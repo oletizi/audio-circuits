@@ -1,1 +1,1 @@
-export { OpampBuffer, type OpampBufferProps } from "./OpampBuffer"
+export { OpampBuffer, type OpampBufferProps } from "./OpampBuffer.tsx"

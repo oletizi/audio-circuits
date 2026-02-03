@@ -5,7 +5,7 @@
  * Example: Dual channel buffer using two OpampBuffer modules.
  */
 
-import { OpampBuffer } from "./modules"
+import { OpampBuffer } from "./modules/index"
 
 export default () => (
   <board width="80mm" height="50mm">

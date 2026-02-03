@@ -8,7 +8,7 @@ export {
   type ScrewTerminal2Props,
   type ScrewTerminal3Props,
   type ScrewTerminal6Props,
-} from "./ScrewTerminal"
+} from "./ScrewTerminal.tsx"
 
 export {
   MonoJack,
@@ -17,4 +17,4 @@ export {
   stereoJackPinLabels,
   type MonoJackProps,
   type StereoJackProps,
-} from "./AudioJack"
+} from "./AudioJack.tsx"

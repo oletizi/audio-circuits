@@ -1,5 +1,5 @@
 // Chips
-export * from "./chips"
+export * from "./chips/index"
 
 // Connectors
-export * from "./connectors"
+export * from "./connectors/index"

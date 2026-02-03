@@ -16,8 +16,8 @@
  * - GND: Ground reference
  */
 
-import { TL072 } from "../../lib/chips"
-import { ScrewTerminal2, ScrewTerminal3 } from "../../lib/connectors"
+import { TL072 } from "../../lib/chips/index"
+import { ScrewTerminal2, ScrewTerminal3 } from "../../lib/connectors/index"
 
 export interface OpampBufferProps {
   name: string
@@ -111,33 +111,48 @@ export const OpampBuffer = (props: OpampBufferProps) => {
         pcbY={pcbY - 10}
       />
 
+      {/* Named nets for clean schematic labels */}
+      <net name={`${name}_GND`} />
+      <net name={`${name}_VCC`} />
+      <net name={`${name}_VEE`} />
+      <net name={`${name}_IN`} />
+      <net name={`${name}_FB`} />
+      <net name={`${name}_OUT`} />
+
       {/* Signal path traces */}
       {/* Input: J_IN.P1 -> C_IN.pin1 */}
       <trace from={`.${name}_J_IN > .P1`} to={`.${name}_C_IN > .pin1`} />
 
-      {/* C_IN -> R_BIAS and U.INA_P */}
-      <trace from={`.${name}_C_IN > .pin2`} to={`.${name}_R_BIAS > .pin1`} />
-      <trace from={`.${name}_C_IN > .pin2`} to={`.${name}_U > .INA_P`} />
+      {/* C_IN -> R_BIAS and U.INA_P via named net */}
+      <trace from={`.${name}_C_IN > .pin2`} to={`net.${name}_IN`} />
+      <trace from={`.${name}_R_BIAS > .pin1`} to={`net.${name}_IN`} />
+      <trace from={`.${name}_U > .INA_P`} to={`net.${name}_IN`} />
 
       {/* Unity gain feedback: OUTA -> INA_N */}
-      <trace from={`.${name}_U > .OUTA`} to={`.${name}_U > .INA_N`} />
+      <trace from={`.${name}_U > .OUTA`} to={`net.${name}_FB`} />
+      <trace from={`.${name}_U > .INA_N`} to={`net.${name}_FB`} />
 
       {/* Output: OUTA -> C_OUT -> J_OUT */}
-      <trace from={`.${name}_U > .OUTA`} to={`.${name}_C_OUT > .pin1`} />
-      <trace from={`.${name}_C_OUT > .pin2`} to={`.${name}_J_OUT > .P1`} />
+      <trace from={`net.${name}_FB`} to={`.${name}_C_OUT > .pin1`} />
+      <trace from={`.${name}_C_OUT > .pin2`} to={`net.${name}_OUT`} />
+      <trace from={`.${name}_J_OUT > .P1`} to={`net.${name}_OUT`} />
 
-      {/* Power connections */}
-      <trace from={`.${name}_J_PWR > .P1`} to={`.${name}_C_VCC > .pin1`} />
-      <trace from={`.${name}_C_VCC > .pin1`} to={`.${name}_U > .VCC`} />
-      <trace from={`.${name}_J_PWR > .P3`} to={`.${name}_C_VEE > .pin1`} />
-      <trace from={`.${name}_C_VEE > .pin1`} to={`.${name}_U > .VEE`} />
+      {/* Power connections via named nets */}
+      <trace from={`.${name}_J_PWR > .P1`} to={`net.${name}_VCC`} />
+      <trace from={`.${name}_C_VCC > .pin1`} to={`net.${name}_VCC`} />
+      <trace from={`.${name}_U > .VCC`} to={`net.${name}_VCC`} />
 
-      {/* Ground connections */}
-      <trace from={`.${name}_J_IN > .P2`} to={`.${name}_J_PWR > .P2`} />
-      <trace from={`.${name}_J_OUT > .P2`} to={`.${name}_J_PWR > .P2`} />
-      <trace from={`.${name}_R_BIAS > .pin2`} to={`.${name}_J_PWR > .P2`} />
-      <trace from={`.${name}_C_VCC > .pin2`} to={`.${name}_J_PWR > .P2`} />
-      <trace from={`.${name}_C_VEE > .pin2`} to={`.${name}_J_PWR > .P2`} />
+      <trace from={`.${name}_J_PWR > .P3`} to={`net.${name}_VEE`} />
+      <trace from={`.${name}_C_VEE > .pin1`} to={`net.${name}_VEE`} />
+      <trace from={`.${name}_U > .VEE`} to={`net.${name}_VEE`} />
+
+      {/* Ground connections via named net */}
+      <trace from={`.${name}_J_IN > .P2`} to={`net.${name}_GND`} />
+      <trace from={`.${name}_J_OUT > .P2`} to={`net.${name}_GND`} />
+      <trace from={`.${name}_J_PWR > .P2`} to={`net.${name}_GND`} />
+      <trace from={`.${name}_R_BIAS > .pin2`} to={`net.${name}_GND`} />
+      <trace from={`.${name}_C_VCC > .pin2`} to={`net.${name}_GND`} />
+      <trace from={`.${name}_C_VEE > .pin2`} to={`net.${name}_GND`} />
     </group>
   )
 }
