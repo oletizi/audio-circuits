@@ -18,6 +18,7 @@
 
 import { TL072 } from "../../lib/chips/index"
 import { ScrewTerminal2, ScrewTerminal3 } from "../../lib/connectors/index"
+import { createGrid } from "../../lib/layout.ts"
 
 export interface OpampBufferProps {
   name: string
@@ -30,6 +31,9 @@ export interface OpampBufferProps {
   /** PCB position */
   pcbX?: number
   pcbY?: number
+  /** Schematic position */
+  schX?: number
+  schY?: number
 }
 
 export const OpampBuffer = (props: OpampBufferProps) => {
@@ -40,15 +44,24 @@ export const OpampBuffer = (props: OpampBufferProps) => {
     biasResistor = "100k",
     pcbX = 0,
     pcbY = 0,
+    schX = 0,
+    schY = 0,
   } = props
+
+  // Grid-based schematic layout
+  // Signal path: J_IN(-4) -> C_IN(-2) -> U(0) -> C_OUT(2) -> J_OUT(4)
+  const g = createGrid(schX, schY)
 
   return (
     <group>
-      {/* Input terminal */}
+      {/* === Signal path (left to right) === */}
+
+      {/* Input terminal - far left */}
       <ScrewTerminal2
         name={`${name}_J_IN`}
         pcbX={pcbX - 25}
         pcbY={pcbY}
+        {...g.signal(-4)}
       />
 
       {/* Input DC blocking capacitor */}
@@ -58,19 +71,27 @@ export const OpampBuffer = (props: OpampBufferProps) => {
         footprint="0805"
         pcbX={pcbX - 15}
         pcbY={pcbY}
+        {...g.signal(-2)}
       />
 
-      {/* Bias resistor to ground */}
+      {/* Bias resistor - below signal path, connects to ground */}
       <resistor
         name={`${name}_R_BIAS`}
         resistance={biasResistor}
         footprint="0805"
         pcbX={pcbX - 5}
         pcbY={pcbY + 5}
+        {...g.below(-1, 1.5)}
+        schRotation="90deg"
       />
 
-      {/* Op-amp (using channel A) */}
-      <TL072 name={`${name}_U`} pcbX={pcbX + 5} pcbY={pcbY} />
+      {/* Op-amp - center */}
+      <TL072
+        name={`${name}_U`}
+        pcbX={pcbX + 5}
+        pcbY={pcbY}
+        {...g.signal(0)}
+      />
 
       {/* Output DC blocking capacitor */}
       <capacitor
@@ -79,36 +100,45 @@ export const OpampBuffer = (props: OpampBufferProps) => {
         footprint="0805"
         pcbX={pcbX + 20}
         pcbY={pcbY}
+        {...g.signal(2)}
       />
 
-      {/* Output terminal */}
+      {/* Output terminal - far right */}
       <ScrewTerminal2
         name={`${name}_J_OUT`}
         pcbX={pcbX + 30}
         pcbY={pcbY}
+        {...g.signal(4)}
       />
 
-      {/* Power terminal (+V, GND, -V) */}
-      <ScrewTerminal3
-        name={`${name}_J_PWR`}
-        pcbX={pcbX}
-        pcbY={pcbY + 15}
-      />
+      {/* === Power section === */}
 
-      {/* Power decoupling capacitors */}
+      {/* VCC decoupling - above op-amp */}
       <capacitor
         name={`${name}_C_VCC`}
         capacitance="100nF"
         footprint="0805"
         pcbX={pcbX + 5}
         pcbY={pcbY + 10}
+        {...g.above(0.5, 1.5)}
       />
+
+      {/* VEE decoupling - below op-amp */}
       <capacitor
         name={`${name}_C_VEE`}
         capacitance="100nF"
         footprint="0805"
         pcbX={pcbX + 5}
         pcbY={pcbY - 10}
+        {...g.below(0.5, 1.5)}
+      />
+
+      {/* Power terminal - bottom left */}
+      <ScrewTerminal3
+        name={`${name}_J_PWR`}
+        pcbX={pcbX}
+        pcbY={pcbY + 15}
+        {...g.below(-3, 2)}
       />
 
       {/* Named nets for clean schematic labels */}
