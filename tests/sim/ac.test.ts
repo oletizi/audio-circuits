@@ -37,3 +37,19 @@ test("surfaces netlist errors instead of returning empty data", async () => {
   const broken = ["broken", "R1 in out", ".ac dec 20 10 100k", ".end"].join("\n")
   await expect(runAcSweep({ netlist: broken, nodes: ["out"] })).rejects.toThrow()
 })
+
+test("rejects a non-AC analysis with real-valued output", async () => {
+  const opPoint = [
+    "RC lowpass op point fixture",
+    "V1 in 0 AC 1",
+    "R1 in out 1000",
+    "C1 out 0 159.1549431n",
+    ".op",
+    ".end",
+  ].join("\n")
+  await expect(runAcSweep({ netlist: opPoint, nodes: ["out"] })).rejects.toThrow("Check the .ac line.")
+})
+
+test("rejects an empty node request instead of returning an empty sweep", async () => {
+  await expect(runAcSweep({ netlist: RC_NETLIST, nodes: [] })).rejects.toThrow()
+})
