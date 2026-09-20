@@ -85,11 +85,16 @@ export function assertSameTopology(reference: PassiveNetwork, candidate: Passive
   if (signature(reference) !== signature(candidate)) throw new Error("Passive topology differs from reference")
 }
 
+export interface PartitionOptions {
+  /** When present, every owner name must appear here. */
+  readonly allowedOwners?: readonly string[]
+}
+
 /** Assigns physical ownership without modifying any electrical connection.
  * Returned boundary nets need one continuous conductor each across their owners.
  * This is not a connector pin order, standalone termination, or PCB implementation.
  */
-export function partitionTopology(network: PassiveNetwork, ownerByRef: Readonly<Record<string, string>>) {
+export function partitionTopology(network: PassiveNetwork, ownerByRef: Readonly<Record<string, string>>, options?: PartitionOptions) {
   validate(network)
   const refs = new Set(network.elements.map(e => e.ref))
   for (const ref of Object.keys(ownerByRef)) {
@@ -102,6 +107,9 @@ export function partitionTopology(network: PassiveNetwork, ownerByRef: Readonly<
       throw new Error(`Missing owner: ${element.ref}`)
     }
     const owner = ownerByRef[element.ref]
+    if (options?.allowedOwners && !options.allowedOwners.includes(owner)) {
+      throw new Error(`Unknown owner: ${owner} (allowed: ${options.allowedOwners.join(", ")})`)
+    }
     ;(modules[owner] ??= []).push(element)
     for (const net of Object.values(element.pins)) {
       if (!ownersByNet.has(net)) ownersByNet.set(net, new Set())
