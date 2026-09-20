@@ -117,8 +117,22 @@ function nameGroups(uf: UnionFind, indices: Indices, netNames: Readonly<Record<s
   for (const [root, ids] of groups) {
     const namedNetIds = ids.filter(id => indices.nets.has(id)).sort()
     if (namedNetIds.length > 1) {
+      // Several declared nets in one group is only an error when they mean
+      // DIFFERENT canonical nets — that is two distinct nodes shorted together.
+      // Modules composed onto one board legitimately join their own net names
+      // to a shared node, and those all map to the same canonical net, which is
+      // the caller stating the join rather than an accident.
       const names = namesForNetIds(namedNetIds, indices.nets).sort()
-      throw new Error(`Conflicting nets in group: ${names.join(", ")}`)
+      const canonical = new Set(names.map(name => {
+        const mapped = netNames[name]
+        if (mapped === undefined) throw new Error(`Unmapped net: ${name}`)
+        return mapped
+      }))
+      if (canonical.size > 1) {
+        throw new Error(
+          `Conflicting nets in group: ${names.join(", ")} resolve to ${[...canonical].sort().join(", ")}`,
+        )
+      }
     }
     const resolvedName = resolveGroupNetName(namedNetIds, indices.nets, netNames)
     if (resolvedName !== undefined) {
