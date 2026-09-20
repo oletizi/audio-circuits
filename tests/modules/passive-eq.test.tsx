@@ -4,47 +4,12 @@ import { PultecPassiveEq } from "../../modules/pultec-passive-eq/PultecPassiveEq
 import { toLabelledNetwork } from "../../lib/export/circuit-json.ts"
 import { assertSameTopology } from "../../lib/passives/topology.ts"
 import { boardNetwork } from "../../reference/pultec/partition.ts"
+import { COMPOSED_MAPPING, COMPOSED_PREFIX } from "./composed-mapping.ts"
 import type { ExportMapping } from "../../lib/export/circuit-json.ts"
 import type { PassiveNetwork } from "../../lib/passives/topology.ts"
 
-const P = "EQ"
-
-const MAPPING: ExportMapping = {
-  componentNames: {
-    [`${P}_LC_C1`]: "C1", [`${P}_LC_C2`]: "C2", [`${P}_LC_C3`]: "C3",
-    [`${P}_LC_C4`]: "C4", [`${P}_LC_C5`]: "C5", [`${P}_LC_C6`]: "C6",
-    [`${P}_LC_C7`]: "C7",
-    [`${P}_LB_C18`]: "C18", [`${P}_LB_C19`]: "C19", [`${P}_LB_C20`]: "C20",
-    [`${P}_LB_C21`]: "C21", [`${P}_LB_C22`]: "C22", [`${P}_LB_C23`]: "C23",
-    [`${P}_LB_R2`]: "R2",
-    [`${P}_HC_C24`]: "C24", [`${P}_HC_C25`]: "C25", [`${P}_HC_C26`]: "C26",
-    [`${P}_HC_C27`]: "C27", [`${P}_HC_C28`]: "C28", [`${P}_HC_C29`]: "C29",
-    [`${P}_HC_C30`]: "C30", [`${P}_HC_C31`]: "C31", [`${P}_HC_C32`]: "C32",
-    [`${P}_HC_C33`]: "C33",
-    [`${P}_HC_R1`]: "R1",
-  },
-  netNames: {
-    [`${P}_LC_IN`]: "hi_boost_out",
-    [`${P}_LC_SEL_20Hz`]: "j5_p1", [`${P}_LC_SEL_30Hz`]: "j5_p2",
-    [`${P}_LC_SEL_60Hz`]: "j5_p3", [`${P}_LC_SEL_100Hz`]: "j5_p4",
-    [`${P}_LC_SEL_150Hz`]: "j5_p5", [`${P}_LC_SEL_200Hz`]: "j5_p6",
-    [`${P}_LB_GND`]: "0",
-    [`${P}_LB_OUT`]: "out",
-    // Both sides of the composition's single join map to the same node.
-    [`${P}_LB_SECTION_IN`]: "lo_boost_in",
-    [`${P}_HC_SECTION`]: "lo_boost_in",
-    [`${P}_LB_SEL_20Hz`]: "j10_p1", [`${P}_LB_SEL_30Hz`]: "j10_p2",
-    [`${P}_LB_SEL_60Hz`]: "j10_p3", [`${P}_LB_SEL_100Hz`]: "j10_p4",
-    [`${P}_LB_SEL_150Hz`]: "j10_p5", [`${P}_LB_SEL_200Hz`]: "j10_p6",
-    [`${P}_HC_WIPER`]: "j4_p2",
-    [`${P}_HC_SEL_COMMON`]: "j3_p1",
-    [`${P}_HC_SEL_3kHz`]: "j12_p1", [`${P}_HC_SEL_4kHz`]: "j12_p2",
-    [`${P}_HC_SEL_5kHz`]: "j12_p3", [`${P}_HC_SEL_8kHz`]: "j12_p4",
-    [`${P}_HC_SEL_10kHz`]: "j12_p5", [`${P}_HC_SEL_16kHz`]: "j12_p6",
-  },
-  pinNames: { pin1: "a", pin2: "b" },
-  ports: { input: "hi_boost_out", output: "out", ground: "0" },
-}
+const P = COMPOSED_PREFIX
+const MAPPING = COMPOSED_MAPPING
 
 function render() {
   const circuit = new RootCircuit()
