@@ -106,22 +106,34 @@ maximum Q in the hi-boost section, so it changes the AC response.
 
 ---
 
-## 3. Mid band is a six-position subset of eleven
+## 3. Mid band — SUPERSEDED by a design decision
 
-**Uncertain:** which six of the doc's eleven mid frequencies are fitted.
+The original question was which six of the documentation's eleven mid
+frequencies the manufactured board fits. It no longer governs.
 
-The doc specifies eleven mid frequencies (200, 300, 500, 700, 1K, 1K5, 2K, 3K,
-4K, 5K, 7K) with an L and C for each. The KiCad schematic has six selector
-positions with A/B capacitor pairs, and every mid capacitor value is a
-placeholder (`Mid C1A` … `Mid C6B`).
+The builder's direction is to **favour Thompson-Bell's topology and values over
+the as-built board**, treating that board as one example rather than the
+reference, and to carry **all eleven** mid frequencies into the modular
+topology: a position can be left unpopulated at build time, but a position
+designed out needs a new board to recover.
 
-The board was manufactured with mid-band footprints, and the gerber commit
-message is "re-worked the mid-range", so a choice was made — it is just not in
-the schematic.
+`reference/pultec/mid.ts` and `modules/pultec-mid/` therefore implement all
+eleven, from P3bandDoc.pdf page 3 — the same set as the Pultec MEQ5, on a
+VTB9050. Seventeen capacitors across eleven positions, six of them doubled,
+served by five winding taps.
 
-**Alternatives:** any six-subset of the eleven; or the mid section is unstuffed.
+**Note the provenance difference.** Every other section in this reference takes
+its topology from an exact netlist export of the manufactured board. The mid
+cannot: that board carries a six-position subset whose values are placeholders
+in the schematic. The mid is authored from documentation and validated against
+that documentation, not against a netlist. That is a deliberate, recorded
+difference.
 
-**Resolves by:** the builder naming the six, or reading them off the board.
+**Still open:** the mid is not yet part of `THREE_BAND_REFERENCE`, because
+inserting it into the signal chain needs the mid level pot's three connections
+settled — the board wires them differently from the master schematic, and the
+board is no longer authoritative. Until that is resolved the mid stands as a
+validated module that nothing composes.
 
 ---
 
