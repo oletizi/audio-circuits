@@ -13,15 +13,14 @@ audio-circuits/
 │
 ├── modules/                # Complete circuit modules
 │   ├── opamp-buffer/       # Unity-gain buffer
-│   ├── low-cut/            # High-pass filter (Pultec-style)
-│   ├── low-boost/          # Low frequency LC boost
-│   ├── high-boost/         # High frequency LC boost with Q control
-│   ├── high-cut/           # Low-pass filter
+│   ├── pultec-lf/          # Planned: coupled LF boost/attenuation R/C network
+│   ├── pultec-hf/          # Planned: HF boost/bandwidth/attenuation network
+│   ├── pultec-passive-eq/  # Planned: reference-equivalent composition
 │   ├── input-stage/        # Input buffering/impedance matching
 │   └── output-stage/       # Output stage variants
 │
 ├── boards/                 # Complete board designs
-│   ├── pultec-eq/          # Full Pultec-style EQ
+│   ├── pultec-eq/          # Planned: complete EQ with separate makeup stage
 │   └── dual-buffer/        # Dual channel buffer
 │
 ├── examples/               # Example circuits and usage
@@ -92,31 +91,26 @@ export const MyModule = (props: MyModuleProps) => {
 ### Module Conventions
 
 1. **Naming**: All component names prefixed with module `name` prop
-2. **Interfaces**: Use screw terminals for external connections
+2. **Interfaces**: Use screw terminals for external connections; derive Pultec shared-node interfaces from the reference topology
 3. **Standalone circuit**: Include `<module>.circuit.tsx` for independent testing
 4. **Exports**: Export from `index.ts` for clean imports
 
 ## Composing Boards
 
-Modules can be composed into complete boards:
+The main demo composes two independent op-amp buffers. Pultec sections require
+shared circuit nodes rather than an assumed LF-to-HF cascade. Their connector
+interface will follow a reviewed unsplit reference network.
 
-```tsx
-// boards/my-board/my-board.circuit.tsx
-import { OpampBuffer } from "../../modules"
-import { LowCutFilter } from "../../modules"
+## Pultec Design Groundwork
 
-export default () => (
-  <board width="100mm" height="80mm">
-    <OpampBuffer name="INPUT" pcbX={-30} pcbY={0} />
-    <LowCutFilter name="LC" pcbX={0} pcbY={0} />
-    <OpampBuffer name="OUTPUT" pcbX={30} pcbY={0} />
+See [the reference and modularization plan](docs/pultec/README.md) and the
+[proposed changes and implementation status](docs/pultec/implementation-plan.md). The governing
+constraint is that LF + HF + wiring preserve the EQP-1A passive topology. The
+reference transcription and circuit modules are pending; the initial connectivity
+checks use synthetic fixtures and do not yet validate a Pultec implementation.
 
-    {/* Inter-module connections */}
-    <trace from=".INPUT_J_OUT > .P1" to=".LC_J_IN > .P1" />
-    <trace from=".LC_J_OUT > .P1" to=".OUTPUT_J_IN > .P1" />
-  </board>
-)
-```
+Run the connectivity checks with `bun test`. The tree above includes planned
+folders; only the op-amp buffer is currently implemented as a circuit module.
 
 ## Component Library
 
@@ -141,10 +135,11 @@ export default () => (
 | Module | Status | Description |
 |--------|--------|-------------|
 | `opamp-buffer` | ✅ Done | Unity-gain buffer |
-| `low-cut` | 🔲 TODO | High-pass filter |
-| `low-boost` | 🔲 TODO | LC low frequency boost |
-| `high-boost` | 🔲 TODO | LC high frequency boost |
-| `high-cut` | 🔲 TODO | Low-pass filter |
+| `pultec-lf` | Design groundwork | Coupled LF R/C network |
+| `pultec-hf` | Design groundwork | Coupled HF L/C/R network |
+| `pultec-passive-eq` | Design groundwork | Node-for-node reference composition |
+| `pultec-lf-standalone` | Deferred | LF + validated HF substitute |
+| `pultec-hf-standalone` | Deferred | HF + validated LF substitute |
 | `input-stage` | 🔲 TODO | Input buffering |
 | `output-stage` | 🔲 TODO | Output stage |
 
