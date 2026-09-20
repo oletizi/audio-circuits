@@ -91,6 +91,17 @@ test("rejects a pot missing a declared terminal", () => {
     .toThrow("Unknown pot pin: P9.cw")
 })
 
+test("rejects a passthrough element without exactly two pins keyed a and b", () => {
+  const threePin: PassiveNetwork = {
+    ports: { input: "in", output: "out", ground: "0" },
+    elements: [
+      { ref: "R9", kind: "resistor", pins: { a: "in", b: "mid", c: "out" }, parameters: { ohms: 1000 } },
+    ],
+  }
+  expect(() => resolveNetwork(threePin, { potPositions: {}, switchPositions: {} }))
+    .toThrow(/Element does not have exactly two pins keyed a and b: R9/)
+})
+
 test("rejects invalid or missing control settings instead of defaulting", () => {
   expect(() => resolveNetwork(physical, { potPositions: {}, switchPositions: { S1: "a" } }))
     .toThrow("Missing control setting: P1")
