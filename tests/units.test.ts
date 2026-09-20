@@ -29,6 +29,18 @@ test("plain forms still win over RKM where both could apply", () => {
   expect(parseValue("470pF")).toBeCloseTo(4.7e-10, 20)
 })
 
+test("scales without introducing rounding the literal does not have", () => {
+  // 18 * 1e-9 is 1.8000000000000002e-8; the literal is exactly 1.8e-8. An exact
+  // topology comparison against a value another tool parsed from the same text
+  // fails on that difference, so scaling goes through exponent notation.
+  expect(parseValue("18n")).toBe(1.8e-8)
+  expect(parseValue("22n")).toBe(2.2e-8)
+  expect(parseValue("33n")).toBe(3.3e-8)
+  expect(parseValue("120n")).toBe(1.2e-7)
+  expect(parseValue("4n7")).toBe(4.7e-9)
+  expect(parseValue("470pF")).toBe(4.7e-10)
+})
+
 test("rejects unparseable values instead of guessing", () => {
   expect(() => parseValue("")).toThrow("Unparseable value")
   expect(() => parseValue("about 1k")).toThrow("Unparseable value")
