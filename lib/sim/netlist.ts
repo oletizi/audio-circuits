@@ -33,10 +33,13 @@ const PREFIX: Readonly<Record<ResolvedElement["kind"], string>> = {
   inductor: "L",
 }
 
-/** Synthetic component/net names the emitter itself introduces. Kept visually distinct
- * from anything `sanitize` would produce from a user ref so a collision is unlikely, and
- * always run through the same collision registry as element-derived names so a collision
- * that does occur is caught rather than silently overwriting a line.
+/** Synthetic component/net names the emitter itself introduces. `LOAD_RESISTOR_NAME`,
+ * `LOAD_CAPACITOR_NAME`, and `SERIES_RESISTOR_NAME` are component names, checked against
+ * the same collision registry as element-derived component names so a collision is caught
+ * rather than silently overwriting a line. `SOURCE_INTERNAL_NODE` is a net name, a
+ * different SPICE namespace, and is checked separately by
+ * `assertNoSourceInternalNodeCollision` against every net actually present in the
+ * network, since nets carry no registry of their own.
  */
 const LOAD_RESISTOR_NAME = "RLOAD"
 const LOAD_CAPACITOR_NAME = "CLOAD"
@@ -87,6 +90,28 @@ function reserveName(registry: Map<string, string>, name: string, ref: string): 
   registry.set(name, ref)
 }
 
+/** When a series resistor is emitted, `SOURCE_INTERNAL_NODE` becomes a real SPICE net.
+ * If any net already present in the network (a port or an element pin) resolves to
+ * that same name, the two would be silently shorted together rather than colliding
+ * loudly, so this checks every net in the network up front and throws naming the
+ * offending net. Nets have no registry of their own the way component names do, so
+ * this walks the network directly rather than reusing `reserveName`.
+ */
+function assertNoSourceInternalNodeCollision(network: ResolvedNetwork, groundNet: string): void {
+  const rawNets = new Set<string>(Object.values(network.ports))
+  for (const element of network.elements) {
+    rawNets.add(element.pins.a)
+    rawNets.add(element.pins.b)
+  }
+  for (const rawNet of rawNets) {
+    if (resolveNet(rawNet, groundNet) === SOURCE_INTERNAL_NODE) {
+      throw new Error(
+        `Net "${rawNet}" collides with the synthetic source-series internal node name "${SOURCE_INTERNAL_NODE}"`,
+      )
+    }
+  }
+}
+
 /** Turns a resolved passive network plus an explicitly declared simulation environment
  * into a complete SPICE deck: title line, source (with optional series resistor),
  * element lines, load, `.ac` line, and `.end`. Source and load models are required
@@ -102,6 +127,7 @@ export function toSpiceNetlist(network: ResolvedNetwork, environment: Simulation
   const lines: string[] = ["Pultec modularize AC network"]
 
   const seriesOhms = environment.source.seriesOhms
+  if (seriesOhms !== 0) assertNoSourceInternalNodeCollision(network, groundNet)
   const sourceOutputNode = seriesOhms !== 0 ? SOURCE_INTERNAL_NODE : node(sourceNet)
   lines.push(`V1 ${sourceOutputNode} 0 AC ${environment.source.amplitude.toExponential(12)}`)
   if (seriesOhms !== 0) {
