@@ -19,6 +19,7 @@
     "test": "bun test"
   },
   "devDependencies": {
+    "bun-types": "^1.4.2",
     "tscircuit": "latest",
     "typescript": "^5.0.0"
   }
