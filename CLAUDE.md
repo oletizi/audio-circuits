@@ -1,5 +1,8 @@
 # Audio Circuits - Project Instructions
 
+Follow the shared project rules in `AGENTS.md`, including committing and pushing
+small, coherent changes early and often.
+
 ## tscircuit Conventions
 
 ### Import Paths
