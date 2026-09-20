@@ -151,7 +151,24 @@ All four items are now recorded, with detail and exact commands, in
 statement about the tooling: it does not mean any Pultec circuit, module, or
 measurement has been validated. That remains gated behind step 1 and later.
 
-### 1. Establish the reference — pending
+### 1. Establish the reference — complete, and corroborated
+
+Delivered in `reference/pultec/`. The circuit is Ian Thompson-Bell's Pultec 3
+Band EQ, an EQP-1 and an MEQ-5 combined; the "EQP-1A" phrasing throughout this
+document is shorthand for it.
+
+Topology is an exact `kicad-cli` export of the schematic that was manufactured,
+retained with digests rather than transcribed. Values come from Thompson-Bell's
+own documentation. The two agree on every capacitor position across all four
+banks, including two details that only match if both sources are right, so the
+reference meets the corroborated gate rather than remaining candidate-only. It
+is corroborated as a faithful record of that design and says nothing about
+fidelity to a factory Pultec.
+
+Scope: low cut, low boost and hi cut in full. The hi boost resonant branch and
+the mid section are excluded with reasons recorded. Six unresolved items are
+listed rather than filled in; two of them — as-built hardware, and a Qmax
+resistor that contradicts the fitted build variant — affect behaviour.
 
 Proposed location: `reference/pultec/`.
 
@@ -204,7 +221,26 @@ with no unresolved connection or parameter needed for the selected configuration
 This gate controls reference-fidelity claims in software as well as hardware; it
 does not prohibit exploratory implementation.
 
-### 2. Model and validate the unsplit circuit — pending
+### 2. Model and validate the unsplit circuit — modelled and validated in scope
+
+The reference assembles into a typed network mechanically from the netlist
+export, resolves at declared control states, and sweeps through the step 0 AC
+harness.
+
+Validated against independent evidence, not self-consistency: at the flat
+setting the model gives 21.54dB insertion loss where Thompson-Bell quotes a
+nominal 20.83dB. The difference is his figure being the bare 47K/4K7 divider
+while the full network also shunts through R2 and the specified 470K load;
+including both derives 21.5398dB by hand, which the simulation matches to
+better than 0.01dB. Hi cut, lo boost and the absent hi boost branch are each
+pinned by their own behavioural test.
+
+Control states use pot extremes only, because no source states a LOG curve
+constant and at an extreme the taper cannot affect the result.
+
+Still outstanding: response validation against published Pultec curves, which
+needs the hi boost branch, and any comparison against the built unit, which
+needs measurement.
 
 Proposed locations: `reference/pultec/` for independent expected data and
 `tests/pultec/` for reference validation fixtures and simulation checks.
@@ -249,7 +285,17 @@ Completion evidence: reviewed connectivity plus a reproducible reference respons
 set. Agreement between two models derived from the same mistaken transcription
 is insufficient evidence of source fidelity.
 
-### 3. Define the physical partition — pending
+### 3. Define the physical partition — complete in scope
+
+`reference/pultec/partition.ts`. One module per section, following the boards
+that were actually built rather than inventing a split. Every element is owned
+exactly once, owner names are checked against a declared set, and recomposition
+is asserted equal to the reference with element order reversed so it cannot
+depend on ordering.
+
+Ground is an external port here, not a boundary net: with hi boost and mid out
+of scope every element on it belongs to low boost. It still needs routing on
+every board, which is exactly the case this plan flags, and is now asserted.
 
 Proposed location: ownership data under `reference/pultec/`, in the format chosen
 for the reference model, plus a connector table in `docs/pultec/`. A typed
@@ -265,7 +311,22 @@ for the reference model, plus a connector table in `docs/pultec/`. A typed
 Completion evidence: recomposed labelled connectivity equals the independent
 reference and the connector table accounts for every boundary connection.
 
-### 4. Implement LF/HF tscircuit modules — pending
+### 4. Implement tscircuit modules — complete in scope
+
+`modules/pultec-low-cut`, `pultec-low-boost`, `pultec-hi-cut`, and
+`pultec-passive-eq` composing the three. Front-panel selectors and level pots
+appear as named nets, not components: which connector carries them is a
+physical decision that belongs after the electrical partition is validated.
+
+Each module renders, exports, flattens through the adapter and compares equal
+to its portion of the reference partition. The composition adds exactly one
+conductor and equals the partition recomposed, with no component duplicated.
+Unsplit and composed responses agree within 1e-6 dB and 1e-6 degrees across a
+nine-state control matrix, and a second test asserts two settings genuinely
+differ so that agreement is not vacuous.
+
+Module naming follows the sections rather than the plan's original LF/HF pair,
+because the circuit has four sections and not two.
 
 Proposed locations:
 

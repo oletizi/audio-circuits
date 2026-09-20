@@ -11,6 +11,33 @@ item 1 is closed.
 
 ---
 
+## 0. The hi boost resonant branch is not modelled
+
+**Uncertain:** the off-board wiring of the hi boost selector, tapped inductor,
+Qmax resistor and Q potentiometer.
+
+The KiCad schematic captures the PCB only; every one of those parts is reached
+through screw terminals. The complete wiring exists in Thompson-Bell's
+hand-drawn master schematic, whose broad structure is legible — the selector
+picks a capacitor, each capacitor taps the inductor, and the coil feeds Qmax
+into the Q pot and then the 47K level pot — but not every junction is certain at
+the available scan resolution, and the project's rule is not to fill uncertain
+junctions from inference.
+
+Consequently the reference models low cut, low boost and hi cut only. The hi
+boost LEVEL pot is retained, because the signal path runs through it and both
+sources agree on its three connections; with its wiper unloaded it behaves as a
+plain 47K in series, which is asserted by test so the limitation cannot pass
+unnoticed.
+
+**Also unresolved within it:** `R3 = 4K7` is the poor-man's Qmax value while the
+fitted capacitors are the inductive `Cboost` set — see item 2.
+
+**Resolves by:** a reviewed transcription of the master schematic's hi boost
+section, ideally against a higher-resolution scan, with its own unresolved list.
+
+---
+
 ## 1. As-built hardware is not captured
 
 **Uncertain:** whether the physical unit matches the schematic.
@@ -72,16 +99,21 @@ the schematic.
 
 ---
 
-## 4. Hi cut potentiometer value not recovered
+## 4. Hi cut potentiometer value — RESOLVED
 
-**Uncertain:** the value and taper of the hi-cut level control.
+**Value: 4K7.** `SteppedPotsfor3BandPultecv0.2.pdf` page 4 states it directly:
+"The High Cut pot is the bottom arm of the divider used for High Boost so for
+High Boost to be correct, this needs to total exactly 4700 ohms."
 
-The other five controls were read from the doc's master schematic. The hi-cut
-pot was not legible in the same pass.
+Independently confirmed by the same document's insertion-loss figure, which only
+holds for this value: "a simple potential divider formed from a 47K
+potentiometer and a 4K7 potentiometer. The EQ therefore has a nominal insertion
+loss of 4.7/(4.7+47) = 20.83dB."
 
-**Resolves by:** re-reading page 5 of `P3bandDoc.pdf` at higher magnification,
-or the stepped-pot document `SteppedPotsfor3BandPultecv0.2.pdf`, which has not
-been examined.
+**Still uncertain:** the taper class. No source states it. It is inert at the
+control extremes the reference is validated at, where every curve returns
+exactly 0 or exactly 1, so it does not block simulation at those states — but
+any interior setting needs it. See item 5.
 
 ---
 
