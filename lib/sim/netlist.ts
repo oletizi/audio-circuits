@@ -155,7 +155,24 @@ export function toSpiceNetlist(network: ResolvedNetwork, environment: Simulation
     lines.push(`${SERIES_RESISTOR_NAME} ${sourceOutputNode} ${node(sourceNet)} ${seriesOhms.toExponential(12)}`)
   }
 
+  let shorts = 0
   for (const element of network.elements) {
+    // A zero-ohm element is an ideal short, which SPICE cannot express as a
+    // resistor — ngspice silently substitutes 1e-12 and warns. The standard
+    // idiom is a zero-volt source, which is exact rather than approximate.
+    // Resolved potentiometer sections are legitimately zero at a control
+    // extreme, so this is a normal case, not an error.
+    if (element.kind === "resistor" && element.parameters.ohms === 0) {
+      const a = node(element.pins.a)
+      const b = node(element.pins.b)
+      // Both ends already on one node: the short is implicit and emitting a
+      // source across it would be a shorted VSRC, which ngspice rejects.
+      if (a === b) continue
+      const name = `VSHORT${shorts++}`
+      reserveName(names, name, element.ref)
+      lines.push(`${name} ${a} ${b} DC 0`)
+      continue
+    }
     const name = elementName(element.kind, element.ref)
     reserveName(names, name, element.ref)
     lines.push(`${name} ${node(element.pins.a)} ${node(element.pins.b)} ${valueOf(element)}`)
