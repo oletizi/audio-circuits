@@ -1278,7 +1278,13 @@ test("refuses a component with no canonical mapping", () => {
 })
 ```
 
-Unconnected pins keep a derived net name of `` `${emittedName}.${pin}` ``, which is what the `HF_L1.pin2` and `LF_R1.pin1` entries above record. That keeps them distinct and makes them visible to the connectivity lint rather than silently merged.
+**Rule change, recorded after delivery.** The plan specified that unconnected pins keep a derived net name of `` `${emittedName}.${pin}` ``, which is what the `HF_L1.pin2` and `LF_R1.pin1` entries above record, on the reasoning that it keeps them distinct and visible to the connectivity lint rather than silently merged. The delivered adapter does not do this. It rejects dangling pins outright, throwing `` `Dangling pins: <sorted list>` `` for any `source_pin_missing_trace_warning` the renderer emitted, and the fixture was changed to connect every pin so it does not trip that rejection.
+
+Rejecting is the better rule under this plan's own no-fallbacks constraint: a derived name is a fabricated net that appears nowhere in the labelled model, and it makes an incomplete export look like a complete one that merely lints badly. Downgrading a missing connection to a lint finding puts the decision in a diagnostic pass that never throws, which is exactly the silent-degradation class the constraint exists to prevent. The adapter has no fallback net names at all: an unnamed net group also throws rather than deriving a name, and so does a group containing two different named nets.
+
+The corresponding change to the `expected` fixture above is that no `HF_L1.pin2`/`LF_R1.pin1` derived entries exist — those pins land on the named `OUT`/`IN` nets instead. Pin keys also changed: see the pinNames rule change below.
+
+**Second rule change: canonical pin keys.** `ExportMapping` gained `pinNames`, mapping each emitted port name to a canonical pin key. The plan's `expected` fixture above shows pins keyed `pin1`/`pin2` — tscircuit's own port names, passed through. That shape is not resolvable: `requireTwoPin` in `lib/passives/control-state.ts` requires exactly `{a, b}`, so the export output could not reach the resolver or the SPICE emitter. The delivered adapter rekeys through `mapping.pinNames` (typically `{ pin1: "a", pin2: "b" }`) and throws `` `Unmapped pin: <component>.<port>` `` when a port has no entry, rather than passing the raw name through.
 
 - [ ] **Step 3: Run to confirm failure**
 
@@ -1315,7 +1321,7 @@ The body runs five passes:
 1. **Reject dangling pins.** If any element has `type === "source_pin_missing_trace_warning"`, throw naming the pins. The renderer already detects this and it must not pass silently.
 2. **Index components and ports.** Collect `source_component` records by `source_component_id`, and `source_port` records by `source_port_id`, each carrying its `name` and owning component.
 3. **Union-find over traces.** For each `source_trace`, union all ids in `connected_source_port_ids` together with all ids in `connected_source_net_ids`. Ports and nets share one id space in this structure.
-4. **Name each group.** If a group contains a `source_net` id whose record has a `name`, that name resolves through `mapping.netNames` — throwing `Unmapped net: <name>` if absent. Otherwise the group takes the derived name `` `${componentName}.${portName}` `` of its lowest-sorted port, which is what an unconnected pin receives.
+4. **Name each group.** If a group contains a `source_net` id whose record has a `name`, that name resolves through `mapping.netNames` — throwing `Unmapped net: <name>` if absent. The plan said a group with no named net takes the derived name `` `${componentName}.${portName}` `` of its lowest-sorted port; as delivered it throws `Unnamed net group: <ports>` instead, for the no-fallbacks reason recorded above. A group holding two DIFFERENT named nets throws `Conflicting nets in group: <names>` rather than picking one.
 5. **Build elements.** For each `source_component`, resolve its canonical ref through `mapping.componentNames`, throwing `Unmapped component: <name>` when absent, and its kind through `FTYPE_KIND`, throwing on an unsupported `ftype`. Read `resistance`, `capacitance`, or `inductance` and pass it through `parseValue` when it is a string, or use it directly when it is a number. Build `pins` from the component's ports, each mapped to its group's canonical net.
 
 Return `{ ports: mapping.ports, elements }` with elements sorted by ref.
@@ -1323,7 +1329,7 @@ Return `{ ports: mapping.ports, elements }` with elements sorted by ref.
 - [ ] **Step 5: Run the adapter tests**
 
 Run: `bun test tests/export/circuit-json.test.ts`
-Expected: 3 pass. Allow extra time on the first run; rendering initializes tscircuit's solvers.
+Expected: 0 fail. Allow extra time on the first run; rendering initializes tscircuit's solvers. The plan expected 3; the delivered file carries more, including the rejection tests for the two rule changes recorded above and the end-to-end export → resolve → netlist chain.
 
 - [ ] **Step 6: Commit and push**
 
@@ -1412,7 +1418,12 @@ test("names a missing component", () => {
 - [ ] **Step 5: Run everything**
 
 Run: `bun test`
-Expected: 42 pass, 0 fail.
+Expected: 0 fail. The plan's original figure of 42 was the arithmetic of the ten
+tasks as planned (see "Test count arithmetic" below); the delivered suite is
+larger, because the per-task reviews and the final whole-branch review each added
+coverage the plan did not anticipate. The figure to trust is the one `bun test`
+prints, which at the close of this plan is 64 across 9 files. Treat it as a guard
+against silently deleting or merging tests, never as a ceiling.
 
 Run: `bun run typecheck && git diff --check`
 Expected: both exit 0.
@@ -1456,4 +1467,4 @@ Two review findings apply to the outline rather than to this plan's tasks, and a
 
 **Type consistency.** `ResolvedNetwork` is produced in Task 3 and consumed unchanged in Tasks 5, 7, and 8. `AcSweep` is produced in Task 6 and consumed in Tasks 7 and 8. `PassiveNetwork` is redefined once, in Task 2, before any other task depends on its shape — no task types a fixture against a shape a later task changes. `parseValue` is defined in Task 2 and used in Task 9. `assertSameTopology` keeps its signature throughout; only its message changes, in Task 10.
 
-**Test count arithmetic.** 9 existing, plus 3 in Task 2, 5 in Task 3, 3 in Task 4, 5 in Task 5, 3 in Task 6, 4 in Task 7, 4 in Task 8, 3 in Task 9, 3 in Task 10 — 42 at completion, matching Task 10's expected figure.
+**Test count arithmetic.** 9 existing, plus 3 in Task 2, 5 in Task 3, 3 in Task 4, 5 in Task 5, 3 in Task 6, 4 in Task 7, 4 in Task 8, 3 in Task 9, 3 in Task 10 — 42 as planned. That was the plan's projection, not the delivered figure: the per-task reviews and the final whole-branch review added coverage beyond it, and the suite stands at 64 across 9 files at the close of this plan. Measure, do not assume; the planned figure is a lower bound on what the tasks owed, not a target to trim back to.

@@ -57,15 +57,34 @@ composition. Neither may require changing the combined reference circuit.
 | `docs/pultec/README.md` | Records candidate sources, unresolved reference authority, transcription requirements, module responsibilities, and validation gates. |
 | `docs/pultec/implementation-plan.md` | Tracks the complete proposal, implementation sequence, and completion evidence. |
 | `lib/passives/topology.ts` | Adds a labelled passive-network representation, strict topology comparison, component ownership partitioning, and derived shared-node lists. |
-| `tests/topology.test.js` | Exercises partition preservation and rejects rewiring, parameter changes, missing/extra components, duplicate references, swapped ports, and invalid ownership using a synthetic fixture. |
+| `tests/topology.test.ts` | Exercises partition preservation and rejects rewiring, parameter changes, missing/extra components, duplicate references, swapped ports, and invalid ownership using a synthetic fixture. |
 | `package.json` | Adds `bun run test` as the standard entry point for the connectivity tests. |
 | `tsconfig.json` | Enables explicit TypeScript import extensions used by existing modules and sets `noEmit` for type checking; circuit output remains the responsibility of tscircuit. |
 
 The topology utility preserves canonical reference names. It deliberately rejects
-renaming and alternative equivalent circuits. Its string parameter maps are an
-initial representation, not a complete simulator model or a validated switch/
-inductor schema. It does not infer pot behavior, validate switch contact tables,
-model coupled windings, or resolve physical connector wiring.
+renaming and alternative equivalent circuits.
+
+The paragraph that stood here described the topology utility's initial state and
+is now superseded by the modules listed under "Verification record and
+reproduction" below. Specifically: parameters are no longer flat strings —
+`lib/passives/parameters.ts` defines structured parameters in canonical SI units,
+with `lib/passives/units.ts` parsing source value strings into base units and
+throwing rather than guessing. Pot behaviour is modelled: `expandPot` in
+`lib/passives/control-state.ts` expands a pot into two resistors using its
+declared taper and wiper fraction. Switch contact tables are validated: the same
+resolver rejects an unknown position, a position with no contacts entry, a
+contact naming a pin the switch does not declare, and ganged switches that
+disagree.
+
+What remains genuinely unmodelled is coupled windings (a tapped or coupled
+inductor has no representation; a third terminal reaching the resolver is
+rejected, not modelled) and physical connector wiring, which stays a
+partitioning/boundary-net concern rather than an electrical one.
+
+Anyone starting the step 1 reference transcription should build fixtures in the
+shape these modules define — structured SI parameters, pot terminals kept as
+`ccw`/`wiper`/`cw`, switches keeping every contact, and two-terminal passives
+keyed `a`/`b` — not in the superseded string-map shape.
 
 No Pultec circuit exports, PCB layouts, fixed connector assignments, BOM, or
 manufacturing files have been implemented. The existing buffer demo is unchanged.
@@ -256,9 +275,12 @@ Manufacturing exports and any inexpensive-inductor variants are later outputs.
 
 ## Verification record and reproduction
 
-Initial groundwork checks completed on 2026-09-19:
+The initial groundwork checks recorded here ran `bun test` against a single
+synthetic bridge fixture and reported 9 tests passing. That figure describes the
+first commit of this branch and is retained only as history; the suite has grown
+with every module since. The current figures are:
 
-- `bun test`: 9 tests passed, using a synthetic bridge fixture.
+- `bun test`: 64 tests passed across 9 files.
 - `bun run typecheck`: passed after the import-extension configuration correction.
 - `git diff --check`: passed.
 
@@ -295,8 +317,10 @@ transitive dependency) using an RC lowpass fixture with a closed-form response
 analytic magnitude and phase to within 1e-9 and 1e-6 respectively at 10 Hz, 1 kHz,
 and 100 kHz. This validates only the simulation harness itself — that it can drive
 the WASM engine, extract complex AC data, and surface the engine error observed
-for a malformed resistor line. It does not validate any Pultec circuit, module,
-or netlist; those remain unverified
+for a malformed resistor line. The engine-error test asserts that engine message
+in full, so it pins the `genuineErrors` path specifically and cannot be satisfied
+by the separate non-complex-data-type rejection. It does not validate any Pultec
+circuit, module, or netlist; those remain unverified
 until they are exercised through this same harness in later tasks.
 
 The export round-trip (`lib/export/circuit-json.ts`, tested by
@@ -309,17 +333,28 @@ confirming that component identity, pin identity, named-net identity, and
 inductance (which tscircuit emits as an unparsed string) all survive the export
 adapter for this fixture shape.
 
+Pin identity survives through an explicit `ExportMapping.pinNames` entry rather
+than by passing tscircuit's emitted port names through. tscircuit names a
+two-terminal passive's ports `pin1`/`pin2`, while `resolveNetwork` requires
+two-terminal elements keyed `a`/`b`; `pinNames` is what joins those two seams,
+and an emitted port with no entry throws. A further test chains
+`toLabelledNetwork` → `resolveNetwork` → `toSpiceNetlist` on the same rendered
+fixture, so the route from a rendered tscircuit board to a SPICE deck is exercised
+end to end rather than assumed.
+
 A deliberate miswire of that same fixture (`renderTwoModule(true)`, which moves
 `LF_C1.pin1` from the `MID` net to `GND`) produces a well-formed but different
 network and was confirmed to fail `assertSameTopology`, proving the comparison
 is not a check that always passes. Before this task, that failure's message was
 the generic "Passive topology differs from reference", which did not identify
 which component had moved. `assertSameTopology` now compares per element by
-reference, in deterministic sorted order, and reports the first element missing
-from the candidate, the first element present in both but differing, or the
-first element in the candidate that the reference does not have; a remaining
-signature mismatch after every element matches is reported as a ports
-difference. For the miswire fixture the thrown message now names `C1` directly
+reference and reports the first element missing from the candidate, the first
+element present in both but differing, or an element in the candidate that the
+reference does not have; a remaining signature mismatch after every element
+matches is reported as a ports difference. The missing and differing branches
+walk the reference's references in deterministic sorted order, so which of
+several differences is reported is stable. The extra-reference branch walks the
+candidate in insertion order and carries no such ordering guarantee. For the miswire fixture the thrown message now names `C1` directly
 instead of requiring the caller to diff two serialized signatures by hand.
 
 These two results — the round-trip and the miswire rejection — validate the
@@ -338,11 +373,34 @@ by any Pultec-specific result:
 - [x] Typed tests — `tests/topology.test.ts` and `tests/export/circuit-json.test.ts`
   are TypeScript, typed against `PassiveNetwork`/`MutablePassiveNetwork`, and run
   under `bun run typecheck`.
-- [x] Targeted validation tests — the mutation-rejection tests in
-  `tests/topology.test.ts` (rewiring, parameter changes, missing/extra
-  components, duplicate references, swapped ports, invalid ownership) and the
-  export adapter's rejection tests (unmapped component/net, unnamed net group,
-  conflicting nets, dangling pin) in `tests/export/circuit-json.test.ts`.
+- [x] Targeted validation tests — across every delivered module, not only the two
+  files named under "Typed tests" above:
+  - `tests/topology.test.ts` — mutation rejection (rewiring, parameter changes,
+    missing/extra components, duplicate references, swapped ports, invalid
+    ownership) for `lib/passives/topology.ts`.
+  - `tests/units.test.ts` — SI suffix parsing and rejection of unparseable
+    values for `lib/passives/units.ts`.
+  - `tests/control-state.test.ts` — pot expansion, switch merging, port
+    rewriting, and rejection of missing/invalid control settings, missing
+    contacts, missing pot terminals, non-`a`/`b` pin keys, unconnected ports and
+    a missing ground port, for `lib/passives/control-state.ts`,
+    `lib/passives/net-preference.ts` and `lib/passives/union-find.ts`.
+  - `tests/owners.test.ts` — the allowed-owner check, a named deliverable, for
+    `partitionTopology` in `lib/passives/topology.ts`.
+  - `tests/connectivity.test.ts` — the connectivity lint, also a named
+    deliverable: singleton nets, declared opens, external ports, and
+    disconnected islands, for `lib/passives/connectivity.ts`.
+  - `tests/sim/netlist.test.ts` — SPICE emission, the source/load environment,
+    and rejection of emitted-node and component-name collisions, for
+    `lib/sim/netlist.ts`.
+  - `tests/sim/ac.test.ts` — the AC harness's analytic agreement and its engine
+    error, data-type and empty-request paths, for `lib/sim/ac.ts`.
+  - `tests/sim/compare.test.ts` — magnitude and phase tolerance comparison for
+    `lib/sim/compare.ts`.
+  - `tests/export/circuit-json.test.ts` — the export adapter's rejection tests
+    (unmapped component, net and pin; unnamed net group; conflicting nets;
+    dangling pin), the miswire negative case, and the end-to-end export →
+    resolve → netlist chain, for `lib/export/circuit-json.ts`.
 
 Step 0 is now complete as scoped. It remains a tooling milestone: it establishes
 that the simulation and export mechanisms work and that the comparison gate has
