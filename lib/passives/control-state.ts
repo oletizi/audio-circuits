@@ -1,6 +1,7 @@
 import type { PassiveElement, PassiveNetwork } from "./topology.ts"
 import type { CapacitorParameters, InductorParameters, ResistorParameters, Taper } from "./parameters.ts"
 import { UnionFind } from "./union-find.ts"
+import { netPreference } from "./net-preference.ts"
 
 export interface ControlState {
   /** Pot reference to wiper fraction, 0 at ccw and 1 at cw. */
@@ -12,7 +13,8 @@ export interface ControlState {
 type ResolvedBase<K extends string, P> = {
   readonly ref: string
   readonly kind: K
-  readonly pins: Readonly<Record<string, string>>
+  /** Every resolved element has exactly two pins: a later SPICE emitter requires it. */
+  readonly pins: { readonly a: string; readonly b: string }
   readonly parameters: P
 }
 
@@ -48,7 +50,9 @@ function validateControlState(network: PassiveNetwork, state: ControlState): voi
       throw new Error(`Missing control setting: ${pot.ref}`)
     }
     const fraction = state.potPositions[pot.ref]
-    if (fraction < 0 || fraction > 1) throw new Error(`Pot position out of range: ${pot.ref}`)
+    if (!Number.isFinite(fraction) || fraction < 0 || fraction > 1) {
+      throw new Error(`Pot position out of range: ${pot.ref}`)
+    }
   }
   for (const sw of switches) {
     if (!Object.prototype.hasOwnProperty.call(state.switchPositions, sw.ref)) {
@@ -57,6 +61,9 @@ function validateControlState(network: PassiveNetwork, state: ControlState): voi
     const position = state.switchPositions[sw.ref]
     if (!sw.parameters.positions.includes(position)) {
       throw new Error(`Unknown switch position: ${sw.ref}=${position}`)
+    }
+    if (!Object.prototype.hasOwnProperty.call(sw.parameters.contacts, position)) {
+      throw new Error(`Missing switch contacts: ${sw.ref}=${position}`)
     }
   }
 
@@ -95,7 +102,7 @@ function mergeShortedNets(
   state: ControlState,
 ): UnionFind {
   const nets = new Set(network.elements.flatMap(e => Object.values(e.pins)))
-  const uf = new UnionFind(nets)
+  const uf = new UnionFind(nets, netPreference(network.ports))
   for (const sw of switches) {
     const position = state.switchPositions[sw.ref]
     const pairs = sw.parameters.contacts[position]
@@ -110,34 +117,83 @@ function mergeShortedNets(
   return uf
 }
 
+/** A pot with a missing ccw/wiper/cw pin names the offending terminal, mirroring the
+ * pin check `mergeShortedNets` performs for switch contacts, rather than letting an
+ * undefined net silently flow into the resolved network.
+ */
+function requirePotPin(
+  pot: Extract<PassiveElement, { kind: "potentiometer" }>,
+  pin: "ccw" | "wiper" | "cw",
+): string {
+  const net = pot.pins[pin]
+  if (!net) throw new Error(`Unknown pot pin: ${pot.ref}.${pin}`)
+  return net
+}
+
 /** Pass 4: replaces each pot with two resistors, ccw-to-wiper and wiper-to-cw.
  * A zero-ohm section is legal and is still emitted, so element counts stay stable
  * across a sweep.
  */
 function expandPot(pot: Extract<PassiveElement, { kind: "potentiometer" }>, fraction: number): ResolvedElement[] {
+  const ccw = requirePotPin(pot, "ccw")
+  const wiper = requirePotPin(pot, "wiper")
+  const cw = requirePotPin(pot, "cw")
   const lowerFraction = taperFraction(pot.parameters.taper, fraction)
   return [
     {
       ref: `${pot.ref}.ccw-wiper`,
       kind: "resistor",
-      pins: { a: pot.pins.ccw, b: pot.pins.wiper },
+      pins: { a: ccw, b: wiper },
       parameters: { ohms: pot.parameters.ohms * lowerFraction },
     },
     {
       ref: `${pot.ref}.wiper-cw`,
       kind: "resistor",
-      pins: { a: pot.pins.wiper, b: pot.pins.cw },
+      pins: { a: wiper, b: cw },
       parameters: { ohms: pot.parameters.ohms * (1 - lowerFraction) },
     },
   ]
 }
 
-/** Pass 5: rewrites an element's pins (or the network's ports) to each net's
- * canonical union-find representative.
+/** Every resolved element carries exactly two pins keyed `a` and `b` (Ruling A) so a
+ * later SPICE emitter never has to handle a surprise third terminal. Resistors,
+ * capacitors and inductors pass through from the physical network unchanged except for
+ * this check; a tapped inductor's extra tap, if it ever reached this path, would fail
+ * here rather than reaching the emitter.
  */
-function rewriteNets(pins: Readonly<Record<string, string>>, uf: UnionFind): Record<string, string> {
+function requireTwoPin(
+  element: { readonly ref: string; readonly pins: Readonly<Record<string, string>> },
+): { readonly a: string; readonly b: string } {
+  const keys = Object.keys(element.pins)
+  if (keys.length !== 2 || !("a" in element.pins) || !("b" in element.pins)) {
+    throw new Error(`Element does not have exactly two pins keyed a and b: ${element.ref}`)
+  }
+  return { a: element.pins.a, b: element.pins.b }
+}
+
+/** Passes a resistor, capacitor or inductor through unchanged apart from enforcing the
+ * two-pin invariant. Narrows on `kind` explicitly (rather than spreading the union)
+ * so `parameters` stays tied to the correct member of `ResolvedElement`.
+ */
+function toResolvedPassthrough(
+  element: Extract<PassiveElement, { kind: "resistor" | "capacitor" | "inductor" }>,
+): ResolvedElement {
+  const pins = requireTwoPin(element)
+  if (element.kind === "resistor") return { ref: element.ref, kind: "resistor", pins, parameters: element.parameters }
+  if (element.kind === "capacitor") return { ref: element.ref, kind: "capacitor", pins, parameters: element.parameters }
+  return { ref: element.ref, kind: "inductor", pins, parameters: element.parameters }
+}
+
+/** Pass 5: rewrites a resolved element's two pins, or the network's arbitrary-keyed
+ * ports, to each net's canonical union-find representative.
+ */
+function rewritePins(pins: { readonly a: string; readonly b: string }, uf: UnionFind): { a: string; b: string } {
+  return { a: uf.find(pins.a), b: uf.find(pins.b) }
+}
+
+function rewritePorts(ports: Readonly<Record<string, string>>, uf: UnionFind): Record<string, string> {
   const rewritten: Record<string, string> = {}
-  for (const [key, net] of Object.entries(pins)) rewritten[key] = uf.find(net)
+  for (const [key, net] of Object.entries(ports)) rewritten[key] = uf.find(net)
   return rewritten
 }
 
@@ -161,11 +217,11 @@ export function resolveNetwork(physical: PassiveNetwork, state: ControlState): R
       expanded.push(...expandPot(element, state.potPositions[element.ref]))
       continue
     }
-    expanded.push(element)
+    expanded.push(toResolvedPassthrough(element))
   }
 
-  const elements = expanded.map(element => ({ ...element, pins: rewriteNets(element.pins, uf) }))
-  const ports = rewriteNets(physical.ports, uf)
+  const elements = expanded.map(element => ({ ...element, pins: rewritePins(element.pins, uf) }))
+  const ports = rewritePorts(physical.ports, uf)
 
   return { ports, elements }
 }

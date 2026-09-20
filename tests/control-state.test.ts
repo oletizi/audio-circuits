@@ -41,6 +41,56 @@ test("an open switch contact leaves its net unmerged", () => {
   expect(c2?.pins.a).toBe("sel_b")
 })
 
+test("rewrites ports through the canonical net representative after a switch merge", () => {
+  // S1's "a" contact unions "out" (a port net) with "sel_a" (not a port net). The
+  // canonical representative must remain "out" - not "sel_a" - or resolved.ports.output
+  // would silently rename an external port.
+  const resolved = resolveNetwork(physical, midpoint)
+  expect(resolved.ports.input).toBe("in")
+  expect(resolved.ports.output).toBe("out")
+  expect(resolved.ports.ground).toBe("0")
+})
+
+test("a contact shorting a net to ground keeps ground as the canonical representative", () => {
+  const groundShort: PassiveNetwork = {
+    ports: { input: "in", output: "out", ground: "0" },
+    elements: [
+      { ref: "R1", kind: "resistor", pins: { a: "in", b: "mid" }, parameters: { ohms: 1000 } },
+      { ref: "S3", kind: "switch", pins: { common: "0", thru: "mid" },
+        parameters: { positions: ["on"], contacts: { on: [["common", "thru"]] } } },
+      { ref: "R2", kind: "resistor", pins: { a: "mid", b: "out" }, parameters: { ohms: 1000 } },
+    ],
+  }
+  const resolved = resolveNetwork(groundShort, { potPositions: {}, switchPositions: { S3: "on" } })
+  expect(resolved.ports.ground).toBe("0")
+  const r1 = resolved.elements.find(e => e.ref === "R1")
+  expect(r1?.pins.b).toBe("0")
+})
+
+test("rejects a switch position with no contacts entry", () => {
+  const missingContacts: PassiveNetwork = {
+    ports: { input: "in", output: "out", ground: "0" },
+    elements: [
+      { ref: "S9", kind: "switch", pins: { common: "out", a: "sel_a", b: "sel_b" },
+        parameters: { positions: ["a", "b"], contacts: { a: [["common", "a"]] } } },
+    ],
+  }
+  expect(() => resolveNetwork(missingContacts, { potPositions: {}, switchPositions: { S9: "b" } }))
+    .toThrow("Missing switch contacts: S9=b")
+})
+
+test("rejects a pot missing a declared terminal", () => {
+  const missingTerminal: PassiveNetwork = {
+    ports: { input: "in", output: "out", ground: "0" },
+    elements: [
+      { ref: "P9", kind: "potentiometer", pins: { ccw: "in", wiper: "out" },
+        parameters: { ohms: 10000, taper: { type: "linear" } } },
+    ],
+  }
+  expect(() => resolveNetwork(missingTerminal, { potPositions: { P9: 0.5 }, switchPositions: {} }))
+    .toThrow("Unknown pot pin: P9.cw")
+})
+
 test("rejects invalid or missing control settings instead of defaulting", () => {
   expect(() => resolveNetwork(physical, { potPositions: {}, switchPositions: { S1: "a" } }))
     .toThrow("Missing control setting: P1")
