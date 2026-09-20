@@ -155,12 +155,36 @@ measurement has been validated. That remains gated behind step 1 and later.
 
 Proposed location: `reference/pultec/`.
 
+Start from the Gyraf original-style drawing. It carries the complete passive
+network, which is what steps 2 through 4 need, and waiting for factory
+documentation is not a precondition for any of that work. Transcribe it, label
+it a candidate, and record what it cannot settle. Corroboration gates
+fidelity *claims* and hardware spend, not modelling, partitioning, or module
+implementation. If a value is later corrected, re-run the sweep with the
+corrected value; none of the structural work is wasted.
+
+Two things that source cannot settle, and that an official schematic would not
+settle either:
+
+- **The impedance environment.** Transformer figures in a reverse-engineering
+  are not reliable impedance specifications, and a passive EQ's response is a
+  function of its source and load. This is a declared modelling assumption, not
+  a fact to be looked up. Record it in the fixture: `SourceModel` and
+  `LoadModel` in `lib/sim/netlist.ts` are required inputs with no defaults
+  precisely so the assumption stays visible and arguable.
+- **Values the source itself flags as corrected.** The Gyraf index notes
+  corrections to potentiometer values. Those belong in the unresolved-items
+  list with their alternatives, not silently resolved to one reading.
+
+Do not mix values from the modified G-Pultec drawing into the original-style
+transcription. Different component values, switch positions, loading, and
+amplifier interface. Cite the drawing each value came from.
+
+The work:
+
 - Identify the exact source version and record URL, revision/date, retrieval
   details, and a digest for any retained source artifact. Record permissions if
   source images are redistributed; the current documentation only links sources.
-- Reconcile the candidate reverse-engineered drawing with original filter
-  documentation or an independently documented tracing. Keep uncertain values
-  and junctions explicitly unresolved rather than filling them from memory.
 - Add an unsplit reference netlist, a source-to-component inventory, complete
   pot and switch definitions, and input/output boundary conditions.
 - Choose a common structured format for the reference and ownership data. A typed
@@ -185,24 +209,39 @@ does not prohibit exploratory implementation.
 Proposed locations: `reference/pultec/` for independent expected data and
 `tests/pultec/` for reference validation fixtures and simulation checks.
 
-- Keep a physical source model containing every pot terminal, switch contact,
-  ganging relationship, and winding/tap relationship. Define a separate typed
-  control-state vector and an explicit resolver from source model plus state to
-  a simulation network. Partition the physical model, not the resolved graph;
+The representation contract this step originally carried is **delivered**, in the
+step 0 branch. Do not rebuild it:
+
+- The physical source model keeps every pot terminal, switch contact and ganging
+  relationship, with a separate typed `ControlState` and an explicit
+  `resolveNetwork` producing the simulation network (`lib/passives/control-state.ts`).
+  Partitioning operates on the physical model, not the resolved graph, so
   unselected contacts remain part of the hardware description.
-- Compare the unsplit and composed simulation networks at identical control
-  states. Reject invalid selections rather than supplying implicit defaults.
-- Replace flat string encodings of electrical structure with validated structured
-  parameters and canonical units. Separate source annotations from electrical
-  identity so provenance-only edits do not count as rewiring. Current top-level
-  parameter keys already sort consistently; the remaining risk is nested
-  structured data encoded inside strings.
-- Settle and test this contract before the production partition and export adapter
-  depend on it. Include control extremes, intermediate pot positions, ganged
-  selection, and winding/tap behavior required by the candidate reference.
+- Invalid selections are rejected rather than defaulted — unknown control
+  reference, out-of-range or non-finite pot position, unknown switch position,
+  missing contacts entry, contact naming an undeclared pin, ganged disagreement.
+- Parameters are structured and in canonical SI units, with provenance separated
+  from electrical identity so an annotation-only edit is not rewiring
+  (`lib/passives/parameters.ts`, `lib/passives/units.ts`, `lib/passives/topology.ts`).
+
+Two parts of that contract are genuinely unbuilt, because no reference has
+required them yet: coupled windings, and any tap model beyond
+`InductorParameters.taps`. Extend only if the candidate reference needs them,
+and do not encode an unsupported assumption as a default.
+
+What remains in this step:
+
+- Exercise the contract against the candidate reference's actual controls:
+  extremes, intermediate pot positions, ganged selection, and winding/tap
+  behaviour as the source requires.
 - Create an unsplit circuit model using the engine validated in step 0. Record
   the source/load model, control settings, simulation method/version, sweep range,
-  and numerical tolerances.
+  and numerical tolerances. Note that `resolveNetwork` currently requires the
+  reference network to key its ground port `ground`, while `toSpiceNetlist`
+  parameterizes `environment.groundPort`; reconcile the two when the reference
+  declares its own port names.
+- Compare the unsplit and composed simulation networks at identical control
+  states.
 - Validate representative responses against trustworthy reference evidence where
   available, particularly simultaneous LF boost/cut and HF bandwidth behavior.
 
