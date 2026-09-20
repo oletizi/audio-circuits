@@ -84,5 +84,69 @@ test("refuses a network whose net collides with the synthetic source-series inte
     groundPort: "ground",
   }
   expect(() => toSpiceNetlist(colliding, collidingEnvironment))
-    .toThrow('Net "n_src_internal" collides with the synthetic source-series internal node name "n_src_internal"')
+    .toThrow("Net collides with the synthetic source-series internal node n_src_internal: n_src_internal")
+})
+
+/** The emitted-node registry. `sanitize` maps every non-alphanumeric character to "_",
+ * and ngspice case-folds node names, so several distinct labelled nets can land on one
+ * SPICE node. Silently shorting them is a false PASS in a validation gate: both sides of
+ * an unsplit-versus-composed comparison run through the same lossy transform, so the
+ * comparison would agree while both decks describe a circuit the model does not.
+ */
+const collisionEnvironment: SimulationEnvironment = {
+  source: { port: "input", amplitude: 1, seriesOhms: 0 },
+  load: { port: "output", ohms: 1e12 },
+  sweep: { pointsPerDecade: 20, startHz: 10, stopHz: 100000 },
+  groundPort: "ground",
+}
+
+test("refuses two nets that differ only in punctuation and would emit as one node", () => {
+  const punctuationCollision: ResolvedNetwork = {
+    ports: { input: "in", output: "out", ground: "0" },
+    elements: [
+      { ref: "R1", kind: "resistor", pins: { a: "in", b: "lf.mid" }, parameters: { ohms: 1000 } },
+      { ref: "R2", kind: "resistor", pins: { a: "lf-mid", b: "out" }, parameters: { ohms: 1000 } },
+    ],
+  }
+  expect(() => toSpiceNetlist(punctuationCollision, collisionEnvironment))
+    .toThrow("Emitted netlist node collision on lf_mid between nets: lf.mid and lf-mid")
+})
+
+test("refuses two nets that differ only in case, which ngspice folds together", () => {
+  const caseCollision: ResolvedNetwork = {
+    ports: { input: "in", output: "out", ground: "0" },
+    elements: [
+      { ref: "R1", kind: "resistor", pins: { a: "in", b: "LF_MID" }, parameters: { ohms: 1000 } },
+      { ref: "R2", kind: "resistor", pins: { a: "lf_mid", b: "out" }, parameters: { ohms: 1000 } },
+    ],
+  }
+  expect(() => toSpiceNetlist(caseCollision, collisionEnvironment))
+    .toThrow("Emitted netlist node collision on lf_mid between nets: LF_MID and lf_mid")
+})
+
+test("refuses a non-ground net named 0, which SPICE reserves for the reference node", () => {
+  const groundImpostor: ResolvedNetwork = {
+    ports: { input: "in", output: "out", ground: "gnd" },
+    elements: [
+      { ref: "R1", kind: "resistor", pins: { a: "in", b: "0" }, parameters: { ohms: 1000 } },
+      { ref: "R2", kind: "resistor", pins: { a: "0", b: "out" }, parameters: { ohms: 1000 } },
+      { ref: "R3", kind: "resistor", pins: { a: "out", b: "gnd" }, parameters: { ohms: 1000 } },
+    ],
+  }
+  expect(() => toSpiceNetlist(groundImpostor, collisionEnvironment))
+    .toThrow("Non-ground net emits as the SPICE reference node 0: 0")
+})
+
+test("refuses two element references that emit as the same component name", () => {
+  // "1" is not prefixed with "R" in the source model but becomes "R1" once the emitter
+  // applies the type letter, colliding with the element already named "R1".
+  const nameCollision: ResolvedNetwork = {
+    ports: { input: "in", output: "out", ground: "0" },
+    elements: [
+      { ref: "R1", kind: "resistor", pins: { a: "in", b: "mid" }, parameters: { ohms: 1000 } },
+      { ref: "1", kind: "resistor", pins: { a: "mid", b: "out" }, parameters: { ohms: 2000 } },
+    ],
+  }
+  expect(() => toSpiceNetlist(nameCollision, collisionEnvironment))
+    .toThrow("Emitted netlist name collision on R1 between refs: R1 and 1")
 })

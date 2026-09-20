@@ -35,11 +35,11 @@ const PREFIX: Readonly<Record<ResolvedElement["kind"], string>> = {
 
 /** Synthetic component/net names the emitter itself introduces. `LOAD_RESISTOR_NAME`,
  * `LOAD_CAPACITOR_NAME`, and `SERIES_RESISTOR_NAME` are component names, checked against
- * the same collision registry as element-derived component names so a collision is caught
- * rather than silently overwriting a line. `SOURCE_INTERNAL_NODE` is a net name, a
- * different SPICE namespace, and is checked separately by
- * `assertNoSourceInternalNodeCollision` against every net actually present in the
- * network, since nets carry no registry of their own.
+ * the component-name registry so a collision is caught rather than silently overwriting
+ * a line. `SOURCE_INTERNAL_NODE` is a net name, a different SPICE namespace, and is
+ * pre-seeded into the node registry (when a series resistor makes it a real node) so a
+ * network net that emits as the same node collides loudly through the same path as any
+ * other node collision.
  */
 const LOAD_RESISTOR_NAME = "RLOAD"
 const LOAD_CAPACITOR_NAME = "CLOAD"
@@ -51,15 +51,54 @@ function sanitize(name: string): string {
   return name.replace(/[^A-Za-z0-9]/g, "_")
 }
 
+/** What produced an emitted SPICE node name. `synthetic` marks a node the emitter
+ * introduced itself rather than one derived from a net in the network, so a collision
+ * against it can name the synthetic node in its message.
+ */
+interface NodeOrigin {
+  readonly raw: string
+  readonly synthetic: boolean
+}
+
 function resolvePort(network: ResolvedNetwork, portKey: string, label: string): string {
   const net = network.ports[portKey]
   if (net === undefined) throw new Error(`${label} port not present in network: ${portKey}`)
   return net
 }
 
-/** Every net equal to the declared ground net emits as SPICE node 0. */
-function resolveNet(net: string, groundNet: string): string {
-  return net === groundNet ? "0" : sanitize(net)
+/** Every net equal to the declared ground net emits as SPICE node 0. Every other net is
+ * sanitized and registered, because `sanitize` is lossy: `lf.mid` and `lf-mid` are
+ * distinct nets that both emit as `lf_mid`, and without a registry SPICE would silently
+ * short them into one node. That is a false PASS in a validation gate — both sides of an
+ * unsplit-versus-composed comparison run through the same lossy transform, so the
+ * comparison would agree while both decks describe a circuit the labelled model does not.
+ *
+ * The registry is keyed on the LOWERCASED emitted node because ngspice case-folds node
+ * names, so `LF_MID` and `lf_mid` are also one node to the simulator.
+ *
+ * A non-ground net that sanitizes to `0` is rejected outright: SPICE reserves node 0 for
+ * the reference node, so emitting it would silently tie that net to ground.
+ */
+function registerNode(nodes: Map<string, NodeOrigin>, rawNet: string, groundNet: string): string {
+  if (rawNet === groundNet) return "0"
+  const emitted = sanitize(rawNet)
+  if (emitted === "0") {
+    throw new Error(`Non-ground net emits as the SPICE reference node 0: ${rawNet}`)
+  }
+  const key = emitted.toLowerCase()
+  const existing = nodes.get(key)
+  if (existing?.synthetic) {
+    // Checked before the raw-name comparison: a net literally named `n_src_internal`
+    // matches the synthetic entry's raw name exactly and would otherwise slip through.
+    throw new Error(
+      `Net collides with the synthetic source-series internal node ${SOURCE_INTERNAL_NODE}: ${rawNet}`,
+    )
+  }
+  if (existing !== undefined && existing.raw !== rawNet) {
+    throw new Error(`Emitted netlist node collision on ${emitted} between nets: ${existing.raw} and ${rawNet}`)
+  }
+  nodes.set(key, { raw: rawNet, synthetic: false })
+  return emitted
 }
 
 /** Applies the type-letter prefix only when the sanitized ref does not already begin
@@ -85,31 +124,9 @@ function valueOf(element: ResolvedElement): string {
 function reserveName(registry: Map<string, string>, name: string, ref: string): void {
   const existing = registry.get(name)
   if (existing !== undefined && existing !== ref) {
-    throw new Error(`Emitted netlist name collision on "${name}" between refs "${existing}" and "${ref}"`)
+    throw new Error(`Emitted netlist name collision on ${name} between refs: ${existing} and ${ref}`)
   }
   registry.set(name, ref)
-}
-
-/** When a series resistor is emitted, `SOURCE_INTERNAL_NODE` becomes a real SPICE net.
- * If any net already present in the network (a port or an element pin) resolves to
- * that same name, the two would be silently shorted together rather than colliding
- * loudly, so this checks every net in the network up front and throws naming the
- * offending net. Nets have no registry of their own the way component names do, so
- * this walks the network directly rather than reusing `reserveName`.
- */
-function assertNoSourceInternalNodeCollision(network: ResolvedNetwork, groundNet: string): void {
-  const rawNets = new Set<string>(Object.values(network.ports))
-  for (const element of network.elements) {
-    rawNets.add(element.pins.a)
-    rawNets.add(element.pins.b)
-  }
-  for (const rawNet of rawNets) {
-    if (resolveNet(rawNet, groundNet) === SOURCE_INTERNAL_NODE) {
-      throw new Error(
-        `Net "${rawNet}" collides with the synthetic source-series internal node name "${SOURCE_INTERNAL_NODE}"`,
-      )
-    }
-  }
 }
 
 /** Turns a resolved passive network plus an explicitly declared simulation environment
@@ -122,12 +139,15 @@ export function toSpiceNetlist(network: ResolvedNetwork, environment: Simulation
   const sourceNet = resolvePort(network, environment.source.port, "Source")
   const loadNet = resolvePort(network, environment.load.port, "Load")
 
-  const node = (net: string): string => resolveNet(net, groundNet)
+  const nodes = new Map<string, NodeOrigin>()
+  const node = (net: string): string => registerNode(nodes, net, groundNet)
   const names = new Map<string, string>()
   const lines: string[] = ["Pultec modularize AC network"]
 
   const seriesOhms = environment.source.seriesOhms
-  if (seriesOhms !== 0) assertNoSourceInternalNodeCollision(network, groundNet)
+  if (seriesOhms !== 0) {
+    nodes.set(SOURCE_INTERNAL_NODE.toLowerCase(), { raw: SOURCE_INTERNAL_NODE, synthetic: true })
+  }
   const sourceOutputNode = seriesOhms !== 0 ? SOURCE_INTERNAL_NODE : node(sourceNet)
   lines.push(`V1 ${sourceOutputNode} 0 AC ${environment.source.amplitude.toExponential(12)}`)
   if (seriesOhms !== 0) {
