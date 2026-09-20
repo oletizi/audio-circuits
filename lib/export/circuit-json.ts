@@ -28,7 +28,6 @@ const FIELD_BY_KIND: Readonly<Record<PassiveKind, "resistance" | "capacitance" |
 
 interface ComponentRecord {
   readonly name: string
-  readonly ftype: string | undefined
 }
 
 interface PortRecord {
@@ -44,6 +43,8 @@ interface Indices {
   readonly components: ReadonlyMap<string, ComponentRecord>
   readonly ports: ReadonlyMap<string, PortRecord>
   readonly nets: ReadonlyMap<string, NetRecord>
+  /** Every port id and net id, the shared id space the union-find groups over. */
+  readonly memberIds: ReadonlySet<string>
 }
 
 function indexElements(circuitJson: readonly AnyCircuitElement[]): Indices {
@@ -52,7 +53,7 @@ function indexElements(circuitJson: readonly AnyCircuitElement[]): Indices {
   const nets = new Map<string, NetRecord>()
   for (const element of circuitJson) {
     if (element.type === "source_component") {
-      components.set(element.source_component_id, { name: element.name, ftype: element.ftype })
+      components.set(element.source_component_id, { name: element.name })
     } else if (element.type === "source_port") {
       if (element.source_component_id === undefined) {
         throw new Error(`Port without owning component: ${element.name}`)
@@ -62,7 +63,8 @@ function indexElements(circuitJson: readonly AnyCircuitElement[]): Indices {
       nets.set(element.source_net_id, { name: element.name })
     }
   }
-  return { components, ports, nets }
+  const memberIds = new Set<string>([...ports.keys(), ...nets.keys()])
+  return { components, ports, nets, memberIds }
 }
 
 function assertNoDanglingPins(circuitJson: readonly AnyCircuitElement[], indices: Indices): void {
@@ -77,8 +79,7 @@ function assertNoDanglingPins(circuitJson: readonly AnyCircuitElement[], indices
 }
 
 function buildUnionFind(circuitJson: readonly AnyCircuitElement[], indices: Indices): UnionFind {
-  const members = new Set<string>([...indices.ports.keys(), ...indices.nets.keys()])
-  const uf = new UnionFind(members, (a, b) => (a < b ? a : b))
+  const uf = new UnionFind(indices.memberIds, (a, b) => (a < b ? a : b))
   for (const element of circuitJson) {
     if (element.type !== "source_trace") continue
     const ids = [...element.connected_source_port_ids, ...element.connected_source_net_ids]
@@ -91,12 +92,13 @@ function buildUnionFind(circuitJson: readonly AnyCircuitElement[], indices: Indi
 
 /** Groups every port/net id by its union-find root, then resolves each group to a
  * canonical net name. A group with no named `source_net` member has no derived
- * fallback: it throws, naming the ports in that group.
+ * fallback: it throws, naming the ports in that group. A group with more than one
+ * DIFFERENT named net has had two declared nets shorted together - also no
+ * fallback: picking one would silently discard the other's existence.
  */
 function nameGroups(uf: UnionFind, indices: Indices, netNames: Readonly<Record<string, string>>): ReadonlyMap<string, string> {
-  const members = new Set<string>([...indices.ports.keys(), ...indices.nets.keys()])
   const groups = new Map<string, string[]>()
-  for (const id of members) {
+  for (const id of indices.memberIds) {
     const root = uf.find(id)
     const existing = groups.get(root)
     if (existing) existing.push(id)
@@ -106,6 +108,10 @@ function nameGroups(uf: UnionFind, indices: Indices, netNames: Readonly<Record<s
   const canonicalNetByRoot = new Map<string, string>()
   for (const [root, ids] of groups) {
     const namedNetIds = ids.filter(id => indices.nets.has(id)).sort()
+    if (namedNetIds.length > 1) {
+      const names = namesForNetIds(namedNetIds, indices.nets).sort()
+      throw new Error(`Conflicting nets in group: ${names.join(", ")}`)
+    }
     const resolvedName = resolveGroupNetName(namedNetIds, indices.nets, netNames)
     if (resolvedName !== undefined) {
       canonicalNetByRoot.set(root, resolvedName)
@@ -114,6 +120,14 @@ function nameGroups(uf: UnionFind, indices: Indices, netNames: Readonly<Record<s
     throw new Error(`Unnamed net group: ${portLabelsForGroup(ids, indices)}`)
   }
   return canonicalNetByRoot
+}
+
+function namesForNetIds(netIds: readonly string[], nets: ReadonlyMap<string, NetRecord>): string[] {
+  return netIds.map(id => {
+    const record = nets.get(id)
+    if (!record) throw new Error(`Missing net record: ${id}`)
+    return record.name
+  })
 }
 
 function resolveGroupNetName(
@@ -152,9 +166,12 @@ function kindForFtype(ftype: string, componentName: string): PassiveKind {
 }
 
 function resolveNumericValue(raw: unknown, field: string, componentName: string): number {
-  if (typeof raw === "number") return raw
+  if (typeof raw === "number") {
+    if (!Number.isFinite(raw)) throw new Error(`Non-finite ${field} on ${componentName}: ${raw}`)
+    return raw
+  }
   if (typeof raw === "string") return parseValue(raw)
-  throw new Error(`Missing ${field} on ${componentName}`)
+  throw new Error(`Unreadable ${field} on ${componentName}: expected number or string, got ${typeof raw}`)
 }
 
 function buildElement(ref: string, kind: PassiveKind, pins: Readonly<Record<string, string>>, value: number): PassiveElement {
@@ -180,8 +197,9 @@ function buildPins(componentId: string, indices: Indices, uf: UnionFind, canonic
 }
 
 /** Flattens tscircuit's emitted circuit JSON to canonical labelled connectivity.
- * Every unmapped component, unmapped net, dangling pin, and unnamed net group throws
- * rather than falling back to a derived or default value.
+ * Every unmapped component, unmapped net, dangling pin, unnamed net group, and
+ * conflicting (shorted) net pair throws rather than falling back to a derived or
+ * default value.
  */
 export function toLabelledNetwork(circuitJson: readonly AnyCircuitElement[], mapping: ExportMapping): PassiveNetwork {
   const indices = indexElements(circuitJson)
@@ -192,11 +210,10 @@ export function toLabelledNetwork(circuitJson: readonly AnyCircuitElement[], map
   const elements: PassiveElement[] = []
   for (const element of circuitJson) {
     if (element.type !== "source_component") continue
-    const kind = kindForFtype(element.ftype, element.name)
-
     const ref = mapping.componentNames[element.name]
     if (ref === undefined) throw new Error(`Unmapped component: ${element.name}`)
 
+    const kind = kindForFtype(element.ftype, element.name)
     const pins = buildPins(element.source_component_id, indices, uf, canonicalNetByRoot, element.name)
     const raw: unknown = Reflect.get(element, FIELD_BY_KIND[kind])
     const value = resolveNumericValue(raw, FIELD_BY_KIND[kind], element.name)

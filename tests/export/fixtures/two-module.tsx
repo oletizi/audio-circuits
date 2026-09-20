@@ -50,3 +50,41 @@ export function renderUnnamedNetFixture() {
   circuit.render()
   return circuit.getCircuitJson()
 }
+
+/** One resistor whose two pins land on two different named nets that are then
+ * shorted together by a direct net-to-net trace. Exercises the fix-round-1 rule
+ * that a group containing more than one DIFFERENT named net must throw rather than
+ * silently pick one and discard the other.
+ */
+export function renderConflictingNetsFixture() {
+  const circuit = new RootCircuit()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <resistor name="B_R1" resistance="1k" footprint="0402" schX={0} schY={0} />
+      <net name="ALPHA" />
+      <net name="BETA" />
+      <trace from=".B_R1 > .pin1" to="net.ALPHA" />
+      <trace from=".B_R1 > .pin2" to="net.BETA" />
+      <trace from="net.ALPHA" to="net.BETA" />
+    </board>,
+  )
+  circuit.render()
+  return circuit.getCircuitJson()
+}
+
+/** One resistor with only pin1 connected; pin2 is left dangling. Exercises the
+ * pass-1 dangling-pin rejection, which the happy-path fixture above deliberately
+ * cannot reach since every one of its pins is connected.
+ */
+export function renderDanglingPinFixture() {
+  const circuit = new RootCircuit()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <resistor name="A_R1" resistance="1k" footprint="0402" schX={0} schY={0} />
+      <net name="ALPHA" />
+      <trace from=".A_R1 > .pin1" to="net.ALPHA" />
+    </board>,
+  )
+  circuit.render()
+  return circuit.getCircuitJson()
+}

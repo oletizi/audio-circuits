@@ -1,5 +1,10 @@
 import { test, expect } from "bun:test"
-import { renderTwoModule, renderUnnamedNetFixture } from "./fixtures/two-module.tsx"
+import {
+  renderTwoModule,
+  renderUnnamedNetFixture,
+  renderConflictingNetsFixture,
+  renderDanglingPinFixture,
+} from "./fixtures/two-module.tsx"
 import { toLabelledNetwork } from "../../lib/export/circuit-json.ts"
 import { assertSameTopology } from "../../lib/passives/topology.ts"
 import type { ExportMapping } from "../../lib/export/circuit-json.ts"
@@ -44,4 +49,30 @@ test("refuses a connected group with no named net and no derived fallback", () =
   }
   expect(() => toLabelledNetwork(renderUnnamedNetFixture(), unnamedNetMapping))
     .toThrow("Unnamed net group: A_R1.pin2, A_R2.pin1")
+})
+
+test("refuses a group where two different named nets have been shorted together", () => {
+  const conflictingNetsMapping: ExportMapping = {
+    componentNames: { B_R1: "RB1" },
+    netNames: { ALPHA: "alpha", BETA: "beta" },
+    ports: {},
+  }
+  expect(() => toLabelledNetwork(renderConflictingNetsFixture(), conflictingNetsMapping))
+    .toThrow("Conflicting nets in group: ALPHA, BETA")
+})
+
+test("refuses a net with no canonical mapping", () => {
+  const { GND: _dropped, ...netNamesWithoutGnd } = mapping.netNames
+  expect(() => toLabelledNetwork(renderTwoModule(), { ...mapping, netNames: netNamesWithoutGnd }))
+    .toThrow("Unmapped net: GND")
+})
+
+test("rejects a dangling pin instead of exporting a partial network", () => {
+  const danglingPinMapping: ExportMapping = {
+    componentNames: { A_R1: "RA1" },
+    netNames: { ALPHA: "alpha" },
+    ports: {},
+  }
+  expect(() => toLabelledNetwork(renderDanglingPinFixture(), danglingPinMapping))
+    .toThrow("Dangling pins: A_R1.pin2")
 })
