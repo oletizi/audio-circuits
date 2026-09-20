@@ -9,22 +9,17 @@ export interface ControlState {
   readonly switchPositions: Readonly<Record<string, string>>
 }
 
-/** Union of every resolved element kind's parameter fields, each optional: a resolved
- * element's `kind` says which fields are actually present, but the field itself does
- * not encode that at the type level. This lets callers read `parameters.ohms` off a
- * `ResolvedElement` pulled from a mixed-kind array without first narrowing on `kind` -
- * useful for tests and lightweight consumers; a consumer that must tell resistor
- * parameters from capacitor parameters still narrows on `kind` first.
- */
-export interface ResolvedParameters extends
-  Partial<ResistorParameters>, Partial<CapacitorParameters>, Partial<InductorParameters> {}
-
-export interface ResolvedElement {
+type ResolvedBase<K extends string, P> = {
   readonly ref: string
-  readonly kind: "resistor" | "capacitor" | "inductor"
+  readonly kind: K
   readonly pins: Readonly<Record<string, string>>
-  readonly parameters: ResolvedParameters
+  readonly parameters: P
 }
+
+export type ResolvedElement =
+  | ResolvedBase<"resistor", ResistorParameters>
+  | ResolvedBase<"capacitor", CapacitorParameters>
+  | ResolvedBase<"inductor", InductorParameters>
 
 export interface ResolvedNetwork {
   readonly ports: Readonly<Record<string, string>>

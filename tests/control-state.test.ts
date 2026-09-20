@@ -21,9 +21,11 @@ test("expands a linear pot into two resistors summing to its total", () => {
   const resolved = resolveNetwork(physical, midpoint)
   const lower = resolved.elements.find(e => e.ref === "P1.ccw-wiper")
   const upper = resolved.elements.find(e => e.ref === "P1.wiper-cw")
-  expect(lower?.kind).toBe("resistor")
-  expect(lower?.parameters.ohms).toBeCloseTo(5000, 9)
-  expect(upper?.parameters.ohms).toBeCloseTo(5000, 9)
+  if (lower?.kind !== "resistor") throw new Error("P1.ccw-wiper must resolve to a resistor")
+  if (upper?.kind !== "resistor") throw new Error("P1.wiper-cw must resolve to a resistor")
+  expect(lower.kind).toBe("resistor")
+  expect(lower.parameters.ohms).toBeCloseTo(5000, 9)
+  expect(upper.parameters.ohms).toBeCloseTo(5000, 9)
 })
 
 test("a closed switch contact merges its two nets", () => {
