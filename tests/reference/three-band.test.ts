@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test"
 import {
-  HI_BOOST_WIPER_NET,
   THREE_BAND_REFERENCE,
   controlState,
   declaredOpens,
@@ -9,7 +8,7 @@ import { resolveNetwork } from "../../lib/passives/control-state.ts"
 import { lintConnectivity } from "../../lib/passives/connectivity.ts"
 import { validateNetwork } from "../../lib/passives/topology.ts"
 
-const MID_POSITIONS = { loCut: "60Hz", loBoost: "60Hz", hiCut: "5kHz" }
+const MID_POSITIONS = { loFrequency: "60Hz", hiFrequency: "5kHz" }
 
 test("the reference network is structurally valid", () => {
   expect(() => validateNetwork(THREE_BAND_REFERENCE)).not.toThrow()
@@ -43,16 +42,51 @@ test("carries the corroborated low boost bank", () => {
   }
 })
 
-test("excludes the hi boost resonant branch and the mid section", () => {
+test("includes the hi boost branch and excludes only the mid section", () => {
   const refs = new Set(THREE_BAND_REFERENCE.elements.map(e => e.ref))
-  for (const absent of ["C14", "C15", "C16", "C17", "C34", "C35", "C2a2", "R3"]) {
-    expect(refs.has(absent)).toBe(false)
+  for (const present of ["C14", "C15", "C16", "C17", "C34", "C35", "C2a2", "R3"]) {
+    expect(refs.has(present)).toBe(true)
   }
+  for (const present of ["RV_HI_BOOST", "RV_HI_Q", "SW_HI_BOOST"]) {
+    expect(refs.has(present)).toBe(true)
+  }
+  // Mid capacitor values are placeholders in the source schematic.
   for (const absent of ["C8", "C9", "C36", "C41"]) {
     expect(refs.has(absent)).toBe(false)
   }
-  // The level pot is retained: the signal path runs through it.
-  expect(refs.has("RV_HI_BOOST")).toBe(true)
+})
+
+test("the tapped winding is four inductors spanning tap to coil top", () => {
+  const inductors = THREE_BAND_REFERENCE.elements.filter(e => e.kind === "inductor")
+  expect(inductors.map(e => e.ref).sort()).toEqual([
+    "L_HI_BOOST_100MH", "L_HI_BOOST_200MH", "L_HI_BOOST_300MH", "L_HI_BOOST_600MH",
+  ])
+  // The coil is not grounded. Every section returns to the same top node, which
+  // leaves the board at J19 and feeds Qmax.
+  const tops = new Set(inductors.map(e => e.pins.b))
+  expect(tops.size).toBe(1)
+  expect([...tops][0]).not.toBe("0")
+  for (const inductor of inductors) expect(inductor.pins.a).not.toBe("0")
+})
+
+test("the two high banks are one ganged switch, not two controls", () => {
+  const boost = THREE_BAND_REFERENCE.elements.find(e => e.ref === "SW_HI_BOOST")
+  const cut = THREE_BAND_REFERENCE.elements.find(e => e.ref === "SW_HI_CUT")
+  if (boost?.kind !== "switch" || cut?.kind !== "switch") {
+    throw new Error("high frequency selectors missing")
+  }
+  expect(boost.parameters.gang).toBeDefined()
+  expect(boost.parameters.gang).toBe(cut.parameters.gang!)
+  expect(boost.parameters.positions).toEqual(cut.parameters.positions)
+})
+
+test("ganged poles cannot be driven to different positions", () => {
+  const state = controlState(1, 1, 1, MID_POSITIONS)
+  const split = {
+    ...state,
+    switchPositions: { ...state.switchPositions, SW_HI_CUT: "10kHz", SW_HI_BOOST: "3kHz" },
+  }
+  expect(() => resolveNetwork(THREE_BAND_REFERENCE, split)).toThrow("Ganged switches disagree")
 })
 
 test("resolves cleanly once unselected switch throws are declared open", () => {
@@ -74,23 +108,20 @@ test("an unselected throw really is floating, and the selected one is not", () =
   expect(floating.has("j5_p6")).toBe(true)
 })
 
-test("the hi boost wiper is a real node, not a floating terminal", () => {
-  // An unloaded wiper still sits between the pot's two resolved halves, so it
-  // carries two terminals. It must not be reported as a singleton.
-  const state = controlState(1, 1, 1, MID_POSITIONS)
-  const resolved = resolveNetwork(THREE_BAND_REFERENCE, state)
-  const onWiper = resolved.elements.filter(
-    e => e.pins.a === HI_BOOST_WIPER_NET || e.pins.b === HI_BOOST_WIPER_NET,
-  )
-  expect(onWiper.map(e => e.ref).sort()).toEqual([
-    "RV_HI_BOOST.ccw-wiper",
-    "RV_HI_BOOST.wiper-cw",
-  ])
+test("the hi boost level pot wiper is fed by the Q network", () => {
+  // The wiper is where the resonant branch bridges into the level pot. It must
+  // carry the two pot halves AND the Q pot's output, not sit unloaded.
+  const wiper = THREE_BAND_REFERENCE.elements.find(e => e.ref === "RV_HI_BOOST")
+  const q = THREE_BAND_REFERENCE.elements.find(e => e.ref === "RV_HI_Q")
+  if (wiper?.kind !== "potentiometer" || q?.kind !== "potentiometer") {
+    throw new Error("hi boost pots missing")
+  }
+  expect(wiper.pins.wiper).toBe(q.pins.cw)
 })
 
 test("a selector position change moves exactly one capacitor into circuit", () => {
   const at = (position: string) => {
-    const state = controlState(1, 1, 1, { ...MID_POSITIONS, loCut: position })
+    const state = controlState(1, 1, 1, { ...MID_POSITIONS, loFrequency: position })
     const resolved = resolveNetwork(THREE_BAND_REFERENCE, state)
     const caps = resolved.elements.filter(e => e.kind === "capacitor")
     return new Set(caps.map(c => `${c.ref}:${c.pins.a}|${c.pins.b}`))
@@ -102,6 +133,6 @@ test("a selector position change moves exactly one capacitor into circuit", () =
 
 test("rejects an unknown selector position rather than defaulting", () => {
   expect(() =>
-    resolveNetwork(THREE_BAND_REFERENCE, controlState(1, 1, 1, { ...MID_POSITIONS, hiCut: "7kHz" })),
+    resolveNetwork(THREE_BAND_REFERENCE, controlState(1, 1, 1, { ...MID_POSITIONS, hiFrequency: "7kHz" })),
   ).toThrow("Unknown switch position: SW_HI_CUT=7kHz")
 })

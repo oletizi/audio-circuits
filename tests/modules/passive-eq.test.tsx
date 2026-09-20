@@ -28,6 +28,7 @@ function composedReference(): PassiveNetwork {
     ...boardNetwork("low-cut").elements,
     ...boardNetwork("low-boost").elements,
     ...boardNetwork("hi-cut").elements,
+    ...boardNetwork("hi-boost").elements,
   ]
   return { ports: MAPPING.ports, elements }
 }

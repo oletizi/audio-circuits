@@ -46,11 +46,20 @@ export const OWNERSHIP: Readonly<Record<string, ModuleOwner>> = {
   RV_HI_CUT: "hi-cut",
   SW_HI_CUT: "hi-cut",
 
-  // Hi boost: only the level pot is in scope. The resonant branch — selector,
-  // tapped inductor, Qmax and Q pot — is not yet modelled, so this module is
-  // deliberately incomplete rather than absent: the signal path runs through
-  // the pot, and leaving it unowned would split the chain.
+  // Hi boost: the Cboost bank, Qmax, the tapped winding modelled per tap, the
+  // level and Q pots, and the selector. The selector is one pole of the high
+  // frequency rotary; its other pole is SW_HI_CUT, and the two are ganged.
+  C14: "hi-boost", C15: "hi-boost", C16: "hi-boost", C17: "hi-boost",
+  C34: "hi-boost", C35: "hi-boost",
+  C2a2: "hi-boost", C4a2: "hi-boost", C5a2: "hi-boost",
+  R3: "hi-boost",
+  L_HI_BOOST_600MH: "hi-boost",
+  L_HI_BOOST_300MH: "hi-boost",
+  L_HI_BOOST_200MH: "hi-boost",
+  L_HI_BOOST_100MH: "hi-boost",
   RV_HI_BOOST: "hi-boost",
+  RV_HI_Q: "hi-boost",
+  SW_HI_BOOST: "hi-boost",
 }
 
 /** Partition of the reference, with owner names checked against the declared
@@ -101,8 +110,14 @@ export function boardNetwork(owner: ModuleOwner): PassiveNetwork {
   const owned = split.modules[owner]
   if (owned === undefined) throw new Error(`No such module: ${owner}`)
 
+  // Inductors are off-board too: the hi boost winding is a hand-wound part on
+  // its own breakout, reached through the same kind of screw terminal as the
+  // pots and selectors.
   const elements = owned.filter(
-    element => element.kind !== "potentiometer" && element.kind !== "switch",
+    element =>
+      element.kind !== "potentiometer"
+      && element.kind !== "switch"
+      && element.kind !== "inductor",
   )
   if (elements.length === 0) {
     throw new Error(`Module has no board-resident elements: ${owner}`)

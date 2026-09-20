@@ -11,30 +11,56 @@ item 1 is closed.
 
 ---
 
-## 0. The hi boost resonant branch is not modelled
+## Design intent that must not be "tidied away"
 
-**Uncertain:** the off-board wiring of the hi boost selector, tapped inductor,
-Qmax resistor and Q potentiometer.
+Not an unresolved item — a requirement, recorded here because it is the thing
+most likely to be broken by a well-meaning refactor.
 
-The KiCad schematic captures the PCB only; every one of those parts is reached
-through screw terminals. The complete wiring exists in Thompson-Bell's
-hand-drawn master schematic, whose broad structure is legible — the selector
-picks a capacitor, each capacitor taps the inductor, and the coil feeds Qmax
-into the Q pot and then the 47K level pot — but not every junction is certain at
-the available scan resolution, and the project's rule is not to fill uncertain
-junctions from inference.
+**Each frequency selector is ONE two-pole rotary.** The low switch configures
+the low boost and low cut networks simultaneously (LOSWA and LOSWB); the high
+switch does the same for high boost and high cut (HISWA and HISWB). Boost and
+cut therefore cannot be tuned independently.
 
-Consequently the reference models low cut, low boost and hi cut only. The hi
-boost LEVEL pot is retained, because the signal path runs through it and both
-sources agree on its three connections; with its wiper unloaded it behaves as a
-plain 47K in series, which is asserted by test so the limitation cannot pass
-unnoticed.
+The builder states that the low pairing "is a critical part of the pultec low
+cut + boost sound that I want to maintain". It is: the two shelves have
+different shapes, so engaging both does not cancel — it leaves a low shelf with
+a dip above it, which is the characteristic Pultec low end. The model measures
+roughly +13dB at 20Hz and −5dB at 400Hz with both engaged at 60Hz.
 
-**Also unresolved within it:** `R3 = 4K7` is the poor-man's Qmax value while the
-fitted capacitors are the inductive `Cboost` set — see item 2.
+Giving each section its own frequency control would still satisfy every
+topology comparison in this project while destroying that behaviour, so the
+gang is enforced by the resolver and the curve itself is asserted in
+`tests/reference/ac.test.ts`.
 
-**Resolves by:** a reviewed transcription of the master schematic's hi boost
-section, ideally against a higher-resolution scan, with its own unresolved list.
+---
+
+## 0. The hi boost resonant branch — RESOLVED
+
+The off-board wiring was settled by the builder against legible crops of the
+master schematic:
+
+- One pole of the high frequency rotary (HISWA) takes the input to the selected
+  capacitor; each capacitor injects at its own tap on the coil.
+- The coil is **not grounded**. Its top end returns to the board at J19 and
+  feeds Qmax, so the winding section in circuit is the one between the selected
+  tap and the top.
+- Qmax and the Q pot sit inside that loop and damp it, then reach the 47K level
+  pot's wiper.
+
+At resonance the branch bridges out the upper part of the level pot, which is
+the documentation's "high boost is achieved by frequency selectively shorting
+out some or all of the 47K potentiometer". Every position now peaks within about
+1.5% of its LC resonance, and the Q control changes peak height without moving
+the centre frequency.
+
+Six positions need only four tap wires because 4k/5k share 0.3H and 10k/16k
+share 0.1H — a grouping that falls out of the netlist and independently matches
+the documentation's Lboost column.
+
+**Still open within it:** `R3 = 4K7` is the poor-man's Qmax value while the
+fitted capacitors are the inductive `Cboost` set — see item 2. And the coil's
+DC resistance is unrecorded, which sets the real maximum Q; the model has no
+winding loss at all, so its Q is optimistic. Both need the meter.
 
 ---
 

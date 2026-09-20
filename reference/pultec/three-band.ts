@@ -24,7 +24,13 @@
 import netlist from "./source/three-band-eq.netlist.json"
 import type { PassiveElement, PassiveNetwork } from "../../lib/passives/topology.ts"
 import type { ControlState } from "../../lib/passives/control-state.ts"
-import { EXCLUDED_COMPONENTS, POTS, SELECTORS } from "./controls.ts"
+import {
+  EXCLUDED_COMPONENTS,
+  HI_BOOST_POSITIONS,
+  HI_FREQUENCY_GANG,
+  POTS,
+  SELECTORS,
+} from "./controls.ts"
 import { parseValue } from "../../lib/passives/units.ts"
 
 /** Canonical names for the nets the schematic names itself. Everything else is
@@ -131,17 +137,114 @@ function buildPots(): readonly PassiveElement[] {
     }))
 }
 
-/** The hi boost level pot, kept because the signal path runs through it. Its
- * wiper feeds the absent resonant branch and is a declared open. */
-function buildHiBoostLevel(): PassiveElement {
-  const pot = POTS.find(p => p.connector === "J21")
-  if (!pot) throw new Error("hi boost level pot missing from POTS")
+/** The hi boost level and Q pots, both wired to their real nets.
+ *
+ * The Q pot's ccw and wiper terminals sit on one net, so its ccw-wiper section
+ * is shorted out and it behaves as a variable resistor in series with Qmax —
+ * which is what a Q control is.
+ */
+function buildHiBoostPots(): readonly PassiveElement[] {
+  const find = (connector: string) => {
+    const pot = POTS.find(p => p.connector === connector)
+    if (!pot) throw new Error(`Pot missing from POTS: ${connector}`)
+    return pot
+  }
+  const level = find("J21")
+  const q = find("J20")
+  return [
+    {
+      ref: level.ref,
+      kind: "potentiometer",
+      pins: { ccw: netAt("J21", "1"), wiper: netAt("J21", "2"), cw: netAt("J21", "3") },
+      parameters: { ohms: level.ohms, taper: taperFor(level.taperClass) },
+      provenance: { source: level.source },
+    },
+    {
+      ref: q.ref,
+      kind: "potentiometer",
+      pins: { ccw: netAt("J20", "1"), wiper: netAt("J20", "2"), cw: netAt("J20", "3") },
+      parameters: { ohms: q.ohms, taper: taperFor(q.taperClass) },
+      provenance: { source: q.source },
+    },
+  ]
+}
+
+/** The hi boost tapped winding, as one inductor per tap.
+ *
+ * The coil is NOT grounded. Per the builder's master schematic, the selected
+ * capacitor injects at its own tap and the coil's TOP end runs out to Qmax, so
+ * the winding section in circuit is the one between that tap and the top. Each
+ * modelled inductor therefore spans tap -> coil top, and the documentation's
+ * Lboost value for a position is the inductance of exactly that section.
+ *
+ * This is what makes the section work the way its documentation describes:
+ * "High boost is achieved by frequency selectively shorting out some or all of
+ * the 47K potentiometer". The capacitor and winding form a series resonant
+ * branch from the input to the level pot's wiper, which goes low-impedance at
+ * resonance and bridges out the upper part of the pot. Qmax and the Q pot sit
+ * inside that loop and are what damp it — which is why the documentation calls
+ * Qmax necessary once modern low-DCR coils are used.
+ *
+ * Representing one tapped coil as four separate inductors is legitimate because
+ * the selector energises exactly one at a time: an unselected tap's capacitors
+ * are disconnected at their tails, so that section carries no current and
+ * cannot couple into the live one. If two sections ever carried current
+ * together this would be wrong and the winding would need explicit coupling,
+ * which the project's design notes warn about directly.
+ */
+function buildHiBoostInductors(): readonly PassiveElement[] {
+  const byTapPin = new Map<string, number>()
+  for (const position of HI_BOOST_POSITIONS) {
+    const existing = byTapPin.get(position.tapPin)
+    if (existing !== undefined && existing !== position.henries) {
+      throw new Error(
+        `Tap ${position.tapPin} has two inductances: ${existing} and ${position.henries}`,
+      )
+    }
+    byTapPin.set(position.tapPin, position.henries)
+  }
+  return [...byTapPin.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([tapPin, henries]) => ({
+      ref: `L_HI_BOOST_${Math.round(henries * 1000)}MH`,
+      kind: "inductor" as const,
+      // Tap -> coil top. The top returns to the board at J19, which feeds Qmax.
+      pins: { a: netAt("J15", tapPin), b: netAt("J19", "1") },
+      parameters: { henries },
+      provenance: {
+        source: "P3bandDoc.pdf p2 Lboost column; tap grouping confirmed by the "
+          + "capacitors the netlist places on each J15 terminal; coil top to "
+          + "Qmax per the builder's master schematic",
+      },
+    }))
+}
+
+/** The hi boost selector.
+ *
+ * The master schematic shows one pole: the input feeds the common, and each
+ * throw reaches one capacitor. The tap does not need switching, because each
+ * capacitor is hard-wired to the tap its frequency calls for — which is why six
+ * positions need only four tap wires, with 4k/5k sharing 0.3H and 10k/16k
+ * sharing 0.1H.
+ */
+function buildHiBoostSelector(): PassiveElement {
+  const pins: Record<string, string> = { common: netAt("J13", "1") }
+  const contacts: Record<string, readonly (readonly [string, string])[]> = {}
+  for (const position of HI_BOOST_POSITIONS) {
+    const throwPin = `t_${position.label}`
+    pins[throwPin] = netAt("J8", position.capacitorPin)
+    contacts[position.label] = [["common", throwPin]]
+  }
   return {
-    ref: pot.ref,
-    kind: "potentiometer",
-    pins: { ccw: netAt("J21", "1"), wiper: HI_BOOST_WIPER_NET, cw: netAt("J21", "3") },
-    parameters: { ohms: pot.ohms, taper: { type: "linear" } },
-    provenance: { source: `${pot.source}; wiper open, resonant branch not modelled` },
+    ref: "SW_HI_BOOST",
+    kind: "switch",
+    pins,
+    parameters: {
+      positions: HI_BOOST_POSITIONS.map(p => p.label),
+      contacts,
+      gang: HI_FREQUENCY_GANG,
+    },
+    provenance: { source: "P3bandDoc.pdf p5, HISWA: the first pole of the high frequency selector, common from the input, one throw per capacitor" },
   }
 }
 
@@ -159,7 +262,9 @@ function buildSelectors(): readonly PassiveElement[] {
       ref: selector.ref,
       kind: "switch" as const,
       pins,
-      parameters: { positions: selector.positions, contacts },
+      parameters: selector.gang === undefined
+        ? { positions: selector.positions, contacts }
+        : { positions: selector.positions, contacts, gang: selector.gang },
       provenance: { source: selector.source },
     }
   })
@@ -173,8 +278,10 @@ export const THREE_BAND_REFERENCE: PassiveNetwork = {
   elements: [
     ...buildPassives(),
     ...buildPots(),
-    buildHiBoostLevel(),
+    ...buildHiBoostPots(),
+    ...buildHiBoostInductors(),
     ...buildSelectors(),
+    buildHiBoostSelector(),
   ],
 }
 
@@ -200,6 +307,12 @@ export function declaredOpens(state: ControlState): readonly string[] {
       open.push(netAt(selector.throwsConnector, String(index + 1)))
     })
   }
+  const hiBoost = state.switchPositions.SW_HI_BOOST
+  if (hiBoost === undefined) throw new Error("No position for SW_HI_BOOST")
+  for (const position of HI_BOOST_POSITIONS) {
+    if (position.label === hiBoost) continue
+    open.push(netAt("J8", position.capacitorPin))
+  }
   return open
 }
 
@@ -210,8 +323,9 @@ export function controlState(
   loCut: 0 | 1,
   loBoost: 0 | 1,
   hiBoostLevel: 0 | 1,
-  positions: { loCut: string; loBoost: string; hiCut: string },
+  positions: { loFrequency: string; hiFrequency: string },
   hiCut: 0 | 1 = 0,
+  hiQ: 0 | 1 = 0,
 ): ControlState {
   return {
     potPositions: {
@@ -219,11 +333,15 @@ export function controlState(
       RV_LO_BOOST: loBoost,
       RV_HI_BOOST: hiBoostLevel,
       RV_HI_CUT: hiCut,
+      RV_HI_Q: hiQ,
     },
     switchPositions: {
-      SW_LO_CUT: positions.loCut,
-      SW_LO_BOOST: positions.loBoost,
-      SW_HI_CUT: positions.hiCut,
+      // One physical rotary drives both low banks, as on the high side.
+      SW_LO_CUT: positions.loFrequency,
+      SW_LO_BOOST: positions.loFrequency,
+      // One physical rotary drives both high banks.
+      SW_HI_CUT: positions.hiFrequency,
+      SW_HI_BOOST: positions.hiFrequency,
     },
   }
 }

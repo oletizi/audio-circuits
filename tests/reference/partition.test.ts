@@ -32,8 +32,13 @@ test("all four modules are populated", () => {
   expect(Object.keys(split.modules).sort()).toEqual([
     "hi-boost", "hi-cut", "low-boost", "low-cut",
   ])
-  // Hi boost is deliberately just the level pot until its branch is modelled.
-  expect(split.modules["hi-boost"]?.map(e => e.ref)).toEqual(["RV_HI_BOOST"])
+  // Hi boost carries its capacitor bank, Qmax, the winding modelled per tap,
+  // both pots and one pole of the high frequency selector.
+  const hiBoost = new Set(split.modules["hi-boost"]?.map(e => e.ref) ?? [])
+  for (const ref of ["C14", "R3", "RV_HI_BOOST", "RV_HI_Q", "SW_HI_BOOST",
+                     "L_HI_BOOST_600MH", "L_HI_BOOST_100MH"]) {
+    expect(hiBoost.has(ref)).toBe(true)
+  }
 })
 
 test("a mis-typed owner is rejected rather than making a phantom module", () => {

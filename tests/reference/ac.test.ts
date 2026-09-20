@@ -18,7 +18,7 @@ const ENVIRONMENT: SimulationEnvironment = {
   groundPort: "ground",
 }
 
-const POSITIONS = { loCut: "60Hz", loBoost: "60Hz", hiCut: "5kHz" }
+const POSITIONS = { loFrequency: "60Hz", hiFrequency: "5kHz" }
 
 async function responseDb(state: ControlState): Promise<(hz: number) => number> {
   const resolved = resolveNetwork(THREE_BAND_REFERENCE, state)
@@ -39,8 +39,8 @@ async function responseDb(state: ControlState): Promise<(hz: number) => number> 
  * With every control at the extreme that takes its network out of circuit, the
  * model collapses to a resistive divider:
  *
- *   - The hi boost level pot is a plain 47k in series, because its wiper feeds
- *     the absent resonant branch and carries no current.
+ *   - The hi boost level pot at 0 puts its wiper on the input, which shorts out
+ *     the resonant branch, leaving a plain 47k in series.
  *   - The lo cut pot at 0 shorts hi_boost_out to out.
  *   - The lo boost pot at 0 shorts lo_boost_in to ground.
  *   - The hi cut pot at 1 shorts out its own 430R-plus-capacitor branch.
@@ -83,13 +83,54 @@ test("lo boost lifts low frequencies relative to flat", async () => {
   expect(db(20)).toBeGreaterThan(db(1_000))
 }, 60_000)
 
-test("the hi boost level control cannot act while its branch is absent", async () => {
-  // Both halves of the pot stay in series when the wiper carries no current,
-  // so the setting must not change the response. This pins the documented
-  // scope limit rather than letting it pass silently.
-  const low = await responseDb(controlState(0, 0, 0, POSITIONS, 0))
-  const high = await responseDb(controlState(0, 0, 1, POSITIONS, 0))
-  for (const hz of [20, 1_000, 20_000]) {
-    expect(high(hz)).toBeCloseTo(low(hz), 6)
-  }
+test("simultaneous low boost and cut give the Pultec curve, not cancellation", async () => {
+  // The low boost and low cut sections share one two-pole rotary, so they are
+  // ALWAYS tuned to the same frequency. That lock is not an implementation
+  // detail to be tidied away — it is what produces the characteristic low end,
+  // and the builder named keeping it as a requirement.
+  //
+  // Because the two shelves have different shapes, engaging both does not
+  // cancel: what remains is a low shelf with a dip above it. Splitting the
+  // control into two independent frequency knobs would still pass every
+  // topology test in this suite while destroying exactly this behaviour.
+  const both = await responseDb(controlState(1, 1, 0, POSITIONS, 1))
+  const boostOnly = await responseDb(controlState(0, 1, 0, POSITIONS, 1))
+
+  const rel = (db: (hz: number) => number, hz: number) => db(hz) - FLAT_DB
+
+  // Still a substantial low shelf.
+  expect(rel(both, 20)).toBeGreaterThan(8)
+  expect(rel(both, 60)).toBeGreaterThan(6)
+
+  // And a genuine dip above it — below flat, and below both its neighbours.
+  expect(rel(both, 400)).toBeLessThan(-2)
+  expect(rel(both, 400)).toBeLessThan(rel(both, 100))
+  expect(rel(both, 400)).toBeLessThan(rel(both, 1_000))
+
+  // Boost alone has no such dip: the dip is what the pairing creates.
+  expect(rel(boostOnly, 400)).toBeGreaterThan(0)
+}, 120_000)
+
+test("hi boost peaks at the selected frequency and leaves the rest alone", async () => {
+  // The branch is a series resonance from the input to the level pot wiper; at
+  // resonance it bridges out the upper part of the 47K pot, which is the boost.
+  const db = await responseDb(controlState(0, 0, 1, { ...POSITIONS, hiFrequency: "5kHz" }, 1, 1))
+  expect(db(5_000)).toBeGreaterThan(db(1_000) + 10)
+  expect(db(5_000)).toBeGreaterThan(db(20) + 10)
 }, 60_000)
+
+test("the Q control changes boost height without moving its centre", async () => {
+  const peakOf = (db: (hz: number) => number) => {
+    let best = { hz: 0, db: -Infinity }
+    for (let hz = 2_000; hz <= 12_000; hz += 25) {
+      const value = db(hz)
+      if (value > best.db) best = { hz, db: value }
+    }
+    return best
+  }
+  const damped = peakOf(await responseDb(controlState(0, 0, 1, { ...POSITIONS, hiFrequency: "5kHz" }, 1, 0)))
+  const sharp = peakOf(await responseDb(controlState(0, 0, 1, { ...POSITIONS, hiFrequency: "5kHz" }, 1, 1)))
+  expect(sharp.db).toBeGreaterThan(damped.db + 2)
+  // A bandwidth control must not drag the centre frequency with it.
+  expect(Math.abs(sharp.hz - damped.hz) / damped.hz).toBeLessThan(0.05)
+}, 120_000)

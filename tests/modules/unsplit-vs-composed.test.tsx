@@ -43,8 +43,13 @@ function renderComposition() {
  * about the boards and the wiring between them, not about the pots. */
 function composedNetwork(): PassiveNetwork {
   const exported = toLabelledNetwork(renderComposition(), COMPOSED_MAPPING)
+  // Pots, selectors and the hand-wound coil are all off-board parts reached
+  // through screw terminals, so none of them come back from tscircuit.
   const controls = THREE_BAND_REFERENCE.elements.filter(
-    element => element.kind === "potentiometer" || element.kind === "switch",
+    element =>
+      element.kind === "potentiometer"
+      || element.kind === "switch"
+      || element.kind === "inductor",
   )
   return {
     ports: THREE_BAND_REFERENCE.ports,
@@ -66,20 +71,20 @@ async function sweepOf(network: PassiveNetwork, state: ControlState): Promise<Ac
  * Pot settings stay at extremes because the LOG curve constant is unstated. */
 const MATRIX: readonly { label: string; state: ControlState }[] = [
   ...["20Hz", "30Hz", "60Hz", "100Hz", "150Hz", "200Hz"].map(position => ({
-    label: `lo cut ${position}`,
-    state: controlState(1, 0, 0, { loCut: position, loBoost: "60Hz", hiCut: "5kHz" }, 1),
+    label: `lo frequency ${position}`,
+    state: controlState(1, 0, 0, { loFrequency: position, hiFrequency: "5kHz" }, 1),
   })),
   {
     label: "lo boost engaged",
-    state: controlState(0, 1, 0, { loCut: "60Hz", loBoost: "20Hz", hiCut: "5kHz" }, 1),
+    state: controlState(0, 1, 0, { loFrequency: "20Hz", hiFrequency: "5kHz" }, 1),
   },
   {
     label: "hi cut engaged",
-    state: controlState(0, 0, 0, { loCut: "60Hz", loBoost: "60Hz", hiCut: "10kHz" }, 0),
+    state: controlState(0, 0, 0, { loFrequency: "60Hz", hiFrequency: "10kHz" }, 0),
   },
   {
     label: "everything at once",
-    state: controlState(1, 1, 1, { loCut: "30Hz", loBoost: "100Hz", hiCut: "3kHz" }, 0),
+    state: controlState(1, 1, 1, { loFrequency: "30Hz", hiFrequency: "3kHz" }, 0),
   },
 ]
 

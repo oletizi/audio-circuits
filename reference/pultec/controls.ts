@@ -39,8 +39,28 @@ export interface SelectorTerminals {
   readonly throwsConnector: string
   /** Position labels, ordered to match throw pins 1..n. */
   readonly positions: readonly string[]
+  /** Selectors sharing a gang identifier are poles of one physical switch and
+   * must always be at the same position. The resolver enforces it. */
+  readonly gang?: string
   readonly source: string
 }
+
+/** The high frequency selector is ONE two-pole rotary, confirmed by the
+ * builder: HISWA picks the hi boost capacitor, HISWB picks the hi cut
+ * capacitor. The reference documentation is laid out the same way — its
+ * "Pultec Hi Boost/Cut" table gives a Cboost and a Ccut on each row, one row
+ * per switch position — so boost and cut frequency are not independent
+ * controls on this design.
+ */
+export const HI_FREQUENCY_GANG = "hi_freq"
+
+/** The low frequency selector is likewise ONE two-pole rotary. The builder's
+ * master schematic labels the low boost pole LOSWB, matching the HISWA/HISWB
+ * pair on the high side, and the reference documentation's "Pultec Lo
+ * Boost/Cut" table has the same shape as the high one: a Cboost and a Ccut on
+ * each row, one row per switch position. So low boost and low cut frequency are
+ * not independent controls either. */
+export const LO_FREQUENCY_GANG = "lo_freq"
 
 export const POTS: readonly PotTerminal[] = [
   {
@@ -102,7 +122,8 @@ export const SELECTORS: readonly SelectorTerminals[] = [
     commonConnector: "J9",
     throwsConnector: "J5",
     positions: ["20Hz", "30Hz", "60Hz", "100Hz", "150Hz", "200Hz"],
-    source: "P3bandDoc.pdf p4 Ccut column",
+    gang: LO_FREQUENCY_GANG,
+    source: "P3bandDoc.pdf p4 Ccut column; LOSWA, one pole of the low frequency selector",
   },
   {
     kind: "selector",
@@ -110,7 +131,8 @@ export const SELECTORS: readonly SelectorTerminals[] = [
     commonConnector: "J6",
     throwsConnector: "J10",
     positions: ["20Hz", "30Hz", "60Hz", "100Hz", "150Hz", "200Hz"],
-    source: "P3bandDoc.pdf p4 Cboost column",
+    gang: LO_FREQUENCY_GANG,
+    source: "P3bandDoc.pdf p4 Cboost column; LOSWB, the other pole of the low frequency selector",
   },
   {
     kind: "selector",
@@ -118,19 +140,51 @@ export const SELECTORS: readonly SelectorTerminals[] = [
     commonConnector: "J3",
     throwsConnector: "J12",
     positions: ["3kHz", "4kHz", "5kHz", "8kHz", "10kHz", "16kHz"],
-    source: "P3bandDoc.pdf p2 Ccut column",
+    gang: HI_FREQUENCY_GANG,
+    source: "P3bandDoc.pdf p2 Ccut column; HISWB, the second pole of the high frequency selector",
   },
+]
+
+/** The hi boost rotary is a TWO-POLE switch on one shaft, confirmed by the
+ * builder. Both poles move together, so a capacitor and its matching inductor
+ * tap are always selected as a pair:
+ *
+ *   pole A  common J13 (from the input)  ->  throws J8  (the six capacitors)
+ *   pole B  common J19 (to Qmax)         ->  throws     (the inductor taps)
+ *
+ * That pairing is why six positions need only four tap wires: 4k and 5k share
+ * the 0.3H tap, 10k and 16k share 0.1H. The grouping is not asserted here — it
+ * falls out of which capacitors the netlist puts on each J15 terminal, and
+ * independently matches the Lboost column of the reference documentation.
+ *
+ * Because exactly one tap is live at a time and the rest have nothing connected
+ * to them, each tap can be modelled as a plain inductor of its stated value.
+ * Magnetic coupling between winding sections would matter if more than one
+ * section carried current; the one-at-a-time switching is what makes the simple
+ * treatment correct rather than a shortcut. See `three-band.ts`.
+ */
+export interface HiBoostPosition {
+  readonly label: string
+  /** Throw pin on J8 carrying this position's capacitor tails. */
+  readonly capacitorPin: string
+  /** Throw pin on J15 carrying this position's inductor tap. */
+  readonly tapPin: string
+  /** Tap inductance in henries, from the documentation's Lboost column. */
+  readonly henries: number
+}
+
+export const HI_BOOST_POSITIONS: readonly HiBoostPosition[] = [
+  { label: "3kHz", capacitorPin: "6", tapPin: "4", henries: 0.6 },
+  { label: "4kHz", capacitorPin: "5", tapPin: "3", henries: 0.3 },
+  { label: "5kHz", capacitorPin: "4", tapPin: "3", henries: 0.3 },
+  { label: "8kHz", capacitorPin: "3", tapPin: "2", henries: 0.2 },
+  { label: "10kHz", capacitorPin: "2", tapPin: "1", henries: 0.1 },
+  { label: "16kHz", capacitorPin: "1", tapPin: "1", henries: 0.1 },
 ]
 
 /** Terminals deliberately left out of the reference model, with the reason.
  * Nothing here is silently dropped. */
 export const EXCLUDED: Readonly<Record<string, string>> = {
-  J13: "hi boost selector common — hi boost section excluded, see below",
-  J8: "hi boost selector throws — hi boost section excluded",
-  J15: "hi boost inductor taps — hi boost section excluded",
-  J19: "hi boost Qmax feed — hi boost section excluded",
-  J20: "hi boost Q pot — hi boost section excluded",
-  J21: "hi boost level pot — hi boost section excluded",
   J14: "mid inductor selector send — mid section excluded, values unresolved",
   J29: "mid level pot — mid section excluded",
   J31: "mid input — mid section excluded",
@@ -142,12 +196,8 @@ export const EXCLUDED: Readonly<Record<string, string>> = {
   J40: "mid inductor return — mid section excluded",
 }
 
-/** Components excluded along with their sections. */
+/** Components excluded along with their sections. Only the mid section now. */
 export const EXCLUDED_COMPONENTS: Readonly<Record<string, string>> = {
   C8: "mid", C9: "mid", C10: "mid", C11: "mid", C12: "mid", C13: "mid",
   C36: "mid", C37: "mid", C38: "mid", C39: "mid", C40: "mid", C41: "mid",
-  C14: "hi boost", C15: "hi boost", C16: "hi boost", C17: "hi boost",
-  C34: "hi boost", C35: "hi boost",
-  C2a2: "hi boost", C4a2: "hi boost", C5a2: "hi boost",
-  R3: "hi boost (Qmax)",
 }
