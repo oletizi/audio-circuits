@@ -277,3 +277,13 @@ git diff --check
 These results establish only the groundwork's behavior. Pultec source fidelity,
 actual module export equivalence, AC response, standalone substitutes, component
 selection, and hardware measurements remain unverified.
+
+The AC simulation harness (`lib/sim/ac.ts`, tested by `tests/sim/ac.test.ts`) was
+validated against `eecircuit-engine` 1.5.8 (ngspice compiled to WASM, already a
+transitive dependency) using an RC lowpass fixture with a closed-form response
+(`R1 in out 1000`, `C1 out 0 159.1549431n`, corner frequency 1 kHz), matching the
+analytic magnitude and phase to within 1e-9 and 1e-6 respectively at 10 Hz, 1 kHz,
+and 100 kHz. This validates only the simulation harness itself — that it can drive
+the WASM engine, extract complex AC data, and surface engine errors correctly. It
+does not validate any Pultec circuit, module, or netlist; those remain unverified
+until they are exercised through this same harness in later tasks.
