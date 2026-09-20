@@ -6,6 +6,15 @@ import type {
 /** Source-labelled connectivity, before schematic layout or PCB partitioning.
  * Pin keys and net names are stable reference identifiers, not board-local names.
  * A pot retains all three terminals; a switch retains every contact and its poles.
+ *
+ * Producer contract for pin keys. `pins` is an open string map because a pot and a
+ * switch need their own terminal vocabularies (`ccw`/`wiper`/`cw`, `common`/contact
+ * names). Two-terminal passives — resistors, capacitors and inductors — are NOT free to
+ * choose: any producer of a `PassiveNetwork` that is meant to be resolvable must key
+ * their two pins `a` and `b`. `resolveNetwork` in `control-state.ts` enforces this and
+ * rejects anything else, and the SPICE emitter downstream reads `pins.a`/`pins.b`
+ * directly. A producer that receives foreign port names (tscircuit's `pin1`/`pin2`, for
+ * example) must rekey them; see `ExportMapping.pinNames` in `lib/export/circuit-json.ts`.
  */
 interface ElementBase<K extends string, P> {
   readonly ref: string
@@ -51,7 +60,15 @@ function canonicalize(value: unknown): Canonical {
   throw new Error(`Non-canonicalizable parameter value: ${String(value)}`)
 }
 
-function validate(network: PassiveNetwork) {
+/** Structural well-formedness of a labelled network, independent of control state:
+ * unique non-empty references, at least two pins per element, no empty pin key or net
+ * name, and every declared port landing on a net some element actually touches.
+ *
+ * Exported so `resolveNetwork` can run it before its own passes, which keeps a
+ * structural defect diagnosed here (`Unconnected port: mid`) rather than surfacing
+ * downstream as an unrelated union-find lookup failure.
+ */
+export function validateNetwork(network: PassiveNetwork) {
   const refs = new Set<string>()
   for (const element of network.elements) {
     if (!element.ref || refs.has(element.ref)) throw new Error(`Duplicate or empty reference: ${element.ref}`)
@@ -72,7 +89,7 @@ function validate(network: PassiveNetwork) {
  */
 export function assertSameTopology(reference: PassiveNetwork, candidate: PassiveNetwork): void {
   const signature = (network: PassiveNetwork) => {
-    validate(network)
+    validateNetwork(network)
     return JSON.stringify({
       ports: canonicalize(network.ports),
       elements: [...network.elements]
@@ -113,7 +130,7 @@ export interface PartitionOptions {
  * This is not a connector pin order, standalone termination, or PCB implementation.
  */
 export function partitionTopology(network: PassiveNetwork, ownerByRef: Readonly<Record<string, string>>, options?: PartitionOptions) {
-  validate(network)
+  validateNetwork(network)
   const refs = new Set(network.elements.map(e => e.ref))
   for (const ref of Object.keys(ownerByRef)) {
     if (!refs.has(ref)) throw new Error(`Unknown reference: ${ref}`)

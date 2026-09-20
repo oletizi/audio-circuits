@@ -8,6 +8,14 @@ export interface ExportMapping {
   readonly componentNames: Readonly<Record<string, string>>
   /** Emitted net name to canonical net. */
   readonly netNames: Readonly<Record<string, string>>
+  /** Emitted port name to canonical pin key. tscircuit names a two-terminal passive's
+   * ports `pin1`/`pin2`; the resolver (`resolveNetwork`) requires two-terminal elements
+   * keyed `a`/`b`, so this mapping is what joins the export seam to the resolve seam.
+   * Typically `{ pin1: "a", pin2: "b" }`. Every emitted port of every exported component
+   * must appear; an unmapped port throws rather than passing the raw name through, which
+   * would produce a network the resolver rejects.
+   */
+  readonly pinNames: Readonly<Record<string, string>>
   /** Canonical port name to canonical net. */
   readonly ports: Readonly<Record<string, string>>
 }
@@ -185,27 +193,49 @@ function buildElement(ref: string, kind: PassiveKind, pins: Readonly<Record<stri
   }
 }
 
-function buildPins(componentId: string, indices: Indices, uf: UnionFind, canonicalNetByRoot: ReadonlyMap<string, string>, componentName: string): Record<string, string> {
+interface PinContext {
+  readonly indices: Indices
+  readonly uf: UnionFind
+  readonly canonicalNetByRoot: ReadonlyMap<string, string>
+  readonly pinNames: Readonly<Record<string, string>>
+}
+
+/** Rekeys a component's emitted ports to canonical pin keys. An emitted port with no
+ * entry in `pinNames` throws naming the component and the port; passing the raw name
+ * through instead would build a `PassiveNetwork` keyed `pin1`/`pin2`, which
+ * `resolveNetwork` rejects later and further from the cause.
+ */
+function buildPins(componentId: string, componentName: string, context: PinContext): Record<string, string> {
   const pins: Record<string, string> = {}
-  for (const [portId, port] of indices.ports) {
+  for (const [portId, port] of context.indices.ports) {
     if (port.componentId !== componentId) continue
-    const net = canonicalNetByRoot.get(uf.find(portId))
+    const net = context.canonicalNetByRoot.get(context.uf.find(portId))
     if (net === undefined) throw new Error(`Unresolved net for pin: ${componentName}.${port.name}`)
-    pins[port.name] = net
+    const pinKey = context.pinNames[port.name]
+    if (pinKey === undefined) throw new Error(`Unmapped pin: ${componentName}.${port.name}`)
+    const existing = pins[pinKey]
+    if (existing !== undefined) {
+      throw new Error(`Two emitted ports map to the same canonical pin key: ${componentName}.${pinKey}`)
+    }
+    pins[pinKey] = net
   }
   return pins
 }
 
 /** Flattens tscircuit's emitted circuit JSON to canonical labelled connectivity.
- * Every unmapped component, unmapped net, dangling pin, unnamed net group, and
- * conflicting (shorted) net pair throws rather than falling back to a derived or
+ * Every unmapped component, unmapped net, unmapped pin, dangling pin, unnamed net group,
+ * and conflicting (shorted) net pair throws rather than falling back to a derived or
  * default value.
+ *
+ * The result is intended to feed `resolveNetwork`, so `mapping.pinNames` must rekey each
+ * two-terminal passive's emitted ports to `a` and `b`; see `ExportMapping.pinNames`.
  */
 export function toLabelledNetwork(circuitJson: readonly AnyCircuitElement[], mapping: ExportMapping): PassiveNetwork {
   const indices = indexElements(circuitJson)
   assertNoDanglingPins(circuitJson, indices)
   const uf = buildUnionFind(circuitJson, indices)
   const canonicalNetByRoot = nameGroups(uf, indices, mapping.netNames)
+  const pinContext: PinContext = { indices, uf, canonicalNetByRoot, pinNames: mapping.pinNames }
 
   const elements: PassiveElement[] = []
   for (const element of circuitJson) {
@@ -214,7 +244,7 @@ export function toLabelledNetwork(circuitJson: readonly AnyCircuitElement[], map
     if (ref === undefined) throw new Error(`Unmapped component: ${element.name}`)
 
     const kind = kindForFtype(element.ftype, element.name)
-    const pins = buildPins(element.source_component_id, indices, uf, canonicalNetByRoot, element.name)
+    const pins = buildPins(element.source_component_id, element.name, pinContext)
     const raw: unknown = Reflect.get(element, FIELD_BY_KIND[kind])
     const value = resolveNumericValue(raw, FIELD_BY_KIND[kind], element.name)
     elements.push(buildElement(ref, kind, pins, value))

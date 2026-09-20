@@ -1,8 +1,11 @@
-/** Union-find (disjoint set) over net names, used by the control-state resolver to
- * merge nets shorted together by a switch's closed contacts. A caller-supplied
- * `preferred` comparator decides which of two roots survives a union, so the caller
- * controls which net name becomes the representative - not just whichever happened to
- * be unioned in second.
+/** Union-find (disjoint set) over opaque string members. The control-state resolver
+ * groups net names; the connectivity lint groups net names too; the export adapter
+ * groups a shared id space of port ids and net ids. The structure itself is agnostic
+ * about what a member denotes, so its diagnostics say "member", not "net".
+ *
+ * A caller-supplied `preferred` comparator decides which of two roots survives a union,
+ * so the caller controls which member becomes the representative - not just whichever
+ * happened to be unioned in second.
  */
 export class UnionFind {
   private readonly parent = new Map<string, string>()
@@ -20,7 +23,7 @@ export class UnionFind {
   /** Returns the canonical representative for `member`, path-compressing along the way. */
   find(member: string): string {
     const parent = this.parent.get(member)
-    if (parent === undefined) throw new Error(`Unknown net: ${member}`)
+    if (parent === undefined) throw new Error(`Unknown union-find member: ${member}`)
     if (parent === member) return member
     const root = this.find(parent)
     this.parent.set(member, root)

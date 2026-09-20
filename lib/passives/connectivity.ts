@@ -82,15 +82,15 @@ function lintIslands(network: ResolvedNetwork): IslandFinding[] {
     else componentsByRoot.set(root, [net])
   }
 
-  const components = Array.from(componentsByRoot.values()).map(members => [...members].sort())
-  components.sort((a, b) => {
-    const [firstA] = a
-    const [firstB] = b
-    if (firstA === undefined || firstB === undefined) throw new Error("Encountered an empty connectivity component")
-    return firstA < firstB ? -1 : firstA > firstB ? 1 : 0
+  const components = Array.from(componentsByRoot.entries()).map(([root, members]) => {
+    const nets = [...members].sort()
+    const [first] = nets
+    if (first === undefined) throw new Error(`Empty connectivity component: ${root}`)
+    return { first, nets }
   })
+  components.sort((a, b) => (a.first < b.first ? -1 : a.first > b.first ? 1 : 0))
 
-  return components.slice(1).map(members => ({ code: "disconnected-island" as const, nets: members }))
+  return components.slice(1).map(({ nets }) => ({ code: "disconnected-island" as const, nets }))
 }
 
 export function lintConnectivity(network: ResolvedNetwork, options: LintOptions = {}): readonly LintFinding[] {

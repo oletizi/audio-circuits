@@ -68,8 +68,10 @@ test("a contact shorting a net to ground keeps ground as the canonical represent
 })
 
 test("rejects a switch position with no contacts entry", () => {
+  // Declares only the ports it actually connects: `resolveNetwork` now runs
+  // `validateNetwork` first, which rejects a port landing on a net no element touches.
   const missingContacts: PassiveNetwork = {
-    ports: { input: "in", output: "out", ground: "0" },
+    ports: { output: "out" },
     elements: [
       { ref: "S9", kind: "switch", pins: { common: "out", a: "sel_a", b: "sel_b" },
         parameters: { positions: ["a", "b"], contacts: { a: [["common", "a"]] } } },
@@ -80,11 +82,15 @@ test("rejects a switch position with no contacts entry", () => {
 })
 
 test("rejects a pot missing a declared terminal", () => {
+  // R9 exists only so the declared ground port lands on a net an element touches, which
+  // `validateNetwork` requires, and so `netPreference` finds the ground port it is told
+  // to use. The pot's missing `cw` terminal is still what this test exercises.
   const missingTerminal: PassiveNetwork = {
     ports: { input: "in", output: "out", ground: "0" },
     elements: [
       { ref: "P9", kind: "potentiometer", pins: { ccw: "in", wiper: "out" },
         parameters: { ohms: 10000, taper: { type: "linear" } } },
+      { ref: "R9", kind: "resistor", pins: { a: "out", b: "0" }, parameters: { ohms: 1000 } },
     ],
   }
   expect(() => resolveNetwork(missingTerminal, { potPositions: { P9: 0.5 }, switchPositions: {} }))
@@ -92,14 +98,43 @@ test("rejects a pot missing a declared terminal", () => {
 })
 
 test("rejects a passthrough element without exactly two pins keyed a and b", () => {
+  // R8 exists only so the declared ground port lands on a connected net; R9's third pin
+  // is what this test exercises.
   const threePin: PassiveNetwork = {
     ports: { input: "in", output: "out", ground: "0" },
     elements: [
       { ref: "R9", kind: "resistor", pins: { a: "in", b: "mid", c: "out" }, parameters: { ohms: 1000 } },
+      { ref: "R8", kind: "resistor", pins: { a: "out", b: "0" }, parameters: { ohms: 1000 } },
     ],
   }
   expect(() => resolveNetwork(threePin, { potPositions: {}, switchPositions: {} }))
     .toThrow(/Element does not have exactly two pins keyed a and b: R9/)
+})
+
+test("an unconnected port is diagnosed by the topology validator, not the union-find", () => {
+  // Before resolveNetwork called validateNetwork, this surfaced as the union-find's
+  // "Unknown ... member: mid" from a module that has no idea what a port is.
+  const unconnectedPort: PassiveNetwork = {
+    ports: { input: "in", output: "mid", ground: "0" },
+    elements: [
+      { ref: "R1", kind: "resistor", pins: { a: "in", b: "0" }, parameters: { ohms: 1000 } },
+    ],
+  }
+  expect(() => resolveNetwork(unconnectedPort, { potPositions: {}, switchPositions: {} }))
+    .toThrow("Unconnected port: output")
+})
+
+test("refuses a network that declares no ground port instead of silently reordering nets", () => {
+  // netPreference is told which port key carries the reference node; an absent one
+  // throws rather than quietly dropping the ground rule from the tie-break.
+  const noGround: PassiveNetwork = {
+    ports: { input: "in", output: "out" },
+    elements: [
+      { ref: "R1", kind: "resistor", pins: { a: "in", b: "out" }, parameters: { ohms: 1000 } },
+    ],
+  }
+  expect(() => resolveNetwork(noGround, { potPositions: {}, switchPositions: {} }))
+    .toThrow("Missing ground port: ground")
 })
 
 test("rejects invalid or missing control settings instead of defaulting", () => {

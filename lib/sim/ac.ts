@@ -54,7 +54,7 @@ function genuineErrors(errors: readonly string[]): readonly string[] {
 /** Runs one AC analysis. Throws on engine error, real-valued output, or a missing node. */
 export async function runAcSweep(request: AcRequest): Promise<readonly AcSweep[]> {
   if (request.nodes.length === 0) {
-    throw new Error("AcRequest.nodes must name at least one node; an empty request cannot produce a sweep")
+    throw new Error("Empty node request: AcRequest.nodes must name at least one node")
   }
 
   const simulation = new Simulation()
@@ -70,7 +70,7 @@ export async function runAcSweep(request: AcRequest): Promise<readonly AcSweep[]
     )
   }
   if (result.dataType !== "complex") {
-    throw new Error(`Expected complex AC data, received ${result.dataType}. Check the .ac line.`)
+    throw new Error(`Unexpected simulation data type: ${result.dataType} (expected complex; check the .ac line)`)
   }
 
   const frequency = result.data.find(d => d.name.toLowerCase() === "frequency")

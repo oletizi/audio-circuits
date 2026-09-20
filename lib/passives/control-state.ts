@@ -1,7 +1,8 @@
 import type { PassiveElement, PassiveNetwork } from "./topology.ts"
+import { validateNetwork } from "./topology.ts"
 import type { CapacitorParameters, InductorParameters, ResistorParameters, Taper } from "./parameters.ts"
 import { UnionFind } from "./union-find.ts"
-import { netPreference } from "./net-preference.ts"
+import { GROUND_PORT_KEY, netPreference } from "./net-preference.ts"
 
 export interface ControlState {
   /** Pot reference to wiper fraction, 0 at ccw and 1 at cw. */
@@ -13,7 +14,11 @@ export interface ControlState {
 type ResolvedBase<K extends string, P> = {
   readonly ref: string
   readonly kind: K
-  /** Every resolved element has exactly two pins: a later SPICE emitter requires it. */
+  /** Every resolved element has exactly two pins, keyed `a` and `b`: the SPICE emitter
+   * reads `pins.a`/`pins.b` directly and must never meet a surprise third terminal.
+   * This is also the key contract a producer of the INPUT `PassiveNetwork` must satisfy
+   * for its two-terminal passives - `requireTwoPin` below rejects any other keying.
+   */
   readonly pins: { readonly a: string; readonly b: string }
   readonly parameters: P
 }
@@ -102,7 +107,7 @@ function mergeShortedNets(
   state: ControlState,
 ): UnionFind {
   const nets = new Set(network.elements.flatMap(e => Object.values(e.pins)))
-  const uf = new UnionFind(nets, netPreference(network.ports))
+  const uf = new UnionFind(nets, netPreference(network.ports, GROUND_PORT_KEY))
   for (const sw of switches) {
     const position = state.switchPositions[sw.ref]
     const pairs = sw.parameters.contacts[position]
@@ -200,8 +205,18 @@ function rewritePorts(ports: Readonly<Record<string, string>>, uf: UnionFind): R
 /** Produces the simplified network simulation and lint consume, from the physical
  * network (which keeps every pot terminal and switch contact) and a control-state
  * vector. No control setting is ever defaulted, inferred, or silently tolerated.
+ *
+ * Input contract. `physical` must be structurally well-formed (`validateNetwork`, run
+ * first here so a structural defect is diagnosed by the module that owns the rule rather
+ * than surfacing later as an unrelated union-find lookup failure), it must declare a
+ * `ground` port, and every resistor, capacitor and inductor in it must key its two pins
+ * `a` and `b`. Pots and switches keep their own terminal vocabularies; only the
+ * two-terminal passives are constrained. A producer whose source names pins otherwise -
+ * tscircuit's `pin1`/`pin2`, for instance - must rekey them before calling this; see
+ * `ExportMapping.pinNames` in `lib/export/circuit-json.ts`.
  */
 export function resolveNetwork(physical: PassiveNetwork, state: ControlState): ResolvedNetwork {
+  validateNetwork(physical)
   validateControlState(physical, state)
 
   const switches = physical.elements.filter((e): e is Extract<PassiveElement, { kind: "switch" }> =>

@@ -34,8 +34,12 @@ test("reports a requested node that the engine did not return", async () => {
 })
 
 test("surfaces netlist errors instead of returning empty data", async () => {
+  // The message is asserted, not just the fact of a rejection: a bare `.rejects.toThrow()`
+  // cannot tell the engine-error path from the `dataType !== "complex"` path, and it is
+  // the engine-error path (genuineErrors) this test is meant to pin.
   const broken = ["broken", "R1 in out", ".ac dec 20 10 100k", ".end"].join("\n")
-  await expect(runAcSweep({ netlist: broken, nodes: ["out"] })).rejects.toThrow()
+  await expect(runAcSweep({ netlist: broken, nodes: ["out"] }))
+    .rejects.toThrow("Simulation error: Warning: 'r1 in out' is not a valid resistor instance line, ignored!")
 })
 
 test("rejects a non-AC analysis with real-valued output", async () => {
@@ -47,9 +51,11 @@ test("rejects a non-AC analysis with real-valued output", async () => {
     ".op",
     ".end",
   ].join("\n")
-  await expect(runAcSweep({ netlist: opPoint, nodes: ["out"] })).rejects.toThrow("Check the .ac line.")
+  await expect(runAcSweep({ netlist: opPoint, nodes: ["out"] }))
+    .rejects.toThrow("Unexpected simulation data type: real (expected complex; check the .ac line)")
 })
 
 test("rejects an empty node request instead of returning an empty sweep", async () => {
-  await expect(runAcSweep({ netlist: RC_NETLIST, nodes: [] })).rejects.toThrow()
+  await expect(runAcSweep({ netlist: RC_NETLIST, nodes: [] }))
+    .rejects.toThrow("Empty node request: AcRequest.nodes must name at least one node")
 })
