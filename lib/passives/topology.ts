@@ -1,22 +1,54 @@
+import type {
+  CapacitorParameters, InductorParameters, PotentiometerParameters,
+  Provenance, ResistorParameters, SwitchParameters,
+} from "./parameters.ts"
+
 /** Source-labelled connectivity, before schematic layout or PCB partitioning.
  * Pin keys and net names are stable reference identifiers, not board-local names.
  * A pot retains all three terminals; a switch retains every contact and its poles.
  */
-export interface PassiveElement {
+interface ElementBase<K extends string, P> {
   readonly ref: string
-  readonly kind: "resistor" | "capacitor" | "inductor" | "potentiometer" | "switch"
+  readonly kind: K
   readonly pins: Readonly<Record<string, string>>
-  /** Values, taper, contact tables, winding/tap details, and source annotations. */
-  readonly parameters: Readonly<Record<string, string>>
+  readonly parameters: P
+  /** Provenance is metadata. assertSameTopology ignores it. */
+  readonly provenance?: Provenance
 }
+
+export type PassiveElement =
+  | ElementBase<"resistor", ResistorParameters>
+  | ElementBase<"capacitor", CapacitorParameters>
+  | ElementBase<"inductor", InductorParameters>
+  | ElementBase<"potentiometer", PotentiometerParameters>
+  | ElementBase<"switch", SwitchParameters>
 
 export interface PassiveNetwork {
   readonly ports: Readonly<Record<string, string>>
   readonly elements: readonly PassiveElement[]
 }
 
-function sortedEntries(record: Readonly<Record<string, string>>) {
-  return Object.entries(record).sort(([a], [b]) => a.localeCompare(b))
+type Canonical = string | number | boolean | null | readonly Canonical[] | { readonly [k: string]: Canonical }
+
+/** Recursively sorts object keys so serialization is order-independent.
+ * Keys whose value is `undefined` are skipped, so an explicitly-undefined optional
+ * field canonicalizes identically to an absent one.
+ */
+function canonicalize(value: unknown): Canonical {
+  if (Array.isArray(value)) return value.map(canonicalize)
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, Canonical> = {}
+    for (const key of Object.keys(value).sort((a, b) => a.localeCompare(b))) {
+      const entryValue = Reflect.get(value, key)
+      if (entryValue === undefined) continue
+      out[key] = canonicalize(entryValue)
+    }
+    return out
+  }
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean" || value === null) {
+    return value
+  }
+  throw new Error(`Non-canonicalizable parameter value: ${String(value)}`)
 }
 
 function validate(network: PassiveNetwork) {
@@ -42,10 +74,12 @@ export function assertSameTopology(reference: PassiveNetwork, candidate: Passive
   const signature = (network: PassiveNetwork) => {
     validate(network)
     return JSON.stringify({
-      ports: sortedEntries(network.ports),
-      elements: [...network.elements].sort((a, b) => a.ref.localeCompare(b.ref)).map(e => ({
-        ref: e.ref, kind: e.kind, pins: sortedEntries(e.pins), parameters: sortedEntries(e.parameters),
-      })),
+      ports: canonicalize(network.ports),
+      elements: [...network.elements]
+        .sort((a, b) => a.ref.localeCompare(b.ref))
+        .map(({ ref, kind, pins, parameters }) => ({
+          ref, kind, pins: canonicalize(pins), parameters: canonicalize(parameters),
+        })),
     })
   }
   if (signature(reference) !== signature(candidate)) throw new Error("Passive topology differs from reference")
