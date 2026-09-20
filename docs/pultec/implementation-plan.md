@@ -78,7 +78,7 @@ not wait for corroboration. Mark all such outputs with the candidate source and
 unresolved assumptions. Resolve the control-state contract before implementing
 the production partition or export adapter. Final acceptance gates still apply.
 
-### 0. Establish validation tooling — pending
+### 0. Establish validation tooling — complete (tooling only; no Pultec circuit work)
 
 Proposed locations: `tests/` for synthetic fixtures and checks, and `lib/passives/`
 for reusable validation helpers. These are bounded prerequisites, not evidence
@@ -121,6 +121,16 @@ Completion evidence: a reproducible analytic simulation check, a passing export
 round-trip with a failing miswire case, typed tests, and targeted validation tests.
 These exercises can land separately; neither depends on an authoritative Pultec
 transcription.
+
+- [x] Reproducible analytic simulation check.
+- [x] Passing export round-trip with a failing miswire case.
+- [x] Typed tests.
+- [x] Targeted validation tests.
+
+All four items are now recorded, with detail and exact commands, in
+"Verification record and reproduction" below. Marking them complete is a
+statement about the tooling: it does not mean any Pultec circuit, module, or
+measurement has been validated. That remains gated behind step 1 and later.
 
 ### 1. Establish the reference — pending
 
@@ -288,3 +298,54 @@ the WASM engine, extract complex AC data, and surface the engine error observed
 for a malformed resistor line. It does not validate any Pultec circuit, module,
 or netlist; those remain unverified
 until they are exercised through this same harness in later tasks.
+
+The export round-trip (`lib/export/circuit-json.ts`, tested by
+`tests/export/circuit-json.test.ts`) was validated against a synthetic two-module
+passive fixture (`tests/export/fixtures/two-module.tsx`): a resistor, capacitor,
+and inductor split across `LF_`/`HF_` module prefixes, connected through named
+tscircuit nets and flattened to canonical reference names. `toLabelledNetwork`
+reproduces the fixture's independently authored expected `PassiveNetwork` exactly,
+confirming that component identity, pin identity, named-net identity, and
+inductance (which tscircuit emits as an unparsed string) all survive the export
+adapter for this fixture shape.
+
+A deliberate miswire of that same fixture (`renderTwoModule(true)`, which moves
+`LF_C1.pin1` from the `MID` net to `GND`) produces a well-formed but different
+network and was confirmed to fail `assertSameTopology`, proving the comparison
+is not a check that always passes. Before this task, that failure's message was
+the generic "Passive topology differs from reference", which did not identify
+which component had moved. `assertSameTopology` now compares per element by
+reference, in deterministic sorted order, and reports the first element missing
+from the candidate, the first element present in both but differing, or the
+first element in the candidate that the reference does not have; a remaining
+signature mismatch after every element matches is reported as a ports
+difference. For the miswire fixture the thrown message now names `C1` directly
+instead of requiring the caller to diff two serialized signatures by hand.
+
+These two results — the round-trip and the miswire rejection — validate the
+export and comparison tooling only. No Pultec circuit has been transcribed,
+simulated, or partitioned using this adapter or this fixture. Source fidelity,
+module export equivalence, AC response, standalone substitutes, component
+selection, and hardware measurements all remain unverified, exactly as stated
+above for the groundwork checks and the AC simulation harness.
+
+Step 0's four completion-evidence items are now all satisfied by tooling, not
+by any Pultec-specific result:
+
+- [x] A reproducible analytic simulation check — the AC harness's RC-lowpass
+  fixture above, matched to closed-form magnitude and phase.
+- [x] A passing export round-trip with a failing miswire case — this section.
+- [x] Typed tests — `tests/topology.test.ts` and `tests/export/circuit-json.test.ts`
+  are TypeScript, typed against `PassiveNetwork`/`MutablePassiveNetwork`, and run
+  under `bun run typecheck`.
+- [x] Targeted validation tests — the mutation-rejection tests in
+  `tests/topology.test.ts` (rewiring, parameter changes, missing/extra
+  components, duplicate references, swapped ports, invalid ownership) and the
+  export adapter's rejection tests (unmapped component/net, unnamed net group,
+  conflicting nets, dangling pin) in `tests/export/circuit-json.test.ts`.
+
+Step 0 is now complete as scoped. It remains a tooling milestone: it establishes
+that the simulation and export mechanisms work and that the comparison gate has
+teeth, not that any Pultec-specific circuit, module, or measurement has been
+validated. Step 1 (the reference transcription) is unaffected and remains
+pending.

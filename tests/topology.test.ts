@@ -46,6 +46,18 @@ for (const [name, mutate] of mutations) {
   })
 }
 
+test("names the component that was rewired", () => {
+  const candidate: MutablePassiveNetwork = structuredClone(reference)
+  candidate.elements[0].pins.b = "0"
+  expect(() => assertSameTopology(reference, candidate)).toThrow("R1 differs")
+})
+
+test("names a missing component", () => {
+  const candidate: MutablePassiveNetwork = structuredClone(reference)
+  candidate.elements.pop()
+  expect(() => assertSameTopology(reference, candidate)).toThrow("P1 is missing")
+})
+
 test("requires exactly one owner for every reference", () => {
   expect(() => partitionTopology(reference, { R1: "lf" })).toThrow("Missing owner")
   expect(() => partitionTopology(reference, { ...ownership, R2: "hf" })).toThrow("Unknown reference")

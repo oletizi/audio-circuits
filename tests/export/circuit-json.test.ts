@@ -76,3 +76,8 @@ test("rejects a dangling pin instead of exporting a partial network", () => {
   expect(() => toLabelledNetwork(renderDanglingPinFixture(), danglingPinMapping))
     .toThrow("Dangling pins: A_R1.pin2")
 })
+
+test("a single miswired trace fails the comparison and names the component", () => {
+  const miswired = toLabelledNetwork(renderTwoModule(true), mapping)
+  expect(() => assertSameTopology(expected, miswired)).toThrow("C1")
+})

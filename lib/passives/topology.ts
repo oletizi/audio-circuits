@@ -82,7 +82,25 @@ export function assertSameTopology(reference: PassiveNetwork, candidate: Passive
         })),
     })
   }
-  if (signature(reference) !== signature(candidate)) throw new Error("Passive topology differs from reference")
+  const referenceSignature = signature(reference)
+  const candidateSignature = signature(candidate)
+  if (referenceSignature === candidateSignature) return
+
+  const elementSignature = (element: PassiveElement) =>
+    JSON.stringify(canonicalize({ kind: element.kind, pins: element.pins, parameters: element.parameters }))
+  const referenceByRef = new Map(reference.elements.map(e => [e.ref, elementSignature(e)]))
+  const candidateByRef = new Map(candidate.elements.map(e => [e.ref, elementSignature(e)]))
+  for (const ref of [...referenceByRef.keys()].sort((a, b) => a.localeCompare(b))) {
+    const candidateEntry = candidateByRef.get(ref)
+    if (candidateEntry === undefined) throw new Error(`Passive topology differs from reference: ${ref} is missing`)
+    if (candidateEntry !== referenceByRef.get(ref)) {
+      throw new Error(`Passive topology differs from reference: ${ref} differs\n  reference: ${referenceByRef.get(ref)}\n  candidate: ${candidateEntry}`)
+    }
+  }
+  for (const ref of candidateByRef.keys()) {
+    if (!referenceByRef.has(ref)) throw new Error(`Passive topology differs from reference: ${ref} is unexpected`)
+  }
+  throw new Error("Passive topology differs from reference: external ports differ")
 }
 
 export interface PartitionOptions {
