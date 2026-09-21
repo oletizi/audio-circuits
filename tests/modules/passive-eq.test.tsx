@@ -5,6 +5,7 @@ import { toLabelledNetwork } from "../../lib/export/circuit-json.ts"
 import { assertSameTopology } from "../../lib/passives/topology.ts"
 import { boardNetwork } from "../../reference/pultec/partition.ts"
 import { COMPOSED_MAPPING, COMPOSED_PREFIX } from "./composed-mapping.ts"
+import { overlappingComponents } from "./schematic-overlap.ts"
 import type { ExportMapping } from "../../lib/export/circuit-json.ts"
 import type { PassiveNetwork } from "../../lib/passives/topology.ts"
 
@@ -22,13 +23,14 @@ function render() {
   return circuit.getCircuitJson()
 }
 
-/** The three module boards recomposed, which is what the composition must equal. */
+/** The five module boards recomposed, which is what the composition must equal. */
 function composedReference(): PassiveNetwork {
   const elements = [
     ...boardNetwork("low-cut").elements,
     ...boardNetwork("low-boost").elements,
     ...boardNetwork("hi-cut").elements,
     ...boardNetwork("hi-boost").elements,
+    ...boardNetwork("mid").elements,
   ]
   return { ports: MAPPING.ports, elements }
 }
@@ -70,4 +72,11 @@ test("two nets that mean different nodes are still refused", () => {
     netNames: { ...MAPPING.netNames, [`${P}_HC_SECTION`]: "out" },
   }
   expect(() => toLabelledNetwork(render(), shorted)).toThrow("Conflicting nets in group")
+})
+
+test("no two components are drawn at the same spot", () => {
+  // Same defect class Tasks 1 and 2 both shipped once each: a schematic
+  // collision is invisible to every topology and value assertion above,
+  // because the netlist is correct either way.
+  expect(overlappingComponents(render())).toEqual([])
 })

@@ -1,3 +1,4 @@
+import { MID_POSITIONS, MID_TAPS, tapLabel } from "../../reference/pultec/mid.ts"
 import type { ExportMapping } from "../../lib/export/circuit-json.ts"
 
 /** Instance prefix for the composed board under test. */
@@ -5,12 +6,57 @@ export const COMPOSED_PREFIX = "EQ"
 
 const P = COMPOSED_PREFIX
 
+/** The mid's net names, generated from the same tables the mid module and its
+ * reference build from, so this cannot drift out of step with either one. The
+ * shape matches `MID_NET_NAMES` in `tests/modules/mid.test.tsx`, prefixed for
+ * this instance rather than the standalone module's own "MID".
+ */
+const MID_NET_NAMES: Readonly<Record<string, string>> = {
+  [`${P}_MID_IN`]: "in",
+  [`${P}_MID_GND`]: "0",
+  [`${P}_MID_BOOST_RETURN`]: "mid_boost_return",
+  [`${P}_MID_CUT_RETURN`]: "mid_cut_return",
+  [`${P}_MID_COIL_RETURN`]: "mid_coil_return",
+  ...Object.fromEntries(
+    MID_TAPS.map(henries => [
+      `${P}_MID_TAP_${tapLabel(henries)}`,
+      `mid_tap_${tapLabel(henries).toLowerCase()}`,
+    ]),
+  ),
+  ...Object.fromEntries(
+    MID_POSITIONS.map(position => [
+      `${P}_MID_SEL_${position.label}`,
+      `mid_sel_${position.label.toLowerCase()}`,
+    ]),
+  ),
+}
+
+/** The mid's component names, generated the same way. */
+const MID_COMPONENT_NAMES: Readonly<Record<string, string>> = {
+  [`${P}_MID_R_BOOST`]: "R_MID_BOOST",
+  [`${P}_MID_R_CUT`]: "R_MID_CUT",
+  [`${P}_MID_R_SHUNT`]: "R_MID_SHUNT",
+  ...Object.fromEntries(
+    MID_TAPS.map(henries => [`${P}_MID_L_${tapLabel(henries)}`, `L_MID_${tapLabel(henries)}`]),
+  ),
+  ...Object.fromEntries(
+    MID_POSITIONS.flatMap(position =>
+      position.capacitors.map((_, index) => {
+        const slot = index === 0 ? "A" : "B"
+        return [`${P}_MID_C_${position.label}_${slot}`, `C_MID_${position.label}_${slot}`]
+      })),
+  ),
+}
+
 /** Maps what the composed board emits onto the reference's canonical
  * identifiers. Shared by the topology comparison and the AC comparison so the
  * two cannot drift apart and quietly test different things.
  *
- * Note the two entries pointing at `lo_boost_in`: that is the composition's
- * single join, stated here rather than inferred from the trace.
+ * Note the two entries pointing at `lo_boost_in`: that is one of the
+ * composition's joins, stated here rather than inferred from the trace. The
+ * mid's ground net is the other: `${P}_MID_GND` and `${P}_LB_GND` both map to
+ * canonical `"0"`, which only reflects reality because `PultecPassiveEq`
+ * traces them together on-board.
  */
 export const COMPOSED_MAPPING: ExportMapping = {
   componentNames: {
@@ -31,6 +77,7 @@ export const COMPOSED_MAPPING: ExportMapping = {
     [`${P}_HB_R3`]: "R3",
     [`${P}_HB_L_600mH`]: "L_HI_BOOST_600MH", [`${P}_HB_L_300mH`]: "L_HI_BOOST_300MH",
     [`${P}_HB_L_200mH`]: "L_HI_BOOST_200MH", [`${P}_HB_L_100mH`]: "L_HI_BOOST_100MH",
+    ...MID_COMPONENT_NAMES,
   },
   netNames: {
     [`${P}_LC_IN`]: "hi_boost_out",
@@ -56,6 +103,7 @@ export const COMPOSED_MAPPING: ExportMapping = {
     [`${P}_HB_SEL_10kHz`]: "j8_p2", [`${P}_HB_SEL_16kHz`]: "j8_p1",
     [`${P}_HB_COIL_TOP`]: "j19_p1",
     [`${P}_HB_QMAX_OUT`]: "j20_p1",
+    ...MID_NET_NAMES,
   },
   pinNames: { pin1: "a", pin2: "b" },
   ports: { input: "hi_boost_out", output: "out", ground: "0" },

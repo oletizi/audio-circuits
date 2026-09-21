@@ -94,6 +94,15 @@ const MATRIX: readonly { label: string; state: ControlState }[] = [
     label: "everything at once",
     state: controlState(1, 1, 1, { loFrequency: "30Hz", hiFrequency: "3kHz" }, 0),
   },
+  {
+    label: "mid boost engaged",
+    state: controlState(
+      0, 0, 0,
+      { loFrequency: "60Hz", hiFrequency: "5kHz", mid: "1kHz" },
+      1, 0,
+      { level: 0, mode: "boost" },
+    ),
+  },
 ]
 
 test("composed modules reproduce the unsplit reference across the control matrix", async () => {
