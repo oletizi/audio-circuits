@@ -21,13 +21,23 @@
  */
 import { Fragment } from "react"
 import { createGrid } from "../../lib/layout.ts"
-import { MID_POSITIONS, MID_RESISTORS, tapLabel } from "../../reference/pultec/mid.ts"
+import { MID_POSITIONS, MID_RESISTORS, MID_TAPS, tapLabel } from "../../reference/pultec/mid.ts"
 
 export interface PultecMidProps {
   /** Prefix for every component and net name in this module. */
   name: string
   schX?: number
   schY?: number
+}
+
+/** Written the way tscircuit wants them; 450mH rather than 0.45H so the value
+ * parses without a decimal point in the middle of a unit. */
+const MID_INDUCTANCES: Readonly<Record<string, string>> = {
+  "2H": "2H",
+  "1H": "1H",
+  "0R45H": "450mH",
+  "0R22H": "220mH",
+  "0R1H": "100mH",
 }
 
 export const PultecMid = (props: PultecMidProps) => {
@@ -38,6 +48,7 @@ export const PultecMid = (props: PultecMidProps) => {
   const groundNet = `${name}_GND`
   const boostReturnNet = `${name}_BOOST_RETURN`
   const cutReturnNet = `${name}_CUT_RETURN`
+  const coilReturnNet = `${name}_COIL_RETURN`
 
   const taps = [...new Set(MID_POSITIONS.map(p => p.henries))]
 
@@ -47,6 +58,7 @@ export const PultecMid = (props: PultecMidProps) => {
       <net name={groundNet} />
       <net name={boostReturnNet} />
       <net name={cutReturnNet} />
+      <net name={coilReturnNet} />
       {taps.map(henries => (
         <Fragment key={`tap-${henries}`}>
           <net name={`${name}_TAP_${tapLabel(henries)}`} />
@@ -109,6 +121,22 @@ export const PultecMid = (props: PultecMidProps) => {
       />
       <trace from={`.${name}_R_SHUNT > .pin1`} to={`net.${inputNet}`} />
       <trace from={`.${name}_R_SHUNT > .pin2`} to={`net.${groundNet}`} />
+
+      {MID_TAPS.map((henries, index) => (
+        <Fragment key={`L-${henries}`}>
+          <inductor
+            name={`${name}_L_${tapLabel(henries)}`}
+            inductance={MID_INDUCTANCES[tapLabel(henries)]!}
+            footprint="0805"
+            {...g.below(index - 2, 3)}
+          />
+          <trace
+            from={`.${name}_L_${tapLabel(henries)} > .pin1`}
+            to={`net.${name}_TAP_${tapLabel(henries)}`}
+          />
+          <trace from={`.${name}_L_${tapLabel(henries)} > .pin2`} to={`net.${coilReturnNet}`} />
+        </Fragment>
+      ))}
     </group>
   )
 }

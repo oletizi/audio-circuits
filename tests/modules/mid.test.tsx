@@ -3,6 +3,11 @@ import { RootCircuit } from "@tscircuit/core"
 import { PultecMid } from "../../modules/pultec-mid/PultecMid.tsx"
 import { MID_POSITIONS, MID_TAPS, tapLabel } from "../../reference/pultec/mid.ts"
 import { parseValue } from "../../lib/passives/units.ts"
+import { toLabelledNetwork } from "../../lib/export/circuit-json.ts"
+import { assertSameTopology } from "../../lib/passives/topology.ts"
+import { boardNetwork } from "../../reference/pultec/partition.ts"
+import { overlappingComponents } from "./schematic-overlap.ts"
+import type { ExportMapping } from "../../lib/export/circuit-json.ts"
 
 function render() {
   const circuit = new RootCircuit()
@@ -96,4 +101,62 @@ test("the module emits no dangling pins", () => {
   expect(
     render().filter(e => e.type === "source_pin_missing_trace_warning"),
   ).toHaveLength(0)
+})
+
+const MID_NET_NAMES: Readonly<Record<string, string>> = {
+  MID_IN: "in",
+  MID_GND: "0",
+  MID_BOOST_RETURN: "mid_boost_return",
+  MID_CUT_RETURN: "mid_cut_return",
+  MID_COIL_RETURN: "mid_coil_return",
+  ...Object.fromEntries(
+    MID_TAPS.map(henries => [
+      `MID_TAP_${tapLabel(henries)}`,
+      `mid_tap_${tapLabel(henries).toLowerCase()}`,
+    ]),
+  ),
+  ...Object.fromEntries(
+    MID_POSITIONS.map(position => [
+      `MID_SEL_${position.label}`,
+      `mid_sel_${position.label.toLowerCase()}`,
+    ]),
+  ),
+}
+
+const MID_MAPPING: ExportMapping = {
+  componentNames: {
+    MID_R_BOOST: "R_MID_BOOST",
+    MID_R_CUT: "R_MID_CUT",
+    MID_R_SHUNT: "R_MID_SHUNT",
+    MID_L_2H: "L_MID_2H",
+    MID_L_1H: "L_MID_1H",
+    MID_L_0R45H: "L_MID_0R45H",
+    MID_L_0R22H: "L_MID_0R22H",
+    MID_L_0R1H: "L_MID_0R1H",
+    ...Object.fromEntries(
+      MID_POSITIONS.flatMap(position =>
+        position.capacitors.map((_, index) => {
+          const slot = index === 0 ? "A" : "B"
+          return [`MID_C_${position.label}_${slot}`, `C_MID_${position.label}_${slot}`]
+        })),
+    ),
+  },
+  netNames: MID_NET_NAMES,
+  pinNames: { pin1: "a", pin2: "b" },
+  // Every net the mid board touches, as identity: `boardNetwork` exposes each
+  // net an element's pins reach as a port, so the candidate side must carry the
+  // same set (see PultecHiBoost's comparison test for the same pattern).
+  ports: Object.fromEntries(Object.values(MID_NET_NAMES).map(net => [net, net])),
+}
+
+test("the rendered module equals the reference mid board", () => {
+  assertSameTopology(boardNetwork("mid"), toLabelledNetwork(render(), MID_MAPPING))
+})
+
+test("no two components are drawn at the same spot", () => {
+  // A schematic collision is invisible to every topology and value assertion,
+  // because the netlist is correct either way — two symbols stacked on the
+  // same coordinates still wire up identically. Only a drawing-position check
+  // like this one can catch it.
+  expect(overlappingComponents(render())).toEqual([])
 })
