@@ -712,6 +712,7 @@ export interface OpticalCompressorProps {
   detectorCapacitance?: string
   releaseResistance?: string
   ledResistance?: string
+  emitterResistance?: string
   inputCap?: string
   outputCap?: string
   sidechainCouplingCap?: string
@@ -721,6 +722,8 @@ export interface OpticalCompressorProps {
   schY?: number
 }
 ```
+
+`emitterResistance` is listed because §8.7.1 introduces R_E, §15 defers its final value and §12.2 item 8 measures the control range it sets — the bench protocol cannot run without it being settable. Revision 3 added the resistor but this interface listing was not updated at the time.
 
 Changes from revision 1: `vactrolFootprint` is required; `sidechainGainResistance`
 is joined by `sidechainBiasResistance` because the sidechain gain is set by two
