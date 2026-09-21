@@ -44,16 +44,13 @@ const isCircuitElement = (v: unknown): v is CircuitElement =>
   isRecord(v) && typeof v.type === "string"
 
 const isSourceComponent = (e: CircuitElement): e is SourceComponent =>
-  e.type === "source_component" &&
-  typeof (e as Record<string, unknown>).name === "string"
+  e.type === "source_component" && isRecord(e) && typeof e.name === "string"
 
 const isSourcePort = (e: CircuitElement): e is SourcePort =>
-  e.type === "source_port" &&
-  typeof (e as Record<string, unknown>).name === "string"
+  e.type === "source_port" && isRecord(e) && typeof e.name === "string"
 
 const isSourceNet = (e: CircuitElement): e is SourceNet =>
-  e.type === "source_net" &&
-  typeof (e as Record<string, unknown>).name === "string"
+  e.type === "source_net" && isRecord(e) && typeof e.name === "string"
 
 /** Render a circuit to settled circuit JSON. */
 export async function renderCircuit(

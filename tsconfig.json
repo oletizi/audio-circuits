@@ -14,9 +14,11 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
     "experimentalDecorators": true,
     "types": [
-      "tscircuit"
+      "tscircuit",
+      "bun-types"
     ]
   },
   "include": [
