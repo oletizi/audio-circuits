@@ -15,10 +15,14 @@ import {
   isRailLabel,
 } from "../../lib/testing/schematic-metrics.ts"
 import {
-  assertSchematicReadable,
-  remainingGap,
-  DECLARED_LABELS,
-} from "../../lib/testing/schematic-standards.ts"
+  computeTier1,
+  formatTier1,
+} from "../../lib/testing/schematic-tier1.ts"
+import {
+  assertReadabilityGate,
+  gateReport,
+  RAIL_NETS,
+} from "../../lib/testing/schematic-gate.ts"
 import { OpticalCompressor } from "./OpticalCompressor.tsx"
 
 // RENDER ONCE, SHARE ACROSS ALL TESTS.
@@ -181,22 +185,17 @@ test("the standalone fixture renders with no floating pins", async () => {
 // legibility is a functional requirement and is asserted here with the same
 // force as connectivity. See docs/SCHEMATIC-STANDARDS.md.
 
-test("schematic meets its readability ceiling and does not regress", () => {
-  const m = computeSchematicMetrics(el, {
-    declared: DECLARED_LABELS["optical-compressor"],
-  })
-  console.log(formatMetrics(m))
-  console.log("\n" + remainingGap(m, (t) => isRailLabel(t)))
-  assertSchematicReadable("optical-compressor", m, (t) => isRailLabel(t), formatMetrics)
+test("TIER 1 readability gate: no regression against recorded baseline", () => {
+  const t1 = computeTier1(el, { railNets: RAIL_NETS["optical-compressor"] })
+  console.log(formatTier1(t1))
+  console.log("\n" + gateReport("optical-compressor", t1))
+  assertReadabilityGate("optical-compressor", t1)
 })
 
-test("the readability assertion actually fires when a limit is exceeded", () => {
-  // A guard nobody has watched trip is not a verified guard.
-  const m = computeSchematicMetrics(el, {
-    declared: DECLARED_LABELS["optical-compressor"],
-  })
-  const inflated = { ...m, wireCrossings: m.wireCrossings + 1000 }
-  expect(() =>
-    assertSchematicReadable("optical-compressor", inflated, (t) => isRailLabel(t), formatMetrics),
-  ).toThrow(/REGRESSION|readability failed/)
+test("the gate fires on a regression", () => {
+  const t1 = computeTier1(el, { railNets: RAIL_NETS["optical-compressor"] })
+  const worse = { ...t1, labelCollisions: t1.labelCollisions + 100 }
+  expect(() => assertReadabilityGate("optical-compressor", worse)).toThrow(
+    /REGRESSED/,
+  )
 })

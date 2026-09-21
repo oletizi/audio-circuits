@@ -1,5 +1,14 @@
 /**
- * Quantified schematic readability.
+ * TIER 2 — DIAGNOSTICS ONLY. This module never gates.
+ *
+ * It explains WHY labels exist so a human knows where to look. It has no
+ * effect on pass/fail: the gate lives in schematic-gate.ts and accepts
+ * Tier1Metrics, which this module does not produce. Adding a clever new
+ * category here cannot make a schematic pass.
+ *
+ * That separation is the central lesson of this project's first attempt,
+ * where the enforced metric went 15 -> 11 -> 0 while the schematic went
+ * from 67 labels to 66. See the design doc, section 2.
  *
  * WHY THIS EXISTS
  *

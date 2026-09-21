@@ -7,14 +7,14 @@ import {
   type CircuitElement,
 } from "../../lib/testing/circuit-assertions.ts"
 import {
-  computeSchematicMetrics,
-  formatMetrics,
-  isRailLabel,
-} from "../../lib/testing/schematic-metrics.ts"
+  computeTier1,
+  formatTier1,
+} from "../../lib/testing/schematic-tier1.ts"
 import {
-  assertSchematicReadable,
-  remainingGap,
-} from "../../lib/testing/schematic-standards.ts"
+  assertReadabilityGate,
+  gateReport,
+  RAIL_NETS,
+} from "../../lib/testing/schematic-gate.ts"
 import { OpampBuffer } from "./OpampBuffer.tsx"
 
 // This module predates the optical compressor work and had NO tests at all.
@@ -52,9 +52,9 @@ test("section A is wired as a unity-gain follower", () => {
 // --- Schematic readability -------------------------------------------------
 // See docs/SCHEMATIC-STANDARDS.md.
 
-test("schematic meets its readability ceiling and does not regress", () => {
-  const m = computeSchematicMetrics(el)
-  console.log(formatMetrics(m))
-  console.log("\n" + remainingGap(m, (t) => isRailLabel(t)))
-  assertSchematicReadable("opamp-buffer", m, (t) => isRailLabel(t), formatMetrics)
+test("TIER 1 readability gate: no regression against recorded baseline", () => {
+  const t1 = computeTier1(el, { railNets: RAIL_NETS["opamp-buffer"] })
+  console.log(formatTier1(t1))
+  console.log("\n" + gateReport("opamp-buffer", t1))
+  assertReadabilityGate("opamp-buffer", t1)
 })
