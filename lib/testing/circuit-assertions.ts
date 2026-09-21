@@ -181,6 +181,11 @@ export function expectComponentValue(
   if (actual === undefined) {
     throw new Error(`Component "${name}" has no ${field}`)
   }
+  if (!Number.isFinite(actual)) {
+    throw new Error(
+      `Component "${name}" ${field} is not a finite number: ${actual}`,
+    )
+  }
   // Relative tolerance absorbs float representation of values like 4.7µF.
   const tolerance = Math.abs(expected) * 1e-6
   if (Math.abs(actual - expected) > tolerance) {

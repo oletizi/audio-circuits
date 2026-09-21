@@ -6,6 +6,7 @@ import {
   expectComponentValue,
   expectNoFloatingPins,
   findComponent,
+  type SourceComponent,
 } from "./circuit-assertions.ts"
 
 const Fixture = () => (
@@ -71,4 +72,32 @@ test("expectNoFloatingPins reports floating pins and honours the allowlist", asy
   // C1.pin2, Q1.collector and Q1.base are deliberately unconnected here
   expect(() => expectNoFloatingPins(el)).toThrow(/C1/)
   expectNoFloatingPins(el, ["C1.pin2", "Q1.collector", "Q1.base"])
+})
+
+test("expectComponentValue throws instead of failing open when the value is NaN", () => {
+  const handBuilt: SourceComponent[] = [
+    {
+      type: "source_component",
+      source_component_id: "test-nan",
+      name: "R_NAN",
+      resistance: NaN,
+    },
+  ]
+  expect(() =>
+    expectComponentValue(handBuilt, "R_NAN", "resistance", 10_000),
+  ).toThrow()
+})
+
+test("expectComponentValue throws when the value is not finite (Infinity)", () => {
+  const handBuilt: SourceComponent[] = [
+    {
+      type: "source_component",
+      source_component_id: "test-inf",
+      name: "R_INF",
+      resistance: Infinity,
+    },
+  ]
+  expect(() =>
+    expectComponentValue(handBuilt, "R_INF", "resistance", 10_000),
+  ).toThrow()
 })
