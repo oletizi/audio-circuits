@@ -35,6 +35,15 @@ export const TL072H = (props: TL072HProps) => (
   <chip
     footprint={props.footprint ?? "soic8"}
     pinLabels={tl072hPinLabels}
+    schPinArrangement={{
+      leftSide: {
+        direction: "top-to-bottom",
+        pins: ["INA_P", "INA_N", "INB_P", "INB_N"],
+      },
+      rightSide: { direction: "top-to-bottom", pins: ["OUTA", "OUTB"] },
+      topSide: { direction: "left-to-right", pins: ["VCC"] },
+      bottomSide: { direction: "left-to-right", pins: ["GND"] },
+    }}
     {...props}
   />
 )
