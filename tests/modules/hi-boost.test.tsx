@@ -12,6 +12,10 @@ const MAPPING: ExportMapping = {
     HB_C34: "C34", HB_C35: "C35",
     HB_C2a2: "C2a2", HB_C4a2: "C4a2", HB_C5a2: "C5a2",
     HB_R3: "R3",
+    HB_L_600mH: "L_HI_BOOST_600MH",
+    HB_L_300mH: "L_HI_BOOST_300MH",
+    HB_L_200mH: "L_HI_BOOST_200MH",
+    HB_L_100mH: "L_HI_BOOST_100MH",
   },
   netNames: {
     HB_TAP_600mH: "j15_p4",
@@ -56,13 +60,14 @@ test("the module emits no dangling pins", () => {
 test("positions sharing an inductance really do share a tap", () => {
   // Six positions, four taps. 4k and 5k both want 0.3H; 10k and 16k both want
   // 0.1H. If a future edit gives each position its own tap, the count changes
-  // here before anything subtler goes wrong.
+  // here before anything subtler goes wrong. Each tap net also carries its own
+  // discrete inductor now that the coil is board-resident.
   const exported = toLabelledNetwork(render(), MAPPING)
   const on = (net: string) =>
     exported.elements.filter(e => Object.values(e.pins).includes(net)).map(e => e.ref).sort()
-  expect(on("j15_p3")).toEqual(["C15", "C16", "C2a2"])
-  expect(on("j15_p1")).toEqual(["C34", "C35", "C5a2"])
-  expect(on("j15_p4")).toEqual(["C14"])
+  expect(on("j15_p3")).toEqual(["C15", "C16", "C2a2", "L_HI_BOOST_300MH"])
+  expect(on("j15_p1")).toEqual(["C34", "C35", "C5a2", "L_HI_BOOST_100MH"])
+  expect(on("j15_p4")).toEqual(["C14", "L_HI_BOOST_600MH"])
 })
 
 test("Qmax bridges the coil top to the Q control, not to ground", () => {
@@ -73,4 +78,17 @@ test("Qmax bridges the coil top to the Q control, not to ground", () => {
   if (qmax?.kind !== "resistor") throw new Error("R3 missing from the export")
   expect([qmax.pins.a, qmax.pins.b].sort()).toEqual(["j19_p1", "j20_p1"])
   expect(Object.values(qmax.pins)).not.toContain("0")
+})
+
+test("four inductors serve six positions", () => {
+  // 4k/5k share 0.3H and 10k/16k share 0.1H. If a future edit gives every
+  // position its own part, this catches it before the BOM does.
+  const exported = toLabelledNetwork(render(), MAPPING)
+  const inductors = exported.elements.filter(e => e.kind === "inductor")
+  expect(inductors).toHaveLength(4)
+  // Each one returns to the coil-top node; none goes to ground.
+  for (const inductor of inductors) {
+    expect(Object.values(inductor.pins)).toContain("j19_p1")
+    expect(Object.values(inductor.pins)).not.toContain("0")
+  }
 })

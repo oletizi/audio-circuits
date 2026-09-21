@@ -39,6 +39,15 @@ const POSITIONS: readonly (readonly [string, string, readonly (readonly [string,
   ["16kHz", "100mH", [["C35", "1nF"]]],
 ]
 
+/** Tap label to the discrete inductor fitted there. Six positions share four
+ * parts: 4k and 5k both want 0.3H, 10k and 16k both want 0.1H. */
+const TAPS: readonly (readonly [string, string])[] = [
+  ["600mH", "600mH"],
+  ["300mH", "300mH"],
+  ["200mH", "200mH"],
+  ["100mH", "100mH"],
+]
+
 export const PultecHiBoost = (props: PultecHiBoostProps) => {
   const { name, schX = 0, schY = 0 } = props
   const g = createGrid(schX, schY)
@@ -87,6 +96,19 @@ export const PultecHiBoost = (props: PultecHiBoostProps) => {
       />
       <trace from={`.${name}_R3 > .pin1`} to={`net.${coilTopNet}`} />
       <trace from={`.${name}_R3 > .pin2`} to={`net.${qmaxOutNet}`} />
+
+      {TAPS.map(([tap, inductance], index) => (
+        <Fragment key={`L-${tap}`}>
+          <inductor
+            name={`${name}_L_${tap}`}
+            inductance={inductance}
+            footprint="0805"
+            {...g.below(index - 2, 1)}
+          />
+          <trace from={`.${name}_L_${tap} > .pin1`} to={`net.${name}_TAP_${tap}`} />
+          <trace from={`.${name}_L_${tap} > .pin2`} to={`net.${coilTopNet}`} />
+        </Fragment>
+      ))}
     </group>
   )
 }

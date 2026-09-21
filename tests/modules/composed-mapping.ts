@@ -29,6 +29,8 @@ export const COMPOSED_MAPPING: ExportMapping = {
     [`${P}_HB_C17`]: "C17", [`${P}_HB_C34`]: "C34", [`${P}_HB_C35`]: "C35",
     [`${P}_HB_C2a2`]: "C2a2", [`${P}_HB_C4a2`]: "C4a2", [`${P}_HB_C5a2`]: "C5a2",
     [`${P}_HB_R3`]: "R3",
+    [`${P}_HB_L_600mH`]: "L_HI_BOOST_600MH", [`${P}_HB_L_300mH`]: "L_HI_BOOST_300MH",
+    [`${P}_HB_L_200mH`]: "L_HI_BOOST_200MH", [`${P}_HB_L_100mH`]: "L_HI_BOOST_100MH",
   },
   netNames: {
     [`${P}_LC_IN`]: "hi_boost_out",

@@ -136,14 +136,11 @@ export function boardNetwork(owner: ModuleOwner): PassiveNetwork {
   const owned = split.modules[owner]
   if (owned === undefined) throw new Error(`No such module: ${owner}`)
 
-  // Inductors are off-board too: the hi boost winding is a hand-wound part on
-  // its own breakout, reached through the same kind of screw terminal as the
-  // pots and selectors.
+  // Potentiometers and rotary selectors are front-panel parts wired back to the
+  // board. Inductors are not: with the tapped coils replaced by discrete parts,
+  // they sit on the section boards beside the capacitors they pair with.
   const elements = owned.filter(
-    element =>
-      element.kind !== "potentiometer"
-      && element.kind !== "switch"
-      && element.kind !== "inductor",
+    element => element.kind !== "potentiometer" && element.kind !== "switch",
   )
   if (elements.length === 0) {
     throw new Error(`Module has no board-resident elements: ${owner}`)

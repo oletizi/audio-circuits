@@ -43,13 +43,14 @@ function renderComposition() {
  * about the boards and the wiring between them, not about the pots. */
 function composedNetwork(): PassiveNetwork {
   const exported = toLabelledNetwork(renderComposition(), COMPOSED_MAPPING)
-  // Pots, selectors and the hand-wound coil are all off-board parts reached
-  // through screw terminals, so none of them come back from tscircuit.
+  // Pots and selectors are off-board parts reached through screw terminals, so
+  // they never come back from tscircuit; some inductors still are too, until a
+  // later task moves them onto a board. Rather than hand-maintain a kind list,
+  // supply whatever the export did not already produce: this self-adjusts as
+  // more parts move onto boards in later tasks.
+  const exportedRefs = new Set(exported.elements.map(element => element.ref))
   const controls = THREE_BAND_REFERENCE.elements.filter(
-    element =>
-      element.kind === "potentiometer"
-      || element.kind === "switch"
-      || element.kind === "inductor",
+    element => !exportedRefs.has(element.ref),
   )
   return {
     ports: THREE_BAND_REFERENCE.ports,
