@@ -1,7 +1,7 @@
 ---
 title: Metrics-based testing for schematic readability
 date: 2026-09-21
-status: Draft for review
+status: Draft for review (revision 2, after third-party review)
 supersedes: the ad-hoc standard in docs/SCHEMATIC-STANDARDS.md
 ---
 
@@ -57,26 +57,32 @@ removes judgement from the gate.
 
 ## 3. Design principles
 
-**P1 — The gate measures geometry, not intent.** Pass/fail depends only on
-quantities computed from rendered coordinates: how many labels, how much
-they overlap, how far apart connected things are. None of these can be
-argued with.
+**P1 — The gate measures rendered output, not author intent.** Pass/fail
+depends only on quantities computed from the generated artifact: how many
+labels it contains, how much they overlap, how far apart connected things
+are. Nothing asserted in source code can alter the verdict.
+
+(Revision 2: this was "measures geometry, not intent". M1 is not strictly
+geometric — it is a count plus an exclusion list. "Rendered output vs.
+author intent" is the invariant that actually matters, and it generalises
+to later metrics such as text density or signal-flow directionality.)
 
 **P2 — Classification is diagnostic, never exculpatory.** Explaining *why*
 a label exists helps a human decide what to fix. It must not subtract from
 the enforced number. This single rule makes Failures 1, 2 and 3 impossible.
 
-**P3 — Exactly one judgement input, and a human owns it.** Rails genuinely
-need labels. That is the only legitimate exemption, and it is expressed as
-an explicit per-module list of net names that a human approves. It is not a
-pattern match the author can widen.
+**P3 — Exactly one judgement input, and it is reviewed.** Rails genuinely
+need labels. That is the only legitimate exemption, expressed as an explicit
+per-module list of net names. It is not a pattern match the author can
+widen, and under R2 it cannot be edited in the same commit as a circuit.
 
 **P4 — Every threshold must be falsifiable.** For each one, a unit test
 constructs the defect and asserts the gate fires. A limit that has never
 been seen to fail is not enforcing anything.
 
-**P5 — Standing still fails.** The ceiling descends on a schedule. A
-ratchet that only prevents regression permits indefinite non-compliance.
+**P5 — Work that claims to improve readability must move a Tier 1 number.**
+A ratchet only prevents regression and permits indefinite non-compliance.
+See §10 for the mechanism and for an honest account of its limits.
 
 **P6 — Changes to the rules are separated from changes to the score.** A
 commit may not both alter the measurement and improve the number.
@@ -85,7 +91,7 @@ commit may not both alter the measurement and improve the number.
 
 ```
           ┌────────────────────────────────────────┐
-          │ RAIL_NETS  (per module, human-approved)│  <-- only judgement input
+          │ RAIL_NETS  (per module, reviewed)      │  <-- only judgement input
           └────────────────────┬───────────────────┘
                                │
    rendered circuit JSON ──────┼──────► TIER 1: raw geometry
@@ -93,7 +99,8 @@ commit may not both alter the measurement and improve the number.
                                │        - labelCollisions
                                │        - wireCrossings
                                │        - longHopFraction
-                               │        - areaPerComponent
+                               │        - componentAreaPerComponent
+                               │        - drawingAreaPerComponent
                                │                │
                                │                ▼
                                │        THRESHOLDS ──► PASS / FAIL
@@ -104,7 +111,7 @@ commit may not both alter the measurement and improve the number.
                                         - "where to look" output
 ```
 
-**Tier 1 is the gate.** Five numbers, all geometric.
+**Tier 1 is the gate.** Six numbers, all read off the rendered artifact.
 
 **Tier 2 is the report.** It may classify labels however usefully it can —
 rail, junction, cross-boundary, whatever aids diagnosis. It has no effect
@@ -115,11 +122,20 @@ which is precisely the loophole that was exploited.
 
 | # | Metric | Definition | Why it resists gaming |
 |---|---|---|---|
-| M1 | `nonRailLabels` | Count of `schematic_net_label` elements whose text is not in the module's approved `RAIL_NETS` | Pure count. The only escape is the human-owned rail list. |
+| M1 | `nonRailLabels` | Count of `schematic_net_label` elements whose text is not in the module's `RAIL_NETS` | Pure count. The only escape is the reviewed rail list. |
 | M2 | `labelCollisions` | Overlapping label bounding boxes; character width derived from the render | Geometry. No categories involved. |
 | M3 | `wireCrossings` | Proper segment intersections between different traces | Geometry. |
 | M4 | `longHopFraction` | Share of net MST hops longer than `SHORT_SPAN_UNITS` | Geometry. Measures placement, the root cause. |
-| M5 | `areaPerComponent` | Bounding-box area ÷ component count | Bounds sprawl and cramming together. |
+| M5a | `componentAreaPerComponent` | Bounding box of `schematic_component` elements ÷ component count | Placement density specifically. |
+| M5b | `drawingAreaPerComponent` | Bounding box of components **and** traces **and** labels ÷ component count | How sprawling the finished artifact is. |
+
+**M5 was split in revision 2.** The original implementation derived extent
+from label boxes and trace segments only, so a metric named
+`areaPerComponent` could move because label geometry changed while component
+placement did not. That is a methodological error: it did not measure what
+its name claimed. The two numbers must be read together — M5a alone can be
+"improved" by packing components tightly enough to cause collisions, which
+M2 then catches.
 
 **M1 replaces `gratuitousLabels`.** The old metric asked "is this label
 defensible?", which is a judgement, which is where the gaming happened. The
@@ -131,25 +147,33 @@ by what the current drawing happens to contain.
 ## 6. The one judgement input
 
 ```ts
-export const RAIL_NETS: Readonly<Record<string, RailDeclaration>> = {
-  "optical-compressor": {
-    nets: ["CMP_GND", "CMP_VBIAS", "CMP_VBIAS_RAW", "CMP_9V_RAW", "CMP_9V_PROT"],
-    approvedBy: "",        // empty = unapproved = nets are NOT exempt
-    approvedOn: "",
-  },
+export const RAIL_NETS: Readonly<Record<string, readonly string[]>> = {
+  "optical-compressor": [
+    "CMP_GND",
+    "CMP_VBIAS",
+    "CMP_VBIAS_RAW",
+    "CMP_9V_RAW",
+    "CMP_9V_PROT",
+  ],
 }
 ```
 
 Rules:
 
-- Adding a net to `nets` exempts **nothing** until `approvedBy` is filled by
-  a human. An automated author must never populate it.
-- The list is per module and explicit. No suffix matching, no patterns, no
-  inference. Widening it is a visible diff a reviewer must sign.
-- If `approvedBy` is empty, every listed net counts toward M1. The default
-  is strict.
+- Explicit enumeration per module. No suffix matching, no patterns, no
+  inference. Widening the list is a visible diff.
+- `RAIL_NETS` is a **ruler** file under R2, so it cannot be edited in the
+  same commit as a circuit. To exempt a net you must change the ruler in
+  one commit, where the artifact is provably identical, and the effect on
+  the score is therefore attributable.
 
-This is the whole of the judgement surface. Everything else is arithmetic.
+**Revision 2 removed the `approvedBy` / `approvedOn` signature fields.**
+They were theatre. An automated author can write a human's name into a
+string as easily as any other text, so the field proved nothing it claimed
+to prove, and git already records who authored the change. The real control
+is R2 plus review of a small explicit list — procedural, but honestly so,
+rather than a cryptographic-looking field that is not a cryptographic
+control.
 
 ## 7. Thresholds
 
@@ -157,11 +181,20 @@ Set from what a readable drawing requires, not from current measurements.
 
 | Metric | Threshold | Rationale |
 |---|---|---|
-| M1 `nonRailLabels` | **≤ 0.15 × components** | On ~50 components, ~7 labels. Enough for genuine interfaces and forced renderer cases; not enough to express the topology in text. |
+| M1 `nonRailLabels` | **≤ 8 per module** (absolute) | A reader does not gain capacity for more label references because the circuit grew. |
 | M2 `labelCollisions` | **0** | Overlapping text is unreadable by definition. |
 | M3 `wireCrossings` | **≤ 0.15 × components** | Some crossing is unavoidable. |
 | M4 `longHopFraction` | **≤ 0.10** | Most connections should be short enough to read as a line. |
-| M5 `areaPerComponent` | **6 – 30 sq units** | Bounds sprawl and cramming. |
+| M5a `componentAreaPerComponent` | **4 – 20 sq units** | Placement density. |
+| M5b `drawingAreaPerComponent` | **6 – 30 sq units** | Total sprawl. |
+
+**M1 is an absolute budget, not proportional to component count.** The
+first draft proposed `0.15 × components`, which grants a 200-component
+design thirty labels. A reader does not become able to hold thirty
+disconnected references because the circuit is large; if anything,
+label-mediated topology hurts more as a drawing grows. Scaling is supposed
+to be solved by **hierarchy** — decompose into readable blocks and label at
+block boundaries — not by an expanding allowance.
 
 ### Current state against these thresholds
 
@@ -169,11 +202,12 @@ Measured at the time of writing (51 components):
 
 | Metric | Now | Threshold | |
 |---|---|---|---|
-| M1 `nonRailLabels` | **~38** | ≤ 7.6 | ❌ 5× over |
+| M1 `nonRailLabels` | **38** | ≤ 8 | ❌ nearly 5× over |
 | M2 `labelCollisions` | **8** | 0 | ❌ |
 | M3 `wireCrossings` | 2 | ≤ 7.6 | ✅ |
 | M4 `longHopFraction` | **0.23** | ≤ 0.10 | ❌ |
-| M5 `areaPerComponent` | 23.5 | 6–30 | ✅ |
+| M5b `drawingAreaPerComponent` | 23.5 | 6–30 | ✅ |
+| M5a `componentAreaPerComponent` | not yet measured | 4–20 | — |
 
 Three of five fail, one badly. That is the honest starting position.
 
@@ -199,57 +233,108 @@ must be completed before the gate is trusted.
 
 ## 9. Anti-gaming rules
 
-Derived directly from what went wrong.
+Derived directly from what went wrong. R2 is not an "anti-gaming rule" but
+a core design invariant, and is mechanically enforced.
 
 **R1 — Tier 2 may not gate.** Enforced structurally: the assertion function
 takes Tier 1 metrics only. Classification is not in its signature.
 
-**R2 — No rule change in a scoring commit.** A commit that modifies
-`schematic-metrics.ts` or the thresholds may not also change a circuit
-file. Enforceable as a check over the diff, and visible in review either
-way.
+**R2 — A commit may not change both the ruler and the artifact.**
+MECHANICALLY ENFORCED. A pre-push check rejects any commit whose diff
+touches both sets:
 
-**R3 — Ceiling changes must cite a raw improvement.** Lowering a ratchet
-entry requires the commit to state the before/after Tier 1 numbers. Raising
-one is forbidden; a regression is fixed, not accommodated.
-
-**R4 — Thresholds are global, not per module.** A module cannot be given
-its own easier bar. Only the descending ceiling is per module, and only
-downward.
-
-**R5 — The rail list is human-signed.** Section 6.
-
-**R6 — A finding needs two measurements in different circuits** before it
-is written into documentation or relied on for a convention. Section 2,
-Failure 4.
-
-## 10. Enforcement: a descending ceiling with milestones
-
-A plain ratchet satisfies "don't get worse" and permits never getting
-better. Each module therefore carries a ceiling **and a milestone
-schedule**:
-
-```ts
-CEILINGS["optical-compressor"] = {
-  current:   { nonRailLabels: 38, labelCollisions: 8, longHopFraction: 0.23 },
-  milestone: { nonRailLabels: 20, labelCollisions: 4, longHopFraction: 0.15 },
-}
+```
+RULER                                ARTIFACT
+  lib/testing/schematic-metrics.ts     modules/**/*.tsx
+  lib/testing/schematic-standards.ts   lib/chips/**, lib/opto/**,
+  thresholds, RAIL_NETS, baselines     lib/connectors/**, lib/layout.ts
 ```
 
-- Exceeding `current` fails: regression.
-- `current` must be re-measured and lowered whenever the schematic
-  improves; it is a record, not a budget.
-- When `current` reaches `milestone`, the milestone is advanced toward the
-  threshold. The schedule is a commitment recorded in the repo.
-- When `current` reaches the threshold for every metric, the module's
-  ceiling entry is **deleted** and the global threshold applies directly.
+This yields the property that makes the 15 → 11 → 0 episode impossible:
 
-**What "100% green" means under this design.** The suite is green while a
-module is under its ceiling. That is honest, because the report prints the
-distance to the threshold on every run and the milestone forces the gap to
-close. Green means "not regressing and on schedule"; it becomes "compliant"
-only when the ceilings are gone. A permanently red suite gets ignored,
-which is a worse failure than a green one with a printed gap.
+- **Ruler commit** — the artifact is byte-identical, so no improvement can
+  be claimed.
+- **Artifact commit** — the ruler is byte-identical, so success cannot be
+  redefined.
+
+**R3 — Improvement is computed, never asserted.** Baselines are stored, so
+the tooling already knows the before-state. It prints a table and decides;
+it does not read the commit message.
+
+```
+SCHEMATIC READABILITY            BASELINE   CURRENT      Δ
+nonRailLabels                          38        31     -7
+labelCollisions                         8         5     -3
+wireCrossings                           2         2      0
+longHopFraction                      0.23      0.17  -0.06
+componentAreaPerComponent            18.2      15.4   -2.8
+drawingAreaPerComponent              23.5      21.8   -1.7
+RESULT: IMPROVED
+```
+
+**R4 — Thresholds are global.** No module gets an easier bar. Only the
+per-module baseline is local, and only downward.
+
+**R5 — The rail list is explicit and reviewed.** §6.
+
+**R6 — A finding needs two measurements in different circuits** before it
+is written into documentation or relied on for a convention. §2, Failure 4.
+
+**R7 — A readability change must produce the rendered artifact.** §10.
+
+## 10. Enforcement
+
+Three layers, in increasing order of what they actually guarantee.
+
+### 10.1 No regression (mechanical, always on)
+
+Any commit touching artifact files is measured against the stored baseline.
+A Tier 1 metric that worsens fails the build. Because baselines live in a
+ruler file, worsening the schematic requires first raising the baseline in
+a **separate, artifact-identical commit** — which is exactly the kind of
+change a reviewer will notice.
+
+### 10.2 Improvement required of readability work (procedural)
+
+```bash
+bun run readability-improve <base-ref>
+```
+
+Renders at `<base-ref>` and at `HEAD`, computes Tier 1 for both, and
+**fails unless at least one metric improved and none regressed.** It
+computes rather than trusts, per R3.
+
+**This is procedural, not mechanical, and I will not pretend otherwise.**
+Nothing forces an agent to run it, just as nothing forced the previous
+`approvedBy` field to be honest. The reviewer who flagged that signature as
+theatre is right, and the same critique applies here: whoever does the work
+decides whether a change counts as readability work.
+
+What makes it materially stronger than the discarded signature is R2. The
+old loophole was *reclassify, then claim the score moved*. Under R2 a ruler
+change cannot touch the artifact, so a reclassification commit is provably
+incapable of moving the artifact — and an artifact commit is measured
+against a baseline it cannot edit. The remaining gap is a task that quietly
+does nothing, which shows up as a baseline that never descends.
+
+### 10.3 Visible stagnation (reporting)
+
+Every run prints the distance to threshold. A baseline that has not moved
+across a series of commits is visible in the file's history. There is no
+mechanism that compels progress, and the first draft's claim that
+"the schedule is a commitment recorded in the repo" was a sentence
+pretending to be a mechanism. It has been removed.
+
+### What "100% green" means
+
+Green means: **no Tier 1 regression against the stored baseline, and every
+falsifiability test passing.** It does *not* mean compliant. Compliance is
+when every baseline equals or beats the global threshold and the per-module
+baselines are deleted.
+
+The report prints the gap on every run so the difference is never
+ambiguous. A permanently red suite gets ignored, which is a worse failure
+than a green one that states its own distance from the goal.
 
 ## 11. Route to a genuinely compliant schematic
 
@@ -273,8 +358,26 @@ count for label width.
 **Phase 4 — retire the ceilings.** When all five metrics meet the
 threshold, delete the module's entry.
 
-Each phase is its own commit with before/after Tier 1 numbers in the
-message, per R3.
+Each phase is its own commit, and per R2 none of them may touch the ruler.
+The before/after table is computed by the tooling (R3), not written by hand.
+
+**Every phase must also produce the rendered schematic** as an artifact for
+human review (R7). The machine answers *did the measurable pathologies
+improve?*; only a person answers *is this becoming a drawing I can use?*
+This matters because §12 admits the five metrics may be incomplete — a
+change can improve all of them and still produce something unreadable, and
+the only detector for that is a human looking at the picture.
+
+**A note on M1 = 8 and what it commits us to.** This module has five
+genuine external interface nets — IN, OUT, MAKEUP_OUT, PEAK_WIPER,
+GAIN_FB — and each appears at two or three points, so interface labels
+alone plausibly account for 12–15. Reaching 8 by placement and wiring
+alone may therefore be impossible; it likely requires the hierarchical
+decomposition that justifies an absolute budget in the first place. That
+is a larger commitment than "tidy the placement", and it should be entered
+into deliberately rather than discovered at Phase 4. If it proves
+unreachable, §12's falsification clause applies: re-derive the threshold
+from evidence, do not relax it to fit.
 
 ## 12. What would falsify this design
 
@@ -290,13 +393,24 @@ Stated so it can be judged rather than admired:
   tractable, then "rail" is doing work it should not, and the exemption
   model needs rethinking.
 
-## 13. Open questions for review
+## 13. Questions resolved in revision 2
 
-1. Is `0.15 × components` the right M1 budget? It is derived from judgement
-   about what a reader can hold, not from measurement, and it is the number
-   most likely to be wrong.
-2. Should `junction` labels count toward M1? Under this design they do. The
-   collision evidence for treating junctions differently was real, but
-   Failure 2 is a strong argument against letting that become an exemption.
-3. Should R2 be mechanically enforced (a check that rejects a commit
-   touching both metrics and circuits) or left to review?
+| Question | Resolution |
+|---|---|
+| Is `0.15 × components` the right M1 budget? | **No.** Replaced with an absolute per-module budget of 8. A reader does not gain capacity because the circuit grew; scaling is hierarchy's job. |
+| Should `junction` labels count toward M1? | **Yes.** They are diagnosed in Tier 2 and counted in Tier 1. Exempting them would immediately recreate the escape hatch that caused this redesign. |
+| Should R2 be mechanically enforced? | **Yes**, and promoted from anti-gaming rule to core invariant. It is the highest-value control here because it makes the specific observed failure structurally impossible. |
+
+## 14. Remaining open questions
+
+1. **Is 8 the right absolute budget?** It is still a judgement, and §11
+   argues it may be unreachable without hierarchy. It is the number most
+   likely to be wrong, and the one whose failure mode is most expensive
+   (it forces a decomposition).
+2. **Does the improvement check need a stronger trigger?** §10.2 is honest
+   that it is procedural. An alternative is to require it for any commit
+   touching artifact files, with opt-out as a visible marker — stricter,
+   but it penalises functional changes that are not about readability.
+3. **Is M5a's floor right?** Packing components tightly improves M5a and
+   worsens M2. The two are intended as a counterweighted pair, but the
+   specific numbers are untested.
