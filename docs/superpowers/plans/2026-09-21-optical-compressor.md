@@ -22,6 +22,7 @@ These apply to **every** task. Do not restate them per-task; do not violate them
 - **Schematic layout uses `createGrid()` from `lib/layout.ts`** with explicit `schX`/`schY`. Signal flows left→right; power above, ground/sidechain below. `schFlex` does not work for schematics.
 - **Named nets, not auto-generated pin concatenations.** Declare `<net name={...} />` and route through it.
 - **Never add AI attribution to commit messages.** No `Co-Authored-By`, no session links, no generated-with footer.
+- **Every part and module test must call `expectNoFailedComponents`.** An invalid footprint makes a component fail SILENTLY — absent from circuit JSON, one `source_failed_to_create_component_error` element, no exception thrown. A test can pass green while a component is missing. Measured: of the footprints this project uses, only `do214ab` was invalid, but the guard must be present so a future bad footprint cannot slip through. It matches that error type SPECIFICALLY — PCB autorouter errors are expected at this stage and must not trip it.
 - **Test design:** assert on *connectivity, component values, and footprints*. Never assert on `schX`/`schY` coordinates — layout is presentation and those assertions are brittle. Every part test must also assert zero floating pins.
 
 ### Component values (from spec revision 3 — use these exactly)
@@ -105,6 +106,7 @@ Everything downstream asserts through these. Build them first and test the helpe
   - `expectNoFloatingPins(elements, allowed?: string[]): void`
   - `findComponent(elements, name): SourceComponent | undefined`
   - `findNet(elements, name): SourceNet | undefined` (used by Task 4)
+  - `expectNoFailedComponents(elements): void` — throws if any component failed to be created
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1007,7 +1009,7 @@ export const PowerSection = (props: PowerSectionProps) => {
       {/* --- Reverse-polarity protection and reservoir --- */}
       <diode
         name={`${name}_D_PROT`}
-        footprint="do214ab"
+        footprint="sma"
         pcbX={pcbX - 20}
         pcbY={pcbY}
         {...g.signal(-4)}
@@ -1148,7 +1150,9 @@ bun test modules/optical-compressor/parts/PowerSection.test.tsx
 bun run typecheck
 ```
 
-Expected: 5 pass, 0 fail; typecheck clean. If a test fails on `do214ab` or another footprint name, run `tsci search "1N5817"` to find a valid footprint and update both the code and this plan.
+Expected: 5 pass, 0 fail; typecheck clean.
+
+The Schottky uses `footprint="sma"`. The originally-planned `do214ab` is NOT a valid tscircuit footprinter string and, critically, an invalid footprint does not throw — the component is silently absent from circuit JSON. `sma`, `sot23`, `dip4`, `dip8`, `soic8`, `0805`, `1206` and `pinrow1/2/3` were all verified valid by measurement.
 
 - [ ] **Step 5: Commit**
 
@@ -2012,7 +2016,7 @@ bun run typecheck
 
 Expected: 10 pass, 0 fail; typecheck clean.
 
-If a test fails on the `sot23` or `do214ab` footprint name, run `bunx tsci search` for the part to find a valid one and update the code.
+`sot23` and `0805` were both verified valid by measurement, so no footprint substitution is expected here. If any component goes missing from circuit JSON without an exception, an invalid footprint is the cause — that is what `expectNoFailedComponents` catches.
 
 - [ ] **Step 5: Commit**
 
