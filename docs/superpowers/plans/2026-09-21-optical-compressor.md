@@ -1527,7 +1527,7 @@ Sidechain amplifier passives, half-wave detector, degenerated LED driver, curren
 - Create: `modules/optical-compressor/parts/Sidechain.test.tsx`
 
 **Interfaces:**
-- Consumes: `TestPoint`, `createGrid`; references `${name}_U2` (PowerSection) and `${name}_VACTROL` (AudioPath) by name; joins nets `${name}_MAKEUP_OUT`, `${name}_VBIAS`, `${name}_9V_PROT`, `${name}_GND`
+- Consumes: `TestPoint`, `createGrid`; references `${name}_U2` (PowerSection) and `${name}_VACTROL` (AudioPath) by name; joins nets `${name}_VBIAS`, `${name}_9V_PROT`, `${name}_GND`. It does NOT touch `${name}_MAKEUP_OUT` — the PEAK REDUCTION pot is external and only its wiper enters this part.
 - Produces:
   - `SidechainProps = { name: string; detectorCapacitance?: string; releaseResistance?: string; ledResistance?: string; emitterResistance?: string; sidechainGainResistance?: string; sidechainBiasResistance?: string; sidechainCouplingCap?: string; schX?; schY?; pcbX?; pcbY? }`
   - `Sidechain: (props: SidechainProps) => JSX.Element`
