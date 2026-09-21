@@ -3,6 +3,7 @@ import {
   renderCircuit,
   expectConnected,
   expectComponentValue,
+  expectNoFailedComponents,
   findNet,
 } from "../../../lib/testing/circuit-assertions.ts"
 import { PowerSection } from "./PowerSection.tsx"
@@ -25,6 +26,12 @@ const render = () =>
 
 test("reverse-polarity diode sits between raw and protected rails", async () => {
   const el = await render()
+  // Guards against a component silently failing to be created (e.g. an
+  // invalid footprinter string) - such a component is simply absent from
+  // circuit JSON with no thrown exception, so it must be checked for
+  // explicitly rather than relying on a by-name assertion to happen to
+  // catch it.
+  expectNoFailedComponents(el)
   expectConnected(el, "CMP_D_PROT.anode", "CMP_C_BULK.pin1")
   // Schottky cathode feeds the protected rail, not the raw input.
   expectConnected(el, "CMP_D_PROT.cathode", "CMP_C_HF.pin1")

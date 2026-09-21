@@ -37,6 +37,19 @@ export interface SourceNet extends CircuitElement {
   readonly name: string
 }
 
+/**
+ * Emitted when tscircuit fails to construct a component at all (e.g. an
+ * invalid footprinter string). No exception is thrown for this - the
+ * component is simply absent from the rest of the circuit JSON, so a test
+ * that never asserts on that component by name would otherwise pass green
+ * with the part silently missing.
+ */
+export interface SourceFailedToCreateComponentError extends CircuitElement {
+  readonly type: "source_failed_to_create_component_error"
+  readonly component_name?: string
+  readonly message?: string
+}
+
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null
 
@@ -51,6 +64,11 @@ const isSourcePort = (e: CircuitElement): e is SourcePort =>
 
 const isSourceNet = (e: CircuitElement): e is SourceNet =>
   e.type === "source_net" && isRecord(e) && typeof e.name === "string"
+
+const isSourceFailedToCreateComponentError = (
+  e: CircuitElement,
+): e is SourceFailedToCreateComponentError =>
+  e.type === "source_failed_to_create_component_error"
 
 /** Render a circuit to settled circuit JSON. */
 export async function renderCircuit(
@@ -224,4 +242,30 @@ export function expectNoFloatingPins(
   if (floating.length > 0) {
     throw new Error(`Floating pins: ${floating.join(", ")}`)
   }
+}
+
+/**
+ * Assert that tscircuit did not silently fail to construct a component
+ * (type `source_failed_to_create_component_error`, e.g. an invalid
+ * footprinter string). This is deliberately scoped to that exact error
+ * type: other element types that happen to contain "error" in their name
+ * - such as the PCB capacity-mesh autorouter's non-fatal via-routing
+ * errors - are expected at this stage (PCB layout is deferred until after
+ * bench validation) and must NOT trip this assertion.
+ */
+export function expectNoFailedComponents(
+  elements: readonly CircuitElement[],
+): void {
+  const failures = elements.filter(isSourceFailedToCreateComponentError)
+  if (failures.length === 0) return
+
+  const details = failures.map((f) => {
+    const name = f.component_name ?? "<unknown component>"
+    const message = f.message ?? "<no message>"
+    return `${name}: ${message}`
+  })
+
+  throw new Error(
+    `${failures.length} component(s) failed to be created: ${details.join("; ")}`,
+  )
 }
