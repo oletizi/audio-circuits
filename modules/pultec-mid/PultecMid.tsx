@@ -37,14 +37,18 @@ export interface PultecMidProps {
   schY?: number
 }
 
-/** Written the way tscircuit wants them; 450mH rather than 0.45H so the value
- * parses without a decimal point in the middle of a unit. */
+/** Written in henries with a decimal point, NOT as millihenries. tscircuit
+ * drops the milli prefix when it formats a value for display: `450mH` renders
+ * on the schematic as "450H", a thousand times the real part, while `0.45H`
+ * renders correctly as "450mH". Both parse to the same number, so the netlist
+ * and the simulation cannot tell them apart — only the drawing, and anything
+ * derived from it, can. See `reference/pultec/unresolved.md`. */
 const MID_INDUCTANCES: Readonly<Record<string, string>> = {
   "2H": "2H",
   "1H": "1H",
-  "0R45H": "450mH",
-  "0R22H": "220mH",
-  "0R1H": "100mH",
+  "0R45H": "0.45H",
+  "0R22H": "0.22H",
+  "0R1H": "0.1H",
 }
 
 /** A tap with no inductance here is a part nobody can buy or fit, so say so

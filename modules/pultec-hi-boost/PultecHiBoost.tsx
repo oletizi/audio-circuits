@@ -52,10 +52,23 @@ const POSITIONS: readonly (readonly [string, string, readonly (readonly [string,
   ["16kHz", "100mH", [["C35", "1nF"]]],
 ]
 
-/** The taps, named for the inductance fitted at each — the label IS the value,
- * which is why one array serves both the net names and the parts. Six positions
- * share four inductors: 4k and 5k both want 0.3H, 10k and 16k both want 0.1H. */
-const TAPS: readonly string[] = ["600mH", "300mH", "200mH", "100mH"]
+/** Tap label, and the inductance fitted there. Six positions share four
+ * inductors: 4k and 5k both want 0.3H, 10k and 16k both want 0.1H.
+ *
+ * The two columns look redundant and are not. The label names nets and parts,
+ * and must stay stable. The value is written in henries with a decimal point
+ * because tscircuit drops the milli prefix when it formats a value for display:
+ * `300mH` renders on the schematic as "300H", a thousand times the real part,
+ * while `0.3H` renders correctly as "300mH". Both parse to the same number, so
+ * only the drawing and anything derived from it sees the difference. See
+ * `reference/pultec/unresolved.md`.
+ */
+const TAPS: readonly (readonly [string, string])[] = [
+  ["600mH", "0.6H"],
+  ["300mH", "0.3H"],
+  ["200mH", "0.2H"],
+  ["100mH", "0.1H"],
+]
 
 export const PultecHiBoost = (props: PultecHiBoostProps) => {
   const { name, schX = 0, schY = 0 } = props
@@ -68,7 +81,7 @@ export const PultecHiBoost = (props: PultecHiBoostProps) => {
     <group name={name}>
       <net name={coilTopNet} />
       <net name={qmaxOutNet} />
-      {TAPS.map(tap => (
+      {TAPS.map(([tap]) => (
         <Fragment key={`tap-${tap}`}>
           <net name={`${name}_TAP_${tap}`} />
         </Fragment>
@@ -105,11 +118,11 @@ export const PultecHiBoost = (props: PultecHiBoostProps) => {
       <trace from={`.${name}_R3 > .pin1`} to={`net.${coilTopNet}`} />
       <trace from={`.${name}_R3 > .pin2`} to={`net.${qmaxOutNet}`} />
 
-      {TAPS.map((tap, index) => (
+      {TAPS.map(([tap, inductance], index) => (
         <Fragment key={`L-${tap}`}>
           <inductor
             name={`${name}_L_${tap}`}
-            inductance={tap}
+            inductance={inductance}
             footprint="0805"
             {...g.below(index - 2, 3)}
           />

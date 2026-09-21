@@ -5,7 +5,7 @@ import { toLabelledNetwork, netGroups } from "../../lib/export/circuit-json.ts"
 import { assertSameTopology } from "../../lib/passives/topology.ts"
 import { boardNetwork } from "../../reference/pultec/partition.ts"
 import { COMPOSED_MAPPING, COMPOSED_PREFIX } from "./composed-mapping.ts"
-import { overlappingComponents } from "./schematic-overlap.ts"
+import { overlappingComponents, misprintedValues } from "./schematic-overlap.ts"
 import type { ExportMapping } from "../../lib/export/circuit-json.ts"
 import type { PassiveNetwork } from "../../lib/passives/topology.ts"
 
@@ -109,4 +109,13 @@ test("no two components are drawn at the same spot", () => {
   // collision is invisible to every topology and value assertion above,
   // because the netlist is correct either way.
   expect(overlappingComponents(render())).toEqual([])
+})
+
+test("every printed value matches the value the part actually carries", () => {
+  // tscircuit formats the display string separately from the simulated value,
+  // and they can disagree: an inductor written `300mH` simulates as 0.3H and
+  // prints "300H". Every other value assertion here reads the simulated side,
+  // so nothing else in this suite can see it -- and the printed side is what a
+  // reader orders parts from.
+  expect(misprintedValues(render())).toEqual([])
 })

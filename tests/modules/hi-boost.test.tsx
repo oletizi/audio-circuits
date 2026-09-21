@@ -4,7 +4,7 @@ import { PultecHiBoost } from "../../modules/pultec-hi-boost/PultecHiBoost.tsx"
 import { toLabelledNetwork } from "../../lib/export/circuit-json.ts"
 import { assertSameTopology } from "../../lib/passives/topology.ts"
 import { boardNetwork } from "../../reference/pultec/partition.ts"
-import { overlappingComponents } from "./schematic-overlap.ts"
+import { overlappingComponents, misprintedValues } from "./schematic-overlap.ts"
 import type { ExportMapping } from "../../lib/export/circuit-json.ts"
 
 const MAPPING: ExportMapping = {
@@ -104,4 +104,13 @@ test("four inductors serve six positions", () => {
     expect(Object.values(inductor.pins)).toContain("j19_p1")
     expect(Object.values(inductor.pins)).not.toContain("0")
   }
+})
+
+test("every printed value matches the value the part actually carries", () => {
+  // tscircuit formats the display string separately from the simulated value,
+  // and they can disagree: an inductor written `300mH` simulates as 0.3H and
+  // prints "300H". Every other value assertion here reads the simulated side,
+  // so nothing else in this suite can see it -- and the printed side is what a
+  // reader orders parts from.
+  expect(misprintedValues(render())).toEqual([])
 })
