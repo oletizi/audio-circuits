@@ -57,6 +57,7 @@ export const AudioPath = (props: AudioPathProps) => {
     <group>
       <net name={`${name}_IN`} />
       <net name={`${name}_IN_BUF`} />
+      <net name={`${name}_BUF_OUT`} />
       <net name={`${name}_GR`} />
       <net name={`${name}_MAKEUP_OUT`} />
       <net name={`${name}_GAIN_FB`} />
@@ -186,11 +187,14 @@ export const AudioPath = (props: AudioPathProps) => {
       <trace from={`.${name}_U1 > .INA_P`} to={`net.${name}_IN_BUF`} />
       <trace from={`.${name}_TP_IN_BUF > .TP`} to={`net.${name}_IN_BUF`} />
 
-      {/* === U1 section A: unity-gain buffer === */}
-      <trace from={`.${name}_U1 > .OUTA`} to={`.${name}_U1 > .INA_N`} />
+      {/* === U1 section A: unity-gain buffer ===
+          BUF_OUT is the buffer's output, its own unity-gain feedback node,
+          and the attenuator's input - all three land on one named net. */}
+      <trace from={`.${name}_U1 > .OUTA`} to={`net.${name}_BUF_OUT`} />
+      <trace from={`.${name}_U1 > .INA_N`} to={`net.${name}_BUF_OUT`} />
 
       {/* === Attenuator: buffer -> R_SHUNT -> GR node, LDR shunts to VBIAS === */}
-      <trace from={`.${name}_U1 > .OUTA`} to={`.${name}_R_SHUNT > .pin1`} />
+      <trace from={`.${name}_R_SHUNT > .pin1`} to={`net.${name}_BUF_OUT`} />
       <trace from={`.${name}_R_SHUNT > .pin2`} to={`net.${name}_GR`} />
       <trace from={`.${name}_VACTROL > .LDR_1`} to={`net.${name}_GR`} />
       <trace from={`.${name}_VACTROL > .LDR_2`} to={`net.${name}_VBIAS`} />

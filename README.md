@@ -136,6 +136,8 @@ export default () => (
 | `ScrewTerminal6` | 6-position terminal | P1-P6 |
 | `MonoJack` | Mono audio jack | TIP, SLEEVE |
 | `StereoJack` | Stereo audio jack | TIP, RING, SLEEVE |
+| `TestPoint` | Single-pin bench probe point | TP |
+| `PotTerminal` | 3-position panel potentiometer terminal | TOP, WIPER, BOTTOM |
 
 ### Optical (`lib/opto/`)
 

@@ -47,6 +47,13 @@ test("input buffer is unity gain", async () => {
   expectConnected(el, "CMP_U1.OUTA", "CMP_U1.INA_N")
 })
 
+test("U1 supply is decoupled with 100nF", async () => {
+  const el = await render()
+  expectComponentValue(el, "CMP_C_U1_DEC", "capacitance", 100e-9)
+  expectConnected(el, "CMP_C_U1_DEC.pin1", "CMP_U1.VCC")
+  expectConnected(el, "CMP_C_U1_DEC.pin2", "CMP_U1.GND")
+})
+
 test("attenuator is R_SHUNT in series with the LDR shunting to VBIAS", async () => {
   const el = await render()
   expectComponentValue(el, "CMP_R_SHUNT", "resistance", 22_000)

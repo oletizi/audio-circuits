@@ -44,6 +44,12 @@ test("reverse-polarity diode sits between raw and protected rails", async () => 
   expectNotConnected(el, "CMP_D_PROT.anode", "CMP_C_BULK.pin1")
   // Schottky cathode feeds the protected rail, not the raw input.
   expectConnected(el, "CMP_D_PROT.cathode", "CMP_C_HF.pin1")
+  // Values are unguarded elsewhere: a silent change from 47uF to 47nF
+  // would remove the bulk reservoir while every connectivity assertion
+  // still passes.
+  expectComponentValue(el, "CMP_C_BULK", "capacitance", 47e-6)
+  expectComponentValue(el, "CMP_C_HF", "capacitance", 100e-9)
+  expectComponentValue(el, "CMP_C_BIAS_HF", "capacitance", 100e-9)
 })
 
 test("bias divider is two 47k resistors to a buffered midpoint", async () => {

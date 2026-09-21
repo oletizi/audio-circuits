@@ -65,11 +65,15 @@ export const Sidechain = (props: SidechainProps) => {
   return (
     <group>
       <net name={`${name}_PEAK_WIPER`} />
+      <net name={`${name}_SC_INV`} />
       <net name={`${name}_SC_OUT`} />
+      <net name={`${name}_DET_IN`} />
       <net name={`${name}_DET`} />
       <net name={`${name}_LED_A`} />
       <net name={`${name}_LED_SENSE`} />
       <net name={`${name}_EMITTER`} />
+      <net name={`${name}_BASE`} />
+      <net name={`${name}_COLL`} />
 
       {/* --- PEAK REDUCTION interface ---
           The pot itself is external: its TOP connects to MAKEUP_OUT and its
@@ -255,18 +259,22 @@ export const Sidechain = (props: SidechainProps) => {
       <trace from={`.${name}_R_PEAK_FAIL > .pin2`} to={`net.${name}_VBIAS`} />
       <trace from={`.${name}_U2 > .INA_P`} to={`net.${name}_PEAK_WIPER`} />
 
-      {/* === U2 section A: non-inverting, gain 1 + 100k/10k === */}
-      <trace from={`.${name}_R_SC_G > .pin1`} to={`.${name}_U2 > .INA_N`} />
+      {/* === U2 section A: non-inverting, gain 1 + 100k/10k ===
+          SC_INV is the inverting summing node - R_SC_G, R_SC_F, the
+          probe pad and U2.INA_N itself all land on one named net. */}
+      <trace from={`.${name}_R_SC_G > .pin1`} to={`net.${name}_SC_INV`} />
       <trace from={`.${name}_R_SC_G > .pin2`} to={`net.${name}_VBIAS`} />
-      <trace from={`.${name}_R_SC_F > .pin1`} to={`.${name}_U2 > .INA_N`} />
+      <trace from={`.${name}_R_SC_F > .pin1`} to={`net.${name}_SC_INV`} />
       <trace from={`.${name}_R_SC_F > .pin2`} to={`net.${name}_SC_OUT`} />
       <trace from={`.${name}_U2 > .OUTA`} to={`net.${name}_SC_OUT`} />
       <trace from={`.${name}_TP_SC_OUT > .TP`} to={`net.${name}_SC_OUT`} />
-      <trace from={`.${name}_TP_SC_INV > .TP`} to={`.${name}_U2 > .INA_N`} />
+      <trace from={`.${name}_U2 > .INA_N`} to={`net.${name}_SC_INV`} />
+      <trace from={`.${name}_TP_SC_INV > .TP`} to={`net.${name}_SC_INV`} />
 
       {/* === Detector: AC couple, half-wave rectify, store === */}
       <trace from={`.${name}_C_SC > .pin1`} to={`net.${name}_SC_OUT`} />
-      <trace from={`.${name}_C_SC > .pin2`} to={`.${name}_D_DET > .anode`} />
+      <trace from={`.${name}_C_SC > .pin2`} to={`net.${name}_DET_IN`} />
+      <trace from={`.${name}_D_DET > .anode`} to={`net.${name}_DET_IN`} />
       <trace from={`.${name}_D_DET > .cathode`} to={`net.${name}_DET`} />
       <trace from={`.${name}_C_DET > .pin1`} to={`net.${name}_DET`} />
       <trace from={`.${name}_C_DET > .pin2`} to={`net.${name}_GND`} />
@@ -274,11 +282,14 @@ export const Sidechain = (props: SidechainProps) => {
       <trace from={`.${name}_R_REL > .pin2`} to={`net.${name}_GND`} />
       <trace from={`.${name}_TP_DET > .TP`} to={`net.${name}_DET`} />
 
-      {/* === Base drive === */}
+      {/* === Base drive ===
+          BASE is the driver base node - R_B, R_B_PD and Q_LED.base itself
+          all land on one named net. */}
       <trace from={`.${name}_R_B > .pin1`} to={`net.${name}_DET`} />
-      <trace from={`.${name}_R_B > .pin2`} to={`.${name}_Q_LED > .base`} />
-      <trace from={`.${name}_R_B_PD > .pin1`} to={`.${name}_Q_LED > .base`} />
+      <trace from={`.${name}_R_B > .pin2`} to={`net.${name}_BASE`} />
+      <trace from={`.${name}_R_B_PD > .pin1`} to={`net.${name}_BASE`} />
       <trace from={`.${name}_R_B_PD > .pin2`} to={`net.${name}_GND`} />
+      <trace from={`.${name}_Q_LED > .base`} to={`net.${name}_BASE`} />
 
       {/* === Emitter degeneration (revision 3) === */}
       <trace from={`.${name}_Q_LED > .emitter`} to={`net.${name}_EMITTER`} />
@@ -294,20 +305,17 @@ export const Sidechain = (props: SidechainProps) => {
         to={`net.${name}_LED_SENSE`}
       />
       <trace from={`.${name}_R_SENSE > .pin1`} to={`net.${name}_LED_SENSE`} />
-      <trace
-        from={`.${name}_R_SENSE > .pin2`}
-        to={`.${name}_Q_LED > .collector`}
-      />
+      {/* COLL is the driver collector node - R_SENSE, TP_SENSE_LO and
+          Q_LED.collector itself all land on one named net. */}
+      <trace from={`.${name}_R_SENSE > .pin2`} to={`net.${name}_COLL`} />
+      <trace from={`.${name}_Q_LED > .collector`} to={`net.${name}_COLL`} />
 
       {/* === Sense test points, so LED current is measurable in circuit === */}
       <trace
         from={`.${name}_TP_SENSE_HI > .TP`}
         to={`net.${name}_LED_SENSE`}
       />
-      <trace
-        from={`.${name}_TP_SENSE_LO > .TP`}
-        to={`.${name}_Q_LED > .collector`}
-      />
+      <trace from={`.${name}_TP_SENSE_LO > .TP`} to={`net.${name}_COLL`} />
 
       {/* === Rail reference test points === */}
       <trace from={`.${name}_TP_VBIAS_SC > .TP`} to={`net.${name}_VBIAS`} />
