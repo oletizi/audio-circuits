@@ -17,7 +17,8 @@
     "start": "tsci dev",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "schematic-check": "bun test lib/testing/schematic-tier1.test.tsx modules/optical-compressor/OpticalCompressor.test.tsx modules/opamp-buffer/OpampBuffer.test.tsx"
+    "schematic-check": "bun test lib/testing/schematic-tier1.test.tsx modules/optical-compressor/OpticalCompressor.test.tsx modules/opamp-buffer/OpampBuffer.test.tsx",
+    "check-r2": "bun scripts/check-r2.ts"
   },
   "devDependencies": {
     "tscircuit": "latest",
