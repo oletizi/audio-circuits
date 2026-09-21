@@ -1,0 +1,225 @@
+/**
+ * Test helpers for asserting on rendered tscircuit output.
+ *
+ * Electrical connectivity is read from `subcircuit_connectivity_map_key` on
+ * source ports: ports sharing a key are on the same net, whether they were
+ * joined by a direct trace or through a named net. A port with no key is
+ * floating.
+ */
+
+import type { ReactElement } from "react"
+import { RootCircuit } from "tscircuit"
+
+export interface CircuitElement {
+  readonly type: string
+}
+
+export interface SourceComponent extends CircuitElement {
+  readonly type: "source_component"
+  readonly source_component_id: string
+  readonly name: string
+  readonly ftype?: string
+  readonly resistance?: number
+  readonly capacitance?: number
+}
+
+export interface SourcePort extends CircuitElement {
+  readonly type: "source_port"
+  readonly source_port_id: string
+  readonly source_component_id: string
+  readonly name: string
+  readonly port_hints?: readonly string[]
+  readonly subcircuit_connectivity_map_key?: string
+}
+
+export interface SourceNet extends CircuitElement {
+  readonly type: "source_net"
+  readonly name: string
+}
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null
+
+const isCircuitElement = (v: unknown): v is CircuitElement =>
+  isRecord(v) && typeof v.type === "string"
+
+const isSourceComponent = (e: CircuitElement): e is SourceComponent =>
+  e.type === "source_component" &&
+  typeof (e as Record<string, unknown>).name === "string"
+
+const isSourcePort = (e: CircuitElement): e is SourcePort =>
+  e.type === "source_port" &&
+  typeof (e as Record<string, unknown>).name === "string"
+
+const isSourceNet = (e: CircuitElement): e is SourceNet =>
+  e.type === "source_net" &&
+  typeof (e as Record<string, unknown>).name === "string"
+
+/** Render a circuit to settled circuit JSON. */
+export async function renderCircuit(
+  element: ReactElement,
+): Promise<CircuitElement[]> {
+  const circuit = new RootCircuit()
+  circuit.add(element)
+  await circuit.renderUntilSettled()
+  const json: unknown = circuit.getCircuitJson()
+  if (!Array.isArray(json)) {
+    throw new Error("getCircuitJson() did not return an array")
+  }
+  return json.filter(isCircuitElement)
+}
+
+export function findComponent(
+  elements: readonly CircuitElement[],
+  name: string,
+): SourceComponent | undefined {
+  return elements.filter(isSourceComponent).find((c) => c.name === name)
+}
+
+export function findNet(
+  elements: readonly CircuitElement[],
+  name: string,
+): SourceNet | undefined {
+  return elements.filter(isSourceNet).find((n) => n.name === name)
+}
+
+function portsOf(
+  elements: readonly CircuitElement[],
+  component: SourceComponent,
+): SourcePort[] {
+  return elements
+    .filter(isSourcePort)
+    .filter((p) => p.source_component_id === component.source_component_id)
+}
+
+function findPort(
+  elements: readonly CircuitElement[],
+  componentName: string,
+  pin: string,
+): SourcePort {
+  const component = findComponent(elements, componentName)
+  if (!component) {
+    throw new Error(
+      `No component named "${componentName}". Present: ${elements
+        .filter(isSourceComponent)
+        .map((c) => c.name)
+        .join(", ")}`,
+    )
+  }
+  const ports = portsOf(elements, component)
+  const port = ports.find(
+    (p) => p.name === pin || (p.port_hints ?? []).includes(pin),
+  )
+  if (!port) {
+    throw new Error(
+      `Component "${componentName}" has no pin "${pin}". Pins: ${ports
+        .map((p) => p.name)
+        .join(", ")}`,
+    )
+  }
+  return port
+}
+
+/** Endpoint string "R1.pin2" or "Q1.emitter" -> [component, pin]. */
+function splitEndpoint(endpoint: string): [string, string] {
+  const dot = endpoint.lastIndexOf(".")
+  if (dot < 1 || dot === endpoint.length - 1) {
+    throw new Error(
+      `Endpoint "${endpoint}" must be of the form "COMPONENT.pin"`,
+    )
+  }
+  return [endpoint.slice(0, dot), endpoint.slice(dot + 1)]
+}
+
+/** The connectivity key for a pin, or undefined if the pin is floating. */
+export function netKeyOf(
+  elements: readonly CircuitElement[],
+  componentName: string,
+  pin: string,
+): string | undefined {
+  return findPort(elements, componentName, pin).subcircuit_connectivity_map_key
+}
+
+export function expectConnected(
+  elements: readonly CircuitElement[],
+  a: string,
+  b: string,
+): void {
+  const [aComp, aPin] = splitEndpoint(a)
+  const [bComp, bPin] = splitEndpoint(b)
+  const aKey = netKeyOf(elements, aComp, aPin)
+  const bKey = netKeyOf(elements, bComp, bPin)
+  if (aKey === undefined) throw new Error(`${a} is floating (no net)`)
+  if (bKey === undefined) throw new Error(`${b} is floating (no net)`)
+  if (aKey !== bKey) {
+    throw new Error(
+      `${a} and ${b} are on different nets (${aKey} vs ${bKey})`,
+    )
+  }
+}
+
+export function expectNotConnected(
+  elements: readonly CircuitElement[],
+  a: string,
+  b: string,
+): void {
+  const [aComp, aPin] = splitEndpoint(a)
+  const [bComp, bPin] = splitEndpoint(b)
+  const aKey = netKeyOf(elements, aComp, aPin)
+  const bKey = netKeyOf(elements, bComp, bPin)
+  if (aKey !== undefined && aKey === bKey) {
+    throw new Error(`${a} and ${b} are unexpectedly connected (${aKey})`)
+  }
+}
+
+export function expectComponentValue(
+  elements: readonly CircuitElement[],
+  name: string,
+  field: "resistance" | "capacitance",
+  expected: number,
+): void {
+  const component = findComponent(elements, name)
+  if (!component) throw new Error(`No component named "${name}"`)
+  const actual = component[field]
+  if (actual === undefined) {
+    throw new Error(`Component "${name}" has no ${field}`)
+  }
+  // Relative tolerance absorbs float representation of values like 4.7µF.
+  const tolerance = Math.abs(expected) * 1e-6
+  if (Math.abs(actual - expected) > tolerance) {
+    throw new Error(
+      `Component "${name}" ${field} is ${actual}, expected ${expected}`,
+    )
+  }
+}
+
+/**
+ * Assert no pin is left unconnected.
+ *
+ * `allowed` lists endpoints ("U1.INB_N") that are deliberately unconnected.
+ * Keep it short — a long allowlist usually means real wiring is missing.
+ */
+export function expectNoFloatingPins(
+  elements: readonly CircuitElement[],
+  allowed: readonly string[] = [],
+): void {
+  const allowedSet = new Set(allowed)
+  const floating: string[] = []
+
+  for (const component of elements.filter(isSourceComponent)) {
+    for (const port of portsOf(elements, component)) {
+      if (port.subcircuit_connectivity_map_key !== undefined) continue
+      const endpoint = `${component.name}.${port.name}`
+      const hintEndpoints = (port.port_hints ?? []).map(
+        (h) => `${component.name}.${h}`,
+      )
+      const isAllowed =
+        allowedSet.has(endpoint) || hintEndpoints.some((h) => allowedSet.has(h))
+      if (!isAllowed) floating.push(endpoint)
+    }
+  }
+
+  if (floating.length > 0) {
+    throw new Error(`Floating pins: ${floating.join(", ")}`)
+  }
+}

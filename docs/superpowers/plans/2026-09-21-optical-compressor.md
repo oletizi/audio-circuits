@@ -1499,7 +1499,9 @@ Sidechain amplifier passives, half-wave detector, degenerated LED driver, curren
 - Produces:
   - `SidechainProps = { name: string; detectorCapacitance?: string; releaseResistance?: string; ledResistance?: string; emitterResistance?: string; sidechainGainResistance?: string; sidechainBiasResistance?: string; sidechainCouplingCap?: string; schX?; schY?; pcbX?; pcbY? }`
   - `Sidechain: (props: SidechainProps) => JSX.Element`
-  - Nets: `${name}_PEAK_TOP`, `${name}_PEAK_WIPER`, `${name}_SC_OUT`, `${name}_DET`, `${name}_LED_K`, `${name}_LED_SENSE`, `${name}_EMITTER`
+  - Nets: `${name}_PEAK_WIPER`, `${name}_SC_OUT`, `${name}_DET`, `${name}_LED_A`, `${name}_LED_SENSE`, `${name}_EMITTER`
+
+The PEAK REDUCTION pot is external and three-terminal: its TOP and BOTTOM land on `MAKEUP_OUT` and `VBIAS` at the `J_PEAK` connector in Task 7. Only the wiper enters this part, so Sidechain declares no pot-top net of its own.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1528,7 +1530,6 @@ const render = () =>
       <net name="CMP_9V_PROT" />
       <net name="CMP_VBIAS" />
       <net name="CMP_GND" />
-      <net name="CMP_MAKEUP_OUT" />
       <trace from=".CMP_U2 > .VCC" to="net.CMP_9V_PROT" />
       <trace from=".CMP_U2 > .GND" to="net.CMP_GND" />
       <trace from=".CMP_U2 > .INB_P" to="net.CMP_VBIAS" />
@@ -1556,9 +1557,12 @@ test("PEAK REDUCTION wiper has a 1M fail-safe to VBIAS, not a wiper tie", async 
   // Spec 10.1: an open wiper must settle at VBIAS (zero compression).
   expectComponentValue(el, "CMP_R_PEAK_FAIL", "resistance", 1_000_000)
   expectConnected(el, "CMP_R_PEAK_FAIL.pin2", "CMP_TP_VBIAS_SC.TP")
-  // The wiper must NOT be shorted to the divider top - that would
-  // destroy the three-terminal control.
-  expectNotConnected(el, "CMP_R_PEAK_FAIL.pin1", "CMP_MAKEUP_OUT_TAP.pin1")
+  // The 1M must be a resistor to VBIAS, not a short. If someone
+  // "simplifies" it away the wiper collapses onto VBIAS and the control
+  // stops working entirely.
+  expectNotConnected(el, "CMP_R_PEAK_FAIL.pin1", "CMP_R_PEAK_FAIL.pin2")
+  // Wiper drives the sidechain amp's + input (non-inverting).
+  expectConnected(el, "CMP_R_PEAK_FAIL.pin1", "CMP_U2.INA_P")
 })
 
 test("detector is AC coupled into a half-wave rectifier", async () => {
@@ -1714,7 +1718,6 @@ export const Sidechain = (props: SidechainProps) => {
 
   return (
     <group>
-      <net name={`${name}_PEAK_TOP`} />
       <net name={`${name}_PEAK_WIPER`} />
       <net name={`${name}_SC_OUT`} />
       <net name={`${name}_DET`} />
@@ -1722,17 +1725,10 @@ export const Sidechain = (props: SidechainProps) => {
       <net name={`${name}_LED_SENSE`} />
       <net name={`${name}_EMITTER`} />
 
-      {/* --- PEAK REDUCTION interface --- */}
-      {/* Tap resistor gives the pot top a named component to attach to and
-          keeps the divider top distinct from the wiper node. */}
-      <resistor
-        name={`${name}_MAKEUP_OUT_TAP`}
-        resistance="0"
-        footprint="0805"
-        pcbX={pcbX - 30}
-        pcbY={pcbY}
-        {...g.signal(-5)}
-      />
+      {/* --- PEAK REDUCTION interface ---
+          The pot itself is external: its TOP connects to MAKEUP_OUT and its
+          BOTTOM to VBIAS at the J_PEAK connector (see OpticalCompressor.tsx).
+          Only the wiper enters this part. */}
       <resistor
         name={`${name}_R_PEAK_FAIL`}
         resistance="1M"
@@ -1898,16 +1894,6 @@ export const Sidechain = (props: SidechainProps) => {
         {...g.below(3, 3)}
       />
 
-      {/* === Tap the makeup output, feed the PEAK REDUCTION divider top === */}
-      <trace
-        from={`.${name}_MAKEUP_OUT_TAP > .pin1`}
-        to={`net.${name}_MAKEUP_OUT`}
-      />
-      <trace
-        from={`.${name}_MAKEUP_OUT_TAP > .pin2`}
-        to={`net.${name}_PEAK_TOP`}
-      />
-
       {/* === Wiper -> sidechain amp + input, with 1M fail-safe to VBIAS === */}
       <trace
         from={`.${name}_R_PEAK_FAIL > .pin1`}
@@ -1987,7 +1973,7 @@ bun run typecheck
 
 Expected: 10 pass, 0 fail; typecheck clean.
 
-If `resistance="0"` on `MAKEUP_OUT_TAP` is rejected, change it to `"0.001"` and update the test's expectations — it is a jumper, and its value is not electrically meaningful.
+If a test fails on the `sot23` or `do214ab` footprint name, run `bunx tsci search` for the part to find a valid one and update the code.
 
 - [ ] **Step 5: Commit**
 
@@ -2019,7 +2005,7 @@ Connector pin mapping (spec §10.1). Note `J_PEAK` and `J_GAIN` both use TOP/WIP
 | `J_IN` | IN | GND | — |
 | `J_OUT` | OUT | GND | — |
 | `J_PWR` | +9V_RAW | GND | — |
-| `J_PEAK` | TOP (`PEAK_TOP`) | WIPER (`PEAK_WIPER`) | BOTTOM (`VBIAS`) |
+| `J_PEAK` | TOP (`MAKEUP_OUT`) | WIPER (`PEAK_WIPER`) | BOTTOM (`VBIAS`) |
 | `J_GAIN` | TOP (`MAKEUP_OUT`) | WIPER (`GAIN_FB`) | BOTTOM (`GAIN_FB`) |
 
 - [ ] **Step 1: Write the failing test**
@@ -2094,7 +2080,8 @@ test("the vactrol bridges audio and sidechain without an electrical path", async
 
 test("the feedback loop is closed: makeup output reaches the LED driver", async () => {
   const el = await render()
-  expectConnected(el, "CMP_U1.OUTB", "CMP_MAKEUP_OUT_TAP.pin1")
+  // Makeup output feeds the PEAK REDUCTION divider top at J_PEAK.P1.
+  expectConnected(el, "CMP_U1.OUTB", "CMP_J_PEAK.P1")
   expectConnected(el, "CMP_U2.OUTA", "CMP_C_SC.pin1")
   expectConnected(el, "CMP_C_DET.pin1", "CMP_R_B.pin1")
 })
@@ -2268,7 +2255,7 @@ export const OpticalCompressor = (props: OpticalCompressorProps) => {
           TOP from the makeup output, BOTTOM to VBIAS, WIPER to the
           sidechain amp. The wiper is NOT tied to either end - doing so
           would short out part of the divider. Spec 10.1. */}
-      <trace from={`.${name}_J_PEAK > .P1`} to={`net.${name}_PEAK_TOP`} />
+      <trace from={`.${name}_J_PEAK > .P1`} to={`net.${name}_MAKEUP_OUT`} />
       <trace from={`.${name}_J_PEAK > .P2`} to={`net.${name}_PEAK_WIPER`} />
       <trace from={`.${name}_J_PEAK > .P3`} to={`net.${name}_VBIAS`} />
 
