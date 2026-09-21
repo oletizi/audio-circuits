@@ -489,17 +489,24 @@ test("TL072H exposes single-supply pin names with GND on pin 4", async () => {
       <TL072H name="U1" />
       <net name="GND" />
       <net name="V9" />
+      {/* Bias the + inputs to their OWN net, never to the chip's GND net.
+          Tying a signal input to the same net as that chip's own ground pin
+          triggers a router pathology: ~30 s to render versus ~210 ms. It is
+          also unrealistic — in the real compressor every + input sits on a
+          signal or VBIAS node, never on ground. */}
+      <net name="BIAS" />
       <trace from=".U1 > .GND" to="net.GND" />
       <trace from=".U1 > .VCC" to="net.V9" />
       <trace from=".U1 > .OUTA" to=".U1 > .INA_N" />
       <trace from=".U1 > .OUTB" to=".U1 > .INB_N" />
-      <trace from=".U1 > .INA_P" to="net.GND" />
-      <trace from=".U1 > .INB_P" to="net.GND" />
+      <trace from=".U1 > .INA_P" to="net.BIAS" />
+      <trace from=".U1 > .INB_P" to="net.BIAS" />
     </board>,
   )
   expect(findComponent(el, "U1")).toBeDefined()
   expectConnected(el, "U1.OUTA", "U1.INA_N")
-  expectConnected(el, "U1.GND", "U1.INA_P")
+  expectConnected(el, "U1.OUTB", "U1.INB_N")
+  expectConnected(el, "U1.INA_P", "U1.INB_P")
 })
 
 test("TL072H defaults to soic8 and accepts a footprint override", async () => {
