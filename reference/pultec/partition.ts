@@ -147,8 +147,9 @@ export function isBoardResident(element: PassiveElement): boolean {
  * no terminal block. That distinction started mattering when the tapped coils
  * became discrete inductors: the tap nets used to run off to a coil through a
  * terminal block, and now they join a capacitor to the inductor beside it. The
- * hi boost board sheds five such nets and the mid board five, which is the
- * terminal-block reduction the discrete-inductor design exists to buy.
+ * hi boost board sheds five nets — its four taps plus the coil top — and the
+ * mid board its five taps, which is the terminal-block reduction the
+ * discrete-inductor design exists to buy.
  *
  * This is the target a tscircuit module is validated against: render the
  * module, flatten its emitted connectivity, and compare. Anything the board
@@ -165,13 +166,19 @@ export function boardNetwork(owner: ModuleOwner): PassiveNetwork {
   }
 
   const onThisBoard = new Set(elements.map(element => element.ref))
+  const globalPorts = new Set(Object.values(THREE_BAND_REFERENCE.ports))
   const ports: Record<string, string> = {}
   for (const element of elements) {
     for (const net of Object.values(element.pins)) {
       const reachedFromOutside = THREE_BAND_REFERENCE.elements.some(
         other => !onThisBoard.has(other.ref) && Object.values(other.pins).includes(net),
       )
-      if (reachedFromOutside) ports[net] = net
+      // A net the whole circuit treats as an external port is a terminal even
+      // when only this board touches it — it still has to reach the outside
+      // world. Today every such net also has an outside neighbour, so this
+      // clause changes nothing; without it, re-owning one neighbour would
+      // silently turn the input, the output or ground into an internal node.
+      if (reachedFromOutside || globalPorts.has(net)) ports[net] = net
     }
   }
   return { ports, elements }

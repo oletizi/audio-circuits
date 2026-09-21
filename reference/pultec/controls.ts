@@ -183,8 +183,9 @@ export const HI_BOOST_POSITIONS: readonly HiBoostPosition[] = [
 ]
 
 /** Terminals deliberately left out of the reference model, with the reason.
- * Nothing here is silently dropped. */
-/* The mid section IS modelled now, but from Thompson-Bell's documentation
+ * Nothing here is silently dropped.
+ *
+ * The mid section IS modelled now, but from Thompson-Bell's documentation
  * rather than from this board's netlist — the as-built mid carries a
  * six-position subset with placeholder values. So these terminals have no
  * counterpart in the model: they belong to a different realisation of the

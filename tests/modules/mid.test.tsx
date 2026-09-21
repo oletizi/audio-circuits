@@ -146,7 +146,9 @@ const MID_MAPPING: ExportMapping = {
   // Every net the mid board touches EXCEPT the five tap nets, which are now
   // internal: each joins a capacitor to the inductor beside it, so it needs no
   // wire off the board. That is the 12-way terminal block this design deletes.
-  // `boardNetwork` applies the same rule, so the two sides must agree.
+  // `boardNetwork` reaches the same set by a different route — it asks what
+  // touches each net from outside. Deriving one side from the other would make
+  // this half of the comparison prove nothing.
   ports: Object.fromEntries(
     Object.values(MID_NET_NAMES)
       .filter(net => !net.startsWith("mid_tap_"))

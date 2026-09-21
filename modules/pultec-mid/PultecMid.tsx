@@ -11,10 +11,14 @@
  *
  * The five inductors are board-resident, replacing a multi-tapped coil that sat
  * off-board behind a terminal block — which is why the tap nets are internal
- * nodes here rather than terminals. The two-pole selector, the boost/off/cut
- * switch and both pots are still off-board and appear as named nets. The fixed
- * resistors around the section — 4K7 on the boost return, 1K on the cut return,
- * 100K across the input — are on-board.
+ * nodes here rather than terminals, each joining a capacitor to its inductor.
+ * The frequency selector and the boost/off/cut switch are off-board and reach
+ * this board through the eleven throw nets and the three return nets. The mid
+ * level pot does not appear here at all: it is a rheostat between the hi boost
+ * output and the selector common, and touches no net this board carries.
+ *
+ * The fixed resistors around the section — 4K7 on the boost return, 1K on the
+ * cut return, 100K across the input — are on-board.
  *
  * Values come from P3bandDoc.pdf page 3. This module IS compared against its
  * portion of the reference partition, like the others; what differs is the
@@ -62,7 +66,6 @@ export const PultecMid = (props: PultecMidProps) => {
   const boostReturnNet = `${name}_BOOST_RETURN`
   const cutReturnNet = `${name}_CUT_RETURN`
   const coilReturnNet = `${name}_COIL_RETURN`
-
 
   return (
     <group name={name}>

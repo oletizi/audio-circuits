@@ -14,10 +14,16 @@
  * Lboost column of the reference documentation independently.
  *
  * The inductors are board-resident. They replace a multi-tapped coil that used
- * to sit off-board behind a terminal block, which is why the tap nets are
- * internal nodes here rather than terminals. The selector and both pots are
- * still off-board and appear as named nets. The coil top is NOT grounded: it
- * returns to Qmax.
+ * to sit off-board behind a terminal block, which is why the tap nets AND the
+ * coil top are internal nodes here rather than terminals: each tap joins a
+ * capacitor to its inductor, and the coil top joins all four inductors to Qmax.
+ * Only the six selector throws and the Qmax return still leave the board.
+ *
+ * The selector and the Q pot are off-board, reached through those terminals.
+ * The hi boost LEVEL pot does not appear here at all — it bridges the section's
+ * input to its output and touches no net this board carries.
+ *
+ * The coil top is NOT grounded: it returns through Qmax to the Q control.
  *
  * Values are the Cboost column of Ian Thompson-Bell's Pultec 3 Band EQ
  * documentation. See `reference/pultec/values.md`.
