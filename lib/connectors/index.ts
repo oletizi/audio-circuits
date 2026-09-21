@@ -24,3 +24,9 @@ export {
   testPointPinLabels,
   type TestPointProps,
 } from "./TestPoint.tsx"
+
+export {
+  PotTerminal,
+  potTerminalPinLabels,
+  type PotTerminalProps,
+} from "./PotTerminal.tsx"

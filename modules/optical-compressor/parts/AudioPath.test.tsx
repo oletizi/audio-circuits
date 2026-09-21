@@ -85,7 +85,13 @@ test("output is AC coupled through 2.2uF with a 100k pulldown", async () => {
 
 test("LDR and LED sides remain isolated through the audio path", async () => {
   const el = await render()
-  expectNotConnected(el, "CMP_VACTROL.LDR_1", "CMP_VACTROL.LED_A")
+  // All four LED-to-LDR cross-pairs, not just one - see Vactrol.test.tsx for
+  // the blind spot this guards against: two pins sharing a net externally
+  // would make one pair unassertable while the others still looked clean.
+  expectNotConnected(el, "CMP_VACTROL.LED_A", "CMP_VACTROL.LDR_1")
+  expectNotConnected(el, "CMP_VACTROL.LED_A", "CMP_VACTROL.LDR_2")
+  expectNotConnected(el, "CMP_VACTROL.LED_K", "CMP_VACTROL.LDR_1")
+  expectNotConnected(el, "CMP_VACTROL.LED_K", "CMP_VACTROL.LDR_2")
 })
 
 test("no pin is left floating", async () => {

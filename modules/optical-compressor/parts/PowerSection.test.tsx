@@ -36,7 +36,12 @@ test("reverse-polarity diode sits between raw and protected rails", async () => 
   // also covers components this file never names directly, such as
   // CMP_C_BIAS_HF, CMP_TP_9V and CMP_TP_GND.
   expectNoFailedComponents(el)
-  expectConnected(el, "CMP_D_PROT.anode", "CMP_C_BULK.pin1")
+  // Bulk reservoir sits on the PROTECTED side of the Schottky (spec 8.1):
+  // under reverse polarity the diode blocks and C_BULK must never see the
+  // fault directly, and the rail that actually feeds the op-amps and LED
+  // chain needs the 47uF reservoir, not just 100nF.
+  expectConnected(el, "CMP_D_PROT.cathode", "CMP_C_BULK.pin1")
+  expectNotConnected(el, "CMP_D_PROT.anode", "CMP_C_BULK.pin1")
   // Schottky cathode feeds the protected rail, not the raw input.
   expectConnected(el, "CMP_D_PROT.cathode", "CMP_C_HF.pin1")
 })

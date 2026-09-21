@@ -48,6 +48,31 @@ inverting topology, an anti-saturation clamp, and a solution to
 single-supply level shifting. §8.6.2 explains why; the board carries test
 pads only.
 
+## Open items (spec §12.1 static checks)
+
+- **Item 5 — schematic legibility.** Spec 12.1 item 5 requires signal flow to
+  read left to right with no overlapping critical labels. This needs a human
+  eye and cannot be closed by `bun test` or `bun run typecheck`. It has **not**
+  been visually verified — run `tsci dev` against
+  `optical-compressor.circuit.tsx` and look at the rendered schematic before
+  treating this item as closed.
+- **Item 7 — vactrol pad mapping.** `vactrolFootprint` is a required prop
+  precisely so an unverified pad map cannot reach fabrication (see "Vactrol
+  selection criteria" above and the fixture's header comment). The placeholder
+  `"dip4"` footprint used for rendering and tests is **not** verified against
+  any specific device's datasheet and must be replaced before fabrication.
+- **Item 8 — manufacturer part identity.** `TL072H`, `1N5817` (D_PROT) and
+  `1N4148` (D_DET) are set via `manufacturerPartNumber` and appear in circuit
+  JSON. These are the real manufacturer part numbers named by the spec, not
+  fabricated procurement codes — no `supplierPartNumbers` / JLCPCB mapping has
+  been added for any of them, so **supplier/JLCPCB sourcing is still an open
+  item** and the manufacturer numbers above must not be read as
+  procurement-ready. Additionally, `Q_LED` (2N3904 per spec) does **not**
+  carry a `manufacturerPartNumber`: tscircuit's `<transistor>` accepts the
+  prop without a schema error but its source-render path never forwards it
+  into circuit JSON, so setting it would silently have no effect. The part
+  identity for Q_LED is recorded here in prose only.
+
 ## Pending measurement
 
 Nothing below has been measured. See spec §12.2 for the full protocol.

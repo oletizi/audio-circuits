@@ -116,6 +116,7 @@ export const Sidechain = (props: SidechainProps) => {
       <diode
         name={`${name}_D_DET`}
         footprint="0805"
+        manufacturerPartNumber="1N4148"
         pcbX={pcbX}
         pcbY={pcbY}
         {...g.signal(0)}
@@ -157,6 +158,12 @@ export const Sidechain = (props: SidechainProps) => {
         pcbY={pcbY + 5}
         {...g.below(4, 1)}
       />
+      {/* manufacturerPartNumber is NOT applied here: verified that
+          tscircuit's <transistor> component accepts the prop (no schema
+          error) but its doInitialSourceRender never forwards it to
+          source_component, so it is silently dropped from circuit JSON.
+          Q_LED is a 2N3904 per spec 8.x; recorded in DESIGN-NOTES.md as an
+          open item rather than set here where it would have no effect. */}
       <transistor
         name={`${name}_Q_LED`}
         type="npn"

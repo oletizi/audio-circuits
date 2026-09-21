@@ -48,6 +48,7 @@ export const PowerSection = (props: PowerSectionProps) => {
       <diode
         name={`${name}_D_PROT`}
         footprint="sma"
+        manufacturerPartNumber="1N5817"
         pcbX={pcbX - 20}
         pcbY={pcbY}
         {...g.signal(-4)}
@@ -146,7 +147,7 @@ export const PowerSection = (props: PowerSectionProps) => {
       {/* === Protection: RAW -> D_PROT -> PROTECTED === */}
       <trace from={`.${name}_D_PROT > .anode`} to={`net.${name}_9V_RAW`} />
       <trace from={`.${name}_D_PROT > .cathode`} to={`net.${name}_9V_PROT`} />
-      <trace from={`.${name}_C_BULK > .pin1`} to={`net.${name}_9V_RAW`} />
+      <trace from={`.${name}_C_BULK > .pin1`} to={`net.${name}_9V_PROT`} />
       <trace from={`.${name}_C_BULK > .pin2`} to={`net.${name}_GND`} />
       <trace from={`.${name}_C_HF > .pin1`} to={`net.${name}_9V_PROT`} />
       <trace from={`.${name}_C_HF > .pin2`} to={`net.${name}_GND`} />

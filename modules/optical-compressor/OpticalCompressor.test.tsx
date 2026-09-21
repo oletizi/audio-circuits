@@ -5,6 +5,7 @@ import {
   expectNotConnected,
   expectNoFloatingPins,
   expectNoFailedComponents,
+  expectComponentValue,
   findComponent,
   type CircuitElement,
 } from "../../lib/testing/circuit-assertions.ts"
@@ -53,29 +54,36 @@ test("supply enters raw and reaches the op-amps only via the Schottky", () => {
 
 test("GAIN pot is wired as a rheostat with the wiper tied to an end", () => {
   // Spec 10.1: an open wiper must not open the feedback loop.
-  expectConnected(el, "CMP_J_GAIN.P2", "CMP_J_GAIN.P3")
-  expectConnected(el, "CMP_J_GAIN.P2", "CMP_U1.INB_N")
-  expectConnected(el, "CMP_J_GAIN.P1", "CMP_U1.OUTB")
+  expectConnected(el, "CMP_J_GAIN.WIPER", "CMP_J_GAIN.BOTTOM")
+  expectConnected(el, "CMP_J_GAIN.WIPER", "CMP_U1.INB_N")
+  expectConnected(el, "CMP_J_GAIN.TOP", "CMP_U1.OUTB")
 })
 
 test("PEAK REDUCTION is a divider: wiper NOT tied to either end", () => {
   // The revision-3 correction. Tying these would short the divider.
-  expectNotConnected(el, "CMP_J_PEAK.P2", "CMP_J_PEAK.P1")
-  expectNotConnected(el, "CMP_J_PEAK.P2", "CMP_J_PEAK.P3")
+  expectNotConnected(el, "CMP_J_PEAK.WIPER", "CMP_J_PEAK.TOP")
+  expectNotConnected(el, "CMP_J_PEAK.WIPER", "CMP_J_PEAK.BOTTOM")
   // Bottom goes to VBIAS, wiper to the sidechain amp.
-  expectConnected(el, "CMP_J_PEAK.P3", "CMP_TP_VBIAS.TP")
-  expectConnected(el, "CMP_J_PEAK.P2", "CMP_U2.INA_P")
+  expectConnected(el, "CMP_J_PEAK.BOTTOM", "CMP_TP_VBIAS.TP")
+  expectConnected(el, "CMP_J_PEAK.WIPER", "CMP_U2.INA_P")
 })
 
 test("the vactrol bridges audio and sidechain without an electrical path", () => {
   expectConnected(el, "CMP_VACTROL.LDR_1", "CMP_R_SHUNT.pin2")
   expectConnected(el, "CMP_VACTROL.LED_A", "CMP_R_LED.pin2")
-  expectNotConnected(el, "CMP_VACTROL.LDR_1", "CMP_VACTROL.LED_A")
+  // All four LED-to-LDR cross-pairs, not just one - see Vactrol.test.tsx
+  // for the blind spot this guards against: two pins sharing a net
+  // externally would make one pair unassertable while the others still
+  // looked clean.
+  expectNotConnected(el, "CMP_VACTROL.LED_A", "CMP_VACTROL.LDR_1")
+  expectNotConnected(el, "CMP_VACTROL.LED_A", "CMP_VACTROL.LDR_2")
+  expectNotConnected(el, "CMP_VACTROL.LED_K", "CMP_VACTROL.LDR_1")
+  expectNotConnected(el, "CMP_VACTROL.LED_K", "CMP_VACTROL.LDR_2")
 })
 
 test("the feedback loop is closed: makeup output reaches the LED driver", () => {
-  // Makeup output feeds the PEAK REDUCTION divider top at J_PEAK.P1.
-  expectConnected(el, "CMP_U1.OUTB", "CMP_J_PEAK.P1")
+  // Makeup output feeds the PEAK REDUCTION divider top at J_PEAK.TOP.
+  expectConnected(el, "CMP_U1.OUTB", "CMP_J_PEAK.TOP")
   expectConnected(el, "CMP_U2.OUTA", "CMP_C_SC.pin1")
   expectConnected(el, "CMP_C_DET.pin1", "CMP_R_B.pin1")
 })
@@ -87,6 +95,64 @@ test("no component failed to be created and no pin is left floating", () => {
   expectNoFailedComponents(el)
   expectNoFloatingPins(el)
 })
+
+// Proves optional prop pass-through actually reaches the intended
+// component. All 53 existing tests pass with EVERY optional prop left at
+// its default, so a bug that transposes two props at the OpticalCompressor
+// call site - most dangerously sidechainGainResistance and
+// sidechainBiasResistance, whose names read backwards relative to what
+// they feed (see Sidechain.tsx: sidechainGainResistance -> R_SC_F, the
+// FEEDBACK resistor; sidechainBiasResistance -> R_SC_G, the resistor to
+// VBIAS) - would go undetected. Every value below is distinct from every
+// other value and from every default, so a transposition of any two props
+// is guaranteed to fail at least one assertion.
+//
+// This is its own render, separate from the shared beforeAll above: a
+// second ~51-component render costs ~8s, comfortably past bun's 5s default
+// per-test timeout, so it needs the same explicit 180000ms timeout as the
+// fixture test below.
+test(
+  "every optional prop lands on its intended component with a non-default value",
+  async () => {
+    const propsEl = await renderCircuit(
+      <board width="100mm" height="80mm">
+        <OpticalCompressor
+          name="CMP"
+          vactrolFootprint="dip4"
+          shuntResistance="33k"
+          inputCap="220nF"
+          outputCap="4.7uF"
+          detectorCapacitance="6.8uF"
+          releaseResistance="220k"
+          ledResistance="2.2k"
+          emitterResistance="1.5k"
+          sidechainGainResistance="47k"
+          sidechainBiasResistance="15k"
+          sidechainCouplingCap="2.2uF"
+        />
+      </board>,
+    )
+    expectNoFailedComponents(propsEl)
+
+    // AudioPath
+    expectComponentValue(propsEl, "CMP_R_SHUNT", "resistance", 33_000)
+    expectComponentValue(propsEl, "CMP_C_IN", "capacitance", 220e-9)
+    expectComponentValue(propsEl, "CMP_C_OUT", "capacitance", 4.7e-6)
+
+    // Sidechain
+    expectComponentValue(propsEl, "CMP_C_DET", "capacitance", 6.8e-6)
+    expectComponentValue(propsEl, "CMP_R_REL", "resistance", 220_000)
+    expectComponentValue(propsEl, "CMP_R_LED", "resistance", 2_200)
+    expectComponentValue(propsEl, "CMP_R_E", "resistance", 1_500)
+    // sidechainGainResistance feeds R_SC_F (the feedback resistor);
+    // sidechainBiasResistance feeds R_SC_G (the resistor to VBIAS). A
+    // transposition of these two props would swap these two values.
+    expectComponentValue(propsEl, "CMP_R_SC_F", "resistance", 47_000)
+    expectComponentValue(propsEl, "CMP_R_SC_G", "resistance", 15_000)
+    expectComponentValue(propsEl, "CMP_C_SC", "capacitance", 2.2e-6)
+  },
+  180000,
+)
 
 // This renders the ~45-component fixture a SECOND time (the module tests
 // above share one render of their own), so it needs its own generous

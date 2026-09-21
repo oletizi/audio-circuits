@@ -44,6 +44,7 @@ export const TL072H = (props: TL072HProps) => (
       topSide: { direction: "left-to-right", pins: ["VCC"] },
       bottomSide: { direction: "left-to-right", pins: ["GND"] },
     }}
+    manufacturerPartNumber="TL072H"
     {...props}
   />
 )

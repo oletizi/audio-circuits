@@ -16,7 +16,7 @@
  * files and extracting modules.
  */
 
-import { ScrewTerminal2, ScrewTerminal3 } from "../../lib/connectors/index"
+import { ScrewTerminal2, PotTerminal } from "../../lib/connectors/index"
 import { AudioPath } from "./parts/AudioPath.tsx"
 import { PowerSection } from "./parts/PowerSection.tsx"
 import { Sidechain } from "./parts/Sidechain.tsx"
@@ -119,14 +119,14 @@ export const OpticalCompressor = (props: OpticalCompressorProps) => {
         pcbX={pcbX - 45}
         pcbY={pcbY - 25}
       />
-      <ScrewTerminal3
+      <PotTerminal
         name={`${name}_J_PEAK`}
         schX={schX - 24}
         schY={schY + 15}
         pcbX={pcbX - 45}
         pcbY={pcbY + 25}
       />
-      <ScrewTerminal3
+      <PotTerminal
         name={`${name}_J_GAIN`}
         schX={schX + 24}
         schY={schY + 15}
@@ -148,16 +148,16 @@ export const OpticalCompressor = (props: OpticalCompressorProps) => {
           TOP from the makeup output, BOTTOM to VBIAS, WIPER to the
           sidechain amp. The wiper is NOT tied to either end - doing so
           would short out part of the divider. Spec 10.1. */}
-      <trace from={`.${name}_J_PEAK > .P1`} to={`net.${name}_MAKEUP_OUT`} />
-      <trace from={`.${name}_J_PEAK > .P2`} to={`net.${name}_PEAK_WIPER`} />
-      <trace from={`.${name}_J_PEAK > .P3`} to={`net.${name}_VBIAS`} />
+      <trace from={`.${name}_J_PEAK > .TOP`} to={`net.${name}_MAKEUP_OUT`} />
+      <trace from={`.${name}_J_PEAK > .WIPER`} to={`net.${name}_PEAK_WIPER`} />
+      <trace from={`.${name}_J_PEAK > .BOTTOM`} to={`net.${name}_VBIAS`} />
 
       {/* === GAIN: a RHEOSTAT in the makeup feedback path ===
           Wiper tied to an end terminal so intermittent contact gives a
           bounded resistance rather than an open feedback loop. Spec 10.1. */}
-      <trace from={`.${name}_J_GAIN > .P1`} to={`net.${name}_MAKEUP_OUT`} />
-      <trace from={`.${name}_J_GAIN > .P2`} to={`net.${name}_GAIN_FB`} />
-      <trace from={`.${name}_J_GAIN > .P3`} to={`net.${name}_GAIN_FB`} />
+      <trace from={`.${name}_J_GAIN > .TOP`} to={`net.${name}_MAKEUP_OUT`} />
+      <trace from={`.${name}_J_GAIN > .WIPER`} to={`net.${name}_GAIN_FB`} />
+      <trace from={`.${name}_J_GAIN > .BOTTOM`} to={`net.${name}_GAIN_FB`} />
     </group>
   )
 }
