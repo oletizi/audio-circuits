@@ -18,3 +18,9 @@ export {
   type MonoJackProps,
   type StereoJackProps,
 } from "./AudioJack.tsx"
+
+export {
+  TestPoint,
+  testPointPinLabels,
+  type TestPointProps,
+} from "./TestPoint.tsx"
