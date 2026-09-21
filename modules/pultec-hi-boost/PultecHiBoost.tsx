@@ -1,20 +1,23 @@
 /**
  * Pultec high boost capacitor bank and Qmax resistor.
  *
- * Each selector position pairs a capacitor with one tap of the hand-wound
- * coil: the capacitor injects at its tap, and the winding between that tap and
- * the coil's top forms a series resonant branch back to the level pot's wiper.
- * At resonance the branch bridges out the upper part of the 47K pot, which is
- * the boost — the documentation's "high boost is achieved by frequency
- * selectively shorting out some or all of the 47K potentiometer".
+ * Each selector position pairs a capacitor with one inductor: the capacitor
+ * injects at the tap net, and the inductor between that net and the common coil
+ * top forms a series resonant branch back to the level pot's wiper. At
+ * resonance the branch bridges out the upper part of the 47K pot, which is the
+ * boost — the documentation's "high boost is achieved by frequency selectively
+ * shorting out some or all of the 47K potentiometer".
  *
- * Six positions need only four tap wires because 4k and 5k share the 0.3H tap
+ * Six positions need only four inductors because 4k and 5k share the 0.3H part
  * and 10k and 16k share 0.1H. That grouping is not a simplification here; it is
  * how the capacitors are wired on the manufactured board, and it matches the
  * Lboost column of the reference documentation independently.
  *
- * The coil, the selector, and both pots are off-board and appear as named nets.
- * The coil is NOT grounded: its top returns to Qmax.
+ * The inductors are board-resident. They replace a multi-tapped coil that used
+ * to sit off-board behind a terminal block, which is why the tap nets are
+ * internal nodes here rather than terminals. The selector and both pots are
+ * still off-board and appear as named nets. The coil top is NOT grounded: it
+ * returns to Qmax.
  *
  * Values are the Cboost column of Ian Thompson-Bell's Pultec 3 Band EQ
  * documentation. See `reference/pultec/values.md`.

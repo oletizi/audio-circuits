@@ -120,17 +120,6 @@ export function boundaryConductors(
   }))
 }
 
-/** The portion of a module that lives on its printed board.
- *
- * Potentiometers and rotary selectors are front-panel parts wired back to the
- * board, so they are not on it. What remains is the passive network the board
- * actually carries, with every net it touches exposed as a port — each one
- * leaves the board, either to a control or to another module.
- *
- * This is the target a tscircuit module is validated against: render the
- * module, flatten its emitted connectivity, and compare. Anything the board
- * gains or loses relative to the reference shows up as a topology difference.
- */
 /** Whether a part sits on a section board rather than the front panel.
  *
  * Potentiometers and rotary selectors are front-panel parts wired back to the
@@ -146,6 +135,25 @@ export function isBoardResident(element: PassiveElement): boolean {
   return element.kind !== "potentiometer" && element.kind !== "switch"
 }
 
+/** The portion of a module that lives on its printed board.
+ *
+ * Potentiometers and rotary selectors are front-panel parts wired back to the
+ * board, so they are not on it. What remains is the passive network the board
+ * actually carries, with its terminals exposed as ports.
+ *
+ * A net is a terminal only when something outside this board touches it — a
+ * front-panel control, or another module. A net reached solely by this board's
+ * own parts is an internal node and gets no port, because it needs no wire and
+ * no terminal block. That distinction started mattering when the tapped coils
+ * became discrete inductors: the tap nets used to run off to a coil through a
+ * terminal block, and now they join a capacitor to the inductor beside it. The
+ * hi boost board sheds five such nets and the mid board five, which is the
+ * terminal-block reduction the discrete-inductor design exists to buy.
+ *
+ * This is the target a tscircuit module is validated against: render the
+ * module, flatten its emitted connectivity, and compare. Anything the board
+ * gains or loses relative to the reference shows up as a topology difference.
+ */
 export function boardNetwork(owner: ModuleOwner): PassiveNetwork {
   const split = partitionReference()
   const owned = split.modules[owner]
@@ -156,9 +164,15 @@ export function boardNetwork(owner: ModuleOwner): PassiveNetwork {
     throw new Error(`Module has no board-resident elements: ${owner}`)
   }
 
+  const onThisBoard = new Set(elements.map(element => element.ref))
   const ports: Record<string, string> = {}
   for (const element of elements) {
-    for (const net of Object.values(element.pins)) ports[net] = net
+    for (const net of Object.values(element.pins)) {
+      const reachedFromOutside = THREE_BAND_REFERENCE.elements.some(
+        other => !onThisBoard.has(other.ref) && Object.values(other.pins).includes(net),
+      )
+      if (reachedFromOutside) ports[net] = net
+    }
   }
   return { ports, elements }
 }

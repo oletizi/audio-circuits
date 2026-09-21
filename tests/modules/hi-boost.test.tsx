@@ -29,11 +29,15 @@ const MAPPING: ExportMapping = {
     HB_QMAX_OUT: "j20_p1",
   },
   pinNames: { pin1: "a", pin2: "b" },
+  // The tap nets and the coil top are NOT here. Each tap now joins a capacitor
+  // to the inductor beside it, and the coil top joins the four inductors to
+  // Qmax — all board-resident, so none of them needs a wire off the board. That
+  // is the 6-way terminal block this design deletes. Only the selector throws
+  // and the Qmax return still leave.
   ports: {
-    j15_p1: "j15_p1", j15_p2: "j15_p2", j15_p3: "j15_p3", j15_p4: "j15_p4",
     j8_p1: "j8_p1", j8_p2: "j8_p2", j8_p3: "j8_p3",
     j8_p4: "j8_p4", j8_p5: "j8_p5", j8_p6: "j8_p6",
-    j19_p1: "j19_p1", j20_p1: "j20_p1",
+    j20_p1: "j20_p1",
   },
 }
 

@@ -254,10 +254,14 @@ is doing wrong.
 
 Rendering the hi boost module now produces schematic autorouting warnings —
 `MultiOffsetIrlsSolver ran out of iterations` — that did not occur before the
-inductors landed on the board. Measured: 0 warnings at the pre-task baseline,
-12 after, and 12 at every inductor row position tried from 3 through 6. The
-count does not change with placement, so it is driven by the added traces
-themselves, not by the geometry chosen for them.
+inductors landed on the board. Measured per render: 0 warnings at the pre-task
+baseline, 2 after. The figure of 12 quoted earlier was six renders inside one
+test file, not one render — the causal claim was right but the number was six
+times the truth.
+
+Placement does not change the count: it held at every inductor row position
+tried from 3 through 6, so the warnings are driven by the added traces
+themselves rather than the geometry chosen for them.
 
 No test observes the warning, and no netlist is affected by it — it is a
 tscircuit schematic-rendering limit, not a circuit defect.

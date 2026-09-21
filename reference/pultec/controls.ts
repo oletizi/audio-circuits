@@ -201,7 +201,11 @@ export const EXCLUDED: Readonly<Record<string, string>> = {
   J40: "mid inductor return — as-built mid, not the modelled one",
 }
 
-/** Components excluded along with their sections. Only the mid section now. */
+/** Components of the as-built mid that the model does not carry. The mid
+ * section itself IS modelled — from Thompson-Bell's documentation — so these
+ * are excluded because they belong to this board's realisation of it, with its
+ * six-position subset and placeholder values, not because the section is
+ * missing. Same distinction as `EXCLUDED` above. */
 export const EXCLUDED_COMPONENTS: Readonly<Record<string, string>> = {
   C8: "mid", C9: "mid", C10: "mid", C11: "mid", C12: "mid", C13: "mid",
   C36: "mid", C37: "mid", C38: "mid", C39: "mid", C40: "mid", C41: "mid",

@@ -143,10 +143,15 @@ const MID_MAPPING: ExportMapping = {
   },
   netNames: MID_NET_NAMES,
   pinNames: { pin1: "a", pin2: "b" },
-  // Every net the mid board touches, as identity: `boardNetwork` exposes each
-  // net an element's pins reach as a port, so the candidate side must carry the
-  // same set (see PultecHiBoost's comparison test for the same pattern).
-  ports: Object.fromEntries(Object.values(MID_NET_NAMES).map(net => [net, net])),
+  // Every net the mid board touches EXCEPT the five tap nets, which are now
+  // internal: each joins a capacitor to the inductor beside it, so it needs no
+  // wire off the board. That is the 12-way terminal block this design deletes.
+  // `boardNetwork` applies the same rule, so the two sides must agree.
+  ports: Object.fromEntries(
+    Object.values(MID_NET_NAMES)
+      .filter(net => !net.startsWith("mid_tap_"))
+      .map(net => [net, net]),
+  ),
 }
 
 test("the rendered module equals the reference mid board", () => {

@@ -2,22 +2,25 @@
  * Pultec mid boost/cut capacitor bank.
  *
  * All eleven of Ian Thompson-Bell's mid frequencies — the same set as the
- * Pultec MEQ5 — each wired to the winding tap its documentation calls for.
- * Five taps serve the eleven positions.
+ * Pultec MEQ5 — each wired to the inductance its documentation calls for.
+ * Five inductors serve the eleven positions.
  *
  * Carrying all eleven is deliberate: positions can be left unpopulated at build
  * time, but a position designed out cannot be added back without a new board.
  * The builder's own unit fits six of them.
  *
- * The coil, the two-pole selector, the boost/off/cut switch and both pots are
- * off-board and appear here as named nets. The fixed resistors around the
- * section — 4K7 on the boost return, 1K on the cut return, 100K across the
- * input — are on-board.
+ * The five inductors are board-resident, replacing a multi-tapped coil that sat
+ * off-board behind a terminal block — which is why the tap nets are internal
+ * nodes here rather than terminals. The two-pole selector, the boost/off/cut
+ * switch and both pots are still off-board and appear as named nets. The fixed
+ * resistors around the section — 4K7 on the boost return, 1K on the cut return,
+ * 100K across the input — are on-board.
  *
- * Values come from P3bandDoc.pdf page 3. Unlike this project's other modules,
- * this one is NOT validated against a netlist export of the manufactured board,
- * because that board carries a six-position subset with placeholder values. See
- * `reference/pultec/mid.ts`.
+ * Values come from P3bandDoc.pdf page 3. This module IS compared against its
+ * portion of the reference partition, like the others; what differs is the
+ * reference's own provenance, which is documentation rather than a netlist
+ * export of the manufactured board — that board carries a six-position subset
+ * with placeholder values. See `reference/pultec/mid.ts`.
  */
 import { Fragment } from "react"
 import { createGrid } from "../../lib/layout.ts"
@@ -60,7 +63,6 @@ export const PultecMid = (props: PultecMidProps) => {
   const cutReturnNet = `${name}_CUT_RETURN`
   const coilReturnNet = `${name}_COIL_RETURN`
 
-  const taps = [...new Set(MID_POSITIONS.map(p => p.henries))]
 
   return (
     <group name={name}>
@@ -69,7 +71,7 @@ export const PultecMid = (props: PultecMidProps) => {
       <net name={boostReturnNet} />
       <net name={cutReturnNet} />
       <net name={coilReturnNet} />
-      {taps.map(henries => (
+      {MID_TAPS.map(henries => (
         <Fragment key={`tap-${henries}`}>
           <net name={`${name}_TAP_${tapLabel(henries)}`} />
         </Fragment>

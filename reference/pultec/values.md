@@ -115,6 +115,14 @@ will look.
 physical part has been measured against them — that is a separate question
 from unresolved item 1, "as-built hardware is not captured".
 
+**Reproducing them needs one setting these tables do not state.** "High boost
+at 5kHz, boost above flat" leaves the Q control's position open, and the
+figures move with it. An independent check reproduced both DCR columns, and the
+tolerance table's ratios to within 3%, at a Q setting of roughly 0.55–0.6; the
+exact position used originally was not recorded. Anyone re-deriving these should
+expect to sweep Q to land on the same curve, and no committed script regenerates
+the tables — worth writing before the numbers are relied on for a purchase.
+
 | Section | Values | Tolerance | DCR | Current |
 | --- | --- | --- | --- | --- |
 | High boost | 0.6, 0.3, 0.2, 0.1 H | ±20% | ≤1kΩ, ≤500Ω preferred | Line level |
