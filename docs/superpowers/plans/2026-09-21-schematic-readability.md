@@ -54,22 +54,39 @@ git add <artifact files> && git commit -F <artifact message>
 | M5a `componentAreaPerComponent` | 24.2 | 4–20 | ❌ |
 | M5b `drawingAreaPerComponent` | 25.2 | 6–30 | ✅ |
 
-### Two measured facts that bound this work
+### One measured fact, and one UNRESOLVED question
 
-Established by experiment before this plan; do not re-derive, and do not
-plan around their opposites:
-
-1. **Multi-terminal junctions never render as wires in tscircuit.** A 3+
-   terminal node emits a net label regardless of whether the source uses a
-   named net or pin-to-pin traces, and regardless of how close the parts
-   are placed. Tested with components pulled hard against the node; no
-   change. This bounds what M1 can reach.
-2. **Two-terminal connections DO render as wires** when written pin-to-pin.
-   That is the only case where connectivity style changes the drawing.
+**Established** — multi-terminal junctions never render as wires in
+tscircuit. A 3+ terminal node emits a net label regardless of whether the
+source uses a named net or pin-to-pin traces, and regardless of how close
+the parts are placed. Tested twice in the same circuit with components
+first 3 units away and then pulled hard against the node; the ribbons were
+identical. This bounds what M1 can reach.
 
 Consequence: **a short named net is better than pin-to-pin at a junction**
-(N narrow labels beat one wide concatenated ribbon, and width drives M2).
-Phase 3 is therefore expected to be worth little. Measure it anyway.
+— N narrow labels beat one wide concatenated ribbon, and width drives M2.
+
+**UNRESOLVED — two-terminal pin-to-pin behaviour.** An earlier draft of
+this plan asserted both "two-terminal connections DO render as wires" and
+"a two-terminal net produces exactly one label either way". Those are
+different claims and the plan stated both as fact. Checking the evidence,
+the two measurements behind them **disagree**:
+
+| Fixture | Style | Labels emitted |
+|---|---|---|
+| Detector chain (5 parts, 3 nets): `C_SC.pin2 -> D_DET.anode` | pin-to-pin | **0** |
+| Isolated pair (2 parts, 1 net): `R1.pin2 -> R2.pin1` | pin-to-pin | **1** (`R1_pin2/R2_pin1`) |
+| Isolated pair, same circuit | named net | **1** (`MID`) |
+
+So a two-terminal pin-to-pin connection emitted no label in one circuit and
+one label in another, and nothing isolates which condition governs. Design
+R6 requires two measurements in different circuits before a convention may
+be relied upon; here two measurements exist and they conflict, so **no
+convention may be built on this yet**.
+
+Task 6 must therefore MEASURE each conversion rather than assume a
+direction. Do not restate either claim as established until a fixture
+explains the difference.
 
 ---
 
@@ -110,7 +127,12 @@ nothing.**
 
 **Interfaces:**
 - Consumes: `Tier1Metrics`, `computeTier1`, `formatTier1` (existing)
-- Produces: `Tier1Metrics.worstHops: readonly { distance: number; from: string; to: string }[]` — longest first, capped at 12. Diagnostic only; `assertReadabilityGate` must not read it.
+- Produces: `Tier1Metrics.worstHops: readonly { distance: number; net: string; from: string; to: string }[]` — longest first, capped at 12. `from`/`to` are `COMPONENT.pin`, `net` is the connectivity key. Diagnostic only; `assertReadabilityGate` must not read it.
+
+**Scope limit — this is a diagnostic patch, not a subsystem.** Report the
+offending hops and stop. No classification, scoring, grouping, severity
+levels, recommendations or layout suggestions. After this task the ruler
+freezes again for the rest of the plan except for `BASELINES` bookkeeping.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -169,10 +191,19 @@ In `lib/testing/schematic-tier1.ts`, inside `Tier1Metrics` after `drawingAreaPer
    */
   readonly worstHops: readonly {
     readonly distance: number
+    /** Connectivity key of the net this MST edge belongs to. */
+    readonly net: string
+    /** COMPONENT.pin at each end. */
     readonly from: string
     readonly to: string
   }[]
 ```
+
+Net identity matters for deciding what to move: a 30-unit **GND** hop is
+not a reason to drag two functional blocks together, while a 30-unit
+**PEAK_WIPER** hop is. Reporting which net produced the edge is not
+classification and grants no exemption — it is the same Tier 1 geometry,
+labelled with where it came from.
 
 - [ ] **Step 4: Carry port ownership through the MST**
 
@@ -271,7 +302,7 @@ bun test lib/testing/schematic-tier1.test.tsx
 
 Expected: typecheck clean; all tests pass including the new one.
 
-- [ ] **Step 9: Verify R2 and commit (RULER ONLY)**
+- [ ] **Step 9: Commit, THEN verify R2 (RULER ONLY)**
 
 ```bash
 git add lib/testing/schematic-tier1.ts lib/testing/schematic-tier1.test.tsx
@@ -288,12 +319,20 @@ Constraints.
 ### Task 2: Phase 1 — collapse the worst hops (ARTIFACT ONLY)
 
 **The plan's central experiment.** Move components so electrically
-connected parts sit near each other. Change **only** `schX`/`schY`.
+connected parts sit near each other.
+
+**Scope: schematic placement, which includes orientation.** `schX`, `schY`
+and `schRotation` are all fair game — a resistor turned vertical to feed a
+transistor can be far clearer than contorting positions around a fixed
+orientation. The invariant is about what must NOT change:
+
+> No electrical connectivity, no net declarations, no component values, no
+> interfaces, no `pcbX`/`pcbY`. Schematic placement and orientation only.
 
 **Files:**
-- Modify: `modules/optical-compressor/parts/PowerSection.tsx` (coordinates only)
-- Modify: `modules/optical-compressor/parts/AudioPath.tsx` (coordinates only)
-- Modify: `modules/optical-compressor/parts/Sidechain.tsx` (coordinates only)
+- Modify: `modules/optical-compressor/parts/PowerSection.tsx` (schX/schY/schRotation)
+- Modify: `modules/optical-compressor/parts/AudioPath.tsx` (schX/schY/schRotation)
+- Modify: `modules/optical-compressor/parts/Sidechain.tsx` (schX/schY/schRotation)
 - Modify: `modules/optical-compressor/OpticalCompressor.tsx` (band offsets, connector placement)
 
 **Interfaces:**
@@ -340,20 +379,55 @@ Take `worstHops[0]`. Find both components in the part files. Move them so
 their `schX`/`schY` are within ~4 units. Prefer moving the one with fewer
 other connections.
 
-- [ ] **Step 3: Re-measure**
+- [ ] **Step 3: Re-measure the candidate**
 
 ```bash
 bun run schematic-check 2>&1 | grep -E "M1|M2|M3|M4|M5"
 ```
 
-Compare against Step 1. **If any Tier 1 metric regressed, revert that move**
-(`git checkout -- <file>`) and take the next hop instead. A move that
-trades M4 for M2 is not an improvement.
+**Individual moves MAY temporarily regress a metric.** Graph layout cannot
+generally be optimised by requiring every coordinate edit to be
+Pareto-monotonic across six numbers: collapsing one hop often needs an
+intermediate state where a label briefly collides, and the next move clears
+several. Forbidding that is a local-minimum trap that would produce a false
+conclusion of "tscircuit cannot be improved".
 
-- [ ] **Step 4: Repeat for the top five hops**
+The invariant belongs at the **commit boundary**, not the edit boundary.
+This is also what the plan's own U2 note demands — "if U2 moves, the parts
+it connects to must move with it" is a multi-part move that must be allowed
+to pass through worse intermediate states.
 
-Iterate Steps 2–3. Stop when either the top five are collapsed or three
-consecutive attempts fail to improve anything.
+**Checkpoint discipline**, so that licence does not become unbounded
+fiddling:
+
+```bash
+git stash push -u -m "sch-checkpoint-<n>"   # known-good state
+git stash list --format='%H %gs'            # capture the SHA immediately
+```
+
+- Work in candidate **sets** of related moves, not single coordinates.
+- If a set ends worse than the checkpoint on every metric, restore it:
+  `git stash apply <sha>`, then drop the entry.
+- **Bound the search: at most six candidate sets.** If six have been tried
+  and the best is not better than the checkpoint on at least one metric
+  with none above baseline, stop and report that placement did not pay.
+  That negative result is a finding, not a failure.
+
+- [ ] **Step 4: Work down the hop list**
+
+Iterate Steps 2–3 against the top hops. Consult `net` on each hop: a long
+rail hop (GND, VBIAS, 9V_PROT) is usually not worth restructuring around,
+because rails render as labels regardless; a long signal hop usually is.
+
+- [ ] **Step 4a: Check the commit-boundary invariant**
+
+Before committing, measure once more. **Both conditions must hold:**
+
+1. No Tier 1 metric exceeds its recorded `BASELINES` value.
+2. At least one Tier 1 metric has improved.
+
+If (1) fails the work is not ready — keep going or restore the checkpoint.
+If (2) fails there is nothing to commit; report the negative result.
 
 - [ ] **Step 5: Verify the whole suite still passes**
 
@@ -363,9 +437,8 @@ bun test
 ```
 
 Expected: typecheck clean, all tests pass. Connectivity assertions must be
-untouched — this task changes coordinates only, so any connectivity failure
-means a coordinate edit corrupted a trace and must be fixed, not
-accommodated.
+untouched — this task changes placement only, so any connectivity failure
+means an edit corrupted a trace and must be fixed, not accommodated.
 
 - [ ] **Step 6: Render the artifact for human review**
 
@@ -381,11 +454,17 @@ Send the trimmed render to the human with the before/after metric table.
 The machine answers *did the numbers improve?*; only a person answers *is
 this a drawing I can use?* (R7).
 
-- [ ] **Step 7: Verify R2 and commit (ARTIFACT ONLY)**
+- [ ] **Step 7: Commit, THEN verify R2 (ARTIFACT ONLY)**
 
 ```bash
+git add modules/optical-compressor/
+git commit -F <message file>
 bun run check-r2 HEAD~1
 ```
+
+Order matters: the check inspects commits, not the working tree, so running
+it first would verify the PREVIOUS commit and report PASS while the new one
+is untested.
 
 Must report PASS. The commit touches **no** ruler file — in particular, do
 not update `BASELINES` here. That is Task 3.
@@ -430,12 +509,13 @@ bun run schematic-check 2>&1 | grep -c "BASELINE STALE"
 
 Expected: `0`.
 
-- [ ] **Step 4: Run the suite and commit (RULER ONLY)**
+- [ ] **Step 4: Run the suite, commit, THEN verify R2 (RULER ONLY)**
 
 ```bash
-bun run typecheck && bun test && bun run check-r2 HEAD~1
+bun run typecheck && bun test
 git add lib/testing/schematic-gate.ts
 git commit -F <message file>
+bun run check-r2 HEAD~1
 ```
 
 `check-r2` must report PASS.
@@ -527,13 +607,15 @@ bun run schematic-check 2>&1 | grep -E "M1|M2|M3|M4|M5"
 
 Then render as in Task 2 Step 6 and send for human review.
 
-- [ ] **Step 7: Verify R2 and commit (ARTIFACT ONLY)**
+- [ ] **Step 7: Commit, THEN verify R2 (ARTIFACT ONLY)**
 
 ```bash
+git add modules/optical-compressor/
+git commit -F <message file>
 bun run check-r2 HEAD~1
 ```
 
-Do not update `BASELINES` here; that is Task 5.
+Must report PASS. Do not update `BASELINES` here; that is Task 5.
 
 ---
 
@@ -560,23 +642,29 @@ Same rule as Task 3: equal to measured, never rounded for headroom.
 
 ```bash
 bun run schematic-check 2>&1 | grep -c "BASELINE STALE"   # expect 0
-bun run typecheck && bun test && bun run check-r2 HEAD~1
+bun run typecheck && bun test
 git add lib/testing/schematic-gate.ts
 git commit -F <message file>
+bun run check-r2 HEAD~1
 ```
 
 ---
 
 ### Task 6: Phase 3 — convert two-terminal connections (ARTIFACT ONLY)
 
-**Expect this to be worth little.** The measured evidence is that a
-two-terminal net produces exactly one label either way, and the pin-to-pin
-version's auto-name is far wider (`R1_pin2/R2_pin1`, 15 chars, versus
-`MID`, 3). Width drives M2. **A conversion that widens a label is a
-regression even if it reads as "more wires".**
+**Two-terminal pin-to-pin behaviour is UNRESOLVED** — see Global
+Constraints. One fixture emitted no label, another emitted one. Do not
+enter this task expecting either outcome.
 
-The genuine win is only where the connection currently renders as a label
-and would become a drawn wire. Measure each conversion individually.
+What IS known: where pin-to-pin does emit a label, its auto-name is far
+wider (`R1_pin2/R2_pin1`, 15 chars, versus `MID`, 3), and width drives M2.
+So **a conversion that widens a label is a regression even if it reads as
+"more wires"**. Measure each conversion individually and let the numbers
+decide.
+
+If a fixture during this task explains WHY the two earlier measurements
+disagreed, record it in the task report — that finding is worth more than
+the conversions themselves.
 
 **Files:**
 - Modify: `modules/optical-compressor/parts/AudioPath.tsx`
@@ -640,14 +728,16 @@ bun run typecheck && bun test
 
 Render as in Task 2 Step 6 and send for human review.
 
-- [ ] **Step 6: Verify R2 and commit (ARTIFACT ONLY)**
+- [ ] **Step 6: Commit, THEN verify R2 (ARTIFACT ONLY)**
 
 ```bash
+git add modules/optical-compressor/
+git commit -F <message file>
 bun run check-r2 HEAD~1
 ```
 
-If **no** conversion survived measurement, commit nothing and record the
-negative result in the task report. A phase that produced no improvement is
+Must report PASS. If **no** conversion survived measurement, commit nothing
+and record the negative result in the task report. A phase that produced no improvement is
 a finding, not a failure to be papered over.
 
 ---
@@ -701,9 +791,9 @@ As in Task 2 Step 6. Send it with the outcome document.
 - [ ] **Step 4: Commit (documentation)**
 
 ```bash
-bun run check-r2 HEAD~1
 git add docs/superpowers/plans/2026-09-21-schematic-readability-outcome.md
 git commit -F <message file>
+bun run check-r2 HEAD~1
 ```
 
 ---
