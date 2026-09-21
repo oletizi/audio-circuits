@@ -40,8 +40,8 @@ export const PultecPassiveEq = (props: PultecPassiveEqProps) => {
       <PultecHiBoost name={hiBoost} {...layout[3]} />
       <PultecMid name={mid} {...layout[4]} />
 
-      {/* The one shared node between these three sections: low boost's series
-          resistor and the hi cut capacitor bank meet at the same point. */}
+      {/* Low boost's series resistor and the hi cut capacitor bank meet at the
+          same point. */}
       <trace from={`net.${lowBoost}_SECTION_IN`} to={`net.${hiCut}_SECTION`} />
 
       {/* The mid's input shunt and boost return reference the canonical input

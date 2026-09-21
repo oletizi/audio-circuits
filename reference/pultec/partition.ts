@@ -10,7 +10,7 @@
  * the built hardware does: each board carries the screw terminals that its
  * own switch and pot wire back to.
  */
-import type { PassiveNetwork } from "../../lib/passives/topology.ts"
+import type { PassiveElement, PassiveNetwork } from "../../lib/passives/topology.ts"
 import { partitionTopology } from "../../lib/passives/topology.ts"
 import { THREE_BAND_REFERENCE } from "./three-band.ts"
 import { MID_POSITIONS, MID_TAPS, tapLabel } from "./mid.ts"
@@ -131,17 +131,27 @@ export function boundaryConductors(
  * module, flatten its emitted connectivity, and compare. Anything the board
  * gains or loses relative to the reference shows up as a topology difference.
  */
+/** Whether a part sits on a section board rather than the front panel.
+ *
+ * Potentiometers and rotary selectors are front-panel parts wired back to the
+ * board. Everything else is board-resident — including the inductors, which
+ * stopped being off-board when the tapped coils were replaced by discrete parts
+ * sitting beside the capacitors they pair with.
+ *
+ * This is the single definition of board-resident. Tests that reason about what
+ * the boards must emit derive it from here rather than restating the rule,
+ * because a second copy is one that can disagree.
+ */
+export function isBoardResident(element: PassiveElement): boolean {
+  return element.kind !== "potentiometer" && element.kind !== "switch"
+}
+
 export function boardNetwork(owner: ModuleOwner): PassiveNetwork {
   const split = partitionReference()
   const owned = split.modules[owner]
   if (owned === undefined) throw new Error(`No such module: ${owner}`)
 
-  // Potentiometers and rotary selectors are front-panel parts wired back to the
-  // board. Inductors are not: with the tapped coils replaced by discrete parts,
-  // they sit on the section boards beside the capacitors they pair with.
-  const elements = owned.filter(
-    element => element.kind !== "potentiometer" && element.kind !== "switch",
-  )
+  const elements = owned.filter(isBoardResident)
   if (elements.length === 0) {
     throw new Error(`Module has no board-resident elements: ${owner}`)
   }

@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { RootCircuit } from "@tscircuit/core"
 import { PultecPassiveEq } from "../../modules/pultec-passive-eq/PultecPassiveEq.tsx"
-import { toLabelledNetwork } from "../../lib/export/circuit-json.ts"
+import { toLabelledNetwork, netGroups } from "../../lib/export/circuit-json.ts"
 import { assertSameTopology } from "../../lib/passives/topology.ts"
 import { boardNetwork } from "../../reference/pultec/partition.ts"
 import { COMPOSED_MAPPING, COMPOSED_PREFIX } from "./composed-mapping.ts"
@@ -74,18 +74,34 @@ test("two nets that mean different nodes are still refused", () => {
   expect(() => toLabelledNetwork(render(), shorted)).toThrow("Conflicting nets in group")
 })
 
-test("the mid's ground really is bonded to the rest of the board", () => {
-  // MID_GND and LB_GND both map to canonical "0", so every assertion above
-  // passes whether or not a conductor actually joins the two boards — the
-  // mapping states the shared ground rather than proving it. Point the mid's
-  // ground at a different canonical net: the guard fires only if the two nets
-  // are physically one group, so this throws exactly when the trace exists.
-  // Delete that trace and this test goes quiet, which is the point.
-  const probed: ExportMapping = {
-    ...MAPPING,
-    netNames: { ...MAPPING.netNames, [`${P}_MID_GND`]: "mid_ground_probe" },
+test("every join the mapping claims is a conductor that actually exists", () => {
+  // Whenever two board nets map to one canonical net, the mapping is asserting
+  // the boards are joined there. Nothing downstream can tell an asserted join
+  // from a real one: the flattened network reads each group's canonical name by
+  // lookup, so two UNJOINED nets both labelled "0" flatten to the same node and
+  // every topology and AC assertion passes. This is the only check that looks
+  // at the conductor. Driven off the mapping rather than a hand-written list,
+  // so a join added tomorrow is covered the day it is written.
+  const byCanonical = new Map<string, string[]>()
+  for (const [boardNet, canonical] of Object.entries(MAPPING.netNames)) {
+    const existing = byCanonical.get(canonical)
+    if (existing) existing.push(boardNet)
+    else byCanonical.set(canonical, [boardNet])
   }
-  expect(() => toLabelledNetwork(render(), probed)).toThrow("Conflicting nets in group")
+  const claimed = [...byCanonical].filter(([, boardNets]) => boardNets.length > 1)
+  // Ground, and the low-boost/hi-cut node. If this drops to nothing, the loop
+  // below is vacuous and the test has stopped testing.
+  expect(claimed.length).toBeGreaterThan(0)
+
+  const groups = netGroups(render())
+  for (const [canonical, boardNets] of claimed) {
+    const containing = groups.filter(group => boardNets.some(net => group.includes(net)))
+    expect(
+      containing.length,
+      `${canonical} is claimed by ${boardNets.sort().join(" and ")}, which are ` +
+      `${containing.length} separate nodes on the board, not one`,
+    ).toBe(1)
+  }
 })
 
 test("no two components are drawn at the same spot", () => {

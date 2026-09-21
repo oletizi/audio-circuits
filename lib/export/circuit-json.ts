@@ -86,6 +86,27 @@ function assertNoDanglingPins(circuitJson: readonly AnyCircuitElement[], indices
   if (dangling.length > 0) throw new Error(`Dangling pins: ${dangling.sort().join(", ")}`)
 }
 
+/** The declared net names that tscircuit actually joined into one node, one
+ * array per physical group, each sorted; groups carrying no declared net are
+ * omitted. This is the fact a mapping cannot establish: two module nets may
+ * both be labelled canonical `0`, and the labelling is a claim about the board
+ * rather than evidence about it. Callers assert the join instead of trusting it.
+ */
+export function netGroups(circuitJson: readonly AnyCircuitElement[]): readonly (readonly string[])[] {
+  const indices = indexElements(circuitJson)
+  const uf = buildUnionFind(circuitJson, indices)
+  const byRoot = new Map<string, string[]>()
+  for (const id of indices.memberIds) {
+    const net = indices.nets.get(id)
+    if (net === undefined) continue
+    const root = uf.find(id)
+    const existing = byRoot.get(root)
+    if (existing) existing.push(net.name)
+    else byRoot.set(root, [net.name])
+  }
+  return [...byRoot.values()].map(names => [...names].sort())
+}
+
 function buildUnionFind(circuitJson: readonly AnyCircuitElement[], indices: Indices): UnionFind {
   const uf = new UnionFind(indices.memberIds, (a, b) => (a < b ? a : b))
   for (const element of circuitJson) {

@@ -184,16 +184,21 @@ export const HI_BOOST_POSITIONS: readonly HiBoostPosition[] = [
 
 /** Terminals deliberately left out of the reference model, with the reason.
  * Nothing here is silently dropped. */
+/* The mid section IS modelled now, but from Thompson-Bell's documentation
+ * rather than from this board's netlist — the as-built mid carries a
+ * six-position subset with placeholder values. So these terminals have no
+ * counterpart in the model: they belong to a different realisation of the
+ * section, not to an omitted one. See `mid.ts`. */
 export const EXCLUDED: Readonly<Record<string, string>> = {
-  J14: "mid inductor selector send — mid section excluded, values unresolved",
-  J29: "mid level pot — mid section excluded",
-  J31: "mid input — mid section excluded",
-  J32: "mid output — mid section excluded",
-  J35: "mid inductor return / cap selector send — mid section excluded",
-  J36: "mid capacitor selector return — mid section excluded",
-  J38: "mid cut/boost switch — mid section excluded",
-  J39: "mid cut Q — mid section excluded",
-  J40: "mid inductor return — mid section excluded",
+  J14: "mid inductor selector send — as-built mid, not the modelled one",
+  J29: "mid level pot — as-built mid, not the modelled one",
+  J31: "mid input — as-built mid, not the modelled one",
+  J32: "mid output — as-built mid, not the modelled one",
+  J35: "mid inductor return / cap selector send — as-built mid, not the modelled one",
+  J36: "mid capacitor selector return — as-built mid, not the modelled one",
+  J38: "mid cut/boost switch — as-built mid, not the modelled one",
+  J39: "mid cut Q — as-built mid, not the modelled one",
+  J40: "mid inductor return — as-built mid, not the modelled one",
 }
 
 /** Components excluded along with their sections. Only the mid section now. */

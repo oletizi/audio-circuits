@@ -9,6 +9,7 @@ import { toSpiceNetlist } from "../../lib/sim/netlist.ts"
 import { runAcSweep } from "../../lib/sim/ac.ts"
 import { compareResponses } from "../../lib/sim/compare.ts"
 import { COMPOSED_MAPPING, COMPOSED_PREFIX } from "./composed-mapping.ts"
+import { isBoardResident } from "../../reference/pultec/partition.ts"
 import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 import type { ControlState } from "../../lib/passives/control-state.ts"
 import type { PassiveNetwork } from "../../lib/passives/topology.ts"
@@ -41,11 +42,6 @@ function renderComposition() {
  * tscircuit, plus the front-panel controls, which are not on any board. The
  * controls are taken from the reference unchanged — the claim under test is
  * about the boards and the wiring between them, not about the pots. */
-/** The only parts that legitimately live off a board: front-panel controls,
- * reached through screw terminals. Every passive in this design is now
- * board-resident, so a passive missing from the export is a module bug. */
-const OFF_BOARD_KINDS: ReadonlySet<string> = new Set(["potentiometer", "switch"])
-
 function composedNetwork(): PassiveNetwork {
   const exported = toLabelledNetwork(renderComposition(), COMPOSED_MAPPING)
   const exportedRefs = new Set(exported.elements.map(element => element.ref))
@@ -58,7 +54,7 @@ function composedNetwork(): PassiveNetwork {
   // handed back the reference's own mid and the sweep below compared the
   // reference against itself. Only controls may be supplied; a board part that
   // failed to render is a bug to report, not a hole to fill.
-  const strays = absent.filter(element => !OFF_BOARD_KINDS.has(element.kind))
+  const strays = absent.filter(isBoardResident)
   if (strays.length > 0) {
     throw new Error(
       `The composition did not emit ${strays.length} board part(s): ` +
