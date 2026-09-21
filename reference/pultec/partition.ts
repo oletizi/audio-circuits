@@ -13,15 +13,38 @@
 import type { PassiveNetwork } from "../../lib/passives/topology.ts"
 import { partitionTopology } from "../../lib/passives/topology.ts"
 import { THREE_BAND_REFERENCE } from "./three-band.ts"
+import { MID_POSITIONS, MID_TAPS, tapLabel } from "./mid.ts"
 
-export type ModuleOwner = "low-cut" | "low-boost" | "hi-cut" | "hi-boost"
+export type ModuleOwner = "low-cut" | "low-boost" | "hi-cut" | "hi-boost" | "mid"
 
 export const MODULE_OWNERS: readonly ModuleOwner[] = [
   "low-cut",
   "low-boost",
   "hi-cut",
   "hi-boost",
+  "mid",
 ]
+
+/** Mid ownership is generated from the same tables the mid section is built
+ * from, so the two cannot drift apart. Everything the mid introduces belongs to
+ * the mid module; it shares no component with any other section. */
+function midOwnership(): Record<string, ModuleOwner> {
+  const owned: Record<string, ModuleOwner> = {
+    R_MID_BOOST: "mid",
+    R_MID_CUT: "mid",
+    R_MID_SHUNT: "mid",
+    RV_MID: "mid",
+    SW_MID: "mid",
+    SW_MID_MODE: "mid",
+  }
+  for (const position of MID_POSITIONS) {
+    position.capacitors.forEach((_, index) => {
+      owned[`C_MID_${position.label}_${index === 0 ? "A" : "B"}`] = "mid"
+    })
+  }
+  for (const henries of MID_TAPS) owned[`L_MID_${tapLabel(henries)}`] = "mid"
+  return owned
+}
 
 /** One entry per element in `THREE_BAND_REFERENCE`. The allowed-owner check
  * rejects a typo here rather than silently creating a phantom module. */
@@ -60,6 +83,9 @@ export const OWNERSHIP: Readonly<Record<string, ModuleOwner>> = {
   RV_HI_BOOST: "hi-boost",
   RV_HI_Q: "hi-boost",
   SW_HI_BOOST: "hi-boost",
+
+  // Mid: generated, see midOwnership().
+  ...midOwnership(),
 }
 
 /** Partition of the reference, with owner names checked against the declared

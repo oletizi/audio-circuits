@@ -129,11 +129,21 @@ in the schematic. The mid is authored from documentation and validated against
 that documentation, not against a netlist. That is a deliberate, recorded
 difference.
 
-**Still open:** the mid is not yet part of `THREE_BAND_REFERENCE`, because
-inserting it into the signal chain needs the mid level pot's three connections
-settled — the board wires them differently from the master schematic, and the
-board is no longer authoritative. Until that is resolved the mid stands as a
-validated module that nothing composes.
+**Insertion — RESOLVED.** The mid level pot is a rheostat, wiper tied to one
+end, running from the node where the hi boost and lo cut pots meet down to the
+LC network. The section therefore shunts the signal path to a variable depth
+rather than sitting in series with it. From there: selector, capacitor, winding
+tap, coil, and the boost/off/cut switch, which returns the coil's far end
+through 4K7 to the input, through 1K to ground, or nowhere in the centre.
+
+The mid is now part of `THREE_BAND_REFERENCE`. At full depth each position
+peaks within a fraction of a percent of its label, the boost is symmetric about
+its centre on a log axis while the cut is several times narrower — the MEQ5
+character — and the centre position is flat to within 1e-6 dB, which is what
+"off" should mean.
+
+Note the rheostat's inverted sense: level 0 is maximum depth and level 1 is
+minimum, because the resistance is in series with the branch.
 
 ---
 

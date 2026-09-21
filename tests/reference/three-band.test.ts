@@ -56,8 +56,10 @@ test("includes the hi boost branch and excludes only the mid section", () => {
   }
 })
 
-test("the tapped winding is four inductors spanning tap to coil top", () => {
-  const inductors = THREE_BAND_REFERENCE.elements.filter(e => e.kind === "inductor")
+test("the hi boost winding is four inductors spanning tap to coil top", () => {
+  const inductors = THREE_BAND_REFERENCE.elements.filter(
+    e => e.kind === "inductor" && e.ref.startsWith("L_HI_BOOST"),
+  )
   expect(inductors.map(e => e.ref).sort()).toEqual([
     "L_HI_BOOST_100MH", "L_HI_BOOST_200MH", "L_HI_BOOST_300MH", "L_HI_BOOST_600MH",
   ])

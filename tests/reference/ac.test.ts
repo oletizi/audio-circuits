@@ -83,6 +83,59 @@ test("lo boost lifts low frequencies relative to flat", async () => {
   expect(db(20)).toBeGreaterThan(db(1_000))
 }, 60_000)
 
+/** The mid level control is a rheostat, so its sense is inverted relative to a
+ * normal pot: 0 is maximum depth (no resistance in the branch) and 1 is minimum
+ * (the full 47K damping it). Worth stating, because reading it the other way
+ * makes every mid result look broken. */
+const MID_FULL = { level: 0, mode: "boost" } as const
+const MID_OFF = { level: 0, mode: "off" } as const
+
+test("the mid section is genuinely absent in the centre switch position", async () => {
+  // "off" opens the coil's return, so no current can flow anywhere in the
+  // branch. It must be indistinguishable from the section not existing.
+  const positions = { ...POSITIONS, mid: "1kHz" }
+  const off = await responseDb(controlState(0, 0, 0, positions, 1, 0, MID_OFF))
+  for (const hz of [200, 1_000, 5_000]) {
+    expect(off(hz)).toBeCloseTo(FLAT_DB, 6)
+  }
+}, 60_000)
+
+test("mid boost peaks on its selected frequency, symmetrically", async () => {
+  const at = async (label: string) =>
+    responseDb(controlState(0, 0, 0, { ...POSITIONS, mid: label }, 1, 0, MID_FULL))
+
+  const oneK = await at("1kHz")
+  expect(oneK(1_000) - FLAT_DB).toBeGreaterThan(12)
+  // An octave either side should fall away by a similar amount: a bell, not a
+  // shelf. Equal skirts are what distinguish the two.
+  const below = oneK(500) - FLAT_DB
+  const above = oneK(2_000) - FLAT_DB
+  expect(Math.abs(below - above)).toBeLessThan(1)
+  expect(oneK(1_000) - FLAT_DB).toBeGreaterThan(below + 2)
+
+  // And the centre moves with the selector.
+  const threeK = await at("3kHz")
+  expect(threeK(3_000)).toBeGreaterThan(threeK(1_000))
+  const twoHundred = await at("200Hz")
+  expect(twoHundred(200)).toBeGreaterThan(twoHundred(1_000))
+}, 180_000)
+
+test("the mid dip is sharper than the mid peak, as an MEQ5 is", async () => {
+  const positions = { ...POSITIONS, mid: "1kHz" }
+  const boost = await responseDb(controlState(0, 0, 0, positions, 1, 0, MID_FULL))
+  const cut = await responseDb(controlState(0, 0, 0, positions, 1, 0, { level: 0, mode: "cut" }))
+
+  // Both act at the centre.
+  expect(boost(1_000) - FLAT_DB).toBeGreaterThan(10)
+  expect(cut(1_000) - FLAT_DB).toBeLessThan(-8)
+
+  // But an octave out, the cut has almost recovered while the boost has not.
+  // That narrow dip against a broad peak is the section's character.
+  const boostSkirt = Math.abs(boost(2_000) - FLAT_DB)
+  const cutSkirt = Math.abs(cut(2_000) - FLAT_DB)
+  expect(cutSkirt).toBeLessThan(boostSkirt / 3)
+}, 180_000)
+
 test("simultaneous low boost and cut give the Pultec curve, not cancellation", async () => {
   // The low boost and low cut sections share one two-pole rotary, so they are
   // ALWAYS tuned to the same frequency. That lock is not an implementation

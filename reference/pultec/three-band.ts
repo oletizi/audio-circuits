@@ -32,6 +32,16 @@ import {
   SELECTORS,
 } from "./controls.ts"
 import { parseValue } from "../../lib/passives/units.ts"
+import {
+  MID_LEVEL,
+  MID_MODES,
+  MID_POSITIONS,
+  MID_RESISTORS,
+  MID_TAPS,
+  MID_TAP_POINT,
+  tapLabel,
+} from "./mid.ts"
+import type { MidMode } from "./mid.ts"
 
 /** Canonical names for the nets the schematic names itself. Everything else is
  * derived from the terminal it belongs to, so net identity stays traceable. */
@@ -270,6 +280,138 @@ function buildSelectors(): readonly PassiveElement[] {
   })
 }
 
+/** Nets the mid section introduces. None of them exist on the manufactured
+ * board's netlist, because the mid lives on its own sub-board; they are named
+ * here so the mid's provenance stays visibly separate. */
+const MID_SELECTOR_COMMON = "mid_sel_common"
+const MID_COIL_RETURN = "mid_coil_return"
+const MID_BOOST_RETURN = "mid_boost_return"
+const MID_CUT_RETURN = "mid_cut_return"
+
+export const MID_NETS = {
+  selectorCommon: MID_SELECTOR_COMMON,
+  coilReturn: MID_COIL_RETURN,
+  boostReturn: MID_BOOST_RETURN,
+  cutReturn: MID_CUT_RETURN,
+} as const
+
+function midTapNet(henries: number): string {
+  return `mid_tap_${tapLabel(henries).toLowerCase()}`
+}
+
+function midThrowNet(label: string): string {
+  return `mid_sel_${label.toLowerCase()}`
+}
+
+/** The mid boost/cut section, authored from documentation rather than derived
+ * from the netlist. See `mid.ts` for why the provenance differs.
+ *
+ * The level pot is a rheostat from the hi boost / lo cut junction down to the
+ * LC network, so the section shunts the signal path to a variable depth rather
+ * than sitting in series with it.
+ */
+function buildMid(): readonly PassiveElement[] {
+  const provenance = { source: "P3bandDoc.pdf p3 and the master schematic p5; NOT netlist-derived" }
+  const elements: PassiveElement[] = []
+
+  for (const position of MID_POSITIONS) {
+    position.capacitors.forEach((capacitance, index) => {
+      elements.push({
+        ref: `C_MID_${position.label}_${index === 0 ? "A" : "B"}`,
+        kind: "capacitor",
+        pins: { a: midTapNet(position.henries), b: midThrowNet(position.label) },
+        parameters: { farads: parseValue(capacitance) },
+        provenance,
+      })
+    })
+  }
+
+  for (const henries of MID_TAPS) {
+    elements.push({
+      ref: `L_MID_${tapLabel(henries)}`,
+      kind: "inductor",
+      // Tap down to the coil's return end, which the cut/boost switch routes.
+      pins: { a: midTapNet(henries), b: MID_COIL_RETURN },
+      parameters: { henries },
+      provenance,
+    })
+  }
+
+  elements.push({
+    ref: "R_MID_BOOST",
+    kind: "resistor",
+    pins: { a: "in", b: MID_BOOST_RETURN },
+    parameters: { ohms: MID_RESISTORS.boostReturnOhms },
+    provenance,
+  })
+  elements.push({
+    ref: "R_MID_CUT",
+    kind: "resistor",
+    pins: { a: MID_CUT_RETURN, b: "0" },
+    parameters: { ohms: MID_RESISTORS.cutReturnOhms },
+    provenance,
+  })
+  elements.push({
+    ref: "R_MID_SHUNT",
+    kind: "resistor",
+    pins: { a: "in", b: "0" },
+    parameters: { ohms: MID_RESISTORS.inputShuntOhms },
+    provenance,
+  })
+
+  // Rheostat: the wiper is tied to the cw end, so only the ccw-wiper section
+  // carries current and the pot reads as a variable resistor.
+  elements.push({
+    ref: "RV_MID",
+    kind: "potentiometer",
+    pins: {
+      ccw: MID_TAP_POINT,
+      wiper: MID_SELECTOR_COMMON,
+      cw: MID_SELECTOR_COMMON,
+    },
+    parameters: { ohms: MID_LEVEL.ohms, taper: taperFor(MID_LEVEL.taperClass) },
+    provenance,
+  })
+
+  const selectorPins: Record<string, string> = { common: MID_SELECTOR_COMMON }
+  const selectorContacts: Record<string, readonly (readonly [string, string])[]> = {}
+  for (const position of MID_POSITIONS) {
+    const pin = `t_${position.label}`
+    selectorPins[pin] = midThrowNet(position.label)
+    selectorContacts[position.label] = [["common", pin]]
+  }
+  elements.push({
+    ref: "SW_MID",
+    kind: "switch",
+    pins: selectorPins,
+    parameters: { positions: MID_POSITIONS.map(p => p.label), contacts: selectorContacts },
+    provenance,
+  })
+
+  elements.push({
+    ref: "SW_MID_MODE",
+    kind: "switch",
+    pins: {
+      common: MID_COIL_RETURN,
+      boost: MID_BOOST_RETURN,
+      cut: MID_CUT_RETURN,
+    },
+    parameters: {
+      positions: [...MID_MODES],
+      contacts: {
+        boost: [["common", "boost"]],
+        // Centre position: the coil's return goes nowhere, so no current can
+        // flow and the whole section is out of circuit.
+        off: [],
+        cut: [["common", "cut"]],
+      },
+    },
+    provenance,
+  })
+
+  return elements
+}
+
 /** The reference network: low cut, low boost and hi cut in full, hi boost
  * level pot retained with an open wiper, hi boost resonant branch and mid
  * section absent. */
@@ -282,6 +424,7 @@ export const THREE_BAND_REFERENCE: PassiveNetwork = {
     ...buildHiBoostInductors(),
     ...buildSelectors(),
     buildHiBoostSelector(),
+    ...buildMid(),
   ],
 }
 
@@ -313,6 +456,16 @@ export function declaredOpens(state: ControlState): readonly string[] {
     if (position.label === hiBoost) continue
     open.push(netAt("J8", position.capacitorPin))
   }
+  const midPosition = state.switchPositions.SW_MID
+  if (midPosition === undefined) throw new Error("No position for SW_MID")
+  for (const position of MID_POSITIONS) {
+    if (position.label === midPosition) continue
+    open.push(midThrowNet(position.label))
+  }
+  const midMode = state.switchPositions.SW_MID_MODE
+  if (midMode === undefined) throw new Error("No position for SW_MID_MODE")
+  if (midMode !== "boost") open.push(MID_BOOST_RETURN)
+  if (midMode !== "cut") open.push(MID_CUT_RETURN)
   return open
 }
 
@@ -323,9 +476,10 @@ export function controlState(
   loCut: 0 | 1,
   loBoost: 0 | 1,
   hiBoostLevel: 0 | 1,
-  positions: { loFrequency: string; hiFrequency: string },
+  positions: { loFrequency: string; hiFrequency: string; mid?: string },
   hiCut: 0 | 1 = 0,
   hiQ: 0 | 1 = 0,
+  mid: { level: 0 | 1; mode: MidMode } = { level: 0, mode: "off" },
 ): ControlState {
   return {
     potPositions: {
@@ -334,6 +488,7 @@ export function controlState(
       RV_HI_BOOST: hiBoostLevel,
       RV_HI_CUT: hiCut,
       RV_HI_Q: hiQ,
+      RV_MID: mid.level,
     },
     switchPositions: {
       // One physical rotary drives both low banks, as on the high side.
@@ -342,6 +497,8 @@ export function controlState(
       // One physical rotary drives both high banks.
       SW_HI_CUT: positions.hiFrequency,
       SW_HI_BOOST: positions.hiFrequency,
+      SW_MID: positions.mid ?? MID_POSITIONS[0]!.label,
+      SW_MID_MODE: mid.mode,
     },
   }
 }

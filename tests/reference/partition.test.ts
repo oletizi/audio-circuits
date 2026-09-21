@@ -27,10 +27,10 @@ test("partitioning preserves the reference exactly", () => {
   expect(() => assertSameTopology(THREE_BAND_REFERENCE, recomposed)).not.toThrow()
 })
 
-test("all four modules are populated", () => {
+test("all five modules are populated", () => {
   const split = partitionReference()
   expect(Object.keys(split.modules).sort()).toEqual([
-    "hi-boost", "hi-cut", "low-boost", "low-cut",
+    "hi-boost", "hi-cut", "low-boost", "low-cut", "mid",
   ])
   // Hi boost carries its capacitor bank, Qmax, the winding modelled per tap,
   // both pots and one pole of the high frequency selector.
@@ -67,14 +67,13 @@ test("the connector table accounts for every boundary crossing", () => {
   }
 })
 
-test("ground is an external port, not an inter-module boundary, in this scope", () => {
-  // Every element on ground is a low-boost element — the Cboost bank and the
-  // low boost pot's ccw end — so ground crosses no module boundary here. It is
-  // still a conductor every board needs physically, which is why the plan
-  // insists external ports are routed even when a single board owns them. In
-  // the complete circuit the hi boost inductor and the mid section also return
-  // to ground, and it would become a boundary net; both are out of scope.
-  expect(boundaryConductors().map(c => c.net)).not.toContain("0")
+test("ground became a boundary net once the mid section returned to it", () => {
+  // It was not one while only low boost touched ground. The mid's cut return
+  // and input shunt now land there too, so ground crosses a module boundary and
+  // needs a conductor between the boards rather than just a local connection.
+  // It remains an external port either way, which is the case the plan flags:
+  // a port still has to reach the outside world even when one board owns it.
+  expect(boundaryConductors().map(c => c.net)).toContain("0")
   expect(Object.values(externalPorts())).toContain("0")
 
   const split = partitionReference()
@@ -84,13 +83,15 @@ test("ground is an external port, not an inter-module boundary, in this scope", 
         elements.some(e => Object.values(e.pins).includes("0")))
       .map(([owner]) => owner),
   )
-  expect([...groundOwners]).toEqual(["low-boost"])
+  expect([...groundOwners].sort()).toEqual(["low-boost", "mid"])
 })
 
-test("hi_boost_out is the low-cut / hi-cut / hi-boost junction", () => {
+test("hi_boost_out is where four sections meet", () => {
+  // Hi boost's output, lo cut's and hi cut's inputs, and the mid rheostat all
+  // land on this node. It is the busiest conductor in the partition.
   const junction = boundaryConductors().find(c => c.net === "hi_boost_out")
   if (!junction) throw new Error("hi_boost_out is not a boundary net")
-  expect([...junction.owners].sort()).toEqual(["hi-boost", "hi-cut", "low-cut"])
+  expect([...junction.owners].sort()).toEqual(["hi-boost", "hi-cut", "low-cut", "mid"])
 })
 
 test("every external port is reachable from the partitioned modules", () => {

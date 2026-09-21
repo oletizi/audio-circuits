@@ -14,10 +14,24 @@
  * by the netlist, and that is a deliberate, recorded difference rather than an
  * oversight.
  *
- * The section is NOT yet part of `THREE_BAND_REFERENCE`: inserting it into the
- * signal chain needs the mid level pot's three connections settled, which the
- * board wires differently from the drawing. See unresolved item 3.
+ * INSERTION. The mid level pot is a rheostat — wiper tied to one end — running
+ * from the node where the hi boost and lo cut pots meet, down to the LC
+ * network. So the section hangs off `hi_boost_out` as a variable-depth shunt
+ * rather than sitting in series with the signal. From there: selector, selected
+ * capacitor, its winding tap, the coil, and finally the boost/off/cut switch,
+ * which returns the coil's far end through 4K7 to the input for boost, through
+ * 1K to ground for cut, or nowhere at all in the centre position.
  */
+
+/** Where the mid network taps the signal path: the node between the hi boost
+ * pot's output and the lo cut pot's input. */
+export const MID_TAP_POINT = "hi_boost_out"
+
+/** The three positions of the cut/boost switch. `off` opens the coil's return
+ * entirely, which takes the whole section out of circuit. */
+export type MidMode = "boost" | "off" | "cut"
+
+export const MID_MODES: readonly MidMode[] = ["boost", "off", "cut"]
 
 export interface MidPosition {
   readonly label: string
