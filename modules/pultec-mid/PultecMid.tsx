@@ -40,6 +40,16 @@ const MID_INDUCTANCES: Readonly<Record<string, string>> = {
   "0R1H": "100mH",
 }
 
+/** A tap with no inductance here is a part nobody can buy or fit, so say so
+ * rather than handing tscircuit an undefined value it would render as blank. */
+function inductanceFor(label: string): string {
+  const inductance = MID_INDUCTANCES[label]
+  if (inductance === undefined) {
+    throw new Error(`No inductance defined for mid tap ${label}`)
+  }
+  return inductance
+}
+
 export const PultecMid = (props: PultecMidProps) => {
   const { name, schX = 0, schY = 0 } = props
   const g = createGrid(schX, schY)
@@ -126,7 +136,7 @@ export const PultecMid = (props: PultecMidProps) => {
         <Fragment key={`L-${henries}`}>
           <inductor
             name={`${name}_L_${tapLabel(henries)}`}
-            inductance={MID_INDUCTANCES[tapLabel(henries)]!}
+            inductance={inductanceFor(tapLabel(henries))}
             footprint="0805"
             {...g.below(index - 2, 3)}
           />
