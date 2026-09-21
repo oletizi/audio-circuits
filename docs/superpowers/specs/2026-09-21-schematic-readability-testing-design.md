@@ -1,7 +1,7 @@
 ---
 title: Metrics-based testing for schematic readability
 date: 2026-09-21
-status: Draft for review (revision 3, after second third-party review)
+status: Revision 4 — review cleanup complete; awaiting maintainer sign-off
 supersedes: the ad-hoc standard in docs/SCHEMATIC-STANDARDS.md
 ---
 
@@ -14,8 +14,14 @@ pictures attached. This project requires a human to review every schematic
 and to do PCB placement and routing from it, so readability is a functional
 requirement.
 
-The goal is a **unit test suite that is genuinely green, where green means
-the schematic is readable** — not green because the bar was moved.
+The goal is to reach a state where **the suite is green because the
+schematic meets the readability standard** — not because the bar was moved.
+
+During migration those are different things, and the document keeps them
+apart. **Green means non-regression against a recorded baseline.
+Compliance is reported separately** until a module's baseline is retired
+(§10). Conflating the two is how the previous attempt convinced itself it
+was succeeding.
 
 ## 2. Why the first attempt failed, in detail
 
@@ -250,7 +256,9 @@ Measured at the time of writing (51 components):
 | M5b `drawingAreaPerComponent` | 23.5 | 6–30 | ✅ |
 | M5a `componentAreaPerComponent` | not yet measured | 4–20 | — |
 
-Three of five fail, one badly. That is the honest starting position.
+Three fail, two pass, one is not yet measured. That is the honest starting
+position — and M5a being unmeasured is itself a gap, since the metric was
+introduced in revision 2 and no implementation has produced it.
 
 ## 8. Falsifiability requirements
 
@@ -326,7 +334,9 @@ This yields the property that makes the 15 → 11 → 0 episode impossible:
 
 **R3 — Improvement is computed, never asserted.** Baselines are stored, so
 the tooling already knows the before-state. It prints a table and decides;
-it does not read the commit message.
+it does not read the commit message. Baseline updates must equal the
+measured value exactly, and a stale baseline is reported until corrected
+(§10.1a).
 
 ```
 SCHEMATIC READABILITY            BASELINE   CURRENT      Δ
@@ -347,7 +357,7 @@ per-module baseline is local, and only downward.
 **R6 — A finding needs two measurements in different circuits** before it
 is written into documentation or relied on for a convention. §2, Failure 4.
 
-**R7 — A readability change must produce the rendered artifact.** §10.
+**R7 — A readability change must produce the rendered artifact.** §11.
 
 ## 10. Enforcement
 
@@ -360,6 +370,48 @@ A Tier 1 metric that worsens fails the build. Because baselines live in a
 ruler file, worsening the schematic requires first raising the baseline in
 a **separate, artifact-identical commit** — which is exactly the kind of
 change a reviewer will notice.
+
+### 10.1a Baseline lifecycle
+
+R2 forbids a commit from touching both artifact and ruler, and baselines
+live in a ruler file. So recording an improvement necessarily takes two
+commits, and the order matters:
+
+```
+A.  ARTIFACT commit          circuit changes only
+    measured   38 -> 31      passes: 31 <= baseline 38
+    baseline   38 (stale)    report prints: BASELINE STALE, update to 31
+
+B.  RULER commit             baseline only, artifact byte-identical
+    baseline   38 -> 31      must equal the value measured at this tree
+
+C.  next ARTIFACT work       must not exceed 31
+```
+
+Two rules make this a measurement rather than a negotiation:
+
+**A baseline update must EQUAL the last measured value, not merely be
+lower.** If the render says 31, the ruler commit records 31 — not 35
+"to leave headroom", and not 25 as a pre-commitment to work not yet done.
+A baseline is a record of what the artifact actually achieved. The moment
+it becomes a number someone chooses, it is a budget again, and budgets are
+what this document exists to eliminate.
+
+**A stale baseline is reported on every run.** Step B is not optional
+housekeeping: leaving the baseline at 38 after achieving 31 silently
+restores 7 units of regression headroom and weakens the ratchet without
+any visible change. The tooling therefore prints `BASELINE STALE: recorded
+38, measured 31` until step B lands, and names the exact value required.
+
+Mechanically:
+
+- an **artifact** commit fails if any metric exceeds its baseline, and
+  warns if any metric is below it;
+- a **ruler** commit that edits a baseline fails unless the new value
+  equals the value measured against that commit's tree.
+
+The second check is what prevents the baseline from drifting away from the
+artifact in either direction.
 
 ### 10.2 Improvement required of readability work (procedural)
 
