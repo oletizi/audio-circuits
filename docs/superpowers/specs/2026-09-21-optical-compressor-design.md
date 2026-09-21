@@ -9,11 +9,28 @@ supersedes: revision 1 draft
 
 ## 0. Revision note
 
-This is a revised draft. Revision 1 proposed a sound architecture; this revision
-corrects two numeric errors, adds the quantitative constraints that were
-previously deferred, and resolves a conflict with the repository's file-size
-convention. Changes from revision 1 are summarized in Appendix A so reviewers who
-read the first draft can see what moved and why.
+**Revision 3**, following third-party review of revision 2.
+
+Revision 1 proposed a sound architecture. Revision 2 corrected two numeric errors
+and added quantitative constraints, but introduced a significant analytical
+mistake of its own: it conflated *detector headroom* with *usable control range*,
+and on the strength of that conflation deferred the emitter degeneration that the
+driver actually requires to function as a compressor at all. Review caught this.
+
+Revision 3 makes three circuit changes and withdraws one unsupported claim:
+
+* **§8.7 adds a 1 kΩ emitter resistor** and drops R_LED to 3.3 kΩ. Without it the
+  control range is ~1 dB and the law is effectively a switch (§6.1.2).
+* **§10.1 splits the potentiometer failure requirements.** Revision 2's
+  wiper-to-end rule is correct for GAIN and would have shorted out PEAK
+  REDUCTION's divider.
+* **§8.6 drops C_DET to 4.7 µF**, because degeneration raised the discharge
+  impedance ~5×.
+* **§8.6.2 withdraws the precision-rectifier "population option."** It was never
+  achievable as a population change on a single supply.
+
+Changes from revision 1 are in Appendix A; changes from revision 2, with the
+review findings that prompted them, are in Appendix B.
 
 ## 1. Summary
 
@@ -133,10 +150,14 @@ evaluated later, but it should not complicate the first module.
 
 ### 5.1 Stability: the failure mode is in the envelope domain
 
-Because the optical element is slow, this loop cannot oscillate at audio rates.
-The realistic instability is **envelope oscillation** — a low-frequency breathing
-or pumping in which gain reduction and recovery chase each other. It appears when
-loop gain is high and release is substantially faster than attack.
+The dominant expected instability is in the **envelope domain** — a low-frequency
+breathing or pumping in which gain reduction and recovery chase each other. It
+appears when loop gain is high and release is substantially faster than attack.
+
+Audio-rate oscillation is not expected, because a photoconductive cell's response
+rolls off in the tens of hertz and the loop therefore has negligible gain at audio
+frequencies. That is a reason to look for envelope instability first, not a proof
+that audio-rate oscillation is impossible.
 
 This distinction matters for acceptance testing: "no oscillation" must be
 verified by watching the gain-reduction envelope on sustained program material,
@@ -149,20 +170,27 @@ These constraints were deferred in revision 1. They are derivable now, and
 stating them up front converts several "measure it later" items into pass/fail
 windows.
 
-### 6.1 Sidechain headroom budget
+### 6.1 Sidechain thresholds and control range
 
-This is the tightest constraint in the design and the reason several otherwise
-attractive refinements are too expensive.
+Revision 2 conflated two different quantities under the name "window." This
+section separates them, because the distinction is what drove the driver change
+in §8.7.
 
-At a nominal 9.0 V input, after the Schottky drop the rail is about 8.7 V and
-VBIAS is about 4.35 V. The TL07xH family has a rail-to-rail output stage, so at
-light loading the sidechain amplifier swings to within roughly 150 mV of each
-rail — about **±4.15 V peak** around VBIAS. (This rail-to-rail output is an
-independent reason to specify the H suffix, beyond the supply-range reason given
-in §8.1.)
+There are **three** thresholds on the sidechain amplifier's output, not two:
 
-Against that swing, the detector places two series junction drops between the
-sidechain output and any LED current at all:
+| # | Threshold | Set by | Estimable in advance? |
+|---|---|---|---|
+| 1 | Detector conduction — first gain reduction | Rectifier + V_BE drops | Yes |
+| 2 | **Maximum useful LED current — full gain reduction** | Driver transfer function | Yes, once the driver is defined |
+| 3 | Sidechain clipping | Op-amp output swing | Estimate only; measure |
+
+**The musically relevant control range is 1 → 2, not 1 → 3.** Revision 2 computed
+1 → 3, called it the control range, and built three conclusions on top of it. All
+three were wrong.
+
+#### 6.1.1 Threshold 1: detector conduction
+
+Two series junction drops stand between the sidechain output and any LED current:
 
 | Element | Drop |
 |---|---|
@@ -170,28 +198,60 @@ sidechain output and any LED current at all:
 | 2N3904 base-emitter forward voltage | ~0.65 V |
 | **Total before any gain reduction** | **~1.25 V** |
 
-So the usable detector window is:
+**The rectifier diode drop is the threshold.** The design has no threshold
+control, but it has a threshold, and this is it. It is temperature dependent
+(roughly −2 mV/°C per junction) and part dependent.
 
-```
-20 * log10(4.15 V / 1.25 V) = 10.4 dB
-```
+#### 6.1.2 Threshold 2: full drive — and why revision 2's driver failed here
 
-**The entire control range from first detection to sidechain clipping is about
-10 dB.** Referred back through the 11x sidechain gain, that is 114 mV peak at the
-makeup output for onset and 377 mV peak for full drive.
+Threshold 2 is set entirely by the driver's transfer function, and revision 2's
+driver placed it almost on top of threshold 1.
 
-Consequences that follow directly:
+With a bare common-emitter stage (no emitter resistor) and R_B = 10 kΩ, the base
+current needed for full LED current is I_C/β, so:
 
-* **The rectifier diode drop is the threshold.** The design has no threshold
-  control, but it does have a threshold, and this is it. It is temperature
-  dependent (roughly −2 mV/°C per junction) and part dependent.
-* **Emitter degeneration is expensive here.** Adding ~1 V across an emitter
-  resistor to make LED current β-independent (§6.4) would cut the window to about
-  7.5 dB. That is a real trade, not a free improvement.
-* **A precision rectifier buys back ~5.7 dB.** Moving the diode inside the
-  sidechain op-amp's feedback loop removes its 0.60 V from the budget, widening
-  the window to 20·log10(4.15/0.65) ≈ 16.1 dB. This is why §8.6.2 provisions for it
-  even though v1 does not populate it.
+| β | I_B at 1.5 mA | Drop across R_B | Threshold 2 | Control range (1→2) |
+|---|---|---|---|---|
+| 100 | 15 µA | 0.15 V | 1.40 V | **~1.0 dB** |
+| 300 | 5 µA | 0.05 V | 1.30 V | **~0.3 dB** |
+
+The entire LED sweep from dark to full drive occupies 0.05–0.15 V of detector
+voltage. That is not a compressor control law; it is approximately a switch, and
+in a feedback loop it produces near-limiting behavior with an extremely sharp
+knee. It is also 3× β-dependent, which §6.4 previously recorded as a separate
+problem — it is the same problem.
+
+**§8.7 therefore adds a 1 kΩ emitter resistor.** With degeneration,
+I_E ≈ (V_DET − V_BE)/R_E, so the span is set by a resistor rather than by β:
+
+| Configuration | Threshold 1 | Threshold 2 | Control range | β spread |
+|---|---|---|---|---|
+| No R_E (revision 2) | 1.25 V | ~1.40 V | ~1.0 dB | ~3× |
+| **R_E = 1 kΩ (revision 3)** | **1.25 V** | **~2.75 V** | **~6.8 dB** | **~7%** |
+
+Degeneration does not *cost* control range here — it *creates* it. Revision 2
+framed it as a headroom expense to be deferred; that was backwards.
+
+#### 6.1.3 Threshold 3: sidechain clipping
+
+At a nominal 9.0 V input the rail is about 8.7 V after the Schottky drop and
+VBIAS is about 4.35 V. The TL07xH family has a rail-to-rail output stage, so the
+sidechain amplifier should swing to within roughly 100–150 mV of each rail —
+about **±4.15 V peak** around VBIAS.
+
+**This is an estimate, not a specification.** TI characterizes rail headroom at a
+40 V supply with a 10 kΩ load; that figure does not transfer to an 8.7 V rail.
+§12.2 item 15 measures it, and §18 flags it as a load-bearing assumption. The
+rail-to-rail output stage remains an independent reason to specify the H suffix
+beyond the supply-range reason in §8.1.
+
+With R_E = 1 kΩ, threshold 3 sits about 20·log10(4.15/2.75) ≈ 3.6 dB above
+threshold 2. That margin is the design's tolerance for op-amp swing coming in
+below estimate, for V_BE and diode drops varying with temperature, and for
+supply sag (§6.3). It is not usable control range.
+
+Referred back through the 11x sidechain gain, thresholds 1 and 2 correspond to
+114 mV and 250 mV peak at the makeup output.
 
 ### 6.2 Vactrol selection criteria
 
@@ -225,9 +285,17 @@ screened against them before anything is ordered.
 
 ### 6.3 Supply voltage
 
-Repeating the §6.1 calculation at a depleted 9 V battery (7.5 V terminal, 7.18 V
-after the diode, VBIAS 3.59 V, swing ±3.44 V) gives a detector window of 8.8 dB —
-a ~1.6 dB loss of control range, on top of reduced audio headroom.
+At a depleted 9 V battery (7.5 V terminal, 7.18 V after the diode, VBIAS 3.59 V,
+estimated swing ±3.44 V) threshold 3 falls to about 1.9 dB above threshold 2,
+down from 3.6 dB.
+
+Note what this does and does not change. Thresholds 1 and 2 are set by junction
+drops and R_E, not by the rail, so the **control range itself is unaffected** at
+~6.8 dB. What shrinks is the margin protecting it. Once the supply sags far
+enough that threshold 3 crosses threshold 2, the sidechain clips before full
+drive and the top of the compression range is lost abruptly rather than
+gradually. That is the failure mode to watch for, and it arrives sooner than the
+audio path's own headroom limit.
 
 **Specify a regulated 9 V adapter as the reference supply** and validate against
 it. Battery operation is not prohibited, but it is not a v1 validation target and
@@ -238,16 +306,29 @@ validation floor at 9.0 V nominal and records battery behavior as a measurement
 
 ### 6.4 LED drive predictability
 
-The 2N3904 operates in its active region across most of the control range, where
-I_C = β · I_B. The 2N3904's β spans roughly 100–300 across parts and current, so
-**LED current at a given detector voltage varies by up to 3× between
-transistors.** The collector resistor caps only the saturated maximum; it does not
-set the current elsewhere on the curve.
+Without degeneration the 2N3904 operates in its active region across the whole
+control range, where I_C = β · I_B. With β spanning roughly 100–300 across parts
+and current, **LED current at a given detector voltage would vary by up to 3×
+between transistors**, and the collector resistor would cap only the saturated
+maximum.
 
-This is accepted for v1. The mitigation — emitter degeneration — costs ~3 dB of
-the §6.1 window and is deferred to a later revision with a controlled-current
-driver, where the headroom can be budgeted deliberately rather than spent
-piecemeal.
+Revision 2 accepted this and deferred the mitigation. Revision 3 does not,
+because §6.1.2 showed it is not a separate problem: the same β multiplication
+that makes the current unpredictable also compresses the control law into
+~0.15 V. One resistor fixes both.
+
+With R_E = 1 kΩ, the base current error term is I_B · R_B, so the threshold-2
+voltage becomes:
+
+| β | I_B | I_B · R_B | Threshold 2 (V_DET) |
+|---|---|---|---|
+| 100 | 15 µA | 0.15 V | 2.30 V |
+| 300 | 5 µA | 0.05 V | 2.20 V |
+
+A 0.10 V spread on a 1.5 V span is about **7%**, down from 3×. A controlled-current
+driver could reduce it further, but it is no longer the pressing problem revision 2
+took it for, and it remains deferred on those grounds rather than on headroom
+grounds.
 
 ## 7. User controls
 
@@ -368,7 +449,9 @@ The attenuated node feeds a non-inverting TL072H stage:
 * non-inverting input connected directly to the gain-reduction node;
 * 10 kΩ from the inverting input to VBIAS;
 * panel-mounted GAIN pot in the feedback path; and
-* **2.2 µF** output coupling capacitor followed by a 100 kΩ output pulldown.
+* **2.2 µF** output coupling capacitor followed by a 100 kΩ output pulldown. If a
+  polarized part is used, its **positive terminal faces the op-amp output**,
+  which sits at VBIAS against a pulldown to ground.
 
 The coupling capacitor is raised from revision 1's 1 µF. Into the specified
 minimum 10 kΩ external load in parallel with the 100 kΩ pulldown (9.1 kΩ), 1 µF
@@ -391,7 +474,8 @@ non-inverting TL072H amplifier with an initial gain of 11x:
 
 This gain makes a simple silicon-diode detector practical without requiring a
 precision rectifier. Per §6.1, it places compression onset at 114 mV peak and
-sidechain clipping at 377 mV peak, both referred to the makeup output.
+full gain reduction at 250 mV peak, both referred to the makeup output, with
+sidechain clipping a further 3.6 dB above that.
 
 Raising this gain does **not** widen the control window — it moves both ends of
 the window down together and clips sooner. The window is set by the junction drops
@@ -409,116 +493,165 @@ through a 10 kΩ base resistor.
 
 **The detector network is:**
 
-* **10 µF detector capacitor (C_DET)**; and
+* **4.7 µF detector capacitor (C_DET)**; and
 * 100 kΩ release resistor (R_REL) in parallel with the capacitor.
 
 Both parts must be independently bypassable or depopulatable.
 
-#### 8.6.1 Why 10 µF, and why revision 1's release figure was wrong
+#### 8.6.1 Release model
 
-Revision 1 specified 1 µF and described a "nominal 100 ms electrical time
-constant" from 1 µF × 100 kΩ. That calculation omits the base path and is wrong by
-roughly an order of magnitude.
+Revision 1 computed the release as C_DET × R_REL and got 100 ms. Revision 2
+identified the missing base path but then treated the discharge current as
+constant, which understated the time. Both were wrong; this is the corrected
+model.
 
-The detector node has two discharge paths, not one. Besides R_REL, it drives the
-2N3904 base through R_B = 10 kΩ, and the base-emitter junction clamps the base at
-~0.65 V. At V_DET = 1.5 V:
+**The discharge is exponential, not linear.** With the emitter resistor from §8.7
+in place, the detector node sees the base path as R_B + (β+1)·R_E — degeneration
+multiplies R_E by the current gain as seen from the base — in parallel with R_REL.
+At β = 100:
 
-| Path | Current |
-|---|---|
-| Base, (1.5 − 0.65) / 10 kΩ | 85 µA |
-| R_REL, 1.5 / 100 kΩ | 15 µA |
-| **Total** | **100 µA** |
+| Path | Impedance from detector node | Current at full drive (V_DET = 2.15 V) |
+|---|---|---|
+| Base | 10 kΩ + 101 kΩ = 111 kΩ | 13.5 µA |
+| R_REL | 100 kΩ | 21.5 µA |
+| **Total** | **52.6 kΩ (19.0 µS)** | **35 µA** |
 
-The base path dominates roughly 6:1. With C_DET = 1 µF the node falls at
-100 mV/ms, so it traverses from 1.5 V to the 0.65 V cutoff — at which point the
-LED is fully off and gain reduction has completely released — in about **8.5 ms**.
-R_REL barely participates, and the release resistor's nominal time constant never
-governs anything audible.
+**Degeneration restores R_REL to relevance.** In revision 2's undegenerated
+circuit the base path dominated 6:1 and the release resistor governed nothing;
+here it carries the larger share, which is a second reason to prefer the
+degenerated driver.
 
-The same 100 µA figure also predicts the ripple. Half-wave rectification of a
-100 Hz signal leaves ~10 ms between peaks, over which 1 µF loses
-100 µA × 10 ms / 1 µF = **1.0 V** — more than the entire 0.85 V control span. The
-LED would effectively strobe at 100 Hz, leaving all smoothing to the vactrol.
+The node decays toward an asymptote of ~0.31 V with τ = C_DET / 19.0 µS. Using
+**LED current falling from 90% to 10%** as the release metric — a measurable
+quantity, unlike "full release at exactly 0.65 V," since V_BE itself falls with
+current — the span works out to 1.235 τ:
 
-Both problems have the same fix. With C_DET = 10 µF:
+| C_DET | τ | Release (90%→10%) | 100 Hz ripple |
+|---|---|---|---|
+| 1 µF | 53 ms | ~65 ms | ~23% of span |
+| 2.2 µF | 116 ms | ~145 ms | ~11% |
+| **4.7 µF** | **247 ms** | **~305 ms** | **~5%** |
+| 10 µF | 526 ms | ~650 ms | ~2.3% |
 
-* the electrical release becomes ~85 ms, close to revision 1's stated intent; and
-* the 100 Hz inter-peak droop falls to ~0.1 V, roughly 12% of the control span.
+**These are estimates from a simplified model** that holds V_BE fixed at 0.65 V
+and ignores the vactrol entirely. Real V_BE falls with current, and τ itself is
+β-dependent (at β = 300 the base path rises to 311 kΩ, stretching the 4.7 µF
+release to ~440 ms). Treat the table as a starting point and a sanity check on
+measurements, not as a prediction.
 
-**This also reverses revision 1's recommended first bench test.** Revision 1
-preferred omitting the capacitor entirely and letting the vactrol do the
-smoothing; with no storage at all the detector node collapses between every peak,
-and low-frequency buzz is the likely result. The better experiment is to start at
-10 µF and work *down* (4.7 µF, 2.2 µF, 1 µF) until ripple becomes audible,
-recording where the boundary falls.
+**C_DET is 4.7 µF, down from revision 2's 10 µF.** The change follows from the
+driver: degeneration raised the discharge impedance roughly 5×, so the same
+ripple performance now needs less capacitance, and 10 µF would push the release
+past 600 ms before the vactrol's own recovery is even added.
 
-The release still is not a single number. The photocell adds its own nonlinear,
-history-dependent recovery, and the cascaded response must be measured as a
-system (§12.2 items 6 and 7).
+The ripple column uses the same constant-current approximation over the ~10 ms
+between 100 Hz half-wave peaks and is likewise a rough estimate. What survives
+from revision 2 is the qualitative conclusion: omitting C_DET entirely leaves the
+node with no storage between peaks and is the wrong opening experiment. Start at
+4.7 µF and sweep both directions (§12.2 item 9).
 
-#### 8.6.2 Precision rectifier population option
+The release is not a single number in any case. The photocell adds its own
+nonlinear, history-dependent recovery, and the cascaded response must be measured
+as a system (§12.2 items 6 and 7).
 
-Per §6.1, moving the rectifier diode inside the sidechain amplifier's feedback
-loop removes 0.60 V of the 1.25 V detector threshold and widens the control window
-from ~10.4 dB to ~16.1 dB.
+#### 8.6.2 Precision rectifier: not a population option
 
-v1 populates the simple detector. But the board must be laid out so the precision
-variant is a **population change, not a respin**:
+Revision 2 claimed the simple detector could become a precision rectifier through
+a population change, backed by two reserved footprints. **That claim does not
+survive scrutiny and is withdrawn.**
 
-* reserve a footprint for a second 1N4148 (D_FB) from the sidechain amplifier
-  output back to its inverting input;
-* reserve a footprint for the feedback-path series resistor the precision
-  configuration requires; and
-* make the simple-detector diode's anode net and the sidechain amplifier's
-  inverting-input net both reachable at the same pads, so the two configurations
-  differ only in which parts are fitted.
+Three problems, in increasing order of severity:
 
-Document the exact populate/depopulate list for both configurations in the module
-design notes, so the swap is mechanical rather than a re-derivation.
+1. **Topology mismatch.** §8.5's sidechain amplifier is non-inverting. A precision
+   half-wave rectifier is an inverting topology — the signal moves from the + pin
+   to a resistor into the − pin. That is a different circuit, not a fitted part.
+2. **Op-amp saturation.** Revision 2 never specified how the amplifier avoids
+   driving into its rail on the half-cycle when the rectifier diode is reverse
+   biased. The canonical answer is a second clamp diode closing the loop, which
+   revision 2 did not account for.
+3. **Single-supply level shifting.** This is the blocker. A precision rectifier
+   referenced to VBIAS produces a VBIAS-referenced output, but the detector node
+   is ground-referenced. AC-coupling between them would undo the rectification,
+   and re-referencing the rectifier to ground costs the op-amp its negative swing.
+   Resolving this needs a different sidechain architecture, not a different BOM.
+
+**Consequence for v1:** the board carries labeled test pads at the sidechain
+amplifier's inverting input and output so the topology can be probed and
+experimented with on the bench. It does not claim a no-respin upgrade path. If
+measurement shows the 1.25 V threshold is genuinely limiting, the fix is a
+sidechain redesign proposed on its own merits with the level-shifting problem
+solved first.
+
+**§8.5 also stays non-inverting** as a result. Revision 3 briefly considered
+flipping it to inverting so both configurations would share a topology, but with
+the population option withdrawn the only remaining effect would be loading the
+100 kΩ PEAK REDUCTION wiper with the inverting stage's input resistor — a
+significant distortion of the control law for no benefit.
 
 ### 8.7 LED driver
 
-Use a 2N3904 as a low-side LED driver:
+Use a 2N3904 as a low-side LED driver, **with emitter degeneration**:
 
-* emitter to ground;
-* base driven from the detector node through 10 kΩ;
-* collector connected to the vactrol LED cathode;
-* vactrol LED anode connected to `+9V_PROTECTED` through the current-limit
-  resistor; and
+* **emitter to ground through R_E = 1 kΩ** (new in revision 3);
+* base driven from the detector node through R_B = 10 kΩ;
+* collector connected to the vactrol LED cathode through the §8.8 sense resistor;
+* vactrol LED anode connected to `+9V_PROTECTED` through R_LED; and
 * 100 kΩ from base to ground so the transistor turns fully off when undriven.
 
-**Start with a 4.7 kΩ LED resistor**, not 2.2 kΩ. Revision 1 had these inverted.
-With approximately 8.7 V after the protection diode, an assumed 1.5 V LED drop and
-0.2 V saturated transistor voltage:
+#### 8.7.1 Why the emitter resistor is not optional
 
-| R_LED | I_LED(max) |
+Revision 2 specified a bare common-emitter stage and deferred degeneration as a
+headroom expense. §6.1.2 shows why that was wrong: without R_E the entire LED
+sweep occupies 0.05–0.15 V of detector voltage, giving a control range of roughly
+0.3–1.0 dB depending on β. The circuit would behave as a near-switch.
+
+R_E = 1 kΩ sets I_E ≈ (V_DET − V_BE) / R_E, so 1.5 mA of LED current requires a
+1.5 V span rather than a 0.15 V one:
+
+| | Control range | β spread | Release governed by |
+|---|---|---|---|
+| No R_E | ~1.0 dB | ~3× | base path, 6:1 |
+| R_E = 1 kΩ | ~6.8 dB | ~7% | R_REL, 1.6:1 |
+
+One resistor fixes the control law, the β-dependence of §6.4, and the release
+model of §8.6.1 simultaneously.
+
+#### 8.7.2 Current limit
+
+**R_LED = 3.3 kΩ**, revised from 4.7 kΩ to account for the 1.5 V now dropped
+across R_E. Budget at full drive, from an 8.7 V rail:
+
+| Element | Drop |
 |---|---|
-| 4.7 kΩ | 1.5 mA |
-| 2.2 kΩ | 3.2 mA |
-| 1 kΩ | 7.0 mA |
+| Vactrol LED (assumed) | 1.5 V |
+| R_LED, 3.3 kΩ at 1.5 mA | 4.95 V |
+| Sense resistor, 10 Ω | 0.015 V |
+| V_CE (active region, not saturated) | 0.74 V |
+| R_E, 1 kΩ at 1.5 mA | 1.5 V |
+| **Total** | **8.7 V** |
 
-The reason to prefer 4.7 kΩ is §6.2. The acceptance target needs R_LDR ≈ 10 kΩ,
-which a VTL5C3-class part reaches at a few hundred microamps. Specifying 3.2 mA
-maximum is roughly an order of magnitude more current than the target requires,
-which compresses the entire useful control range into the bottom of PEAK
-REDUCTION's travel and makes the control feel abrupt near the top. 1.5 mA still
-provides substantial margin over the ~0.5 mA the target implies.
+V_CE of 0.74 V keeps the transistor comfortably out of saturation across the
+range, which matters now that the stage is meant to be a transconductance
+element rather than a switch.
 
-Keep 2.2 kΩ and 1 kΩ as population alternatives for characterization, but do not
-fit the 1 kΩ option unless the selected vactrol's datasheet and measured response
-justify roughly 7 mA. The 1.5 V LED forward-drop assumption is itself
-part-dependent — red vactrol LEDs commonly sit near 1.8 V — so recompute this
-table once the part is chosen.
+The 1.5 mA target comes from §6.2: the acceptance criterion needs R_LDR ≈ 10 kΩ,
+and specifying several milliamps more than that compresses the useful range into
+the bottom of PEAK REDUCTION's travel. **The LED current at which a candidate
+vactrol reaches 10 kΩ must be read from its datasheet** and this table recomputed
+— revision 2 asserted a figure for a "VTL5C3-class" part from memory without a
+citation, and that claim is withdrawn.
 
-This transistor stage is intentionally simple; it is not a precision current
-source, and §6.4 records the β-dependence that follows. If LED current proves too
-supply-dependent or the compression curve too abrupt, a controlled-current driver
-can be proposed as a separate revision.
+Keep 2.2 kΩ and 1.5 kΩ as population alternatives for characterization. The 1.5 V
+LED forward-drop assumption is part-dependent — red vactrol LEDs commonly sit
+near 1.8 V — so recompute once the part is chosen.
+
+This stage is still not a precision current source. A controlled-current driver
+remains a candidate for a later revision, but §6.4 records that degeneration has
+already removed most of the motivation.
 
 ### 8.8 LED current measurement
 
-Bench item §12.2 item 2 requires LDR resistance at several known LED currents, so the
+Bench item §12.2.2 requires LDR resistance at several known LED currents, so the
 LED current must be measurable without desoldering. Revision 1 called for a
 "collector/current measurement point," which is not sufficient on its own.
 
@@ -614,12 +747,27 @@ to VBIAS, but naming a physical terminal after the net it happens to land on
 conflates two things the schematic should keep separate — and it makes the two pot
 connectors gratuitously asymmetric.
 
-Both pots must fail safely when a wiper goes open or intermittent. **Tie each
-wiper to the appropriate end terminal** so intermittent contact produces a bounded
-resistance rather than an open circuit — for GAIN this matters most, since an open
-wiper in the feedback path drives the makeup stage to maximum gain. Revision 1
-said "where possible"; there is no case here where it is not possible, so it is a
-requirement.
+Both pots must fail safely when a wiper goes open or intermittent, but **the two
+require different treatments** — revision 2 applied one rule to both and was
+wrong to do so.
+
+**GAIN is a rheostat.** It sits in the makeup amplifier's feedback path and only
+its resistance matters. Tie the wiper to the appropriate end terminal, so
+intermittent contact produces a bounded resistance rather than an open circuit.
+This matters most here, because an open wiper in a feedback path drives the
+makeup stage to maximum gain.
+
+**PEAK REDUCTION is a three-terminal voltage divider** — TOP from the makeup
+output, BOTTOM to VBIAS, WIPER to the sidechain amplifier. Tying its wiper to
+either end would short out part of the divider and destroy the control. Revision
+2 specified exactly that, in pursuit of connector symmetry; it would not have
+worked. Instead, add a **1 MΩ resistor from the wiper to VBIAS**. Against the
+100 kΩ pot this perturbs the control law by roughly a tenth of its own
+contribution while guaranteeing that an open wiper settles at VBIAS, producing
+zero detector drive and therefore no compression.
+
+The two connectors keep symmetric physical pin names. Their electrical failure
+handling is not symmetric and cannot be made so.
 
 ### 10.2 Test points
 
@@ -662,7 +810,14 @@ And updates `lib/index.ts`, `modules/index.ts`, and `README.md`.
 Revision 1 placed the entire circuit in a single `OpticalCompressor.tsx`. Power,
 bias, buffer, attenuator, makeup, sidechain, detector, driver, five connectors,
 roughly ten test points, and all interconnecting traces will not fit in the
-repository's 300–500 line ceiling.
+300–500 line ceiling.
+
+**Provenance of that ceiling.** It is a standing convention of this project's
+maintainer, but through revision 2 it lived only in the maintainer's personal
+global configuration and was not visible in the repository — a reviewer working
+from the public tree could not verify it, and reasonably challenged it.
+Revision 3 adds the rule to the checked-in project `CLAUDE.md` so it is a real,
+auditable project convention rather than an unstated one.
 
 The split resolves this **without** violating §4's prohibition on premature
 module extraction, because the two are different boundaries:
@@ -725,14 +880,20 @@ Before calling the electrical design validated, record:
 5. Attack time after a level step.
 6. Recovery after both a 100 ms pulse and several seconds of illumination.
 7. Output level versus input level at several PEAK REDUCTION settings.
-8. **Detector window**: sidechain-amplifier output voltage at first detectable
-   gain reduction, and at visible clipping. **Expected ~10 dB apart** (§6.1); a
-   materially smaller measured window is the trigger for populating the §8.6.2
-   precision rectifier.
-9. Rectifier ripple at the detector node, swept from C_DET = 10 µF downward
-   (4.7 µF, 2.2 µF, 1 µF), recording where audible modulation begins.
-10. Measured electrical release with the LED driver connected, confirming the
-    §8.6.1 analysis rather than the nominal R_REL·C_DET product.
+8. **All three §6.1 thresholds**, measured at the sidechain-amplifier output:
+   (a) first detectable gain reduction; (b) the level at which further increase
+   stops producing additional gain reduction; (c) visible clipping. **Expected:
+   (a) ≈ 1.25 V, (b) ≈ 2.75 V, (c) ≈ 4.15 V — so (a)→(b) ≈ 6.8 dB of control
+   range with ≈ 3.6 dB of margin above it.** This is the single most important
+   measurement in the list: it validates or refutes the driver change in §8.7,
+   and (b) cannot be predicted reliably without the selected transistor and
+   vactrol in circuit.
+9. Rectifier ripple at the detector node, swept **both directions** from
+   C_DET = 4.7 µF (10 µF, 2.2 µF, 1 µF), recording where audible modulation
+   begins.
+10. Electrical release with the LED driver connected, measured as **LED current
+    falling from 90% to 10%** (§8.6.1). Compare against the ~305 ms estimate;
+    the nominal R_REL·C_DET product predicts neither the shape nor the duration.
 11. Distortion and noise at representative guitar, line, and maximum expected
     levels.
 12. Interaction between GAIN and PEAK REDUCTION.
@@ -741,9 +902,15 @@ Before calling the electrical design validated, record:
 14. Power-up transient: thump amplitude at the output and gain-reduction excursion
     during the ~2.5 s VBIAS ramp (§8.9).
 15. Clean headroom at the buffered input, gain-reduction node, makeup output, and
-    sidechain output using a regulated 9.0 V supply.
-16. LED current at maximum drive across at least three 2N3904 samples, to bound
-    the §6.4 β spread in practice.
+    sidechain output using a regulated 9.0 V supply. **Record the TL072H output
+    swing explicitly** — §6.1.3's ±4.15 V estimate is extrapolated from a 40 V
+    characterization and is the design's most load-bearing unverified number.
+16. LED current at maximum drive across at least three 2N3904 samples, to confirm
+    that degeneration has reduced the §6.4 β spread to single-digit percent.
+17. **Control-law shape**: gain reduction versus detector voltage across the full
+    range, to confirm the law is progressive rather than switch-like. Revision 2's
+    undegenerated driver would have failed this; it is the acceptance test for
+    §8.7's emitter resistor.
 
 Measurements must identify the exact vactrol part and sample. Optical parts can
 have wide tolerances, so a single measurement is evidence for a prototype, not a
@@ -776,9 +943,10 @@ insertion loss.
 
 | Risk | Consequence | Mitigation |
 |---|---|---|
-| Narrow detector window (~10 dB, §6.1) | Compression goes from absent to full over a small level range; sidechain clips early | Measure it explicitly (§12.2.8); populate the §8.6.2 precision rectifier if the measured window is short |
+| Control range narrower than the ~6.8 dB estimate (§6.1.2) | Compression goes from absent to full over a small level range; law feels switch-like | Measure all three thresholds (§12.2.8) and the law's shape (§12.2.17); increase R_E if the measured range is short |
+| Measured op-amp swing below the ±4.15 V estimate (§6.1.3) | Sidechain clips before full drive; top of the compression range lost abruptly | Measure it (§12.2.15); the 3.6 dB margin above threshold 2 exists to absorb this |
 | Unknown vactrol characteristics | Wrong attenuation range or unusable timing | Screen datasheets against the §6.2 windows before ordering; characterize before freezing R_SHUNT or LED current |
-| β spread in the LED driver (§6.4) | Compression law varies 3× between transistor samples | Measure across samples (§12.2.16); defer emitter degeneration to a revision that can afford the ~3 dB headroom cost |
+| Residual β spread (§6.4) | LED current varies ~7% between transistor samples | Measure across samples (§12.2.16); acceptable at this magnitude, unlike the 3× of the undegenerated design |
 | Wide part-to-part vactrol tolerance | Units behave differently | Measure multiple samples; consider selection or calibration only if variance is musically unacceptable |
 | Cascaded electrical and optical release | Recovery becomes excessively slow | Make C_DET and R_REL independently optional; sweep downward from 10 µF |
 | Half-wave ripple | Audible amplitude modulation or distortion | Start at C_DET = 10 µF per §8.6.1; reduce only to the measured audible boundary; adopt full-wave rectification only if evidence requires it |
@@ -802,7 +970,9 @@ are listed in Appendix A instead.
 * PEAK REDUCTION and GAIN pot tapers;
 * maximum makeup gain;
 * whether half-wave rectification is quiet enough;
-* whether the §8.6.2 precision rectifier gets populated in v1's final form;
+* final R_E, if the measured control range (§12.2.8) differs from ~6.8 dB;
+* whether a redesigned sidechain solving the §8.6.2 level-shifting problem is
+  worth proposing at all;
 * whether to adopt a controlled-current LED driver in a later revision; and
 * whether validated internal parts deserve promotion to reusable modules.
 
@@ -837,9 +1007,12 @@ Approve the following direction for implementation:
 * TL072H op-amps, in two packages split audio/control per §8.1;
 * feedback detection from the post-makeup output;
 * two controls only: PEAK REDUCTION and GAIN;
-* simple half-wave detector and 2N3904 LED driver, with the precision-rectifier
-  variant provisioned as a population option;
-* C_DET = 10 µF and R_LED = 4.7 kΩ as starting values, per §8.6.1 and §8.7;
+* simple half-wave detector and a **degenerated** 2N3904 LED driver, with the
+  precision-rectifier variant withdrawn as unachievable on a single supply and
+  reduced to bench test pads (§8.6.2);
+* R_E = 1 kΩ, R_LED = 3.3 kΩ, and C_DET = 4.7 µF as starting values, per §8.6.1
+  and §8.7;
+* separate failure-mode treatments for the two potentiometers (§10.1);
 * the §6.2 vactrol selection criteria as the part-screening specification;
 * one generic `Vactrol` library component with a required footprint, and one
   complete compressor module built from internal parts; and
@@ -906,3 +1079,92 @@ optical element.
 * maximum LED current and LED resistor starting value → §8.7
 * detector capacitor starting value → §8.6.1
 * vactrol selection criteria (previously implicit in "exact part number") → §6.2
+
+> **Note.** Appendix A describes revision 2 as it stood. Several of its entries
+> were themselves corrected in revision 3 — notably the §10.1 wiper rule, the
+> §8.6.1 release figures, and the §8.7 LED resistor. Appendix B is authoritative
+> where the two disagree.
+
+---
+
+## Appendix B: Changes from revision 2
+
+Prompted by third-party review. Findings 1, 2 and 3 were raised as blocking;
+all three are accepted.
+
+### Blocking findings — circuit changes
+
+**B1. Control range was not what §6.1 calculated.** Revision 2 computed detector
+conduction → sidechain clipping (10.4 dB) and called it the control range. The
+actual control range ends at maximum LED current, which with a bare
+common-emitter stage and R_B = 10 kΩ arrives after only 0.05–0.15 V of detector
+travel — roughly 0.3–1.0 dB depending on β. Revision 2's circuit would have
+behaved as a near-switch.
+
+*Change:* §6.1 rewritten around three thresholds instead of two. §8.7 adds
+R_E = 1 kΩ, restoring ~6.8 dB of control range; R_LED drops 4.7 kΩ → 3.3 kΩ to
+absorb the 1.5 V now across R_E. §12.2.8 and a new §12.2.17 measure the result.
+
+*Consequence beyond the finding:* §6.4's framing was inverted. Revision 2 called
+degeneration a ~3 dB headroom expense to defer; it is the change that makes the
+control law exist, and it also cuts β spread from ~3× to ~7%.
+
+**B2. The wiper rule was wrong for PEAK REDUCTION.** §10.1 required tying both
+pot wipers to an end terminal. That is correct for GAIN, a rheostat in the
+feedback path, and would have shorted out part of PEAK REDUCTION's three-terminal
+divider.
+
+*Change:* §10.1 split into separate GAIN and PEAK REDUCTION requirements; PEAK
+REDUCTION gets a 1 MΩ wiper-to-VBIAS resistor for open-wiper safety instead.
+
+**B3. The precision rectifier was never a population option.** Two reserved
+footprints do not convert a non-inverting amplifier into an inverting precision
+rectifier, revision 2 never addressed op-amp saturation on the off half-cycle,
+and — decisively — a VBIAS-referenced rectifier cannot feed a ground-referenced
+detector without level shifting that the single supply does not permit.
+
+*Change:* §8.6.2 rewritten to withdraw the claim, stating all three problems.
+The board keeps labeled test pads only. §8.5 consequently stays non-inverting,
+since flipping it would have loaded the PEAK REDUCTION wiper for no remaining
+benefit.
+
+### Quantitative corrections
+
+**B4. The release calculation used a linear approximation on an exponential
+decay.** Revision 2's 8.5 ms figure held the discharge current at 100 µA; base
+current actually falls continuously with detector voltage.
+
+*Change:* §8.6.1 rebuilt on the exponential model, with the release metric
+redefined as **LED current falling 90% → 10%**, which is measurable, unlike
+"release at exactly 0.65 V" — V_BE moves with current. C_DET drops 10 µF →
+4.7 µF, because degeneration raised the discharge impedance ~5× and 10 µF would
+now give a ~650 ms release. All figures are marked as model estimates, including
+the ripple numbers, which share the same approximation.
+
+**B5. The degeneration penalty was arithmetically inconsistent.** Revision 2's
+prose said ~1 V across the emitter resistor; its arithmetic used 0.5 V, giving
+7.5 dB where 1 V gives 5.3 dB. Moot after B1 — recast as detector margin above
+threshold 2 (~3.6 dB) rather than as usable range.
+
+### Other accepted corrections
+
+| Item | Change |
+|---|---|
+| §5.1 | "Cannot oscillate at audio rates" softened to "dominant expected instability is in the envelope domain," with the photoconductive roll-off given as a reason rather than a proof |
+| §6.1.3 | TL072H swing marked an estimate extrapolated from a 40 V characterization; §12.2.15 now measures it explicitly |
+| §8.4 | Polarity added for the 2.2 µF output capacitor (positive toward the op-amp) |
+| §8.7.2 | Uncited "VTL5C3-class reaches target at a few hundred µA" claim withdrawn; datasheet reading made a prerequisite |
+| §11.1 | Provenance of the 300–500 line ceiling stated; rule added to the checked-in project `CLAUDE.md` so it is auditable from the repository |
+| §8.8 | "Bench item §12.2 item 2" → "§12.2.2" |
+
+### Disputed, and how it was resolved
+
+* **"The second threshold must be measured."** Partly. It is measurable and
+  §12.2.8 measures it, but it was also calculable in advance — the review
+  calculated it — and treating it as unknowable would have shipped a near-switch
+  control law to the bench. Revision 3 treats B1 as a design defect with a
+  circuit fix, not as a documentation gap.
+* **"Verify the 300–500 line convention; it is not in the public CLAUDE.md."**
+  Correct that it was unverifiable from the repository; incorrect that it might
+  not exist. It was a real standing convention living only in the maintainer's
+  global configuration. Fixed by publishing it rather than by annotating it.

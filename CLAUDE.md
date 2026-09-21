@@ -1,5 +1,16 @@
 # Audio Circuits - Project Instructions
 
+## Code Organization
+
+Source files should be no larger than 300-500 lines. Anything larger should be
+refactored for readability and modularity.
+
+For circuit modules, split by functional block into a non-exported `parts/`
+directory rather than by promoting blocks to public modules — file organization
+and module extraction are different decisions. A module's public surface stays
+one component and one props interface; `parts/*.tsx` are internal and are not
+re-exported from the module's `index.ts`.
+
 ## tscircuit Conventions
 
 ### Import Paths
