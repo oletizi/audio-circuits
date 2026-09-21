@@ -28,9 +28,12 @@
  * Values are the Cboost column of Ian Thompson-Bell's Pultec 3 Band EQ
  * documentation. See `reference/pultec/values.md`.
  *
- * Grid rows are allocated: 0-1 capacitors, 2 Qmax, 3 inductors. Anything added
- * here takes row 4 or beyond — two components on one cell draw as one symbol
- * on top of another, which no topology assertion can see.
+ * Grid rows are allocated: 0-1 capacitors, 2 inductors, with Qmax off to the
+ * right at column 4. Each inductor sits at the average column of the capacitors
+ * on its tap, which keeps the tap nets short enough that tscircuit draws them
+ * as wires instead of printing a label at each end. Anything added here needs
+ * its own cell — two components on one cell draw as one symbol on top of
+ * another, which no topology assertion can see.
  */
 import { Fragment } from "react"
 import { createGrid } from "../../lib/layout.ts"
@@ -70,6 +73,29 @@ const TAPS: readonly (readonly [string, string])[] = [
   ["100mH", "0.1H"],
 ]
 
+/** Columns are spread wider than the default grid step because each pin of
+ * each capacitor carries a net label, and two labels on neighbouring pins
+ * overprint each other at one step. This is a drawing concern only; it moves
+ * no part relative to another electrically. */
+const COLUMN_SPACING = 2
+
+/** The column an inductor sits at: the average of the columns its capacitors
+ * occupy, so the part lands among the parts it serves.
+ *
+ * This is what makes the tap nets draw as wires. tscircuit routes a net when it
+ * is short and has few pins, and gives up and prints a label at each pin when it
+ * spans the sheet — so an inductor parked in a row of its own turns every tap
+ * into a row of labels a reader has to match up by name. Computed rather than
+ * written down so it follows the capacitor bank if a position ever moves.
+ */
+function tapColumn(tap: string): number {
+  const columns = POSITIONS.flatMap(([, positionTap], index) =>
+    positionTap === tap ? [index - 2] : [],
+  )
+  if (columns.length === 0) throw new Error(`No position uses tap ${tap}`)
+  return columns.reduce((total, column) => total + column, 0) / columns.length
+}
+
 export const PultecHiBoost = (props: PultecHiBoostProps) => {
   const { name, schX = 0, schY = 0 } = props
   const g = createGrid(schX, schY)
@@ -100,7 +126,7 @@ export const PultecHiBoost = (props: PultecHiBoostProps) => {
                 name={`${name}_${ref}`}
                 capacitance={capacitance}
                 footprint="0805"
-                {...g.at(column - 2, row)}
+                {...g.at((column - 2) * COLUMN_SPACING, row)}
               />
               <trace from={`.${name}_${ref} > .pin1`} to={`net.${name}_TAP_${tap}`} />
               <trace from={`.${name}_${ref} > .pin2`} to={`net.${name}_SEL_${position}`} />
@@ -113,18 +139,18 @@ export const PultecHiBoost = (props: PultecHiBoostProps) => {
         name={`${name}_R3`}
         resistance="4.7k"
         footprint="0805"
-        {...g.below(0, 2)}
+        {...g.at(4 * COLUMN_SPACING, 1)}
       />
       <trace from={`.${name}_R3 > .pin1`} to={`net.${coilTopNet}`} />
       <trace from={`.${name}_R3 > .pin2`} to={`net.${qmaxOutNet}`} />
 
-      {TAPS.map(([tap, inductance], index) => (
+      {TAPS.map(([tap, inductance]) => (
         <Fragment key={`L-${tap}`}>
           <inductor
             name={`${name}_L_${tap}`}
             inductance={inductance}
             footprint="0805"
-            {...g.below(index - 2, 3)}
+            {...g.at(tapColumn(tap) * COLUMN_SPACING, 2)}
           />
           <trace from={`.${name}_L_${tap} > .pin1`} to={`net.${name}_TAP_${tap}`} />
           <trace from={`.${name}_L_${tap} > .pin2`} to={`net.${coilTopNet}`} />

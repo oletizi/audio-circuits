@@ -20,6 +20,11 @@
  * The fixed resistors around the section — 4K7 on the boost return, 1K on the
  * cut return, 100K across the input — are on-board.
  *
+ * Grid rows are allocated: 0-1 capacitors, 2 inductors, 4 the fixed resistors.
+ * Each inductor sits at the average column of the capacitors on its tap, which
+ * keeps the tap nets short enough that tscircuit draws them as wires rather
+ * than printing a label at each end.
+ *
  * Values come from P3bandDoc.pdf page 3. This module IS compared against its
  * portion of the reference partition, like the others; what differs is the
  * reference's own provenance, which is documentation rather than a netlist
@@ -61,6 +66,32 @@ function inductanceFor(label: string): string {
   return inductance
 }
 
+/** Columns are spread wider than the default grid step because each pin of each
+ * capacitor carries a net label, and two labels on neighbouring pins overprint
+ * each other at one step. Three rather than the hi boost's two because this
+ * section's names are longer — `MID_TAP_0R22H` beside `MID_SEL_4kHz` still
+ * collided at two. Verified by rendering, not by arithmetic: the check is
+ * whether a person can read the drawing. This moves no part relative to another
+ * electrically. */
+const COLUMN_SPACING = 3
+
+/** The column an inductor sits at: the average of the columns its capacitors
+ * occupy, so the part lands among the parts it serves.
+ *
+ * This is what makes the tap nets draw as wires. tscircuit routes a net when it
+ * is short and has few pins, and gives up and prints a label at each pin when it
+ * spans the sheet — so an inductor parked in a row of its own turns every tap
+ * into a row of labels a reader has to match up by name. Computed rather than
+ * written down so it follows the capacitor bank if a position ever moves.
+ */
+function tapColumn(henries: number): number {
+  const columns = MID_POSITIONS.flatMap((position, index) =>
+    position.henries === henries ? [index - 5] : [],
+  )
+  if (columns.length === 0) throw new Error(`No position uses the ${henries}H tap`)
+  return columns.reduce((total, column) => total + column, 0) / columns.length
+}
+
 export const PultecMid = (props: PultecMidProps) => {
   const { name, schX = 0, schY = 0 } = props
   const g = createGrid(schX, schY)
@@ -97,7 +128,7 @@ export const PultecMid = (props: PultecMidProps) => {
                 name={`${name}_C_${position.label}_${row === 0 ? "A" : "B"}`}
                 capacitance={capacitance}
                 footprint="0805"
-                {...g.at(column - 5, row)}
+                {...g.at((column - 5) * COLUMN_SPACING, row)}
               />
               <trace
                 from={`.${name}_C_${position.label}_${row === 0 ? "A" : "B"} > .pin1`}
@@ -118,7 +149,7 @@ export const PultecMid = (props: PultecMidProps) => {
         name={`${name}_R_BOOST`}
         resistance={`${MID_RESISTORS.boostReturnOhms}`}
         footprint="0805"
-        {...g.below(-1, 2)}
+        {...g.at(-3 * COLUMN_SPACING, 4)}
       />
       <trace from={`.${name}_R_BOOST > .pin1`} to={`net.${inputNet}`} />
       <trace from={`.${name}_R_BOOST > .pin2`} to={`net.${boostReturnNet}`} />
@@ -127,7 +158,7 @@ export const PultecMid = (props: PultecMidProps) => {
         name={`${name}_R_CUT`}
         resistance={`${MID_RESISTORS.cutReturnOhms}`}
         footprint="0805"
-        {...g.below(1, 2)}
+        {...g.at(0, 4)}
       />
       <trace from={`.${name}_R_CUT > .pin1`} to={`net.${cutReturnNet}`} />
       <trace from={`.${name}_R_CUT > .pin2`} to={`net.${groundNet}`} />
@@ -136,18 +167,18 @@ export const PultecMid = (props: PultecMidProps) => {
         name={`${name}_R_SHUNT`}
         resistance={`${MID_RESISTORS.inputShuntOhms}`}
         footprint="0805"
-        {...g.below(3, 2)}
+        {...g.at(3 * COLUMN_SPACING, 4)}
       />
       <trace from={`.${name}_R_SHUNT > .pin1`} to={`net.${inputNet}`} />
       <trace from={`.${name}_R_SHUNT > .pin2`} to={`net.${groundNet}`} />
 
-      {MID_TAPS.map((henries, index) => (
+      {MID_TAPS.map(henries => (
         <Fragment key={`L-${henries}`}>
           <inductor
             name={`${name}_L_${tapLabel(henries)}`}
             inductance={inductanceFor(tapLabel(henries))}
             footprint="0805"
-            {...g.below(index - 2, 3)}
+            {...g.at(tapColumn(henries) * COLUMN_SPACING, 2)}
           />
           <trace
             from={`.${name}_L_${tapLabel(henries)} > .pin1`}
