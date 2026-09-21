@@ -159,7 +159,10 @@ test("worstHops names the components at each end, longest first", async () => {
   if (!worst) return
   // The 50-unit connection must rank above the 1-unit one.
   expect(worst.distance).toBeGreaterThan(10)
-  expect([worst.from, worst.to].sort()).toEqual(["FAR_A", "FAR_B"])
+  // Enforce COMPONENT.pin. Asserting bare component names here would
+  // enshrine the weaker contract and let the diagnostic silently regress.
+  expect([worst.from, worst.to].sort()).toEqual(["FAR_A.pin2", "FAR_B.pin1"])
+  expect(worst.net.length).toBeGreaterThan(0)
   // Sorted descending.
   for (let i = 1; i < hops.length; i++) {
     const prev = hops[i - 1]
@@ -217,12 +220,21 @@ In `computeTier1`, before the M4 block, build the port→component-name map:
     const n = str(e.name)
     if (id && n) compName.set(id, n)
   }
-  const ownerOfPort = new Map<string, string>()
+  // COMPONENT.pin, not COMPONENT. Verified: source_port.name carries the
+  // SEMANTIC label for a chip with pinLabels ("INA_P", "GND") and
+  // "pin1"/"pin2" for passives. Component-only identity is not enough
+  // here - a TL072 participates in two unrelated functional stages plus
+  // power, so "CMP_U2 <-> CMP_J_PEAK" says far less than
+  // "CMP_U2.INA_P <-> CMP_J_PEAK.WIPER".
+  const portDescription = new Map<string, string>()
   for (const e of elements) {
     if (e.type !== "source_port" || !isRecord(e)) continue
     const id = str(e.source_port_id)
     const c = str(e.source_component_id)
-    if (id && c) ownerOfPort.set(id, compName.get(c) ?? c)
+    const pin = str(e.name)
+    if (!id || !c) continue
+    const comp = compName.get(c) ?? c
+    portDescription.set(id, pin ? `${comp}.${pin}` : comp)
   }
 ```
 
@@ -249,8 +261,16 @@ Change `ptsByNet` to carry the port id so hops can be attributed:
 Declare alongside `hops`:
 
 ```ts
-  const hopDetail: { distance: number; from: string; to: string }[] = []
+  const hopDetail: {
+    distance: number
+    net: string
+    from: string
+    to: string
+  }[] = []
 ```
+
+The MST loop already iterates `ptsByNet`, so change its header to bind the
+key — `for (const [net, pts] of ptsByNet) {` — and push it below.
 
 In the Prim inner loop, track which node the winning edge came from by adding `let bestFrom: (Pt & { owner: string }) | undefined` beside `bestIdx`, setting `bestFrom = a` wherever `bestIdx = j` is set, and after `inTree.add(bestIdx)`:
 
@@ -259,8 +279,9 @@ In the Prim inner loop, track which node the winning edge came from by adding `l
       if (bestFrom && to) {
         hopDetail.push({
           distance: best,
-          from: ownerOfPort.get(bestFrom.owner) ?? "?",
-          to: ownerOfPort.get(to.owner) ?? "?",
+          net,
+          from: portDescription.get(bestFrom.owner) ?? "?",
+          to: portDescription.get(to.owner) ?? "?",
         })
       }
 ```
@@ -284,10 +305,23 @@ In `formatTier1`, after the M5b line:
 ```ts
     "",
     "LONGEST CONNECTION HOPS (the gradient for placement work):",
-    ...m.worstHops.map(
-      (h) => `  ${h.distance.toFixed(1).padStart(6)}  ${h.from} <-> ${h.to}`,
-    ),
+    ...m.worstHops.flatMap((h) => [
+      `  ${h.distance.toFixed(1).padStart(6)}  ${h.net}`,
+      `          ${h.from} <-> ${h.to}`,
+    ]),
 ```
+
+Producing:
+
+```
+LONGEST CONNECTION HOPS (the gradient for placement work):
+    30.8  CMP_PEAK_WIPER
+          CMP_J_PEAK.WIPER <-> CMP_U2.INA_P
+    24.1  CMP_GND
+          CMP_TP_GND.TP <-> CMP_J_IN.P2
+```
+
+Asking for net awareness and then not printing it would defeat the point.
 
 - [ ] **Step 7: Fix the three hand-built fixtures**
 
@@ -342,12 +376,21 @@ orientation. The invariant is about what must NOT change:
 **Method — mechanical, not aesthetic:**
 
 ```
-render → read worstHops → move those two components together → render
-  → improved? commit : revert
+  inspect worst hops
+        ↓
+  make a RELATED SET of placement changes
+        ↓
+  render + measure
+        ↓
+  better than checkpoint? → save the candidate patch
+        ↓
+  repeat, within the search bound
+        ↓
+  commit the best non-regressing improvement
 ```
 
-Do **not** nudge things until the drawing "looks balanced". Start at the
-top of `worstHops` and collapse them one at a time.
+Do **not** nudge things until the drawing "looks balanced". Work from the
+top of `worstHops` downward, in sets rather than single coordinates.
 
 **The band trap.** The module is arranged as three horizontal bands (power,
 audio, sidechain) mirroring its code structure. **Electrical connectivity
@@ -398,16 +441,27 @@ it connects to must move with it" is a multi-part move that must be allowed
 to pass through worse intermediate states.
 
 **Checkpoint discipline**, so that licence does not become unbounded
-fiddling:
+fiddling. Use **patch files**, not `git stash`: `stash push` removes the
+working tree changes and returns to HEAD, so the next candidate would start
+from the committed baseline rather than from the best candidate so far —
+easy to misuse and easy to lose the best layout to.
 
 ```bash
-git stash push -u -m "sch-checkpoint-<n>"   # known-good state
-git stash list --format='%H %gs'            # capture the SHA immediately
+# HEAD stays the immutable baseline throughout.
+# After measuring a candidate you want to keep:
+git diff -- modules/optical-compressor/ > /tmp/cand-<n>.patch
+
+# To start the next candidate from the baseline:
+git restore modules/optical-compressor/
+
+# To start it from the best candidate so far:
+git restore modules/optical-compressor/ && git apply /tmp/cand-<best>.patch
 ```
 
 - Work in candidate **sets** of related moves, not single coordinates.
-- If a set ends worse than the checkpoint on every metric, restore it:
-  `git stash apply <sha>`, then drop the entry.
+- Record the metrics for each candidate alongside its patch number.
+- The best candidate is never only in the working tree; it is always in a
+  patch file.
 - **Bound the search: at most six candidate sets.** If six have been tried
   and the best is not better than the checkpoint on at least one metric
   with none above baseline, stop and report that placement did not pay.
@@ -539,6 +593,15 @@ of each.
 **Interfaces:**
 - Consumes: `findNet` from `lib/testing/circuit-assertions.ts`
 - Produces: four fewer components and their labels
+
+**R2 note — the implementation and its tests belong in ONE commit.** This
+task edits `AudioPath.tsx` and `AudioPath.test.tsx` together, which is
+correct and does not violate R2. Ordinary module tests are classified
+`other` by `scripts/check-r2.ts`, not `ruler`: a connectivity test changes
+neither the drawing nor the definition of success. Do not split a component
+change from the assertions that cover it — an earlier draft of the R2
+classifier treated all tests as ruler and promptly flagged four legitimate
+TDD commits.
 
 - [ ] **Step 1: Find the assertions that depend on them**
 
@@ -715,7 +778,14 @@ bun run schematic-check 2>&1 | grep -E "M1|M2|M3|M4|M5"
 
 Improved with no regression → keep. Anything regressed → `git checkout --`
 that file and move on. **Do not keep a conversion because it "should" be
-better.** Two claims of mine about pin-to-pin have already failed to
+better.**
+
+**Note this rule is stricter than Task 2's deliberately.** Placement needed
+permission to cross a temporarily worse intermediate state because moves
+interact — collapsing one hop can require a transient collision that the
+next move clears. Connectivity conversions are discrete and independent:
+there is no hill to cross, so each one stands or falls on its own
+measurement. Two claims of mine about pin-to-pin have already failed to
 replicate; the measurement decides.
 
 - [ ] **Step 4: Repeat for each two-terminal candidate**
