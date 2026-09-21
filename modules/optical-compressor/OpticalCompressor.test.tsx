@@ -17,6 +17,7 @@ import {
 import {
   assertSchematicReadable,
   remainingGap,
+  DECLARED_LABELS,
 } from "../../lib/testing/schematic-standards.ts"
 import { OpticalCompressor } from "./OpticalCompressor.tsx"
 
@@ -181,7 +182,9 @@ test("the standalone fixture renders with no floating pins", async () => {
 // force as connectivity. See docs/SCHEMATIC-STANDARDS.md.
 
 test("schematic meets its readability ceiling and does not regress", () => {
-  const m = computeSchematicMetrics(el)
+  const m = computeSchematicMetrics(el, {
+    declared: DECLARED_LABELS["optical-compressor"],
+  })
   console.log(formatMetrics(m))
   console.log("\n" + remainingGap(m, (t) => isRailLabel(t)))
   assertSchematicReadable("optical-compressor", m, (t) => isRailLabel(t), formatMetrics)
@@ -189,7 +192,9 @@ test("schematic meets its readability ceiling and does not regress", () => {
 
 test("the readability assertion actually fires when a limit is exceeded", () => {
   // A guard nobody has watched trip is not a verified guard.
-  const m = computeSchematicMetrics(el)
+  const m = computeSchematicMetrics(el, {
+    declared: DECLARED_LABELS["optical-compressor"],
+  })
   const inflated = { ...m, wireCrossings: m.wireCrossings + 1000 }
   expect(() =>
     assertSchematicReadable("optical-compressor", inflated, (t) => isRailLabel(t), formatMetrics),

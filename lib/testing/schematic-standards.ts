@@ -59,7 +59,7 @@ export interface Ceiling {
  */
 export const RATCHET: Readonly<Record<string, Ceiling>> = {
   "optical-compressor": {
-    gratuitousLabels: 15,
+    gratuitousLabels: 11,
     labelCollisions: 8,
     signalLabelRatio: 0.52,
     wireCrossings: 2,
@@ -71,6 +71,32 @@ export const RATCHET: Readonly<Record<string, Ceiling>> = {
     signalLabelRatio: 0.64,
     wireCrossings: 0,
     areaPerComponent: 33,
+  },
+}
+
+/**
+ * Labels the author has decided are the right call, with the reason. This
+ * is the escape hatch from `gratuitous`: not a budget, a recorded argument
+ * someone can disagree with in review.
+ *
+ * Keyed by module, then by label text.
+ */
+export const DECLARED_LABELS: Readonly<
+  Record<string, Readonly<Record<string, string>>>
+> = {
+  "optical-compressor": {
+    CMP_BASE:
+      "Three-terminal junction at Q_LED. MEASURED: wiring it pin-to-pin " +
+      "produces one auto-label naming every member " +
+      "(CMP_R_B_pin2/CMP_R_B_PD_pin1/CMP_Q_LED_pin3, ~43 chars) which is " +
+      "far wider than three short labels, and it collided with the " +
+      "collector node's equivalent -- label collisions went 8 -> 9. The " +
+      "labels anchor at Q_LED's own pins, so spacing other components " +
+      "cannot separate them. A short named net is the better trade here.",
+    CMP_COLL:
+      "Three-terminal junction at Q_LED, same measured trade as CMP_BASE: " +
+      "pin-to-pin yields CMP_Q_LED_pin1/CMP_R_SENSE_pin2/CMP_TP_SENSE_LO_TP " +
+      "(~50 chars), which collides with the base node's auto-label.",
   },
 }
 

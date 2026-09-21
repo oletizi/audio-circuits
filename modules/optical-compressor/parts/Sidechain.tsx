@@ -65,15 +65,14 @@ export const Sidechain = (props: SidechainProps) => {
   return (
     <group>
       <net name={`${name}_PEAK_WIPER`} />
+      <net name={`${name}_BASE`} />
+      <net name={`${name}_COLL`} />
       <net name={`${name}_SC_INV`} />
       <net name={`${name}_SC_OUT`} />
-      <net name={`${name}_DET_IN`} />
       <net name={`${name}_DET`} />
       <net name={`${name}_LED_A`} />
       <net name={`${name}_LED_SENSE`} />
       <net name={`${name}_EMITTER`} />
-      <net name={`${name}_BASE`} />
-      <net name={`${name}_COLL`} />
 
       {/* --- PEAK REDUCTION interface ---
           The pot itself is external: its TOP connects to MAKEUP_OUT and its
@@ -273,8 +272,10 @@ export const Sidechain = (props: SidechainProps) => {
 
       {/* === Detector: AC couple, half-wave rectify, store === */}
       <trace from={`.${name}_C_SC > .pin1`} to={`net.${name}_SC_OUT`} />
-      <trace from={`.${name}_C_SC > .pin2`} to={`net.${name}_DET_IN`} />
-      <trace from={`.${name}_D_DET > .anode`} to={`net.${name}_DET_IN`} />
+      {/* Two-terminal: drawn pin-to-pin so it renders as an actual wire.
+          A named net here would put a label on both ends of a connection
+          the reader can simply see. */}
+      <trace from={`.${name}_C_SC > .pin2`} to={`.${name}_D_DET > .anode`} />
       <trace from={`.${name}_D_DET > .cathode`} to={`net.${name}_DET`} />
       <trace from={`.${name}_C_DET > .pin1`} to={`net.${name}_DET`} />
       <trace from={`.${name}_C_DET > .pin2`} to={`net.${name}_GND`} />
@@ -283,13 +284,17 @@ export const Sidechain = (props: SidechainProps) => {
       <trace from={`.${name}_TP_DET > .TP`} to={`net.${name}_DET`} />
 
       {/* === Base drive ===
-          BASE is the driver base node - R_B, R_B_PD and Q_LED.base itself
-          all land on one named net. */}
+          MEASURED TRADE-OFF: this junction has three members. Wiring it
+          pin-to-pin yields ONE auto-label naming every member
+          (CMP_R_B_pin2/CMP_R_B_PD_pin1/CMP_Q_LED_pin3, ~43 chars) which
+          is far wider than three short named labels and collided with the
+          collector node's equivalent. Multi-terminal junctions keep a
+          SHORT named net; two-terminal connections go pin-to-pin. */}
       <trace from={`.${name}_R_B > .pin1`} to={`net.${name}_DET`} />
       <trace from={`.${name}_R_B > .pin2`} to={`net.${name}_BASE`} />
       <trace from={`.${name}_R_B_PD > .pin1`} to={`net.${name}_BASE`} />
-      <trace from={`.${name}_R_B_PD > .pin2`} to={`net.${name}_GND`} />
       <trace from={`.${name}_Q_LED > .base`} to={`net.${name}_BASE`} />
+      <trace from={`.${name}_R_B_PD > .pin2`} to={`net.${name}_GND`} />
 
       {/* === Emitter degeneration (revision 3) === */}
       <trace from={`.${name}_Q_LED > .emitter`} to={`net.${name}_EMITTER`} />
