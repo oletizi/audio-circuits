@@ -125,6 +125,7 @@ export default () => (
 | Component | Description | Footprint |
 |-----------|-------------|-----------|
 | `TL072` | Dual JFET op-amp | SOIC-8, DIP-8 |
+| `TL072H` | Dual JFET op-amp, single supply 4.5–40 V, rail-to-rail output | SOIC-8, DIP-8 |
 
 ### Connectors (`lib/connectors/`)
 
@@ -135,6 +136,12 @@ export default () => (
 | `ScrewTerminal6` | 6-position terminal | P1-P6 |
 | `MonoJack` | Mono audio jack | TIP, SLEEVE |
 | `StereoJack` | Stereo audio jack | TIP, RING, SLEEVE |
+
+### Optical (`lib/opto/`)
+
+| Component | Description | Pins |
+|-----------|-------------|------|
+| `Vactrol` | Generic LED/LDR optocoupler (footprint required) | LED_A, LED_K, LDR_1, LDR_2 |
 
 ## Module Status
 
@@ -147,6 +154,7 @@ export default () => (
 | `high-cut` | 🔲 TODO | Low-pass filter |
 | `input-stage` | 🔲 TODO | Input buffering |
 | `output-stage` | 🔲 TODO | Output stage |
+| `optical-compressor` | ✅ Renders | +9V LA-2A-inspired optical compressor — **not bench validated** |
 
 ## References
 

@@ -87,3 +87,14 @@ test("no component failed to be created and no pin is left floating", () => {
   expectNoFailedComponents(el)
   expectNoFloatingPins(el)
 })
+
+// This renders the ~45-component fixture a SECOND time (the module tests
+// above share one render of their own), so it needs its own generous
+// timeout - bun's default is 5s and this render takes ~30s.
+test("the standalone fixture renders with no floating pins", async () => {
+  const { default: fixture } = await import("./optical-compressor.circuit.tsx")
+  const fixtureEl = await renderCircuit(fixture())
+  expectNoFailedComponents(fixtureEl)
+  expectNoFloatingPins(fixtureEl)
+  expect(findComponent(fixtureEl, "CMP1_VACTROL")).toBeDefined()
+}, 180000)
