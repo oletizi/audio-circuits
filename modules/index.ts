@@ -1,4 +1,8 @@
 export { OpampBuffer, type OpampBufferProps } from "./opamp-buffer/index"
+export {
+  OpticalCompressor,
+  type OpticalCompressorProps,
+} from "./optical-compressor/index"
 
 // TODO: Add more modules as they're implemented
 // export { LowCutFilter } from "./low-cut"
