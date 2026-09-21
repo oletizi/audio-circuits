@@ -74,6 +74,20 @@ test("two nets that mean different nodes are still refused", () => {
   expect(() => toLabelledNetwork(render(), shorted)).toThrow("Conflicting nets in group")
 })
 
+test("the mid's ground really is bonded to the rest of the board", () => {
+  // MID_GND and LB_GND both map to canonical "0", so every assertion above
+  // passes whether or not a conductor actually joins the two boards — the
+  // mapping states the shared ground rather than proving it. Point the mid's
+  // ground at a different canonical net: the guard fires only if the two nets
+  // are physically one group, so this throws exactly when the trace exists.
+  // Delete that trace and this test goes quiet, which is the point.
+  const probed: ExportMapping = {
+    ...MAPPING,
+    netNames: { ...MAPPING.netNames, [`${P}_MID_GND`]: "mid_ground_probe" },
+  }
+  expect(() => toLabelledNetwork(render(), probed)).toThrow("Conflicting nets in group")
+})
+
 test("no two components are drawn at the same spot", () => {
   // Same defect class Tasks 1 and 2 both shipped once each: a schematic
   // collision is invisible to every topology and value assertion above,

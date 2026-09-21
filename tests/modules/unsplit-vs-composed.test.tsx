@@ -41,27 +41,35 @@ function renderComposition() {
  * tscircuit, plus the front-panel controls, which are not on any board. The
  * controls are taken from the reference unchanged — the claim under test is
  * about the boards and the wiring between them, not about the pots. */
+/** The only parts that legitimately live off a board: front-panel controls,
+ * reached through screw terminals. Every passive in this design is now
+ * board-resident, so a passive missing from the export is a module bug. */
+const OFF_BOARD_KINDS: ReadonlySet<string> = new Set(["potentiometer", "switch"])
+
 function composedNetwork(): PassiveNetwork {
   const exported = toLabelledNetwork(renderComposition(), COMPOSED_MAPPING)
-  // Pots and selectors are off-board parts reached through screw terminals, so
-  // they never come back from tscircuit; some inductors still are too, until a
-  // later task moves them onto a board. Rather than hand-maintain a kind list,
-  // supply whatever the export did not already produce: this self-adjusts as
-  // more parts move onto boards in later tasks.
-  //
-  // The cost of that generality: if a module ever fails to emit a part it
-  // should have, this backfills the reference's copy and the AC comparison
-  // below stops being evidence for it. That case is caught elsewhere —
-  // passive-eq.test.tsx builds its expectation from boardNetwork() per module,
-  // with no export-derived backfill, so a module that drops a part fails there.
-  // This function is not self-verifying; that test is what makes it safe.
   const exportedRefs = new Set(exported.elements.map(element => element.ref))
-  const controls = THREE_BAND_REFERENCE.elements.filter(
+  const absent = THREE_BAND_REFERENCE.elements.filter(
     element => !exportedRefs.has(element.ref),
   )
+
+  // Supplying ANY absent element from the reference is what let a whole missing
+  // section pass unnoticed: with the mid absent from the composition, this
+  // handed back the reference's own mid and the sweep below compared the
+  // reference against itself. Only controls may be supplied; a board part that
+  // failed to render is a bug to report, not a hole to fill.
+  const strays = absent.filter(element => !OFF_BOARD_KINDS.has(element.kind))
+  if (strays.length > 0) {
+    throw new Error(
+      `The composition did not emit ${strays.length} board part(s): ` +
+      `${strays.map(element => element.ref).sort().join(", ")}. ` +
+      `Supplying these from the reference would compare the reference against itself.`,
+    )
+  }
+
   return {
     ports: THREE_BAND_REFERENCE.ports,
-    elements: [...exported.elements, ...controls],
+    elements: [...exported.elements, ...absent],
   }
 }
 
