@@ -1,7 +1,7 @@
 ---
 title: Metrics-based testing for schematic readability
 date: 2026-09-21
-status: Draft for review (revision 2, after third-party review)
+status: Draft for review (revision 3, after second third-party review)
 supersedes: the ad-hoc standard in docs/SCHEMATIC-STANDARDS.md
 ---
 
@@ -118,7 +118,7 @@ rail, junction, cross-boundary, whatever aids diagnosis. It has no effect
 on pass/fail. Reclassifying something in Tier 2 cannot change the verdict,
 which is precisely the loophole that was exploited.
 
-## 5. The gate: five metrics
+## 5. The gate: six numbers
 
 | # | Metric | Definition | Why it resists gaming |
 |---|---|---|---|
@@ -192,9 +192,50 @@ Set from what a readable drawing requires, not from current measurements.
 first draft proposed `0.15 × components`, which grants a 200-component
 design thirty labels. A reader does not become able to hold thirty
 disconnected references because the circuit is large; if anything,
-label-mediated topology hurts more as a drawing grows. Scaling is supposed
-to be solved by **hierarchy** — decompose into readable blocks and label at
-block boundaries — not by an expanding allowance.
+label-mediated topology hurts more as a drawing grows.
+
+### 7.1 The status of 8, and what it does not authorise
+
+**8 is an initial falsifiable threshold, not a mandate.** Failing to reach
+it does **not** by itself justify restructuring a schematic that a human
+already judges readable.
+
+The reason is that M1 is deliberately a blunt proxy. The pathology being
+prevented is *"the topology of the circuit disappeared into labels"*. M1
+measures *"there are more than eight non-rail labels"*. Those are not the
+same proposition, and the design refuses to distinguish legitimate
+interface labels from topology labels precisely because that distinction
+was gamed before. Letting a blunt proxy force architectural decomposition
+would be optimising the artifact for the metric rather than for the reader
+— the exact failure class this document exists to prevent.
+
+So the compressor becomes evidence rather than a defendant:
+
+- If the module reaches, say, **11 labels, 0 collisions, 7% long hops** and
+  a human looks at the render and says *yes, this is the drawing I want*,
+  then **11 is evidence that 8 was wrong**, and the threshold is revised.
+  That is not gaming; it is the falsification process §12 calls for.
+- If the 11-label version still reads as a netlist, that is evidence for 8
+  or something stricter.
+
+**Only a human's judgement of the rendered artifact may revise this
+threshold.** An automated author may present the render and the numbers; it
+may not declare the result readable and adjust the bar accordingly. That
+restriction is the whole reason the three-layer separation in §11 exists.
+
+### 7.2 Code hierarchy is not sheet hierarchy
+
+A caution against the obvious misreading. This module is *already*
+decomposed in code — `PowerSection`, `AudioPath`, `Sidechain` — and still
+renders as one flat sheet. So if hierarchy turns out to be the answer for
+M1, the relevant hierarchy is probably **sheet** hierarchy: rendering each
+part as its own sheet with interface labels at the boundaries. That is a
+rendering and tooling question, not an argument for decomposing code that
+is already decomposed sensibly.
+
+Whether tscircuit supports multi-sheet schematic output is **unknown and
+unmeasured**. It should be established before any claim that hierarchy
+solves the scaling problem here.
 
 ### Current state against these thresholds
 
@@ -219,14 +260,25 @@ thing that should fail". A threshold without such a test is not enforcing.
 
 | Test | Construct | Assert |
 |---|---|---|
-| F1 | A 2-terminal named net not on the rail list | counts toward M1 |
-| F2 | A net on the rail list, `approvedBy` empty | still counts toward M1 |
-| F3 | A net on the rail list, `approvedBy` set | exempt from M1 |
+| F1 | A named net not listed in `RAIL_NETS` | counts toward M1 |
+| F2 | A net explicitly listed in `RAIL_NETS` | does **not** count toward M1 |
+| F3 | A rail-*looking* net (e.g. `FOO_GND`) **not** listed | **counts** toward M1 |
 | F4 | Two labels placed overlapping | M2 > 0 |
 | F5 | Two traces crossing | M3 > 0 |
 | F6 | Two connected components placed far apart | M4 rises |
-| F7 | Components in a tiny area | M5 below floor |
+| F7a | Components packed tightly, labels sprawling | M5a low, M5b high — they move independently |
+| F7b | Components spread, few labels | M5a high, M5b high |
 | F8 | Metrics inflated past every threshold | the assertion throws |
+
+**F3 is the important one.** It proves the pattern-matching escape hatch is
+actually gone. The current implementation still has `DEFAULT_RAIL_SUFFIXES`
+doing `endsWith("_GND")`, which would silently exempt any net an author
+chose to name that way — F3 fails against today's code, and should, until
+the explicit-enumeration model in §6 is implemented.
+
+**F7 was split** because M5a and M5b must be shown to measure different
+things. If a single construct moves both identically, the split bought
+nothing.
 
 These already exist in part (`lib/testing/schematic-metrics.test.tsx`) and
 must be completed before the gate is trusted.
@@ -249,6 +301,21 @@ RULER                                ARTIFACT
   lib/testing/schematic-standards.ts   lib/chips/**, lib/opto/**,
   thresholds, RAIL_NETS, baselines     lib/connectors/**, lib/layout.ts
 ```
+
+**Enforcement operates on each commit individually, never on an aggregate
+branch or PR diff.** The invariant is *a commit may not change both*, and
+the two cases come apart:
+
+```
+  commit A: circuit          }  aggregate diff touches both categories,
+  commit B: ruler            }  but each commit is LEGAL
+
+  commit A: circuit + ruler  }  must be REJECTED, even though a later
+  commit B: unrelated        }  aggregate view may obscure it
+```
+
+Checking the squashed diff would reject the first case and pass the second
+— precisely backwards.
 
 This yields the property that makes the 15 → 11 → 0 episode impossible:
 
@@ -355,7 +422,7 @@ topology to pin-to-pin and measure each conversion. Expect this to be worth
 less than it appears; the measured evidence so far is that it trades label
 count for label width.
 
-**Phase 4 — retire the ceilings.** When all five metrics meet the
+**Phase 4 — retire the baselines.** When all six numbers meet the
 threshold, delete the module's entry.
 
 Each phase is its own commit, and per R2 none of them may touch the ruler.
@@ -364,28 +431,27 @@ The before/after table is computed by the tooling (R3), not written by hand.
 **Every phase must also produce the rendered schematic** as an artifact for
 human review (R7). The machine answers *did the measurable pathologies
 improve?*; only a person answers *is this becoming a drawing I can use?*
-This matters because §12 admits the five metrics may be incomplete — a
+This matters because §12 admits the metric set may be incomplete — a
 change can improve all of them and still produce something unreadable, and
 the only detector for that is a human looking at the picture.
 
-**A note on M1 = 8 and what it commits us to.** This module has five
-genuine external interface nets — IN, OUT, MAKEUP_OUT, PEAK_WIPER,
-GAIN_FB — and each appears at two or three points, so interface labels
-alone plausibly account for 12–15. Reaching 8 by placement and wiring
-alone may therefore be impossible; it likely requires the hierarchical
-decomposition that justifies an absolute budget in the first place. That
-is a larger commitment than "tidy the placement", and it should be entered
-into deliberately rather than discovered at Phase 4. If it proves
-unreachable, §12's falsification clause applies: re-derive the threshold
-from evidence, do not relax it to fit.
+**A note on M1 = 8.** This module has five genuine external interface nets
+— IN, OUT, MAKEUP_OUT, PEAK_WIPER, GAIN_FB — each appearing at two or
+three points, so interface labels alone plausibly account for 12–15.
+Reaching 8 by placement and wiring alone may be impossible.
+
+Per §7.1 that is **not** automatically a mandate to decompose. Run the
+phases, render the result, and let a human judge whether the remaining
+labels are carrying real information. The number that comes out is
+evidence about the threshold, not a verdict on the module.
 
 ## 12. What would falsify this design
 
 Stated so it can be judged rather than admired:
 
-- **If M1 ≤ 0.15 × components proves unreachable** without making the
-  drawing worse by some other measure, the threshold is wrong and needs
-  re-deriving from evidence — not relaxing to fit.
+- **If M1 ≤ 8 proves unreachable** without making the drawing worse by some
+  other measure, the threshold is wrong and needs re-deriving from evidence
+  — see §7.1 for how that evidence is gathered and who may declare it.
 - **If placement work moves M2 and M4 but the drawing still reads badly to
   a human**, the metric set is missing something and needs a new Tier 1
   measurement, added in its own commit under R2.
@@ -397,20 +463,24 @@ Stated so it can be judged rather than admired:
 
 | Question | Resolution |
 |---|---|
-| Is `0.15 × components` the right M1 budget? | **No.** Replaced with an absolute per-module budget of 8. A reader does not gain capacity because the circuit grew; scaling is hierarchy's job. |
+| Is `0.15 × components` the right M1 budget? | **No.** Replaced with an absolute per-module budget of 8, held as an *initial falsifiable threshold* (§7.1). A reader does not gain capacity because the circuit grew. Whether hierarchy is the remedy — and whether that means sheets or code — is unresolved (§7.2). |
 | Should `junction` labels count toward M1? | **Yes.** They are diagnosed in Tier 2 and counted in Tier 1. Exempting them would immediately recreate the escape hatch that caused this redesign. |
 | Should R2 be mechanically enforced? | **Yes**, and promoted from anti-gaming rule to core invariant. It is the highest-value control here because it makes the specific observed failure structurally impossible. |
 
 ## 14. Remaining open questions
 
-1. **Is 8 the right absolute budget?** It is still a judgement, and §11
-   argues it may be unreachable without hierarchy. It is the number most
-   likely to be wrong, and the one whose failure mode is most expensive
-   (it forces a decomposition).
-2. **Does the improvement check need a stronger trigger?** §10.2 is honest
-   that it is procedural. An alternative is to require it for any commit
-   touching artifact files, with opt-out as a visible marker — stricter,
-   but it penalises functional changes that are not about readability.
-3. **Is M5a's floor right?** Packing components tightly improves M5a and
-   worsens M2. The two are intended as a counterweighted pair, but the
-   specific numbers are untested.
+1. **Is 8 the right absolute budget?** Held as an initial falsifiable
+   threshold (§7.1). The compressor's own phase work is the first
+   experiment; a human's judgement of the rendered result decides, not the
+   author's.
+2. **Does tscircuit support multi-sheet schematic output?** Unknown and
+   unmeasured (§7.2). Until it is established, "hierarchy solves scaling"
+   is a hypothesis, not a plan.
+3. **Does the improvement check need a stronger trigger?** §10.2 is honest
+   that it is procedural. Requiring it for any commit touching artifact
+   files, with a visible opt-out marker, is stricter but penalises
+   functional changes unrelated to readability.
+4. **Are M5a's bounds right?** Packing components tightly improves M5a and
+   worsens M2. They are meant as a counterweighted pair; the specific
+   numbers are untested, and F7a/F7b exist to prove they at least move
+   independently.
