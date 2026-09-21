@@ -48,6 +48,13 @@ function composedNetwork(): PassiveNetwork {
   // later task moves them onto a board. Rather than hand-maintain a kind list,
   // supply whatever the export did not already produce: this self-adjusts as
   // more parts move onto boards in later tasks.
+  //
+  // The cost of that generality: if a module ever fails to emit a part it
+  // should have, this backfills the reference's copy and the AC comparison
+  // below stops being evidence for it. That case is caught elsewhere —
+  // passive-eq.test.tsx builds its expectation from boardNetwork() per module,
+  // with no export-derived backfill, so a module that drops a part fails there.
+  // This function is not self-verifying; that test is what makes it safe.
   const exportedRefs = new Set(exported.elements.map(element => element.ref))
   const controls = THREE_BAND_REFERENCE.elements.filter(
     element => !exportedRefs.has(element.ref),

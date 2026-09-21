@@ -4,6 +4,7 @@ import { PultecHiBoost } from "../../modules/pultec-hi-boost/PultecHiBoost.tsx"
 import { toLabelledNetwork } from "../../lib/export/circuit-json.ts"
 import { assertSameTopology } from "../../lib/passives/topology.ts"
 import { boardNetwork } from "../../reference/pultec/partition.ts"
+import { overlappingComponents } from "./schematic-overlap.ts"
 import type { ExportMapping } from "../../lib/export/circuit-json.ts"
 
 const MAPPING: ExportMapping = {
@@ -78,6 +79,14 @@ test("Qmax bridges the coil top to the Q control, not to ground", () => {
   if (qmax?.kind !== "resistor") throw new Error("R3 missing from the export")
   expect([qmax.pins.a, qmax.pins.b].sort()).toEqual(["j19_p1", "j20_p1"])
   expect(Object.values(qmax.pins)).not.toContain("0")
+})
+
+test("no two components are drawn at the same spot", () => {
+  // The inductors landed on the capacitors' own grid rows when they first moved
+  // on-board: two symbols per position, stacked. Every topology and value
+  // assertion still passed, because the netlist was right — only the drawing
+  // was wrong. Nothing else in this file would have caught it.
+  expect(overlappingComponents(render())).toEqual([])
 })
 
 test("four inductors serve six positions", () => {

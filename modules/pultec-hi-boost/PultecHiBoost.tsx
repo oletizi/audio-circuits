@@ -18,6 +18,10 @@
  *
  * Values are the Cboost column of Ian Thompson-Bell's Pultec 3 Band EQ
  * documentation. See `reference/pultec/values.md`.
+ *
+ * Grid rows are allocated: 0-1 capacitors, 2 Qmax, 3 inductors. Anything added
+ * here takes row 4 or beyond — two components on one cell draw as one symbol
+ * on top of another, which no topology assertion can see.
  */
 import { Fragment } from "react"
 import { createGrid } from "../../lib/layout.ts"
@@ -39,14 +43,10 @@ const POSITIONS: readonly (readonly [string, string, readonly (readonly [string,
   ["16kHz", "100mH", [["C35", "1nF"]]],
 ]
 
-/** Tap label to the discrete inductor fitted there. Six positions share four
- * parts: 4k and 5k both want 0.3H, 10k and 16k both want 0.1H. */
-const TAPS: readonly (readonly [string, string])[] = [
-  ["600mH", "600mH"],
-  ["300mH", "300mH"],
-  ["200mH", "200mH"],
-  ["100mH", "100mH"],
-]
+/** The taps, named for the inductance fitted at each — the label IS the value,
+ * which is why one array serves both the net names and the parts. Six positions
+ * share four inductors: 4k and 5k both want 0.3H, 10k and 16k both want 0.1H. */
+const TAPS: readonly string[] = ["600mH", "300mH", "200mH", "100mH"]
 
 export const PultecHiBoost = (props: PultecHiBoostProps) => {
   const { name, schX = 0, schY = 0 } = props
@@ -54,13 +54,12 @@ export const PultecHiBoost = (props: PultecHiBoostProps) => {
 
   const coilTopNet = `${name}_COIL_TOP`
   const qmaxOutNet = `${name}_QMAX_OUT`
-  const taps = ["600mH", "300mH", "200mH", "100mH"]
 
   return (
     <group name={name}>
       <net name={coilTopNet} />
       <net name={qmaxOutNet} />
-      {taps.map(tap => (
+      {TAPS.map(tap => (
         <Fragment key={`tap-${tap}`}>
           <net name={`${name}_TAP_${tap}`} />
         </Fragment>
@@ -97,13 +96,13 @@ export const PultecHiBoost = (props: PultecHiBoostProps) => {
       <trace from={`.${name}_R3 > .pin1`} to={`net.${coilTopNet}`} />
       <trace from={`.${name}_R3 > .pin2`} to={`net.${qmaxOutNet}`} />
 
-      {TAPS.map(([tap, inductance], index) => (
+      {TAPS.map((tap, index) => (
         <Fragment key={`L-${tap}`}>
           <inductor
             name={`${name}_L_${tap}`}
-            inductance={inductance}
+            inductance={tap}
             footprint="0805"
-            {...g.below(index - 2, 1)}
+            {...g.below(index - 2, 3)}
           />
           <trace from={`.${name}_L_${tap} > .pin1`} to={`net.${name}_TAP_${tap}`} />
           <trace from={`.${name}_L_${tap} > .pin2`} to={`net.${coilTopNet}`} />
