@@ -66,8 +66,8 @@ export const OpticalCompressor = (props: OpticalCompressorProps) => {
       {/* Power above the audio row, sidechain below it. */}
       <PowerSection
         name={name}
-        schX={schX - 6}
-        schY={schY - 12}
+        schX={schX - 4}
+        schY={schY + 13}
         pcbX={pcbX - 10}
         pcbY={pcbY - 25}
       />
@@ -91,8 +91,8 @@ export const OpticalCompressor = (props: OpticalCompressorProps) => {
         sidechainGainResistance={sidechainGainResistance}
         sidechainBiasResistance={sidechainBiasResistance}
         sidechainCouplingCap={sidechainCouplingCap}
-        schX={schX - 3}
-        schY={schY + 15}
+        schX={schX - 2}
+        schY={schY - 13}
         pcbX={pcbX - 5}
         pcbY={pcbY + 25}
       />
@@ -100,36 +100,36 @@ export const OpticalCompressor = (props: OpticalCompressorProps) => {
       {/* === External connectors === */}
       <ScrewTerminal2
         name={`${name}_J_IN`}
-        schX={schX - 24}
+        schX={schX - 16}
         schY={schY}
         pcbX={pcbX - 45}
         pcbY={pcbY}
       />
       <ScrewTerminal2
         name={`${name}_J_OUT`}
-        schX={schX + 24}
+        schX={schX + 16}
         schY={schY}
         pcbX={pcbX + 45}
         pcbY={pcbY}
       />
       <ScrewTerminal2
         name={`${name}_J_PWR`}
-        schX={schX - 24}
-        schY={schY - 15}
+        schX={schX - 16}
+        schY={schY + 14}
         pcbX={pcbX - 45}
         pcbY={pcbY - 25}
       />
       <PotTerminal
         name={`${name}_J_PEAK`}
-        schX={schX - 24}
-        schY={schY + 15}
+        schX={schX - 16}
+        schY={schY - 14}
         pcbX={pcbX - 45}
         pcbY={pcbY + 25}
       />
       <PotTerminal
         name={`${name}_J_GAIN`}
-        schX={schX + 24}
-        schY={schY + 15}
+        schX={schX + 16}
+        schY={schY - 14}
         pcbX={pcbX + 45}
         pcbY={pcbY + 25}
       />

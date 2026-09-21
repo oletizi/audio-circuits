@@ -9,6 +9,15 @@ import {
   findComponent,
   type CircuitElement,
 } from "../../lib/testing/circuit-assertions.ts"
+import {
+  computeSchematicMetrics,
+  formatMetrics,
+  isRailLabel,
+} from "../../lib/testing/schematic-metrics.ts"
+import {
+  assertSchematicReadable,
+  remainingGap,
+} from "../../lib/testing/schematic-standards.ts"
 import { OpticalCompressor } from "./OpticalCompressor.tsx"
 
 // RENDER ONCE, SHARE ACROSS ALL TESTS.
@@ -164,3 +173,25 @@ test("the standalone fixture renders with no floating pins", async () => {
   expectNoFloatingPins(fixtureEl)
   expect(findComponent(fixtureEl, "CMP1_VACTROL")).toBeDefined()
 }, 180000)
+
+// --- Schematic readability -------------------------------------------------
+//
+// A human must review this schematic and lay out the board from it, so
+// legibility is a functional requirement and is asserted here with the same
+// force as connectivity. See docs/SCHEMATIC-STANDARDS.md.
+
+test("schematic meets its readability ceiling and does not regress", () => {
+  const m = computeSchematicMetrics(el)
+  console.log(formatMetrics(m))
+  console.log("\n" + remainingGap(m, (t) => isRailLabel(t)))
+  assertSchematicReadable("optical-compressor", m, (t) => isRailLabel(t), formatMetrics)
+})
+
+test("the readability assertion actually fires when a limit is exceeded", () => {
+  // A guard nobody has watched trip is not a verified guard.
+  const m = computeSchematicMetrics(el)
+  const inflated = { ...m, wireCrossings: m.wireCrossings + 1000 }
+  expect(() =>
+    assertSchematicReadable("optical-compressor", inflated, (t) => isRailLabel(t), formatMetrics),
+  ).toThrow(/REGRESSION|readability failed/)
+})

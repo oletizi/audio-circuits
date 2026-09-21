@@ -16,7 +16,8 @@
     "snapshot:update": "tsci snapshot --update",
     "start": "tsci dev",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "schematic-check": "bun test modules/optical-compressor/OpticalCompressor.test.tsx modules/opamp-buffer/OpampBuffer.test.tsx"
   },
   "devDependencies": {
     "tscircuit": "latest",

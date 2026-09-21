@@ -60,7 +60,7 @@ export const Sidechain = (props: SidechainProps) => {
     pcbX = 0,
     pcbY = 0,
   } = props
-  const g = createGrid(schX, schY)
+  const g = createGrid(schX, schY, 2)
 
   return (
     <group>

@@ -25,11 +25,11 @@ export function createGrid(originX = 0, originY = 0, gridSize = GRID) {
     /**
      * Calculate schematic position from grid coordinates
      * @param col - Column (0 = center, negative = left, positive = right)
-     * @param row - Row (0 = center/signal path, negative = up, positive = down)
+     * @param row - Row (0 = center/signal path, positive = down, negative = up)
      */
     at: (col: number, row: number) => ({
       schX: originX + col * gridSize,
-      schY: originY + row * gridSize,
+      schY: originY - row * gridSize,
     }),
 
     /** Position on the signal path (row 0) */
@@ -38,16 +38,22 @@ export function createGrid(originX = 0, originY = 0, gridSize = GRID) {
       schY: originY,
     }),
 
-    /** Position above the signal path (for VCC, etc.) */
+    /**
+     * Position above the signal path (for VCC, etc.)
+     *
+     * tscircuit renders schematics with +Y UPWARD, so "above" adds to
+     * schY. This was inverted originally, which drew every supply rail
+     * and decoupling cap on the wrong side of its component.
+     */
     above: (col: number, rows = 1) => ({
       schX: originX + col * gridSize,
-      schY: originY - rows * gridSize,
+      schY: originY + rows * gridSize,
     }),
 
     /** Position below the signal path (for GND, VEE, etc.) */
     below: (col: number, rows = 1) => ({
       schX: originX + col * gridSize,
-      schY: originY + rows * gridSize,
+      schY: originY - rows * gridSize,
     }),
   }
 }

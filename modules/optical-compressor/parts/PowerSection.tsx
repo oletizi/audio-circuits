@@ -33,7 +33,7 @@ export interface PowerSectionProps {
 
 export const PowerSection = (props: PowerSectionProps) => {
   const { name, schX = 0, schY = 0, pcbX = 0, pcbY = 0 } = props
-  const g = createGrid(schX, schY)
+  const g = createGrid(schX, schY, 2)
 
   return (
     <group>
