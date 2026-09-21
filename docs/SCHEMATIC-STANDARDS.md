@@ -33,7 +33,9 @@ So every label is classified, and only one class is a defect:
 | `rail` | GND, VBIAS, VCC, VEE, 9V_RAW, 9V_PROT, VBIAS_RAW | Always fine — wiring every ground connection is spaghetti |
 | `cross-boundary` | The net connects components in different schematic groups — it crosses a module boundary | Fine — **detected from the render**, not declared, so it cannot be gamed |
 | `same-component` | Two pins on one component | Fine — forced by the renderer, not chosen |
-| `declared` | Author stated a reason in the module's `declared` map | Fine — that is the defensible choice being made explicitly |
+| `junction` | A multi-terminal net (3+ ports) | Fine — no strictly better rendering exists; governed by the collision and distance metrics instead |
+| `declared` | Declared with a reason **and approved by a human** | Fine — a recorded, signed decision |
+| `pending-approval` | Declared but **not** approved | **Defect.** A reason is not an exemption. |
 | **`gratuitous`** | **Close enough to wire, not a rail, not forced, not declared** | **Defect** |
 
 A gratuitous label is the unmeasured default: two things a few units apart
@@ -59,19 +61,26 @@ Module boundaries *are* auto-exempt, but by **measurement** rather than
 assertion: a net whose ports belong to components in different schematic
 groups is genuinely an interface, and that is visible in the render.
 
-**The escape hatch is a reason, not a budget.** If a label genuinely belongs
-somewhere the classifier would call gratuitous, declare it:
+**The escape hatch requires a human signature.** The accepted classes above
+are derived structurally from the render and cannot be talked into existence.
+Anything outside them needs a person to sign off, because otherwise whoever
+writes the schematic also writes its own exemptions — which is a formality,
+not a standard.
 
 ```ts
-computeSchematicMetrics(el, {
-  declared: {
-    CMP_GR: "tapped by the sidechain two bands away; wiring it would cross the audio row",
+DECLARED_LABELS["my-module"] = {
+  CMP_GR: {
+    reason: "tapped by the sidechain two bands away",
+    evidence: "wiring it crosses the audio row; crossings 2 -> 7 when tried",
+    approvedBy: "oletizi",      // a human fills this in, never the author
+    approvedOn: "2026-09-21",
   },
-})
+}
 ```
 
-That turns an unmeasured default into a recorded choice someone can argue
-with in review — which is the entire point.
+Without `approvedBy` the label classifies as `pending-approval`, **still
+counts as a defect**, and is named loudly in the report. An automated author
+must not sign its own declarations.
 
 ### Signal label ratio (informational)
 
@@ -206,9 +215,28 @@ Three findings, each from an A/B measurement rather than inspection:
    Critically, a **two-terminal** connection wired pin-to-pin produced **no
    label at all** — a pure wire.
 3. **Multi-terminal junctions still produce one label** when wired
-   pin-to-pin, with an ugly concatenated auto-name. So the trade is: one
-   ugly label per junction (pin-to-pin) versus one clean label per member
-   (named net). For a 3-member node that is 1 vs 3.
+   pin-to-pin, with an ugly concatenated auto-name.
+
+**Two earlier claims here were wrong and are retracted.** Both were stated
+from a single circuit and did not survive a second measurement:
+
+- *"A two-terminal pin-to-pin connection produces no label at all."* It does
+  in some circuits and not others; an isolated two-port net still gets one.
+- *"Pin-to-pin produces fewer labels."* Not for a two-terminal net — both
+  styles produce exactly one.
+
+What IS stable, and what the convention now rests on, is label **width**:
+
+```
+pin-to-pin -> "R1_pin2/R2_pin1"   15 chars, concatenates every member
+named      -> "MID"                3 chars
+```
+
+Width drives collisions, which is the metric with teeth. Measured on this
+project: converting two junctions to pin-to-pin took collisions from 8 to 9
+and failed the ratchet. Label-*count* differences between the two styles are
+context-dependent and this project has not isolated the rule, so no
+convention rests on them.
 
 The consequence for this codebase is blunt: the schematic was constructed as
 a collection of named nets, which turns `createGrid`'s spatial layout back

@@ -10,7 +10,10 @@
  * freely, regressions fail. The ratchet turns one way.
  */
 
-import type { SchematicMetrics } from "./schematic-metrics.ts"
+import type {
+  DeclaredLabel,
+  SchematicMetrics,
+} from "./schematic-metrics.ts"
 
 export interface SchematicStandard {
   readonly maxLabelCollisions: number
@@ -82,22 +85,15 @@ export const RATCHET: Readonly<Record<string, Ceiling>> = {
  * Keyed by module, then by label text.
  */
 export const DECLARED_LABELS: Readonly<
-  Record<string, Readonly<Record<string, string>>>
+  Record<string, Readonly<Record<string, DeclaredLabel>>>
 > = {
-  "optical-compressor": {
-    CMP_BASE:
-      "Three-terminal junction at Q_LED. MEASURED: wiring it pin-to-pin " +
-      "produces one auto-label naming every member " +
-      "(CMP_R_B_pin2/CMP_R_B_PD_pin1/CMP_Q_LED_pin3, ~43 chars) which is " +
-      "far wider than three short labels, and it collided with the " +
-      "collector node's equivalent -- label collisions went 8 -> 9. The " +
-      "labels anchor at Q_LED's own pins, so spacing other components " +
-      "cannot separate them. A short named net is the better trade here.",
-    CMP_COLL:
-      "Three-terminal junction at Q_LED, same measured trade as CMP_BASE: " +
-      "pin-to-pin yields CMP_Q_LED_pin1/CMP_R_SENSE_pin2/CMP_TP_SENSE_LO_TP " +
-      "(~50 chars), which collides with the base node's auto-label.",
-  },
+  // Empty by design. BASE and COLL were declared here and are now covered
+  // structurally by the `junction` class, which is derived from the render
+  // and cannot be argued into existence.
+  //
+  // Anything added below exempts NOTHING until a human fills in approvedBy.
+  // An automated author must not sign its own declarations.
+  "optical-compressor": {},
 }
 
 export interface Violation {

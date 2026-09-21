@@ -191,8 +191,8 @@ export function computeSchematicMetrics(
     readonly lineHeight?: number
     readonly railSuffixes?: readonly string[]
     readonly shortSpanUnits?: number
-    /** net text -> why a label is the right call here */
-    readonly declared?: Readonly<Record<string, string>>
+    /** net text -> the declaration, including its provenance */
+    readonly declared?: Readonly<Record<string, DeclaredLabel>>
   } = {},
 ): SchematicMetrics {
   const lineHeight = opts.lineHeight ?? 0.3
@@ -271,13 +271,17 @@ export function computeSchematicMetrics(
   const justOpts: {
     railSuffixes: readonly string[]
     shortSpanUnits?: number
-    declared?: Readonly<Record<string, string>>
+    declared?: Readonly<Record<string, DeclaredLabel>>
   } = { railSuffixes }
   if (opts.shortSpanUnits !== undefined) justOpts.shortSpanUnits = opts.shortSpanUnits
   if (opts.declared !== undefined) justOpts.declared = opts.declared
   const labelJustifications = classifyLabels(elements, justOpts)
+  // Unapproved declarations count as defects. Otherwise writing a
+  // justification would be indistinguishable from fixing the problem.
   const gratuitousLabels = labelJustifications.filter(
-    (c) => c.justification === "gratuitous",
+    (c) =>
+      c.justification === "gratuitous" ||
+      c.justification === "pending-approval",
   ).length
 
   const connectionDistances = computeConnectionDistances(elements, {
@@ -369,13 +373,53 @@ export type LabelJustification =
    * symbol, so this label is forced by the renderer, not chosen.
    */
   | "same-component"
-  /** Declared intentional by the module author, with a stated reason. */
+  /**
+   * Declared intentional AND approved by a human. Only an approved
+   * declaration exempts a label.
+   */
   | "declared"
+  /**
+   * A declaration exists but carries no human approval. This does NOT
+   * exempt anything -- it is counted as a defect and named loudly, so
+   * that writing a justification cannot by itself buy a passing grade.
+   */
+  | "pending-approval"
+  /**
+   * A multi-terminal junction (3+ ports). No strictly better option exists:
+   * wiring it pin-to-pin collapses it into ONE auto-label naming every
+   * member, which is far wider than N short labels and collides at fixed
+   * pin anchors. Measured on this project -- see the docs. Whether such a
+   * net is acceptable is governed by the COLLISION and DISTANCE metrics,
+   * not by label count.
+   */
+  | "junction"
   /**
    * The endpoints are close enough to wire together and nothing forced a
    * label. This is the unmeasured default, and the only class that fails.
    */
   | "gratuitous"
+
+/**
+ * A label the author argues should stay, with its provenance.
+ *
+ * The accepted classes (rail, cross-boundary, same-component, junction) are
+ * determined STRUCTURALLY from the render and cannot be talked into
+ * existence. Anything outside them needs a human to sign off, because the
+ * alternative is that whoever writes the schematic also writes its own
+ * exemptions -- which is not a standard, it is a formality.
+ */
+export interface DeclaredLabel {
+  readonly reason: string
+  /** Measured evidence, where the argument rests on data rather than taste. */
+  readonly evidence?: string
+  /**
+   * HUMAN APPROVAL. An automated author must not populate this field for
+   * its own declarations; doing so defeats the entire mechanism. Absent
+   * approval the label is classified `pending-approval` and still fails.
+   */
+  readonly approvedBy?: string
+  readonly approvedOn?: string
+}
 
 export interface ClassifiedLabel {
   readonly text: string
@@ -383,6 +427,7 @@ export interface ClassifiedLabel {
   /** Greatest distance between this net's labels, in schematic units. */
   readonly netSpan: number
   readonly reason?: string
+  readonly approvedBy?: string
 }
 
 /**
@@ -396,8 +441,8 @@ export function classifyLabels(
   opts: {
     readonly railSuffixes?: readonly string[]
     readonly shortSpanUnits?: number
-    /** net text -> why a label is the right call here */
-    readonly declared?: Readonly<Record<string, string>>
+    /** net text -> the declaration, including its provenance */
+    readonly declared?: Readonly<Record<string, DeclaredLabel>>
   } = {},
 ): ClassifiedLabel[] {
   const railSuffixes = opts.railSuffixes ?? DEFAULT_RAIL_SUFFIXES
@@ -426,6 +471,19 @@ export function classifyLabels(
     else portsByComponent.set(net, new Set([comp]))
   }
 
+  // Labels are keyed by source_net_id, groups by connectivity key. A
+  // source_trace carries BOTH, so it bridges the two namespaces. Without
+  // this the lookup silently never matches and nothing is ever classified
+  // cross-boundary.
+  const netIdOfConnKey = new Map<string, string>()
+  for (const e of elements) {
+    if (e.type !== "source_trace" || !isRecord(e)) continue
+    const conn = e.subcircuit_connectivity_map_key
+    const nets = e.connected_source_net_ids
+    if (typeof conn !== "string" || !Array.isArray(nets)) continue
+    for (const n of nets) if (typeof n === "string") netIdOfConnKey.set(conn, n)
+  }
+
   // A net is cross-boundary when its ports live in different schematic
   // groups. Measured from the render rather than declared by the author.
   const groupOfComponent = new Map<string, string>()
@@ -449,24 +507,42 @@ export function classifyLabels(
     if (set) set.add(g)
     else groupsPerNet.set(net, new Set([g]))
   }
-  // Labels are keyed by source_net_id, groups by connectivity key. A
-  // source_trace carries BOTH, so it bridges the two namespaces. Without
-  // this the lookup silently never matches and nothing is ever classified
-  // cross-boundary.
-  const netIdOfConnKey = new Map<string, string>()
-  for (const e of elements) {
-    if (e.type !== "source_trace" || !isRecord(e)) continue
-    const conn = e.subcircuit_connectivity_map_key
-    const nets = e.connected_source_net_ids
-    if (typeof conn !== "string" || !Array.isArray(nets)) continue
-    for (const n of nets) if (typeof n === "string") netIdOfConnKey.set(conn, n)
-  }
   const crossesBoundary = new Set<string>()
   for (const [net, gs] of groupsPerNet) {
     if (gs.size <= 1) continue
     crossesBoundary.add(net)
     const asNetId = netIdOfConnKey.get(net)
     if (asNetId !== undefined) crossesBoundary.add(asNetId)
+  }
+
+  // Port count per net, in the label's own id namespace. A 2-port net has
+  // a strictly better rendering (pin-to-pin draws a wire and emits NO
+  // label); a 3+ port net does not.
+  const portsPerConnKey = new Map<string, number>()
+  for (const e of elements) {
+    if (e.type !== "source_port" || !isRecord(e)) continue
+    const k = e.subcircuit_connectivity_map_key
+    if (typeof k === "string") {
+      portsPerConnKey.set(k, (portsPerConnKey.get(k) ?? 0) + 1)
+    }
+  }
+  const memberCount = new Map<string, number>()
+  for (const [conn, count] of portsPerConnKey) {
+    memberCount.set(conn, count)
+    const asNetId = netIdOfConnKey.get(conn)
+    if (asNetId !== undefined) memberCount.set(asNetId, count)
+  }
+
+  // "same-component" means every port on the net belongs to ONE component
+  // (tscircuit will not route around its own symbol). Determined from
+  // component identity -- NOT from "only one label was emitted", which is a
+  // different thing and silently exempted real defects.
+  const singleComponentNets = new Set<string>()
+  for (const [conn, comps] of portsByComponent) {
+    if (comps.size !== 1) continue
+    singleComponentNets.add(conn)
+    const asNetId = netIdOfConnKey.get(conn)
+    if (asNetId !== undefined) singleComponentNets.add(asNetId)
   }
 
   const out: ClassifiedLabel[] = []
@@ -485,12 +561,19 @@ export function classifyLabels(
       }
     }
     for (const l of group) {
-      const reason = declared[l.text]
+      const decl = declared[l.text]
       let justification: LabelJustification
       if (isRailLabel(l.text, railSuffixes)) justification = "rail"
-      else if (reason !== undefined) justification = "declared"
+      else if (decl !== undefined)
+        // A declaration alone proves nothing. Only a human signature turns
+        // it into an exemption.
+        justification =
+          decl.approvedBy !== undefined && decl.approvedBy.trim() !== ""
+            ? "declared"
+            : "pending-approval"
       else if (crossesBoundary.has(netKey)) justification = "cross-boundary"
-      else if (group.length === 1) justification = "same-component"
+      else if (singleComponentNets.has(netKey)) justification = "same-component"
+      else if ((memberCount.get(netKey) ?? 0) >= 3) justification = "junction"
       else justification = "gratuitous"
       // NOTE: a long span is deliberately NOT an exemption. "These are far
       // apart" is a question, not an answer -- if the distance is genuine
@@ -498,10 +581,13 @@ export function classifyLabels(
       // via `declared`. Otherwise the placement is what needs fixing, and
       // auto-exempting it would let sprawl launder a lazy label into a
       // justified one.
+      const base = { text: l.text, justification, netSpan: span }
       out.push(
-        reason === undefined
-          ? { text: l.text, justification, netSpan: span }
-          : { text: l.text, justification, netSpan: span, reason },
+        decl === undefined
+          ? base
+          : decl.approvedBy === undefined
+            ? { ...base, reason: decl.reason }
+            : { ...base, reason: decl.reason, approvedBy: decl.approvedBy },
       )
     }
   }
@@ -519,16 +605,33 @@ export function summarizeJustifications(
     "rail",
     "cross-boundary",
     "same-component",
+    "junction",
     "declared",
+    "pending-approval",
     "gratuitous",
   ]
   const lines = order
     .filter((k) => (counts.get(k) ?? 0) > 0)
     .map((k) => `  ${String(counts.get(k)).padStart(3)}  ${k}`)
+  const pending = classified.filter(
+    (c) => c.justification === "pending-approval",
+  )
+  if (pending.length > 0) {
+    const names = [...new Set(pending.map((p) => p.text))]
+    lines.push(
+      "",
+      "  UNAPPROVED declarations (a reason is not an exemption - these",
+      "  need a human signature in DECLARED_LABELS.approvedBy):",
+    )
+    for (const n of names) lines.push(`    ${n}`)
+  }
   const gratuitous = classified.filter((c) => c.justification === "gratuitous")
   if (gratuitous.length > 0) {
     const names = [...new Set(gratuitous.map((g) => g.text))]
-    lines.push("", "  gratuitous labels (wire these, or declare a reason):")
+    lines.push(
+      "",
+      "  gratuitous labels (2-terminal: wire these, or declare a reason):",
+    )
     for (const n of names.slice(0, 12)) {
       const ex = gratuitous.find((g) => g.text === n)
       lines.push(`    ${n}  (net span ${ex?.netSpan.toFixed(1)} units)`)
