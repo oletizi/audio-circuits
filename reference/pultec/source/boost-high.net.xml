@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="E">
+  <design>
+    <source>/Users/orion/work/multi-channel-preamp/src/schematics/pultec-boost-high/pultec-boost-high.kicad_sch</source>
+    <date>2026-09-19T23:04:47</date>
+    <tool>Eeschema 10.0.5</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>pultec-boost-high.kicad_sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="C1">
+      <value>4n7</value>
+      <footprint>OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</footprint>
+      <description>Unpolarized capacitor</description>
+      <fields>
+        <field name="Footprint">OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="C_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>8f922df2-bede-47c9-bf3d-865142f3a2dc</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="C2">
+      <value>4n7</value>
+      <footprint>OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</footprint>
+      <description>Unpolarized capacitor</description>
+      <fields>
+        <field name="Footprint">OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="C_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d2c72760-1bcd-468e-8494-8af3a00d9da3</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="C2a1">
+      <value>470pF</value>
+      <footprint>OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</footprint>
+      <description>Unpolarized capacitor</description>
+      <fields>
+        <field name="Footprint">OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="C_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>068547a4-54ce-4cd8-ab66-d694eedc7027</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="C3">
+      <value>3n3</value>
+      <footprint>OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</footprint>
+      <description>Unpolarized capacitor</description>
+      <fields>
+        <field name="Footprint">OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="C_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>c88649b5-0819-4daa-b869-6e5a2f48ba77</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="C4">
+      <value>1nF</value>
+      <footprint>OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</footprint>
+      <description>Unpolarized capacitor</description>
+      <fields>
+        <field name="Footprint">OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="C_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>bbb098e9-25c4-43b6-b75b-52be6c57526f</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="C4a1">
+      <value>1nF</value>
+      <footprint>OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</footprint>
+      <description>Unpolarized capacitor</description>
+      <fields>
+        <field name="Footprint">OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="C_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>b9619427-efdb-4971-9377-10a9e0e5fb73</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="C5">
+      <value>1nF</value>
+      <footprint>OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</footprint>
+      <description>Unpolarized capacitor</description>
+      <fields>
+        <field name="Footprint">OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="C_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>84a4d5e6-a424-4fdc-9dcc-1fe08268abbb</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="C5a1">
+      <value>1n5</value>
+      <footprint>OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</footprint>
+      <description>Unpolarized capacitor</description>
+      <fields>
+        <field name="Footprint">OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="C_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>74872b79-9ec7-404c-98b8-00c2146beee4</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="C6">
+      <value>1nF</value>
+      <footprint>OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</footprint>
+      <description>Unpolarized capacitor</description>
+      <fields>
+        <field name="Footprint">OL Library:C_Rect_L7.0mm_W2.0mm_P5.00mm_Fat_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="C_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>b0bf9829-723e-4f6d-bd64-8a6b6d21219e</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J1">
+      <value>INPUT</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f8e91d09-46c9-4efc-a4b7-fdd56b2d3c8d</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J2">
+      <value>output</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f2aaf0b4-49dc-438d-968b-fca7ee715af5</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J3">
+      <value>600mH</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>0ecf71cb-2079-41f9-9dbf-f5b971c2b0ab</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J4">
+      <value>300mH</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>23e1b6f9-d31d-4ae3-b64b-90e363808307</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J5">
+      <value>200mH</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e2c91b03-478f-477f-9e46-7430302d7599</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J6">
+      <value>100mH</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d688ccb3-f728-4d77-82d0-ff9fdc8970fb</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J7">
+      <value>Frequency Selector Return</value>
+      <footprint>TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-6_1x06_P5.00mm_Horizontal</footprint>
+      <description>Generic screw terminal, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-6_1x06_P5.00mm_Horizontal</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x06" description="Generic screw terminal, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>2ea93609-8896-4d61-8bb1-876a729bf9de</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+            <pin num="3"/>
+            <pin num="4"/>
+            <pin num="5"/>
+            <pin num="6"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J8">
+      <value>Frequency Selector Send</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>b6a0c141-112d-4656-ab30-ab760c896044</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J9">
+      <value>Inductor Return</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d6cfe076-8b02-45ff-9a28-f65b447ec39d</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J10">
+      <value>Boost High</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-3_1x03_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-3_1x03_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x03" description="Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>4414b63f-0293-4d0f-a122-e4e3ad68137d</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+            <pin num="3"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J11">
+      <value>Boost High Q</value>
+      <footprint>OL Library:TerminalBlock_Phoenix_MKDS-1,5-3_1x03_P5.00mm_Horizontal Fat Pad</footprint>
+      <description>Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <fields>
+        <field name="Footprint">OL Library:TerminalBlock_Phoenix_MKDS-1,5-3_1x03_P5.00mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x03" description="Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>b1ad1fb2-e4f9-4146-a6bb-b1a8c3dbc6e4</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+            <pin num="3"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="R1">
+      <value>4K7</value>
+      <footprint>OL Library:R_Axial_DIN0411_L9.9mm_D3.6mm_P12.70mm_Horizontal Fat Pad</footprint>
+      <description>Resistor</description>
+      <fields>
+        <field name="Footprint">OL Library:R_Axial_DIN0411_L9.9mm_D3.6mm_P12.70mm_Horizontal Fat Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description">Resistor</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value="pultec-boost-high"/>
+      <property name="Sheetfile" value="pultec-boost-high.kicad_sch"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>11ca2521-822c-4006-9489-bad7e7a7cdea</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="Connector" part="Screw_Terminal_01x02">
+      <description>Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <footprints>
+        <fp>TerminalBlock*:*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Screw_Terminal_01x02</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector" part="Screw_Terminal_01x03">
+      <description>Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <footprints>
+        <fp>TerminalBlock*:*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Screw_Terminal_01x03</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector" part="Screw_Terminal_01x06">
+      <description>Generic screw terminal, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <footprints>
+        <fp>TerminalBlock*:*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Screw_Terminal_01x06</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description">Generic screw terminal, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+        <pin num="6" name="Pin_6" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C">
+      <description>Unpolarized capacitor</description>
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description">Unpolarized capacitor</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="R">
+      <description>Resistor</description>
+      <footprints>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">R</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description">Resistor</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="Connector">
+      <uri>${KICAD10_SYMBOL_DIR}/Connector.kicad_sym</uri>
+    </library>
+    <library logical="Device">
+      <uri>${KICAD10_SYMBOL_DIR}/Device.kicad_sym</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="GND" class="Default">
+      <node ref="J1" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+      <node ref="J2" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+    </net>
+    <net code="2" name="Net-(J1-Pin_1)" class="Default">
+      <node ref="J1" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J10" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J8" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J8" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+    </net>
+    <net code="3" name="Net-(J3-Pin_1)" class="Default">
+      <node ref="C1" pin="2" pintype="passive"/>
+      <node ref="J3" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J3" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+    </net>
+    <net code="4" name="Net-(J4-Pin_1)" class="Default">
+      <node ref="C2" pin="2" pintype="passive"/>
+      <node ref="C2a1" pin="2" pintype="passive"/>
+      <node ref="C3" pin="2" pintype="passive"/>
+      <node ref="J4" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J4" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+    </net>
+    <net code="5" name="Net-(J5-Pin_1)" class="Default">
+      <node ref="C4" pin="2" pintype="passive"/>
+      <node ref="C4a1" pin="2" pintype="passive"/>
+      <node ref="J5" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J5" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+    </net>
+    <net code="6" name="Net-(J6-Pin_1)" class="Default">
+      <node ref="C5" pin="2" pintype="passive"/>
+      <node ref="C5a1" pin="2" pintype="passive"/>
+      <node ref="C6" pin="2" pintype="passive"/>
+      <node ref="J6" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J6" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+    </net>
+    <net code="7" name="Net-(J7-Pin_1)" class="Default">
+      <node ref="C6" pin="1" pintype="passive"/>
+      <node ref="J7" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+    </net>
+    <net code="8" name="Net-(J7-Pin_2)" class="Default">
+      <node ref="C5" pin="1" pintype="passive"/>
+      <node ref="C5a1" pin="1" pintype="passive"/>
+      <node ref="J7" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+    </net>
+    <net code="9" name="Net-(J7-Pin_3)" class="Default">
+      <node ref="C4" pin="1" pintype="passive"/>
+      <node ref="C4a1" pin="1" pintype="passive"/>
+      <node ref="J7" pin="3" pinfunction="Pin_3_3" pintype="passive"/>
+    </net>
+    <net code="10" name="Net-(J7-Pin_4)" class="Default">
+      <node ref="C3" pin="1" pintype="passive"/>
+      <node ref="J7" pin="4" pinfunction="Pin_4_4" pintype="passive"/>
+    </net>
+    <net code="11" name="Net-(J7-Pin_5)" class="Default">
+      <node ref="C2" pin="1" pintype="passive"/>
+      <node ref="C2a1" pin="1" pintype="passive"/>
+      <node ref="J7" pin="5" pinfunction="Pin_5_5" pintype="passive"/>
+    </net>
+    <net code="12" name="Net-(J7-Pin_6)" class="Default">
+      <node ref="C1" pin="1" pintype="passive"/>
+      <node ref="J7" pin="6" pinfunction="Pin_6_6" pintype="passive"/>
+    </net>
+    <net code="13" name="Net-(J9-Pin_1)" class="Default">
+      <node ref="J9" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J9" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+      <node ref="R1" pin="1" pintype="passive"/>
+    </net>
+    <net code="14" name="Net-(J10-Pin_2)" class="Default">
+      <node ref="J10" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+      <node ref="J11" pin="3" pinfunction="Pin_3_3" pintype="passive"/>
+    </net>
+    <net code="15" name="Net-(J10-Pin_3)" class="Default">
+      <node ref="J10" pin="3" pinfunction="Pin_3_3" pintype="passive"/>
+      <node ref="J2" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+    </net>
+    <net code="16" name="Net-(J11-Pin_1)" class="Default">
+      <node ref="J11" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J11" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+      <node ref="R1" pin="2" pintype="passive"/>
+    </net>
+  </nets>
+</export>

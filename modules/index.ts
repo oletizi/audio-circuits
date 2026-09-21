@@ -1,9 +1,6 @@
 export { OpampBuffer, type OpampBufferProps } from "./opamp-buffer/index"
 
-// TODO: Add more modules as they're implemented
-// export { LowCutFilter } from "./low-cut"
-// export { LowBoostFilter } from "./low-boost"
-// export { HighBoostFilter } from "./high-boost"
-// export { HighCutFilter } from "./high-cut"
-// export { InputStage } from "./input-stage"
-// export { OutputStage } from "./output-stage"
+// The Pultec section modules are deliberately absent from this barrel. They are
+// imported by their own file paths — `modules/pultec-hi-boost/PultecHiBoost.tsx`
+// and so on — because that is what tscircuit's evaluator can resolve, and a
+// barrel that re-exports them invites the directory import that cannot.
