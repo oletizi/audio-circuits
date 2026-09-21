@@ -213,3 +213,105 @@ Consequences already visible in that repository:
 
 The low-boost module is the one place it was caught and corrected, against the
 doc's page 4 `Cboost` column. That correction agrees with this reference.
+
+---
+
+## 7. Winding-coupling caveat — RETIRED by the discrete-inductor redesign
+
+The original caveat, recorded in `three-band.ts` and `controls.ts`:
+representing one tapped coil as several separate inductors is only legitimate
+because the selector energises exactly one tap at a time, so unselected
+sections carry no current and cannot couple into the live one. If two sections
+ever carried current together, the model would need explicit magnetic coupling
+between them — a risk flagged rather than modelled.
+
+**No longer load-bearing.** The 2026-09-20 discrete-inductors design (see
+`docs/superpowers/specs/2026-09-20-discrete-inductors-design.md`) replaced both
+tapped coils — hi boost's four taps and the mid's five — with nine discrete
+inductors on the section boards (`modules/pultec-hi-boost/`,
+`modules/pultec-mid/`). Discrete parts share no winding, so there is no
+coupling to argue about at all: the one-at-a-time switching argument has
+nothing left to defend on those boards.
+
+This retirement applies to the board implementation only. `three-band.ts` and
+`controls.ts` still model the tapped coil as documented from the original
+hardware, and their comments — and the caveat those comments carry — remain
+correct descriptions of that model. Recorded here rather than deleted,
+consistent with how item 3 keeps its superseded history.
+
+**Still open within it:** the mid's 2H inductor has not been verified as
+purchasable at an acceptable price. The design's fallback is to cluster the
+mid frequencies onto fewer distinct inductance values; since positions can be
+left unpopulated at build time regardless, that is a build decision rather
+than a redesign.
+
+---
+
+## 8. Hi boost schematic autorouting warnings after discrete inductors
+
+**Uncertain:** whether this is a tooling limitation or something the circuit
+is doing wrong.
+
+Rendering the hi boost module now produces schematic autorouting warnings —
+`MultiOffsetIrlsSolver ran out of iterations` — that did not occur before the
+inductors landed on the board. Measured: 0 warnings at the pre-task baseline,
+12 after, and 12 at every inductor row position tried from 3 through 6. The
+count does not change with placement, so it is driven by the added traces
+themselves, not by the geometry chosen for them.
+
+No test observes the warning, and no netlist is affected by it — it is a
+tscircuit schematic-rendering limit, not a circuit defect.
+
+**Alternatives:** leave it as a rendering wart; reduce trace count or reroute
+by hand to make the solver converge; or report it upstream as a tscircuit
+limitation.
+
+**Resolves by:** a decision on whether the warning is worth chasing. Nothing
+currently depends on it going away.
+
+---
+
+## 9. `parseValue` does not check a value string's unit against component kind
+
+**Uncertain:** nothing about this project's current values — flagged as a
+latent risk, not a present defect.
+
+`parseValue` and the circuit-json export never cross-check a value string's
+unit letter against the kind of component it is attached to. Nothing stops
+"450mF" written on an inductor from parsing silently as 0.45 henries: the
+digits are read correctly, but the unit letter is never validated against
+"this is an inductor, `F` is wrong here." This is pre-existing shared
+infrastructure, not something this task touched, and every value currently in
+the tree is correct.
+
+**Alternatives:** add a unit-vs-kind check to `parseValue` or the circuit-json
+export path; or accept the risk as long as values continue to be hand-verified.
+
+**Resolves by:** a decision on whether to harden `parseValue`. Recorded because
+a silent wrong-unit parse is a silent-wrong-answer failure mode, not because
+anything is wrong today.
+
+---
+
+## 10. Schematic-overlap test only catches exact-coordinate collisions
+
+**Uncertain:** how much headroom the current module layout actually has.
+
+`tests/modules/schematic-overlap.ts` detects overlap only by exact coordinate
+equality. `columnLayout` spaces module origins 10 units apart; `createGrid`
+multiplies row index by `GRID = 3`, so a module occupying rows 0-3 spans 9
+units inside a 10-unit slot. The measured closest cross-module pair today is
+1.00 unit apart with 0.35 units of symbol-bounding-box clearance — no overlap
+today, but not much margin either.
+
+A sixth module, or one more row added to the mid or hi boost section, closes
+that 1-unit gap and produces a real collision the test will not report,
+because it only compares exact coordinates rather than bounding boxes or a
+minimum clearance.
+
+**Alternatives:** tighten the test to a clearance threshold instead of exact
+equality; widen `columnLayout`'s spacing; or leave it and re-check by hand
+before adding rows or modules.
+
+**Resolves by:** a decision on which of the above, made before the next module
+or row is added rather than after.

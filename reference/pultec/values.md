@@ -101,3 +101,62 @@ requires — see unresolved item 5.
 
 The doc states the output "should be loaded with not less than 470K". This is
 the load model the AC harness needs as an explicit input.
+
+## Discrete inductor specification
+
+Nine discrete inductors replace the two tapped coils, one per tap position, on
+the section boards (`modules/pultec-hi-boost/`, `modules/pultec-mid/`). See
+`docs/superpowers/specs/2026-09-20-discrete-inductors-design.md` for the full
+design rationale; the specification and measurement tables below are
+reproduced from that document verbatim, as the place someone selecting parts
+will look.
+
+**These numbers come from the validated model, not from a datasheet.** No
+physical part has been measured against them — that is a separate question
+from unresolved item 1, "as-built hardware is not captured".
+
+| Section | Values | Tolerance | DCR | Current |
+| --- | --- | --- | --- | --- |
+| High boost | 0.6, 0.3, 0.2, 0.1 H | ±20% | ≤1kΩ, ≤500Ω preferred | Line level |
+| Mid | 2, 1, 0.45, 0.22, 0.1 H | ±20% | ≤1kΩ, ≤500Ω preferred | Line level |
+
+Nine parts. Anything meeting the spec qualifies: a catalogue inductor, a
+pot-core part, or a small transformer winding with the other side left open.
+
+### Where those numbers come from
+
+Both limits were measured against the validated model rather than assumed, and
+both are looser than the usual instinct for inductor-based EQ.
+
+**DCR barely matters.** Q in these sections is set by the deliberate damping —
+Qmax and the mid's boost-return resistor — not by the coil. Coil losses are
+small against the 4.7kΩ already in the loop. High boost at 5kHz, boost above
+flat:
+
+| Coil DCR | Qmax 4K7 | Qmax 470R |
+| --- | --- | --- |
+| 0Ω | +15.5 dB, Q≈1.1 | +20.6 dB, Q≈2.3 |
+| 250Ω | +15.3 dB | +20.2 dB, Q≈2.1 |
+| 500Ω | +15.1 dB | +19.8 dB, Q≈2.0 |
+| 1kΩ | +14.8 dB | +19.0 dB, Q≈1.8 |
+| 2kΩ | +14.1 dB | +17.8 dB, Q≈1.6 |
+
+The centre frequency does not move at any value. This is what removes the need
+for thick-wire, low-DCR, physically large coils — most of what makes audio
+inductors expensive.
+
+Both Qmax columns are shown because which value is actually fitted is
+unresolved — see unresolved item 2.
+
+**Tolerance barely matters either**, because the curves are broad by design.
+Worst-case deviation anywhere in 1k–20kHz, high boost at 5kHz:
+
+| L tolerance | Worst-case error |
+| --- | --- |
+| ±10% | 0.80 dB |
+| ±20% | 1.67 dB |
+| ±30% | 2.62 dB |
+| ±50% | 4.87 dB |
+
+±20% is under 2 dB. Standard parts are ±10% or ±20%, so tolerance is not a
+selection criterion.
