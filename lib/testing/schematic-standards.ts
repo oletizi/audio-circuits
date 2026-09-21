@@ -59,7 +59,7 @@ export interface Ceiling {
  */
 export const RATCHET: Readonly<Record<string, Ceiling>> = {
   "optical-compressor": {
-    gratuitousLabels: 16,
+    gratuitousLabels: 15,
     labelCollisions: 8,
     signalLabelRatio: 0.52,
     wireCrossings: 2,

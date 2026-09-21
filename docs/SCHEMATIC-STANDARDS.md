@@ -31,7 +31,7 @@ So every label is classified, and only one class is a defect:
 | Class | Meaning | Verdict |
 |---|---|---|
 | `rail` | GND, VBIAS, VCC, VEE, 9V_RAW, 9V_PROT, VBIAS_RAW | Always fine — wiring every ground connection is spaghetti |
-| `long-span` | The net's endpoints are more than `SHORT_SPAN_UNITS` (8) apart | Fine — a wire would be a long haul across the drawing |
+| `cross-boundary` | The net connects components in different schematic groups — it crosses a module boundary | Fine — **detected from the render**, not declared, so it cannot be gamed |
 | `same-component` | Two pins on one component | Fine — forced by the renderer, not chosen |
 | `declared` | Author stated a reason in the module's `declared` map | Fine — that is the defensible choice being made explicitly |
 | **`gratuitous`** | **Close enough to wire, not a rail, not forced, not declared** | **Defect** |
@@ -39,6 +39,25 @@ So every label is classified, and only one class is a defect:
 A gratuitous label is the unmeasured default: two things a few units apart
 that could simply have been joined by a line. `CMP_COLL` with a net span of
 2.3 units is not a labelling decision, it is an absence of one.
+
+**A long span is deliberately NOT an exemption.** An earlier version of this
+standard exempted any net whose endpoints were more than 8 units apart, and
+noted in its own limitations that "a sufficiently sprawling schematic can
+launder gratuitous labels into justified ones". Noting that hole and shipping
+it anyway was incoherent: the rule rewarded exactly the sprawl the other
+metrics penalise. "These are far apart" is a *question*, not an answer. If
+the distance is genuine — feedback returning across a signal chain, a control
+crossing functional blocks — say so with `declared`. Otherwise the placement
+is the defect, and relabelling it fixes nothing:
+
+```
+R17 ------------------------------- Q3     is not improved by
+R17 -- FOO                 FOO -- Q3
+```
+
+Module boundaries *are* auto-exempt, but by **measurement** rather than
+assertion: a net whose ports belong to components in different schematic
+groups is genuinely an interface, and that is visible in the render.
 
 **The escape hatch is a reason, not a budget.** If a label genuinely belongs
 somewhere the classifier would call gratuitous, declare it:
@@ -121,13 +140,13 @@ Measured at the time of writing:
 
 | Module | Gratuitous | Collisions | Crossings | Area/comp |
 |---|---|---|---|---|
-| `optical-compressor` | **16** ❌ | **8** ❌ | 2 ✅ | 23.5 ✅ |
-| `opamp-buffer` (pre-existing) | **4** ❌ | **1** ❌ | 0 ✅ | 32.6 ❌ |
+| `optical-compressor` | **15** ❌ | **8** ❌ | 2 ✅ | 23.5 ✅ |
+| `opamp-buffer` (pre-existing) | **6** ❌ | **1** ❌ | 0 ✅ | 32.6 ❌ |
 
-The compressor's 67 labels classify as 28 rail, 21 long-span, 2
-same-component and **16 gratuitous** across 7 nets — `CMP_COLL` (span 2.3),
+The compressor's 67 labels classify as 28 rail, 22 cross-boundary, 2
+same-component and **15 gratuitous** across 6 nets — `CMP_COLL` (span 2.3),
 `CMP_BUF_OUT` (2.6), `CMP_BASE` (2.8), `CMP_OUT` (2.8), `CMP_IN` (6.5),
-`CMP_GR` (7.4), `CMP_DET` (7.4). Four of those nets were introduced while
+`CMP_GR` (7.4), `CMP_DET` (7.4), `CMP_IN_BUF` (8.2). Four of those nets were introduced while
 fixing an unrelated label-overlap problem, by converting drawn wires into
 net-routed connections. That is precisely the kind of silent degradation this
 metric exists to catch.

@@ -360,10 +360,10 @@ export type LabelJustification =
   /** A power rail. Drawing every ground connection is spaghetti. Always fine. */
   | "rail"
   /**
-   * The net's endpoints are far apart. A wire here would be a long haul
-   * across the drawing, which is exactly what labels are for.
+   * The net connects components in DIFFERENT schematic groups, i.e. it
+   * crosses a module boundary. Detected from the render, not declared.
    */
-  | "long-span"
+  | "cross-boundary"
   /**
    * Two pins on the SAME component. tscircuit will not route around its own
    * symbol, so this label is forced by the renderer, not chosen.
@@ -426,8 +426,51 @@ export function classifyLabels(
     else portsByComponent.set(net, new Set([comp]))
   }
 
+  // A net is cross-boundary when its ports live in different schematic
+  // groups. Measured from the render rather than declared by the author.
+  const groupOfComponent = new Map<string, string>()
+  for (const e of elements) {
+    if (e.type !== "schematic_component" || !isRecord(e)) continue
+    const sid = e.source_component_id
+    const gid = e.schematic_group_id
+    if (typeof sid === "string" && typeof gid === "string") {
+      groupOfComponent.set(sid, gid)
+    }
+  }
+  const groupsPerNet = new Map<string, Set<string>>()
+  for (const e of elements) {
+    if (e.type !== "source_port" || !isRecord(e)) continue
+    const comp = e.source_component_id
+    const net = e.subcircuit_connectivity_map_key
+    if (typeof comp !== "string" || typeof net !== "string") continue
+    const g = groupOfComponent.get(comp)
+    if (g === undefined) continue
+    const set = groupsPerNet.get(net)
+    if (set) set.add(g)
+    else groupsPerNet.set(net, new Set([g]))
+  }
+  // Labels are keyed by source_net_id, groups by connectivity key. A
+  // source_trace carries BOTH, so it bridges the two namespaces. Without
+  // this the lookup silently never matches and nothing is ever classified
+  // cross-boundary.
+  const netIdOfConnKey = new Map<string, string>()
+  for (const e of elements) {
+    if (e.type !== "source_trace" || !isRecord(e)) continue
+    const conn = e.subcircuit_connectivity_map_key
+    const nets = e.connected_source_net_ids
+    if (typeof conn !== "string" || !Array.isArray(nets)) continue
+    for (const n of nets) if (typeof n === "string") netIdOfConnKey.set(conn, n)
+  }
+  const crossesBoundary = new Set<string>()
+  for (const [net, gs] of groupsPerNet) {
+    if (gs.size <= 1) continue
+    crossesBoundary.add(net)
+    const asNetId = netIdOfConnKey.get(net)
+    if (asNetId !== undefined) crossesBoundary.add(asNetId)
+  }
+
   const out: ClassifiedLabel[] = []
-  for (const [, group] of byNet) {
+  for (const [netKey, group] of byNet) {
     let span = 0
     for (let i = 0; i < group.length; i++) {
       for (let j = i + 1; j < group.length; j++) {
@@ -446,9 +489,15 @@ export function classifyLabels(
       let justification: LabelJustification
       if (isRailLabel(l.text, railSuffixes)) justification = "rail"
       else if (reason !== undefined) justification = "declared"
-      else if (span > shortSpan) justification = "long-span"
+      else if (crossesBoundary.has(netKey)) justification = "cross-boundary"
       else if (group.length === 1) justification = "same-component"
       else justification = "gratuitous"
+      // NOTE: a long span is deliberately NOT an exemption. "These are far
+      // apart" is a question, not an answer -- if the distance is genuine
+      // (feedback across a signal chain, a control crossing blocks) say so
+      // via `declared`. Otherwise the placement is what needs fixing, and
+      // auto-exempting it would let sprawl launder a lazy label into a
+      // justified one.
       out.push(
         reason === undefined
           ? { text: l.text, justification, netSpan: span }
@@ -468,7 +517,7 @@ export function summarizeJustifications(
   }
   const order: LabelJustification[] = [
     "rail",
-    "long-span",
+    "cross-boundary",
     "same-component",
     "declared",
     "gratuitous",
