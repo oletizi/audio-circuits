@@ -908,14 +908,12 @@ const render = () =>
   )
 
 test("reverse-polarity diode sits between raw and protected rails", async () => {
-  const el = await render()
   expectConnected(el, "CMP_D_PROT.anode", "CMP_C_BULK.pin1")
   // Schottky cathode feeds the protected rail, not the raw input.
   expectConnected(el, "CMP_D_PROT.cathode", "CMP_C_HF.pin1")
 })
 
 test("bias divider is two 47k resistors to a buffered midpoint", async () => {
-  const el = await render()
   expectComponentValue(el, "CMP_R_BIAS1", "resistance", 47_000)
   expectComponentValue(el, "CMP_R_BIAS2", "resistance", 47_000)
   expectConnected(el, "CMP_R_BIAS1.pin2", "CMP_R_BIAS2.pin1")
@@ -924,13 +922,11 @@ test("bias divider is two 47k resistors to a buffered midpoint", async () => {
 })
 
 test("VBIAS buffer is unity gain and VBIAS is the buffer output", async () => {
-  const el = await render()
   expectConnected(el, "CMP_U2.OUTB", "CMP_U2.INB_N")
   expectConnected(el, "CMP_U2.OUTB", "CMP_TP_VBIAS.TP")
 })
 
 test("divider midpoint is bypassed but is NOT the VBIAS net", async () => {
-  const el = await render()
   // C_BIAS bypasses VBIAS_RAW, the unbuffered node.
   expectConnected(el, "CMP_C_BIAS.pin1", "CMP_U2.INB_P")
   expectComponentValue(el, "CMP_C_BIAS", "capacitance", 47e-6)
@@ -940,7 +936,6 @@ test("divider midpoint is bypassed but is NOT the VBIAS net", async () => {
 })
 
 test("U2 is powered from the protected rail and decoupled", async () => {
-  const el = await render()
   expectConnected(el, "CMP_U2.VCC", "CMP_C_U2_DEC.pin1")
   expectConnected(el, "CMP_U2.VCC", "CMP_D_PROT.cathode")
   expectConnected(el, "CMP_U2.GND", "CMP_C_U2_DEC.pin2")
@@ -1215,7 +1210,6 @@ const render = () =>
   )
 
 test("input is AC coupled and biased to VBIAS through 1M", async () => {
-  const el = await render()
   expectComponentValue(el, "CMP_C_IN", "capacitance", 100e-9)
   expectComponentValue(el, "CMP_R_IN_BIAS", "resistance", 1_000_000)
   expectConnected(el, "CMP_C_IN.pin2", "CMP_R_IN_BIAS.pin1")
@@ -1224,12 +1218,10 @@ test("input is AC coupled and biased to VBIAS through 1M", async () => {
 })
 
 test("input buffer is unity gain", async () => {
-  const el = await render()
   expectConnected(el, "CMP_U1.OUTA", "CMP_U1.INA_N")
 })
 
 test("attenuator is R_SHUNT in series with the LDR shunting to VBIAS", async () => {
-  const el = await render()
   expectComponentValue(el, "CMP_R_SHUNT", "resistance", 22_000)
   // Buffer output feeds R_SHUNT...
   expectConnected(el, "CMP_U1.OUTA", "CMP_R_SHUNT.pin1")
@@ -1239,14 +1231,12 @@ test("attenuator is R_SHUNT in series with the LDR shunting to VBIAS", async () 
 })
 
 test("gain-reduction node drives the makeup amp with NO coupling cap", async () => {
-  const el = await render()
   // Both stages share the VBIAS operating point, so they are DC coupled.
   expectConnected(el, "CMP_R_SHUNT.pin2", "CMP_U1.INB_P")
   expectConnected(el, "CMP_TP_GR.TP", "CMP_U1.INB_P")
 })
 
 test("makeup amp gain network returns to VBIAS, feedback goes to the pot", async () => {
-  const el = await render()
   expectComponentValue(el, "CMP_R_MAKEUP_G", "resistance", 10_000)
   expectConnected(el, "CMP_R_MAKEUP_G.pin1", "CMP_U1.INB_N")
   expectConnected(el, "CMP_R_MAKEUP_G.pin2", "CMP_TP_VBIAS_CHK.TP")
@@ -1254,7 +1244,6 @@ test("makeup amp gain network returns to VBIAS, feedback goes to the pot", async
 })
 
 test("output is AC coupled through 2.2uF with a 100k pulldown", async () => {
-  const el = await render()
   expectComponentValue(el, "CMP_C_OUT", "capacitance", 2.2e-6)
   expectComponentValue(el, "CMP_R_OUT_PD", "resistance", 100_000)
   expectConnected(el, "CMP_U1.OUTB", "CMP_C_OUT.pin1")
@@ -1265,7 +1254,6 @@ test("output is AC coupled through 2.2uF with a 100k pulldown", async () => {
 })
 
 test("LDR and LED sides remain isolated through the audio path", async () => {
-  const el = await render()
   expectNotConnected(el, "CMP_VACTROL.LDR_1", "CMP_VACTROL.LED_A")
 })
 ```
@@ -1585,7 +1573,6 @@ const render = () =>
   )
 
 test("sidechain amp is non-inverting with gain 1 + 100k/10k", async () => {
-  const el = await render()
   expectComponentValue(el, "CMP_R_SC_G", "resistance", 10_000)
   expectComponentValue(el, "CMP_R_SC_F", "resistance", 100_000)
   // Gain leg returns to VBIAS, feedback leg to the output: non-inverting.
@@ -1597,7 +1584,6 @@ test("sidechain amp is non-inverting with gain 1 + 100k/10k", async () => {
 })
 
 test("PEAK REDUCTION wiper has a 1M fail-safe to VBIAS, not a wiper tie", async () => {
-  const el = await render()
   // Spec 10.1: an open wiper must settle at VBIAS (zero compression).
   expectComponentValue(el, "CMP_R_PEAK_FAIL", "resistance", 1_000_000)
   expectConnected(el, "CMP_R_PEAK_FAIL.pin2", "CMP_TP_VBIAS_SC.TP")
@@ -1610,7 +1596,6 @@ test("PEAK REDUCTION wiper has a 1M fail-safe to VBIAS, not a wiper tie", async 
 })
 
 test("detector is AC coupled into a half-wave rectifier", async () => {
-  const el = await render()
   expectComponentValue(el, "CMP_C_SC", "capacitance", 1e-6)
   expectConnected(el, "CMP_C_SC.pin1", "CMP_U2.OUTA")
   // Diode anode takes the coupled signal; cathode charges the detector.
@@ -1621,7 +1606,6 @@ test("detector is AC coupled into a half-wave rectifier", async () => {
 })
 
 test("detector cap is 4.7uF per revision 3, with a 100k release resistor", async () => {
-  const el = await render()
   // Revision 2 specified 10uF; degeneration raised the discharge
   // impedance ~5x, so revision 3 uses 4.7uF. See spec 8.6.1.
   expectComponentValue(el, "CMP_C_DET", "capacitance", 4.7e-6)
@@ -1632,7 +1616,6 @@ test("detector cap is 4.7uF per revision 3, with a 100k release resistor", async
 })
 
 test("driver has a 1k EMITTER RESISTOR - the revision 3 control-law fix", async () => {
-  const el = await render()
   // Without this the control range is ~1 dB and the law is a switch.
   // See spec 6.1.2 and 8.7.1. This test is the regression guard.
   expectComponentValue(el, "CMP_R_E", "resistance", 1_000)
@@ -1643,7 +1626,6 @@ test("driver has a 1k EMITTER RESISTOR - the revision 3 control-law fix", async 
 })
 
 test("base is driven through 10k with a 100k pulldown", async () => {
-  const el = await render()
   expectComponentValue(el, "CMP_R_B", "resistance", 10_000)
   expectComponentValue(el, "CMP_R_B_PD", "resistance", 100_000)
   expectConnected(el, "CMP_C_DET.pin1", "CMP_R_B.pin1")
@@ -1653,7 +1635,6 @@ test("base is driven through 10k with a 100k pulldown", async () => {
 })
 
 test("LED chain is 3.3k limit, vactrol LED, 10R sense, collector", async () => {
-  const el = await render()
   // R_LED is 3.3k, not 4.7k: 1.5 V now drops across R_E. Spec 8.7.2.
   expectComponentValue(el, "CMP_R_LED", "resistance", 3_300)
   expectComponentValue(el, "CMP_R_SENSE", "resistance", 10)
@@ -1663,14 +1644,12 @@ test("LED chain is 3.3k limit, vactrol LED, 10R sense, collector", async () => {
 })
 
 test("sense resistor is bracketed by test points so current is measurable", async () => {
-  const el = await render()
   // Bench item 12.2.2 needs LED current without desoldering.
   expectConnected(el, "CMP_TP_SENSE_HI.TP", "CMP_R_SENSE.pin1")
   expectConnected(el, "CMP_TP_SENSE_LO.TP", "CMP_R_SENSE.pin2")
 })
 
 test("sidechain amp inverting input and output both carry test pads", async () => {
-  const el = await render()
   // Spec 8.6.2: the withdrawn precision-rectifier option leaves test pads
   // at these two nodes so the topology can still be probed on the bench.
   expectConnected(el, "CMP_TP_SC_INV.TP", "CMP_U2.INA_N")
@@ -1678,7 +1657,6 @@ test("sidechain amp inverting input and output both carry test pads", async () =
 })
 
 test("transistor is an NPN", async () => {
-  const el = await render()
   expect(findComponent(el, "CMP_Q_LED")?.ftype).toBe("simple_transistor")
 })
 ```
@@ -2057,39 +2035,52 @@ Connector pin mapping (spec §10.1). Note `J_PEAK` and `J_GAIN` both use TOP/WIP
 Create `modules/optical-compressor/OpticalCompressor.test.tsx`:
 
 ```tsx
-import { test, expect } from "bun:test"
+import { test, expect, beforeAll } from "bun:test"
 import {
   renderCircuit,
   expectConnected,
   expectNotConnected,
   expectNoFloatingPins,
+  expectNoFailedComponents,
   findComponent,
+  type CircuitElement,
 } from "../../lib/testing/circuit-assertions.ts"
 import { OpticalCompressor } from "./OpticalCompressor.tsx"
 
-const render = () =>
-  renderCircuit(
+// RENDER ONCE, SHARE ACROSS ALL TESTS.
+//
+// tscircuit's render cost is roughly QUADRATIC in component count -
+// measured: 12 components 1.2s, 22 components 5.9s, 32 components 14.9s,
+// 45 components 30.4s. The composed module has ~45 components, so one
+// render costs ~30s. Rendering per-test across 8 tests would cost ~240s
+// AND every individual test would blow past bun's 5s default per-test
+// timeout and fail.
+//
+// Circuit JSON is immutable data, so sharing one render is safe. The
+// beforeAll timeout must be generous - the render genuinely takes ~30s.
+let el: CircuitElement[]
+
+beforeAll(async () => {
+  el = await renderCircuit(
     <board width="100mm" height="80mm">
       <OpticalCompressor name="CMP" vactrolFootprint="dip4" />
     </board>,
   )
+}, 180000)
 
-test("all five connectors are present", async () => {
-  const el = await render()
+test("all five connectors are present", () => {
   for (const j of ["J_IN", "J_OUT", "J_PWR", "J_PEAK", "J_GAIN"]) {
     expect(findComponent(el, `CMP_${j}`)).toBeDefined()
   }
 })
 
-test("audio enters through J_IN and leaves through J_OUT", async () => {
-  const el = await render()
+test("audio enters through J_IN and leaves through J_OUT", () => {
   expectConnected(el, "CMP_J_IN.P1", "CMP_C_IN.pin1")
   expectConnected(el, "CMP_J_OUT.P1", "CMP_C_OUT.pin2")
   expectConnected(el, "CMP_J_IN.P2", "CMP_J_OUT.P2")
 })
 
-test("supply enters raw and reaches the op-amps only via the Schottky", async () => {
-  const el = await render()
+test("supply enters raw and reaches the op-amps only via the Schottky", () => {
   expectConnected(el, "CMP_J_PWR.P1", "CMP_D_PROT.anode")
   expectConnected(el, "CMP_U1.VCC", "CMP_D_PROT.cathode")
   expectConnected(el, "CMP_U2.VCC", "CMP_D_PROT.cathode")
@@ -2097,16 +2088,14 @@ test("supply enters raw and reaches the op-amps only via the Schottky", async ()
   expectNotConnected(el, "CMP_J_PWR.P1", "CMP_U1.VCC")
 })
 
-test("GAIN pot is wired as a rheostat with the wiper tied to an end", async () => {
-  const el = await render()
+test("GAIN pot is wired as a rheostat with the wiper tied to an end", () => {
   // Spec 10.1: an open wiper must not open the feedback loop.
   expectConnected(el, "CMP_J_GAIN.P2", "CMP_J_GAIN.P3")
   expectConnected(el, "CMP_J_GAIN.P2", "CMP_U1.INB_N")
   expectConnected(el, "CMP_J_GAIN.P1", "CMP_U1.OUTB")
 })
 
-test("PEAK REDUCTION is a divider: wiper NOT tied to either end", async () => {
-  const el = await render()
+test("PEAK REDUCTION is a divider: wiper NOT tied to either end", () => {
   // The revision-3 correction. Tying these would short the divider.
   expectNotConnected(el, "CMP_J_PEAK.P2", "CMP_J_PEAK.P1")
   expectNotConnected(el, "CMP_J_PEAK.P2", "CMP_J_PEAK.P3")
@@ -2115,23 +2104,24 @@ test("PEAK REDUCTION is a divider: wiper NOT tied to either end", async () => {
   expectConnected(el, "CMP_J_PEAK.P2", "CMP_U2.INA_P")
 })
 
-test("the vactrol bridges audio and sidechain without an electrical path", async () => {
-  const el = await render()
+test("the vactrol bridges audio and sidechain without an electrical path", () => {
   expectConnected(el, "CMP_VACTROL.LDR_1", "CMP_R_SHUNT.pin2")
   expectConnected(el, "CMP_VACTROL.LED_A", "CMP_R_LED.pin2")
   expectNotConnected(el, "CMP_VACTROL.LDR_1", "CMP_VACTROL.LED_A")
 })
 
-test("the feedback loop is closed: makeup output reaches the LED driver", async () => {
-  const el = await render()
+test("the feedback loop is closed: makeup output reaches the LED driver", () => {
   // Makeup output feeds the PEAK REDUCTION divider top at J_PEAK.P1.
   expectConnected(el, "CMP_U1.OUTB", "CMP_J_PEAK.P1")
   expectConnected(el, "CMP_U2.OUTA", "CMP_C_SC.pin1")
   expectConnected(el, "CMP_C_DET.pin1", "CMP_R_B.pin1")
 })
 
-test("no pin is left floating", async () => {
-  const el = await render()
+test("no component failed to be created and no pin is left floating", () => {
+  // expectNoFailedComponents scans the WHOLE element array, so this one
+  // call covers every component in the module - an invalid footprint
+  // makes a component vanish from circuit JSON without throwing.
+  expectNoFailedComponents(el)
   expectNoFloatingPins(el)
 })
 ```
@@ -2374,12 +2364,16 @@ Closes out spec §12.1, the static project checks.
 Append to `modules/optical-compressor/OpticalCompressor.test.tsx`:
 
 ```tsx
+// This renders the ~45-component fixture a SECOND time (the module tests
+// above share one render of their own), so it needs its own generous
+// timeout - bun's default is 5s and this render takes ~30s.
 test("the standalone fixture renders with no floating pins", async () => {
   const { default: fixture } = await import("./optical-compressor.circuit.tsx")
-  const el = await renderCircuit(fixture())
-  expectNoFloatingPins(el)
-  expect(findComponent(el, "CMP1_VACTROL")).toBeDefined()
-})
+  const fixtureEl = await renderCircuit(fixture())
+  expectNoFailedComponents(fixtureEl)
+  expectNoFloatingPins(fixtureEl)
+  expect(findComponent(fixtureEl, "CMP1_VACTROL")).toBeDefined()
+}, 180000)
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
