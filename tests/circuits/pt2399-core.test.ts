@@ -2,6 +2,7 @@ import { test, expect } from "bun:test"
 import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core.ts"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { importLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
+import { parseValue } from "../../lib/model/units.ts"
 import type { Network } from "../../lib/model/types.ts"
 
 /** Our network expressed the way the KiCad netlist expresses itself. */
@@ -43,8 +44,34 @@ test("every component in the built unit is present, with its value", async () =>
   const imported = await built()
   const ours = pt2399Core()
   expect(ours.components).toHaveLength(imported.components.length)
-  const mapped = new Set(ours.components.map((c) => DESIGNATORS[c.id]))
-  for (const c of imported.components) expect(mapped.has(c.designator)).toBe(true)
+
+  const byDesignator = new Map(ours.components.map((c) => [DESIGNATORS[c.id], c]))
+  for (const c of imported.components) {
+    const authored = byDesignator.get(c.designator)
+    if (authored === undefined) {
+      throw new Error(`no authored component maps to designator "${c.designator}"`)
+    }
+
+    // The PT2399 (ic) and the header (connector) carry a part name in the
+    // netlist's "value" field (e.g. "PT2399", "Conn_01x05"), not a quantity -
+    // there is nothing numeric to compare for these kinds, so they are
+    // skipped explicitly rather than falling through a numeric check by
+    // accident.
+    if (authored.kind === "ic" || authored.kind === "connector") continue
+
+    const expected = parseValue(c.value)
+    const label = `${c.designator} (${authored.kind}, netlist value "${c.value}")`
+    if (authored.kind === "resistor" && "ohms" in authored.parameters) {
+      expect(authored.parameters.ohms, label).toBe(expected)
+    } else if (authored.kind === "capacitor" && "farads" in authored.parameters) {
+      expect(authored.parameters.farads, label).toBe(expected)
+    } else {
+      throw new Error(
+        `component "${c.designator}" (kind "${authored.kind}") has no numeric ` +
+          "parameter this test knows how to compare",
+      )
+    }
+  }
 })
 
 /**
