@@ -122,7 +122,18 @@ function sharedNet(
 
 /** The buffer's `.subckt` call, in its MODEL's declared pin order - never in an
  * order typed here, which would silently rewire the amplifier if the registry
- * ever changed. */
+ * ever changed.
+ *
+ * THIS MIRRORS THE PRODUCTION LOWERING, AND THE TWO MUST BE EDITED TOGETHER.
+ * `lib/sim/device-lines.ts` owns three rules this function restates:
+ * `visiblePins` (package pins spread first, the unit's own second, so a unit pin
+ * wins a name collision), `unitModel` (a unit with no `spiceModel` is an error,
+ * never a bare device line) and `modelPinOrder` (a subcircuit-backed unit's
+ * argument order comes from the model entry, not from the kind). The duplication
+ * is forced by Defect A - there is no `.op` route through `toSpiceNetlist`, so
+ * this deck cannot travel the production path - and its cost is worth naming:
+ * the only behavioural number this circuit produces does NOT go through that
+ * path, so a regression in the spread order there would not move VBIAS here. */
 function bufferLine(
   resolved: ResolvedNetwork,
   node: (net: string) => string,

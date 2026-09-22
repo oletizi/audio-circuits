@@ -8,55 +8,24 @@ import { audioPath } from "../../circuits/optical-compressor/parts/audio-path.ts
 import { sidechain } from "../../circuits/optical-compressor/parts/sidechain.ts"
 import { validateNetwork } from "../../lib/model/validate.ts"
 import { parseValue } from "../../lib/model/units.ts"
-import type { Component, Network } from "../../lib/model/types.ts"
+import type { Network } from "../../lib/model/types.ts"
 import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
 import { deckFor, NO_CONTROLS } from "../sim/helpers.ts"
 import { biasDeck, PROTECTED_RAIL_VOLTS } from "./optical-compressor-bias-deck.ts"
+import {
+  componentById,
+  elementLine,
+  lastField,
+  netOfPin,
+  netsTouched,
+  ohmsOf,
+  packageNet,
+  parameterOf,
+  withResistance,
+} from "./network-probes.ts"
 
 const compressor: Network = opticalCompressor()
-
-function componentById(network: Network, id: string): Component {
-  const found = network.components.find(c => c.id === id)
-  if (!found) throw new Error(`no component "${id}"`)
-  return found
-}
-
-function parameterOf(network: Network, id: string, field: string): unknown {
-  return Reflect.get(componentById(network, id).parameters, field)
-}
-
-function netOfPin(network: Network, id: string, unitName: string, pin: string): string {
-  const unit = componentById(network, id).units.find(u => u.name === unitName)
-  if (!unit) throw new Error(`component "${id}" has no unit "${unitName}"`)
-  const connection = unit.pins[pin]
-  if (connection === undefined || connection.kind !== "net") {
-    throw new Error(`component "${id}" unit "${unitName}" pin "${pin}" is not on a net`)
-  }
-  return connection.net
-}
-
-function packageNet(network: Network, id: string, pin: string): string {
-  const connection = componentById(network, id).pins[pin]
-  if (connection === undefined || connection.kind !== "net") {
-    throw new Error(`component "${id}" package pin "${pin}" is not on a net`)
-  }
-  return connection.net
-}
-
-/** Every net a component touches, across package and unit pins. */
-function netsTouched(component: Component): readonly string[] {
-  const nets: string[] = []
-  for (const connection of Object.values(component.pins)) {
-    if (connection.kind === "net") nets.push(connection.net)
-  }
-  for (const unit of component.units) {
-    for (const connection of Object.values(unit.pins)) {
-      if (connection.kind === "net") nets.push(connection.net)
-    }
-  }
-  return nets
-}
 
 test("the composed compressor validates and carries every transcribed part", () => {
   expect(() => validateNetwork(compressor)).not.toThrow()
@@ -313,8 +282,9 @@ test("the module's whole external interface is declared as ports", () => {
  * outcome this project wants: a missing model is missing capability, and the
  * alternative - substituting a model of some other part that happens to be
  * registered - would quietly change the very numbers each part exists to set.
- * A 1N4148 standing in for the 1N5817 would move the protected rail by roughly
- * 0.3 V, and the protected rail is what the VBIAS assertion below rests on.
+ * A 1N4148 standing in for the 1N5817 would move the protected rail - a silicon
+ * signal junction does not drop the 0.2-0.4 V spec section 8.1 budgets for this
+ * Schottky - and the protected rail is what the VBIAS assertion below rests on.
  *
  * These assertions are here so that a later fallback goes red rather than
  * passing unnoticed.
@@ -354,11 +324,20 @@ test("a deck needing an unregistered model throws, naming the component", () => 
  * WHY THE TOLERANCE IS 25 mV. It has to be loose enough to survive the op-amp
  * model's finite gain and tight enough that a wrong divider cannot slip through.
  * GENERIC_OPAMP's open-loop gain is 1e4, so a correctly wired follower sits
- * 1/(1+A) = 435 microvolts below its input - 57x inside the band. The smallest
- * plausible authoring error is a divider resistor taken to a neighbouring
- * E-series value: 47k against 43k puts VBIAS at 4.55 V and 47k against 39k puts
- * it at 4.75 V, both an order of magnitude outside. Step 6's falsification run
- * is the measured version of that argument.
+ * 1/(1+A) = 435 microvolts below its input - 57x inside the band.
+ *
+ * WHAT THE BAND DOES AND DOES NOT CATCH, stated as a window rather than as
+ * examples. 25 mV around 4.35 V admits either divider leg being wrong by about
+ * +/-1.15% (VBIAS moves by about 2.175 V per unit fractional error in one leg),
+ * so it catches every E12 and E24 neighbour of 47k - 43k puts VBIAS at 4.54 V
+ * and 39k at 4.75 V, roughly 8x and 16x outside - and it does NOT catch an E96
+ * neighbour: a 47.5k upper leg lands 23.0 mV out and passes. That is deliberate.
+ * A band tight enough to reject 47.5k would be tighter than a 1% resistor's own
+ * tolerance, so it would reject correct circuits built from real parts, and it
+ * would eat the margin over the 435 microvolt finite-gain signature that makes
+ * the sided half below meaningful. The band is sized for a wrong VALUE, not for
+ * a part's tolerance. Step 6's falsification run is the measured version of
+ * this argument.
  *
  * WHY IT IS ALSO ONE-SIDED. A two-sided band around 4.35 V is blind to the
  * wiring error that matters most in a follower. Transpose the buffer's inputs
@@ -400,16 +379,61 @@ test("VBIAS sits at the half-rail the spec states, below its unbuffered divider 
   ).toBeLessThan(unbuffered)
 })
 
+/**
+ * The property that makes the assertion above falsifiable: the divider values in
+ * the deck come out of the composed network. A deck with them hard-coded would
+ * keep reporting 4.35 V after someone changed a divider resistor in the circuit,
+ * so the VBIAS assertion would be unfalsifiable by precisely the edit that ought
+ * to falsify it.
+ *
+ * WHAT THIS TEST DELIBERATELY DOES NOT DO. An earlier version asserted
+ * `toContain("4.700000000000e+4")` and four other literals. Every one of those
+ * passes identically against a deck with all five values typed into the string,
+ * so the test's name was a claim its assertions did not establish. Literals are
+ * gone: the expected value is read out of the circuit, and a COPY of the circuit
+ * with a different divider is emitted and required to produce a different deck.
+ * Hard-code the divider inside `biasDeck` and the second half goes red.
+ *
+ * It is NOT red when the CIRCUIT's divider value changes, and that is correct
+ * rather than a gap: a test that went red then would be asserting the circuit's
+ * value, which is what "every transcribed value matches the value the spec
+ * states" is for, and it would have to be edited on every value change - which
+ * is the literal-shaped defect this rewrite removes. Sensitivity to the
+ * circuit's value lives in that test and in the VBIAS assertion above, both of
+ * which do go red; see the task report's Fix 1 runs.
+ */
 test("the bias deck is built from the circuit, not from numbers typed into it", () => {
-  // The property that makes the assertion above falsifiable: the divider values
-  // and node names in the deck come out of the composed network. A deck with
-  // them hard-coded would keep reporting 4.35 V after the circuit changed.
   const deck = biasDeck(compressor)
-  expect(deck.netlist).toContain(`R${BIAS_REFERENCE.dividerUpper} `)
-  expect(deck.netlist).toContain(`R${BIAS_REFERENCE.dividerLower} `)
-  expect(deck.netlist).toContain("4.700000000000e+4")
-  expect(deck.netlist).toMatch(/^\.op$/m)
-  // The rail is the one number stated by hand, and the deck says so in its text.
-  expect(deck.netlist).toContain("8.700000000000e+0")
+
+  // Half one: what the deck emits for each divider leg is what the CIRCUIT
+  // declares for it. The expected value is read out of the network, so there is
+  // no literal here to keep in step with anything.
+  for (const id of [BIAS_REFERENCE.dividerUpper, BIAS_REFERENCE.dividerLower]) {
+    const line = elementLine(deck.netlist, `R${id}`)
+    expect(lastField(line, id), id).toBe(ohmsOf(compressor, id).toExponential(12))
+  }
+
+  // Half two: a DIFFERENT circuit produces a DIFFERENT deck. This is the half a
+  // hard-coded deck fails - it would emit the same text for both circuits.
+  // The mutated value is derived from the circuit's own, so it can never
+  // collide with whatever the circuit happens to declare.
+  const changed = ohmsOf(compressor, BIAS_REFERENCE.dividerUpper) * 3
+  const mutated = biasDeck(withResistance(compressor, BIAS_REFERENCE.dividerUpper, changed))
+  // Compared line by line rather than whole-netlist, so a failure prints the one
+  // element line that did not move instead of two full decks.
+  expect(elementLine(mutated.netlist, `R${BIAS_REFERENCE.dividerUpper}`))
+    .not.toBe(elementLine(deck.netlist, `R${BIAS_REFERENCE.dividerUpper}`))
+  expect(lastField(elementLine(mutated.netlist, `R${BIAS_REFERENCE.dividerUpper}`), "mutated"))
+    .toBe(changed.toExponential(12))
+  // ...and only that leg moved, so the deck follows the circuit element by
+  // element rather than regenerating something loosely similar.
+  expect(elementLine(mutated.netlist, `R${BIAS_REFERENCE.dividerLower}`))
+    .toBe(elementLine(deck.netlist, `R${BIAS_REFERENCE.dividerLower}`))
+
+  // The rail is the one number the deck states by hand, and it says where it
+  // came from in its own text - the duplication Defect A forces, made visible
+  // to whoever reads the deck rather than only to whoever reads this file.
+  expect(deck.netlist).toContain(PROTECTED_RAIL_VOLTS.toExponential(12))
   expect(deck.netlist).toContain("spec section 6.1.3")
+  expect(deck.netlist).toMatch(/^\.op$/m)
 })

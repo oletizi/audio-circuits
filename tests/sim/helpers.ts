@@ -1,7 +1,12 @@
 /**
  * Thin test-side wrappers over `resolveNetwork` + `toSpiceNetlist` +
  * `runAcSweep`, so a circuit test reads as a measurement rather than as deck
- * plumbing. Task 9 reuses both of these.
+ * plumbing. `deckFor` has two callers - `tests/circuits/opamp-buffer.test.ts`
+ * and `tests/circuits/optical-compressor.test.ts`; `acSweepOf` has one,
+ * `tests/circuits/opamp-buffer.test.ts`. The compressor emits decks but runs no
+ * sweep: its only behavioural assertion is an operating point, which needs a
+ * hand-built deck (`toSpiceNetlist` requires a sweep and emits `.ac`
+ * unconditionally, so nothing here can reach `.op`).
  *
  * `acSweepOf` deliberately takes a whole `SimulationEnvironment` rather than a
  * convenience shape naming just an input and an output. `toSpiceNetlist`
@@ -24,8 +29,11 @@ import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 import { runAcSweep } from "../../lib/sim/ac.ts"
 import type { AcSweep } from "../../lib/sim/ac.ts"
 
-/** The deck an `acSweepOf` would run, for a test that wants to assert on the
- * emitted text as well as on the result. */
+/** The deck `acSweepOf` would run, for a test that wants to assert on the
+ * emitted text - whether or not it goes on to run a sweep. Separating the two
+ * is what lets a test assert on a deck it never runs, and what lets a test
+ * assert that emission THROWS, which is the only thing to assert about a
+ * circuit naming a device model this repository does not carry. */
 export function deckFor(
   network: Network,
   state: ControlState,
@@ -37,7 +45,15 @@ export function deckFor(
 /** Runs an AC sweep of `network` and returns the sweep at the LOAD port's
  * node - the output the environment already had to name. Control state is an
  * explicit argument, never defaulted: a circuit with a pot has no meaningful
- * "no settings" reading, and Task 9's compressor has pots.
+ * "no settings" reading, and the Pultec reference network has five of them
+ * (`reference/pultec/controls.ts`). No circuit in `circuits/` declares one:
+ * `pt2399-core.ts`'s delay-time control reaches the board through its header's
+ * `VCO` pin rather than sitting on it, and `opamp-buffer.ts` has no control at
+ * all. (The optical
+ * compressor does NOT: spec section 10 makes both its panel pots external
+ * controls reached through connectors, so it declares no `potentiometer` and
+ * every one of its call sites passes `NO_CONTROLS`. That is a circuit whose
+ * control state is genuinely empty, not one that was allowed to omit it.)
  */
 export async function acSweepOf(
   network: Network,

@@ -50,6 +50,24 @@
  * and the vactrol LED both declare no `spiceModel`, so a SPICE deck containing
  * either throws at emission naming the component. Nothing is substituted: both
  * blocks explain what the substitution would have cost.
+ *
+ * TWO SPEC SECTIONS DELIBERATELY NOT CARRIED ACROSS, named here because a module
+ * claiming the spec as its sole authority has to state what it declined:
+ *
+ *  - SECTION 10's `OpticalCompressorProps` - the settable `shuntResistance`,
+ *    `emitterResistance`, `detectorCapacitance`, `releaseResistance` and the
+ *    rest, which section 10 says the section 12.2 bench protocol cannot run
+ *    without. That interface is tscircuit-era surface: a component with props,
+ *    defaults and layout coordinates. A circuit here is a zero-argument function
+ *    returning a `Network`, and the spec's provisional values - which section 10
+ *    says its defaults match - are transcribed as literals, the way
+ *    `circuits/opamp-buffer.ts` transcribes the props its source module was only
+ *    ever built with. A sweep over R_E or C_DET would want parameterisation
+ *    back; that is a decision for whoever runs the bench protocol, not one to
+ *    pre-empt here.
+ *  - SECTION 10.2's TEST POINTS. Every node they name is already a net in this
+ *    model and most are declared ports; a test point is a pad and a silkscreen
+ *    label, which is PCB surface this model does not carry at all.
  */
 import { circuit } from "../../lib/model/index.ts"
 import type { Network } from "../../lib/model/index.ts"

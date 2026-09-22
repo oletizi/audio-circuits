@@ -133,6 +133,17 @@ export function sidechain(): Network {
     // rectifier... If a polarized capacitor is used, its positive terminal faces
     // the op-amp" - so pin `a` is the op-amp side. The coupling capacitor is
     // what stops the ~4.35 V bias holding the LED driver on continuously.
+    //
+    // RAISED AND DELIBERATELY NOT FIXED: the net between this capacitor and the
+    // rectifier's anode (DET_RECT) is touched by exactly those two pins, so it
+    // has no resistive DC return - the diode conducts one way only. That is a
+    // faithful transcription, because section 8.6 names exactly one diode, and
+    // inventing a bleed path the spec does not describe is what this
+    // transcription must not do. The consequence belongs where a reader will
+    // meet it: an operating-point analysis of this block would not solve as
+    // authored EVEN IF the two missing device models above were registered, so
+    // registering them would not on its own make the sidechain simulable. It is
+    // a question for the spec's author, not a defect to patch here.
     .capacitor("detector_coupling_cap", "1uF", { a: SC_OUT, b: DET_RECT })
     .add({
       id: "detector_rectifier_diode",

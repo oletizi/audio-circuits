@@ -31,12 +31,14 @@
  * 1N5817 and declares no `spiceModel`, because no 1N5817 model is registered in
  * `lib/sim/models/` and none is invented here. Any deck containing this block
  * therefore throws at emission, naming this component. That is the intended
- * outcome: the only registered diode is a 1N4148, a silicon signal diode whose
- * drop is roughly 0.3 V higher than a Schottky's, and substituting it would move
- * the protected rail - the very quantity this diode exists to set, and the one
- * the module's whole bias budget is stated against (spec section 6.1.3). The
- * operating-point deck that measures VBIAS states the 8.7 V protected rail
- * directly instead, which is where section 6.1.3 already puts it.
+ * outcome: the only registered diode is a 1N4148, a silicon signal diode, and
+ * substituting it would move the protected rail - the very quantity this diode
+ * exists to set, and the one the module's whole bias budget is stated against
+ * (spec section 6.1.3). By how much is not measured here; what is stated is that
+ * a silicon signal junction does not drop the 0.2-0.4 V section 8.1 budgets for
+ * this Schottky, and that the 8.7 V rail of section 6.1.3 is that budget's
+ * result. The operating-point deck that measures VBIAS states the 8.7 V
+ * protected rail directly instead, which is where section 6.1.3 already puts it.
  */
 import { circuit, net } from "../../../lib/model/index.ts"
 import type { Network, PartSpec } from "../../../lib/model/index.ts"

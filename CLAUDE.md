@@ -46,6 +46,17 @@ and must be bound explicitly. Leaving one unbound is an error, not a default. Wh
 this buys is that a rail which should be shared and is not becomes a loud
 construction error instead of a quiet simulation result.
 
+**A component is atomic with respect to `include()`.** Composition moves whole
+components, never single units, so a package cannot be split across two blocks.
+When one package's sections serve different functional blocks, the package
+allocation therefore constrains the file layout, and not the other way round: the
+whole component goes in one block and the other block reaches what it needs
+through a declared port. `circuits/optical-compressor/` is the worked example -
+its spec puts the VBIAS buffer and the sidechain amplifier on the same dual
+op-amp, so the buffer is declared in `parts/sidechain.ts` although it belongs to
+the power section by function, and `parts/power-section.ts` hands the unbuffered
+divider node across as a port. See also **Multi-section packages** below.
+
 ### Ids are semantic; designators belong to KiCad
 
 A component's `id` says what the part DOES - `input_bias_resistor`,
@@ -70,6 +81,11 @@ A package's `units` are its functional sections: `A` and `B` for a dual op-amp,
 `MAIN` for everything else. Pins shared across sections - supply, shield - sit on
 the component rather than in a unit. The SPICE emitter lowers one unit to one
 device line, each seeing its own pins merged with the package's.
+
+Which section does which job is a decision with a composition consequence, not a
+free choice made afterwards: a package is one component and `include()` moves
+whole components, so two sections doing two blocks' work still live in one block.
+See **Composition** above.
 
 ### Imports
 

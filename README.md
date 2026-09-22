@@ -35,9 +35,12 @@ audio-circuits/
 │       └── models/       # Device models, each with its own provenance
 │
 ├── circuits/             # Circuit definitions built on lib/model:
-│                         # pt2399-core.ts, transcribed from the netlist of a
-│                         # board that was physically built and works, and
-│                         # opamp-buffer.ts, a unity-gain TL072 buffer
+│   │                     # pt2399-core.ts, transcribed from the netlist of a
+│   │                     # board that was physically built and works, and
+│   │                     # opamp-buffer.ts, a unity-gain TL072 buffer
+│   └── optical-compressor/ # An LA-2A-inspired optical compressor: three
+│                         # blocks joined by include(), transcribed from the
+│                         # design spec in docs/superpowers/specs/
 │
 ├── reference/pultec/     # The Pultec reference network and what it is built
 │                         # from - unvalidated, see its own README
