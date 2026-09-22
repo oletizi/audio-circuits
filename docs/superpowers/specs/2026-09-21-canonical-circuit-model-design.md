@@ -1,18 +1,27 @@
 # Canonical Circuit Model — Design
 
-**Status:** revision 2, proposed, awaiting maintainer review
+**Status:** revision 3, proposed
 **Date:** 2026-09-21
 **Supersedes:** `2026-09-21-schematic-readability-testing-design.md` (and its plan), which
 measured a renderer this design removes.
 
-Revision 2 responds to a third-party review. Changes: components model multiple symbol
-units (§3.2); component identity is separated from reference designator (§3.3); net
-identity for reconciliation is membership-based with overlap matching (§6.2); canonical
-pin names are fixed per kind (§3.4); `include` forbids implicit global nets (§4.1);
-floating-net validation is stated precisely (§4.3); structural and behavioural acceptance
-are separated (§5.5); the round-trip gate is strengthened to mutation-preservation
-(§8.1); code-side deletion no longer removes symbols automatically (§6.4); machine-added
-labels are given explicit lifecycle semantics (§6.5).
+Revision 2 responded to a third-party review: components model multiple symbol units
+(§3.2); component identity separated from reference designator (§3.3); canonical pin names
+fixed per kind (§3.4); `include` forbids implicit global nets (§4.1); floating-net
+validation stated precisely (§4.3); structural and behavioural acceptance separated
+(§5.5); the round-trip gate strengthened to mutation-preservation (§8.1); code-side
+deletion no longer removes symbols automatically (§6.4); machine-added labels given
+lifecycle semantics (§6.5).
+
+Revision 3 responds to a second review. **Reconciliation is now per pin, not per net
+(§6.2)** — revision 2's membership-overlap heuristic is rejected because it misfires on
+two-pin nets, the commonest case; §6.2.1 adds the partition-consistency rule the
+per-pin formulation needs. Consumer pin mappings move off `ComponentKind` onto the
+concrete symbol, package and model that own them (§3.5). No-connect becomes structural
+rather than a reserved net name (§3, §4.3). Component renaming is described by its
+observable condition rather than as knowledge the tool does not have (§3.3, §6.7). The
+`ControlState` relationship is promoted from assumption to decision (§5.0). Designator
+allocation and sheet correspondence are resolved as scope boundaries (§11).
 
 ## 1. Purpose
 
@@ -99,7 +108,7 @@ interface Component {
   /** Package-level realisation. */
   readonly part?: PartSpec
   /** Package pins shared across units: supply, shield, substrate. */
-  readonly pins: Readonly<Record<string, string>>
+  readonly pins: Readonly<Record<string, Connection>>
   /** One entry per functional unit. Single-unit parts have exactly one. */
   readonly units: readonly Unit[]
 }
@@ -107,18 +116,33 @@ interface Component {
 interface Unit {
   /** Unique within the component: "A"/"B" for a dual op-amp, "MAIN" otherwise. */
   readonly name: string
-  /** Canonical pin name -> net name. Names fixed by kind (§3.4). */
-  readonly pins: Readonly<Record<string, string>>
+  /** Canonical pin name -> connection. Names fixed by kind (§3.4). */
+  readonly pins: Readonly<Record<string, Connection>>
   /** KiCad symbol unit for this unit, when it differs from the package symbol. */
   readonly symbol?: string
-  /** SPICE subcircuit invoked once per unit. */
+  /** SPICE subcircuit invoked once per unit; carries its own pin mapping (§3.5). */
   readonly spiceModel?: string
 }
+
+/**
+ * A pin is either on a net or deliberately not connected. Tagged rather than a
+ * magic string: "nc" is a legal net name, and a representation that cannot
+ * distinguish an intentional no-connect from a net someone called "nc" would
+ * silently accept a defect. The builder accepts a bare string as shorthand for
+ * { kind: "net" }.
+ */
+type Connection =
+  | { readonly kind: "net"; readonly net: string }
+  | { readonly kind: "nc" }
 
 interface PartSpec {
   readonly mpn?: string
   readonly footprint?: string
   readonly symbol?: string   // KiCad symbol library id
+  /** Canonical pin -> KiCad symbol pin number, per unit. See §3.5. */
+  readonly symbolPins?: Readonly<Record<string, Readonly<Record<string, string>>>>
+  /** Canonical pin -> footprint pad. See §3.5. */
+  readonly pads?: Readonly<Record<string, string>>
 }
 ```
 
@@ -180,10 +204,11 @@ be produced, but code never states one. (This deviates from the review's suggest
 `designator?` field on `Component`: a field that code declares but KiCad owns would drift
 by construction.)
 
-**`id` is treated as immutable for synchronisation.** It is a string in source, so
-nothing can enforce that. The honest consequence: **a changed `id` is indistinguishable
-from a delete plus an add, so it is reported and never applied.** That is safe precisely
-because §6.4 removes automatic deletion.
+**`id` is treated as immutable for synchronisation.** It is a string in source, so nothing
+can enforce that. The honest consequence: editing an `id` presents to the tool as one
+component absent and another present, which it **cannot distinguish** from a genuine
+delete plus add. A rename is therefore never inferred — the pair is reported and the human
+says which it was (§6.7). That is safe precisely because §6.4 removes automatic deletion.
 
 ### 3.4 Canonical pin names belong to the kind
 
@@ -199,16 +224,29 @@ the main reason a canonical model is worth having.
 | potentiometer | `ccw`, `wiper`, `cw` | — |
 | switch | per switch kind | — |
 
-Each kind additionally declares three mappings, stored with the kind rather than with the
-consumer:
-
-- canonical pin → KiCad symbol pin number, per unit
-- canonical pin → SPICE positional argument order
-- canonical pin → footprint pad
-
 A pin name outside its kind's vocabulary throws at construction.
 
-### 3.5 `PartSpec` replaces footprinter
+**The kind declares the vocabulary and nothing else.** Concrete mappings to downstream
+formats do not live here — see §3.5.
+
+### 3.5 Where consumer mappings live
+
+Canonical pin names must be translated for each consumer, but those translations are
+properties of a concrete symbol, package or model — never of the abstract kind. An
+`opamp` kind cannot state that `in+` is pin 3, because that is true of TL072 unit A in one
+particular symbol, not of operational amplifiers.
+
+| Mapping | Lives on | Why |
+|---|---|---|
+| canonical pin → KiCad symbol pin number, per unit | `PartSpec.symbolPins` | a property of the chosen symbol |
+| canonical pin → footprint pad | `PartSpec.pads` | a property of the chosen package |
+| canonical pin → SPICE argument position | the model entry (§5.2) | a property of the `.subckt`, and two models of the same kind may order pins differently |
+
+Keeping these off the kind is what makes the claim in §3.4 true rather than aspirational:
+downstream formats do not dictate the canonical vocabulary. Putting KiCad pin numbers on
+`ComponentKind` would have quietly inverted that.
+
+### 3.6 `PartSpec` replaces footprinter
 
 Once tscircuit is gone, footprints become KiCad library references. `PartSpec` carries
 package-level facts; `Unit.symbol` and `Unit.spiceModel` carry per-unit ones. The review
@@ -289,13 +327,38 @@ A pin having a net name does not make it connected. The invariant:
 So `R1.a -> FOO` with nothing else on `FOO` is a construction error, while a connector
 pin alone on a net that is also a declared port is valid.
 
-Pins intentionally unconnected are declared as such (`nc`), which exempts them and
-documents the intent. An undeclared single-pin net is never assumed to be deliberate.
+Pins intentionally unconnected carry `{ kind: "nc" }` (§3), which exempts them from the
+invariant and records the intent. This is structural, not a reserved net name: `"nc"` is a
+legal net name, and a representation that could not tell an intentional no-connect from a
+net someone happened to call `nc` would accept a defect silently. An undeclared single-pin
+net is never assumed to be deliberate.
 
 ## 5. Simulation
 
 `lib/sim/` already provides `toSpiceNetlist`, `runAcSweep` over `eecircuit-engine`,
 floating-branch pruning, and comparison helpers.
+
+### 5.0 The canonical network is the physical circuit, not an operating state
+
+```
+        Network  (physical circuit: pots and switches as whole components)
+           │
+           ├──────────────────────────────────────→  KiCad
+           │
+           └── resolveNetwork(ControlState) ──────→  SPICE
+```
+
+A potentiometer is one three-terminal component whatever its wiper sits at; a switch is
+one component whatever its position. `resolveNetwork` produces a **projection** of the
+canonical network for one control state, which simulation consumes.
+
+**KiCad always corresponds to the unresolved network.** A schematic draws the circuit, not
+one of its operating points, so a pot appears as a single symbol and never as the resolved
+resistor pair. Simulation may therefore run over many control states without any of them
+implying a schematic change.
+
+This was an assumption in revision 2 and is promoted to a decision here, because it is
+what makes "canonical" mean the physical circuit rather than one state of it.
 
 ### 5.1 Emitter support for active devices
 
@@ -374,25 +437,51 @@ The baseline makes "I changed this" distinguishable from "you changed this". Two
 independently editable sides without a common ancestor can only guess; with one, this is
 an ordinary three-way merge.
 
-### 6.2 Net identity is membership, matched by overlap
+### 6.2 The pin is the unit of reconciliation, not the net
 
 Net *names* cannot serve as identity across the seam: KiCad derives names from labels and
 generates the rest, so a rename on each side is indistinguishable from a rewire.
 
-**A net's reconciliation identity is the set of `(component id, unit, pin)` triples on
-it.** Its name is metadata.
+An earlier revision tried to fix this by giving nets a fuzzy identity — maximal membership
+overlap against the baseline, accepted above a half-share threshold. **That is rejected.**
+It fails on exactly the commonest case. A two-pin net `{R1.b, C1.a}` rewired to
+`{R1.b, C2.a}` overlaps its baseline by one member of two — precisely half — so an
+unremarkable pin move would be reported as a conflict. Introducing a heuristic where
+deterministic behaviour is available is the wrong trade.
 
-Exact set equality will not do, however: adding one component to a net changes its
-membership, and exact matching would report every rewire as a net deleted plus a net
-created — destroying the continuity the rule exists to provide. So:
+**Connectivity is reconciled per pin.** Each pin has an atomic, stable identity —
+`(component id, unit, pin)` — and connectivity is the partition those pins fall into.
+Reconciliation compares, for each pin, the set of pins sharing its net in the baseline, in
+code, and in KiCad:
 
-- Each candidate net is matched against baseline nets by **maximal membership overlap**.
-- A match is accepted when one baseline net is the unique best overlap **and** shares more
-  than half of that baseline net's members.
-- A tie, or a best overlap at or below half, is a **conflict**: reported, not guessed.
+| baseline | code | KiCad | Outcome |
+|---|---|---|---|
+| X | X | X | unchanged |
+| X | Y | X | code moved it — apply to KiCad |
+| X | X | Z | KiCad moved it — report to code |
+| X | Y | Z where Y = Z | both made the same move — converged |
+| X | Y | Z where Y ≠ Z | **conflict on that pin** |
 
-A name change with unchanged membership is therefore not a connectivity change at all,
-and a rename on both sides is a metadata conflict rather than a structural one.
+No thresholds, no tie-breaking, no guessing. The worked example that defeated the overlap
+rule resolves trivially: the changed endpoint is unambiguous because `R1.b`'s partner
+changed on exactly one side.
+
+**Net names reconcile separately, as metadata.** Membership overlap is a reasonable way to
+decide whether a name still describes the same conceptual net, but it carries no
+connectivity consequence, so an imperfect answer costs a mislabelled net rather than a
+mis-merged circuit. A rename on both sides is a metadata conflict.
+
+#### 6.2.1 Partition consistency
+
+Per-pin resolution can produce an incoherent result even when no individual pin conflicts
+— a net split applied for one of its pins but not another leaves a partition that is not a
+valid equivalence relation.
+
+After per-pin resolution the merged partition is recomputed (the repository's existing
+`UnionFind` is the tool) and checked. **Where a resolved membership is inconsistent, the
+whole affected net is reported rather than partially applied.** A half-applied net split
+is worse than no change, because it is electrically wrong in a way that looks deliberate —
+the same failure mode that disqualified tscircuit.
 
 ### 6.3 What syncs
 
@@ -448,10 +537,16 @@ Reported and skipped individually; all non-conflicting changes still merge. The 
 
 - the same value changed differently on both sides
 - a component deleted on one side and edited on the other
-- the same pin rewired differently
-- a net whose membership match is tied or below threshold (§6.2)
+- the same pin moved to different nets on each side (§6.2)
+- a resolved partition that is not a valid equivalence relation (§6.2.1)
 - a net renamed on both sides (metadata conflict)
-- a `Component.id` changed in code (§3.3) — indistinguishable from delete plus add
+- an unmatched removal and an unmatched addition occurring together
+
+The last class is stated as the **observable condition**, deliberately. The tool cannot
+know that a `Component.id` was edited; it sees one component absent and another present.
+Describing that as "an id changed" would claim knowledge the design explicitly denies
+itself (§3.3). A rename is therefore never *inferred* — the pair is reported, and the
+human says which it was.
 
 ## 7. Repository structure
 
@@ -563,16 +658,33 @@ With the port that supersedes each:
 | KiCad symbol library ids drift between versions | `PartSpec.symbol` is data; a missing symbol throws at sync time with the id named. |
 | The compressor port is larger than estimated | It is last; every earlier rung delivers independently. |
 
-## 11. Open questions for the maintainer
+## 11. Scope boundaries and resolved questions
 
-1. **Multi-sheet schematics.** Assumed one sheet per circuit. KiCad hierarchical sheets
-   would interact with `include` — plausibly they should correspond, but that is not
-   designed here.
-2. **Designator allocation before a schematic exists.** §3.3 puts designators in the
-   baseline, owned by KiCad. A circuit that has been authored but never drawn therefore
-   has no designators, so a BOM produced from code alone would be unannotated. Acceptable,
-   or should the tool allocate provisional designators?
-3. **Where `ControlState` fits.** `resolveNetwork` resolves pot and switch positions into
-   a concrete network for simulation. Whether a KiCad schematic corresponds to the
-   unresolved network (a pot as one symbol) or a resolved one is not specified; the former
-   is assumed.
+### 11.1 Resolved: no provisional designators
+
+A circuit authored but never drawn has no designators, so a BOM produced from code alone
+identifies components by semantic id — `input_bias`, `sidechain_amp`, `detector_attack`.
+Once a schematic exists, the baseline enriches those with `R17`, `U1` and so on.
+
+**No provisional allocator.** Inventing designators in code would establish a second
+identity namespace, and every KiCad re-annotation would then create reconciliation work
+against identifiers nothing depended on. It would also undercut §3.3's claim that
+designators belong to KiCad. An unannotated code-only BOM is the correct behaviour, not a
+gap.
+
+### 11.2 Scope boundary: single-sheet schematics, no `include`/sheet correspondence
+
+Only single-sheet schematics are supported initially. Sheet organisation is treated as
+**opaque, human-owned presentation**, exactly like placement and wire geometry.
+
+**No correspondence between `include` boundaries and KiCad sheet boundaries is assumed,
+now or later.** They are different concepts: `include` expresses electrical composition
+and reuse, a KiCad hierarchy expresses how a person chose to organise a drawing. Forcing
+them to correspond would let code dictate drawing structure, which principle 5 forbids.
+Stating this now prevents a convenient-looking correspondence from hardening into an
+architectural constraint when multi-sheet support is designed.
+
+### 11.3 Still open
+
+Nothing blocking. Multi-sheet support itself remains undesigned, deliberately, under the
+boundary in §11.2.
