@@ -117,10 +117,9 @@ reference, and to carry **all eleven** mid frequencies into the modular
 topology: a position can be left unpopulated at build time, but a position
 designed out needs a new board to recover.
 
-`reference/pultec/mid.ts` and `modules/pultec-mid/` therefore implement all
-eleven, from P3bandDoc.pdf page 3 — the same set as the Pultec MEQ5, on a
-VTB9050. Seventeen capacitors across eleven positions, six of them doubled,
-served by five winding taps.
+`reference/pultec/mid.ts` therefore implements all eleven, from P3bandDoc.pdf
+page 3 — the same set as the Pultec MEQ5, on a VTB9050. Seventeen capacitors
+across eleven positions, six of them doubled, served by five winding taps.
 
 **Note the provenance difference.** Every other section in this reference takes
 its topology from an exact netlist export of the manufactured board. The mid
@@ -228,10 +227,9 @@ between them — a risk flagged rather than modelled.
 **No longer load-bearing.** The 2026-09-20 discrete-inductors design (see
 `docs/superpowers/specs/2026-09-20-discrete-inductors-design.md`) replaced both
 tapped coils — hi boost's four taps and the mid's five — with nine discrete
-inductors on the section boards (`modules/pultec-hi-boost/`,
-`modules/pultec-mid/`). Discrete parts share no winding, so there is no
-coupling to argue about at all: the one-at-a-time switching argument has
-nothing left to defend on those boards.
+inductors in the hi boost and mid sections. Discrete parts share no winding,
+so there is no coupling to argue about at all: the one-at-a-time switching
+argument has nothing left to defend in those sections.
 
 This retirement applies to the board implementation only. `three-band.ts` and
 `controls.ts` still model the tapped coil as documented from the original
