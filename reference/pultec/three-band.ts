@@ -22,8 +22,8 @@
  * this subset, not of the built unit.
  */
 import netlist from "./source/three-band-eq.netlist.json"
-import type { PassiveElement, PassiveNetwork } from "../../lib/passives/topology.ts"
-import type { ControlState } from "../../lib/passives/control-state.ts"
+import type { PassiveElement, PassiveNetwork } from "../../lib/model/topology.ts"
+import type { ControlState } from "../../lib/model/control-state.ts"
 import {
   EXCLUDED_COMPONENTS,
   HI_BOOST_POSITIONS,
@@ -31,7 +31,7 @@ import {
   POTS,
   SELECTORS,
 } from "./controls.ts"
-import { parseValue } from "../../lib/passives/units.ts"
+import { parseValue } from "../../lib/model/units.ts"
 import {
   MID_LEVEL,
   MID_MODES,

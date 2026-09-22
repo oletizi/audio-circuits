@@ -7,7 +7,7 @@ import {
   partitionReference,
 } from "../../reference/pultec/partition.ts"
 import { THREE_BAND_REFERENCE } from "../../reference/pultec/three-band.ts"
-import { assertSameTopology, partitionTopology } from "../../lib/passives/topology.ts"
+import { assertSameTopology, partitionTopology } from "../../lib/model/topology.ts"
 
 test("every element is owned exactly once, by a declared module", () => {
   const refs = THREE_BAND_REFERENCE.elements.map(e => e.ref).sort()
