@@ -14,6 +14,7 @@
  */
 import type { ResolvedComponent, ResolvedUnit } from "../model/control-state.ts"
 import { isSpicePrimitive, spicePinOrder } from "../model/kinds.ts"
+import { assertNoPackagePinShadowing } from "../model/pin-collision.ts"
 import type { ComponentKind, Parameters } from "../model/types.ts"
 import { deviceModel } from "./models/index.ts"
 import type { DeviceModel } from "./models/index.ts"
@@ -126,14 +127,18 @@ function unitRef(component: ResolvedComponent, unit: ResolvedUnit): string {
  * takes and the one that used to lose the net. Both call the same helper,
  * `lib/model/pin-collision.ts`, so the two cannot drift apart.
  *
- * `resolveNetwork` is the only producer of a `ResolvedComponent`, so a collision cannot
- * arrive here any other way - short of hand-writing a `ResolvedNetwork` literal, which
- * several fixtures in tests/sim/netlist.test.ts do, and which no input rule can police.
+ * Both validators enforce the rule on the way in: `validateNetwork` for authored circuits
+ * at `Builder.done()`, and `validatePhysicalNetwork` as `resolveNetwork`'s input contract.
+ * Neither can police a hand-written `ResolvedNetwork` literal handed straight to
+ * `toSpiceNetlist`, which several fixtures in tests/sim/netlist.test.ts are - so the merge
+ * checks for itself as well, using the same shared rule. Measured: before this call, that
+ * literal route still emitted `Xu1 in out out lost 0 GENERIC_OPAMP`; after it, it throws.
  */
 function visiblePins(
   component: ResolvedComponent,
   unit: ResolvedUnit,
 ): Readonly<Record<string, string>> {
+  assertNoPackagePinShadowing(component)
   return { ...component.pins, ...unit.pins }
 }
 

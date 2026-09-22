@@ -223,19 +223,24 @@ test("a unit line sees the component's package pins as well as its own", () => {
   expect(deck).toMatch(/^Qstage out in 0 2N3904$/m)
 })
 
-test("a unit's own pin wins over a package pin of the same name", () => {
-  const deck = toSpiceNetlist({
+test("a package pin and a unit pin sharing a name is refused, not silently resolved", () => {
+  // This test previously asserted the opposite - that the unit's pin wins and the
+  // package's net simply does not appear. That IS what the merge did, and it is a
+  // silent drop: measured on this exact shape, the deck emitted
+  // `Qstage out in 0 2N3904` with `package_net` nowhere on it, and on an op-amp
+  // `Xu1 in out out lost 0 GENERIC_OPAMP` with the supply net lost.
+  //
+  // Both validators now refuse it on the way in, and `visiblePins` refuses it here
+  // as well, which is the route a hand-written `ResolvedNetwork` literal like this
+  // one takes - and the route that used to lose the net.
+  expect(() => toSpiceNetlist({
     ports: { input: "in", output: "out", ground: "0" },
     components: [
       { id: "stage", kind: "bjt", parameters: {},
         pins: { emitter: "0", collector: "package_net" },
         units: [{ name: "MAIN", pins: { collector: "out", base: "in" }, spiceModel: "2N3904" }] },
     ],
-  }, environment)
-  // Merge precedence asserted by construction rather than by hope: the unit's
-  // collector must reach the deck, and the package's must not appear at all.
-  expect(deck).toMatch(/^Qstage out in 0 2N3904$/m)
-  expect(deck).not.toContain("package_net")
+  }, environment)).toThrow(/stage.*MAIN.*collector.*collides/)
 })
 
 test("a photoresistor emits as a plain resistance until a behavioural model replaces it", () => {

@@ -20,9 +20,21 @@
  * PER UNIT AGAINST THE PACKAGE, never unit against unit: two sections of a dual
  * op-amp legitimately share pin names (`in+` on both), and that stays legal.
  */
-import type { Component } from "./types.ts"
+/** The minimum shape this rule reads: an id, package pins, and named units with pins.
+ * Stated structurally rather than as `Component` so the same function also accepts a
+ * `ResolvedComponent`, whose pins are net-name strings rather than `Connection`s. The
+ * rule only ever looks at key names, so the value type is deliberately `unknown`.
+ */
+export interface PinShadowingSubject {
+  readonly id: string
+  readonly pins: Readonly<Record<string, unknown>>
+  readonly units: readonly {
+    readonly name: string
+    readonly pins: Readonly<Record<string, unknown>>
+  }[]
+}
 
-export function assertNoPackagePinShadowing(component: Component): void {
+export function assertNoPackagePinShadowing(component: PinShadowingSubject): void {
   for (const unit of component.units) {
     for (const pin of Object.keys(unit.pins)) {
       if (Object.prototype.hasOwnProperty.call(component.pins, pin)) {
