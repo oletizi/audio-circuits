@@ -8,7 +8,10 @@
  * not of operational amplifiers.
  *
  * `ic` and `connector` declare no vocabulary: their pins are whatever the part
- * has, so they are checked for non-emptiness rather than against a list.
+ * has, so they are checked for non-emptiness rather than against a list. `switch`
+ * is open for the same reason once it stands for a general selector: a simple SPST
+ * has two contacts, but a rotary selector's terminals are a common plus one throw
+ * per position, named by the part rather than fixed by the kind.
  */
 import type { ComponentKind } from "./types.ts"
 
@@ -20,7 +23,7 @@ const UNIT_PINS: Readonly<Record<ComponentKind, readonly string[]>> = {
   diode: ["anode", "cathode"],
   bjt: ["base", "collector", "emitter"],
   potentiometer: ["ccw", "wiper", "cw"],
-  switch: ["a", "b"],
+  switch: [],
   opamp: ["in+", "in-", "out"],
   ic: [],
   connector: [],
@@ -34,15 +37,15 @@ const PACKAGE_PINS: Readonly<Record<ComponentKind, readonly string[]>> = {
 }
 
 /**
- * Kinds whose pin names are declared by the PART, not by the kind: an IC or a
- * connector has whatever pins it has.
+ * Kinds whose pin names are declared by the PART, not by the kind: an IC, a
+ * connector or a switch has whatever pins it has.
  *
  * Declared explicitly rather than inferred from an empty UNIT_PINS entry. An
  * inferred version cannot tell a deliberate open vocabulary from a closed one
  * whose list was left empty by mistake, and would silently stop validating that
  * kind's pins. The CONSISTENCY test below turns that mistake into a loud failure.
  */
-const OPEN_VOCABULARY: ReadonlySet<ComponentKind> = new Set(["ic", "connector"])
+const OPEN_VOCABULARY: ReadonlySet<ComponentKind> = new Set(["ic", "connector", "switch"])
 
 export const ALL_KINDS: readonly ComponentKind[] =
   Object.keys(UNIT_PINS) as readonly ComponentKind[]

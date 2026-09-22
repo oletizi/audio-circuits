@@ -10,6 +10,7 @@ import type {
   CapacitorParameters,
   InductorParameters,
   PotentiometerParameters,
+  Provenance,
   ResistorParameters,
   SwitchParameters,
 } from "./parameters.ts"
@@ -82,10 +83,41 @@ export interface Component {
   readonly pins: Readonly<Record<string, Connection>>
   /** One entry per functional unit. Single-unit parts have exactly one. */
   readonly units: readonly Unit[]
+  /** Where this component's data came from. Metadata; assertSameTopology ignores it. */
+  readonly provenance?: Provenance
 }
 
 export interface Network {
   readonly components: readonly Component[]
   /** External interface: port name -> net name. */
   readonly ports: Readonly<Record<string, string>>
+}
+
+/** Per-kind component views.
+ *
+ * `Component` keeps `kind` and `parameters` as independent fields - a pin vocabulary
+ * needs no fixed parameter shape - so narrowing a `Component` on `kind` alone does not
+ * narrow `parameters`. These give consumers that read one kind's parameters (a physical
+ * network's control-state resolver, for instance) something to narrow into via a type
+ * predicate rather than a cast.
+ */
+export interface ResistorComponent extends Component {
+  readonly kind: "resistor"
+  readonly parameters: ResistorParameters
+}
+export interface CapacitorComponent extends Component {
+  readonly kind: "capacitor"
+  readonly parameters: CapacitorParameters
+}
+export interface InductorComponent extends Component {
+  readonly kind: "inductor"
+  readonly parameters: InductorParameters
+}
+export interface PotentiometerComponent extends Component {
+  readonly kind: "potentiometer"
+  readonly parameters: PotentiometerParameters
+}
+export interface SwitchComponent extends Component {
+  readonly kind: "switch"
+  readonly parameters: SwitchParameters
 }

@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { unitPins, packagePins, isKnownKind, ALL_KINDS, hasOpenVocabulary } from "../../lib/model/kinds.ts"
 
 test("two-terminal passives share the a/b vocabulary", () => {
-  for (const kind of ["resistor", "capacitor", "inductor", "photoresistor", "switch"] as const) {
+  for (const kind of ["resistor", "capacitor", "inductor", "photoresistor"] as const) {
     expect([...unitPins(kind)].sort()).toEqual(["a", "b"])
     expect(packagePins(kind)).toEqual([])
   }
@@ -19,9 +19,10 @@ test("an opamp splits signal pins from shared supply pins", () => {
   expect([...packagePins("opamp")].sort()).toEqual(["v+", "v-"])
 })
 
-test("ic and connector declare their pins per part, not per kind", () => {
+test("ic, connector and switch declare their pins per part, not per kind", () => {
   expect(unitPins("ic")).toEqual([])
   expect(unitPins("connector")).toEqual([])
+  expect(unitPins("switch")).toEqual([])
 })
 
 test("an unknown kind is rejected rather than defaulted", () => {
