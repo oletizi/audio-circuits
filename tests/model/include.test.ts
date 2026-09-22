@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { circuit } from "../../lib/model/builder.ts"
+import { circuit, NC } from "../../lib/model/builder.ts"
 
 const divider = () =>
   circuit()
@@ -66,4 +66,48 @@ test("a prefix colliding with an existing id is rejected", () => {
   const b = circuit().resistor("first_top", "1k", { a: "SIG", b: "GROUND" })
   expect(() => b.include("first", divider(), { IN: "SIG", OUT: "TAP", GND: "GROUND" }))
     .toThrow(/duplicate component id "first_top"/i)
+})
+
+test("NC pins are not renamed or converted to nets", () => {
+  const subCircuit = circuit()
+    .ic("opamp", {
+      in_p: "V_IN", in_n: "V_FB", out: "V_OUT",
+      pos: "VCC", neg: "GND", nc1: NC, nc2: NC,
+    })
+    .port("IN", "V_IN")
+    .port("FB", "V_FB")
+    .port("OUT", "V_OUT")
+    .port("VCC", "VCC")
+    .port("GND", "GND")
+    .done()
+
+  const n = circuit()
+    .include("opamp1", subCircuit, {
+      IN: "SIG_IN", FB: "SIG_FB", OUT: "SIG_OUT", VCC: "RAIL", GND: "GROUND",
+    })
+    .port("SIG_IN", "SIG_IN").port("SIG_FB", "SIG_FB").port("SIG_OUT", "SIG_OUT")
+    .port("RAIL", "RAIL").port("GROUND", "GROUND")
+    .done()
+
+  const component = n.components.find((c) => c.id === "opamp1_opamp")
+
+  // NC pins must remain NC, not be converted to nets or prefixed
+  expect(component?.units[0]?.pins.nc1).toEqual({ kind: "nc" })
+  expect(component?.units[0]?.pins.nc2).toEqual({ kind: "nc" })
+
+  // Regular pins should be renamed as expected
+  expect(component?.units[0]?.pins.in_p).toEqual({ kind: "net", net: "SIG_IN" })
+  expect(component?.units[0]?.pins.out).toEqual({ kind: "net", net: "SIG_OUT" })
+})
+
+test("empty prefix is rejected", () => {
+  const subCircuit = circuit()
+    .resistor("r1", "1k", { a: "IN", b: "GND" })
+    .port("IN", "IN")
+    .port("GND", "GND")
+    .done()
+
+  expect(() =>
+    circuit().include("", subCircuit, { IN: "SIG", GND: "GROUND" })
+  ).toThrow(/include prefix must not be empty/i)
 })
