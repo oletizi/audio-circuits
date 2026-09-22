@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
-import { resolveNetwork } from "../lib/passives/control-state.ts"
-import type { ControlState } from "../lib/passives/control-state.ts"
-import type { PassiveNetwork } from "../lib/passives/topology.ts"
+import { resolveNetwork } from "../lib/model/control-state.ts"
+import type { ControlState } from "../lib/model/control-state.ts"
+import type { PassiveNetwork } from "../lib/model/topology.ts"
 
 const physical: PassiveNetwork = {
   ports: { input: "in", output: "out", ground: "0" },

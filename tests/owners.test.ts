@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
-import { partitionTopology } from "../lib/passives/topology.ts"
-import type { PassiveNetwork } from "../lib/passives/topology.ts"
+import { partitionTopology } from "../lib/model/topology.ts"
+import type { PassiveNetwork } from "../lib/model/topology.ts"
 
 const network: PassiveNetwork = {
   ports: { input: "in", output: "out", ground: "0" },

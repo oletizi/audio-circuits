@@ -4,9 +4,9 @@ import {
   controlState,
   declaredOpens,
 } from "../../reference/pultec/three-band.ts"
-import { resolveNetwork } from "../../lib/passives/control-state.ts"
-import { lintConnectivity } from "../../lib/passives/connectivity.ts"
-import { validateNetwork } from "../../lib/passives/topology.ts"
+import { resolveNetwork } from "../../lib/model/control-state.ts"
+import { lintConnectivity } from "../../lib/model/connectivity.ts"
+import { validateNetwork } from "../../lib/model/topology.ts"
 
 const MID_POSITIONS = { loFrequency: "60Hz", hiFrequency: "5kHz" }
 

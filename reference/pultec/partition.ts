@@ -10,8 +10,8 @@
  * the built hardware does: each board carries the screw terminals that its
  * own switch and pot wire back to.
  */
-import type { PassiveElement, PassiveNetwork } from "../../lib/passives/topology.ts"
-import { partitionTopology } from "../../lib/passives/topology.ts"
+import type { PassiveElement, PassiveNetwork } from "../../lib/model/topology.ts"
+import { partitionTopology } from "../../lib/model/topology.ts"
 import { THREE_BAND_REFERENCE } from "./three-band.ts"
 import { MID_POSITIONS, MID_TAPS, tapLabel } from "./mid.ts"
 

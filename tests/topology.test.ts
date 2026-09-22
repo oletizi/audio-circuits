@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
-import { assertSameTopology, partitionTopology } from "../lib/passives/topology.ts"
-import type { MutablePassiveNetwork } from "../lib/passives/mutable.ts"
+import { assertSameTopology, partitionTopology } from "../lib/model/topology.ts"
+import type { MutablePassiveNetwork } from "../lib/model/mutable.ts"
 
 // Synthetic bridge: deliberately NOT a Pultec transcription or acceptance fixture.
 const reference: MutablePassiveNetwork = {

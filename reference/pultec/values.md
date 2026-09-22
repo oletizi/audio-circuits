@@ -104,8 +104,8 @@ the load model the AC harness needs as an explicit input.
 
 ## Discrete inductor specification
 
-Nine discrete inductors replace the two tapped coils, one per tap position, on
-the section boards (`modules/pultec-hi-boost/`, `modules/pultec-mid/`). See
+Nine discrete inductors replace the two tapped coils, one per tap position, in
+the hi boost and mid sections. See
 `docs/superpowers/specs/2026-09-20-discrete-inductors-design.md` for the full
 design rationale; the specification and measurement tables below are
 reproduced from that document verbatim, as the place someone selecting parts
