@@ -1,5 +1,12 @@
 # Pultec reference
 
+> **UNVALIDATED.** No unit has been built from this model. Validation would
+> require building the circuit from the schematic, which is out of scope. The
+> model is additionally known to be incomplete: the hi boost resonant branch is
+> absent and the mid capacitor values are placeholders (see `unresolved.md`).
+> Any response computed from it is the response of this subset, not of a built
+> unit. Do not treat it as a reference for a working circuit.
+
 The reference this project's modules are validated against. Step 1 of
 [the implementation plan](../../docs/pultec/implementation-plan.md).
 

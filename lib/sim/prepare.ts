@@ -1,4 +1,4 @@
-import type { ResolvedElement, ResolvedNetwork } from "../passives/control-state.ts"
+import type { ResolvedElement, ResolvedNetwork } from "../model/control-state.ts"
 
 export interface PrunedBranches {
   readonly network: ResolvedNetwork

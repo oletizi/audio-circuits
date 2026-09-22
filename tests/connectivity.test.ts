@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
-import { lintConnectivity } from "../lib/passives/connectivity.ts"
-import type { ResolvedNetwork } from "../lib/passives/control-state.ts"
+import { lintConnectivity } from "../lib/model/connectivity.ts"
+import type { ResolvedNetwork } from "../lib/model/control-state.ts"
 
 const wellFormed: ResolvedNetwork = {
   ports: { input: "in", output: "out", ground: "0" },

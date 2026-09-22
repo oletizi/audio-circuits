@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { toSpiceNetlist } from "../../lib/sim/netlist.ts"
 import { runAcSweep } from "../../lib/sim/ac.ts"
-import type { ResolvedNetwork } from "../../lib/passives/control-state.ts"
+import type { ResolvedNetwork } from "../../lib/model/control-state.ts"
 import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 
 const rc: ResolvedNetwork = {

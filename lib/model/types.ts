@@ -12,7 +12,7 @@ import type {
   PotentiometerParameters,
   ResistorParameters,
   SwitchParameters,
-} from "../passives/parameters.ts"
+} from "./parameters.ts"
 
 export type ComponentKind =
   | "resistor"

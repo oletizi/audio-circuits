@@ -1,11 +1,11 @@
 import { test, expect } from "bun:test"
 import { THREE_BAND_REFERENCE, controlState } from "../../reference/pultec/three-band.ts"
-import { resolveNetwork } from "../../lib/passives/control-state.ts"
+import { resolveNetwork } from "../../lib/model/control-state.ts"
 import { pruneFloatingBranches } from "../../lib/sim/prepare.ts"
 import { toSpiceNetlist } from "../../lib/sim/netlist.ts"
 import { runAcSweep } from "../../lib/sim/ac.ts"
 import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
-import type { ControlState } from "../../lib/passives/control-state.ts"
+import type { ControlState } from "../../lib/model/control-state.ts"
 
 /** Source and load are explicit inputs, never defaulted. The load is the
  * "not less than 470K" the reference documentation specifies. The source is

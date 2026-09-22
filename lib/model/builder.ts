@@ -6,7 +6,7 @@
  * the declaration that causes it, not at done(), so the stack points at the
  * mistake.
  */
-import { parseValue } from "../passives/units.ts"
+import { parseValue } from "./units.ts"
 import { validateNetwork } from "./validate.ts"
 import { includeNetwork } from "./include.ts"
 import { NC, net } from "./types.ts"
