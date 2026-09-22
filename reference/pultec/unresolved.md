@@ -117,9 +117,10 @@ reference, and to carry **all eleven** mid frequencies into the modular
 topology: a position can be left unpopulated at build time, but a position
 designed out needs a new board to recover.
 
-`reference/pultec/mid.ts` therefore implements all eleven, from P3bandDoc.pdf
-page 3 — the same set as the Pultec MEQ5, on a VTB9050. Seventeen capacitors
-across eleven positions, six of them doubled, served by five winding taps.
+`reference/pultec/mid.ts` and `modules/pultec-mid/` therefore implement all
+eleven, from P3bandDoc.pdf page 3 — the same set as the Pultec MEQ5, on a
+VTB9050. Seventeen capacitors across eleven positions, six of them doubled,
+served by five winding taps.
 
 **Note the provenance difference.** Every other section in this reference takes
 its topology from an exact netlist export of the manufactured board. The mid
@@ -227,9 +228,10 @@ between them — a risk flagged rather than modelled.
 **No longer load-bearing.** The 2026-09-20 discrete-inductors design (see
 `docs/superpowers/specs/2026-09-20-discrete-inductors-design.md`) replaced both
 tapped coils — hi boost's four taps and the mid's five — with nine discrete
-inductors in the hi boost and mid sections. Discrete parts share no winding,
-so there is no coupling to argue about at all: the one-at-a-time switching
-argument has nothing left to defend in those sections.
+inductors on the section boards (`modules/pultec-hi-boost/`,
+`modules/pultec-mid/`). Discrete parts share no winding, so there is no
+coupling to argue about at all: the one-at-a-time switching argument has
+nothing left to defend on those boards.
 
 This retirement applies to the board implementation only. `three-band.ts` and
 `controls.ts` still model the tapped coil as documented from the original
@@ -271,11 +273,6 @@ limitation.
 **Resolves by:** a decision on whether the warning is worth chasing. Nothing
 currently depends on it going away.
 
-**Closed by obsolescence, 2026-09-22.** tscircuit was removed from this
-repository, so there is no schematic renderer left to emit this warning and no
-upstream to report it to. The entry is kept rather than deleted, as item 3's
-superseded history is, because it records something that was measured.
-
 ---
 
 ## 9. `parseValue` does not check a value string's unit against component kind
@@ -283,15 +280,16 @@ superseded history is, because it records something that was measured.
 **Uncertain:** nothing about this project's current values — flagged as a
 latent risk, not a present defect.
 
-`parseValue` never cross-checks a value string's unit letter against the kind
-of component it is attached to. Nothing stops "450mF" written on an inductor
-from parsing silently as 0.45 henries: the digits are read correctly, but the
-unit letter is never validated against "this is an inductor, `F` is wrong
-here." This is pre-existing shared infrastructure, not something this task
-touched, and every value currently in the tree is correct.
+`parseValue` and the circuit-json export never cross-check a value string's
+unit letter against the kind of component it is attached to. Nothing stops
+"450mF" written on an inductor from parsing silently as 0.45 henries: the
+digits are read correctly, but the unit letter is never validated against
+"this is an inductor, `F` is wrong here." This is pre-existing shared
+infrastructure, not something this task touched, and every value currently in
+the tree is correct.
 
-**Alternatives:** add a unit-vs-kind check to `parseValue` itself; or accept
-the risk as long as values continue to be hand-verified.
+**Alternatives:** add a unit-vs-kind check to `parseValue` or the circuit-json
+export path; or accept the risk as long as values continue to be hand-verified.
 
 **Resolves by:** a decision on whether to harden `parseValue`. Recorded because
 a silent wrong-unit parse is a silent-wrong-answer failure mode, not because

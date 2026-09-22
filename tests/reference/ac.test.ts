@@ -1,11 +1,11 @@
 import { test, expect } from "bun:test"
 import { THREE_BAND_REFERENCE, controlState } from "../../reference/pultec/three-band.ts"
-import { resolveNetwork } from "../../lib/model/control-state.ts"
+import { resolveNetwork } from "../../lib/passives/control-state.ts"
 import { pruneFloatingBranches } from "../../lib/sim/prepare.ts"
 import { toSpiceNetlist } from "../../lib/sim/netlist.ts"
 import { runAcSweep } from "../../lib/sim/ac.ts"
 import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
-import type { ControlState } from "../../lib/model/control-state.ts"
+import type { ControlState } from "../../lib/passives/control-state.ts"
 
 /** Source and load are explicit inputs, never defaulted. The load is the
  * "not less than 470K" the reference documentation specifies. The source is
@@ -14,9 +14,6 @@ import type { ControlState } from "../../lib/model/control-state.ts"
 const ENVIRONMENT: SimulationEnvironment = {
   source: { port: "input", amplitude: 1, seriesOhms: 0 },
   load: { port: "output", ohms: 470_000 },
-  // The Pultec reference is entirely passive: it has no supply rails at all,
-  // so this is a deliberate "none", not an omission.
-  supplies: [],
   sweep: { pointsPerDecade: 10, startHz: 20, stopHz: 20_000 },
   groundPort: "ground",
 }

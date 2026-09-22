@@ -1,17 +1,13 @@
 import { test, expect } from "bun:test"
-import { partitionTopology } from "../lib/model/topology.ts"
-import { net } from "../lib/model/types.ts"
-import type { Network } from "../lib/model/types.ts"
+import { partitionTopology } from "../lib/passives/topology.ts"
+import type { PassiveNetwork } from "../lib/passives/topology.ts"
 
-const network: Network = {
+const network: PassiveNetwork = {
   ports: { input: "in", output: "out", ground: "0" },
-  components: [
-    { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
-      units: [{ name: "MAIN", pins: { a: net("in"), b: net("mid") } }] },
-    { id: "C1", kind: "capacitor", parameters: { farads: 1e-6 }, pins: {},
-      units: [{ name: "MAIN", pins: { a: net("mid"), b: net("0") } }] },
-    { id: "L1", kind: "inductor", parameters: { henries: 0.1 }, pins: {},
-      units: [{ name: "MAIN", pins: { a: net("mid"), b: net("out") } }] },
+  elements: [
+    { ref: "R1", kind: "resistor", pins: { a: "in", b: "mid" }, parameters: { ohms: 1000 } },
+    { ref: "C1", kind: "capacitor", pins: { a: "mid", b: "0" }, parameters: { farads: 1e-6 } },
+    { ref: "L1", kind: "inductor", pins: { a: "mid", b: "out" }, parameters: { henries: 0.1 } },
   ],
 }
 

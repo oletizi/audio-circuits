@@ -1,20 +1,6 @@
 # Pultec Step 0 and Representation Contract Execution Plan
 
-> ## SUPERSEDED — HISTORICAL RECORD ONLY. DO NOT IMPLEMENT.
->
-> This plan was written against a repository layout that no longer exists, and **its
-> instructions are not canon.** `lib/passives/` was folded into `lib/model/` by Plan A;
-> `lib/export/` was deleted with it; and tscircuit — along with the
-> `"types": ["tscircuit"]` tsconfig entry this document tells you to set — was removed
-> entirely by `feature/active-devices`. `tsconfig.json` now carries only `bun-types`.
->
-> The canonical model is specified by
-> `docs/superpowers/specs/2026-09-21-canonical-circuit-model-design.md` and summarised for
-> working agents in `CLAUDE.md`. Read those instead. This file is kept because the Pultec
-> transcription's electrical reasoning and its reference-comparison rules remain the record
-> of why that work was done as it was.
-
-> **For agentic workers (SUPERSEDED — see the banner above; do not execute this plan):** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build and prove the validation tooling and the data-representation contract that every later Pultec step depends on, without depending on a Pultec transcription.
 

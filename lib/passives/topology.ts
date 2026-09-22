@@ -1,0 +1,159 @@
+import type {
+  CapacitorParameters, InductorParameters, PotentiometerParameters,
+  Provenance, ResistorParameters, SwitchParameters,
+} from "./parameters.ts"
+
+/** Source-labelled connectivity, before schematic layout or PCB partitioning.
+ * Pin keys and net names are stable reference identifiers, not board-local names.
+ * A pot retains all three terminals; a switch retains every contact and its poles.
+ *
+ * Producer contract for pin keys. `pins` is an open string map because a pot and a
+ * switch need their own terminal vocabularies (`ccw`/`wiper`/`cw`, `common`/contact
+ * names). Two-terminal passives — resistors, capacitors and inductors — are NOT free to
+ * choose: any producer of a `PassiveNetwork` that is meant to be resolvable must key
+ * their two pins `a` and `b`. `resolveNetwork` in `control-state.ts` enforces this and
+ * rejects anything else, and the SPICE emitter downstream reads `pins.a`/`pins.b`
+ * directly. A producer that receives foreign port names (tscircuit's `pin1`/`pin2`, for
+ * example) must rekey them; see `ExportMapping.pinNames` in `lib/export/circuit-json.ts`.
+ */
+interface ElementBase<K extends string, P> {
+  readonly ref: string
+  readonly kind: K
+  readonly pins: Readonly<Record<string, string>>
+  readonly parameters: P
+  /** Provenance is metadata. assertSameTopology ignores it. */
+  readonly provenance?: Provenance
+}
+
+export type PassiveElement =
+  | ElementBase<"resistor", ResistorParameters>
+  | ElementBase<"capacitor", CapacitorParameters>
+  | ElementBase<"inductor", InductorParameters>
+  | ElementBase<"potentiometer", PotentiometerParameters>
+  | ElementBase<"switch", SwitchParameters>
+
+export interface PassiveNetwork {
+  readonly ports: Readonly<Record<string, string>>
+  readonly elements: readonly PassiveElement[]
+}
+
+type Canonical = string | number | boolean | null | readonly Canonical[] | { readonly [k: string]: Canonical }
+
+/** Recursively sorts object keys so serialization is order-independent.
+ * Keys whose value is `undefined` are skipped, so an explicitly-undefined optional
+ * field canonicalizes identically to an absent one.
+ */
+function canonicalize(value: unknown): Canonical {
+  if (Array.isArray(value)) return value.map(canonicalize)
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, Canonical> = {}
+    for (const key of Object.keys(value).sort((a, b) => a.localeCompare(b))) {
+      const entryValue = Reflect.get(value, key)
+      if (entryValue === undefined) continue
+      out[key] = canonicalize(entryValue)
+    }
+    return out
+  }
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean" || value === null) {
+    return value
+  }
+  throw new Error(`Non-canonicalizable parameter value: ${String(value)}`)
+}
+
+/** Structural well-formedness of a labelled network, independent of control state:
+ * unique non-empty references, at least two pins per element, no empty pin key or net
+ * name, and every declared port landing on a net some element actually touches.
+ *
+ * Exported so `resolveNetwork` can run it before its own passes, which keeps a
+ * structural defect diagnosed here (`Unconnected port: mid`) rather than surfacing
+ * downstream as an unrelated union-find lookup failure.
+ */
+export function validateNetwork(network: PassiveNetwork) {
+  const refs = new Set<string>()
+  for (const element of network.elements) {
+    if (!element.ref || refs.has(element.ref)) throw new Error(`Duplicate or empty reference: ${element.ref}`)
+    refs.add(element.ref)
+    if (Object.keys(element.pins).length < 2) throw new Error(`Missing pins: ${element.ref}`)
+    for (const [pin, net] of Object.entries(element.pins)) {
+      if (!pin || !net) throw new Error(`Empty pin/net: ${element.ref}`)
+    }
+  }
+  const nets = new Set(network.elements.flatMap(element => Object.values(element.pins)))
+  for (const [port, net] of Object.entries(network.ports)) {
+    if (!port || !nets.has(net)) throw new Error(`Unconnected port: ${port}`)
+  }
+}
+
+/** Deliberately strict: compares labelled topology and parameters, not transfer functions.
+ * Does not accept net renaming, resistor reduction, or electrically similar redesigns.
+ */
+export function assertSameTopology(reference: PassiveNetwork, candidate: PassiveNetwork): void {
+  const signature = (network: PassiveNetwork) => {
+    validateNetwork(network)
+    return JSON.stringify({
+      ports: canonicalize(network.ports),
+      elements: [...network.elements]
+        .sort((a, b) => a.ref.localeCompare(b.ref))
+        .map(({ ref, kind, pins, parameters }) => ({
+          ref, kind, pins: canonicalize(pins), parameters: canonicalize(parameters),
+        })),
+    })
+  }
+  const referenceSignature = signature(reference)
+  const candidateSignature = signature(candidate)
+  if (referenceSignature === candidateSignature) return
+
+  const elementSignature = (element: PassiveElement) =>
+    JSON.stringify(canonicalize({ kind: element.kind, pins: element.pins, parameters: element.parameters }))
+  const referenceByRef = new Map(reference.elements.map(e => [e.ref, elementSignature(e)]))
+  const candidateByRef = new Map(candidate.elements.map(e => [e.ref, elementSignature(e)]))
+  for (const ref of [...referenceByRef.keys()].sort((a, b) => a.localeCompare(b))) {
+    const candidateEntry = candidateByRef.get(ref)
+    if (candidateEntry === undefined) throw new Error(`Passive topology differs from reference: ${ref} is missing`)
+    if (candidateEntry !== referenceByRef.get(ref)) {
+      throw new Error(`Passive topology differs from reference: ${ref} differs\n  reference: ${referenceByRef.get(ref)}\n  candidate: ${candidateEntry}`)
+    }
+  }
+  for (const ref of candidateByRef.keys()) {
+    if (!referenceByRef.has(ref)) throw new Error(`Passive topology differs from reference: ${ref} is unexpected`)
+  }
+  throw new Error("Passive topology differs from reference: external ports differ")
+}
+
+export interface PartitionOptions {
+  /** When present, every owner name must appear here. */
+  readonly allowedOwners?: readonly string[]
+}
+
+/** Assigns physical ownership without modifying any electrical connection.
+ * Returned boundary nets need one continuous conductor each across their owners.
+ * This is not a connector pin order, standalone termination, or PCB implementation.
+ */
+export function partitionTopology(network: PassiveNetwork, ownerByRef: Readonly<Record<string, string>>, options?: PartitionOptions) {
+  validateNetwork(network)
+  const refs = new Set(network.elements.map(e => e.ref))
+  for (const ref of Object.keys(ownerByRef)) {
+    if (!refs.has(ref)) throw new Error(`Unknown reference: ${ref}`)
+  }
+  const modules: Record<string, PassiveElement[]> = Object.create(null)
+  const ownersByNet = new Map<string, Set<string>>()
+  for (const element of network.elements) {
+    if (!Object.prototype.hasOwnProperty.call(ownerByRef, element.ref) || !ownerByRef[element.ref]) {
+      throw new Error(`Missing owner: ${element.ref}`)
+    }
+    const owner = ownerByRef[element.ref]
+    if (options?.allowedOwners && !options.allowedOwners.includes(owner)) {
+      throw new Error(`Unknown owner: ${owner} (allowed: ${options.allowedOwners.join(", ")})`)
+    }
+    ;(modules[owner] ??= []).push(element)
+    for (const net of Object.values(element.pins)) {
+      if (!ownersByNet.has(net)) ownersByNet.set(net, new Set())
+      ownersByNet.get(net)!.add(owner)
+    }
+  }
+  const boundaryNets = [...ownersByNet.entries()]
+    .filter(([, owners]) => owners.size > 1)
+    .map(([net, owners]) => ({ net, owners: [...owners].sort() }))
+    .sort((a, b) => a.net.localeCompare(b.net))
+  return { modules, boundaryNets, ports: network.ports }
+}

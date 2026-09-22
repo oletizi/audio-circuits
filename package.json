@@ -1,18 +1,26 @@
 {
   "name": "audio-circuits",
   "version": "1.0.0",
-  "description": "Audio circuits as a declarative model, verified in SPICE",
+  "description": "A tscircuit component package",
+  "main": "index.tsx",
   "keywords": [
+    "tscircuit",
     "circuit",
-    "spice",
+    "pcb",
     "electronics"
   ],
   "scripts": {
+    "dev": "tsci dev",
+    "build": "tsci build",
+    "snapshot": "tsci snapshot",
+    "snapshot:update": "tsci snapshot --update",
+    "start": "tsci dev",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
   "devDependencies": {
     "bun-types": "^1.4.2",
+    "tscircuit": "latest",
     "typescript": "^5.0.0"
   }
 }

@@ -1,9 +1,8 @@
-import type { ResolvedComponent, ResolvedNetwork } from "../model/control-state.ts"
-import { twoPinElements, type ResolvedTwoPinElement } from "../model/resolved-two-pin.ts"
+import type { ResolvedElement, ResolvedNetwork } from "../passives/control-state.ts"
 
 export interface PrunedBranches {
   readonly network: ResolvedNetwork
-  /** Component ids removed, in the order they were found. */
+  /** Element refs removed, in the order they were found. */
   readonly removed: readonly string[]
 }
 
@@ -28,25 +27,10 @@ export interface PrunedBranches {
  * Port nets are preserved: an input or output legitimately touches one terminal.
  * Removal repeats to a fixed point, since dropping one branch can strand the
  * next.
- *
- * Only reasons about two-terminal passives (`twoPinElements`) - the same scope
- * this module has always had. Active-device pruning is not attempted here.
- *
- * THAT SCOPE IS A REFUSAL, NOT A PASS-THROUGH, and it is worth knowing which
- * networks it excludes. `twoPinElements` THROWS on any component with package
- * pins, more than one unit, or pins not keyed `a`/`b`. Measured: this function
- * runs on the Pultec reference (76 elements) and throws on both circuits
- * carrying an active device - `circuits/opamp-buffer.ts` at `buffer_amp`
- * (package pins v+, v-) and `circuits/optical-compressor/` at
- * `power_power_terminal` (pins not keyed a/b). Its one caller in the tree is
- * `tests/reference/ac.test.ts`, so neither ported circuit is pruned, and a
- * dead-end branch in one would reach ngspice as a singular matrix rather than
- * being removed here. See `lib/model/resolved-two-pin.ts` for the same note from
- * the other side.
  */
 export function pruneFloatingBranches(network: ResolvedNetwork): PrunedBranches {
   const ports = new Set(Object.values(network.ports))
-  let elements: readonly ResolvedTwoPinElement[] = twoPinElements(network)
+  let elements: readonly ResolvedElement[] = network.elements
   const removed: string[] = []
 
   for (;;) {
@@ -67,10 +51,10 @@ export function pruneFloatingBranches(network: ResolvedNetwork): PrunedBranches 
     }
     if (deadEnds.size === 0) break
 
-    const keep: ResolvedTwoPinElement[] = []
+    const keep: ResolvedElement[] = []
     for (const element of elements) {
       if (deadEnds.has(element.pins.a) || deadEnds.has(element.pins.b)) {
-        removed.push(element.component.id)
+        removed.push(element.ref)
         continue
       }
       keep.push(element)
@@ -79,6 +63,5 @@ export function pruneFloatingBranches(network: ResolvedNetwork): PrunedBranches 
     elements = keep
   }
 
-  const components: readonly ResolvedComponent[] = elements.map(element => element.component)
-  return { network: { ports: network.ports, components }, removed: removed.slice() }
+  return { network: { ports: network.ports, elements }, removed: removed.slice() }
 }

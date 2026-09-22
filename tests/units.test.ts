@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { parseValue } from "../lib/model/units.ts"
+import { parseValue } from "../lib/passives/units.ts"
 
 test("parses SI suffixes to base units", () => {
   expect(parseValue("1k")).toBe(1000)

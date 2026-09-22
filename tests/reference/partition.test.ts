@@ -7,26 +7,10 @@ import {
   partitionReference,
 } from "../../reference/pultec/partition.ts"
 import { THREE_BAND_REFERENCE } from "../../reference/pultec/three-band.ts"
-import { assertSameTopology, partitionTopology } from "../../lib/model/topology.ts"
-import type { Component } from "../../lib/model/types.ts"
-
-/** Every net a component's package pins and unit pins name. A no-connect
- * contributes nothing. Mirrors the equivalent helper in reference/pultec/partition.ts. */
-function connectedNets(component: Component): readonly string[] {
-  const nets: string[] = []
-  for (const connection of Object.values(component.pins)) {
-    if (connection.kind === "net") nets.push(connection.net)
-  }
-  for (const unit of component.units) {
-    for (const connection of Object.values(unit.pins)) {
-      if (connection.kind === "net") nets.push(connection.net)
-    }
-  }
-  return nets
-}
+import { assertSameTopology, partitionTopology } from "../../lib/passives/topology.ts"
 
 test("every element is owned exactly once, by a declared module", () => {
-  const refs = THREE_BAND_REFERENCE.components.map(c => c.id).sort()
+  const refs = THREE_BAND_REFERENCE.elements.map(e => e.ref).sort()
   expect(Object.keys(OWNERSHIP).sort()).toEqual(refs)
   for (const owner of Object.values(OWNERSHIP)) {
     expect(MODULE_OWNERS).toContain(owner)
@@ -37,7 +21,7 @@ test("partitioning preserves the reference exactly", () => {
   const split = partitionReference()
   const recomposed = {
     ports: split.ports,
-    components: Object.values(split.modules).flat().reverse(),
+    elements: Object.values(split.modules).flat().reverse(),
   }
   // Reversed on purpose: recomposition must not depend on element order.
   expect(() => assertSameTopology(THREE_BAND_REFERENCE, recomposed)).not.toThrow()
@@ -50,7 +34,7 @@ test("all five modules are populated", () => {
   ])
   // Hi boost carries its capacitor bank, Qmax, the winding modelled per tap,
   // both pots and one pole of the high frequency selector.
-  const hiBoost = new Set(split.modules["hi-boost"]?.map(c => c.id) ?? [])
+  const hiBoost = new Set(split.modules["hi-boost"]?.map(e => e.ref) ?? [])
   for (const ref of ["C14", "R3", "RV_HI_BOOST", "RV_HI_Q", "SW_HI_BOOST",
                      "L_HI_BOOST_600MH", "L_HI_BOOST_100MH"]) {
     expect(hiBoost.has(ref)).toBe(true)
@@ -95,8 +79,8 @@ test("ground became a boundary net once the mid section returned to it", () => {
   const split = partitionReference()
   const groundOwners = new Set(
     Object.entries(split.modules)
-      .filter(([, components]) =>
-        components.some(c => connectedNets(c).includes("0")))
+      .filter(([, elements]) =>
+        elements.some(e => Object.values(e.pins).includes("0")))
       .map(([owner]) => owner),
   )
   expect([...groundOwners].sort()).toEqual(["low-boost", "mid"])
@@ -113,7 +97,7 @@ test("hi_boost_out is where four sections meet", () => {
 test("every external port is reachable from the partitioned modules", () => {
   const split = partitionReference()
   const owned = new Set(
-    Object.values(split.modules).flat().flatMap(c => connectedNets(c)),
+    Object.values(split.modules).flat().flatMap(e => Object.values(e.pins)),
   )
   for (const net of Object.values(THREE_BAND_REFERENCE.ports)) {
     expect(owned.has(net)).toBe(true)

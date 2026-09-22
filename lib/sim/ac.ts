@@ -47,7 +47,7 @@ export interface AcRequest {
  * in runAcSweep below) specifically so the misclassification is immediately
  * diagnosable rather than read as a phantom circuit fault.
  */
-export function genuineErrors(errors: readonly string[]): readonly string[] {
+function genuineErrors(errors: readonly string[]): readonly string[] {
   return errors.filter(line => line.trim().length > 0 && !line.trim().startsWith("Note:"))
 }
 
