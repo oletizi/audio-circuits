@@ -54,3 +54,78 @@ test("a port declared twice throws", () => {
   const b = circuit().resistor("r", "1k", { a: "IN", b: "GND" }).port("IN", "IN")
   expect(() => b.port("IN", "GND")).toThrow(/port "IN" is already declared/i)
 })
+
+test("inductor() parses value into henries", () => {
+  const n = circuit()
+    .inductor("l1", "10mH", { a: "IN", b: "GND" })
+    .port("IN", "IN")
+    .port("GND", "GND")
+    .done()
+  expect(n.components[0]?.parameters).toEqual({ henries: 0.01 })
+})
+
+test("connector() builds and validates", () => {
+  const n = circuit()
+    .connector("j1", { "1": "IN", "2": "GND", "3": "OUT" })
+    .port("IN", "IN")
+    .port("GND", "GND")
+    .port("OUT", "OUT")
+    .done()
+  expect(n.components[0]?.kind).toBe("connector")
+  expect(n.components[0]?.id).toBe("j1")
+  expect(n.components[0]?.units[0]?.pins["1"]).toEqual({ kind: "net", net: "IN" })
+})
+
+test("add() can build an opamp with package pins and validates", () => {
+  const n = circuit()
+    .add({
+      id: "u1",
+      kind: "opamp",
+      parameters: {},
+      pins: { "v+": { kind: "net", net: "VCC" }, "v-": { kind: "net", net: "GND" } },
+      units: [{ name: "MAIN", pins: { "in+": { kind: "net", net: "IN" }, "in-": { kind: "net", net: "FB" }, "out": { kind: "net", net: "OUT" } } }],
+      part: { mpn: "TL072" },
+    })
+    .port("VCC", "VCC")
+    .port("GND", "GND")
+    .port("IN", "IN")
+    .port("FB", "FB")
+    .port("OUT", "OUT")
+    .done()
+  const u1 = n.components[0]
+  expect(u1?.kind).toBe("opamp")
+  expect(u1?.pins["v+"]).toEqual({ kind: "net", net: "VCC" })
+  expect(u1?.pins["v-"]).toEqual({ kind: "net", net: "GND" })
+})
+
+test("done() rejects malformed package pins", () => {
+  expect(() =>
+    circuit()
+      .add({
+        id: "u1",
+        kind: "opamp",
+        parameters: {},
+        pins: { "v+": { kind: "net", net: "VCC" }, "invalid_pin": { kind: "net", net: "GND" } },
+        units: [{ name: "MAIN", pins: { "in+": { kind: "net", net: "IN" }, "in-": { kind: "net", net: "FB" }, "out": { kind: "net", net: "OUT" } } }],
+      })
+      .port("VCC", "VCC")
+      .port("IN", "IN")
+      .port("FB", "FB")
+      .port("OUT", "OUT")
+      .done(),
+  ).toThrow()
+})
+
+test("done() defensively copies components and ports", () => {
+  const b = circuit()
+    .resistor("r1", "1k", { a: "IN", b: "GND" })
+    .port("IN", "IN")
+    .port("GND", "GND")
+  const n1 = b.done()
+  expect(n1.components).toHaveLength(1)
+  expect(n1.ports).toEqual({ IN: "IN", GND: "GND" })
+
+  b.resistor("r2", "2k", { a: "OUT", b: "GND" }).port("OUT", "OUT")
+  expect(n1.components).toHaveLength(1)
+  expect(n1.ports).toEqual({ IN: "IN", GND: "GND" })
+})
