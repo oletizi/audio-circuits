@@ -85,6 +85,13 @@ export function importLegacyNetlist(text: string): ImportedNetlist {
   if (closedAt === -1) {
     throw new Error("legacy netlist never closes its top-level form")
   }
+  // EESchema always appends a bare "*" after the top-level close to mark
+  // end-of-file. It is not structural - it never nests inside the form - but
+  // real exports (and the VeroRoute-fed netlist for pt2399-core) always carry
+  // it, so it must be accepted as the sole permitted trailing token.
+  if (i === tokens.length - 1 && tokens[i] === "*") {
+    i++
+  }
   if (i !== tokens.length) {
     throw new Error(
       `unexpected trailing token "${tokens[i]}" after the top-level close of the legacy netlist`,

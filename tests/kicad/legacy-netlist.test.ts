@@ -79,6 +79,19 @@ test("a truncated netlist that never closes throws", () => {
   expect(() => importLegacyNetlist(bad)).toThrow(/never closes|close/i)
 })
 
+test("a real EESchema export's trailing end-of-file marker is accepted", () => {
+  // EESchema always appends a bare "*" after the closing paren; VeroRoute-fed
+  // exports (e.g. the pt2399-core fixture) always carry it.
+  const withEof = `${SAMPLE}\n*\n`
+  const n = importLegacyNetlist(withEof)
+  expect(n.components).toHaveLength(2)
+})
+
+test("trailing content after the end-of-file marker still throws", () => {
+  const bad = `${SAMPLE}\n* GARBAGE\n`
+  expect(() => importLegacyNetlist(bad)).toThrow(/trailing/i)
+})
+
 test("a well-formed netlist still parses exactly as before", () => {
   const n = importLegacyNetlist(SAMPLE)
   expect(n.components).toEqual([
