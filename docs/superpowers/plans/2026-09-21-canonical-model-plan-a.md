@@ -1438,8 +1438,15 @@ Note the hazard the third test guards: KiCad's generated net names contain paren
  *     (    2 NetName ) ) ... )
  *
  * HAZARD: generated net names contain parentheses, e.g. "Net-(U1-LPF2-IN)".
- * Atoms are therefore read to whitespace and a ")" only closes a form when it
- * stands alone as a token.
+ * A tokeniser that treats every "(" and ")" as structural, or that strips a
+ * trailing ")" from an atom, corrupts those names into "Net-(U1-LPF2-IN".
+ *
+ * EESchema writes structural parentheses whitespace-delimited, so tokenising on
+ * whitespace and treating a token as structural ONLY when it is exactly "(" or
+ * ")" reads net names intact. The "net names containing parentheses survive
+ * tokenising" test guards this; if it ever fails, the assumption about
+ * whitespace has been violated and the tokeniser needs a real parser, not a
+ * patch.
  */
 import type { ImportedComponent, ImportedNetlist } from "./netlist.ts"
 
@@ -1448,28 +1455,7 @@ function stripComments(text: string): string {
 }
 
 function tokenise(text: string): string[] {
-  const out: string[] = []
-  let i = 0
-  while (i < text.length) {
-    const ch = text[i] ?? ""
-    if (/\s/.test(ch)) { i++; continue }
-    if (ch === "(") { out.push("("); i++; continue }
-    if (ch === ")") { out.push(")"); i++; continue }
-    let atom = ""
-    while (i < text.length && !/\s/.test(text[i] ?? "")) {
-      atom += text[i]
-      i++
-    }
-    // A trailing ")" closes the form unless the atom is only that paren.
-    while (atom.endsWith(")") && atom !== ")") {
-      atom = atom.slice(0, -1)
-      out.push(atom)
-      out.push(")")
-      atom = ""
-    }
-    if (atom.length > 0) out.push(atom)
-  }
-  return out
+  return text.split(/\s+/).filter((token) => token.length > 0)
 }
 
 export function importLegacyNetlist(text: string): ImportedNetlist {
@@ -1580,7 +1566,7 @@ import { test, expect } from "bun:test"
 import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core.ts"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { importLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
-import type { Connection, Network } from "../../lib/model/types.ts"
+import type { Network } from "../../lib/model/types.ts"
 
 /** Our network expressed the way the KiCad netlist expresses itself. */
 function asDesignatorNets(n: Network): Record<string, string[]> {
@@ -1592,7 +1578,7 @@ function asDesignatorNets(n: Network): Record<string, string[]> {
     const designator = DESIGNATORS[component.id]
     if (designator === undefined) throw new Error(`no designator mapped for "${component.id}"`)
     for (const unit of component.units) {
-      for (const [pin, conn] of Object.entries(unit.pins) as [string, Connection][]) {
+      for (const [pin, conn] of Object.entries(unit.pins)) {
         if (conn.kind === "nc") continue
         const number = PIN_NUMBERS[component.kind]?.[pin] ?? pin
         add(conn.net, `${designator}.${number}`)
