@@ -327,9 +327,15 @@ test("an op-amp deck emitted from the model's pin order actually solves in ngspi
   // how a five-argument call against a three-node subcircuit stayed invisible until
   // someone ran it ("Too many parameters for subcircuit type"). This one runs the deck.
   //
-  // It deliberately does NOT claim to verify input polarity: a `.op`-style solve of an
-  // op-amp converges to the same answer with the inputs swapped, so polarity is pinned
-  // textually above, not numerically here.
+  // It is also sign-sensitive, which a magnitude test alone is not. Transposing the
+  // amplifier's inputs (in the model's own .subckt argument list, say, which pinOrder
+  // cannot see) turns this follower's negative feedback into positive feedback. The
+  // magnitude barely moves - 1e6/(1e6+1) = 0.999999 becomes 1e6/(1e6-1) = 1.000001, and
+  // both sit within 5e-6 of unity, so `toBeCloseTo(1, 5)` accepts either. The SIGN of
+  // the error does carry the information: a correctly wired follower's closed-loop gain
+  // is strictly BELOW unity, a transposed one's is strictly above. Asserting both
+  // closeness and strict-below is what distinguishes them. Verified by permuting the
+  // .subckt node list against a mocked registry: this test goes red.
   const buffer: ResolvedNetwork = {
     ports: { input: "in", output: "out", ground: "0" },
     components: [
@@ -351,8 +357,12 @@ test("an op-amp deck emitted from the model's pin order actually solves in ngspi
   const [sweep] = await runAcSweep({ netlist: deck, nodes: ["out"] })
   expect(sweep.points.length).toBeGreaterThan(0)
   for (const point of sweep.points) {
+    const magnitude = Math.hypot(point.real, point.imaginary)
     // Unity-gain follower around an open-loop gain of 1e6: 1e6/(1+1e6) ≈ 0.999999.
-    expect(Math.hypot(point.real, point.imaginary)).toBeCloseTo(1, 5)
+    expect(magnitude).toBeCloseTo(1, 5)
+    // Strictly below unity: negative feedback. Above unity would mean the inputs are
+    // transposed somewhere between pinOrder and the subcircuit's own argument list.
+    expect(magnitude).toBeLessThan(1)
   }
 })
 
@@ -396,4 +406,77 @@ test("a zero-ohm resistor with both ends on one net emits nothing at all", () =>
   // A zero-volt source across one node is a shorted VSRC, which ngspice rejects.
   expect(deck).not.toContain("VSHORT")
   expect(deck).not.toContain("R1 ")
+})
+
+test("a zero-ohm photoresistor reaches the simulator and is refused there, not shorted", async () => {
+  // The emitter deliberately does NOT apply the zero-ohm VSHORT idiom to a
+  // photoresistor, because an LDR is never actually zero and a zero is a data defect.
+  // What makes that loud rather than silent lives two modules away: ngspice does not
+  // reject `Rldr ... 0`, it warns "Value of resistor rldr is too small, set to
+  // 1.000000e-12" and continues, and only `genuineErrors`' deny-by-default filter in
+  // lib/sim/ac.ts turns that warning into a throw. That filter is documented as
+  // expected to grow; broadening it to cover this warning would silently convert a
+  // zero-ohm LDR into a short. This test is what goes red if that happens.
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "ldr", kind: "photoresistor", parameters: { ohms: 0 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "out" } }] },
+    ],
+  }, environment)
+  expect(deck).toMatch(/^Rldr in out 0\.000000000000e\+0$/m)
+  await expect(runAcSweep({ netlist: deck, nodes: ["out"] })).rejects.toThrow(/rldr/i)
+})
+
+test("a diode deck carries the .model text its D line references", () => {
+  // Without this, deleting the model-text loop leaves every diode and BJT assertion
+  // green while every such deck silently becomes an undefined-model deck. Only the
+  // .subckt half of the embedding was pinned before.
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "clamp", kind: "diode", parameters: {}, pins: {},
+        units: [{ name: "MAIN", pins: { anode: "in", cathode: "0" }, spiceModel: "1N4148" }] },
+    ],
+  }, environment)
+  expect(deck).toContain(".model 1N4148")
+})
+
+test("a deck referencing two different models embeds both of them", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "clamp", kind: "diode", parameters: {}, pins: {},
+        units: [{ name: "MAIN", pins: { anode: "in", cathode: "0" }, spiceModel: "1N4148" }] },
+      { id: "stage", kind: "bjt", parameters: {}, pins: {},
+        units: [{ name: "MAIN", pins: { collector: "out", base: "in", emitter: "0" }, spiceModel: "2N3904" }] },
+    ],
+  }, environment)
+  expect(deck).toContain(".model 1N4148")
+  expect(deck).toContain(".model 2N3904")
+})
+
+test("a primitive is as strict as a model about a pin its order does not name", () => {
+  // The `shield` test above covers the model-pinOrder branch. The guard is shared, but
+  // that primitives are equally strict was asserted nowhere: a package pin a `Q` line
+  // has no argument for must throw, not be dropped.
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "stage", kind: "bjt", parameters: {},
+      pins: { emitter: "0", substrate: "chassis" },
+      units: [{ name: "MAIN", pins: { collector: "out", base: "in" }, spiceModel: "2N3904" }],
+    }],
+  }, environment)).toThrow(/stage.*substrate/i)
+})
+
+test("a component with no units throws rather than vanishing from the deck", () => {
+  // Unreachable through resolveNetwork or validateNetwork, both of which reject it. But
+  // every fixture here hand-builds a ResolvedNetwork and bypasses both, and a component
+  // that emits no device line at all is the same hazard the kind dispatch's final
+  // `else` guards against one line away.
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{ id: "ghost", kind: "resistor", parameters: { ohms: 1000 }, pins: {}, units: [] }],
+  }, environment)).toThrow(/ghost.*no units/i)
 })

@@ -249,7 +249,6 @@ function orderedNodes(
   })
 }
 
-
 /** Registers an emitted component name against the ref that produced it, throwing
  * naming both refs when two distinct refs collide on the same emitted name.
  */
@@ -297,10 +296,21 @@ function emitUnit(state: DeckState, component: ResolvedComponent, unit: Resolved
     // resistor — ngspice silently substitutes 1e-12 and warns. The standard
     // idiom is a zero-volt source, which is exact rather than approximate.
     // Resolved potentiometer sections are legitimately zero at a control
-    // extreme, so this is a normal case, not an error. `photoresistor` is
-    // deliberately not included: a light-dependent resistor is never actually
-    // zero, so a zero there is a data defect that should reach the simulator
-    // and be complained about, not be quietly turned into an ideal short.
+    // extreme, so this is a normal case, not an error.
+    //
+    // `photoresistor` is deliberately NOT converted: a light-dependent resistor
+    // is never actually zero, so a zero there is a data defect rather than a
+    // control extreme, and turning it into an ideal short would hide the defect
+    // behind a plausible circuit. What makes leaving it loud rather than silent
+    // is a mechanism two modules away, so name it here: ngspice does not reject
+    // `Rldr a b 0`, it warns "Value of resistor rldr is too small, set to
+    // 1.000000e-12" and carries on. That reaches the caller only because
+    // `genuineErrors` in `lib/sim/ac.ts` is deny-by-default — it keeps every
+    // non-empty line that does not start with "Note:", so `runAcSweep` throws on
+    // the warning. That allowlist is documented as expected to grow; broadening
+    // it to cover this warning would convert a zero-ohm LDR into a silent short.
+    // `tests/sim/netlist.test.ts` pins the throw end-to-end so that broadening
+    // goes red here rather than passing unnoticed.
     if (kind === "resistor" && value === 0) {
       // Both ends already on one node: the short is implicit and emitting a
       // source across it would be a shorted VSRC, which ngspice rejects.
@@ -366,6 +376,14 @@ export function toSpiceNetlist(network: ResolvedNetwork, environment: Simulation
   const modelTexts = new Map<string, string>()
   const state: DeckState = { node, names, lines, modelTexts, shorts: 0 }
   for (const component of network.components) {
+    // A component with no units contributes no device line at all, which is the same
+    // hazard the kind dispatch's final `else` guards against: it would vanish from the
+    // deck with no signal. `control-state.ts` and `validate.ts` both reject it upstream,
+    // but a hand-built ResolvedNetwork (every fixture in the netlist tests is one) does
+    // not pass through either, so the emitter refuses it where it would do the damage.
+    if (component.units.length === 0) {
+      throw new Error(`component "${component.id}": declares no units, so it would emit no device line`)
+    }
     for (const unit of component.units) emitUnit(state, component, unit)
   }
 
