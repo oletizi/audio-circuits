@@ -9,7 +9,10 @@ test("a discrete model carries its SPICE text and its provenance", () => {
 })
 
 test("an unknown model throws, listing what is known", () => {
-  expect(() => deviceModel("NOT_A_PART")).toThrow(/NOT_A_PART.*known/i)
+  // /NOT_A_PART.*known/i would match a message with an empty list (it only
+  // needs to reach the word "known" and stop); this instead requires the
+  // message to actually name a registered model after "Known models:".
+  expect(() => deviceModel("NOT_A_PART")).toThrow(/Known models:.*1N4148/)
 })
 
 test("every registered model declares a non-empty provenance", () => {
@@ -23,6 +26,24 @@ test("every subcircuit-backed model declares a pin order", () => {
     if (m.spice.match(/^\.subckt/im)) {
       expect(m.pinOrder, `${m.name} is a subcircuit but declares no pinOrder`).toBeDefined()
     }
+  }
+})
+
+// Nothing else compares pinOrder to the .subckt line itself - both are only
+// ever checked against constants. Permuting the .subckt argument list, or
+// permuting pinOrder, would leave every other test green while every
+// amplifier the emitter produces is wired to the wrong pins. This sweep
+// parses the node list straight off each subcircuit-backed model's own
+// .subckt line and checks it against that same entry's pinOrder length.
+test("every subcircuit-backed model's pinOrder matches its .subckt argument count", () => {
+  for (const m of allModels()) {
+    const subcktLine = m.spice.match(/^\.subckt\s+\S+\s+(.+)$/im)
+    if (!subcktLine) continue
+    const nodes = subcktLine[1].trim().split(/\s+/)
+    expect(
+      m.pinOrder?.length,
+      `${m.name} declares ${nodes.length} .subckt node(s) (${nodes.join(", ")}) but pinOrder has a different length`,
+    ).toBe(nodes.length)
   }
 })
 
@@ -44,17 +65,22 @@ test("2N3904 resolves directly to its own registered entry", () => {
   const d = deviceModel("2N3904")
   expect(d.name).toBe("2N3904")
   expect(d.category).toBe("discrete")
+  // Confirms the text really is the model it claims - name, category and
+  // pinOrder alone would still pass if `spice` were empty, truncated, or
+  // loaded from the wrong file.
+  expect(d.spice).toMatch(/^\.model\s+2N3904\s+NPN\(/im)
 })
 
 test("IDEAL_OPAMP resolves directly to its own entry with its declared pin order", () => {
   const d = deviceModel("IDEAL_OPAMP")
   expect(d.name).toBe("IDEAL_OPAMP")
   expect(d.category).toBe("behavioural")
-  // Must match the argument order of ".subckt IDEAL_OPAMP inp inn out"
-  // exactly: the emitter reads pinOrder to place its arguments, and a wrong
-  // order here would wire a real circuit's signals into the wrong pins
-  // without any error - a silently mis-wired amplifier.
-  expect(d.pinOrder).toEqual(["in+", "in-", "out"])
+  // Must match the argument order of
+  // ".subckt IDEAL_OPAMP inp inn out vplus vminus" exactly: the emitter
+  // reads pinOrder to place its arguments, and a wrong order here would
+  // wire a real circuit's signals into the wrong pins without any error -
+  // a silently mis-wired amplifier.
+  expect(d.pinOrder).toEqual(["in+", "in-", "out", "v+", "v-"])
 })
 
 test("a registered model's SPICE text actually simulates", async () => {
@@ -66,4 +92,32 @@ test("a registered model's SPICE text actually simulates", async () => {
   })
   expect(v["a"]).toBeGreaterThan(0.3)
   expect(v["a"]).toBeLessThan(0.9)
+})
+
+test("2N3904's SPICE text actually simulates a common-emitter stage", async () => {
+  const { runOperatingPoint } = await import("../../lib/sim/operating-point.ts")
+  const d = deviceModel("2N3904")
+  const v = await runOperatingPoint({
+    netlist: [
+      "common-emitter",
+      "V1 vcc 0 DC 10",
+      "Rb vcc base 470k",
+      "Rc vcc coll 4.7k",
+      "Q1 coll base 0 2N3904",
+      d.spice,
+      ".op",
+      ".end",
+    ].join("\n"),
+    nodes: ["base", "coll"],
+  })
+  // A forward-biased silicon base-emitter junction sits roughly 0.6-0.75V.
+  // Bounds are physically meaningful, not the run's own printed digits, so
+  // a legitimate model refinement would not fail this while a broken model
+  // (e.g. the base-emitter junction not conducting at all) would.
+  expect(v["base"]).toBeGreaterThan(0.6)
+  expect(v["base"]).toBeLessThan(0.75)
+  // The collector must be pulled well below the 10V supply, showing real
+  // conduction through Rc rather than the transistor sitting off.
+  expect(v["coll"]).toBeGreaterThan(0)
+  expect(v["coll"]).toBeLessThan(5)
 })

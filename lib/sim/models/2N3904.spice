@@ -1,21 +1,26 @@
 * 2N3904 - NPN small-signal bipolar transistor (TO-92)
 *
-* Provenance: the Fairchild Semiconductor Gummel-Poon SPICE model for the
-* 2N3904 (catalogued in Fairchild's own SPICE model library metadata as
-* pid=23, case=TO92, dated 88-09-08). This exact parameter set is the
-* version most widely redistributed across public SPICE model libraries
-* (PSpice/LTspice/ngspice "standard" discrete-device libraries) and
-* countless university course materials, and matches the model already
-* built into this project's toolchain from prior training exposure.
+* Provenance: this parameter set is the PSpice/OrCAD evaluation-library
+* entry `Q2N3904`, and it is the version most widely redistributed across
+* public SPICE model libraries (PSpice/LTspice/ngspice "standard"
+* discrete-device libraries) and countless university course materials.
 *
-* Corroborated 2026-09-22 via web search against multiple independent
-* public mirrors that reproduce this parameter set (including one citing
-* the Fairchild pid=23/case=TO92/88-09-08 attribution comment). A single
-* stable, directly-fetchable copy of the original Fairchild-hosted
-* document was not located in this session, so the pid/case/date
-* attribution above should be read as corroborated-by-mirrors rather than
-* independently re-verified byte-for-byte against a live Fairchild source.
-* No parameter value here was invented; every value below was cross-checked
-* against at least one independent public source before being recorded.
+* Which company originated it is ambiguous in the public record and this
+* file does not pick a winner it cannot support. Mirrors that preserve the
+* comment block accompanying this exact parameter set read:
+*
+*     National   pid=23   case=TO92
+*     88-09-08 bam   creation
+*
+* i.e. National Semiconductor, dated 88-09-08. A third mirror instead
+* labels the same 26 values "Fairchild pid=23 case=TO92", but with the
+* "88-09-08 bam creation" line stripped - a later relabelling of the same
+* entry, not an independent second source. Corroborated 2026-09-22 via web
+* search against multiple independent public mirrors; no single stable,
+* directly-fetchable copy of a manufacturer-hosted original was located in
+* this session. No parameter value here was invented; every value below
+* was cross-checked against at least one independent public source before
+* being recorded, and is identical across every mirror seen regardless of
+* which company that mirror credits.
 *
 .model 2N3904 NPN(IS=6.734f XTI=3 EG=1.11 VAF=74.03 BF=416.4 NE=1.259 ISE=6.734f IKF=66.78m XTB=1.5 BR=.7371 NC=2 ISC=0 IKR=0 RC=1 CJC=3.638p MJC=.3085 VJC=.75 FC=.5 CJE=4.493p MJE=.2593 VJE=.75 TR=239.5n TF=301.2p ITF=.4 VTF=4 XTF=2 RB=10)

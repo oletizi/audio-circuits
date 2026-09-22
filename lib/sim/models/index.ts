@@ -39,14 +39,18 @@ const PROVENANCE_1N4148 =
   "vendor subcircuit. See lib/sim/models/1N4148.spice for the full note."
 
 const PROVENANCE_2N3904 =
-  "The Fairchild Semiconductor Gummel-Poon SPICE model for the 2N3904 " +
-  "(catalogued in Fairchild's own model-library metadata as pid=23, " +
-  "case=TO92, dated 88-09-08). This parameter set is the version most " +
-  "widely redistributed across public SPICE model libraries (PSpice, " +
-  "LTspice, ngspice) and course materials; corroborated 2026-09-22 via web " +
-  "search against multiple independent mirrors, though a single stable " +
-  "Fairchild-hosted original was not located in this session - see " +
-  "lib/sim/models/2N3904.spice for the full caveat."
+  "The 2N3904 parameter set from the PSpice/OrCAD evaluation library " +
+  "entry `Q2N3904`, widely redistributed across public SPICE model " +
+  "libraries (PSpice, LTspice, ngspice) and course materials. Who " +
+  "originated it is ambiguous in the public record: mirrors that " +
+  "preserve the comment block accompanying this exact parameter set " +
+  "attribute it to National Semiconductor and date it 88-09-08 " +
+  "(pid=23, case=TO92); other, later mirrors relabel the same values " +
+  "Fairchild, with the creation-date line stripped. Corroborated " +
+  "2026-09-22 via web search against multiple independent mirrors - " +
+  "see lib/sim/models/2N3904.spice for the full note. The 26 parameter " +
+  "values are consistent across every mirror checked and were not " +
+  "invented; only the originating company is unresolved."
 
 const PROVENANCE_IDEAL_OPAMP =
   "Authored for this project (audio-circuits canonical-model), 2026-09-22. " +
@@ -60,7 +64,10 @@ const PROVENANCE_IDEAL_OPAMP =
   "false conclusions about a real circuit. It exists so the multi-unit " +
   "component lowering added in a later task has a subcircuit-backed model " +
   "to test against that does not depend on whichever real op-amp model a " +
-  "later task registers."
+  "later task registers. It carries v+/v- supply pins so it can be " +
+  "instantiated against a package that has them, but it is behaviourally " +
+  "unaffected by supply rail voltage - it stays an ideal amplifier " +
+  "regardless of what is connected to those pins."
 
 const models: readonly DeviceModel[] = [
   {
@@ -80,7 +87,7 @@ const models: readonly DeviceModel[] = [
     category: "behavioural",
     spice: loadSpiceText("IDEAL_OPAMP.spice"),
     provenance: PROVENANCE_IDEAL_OPAMP,
-    pinOrder: ["in+", "in-", "out"],
+    pinOrder: ["in+", "in-", "out", "v+", "v-"],
   },
 ]
 

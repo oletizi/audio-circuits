@@ -10,13 +10,14 @@
 * The vendor file states the numbers below as a PSPICE-syntax continuation
 * block (`.MODEL 1N4148 D` followed by `+ PARAM = value` lines, no
 * parentheses) and additionally wraps the junction in a `.SUBCKT` with a
-* parallel 5.827e9-ohm resistor that only improves reverse-mode accuracy.
-* Neither change affects device physics, so this file drops the subckt
-* wrapper - this project files 1N4148 under "standard discretes" (a plain
-* `.model` line), not "vendor subcircuits" (see spec section 5.2) - and
-* reformats the same parameter values onto a single `.model NAME D(...)`
-* line for this project's SPICE engine. No parameter value differs from
-* the vendor source.
+* parallel 5.827e9-ohm resistor that only improves reverse-mode accuracy -
+* dropping it affects reverse-bias leakage only and leaves forward
+* conduction (the region this file's own simulation test exercises)
+* identical. This file drops that subckt wrapper - this project files
+* 1N4148 under "standard discretes" (a plain `.model` line), not "vendor
+* subcircuits" (see spec section 5.2) - and reformats the same parameter
+* values onto a single `.model NAME D(...)` line for this project's SPICE
+* engine. No parameter value differs from the vendor source.
 *
 * The vendor file carries no explicit license/terms text; these are
 * recorded here as manufacturer-published datasheet-derived parameters,
