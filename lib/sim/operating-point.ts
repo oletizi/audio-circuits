@@ -41,8 +41,11 @@ export async function runOperatingPoint(
     const wanted = `v(${node.toLowerCase()})`
     const vector = result.data.find(d => d.name.toLowerCase() === wanted)
     if (!vector) throw new Error(`Node not present in simulation output: ${node}`)
-    if (vector.values.length === 0) {
-      throw new Error(`Node ${node} resolved to a zero-length data vector`)
+    if (vector.values.length !== 1) {
+      throw new Error(
+        `Node ${node} resolved to ${vector.values.length} values, expected exactly 1 (an operating-point ` +
+          `analysis should yield one bias value per node; check that the deck runs .op, not a sweep)`,
+      )
     }
     values[node] = vector.values[0]
   }
