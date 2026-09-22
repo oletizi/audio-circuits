@@ -38,9 +38,17 @@ export function importLegacyNetlist(text: string): ImportedNetlist {
   const components: ImportedComponent[] = []
   const nets: Record<string, string[]> = {}
 
+  // The legacy format's grammar is a single outer form: ( <component form>* )
+  // Exactly one top-level ")" is legitimate, and it must be the last token -
+  // it is the terminal close of the outer form, not a token to be skipped.
   let i = 1
+  let closedAt = -1
   while (i < tokens.length) {
-    if (tokens[i] === ")") { i++; continue }
+    if (tokens[i] === ")") {
+      closedAt = i
+      i++
+      break
+    }
     if (tokens[i] !== "(") {
       throw new Error(`unexpected token "${tokens[i]}" at the top level of the legacy netlist`)
     }
@@ -72,6 +80,15 @@ export function importLegacyNetlist(text: string): ImportedNetlist {
       throw new Error(`component form for "${designator}" did not close where expected`)
     }
     i++
+  }
+
+  if (closedAt === -1) {
+    throw new Error("legacy netlist never closes its top-level form")
+  }
+  if (i !== tokens.length) {
+    throw new Error(
+      `unexpected trailing token "${tokens[i]}" after the top-level close of the legacy netlist`,
+    )
   }
 
   if (components.length === 0) throw new Error("legacy netlist declares no components")

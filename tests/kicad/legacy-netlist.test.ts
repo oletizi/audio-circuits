@@ -45,3 +45,49 @@ test("a stray token at the top level throws instead of being silently skipped", 
   )`
   expect(() => importLegacyNetlist(bad)).toThrow(/unexpected token "GARBAGE"/i)
 })
+
+test("a stray extra ) between component forms throws instead of being silently absorbed", () => {
+  // Simulates a component form whose content was lost but whose closing
+  // paren survived: a bare ")" sits where a second component form's
+  // remnant would be, ahead of a real, well-formed component form.
+  const bad = `( { header }
+   )
+   ( /04737d7e-1324-4a9b-8c05-3227c13a478c CAP_CERAMIC1  C12 5600pF
+    (    1 GND )
+   )
+  )`
+  expect(() => importLegacyNetlist(bad)).toThrow(/unexpected|trailing/i)
+})
+
+test("trailing tokens after the terminal ) throw", () => {
+  const bad = `( { header }
+   ( /04737d7e-1324-4a9b-8c05-3227c13a478c CAP_CERAMIC1  C12 5600pF
+    (    1 GND )
+   )
+  )
+  ( /304173c5-1ea4-4fe8-87ec-61bada675f8a RESISTOR4  R7 10K
+   (    1 GND )
+  )`
+  expect(() => importLegacyNetlist(bad)).toThrow(/trailing/i)
+})
+
+test("a truncated netlist that never closes throws", () => {
+  const bad = `( { header }
+   ( /04737d7e-1324-4a9b-8c05-3227c13a478c CAP_CERAMIC1  C12 5600pF
+    (    1 GND )
+   )`
+  expect(() => importLegacyNetlist(bad)).toThrow(/never closes|close/i)
+})
+
+test("a well-formed netlist still parses exactly as before", () => {
+  const n = importLegacyNetlist(SAMPLE)
+  expect(n.components).toEqual([
+    { designator: "C12", value: "5600pF", footprint: "CAP_CERAMIC1" },
+    { designator: "R7", value: "10K", footprint: "RESISTOR4" },
+  ])
+  expect(n.nets).toEqual({
+    "Net-(C12-Pad1)": ["C12.1", "R7.1"],
+    "GND": ["C12.2"],
+    "Net-(U1-LPF2-IN)": ["R7.2"],
+  })
+})
