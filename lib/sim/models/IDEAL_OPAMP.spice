@@ -1,0 +1,67 @@
+* IDEAL_OPAMP - ideal voltage-controlled-voltage-source amplifier macromodel
+*
+* Provenance: authored for this project (audio-circuits canonical-model),
+* 2026-09-22. This is NOT a device model - it does not represent, and is
+* not derived from, any real operational amplifier part (it is not a
+* TL072, and is not intended to stand in for one). It is a deliberately
+* ideal VCVS with very high input impedance and very high open-loop gain.
+* Simulation results computed with this model are properties of an IDEAL
+* amplifier, not predictions about any real part's behaviour; a reader
+* who mistook this for a TL072 (or any other real op-amp) model would draw
+* false conclusions about a real circuit from it.
+*
+* This entry exists so the multi-unit component lowering added in the next
+* task has a subcircuit-backed model to test against that does not depend
+* on whichever real op-amp model a later task registers (that task may
+* legitimately fall back to a generic model rather than a TL072, so this
+* entry must not depend on it). It also carries v+/v- supply pins because
+* that task emits op-amp components with package v+/v- pins and needs a
+* subcircuit-backed model that accepts them; the model does nothing with
+* them behaviourally (it stays an ideal amplifier, unaffected by supply
+* rail voltage), but real op-amp packages carry those pins and downstream
+* code needs a model shaped like one to lower a package against.
+*
+* Pin order (position in the .subckt line below): in+, in-, out, v+, v-.
+* The internal node names (inp, inn, out, vplus, vminus) avoid "+"/"-"
+* characters, which are not safe in SPICE node names; the canonical pin
+* names are recorded separately as DeviceModel.pinOrder in
+* lib/sim/models/index.ts.
+*
+* Rin bridges inp and inn with a large (1e12 ohm) resistance. It does NOT
+* give either input node a DC path to ground by itself - two nodes tied
+* only to each other, both otherwise floating, still leave the matrix
+* singular (confirmed by instantiating with both inputs on
+* otherwise-unconnected nodes: "Warning: singular matrix"). What Rin
+* actually does is avoid a floating differential input when only ONE side
+* is grounded through the external network: an AC-coupled input with no
+* bias resistor to ground, for example, has no DC path of its own, and
+* Rin extends the other input's existing ground reference to it. It is
+* high enough to be indistinguishable from an open input for any circuit
+* impedance this project simulates.
+*
+* v+ and v- are declared on the .subckt line but referenced by no element
+* inside it - deliberately. What was actually observed is that such decks
+* SOLVE, not what the engine does internally with the node: a five-argument
+* instantiation with real supply rails wired to v+/v- solves, and so does
+* one where v+/v- are left connected to nothing else in the whole netlist.
+* (A supply net that carries other elements but no DC path to ground is a
+* different case and does NOT solve - see GENERIC_OPAMP.spice, where that
+* was measured.) An earlier revision of this file
+* added a resistor across v+/v- on the theory that an unreferenced node
+* needed one; that theory was wrong, and worse, that resistor was what
+* tied the two rails into a floating island with no path to ground,
+* which is what actually produced a singular-matrix failure when v+/v-
+* were left unconnected elsewhere. There is no problem here to solve.
+*
+* Eout is a VCVS with open-loop gain 1e6, referenced to global ground
+* (node 0, which SPICE treats as the same node inside and outside a
+* subcircuit) - high enough that closed-loop feedback circuits settle to
+* the ideal virtual-short result to numerical precision, without the
+* convergence trouble of an infinite gain. It does not reference the
+* supply nodes at all, consistent with this being an ideal amplifier that
+* is unaffected by supply rail voltage.
+*
+.subckt IDEAL_OPAMP inp inn out vplus vminus
+Rin inp inn 1e12
+Eout out 0 inp inn 1e6
+.ends IDEAL_OPAMP

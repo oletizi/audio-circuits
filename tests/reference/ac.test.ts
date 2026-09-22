@@ -14,6 +14,9 @@ import type { ControlState } from "../../lib/model/control-state.ts"
 const ENVIRONMENT: SimulationEnvironment = {
   source: { port: "input", amplitude: 1, seriesOhms: 0 },
   load: { port: "output", ohms: 470_000 },
+  // The Pultec reference is entirely passive: it has no supply rails at all,
+  // so this is a deliberate "none", not an omission.
+  supplies: [],
   sweep: { pointsPerDecade: 10, startHz: 20, stopHz: 20_000 },
   groundPort: "ground",
 }

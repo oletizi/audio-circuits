@@ -1,0 +1,111 @@
+* GENERIC_OPAMP - generic, non-ideal operational amplifier macromodel
+*
+* THIS IS NOT A VENDOR PART MODEL. It was authored for this project
+* (audio-circuits canonical-model), 2026-09-22. It does not represent, and
+* is not derived from, any real operational amplifier: it is NOT a TL072
+* and must not be read as one. A circuit may legitimately record
+* part.mpn = "TL072" (the part really is a TL072) while its unit records
+* spiceModel = "GENERIC_OPAMP" (the model is generic). Those are two
+* different claims and conflating them would be exactly the quiet falsehood
+* this project exists to avoid.
+*
+* Why generic rather than a TL072 macromodel. A vendor TL072 macromodel was
+* located and inspected but could NOT be redistributed in this repository:
+* Texas Instruments distributes one (www.ti.com/lit/zip/sloj067, retrieved
+* 2026-09-22, file TL072.301), that file carries no licence text of its own,
+* and ti.com's Terms of Use states that software carrying no accompanying
+* terms falls under TI's Evaluation, Development and Demonstration Software
+* License Agreement (www.ti.com/lit/pdf/sszo061), which says in terms:
+* "THIS AGREEMENT DOES NOT CONVEY ANY LICENSE TO USE THE LICENSED MATERIALS
+* IN PRODUCTION, OR TO DISTRIBUTE THE LICENSED MATERIALS TO ANY THIRD
+* PARTY." No redistributable TL072 macromodel was found from any other
+* source either. So none was vendored, and this file is the decided
+* fallback. See the task report for the full provenance trail.
+*
+* WHAT RESULTS FROM THIS MODEL MEAN. They are properties of a generic,
+* mildly non-ideal amplifier - an approximation of an ideal amplifier - not
+* predictions about a TL072 or about any other real part. Nothing measured
+* through this model is evidence about a real device's gain, bandwidth,
+* noise, distortion, slew rate, headroom or supply behaviour.
+*
+* Parameter choices, and the reason for each. None is taken from a
+* datasheet; all are round numbers picked to be PLAUSIBLE for a
+* general-purpose audio op-amp while staying deliberately non-ideal:
+*
+*   open-loop DC gain   1e4    (80 dB)
+*   dominant pole       300 Hz  -> gain-bandwidth product 3 MHz
+*   output resistance   100 ohm (open-loop; inside the feedback loop)
+*   differential input  1e12 ohm
+*
+* The open-loop gain is deliberately MODEST rather than as large as
+* possible. A follower built from an amplifier of open-loop gain A has
+* closed-loop gain A/(1+A), which sits below unity by about 1/A; with its
+* inputs transposed the loop becomes positive feedback and the gain is
+* A/(A-1), above unity by about the same amount. That 1/A offset is the
+* only thing distinguishing a correctly wired follower from a transposed
+* one at audio frequencies, so a model with A = 1e6 makes its own polarity
+* almost unmeasurable inside a real circuit, where coupling networks move
+* the gain by far more than 1e-6. At A = 1e4 the signature is 1e-4, which
+* survives being measured through this project's coupling networks. The
+* accompanying test in tests/sim/models.test.ts is what pins the polarity
+* down, by measurement, in both directions.
+*
+* Pin order (position in the .subckt line below): in+, in-, out, v+, v-.
+* The internal node names (inp, inn, out, vplus, vminus) avoid "+"/"-",
+* which are not safe in SPICE node names; the canonical pin names are
+* recorded separately as DeviceModel.pinOrder in lib/sim/models/index.ts.
+*
+* Input polarity. `inp` is the non-inverting input: it is the first
+* controlling node of Eopen, whose controlling pair is (inp, inn), so a
+* rising inp drives out positive. Reading that off the line below is only
+* half the story, because nothing stops pinOrder and the .subckt line from
+* being permuted together; the polarity is therefore also established by
+* MEASUREMENT in tests/sim/models.test.ts, which builds a follower from
+* pinOrder itself and asserts the closed-loop gain lands strictly BELOW
+* unity, and lands strictly ABOVE unity when the two inputs are swapped.
+*
+* The measurement is an AC one, and the reason is narrower than "an
+* operating point cannot see polarity" - it is not that, and saying so
+* would claim a mechanism where only an outcome was observed. Measured
+* 2026-09-22 through this repository's own runOperatingPoint, on the same
+* five-argument follower:
+*
+*   source `V1 sig 0 DC 1`   correct    v(out) = 0.9999000100
+*                            transposed v(out) = 1.0001000100   separated
+*   source `V1 sig 0 AC 1`   correct    v(out) = 0
+*                            transposed v(out) = 0              blind
+*
+* So a .op DOES separate the two polarities when the source carries a DC
+* value; this model is linear, so its DC system has one solution and there
+* is no unstable equilibrium to converge to. What a .op cannot do is
+* separate them on a SWEEP deck, whose source is AC-only: ngspice then
+* assumes DC 0 (the "Note: v1: has no value, DC 0 assumed" line printed
+* throughout this suite), the operating point is identically zero
+* everywhere, and 0 = 0 carries no information. The AC result carries the
+* sign either way, and is what these tests use.
+*
+* SUPPLY PINS: STRUCTURAL, NOT BEHAVIOURAL. v+ and v- appear on the .subckt
+* line but are referenced by no element inside it, deliberately. This model
+* is a linear small-signal amplifier: it does not clip at the rails, has no
+* PSRR and no quiescent current, and its behaviour is identical whatever
+* the rails sit at. The pins exist so the model can be instantiated against
+* a package that has supply pins. NO result obtained through this model
+* says anything about headroom, clipping or supply rejection.
+*
+* Consequently the rails get no DC reference from this model, and a deck
+* must supply their potential itself. Measured 2026-09-22 with
+* eecircuit-engine: a buffer whose VCC/VEE nets carried only decoupling
+* capacitors to ground and this model's supply pins failed with "Warning:
+* singular matrix:  check node vcc" / "check node vee" and the analysis did
+* not run; adding DC sources on those rails (SimulationEnvironment.supplies)
+* made the same deck solve. That is an observation about what solved and
+* what did not, not a claim about node pruning.
+*
+.subckt GENERIC_OPAMP inp inn out vplus vminus
+Rin inp inn 1e12
+Eopen amp 0 inp inn 1.0e4
+Rpole amp lag 1.0e6
+Cpole lag 0 5.3052e-10
+Ebuf buf 0 lag 0 1
+Rout buf out 100
+.ends GENERIC_OPAMP

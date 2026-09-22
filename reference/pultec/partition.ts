@@ -10,10 +10,37 @@
  * the built hardware does: each board carries the screw terminals that its
  * own switch and pot wire back to.
  */
-import type { PassiveElement, PassiveNetwork } from "../../lib/model/topology.ts"
 import { partitionTopology } from "../../lib/model/topology.ts"
+import type { Component, Connection, Network } from "../../lib/model/types.ts"
 import { THREE_BAND_REFERENCE } from "./three-band.ts"
 import { MID_POSITIONS, MID_TAPS, tapLabel } from "./mid.ts"
+
+/** A physical network's components are single-unit: one "MAIN" unit carries every
+ * terminal. Package pins stay empty. Mirrors the equivalent helper in
+ * `lib/model/control-state.ts`. */
+function terminals(component: Component): Readonly<Record<string, Connection>> {
+  if (component.units.length !== 1) {
+    throw new Error(`Physical network component must have exactly one unit: ${component.id}`)
+  }
+  const unit = component.units[0]
+  for (const pin of Object.keys(unit.pins)) {
+    if (Object.prototype.hasOwnProperty.call(component.pins, pin)) {
+      throw new Error(
+        `Component "${component.id}" unit "${unit.name}": pin "${pin}" collides with a package pin of the same name`,
+      )
+    }
+  }
+  return { ...component.pins, ...unit.pins }
+}
+
+/** Every net a component's terminals name. A no-connect contributes nothing. */
+function connectedNets(component: Component): readonly string[] {
+  const nets: string[] = []
+  for (const connection of Object.values(terminals(component))) {
+    if (connection.kind === "net") nets.push(connection.net)
+  }
+  return nets
+}
 
 export type ModuleOwner = "low-cut" | "low-boost" | "hi-cut" | "hi-boost" | "mid"
 
@@ -90,7 +117,7 @@ export const OWNERSHIP: Readonly<Record<string, ModuleOwner>> = {
 
 /** Partition of the reference, with owner names checked against the declared
  * set. Throws if ownership and the reference ever drift apart. */
-export function partitionReference(network: PassiveNetwork = THREE_BAND_REFERENCE) {
+export function partitionReference(network: Network = THREE_BAND_REFERENCE) {
   return partitionTopology(network, OWNERSHIP, { allowedOwners: MODULE_OWNERS })
 }
 
@@ -105,17 +132,17 @@ export interface BoundaryConductor {
 }
 
 export function boundaryConductors(
-  network: PassiveNetwork = THREE_BAND_REFERENCE,
+  network: Network = THREE_BAND_REFERENCE,
 ): readonly BoundaryConductor[] {
   const split = partitionReference(network)
   return split.boundaryNets.map(boundary => ({
     net: boundary.net,
     owners: boundary.owners,
-    terminals: network.elements
-      .flatMap(element =>
-        Object.entries(element.pins)
-          .filter(([, net]) => net === boundary.net)
-          .map(([pin]) => `${element.ref}.${pin}`))
+    terminals: network.components
+      .flatMap(component =>
+        Object.entries(terminals(component))
+          .filter(([, connection]) => connection.kind === "net" && connection.net === boundary.net)
+          .map(([pin]) => `${component.id}.${pin}`))
       .sort(),
   }))
 }
@@ -131,8 +158,8 @@ export function boundaryConductors(
  * the boards must emit derive it from here rather than restating the rule,
  * because a second copy is one that can disagree.
  */
-export function isBoardResident(element: PassiveElement): boolean {
-  return element.kind !== "potentiometer" && element.kind !== "switch"
+export function isBoardResident(component: Component): boolean {
+  return component.kind !== "potentiometer" && component.kind !== "switch"
 }
 
 /** The portion of a module that lives on its printed board.
@@ -151,27 +178,27 @@ export function isBoardResident(element: PassiveElement): boolean {
  * mid board its five taps, which is the terminal-block reduction the
  * discrete-inductor design exists to buy.
  *
- * This is the target a tscircuit module is validated against: render the
- * module, flatten its emitted connectivity, and compare. Anything the board
- * gains or loses relative to the reference shows up as a topology difference.
+ * This is the target an authored circuit is validated against: build the
+ * circuit, flatten its connectivity, and compare. Anything the board gains or
+ * loses relative to the reference shows up as a topology difference.
  */
-export function boardNetwork(owner: ModuleOwner): PassiveNetwork {
+export function boardNetwork(owner: ModuleOwner): Network {
   const split = partitionReference()
   const owned = split.modules[owner]
   if (owned === undefined) throw new Error(`No such module: ${owner}`)
 
-  const elements = owned.filter(isBoardResident)
-  if (elements.length === 0) {
+  const components = owned.filter(isBoardResident)
+  if (components.length === 0) {
     throw new Error(`Module has no board-resident elements: ${owner}`)
   }
 
-  const onThisBoard = new Set(elements.map(element => element.ref))
+  const onThisBoard = new Set(components.map(component => component.id))
   const globalPorts = new Set(Object.values(THREE_BAND_REFERENCE.ports))
   const ports: Record<string, string> = {}
-  for (const element of elements) {
-    for (const net of Object.values(element.pins)) {
-      const reachedFromOutside = THREE_BAND_REFERENCE.elements.some(
-        other => !onThisBoard.has(other.ref) && Object.values(other.pins).includes(net),
+  for (const component of components) {
+    for (const net of connectedNets(component)) {
+      const reachedFromOutside = THREE_BAND_REFERENCE.components.some(
+        other => !onThisBoard.has(other.id) && connectedNets(other).includes(net),
       )
       // A net the whole circuit treats as an external port is a terminal even
       // when only this board touches it — it still has to reach the outside
@@ -181,14 +208,14 @@ export function boardNetwork(owner: ModuleOwner): PassiveNetwork {
       if (reachedFromOutside || globalPorts.has(net)) ports[net] = net
     }
   }
-  return { ports, elements }
+  return { ports, components }
 }
 
 /** External ports are conductors too, even where only one module touches them.
  * The plan calls this out specifically: a port used on one board still has to
  * reach the outside world. */
 export function externalPorts(
-  network: PassiveNetwork = THREE_BAND_REFERENCE,
+  network: Network = THREE_BAND_REFERENCE,
 ): Readonly<Record<string, string>> {
   return network.ports
 }

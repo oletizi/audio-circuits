@@ -271,6 +271,11 @@ limitation.
 **Resolves by:** a decision on whether the warning is worth chasing. Nothing
 currently depends on it going away.
 
+**Closed by obsolescence, 2026-09-22.** tscircuit was removed from this
+repository, so there is no schematic renderer left to emit this warning and no
+upstream to report it to. The entry is kept rather than deleted, as item 3's
+superseded history is, because it records something that was measured.
+
 ---
 
 ## 9. `parseValue` does not check a value string's unit against component kind

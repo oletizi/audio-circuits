@@ -242,6 +242,13 @@ particular symbol, not of operational amplifiers.
 | canonical pin → footprint pad | `PartSpec.pads` | a property of the chosen package |
 | canonical pin → SPICE argument position | the model entry (§5.2) | a property of the `.subckt`, and two models of the same kind may order pins differently |
 
+**One exception, and only this one.** Where SPICE itself fixes the argument order for a
+primitive element, the order is a property of the kind and lives there. A diode is always
+anode then cathode, a bipolar transistor always collector, base, emitter; no model gets a
+say, so there is no concrete thing for the mapping to be a property of. This is the
+opposite of the `opamp` case above, where the order genuinely varies between macromodels.
+Subcircuit-backed kinds take their order from the model entry as the table states.
+
 Keeping these off the kind is what makes the claim in §3.4 true rather than aspirational:
 downstream formats do not dictate the canonical vocabulary. Putting KiCad pin numbers on
 `ComponentKind` would have quietly inverted that.

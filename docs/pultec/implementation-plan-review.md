@@ -1,5 +1,12 @@
 # Review: Pultec modularization implementation plan
 
+> ## SUPERSEDED — HISTORICAL RECORD ONLY.
+>
+> This reviews a plan that is itself superseded. Every `lib/passives/`, `lib/export/`
+> and tscircuit reference below describes a repository that no longer exists. Current
+> canon: `docs/superpowers/specs/2026-09-21-canonical-circuit-model-design.md` and
+> `CLAUDE.md`.
+
 Reviewed document: [implementation-plan.md](implementation-plan.md).
 Branch: `feature/pultec-modularize`.
 

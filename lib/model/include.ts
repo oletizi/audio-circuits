@@ -7,6 +7,18 @@
  * `mid_GND` can never silently appear because someone assumed ground was
  * ambient - a rail that should be shared and is not becomes a construction
  * error instead of a subtle simulation result.
+ *
+ * A COMPONENT IS ATOMIC HERE. `includeNetwork` maps over whole components, so a
+ * multi-section package cannot be split across two included networks: its units
+ * travel together or not at all. That is structural rather than incidental, and
+ * it constrains how a circuit may be decomposed. When one package's sections
+ * serve different functional blocks - a dual op-amp with one section in the
+ * sidechain and the other buffering the bias reference, say - the package
+ * allocation decides the file layout rather than the other way round. The whole
+ * component is declared in one block, and the other block reaches what it needs
+ * through a declared port, like any other boundary net.
+ * `circuits/optical-compressor/` is the worked example; CLAUDE.md's Composition
+ * section states the rule.
  */
 import type { Component, Connection, Network, Unit } from "./types.ts"
 
