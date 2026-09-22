@@ -81,10 +81,9 @@ Recorded so the diff against the first version is legible rather than mysterious
   quantize. The reviewer's first point, and my correction to it, are both moot.
 - The union-find refactor of `lib/export/circuit-json.ts`. That file no longer exists;
   `lib/model/` supersedes it.
-- `lib/export/value-notation.ts`. `circuits/pt2399-core.ts` already carries values in the
-  source notation verbatim — `.1uF`, `5600pF`, `100K` — so the exporter emits
-  `component.parameters` as authored and no formatter is needed. The reviewer was right that
-  this should be settled rather than deferred; the architecture settled it by another route.
+*(An earlier revision of this list also declared the value formatter dead, on the grounds that
+`circuits/pt2399-core.ts` carries values in source notation. That was wrong — see **Value
+notation** below. The formatter is needed and is back.)*
 
 **Reversed:**
 
@@ -132,9 +131,131 @@ first real check report it and resolve it against the physical part.
 
 `FOOTPRINT_IMPORT_STRINGS`, the override table, comes across empty, as it is in `pedals` —
 with its comment explaining what belongs in it and why an override with no stated reason is
-indistinguishable from a mistake.
+indistinguishable from a mistake. It matters more here than there, because the grammar below
+is deliberately narrow.
+
+### The grammar is narrow: proven families only
+
+"Port `deriveImportString.ts`" overstates what should cross. The old file interprets the whole
+KiCad footprint vocabulary; this repository should recognize only the families it has evidence
+for, and refuse everything else. That is the repository's standing rule — errors, not
+fallbacks — and it avoids carrying hundreds of lines of interpretation that no board here
+exercises.
+
+`lib/kicad/import-string.ts` recognizes exactly:
+
+| Footprint name shape | Import string |
+| --- | --- |
+| `R_Axial_*_P<mm>mm_*` | `RESISTOR<n>` |
+| `C_Disc_*_P<mm>mm` | `CAP_CERAMIC<n>` |
+| `CP_Radial_D<mm>mm_*` | `CAP_ELECTRO_<mils>` |
+| `DIP-<pins>_*` | `DIP<pins>` |
+| `PinHeader_1x<pins>_*` | `SIP<pins>` |
+
+Everything else refuses, naming the footprint and listing the shapes that derive. What crosses
+from `pedals` is the *refusal quality* — a message that teaches which field to fix — not the
+breadth of its vocabulary.
+
+The 24-part assertion against the two fixtures then establishes that this grammar is
+sufficient for the workflow, rather than merely plausible.
+
+### Dimension quantization
+
+Two different quantizations, and they are not the same rule.
+
+**Lead pitch** (`RESISTOR<n>`, `CAP_CERAMIC<n>`), where `n` is span in 100-mil units:
+
+```
+n = round(mm / 2.54),  accepted when |mm - 2.54 * n| <= 0.15mm
+```
+
+The 0.15mm tolerance exists for a specific reason: KiCad names imperial parts with rounded
+metric. `P2.50mm` is a nominal 0.1in part (0.04mm off), `P7.50mm` a nominal 0.3in part (0.12mm
+off), while `P10.16mm` is exact. A tighter tolerance would refuse real, correct footprints; a
+much looser one would start accepting genuinely off-pitch parts as though they fitted.
+
+**Electrolytic body diameter** (`CAP_ELECTRO_<mils>`) is *not* a rounding to a 50-mil ladder,
+and implementing it as one produces strings VeroRoute cannot import. The fork enumerates its
+types in `Src/CompTypes.h`:
+
+```
+CAP_ELECTRO_200  _250  _300  _400  _500  _600
+```
+
+There is no 350, 450 or 550. A part measuring 8.9mm (350.4 mil) rounded to the nearest 50 mil
+yields `CAP_ELECTRO_350`, which has no matching type and fails the import outright.
+
+So the rule is **nearest member of the enumerated set**, whose gaps are uneven — 50 mil below
+300, then 100 mil above:
+
+| Footprint | mils | Nearest enumerated | Used by the board |
+| --- | --- | --- | --- |
+| `CP_Radial_D5.0mm_P2.50mm` | 196.85 | 200 | `CAP_ELECTRO_200` ✓ |
+| `CP_Radial_D6.3mm_P2.50mm` | 248.03 | 250 | `CAP_ELECTRO_250` ✓ |
+| `CP_Radial_D8.0mm_P3.50mm` | 314.96 | 300 | `CAP_ELECTRO_300` ✓ |
+
+Note that the third rounds **down** by 15 mil. That is the observed behaviour of the board
+that works, so nearest — not round-up — is the rule, even though rounding down means the
+layout understates the part's physical size by that margin. The understatement is bounded by
+half the local gap, and is a property of VeroRoute's coarse type set rather than a choice this
+code makes.
+
+A diameter outside `[200, 600]` mils refuses. An exact tie — 350.0 mil, equidistant between
+300 and 400 — refuses rather than picking, because a silent choice there is a physical-size
+claim nobody made.
+
+The `_NP` (non-polarized) variants exist in the same enumeration and are **not** derived: no
+footprint name on this board distinguishes them, and inferring polarity from a name that does
+not state it is the kind of guess this grammar refuses. A non-polarized electrolytic goes
+through the override table with a stated reason.
 
 ## Decisions
+
+### Value notation is reconstructed by a formatter
+
+The canonical model does **not** retain the spelling a circuit was authored with.
+`builder.ts` parses on the way in:
+
+```ts
+capacitor(id, value, pins, part) {
+  return this.push({ ..., parameters: { farads: parseValue(value) }, ... })
+}
+```
+
+so `".1uF"` is `1e-7` by the time a `Network` exists, and nothing in `Parameters`, `PartSpec`
+or `Provenance` keeps the original string. The authoring call site contains `.1uF`; the data
+structure the exporter receives does not.
+
+This matters because VeroRoute compares values as text. A netlist saying `100nF` where the
+board holds `.1uF` produces a `Schematic delta` line per part, and `--check` exits 0 only when
+the plan is empty.
+
+Three ways out were available: retain the source spelling in the model, format canonically
+from the numeric parameter, or accept a one-time value-spelling reconciliation into the
+`.vrt`. **The formatter wins**, for two reasons. Retaining source spelling would put a display
+concern inside the electrical model, which deliberately excludes such things — `Provenance` is
+annotated "deliberately excluded from electrical identity comparison", and value spelling is
+the same kind of fact. And a one-time reconciliation would permanently desync the exporter
+from the fixture that proves it, discarding the strongest assertion this design has.
+
+The policy, validated against all twelve distinct values on the board:
+
+| Kind | Rule |
+| --- | --- |
+| Capacitance | below 10nF express in `pF`; 10nF and above express in `uF` |
+| Resistance | express in `K` (uppercase) for 1kΩ–999kΩ |
+| Both | strip a leading zero (`.1uF`, never `0.1uF`); strip a trailing `.0` |
+
+This reproduces `560pF`, `5600pF`, `.01uF`, `.1uF`, `4.7uF`, `10uF`, `47uF`, `100uF`, `10K`,
+`2.7K`, `15K`, `100K` — including the `5600pF` / `.01uF` pair that sits either side of the
+10nF boundary and looks arbitrary until the rule is stated.
+
+Decades the fixture does not exercise — bare ohms, megohms, farads at or above 1000uF — are
+**refused, not guessed**, per this repository's standing rule against fallbacks.
+
+The formatter is an artifact of the fork treating values as opaque strings. If the fork ever
+compares values semantically it is deleted, and its removal is a completion rather than a
+regression.
 
 ### Footprints are transcribed into the circuit, as evidence
 
@@ -157,30 +278,60 @@ The package field is emitted already holding the import string, so VeroRoute imp
 Part Alias entry — the same trick `pedals` plays by rewriting text after the fact, done at
 emit time instead.
 
-### The round trip is the exporter's proof
+### Three artifacts, and the exporter is only responsible for one
 
-`tests/fixtures/pt2399-core-veroroute.net` is the exact artifact VeroRoute consumed to lay out
-the board that works. So:
-
-```
-importLegacyNetlist(fixture) -> export -> compare against fixture
-```
-
-and, separately, the path that matters:
+Precision here matters, because the C3 story is incoherent without it. There are three
+distinct things, and "the board" is never an acceptable name for any of them:
 
 ```
-pt2399Core() + DESIGNATORS + PIN_NUMBERS + derived import strings
-    -> export -> compare against fixture
+circuits/pt2399-core.ts        the canonical circuit
+                               C3 footprint CP_Radial_D6.3mm_P2.50mm
+        |
+        v
+emitted netlist                derived: C3 package CAP_ELECTRO_250
+        :
+tests/fixtures/                the netlist VeroRoute was actually fed
+  pt2399-core-veroroute.net    records: C3 package CAP_ELECTRO_250
+        :
+boards/pt2399-core/            the persisted hand-authored layout
+  *.perfboard.vrt              remembers: C3 typed CAP_ELECTRO_300
 ```
 
-The second is the real assertion. It proves the whole chain — circuit, designator map, pin
-numbering, footprint transcription, import-string derivation, and emitter — reproduces the
-netlist a working board was built from. The first version of this design could only assert
-connectivity; this asserts the actual bytes VeroRoute was fed.
+> **The invariant:** the exporter must semantically reproduce
+> `pt2399-core-veroroute.net`. Differences between that netlist and the persisted `.vrt` are
+> reconciliation deltas, and are deliberately outside the exporter's proof.
 
-Comparison is semantic, not byte-for-byte, on the parts that carry no meaning: the header
-comment holds a timestamp, and component order is a set. Everything else — package field,
-designator, value, pin numbers, net names — compares exactly.
+Stated this way the C3 situation is coherent rather than contradictory: circuit, derivation
+and fixture all agree on `CAP_ELECTRO_250`, and only the `.vrt` disagrees — which is exactly
+what a reconciler exists to report. An implementer must not try to make the exporter reproduce
+the stale type held in the `.vrt`; that would be teaching the exporter to lie in order to
+silence a delta the workflow exists to surface.
+
+### The exporter's proof runs through the reader
+
+The importer deliberately discards information — component UUIDs, ordering, the header comment
+— so no exporter can reconstruct the fixture's literal bytes, and asserting against them would
+be asserting on data the pipeline does not carry. Both assertions therefore compare
+`ImportedNetlist` values, through the reader that is already trusted and tested.
+
+**Writer self-consistency:**
+
+```
+fixture --import--> A --export--> text --import--> B        assert A == B
+```
+
+**The assertion that matters:**
+
+```
+pt2399Core() + DESIGNATORS + PIN_NUMBERS
+  + derived import strings + formatted values
+        --export--> text --import--> C                      assert C == A
+```
+
+The second proves the whole chain — circuit, designator map, pin numbering, footprint
+transcription, import-string derivation, value formatting and writer — reproduces the netlist
+a working board was built from. The first version of this design could assert connectivity
+only; this asserts every field VeroRoute reads.
 
 ### The driver is one TypeScript CLI
 
@@ -236,7 +387,7 @@ exists to prevent. Both paths resolve against the declaration's own directory.
 ### Board artifacts live in a board tree
 
 ```
-circuits/pt2399-core.ts    the circuit, with its canonical component geometry
+circuits/pt2399-core.ts    the circuit, with its canonical footprint selection
 boards/pt2399-core/        the hand-authored placement and routing that realizes it
 ```
 
@@ -264,7 +415,8 @@ circuits/
 lib/kicad/
   legacy-netlist.ts         EXISTING reader - gains the matching writer
   netlist.ts                EXISTING - modern reader, source of the footprints
-  import-string.ts          NEW - ported deriveImportString + the override table
+  import-string.ts          NEW - five proven footprint families + override table
+  value-notation.ts         NEW - numeric parameters -> KiCad value spelling
 
 tools/perfboard/
   declaration.ts            ported: perfboard.json load + discovery
@@ -291,6 +443,7 @@ circuits/pt2399-core.ts
 Network + DESIGNATORS + PIN_NUMBERS      PartSpec.footprint
     |                                         |
     | (designator, pin) -> net                | import-string.ts
+    | value-notation.ts                       |
     v                                         v
          +---- legacy-netlist writer ----+
                         |
@@ -313,8 +466,9 @@ the circuit as it is now rather than a checked-in netlist that may itself be sta
 | Surface | Test |
 | --- | --- |
 | Footprint transcription | every component's footprint matches `pt2399-core.net` |
-| `import-string.ts` | ported cases, plus all 24 of this board's parts |
-| The writer | round trip, and full chain reproducing the veroroute fixture |
+| `import-string.ts` | each family; both quantization rules; refusals; all 24 parts |
+| `value-notation.ts` | the board's twelve values; refusal outside proven decades |
+| The writer | writer self-consistency, and full chain reproducing the fixture |
 | `declaration.ts` | absent / wrong-typed / empty fields are three messages |
 | `check.ts` | exit 0, exit 1, unexpected status throws; report carried verbatim |
 | `perfboard.ts` | every verb with injected deps; unknown flags; cwd resolution |
@@ -328,20 +482,23 @@ comparison is used only to assert a board was *not* modified.
 
 1. **Footprints.** Transcribe `PartSpec.footprint` into `circuits/pt2399-core.ts` from the
    modern netlist fixture, with the test that pins them to it.
-2. **Import strings.** Port `deriveImportString.ts` and its tests into `lib/kicad/`, plus the
-   24-part assertion against the two fixtures.
-3. **The writer.** EESchema v1.1 emission in `lib/kicad/legacy-netlist.ts`, proven by the
-   round trip and by reproducing the veroroute fixture from the circuit.
-4. **The declaration and check.** `tools/perfboard/{declaration,check,load}.ts`, ported.
-5. **The CLI.** `tools/cli/perfboard.ts`, every verb, including the layout-scoped guard.
-6. **The fork.** `veroroute.pin`, the `veroroute` verb, `.gitignore` for `.tools/`.
-7. **The board and the fixed-point acceptance.** `boards/pt2399-core/` with the carried
+2. **Import strings.** `lib/kicad/import-string.ts`: the five proven footprint families, both
+   quantization rules, the empty override table, and the 24-part assertion against the two
+   fixtures.
+3. **Value notation.** `lib/kicad/value-notation.ts`, reconstructing source spelling from the
+   numeric parameters, pinned by the board's twelve values.
+4. **The writer.** EESchema v1.1 emission in `lib/kicad/legacy-netlist.ts`, proven through the
+   reader by both assertions above.
+5. **The declaration and check.** `tools/perfboard/{declaration,check,load}.ts`, ported.
+6. **The CLI.** `tools/cli/perfboard.ts`, every verb, including the layout-scoped guard.
+7. **The fork.** `veroroute.pin`, the `veroroute` verb, `.gitignore` for `.tools/`.
+8. **The board and the fixed-point acceptance.** `boards/pt2399-core/` with the carried
    `.vrt`, run to the fixed point below.
 
-Phases 1–5 need no VeroRoute binary. Phase 7 is acceptance and is where inherited
+Phases 1–6 need no VeroRoute binary. Phase 8 is acceptance and is where inherited
 discrepancies surface.
 
-### Phase 7 acceptance: reaching a fixed point
+### Phase 8 acceptance: reaching a fixed point
 
 A single green `check` is not sufficient acceptance for a reconciliation system: it can hide a
 derivation wrong in a way the first pass tolerates, or an emitter stable only by accident.
@@ -366,18 +523,18 @@ not established.
 1. **C3's body diameter is a known inherited discrepancy.** The netlist side derives
    `CAP_ELECTRO_250` from `CP_Radial_D6.3mm_P2.50mm` and is self-consistent; the `pedals`
    reports indicate the board holds `CAP_ELECTRO_300`. **Do not pre-emptively "fix" this.**
-   Whatever the first check reports at phase 7 is ground truth, resolved then against the
+   Whatever the first check reports at phase 8 is ground truth, resolved then against the
    physical part.
 
 2. **Strip mode.** The perfboard design records this board's `m_bVeroTracks` as false
    (isolated-hole perfboard) as of 2026-09-16, with twelve unrouted board-side nets genuine.
-   The layout has been worked on since. Phase 7 establishes the current state; the
+   The layout has been worked on since. Phase 8 establishes the current state; the
    `stripboard` verb exists if conversion is wanted.
 
 3. **Off-board pad provenance.** `J1`'s five pins become `J1_1`..`J1_5` on the board via
    `BreakComponentIntoPads()`. Reconciliation resolves these through persisted provenance
    fields (VeroRoute format version 60). This is fork behavior and needs nothing here, but a
-   pre-60 board needs the fork's one-time `adopt` step. Confirm at phase 7.
+   pre-60 board needs the fork's one-time `adopt` step. Confirm at phase 8.
 
 4. **Loading a circuit module from the CLI.** The declaration names a module and an export;
    `tools/perfboard/load.ts` imports it dynamically. A module that throws on import, or whose
