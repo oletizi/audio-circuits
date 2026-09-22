@@ -7,7 +7,8 @@
 > Any response computed from it is the response of this subset, not of a built
 > unit. Do not treat it as a reference for a working circuit.
 
-The reference this project's modules are validated against. Step 1 of
+This directory holds the Pultec reference network, transcribed from a `kicad-cli`
+export of the manufactured schematic. Step 1 of
 [the implementation plan](../../docs/pultec/implementation-plan.md).
 
 The circuit is Ian Thompson-Bell's **Pultec 3 Band EQ** — an EQP-1 and an MEQ-5

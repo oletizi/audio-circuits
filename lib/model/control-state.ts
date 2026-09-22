@@ -212,8 +212,7 @@ function rewritePorts(ports: Readonly<Record<string, string>>, uf: UnionFind): R
  * `ground` port, and every resistor, capacitor and inductor in it must key its two pins
  * `a` and `b`. Pots and switches keep their own terminal vocabularies; only the
  * two-terminal passives are constrained. A producer whose source names pins otherwise -
- * tscircuit's `pin1`/`pin2`, for instance - must rekey them before calling this; see
- * `ExportMapping.pinNames` in `lib/export/circuit-json.ts`.
+ * tscircuit's `pin1`/`pin2`, for instance - must rekey them before calling this.
  */
 export function resolveNetwork(physical: PassiveNetwork, state: ControlState): ResolvedNetwork {
   validateNetwork(physical)

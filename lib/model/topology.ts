@@ -14,7 +14,7 @@ import type {
  * their two pins `a` and `b`. `resolveNetwork` in `control-state.ts` enforces this and
  * rejects anything else, and the SPICE emitter downstream reads `pins.a`/`pins.b`
  * directly. A producer that receives foreign port names (tscircuit's `pin1`/`pin2`, for
- * example) must rekey them; see `ExportMapping.pinNames` in `lib/export/circuit-json.ts`.
+ * example) must rekey them before passing the network to `resolveNetwork`.
  */
 interface ElementBase<K extends string, P> {
   readonly ref: string
