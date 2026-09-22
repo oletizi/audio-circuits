@@ -1,9 +1,10 @@
 * 2N3904 - NPN small-signal bipolar transistor (TO-92)
 *
 * Provenance: this parameter set is the PSpice/OrCAD evaluation-library
-* entry `Q2N3904`, and it is the version most widely redistributed across
-* public SPICE model libraries (PSpice/LTspice/ngspice "standard"
-* discrete-device libraries) and countless university course materials.
+* entry `Q2N3904`. It appears in multiple public SPICE model libraries
+* (PSpice/LTspice/ngspice "standard" discrete-device libraries) and in
+* university course materials. How its circulation ranks against other
+* 2N3904 parameter sets was not measured and is not claimed here.
 *
 * Which company originated it is not resolved by the available sources,
 * and this file does not pick a winner it cannot support. The parameter

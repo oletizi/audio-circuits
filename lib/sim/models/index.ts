@@ -50,8 +50,10 @@ const PROVENANCE_1N4148 =
 
 const PROVENANCE_2N3904 =
   "The 2N3904 parameter set from the PSpice/OrCAD evaluation library " +
-  "entry `Q2N3904`, widely redistributed across public SPICE model " +
-  "libraries (PSpice, LTspice, ngspice) and course materials. Which " +
+  "entry `Q2N3904`, which appears in multiple public SPICE model " +
+  "libraries (PSpice, LTspice, ngspice) and in course materials; how its " +
+  "circulation ranks against other 2N3904 parameter sets is not measured " +
+  "and not claimed. Which " +
   "company originated it is not resolved by the available sources: it " +
   "appears in multiple public mirrors whose accompanying comment blocks " +
   "are identical to each other except for the company name - some read " +
@@ -80,6 +82,30 @@ const PROVENANCE_IDEAL_OPAMP =
   "unaffected by supply rail voltage - it stays an ideal amplifier " +
   "regardless of what is connected to those pins."
 
+const PROVENANCE_GENERIC_OPAMP =
+  "Authored for this project (audio-circuits canonical-model), 2026-09-22. " +
+  "This is NOT a vendor part model: it does not represent, and is not " +
+  "derived from, any real operational amplifier - it is not a TL072 and " +
+  "must not be read as one. A circuit may record part.mpn = \"TL072\" " +
+  "while its unit records spiceModel = \"GENERIC_OPAMP\"; the part and the " +
+  "model are different claims. It exists because no redistributable TL072 " +
+  "macromodel was found: Texas Instruments distributes one " +
+  "(www.ti.com/lit/zip/sloj067, retrieved 2026-09-22), that file carries " +
+  "no licence text of its own, and ti.com's Terms of Use puts software " +
+  "with no accompanying terms under TI's Evaluation, Development and " +
+  "Demonstration Software License Agreement (www.ti.com/lit/pdf/sszo061), " +
+  "which states that it \"DOES NOT CONVEY ANY LICENSE ... TO DISTRIBUTE " +
+  "THE LICENSED MATERIALS TO ANY THIRD PARTY\". Nothing was vendored. " +
+  "Results computed with this model are properties of a generic, mildly " +
+  "non-ideal amplifier (open-loop gain 1e4, dominant pole 300 Hz, output " +
+  "resistance 100 ohm), NOT predictions about a TL072 or any other real " +
+  "part. Its v+/v- pins are structural: no element inside the subcircuit " +
+  "references them, so the model does not clip at the rails and has no " +
+  "supply rejection, and no result obtained through it says anything " +
+  "about headroom or supply behaviour. See lib/sim/models/GENERIC_OPAMP.spice " +
+  "for the full note, including why the open-loop gain is deliberately " +
+  "modest rather than as large as possible."
+
 /** The single declared correspondence between IDEAL_OPAMP's canonical pin
  * names and the SPICE-legal node names its .subckt argument list actually
  * uses, in physical pin order. pinOrder and subcktNodeNames below are both
@@ -89,6 +115,22 @@ const PROVENANCE_IDEAL_OPAMP =
  * the model's own .subckt line.
  */
 const IDEAL_OPAMP_PINS: readonly { readonly canonical: string; readonly spice: string }[] = [
+  { canonical: "in+", spice: "inp" },
+  { canonical: "in-", spice: "inn" },
+  { canonical: "out", spice: "out" },
+  { canonical: "v+", spice: "vplus" },
+  { canonical: "v-", spice: "vminus" },
+]
+
+/** GENERIC_OPAMP's canonical-to-SPICE pin correspondence, in physical pin
+ * order, for the same reason IDEAL_OPAMP_PINS exists: pinOrder and
+ * subcktNodeNames are both derived from one array so they cannot drift apart,
+ * and the registry sweep in tests/sim/models.test.ts checks subcktNodeNames
+ * against the model's own .subckt line. That sweep proves the NAMES line up;
+ * it cannot prove the semantic pairing (that "in+" really is `inp`), which is
+ * established separately, by measurement, in the same test file.
+ */
+const GENERIC_OPAMP_PINS: readonly { readonly canonical: string; readonly spice: string }[] = [
   { canonical: "in+", spice: "inp" },
   { canonical: "in-", spice: "inn" },
   { canonical: "out", spice: "out" },
@@ -116,6 +158,14 @@ const models: readonly DeviceModel[] = [
     provenance: PROVENANCE_IDEAL_OPAMP,
     pinOrder: IDEAL_OPAMP_PINS.map(pin => pin.canonical),
     subcktNodeNames: IDEAL_OPAMP_PINS.map(pin => pin.spice),
+  },
+  {
+    name: "GENERIC_OPAMP",
+    category: "behavioural",
+    spice: loadSpiceText("GENERIC_OPAMP.spice"),
+    provenance: PROVENANCE_GENERIC_OPAMP,
+    pinOrder: GENERIC_OPAMP_PINS.map(pin => pin.canonical),
+    subcktNodeNames: GENERIC_OPAMP_PINS.map(pin => pin.spice),
   },
 ]
 

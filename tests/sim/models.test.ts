@@ -95,10 +95,10 @@ test("every subcircuit-backed model's pinOrder aligns positionally with its actu
 // asserted: count alone would survive a registry that swapped an entry for a
 // duplicate; membership alone would survive one that silently grew a fourth
 // entry.
-test("the registry holds exactly its three expected entries, no more and no fewer", () => {
+test("the registry holds exactly its four expected entries, no more and no fewer", () => {
   const all = allModels()
-  expect(all.length).toBe(3)
-  expect(all.map(m => m.name).sort()).toEqual(["1N4148", "2N3904", "IDEAL_OPAMP"])
+  expect(all.length).toBe(4)
+  expect(all.map(m => m.name).sort()).toEqual(["1N4148", "2N3904", "GENERIC_OPAMP", "IDEAL_OPAMP"])
 })
 
 test("2N3904 resolves directly to its own registered entry", () => {
@@ -160,4 +160,125 @@ test("2N3904's SPICE text actually simulates a common-emitter stage", async () =
   // conduction through Rc rather than the transistor sitting off.
   expect(v["coll"]).toBeGreaterThan(0)
   expect(v["coll"]).toBeLessThan(5)
+})
+
+/** The controlling node pair of the one VCVS inside `model` that amplifies its
+ * declared inputs, found by looking for an `E` line whose controlling pair
+ * mentions either input node.
+ *
+ * This is the assertion the registry sweep above CANNOT make. That sweep
+ * proves the node NAMES declared in subcktNodeNames are the names the .subckt
+ * line declares, in that order. It cannot prove the SEMANTIC pairing - that
+ * pinOrder[i] really is the canonical meaning of subcktNodeNames[i] - because
+ * only the model's internals say which terminal inverts. A coordinated edit
+ * swapping the two `spice` halves and the .subckt line together stays green
+ * under the sweep while leaving "in+" on the inverting control.
+ */
+function controllingInputs(spice: string, plusNode: string, minusNode: string): readonly string[] {
+  const lines = spice.split("\n").filter(line => /^E/i.test(line.trim()))
+  const controlling = lines
+    .map(line => line.trim().split(/[ \t]+/))
+    .filter(tokens => tokens.length >= 6)
+    .map(tokens => [tokens[3], tokens[4]] as const)
+    .filter(pair => pair.includes(plusNode) || pair.includes(minusNode))
+  if (controlling.length !== 1) {
+    throw new Error(
+      `expected exactly one VCVS controlled by the input nodes (${plusNode}, ${minusNode}), ` +
+        `found ${controlling.length}`,
+    )
+  }
+  return controlling[0]
+}
+
+function expectNonInvertingFirst(name: string): void {
+  const model = deviceModel(name)
+  const order = model.pinOrder
+  const nodes = model.subcktNodeNames
+  if (!order || !nodes) throw new Error(`${name} declares no pinOrder/subcktNodeNames`)
+  const plus = nodes[order.indexOf("in+")]
+  const minus = nodes[order.indexOf("in-")]
+  expect(
+    controllingInputs(model.spice, plus, minus),
+    `${name}: the pin declared "in+" (${plus}) must be the FIRST controlling node of the ` +
+      `amplifying VCVS, or the model inverts the pin the registry calls non-inverting`,
+  ).toEqual([plus, minus])
+}
+
+test("IDEAL_OPAMP's declared in+ really is the non-inverting control of its VCVS", () => {
+  expectNonInvertingFirst("IDEAL_OPAMP")
+})
+
+test("GENERIC_OPAMP's declared in+ really is the non-inverting control of its VCVS", () => {
+  expectNonInvertingFirst("GENERIC_OPAMP")
+})
+
+test("GENERIC_OPAMP resolves directly to its own entry with its declared pin order", () => {
+  const d = deviceModel("GENERIC_OPAMP")
+  expect(d.name).toBe("GENERIC_OPAMP")
+  expect(d.category).toBe("behavioural")
+  expect(d.pinOrder).toEqual(["in+", "in-", "out", "v+", "v-"])
+  // The text really is the model it claims, not an empty or wrong file.
+  expect(d.spice).toMatch(/^\.subckt\s+GENERIC_OPAMP\s+inp\s+inn\s+out\s+vplus\s+vminus$/im)
+  // It must say plainly that it is not a vendor part model, since a circuit
+  // using it records mpn "TL072" alongside it.
+  expect(d.provenance).toMatch(/not a TL072|NOT a vendor part model/i)
+})
+
+/** A follower built FROM the model's own pinOrder, so a permutation of
+ * pinOrder rebuilds this deck wrongly and the assertion moves. */
+function follower(nodes: Readonly<Record<string, string>>): string {
+  const model = deviceModel("GENERIC_OPAMP")
+  const order = model.pinOrder
+  if (!order) throw new Error("GENERIC_OPAMP declares no pinOrder")
+  const args = order.map(pin => {
+    const node = nodes[pin]
+    if (node === undefined) throw new Error(`no node given for pin "${pin}"`)
+    return node
+  })
+  return [
+    "generic opamp follower",
+    "V1 sig 0 AC 1",
+    "VVCC vcc 0 DC 15",
+    "VVEE vee 0 DC -15",
+    `X1 ${args.join(" ")} GENERIC_OPAMP`,
+    "Rload out 0 1e12",
+    model.spice.trimEnd(),
+    ".ac dec 20 10 100000",
+    ".end",
+  ].join("\n")
+}
+
+async function followerGain(nodes: Readonly<Record<string, string>>): Promise<number> {
+  const { runAcSweep } = await import("../../lib/sim/ac.ts")
+  const [sweep] = await runAcSweep({ netlist: follower(nodes), nodes: ["out"] })
+  const point = sweep.points.find(p => Math.abs(p.frequency - 1000) <= 1e-6)
+  if (!point) throw new Error("no sweep point at 1 kHz")
+  return Math.hypot(point.real, point.imaginary)
+}
+
+const SUPPLIES = { "v+": "vcc", "v-": "vee" }
+
+/**
+ * The model's input POLARITY, established by measurement rather than by
+ * reading one line - the obligation that lands on whichever task registers a
+ * model whose input stage is not a single readable VCVS.
+ *
+ * An operating-point solve cannot do this. A `.op` converges to the unstable
+ * equilibrium and returns the same answer to six figures with the inputs
+ * transposed; this project has measured that and been fooled by it. The AC
+ * result does carry the sign: negative feedback gives A/(1+A), strictly below
+ * unity, and positive feedback gives A/(A-1), strictly above. With A0 = 1e4
+ * the two land about 1e-4 either side of unity, which is why the model's
+ * open-loop gain is deliberately modest.
+ */
+test("GENERIC_OPAMP's input polarity is measured, not assumed: negative feedback lands below unity", async () => {
+  const gain = await followerGain({ "in+": "sig", "in-": "out", out: "out", ...SUPPLIES })
+  expect(gain).toBeCloseTo(1, 3)
+  expect(gain).toBeLessThan(1)
+})
+
+test("GENERIC_OPAMP with its inputs transposed lands above unity, which is what makes the test above mean something", async () => {
+  const gain = await followerGain({ "in+": "out", "in-": "sig", out: "out", ...SUPPLIES })
+  expect(gain).toBeCloseTo(1, 3)
+  expect(gain).toBeGreaterThan(1)
 })

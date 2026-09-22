@@ -17,6 +17,7 @@ const rc: ResolvedNetwork = {
 const environment: SimulationEnvironment = {
   source: { port: "input", amplitude: 1, seriesOhms: 0 },
   load: { port: "output", ohms: 1e12 },
+  supplies: [],
   sweep: { pointsPerDecade: 20, startHz: 10, stopHz: 100000 },
   groundPort: "ground",
 }
@@ -50,6 +51,7 @@ const resistiveDivider: ResolvedNetwork = {
 const resistiveDividerEnvironment: SimulationEnvironment = {
   source: { port: "input", amplitude: 1, seriesOhms: 1000 },
   load: { port: "output", ohms: 3000 },
+  supplies: [],
   sweep: { pointsPerDecade: 20, startHz: 10, stopHz: 100000 },
   groundPort: "ground",
 }
@@ -84,6 +86,7 @@ test("refuses a network whose net collides with the synthetic source-series inte
   const collidingEnvironment: SimulationEnvironment = {
     source: { port: "input", amplitude: 1, seriesOhms: 50 },
     load: { port: "output", ohms: 1e12 },
+    supplies: [],
     sweep: { pointsPerDecade: 20, startHz: 10, stopHz: 100000 },
     groundPort: "ground",
   }
@@ -100,6 +103,7 @@ test("refuses a network whose net collides with the synthetic source-series inte
 const collisionEnvironment: SimulationEnvironment = {
   source: { port: "input", amplitude: 1, seriesOhms: 0 },
   load: { port: "output", ohms: 1e12 },
+  supplies: [],
   sweep: { pointsPerDecade: 20, startHz: 10, stopHz: 100000 },
   groundPort: "ground",
 }
@@ -479,4 +483,87 @@ test("a component with no units throws rather than vanishing from the deck", () 
     ports: { input: "in", output: "out", ground: "0" },
     components: [{ id: "ghost", kind: "resistor", parameters: { ohms: 1000 }, pins: {}, units: [] }],
   }, environment)).toThrow(/ghost.*no units/i)
+})
+
+/* DC supply rails. An active device's supply pins have to be driven by
+ * something, and a `SimulationEnvironment` is where that belongs: the circuit
+ * is not wrong when its rails float, the DECK is simply missing the power
+ * supply the circuit's power connector would be wired to.
+ */
+
+const railed: ResolvedNetwork = {
+  ports: { input: "in", output: "out", ground: "0", vcc: "vcc", vee: "vee" },
+  components: [
+    { id: "u1", kind: "opamp", parameters: {},
+      pins: { "v+": "vcc", "v-": "vee" },
+      units: [{ name: "MAIN", pins: { "in+": "in", "in-": "out", out: "out" }, spiceModel: "GENERIC_OPAMP" }] },
+    // Decoupling only: no DC path from either rail to ground.
+    { id: "Cvcc", kind: "capacitor", parameters: { farads: 1e-7 }, pins: {},
+      units: [{ name: "MAIN", pins: { a: "vcc", b: "0" } }] },
+    { id: "Cvee", kind: "capacitor", parameters: { farads: 1e-7 }, pins: {},
+      units: [{ name: "MAIN", pins: { a: "vee", b: "0" } }] },
+  ],
+}
+
+const railedEnvironment: SimulationEnvironment = {
+  source: { port: "input", amplitude: 1, seriesOhms: 0 },
+  load: { port: "output", ohms: 1e12 },
+  supplies: [{ port: "vcc", volts: 15 }, { port: "vee", volts: -15 }],
+  sweep: { pointsPerDecade: 20, startHz: 10, stopHz: 100000 },
+  groundPort: "ground",
+}
+
+test("a declared supply emits a DC source named for its port, on that port's net", () => {
+  const deck = toSpiceNetlist(railed, railedEnvironment)
+  expect(deck).toMatch(/^VVCC vcc 0 DC 1\.500000000000e\+1$/m)
+  expect(deck).toMatch(/^VVEE vee 0 DC -1\.500000000000e\+1$/m)
+})
+
+test("a supply port the network does not expose throws, naming it", () => {
+  expect(() => toSpiceNetlist(railed, {
+    ...railedEnvironment,
+    supplies: [{ port: "v_phantom", volts: 9 }],
+  })).toThrow("Supply port not present in network: v_phantom")
+})
+
+test("a supply on the ground net throws rather than emitting a source shorted across node 0", () => {
+  expect(() => toSpiceNetlist(railed, {
+    ...railedEnvironment,
+    supplies: [{ port: "ground", volts: 9 }],
+  })).toThrow(/Supply port "ground" names the ground net/)
+})
+
+test("the same supply port declared twice throws rather than emitting a duplicate source", () => {
+  // Two identical V lines is a hard ngspice error ("device already exists"),
+  // and two different voltages on one rail is a contradiction. Neither is
+  // something to resolve by picking one.
+  expect(() => toSpiceNetlist(railed, {
+    ...railedEnvironment,
+    supplies: [{ port: "vcc", volts: 15 }, { port: "vcc", volts: 12 }],
+  })).toThrow("Duplicate supply port: vcc")
+})
+
+test("a rail carrying only decoupling capacitance is unsolvable without a declared supply", async () => {
+  // The measurement the whole `supplies` field exists for, kept as a test so
+  // the field cannot be quietly deleted as unnecessary. Without supplies the
+  // two rails have no DC path to the reference node and ngspice abandons the
+  // analysis; the error names the offending node.
+  const deck = toSpiceNetlist(railed, { ...railedEnvironment, supplies: [] })
+  await expect(runAcSweep({ netlist: deck, nodes: ["out"] })).rejects.toThrow(/singular matrix/i)
+})
+
+test("the same deck solves once its rails are declared, and the follower's gain lands below unity", async () => {
+  const deck = toSpiceNetlist(railed, railedEnvironment)
+  const [sweep] = await runAcSweep({ netlist: deck, nodes: ["out"] })
+  expect(sweep.points.length).toBeGreaterThan(0)
+  for (const point of sweep.points) {
+    const magnitude = Math.hypot(point.real, point.imaginary)
+    // GENERIC_OPAMP's open-loop gain is 1e4, so a follower sits about 1e-4
+    // below unity at low frequency; its 3 MHz gain-bandwidth product widens
+    // that to about 5e-4 by the 100 kHz end of this sweep, hence 1% rather
+    // than 0.1% closeness. Strictly below unity everywhere, for the same
+    // sign-sensitivity reason the IDEAL_OPAMP case above documents.
+    expect(magnitude).toBeCloseTo(1, 2)
+    expect(magnitude).toBeLessThan(1)
+  }
 })

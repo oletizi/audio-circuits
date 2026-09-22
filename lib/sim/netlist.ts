@@ -23,9 +23,29 @@ export interface SweepModel {
   readonly stopHz: number
 }
 
+/** A DC supply rail the deck drives, named by the port that carries it.
+ *
+ * Required because an active device's supply pins have to come from somewhere.
+ * A rail whose only elements are decoupling capacitors and an op-amp's supply
+ * pins has no DC path to the reference node, and ngspice refuses the whole
+ * analysis with "singular matrix: check node <rail>" - measured, see
+ * lib/sim/models/GENERIC_OPAMP.spice. The circuit is not wrong in that case;
+ * the deck is simply missing the power supply that the circuit's power
+ * connector would be wired to, and a simulation environment is exactly where
+ * that belongs.
+ */
+export interface SupplyModel {
+  /** Port name in the network's ports map. */
+  readonly port: string
+  readonly volts: number
+}
+
 export interface SimulationEnvironment {
   readonly source: SourceModel
   readonly load: LoadModel
+  /** DC rails the deck drives. Required, never defaulted: a deck with no
+   * supplies is a deliberate `[]`, not an omission. */
+  readonly supplies: readonly SupplyModel[]
   readonly sweep: SweepModel
   /** Port name carrying the reference node; becomes SPICE node 0. */
   readonly groundPort: string
@@ -92,6 +112,7 @@ function numericParameter(parameters: Parameters, field: string, ref: string): n
  * network net that emits as the same node collides loudly through the same path as any
  * other node collision.
  */
+const SOURCE_NAME = "V1"
 const LOAD_RESISTOR_NAME = "RLOAD"
 const LOAD_CAPACITOR_NAME = "CLOAD"
 const SERIES_RESISTOR_NAME = "RSRC"
@@ -100,6 +121,16 @@ const SOURCE_INTERNAL_NODE = "n_src_internal"
 /** Replaces any character outside [A-Za-z0-9] with "_". */
 function sanitize(name: string): string {
   return name.replace(/[^A-Za-z0-9]/g, "_")
+}
+
+/** The emitter's net-name-to-SPICE-node transform, exported so a caller that
+ * wants to read a node back out of a simulation result can ask which node a
+ * net became, rather than re-deriving (and eventually mis-deriving) the rule.
+ * The ground net is NOT handled here: it emits as node 0, which only
+ * `toSpiceNetlist` knows, because only it knows which net is ground.
+ */
+export function spiceNodeName(netName: string): string {
+  return sanitize(netName)
 }
 
 /** What produced an emitted SPICE node name. `synthetic` marks a node the emitter
@@ -367,10 +398,38 @@ export function toSpiceNetlist(network: ResolvedNetwork, environment: Simulation
     nodes.set(SOURCE_INTERNAL_NODE.toLowerCase(), { raw: SOURCE_INTERNAL_NODE, synthetic: true })
   }
   const sourceOutputNode = seriesOhms !== 0 ? SOURCE_INTERNAL_NODE : node(sourceNet)
-  lines.push(`V1 ${sourceOutputNode} 0 AC ${environment.source.amplitude.toExponential(12)}`)
+  // Registered like any other emitted element name: the supply rails below are
+  // also `V` lines named from their port, so "V1" has to be taken rather than
+  // merely conventional, or a supply on a port named "1" would silently
+  // duplicate the source line.
+  reserveName(names, SOURCE_NAME, "AC source")
+  lines.push(`${SOURCE_NAME} ${sourceOutputNode} 0 AC ${environment.source.amplitude.toExponential(12)}`)
   if (seriesOhms !== 0) {
     reserveName(names, SERIES_RESISTOR_NAME, "source series resistor")
     lines.push(`${SERIES_RESISTOR_NAME} ${sourceOutputNode} ${node(sourceNet)} ${seriesOhms.toExponential(12)}`)
+  }
+
+  // DC rails, before any device line that references them. A rail is named for
+  // its port so the deck reads back to the environment that asked for it, and
+  // is registered in the component-name registry like every other element, so
+  // a collision with a network component is caught rather than silently
+  // overwriting a line.
+  const suppliedPorts = new Set<string>()
+  for (const supply of environment.supplies) {
+    if (suppliedPorts.has(supply.port)) {
+      throw new Error(`Duplicate supply port: ${supply.port}`)
+    }
+    suppliedPorts.add(supply.port)
+    const supplyNet = resolvePort(network, supply.port, "Supply")
+    if (supplyNet === groundNet) {
+      throw new Error(
+        `Supply port "${supply.port}" names the ground net "${groundNet}", which would emit a ` +
+          `voltage source shorted across node 0`,
+      )
+    }
+    const supplyName = `V${sanitize(supply.port).toUpperCase()}`
+    reserveName(names, supplyName, `supply port ${supply.port}`)
+    lines.push(`${supplyName} ${node(supplyNet)} 0 DC ${supply.volts.toExponential(12)}`)
   }
 
   const modelTexts = new Map<string, string>()

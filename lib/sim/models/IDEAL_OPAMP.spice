@@ -40,11 +40,13 @@
 * impedance this project simulates.
 *
 * v+ and v- are declared on the .subckt line but referenced by no element
-* inside it - deliberately. This engine prunes an unreferenced subcircuit
-* node cleanly rather than treating it as ill-posed (confirmed by
-* simulating: a five-argument instantiation with real supply rails wired
-* to v+/v- solves, and so does one where v+/v- are left connected to
-* nothing else in the whole netlist). An earlier revision of this file
+* inside it - deliberately. What was actually observed is that such decks
+* SOLVE, not what the engine does internally with the node: a five-argument
+* instantiation with real supply rails wired to v+/v- solves, and so does
+* one where v+/v- are left connected to nothing else in the whole netlist.
+* (A supply net that carries other elements but no DC path to ground is a
+* different case and does NOT solve - see GENERIC_OPAMP.spice, where that
+* was measured.) An earlier revision of this file
 * added a resistor across v+/v- on the theory that an unreferenced node
 * needed one; that theory was wrong, and worse, that resistor was what
 * tied the two rails into a floating island with no path to ground,
