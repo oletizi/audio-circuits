@@ -33,6 +33,20 @@ const PACKAGE_PINS: Readonly<Record<ComponentKind, readonly string[]>> = {
   ic: [], connector: [],
 }
 
+/**
+ * Kinds whose pin names are declared by the PART, not by the kind: an IC or a
+ * connector has whatever pins it has.
+ *
+ * Declared explicitly rather than inferred from an empty UNIT_PINS entry. An
+ * inferred version cannot tell a deliberate open vocabulary from a closed one
+ * whose list was left empty by mistake, and would silently stop validating that
+ * kind's pins. The CONSISTENCY test below turns that mistake into a loud failure.
+ */
+const OPEN_VOCABULARY: ReadonlySet<ComponentKind> = new Set(["ic", "connector"])
+
+export const ALL_KINDS: readonly ComponentKind[] =
+  Object.keys(UNIT_PINS) as readonly ComponentKind[]
+
 export function isKnownKind(kind: string): kind is ComponentKind {
   return Object.prototype.hasOwnProperty.call(UNIT_PINS, kind)
 }
@@ -58,5 +72,5 @@ export function packagePins(kind: ComponentKind): readonly string[] {
 /** Kinds whose pin names are declared by the part rather than the kind. */
 export function hasOpenVocabulary(kind: ComponentKind): boolean {
   assertKnown(kind)
-  return UNIT_PINS[kind].length === 0
+  return OPEN_VOCABULARY.has(kind)
 }

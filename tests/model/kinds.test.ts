@@ -1,8 +1,8 @@
 import { test, expect } from "bun:test"
-import { unitPins, packagePins, isKnownKind } from "../../lib/model/kinds.ts"
+import { unitPins, packagePins, isKnownKind, ALL_KINDS, hasOpenVocabulary } from "../../lib/model/kinds.ts"
 
 test("two-terminal passives share the a/b vocabulary", () => {
-  for (const kind of ["resistor", "capacitor", "inductor", "photoresistor"] as const) {
+  for (const kind of ["resistor", "capacitor", "inductor", "photoresistor", "switch"] as const) {
     expect([...unitPins(kind)].sort()).toEqual(["a", "b"])
     expect(packagePins(kind)).toEqual([])
   }
@@ -28,4 +28,14 @@ test("an unknown kind is rejected rather than defaulted", () => {
   expect(isKnownKind("resistor")).toBe(true)
   expect(isKnownKind("flux_capacitor")).toBe(false)
   expect(() => unitPins("flux_capacitor" as never)).toThrow(/unknown component kind/i)
+})
+
+test("open and closed vocabularies are declared consistently for every kind", () => {
+  for (const kind of ALL_KINDS) {
+    if (hasOpenVocabulary(kind)) {
+      expect(unitPins(kind)).toEqual([])
+    } else {
+      expect(unitPins(kind).length).toBeGreaterThan(0)
+    }
+  }
 })
