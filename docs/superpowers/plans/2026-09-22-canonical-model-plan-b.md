@@ -130,8 +130,10 @@ test("a network is the same topology as itself", () => {
 test("provenance is metadata and does not affect topology", () => {
   const withProv: Network = {
     ...divider,
+    // Provenance is { source, location?, note?, unresolved? } — see
+    // lib/model/parameters.ts. There is no `line` field.
     components: divider.components.map((c) => ({
-      ...c, provenance: { source: "test", line: 1 },
+      ...c, provenance: { source: "test", location: "fixture" },
     })),
   }
   expect(() => assertSameTopology(divider, withProv)).not.toThrow()
@@ -276,6 +278,12 @@ export interface ResolvedNetwork {
 
 - [ ] **Step 1: Write the failing tests**
 
+`ControlState` is `{ potPositions, switchPositions }` and **both fields are required** — it is not an empty object. Declare one shared fixture at the top of the tests and use it everywhere a circuit has no controls:
+
+```ts
+const NO_CONTROLS: ControlState = { potPositions: {}, switchPositions: {} }
+```
+
 ```ts
 test("an active device passes through resolution with its structure intact", () => {
   const network: Network = {
@@ -289,7 +297,7 @@ test("an active device passes through resolution with its structure intact", () 
     }],
     ports: { IN: "IN", VCC: "VCC", VEE: "VEE", OUT: "OUT" },
   }
-  const amp = resolveNetwork(network, {}).components.find((c) => c.id === "amp")
+  const amp = resolveNetwork(network, NO_CONTROLS).components.find((c) => c.id === "amp")
   // Package pins stay on the COMPONENT. They are not merged into the unit.
   expect(amp?.pins).toEqual({ "v+": "VCC", "v-": "VEE" })
   expect(amp?.units).toHaveLength(1)
@@ -311,7 +319,7 @@ test("a dual package stays ONE component with two units", () => {
       B_IN: "B_IN", B_FB: "B_FB", B_OUT: "B_OUT",
     },
   }
-  const resolved = resolveNetwork(dual, {})
+  const resolved = resolveNetwork(dual, NO_CONTROLS)
   expect(resolved.components).toHaveLength(1)
   expect(resolved.components[0]?.units.map((u) => u.name)).toEqual(["A", "B"])
 })
@@ -327,7 +335,7 @@ test("a no-connect is omitted from resolved pins, not rendered as a net name", (
     }],
     ports: { IN: "IN", GND: "GND" },
   }
-  const u = resolveNetwork(withNc, {}).components.find((c) => c.id === "u")
+  const u = resolveNetwork(withNc, NO_CONTROLS).components.find((c) => c.id === "u")
   expect(u?.units[0]?.pins).toEqual({ "1": "IN" })
   expect(Object.keys(u?.units[0]?.pins ?? {})).not.toContain("2")
 })
@@ -477,7 +485,17 @@ The last test matters most: it is the difference between a registry of plausible
 
 - [ ] **Step 2: Run and confirm it fails.**
 
-- [ ] **Step 3: Implement.** Store model text in `.spice` files so it is readable and diffable as SPICE, each beginning with a header comment recording origin and terms. Start with `1N4148` and `2N3904`. `deviceModel` throws on an unknown name, listing the registered ones; `allModels()` returns every entry so the invariant tests can sweep.
+- [ ] **Step 3: Implement.** Store model text in `.spice` files so it is readable and diffable as SPICE, each beginning with a header comment recording origin and terms. Register **three** entries:
+
+- `1N4148` — a standard small-signal diode `.model` line, category `discrete`.
+- `2N3904` — a standard NPN `.model` line, category `discrete`.
+- `IDEAL_OPAMP` — a `.subckt` holding an ideal voltage-controlled voltage source with a high input impedance, category `behavioural`, and `pinOrder` declaring `["in+", "in-", "out"]` in the order its `.subckt` line lists them.
+
+**Why `IDEAL_OPAMP` exists and what it is not.** Task 6 must test that the emitter lowers a multi-unit component into one `X` line per unit, sharing package pins. That test needs *a* subcircuit-backed model, and it must not depend on Task 7's real part model — which lands later and may not even be a TL072, since Task 7 can fall back to a generic model. So this is a genuine registry entry, not a fixture: an ideal amplifier is useful wherever an op-amp's non-idealities are irrelevant to the question being asked.
+
+Its provenance line must say exactly that: authored here, an ideal VCVS, **not** a device model, and results computed with it are properties of an ideal amplifier rather than predictions about any real part. A reader who mistakes it for a TL072 model would draw false conclusions from it.
+
+`deviceModel` throws on an unknown name, listing the registered ones; `allModels()` returns every entry so the invariant tests can sweep.
 
 - [ ] **Step 4: Run, confirm, commit.**
 
@@ -507,7 +525,7 @@ test("a diode emits as a SPICE primitive with anode then cathode", () => {
       id: "d1", kind: "diode", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { anode: "IN", cathode: "GND" }, spiceModel: "1N4148" }],
     }],
-  }, ENVIRONMENT)
+  }, environment)
   expect(deck).toMatch(/^Dd1 in gnd 1N4148$/m)
 })
 
@@ -518,7 +536,7 @@ test("a BJT emits collector, base, emitter in SPICE order", () => {
       id: "q1", kind: "bjt", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { collector: "C", base: "B", emitter: "E" }, spiceModel: "2N3904" }],
     }],
-  }, ENVIRONMENT)
+  }, environment)
   expect(deck).toMatch(/^Qq1 c b e 2N3904$/m)
 })
 
@@ -529,11 +547,11 @@ test("a dual package emits one line per unit, sharing its package pins", () => {
       id: "u1", kind: "opamp", parameters: {},
       pins: { "v+": "VCC", "v-": "VEE" },
       units: [
-        { name: "A", pins: { "in+": "AP", "in-": "AN", out: "AO" }, spiceModel: "TESTAMP" },
-        { name: "B", pins: { "in+": "BP", "in-": "BN", out: "BO" }, spiceModel: "TESTAMP" },
+        { name: "A", pins: { "in+": "AP", "in-": "AN", out: "AO" }, spiceModel: "IDEAL_OPAMP" },
+        { name: "B", pins: { "in+": "BP", "in-": "BN", out: "BO" }, spiceModel: "IDEAL_OPAMP" },
       ],
     }],
-  }, ENVIRONMENT)
+  }, environment)
   const lines = deck.split("\n").filter((l) => l.startsWith("Xu1"))
   expect(lines).toHaveLength(2)
   expect(lines[0]).toContain("vcc")
@@ -548,7 +566,7 @@ test("a unit with no spiceModel throws rather than emitting a bare line", () => 
       id: "d1", kind: "diode", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { anode: "A", cathode: "B" } }],
     }],
-  }, ENVIRONMENT)).toThrow(/d1.*no SPICE model/i)
+  }, environment)).toThrow(/d1.*no SPICE model/i)
 })
 
 test("a pin missing from the emitted kind's order throws, naming it", () => {
@@ -558,7 +576,7 @@ test("a pin missing from the emitted kind's order throws, naming it", () => {
       id: "q1", kind: "bjt", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { collector: "C", base: "B" }, spiceModel: "2N3904" }],
     }],
-  }, ENVIRONMENT)).toThrow(/q1.*emitter/i)
+  }, environment)).toThrow(/q1.*emitter/i)
 })
 
 test("resistors and capacitors emit exactly as before", () => {
@@ -567,7 +585,7 @@ test("resistors and capacitors emit exactly as before", () => {
 })
 ```
 
-Read `tests/sim/netlist.test.ts` for the existing `ENVIRONMENT` fixture and R/C assertions and reuse both verbatim. `TESTAMP` needs a registry entry — add a behavioural test-only model, or use whichever real model Task 7 lands and note the dependency in your report.
+Read `tests/sim/netlist.test.ts` for the existing `environment` fixture and R/C assertions and reuse both verbatim. `IDEAL_OPAMP` is registered by Task 5 — use it. Do NOT wait for, or depend on, the real part model that Task 7 lands: Task 7 may legitimately fall back to a generic model, so a dependency in that direction would be backwards.
 
 - [ ] **Step 2: Run and confirm it fails.**
 
