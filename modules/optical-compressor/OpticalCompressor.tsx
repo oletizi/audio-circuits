@@ -63,11 +63,16 @@ export const OpticalCompressor = (props: OpticalCompressorProps) => {
 
   return (
     <group>
-      {/* Power above the audio row, sidechain below it. */}
+      {/* Three bands: supply above the audio row, sidechain below it.
+          The bands are the CODE's structure, not the circuit's - see
+          PowerSection, whose VBIAS/U2 block sits in the sidechain region
+          because that is where U2's section A is used. Connectors are
+          likewise placed by what they connect to, not by sheet edge: the
+          two pots sit against the makeup stage they wrap around. */}
       <PowerSection
         name={name}
-        schX={schX - 4}
-        schY={schY + 13}
+        schX={schX - 8}
+        schY={schY + 9}
         pcbX={pcbX - 10}
         pcbY={pcbY - 25}
       />
@@ -91,8 +96,8 @@ export const OpticalCompressor = (props: OpticalCompressorProps) => {
         sidechainGainResistance={sidechainGainResistance}
         sidechainBiasResistance={sidechainBiasResistance}
         sidechainCouplingCap={sidechainCouplingCap}
-        schX={schX - 2}
-        schY={schY - 13}
+        schX={schX - 4}
+        schY={schY - 8}
         pcbX={pcbX - 5}
         pcbY={pcbY + 25}
       />
@@ -100,36 +105,36 @@ export const OpticalCompressor = (props: OpticalCompressorProps) => {
       {/* === External connectors === */}
       <ScrewTerminal2
         name={`${name}_J_IN`}
-        schX={schX - 16}
+        schX={schX - 11.6}
         schY={schY}
         pcbX={pcbX - 45}
         pcbY={pcbY}
       />
       <ScrewTerminal2
         name={`${name}_J_OUT`}
-        schX={schX + 16}
+        schX={schX + 7.5}
         schY={schY}
         pcbX={pcbX + 45}
         pcbY={pcbY}
       />
       <ScrewTerminal2
         name={`${name}_J_PWR`}
-        schX={schX - 16}
-        schY={schY + 14}
+        schX={schX - 13}
+        schY={schY + 9.5}
         pcbX={pcbX - 45}
         pcbY={pcbY - 25}
       />
       <PotTerminal
         name={`${name}_J_PEAK`}
-        schX={schX - 16}
-        schY={schY - 14}
+        schX={schX - 10.5}
+        schY={schY - 2.5}
         pcbX={pcbX - 45}
         pcbY={pcbY + 25}
       />
       <PotTerminal
         name={`${name}_J_GAIN`}
-        schX={schX + 16}
-        schY={schY - 14}
+        schX={schX - 1}
+        schY={schY - 2}
         pcbX={pcbX + 45}
         pcbY={pcbY + 25}
       />

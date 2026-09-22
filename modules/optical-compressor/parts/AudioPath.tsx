@@ -51,7 +51,9 @@ export const AudioPath = (props: AudioPathProps) => {
     pcbX = 0,
     pcbY = 0,
   } = props
-  const g = createGrid(schX, schY, 2)
+  // Grid size 1, so a column/row number IS a schematic unit. Row counts
+  // DOWNWARD, which is how a reader scans a sheet.
+  const g = createGrid(schX, schY, 1)
 
   return (
     <group>
@@ -70,7 +72,7 @@ export const AudioPath = (props: AudioPathProps) => {
         footprint="0805"
         pcbX={pcbX - 28}
         pcbY={pcbY}
-        {...g.signal(-5)}
+        {...g.at(-9.5, -0.1)}
       />
       <resistor
         name={`${name}_R_IN_BIAS`}
@@ -79,7 +81,7 @@ export const AudioPath = (props: AudioPathProps) => {
         schRotation="90deg"
         pcbX={pcbX - 24}
         pcbY={pcbY + 5}
-        {...g.below(-4, 1)}
+        {...g.at(-8, 2)}
       />
 
       {/* --- Audio op-amp package (A: buffer, B: makeup) --- */}
@@ -87,7 +89,7 @@ export const AudioPath = (props: AudioPathProps) => {
         name={`${name}_U1`}
         pcbX={pcbX - 14}
         pcbY={pcbY}
-        {...g.signal(-2)}
+        {...g.at(-6, 0)}
       />
       <capacitor
         name={`${name}_C_U1_DEC`}
@@ -95,7 +97,7 @@ export const AudioPath = (props: AudioPathProps) => {
         footprint="0805"
         pcbX={pcbX - 14}
         pcbY={pcbY - 6}
-        {...g.above(-2, 2)}
+        {...g.at(-6, -2.5)}
       />
 
       {/* --- Optical attenuator --- */}
@@ -105,14 +107,14 @@ export const AudioPath = (props: AudioPathProps) => {
         footprint="0805"
         pcbX={pcbX - 4}
         pcbY={pcbY}
-        {...g.signal(0)}
+        {...g.at(-3.2, -0.9)}
       />
       <Vactrol
         name={`${name}_VACTROL`}
         footprint={vactrolFootprint}
         pcbX={pcbX}
         pcbY={pcbY + 8}
-        {...g.below(0, 2)}
+        {...g.at(1.5, 4)}
       />
 
       {/* --- Makeup gain network --- */}
@@ -123,7 +125,7 @@ export const AudioPath = (props: AudioPathProps) => {
         schRotation="90deg"
         pcbX={pcbX + 8}
         pcbY={pcbY + 5}
-        {...g.below(2, 1)}
+        {...g.at(-3, 3.5)}
       />
 
       {/* --- Output coupling --- */}
@@ -133,7 +135,7 @@ export const AudioPath = (props: AudioPathProps) => {
         footprint="1206"
         pcbX={pcbX + 20}
         pcbY={pcbY}
-        {...g.signal(4)}
+        {...g.at(3, 0)}
       />
       <resistor
         name={`${name}_R_OUT_PD`}
@@ -142,7 +144,7 @@ export const AudioPath = (props: AudioPathProps) => {
         schRotation="90deg"
         pcbX={pcbX + 25}
         pcbY={pcbY + 5}
-        {...g.below(5, 1)}
+        {...g.at(5, 1.5)}
       />
 
       {/* --- Test points --- */}
@@ -150,19 +152,19 @@ export const AudioPath = (props: AudioPathProps) => {
         name={`${name}_TP_IN_BUF`}
         pcbX={pcbX - 10}
         pcbY={pcbY - 8}
-        {...g.above(-1, 2)}
+        {...g.at(-8, -2)}
       />
       <TestPoint
         name={`${name}_TP_GR`}
         pcbX={pcbX + 2}
         pcbY={pcbY - 8}
-        {...g.above(1, 2)}
+        {...g.at(-1, -2)}
       />
       <TestPoint
         name={`${name}_TP_MAKEUP_OUT`}
         pcbX={pcbX + 16}
         pcbY={pcbY - 8}
-        {...g.above(3, 2)}
+        {...g.at(-2.8, 0.1)}
       />
       {/* Rail references, so bench probing and tests can confirm a node
           really lands on the buffered reference rather than a stub. */}
@@ -170,13 +172,13 @@ export const AudioPath = (props: AudioPathProps) => {
         name={`${name}_TP_VBIAS_CHK`}
         pcbX={pcbX + 2}
         pcbY={pcbY + 14}
-        {...g.below(1, 3)}
+        {...g.at(4, 3.5)}
       />
       <TestPoint
         name={`${name}_TP_GND_CHK`}
         pcbX={pcbX + 25}
         pcbY={pcbY + 10}
-        {...g.below(5, 2)}
+        {...g.at(7, 1.5)}
       />
 
       {/* === Input: IN -> C_IN -> IN_BUF (biased to VBIAS) === */}

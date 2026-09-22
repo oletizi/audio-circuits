@@ -33,7 +33,20 @@ export interface PowerSectionProps {
 
 export const PowerSection = (props: PowerSectionProps) => {
   const { name, schX = 0, schY = 0, pcbX = 0, pcbY = 0 } = props
-  const g = createGrid(schX, schY, 2)
+  // TWO grids, because this part serves two electrically distant places.
+  //
+  // `g` is the supply-input block: connector, protection diode, reservoir.
+  // `gb` is the VBIAS generator and the U2 package. U2's section A is the
+  // sidechain amplifier, so the package and the divider that feeds its
+  // section-B buffer belong beside the sidechain, not beside the reservoir
+  // caps. Keeping them here purely because the code declares them here put
+  // four of the drawing's longest connections on one part. The offset is
+  // the measured consequence of that: 15 units down from the supply block,
+  // level with the sidechain's input network.
+  //
+  // Grid size is 1, so a column/row number IS a schematic unit.
+  const g = createGrid(schX, schY, 1)
+  const gb = createGrid(schX, schY - 15, 1)
 
   return (
     <group>
@@ -51,7 +64,7 @@ export const PowerSection = (props: PowerSectionProps) => {
         manufacturerPartNumber="1N5817"
         pcbX={pcbX - 20}
         pcbY={pcbY}
-        {...g.signal(-4)}
+        {...g.at(-2, -0.5)}
       />
       <capacitor
         name={`${name}_C_BULK`}
@@ -59,7 +72,7 @@ export const PowerSection = (props: PowerSectionProps) => {
         footprint="1206"
         pcbX={pcbX - 14}
         pcbY={pcbY + 4}
-        {...g.below(-3, 1)}
+        {...g.at(0, -0.5)}
       />
       <capacitor
         name={`${name}_C_HF`}
@@ -67,7 +80,7 @@ export const PowerSection = (props: PowerSectionProps) => {
         footprint="0805"
         pcbX={pcbX - 10}
         pcbY={pcbY + 4}
-        {...g.below(-2, 1)}
+        {...g.at(2, -0.5)}
       />
 
       {/* --- Half-supply divider --- */}
@@ -75,10 +88,14 @@ export const PowerSection = (props: PowerSectionProps) => {
         name={`${name}_R_BIAS1`}
         resistance="47k"
         footprint="0805"
-        schRotation="90deg"
+        /* 270deg, not 90: this turns pin1 (9V_PROT) to the TOP and pin2
+           (VBIAS_RAW) to the BOTTOM, so the divider reads supply-down and
+           the midpoint sits level with R_BIAS2's, which lets the renderer
+           wire it instead of emitting a second VBIAS_RAW label. */
+        schRotation="270deg"
         pcbX={pcbX - 4}
         pcbY={pcbY - 4}
-        {...g.above(-1, 1)}
+        {...gb.at(-5, -1.4)}
       />
       <resistor
         name={`${name}_R_BIAS2`}
@@ -87,7 +104,7 @@ export const PowerSection = (props: PowerSectionProps) => {
         schRotation="90deg"
         pcbX={pcbX - 4}
         pcbY={pcbY + 4}
-        {...g.below(-1, 1)}
+        {...gb.at(-3.4, -1.4)}
       />
       <capacitor
         name={`${name}_C_BIAS`}
@@ -96,7 +113,7 @@ export const PowerSection = (props: PowerSectionProps) => {
         schRotation="90deg"
         pcbX={pcbX}
         pcbY={pcbY + 4}
-        {...g.below(0, 1)}
+        {...gb.at(-1.8, -1.4)}
       />
       <capacitor
         name={`${name}_C_BIAS_HF`}
@@ -105,7 +122,7 @@ export const PowerSection = (props: PowerSectionProps) => {
         schRotation="90deg"
         pcbX={pcbX + 3}
         pcbY={pcbY + 4}
-        {...g.below(1, 1)}
+        {...gb.at(-0.2, -1.4)}
       />
 
       {/* --- Control-side op-amp package (A: sidechain, B: VBIAS buffer) --- */}
@@ -113,7 +130,7 @@ export const PowerSection = (props: PowerSectionProps) => {
         name={`${name}_U2`}
         pcbX={pcbX + 10}
         pcbY={pcbY}
-        {...g.signal(3)}
+        {...gb.at(0.5, 2)}
       />
       <capacitor
         name={`${name}_C_U2_DEC`}
@@ -121,7 +138,7 @@ export const PowerSection = (props: PowerSectionProps) => {
         footprint="0805"
         pcbX={pcbX + 10}
         pcbY={pcbY - 5}
-        {...g.above(3, 1)}
+        {...gb.at(2, -3.8)}
       />
 
       {/* --- Test points --- */}
@@ -129,19 +146,19 @@ export const PowerSection = (props: PowerSectionProps) => {
         name={`${name}_TP_9V`}
         pcbX={pcbX - 8}
         pcbY={pcbY - 6}
-        {...g.above(-2, 2)}
+        {...g.at(0, -2.5)}
       />
       <TestPoint
         name={`${name}_TP_VBIAS`}
         pcbX={pcbX + 16}
         pcbY={pcbY}
-        {...g.signal(5)}
+        {...gb.at(3, 0.5)}
       />
       <TestPoint
         name={`${name}_TP_GND`}
         pcbX={pcbX - 8}
         pcbY={pcbY + 8}
-        {...g.below(-2, 2)}
+        {...g.at(-2, 1.5)}
       />
 
       {/* === Protection: RAW -> D_PROT -> PROTECTED === */}

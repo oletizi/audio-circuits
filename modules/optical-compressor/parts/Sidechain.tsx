@@ -60,7 +60,11 @@ export const Sidechain = (props: SidechainProps) => {
     pcbX = 0,
     pcbY = 0,
   } = props
-  const g = createGrid(schX, schY, 2)
+  // Grid size 1, so a column/row number IS a schematic unit. Row counts
+  // DOWNWARD. The block runs left to right: pot interface and U2's
+  // section-A gain network, then the detector, then the LED driver, whose
+  // output lands on the vactrol's LED pins in AudioPath.
+  const g = createGrid(schX, schY, 1)
 
   return (
     <group>
@@ -85,7 +89,7 @@ export const Sidechain = (props: SidechainProps) => {
         schRotation="90deg"
         pcbX={pcbX - 24}
         pcbY={pcbY + 5}
-        {...g.below(-4, 1)}
+        {...g.at(-6, -0.5)}
       />
 
       {/* --- Sidechain amplifier gain network (U2 section A) --- */}
@@ -96,7 +100,7 @@ export const Sidechain = (props: SidechainProps) => {
         schRotation="90deg"
         pcbX={pcbX - 14}
         pcbY={pcbY + 5}
-        {...g.below(-3, 1)}
+        {...g.at(-7.5, 0.5)}
       />
       <resistor
         name={`${name}_R_SC_F`}
@@ -104,7 +108,7 @@ export const Sidechain = (props: SidechainProps) => {
         footprint="0805"
         pcbX={pcbX - 14}
         pcbY={pcbY - 5}
-        {...g.above(-3, 1)}
+        {...g.at(-6, 2)}
       />
 
       {/* --- Detector --- */}
@@ -114,7 +118,7 @@ export const Sidechain = (props: SidechainProps) => {
         footprint="0805"
         pcbX={pcbX - 6}
         pcbY={pcbY}
-        {...g.signal(-1)}
+        {...g.at(-1.5, 0)}
       />
       <diode
         name={`${name}_D_DET`}
@@ -122,7 +126,7 @@ export const Sidechain = (props: SidechainProps) => {
         manufacturerPartNumber="1N4148"
         pcbX={pcbX}
         pcbY={pcbY}
-        {...g.signal(0)}
+        {...g.at(0.5, 0)}
       />
       <capacitor
         name={`${name}_C_DET`}
@@ -131,7 +135,7 @@ export const Sidechain = (props: SidechainProps) => {
         schRotation="90deg"
         pcbX={pcbX + 4}
         pcbY={pcbY + 5}
-        {...g.below(1, 1)}
+        {...g.at(0.5, 2)}
       />
       <resistor
         name={`${name}_R_REL`}
@@ -140,7 +144,7 @@ export const Sidechain = (props: SidechainProps) => {
         schRotation="90deg"
         pcbX={pcbX + 8}
         pcbY={pcbY + 5}
-        {...g.below(2, 1)}
+        {...g.at(-1, 2)}
       />
 
       {/* --- LED driver --- */}
@@ -150,7 +154,7 @@ export const Sidechain = (props: SidechainProps) => {
         footprint="0805"
         pcbX={pcbX + 12}
         pcbY={pcbY}
-        {...g.signal(3)}
+        {...g.at(2.5, 0)}
       />
       <resistor
         name={`${name}_R_B_PD`}
@@ -159,7 +163,7 @@ export const Sidechain = (props: SidechainProps) => {
         schRotation="90deg"
         pcbX={pcbX + 16}
         pcbY={pcbY + 5}
-        {...g.below(4, 1)}
+        {...g.at(3, 2)}
       />
       {/* manufacturerPartNumber is NOT applied here: verified that
           tscircuit's <transistor> component accepts the prop (no schema
@@ -173,7 +177,7 @@ export const Sidechain = (props: SidechainProps) => {
         footprint="sot23"
         pcbX={pcbX + 22}
         pcbY={pcbY}
-        {...g.signal(5)}
+        {...g.at(4.5, 0.5)}
       />
       {/* THE revision-3 fix. See the header comment. */}
       <resistor
@@ -183,16 +187,15 @@ export const Sidechain = (props: SidechainProps) => {
         schRotation="90deg"
         pcbX={pcbX + 22}
         pcbY={pcbY + 8}
-        {...g.below(5, 2)}
+        {...g.at(6, 1.5)}
       />
       <resistor
         name={`${name}_R_LED`}
         resistance={ledResistance}
         footprint="0805"
-        schRotation="90deg"
         pcbX={pcbX + 22}
         pcbY={pcbY - 10}
-        {...g.above(5, 3)}
+        {...g.at(2.8, -4.1)}
       />
       <resistor
         name={`${name}_R_SENSE`}
@@ -201,7 +204,7 @@ export const Sidechain = (props: SidechainProps) => {
         schRotation="90deg"
         pcbX={pcbX + 22}
         pcbY={pcbY - 4}
-        {...g.above(5, 1)}
+        {...g.at(3.5, -2)}
       />
 
       {/* --- Test points --- */}
@@ -209,7 +212,7 @@ export const Sidechain = (props: SidechainProps) => {
         name={`${name}_TP_SC_OUT`}
         pcbX={pcbX - 10}
         pcbY={pcbY - 8}
-        {...g.above(-2, 2)}
+        {...g.at(-3, 2.5)}
       />
       {/* Spec 8.6.2: pads left for probing the withdrawn precision-
           rectifier topology on the bench. */}
@@ -217,37 +220,37 @@ export const Sidechain = (props: SidechainProps) => {
         name={`${name}_TP_SC_INV`}
         pcbX={pcbX - 14}
         pcbY={pcbY - 9}
-        {...g.above(-3, 2)}
+        {...g.at(-8.5, 1)}
       />
       <TestPoint
         name={`${name}_TP_DET`}
         pcbX={pcbX + 4}
         pcbY={pcbY - 8}
-        {...g.above(1, 2)}
+        {...g.at(3, -1)}
       />
       <TestPoint
         name={`${name}_TP_SENSE_HI`}
         pcbX={pcbX + 27}
         pcbY={pcbY - 6}
-        {...g.above(6, 2)}
+        {...g.at(6.5, -2)}
       />
       <TestPoint
         name={`${name}_TP_SENSE_LO`}
         pcbX={pcbX + 27}
         pcbY={pcbY - 2}
-        {...g.above(6, 1)}
+        {...g.at(1.5, -2)}
       />
       <TestPoint
         name={`${name}_TP_VBIAS_SC`}
         pcbX={pcbX - 20}
         pcbY={pcbY + 12}
-        {...g.below(-4, 3)}
+        {...g.at(-5, 3)}
       />
       <TestPoint
         name={`${name}_TP_GND_SC`}
         pcbX={pcbX + 12}
         pcbY={pcbY + 12}
-        {...g.below(3, 3)}
+        {...g.at(8, -2.5)}
       />
 
       {/* === Wiper -> sidechain amp + input, with 1M fail-safe to VBIAS === */}
