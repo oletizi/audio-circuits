@@ -72,7 +72,14 @@ export function parseSexpr(text: string): SNode {
     }
   }
 
-  return readNode()
+  const root = readNode()
+  skipSpace()
+  if (i < text.length) {
+    throw new Error(
+      `unexpected trailing input at offset ${i}: "${text.slice(i, i + 40)}"`,
+    )
+  }
+  return root
 }
 
 export function children(node: SNode, name: string): readonly SNode[] {

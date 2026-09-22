@@ -112,6 +112,29 @@ test("empty prefix is rejected", () => {
   ).toThrow(/include prefix must not be empty/i)
 })
 
+// include() binds declared ports to parent nets; it does not require those
+// bindings be distinct. Binding two of a child's ports to the SAME parent net
+// is electrically legitimate (it deliberately shorts them together) and must
+// stay legal - a future validation change could otherwise reject it, or
+// someone could do it by accident and be surprised it "worked". This test
+// documents the behavior as intentional: it is a topology change, not a mere
+// rename, and include() is allowed to make one.
+test("include() deliberately allows two child ports to be shorted onto one parent net", () => {
+  const n = circuit()
+    .include("x", divider(), { IN: "SIG", OUT: "SIG", GND: "GROUND" })
+    .port("SIG", "SIG").port("GROUND", "GROUND")
+    .done()
+
+  const top = n.components.find((c) => c.id === "x_top")
+  const bottom = n.components.find((c) => c.id === "x_bottom")
+
+  // IN and OUT were bound to the same parent net ("SIG"), so both the
+  // resistor pin that was IN and the one that was OUT land on that one net -
+  // the two child ports are shorted together, as bound.
+  expect(top?.units[0]?.pins.a).toEqual({ kind: "net", net: "SIG" })
+  expect(bottom?.units[0]?.pins.a).toEqual({ kind: "net", net: "SIG" })
+})
+
 test("package pins are renamed: bound takes parent net, unbound gains prefix", () => {
   const subCircuit = circuit()
     .add({

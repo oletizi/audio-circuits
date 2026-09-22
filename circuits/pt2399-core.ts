@@ -99,33 +99,51 @@ export function pt2399Core(): Network {
     .capacitor("output_coupling_cap", "10uF", { a: "Net-(C10-Pad1)", b: "OUTPUT" })
 
     // The delay IC. Pin names are the PT2399's pin numbers, as strings.
-    .ic("delay_ic", {
-      "1": "+5V",
-      "2": "Net-(U1-REF)",
-      "3": "GND",
-      "4": "GND",
-      "5": "unconnected-(U1-CLK_O-Pad5)",
-      "6": "VCO",
-      "7": "Net-(U1-CC1)",
-      "8": "Net-(U1-CC0)",
-      "9": "Net-(U1-OP1-OUT)",
-      "10": "Net-(U1-OP1-IN)",
-      "11": "Net-(U1-OP2-IN)",
-      "12": "Net-(U1-OP2-OUT)",
-      "13": "Net-(U1-LPF2-IN)",
-      "14": "Net-(U1-LPF2-OUT)",
-      "15": "Net-(U1-LPF1-OUT)",
-      "16": "Net-(U1-LPF1-IN)",
-    })
+    // "PT2399" is a genuine manufacturer part number (Princeton Technology),
+    // so it belongs in part.mpn; "Audio:PT2399" is the KiCad symbol library
+    // id the modern netlist's (libsource (lib "Audio") (part "PT2399"))
+    // records for U1.
+    .ic(
+      "delay_ic",
+      {
+        "1": "+5V",
+        "2": "Net-(U1-REF)",
+        "3": "GND",
+        "4": "GND",
+        "5": "unconnected-(U1-CLK_O-Pad5)",
+        "6": "VCO",
+        "7": "Net-(U1-CC1)",
+        "8": "Net-(U1-CC0)",
+        "9": "Net-(U1-OP1-OUT)",
+        "10": "Net-(U1-OP1-IN)",
+        "11": "Net-(U1-OP2-IN)",
+        "12": "Net-(U1-OP2-OUT)",
+        "13": "Net-(U1-LPF2-IN)",
+        "14": "Net-(U1-LPF2-OUT)",
+        "15": "Net-(U1-LPF1-OUT)",
+        "16": "Net-(U1-LPF1-IN)",
+      },
+      { mpn: "PT2399", symbol: "Audio:PT2399" },
+    )
 
     // The external header. Pin names are the connector's pin numbers, as strings.
-    .connector("power_signal_header", {
-      "1": "+5V",
-      "2": "GND",
-      "3": "VCO",
-      "4": "OUTPUT",
-      "5": "INPUT",
-    })
+    // "Conn_01x05" is a KiCad generic-connector *symbol* name, not a
+    // manufacturer part number - there is no genuine MPN for a generic
+    // 5-pin header, so it belongs in part.symbol, not part.mpn.
+    // "Connector_Generic:Conn_01x05" is the KiCad symbol library id the
+    // modern netlist's (libsource (lib "Connector_Generic") (part
+    // "Conn_01x05")) records for J1.
+    .connector(
+      "power_signal_header",
+      {
+        "1": "+5V",
+        "2": "GND",
+        "3": "VCO",
+        "4": "OUTPUT",
+        "5": "INPUT",
+      },
+      { symbol: "Connector_Generic:Conn_01x05" },
+    )
 
     // Ports: every net that leaves the board, plus the floating CLK_O pin's
     // placeholder net (a single-pin net needs one to satisfy validation - see

@@ -52,23 +52,34 @@ test("every component in the built unit is present, with its value", async () =>
       throw new Error(`no authored component maps to designator "${c.designator}"`)
     }
 
-    // The PT2399 (ic) and the header (connector) carry a part name in the
-    // netlist's "value" field (e.g. "PT2399", "Conn_01x05"), not a quantity -
-    // there is nothing numeric to compare for these kinds, so they are
-    // skipped explicitly rather than falling through a numeric check by
-    // accident.
-    if (authored.kind === "ic" || authored.kind === "connector") continue
-
-    const expected = parseValue(c.value)
     const label = `${c.designator} (${authored.kind}, netlist value "${c.value}")`
+
+    // The netlist's "value" field means something different per kind, and
+    // that mapping is made explicit here rather than left implicit:
+    //   - resistor / capacitor: value is a quantity -> compare to parameters.
+    //   - ic: value is the part's genuine manufacturer part number
+    //     (e.g. "PT2399") -> compare to part.mpn.
+    //   - connector: value is a KiCad generic-connector *symbol* name
+    //     (e.g. "Conn_01x05"), not a manufacturer part number -> compare to
+    //     the part name half of part.symbol ("Lib:Part").
+    // The final `else { throw }` guard means a future kind cannot silently
+    // fall out of this check.
     if (authored.kind === "resistor" && "ohms" in authored.parameters) {
+      const expected = parseValue(c.value)
       expect(authored.parameters.ohms, label).toBe(expected)
     } else if (authored.kind === "capacitor" && "farads" in authored.parameters) {
+      const expected = parseValue(c.value)
       expect(authored.parameters.farads, label).toBe(expected)
+    } else if (authored.kind === "ic") {
+      expect(authored.part?.mpn, label).toBe(c.value)
+    } else if (authored.kind === "connector") {
+      const symbol = authored.part?.symbol
+      const symbolPart = symbol?.split(":").at(-1)
+      expect(symbolPart, label).toBe(c.value)
     } else {
       throw new Error(
-        `component "${c.designator}" (kind "${authored.kind}") has no numeric ` +
-          "parameter this test knows how to compare",
+        `component "${c.designator}" (kind "${authored.kind}") has no part ` +
+          "identity this test knows how to compare",
       )
     }
   }

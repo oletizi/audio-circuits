@@ -31,3 +31,21 @@ test("a quoted form name parses as that name", () => {
   const node = parseSexpr(`("weird name" (x "1"))`)
   expect(node.name).toBe("weird name")
 })
+
+test("trailing garbage after the root form throws rather than being discarded", () => {
+  expect(() => parseSexpr(`(root (a "1")) THIS SHOULD NOT BE HERE`)).toThrow(/trailing/i)
+})
+
+test("a second top-level form throws rather than being silently discarded", () => {
+  expect(() => parseSexpr(`(root) (second-form)`)).toThrow(/trailing/i)
+})
+
+test("a stray close paren after the root form throws", () => {
+  expect(() => parseSexpr(`(root) )`)).toThrow(/trailing/i)
+})
+
+test("trailing whitespace and newlines after the root form still parse", () => {
+  const node = parseSexpr(`(root (a "1"))\n\n`)
+  expect(node.name).toBe("root")
+  expect(attr(node, "a")).toBe("1")
+})
