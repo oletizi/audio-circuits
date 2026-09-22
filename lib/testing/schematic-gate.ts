@@ -90,7 +90,12 @@ export const BASELINES: Readonly<Record<string, Baseline>> = {
     nonRailLabels: 7,
     labelCollisions: 1,
     wireCrossings: 0,
-    longHopFraction: 0.267,
+    // 4 long hops of 15. Written at full precision, not as 0.267: a baseline
+    // rounded UP sits above the measured value by more than the 1e-9
+    // tolerance, so checkStaleBaseline fires on every run and can never be
+    // cleared. A permanently-firing alarm trains readers to ignore the
+    // mechanism that protects every other metric.
+    longHopFraction: 0.26666666666666666,
     componentAreaPerComponent: 31.9,
     drawingAreaPerComponent: 35.8,
   },
