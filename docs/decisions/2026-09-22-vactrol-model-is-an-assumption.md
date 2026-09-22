@@ -54,10 +54,18 @@ sense resistor, 2N3904 with a 1 kΩ emitter resistor:
 
 Two things to read from this.
 
-LED current is almost insensitive to the forward drop — 0.087 % across the whole
-range — because the emitter resistor makes the stage a current sink: I_E is
-approximately (V_DET − V_BE) / R_E. Any concern about the forward drop distorting
-LED current is aimed at the wrong quantity.
+In this driver stage, LED current is largely insensitive to the forward drop,
+because the emitter resistor makes it a current sink: I_E is approximately
+(V_DET − V_BE) / R_E. Swapping the bare `1N4148` for the 1.5 V junction moves the
+current by 0.087 %; going all the way to 2.2 V moves it by 1.7 %. So a concern
+about the forward drop distorting LED current is aimed at the wrong quantity
+**here**.
+
+That holds only because of the transistor. In a passive branch — rail through
+R_LED straight into the LED, no transistor — the forward drop sets the current
+directly, and the same spread moves it by 0.26–0.46 mA on a 1.5 mA target. Both
+statements are true of different circuits, and the qualifier is the whole content
+of the claim.
 
 The forward drop lands on V_CE instead, and §8.7.2 allocates only 0.74 V there. The
 1.5 V row reproduces that allocation, so the specification's own budget is
@@ -71,6 +79,25 @@ Note also that §8.7.2 already requires the LED *current* at which a candidate
 vactrol reaches 10 kΩ to be read from its datasheet, while treating the 1.5 V
 forward voltage as settled. On these numbers the forward voltage deserves the same
 treatment, because the headroom has no room to absorb it being wrong.
+
+### The stated forward voltage is exact at one current only
+
+The stand-in is a silicon junction plus a fixed offset, and the offset is computed
+to make the branch drop correct at `fullDriveAmps`. A real junction's drop is
+current-dependent, so below that point the branch drops less than the stated value.
+Measured, for 1.5 V stated with full drive at 2 mA:
+
+| I_LED | branch drop | error against the stated 1.5 V |
+|---|---|---|
+| 1.5 mA | 1.4855 V | −0.97 % |
+| 0.5 mA | 1.4307 V | −4.62 % |
+| 0.1 mA | 1.3511 V | −9.93 % |
+| 0.05 mA | 1.3169 V | −12.21 % |
+
+This matters for the measurement plan below, whose sampling is deliberately densest
+between 0.05 and 0.5 mA — precisely where the stand-in is furthest off. It is a
+limitation of the stand-in, not of the measurements: real readings taken there are
+exactly what replaces it.
 
 ## What to measure, when the time comes
 
