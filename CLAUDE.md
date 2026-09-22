@@ -70,10 +70,22 @@ the only place the two vocabularies meet.
 
 Each component kind declares its pin vocabulary in `lib/model/kinds.ts`: a
 resistor has `a`/`b`, an op-amp unit has `in+`/`in-`/`out` with `v+`/`v-` on the
-package. A kind declares the vocabulary and NOTHING else - which KiCad pin number
-or SPICE argument position a pin maps to is a property of a concrete symbol,
-package or model, and lives there. `ic`, `connector` and `switch` have open
-vocabularies, because their pins are whatever the part has.
+package. A kind declares the vocabulary - which KiCad pin number or footprint pad
+a pin maps to is a property of a concrete symbol or package, and lives there.
+`ic`, `connector` and `switch` have open vocabularies, because their pins are
+whatever the part has.
+
+SPICE argument order follows the same rule, with ONE principled exception. For a
+kind emitted as a SPICE PRIMITIVE - resistor, capacitor, inductor, photoresistor,
+diode, bjt - SPICE itself fixes the order (`D` is anode then cathode, `Q` is
+collector, base, emitter), so it is a property of the SPICE language rather than
+of any model, and `SPICE_PIN_ORDER` in `lib/model/kinds.ts` keys it by kind. For
+a subcircuit-backed kind it is a property of the concrete model, because two
+macromodels of one kind may order their pins differently, so it lives on the
+model entry (`DeviceModel.pinOrder`) and `spicePinOrder` refuses those kinds
+rather than inventing an order. Spec 3.5 states the rule without this exception;
+the deviation is recorded in
+`docs/superpowers/plans/2026-09-22-canonical-model-plan-b.md`.
 
 ### Multi-section packages
 

@@ -35,6 +35,22 @@ Spec §9.2 assigns rung 7 — dependency removal — to Plan C. **This plan does
 
 After Plan A, `modules/opamp-buffer/` is the only remaining tscircuit consumer. Task 7 ports it, leaving `lib/chips/`, `lib/connectors/`, `lib/layout.ts`, `index.circuit.tsx`, `tscircuit.config.json` and the dependency supporting nothing. Deferring their removal would leave the repository in the half-migrated state the one-model rule exists to prevent, and would make Plan C — which the spec requires to stay independently killable — the only route to a coherent state.
 
+### §3.5: SPICE argument order lives on a kind, for six primitive kinds
+
+Spec §3.5 (line 243) assigns "canonical pin → SPICE argument position" to **the model entry (§5.2)**, without exception. **Task 6 put it on the kind for the six kinds emitted as SPICE primitives** — resistor, capacitor, inductor, photoresistor, diode, bjt — in `SPICE_PIN_ORDER` (`lib/model/kinds.ts`).
+
+The reason is that SPICE itself fixes those orders. A `D` line is always anode then cathode; a `Q` line is always collector, base, emitter. That order is a property of the SPICE language, not of any one model, and there is no model entry it could live on: a `diode` emitted against `1N4148` and one emitted against any other `.model` line take the same argument order. Putting it on the model entry would mean restating one fixed fact once per registered model, with nothing to catch a restatement that disagreed.
+
+The split the spec describes is preserved everywhere it applies: **subcircuit-backed kinds are deliberately absent** from `SPICE_PIN_ORDER`, because two macromodels of one kind may order their pins differently. Their order lives on `DeviceModel.pinOrder`, and `spicePinOrder` throws for them rather than inventing one.
+
+`lib/model/kinds.ts`'s header and `CLAUDE.md` both now state the rule together with this exception. **The spec itself is left as written** — it is the owner's document, and ratifying or rejecting this deviation is the owner's call. If it is rejected, the alternative is a per-model `pinOrder` on every primitive model entry plus a check that they all agree.
+
+### §4: the `opamp()` builder shorthand was never implemented
+
+Spec §4 illustrates authoring a dual op-amp as `n.opamp("sidechain_amp", { part, supply, units })`. **No such method exists on `Builder`.** All three op-amp sites — `circuits/opamp-buffer.ts`, `circuits/optical-compressor/parts/audio-path.ts` and `.../sidechain.ts` — use `add()` with the full `Component` literal, and each says so at the call site. `CLAUDE.md` states the rule the code follows: the builder has shorthands for the two-terminal passives plus `ic()` and `connector()`, and anything else goes in through `add()`.
+
+The reason is that `add()` already expresses everything the shorthand would, and a shorthand that took `units` as a literal would mostly be a rename. That is a judgement, not a requirement, and the cost is real: **someone reading the spec to author a fourth circuit will reach for a method that does not exist.** Recorded here rather than fixed in the spec, which is the owner's document. Either adding `opamp()` or striking the illustration from §4 closes it; both are the owner's call.
+
 ## Global Constraints
 
 - **One model.** Exactly one way to describe a circuit, repository-wide.

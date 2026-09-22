@@ -111,9 +111,20 @@ function unitRef(component: ResolvedComponent, unit: ResolvedUnit): string {
 }
 
 /** Every pin visible to one unit: the component's package pins merged with the unit's
- * own. That is how a dual op-amp's two sections share one supply. The unit's pins are
- * spread second, so a unit pin wins over a package pin of the same name - asserted by
- * construction rather than left to the caller's key ordering.
+ * own. That is how a dual op-amp's two sections share one supply.
+ *
+ * A NAME ON BOTH SIDES IS A DEFECT, and this merge does not detect it: the unit's pins
+ * are spread second, so a unit pin silently wins and the package pin's net never reaches
+ * the device line. Measured on an op-amp whose unit re-declared `v+`: the line emitted as
+ * `Xu1 IN OUT OUT LOST 0 GENERIC_OPAMP`, with the unit's net in the supply position and
+ * the package's nowhere on it.
+ *
+ * `validateNetwork` (lib/model/validate.ts) rejects the collision, and every network built
+ * through `Builder` runs it at `done()`. A hand-built `Network` literal handed straight to
+ * `resolveNetwork` does NOT - that path never calls `validateNetwork` - so the guarantee
+ * this function relies on holds for authored circuits and not for every possible input.
+ * `control-state.ts`'s `terminals()` is the backstop on that path, for the single-unit
+ * pot and switch shapes it covers.
  */
 function visiblePins(
   component: ResolvedComponent,

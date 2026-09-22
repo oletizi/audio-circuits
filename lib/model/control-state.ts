@@ -56,6 +56,12 @@ export interface ResolvedNetwork {
  * exactly what lets them address a pin by name without caring whether it came from
  * the package or the unit. Throws if the component was built with more than one
  * unit, which that convention never produces.
+ *
+ * THE COLLISION CHECK BELOW IS A DELIBERATE BACKSTOP, NOT DUPLICATION. `validateNetwork`
+ * enforces the same rule for every kind, but it runs from `Builder.done()`, and a
+ * hand-built `Network` literal handed straight to `resolveNetwork` never reaches it -
+ * which is how most of this repository's tests construct networks. Do not remove this as
+ * redundant with the validator; on this path there is nothing else.
  */
 function terminals(component: Component): Readonly<Record<string, Connection>> {
   if (component.units.length !== 1) {
@@ -107,10 +113,31 @@ function requireNet(connection: Connection | undefined, message: string): string
  * per component (package pins plus every unit's pins, combined), no empty pin key or
  * net name, and every declared port landing on a net some component actually touches.
  *
- * Deliberately separate from `validate.ts`'s `validateNetwork`: that check enforces a
- * closed per-kind pin vocabulary meant for authored circuits, while a physical network's
- * pots and switches declare their own open vocabularies (a rotary selector's throw names,
- * for instance) that a closed vocabulary does not anticipate.
+ * Deliberately separate from `validate.ts`'s `validateNetwork`, and NOT because that
+ * check cannot cope with a physical network. It can: `kinds.ts` puts `switch` in
+ * `OPEN_VOCABULARY`, so a rotary selector's throw names are anticipated, and
+ * `validateNetwork(THREE_BAND_REFERENCE)` - 76 components, six pots, six rotaries -
+ * accepts it (asserted at `tests/reference/three-band.test.ts:45`). An earlier version
+ * of this comment claimed the opposite; it was true before `switch` joined the open
+ * vocabulary and is not true now.
+ *
+ * The real reason is that NEITHER RULE SET CONTAINS THE OTHER, measured in both
+ * directions:
+ *
+ *  - only here: at least two pins per component, across package and unit pins combined.
+ *    A `connector` declaring a single pin on a net two other pins already sit on is
+ *    ACCEPTED by `validateNetwork` and refused here ("Missing pins: j1").
+ *  - only there: the per-kind pin vocabulary and the per-kind required parameters. A
+ *    resistor with pins named `x`/`y`, and a capacitor declaring no `farads`, both reach
+ *    resolution unchallenged and are refused by `validateNetwork`.
+ *
+ * And they answer to different producers. `validateNetwork` is the AUTHORED-CIRCUIT
+ * check, run from `Builder.done()` on every circuit this repository writes. This one is
+ * `resolveNetwork`'s INPUT CONTRACT, and it runs on every network reaching resolution
+ * including literals that never went through the builder - `THREE_BAND_REFERENCE`,
+ * assembled from a KiCad netlist by `reference/pultec/from-netlist.ts`, is one.
+ * Collapsing the two would either impose an authored circuit's vocabulary rules on an
+ * imported network or drop the pin-count rule from the resolution path.
  */
 function validatePhysicalNetwork(network: Network): void {
   const ids = new Set<string>()

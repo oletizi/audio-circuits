@@ -14,6 +14,21 @@
  * in `lib/sim/device-lines.ts` and is NOT what this file does: this only recognizes the
  * two-terminal passives its remaining consumers handle, and throws, naming the
  * component, on anything else.
+ *
+ * WHAT THAT MEANS FOR THE CIRCUITS IN THIS REPOSITORY, stated here because it is a
+ * capability gap and not merely a narrow type. Both consumers - `lintConnectivity`
+ * (lib/model/connectivity.ts) and `pruneFloatingBranches` (lib/sim/prepare.ts) - are
+ * available for a network of two-terminal passives ONLY. Measured, by resolving each
+ * network in the repository and calling `twoPinElements` on it:
+ *
+ *   reference/pultec THREE_BAND_REFERENCE   OK - 76 two-pin elements
+ *   circuits/opamp-buffer.ts                THROWS - "buffer_amp" has package pins v+, v-
+ *   circuits/optical-compressor/            THROWS - "power_power_terminal" is not keyed a/b
+ *
+ * So the Pultec reference is linted and prunable, and NEITHER circuit carrying an active
+ * device is. Generalising the two passes to walk components and units the way
+ * `device-lines.ts` does is real work and is not attempted here; until it is, a reader
+ * must not assume a circuit in `circuits/` has been through either pass.
  */
 import type { ResolvedComponent, ResolvedNetwork } from "./control-state.ts"
 

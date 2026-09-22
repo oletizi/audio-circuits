@@ -129,6 +129,14 @@ const IDEAL_OPAMP_PINS: readonly { readonly canonical: string; readonly spice: s
  * against the model's own .subckt line. That sweep proves the NAMES line up;
  * it cannot prove the semantic pairing (that "in+" really is `inp`), which is
  * established separately, by measurement, in the same test file.
+ *
+ * IT IS BYTE-IDENTICAL TO IDEAL_OPAMP_PINS AND MUST STAY A SEPARATE ARRAY. The
+ * identity is a coincidence of how these two `.subckt` files happen to be
+ * written, not a shared rule: argument order is a property of the CONCRETE
+ * MODEL (spec 3.5), and two macromodels of one kind may order their pins
+ * differently. Deduplicating these into one constant would couple two models
+ * that are free to diverge, and the next macromodel added with a different
+ * order would have to uncouple them again.
  */
 const GENERIC_OPAMP_PINS: readonly { readonly canonical: string; readonly spice: string }[] = [
   { canonical: "in+", spice: "inp" },

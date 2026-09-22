@@ -146,6 +146,13 @@
  * branch drop against the requested value, so a drift between that arithmetic
  * and the engine goes red rather than quiet.
  *
+ * That standing test asserts at THREE full-drive currents - 2e-4, 2e-3 and
+ * 2e-2 A - not at one. The sizing is a function of the current, so a version
+ * that ignored `amps` would satisfy any single-current test while being wrong
+ * by about 0.12 V a decade either side. Measured: hardcoding `amps` to 2e-3
+ * inside `standInForwardVolts` leaves the branch dropping 1.38533 V at 2e-4 A
+ * and 1.62514 V at 2e-2 A where the caller asked for 1.5 V.
+ *
  * ---------------------------------------------------------------------------
  * THE SENSE SOURCE IS AN AMMETER, NOT PART OF THE DEVICE
  * ---------------------------------------------------------------------------

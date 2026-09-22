@@ -131,7 +131,10 @@ tidied away. The two that matter most to anyone building this:
 ## References
 
 - [multi-channel-preamp](https://github.com/oletizi/multi-channel-preamp) — the original KiCAD designs
-- `docs/pultec/` — the modularization plan and its review
+- `docs/pultec/` — the modularization plan and its review. **Superseded as software
+  instruction** — its `lib/passives/`, `lib/export/` and tscircuit references describe a
+  layout this repository no longer has; each file carries a banner saying so. Its
+  electrical content still stands.
 - `docs/decisions/` — recorded architecture decisions, including why tscircuit
   was dropped
 - `docs/superpowers/specs/` — design documents for individual changes

@@ -142,7 +142,11 @@ export function toSpiceNetlist(network: ResolvedNetwork, environment: Simulation
   const nodes = new Map<string, NodeOrigin>()
   const node = (net: string): string => registerNode(nodes, net, groundNet)
   const names = new Map<string, string>()
-  const lines: string[] = ["Pultec modularize AC network"]
+  // SPICE takes the first line of a deck as its title and does nothing else with
+  // it, so this is the first thing a human reading an emitted deck sees. It says
+  // what the deck IS - an AC sweep emitted from a resolved network - rather than
+  // naming a project phase, which is what it used to do.
+  const lines: string[] = ["AC sweep emitted from a resolved circuit network"]
 
   const seriesOhms = environment.source.seriesOhms
   if (seriesOhms !== 0) {

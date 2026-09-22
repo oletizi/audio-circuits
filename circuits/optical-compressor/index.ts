@@ -66,8 +66,12 @@
  *    back; that is a decision for whoever runs the bench protocol, not one to
  *    pre-empt here.
  *  - SECTION 10.2's TEST POINTS. Every node they name is already a net in this
- *    model and most are declared ports; a test point is a pad and a silkscreen
- *    label, which is PCB surface this model does not carry at all.
+ *    model, though only four of the ten are declared ports (OUT_PRE via
+ *    `makeup_output`, +9V_PROTECTED via `rail`, VBIAS via `bias`, GND via
+ *    `ground`); the other six - BUF_OUT, GR, SC_OUT, DET, Q_COLLECTOR and
+ *    LED_K - are block-prefixed nets inside the composition. Either way a test
+ *    point is a pad and a silkscreen label, which is PCB surface this model
+ *    does not carry at all.
  */
 import { circuit } from "../../lib/model/index.ts"
 import type { Network } from "../../lib/model/index.ts"

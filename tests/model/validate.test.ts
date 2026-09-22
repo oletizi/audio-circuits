@@ -143,6 +143,64 @@ test("opamp with extra package pin is rejected", () => {
   expect(() => validateNetwork(bad)).toThrow(/package pin "vcc".*opamp/i)
 })
 
+test("a unit pin colliding with a package pin of the same name is rejected", () => {
+  // The mistake this catches is an author writing the supply pin on the unit as
+  // well as on the package. The emitter merges the two maps per unit
+  // (`visiblePins`, lib/sim/device-lines.ts) with the unit spread second, so
+  // the package's net is the one that disappears. MEASURED on the shape below,
+  // through `resolveNetwork` + `toSpiceNetlist` before this rule existed: the
+  // op-amp emitted as `Xu1 IN OUT OUT LOST 0 GENERIC_OPAMP` - the unit's `v+`
+  // net in the supply position and the package's nowhere on the line.
+  //
+  // `opamp` is the kind used here because it is the only registered kind with
+  // package pins at all; `ic`, `connector` and `switch` have open UNIT
+  // vocabularies but closed (empty) PACKAGE vocabularies, so they cannot
+  // express a collision until one of them gains a package pin.
+  const collide: Network = {
+    components: [
+      {
+        id: "u1", kind: "opamp", parameters: {},
+        pins: { "v+": net("VCC"), "v-": net("GND") },
+        units: [{
+          name: "MAIN",
+          pins: { "in+": net("IN+"), "in-": net("OUT"), out: net("OUT"), "v+": net("LOST") },
+        }],
+      },
+      resistor("r1", "IN+", "GND"),
+      resistor("r2", "OUT", "GND"),
+      resistor("r3", "VCC", "GND"),
+      resistor("r4", "LOST", "GND"),
+    ],
+    ports: { GND: "GND" },
+  }
+  expect(() => validateNetwork(collide)).toThrow(/pin "v\+" collides with a package pin/i)
+})
+
+test("two units of one package may share pin names with each other", () => {
+  // The companion half of the rule above: the collision check is per unit
+  // AGAINST THE PACKAGE, so a dual op-amp's two sections both naming `in+`
+  // stays legal. A check written unit-against-unit would reject this.
+  const dual: Network = {
+    components: [
+      {
+        id: "u1", kind: "opamp", parameters: {},
+        pins: { "v+": net("VCC"), "v-": net("GND") },
+        units: [
+          { name: "A", pins: { "in+": net("A_IN+"), "in-": net("A_OUT"), out: net("A_OUT") } },
+          { name: "B", pins: { "in+": net("B_IN+"), "in-": net("B_OUT"), out: net("B_OUT") } },
+        ],
+      },
+      resistor("r1", "A_IN+", "GND"),
+      resistor("r2", "B_IN+", "GND"),
+      resistor("r3", "A_OUT", "GND"),
+      resistor("r4", "B_OUT", "GND"),
+      resistor("r5", "VCC", "GND"),
+    ],
+    ports: { GND: "GND" },
+  }
+  expect(() => validateNetwork(dual)).not.toThrow()
+})
+
 test("opamp package pin on floating net is rejected", () => {
   const floating: Network = {
     components: [opamp("u1", "IN+", "IN-", "OUT", "VFLOAT", "GND"), resistor("r1", "OUT", "GND")],
@@ -193,6 +251,20 @@ test("component with duplicate unit names is rejected", () => {
 // a kind to its required parameter fields. One test per kind proves
 // checkParameters catches the mismatch at construction instead of letting it
 // crash downstream (the SPICE emitter, in practice) with no name attached.
+test("a photoresistor without ohms is rejected at construction, not at emission", () => {
+  // The one emitted value-kind this check used to miss. Without it the network
+  // validated here and threw later inside the SPICE emitter, with a different
+  // message that named neither the kind nor the requirement.
+  const bad: Network = {
+    components: [{
+      id: "ldr1", kind: "photoresistor", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
+    }, resistor("r1", "A", "B")],
+    ports: { A: "A", B: "B" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/missing parameter "ohms".*photoresistor/i)
+})
+
 test("a resistor without ohms is rejected", () => {
   const bad: Network = {
     components: [{

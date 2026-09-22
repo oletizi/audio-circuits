@@ -1,5 +1,13 @@
 # Pultec modularization: proposed changes and implementation status
 
+> ## SUPERSEDED — HISTORICAL RECORD ONLY. DO NOT IMPLEMENT, AND DO NOT UPDATE.
+>
+> The file paths and the "update the status and evidence here as each step lands"
+> instruction below are no longer canon. `lib/passives/` became `lib/model/` in Plan A,
+> `lib/export/` was deleted, and tscircuit was removed by `feature/active-devices`.
+> Current status lives in `docs/superpowers/plans/`, and the model itself in
+> `docs/superpowers/specs/2026-09-21-canonical-circuit-model-design.md` and `CLAUDE.md`.
+
 Branch: `feature/pultec-modularize`.
 
 This document records the proposed repository changes and their acceptance

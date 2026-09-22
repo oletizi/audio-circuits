@@ -333,11 +333,13 @@ test("a deck needing an unregistered model throws, naming the component", () => 
  * and 39k at 4.75 V, roughly 8x and 16x outside - and it does NOT catch an E96
  * neighbour: a 47.5k upper leg lands 23.0 mV out and passes. That is deliberate.
  * A band tight enough to reject 47.5k would be tighter than a 1% resistor's own
- * tolerance, so it would reject correct circuits built from real parts, and it
- * would eat the margin over the 435 microvolt finite-gain signature that makes
- * the sided half below meaningful. The band is sized for a wrong VALUE, not for
- * a part's tolerance. Step 6's falsification run is the measured version of
- * this argument.
+ * tolerance, so it would reject correct circuits built from real parts. THAT
+ * CLAUSE CARRIES THE ARGUMENT ON ITS OWN, and it is the only one that does:
+ * rejecting 47.5k needs a band just under 23.0 mV, which is still 53x the
+ * 435 microvolt finite-gain signature against 57x at 25 mV, so tightening would
+ * not eat the margin the sided half below depends on. The band is sized for a
+ * wrong VALUE, not for a part's tolerance. Step 6's falsification run is the
+ * measured version of this argument.
  *
  * WHY IT IS ALSO ONE-SIDED. A two-sided band around 4.35 V is blind to the
  * wiring error that matters most in a follower. Transpose the buffer's inputs
@@ -355,7 +357,7 @@ test("a deck needing an unregistered model throws, naming the component", () => 
  * VBIAS in the loaded, powered-up module, and nothing about the section 8.1
  * power-up ramp, which is a transient property of capacitors this deck omits.
  */
-test("VBIAS sits at the half-rail the spec states, below its unbuffered divider node", async () => {
+test("the isolated VBIAS divider and buffer produce the specified half-rail, below the unbuffered node", async () => {
   const deck = biasDeck(compressor)
   const v = await runOperatingPoint({
     netlist: deck.netlist,

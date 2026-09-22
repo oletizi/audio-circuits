@@ -57,11 +57,8 @@
  * targets, transcribed.
  */
 import { circuit, net } from "../../../lib/model/index.ts"
-import type { Network, PartSpec } from "../../../lib/model/index.ts"
-
-/** See `power-section.ts`: spec section 10.1's connectors are inert, and the
- * emitter requires each to say so. No footprint or mpn is invented. */
-const INERT_TERMINAL: PartSpec = { electricallyInert: true }
+import type { Network } from "../../../lib/model/index.ts"
+import { INERT_TERMINAL } from "./inert-terminal.ts"
 
 const MAKEUP_OUT = "MAKEUP_OUT"
 const SC_IN = "SC_IN"
@@ -139,11 +136,27 @@ export function sidechain(): Network {
     // has no resistive DC return - the diode conducts one way only. That is a
     // faithful transcription, because section 8.6 names exactly one diode, and
     // inventing a bleed path the spec does not describe is what this
-    // transcription must not do. The consequence belongs where a reader will
-    // meet it: an operating-point analysis of this block would not solve as
-    // authored EVEN IF the two missing device models above were registered, so
-    // registering them would not on its own make the sidechain simulable. It is
-    // a question for the spec's author, not a defect to patch here.
+    // transcription must not do. It is a question for the spec's author, not a
+    // defect to patch here.
+    //
+    // THE CONSEQUENCE, MEASURED RATHER THAN PREDICTED. An earlier version of
+    // this comment said an operating point would not solve. It does. Patching
+    // `vactrol_led` to the registered 1N4148 in a scratchpad probe, emitting
+    // this block through `resolveNetwork` + `toSpiceNetlist` and swapping the
+    // `.ac` card for `.op`, the deck SOLVES: with the rail at 8.7 V,
+    // DET_RECT = 4.147e-7 V, DET = 4.147e-7 V, Q_BASE = 4.562e-7 V,
+    // Q_COLLECTOR = 8.6998 V, LED_A = 8.7000 V; driving bias_raw at 4.35 V as
+    // well gives VBIAS = 4.34957 V and the same detector figures.
+    //
+    // What the missing DC return costs is not solvability but MEANING: DET_RECT
+    // is held by the engine's GMIN, not by the circuit. Measured by varying it -
+    // gmin 1e-15 puts DET_RECT at 8.504e-10 V, the engine default at
+    // 4.147e-7 V, gmin 1e-9 at 4.105e-4 V. The node tracks the solver setting
+    // over five orders of magnitude, so any bias figure read at DET_RECT (or at
+    // DET, which follows it) is an artifact of the solver and not a property of
+    // this design. The engine does still refuse a genuinely floating node: the
+    // same probe on a capacitor whose far end touches nothing else throws
+    // "singular matrix: check node dangling".
     .capacitor("detector_coupling_cap", "1uF", { a: SC_OUT, b: DET_RECT })
     .add({
       id: "detector_rectifier_diode",

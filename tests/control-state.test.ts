@@ -47,6 +47,72 @@ test("expands a linear pot into two resistors summing to its total", () => {
   expect(upper.parameters.ohms).toBeCloseTo(5000, 9)
 })
 
+/** Sections of a pot with the given taper, at the given wiper fraction. */
+function potSections(
+  taper: { readonly type: "linear" } | { readonly type: "log"; readonly curveConstant: number },
+  fraction: number,
+): { readonly lower: number; readonly upper: number } {
+  const network: Network = {
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "P1", kind: "potentiometer", parameters: { ohms: 10000, taper }, pins: {},
+        units: [{ name: "MAIN", pins: { ccw: net("in"), wiper: net("out"), cw: net("0") } }] },
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("out"), b: net("0") } }] },
+    ],
+  }
+  const resolved = resolveNetwork(network, { potPositions: { P1: fraction }, switchPositions: {} })
+  const read = (id: string): number => {
+    const section = resolved.components.find(c => c.id === id)
+    if (section === undefined || !("ohms" in section.parameters)) {
+      throw new Error(`resolved pot section missing or carrying no ohms: ${id}`)
+    }
+    return section.parameters.ohms
+  }
+  return { lower: read("P1.ccw-wiper"), upper: read("P1.wiper-cw") }
+}
+
+test("a logarithmic pot follows its curve constant, not a straight line", () => {
+  // `taperFraction`'s log branch was entirely untested: replacing the whole
+  // function body with `return f` - every taper linear - left the suite green.
+  // The reference network only ever resolves at the extremes, where every curve
+  // agrees exactly, so the coverage has to come from a mid-position case here.
+  //
+  // Expected values from the law the branch implements,
+  // (exp(k*f) - 1) / (exp(k) - 1) at k = 4.8, computed independently of the
+  // implementation: 0.01925241792790118 at f = 0.25, 0.08317269649392238 at
+  // f = 0.5, 0.2953954950670035 at f = 0.75.
+  const taper = { type: "log", curveConstant: 4.8 } as const
+  for (const [fraction, expectedLower] of [
+    [0.25, 192.5241792790118],
+    [0.5, 831.7269649392238],
+    [0.75, 2953.954950670035],
+  ] as const) {
+    const { lower, upper } = potSections(taper, fraction)
+    expect(lower, `log taper at ${fraction}`).toBeCloseTo(expectedLower, 9)
+    // The two sections still sum to the pot's total, as they do for a linear one.
+    expect(lower + upper).toBeCloseTo(10000, 9)
+    // And the log curve is NOWHERE near the linear one in mid-travel, which is
+    // what makes a linear substitution visible rather than a rounding question.
+    expect(Math.abs(lower - 10000 * fraction)).toBeGreaterThan(1000)
+  }
+})
+
+test("every taper agrees exactly at the extremes", () => {
+  // Why the reference network can resolve a log pot without the curve constant
+  // mattering: at fraction 0 and 1 the log branch returns exactly 0 and 1, the
+  // same as the linear branch. Asserted rather than assumed, because
+  // `reference/pultec/three-band.ts` records an UNVALIDATED curve constant and
+  // rests on precisely this.
+  for (const taper of [
+    { type: "linear" } as const,
+    { type: "log", curveConstant: 4.8 } as const,
+  ]) {
+    expect(potSections(taper, 0).lower).toBe(0)
+    expect(potSections(taper, 1).lower).toBe(10000)
+  }
+})
+
 test("a closed switch contact merges its two nets", () => {
   const resolved = resolveNetwork(physical, midpoint)
   const c1 = resolved.components.find(c => c.id === "C1")

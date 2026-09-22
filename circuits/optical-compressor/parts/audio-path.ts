@@ -56,11 +56,8 @@
  * number may be taken from this circuit.
  */
 import { circuit, net } from "../../../lib/model/index.ts"
-import type { Network, PartSpec } from "../../../lib/model/index.ts"
-
-/** See `power-section.ts`: spec section 10.1's connectors are inert, and the
- * emitter requires each to say so. No footprint or mpn is invented. */
-const INERT_TERMINAL: PartSpec = { electricallyInert: true }
+import type { Network } from "../../../lib/model/index.ts"
+import { INERT_TERMINAL } from "./inert-terminal.ts"
 
 const IN_EXT = "IN_EXT"
 const IN = "IN"

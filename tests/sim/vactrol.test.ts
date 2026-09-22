@@ -203,6 +203,16 @@ test("the LED branch drops the forward voltage the caller stated", async () => {
   //
   // It asserts that a STATED ASSUMPTION is honoured, and nothing more. It does
   // not make the branch an LED, and no driver-bias conclusion follows from it.
+  //
+  // THE CURRENT IS VARIED, NOT ONLY THE VOLTAGE, and that is the half with
+  // teeth. `standInForwardVolts` takes `amps`; with every case at one current,
+  // hardcoding that argument left the whole suite green - measured, with these
+  // two cases removed and `amps` hardcoded: 285 pass / 0 fail.
+  // MEASURED with `amps` replaced by the literal 2e-3 inside
+  // `standInForwardVolts`: this test goes RED, at v(a) = 1.38533 V for the
+  // 2e-4 case and 1.62514 V for the 2e-2 case, each against the stated 1.5 V.
+  // Those misses - 0.115 V and 0.125 V - are what the gap was worth, against a
+  // spec whose entire V_CE allocation at section 8.7.2 is 0.74 V.
   for (const stated of [1.5, 1.8, 2.2]) {
     const v = await runOperatingPoint({
       netlist: divider(FULL_DRIVE_AMPS, 0, { ledForwardVolts: stated }),
@@ -212,7 +222,35 @@ test("the LED branch drops the forward voltage the caller stated", async () => {
     // the whole branch drop.
     expect(v["a"]).toBeCloseTo(stated, 4)
   }
+  // A decade either side of that point. The drive current moves WITH
+  // `fullDriveAmps`, because the claim is that the branch drops the stated
+  // voltage at the stated full-drive current.
+  for (const amps of [2e-4, 2e-2]) {
+    const v = await runOperatingPoint({
+      netlist: divider(amps, 0, { fullDriveAmps: amps, ledForwardVolts: 1.5 }),
+      nodes: ["a"],
+    })
+    expect(v["a"], `at fullDriveAmps ${amps}, v(a) is ${v["a"]} V, not the stated 1.5 V`)
+      .toBeCloseTo(1.5, 4)
+  }
 })
+
+/** WHY THE CASES ABOVE STOP AT 2.2 V, measured rather than chosen by taste.
+ *
+ * The residual between the stated forward voltage and the simulated branch drop
+ * is flat up to 3.0 V and then steps, at this fixture's 2 mA drive:
+ *
+ *   stated 1.5 / 1.8 / 2.2 / 2.6 / 3.0 V   residual -5.0901e-8 V
+ *   stated 3.5 / 4.0 / 5.0 V               residual +1.2826e-4 V
+ *
+ * `toBeCloseTo(stated, 4)` admits |delta| < 5e-5, so a caller stating a blue or
+ * white LED's forward voltage would fail the assertion above on a 128 microvolt
+ * engine convergence artifact rather than on a modelling error. The step is
+ * physically negligible and the model is not wrong there; the TEST's tolerance
+ * simply does not reach that far, and a future case added at 3.5 V or above
+ * needs a looser one and a note saying why. Recorded here so the next reader
+ * does not have to re-derive it.
+ */
 
 test("the LDR is unaffected by the stated forward voltage at a given LED current", async () => {
   // The durable form of the header's claim that the LED stand-in does not

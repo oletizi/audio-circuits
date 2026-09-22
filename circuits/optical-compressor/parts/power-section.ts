@@ -41,18 +41,8 @@
  * protected rail directly instead, which is where section 6.1.3 already puts it.
  */
 import { circuit, net } from "../../../lib/model/index.ts"
-import type { Network, PartSpec } from "../../../lib/model/index.ts"
-
-/** Spec section 10.1's connectors are screw terminals and pot headers - each
- * terminal is simply a place a wire lands, with no internal electrical
- * relationship of any kind - so each declares `electricallyInert`. The emitter
- * requires the declaration and will not guess it, because guessing "inert" is
- * how a switching part would disappear from a deck silently. There are no jacks
- * in this circuit and no switching behaviour is modelled.
- *
- * No footprint and no mpn: the spec names the connectors and their pins and
- * says nothing about packaging, and inventing either would be fabricated data. */
-const INERT_TERMINAL: PartSpec = { electricallyInert: true }
+import type { Network } from "../../../lib/model/index.ts"
+import { INERT_TERMINAL } from "./inert-terminal.ts"
 
 const SUPPLY_RAW = "+9V_RAW"
 const RAIL = "+9V_PROTECTED"

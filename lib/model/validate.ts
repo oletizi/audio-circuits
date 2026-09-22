@@ -63,6 +63,14 @@ function checkParameters(component: Component): void {
     case "resistor":
       requireField(component, "ohms", isNumber, "a number")
       break
+    // A photoresistor IS a plain resistance until a behavioural model replaces it
+    // (`lib/sim/device-lines.ts` reads `ohms` from it exactly as from a resistor), so
+    // it is checked here for the same reason and with the same message. Without this
+    // case it validated at `done()` and threw later, at emission, saying "missing or
+    // non-numeric parameter" instead of naming the kind that required it.
+    case "photoresistor":
+      requireField(component, "ohms", isNumber, "a number")
+      break
     case "capacitor":
       requireField(component, "farads", isNumber, "a number")
       break
@@ -106,6 +114,26 @@ function checkVocabulary(component: Component): void {
       throw new Error(
         `component "${component.id}" unit "${unit.name}" declares no pins`,
       )
+    }
+    // Checked BEFORE the open-vocabulary escape, because that is where the hole
+    // is: `ic`, `connector` and `switch` name their own pins, so nothing else
+    // stops a unit pin from being spelled the same as a package pin. The SPICE
+    // emitter merges the two maps per unit (`visiblePins` in
+    // lib/sim/device-lines.ts), and a collision means one of the two nets is
+    // silently dropped from the emitted device line - a complete, well-formed
+    // deck with a connection missing.
+    //
+    // Checked PER UNIT against the package, never unit against unit: two
+    // sections of a dual op-amp legitimately share pin names (`in+` on both),
+    // and that must stay legal.
+    for (const pin of names) {
+      if (Object.prototype.hasOwnProperty.call(component.pins, pin)) {
+        throw new Error(
+          `component "${component.id}" unit "${unit.name}": pin "${pin}" collides with a ` +
+            `package pin of the same name. A unit pin and a package pin cannot share a name: ` +
+            `the emitter merges them into one map per unit, so one of the two nets would be lost.`,
+        )
+      }
     }
     if (open) continue
     for (const pin of names) {

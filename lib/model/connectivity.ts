@@ -7,6 +7,22 @@ import { UnionFind } from "./union-find.ts"
  * a lint condition and instead reports findings, catching transcription slips (a typo'd
  * pin name, an accidentally isolated island) that a strict structural comparison cannot
  * see because there is nothing to compare against.
+ *
+ * SCOPE, AND THE GAP IT LEAVES. Both passes below go through `twoPinElements`
+ * (`resolved-two-pin.ts`), which THROWS on any component with package pins, more than
+ * one unit, or pins not keyed `a`/`b`. This lint is therefore available for a network of
+ * two-terminal passives only. Measured: it runs on the Pultec reference (76 elements)
+ * and throws on both circuits carrying an active device - `circuits/opamp-buffer.ts` at
+ * `buffer_amp` (package pins v+, v-) and `circuits/optical-compressor/` at
+ * `power_power_terminal` (pins not keyed a/b).
+ *
+ * That gap is worth stating, because a circuit transcribed from a spec is exactly the
+ * risk profile this lint was built for, and the two newest such circuits do not get it.
+ * What they do get is `validateNetwork`'s floating-net rule, which covers part of the
+ * SINGLETON case at construction: a net with one component pin that is neither a
+ * declared port nor a no-connect is refused there. The ISLAND pass has no equivalent
+ * anywhere. Generalising both passes to walk components and units the way
+ * `lib/sim/device-lines.ts` does is separate work and is not attempted here.
  */
 export type LintFinding =
   | { readonly code: "singleton-net"; readonly net: string; readonly terminal: string }
