@@ -8,8 +8,10 @@
  */
 import { parseValue } from "../passives/units.ts"
 import { validateNetwork } from "./validate.ts"
+import { includeNetwork } from "./include.ts"
 import { NC, net } from "./types.ts"
 import type { Component, Connection, Network, PartSpec, Unit } from "./types.ts"
+import type { PortMap } from "./include.ts"
 
 /** A pin map accepts a bare net name as shorthand for net(name). */
 export type PinMap = Readonly<Record<string, string | Connection>>
@@ -76,6 +78,13 @@ export class Builder {
   /** Escape hatch for kinds the builder has no shorthand for yet. */
   add(component: Component): this {
     return this.push(component)
+  }
+
+  include(prefix: string, network: Network, portMap: PortMap): this {
+    for (const component of includeNetwork(prefix, network, portMap)) {
+      this.push(component)
+    }
+    return this
   }
 
   port(name: string, netName: string): this {
