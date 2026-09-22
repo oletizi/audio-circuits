@@ -163,3 +163,237 @@ test("refuses two element references that emit as the same component name", () =
   expect(() => toSpiceNetlist(nameCollision, collisionEnvironment))
     .toThrow("Emitted netlist name collision on R1 between refs: R1 and 1")
 })
+
+/* Active devices: per-kind prefixes, per-kind and per-model argument order, and the
+ * component/unit lowering that turns one multi-section package into one device line
+ * per section. Every fixture below declares all three ports the emitter resolves up
+ * front (ground, source, load) and reuses the `environment` fixture above, so a
+ * failure here is a device-emission failure and not a port lookup throwing before
+ * any device is reached. Net names are lowercase because `sanitize` preserves case:
+ * a net named `IN` emits as `IN`, so a regex expecting `in` would never match.
+ */
+
+test("a diode emits as a SPICE primitive with anode then cathode", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "clamp", kind: "diode", parameters: {}, pins: {},
+        units: [{ name: "MAIN", pins: { cathode: "0", anode: "in" }, spiceModel: "1N4148" }] },
+    ],
+  }, environment)
+  // The pins are declared cathode-first on purpose: the emitted order must come from
+  // SPICE's fixed argument order for a D line, not from the fixture's key order.
+  expect(deck).toMatch(/^Dclamp in 0 1N4148$/m)
+})
+
+test("a BJT emits collector, base, emitter in SPICE order, not in the kind's vocabulary order", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "stage", kind: "bjt", parameters: {}, pins: {},
+        units: [{ name: "MAIN", pins: { base: "b", collector: "c", emitter: "0" }, spiceModel: "2N3904" }] },
+    ],
+  }, environment)
+  // `unitPins("bjt")` is base, collector, emitter; SPICE's Q line is collector, base,
+  // emitter. Emitting the vocabulary order would swap the first two arguments and
+  // still produce a deck that simulates cleanly, so the order needs a real assertion.
+  expect(deck).toMatch(/^Qstage c b 0 2N3904$/m)
+})
+
+test("a unit line sees the component's package pins as well as its own", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "stage", kind: "bjt", parameters: {},
+        pins: { emitter: "0" },
+        units: [{ name: "MAIN", pins: { collector: "out", base: "in" }, spiceModel: "2N3904" }] },
+    ],
+  }, environment)
+  // A mechanism test: it proves the emitted line is built from
+  // { ...component.pins, ...unit.pins }, not from the unit's pins alone. It is not a
+  // claim that real BJTs carry package pins.
+  expect(deck).toMatch(/^Qstage out in 0 2N3904$/m)
+})
+
+test("a unit's own pin wins over a package pin of the same name", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "stage", kind: "bjt", parameters: {},
+        pins: { emitter: "0", collector: "package_net" },
+        units: [{ name: "MAIN", pins: { collector: "out", base: "in" }, spiceModel: "2N3904" }] },
+    ],
+  }, environment)
+  // Merge precedence asserted by construction rather than by hope: the unit's
+  // collector must reach the deck, and the package's must not appear at all.
+  expect(deck).toMatch(/^Qstage out in 0 2N3904$/m)
+  expect(deck).not.toContain("package_net")
+})
+
+test("a photoresistor emits as a plain resistance until a behavioural model replaces it", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "ldr", kind: "photoresistor", parameters: { ohms: 10000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "0" } }] },
+    ],
+  }, environment)
+  expect(deck).toMatch(/^Rldr in 0 1\.000000000000e\+4$/m)
+})
+
+test("a dual package emits one line per unit, each named for its unit and sharing the supply", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "u1", kind: "opamp", parameters: {},
+      pins: { "v+": "vcc", "v-": "vee" },
+      units: [
+        { name: "A", pins: { "in+": "ap", "in-": "an", out: "ao" }, spiceModel: "IDEAL_OPAMP" },
+        { name: "B", pins: { "in+": "bp", "in-": "bn", out: "bo" }, spiceModel: "IDEAL_OPAMP" },
+      ],
+    }],
+  }, environment)
+  // Pins three things at once: the unit-distinguishing name, the argument ORDER (which
+  // comes from the model entry, not from the kind), and both sections reaching the same
+  // supply nets. A mis-ordered pinOrder produces a silently mis-wired amplifier that
+  // still simulates cleanly.
+  expect(deck).toMatch(/^Xu1_A ap an ao vcc vee IDEAL_OPAMP$/m)
+  expect(deck).toMatch(/^Xu1_B bp bn bo vcc vee IDEAL_OPAMP$/m)
+  // Both units reference one model, so its subcircuit must appear exactly once: a
+  // duplicated .subckt is a hard ngspice error, and a missing one is an undefined
+  // subcircuit reference.
+  expect(deck.match(/^\.subckt\s+IDEAL_OPAMP\b/gim)).toHaveLength(1)
+})
+
+test("a package pin the model does not declare throws, rather than being dropped", () => {
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "u1", kind: "opamp", parameters: {},
+      pins: { "v+": "vcc", "v-": "vee", shield: "chassis" },
+      units: [{ name: "MAIN", pins: { "in+": "in", "in-": "0", out: "out" }, spiceModel: "IDEAL_OPAMP" }],
+    }],
+  }, environment)).toThrow(/u1.*shield/i)
+})
+
+test("a pin missing from the emitted kind's order throws, naming it", () => {
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "stage", kind: "bjt", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { collector: "out", base: "in" }, spiceModel: "2N3904" }],
+    }],
+  }, environment)).toThrow(/stage.*emitter/i)
+})
+
+test("a unit with no spiceModel throws rather than emitting a bare line", () => {
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "clamp", kind: "diode", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { anode: "in", cathode: "0" } }],
+    }],
+  }, environment)).toThrow(/clamp.*no SPICE model/i)
+})
+
+test("a multi-unit component names the offending unit as well as the component", () => {
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "u1", kind: "opamp", parameters: {},
+      pins: { "v+": "vcc", "v-": "vee" },
+      units: [
+        { name: "A", pins: { "in+": "ap", "in-": "an", out: "ao" }, spiceModel: "IDEAL_OPAMP" },
+        { name: "B", pins: { "in+": "bp", "in-": "bn" }, spiceModel: "IDEAL_OPAMP" },
+      ],
+    }],
+  }, environment)).toThrow(/u1.*"B".*out/i)
+})
+
+test("a kind with no emission rule throws rather than silently vanishing from the deck", () => {
+  // The final `else` of the kind dispatch. Without it, a kind added later stops being
+  // emitted with no signal at all: a complete, well-formed, entirely wrong netlist.
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "j1", kind: "connector", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { tip: "in", sleeve: "0" } }],
+    }],
+  }, environment)).toThrow(/j1.*connector/i)
+})
+
+test("an op-amp deck emitted from the model's pin order actually solves in ngspice", async () => {
+  // Every other assertion in this section is textual, and a text-only test is exactly
+  // how a five-argument call against a three-node subcircuit stayed invisible until
+  // someone ran it ("Too many parameters for subcircuit type"). This one runs the deck.
+  //
+  // It deliberately does NOT claim to verify input polarity: a `.op`-style solve of an
+  // op-amp converges to the same answer with the inputs swapped, so polarity is pinned
+  // textually above, not numerically here.
+  const buffer: ResolvedNetwork = {
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "u1", kind: "opamp", parameters: {},
+        pins: { "v+": "vcc", "v-": "vee" },
+        units: [{ name: "MAIN", pins: { "in+": "in", "in-": "out", out: "out" }, spiceModel: "IDEAL_OPAMP" }] },
+      // The supply rails need a DC path to ground or the matrix is singular; the ideal
+      // model is behaviourally indifferent to what they sit at.
+      { id: "Rvcc", kind: "resistor", parameters: { ohms: 1 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "vcc", b: "0" } }] },
+      { id: "Rvee", kind: "resistor", parameters: { ohms: 1 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "vee", b: "0" } }] },
+    ],
+  }
+  const deck = toSpiceNetlist(buffer, environment)
+  // A single-unit component's name carries no unit suffix.
+  expect(deck).toMatch(/^Xu1 in out out vcc vee IDEAL_OPAMP$/m)
+
+  const [sweep] = await runAcSweep({ netlist: deck, nodes: ["out"] })
+  expect(sweep.points.length).toBeGreaterThan(0)
+  for (const point of sweep.points) {
+    // Unity-gain follower around an open-loop gain of 1e6: 1e6/(1+1e6) ≈ 0.999999.
+    expect(Math.hypot(point.real, point.imaginary)).toBeCloseTo(1, 5)
+  }
+})
+
+test("a subcircuit-backed kind whose model declares no pin order throws rather than guessing", () => {
+  // A diode's .model line carries no pin order, so instantiating one as an op-amp
+  // subcircuit has no argument order to read. Guessing one would wire the amplifier
+  // at random and still emit a deck.
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "u1", kind: "opamp", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { "in+": "in", "in-": "0", out: "out" }, spiceModel: "1N4148" }],
+    }],
+  }, environment)).toThrow(/u1.*1N4148.*no pinOrder/i)
+})
+
+/* The zero-ohm short path, restated against the generalised emitter. It predates active
+ * devices (a pot section is legitimately zero at a control extreme) and nothing else in
+ * the suite names VSHORT, so these pin it down explicitly rather than trusting that the
+ * per-kind rewrite left it intact.
+ */
+test("a zero-ohm resistor still emits as an exact zero-volt source, not a 0-ohm R line", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 0 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "out" } }] },
+    ],
+  }, environment)
+  expect(deck).toMatch(/^VSHORT0 in out DC 0$/m)
+})
+
+test("a zero-ohm resistor with both ends on one net emits nothing at all", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 0 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "out", b: "out" } }] },
+    ],
+  }, environment)
+  // A zero-volt source across one node is a shorted VSRC, which ngspice rejects.
+  expect(deck).not.toContain("VSHORT")
+  expect(deck).not.toContain("R1 ")
+})

@@ -1,17 +1,19 @@
 /**
- * A two-terminal view over `ResolvedNetwork`, for the three consumers that predate
- * active devices and only understand a component with one unit keyed `a`/`b`: the
- * connectivity lint, dead-branch pruning, and the SPICE emitter.
+ * A two-terminal view over `ResolvedNetwork`, for the consumers that predate active
+ * devices and only understand a component with one unit keyed `a`/`b`: the connectivity
+ * lint and dead-branch pruning. The SPICE emitter was a third such consumer until it
+ * gained per-kind emission and unit lowering; it now walks components and units itself,
+ * because most of what it emits is not a single-unit two-terminal passive.
  *
  * `resolveNetwork` (control-state.ts) deliberately stopped producing this shape - it
  * stays structurally faithful to `Network` instead, so a representation invented for
  * one consumer is not baked into a type every future consumer inherits. This module
  * is that consumer-owned narrowing, kept out of control-state.ts on purpose.
  *
- * Active-device SPICE emission (multi-unit lowering, package-pin sharing across
- * units) is a later task's job and is NOT what this file does: it only recognizes
- * the two-terminal passives these three consumers already handled, and throws,
- * naming the component, on anything else.
+ * Active-device emission (multi-unit lowering, package-pin sharing across units) lives
+ * in `lib/sim/netlist.ts` and is NOT what this file does: this only recognizes the
+ * two-terminal passives its remaining consumers handle, and throws, naming the
+ * component, on anything else.
  */
 import type { ResolvedComponent, ResolvedNetwork } from "./control-state.ts"
 

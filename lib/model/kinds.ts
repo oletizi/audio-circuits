@@ -77,3 +77,44 @@ export function hasOpenVocabulary(kind: ComponentKind): boolean {
   assertKnown(kind)
   return OPEN_VOCABULARY.has(kind)
 }
+
+/**
+ * Argument order for kinds emitted as SPICE PRIMITIVES, where the order is fixed by
+ * SPICE itself rather than by any model: a `D` line is always anode then cathode, a
+ * `Q` line always collector, base, emitter. Note that this is NOT the kind's pin
+ * vocabulary reordered by accident - `UNIT_PINS.bjt` reads base, collector, emitter,
+ * and emitting that order would silently swap a transistor's first two terminals.
+ *
+ * Subcircuit-backed kinds are deliberately absent. Their order is a property of the
+ * concrete model (spec 3.5), because two macromodels of one kind may order their pins
+ * differently, so it lives on the model entry (`DeviceModel.pinOrder`) and `spicePinOrder`
+ * refuses them rather than inventing an order here.
+ *
+ * Typed `Partial<...>` rather than a total record on purpose: a total record would claim
+ * every kind is present and make the `undefined` branch below a check the type says can
+ * never fire.
+ */
+const SPICE_PIN_ORDER: Partial<Readonly<Record<ComponentKind, readonly string[]>>> = {
+  resistor: ["a", "b"],
+  capacitor: ["a", "b"],
+  inductor: ["a", "b"],
+  photoresistor: ["a", "b"],
+  diode: ["anode", "cathode"],
+  bjt: ["collector", "base", "emitter"],
+}
+
+export function spicePinOrder(kind: ComponentKind): readonly string[] {
+  assertKnown(kind)
+  const order = SPICE_PIN_ORDER[kind]
+  if (order === undefined) {
+    throw new Error(
+      `kind "${kind}" is not emitted as a SPICE primitive; its pin order comes from its model`,
+    )
+  }
+  return order
+}
+
+export function isSpicePrimitive(kind: ComponentKind): boolean {
+  assertKnown(kind)
+  return Object.prototype.hasOwnProperty.call(SPICE_PIN_ORDER, kind)
+}
