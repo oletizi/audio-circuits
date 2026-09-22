@@ -187,3 +187,78 @@ test("component with duplicate unit names is rejected", () => {
   }
   expect(() => validateNetwork(bad)).toThrow(/duplicate unit "A"/i)
 })
+
+// `Component.kind` and `Component.parameters` are independent fields, so
+// {kind: "resistor", parameters: {}} typechecks clean - nothing statically ties
+// a kind to its required parameter fields. One test per kind proves
+// checkParameters catches the mismatch at construction instead of letting it
+// crash downstream (the SPICE emitter, in practice) with no name attached.
+test("a resistor without ohms is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "r1", kind: "resistor", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
+    }],
+    ports: { A: "A", B: "B" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/missing parameter "ohms".*resistor/i)
+})
+
+test("a capacitor without farads is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "c1", kind: "capacitor", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
+    }],
+    ports: { A: "A", B: "B" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/missing parameter "farads".*capacitor/i)
+})
+
+test("an inductor without henries is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "l1", kind: "inductor", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
+    }],
+    ports: { A: "A", B: "B" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/missing parameter "henries".*inductor/i)
+})
+
+test("a potentiometer without ohms is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "p1", kind: "potentiometer", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { ccw: net("A"), wiper: net("B"), cw: net("C") } }],
+    }],
+    ports: { A: "A", B: "B", C: "C" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/missing parameter "ohms".*potentiometer/i)
+})
+
+test("a potentiometer without a taper is rejected", () => {
+  // {ohms: 1000} alone happens to satisfy ResistorParameters, a legal member of
+  // the Parameters union regardless of this component's kind - exactly the gap
+  // this check exists to close - so it typechecks as a `potentiometer` missing
+  // only `taper`, exercising checkParameters' second required field.
+  const bad: Network = {
+    components: [{
+      id: "p1", kind: "potentiometer", parameters: { ohms: 1000 }, pins: {},
+      units: [{ name: "MAIN", pins: { ccw: net("A"), wiper: net("B"), cw: net("C") } }],
+    }],
+    ports: { A: "A", B: "B", C: "C" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/missing parameter "taper".*potentiometer/i)
+})
+
+test("a switch without positions is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "s1", kind: "switch", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { common: net("A"), thru: net("B") } }],
+    }],
+    ports: { A: "A", B: "B" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/missing parameter "positions".*switch/i)
+})

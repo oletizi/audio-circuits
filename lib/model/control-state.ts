@@ -2,21 +2,10 @@ import type { CapacitorParameters, InductorParameters, ResistorParameters, Taper
 import { UnionFind } from "./union-find.ts"
 import { GROUND_PORT_KEY, netPreference } from "./net-preference.ts"
 import type {
-  Component, Connection, Network, PotentiometerComponent, SwitchComponent,
+  CapacitorComponent, Component, Connection, InductorComponent, Network,
+  PotentiometerComponent, ResistorComponent, SwitchComponent,
 } from "./types.ts"
 
-interface ResistorComponent extends Component {
-  readonly kind: "resistor"
-  readonly parameters: ResistorParameters
-}
-interface CapacitorComponent extends Component {
-  readonly kind: "capacitor"
-  readonly parameters: CapacitorParameters
-}
-interface InductorComponent extends Component {
-  readonly kind: "inductor"
-  readonly parameters: InductorParameters
-}
 /** The kinds `toResolvedPassthrough` accepts: `resolveNetwork` only ever expects
  * resistors, capacitors, inductors, pots and switches on its input (Ruling A's
  * two-terminal convention). A genuine discriminated union - unlike `Component` itself,
@@ -74,7 +63,15 @@ function terminals(component: Component): Readonly<Record<string, Connection>> {
   if (component.units.length !== 1) {
     throw new Error(`Physical network component must have exactly one unit: ${component.id}`)
   }
-  return { ...component.pins, ...component.units[0].pins }
+  const unit = component.units[0]
+  for (const pin of Object.keys(unit.pins)) {
+    if (Object.prototype.hasOwnProperty.call(component.pins, pin)) {
+      throw new Error(
+        `Component "${component.id}" unit "${unit.name}": pin "${pin}" collides with a package pin of the same name`,
+      )
+    }
+  }
+  return { ...component.pins, ...unit.pins }
 }
 
 /** Every net a component's terminals name. A no-connect contributes nothing. */

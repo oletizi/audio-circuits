@@ -22,7 +22,15 @@ function terminals(component: Component): Readonly<Record<string, Connection>> {
   if (component.units.length !== 1) {
     throw new Error(`Physical network component must have exactly one unit: ${component.id}`)
   }
-  return { ...component.pins, ...component.units[0].pins }
+  const unit = component.units[0]
+  for (const pin of Object.keys(unit.pins)) {
+    if (Object.prototype.hasOwnProperty.call(component.pins, pin)) {
+      throw new Error(
+        `Component "${component.id}" unit "${unit.name}": pin "${pin}" collides with a package pin of the same name`,
+      )
+    }
+  }
+  return { ...component.pins, ...unit.pins }
 }
 
 /** Every net a component's terminals name. A no-connect contributes nothing. */

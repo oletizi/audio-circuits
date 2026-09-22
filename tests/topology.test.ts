@@ -53,7 +53,6 @@ const mutations: readonly (readonly [string, (n: MutableNetwork) => void])[] = [
   }],
   ["missing component", n => { n.components.pop() }],
   ["extra termination", n => { n.components.push({ ...n.components[0], id: "R2" }) }],
-  ["duplicate reference", n => { n.components.push(n.components[0]) }],
   ["swapped external ports", n => { n.ports.input = "out"; n.ports.output = "in" }],
 ]
 
@@ -64,6 +63,16 @@ for (const [name, mutate] of mutations) {
     expect(() => assertSameTopology(reference, candidate)).toThrow()
   })
 }
+
+test("rejects duplicate reference", () => {
+  // A bare .toThrow() here would also pass on the unrelated "external ports
+  // differ" fall-through (nothing else in assertSameTopology's per-component
+  // diff names a same-id, same-shape duplicate). Assert the specific message
+  // validateNetwork raises, so this test can only pass for the right reason.
+  const candidate: MutableNetwork = structuredClone(reference)
+  candidate.components.push(candidate.components[0])
+  expect(() => assertSameTopology(reference, candidate)).toThrow(/duplicate component id "R1"/)
+})
 
 test("names the component that was rewired", () => {
   const candidate: MutableNetwork = structuredClone(reference)

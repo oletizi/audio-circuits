@@ -1,3 +1,4 @@
+import { validateNetwork } from "./validate.ts"
 import type { Component, Network } from "./types.ts"
 
 type Canonical = string | number | boolean | null | readonly Canonical[] | { readonly [k: string]: Canonical }
@@ -32,8 +33,9 @@ function canonicalize(value: unknown): Canonical {
  * and is deliberately excluded from every signature below.
  */
 export function assertSameTopology(reference: Network, candidate: Network): void {
-  const signature = (network: Network) =>
-    JSON.stringify({
+  const signature = (network: Network) => {
+    validateNetwork(network)
+    return JSON.stringify({
       ports: canonicalize(network.ports),
       components: [...network.components]
         .sort((a, b) => a.id.localeCompare(b.id))
@@ -41,6 +43,7 @@ export function assertSameTopology(reference: Network, candidate: Network): void
           id, kind, pins: canonicalize(pins), units: canonicalize(units), parameters: canonicalize(parameters),
         })),
     })
+  }
   const referenceSignature = signature(reference)
   const candidateSignature = signature(candidate)
   if (referenceSignature === candidateSignature) return
@@ -89,6 +92,7 @@ function componentNets(component: Component): readonly string[] {
  * This is not a connector pin order, standalone termination, or PCB implementation.
  */
 export function partitionTopology(network: Network, ownerById: Readonly<Record<string, string>>, options?: PartitionOptions) {
+  validateNetwork(network)
   const ids = new Set(network.components.map(c => c.id))
   for (const id of Object.keys(ownerById)) {
     if (!ids.has(id)) throw new Error(`Unknown reference: ${id}`)

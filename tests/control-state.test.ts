@@ -193,3 +193,18 @@ test("ganged switches must select the same position", () => {
   expect(() => resolveNetwork(gangedPhysical, { potPositions: { P1: 0.5 }, switchPositions: { S1: "a", S2: "b" } }))
     .toThrow("Ganged switches disagree: freq")
 })
+
+test("a unit pin colliding with a package pin of the same name is rejected", () => {
+  // terminals() merges package pins and the MAIN unit's pins with a spread; a
+  // same-named unit pin would otherwise silently shadow the package pin instead
+  // of raising a collision.
+  const collision: Network = {
+    ports: { input: "in", output: "out" },
+    components: [{
+      id: "r1", kind: "resistor", parameters: { ohms: 1000 }, pins: { a: net("SHADOW") },
+      units: [{ name: "MAIN", pins: { a: net("in"), b: net("out") } }],
+    }],
+  }
+  expect(() => resolveNetwork(collision, { potPositions: {}, switchPositions: {} }))
+    .toThrow(/pin "a" collides with a package pin/)
+})
