@@ -63,11 +63,12 @@
  * so it is recorded and not fixed. Note that section B is simply UNDECLARED -
  * no pin here is an explicit no-connect, and this circuit authors no `NC`.
  *
- * TL072 pinout, transcribed from the `lib/chips/TL072.tsx` this commit
- * deletes (DIP-8 / SOIC-8): 1 OUTA, 2 INA_N, 3 INA_P, 4 VEE, 5 INB_P,
- * 6 INB_N, 7 OUTB, 8 VCC. That file also recorded a JLCPCB supplier part
- * number for the SOIC-8 part, C6961 (TL072CDT); `PartSpec` has no supplier
- * field, so it is written down here rather than lost.
+ * TL072 pinout, transcribed from `lib/chips/TL072.tsx` before the commit that
+ * removed tscircuit deleted it (DIP-8 / SOIC-8): 1 OUTA, 2 INA_N, 3 INA_P,
+ * 4 VEE, 5 INB_P, 6 INB_N, 7 OUTB, 8 VCC. Git history holds that file, at
+ * 6c5ad0a. It also recorded a JLCPCB supplier part number for the SOIC-8
+ * part, C6961 (TL072CDT); `PartSpec` has no supplier field, so it is written
+ * down here rather than lost.
  *
  * THE SPICE MODEL IS NOT A TL072 MODEL. `part.mpn` is "TL072" because the
  * part is a TL072. `spiceModel` is "GENERIC_OPAMP" because no redistributable
