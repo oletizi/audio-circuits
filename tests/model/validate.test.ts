@@ -8,6 +8,11 @@ const resistor = (id: string, a: string, b: string): Component => ({
   units: [{ name: "MAIN", pins: { a: net(a), b: net(b) } }],
 })
 
+const opamp = (id: string, inp: string, inm: string, out: string, vp: string, vm: string): Component => ({
+  id, kind: "opamp", parameters: {}, pins: { "v+": net(vp), "v-": net(vm) },
+  units: [{ name: "MAIN", pins: { "in+": net(inp), "in-": net(inm), out: net(out) } }],
+})
+
 const twoResistors: Network = {
   components: [resistor("r1", "IN", "MID"), resistor("r2", "MID", "OUT")],
   ports: { IN: "IN", OUT: "OUT" },
@@ -60,8 +65,8 @@ test("one component pin plus a declared port is valid", () => {
     components: [{
       id: "j1", kind: "connector", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { "1": net("OUT") } }],
-    }, resistor("r1", "IN", "OUT")],
-    ports: { IN: "IN", OUT: "OUT" },
+    }],
+    ports: { OUT: "OUT" },
   }
   expect(() => validateNetwork(connectorLike)).not.toThrow()
 })
@@ -105,4 +110,80 @@ test("an open-vocabulary kind still rejects an empty pin map", () => {
     ports: {},
   }
   expect(() => validateNetwork(bad)).toThrow(/declares no pins/i)
+})
+
+// Finding 1: Package-pin walk coverage tests
+test("opamp with valid package pins is accepted", () => {
+  const valid: Network = {
+    components: [opamp("u1", "IN+", "IN-", "OUT", "VCC", "GND"), resistor("r1", "OUT", "GND")],
+    ports: { "IN+": "IN+", "IN-": "IN-", OUT: "OUT", VCC: "VCC", GND: "GND" },
+  }
+  expect(() => validateNetwork(valid)).not.toThrow()
+})
+
+test("opamp missing required package pin is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "u1", kind: "opamp", parameters: {}, pins: { "v+": net("VCC") },
+      units: [{ name: "MAIN", pins: { "in+": net("IN+"), "in-": net("IN-"), out: net("OUT") } }],
+    }],
+    ports: { "IN+": "IN+", "IN-": "IN-", OUT: "OUT", VCC: "VCC" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/missing package pin "v-"/i)
+})
+
+test("opamp with extra package pin is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "u1", kind: "opamp", parameters: {}, pins: { "v+": net("VCC"), "v-": net("GND"), vcc: net("VCC") },
+      units: [{ name: "MAIN", pins: { "in+": net("IN+"), "in-": net("IN-"), out: net("OUT") } }],
+    }],
+    ports: { "IN+": "IN+", "IN-": "IN-", OUT: "OUT", VCC: "VCC", GND: "GND" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/package pin "vcc".*opamp/i)
+})
+
+test("opamp package pin on floating net is rejected", () => {
+  const floating: Network = {
+    components: [opamp("u1", "IN+", "IN-", "OUT", "VFLOAT", "GND"), resistor("r1", "OUT", "GND")],
+    ports: { "IN+": "IN+", "IN-": "IN-", OUT: "OUT", GND: "GND" },
+  }
+  expect(() => validateNetwork(floating)).toThrow(/net "VFLOAT".*one component pin/i)
+})
+
+// Finding 3: Missing validation tests
+test("component with empty id is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "", kind: "resistor", parameters: { ohms: 1 }, pins: {},
+      units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
+    }],
+    ports: { A: "A", B: "B" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/component id must not be empty/i)
+})
+
+test("component with empty units array is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "r1", kind: "resistor", parameters: { ohms: 1 }, pins: {},
+      units: [],
+    }],
+    ports: {},
+  }
+  expect(() => validateNetwork(bad)).toThrow(/declares no units/i)
+})
+
+test("component with duplicate unit names is rejected", () => {
+  const bad: Network = {
+    components: [{
+      id: "u1", kind: "ic", parameters: {}, pins: {},
+      units: [
+        { name: "A", pins: { "1": net("X") } },
+        { name: "A", pins: { "2": net("Y") } },
+      ],
+    }],
+    ports: { X: "X", Y: "Y" },
+  }
+  expect(() => validateNetwork(bad)).toThrow(/duplicate unit "A"/i)
 })
