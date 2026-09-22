@@ -1,4 +1,5 @@
 import type { ResolvedNetwork } from "./control-state.ts"
+import { twoPinElements } from "./resolved-two-pin.ts"
 import { UnionFind } from "./union-find.ts"
 
 /** Diagnostic connectivity lint, deliberately separate from `assertSameTopology`. Strict
@@ -30,11 +31,11 @@ function lintSingletons(network: ResolvedNetwork, declaredOpens: ReadonlySet<str
   const firstTerminalByNet = new Map<string, string>()
   const terminalCountByNet = new Map<string, number>()
 
-  for (const element of network.elements) {
+  for (const element of twoPinElements(network)) {
     for (const pin of ["a", "b"] as const) {
       const net = element.pins[pin]
       terminalCountByNet.set(net, (terminalCountByNet.get(net) ?? 0) + 1)
-      if (!firstTerminalByNet.has(net)) firstTerminalByNet.set(net, `${element.ref}.${pin}`)
+      if (!firstTerminalByNet.has(net)) firstTerminalByNet.set(net, `${element.component.id}.${pin}`)
     }
   }
 
@@ -60,9 +61,10 @@ function lintSingletons(network: ResolvedNetwork, declaredOpens: ReadonlySet<str
  * component and so stays at zero findings.
  */
 function lintIslands(network: ResolvedNetwork): IslandFinding[] {
+  const elements = twoPinElements(network)
   const nets = new Set<string>()
   for (const portNet of Object.values(network.ports)) nets.add(portNet)
-  for (const element of network.elements) {
+  for (const element of elements) {
     nets.add(element.pins.a)
     nets.add(element.pins.b)
   }
@@ -70,7 +72,7 @@ function lintIslands(network: ResolvedNetwork): IslandFinding[] {
   // Which root survives a merge is irrelevant for grouping purposes; the comparator only
   // needs to be deterministic.
   const uf = new UnionFind(nets, (a, b) => (a < b ? a : b))
-  for (const element of network.elements) {
+  for (const element of elements) {
     uf.union(element.pins.a, element.pins.b)
   }
 

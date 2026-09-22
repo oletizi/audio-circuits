@@ -4,10 +4,13 @@ import type { ResolvedNetwork } from "../lib/model/control-state.ts"
 
 const wellFormed: ResolvedNetwork = {
   ports: { input: "in", output: "out", ground: "0" },
-  elements: [
-    { ref: "R1", kind: "resistor", pins: { a: "in", b: "mid" }, parameters: { ohms: 1000 } },
-    { ref: "C1", kind: "capacitor", pins: { a: "mid", b: "0" }, parameters: { farads: 1e-6 } },
-    { ref: "L1", kind: "inductor", pins: { a: "mid", b: "out" }, parameters: { henries: 0.1 } },
+  components: [
+    { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+      units: [{ name: "MAIN", pins: { a: "in", b: "mid" } }] },
+    { id: "C1", kind: "capacitor", parameters: { farads: 1e-6 }, pins: {},
+      units: [{ name: "MAIN", pins: { a: "mid", b: "0" } }] },
+    { id: "L1", kind: "inductor", parameters: { henries: 0.1 }, pins: {},
+      units: [{ name: "MAIN", pins: { a: "mid", b: "out" } }] },
   ],
 }
 
@@ -23,9 +26,10 @@ test("external ports are not reported as singletons", () => {
 test("an accidental singleton net is reported", () => {
   const typo: ResolvedNetwork = {
     ports: wellFormed.ports,
-    elements: [
-      ...wellFormed.elements.slice(0, 2),
-      { ref: "L1", kind: "inductor", pins: { a: "mjd", b: "out" }, parameters: { henries: 0.1 } },
+    components: [
+      ...wellFormed.components.slice(0, 2),
+      { id: "L1", kind: "inductor", parameters: { henries: 0.1 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "mjd", b: "out" } }] },
     ],
   }
   const findings = lintConnectivity(typo)
@@ -35,9 +39,10 @@ test("an accidental singleton net is reported", () => {
 test("a declared open is not reported", () => {
   const withOpen: ResolvedNetwork = {
     ports: wellFormed.ports,
-    elements: [
-      ...wellFormed.elements,
-      { ref: "C9", kind: "capacitor", pins: { a: "mid", b: "spare" }, parameters: { farads: 1e-9 } },
+    components: [
+      ...wellFormed.components,
+      { id: "C9", kind: "capacitor", parameters: { farads: 1e-9 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "mid", b: "spare" } }] },
     ],
   }
   expect(lintConnectivity(withOpen, { declaredOpens: ["spare"] })).toEqual([])
@@ -47,10 +52,13 @@ test("a declared open is not reported", () => {
 test("two internally well-formed islands are reported", () => {
   const split: ResolvedNetwork = {
     ports: { input: "in", output: "out", ground: "0" },
-    elements: [
-      { ref: "R1", kind: "resistor", pins: { a: "in", b: "0" }, parameters: { ohms: 1000 } },
-      { ref: "R2", kind: "resistor", pins: { a: "out", b: "iso" }, parameters: { ohms: 1000 } },
-      { ref: "C2", kind: "capacitor", pins: { a: "iso", b: "out" }, parameters: { farads: 1e-6 } },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "0" } }] },
+      { id: "R2", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "out", b: "iso" } }] },
+      { id: "C2", kind: "capacitor", parameters: { farads: 1e-6 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "iso", b: "out" } }] },
     ],
   }
   const islands = lintConnectivity(split).filter(f => f.code === "disconnected-island")

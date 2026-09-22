@@ -10,6 +10,8 @@ function isSwitchComponent(c: Network["components"][number]): c is SwitchCompone
   return c.kind === "switch"
 }
 
+const NO_CONTROLS: ControlState = { potPositions: {}, switchPositions: {} }
+
 const physical: Network = {
   ports: { input: "in", output: "out", ground: "0" },
   components: [
@@ -30,10 +32,16 @@ const midpoint: ControlState = { potPositions: { P1: 0.5 }, switchPositions: { S
 
 test("expands a linear pot into two resistors summing to its total", () => {
   const resolved = resolveNetwork(physical, midpoint)
-  const lower = resolved.elements.find(e => e.ref === "P1.ccw-wiper")
-  const upper = resolved.elements.find(e => e.ref === "P1.wiper-cw")
+  const lower = resolved.components.find(c => c.id === "P1.ccw-wiper")
+  const upper = resolved.components.find(c => c.id === "P1.wiper-cw")
   if (lower?.kind !== "resistor") throw new Error("P1.ccw-wiper must resolve to a resistor")
   if (upper?.kind !== "resistor") throw new Error("P1.wiper-cw must resolve to a resistor")
+  // `parameters` is independent of `kind` (see control-state.ts's own comment on
+  // `Component`), so narrowing `kind` above does not narrow `parameters` with it; the
+  // `in` check does.
+  if (!("ohms" in lower.parameters) || !("ohms" in upper.parameters)) {
+    throw new Error("resolved pot sections must carry ohms")
+  }
   expect(lower.kind).toBe("resistor")
   expect(lower.parameters.ohms).toBeCloseTo(5000, 9)
   expect(upper.parameters.ohms).toBeCloseTo(5000, 9)
@@ -41,15 +49,16 @@ test("expands a linear pot into two resistors summing to its total", () => {
 
 test("a closed switch contact merges its two nets", () => {
   const resolved = resolveNetwork(physical, midpoint)
-  const c1 = resolved.elements.find(e => e.ref === "C1")
-  expect(c1?.pins.a).toBe(resolved.elements.find(e => e.ref === "P1.wiper-cw")?.pins.a)
-  expect(resolved.elements.some(e => e.ref === "S1")).toBe(false)
+  const c1 = resolved.components.find(c => c.id === "C1")
+  const wiperCw = resolved.components.find(c => c.id === "P1.wiper-cw")
+  expect(c1?.units[0]?.pins.a).toBe(wiperCw?.units[0]?.pins.a)
+  expect(resolved.components.some(c => c.id === "S1")).toBe(false)
 })
 
 test("an open switch contact leaves its net unmerged", () => {
   const resolved = resolveNetwork(physical, midpoint)
-  const c2 = resolved.elements.find(e => e.ref === "C2")
-  expect(c2?.pins.a).toBe("sel_b")
+  const c2 = resolved.components.find(c => c.id === "C2")
+  expect(c2?.units[0]?.pins.a).toBe("sel_b")
 })
 
 test("rewrites ports through the canonical net representative after a switch merge", () => {
@@ -77,8 +86,8 @@ test("a contact shorting a net to ground keeps ground as the canonical represent
   }
   const resolved = resolveNetwork(groundShort, { potPositions: {}, switchPositions: { S3: "on" } })
   expect(resolved.ports.ground).toBe("0")
-  const r1 = resolved.elements.find(e => e.ref === "R1")
-  expect(r1?.pins.b).toBe("0")
+  const r1 = resolved.components.find(c => c.id === "R1")
+  expect(r1?.units[0]?.pins.b).toBe("0")
 })
 
 test("rejects a switch position with no contacts entry", () => {
@@ -113,22 +122,6 @@ test("rejects a pot missing a declared terminal", () => {
   }
   expect(() => resolveNetwork(missingTerminal, { potPositions: { P9: 0.5 }, switchPositions: {} }))
     .toThrow("Unknown pot pin: P9.cw")
-})
-
-test("rejects a passthrough element without exactly two pins keyed a and b", () => {
-  // R8 exists only so the declared ground port lands on a connected net; R9's third pin
-  // is what this test exercises.
-  const threePin: Network = {
-    ports: { input: "in", output: "out", ground: "0" },
-    components: [
-      { id: "R9", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
-        units: [{ name: "MAIN", pins: { a: net("in"), b: net("mid"), c: net("out") } }] },
-      { id: "R8", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
-        units: [{ name: "MAIN", pins: { a: net("out"), b: net("0") } }] },
-    ],
-  }
-  expect(() => resolveNetwork(threePin, { potPositions: {}, switchPositions: {} }))
-    .toThrow(/Element does not have exactly two pins keyed a and b: R9/)
 })
 
 test("an unconnected port is diagnosed by the topology validator, not the union-find", () => {
@@ -194,17 +187,101 @@ test("ganged switches must select the same position", () => {
     .toThrow("Ganged switches disagree: freq")
 })
 
-test("a unit pin colliding with a package pin of the same name is rejected", () => {
-  // terminals() merges package pins and the MAIN unit's pins with a spread; a
-  // same-named unit pin would otherwise silently shadow the package pin instead
-  // of raising a collision.
+test("a switch's unit pin colliding with a package pin of the same name is rejected", () => {
+  // `terminals()` merges a pot/switch's package pins and its single unit's pins with a
+  // spread; a same-named unit pin would otherwise silently shadow the package pin
+  // instead of raising a collision. General (non-pot/switch) components no longer go
+  // through this merge at all - Task 3 stopped resolution flattening package pins into
+  // units - so this now has to be exercised through a switch, not a plain resistor.
   const collision: Network = {
-    ports: { input: "in", output: "out" },
+    // `ground` is required by `netPreference` regardless of what this test exercises
+    // (see "refuses a network that declares no ground port" below); reusing "in" keeps
+    // the fixture minimal.
+    ports: { input: "in", output: "out", ground: "in" },
     components: [{
-      id: "r1", kind: "resistor", parameters: { ohms: 1000 }, pins: { a: net("SHADOW") },
-      units: [{ name: "MAIN", pins: { a: net("in"), b: net("out") } }],
+      id: "s1", kind: "switch",
+      parameters: { positions: ["a"], contacts: { a: [["common", "a"]] } },
+      pins: { common: net("SHADOW") },
+      units: [{ name: "MAIN", pins: { common: net("in"), a: net("out") } }],
     }],
   }
-  expect(() => resolveNetwork(collision, { potPositions: {}, switchPositions: {} }))
-    .toThrow(/pin "a" collides with a package pin/)
+  expect(() => resolveNetwork(collision, { potPositions: {}, switchPositions: { s1: "a" } }))
+    .toThrow(/pin "common" collides with a package pin/)
+})
+
+test("an active device passes through resolution with its structure intact", () => {
+  const network: Network = {
+    components: [{
+      id: "amp", kind: "opamp", parameters: {},
+      pins: { "v+": net("VCC"), "v-": net("VEE") },
+      units: [{ name: "A", pins: { "in+": net("IN"), "in-": net("FB"), out: net("OUT") } }],
+    }, {
+      id: "fb", kind: "resistor", parameters: { ohms: 10000 },
+      pins: {}, units: [{ name: "MAIN", pins: { a: net("OUT"), b: net("FB") } }],
+    }],
+    // `ground` is required by `netPreference` regardless of what this test exercises;
+    // VEE (the negative supply) is a reasonable stand-in.
+    ports: { IN: "IN", VCC: "VCC", VEE: "VEE", OUT: "OUT", ground: "VEE" },
+  }
+  const amp = resolveNetwork(network, NO_CONTROLS).components.find((c) => c.id === "amp")
+  // Package pins stay on the COMPONENT. They are not merged into the unit.
+  expect(amp?.pins).toEqual({ "v+": "VCC", "v-": "VEE" })
+  expect(amp?.units).toHaveLength(1)
+  expect(amp?.units[0]?.pins).toEqual({ "in+": "IN", "in-": "FB", out: "OUT" })
+})
+
+test("a dual package stays ONE component with two units", () => {
+  const dual: Network = {
+    components: [{
+      id: "amp", kind: "opamp", parameters: {},
+      pins: { "v+": net("VCC"), "v-": net("VEE") },
+      units: [
+        { name: "A", pins: { "in+": net("A_IN"), "in-": net("A_FB"), out: net("A_OUT") } },
+        { name: "B", pins: { "in+": net("B_IN"), "in-": net("B_FB"), out: net("B_OUT") } },
+      ],
+    }],
+    ports: {
+      VCC: "VCC", VEE: "VEE", A_IN: "A_IN", A_FB: "A_FB", A_OUT: "A_OUT",
+      B_IN: "B_IN", B_FB: "B_FB", B_OUT: "B_OUT",
+      // Required by `netPreference` regardless of what this test exercises.
+      ground: "VEE",
+    },
+  }
+  const resolved = resolveNetwork(dual, NO_CONTROLS)
+  expect(resolved.components).toHaveLength(1)
+  expect(resolved.components[0]?.units.map((u) => u.name)).toEqual(["A", "B"])
+})
+
+test("a no-connect is omitted from resolved pins, not rendered as a net name", () => {
+  const withNc: Network = {
+    components: [{
+      id: "u", kind: "ic", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { "1": net("IN"), "2": { kind: "nc" } } }],
+    }, {
+      id: "load", kind: "resistor", parameters: { ohms: 1000 },
+      pins: {}, units: [{ name: "MAIN", pins: { a: net("IN"), b: net("GND") } }],
+    }],
+    // `ground` is required by `netPreference` regardless of what this test exercises.
+    ports: { IN: "IN", GND: "GND", ground: "GND" },
+  }
+  const u = resolveNetwork(withNc, NO_CONTROLS).components.find((c) => c.id === "u")
+  expect(u?.units[0]?.pins).toEqual({ "1": "IN" })
+  expect(Object.keys(u?.units[0]?.pins ?? {})).not.toContain("2")
+})
+
+test("a potentiometer still resolves into two resistors", () => {
+  // Reuses the assertions from "expands a linear pot into two resistors summing to its
+  // total" above verbatim in substance (same fixture, same 5000/5000 split at the
+  // midpoint), proving the generalisation changed nothing for a kind that already
+  // resolved.
+  const resolved = resolveNetwork(physical, midpoint)
+  const lower = resolved.components.find(c => c.id === "P1.ccw-wiper")
+  const upper = resolved.components.find(c => c.id === "P1.wiper-cw")
+  if (lower?.kind !== "resistor") throw new Error("P1.ccw-wiper must resolve to a resistor")
+  if (upper?.kind !== "resistor") throw new Error("P1.wiper-cw must resolve to a resistor")
+  if (!("ohms" in lower.parameters) || !("ohms" in upper.parameters)) {
+    throw new Error("resolved pot sections must carry ohms")
+  }
+  expect(lower.parameters.ohms).toBeCloseTo(5000, 9)
+  expect(upper.parameters.ohms).toBeCloseTo(5000, 9)
 })

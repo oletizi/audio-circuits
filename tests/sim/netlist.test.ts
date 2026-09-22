@@ -6,9 +6,11 @@ import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 
 const rc: ResolvedNetwork = {
   ports: { input: "in", output: "out", ground: "0" },
-  elements: [
-    { ref: "R1", kind: "resistor", pins: { a: "in", b: "out" }, parameters: { ohms: 1000 } },
-    { ref: "C1", kind: "capacitor", pins: { a: "out", b: "0" }, parameters: { farads: 159.1549431e-9 } },
+  components: [
+    { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+      units: [{ name: "MAIN", pins: { a: "in", b: "out" } }] },
+    { id: "C1", kind: "capacitor", parameters: { farads: 159.1549431e-9 }, pins: {},
+      units: [{ name: "MAIN", pins: { a: "out", b: "0" } }] },
   ],
 }
 
@@ -42,7 +44,7 @@ test("refuses a source or load port that the network does not expose", () => {
 
 const resistiveDivider: ResolvedNetwork = {
   ports: { input: "sig", output: "sig", ground: "0" },
-  elements: [],
+  components: [],
 }
 
 const resistiveDividerEnvironment: SimulationEnvironment = {
@@ -72,9 +74,11 @@ test("wires the source's internal node and series resistor to reproduce a purely
 test("refuses a network whose net collides with the synthetic source-series internal node", () => {
   const colliding: ResolvedNetwork = {
     ports: { input: "in", output: "out", ground: "0" },
-    elements: [
-      { ref: "R1", kind: "resistor", pins: { a: "in", b: "n_src_internal" }, parameters: { ohms: 1000 } },
-      { ref: "R2", kind: "resistor", pins: { a: "n_src_internal", b: "out" }, parameters: { ohms: 1000 } },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "n_src_internal" } }] },
+      { id: "R2", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "n_src_internal", b: "out" } }] },
     ],
   }
   const collidingEnvironment: SimulationEnvironment = {
@@ -103,9 +107,11 @@ const collisionEnvironment: SimulationEnvironment = {
 test("refuses two nets that differ only in punctuation and would emit as one node", () => {
   const punctuationCollision: ResolvedNetwork = {
     ports: { input: "in", output: "out", ground: "0" },
-    elements: [
-      { ref: "R1", kind: "resistor", pins: { a: "in", b: "lf.mid" }, parameters: { ohms: 1000 } },
-      { ref: "R2", kind: "resistor", pins: { a: "lf-mid", b: "out" }, parameters: { ohms: 1000 } },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "lf.mid" } }] },
+      { id: "R2", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "lf-mid", b: "out" } }] },
     ],
   }
   expect(() => toSpiceNetlist(punctuationCollision, collisionEnvironment))
@@ -115,9 +121,11 @@ test("refuses two nets that differ only in punctuation and would emit as one nod
 test("refuses two nets that differ only in case, which ngspice folds together", () => {
   const caseCollision: ResolvedNetwork = {
     ports: { input: "in", output: "out", ground: "0" },
-    elements: [
-      { ref: "R1", kind: "resistor", pins: { a: "in", b: "LF_MID" }, parameters: { ohms: 1000 } },
-      { ref: "R2", kind: "resistor", pins: { a: "lf_mid", b: "out" }, parameters: { ohms: 1000 } },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "LF_MID" } }] },
+      { id: "R2", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "lf_mid", b: "out" } }] },
     ],
   }
   expect(() => toSpiceNetlist(caseCollision, collisionEnvironment))
@@ -127,10 +135,13 @@ test("refuses two nets that differ only in case, which ngspice folds together", 
 test("refuses a non-ground net named 0, which SPICE reserves for the reference node", () => {
   const groundImpostor: ResolvedNetwork = {
     ports: { input: "in", output: "out", ground: "gnd" },
-    elements: [
-      { ref: "R1", kind: "resistor", pins: { a: "in", b: "0" }, parameters: { ohms: 1000 } },
-      { ref: "R2", kind: "resistor", pins: { a: "0", b: "out" }, parameters: { ohms: 1000 } },
-      { ref: "R3", kind: "resistor", pins: { a: "out", b: "gnd" }, parameters: { ohms: 1000 } },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "0" } }] },
+      { id: "R2", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "0", b: "out" } }] },
+      { id: "R3", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "out", b: "gnd" } }] },
     ],
   }
   expect(() => toSpiceNetlist(groundImpostor, collisionEnvironment))
@@ -142,9 +153,11 @@ test("refuses two element references that emit as the same component name", () =
   // applies the type letter, colliding with the element already named "R1".
   const nameCollision: ResolvedNetwork = {
     ports: { input: "in", output: "out", ground: "0" },
-    elements: [
-      { ref: "R1", kind: "resistor", pins: { a: "in", b: "mid" }, parameters: { ohms: 1000 } },
-      { ref: "1", kind: "resistor", pins: { a: "mid", b: "out" }, parameters: { ohms: 2000 } },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "mid" } }] },
+      { id: "1", kind: "resistor", parameters: { ohms: 2000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "mid", b: "out" } }] },
     ],
   }
   expect(() => toSpiceNetlist(nameCollision, collisionEnvironment))

@@ -1,26 +1,16 @@
-import type { CapacitorParameters, InductorParameters, ResistorParameters, Taper } from "./parameters.ts"
+import type { Taper } from "./parameters.ts"
 import { UnionFind } from "./union-find.ts"
 import { GROUND_PORT_KEY, netPreference } from "./net-preference.ts"
 import type {
-  CapacitorComponent, Component, Connection, InductorComponent, Network,
-  PotentiometerComponent, ResistorComponent, SwitchComponent,
+  Component, ComponentKind, Connection, Network, Parameters, PartSpec,
+  PotentiometerComponent, SwitchComponent,
 } from "./types.ts"
-
-/** The kinds `toResolvedPassthrough` accepts: `resolveNetwork` only ever expects
- * resistors, capacitors, inductors, pots and switches on its input (Ruling A's
- * two-terminal convention). A genuine discriminated union - unlike `Component` itself,
- * where `kind` and `parameters` are independent fields - so narrowing on `kind` inside
- * `toResolvedPassthrough` narrows `parameters` with it. */
-type PassthroughComponent = ResistorComponent | CapacitorComponent | InductorComponent
 
 function isPotentiometer(component: Component): component is PotentiometerComponent {
   return component.kind === "potentiometer"
 }
 function isSwitch(component: Component): component is SwitchComponent {
   return component.kind === "switch"
-}
-function isPassthroughKind(component: Component): component is PassthroughComponent {
-  return component.kind === "resistor" || component.kind === "capacitor" || component.kind === "inductor"
 }
 
 export interface ControlState {
@@ -30,34 +20,42 @@ export interface ControlState {
   readonly switchPositions: Readonly<Record<string, string>>
 }
 
-type ResolvedBase<K extends string, P> = {
-  readonly ref: string
-  readonly kind: K
-  /** Every resolved element has exactly two pins, keyed `a` and `b`: the SPICE emitter
-   * reads `pins.a`/`pins.b` directly and must never meet a surprise third terminal.
-   * This is also the key contract a producer of the INPUT `Network` must satisfy
-   * for its two-terminal passives - `requireTwoPin` below rejects any other keying.
-   */
-  readonly pins: { readonly a: string; readonly b: string }
-  readonly parameters: P
+/** Mirrors `Unit`, but every pin is resolved to a net name rather than a `Connection`.
+ * A no-connect pin is ABSENT, not present as a name: an unconnected pin must never
+ * appear in a SPICE netlist as a node.
+ */
+export interface ResolvedUnit {
+  readonly name: string
+  readonly pins: Readonly<Record<string, string>>
+  readonly spiceModel?: string
 }
 
-export type ResolvedElement =
-  | ResolvedBase<"resistor", ResistorParameters>
-  | ResolvedBase<"capacitor", CapacitorParameters>
-  | ResolvedBase<"inductor", InductorParameters>
+/** Mirrors `Component`: resolution resolves control state, nothing more. It does NOT
+ * flatten package pins into units and does NOT split a multi-unit package into
+ * separate elements - both are SPICE-shaped lowerings, owned by the SPICE emitter
+ * (a later task), not by resolution. A consumer's needs never reshape this type.
+ */
+export interface ResolvedComponent {
+  readonly id: string
+  readonly kind: ComponentKind
+  readonly parameters: Parameters
+  readonly part?: PartSpec
+  readonly pins: Readonly<Record<string, string>>
+  readonly units: readonly ResolvedUnit[]
+}
 
 export interface ResolvedNetwork {
   readonly ports: Readonly<Record<string, string>>
-  readonly elements: readonly ResolvedElement[]
+  readonly components: readonly ResolvedComponent[]
 }
 
-/** A physical network's components are single-unit: one "MAIN" unit carries every
- * terminal (a two-terminal passive's `a`/`b`, a pot's `ccw`/`wiper`/`cw`, a switch's
- * `common` and its throws), and package pins stay empty. This flattens a component's
- * package pins and its one unit's pins into the single pin-name -> Connection map every
- * pass below reasons about. Throws if a component was built with more than one unit,
- * which the physical-network convention never produces.
+/** A pot or switch component's single "MAIN" unit, merged with its (normally empty)
+ * package pins into one pin-name -> Connection map. Pots and switches keep the
+ * two-terminal / open-vocabulary convention that predates active devices - that is
+ * what `requirePotPin` and `mergeShortedNets` read pins through - and this merge is
+ * exactly what lets them address a pin by name without caring whether it came from
+ * the package or the unit. Throws if the component was built with more than one
+ * unit, which that convention never produces.
  */
 function terminals(component: Component): Readonly<Record<string, Connection>> {
   if (component.units.length !== 1) {
@@ -74,10 +72,22 @@ function terminals(component: Component): Readonly<Record<string, Connection>> {
   return { ...component.pins, ...unit.pins }
 }
 
-/** Every net a component's terminals name. A no-connect contributes nothing. */
+/** Every connection a component declares, across its package pins and every unit's
+ * pins - unlike `terminals`, this does not assume (or require) exactly one unit, so
+ * it works uniformly for a two-terminal passive and a multi-unit active device alike.
+ */
+function connectionsOf(component: Component): readonly Connection[] {
+  const connections: Connection[] = [...Object.values(component.pins)]
+  for (const unit of component.units) connections.push(...Object.values(unit.pins))
+  return connections
+}
+
+/** Every net a component's pins name, across package and unit pins. A no-connect
+ * contributes nothing.
+ */
 function netsOf(component: Component): readonly string[] {
   const nets: string[] = []
-  for (const connection of Object.values(terminals(component))) {
+  for (const connection of connectionsOf(component)) {
     if (connection.kind === "net") nets.push(connection.net)
   }
   return nets
@@ -93,7 +103,8 @@ function requireNet(connection: Connection | undefined, message: string): string
 }
 
 /** Structural well-formedness of a physical network, before control-state resolution:
- * unique non-empty component ids, at least two pins per component, no empty pin key or
+ * unique non-empty component ids, at least one unit per component, at least two pins
+ * per component (package pins plus every unit's pins, combined), no empty pin key or
  * net name, and every declared port landing on a net some component actually touches.
  *
  * Deliberately separate from `validate.ts`'s `validateNetwork`: that check enforces a
@@ -108,7 +119,13 @@ function validatePhysicalNetwork(network: Network): void {
       throw new Error(`Duplicate or empty reference: ${component.id}`)
     }
     ids.add(component.id)
-    const pinEntries = Object.entries(terminals(component))
+    if (component.units.length === 0) {
+      throw new Error(`Component declares no units: ${component.id}`)
+    }
+    const pinEntries: (readonly [string, Connection])[] = [
+      ...Object.entries(component.pins),
+      ...component.units.flatMap(unit => Object.entries(unit.pins)),
+    ]
     if (pinEntries.length < 2) throw new Error(`Missing pins: ${component.id}`)
     for (const [pin, connection] of pinEntries) {
       if (!pin) throw new Error(`Empty pin/net: ${component.id}`)
@@ -218,84 +235,82 @@ function requirePotPin(
   return requireNet(terminals(pot)[pin], `Unknown pot pin: ${pot.id}.${pin}`)
 }
 
-/** Pass 4: replaces each pot with two resistors, ccw-to-wiper and wiper-to-cw.
- * A zero-ohm section is legal and is still emitted, so element counts stay stable
- * across a sweep.
+/** Pass 4: replaces each pot with two resolved resistor components, ccw-to-wiper and
+ * wiper-to-cw. A zero-ohm section is legal and is still emitted, so component counts
+ * stay stable across a sweep. Pots legitimately keep the two-terminal `a`/`b` resistor
+ * shape here - that is the kind's own vocabulary (see `kinds.ts`), not a SPICE-shaped
+ * lowering imposed by resolution.
  */
-function expandPot(pot: PotentiometerComponent, fraction: number): ResolvedElement[] {
+function expandPot(pot: PotentiometerComponent, fraction: number, uf: UnionFind): ResolvedComponent[] {
   const ccw = requirePotPin(pot, "ccw")
   const wiper = requirePotPin(pot, "wiper")
   const cw = requirePotPin(pot, "cw")
   const lowerFraction = taperFraction(pot.parameters.taper, fraction)
+  const section = (suffix: string, a: string, b: string, ohms: number): ResolvedComponent => ({
+    id: `${pot.id}.${suffix}`,
+    kind: "resistor",
+    parameters: { ohms },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a: uf.find(a), b: uf.find(b) } }],
+  })
   return [
-    {
-      ref: `${pot.id}.ccw-wiper`,
-      kind: "resistor",
-      pins: { a: ccw, b: wiper },
-      parameters: { ohms: pot.parameters.ohms * lowerFraction },
-    },
-    {
-      ref: `${pot.id}.wiper-cw`,
-      kind: "resistor",
-      pins: { a: wiper, b: cw },
-      parameters: { ohms: pot.parameters.ohms * (1 - lowerFraction) },
-    },
+    section("ccw-wiper", ccw, wiper, pot.parameters.ohms * lowerFraction),
+    section("wiper-cw", wiper, cw, pot.parameters.ohms * (1 - lowerFraction)),
   ]
 }
 
-/** Every resolved element carries exactly two pins keyed `a` and `b` (Ruling A) so a
- * later SPICE emitter never has to handle a surprise third terminal. Resistors,
- * capacitors and inductors pass through from the physical network unchanged except for
- * this check; a tapped inductor's extra tap, if it ever reached this path, would fail
- * here rather than reaching the emitter.
+/** A pin map reduced to net names, canonicalized through the union-find. A no-connect
+ * pin is OMITTED, not rewritten to some placeholder: an unconnected pin must never
+ * appear in a resolved network, and so never reach a SPICE netlist as a node.
  */
-function requireTwoPin(component: Component): { readonly a: string; readonly b: string } {
-  const pins = terminals(component)
-  const keys = Object.keys(pins)
-  if (keys.length !== 2 || !("a" in pins) || !("b" in pins)) {
-    throw new Error(`Element does not have exactly two pins keyed a and b: ${component.id}`)
+function reducePins(pins: Readonly<Record<string, Connection>>, uf: UnionFind): Record<string, string> {
+  const resolved: Record<string, string> = {}
+  for (const [pin, connection] of Object.entries(pins)) {
+    if (connection.kind === "net") resolved[pin] = uf.find(connection.net)
   }
+  return resolved
+}
+
+/** Every kind but potentiometer and switch passes through with its component/unit
+ * structure intact: package pins stay on the component, each unit keeps its own pin
+ * map and its own name, and every `Connection` is reduced to its canonical net name.
+ * This is exactly resolving control state - nothing here reshapes the component for
+ * any particular downstream consumer.
+ */
+function toResolvedComponent(component: Component, uf: UnionFind): ResolvedComponent {
   return {
-    a: requireNet(pins.a, `Unknown pin: ${component.id}.a`),
-    b: requireNet(pins.b, `Unknown pin: ${component.id}.b`),
+    id: component.id,
+    kind: component.kind,
+    parameters: component.parameters,
+    part: component.part,
+    pins: reducePins(component.pins, uf),
+    units: component.units.map(unit => ({
+      name: unit.name,
+      pins: reducePins(unit.pins, uf),
+      spiceModel: unit.spiceModel,
+    })),
   }
 }
 
-/** Passes a resistor, capacitor or inductor through unchanged apart from enforcing the
- * two-pin invariant. Narrows on `kind` explicitly (rather than spreading the union)
- * so `parameters` stays tied to the correct member of `ResolvedElement`.
+/** Pass 5: rewrites the network's arbitrary-keyed ports to each net's canonical
+ * union-find representative.
  */
-function toResolvedPassthrough(component: PassthroughComponent): ResolvedElement {
-  const pins = requireTwoPin(component)
-  if (component.kind === "resistor") return { ref: component.id, kind: "resistor", pins, parameters: component.parameters }
-  if (component.kind === "capacitor") return { ref: component.id, kind: "capacitor", pins, parameters: component.parameters }
-  return { ref: component.id, kind: "inductor", pins, parameters: component.parameters }
-}
-
-/** Pass 5: rewrites a resolved element's two pins, or the network's arbitrary-keyed
- * ports, to each net's canonical union-find representative.
- */
-function rewritePins(pins: { readonly a: string; readonly b: string }, uf: UnionFind): { a: string; b: string } {
-  return { a: uf.find(pins.a), b: uf.find(pins.b) }
-}
-
 function rewritePorts(ports: Readonly<Record<string, string>>, uf: UnionFind): Record<string, string> {
   const rewritten: Record<string, string> = {}
   for (const [key, net] of Object.entries(ports)) rewritten[key] = uf.find(net)
   return rewritten
 }
 
-/** Produces the simplified network simulation and lint consume, from the physical
- * network (which keeps every pot terminal and switch contact) and a control-state
- * vector. No control setting is ever defaulted, inferred, or silently tolerated.
+/** Produces the network simulation and lint consume, from the physical network (which
+ * keeps every pot terminal and switch contact) and a control-state vector. No control
+ * setting is ever defaulted, inferred, or silently tolerated.
  *
  * Input contract. `physical` must be structurally well-formed (`validatePhysicalNetwork`,
  * run first here so a structural defect is diagnosed by the module that owns the rule
- * rather than surfacing later as an unrelated union-find lookup failure), it must declare
- * a `ground` port, and every resistor, capacitor and inductor in it must key its two pins
- * `a` and `b`. Pots and switches keep their own terminal vocabularies; only the
- * two-terminal passives are constrained. A producer whose source names pins otherwise -
- * tscircuit's `pin1`/`pin2`, for instance - must rekey them before calling this.
+ * rather than surfacing later as an unrelated union-find lookup failure) and it must
+ * declare a `ground` port. Pots and switches keep their own two-terminal / open-vocabulary
+ * pin conventions; every other kind's pins pass through unconstrained, since resolution
+ * does not police a kind's vocabulary - `validate.ts` does that for authored circuits.
  */
 export function resolveNetwork(physical: Network, state: ControlState): ResolvedNetwork {
   validatePhysicalNetwork(physical)
@@ -306,21 +321,17 @@ export function resolveNetwork(physical: Network, state: ControlState): Resolved
 
   const uf = mergeShortedNets(physical, switches, state)
 
-  const expanded: ResolvedElement[] = []
+  const components: ResolvedComponent[] = []
   for (const component of physical.components) {
     if (isSwitch(component)) continue
     if (isPotentiometer(component)) {
-      expanded.push(...expandPot(component, state.potPositions[component.id]))
+      components.push(...expandPot(component, state.potPositions[component.id], uf))
       continue
     }
-    if (!isPassthroughKind(component)) {
-      throw new Error(`Component kind not supported by resolveNetwork: ${component.kind} (${component.id})`)
-    }
-    expanded.push(toResolvedPassthrough(component))
+    components.push(toResolvedComponent(component, uf))
   }
 
-  const elements = expanded.map(element => ({ ...element, pins: rewritePins(element.pins, uf) }))
   const ports = rewritePorts(physical.ports, uf)
 
-  return { ports, elements }
+  return { ports, components }
 }

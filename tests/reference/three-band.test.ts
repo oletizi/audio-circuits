@@ -156,8 +156,8 @@ test("a selector position change moves exactly one capacitor into circuit", () =
   const at = (position: string) => {
     const state = controlState(1, 1, 1, { ...MID_POSITIONS, loFrequency: position })
     const resolved = resolveNetwork(THREE_BAND_REFERENCE, state)
-    const caps = resolved.elements.filter(e => e.kind === "capacitor")
-    return new Set(caps.map(c => `${c.ref}:${c.pins.a}|${c.pins.b}`))
+    const caps = resolved.components.filter(c => c.kind === "capacitor")
+    return new Set(caps.map(c => `${c.id}:${c.units[0]?.pins.a}|${c.units[0]?.pins.b}`))
   }
   const twenty = at("20Hz")
   const thirty = at("30Hz")

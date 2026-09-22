@@ -1,4 +1,6 @@
-import type { ResolvedElement, ResolvedNetwork } from "../model/control-state.ts"
+import type { ResolvedNetwork } from "../model/control-state.ts"
+import { twoPinElements } from "../model/resolved-two-pin.ts"
+import type { ComponentKind, Parameters } from "../model/types.ts"
 
 export interface SourceModel {
   /** Port name in the network's ports map. */
@@ -27,10 +29,37 @@ export interface SimulationEnvironment {
   readonly groundPort: string
 }
 
-const PREFIX: Readonly<Record<ResolvedElement["kind"], string>> = {
+/** This emitter predates active devices and only knows how to emit two-terminal
+ * passives (see `resolved-two-pin.ts`). Active-device emission - unit lowering,
+ * subcircuit `X` lines, device models - is a later task's job, not this one's.
+ */
+type PassiveKind = "resistor" | "capacitor" | "inductor"
+
+function isPassiveKind(kind: ComponentKind): kind is PassiveKind {
+  return kind === "resistor" || kind === "capacitor" || kind === "inductor"
+}
+
+const PREFIX: Readonly<Record<PassiveKind, string>> = {
   resistor: "R",
   capacitor: "C",
   inductor: "L",
+}
+
+const VALUE_FIELD: Readonly<Record<PassiveKind, string>> = {
+  resistor: "ohms",
+  capacitor: "farads",
+  inductor: "henries",
+}
+
+/** `Parameters` is not tied to `kind` (see `validate.ts`'s `checkParameters` for why),
+ * so a numeric parameter is read generically rather than narrowed with a cast.
+ */
+function numericParameter(parameters: Parameters, field: string, ref: string): number {
+  const value: unknown = Reflect.get(parameters, field)
+  if (typeof value !== "number") {
+    throw new Error(`component "${ref}": missing or non-numeric parameter "${field}"`)
+  }
+  return value
 }
 
 /** Synthetic component/net names the emitter itself introduces. `LOAD_RESISTOR_NAME`,
@@ -105,17 +134,15 @@ function registerNode(nodes: Map<string, NodeOrigin>, rawNet: string, groundNet:
  * with the correct type letter, case-insensitively. `R1` stays `R1`; `P1.ccw-wiper`
  * (a resolved pot section) becomes `RP1_ccw_wiper`.
  */
-function elementName(kind: ResolvedElement["kind"], ref: string): string {
+function elementName(kind: PassiveKind, ref: string): string {
   const sanitized = sanitize(ref)
   const letter = PREFIX[kind]
   if (sanitized.charAt(0).toUpperCase() === letter) return sanitized
   return `${letter}${sanitized}`
 }
 
-function valueOf(element: ResolvedElement): string {
-  if (element.kind === "resistor") return element.parameters.ohms.toExponential(12)
-  if (element.kind === "capacitor") return element.parameters.farads.toExponential(12)
-  return element.parameters.henries.toExponential(12)
+function valueOf(kind: PassiveKind, parameters: Parameters, ref: string): number {
+  return numericParameter(parameters, VALUE_FIELD[kind], ref)
 }
 
 /** Registers an emitted component name against the ref that produced it, throwing
@@ -156,26 +183,32 @@ export function toSpiceNetlist(network: ResolvedNetwork, environment: Simulation
   }
 
   let shorts = 0
-  for (const element of network.elements) {
+  for (const element of twoPinElements(network)) {
+    const ref = element.component.id
+    const kind = element.component.kind
+    if (!isPassiveKind(kind)) {
+      throw new Error(`Component kind not supported by this netlist emitter yet: ${kind} (${ref})`)
+    }
+    const value = valueOf(kind, element.component.parameters, ref)
     // A zero-ohm element is an ideal short, which SPICE cannot express as a
     // resistor — ngspice silently substitutes 1e-12 and warns. The standard
     // idiom is a zero-volt source, which is exact rather than approximate.
     // Resolved potentiometer sections are legitimately zero at a control
     // extreme, so this is a normal case, not an error.
-    if (element.kind === "resistor" && element.parameters.ohms === 0) {
+    if (kind === "resistor" && value === 0) {
       const a = node(element.pins.a)
       const b = node(element.pins.b)
       // Both ends already on one node: the short is implicit and emitting a
       // source across it would be a shorted VSRC, which ngspice rejects.
       if (a === b) continue
       const name = `VSHORT${shorts++}`
-      reserveName(names, name, element.ref)
+      reserveName(names, name, ref)
       lines.push(`${name} ${a} ${b} DC 0`)
       continue
     }
-    const name = elementName(element.kind, element.ref)
-    reserveName(names, name, element.ref)
-    lines.push(`${name} ${node(element.pins.a)} ${node(element.pins.b)} ${valueOf(element)}`)
+    const name = elementName(kind, ref)
+    reserveName(names, name, ref)
+    lines.push(`${name} ${node(element.pins.a)} ${node(element.pins.b)} ${value.toExponential(12)}`)
   }
 
   reserveName(names, LOAD_RESISTOR_NAME, "load resistor")

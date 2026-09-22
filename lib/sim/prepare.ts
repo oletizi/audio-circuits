@@ -1,8 +1,9 @@
-import type { ResolvedElement, ResolvedNetwork } from "../model/control-state.ts"
+import type { ResolvedComponent, ResolvedNetwork } from "../model/control-state.ts"
+import { twoPinElements, type ResolvedTwoPinElement } from "../model/resolved-two-pin.ts"
 
 export interface PrunedBranches {
   readonly network: ResolvedNetwork
-  /** Element refs removed, in the order they were found. */
+  /** Component ids removed, in the order they were found. */
   readonly removed: readonly string[]
 }
 
@@ -27,10 +28,13 @@ export interface PrunedBranches {
  * Port nets are preserved: an input or output legitimately touches one terminal.
  * Removal repeats to a fixed point, since dropping one branch can strand the
  * next.
+ *
+ * Only reasons about two-terminal passives (`twoPinElements`) - the same scope
+ * this module has always had. Active-device pruning is not attempted here.
  */
 export function pruneFloatingBranches(network: ResolvedNetwork): PrunedBranches {
   const ports = new Set(Object.values(network.ports))
-  let elements: readonly ResolvedElement[] = network.elements
+  let elements: readonly ResolvedTwoPinElement[] = twoPinElements(network)
   const removed: string[] = []
 
   for (;;) {
@@ -51,10 +55,10 @@ export function pruneFloatingBranches(network: ResolvedNetwork): PrunedBranches 
     }
     if (deadEnds.size === 0) break
 
-    const keep: ResolvedElement[] = []
+    const keep: ResolvedTwoPinElement[] = []
     for (const element of elements) {
       if (deadEnds.has(element.pins.a) || deadEnds.has(element.pins.b)) {
-        removed.push(element.ref)
+        removed.push(element.component.id)
         continue
       }
       keep.push(element)
@@ -63,5 +67,6 @@ export function pruneFloatingBranches(network: ResolvedNetwork): PrunedBranches 
     elements = keep
   }
 
-  return { network: { ports: network.ports, elements }, removed: removed.slice() }
+  const components: readonly ResolvedComponent[] = elements.map(element => element.component)
+  return { network: { ports: network.ports, components }, removed: removed.slice() }
 }
