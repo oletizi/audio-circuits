@@ -1,0 +1,37 @@
+* IDEAL_OPAMP - ideal voltage-controlled-voltage-source amplifier macromodel
+*
+* Provenance: authored for this project (audio-circuits canonical-model),
+* 2026-09-22. This is NOT a device model - it does not represent, and is
+* not derived from, any real operational amplifier part (it is not a
+* TL072, and is not intended to stand in for one). It is a deliberately
+* ideal VCVS with very high input impedance and very high open-loop gain.
+* Simulation results computed with this model are properties of an IDEAL
+* amplifier, not predictions about any real part's behaviour; a reader
+* who mistook this for a TL072 (or any other real op-amp) model would draw
+* false conclusions about a real circuit from it.
+*
+* This entry exists so the multi-unit component lowering added in the next
+* task has a subcircuit-backed model to test against that does not depend
+* on whichever real op-amp model a later task registers (that task may
+* legitimately fall back to a generic model rather than a TL072, so this
+* entry must not depend on it).
+*
+* Pin order (position in the .subckt line below): in+, in-, out. The
+* internal node names (inp, inn, out) avoid "+"/"-" characters, which are
+* not safe in SPICE node names; the canonical pin names are recorded
+* separately as DeviceModel.pinOrder in lib/sim/models/index.ts.
+*
+* Rin gives the input a large but finite differential resistance (1e12
+* ohm) so the input nodes have a DC path and the matrix does not go
+* singular; it is high enough to be indistinguishable from an open input
+* for any circuit impedance this project simulates. Eout is a VCVS with
+* open-loop gain 1e6, referenced to global ground (node 0, which SPICE
+* treats as the same node inside and outside a subcircuit) - high enough
+* that closed-loop feedback circuits settle to the ideal virtual-short
+* result to numerical precision, without the convergence trouble of an
+* infinite gain.
+*
+.subckt IDEAL_OPAMP inp inn out
+Rin inp inn 1e12
+Eout out 0 inp inn 1e6
+.ends IDEAL_OPAMP

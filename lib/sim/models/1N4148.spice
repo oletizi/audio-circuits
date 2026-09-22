@@ -1,0 +1,26 @@
+* 1N4148 - small-signal switching diode
+*
+* Provenance: NXP Semiconductors' published SPICE model for the 1N4148,
+* originally distributed at nxp.com/documents/spice_model/1N4148.prm and
+* mirrored (byte-identical parameter values) in the PySpice project's
+* example library:
+*   https://github.com/FabriceSalvaire/PySpice/blob/master/examples/libraries/diode/switching/1N4148.lib
+* Retrieved and cross-checked 2026-09-22.
+*
+* The vendor file states the numbers below as a PSPICE-syntax continuation
+* block (`.MODEL 1N4148 D` followed by `+ PARAM = value` lines, no
+* parentheses) and additionally wraps the junction in a `.SUBCKT` with a
+* parallel 5.827e9-ohm resistor that only improves reverse-mode accuracy.
+* Neither change affects device physics, so this file drops the subckt
+* wrapper - this project files 1N4148 under "standard discretes" (a plain
+* `.model` line), not "vendor subcircuits" (see spec section 5.2) - and
+* reformats the same parameter values onto a single `.model NAME D(...)`
+* line for this project's SPICE engine. No parameter value differs from
+* the vendor source.
+*
+* The vendor file carries no explicit license/terms text; these are
+* recorded here as manufacturer-published datasheet-derived parameters,
+* used for simulation as the manufacturer intends its device models to be
+* used.
+*
+.model 1N4148 D(IS=4.352e-9 N=1.906 BV=110 IBV=100u RS=.6458 CJO=7.048e-13 VJ=.869 M=.03 FC=.5 TT=3.48e-9)
