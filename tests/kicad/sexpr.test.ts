@@ -21,3 +21,13 @@ test("children returns every matching sub-form", () => {
 test("an unbalanced form throws rather than returning a partial tree", () => {
   expect(() => parseSexpr(`(comp (ref "C1")`)).toThrow(/unbalanced/i)
 })
+
+test("a backslash escape inside a quoted atom is unescaped", () => {
+  const node = parseSexpr(`(field (name "Description") "She said \\"hi\\"")`)
+  expect(node.atoms).toContain(`She said "hi"`)
+})
+
+test("a quoted form name parses as that name", () => {
+  const node = parseSexpr(`("weird name" (x "1"))`)
+  expect(node.name).toBe("weird name")
+})

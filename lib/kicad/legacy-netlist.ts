@@ -41,7 +41,9 @@ export function importLegacyNetlist(text: string): ImportedNetlist {
   let i = 1
   while (i < tokens.length) {
     if (tokens[i] === ")") { i++; continue }
-    if (tokens[i] !== "(") { i++; continue }
+    if (tokens[i] !== "(") {
+      throw new Error(`unexpected token "${tokens[i]}" at the top level of the legacy netlist`)
+    }
     i++ // into the component form
 
     const uuid = tokens[i++] ?? ""
@@ -73,6 +75,6 @@ export function importLegacyNetlist(text: string): ImportedNetlist {
   }
 
   if (components.length === 0) throw new Error("legacy netlist declares no components")
-  for (const key of Object.keys(nets)) nets[key] = (nets[key] ?? []).sort()
+  for (const key of Object.keys(nets)) nets[key].sort()
   return { components, nets }
 }

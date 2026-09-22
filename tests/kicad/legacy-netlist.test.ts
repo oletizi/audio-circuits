@@ -35,3 +35,13 @@ test("the brace header is not mistaken for a component", () => {
   const n = importLegacyNetlist(SAMPLE)
   expect(n.components.map((c) => c.designator).sort()).toEqual(["C12", "R7"])
 })
+
+test("a stray token at the top level throws instead of being silently skipped", () => {
+  const bad = `( { header }
+   GARBAGE
+   ( /04737d7e-1324-4a9b-8c05-3227c13a478c CAP_CERAMIC1  C12 5600pF
+    (    1 GND )
+   )
+  )`
+  expect(() => importLegacyNetlist(bad)).toThrow(/unexpected token "GARBAGE"/i)
+})
