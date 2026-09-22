@@ -22,6 +22,16 @@ export interface DeviceModel {
   readonly provenance: string
   /** Canonical pin -> position in the .subckt line. Subcircuit-backed models only. */
   readonly pinOrder?: readonly string[]
+  /** The literal SPICE-legal node names used in the .subckt argument list,
+   * positionally aligned with pinOrder (same index = same physical pin;
+   * canonical spelling in pinOrder vs. SPICE-legal spelling here - canonical
+   * names like "in+" are not valid SPICE node names). The emitter never
+   * reads this field; it exists so a test can check the declared
+   * correspondence between the two spellings against the model's own
+   * .subckt text, catching a permutation of either that a length-only
+   * comparison would miss. Subcircuit-backed models only.
+   */
+  readonly subcktNodeNames?: readonly string[]
 }
 
 function loadSpiceText(fileName: string): string {
@@ -41,16 +51,17 @@ const PROVENANCE_1N4148 =
 const PROVENANCE_2N3904 =
   "The 2N3904 parameter set from the PSpice/OrCAD evaluation library " +
   "entry `Q2N3904`, widely redistributed across public SPICE model " +
-  "libraries (PSpice, LTspice, ngspice) and course materials. Who " +
-  "originated it is ambiguous in the public record: mirrors that " +
-  "preserve the comment block accompanying this exact parameter set " +
-  "attribute it to National Semiconductor and date it 88-09-08 " +
-  "(pid=23, case=TO92); other, later mirrors relabel the same values " +
-  "Fairchild, with the creation-date line stripped. Corroborated " +
-  "2026-09-22 via web search against multiple independent mirrors - " +
-  "see lib/sim/models/2N3904.spice for the full note. The 26 parameter " +
-  "values are consistent across every mirror checked and were not " +
-  "invented; only the originating company is unresolved."
+  "libraries (PSpice, LTspice, ngspice) and course materials. Which " +
+  "company originated it is not resolved by the available sources: it " +
+  "appears in multiple public mirrors whose accompanying comment blocks " +
+  "are identical to each other except for the company name - some read " +
+  "National Semiconductor, at least one reads Fairchild - and all of " +
+  "them date it 88-09-08 (pid=23, case=TO92). No mirror is ranked above " +
+  "another here. Corroborated 2026-09-22 via web search against multiple " +
+  "independent mirrors - see lib/sim/models/2N3904.spice for the full " +
+  "note. The 27 parameter values are consistent across every mirror " +
+  "checked and were not invented; only the originating company is " +
+  "unresolved."
 
 const PROVENANCE_IDEAL_OPAMP =
   "Authored for this project (audio-circuits canonical-model), 2026-09-22. " +
@@ -68,6 +79,22 @@ const PROVENANCE_IDEAL_OPAMP =
   "instantiated against a package that has them, but it is behaviourally " +
   "unaffected by supply rail voltage - it stays an ideal amplifier " +
   "regardless of what is connected to those pins."
+
+/** The single declared correspondence between IDEAL_OPAMP's canonical pin
+ * names and the SPICE-legal node names its .subckt argument list actually
+ * uses, in physical pin order. pinOrder and subcktNodeNames below are both
+ * derived from this one array so they cannot drift apart from each other by
+ * construction; the registry-invariant sweep in tests/sim/models.test.ts
+ * checks subcktNodeNames (and therefore, transitively, this array) against
+ * the model's own .subckt line.
+ */
+const IDEAL_OPAMP_PINS: readonly { readonly canonical: string; readonly spice: string }[] = [
+  { canonical: "in+", spice: "inp" },
+  { canonical: "in-", spice: "inn" },
+  { canonical: "out", spice: "out" },
+  { canonical: "v+", spice: "vplus" },
+  { canonical: "v-", spice: "vminus" },
+]
 
 const models: readonly DeviceModel[] = [
   {
@@ -87,7 +114,8 @@ const models: readonly DeviceModel[] = [
     category: "behavioural",
     spice: loadSpiceText("IDEAL_OPAMP.spice"),
     provenance: PROVENANCE_IDEAL_OPAMP,
-    pinOrder: ["in+", "in-", "out", "v+", "v-"],
+    pinOrder: IDEAL_OPAMP_PINS.map(pin => pin.canonical),
+    subcktNodeNames: IDEAL_OPAMP_PINS.map(pin => pin.spice),
   },
 ]
 

@@ -39,14 +39,17 @@
 * high enough to be indistinguishable from an open input for any circuit
 * impedance this project simulates.
 *
-* Rsupply bridges v+ and v- with the same large (1e12 ohm) resistance, for
-* the same structural reason: it gives those two declared subcircuit nodes
-* an internal element to reference (rather than being declared on the
-* .subckt line and used by nothing inside it) so the model is well-posed
-* when instantiated standalone, before any external supply network is
-* wired to those pins. At 1e12 ohm across whatever supply rails this ends
-* up connected to, the current it draws is negligible for any supply this
-* project simulates.
+* v+ and v- are declared on the .subckt line but referenced by no element
+* inside it - deliberately. This engine prunes an unreferenced subcircuit
+* node cleanly rather than treating it as ill-posed (confirmed by
+* simulating: a five-argument instantiation with real supply rails wired
+* to v+/v- solves, and so does one where v+/v- are left connected to
+* nothing else in the whole netlist). An earlier revision of this file
+* added a resistor across v+/v- on the theory that an unreferenced node
+* needed one; that theory was wrong, and worse, that resistor was what
+* tied the two rails into a floating island with no path to ground,
+* which is what actually produced a singular-matrix failure when v+/v-
+* were left unconnected elsewhere. There is no problem here to solve.
 *
 * Eout is a VCVS with open-loop gain 1e6, referenced to global ground
 * (node 0, which SPICE treats as the same node inside and outside a
@@ -58,6 +61,5 @@
 *
 .subckt IDEAL_OPAMP inp inn out vplus vminus
 Rin inp inn 1e12
-Rsupply vplus vminus 1e12
 Eout out 0 inp inn 1e6
 .ends IDEAL_OPAMP

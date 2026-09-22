@@ -8,10 +8,14 @@ test("a discrete model carries its SPICE text and its provenance", () => {
   expect(d.provenance.length).toBeGreaterThan(0)
 })
 
-test("an unknown model throws, listing what is known", () => {
-  // /NOT_A_PART.*known/i would match a message with an empty list (it only
-  // needs to reach the word "known" and stop); this instead requires the
-  // message to actually name a registered model after "Known models:".
+test("an unknown model throws, naming the rejected model and listing what is known", () => {
+  // Two separate requirements, asserted separately so neither can satisfy
+  // the other: the rejected name must actually appear (a message that only
+  // said "Known models: ..." with the name omitted would still describe a
+  // real failure, but not name what caused it), and the known list must be
+  // non-empty and name a real registered entry (not just reach the word
+  // "known" and stop, which /NOT_A_PART.*known/i would have allowed).
+  expect(() => deviceModel("NOT_A_PART")).toThrow(/NOT_A_PART/)
   expect(() => deviceModel("NOT_A_PART")).toThrow(/Known models:.*1N4148/)
 })
 
@@ -29,21 +33,57 @@ test("every subcircuit-backed model declares a pin order", () => {
   }
 })
 
-// Nothing else compares pinOrder to the .subckt line itself - both are only
-// ever checked against constants. Permuting the .subckt argument list, or
-// permuting pinOrder, would leave every other test green while every
-// amplifier the emitter produces is wired to the wrong pins. This sweep
-// parses the node list straight off each subcircuit-backed model's own
-// .subckt line and checks it against that same entry's pinOrder length.
-test("every subcircuit-backed model's pinOrder matches its .subckt argument count", () => {
+// A length-only comparison catches a count mismatch and nothing else: a
+// PERMUTED .subckt argument list (".subckt inn inp out ..." instead of
+// "inp inn out ...") has the same length and passes it while every
+// amplifier the emitter produces is wired to the wrong pins - exactly the
+// silent mis-wiring this guard exists to prevent. pinOrder's canonical
+// names ("in+", "v+") are not valid SPICE node names and never appear
+// literally in the .subckt line, so a direct string comparison against
+// pinOrder itself cannot work either; DeviceModel.subcktNodeNames is the
+// explicit, positionally-aligned declared correspondence between the two
+// spellings (see lib/sim/models/index.ts), and this sweep checks THAT
+// against the model's own .subckt text - the one thing in this file that
+// is not a constant. Permuting either the .subckt line or subcktNodeNames
+// without the other now breaks this comparison.
+//
+// The node-list regex is deliberately restricted to a single line
+// ([ \t]+, not \s+, between tokens): \s+ matches newlines too, so on a
+// .subckt line with no nodes at all it would silently capture the
+// FOLLOWING line's tokens as this line's node list - a latent bug that a
+// correct verdict today would have hidden.
+//
+// A model that IS subcircuit-backed (per the broader /^\.subckt/im test
+// below, which only checks presence) always falls through to an
+// assertion, never a silent `continue` - a model whose .subckt line this
+// stricter single-line pattern fails to parse is a failure to report, not
+// a reason to skip it unchecked and indistinguishable from a model that
+// was never a subcircuit at all.
+test("every subcircuit-backed model's pinOrder aligns positionally with its actual .subckt argument names", () => {
   for (const m of allModels()) {
-    const subcktLine = m.spice.match(/^\.subckt\s+\S+\s+(.+)$/im)
-    if (!subcktLine) continue
-    const nodes = subcktLine[1].trim().split(/\s+/)
+    const isSubcircuitBacked = /^\.subckt/im.test(m.spice)
+    if (!isSubcircuitBacked) continue
+
+    const subcktLine = m.spice.match(/^\.subckt[ \t]+(\S+)[ \t]+(.+)$/im)
+    expect(
+      subcktLine,
+      `${m.name} declares a .subckt but its argument line could not be parsed as a single line`,
+    ).not.toBeNull()
+    if (!subcktLine) continue // unreachable: the assertion above throws first; narrows the type for TS.
+
+    const actualNodes = subcktLine[2].trim().split(/[ \t]+/)
+
+    expect(m.pinOrder, `${m.name} is a subcircuit but declares no pinOrder`).toBeDefined()
+    expect(m.subcktNodeNames, `${m.name} is a subcircuit but declares no subcktNodeNames`).toBeDefined()
     expect(
       m.pinOrder?.length,
-      `${m.name} declares ${nodes.length} .subckt node(s) (${nodes.join(", ")}) but pinOrder has a different length`,
-    ).toBe(nodes.length)
+      `${m.name}'s pinOrder and subcktNodeNames have different lengths`,
+    ).toBe(m.subcktNodeNames?.length)
+    expect(
+      m.subcktNodeNames,
+      `${m.name}'s declared subcktNodeNames (${m.subcktNodeNames?.join(", ")}) does not match its ` +
+        `actual .subckt argument list (${actualNodes.join(", ")})`,
+    ).toEqual(actualNodes)
   }
 })
 
