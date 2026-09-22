@@ -162,6 +162,39 @@ test("F7: component extent and drawing extent are not the same number", async ()
   expect(b.drawingAreaPerComponent).toBeGreaterThan(a.drawingAreaPerComponent)
 }, 120000)
 
+test("worstHops names the components at each end, longest first", async () => {
+  const el = await render(
+    <>
+      <resistor name="NEAR_A" resistance="1k" footprint="0805" schX={0} schY={0} />
+      <resistor name="NEAR_B" resistance="1k" footprint="0805" schX={1} schY={0} />
+      <resistor name="FAR_A" resistance="1k" footprint="0805" schX={-25} schY={0} />
+      <resistor name="FAR_B" resistance="1k" footprint="0805" schX={25} schY={0} />
+      <trace from=".NEAR_A > .pin2" to=".NEAR_B > .pin1" />
+      <trace from=".FAR_A > .pin2" to=".FAR_B > .pin1" />
+    </>,
+    "160mm",
+    "40mm",
+  )
+  const hops = computeTier1(el).worstHops
+  expect(hops.length).toBeGreaterThan(0)
+  const worst = hops[0]
+  expect(worst).toBeDefined()
+  if (!worst) return
+  // The 50-unit connection must rank above the 1-unit one.
+  expect(worst.distance).toBeGreaterThan(10)
+  // Enforce COMPONENT.pin. Asserting bare component names here would
+  // enshrine the weaker contract and let the diagnostic silently regress.
+  expect([worst.from, worst.to].sort()).toEqual(["FAR_A.pin2", "FAR_B.pin1"])
+  expect(worst.net.length).toBeGreaterThan(0)
+  // Sorted descending.
+  for (let i = 1; i < hops.length; i++) {
+    const prev = hops[i - 1]
+    const cur = hops[i]
+    if (!prev || !cur) continue
+    expect(prev.distance).toBeGreaterThanOrEqual(cur.distance)
+  }
+}, 120000)
+
 // --- F8: the gate itself ---------------------------------------------------
 
 test("F8: the gate throws when a metric exceeds its baseline", () => {
@@ -176,6 +209,7 @@ test("F8: the gate throws when a metric exceeds its baseline", () => {
     longHopFraction: base.longHopFraction,
     componentAreaPerComponent: base.componentAreaPerComponent,
     drawingAreaPerComponent: base.drawingAreaPerComponent,
+    worstHops: [],
   }
   expect(() => assertReadabilityGate("optical-compressor", worse)).toThrow(
     /REGRESSED/,
@@ -186,7 +220,11 @@ test("F8b: the gate passes when every metric sits at its baseline", () => {
   const base = BASELINES["optical-compressor"]
   expect(base).toBeDefined()
   if (!base) return
-  assertReadabilityGate("optical-compressor", { components: 51, ...base })
+  assertReadabilityGate("optical-compressor", {
+    components: 51,
+    ...base,
+    worstHops: [],
+  })
 })
 
 test("F8c: an unknown module throws rather than silently passing", () => {
@@ -199,6 +237,7 @@ test("F8c: an unknown module throws rather than silently passing", () => {
       longHopFraction: 0,
       componentAreaPerComponent: 5,
       drawingAreaPerComponent: 5,
+      worstHops: [],
     }),
   ).toThrow(/No baseline/)
 })

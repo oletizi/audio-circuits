@@ -30,6 +30,20 @@ export interface Tier1Metrics {
   readonly componentAreaPerComponent: number
   /** M5b — bounding box of components, traces AND labels, per component. */
   readonly drawingAreaPerComponent: number
+  /**
+   * The connections producing M4, longest first, with endpoint component
+   * names. DIAGNOSTIC OUTPUT, not a metric: it changes no verdict. It
+   * exists because a score without an actionable gradient tells you the
+   * drawing is bad and nothing about which two parts to move.
+   */
+  readonly worstHops: readonly {
+    readonly distance: number
+    /** Connectivity key of the net this MST edge belongs to. */
+    readonly net: string
+    /** COMPONENT.pin at each end. */
+    readonly from: string
+    readonly to: string
+  }[]
 }
 
 export interface Box {
@@ -213,7 +227,30 @@ export function computeTier1(
     const key = str(e.subcircuit_connectivity_map_key)
     if (id && key) netOfPort.set(id, key)
   }
-  const ptsByNet = new Map<string, Pt[]>()
+  const compName = new Map<string, string>()
+  for (const e of elements) {
+    if (e.type !== "source_component" || !isRecord(e)) continue
+    const id = str(e.source_component_id)
+    const n = str(e.name)
+    if (id && n) compName.set(id, n)
+  }
+  // COMPONENT.pin, not COMPONENT. Verified: source_port.name carries the
+  // SEMANTIC label for a chip with pinLabels ("INA_P", "GND") and
+  // "pin1"/"pin2" for passives. Component-only identity is not enough
+  // here - a TL072 participates in two unrelated functional stages plus
+  // power, so "CMP_U2 <-> CMP_J_PEAK" says far less than
+  // "CMP_U2.INA_P <-> CMP_J_PEAK.WIPER".
+  const portDescription = new Map<string, string>()
+  for (const e of elements) {
+    if (e.type !== "source_port" || !isRecord(e)) continue
+    const id = str(e.source_port_id)
+    const c = str(e.source_component_id)
+    const pin = str(e.name)
+    if (!id || !c) continue
+    const comp = compName.get(c) ?? c
+    portDescription.set(id, pin ? `${comp}.${pin}` : comp)
+  }
+  const ptsByNet = new Map<string, (Pt & { owner: string })[]>()
   for (const e of elements) {
     if (e.type !== "schematic_port" || !isRecord(e)) continue
     const sp = str(e.source_port_id)
@@ -221,17 +258,25 @@ export function computeTier1(
     if (!sp || !c) continue
     const net = netOfPort.get(sp)
     if (!net) continue
+    const rec = { ...c, owner: sp }
     const arr = ptsByNet.get(net)
-    if (arr) arr.push(c)
-    else ptsByNet.set(net, [c])
+    if (arr) arr.push(rec)
+    else ptsByNet.set(net, [rec])
   }
   const hops: number[] = []
-  for (const pts of ptsByNet.values()) {
+  const hopDetail: {
+    distance: number
+    net: string
+    from: string
+    to: string
+  }[] = []
+  for (const [net, pts] of ptsByNet) {
     if (pts.length < 2) continue
     const inTree = new Set<number>([0])
     while (inTree.size < pts.length) {
       let best = Infinity
       let bestIdx = -1
+      let bestFrom: (Pt & { owner: string }) | undefined
       for (const i of inTree) {
         for (let j = 0; j < pts.length; j++) {
           if (inTree.has(j)) continue
@@ -242,14 +287,25 @@ export function computeTier1(
           if (dd < best) {
             best = dd
             bestIdx = j
+            bestFrom = a
           }
         }
       }
       if (bestIdx < 0) break
       inTree.add(bestIdx)
       hops.push(best)
+      const to = pts[bestIdx]
+      if (bestFrom && to) {
+        hopDetail.push({
+          distance: best,
+          net,
+          from: portDescription.get(bestFrom.owner) ?? "?",
+          to: portDescription.get(to.owner) ?? "?",
+        })
+      }
     }
   }
+  hopDetail.sort((a, b) => b.distance - a.distance)
   const longHopFraction =
     hops.length === 0 ? 0 : hops.filter((h) => h > shortSpan).length / hops.length
 
@@ -283,6 +339,7 @@ export function computeTier1(
     longHopFraction,
     componentAreaPerComponent: components === 0 ? 0 : area(compBox) / components,
     drawingAreaPerComponent: components === 0 ? 0 : area(drawBox) / components,
+    worstHops: hopDetail.slice(0, 12),
   }
 }
 
@@ -295,5 +352,11 @@ export function formatTier1(m: Tier1Metrics): string {
     `M4 longHopFraction          ${m.longHopFraction.toFixed(3)}`,
     `M5a componentAreaPerComp    ${m.componentAreaPerComponent.toFixed(1)}`,
     `M5b drawingAreaPerComp      ${m.drawingAreaPerComponent.toFixed(1)}`,
+    "",
+    "LONGEST CONNECTION HOPS (the gradient for placement work):",
+    ...m.worstHops.flatMap((h) => [
+      `  ${h.distance.toFixed(1).padStart(6)}  ${h.net}`,
+      `          ${h.from} <-> ${h.to}`,
+    ]),
   ].join("\n")
 }
