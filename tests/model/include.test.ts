@@ -111,3 +111,44 @@ test("empty prefix is rejected", () => {
     circuit().include("", subCircuit, { IN: "SIG", GND: "GROUND" })
   ).toThrow(/include prefix must not be empty/i)
 })
+
+test("package pins are renamed: bound takes parent net, unbound gains prefix", () => {
+  const subCircuit = circuit()
+    .add({
+      id: "opamp1",
+      kind: "opamp",
+      parameters: {},
+      pins: { "v+": { kind: "net", net: "VCC_EXT" }, "v-": { kind: "net", net: "GND_INT" } },
+      units: [{ name: "MAIN", pins: { "in+": { kind: "net", net: "IN" }, "in-": { kind: "net", net: "FB" }, "out": { kind: "net", net: "OUT" } } }],
+    })
+    .resistor("pulldown", "100k", { a: "OUT", b: "GND_INT" })
+    .port("VCC", "VCC_EXT")
+    .port("IN", "IN")
+    .port("FB", "FB")
+    .port("OUT", "OUT")
+    .done()
+
+  const n = circuit()
+    .include("amp", subCircuit, {
+      VCC: "RAIL",
+      IN: "sig_in",
+      FB: "sig_fb",
+      OUT: "sig_out",
+    })
+    .port("RAIL", "RAIL")
+    .port("sig_in", "sig_in").port("sig_fb", "sig_fb").port("sig_out", "sig_out")
+    .port("amp_GND_INT", "amp_GND_INT")
+    .done()
+
+  const component = n.components.find((c) => c.id === "amp_opamp1")
+
+  // Bound package pin (VCC_EXT -> RAIL) takes the parent net name
+  expect(component?.pins["v+"]).toEqual({ kind: "net", net: "RAIL" })
+
+  // Unbound package pin (GND_INT, not a declared port) gains the prefix
+  expect(component?.pins["v-"]).toEqual({ kind: "net", net: "amp_GND_INT" })
+
+  // Unit pins also renamed as expected
+  expect(component?.units[0]?.pins["in+"]).toEqual({ kind: "net", net: "sig_in" })
+  expect(component?.units[0]?.pins["out"]).toEqual({ kind: "net", net: "sig_out" })
+})
