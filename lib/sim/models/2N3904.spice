@@ -1,0 +1,28 @@
+* 2N3904 - NPN small-signal bipolar transistor (TO-92)
+*
+* Provenance: this parameter set is the PSpice/OrCAD evaluation-library
+* entry `Q2N3904`. It appears in multiple public SPICE model libraries
+* (PSpice/LTspice/ngspice "standard" discrete-device libraries) and in
+* university course materials. How its circulation ranks against other
+* 2N3904 parameter sets was not measured and is not claimed here.
+*
+* Which company originated it is not resolved by the available sources,
+* and this file does not pick a winner it cannot support. The parameter
+* set appears in multiple public mirrors whose accompanying comment
+* blocks are identical to each other except for the company name - some
+* read National Semiconductor, at least one reads Fairchild - and all of
+* them carry the same creation line, dated 88-09-08:
+*
+*     <company>   pid=23   case=TO92
+*     88-09-08 bam   creation
+*
+* No mirror is more authoritative than another here; none is ranked
+* above the rest. Corroborated 2026-09-22 via web search against multiple
+* independent public mirrors; no single stable, directly-fetchable copy
+* of a manufacturer-hosted original was located in this session. No
+* parameter value here was invented; every one of the 27 values below
+* was cross-checked against at least one independent public source
+* before being recorded, and is identical across every mirror seen
+* regardless of which company that mirror credits.
+*
+.model 2N3904 NPN(IS=6.734f XTI=3 EG=1.11 VAF=74.03 BF=416.4 NE=1.259 ISE=6.734f IKF=66.78m XTB=1.5 BR=.7371 NC=2 ISC=0 IKR=0 RC=1 CJC=3.638p MJC=.3085 VJC=.75 FC=.5 CJE=4.493p MJE=.2593 VJE=.75 TR=239.5n TF=301.2p ITF=.4 VTF=4 XTF=2 RB=10)

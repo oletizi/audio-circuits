@@ -1,5 +1,20 @@
 # Pultec passive EQ modularization
 
+> ## PARTLY SUPERSEDED — READ THIS FIRST.
+>
+> The ELECTRICAL content of this directory is still the record of why the Pultec
+> reference is transcribed the way it is: the governing single-reference-network
+> requirement below, the source links, the component values and the reference
+> transcription checklist all still hold, and `reference/pultec/` implements them.
+>
+> The SOFTWARE content does not. Every reference here to `lib/passives/`,
+> `lib/export/`, tscircuit or a `"types": ["tscircuit"]` tsconfig entry describes a
+> repository that no longer exists — `lib/passives/` became `lib/model/` in Plan A,
+> `lib/export/` was deleted, and tscircuit was removed by `feature/active-devices`.
+> Nothing in this directory may be treated as an instruction to create a file or a
+> dependency. Canon for that is
+> `docs/superpowers/specs/2026-09-21-canonical-circuit-model-design.md` and `CLAUDE.md`.
+
 See the [implementation plan and change inventory](implementation-plan.md) for
 implemented groundwork, proposed files, sequencing, and completion criteria.
 
@@ -86,10 +101,11 @@ chassis or protective earth.
   parameters, and external ports. `partitionTopology` preserves those identities
   while deriving cross-module nets. It rejects missing/unknown ownership. These
   helpers do not parse schematics or prove a source transcription correct.
-- **Circuit export:** once tscircuit modules exist, flatten their actual emitted
-  connectivity, resolve connector wiring to canonical reference nets, and compare
-  it against the independent reference fixture. Comparing an unchanged partition
-  alone does not test the eventual PCB implementation.
+- **Circuit export:** ~~once tscircuit modules exist, flatten their actual emitted
+  connectivity~~ (**stale** — tscircuit was removed; the emitted representation is
+  now a SPICE deck from `lib/sim/`), resolve connector wiring to canonical reference
+  nets, and compare it against the independent reference fixture. Comparing an
+  unchanged partition alone does not test the eventual PCB implementation.
 - **Behavior:** compare unsplit and composed AC responses (magnitude and phase)
   with identical source/load models. Sweep all frequency selections, boost/cut
   extremes and intermediate settings, bandwidth extremes, simultaneous LF boost

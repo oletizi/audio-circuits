@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test"
-import { circuit, NC } from "../../lib/model/builder.ts"
+import { circuit } from "../../lib/model/builder.ts"
+import { NC } from "../../lib/model/types.ts"
 
 const divider = () =>
   circuit()

@@ -3,23 +3,35 @@ import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core
 import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { importLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import { parseValue } from "../../lib/model/units.ts"
-import type { Network } from "../../lib/model/types.ts"
+import { net } from "../../lib/model/types.ts"
+import type { Connection, Network } from "../../lib/model/types.ts"
 
 /** Our network expressed the way the KiCad netlist expresses itself. */
-function asDesignatorNets(n: Network): Record<string, string[]> {
+function asDesignatorNets(
+  n: Network,
+  designators: Readonly<Record<string, string>>,
+): Record<string, string[]> {
   const out: Record<string, string[]> = {}
   const add = (netName: string, member: string) => {
     ;(out[netName] ??= []).push(member)
   }
+  const addPins = (
+    kind: string,
+    designator: string,
+    pins: Readonly<Record<string, Connection>>,
+  ) => {
+    for (const [pin, conn] of Object.entries(pins)) {
+      if (conn.kind === "nc") continue
+      const number = PIN_NUMBERS[kind]?.[pin] ?? pin
+      add(conn.net, `${designator}.${number}`)
+    }
+  }
   for (const component of n.components) {
-    const designator = DESIGNATORS[component.id]
+    const designator = designators[component.id]
     if (designator === undefined) throw new Error(`no designator mapped for "${component.id}"`)
+    addPins(component.kind, designator, component.pins)
     for (const unit of component.units) {
-      for (const [pin, conn] of Object.entries(unit.pins)) {
-        if (conn.kind === "nc") continue
-        const number = PIN_NUMBERS[component.kind]?.[pin] ?? pin
-        add(conn.net, `${designator}.${number}`)
-      }
+      addPins(component.kind, designator, unit.pins)
     }
   }
   for (const key of Object.keys(out)) out[key] = (out[key] ?? []).sort()
@@ -31,13 +43,30 @@ const built = async () =>
 
 test("the authored network matches the netlist of the built unit", async () => {
   const imported = await built()
-  const ours = asDesignatorNets(pt2399Core())
+  const ours = asDesignatorNets(pt2399Core(), DESIGNATORS)
 
   // Compare connectivity as sets of members, keyed by net name.
   expect(Object.keys(ours).sort()).toEqual(Object.keys(imported.nets).sort())
   for (const [name, members] of Object.entries(imported.nets)) {
     expect(ours[name]).toEqual([...members])
   }
+})
+
+test("the designator map walks package pins, not only unit pins", () => {
+  const withPackagePins: Network = {
+    components: [{
+      id: "amp", kind: "opamp", parameters: {},
+      pins: { "v+": net("VCC"), "v-": net("GND") },
+      units: [{ name: "A", pins: { "in+": net("IN"), "in-": net("FB"), out: net("FB") } }],
+    }, {
+      id: "load", kind: "resistor", parameters: { ohms: 1000 },
+      pins: {}, units: [{ name: "MAIN", pins: { a: net("VCC"), b: net("GND") } }],
+    }],
+    ports: { IN: "IN" },
+  }
+  const nets = asDesignatorNets(withPackagePins, { amp: "U9", load: "R9" })
+  expect(nets["VCC"]).toContain("U9.v+")
+  expect(nets["GND"]).toContain("U9.v-")
 })
 
 test("every component in the built unit is present, with its value", async () => {

@@ -9,7 +9,7 @@
 import { parseValue } from "./units.ts"
 import { validateNetwork } from "./validate.ts"
 import { includeNetwork } from "./include.ts"
-import { NC, net } from "./types.ts"
+import { net } from "./types.ts"
 import type { Component, Connection, Network, PartSpec, Unit } from "./types.ts"
 import type { PortMap } from "./include.ts"
 
@@ -108,5 +108,3 @@ export class Builder {
 export function circuit(): Builder {
   return new Builder()
 }
-
-export { NC }

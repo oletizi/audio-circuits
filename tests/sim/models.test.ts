@@ -1,0 +1,328 @@
+import { test, expect } from "bun:test"
+import { deviceModel, allModels } from "../../lib/sim/models/index.ts"
+
+test("a discrete model carries its SPICE text and its provenance", () => {
+  const d = deviceModel("1N4148")
+  expect(d.category).toBe("discrete")
+  expect(d.spice).toMatch(/^\.model\s+1N4148\s+D\(/im)
+  expect(d.provenance.length).toBeGreaterThan(0)
+})
+
+test("an unknown model throws, naming the rejected model and listing what is known", () => {
+  // Two separate requirements, asserted separately so neither can satisfy
+  // the other: the rejected name must actually appear (a message that only
+  // said "Known models: ..." with the name omitted would still describe a
+  // real failure, but not name what caused it), and the known list must be
+  // non-empty and name a real registered entry (not just reach the word
+  // "known" and stop, which /NOT_A_PART.*known/i would have allowed).
+  expect(() => deviceModel("NOT_A_PART")).toThrow(/NOT_A_PART/)
+  expect(() => deviceModel("NOT_A_PART")).toThrow(/Known models:.*1N4148/)
+})
+
+test("every registered model declares a non-empty provenance", () => {
+  for (const m of allModels()) {
+    expect(m.provenance.length, `${m.name} has no provenance`).toBeGreaterThan(0)
+  }
+})
+
+test("every subcircuit-backed model declares a pin order", () => {
+  for (const m of allModels()) {
+    if (m.spice.match(/^\.subckt/im)) {
+      expect(m.pinOrder, `${m.name} is a subcircuit but declares no pinOrder`).toBeDefined()
+    }
+  }
+})
+
+// A length-only comparison catches a count mismatch and nothing else: a
+// PERMUTED .subckt argument list (".subckt inn inp out ..." instead of
+// "inp inn out ...") has the same length and passes it while every
+// amplifier the emitter produces is wired to the wrong pins - exactly the
+// silent mis-wiring this guard exists to prevent. pinOrder's canonical
+// names ("in+", "v+") are not valid SPICE node names and never appear
+// literally in the .subckt line, so a direct string comparison against
+// pinOrder itself cannot work either; DeviceModel.subcktNodeNames is the
+// explicit, positionally-aligned declared correspondence between the two
+// spellings (see lib/sim/models/index.ts), and this sweep checks THAT
+// against the model's own .subckt text - the one thing in this file that
+// is not a constant. Permuting either the .subckt line or subcktNodeNames
+// without the other now breaks this comparison.
+//
+// The node-list regex is deliberately restricted to a single line
+// ([ \t]+, not \s+, between tokens): \s+ matches newlines too, so on a
+// .subckt line with no nodes at all it would silently capture the
+// FOLLOWING line's tokens as this line's node list - a latent bug that a
+// correct verdict today would have hidden.
+//
+// A model that IS subcircuit-backed (per the broader /^\.subckt/im test
+// below, which only checks presence) always falls through to an
+// assertion, never a silent `continue` - a model whose .subckt line this
+// stricter single-line pattern fails to parse is a failure to report, not
+// a reason to skip it unchecked and indistinguishable from a model that
+// was never a subcircuit at all.
+test("every subcircuit-backed model's pinOrder aligns positionally with its actual .subckt argument names", () => {
+  for (const m of allModels()) {
+    const isSubcircuitBacked = /^\.subckt/im.test(m.spice)
+    if (!isSubcircuitBacked) continue
+
+    const subcktLine = m.spice.match(/^\.subckt[ \t]+(\S+)[ \t]+(.+)$/im)
+    expect(
+      subcktLine,
+      `${m.name} declares a .subckt but its argument line could not be parsed as a single line`,
+    ).not.toBeNull()
+    if (!subcktLine) continue // unreachable: the assertion above throws first; narrows the type for TS.
+
+    const actualNodes = subcktLine[2].trim().split(/[ \t]+/)
+
+    expect(m.pinOrder, `${m.name} is a subcircuit but declares no pinOrder`).toBeDefined()
+    expect(m.subcktNodeNames, `${m.name} is a subcircuit but declares no subcktNodeNames`).toBeDefined()
+    expect(
+      m.pinOrder?.length,
+      `${m.name}'s pinOrder and subcktNodeNames have different lengths`,
+    ).toBe(m.subcktNodeNames?.length)
+    expect(
+      m.subcktNodeNames,
+      `${m.name}'s declared subcktNodeNames (${m.subcktNodeNames?.join(", ")}) does not match its ` +
+        `actual .subckt argument list (${actualNodes.join(", ")})`,
+    ).toEqual(actualNodes)
+  }
+})
+
+// The two sweep tests above iterate allModels(): each is vacuously true over
+// an empty (or truncated) registry, since a for-loop over nothing runs no
+// expect() calls. This test pins the registry down directly so an empty or
+// wrong-shaped allModels() fails loudly here instead of satisfying every
+// invariant by having nothing left to check. Count and membership are both
+// asserted: count alone would survive a registry that swapped an entry for a
+// duplicate; membership alone would survive one that silently grew a fourth
+// entry.
+test("the registry holds exactly its four expected entries, no more and no fewer", () => {
+  const all = allModels()
+  expect(all.length).toBe(4)
+  expect(all.map(m => m.name).sort()).toEqual(["1N4148", "2N3904", "GENERIC_OPAMP", "IDEAL_OPAMP"])
+})
+
+test("2N3904 resolves directly to its own registered entry", () => {
+  const d = deviceModel("2N3904")
+  expect(d.name).toBe("2N3904")
+  expect(d.category).toBe("discrete")
+  // Confirms the text really is the model it claims - name, category and
+  // pinOrder alone would still pass if `spice` were empty, truncated, or
+  // loaded from the wrong file.
+  expect(d.spice).toMatch(/^\.model\s+2N3904\s+NPN\(/im)
+})
+
+test("IDEAL_OPAMP resolves directly to its own entry with its declared pin order", () => {
+  const d = deviceModel("IDEAL_OPAMP")
+  expect(d.name).toBe("IDEAL_OPAMP")
+  expect(d.category).toBe("behavioural")
+  // Must match the argument order of
+  // ".subckt IDEAL_OPAMP inp inn out vplus vminus" exactly: the emitter
+  // reads pinOrder to place its arguments, and a wrong order here would
+  // wire a real circuit's signals into the wrong pins without any error -
+  // a silently mis-wired amplifier.
+  expect(d.pinOrder).toEqual(["in+", "in-", "out", "v+", "v-"])
+})
+
+test("a registered model's SPICE text actually simulates", async () => {
+  const { runOperatingPoint } = await import("../../lib/sim/operating-point.ts")
+  const d = deviceModel("1N4148")
+  const v = await runOperatingPoint({
+    netlist: `probe\nV1 in 0 DC 1\nR1 in a 1k\nD1 a 0 1N4148\n${d.spice}\n.op\n.end`,
+    nodes: ["a"],
+  })
+  expect(v["a"]).toBeGreaterThan(0.3)
+  expect(v["a"]).toBeLessThan(0.9)
+})
+
+test("2N3904's SPICE text actually simulates a common-emitter stage", async () => {
+  const { runOperatingPoint } = await import("../../lib/sim/operating-point.ts")
+  const d = deviceModel("2N3904")
+  const v = await runOperatingPoint({
+    netlist: [
+      "common-emitter",
+      "V1 vcc 0 DC 10",
+      "Rb vcc base 470k",
+      "Rc vcc coll 4.7k",
+      "Q1 coll base 0 2N3904",
+      d.spice,
+      ".op",
+      ".end",
+    ].join("\n"),
+    nodes: ["base", "coll"],
+  })
+  // A forward-biased silicon base-emitter junction sits roughly 0.6-0.75V.
+  // Bounds are physically meaningful, not the run's own printed digits, so
+  // a legitimate model refinement would not fail this while a broken model
+  // (e.g. the base-emitter junction not conducting at all) would.
+  expect(v["base"]).toBeGreaterThan(0.6)
+  expect(v["base"]).toBeLessThan(0.75)
+  // The collector must be pulled well below the 10V supply, showing real
+  // conduction through Rc rather than the transistor sitting off.
+  expect(v["coll"]).toBeGreaterThan(0)
+  expect(v["coll"]).toBeLessThan(5)
+})
+
+/** The controlling node pair of the one VCVS inside `model` that amplifies its
+ * declared inputs, found by looking for an `E` line whose controlling pair
+ * mentions either input node.
+ *
+ * This is the assertion the registry sweep above CANNOT make. That sweep
+ * proves the node NAMES declared in subcktNodeNames are the names the .subckt
+ * line declares, in that order. It cannot prove the SEMANTIC pairing - that
+ * pinOrder[i] really is the canonical meaning of subcktNodeNames[i] - because
+ * only the model's internals say which terminal inverts. A coordinated edit
+ * swapping the two `spice` halves and the .subckt line together stays green
+ * under the sweep while leaving "in+" on the inverting control.
+ */
+function controllingInputs(spice: string, plusNode: string, minusNode: string): readonly string[] {
+  const lines = spice.split("\n").filter(line => /^E/i.test(line.trim()))
+  const controlling = lines
+    .map(line => line.trim().split(/[ \t]+/))
+    .filter(tokens => tokens.length >= 6)
+    .map(tokens => [tokens[3], tokens[4]] as const)
+    .filter(pair => pair.includes(plusNode) || pair.includes(minusNode))
+  if (controlling.length !== 1) {
+    throw new Error(
+      `expected exactly one VCVS controlled by the input nodes (${plusNode}, ${minusNode}), ` +
+        `found ${controlling.length}`,
+    )
+  }
+  return controlling[0]
+}
+
+function expectNonInvertingFirst(name: string): void {
+  const model = deviceModel(name)
+  const order = model.pinOrder
+  const nodes = model.subcktNodeNames
+  if (!order || !nodes) throw new Error(`${name} declares no pinOrder/subcktNodeNames`)
+  const plus = nodes[order.indexOf("in+")]
+  const minus = nodes[order.indexOf("in-")]
+  expect(
+    controllingInputs(model.spice, plus, minus),
+    `${name}: the pin declared "in+" (${plus}) must be the FIRST controlling node of the ` +
+      `amplifying VCVS, or the model inverts the pin the registry calls non-inverting`,
+  ).toEqual([plus, minus])
+}
+
+test("IDEAL_OPAMP's declared in+ really is the non-inverting control of its VCVS", () => {
+  expectNonInvertingFirst("IDEAL_OPAMP")
+})
+
+test("GENERIC_OPAMP's declared in+ really is the non-inverting control of its VCVS", () => {
+  expectNonInvertingFirst("GENERIC_OPAMP")
+})
+
+test("GENERIC_OPAMP resolves directly to its own entry with its declared pin order", () => {
+  const d = deviceModel("GENERIC_OPAMP")
+  expect(d.name).toBe("GENERIC_OPAMP")
+  expect(d.category).toBe("behavioural")
+  expect(d.pinOrder).toEqual(["in+", "in-", "out", "v+", "v-"])
+  // The text really is the model it claims, not an empty or wrong file.
+  expect(d.spice).toMatch(/^\.subckt\s+GENERIC_OPAMP\s+inp\s+inn\s+out\s+vplus\s+vminus$/im)
+  // It must say plainly that it is not a vendor part model, since a circuit
+  // using it records mpn "TL072" alongside it.
+  expect(d.provenance).toMatch(/not a TL072|NOT a vendor part model/i)
+})
+
+/** A follower built FROM the model's own pinOrder, so a permutation of
+ * pinOrder rebuilds this deck wrongly and the assertion moves. */
+function follower(nodes: Readonly<Record<string, string>>): string {
+  const model = deviceModel("GENERIC_OPAMP")
+  const order = model.pinOrder
+  if (!order) throw new Error("GENERIC_OPAMP declares no pinOrder")
+  const args = order.map(pin => {
+    const node = nodes[pin]
+    if (node === undefined) throw new Error(`no node given for pin "${pin}"`)
+    return node
+  })
+  return [
+    "generic opamp follower",
+    "V1 sig 0 AC 1",
+    "VVCC vcc 0 DC 15",
+    "VVEE vee 0 DC -15",
+    `X1 ${args.join(" ")} GENERIC_OPAMP`,
+    "Rload out 0 1e12",
+    model.spice.trimEnd(),
+    ".ac dec 20 10 100000",
+    ".end",
+  ].join("\n")
+}
+
+async function followerGain(nodes: Readonly<Record<string, string>>): Promise<number> {
+  const { runAcSweep } = await import("../../lib/sim/ac.ts")
+  const [sweep] = await runAcSweep({ netlist: follower(nodes), nodes: ["out"] })
+  const point = sweep.points.find(p => Math.abs(p.frequency - 1000) <= 1e-6)
+  if (!point) throw new Error("no sweep point at 1 kHz")
+  return Math.hypot(point.real, point.imaginary)
+}
+
+const SUPPLIES = { "v+": "vcc", "v-": "vee" }
+
+/**
+ * The model's input POLARITY, established by measurement rather than by
+ * reading one line - the obligation that lands on whichever task registers a
+ * model whose input stage is not a single readable VCVS.
+ *
+ * The measurement is an AC one. The reason is narrower than "an operating
+ * point cannot see polarity", which is simply false for these models and
+ * would be claiming a mechanism where only an outcome was observed: both
+ * models are linear, so their DC systems have one solution each and there is
+ * no unstable equilibrium to converge to. What is true is that a SWEEP deck's
+ * source is AC-only, ngspice then assumes `DC 0`, and the operating point is
+ * identically zero everywhere - so `.op` on a sweep-shaped deck compares 0
+ * against 0 and learns nothing. Give the same deck a DC-carrying source and a
+ * `.op` separates the polarities perfectly well. Both halves of that are
+ * measured by the test immediately below, rather than asserted here in prose.
+ *
+ * The AC result carries the sign either way: negative feedback gives A/(1+A),
+ * strictly below unity, and positive feedback gives A/(A-1), strictly above.
+ * With A0 = 1e4 the two land about 1e-4 either side of unity, which is why
+ * the model's open-loop gain is deliberately modest.
+ */
+test("a sweep-shaped deck's operating point is blind to polarity, but a DC-driven one is not", async () => {
+  const { runOperatingPoint } = await import("../../lib/sim/operating-point.ts")
+  const model = deviceModel("GENERIC_OPAMP")
+  const order = model.pinOrder
+  if (!order) throw new Error("GENERIC_OPAMP declares no pinOrder")
+  const bias = async (sourceLine: string, transposed: boolean): Promise<number> => {
+    const pins: Readonly<Record<string, string>> = transposed
+      ? { "in+": "out", "in-": "sig", out: "out", ...SUPPLIES }
+      : { "in+": "sig", "in-": "out", out: "out", ...SUPPLIES }
+    const v = await runOperatingPoint({
+      netlist: [
+        "polarity under .op",
+        sourceLine,
+        "VVCC vcc 0 DC 15",
+        "VVEE vee 0 DC -15",
+        `X1 ${order.map(pin => pins[pin]).join(" ")} GENERIC_OPAMP`,
+        "Rload out 0 1e12",
+        model.spice.trimEnd(),
+        ".op",
+        ".end",
+      ].join("\n"),
+      nodes: ["out"],
+    })
+    return v["out"]
+  }
+
+  // An AC-only source: ngspice assumes DC 0, so the bias point is zero
+  // whichever way the inputs are wired. This is the blindness, and its cause.
+  expect(await bias("V1 sig 0 AC 1", false)).toBe(0)
+  expect(await bias("V1 sig 0 AC 1", true)).toBe(0)
+
+  // The same deck with a DC-carrying source separates them cleanly, which is
+  // what makes "use AC" a statement about the DECK rather than about `.op`.
+  expect(await bias("V1 sig 0 DC 1", false)).toBeLessThan(1)
+  expect(await bias("V1 sig 0 DC 1", true)).toBeGreaterThan(1)
+})
+test("GENERIC_OPAMP's input polarity is measured, not assumed: negative feedback lands below unity", async () => {
+  const gain = await followerGain({ "in+": "sig", "in-": "out", out: "out", ...SUPPLIES })
+  expect(gain).toBeCloseTo(1, 3)
+  expect(gain).toBeLessThan(1)
+})
+
+test("GENERIC_OPAMP with its inputs transposed lands above unity, which is what makes the test above mean something", async () => {
+  const gain = await followerGain({ "in+": "out", "in-": "sig", out: "out", ...SUPPLIES })
+  expect(gain).toBeCloseTo(1, 3)
+  expect(gain).toBeGreaterThan(1)
+})
