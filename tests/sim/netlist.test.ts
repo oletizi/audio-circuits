@@ -1,7 +1,11 @@
 import { test, expect } from "bun:test"
 import { toSpiceNetlist } from "../../lib/sim/netlist.ts"
 import { runAcSweep } from "../../lib/sim/ac.ts"
+import { resolveNetwork } from "../../lib/model/control-state.ts"
 import type { ResolvedNetwork } from "../../lib/model/control-state.ts"
+import { net } from "../../lib/model/types.ts"
+import type { Network } from "../../lib/model/types.ts"
+import { NO_CONTROLS } from "./helpers.ts"
 import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 
 const rc: ResolvedNetwork = {
@@ -653,4 +657,51 @@ test("the same deck solves once its rails are declared, and the follower's gain 
     expect(magnitude).toBeCloseTo(1, 2)
     expect(magnitude).toBeLessThan(1)
   }
+})
+
+test("a package-pin collision stops the pipeline before any deck exists", () => {
+  // The emission half of the net-loss regression. `visiblePins` merges package
+  // and unit pins with the unit spread second, so a shadowed name drops the
+  // package pin's net from the device line. Measured on this exact network,
+  // before `validatePhysicalNetwork` enforced the rule: the pipeline SUCCEEDED
+  // and produced
+  //
+  //     Xu1 IN OUT OUT LOST 0 GENERIC_OPAMP
+  //
+  // a complete, well-formed deck with VCC nowhere on the op-amp line.
+  //
+  // Asserted through the WHOLE pipeline rather than at `resolveNetwork` alone,
+  // because the claim being pinned is that no deck comes back - not merely that
+  // one function complains.
+  const colliding: Network = {
+    ports: { ground: "GND", input: "IN", output: "OUT" },
+    components: [
+      {
+        id: "u1", kind: "opamp", parameters: {}, part: { mpn: "X" },
+        pins: { "v+": net("VCC"), "v-": net("GND") },
+        units: [{
+          name: "MAIN",
+          pins: { "in+": net("IN"), "in-": net("OUT"), out: net("OUT"), "v+": net("LOST") },
+          spiceModel: "GENERIC_OPAMP",
+        }],
+      },
+      { id: "r1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("OUT"), b: net("GND") } }] },
+      { id: "r2", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("IN"), b: net("GND") } }] },
+      { id: "r3", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("VCC"), b: net("GND") } }] },
+      { id: "r4", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("LOST"), b: net("GND") } }] },
+    ],
+  }
+  const collidingEnvironment: SimulationEnvironment = {
+    source: { port: "input", amplitude: 1, seriesOhms: 0 },
+    load: { port: "output", ohms: 1e12 },
+    supplies: [],
+    sweep: { pointsPerDecade: 20, startHz: 10, stopHz: 100000 },
+    groundPort: "ground",
+  }
+  expect(() => toSpiceNetlist(resolveNetwork(colliding, NO_CONTROLS), collidingEnvironment))
+    .toThrow(/component "u1" unit "MAIN": pin "v\+" collides with a package pin/)
 })

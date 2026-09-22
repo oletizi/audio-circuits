@@ -5,6 +5,7 @@
  * a malformed network is a programming error, and a fallback would hide it.
  */
 import { hasOpenVocabulary, packagePins, unitPins } from "./kinds.ts"
+import { assertNoPackagePinShadowing } from "./pin-collision.ts"
 import type { Component, Connection, Network, Parameters } from "./types.ts"
 
 function netOf(c: Connection): string | undefined {
@@ -106,6 +107,20 @@ function checkVocabulary(component: Component): void {
     )
   }
 
+  // Run BEFORE the per-unit vocabulary checks below, so a shadowed pin is reported
+  // as the collision it is rather than as whichever vocabulary complaint happens to
+  // fire first. For `opamp` - today the only kind with package pins - the unit
+  // vocabulary would otherwise reject a re-declared `v+` with a message that names
+  // neither the package pin nor the merge that loses it.
+  //
+  // This is NOT where the defect the rule exists for is reachable. `validateNetwork`
+  // runs from `Builder.done()`; the path that reaches `visiblePins` with a collision
+  // intact is `resolveNetwork`, which never calls this function. See
+  // `pin-collision.ts` and `control-state.ts`'s `validatePhysicalNetwork`, which is
+  // the enforcement that closes it. Here the rule is the authored-circuit half, and a
+  // better message.
+  assertNoPackagePinShadowing(component)
+
   const open = hasOpenVocabulary(component.kind)
   const allowedUnit = unitPins(component.kind)
   for (const unit of component.units) {
@@ -114,26 +129,6 @@ function checkVocabulary(component: Component): void {
       throw new Error(
         `component "${component.id}" unit "${unit.name}" declares no pins`,
       )
-    }
-    // Checked BEFORE the open-vocabulary escape, because that is where the hole
-    // is: `ic`, `connector` and `switch` name their own pins, so nothing else
-    // stops a unit pin from being spelled the same as a package pin. The SPICE
-    // emitter merges the two maps per unit (`visiblePins` in
-    // lib/sim/device-lines.ts), and a collision means one of the two nets is
-    // silently dropped from the emitted device line - a complete, well-formed
-    // deck with a connection missing.
-    //
-    // Checked PER UNIT against the package, never unit against unit: two
-    // sections of a dual op-amp legitimately share pin names (`in+` on both),
-    // and that must stay legal.
-    for (const pin of names) {
-      if (Object.prototype.hasOwnProperty.call(component.pins, pin)) {
-        throw new Error(
-          `component "${component.id}" unit "${unit.name}": pin "${pin}" collides with a ` +
-            `package pin of the same name. A unit pin and a package pin cannot share a name: ` +
-            `the emitter merges them into one map per unit, so one of the two nets would be lost.`,
-        )
-      }
     }
     if (open) continue
     for (const pin of names) {

@@ -147,10 +147,20 @@ test("a unit pin colliding with a package pin of the same name is rejected", () 
   // The mistake this catches is an author writing the supply pin on the unit as
   // well as on the package. The emitter merges the two maps per unit
   // (`visiblePins`, lib/sim/device-lines.ts) with the unit spread second, so
-  // the package's net is the one that disappears. MEASURED on the shape below,
-  // through `resolveNetwork` + `toSpiceNetlist` before this rule existed: the
-  // op-amp emitted as `Xu1 IN OUT OUT LOST 0 GENERIC_OPAMP` - the unit's `v+`
-  // net in the supply position and the package's nowhere on the line.
+  // the package's net is the one that disappears.
+  //
+  // WHAT THIS TEST DOES AND DOES NOT ESTABLISH. It pins the AUTHORED-CIRCUIT
+  // half of the rule and the message it produces. It is NOT the test that shows
+  // the net loss is closed, and this shape was never the hole: measured by
+  // deleting the shared rule and re-running this file, `validateNetwork` still
+  // refuses the network below, as `pin "v+" is not in the opamp vocabulary
+  // [in+, in-, out]`. What the rule buys here is the message - one that names
+  // the package pin and the merge - not a rejection that was missing.
+  //
+  // The loss happened through `resolveNetwork`, which calls neither check. That
+  // is closed in `lib/model/control-state.ts` and pinned by "a package-pin
+  // collision is refused before resolution can produce a network" in
+  // tests/control-state.test.ts and its emission half in tests/sim/netlist.test.ts.
   //
   // `opamp` is the kind used here because it is the only registered kind with
   // package pins at all; `ic`, `connector` and `switch` have open UNIT

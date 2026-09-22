@@ -259,6 +259,14 @@ test("a switch's unit pin colliding with a package pin of the same name is rejec
   // instead of raising a collision. General (non-pot/switch) components no longer go
   // through this merge at all - Task 3 stopped resolution flattening package pins into
   // units - so this now has to be exercised through a switch, not a plain resistor.
+  //
+  // WHICH MECHANISM ACTUALLY FIRES HERE HAS CHANGED. `validatePhysicalNetwork` now runs
+  // `assertNoPackagePinShadowing` over every component first, so this throw comes from
+  // the input contract and `terminals()`'s own check is dead on this path. Measured:
+  // with the `validatePhysicalNetwork` call deleted from `resolveNetwork`, this test
+  // still passes - which it can only do if `terminals()` threw instead. Both messages
+  // match the pattern below deliberately, so the test asserts the RULE rather than
+  // which layer happened to enforce it.
   const collision: Network = {
     // `ground` is required by `netPreference` regardless of what this test exercises
     // (see "refuses a network that declares no ground port" below); reusing "in" keeps
@@ -273,6 +281,49 @@ test("a switch's unit pin colliding with a package pin of the same name is rejec
   }
   expect(() => resolveNetwork(collision, { potPositions: {}, switchPositions: { s1: "a" } }))
     .toThrow(/pin "common" collides with a package pin/)
+})
+
+test("a package-pin collision is refused before resolution can produce a network", () => {
+  // THE PATH THAT ACTUALLY LOST A NET. `resolveNetwork` never calls
+  // `validateNetwork`, so a hand-built `Network` literal - which is how most of
+  // this file's fixtures and any non-builder caller construct one - used to
+  // reach the emitter with the collision intact. Measured before
+  // `validatePhysicalNetwork` enforced the rule, on exactly this network:
+  // `resolveNetwork` + `toSpiceNetlist` SUCCEEDED and emitted
+  //
+  //     Xu1 IN OUT OUT LOST 0 GENERIC_OPAMP
+  //
+  // with the package's `VCC` nowhere on the line. The unit's `v+` took the
+  // supply argument position and the package's net was silently dropped.
+  //
+  // `opamp` rather than a switch because a switch is caught either way; this is
+  // the multi-pin, model-backed shape whose loss reaches a deck.
+  const collision: Network = {
+    ports: { ground: "GND", input: "IN", output: "OUT" },
+    components: [
+      {
+        id: "u1", kind: "opamp", parameters: {}, part: { mpn: "X" },
+        pins: { "v+": net("VCC"), "v-": net("GND") },
+        units: [{
+          name: "MAIN",
+          pins: { "in+": net("IN"), "in-": net("OUT"), out: net("OUT"), "v+": net("LOST") },
+          spiceModel: "GENERIC_OPAMP",
+        }],
+      },
+      { id: "r1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("OUT"), b: net("GND") } }] },
+      { id: "r2", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("IN"), b: net("GND") } }] },
+      { id: "r3", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("VCC"), b: net("GND") } }] },
+      { id: "r4", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("LOST"), b: net("GND") } }] },
+    ],
+  }
+  // Names the component, the unit and the pin, so a failure says which of the
+  // four a reader has to go and look at.
+  expect(() => resolveNetwork(collision, NO_CONTROLS))
+    .toThrow(/component "u1" unit "MAIN": pin "v\+" collides with a package pin/)
 })
 
 test("an active device passes through resolution with its structure intact", () => {

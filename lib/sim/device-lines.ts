@@ -119,12 +119,16 @@ function unitRef(component: ResolvedComponent, unit: ResolvedUnit): string {
  * `Xu1 IN OUT OUT LOST 0 GENERIC_OPAMP`, with the unit's net in the supply position and
  * the package's nowhere on it.
  *
- * `validateNetwork` (lib/model/validate.ts) rejects the collision, and every network built
- * through `Builder` runs it at `done()`. A hand-built `Network` literal handed straight to
- * `resolveNetwork` does NOT - that path never calls `validateNetwork` - so the guarantee
- * this function relies on holds for authored circuits and not for every possible input.
- * `control-state.ts`'s `terminals()` is the backstop on that path, for the single-unit
- * pot and switch shapes it covers.
+ * BOTH ROUTES INTO THIS FUNCTION NOW REFUSE IT, which is what makes the merge safe.
+ * `validateNetwork` (lib/model/validate.ts) rejects it for authored circuits at
+ * `Builder.done()`; `validatePhysicalNetwork` (lib/model/control-state.ts) rejects it as
+ * `resolveNetwork`'s input contract, which is the route a hand-built `Network` literal
+ * takes and the one that used to lose the net. Both call the same helper,
+ * `lib/model/pin-collision.ts`, so the two cannot drift apart.
+ *
+ * `resolveNetwork` is the only producer of a `ResolvedComponent`, so a collision cannot
+ * arrive here any other way - short of hand-writing a `ResolvedNetwork` literal, which
+ * several fixtures in tests/sim/netlist.test.ts do, and which no input rule can police.
  */
 function visiblePins(
   component: ResolvedComponent,

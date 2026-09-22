@@ -1,6 +1,7 @@
 import type { Taper } from "./parameters.ts"
 import { UnionFind } from "./union-find.ts"
 import { GROUND_PORT_KEY, netPreference } from "./net-preference.ts"
+import { assertNoPackagePinShadowing } from "./pin-collision.ts"
 import type {
   Component, ComponentKind, Connection, Network, Parameters, PartSpec,
   PotentiometerComponent, SwitchComponent,
@@ -57,11 +58,20 @@ export interface ResolvedNetwork {
  * the package or the unit. Throws if the component was built with more than one
  * unit, which that convention never produces.
  *
- * THE COLLISION CHECK BELOW IS A DELIBERATE BACKSTOP, NOT DUPLICATION. `validateNetwork`
- * enforces the same rule for every kind, but it runs from `Builder.done()`, and a
- * hand-built `Network` literal handed straight to `resolveNetwork` never reaches it -
- * which is how most of this repository's tests construct networks. Do not remove this as
- * redundant with the validator; on this path there is nothing else.
+ * THE COLLISION CHECK BELOW IS A DELIBERATE BACKSTOP, NOT DUPLICATION - and its status
+ * is worth stating exactly, because it changed. `validatePhysicalNetwork` now runs
+ * `assertNoPackagePinShadowing` over every component before any of this executes, so on
+ * the `resolveNetwork` path this check is UNREACHABLE: it cannot fire, because the
+ * network was already refused. Verified by mutation - with the
+ * `validatePhysicalNetwork` call deleted from `resolveNetwork`, the switch-collision
+ * test in tests/control-state.test.ts still passes, which it can only do if the throw
+ * came from here; with that call in place, this line is dead.
+ *
+ * It stays because `terminals()` is reached from three module-private helpers
+ * (`mergeShortedNets`, `requirePotPin`) whose only current entry point is
+ * `resolveNetwork`, and a future caller that skips the input contract would otherwise
+ * silently shadow a package pin again. Keeping a cheap per-component loop is the right
+ * trade against re-opening a defect this project has now had to close twice.
  */
 function terminals(component: Component): Readonly<Record<string, Connection>> {
   if (component.units.length !== 1) {
@@ -154,6 +164,15 @@ function validatePhysicalNetwork(network: Network): void {
       ...component.units.flatMap(unit => Object.entries(unit.pins)),
     ]
     if (pinEntries.length < 2) throw new Error(`Missing pins: ${component.id}`)
+    // THIS is the enforcement that closes the silent net loss, for every kind and
+    // every unit count. `validateNetwork` carries the same rule for authored
+    // circuits, but it runs from `Builder.done()`, and a hand-built `Network`
+    // literal never reaches it - which is how most of this repository's tests, and
+    // any non-builder caller, construct one. Measured before this call existed: an
+    // op-amp whose unit re-declared `v+` resolved and emitted
+    // `Xu1 IN OUT OUT LOST 0 GENERIC_OPAMP`, the package's net absent from the line.
+    // One shared helper (`pin-collision.ts`), so the two validators cannot drift.
+    assertNoPackagePinShadowing(component)
     for (const [pin, connection] of pinEntries) {
       if (!pin) throw new Error(`Empty pin/net: ${component.id}`)
       if (connection.kind === "net" && !connection.net) throw new Error(`Empty pin/net: ${component.id}`)
