@@ -67,7 +67,8 @@ export function netAt(ref: string, pin: string): string {
   return found
 }
 
-/** tscircuit-style two-terminal passives: KiCad numbers their pins 1 and 2. */
+/** Two-terminal passives: KiCad numbers their pins 1 and 2, which map to the
+ * `a`/`b` the kind's vocabulary declares (lib/model/kinds.ts). */
 function twoTerminal(ref: string, value: string): Component {
   const pins = { a: net(netAt(ref, "1")), b: net(netAt(ref, "2")) }
   const provenance = { source: "pultec-three-band-eq.kicad_sch @ c0f6f39" }

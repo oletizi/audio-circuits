@@ -178,9 +178,9 @@ export function isBoardResident(component: Component): boolean {
  * mid board its five taps, which is the terminal-block reduction the
  * discrete-inductor design exists to buy.
  *
- * This is the target a tscircuit module is validated against: render the
- * module, flatten its emitted connectivity, and compare. Anything the board
- * gains or loses relative to the reference shows up as a topology difference.
+ * This is the target an authored circuit is validated against: build the
+ * circuit, flatten its connectivity, and compare. Anything the board gains or
+ * loses relative to the reference shows up as a topology difference.
  */
 export function boardNetwork(owner: ModuleOwner): Network {
   const split = partitionReference()

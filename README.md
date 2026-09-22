@@ -1,20 +1,17 @@
 # Audio Circuits
 
-Audio circuit definitions, built two different ways depending on when the work
-was done.
+Audio circuit definitions as a declarative model, verified in SPICE inside the
+test suite.
 
-New work is written against `lib/model/`, a declarative circuit model that is
-not tscircuit: a circuit is either built directly with its `circuit()`
-builder, or produced by reading a KiCad netlist export with `lib/kicad/` and
-transcribing it. `circuits/pt2399-core.ts` is the first circuit built this
-way — from the netlist of a unit that was actually built and works, not from a
-datasheet. See `docs/decisions/2026-09-21-why-not-tscircuit.md` for why new
-circuits are not authored as tscircuit components.
+Circuits are written against `lib/model/`: a circuit is either built directly
+with its `circuit()` builder, or produced by reading a KiCad netlist export
+with `lib/kicad/` and transcribing it. `circuits/pt2399-core.ts` came from the
+netlist of a unit that was actually built and works, not from a datasheet;
+`circuits/opamp-buffer.ts` is the first circuit here with an active device.
 
-Older work — `lib/chips/`, `lib/connectors/`, `modules/opamp-buffer/`, and the
-`index.circuit.tsx` demo — is still authored as composable
-[tscircuit](https://tscircuit.com) React components, and `tsci` is still how
-those are previewed and exported.
+This repository was previously a tscircuit component package. tscircuit has
+been removed entirely — see `docs/decisions/2026-09-21-why-not-tscircuit.md`
+for why.
 
 The largest single body of content is a passive Pultec EQ reference network
 under `reference/pultec/`: Ian Thompson-Bell's "Pultec 3 Band EQ", which
@@ -34,43 +31,28 @@ audio-circuits/
 │   │                     # vocabularies, validation, the circuit() builder,
 │   │                     # include() composition
 │   ├── kicad/            # Readers for two KiCad netlist export formats
-│   ├── sim/              # SPICE netlist generation and AC simulation
-│   ├── chips/            # IC definitions (TL072) - tscircuit components
-│   ├── connectors/       # Screw terminals, audio jacks - tscircuit components
-│   └── layout.ts         # Grid-based schematic placement helpers
+│   └── sim/              # SPICE netlist generation, AC and operating-point
+│       └── models/       # Device models, each with its own provenance
 │
-├── circuits/             # Circuit definitions built on lib/model; currently
+├── circuits/             # Circuit definitions built on lib/model:
 │                         # pt2399-core.ts, transcribed from the netlist of a
-│                         # board that was physically built and works
-│
-├── modules/
-│   └── opamp-buffer/     # Unity-gain buffer (tscircuit module)
+│                         # board that was physically built and works, and
+│                         # opamp-buffer.ts, a unity-gain TL072 buffer
 │
 ├── reference/pultec/     # The Pultec reference network and what it is built
 │                         # from - unvalidated, see its own README
 │
 ├── tests/                # Model, kicad, sim, circuit and reference tests
 │
-├── docs/                 # Design notes, specs and plans
-│
-└── index.circuit.tsx     # Demo: two op-amp buffers
+└── docs/                 # Design notes, specs and plans
 ```
 
 ## Usage
 
 ```bash
 bun install
-bun test           # the full suite
+bun test           # the full suite, including the SPICE simulations
 bun run typecheck
-bun run dev        # tsci dev, live preview on http://localhost:3020
-```
-
-Export and build of the tscircuit-authored modules go through `tsci`:
-
-```bash
-tsci snapshot index.circuit.tsx -u
-tsci export index.circuit.tsx -f kicad_zip -o output.zip
-tsci export index.circuit.tsx -f gerbers -o gerbers/
 ```
 
 ## How the Pultec reference is validated
@@ -113,62 +95,24 @@ All eleven mid frequencies are modelled. A build that wants fewer would leave
 positions unpopulated, because a position designed out of the model needs the
 model changed to recover it — but no build exists yet to make that call.
 
-## Creating tscircuit Modules
+## Writing a circuit
 
-The tscircuit-authored modules (`modules/opamp-buffer/` today) follow this
-pattern — a self-contained circuit with a named interface:
+A circuit is a function that returns a `Network`:
 
-```tsx
-export interface MyModuleProps {
-  name: string
-  schX?: number
-  schY?: number
-}
-
-export const MyModule = (props: MyModuleProps) => {
-  const { name, schX = 0, schY = 0 } = props
-  const g = createGrid(schX, schY)
-
-  return (
-    <group name={name}>
-      <net name={`${name}_GND`} />
-      <resistor name={`${name}_R1`} resistance="10k" footprint="0805" {...g.signal(0)} />
-      <trace from={`.${name}_R1 > .pin2`} to={`net.${name}_GND`} />
-    </group>
-  )
+```ts
+export function myStage(): Network {
+  return circuit()
+    .resistor("input_bias_resistor", "10k", { a: "IN", b: "GND" })
+    .port("input", "IN")
+    .port("ground", "GND")
+    .done()
 }
 ```
 
-### Conventions
-
-1. **Naming** — every component and net name is prefixed with the `name` prop,
-   so two instances of a module never collide.
-2. **Imports** — explicit relative file paths with extensions. tscircuit's
-   evaluator resolves neither directory imports nor path aliases.
-3. **Layout** — explicit `schX`/`schY` through the helpers in `lib/layout.ts`.
-   `schFlex` is not reliable for schematics.
-4. **Named nets** — declare `<net>` elements rather than relying on generated
-   pin-pair names.
-
-See `CLAUDE.md` for the full conventions.
-
-## Component Library
-
-### Chips (`lib/chips/`)
-
-| Component | Description | Footprint |
-|-----------|-------------|-----------|
-| `TL072` | Dual JFET op-amp | SOIC-8, DIP-8 |
-
-### Connectors (`lib/connectors/`)
-
-| Component | Description | Pins |
-|-----------|-------------|------|
-| `ScrewTerminal2` | 2-position terminal | P1, P2 |
-| `ScrewTerminal3` | 3-position terminal | P1, P2, P3 |
-| `ScrewTerminal6` | 6-position terminal | P1-P6 |
-| `MonoJack` | Mono audio jack | TIP, SLEEVE |
-| `StereoJack` | Stereo audio jack | TIP, RING, SLEEVE |
+Circuits compose with `include()`, which binds every declared port explicitly —
+there are no implicit global nets, not even ground. Component ids are semantic
+(`input_bias_resistor`, never `R1`); reference designators belong to KiCad.
+`CLAUDE.md` has the conventions in full.
 
 ## Open questions
 
@@ -183,9 +127,8 @@ tidied away. The two that matter most to anyone building this:
 
 ## References
 
-- [tscircuit docs](https://docs.tscircuit.com)
 - [multi-channel-preamp](https://github.com/oletizi/multi-channel-preamp) — the original KiCAD designs
 - `docs/pultec/` — the modularization plan and its review
 - `docs/decisions/` — recorded architecture decisions, including why tscircuit
-  was dropped for new work
+  was dropped
 - `docs/superpowers/specs/` — design documents for individual changes
