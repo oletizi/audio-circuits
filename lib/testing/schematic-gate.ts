@@ -79,12 +79,12 @@ export interface Baseline {
 export const BASELINES: Readonly<Record<string, Baseline>> = {
   // Measured, not chosen. See the commit that introduced these numbers.
   "optical-compressor": {
-    nonRailLabels: 38,
+    nonRailLabels: 28,
     labelCollisions: 8,
-    wireCrossings: 2,
-    longHopFraction: 0.233,
-    componentAreaPerComponent: 24.2,
-    drawingAreaPerComponent: 25.2,
+    wireCrossings: 1,
+    longHopFraction: 0.0,
+    componentAreaPerComponent: 9.8,
+    drawingAreaPerComponent: 10.4,
   },
   "opamp-buffer": {
     nonRailLabels: 7,
