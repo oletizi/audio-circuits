@@ -21,6 +21,17 @@ export interface ResolvedTwoPinElement {
 }
 
 function twoPinUnit(component: ResolvedComponent): { readonly a: string; readonly b: string } {
+  const packagePins = Object.keys(component.pins)
+  if (packagePins.length !== 0) {
+    // A two-terminal passive has no package pins of its own (see `kinds.ts`'s
+    // PACKAGE_PINS), so a component that reaches here with one is not something this
+    // narrowing can represent. Refusing beats dropping the pin: silently ignoring
+    // `component.pins` would drop a net from the emitted deck with no signal at all.
+    throw new Error(
+      `Component is not a two-terminal passive (has package pin${packagePins.length === 1 ? "" : "s"} ` +
+        `${packagePins.join(", ")}): ${component.id}`,
+    )
+  }
   if (component.units.length !== 1) {
     throw new Error(
       `Component is not a two-terminal passive (does not have exactly one unit): ${component.id}`,

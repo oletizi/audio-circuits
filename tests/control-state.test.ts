@@ -269,6 +269,23 @@ test("a no-connect is omitted from resolved pins, not rendered as a net name", (
   expect(Object.keys(u?.units[0]?.pins ?? {})).not.toContain("2")
 })
 
+test("a no-connect PACKAGE pin is omitted from resolved pins, not rendered as a net name", () => {
+  // `reducePins` is shared between package pins and unit pins; the previous test only
+  // exercised it on a unit pin. A package pin is a separate map on `ResolvedComponent`
+  // (Finding 1: it is not merged with the unit's), so it needs its own coverage.
+  const withNc: Network = {
+    components: [{
+      id: "amp", kind: "opamp", parameters: {},
+      pins: { "v+": net("VCC"), "v-": { kind: "nc" } },
+      units: [{ name: "A", pins: { "in+": net("IN"), "in-": net("FB"), out: net("OUT") } }],
+    }],
+    ports: { VCC: "VCC", IN: "IN", FB: "FB", OUT: "OUT", ground: "VCC" },
+  }
+  const amp = resolveNetwork(withNc, NO_CONTROLS).components.find((c) => c.id === "amp")
+  expect(amp?.pins).toEqual({ "v+": "VCC" })
+  expect(Object.keys(amp?.pins ?? {})).not.toContain("v-")
+})
+
 test("a potentiometer still resolves into two resistors", () => {
   // Reuses the assertions from "expands a linear pot into two resistors summing to its
   // total" above verbatim in substance (same fixture, same 5000/5000 split at the
