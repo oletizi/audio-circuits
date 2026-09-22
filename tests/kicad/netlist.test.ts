@@ -37,6 +37,11 @@ test("a netlist with no components section throws", () => {
     .toThrow(/no \(components\) section/i)
 })
 
+test("a netlist with no nets section throws", () => {
+  expect(() => importNetlist(`(export (version "E") (components))`))
+    .toThrow(/no \(nets\) section/i)
+})
+
 test("a node referencing an undeclared component throws", () => {
   const bad = `(export (components (comp (ref "C1") (value "1n")))
     (nets (net (code "1") (name "N") (node (ref "C1") (pin "1")) (node (ref "R9") (pin "1")))))`

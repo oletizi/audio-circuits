@@ -45,9 +45,13 @@ export function importNetlist(text: string): ImportedNetlist {
   })
 
   const declared = new Set(components.map((c) => c.designator))
-  const nets: Record<string, readonly string[]> = {}
   const netsNode = child(root, "nets")
-  for (const netNode of netsNode === undefined ? [] : children(netsNode, "net")) {
+  if (netsNode === undefined) {
+    throw new Error("netlist has no (nets) section")
+  }
+
+  const nets: Record<string, readonly string[]> = {}
+  for (const netNode of children(netsNode, "net")) {
     const name = attr(netNode, "name")
     if (name === undefined) throw new Error("(net) with no (name)")
     const members = children(netNode, "node").map((node) => {

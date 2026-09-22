@@ -15,7 +15,7 @@ independent cascaded filters. Makeup amplification stays outside this network.
 
 There is no Pultec circuit in this repository yet. The existing op-amp buffer
 and demo are unrelated to the reference filter. The topology utility in
-`lib/passives/topology.ts` is initial validation infrastructure; its tests use a
+`lib/model/topology.ts` is initial validation infrastructure; its tests use a
 synthetic circuit. Passing those tests does **not** establish Pultec equivalence.
 No connector pin count, component values, or manufacturing files are approved.
 
