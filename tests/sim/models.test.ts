@@ -263,14 +263,58 @@ const SUPPLIES = { "v+": "vcc", "v-": "vee" }
  * reading one line - the obligation that lands on whichever task registers a
  * model whose input stage is not a single readable VCVS.
  *
- * An operating-point solve cannot do this. A `.op` converges to the unstable
- * equilibrium and returns the same answer to six figures with the inputs
- * transposed; this project has measured that and been fooled by it. The AC
- * result does carry the sign: negative feedback gives A/(1+A), strictly below
- * unity, and positive feedback gives A/(A-1), strictly above. With A0 = 1e4
- * the two land about 1e-4 either side of unity, which is why the model's
- * open-loop gain is deliberately modest.
+ * The measurement is an AC one. The reason is narrower than "an operating
+ * point cannot see polarity", which is simply false for these models and
+ * would be claiming a mechanism where only an outcome was observed: both
+ * models are linear, so their DC systems have one solution each and there is
+ * no unstable equilibrium to converge to. What is true is that a SWEEP deck's
+ * source is AC-only, ngspice then assumes `DC 0`, and the operating point is
+ * identically zero everywhere - so `.op` on a sweep-shaped deck compares 0
+ * against 0 and learns nothing. Give the same deck a DC-carrying source and a
+ * `.op` separates the polarities perfectly well. Both halves of that are
+ * measured by the test immediately below, rather than asserted here in prose.
+ *
+ * The AC result carries the sign either way: negative feedback gives A/(1+A),
+ * strictly below unity, and positive feedback gives A/(A-1), strictly above.
+ * With A0 = 1e4 the two land about 1e-4 either side of unity, which is why
+ * the model's open-loop gain is deliberately modest.
  */
+test("a sweep-shaped deck's operating point is blind to polarity, but a DC-driven one is not", async () => {
+  const { runOperatingPoint } = await import("../../lib/sim/operating-point.ts")
+  const model = deviceModel("GENERIC_OPAMP")
+  const order = model.pinOrder
+  if (!order) throw new Error("GENERIC_OPAMP declares no pinOrder")
+  const bias = async (sourceLine: string, transposed: boolean): Promise<number> => {
+    const pins: Readonly<Record<string, string>> = transposed
+      ? { "in+": "out", "in-": "sig", out: "out", ...SUPPLIES }
+      : { "in+": "sig", "in-": "out", out: "out", ...SUPPLIES }
+    const v = await runOperatingPoint({
+      netlist: [
+        "polarity under .op",
+        sourceLine,
+        "VVCC vcc 0 DC 15",
+        "VVEE vee 0 DC -15",
+        `X1 ${order.map(pin => pins[pin]).join(" ")} GENERIC_OPAMP`,
+        "Rload out 0 1e12",
+        model.spice.trimEnd(),
+        ".op",
+        ".end",
+      ].join("\n"),
+      nodes: ["out"],
+    })
+    return v["out"]
+  }
+
+  // An AC-only source: ngspice assumes DC 0, so the bias point is zero
+  // whichever way the inputs are wired. This is the blindness, and its cause.
+  expect(await bias("V1 sig 0 AC 1", false)).toBe(0)
+  expect(await bias("V1 sig 0 AC 1", true)).toBe(0)
+
+  // The same deck with a DC-carrying source separates them cleanly, which is
+  // what makes "use AC" a statement about the DECK rather than about `.op`.
+  expect(await bias("V1 sig 0 DC 1", false)).toBeLessThan(1)
+  expect(await bias("V1 sig 0 DC 1", true)).toBeGreaterThan(1)
+})
 test("GENERIC_OPAMP's input polarity is measured, not assumed: negative feedback lands below unity", async () => {
   const gain = await followerGain({ "in+": "sig", "in-": "out", out: "out", ...SUPPLIES })
   expect(gain).toBeCloseTo(1, 3)

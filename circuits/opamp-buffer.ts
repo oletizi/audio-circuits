@@ -5,32 +5,36 @@
  * module this repository is retiring; that file is the sole authority for
  * every component, value and connection below, and this port was written by
  * reading it rather than from memory of what a buffer looks like. The module
- * is deleted in the same commit that adds this file, so its content is
- * recorded here where it is load-bearing.
+ * was deleted immediately afterwards, by the commit that removed tscircuit,
+ * so its content is recorded here where it is load-bearing; git history holds
+ * the file itself, at 6c5ad0a.
  *
  * THE SOURCE MODULE'S PARTS, AND WHERE EACH ONE WENT
  *
- *   C_IN    100nF 0805   -> input_coupling_cap
- *   R_BIAS  100k  0805   -> input_bias_resistor
- *   U       TL072 soic8  -> buffer_amp (one section, unit "A")
- *   C_OUT   100nF 0805   -> output_coupling_cap
- *   C_VCC   100nF 0805   -> vcc_decoupling_cap
- *   C_VEE   100nF 0805   -> vee_decoupling_cap
- *   J_IN    ScrewTerminal2 -> the `input` and `ground` ports
- *   J_OUT   ScrewTerminal2 -> the `output` and `ground` ports
- *   J_PWR   ScrewTerminal3 -> the `vcc`, `ground` and `vee` ports
+ *   C_IN    100nF 0805     -> input_coupling_cap
+ *   R_BIAS  100k  0805     -> input_bias_resistor
+ *   U       TL072 soic8    -> buffer_amp (one section, unit "A")
+ *   C_OUT   100nF 0805     -> output_coupling_cap
+ *   C_VCC   100nF 0805     -> vcc_decoupling_cap
+ *   C_VEE   100nF 0805     -> vee_decoupling_cap
+ *   J_IN    ScrewTerminal2 -> input_terminal  (pinrow2)
+ *   J_OUT   ScrewTerminal2 -> output_terminal (pinrow2)
+ *   J_PWR   ScrewTerminal3 -> power_terminal  (pinrow3)
  *
- * The three screw terminals are the ONE deliberate departure from a
- * one-component-for-one-component transcription, and it is recorded rather
- * than quiet. In tscircuit a module's external interface has to be a physical
- * part, because tscircuit lays out a board; in this model an external
- * interface is a declared port (`Network.ports`), which is what ports are
- * for. The SPICE emitter also refuses `kind: "connector"` outright and by
- * design, so a buffer carrying its screw terminals as components could not be
- * simulated at all. The cost is real and is stated here so nobody discovers
- * it by surprise: a bill of materials generated from this network will not
- * list the three screw terminals. Whether connectors should become components
- * with an emission rule is a question for the plan, not for this file.
+ * The three screw terminals are BOTH components and ports, and they have to
+ * be both. They are real parts with real footprints, so a bill of materials
+ * has to see them; they are also where every net leaves the module, so
+ * composition and simulation have to see those nets as declared ports.
+ * `circuits/pt2399-core.ts` already does exactly this for its five-pin
+ * header, which settles it - there was never a choice to make.
+ *
+ * A screw terminal contributes no device line to a SPICE deck, and it says so
+ * itself: `part.electricallyInert` is declared true on each one. That is a
+ * property of the part rather than of the kind, because `kind: "connector"`
+ * also covers a switching jack whose contact opens when a plug is inserted.
+ * The emitter refuses a connector that does not declare it (see
+ * `emitConnector` in `lib/sim/device-lines.ts`), so a switching part cannot
+ * vanish from a deck by default.
  *
  * The source module's props `inputCap`, `outputCap` and `biasResistor` are
  * not parameters here. Their defaults were 100nF, 100nF and 100k, and both
@@ -86,7 +90,19 @@ export const SOURCE_PART_NAMES: Readonly<Record<string, string>> = {
   output_coupling_cap: "C_OUT",
   vcc_decoupling_cap: "C_VCC",
   vee_decoupling_cap: "C_VEE",
+  input_terminal: "J_IN",
+  output_terminal: "J_OUT",
+  power_terminal: "J_PWR",
 }
+
+/** The screw terminals' part identity, recovered from the `lib/connectors/`
+ * this commit's predecessor deleted: Phoenix-Contact-style 5.08mm screw
+ * terminals, rendered on `pinrow2`/`pinrow3` footprints, with pins named P1,
+ * P2, P3. There is no genuine manufacturer part number for a generic screw
+ * terminal, so `mpn` is absent rather than invented - the same reasoning
+ * `circuits/pt2399-core.ts` applies to its generic header. */
+const SCREW_TERMINAL_2 = { footprint: "pinrow2", electricallyInert: true } as const
+const SCREW_TERMINAL_3 = { footprint: "pinrow3", electricallyInert: true } as const
 
 /** Nets, named as the source module named them. `IN_EXT` is the one net the
  * module left unnamed: it drew `J_IN.P1 -> C_IN.pin1` as a bare trace, so it
@@ -142,8 +158,15 @@ export function opampBuffer(): Network {
     .capacitor("vcc_decoupling_cap", "100nF", { a: VCC, b: GND }, { footprint: "0805" })
     .capacitor("vee_decoupling_cap", "100nF", { a: VEE, b: GND }, { footprint: "0805" })
 
+    // The screw terminals. Pin names are the connector's own P1/P2/P3, which
+    // is what `kind: "connector"`'s open vocabulary is for.
+    .connector("input_terminal", { P1: IN_EXT, P2: GND }, SCREW_TERMINAL_2)
+    .connector("output_terminal", { P1: OUT, P2: GND }, SCREW_TERMINAL_2)
+    .connector("power_terminal", { P1: VCC, P2: GND, P3: VEE }, SCREW_TERMINAL_3)
+
     // Ports: every net that leaves the module, which is every net the three
-    // screw terminals touched.
+    // screw terminals land on. Declared alongside the terminals rather than
+    // instead of them - see the header.
     .port("input", IN_EXT)
     .port("output", OUT)
     .port("vcc", VCC)

@@ -317,13 +317,82 @@ test("a multi-unit component names the offending unit as well as the component",
 test("a kind with no emission rule throws rather than silently vanishing from the deck", () => {
   // The final `else` of the kind dispatch. Without it, a kind added later stops being
   // emitted with no signal at all: a complete, well-formed, entirely wrong netlist.
+  //
+  // A potentiometer is the right probe for it: `resolveNetwork` normally expands one
+  // into two resistors, so a pot arriving here IS the "a kind stopped being lowered and
+  // nobody noticed" case, and the emitter is the last thing that can say so.
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "vol", kind: "potentiometer", parameters: {}, pins: {},
+      units: [{ name: "MAIN", pins: { ccw: "in", wiper: "out", cw: "0" } }],
+    }],
+  }, environment)).toThrow(/vol.*potentiometer/i)
+})
+
+/* Connectors. A screw terminal contributes no device line; a switching jack would, and
+ * `kind: "connector"` covers both. So inertness is declared by the PART and the emitter
+ * refuses a connector that does not declare it - an unconditional "connectors emit
+ * nothing" branch is the silent-drop bug this project has already shipped three times.
+ */
+
+test("an inert connector emits no device line at all", () => {
+  const deck = toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "j1", kind: "connector", parameters: {},
+        part: { footprint: "pinrow2", electricallyInert: true }, pins: {},
+        units: [{ name: "MAIN", pins: { P1: "in", P2: "0" } }] },
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "out" } }] },
+    ],
+  }, environment)
+  expect(deck).not.toContain("j1")
+  // The rest of the deck is untouched, so "emits nothing" means nothing rather than
+  // "swallowed the component after it".
+  expect(deck).toMatch(/^R1 in out 1\.000000000000e\+3$/m)
+})
+
+test("an inert connector still registers its nets, so a collision through one is caught", () => {
+  // Nothing is emitted for the connector, but its nets must still take part in
+  // collision detection or a net that reaches the deck only through a connector could
+  // silently alias another.
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [
+      { id: "j1", kind: "connector", parameters: {},
+        part: { electricallyInert: true }, pins: {},
+        units: [{ name: "MAIN", pins: { P1: "lf.mid", P2: "0" } }] },
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "lf-mid", b: "out" } }] },
+      { id: "R2", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: "in", b: "out" } }] },
+    ],
+  }, environment)).toThrow("Emitted netlist node collision on lf_mid between nets: lf.mid and lf-mid")
+})
+
+test("a connector whose part does not declare inertness throws rather than being assumed inert", () => {
   expect(() => toSpiceNetlist({
     ports: { input: "in", output: "out", ground: "0" },
     components: [{
       id: "j1", kind: "connector", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { tip: "in", sleeve: "0" } }],
     }],
-  }, environment)).toThrow(/j1.*connector/i)
+  }, environment)).toThrow(/j1.*electricallyInert/i)
+})
+
+test("a connector declaring itself NOT inert throws, naming the kind it belongs in", () => {
+  // A switching jack is not an inert connector. The model already expresses contacts
+  // that open and close - `kind: "switch"` with a control-state position - and the
+  // error says so rather than leaving the author to guess.
+  expect(() => toSpiceNetlist({
+    ports: { input: "in", output: "out", ground: "0" },
+    components: [{
+      id: "j1", kind: "connector", parameters: {},
+      part: { electricallyInert: false }, pins: {},
+      units: [{ name: "MAIN", pins: { tip: "in", sleeve: "0" } }],
+    }],
+  }, environment)).toThrow(/j1.*switch/i)
 })
 
 test("an op-amp deck emitted from the model's pin order actually solves in ngspice", async () => {
@@ -531,6 +600,24 @@ test("a supply on the ground net throws rather than emitting a source shorted ac
     ...railedEnvironment,
     supplies: [{ port: "ground", volts: 9 }],
   })).toThrow(/Supply port "ground" names the ground net/)
+})
+
+test("a supply on the LOAD port throws, because it would silently make every gain zero", () => {
+  // The one that matters most, and the only one of these guards whose absence produces
+  // a wrong NUMBER rather than a failure: the measured node would be held by an ideal
+  // DC source whose AC value is zero, so the whole sweep reads exactly 0 with no error
+  // raised anywhere. The other guards here are loud on their own; this one is not.
+  expect(() => toSpiceNetlist(railed, {
+    ...railedEnvironment,
+    supplies: [{ port: "output", volts: 15 }],
+  })).toThrow(/Supply port "output" names the load net/)
+})
+
+test("a supply on the SOURCE port throws rather than putting two sources on one node", () => {
+  expect(() => toSpiceNetlist(railed, {
+    ...railedEnvironment,
+    supplies: [{ port: "input", volts: 15 }],
+  })).toThrow(/Supply port "input" names the source net/)
 })
 
 test("the same supply port declared twice throws rather than emitting a duplicate source", () => {

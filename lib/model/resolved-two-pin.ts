@@ -11,7 +11,7 @@
  * is that consumer-owned narrowing, kept out of control-state.ts on purpose.
  *
  * Active-device emission (multi-unit lowering, package-pin sharing across units) lives
- * in `lib/sim/netlist.ts` and is NOT what this file does: this only recognizes the
+ * in `lib/sim/device-lines.ts` and is NOT what this file does: this only recognizes the
  * two-terminal passives its remaining consumers handle, and throws, naming the
  * component, on anything else.
  */

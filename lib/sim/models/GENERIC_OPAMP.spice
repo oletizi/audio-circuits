@@ -63,9 +63,26 @@
 * MEASUREMENT in tests/sim/models.test.ts, which builds a follower from
 * pinOrder itself and asserts the closed-loop gain lands strictly BELOW
 * unity, and lands strictly ABOVE unity when the two inputs are swapped.
-* An operating-point solve cannot do this: a .op converges to the unstable
-* equilibrium and returns the same answer either way, which this project
-* has measured and been fooled by. Only the AC result carries the sign.
+*
+* The measurement is an AC one, and the reason is narrower than "an
+* operating point cannot see polarity" - it is not that, and saying so
+* would claim a mechanism where only an outcome was observed. Measured
+* 2026-09-22 through this repository's own runOperatingPoint, on the same
+* five-argument follower:
+*
+*   source `V1 sig 0 DC 1`   correct    v(out) = 0.9999000100
+*                            transposed v(out) = 1.0001000100   separated
+*   source `V1 sig 0 AC 1`   correct    v(out) = 0
+*                            transposed v(out) = 0              blind
+*
+* So a .op DOES separate the two polarities when the source carries a DC
+* value; this model is linear, so its DC system has one solution and there
+* is no unstable equilibrium to converge to. What a .op cannot do is
+* separate them on a SWEEP deck, whose source is AC-only: ngspice then
+* assumes DC 0 (the "Note: v1: has no value, DC 0 assumed" line printed
+* throughout this suite), the operating point is identically zero
+* everywhere, and 0 = 0 carries no information. The AC result carries the
+* sign either way, and is what these tests use.
 *
 * SUPPLY PINS: STRUCTURAL, NOT BEHAVIOURAL. v+ and v- appear on the .subckt
 * line but are referenced by no element inside it, deliberately. This model

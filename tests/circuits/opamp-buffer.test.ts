@@ -3,7 +3,7 @@ import { opampBuffer, SOURCE_PART_NAMES } from "../../circuits/opamp-buffer.ts"
 import { validateNetwork } from "../../lib/model/validate.ts"
 import { parseValue } from "../../lib/model/units.ts"
 import { net } from "../../lib/model/types.ts"
-import type { Component } from "../../lib/model/types.ts"
+import type { Component, PartSpec } from "../../lib/model/types.ts"
 import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 import { acSweepOf, deckFor, expectGainAt, NO_CONTROLS } from "../sim/helpers.ts"
 
@@ -61,10 +61,53 @@ test("the buffer validates and carries the expected parts", () => {
   expect(kinds.filter(k => k === "capacitor").length).toBe(4)
   expect(kinds.filter(k => k === "resistor").length).toBe(1)
   expect(kinds.filter(k => k === "opamp").length).toBe(1)
+  // The three screw terminals are components as well as ports: they are real
+  // parts with real footprints and a bill of materials has to see them.
+  expect(kinds.filter(k => k === "connector").length).toBe(3)
   // Total as well as per-kind: a per-kind tally alone would survive an extra
   // component of some kind nobody thought to count.
-  expect(n.components.length).toBe(6)
+  expect(n.components.length).toBe(9)
   expect(n.components.map(c => c.id).sort()).toEqual(Object.keys(SOURCE_PART_NAMES).sort())
+})
+
+test("every transcribed part identity matches the source module", () => {
+  // Values are checked below; this checks the PartSpec fields, which a
+  // regression could drop without failing anything else. Every figure here
+  // comes from the deleted tscircuit sources (lib/chips/TL072.tsx,
+  // lib/connectors/ScrewTerminal.tsx) as they stood at 6c5ad0a.
+  const byId = new Map(opampBuffer().components.map(c => [c.id, c]))
+  const partOf = (id: string): PartSpec => {
+    const component = byId.get(id)
+    if (!component) throw new Error(`no component "${id}"`)
+    if (!component.part) throw new Error(`component "${id}" declares no part`)
+    return component.part
+  }
+
+  for (const id of [
+    "input_coupling_cap", "output_coupling_cap", "vcc_decoupling_cap",
+    "vee_decoupling_cap", "input_bias_resistor",
+  ]) {
+    expect(partOf(id).footprint, id).toBe("0805")
+  }
+
+  const amp = partOf("buffer_amp")
+  expect(amp.mpn).toBe("TL072")
+  expect(amp.footprint).toBe("soic8")
+  expect(amp.symbol).toBe("Amplifier_Operational:TL072")
+  // TL072 section A: output pin 1, inverting input pin 2, non-inverting pin 3.
+  expect(amp.symbolPins).toEqual({ A: { "in+": "3", "in-": "2", out: "1" } })
+
+  expect(partOf("input_terminal").footprint).toBe("pinrow2")
+  expect(partOf("output_terminal").footprint).toBe("pinrow2")
+  expect(partOf("power_terminal").footprint).toBe("pinrow3")
+  // Inertness is declared per part, and the emitter refuses a connector that
+  // does not declare it, so these three are what keep the buffer simulable.
+  for (const id of ["input_terminal", "output_terminal", "power_terminal"]) {
+    expect(partOf(id).electricallyInert, id).toBe(true)
+  }
+  // A generic screw terminal has no manufacturer part number, and inventing
+  // one would be exactly the kind of quiet fiction this project refuses.
+  expect(partOf("input_terminal").mpn).toBeUndefined()
 })
 
 test("every transcribed value matches the source module", () => {
@@ -154,6 +197,12 @@ test("the emitted deck instantiates one amplifier section against the generic mo
   expect(deck).toMatch(/^VVCC VCC 0 DC 1\.500000000000e\+1$/m)
   expect(deck).toMatch(/^VVEE VEE 0 DC -1\.500000000000e\+1$/m)
   expect(deck.match(/^\.subckt\s+GENERIC_OPAMP\b/gim)).toHaveLength(1)
+  // The three screw terminals declare themselves electrically inert, so they
+  // contribute no device line. They are still components, and the emitter
+  // would have refused them had they not said so.
+  for (const id of ["input_terminal", "output_terminal", "power_terminal"]) {
+    expect(deck).not.toContain(id)
+  }
 })
 
 /**
