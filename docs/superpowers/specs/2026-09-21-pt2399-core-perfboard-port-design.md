@@ -377,6 +377,35 @@ bun run perfboard veroroute    acquire and build the pinned fork
 `runCli(argv, opts)` returns an exit code with injected dependencies, so every verb is
 testable under `bun test` with no binary present.
 
+#### What each binary-backed verb actually does
+
+Parity with the `pedals` make layer, which is the authority for these. The fork's headless
+surface is `--check`, `--update`, `--set-strips`, `--dump-board`, `--dump-netlist`,
+`--import`, `--adopt`, `--stretch`.
+
+- **`cuts`** — `--dump-board <vrt>`, then report the `CUT_STATE`, `CUT`, `CUT_CONFLICT`,
+  `SOLDER` and `CUT_UNCONNECTED_PIN` lines. **A dump carrying no `CUT_STATE` line is a
+  refusal, not an empty list**: it means the tool no longer understands what
+  `--dump-board` prints, and printing nothing would read as "no cuts needed". `CUT_STATE
+  NOT_APPLICABLE` means the board is in isolated-hole mode and has no strips to cut, which
+  is reported as that fact plus the `stripboard` verb that changes it — again, not an empty
+  list.
+- **`update`** — guard, export the netlist from the declared circuit,
+  `--update <vrt> --netlist <net> -o <temp>`, then atomically replace. Reports what changed
+  and names `git checkout --` as the way back.
+- **`stripboard`** — requires a strip direction (there is no default: it is a fact about
+  the board in the operator's hand, not a preference this tool can hold). Guard,
+  `--set-strips <vrt> --strips <dir> -o <temp>`, atomic replace, then run the update path
+  with `--allow-dirty` to fill the strips it just created. Converting without filling is
+  half a conversion.
+- **`edit`** — hands the layout to the forked binary and returns. It must not use a generic
+  "open this file" mechanism, which would consult the desktop's association for `.vrt` and
+  could launch a stock VeroRoute: a build that opens the board perfectly well and silently
+  lacks every verb this workflow depends on.
+- **`veroroute`** — clone the pinned commit from `veroroute.pin` into `.tools/` and build
+  it. An explicitly set `VEROROUTE` wins and suppresses acquisition entirely: that is the
+  operator pointing at their own development build, and their checkout is theirs.
+
 `check`, `cuts`, `board-info` and `boards` write nothing. `update` and `stripboard` write the
 declared layout **in place**, because git is the undo and a target that wrote a copy elsewhere
 and told you to move it into position would hand you the one step that can go wrong.
@@ -401,6 +430,27 @@ an uncommitted first one is refused, and that is correct rather than awkward: it
 operator to look at what the first one did before stacking another on top of it. The
 acceptance procedure below therefore carries an explicit commit checkpoint, and any narrative
 that runs two mutations back to back without one is wrong.
+
+#### The guard needs an escape hatch, and one verb requires it
+
+An earlier revision of this document specified the guard with no way past it. That is
+wrong, and `stripboard` is the proof: it converts a layout to strip mode **and then
+immediately fills the strips by running the update path**. The first write leaves the
+layout dirty, so the second write would be refused by the guard the first write just
+satisfied. A guard with no bypass makes that verb unimplementable.
+
+So mutation takes `--allow-dirty`, and `stripboard` passes it to its own internal update
+step. The flag is not a convenience: it is an explicit statement that the operator accepts
+this run cannot be undone.
+
+The two refusals stay distinct, because they are different mistakes with different fixes:
+
+- **Untracked** — git has never seen this layout, so there is no way back at all.
+- **Tracked but modified** — there is a way back, but it does not reach the state the
+  operator is looking at now.
+
+`--allow-dirty` suppresses both, and a verb that used it says so in its output rather than
+reporting success as though the undo were intact.
 
 #### A mutating verb must not be able to leave a corrupt layout
 
