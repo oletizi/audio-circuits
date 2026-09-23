@@ -584,6 +584,45 @@ test("no verb other than veroroute triggers acquisition, even when the binary is
   }
 })
 
+// ---------------------------------------------------------------------------
+// F9: the top-level repoRoot option threads into the binary-backed verbs too
+// ---------------------------------------------------------------------------
+
+test("cuts resolves its binary against the top-level repoRoot option, not just veroroute", async () => {
+  // Before F9, RunCliOptions.repoRoot silently had no effect on cuts/update/
+  // stripboard/edit - each fell back to moduleRepoRoot() regardless. This
+  // pins the real (un-injected) resolution path: no runVeroroute stub, no
+  // repoRoot on verbDeps directly - only the top-level opts.repoRoot, and a
+  // tiny test-authored stand-in executable at the path that resolution rule
+  // computes (never the real veroroute binary).
+  const root = tree()
+  const fakeRepoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-f9-reporoot-"))
+  try {
+    const binaryPath = path.join(
+      fakeRepoRoot, ".tools", "veroroute-perfboard", "veroroute.app", "Contents", "MacOS", "veroroute",
+    )
+    fs.mkdirSync(path.dirname(binaryPath), { recursive: true })
+    fs.writeFileSync(binaryPath, "#!/bin/sh\necho 'CUT_STATE OK'\n")
+    fs.chmodSync(binaryPath, 0o755)
+
+    const lines: string[] = []
+    const errors: string[] = []
+    const code = await runCli(["cuts"], {
+      cwd: boardDir(root),
+      repoRoot: fakeRepoRoot,
+      log: (line) => lines.push(line),
+      error: (line) => errors.push(line),
+      verbDeps: { env: {} },
+    })
+    expect(errors).toEqual([])
+    expect(code).toBe(0)
+    expect(lines.join("\n")).toContain("CUT_STATE OK")
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+    fs.rmSync(fakeRepoRoot, { recursive: true, force: true })
+  }
+})
+
 test("board-info prints what the directory declares", async () => {
   const root = tree()
   try {
