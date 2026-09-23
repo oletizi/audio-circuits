@@ -26,7 +26,9 @@ test("resolves both paths against the declaration's own directory", () => {
     const declaration = loadDeclaration(file)
     expect(declaration.exportName).toBe("pt2399Core")
     expect(declaration.vrtPath).toBe(path.join(path.dirname(file), "board.vrt"))
-    expect(path.isAbsolute(declaration.circuitPath)).toBe(true)
+    expect(declaration.circuitPath).toBe(
+      path.resolve(path.dirname(file), "../../circuits/pt2399-core.ts"),
+    )
   })
 })
 
@@ -58,6 +60,28 @@ test("an unreadable or malformed declaration names the file", () => {
   withDeclaration(JSON.stringify([1, 2]), (file) => {
     expect(() => loadDeclaration(file)).toThrow(/expected a JSON object at the top level/)
   })
+})
+
+test("a symlinked board directory refuses rather than being silently skipped", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-symlink-"))
+  try {
+    fs.mkdirSync(path.join(root, "real-board"), { recursive: true })
+    fs.writeFileSync(path.join(root, "real-board", "perfboard.json"), VALID)
+    const linkPath = path.join(root, "linked-board")
+    fs.symlinkSync(path.join(root, "real-board"), linkPath, "dir")
+    let caught: unknown
+    try {
+      discoverDeclarations(root)
+    } catch (error) {
+      caught = error
+    }
+    expect(caught).toBeInstanceOf(Error)
+    const message = caught instanceof Error ? caught.message : ""
+    expect(message).toContain(linkPath)
+    expect(message).toContain("symlink")
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
 })
 
 test("discovery matches the exact basename, not a suffix", () => {

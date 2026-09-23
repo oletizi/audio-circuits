@@ -111,11 +111,39 @@ export function discoverDeclarations(root: string): string[] {
   const found: string[] = []
   const walk = (dir: string): void => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name)
+      if (entry.isSymbolicLink()) {
+        // A symlinked directory is neither `entry.isDirectory()` (that reflects the
+        // link itself, not its target) nor named "perfboard.json", so the loop below
+        // would silently step over it: a board reachable only through the symlink
+        // would be neither descended into nor reported, and the run would exit 0
+        // having checked fewer boards than exist. A skipped check must never look
+        // like a passing one, so this refuses rather than following - following
+        // would need cycle detection this repository has no symlinked board tree to
+        // justify.
+        let resolvesToDirectory: boolean
+        try {
+          resolvesToDirectory = fs.statSync(fullPath).isDirectory()
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : String(error)
+          throw new Error(`${fullPath}: symlink could not be resolved: ${detail}`)
+        }
+        if (resolvesToDirectory) {
+          throw new Error(
+            `${fullPath}: is a symlink to a directory. discoverDeclarations does not follow ` +
+              "symlinked board directories, because a perfboard.json reachable only through one " +
+              "would otherwise be silently skipped. Replace the symlink with a real directory if " +
+              "this board needs to live there.",
+          )
+        }
+        if (entry.name === "perfboard.json") found.push(fullPath)
+        continue
+      }
       if (entry.isDirectory()) {
         if (SKIP_DIRECTORIES.has(entry.name) || entry.name.endsWith("-backups")) continue
-        walk(path.join(dir, entry.name))
+        walk(fullPath)
       } else if (entry.name === "perfboard.json") {
-        found.push(path.join(dir, entry.name))
+        found.push(fullPath)
       }
     }
   }
