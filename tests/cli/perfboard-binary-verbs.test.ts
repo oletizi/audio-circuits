@@ -355,7 +355,7 @@ test("an unknown flag is rejected rather than silently ignored", async () => {
 // veroroute: acquisition is checked, never implicit, never re-run needlessly
 // ---------------------------------------------------------------------------
 
-test("veroroute reports an already-built binary and its pinned commit without acquiring", async () => {
+test("veroroute reports a binary already built from the pinned commit without acquiring", async () => {
   const lines: string[] = []
   let acquireCalled = false
   const code = await runCli(["veroroute"], {
@@ -366,6 +366,7 @@ test("veroroute reports an already-built binary and its pinned commit without ac
     readPin: () => ({ repo: "git@github.com:x/veroroute-perfboard.git", commit: "abc123" }),
     resolveBinary: () => ({ path: "/repo/.tools/veroroute-perfboard/veroroute", mode: "acquired" }),
     binaryExists: (p: string) => p === "/repo/.tools/veroroute-perfboard/veroroute",
+    builtCommit: () => "abc123",
     acquire: () => { acquireCalled = true; return "/should/not/be/called" },
   })
   expect(code).toBe(0)
@@ -373,6 +374,52 @@ test("veroroute reports an already-built binary and its pinned commit without ac
   const output = lines.join("\n")
   expect(output).toContain("/repo/.tools/veroroute-perfboard/veroroute")
   expect(output).toContain("abc123")
+})
+
+// The defect this pair exists for: the skip once asked only whether a file
+// existed at the resolved path. Advancing veroroute.pin does not change that,
+// so the stale binary was kept AND reported as the new commit - the run named
+// code it was not running. Both tests would pass against that version if they
+// only asserted the exit code, so each asserts that acquisition HAPPENED.
+test("veroroute rebuilds when the existing binary was built from a different commit", async () => {
+  const lines: string[] = []
+  const calls: Pin[] = []
+  const code = await runCli(["veroroute"], {
+    repoRoot: "/repo",
+    env: {},
+    log: (line) => lines.push(line),
+    error: () => {},
+    readPin: () => ({ repo: "git@github.com:x/veroroute-perfboard.git", commit: "new456" }),
+    resolveBinary: () => ({ path: "/repo/.tools/veroroute-perfboard/veroroute", mode: "acquired" }),
+    binaryExists: () => true,
+    builtCommit: () => "old123",
+    acquire: (pin) => { calls.push(pin); return "/repo/.tools/veroroute-perfboard/veroroute" },
+  })
+  expect(code).toBe(0)
+  expect(calls.map((pin) => pin.commit)).toEqual(["new456"])
+  const output = lines.join("\n")
+  expect(output).toContain("new456")
+  expect(output).not.toContain("old123")
+})
+
+test("veroroute rebuilds when an existing binary carries no record of its commit", async () => {
+  // An unstamped build is UNKNOWN, not agreed: it predates stamping, or its
+  // build never finished. Either way the only safe reading is "not the pinned
+  // commit", because the alternative is reporting a commit nobody verified.
+  const calls: Pin[] = []
+  const code = await runCli(["veroroute"], {
+    repoRoot: "/repo",
+    env: {},
+    log: () => {},
+    error: () => {},
+    readPin: () => ({ repo: "git@github.com:x/veroroute-perfboard.git", commit: "abc123" }),
+    resolveBinary: () => ({ path: "/repo/.tools/veroroute-perfboard/veroroute", mode: "acquired" }),
+    binaryExists: () => true,
+    builtCommit: () => undefined,
+    acquire: (pin) => { calls.push(pin); return "/repo/.tools/veroroute-perfboard/veroroute" },
+  })
+  expect(code).toBe(0)
+  expect(calls.map((pin) => pin.commit)).toEqual(["abc123"])
 })
 
 test("veroroute acquires when no binary exists yet at the resolved path", async () => {
@@ -421,6 +468,8 @@ test("veroroute --force rebuilds even when a binary already exists at the resolv
     readPin: () => ({ repo: "git@github.com:x/veroroute-perfboard.git", commit: "abc123" }),
     resolveBinary: () => ({ path: "/repo/.tools/veroroute-perfboard/veroroute", mode: "acquired" }),
     binaryExists: () => true,
+    // Matching the pin: --force must rebuild even when nothing else would.
+    builtCommit: () => "abc123",
     acquire: () => { calls.push("acquire"); return "/repo/.tools/veroroute-perfboard/veroroute" },
   })
   expect(code).toBe(0)

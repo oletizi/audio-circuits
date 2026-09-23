@@ -137,6 +137,8 @@ export interface VerorouteDeps {
   readonly readPin: (file: string) => Pin
   readonly resolveBinary: (env: Env, repoRoot: string) => BinaryResolution
   readonly binaryExists: (binaryPath: string) => boolean
+  /** The commit an existing build was made from, or `undefined` if unknown. */
+  readonly builtCommit: (repoRoot: string) => string | undefined
   readonly acquire: (pin: Pin, opts: AcquireOptions) => string
 }
 
@@ -145,8 +147,17 @@ export interface VerorouteDeps {
  *
  * `acquire()` is NOT idempotent - it re-runs checkout, qmake and make on
  * every call, skipping only the clone, and a Qt5 build takes many minutes.
- * So this checks whether a binary already exists at the resolved path
- * FIRST, and only builds when there is none (or `--force` was passed). When
+ * So this checks for an existing build FIRST, and only builds when there is
+ * none, when it was made from a different commit, or when `--force` was
+ * passed.
+ *
+ * "A binary exists there" was the whole check once, and it is not enough:
+ * a pin bump does not change whether a file exists, so advancing
+ * veroroute.pin left the old binary in place while this reported the new
+ * commit - the run claimed code it was not executing. The commit a build
+ * was actually made from is the thing to compare, and an unstamped build
+ * is unknown, not agreed. When
+ * `VEROROUTE` points at the operator's own checkout ("explicit" mode), this
  * `VEROROUTE` points at the operator's own checkout ("explicit" mode), this
  * never acquires at all: that is a build this tool does not own, and cloning
  * or rebuilding over it would be this tool destroying work that is not its
@@ -173,8 +184,9 @@ function dispatchVeroroute(
 
     const pin = deps.readPin(path.join(repoRoot, PIN_FILE_NAME))
 
-    if (!force && deps.binaryExists(resolution.path)) {
-      log(`${resolution.path} (already built, pinned at commit ${pin.commit})`)
+    const built = deps.builtCommit(repoRoot)
+    if (!force && deps.binaryExists(resolution.path) && built === pin.commit) {
+      log(`${resolution.path} (already built from commit ${pin.commit})`)
       return 0
     }
 

@@ -30,6 +30,7 @@ import {
   readPin as defaultReadPin,
   resolveBinary as defaultResolveBinary,
   acquire as defaultAcquire,
+  builtCommit as defaultBuiltCommit,
   type Pin,
   type BinaryResolution,
   type AcquireOptions,
@@ -156,6 +157,8 @@ export interface RunCliOptions {
   readonly resolveBinary?: (env: Env, repoRoot: string) => BinaryResolution
   /** Injected so `veroroute` never checks the real filesystem for a binary in tests. */
   readonly binaryExists?: (binaryPath: string) => boolean
+  /** Injected so `veroroute` never reads a real build stamp in tests. */
+  readonly builtCommit?: (repoRoot: string) => string | undefined
   /** Injected so no test ever clones or builds the real fork. */
   readonly acquire?: (pin: Pin, opts: AcquireOptions) => string
   /** Injected so no test spawns the real kicad-cli for `netlist-sync`. */
@@ -331,6 +334,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
         readPin: opts.readPin ?? defaultReadPin,
         resolveBinary: opts.resolveBinary ?? defaultResolveBinary,
         binaryExists: opts.binaryExists ?? defaultBinaryExists,
+        builtCommit: opts.builtCommit ?? defaultBuiltCommit,
         acquire: opts.acquire ?? defaultAcquire,
       },
       log,

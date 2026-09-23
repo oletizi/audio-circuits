@@ -130,6 +130,36 @@ const CLONE_RELATIVE = path.join(".tools", "veroroute-perfboard")
 /** Where the built app bundle puts its executable, relative to the clone. */
 const BINARY_RELATIVE = path.join("veroroute.app", "Contents", "MacOS", "veroroute")
 
+/**
+ * Records which commit the binary beside it was built from.
+ *
+ * Without it the only question that can be asked of an existing build is
+ * "does a file exist there", which a pin bump does not change - so advancing
+ * `veroroute.pin` left the old binary in place and the run reported the NEW
+ * commit while executing the OLD code. The stamp is written only after a
+ * build has been verified to produce a binary, so its presence is a claim
+ * about a build that finished, not one that started.
+ */
+const STAMP_BASENAME = ".built-commit"
+
+/** Absolute path to the build stamp for the clone under `repoRoot`. */
+export function builtCommitFile(repoRoot: string): string {
+  return path.join(repoRoot, CLONE_RELATIVE, STAMP_BASENAME)
+}
+
+/**
+ * The commit the binary under `repoRoot` was built from, or `undefined`
+ * when there is no stamp - an older build made before stamping existed, or
+ * a clone whose build never finished. `undefined` means "unknown", which
+ * callers must treat as "not the pinned commit" rather than as agreement.
+ */
+export function builtCommit(repoRoot: string): string | undefined {
+  const file = builtCommitFile(repoRoot)
+  if (!fs.existsSync(file)) return undefined
+  const text = fs.readFileSync(file, "utf8").trim()
+  return text === "" ? undefined : text
+}
+
 function acquiredBinaryPath(repoRoot: string): string {
   return path.join(repoRoot, CLONE_RELATIVE, BINARY_RELATIVE)
 }
@@ -347,13 +377,31 @@ export function acquire(pin: Pin, opts: AcquireOptions): string {
     }
   }
 
-  const checkout = run("git", ["checkout", pin.commit], cloneDir)
+  // A clone made before the pin advanced does not have the new commit yet, so
+  // the first checkout fails for a reason the operator should never have to
+  // act on: fetch and retry once. Advancing veroroute.pin is an edit to a file
+  // in THIS repository, and the tooling it configures has to follow it without
+  // being told twice - a refusal here would send the operator to run git by
+  // hand inside a directory this tool owns and gitignores.
+  let checkout = run("git", ["checkout", pin.commit], cloneDir)
+  if (checkout.status !== 0) {
+    const fetch = run("git", ["fetch", "origin"], cloneDir)
+    if (fetch.status !== 0) {
+      throw new Error(
+        `git checkout ${pin.commit} in ${cloneDir} failed, and the git fetch to recover from it ` +
+          `exited ${fetch.status}. The commit pinned in veroroute.pin could not be checked out ` +
+          `and the clone could not be refreshed to look for it.\n${fetch.output}`,
+      )
+    }
+    checkout = run("git", ["checkout", pin.commit], cloneDir)
+  }
   if (checkout.status !== 0) {
     throw new Error(
       `git checkout ${pin.commit} in ${cloneDir} exited ${checkout.status}; the commit pinned in ` +
-        `veroroute.pin could not be checked out.\n${checkout.output}\n` +
-        `If ${cloneDir} is a clone made before this pin advanced, that commit may not be present ` +
-        `locally: delete ${cloneDir} and re-run to reclone, or run "git fetch" inside it.`,
+        `veroroute.pin could not be checked out, and a git fetch did not bring it in.\n` +
+        `${checkout.output}\n` +
+        `That commit is not in ${pin.repo}. Check veroroute.pin for a typo or a commit that only ` +
+        `exists locally somewhere else, or remove ${cloneDir} and re-run to reclone.`,
     )
   }
 
@@ -393,6 +441,11 @@ export function acquire(pin: Pin, opts: AcquireOptions): string {
         "there. A build that half-worked and left no binary must not be reported as acquired.",
     )
   }
+
+  // Last, and only now: the stamp claims a FINISHED build, so it is written
+  // after the binary has been seen, never before the build or between its
+  // steps.
+  fs.writeFileSync(builtCommitFile(opts.repoRoot), `${pin.commit}\n`)
 
   return binaryPath
 }
