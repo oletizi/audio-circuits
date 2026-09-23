@@ -176,3 +176,59 @@ test("a component with no pins refuses rather than writing a part VeroRoute cann
   }
   expect(() => writeLegacyNetlist(netlist, { createdAt: CREATED_AT })).toThrow(/R9/)
 })
+
+// Every field below becomes its own whitespace-delimited token in the written file.
+// A field written empty or containing whitespace shifts the token stream, and the
+// reader then throws pointing at whichever field happens to fall out of alignment -
+// not the field that is actually wrong. These five tests pin that the writer catches
+// each such field AT WRITE TIME, and that the message names the actual offending field.
+
+test("write refuses a designator containing whitespace, naming the designator field", () => {
+  const netlist: ImportedNetlist = {
+    components: [{ designator: "R 9", value: "10K", footprint: "RESISTOR4" }],
+    nets: { GND: ["R 9.1"] },
+  }
+  expect(() => writeLegacyNetlist(netlist, { createdAt: CREATED_AT })).toThrow(
+    /designator.*must not contain whitespace.*R 9/,
+  )
+})
+
+test("write refuses a value containing whitespace, naming the value field", () => {
+  const netlist: ImportedNetlist = {
+    components: [{ designator: "R9", value: "10 K", footprint: "RESISTOR4" }],
+    nets: { GND: ["R9.1"] },
+  }
+  expect(() => writeLegacyNetlist(netlist, { createdAt: CREATED_AT })).toThrow(
+    /value.*must not contain whitespace.*10 K/,
+  )
+})
+
+test("write refuses a footprint containing whitespace, naming the footprint field", () => {
+  const netlist: ImportedNetlist = {
+    components: [{ designator: "R9", value: "10K", footprint: "RESISTOR 4" }],
+    nets: { GND: ["R9.1"] },
+  }
+  expect(() => writeLegacyNetlist(netlist, { createdAt: CREATED_AT })).toThrow(
+    /footprint.*must not contain whitespace.*RESISTOR 4/,
+  )
+})
+
+test("write refuses a net name containing whitespace, naming the net name field", () => {
+  const netlist: ImportedNetlist = {
+    components: [{ designator: "R9", value: "10K", footprint: "RESISTOR4" }],
+    nets: { "Net 1": ["R9.1"] },
+  }
+  expect(() => writeLegacyNetlist(netlist, { createdAt: CREATED_AT })).toThrow(
+    /net name.*must not contain whitespace.*Net 1/,
+  )
+})
+
+test("write refuses a pin label containing whitespace, naming the pin label field", () => {
+  const netlist: ImportedNetlist = {
+    components: [{ designator: "U1", value: "PT2399", footprint: "DIP16" }],
+    nets: { GND: ["U1.1 6"] },
+  }
+  expect(() => writeLegacyNetlist(netlist, { createdAt: CREATED_AT })).toThrow(
+    /pin label.*must not contain whitespace.*1 6/,
+  )
+})

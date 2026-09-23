@@ -126,6 +126,23 @@ export interface WriteOptions {
   readonly createdAt: string
 }
 
+/**
+ * The file format is a bare whitespace tokenizer (see `importLegacyNetlist`'s hazard
+ * comment above): a field written empty, or written with embedded whitespace, shifts
+ * the token stream, and the reader then throws pointing at whichever field happens to
+ * fall out of alignment - not the field that is actually wrong. Every field that
+ * becomes its own token is checked here, at write time, so a malformed input is
+ * reported against the field that is actually at fault.
+ */
+function assertToken(value: string, field: string, context: string): void {
+  if (value.length === 0) {
+    throw new Error(`${context}: ${field} must not be empty`)
+  }
+  if (/\s/.test(value)) {
+    throw new Error(`${context}: ${field} must not contain whitespace, got "${value}"`)
+  }
+}
+
 export function writeLegacyNetlist(netlist: ImportedNetlist, options: WriteOptions): string {
   if (netlist.components.length === 0) {
     throw new Error("refusing to write a netlist with no components")
@@ -134,6 +151,7 @@ export function writeLegacyNetlist(netlist: ImportedNetlist, options: WriteOptio
   // Invert the net map once: the file is organized by component, the model by net.
   const pinsByDesignator = new Map<string, { pin: string; net: string }[]>()
   for (const [netName, members] of Object.entries(netlist.nets)) {
+    assertToken(netName, "net name", `net "${netName}"`)
     for (const member of members) {
       const dot = member.lastIndexOf(".")
       if (dot === -1) {
@@ -141,6 +159,7 @@ export function writeLegacyNetlist(netlist: ImportedNetlist, options: WriteOptio
       }
       const designator = member.slice(0, dot)
       const pin = member.slice(dot + 1)
+      assertToken(pin, "pin label", `component ${designator} on net "${netName}"`)
       const existing = pinsByDesignator.get(designator)
       if (existing) existing.push({ pin, net: netName })
       else pinsByDesignator.set(designator, [{ pin, net: netName }])
@@ -150,6 +169,9 @@ export function writeLegacyNetlist(netlist: ImportedNetlist, options: WriteOptio
   const lines: string[] = [`( { EESchema Netlist Version 1.1 created  ${options.createdAt} }`]
 
   for (const component of netlist.components) {
+    assertToken(component.designator, "designator", `component ${component.designator}`)
+    assertToken(component.value, "value", `component ${component.designator}`)
+
     const pins = pinsByDesignator.get(component.designator)
     if (pins === undefined || pins.length === 0) {
       throw new Error(
@@ -164,6 +186,7 @@ export function writeLegacyNetlist(netlist: ImportedNetlist, options: WriteOptio
           "as its component Type and cannot import a part without one.",
       )
     }
+    assertToken(footprint, "footprint", `component ${component.designator}`)
     lines.push(` ( /${component.designator} ${footprint}  ${component.designator} ${component.value}`)
     // Numeric pin order where the pins are numbers, lexical otherwise, so a
     // 16-pin DIP reads 1..16 rather than 1, 10, 11.
