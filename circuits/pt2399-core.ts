@@ -7,6 +7,8 @@
  * VeroRoute consumed to lay out the perfboard that was actually built.
  * Every component, value and connection below comes from that file, read
  * with `importLegacyNetlist`, not from memory or a PT2399 datasheet.
+ * Component footprints are transcribed from `tests/fixtures/pt2399-core.net`,
+ * the checked-in modern netlist of the built unit.
  *
  * Semantic ids describe each part's role, inferred from which nets it sits
  * on (including the PT2399's own symbol-derived pin labels, e.g.
@@ -63,40 +65,62 @@ export const PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string, string
 export function pt2399Core(): Network {
   return circuit()
     // Supply decoupling.
-    .capacitor("supply_bypass_local", ".1uF", { a: "+5V", b: "GND" })
-    .capacitor("supply_bulk", "100uF", { a: "+5V", b: "GND" })
+    .capacitor("supply_bypass_local", ".1uF", { a: "+5V", b: "GND" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
+    .capacitor("supply_bulk", "100uF", { a: "+5V", b: "GND" },
+      { footprint: "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm" })
 
     // PT2399 reference and internal-oscillator bypassing.
-    .capacitor("reference_bypass", "47uF", { a: "Net-(U1-REF)", b: "GND" })
-    .capacitor("oscillator_cc0_bypass", ".1uF", { a: "Net-(U1-CC0)", b: "GND" })
-    .capacitor("oscillator_cc1_bypass", ".1uF", { a: "Net-(U1-CC1)", b: "GND" })
+    .capacitor("reference_bypass", "47uF", { a: "Net-(U1-REF)", b: "GND" },
+      { footprint: "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm" })
+    .capacitor("oscillator_cc0_bypass", ".1uF", { a: "Net-(U1-CC0)", b: "GND" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
+    .capacitor("oscillator_cc1_bypass", ".1uF", { a: "Net-(U1-CC1)", b: "GND" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
 
     // Input path.
-    .capacitor("input_coupling_cap", "4.7uF", { a: "Net-(C7-Pad1)", b: "INPUT" })
-    .resistor("input_bias_resistor", "100K", { a: "INPUT", b: "GND" })
-    .resistor("input_mix_resistor", "15K", { a: "Net-(C8-Pad2)", b: "Net-(C7-Pad1)" })
+    .capacitor("input_coupling_cap", "4.7uF", { a: "Net-(C7-Pad1)", b: "INPUT" },
+      { footprint: "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" })
+    .resistor("input_bias_resistor", "100K", { a: "INPUT", b: "GND" },
+      { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" })
+    .resistor("input_mix_resistor", "15K", { a: "Net-(C8-Pad2)", b: "Net-(C7-Pad1)" },
+      { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" })
 
     // LPF1 summing/filter node (Net-(C8-Pad2)).
-    .capacitor("lpf1_node_filter_cap", "5600pF", { a: "GND", b: "Net-(C8-Pad2)" })
-    .resistor("lpf1_input_resistor", "10K", { a: "Net-(C8-Pad2)", b: "Net-(U1-LPF1-IN)" })
-    .resistor("lpf1_feedback_resistor", "15K", { a: "Net-(C8-Pad2)", b: "Net-(U1-LPF1-OUT)" })
-    .capacitor("lpf1_feedback_cap", "560pF", { a: "Net-(U1-LPF1-IN)", b: "Net-(U1-LPF1-OUT)" })
+    .capacitor("lpf1_node_filter_cap", "5600pF", { a: "GND", b: "Net-(C8-Pad2)" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
+    .resistor("lpf1_input_resistor", "10K", { a: "Net-(C8-Pad2)", b: "Net-(U1-LPF1-IN)" },
+      { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" })
+    .resistor("lpf1_feedback_resistor", "15K", { a: "Net-(C8-Pad2)", b: "Net-(U1-LPF1-OUT)" },
+      { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" })
+    .capacitor("lpf1_feedback_cap", "560pF", { a: "Net-(U1-LPF1-IN)", b: "Net-(U1-LPF1-OUT)" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
 
     // LPF2 / regeneration node (Net-(C12-Pad1)).
-    .capacitor("regen_node_filter_cap", "5600pF", { a: "Net-(C12-Pad1)", b: "GND" })
-    .resistor("regen_feedback_resistor", "15K", { a: "Net-(U1-LPF2-OUT)", b: "Net-(C12-Pad1)" })
-    .resistor("regen_input_resistor", "10K", { a: "Net-(C12-Pad1)", b: "Net-(U1-LPF2-IN)" })
-    .resistor("op2_mix_resistor", "15K", { a: "Net-(U1-OP2-OUT)", b: "Net-(C12-Pad1)" })
-    .capacitor("lpf2_feedback_cap", "560pF", { a: "Net-(U1-LPF2-IN)", b: "Net-(U1-LPF2-OUT)" })
+    .capacitor("regen_node_filter_cap", "5600pF", { a: "Net-(C12-Pad1)", b: "GND" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
+    .resistor("regen_feedback_resistor", "15K", { a: "Net-(U1-LPF2-OUT)", b: "Net-(C12-Pad1)" },
+      { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" })
+    .resistor("regen_input_resistor", "10K", { a: "Net-(C12-Pad1)", b: "Net-(U1-LPF2-IN)" },
+      { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" })
+    .resistor("op2_mix_resistor", "15K", { a: "Net-(U1-OP2-OUT)", b: "Net-(C12-Pad1)" },
+      { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" })
+    .capacitor("lpf2_feedback_cap", "560pF", { a: "Net-(U1-LPF2-IN)", b: "Net-(U1-LPF2-OUT)" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
 
     // Op-amp feedback caps.
-    .capacitor("op1_feedback_cap", ".1uF", { a: "Net-(U1-OP1-OUT)", b: "Net-(U1-OP1-IN)" })
-    .capacitor("op2_feedback_cap", ".1uF", { a: "Net-(U1-OP2-IN)", b: "Net-(U1-OP2-OUT)" })
+    .capacitor("op1_feedback_cap", ".1uF", { a: "Net-(U1-OP1-OUT)", b: "Net-(U1-OP1-IN)" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
+    .capacitor("op2_feedback_cap", ".1uF", { a: "Net-(U1-OP2-IN)", b: "Net-(U1-OP2-OUT)" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
 
     // Output path.
-    .resistor("output_mix_resistor", "2.7K", { a: "Net-(C10-Pad1)", b: "Net-(U1-LPF2-OUT)" })
-    .capacitor("output_node_filter_cap", ".01uF", { a: "Net-(C10-Pad1)", b: "GND" })
-    .capacitor("output_coupling_cap", "10uF", { a: "Net-(C10-Pad1)", b: "OUTPUT" })
+    .resistor("output_mix_resistor", "2.7K", { a: "Net-(C10-Pad1)", b: "Net-(U1-LPF2-OUT)" },
+      { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" })
+    .capacitor("output_node_filter_cap", ".01uF", { a: "Net-(C10-Pad1)", b: "GND" },
+      { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
+    .capacitor("output_coupling_cap", "10uF", { a: "Net-(C10-Pad1)", b: "OUTPUT" },
+      { footprint: "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" })
 
     // The delay IC. Pin names are the PT2399's pin numbers, as strings.
     // "PT2399" is a genuine manufacturer part number (Princeton Technology),
@@ -123,7 +147,7 @@ export function pt2399Core(): Network {
         "15": "Net-(U1-LPF1-OUT)",
         "16": "Net-(U1-LPF1-IN)",
       },
-      { mpn: "PT2399", symbol: "Audio:PT2399" },
+      { mpn: "PT2399", symbol: "Audio:PT2399", footprint: "Package_DIP:DIP-16_W7.62mm" },
     )
 
     // The external header. Pin names are the connector's pin numbers, as strings.
@@ -142,7 +166,7 @@ export function pt2399Core(): Network {
         "4": "OUTPUT",
         "5": "INPUT",
       },
-      { symbol: "Connector_Generic:Conn_01x05" },
+      { symbol: "Connector_Generic:Conn_01x05", footprint: "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" },
     )
 
     // Ports: every net that leaves the board, plus the floating CLK_O pin's
