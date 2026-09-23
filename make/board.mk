@@ -49,10 +49,10 @@ ifeq ($(wildcard $(SCH)),)
 # silently treat a broken declaration as "no schematic declared."
 netlist-agrees:
 	@echo "$(CURDIR)/perfboard.json declares \"sch\": $(SCH), but that file does not exist."
-	@echo "  Either the \"sch\" path in perfboard.json is wrong, or the schematic's own"
-	@echo "  repository is not checked out on this machine. KiCad, and the schematic it"
-	@echo "  edits, are prerequisites for this repo - fix the path, or check out that"
-	@echo "  repository at the declared location."
+	@echo "  The schematic is vendored in this repository, so a missing file here means"
+	@echo "  something is wrong IN THIS REPOSITORY - either the \"sch\" path in"
+	@echo "  perfboard.json is wrong, or the schematic was not committed. Fix the path, or"
+	@echo "  restore the file; no other repository is involved."
 	@exit 1
 else
 # Every run regenerates the export to a temp file and reconciles it with the
