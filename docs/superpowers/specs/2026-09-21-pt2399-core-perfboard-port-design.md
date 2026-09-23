@@ -380,11 +380,13 @@ breaks the cwd-as-context decision above through exactly the invocation this rep
 documents: `cd boards/pt2399-core && bun run perfboard board-info` runs `board-info` standing
 in the repository root, not `boards/pt2399-core`. Direct invocation
 (`bun tools/cli/perfboard.ts board-info`) is unaffected - only `bun run` rewrites cwd. The fix
-is a `-C <dir>` flag, spelled the same as make's own `-C` for the reason the "no BOARD=<name>"
-decision above already states: a directory flag is a PATH, not a second way to name a board,
-so it stays "the same mechanism driven from elsewhere" rather than the indirection that
-decision rejects. `bun run perfboard -C boards/pt2399-core board-info` is the documented
-invocation's answer to `bun run`'s chdir.
+is a `-C <dir>` flag, spelled the same as make's own `-C`. This is not the `BOARD=<name>`
+indirection this design rejects elsewhere (a board is named only by the directory you stand
+in, because two ways to say which board is two places for one fact to be wrong): `-C <dir>`
+names no board at all, it is a PATH that changes which directory counts as "here" before
+that one naming mechanism (cwd-as-context) applies, so it stays "the same mechanism driven
+from elsewhere" rather than adding a second one. `bun run perfboard -C boards/pt2399-core
+board-info` is the documented invocation's answer to `bun run`'s chdir.
 
 `runCli(argv, opts)` returns an exit code with injected dependencies, so every verb is
 testable under `bun test` with no binary present.
