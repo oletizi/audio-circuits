@@ -15,5 +15,8 @@
   "devDependencies": {
     "bun-types": "^1.4.2",
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "eecircuit-engine": "1.5.8"
   }
 }
