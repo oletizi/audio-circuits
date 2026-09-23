@@ -149,9 +149,24 @@ export interface CommandResult {
 /** The injection seam every git/build step runs through. */
 export type CommandRunner = (command: string, args: readonly string[], cwd: string) => CommandResult
 
+/** Node reports a missing executable via `spawnSync`'s error as `ENOENT`. */
+function isMissingExecutable(error: NodeJS.ErrnoException): boolean {
+  return error.code === "ENOENT"
+}
+
 function defaultRun(command: string, args: readonly string[], cwd: string): CommandResult {
   const result = spawnSync(command, [...args], { cwd, encoding: "utf8" })
   if (result.error) {
+    // `qmake` missing entirely (Qt5 not installed at all) is the most likely
+    // first-run failure - `veroroute` is the first verb a new operator runs -
+    // so it gets the same quality of guidance as the adjacent non-zero-exit
+    // branch below, rather than a bare ENOENT.
+    if (isMissingExecutable(result.error) && command === "qmake") {
+      throw new Error(
+        `could not run qmake: ${result.error.message}. This build needs Homebrew qt@5 ` +
+          "(brew install qt@5) with qmake on PATH.",
+      )
+    }
     throw new Error(`could not run ${command}: ${result.error.message}`)
   }
   const stdout = typeof result.stdout === "string" ? result.stdout : ""

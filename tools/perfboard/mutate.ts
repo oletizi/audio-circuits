@@ -18,7 +18,10 @@ export type GitRunner = (
 function runGit(args: readonly string[], cwd: string): { status: number | null; stdout: string } {
   const result = spawnSync("git", [...args], { cwd, encoding: "utf8" })
   if (result.error) {
-    throw new Error(`could not run git: ${result.error.message}`)
+    throw new Error(
+      `could not run git: ${result.error.message}. Install git (e.g. Xcode Command Line Tools: ` +
+        "xcode-select --install, or Homebrew: brew install git) and make sure it is on PATH.",
+    )
   }
   return { status: result.status, stdout: typeof result.stdout === "string" ? result.stdout : "" }
 }
