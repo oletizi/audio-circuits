@@ -31,8 +31,8 @@ test("resistances are expressed in uppercase K", () => {
 })
 
 test("decades the board does not exercise are refused, not guessed", () => {
-  expect(() => valueFor(resistor(470))).toThrow(/1k.*999k/s)
-  expect(() => valueFor(resistor(2e6))).toThrow(/1k.*999k/s)
+  expect(() => valueFor(resistor(470))).toThrow(/1k.*10M/s)
+  expect(() => valueFor(resistor(1e7))).toThrow(/1k.*10M/s)
   expect(() => valueFor(capacitor(2e-3))).toThrow(/1pF.*1000uF/s)
 })
 
@@ -44,10 +44,12 @@ test("capacitor boundary: highest accepted value just below 1000uF formats", () 
   expect(valueFor(capacitor(9.99e-4))).toBe("999uF")
 })
 
-test("resistor boundaries: 1000 ohms, 999000 ohms both format, 999001 refuses", () => {
+test("resistor boundaries: 1k formats, the K/M boundary is 1M, 10M refuses", () => {
   expect(valueFor(resistor(1000))).toBe("1K")
   expect(valueFor(resistor(999000))).toBe("999K")
-  expect(() => valueFor(resistor(999001))).toThrow(/1k.*999k/s)
+  expect(valueFor(resistor(1e6))).toBe("1M")
+  expect(valueFor(resistor(1.5e6))).toBe("1.5M")
+  expect(() => valueFor(resistor(1e7))).toThrow(/1k.*10M/s)
 })
 
 test("an IC's value is its manufacturer part number", () => {
@@ -80,4 +82,29 @@ test("an inductor refuses rather than putting its part number in the value field
     id: "l1", kind: "inductor", parameters: { henries: 1e-2 }, pins: {}, units: [],
     part: { mpn: "SRR1260-103K" },
   })).toThrow(/l1.*inductor/s)
+})
+
+test("a trim-pot's value is its resistance, spelled like a resistor's", () => {
+  const pot = (ohms: number): Component => ({
+    id: "trim", kind: "potentiometer", parameters: { ohms, taper: { type: "linear" } },
+    pins: {}, units: [], part: { mpn: "3006P", symbol: "Device:R_Potentiometer_Trim" },
+  })
+  expect(valueFor(pot(50000))).toBe("50K")
+  expect(valueFor(pot(1e6))).toBe("1M")
+})
+
+test("a jumper's value is its part name, as for a connector", () => {
+  expect(valueFor({
+    id: "jumper", kind: "switch",
+    parameters: { positions: ["fitted", "removed"], contacts: { fitted: [["1", "2"]], removed: [] } },
+    pins: {}, units: [], part: { symbol: "Jumper:Jumper_2_Open" },
+  })).toBe("Jumper_2_Open")
+})
+
+test("a switch with neither an mpn nor a symbol refuses", () => {
+  expect(() => valueFor({
+    id: "bare_switch", kind: "switch",
+    parameters: { positions: ["a"], contacts: { a: [] } },
+    pins: {}, units: [],
+  })).toThrow(/bare_switch/)
 })
