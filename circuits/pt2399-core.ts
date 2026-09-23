@@ -8,7 +8,17 @@
  * Every component, value and connection below comes from that file, read
  * with `importLegacyNetlist`, not from memory or a PT2399 datasheet.
  * Component footprints are transcribed from `tests/fixtures/pt2399-core.net`,
- * the checked-in modern netlist of the built unit.
+ * the checked-in modern netlist of the built unit. C2's footprint was
+ * briefly inflated to a larger radial body (`CP_Radial_D8.0mm_P3.50mm`) to
+ * buy pad span, back when the VeroRoute fork could not yet stretch a
+ * radial electrolytic's leads to fit a smaller-diameter part across wider
+ * perfboard holes. The operator later corrected the schematic once the fork
+ * gained lead-stretching for electrolytics, and the modern netlist now
+ * carries C2's true footprint, `CP_Radial_D5.0mm_P2.00mm`. The board
+ * (`boards/pt2399-core/`) carries `PART C2 CAP_ELECTRO_200`, confirming the
+ * corrected footprint is what was actually built - the truthful footprint
+ * belongs here, not the larger body some earlier reader might be tempted to
+ * "helpfully" restore.
  *
  * Semantic ids describe each part's role, inferred from which nets it sits
  * on (including the PT2399's own symbol-derived pin labels, e.g.
@@ -68,7 +78,7 @@ export function pt2399Core(): Network {
     .capacitor("supply_bypass_local", ".1uF", { a: "+5V", b: "GND" },
       { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" })
     .capacitor("supply_bulk", "100uF", { a: "+5V", b: "GND" },
-      { footprint: "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm" })
+      { footprint: "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm" })
 
     // PT2399 reference and internal-oscillator bypassing.
     .capacitor("reference_bypass", "47uF", { a: "Net-(U1-REF)", b: "GND" },

@@ -1,8 +1,8 @@
 (export
 	(version "E")
 	(design
-		(source "/Users/orion/work/pedals-work/pt2399-core/pt2399/pt2399-core/pt2399-core/pt2399-core.kicad_sch")
-		(date "2026-09-15T21:54:23")
+		(source "/Users/orion/work/pedals-work/perfboard/pt2399/pt2399-core/pt2399-core/pt2399-core.kicad_sch")
+		(date "2026-09-23T02:03:36")
 		(tool "Eeschema 10.0.5")
 		(sheet
 			(number "1")
@@ -111,11 +111,11 @@
 		(comp
 			(ref "C2")
 			(value "100uF")
-			(footprint "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm")
+			(footprint "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
 			(description "Polarized capacitor")
 			(fields
 				(field
-					(name "Footprint") "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm")
+					(name "Footprint") "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
 				(field
 					(name "Datasheet")
 				)

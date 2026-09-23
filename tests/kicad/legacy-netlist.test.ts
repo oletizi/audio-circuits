@@ -125,11 +125,38 @@ test("the writer is self-consistent through the reader", async () => {
   expect(normalize(b)).toEqual(normalize(a))
 })
 
-test("the full chain reproduces the netlist the built board was laid out from", async () => {
+/**
+ * FIXTURE predates the operator's schematic correction to C2 (see the module
+ * comment in circuits/pt2399-core.ts): it was the netlist VeroRoute actually
+ * consumed to lay out the board that was built, back when C2 still carried
+ * an inflated CAP_ELECTRO_300 footprint to buy pad span the fork could not
+ * yet stretch a radial electrolytic's leads to provide. It stays checked in
+ * as a genuine historical artifact, and its provenance comment stays true.
+ *
+ * Every other component must still reproduce exactly - dropping to a subset
+ * comparison here would hide a real regression anywhere else in the chain.
+ */
+function dropComponent(netlist: ImportedNetlist, designator: string): ImportedNetlist {
+  return {
+    components: netlist.components.filter((c) => c.designator !== designator),
+    nets: netlist.nets,
+  }
+}
+
+test("the full chain reproduces the netlist the built board was laid out from, except C2", async () => {
   const fixture = importLegacyNetlist(await Bun.file(FIXTURE).text())
   const lowered = toImportedNetlist(pt2399Core(), DESIGNATORS, PIN_NUMBERS)
   const ours = importLegacyNetlist(writeLegacyNetlist(lowered, { createdAt: CREATED_AT }))
-  expect(normalize(ours)).toEqual(normalize(fixture))
+
+  const fixtureC2 = fixture.components.find((c) => c.designator === "C2")
+  const oursC2 = ours.components.find((c) => c.designator === "C2")
+  if (fixtureC2 === undefined) throw new Error("C2 missing from the fixture")
+  if (oursC2 === undefined) throw new Error("C2 missing from our derivation")
+  // The one asserted, explained divergence: see the doc comment above.
+  expect(fixtureC2.footprint).toBe("CAP_ELECTRO_300")
+  expect(oursC2.footprint).toBe("CAP_ELECTRO_200")
+
+  expect(normalize(dropComponent(ours, "C2"))).toEqual(normalize(dropComponent(fixture, "C2")))
 })
 
 /**
@@ -142,7 +169,25 @@ test("the full chain reproduces the netlist the built board was laid out from", 
  * (never read back by anything downstream) and component block order (a set,
  * not a sequence - nothing in the model orders components).
  */
-function normalizeNetlistText(text: string): string {
+/** The designator a component block's first line names: "( /UUID <type>  <designator> <value>". */
+function blockDesignator(block: string[]): string {
+  const firstLine = block[0]
+  if (firstLine === undefined) throw new Error("empty component block")
+  const tokens = firstLine.trim().split(/\s+/)
+  const designator = tokens[3]
+  if (designator === undefined) {
+    throw new Error(`could not read a designator out of component block first line: "${firstLine}"`)
+  }
+  return designator
+}
+
+/**
+ * excludeDesignators drops named component blocks entirely before comparing -
+ * used to carve out C2, whose footprint text is the one asserted, explained
+ * divergence from this pre-correction fixture (see the doc comment on
+ * dropComponent above).
+ */
+function normalizeNetlistText(text: string, excludeDesignators: readonly string[] = []): string {
   const uuidNormalized = text.replace(/\( \/\S+/g, "( /UUID")
   const lines = uuidNormalized.split("\n")
   const header = lines[0]
@@ -168,15 +213,21 @@ function normalizeNetlistText(text: string): string {
     }
     i++
   }
-  const sortedBlocks = blocks.map((block) => block.join("\n")).sort()
+  const kept = blocks.filter((block) => !excludeDesignators.includes(blockDesignator(block)))
+  const sortedBlocks = kept.map((block) => block.join("\n")).sort()
   return [header, ...sortedBlocks, ...rest].join("\n")
 }
 
-test("the written netlist's text matches the fixture, modulo uuid and block order", async () => {
+test("the written netlist's text matches the fixture, modulo uuid and block order, except C2", async () => {
   const fixtureText = await Bun.file(FIXTURE).text()
   const lowered = toImportedNetlist(pt2399Core(), DESIGNATORS, PIN_NUMBERS)
   const writtenText = writeLegacyNetlist(lowered, { createdAt: CREATED_AT })
-  expect(normalizeNetlistText(writtenText)).toBe(normalizeNetlistText(fixtureText))
+
+  // The one asserted, explained divergence: see dropComponent's doc comment above.
+  expect(fixtureText).toContain("CAP_ELECTRO_300  C2")
+  expect(writtenText).toContain("CAP_ELECTRO_200  C2")
+
+  expect(normalizeNetlistText(writtenText, ["C2"])).toBe(normalizeNetlistText(fixtureText, ["C2"]))
 })
 
 test("renaming a net without changing its membership is not an electrical change", async () => {

@@ -1,7 +1,6 @@
 import { test, expect } from "bun:test"
 import { importStringFor, declaredPinCount } from "../../lib/kicad/import-string.ts"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
-import { importLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 
 test("derives the five proven families", () => {
   expect(importStringFor("Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"))
@@ -68,21 +67,93 @@ test("pin-count types report their count; span types do not", () => {
   expect(declaredPinCount("CAP_ELECTRO_200")).toBeNull()
 })
 
-test("every part of the built board derives the import string that board used", async () => {
+/**
+ * Parses the `PART <name> <type> <value> <FLOATING|AT <row>,<col>> SPAN <n>`
+ * lines `--dump-board` prints (Src/Headless_dump.cpp), returning designator
+ * -> type. Only the fields this test needs; SPAN is deliberately not
+ * captured - see the test below for why it can't be used here.
+ */
+function parseBoardDumpPartTypes(dump: string): Map<string, string> {
+  const types = new Map<string, string>()
+  for (const line of dump.split("\n")) {
+    const match = /^PART (\S+) (\S+) /.exec(line)
+    if (match === null) continue
+    const designator = match[1]
+    const type = match[2]
+    if (designator === undefined || type === undefined) {
+      throw new Error(`malformed PART line in board dump: "${line}"`)
+    }
+    types.set(designator, type)
+  }
+  return types
+}
+
+/**
+ * The two families whose VeroRoute import string carries a lead-span digit
+ * (RESISTOR4, CAP_CERAMIC1, ...) that a board never persists as such.
+ *
+ * Verified from the fork's own source, not guessed:
+ * - `Headless_dump.cpp`'s `TypeField()` reconstructs a PART line's <type>
+ *   field from `Component::GetImportStr()`, appending `GetNumPins()` only
+ *   for the pin-count families (SIP, DIP, SWITCH_*, STRIP_100MIL,
+ *   BLOCK_*00MIL). RESISTOR and CAP_CERAMIC are not in that list, and
+ *   `GetImportStr()` "only ever holds the generic per-type import string
+ *   ... never the schematic's original numeric suffix" (Headless_dump.cpp
+ *   comment above TypeField). So the dump's <type> field for these two is
+ *   always the bare family name - there is no digit to compare.
+ * - `Reconcile.cpp` documents, as an empirically-verified fact, that for
+ *   these length-suffixed families `cols == digit + 1` (`SpanImportStr`/
+ *   `GetExpectedSpanCols`), and `Headless_dump.cpp:56-57` documents PART's
+ *   `SPAN <n>` field as exactly that `cols`
+ *   (`Component::GetCompCols()`, "the footprint's current column span,
+ *   direction-aware"). So SPAN - 1 = digit IS an unambiguous relationship
+ *   in the abstract.
+ * - But `GetCompCols()` is direction-aware: `CompElementGrid::GetCols(dir)`
+ *   returns the footprint's internal ROW count instead of its column count
+ *   when the part is mounted 'N'/'S' (vertical), because a vertical part's
+ *   long (lead-span) axis then runs along the board's rows, not its
+ *   columns. On this real board, EVERY RESISTOR and CAP_CERAMIC part dumps
+ *   `SPAN 1` (see tests/fixtures/pt2399-core-board.dump) - and a
+ *   horizontally-mounted two-pin part cannot occupy a single column (its
+ *   two pins would collapse onto one point), so by elimination every one
+ *   of these parts is mounted vertically. Their SPAN therefore reports the
+ *   footprint's column footprint (1), not its lead-span digit - and the
+ *   row count that WOULD reveal the digit is not part of this grammar at
+ *   all (only SPAN/cols is ever printed, never rows).
+ * Conclusion: on this board, SPAN cannot be used to recover the declared
+ * digit for these two families - not because the SPAN/digit relationship
+ * is ambiguous in the abstract, but because the dimension it reports here
+ * is the wrong one, and the dump has no field that reports the right one.
+ * So only the FAMILY is asserted for RESISTOR/CAP_CERAMIC below.
+ */
+const AXIAL_LENGTH_SUFFIX_FAMILIES = new Set(["RESISTOR", "CAP_CERAMIC"])
+
+test("every part of the built board derives the import string (or family) its own dump shows", async () => {
   const modern = importNetlist(await Bun.file("tests/fixtures/pt2399-core.net").text())
-  const legacy = importLegacyNetlist(
-    await Bun.file("tests/fixtures/pt2399-core-veroroute.net").text(),
+  const boardTypes = parseBoardDumpPartTypes(
+    await Bun.file("tests/fixtures/pt2399-core-board.dump").text(),
   )
-  const used = new Map(legacy.components.map((c) => [c.designator, c.footprint]))
 
   expect(modern.components.length).toBe(24)
   for (const component of modern.components) {
     const footprint = component.footprint
     if (footprint === undefined) throw new Error(`${component.designator} has no footprint`)
-    const expected = used.get(component.designator)
-    if (expected === undefined) {
-      throw new Error(`${component.designator} has no recorded import string in the legacy netlist`)
+    const boardType = boardTypes.get(component.designator)
+    if (boardType === undefined) {
+      throw new Error(
+        `${component.designator} has no PART line in tests/fixtures/pt2399-core-board.dump`,
+      )
     }
-    expect(importStringFor(footprint)).toBe(expected)
+    const derived = importStringFor(footprint)
+    if (AXIAL_LENGTH_SUFFIX_FAMILIES.has(boardType)) {
+      // Fixed-geometry parts (the four electrolytics, J1, U1) reconstruct
+      // their FULL import string exactly - fully non-circular, since the
+      // board never stores the netlist's import string verbatim, only the
+      // enum type it was built from. Axial parts only get a family check;
+      // see AXIAL_LENGTH_SUFFIX_FAMILIES above for why span is excluded.
+      expect(derived.replace(/[0-9]+$/, "")).toBe(boardType)
+    } else {
+      expect(derived).toBe(boardType)
+    }
   }
 })
