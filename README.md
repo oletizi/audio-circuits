@@ -50,6 +50,26 @@ audio-circuits/
 └── docs/                 # Design notes, specs and plans
 ```
 
+## Prerequisites
+
+- **[KiCad](https://www.kicad.org/)**, for `kicad-cli`. Required: the perfboard
+  workflow re-exports each board's netlist from its KiCad schematic on every
+  run (see `make/board.mk`'s `netlist-agrees`), not just once, so `kicad-cli`
+  has to be present to run `make check` against a declared board. The default
+  assumes a standard macOS install
+  (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`); override
+  `KICAD_CLI` if yours lives elsewhere.
+- **Homebrew's `qt@5`** (`brew install qt@5`), needed to build the VeroRoute
+  fork the perfboard tooling drives. It is keg-only, which is why the tooling
+  locates it via `brew --prefix qt@5` rather than expecting `qmake` on `PATH` -
+  there is nothing to configure once it's installed.
+- **[Bun](https://bun.sh/)**, for the runtime and the test suite.
+
+Nothing else needs setting up: the perfboard tooling builds and locates the
+VeroRoute fork itself, and none of this requires an environment variable. If
+you want to point at your own builds instead, `VEROROUTE`, `QMAKE` and
+`KICAD_CLI` are overrides, not required setup.
+
 ## Usage
 
 ```bash
@@ -57,6 +77,11 @@ bun install
 bun test           # the full suite, including the SPICE simulations
 bun run typecheck
 ```
+
+Circuits are checked against real, physically-built layouts through the
+perfboard workflow. `make check`, run from a board's directory (e.g.
+`boards/pt2399-core`) or from the repository root to check every declared
+board, is that workflow's front door - see `make help` for the rest of it.
 
 ## How the Pultec reference is validated
 

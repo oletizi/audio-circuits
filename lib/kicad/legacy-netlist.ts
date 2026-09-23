@@ -102,3 +102,123 @@ export function importLegacyNetlist(text: string): ImportedNetlist {
   for (const key of Object.keys(nets)) nets[key].sort()
   return { components, nets }
 }
+
+/**
+ * Write an EESchema v1.1 netlist - the mirror of `importLegacyNetlist`.
+ *
+ * THE PACKAGE FIELD HOLDS A VEROROUTE IMPORT STRING, not a KiCad footprint
+ * name. VeroRoute treats that field as its component Type, so a netlist
+ * written this way imports a fully typed board with no Part Aliases entry.
+ *
+ * The uuid field is not carried by the canonical model and is not carried by
+ * the reader either, so it is written as "/" plus the designator: unique,
+ * stable across runs, and meaningful to a human reading the file. Nothing
+ * downstream reads it - the reader discards it - which is precisely why a
+ * generated one is safe.
+ *
+ * Layout matches the files KiCad itself produces (two spaces after "created",
+ * two between the package and the designator, pin numbers right-aligned in
+ * five columns) so a diff against a real export stays readable. None of that
+ * spacing is load-bearing: the reader tokenises on whitespace.
+ */
+export interface WriteOptions {
+  /** ISO 8601 timestamp for the header comment. Explicit so output is reproducible. */
+  readonly createdAt: string
+}
+
+/**
+ * The file format is a bare whitespace tokenizer (see `importLegacyNetlist`'s hazard
+ * comment above): a field written empty, or written with embedded whitespace, shifts
+ * the token stream, and the reader then throws pointing at whichever field happens to
+ * fall out of alignment - not the field that is actually wrong. Every field that
+ * becomes its own token is checked here, at write time, so a malformed input is
+ * reported against the field that is actually at fault.
+ */
+function assertToken(value: string, field: string, context: string): void {
+  if (value.length === 0) {
+    throw new Error(`${context}: ${field} must not be empty`)
+  }
+  if (/\s/.test(value)) {
+    throw new Error(`${context}: ${field} must not contain whitespace, got "${value}"`)
+  }
+}
+
+export function writeLegacyNetlist(netlist: ImportedNetlist, options: WriteOptions): string {
+  if (netlist.components.length === 0) {
+    throw new Error("refusing to write a netlist with no components")
+  }
+
+  // Invert the net map once: the file is organized by component, the model by net.
+  const pinsByDesignator = new Map<string, { pin: string; net: string }[]>()
+  for (const [netName, members] of Object.entries(netlist.nets)) {
+    assertToken(netName, "net name", `net "${netName}"`)
+    for (const member of members) {
+      const dot = member.lastIndexOf(".")
+      if (dot === -1) {
+        throw new Error(`net "${netName}" has a member "${member}" that is not designator.pin`)
+      }
+      const designator = member.slice(0, dot)
+      const pin = member.slice(dot + 1)
+      assertToken(pin, "pin label", `component ${designator} on net "${netName}"`)
+      const existing = pinsByDesignator.get(designator)
+      if (existing) existing.push({ pin, net: netName })
+      else pinsByDesignator.set(designator, [{ pin, net: netName }])
+    }
+  }
+
+  // Every net member has to name a declared component. A member whose
+  // designator is not in `netlist.components` would otherwise vanish
+  // silently from the written file - the emit loop below only walks declared
+  // components - which is the same shape of defect the "component appears on
+  // no net" refusal a few lines down exists to catch in the other direction.
+  const declaredDesignators = new Set(netlist.components.map((c) => c.designator))
+  for (const [designator, pins] of pinsByDesignator) {
+    if (declaredDesignators.has(designator)) continue
+    const first = pins[0]
+    if (first === undefined) continue
+    throw new Error(
+      `net "${first.net}" has a member on component "${designator}", which is not in ` +
+        "netlist.components. Every net member must name a declared component - an orphaned one " +
+        "would be silently dropped from the written file instead of failing the export.",
+    )
+  }
+
+  const lines: string[] = [`( { EESchema Netlist Version 1.1 created  ${options.createdAt} }`]
+
+  for (const component of netlist.components) {
+    assertToken(component.designator, "designator", `component ${component.designator}`)
+    assertToken(component.value, "value", `component ${component.designator}`)
+
+    const pins = pinsByDesignator.get(component.designator)
+    if (pins === undefined || pins.length === 0) {
+      throw new Error(
+        `component ${component.designator} appears on no net. VeroRoute cannot place a part ` +
+          "with no pins, and a netlist that declares one reads as a board with a missing part.",
+      )
+    }
+    const footprint = component.footprint
+    if (footprint === undefined || footprint.length === 0) {
+      throw new Error(
+        `component ${component.designator} has no package field. VeroRoute reads that field ` +
+          "as its component Type and cannot import a part without one.",
+      )
+    }
+    assertToken(footprint, "footprint", `component ${component.designator}`)
+    lines.push(` ( /${component.designator} ${footprint}  ${component.designator} ${component.value}`)
+    // Numeric pin order where the pins are numbers, lexical otherwise, so a
+    // 16-pin DIP reads 1..16 rather than 1, 10, 11.
+    const ordered = [...pins].sort((a, b) => {
+      const left = Number(a.pin)
+      const right = Number(b.pin)
+      if (Number.isFinite(left) && Number.isFinite(right)) return left - right
+      return a.pin.localeCompare(b.pin)
+    })
+    for (const { pin, net } of ordered) {
+      lines.push(`  (${pin.padStart(5)} ${net} )`)
+    }
+    lines.push(" )")
+  }
+
+  lines.push(")", "*", "")
+  return lines.join("\n")
+}

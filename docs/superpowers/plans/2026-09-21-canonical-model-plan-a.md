@@ -18,7 +18,7 @@ Proving new foundations on an untrusted circuit makes a failure impossible to at
 
 **`pt2399-core` replaces it as the proving ground.** The maintainer built one and it works. It is 24 components — 14 capacitors, 8 resistors, one connector, one PT2399 — so it exercises multi-pin parts without requiring a SPICE model the PT2399 does not have. Under spec §5.5 it is a structural-only circuit, which is exactly what Plan A needs.
 
-**Which artefact is authoritative, and why it matters.** `/Users/orion/work/pedals-work/pedals/pt2399/pt2399-core/pt2399-core/` holds two netlists of the same schematic:
+**Which artefact is authoritative, and why it matters.** The source repository's pt2399-core project directory held two netlists of the same schematic:
 
 | File | Format | Created | Provenance |
 |---|---|---|---|
@@ -1522,7 +1522,7 @@ git commit -F <message file>
 
 ### Task 7: Author `pt2399-core` and verify it against the built unit
 
-This is the plan's proving ground. The maintainer built this circuit from the pedals repository and it works, so its netlist is the strongest correctness evidence available without a bench.
+This is the plan's proving ground. The maintainer built this circuit from a private source repository and it works, so its netlist is the strongest correctness evidence available without a bench.
 
 **Files:**
 - Create: `circuits/pt2399-core.ts`
@@ -1538,7 +1538,7 @@ This is the plan's proving ground. The maintainer built this circuit from the pe
 
 ```bash
 mkdir -p tests/fixtures
-SRC=/Users/orion/work/pedals-work/pedals/pt2399/pt2399-core/pt2399-core
+SRC=<source-repo>/pt2399/pt2399-core/pt2399-core
 cp "$SRC/pt2399-core-veroroute.net" tests/fixtures/pt2399-core-veroroute.net
 cp "$SRC/pt2399-core.net"           tests/fixtures/pt2399-core.net
 wc -l tests/fixtures/pt2399-core-veroroute.net tests/fixtures/pt2399-core.net
@@ -1650,9 +1650,9 @@ The file's shape:
 /**
  * PT2399 delay core.
  *
- * Transcribed from the netlist of a unit that was built and works
- * (pedals repository, pt2399/pt2399-core). Semantic ids describe each part's
- * role; DESIGNATORS maps them to the schematic's reference designators, which
+ * Transcribed from the netlist of a unit that was built and works.
+ * Semantic ids describe each part's role; DESIGNATORS maps them to the
+ * schematic's reference designators, which
  * belong to KiCad and are recorded here only so the verification test can
  * compare the two.
  */

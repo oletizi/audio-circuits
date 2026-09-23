@@ -28,3 +28,16 @@ yarn-error.log*
 # Agent task briefs, reports and reviews. Working notes, not repository content;
 # ignored so a `git add -A` cannot sweep them into a branch.
 .superpowers/
+
+# tools/perfboard/verbs.ts's same-directory `-o` scratch files for `--update`
+# and `--set-strips`. Normally removed on both success (renamed away) and
+# failure (best-effort cleanup), but this is defence in depth against one
+# left behind by a crash `git add -A` would otherwise sweep into a commit.
+.*.update-*.vrt
+.*.strips-*.vrt
+
+# The forked VeroRoute binary, cloned and built from veroroute.pin's pinned
+# commit (tools/perfboard/acquire.ts). It is a GPLv3 Qt5 C++ application with
+# its own build - not vendored, not a submodule - so it is acquired locally
+# rather than committed here.
+.tools/

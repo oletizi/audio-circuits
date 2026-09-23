@@ -136,3 +136,16 @@ test("the schematic export describes the same circuit as the built board", async
     Object.fromEntries(cs.map((c) => [c.designator, c.value]))
   expect(values(modern.components)).toEqual(values(legacy.components))
 })
+
+test("every component's footprint matches the netlist of the built unit", async () => {
+  const modern = importNetlist(await Bun.file("tests/fixtures/pt2399-core.net").text())
+  const byDesignator = new Map(modern.components.map((c) => [c.designator, c.footprint]))
+
+  for (const component of pt2399Core().components) {
+    const designator = DESIGNATORS[component.id]
+    if (designator === undefined) throw new Error(`no designator mapped for "${component.id}"`)
+    const expected = byDesignator.get(designator)
+    if (expected === undefined) throw new Error(`${designator} is absent from the netlist`)
+    expect(component.part?.footprint).toBe(expected)
+  }
+})
