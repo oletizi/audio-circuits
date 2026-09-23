@@ -979,6 +979,34 @@ test("the full chain reproduces the netlist the built board was laid out from", 
   expect(normalize(ours)).toEqual(normalize(fixture))
 })
 
+test("renaming a net without changing its membership is not an electrical change", async () => {
+  // WHY THIS EXISTS. The two assertions above compare `nets` maps keyed by NAME,
+  // which is stricter than the identity model requires: a net renamed without a
+  // membership change is the same net, and reconciliation would treat it as a
+  // no-op. The strictness is kept because it currently holds and a stricter
+  // passing assertion is a better statement - but it invites the reading that
+  // names ARE identity, which is the failure the membership model exists to
+  // prevent. This workflow was built to survive KiCad's generated net names
+  // migrating between electrical nets.
+  const lowered = toImportedNetlist(pt2399Core(), DESIGNATORS, PIN_NUMBERS)
+
+  const renamed = {
+    components: lowered.components,
+    nets: Object.fromEntries(
+      Object.entries(lowered.nets).map(([name, members]) =>
+        [name.startsWith("Net-(") ? `renamed_${name.length}_${members.join("_")}` : name, members]),
+    ),
+  }
+
+  // Membership comparison: the set of nets as sorted member lists, names discarded.
+  const membership = (netlist: ImportedNetlist) =>
+    Object.values(netlist.nets).map((members) => [...members].sort().join(",")).sort()
+
+  const viaRenamed = importLegacyNetlist(writeLegacyNetlist(renamed, { createdAt: CREATED_AT }))
+  const fixture = importLegacyNetlist(await Bun.file(FIXTURE).text())
+  expect(membership(viaRenamed)).toEqual(membership(fixture))
+})
+
 test("net names containing parentheses survive a write/read round trip", () => {
   const netlist: ImportedNetlist = {
     components: [{ designator: "C12", value: "5600pF", footprint: "CAP_CERAMIC1" }],
@@ -1106,7 +1134,7 @@ Expected: PASS. The second test is the load-bearing one: the whole chain — cir
 - [ ] **Step 5: Run the full suite**
 
 Run: `bun test`
-Expected: PASS — 314 pass, 0 fail.
+Expected: PASS — 315 pass, 0 fail.
 
 - [ ] **Step 6: Commit and push**
 
@@ -1692,7 +1720,7 @@ Expected: PASS — 5 pass.
 - [ ] **Step 6: Run the full suite**
 
 Run: `bun test`
-Expected: PASS — 325 pass, 0 fail.
+Expected: PASS — 326 pass, 0 fail.
 
 - [ ] **Step 7: Commit and push**
 
@@ -2063,7 +2091,7 @@ bun test
 bun run perfboard --help
 ```
 
-Expected: 332 pass, 0 fail; the usage text lists all eight verbs.
+Expected: 333 pass, 0 fail; the usage text lists all eight verbs.
 
 - [ ] **Step 8: Commit and push**
 
@@ -2107,7 +2135,7 @@ head -c 2 boards/pt2399-core/pt2399-core.perfboard.vrt
 
 Expected: `59` — `VRT_VERSION_CURRENT` for VeroRoute 2.40. A pre-60 board needs the fork's one-time `adopt` step before reconciliation can resolve `J1`'s generated pads; note the result for Step 6.
 
-- [ ] **Step 2: Write the declaration**
+- [ ] **Step 2: Write the declaration, and commit the layout before anything can mutate it**
 
 Create `boards/pt2399-core/perfboard.json`:
 
@@ -2118,6 +2146,15 @@ Create `boards/pt2399-core/perfboard.json`:
   "vrt": "pt2399-core.perfboard.vrt"
 }
 ```
+
+Then commit immediately, **before any mutating verb is run**:
+
+```bash
+git add boards/pt2399-core/
+git commit -m "Carry the pt2399-core perfboard layout across from pedals"
+```
+
+This is not deferrable to the end of the task. The layout arrives untracked, every mutating verb refuses an untracked layout, and `git checkout --` cannot restore a file git has never seen — so without this commit the first `update` in step 7 is rejected rather than run.
 
 - [ ] **Step 3: Pin the fork and ignore its build tree**
 
@@ -2178,9 +2215,17 @@ Expected: **exit 1 on the first run**, reporting inherited deltas. Record the re
 
 A single green check is not sufficient acceptance for a reconciliation system: it can hide a derivation wrong in a way the first pass tolerates, or an emitter stable only by accident.
 
+**The commits below are load-bearing, not bookkeeping.** Every mutating verb refuses a layout that is modified relative to `HEAD` or untracked, so a run without them is rejected rather than executed. Step 2 of this task already committed the carried layout for exactly this reason; this is the second checkpoint.
+
 ```bash
 bun run perfboard update      # only if step 6's deltas call for it
 bun run perfboard check       # must exit 0
+
+# The guard refuses the next update until this lands. Look at what the
+# reconcile did before stacking another mutation on top of it.
+git add boards/pt2399-core/pt2399-core.perfboard.vrt
+git commit -m "Reconcile the pt2399-core layout against the circuit"
+
 bun run perfboard update      # must report an EMPTY PLAN
 bun run perfboard check       # must exit 0
 ```
@@ -2205,8 +2250,13 @@ git push
 
 **Spec coverage.** Every section of the design maps to a task: footprint transcription → 1; narrow grammar and both quantization rules → 2; value notation → 3; the lowering → 4; the writer and both proofs → 5; declaration → 6; load + check → 7; CLI, cwd context and the write/read split → 8; board tree, fork pinning and fixed-point acceptance → 9.
 
-**Two spec items deliberately deferred, and why.** The design lists `update`, `stripboard`, `edit` and `cuts` as verbs. Task 8 ships them as explicit refusals naming what is missing rather than as stubs that appear to work, because every one requires the binary and a verb that silently does nothing is the failure shape this workflow exists to prevent. Task 9 exercises them by hand. The **layout-scoped dirty-state guard** likewise belongs to `update`/`stripboard`; it is specified in the design and must be implemented when those verbs are wired up — it is not needed by any read-only verb shipped here.
+**Two spec items deliberately deferred, and why.** The design lists `update`, `stripboard`, `edit` and `cuts` as verbs. Task 8 ships them as explicit refusals naming what is missing rather than as stubs that appear to work, because every one requires the binary and a verb that silently does nothing is the failure shape this workflow exists to prevent. Task 9 exercises them by hand.
+
+The **layout-scoped dirty-state guard** likewise belongs to `update`/`stripboard`, and is not needed by any read-only verb shipped here. When those verbs are wired up, two contracts from the design apply and must be implemented once rather than per verb:
+
+- The guard is a **shared prerequisite of mutation** — every verb that writes the declared `.vrt` passes it before VeroRoute is invoked, so a mutating verb added later cannot quietly omit it.
+- The replace is **atomic**. The fork forces this shape rather than leaving it to preference: `--update` requires `-o` and has no in-place mode, and its serialization is a plain `QDataStream` over a `QFile` rather than a `QSaveFile`. So a mutating verb points `-o` at a temporary file *in the same directory as the declared layout* and `rename`s over the layout only after the binary exits successfully. Same-directory `rename(2)` is atomic, so the layout is either the old one or the new one, never half-written.
 
 **Type consistency.** `ImportedNetlist` / `ImportedComponent` are the existing types from `lib/kicad/netlist.ts` and flow unchanged through Tasks 4, 5 and 7. `PerfboardDeclaration` uses `circuitPath` / `exportName` / `vrtPath` consistently in Tasks 6–9. `toImportedNetlist`, `writeLegacyNetlist`, `importStringFor`, `declaredPinCount`, `valueFor`, `loadCircuit`, `checkPerfboard` and `runCli` keep one signature each throughout.
 
-**Test-count arithmetic.** 287 baseline → 288 (T1) → 298 (T2) → 305 (T3) → 310 (T4) → 314 (T5) → 320 (T6) → 325 (T7) → 332 (T8). Treat these as expectations to check, not as assertions; if a count differs, find out why before proceeding.
+**Test-count arithmetic.** 287 baseline → 288 (T1) → 298 (T2) → 305 (T3) → 310 (T4) → 315 (T5) → 321 (T6) → 326 (T7) → 333 (T8). Treat these as expectations to check, not as assertions; if a count differs, find out why before proceeding.

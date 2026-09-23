@@ -333,6 +333,27 @@ transcription, import-string derivation, value formatting and writer — reprodu
 a working board was built from. The first version of this design could assert connectivity
 only; this asserts every field VeroRoute reads.
 
+#### Name-strictness here, and why it is not a claim that names are identity
+
+Both assertions compare `nets` maps keyed by net name, so both are **stricter** than the
+inherited identity model requires. Under that model a net renamed without a membership change
+is the same net, so a circuit that called `Net-(U1-LPF1-IN)` something legible would still
+reconcile clean against the `.vrt`.
+
+The strictness is kept because it currently holds — the circuit was transcribed with the
+names verbatim — and a passing stricter assertion is a better statement than a passing looser
+one. But it invites exactly one misreading, and the misreading is dangerous: an implementer
+who concludes from a name-keyed comparison that names *are* identity may later key
+reconciliation logic on them, which is the failure the whole membership model exists to
+prevent. This workflow was built to survive KiCad's generated net names migrating between
+electrical nets.
+
+So a third, focused regression test states the invariant directly: take the lowered netlist,
+rename every generated `Net-(...)` net without touching any membership, and assert the
+connectivity is equivalent under a membership comparison. It needs no production abstraction —
+a test-local helper that compares sorted member sets is enough. Its job is to be the thing an
+implementer reads when they wonder whether a name matters.
+
 ### The driver is one TypeScript CLI
 
 Unchanged from the first version and unaffected by the architecture change. `pedals` drives
@@ -362,13 +383,47 @@ and told you to move it into position would hand you the one step that can go wr
 
 #### The dirty-state guard is scoped to the layout, not the tree
 
-> refuse when the declared `.vrt` has modifications relative to `HEAD`, or is untracked.
+> **Every verb that mutates the declared `.vrt` — `update`, `stripboard`, and any mutating
+> verb added later — must pass this guard before VeroRoute is invoked:** refuse when the
+> declared `.vrt` has modifications relative to `HEAD`, or is untracked.
+
+Stated as a shared prerequisite of mutation rather than per verb, so it is implemented and
+tested once and a future mutating verb cannot quietly omit it.
 
 A whole-repository check would be wrong: editing `circuits/pt2399-core.ts` and then running
 `update` to reconcile the board against that edit is the normal workflow, and forcing a commit
 of unrelated source first would obstruct the loop this tooling exists to support. Untracked is
 refused for the same reason modified is — `git checkout --` cannot restore a file git has
 never seen, so the stated guarantee would not hold.
+
+**The guard makes committing part of the reconcile loop, by design.** A second `update` after
+an uncommitted first one is refused, and that is correct rather than awkward: it forces the
+operator to look at what the first one did before stacking another on top of it. The
+acceptance procedure below therefore carries an explicit commit checkpoint, and any narrative
+that runs two mutations back to back without one is wrong.
+
+#### A mutating verb must not be able to leave a corrupt layout
+
+The fork settles this rather than leaving it to preference: `--update` **requires** `-o` and
+has no in-place mode at all —
+
+```cpp
+if ( outPath == nullptr ) {
+    std::cerr << "--update requires an output file (-o)" << std::endl;
+    return 1;
+}
+```
+
+— and on every reconcile-failure path it saves nothing, which its own comment states ("NOTHING
+IS SAVED ON ANY OF THESE PATHS"). Its serialization is a plain `QDataStream` over a `QFile`,
+not a `QSaveFile`, so the write to `-o` is not itself atomic.
+
+So the shape is not a choice: a mutating verb runs VeroRoute with `-o` pointing at a temporary
+file **in the same directory as the declared layout**, and replaces the declared `.vrt` by
+`rename` only after the binary exits successfully. Same-directory `rename(2)` is atomic, so
+the layout is either the old one or the new one and never a half-written file. A failed or
+crashed run leaves the declared layout untouched, which is what makes "your board is
+unchanged" a statement rather than a hope.
 
 ### The board declaration names a circuit module
 
@@ -503,17 +558,29 @@ discrepancies surface.
 A single green `check` is not sufficient acceptance for a reconciliation system: it can hide a
 derivation wrong in a way the first pass tolerates, or an emitter stable only by accident.
 
+0. **Commit the carried layout**, before any mutating verb runs. It arrives in this repository
+   as a new, untracked file, and the guard refuses an untracked layout — so without this the
+   very first `update` is rejected.
 1. `check` — record the report. Inherited deltas (C3's body diameter, any residue) surface.
 2. Resolve each reported delta deliberately, against the physical board.
 3. `update`, if the resolution requires it.
 4. `check` — must exit 0.
-5. `update` again — **must report an empty plan.**
-6. `check` again — must exit 0.
+5. **Inspect and commit the reconciled layout.** This checkpoint is load-bearing, not
+   bookkeeping: step 3 left the `.vrt` modified relative to `HEAD`, so the guard refuses
+   step 6 until it is committed.
+6. `update` again — **must report an empty plan.**
+7. `check` again — must exit 0.
 
-Step 5 is the fixed point. A reconciler that keeps finding work on an unchanged input is wrong
+Step 6 is the fixed point. A reconciler that keeps finding work on an unchanged input is wrong
 in a way steps 1–4 cannot reveal.
 
-The assertion at step 5 is on **the plan being empty**, not on `.vrt` bytes. `--update`
+The two commit checkpoints are a consequence of the dirty-state guard, and an earlier revision
+of this document omitted them and so specified an acceptance procedure its own guard would
+have refused. They are also the point of the guard rather than a tax imposed by it: each one
+is a moment where the operator looks at what a mutation did before stacking another on top,
+and each gives `git checkout --` something to return to.
+
+The assertion at step 6 is on **the plan being empty**, not on `.vrt` bytes. `--update`
 re-serializes on every write, so byte-identity across an empty-plan update is plausible but
 unverified, and promising it here would assert something about the fork this repository has
 not established.
