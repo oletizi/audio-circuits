@@ -28,6 +28,7 @@ import type { Component } from "../model/types.ts"
 const PF_UF_BOUNDARY_FARADS = 1e-8
 
 const MIN_FARADS = 1e-12
+// Exclusive upper bound: spec says "farads at or above 1000uF are refused" (line 253)
 const MAX_FARADS = 1e-3
 const MIN_OHMS = 1000
 const MAX_OHMS = 999000
@@ -51,7 +52,7 @@ function capacitanceText(farads: number, id: string): string {
   if (!Number.isFinite(farads) || farads < MIN_FARADS || farads >= MAX_FARADS) {
     throw new Error(
       `capacitance ${farads}F on "${id}" is outside the range this formatter has been ` +
-        "proven over (1pF to 1000uF). Extend lib/kicad/value-notation.ts with a test " +
+        "proven over (1pF up to but not including 1000uF). Extend lib/kicad/value-notation.ts with a test " +
         "rather than letting it guess a spelling.",
     )
   }

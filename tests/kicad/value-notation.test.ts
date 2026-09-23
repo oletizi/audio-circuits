@@ -36,6 +36,20 @@ test("decades the board does not exercise are refused, not guessed", () => {
   expect(() => valueFor(capacitor(2e-3))).toThrow(/1pF.*1000uF/s)
 })
 
+test("capacitor boundary: exactly 1000uF (1e-3) is refused with clear message", () => {
+  expect(() => valueFor(capacitor(1e-3))).toThrow(/up to but not including 1000uF/)
+})
+
+test("capacitor boundary: highest accepted value just below 1000uF formats", () => {
+  expect(valueFor(capacitor(9.99e-4))).toBe("999uF")
+})
+
+test("resistor boundaries: 1000 ohms, 999000 ohms both format, 999001 refuses", () => {
+  expect(valueFor(resistor(1000))).toBe("1K")
+  expect(valueFor(resistor(999000))).toBe("999K")
+  expect(() => valueFor(resistor(999001))).toThrow(/1k.*999k/s)
+})
+
 test("an IC's value is its manufacturer part number", () => {
   expect(valueFor({
     id: "delay_ic", kind: "ic", parameters: {}, pins: {}, units: [],
