@@ -3,9 +3,20 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import {
-  readPin, resolveBinary, acquire,
+  readPin, resolveBinary, resolveQmake, acquire,
 } from "../../tools/perfboard/acquire.ts"
-import type { Pin, CommandRunner } from "../../tools/perfboard/acquire.ts"
+import type { Pin, CommandRunner, Env } from "../../tools/perfboard/acquire.ts"
+
+/**
+ * Every direct `acquire()` test below is unrelated to `qmake` resolution
+ * itself, so it sets `QMAKE` explicitly to the literal string `"qmake"` -
+ * this reduces `resolveQmake` to mode "explicit", returning that literal
+ * unchanged, so `run` still sees a bare `"qmake"` command exactly as before
+ * `resolveQmake` existed, and never calls (or needs a handler for) `brew`.
+ * `resolveQmake`'s own behavior - the brew lookup, `QMAKE` override, and
+ * every refusal - is exercised directly, below.
+ */
+const QMAKE_EXPLICIT: Env = { QMAKE: "qmake" }
 
 function withTempDir(run: (dir: string) => void): void {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "acquire-"))
@@ -88,6 +99,64 @@ test("VEROROUTE set but empty refuses rather than guessing unset was meant", () 
 })
 
 // ---------------------------------------------------------------------------
+// resolveQmake
+// ---------------------------------------------------------------------------
+
+test("QMAKE set to the operator's own qmake resolves explicit, unchanged, and never calls brew", () => {
+  const run: CommandRunner = () => { throw new Error("must not be called in explicit mode") }
+  const resolution = resolveQmake({ QMAKE: "/opt/dev-qt/bin/qmake" }, run, "/repo")
+  expect(resolution.mode).toBe("explicit")
+  expect(resolution.command).toBe("/opt/dev-qt/bin/qmake")
+})
+
+test("QMAKE set but empty refuses rather than guessing unset was meant", () => {
+  const run: CommandRunner = () => { throw new Error("must not be called") }
+  expect(() => resolveQmake({ QMAKE: "   " }, run, "/repo")).toThrow(/set but empty/)
+})
+
+test("QMAKE unset asks brew for qt@5's prefix and resolves to <prefix>/bin/qmake when it exists", () => {
+  withTempDir((prefix) => {
+    fs.mkdirSync(path.join(prefix, "bin"), { recursive: true })
+    fs.writeFileSync(path.join(prefix, "bin", "qmake"), "#!/bin/sh\n")
+    const calls: Array<{ command: string; args: readonly string[] }> = []
+    const run: CommandRunner = (command, args) => {
+      calls.push({ command, args })
+      if (command === "brew") return { status: 0, output: `${prefix}\n` }
+      throw new Error(`unexpected command in test: ${command}`)
+    }
+    const resolution = resolveQmake({}, run, "/repo")
+    expect(resolution.mode).toBe("brew")
+    expect(resolution.command).toBe(path.join(prefix, "bin", "qmake"))
+    expect(calls).toEqual([{ command: "brew", args: ["--prefix", "qt@5"] }])
+  })
+})
+
+test("QMAKE unset, brew itself absent, refuses naming Homebrew, brew install qt@5, and QMAKE", () => {
+  const run: CommandRunner = () => { throw new Error("spawnSync brew ENOENT") }
+  expect(() => resolveQmake({}, run, "/repo")).toThrow(/Homebrew/)
+  expect(() => resolveQmake({}, run, "/repo")).toThrow(/brew install qt@5/)
+  expect(() => resolveQmake({}, run, "/repo")).toThrow(/QMAKE/)
+})
+
+test("QMAKE unset, brew present but qt@5 not installed, refuses differently naming brew install qt@5", () => {
+  const run: CommandRunner = () => ({ status: 1, output: "Error: No such keg" })
+  expect(() => resolveQmake({}, run, "/repo")).toThrow(/brew install qt@5/)
+  // Distinct from the "brew itself is absent" refusal above: this one never
+  // tells the operator to go install Homebrew - brew already ran fine here,
+  // it is qt@5 specifically that is missing.
+  expect(() => resolveQmake({}, run, "/repo")).not.toThrow(/https:\/\/brew\.sh/)
+})
+
+test("QMAKE unset, brew resolves a prefix with no qmake underneath, refuses naming the resolved path", () => {
+  withTempDir((prefix) => {
+    const run: CommandRunner = () => ({ status: 0, output: `${prefix}\n` })
+    expect(() => resolveQmake({}, run, "/repo")).toThrow(
+      new RegExp(path.join(prefix, "bin", "qmake").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
 // acquire
 // ---------------------------------------------------------------------------
 
@@ -134,7 +203,7 @@ test("acquire clones, checks out the pinned commit, builds, and returns the bina
       calls,
     )
 
-    const result = acquire(PIN, { repoRoot, run })
+    const result = acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })
     expect(result).toBe(binaryPath)
     expect(calls).toEqual([
       `git clone ${PIN.repo} ${path.join(repoRoot, ".tools", "veroroute-perfboard")}`,
@@ -148,7 +217,7 @@ test("acquire clones, checks out the pinned commit, builds, and returns the bina
 test("acquire refuses to report success when the expected binary is not there afterward", () => {
   withTempDir((repoRoot) => {
     const run: CommandRunner = () => ({ status: 0, output: "" })
-    expect(() => acquire(PIN, { repoRoot, run })).toThrow(/veroroute.*not there/s)
+    expect(() => acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })).toThrow(/veroroute.*not there/s)
   })
 })
 
@@ -183,7 +252,7 @@ test("a failing qmake names the qt@5 prerequisite and never reaches make", () =>
       },
       calls,
     )
-    expect(() => acquire(PIN, { repoRoot, run })).toThrow(/qt@5/)
+    expect(() => acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })).toThrow(/qt@5/)
     expect(calls).not.toContain("make ")
   })
 })
@@ -208,7 +277,7 @@ test("git clone runs in a cwd that already exists (the repository root), never t
       if (command === "make") fs.writeFileSync(binaryPath, "#!/bin/sh\n")
       return { status: 0, output: "" }
     }
-    acquire(PIN, { repoRoot, run })
+    acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })
     expect(cwds[0]).toBe(repoRoot)
   })
 })
@@ -246,7 +315,7 @@ test("acquire skips cloning when the checkout directory already exists, but stil
       },
       calls,
     )
-    const result = acquire(PIN, { repoRoot, run })
+    const result = acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })
     expect(result).toBe(binaryPath)
     expect(calls.some((call) => call.startsWith("git clone"))).toBe(false)
     expect(calls).toContain(`git checkout ${PIN.commit}`)

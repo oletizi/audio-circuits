@@ -8,13 +8,18 @@
  * `make`. The result lands under `.tools/`, which is gitignored: it is a
  * build artifact of a GPLv3 C++ project, not repository content.
  *
- * `readPin`, `resolveBinary` and `acquire` are three separate, composable
- * questions:
+ * `readPin`, `resolveBinary`, `resolveQmake` and `acquire` are four separate,
+ * composable questions:
  *   - `readPin` answers "what does veroroute.pin say" - nothing else.
  *   - `resolveBinary` answers "which binary path and mode apply given this
  *     environment" - a pure function that never touches the filesystem or a
  *     process, so a test can exercise every branch of the resolution rule
  *     without a real checkout anywhere.
+ *   - `resolveQmake` answers "which qmake do we build with" by asking
+ *     Homebrew where it put the keg-only `qt@5` formula (`brew --prefix
+ *     qt@5`), unless `QMAKE` overrides it. It is not pure - it shells to
+ *     `brew` through the same injected `run` - but every test still injects
+ *     that `run`, so no test here ever shells to a real `brew`.
  *   - `acquire` is the one function that actually shells out. Every git and
  *     build invocation is injected (`AcquireOptions.run`), exactly as
  *     `tools/perfboard/mutate.ts` injects `GitRunner` and `tools/perfboard/
@@ -34,9 +39,20 @@
  *     and guessing which was meant is how a check ends up running against a
  *     binary nobody chose.
  *
- * There is deliberately no hardcoded fallback like `$HOME/src/...`: such a
- * path is right on exactly one machine and wrong everywhere else, matching
- * `check.ts`'s own reasoning for `verorouteBinary`.
+ * `QMAKE` follows the identical shape, one level down the build, because
+ * Homebrew's `qt@5` is keg-only and deliberately never linked onto `PATH`:
+ *   - `QMAKE` unset -> ask `brew --prefix qt@5` and use `<prefix>/bin/qmake`,
+ *     confirming it exists. This is the road every fresh operator gets with
+ *     zero configuration, once `qt@5` is installed.
+ *   - `QMAKE` set to anything else -> use it unchanged, unconditionally. The
+ *     operator pointing at their own Qt is theirs.
+ *   - `QMAKE` set but empty or whitespace -> refuse, for the same reason
+ *     an empty `VEROROUTE` refuses.
+ *
+ * There is deliberately no hardcoded fallback like `$HOME/src/...`, and no
+ * search over guessed Qt install locations either: `brew --prefix qt@5` is
+ * not a fallback search, it is asking the package manager where it put the
+ * thing, matching `check.ts`'s own reasoning for `verorouteBinary`.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -149,6 +165,81 @@ export interface CommandResult {
 /** The injection seam every git/build step runs through. */
 export type CommandRunner = (command: string, args: readonly string[], cwd: string) => CommandResult
 
+/** Which `qmake` to run, and whose Qt5 it is. */
+export interface QmakeResolution {
+  readonly command: string
+  readonly mode: "brew" | "explicit"
+}
+
+/**
+ * Resolve which `qmake` to invoke for the build.
+ *
+ * `QMAKE` unset -> ask Homebrew where it put `qt@5` (`brew --prefix qt@5`)
+ * and use `<prefix>/bin/qmake`, confirming that binary actually exists
+ * before handing it back. Homebrew's `qt@5` is keg-only, so it is
+ * deliberately never linked onto `PATH`; `brew --prefix` is how a program,
+ * not just a human, is meant to find a keg-only formula. That is
+ * categorically different from a fallback search over guessed install
+ * locations - it is asking the one program that knows where it put the
+ * thing, the same way `resolveBinary` above refuses a hardcoded
+ * `$HOME/src/...` guess.
+ *
+ * `QMAKE` set to anything else -> mode "explicit", returned unchanged. The
+ * operator pointing at their own Qt is theirs, mirroring exactly how
+ * `VEROROUTE` lets an operator point at their own veroroute-perfboard
+ * checkout: this function must never override it.
+ *
+ * `QMAKE` set but empty or whitespace -> refuse, for the same reason
+ * `resolveBinary` refuses an empty `VEROROUTE`: an empty value cannot be an
+ * accident of it being unset.
+ */
+export function resolveQmake(env: Env, run: CommandRunner, repoRoot: string): QmakeResolution {
+  const value = env["QMAKE"]
+  if (value !== undefined) {
+    if (value.trim() === "") {
+      throw new Error(
+        "QMAKE is set but empty. An empty value cannot be an accident of it being unset - " +
+          "something set it to nothing, and guessing which was meant is how a build ends up " +
+          "running against a qmake nobody chose. Unset QMAKE to use the qt@5 this tool locates " +
+          "through Homebrew, or point it at your own qmake.",
+      )
+    }
+    return { command: value, mode: "explicit" }
+  }
+
+  let brewResult: CommandResult
+  try {
+    brewResult = run("brew", ["--prefix", "qt@5"], repoRoot)
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `could not run brew to locate qt@5: ${detail}. This build needs Homebrew ` +
+        "(https://brew.sh) installed, then \"brew install qt@5\" - or, to point at a qmake " +
+        "from a non-Homebrew Qt installation instead, set QMAKE.",
+    )
+  }
+
+  if (brewResult.status !== 0) {
+    throw new Error(
+      `brew --prefix qt@5 exited ${brewResult.status}; qt@5 does not appear to be installed. ` +
+        'Run "brew install qt@5", or set QMAKE to point at a qmake from a non-Homebrew Qt ' +
+        `installation.\n${brewResult.output}`,
+    )
+  }
+
+  const prefix = brewResult.output.trim()
+  const qmakePath = path.join(prefix, "bin", "qmake")
+  if (!fs.existsSync(qmakePath)) {
+    throw new Error(
+      `${qmakePath}: brew --prefix qt@5 resolved to ${prefix}, but no qmake exists there. ` +
+        'Reinstall with "brew reinstall qt@5", or set QMAKE to point at a qmake from a ' +
+        "non-Homebrew Qt installation.",
+    )
+  }
+
+  return { command: qmakePath, mode: "brew" }
+}
+
 /** Node reports a missing executable via `spawnSync`'s error as `ENOENT`. */
 function isMissingExecutable(error: NodeJS.ErrnoException): boolean {
   return error.code === "ENOENT"
@@ -161,10 +252,10 @@ function defaultRun(command: string, args: readonly string[], cwd: string): Comm
     // first-run failure - `veroroute` is the first verb a new operator runs -
     // so it gets the same quality of guidance as the adjacent non-zero-exit
     // branch below, rather than a bare ENOENT.
-    if (isMissingExecutable(result.error) && command === "qmake") {
+    if (isMissingExecutable(result.error) && path.basename(command) === "qmake") {
       throw new Error(
-        `could not run qmake: ${result.error.message}. This build needs Homebrew qt@5 ` +
-          "(brew install qt@5) with qmake on PATH.",
+        `could not run qmake at ${command}: ${result.error.message}. This build needs ` +
+          "Homebrew qt@5 (brew install qt@5), or QMAKE pointed at a real qmake.",
       )
     }
     throw new Error(`could not run ${command}: ${result.error.message}`)
@@ -179,6 +270,8 @@ export interface AcquireOptions {
   readonly repoRoot: string
   /** Injected so no test ever clones or builds anything real. */
   readonly run?: CommandRunner
+  /** Injected so no test resolves `QMAKE` against the real process environment. */
+  readonly env?: Env
 }
 
 /**
@@ -202,6 +295,7 @@ export interface AcquireOptions {
  */
 export function acquire(pin: Pin, opts: AcquireOptions): string {
   const run = opts.run ?? defaultRun
+  const env = opts.env ?? process.env
   const cloneDir = path.join(opts.repoRoot, CLONE_RELATIVE)
   const binaryPath = path.join(cloneDir, BINARY_RELATIVE)
 
@@ -231,11 +325,12 @@ export function acquire(pin: Pin, opts: AcquireOptions): string {
     )
   }
 
-  const qmake = run("qmake", [], cloneDir)
+  const qmakeResolution = resolveQmake(env, run, opts.repoRoot)
+  const qmake = run(qmakeResolution.command, [], cloneDir)
   if (qmake.status !== 0) {
     throw new Error(
-      `qmake in ${cloneDir} exited ${qmake.status}. This build needs Homebrew qt@5 ` +
-        `(brew install qt@5) with qmake on PATH.\n${qmake.output}`,
+      `${qmakeResolution.command} in ${cloneDir} exited ${qmake.status}. This build needs ` +
+        `Homebrew qt@5 (brew install qt@5).\n${qmake.output}`,
     )
   }
 

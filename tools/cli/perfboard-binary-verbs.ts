@@ -178,7 +178,7 @@ function dispatchVeroroute(
       return 0
     }
 
-    const builtPath = deps.acquire(pin, { repoRoot })
+    const builtPath = deps.acquire(pin, { repoRoot, env })
     log(`${builtPath} (built from ${pin.repo} at commit ${pin.commit})`)
     return 0
   } catch (caught) {
