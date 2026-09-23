@@ -142,8 +142,17 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       error(`no perfboard.json found in or under ${cwd}`)
       return 1
     }
-    for (const file of files) log(boardName(loadDeclaration(file)))
-    return 0
+    let failed = false
+    for (const file of files) {
+      try {
+        log(boardName(loadDeclaration(file)))
+      } catch (caught) {
+        failed = true
+        error(`FAIL ${file}`)
+        for (const line of reportLines(errorMessage(caught))) error(line)
+      }
+    }
+    return failed ? 1 : 0
   }
 
   if (verb === "board-info") {
@@ -152,7 +161,14 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       error(`${cwd} declares no board. Run this from a directory holding a perfboard.json.`)
       return 1
     }
-    const declaration = loadDeclaration(here)
+    let declaration: PerfboardDeclaration
+    try {
+      declaration = loadDeclaration(here)
+    } catch (caught) {
+      error(`FAIL ${here}`)
+      for (const line of reportLines(errorMessage(caught))) error(line)
+      return 1
+    }
     log(`board:   ${boardName(declaration)}`)
     log(`circuit: ${declaration.circuitPath} (${declaration.exportName})`)
     log(`layout:  ${declaration.vrtPath}`)

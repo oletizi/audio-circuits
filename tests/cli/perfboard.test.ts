@@ -95,6 +95,36 @@ test("no declarations anywhere is a failure, not a quiet success", async () => {
   }
 })
 
+test("boards reports a malformed declaration through the normal return path, not a rejection", async () => {
+  const root = tree()
+  try {
+    fs.writeFileSync(path.join(root, "boards", "demo", "perfboard.json"), "{ not json")
+    const errors: string[] = []
+    const code = await runCli(["boards"], {
+      cwd: root, log: () => {}, error: (line) => errors.push(line),
+    })
+    expect(code).toBe(1)
+    expect(errors.join("\n")).toContain(path.join(root, "boards", "demo", "perfboard.json"))
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("board-info reports a malformed declaration through the normal return path, not a rejection", async () => {
+  const root = tree()
+  try {
+    fs.writeFileSync(path.join(root, "boards", "demo", "perfboard.json"), "{ not json")
+    const errors: string[] = []
+    const code = await runCli(["board-info"], {
+      cwd: path.join(root, "boards", "demo"), log: () => {}, error: (line) => errors.push(line),
+    })
+    expect(code).toBe(1)
+    expect(errors.join("\n")).toContain(path.join(root, "boards", "demo", "perfboard.json"))
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
 test("board-info prints what the directory declares", async () => {
   const root = tree()
   try {
