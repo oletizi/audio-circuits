@@ -2,13 +2,23 @@
  * A `perfboard.json` sitting beside a stripboard layout, naming the circuit
  * that layout is supposed to match and the `.vrt` that holds it.
  *
- * Both paths resolve against the declaration's own directory, so a declaration
+ * All paths resolve against the declaration's own directory, so a declaration
  * is readable from anywhere in the tree and says the same thing however it was
  * reached.
  *
  * `export` is REQUIRED and is not defaulted. A module may export several
  * circuits, and guessing which one a board was built from is exactly the class
  * of silent wrong answer this workflow exists to prevent.
+ *
+ * `sch` and `netlist` are OPTIONAL, and only ever come as a pair. Together
+ * they name the dependency edge upstream of `circuit`: `sch` is the
+ * hand-authored KiCad schematic, `netlist` is the s-expression export make
+ * can regenerate from it. A board that declares neither keeps working
+ * exactly as before this pair existed - a clone of this repository without
+ * the schematic's own repository must still be able to run `make check`
+ * against the checked-in netlist fixture. A board that declares only one of
+ * the two has a broken declaration, not a partial one: half a dependency
+ * edge names nothing.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -24,6 +34,20 @@ export interface PerfboardDeclaration {
   readonly exportName: string
   /** Absolute path to the VeroRoute layout, resolved from `dir`. */
   readonly vrtPath: string
+  /**
+   * Absolute path to the hand-authored KiCad schematic this board's netlist
+   * export comes from, when declared. Present iff `netlistPath` is present.
+   */
+  readonly schPath?: string
+  /**
+   * Absolute path to the schematic's netlist export, when declared. `make`
+   * regenerates this file from `schPath` when the schematic is newer; it is
+   * NOT required to exist here (loading a declaration never touches the
+   * filesystem beyond the declaration itself) - a schematic that has moved
+   * out from under a stale export is exactly the case this pair exists to
+   * let `make` catch.
+   */
+  readonly netlistPath?: string
 }
 
 const SKIP_DIRECTORIES = new Set(["node_modules", ".git", ".tools", "dist"])
@@ -45,6 +69,25 @@ function readString(parsed: unknown, key: string, file: string): string {
   if (!isRecord(parsed)) throw new Error(`${file}: expected a JSON object at the top level`)
   const value = parsed[key]
   if (value === undefined) throw new Error(`${file}: missing required string field "${key}"`)
+  if (typeof value !== "string") {
+    throw new Error(
+      `${file}: field "${key}" must be a string, got ${value === null ? "null" : typeof value}`,
+    )
+  }
+  if (value.trim() === "") throw new Error(`${file}: field "${key}" must not be empty`)
+  return value
+}
+
+/**
+ * Read one optional string field: `undefined` when absent, the same
+ * wrong-typed/empty checks as `readString` otherwise. Absence is not an
+ * error here - pairing absence with its partner field is `loadDeclaration`'s
+ * job, not this function's.
+ */
+function readOptionalString(parsed: unknown, key: string, file: string): string | undefined {
+  if (!isRecord(parsed)) throw new Error(`${file}: expected a JSON object at the top level`)
+  const value = parsed[key]
+  if (value === undefined) return undefined
   if (typeof value !== "string") {
     throw new Error(
       `${file}: field "${key}" must be a string, got ${value === null ? "null" : typeof value}`,
@@ -82,12 +125,25 @@ export function loadDeclaration(file: string): PerfboardDeclaration {
   }
 
   const dir = path.dirname(abs)
+
+  const sch = readOptionalString(parsed, "sch", abs)
+  const netlist = readOptionalString(parsed, "netlist", abs)
+  if ((sch === undefined) !== (netlist === undefined)) {
+    throw new Error(
+      `${abs}: "sch" and "netlist" must be declared together - together they name the ` +
+        'dependency edge from the schematic to its export, and half of it means nothing. ' +
+        (sch === undefined ? 'Add "sch", or remove "netlist".' : 'Add "netlist", or remove "sch".'),
+    )
+  }
+
   return {
     file: abs,
     dir,
     circuitPath: path.resolve(dir, readString(parsed, "circuit", abs)),
     exportName: readString(parsed, "export", abs),
     vrtPath: path.resolve(dir, readString(parsed, "vrt", abs)),
+    ...(sch !== undefined ? { schPath: path.resolve(dir, sch) } : {}),
+    ...(netlist !== undefined ? { netlistPath: path.resolve(dir, netlist) } : {}),
   }
 }
 

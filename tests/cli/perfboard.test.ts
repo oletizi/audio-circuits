@@ -159,3 +159,70 @@ test("board-info prints what the directory declares", async () => {
     fs.rmSync(root, { recursive: true, force: true })
   }
 })
+
+test("board-info --field sch/netlist print an empty line when neither is declared", async () => {
+  const root = tree()
+  try {
+    for (const field of ["sch", "netlist"]) {
+      const lines: string[] = []
+      const code = await runCli(["board-info", "--field", field], {
+        cwd: path.join(root, "boards", "demo"), log: (line) => lines.push(line),
+      })
+      expect(code).toBe(0)
+      expect(lines).toEqual([""])
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("board-info --field sch/netlist print the resolved paths when declared, and the plain report includes them", async () => {
+  const root = tree()
+  try {
+    fs.writeFileSync(
+      path.join(root, "boards", "demo", "perfboard.json"),
+      JSON.stringify({
+        sch: "../../board.kicad_sch",
+        circuit: "c.ts",
+        export: "demo",
+        netlist: "../../board.net",
+        vrt: "demo.vrt",
+      }),
+    )
+    const schLines: string[] = []
+    expect(await runCli(["board-info", "--field", "sch"], {
+      cwd: path.join(root, "boards", "demo"), log: (line) => schLines.push(line),
+    })).toBe(0)
+    expect(schLines).toEqual([path.join(root, "board.kicad_sch")])
+
+    const netlistLines: string[] = []
+    expect(await runCli(["board-info", "--field", "netlist"], {
+      cwd: path.join(root, "boards", "demo"), log: (line) => netlistLines.push(line),
+    })).toBe(0)
+    expect(netlistLines).toEqual([path.join(root, "board.net")])
+
+    const reportLines: string[] = []
+    expect(await runCli(["board-info"], {
+      cwd: path.join(root, "boards", "demo"), log: (line) => reportLines.push(line),
+    })).toBe(0)
+    const report = reportLines.join("\n")
+    expect(report).toContain(path.join(root, "board.kicad_sch"))
+    expect(report).toContain(path.join(root, "board.net"))
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("board-info --field with an unknown field name refuses", async () => {
+  const root = tree()
+  try {
+    const errors: string[] = []
+    const code = await runCli(["board-info", "--field", "vrt"], {
+      cwd: path.join(root, "boards", "demo"), log: () => {}, error: (line) => errors.push(line),
+    })
+    expect(code).toBe(1)
+    expect(errors.join("\n")).toContain("vrt")
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})

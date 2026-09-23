@@ -84,6 +84,66 @@ test("a symlinked board directory refuses rather than being silently skipped", (
   }
 })
 
+test("a board declaring neither sch nor netlist leaves both undefined", () => {
+  withDeclaration(VALID, (file) => {
+    const declaration = loadDeclaration(file)
+    expect(declaration.schPath).toBeUndefined()
+    expect(declaration.netlistPath).toBeUndefined()
+  })
+})
+
+test("sch and netlist resolve against the declaration's own directory, like every other path", () => {
+  const contents = JSON.stringify({
+    sch: "../sch/board.kicad_sch",
+    circuit: "../../circuits/pt2399-core.ts",
+    export: "pt2399Core",
+    netlist: "../fixtures/board.net",
+    vrt: "board.vrt",
+  })
+  withDeclaration(contents, (file) => {
+    const declaration = loadDeclaration(file)
+    expect(declaration.schPath).toBe(path.resolve(path.dirname(file), "../sch/board.kicad_sch"))
+    expect(declaration.netlistPath).toBe(path.resolve(path.dirname(file), "../fixtures/board.net"))
+  })
+})
+
+test("an absolute sch path is honored as given, unmodified by the declaration's directory", () => {
+  const contents = JSON.stringify({
+    sch: "/absolute/path/board.kicad_sch",
+    circuit: "../../circuits/pt2399-core.ts",
+    export: "pt2399Core",
+    netlist: "../fixtures/board.net",
+    vrt: "board.vrt",
+  })
+  withDeclaration(contents, (file) => {
+    expect(loadDeclaration(file).schPath).toBe("/absolute/path/board.kicad_sch")
+  })
+})
+
+test("declaring sch without netlist is a refusal naming the fix", () => {
+  const contents = JSON.stringify({
+    sch: "../sch/board.kicad_sch",
+    circuit: "../../circuits/pt2399-core.ts",
+    export: "pt2399Core",
+    vrt: "board.vrt",
+  })
+  withDeclaration(contents, (file) => {
+    expect(() => loadDeclaration(file)).toThrow(/add "netlist", or remove "sch"/i)
+  })
+})
+
+test("declaring netlist without sch is a refusal naming the fix", () => {
+  const contents = JSON.stringify({
+    circuit: "../../circuits/pt2399-core.ts",
+    export: "pt2399Core",
+    netlist: "../fixtures/board.net",
+    vrt: "board.vrt",
+  })
+  withDeclaration(contents, (file) => {
+    expect(() => loadDeclaration(file)).toThrow(/add "sch", or remove "netlist"/i)
+  })
+})
+
 test("discovery matches the exact basename, not a suffix", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-tree-"))
   try {

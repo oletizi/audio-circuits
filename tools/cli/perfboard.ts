@@ -89,6 +89,8 @@ const USAGE = [
   "                           default; it is a fact about the board in hand.",
   "  --force                  veroroute: rebuild even if a binary already exists",
   "                           at the resolved path.",
+  "  --field sch|netlist      board-info: print only that resolved path (or an",
+  "                           empty line if it was not declared), for scripts.",
   "",
   "Environment:",
   "  This tool needs no configuration to find its own veroroute binary: run",
@@ -248,9 +250,32 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       for (const line of reportLines(errorMessage(caught))) error(line)
       return 1
     }
+
+    // `--field <name>` is the machine-readable form make/board.mk uses to
+    // pull SCH and NETLIST out of the declaration without reimplementing
+    // this module's JSON parsing. It prints exactly one line - the resolved
+    // path, or nothing when the field was not declared - and nothing else,
+    // so `$(shell ...)` can capture it directly as a make variable.
+    const fieldIndex = args.indexOf("--field")
+    if (fieldIndex !== -1) {
+      const field = args[fieldIndex + 1]
+      if (field === "sch") {
+        log(declaration.schPath ?? "")
+        return 0
+      }
+      if (field === "netlist") {
+        log(declaration.netlistPath ?? "")
+        return 0
+      }
+      error(`--field "${field ?? ""}" is not a known field. Valid fields: sch, netlist.`)
+      return 1
+    }
+
     log(`board:   ${boardName(declaration)}`)
     log(`circuit: ${declaration.circuitPath} (${declaration.exportName})`)
     log(`layout:  ${declaration.vrtPath}`)
+    if (declaration.schPath !== undefined) log(`sch:     ${declaration.schPath}`)
+    if (declaration.netlistPath !== undefined) log(`netlist: ${declaration.netlistPath}`)
     return 0
   }
 
