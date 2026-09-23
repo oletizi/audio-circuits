@@ -61,7 +61,7 @@ function resolvedEnvAndRepoRoot(deps: VerbDeps): readonly [Env, string] {
 }
 
 /** The `deps.runVeroroute ?? defaultRunVeroroute(...)` fallback chain, in one place. */
-function runnerFor(deps: VerbDeps): (args: readonly string[]) => VerbRun {
+export function runnerFor(deps: VerbDeps): (args: readonly string[]) => VerbRun {
   const [env, repoRoot] = resolvedEnvAndRepoRoot(deps)
   return deps.runVeroroute ?? defaultRunVeroroute(env, repoRoot)
 }
@@ -94,7 +94,7 @@ function defaultRunVeroroute(env: Env, repoRoot: string): (args: readonly string
  * `rename` is only atomic within one filesystem, so the produced file has to
  * land beside the layout it will replace, never in the system tmpdir.
  */
-function tempPathAlongside(vrtPath: string, tag: string): string {
+export function tempPathAlongside(vrtPath: string, tag: string): string {
   const dir = path.dirname(vrtPath)
   const base = path.basename(vrtPath, ".vrt")
   return path.join(dir, `.${base}.${tag}-${process.pid}-${Date.now()}.vrt`)
@@ -116,7 +116,7 @@ function tempPathAlongside(vrtPath: string, tag: string): string {
  * human kept deliberately for post-crash diagnosis. This function only ever
  * removes a path it just computed for the run currently failing.
  */
-function cleanupProduced(producedPath: string): void {
+export function cleanupProduced(producedPath: string): void {
   try {
     fs.rmSync(producedPath, { force: true })
   } catch {

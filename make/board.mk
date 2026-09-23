@@ -40,7 +40,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts update stripboard edit board-info netlist-agrees
+.PHONY: help perfboard-help check cuts import update stripboard edit board-info netlist-agrees
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -129,6 +129,7 @@ perfboard-help:
 	@echo ""
 	@echo "Work on it (these rewrite the layout IN PLACE; git is the undo, and both"
 	@echo "refuse while the layout has uncommitted changes)"
+	@echo "  make import                            create this board's first layout"
 	@echo "  make update                            apply the circuit to this layout"
 	@echo "  make stripboard STRIPS=horizontal|vertical"
 	@echo "                                          convert this layout to strip mode"
@@ -164,6 +165,9 @@ cuts: veroroute netlist-agrees
 
 board-info:
 	@bun "$(CLI)" board-info -C "$(CURDIR)"
+
+import: veroroute netlist-agrees
+	@bun "$(CLI)" import -C "$(CURDIR)"
 
 update: veroroute netlist-agrees
 	@bun "$(CLI)" update -C "$(CURDIR)" $(if $(ALLOW_DIRTY),--allow-dirty)
