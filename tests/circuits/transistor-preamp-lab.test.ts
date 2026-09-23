@@ -189,3 +189,7 @@ test("KiCad reads the generated stub as the same circuit", () => {
     fs.rmSync(dir, { recursive: true, force: true })
   }
 }, 30_000)
+
+test("the schematic's netlist export describes the same circuit as the model", async () => {
+  expectSameCircuit(importNetlist(await Bun.file("tests/fixtures/transistor-preamp-lab.net").text()))
+})

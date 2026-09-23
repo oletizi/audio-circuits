@@ -1,0 +1,1904 @@
+(kicad_sch
+	(version 20260306)
+	(generator "audio-circuits")
+	(generator_version "10.0")
+	(uuid "73aa457b-4131-4b23-a143-b4dc440370e7")
+	(paper "A3")
+	(lib_symbols
+(symbol "Connector:TestPoint"
+		(pin_numbers
+			(hide yes)
+		)
+		(pin_names
+			(offset 0.762)
+			(hide yes)
+		)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(duplicate_pin_numbers_are_jumpers no)
+		(property "Reference" "TP"
+			(at 0 6.858 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TestPoint"
+			(at 0 5.08 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 5.08 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 5.08 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "test point"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_keywords" "test point tp"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_fp_filters" "Pin* Test*"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(symbol "TestPoint_0_1"
+			(circle
+				(center 0 3.302)
+				(radius 0.762)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "TestPoint_1_1"
+			(pin passive line
+				(at 0 0 90)
+				(length 2.54)
+				(name "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+(symbol "Connector_Generic:Conn_01x02"
+		(pin_names
+			(offset 1.016)
+			(hide yes)
+		)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(duplicate_pin_numbers_are_jumpers no)
+		(property "Reference" "J"
+			(at 0 2.54 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "Conn_01x02"
+			(at 0 -5.08 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_keywords" "connector"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_fp_filters" "Connector*:*_1x??_*"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(symbol "Conn_01x02_1_1"
+			(rectangle
+				(start -1.27 1.27)
+				(end 1.27 -3.81)
+				(stroke
+					(width 0.254)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+			(rectangle
+				(start -1.27 0.127)
+				(end 0 -0.127)
+				(stroke
+					(width 0.1524)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(rectangle
+				(start -1.27 -2.413)
+				(end 0 -2.667)
+				(stroke
+					(width 0.1524)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(pin passive line
+				(at -5.08 0 0)
+				(length 3.81)
+				(name "Pin_1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin passive line
+				(at -5.08 -2.54 0)
+				(length 3.81)
+				(name "Pin_2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+(symbol "Device:C_Polarized"
+		(pin_numbers
+			(hide yes)
+		)
+		(pin_names
+			(offset 0.254)
+		)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(duplicate_pin_numbers_are_jumpers no)
+		(property "Reference" "C"
+			(at 0.635 2.54 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "C_Polarized"
+			(at 0.635 -2.54 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 0.9652 -3.81 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Polarized capacitor"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_keywords" "cap capacitor"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_fp_filters" "CP_*"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(symbol "C_Polarized_0_1"
+			(rectangle
+				(start -2.286 0.508)
+				(end 2.286 1.016)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy -1.778 2.286) (xy -0.762 2.286)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy -1.27 2.794) (xy -1.27 1.778)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(rectangle
+				(start 2.286 -0.508)
+				(end -2.286 -1.016)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type outline)
+				)
+			)
+		)
+		(symbol "C_Polarized_1_1"
+			(pin passive line
+				(at 0 3.81 270)
+				(length 2.794)
+				(name ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin passive line
+				(at 0 -3.81 90)
+				(length 2.794)
+				(name ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+(symbol "Device:R"
+		(pin_numbers
+			(hide yes)
+		)
+		(pin_names
+			(offset 0)
+		)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(duplicate_pin_numbers_are_jumpers no)
+		(property "Reference" "R"
+			(at 2.032 0 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "R"
+			(at 0 0 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at -1.778 0 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_keywords" "R res resistor"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_fp_filters" "R_*"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(symbol "R_0_1"
+			(rectangle
+				(start -1.016 -2.54)
+				(end 1.016 2.54)
+				(stroke
+					(width 0.254)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "R_1_1"
+			(pin passive line
+				(at 0 3.81 270)
+				(length 1.27)
+				(name ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin passive line
+				(at 0 -3.81 90)
+				(length 1.27)
+				(name ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+(symbol "Device:R_Potentiometer_Trim"
+		(pin_names
+			(offset 1.016)
+			(hide yes)
+		)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(duplicate_pin_numbers_are_jumpers no)
+		(property "Reference" "RV"
+			(at -4.445 0 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "R_Potentiometer_Trim"
+			(at -2.54 0 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Trim-potentiometer"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Device" "R"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Type" "POT"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Pins" "1=r0 2=wiper 3=r1"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_keywords" "resistor variable trimpot trimmer"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_fp_filters" "Potentiometer*"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(symbol "R_Potentiometer_Trim_0_1"
+			(rectangle
+				(start 1.016 2.54)
+				(end -1.016 -2.54)
+				(stroke
+					(width 0.254)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 1.524 0.762) (xy 1.524 -0.762)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 2.54 0) (xy 1.524 0)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "R_Potentiometer_Trim_1_1"
+			(pin passive line
+				(at 0 3.81 270)
+				(length 1.27)
+				(name "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin passive line
+				(at 3.81 0 180)
+				(length 1.27)
+				(name "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin passive line
+				(at 0 -3.81 90)
+				(length 1.27)
+				(name "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+(symbol "Jumper:Jumper_2_Open"
+		(pin_numbers
+			(hide yes)
+		)
+		(pin_names
+			(offset 0)
+			(hide yes)
+		)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(duplicate_pin_numbers_are_jumpers no)
+		(property "Reference" "JP"
+			(at 0 2.794 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "Jumper_2_Open"
+			(at 0 -2.286 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Jumper, 2-pole, open"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_keywords" "Jumper SPST"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_fp_filters" "Jumper* TestPoint*2Pads* TestPoint*Bridge*"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(symbol "Jumper_2_Open_0_0"
+			(circle
+				(center -2.032 0)
+				(radius 0.508)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(circle
+				(center 2.032 0)
+				(radius 0.508)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "Jumper_2_Open_0_1"
+			(arc
+				(start -1.524 1.27)
+				(mid 0 1.778)
+				(end 1.524 1.27)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "Jumper_2_Open_1_1"
+			(pin passive line
+				(at -5.08 0 0)
+				(length 2.54)
+				(name "A"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin passive line
+				(at 5.08 0 180)
+				(length 2.54)
+				(name "B"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+(symbol "Transistor_BJT:2N3904"
+		(pin_names
+			(offset 0)
+			(hide yes)
+		)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(duplicate_pin_numbers_are_jumpers no)
+		(property "Reference" "Q"
+			(at 5.08 1.905 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "2N3904"
+			(at 5.08 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
+			(at 5.08 -1.905 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/2N3903-D.PDF"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "0.2A Ic, 40V Vce, Small Signal NPN Transistor, TO-92"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Device" "NPN"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Pins" "1=E 2=B 3=C"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_keywords" "NPN Transistor"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_fp_filters" "TO?92*"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(symbol "2N3904_0_1"
+			(polyline
+				(pts
+					(xy -2.54 0) (xy 0.635 0)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 0.635 1.905) (xy 0.635 -1.905)
+				)
+				(stroke
+					(width 0.508)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(circle
+				(center 1.27 0)
+				(radius 2.8194)
+				(stroke
+					(width 0.254)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "2N3904_1_1"
+			(polyline
+				(pts
+					(xy 0.635 0.635) (xy 2.54 2.54)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 0.635 -0.635) (xy 2.54 -2.54)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 1.27 -1.778) (xy 1.778 -1.27) (xy 2.286 -2.286) (xy 1.27 -1.778)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type outline)
+				)
+			)
+			(pin passive line
+				(at 2.54 -5.08 90)
+				(length 2.54)
+				(name "E"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin input line
+				(at -5.08 0 0)
+				(length 2.54)
+				(name "B"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin passive line
+				(at 2.54 5.08 270)
+				(length 2.54)
+				(name "C"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+	)
+	(symbol
+		(lib_id "Device:C_Polarized")
+		(at 30.48 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "8374eac0-9ab0-4115-b8bf-66efd288e871")
+		(property "Reference" "C1" (at 35.56 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "220uF" (at 35.56 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm" (at 30.48 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 30.48 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "b0f77217-cf2d-4bac-bfbe-0d004d52eb31"))
+		(pin "2" (uuid "a3511da4-d6d4-4bbb-920d-1177b27199d0"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "C1") (unit 1))))
+	)
+	(wire (pts (xy 30.48 26.67) (xy 30.48 24.13)) (stroke (width 0) (type default)) (uuid "389106e3-ce5c-4e3f-9a4f-41d38457332e"))
+	(label "BYPASS_JUMPED" (at 30.48 24.13 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "60f1e744-19ce-4573-9970-9320e63c16ac"))
+	(wire (pts (xy 30.48 34.29) (xy 30.48 36.83)) (stroke (width 0) (type default)) (uuid "e8491391-f0f3-45e6-8bce-b8cf41d4565d"))
+	(label "BYPASS_CAP" (at 30.48 36.83 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "14dce651-48de-49da-b19f-535d3ed39013"))
+	(symbol
+		(lib_id "Device:C_Polarized")
+		(at 60.96 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "618e0314-438f-4c90-9a5a-ccee8c87655f")
+		(property "Reference" "C2" (at 66.04 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "10uF" (at 66.04 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm" (at 60.96 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 60.96 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "3b79403c-96b7-4b90-af92-ba7298463724"))
+		(pin "2" (uuid "3554dd51-a939-4e9d-8ac7-976b8edeb1b5"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "C2") (unit 1))))
+	)
+	(wire (pts (xy 60.96 26.67) (xy 60.96 24.13)) (stroke (width 0) (type default)) (uuid "cbd90ce4-3092-44a7-b602-d34cb54029ae"))
+	(label "BASE" (at 60.96 24.13 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "106a63e8-c2f8-42de-b276-97d7f9e3fb6d"))
+	(wire (pts (xy 60.96 34.29) (xy 60.96 36.83)) (stroke (width 0) (type default)) (uuid "2ae6eaaa-610e-40ae-aefa-b681bbfa6938"))
+	(label "IN_EXT" (at 60.96 36.83 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "493faf91-a78e-4856-b9d3-abf29aad9a5b"))
+	(symbol
+		(lib_id "Device:C_Polarized")
+		(at 91.44 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1202cdeb-20ba-42b8-8bfb-9f0f1a7af98b")
+		(property "Reference" "C3" (at 96.52 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "10uF" (at 96.52 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm" (at 91.44 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 91.44 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "7e5cc41d-c147-4852-ad68-ad1002c553a3"))
+		(pin "2" (uuid "b0363f13-a663-42c0-8291-59613efbeb20"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "C3") (unit 1))))
+	)
+	(wire (pts (xy 91.44 26.67) (xy 91.44 24.13)) (stroke (width 0) (type default)) (uuid "d991a8b4-c4d1-456f-b1a3-3121168855db"))
+	(label "COLLECTOR" (at 91.44 24.13 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "2f598598-93a5-4597-beaa-4b5e81a9a579"))
+	(wire (pts (xy 91.44 34.29) (xy 91.44 36.83)) (stroke (width 0) (type default)) (uuid "c606495f-321a-4ff7-8d77-c0e6295b2d04"))
+	(label "OUT" (at 91.44 36.83 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "82ada714-baa2-41dd-a635-8de9915e23c0"))
+	(symbol
+		(lib_id "Device:C_Polarized")
+		(at 121.92 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6503e0b8-a029-4afb-8c55-8aa5c93118f8")
+		(property "Reference" "C4" (at 127 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "100uF" (at 127 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm" (at 121.92 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 121.92 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "44939f73-654f-42b5-b945-dfe06d64c8b6"))
+		(pin "2" (uuid "9078ddf5-bfb8-483f-ad92-5b53108db6b6"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "C4") (unit 1))))
+	)
+	(wire (pts (xy 121.92 26.67) (xy 121.92 24.13)) (stroke (width 0) (type default)) (uuid "cfd95216-696e-46fa-97da-9571ca5c9bb9"))
+	(label "VCC" (at 121.92 24.13 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "a9e4e23d-9678-471b-b15d-00dfdb97ed16"))
+	(wire (pts (xy 121.92 34.29) (xy 121.92 36.83)) (stroke (width 0) (type default)) (uuid "74509b3b-b68c-4d9b-bdca-fcd3e220c8fa"))
+	(label "GND" (at 121.92 36.83 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "1ee96ccd-e649-48a8-a6b1-905740e6a930"))
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x02")
+		(at 152.4 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "c9ca47bb-1684-4310-9d57-ce2b657c9cbb")
+		(property "Reference" "J1" (at 157.48 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "Conn_01x02" (at 157.48 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" (at 152.4 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 152.4 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "f44ccb7d-1355-4445-b448-98894126487d"))
+		(pin "2" (uuid "68f9f3fa-493d-4dc8-b7f5-dbb78ceee150"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "J1") (unit 1))))
+	)
+	(wire (pts (xy 147.32 30.48) (xy 144.78 30.48)) (stroke (width 0) (type default)) (uuid "36c67228-2505-45ab-9db3-fd25b56c3da3"))
+	(label "IN_EXT" (at 144.78 30.48 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "1ba041f7-466a-46c7-8b30-8b2c40ae8b48"))
+	(wire (pts (xy 147.32 33.02) (xy 144.78 33.02)) (stroke (width 0) (type default)) (uuid "d6ff812c-9958-4307-8c51-50495170c7fe"))
+	(label "GND" (at 144.78 33.02 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "9f6e0cd0-dda7-42bb-ab76-2620339bf0c9"))
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x02")
+		(at 182.88 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "dd9321dc-bf19-401b-9f7a-c7a15921f25b")
+		(property "Reference" "J2" (at 187.96 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "Conn_01x02" (at 187.96 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" (at 182.88 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 182.88 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "73aee55c-9a37-4210-8439-35992a905708"))
+		(pin "2" (uuid "3e605360-fe44-4ed9-8c53-9dbfbb32e4c0"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "J2") (unit 1))))
+	)
+	(wire (pts (xy 177.8 30.48) (xy 175.26 30.48)) (stroke (width 0) (type default)) (uuid "1939e87b-1a76-4d2e-bc82-8da211286f98"))
+	(label "OUT" (at 175.26 30.48 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "b05ccf77-ec5a-489a-a336-bd21c6432878"))
+	(wire (pts (xy 177.8 33.02) (xy 175.26 33.02)) (stroke (width 0) (type default)) (uuid "2751a6aa-db7d-48c7-b055-58b43b72f23f"))
+	(label "GND" (at 175.26 33.02 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "b2677a1c-8e18-4fa5-af46-f2c23596417a"))
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x02")
+		(at 213.36 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "aa8f3634-b53c-4452-9a7c-0f021219d72b")
+		(property "Reference" "J3" (at 218.44 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "Conn_01x02" (at 218.44 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" (at 213.36 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 213.36 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "0de9e635-9f39-4b9e-95ad-f6734f8c1ddc"))
+		(pin "2" (uuid "9b14a6b6-72dd-4a5a-a02b-568d1f73aace"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "J3") (unit 1))))
+	)
+	(wire (pts (xy 208.28 30.48) (xy 205.74 30.48)) (stroke (width 0) (type default)) (uuid "ec2cd605-b923-4119-8ad4-6c9888ea7995"))
+	(label "VCC" (at 205.74 30.48 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "5a623eea-3d77-4e28-9964-2f265f373279"))
+	(wire (pts (xy 208.28 33.02) (xy 205.74 33.02)) (stroke (width 0) (type default)) (uuid "6d31fdb3-b8fd-47e6-ae77-a55eab212b24"))
+	(label "GND" (at 205.74 33.02 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "4a2f5640-ba7d-47c4-ab49-6526f7b6c3fd"))
+	(symbol
+		(lib_id "Jumper:Jumper_2_Open")
+		(at 243.84 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "c552d5c7-576c-441d-abfe-60c8582814d8")
+		(property "Reference" "JP1" (at 248.92 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "Jumper_2_Open" (at 248.92 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" (at 243.84 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 243.84 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "55e8040a-b5ee-44ab-a480-bcd5ba97be68"))
+		(pin "2" (uuid "f4649879-b52b-46f2-b2f7-679ef090caa0"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "JP1") (unit 1))))
+	)
+	(wire (pts (xy 238.76 30.48) (xy 236.22 30.48)) (stroke (width 0) (type default)) (uuid "e41d619b-9130-474c-aac0-3d0b92e091df"))
+	(label "VCC" (at 236.22 30.48 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "ee2f4eec-d65d-42c3-a725-1a8fed4c6b64"))
+	(wire (pts (xy 248.92 30.48) (xy 251.46 30.48)) (stroke (width 0) (type default)) (uuid "6109040c-1308-4401-a6a7-7af1c27ae5e4"))
+	(label "UPPER_JUMPED" (at 251.46 30.48 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "82b41523-6188-4a8c-8bd7-c3cbc0f8cc8c"))
+	(symbol
+		(lib_id "Jumper:Jumper_2_Open")
+		(at 274.32 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "36fae71f-5291-4363-9aea-8df8b020bea2")
+		(property "Reference" "JP2" (at 279.4 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "Jumper_2_Open" (at 279.4 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" (at 274.32 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 274.32 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "faf8dd43-ab60-44c6-880c-225f2a906c29"))
+		(pin "2" (uuid "c5d54b25-3df1-4d8d-a3f6-543cd047060f"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "JP2") (unit 1))))
+	)
+	(wire (pts (xy 269.24 30.48) (xy 266.7 30.48)) (stroke (width 0) (type default)) (uuid "829665be-61aa-47fd-8e52-e958c6b4766c"))
+	(label "COLLECTOR" (at 266.7 30.48 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "d205e7be-17e4-4035-a6e9-baa71535cb8b"))
+	(wire (pts (xy 279.4 30.48) (xy 281.94 30.48)) (stroke (width 0) (type default)) (uuid "53b9ab7e-364b-4455-b814-9d916ef6de39"))
+	(label "FEEDBACK_JUMPED" (at 281.94 30.48 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "5453cf3b-8724-4818-87ea-a4f9eb4b5fb2"))
+	(symbol
+		(lib_id "Jumper:Jumper_2_Open")
+		(at 304.8 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "25d7de38-f1a9-46ff-93ec-a2feba1fe33b")
+		(property "Reference" "JP3" (at 309.88 29.21 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "Jumper_2_Open" (at 309.88 31.75 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" (at 304.8 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 304.8 30.48 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "5c3eadae-fdf1-4218-ab98-ac8844640ff4"))
+		(pin "2" (uuid "d34c21b3-3087-4587-8ade-879cccd03a2b"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "JP3") (unit 1))))
+	)
+	(wire (pts (xy 299.72 30.48) (xy 297.18 30.48)) (stroke (width 0) (type default)) (uuid "c0a2fffd-c9f9-4d59-aaa2-3c03cbcf7f89"))
+	(label "BASE" (at 297.18 30.48 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "8c7d9c3d-6531-4ddb-a512-19fa83d5e912"))
+	(wire (pts (xy 309.88 30.48) (xy 312.42 30.48)) (stroke (width 0) (type default)) (uuid "9aae515f-0784-4413-96f8-dc34e77945ff"))
+	(label "LOWER_A_JUMPED" (at 312.42 30.48 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "d0c12080-249a-4d60-8590-837a971e819d"))
+	(symbol
+		(lib_id "Jumper:Jumper_2_Open")
+		(at 30.48 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "524bd743-b5e2-45d6-bf11-a7fdbc594927")
+		(property "Reference" "JP4" (at 35.56 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "Jumper_2_Open" (at 35.56 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" (at 30.48 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 30.48 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "bb6fb45d-8b06-4219-ba75-c78809ffcc7f"))
+		(pin "2" (uuid "cc2cbaf8-7d06-468e-b672-7de75c34603d"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "JP4") (unit 1))))
+	)
+	(wire (pts (xy 25.4 60.96) (xy 22.86 60.96)) (stroke (width 0) (type default)) (uuid "a0b35097-8229-4759-957b-1e752ed9128e"))
+	(label "BASE" (at 22.86 60.96 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "c31027c9-97d5-4f28-b1b1-064e9a6f275a"))
+	(wire (pts (xy 35.56 60.96) (xy 38.1 60.96)) (stroke (width 0) (type default)) (uuid "b7df41a4-4326-431a-9a8c-bda5d7b47c3e"))
+	(label "LOWER_B_JUMPED" (at 38.1 60.96 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "f0ca6812-aa59-4b4e-8e19-e2ff49954689"))
+	(symbol
+		(lib_id "Jumper:Jumper_2_Open")
+		(at 60.96 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "f2fc5e26-6c24-48e6-8684-937fb5619cba")
+		(property "Reference" "JP5" (at 66.04 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "Jumper_2_Open" (at 66.04 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" (at 60.96 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 60.96 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "c285a930-ce20-4ea5-9715-b24ade9bb24f"))
+		(pin "2" (uuid "628b1c35-92d1-49dc-91a6-9d11564cb806"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "JP5") (unit 1))))
+	)
+	(wire (pts (xy 55.88 60.96) (xy 53.34 60.96)) (stroke (width 0) (type default)) (uuid "d4ba2f0a-dead-4679-944a-a77f680225da"))
+	(label "EMITTER" (at 53.34 60.96 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "cfb89c1c-780e-4e7e-a142-70ba789c5d57"))
+	(wire (pts (xy 66.04 60.96) (xy 68.58 60.96)) (stroke (width 0) (type default)) (uuid "1821ad9d-842e-4c76-8336-646e1de9ad26"))
+	(label "BYPASS_JUMPED" (at 68.58 60.96 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "71cec208-cfbd-4c07-bfbc-c91f2917d5f8"))
+	(symbol
+		(lib_id "Transistor_BJT:2N3904")
+		(at 91.44 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "5d0ed99a-2fe5-476d-a83e-4b90f72c06d7")
+		(property "Reference" "Q1" (at 96.52 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "2N3904" (at 96.52 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline" (at 91.44 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 91.44 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "d9d1b954-4dea-4af9-8907-55694363e816"))
+		(pin "2" (uuid "4edc81cf-49ae-4e50-97dc-011ace877580"))
+		(pin "3" (uuid "48f74bd8-20b9-4474-931c-932a8bc2b43e"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "Q1") (unit 1))))
+	)
+	(wire (pts (xy 93.98 66.04) (xy 93.98 68.58)) (stroke (width 0) (type default)) (uuid "d6c8dd22-f737-46e3-a502-d77ef25f7469"))
+	(label "EMITTER" (at 93.98 68.58 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "6c5e2c32-f7de-4d2d-9d68-79b45a48bc9b"))
+	(wire (pts (xy 86.36 60.96) (xy 83.82 60.96)) (stroke (width 0) (type default)) (uuid "8cec056b-bea1-43bf-8530-66587d6cddbf"))
+	(label "BASE" (at 83.82 60.96 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "e5ee7498-7837-4fbd-9987-6c593d536474"))
+	(wire (pts (xy 93.98 55.88) (xy 93.98 53.34)) (stroke (width 0) (type default)) (uuid "5ed18827-d970-465b-8acf-dfddf661b34e"))
+	(label "COLLECTOR" (at 93.98 53.34 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "2b072d55-e38e-4962-b214-44cd1d55042b"))
+	(symbol
+		(lib_id "Device:R")
+		(at 121.92 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d37f4f3a-354e-44ab-a67b-6e9d62e66d19")
+		(property "Reference" "R1" (at 127 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "47K" (at 127 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" (at 121.92 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 121.92 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "0f0095ee-776d-4572-b393-4e2a8e0edbdc"))
+		(pin "2" (uuid "51d6b028-0d34-444c-a6d6-1d272eb11c3f"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "R1") (unit 1))))
+	)
+	(wire (pts (xy 121.92 57.15) (xy 121.92 54.61)) (stroke (width 0) (type default)) (uuid "7b1fb1db-b6ce-496c-ae5d-e69bc24c0e10"))
+	(label "UPPER_JUMPED" (at 121.92 54.61 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "45256dbc-7bd1-4286-876b-9dbc9ab5ae8f"))
+	(wire (pts (xy 121.92 64.77) (xy 121.92 67.31)) (stroke (width 0) (type default)) (uuid "35cbe823-9884-4f2d-a1e3-0712e007438d"))
+	(label "UPPER_FLOOR" (at 121.92 67.31 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "d8e13da7-af26-459e-b9ab-dc8cf0335d66"))
+	(symbol
+		(lib_id "Device:R")
+		(at 152.4 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "43cf2a53-cd5d-4718-870e-64e2e060f51d")
+		(property "Reference" "R2" (at 157.48 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "470K" (at 157.48 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" (at 152.4 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 152.4 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "77b702d6-cb66-46dd-b23c-8d22acd73eb7"))
+		(pin "2" (uuid "d2d255b0-2492-4582-979b-a943f0b15525"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "R2") (unit 1))))
+	)
+	(wire (pts (xy 152.4 57.15) (xy 152.4 54.61)) (stroke (width 0) (type default)) (uuid "d082ce7c-bd1e-4483-863c-564f9aecd412"))
+	(label "FEEDBACK_JUMPED" (at 152.4 54.61 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "9f9a00d0-73ab-4e91-8066-0843878f2a81"))
+	(wire (pts (xy 152.4 64.77) (xy 152.4 67.31)) (stroke (width 0) (type default)) (uuid "661bf7c1-e61e-4c14-8307-ac4e67c03810"))
+	(label "FEEDBACK_FLOOR" (at 152.4 67.31 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "4d89b09e-29be-41c3-874a-65b842787a25"))
+	(symbol
+		(lib_id "Device:R")
+		(at 182.88 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1eece40a-37b9-42d5-8e27-a3fb3a5e6f3f")
+		(property "Reference" "R3" (at 187.96 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "4.7K" (at 187.96 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" (at 182.88 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 182.88 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "63f00645-067c-40f6-8042-b84347f82070"))
+		(pin "2" (uuid "72900e71-827a-4711-ab42-f4d97ae5f78b"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "R3") (unit 1))))
+	)
+	(wire (pts (xy 182.88 57.15) (xy 182.88 54.61)) (stroke (width 0) (type default)) (uuid "a91a4659-aa76-46e6-acc8-05e1c881891b"))
+	(label "LOWER_A_JUMPED" (at 182.88 54.61 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "30d41a87-492f-4319-b9e0-87947b67ebfc"))
+	(wire (pts (xy 182.88 64.77) (xy 182.88 67.31)) (stroke (width 0) (type default)) (uuid "1c1d2f83-7748-40dd-ad7b-b312117d1945"))
+	(label "LOWER_A_FLOOR" (at 182.88 67.31 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "31a042cd-03e3-4c27-93cd-dde6b468e96e"))
+	(symbol
+		(lib_id "Device:R")
+		(at 213.36 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "8e58da90-e19c-4fe4-b4a8-0eb643d70a32")
+		(property "Reference" "R4" (at 218.44 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "47K" (at 218.44 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" (at 213.36 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 213.36 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "ac10ee16-22e2-414d-84fc-e8a75dfd7b26"))
+		(pin "2" (uuid "093b344e-ebab-4cf7-94ca-53daa0264a2c"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "R4") (unit 1))))
+	)
+	(wire (pts (xy 213.36 57.15) (xy 213.36 54.61)) (stroke (width 0) (type default)) (uuid "86822687-eb31-43e8-ab85-e1f8cd14f6bd"))
+	(label "LOWER_B_JUMPED" (at 213.36 54.61 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "ff211129-f8f9-4e1b-9723-360127a999b3"))
+	(wire (pts (xy 213.36 64.77) (xy 213.36 67.31)) (stroke (width 0) (type default)) (uuid "8806bca6-45fc-486f-9a45-5fead0558322"))
+	(label "LOWER_B_FLOOR" (at 213.36 67.31 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "02eadb50-7de4-407e-8093-9bf2de15390f"))
+	(symbol
+		(lib_id "Device:R")
+		(at 243.84 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "daa0590d-c09b-464e-8989-d2ae203e39a1")
+		(property "Reference" "R5" (at 248.92 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "1K" (at 248.92 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" (at 243.84 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 243.84 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "04092594-9e20-4e3b-be69-6368e83bdab6"))
+		(pin "2" (uuid "48c9a88d-0fbd-499d-893c-f7b90760cade"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "R5") (unit 1))))
+	)
+	(wire (pts (xy 243.84 57.15) (xy 243.84 54.61)) (stroke (width 0) (type default)) (uuid "2cca3265-dff1-4ba1-b273-b8dd6b28dccd"))
+	(label "VCC" (at 243.84 54.61 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "6474e587-866c-477d-93d4-0fac2ed073a6"))
+	(wire (pts (xy 243.84 64.77) (xy 243.84 67.31)) (stroke (width 0) (type default)) (uuid "619e67df-4d03-4cc4-a1cb-6f7a8ce77175"))
+	(label "COLLECTOR_LOAD_FLOOR" (at 243.84 67.31 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "4d254b88-4781-43a3-bf2c-0ae89e2fba38"))
+	(symbol
+		(lib_id "Device:R")
+		(at 274.32 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d0bee0a8-dcc6-4576-b8fd-58deb48b017d")
+		(property "Reference" "R6" (at 279.4 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "1.5K" (at 279.4 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" (at 274.32 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 274.32 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "40f92bfe-e85f-4494-9aa0-6e9781c07546"))
+		(pin "2" (uuid "5a7093ca-e067-44b1-b7ed-bfc186b9a609"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "R6") (unit 1))))
+	)
+	(wire (pts (xy 274.32 57.15) (xy 274.32 54.61)) (stroke (width 0) (type default)) (uuid "c6195192-c923-405b-8087-6880d2187ca0"))
+	(label "EMITTER" (at 274.32 54.61 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "70f60d9c-baeb-4ec1-a61b-1887bb91365f"))
+	(wire (pts (xy 274.32 64.77) (xy 274.32 67.31)) (stroke (width 0) (type default)) (uuid "bb1005c9-7b59-4189-b782-989e10a23fc2"))
+	(label "GND" (at 274.32 67.31 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "96c9134d-0076-4b26-b02b-245bd782c7d3"))
+	(symbol
+		(lib_id "Device:R_Potentiometer_Trim")
+		(at 304.8 60.96 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "797cfbef-d302-4f4b-93fe-aa8195ba8235")
+		(property "Reference" "RV1" (at 309.88 59.69 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "50K" (at 309.88 62.23 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal" (at 304.8 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 304.8 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "95dae577-bd48-4b3f-82d8-449c01115098"))
+		(pin "2" (uuid "3e4c32e4-849d-4474-a13d-e6df75946291"))
+		(pin "3" (uuid "fe65f8c9-b218-44ab-adce-9b14388d00bb"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "RV1") (unit 1))))
+	)
+	(wire (pts (xy 304.8 57.15) (xy 304.8 54.61)) (stroke (width 0) (type default)) (uuid "051661d5-3965-4bab-b6ca-4d441f2f4037"))
+	(label "UPPER_FLOOR" (at 304.8 54.61 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "84ffd654-0217-4ef1-8453-37c1f470d532"))
+	(wire (pts (xy 308.61 60.96) (xy 311.15 60.96)) (stroke (width 0) (type default)) (uuid "41b53434-dc26-426e-9f8b-83902c48a9a3"))
+	(label "BASE" (at 311.15 60.96 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "96c698ec-244c-497d-b2ee-197e04d553f3"))
+	(wire (pts (xy 304.8 64.77) (xy 304.8 67.31)) (stroke (width 0) (type default)) (uuid "14029e22-e876-4669-bb62-017b021c9782"))
+	(label "BASE" (at 304.8 67.31 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "0d11d1dd-9e08-4edc-84ac-c4eea97612dc"))
+	(symbol
+		(lib_id "Device:R_Potentiometer_Trim")
+		(at 30.48 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "e0abcdcf-fa9d-439c-8088-0d8e86ba6aaa")
+		(property "Reference" "RV2" (at 35.56 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "1M" (at 35.56 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal" (at 30.48 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 30.48 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "a9532e6b-d303-422a-8728-720f5685c3a2"))
+		(pin "2" (uuid "c34ec6c8-cfe9-47dd-919a-4d4ec16598d8"))
+		(pin "3" (uuid "b7abe456-a46a-4344-8e58-dc13522aad2e"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "RV2") (unit 1))))
+	)
+	(wire (pts (xy 30.48 87.63) (xy 30.48 85.09)) (stroke (width 0) (type default)) (uuid "3d8d53d8-0a8a-48ff-97ce-0217c864cfc5"))
+	(label "FEEDBACK_FLOOR" (at 30.48 85.09 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "f2dc53e5-2249-4422-a816-d6da4564f266"))
+	(wire (pts (xy 34.29 91.44) (xy 36.83 91.44)) (stroke (width 0) (type default)) (uuid "58fc8f0c-8735-46fc-847f-cd918025d5a8"))
+	(label "BASE" (at 36.83 91.44 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "c14c95a4-830a-4a38-b80e-eb7bca0d5edd"))
+	(wire (pts (xy 30.48 95.25) (xy 30.48 97.79)) (stroke (width 0) (type default)) (uuid "13be1901-d364-4312-88c5-ccdc87377560"))
+	(label "BASE" (at 30.48 97.79 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "37b1dded-a386-4f2e-b441-eab1f86bad7c"))
+	(symbol
+		(lib_id "Device:R_Potentiometer_Trim")
+		(at 60.96 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ec919c96-b840-48da-9bba-58ca539e8240")
+		(property "Reference" "RV3" (at 66.04 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "10K" (at 66.04 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal" (at 60.96 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 60.96 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "21744ce5-d5f5-44bf-bac2-d06471917922"))
+		(pin "2" (uuid "da4c063a-2b8e-456d-a12b-eb14fae98fd2"))
+		(pin "3" (uuid "03a7313c-95a2-448a-8587-8b74ee01fa4f"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "RV3") (unit 1))))
+	)
+	(wire (pts (xy 60.96 87.63) (xy 60.96 85.09)) (stroke (width 0) (type default)) (uuid "737e2868-3957-46a9-a00b-5913e05fdfe1"))
+	(label "LOWER_A_FLOOR" (at 60.96 85.09 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "d30c29cf-fc5c-4d93-b970-3eeedee6d2d8"))
+	(wire (pts (xy 64.77 91.44) (xy 67.31 91.44)) (stroke (width 0) (type default)) (uuid "6fff7015-7279-42d3-a9ea-96817a7edd6d"))
+	(label "GND" (at 67.31 91.44 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "dc67e307-dc3b-4004-9f59-5b73b6d78981"))
+	(wire (pts (xy 60.96 95.25) (xy 60.96 97.79)) (stroke (width 0) (type default)) (uuid "2511c418-45cd-47c4-b9ac-375ff276d9e8"))
+	(label "GND" (at 60.96 97.79 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "1f001f57-8695-481d-aa41-e174267c885d"))
+	(symbol
+		(lib_id "Device:R_Potentiometer_Trim")
+		(at 91.44 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "e73a05b9-bf94-4964-9c42-195d43803abb")
+		(property "Reference" "RV4" (at 96.52 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "200K" (at 96.52 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal" (at 91.44 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 91.44 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "76f30b98-b0de-4abd-886d-66773deb871a"))
+		(pin "2" (uuid "c922561b-9fef-44ed-94fe-2a4d7e5424f3"))
+		(pin "3" (uuid "c998cb90-47af-410a-a157-497e60a7ee2c"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "RV4") (unit 1))))
+	)
+	(wire (pts (xy 91.44 87.63) (xy 91.44 85.09)) (stroke (width 0) (type default)) (uuid "50456e05-0efb-4fde-85a7-5f472efb337d"))
+	(label "LOWER_B_FLOOR" (at 91.44 85.09 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "b3992594-3843-4dc0-aa58-43eb84180aa4"))
+	(wire (pts (xy 95.25 91.44) (xy 97.79 91.44)) (stroke (width 0) (type default)) (uuid "fc6d94cc-02c4-4727-a574-02a74d5ad228"))
+	(label "GND" (at 97.79 91.44 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "f97d4b4c-d5fd-4fec-bd6a-301c0fdc60c5"))
+	(wire (pts (xy 91.44 95.25) (xy 91.44 97.79)) (stroke (width 0) (type default)) (uuid "01a22a7c-3eb8-4ddf-84cd-059d1cb48c1d"))
+	(label "GND" (at 91.44 97.79 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "61a9c338-4e4a-4a31-a409-bbf1af00a94f"))
+	(symbol
+		(lib_id "Device:R_Potentiometer_Trim")
+		(at 121.92 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "73590d5a-bd3b-4248-b86d-4ade78713534")
+		(property "Reference" "RV5" (at 127 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "2K" (at 127 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal" (at 121.92 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 121.92 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "093ef2a5-40ff-4cc9-8d87-921405cef188"))
+		(pin "2" (uuid "fdc8e59e-8b94-427a-8d4f-9176dacf9497"))
+		(pin "3" (uuid "c98c29e0-4fe9-4227-8927-04e1658240b9"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "RV5") (unit 1))))
+	)
+	(wire (pts (xy 121.92 87.63) (xy 121.92 85.09)) (stroke (width 0) (type default)) (uuid "6ee6da04-412d-4775-aec2-45c5126d2270"))
+	(label "COLLECTOR_LOAD_FLOOR" (at 121.92 85.09 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "8b75c963-9066-4800-a6bb-f785736eb575"))
+	(wire (pts (xy 125.73 91.44) (xy 128.27 91.44)) (stroke (width 0) (type default)) (uuid "15889444-f837-47d7-b270-4bc6df740649"))
+	(label "COLLECTOR" (at 128.27 91.44 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "9cba1b67-bb54-4ecc-bad4-4066e3ca95d4"))
+	(wire (pts (xy 121.92 95.25) (xy 121.92 97.79)) (stroke (width 0) (type default)) (uuid "6642cad1-9e2d-49f3-be05-67541d49f923"))
+	(label "COLLECTOR" (at 121.92 97.79 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "39f3d5d1-c6a5-459c-ac09-82128438ad27"))
+	(symbol
+		(lib_id "Device:R_Potentiometer_Trim")
+		(at 152.4 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "c2adf3b7-1a39-4a18-9a1b-bddc3ffff0b5")
+		(property "Reference" "RV6" (at 157.48 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "1K" (at 157.48 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal" (at 152.4 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 152.4 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "1111190f-52a7-4ce0-afea-3fb52e0f5d2b"))
+		(pin "2" (uuid "119f1e72-ab40-4605-bb0a-39db7a9e9f3a"))
+		(pin "3" (uuid "a6f6d5a4-1239-4207-bb86-11800e09a472"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "RV6") (unit 1))))
+	)
+	(wire (pts (xy 152.4 87.63) (xy 152.4 85.09)) (stroke (width 0) (type default)) (uuid "14acf79d-978e-4325-91e4-536c2fe5e91a"))
+	(label "BYPASS_CAP" (at 152.4 85.09 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "e64c38f0-5c48-49e2-9e49-0d4f4d370fa3"))
+	(wire (pts (xy 156.21 91.44) (xy 158.75 91.44)) (stroke (width 0) (type default)) (uuid "259d9623-ebc6-45e3-9f36-2c84c537b30a"))
+	(label "GND" (at 158.75 91.44 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "0804b685-815c-4199-95e2-4864dac12e7c"))
+	(wire (pts (xy 152.4 95.25) (xy 152.4 97.79)) (stroke (width 0) (type default)) (uuid "4b3c7ce1-c3af-4349-abb2-2e7f1dbc9fb2"))
+	(label "GND" (at 152.4 97.79 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "975d6c86-f3c4-4eb6-9bf8-95c2701d7e2a"))
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 182.88 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1d921426-1bfd-48f6-8019-2de44a579439")
+		(property "Reference" "TP1" (at 187.96 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "TestPoint" (at 187.96 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical" (at 182.88 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 182.88 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "84398af6-a31f-428a-a945-d9a5c2ae54fe"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "TP1") (unit 1))))
+	)
+	(wire (pts (xy 182.88 91.44) (xy 182.88 93.98)) (stroke (width 0) (type default)) (uuid "a5d3ac89-f101-4408-91be-c252c2fe714d"))
+	(label "VCC" (at 182.88 93.98 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "234da1c7-b233-47cb-807f-859c7f50771c"))
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 213.36 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2bc14a3e-57be-4c6a-81f1-544283f0331d")
+		(property "Reference" "TP2" (at 218.44 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "TestPoint" (at 218.44 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical" (at 213.36 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 213.36 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "29c0d925-21c8-4691-8a74-7f737e1d0b7d"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "TP2") (unit 1))))
+	)
+	(wire (pts (xy 213.36 91.44) (xy 213.36 93.98)) (stroke (width 0) (type default)) (uuid "b91bf24f-872f-47a4-ac5e-20c4d6920f2d"))
+	(label "BASE" (at 213.36 93.98 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "fb35f527-2e0d-4007-aa46-bf284f8ccf52"))
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 243.84 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "02401ffd-780a-48fb-84bf-18668690f1c5")
+		(property "Reference" "TP3" (at 248.92 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "TestPoint" (at 248.92 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical" (at 243.84 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 243.84 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "22a8d370-4411-429d-9bb5-a596dd6ba397"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "TP3") (unit 1))))
+	)
+	(wire (pts (xy 243.84 91.44) (xy 243.84 93.98)) (stroke (width 0) (type default)) (uuid "cef83feb-0a2b-49f5-896e-a2f0814b89ec"))
+	(label "EMITTER" (at 243.84 93.98 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "de21ebfe-fcf1-4f81-b117-89af62cceca4"))
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 274.32 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "fd0c09a4-38f9-4c48-85e0-63e75116219c")
+		(property "Reference" "TP4" (at 279.4 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "TestPoint" (at 279.4 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical" (at 274.32 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 274.32 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "89061a6f-55b6-4d48-9a6f-755f1dff7829"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "TP4") (unit 1))))
+	)
+	(wire (pts (xy 274.32 91.44) (xy 274.32 93.98)) (stroke (width 0) (type default)) (uuid "2b038797-290d-4c73-b545-0026d54214af"))
+	(label "COLLECTOR" (at 274.32 93.98 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "bbab3a51-6d62-4a9f-b8dc-1a9be1b3d9fc"))
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 304.8 91.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d2a1a9c4-9bc2-419f-b57f-cd42f254708e")
+		(property "Reference" "TP5" (at 309.88 90.17 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "TestPoint" (at 309.88 92.71 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical" (at 304.8 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 304.8 91.44 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "9ee60510-dd64-4d05-85cd-0b3f273cc816"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "TP5") (unit 1))))
+	)
+	(wire (pts (xy 304.8 91.44) (xy 304.8 93.98)) (stroke (width 0) (type default)) (uuid "d4dc7642-f8a2-4539-a5a0-38f2175788ed"))
+	(label "GND" (at 304.8 93.98 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "a44de941-a68c-4124-8c6a-b9f6c36b0d81"))
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 30.48 121.92 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "322c1c52-033c-45cf-9267-75304790eb91")
+		(property "Reference" "TP6" (at 35.56 120.65 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "TestPoint" (at 35.56 123.19 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical" (at 30.48 121.92 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 30.48 121.92 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "4367252e-e3d5-44b1-bb8e-ab8d6920dad0"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "TP6") (unit 1))))
+	)
+	(wire (pts (xy 30.48 121.92) (xy 30.48 124.46)) (stroke (width 0) (type default)) (uuid "d162d2d9-3af6-4a20-b7f8-6d1fb45590ed"))
+	(label "IN_EXT" (at 30.48 124.46 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "f54ae7ab-9e49-4a6a-ada1-c6bb2bb679be"))
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 60.96 121.92 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "fb3bf9ce-83d6-4388-b12e-b197172d3834")
+		(property "Reference" "TP7" (at 66.04 120.65 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "TestPoint" (at 66.04 123.19 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical" (at 60.96 121.92 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "" (at 60.96 121.92 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(pin "1" (uuid "614984f8-77a0-4d6f-b7b2-d60640846a77"))
+		(instances (project "lab-board" (path "/73aa457b-4131-4b23-a143-b4dc440370e7" (reference "TP7") (unit 1))))
+	)
+	(wire (pts (xy 60.96 121.92) (xy 60.96 124.46)) (stroke (width 0) (type default)) (uuid "490de988-d643-4e87-be64-98ef99185227"))
+	(label "OUT" (at 60.96 124.46 0) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "4743d5f6-82d6-4bb5-8100-427b1c7cc9c1"))
+	(text "BENCH SETTINGS (circuits/transistor-preamp/lab-settings.ts)\nJumpers: F = fitted, - = removed. Trim values are each leg's total resistance.\nnominal: divider bias, the brief's Build 0\n  JP1 F  JP2 -  JP3 F  JP4 -  JP5 F\n  RV1 80k  RV3 10k  RV5 1.8k  RV6 0\ndividerWithFeedback: divider plus collector-to-base feedback, Build 2A (DC-coupled)\n  JP1 F  JP2 F  JP3 F  JP4 -  JP5 F\n  RV1 80k  RV2 1M  RV3 10k  RV5 1.8k  RV6 0\ncollectorFeedback: collector-feedback bias with a base-to-ground leg, Build 2B\n  JP1 -  JP2 F  JP3 -  JP4 F  JP5 F\n  RV2 470k  RV4 150k  RV5 1.8k  RV6 0\ncollectorFeedbackOnly: collector-feedback bias alone, Build 2B\n  JP1 -  JP2 F  JP3 -  JP4 -  JP5 F\n  RV2 1.3M  RV5 1.8k  RV6 0" (exclude_from_sim no) (at 30.48 152.4 0) (effects (font (size 1.27 1.27)) (justify left top)) (uuid "9c33310e-ed21-46ed-96ea-90fa06cc434b"))
+	(sheet_instances (path "/" (page "1")))
+	(embedded_fonts no)
+)
