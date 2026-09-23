@@ -223,10 +223,16 @@ rewrite `valueFor`'s tail:
  * This replaces a hardcoded list of kinds that had no formatter. A list has to
  * be edited whenever a kind gains a quantity, and the failure mode of
  * forgetting is silent: the part's IDENTITY goes into the field meant to hold
- * its VALUE - an inductor's part number where its inductance belongs. Asking
- * the parameters directly cannot be forgotten.
+ * its VALUE - an inductor's part number where its inductance belongs.
  *
- * A switch is the case that proves the rule is the right one: `positions` and
+ * ITS REACH IS TOP-LEVEL NUMBERS, and no further. A quantity represented
+ * structurally - a tuple, or an object like `taper` - is invisible to it and
+ * would fall through to the mpn branch exactly as a forgotten list entry did.
+ * That covers every kind in `lib/model/parameters.ts` today, which is why it is
+ * worth having; it is not a general guarantee, and a kind that carries a
+ * structured quantity needs a branch here rather than trusting this.
+ *
+ * A switch is the case that shows the shape is right: `positions` and
  * `contacts` are topology, not quantities, so a switch has no value to derive
  * and its identity is legitimately what the value field holds.
  */
@@ -339,26 +345,46 @@ Add to `tests/kicad/import-string.test.ts`:
 import { test, expect } from "bun:test"
 import { importStringFor, declaredPinCount } from "../../lib/kicad/import-string.ts"
 
+// Every footprint name below is a real one, verified present in KiCad's own
+// libraries under SharedSupport/footprints. Names invented from memory are how
+// this task's first draft acquired two bugs.
+
 test("a 5.08mm terminal block derives to a 200-mil block", () => {
-  expect(importStringFor("TerminalBlock:TerminalBlock_1x03_P5.08mm")).toBe("BLOCK_200MIL3")
+  expect(importStringFor(
+    "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal",
+  )).toBe("BLOCK_200MIL3")
 })
 
 test("a 5.00mm terminal block also derives to a 200-mil block", () => {
   // 5.00mm is 0.08mm from the 5.08mm grid multiple, inside the 0.15mm tolerance,
   // so the common KiCad 5.00mm parts are usable without an override.
-  expect(importStringFor("TerminalBlock:TerminalBlock_1x02_P5.00mm")).toBe("BLOCK_200MIL2")
+  expect(importStringFor(
+    "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3_1x03_P5.00mm_Horizontal",
+  )).toBe("BLOCK_200MIL3")
+})
+
+test("a terminal block is recognized by its LIBRARY, not by its part name", () => {
+  // Altech's 46 footprints and Wuerth's 14 are named for the manufacturer's
+  // series, not "TerminalBlock..." - so a rule matching the name after the colon
+  // silently refuses 60 real parts. The library prefix is the reliable
+  // discriminator, and this is the test that holds that.
+  expect(importStringFor("TerminalBlock_Altech:Altech_AK300_1x03_P5.00mm_45-Degree"))
+    .toBe("BLOCK_200MIL3")
 })
 
 test("a 2.54mm terminal block derives to a 100-mil block", () => {
-  expect(importStringFor("TerminalBlock:TerminalBlock_1x04_P2.54mm")).toBe("BLOCK_100MIL4")
+  expect(importStringFor(
+    "TerminalBlock:TerminalBlock_Xinya_XY308-2.54-3P_1x03_P2.54mm_Horizontal",
+  )).toBe("BLOCK_100MIL3")
 })
 
 test("a terminal block at a pitch that is neither one nor two grid steps refuses", () => {
-  expect(() => importStringFor("TerminalBlock:TerminalBlock_1x02_P7.62mm")).toThrow(/3 grid steps/)
+  expect(() => importStringFor("TerminalBlock_Phoenix:Phoenix_1x02_P7.62mm"))
+    .toThrow(/3 grid steps/)
 })
 
 test("a terminal block with no readable pin count refuses", () => {
-  expect(() => importStringFor("TerminalBlock:TerminalBlock_P5.08mm")).toThrow(/pin count/)
+  expect(() => importStringFor("TerminalBlock_Phoenix:Phoenix_MKDS_P5.08mm")).toThrow(/pin count/)
 })
 
 test("block pin counts are declared, so a netlist cannot reference a pin the block lacks", () => {
@@ -413,16 +439,32 @@ export const FILM_CAPACITOR_IMPORT_STRINGS: ReadonlyMap<string, string> = new Ma
 
 - [ ] **Step 4: Add both derivations**
 
+Add the library accessor beside the existing `bareName`, which it mirrors:
+
+```ts
+/** The library a footprint names: "TerminalBlock_Altech:Altech_AK300_..." -> "TerminalBlock_Altech". */
+function libraryOf(footprint: string): string {
+  const colon = footprint.indexOf(":")
+  return colon === -1 ? "" : footprint.slice(0, colon)
+}
+```
+
 Add to `DERIVABLE_SHAPES`, after the `CP_Radial` line:
 
 ```ts
-  "  TerminalBlock_*_1x<pins>_P<mm>mm         -> BLOCK_100MIL<n> / BLOCK_200MIL<n> by pitch",
+  "  <TerminalBlock* library>:*_1x<pins>_P<mm>mm -> BLOCK_100MIL<n> / BLOCK_200MIL<n> by pitch",
 ```
 
 Add to `derive`, before the final `refuse`:
 
 ```ts
-  if (bare.startsWith("TerminalBlock")) {
+  // MATCHED ON THE LIBRARY, NOT THE PART NAME. KiCad keeps terminal blocks in
+  // fourteen libraries all prefixed "TerminalBlock", but the footprint names
+  // inside them follow the manufacturer's series: Altech's 46 are
+  // "Altech_AK300_1x03_P5.00mm_45-Degree" and Wuerth's 14 are similar. A rule
+  // reading the name after the colon refuses all 60 of those while looking
+  // perfectly correct on Phoenix and WAGO, which do prefix their names.
+  if (libraryOf(footprint).startsWith("TerminalBlock")) {
     const pins = field(bare, /_1x([0-9]+)/)
     if (pins === null) {
       refuse(footprint, "it is a TerminalBlock part with no readable _1x<pins> pin count.")
@@ -845,6 +887,20 @@ test("a physical-only component that joins two pins to one net is not transparen
   expect(() => assertElectricallyTransparent(shorting)).toThrow(/joins pins/)
 })
 
+test("projection REFUSES a physical-only component that is not transparent", () => {
+  // The invariant the whole abstraction rests on. Without this, the provenance
+  // marker alone is enough to make arbitrary circuitry vanish from every
+  // equivalence check, and assertElectricallyTransparent only holds where
+  // somebody remembered to call it.
+  const shorting: Component = {
+    ...BLOCK,
+    id: "shorting_block",
+    units: [{ name: "MAIN", pins: { "1": net("IN"), "2": net("IN") } }],
+  }
+  const board: Network = { ports: {}, components: [CAP, shorting] }
+  expect(() => projectPhysical(board)).toThrow(/joins pins/)
+})
+
 test("projecting a network with no physical-only components changes nothing", () => {
   const board: Network = { ports: {}, components: [CAP] }
   expect(projectPhysical(board).components).toEqual([CAP])
@@ -924,6 +980,16 @@ export function assertElectricallyTransparent(component: Component): void {
  * was a projected component simply stops existing.
  */
 export function projectPhysical(network: Network): Network {
+  // ENFORCED HERE, not left to callers. The soundness of this whole abstraction
+  // is "anything that can be projected away is transparent", and a marker that
+  // any component can carry is not that - it would let arbitrary circuitry
+  // disappear from every equivalence check in this repository by adding one
+  // provenance line. Asserting at the point of projection makes the invariant
+  // the projection's own precondition rather than a rule somebody has to
+  // remember to apply first.
+  for (const component of network.components) {
+    if (physicalOnly(component)) assertElectricallyTransparent(component)
+  }
   return {
     ports: network.ports,
     components: network.components.filter((component) => !physicalOnly(component)),
@@ -1160,7 +1226,7 @@ through the existing lint exemption rather than suppressed.
   - `export const PAD_ORDER: Readonly<Record<string, readonly string[]>>`
   - `export const DECLARED_OPENS: readonly string[]`
 
-  Task 7 reads the last three off the module by name; Task 10's `perfboard.json` names the board function in its `export` field.
+  Task 7 reads the last three off the module by name; Task 11's `perfboard.json` names the board function in its `export` field.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1172,7 +1238,7 @@ import { assertSameTopology } from "../../lib/model/topology.ts"
 import { assertElectricallyTransparent, physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import { boardNetwork } from "../../reference/pultec/partition.ts"
+import { partitionReference } from "../../reference/pultec/partition.ts"
 import type { ModuleOwner } from "../../reference/pultec/partition.ts"
 import type { Network } from "../../lib/model/types.ts"
 import * as lowCut from "../../circuits/pultec/low-cut.ts"
@@ -1198,13 +1264,20 @@ const BOARDS: readonly (readonly [ModuleOwner, BoardModule, () => Network])[] = 
 ]
 
 test("each board projects back to its electrical partition", () => {
+  // The target is the PARTITION MODULE, not boardNetwork(owner). boardNetwork
+  // drops everything off-board, and the off-board parts are exactly what this
+  // design keeps in the network. Ports are {} on both sides: the terminal block
+  // and the PADS pads are the board's interface now.
+  const modules = partitionReference().modules
   for (const [owner, , build] of BOARDS) {
-    expect(() => assertSameTopology(boardNetwork(owner), projectPhysical(build())))
-      .not.toThrow()
+    const target: Network = { ports: {}, components: modules[owner] ?? [] }
+    expect(() => assertSameTopology(target, projectPhysical(build())), owner).not.toThrow()
   }
 })
 
 test("every physical-only component is electrically transparent", () => {
+  // projectPhysical enforces this itself, so this is a direct statement of the
+  // same fact rather than the only thing holding it.
   for (const [, , build] of BOARDS) {
     for (const component of build().components) {
       if (physicalOnly(component)) assertElectricallyTransparent(component)
@@ -1325,8 +1398,22 @@ export const FILM_CAPACITOR = "Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm"
 export const AXIAL_RESISTOR =
   "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 
-/** A three-way 5.08mm terminal block: this board's crossing nets plus ground. */
-export const TERMINAL_BLOCK_3 = "TerminalBlock:TerminalBlock_1x03_P5.08mm"
+/**
+ * A three-way 5.08mm terminal block: this board's crossing nets plus ground.
+ *
+ * VERIFIED PRESENT in KiCad's own library before being written here - the first
+ * draft of this plan invented a plausible name that does not exist. Confirm with:
+ *
+ *   ls "/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints/\
+ * TerminalBlock_Phoenix.pretty/TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal.kicad_mod"
+ *
+ * The block is a landing, not a purchase: 5.08mm pitch means a screw terminal can
+ * be fitted over those holes, a header pressed into them, or a wire soldered
+ * straight in. Any other 1x03 part at 5.00mm or 5.08mm substitutes without
+ * changing the layout.
+ */
+export const TERMINAL_BLOCK_3 =
+  "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal"
 
 /** Symbols for the off-board parts, so their netlist value field is not empty. */
 export const ROTARY_SYMBOL = "Switch:SW_Rotary"
@@ -1376,7 +1463,7 @@ Add to `circuits/pultec/parts.ts`:
 ```ts
 import { PHYSICAL_ONLY } from "../../lib/board/physicalize.ts"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import { boardNetwork } from "../../reference/pultec/partition.ts"
+import { partitionReference } from "../../reference/pultec/partition.ts"
 import type { ModuleOwner } from "../../reference/pultec/partition.ts"
 import { net } from "../../lib/model/types.ts"
 import type { Network } from "../../lib/model/types.ts"
@@ -1403,8 +1490,15 @@ function symbolFor(component: Component): string {
  * soldered to it later.
  */
 export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly string[]): Network {
-  const electrical = boardNetwork(owner)
-  const components: Component[] = electrical.components.map((component) =>
+  // partitionReference(), NOT boardNetwork(). boardNetwork filters out everything
+  // that is not board-resident, which after Task 5 means every pot, switch and
+  // inductor - exactly the components this design keeps in the network and marks
+  // off-board so their PADS pads become the wire landings. Building from
+  // boardNetwork would leave the off-board branch below unreachable and produce
+  // boards with no landings at all.
+  const owned = partitionReference().modules[owner]
+  if (owned === undefined) throw new Error(`no such module: ${owner}`)
+  const components: Component[] = owned.map((component) =>
     OFF_BOARD.has(component.id)
       ? { ...component, part: { ...component.part, symbol: symbolFor(component) } }
       : { ...component, part: { ...component.part, footprint: footprintForKind(component) } })
@@ -1422,7 +1516,10 @@ export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly str
     provenance: { source: PHYSICAL_ONLY },
   })
 
-  return { ports: electrical.ports, components }
+  // No ports. Once a landing is a physical part, the abstract port map is
+  // redundant - the terminal block and the PADS pads ARE the board's interface,
+  // and a second description of it is a second thing that can be wrong.
+  return { ports: {}, components }
 }
 
 /** Pad orders for every off-board component on a physicalized board. */
@@ -1699,9 +1796,15 @@ git commit -m "Read OFF_BOARD_IDS and PAD_ORDER from the circuit module"
 one stage further: take all five *physicalized* boards, project the physical-only
 components away, union what remains, and assert the result is the reference.
 
-This catches errors no per-board comparison can — a crossing net landing on the right
-pin count on every board while joining the wrong two boards, a component
-physicalized onto two boards, a component lost between them.
+**What this adds, stated narrowly.** Task 6 already asserts each board equals its
+partition module, and `tests/reference/partition.test.ts` already asserts the modules
+recompose to the reference. Between them those largely imply this one, so the honest
+claim is not that reconstruction catches a whole failure class the per-board tests
+miss. What it adds is end-to-end coverage of the *composition itself*: a component
+physicalized onto two boards or lost between them, and — via `projectPhysical`'s
+enforcement — a physical-only component that is not transparent. It is the statement
+of the property in the terms the design describes it in, and it is cheap. That is
+enough reason to have it; overclaiming its reach is not.
 
 **Files:**
 - Test: `tests/circuits/pultec-reconstruction.test.ts`
@@ -1790,15 +1893,36 @@ Expected: the file does not exist before Step 1; after it, every test passes. If
 the fault is in Task 6's `CROSSING_NETS` — a board naming a net that no other board
 names produces an orphan, and `assertSameTopology` reports the difference.
 
-- [ ] **Step 3: Verify the test discriminates**
+- [ ] **Step 3: Verify that THIS test discriminates, not a neighbouring one**
 
-Temporarily change `CROSSING_NETS` in `circuits/pultec/hi-cut.ts` from
-`["hi_boost_out", "lo_boost_in", "0"]` to `["hi_boost_out", "out", "0"]` and run the
-suite again.
+A mutation caught by `pultec-boards.test.ts` proves that Task 6's per-board test
+works. It says nothing about this file. Run the reconstruction file **alone** after
+each mutation:
 
-Expected: `tests/circuits/pultec-boards.test.ts` fails on the terminal-block
-assertion. Revert the change before committing. A mutation that no test catches means
-the tests are not yet doing their job — say so rather than proceeding.
+```bash
+bun test tests/circuits/pultec-reconstruction.test.ts
+```
+
+Mutation A — drop a component from a board. In `circuits/pultec/parts.ts`, make
+`physicalizedBoard` skip one owned component:
+
+```ts
+  const owned = (partitionReference().modules[owner] ?? []).slice(1)
+```
+
+Expected: "partitioning, physicalization and interconnection do not change the
+circuit" FAILS, and so does "every reference component is on exactly one board".
+
+Mutation B — make a physical-only component non-transparent. Change one board's
+`CROSSING_NETS` to repeat a net, e.g. `["hi_boost_out", "hi_boost_out", "0"]`.
+
+Expected: the principal test FAILS with `/joins pins/`, thrown by `projectPhysical`
+itself. This is the mutation that proves Task 4's enforcement is load-bearing: before
+that change, the terminal block would simply have been filtered away and the shorted
+net would have vanished silently.
+
+Revert both mutations before committing. A mutation no test catches means the tests
+are not doing their job — say so rather than proceeding.
 
 - [ ] **Step 4: Commit**
 
@@ -1898,6 +2022,25 @@ test("a zero exit that produced no file is an error, not a success", async () =>
     runImport: () => ({ status: 0, output: "ok" }),
   })).rejects.toThrow(/produced no output file/)
 })
+
+test("a stale temporary file from an interrupted run is never installed", async () => {
+  // The crash-recovery case. An earlier run died after the binary wrote its
+  // output and before the rename. If the temporary name were fixed, this run's
+  // "did the binary produce a file?" test would find that corpse, take it for
+  // its own output, and install a layout built from a netlist this run never
+  // exported - reporting success the whole way.
+  const dir = tempDir()
+  const declaration = declarationIn(dir)
+  fs.writeFileSync(`${declaration.vrtPath}.creating`, "STALE FROM A CRASHED RUN")
+  for (const name of fs.readdirSync(dir)) {
+    if (name.endsWith(".creating")) fs.writeFileSync(path.join(dir, name), "STALE")
+  }
+  await expect(createBoard(declaration, {
+    exportNetlist: async () => "(export)",
+    runImport: () => ({ status: 0, output: "ok" }),
+  })).rejects.toThrow(/produced no output file/)
+  expect(fs.existsSync(declaration.vrtPath)).toBe(false)
+})
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -1922,6 +2065,7 @@ Create `tools/perfboard/create.ts`:
  * existing layout changes.
  */
 import { spawnSync } from "node:child_process"
+import { randomUUID } from "node:crypto"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
@@ -1970,9 +2114,18 @@ export async function createBoard(
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-create-"))
   const netPath = path.join(scratch, "circuit.net")
   fs.writeFileSync(netPath, text)
-  // Produced beside the declared layout, so the rename that puts it in place is
-  // within one directory and therefore atomic.
-  const producedPath = `${declaration.vrtPath}.creating`
+
+  // UNIQUELY NAMED, because `replaceAtomically` decides the binary succeeded by
+  // testing that the produced file exists. A fixed name such as
+  // "<layout>.creating" survives an interrupted run, and the next run would then
+  // find that stale file, take it for this run's output, and install a layout
+  // built from a netlist nobody exported - reporting success. The name is
+  // produced beside the declared layout so the rename that puts it in place
+  // stays within one directory, and therefore atomic.
+  const producedPath = `${declaration.vrtPath}.creating-${randomUUID()}`
+  if (fs.existsSync(producedPath)) {
+    throw new Error(`${producedPath} already exists, which should be impossible for a fresh name.`)
+  }
 
   const runImport = deps.runImport
     ?? ((net: string, out: string) => runVerorouteImport(net, out, deps.repoRoot ?? moduleRepoRoot()))
@@ -2053,53 +2206,112 @@ git commit -m "A create verb, so a declared board can come into existence"
 
 ---
 
-## Task 10: Choose the capacitor family and create the five boards
+## Task 10: Research and select the capacitor family
 
 Everything above is complete and tested, and no board exists yet: the film-capacitor
 whitelist is empty, so every board refuses at export. That refusal is the design
 working — it says out loud that nobody has chosen a capacitor.
 
-This task chooses one and creates the boards.
+This is a research task, and it is verifiable rather than speculative because
+**KiCad's footprint libraries are on disk**, at
+`/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints` (KiCad is already a
+stated prerequisite of this repository). `Capacitor_THT.pretty` holds 384 footprints,
+the `C_Rect_*` names carry the manufacturer series they were drawn for — `MKS4`,
+`FKS3_FKP3`, `MKT` — and each `.kicad_mod` file holds the real pad geometry. So every
+dimension can be read from a file rather than remembered, and every footprint name
+can be confirmed to exist before it is written down.
 
-> **This task needs a decision an agent cannot make.** Steps 1 and 2 require
-> choosing a capacitor series you can buy and reading body dimensions off real
-> parts. An implementer without that input should stop at Step 1 and say so rather
-> than inventing footprint names — an invented body width produces a layout built
-> around a part that does not exist, and every test in this plan would pass.
+The selection criteria come from the project: `reference/pultec/values.md` records
+that the curves are broad and ±20% costs under 2 dB, so **tolerance is not a
+selection criterion**. Per-unit cost and availability are.
 
 **Files:**
+- Create: `docs/pultec/capacitor-selection.md` (the findings, with citations)
 - Modify: `lib/kicad/import-string.ts` (populate `FILM_CAPACITOR_IMPORT_STRINGS`)
 - Modify: `circuits/pultec/parts.ts` (per-value footprints if the family needs them)
-- Create: `boards/pultec-<module>/perfboard.json` and `Makefile` × 5
 - Test: `tests/circuits/pultec-boards.test.ts` (turn the `test.todo` back on)
 
 **Interfaces:**
-- Consumes: everything from Tasks 1–9.
-- Produces: five directories under `boards/` that `make check` can act on.
+- Consumes: `FILM_CAPACITOR_IMPORT_STRINGS` and `FILM_CAPACITOR` (Tasks 2 and 6).
+- Produces: a populated whitelist, so every board exports. Task 11 needs that.
 
-- [ ] **Step 1: Choose the capacitor family and record its footprints**
+- [ ] **Step 1: List the values the boards actually need**
 
-The Pultec's capacitors run from 470pF to 330nF. Pick a film series you can actually
-buy, find each value's KiCad footprint name, and read the body dimensions from that
-name's own `L`/`W`/`P` fields.
+```bash
+bun -e 'import {partitionReference,MODULE_OWNERS} from "./reference/pultec/partition.ts"; const s=partitionReference(); const v=new Set<number>(); for (const o of MODULE_OWNERS) for (const c of s.modules[o]) if (c.kind==="capacitor") v.add(Reflect.get(c.parameters,"farads") as number); console.log([...v].sort((a,b)=>a-b).map(f=>f<1e-8?`${f*1e12}pF`:`${f*1e9}nF`).join(" "))'
+```
 
-For each distinct footprint, decide `CAP_FILM<n>` or `CAP_FILM_WIDE<n>` from the
-**part in your hand**, not from the name: `CAP_FILM` occupies one strip row,
-`CAP_FILM_WIDE` occupies three (`"+++1+2+++"` in `CompTypes.h`). `<n>` is the lead
-pitch in 100-mil steps, so a 5.00mm or 5.08mm part is `2` and a 2.50mm part is `1`.
+Record the list. Every one of them needs a footprint by the end of this task.
+
+- [ ] **Step 2: Enumerate the candidate footprints that exist locally**
+
+```bash
+KI=/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints
+ls "$KI/Capacitor_THT.pretty" | grep "^C_Rect" | sort
+```
+
+Group them by series suffix and lead pitch. Only pitches that land on the 0.1" grid
+are usable: 2.50mm (1 step), 5.00mm and 5.08mm (2 steps), 7.50mm and 7.62mm
+(3 steps), 10.00mm and 10.16mm (4 steps).
+
+- [ ] **Step 3: Research which series covers the value range, and at what cost**
+
+Use WebSearch and WebFetch. For each candidate series found in Step 2 — the
+footprint names tell you which ones KiCad already supports — establish from the
+manufacturer's datasheet and a distributor listing:
+
+- which of the Step 1 values the series offers, and at what voltage rating
+- the body dimensions per value, so the right footprint is chosen per value
+- unit price at a quantity of 10 and 100, and current stock
+
+Write the findings to `docs/pultec/capacitor-selection.md` with a table and a cited
+source URL per row. **Every dimension must come from a fetched datasheet or a
+`.kicad_mod` file, never from recall.** A series you cannot find a datasheet for does
+not go in the table.
+
+Recommend one series, and say why in terms of the project's criteria: coverage of
+the value range, per-unit cost, availability, and body size against the board area.
+
+- [ ] **Step 4: Verify every chosen footprint exists and measure its pads**
+
+For each footprint the recommendation uses:
+
+```bash
+KI=/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints
+ls "$KI/Capacitor_THT.pretty/<name>.kicad_mod"          # must exist
+grep -E '\(pad |\(fp_line' "$KI/Capacitor_THT.pretty/<name>.kicad_mod" | head -20
+```
+
+The pad coordinates give the true lead pitch and the courtyard gives the true body
+outline. Confirm both agree with the name's `L`/`W`/`P` fields; if they disagree,
+the name lies and the footprint belongs in `FOOTPRINT_IMPORT_STRINGS` as an override
+with the reason stated, which is exactly what that map exists for.
+
+Classify each as `CAP_FILM<n>` or `CAP_FILM_WIDE<n>`: `CAP_FILM` occupies one strip
+row, `CAP_FILM_WIDE` occupies three (`"+++1+2+++"` in the fork's `CompTypes.h`), so
+a body up to 2.54mm wide is `CAP_FILM` and one up to 7.62mm is `CAP_FILM_WIDE`.
+`<n>` is the lead pitch in 100-mil steps.
+
+- [ ] **Step 5: Present the recommendation and get approval**
+
+Post the table, the recommendation and the total per-board capacitor cost. **Stop
+here for a yes.** The research is the agent's work; committing to a part to buy is
+not, and the operator may already have a stock of something.
+
+- [ ] **Step 6: Record the whitelist**
 
 Add one entry per footprint to `FILM_CAPACITOR_IMPORT_STRINGS` in
-`lib/kicad/import-string.ts`, each with a comment naming the series and the measured
-body width:
+`lib/kicad/import-string.ts`, each with a comment naming the series and the body
+width read in Step 4:
 
 ```ts
 export const FILM_CAPACITOR_IMPORT_STRINGS: ReadonlyMap<string, string> = new Map<string, string>([
-  // <series>, <value range>: body <W>mm measured, spans <one|three> strip rows.
-  ["Capacitor_THT:C_Rect_L<len>mm_W<width>mm_P<pitch>mm", "CAP_FILM<n>"],
+  // <series>, <value range>: body <W>mm from the .kicad_mod courtyard, <one|three> strip rows.
+  ["Capacitor_THT:<verified name>", "CAP_FILM<n>"],
 ])
 ```
 
-- [ ] **Step 2: Point the capacitors at their footprints**
+- [ ] **Step 7: Point the capacitors at their footprints**
 
 If one footprint covers every value, change `FILM_CAPACITOR` in
 `circuits/pultec/parts.ts` to that name and stop here.
@@ -2130,7 +2342,30 @@ function filmFootprint(component: Component): string {
 }
 ```
 
-- [ ] **Step 3: Turn the export test back on**
+- [ ] **Step 8: Commit the selection**
+
+```bash
+bun run typecheck
+git add lib/kicad/import-string.ts circuits/pultec/parts.ts docs/pultec/capacitor-selection.md
+git commit -m "Select the Pultec capacitor family and record its footprints"
+```
+
+---
+
+## Task 11: Create the five boards
+
+Everything is in place and the whitelist is populated, so the boards can be declared
+and brought into existence.
+
+**Files:**
+- Create: `boards/pultec-<module>/perfboard.json` and `Makefile` × 5
+- Test: `tests/circuits/pultec-boards.test.ts` (turn the `test.todo` back on)
+
+**Interfaces:**
+- Consumes: the five board functions (Task 6), the `create` verb (Task 9), the populated whitelist (Task 10).
+- Produces: five directories under `boards/` that `make check` can act on.
+
+- [ ] **Step 1: Turn the export test back on**
 
 In `tests/circuits/pultec-boards.test.ts`, change the `test.todo` added in Task 6
 back to `test` and delete the comment pointing at this task.
@@ -2141,7 +2376,7 @@ Expected: PASS, including "each board exports to a netlist". A refusal here name
 the footprint that is missing from the whitelist — add it, do not widen the
 derivation.
 
-- [ ] **Step 4: Declare the five boards**
+- [ ] **Step 2: Declare the five boards**
 
 For each of `low-cut`, `low-boost`, `hi-cut`, `hi-boost`, `mid`, create
 `boards/pultec-<module>/perfboard.json`:
@@ -2168,7 +2403,7 @@ Create `boards/pultec-<module>/Makefile`, identical to `boards/pt2399-core/Makef
 include $(shell git rev-parse --show-toplevel)/make/perfboard.mk
 ```
 
-- [ ] **Step 5: Build the toolchain and create each board**
+- [ ] **Step 3: Build the toolchain and create each board**
 
 ```bash
 make -C boards/pultec-low-cut veroroute
@@ -2188,7 +2423,7 @@ Expected: each prints what `--import` placed and writes a `.vrt`. Each board has
 placement or routing yet — that is bench work in the GUI, and is not part of this
 plan.
 
-- [ ] **Step 6: Confirm every board checks**
+- [ ] **Step 4: Confirm every board checks**
 
 ```bash
 make check
@@ -2200,12 +2435,12 @@ A newly imported board is **not routed**, so `check` exits non-zero on the Pulte
 boards with a report saying so — that is the correct state for a board nobody has
 laid out, and is not a failure of this plan. `pt2399-core` must still report `ok`.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 bun test && bun run typecheck
-git add lib/kicad/import-string.ts circuits/pultec/parts.ts boards tests/circuits/pultec-boards.test.ts
-git commit -m "Choose the capacitor family and create the five Pultec boards"
+git add boards tests/circuits/pultec-boards.test.ts
+git commit -m "Create the five Pultec boards"
 ```
 
 ---
@@ -2220,6 +2455,16 @@ These are recorded in the spec and are deliberately not tasks:
   boost four on-board is: delete four lines from `reference/pultec/off-board.ts`, add
   an `INDUCTOR<n>` family to `lib/kicad/import-string.ts`, give them footprints in
   `circuits/pultec/parts.ts`, and `make update` each affected board.
+
+  **This is researchable the same way Task 10 is**, and worth doing before the hi
+  boost layout is finished rather than after. `Inductor_THT.pretty` holds 275
+  footprints locally, including `L_Axial_*` names carrying their series
+  (`Fastron_MECC`, `Fastron_MISC`, `Fastron_HBCC`), so candidates can be enumerated
+  from disk and checked against datasheets exactly as Task 10 does for capacitors.
+  The constraint that makes it interesting: `values.md` specifies 0.1H to 2H at
+  ≤1kΩ DCR, and inductances that large are uncommon as catalogue axial parts — the
+  research may well conclude that no through-hole part exists and the coils stay
+  off-board permanently. That is a real answer and worth having early.
 - **R3 stays at 4K7.** `reference/pultec/unresolved.md` item 2 disputes it. 4K7 and
   470R are both quarter-watt axial parts — the same two pads, the same span — so the
   dispute cannot invalidate a layout and gets no gating mechanism here.
