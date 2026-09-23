@@ -132,6 +132,53 @@ test("the full chain reproduces the netlist the built board was laid out from", 
   expect(normalize(ours)).toEqual(normalize(fixture))
 })
 
+/**
+ * F8: closes the writer's unverified-behaviour gap. Every round-trip proof
+ * above re-parses the written text through `importLegacyNetlist`, which
+ * treats both the trailing "*" EOF marker and the header brace comment as
+ * optional - so a writer that dropped either would still pass every one of
+ * them. This compares the written TEXT against the fixture text directly,
+ * normalizing away exactly what the pipeline does not carry: the uuid field
+ * (never read back by anything downstream) and component block order (a set,
+ * not a sequence - nothing in the model orders components).
+ */
+function normalizeNetlistText(text: string): string {
+  const uuidNormalized = text.replace(/\( \/\S+/g, "( /UUID")
+  const lines = uuidNormalized.split("\n")
+  const header = lines[0]
+  const blocks: string[][] = []
+  let current: string[] | null = null
+  let rest: string[] = []
+  let i = 1
+  while (i < lines.length) {
+    const line = lines[i]
+    if (line === undefined) break
+    if (current === null) {
+      if (line === ")") {
+        rest = lines.slice(i)
+        break
+      }
+      current = [line]
+    } else {
+      current.push(line)
+      if (line === " )") {
+        blocks.push(current)
+        current = null
+      }
+    }
+    i++
+  }
+  const sortedBlocks = blocks.map((block) => block.join("\n")).sort()
+  return [header, ...sortedBlocks, ...rest].join("\n")
+}
+
+test("the written netlist's text matches the fixture, modulo uuid and block order", async () => {
+  const fixtureText = await Bun.file(FIXTURE).text()
+  const lowered = toImportedNetlist(pt2399Core(), DESIGNATORS, PIN_NUMBERS)
+  const writtenText = writeLegacyNetlist(lowered, { createdAt: CREATED_AT })
+  expect(normalizeNetlistText(writtenText)).toBe(normalizeNetlistText(fixtureText))
+})
+
 test("renaming a net without changing its membership is not an electrical change", async () => {
   // WHY THIS EXISTS. The two assertions above compare `nets` maps keyed by NAME,
   // which is stricter than the identity model requires: a net renamed without a
@@ -167,6 +214,14 @@ test("net names containing parentheses survive a write/read round trip", () => {
   }
   const reread = importLegacyNetlist(writeLegacyNetlist(netlist, { createdAt: CREATED_AT }))
   expect(reread.nets["Net-(C12-Pad1)"]).toEqual(["C12.1"])
+})
+
+test("an orphan net member naming an undeclared component refuses, not silently drops it", () => {
+  const netlist: ImportedNetlist = {
+    components: [{ designator: "R1", value: "10K", footprint: "RESISTOR4" }],
+    nets: { IN: ["R1.1"], GND: ["R1.2", "R99.1"] },
+  }
+  expect(() => writeLegacyNetlist(netlist, { createdAt: CREATED_AT })).toThrow(/GND.*R99/s)
 })
 
 test("a component with no pins refuses rather than writing a part VeroRoute cannot place", () => {

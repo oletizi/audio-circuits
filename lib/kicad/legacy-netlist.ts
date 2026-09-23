@@ -166,6 +166,23 @@ export function writeLegacyNetlist(netlist: ImportedNetlist, options: WriteOptio
     }
   }
 
+  // Every net member has to name a declared component. A member whose
+  // designator is not in `netlist.components` would otherwise vanish
+  // silently from the written file - the emit loop below only walks declared
+  // components - which is the same shape of defect the "component appears on
+  // no net" refusal a few lines down exists to catch in the other direction.
+  const declaredDesignators = new Set(netlist.components.map((c) => c.designator))
+  for (const [designator, pins] of pinsByDesignator) {
+    if (declaredDesignators.has(designator)) continue
+    const first = pins[0]
+    if (first === undefined) continue
+    throw new Error(
+      `net "${first.net}" has a member on component "${designator}", which is not in ` +
+        "netlist.components. Every net member must name a declared component - an orphaned one " +
+        "would be silently dropped from the written file instead of failing the export.",
+    )
+  }
+
   const lines: string[] = [`( { EESchema Netlist Version 1.1 created  ${options.createdAt} }`]
 
   for (const component of netlist.components) {
