@@ -155,8 +155,15 @@ function assertPinNumbers(
   return pinNumbers
 }
 
-/** Load the declared circuit and lower it to an EESchema v1.1 netlist. */
-async function exportNetlistFor(declaration: PerfboardDeclaration): Promise<string> {
+/**
+ * Load the declared circuit and lower it to an EESchema v1.1 netlist.
+ *
+ * Exported so the binary-backed write verbs (`tools/perfboard/verbs.ts`) can
+ * reuse this exact lowering path rather than duplicating it. Two netlist
+ * export paths that could disagree - one used to check a board, another used
+ * to rewrite it - is exactly the defect class this module exists to remove.
+ */
+export async function exportNetlistFor(declaration: PerfboardDeclaration): Promise<string> {
   const network = await loadCircuit(declaration)
   const imported: unknown = await import(declaration.circuitPath)
   if (!isRecord(imported)) {
