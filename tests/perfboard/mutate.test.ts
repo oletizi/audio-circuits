@@ -63,13 +63,48 @@ test("the replace is atomic and lands the produced bytes", () => {
   }
 })
 
-test("a replace across filesystems refuses rather than falling back to a copy", () => {
+test("a produced file that does not exist refuses, naming it and saying the layout is unchanged", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mutate-"))
   try {
     const vrt = path.join(dir, "board.vrt")
     fs.writeFileSync(vrt, "OLD")
-    expect(() => replaceAtomically(vrt, "/definitely/not/here.vrt")).toThrow(/here\.vrt/)
+    // "produced no output file" is unique to this branch: the rename-failure
+    // branch's message never contains it, so this pins the missing-produced-file
+    // message specifically rather than matching either branch.
+    expect(() => replaceAtomically(vrt, "/definitely/not/here.vrt"))
+      .toThrow(/here\.vrt[\s\S]*produced no output file[\s\S]*board\.vrt[\s\S]*unchanged/)
     expect(fs.readFileSync(vrt, "utf8")).toBe("OLD")
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test("a rename failure refuses without falling back to a copy, leaving the layout untouched", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mutate-"))
+  try {
+    const vrt = path.join(dir, "board.vrt")
+    const produced = path.join(dir, "board.produced.vrt")
+    fs.writeFileSync(vrt, "ORIGINAL")
+    // A directory passes the existsSync check (so this reaches renameSync,
+    // unlike the missing-file test above) but can never be renamed onto an
+    // existing regular file. That failure is portable and deterministic,
+    // unlike a permission-based failure (chmod is unreliable under root and
+    // across filesystems).
+    fs.mkdirSync(produced)
+    let message = ""
+    try {
+      replaceAtomically(vrt, produced)
+      throw new Error("replaceAtomically did not throw")
+    } catch (e) {
+      message = e instanceof Error ? e.message : String(e)
+    }
+    expect(message).toContain(produced)
+    expect(message).toContain(vrt)
+    expect(message).toContain("unchanged")
+    // The invariant that actually matters: no copy fallback happened, so the
+    // layout still holds its original bytes rather than a copy of the
+    // (directory) produced path.
+    expect(fs.readFileSync(vrt, "utf8")).toBe("ORIGINAL")
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }
