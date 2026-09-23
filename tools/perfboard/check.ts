@@ -21,6 +21,7 @@ import path from "node:path"
 import { writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
+import { isRecord } from "./guards.ts"
 import { loadCircuit } from "./load.ts"
 
 /**
@@ -97,23 +98,75 @@ export interface PerfboardResult {
   readonly report: string
 }
 
+/**
+ * Validate `DESIGNATORS`: every value must be a string designator.
+ *
+ * The container check alone is not enough - `typeof {} === "object"` is true
+ * of `{ delay_ic: 42 }` too - and this module's whole job is to fail loudly, so
+ * a numeric or otherwise non-string designator must throw naming the id it
+ * came from, not get lowered into a netlist as a wrong value.
+ */
+function assertDesignators(
+  value: unknown,
+  circuitPath: string,
+): Readonly<Record<string, string>> {
+  if (!isRecord(value)) {
+    throw new Error(`${circuitPath} does not export a DESIGNATORS map`)
+  }
+  const designators: Record<string, string> = {}
+  for (const [id, designator] of Object.entries(value)) {
+    if (typeof designator !== "string") {
+      throw new Error(
+        `${circuitPath}: DESIGNATORS["${id}"] must be a string designator, got ${typeof designator}`,
+      )
+    }
+    designators[id] = designator
+  }
+  return designators
+}
+
+/** Validate `PIN_NUMBERS`: every entry must be a map of canonical pin -> string pin number. */
+function assertPinNumbers(
+  value: unknown,
+  circuitPath: string,
+): Readonly<Record<string, Readonly<Record<string, string>>>> {
+  if (!isRecord(value)) {
+    throw new Error(`${circuitPath} does not export a PIN_NUMBERS map`)
+  }
+  const pinNumbers: Record<string, Record<string, string>> = {}
+  for (const [kind, mapping] of Object.entries(value)) {
+    if (!isRecord(mapping)) {
+      throw new Error(
+        `${circuitPath}: PIN_NUMBERS["${kind}"] must be an object mapping canonical pins to ` +
+          `footprint pin numbers, got ${mapping === null ? "null" : typeof mapping}`,
+      )
+    }
+    const pins: Record<string, string> = {}
+    for (const [pin, number] of Object.entries(mapping)) {
+      if (typeof number !== "string") {
+        throw new Error(
+          `${circuitPath}: PIN_NUMBERS["${kind}"]["${pin}"] must be a string pin number, got ${typeof number}`,
+        )
+      }
+      pins[pin] = number
+    }
+    pinNumbers[kind] = pins
+  }
+  return pinNumbers
+}
+
 /** Load the declared circuit and lower it to an EESchema v1.1 netlist. */
 async function exportNetlistFor(declaration: PerfboardDeclaration): Promise<string> {
   const network = await loadCircuit(declaration)
-  const module = (await import(declaration.circuitPath)) as Record<string, unknown>
-  const designators = module["DESIGNATORS"]
-  const pinNumbers = module["PIN_NUMBERS"]
-  if (typeof designators !== "object" || designators === null) {
-    throw new Error(`${declaration.circuitPath} does not export a DESIGNATORS map`)
+  const imported: unknown = await import(declaration.circuitPath)
+  if (!isRecord(imported)) {
+    throw new Error(
+      `${declaration.circuitPath}: the module did not import as an object`,
+    )
   }
-  if (typeof pinNumbers !== "object" || pinNumbers === null) {
-    throw new Error(`${declaration.circuitPath} does not export a PIN_NUMBERS map`)
-  }
-  const lowered = toImportedNetlist(
-    network,
-    designators as Readonly<Record<string, string>>,
-    pinNumbers as Readonly<Record<string, Readonly<Record<string, string>>>>,
-  )
+  const designators = assertDesignators(imported["DESIGNATORS"], declaration.circuitPath)
+  const pinNumbers = assertPinNumbers(imported["PIN_NUMBERS"], declaration.circuitPath)
+  const lowered = toImportedNetlist(network, designators, pinNumbers)
   return writeLegacyNetlist(lowered, { createdAt: new Date().toISOString().slice(0, 19) })
 }
 

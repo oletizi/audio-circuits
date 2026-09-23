@@ -2,6 +2,7 @@ import { test, expect } from "bun:test"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { checkPerfboard, verorouteBinary } from "../../tools/perfboard/check.ts"
 import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 
@@ -70,4 +71,109 @@ test("a circuit that fails to export stops the run before the binary is reached"
     })).rejects.toThrow(/unmapped footprint/)
     expect(ran).toBe(false)
   })
+})
+
+/**
+ * These tests exercise `exportNetlistFor` for real (no `deps.exportNetlist`
+ * override), because that is the only place `DESIGNATORS`/`PIN_NUMBERS`
+ * content validation lives. Each writes a throwaway circuit module to disk
+ * that imports the real builder from `lib/model/index.ts`, so the whole
+ * load -> validate -> lower -> write pipeline runs, with only `runCheck`
+ * (the veroroute spawn) injected.
+ */
+const MODEL_INDEX_PATH = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)), "..", "..", "lib", "model", "index.ts",
+)
+
+const VALID_BOARD_SOURCE = `
+import { circuit } from ${JSON.stringify(MODEL_INDEX_PATH)}
+
+export function board() {
+  return circuit()
+    .resistor("r1", "10K", { a: "IN", b: "GND" },
+      { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" })
+    .port("input", "IN").port("ground", "GND")
+    .done()
+}
+`
+
+function withCircuitModule(
+  source: string,
+  run: (declaration: PerfboardDeclaration) => Promise<void>,
+): Promise<void> {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-check-mod-"))
+  const circuitPath = path.join(dir, `circuit-${Math.random().toString(36).slice(2)}.ts`)
+  fs.writeFileSync(circuitPath, source)
+  const vrtPath = path.join(dir, "board.vrt")
+  fs.writeFileSync(vrtPath, "59")
+  const decl: PerfboardDeclaration = {
+    file: path.join(dir, "perfboard.json"), dir,
+    circuitPath, exportName: "board", vrtPath,
+  }
+  return run(decl).finally(() => fs.rmSync(dir, { recursive: true, force: true }))
+}
+
+test("a well-formed circuit, DESIGNATORS and PIN_NUMBERS reach the binary as a real netlist", async () => {
+  await withCircuitModule(
+    `${VALID_BOARD_SOURCE}
+     export const DESIGNATORS = { r1: "R1" }
+     export const PIN_NUMBERS = { resistor: { a: "1", b: "2" } }`,
+    async (decl) => {
+      let netText = ""
+      const result = await checkPerfboard(decl, {
+        runCheck: (_vrt, netPath) => {
+          netText = fs.readFileSync(netPath, "utf8")
+          return { status: 0, output: "all nets complete" }
+        },
+      })
+      expect(result.ok).toBe(true)
+      expect(netText).toContain("R1")
+      expect(netText).toContain("RESISTOR4")
+    },
+  )
+})
+
+test("a DESIGNATORS entry that is not a string names the entry and never reaches the binary", async () => {
+  await withCircuitModule(
+    `${VALID_BOARD_SOURCE}
+     export const DESIGNATORS = { r1: 42 }
+     export const PIN_NUMBERS = { resistor: { a: "1", b: "2" } }`,
+    async (decl) => {
+      let ran = false
+      await expect(checkPerfboard(decl, {
+        runCheck: () => { ran = true; return { status: 0, output: "" } },
+      })).rejects.toThrow(/DESIGNATORS\["r1"\] must be a string designator, got number/)
+      expect(ran).toBe(false)
+    },
+  )
+})
+
+test("a PIN_NUMBERS entry that is not an object names the entry and never reaches the binary", async () => {
+  await withCircuitModule(
+    `${VALID_BOARD_SOURCE}
+     export const DESIGNATORS = { r1: "R1" }
+     export const PIN_NUMBERS = { resistor: "not-an-object" }`,
+    async (decl) => {
+      let ran = false
+      await expect(checkPerfboard(decl, {
+        runCheck: () => { ran = true; return { status: 0, output: "" } },
+      })).rejects.toThrow(/PIN_NUMBERS\["resistor"\] must be an object/)
+      expect(ran).toBe(false)
+    },
+  )
+})
+
+test("a PIN_NUMBERS nested value that is not a string names the entry and never reaches the binary", async () => {
+  await withCircuitModule(
+    `${VALID_BOARD_SOURCE}
+     export const DESIGNATORS = { r1: "R1" }
+     export const PIN_NUMBERS = { resistor: { a: 1, b: "2" } }`,
+    async (decl) => {
+      let ran = false
+      await expect(checkPerfboard(decl, {
+        runCheck: () => { ran = true; return { status: 0, output: "" } },
+      })).rejects.toThrow(/PIN_NUMBERS\["resistor"\]\["a"\] must be a string pin number, got number/)
+      expect(ran).toBe(false)
+    },
+  )
 })

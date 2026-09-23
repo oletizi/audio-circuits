@@ -9,23 +9,29 @@
  */
 import type { Network } from "../../lib/model/types.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
+import { isRecord } from "./guards.ts"
 
 function isNetwork(value: unknown): value is Network {
-  if (typeof value !== "object" || value === null) return false
-  const candidate: Record<string, unknown> = value as Record<string, unknown>
-  return Array.isArray(candidate["components"]) && typeof candidate["ports"] === "object"
+  if (!isRecord(value)) return false
+  return Array.isArray(value["components"]) && isRecord(value["ports"])
 }
 
 export async function loadCircuit(declaration: PerfboardDeclaration): Promise<Network> {
-  let module: Record<string, unknown>
+  let imported: unknown
   try {
-    module = (await import(declaration.circuitPath)) as Record<string, unknown>
+    imported = await import(declaration.circuitPath)
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
     throw new Error(
       `${declaration.file}: could not import the circuit at ${declaration.circuitPath}: ${detail}`,
     )
   }
+  if (!isRecord(imported)) {
+    throw new Error(
+      `${declaration.file}: the module at ${declaration.circuitPath} did not import as an object`,
+    )
+  }
+  const module = imported
 
   const exported = module[declaration.exportName]
   if (exported === undefined) {
