@@ -5,7 +5,11 @@
  * perfboard.json is a BOARD and the verbs act on it; any other directory is an
  * aggregate and `check` walks down from there. There is deliberately no
  * BOARD=<name> flag: two ways to say which board is two places for one fact to
- * be wrong. To act on a board from elsewhere, cd to it.
+ * be wrong. To act on a board from elsewhere, cd to it - or, when that is not
+ * possible (`bun run` chdirs to the package root before running any script,
+ * so `cd boards/x && bun run perfboard board-info` never sees boards/x), pass
+ * `-C <dir>`. That is a PATH, not a second way to name a board: see
+ * `resolveDirectoryFlag` in `./perfboard-support.ts`.
  *
  * WHAT WRITES: `check`, `cuts`, `board-info` and `boards` write nothing.
  * `update` and `stripboard` write the declared layout IN PLACE, because git is
@@ -32,7 +36,7 @@ import {
 } from "../perfboard/acquire.ts"
 import type { VerbDeps } from "../perfboard/verbs.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
-import { errorMessage, reportLines, safeTargets } from "./perfboard-support.ts"
+import { errorMessage, reportLines, resolveDirectoryFlag, safeTargets } from "./perfboard-support.ts"
 import {
   dispatchCuts, dispatchEdit, dispatchUpdate, dispatchStripboard, dispatchVerorouteVerb,
   defaultBinaryExists,
@@ -59,10 +63,25 @@ const USAGE = [
   "cuts, update, stripboard and edit act on exactly one declared board, never a",
   "batch: run them from that board's directory.",
   "",
+  "`bun run perfboard` runs from the REPOSITORY ROOT, not the directory you",
+  "typed it in: `bun run <script>` chdirs there before running anything, for",
+  "every package.json script. `cd boards/x && bun run perfboard board-info`",
+  "therefore acts on the repo root, not boards/x. Direct invocation",
+  '(`bun tools/cli/perfboard.ts board-info`) genuinely runs from where you',
+  "stand; through bun run, use -C to say where from:",
+  "",
+  "  bun run perfboard -C boards/pt2399-core board-info",
+  "",
   "Verbs:",
   ...VERBS.map(([name, description]) => `  ${name.padEnd(12)} ${description}`),
   "",
   "Flags:",
+  "  -C <dir>, --directory <dir>",
+  "                           act as though standing in <dir> instead of the",
+  "                           process's own directory. A path, never a board",
+  "                           name - there is deliberately no BOARD=<name>",
+  "                           lookup. Refuses if <dir> does not exist or is not",
+  "                           a directory, rather than falling back to cwd.",
   "  --allow-dirty            update, stripboard: accept that this write cannot",
   "                           be undone through git.",
   "  --strips horizontal|vertical",
@@ -85,6 +104,14 @@ const USAGE = [
 ].join("\n")
 
 export interface RunCliOptions {
+  /**
+   * The process's own directory: `process.cwd()` in production, an injected
+   * stand-in for it in tests. `-C`/`--directory` on the command line, when
+   * given, WINS over this for the effective directory every verb treats as
+   * its context - `cwd` only anchors a relative `-C` (see
+   * `resolveDirectoryFlag` in `./perfboard-support.ts`). Without `-C`, this
+   * is exactly the directory every verb acts on, as always.
+   */
   readonly cwd?: string
   readonly log?: (line: string) => void
   readonly error?: (line: string) => void
@@ -153,14 +180,23 @@ async function runCheck(
 }
 
 export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<number> {
-  const cwd = opts.cwd ?? process.cwd()
+  const baseCwd = opts.cwd ?? process.cwd()
   const log = opts.log ?? ((line: string) => console.log(line))
   const error = opts.error ?? ((line: string) => console.error(line))
+
+  // -C/--directory, if given, wins over baseCwd as the effective directory
+  // every verb below treats as its context; baseCwd is only the anchor a
+  // relative -C resolves against. See resolveDirectoryFlag's doc comment.
+  const directory = resolveDirectoryFlag(argv, baseCwd, error)
+  if (directory === null) return 1
+  const cwd = directory.cwd
+  const args = directory.rest
+
   const check =
     opts.check ??
     ((declaration: PerfboardDeclaration) => checkPerfboard(declaration, { repoRoot: opts.repoRoot }))
 
-  const verb = argv[0]
+  const verb = args[0]
   if (verb === undefined || verb === "--help" || verb === "-h" || verb === "help") {
     log(USAGE)
     return 0
@@ -210,18 +246,18 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     return 0
   }
 
-  if (verb === "cuts") return dispatchCuts(cwd, argv.slice(1), opts.verbDeps, opts.repoRoot, log, error)
-  if (verb === "edit") return dispatchEdit(cwd, argv.slice(1), opts.verbDeps, opts.repoRoot, log, error)
-  if (verb === "update") return dispatchUpdate(cwd, argv.slice(1), opts.verbDeps, opts.repoRoot, log, error)
+  if (verb === "cuts") return dispatchCuts(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
+  if (verb === "edit") return dispatchEdit(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
+  if (verb === "update") return dispatchUpdate(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
   if (verb === "stripboard") {
-    return dispatchStripboard(cwd, argv.slice(1), opts.verbDeps, opts.repoRoot, log, error)
+    return dispatchStripboard(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
   }
 
   if (verb === "veroroute") {
     const env = opts.env ?? process.env
     const repoRoot = opts.repoRoot ?? moduleRepoRoot()
     return dispatchVerorouteVerb(
-      argv.slice(1),
+      args.slice(1),
       repoRoot,
       env,
       {

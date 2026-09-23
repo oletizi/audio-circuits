@@ -5,6 +5,7 @@
  * and `edit` dispatch). Split out so neither of those two files needs to
  * import the other just to reach `boardHere` or `reportLines`.
  */
+import fs from "node:fs"
 import path from "node:path"
 import {
   discoverDeclarations, loadDeclaration, type PerfboardDeclaration,
@@ -139,4 +140,79 @@ export function parseFlags(
 
 export function isStripsDirection(value: string): value is "horizontal" | "vertical" {
   return value === "horizontal" || value === "vertical"
+}
+
+const DIRECTORY_FLAGS = new Set(["-C", "--directory"])
+
+/** `resolveDirectoryFlag`'s result: the effective cwd, and every argument that was not `-C`/`--directory` and its value. */
+export interface DirectoryResolution {
+  readonly cwd: string
+  readonly rest: string[]
+}
+
+/**
+ * Pull `-C <dir>` / `--directory <dir>` out of `argv`, wherever it appears,
+ * and resolve it against `baseCwd`.
+ *
+ * `bun run <script>` chdirs to the package root before running the script -
+ * bun's documented behaviour, not something a script can opt out of - which
+ * breaks the documented invocation `cd boards/x && bun run perfboard
+ * board-info`: the process is standing in the repo root by the time this
+ * ever runs. `-C` is the escape hatch, spelled the same as make's own flag on
+ * purpose: the spec forbids a `BOARD=<name>` indirection ("two ways to say
+ * which board is two places for one fact to be wrong") but names `make -C`
+ * as "the same mechanism driven from elsewhere, not a second one." This is a
+ * PATH, never a board name - no lookup, no fuzzy matching, no search.
+ *
+ * Precedence between `-C` and `baseCwd` (production: `process.cwd()`; tests:
+ * `RunCliOptions.cwd`): an explicit `-C`, when given, always wins as the
+ * effective directory every verb treats as its context. `baseCwd` is only
+ * the anchor a RELATIVE `-C` resolves against (`path.resolve` ignores it
+ * entirely for an absolute `-C`) - it never competes with `-C` for the final
+ * answer. That is what lets a test inject `cwd` as a stand-in for the repo
+ * root `bun run` leaves the process in, and pass a relative `-C` under it,
+ * reproducing the exact shape of the defect this flag exists to fix.
+ *
+ * Refuses - naming the path, never falling through to `baseCwd` - when `-C`
+ * is missing its value, or names something that does not exist or is not a
+ * directory. Silently acting on a different board than the one named is the
+ * failure shape this whole tool exists to prevent.
+ */
+export function resolveDirectoryFlag(
+  argv: readonly string[],
+  baseCwd: string,
+  error: (line: string) => void,
+): DirectoryResolution | null {
+  const rest: string[] = []
+  let directory: string | undefined
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]
+    if (arg !== undefined && DIRECTORY_FLAGS.has(arg)) {
+      const value = argv[i + 1]
+      if (value === undefined || DIRECTORY_FLAGS.has(value) || value.startsWith("--")) {
+        error('-C/--directory needs a value: a path to the board or aggregate directory to act on.')
+        return null
+      }
+      directory = value
+      i += 1
+      continue
+    }
+    if (arg !== undefined) rest.push(arg)
+  }
+
+  if (directory === undefined) return { cwd: baseCwd, rest }
+
+  const resolved = path.resolve(baseCwd, directory)
+  if (!fs.existsSync(resolved)) {
+    error(
+      `-C ${directory} names ${resolved}, which does not exist. Check the path - this refuses ` +
+        "rather than falling back to the current directory, so it never silently acts on a different board.",
+    )
+    return null
+  }
+  if (!fs.statSync(resolved).isDirectory()) {
+    error(`-C ${directory} names ${resolved}, which is not a directory. -C takes the path to a board or aggregate directory.`)
+    return null
+  }
+  return { cwd: resolved, rest }
 }
