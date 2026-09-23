@@ -35,3 +35,9 @@ yarn-error.log*
 # left behind by a crash `git add -A` would otherwise sweep into a commit.
 .*.update-*.vrt
 .*.strips-*.vrt
+
+# The forked VeroRoute binary, cloned and built from veroroute.pin's pinned
+# commit (tools/perfboard/acquire.ts). It is a GPLv3 Qt5 C++ application with
+# its own build - not vendored, not a submodule - so it is acquired locally
+# rather than committed here.
+.tools/
