@@ -95,6 +95,49 @@ test("no declarations anywhere is a failure, not a quiet success", async () => {
   }
 })
 
+test("boards prints board names by default", async () => {
+  const root = tree()
+  try {
+    const lines: string[] = []
+    const code = await runCli(["boards"], { cwd: root, log: (line) => lines.push(line) })
+    expect(code).toBe(0)
+    expect(lines).toEqual(["demo"])
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("boards --paths prints each board's own directory, for a caller that acts on it", async () => {
+  const root = tree()
+  try {
+    fs.mkdirSync(path.join(root, "boards", "second"), { recursive: true })
+    fs.writeFileSync(
+      path.join(root, "boards", "second", "perfboard.json"),
+      JSON.stringify({ circuit: "c.ts", export: "demo", vrt: "second.vrt" }),
+    )
+    const lines: string[] = []
+    const code = await runCli(["boards", "--paths"], { cwd: root, log: (line) => lines.push(line) })
+    expect(code).toBe(0)
+    expect(lines.sort()).toEqual(
+      [path.join(root, "boards", "demo"), path.join(root, "boards", "second")].sort(),
+    )
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("boards rejects an unknown flag rather than silently ignoring it", async () => {
+  const root = tree()
+  try {
+    const errors: string[] = []
+    const code = await runCli(["boards", "--bogus"], { cwd: root, error: (line) => errors.push(line) })
+    expect(code).toBe(1)
+    expect(errors.join("\n")).toContain('unknown flag "--bogus"')
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
 test("boards reports a malformed declaration through the normal return path, not a rejection", async () => {
   const root = tree()
   try {

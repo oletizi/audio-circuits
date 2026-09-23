@@ -87,6 +87,9 @@ const USAGE = [
   "  --strips horizontal|vertical",
   "                           stripboard: which way the strips run. There is no",
   "                           default; it is a fact about the board in hand.",
+  "  --paths                  boards: print each declared board's own directory",
+  "                           instead of its name, for a caller that acts on",
+  "                           every discovered board (e.g. `make -C <dir>`).",
   "  --force                  veroroute: rebuild even if a binary already exists",
   "                           at the resolved path.",
   "  --field sch|netlist      board-info: print only that resolved path (or an",
@@ -215,6 +218,18 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (verb === "check") return runCheck(cwd, check, log, error)
 
   if (verb === "boards") {
+    const flags = args.slice(1)
+    const unknownFlag = flags.find((flag) => flag !== "--paths")
+    if (unknownFlag !== undefined) {
+      error(`unknown flag "${unknownFlag}" for "boards". Run with --help to see the flags this verb accepts.`)
+      return 1
+    }
+    // --paths prints each board's own directory instead of its name, so a
+    // caller that needs to ACT on every discovered board (make/aggregate.mk's
+    // `check`, recursing as `make -C <dir> check`) can do that without
+    // reimplementing the discovery walk itself. The plain name stays the
+    // default because it is what an operator reads.
+    const emitPaths = flags.includes("--paths")
     const files = safeTargets(cwd, error)
     if (files === null) return 1
     if (files.length === 0) {
@@ -224,7 +239,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     let failed = false
     for (const file of files) {
       try {
-        log(boardName(loadDeclaration(file)))
+        const declaration = loadDeclaration(file)
+        log(emitPaths ? declaration.dir : boardName(declaration))
       } catch (caught) {
         failed = true
         error(`FAIL ${file}`)
