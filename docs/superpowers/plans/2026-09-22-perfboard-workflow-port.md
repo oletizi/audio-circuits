@@ -2252,10 +2252,12 @@ git push
 
 **Two spec items deliberately deferred, and why.** The design lists `update`, `stripboard`, `edit` and `cuts` as verbs. Task 8 ships them as explicit refusals naming what is missing rather than as stubs that appear to work, because every one requires the binary and a verb that silently does nothing is the failure shape this workflow exists to prevent. Task 9 exercises them by hand.
 
-The **layout-scoped dirty-state guard** likewise belongs to `update`/`stripboard`, and is not needed by any read-only verb shipped here. When those verbs are wired up, two contracts from the design apply and must be implemented once rather than per verb:
+The **layout-scoped dirty-state guard** and the **atomic replace** belong to `update`/`stripboard`, and were not needed by any read-only verb shipped here. Both are now implemented (`tools/perfboard/mutate.ts`'s `assertLayoutRecoverable` and `replaceAtomically`) and wired into the CLI, so the two contracts from the design apply as built rather than as a future obligation:
 
 - The guard is a **shared prerequisite of mutation** — every verb that writes the declared `.vrt` passes it before VeroRoute is invoked, so a mutating verb added later cannot quietly omit it.
 - The replace is **atomic**. The fork forces this shape rather than leaving it to preference: `--update` requires `-o` and has no in-place mode, and its serialization is a plain `QDataStream` over a `QFile` rather than a `QSaveFile`. So a mutating verb points `-o` at a temporary file *in the same directory as the declared layout* and `rename`s over the layout only after the binary exits successfully. Same-directory `rename(2)` is atomic, so the layout is either the old one or the new one, never half-written.
+
+With the verbs now live, Task 9 executes as written: the fixed-point acceptance run exercises `update`, `stripboard`, `edit` and `cuts` against the real board and fork rather than against refusals.
 
 **Type consistency.** `ImportedNetlist` / `ImportedComponent` are the existing types from `lib/kicad/netlist.ts` and flow unchanged through Tasks 4, 5 and 7. `PerfboardDeclaration` uses `circuitPath` / `exportName` / `vrtPath` consistently in Tasks 6–9. `toImportedNetlist`, `writeLegacyNetlist`, `importStringFor`, `declaredPinCount`, `valueFor`, `loadCircuit`, `checkPerfboard` and `runCli` keep one signature each throughout.
 
