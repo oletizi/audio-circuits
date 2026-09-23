@@ -84,7 +84,7 @@ function parseLine(line: string, file: string): readonly [string, string] {
   if (match === null) {
     throw new Error(
       `${file}: could not parse line ${JSON.stringify(line)}; expected "<field> <value>", e.g. ` +
-        '"repo git@github.com:owner/repo.git".',
+        '"repo https://github.com/owner/repo.git".',
     )
   }
   return [match[1], match[2]]
