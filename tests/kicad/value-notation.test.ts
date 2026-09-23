@@ -69,3 +69,15 @@ test("a part with neither an MPN nor a symbol refuses", () => {
     id: "mystery", kind: "ic", parameters: {}, pins: {}, units: [],
   })).toThrow(/mystery/)
 })
+
+test("an inductor refuses rather than putting its part number in the value field", () => {
+  // `inductor` carries `henries`, an electrical quantity this module has no
+  // formatter for. Falling through to the mpn/symbol branch would silently
+  // spell an inductor's inductance as its manufacturer part number instead -
+  // the exact defect this refusal exists to catch, even though `part.mpn` is
+  // present here and the fallback branch would otherwise happily return it.
+  expect(() => valueFor({
+    id: "l1", kind: "inductor", parameters: { henries: 1e-2 }, pins: {}, units: [],
+    part: { mpn: "SRR1260-103K" },
+  })).toThrow(/l1.*inductor/s)
+})

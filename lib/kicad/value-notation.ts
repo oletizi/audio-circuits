@@ -79,6 +79,18 @@ function symbolPartName(symbol: string): string {
 }
 
 /**
+ * Kinds whose `Parameters` carry an electrical quantity this module has no
+ * formatter for. `resistor` and `capacitor` are handled above; every other
+ * kind with a quantity-bearing parameter type (see `lib/model/parameters.ts`)
+ * must refuse here rather than fall through to the mpn/symbol branch below,
+ * which would silently put the part's IDENTITY in the field meant to hold its
+ * VALUE - e.g. an inductor's part number where its inductance belongs.
+ */
+const UNFORMATTED_ELECTRICAL_KINDS: ReadonlySet<string> = new Set([
+  "inductor", "potentiometer", "switch",
+])
+
+/**
  * A part's value as the netlist spells it.
  *
  * For a passive this is derived from its parameter. For a part with no
@@ -101,6 +113,15 @@ export function valueFor(component: Component): string {
       throw new Error(`resistor "${component.id}" has no numeric ohms parameter`)
     }
     return resistanceText(ohms, component.id)
+  }
+  if (UNFORMATTED_ELECTRICAL_KINDS.has(component.kind)) {
+    throw new Error(
+      `component "${component.id}" (kind "${component.kind}") has an electrical parameter this ` +
+        "formatter does not handle, so its value field cannot be derived from an mpn or symbol " +
+        "fallback either - that would silently swap the part's identity in for its electrical " +
+        "value. Extend lib/kicad/value-notation.ts with a formatter for this kind, proven with a " +
+        "test, before lowering it to a netlist.",
+    )
   }
 
   const mpn = component.part?.mpn
