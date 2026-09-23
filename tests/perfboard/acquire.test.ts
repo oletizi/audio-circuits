@@ -97,6 +97,20 @@ test("VEROROUTE set to the operator's own checkout resolves explicit, unchanged"
   expect(resolution.path).toBe("/Users/dev/src/veroroute-perfboard/veroroute")
 })
 
+test("VEROROUTE set to exactly the acquired path still resolves acquired, not explicit", () => {
+  // make/veroroute.mk states `VEROROUTE ?= $(VEROROUTE_BUILT)` and
+  // unconditionally exports it, so every make-driven run sees VEROROUTE
+  // defined even when nobody set anything - the acquired-vs-explicit
+  // decision has to be keyed on the VALUE, not on whether the variable is
+  // present in the environment. Getting this wrong means "make check" from
+  // a cold clone reports VEROROUTE as an operator override and refuses to
+  // ever build the fork.
+  const acquired = resolveBinary({}, "/repo").path
+  const resolution = resolveBinary({ VEROROUTE: acquired }, "/repo")
+  expect(resolution.mode).toBe("acquired")
+  expect(resolution.path).toBe(acquired)
+})
+
 test("VEROROUTE set but empty refuses rather than guessing unset was meant", () => {
   expect(() => resolveBinary({ VEROROUTE: "   " }, "/repo")).toThrow(/set but empty/)
 })

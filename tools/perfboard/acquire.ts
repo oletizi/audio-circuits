@@ -29,8 +29,14 @@
  *     anything real - the Qt5 compile this stands in for takes many minutes.
  *
  * THE RESOLUTION RULE, which is the heart of this module:
- *   - `VEROROUTE` unset -> mode "acquired": the path this repository is
- *     responsible for creating, under `.tools/`.
+ *   - `VEROROUTE` unset, OR set to exactly the path this repository would
+ *     compute anyway -> mode "acquired": the path this repository is
+ *     responsible for creating, under `.tools/`. The second half of that
+ *     "or" matters because `make/veroroute.mk` states its own default
+ *     (`VEROROUTE ?= $(VEROROUTE_BUILT)`) and unconditionally exports it, so
+ *     a make-driven run always sees `VEROROUTE` defined even when nobody set
+ *     anything - the discriminant has to be the VALUE, not whether the
+ *     variable exists in the environment.
  *   - `VEROROUTE` set to anything else -> mode "explicit", returned
  *     unchanged. That is the operator pointing at their own development
  *     build, and acquisition must never run against it - cloning or
@@ -141,11 +147,22 @@ export interface BinaryResolution {
  * itself decides, separately, whether the acquired path already has a
  * binary sitting at it - this function only ever answers "which path and
  * whose responsibility."
+ *
+ * THE DISCRIMINANT IS THE VALUE, NOT WHETHER IT WAS SET. `make/veroroute.mk`
+ * states `VEROROUTE ?= $(VEROROUTE_BUILT)` and unconditionally `export`s it,
+ * exactly as this module's own doc comment prescribes - so every process this
+ * tool ever runs under `make` sees `VEROROUTE` defined, even on the normal,
+ * zero-configuration road where nobody set anything. Treating "defined" as
+ * "an operator's own override" would make every make-driven invocation look
+ * like mode "explicit" and never build anything; only a value that actually
+ * DIFFERS from the path this repository would compute anyway is somebody
+ * pointing at their own checkout.
  */
 export function resolveBinary(env: Env, repoRoot: string): BinaryResolution {
+  const acquired = acquiredBinaryPath(repoRoot)
   const value = env["VEROROUTE"]
-  if (value === undefined) {
-    return { path: acquiredBinaryPath(repoRoot), mode: "acquired" }
+  if (value === undefined || value === acquired) {
+    return { path: acquired, mode: "acquired" }
   }
   if (value.trim() === "") {
     throw new Error(
