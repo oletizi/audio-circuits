@@ -52,8 +52,13 @@ test("an unrecognized family refuses, listing the shapes that derive", () => {
 })
 
 test("an override wins over the derivation", () => {
-  const overrides = new Map([["Package_DIP:DIP-16_W7.62mm", "DIP16"]])
-  expect(importStringFor("Package_DIP:DIP-16_W7.62mm", overrides)).toBe("DIP16")
+  // The override must produce a string `derive()` would NOT produce on its own -
+  // otherwise this test stays green even if the override lookup is deleted.
+  // "Package_TO_SOT_THT:TO-92_Inline" matches none of the derivable families
+  // (see "an unrecognized family refuses" above), so `derive()` throws for it;
+  // only the override lookup can make this call succeed.
+  const overrides = new Map([["Package_TO_SOT_THT:TO-92_Inline", "PADS3"]])
+  expect(importStringFor("Package_TO_SOT_THT:TO-92_Inline", overrides)).toBe("PADS3")
 })
 
 test("pin-count types report their count; span types do not", () => {
