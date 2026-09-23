@@ -49,8 +49,10 @@ ifeq ($(wildcard $(SCH)),)
 # silently treat a broken declaration as "no schematic declared."
 netlist-agrees:
 	@echo "$(CURDIR)/perfboard.json declares \"sch\": $(SCH), but that file does not exist."
-	@echo "  Fix the \"sch\" path in perfboard.json, or remove the sch/netlist declaration"
-	@echo "  if this board's schematic repository is not checked out on this machine."
+	@echo "  Either the \"sch\" path in perfboard.json is wrong, or the schematic's own"
+	@echo "  repository is not checked out on this machine. KiCad, and the schematic it"
+	@echo "  edits, are prerequisites for this repo - fix the path, or check out that"
+	@echo "  repository at the declared location."
 	@exit 1
 else
 # Every run regenerates the export to a temp file and reconciles it with the
@@ -80,7 +82,7 @@ netlist-agrees:
 	@if [ ! -f "$(NETLIST_TEST)" ]; then \
 		echo "$(CURDIR) declares sch/netlist, but $(NETLIST_TEST) does not exist."; \
 		echo "  Add tests there asserting the circuit still agrees with the schematic"; \
-		echo "  export, or remove the sch/netlist declaration from perfboard.json."; \
+		echo "  export - that guard is what this declaration exists for."; \
 		exit 1; \
 	fi
 	@cd "$(REPO_ROOT)" && bun test "$(NETLIST_TEST)"
