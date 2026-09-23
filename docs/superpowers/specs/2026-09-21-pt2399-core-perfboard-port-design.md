@@ -652,10 +652,28 @@ have refused. They are also the point of the guard rather than a tax imposed by 
 is a moment where the operator looks at what a mutation did before stacking another on top,
 and each gives `git checkout --` something to return to.
 
-The assertion at step 6 is on **the plan being empty**, not on `.vrt` bytes. `--update`
-re-serializes on every write, so byte-identity across an empty-plan update is plausible but
-unverified, and promising it here would assert something about the fork this repository has
-not established.
+The assertion at step 6 is on **the plan being empty**, not on `.vrt` bytes. That distinction
+is load-bearing rather than cautious: at the pinned commit, byte-identity across an empty-plan
+update is **false**, and measurably so.
+
+`--update` re-serializes on every write, and the fork saved several persisted collections by
+iterating a `std::unordered_map`. Iteration order there is a property of the hash table's
+insertion history rather than of the board, so a load followed by a save reordered the file —
+on libc++, exactly reversing the component list. Measured on this board: one save changed
+10151 of 33309 bytes, and a second save returned the file byte-for-byte to where it started.
+The board never changed; the file oscillated between two spellings of it and settled on
+neither.
+
+So an `update` that reconciles nothing still rewrites the layout, and the resulting whole-file
+diff is indistinguishable from a real layout change. The empty plan is the only signal that
+means what it says, which is why step 6 asserts on that and nothing else.
+
+The cause is fixed upstream in the fork — save in key order, so the written bytes are a
+function of the board alone (`oletizi/veroroute-perfboard` PR #2). Until `veroroute.pin` moves
+to a commit carrying that fix, the paragraph above describes this repository's behaviour. When
+it does move, the first save of any existing board reorders it once more, from hash order to
+id order, and is stable from then on — so expect exactly one reordering commit per board at
+that point, and none after.
 
 ## Risks and open questions
 
