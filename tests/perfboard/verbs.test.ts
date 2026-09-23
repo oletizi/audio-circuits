@@ -142,6 +142,47 @@ test("update on a non-zero exit leaves the layout byte-identical and does not re
   })
 })
 
+test("a binary that writes PARTIAL output to -o and then exits non-zero leaves no leftover file", async () => {
+  // The ordinary "attempted, failed partway" case, not a crash: the binary
+  // did write something at the -o path before deciding to fail. That file
+  // must not survive the call, or `git add -A` would sweep it into a commit.
+  await withVrt(async (vrtPath) => {
+    let outPath = ""
+    const report = await runUpdate(declaration(vrtPath), { allowDirty: false }, {
+      git: stubGit(true, false),
+      exportNetlist: netlist,
+      runVeroroute: (args) => {
+        outPath = flagValue(args, "-o")
+        fs.writeFileSync(outPath, "PARTIAL-GARBAGE")
+        return { status: 1, output: "veroroute: routing failed partway" }
+      },
+    })
+    expect(fs.existsSync(outPath)).toBe(false)
+    expect(fs.readdirSync(path.dirname(vrtPath))).toEqual([path.basename(vrtPath)])
+    expect(fs.readFileSync(vrtPath, "utf8")).toBe("ORIGINAL")
+    expect(report).toContain("unchanged")
+  })
+})
+
+test("update cleans up the -o file left behind when the spawn itself throws", async () => {
+  await withVrt(async (vrtPath) => {
+    let outPath = ""
+    await expect(
+      runUpdate(declaration(vrtPath), { allowDirty: false }, {
+        git: stubGit(true, false),
+        exportNetlist: netlist,
+        runVeroroute: (args) => {
+          outPath = flagValue(args, "-o")
+          fs.writeFileSync(outPath, "PARTIAL-BEFORE-CRASH")
+          throw new Error("could not run veroroute: signal killed")
+        },
+      }),
+    ).rejects.toThrow(/signal killed/)
+    expect(fs.existsSync(outPath)).toBe(false)
+    expect(fs.readdirSync(path.dirname(vrtPath))).toEqual([path.basename(vrtPath)])
+  })
+})
+
 // ---------------------------------------------------------------------------
 // stripboard
 // ---------------------------------------------------------------------------
@@ -151,6 +192,28 @@ test("stripboard refuses without a strip direction", async () => {
     await expect(
       runStripboard(declaration(vrtPath), { strips: undefined, allowDirty: false }, {}),
     ).rejects.toThrow(/strip direction/)
+  })
+})
+
+test("stripboard cleans up the -o file when --set-strips writes partial output and exits non-zero", async () => {
+  await withVrt(async (vrtPath) => {
+    let outPath = ""
+    const report = await runStripboard(
+      declaration(vrtPath),
+      { strips: "horizontal", allowDirty: false },
+      {
+        git: stubGit(true, false),
+        runVeroroute: (args) => {
+          outPath = flagValue(args, "-o")
+          fs.writeFileSync(outPath, "PARTIAL-GARBAGE")
+          return { status: 1, output: "veroroute: could not set strips" }
+        },
+      },
+    )
+    expect(fs.existsSync(outPath)).toBe(false)
+    expect(fs.readdirSync(path.dirname(vrtPath))).toEqual([path.basename(vrtPath)])
+    expect(fs.readFileSync(vrtPath, "utf8")).toBe("ORIGINAL")
+    expect(report).toContain("unchanged")
   })
 })
 
@@ -197,6 +260,44 @@ test("stripboard sets strips, replaces, then runs the update path with allowDirt
   })
 })
 
+test("stripboard's inner update call skips the guard's git check entirely, not just tolerates it", async () => {
+  // A call-count assertion pins HOW the guard talks to git, not WHAT must be
+  // true. This test fails for the right reason instead: the git stub reports
+  // clean on the FIRST diff check (the outer guard, which must run for
+  // real) and dirty on any diff check after that. With allowDirty: true
+  // correctly threaded into the inner update call, that inner guard returns
+  // before ever calling git, so no second diff check happens and the run
+  // succeeds. If the chaining regressed - the inner call reaching git at all
+  // - the second diff check reports dirty and assertLayoutRecoverable
+  // throws, which surfaces here as a direct failure, not a broken tally.
+  await withVrt(async (vrtPath) => {
+    let diffCalls = 0
+    const git: GitRunner = (args) => {
+      if (args[0] === "ls-files") return { status: 0, stdout: "" }
+      if (args[0] === "diff") {
+        diffCalls += 1
+        return { status: diffCalls === 1 ? 0 : 1, stdout: "" }
+      }
+      throw new Error(`unexpected git call: ${args.join(" ")}`)
+    }
+    const report = await runStripboard(
+      declaration(vrtPath),
+      { strips: "horizontal", allowDirty: false },
+      {
+        git,
+        exportNetlist: netlist,
+        runVeroroute: (args) => {
+          const outPath = flagValue(args, "-o")
+          fs.writeFileSync(outPath, args[0] === "--set-strips" ? "STRIPPED" : "FILLED")
+          return { status: 0, output: "ok" }
+        },
+      },
+    )
+    expect(fs.readFileSync(vrtPath, "utf8")).toBe("FILLED")
+    expect(report).toContain("horizontal strips")
+  })
+})
+
 // ---------------------------------------------------------------------------
 // edit
 // ---------------------------------------------------------------------------
@@ -231,4 +332,23 @@ test("edit hands the layout to the binary and returns", () => {
   expect(launchedBinary).toBe("/fake/veroroute")
   expect(launchedVrtPath).toBe("/tmp/board.vrt")
   expect(report).toContain("/tmp/board.vrt")
+})
+
+test("edit's real, un-injected launcher does not crash the host process when the spawn fails asynchronously", async () => {
+  // Exercises the actual defaultLaunchEditor, not an injected stub: a binary
+  // that passes the (stubbed) executable check but does not actually exist
+  // triggers node's async 'error' event on the detached child (ENOENT) -
+  // exactly the case defaultLaunchEditor's 'error' handler exists for. Without
+  // that handler this throws an uncaught exception from the process' event
+  // loop rather than the assertions below, since node crashes the process by
+  // default on an unhandled child 'error' event.
+  const fakeBinary = path.join(os.tmpdir(), `pt2399-fake-veroroute-${process.pid}-${Date.now()}`)
+  const decl = declaration("/tmp/nonexistent-board.vrt")
+  const report = runEdit(decl, {
+    env: { VEROROUTE: fakeBinary },
+    isExecutable: () => true,
+  })
+  expect(report).toContain(fakeBinary)
+  // Give the async spawn error a tick to fire before the test ends.
+  await new Promise((resolve) => setTimeout(resolve, 50))
 })

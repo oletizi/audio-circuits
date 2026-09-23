@@ -81,6 +81,30 @@ function tempPathAlongside(vrtPath: string, tag: string): string {
   return path.join(dir, `.${base}.${tag}-${process.pid}-${Date.now()}.vrt`)
 }
 
+/**
+ * Best-effort removal of a `-o` target after a failed run.
+ *
+ * A binary that writes partial output and then exits non-zero - an ordinary
+ * "attempted, failed partway" case, not a crash - leaves that file sitting
+ * beside the operator's real layout, where `git add -A` would sweep it into
+ * a commit. This is called on every failure path (non-zero exit, a thrown
+ * spawn, a signal death) to clean it up.
+ *
+ * It SWALLOWS ITS OWN ERRORS. A failing cleanup must never mask or replace
+ * the real failure message the operator needs to read - and it must never
+ * itself become the reported error. There is deliberately no sweep-on-startup
+ * counterpart: that would race a concurrent run and could destroy a file a
+ * human kept deliberately for post-crash diagnosis. This function only ever
+ * removes a path it just computed for the run currently failing.
+ */
+function cleanupProduced(producedPath: string): void {
+  try {
+    fs.rmSync(producedPath, { force: true })
+  } catch {
+    // Best-effort only - see docstring above.
+  }
+}
+
 // ---------------------------------------------------------------------------
 // cuts
 // ---------------------------------------------------------------------------
@@ -176,12 +200,18 @@ export async function runUpdate(
   try {
     const netPath = path.join(netDir, `${path.basename(declaration.vrtPath, ".vrt")}.net`)
     fs.writeFileSync(netPath, text)
-    run = runVeroroute(["--update", declaration.vrtPath, "--netlist", netPath, "-o", producedPath])
+    try {
+      run = runVeroroute(["--update", declaration.vrtPath, "--netlist", netPath, "-o", producedPath])
+    } catch (error) {
+      cleanupProduced(producedPath)
+      throw error
+    }
   } finally {
     fs.rmSync(netDir, { recursive: true, force: true })
   }
 
   if (run.status !== 0) {
+    cleanupProduced(producedPath)
     return (
       `veroroute --update on ${declaration.vrtPath} exited ${run.status}; the layout is unchanged.\n` +
       run.output
@@ -244,11 +274,16 @@ export async function runStripboard(
 
   const runVeroroute = deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env)
   const producedPath = tempPathAlongside(declaration.vrtPath, "strips")
-  const run = runVeroroute([
-    "--set-strips", declaration.vrtPath, "--strips", opts.strips, "-o", producedPath,
-  ])
+  let run: VerbRun
+  try {
+    run = runVeroroute(["--set-strips", declaration.vrtPath, "--strips", opts.strips, "-o", producedPath])
+  } catch (error) {
+    cleanupProduced(producedPath)
+    throw error
+  }
 
   if (run.status !== 0) {
+    cleanupProduced(producedPath)
     return (
       `veroroute --set-strips on ${declaration.vrtPath} exited ${run.status}; the layout is ` +
       `unchanged.\n${run.output}`
@@ -276,6 +311,14 @@ function defaultIsExecutable(binaryPath: string): boolean {
 
 function defaultLaunchEditor(binary: string, vrtPath: string): void {
   const child = spawn(binary, [vrtPath], { detached: true, stdio: "ignore" })
+  // An async spawn failure - including the narrow TOCTOU window between the
+  // executable check and this spawn - emits an 'error' event. Node crashes
+  // the host process on an unhandled 'error' listener by default, and it
+  // would do so AFTER runEdit already returned its success string, so this
+  // must be caught here rather than left to propagate.
+  child.on("error", (error) => {
+    console.error(`veroroute editor failed to start for ${vrtPath} (${binary}): ${error.message}`)
+  })
   child.unref()
 }
 
