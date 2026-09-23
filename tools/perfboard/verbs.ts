@@ -337,6 +337,10 @@ export async function runStripboard(
         `${opts.strips} strip mode. But filling those strips failed, so the layout is converted ` +
         "and NOT filled - this is not the usual \"failure leaves nothing changed\" case. The fill " +
         `failure was:\n${detail}\n` +
+        "If that failure text above says the layout is \"unchanged,\" it is describing only the " +
+        "fill step's own write attempt in isolation - that step wrote nothing. It is NOT a " +
+        `description of ${declaration.vrtPath} on disk right now: this board is the ` +
+        "converted-but-not-filled layout stated above, not the pre-conversion layout.\n" +
         `Run \`git checkout -- ${declaration.vrtPath}\` to go back to the pre-conversion layout.`,
     )
   }

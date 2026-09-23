@@ -277,6 +277,21 @@ test("stripboard whose fill step exits non-zero reports the layout as converted-
     expect(caught.message).toContain("SUCCEEDED")
     expect(caught.message).toContain("NOT filled")
     expect(caught.message.split("\n")[0]).not.toMatch(/unchanged/)
+    // F1: the inner update step's own "...the layout is unchanged." sentence
+    // is embedded verbatim (asserted below), which reads as contradicting the
+    // SUCCEEDED/NOT-filled account above it. A corrective clause right after
+    // it must resolve that contradiction where the reader's eye lands, not
+    // rely on the framing two sentences earlier.
+    expect(caught.message).toContain("veroroute --update on")
+    expect(caught.message).toContain("the layout is unchanged")
+    expect(caught.message).toContain(
+      "it is describing only the fill step's own write attempt in isolation",
+    )
+    expect(caught.message).toContain("this board is the converted-but-not-filled layout")
+    // The corrective clause must come after the embedded detail, not before it.
+    expect(caught.message.indexOf("the layout is unchanged")).toBeLessThan(
+      caught.message.indexOf("it is describing only the fill step's own write attempt"),
+    )
     // The conversion write landed - the bytes on disk are the converted ones.
     expect(fs.readFileSync(vrtPath, "utf8")).toBe("STRIPPED")
   })
