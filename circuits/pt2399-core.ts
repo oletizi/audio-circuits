@@ -1,10 +1,10 @@
 /**
  * PT2399 delay core.
  *
- * Transcribed from the netlist of a unit that was built and works (pedals
- * repository, pt2399/pt2399-core). The authority for this transcription is
- * `tests/fixtures/pt2399-core-veroroute.net` - the EESchema legacy netlist
- * VeroRoute consumed to lay out the perfboard that was actually built.
+ * Transcribed from the netlist of a unit that was built and works. The
+ * authority for this transcription is `tests/fixtures/pt2399-core-veroroute.net`
+ * - the EESchema legacy netlist VeroRoute consumed to lay out the perfboard
+ * that was actually built.
  * Every component, value and connection below comes from that file, read
  * with `importLegacyNetlist`, not from memory or a PT2399 datasheet.
  * Component footprints are transcribed from `tests/fixtures/pt2399-core.net`,

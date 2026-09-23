@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Bring the `perfboard` CLI to parity with the `pedals` make layer it was ported from, so Task 9 of the previous plan can actually execute.
+**Goal:** Bring the `perfboard` CLI to parity with the make layer it was ported from, so Task 9 of the previous plan can actually execute.
 
 **Architecture:** Four verbs currently ship as explicit refusals (`cuts`, `update`, `stripboard`, `edit`) plus `veroroute`, because each needs the forked VeroRoute binary. This plan wires them up, on top of a shared mutation prerequisite — a recoverability guard and an atomic replace — that the spec makes mandatory for anything that writes a layout.
 
@@ -387,7 +387,7 @@ In `docs/superpowers/plans/2026-09-22-perfboard-workflow-port.md`, remove the Se
 
 **Spec coverage.** Guard and its `--allow-dirty` escape hatch → Task 1; atomic replace → Task 1; the four binary-backed verb contracts → Task 2; acquisition and the explicit-`VEROROUTE` rule → Task 3; CLI surface and help → Task 4.
 
-**What this plan does NOT cover, deliberately.** `--adopt` (the one-time migration for pre-version-60 boards) is not wired up. The spec records it as a risk to confirm at acceptance, and whether this board needs it is unknown until the binary reads it — building a verb for a migration that may not apply would be speculative. If acceptance shows the layout is pre-60, that is a small follow-up. Likewise `--stretch`, `--import` and `--dump-netlist`: the pedals make layer exposes `set-strips` as a general non-declared form, but nothing in this repository's workflow needs the others.
+**What this plan does NOT cover, deliberately.** `--adopt` (the one-time migration for pre-version-60 boards) is not wired up. The spec records it as a risk to confirm at acceptance, and whether this board needs it is unknown until the binary reads it — building a verb for a migration that may not apply would be speculative. If acceptance shows the layout is pre-60, that is a small follow-up. Likewise `--stretch`, `--import` and `--dump-netlist`: the make layer this was ported from exposes `set-strips` as a general non-declared form, but nothing in this repository's workflow needs the others.
 
 **Type consistency.** `GitRunner`, `PerfboardDeclaration`, and the injected spawn shape from `check.ts` are used unchanged throughout. The verb functions all take `(declaration, opts, deps)` in that order.
 

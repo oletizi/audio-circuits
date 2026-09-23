@@ -58,7 +58,7 @@ survives, and validation provably forces `pins: {}` on every kind present in thi
 
 ## Notes for Plan C
 
-- `reference/pultec/source/*.net.xml` and the pedals repository's `pt2399-core.kicad_sch`
+- `reference/pultec/source/*.net.xml` and the source repository's `pt2399-core.kicad_sch`
   are real hand-drawn artefacts, suitable as fidelity-gate fixtures.
 - The two pt2399 netlists are proven equal, so the `.kicad_sch` describes hardware known to
   work — which is what licenses using it as a fixture.

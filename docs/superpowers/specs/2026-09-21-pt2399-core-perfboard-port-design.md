@@ -1,5 +1,5 @@
 ---
-title: Porting the perfboard workflow from the pedals repository
+title: Porting the perfboard workflow from a private source repository
 date: 2026-09-21
 revised: 2026-09-22
 status: approved-design
@@ -16,16 +16,16 @@ status: approved-design
 
 ## Problem
 
-The `pedals` repository (`oletizi/pedals`, branch `feature/perfboard`) carries a perfboard
-workflow that belongs here: a hand-authored stripboard layout checked against the circuit by
-a forked VeroRoute, so a layout cannot silently drift from the circuit it was built from. The
-operator has built this board; `pt2399-core.perfboard.vrt` is the layout they are using, and
-the commit that introduced it is titled "perfboard seems functional".
+A private source repository carries a perfboard workflow that belongs here: a hand-authored
+stripboard layout checked against the circuit by a forked VeroRoute, so a layout cannot
+silently drift from the circuit it was built from. The operator has built this board;
+`pt2399-core.perfboard.vrt` is the layout they are using, and the commit that introduced it is
+titled "perfboard seems functional".
 
-The workflow's design is recorded in
-`docs/superpowers/specs/2026-09-16-perfboard-layout-design.md` in that repository, which
-remains the authority on *why* it is shaped the way it is. This document covers what changes
-when it moves here.
+The workflow's design was recorded in a design document in that source repository, which is
+not part of this repository and is not needed to work in this one - it explains *why* the
+original workflow was shaped the way it was. This document covers what changes when the
+workflow is ported here.
 
 **The circuit itself is no longer part of this work.** `circuits/pt2399-core.ts` already
 exists, transcribed from `tests/fixtures/pt2399-core-veroroute.net` and verified against it by
@@ -125,14 +125,14 @@ had in its own repository.
 
 **This also resolves the C3 question.** `D6.3mm` derives `CAP_ELECTRO_250`, so the netlist
 side is self-consistent and the `C3 retyped CAP_ELECTRO_300 -> CAP_ELECTRO_250` line in the
-`pedals` reports is the *board* holding 300 against a netlist saying 250. The discrepancy is
-board-side. The earlier instruction stands unchanged: do not pre-emptively correct it; let the
-first real check report it and resolve it against the physical part.
+source repository's reports is the *board* holding 300 against a netlist saying 250. The
+discrepancy is board-side. The earlier instruction stands unchanged: do not pre-emptively
+correct it; let the first real check report it and resolve it against the physical part.
 
-`FOOTPRINT_IMPORT_STRINGS`, the override table, comes across empty, as it is in `pedals` —
-with its comment explaining what belongs in it and why an override with no stated reason is
-indistinguishable from a mistake. It matters more here than there, because the grammar below
-is deliberately narrow.
+`FOOTPRINT_IMPORT_STRINGS`, the override table, comes across empty, as it did in the source
+repository - with its comment explaining what belongs in it and why an override with no
+stated reason is indistinguishable from a mistake. It matters more here than there, because
+the grammar below is deliberately narrow.
 
 ### The grammar is narrow: proven families only
 
@@ -153,8 +153,8 @@ exercises.
 | `PinHeader_1x<pins>_*` | `SIP<pins>` |
 
 Everything else refuses, naming the footprint and listing the shapes that derive. What crosses
-from `pedals` is the *refusal quality* — a message that teaches which field to fix — not the
-breadth of its vocabulary.
+from the source repository's tool is the *refusal quality* — a message that teaches which
+field to fix — not the breadth of its vocabulary.
 
 The 24-part assertion against the two fixtures then establishes that this grammar is
 sufficient for the workflow, rather than merely plausible.
@@ -275,8 +275,8 @@ format, one module, and the hazard comment about parenthesised net names already
 exactly as load-bearing for writing as for reading.
 
 The package field is emitted already holding the import string, so VeroRoute imports with no
-Part Alias entry — the same trick `pedals` plays by rewriting text after the fact, done at
-emit time instead.
+Part Alias entry — the same trick the source repository's tool plays by rewriting text after
+the fact, done at emit time instead.
 
 ### Three artifacts, and the exporter is only responsible for one
 
@@ -356,9 +356,9 @@ implementer reads when they wonder whether a name matters.
 
 ### The driver is one TypeScript CLI
 
-Unchanged from the first version and unaffected by the architecture change. `pedals` drives
-this from four `.mk` files over `pnpm`; this repository is bun plus `package.json` scripts,
-and the operator's standing rule puts enforcement in CLI verbs.
+Unchanged from the first version and unaffected by the architecture change. The source
+repository drove this from four `.mk` files over `pnpm`; this repository is bun plus
+`package.json` scripts, and the operator's standing rule puts enforcement in CLI verbs.
 
 The good idea in that make layer — **the directory you are standing in is the context** — is
 kept. The `.mk` files are not.
@@ -393,9 +393,9 @@ testable under `bun test` with no binary present.
 
 #### What each binary-backed verb actually does
 
-Parity with the `pedals` make layer, which is the authority for these. The fork's headless
-surface is `--check`, `--update`, `--set-strips`, `--dump-board`, `--dump-netlist`,
-`--import`, `--adopt`, `--stretch`.
+Parity with the make layer this was ported from, which recorded the authority for these. The
+fork's headless surface is `--check`, `--update`, `--set-strips`, `--dump-board`,
+`--dump-netlist`, `--import`, `--adopt`, `--stretch`.
 
 - **`cuts`** — `--dump-board <vrt>`, then report the `CUT_STATE`, `CUT`, `CUT_CONFLICT`,
   `SOLDER` and `CUT_UNCONNECTED_PIN` lines. **A dump carrying no `CUT_STATE` line is a
@@ -652,8 +652,9 @@ not established.
 ## Risks and open questions
 
 1. **C3's body diameter is a known inherited discrepancy.** The netlist side derives
-   `CAP_ELECTRO_250` from `CP_Radial_D6.3mm_P2.50mm` and is self-consistent; the `pedals`
-   reports indicate the board holds `CAP_ELECTRO_300`. **Do not pre-emptively "fix" this.**
+   `CAP_ELECTRO_250` from `CP_Radial_D6.3mm_P2.50mm` and is self-consistent; the source
+   repository's reports indicate the board holds `CAP_ELECTRO_300`. **Do not pre-emptively
+   "fix" this.**
    Whatever the first check reports at phase 8 is ground truth, resolved then against the
    physical part.
 
@@ -680,10 +681,10 @@ not established.
 
 ## Out of scope
 
-- Everything in `pedals/tools/kicad/*`, `tools/derivation/*`, `board-sync` and `derive` — the
-  KiCad PCB flow, which does not belong here.
+- Everything in the source repository's `tools/kicad/*`, `tools/derivation/*`, `board-sync`
+  and `derive` — the KiCad PCB flow, which does not belong here.
 - The `make/*.mk` layer.
 - Any change to the VeroRoute fork. It is consumed at a pinned commit.
-- Retiring the `pedals` copies. A separate decision in a separate repository.
+- Retiring the source repository's own copies. A separate decision in a separate repository.
 - Automatic placement or routing as the primary workflow.
 - Any write path from layout back to the circuit.

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Port the `pedals` perfboard workflow here, so `bun run perfboard check` verifies the hand-authored stripboard layout of pt2399-core against the canonical circuit and reports precisely what went stale.
+**Goal:** Port the perfboard workflow from a private prior repository into this one, so `bun run perfboard check` verifies the hand-authored stripboard layout of pt2399-core against the canonical circuit and reports precisely what went stale.
 
 **Architecture:** The canonical `Network` plus three lookup tables (`DESIGNATORS`, `PIN_NUMBERS`, `PartSpec.footprint`) is lowered to an EESchema v1.1 netlist whose package field already holds a VeroRoute import string. A forked VeroRoute reconciles that netlist against the persisted `.vrt` and reports. Nothing places parts; the tool verifies and reports only.
 
@@ -2123,8 +2123,8 @@ This is the acceptance task and the only one requiring the binary. It is where i
 
 ```bash
 mkdir -p boards/pt2399-core
-cp /Users/orion/work/pedals-work/perfboard/pt2399/pt2399-core/pt2399-core/pt2399-core.perfboard.vrt boards/pt2399-core/
-cp /Users/orion/work/pedals-work/perfboard/pt2399/pt2399-core/pt2399-core/pt2399-core.perfboard.png boards/pt2399-core/
+cp <source-repo>/perfboard/pt2399/pt2399-core/pt2399-core/pt2399-core.perfboard.vrt boards/pt2399-core/
+cp <source-repo>/perfboard/pt2399/pt2399-core/pt2399-core/pt2399-core.perfboard.png boards/pt2399-core/
 ```
 
 Verify the layout is the expected VeroRoute format version:
@@ -2151,7 +2151,7 @@ Then commit immediately, **before any mutating verb is run**:
 
 ```bash
 git add boards/pt2399-core/
-git commit -m "Carry the pt2399-core perfboard layout across from pedals"
+git commit -m "Carry the pt2399-core perfboard layout across from the source repository"
 ```
 
 This is not deferrable to the end of the task. The layout arrives untracked, every mutating verb refuses an untracked layout, and `git checkout --` cannot restore a file git has never seen — so without this commit the first `update` in step 7 is rejected rather than run.
@@ -2168,7 +2168,7 @@ commit  b09727dd8b9e1b0e9a0c8a0b0d0e0f0102030405
 Replace the commit with the real one:
 
 ```bash
-git -C /Users/orion/work/pedals-work/perfboard/.tools/veroroute-perfboard rev-parse HEAD
+git -C <source-repo>/perfboard/.tools/veroroute-perfboard rev-parse HEAD
 ```
 
 Append to `.gitignore`:
