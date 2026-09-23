@@ -1,5 +1,5 @@
 {
-  "sch": "/Users/orion/work/pedals-work/perfboard/pt2399/pt2399-core/pt2399-core/pt2399-core.kicad_sch",
+  "sch": "../../circuits/pt2399-core.kicad_sch",
   "circuit": "../../circuits/pt2399-core.ts",
   "export": "pt2399Core",
   "netlist": "../../tests/fixtures/pt2399-core.net",
