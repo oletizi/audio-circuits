@@ -1,9 +1,16 @@
 ---
 title: Transistor preamp lab board - model, KiCad schematic stub, stripboard
 date: 2026-09-23
-status: Draft for review
+status: Draft for review (revision 2)
 brief: docs/transistor-preamp/microphone-preamp-feedback-lab.md
 ---
+
+> **Revision 2**, after third-party review. Accepted: explicit rheostat
+> wiring and its failure mode (§3.2), which corrects revision 1's claim that a
+> failed wiper opens a leg; numeric sanity bounds (§5); test points (§3.2);
+> a settings table on the stub (§4.3); an explicit ownership boundary (§4.4);
+> "about 1.5M" wording; and a Build 2A setting. Declined, with reasons in
+> §3.3: a 100 Ω floor in the emitter bypass branch.
 
 # Transistor preamp lab board
 
@@ -70,15 +77,26 @@ suggestions with room to explore either side. Where a range proves wrong on the
 bench, the operator swaps the fixed resistor or the trim-pot.
 
 Every adjustable resistance is a **trim-pot wired as a rheostat, in series with
-a fixed resistor that sets its minimum**. At the rheostat's lowest setting the
-leg is never 0 Ω, so no setting, and no failed wiper, drives the base directly
-from a rail. Each bias leg also has a 2-pin jumper that removes it entirely,
-because a pot cannot reach "disconnected".
+a fixed resistor that sets its minimum**. At the rheostat's lowest setting a
+bias leg is never 0 Ω, so no setting drives the base directly from a rail. Each
+bias leg also has a 2-pin jumper that removes it entirely, because a pot cannot
+reach "disconnected".
+
+**Rheostat wiring is fixed and explicit.** In every trim-pot, the wiper is
+strapped to the `cw` end. `ccw` goes to one node of the leg, and `wiper` and
+`cw` together go to the other. The leg resistance is then `position × R_trim`,
+which rises clockwise. The strap sets the failure mode: an open or
+intermittent wiper leaves the full element between `ccw` and `cw`, so the leg
+fails to its **maximum** resistance, never to open and never to zero. For a bias
+leg that means less base drive. For the emitter bypass branch it means the
+stage is mostly unbypassed. Both are safe. The circuit declares this wiring at
+pin level, so the generated schematic and netlist carry it. The simulation does
+not model a wiper failure. The reasoning is recorded, not tested.
 
 | Position | Parts (in series) | Adjustable range | Brief values it reaches |
 |---|---|---|---|
 | Upper bias leg, `VCC`→`BASE` | jumper, 47k fixed, 50k trim | 47k–97k | 80k (Build 0) |
-| Feedback leg, `COLLECTOR`→`BASE` | jumper, 470k fixed, 1M trim | 470k–1.47M | 470k, 680k, 1M, 1.3M (2A, 2B); 1.5M only as the upper end of the range |
+| Feedback leg, `COLLECTOR`→`BASE` | jumper, 470k fixed, 1M trim | 470k to about 1.5M | 470k, 680k, 1M, 1.3M, about 1.5M (2A, 2B) |
 | Lower bias leg A, `BASE`→`GND` | jumper, 4.7k fixed, 10k trim | 4.7k–14.7k | 10k (Build 0) |
 | Lower bias leg B, `BASE`→`GND` | jumper, 47k fixed, 200k trim | 47k–247k | 150k (2B) |
 | Collector resistor, `VCC`→`COLLECTOR` | 1k fixed, 2k trim | 1k–3k | 1.8k |
@@ -104,11 +122,19 @@ Other parts:
   call for this. It is a design choice, and the module comment says so.
 - **Headers:** input (`IN_EXT`, `GND`), output (`OUT`, `GND`) and power
   (`VCC`, `GND`), each a 2-pin 2.54 mm header, `electricallyInert`.
+- **Test points:** single-pin headers on `VCC`, `BASE`, `EMITTER`,
+  `COLLECTOR`, `GND`, `IN_EXT` and `OUT`, `electricallyInert`, with the
+  `Connector:TestPoint` symbol and a `PinHeader_1x01` footprint (`SIP1`). The
+  brief asks for `VB`, `VE` and `VC` against one ground after every change, and
+  these give each of those a probe or clip point.
 
 **Capacitor values are placeholders.** The brief gives no coupling or bypass
 values. The values above are sized so that each corner sits well below 100 Hz
 at the smallest resistance it sees across the trim ranges. The module comment
-must label them as placeholders until the bench confirms them. An electrolytic
+must label them as placeholders until the bench confirms them. (The input
+cap's corner moves with the bias network's input impedance, which changes a
+lot between settings. Shrinking that cap on the bench to make the change
+audible is a good exercise, and it needs no change to the board.) An electrolytic
 follows the existing two-terminal rule: pin `a` is pin 1, which is `+` on
 `Device:C_Polarized`. The comment states which node each `+` faces, from the
 nominal DC voltages: `BASE` for the input cap, `COLLECTOR` for the output cap,
@@ -123,11 +149,19 @@ trim), which a jumper can remove.
 
 - The DC operating point never depends on a pot, which meets the brief's rule
   that no pot sits in the emitter-to-ground DC path.
-- A failed wiper opens the AC branch and leaves the stage unbypassed. That is a
-  safe failure.
+- A failed wiper sends the branch to its maximum (§3.2), which leaves the
+  stage mostly unbypassed. That is a safe failure.
 - At audio frequencies the unbypassed emitter resistance is roughly
   `1.5k ∥ R_trim`. Trim at zero is fully bypassed, jumper removed is fully
   unbypassed, and everything in between is available to dial in on the bench.
+
+**Why there is no fixed floor in the bypass branch.** A review proposed a
+100 Ω fixed resistor in series with the trim, to reproduce the brief's 100 Ω
+residual degeneration as the endpoint. That is declined. The brief's Build 1
+comparison names **0 Ω (fully bypassed)**, 100 Ω, 220 Ω and 1.5 kΩ, and Build 0
+is the fully bypassed stage, so zero is one of the points the experiment
+needs. A 100 Ω floor would remove it, while 100 Ω without the floor is one trim
+setting away.
 
 ### 3.4 Named settings
 
@@ -138,6 +172,7 @@ requested ohms fall outside the leg's range. It never clamps.
 | Setting | Jumpers fitted | Leg values |
 |---|---|---|
 | `nominal` | upper, lower A, bypass | upper 80k, lower A 10k, collector 1.8k, bypass trim 0 Ω |
+| `dividerWithFeedback` | upper, feedback, lower A, bypass | as `nominal`, plus feedback 1M (Build 2A) |
 | `collectorFeedback` | feedback, lower B, bypass | feedback 470k, lower B 150k, collector 1.8k, bypass trim 0 Ω |
 | `collectorFeedbackOnly` | feedback, bypass | feedback 1.3M, collector 1.8k, bypass trim 0 Ω |
 
@@ -162,6 +197,7 @@ exported `DESIGNATORS` map:
 | `input_coupling_cap` / `output_coupling_cap` / `supply_decoupling_cap` | C2 / C3 / C4 | 10µF / 10µF / 100µF |
 | `gain_transistor` | Q1 | 2N3904 |
 | `input_header` / `output_header` / `power_header` | J1 / J2 / J3 | — |
+| `vcc_test_point` / `base_test_point` / `emitter_test_point` / `collector_test_point` / `ground_test_point` / `input_test_point` / `output_test_point` | TP1–TP7 | — |
 
 ### 3.6 Parts and footprints
 
@@ -174,6 +210,7 @@ exported `DESIGNATORS` map:
 | 100µF electrolytic | `Capacitor_THT:CP_Radial_D6.3mm_P2.50mm` | existing electrolytic family |
 | 220µF electrolytic | `Capacitor_THT:CP_Radial_D8.0mm_P3.50mm` | existing electrolytic family |
 | Jumper, header | `Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical` | `SIP2` (existing) |
+| Test point | `Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical` | `SIP1` (existing) |
 
 Electrolytic can sizes are typical, not measured. Once the operator has the
 physical parts, any disagreement surfaces as a reconciliation delta in
@@ -213,7 +250,8 @@ id to a `lib_id`. Output: KiCad 10 `.kicad_sch` text.
 
 - **Vendored symbols.** The definitions for `Device:R`, `Device:C_Polarized`,
   `Device:R_Potentiometer_Trim`, `Transistor_BJT:2N3904`,
-  `Connector_Generic:Conn_01x02` and `Jumper:Jumper_2_Open` are copied into
+  `Connector_Generic:Conn_01x02`, `Connector:TestPoint` and
+  `Jumper:Jumper_2_Open` are copied into
   `lib/kicad/symbols/`. A provenance note records the KiCad 10.0.5 library they
   came from and the libraries' CC-BY-SA 4.0 licence with its design-use
   exception. `2N3904` is defined in the library as `(extends "Q_NPN_EBC")`,
@@ -224,6 +262,11 @@ id to a `lib_id`. Output: KiCad 10 `.kicad_sch` text.
   `DESIGNATORS` order. Each symbol carries `Reference`, `Value` and `Footprint`
   properties. Each pin gets a short wire to a local net label named after its
   net. Connectivity is carried entirely by labels.
+- **Settings table.** The stub carries a text block listing each named
+  setting, which jumpers it fits and its starting trim values. The block is
+  generated from the same `ControlState`s the simulations use, so the
+  schematic is also the bench document. Like the rest of the stub, it is a
+  snapshot and the operator owns it afterwards.
 - **Refusals.** A component with no designator, no symbol, no footprint or an
   unmapped pin throws an error naming it. A pin present on the symbol but
   absent from the circuit throws too. A no-connect must be declared, never
@@ -235,6 +278,13 @@ id to a `lib_id`. Output: KiCad 10 `.kicad_sch` text.
 stub. It **refuses to overwrite** an existing file, because once written, the
 schematic belongs to the operator. After that, the board's existing
 `sch`/`netlist` pair and `netlist-sync` keep it in agreement with the circuit.
+
+**Ownership boundary.** The stub's presentation is disposable. After
+generation, only **electrical equivalence** to the canonical circuit is
+enforced: designators, values, footprints and net membership, compared
+through the exported netlist. Symbol positions, wires versus labels, label
+names on nets that ports do not fix, text and graphical grouping all belong to
+the operator. Nothing may compare them against the stub.
 
 ### 4.5 Board directory (`boards/transistor-preamp-lab/`)
 
@@ -258,11 +308,12 @@ Tests are written first, following TDD.
    out-of-range ohms throw.
 4. **Sanity simulation, per setting.** The board is a bench instrument, and
    exact numbers are the bench's job, so these checks confirm only that the
-   circuit is wired so that each setting works. For every setting,
-   `runOperatingPoint` shows the transistor in its active region (a real
-   emitter current, and `VCE` comfortably above saturation), and `runAcSweep`
-   at 1 kHz shows inverting gain greater than 1. The checks assert no specific
-   voltages or gains. (The brief's own numbers come from readings it calls
+   circuit is wired so that each setting works. The bounds are deliberately
+   generous: they exist to catch wiring and generation errors, not to predict
+   the experiment. For every setting, `runOperatingPoint` must show
+   `I_E` > 0.1 mA and `VCE` > 1 V, and `runAcSweep` at 1 kHz into a
+   100 kΩ load must show a finite gain with `|Av|` > 1 and a phase within
+   45° of 180°, which confirms inversion. (The brief's own numbers come from readings it calls
    inconsistent, so they would be the wrong reference anyway.)
 5. **Schematic round trip.** The stub is written and read back through the
    s-expression parser, and every component, property and label is present.
