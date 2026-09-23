@@ -84,6 +84,8 @@ const DERIVABLE_SHAPES = [
   "  CP_Radial_D<mm>mm_*                    -> CAP_ELECTRO_<mil> (nearest of 200/250/300/400/500/600)",
   "  DIP-<pins>_*                           -> DIP<pins>",
   "  PinHeader_1x<pins>_*                   -> SIP<pins>",
+  "  TO-92_Inline (exactly)                 -> TO92",
+  "  Potentiometer_Bourns_3006P_Horizontal  -> TRIM_3006P",
 ].join("\n")
 
 /** Strips the library prefix: "Capacitor_THT:C_Disc_..." -> "C_Disc_...". */
@@ -165,8 +167,26 @@ function field(bare: string, pattern: RegExp): number | null {
   return Number.isFinite(value) ? value : null
 }
 
+/**
+ * Footprints whose VeroRoute type is a fixed shape rather than a derived
+ * span or count. Each name is matched EXACTLY: a neighbouring variant (a
+ * wide-pitch TO-92, a vertical trimmer) has different geometry, and mapping it
+ * here would place the part on the wrong holes.
+ *
+ * Evidence: the pinned fork's Src/CompTypes.h,
+ *   UpdateMaps(COMP::TO92,       "TO92",         "TO92");
+ *   UpdateMaps(COMP::TRIM_3006P, "Bourns 3006P", "TRIM_3006P");
+ */
+const FIXED_SHAPE_TYPES: ReadonlyMap<string, string> = new Map([
+  ["TO-92_Inline", "TO92"],
+  ["Potentiometer_Bourns_3006P_Horizontal", "TRIM_3006P"],
+])
+
 function derive(footprint: string): string {
   const bare = bareName(footprint)
+
+  const fixed = FIXED_SHAPE_TYPES.get(bare)
+  if (fixed !== undefined) return fixed
 
   if (bare.startsWith("R_Axial_")) {
     const pitch = field(bare, /_P([0-9.]+)mm/)
@@ -220,14 +240,22 @@ export function importStringFor(
   return derive(footprint)
 }
 
+/** Pin counts of the fixed-shape types in FIXED_SHAPE_TYPES. */
+const FIXED_SHAPE_PIN_COUNTS: ReadonlyMap<string, number> = new Map([
+  ["TO92", 3],
+  ["TRIM_3006P", 3],
+])
+
 /**
- * Pin count a pin-count-suffixed import string declares, or null when the type
- * carries a lead span or a fixed geometry instead.
+ * Pin count a pin-count-suffixed or fixed-shape import string declares, or
+ * null when the type carries a lead span instead.
  *
  * A lead span cannot be validated this way: RESISTOR4 spans four grid steps
  * but still has two pins, so its suffix says nothing about pin numbering.
  */
 export function declaredPinCount(importStr: string): number | null {
+  const fixed = FIXED_SHAPE_PIN_COUNTS.get(importStr)
+  if (fixed !== undefined) return fixed
   for (const type of ["SIP", "DIP", "PADS"]) {
     // Anchored, so CAP_ELECTRO_200 is never read as a PADS-style count.
     const match = new RegExp(`^${type}([0-9]+)$`).exec(importStr)
