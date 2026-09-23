@@ -34,7 +34,7 @@ test("missing --sch/--netlist/--kicad-cli refuses naming every flag left out", a
 test("an in-sync export logs nothing and exits 0", async () => {
   await withTempDir(async (dir) => {
     const netlistPath = path.join(dir, "board.net")
-    fs.writeFileSync(netlistPath, '(export\n\t(date "2026-01-01")\n)\n')
+    fs.writeFileSync(netlistPath, '(export\n\t(source "board.kicad_sch")\n\t(date "2026-01-01")\n)\n')
     const lines: string[] = []
     const code = await runCli(
       ["netlist-sync", "--sch", "board.kicad_sch", "--netlist", netlistPath, "--kicad-cli", "kicad-cli"],
@@ -43,7 +43,10 @@ test("an in-sync export logs nothing and exits 0", async () => {
         netlistSyncDeps: {
           kicadCliExists: () => true,
           runExport: (_cli, _sch, outputPath) =>
-            fs.writeFileSync(outputPath, '(export\n\t(date "2026-06-06")\n)\n'),
+            fs.writeFileSync(
+              outputPath,
+              '(export\n\t(source "/some/other/machine/board.kicad_sch")\n\t(date "2026-06-06")\n)\n',
+            ),
         },
       },
     )
@@ -55,7 +58,10 @@ test("an in-sync export logs nothing and exits 0", async () => {
 test("a changed export rewrites the fixture, exits 0, and logs why it matters", async () => {
   await withTempDir(async (dir) => {
     const netlistPath = path.join(dir, "board.net")
-    fs.writeFileSync(netlistPath, '(export\n\t(date "2026-01-01")\n\t(tool "old")\n)\n')
+    fs.writeFileSync(
+      netlistPath,
+      '(export\n\t(source "board.kicad_sch")\n\t(date "2026-01-01")\n\t(tool "old")\n)\n',
+    )
     const lines: string[] = []
     const code = await runCli(
       ["netlist-sync", "--sch", "board.kicad_sch", "--netlist", netlistPath, "--kicad-cli", "kicad-cli"],
@@ -64,7 +70,10 @@ test("a changed export rewrites the fixture, exits 0, and logs why it matters", 
         netlistSyncDeps: {
           kicadCliExists: () => true,
           runExport: (_cli, _sch, outputPath) =>
-            fs.writeFileSync(outputPath, '(export\n\t(date "2026-06-06")\n\t(tool "new")\n)\n'),
+            fs.writeFileSync(
+              outputPath,
+              '(export\n\t(source "board.kicad_sch")\n\t(date "2026-06-06")\n\t(tool "new")\n)\n',
+            ),
         },
       },
     )

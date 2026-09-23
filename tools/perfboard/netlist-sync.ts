@@ -32,11 +32,42 @@
  * line; nothing else is ignored, because a change to, say, the tool version
  * or the source path is exactly the kind of drift worth seeing - and the
  * fixture is rewritten only when what remains still differs.
+ *
+ * MACHINE-SPECIFIC PATHS ARE NORMALIZED BEFORE THE COMPARISON, NOT IGNORED
+ * BY IT - so the FIXTURE ITSELF never carries a machine-specific path, and a
+ * clone at a different location never rewrites it on its first run. Two
+ * independent facts, established by experiment against the real binary,
+ * both needed fixing:
+ *
+ *   - kicad-cli stamps the design section's `(source "...")` with the
+ *     ABSOLUTE path it resolved the schematic to, unconditionally - passing
+ *     a relative path produces the identical absolute line, and there is no
+ *     flag to suppress it. `normalizeSourcePath` below rewrites that one
+ *     line to a repository-relative path, derived from this repository's
+ *     own root, after every export and before the fixture is ever written
+ *     or compared. The per-sheet `title_block`'s OWN `(source ...)` is
+ *     already just a bare filename - stable across machines already - and
+ *     is deliberately left alone.
+ *   - the per-component `Sheetfile` property is relative, but relative to
+ *     kicad-cli's OWN invocation cwd, not to anything fixed. `defaultRunExport`
+ *     below pins that cwd to this repository's root on every export, so
+ *     `Sheetfile` is always repository-root-relative regardless of where the
+ *     export was invoked from - a fixed cwd rather than after-the-fact text
+ *     surgery, because it also gets every `Sheetfile` right, including in a
+ *     hierarchical schematic with more than one distinct sheet file, with no
+ *     need to guess which value belongs to which sheet.
+ *
+ * A consequence worth stating where the fixture is read as much as where
+ * it's written: the checked-in `.net` file is no longer byte-identical to
+ * what a raw, unpinned `kicad-cli sch export netlist` invocation would
+ * produce. Regenerating it BY HAND (bypassing this module) reintroduces
+ * exactly the machine-specific path this module exists to remove.
  */
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { moduleRepoRoot } from "./repo-root.ts"
 
 /**
  * A line shaped like `(date "2026-09-23T11:25:33")`, whitespace and all,
@@ -67,11 +98,50 @@ export function netlistsAgree(fresh: string, existing: string): boolean {
   return withoutVolatileDate(fresh) === withoutVolatileDate(existing)
 }
 
+/**
+ * The design section's `(source "...")` line - the FIRST `(source "...")`
+ * line kicad-cli writes, always emitted before any per-sheet `title_block`'s
+ * own `(source ...)`. Capturing (rather than blanking, as DESIGN_DATE_LINE
+ * above does) because this value is replaced with a real, repository-
+ * relative path, not erased.
+ */
+const SOURCE_LINE = /^(\s*\(source ")([^"]*)("\)\s*)$/
+
+/**
+ * `content` with the design section's `(source "...")` rewritten to
+ * `repoRelativeSchPath` - a stable, repository-relative path in place of
+ * kicad-cli's unconditional absolute one. See the module doc for why this
+ * exists and why it targets only the first such line.
+ *
+ * Throws rather than silently leaving a machine-specific path in place: if
+ * kicad-cli's export ever stops matching this shape, that is itself worth
+ * knowing, loudly, not papering over.
+ */
+export function normalizeSourcePath(content: string, repoRelativeSchPath: string): string {
+  const lines = content.split("\n")
+  const index = lines.findIndex((line) => SOURCE_LINE.test(line))
+  if (index === -1) {
+    throw new Error(
+      'kicad-cli\'s export has no "(source ...)" line to normalize - the export format may have ' +
+        "changed; this module's SOURCE_LINE pattern needs updating to match it.",
+    )
+  }
+  lines[index] = lines[index].replace(SOURCE_LINE, `$1${repoRelativeSchPath}$3`)
+  return lines.join("\n")
+}
+
+/** `absolutePath`, relative to `repoRoot`, with forward slashes regardless of platform separator. */
+export function repoRelativePath(repoRoot: string, absolutePath: string): string {
+  return path.relative(repoRoot, absolutePath).split(path.sep).join("/")
+}
+
 export interface NetlistSyncDeps {
   /** Runs kicad-cli, writing the fresh export to outputPath. Injected so no test spawns the real binary. */
-  readonly runExport?: (kicadCli: string, schPath: string, outputPath: string) => void
+  readonly runExport?: (kicadCli: string, schPath: string, outputPath: string, repoRoot: string) => void
   /** Injected so no test touches the real filesystem to check kicad-cli's executable bit. */
   readonly kicadCliExists?: (kicadCliPath: string) => boolean
+  /** This repository's root, for both the `(source ...)` rewrite and pinning kicad-cli's cwd. Defaults to the real one. */
+  readonly repoRoot?: string
 }
 
 export interface NetlistSyncResult {
@@ -89,11 +159,18 @@ export function defaultKicadCliExists(kicadCliPath: string): boolean {
   }
 }
 
-export function defaultRunExport(kicadCli: string, schPath: string, outputPath: string): void {
+export function defaultRunExport(kicadCli: string, schPath: string, outputPath: string, repoRoot: string): void {
+  // cwd is pinned to repoRoot deliberately - see the module doc's Sheetfile
+  // paragraph. Without this, kicad-cli computes each component's Sheetfile
+  // property relative to wherever THIS process happened to be invoked from,
+  // which varies (a board directory today, only because make always drives
+  // this via `-C` from there - a coupling nothing enforces). Pinning it here
+  // makes Sheetfile repository-root-relative unconditionally, the same
+  // stable form as the normalized `(source ...)` line.
   const result = spawnSync(
     kicadCli,
     ["sch", "export", "netlist", "--format", "kicadsexpr", "--output", outputPath, schPath],
-    { encoding: "utf8" },
+    { encoding: "utf8", cwd: repoRoot },
   )
   if (result.error) {
     throw new Error(`could not run kicad-cli at ${kicadCli}: ${result.error.message}`)
@@ -125,6 +202,7 @@ export function syncNetlistExport(
 ): NetlistSyncResult {
   const kicadCliExists = deps.kicadCliExists ?? defaultKicadCliExists
   const runExport = deps.runExport ?? defaultRunExport
+  const repoRoot = deps.repoRoot ?? moduleRepoRoot()
 
   if (!kicadCliExists(kicadCli)) {
     throw new Error(
@@ -137,8 +215,11 @@ export function syncNetlistExport(
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "netlist-sync-"))
   try {
     const freshPath = path.join(dir, path.basename(netlistPath))
-    runExport(kicadCli, schPath, freshPath)
-    const fresh = fs.readFileSync(freshPath, "utf8")
+    runExport(kicadCli, schPath, freshPath, repoRoot)
+    const fresh = normalizeSourcePath(
+      fs.readFileSync(freshPath, "utf8"),
+      repoRelativePath(repoRoot, schPath),
+    )
     const existing = fs.existsSync(netlistPath) ? fs.readFileSync(netlistPath, "utf8") : undefined
 
     if (existing !== undefined && netlistsAgree(fresh, existing)) {

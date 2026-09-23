@@ -64,6 +64,17 @@ else
 # clean; when it DOES differ, the CLI verb says so plainly, because that is
 # the operator's cue that circuits/*.ts may now need updating too.
 #
+# THE FIXTURE IS NOT RAW KICAD-CLI OUTPUT. netlist-sync.ts also normalizes
+# every machine-specific path kicad-cli stamps into the export - the design
+# section's absolute `(source ...)` and, by pinning kicad-cli's own cwd to
+# this repository's root, every component's `Sheetfile` - to a stable,
+# repository-relative form, BEFORE the fixture is ever compared or written.
+# That is why a clone at a different path never rewrites this file on its
+# first run: see the module's own doc comment for the two hazards this
+# closes. Regenerating the fixture by any OTHER means (a bare `kicad-cli sch
+# export netlist`) reintroduces exactly the machine-specific path this
+# guards against - always regenerate it through this target.
+#
 # The regenerated export is only half the safety: if the schematic moved and
 # circuits/*.ts (the hand-authored transcription) was not updated to match,
 # the circuit is now WRONG, and `check` would happily compare a stale

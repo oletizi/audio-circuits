@@ -1,20 +1,23 @@
 /**
  * Tests for tools/perfboard/netlist-sync.ts: the content-based freshness
- * check that replaced make/board.mk's `$(NETLIST): $(SCH)` mtime rule.
+ * check that replaced make/board.mk's `$(NETLIST): $(SCH)` mtime rule, and
+ * the path normalization that keeps the fixture free of machine-specific
+ * paths (see the module's own doc comment for why both exist).
  *
  * `runExport` and `kicadCliExists` are always injected here - this suite
  * never spawns the real kicad-cli, per this repository's own rule that no
  * test invokes it or builds anything. Injecting `runExport` also lets these
  * tests write whatever "fresh export" content they like, including content
- * that differs only in its `(date ...)` line, which is exactly the
- * distinction this module exists to make.
+ * that differs only in its `(date ...)` line, or only in the machine-
+ * specific `(source ...)` path a different clone's kicad-cli would stamp -
+ * both are exactly the distinctions this module exists to make.
  */
 import { test, expect } from "bun:test"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import {
-  netlistsAgree, syncNetlistExport, withoutVolatileDate,
+  netlistsAgree, normalizeSourcePath, repoRelativePath, syncNetlistExport, withoutVolatileDate,
 } from "../../tools/perfboard/netlist-sync.ts"
 
 function withTempDir(run: (dir: string) => void): void {
@@ -26,14 +29,47 @@ function withTempDir(run: (dir: string) => void): void {
   }
 }
 
+// The REPO-RELATIVE form every fixture in this suite is expected to carry -
+// as if this repository's root were `dir` and the schematic lived at
+// `dir/circuits/sch.kicad_sch`. Every orchestration test below passes a
+// matching `schPath`/`repoRoot` pair so the normalized value is exactly this.
+const NORMALIZED_SOURCE = "circuits/sch.kicad_sch"
+
+// Already in NORMALIZED form, as the checked-in fixture always is: this is
+// what "the fixture on disk" looks like BEFORE a new sync runs.
 const NETLIST_A = [
   "(export",
   '\t(version "E")',
   "\t(design",
+  `\t\t(source "${NORMALIZED_SOURCE}")`,
   '\t\t(date "2026-09-23T02:03:36")',
   '\t\t(tool "Eeschema 10.0.5")',
   "\t\t(sheet",
   "\t\t\t(title_block",
+  '\t\t\t\t(source "sch.kicad_sch")',
+  "\t\t\t\t(date)",
+  "\t\t\t)",
+  "\t\t)",
+  "\t)",
+  ")",
+].join("\n")
+
+// A RAW export, as kicad-cli would actually write it on some OTHER machine
+// (or a different clone path) before normalization: a different absolute
+// `(source ...)` AND a different date. After normalizeSourcePath and
+// withoutVolatileDate both do their jobs, this must agree with NETLIST_A -
+// that agreement is the entire point of normalizing before comparing rather
+// than after.
+const NETLIST_A_RAW_FROM_ANOTHER_MACHINE = [
+  "(export",
+  '\t(version "E")',
+  "\t(design",
+  '\t\t(source "/Users/someone-else/elsewhere/circuits/sch.kicad_sch")',
+  '\t\t(date "2026-09-23T11:25:33")',
+  '\t\t(tool "Eeschema 10.0.5")',
+  "\t\t(sheet",
+  "\t\t\t(title_block",
+  '\t\t\t\t(source "sch.kicad_sch")',
   "\t\t\t\t(date)",
   "\t\t\t)",
   "\t\t)",
@@ -53,6 +89,27 @@ const NETLIST_B = NETLIST_A.replace(
   '(tool "Eeschema 10.0.5")',
   '(tool "Eeschema 10.0.6")',
 )
+
+// ---------------------------------------------------------------------------
+// normalizeSourcePath / repoRelativePath: pure path normalization
+// ---------------------------------------------------------------------------
+
+test("normalizeSourcePath rewrites only the design section's (source ...), leaving the title_block's bare filename alone", () => {
+  const normalized = normalizeSourcePath(NETLIST_A_RAW_FROM_ANOTHER_MACHINE, NORMALIZED_SOURCE)
+  expect(normalized).toContain(`(source "${NORMALIZED_SOURCE}")`)
+  expect(normalized).not.toContain("/Users/someone-else")
+  // The title_block's own (source "sch.kicad_sch") is untouched.
+  expect(normalized).toContain('(source "sch.kicad_sch")')
+})
+
+test("normalizeSourcePath throws naming what's missing when there is no (source ...) line at all", () => {
+  const noSource = NETLIST_A.split("\n").filter((line) => !line.includes("(source ")).join("\n")
+  expect(() => normalizeSourcePath(noSource, NORMALIZED_SOURCE)).toThrow(/no "\(source \.\.\.\)" line/)
+})
+
+test("repoRelativePath renders a repository-relative path with forward slashes", () => {
+  expect(repoRelativePath("/repo", "/repo/circuits/sch.kicad_sch")).toBe("circuits/sch.kicad_sch")
+})
 
 // ---------------------------------------------------------------------------
 // withoutVolatileDate / netlistsAgree: pure comparison
@@ -103,11 +160,13 @@ test("kicad-cli missing refuses naming the sch/netlist/kicad-cli paths, and neve
 test("a fresh export that agrees with the fixture (ignoring the date) leaves the fixture untouched", () => {
   withTempDir((dir) => {
     const netlistPath = path.join(dir, "board.net")
+    const schPath = path.join(dir, "circuits", "sch.kicad_sch")
     fs.writeFileSync(netlistPath, NETLIST_A)
     const before = fs.statSync(netlistPath).mtimeMs
 
-    const result = syncNetlistExport("sch.kicad_sch", netlistPath, "/fake/kicad-cli", {
+    const result = syncNetlistExport(schPath, netlistPath, "/fake/kicad-cli", {
       kicadCliExists: () => true,
+      repoRoot: dir,
       runExport: (_cli, _sch, outputPath) => fs.writeFileSync(outputPath, NETLIST_A_RESTAMPED),
     })
 
@@ -120,13 +179,50 @@ test("a fresh export that agrees with the fixture (ignoring the date) leaves the
   })
 })
 
-test("a fresh export that genuinely differs replaces the fixture and says so", () => {
+test("a fresh export carrying a DIFFERENT machine's absolute source path still agrees, once normalized - this is the whole point", () => {
   withTempDir((dir) => {
     const netlistPath = path.join(dir, "board.net")
+    const schPath = path.join(dir, "circuits", "sch.kicad_sch")
     fs.writeFileSync(netlistPath, NETLIST_A)
 
-    const result = syncNetlistExport("sch.kicad_sch", netlistPath, "/fake/kicad-cli", {
+    const result = syncNetlistExport(schPath, netlistPath, "/fake/kicad-cli", {
       kicadCliExists: () => true,
+      repoRoot: dir,
+      runExport: (_cli, _sch, outputPath) =>
+        fs.writeFileSync(outputPath, NETLIST_A_RAW_FROM_ANOTHER_MACHINE),
+    })
+
+    expect(result.changed).toBe(false)
+    expect(fs.readFileSync(netlistPath, "utf8")).toBe(NETLIST_A)
+  })
+})
+
+test("passes the resolved repository root through to runExport, for pinning kicad-cli's own cwd", () => {
+  withTempDir((dir) => {
+    const netlistPath = path.join(dir, "board.net")
+    const schPath = path.join(dir, "circuits", "sch.kicad_sch")
+    let receivedRepoRoot: string | undefined
+    syncNetlistExport(schPath, netlistPath, "/fake/kicad-cli", {
+      kicadCliExists: () => true,
+      repoRoot: dir,
+      runExport: (_cli, _sch, outputPath, repoRoot) => {
+        receivedRepoRoot = repoRoot
+        fs.writeFileSync(outputPath, NETLIST_A)
+      },
+    })
+    expect(receivedRepoRoot).toBe(dir)
+  })
+})
+
+test("a fresh export that genuinely differs replaces the fixture, normalized, and says so", () => {
+  withTempDir((dir) => {
+    const netlistPath = path.join(dir, "board.net")
+    const schPath = path.join(dir, "circuits", "sch.kicad_sch")
+    fs.writeFileSync(netlistPath, NETLIST_A)
+
+    const result = syncNetlistExport(schPath, netlistPath, "/fake/kicad-cli", {
+      kicadCliExists: () => true,
+      repoRoot: dir,
       runExport: (_cli, _sch, outputPath) => fs.writeFileSync(outputPath, NETLIST_B),
     })
 
@@ -143,12 +239,14 @@ test("a stale fixture stamped with a NEWER mtime than the schematic is still cau
   // never consults either file's mtime, so this must still be caught.
   withTempDir((dir) => {
     const netlistPath = path.join(dir, "board.net")
+    const schPath = path.join(dir, "circuits", "sch.kicad_sch")
     fs.writeFileSync(netlistPath, NETLIST_A) // stale content
     const future = new Date(Date.now() + 60 * 60 * 1000)
     fs.utimesSync(netlistPath, future, future) // newer than any schematic touch
 
-    const result = syncNetlistExport("sch.kicad_sch", netlistPath, "/fake/kicad-cli", {
+    const result = syncNetlistExport(schPath, netlistPath, "/fake/kicad-cli", {
       kicadCliExists: () => true,
+      repoRoot: dir,
       runExport: (_cli, _sch, outputPath) => fs.writeFileSync(outputPath, NETLIST_B), // schematic moved
     })
 
@@ -157,26 +255,34 @@ test("a stale fixture stamped with a NEWER mtime than the schematic is still cau
   })
 })
 
-test("no existing fixture creates one rather than comparing against nothing", () => {
+test("no existing fixture creates one, normalized, rather than comparing against nothing", () => {
   withTempDir((dir) => {
     const netlistPath = path.join(dir, "board.net")
-    const result = syncNetlistExport("sch.kicad_sch", netlistPath, "/fake/kicad-cli", {
+    const schPath = path.join(dir, "circuits", "sch.kicad_sch")
+    const result = syncNetlistExport(schPath, netlistPath, "/fake/kicad-cli", {
       kicadCliExists: () => true,
-      runExport: (_cli, _sch, outputPath) => fs.writeFileSync(outputPath, NETLIST_A),
+      repoRoot: dir,
+      runExport: (_cli, _sch, outputPath) =>
+        fs.writeFileSync(outputPath, NETLIST_A_RAW_FROM_ANOTHER_MACHINE),
     })
     expect(result.changed).toBe(true)
     expect(result.message).toMatch(/created/)
-    expect(fs.readFileSync(netlistPath, "utf8")).toBe(NETLIST_A)
+    // Written with the normalized source - but otherwise verbatim, date
+    // included: normalizing (source ...) never touches (date ...). The raw
+    // export's date (11:25:33) survives; only its source path is rewritten.
+    expect(fs.readFileSync(netlistPath, "utf8")).toBe(NETLIST_A_RESTAMPED)
   })
 })
 
 test("an export failure propagates rather than being swallowed as 'unchanged'", () => {
   withTempDir((dir) => {
     const netlistPath = path.join(dir, "board.net")
+    const schPath = path.join(dir, "circuits", "sch.kicad_sch")
     fs.writeFileSync(netlistPath, NETLIST_A)
     expect(() =>
-      syncNetlistExport("sch.kicad_sch", netlistPath, "/fake/kicad-cli", {
+      syncNetlistExport(schPath, netlistPath, "/fake/kicad-cli", {
         kicadCliExists: () => true,
+        repoRoot: dir,
         runExport: () => { throw new Error("kicad-cli exited 1: unreadable schematic") },
       }),
     ).toThrow(/unreadable schematic/)
