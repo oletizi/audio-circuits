@@ -10,7 +10,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "perfboard": "bun run tools/cli/perfboard.ts"
+    "perfboard": "bun run tools/cli/perfboard.ts",
+    "schematic-stub": "bun run tools/cli/schematic-stub.ts"
   },
   "devDependencies": {
     "bun-types": "^1.4.2",

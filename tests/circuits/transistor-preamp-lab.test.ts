@@ -13,6 +13,14 @@ import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netli
 import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
 import { acSweepOf } from "../sim/helpers.ts"
+import { randomUUID } from "node:crypto"
+import fs from "node:fs"
+import os from "node:os"
+import path from "node:path"
+import { writeSchematicStub } from "../../lib/kicad/schematic.ts"
+import { importNetlist } from "../../lib/kicad/netlist.ts"
+import type { ImportedNetlist } from "../../lib/kicad/netlist.ts"
+import { defaultKicadCliExists, defaultRunExport } from "../../tools/perfboard/netlist-sync.ts"
 
 function byId(id: string): Component {
   const found = transistorPreampLab().components.find((c) => c.id === id)
@@ -135,3 +143,49 @@ for (const setting of SETTINGS) {
     expect(Math.abs(phase)).toBeGreaterThan(135)
   })
 }
+
+/** The same default make/board.mk uses; KICAD_CLI overrides it. */
+const KICAD_CLI = process.env["KICAD_CLI"] ?? "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
+
+/** Nets as a partition of "designator.pin" members, ignoring net names. */
+function partition(netlist: Pick<ImportedNetlist, "nets">): string[] {
+  return Object.values(netlist.nets).map((members) => [...members].sort().join(" ")).sort()
+}
+
+function valuesOf(netlist: Pick<ImportedNetlist, "components">): Record<string, string> {
+  return Object.fromEntries(netlist.components.map((c) => [c.designator, c.value]))
+}
+
+/** Asserts a KiCad netlist export describes exactly the lab board. */
+function expectSameCircuit(exported: ImportedNetlist): void {
+  const network = transistorPreampLab()
+  const ours = toImportedNetlist(network, DESIGNATORS, PIN_NUMBERS)
+  expect(partition(exported)).toEqual(partition(ours))
+  expect(valuesOf(exported)).toEqual(valuesOf(ours))
+  const footprints = new Map(exported.components.map((c) => [c.designator, c.footprint]))
+  for (const component of network.components) {
+    expect(footprints.get(DESIGNATORS[component.id] ?? "")).toBe(component.part?.footprint)
+  }
+}
+
+test("KiCad reads the generated stub as the same circuit", () => {
+  if (!defaultKicadCliExists(KICAD_CLI)) {
+    throw new Error(
+      `kicad-cli not found at ${KICAD_CLI}. Install KiCad or set KICAD_CLI. This test ` +
+        "does not skip: it is the only proof KiCad reads the stub the way the circuit means it.",
+    )
+  }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lab-board-stub-"))
+  try {
+    const sch = path.join(dir, "lab-board.kicad_sch")
+    fs.writeFileSync(sch, writeSchematicStub({
+      network: transistorPreampLab(), designators: DESIGNATORS, pinNumbers: PIN_NUMBERS,
+      notes: schematicNotes(), projectName: "lab-board", newUuid: randomUUID,
+    }))
+    const net = path.join(dir, "lab-board.net")
+    defaultRunExport(KICAD_CLI, sch, net, dir)
+    expectSameCircuit(importNetlist(fs.readFileSync(net, "utf8")))
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+}, 30_000)

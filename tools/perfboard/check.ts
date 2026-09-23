@@ -114,6 +114,13 @@ export interface PerfboardResult {
   readonly report: string
 }
 
+/** Where a circuit's exports were read from, for error messages. A PerfboardDeclaration
+ * is one; the schematic-stub verb passes the module path for both fields. */
+export interface SourceOfExports {
+  readonly file: string
+  readonly circuitPath: string
+}
+
 /**
  * Validate `DESIGNATORS`: every value must be a string designator.
  *
@@ -122,9 +129,9 @@ export interface PerfboardResult {
  * a numeric or otherwise non-string designator must throw naming the id it
  * came from, not get lowered into a netlist as a wrong value.
  */
-function assertDesignators(
+export function assertDesignators(
   value: unknown,
-  declaration: PerfboardDeclaration,
+  declaration: SourceOfExports,
 ): Readonly<Record<string, string>> {
   if (!isRecord(value)) {
     throw new Error(`${declaration.file}: ${declaration.circuitPath} does not export a DESIGNATORS map`)
@@ -142,9 +149,9 @@ function assertDesignators(
 }
 
 /** Validate `PIN_NUMBERS`: every entry must be a map of canonical pin -> string pin number. */
-function assertPinNumbers(
+export function assertPinNumbers(
   value: unknown,
-  declaration: PerfboardDeclaration,
+  declaration: SourceOfExports,
 ): Readonly<Record<string, Readonly<Record<string, string>>>> {
   if (!isRecord(value)) {
     throw new Error(`${declaration.file}: ${declaration.circuitPath} does not export a PIN_NUMBERS map`)

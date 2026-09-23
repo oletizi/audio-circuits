@@ -11,7 +11,7 @@ import type { Network } from "../../lib/model/types.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
 import { isRecord } from "./guards.ts"
 
-function isNetwork(value: unknown): value is Network {
+export function isNetwork(value: unknown): value is Network {
   if (!isRecord(value)) return false
   return Array.isArray(value["components"]) && isRecord(value["ports"])
 }
