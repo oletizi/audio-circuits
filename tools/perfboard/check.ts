@@ -108,16 +108,16 @@ export interface PerfboardResult {
  */
 function assertDesignators(
   value: unknown,
-  circuitPath: string,
+  declaration: PerfboardDeclaration,
 ): Readonly<Record<string, string>> {
   if (!isRecord(value)) {
-    throw new Error(`${circuitPath} does not export a DESIGNATORS map`)
+    throw new Error(`${declaration.file}: ${declaration.circuitPath} does not export a DESIGNATORS map`)
   }
   const designators: Record<string, string> = {}
   for (const [id, designator] of Object.entries(value)) {
     if (typeof designator !== "string") {
       throw new Error(
-        `${circuitPath}: DESIGNATORS["${id}"] must be a string designator, got ${typeof designator}`,
+        `${declaration.file}: DESIGNATORS["${id}"] must be a string designator, got ${typeof designator}`,
       )
     }
     designators[id] = designator
@@ -128,16 +128,16 @@ function assertDesignators(
 /** Validate `PIN_NUMBERS`: every entry must be a map of canonical pin -> string pin number. */
 function assertPinNumbers(
   value: unknown,
-  circuitPath: string,
+  declaration: PerfboardDeclaration,
 ): Readonly<Record<string, Readonly<Record<string, string>>>> {
   if (!isRecord(value)) {
-    throw new Error(`${circuitPath} does not export a PIN_NUMBERS map`)
+    throw new Error(`${declaration.file}: ${declaration.circuitPath} does not export a PIN_NUMBERS map`)
   }
   const pinNumbers: Record<string, Record<string, string>> = {}
   for (const [kind, mapping] of Object.entries(value)) {
     if (!isRecord(mapping)) {
       throw new Error(
-        `${circuitPath}: PIN_NUMBERS["${kind}"] must be an object mapping canonical pins to ` +
+        `${declaration.file}: PIN_NUMBERS["${kind}"] must be an object mapping canonical pins to ` +
           `footprint pin numbers, got ${mapping === null ? "null" : typeof mapping}`,
       )
     }
@@ -145,7 +145,7 @@ function assertPinNumbers(
     for (const [pin, number] of Object.entries(mapping)) {
       if (typeof number !== "string") {
         throw new Error(
-          `${circuitPath}: PIN_NUMBERS["${kind}"]["${pin}"] must be a string pin number, got ${typeof number}`,
+          `${declaration.file}: PIN_NUMBERS["${kind}"]["${pin}"] must be a string pin number, got ${typeof number}`,
         )
       }
       pins[pin] = number
@@ -161,11 +161,11 @@ async function exportNetlistFor(declaration: PerfboardDeclaration): Promise<stri
   const imported: unknown = await import(declaration.circuitPath)
   if (!isRecord(imported)) {
     throw new Error(
-      `${declaration.circuitPath}: the module did not import as an object`,
+      `${declaration.file}: the module at ${declaration.circuitPath} did not import as an object`,
     )
   }
-  const designators = assertDesignators(imported["DESIGNATORS"], declaration.circuitPath)
-  const pinNumbers = assertPinNumbers(imported["PIN_NUMBERS"], declaration.circuitPath)
+  const designators = assertDesignators(imported["DESIGNATORS"], declaration)
+  const pinNumbers = assertPinNumbers(imported["PIN_NUMBERS"], declaration)
   const lowered = toImportedNetlist(network, designators, pinNumbers)
   return writeLegacyNetlist(lowered, { createdAt: new Date().toISOString().slice(0, 19) })
 }

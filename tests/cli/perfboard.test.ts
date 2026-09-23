@@ -125,6 +125,41 @@ test("board-info reports a malformed declaration through the normal return path,
   }
 })
 
+test("standing in a board directory targets only that board, even with a board nested beneath it", async () => {
+  const root = tree()
+  try {
+    fs.mkdirSync(path.join(root, "boards", "demo", "nested"), { recursive: true })
+    fs.writeFileSync(
+      path.join(root, "boards", "demo", "nested", "perfboard.json"),
+      JSON.stringify({ circuit: "c.ts", export: "demo", vrt: "nested.vrt" }),
+    )
+    const checked: string[] = []
+    const code = await runCli(["check"], {
+      cwd: path.join(root, "boards", "demo"),
+      log: () => {},
+      check: (declaration) => { checked.push(declaration.vrtPath); return okCheck(declaration) },
+    })
+    expect(code).toBe(0)
+    expect(checked).toEqual([path.join(root, "boards", "demo", "demo.vrt")])
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("an unimplemented verb refuses with exit 1, not a silent success", async () => {
+  const root = tree()
+  try {
+    const errors: string[] = []
+    const code = await runCli(["cuts"], {
+      cwd: path.join(root, "boards", "demo"), log: () => {}, error: (line) => errors.push(line),
+    })
+    expect(code).toBe(1)
+    expect(errors.join("\n")).toContain("cuts")
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
 test("board-info prints what the directory declares", async () => {
   const root = tree()
   try {

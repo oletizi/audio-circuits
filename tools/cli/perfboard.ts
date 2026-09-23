@@ -82,13 +82,35 @@ function targets(cwd: string): string[] {
   return all.includes(here) ? [here] : all
 }
 
+/**
+ * `targets` in a try/catch, for every call site.
+ *
+ * `discoverDeclarations` reads the filesystem (`fs.readdirSync`) with nothing
+ * between it and this CLI's callers - a nonexistent `cwd` throws `ENOENT`
+ * outside every other try/catch here, which would break `runCli`'s documented
+ * `Promise<number>` contract exactly the way an unhandled `loadDeclaration`
+ * throw once did. Returns `null` on failure after reporting it, so every verb
+ * can treat "could not even look" the same as any other refusal: return 1,
+ * never let the exception escape.
+ */
+function safeTargets(cwd: string, error: (line: string) => void): string[] | null {
+  try {
+    return targets(cwd)
+  } catch (caught) {
+    error(`FAIL ${cwd}`)
+    for (const line of reportLines(errorMessage(caught))) error(line)
+    return null
+  }
+}
+
 async function runCheck(
   cwd: string,
   check: (declaration: PerfboardDeclaration) => Promise<PerfboardResult>,
   log: (line: string) => void,
   error: (line: string) => void,
 ): Promise<number> {
-  const files = targets(cwd)
+  const files = safeTargets(cwd, error)
+  if (files === null) return 1
   if (files.length === 0) {
     // NOT exit 0. A discovery that finds nothing and succeeds is a gate that is
     // permanently green while looking exactly like a passing one.
@@ -137,7 +159,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (verb === "check") return runCheck(cwd, check, log, error)
 
   if (verb === "boards") {
-    const files = targets(cwd)
+    const files = safeTargets(cwd, error)
+    if (files === null) return 1
     if (files.length === 0) {
       error(`no perfboard.json found in or under ${cwd}`)
       return 1
@@ -157,7 +180,9 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
 
   if (verb === "board-info") {
     const here = path.join(cwd, "perfboard.json")
-    if (!targets(cwd).includes(here)) {
+    const files = safeTargets(cwd, error)
+    if (files === null) return 1
+    if (!files.includes(here)) {
       error(`${cwd} declares no board. Run this from a directory holding a perfboard.json.`)
       return 1
     }
