@@ -43,6 +43,7 @@ import {
 } from "./perfboard-binary-verbs.ts"
 import { dispatchNetlistSync } from "./perfboard-netlist-verb.ts"
 import type { NetlistSyncDeps } from "../perfboard/netlist-sync.ts"
+import { schematicNoticeLines } from "../perfboard/schematic-notice.ts"
 
 const VERBS = [
   ["check", "check this layout against the circuit it was built from"],
@@ -54,6 +55,7 @@ const VERBS = [
   ["boards", "every declared board under this directory"],
   ["veroroute", "acquire the pinned VeroRoute fork (a no-op if already built)"],
   ["netlist-sync", "regenerate a netlist export and reconcile it with its fixture (used by make)"],
+  ["schematic-notice", "print the no-schematic-declared notice (used by make)"],
 ] as const
 
 const USAGE = [
@@ -312,6 +314,11 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   }
 
   if (verb === "netlist-sync") return dispatchNetlistSync(args.slice(1), opts.netlistSyncDeps, log, error)
+
+  if (verb === "schematic-notice") {
+    for (const line of schematicNoticeLines(path.join(cwd, "perfboard.json"))) log(line)
+    return 0
+  }
 
   if (verb === "veroroute") {
     const env = opts.env ?? process.env

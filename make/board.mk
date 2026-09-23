@@ -91,8 +91,16 @@ else
 # No schematic declared: the graceful path a clone without the schematic's
 # own repository needs. Nothing to regenerate, nothing to re-check here -
 # `check` still checks the circuit against the .vrt exactly as it always did.
+#
+# BUT THIS BOARD GETS NO FRESHNESS GUARD AT ALL, and that must never be
+# silent: `check` reported `ok <path>` in exactly the same words whether the
+# circuit had just been verified against its schematic or never compared to
+# one at all. A skipped check that looks identical to a passing one is the
+# precise failure shape this whole workflow exists to prevent - see
+# tools/perfboard/schematic-notice.ts (bun test reaches it; this recipe just
+# calls it, same as every other verb here).
 netlist-agrees:
-	@:
+	@bun "$(CLI)" schematic-notice -C "$(CURDIR)"
 endif
 
 .DEFAULT_GOAL := help
