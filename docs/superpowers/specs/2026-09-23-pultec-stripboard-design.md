@@ -189,6 +189,23 @@ The mid is the large one: 20 on-board parts and 28 landing pads.
 
 ## Changes to existing code
 
+### `lib/kicad/value-notation.ts` — formatters for three more cases
+
+Found while writing the plan, by running `valueFor` against every component in
+`partitionReference()`: it refuses **22 of them**. Every inductor, every
+potentiometer and every switch throws on `UNFORMATTED_ELECTRICAL_KINDS`, and `R1`
+throws because 430Ω is below the 1k floor the resistance formatter is proven over.
+Off-board parts go through `valueFor` like any other, so this blocks every board,
+not just the ones with inductors.
+
+The three kinds are not one problem. An inductor and a potentiometer each carry a
+real electrical quantity and need a formatter. A **switch does not**: `positions` and
+`contacts` are topology, and KiCad's value field for a switch legitimately holds the
+part identity, so a switch belongs on the existing mpn/symbol fallback rather than in
+the refuse-set. With all three removed that set is empty, and an empty list kept for
+future kinds is a vestigial pattern — it becomes a rule that maintains itself: if no
+branch handled the component and its parameters carry a numeric quantity, refuse.
+
 ### `lib/kicad/import-string.ts` — two new families
 
 It derives five of the fork's sixteen part types. These are needed now:
