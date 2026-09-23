@@ -50,6 +50,22 @@ export interface VerbDeps {
   readonly launchEditor?: (binary: string, vrtPath: string) => void
 }
 
+/**
+ * The `deps.env ?? process.env` / `deps.repoRoot ?? moduleRepoRoot()`
+ * fallback pair, in one place. Repeating it at every call site is how a
+ * future verb gets the fallback subtly wrong - e.g. resolving `deps.env`
+ * against the wrong default, or forgetting `deps.repoRoot` entirely.
+ */
+function resolvedEnvAndRepoRoot(deps: VerbDeps): readonly [Env, string] {
+  return [deps.env ?? process.env, deps.repoRoot ?? moduleRepoRoot()]
+}
+
+/** The `deps.runVeroroute ?? defaultRunVeroroute(...)` fallback chain, in one place. */
+function runnerFor(deps: VerbDeps): (args: readonly string[]) => VerbRun {
+  const [env, repoRoot] = resolvedEnvAndRepoRoot(deps)
+  return deps.runVeroroute ?? defaultRunVeroroute(env, repoRoot)
+}
+
 function defaultRunVeroroute(env: Env, repoRoot: string): (args: readonly string[]) => VerbRun {
   return (args) => {
     const binary = verorouteBinary(env, repoRoot)
@@ -132,8 +148,7 @@ const CUT_LINE_KEYWORDS = new Set([
  * it, rather than as an empty cut list.
  */
 export function runCuts(declaration: PerfboardDeclaration, deps: VerbDeps = {}): string {
-  const runVeroroute =
-    deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env, deps.repoRoot ?? moduleRepoRoot())
+  const runVeroroute = runnerFor(deps)
   const run = runVeroroute(["--dump-board", declaration.vrtPath])
   if (run.status !== 0) {
     throw new Error(
@@ -183,8 +198,13 @@ export interface UpdateOptions {
  * that cannot be undone must never get far enough to spend the cost of
  * exporting or spawning. `-o` names a same-directory temp path because
  * rename is only atomic within one filesystem, and the produced file
- * replaces the original only after veroroute exits 0. On any other exit, the
- * layout is reported unchanged and nothing is replaced.
+ * replaces the original only after veroroute exits 0. On any other exit,
+ * this THROWS - the layout is unchanged and nothing is replaced, but a
+ * report string returned on a failed write could be logged to stdout and
+ * mistaken for a real answer, which is this workflow's defining failure
+ * shape. On success, the binary's own output is carried into the returned
+ * report: the spec's fixed point ("update again must report an empty plan")
+ * is unexecutable if that text is discarded.
  */
 export async function runUpdate(
   declaration: PerfboardDeclaration,
@@ -194,8 +214,7 @@ export async function runUpdate(
   assertLayoutRecoverable(declaration.vrtPath, { allowDirty: opts.allowDirty, git: deps.git })
 
   const exportNetlist = deps.exportNetlist ?? exportNetlistFor
-  const runVeroroute =
-    deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env, deps.repoRoot ?? moduleRepoRoot())
+  const runVeroroute = runnerFor(deps)
   const producedPath = tempPathAlongside(declaration.vrtPath, "update")
 
   const text = await exportNetlist(declaration)
@@ -217,24 +236,20 @@ export async function runUpdate(
 
   if (run.status !== 0) {
     cleanupProduced(producedPath)
-    return (
+    throw new Error(
       `veroroute --update on ${declaration.vrtPath} exited ${run.status}; the layout is unchanged.\n` +
-      run.output
+        run.output,
     )
   }
 
   replaceAtomically(declaration.vrtPath, producedPath)
 
-  if (opts.allowDirty) {
-    return (
-      `${declaration.vrtPath} was rewritten in place. This ran with --allow-dirty, so there may be ` +
+  const summary = opts.allowDirty
+    ? `${declaration.vrtPath} was rewritten in place. This ran with --allow-dirty, so there may be ` +
       "no clean prior version in git to fall back to."
-    )
-  }
-  return (
-    `${declaration.vrtPath} was rewritten in place. Run \`git checkout -- ${declaration.vrtPath}\` ` +
-    "to undo."
-  )
+    : `${declaration.vrtPath} was rewritten in place. Run \`git checkout -- ${declaration.vrtPath}\` ` +
+      "to undo."
+  return run.output.trim() === "" ? summary : `${summary}\n${run.output}`
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +276,17 @@ export interface StripboardOptions {
  * itself what left the layout dirty, and the guard that write already
  * satisfied (or was told to ignore) must not turn around and refuse the
  * write that completes it.
+ *
+ * If that fill step fails for ANY reason - a non-zero veroroute exit, or a
+ * throw from anywhere inside `runUpdate` (a circuit that cannot be lowered,
+ * a dead spawn, a failed replace) - the conversion write has already
+ * landed on disk and is NOT undone. Reporting that as "unchanged," or
+ * letting the bare error propagate as if nothing happened, would both hide
+ * a real state change from the operator. So this step is CAUGHT and
+ * re-thrown as a fuller account: the conversion succeeded, the layout on
+ * disk is converted but not filled, the fill's own error text is preserved,
+ * and `git checkout --` is named as the way back to the pre-conversion
+ * layout.
  */
 export async function runStripboard(
   declaration: PerfboardDeclaration,
@@ -277,8 +303,7 @@ export async function runStripboard(
 
   assertLayoutRecoverable(declaration.vrtPath, { allowDirty: opts.allowDirty, git: deps.git })
 
-  const runVeroroute =
-    deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env, deps.repoRoot ?? moduleRepoRoot())
+  const runVeroroute = runnerFor(deps)
   const producedPath = tempPathAlongside(declaration.vrtPath, "strips")
   let run: VerbRun
   try {
@@ -290,16 +315,31 @@ export async function runStripboard(
 
   if (run.status !== 0) {
     cleanupProduced(producedPath)
-    return (
+    throw new Error(
       `veroroute --set-strips on ${declaration.vrtPath} exited ${run.status}; the layout is ` +
-      `unchanged.\n${run.output}`
+        `unchanged.\n${run.output}`,
     )
   }
 
   replaceAtomically(declaration.vrtPath, producedPath)
 
-  const updateReport = await runUpdate(declaration, { allowDirty: true }, deps)
-  return `${declaration.vrtPath} was converted to ${opts.strips} strips.\n${updateReport}`
+  const convertedLine = `${declaration.vrtPath} was converted to ${opts.strips} strips.`
+  const convertedSummary = run.output.trim() === "" ? convertedLine : `${convertedLine}\n${run.output}`
+
+  try {
+    const updateReport = await runUpdate(declaration, { allowDirty: true }, deps)
+    return `${convertedSummary}\n${updateReport}`
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `${convertedSummary}\n` +
+        `The conversion above SUCCEEDED and is on disk: ${declaration.vrtPath} is now in ` +
+        `${opts.strips} strip mode. But filling those strips failed, so the layout is converted ` +
+        "and NOT filled - this is not the usual \"failure leaves nothing changed\" case. The fill " +
+        `failure was:\n${detail}\n` +
+        `Run \`git checkout -- ${declaration.vrtPath}\` to go back to the pre-conversion layout.`,
+    )
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -337,7 +377,8 @@ function defaultLaunchEditor(binary: string, vrtPath: string): void {
  * perfectly well and silently lacks every verb this workflow depends on.
  */
 export function runEdit(declaration: PerfboardDeclaration, deps: VerbDeps = {}): string {
-  const binary = verorouteBinary(deps.env ?? process.env, deps.repoRoot ?? moduleRepoRoot())
+  const [env, repoRoot] = resolvedEnvAndRepoRoot(deps)
+  const binary = verorouteBinary(env, repoRoot)
   const isExecutable = deps.isExecutable ?? defaultIsExecutable
   if (!isExecutable(binary)) {
     throw new Error(

@@ -69,12 +69,17 @@ test("cuts reports the CUT_STATE/CUT/CUT_CONFLICT/SOLDER/CUT_UNCONNECTED_PIN lin
 })
 
 test("a dump with no CUT_STATE line refuses rather than reporting an empty list", async () => {
+  // F6: assert a distinctive phrase from the deliberate refusal, not a token
+  // ("CUT_STATE") that also appears in an incidental TypeError's message if
+  // the refusal itself is ever accidentally removed - `.trim()` on
+  // `undefined` throws a message that quotes the source expression
+  // containing "CUT_STATE", which would let a gutted refusal pass this test.
   await withVrt((vrtPath) => {
     expect(() =>
       runCuts(declaration(vrtPath), {
         runVeroroute: () => ({ status: 0, output: "CUT r1c1\nSOLDER r2c2\n" }),
       }),
-    ).toThrow(/CUT_STATE/)
+    ).toThrow(/no longer understands/)
   })
 })
 
@@ -129,38 +134,58 @@ test("update passes -o in the same directory as the layout, and replaces atomica
   })
 })
 
-test("update on a non-zero exit leaves the layout byte-identical and does not replace", async () => {
+test("update on a non-zero exit THROWS, leaves the layout byte-identical, and does not replace", async () => {
+  // F1: a failed write must never come back as a normal return value - a
+  // report string returned on a failed run could be logged and mistaken for
+  // a real answer, which is this workflow's defining failure shape.
   await withVrt(async (vrtPath) => {
     const before = fs.readFileSync(vrtPath, "utf8")
-    const report = await runUpdate(declaration(vrtPath), { allowDirty: false }, {
-      git: stubGit(true, false),
-      exportNetlist: netlist,
-      runVeroroute: () => ({ status: 1, output: "veroroute: could not route" }),
-    })
+    await expect(
+      runUpdate(declaration(vrtPath), { allowDirty: false }, {
+        git: stubGit(true, false),
+        exportNetlist: netlist,
+        runVeroroute: () => ({ status: 1, output: "veroroute: could not route" }),
+      }),
+    ).rejects.toThrow(/unchanged/)
     expect(fs.readFileSync(vrtPath, "utf8")).toBe(before)
-    expect(report).toContain("unchanged")
   })
 })
 
-test("a binary that writes PARTIAL output to -o and then exits non-zero leaves no leftover file", async () => {
+test("a binary that writes PARTIAL output to -o and then exits non-zero throws and leaves no leftover file", async () => {
   // The ordinary "attempted, failed partway" case, not a crash: the binary
   // did write something at the -o path before deciding to fail. That file
   // must not survive the call, or `git add -A` would sweep it into a commit.
   await withVrt(async (vrtPath) => {
     let outPath = ""
+    await expect(
+      runUpdate(declaration(vrtPath), { allowDirty: false }, {
+        git: stubGit(true, false),
+        exportNetlist: netlist,
+        runVeroroute: (args) => {
+          outPath = flagValue(args, "-o")
+          fs.writeFileSync(outPath, "PARTIAL-GARBAGE")
+          return { status: 1, output: "veroroute: routing failed partway" }
+        },
+      }),
+    ).rejects.toThrow(/unchanged/)
+    expect(fs.existsSync(outPath)).toBe(false)
+    expect(fs.readdirSync(path.dirname(vrtPath))).toEqual([path.basename(vrtPath)])
+    expect(fs.readFileSync(vrtPath, "utf8")).toBe("ORIGINAL")
+  })
+})
+
+test("update on success carries the binary's own output into the report (F4)", async () => {
+  await withVrt(async (vrtPath) => {
     const report = await runUpdate(declaration(vrtPath), { allowDirty: false }, {
       git: stubGit(true, false),
       exportNetlist: netlist,
       runVeroroute: (args) => {
-        outPath = flagValue(args, "-o")
-        fs.writeFileSync(outPath, "PARTIAL-GARBAGE")
-        return { status: 1, output: "veroroute: routing failed partway" }
+        const outPath = flagValue(args, "-o")
+        fs.writeFileSync(outPath, "UPDATED")
+        return { status: 0, output: "PLAN: move R4 to r3c7\n" }
       },
     })
-    expect(fs.existsSync(outPath)).toBe(false)
-    expect(fs.readdirSync(path.dirname(vrtPath))).toEqual([path.basename(vrtPath)])
-    expect(fs.readFileSync(vrtPath, "utf8")).toBe("ORIGINAL")
-    expect(report).toContain("unchanged")
+    expect(report).toContain("PLAN: move R4 to r3c7")
   })
 })
 
@@ -195,25 +220,95 @@ test("stripboard refuses without a strip direction", async () => {
   })
 })
 
-test("stripboard cleans up the -o file when --set-strips writes partial output and exits non-zero", async () => {
+test("stripboard throws and cleans up the -o file when --set-strips writes partial output and exits non-zero", async () => {
   await withVrt(async (vrtPath) => {
     let outPath = ""
-    const report = await runStripboard(
-      declaration(vrtPath),
-      { strips: "horizontal", allowDirty: false },
-      {
-        git: stubGit(true, false),
-        runVeroroute: (args) => {
-          outPath = flagValue(args, "-o")
-          fs.writeFileSync(outPath, "PARTIAL-GARBAGE")
-          return { status: 1, output: "veroroute: could not set strips" }
+    await expect(
+      runStripboard(
+        declaration(vrtPath),
+        { strips: "horizontal", allowDirty: false },
+        {
+          git: stubGit(true, false),
+          runVeroroute: (args) => {
+            outPath = flagValue(args, "-o")
+            fs.writeFileSync(outPath, "PARTIAL-GARBAGE")
+            return { status: 1, output: "veroroute: could not set strips" }
+          },
         },
-      },
-    )
+      ),
+    ).rejects.toThrow(/unchanged/)
     expect(fs.existsSync(outPath)).toBe(false)
     expect(fs.readdirSync(path.dirname(vrtPath))).toEqual([path.basename(vrtPath)])
     expect(fs.readFileSync(vrtPath, "utf8")).toBe("ORIGINAL")
-    expect(report).toContain("unchanged")
+  })
+})
+
+// F2: a fill-step failure after a successful conversion must say plainly that
+// the conversion succeeded and the layout is converted-but-not-filled, never
+// "unchanged" - the layout WAS changed.
+test("stripboard whose fill step exits non-zero reports the layout as converted-but-not-filled, never unchanged", async () => {
+  await withVrt(async (vrtPath) => {
+    let caught: Error | undefined
+    try {
+      await runStripboard(
+        declaration(vrtPath),
+        { strips: "horizontal", allowDirty: false },
+        {
+          git: stubGit(true, false),
+          exportNetlist: netlist,
+          runVeroroute: (args) => {
+            const outPath = flagValue(args, "-o")
+            if (args[0] === "--set-strips") {
+              fs.writeFileSync(outPath, "STRIPPED")
+              return { status: 0, output: "" }
+            }
+            return { status: 1, output: "update failed" }
+          },
+        },
+      )
+    } catch (error) {
+      caught = error instanceof Error ? error : undefined
+    }
+    if (caught === undefined) throw new Error("test bug: runStripboard did not throw")
+    // The headline must say the conversion succeeded and the layout is
+    // NOT filled - not just repeat the inner update step's own "unchanged"
+    // framing (which is preserved verbatim further down per F3, correctly
+    // describing that ONE step in isolation).
+    expect(caught.message).toContain("SUCCEEDED")
+    expect(caught.message).toContain("NOT filled")
+    expect(caught.message.split("\n")[0]).not.toMatch(/unchanged/)
+    // The conversion write landed - the bytes on disk are the converted ones.
+    expect(fs.readFileSync(vrtPath, "utf8")).toBe("STRIPPED")
+  })
+})
+
+// F3: a THROW from anywhere inside the fill step (not just a non-zero exit)
+// must be caught the same way, and the original error's text preserved.
+test("stripboard whose fill step throws (not just exits non-zero) still reports converted-but-not-filled, with the original error preserved", async () => {
+  await withVrt(async (vrtPath) => {
+    let caught: Error | undefined
+    try {
+      await runStripboard(
+        declaration(vrtPath),
+        { strips: "vertical", allowDirty: false },
+        {
+          git: stubGit(true, false),
+          exportNetlist: () => Promise.reject(new Error("circuits/demo.ts: no footprint for R9")),
+          runVeroroute: (args) => {
+            const outPath = flagValue(args, "-o")
+            fs.writeFileSync(outPath, "STRIPPED")
+            return { status: 0, output: "" }
+          },
+        },
+      )
+    } catch (error) {
+      caught = error instanceof Error ? error : undefined
+    }
+    if (caught === undefined) throw new Error("test bug: runStripboard did not throw")
+    expect(caught.message).toContain("SUCCEEDED")
+    expect(caught.message).toContain("NOT filled")
+    expect(caught.message).toContain("no footprint for R9")
+    expect(fs.readFileSync(vrtPath, "utf8")).toBe("STRIPPED")
   })
 })
 

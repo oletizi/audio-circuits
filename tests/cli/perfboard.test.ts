@@ -252,6 +252,100 @@ test("stripboard dispatches to the real implementation via injected deps, never 
 })
 
 // ---------------------------------------------------------------------------
+// F1: a failed update/stripboard exits 1, on stderr, never a silent stdout 0
+// ---------------------------------------------------------------------------
+
+test("update whose veroroute exits non-zero exits 1, writes FAIL to stderr, and leaves the layout untouched", async () => {
+  const root = tree()
+  try {
+    const vrtPath = path.join(boardDir(root), "demo.vrt")
+    fs.writeFileSync(vrtPath, "ORIGINAL")
+    const lines: string[] = []
+    const errors: string[] = []
+    const code = await runCli(["update"], {
+      cwd: boardDir(root),
+      log: (line) => lines.push(line),
+      error: (line) => errors.push(line),
+      verbDeps: {
+        git: () => ({ status: 0, stdout: "" }),
+        exportNetlist: () => Promise.resolve("( { EESchema Netlist Version 1.1 created x }\n)\n*\n"),
+        runVeroroute: () => ({ status: 3, output: "reconcile failed: unmapped part R9" }),
+      },
+    })
+    expect(code).toBe(1)
+    expect(lines).toEqual([])
+    const stderr = errors.join("\n")
+    expect(stderr).toContain(`FAIL ${vrtPath}`)
+    expect(stderr).toContain("unchanged")
+    expect(stderr).toContain("unmapped part R9")
+    expect(fs.readFileSync(vrtPath, "utf8")).toBe("ORIGINAL")
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("stripboard whose --set-strips exits non-zero exits 1, writes FAIL to stderr, and leaves the layout untouched", async () => {
+  const root = tree()
+  try {
+    const vrtPath = path.join(boardDir(root), "demo.vrt")
+    fs.writeFileSync(vrtPath, "ORIGINAL")
+    const lines: string[] = []
+    const errors: string[] = []
+    const code = await runCli(["stripboard", "--strips", "horizontal"], {
+      cwd: boardDir(root),
+      log: (line) => lines.push(line),
+      error: (line) => errors.push(line),
+      verbDeps: {
+        git: () => ({ status: 0, stdout: "" }),
+        runVeroroute: () => ({ status: 1, output: "could not set strips" }),
+      },
+    })
+    expect(code).toBe(1)
+    expect(lines).toEqual([])
+    const stderr = errors.join("\n")
+    expect(stderr).toContain(`FAIL ${vrtPath}`)
+    expect(stderr).toContain("unchanged")
+    expect(fs.readFileSync(vrtPath, "utf8")).toBe("ORIGINAL")
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("stripboard whose fill step fails exits 1 and stderr says the layout was converted and is not filled", async () => {
+  const root = tree()
+  try {
+    const vrtPath = path.join(boardDir(root), "demo.vrt")
+    fs.writeFileSync(vrtPath, "ORIGINAL")
+    const errors: string[] = []
+    const code = await runCli(["stripboard", "--strips", "horizontal"], {
+      cwd: boardDir(root),
+      log: () => {},
+      error: (line) => errors.push(line),
+      verbDeps: {
+        git: () => ({ status: 0, stdout: "" }),
+        exportNetlist: () => Promise.resolve("( { EESchema Netlist Version 1.1 created x }\n)\n*\n"),
+        runVeroroute: (args) => {
+          const outIndex = args.indexOf("-o")
+          if (args[0] === "--set-strips") {
+            fs.writeFileSync(args[outIndex + 1] as string, "STRIPPED")
+            return { status: 0, output: "" }
+          }
+          return { status: 1, output: "update failed" }
+        },
+      },
+    })
+    expect(code).toBe(1)
+    const stderr = errors.join("\n")
+    expect(stderr).toContain(`FAIL ${vrtPath}`)
+    expect(stderr).toContain("SUCCEEDED")
+    expect(stderr).toContain("NOT filled")
+    expect(fs.readFileSync(vrtPath, "utf8")).toBe("STRIPPED")
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+// ---------------------------------------------------------------------------
 // --allow-dirty reaches update and stripboard
 // ---------------------------------------------------------------------------
 
