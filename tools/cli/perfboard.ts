@@ -41,6 +41,8 @@ import {
   dispatchCuts, dispatchEdit, dispatchUpdate, dispatchStripboard, dispatchVerorouteVerb,
   defaultBinaryExists,
 } from "./perfboard-binary-verbs.ts"
+import { dispatchNetlistSync } from "./perfboard-netlist-verb.ts"
+import type { NetlistSyncDeps } from "../perfboard/netlist-sync.ts"
 
 const VERBS = [
   ["check", "check this layout against the circuit it was built from"],
@@ -51,6 +53,7 @@ const VERBS = [
   ["board-info", "what this directory declares"],
   ["boards", "every declared board under this directory"],
   ["veroroute", "acquire the pinned VeroRoute fork (a no-op if already built)"],
+  ["netlist-sync", "regenerate a netlist export and reconcile it with its fixture (used by make)"],
 ] as const
 
 const USAGE = [
@@ -92,6 +95,10 @@ const USAGE = [
   "                           every discovered board (e.g. `make -C <dir>`).",
   "  --force                  veroroute: rebuild even if a binary already exists",
   "                           at the resolved path.",
+  "  --sch, --netlist, --kicad-cli <path>",
+  "                           netlist-sync: the resolved schematic, netlist fixture and kicad-cli",
+  "                           paths. make/board.mk passes all three - this verb never re-derives",
+  "                           them from a directory, so it is not meant to be typed by hand.",
   "  --field sch|netlist      board-info: print only that resolved path (or an",
   "                           empty line if it was not declared), for scripts.",
   "",
@@ -149,6 +156,8 @@ export interface RunCliOptions {
   readonly binaryExists?: (binaryPath: string) => boolean
   /** Injected so no test ever clones or builds the real fork. */
   readonly acquire?: (pin: Pin, opts: AcquireOptions) => string
+  /** Injected so no test spawns the real kicad-cli for `netlist-sync`. */
+  readonly netlistSyncDeps?: NetlistSyncDeps
 }
 
 async function runCheck(
@@ -301,6 +310,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (verb === "stripboard") {
     return dispatchStripboard(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
   }
+
+  if (verb === "netlist-sync") return dispatchNetlistSync(args.slice(1), opts.netlistSyncDeps, log, error)
 
   if (verb === "veroroute") {
     const env = opts.env ?? process.env

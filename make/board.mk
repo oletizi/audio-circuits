@@ -13,15 +13,24 @@
 # through as --allow-dirty. `edit` writes nothing itself; it hands the
 # layout to the GUI, which writes only when you save.
 #
-# THE SCHEMATIC IS THE ROOT OF THIS DEPENDENCY GRAPH, and the two variables
-# below are the one genuine file rule in this whole make system - every
-# other target here is phony, because the `.vrt` and the circuit are both
-# hand-authored and nothing here can regenerate either of them. SCH and
-# NETLIST come from THIS board's own declaration (perfboard.json's optional
+# THE SCHEMATIC IS THE ROOT OF THIS DEPENDENCY GRAPH. SCH and NETLIST come
+# from THIS board's own declaration (perfboard.json's optional
 # "sch"/"netlist" pair), read through the CLI's `board-info --field` so this
 # file never reimplements the JSON parsing. Both are empty together when a
 # board declares neither - the graceful path for a clone without the
 # schematic's own repository - and everything below is inert in that case.
+#
+# THERE IS DELIBERATELY NO $(NETLIST): $(SCH) FILE RULE. That would be
+# idiomatic make, and it is not sound here: git does not preserve mtimes, so
+# checking out a branch carrying a STALE export can stamp it newer than a
+# schematic edited long before - and only the export side of that can ever
+# be falsely freshened this way, never the schematic, because the schematic
+# lives in a different repository this repo's own checkouts never touch.
+# Every mtime accident here would make stale look current, never the
+# reverse. `netlist-agrees` below regenerates the export EVERY run instead
+# (tools/perfboard/netlist-sync.ts) and decides freshness from content, not
+# a clock - the export costs well under half a second, so there is no
+# performance reason to trust a timestamp instead.
 SCH     := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field sch)
 NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 
@@ -44,33 +53,30 @@ netlist-agrees:
 	@echo "  if this board's schematic repository is not checked out on this machine."
 	@exit 1
 else
-# The schematic is upstream of everything below it. A schematic newer than
-# its export regenerates the export; an unchanged schematic does nothing -
-# that is make doing its own job, for once, instead of every target here
-# being phony.
-$(NETLIST): $(SCH)
-	@if [ ! -x "$(KICAD_CLI)" ]; then \
-		echo "$(SCH) is newer than $(NETLIST), so the export needs regenerating, but no"; \
-		echo "kicad-cli was found at $(KICAD_CLI)."; \
-		echo "  Install KiCad, or set KICAD_CLI to point at your own kicad-cli."; \
-		exit 1; \
-	fi
-	"$(KICAD_CLI)" sch export netlist --format kicadsexpr --output "$(NETLIST)" "$(SCH)"
-
+# Every run regenerates the export to a temp file and reconciles it with the
+# checked-in fixture through tools/perfboard/netlist-sync.ts - that module,
+# not a shell pipeline here, holds the comparison logic (ignoring only the
+# volatile `(date ...)` line kicad-cli stamps on every export) precisely so
+# `bun test` can reach it. The fixture is rewritten ONLY when the substantive
+# content differs, so an unchanged schematic still leaves `git status`
+# clean; when it DOES differ, the CLI verb says so plainly, because that is
+# the operator's cue that circuits/*.ts may now need updating too.
+#
 # The regenerated export is only half the safety: if the schematic moved and
 # circuits/*.ts (the hand-authored transcription) was not updated to match,
 # the circuit is now WRONG, and `check` would happily compare a stale
 # circuit against the board. tests/circuits/<board>.test.ts already asserts
 # that the transcription agrees with the export - "the schematic export
 # describes the same circuit as the built board" and "every component's
-# footprint matches the netlist of the built unit" - so this depends on a
-# fresh $(NETLIST) and then runs that file, rather than re-deriving the
-# comparison here. A drifted transcription stops here, loudly, naming the
-# mismatch bun test found, instead of `check` producing a confident wrong
-# answer against a circuit nobody looked at again.
+# footprint matches the netlist of the built unit" - so this runs the sync
+# first and then that file, rather than re-deriving the comparison here. A
+# drifted transcription stops here, loudly, naming the mismatch bun test
+# found, instead of `check` producing a confident wrong answer against a
+# circuit nobody looked at again.
 NETLIST_TEST := $(REPO_ROOT)/tests/circuits/$(notdir $(CURDIR)).test.ts
 
-netlist-agrees: $(NETLIST)
+netlist-agrees:
+	@bun "$(CLI)" netlist-sync --sch "$(SCH)" --netlist "$(NETLIST)" --kicad-cli "$(KICAD_CLI)"
 	@if [ ! -f "$(NETLIST_TEST)" ]; then \
 		echo "$(CURDIR) declares sch/netlist, but $(NETLIST_TEST) does not exist."; \
 		echo "  Add tests there asserting the circuit still agrees with the schematic"; \
@@ -124,9 +130,9 @@ perfboard-help:
 	@echo "  VEROROUTE            override: point at your OWN veroroute-perfboard"
 	@echo "                       checkout instead of the one this repository builds"
 	@echo "  QMAKE                override: point at your OWN qmake"
-	@echo "  KICAD_CLI            override: point at your OWN kicad-cli - only consulted"
-	@echo "                       when this board declares \"sch\"/\"netlist\" and the"
-	@echo "                       schematic is newer than its export"
+	@echo "  KICAD_CLI            override: point at your OWN kicad-cli - consulted on"
+	@echo "                       every run that declares \"sch\"/\"netlist\", since every"
+	@echo "                       such run now re-exports the schematic to check it"
 	@echo "  ALLOW_DIRTY=1        let update/stripboard write over uncommitted changes"
 
 check: veroroute netlist-agrees
