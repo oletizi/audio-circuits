@@ -188,6 +188,46 @@ test("a failing qmake names the qt@5 prerequisite and never reaches make", () =>
   })
 })
 
+test("git clone runs in a cwd that already exists (the repository root), never the not-yet-created .tools directory", () => {
+  // `.tools/` is gitignored and nothing but `acquire` itself ever creates it,
+  // so on a genuinely fresh checkout it does not exist yet when `acquire`
+  // starts. An injected `run` cannot by itself catch a clone spawned with a
+  // missing `cwd` - that only fails inside the real, un-injected
+  // `spawnSync` - so this pins the ARGUMENT SHAPE instead: the clone must
+  // run from a directory guaranteed to exist already, never from the
+  // directory `git clone` itself is responsible for creating.
+  withTempDir((repoRoot) => {
+    const binaryPath = binaryPathUnder(repoRoot)
+    const cwds: string[] = []
+    const run: CommandRunner = (command, args, cwd) => {
+      cwds.push(cwd)
+      if (command === "git" && args[0] === "clone") {
+        expect(fs.existsSync(cwd)).toBe(true)
+        fs.mkdirSync(path.dirname(binaryPath), { recursive: true })
+      }
+      if (command === "make") fs.writeFileSync(binaryPath, "#!/bin/sh\n")
+      return { status: 0, output: "" }
+    }
+    acquire(PIN, { repoRoot, run })
+    expect(cwds[0]).toBe(repoRoot)
+  })
+})
+
+test("a failing checkout names the likely cause and both remedies, not just git's raw output", () => {
+  withTempDir((repoRoot) => {
+    const cloneDir = path.join(repoRoot, ".tools", "veroroute-perfboard")
+    fs.mkdirSync(cloneDir, { recursive: true })
+    const run: CommandRunner = (command, args) => {
+      if (command === "git" && args[0] === "checkout") {
+        return { status: 1, output: "fatal: reference is not a tree: b09727d8ee0eb2a062da74b530b637436296330c" }
+      }
+      return { status: 0, output: "" }
+    }
+    expect(() => acquire(PIN, { repoRoot, run })).toThrow(/fetch/i)
+    expect(() => acquire(PIN, { repoRoot, run })).toThrow(new RegExp(cloneDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")))
+  })
+})
+
 test("acquire skips cloning when the checkout directory already exists, but still checks out and builds", () => {
   withTempDir((repoRoot) => {
     const cloneDir = path.join(repoRoot, ".tools", "veroroute-perfboard")

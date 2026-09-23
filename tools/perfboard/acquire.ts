@@ -187,12 +187,18 @@ export interface AcquireOptions {
  */
 export function acquire(pin: Pin, opts: AcquireOptions): string {
   const run = opts.run ?? defaultRun
-  const toolsDir = path.join(opts.repoRoot, ".tools")
   const cloneDir = path.join(opts.repoRoot, CLONE_RELATIVE)
   const binaryPath = path.join(cloneDir, BINARY_RELATIVE)
 
+  // `cwd: opts.repoRoot`, not `.tools/`: on a fresh checkout, `.tools/` does
+  // not exist yet (nothing creates it - it is gitignored and this is the
+  // only thing that would ever populate it), and `spawnSync` refuses to run
+  // in a `cwd` that is not there. `git clone <repo> <dest>` creates every
+  // missing leading directory of `<dest>` itself, so running it from a
+  // directory that is guaranteed to exist (the repository root) needs no
+  // `mkdirSync` here at all.
   if (!fs.existsSync(cloneDir)) {
-    const clone = run("git", ["clone", pin.repo, cloneDir], toolsDir)
+    const clone = run("git", ["clone", pin.repo, cloneDir], opts.repoRoot)
     if (clone.status !== 0) {
       throw new Error(
         `git clone ${pin.repo} into ${cloneDir} exited ${clone.status}; nothing was built.\n${clone.output}`,
@@ -204,7 +210,9 @@ export function acquire(pin: Pin, opts: AcquireOptions): string {
   if (checkout.status !== 0) {
     throw new Error(
       `git checkout ${pin.commit} in ${cloneDir} exited ${checkout.status}; the commit pinned in ` +
-        `veroroute.pin could not be checked out.\n${checkout.output}`,
+        `veroroute.pin could not be checked out.\n${checkout.output}\n` +
+        `If ${cloneDir} is a clone made before this pin advanced, that commit may not be present ` +
+        `locally: delete ${cloneDir} and re-run to reclone, or run "git fetch" inside it.`,
     )
   }
 
