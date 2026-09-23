@@ -1,0 +1,5 @@
+{
+  "circuit": "../../circuits/pt2399-core.ts",
+  "export": "pt2399Core",
+  "vrt": "pt2399-core.perfboard.vrt"
+}
