@@ -4,6 +4,7 @@ import os from "node:os"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { checkPerfboard, verorouteBinary } from "../../tools/perfboard/check.ts"
+import { resolveBinary } from "../../tools/perfboard/acquire.ts"
 import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 
 function declaration(vrtPath: string): PerfboardDeclaration {
@@ -20,12 +21,48 @@ function withVrt(run: (vrtPath: string) => Promise<void>): Promise<void> {
   return run(vrtPath).finally(() => fs.rmSync(dir, { recursive: true, force: true }))
 }
 
+function withTempDir(run: (dir: string) => void): void {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-check-repo-"))
+  try {
+    run(dir)
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+}
+
 const netlist = () => Promise.resolve("( { EESchema Netlist Version 1.1 created  x }\n)\n*\n")
 
-test("VEROROUTE has no default and says what to set", () => {
-  expect(() => verorouteBinary({})).toThrow(/VEROROUTE is not set/)
-  expect(() => verorouteBinary({ VEROROUTE: "  " })).toThrow(/set but empty/)
-  expect(verorouteBinary({ VEROROUTE: "/bin/veroroute" })).toBe("/bin/veroroute")
+// `verorouteBinary` used to say unset always throws "VEROROUTE is not set".
+// It no longer does: unset now resolves through the same rule
+// `resolveBinary` (tools/perfboard/acquire.ts) implements, so it succeeds
+// when a binary already sits at the acquired path and only refuses when one
+// does not - and even then, RESOLVING that path must never ACQUIRE it. These
+// four tests replace the old single "has no default" test with one case per
+// branch of that rule.
+
+test("VEROROUTE set to a real path is returned unchanged, with no existence check", () => {
+  expect(verorouteBinary({ VEROROUTE: "/bin/veroroute" }, "/repo")).toBe("/bin/veroroute")
+})
+
+test("VEROROUTE set but empty refuses rather than guessing unset was meant", () => {
+  expect(() => verorouteBinary({ VEROROUTE: "   " }, "/repo")).toThrow(/set but empty/)
+})
+
+test("VEROROUTE unset resolves to the acquired path and returns it when a binary is already there", () => {
+  withTempDir((repoRoot) => {
+    const acquiredPath = resolveBinary({}, repoRoot).path
+    fs.mkdirSync(path.dirname(acquiredPath), { recursive: true })
+    fs.writeFileSync(acquiredPath, "#!/bin/sh\n")
+    expect(verorouteBinary({}, repoRoot)).toBe(acquiredPath)
+  })
+})
+
+test("VEROROUTE unset with no binary built yet refuses naming the veroroute verb, and never acquires anything itself", () => {
+  withTempDir((repoRoot) => {
+    // No binary is created at the acquired path, and nothing here ever calls
+    // acquire() - a resolution failure must never become a silent build.
+    expect(() => verorouteBinary({}, repoRoot)).toThrow(/"veroroute" verb/)
+  })
 })
 
 test("exit 0 is ok and exit 1 is not, both carrying the report verbatim", async () => {

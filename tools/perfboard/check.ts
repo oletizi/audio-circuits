@@ -20,33 +20,38 @@ import os from "node:os"
 import path from "node:path"
 import { writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
+import { resolveBinary } from "./acquire.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
 import { isRecord } from "./guards.ts"
 import { loadCircuit } from "./load.ts"
+import { moduleRepoRoot } from "./repo-root.ts"
 
 /**
- * Where to find the forked VeroRoute, and why there is no default here.
+ * Where to find the forked VeroRoute, and why there is no hardcoded default
+ * here.
  *
- * A hardcoded $HOME/src/... is right on exactly one machine and wrong
+ * A literal $HOME/src/... would be right on exactly one machine and wrong
  * everywhere else, and this module's whole job is to fail when something is
- * wrong. A binary the check cannot find has to stop the run naming what to set,
- * because a spawn that quietly fails is the shape that reads as a clean board.
- * The CLI supplies a default it is itself responsible for building; this module
- * does not.
+ * wrong. `VEROROUTE` set to a real path (`resolveBinary`'s "explicit" mode)
+ * is returned unchanged, with no existence check: that is the operator
+ * pointing at their own checkout, and this module has no business judging
+ * it. Unset, this resolves to the path this repository acquires and builds
+ * under `.tools/` (`resolveBinary`'s "acquired" mode) - but RESOLVING that
+ * path is not ACQUIRING it: this checks whether a binary already sits
+ * there, and if not, refuses naming the "veroroute" verb rather than
+ * building one itself. Only that verb ever acquires.
  */
-const BINARY_HINT =
-  "Point it at the veroroute binary built from the perfboard fork, or run " +
-  "`bun run perfboard veroroute` to build the pinned one."
-
 export type Env = Readonly<Record<string, string | undefined>>
 
-export function verorouteBinary(env: Env = process.env): string {
-  const value = env["VEROROUTE"]
-  if (value === undefined) {
-    throw new Error(`VEROROUTE is not set, and this check has no default binary path. ${BINARY_HINT}`)
-  }
-  if (value.trim() === "") throw new Error(`VEROROUTE is set but empty. ${BINARY_HINT}`)
-  return value
+export function verorouteBinary(env: Env, repoRoot: string): string {
+  const resolution = resolveBinary(env, repoRoot)
+  if (resolution.mode === "explicit") return resolution.path
+  if (fs.existsSync(resolution.path)) return resolution.path
+  throw new Error(
+    `${resolution.path}: no veroroute binary built yet. Run the "veroroute" verb ` +
+      '(`bun run perfboard veroroute`) to build the pinned one, or set VEROROUTE to point at ' +
+      "your own checkout.",
+  )
 }
 
 /** The exit status and the report text, as `checkPerfboard` consumes them. */
@@ -67,11 +72,20 @@ export interface CheckRun {
  * the answer: the report body is on stdout, but an unreadable board writes an
  * empty report and puts the only diagnostic on stderr.
  */
-export function runVerorouteCheck(vrtPath: string, netPath: string, env: Env = process.env): CheckRun {
-  const binary = verorouteBinary(env)
+export function runVerorouteCheck(
+  vrtPath: string,
+  netPath: string,
+  repoRoot: string,
+  env: Env = process.env,
+): CheckRun {
+  const binary = verorouteBinary(env, repoRoot)
   const result = spawnSync(binary, ["--check", vrtPath, "--netlist", netPath], { encoding: "utf8" })
   if (result.error) {
-    throw new Error(`could not run veroroute at ${binary}: ${result.error.message}. ${BINARY_HINT}`)
+    throw new Error(
+      `could not run veroroute at ${binary}: ${result.error.message}. Rebuild it with the ` +
+        '"veroroute" verb (`bun run perfboard veroroute`), or check that VEROROUTE points at a ' +
+        "real executable.",
+    )
   }
   if (result.status === null) {
     throw new Error(
@@ -89,6 +103,8 @@ export interface CheckDeps {
   readonly exportNetlist?: (declaration: PerfboardDeclaration) => Promise<string>
   /** Injected so no test needs the veroroute binary. */
   readonly runCheck?: (vrtPath: string, netPath: string) => CheckRun
+  /** Injected so no test resolves against this repository's own root. Only consulted when `runCheck` is not injected. */
+  readonly repoRoot?: string
 }
 
 export interface PerfboardResult {
@@ -182,7 +198,7 @@ export async function checkPerfboard(
   deps: CheckDeps = {},
 ): Promise<PerfboardResult> {
   const exportNetlist = deps.exportNetlist ?? exportNetlistFor
-  const runCheck = deps.runCheck ?? ((vrt, net) => runVerorouteCheck(vrt, net))
+  const runCheck = deps.runCheck ?? ((vrt, net) => runVerorouteCheck(vrt, net, deps.repoRoot ?? moduleRepoRoot()))
 
   // Export BEFORE opening anything: a circuit that cannot be lowered - an
   // unmapped footprint, an unformattable value - must stop the run rather than

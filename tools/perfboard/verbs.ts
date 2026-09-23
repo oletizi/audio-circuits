@@ -25,10 +25,7 @@ import type { GitRunner } from "./mutate.ts"
 import { exportNetlistFor, verorouteBinary } from "./check.ts"
 import type { Env } from "./check.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
-
-const BINARY_HINT =
-  "Point it at the veroroute binary built from the perfboard fork, or run " +
-  "`bun run perfboard veroroute` to build the pinned one."
+import { moduleRepoRoot } from "./repo-root.ts"
 
 /** One spawn's exit status and its combined stdout+stderr. */
 export interface VerbRun {
@@ -45,18 +42,24 @@ export interface VerbDeps {
   readonly git?: GitRunner
   /** Injected so no test needs VEROROUTE set in the real environment. */
   readonly env?: Env
+  /** Injected so no test resolves the acquired binary path against this repository's own root. */
+  readonly repoRoot?: string
   /** Injected so `runEdit`'s executable check needs no real binary on disk. */
   readonly isExecutable?: (binaryPath: string) => boolean
   /** Injected so `runEdit` needs no real GUI process. */
   readonly launchEditor?: (binary: string, vrtPath: string) => void
 }
 
-function defaultRunVeroroute(env: Env): (args: readonly string[]) => VerbRun {
+function defaultRunVeroroute(env: Env, repoRoot: string): (args: readonly string[]) => VerbRun {
   return (args) => {
-    const binary = verorouteBinary(env)
+    const binary = verorouteBinary(env, repoRoot)
     const result = spawnSync(binary, [...args], { encoding: "utf8" })
     if (result.error) {
-      throw new Error(`could not run veroroute at ${binary}: ${result.error.message}. ${BINARY_HINT}`)
+      throw new Error(
+        `could not run veroroute at ${binary}: ${result.error.message}. Rebuild it with the ` +
+          '"veroroute" verb (`bun run perfboard veroroute`), or check that VEROROUTE points at a ' +
+          "real executable.",
+      )
     }
     if (result.status === null) {
       throw new Error(
@@ -129,7 +132,8 @@ const CUT_LINE_KEYWORDS = new Set([
  * it, rather than as an empty cut list.
  */
 export function runCuts(declaration: PerfboardDeclaration, deps: VerbDeps = {}): string {
-  const runVeroroute = deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env)
+  const runVeroroute =
+    deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env, deps.repoRoot ?? moduleRepoRoot())
   const run = runVeroroute(["--dump-board", declaration.vrtPath])
   if (run.status !== 0) {
     throw new Error(
@@ -190,7 +194,8 @@ export async function runUpdate(
   assertLayoutRecoverable(declaration.vrtPath, { allowDirty: opts.allowDirty, git: deps.git })
 
   const exportNetlist = deps.exportNetlist ?? exportNetlistFor
-  const runVeroroute = deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env)
+  const runVeroroute =
+    deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env, deps.repoRoot ?? moduleRepoRoot())
   const producedPath = tempPathAlongside(declaration.vrtPath, "update")
 
   const text = await exportNetlist(declaration)
@@ -272,7 +277,8 @@ export async function runStripboard(
 
   assertLayoutRecoverable(declaration.vrtPath, { allowDirty: opts.allowDirty, git: deps.git })
 
-  const runVeroroute = deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env)
+  const runVeroroute =
+    deps.runVeroroute ?? defaultRunVeroroute(deps.env ?? process.env, deps.repoRoot ?? moduleRepoRoot())
   const producedPath = tempPathAlongside(declaration.vrtPath, "strips")
   let run: VerbRun
   try {
@@ -331,7 +337,7 @@ function defaultLaunchEditor(binary: string, vrtPath: string): void {
  * perfectly well and silently lacks every verb this workflow depends on.
  */
 export function runEdit(declaration: PerfboardDeclaration, deps: VerbDeps = {}): string {
-  const binary = verorouteBinary(deps.env ?? process.env)
+  const binary = verorouteBinary(deps.env ?? process.env, deps.repoRoot ?? moduleRepoRoot())
   const isExecutable = deps.isExecutable ?? defaultIsExecutable
   if (!isExecutable(binary)) {
     throw new Error(

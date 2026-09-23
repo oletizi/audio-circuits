@@ -30,6 +30,7 @@ import {
 import {
   runCuts, runUpdate, runStripboard, runEdit, type VerbDeps,
 } from "../perfboard/verbs.ts"
+import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 
 const VERBS = [
   ["check", "check this layout against the circuit it was built from"],
@@ -207,7 +208,12 @@ function parseFlags(
     }
     if (arg === "--strips" && allowed.has("--strips")) {
       const value = args[i + 1]
-      if (value === undefined) {
+      // A missing value and a NEXT FLAG look the same at args[i + 1] === undefined,
+      // but so does a next flag that just happens to be there: "--strips
+      // --allow-dirty" must not silently consume "--allow-dirty" as the strip
+      // direction, or the operator sees "invalid --strips value
+      // \"--allow-dirty\"" instead of the much clearer "needs a value."
+      if (value === undefined || value.startsWith("--")) {
         error('--strips needs a value: "horizontal" or "vertical".')
         return null
       }
@@ -223,12 +229,6 @@ function parseFlags(
 
 function isStripsDirection(value: string): value is "horizontal" | "vertical" {
   return value === "horizontal" || value === "vertical"
-}
-
-/** This repository's own root, derived from where this module lives on disk. */
-function moduleRepoRoot(): string {
-  const moduleDir = path.dirname(new URL(import.meta.url).pathname)
-  return path.resolve(moduleDir, "..", "..")
 }
 
 const PIN_FILE_NAME = "veroroute.pin"
@@ -333,7 +333,9 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   const cwd = opts.cwd ?? process.cwd()
   const log = opts.log ?? ((line: string) => console.log(line))
   const error = opts.error ?? ((line: string) => console.error(line))
-  const check = opts.check ?? ((declaration: PerfboardDeclaration) => checkPerfboard(declaration))
+  const check =
+    opts.check ??
+    ((declaration: PerfboardDeclaration) => checkPerfboard(declaration, { repoRoot: opts.repoRoot }))
 
   const verb = argv[0]
   if (verb === undefined || verb === "--help" || verb === "-h" || verb === "help") {
