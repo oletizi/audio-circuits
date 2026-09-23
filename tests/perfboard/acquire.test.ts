@@ -9,14 +9,17 @@ import type { Pin, CommandRunner, Env } from "../../tools/perfboard/acquire.ts"
 
 /**
  * Every direct `acquire()` test below is unrelated to `qmake` resolution
- * itself, so it sets `QMAKE` explicitly to the literal string `"qmake"` -
+ * itself, so it sets `QMAKE` explicitly to a full `<prefix>/bin/qmake` path -
  * this reduces `resolveQmake` to mode "explicit", returning that literal
- * unchanged, so `run` still sees a bare `"qmake"` command exactly as before
- * `resolveQmake` existed, and never calls (or needs a handler for) `brew`.
- * `resolveQmake`'s own behavior - the brew lookup, `QMAKE` override, and
- * every refusal - is exercised directly, below.
+ * unchanged, so `run` never calls (or needs a handler for) `brew`. The path
+ * shape matters here even in explicit mode: `acquire` derives `QT_PREFIX` for
+ * `build.sh` by walking two directories up from whatever `resolveQmake`
+ * returns, so a bare command name (no directory at all) would derive a
+ * nonsense prefix. `resolveQmake`'s own behavior - the brew lookup, `QMAKE`
+ * override, and every refusal - is exercised directly, below.
  */
-const QMAKE_EXPLICIT: Env = { QMAKE: "qmake" }
+const QMAKE_EXPLICIT: Env = { QMAKE: "/opt/dev-qt/bin/qmake" }
+const QMAKE_EXPLICIT_PREFIX = "/opt/dev-qt"
 
 function withTempDir(run: (dir: string) => void): void {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "acquire-"))
@@ -162,14 +165,16 @@ test("QMAKE unset, brew resolves a prefix with no qmake underneath, refuses nami
 
 /** Records every command run, and lets the caller decide each one's outcome. */
 function recordingRunner(
-  handlers: Readonly<Record<string, (args: readonly string[], cwd: string) => { status: number | null; output: string }>>,
+  handlers: Readonly<
+    Record<string, (args: readonly string[], cwd: string, env?: Env) => { status: number | null; output: string }>
+  >,
   calls: string[],
 ): CommandRunner {
-  return (command, args, cwd) => {
+  return (command, args, cwd, env) => {
     calls.push(`${command} ${args.join(" ")}`)
     const handler = handlers[command]
     if (handler === undefined) throw new Error(`unexpected command in test: ${command}`)
-    return handler(args, cwd)
+    return handler(args, cwd, env)
   }
 }
 
@@ -178,24 +183,44 @@ const PIN: Pin = {
   commit: "b09727d8ee0eb2a062da74b530b637436296330c",
 }
 
-function binaryPathUnder(repoRoot: string): string {
-  return path.join(repoRoot, ".tools", "veroroute-perfboard", "veroroute.app", "Contents", "MacOS", "veroroute")
+function cloneDirUnder(repoRoot: string): string {
+  return path.join(repoRoot, ".tools", "veroroute-perfboard")
 }
 
-test("acquire clones, checks out the pinned commit, builds, and returns the binary path", () => {
+function binaryPathUnder(repoRoot: string): string {
+  return path.join(cloneDirUnder(repoRoot), "veroroute.app", "Contents", "MacOS", "veroroute")
+}
+
+function buildScriptUnder(repoRoot: string): string {
+  return path.join(cloneDirUnder(repoRoot), "build.sh")
+}
+
+/**
+ * A "git clone" handler that materializes the clone dir, a stub build.sh, and
+ * the binary's parent directory, as a real clone would leave the first two -
+ * the binary's parent dir stands in for what a real `build.sh` mkdir's.
+ */
+function cloningGit(repoRoot: string): (args: readonly string[]) => { status: number | null; output: string } {
+  return (args) => {
+    if (args[0] === "clone") {
+      fs.mkdirSync(path.dirname(binaryPathUnder(repoRoot)), { recursive: true })
+      fs.writeFileSync(buildScriptUnder(repoRoot), "#!/bin/bash\n")
+    }
+    return { status: 0, output: "" }
+  }
+}
+
+test("acquire clones, checks out the pinned commit, runs build.sh with QT_PREFIX, and returns the binary path", () => {
   withTempDir((repoRoot) => {
     const calls: string[] = []
     const binaryPath = binaryPathUnder(repoRoot)
+    const buildScript = buildScriptUnder(repoRoot)
+    let buildEnv: Env | undefined
     const run = recordingRunner(
       {
-        git: (args) => {
-          if (args[0] === "clone") {
-            fs.mkdirSync(path.dirname(binaryPath), { recursive: true })
-          }
-          return { status: 0, output: "" }
-        },
-        qmake: () => ({ status: 0, output: "" }),
-        make: () => {
+        git: cloningGit(repoRoot),
+        [buildScript]: (_args, _cwd, env) => {
+          buildEnv = env
           fs.writeFileSync(binaryPath, "#!/bin/sh\n")
           return { status: 0, output: "" }
         },
@@ -206,17 +231,54 @@ test("acquire clones, checks out the pinned commit, builds, and returns the bina
     const result = acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })
     expect(result).toBe(binaryPath)
     expect(calls).toEqual([
-      `git clone ${PIN.repo} ${path.join(repoRoot, ".tools", "veroroute-perfboard")}`,
+      `git clone ${PIN.repo} ${cloneDirUnder(repoRoot)}`,
       `git checkout ${PIN.commit}`,
-      "qmake ",
-      "make ",
+      `${buildScript} `,
     ])
+    // QT_PREFIX is derived from the resolved qmake path (two directories up),
+    // never from a second call to brew - resolveQmake was already asked once.
+    expect(buildEnv).toEqual({ QT_PREFIX: QMAKE_EXPLICIT_PREFIX })
+  })
+})
+
+test("QT_PREFIX passed to build.sh is derived from brew's resolved prefix when QMAKE is unset", () => {
+  withTempDir((repoRoot) => {
+    withTempDir((qtPrefix) => {
+      fs.mkdirSync(path.join(qtPrefix, "bin"), { recursive: true })
+      fs.writeFileSync(path.join(qtPrefix, "bin", "qmake"), "#!/bin/sh\n")
+      const binaryPath = binaryPathUnder(repoRoot)
+      const buildScript = buildScriptUnder(repoRoot)
+      let buildEnv: Env | undefined
+      const calls: string[] = []
+      const run = recordingRunner(
+        {
+          git: cloningGit(repoRoot),
+          brew: () => ({ status: 0, output: `${qtPrefix}\n` }),
+          [buildScript]: (_args, _cwd, env) => {
+            buildEnv = env
+            fs.writeFileSync(binaryPath, "#!/bin/sh\n")
+            return { status: 0, output: "" }
+          },
+        },
+        calls,
+      )
+      const result = acquire(PIN, { repoRoot, run, env: {} })
+      expect(result).toBe(binaryPath)
+      expect(buildEnv).toEqual({ QT_PREFIX: qtPrefix })
+    })
   })
 })
 
 test("acquire refuses to report success when the expected binary is not there afterward", () => {
   withTempDir((repoRoot) => {
-    const run: CommandRunner = () => ({ status: 0, output: "" })
+    const buildScript = buildScriptUnder(repoRoot)
+    const run = recordingRunner(
+      {
+        git: cloningGit(repoRoot),
+        [buildScript]: () => ({ status: 0, output: "" }),
+      },
+      [],
+    )
     expect(() => acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })).toThrow(/veroroute.*not there/s)
   })
 })
@@ -227,33 +289,52 @@ test("a failing clone throws naming the exit status and never reaches checkout o
     const run = recordingRunner(
       {
         git: (args) => (args[0] === "clone" ? { status: 128, output: "fatal: could not resolve host" } : { status: 0, output: "" }),
-        qmake: () => ({ status: 0, output: "" }),
-        make: () => ({ status: 0, output: "" }),
       },
       calls,
     )
     expect(() => acquire(PIN, { repoRoot, run })).toThrow(/git clone.*exited 128/s)
-    expect(calls).toEqual([`git clone ${PIN.repo} ${path.join(repoRoot, ".tools", "veroroute-perfboard")}`])
+    expect(calls).toEqual([`git clone ${PIN.repo} ${cloneDirUnder(repoRoot)}`])
   })
 })
 
-test("a failing qmake names the qt@5 prerequisite and never reaches make", () => {
+test("acquire refuses before ever looking for build.sh when QMAKE resolution itself fails", () => {
   withTempDir((repoRoot) => {
+    const run: CommandRunner = (command, args) => {
+      if (command === "git") return { status: 0, output: "" }
+      if (command === "brew") return { status: 1, output: "Error: No such keg" }
+      throw new Error(`unexpected command in test: ${command}`)
+    }
+    // No build.sh is ever written to the clone dir in this test - if acquire
+    // reached the build.sh existence check before propagating the QMAKE
+    // resolution failure, it would throw the wrong (build.sh missing) error.
+    fs.mkdirSync(cloneDirUnder(repoRoot), { recursive: true })
+    expect(() => acquire(PIN, { repoRoot, run })).toThrow(/brew install qt@5/)
+  })
+})
+
+test("build.sh missing from the clone refuses naming it, rather than reimplementing qmake/make", () => {
+  withTempDir((repoRoot) => {
+    const cloneDir = cloneDirUnder(repoRoot)
+    fs.mkdirSync(cloneDir, { recursive: true })
+    const run: CommandRunner = () => ({ status: 0, output: "" })
+    expect(() => acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })).toThrow(
+      new RegExp(`${buildScriptUnder(repoRoot).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}.*not found`, "s"),
+    )
+  })
+})
+
+test("a failing build.sh names its own exit status; the build did not complete", () => {
+  withTempDir((repoRoot) => {
+    const buildScript = buildScriptUnder(repoRoot)
     const calls: string[] = []
-    const binaryPath = binaryPathUnder(repoRoot)
     const run = recordingRunner(
       {
-        git: (args) => {
-          if (args[0] === "clone") fs.mkdirSync(path.dirname(binaryPath), { recursive: true })
-          return { status: 0, output: "" }
-        },
-        qmake: () => ({ status: 1, output: "qmake: command not found" }),
-        make: () => ({ status: 0, output: "" }),
+        git: cloningGit(repoRoot),
+        [buildScript]: () => ({ status: 2, output: "make: *** [all] Error 1" }),
       },
       calls,
     )
-    expect(() => acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })).toThrow(/qt@5/)
-    expect(calls).not.toContain("make ")
+    expect(() => acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })).toThrow(/exited 2.*did not complete/s)
   })
 })
 
@@ -267,14 +348,16 @@ test("git clone runs in a cwd that already exists (the repository root), never t
   // directory `git clone` itself is responsible for creating.
   withTempDir((repoRoot) => {
     const binaryPath = binaryPathUnder(repoRoot)
+    const buildScript = buildScriptUnder(repoRoot)
     const cwds: string[] = []
     const run: CommandRunner = (command, args, cwd) => {
       cwds.push(cwd)
       if (command === "git" && args[0] === "clone") {
         expect(fs.existsSync(cwd)).toBe(true)
         fs.mkdirSync(path.dirname(binaryPath), { recursive: true })
+        fs.writeFileSync(buildScript, "#!/bin/bash\n")
       }
-      if (command === "make") fs.writeFileSync(binaryPath, "#!/bin/sh\n")
+      if (command === buildScript) fs.writeFileSync(binaryPath, "#!/bin/sh\n")
       return { status: 0, output: "" }
     }
     acquire(PIN, { repoRoot, run, env: QMAKE_EXPLICIT })
@@ -284,7 +367,7 @@ test("git clone runs in a cwd that already exists (the repository root), never t
 
 test("a failing checkout names the likely cause and both remedies, not just git's raw output", () => {
   withTempDir((repoRoot) => {
-    const cloneDir = path.join(repoRoot, ".tools", "veroroute-perfboard")
+    const cloneDir = cloneDirUnder(repoRoot)
     fs.mkdirSync(cloneDir, { recursive: true })
     const run: CommandRunner = (command, args) => {
       if (command === "git" && args[0] === "checkout") {
@@ -299,15 +382,16 @@ test("a failing checkout names the likely cause and both remedies, not just git'
 
 test("acquire skips cloning when the checkout directory already exists, but still checks out and builds", () => {
   withTempDir((repoRoot) => {
-    const cloneDir = path.join(repoRoot, ".tools", "veroroute-perfboard")
+    const cloneDir = cloneDirUnder(repoRoot)
     fs.mkdirSync(cloneDir, { recursive: true })
+    fs.writeFileSync(buildScriptUnder(repoRoot), "#!/bin/bash\n")
     const binaryPath = binaryPathUnder(repoRoot)
+    const buildScript = buildScriptUnder(repoRoot)
     const calls: string[] = []
     const run = recordingRunner(
       {
         git: () => ({ status: 0, output: "" }),
-        qmake: () => ({ status: 0, output: "" }),
-        make: () => {
+        [buildScript]: () => {
           fs.mkdirSync(path.dirname(binaryPath), { recursive: true })
           fs.writeFileSync(binaryPath, "#!/bin/sh\n")
           return { status: 0, output: "" }

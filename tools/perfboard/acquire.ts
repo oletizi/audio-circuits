@@ -4,9 +4,11 @@
  * The fork is a separate GPLv3 Qt5 application with its own build. This
  * repository does not vendor it and does not submodule it - `veroroute.pin`
  * at the repository root names a repo and a pinned commit, and this module
- * clones that repo, checks out that commit, and builds it with `qmake` then
- * `make`. The result lands under `.tools/`, which is gitignored: it is a
- * build artifact of a GPLv3 C++ project, not repository content.
+ * clones that repo, checks out that commit, and runs the fork's OWN
+ * `build.sh` (which itself runs `qmake` then `make` - this module does not
+ * reimplement that recipe, see `acquire` below). The result lands under
+ * `.tools/`, which is gitignored: it is a build artifact of a GPLv3 C++
+ * project, not repository content.
  *
  * `readPin`, `resolveBinary`, `resolveQmake` and `acquire` are four separate,
  * composable questions:
@@ -162,8 +164,18 @@ export interface CommandResult {
   readonly output: string
 }
 
-/** The injection seam every git/build step runs through. */
-export type CommandRunner = (command: string, args: readonly string[], cwd: string) => CommandResult
+/**
+ * The injection seam every git/build step runs through. `env`, when given, is
+ * merged over the process environment for that one invocation - only the
+ * fork's `build.sh` needs this, to hand it `QT_PREFIX` without mutating
+ * `process.env` for every other command this module runs.
+ */
+export type CommandRunner = (
+  command: string,
+  args: readonly string[],
+  cwd: string,
+  env?: Env,
+) => CommandResult
 
 /** Which `qmake` to run, and whose Qt5 it is. */
 export interface QmakeResolution {
@@ -245,8 +257,12 @@ function isMissingExecutable(error: NodeJS.ErrnoException): boolean {
   return error.code === "ENOENT"
 }
 
-function defaultRun(command: string, args: readonly string[], cwd: string): CommandResult {
-  const result = spawnSync(command, [...args], { cwd, encoding: "utf8" })
+function defaultRun(command: string, args: readonly string[], cwd: string, env?: Env): CommandResult {
+  const result = spawnSync(command, [...args], {
+    cwd,
+    encoding: "utf8",
+    ...(env === undefined ? {} : { env: { ...process.env, ...env } }),
+  })
   if (result.error) {
     // `qmake` missing entirely (Qt5 not installed at all) is the most likely
     // first-run failure - `veroroute` is the first verb a new operator runs -
@@ -276,14 +292,13 @@ export interface AcquireOptions {
 
 /**
  * Clone the pinned repo (if not already present), check out the pinned
- * commit, build with `qmake` then `make`, and return the built binary's
- * path.
+ * commit, run the fork's own `build.sh`, and return the built binary's path.
  *
  * Cloning is skipped when the checkout directory already exists - a run
- * that previously cloned successfully but failed at `qmake`/`make` (missing
+ * that previously cloned successfully but failed at the build step (missing
  * Homebrew qt@5, say) must be retryable without first deleting a perfectly
- * good clone. Checkout, `qmake` and `make` always run: a stale checkout at
- * the wrong commit, or a build left half-done by an earlier interrupted run,
+ * good clone. Checkout and the build always run: a stale checkout at the
+ * wrong commit, or a build left half-done by an earlier interrupted run,
  * must not be silently treated as already-acquired.
  *
  * THE LAST CHECK IS THE ONE THAT MATTERS: after every step reports success,
@@ -325,18 +340,34 @@ export function acquire(pin: Pin, opts: AcquireOptions): string {
     )
   }
 
+  // The fork ships its own build recipe (`build.sh`): clone root -> mkdir
+  // build/ -> qmake Src/veroroute.pro -> make. Reimplementing that sequence
+  // here would mean carrying a second copy that goes stale silently the
+  // moment the fork's own recipe changes - which is exactly how the bare
+  // `qmake` (no .pro argument, run in the wrong directory) defect this
+  // replaces arose in the first place. `resolveQmake` is reused only to find
+  // WHICH Qt5 to build with (Homebrew's keg-only qt@5, or an operator's
+  // override); `build.sh` itself is the one authority on how to build.
   const qmakeResolution = resolveQmake(env, run, opts.repoRoot)
-  const qmake = run(qmakeResolution.command, [], cloneDir)
-  if (qmake.status !== 0) {
+  // build.sh takes QT_PREFIX (a directory) and appends "bin/qmake" itself, so
+  // the prefix is derived from the resolved qmake path rather than asking
+  // brew a second time: <prefix>/bin/qmake -> <prefix>.
+  const qtPrefix = path.dirname(path.dirname(qmakeResolution.command))
+
+  const buildScript = path.join(cloneDir, "build.sh")
+  if (!fs.existsSync(buildScript)) {
     throw new Error(
-      `${qmakeResolution.command} in ${cloneDir} exited ${qmake.status}. This build needs ` +
-        `Homebrew qt@5 (brew install qt@5).\n${qmake.output}`,
+      `${buildScript}: not found. Every revision of the veroroute-perfboard fork ships its own ` +
+        "build.sh; its absence means the commit pinned in veroroute.pin is not that fork. Check " +
+        `veroroute.pin, or remove ${cloneDir} and re-run to reclone.`,
     )
   }
 
-  const make = run("make", [], cloneDir)
-  if (make.status !== 0) {
-    throw new Error(`make in ${cloneDir} exited ${make.status}; the build did not complete.\n${make.output}`)
+  const build = run(buildScript, [], cloneDir, { QT_PREFIX: qtPrefix })
+  if (build.status !== 0) {
+    throw new Error(
+      `${buildScript} in ${cloneDir} exited ${build.status}; the build did not complete.\n${build.output}`,
+    )
   }
 
   if (!fs.existsSync(binaryPath)) {
