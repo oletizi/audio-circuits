@@ -3,6 +3,84 @@
 Follow the shared project rules in `AGENTS.md`, including committing and pushing
 small, coherent changes early and often.
 
+## What this project is
+
+A collection of audio circuits under development. Some are core, reusable
+components intended for future designs; some are designs in their own right.
+**This is hardware in progress, not software that ships.** Circuits get
+designed, built on a bench, listened to, and revised. Nothing here reaches a
+state called "done".
+
+**The repository exists as a bridge between AI agents and human designers.**
+That is its purpose, and almost every structural decision follows from it.
+
+## Who does what, and why
+
+**Agents are good at software and bad at hardware design.** An agent cannot draw
+a schematic a person can read, and cannot be trusted to lay out a physical
+board. Those are not gaps to work around; they are the reason the bridge exists.
+
+| | Belongs to | Why |
+| --- | --- | --- |
+| `lib/`, `circuits/*.ts`, `tests/`, `tools/` | **agents** | Holding a circuit as data makes it something an agent can validate, simulate, compose, partition and be held to |
+| KiCad schematics, VeroRoute layouts | **the human designer** | Legibility and buildability are judgement calls agents fail at |
+
+So:
+
+- **Never place parts or route a board.** The tooling verifies a layout against
+  a circuit and reports; it does not author one. `make check` is a gate, not a
+  generator.
+- **Never call a generated schematic finished.** `lib/kicad/schematic.ts` emits
+  a stub - a correct netlist with a useless arrangement. A person turns it into
+  something readable. Say "stub", not "schematic", when that is what you made.
+- **KiCad and VeroRoute are primary tools here, not optional extras.**
+  `make check` invokes `kicad-cli` on every board on every run, and one test
+  invokes it directly and fails rather than skips. Treat KiCad the way you would
+  a compiler: required, and not something to engineer around.
+
+**Authority runs in both directions**, depending on where a circuit came from.
+For a circuit an agent designs, the model is authoritative and the schematic is
+derived from it. For an existing design being brought in - the Pultec - the
+schematic is authoritative and the model is derived from a netlist export. Work
+out which case you are in before deciding what may edit what.
+
+## Practices
+
+These are settled, and each one exists because its absence cost something real.
+
+**Look at the output, not only the tests.** Netlist-level assertions are
+necessary and not sufficient. A board can pass every test and be unbuildable, a
+schematic can be correct and unreadable, a document can be generated and
+useless. Render it, print it, read it.
+
+**Refusals teach.** Every `throw` names what is missing, where to fix it, and
+why it is not defaulted. A message that only says something went wrong is
+incomplete.
+
+**Refuse rather than guess.** Value ranges, footprint families and part
+geometries are proven with tests over the range they claim. Extending one is a
+deliberate edit with a test beside it, never a silent widening. An empty
+whitelist that refuses loudly beats a general rule that quietly accepts a guess.
+
+**Verify names against the thing itself.** A KiCad footprint name is checkable -
+the libraries are on disk. Do not write one from memory; this repository has
+twice shipped a footprint that does not exist.
+
+**A skipped check must never look like a passing one.** If a guard cannot run,
+say so loudly. Silence that resembles success is the failure mode the whole
+workflow exists to prevent.
+
+**Derived artifacts are regenerated every run and compared by content**, never
+by timestamp - git does not preserve mtimes, and every mtime accident makes
+stale look current. Where a generated netlist is committed, it is committed
+deliberately: it is the form in which a human's schematic edit becomes legible
+to an agent in a diff.
+
+**Transcription is evidence, not memory.** See the section of that name below.
+
+**Supersede means delete.** A pattern replaced by a better one is removed in the
+same change, not left as a stub for somebody to find and trust.
+
 ## Circuit Conventions
 
 This repository used to be a tscircuit component package. It is not one any more:
