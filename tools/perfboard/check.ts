@@ -122,7 +122,7 @@ export interface PerfboardResult {
  * a numeric or otherwise non-string designator must throw naming the id it
  * came from, not get lowered into a netlist as a wrong value.
  */
-function assertDesignators(
+export function assertDesignators(
   value: unknown,
   declaration: PerfboardDeclaration,
 ): Readonly<Record<string, string>> {

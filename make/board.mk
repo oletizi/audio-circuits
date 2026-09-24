@@ -40,7 +40,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts update stripboard edit board-info netlist-agrees create
+.PHONY: help perfboard-help check cuts update stripboard edit board-info netlist-agrees create wiring
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -129,6 +129,7 @@ perfboard-help:
 	@echo ""
 	@echo "Bring it into existence (refuses if a layout already exists)"
 	@echo "  make create          build this board's layout from its circuit"
+	@echo "  make wiring          regenerate the panel wiring guide (check does this too)"
 	@echo "                       NOTE: this leaves the layout in isolated-hole mode."
 	@echo "                       Run \`make stripboard STRIPS=horizontal|vertical\` next"
 	@echo "                       (matching the direction the physical board's strips"
@@ -163,8 +164,17 @@ perfboard-help:
 	@echo "                       such run now re-exports the schematic to check it"
 	@echo "  ALLOW_DIRTY=1        let update/stripboard write over uncommitted changes"
 
-check: veroroute netlist-agrees
+# `wiring` is a prerequisite of `check` for the same reason `netlist-agrees` is:
+# a derived artifact nobody regenerates is one that goes quietly stale, and a
+# stale wiring guide is worse than none - it is confidently wrong in a way the
+# layout cannot contradict. It rewrites rather than failing, exactly as
+# netlist-agrees does, so drift surfaces as a git diff the operator has to look
+# at. A board with nothing off it reports that and writes nothing.
+check: veroroute netlist-agrees wiring
 	@bun "$(CLI)" check -C "$(CURDIR)"
+
+wiring:
+	@bun "$(CLI)" wiring -C "$(CURDIR)"
 
 cuts: veroroute netlist-agrees
 	@bun "$(CLI)" cuts -C "$(CURDIR)"

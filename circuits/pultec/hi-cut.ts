@@ -16,7 +16,13 @@
  * 6-position rotary whose other pole lives on the hi-boost board, and the two
  * poles must always be wired to move together.
  */
-import { designatorsFor, padOrdersFor, physicalizedBoard, PASSIVE_PIN_NUMBERS } from "./parts.ts"
+import {
+  designatorsFor,
+  padOrdersFor,
+  physicalizedBoard,
+  sharedByFor,
+  PASSIVE_PIN_NUMBERS,
+} from "./parts.ts"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
 import type { Network } from "../../lib/model/types.ts"
 
@@ -34,5 +40,8 @@ export const PAD_ORDER = padOrdersFor(BOARD)
 export const OFF_BOARD_IDS: ReadonlySet<string> = new Set(
   BOARD.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id),
 )
+/** Crossing net -> the other boards that touch it, for the wiring guide. */
+export const SHARED_BY = sharedByFor("hi-cut", CROSSING_NETS)
+
 /** Ground is physical-only here, so it has one member and is an intended open. */
 export const DECLARED_OPENS: readonly string[] = ["0"]

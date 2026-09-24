@@ -7,7 +7,13 @@
  * section's signal topology, so it has a second member on this board and no
  * singleton is declared.
  */
-import { designatorsFor, padOrdersFor, physicalizedBoard, PASSIVE_PIN_NUMBERS } from "./parts.ts"
+import {
+  designatorsFor,
+  padOrdersFor,
+  physicalizedBoard,
+  sharedByFor,
+  PASSIVE_PIN_NUMBERS,
+} from "./parts.ts"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
 import type { Network } from "../../lib/model/types.ts"
 
@@ -25,4 +31,7 @@ export const PAD_ORDER = padOrdersFor(BOARD)
 export const OFF_BOARD_IDS: ReadonlySet<string> = new Set(
   BOARD.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id),
 )
+/** Crossing net -> the other boards that touch it, for the wiring guide. */
+export const SHARED_BY = sharedByFor("mid", CROSSING_NETS)
+
 export const DECLARED_OPENS: readonly string[] = []

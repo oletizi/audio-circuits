@@ -13,7 +13,7 @@ import { net } from "../../lib/model/types.ts"
 import { componentNets } from "../../lib/model/topology.ts"
 import { PHYSICAL_ONLY } from "../../lib/board/physicalize.ts"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import { partitionReference } from "../../reference/pultec/partition.ts"
+import { boundaryConductors, partitionReference } from "../../reference/pultec/partition.ts"
 import type { ModuleOwner } from "../../reference/pultec/partition.ts"
 
 /**
@@ -224,4 +224,29 @@ export function designatorsFor(board: Network): Readonly<Record<string, string>>
 export const PASSIVE_PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   resistor: { a: "1", b: "2" },
   capacitor: { a: "1", b: "2" },
+}
+
+/**
+ * Each crossing net mapped to the OTHER boards that touch it, for the wiring
+ * guide's terminal-block table.
+ *
+ * Derived from `boundaryConductors()` rather than restated, so it cannot
+ * disagree with the boundary the boards were actually split along. A net no
+ * other board touches - the chassis ground on three of the five - maps to an
+ * empty list rather than being absent, which is what lets the guide print "no
+ * other board" instead of a blank cell that reads like missing data.
+ */
+export function sharedByFor(
+  owner: ModuleOwner,
+  crossingNets: readonly string[],
+): Readonly<Record<string, readonly string[]>> {
+  const boundaries = boundaryConductors()
+  const shared: Record<string, readonly string[]> = {}
+  for (const netName of crossingNets) {
+    const boundary = boundaries.find(candidate => candidate.net === netName)
+    shared[netName] = boundary === undefined
+      ? []
+      : boundary.owners.filter(candidate => candidate !== owner)
+  }
+  return shared
 }
