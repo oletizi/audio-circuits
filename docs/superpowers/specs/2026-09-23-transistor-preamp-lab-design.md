@@ -24,6 +24,12 @@ brief: docs/transistor-preamp/microphone-preamp-feedback-lab.md
 > exemption for electrically inert connectors is recorded (§3.2); and §6
 > step 5 states what `make check` reports before the board is placed.
 
+> **Trim-pot part change**, after the operator laid out the schematic: the
+> trim-pots are the Runtron RM-065 style single-turn carbon trimmers the
+> operator has on hand, not the Bourns 3006P (a 19 mm long 15-turn part,
+> which VeroRoute also draws at half its real width). §3.6 and §4.1 are
+> updated; the RM065 comes in every value the board uses.
+
 # Transistor preamp lab board
 
 ## 1. Purpose
@@ -221,7 +227,7 @@ exported `DESIGNATORS` map:
 | Kind | Footprint | VeroRoute type |
 |---|---|---|
 | Fixed resistor | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` | `RESISTOR4` (existing) |
-| Trim-pot (Bourns 3006P, 15-turn) | `Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal` | `TRIM_3006P` (**new**) |
+| Trim-pot (Runtron RM-065 style, single-turn, top-adjust) | `Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical` | `TRIM_FLAT` (**new**) |
 | Transistor | `Package_TO_SOT_THT:TO-92_Inline` | `TO92` (**new**) |
 | 10µF electrolytic | `Capacitor_THT:CP_Radial_D5.0mm_P2.00mm` | `CAP_ELECTRO_200` (existing) |
 | 100µF electrolytic | `Capacitor_THT:CP_Radial_D6.3mm_P2.50mm` | existing electrolytic family |
@@ -243,8 +249,10 @@ name, in the same way as connectors.
 ### 4.1 Footprint families (`lib/kicad/import-string.ts`)
 
 - `TO-92_Inline` (exactly) → `TO92`, a 3-pin consistency check.
-- `Potentiometer_Bourns_3006P_Horizontal` (exactly) → `TRIM_3006P`, a 3-pin
-  consistency check.
+- `Potentiometer_Runtron_RM-065_Vertical` (exactly) → `TRIM_FLAT`, a 3-pin
+  consistency check. `TRIM_FLAT`'s pattern (pins 1 and 3 two holes apart,
+  pin 2 centred two rows away) is the RM065's pinout per its datasheet and
+  KiCad's footprint.
 
 Each name is matched EXACTLY, not as a prefix: a neighbouring variant (a
 wide-pitch TO-92, a vertical trimmer) has different geometry, and mapping it

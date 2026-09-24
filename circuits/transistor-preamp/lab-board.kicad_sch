@@ -3069,7 +3069,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal"
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical"
 			(at 124.46 191.77 0)
 			(hide yes)
 			(show_name no)
@@ -3229,7 +3229,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal"
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical"
 			(at 88.9 110.49 0)
 			(hide yes)
 			(show_name no)
@@ -3944,7 +3944,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal"
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical"
 			(at 151.13 67.31 0)
 			(hide yes)
 			(show_name no)
@@ -4345,7 +4345,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal"
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical"
 			(at 120.65 110.49 0)
 			(hide yes)
 			(show_name no)
@@ -4743,7 +4743,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal"
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical"
 			(at 168.91 191.77 0)
 			(hide yes)
 			(show_name no)
@@ -5142,7 +5142,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal"
+		(property "Footprint" "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical"
 			(at 82.55 191.77 0)
 			(hide yes)
 			(show_name no)

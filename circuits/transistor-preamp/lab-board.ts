@@ -98,9 +98,11 @@ const RESISTOR: PartSpec = {
   footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
   symbol: "Device:R",
 }
+/** The operator's parts: Runtron RM-065 style single-turn carbon trimmers,
+ * top-adjust, about 6.4 x 7.5 mm (value code on the rotor, e.g. "504" = 500k). */
 const TRIM: PartSpec = {
-  mpn: "3006P",
-  footprint: "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal",
+  mpn: "RM-065",
+  footprint: "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical",
   symbol: "Device:R_Potentiometer_Trim",
 }
 const HEADER_2: PartSpec = {
@@ -244,7 +246,7 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
  *
  * bjt: Transistor_BJT:2N3904 and Package_TO_SOT_THT:TO-92_Inline are both
  * E-B-C, pins 1-2-3. potentiometer: Device:R_Potentiometer_Trim and the
- * Bourns 3006P footprint both put the wiper on pin 2.
+ * Runtron RM-065 footprint both put the wiper on pin 2.
  */
 export const PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   resistor: { a: "1", b: "2" },

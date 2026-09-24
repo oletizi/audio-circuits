@@ -85,7 +85,7 @@ const DERIVABLE_SHAPES = [
   "  DIP-<pins>_*                           -> DIP<pins>",
   "  PinHeader_1x<pins>_*                   -> SIP<pins>",
   "  TO-92_Inline (exactly)                 -> TO92",
-  "  Potentiometer_Bourns_3006P_Horizontal  -> TRIM_3006P",
+  "  Potentiometer_Runtron_RM-065_Vertical  -> TRIM_FLAT",
 ].join("\n")
 
 /** Strips the library prefix: "Capacitor_THT:C_Disc_..." -> "C_Disc_...". */
@@ -174,12 +174,21 @@ function field(bare: string, pattern: RegExp): number | null {
  * here would place the part on the wrong holes.
  *
  * Evidence: the pinned fork's Src/CompTypes.h,
- *   UpdateMaps(COMP::TO92,       "TO92",         "TO92");
- *   UpdateMaps(COMP::TRIM_3006P, "Bourns 3006P", "TRIM_3006P");
+ *   UpdateMaps(COMP::TO92,      "TO92", "TO92");
+ *   UpdateMaps(COMP::TRIM_FLAT, "Flat", "TRIM_FLAT");
+ *   TRIM_FLAT: rows = 3; cols = 3; "+2++++1+3"
+ *
+ * TRIM_FLAT's pattern is pins 1 and 3 two holes apart in one row, with pin 2
+ * centred between them two rows away. That is the Runtron RM-065's pinout:
+ * the RM065/RM063 datasheet (components101.com, "Preset Potentiometer
+ * (Trimpot)") and KiCad's Potentiometer_Runtron_RM-065_Vertical both put pins
+ * 1 and 3 at (0, 0) and (5, 0) mm and the wiper, pin 2, at (2.5, 5) mm. The
+ * 5 mm spacing lands on the 0.1" grid within the legs' give (5.08 mm), and
+ * TRIM_FLAT's 3 x 3 hole body is close to the part's roughly 6.4 x 7.5 mm.
  */
 const FIXED_SHAPE_TYPES: ReadonlyMap<string, string> = new Map([
   ["TO-92_Inline", "TO92"],
-  ["Potentiometer_Bourns_3006P_Horizontal", "TRIM_3006P"],
+  ["Potentiometer_Runtron_RM-065_Vertical", "TRIM_FLAT"],
 ])
 
 function derive(footprint: string): string {
@@ -243,7 +252,7 @@ export function importStringFor(
 /** Pin counts of the fixed-shape types in FIXED_SHAPE_TYPES. */
 const FIXED_SHAPE_PIN_COUNTS: ReadonlyMap<string, number> = new Map([
   ["TO92", 3],
-  ["TRIM_3006P", 3],
+  ["TRIM_FLAT", 3],
 ])
 
 /**

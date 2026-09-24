@@ -72,7 +72,7 @@ test("the board lowers to a VeroRoute netlist with the new fixed-shape types", (
   const typeOf = (designator: string): string | undefined =>
     lowered.components.find((c) => c.designator === designator)?.footprint
   expect(typeOf("Q1")).toBe("TO92")
-  expect(typeOf("RV2")).toBe("TRIM_3006P")
+  expect(typeOf("RV2")).toBe("TRIM_FLAT")
   expect(typeOf("TP1")).toBe("SIP1")
   expect(typeOf("JP1")).toBe("SIP2")
 })

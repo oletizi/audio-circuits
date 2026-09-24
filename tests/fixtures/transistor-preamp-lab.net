@@ -2,7 +2,7 @@
 	(version "E")
 	(design
 		(source "circuits/transistor-preamp/lab-board.kicad_sch")
-		(date "2026-09-23T19:47:56")
+		(date "2026-09-23T20:17:14")
 		(tool "Eeschema 10.0.5")
 		(sheet
 			(number "1")
@@ -1086,10 +1086,10 @@
 		(comp
 			(ref "RV1")
 			(value "50K")
-			(footprint "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 			(fields
 				(field
-					(name "Footprint") "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 				(field
 					(name "Datasheet")
 				)
@@ -1143,10 +1143,10 @@
 		(comp
 			(ref "RV2")
 			(value "1M")
-			(footprint "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 			(fields
 				(field
-					(name "Footprint") "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 				(field
 					(name "Datasheet")
 				)
@@ -1200,10 +1200,10 @@
 		(comp
 			(ref "RV3")
 			(value "10K")
-			(footprint "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 			(fields
 				(field
-					(name "Footprint") "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 				(field
 					(name "Datasheet")
 				)
@@ -1257,10 +1257,10 @@
 		(comp
 			(ref "RV4")
 			(value "200K")
-			(footprint "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 			(fields
 				(field
-					(name "Footprint") "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 				(field
 					(name "Datasheet")
 				)
@@ -1314,10 +1314,10 @@
 		(comp
 			(ref "RV5")
 			(value "2K")
-			(footprint "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 			(fields
 				(field
-					(name "Footprint") "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 				(field
 					(name "Datasheet")
 				)
@@ -1371,10 +1371,10 @@
 		(comp
 			(ref "RV6")
 			(value "1K")
-			(footprint "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 			(fields
 				(field
-					(name "Footprint") "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
 				(field
 					(name "Datasheet")
 				)

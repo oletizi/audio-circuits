@@ -158,9 +158,9 @@ test("every part of the built board derives the import string (or family) its ow
   }
 })
 
-test("the exact TO-92 inline and Bourns 3006P footprints derive their fixed VeroRoute types", () => {
+test("the exact TO-92 inline and Runtron RM-065 footprints derive their fixed VeroRoute types", () => {
   expect(importStringFor("Package_TO_SOT_THT:TO-92_Inline")).toBe("TO92")
-  expect(importStringFor("Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal")).toBe("TRIM_3006P")
+  expect(importStringFor("Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")).toBe("TRIM_FLAT")
 })
 
 test("neighbouring TO-92 and trimmer footprints still refuse", () => {
@@ -168,7 +168,8 @@ test("neighbouring TO-92 and trimmer footprints still refuse", () => {
     "Package_TO_SOT_THT:TO-92_Inline_Wide",
     "Package_TO_SOT_THT:TO-92",
     "Package_TO_SOT_THT:TO-92_Inline_Horizontal1",
-    "Potentiometer_THT:Potentiometer_Bourns_3006W_Horizontal",
+    "Potentiometer_THT:Potentiometer_Runtron_RM-063_Horizontal",
+    "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal",
     "Potentiometer_THT:Potentiometer_Bourns_3296W_Vertical",
   ]) {
     expect(() => importStringFor(footprint)).toThrow(/no VeroRoute import string/)
@@ -177,5 +178,5 @@ test("neighbouring TO-92 and trimmer footprints still refuse", () => {
 
 test("fixed-geometry three-pin types declare three pins", () => {
   expect(declaredPinCount("TO92")).toBe(3)
-  expect(declaredPinCount("TRIM_3006P")).toBe(3)
+  expect(declaredPinCount("TRIM_FLAT")).toBe(3)
 })
