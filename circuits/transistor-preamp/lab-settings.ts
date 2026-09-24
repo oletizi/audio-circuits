@@ -11,7 +11,10 @@
 import type { ControlState } from "../../lib/model/control-state.ts"
 import { parseValue } from "../../lib/model/units.ts"
 import { DESIGNATORS, LEGS } from "./lab-board.ts"
-import type { Leg, LegName } from "./lab-board.ts"
+import type { LegName } from "./lab-board.ts"
+import { formatOhms, legPosition, trimOnlyOhms } from "./leg-values.ts"
+
+export { legPosition }
 
 /** A leg setting meaning "jumper removed: this leg is out of circuit". */
 export const REMOVED = "removed"
@@ -54,21 +57,6 @@ export const SETTINGS: readonly LabSetting[] = [
   },
 ]
 
-/** Wiper position giving `ohms` of total leg resistance. Throws, never clamps. */
-export function legPosition(leg: Leg, ohms: number): number {
-  const floorOhms = leg.floor === undefined ? 0 : parseValue(leg.floor.value)
-  const trimOhms = parseValue(leg.trim)
-  const position = (ohms - floorOhms) / trimOhms
-  if (!Number.isFinite(position) || position < 0 || position > 1) {
-    throw new Error(
-      `${leg.trimId}: ${ohms} ohms is outside this leg's range, ${floorOhms} to ` +
-        `${floorOhms + trimOhms} ohms. Swap the fixed resistor or the trim-pot rather than ` +
-        "asking for a setting the board cannot reach.",
-    )
-  }
-  return position
-}
-
 export function controlStateFor(setting: LabSetting): ControlState {
   const potPositions: Record<string, number> = {}
   const switchPositions: Record<string, string> = {}
@@ -95,33 +83,6 @@ function designatorOf(id: string): string {
   const designator = DESIGNATORS[id]
   if (designator === undefined) throw new Error(`"${id}" has no designator in DESIGNATORS`)
   return designator
-}
-
-/**
- * A resistance in ohms, spelled the way this table wants it: "0", "800R" below
- * 1k, "33k"/"5.3k" at or above it. This is deliberately a small local
- * formatter rather than a reuse of lib/kicad/value-notation.ts's resistor
- * formatter, which refuses below 1000 ohms and at 0 - exactly the range a
- * pot-only trim value (leg total minus its floor) needs, since a leg's floor
- * can already supply most of a small total.
- */
-function formatOhms(ohms: number): string {
-  if (!Number.isFinite(ohms) || ohms < 0 || ohms > 1_500_000) {
-    throw new Error(`${ohms} ohms is outside the range this table's formatter covers (0 to 1.5M)`)
-  }
-  const spelled = (n: number): string => {
-    const text = String(Number(n.toFixed(4)))
-    return text.startsWith("0.") ? text.slice(1) : text
-  }
-  if (ohms === 0) return "0"
-  return ohms < 1000 ? `${spelled(ohms)}R` : `${spelled(ohms / 1000)}k`
-}
-
-/** The pot-only resistance a leg's trim must be set to, for a total of `ohms`:
- * the leg total minus its fixed floor (0 where the leg has none). */
-function trimOnlyOhms(leg: Leg, ohms: number): number {
-  const floorOhms = leg.floor === undefined ? 0 : parseValue(leg.floor.value)
-  return ohms - floorOhms
 }
 
 /** The bench-settings table carried as text on the generated schematic stub. */

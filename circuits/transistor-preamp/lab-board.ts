@@ -13,11 +13,8 @@
  * the authority for every part below. Values are bench starting points, not
  * design targets: a range that proves wrong is fixed by swapping a part.
  *
- * RHEOSTAT WIRING. Every trim-pot has its wiper strapped to its cw end, with
- * ccw on one node of the leg and wiper+cw on the other. The leg resistance is
- * position x R_trim, rising clockwise. The strap sets the failure mode: an
- * open wiper leaves the whole element in circuit, so every leg fails to its
- * MAXIMUM resistance - never open, never zero. Each adjustable bias leg also
+ * RHEOSTAT WIRING is described in ./parts.ts, which this board shares with
+ * the collector-feedback board. Each adjustable bias leg also
  * has a fixed "floor" resistor in series, so no setting drives the base
  * directly from a rail, and a 2-pin jumper that takes the leg out entirely.
  *
@@ -39,21 +36,17 @@
  * COLLECTOR are also ports, which keeps those canonical net names when a
  * fitted jumper merges a leg's internal net into them.
  */
-import { circuit, net } from "../../lib/model/index.ts"
-import type { Builder, Component, Network, PartSpec } from "../../lib/model/index.ts"
-import { parseValue } from "../../lib/model/units.ts"
+import { circuit } from "../../lib/model/index.ts"
+import type { Network, PartSpec } from "../../lib/model/index.ts"
+import {
+  HEADER_2, RESISTOR, addLeg, electrolytic, gainTransistor, jumper, trim,
+} from "./parts.ts"
+import type { Leg } from "./parts.ts"
+
+export type { Leg }
+export { PIN_NUMBERS } from "./parts.ts"
 
 export type LegName = "upper" | "feedback" | "lowerA" | "lowerB" | "collector" | "emitterBypass"
-
-export interface Leg {
-  readonly trimId: string
-  /** The trim-pot's full value, e.g. "50k". */
-  readonly trim: string
-  /** Fixed resistor in series with the trim; absent where the leg has none. */
-  readonly floor?: { readonly id: string; readonly value: string }
-  /** The jumper that takes the leg out of circuit; absent where the leg is always in. */
-  readonly jumperId?: string
-}
 
 export const LEGS: Readonly<Record<LegName, Leg>> = {
   upper: {
@@ -94,73 +87,10 @@ const EMITTER = "EMITTER"
 const COLLECTOR = "COLLECTOR"
 const OUT = "OUT"
 
-const RESISTOR: PartSpec = {
-  footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
-  symbol: "Device:R",
-}
-/** The operator's parts: Runtron RM-065 style single-turn carbon trimmers,
- * top-adjust, about 6.4 x 7.5 mm (value code on the rotor, e.g. "504" = 500k). */
-const TRIM: PartSpec = {
-  mpn: "RM-065",
-  footprint: "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical",
-  symbol: "Device:R_Potentiometer_Trim",
-}
-const HEADER_2: PartSpec = {
-  footprint: "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
-  symbol: "Connector_Generic:Conn_01x02",
-  electricallyInert: true,
-}
 const TEST_POINT: PartSpec = {
   footprint: "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
   symbol: "Connector:TestPoint",
   electricallyInert: true,
-}
-
-/** Can sizes are typical for the value, not measured; `perfboard check` reports a
- * mismatch against the physical part, which is resolved against the part. */
-function electrolytic(footprint: string): PartSpec {
-  return { footprint: `Capacitor_THT:${footprint}`, symbol: "Device:C_Polarized" }
-}
-
-/** A trim-pot wired as a rheostat: ccw on `from`, wiper and cw strapped on `to`. */
-function trim(id: string, value: string, from: string, to: string): Component {
-  return {
-    id, kind: "potentiometer",
-    parameters: { ohms: parseValue(value), taper: { type: "linear" } },
-    part: TRIM,
-    pins: {},
-    units: [{ name: "MAIN", pins: { ccw: net(from), wiper: net(to), cw: net(to) } }],
-  }
-}
-
-/** A 2-pin header and shunt: fitted shorts its pins, removed shorts nothing. */
-function jumper(id: string, a: string, b: string): Component {
-  return {
-    id, kind: "switch",
-    parameters: { positions: ["fitted", "removed"], contacts: { fitted: [["1", "2"]], removed: [] } },
-    part: {
-      footprint: "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
-      symbol: "Jumper:Jumper_2_Open",
-    },
-    pins: {},
-    units: [{ name: "MAIN", pins: { "1": net(a), "2": net(b) } }],
-  }
-}
-
-/** One adjustable leg from `from` to `to`: jumper, then floor, then trim, each where present. */
-function addLeg(builder: Builder, leg: Leg, netPrefix: string, from: string, to: string): void {
-  let node = from
-  if (leg.jumperId !== undefined) {
-    const next = `${netPrefix}_JUMPED`
-    builder.add(jumper(leg.jumperId, node, next))
-    node = next
-  }
-  if (leg.floor !== undefined) {
-    const next = `${netPrefix}_FLOOR`
-    builder.resistor(leg.floor.id, leg.floor.value, { a: node, b: next }, RESISTOR)
-    node = next
-  }
-  builder.add(trim(leg.trimId, leg.trim, node, to))
 }
 
 export function transistorPreampLab(): Network {
@@ -182,20 +112,7 @@ export function transistorPreampLab(): Network {
   builder.add(trim(bypass.trimId, bypass.trim, "BYPASS_CAP", GND))
 
   builder
-    .add({
-      id: "gain_transistor", kind: "bjt", parameters: {},
-      part: {
-        mpn: "2N3904",
-        footprint: "Package_TO_SOT_THT:TO-92_Inline",
-        symbol: "Transistor_BJT:2N3904",
-      },
-      pins: {},
-      units: [{
-        name: "MAIN",
-        pins: { base: net(BASE), collector: net(COLLECTOR), emitter: net(EMITTER) },
-        spiceModel: "2N3904",
-      }],
-    })
+    .add(gainTransistor(BASE, COLLECTOR, EMITTER))
     .capacitor("input_coupling_cap", "10uF", { a: BASE, b: IN_EXT },
       electrolytic("CP_Radial_D5.0mm_P2.00mm"))
     .capacitor("output_coupling_cap", "10uF", { a: COLLECTOR, b: OUT },
@@ -238,19 +155,4 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   vcc_test_point: "TP1", base_test_point: "TP2", emitter_test_point: "TP3",
   collector_test_point: "TP4", ground_test_point: "TP5", input_test_point: "TP6",
   output_test_point: "TP7",
-}
-
-/**
- * Canonical pin -> KiCad symbol/footprint pin number, by kind. Jumpers,
- * headers and test points already name their pins by number.
- *
- * bjt: Transistor_BJT:2N3904 and Package_TO_SOT_THT:TO-92_Inline are both
- * E-B-C, pins 1-2-3. potentiometer: Device:R_Potentiometer_Trim and the
- * Runtron RM-065 footprint both put the wiper on pin 2.
- */
-export const PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
-  resistor: { a: "1", b: "2" },
-  capacitor: { a: "1", b: "2" },
-  potentiometer: { ccw: "1", wiper: "2", cw: "3" },
-  bjt: { emitter: "1", base: "2", collector: "3" },
 }
