@@ -12,6 +12,7 @@
  */
 import { partitionTopology } from "../../lib/model/topology.ts"
 import type { Component, Connection, Network } from "../../lib/model/types.ts"
+import { OFF_BOARD } from "./off-board.ts"
 import { THREE_BAND_REFERENCE } from "./three-band.ts"
 import { MID_POSITIONS, MID_TAPS, tapLabel } from "./mid.ts"
 
@@ -147,36 +148,37 @@ export function boundaryConductors(
   }))
 }
 
-/** Whether a part sits on a section board rather than the front panel.
+/** Whether a part sits on a section board rather than off it.
  *
- * Potentiometers and rotary selectors are front-panel parts wired back to the
- * board. Everything else is board-resident — including the inductors, which
- * stopped being off-board when the tapped coils were replaced by discrete parts
- * sitting beside the capacitors they pair with.
+ * Residency is DATA, in `off-board.ts`, not a rule about kinds. A kind rule
+ * could not express an off-board inductor, and it made moving a pot on-board a
+ * code change rather than a decision.
  *
- * This is the single definition of board-resident. Tests that reason about what
- * the boards must emit derive it from here rather than restating the rule,
- * because a second copy is one that can disagree.
+ * This is the single definition. Tests that reason about what the boards must
+ * emit derive it from here rather than restating the rule, because a second
+ * copy is one that can disagree.
  */
 export function isBoardResident(component: Component): boolean {
-  return component.kind !== "potentiometer" && component.kind !== "switch"
+  return !OFF_BOARD.has(component.id)
 }
 
 /** The portion of a module that lives on its printed board.
  *
- * Potentiometers and rotary selectors are front-panel parts wired back to the
- * board, so they are not on it. What remains is the passive network the board
- * actually carries, with its terminals exposed as ports.
+ * Residency comes from `isBoardResident`, i.e. from `off-board.ts`. Every
+ * inductor is off-board today, because no inductor part has been chosen (see
+ * that file's docblock), so a tap net reaches its coil through a terminal
+ * block rather than joining it on the board. Potentiometers and rotary
+ * selectors are off-board for a separate, permanent reason: they are
+ * front-panel parts wired back to the board. What remains is the passive
+ * network the board actually carries, with its terminals exposed as ports.
  *
  * A net is a terminal only when something outside this board touches it — a
- * front-panel control, or another module. A net reached solely by this board's
- * own parts is an internal node and gets no port, because it needs no wire and
- * no terminal block. That distinction started mattering when the tapped coils
- * became discrete inductors: the tap nets used to run off to a coil through a
- * terminal block, and now they join a capacitor to the inductor beside it. The
- * hi boost board sheds five nets — its four taps plus the coil top — and the
- * mid board its five taps, which is the terminal-block reduction the
- * discrete-inductor design exists to buy.
+ * front-panel control, an off-board inductor, or another module. A net reached
+ * solely by this board's own parts is an internal node and gets no port,
+ * because it needs no wire and no terminal block. Moving an inductor on-board
+ * removes its tap net's port the same way moving a pot on-board would remove
+ * its wiper's; that reduction is the terminal-block saving the per-section
+ * placement in `off-board.ts` is working toward, one line at a time.
  *
  * This is the target an authored circuit is validated against: build the
  * circuit, flatten its connectivity, and compare. Anything the board gains or
