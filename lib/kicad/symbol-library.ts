@@ -136,16 +136,46 @@ export interface SymbolPin {
   readonly angle: number
 }
 
-/** The pins of a single-unit symbol: every pin in its common (style 0) and normal
- * (style 1) unit bodies, in file order. */
+/**
+ * The pins of a symbol's SUPPORTED units: unit 0 (pins and graphics common to
+ * every unit) and unit 1 (the part's own body, which is every pin a
+ * single-unit symbol has). KiCad names a unit sub-symbol
+ * "Name_<unit>_<bodyStyle>": `<unit>` is 0 for the common unit or 1, 2, 3...
+ * for a specific one, and `<bodyStyle>` is 0 or 1 for every vendored symbol
+ * here (a De Morgan alternate would be 2 and is skipped, since this
+ * repository has none). A unit sub-symbol with no name, or with a unit number
+ * greater than 1, refuses: the stub writer always emits a placed symbol's
+ * `(unit 1)` and merges every returned pin onto it (lib/kicad/schematic.ts),
+ * which silently drops or wrongly combines a genuine multi-unit part's pins
+ * rather than being wrong about it loudly.
+ */
 export function symbolPins(block: string): readonly SymbolPin[] {
   const root = parseSexpr(block)
   const name = root.atoms[0] ?? "(unnamed)"
   const pins: SymbolPin[] = []
   for (const unit of root.nodes.filter((n) => n.name === "symbol")) {
-    const unitName = unit.atoms[0] ?? ""
-    const style = unitName.slice(unitName.lastIndexOf("_") + 1)
-    if (style !== "0" && style !== "1") continue
+    const unitName = unit.atoms[0]
+    if (unitName === undefined) {
+      throw new Error(`symbol "${name}" has a unit sub-symbol with no name; expected "Name_<unit>_<bodyStyle>"`)
+    }
+    const fields = unitName.split("_")
+    const bodyStyle = fields[fields.length - 1]
+    const unitNumberText = fields[fields.length - 2]
+    const unitNumber = unitNumberText === undefined ? Number.NaN : Number(unitNumberText)
+    if (!Number.isFinite(unitNumber)) {
+      throw new Error(
+        `symbol "${name}" unit "${unitName}" has no numeric unit field; expected "Name_<unit>_<bodyStyle>"`,
+      )
+    }
+    if (unitNumber > 1) {
+      throw new Error(
+        `symbol "${name}" has unit ${unitNumber} ("${unitName}"): a multi-unit symbol. ` +
+          "lib/kicad/schematic.ts always places a symbol as \"(unit 1)\" and merges every unit's " +
+          "pins onto it, which is wrong once there is more than one unit. Multi-unit symbols are " +
+          "not supported by the stub writer.",
+      )
+    }
+    if (bodyStyle !== "0" && bodyStyle !== "1") continue
     for (const pin of unit.nodes.filter((n) => n.name === "pin")) {
       const at = pin.nodes.find((n) => n.name === "at")
       const number = pin.nodes.find((n) => n.name === "number")?.atoms[0]

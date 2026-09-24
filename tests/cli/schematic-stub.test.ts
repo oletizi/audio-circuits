@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import path from "node:path"
 import { runSchematicStub } from "../../tools/cli/schematic-stub.ts"
 import type { SchematicStubDeps } from "../../tools/cli/schematic-stub.ts"
 
@@ -37,12 +38,15 @@ test("refuses to overwrite an existing schematic", async () => {
   expect(h.errors.join("\n")).toMatch(/already exists/)
 })
 
-test("refuses a module that does not export DESIGNATORS", async () => {
+test("refuses a module that does not export DESIGNATORS, naming the module path once, not twice", async () => {
   const h = harness(new Set())
   const status = await runSchematicStub(
     ["circuits/opamp-buffer.ts", "opampBuffer", OUT], h.deps, h.log, h.error)
   expect(status).toBe(1)
-  expect(h.errors.join("\n")).toMatch(/DESIGNATORS/)
+  const message = h.errors.join("\n")
+  expect(message).toMatch(/DESIGNATORS/)
+  const modulePath = path.resolve("circuits/opamp-buffer.ts")
+  expect(message.split(modulePath).length - 1).toBe(1)
 })
 
 test("refuses the wrong number of arguments", async () => {

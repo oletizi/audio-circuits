@@ -23,7 +23,9 @@ export interface SchematicStubDeps {
   readonly newUuid: () => string
 }
 
-const USAGE = "usage: bun run schematic-stub <circuit-module> <export> <out.kicad_sch>"
+const USAGE =
+  "usage: bun run schematic-stub <circuit-module> <export> <out.kicad_sch>\n" +
+  "  a relative path resolves from the repository root, since that is bun run's cwd"
 
 function isStringArray(value: unknown): value is readonly string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string")
@@ -59,7 +61,11 @@ export async function runSchematicStub(
     }
     const network: unknown = build()
     if (!isNetwork(network)) throw new Error(`"${exportName}" in ${modulePath} did not return a Network`)
-    const where = { file: modulePath, circuitPath: modulePath }
+    // assertDesignators/assertPinNumbers' messages read "<file>: <circuitPath> ...",
+    // so passing modulePath for both would print it twice ("/abs/x.ts: /abs/x.ts
+    // does not export..."). There is no perfboard.json here, only the module
+    // itself, so `file` names this verb instead - the message then reads once.
+    const where = { file: "schematic-stub", circuitPath: modulePath }
     const designators = assertDesignators(imported["DESIGNATORS"], where)
     const pinNumbers = assertPinNumbers(imported["PIN_NUMBERS"], where)
     const notesOf = imported["schematicNotes"]

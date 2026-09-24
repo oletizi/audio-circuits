@@ -60,6 +60,27 @@ test("a lib id without a colon, or an unvendored symbol, refuses", () => {
   expect(() => vendoredSymbolText("Device:NoSuchPart")).toThrow(/Device:NoSuchPart/)
 })
 
+test("a unit sub-symbol with no name refuses", () => {
+  const block = [
+    '(symbol "Nameless"',
+    '\t(property "Reference" "Q" (at 0 0 0))',
+    "\t(symbol (pin passive line (at 0 0 0) (length 1.27) (name \"~\") (number \"1\")))",
+    ")",
+  ].join("\n")
+  expect(() => symbolPins(block)).toThrow(/no name/)
+})
+
+test("a unit number greater than 1 - a multi-unit symbol - refuses", () => {
+  const block = [
+    '(symbol "MultiUnit"',
+    '\t(property "Reference" "U" (at 0 0 0))',
+    '\t(symbol "MultiUnit_1_1" (pin passive line (at 0 0 0) (length 1.27) (name "~") (number "1")))',
+    '\t(symbol "MultiUnit_2_1" (pin passive line (at 0 0 0) (length 1.27) (name "~") (number "2")))',
+    ")",
+  ].join("\n")
+  expect(() => symbolPins(block)).toThrow(/multi-unit/)
+})
+
 test("every vendored symbol loads, is self-contained, and has pins", () => {
   for (const libId of VENDORED_SYMBOLS) {
     const text = vendoredSymbolText(libId)
