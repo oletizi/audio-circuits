@@ -34,15 +34,6 @@ function terminals(component: Component): Readonly<Record<string, Connection>> {
   return { ...component.pins, ...unit.pins }
 }
 
-/** Every net a component's terminals name. A no-connect contributes nothing. */
-function connectedNets(component: Component): readonly string[] {
-  const nets: string[] = []
-  for (const connection of Object.values(terminals(component))) {
-    if (connection.kind === "net") nets.push(connection.net)
-  }
-  return nets
-}
-
 export type ModuleOwner = "low-cut" | "low-boost" | "hi-cut" | "hi-boost" | "mid"
 
 export const MODULE_OWNERS: readonly ModuleOwner[] = [
@@ -160,57 +151,6 @@ export function boundaryConductors(
  */
 export function isBoardResident(component: Component): boolean {
   return !OFF_BOARD.has(component.id)
-}
-
-/** The portion of a module that lives on its printed board.
- *
- * Residency comes from `isBoardResident`, i.e. from `off-board.ts`. Every
- * inductor is off-board today, because no inductor part has been chosen (see
- * that file's docblock), so a tap net reaches its coil through a terminal
- * block rather than joining it on the board. Potentiometers and rotary
- * selectors are off-board for a separate, permanent reason: they are
- * front-panel parts wired back to the board. What remains is the passive
- * network the board actually carries, with its terminals exposed as ports.
- *
- * A net is a terminal only when something outside this board touches it — a
- * front-panel control, an off-board inductor, or another module. A net reached
- * solely by this board's own parts is an internal node and gets no port,
- * because it needs no wire and no terminal block. Moving an inductor on-board
- * removes its tap net's port the same way moving a pot on-board would remove
- * its wiper's; that reduction is the terminal-block saving the per-section
- * placement in `off-board.ts` is working toward, one line at a time.
- *
- * This is the target an authored circuit is validated against: build the
- * circuit, flatten its connectivity, and compare. Anything the board gains or
- * loses relative to the reference shows up as a topology difference.
- */
-export function boardNetwork(owner: ModuleOwner): Network {
-  const split = partitionReference()
-  const owned = split.modules[owner]
-  if (owned === undefined) throw new Error(`No such module: ${owner}`)
-
-  const components = owned.filter(isBoardResident)
-  if (components.length === 0) {
-    throw new Error(`Module has no board-resident elements: ${owner}`)
-  }
-
-  const onThisBoard = new Set(components.map(component => component.id))
-  const globalPorts = new Set(Object.values(THREE_BAND_REFERENCE.ports))
-  const ports: Record<string, string> = {}
-  for (const component of components) {
-    for (const net of connectedNets(component)) {
-      const reachedFromOutside = THREE_BAND_REFERENCE.components.some(
-        other => !onThisBoard.has(other.id) && connectedNets(other).includes(net),
-      )
-      // A net the whole circuit treats as an external port is a terminal even
-      // when only this board touches it — it still has to reach the outside
-      // world. Today every such net also has an outside neighbour, so this
-      // clause changes nothing; without it, re-owning one neighbour would
-      // silently turn the input, the output or ground into an internal node.
-      if (reachedFromOutside || globalPorts.has(net)) ports[net] = net
-    }
-  }
-  return { ports, components }
 }
 
 /** External ports are conductors too, even where only one module touches them.
