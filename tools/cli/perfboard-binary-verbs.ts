@@ -12,6 +12,7 @@ import path from "node:path"
 import type { Env } from "../perfboard/check.ts"
 import type { Pin, BinaryResolution, AcquireOptions } from "../perfboard/acquire.ts"
 import { runCuts, runUpdate, runStripboard, runEdit, type VerbDeps } from "../perfboard/verbs.ts"
+import { createBoard } from "../perfboard/create.ts"
 import { boardHere, parseFlags, isStripsDirection, reportLines, errorMessage } from "./perfboard-support.ts"
 
 /**
@@ -85,6 +86,26 @@ export async function dispatchUpdate(
   if (declaration === null) return 1
   try {
     log(await runUpdate(declaration, { allowDirty: flags.allowDirty }, mergedVerbDeps(verbDeps, repoRoot)))
+    return 0
+  } catch (caught) {
+    error(`FAIL ${declaration.vrtPath}`)
+    for (const line of reportLines(errorMessage(caught))) error(line)
+    return 1
+  }
+}
+
+export async function dispatchCreate(
+  cwd: string,
+  verbDeps: VerbDeps | undefined,
+  repoRoot: string | undefined,
+  log: (line: string) => void,
+  error: (line: string) => void,
+): Promise<number> {
+  const declaration = boardHere(cwd, "create", error)
+  if (declaration === null) return 1
+  try {
+    log(await createBoard(declaration, mergedVerbDeps(verbDeps, repoRoot)))
+    log(`created ${declaration.vrtPath}`)
     return 0
   } catch (caught) {
     error(`FAIL ${declaration.vrtPath}`)
