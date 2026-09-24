@@ -95,7 +95,14 @@ export const FOOTPRINT_IMPORT_STRINGS: ReadonlyMap<string, string> = new Map<str
  * empty whitelist refuses loudly, where a general rule would quietly accept a
  * guess.
  */
-export const FILM_CAPACITOR_IMPORT_STRINGS: ReadonlyMap<string, string> = new Map<string, string>()
+export const FILM_CAPACITOR_IMPORT_STRINGS: ReadonlyMap<string, string> = new Map<string, string>([
+  // TDK/EPCOS B32529, 63V, 1nF-220nF: body 2.5mm wide, one strip row.
+  ["Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm", "CAP_FILM2"],
+  // TDK/EPCOS B32529, 63V, 330nF: body 3.5mm wide, three strip rows.
+  ["Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm", "CAP_FILM_WIDE2"],
+  // WIMA FKP2, 63V, 470pF: body 4.5mm wide, three strip rows.
+  ["Capacitor_THT:C_Rect_L7.2mm_W4.5mm_P5.00mm", "CAP_FILM_WIDE2"],
+])
 
 /** The shapes this derives, quoted in every refusal so the operator can fix the source. */
 const DERIVABLE_SHAPES = [

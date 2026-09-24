@@ -168,3 +168,11 @@ Worst-case deviation anywhere in 1k–20kHz, high boost at 5kHz:
 
 ±20% is under 2 dB. Standard parts are ±10% or ±20%, so tolerance is not a
 selection criterion.
+
+**This table was produced by sweeping inductance, not capacitance** - the column
+header says so. Extending the conclusion to capacitor tolerance is an inference,
+not a second measurement: centre frequency goes as 1/√(LC), so a ±20% error in C
+shifts f₀ by the same factor a ±20% error in L does, and the transfer holds by
+that symmetry. Q does not follow by the same symmetry and was not swept here, so
+this table is not itself evidence that capacitor tolerance is free of the whole
+story - only that its effect on f₀ is.

@@ -2,12 +2,11 @@
  * What the Pultec boards are built from: footprints, designators and pad
  * orders, shared across the five board modules.
  *
- * THE FOOTPRINT HERE IS A NAME, NOT A CHOICE YET. Every capacitor points at one
- * film footprint, and `FILM_CAPACITOR_IMPORT_STRINGS` in
- * `lib/kicad/import-string.ts` is empty, so every board refuses at export until
- * a real capacitor family has been chosen and entered there. That refusal is
- * the point: an empty whitelist says "nobody has picked a part" out loud, where
- * a derived guess would quietly produce a board built around the wrong body.
+ * The capacitor family is TDK/EPCOS B32529 (63V) for 1nF-330nF, plus one WIMA
+ * FKP2 for the single 470pF below B32529's floor - see
+ * `docs/pultec/capacitor-selection.md` for the selection and
+ * `FILM_CAPACITOR_IMPORT_STRINGS` in `lib/kicad/import-string.ts` for the
+ * footprints' VeroRoute import strings.
  */
 import type { Component, Network } from "../../lib/model/types.ts"
 import { net } from "../../lib/model/types.ts"
@@ -16,8 +15,42 @@ import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
 import { partitionReference } from "../../reference/pultec/partition.ts"
 import type { ModuleOwner } from "../../reference/pultec/partition.ts"
 
-/** Placeholder until a capacitor family is chosen - see the module comment. */
-export const FILM_CAPACITOR = "Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm"
+/**
+ * Capacitance (farads) -> KiCad footprint, largest threshold first.
+ *
+ * THE 470pF ENTRY IS BELOW ITS OWN RANGE, NOT ABOVE. A table with only a "1nF
+ * and up" entry would let 470pF fall through the bottom and throw, or - worse -
+ * silently match nothing. Its 4.5mm body (WIMA FKP2, below B32529's 1nF floor)
+ * is also wider than the 3.5mm 330nF top of the range, so it cannot share that
+ * entry either; it needs its own threshold at its own value.
+ *
+ * See docs/pultec/capacitor-selection.md section 7 for the value-to-footprint
+ * map this table encodes.
+ */
+const FILM_BY_FARADS: readonly (readonly [number, string])[] = [
+  // TDK/EPCOS B32529, 63V, 330nF: body 3.5mm wide, three strip rows.
+  [330e-9, "Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm"],
+  // TDK/EPCOS B32529, 63V, 1nF-220nF: body 2.5mm wide, one strip row.
+  [1e-9, "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm"],
+  // WIMA FKP2, 63V, 470pF: body 4.5mm wide, three strip rows.
+  [470e-12, "Capacitor_THT:C_Rect_L7.2mm_W4.5mm_P5.00mm"],
+]
+
+/** The film footprint for a capacitor's value, from `FILM_BY_FARADS`. */
+function filmFootprint(component: Component): string {
+  const farads: unknown = Reflect.get(component.parameters, "farads")
+  if (typeof farads !== "number") {
+    throw new Error(`capacitor "${component.id}" has no numeric farads parameter`)
+  }
+  for (const [threshold, footprint] of FILM_BY_FARADS) {
+    if (farads >= threshold) return footprint
+  }
+  throw new Error(
+    `no film footprint is recorded for ${farads}F ("${component.id}"). Add its value to ` +
+      "FILM_BY_FARADS in circuits/pultec/parts.ts, with the footprint of the part you are " +
+      "actually fitting.",
+  )
+}
 
 export const AXIAL_RESISTOR =
   "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
@@ -81,7 +114,7 @@ export function rotaryPadOrder(component: Component): readonly string[] {
 
 /** The footprint an on-board component gets, by kind. */
 export function footprintForKind(component: Component): string {
-  if (component.kind === "capacitor") return FILM_CAPACITOR
+  if (component.kind === "capacitor") return filmFootprint(component)
   if (component.kind === "resistor") return AXIAL_RESISTOR
   throw new Error(
     `no footprint is defined for on-board component "${component.id}" of kind ` +

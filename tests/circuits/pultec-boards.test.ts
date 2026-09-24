@@ -181,10 +181,7 @@ test("every board carries a ground pin on its terminal block", () => {
   }
 })
 
-// Fails today because FILM_CAPACITOR_IMPORT_STRINGS is deliberately empty until
-// a capacitor family is chosen - see circuits/pultec/parts.ts. Task 10 enters
-// that footprint's VeroRoute import string, which is the remaining blocker.
-test.todo("each board exports to a netlist", () => {
+test("each board exports to a netlist", () => {
   for (const [owner, module, build] of BOARDS) {
     expect(() => toImportedNetlist(
       build(), module.DESIGNATORS, module.PIN_NUMBERS, module.OFF_BOARD_IDS, module.PAD_ORDER,

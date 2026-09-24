@@ -172,13 +172,13 @@ test("block pin counts are declared, so a netlist cannot reference a pin the blo
 })
 
 test("a film capacitor not on the whitelist refuses and says the list is how to add one", () => {
-  expect(() => importStringFor("Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm"))
+  expect(() => importStringFor("Capacitor_THT:C_Rect_L7.2mm_W5.0mm_P5.00mm"))
     .toThrow(/FILM_CAPACITOR_IMPORT_STRINGS/)
 })
 
 test("a whitelisted film capacitor returns its recorded import string", () => {
-  const whitelist = new Map([["Capacitor_THT:C_Rect_L4.6mm_W2.5mm_P2.50mm", "CAP_FILM1"]])
-  expect(importStringFor("Capacitor_THT:C_Rect_L4.6mm_W2.5mm_P2.50mm", undefined, whitelist))
+  const whitelist = new Map([["Capacitor_THT:C_Rect_L4.6mm_W2.0mm_P2.50mm_MKS02_FKP02", "CAP_FILM1"]])
+  expect(importStringFor("Capacitor_THT:C_Rect_L4.6mm_W2.0mm_P2.50mm_MKS02_FKP02", undefined, whitelist))
     .toBe("CAP_FILM1")
 })
 
