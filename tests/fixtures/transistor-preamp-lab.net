@@ -2,7 +2,7 @@
 	(version "E")
 	(design
 		(source "circuits/transistor-preamp/lab-board.kicad_sch")
-		(date "2026-09-23T17:22:44")
+		(date "2026-09-23T19:47:56")
 		(tool "Eeschema 10.0.5")
 		(sheet
 			(number "1")
@@ -75,11 +75,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -129,11 +129,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -183,11 +183,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -237,11 +237,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -291,11 +291,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -345,11 +345,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -399,11 +399,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -453,11 +453,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -507,11 +507,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -561,11 +561,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -615,11 +615,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -669,11 +669,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -723,11 +723,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -780,11 +780,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -834,11 +834,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -888,11 +888,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -942,11 +942,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -996,11 +996,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1050,11 +1050,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1104,11 +1104,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1161,11 +1161,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1218,11 +1218,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1275,11 +1275,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1332,11 +1332,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1389,11 +1389,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1446,11 +1446,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1497,11 +1497,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1548,11 +1548,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1599,11 +1599,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1650,11 +1650,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1701,11 +1701,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -1752,11 +1752,11 @@
 			)
 			(property
 				(name "Sheetname")
-				(value "Root")
+				(value "lab-board")
 			)
 			(property
 				(name "Sheetfile")
-				(value "circuits/transistor-preamp/lab-board.kicad_sch")
+				(value "lab-board.kicad_sch")
 			)
 			(property
 				(name "ki_keywords")
@@ -2273,7 +2273,180 @@
 		)
 		(net
 			(code "9")
-			(name "/GND")
+			(name "/IN_EXT")
+			(class "Default")
+			(node
+				(ref "C2")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J1")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "TP6")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "10")
+			(name "/LOWER_A_FLOOR")
+			(class "Default")
+			(node
+				(ref "R3")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV3")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "11")
+			(name "/LOWER_A_JUMPED")
+			(class "Default")
+			(node
+				(ref "JP3")
+				(pin "2")
+				(pinfunction "B_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R3")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "12")
+			(name "/LOWER_B_FLOOR")
+			(class "Default")
+			(node
+				(ref "R4")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV4")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "13")
+			(name "/LOWER_B_JUMPED")
+			(class "Default")
+			(node
+				(ref "JP4")
+				(pin "2")
+				(pinfunction "B_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R4")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "14")
+			(name "/OUT")
+			(class "Default")
+			(node
+				(ref "C3")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J2")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "TP7")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "15")
+			(name "/UPPER_FLOOR")
+			(class "Default")
+			(node
+				(ref "R1")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV1")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "16")
+			(name "/UPPER_JUMPED")
+			(class "Default")
+			(node
+				(ref "JP1")
+				(pin "2")
+				(pinfunction "B_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R1")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "17")
+			(name "/VCC")
+			(class "Default")
+			(node
+				(ref "C4")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "JP1")
+				(pin "1")
+				(pinfunction "A_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R5")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "TP1")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "18")
+			(name "GND")
 			(class "Default")
 			(node
 				(ref "C4")
@@ -2341,179 +2514,6 @@
 			)
 			(node
 				(ref "TP5")
-				(pin "1")
-				(pinfunction "1_1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "10")
-			(name "/IN_EXT")
-			(class "Default")
-			(node
-				(ref "C2")
-				(pin "2")
-				(pintype "passive")
-			)
-			(node
-				(ref "J1")
-				(pin "1")
-				(pinfunction "Pin_1_1")
-				(pintype "passive")
-			)
-			(node
-				(ref "TP6")
-				(pin "1")
-				(pinfunction "1_1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "11")
-			(name "/LOWER_A_FLOOR")
-			(class "Default")
-			(node
-				(ref "R3")
-				(pin "2")
-				(pintype "passive")
-			)
-			(node
-				(ref "RV3")
-				(pin "1")
-				(pinfunction "1_1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "12")
-			(name "/LOWER_A_JUMPED")
-			(class "Default")
-			(node
-				(ref "JP3")
-				(pin "2")
-				(pinfunction "B_2")
-				(pintype "passive")
-			)
-			(node
-				(ref "R3")
-				(pin "1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "13")
-			(name "/LOWER_B_FLOOR")
-			(class "Default")
-			(node
-				(ref "R4")
-				(pin "2")
-				(pintype "passive")
-			)
-			(node
-				(ref "RV4")
-				(pin "1")
-				(pinfunction "1_1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "14")
-			(name "/LOWER_B_JUMPED")
-			(class "Default")
-			(node
-				(ref "JP4")
-				(pin "2")
-				(pinfunction "B_2")
-				(pintype "passive")
-			)
-			(node
-				(ref "R4")
-				(pin "1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "15")
-			(name "/OUT")
-			(class "Default")
-			(node
-				(ref "C3")
-				(pin "2")
-				(pintype "passive")
-			)
-			(node
-				(ref "J2")
-				(pin "1")
-				(pinfunction "Pin_1_1")
-				(pintype "passive")
-			)
-			(node
-				(ref "TP7")
-				(pin "1")
-				(pinfunction "1_1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "16")
-			(name "/UPPER_FLOOR")
-			(class "Default")
-			(node
-				(ref "R1")
-				(pin "2")
-				(pintype "passive")
-			)
-			(node
-				(ref "RV1")
-				(pin "1")
-				(pinfunction "1_1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "17")
-			(name "/UPPER_JUMPED")
-			(class "Default")
-			(node
-				(ref "JP1")
-				(pin "2")
-				(pinfunction "B_2")
-				(pintype "passive")
-			)
-			(node
-				(ref "R1")
-				(pin "1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "18")
-			(name "/VCC")
-			(class "Default")
-			(node
-				(ref "C4")
-				(pin "1")
-				(pintype "passive")
-			)
-			(node
-				(ref "J3")
-				(pin "1")
-				(pinfunction "Pin_1_1")
-				(pintype "passive")
-			)
-			(node
-				(ref "JP1")
-				(pin "1")
-				(pinfunction "A_1")
-				(pintype "passive")
-			)
-			(node
-				(ref "R5")
-				(pin "1")
-				(pintype "passive")
-			)
-			(node
-				(ref "TP1")
 				(pin "1")
 				(pinfunction "1_1")
 				(pintype "passive")
