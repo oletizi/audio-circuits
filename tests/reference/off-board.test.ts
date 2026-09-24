@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import { isBoardResident } from "../../reference/pultec/partition.ts"
 import { THREE_BAND_REFERENCE } from "../../reference/pultec/three-band.ts"
 
 test("every off-board id names a component that exists", () => {
@@ -22,12 +21,6 @@ test("no passive is off-board", () => {
     .filter((c) => c.kind === "capacitor" || c.kind === "resistor")
     .map((c) => c.id)
   expect(passives.filter((id) => OFF_BOARD.has(id))).toEqual([])
-})
-
-test("residency reads the set rather than the kind", () => {
-  for (const component of THREE_BAND_REFERENCE.components) {
-    expect(isBoardResident(component)).toBe(!OFF_BOARD.has(component.id))
-  }
 })
 
 test("all nine inductors start off-board, because no part has been chosen", () => {

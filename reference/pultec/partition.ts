@@ -139,20 +139,6 @@ export function boundaryConductors(
   }))
 }
 
-/** Whether a part sits on a section board rather than off it.
- *
- * Residency is DATA, in `off-board.ts`, not a rule about kinds. A kind rule
- * could not express an off-board inductor, and it made moving a pot on-board a
- * code change rather than a decision.
- *
- * This is the single definition. Tests that reason about what the boards must
- * emit derive it from here rather than restating the rule, because a second
- * copy is one that can disagree.
- */
-export function isBoardResident(component: Component): boolean {
-  return !OFF_BOARD.has(component.id)
-}
-
 /** External ports are conductors too, even where only one module touches them.
  * The plan calls this out specifically: a port used on one board still has to
  * reach the outside world. */
