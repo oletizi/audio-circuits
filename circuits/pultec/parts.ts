@@ -148,7 +148,7 @@ export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly str
     id: "board_terminals",
     kind: "connector",
     parameters: {},
-    part: { footprint: TERMINAL_BLOCK_3, electricallyInert: true },
+    part: { symbol: "Connector_Generic:Conn_01x03", footprint: TERMINAL_BLOCK_3, electricallyInert: true },
     pins: {},
     units: [{ name: "MAIN", pins }],
     provenance: { source: PHYSICAL_ONLY },

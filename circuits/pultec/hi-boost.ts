@@ -1,7 +1,7 @@
 /**
  * The hi boost section on stripboard.
  *
- * The Cboost bank, Qmax, and R3 are on the board; the tapped inductors, the
+ * The Cboost bank and R3 (Qmax) are on the board; the tapped inductors, the
  * level and Q pots, and the selector are panel-mount / off-board and appear as
  * PADS landings. Ground is a chassis/shield landing here, so net "0" has no
  * other member on this board and that singleton is declared.

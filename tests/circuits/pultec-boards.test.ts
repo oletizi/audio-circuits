@@ -3,7 +3,7 @@ import { assertSameTopology } from "../../lib/model/topology.ts"
 import { assertElectricallyTransparent, physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import { partitionReference } from "../../reference/pultec/partition.ts"
+import { boundaryConductors, partitionReference } from "../../reference/pultec/partition.ts"
 import type { ModuleOwner } from "../../reference/pultec/partition.ts"
 import type { Network } from "../../lib/model/types.ts"
 import * as lowCut from "../../circuits/pultec/low-cut.ts"
@@ -58,6 +58,18 @@ test("a board's ports are exactly the crossing nets its own components touch", (
   }
 })
 
+test("a board's ports are exactly the boundary nets the partition says it owns", () => {
+  // THE DIRECTION WITH TEETH. The ports test above checks ports are a subset of
+  // what the board touches, which a board missing a crossing net still satisfies -
+  // its output simply has nowhere to land, silently. This checks the other way:
+  // every net the partition says crosses this module's boundary must be a port.
+  const boundaries = boundaryConductors()
+  for (const [owner, , build] of BOARDS) {
+    const expected = boundaries.filter((b) => b.owners.includes(owner)).map((b) => b.net).sort()
+    expect(Object.keys(build().ports).sort(), owner).toEqual(expected)
+  }
+})
+
 test("every physical-only component is electrically transparent", () => {
   // projectPhysical enforces this itself, so this is a direct statement of the
   // same fact rather than the only thing holding it. The count assertion keeps
@@ -86,12 +98,37 @@ test("every on-board component has a footprint and every off-board one does not"
   }
 })
 
-test("each board's off-board ids are exactly its share of the global set", () => {
-  for (const [owner, module, build] of BOARDS) {
-    const onThisBoard = build().components.filter((c) => !physicalOnly(c)).map((c) => c.id)
-    const expected = onThisBoard.filter((id) => OFF_BOARD.has(id)).sort()
+test("each board carries exactly the off-board components the partition assigns it", () => {
+  const modules = partitionReference().modules
+  let total = 0
+  for (const [owner, module, ] of BOARDS) {
+    const expected = (modules[owner] ?? [])
+      .filter((component) => OFF_BOARD.has(component.id))
+      .map((component) => component.id)
+      .sort()
     expect([...module.OFF_BOARD_IDS].sort(), owner).toEqual(expected)
+    total += expected.length
   }
+  // Every member of the global set is on exactly one board: 6 pots, 6 switches,
+  // 9 inductors. A board that emitted none would pass the per-board check above
+  // with two empty sets, and this is what refuses that.
+  expect(total).toBe(OFF_BOARD.size)
+})
+
+test("every part that needs a symbol has one, so its netlist value is not empty", () => {
+  // valueFor derives a value from a numeric quantity where there is one, and
+  // falls back to mpn then symbol otherwise. Switches and the terminal block
+  // have no quantity, so without a symbol they refuse at export - which the
+  // parked export test would otherwise be the only thing to notice.
+  let checked = 0
+  for (const [owner, , build] of BOARDS) {
+    for (const component of build().components) {
+      if (component.kind !== "switch" && component.kind !== "connector") continue
+      expect(component.part?.symbol ?? component.part?.mpn, `${owner}/${component.id}`).toBeDefined()
+      checked += 1
+    }
+  }
+  expect(checked).toBeGreaterThan(BOARDS.length)
 })
 
 test("every off-board component has a pad order that is a permutation of its pins", () => {
@@ -146,7 +183,7 @@ test("every board carries a ground pin on its terminal block", () => {
 
 // Fails today because FILM_CAPACITOR_IMPORT_STRINGS is deliberately empty until
 // a capacitor family is chosen - see circuits/pultec/parts.ts. Task 10 enters
-// that footprint's VeroRoute import string and turns this on.
+// that footprint's VeroRoute import string, which is the remaining blocker.
 test.todo("each board exports to a netlist", () => {
   for (const [owner, module, build] of BOARDS) {
     expect(() => toImportedNetlist(
