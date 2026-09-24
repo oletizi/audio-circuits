@@ -1,9 +1,9 @@
 # Capacitor selection for the Pultec stripboard set
 
-**Status: a recommendation awaiting the operator's decision. Nothing is committed to
-code.** `FILM_CAPACITOR_IMPORT_STRINGS` in `lib/kicad/import-string.ts` is still
-empty, so the five boards still refuse at export. That refusal is the interlock
-working: it says out loud that nobody has picked a part.
+**Status: the recommendation below has been committed to code.**
+`FILM_CAPACITOR_IMPORT_STRINGS` in `lib/kicad/import-string.ts` now carries the
+three footprints this document selects, so the five boards no longer refuse at
+export for lack of a whitelist entry.
 
 Every dimension below was read from a manufacturer datasheet PDF or from a
 `.kicad_mod` file on this machine. Every price and stock figure was read from a
@@ -292,7 +292,9 @@ Against the project's criteria:
   means almost every capacitor on the mid board occupies **one strip row**. Nothing
   else tested holds one body size across that span.
 - **Tolerance** — ±10% standard, ±5% available; both far inside the ±20% the
-  measured table says is free.
+  measured table says is free for inductance - see section 2's caveat, which
+  applies here too: that table swept inductance, not capacitance, so the
+  transfer to capacitance is an inference, not a second measurement.
 - **Voltage** — 63 VDC, an order of magnitude over line level.
 
 If the operator would rather buy one brand and accept three footprint widths,

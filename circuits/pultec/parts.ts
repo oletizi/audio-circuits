@@ -29,7 +29,10 @@ import type { ModuleOwner } from "../../reference/pultec/partition.ts"
  * map this table encodes.
  */
 const FILM_BY_FARADS: readonly (readonly [number, string])[] = [
-  // TDK/EPCOS B32529, 63V, 330nF: body 3.5mm wide, three strip rows.
+  // TDK/EPCOS B32529, 63V, 330nF: 3.0mm body, deliberately oversize on the
+  // 3.5mm-wide footprint (no W3.0 footprint exists without naming the wrong
+  // manufacturer - see docs/pultec/capacitor-selection.md section 7). Three
+  // strip rows either way.
   [330e-9, "Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm"],
   // TDK/EPCOS B32529, 63V, 1nF-220nF: body 2.5mm wide, one strip row.
   [1e-9, "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm"],
