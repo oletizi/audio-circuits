@@ -145,9 +145,32 @@ test("a crossing net no other board touches says so rather than showing a blank"
   expect(doc).not.toMatch(/\|\s*3\s*\|\s*0\s*\|\s*\|/)
 })
 
-test("on-board parts do not appear, because nothing about them is wired by hand", () => {
+test("on-board parts are listed with the value to fit and what they sit between", () => {
+  // These were once omitted, on the reasoning that the layout already shows
+  // where they go. That failed the one person the guide is for: somebody doing
+  // the layout holds a bag of parts and a board full of designators, and the
+  // layout does not say that C1 is 100nF.
   const doc = wiringDocument(INPUT)
-  expect(doc).not.toContain("C1")
+  expect(doc).toMatch(/\|\s*C1\s*\|\s*100nF\s*\|/)
+  expect(doc).toMatch(/\|\s*C1\s*\|[^|]*\|[^|]*IN[^|]*\|/)
+})
+
+test("a net a selector switches is labelled with the position, not just the net name", () => {
+  // `T1` says nothing at a bench; the selector knows that net as "20Hz". The
+  // label comes from the switch's own contacts, so it cannot disagree with the
+  // frequency tables the circuit is built from.
+  const doc = wiringDocument(INPUT)
+  const onBoard = doc.slice(doc.indexOf("## On the board"), doc.indexOf("## Panel parts"))
+  expect(onBoard).toContain("T1 (20Hz)")
+})
+
+test("the three kinds of connection are named in plain language", () => {
+  // The question that prompted this: "what are the board_terminals for?" The
+  // answer must be in the document, not inferable from a heading.
+  const doc = wiringDocument(INPUT)
+  expect(doc).toMatch(/place and solder/)
+  expect(doc).toMatch(/NOT on the board/)
+  expect(doc).toMatch(/leave this board for the OTHER boards/)
 })
 
 test("a component with no declared pad order refuses rather than guessing", () => {

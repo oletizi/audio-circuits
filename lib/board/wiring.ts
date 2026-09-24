@@ -59,6 +59,19 @@ function henriesText(henries: number): string {
 }
 
 /**
+ * Capacitance as somebody reads it off a part, not as a netlist spells it.
+ *
+ * `lib/kicad/value-notation.ts` answers "what text goes in a netlist field" and
+ * is constrained by what VeroRoute compares; this answers "which part do I pick
+ * out of the drawer", so it uses whichever unit keeps the number small.
+ */
+function faradsText(farads: number): string {
+  if (farads < 1e-9) return `${Math.round(farads * 1e12)}pF`
+  if (farads < 1e-6) return `${Number((farads * 1e9).toPrecision(3))}nF`
+  return `${Number((farads * 1e6).toPrecision(3))}uF`
+}
+
+/**
  * A one-line description of the part, for somebody holding it.
  *
  * Deliberately not `valueFor` from the KiCad lowering: that answers "what text
@@ -84,12 +97,98 @@ function describe(component: Component): string {
     const positions = parameters["positions"]
     return Array.isArray(positions) ? `${positions.length}-position switch` : "switch"
   }
+  if (component.kind === "capacitor") {
+    const farads = parameters["farads"]
+    return typeof farads === "number" ? faradsText(farads) : "capacitor"
+  }
+  if (component.kind === "resistor") {
+    const ohms = parameters["ohms"]
+    return typeof ohms === "number" ? ohmsText(ohms) : "resistor"
+  }
   if (component.kind === "connector") return "terminal block"
   return component.kind
 }
 
 function netOf(connection: Component["pins"][string]): string | undefined {
   return connection.kind === "net" ? connection.net : undefined
+}
+
+/**
+ * Net -> the selector position that reaches it, across every off-board switch.
+ *
+ * A capacitor's far end lands on a net called `j10_p1`, which says nothing at a
+ * bench. The selector that switches it knows the net as "20Hz". Joining the two
+ * is what turns the on-board parts list from a net dump into something you can
+ * place parts from.
+ */
+function selectorLabels(
+  network: Network,
+  offBoard: ReadonlySet<string>,
+): Readonly<Record<string, string>> {
+  const labels: Record<string, string> = {}
+  for (const component of network.components) {
+    if (!offBoard.has(component.id)) continue
+
+    if (component.kind === "switch") {
+      const positions = positionsByPin(component)
+      const pins = pinsOf(component)
+      for (const [pin, position] of Object.entries(positions)) {
+        const connection = pins[pin]
+        const netName = connection === undefined ? undefined : netOf(connection)
+        if (netName !== undefined) labels[netName] = position
+      }
+      continue
+    }
+
+    // An off-board inductor's tap net is named `j15_p3` by the netlist, which
+    // tells a builder nothing about which coil it reaches. Naming it by the
+    // inductor's value is what says "this capacitor pairs with the 300mH coil".
+    // Only the tap end is labelled: the other end is the shared coil return,
+    // which every inductor lands on, so labelling it would be noise.
+    if (component.kind === "inductor") {
+      const value = describe(component)
+      const pins = pinsOf(component)
+      const tap = pins["a"]
+      const tapNet = tap === undefined ? undefined : netOf(tap)
+      if (tapNet !== undefined) labels[tapNet] = value
+    }
+  }
+  return labels
+}
+
+/**
+ * What you place and solder, with the value to fit.
+ *
+ * This used to be omitted, on the reasoning that the layout already shows where
+ * these parts go. That was wrong in the one situation the guide exists for:
+ * somebody doing the layout is holding a bag of parts and a board full of
+ * designators, and the layout does NOT say that C18 is 330nF or that its far
+ * end is the 20Hz throw.
+ */
+function onBoardTable(
+  network: Network,
+  designators: Readonly<Record<string, string>>,
+  offBoard: ReadonlySet<string>,
+): string {
+  const labels = selectorLabels(network, offBoard)
+  const rows: string[] = []
+  for (const component of network.components) {
+    if (offBoard.has(component.id) || physicalOnly(component)) continue
+    const pins = pinsOf(component)
+    const connections = Object.values(pins)
+      .flatMap((connection) => {
+        const netName = netOf(connection)
+        if (netName === undefined) return []
+        const label = labels[netName]
+        return [label === undefined ? netName : `${netName} (${label})`]
+      })
+      .join(" ↔ ")
+    rows.push(
+      `| ${designators[component.id] ?? component.id} | ${describe(component)} | ${connections} |`,
+    )
+  }
+  if (rows.length === 0) return "_None._\n"
+  return ["| Part | Fit | Between |", "| --- | --- | --- |", ...rows].join("\n")
 }
 
 /** Pads that land on the same net, which the builder has to link together. */
@@ -226,14 +325,30 @@ export function wiringDocument(input: WiringInput): string {
     "it on every run and overwrites anything that has drifted, so a change here shows up as a",
     "git diff you have to look at rather than as a file somebody has to remember to update.",
     "",
-    "Pad numbers are positions in the layout, counting from 1. Everything in this file is",
-    "**off the board** and reaches it by wire — the parts on the board are placed by the",
-    "layout and need no instructions here.",
+    "There are three kinds of thing here, and they are wired differently:",
+    "",
+    "- **On the board** — parts you place and solder. The layout says where; this says",
+    "  which part and what it sits between.",
+    "- **Panel parts** — pots and switches that are NOT on the board. Each of their",
+    "  terminals gets a wire to one pad. Pad numbers count from 1 in layout order.",
+    "- **Board terminals** — the wires that leave this board for the OTHER boards, not",
+    "  for the panel. This is the inter-board harness.",
+    "",
+    "## On the board",
+    "",
+    onBoardTable(input.network, input.designators, input.offBoard),
     "",
     "## Panel parts",
     "",
+    "Off the board, wired back to it. Nothing here is soldered to the board itself.",
+    "",
     offBoard.length > 0 ? offBoard.join("\n") : "_None._\n",
     "## Board terminals",
+    "",
+    "Where this board joins the rest of the EQ. Each pin is one wire to another board —",
+    "the **Also on** column names which. A net reaching no other board is a chassis or",
+    "shield landing, present so there is somewhere to put that wire rather than",
+    "improvising one later.",
     "",
     physical.length > 0 ? physical.join("\n") : "_None._\n",
   ].join("\n")

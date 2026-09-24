@@ -4,11 +4,30 @@ Generated from `circuits/pultec/physical/low-cut.ts`. Do not edit by hand — `m
 it on every run and overwrites anything that has drifted, so a change here shows up as a
 git diff you have to look at rather than as a file somebody has to remember to update.
 
-Pad numbers are positions in the layout, counting from 1. Everything in this file is
-**off the board** and reaches it by wire — the parts on the board are placed by the
-layout and need no instructions here.
+There are three kinds of thing here, and they are wired differently:
+
+- **On the board** — parts you place and solder. The layout says where; this says
+  which part and what it sits between.
+- **Panel parts** — pots and switches that are NOT on the board. Each of their
+  terminals gets a wire to one pad. Pad numbers count from 1 in layout order.
+- **Board terminals** — the wires that leave this board for the OTHER boards, not
+  for the panel. This is the inter-board harness.
+
+## On the board
+
+| Part | Fit | Between |
+| --- | --- | --- |
+| C1 | 18nF | hi_boost_out ↔ j5_p1 (20Hz) |
+| C2 | 10nF | hi_boost_out ↔ j5_p2 (30Hz) |
+| C3 | 4.7nF | hi_boost_out ↔ j5_p3 (60Hz) |
+| C4 | 3.3nF | hi_boost_out ↔ j5_p4 (100Hz) |
+| C5 | 2.2nF | hi_boost_out ↔ j5_p5 (150Hz) |
+| C6 | 1.8nF | hi_boost_out ↔ j5_p6 (200Hz) |
+| C7 | 1nF | hi_boost_out ↔ j5_p3 (60Hz) |
 
 ## Panel parts
+
+Off the board, wired back to it. Nothing here is soldered to the board itself.
 
 ### RV_LO_CUT — 470k LOG potentiometer
 
@@ -35,6 +54,11 @@ layout and need no instructions here.
 **Ganged (`lo_freq`).** This is one pole of a two-pole switch shared with another board — not a switch of its own. Both poles turn together on one shaft, and fitting two separate switches makes two controls out of what should be one.
 
 ## Board terminals
+
+Where this board joins the rest of the EQ. Each pin is one wire to another board —
+the **Also on** column names which. A net reaching no other board is a chassis or
+shield landing, present so there is somewhere to put that wire rather than
+improvising one later.
 
 ### board_terminals — terminal block
 
