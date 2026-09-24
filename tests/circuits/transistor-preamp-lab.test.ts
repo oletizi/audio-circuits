@@ -1,0 +1,163 @@
+import { test, expect } from "bun:test"
+import {
+  transistorPreampLab, DESIGNATORS, PIN_NUMBERS, LEGS,
+} from "../../circuits/transistor-preamp/index.ts"
+import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
+import { validateNetwork } from "../../lib/model/validate.ts"
+import type { Component } from "../../lib/model/types.ts"
+import {
+  SETTINGS, REMOVED, controlStateFor, legPosition, schematicNotes,
+} from "../../circuits/transistor-preamp/index.ts"
+import { resolveNetwork } from "../../lib/model/control-state.ts"
+import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
+import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
+import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
+import { acSweepOf } from "../sim/helpers.ts"
+import { importNetlist } from "../../lib/kicad/netlist.ts"
+import { expectSameCircuit, kicadRoundTrip } from "./kicad-round-trip.ts"
+import type { BoardUnderTest } from "./kicad-round-trip.ts"
+
+function byId(id: string): Component {
+  const found = transistorPreampLab().components.find((c) => c.id === id)
+  if (found === undefined) throw new Error(`the lab board declares no "${id}"`)
+  return found
+}
+
+function netOf(component: Component, pin: string): string {
+  const connection = component.units[0]?.pins[pin]
+  if (connection === undefined || connection.kind !== "net") {
+    throw new Error(`"${component.id}" pin "${pin}" is not on a net`)
+  }
+  return connection.net
+}
+
+test("the lab board validates, and every part has exactly one designator", () => {
+  const network = transistorPreampLab()
+  expect(() => validateNetwork(network)).not.toThrow()
+  expect(network.components.map((c) => c.id).sort()).toEqual(Object.keys(DESIGNATORS).sort())
+  const designators = Object.values(DESIGNATORS)
+  expect(new Set(designators).size).toBe(designators.length)
+  expect(network.components.length).toBe(32)
+})
+
+test("every part names a symbol and a footprint", () => {
+  for (const component of transistorPreampLab().components) {
+    expect(component.part?.symbol).toBeDefined()
+    expect(component.part?.footprint).toBeDefined()
+  }
+})
+
+test("every trim-pot is a rheostat: its wiper is strapped to its cw end", () => {
+  for (const leg of Object.values(LEGS)) {
+    const trim = byId(leg.trimId)
+    expect(netOf(trim, "wiper")).toBe(netOf(trim, "cw"))
+    expect(netOf(trim, "ccw")).not.toBe(netOf(trim, "cw"))
+  }
+})
+
+test("each electrolytic's + terminal (pin a) faces the higher DC node", () => {
+  expect(netOf(byId("input_coupling_cap"), "a")).toBe("BASE")
+  expect(netOf(byId("output_coupling_cap"), "a")).toBe("COLLECTOR")
+  expect(netOf(byId("emitter_bypass_cap"), "a")).toBe("BYPASS_JUMPED")
+  expect(netOf(byId("supply_decoupling_cap"), "a")).toBe("VCC")
+})
+
+test("the board lowers to a VeroRoute netlist with the new fixed-shape types", () => {
+  const lowered = toImportedNetlist(transistorPreampLab(), DESIGNATORS, PIN_NUMBERS)
+  const typeOf = (designator: string): string | undefined =>
+    lowered.components.find((c) => c.designator === designator)?.footprint
+  expect(typeOf("Q1")).toBe("TO92")
+  expect(typeOf("RV2")).toBe("TRIM_FLAT")
+  expect(typeOf("TP1")).toBe("SIP1")
+  expect(typeOf("JP1")).toBe("SIP2")
+})
+
+test("a leg's ohms convert to a wiper position and back; out-of-range ohms throw", () => {
+  expect(legPosition(LEGS.upper, 47_000)).toBe(0)
+  expect(legPosition(LEGS.upper, 97_000)).toBe(1)
+  expect(legPosition(LEGS.upper, 80_000)).toBeCloseTo(0.66, 10)
+  expect(legPosition(LEGS.emitterBypass, 0)).toBe(0)
+  expect(() => legPosition(LEGS.upper, 46_000)).toThrow(/upper_bias_trim/)
+  expect(() => legPosition(LEGS.upper, 98_000)).toThrow(/upper_bias_trim/)
+})
+
+test("every setting resolves, and taking out a leg with no jumper throws", () => {
+  for (const setting of SETTINGS) {
+    expect(() => resolveNetwork(transistorPreampLab(), controlStateFor(setting))).not.toThrow()
+  }
+  const [first] = SETTINGS
+  if (first === undefined) throw new Error("no settings declared")
+  expect(() => controlStateFor({ ...first, legs: { ...first.legs, collector: REMOVED } }))
+    .toThrow(/collector/)
+})
+
+test("the schematic notes list every setting with its jumpers", () => {
+  const text = schematicNotes().join("\n")
+  for (const setting of SETTINGS) expect(text).toContain(setting.name)
+  for (const jumper of ["JP1", "JP2", "JP3", "JP4", "JP5"]) expect(text).toContain(jumper)
+})
+
+test("the schematic notes show a trim's leg total AND the pot-only value, not the leg total under the pot's designator", () => {
+  // RV1 (upper_bias_trim) is a 50k trim in series with a 47k fixed floor. The
+  // nominal setting asks for 80k of leg resistance, so RV1 itself must be set
+  // to 33k (80k minus the 47k floor) - printing "RV1 80k" would send someone
+  // to the bench to dial in the wrong number on the pot itself.
+  const text = schematicNotes().join("\n")
+  expect(text).toContain("RV1 leg 80k (trim 33k)")
+})
+
+/**
+ * Sanity bounds, not predictions. The board is a bench instrument; these catch
+ * wiring and generation errors. Source: 1 V AC ideal (so the load node reads
+ * the gain directly). Load: the brief's 100k measurement load. Supply: the
+ * brief's 9 V.
+ */
+const ENVIRONMENT: SimulationEnvironment = {
+  source: { port: "input", amplitude: 1, seriesOhms: 0 },
+  load: { port: "output", ohms: 100_000 },
+  supplies: [{ port: "vcc", volts: 9 }],
+  sweep: { pointsPerDecade: 10, startHz: 100, stopHz: 10_000 },
+  groundPort: "ground",
+}
+
+const EMITTER_DC_OHMS = 1500
+
+for (const setting of SETTINGS) {
+  test(`${setting.name}: the transistor is biased into its active region`, async () => {
+    const deck = toSpiceOperatingPointNetlist(
+      resolveNetwork(transistorPreampLab(), controlStateFor(setting)), ENVIRONMENT)
+    const [emitter, collector] = [spiceNodeName("EMITTER"), spiceNodeName("COLLECTOR")]
+    const v = await runOperatingPoint({ netlist: deck, nodes: [emitter, collector] })
+    const ve = v[emitter]
+    const vc = v[collector]
+    if (ve === undefined || vc === undefined) throw new Error("operating point is missing a node")
+    expect(ve / EMITTER_DC_OHMS).toBeGreaterThan(1e-4)
+    expect(vc - ve).toBeGreaterThan(1)
+  })
+
+  test(`${setting.name}: the stage inverts with gain greater than one at 1 kHz`, async () => {
+    const sweep = await acSweepOf(transistorPreampLab(), controlStateFor(setting), ENVIRONMENT)
+    const nearest = [...sweep.points].sort(
+      (a, b) => Math.abs(a.frequency - 1000) - Math.abs(b.frequency - 1000))[0]
+    if (nearest === undefined) throw new Error("the sweep returned no points")
+    const gain = Math.hypot(nearest.real, nearest.imaginary)
+    const phase = (Math.atan2(nearest.imaginary, nearest.real) * 180) / Math.PI
+    expect(Number.isFinite(gain)).toBe(true)
+    expect(gain).toBeGreaterThan(1)
+    expect(Math.abs(phase)).toBeGreaterThan(135)
+  })
+}
+
+const LAB_BOARD: BoardUnderTest = {
+  network: transistorPreampLab(), designators: DESIGNATORS, pinNumbers: PIN_NUMBERS,
+  notes: schematicNotes(),
+}
+
+test("KiCad reads the generated stub as the same circuit", () => {
+  expectSameCircuit(kicadRoundTrip(LAB_BOARD, "lab-board"), LAB_BOARD)
+}, 30_000)
+
+test("the schematic's netlist export describes the same circuit as the model", async () => {
+  expectSameCircuit(
+    importNetlist(await Bun.file("tests/fixtures/transistor-preamp-lab.net").text()), LAB_BOARD)
+})

@@ -419,3 +419,29 @@ test("a potentiometer still resolves into two resistors", () => {
   expect(lower.parameters.ohms).toBeCloseTo(5000, 9)
   expect(upper.parameters.ohms).toBeCloseTo(5000, 9)
 })
+
+test("a single-pin electrically inert connector (a test point) resolves without throwing", () => {
+  const withTestPoint: Network = {
+    ports: { input: "in", ground: "0" },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("in"), b: net("0") } }] },
+      { id: "TP1", kind: "connector", parameters: {}, pins: {}, part: { electricallyInert: true },
+        units: [{ name: "MAIN", pins: { "1": net("in") } }] },
+    ],
+  }
+  expect(() => resolveNetwork(withTestPoint, NO_CONTROLS)).not.toThrow()
+})
+
+test("a single-pin connector that is not declared electrically inert still throws Missing pins", () => {
+  const withTestPoint: Network = {
+    ports: { input: "in", ground: "0" },
+    components: [
+      { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
+        units: [{ name: "MAIN", pins: { a: net("in"), b: net("0") } }] },
+      { id: "TP1", kind: "connector", parameters: {}, pins: {},
+        units: [{ name: "MAIN", pins: { "1": net("in") } }] },
+    ],
+  }
+  expect(() => resolveNetwork(withTestPoint, NO_CONTROLS)).toThrow(/Missing pins: TP1/)
+})

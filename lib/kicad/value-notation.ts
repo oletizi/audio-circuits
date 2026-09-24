@@ -31,7 +31,7 @@ const MIN_FARADS = 1e-12
 // Exclusive upper bound: spec says "farads at or above 1000uF are refused" (line 253)
 const MAX_FARADS = 1e-3
 const MIN_OHMS = 1000
-const MAX_OHMS = 999000
+const MAX_OHMS_EXCLUSIVE = 1e7
 
 /**
  * A number as KiCad spells it: no exponent, no trailing zeros, no leading zero.
@@ -62,14 +62,14 @@ function capacitanceText(farads: number, id: string): string {
 }
 
 function resistanceText(ohms: number, id: string): string {
-  if (!Number.isFinite(ohms) || ohms < MIN_OHMS || ohms > MAX_OHMS) {
+  if (!Number.isFinite(ohms) || ohms < MIN_OHMS || ohms >= MAX_OHMS_EXCLUSIVE) {
     throw new Error(
       `resistance ${ohms}R on "${id}" is outside the range this formatter has been proven ` +
-        "over (1k to 999k). Extend lib/kicad/value-notation.ts with a test rather than " +
-        "letting it guess a spelling.",
+        "over (1k up to but not including 10M). Extend lib/kicad/value-notation.ts with a test " +
+        "rather than letting it guess a spelling.",
     )
   }
-  return `${decimal(ohms / 1000)}K`
+  return ohms < 1e6 ? `${decimal(ohms / 1000)}K` : `${decimal(ohms / 1e6)}M`
 }
 
 /** "Connector_Generic:Conn_01x05" -> "Conn_01x05". */
@@ -80,15 +80,15 @@ function symbolPartName(symbol: string): string {
 
 /**
  * Kinds whose `Parameters` carry an electrical quantity this module has no
- * formatter for. `resistor` and `capacitor` are handled above; every other
- * kind with a quantity-bearing parameter type (see `lib/model/parameters.ts`)
- * must refuse here rather than fall through to the mpn/symbol branch below,
- * which would silently put the part's IDENTITY in the field meant to hold its
- * VALUE - e.g. an inductor's part number where its inductance belongs.
+ * formatter for. `resistor`, `capacitor` and `potentiometer` are handled above;
+ * a switch's parameters (positions and contacts) are not an electrical quantity,
+ * so a switch takes the mpn/symbol path like a connector. Every other kind with
+ * a quantity-bearing parameter type (see `lib/model/parameters.ts`) must refuse
+ * here rather than fall through to the mpn/symbol branch below, which would
+ * silently put the part's IDENTITY in the field meant to hold its VALUE - e.g.
+ * an inductor's part number where its inductance belongs.
  */
-const UNFORMATTED_ELECTRICAL_KINDS: ReadonlySet<string> = new Set([
-  "inductor", "potentiometer", "switch",
-])
+const UNFORMATTED_ELECTRICAL_KINDS: ReadonlySet<string> = new Set(["inductor"])
 
 /**
  * A part's value as the netlist spells it.
@@ -107,10 +107,10 @@ export function valueFor(component: Component): string {
     }
     return capacitanceText(farads, component.id)
   }
-  if (component.kind === "resistor") {
+  if (component.kind === "resistor" || component.kind === "potentiometer") {
     const ohms: unknown = Reflect.get(component.parameters, "ohms")
     if (typeof ohms !== "number") {
-      throw new Error(`resistor "${component.id}" has no numeric ohms parameter`)
+      throw new Error(`${component.kind} "${component.id}" has no numeric ohms parameter`)
     }
     return resistanceText(ohms, component.id)
   }

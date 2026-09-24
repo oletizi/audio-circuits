@@ -46,18 +46,18 @@ test("a diameter outside the enumerated range refuses", () => {
 })
 
 test("an unrecognized family refuses, listing the shapes that derive", () => {
-  expect(() => importStringFor("Package_TO_SOT_THT:TO-92_Inline"))
-    .toThrow(/TO-92_Inline[\s\S]*R_Axial[\s\S]*PinHeader_1x/)
+  expect(() => importStringFor("Package_TO_SOT_THT:TO-220-3_Vertical"))
+    .toThrow(/TO-220-3_Vertical[\s\S]*R_Axial[\s\S]*PinHeader_1x/)
 })
 
 test("an override wins over the derivation", () => {
   // The override must produce a string `derive()` would NOT produce on its own -
   // otherwise this test stays green even if the override lookup is deleted.
-  // "Package_TO_SOT_THT:TO-92_Inline" matches none of the derivable families
+  // "Package_TO_SOT_THT:TO-220-3_Vertical" matches none of the derivable families
   // (see "an unrecognized family refuses" above), so `derive()` throws for it;
   // only the override lookup can make this call succeed.
-  const overrides = new Map([["Package_TO_SOT_THT:TO-92_Inline", "PADS3"]])
-  expect(importStringFor("Package_TO_SOT_THT:TO-92_Inline", overrides)).toBe("PADS3")
+  const overrides = new Map([["Package_TO_SOT_THT:TO-220-3_Vertical", "PADS3"]])
+  expect(importStringFor("Package_TO_SOT_THT:TO-220-3_Vertical", overrides)).toBe("PADS3")
 })
 
 test("pin-count types report their count; span types do not", () => {
@@ -156,4 +156,27 @@ test("every part of the built board derives the import string (or family) its ow
       expect(derived).toBe(boardType)
     }
   }
+})
+
+test("the exact TO-92 inline and Runtron RM-065 footprints derive their fixed VeroRoute types", () => {
+  expect(importStringFor("Package_TO_SOT_THT:TO-92_Inline")).toBe("TO92")
+  expect(importStringFor("Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")).toBe("TRIM_FLAT")
+})
+
+test("neighbouring TO-92 and trimmer footprints still refuse", () => {
+  for (const footprint of [
+    "Package_TO_SOT_THT:TO-92_Inline_Wide",
+    "Package_TO_SOT_THT:TO-92",
+    "Package_TO_SOT_THT:TO-92_Inline_Horizontal1",
+    "Potentiometer_THT:Potentiometer_Runtron_RM-063_Horizontal",
+    "Potentiometer_THT:Potentiometer_Bourns_3006P_Horizontal",
+    "Potentiometer_THT:Potentiometer_Bourns_3296W_Vertical",
+  ]) {
+    expect(() => importStringFor(footprint)).toThrow(/no VeroRoute import string/)
+  }
+})
+
+test("fixed-geometry three-pin types declare three pins", () => {
+  expect(declaredPinCount("TO92")).toBe(3)
+  expect(declaredPinCount("TRIM_FLAT")).toBe(3)
 })

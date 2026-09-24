@@ -66,7 +66,7 @@ function isPinNumber(pin: string): boolean {
   return /^[0-9]+$/.test(pin)
 }
 
-function pinNumberFor(component: Component, pin: string, pinNumbers: PinNumbers): string {
+export function pinNumberFor(component: Component, pin: string, pinNumbers: PinNumbers): string {
   const mapped = pinNumbers[component.kind]?.[pin]
   if (mapped !== undefined) return mapped
   if (isPinNumber(pin)) return pin
