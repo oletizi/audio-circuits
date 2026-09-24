@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { assertSameTopology } from "../../lib/model/topology.ts"
+import { assertSameTopology, componentNets } from "../../lib/model/topology.ts"
 import { assertElectricallyTransparent, physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
@@ -45,9 +45,7 @@ test("a board's ports are exactly the crossing nets its own components touch", (
   for (const [owner, , build] of BOARDS) {
     const board = build()
     const electrical = modules[owner] ?? []
-    const touched = new Set(electrical.flatMap((component) =>
-      [component.pins, ...component.units.map((unit) => unit.pins)].flatMap((group) =>
-        Object.values(group).flatMap((c) => (c.kind === "net" ? [c.net] : [])))))
+    const touched = new Set(electrical.flatMap((component) => componentNets(component)))
     for (const netName of Object.keys(board.ports)) {
       expect(touched.has(netName), `${owner}: port ${netName} touches no component`).toBe(true)
     }

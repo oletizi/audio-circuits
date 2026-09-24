@@ -7,23 +7,7 @@ import {
   partitionReference,
 } from "../../reference/pultec/partition.ts"
 import { THREE_BAND_REFERENCE } from "../../reference/pultec/three-band.ts"
-import { assertSameTopology, partitionTopology } from "../../lib/model/topology.ts"
-import type { Component } from "../../lib/model/types.ts"
-
-/** Every net a component's package pins and unit pins name. A no-connect
- * contributes nothing. Mirrors the equivalent helper in reference/pultec/partition.ts. */
-function connectedNets(component: Component): readonly string[] {
-  const nets: string[] = []
-  for (const connection of Object.values(component.pins)) {
-    if (connection.kind === "net") nets.push(connection.net)
-  }
-  for (const unit of component.units) {
-    for (const connection of Object.values(unit.pins)) {
-      if (connection.kind === "net") nets.push(connection.net)
-    }
-  }
-  return nets
-}
+import { assertSameTopology, componentNets, partitionTopology } from "../../lib/model/topology.ts"
 
 test("every element is owned exactly once, by a declared module", () => {
   const refs = THREE_BAND_REFERENCE.components.map(c => c.id).sort()
@@ -96,7 +80,7 @@ test("ground became a boundary net once the mid section returned to it", () => {
   const groundOwners = new Set(
     Object.entries(split.modules)
       .filter(([, components]) =>
-        components.some(c => connectedNets(c).includes("0")))
+        components.some(c => componentNets(c).includes("0")))
       .map(([owner]) => owner),
   )
   expect([...groundOwners].sort()).toEqual(["low-boost", "mid"])
@@ -113,7 +97,7 @@ test("hi_boost_out is where four sections meet", () => {
 test("every external port is reachable from the partitioned modules", () => {
   const split = partitionReference()
   const owned = new Set(
-    Object.values(split.modules).flat().flatMap(c => connectedNets(c)),
+    Object.values(split.modules).flat().flatMap(c => componentNets(c)),
   )
   for (const net of Object.values(THREE_BAND_REFERENCE.ports)) {
     expect(owned.has(net)).toBe(true)

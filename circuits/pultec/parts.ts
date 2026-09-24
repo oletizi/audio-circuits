@@ -10,6 +10,7 @@
  */
 import type { Component, Network } from "../../lib/model/types.ts"
 import { net } from "../../lib/model/types.ts"
+import { componentNets } from "../../lib/model/topology.ts"
 import { PHYSICAL_ONLY } from "../../lib/board/physicalize.ts"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
 import { partitionReference } from "../../reference/pultec/partition.ts"
@@ -94,17 +95,6 @@ export const ROTARY_SYMBOL = "Switch:SW_Rotary"
 export const TOGGLE_SYMBOL = "Switch:SW_SPDT"
 export const POT_SYMBOL = "Device:R_Potentiometer"
 export const INDUCTOR_SYMBOL = "Device:L"
-
-/** Every net a component's package pins and unit pins name. A no-connect names none. */
-function componentNets(component: Component): readonly string[] {
-  const nets: string[] = []
-  for (const group of [component.pins, ...component.units.map((unit) => unit.pins)]) {
-    for (const connection of Object.values(group)) {
-      if (connection.kind === "net") nets.push(connection.net)
-    }
-  }
-  return nets
-}
 
 /** A pot's lugs, in the order a panel-mount part numbers them. */
 export const POT_PAD_ORDER: readonly string[] = ["ccw", "wiper", "cw"]
