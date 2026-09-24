@@ -4,6 +4,7 @@ import {
   schematicNotes,
 } from "../../circuits/transistor-preamp/feedback-board.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
+import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { validateNetwork } from "../../lib/model/validate.ts"
 import type { Component } from "../../lib/model/types.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
@@ -122,3 +123,9 @@ const FEEDBACK_BOARD: BoardUnderTest = {
 test("KiCad reads the generated stub as the same circuit", () => {
   expectSameCircuit(kicadRoundTrip(FEEDBACK_BOARD, "feedback-board"), FEEDBACK_BOARD)
 }, 30_000)
+
+test("the schematic's netlist export describes the same circuit as the model", async () => {
+  expectSameCircuit(
+    importNetlist(await Bun.file("tests/fixtures/transistor-preamp-feedback.net").text()),
+    FEEDBACK_BOARD)
+})

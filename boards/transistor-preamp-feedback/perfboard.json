@@ -1,0 +1,7 @@
+{
+  "sch": "../../circuits/transistor-preamp/feedback-board.kicad_sch",
+  "circuit": "../../circuits/transistor-preamp/feedback-board.ts",
+  "export": "transistorPreampFeedback",
+  "netlist": "../../tests/fixtures/transistor-preamp-feedback.net",
+  "vrt": "transistor-preamp-feedback.perfboard.vrt"
+}
