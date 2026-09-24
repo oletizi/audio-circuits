@@ -1,26 +1,48 @@
 # Audio Circuits
 
-Audio circuit definitions as a declarative model, verified in SPICE inside the
-test suite.
+A collection of audio circuits under development. Some are core, reusable
+components meant to appear in future designs; some are designs in their own
+right. Nothing here is finished software — it is hardware in progress.
 
-Circuits are written against `lib/model/`: a circuit is either built directly
-with its `circuit()` builder, or produced by reading a KiCad netlist export
-with `lib/kicad/` and transcribing it. `circuits/pt2399-core/pt2399-core.ts` came from the
-netlist of a unit that was actually built and works, not from a datasheet;
-`circuits/opamp-buffer.ts` is the first circuit here with an active device.
+## What this repository is for
+
+**It is a bridge between AI agents and human designers**, and the split of
+responsibilities is deliberate:
+
+- **The TypeScript is for agents.** Agents are good at software, so a circuit
+  is held as data — built with `lib/model/`'s `circuit()` builder or read from
+  a KiCad netlist — where it can be validated, simulated in SPICE, composed,
+  partitioned and checked. That is work an agent can do well and be held to.
+- **The KiCad and VeroRoute interfaces are for the human designer.** Agents are
+  bad at hardware design: they cannot draw a legible schematic and cannot be
+  trusted to lay out a physical board. So the handoff is explicit. An agent
+  codifies and tests the circuit; a person picks it up in KiCad and VeroRoute
+  and produces the things that actually get built — readable schematics, and
+  buildable layouts for stripboard, perfboard and manufactured PCBs.
+
+Authority runs in both directions depending on where a circuit came from.
+`lib/kicad/schematic.ts` writes a `.kicad_sch` **from** a model, as a starting
+point a person rearranges into something legible. The Pultec runs the other
+way: an existing design imported schematic-first, with the model derived from a
+netlist export.
+
+**KiCad is a primary tool here, not an optional extra.** `make check` runs
+`kicad-cli` on every board on every run. Treat it the way you would a compiler.
+
+Read `CLAUDE.md` for the conventions every circuit follows.
 
 This repository was previously a tscircuit component package. tscircuit has
 been removed entirely — see `docs/decisions/2026-09-21-why-not-tscircuit.md`
 for why.
 
-The largest single body of content is a passive Pultec EQ reference network
-under `reference/pultec/`: Ian Thompson-Bell's "Pultec 3 Band EQ", which
-combines an EQP-1 and an MEQ-5. It is assembled directly from a `kicad-cli`
-netlist export onto `lib/model/topology.ts`'s network type, independently of
-the `circuit()` builder `circuits/pt2399-core/pt2399-core.ts` uses. It is **unvalidated** — no unit has been built from it, and the model is known to be
-incomplete — see `reference/pultec/README.md` and
-`reference/pultec/unresolved.md` before treating anything computed from it as
-more than a model prediction.
+The largest single body of content is the passive Pultec EQ in
+`circuits/pultec/`: Ian Thompson-Bell's "Pultec 3 Band EQ", which combines an
+EQP-1 and an MEQ-5. Its model is assembled directly from a `kicad-cli` netlist
+export of the schematic in that directory, independently of the `circuit()`
+builder `circuits/pt2399-core/pt2399-core.ts` uses. It is **unvalidated** — no
+unit has been built from it, and the model is known to be incomplete — see
+`docs/pultec/provenance.md` and `docs/pultec/unresolved.md` before treating
+anything computed from it as more than a model prediction.
 
 ## Project Structure
 
@@ -54,13 +76,9 @@ audio-circuits/
 │   │                     # design spec in docs/superpowers/specs/
 │   └── opamp-buffer.ts   # A unity-gain TL072 buffer
 │
-├── reference/pultec/     # What is DERIVED from the Pultec schematic - the
-│                         # netlist export, the generated JSON, the typed
-│                         # reference network - plus hand-authored analysis of
-│                         # it (values, unresolved questions, control mapping).
-│                         # Never an editable source; the schematic itself
-│                         # lives in circuits/pultec/. Unvalidated - see its
-│                         # own README
+│                         # Within a circuit: model/ for a mechanically derived
+│                         # electrical model, boards/ for physicalized board
+│                         # modules, generated/ for artifacts a tool rebuilds
 │
 ├── boards/               # Perfboard directories the perfboard CLI drives,
 │                         # each checking a circuit against a physical
@@ -119,26 +137,26 @@ stub does and does not carry.
 
 ## How the Pultec reference is validated
 
-`reference/pultec/three-band.ts` is not compared against any board or module —
+`circuits/pultec/model/three-band.ts` is not compared against any board or module —
 none currently exist for it. What "validated" means here is narrower:
 
 - **Topology** comes from an exact `kicad-cli` netlist export of a board that
   was actually manufactured. **Values** come from Thompson-Bell's documentation.
   The two agree on every capacitor position, which is what makes the reference
-  evidence rather than a transcription. See `reference/pultec/README.md` for
+  evidence rather than a transcription. See `docs/pultec/provenance.md` for
   the corroboration in full.
-- `tests/reference/three-band.test.ts` checks the network is structurally
+- `tests/pultec/three-band.test.ts` checks the network is structurally
   valid and spot-checks component values against the documentation.
-- `tests/reference/partition.test.ts` checks that a hypothetical split of the
-  reference into per-section modules (`reference/pultec/partition.ts`) would
+- `tests/pultec/partition.test.ts` checks that a hypothetical split of the
+  reference into per-section modules (`circuits/pultec/partition.ts`) would
   own every element exactly once and recompose to the same network — a
   consistency check on the model, not a comparison against anything built.
-- `tests/reference/ac.test.ts` runs the network through SPICE across a matrix
+- `tests/pultec/ac.test.ts` runs the network through SPICE across a matrix
   of control settings and checks the frequency response against hand-derived
   analytic values and the documented curve shapes.
 
-None of this touches real hardware or a real PCB. See `reference/pultec/README.md`
-("UNVALIDATED") and `reference/pultec/unresolved.md` item 1.
+None of this touches real hardware or a real PCB. See `docs/pultec/provenance.md`
+("UNVALIDATED") and `docs/pultec/unresolved.md` item 1.
 
 ### Discrete inductors
 
@@ -146,12 +164,12 @@ The reference models the two multi-tapped coils as nine discrete inductors —
 the hi boost section's four taps and the mid section's five — rather than as
 tapped windings. The tap nets become internal nodes in the model. This removed
 a modelling caveat about winding coupling between taps; see
-`reference/pultec/unresolved.md` item 7 for what was retired and why.
+`docs/pultec/unresolved.md` item 7 for what was retired and why.
 
 The inductors are specified electrically rather than by part number — values,
-±20% tolerance, DCR — in `reference/pultec/values.md`, together with the
+±20% tolerance, DCR — in `docs/pultec/values.md`, together with the
 measurements behind those limits. Nothing physical has been measured against
-them; see `reference/pultec/unresolved.md`.
+them; see `docs/pultec/unresolved.md`.
 
 All eleven mid frequencies are modelled. A build that wants fewer would leave
 positions unpopulated, because a position designed out of the model needs the
@@ -186,7 +204,7 @@ the file will be *edited* here: if it will, it is a source.
 
 ## Open questions
 
-`reference/pultec/unresolved.md` is the list, kept deliberately rather than
+`docs/pultec/unresolved.md` is the list, kept deliberately rather than
 tidied away. The two that matter most to anyone building this:
 
 - **R3 is fitted at 4K7**, the value the documentation gives for the build with
@@ -199,7 +217,7 @@ tidied away. The two that matter most to anyone building this:
 
 - [multi-channel-preamp](https://github.com/oletizi/multi-channel-preamp) — where the
   Pultec schematic and documentation came from originally. **This is history, not a
-  dependency:** both are vendored under `reference/pultec/`, nothing here reads
+  dependency:** both are vendored under `circuits/pultec/` and `docs/pultec/`, nothing here reads
   anything from that repository, and it has its own purpose and lifecycle. The only
   external code this project depends on is the pinned VeroRoute fork.
 - `docs/pultec/` — the modularization plan and its review. **Superseded as software

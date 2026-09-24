@@ -39,7 +39,7 @@ export interface PrunedBranches {
  * carrying an active device - `circuits/opamp-buffer.ts` at `buffer_amp`
  * (package pins v+, v-) and `circuits/optical-compressor/` at
  * `power_power_terminal` (pins not keyed a/b). Its one caller in the tree is
- * `tests/reference/ac.test.ts`, so neither ported circuit is pruned, and a
+ * `tests/pultec/ac.test.ts`, so neither ported circuit is pruned, and a
  * dead-end branch in one would reach ngspice as a singular matrix rather than
  * being removed here. See `lib/model/resolved-two-pin.ts` for the same note from
  * the other side.

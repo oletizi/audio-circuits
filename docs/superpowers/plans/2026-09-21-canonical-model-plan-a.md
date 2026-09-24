@@ -1711,7 +1711,7 @@ The Pultec reference network already exists in `reference/pultec/`, assembled me
 **These circuits are unvalidated.** The maintainer cannot validate them without building from the schematic, which is off the table. This task moves them to the canonical model so the one-model rule holds; it does not make them trusted, and the marker added in Step 2 says so.
 
 **Files:**
-- Modify: `reference/pultec/three-band.ts`, `partition.ts`, `controls.ts`, `mid.ts` (import from `lib/model/`)
+- Modify: `circuits/pultec/model/three-band.ts`, `partition.ts`, `controls.ts`, `mid.ts` (import from `lib/model/`)
 - Modify: `lib/passives/*` → moved to `lib/model/` (see Step 1)
 - Delete: `modules/pultec-hi-boost/`, `modules/pultec-hi-cut/`, `modules/pultec-low-boost/`, `modules/pultec-low-cut/`, `modules/pultec-mid/`, `modules/pultec-passive-eq/`
 - Delete: `tests/modules/*.test.tsx` for those six modules
@@ -1744,7 +1744,7 @@ Run `bun run typecheck` until clean. Do not rename `PassiveNetwork` yet — that
 
 - [ ] **Step 2: Mark the Pultec reference unvalidated**
 
-Add this to the top of `reference/pultec/README.md`, immediately under the title:
+Add this to the top of `docs/pultec/provenance.md`, immediately under the title:
 
 ```markdown
 > **UNVALIDATED.** No unit has been built from this model. Validation would
@@ -1789,7 +1789,7 @@ bun run typecheck
 bun test
 ```
 
-Expected: green. The suite shrinks by the deleted module tests; `tests/topology.test.ts`, `tests/control-state.test.ts`, `tests/sim/*` and `tests/reference/*` must all still pass, because none of them depended on tscircuit.
+Expected: green. The suite shrinks by the deleted module tests; `tests/topology.test.ts`, `tests/control-state.test.ts`, `tests/sim/*` and `tests/pultec/*` must all still pass, because none of them depended on tscircuit.
 
 Report the before/after test counts.
 

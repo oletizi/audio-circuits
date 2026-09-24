@@ -8,13 +8,13 @@
  * `FILM_CAPACITOR_IMPORT_STRINGS` in `lib/kicad/import-string.ts` for the
  * footprints' VeroRoute import strings.
  */
-import type { Component, Network } from "../../lib/model/types.ts"
-import { net } from "../../lib/model/types.ts"
-import { componentNets } from "../../lib/model/topology.ts"
-import { PHYSICAL_ONLY } from "../../lib/board/physicalize.ts"
-import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import { boundaryConductors, partitionReference } from "../../reference/pultec/partition.ts"
-import type { ModuleOwner } from "../../reference/pultec/partition.ts"
+import type { Component, Network } from "../../../lib/model/types.ts"
+import { net } from "../../../lib/model/types.ts"
+import { componentNets } from "../../../lib/model/topology.ts"
+import { PHYSICAL_ONLY } from "../../../lib/board/physicalize.ts"
+import { OFF_BOARD } from "../off-board.ts"
+import { boundaryConductors, partitionReference } from "../partition.ts"
+import type { ModuleOwner } from "../partition.ts"
 
 /**
  * Capacitance (farads) -> KiCad footprint, largest threshold first.
@@ -129,7 +129,7 @@ export function footprintForKind(component: Component): string {
   throw new Error(
     `no footprint is defined for on-board component "${component.id}" of kind ` +
       `"${component.kind}". Every on-board part needs one; if this part should be off the ` +
-      "board, add it to reference/pultec/off-board.ts instead.",
+      "board, add it to circuits/pultec/off-board.ts instead.",
   )
 }
 

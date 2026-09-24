@@ -78,7 +78,7 @@ code.
 
 The vendored copies were verified byte-identical to the ones the reference was
 transcribed from — their sha256 digests match the table below, and
-`tests/reference/pultec-schematic.test.ts` asserts that on every run, so the
+`tests/pultec/pultec-schematic.test.ts` asserts that on every run, so the
 table is a checkable claim rather than a note.
 
 ## Retained artifacts
@@ -89,7 +89,7 @@ manual reading is involved in the topology.
 **`source/three-band-eq.net.xml` is now DERIVED, and carries no pinned digest.**
 Since the schematic was vendored here, `make check` regenerates that export from
 it on every run and rewrites it when the content differs
-(`tools/reference/pultec-schematic-sync.ts`). A digest would change on every
+(`tools/pultec/schematic-sync.ts`). A digest would change on every
 legitimate regeneration — kicad-cli stamps a fresh `<date>` each time — so
 pinning one would mean either a permanently failing check or a number nobody
 updates. The digests that matter are the schematic's, below: it is hand-drawn,
@@ -138,7 +138,7 @@ By hand, from the repository root, is the same command that target runs:
 ```sh
 KC=/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli   # kicad-cli 10.0.5
 "$KC" sch export netlist --format kicadxml \
-  -o reference/pultec/source/three-band-eq.net.xml \
+  -o circuits/pultec/generated/three-band-eq.net.xml \
   circuits/pultec/pultec-three-band-eq.kicad_sch
 ```
 

@@ -94,14 +94,14 @@ Record unresolved junctions, tap connections, and pot conventions explicitly.
 | Mid | `mid.ts` | `pultec-mid/` | Mid selection network, from Thompson-Bell's documentation |
 
 Five physical boards, one per module above, rather than the two-module LF/HF
-split this document originally proposed - `reference/pultec/partition.ts`
+split this document originally proposed - `circuits/pultec/partition.ts`
 assigns every reference component to exactly one of the five, following the
 built hardware's own section boundaries. The interconnect between boards adds
 only conductors and terminal blocks (`circuits/pultec/parts.ts`); a net
 crossing a board boundary is a declared port, never implicit. External
 signal/return ports need routing even where a board's own topology does not
 put them on its critical path - see the per-board module docblocks and
-`reference/pultec/unresolved.md` for the low/high frequency selectors' shared
+`docs/pultec/unresolved.md` for the low/high frequency selectors' shared
 physical switch, which crosses board boundaries the same way.
 
 ## Validation gates

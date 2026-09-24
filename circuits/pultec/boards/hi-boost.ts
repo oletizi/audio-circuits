@@ -7,8 +7,8 @@
  * other member on this board and that singleton is declared.
  *
  * SW_HI_BOOST'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
- * hi-cut BOARD (SW_HI_CUT there). `reference/pultec/controls.ts` models both
- * under `HI_FREQUENCY_GANG`, and `reference/pultec/unresolved.md` calls this
+ * hi-cut BOARD (SW_HI_CUT there). `circuits/pultec/model/controls.ts` models both
+ * under `HI_FREQUENCY_GANG`, and `docs/pultec/unresolved.md` calls this
  * pairing "the thing most likely to be broken by a well-meaning refactor".
  * Physicalization does not carry the gang across board boundaries - each
  * board sees only its own pole, valued `SW_Rotary` like any other - so this
@@ -23,8 +23,8 @@ import {
   sharedByFor,
   PASSIVE_PIN_NUMBERS,
 } from "./parts.ts"
-import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import type { Network } from "../../lib/model/types.ts"
+import { OFF_BOARD } from "../off-board.ts"
+import type { Network } from "../../../lib/model/types.ts"
 
 const CROSSING_NETS: readonly string[] = ["hi_boost_out", "in", "0"]
 

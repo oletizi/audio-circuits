@@ -114,17 +114,29 @@ circuits/transistor-preamp/  lab-board.kicad_sch   lab-board.ts   ...
 **No KiCad file sits at the top level of `circuits/`.** It gets a directory even
 when the circuit is one schematic and one module.
 
-**`reference/` is not a home for an editable source.** It holds artifacts
-DERIVED from a circuit - netlist exports, generated JSON, a typed model - and
-hand-authored ANALYSIS of them, such as a values table or a list of unresolved
-questions. A file somebody will open in KiCad and change is a source, and
-belongs in `circuits/<circuit>/`, however much reference material surrounds it.
-The name invites the opposite assumption: "reference" reads as material you
-consult, and filing a live schematic under it quietly asserts that nobody will
-ever edit it.
+A circuit with enough parts uses subdirectories, and they say what KIND of
+thing each file is rather than what topic it is about:
 
-The test is not where a file came from or what reads it. Ask whether it will be
-EDITED here. If yes, it is a source.
+```
+circuits/pultec/model/      an electrical model derived from the schematic
+circuits/pultec/boards/     physicalized board modules, one per board
+circuits/pultec/generated/  artifacts a tool rebuilds - never hand-edited
+```
+
+**The test is not where a file came from, or what reads it. Ask whether it will
+be EDITED here.** If yes, it is a source and belongs with the circuit. If a tool
+rebuilds it, it is generated. If it is prose about the circuit - a values table,
+a list of unresolved questions, a parts-selection writeup - it is documentation
+and belongs in `docs/<circuit>/`.
+
+There is deliberately **no `reference/` directory**. There was one, and it
+accumulated all three kinds: over a thousand lines of editable TypeScript, the
+generated netlist, and the analysis prose, under a name that described only the
+last. "Reference" reads as material you consult rather than a project you work
+on, and filing live sources under it quietly asserts that nobody will ever edit
+them. If you find yourself wanting a directory for "the stuff around this
+circuit", you are about to make the same mistake: sort it into source,
+generated, or documentation instead.
 
 A `.kicad_prl` is per-user view state, not design data. It is gitignored and
 never committed, whatever directory it appears in.

@@ -1,13 +1,13 @@
 import { test, expect } from "bun:test"
 import { assertSameTopology } from "../../lib/model/topology.ts"
 import { physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
-import { THREE_BAND_REFERENCE } from "../../reference/pultec/three-band.ts"
+import { THREE_BAND_REFERENCE } from "../../circuits/pultec/model/three-band.ts"
 import type { Component, Network } from "../../lib/model/types.ts"
-import { pultecLowCut } from "../../circuits/pultec/low-cut.ts"
-import { pultecLowBoost } from "../../circuits/pultec/low-boost.ts"
-import { pultecHiCut } from "../../circuits/pultec/hi-cut.ts"
-import { pultecHiBoost } from "../../circuits/pultec/hi-boost.ts"
-import { pultecMid } from "../../circuits/pultec/mid.ts"
+import { pultecLowCut } from "../../circuits/pultec/boards/low-cut.ts"
+import { pultecLowBoost } from "../../circuits/pultec/boards/low-boost.ts"
+import { pultecHiCut } from "../../circuits/pultec/boards/hi-cut.ts"
+import { pultecHiBoost } from "../../circuits/pultec/boards/hi-boost.ts"
+import { pultecMid } from "../../circuits/pultec/boards/mid.ts"
 
 // Reversed on purpose: reconstruction must not depend on board order.
 const BOARDS: readonly (() => Network)[] = [

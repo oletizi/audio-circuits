@@ -1,5 +1,5 @@
 {
-  "circuit": "../../circuits/pultec/mid.ts",
+  "circuit": "../../circuits/pultec/boards/mid.ts",
   "export": "pultecMid",
   "vrt": "pultec-mid.perfboard.vrt"
 }

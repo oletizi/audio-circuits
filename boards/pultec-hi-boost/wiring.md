@@ -1,6 +1,6 @@
 # pultec-hi-boost — wiring
 
-Generated from `circuits/pultec/hi-boost.ts`. Do not edit by hand — `make check` regenerates
+Generated from `circuits/pultec/boards/hi-boost.ts`. Do not edit by hand — `make check` regenerates
 it on every run and overwrites anything that has drifted, so a change here shows up as a
 git diff you have to look at rather than as a file somebody has to remember to update.
 

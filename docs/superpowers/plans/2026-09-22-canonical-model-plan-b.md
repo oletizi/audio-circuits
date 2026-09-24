@@ -55,7 +55,7 @@ The reason is that `add()` already expresses everything the shorthand would, and
 
 Both were raised in the whole-branch review, declined in the final fix round, and the decline upheld on re-review. Recorded here so that being declined does not mean being lost.
 
-**A silent default and a non-null assertion in `reference/pultec/`.** `reference/pultec/three-band.ts:289` reads `positions.mid ?? MID_POSITIONS[0]!.label`, and `controlState`'s `mid`, `hiCut`, `hiQ` and `positions.mid` all default. `reference/` is not under `tests/` and `controlState` is production-shaped API, so this is a fallback where the project's rules call for a throw. It pre-dates this branch (Plan A). **Not fixed here** because those defaults are load-bearing for every reference test's control vector, and changing them is a behaviour change to the one artefact this branch is validated against — not something to do inside a round convened for comments and guards. Same class, same directory level: `lib/kicad/legacy-netlist.ts:57-72` reads six tokens through `?? ""`. Three are followed immediately by a validating throw, so the default is unreachable there; the other three (`footprint`, `pin`, `netName`) have none, and an empty token would silently produce an empty footprint or a `nets[""]` bucket. In practice the tokenizer cannot emit an empty atom, so it is defensive rather than live. Both belong with the twelve untested `lib/kicad/` throw paths already carried from Plan A.
+**A silent default and a non-null assertion in `reference/pultec/`.** `circuits/pultec/model/three-band.ts:289` reads `positions.mid ?? MID_POSITIONS[0]!.label`, and `controlState`'s `mid`, `hiCut`, `hiQ` and `positions.mid` all default. `reference/` is not under `tests/` and `controlState` is production-shaped API, so this is a fallback where the project's rules call for a throw. It pre-dates this branch (Plan A). **Not fixed here** because those defaults are load-bearing for every reference test's control vector, and changing them is a behaviour change to the one artefact this branch is validated against — not something to do inside a round convened for comments and guards. Same class, same directory level: `lib/kicad/legacy-netlist.ts:57-72` reads six tokens through `?? ""`. Three are followed immediately by a validating throw, so the default is unreachable there; the other three (`footprint`, `pin`, `netName`) have none, and an empty token would silently produce an empty footprint or a `nets[""]` bucket. In practice the tokenizer cannot emit an empty atom, so it is defensive rather than live. Both belong with the twelve untested `lib/kicad/` throw paths already carried from Plan A.
 
 **`vactrolSubcircuit`'s model-parse guards have no falsifying test.** `modelParameters` and `requiredParameter` are module-private and are reached only through `standInForwardVolts`, which reads `deviceModel("1N4148").spice` — a fixed file in the registry. No public surface can feed them a malformed model text, so testing them needs either exporting two internals for test access or making the model text injectable.
 
@@ -101,7 +101,7 @@ The repository has two types describing the same thing. `reference/pultec/`, `co
 **Files:**
 - Modify: `lib/model/topology.ts` — delete `PassiveElement`, `PassiveNetwork`, `ElementBase`, and the `validateNetwork` at line 71; retype `assertSameTopology` and `partitionTopology`
 - Modify: `lib/model/control-state.ts`, `mutable.ts`, `connectivity.ts`, `net-preference.ts`, `types.ts`
-- Modify: `reference/pultec/three-band.ts`, `partition.ts`, `mid.ts`, `controls.ts`
+- Modify: `circuits/pultec/model/three-band.ts`, `partition.ts`, `mid.ts`, `controls.ts`
 - Modify: `tests/topology.test.ts`, `tests/control-state.test.ts`, `tests/owners.test.ts`
 
 **Interfaces:**
@@ -122,7 +122,7 @@ A two-terminal passive becomes a `Component` with `pins: {}` and one unit named 
 
 - [ ] **Step 1: Add `provenance` to `Component`**
 
-`reference/pultec/three-band.ts` attaches provenance to every element and `assertSameTopology` ignores it. Preserve that. In `lib/model/types.ts`, import `Provenance` from `./parameters.ts` and add:
+`circuits/pultec/model/three-band.ts` attaches provenance to every element and `assertSameTopology` ignores it. Preserve that. In `lib/model/types.ts`, import `Provenance` from `./parameters.ts` and add:
 
 ```ts
   /** Where this component's data came from. Metadata; assertSameTopology ignores it. */
@@ -217,7 +217,7 @@ Retype `assertSameTopology` and `partitionTopology` to `Network`. Where old code
 
 `grep -rln "PassiveNetwork\|PassiveElement\|\.elements" --include='*.ts' . | grep -v node_modules`
 
-Convert `reference/pultec/three-band.ts` last — it is largest and builds elements mechanically from netlist JSON, so its construction helpers carry most of the work. Its provenance handling must survive.
+Convert `circuits/pultec/model/three-band.ts` last — it is largest and builds elements mechanically from netlist JSON, so its construction helpers carry most of the work. Its provenance handling must survive.
 
 `bun run typecheck` is the arbiter. **Do not add a compatibility shim or adapter** — the point is that one type survives.
 
@@ -869,7 +869,7 @@ For any other property, transcribe only what the spec states as a target. **Do n
 
 **Spec coverage.** §3.1 active kinds — declared in Plan A, given emission by Task 6. §3.2 units — preserved by Task 3, lowered by Task 6. §3.5 consumer mappings — Task 6 splits primitive order (kind) from subcircuit order (model). §5.1 emitter — Task 6. §5.2 model library with provenance — Task 5. §5.3 vactrol and its exclusions — Task 8. §5.4 behavioural assertions — Tasks 7 and 9. §5.5 structural and behavioural as separate gates — every circuit task asserts structure first, behaviour only where the spec states a target. §9.2 rung 4 — Task 7; rung 5 — Task 9. **Rung 7 pulled forward into Task 7; deviation recorded above.**
 
-**Plan A's five obligations.** Unify the types — Task 1. Generalise `resolveNetwork` — Task 3. The package-pin harness gap — Task 2, deliberately before Task 7 introduces the circuit that would be bitten by it. `include()` end-to-end evidence — Task 9. The value-unit-versus-kind question — **not addressed here**; it is recorded in `reference/pultec/unresolved.md` and wants a decision about `parseValue`'s contract rather than a fix inside this plan's scope.
+**Plan A's five obligations.** Unify the types — Task 1. Generalise `resolveNetwork` — Task 3. The package-pin harness gap — Task 2, deliberately before Task 7 introduces the circuit that would be bitten by it. `include()` end-to-end evidence — Task 9. The value-unit-versus-kind question — **not addressed here**; it is recorded in `docs/pultec/unresolved.md` and wants a decision about `parseValue`'s contract rather than a fix inside this plan's scope.
 
 **Dependency order.** Every task consumes only what already exists: 3 uses 1; 5 uses 4; 6 uses 3 and 5; 7 uses 2, 5 and 6; 8 uses 4 and 5; 9 uses 6, 7 and 8.
 

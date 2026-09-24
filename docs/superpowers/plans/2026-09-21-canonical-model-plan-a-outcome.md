@@ -53,7 +53,7 @@ survives, and validation provably forces `pins: {}` on every kind present in thi
 4. **`include()` has no end-to-end evidence.** Spec rung 3 wanted composition proven by a
    real circuit; `pt2399-core` never calls `include()`. It has unit tests and no more.
 5. **A value's unit is never cross-checked against its component kind** — recorded as an
-   open question in `reference/pultec/unresolved.md`. `parseValue` accepts `10k` for a
+   open question in `docs/pultec/unresolved.md`. `parseValue` accepts `10k` for a
    capacitor.
 
 ## Notes for Plan C

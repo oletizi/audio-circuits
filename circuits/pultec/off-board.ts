@@ -19,7 +19,7 @@
  * stripboard under any variant.
  *
  * INDUCTORS are all off-board because no inductor part has been chosen.
- * `reference/pultec/values.md` specifies them electrically and says a catalogue
+ * `docs/pultec/values.md` specifies them electrically and says a catalogue
  * part, a pot core or a transformer winding all qualify - and those do not share
  * a footprint, so naming one now would be a geometry claim nothing supports. The
  * design's per-section placement (the hi boost four on-board, the mid's 2H and

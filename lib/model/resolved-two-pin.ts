@@ -21,7 +21,7 @@
  * available for a network of two-terminal passives ONLY. Measured, by resolving each
  * network in the repository and calling `twoPinElements` on it:
  *
- *   reference/pultec THREE_BAND_REFERENCE   OK - 76 two-pin elements
+ *   circuits/pultec THREE_BAND_REFERENCE   OK - 76 two-pin elements
  *   circuits/opamp-buffer.ts                THROWS - "buffer_amp" has package pins v+, v-
  *   circuits/optical-compressor/            THROWS - "power_power_terminal" is not keyed a/b
  *

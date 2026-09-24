@@ -6,6 +6,6 @@ include $(shell git rev-parse --show-toplevel)/make/perfboard.mk
 # board, so its freshness guard cannot hang off a perfboard.json; adding it as
 # a prerequisite here gives the root's `check` one more thing to verify without
 # the generic board mechanism having to know the reference exists.
-include $(shell git rev-parse --show-toplevel)/make/reference.mk
+include $(shell git rev-parse --show-toplevel)/make/pultec.mk
 
 check: pultec-schematic-agrees

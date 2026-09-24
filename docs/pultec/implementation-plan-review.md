@@ -164,7 +164,7 @@ Against the repository's stated "never bypass typing" posture this is backwards.
   under `noEmit: true`.
 - The verification record's note about a "temporary link" to the adjacent
   checkout is stale.
-- Step 3 proposes `reference/pultec/partition.ts` while step 1 places the
+- Step 3 proposes `circuits/pultec/partition.ts` while step 1 places the
   netlist in the same directory as data. A single format for both would avoid
   splitting the reference across TypeScript and data files.
 

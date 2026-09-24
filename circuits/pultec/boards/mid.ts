@@ -14,8 +14,8 @@ import {
   sharedByFor,
   PASSIVE_PIN_NUMBERS,
 } from "./parts.ts"
-import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import type { Network } from "../../lib/model/types.ts"
+import { OFF_BOARD } from "../off-board.ts"
+import type { Network } from "../../../lib/model/types.ts"
 
 const CROSSING_NETS: readonly string[] = ["hi_boost_out", "in", "0"]
 

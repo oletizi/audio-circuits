@@ -10,13 +10,13 @@ import {
   syncPultecSchematic,
   withRepoRelativeSource,
   withoutVolatileFields,
-} from "../../tools/reference/pultec-schematic-sync.ts"
+} from "../../tools/pultec/schematic-sync.ts"
 
 const REPO = path.resolve(import.meta.dir, "../..")
 const read = (relative: string) => fs.readFileSync(path.join(REPO, relative), "utf8")
 
 /**
- * The hashes `reference/pultec/README.md` records for the schematics the
+ * The hashes `docs/pultec/provenance.md` records for the schematics the
  * reference was transcribed from. Asserting the vendored copies against them
  * turns that table from a historical note into a checkable claim: if these
  * ever differ, the schematic in this repository is not the one every value in

@@ -7,8 +7,8 @@
  * no singleton is declared.
  *
  * SW_LO_BOOST'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
- * low-cut BOARD (SW_LO_CUT there). `reference/pultec/controls.ts` models both
- * under `LO_FREQUENCY_GANG`, and `reference/pultec/unresolved.md` calls this
+ * low-cut BOARD (SW_LO_CUT there). `circuits/pultec/model/controls.ts` models both
+ * under `LO_FREQUENCY_GANG`, and `docs/pultec/unresolved.md` calls this
  * pairing "the thing most likely to be broken by a well-meaning refactor" -
  * the builder states it "is a critical part of the pultec low cut + boost
  * sound". Physicalization does not carry the gang across board boundaries -
@@ -24,8 +24,8 @@ import {
   sharedByFor,
   PASSIVE_PIN_NUMBERS,
 } from "./parts.ts"
-import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import type { Network } from "../../lib/model/types.ts"
+import { OFF_BOARD } from "../off-board.ts"
+import type { Network } from "../../../lib/model/types.ts"
 
 const CROSSING_NETS: readonly string[] = ["lo_boost_in", "out", "0"]
 

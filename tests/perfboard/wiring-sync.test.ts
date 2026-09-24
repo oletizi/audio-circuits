@@ -41,16 +41,19 @@ test("a board with nothing off it produces no guide at all", async () => {
   expect(fs.existsSync(result.file)).toBe(false)
 })
 
-test("regenerating a current guide writes nothing", async () => {
+test("every committed guide matches what its circuit generates", async () => {
   // The property the whole sync rests on: an unchanged circuit must leave the
   // working tree clean, or `make check` would report drift on every run and the
   // signal would be worthless.
+  //
+  // READ-ONLY, deliberately. An earlier version of this called `syncWiringDoc`,
+  // which WRITES when it finds drift - so a run against stale guides quietly
+  // rewrote tracked files and then failed about the state it had just changed,
+  // and the next run passed. A test must not repair the thing it is checking.
   for (const board of ["low-cut", "low-boost", "hi-cut", "hi-boost", "mid"]) {
     const declaration = loadDeclaration(path.join(REPO, `boards/pultec-${board}/perfboard.json`))
-    const before = fs.readFileSync(declaration.dir + "/wiring.md", "utf8")
-    const result = await syncWiringDoc(declaration)
-    expect(result.status, board).toBe("unchanged")
-    expect(fs.readFileSync(declaration.dir + "/wiring.md", "utf8"), board).toBe(before)
+    const committed = fs.readFileSync(path.join(declaration.dir, "wiring.md"), "utf8")
+    expect(await wiringDocumentFor(declaration), board).toBe(committed)
   }
 })
 
@@ -61,7 +64,7 @@ test("a drifted guide is rewritten, and the message says the wiring changed", as
   const declaration: PerfboardDeclaration = {
     file: path.join(scratch, "perfboard.json"),
     dir: scratch,
-    circuitPath: path.join(REPO, "circuits/pultec/low-cut.ts"),
+    circuitPath: path.join(REPO, "circuits/pultec/boards/low-cut.ts"),
     exportName: "pultecLowCut",
     vrtPath: path.join(scratch, "board.vrt"),
   }

@@ -30,7 +30,7 @@ roughly +13dB at 20Hz and −5dB at 400Hz with both engaged at 60Hz.
 Giving each section its own frequency control would still satisfy every
 topology comparison in this project while destroying that behaviour, so the
 gang is enforced by the resolver and the curve itself is asserted in
-`tests/reference/ac.test.ts`.
+`tests/pultec/ac.test.ts`.
 
 ---
 
@@ -117,7 +117,7 @@ reference, and to carry **all eleven** mid frequencies into the modular
 topology: a position can be left unpopulated at build time, but a position
 designed out needs a new board to recover.
 
-`reference/pultec/mid.ts` therefore implements all eleven, from P3bandDoc.pdf
+`circuits/pultec/model/mid.ts` therefore implements all eleven, from P3bandDoc.pdf
 page 3 — the same set as the Pultec MEQ5, on a VTB9050. Seventeen capacitors
 across eleven positions, six of them doubled, served by five winding taps.
 

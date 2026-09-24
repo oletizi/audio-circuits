@@ -18,7 +18,7 @@ Read from the model, not from the reference tables, so it reflects what the five
 board modules will actually instantiate:
 
 ```bash
-bun -e 'import {partitionReference,MODULE_OWNERS} from "./reference/pultec/partition.ts"; const s=partitionReference(); const v=new Map<number,number>(); for (const o of MODULE_OWNERS) for (const c of s.modules[o]) if (c.kind==="capacitor") { const f=Reflect.get(c.parameters,"farads") as number; v.set(f,(v.get(f)??0)+1) } console.log([...v.entries()].sort((a,b)=>a[0]-b[0]))'
+bun -e 'import {partitionReference,MODULE_OWNERS} from "./circuits/pultec/partition.ts"; const s=partitionReference(); const v=new Map<number,number>(); for (const o of MODULE_OWNERS) for (const c of s.modules[o]) if (c.kind==="capacitor") { const f=Reflect.get(c.parameters,"farads") as number; v.set(f,(v.get(f)??0)+1) } console.log([...v.entries()].sort((a,b)=>a[0]-b[0]))'
 ```
 
 **19 distinct values, 49 capacitors across the five boards.**
@@ -58,7 +58,7 @@ are called out separately throughout what follows.
 
 ## 2. Selection criteria, from the project
 
-From `reference/pultec/values.md`:
+From `docs/pultec/values.md`:
 
 - **Tolerance is not a selection criterion.** The measured table in that file shows
   ±20% costs under 2 dB anywhere in the band, and standard parts are ±5% or ±10%.

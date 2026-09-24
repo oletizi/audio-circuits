@@ -33,8 +33,8 @@
 | `lib/kicad/import-string.ts` | MODIFY — terminal-block family, film-capacitor whitelist |
 | `lib/kicad/from-network.ts` | MODIFY — off-board components export as `PADS<n>`; explicit pad order |
 | `lib/board/physicalize.ts` | NEW — the physicalization types, the physical-only marker, and the projection helper |
-| `reference/pultec/off-board.ts` | NEW — the single `OFF_BOARD` set |
-| `reference/pultec/partition.ts` | MODIFY — `isBoardResident` reads `OFF_BOARD` instead of hardcoding kinds |
+| `circuits/pultec/off-board.ts` | NEW — the single `OFF_BOARD` set |
+| `circuits/pultec/partition.ts` | MODIFY — `isBoardResident` reads `OFF_BOARD` instead of hardcoding kinds |
 | `circuits/pultec/parts.ts` | NEW — shared footprint table, designators, pad orders |
 | `circuits/pultec/<module>.ts` × 5 | NEW — one physicalized board circuit each |
 | `tools/perfboard/check.ts` | MODIFY — read `OFF_BOARD` and `PAD_ORDER` from the circuit module |
@@ -178,7 +178,7 @@ function resistanceText(ohms: number, id: string): string {
     )
   }
   // Sub-kilohm parts are spelled in ohms, as the reference documentation spells
-  // them ("R1 430R" in reference/pultec/values.md). Dividing them by 1000 would
+  // them ("R1 430R" in docs/pultec/values.md). Dividing them by 1000 would
   // produce ".43K", which no schematic writes and which reconciles as a value
   // delta against a board built from the documentation.
   return ohms < 1000 ? `${decimal(ohms)}R` : `${decimal(ohms / 1000)}K`
@@ -296,7 +296,7 @@ first.
 Run:
 
 ```bash
-bun -e 'import {partitionReference,MODULE_OWNERS} from "./reference/pultec/partition.ts"; import {valueFor} from "./lib/kicad/value-notation.ts"; const s=partitionReference(); let bad=0; for (const o of MODULE_OWNERS) for (const c of s.modules[o]) { try { valueFor(c) } catch (e) { bad++; console.log(c.id, (e as Error).message.split("\n")[0]) } } console.log("refused:", bad)'
+bun -e 'import {partitionReference,MODULE_OWNERS} from "./circuits/pultec/partition.ts"; import {valueFor} from "./lib/kicad/value-notation.ts"; const s=partitionReference(); let bad=0; for (const o of MODULE_OWNERS) for (const c of s.modules[o]) { try { valueFor(c) } catch (e) { bad++; console.log(c.id, (e as Error).message.split("\n")[0]) } } console.log("refused:", bad)'
 ```
 
 Expected: `refused: 6` — the six switches (`SW_LO_CUT`, `SW_LO_BOOST`, `SW_HI_CUT`,
@@ -1047,23 +1047,23 @@ would be an unfounded claim if the part turns out to be a pot core or a transfor
 winding. Per-section placement is the target; this is the honest starting state.
 
 **Files:**
-- Create: `reference/pultec/off-board.ts`
-- Modify: `reference/pultec/partition.ts`
-- Test: `tests/reference/off-board.test.ts`
+- Create: `circuits/pultec/off-board.ts`
+- Modify: `circuits/pultec/partition.ts`
+- Test: `tests/pultec/off-board.test.ts`
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
-- Produces: `OFF_BOARD: ReadonlySet<string>` from `reference/pultec/off-board.ts`. Tasks 6, 7 and 8 import it. `isBoardResident(component: Component): boolean` keeps its signature.
+- Produces: `OFF_BOARD: ReadonlySet<string>` from `circuits/pultec/off-board.ts`. Tasks 6, 7 and 8 import it. `isBoardResident(component: Component): boolean` keeps its signature.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/reference/off-board.test.ts`:
+Create `tests/pultec/off-board.test.ts`:
 
 ```ts
 import { test, expect } from "bun:test"
-import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import { isBoardResident } from "../../reference/pultec/partition.ts"
-import { THREE_BAND_REFERENCE } from "../../reference/pultec/three-band.ts"
+import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
+import { isBoardResident } from "../../circuits/pultec/partition.ts"
+import { THREE_BAND_REFERENCE } from "../../circuits/pultec/model/three-band.ts"
 
 test("every off-board id names a component that exists", () => {
   const ids = new Set(THREE_BAND_REFERENCE.components.map((c) => c.id))
@@ -1101,13 +1101,13 @@ test("all nine inductors start off-board, because no part has been chosen", () =
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `bun test tests/reference/off-board.test.ts`
+Run: `bun test tests/pultec/off-board.test.ts`
 
-Expected: FAIL with "Cannot find module '../../reference/pultec/off-board.ts'".
+Expected: FAIL with "Cannot find module '../../circuits/pultec/off-board.ts'".
 
 - [ ] **Step 3: Write the off-board set**
 
-Create `reference/pultec/off-board.ts`:
+Create `circuits/pultec/off-board.ts`:
 
 ```ts
 /**
@@ -1131,7 +1131,7 @@ Create `reference/pultec/off-board.ts`:
  * stripboard under any variant.
  *
  * INDUCTORS are all off-board because no inductor part has been chosen.
- * `reference/pultec/values.md` specifies them electrically and says a catalogue
+ * `docs/pultec/values.md` specifies them electrically and says a catalogue
  * part, a pot core or a transformer winding all qualify - and those do not share
  * a footprint, so naming one now would be a geometry claim nothing supports. The
  * design's per-section placement (the hi boost four on-board, the mid's 2H and
@@ -1169,7 +1169,7 @@ export const OFF_BOARD: ReadonlySet<string> = new Set([
 
 - [ ] **Step 4: Point `isBoardResident` at it**
 
-In `reference/pultec/partition.ts`, add the import and replace the function body.
+In `circuits/pultec/partition.ts`, add the import and replace the function body.
 Keep the docblock's first line and rewrite the rest:
 
 ```ts
@@ -1194,7 +1194,7 @@ export function isBoardResident(component: Component): boolean {
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `bun test tests/reference/off-board.test.ts && bun run typecheck`
+Run: `bun test tests/pultec/off-board.test.ts && bun run typecheck`
 
 Expected: PASS.
 
@@ -1202,7 +1202,7 @@ Expected: PASS.
 
 Run: `bun test`
 
-Expected: `tests/reference/partition.test.ts` may fail, because `boardNetwork()`'s
+Expected: `tests/pultec/partition.test.ts` may fail, because `boardNetwork()`'s
 ports change — the nine inductors are now off-board, so each inductor's tap net is
 reached from outside the board and becomes a port again. That is the correct new
 answer, not a regression. Update any expected port counts in that file to the values
@@ -1214,7 +1214,7 @@ assertion pass.
 
 ```bash
 bun test && bun run typecheck
-git add reference/pultec/off-board.ts reference/pultec/partition.ts tests/reference/off-board.test.ts tests/reference/partition.test.ts
+git add circuits/pultec/off-board.ts circuits/pultec/partition.ts tests/pultec/off-board.test.ts tests/pultec/partition.test.ts
 git commit -m "Residency becomes data: one OFF_BOARD set, all inductors off-board"
 ```
 
@@ -1260,9 +1260,9 @@ import { test, expect } from "bun:test"
 import { assertSameTopology } from "../../lib/model/topology.ts"
 import { assertElectricallyTransparent, physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
-import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import { partitionReference } from "../../reference/pultec/partition.ts"
-import type { ModuleOwner } from "../../reference/pultec/partition.ts"
+import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
+import { partitionReference } from "../../circuits/pultec/partition.ts"
+import type { ModuleOwner } from "../../circuits/pultec/partition.ts"
 import type { Network } from "../../lib/model/types.ts"
 import * as lowCut from "../../circuits/pultec/low-cut.ts"
 import * as lowBoost from "../../circuits/pultec/low-boost.ts"
@@ -1500,7 +1500,7 @@ export function footprintForKind(component: Component): string {
   throw new Error(
     `no footprint is defined for on-board component "${component.id}" of kind ` +
       `"${component.kind}". Every on-board part needs one; if this part should be off the ` +
-      "board, add it to reference/pultec/off-board.ts instead.",
+      "board, add it to circuits/pultec/off-board.ts instead.",
   )
 }
 ```
@@ -1511,9 +1511,9 @@ Add to `circuits/pultec/parts.ts`:
 
 ```ts
 import { PHYSICAL_ONLY } from "../../lib/board/physicalize.ts"
-import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
-import { partitionReference } from "../../reference/pultec/partition.ts"
-import type { ModuleOwner } from "../../reference/pultec/partition.ts"
+import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
+import { partitionReference } from "../../circuits/pultec/partition.ts"
+import type { ModuleOwner } from "../../circuits/pultec/partition.ts"
 import { net } from "../../lib/model/types.ts"
 import type { Network } from "../../lib/model/types.ts"
 
@@ -1626,7 +1626,7 @@ Create `circuits/pultec/low-cut.ts`. The crossing nets come from
  * net "0" has no other member on this board, and that singleton is declared.
  */
 import { designatorsFor, padOrdersFor, physicalizedBoard, PASSIVE_PIN_NUMBERS } from "./parts.ts"
-import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
+import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
 import type { Network } from "../../lib/model/types.ts"
 
 const CROSSING_NETS: readonly string[] = ["hi_boost_out", "out", "0"]
@@ -1853,13 +1853,13 @@ git commit -m "Read OFF_BOARD_IDS and PAD_ORDER from the circuit module"
 
 ## Task 8: Whole-system reconstruction
 
-`tests/reference/partition.test.ts:38` already recomposes the partition and asserts
+`tests/pultec/partition.test.ts:38` already recomposes the partition and asserts
 `assertSameTopology(THREE_BAND_REFERENCE, recomposed)`. The same invariant extends
 one stage further: take all five *physicalized* boards, project the physical-only
 components away, union what remains, and assert the result is the reference.
 
 **What this adds, stated narrowly.** Task 6 already asserts each board equals its
-partition module, and `tests/reference/partition.test.ts` already asserts the modules
+partition module, and `tests/pultec/partition.test.ts` already asserts the modules
 recompose to the reference. Between them those largely imply this one, so the honest
 claim is not that reconstruction catches a whole failure class the per-board tests
 miss. What it adds is end-to-end coverage of the *composition itself*: a component
@@ -1883,7 +1883,7 @@ Create `tests/circuits/pultec-reconstruction.test.ts`:
 import { test, expect } from "bun:test"
 import { assertSameTopology } from "../../lib/model/topology.ts"
 import { physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
-import { THREE_BAND_REFERENCE } from "../../reference/pultec/three-band.ts"
+import { THREE_BAND_REFERENCE } from "../../circuits/pultec/model/three-band.ts"
 import type { Component, Network } from "../../lib/model/types.ts"
 import { pultecLowCut } from "../../circuits/pultec/low-cut.ts"
 import { pultecLowBoost } from "../../circuits/pultec/low-boost.ts"
@@ -2296,7 +2296,7 @@ the `C_Rect_*` names carry the manufacturer series they were drawn for — `MKS4
 dimension can be read from a file rather than remembered, and every footprint name
 can be confirmed to exist before it is written down.
 
-The selection criteria come from the project: `reference/pultec/values.md` records
+The selection criteria come from the project: `docs/pultec/values.md` records
 that the curves are broad and ±20% costs under 2 dB, so **tolerance is not a
 selection criterion**. Per-unit cost and availability are.
 
@@ -2312,7 +2312,7 @@ selection criterion**. Per-unit cost and availability are.
 - [ ] **Step 1: List the values the boards actually need**
 
 ```bash
-bun -e 'import {partitionReference,MODULE_OWNERS} from "./reference/pultec/partition.ts"; const s=partitionReference(); const v=new Set<number>(); for (const o of MODULE_OWNERS) for (const c of s.modules[o]) if (c.kind==="capacitor") v.add(Reflect.get(c.parameters,"farads") as number); console.log([...v].sort((a,b)=>a-b).map(f=>f<1e-8?`${f*1e12}pF`:`${f*1e9}nF`).join(" "))'
+bun -e 'import {partitionReference,MODULE_OWNERS} from "./circuits/pultec/partition.ts"; const s=partitionReference(); const v=new Set<number>(); for (const o of MODULE_OWNERS) for (const c of s.modules[o]) if (c.kind==="capacitor") v.add(Reflect.get(c.parameters,"farads") as number); console.log([...v].sort((a,b)=>a-b).map(f=>f<1e-8?`${f*1e12}pF`:`${f*1e9}nF`).join(" "))'
 ```
 
 Record the list. Every one of them needs a footprint by the end of this task.
@@ -2526,7 +2526,7 @@ These are recorded in the spec and are deliberately not tasks:
 - **No layouts.** Five `.vrt` files exist with no placement. Placing and routing them
   is bench work in the GUI.
 - **No inductor part.** All nine stay off-board until one is chosen. Moving the hi
-  boost four on-board is: delete four lines from `reference/pultec/off-board.ts`, add
+  boost four on-board is: delete four lines from `circuits/pultec/off-board.ts`, add
   an `INDUCTOR<n>` family to `lib/kicad/import-string.ts`, give them footprints in
   `circuits/pultec/parts.ts`, and `make update` each affected board.
 
@@ -2539,7 +2539,7 @@ These are recorded in the spec and are deliberately not tasks:
   ≤1kΩ DCR, and inductances that large are uncommon as catalogue axial parts — the
   research may well conclude that no through-hole part exists and the coils stay
   off-board permanently. That is a real answer and worth having early.
-- **R3 stays at 4K7.** `reference/pultec/unresolved.md` item 2 disputes it. 4K7 and
+- **R3 stays at 4K7.** `docs/pultec/unresolved.md` item 2 disputes it. 4K7 and
   470R are both quarter-watt axial parts — the same two pads, the same span — so the
   dispute cannot invalidate a layout and gets no gating mechanism here.
 - **No on-board pot or switch footprints.** The architecture admits them; nothing in

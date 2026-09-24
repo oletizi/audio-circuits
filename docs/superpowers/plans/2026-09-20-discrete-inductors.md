@@ -49,7 +49,7 @@ Each inductor spans its tap net to the section's common return: high boost taps 
 ### Task 1: High boost inductors become board-resident
 
 **Files:**
-- Modify: `reference/pultec/partition.ts` (`boardNetwork`)
+- Modify: `circuits/pultec/partition.ts` (`boardNetwork`)
 - Modify: `modules/pultec-hi-boost/PultecHiBoost.tsx`
 - Modify: `tests/modules/hi-boost.test.tsx`
 
@@ -59,7 +59,7 @@ Each inductor spans its tap net to the section's common return: high boost taps 
 
 - [ ] **Step 1: Make inductors board-resident**
 
-In `reference/pultec/partition.ts`, replace the filter in `boardNetwork` and its comment:
+In `circuits/pultec/partition.ts`, replace the filter in `boardNetwork` and its comment:
 
 ```ts
   // Potentiometers and rotary selectors are front-panel parts wired back to the
@@ -154,7 +154,7 @@ test("four inductors serve six positions", () => {
 - [ ] **Step 7: Commit**
 
 ```bash
-git add reference/pultec/partition.ts modules/pultec-hi-boost tests/modules/hi-boost.test.tsx
+git add circuits/pultec/partition.ts modules/pultec-hi-boost tests/modules/hi-boost.test.tsx
 git commit -F commit-msg.txt
 git push
 ```
@@ -172,7 +172,7 @@ The mid module has never been compared against the reference partition — its t
 - Modify: `tests/modules/mid.test.tsx`
 
 **Interfaces:**
-- Consumes: `boardNetwork("mid")`, `MID_NETS` from `reference/pultec/three-band.ts`, `MID_POSITIONS`/`MID_TAPS`/`tapLabel` from `reference/pultec/mid.ts`.
+- Consumes: `boardNetwork("mid")`, `MID_NETS` from `circuits/pultec/model/three-band.ts`, `MID_POSITIONS`/`MID_TAPS`/`tapLabel` from `circuits/pultec/model/mid.ts`.
 - Produces: a `PultecMid` emitting five inductors on a new `COIL_RETURN` net.
 
 - [ ] **Step 1: Write the failing board comparison**
@@ -231,7 +231,7 @@ Add the imports it needs:
 ```tsx
 import { toLabelledNetwork } from "../../lib/export/circuit-json.ts"
 import { assertSameTopology } from "../../lib/passives/topology.ts"
-import { boardNetwork } from "../../reference/pultec/partition.ts"
+import { boardNetwork } from "../../circuits/pultec/partition.ts"
 import type { ExportMapping } from "../../lib/export/circuit-json.ts"
 ```
 
@@ -358,8 +358,8 @@ Expected: all pass, including `mid boost engaged`. Report the real test count.
 ### Task 4: Record the measurements where part selection will find them
 
 **Files:**
-- Modify: `reference/pultec/values.md`
-- Modify: `reference/pultec/unresolved.md`
+- Modify: `docs/pultec/values.md`
+- Modify: `docs/pultec/unresolved.md`
 
 - [ ] **Step 1: Add the inductor specification to `values.md`**
 

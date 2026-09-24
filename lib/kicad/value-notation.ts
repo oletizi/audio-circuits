@@ -75,7 +75,7 @@ function resistanceText(ohms: number, id: string): string {
   }
   // Three spellings, one per decade band. Sub-kilohm parts are spelled in ohms,
   // as the reference documentation spells them ("R1 430R" in
-  // reference/pultec/values.md): dividing them by 1000 would produce ".43K",
+  // docs/pultec/values.md): dividing them by 1000 would produce ".43K",
   // which no schematic writes and which reconciles as a value delta against a
   // board built from that documentation.
   if (ohms < 1000) return `${decimal(ohms)}R`

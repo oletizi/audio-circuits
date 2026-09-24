@@ -10,9 +10,9 @@
  * than the netlist (see `three-band.ts` and `mid.ts`), which is precisely the
  * provenance boundary this file exists to keep visible.
  */
-import netlist from "./source/three-band-eq.netlist.json"
-import { net } from "../../lib/model/types.ts"
-import type { Component } from "../../lib/model/types.ts"
+import netlist from "../generated/three-band-eq.netlist.json"
+import { net } from "../../../lib/model/types.ts"
+import type { Component } from "../../../lib/model/types.ts"
 import {
   EXCLUDED_COMPONENTS,
   HI_BOOST_POSITIONS,
@@ -20,7 +20,7 @@ import {
   POTS,
   SELECTORS,
 } from "./controls.ts"
-import { parseValue } from "../../lib/model/units.ts"
+import { parseValue } from "../../../lib/model/units.ts"
 
 /** Canonical names for the nets the schematic names itself. Everything else is
  * derived from the terminal it belongs to, so net identity stays traceable. */

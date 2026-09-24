@@ -12,7 +12,7 @@
  * non-zero exit here would stop `make check` before it ever reached the boards
  * whose agreement with that circuit is the actual question.
  */
-import { syncPultecSchematic } from "./pultec-schematic-sync.ts"
+import { syncPultecSchematic } from "./schematic-sync.ts"
 
 function main(): number {
   try {

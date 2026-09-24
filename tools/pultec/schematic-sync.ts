@@ -37,9 +37,9 @@ import path from "node:path"
 
 /** Repository-relative paths, so a clone at any path reads the same. */
 export const SCHEMATIC = "circuits/pultec/pultec-three-band-eq.kicad_sch"
-export const EXPORT = "reference/pultec/source/three-band-eq.net.xml"
-export const NETLIST_JSON = "reference/pultec/source/three-band-eq.netlist.json"
-export const TO_JSON = "reference/pultec/source/to-json.py"
+export const EXPORT = "circuits/pultec/generated/three-band-eq.net.xml"
+export const NETLIST_JSON = "circuits/pultec/generated/three-band-eq.netlist.json"
+export const TO_JSON = "tools/pultec/to-json.py"
 
 /**
  * Blank the two fields kicad-cli stamps per run and per machine.

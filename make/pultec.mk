@@ -11,8 +11,8 @@
 # entirely inside it:
 #
 #   circuits/pultec/pultec-three-band-eq.kicad_sch
-#     -> reference/pultec/source/three-band-eq.net.xml       (kicad-cli)
-#     -> reference/pultec/source/three-band-eq.netlist.json  (to-json.py)
+#     -> circuits/pultec/generated/three-band-eq.net.xml       (kicad-cli)
+#     -> circuits/pultec/generated/three-band-eq.netlist.json  (to-json.py)
 #     -> THREE_BAND_REFERENCE                                (from-netlist.ts)
 #     -> the five boards under boards/pultec-*
 #
@@ -26,4 +26,4 @@
 .PHONY: pultec-schematic-agrees
 
 pultec-schematic-agrees:
-	@bun "$(REPO_ROOT)/tools/reference/sync-pultec-schematic.ts"
+	@bun "$(REPO_ROOT)/tools/pultec/sync-schematic.ts"

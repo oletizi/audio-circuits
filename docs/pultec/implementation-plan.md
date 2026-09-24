@@ -295,7 +295,7 @@ is insufficient evidence of source fidelity.
 
 ### 3. Define the physical partition — complete in scope
 
-`reference/pultec/partition.ts`. One module per section, following the boards
+`circuits/pultec/partition.ts`. One module per section, following the boards
 that were actually built rather than inventing a split. Every element is owned
 exactly once, owner names are checked against a declared set, and recomposition
 is asserted equal to the reference with element order reversed so it cannot

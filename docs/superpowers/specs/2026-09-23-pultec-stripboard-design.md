@@ -240,7 +240,7 @@ knowing whether the part is an axial choke, a pot core or a transformer winding.
 set it emits `PADS<n>` from the pin count and never calls `footprintFor`; for
 everything else it behaves exactly as now.
 
-### `reference/pultec/partition.ts` — `isBoardResident` becomes data
+### `circuits/pultec/partition.ts` — `isBoardResident` becomes data
 
 Today it is a kind rule: `kind !== "potentiometer" && kind !== "switch"`. It becomes
 a lookup against the `OFF_BOARD` set, so inductors are expressible on either side
@@ -303,7 +303,7 @@ and `update` is the way to change an existing one.
 
 ### Whole-system reconstruction
 
-`tests/reference/partition.test.ts:38` already recomposes the partition and asserts
+`tests/pultec/partition.test.ts:38` already recomposes the partition and asserts
 `assertSameTopology(THREE_BAND_REFERENCE, recomposed)`. The same invariant extends
 one stage further, through the same helper: physicalize all five boards, join
 terminal-block pins that carry the same crossing net, project the physical-only

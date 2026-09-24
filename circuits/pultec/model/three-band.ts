@@ -20,11 +20,11 @@
  * See `unresolved.md`. Any response computed from this model is the response of
  * this subset, not of the built unit.
  */
-import { net } from "../../lib/model/types.ts"
-import type { Component, Network } from "../../lib/model/types.ts"
-import type { ControlState } from "../../lib/model/control-state.ts"
+import { net } from "../../../lib/model/types.ts"
+import type { Component, Network } from "../../../lib/model/types.ts"
+import type { ControlState } from "../../../lib/model/control-state.ts"
 import { HI_BOOST_POSITIONS, SELECTORS } from "./controls.ts"
-import { parseValue } from "../../lib/model/units.ts"
+import { parseValue } from "../../../lib/model/units.ts"
 import {
   buildHiBoostInductors,
   buildHiBoostPots,
