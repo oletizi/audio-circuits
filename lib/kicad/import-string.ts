@@ -119,6 +119,8 @@ const DERIVABLE_SHAPES = [
   "  DIP-<pins>_*                           -> DIP<pins>",
   "  PinHeader_1x<pins>_*                   -> SIP<pins>",
   "  <TerminalBlock* library>:*_1x<pins>_P<mm>mm -> BLOCK_100MIL<n> / BLOCK_200MIL<n> by pitch",
+  "  TO-92_Inline (exactly)                 -> TO92",
+  "  Potentiometer_Runtron_RM-065_Vertical  -> TRIM_FLAT",
 ].join("\n")
 
 /** Strips the library prefix: "Capacitor_THT:C_Disc_..." -> "C_Disc_...". */
@@ -206,8 +208,35 @@ function field(bare: string, pattern: RegExp): number | null {
   return Number.isFinite(value) ? value : null
 }
 
+/**
+ * Footprints whose VeroRoute type is a fixed shape rather than a derived
+ * span or count. Each name is matched EXACTLY: a neighbouring variant (a
+ * wide-pitch TO-92, a vertical trimmer) has different geometry, and mapping it
+ * here would place the part on the wrong holes.
+ *
+ * Evidence: the pinned fork's Src/CompTypes.h,
+ *   UpdateMaps(COMP::TO92,      "TO92", "TO92");
+ *   UpdateMaps(COMP::TRIM_FLAT, "Flat", "TRIM_FLAT");
+ *   TRIM_FLAT: rows = 3; cols = 3; "+2++++1+3"
+ *
+ * TRIM_FLAT's pattern is pins 1 and 3 two holes apart in one row, with pin 2
+ * centred between them two rows away. That is the Runtron RM-065's pinout:
+ * the RM065/RM063 datasheet (components101.com, "Preset Potentiometer
+ * (Trimpot)") and KiCad's Potentiometer_Runtron_RM-065_Vertical both put pins
+ * 1 and 3 at (0, 0) and (5, 0) mm and the wiper, pin 2, at (2.5, 5) mm. The
+ * 5 mm spacing lands on the 0.1" grid within the legs' give (5.08 mm), and
+ * TRIM_FLAT's 3 x 3 hole body is close to the part's roughly 6.4 x 7.5 mm.
+ */
+const FIXED_SHAPE_TYPES: ReadonlyMap<string, string> = new Map([
+  ["TO-92_Inline", "TO92"],
+  ["Potentiometer_Runtron_RM-065_Vertical", "TRIM_FLAT"],
+])
+
 function derive(footprint: string): string {
   const bare = bareName(footprint)
+
+  const fixed = FIXED_SHAPE_TYPES.get(bare)
+  if (fixed !== undefined) return fixed
 
   if (bare.startsWith("R_Axial_")) {
     const pitch = field(bare, /_P([0-9.]+)mm/)
@@ -305,14 +334,24 @@ export function importStringFor(
   return derive(footprint)
 }
 
+/** Pin counts of the fixed-shape types in FIXED_SHAPE_TYPES. */
+const FIXED_SHAPE_PIN_COUNTS: ReadonlyMap<string, number> = new Map([
+  ["TO92", 3],
+  ["TRIM_FLAT", 3],
+])
+
 /**
- * Pin count a pin-count-suffixed import string declares, or null when the type
- * carries a lead span or a fixed geometry instead.
+ * Pin count a pin-count-suffixed or fixed-shape import string declares, or
+ * null when the type carries a lead span instead.
  *
  * A lead span cannot be validated this way: RESISTOR4 spans four grid steps
  * but still has two pins, so its suffix says nothing about pin numbering.
  */
 export function declaredPinCount(importStr: string): number | null {
+  // A fixed-shape type carries its pin count in a table rather than a suffix,
+  // so it is answered before the suffixed families are parsed.
+  const fixed = FIXED_SHAPE_PIN_COUNTS.get(importStr)
+  if (fixed !== undefined) return fixed
   for (const type of ["SIP", "DIP", "PADS", "BLOCK_100MIL", "BLOCK_200MIL"]) {
     // Anchored, so CAP_ELECTRO_200 is never read as a PADS-style count.
     const match = new RegExp(`^${type}([0-9]+)$`).exec(importStr)

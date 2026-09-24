@@ -1,6 +1,6 @@
 /**
- * Dispatch for the CLI's binary-backed verbs: `cuts`, `update`, `stripboard`,
- * `edit`, and the `veroroute` acquisition verb.
+ * Dispatch for the CLI's binary-backed verbs: `cuts`, `import`, `update`,
+ * `stripboard`, `edit`, and the `veroroute` acquisition verb.
  *
  * Split out of `tools/cli/perfboard.ts` to keep that file under the
  * repository's file-size ceiling: this is the coherent half that shells out
@@ -12,7 +12,7 @@ import path from "node:path"
 import type { Env } from "../perfboard/check.ts"
 import type { Pin, BinaryResolution, AcquireOptions } from "../perfboard/acquire.ts"
 import { runCuts, runUpdate, runStripboard, runEdit, type VerbDeps } from "../perfboard/verbs.ts"
-import { createBoard } from "../perfboard/create.ts"
+import { runImport } from "../perfboard/import.ts"
 import { boardHere, parseFlags, isStripsDirection, reportLines, errorMessage } from "./perfboard-support.ts"
 
 /**
@@ -94,18 +94,19 @@ export async function dispatchUpdate(
   }
 }
 
-export async function dispatchCreate(
+export async function dispatchImport(
   cwd: string,
+  args: readonly string[],
   verbDeps: VerbDeps | undefined,
   repoRoot: string | undefined,
   log: (line: string) => void,
   error: (line: string) => void,
 ): Promise<number> {
-  const declaration = boardHere(cwd, "create", error)
+  if (parseFlags(args, new Set(), error) === null) return 1
+  const declaration = boardHere(cwd, "import", error)
   if (declaration === null) return 1
   try {
-    log(await createBoard(declaration, mergedVerbDeps(verbDeps, repoRoot)))
-    log(`created ${declaration.vrtPath}`)
+    log(await runImport(declaration, mergedVerbDeps(verbDeps, repoRoot)))
     return 0
   } catch (caught) {
     error(`FAIL ${declaration.vrtPath}`)

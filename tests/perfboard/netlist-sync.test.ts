@@ -4,13 +4,17 @@
  * the path normalization that keeps the fixture free of machine-specific
  * paths (see the module's own doc comment for why both exist).
  *
- * `runExport` and `kicadCliExists` are always injected here - this suite
- * never spawns the real kicad-cli, per this repository's own rule that no
- * test invokes it or builds anything. Injecting `runExport` also lets these
- * tests write whatever "fresh export" content they like, including content
- * that differs only in its `(date ...)` line, or only in the machine-
- * specific `(source ...)` path a different clone's kicad-cli would stamp -
- * both are exactly the distinctions this module exists to make.
+ * `runExport` and `kicadCliExists` are always injected here, so this suite
+ * never spawns the real kicad-cli or builds anything. Exactly one test in
+ * this repository invokes kicad-cli directly - "KiCad reads the generated
+ * stub as the same circuit" in tests/circuits/transistor-preamp-lab.test.ts,
+ * kept because it is the only proof that KiCad reads the generated stub the
+ * way the circuit means it (spec §5 item 6) - and every other test,
+ * including these, injects it out instead. Injecting `runExport` also lets
+ * these tests write whatever "fresh export" content they like, including
+ * content that differs only in its `(date ...)` line, or only in the
+ * machine-specific `(source ...)` path a different clone's kicad-cli would
+ * stamp - both are exactly the distinctions this module exists to make.
  */
 import { test, expect } from "bun:test"
 import fs from "node:fs"

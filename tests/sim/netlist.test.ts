@@ -1,6 +1,8 @@
 import { test, expect } from "bun:test"
-import { toSpiceNetlist } from "../../lib/sim/netlist.ts"
+import { spiceNodeName, toSpiceNetlist, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
 import { runAcSweep } from "../../lib/sim/ac.ts"
+import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
+import { circuit } from "../../lib/model/index.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
 import type { ResolvedNetwork } from "../../lib/model/control-state.ts"
 import { net } from "../../lib/model/types.ts"
@@ -709,4 +711,29 @@ test("a package-pin collision stops the pipeline before any deck exists", () => 
   }
   expect(() => toSpiceNetlist(resolveNetwork(colliding, NO_CONTROLS), collidingEnvironment))
     .toThrow(/component "u1" unit "MAIN": pin "v\+" collides with a package pin/)
+})
+
+test("the operating-point deck shares the AC deck's body and solves a DC divider", async () => {
+  // The source couples in through a capacitor, which is open at DC, so the
+  // midpoint is set by the divider alone: 9 V across two equal resistors.
+  const divider = circuit()
+    .resistor("top", "1k", { a: "VCC", b: "MID" })
+    .resistor("bottom", "1k", { a: "MID", b: "GND" })
+    .capacitor("coupling", "1uF", { a: "IN", b: "MID" })
+    .port("input", "IN").port("output", "MID").port("vcc", "VCC").port("ground", "GND")
+    .done()
+  const deck = toSpiceOperatingPointNetlist(
+    resolveNetwork(divider, { potPositions: {}, switchPositions: {} }),
+    {
+      source: { port: "input", amplitude: 1, seriesOhms: 0 },
+      load: { port: "output", ohms: 1e12 },
+      supplies: [{ port: "vcc", volts: 9 }],
+      groundPort: "ground",
+    },
+  )
+  expect(deck).toContain("\n.op\n.end\n")
+  expect(deck).not.toContain(".ac ")
+  const mid = spiceNodeName("MID")
+  const result = await runOperatingPoint({ netlist: deck, nodes: [mid] })
+  expect(result[mid]).toBeCloseTo(4.5, 6)
 })

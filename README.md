@@ -30,20 +30,32 @@ audio-circuits/
 │   ├── model/            # Canonical circuit model: types, per-kind pin
 │   │                     # vocabularies, validation, the circuit() builder,
 │   │                     # include() composition
-│   ├── kicad/            # Readers for two KiCad netlist export formats
+│   ├── kicad/            # Readers for two KiCad netlist export formats, and
+│   │   │                 # the schematic-stub writer (schematic.ts) that
+│   │   │                 # writes a KiCad .kicad_sch from a Network
+│   │   └── symbols/      # Vendored KiCad symbol definitions the stub writer
+│   │                     # embeds, so a generated schematic never depends on
+│   │                     # an installed KiCad - see symbols/PROVENANCE.md
 │   └── sim/              # SPICE netlist generation, AC and operating-point
 │       └── models/       # Device models, each with its own provenance
 │
 ├── circuits/             # Circuit definitions built on lib/model:
 │   │                     # pt2399-core.ts, transcribed from the netlist of a
-│   │                     # board that was physically built and works, and
-│   │                     # opamp-buffer.ts, a unity-gain TL072 buffer
+│   │                     # board that was physically built and works,
+│   │                     # opamp-buffer.ts, a unity-gain TL072 buffer, and
+│   │                     # transistor-preamp/, a common-emitter lab board
+│   │                     # reconfigured by jumpers and trim-pots
 │   └── optical-compressor/ # An LA-2A-inspired optical compressor: three
 │                         # blocks joined by include(), transcribed from the
 │                         # design spec in docs/superpowers/specs/
 │
 ├── reference/pultec/     # The Pultec reference network and what it is built
 │                         # from - unvalidated, see its own README
+│
+├── boards/               # Perfboard directories the perfboard CLI drives,
+│                         # each checking a circuit against a physical
+│                         # stripboard layout in VeroRoute, e.g.
+│                         # transistor-preamp-lab/
 │
 ├── tests/                # Model, kicad, sim, circuit and reference tests
 │
@@ -55,8 +67,13 @@ audio-circuits/
 - **[KiCad](https://www.kicad.org/)**, for `kicad-cli`. Required: the perfboard
   workflow re-exports each board's netlist from its KiCad schematic on every
   run (see `make/board.mk`'s `netlist-agrees`), not just once, so `kicad-cli`
-  has to be present to run `make check` against a declared board. The default
-  assumes a standard macOS install
+  has to be present to run `make check` against a declared board. It is also
+  required for `bun test`: exactly one test, "KiCad reads the generated stub
+  as the same circuit" in `tests/circuits/transistor-preamp-lab.test.ts`,
+  deliberately invokes `kicad-cli` and **fails** (never skips) when it cannot
+  find it, because it is the only proof that KiCad reads a generated
+  schematic stub the way the circuit means it. Every other test injects
+  `kicad-cli` out. The default assumes a standard macOS install
   (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`); override
   `KICAD_CLI` if yours lives elsewhere.
 - **Homebrew's `qt@5`** (`brew install qt@5`), needed to build the VeroRoute
@@ -74,7 +91,8 @@ you want to point at your own builds instead, `VEROROUTE`, `QMAKE` and
 
 ```bash
 bun install
-bun test           # the full suite, including the SPICE simulations
+bun test           # the full suite, including the SPICE simulations and one
+                   # test that invokes kicad-cli directly (see Prerequisites)
 bun run typecheck
 ```
 
@@ -82,6 +100,12 @@ Circuits are checked against real, physically-built layouts through the
 perfboard workflow. `make check`, run from a board's directory (e.g.
 `boards/pt2399-core`) or from the repository root to check every declared
 board, is that workflow's front door - see `make help` for the rest of it.
+
+A new board's KiCad schematic starts from a generated stub, written once with
+`bun run schematic-stub <circuit-module> <export> <out.kicad_sch>` (e.g.
+`circuits/transistor-preamp/lab-board.kicad_sch`) and arranged by hand in
+KiCad from there; see `lib/kicad/schematic.ts`'s module comment for what the
+stub does and does not carry.
 
 ## How the Pultec reference is validated
 

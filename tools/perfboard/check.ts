@@ -21,6 +21,7 @@ import path from "node:path"
 import { writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import { resolveBinary } from "./acquire.ts"
+import { foldCutState } from "./cut-state.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
 import { isRecord } from "./guards.ts"
 import { loadCircuit } from "./load.ts"
@@ -78,8 +79,36 @@ export function runVerorouteCheck(
   repoRoot: string,
   env: Env = process.env,
 ): CheckRun {
+  return spawnVeroroute(["--check", vrtPath, "--netlist", netPath], repoRoot, env)
+}
+
+/**
+ * `--check`, then - when it passed - the board's cut state folded in
+ * (`./cut-state.ts`): `--check` can exit 0 with every net complete on a strip
+ * board whose cuts cannot be worked out, and a check that passes there would
+ * send an unbuildable board to the bench.
+ */
+export function runVerorouteCheckWithCuts(
+  vrtPath: string,
+  netPath: string,
+  repoRoot: string,
+  env: Env = process.env,
+): CheckRun {
+  const check = runVerorouteCheck(vrtPath, netPath, repoRoot, env)
+  if (check.status !== 0) return check
+  const dump = spawnVeroroute(["--dump-board", vrtPath], repoRoot, env)
+  if (dump.status !== 0) {
+    throw new Error(
+      `veroroute --dump-board ${vrtPath} exited ${dump.status}, so this board's cuts could not ` +
+        `be read and the check has no verdict.\n${dump.output}`,
+    )
+  }
+  return foldCutState(check, dump.output, vrtPath)
+}
+
+function spawnVeroroute(args: readonly string[], repoRoot: string, env: Env): CheckRun {
   const binary = verorouteBinary(env, repoRoot)
-  const result = spawnSync(binary, ["--check", vrtPath, "--netlist", netPath], { encoding: "utf8" })
+  const result = spawnSync(binary, [...args], { encoding: "utf8" })
   if (result.error) {
     throw new Error(
       `could not run veroroute at ${binary}: ${result.error.message}. Rebuild it with the ` +
@@ -114,6 +143,13 @@ export interface PerfboardResult {
   readonly report: string
 }
 
+/** Where a circuit's exports were read from, for error messages. A PerfboardDeclaration
+ * is one; the schematic-stub verb passes the module path for both fields. */
+export interface SourceOfExports {
+  readonly file: string
+  readonly circuitPath: string
+}
+
 /**
  * Validate `DESIGNATORS`: every value must be a string designator.
  *
@@ -124,7 +160,7 @@ export interface PerfboardResult {
  */
 export function assertDesignators(
   value: unknown,
-  declaration: PerfboardDeclaration,
+  declaration: SourceOfExports,
 ): Readonly<Record<string, string>> {
   if (!isRecord(value)) {
     throw new Error(`${declaration.file}: ${declaration.circuitPath} does not export a DESIGNATORS map`)
@@ -142,9 +178,9 @@ export function assertDesignators(
 }
 
 /** Validate `PIN_NUMBERS`: every entry must be a map of canonical pin -> string pin number. */
-function assertPinNumbers(
+export function assertPinNumbers(
   value: unknown,
-  declaration: PerfboardDeclaration,
+  declaration: SourceOfExports,
 ): Readonly<Record<string, Readonly<Record<string, string>>>> {
   if (!isRecord(value)) {
     throw new Error(`${declaration.file}: ${declaration.circuitPath} does not export a PIN_NUMBERS map`)
@@ -256,7 +292,8 @@ export async function checkPerfboard(
   deps: CheckDeps = {},
 ): Promise<PerfboardResult> {
   const exportNetlist = deps.exportNetlist ?? exportNetlistFor
-  const runCheck = deps.runCheck ?? ((vrt, net) => runVerorouteCheck(vrt, net, deps.repoRoot ?? moduleRepoRoot()))
+  const runCheck = deps.runCheck ??
+    ((vrt, net) => runVerorouteCheckWithCuts(vrt, net, deps.repoRoot ?? moduleRepoRoot()))
 
   // Export BEFORE opening anything: a circuit that cannot be lowered - an
   // unmapped footprint, an unformattable value - must stop the run rather than

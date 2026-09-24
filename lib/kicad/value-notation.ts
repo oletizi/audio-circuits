@@ -30,8 +30,12 @@ const PF_UF_BOUNDARY_FARADS = 1e-8
 const MIN_FARADS = 1e-12
 // Exclusive upper bound: spec says "farads at or above 1000uF are refused" (line 253)
 const MAX_FARADS = 1e-3
+// Both ends were widened independently and both widenings are kept: down to 1R
+// for the Pultec's 430R hi-cut series resistor, up to 10M for the transistor
+// preamp's bias network. The range this formatter is PROVEN over is the union,
+// and the tests assert both boundaries.
 const MIN_OHMS = 1
-const MAX_OHMS = 999000
+const MAX_OHMS_EXCLUSIVE = 1e7
 
 /**
  * A number as KiCad spells it: no exponent, no trailing zeros, no leading zero.
@@ -62,18 +66,20 @@ function capacitanceText(farads: number, id: string): string {
 }
 
 function resistanceText(ohms: number, id: string): string {
-  if (!Number.isFinite(ohms) || ohms < MIN_OHMS || ohms > MAX_OHMS) {
+  if (!Number.isFinite(ohms) || ohms < MIN_OHMS || ohms >= MAX_OHMS_EXCLUSIVE) {
     throw new Error(
       `resistance ${ohms}R on "${id}" is outside the range this formatter has been proven ` +
-        "over (1R to 999k). Extend lib/kicad/value-notation.ts with a test rather than " +
-        "letting it guess a spelling.",
+        "over (1R up to but not including 10M). Extend lib/kicad/value-notation.ts with a test " +
+        "rather than letting it guess a spelling.",
     )
   }
-  // Sub-kilohm parts are spelled in ohms, as the reference documentation spells
-  // them ("R1 430R" in reference/pultec/values.md). Dividing them by 1000 would
-  // produce ".43K", which no schematic writes and which reconciles as a value
-  // delta against a board built from the documentation.
-  return ohms < 1000 ? `${decimal(ohms)}R` : `${decimal(ohms / 1000)}K`
+  // Three spellings, one per decade band. Sub-kilohm parts are spelled in ohms,
+  // as the reference documentation spells them ("R1 430R" in
+  // reference/pultec/values.md): dividing them by 1000 would produce ".43K",
+  // which no schematic writes and which reconciles as a value delta against a
+  // board built from that documentation.
+  if (ohms < 1000) return `${decimal(ohms)}R`
+  return ohms < 1e6 ? `${decimal(ohms / 1000)}K` : `${decimal(ohms / 1e6)}M`
 }
 
 const MIN_HENRIES = 1e-6
@@ -111,6 +117,11 @@ function symbolPartName(symbol: string): string {
  * be edited whenever a kind gains a quantity, and the failure mode of
  * forgetting is silent: the part's IDENTITY goes into the field meant to hold
  * its VALUE - an inductor's part number where its inductance belongs.
+ *
+ * THE LIST IT REPLACED HAD ONE ENTRY LEFT - `inductor` - and this branch adds
+ * the inductance formatter that empties it. An empty set kept for future kinds
+ * is the stub this project deletes rather than leaves, so the rule below takes
+ * its place and asks the parameters directly.
  *
  * ITS REACH IS TOP-LEVEL NUMBERS, and no further. A quantity represented
  * structurally - a tuple, or an object like `taper` - is invisible to it and

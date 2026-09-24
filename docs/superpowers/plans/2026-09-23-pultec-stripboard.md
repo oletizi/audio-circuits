@@ -1998,6 +1998,19 @@ git commit -m "Whole-system reconstruction: five boards rebuild the reference"
 
 ## Task 9: The `create` verb
 
+> **SUPERSEDED, and the work was redundant.** `main` independently built the
+> same capability as `import` (`tools/perfboard/import.ts`) while this branch
+> was building `create`, and merging the two made the duplication visible. The
+> `create` verb was deleted in favour of `import`, which is better factored: it
+> uses the shared `runnerFor` / `tempPathAlongside` / `cleanupProduced` helpers
+> instead of duplicating spawn logic, `tempPathAlongside` already carries the
+> pid and a timestamp so the crash-corpse defect this task's review caught was
+> never present there, and its dispatch validates flags — which also closed
+> this task's one deferred minor. Two of this task's tests had no counterpart on
+> `main` and were ported onto `import`: the zero-exit-no-file case, and the
+> stale-temporary-file case. Everything below describes code that no longer
+> exists; it is kept as the record of what was done, not as instructions.
+
 Every CLI verb acts on a `.vrt` that already exists. The fork has
 `--import NETLIST -o BOARD`, which builds one from a netlist, and nothing in this
 repository calls it. Five new boards need that.

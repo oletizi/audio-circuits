@@ -38,6 +38,17 @@ yarn-error.log*
 # left behind by a crash `git add -A` would otherwise sweep into a commit.
 .*.update-*.vrt
 .*.strips-*.vrt
+.*.import-*.vrt
+
+# KiCad per-user and transient files. The .kicad_pro (project) and .kicad_sch
+# (schematic) are committed; these are not: .kicad_prl is each user's view
+# state, the rest are lock files, automatic backups, autosaves and caches.
+*.kicad_prl
+~*.lck
+*-backups/
+_autosave-*
+*.bak
+fp-info-cache
 
 # The forked VeroRoute binary, cloned and built from veroroute.pin's pinned
 # commit (tools/perfboard/acquire.ts). It is a GPLv3 Qt5 C++ application with

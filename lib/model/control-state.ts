@@ -163,7 +163,16 @@ function validatePhysicalNetwork(network: Network): void {
       ...Object.entries(component.pins),
       ...component.units.flatMap(unit => Object.entries(unit.pins)),
     ]
-    if (pinEntries.length < 2) throw new Error(`Missing pins: ${component.id}`)
+    // The floor exists to catch a component that silently lost a net (a pin present on
+    // the symbol but absent here). A terminal whose only job is to be a place a wire or
+    // probe lands - a test point - has no electrical relationship to lose, and the spec
+    // (docs/superpowers/specs/2026-09-23-transistor-preamp-lab-design.md sec 3.2) mandates
+    // single-pin test points, matching KiCad's own Connector:TestPoint. So the one
+    // component this repository ever declares with a single pin - an electrically inert
+    // connector - is exempted down to a floor of 1. Zero pins still throws for everyone,
+    // inert connector included.
+    const minPins = component.kind === "connector" && component.part?.electricallyInert === true ? 1 : 2
+    if (pinEntries.length < minPins) throw new Error(`Missing pins: ${component.id}`)
     // THIS is the enforcement that closes the silent net loss, for every kind and
     // every unit count. `validateNetwork` carries the same rule for authored
     // circuits, but it runs from `Builder.done()`, and a hand-built `Network`

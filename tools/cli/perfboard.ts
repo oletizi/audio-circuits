@@ -16,7 +16,7 @@
  * the undo and a verb that wrote a copy somewhere else and told you to move it
  * into position would hand you the one step that can go wrong.
  *
- * `cuts`, `update`, `stripboard`, `edit` and `veroroute` dispatch through
+ * `cuts`, `import`, `update`, `stripboard`, `edit` and `veroroute` dispatch through
  * `./perfboard-binary-verbs.ts` - the coherent, binary-backed half of this
  * CLI, split out to keep this file under the repository's size ceiling.
  */
@@ -39,7 +39,7 @@ import type { VerbDeps } from "../perfboard/verbs.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { errorMessage, reportLines, resolveDirectoryFlag, safeTargets } from "./perfboard-support.ts"
 import {
-  dispatchCuts, dispatchEdit, dispatchUpdate, dispatchCreate, dispatchStripboard, dispatchVerorouteVerb,
+  dispatchCuts, dispatchEdit, dispatchImport, dispatchUpdate, dispatchStripboard, dispatchVerorouteVerb,
   defaultBinaryExists,
 } from "./perfboard-binary-verbs.ts"
 import { dispatchNetlistSync } from "./perfboard-netlist-verb.ts"
@@ -50,8 +50,8 @@ import { schematicNoticeLines } from "../perfboard/schematic-notice.ts"
 const VERBS = [
   ["check", "check this layout against the circuit it was built from"],
   ["cuts", "print the cut list and solder bridges"],
+  ["import", "create this board's first layout from its circuit"],
   ["update", "apply the circuit to this layout, in place"],
-  ["create", "build this board's layout from its circuit (refuses if one exists)"],
   ["stripboard", "convert this layout to strip mode, in place"],
   ["edit", "open this layout in the forked VeroRoute"],
   ["board-info", "what this directory declares"],
@@ -69,8 +69,8 @@ const USAGE = [
   "",
   "The directory you are standing in is the context: run a verb inside a board's",
   "directory to act on that board, or higher up to walk down to every board.",
-  "cuts, update, stripboard and edit act on exactly one declared board, never a",
-  "batch: run them from that board's directory.",
+  "cuts, import, update, stripboard and edit act on exactly one declared board,",
+  "never a batch: run them from that board's directory.",
   "",
   "`bun run perfboard` runs from the REPOSITORY ROOT, not the directory you",
   "typed it in: `bun run <script>` chdirs there before running anything, for",
@@ -314,8 +314,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
 
   if (verb === "cuts") return dispatchCuts(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
   if (verb === "edit") return dispatchEdit(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
+  if (verb === "import") return dispatchImport(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
   if (verb === "update") return dispatchUpdate(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
-  if (verb === "create") return dispatchCreate(cwd, opts.verbDeps, opts.repoRoot, log, error)
   if (verb === "stripboard") {
     return dispatchStripboard(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
   }

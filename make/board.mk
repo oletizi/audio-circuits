@@ -40,7 +40,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts update stripboard edit board-info netlist-agrees create wiring
+.PHONY: help perfboard-help check cuts import update stripboard edit board-info netlist-agrees wiring
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -127,19 +127,23 @@ perfboard-help:
 	@echo "  make cuts            print the cut list and solder bridges"
 	@echo "  make board-info      what this directory declares"
 	@echo ""
-	@echo "Bring it into existence (refuses if a layout already exists)"
-	@echo "  make create          build this board's layout from its circuit"
-	@echo "  make wiring          regenerate the panel wiring guide (check does this too)"
-	@echo "                       NOTE: this leaves the layout in isolated-hole mode."
-	@echo "                       Run \`make stripboard STRIPS=horizontal|vertical\` next"
-	@echo "                       (matching the direction the physical board's strips"
-	@echo "                       run) - until then \`make cuts\` has no strips to cut."
-	@echo ""
-	@echo "Work on it (these rewrite the layout IN PLACE; git is the undo, and both"
-	@echo "refuse while the layout has uncommitted changes)"
-	@echo "  make update                            apply the circuit to this layout"
+	@echo "Work on it (these write the layout; git is the undo)"
+	@echo "  make import                            create this board's first layout -"
+	@echo "                                          refuses if one already exists. It"
+	@echo "                                          arrives in ISOLATED-HOLE mode, so"
+	@echo "                                          run \`make stripboard STRIPS=...\`"
+	@echo "                                          next, matching the way the physical"
+	@echo "                                          board's strips run - until then"
+	@echo "                                          \`make cuts\` has no strips to cut"
+	@echo "  make wiring                            regenerate the panel wiring guide"
+	@echo "                                          (check does this too)"
+	@echo "  make update                            apply the circuit to this layout IN"
+	@echo "                                          PLACE - refuses while it has"
+	@echo "                                          uncommitted changes"
 	@echo "  make stripboard STRIPS=horizontal|vertical"
-	@echo "                                          convert this layout to strip mode"
+	@echo "                                          convert this layout to strip mode IN"
+	@echo "                                          PLACE - refuses while it has"
+	@echo "                                          uncommitted changes"
 	@echo "  ALLOW_DIRTY=1                           accept that the write cannot be"
 	@echo "                                          undone through git"
 	@echo ""
@@ -182,11 +186,8 @@ cuts: veroroute netlist-agrees
 board-info:
 	@bun "$(CLI)" board-info -C "$(CURDIR)"
 
-# No netlist-agrees prerequisite: there is no existing layout yet for a
-# schematic-freshness check to be about, and the CLI verb itself exports the
-# netlist fresh from the circuit as part of building the board.
-create: veroroute
-	@bun "$(CLI)" create -C "$(CURDIR)"
+import: veroroute netlist-agrees
+	@bun "$(CLI)" import -C "$(CURDIR)"
 
 update: veroroute netlist-agrees
 	@bun "$(CLI)" update -C "$(CURDIR)" $(if $(ALLOW_DIRTY),--allow-dirty)

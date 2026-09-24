@@ -63,6 +63,9 @@ export interface SimulationEnvironment {
   readonly groundPort: string
 }
 
+/** Everything an operating-point deck needs: the AC environment without its sweep. */
+export type OperatingPointEnvironment = Omit<SimulationEnvironment, "sweep">
+
 /** Synthetic component/net names the emitter itself introduces. `LOAD_RESISTOR_NAME`,
  * `LOAD_CAPACITOR_NAME`, and `SERIES_RESISTOR_NAME` are component names, checked against
  * the component-name registry so a collision is caught rather than silently overwriting
@@ -128,13 +131,17 @@ function registerNode(nodes: Map<string, NodeOrigin>, rawNet: string, groundNet:
   return emitted
 }
 
-/** Turns a resolved network plus an explicitly declared simulation environment into a
- * complete SPICE deck: title line, source (with optional series resistor), one device
- * line per component unit, load, the text of every device model the deck references,
- * the `.ac` line, and `.end`. Source and load models are required inputs and are never
- * defaulted.
+/** Title, source, supplies, devices, load and model texts: every line both decks share.
+ * SPICE takes the first line of a deck as its title and does nothing else with it, so
+ * this is the first thing a human reading an emitted deck sees; the caller names what
+ * the deck IS, rather than this function guessing between "AC sweep" and "operating
+ * point" or naming a project phase, which is what it used to do.
  */
-export function toSpiceNetlist(network: ResolvedNetwork, environment: SimulationEnvironment): string {
+function circuitLines(
+  network: ResolvedNetwork,
+  environment: OperatingPointEnvironment,
+  title: string,
+): string[] {
   const groundNet = resolvePort(network, environment.groundPort, "Ground")
   const sourceNet = resolvePort(network, environment.source.port, "Source")
   const loadNet = resolvePort(network, environment.load.port, "Load")
@@ -142,11 +149,7 @@ export function toSpiceNetlist(network: ResolvedNetwork, environment: Simulation
   const nodes = new Map<string, NodeOrigin>()
   const node = (net: string): string => registerNode(nodes, net, groundNet)
   const names = new Map<string, string>()
-  // SPICE takes the first line of a deck as its title and does nothing else with
-  // it, so this is the first thing a human reading an emitted deck sees. It says
-  // what the deck IS - an AC sweep emitted from a resolved network - rather than
-  // naming a project phase, which is what it used to do.
-  const lines: string[] = ["AC sweep emitted from a resolved circuit network"]
+  const lines: string[] = [title]
 
   const seriesOhms = environment.source.seriesOhms
   if (seriesOhms !== 0) {
@@ -232,8 +235,29 @@ export function toSpiceNetlist(network: ResolvedNetwork, environment: Simulation
   // caller to remember.
   for (const text of modelTexts.values()) lines.push(text.trimEnd())
 
+  return lines
+}
+
+/** Turns a resolved network plus an explicitly declared simulation environment into a
+ * complete AC SPICE deck: the shared circuit lines, the `.ac` line, and `.end`. Source and
+ * load models are required inputs and are never defaulted.
+ */
+export function toSpiceNetlist(network: ResolvedNetwork, environment: SimulationEnvironment): string {
+  const lines = circuitLines(network, environment, "AC sweep emitted from a resolved circuit network")
   lines.push(`.ac dec ${environment.sweep.pointsPerDecade} ${environment.sweep.startHz} ${environment.sweep.stopHz}`)
   lines.push(".end")
+  return `${lines.join("\n")}\n`
+}
 
+/** The same circuit lines as `toSpiceNetlist`, ending in `.op` rather than `.ac`: the DC
+ * operating point with every capacitor open and the AC source at DC 0.
+ */
+export function toSpiceOperatingPointNetlist(
+  network: ResolvedNetwork,
+  environment: OperatingPointEnvironment,
+): string {
+  const lines = circuitLines(network, environment, "Operating point emitted from a resolved circuit network")
+  lines.push(".op")
+  lines.push(".end")
   return `${lines.join("\n")}\n`
 }
