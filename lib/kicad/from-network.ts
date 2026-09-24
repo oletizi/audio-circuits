@@ -78,14 +78,73 @@ function pinNumberFor(component: Component, pin: string, pinNumbers: PinNumbers)
   )
 }
 
+/** Component id -> that component's pins, in the order their pads are numbered. */
+export type PadOrders = Readonly<Record<string, readonly string[]>>
+
+/** Every pin a component declares, package pins and unit pins together. */
+function allPins(component: Component): readonly string[] {
+  const pins = Object.keys(component.pins)
+  for (const unit of component.units) pins.push(...Object.keys(unit.pins))
+  return pins
+}
+
+/**
+ * The declared pad order for an off-board component, checked to be a
+ * permutation of its pins.
+ *
+ * A PERMUTATION, not a subset and not a superset. A short order leaves pins
+ * with no pad, which reconciles as a part whose connections are missing; a long
+ * one numbers a pad that no wire can ever reach. Both are silent on a board
+ * nobody has checked, which is why neither is tolerated here.
+ */
+function padOrderFor(component: Component, padOrders: PadOrders): readonly string[] {
+  const order = padOrders[component.id]
+  if (order === undefined) {
+    throw new Error(
+      `off-board component "${component.id}" has no declared pad order. Its pads are numbered ` +
+        "in that order and nothing else can supply it: PIN_NUMBERS is keyed by kind, and two " +
+        "parts of one kind may put the same pin name in different positions.",
+    )
+  }
+  const pins = new Set(allPins(component))
+  for (const pin of order) {
+    if (!pins.has(pin)) {
+      throw new Error(
+        `the pad order for "${component.id}" names "${pin}", which is not a pin of that ` +
+          `component. Its pins are: ${[...pins].sort().join(", ")}.`,
+      )
+    }
+  }
+  if (order.length !== pins.size) {
+    const missing = [...pins].filter((pin) => !order.includes(pin)).sort()
+    throw new Error(
+      `the pad order for "${component.id}" does not list every pin: ${missing.join(", ")} ` +
+        `${missing.length === 1 ? "has" : "have"} no pad.`,
+    )
+  }
+  return order
+}
+
 export function toImportedNetlist(
   network: Network,
   designators: Readonly<Record<string, string>>,
   pinNumbers: PinNumbers,
+  offBoard: ReadonlySet<string> = new Set(),
+  padOrders: PadOrders = {},
 ): ImportedNetlist {
   const components: ImportedComponent[] = []
   const nets: Record<string, string[]> = {}
   const seenDesignators = new Map<string, string>()
+
+  for (const id of Object.keys(padOrders)) {
+    if (!offBoard.has(id)) {
+      throw new Error(
+        `a pad order is declared for "${id}", but "${id}" is not off-board, so nothing would ` +
+          "ever read it. An on-board part's pins are numbered through PIN_NUMBERS and its " +
+          "footprint; a stale pad order here is a decision nobody is applying.",
+      )
+    }
+  }
 
   for (const component of network.components) {
     const designator = designatorFor(component, designators)
@@ -100,7 +159,11 @@ export function toImportedNetlist(
     }
     seenDesignators.set(designator, component.id)
 
-    const importStr = importStringFor(footprintFor(component))
+    const isOffBoard = offBoard.has(component.id)
+    const order = isOffBoard ? padOrderFor(component, padOrders) : undefined
+    const importStr = isOffBoard
+      ? `PADS${order?.length ?? 0}`
+      : importStringFor(footprintFor(component))
     components.push({ designator, value: valueFor(component), footprint: importStr })
 
     const emitted: string[] = []
@@ -108,7 +171,9 @@ export function toImportedNetlist(
     for (const group of groups) {
       for (const [pin, connection] of Object.entries(group)) {
         if (connection.kind === "nc") continue
-        const number = pinNumberFor(component, pin, pinNumbers)
+        const number = order === undefined
+          ? pinNumberFor(component, pin, pinNumbers)
+          : String(order.indexOf(pin) + 1)
         emitted.push(number)
         ;(nets[connection.net] ??= []).push(`${designator}.${number}`)
       }
