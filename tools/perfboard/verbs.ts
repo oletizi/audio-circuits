@@ -23,6 +23,7 @@ import path from "node:path"
 import { assertLayoutRecoverable, replaceAtomically } from "./mutate.ts"
 import type { GitRunner } from "./mutate.ts"
 import { exportNetlistFor, verorouteBinary } from "./check.ts"
+import { unresolvedCutsMessage } from "./cut-state.ts"
 import type { Env } from "./check.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
 import { moduleRepoRoot } from "./repo-root.ts"
@@ -177,6 +178,12 @@ export function runCuts(declaration: PerfboardDeclaration, deps: VerbDeps = {}):
       `${declaration.vrtPath} is in isolated-hole mode (CUT_STATE NOT_APPLICABLE): there are no ` +
       'strips on this board to cut. Run the "stripboard" verb to convert it to strip mode first.'
     )
+  }
+
+  // No cut list can be derived, so none is reported: raw CUT_CONFLICT lines read
+  // like a list, and an operator could mistake them for one. See ./cut-state.ts.
+  if (cutState.trim() === "CUT_STATE UNRESOLVED") {
+    throw new Error(unresolvedCutsMessage(declaration.vrtPath, run.output))
   }
 
   return relevant.join("\n")

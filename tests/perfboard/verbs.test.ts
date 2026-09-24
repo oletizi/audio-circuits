@@ -83,6 +83,26 @@ test("a dump with no CUT_STATE line refuses rather than reporting an empty list"
   })
 })
 
+test("CUT_STATE UNRESOLVED refuses, naming each shorted stretch by net and the fix, not raw conflict lines", async () => {
+  await withVrt((vrtPath) => {
+    const output = [
+      "NODE 3 NAME BASE C2.1",
+      "NODE 5 NAME GND J2.2",
+      "CUT_STATE UNRESOLVED",
+      "CUT_CONFLICT 15,8,5 15,16,3",
+    ].join("\n")
+    let message = ""
+    try {
+      runCuts(declaration(vrtPath), { runVeroroute: () => ({ status: 0, output }) })
+    } catch (caught) {
+      message = caught instanceof Error ? caught.message : String(caught)
+    }
+    expect(message).toContain("(15,8) GND  ...  (15,16) BASE")
+    expect(message).toMatch(/Paste/)
+    expect(message).not.toContain("CUT_CONFLICT")
+  })
+})
+
 test("CUT_STATE NOT_APPLICABLE reports isolated-hole mode and names stripboard", async () => {
   await withVrt((vrtPath) => {
     const report = runCuts(declaration(vrtPath), {
