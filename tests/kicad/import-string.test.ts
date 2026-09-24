@@ -128,6 +128,60 @@ function parseBoardDumpPartTypes(dump: string): Map<string, string> {
  */
 const AXIAL_LENGTH_SUFFIX_FAMILIES = new Set(["RESISTOR", "CAP_CERAMIC"])
 
+test("a 5.08mm terminal block derives to a 200-mil block", () => {
+  expect(importStringFor(
+    "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal",
+  )).toBe("BLOCK_200MIL3")
+})
+
+test("a 5.00mm terminal block also derives to a 200-mil block", () => {
+  // 5.00mm is 0.08mm from the 5.08mm grid multiple, inside the 0.15mm tolerance,
+  // so the common KiCad 5.00mm parts are usable without an override.
+  expect(importStringFor(
+    "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3_1x03_P5.00mm_Horizontal",
+  )).toBe("BLOCK_200MIL3")
+})
+
+test("a terminal block is recognized by its LIBRARY, not by its part name", () => {
+  // Altech's 46 footprints and Wuerth's 14 are named for the manufacturer's
+  // series, not "TerminalBlock..." - so a rule matching the name after the colon
+  // silently refuses 60 real parts. The library prefix is the reliable
+  // discriminator, and this is the test that holds that.
+  expect(importStringFor("TerminalBlock_Altech:Altech_AK300_1x03_P5.00mm_45-Degree"))
+    .toBe("BLOCK_200MIL3")
+})
+
+test("a 2.54mm terminal block derives to a 100-mil block", () => {
+  expect(importStringFor(
+    "TerminalBlock:TerminalBlock_Xinya_XY308-2.54-3P_1x03_P2.54mm_Horizontal",
+  )).toBe("BLOCK_100MIL3")
+})
+
+test("a terminal block at a pitch that is neither one nor two grid steps refuses", () => {
+  expect(() => importStringFor("TerminalBlock_Phoenix:Phoenix_1x02_P7.62mm"))
+    .toThrow(/3 grid steps/)
+})
+
+test("a terminal block with no readable pin count refuses", () => {
+  expect(() => importStringFor("TerminalBlock_Phoenix:Phoenix_MKDS_P5.08mm")).toThrow(/pin count/)
+})
+
+test("block pin counts are declared, so a netlist cannot reference a pin the block lacks", () => {
+  expect(declaredPinCount("BLOCK_200MIL3")).toBe(3)
+  expect(declaredPinCount("BLOCK_100MIL4")).toBe(4)
+})
+
+test("a film capacitor not on the whitelist refuses and says the list is how to add one", () => {
+  expect(() => importStringFor("Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm"))
+    .toThrow(/FILM_CAPACITOR_IMPORT_STRINGS/)
+})
+
+test("a whitelisted film capacitor returns its recorded import string", () => {
+  const whitelist = new Map([["Capacitor_THT:C_Rect_L4.6mm_W2.5mm_P2.50mm", "CAP_FILM1"]])
+  expect(importStringFor("Capacitor_THT:C_Rect_L4.6mm_W2.5mm_P2.50mm", undefined, whitelist))
+    .toBe("CAP_FILM1")
+})
+
 test("every part of the built board derives the import string (or family) its own dump shows", async () => {
   const modern = importNetlist(await Bun.file("tests/fixtures/pt2399-core.net").text())
   const boardTypes = parseBoardDumpPartTypes(
