@@ -40,15 +40,34 @@ and the disagreement is recorded in [unresolved.md](unresolved.md).
 `docs/1.0/COMPONENT_VALUES.md` in the originating repository is **not** a
 source. Its section assignments are scrambled; see unresolved item 6.
 
-## This repository is the home of these schematics
+## The schematic lives in `circuits/pultec/`, and this directory does not
 
-The schematic and the documentation PDF were vendored here from
-`multi-channel-preamp` (`src/schematics/pultec-three-band-eq/`, commit
-`9d63f0a`, 2024-07-23). **That is history, not a dependency.** Nothing in this
-repository reads anything from that one, and nothing here needs it to be
-present or current. It has a separate purpose and a separate lifecycle; the
-only external code this project depends on is the pinned VeroRoute fork, which
-`make veroroute` acquires and builds.
+**`circuits/pultec/pultec-three-band-eq.kicad_sch` is a living, editable
+source**, and it sits with the other authored circuits, not here. This
+directory holds what is DERIVED from it — the netlist export, the JSON, the
+typed reference network — and the hand-authored analysis of it: `values.md`,
+`unresolved.md`, and the connector-to-control mapping in `controls.ts`.
+
+The schematic was here briefly and that was a mistake: "reference" reads as
+material you consult rather than a project you edit, and filing an editable
+schematic under it invites the assumption that nobody will ever change it. The
+rule the repository follows is that **an authored source lives in
+`circuits/<circuit>/`** — which is where `pt2399-core` and `transistor-preamp`
+keep theirs too.
+
+Editing that schematic is expected, and `make check` at the repository root
+regenerates everything below it (see **Reproducing the export**). Note what
+that means: a schematic edit changes `THREE_BAND_REFERENCE`, which all five
+Pultec boards are partitioned from, so their layouts must be re-checked
+afterwards.
+
+The schematic and the documentation PDF came from `multi-channel-preamp`
+(`src/schematics/pultec-three-band-eq/`, commit `9d63f0a`, 2024-07-23).
+**That is history, not a dependency.** Nothing in this repository reads
+anything from that one, and nothing here needs it to be present or current. It
+has a separate purpose and a separate lifecycle; the only external code this
+project depends on is the pinned VeroRoute fork, which `make veroroute`
+acquires and builds.
 
 What came across is the schematic pair and the PDF. The PCB artwork, the
 gerbers and the four breakout-board projects stayed behind: this repository's
@@ -120,7 +139,7 @@ By hand, from the repository root, is the same command that target runs:
 KC=/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli   # kicad-cli 10.0.5
 "$KC" sch export netlist --format kicadxml \
   -o reference/pultec/source/three-band-eq.net.xml \
-  reference/pultec/schematic/pultec-three-band-eq.kicad_sch
+  circuits/pultec/pultec-three-band-eq.kicad_sch
 ```
 
 Doing it that way leaves an absolute `<source>` path in the file. The target

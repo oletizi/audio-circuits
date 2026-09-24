@@ -27,7 +27,7 @@ not part of this repository and is not needed to work in this one - it explains 
 original workflow was shaped the way it was. This document covers what changes when the
 workflow is ported here.
 
-**The circuit itself is no longer part of this work.** `circuits/pt2399-core.ts` already
+**The circuit itself is no longer part of this work.** `circuits/pt2399-core/pt2399-core.ts` already
 exists, transcribed from `tests/fixtures/pt2399-core-veroroute.net` and verified against it by
 `tests/circuits/pt2399-core.test.ts`. See Current state.
 
@@ -51,10 +51,10 @@ Work the architecture change delivered, which this design no longer has to:
 
 | Done | Where |
 | --- | --- |
-| The circuit, transcribed from the built unit's netlist | `circuits/pt2399-core.ts` |
+| The circuit, transcribed from the built unit's netlist | `circuits/pt2399-core/pt2399-core.ts` |
 | Verification at `(designator, pin)` precision | `tests/circuits/pt2399-core.test.ts` |
 | Both fixtures checked in | `tests/fixtures/pt2399-core{,-veroroute}.net` |
-| Id → designator mapping | `DESIGNATORS` in `circuits/pt2399-core.ts` |
+| Id → designator mapping | `DESIGNATORS` in `circuits/pt2399-core/pt2399-core.ts` |
 | Canonical pin → KiCad pin number | `PIN_NUMBERS`, and IC/connector pins are already numbers |
 | EESchema v1.1 netlist **reader** | `lib/kicad/legacy-netlist.ts` |
 | Modern `kicad-cli` netlist reader | `lib/kicad/netlist.ts` |
@@ -82,7 +82,7 @@ Recorded so the diff against the first version is legible rather than mysterious
 - The union-find refactor of `lib/export/circuit-json.ts`. That file no longer exists;
   `lib/model/` supersedes it.
 *(An earlier revision of this list also declared the value formatter dead, on the grounds that
-`circuits/pt2399-core.ts` carries values in source notation. That was wrong — see **Value
+`circuits/pt2399-core/pt2399-core.ts` carries values in source notation. That was wrong — see **Value
 notation** below. The formatter is needed and is back.)*
 
 **Reversed:**
@@ -259,7 +259,7 @@ regression.
 
 ### Footprints are transcribed into the circuit, as evidence
 
-`circuits/pt2399-core.ts` does not currently populate `PartSpec.footprint`. It must, because
+`circuits/pt2399-core/pt2399-core.ts` does not currently populate `PartSpec.footprint`. It must, because
 the footprint is what yields the import string, which is layout-geometry identity.
 
 They are transcribed from `tests/fixtures/pt2399-core.net` — the checked-in modern netlist of
@@ -292,7 +292,7 @@ Precision here matters, because the C3 story is incoherent without it. There are
 distinct things, and "the board" is never an acceptable name for any of them:
 
 ```
-circuits/pt2399-core.ts        the canonical circuit
+circuits/pt2399-core/pt2399-core.ts        the canonical circuit
                                C3 footprint CP_Radial_D6.3mm_P2.50mm
         |
         v
@@ -441,7 +441,7 @@ and told you to move it into position would hand you the one step that can go wr
 Stated as a shared prerequisite of mutation rather than per verb, so it is implemented and
 tested once and a future mutating verb cannot quietly omit it.
 
-A whole-repository check would be wrong: editing `circuits/pt2399-core.ts` and then running
+A whole-repository check would be wrong: editing `circuits/pt2399-core/pt2399-core.ts` and then running
 `update` to reconcile the board against that edit is the normal workflow, and forcing a commit
 of unrelated source first would obstruct the loop this tooling exists to support. Untracked is
 refused for the same reason modified is — `git checkout --` cannot restore a file git has
@@ -501,7 +501,7 @@ unchanged" a statement rather than a hope.
 
 ```json
 {
-  "circuit": "../../circuits/pt2399-core.ts",
+  "circuit": "../../circuits/pt2399-core/pt2399-core.ts",
   "export": "pt2399Core",
   "vrt": "pt2399-core.perfboard.vrt"
 }
@@ -514,7 +514,7 @@ exists to prevent. Both paths resolve against the declaration's own directory.
 ### Board artifacts live in a board tree
 
 ```
-circuits/pt2399-core.ts    the circuit, with its canonical footprint selection
+circuits/pt2399-core/pt2399-core.ts    the circuit, with its canonical footprint selection
 boards/pt2399-core/        the hand-authored placement and routing that realizes it
 ```
 
@@ -564,7 +564,7 @@ veroroute.pin               the pinned fork commit
 ### Data flow
 
 ```
-circuits/pt2399-core.ts
+circuits/pt2399-core/pt2399-core.ts
     |  pt2399Core() -> Network
     v
 Network + DESIGNATORS + PIN_NUMBERS      PartSpec.footprint
@@ -607,7 +607,7 @@ comparison is used only to assert a board was *not* modified.
 
 ## Implementation phases
 
-1. **Footprints.** Transcribe `PartSpec.footprint` into `circuits/pt2399-core.ts` from the
+1. **Footprints.** Transcribe `PartSpec.footprint` into `circuits/pt2399-core/pt2399-core.ts` from the
    modern netlist fixture, with the test that pins them to it.
 2. **Import strings.** `lib/kicad/import-string.ts`: the five proven footprint families, both
    quantization rules, the empty override table, and the 24-part assertion against the two

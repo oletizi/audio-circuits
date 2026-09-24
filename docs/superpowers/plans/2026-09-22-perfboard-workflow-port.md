@@ -26,7 +26,7 @@
 
 | File | Responsibility |
 | --- | --- |
-| `circuits/pt2399-core.ts` | **Modify.** Gains `PartSpec.footprint` on all 24 components. |
+| `circuits/pt2399-core/pt2399-core.ts` | **Modify.** Gains `PartSpec.footprint` on all 24 components. |
 | `lib/kicad/import-string.ts` | **Create.** KiCad footprint name → VeroRoute import string. Five proven families; everything else refuses. |
 | `lib/kicad/value-notation.ts` | **Create.** Numeric parameters → KiCad value spelling. |
 | `lib/kicad/from-network.ts` | **Create.** `Network` + the three tables → `ImportedNetlist`. |
@@ -46,11 +46,11 @@
 `PartSpec.footprint` is what yields the import string, which is layout-geometry identity. It is transcribed from `tests/fixtures/pt2399-core.net` — the checked-in modern netlist of the built unit — under the repository's rule that transcription is evidence, not memory.
 
 **Files:**
-- Modify: `circuits/pt2399-core.ts`
+- Modify: `circuits/pt2399-core/pt2399-core.ts`
 - Test: `tests/circuits/pt2399-core.test.ts`
 
 **Interfaces:**
-- Consumes: `importNetlist` from `lib/kicad/netlist.ts`; `DESIGNATORS` from `circuits/pt2399-core.ts`.
+- Consumes: `importNetlist` from `lib/kicad/netlist.ts`; `DESIGNATORS` from `circuits/pt2399-core/pt2399-core.ts`.
 - Produces: every component in `pt2399Core()` has `part.footprint` set to its library-qualified KiCad footprint name.
 
 - [ ] **Step 1: Write the failing test**
@@ -81,7 +81,7 @@ Expected: FAIL — `expected: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm", rece
 
 - [ ] **Step 3: Add footprints to all 24 components**
 
-In `circuits/pt2399-core.ts`, add a fourth argument to every `.capacitor(...)` and `.resistor(...)` call, and a `footprint` field to the existing part objects on `.ic(...)` and `.connector(...)`. The exact values, verified against both fixtures:
+In `circuits/pt2399-core/pt2399-core.ts`, add a fourth argument to every `.capacitor(...)` and `.resistor(...)` call, and a `footprint` field to the existing part objects on `.ic(...)` and `.connector(...)`. The exact values, verified against both fixtures:
 
 | Components | `footprint` |
 | --- | --- |
@@ -131,7 +131,7 @@ Expected: PASS — 288 pass, 0 fail.
 - [ ] **Step 5: Commit and push**
 
 ```bash
-git add circuits/pt2399-core.ts tests/circuits/pt2399-core.test.ts
+git add circuits/pt2399-core/pt2399-core.ts tests/circuits/pt2399-core.test.ts
 git commit -m "Transcribe the built unit's footprints into the circuit"
 git push
 ```
@@ -952,7 +952,7 @@ Append to `tests/kicad/legacy-netlist.test.ts`:
 ```ts
 import { writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
-import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core.ts"
+import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core/pt2399-core.ts"
 import type { ImportedNetlist } from "../../lib/kicad/netlist.ts"
 
 /** Component order is a set, so compare it sorted. Nets are already sorted by the reader. */
@@ -1186,7 +1186,7 @@ function withDeclaration(contents: string, run: (file: string) => void): void {
 }
 
 const VALID = JSON.stringify({
-  circuit: "../../circuits/pt2399-core.ts", export: "pt2399Core", vrt: "board.vrt",
+  circuit: "../../circuits/pt2399-core/pt2399-core.ts", export: "pt2399Core", vrt: "board.vrt",
 })
 
 test("resolves both paths against the declaration's own directory", () => {
@@ -2141,7 +2141,7 @@ Create `boards/pt2399-core/perfboard.json`:
 
 ```json
 {
-  "circuit": "../../circuits/pt2399-core.ts",
+  "circuit": "../../circuits/pt2399-core/pt2399-core.ts",
   "export": "pt2399Core",
   "vrt": "pt2399-core.perfboard.vrt"
 }

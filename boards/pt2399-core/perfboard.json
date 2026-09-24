@@ -1,6 +1,6 @@
 {
-  "sch": "../../circuits/pt2399-core.kicad_sch",
-  "circuit": "../../circuits/pt2399-core.ts",
+  "sch": "../../circuits/pt2399-core/pt2399-core.kicad_sch",
+  "circuit": "../../circuits/pt2399-core/pt2399-core.ts",
   "export": "pt2399Core",
   "netlist": "../../tests/fixtures/pt2399-core.net",
   "vrt": "pt2399-core.perfboard.vrt"

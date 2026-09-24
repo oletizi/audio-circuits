@@ -11,7 +11,7 @@ This records what Plan B and Plan C need to know. It is not a retelling of the p
 `lib/model/` — `Network`/`Component`/`Unit`, canonical per-kind pin vocabularies,
 structural validation, the `circuit()` builder, `include()` composition.
 `lib/kicad/` — readers for the KiCad s-expression and EESchema legacy netlist formats.
-`circuits/pt2399-core.ts` — the first circuit in the canonical model.
+`circuits/pt2399-core/pt2399-core.ts` — the first circuit in the canonical model.
 Deleted: six tscircuit Pultec modules, `lib/passives/` (consolidated into `lib/model/`),
 and `lib/export/circuit-json.ts` — a 290-line translation seam that existed only because
 the repository held two representations of the same thing.

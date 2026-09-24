@@ -59,7 +59,7 @@ Copied from the spec and the project's `CLAUDE.md`. Every task's requirements in
 | `lib/model/include.ts` | composition: prefixing, port binding, global-net invariant |
 | `lib/model/index.ts` | the module's public surface |
 | `lib/kicad/netlist.ts` | parse a KiCad `.net` export into a `Network` |
-| `circuits/pt2399-core.ts` | the proving-ground circuit, authored with the builder |
+| `circuits/pt2399-core/pt2399-core.ts` | the proving-ground circuit, authored with the builder |
 | `tests/model/*.test.ts` | one file per `lib/model` unit |
 | `tests/kicad/netlist.test.ts` | importer tests |
 | `tests/circuits/pt2399-core.test.ts` | authored network vs the built unit's netlist |
@@ -1525,7 +1525,7 @@ git commit -F <message file>
 This is the plan's proving ground. The maintainer built this circuit from a private source repository and it works, so its netlist is the strongest correctness evidence available without a bench.
 
 **Files:**
-- Create: `circuits/pt2399-core.ts`
+- Create: `circuits/pt2399-core/pt2399-core.ts`
 - Create: `tests/fixtures/pt2399-core-veroroute.net` (the built board's netlist — authority)
 - Create: `tests/fixtures/pt2399-core.net` (the s-expression export — cross-check)
 - Test: `tests/circuits/pt2399-core.test.ts`
@@ -1563,7 +1563,7 @@ Create `tests/circuits/pt2399-core.test.ts`:
 
 ```ts
 import { test, expect } from "bun:test"
-import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core.ts"
+import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core/pt2399-core.ts"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { importLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import type { Network } from "../../lib/model/types.ts"
@@ -1638,11 +1638,11 @@ test("the schematic export describes the same circuit as the built board", async
 - [ ] **Step 3: Run it and confirm it fails**
 
 Run: `bun test tests/circuits/pt2399-core.test.ts`
-Expected: FAIL — cannot resolve `../../circuits/pt2399-core.ts`.
+Expected: FAIL — cannot resolve `../../circuits/pt2399-core/pt2399-core.ts`.
 
 - [ ] **Step 4: Author the circuit**
 
-Create `circuits/pt2399-core.ts`. Transcribe from the netlist output captured in Step 1 — **every component and every connection comes from that output, not from memory or from the datasheet.** Give each component a semantic id describing its role; keep the designator mapping beside it.
+Create `circuits/pt2399-core/pt2399-core.ts`. Transcribe from the netlist output captured in Step 1 — **every component and every connection comes from that output, not from memory or from the datasheet.** Give each component a semantic id describing its role; keep the designator mapping beside it.
 
 The file's shape:
 

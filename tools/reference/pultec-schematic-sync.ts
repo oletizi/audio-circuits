@@ -2,7 +2,7 @@
  * Keep the Pultec netlist export honest with the schematic it comes from.
  *
  * THE SCHEMATIC IS NOW IN THIS REPOSITORY, at
- * `reference/pultec/schematic/`, and it is the root of the reference's
+ * `circuits/pultec/`, and it is the root of the reference's
  * dependency graph:
  *
  *   pultec-three-band-eq.kicad_sch  (hand-drawn, the authority)
@@ -36,7 +36,7 @@ import os from "node:os"
 import path from "node:path"
 
 /** Repository-relative paths, so a clone at any path reads the same. */
-export const SCHEMATIC = "reference/pultec/schematic/pultec-three-band-eq.kicad_sch"
+export const SCHEMATIC = "circuits/pultec/pultec-three-band-eq.kicad_sch"
 export const EXPORT = "reference/pultec/source/three-band-eq.net.xml"
 export const NETLIST_JSON = "reference/pultec/source/three-band-eq.netlist.json"
 export const TO_JSON = "reference/pultec/source/to-json.py"

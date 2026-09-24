@@ -35,8 +35,8 @@
  * port does not imply the pin does anything off-board, only that the
  * netlist shows it on a net rather than showing no connection at all.
  */
-import { circuit } from "../lib/model/index.ts"
-import type { Network } from "../lib/model/index.ts"
+import { circuit } from "../../lib/model/index.ts"
+import type { Network } from "../../lib/model/index.ts"
 
 /** Semantic id -> the built unit's reference designator. */
 export const DESIGNATORS: Readonly<Record<string, string>> = {

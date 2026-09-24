@@ -5,7 +5,7 @@ test suite.
 
 Circuits are written against `lib/model/`: a circuit is either built directly
 with its `circuit()` builder, or produced by reading a KiCad netlist export
-with `lib/kicad/` and transcribing it. `circuits/pt2399-core.ts` came from the
+with `lib/kicad/` and transcribing it. `circuits/pt2399-core/pt2399-core.ts` came from the
 netlist of a unit that was actually built and works, not from a datasheet;
 `circuits/opamp-buffer.ts` is the first circuit here with an active device.
 
@@ -17,7 +17,7 @@ The largest single body of content is a passive Pultec EQ reference network
 under `reference/pultec/`: Ian Thompson-Bell's "Pultec 3 Band EQ", which
 combines an EQP-1 and an MEQ-5. It is assembled directly from a `kicad-cli`
 netlist export onto `lib/model/topology.ts`'s network type, independently of
-the `circuit()` builder `circuits/pt2399-core.ts` uses. It is **unvalidated** — no unit has been built from it, and the model is known to be
+the `circuit()` builder `circuits/pt2399-core/pt2399-core.ts` uses. It is **unvalidated** — no unit has been built from it, and the model is known to be
 incomplete — see `reference/pultec/README.md` and
 `reference/pultec/unresolved.md` before treating anything computed from it as
 more than a model prediction.

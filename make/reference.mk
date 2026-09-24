@@ -10,7 +10,7 @@
 # was vendored into this repository it is the root of a graph that lives
 # entirely inside it:
 #
-#   reference/pultec/schematic/pultec-three-band-eq.kicad_sch
+#   circuits/pultec/pultec-three-band-eq.kicad_sch
 #     -> reference/pultec/source/three-band-eq.net.xml       (kicad-cli)
 #     -> reference/pultec/source/three-band-eq.netlist.json  (to-json.py)
 #     -> THREE_BAND_REFERENCE                                (from-netlist.ts)

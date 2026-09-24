@@ -33,13 +33,13 @@ test("the schematic is in this repository, not referenced from another one", () 
   expect(fs.existsSync(path.join(REPO, SCHEMATIC))).toBe(true)
   // Hierarchical: the top sheet pulls the mid band in, so both must be present
   // or an export silently loses the whole mid section.
-  expect(fs.existsSync(path.join(REPO, "reference/pultec/schematic/pultec-mid-band.kicad_sch")))
+  expect(fs.existsSync(path.join(REPO, "circuits/pultec/pultec-mid-band.kicad_sch")))
     .toBe(true)
 })
 
 test("the vendored schematics are the ones the reference was transcribed from", () => {
   for (const [file, expected] of Object.entries(RECORDED_HASHES)) {
-    const contents = fs.readFileSync(path.join(REPO, "reference/pultec/schematic", file))
+    const contents = fs.readFileSync(path.join(REPO, "circuits/pultec", file))
     expect(createHash("sha256").update(contents).digest("hex"), file).toBe(expected)
   }
 })
@@ -89,7 +89,7 @@ test("a missing schematic refuses, naming this repository rather than another", 
   // committed schematic and then crashes leaves the tree broken for every test
   // after it.
   expect(() => syncPultecSchematic({
-    schematic: "reference/pultec/schematic/does-not-exist.kicad_sch",
+    schematic: "circuits/pultec/does-not-exist.kicad_sch",
     runExport: () => { throw new Error("the export must not run when the schematic is absent") },
   })).toThrow(/does not exist[\s\S]*THIS repository/)
 })

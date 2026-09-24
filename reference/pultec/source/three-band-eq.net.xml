@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <export version="E">
   <design>
-    <source>reference/pultec/schematic/pultec-three-band-eq.kicad_sch</source>
-    <date>2026-09-24T09:06:01</date>
+    <source>circuits/pultec/pultec-three-band-eq.kicad_sch</source>
+    <date>2026-09-24T14:28:12</date>
     <tool>Eeschema 10.0.5</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>

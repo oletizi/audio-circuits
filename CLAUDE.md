@@ -63,7 +63,7 @@ A component's `id` says what the part DOES - `input_bias_resistor`,
 `vcc_decoupling_cap`, `buffer_amp`. It is never a reference designator. `R4` is a
 fact about one particular schematic, and schematics are downstream of this model.
 Where a circuit has to be checked against one, it exports a separate id-to-
-designator map (see `DESIGNATORS` in `circuits/pt2399-core.ts`), and that map is
+designator map (see `DESIGNATORS` in `circuits/pt2399-core/pt2399-core.ts`), and that map is
 the only place the two vocabularies meet.
 
 ### Pin names come from the kind, not from the part
