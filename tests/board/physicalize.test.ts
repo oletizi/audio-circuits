@@ -65,6 +65,23 @@ test("projection REFUSES a physical-only component that is not transparent", () 
   expect(() => projectPhysical(board)).toThrow(/joins pins/)
 })
 
+test("projection REFUSES a physical-only component whose pins are on different nets but which does not declare electricallyInert", () => {
+  // A pin map alone cannot prove a component conducts nothing between its
+  // pads - a 0.001-ohm resistor between two different nets would pass the
+  // pin-map check and still short them. Only a declared electricallyInert:
+  // true on the part makes projecting it away sound.
+  const maybeConducting: Component = {
+    id: "ground_lift",
+    kind: "resistor",
+    parameters: { ohms: 0.001 },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a: net("0"), b: net("CHASSIS") } }],
+    provenance: { source: PHYSICAL_ONLY },
+  }
+  const board: Network = { ports: {}, components: [CAP, maybeConducting] }
+  expect(() => projectPhysical(board)).toThrow(/electricallyInert/)
+})
+
 test("projecting a network with no physical-only components changes nothing", () => {
   const board: Network = { ports: {}, components: [CAP] }
   expect(projectPhysical(board).components).toEqual([CAP])
