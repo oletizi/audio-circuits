@@ -99,6 +99,41 @@ free choice made afterwards: a package is one component and `include()` moves
 whole components, so two sections doing two blocks' work still live in one block.
 See **Composition** above.
 
+### One directory per circuit, and it holds the KiCad files
+
+Every circuit owns a directory under `circuits/`, and its authored sources live
+there together:
+
+```
+circuits/pt2399-core/     pt2399-core.kicad_sch   pt2399-core.ts
+circuits/pultec/          pultec-three-band-eq.kicad_sch   pultec-mid-band.kicad_sch
+                          pultec-three-band-eq.kicad_pro   <the board modules>
+circuits/transistor-preamp/  lab-board.kicad_sch   lab-board.ts   ...
+```
+
+**No KiCad file sits at the top level of `circuits/`.** It gets a directory even
+when the circuit is one schematic and one module.
+
+**`reference/` is not a home for an editable source.** It holds artifacts
+DERIVED from a circuit - netlist exports, generated JSON, a typed model - and
+hand-authored ANALYSIS of them, such as a values table or a list of unresolved
+questions. A file somebody will open in KiCad and change is a source, and
+belongs in `circuits/<circuit>/`, however much reference material surrounds it.
+The name invites the opposite assumption: "reference" reads as material you
+consult, and filing a live schematic under it quietly asserts that nobody will
+ever edit it.
+
+The test is not where a file came from or what reads it. Ask whether it will be
+EDITED here. If yes, it is a source.
+
+A `.kicad_prl` is per-user view state, not design data. It is gitignored and
+never committed, whatever directory it appears in.
+
+Moving a `.ts` into a new directory changes its import depth. Fix the relative
+paths and run `bun run typecheck` - an unresolved module shows up as a confusing
+type error at an untouched line (`Property 'x' does not exist on type '{}'`),
+not as "module not found".
+
 ### Imports
 
 Explicit relative paths, with the file extension:

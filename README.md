@@ -39,18 +39,28 @@ audio-circuits/
 │   └── sim/              # SPICE netlist generation, AC and operating-point
 │       └── models/       # Device models, each with its own provenance
 │
-├── circuits/             # Circuit definitions built on lib/model:
-│   │                     # pt2399-core.ts, transcribed from the netlist of a
-│   │                     # board that was physically built and works,
-│   │                     # opamp-buffer.ts, a unity-gain TL072 buffer, and
-│   │                     # transistor-preamp/, a common-emitter lab board
-│   │                     # reconfigured by jumpers and trim-pots
-│   └── optical-compressor/ # An LA-2A-inspired optical compressor: three
-│                         # blocks joined by include(), transcribed from the
-│                         # design spec in docs/superpowers/specs/
+├── circuits/             # One directory per circuit, holding its authored
+│   │                     # sources together - the KiCad schematic and project
+│   │                     # files alongside the .ts that models them. No KiCad
+│   │                     # file sits at this level; see CLAUDE.md.
+│   ├── pt2399-core/      # Transcribed from the netlist of a board that was
+│   │                     # physically built and works
+│   ├── pultec/           # The Pultec 3-band EQ schematic, and the five
+│   │                     # physicalized stripboard modules derived from it
+│   ├── transistor-preamp/ # A common-emitter lab board reconfigured by
+│   │                     # jumpers and trim-pots
+│   ├── optical-compressor/ # An LA-2A-inspired optical compressor: three
+│   │                     # blocks joined by include(), transcribed from the
+│   │                     # design spec in docs/superpowers/specs/
+│   └── opamp-buffer.ts   # A unity-gain TL072 buffer
 │
-├── reference/pultec/     # The Pultec reference network and what it is built
-│                         # from - unvalidated, see its own README
+├── reference/pultec/     # What is DERIVED from the Pultec schematic - the
+│                         # netlist export, the generated JSON, the typed
+│                         # reference network - plus hand-authored analysis of
+│                         # it (values, unresolved questions, control mapping).
+│                         # Never an editable source; the schematic itself
+│                         # lives in circuits/pultec/. Unvalidated - see its
+│                         # own README
 │
 ├── boards/               # Perfboard directories the perfboard CLI drives,
 │                         # each checking a circuit against a physical
@@ -164,6 +174,14 @@ export function myStage(): Network {
 Circuits compose with `include()`, which binds every declared port explicitly —
 there are no implicit global nets, not even ground. Component ids are semantic
 (`input_bias_resistor`, never `R1`); reference designators belong to KiCad.
+
+**Give it a directory.** A circuit lives in `circuits/<circuit-name>/`, and its
+authored sources sit there together — the `.ts` above alongside the
+`.kicad_sch` and `.kicad_pro` if it has them. No KiCad file belongs at the top
+level of `circuits/`, and an editable schematic never belongs under
+`reference/`, which is for derived artifacts and analysis. The test is whether
+the file will be *edited* here: if it will, it is a source.
+
 `CLAUDE.md` has the conventions in full.
 
 ## Open questions
