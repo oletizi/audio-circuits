@@ -1,5 +1,5 @@
 {
-  "source": "three-band-eq.net.xml",
+  "source": "reference/pultec/source/three-band-eq.net.xml",
   "components": {
     "C1": "18n",
     "C10": "Mid C2A",
