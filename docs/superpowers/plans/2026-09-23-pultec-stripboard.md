@@ -299,9 +299,11 @@ Run:
 bun -e 'import {partitionReference,MODULE_OWNERS} from "./reference/pultec/partition.ts"; import {valueFor} from "./lib/kicad/value-notation.ts"; const s=partitionReference(); let bad=0; for (const o of MODULE_OWNERS) for (const c of s.modules[o]) { try { valueFor(c) } catch (e) { bad++; console.log(c.id, (e as Error).message.split("\n")[0]) } } console.log("refused:", bad)'
 ```
 
-Expected: `refused: 12` — the six switches and six potentiometers, which have no
-`part.symbol` yet. Task 6 gives them one. Every capacitor, resistor and inductor
-must now pass; if any of those still refuse, the formatter is wrong.
+Expected: `refused: 6` — the six switches (`SW_LO_CUT`, `SW_LO_BOOST`, `SW_HI_CUT`,
+`SW_HI_BOOST`, `SW_MID`, `SW_MID_MODE`), which have no `part.symbol` yet; Task 6
+gives them one. The six potentiometers must now **pass**, because they take the
+resistance branch. Every capacitor, resistor and inductor must pass too; if any of
+those still refuse, the formatter is wrong.
 
 - [ ] **Step 7: Run the whole suite and commit**
 
@@ -1277,12 +1279,17 @@ test("each board projects back to its electrical partition", () => {
 
 test("every physical-only component is electrically transparent", () => {
   // projectPhysical enforces this itself, so this is a direct statement of the
-  // same fact rather than the only thing holding it.
+  // same fact rather than the only thing holding it. The count assertion keeps
+  // it from passing vacuously if physicalizedBoard ever stops adding a block.
+  let checked = 0
   for (const [, , build] of BOARDS) {
     for (const component of build().components) {
-      if (physicalOnly(component)) assertElectricallyTransparent(component)
+      if (!physicalOnly(component)) continue
+      assertElectricallyTransparent(component)
+      checked += 1
     }
   }
+  expect(checked).toBe(BOARDS.length)
 })
 
 test("every on-board component has a footprint and every off-board one does not", () => {
@@ -2229,7 +2236,6 @@ selection criterion**. Per-unit cost and availability are.
 - Create: `docs/pultec/capacitor-selection.md` (the findings, with citations)
 - Modify: `lib/kicad/import-string.ts` (populate `FILM_CAPACITOR_IMPORT_STRINGS`)
 - Modify: `circuits/pultec/parts.ts` (per-value footprints if the family needs them)
-- Test: `tests/circuits/pultec-boards.test.ts` (turn the `test.todo` back on)
 
 **Interfaces:**
 - Consumes: `FILM_CAPACITOR_IMPORT_STRINGS` and `FILM_CAPACITOR` (Tasks 2 and 6).
