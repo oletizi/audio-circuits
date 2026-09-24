@@ -30,7 +30,7 @@ const PF_UF_BOUNDARY_FARADS = 1e-8
 const MIN_FARADS = 1e-12
 // Exclusive upper bound: spec says "farads at or above 1000uF are refused" (line 253)
 const MAX_FARADS = 1e-3
-const MIN_OHMS = 1000
+const MIN_OHMS = 1
 const MAX_OHMS = 999000
 
 /**
@@ -65,11 +65,37 @@ function resistanceText(ohms: number, id: string): string {
   if (!Number.isFinite(ohms) || ohms < MIN_OHMS || ohms > MAX_OHMS) {
     throw new Error(
       `resistance ${ohms}R on "${id}" is outside the range this formatter has been proven ` +
-        "over (1k to 999k). Extend lib/kicad/value-notation.ts with a test rather than " +
+        "over (1R to 999k). Extend lib/kicad/value-notation.ts with a test rather than " +
         "letting it guess a spelling.",
     )
   }
-  return `${decimal(ohms / 1000)}K`
+  // Sub-kilohm parts are spelled in ohms, as the reference documentation spells
+  // them ("R1 430R" in reference/pultec/values.md). Dividing them by 1000 would
+  // produce ".43K", which no schematic writes and which reconciles as a value
+  // delta against a board built from the documentation.
+  return ohms < 1000 ? `${decimal(ohms)}R` : `${decimal(ohms / 1000)}K`
+}
+
+const MIN_HENRIES = 1e-6
+const MAX_HENRIES = 100
+
+/**
+ * Inductance as a netlist spells it.
+ *
+ * The boundary is one henry rather than the capacitance formatter's decade
+ * split, because every Pultec value is between 100mH and 2H and a single
+ * boundary there keeps both spellings free of a leading decimal point: 0.45H
+ * would render as ".45H" through `decimal`, which strips the leading zero.
+ */
+function inductanceText(henries: number, id: string): string {
+  if (!Number.isFinite(henries) || henries < MIN_HENRIES || henries > MAX_HENRIES) {
+    throw new Error(
+      `inductance ${henries}H on "${id}" is outside the range this formatter has been proven ` +
+        "over (1uH to 100H). Extend lib/kicad/value-notation.ts with a test rather than " +
+        "letting it guess a spelling.",
+    )
+  }
+  return henries < 1 ? `${decimal(henries * 1000)}mH` : `${decimal(henries)}H`
 }
 
 /** "Connector_Generic:Conn_01x05" -> "Conn_01x05". */
@@ -79,16 +105,27 @@ function symbolPartName(symbol: string): string {
 }
 
 /**
- * Kinds whose `Parameters` carry an electrical quantity this module has no
- * formatter for. `resistor` and `capacitor` are handled above; every other
- * kind with a quantity-bearing parameter type (see `lib/model/parameters.ts`)
- * must refuse here rather than fall through to the mpn/symbol branch below,
- * which would silently put the part's IDENTITY in the field meant to hold its
- * VALUE - e.g. an inductor's part number where its inductance belongs.
+ * Whether a component's parameters carry a numeric electrical quantity.
+ *
+ * This replaces a hardcoded list of kinds that had no formatter. A list has to
+ * be edited whenever a kind gains a quantity, and the failure mode of
+ * forgetting is silent: the part's IDENTITY goes into the field meant to hold
+ * its VALUE - an inductor's part number where its inductance belongs.
+ *
+ * ITS REACH IS TOP-LEVEL NUMBERS, and no further. A quantity represented
+ * structurally - a tuple, or an object like `taper` - is invisible to it and
+ * would fall through to the mpn branch exactly as a forgotten list entry did.
+ * That covers every kind in `lib/model/parameters.ts` today, which is why it is
+ * worth having; it is not a general guarantee, and a kind that carries a
+ * structured quantity needs a branch here rather than trusting this.
+ *
+ * A switch is the case that shows the shape is right: `positions` and
+ * `contacts` are topology, not quantities, so a switch has no value to derive
+ * and its identity is legitimately what the value field holds.
  */
-const UNFORMATTED_ELECTRICAL_KINDS: ReadonlySet<string> = new Set([
-  "inductor", "potentiometer", "switch",
-])
+function hasNumericQuantity(component: Component): boolean {
+  return Object.values(component.parameters).some((value) => typeof value === "number")
+}
 
 /**
  * A part's value as the netlist spells it.
@@ -107,20 +144,27 @@ export function valueFor(component: Component): string {
     }
     return capacitanceText(farads, component.id)
   }
-  if (component.kind === "resistor") {
+  if (component.kind === "resistor" || component.kind === "potentiometer") {
     const ohms: unknown = Reflect.get(component.parameters, "ohms")
     if (typeof ohms !== "number") {
-      throw new Error(`resistor "${component.id}" has no numeric ohms parameter`)
+      throw new Error(`${component.kind} "${component.id}" has no numeric ohms parameter`)
     }
     return resistanceText(ohms, component.id)
   }
-  if (UNFORMATTED_ELECTRICAL_KINDS.has(component.kind)) {
+  if (component.kind === "inductor") {
+    const henries: unknown = Reflect.get(component.parameters, "henries")
+    if (typeof henries !== "number") {
+      throw new Error(`inductor "${component.id}" has no numeric henries parameter`)
+    }
+    return inductanceText(henries, component.id)
+  }
+  if (hasNumericQuantity(component)) {
     throw new Error(
-      `component "${component.id}" (kind "${component.kind}") has an electrical parameter this ` +
-        "formatter does not handle, so its value field cannot be derived from an mpn or symbol " +
-        "fallback either - that would silently swap the part's identity in for its electrical " +
-        "value. Extend lib/kicad/value-notation.ts with a formatter for this kind, proven with a " +
-        "test, before lowering it to a netlist.",
+      `component "${component.id}" (kind "${component.kind}") carries a numeric electrical ` +
+        "parameter this formatter does not handle, so its value cannot come from an mpn or " +
+        "symbol fallback either - that would silently swap the part's identity in for its " +
+        "electrical value. Add a formatter for this kind, proven with a test, before lowering " +
+        "it to a netlist.",
     )
   }
 
