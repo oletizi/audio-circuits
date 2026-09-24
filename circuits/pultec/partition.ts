@@ -13,8 +13,8 @@
 import { partitionTopology } from "../../lib/model/topology.ts"
 import type { Component, Connection, Network } from "../../lib/model/types.ts"
 import { OFF_BOARD } from "./off-board.ts"
-import { THREE_BAND_REFERENCE } from "./model/three-band.ts"
-import { MID_POSITIONS, MID_TAPS, tapLabel } from "./model/mid.ts"
+import { THREE_BAND_REFERENCE } from "./electrical/three-band.ts"
+import { MID_POSITIONS, MID_TAPS, tapLabel } from "./electrical/mid.ts"
 
 /** A physical network's components are single-unit: one "MAIN" unit carries every
  * terminal. Package pins stay empty. Mirrors the equivalent helper in

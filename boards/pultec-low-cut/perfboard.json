@@ -1,5 +1,5 @@
 {
-  "circuit": "../../circuits/pultec/boards/low-cut.ts",
+  "circuit": "../../circuits/pultec/physical/low-cut.ts",
   "export": "pultecLowCut",
   "vrt": "pultec-low-cut.perfboard.vrt"
 }

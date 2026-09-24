@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { THREE_BAND_REFERENCE, controlState } from "../../circuits/pultec/model/three-band.ts"
+import { THREE_BAND_REFERENCE, controlState } from "../../circuits/pultec/electrical/three-band.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
 import { pruneFloatingBranches } from "../../lib/sim/prepare.ts"
 import { toSpiceNetlist } from "../../lib/sim/netlist.ts"

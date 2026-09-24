@@ -956,7 +956,7 @@ Create `lib/board/physicalize.ts`:
  * makes the statement exact instead: the board matches its partition AFTER the
  * physical-only components are projected away.
  */
-import type { Component, Network } from "../model/types.ts"
+import type { Component, Network } from "../electrical/types.ts"
 
 /** The `provenance.source` that marks a component as the board's, not the circuit's. */
 export const PHYSICAL_ONLY = "physical-only"
@@ -1063,7 +1063,7 @@ Create `tests/pultec/off-board.test.ts`:
 import { test, expect } from "bun:test"
 import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
 import { isBoardResident } from "../../circuits/pultec/partition.ts"
-import { THREE_BAND_REFERENCE } from "../../circuits/pultec/model/three-band.ts"
+import { THREE_BAND_REFERENCE } from "../../circuits/pultec/electrical/three-band.ts"
 
 test("every off-board id names a component that exists", () => {
   const ids = new Set(THREE_BAND_REFERENCE.components.map((c) => c.id))
@@ -1883,7 +1883,7 @@ Create `tests/circuits/pultec-reconstruction.test.ts`:
 import { test, expect } from "bun:test"
 import { assertSameTopology } from "../../lib/model/topology.ts"
 import { physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
-import { THREE_BAND_REFERENCE } from "../../circuits/pultec/model/three-band.ts"
+import { THREE_BAND_REFERENCE } from "../../circuits/pultec/electrical/three-band.ts"
 import type { Component, Network } from "../../lib/model/types.ts"
 import { pultecLowCut } from "../../circuits/pultec/low-cut.ts"
 import { pultecLowBoost } from "../../circuits/pultec/low-boost.ts"

@@ -102,7 +102,7 @@ test("every taper agrees exactly at the extremes", () => {
   // Why the reference network can resolve a log pot without the curve constant
   // mattering: at fraction 0 and 1 the log branch returns exactly 0 and 1, the
   // same as the linear branch. Asserted rather than assumed, because
-  // `circuits/pultec/model/three-band.ts` records an UNVALIDATED curve constant and
+  // `circuits/pultec/electrical/three-band.ts` records an UNVALIDATED curve constant and
   // rests on precisely this.
   for (const taper of [
     { type: "linear" } as const,

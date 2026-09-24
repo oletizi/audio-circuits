@@ -1,20 +1,20 @@
 /**
- * The hi cut section on stripboard.
+ * The low cut section on stripboard.
  *
- * The Ccut bank and the 430R series resistor are on the board; the 4K7 level
- * pot and its selector are panel-mount and appear as PADS landings. Ground is a
- * chassis/shield landing here, so net "0" has no other member on this board and
- * that singleton is declared.
+ * Seven capacitors on the board; the 470K level pot and the six-position
+ * selector are panel-mount and appear as PADS landings. Ground is a
+ * chassis/shield landing here - the low cut section returns through its pot, so
+ * net "0" has no other member on this board, and that singleton is declared.
  *
- * SW_HI_CUT'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
- * hi-boost BOARD (SW_HI_BOOST there). `circuits/pultec/model/controls.ts` models
- * both under `HI_FREQUENCY_GANG`, and `docs/pultec/unresolved.md` calls
+ * SW_LO_CUT'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
+ * low-boost BOARD (SW_LO_BOOST there). `circuits/pultec/electrical/controls.ts` models
+ * both under `LO_FREQUENCY_GANG`, and `docs/pultec/unresolved.md` calls
  * this pairing "the thing most likely to be broken by a well-meaning
  * refactor". Physicalization does not carry the gang across board boundaries
  * - each board sees only its own pole, valued `SW_Rotary` like any other - so
  * this landing is NOT an independent switch to buy: it is one physical
- * 6-position rotary whose other pole lives on the hi-boost board, and the two
- * poles must always be wired to move together.
+ * 6-position rotary whose other pole lives on the low-boost board, and the
+ * two poles must always be wired to move together.
  */
 import {
   designatorsFor,
@@ -26,13 +26,13 @@ import {
 import { OFF_BOARD } from "../off-board.ts"
 import type { Network } from "../../../lib/model/types.ts"
 
-const CROSSING_NETS: readonly string[] = ["hi_boost_out", "lo_boost_in", "0"]
+const CROSSING_NETS: readonly string[] = ["hi_boost_out", "out", "0"]
 
-export function pultecHiCut(): Network {
-  return physicalizedBoard("hi-cut", CROSSING_NETS)
+export function pultecLowCut(): Network {
+  return physicalizedBoard("low-cut", CROSSING_NETS)
 }
 
-const BOARD = pultecHiCut()
+const BOARD = pultecLowCut()
 
 export const DESIGNATORS = designatorsFor(BOARD)
 export const PIN_NUMBERS = PASSIVE_PIN_NUMBERS
@@ -41,7 +41,7 @@ export const OFF_BOARD_IDS: ReadonlySet<string> = new Set(
   BOARD.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id),
 )
 /** Crossing net -> the other boards that touch it, for the wiring guide. */
-export const SHARED_BY = sharedByFor("hi-cut", CROSSING_NETS)
+export const SHARED_BY = sharedByFor("low-cut", CROSSING_NETS)
 
 /** Ground is physical-only here, so it has one member and is an intended open. */
 export const DECLARED_OPENS: readonly string[] = ["0"]

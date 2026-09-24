@@ -145,7 +145,7 @@ function requireNet(connection: Connection | undefined, message: string): string
  * check, run from `Builder.done()` on every circuit this repository writes. This one is
  * `resolveNetwork`'s INPUT CONTRACT, and it runs on every network reaching resolution
  * including literals that never went through the builder - `THREE_BAND_REFERENCE`,
- * assembled from a KiCad netlist by `circuits/pultec/model/from-netlist.ts`, is one.
+ * assembled from a KiCad netlist by `circuits/pultec/electrical/from-netlist.ts`, is one.
  * Collapsing the two would either impose an authored circuit's vocabulary rules on an
  * imported network or drop the pin-count rule from the resolution path.
  */

@@ -117,7 +117,7 @@ reference, and to carry **all eleven** mid frequencies into the modular
 topology: a position can be left unpopulated at build time, but a position
 designed out needs a new board to recover.
 
-`circuits/pultec/model/mid.ts` therefore implements all eleven, from P3bandDoc.pdf
+`circuits/pultec/electrical/mid.ts` therefore implements all eleven, from P3bandDoc.pdf
 page 3 — the same set as the Pultec MEQ5, on a VTB9050. Seventeen capacitors
 across eleven positions, six of them doubled, served by five winding taps.
 

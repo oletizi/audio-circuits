@@ -6,11 +6,11 @@ import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
 import { boundaryConductors, partitionReference } from "../../circuits/pultec/partition.ts"
 import type { ModuleOwner } from "../../circuits/pultec/partition.ts"
 import type { Network } from "../../lib/model/types.ts"
-import * as lowCut from "../../circuits/pultec/boards/low-cut.ts"
-import * as lowBoost from "../../circuits/pultec/boards/low-boost.ts"
-import * as hiCut from "../../circuits/pultec/boards/hi-cut.ts"
-import * as hiBoost from "../../circuits/pultec/boards/hi-boost.ts"
-import * as mid from "../../circuits/pultec/boards/mid.ts"
+import * as lowCut from "../../circuits/pultec/physical/low-cut.ts"
+import * as lowBoost from "../../circuits/pultec/physical/low-boost.ts"
+import * as hiCut from "../../circuits/pultec/physical/hi-cut.ts"
+import * as hiBoost from "../../circuits/pultec/physical/hi-boost.ts"
+import * as mid from "../../circuits/pultec/physical/mid.ts"
 
 interface BoardModule {
   readonly DESIGNATORS: Readonly<Record<string, string>>

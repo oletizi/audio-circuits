@@ -3,7 +3,7 @@ import {
   THREE_BAND_REFERENCE,
   controlState,
   declaredOpens,
-} from "../../circuits/pultec/model/three-band.ts"
+} from "../../circuits/pultec/electrical/three-band.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
 import { lintConnectivity } from "../../lib/model/connectivity.ts"
 import { validateNetwork } from "../../lib/model/validate.ts"

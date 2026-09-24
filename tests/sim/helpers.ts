@@ -46,8 +46,8 @@ export function deckFor(
  * node - the output the environment already had to name. Control state is an
  * explicit argument, never defaulted: a circuit with a pot has no meaningful
  * "no settings" reading, and the Pultec reference network has SIX of them -
- * `circuits/pultec/model/controls.ts`'s `POTS` lists five, and
- * `circuits/pultec/model/three-band.ts` declares a sixth, `RV_MID`, from
+ * `circuits/pultec/electrical/controls.ts`'s `POTS` lists five, and
+ * `circuits/pultec/electrical/three-band.ts` declares a sixth, `RV_MID`, from
  * documentation rather than from the netlist. No circuit in `circuits/`
  * declares one:
  * `pt2399-core.ts`'s delay-time control reaches the board through its header's

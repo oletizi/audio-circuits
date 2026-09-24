@@ -6,7 +6,7 @@ import {
   externalPorts,
   partitionReference,
 } from "../../circuits/pultec/partition.ts"
-import { THREE_BAND_REFERENCE } from "../../circuits/pultec/model/three-band.ts"
+import { THREE_BAND_REFERENCE } from "../../circuits/pultec/electrical/three-band.ts"
 import { assertSameTopology, componentNets, partitionTopology } from "../../lib/model/topology.ts"
 
 test("every element is owned exactly once, by a declared module", () => {

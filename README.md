@@ -137,7 +137,7 @@ stub does and does not carry.
 
 ## How the Pultec reference is validated
 
-`circuits/pultec/model/three-band.ts` is not compared against any board or module —
+`circuits/pultec/electrical/three-band.ts` is not compared against any board or module —
 none currently exist for it. What "validated" means here is narrower:
 
 - **Topology** comes from an exact `kicad-cli` netlist export of a board that

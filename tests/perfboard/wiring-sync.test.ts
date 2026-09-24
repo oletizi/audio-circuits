@@ -64,7 +64,7 @@ test("a drifted guide is rewritten, and the message says the wiring changed", as
   const declaration: PerfboardDeclaration = {
     file: path.join(scratch, "perfboard.json"),
     dir: scratch,
-    circuitPath: path.join(REPO, "circuits/pultec/boards/low-cut.ts"),
+    circuitPath: path.join(REPO, "circuits/pultec/physical/low-cut.ts"),
     exportName: "pultecLowCut",
     vrtPath: path.join(scratch, "board.vrt"),
   }

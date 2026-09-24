@@ -7,7 +7,7 @@
  * no singleton is declared.
  *
  * SW_LO_BOOST'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
- * low-cut BOARD (SW_LO_CUT there). `circuits/pultec/model/controls.ts` models both
+ * low-cut BOARD (SW_LO_CUT there). `circuits/pultec/electrical/controls.ts` models both
  * under `LO_FREQUENCY_GANG`, and `docs/pultec/unresolved.md` calls this
  * pairing "the thing most likely to be broken by a well-meaning refactor" -
  * the builder states it "is a critical part of the pultec low cut + boost

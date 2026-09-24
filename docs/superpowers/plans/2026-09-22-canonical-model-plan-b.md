@@ -55,7 +55,7 @@ The reason is that `add()` already expresses everything the shorthand would, and
 
 Both were raised in the whole-branch review, declined in the final fix round, and the decline upheld on re-review. Recorded here so that being declined does not mean being lost.
 
-**A silent default and a non-null assertion in `reference/pultec/`.** `circuits/pultec/model/three-band.ts:289` reads `positions.mid ?? MID_POSITIONS[0]!.label`, and `controlState`'s `mid`, `hiCut`, `hiQ` and `positions.mid` all default. `reference/` is not under `tests/` and `controlState` is production-shaped API, so this is a fallback where the project's rules call for a throw. It pre-dates this branch (Plan A). **Not fixed here** because those defaults are load-bearing for every reference test's control vector, and changing them is a behaviour change to the one artefact this branch is validated against — not something to do inside a round convened for comments and guards. Same class, same directory level: `lib/kicad/legacy-netlist.ts:57-72` reads six tokens through `?? ""`. Three are followed immediately by a validating throw, so the default is unreachable there; the other three (`footprint`, `pin`, `netName`) have none, and an empty token would silently produce an empty footprint or a `nets[""]` bucket. In practice the tokenizer cannot emit an empty atom, so it is defensive rather than live. Both belong with the twelve untested `lib/kicad/` throw paths already carried from Plan A.
+**A silent default and a non-null assertion in `reference/pultec/`.** `circuits/pultec/electrical/three-band.ts:289` reads `positions.mid ?? MID_POSITIONS[0]!.label`, and `controlState`'s `mid`, `hiCut`, `hiQ` and `positions.mid` all default. `reference/` is not under `tests/` and `controlState` is production-shaped API, so this is a fallback where the project's rules call for a throw. It pre-dates this branch (Plan A). **Not fixed here** because those defaults are load-bearing for every reference test's control vector, and changing them is a behaviour change to the one artefact this branch is validated against — not something to do inside a round convened for comments and guards. Same class, same directory level: `lib/kicad/legacy-netlist.ts:57-72` reads six tokens through `?? ""`. Three are followed immediately by a validating throw, so the default is unreachable there; the other three (`footprint`, `pin`, `netName`) have none, and an empty token would silently produce an empty footprint or a `nets[""]` bucket. In practice the tokenizer cannot emit an empty atom, so it is defensive rather than live. Both belong with the twelve untested `lib/kicad/` throw paths already carried from Plan A.
 
 **`vactrolSubcircuit`'s model-parse guards have no falsifying test.** `modelParameters` and `requiredParameter` are module-private and are reached only through `standInForwardVolts`, which reads `deviceModel("1N4148").spice` — a fixed file in the registry. No public surface can feed them a malformed model text, so testing them needs either exporting two internals for test access or making the model text injectable.
 
@@ -101,7 +101,7 @@ The repository has two types describing the same thing. `reference/pultec/`, `co
 **Files:**
 - Modify: `lib/model/topology.ts` — delete `PassiveElement`, `PassiveNetwork`, `ElementBase`, and the `validateNetwork` at line 71; retype `assertSameTopology` and `partitionTopology`
 - Modify: `lib/model/control-state.ts`, `mutable.ts`, `connectivity.ts`, `net-preference.ts`, `types.ts`
-- Modify: `circuits/pultec/model/three-band.ts`, `partition.ts`, `mid.ts`, `controls.ts`
+- Modify: `circuits/pultec/electrical/three-band.ts`, `partition.ts`, `mid.ts`, `controls.ts`
 - Modify: `tests/topology.test.ts`, `tests/control-state.test.ts`, `tests/owners.test.ts`
 
 **Interfaces:**
@@ -122,7 +122,7 @@ A two-terminal passive becomes a `Component` with `pins: {}` and one unit named 
 
 - [ ] **Step 1: Add `provenance` to `Component`**
 
-`circuits/pultec/model/three-band.ts` attaches provenance to every element and `assertSameTopology` ignores it. Preserve that. In `lib/model/types.ts`, import `Provenance` from `./parameters.ts` and add:
+`circuits/pultec/electrical/three-band.ts` attaches provenance to every element and `assertSameTopology` ignores it. Preserve that. In `lib/model/types.ts`, import `Provenance` from `./parameters.ts` and add:
 
 ```ts
   /** Where this component's data came from. Metadata; assertSameTopology ignores it. */
@@ -217,7 +217,7 @@ Retype `assertSameTopology` and `partitionTopology` to `Network`. Where old code
 
 `grep -rln "PassiveNetwork\|PassiveElement\|\.elements" --include='*.ts' . | grep -v node_modules`
 
-Convert `circuits/pultec/model/three-band.ts` last — it is largest and builds elements mechanically from netlist JSON, so its construction helpers carry most of the work. Its provenance handling must survive.
+Convert `circuits/pultec/electrical/three-band.ts` last — it is largest and builds elements mechanically from netlist JSON, so its construction helpers carry most of the work. Its provenance handling must survive.
 
 `bun run typecheck` is the arbiter. **Do not add a compatibility shim or adapter** — the point is that one type survives.
 

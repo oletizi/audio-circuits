@@ -172,7 +172,7 @@ The mid module has never been compared against the reference partition — its t
 - Modify: `tests/modules/mid.test.tsx`
 
 **Interfaces:**
-- Consumes: `boardNetwork("mid")`, `MID_NETS` from `circuits/pultec/model/three-band.ts`, `MID_POSITIONS`/`MID_TAPS`/`tapLabel` from `circuits/pultec/model/mid.ts`.
+- Consumes: `boardNetwork("mid")`, `MID_NETS` from `circuits/pultec/electrical/three-band.ts`, `MID_POSITIONS`/`MID_TAPS`/`tapLabel` from `circuits/pultec/electrical/mid.ts`.
 - Produces: a `PultecMid` emitting five inductors on a new `COIL_RETURN` net.
 
 - [ ] **Step 1: Write the failing board comparison**

@@ -1711,7 +1711,7 @@ The Pultec reference network already exists in `reference/pultec/`, assembled me
 **These circuits are unvalidated.** The maintainer cannot validate them without building from the schematic, which is off the table. This task moves them to the canonical model so the one-model rule holds; it does not make them trusted, and the marker added in Step 2 says so.
 
 **Files:**
-- Modify: `circuits/pultec/model/three-band.ts`, `partition.ts`, `controls.ts`, `mid.ts` (import from `lib/model/`)
+- Modify: `circuits/pultec/electrical/three-band.ts`, `partition.ts`, `controls.ts`, `mid.ts` (import from `lib/model/`)
 - Modify: `lib/passives/*` → moved to `lib/model/` (see Step 1)
 - Delete: `modules/pultec-hi-boost/`, `modules/pultec-hi-cut/`, `modules/pultec-low-boost/`, `modules/pultec-low-cut/`, `modules/pultec-mid/`, `modules/pultec-passive-eq/`
 - Delete: `tests/modules/*.test.tsx` for those six modules
@@ -1734,7 +1734,7 @@ git mv lib/passives/mutable.ts lib/model/mutable.ts
 git mv lib/passives/net-preference.ts lib/model/net-preference.ts
 ```
 
-Update every import of `../passives/` or `lib/passives/` to `../model/` / `lib/model/`. Find them with:
+Update every import of `../passives/` or `lib/passives/` to `../electrical/` / `lib/model/`. Find them with:
 
 ```bash
 grep -rln "passives/" --include='*.ts' --include='*.tsx' . | grep -v node_modules

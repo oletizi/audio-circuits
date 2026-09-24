@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
-import { THREE_BAND_REFERENCE } from "../../circuits/pultec/model/three-band.ts"
+import { THREE_BAND_REFERENCE } from "../../circuits/pultec/electrical/three-band.ts"
 
 test("every off-board id names a component that exists", () => {
   const ids = new Set(THREE_BAND_REFERENCE.components.map((c) => c.id))

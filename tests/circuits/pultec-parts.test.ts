@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { footprintForKind } from "../../circuits/pultec/boards/parts.ts"
+import { footprintForKind } from "../../circuits/pultec/physical/parts.ts"
 import type { Component } from "../../lib/model/types.ts"
 
 function capacitor(farads: number): Component {

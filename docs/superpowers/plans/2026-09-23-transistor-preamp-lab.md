@@ -1623,7 +1623,7 @@ Expected: FAIL. The module does not exist.
  * Symbols come from lib/kicad/symbols/ (vendored), never from an installed
  * KiCad, so the output does not depend on the machine.
  */
-import type { Component, Connection, Network } from "../model/types.ts"
+import type { Component, Connection, Network } from "../electrical/types.ts"
 import { pinNumberFor } from "./from-network.ts"
 import type { PinNumbers } from "./from-network.ts"
 import { embeddedSymbol, symbolPins, vendoredSymbolText } from "./symbol-library.ts"

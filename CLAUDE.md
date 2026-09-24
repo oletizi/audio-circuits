@@ -196,8 +196,8 @@ A circuit with enough parts uses subdirectories, and they say what KIND of
 thing each file is rather than what topic it is about:
 
 ```
-circuits/pultec/model/      an electrical model derived from the schematic
-circuits/pultec/boards/     physicalized board modules, one per board
+circuits/pultec/electrical/      an electrical model derived from the schematic
+circuits/pultec/physical/     physicalized board modules, one per board
 circuits/pultec/generated/  artifacts a tool rebuilds - never hand-edited
 ```
 

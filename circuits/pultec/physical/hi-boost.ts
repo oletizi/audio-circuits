@@ -7,7 +7,7 @@
  * other member on this board and that singleton is declared.
  *
  * SW_HI_BOOST'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
- * hi-cut BOARD (SW_HI_CUT there). `circuits/pultec/model/controls.ts` models both
+ * hi-cut BOARD (SW_HI_CUT there). `circuits/pultec/electrical/controls.ts` models both
  * under `HI_FREQUENCY_GANG`, and `docs/pultec/unresolved.md` calls this
  * pairing "the thing most likely to be broken by a well-meaning refactor".
  * Physicalization does not carry the gang across board boundaries - each

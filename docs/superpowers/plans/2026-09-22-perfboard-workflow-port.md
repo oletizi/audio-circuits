@@ -627,7 +627,7 @@ Create `lib/kicad/value-notation.ts`:
  * strings. If the fork ever compares values semantically it is deleted, and
  * its removal is a completion rather than a regression.
  */
-import type { Component } from "../model/types.ts"
+import type { Component } from "../electrical/types.ts"
 
 /** Capacitances below this are spelled in pF; at or above it, in uF. */
 const PF_UF_BOUNDARY_FARADS = 1e-8
@@ -828,7 +828,7 @@ Create `lib/kicad/from-network.ts`:
  * import string rather than a KiCad footprint name, so the netlist imports
  * with no Part Aliases entry.
  */
-import type { Component, Network } from "../model/types.ts"
+import type { Component, Network } from "../electrical/types.ts"
 import type { ImportedComponent, ImportedNetlist } from "./netlist.ts"
 import { declaredPinCount, importStringFor } from "./import-string.ts"
 import { valueFor } from "./value-notation.ts"
