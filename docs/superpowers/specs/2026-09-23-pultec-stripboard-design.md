@@ -246,8 +246,14 @@ Today it is a kind rule: `kind !== "potentiometer" && kind !== "switch"`. It bec
 a lookup against the `OFF_BOARD` set, so inductors are expressible on either side
 and a pot can move on-board later without touching the rule.
 
-`boardNetwork()` keeps its ports — other tests read them — but the boards no longer
-derive their landings from ports.
+`boardNetwork()` is **deleted**. This document's first version said it "keeps its
+ports — other tests read them"; that was wrong, and execution found it. The function
+has no callers anywhere in the repository and no test exercises it, so nothing read
+those ports at all. Its concept — the board-resident subset, plus a ports map naming
+what leaves — is superseded twice over: physicalization keeps *every* module
+component and marks residency instead of filtering, and the terminal block replaces
+the ports map with a real part. Leaving it would be the vestigial pattern this
+project deletes rather than stubs.
 
 ### `circuits/pultec/` — five physicalized board circuits
 
