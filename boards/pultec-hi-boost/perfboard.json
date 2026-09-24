@@ -1,0 +1,5 @@
+{
+  "circuit": "../../circuits/pultec/hi-boost.ts",
+  "export": "pultecHiBoost",
+  "vrt": "pultec-hi-boost.perfboard.vrt"
+}

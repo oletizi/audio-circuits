@@ -40,7 +40,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts update stripboard edit board-info netlist-agrees
+.PHONY: help perfboard-help check cuts update stripboard edit board-info netlist-agrees create
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -127,6 +127,9 @@ perfboard-help:
 	@echo "  make cuts            print the cut list and solder bridges"
 	@echo "  make board-info      what this directory declares"
 	@echo ""
+	@echo "Bring it into existence (refuses if a layout already exists)"
+	@echo "  make create          build this board's layout from its circuit"
+	@echo ""
 	@echo "Work on it (these rewrite the layout IN PLACE; git is the undo, and both"
 	@echo "refuse while the layout has uncommitted changes)"
 	@echo "  make update                            apply the circuit to this layout"
@@ -164,6 +167,12 @@ cuts: veroroute netlist-agrees
 
 board-info:
 	@bun "$(CLI)" board-info -C "$(CURDIR)"
+
+# No netlist-agrees prerequisite: there is no existing layout yet for a
+# schematic-freshness check to be about, and the CLI verb itself exports the
+# netlist fresh from the circuit as part of building the board.
+create: veroroute
+	@bun "$(CLI)" create -C "$(CURDIR)"
 
 update: veroroute netlist-agrees
 	@bun "$(CLI)" update -C "$(CURDIR)" $(if $(ALLOW_DIRTY),--allow-dirty)
