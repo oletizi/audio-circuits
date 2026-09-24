@@ -56,33 +56,37 @@ export async function createBoard(
   const text = await exportNetlist(declaration)
 
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-create-"))
-  const netPath = path.join(scratch, "circuit.net")
-  fs.writeFileSync(netPath, text)
+  try {
+    const netPath = path.join(scratch, "circuit.net")
+    fs.writeFileSync(netPath, text)
 
-  // UNIQUELY NAMED, because `replaceAtomically` decides the binary succeeded by
-  // testing that the produced file exists. A fixed name such as
-  // "<layout>.creating" survives an interrupted run, and the next run would then
-  // find that stale file, take it for this run's output, and install a layout
-  // built from a netlist nobody exported - reporting success. The name is
-  // produced beside the declared layout so the rename that puts it in place
-  // stays within one directory, and therefore atomic.
-  const producedPath = `${declaration.vrtPath}.creating-${randomUUID()}`
-  if (fs.existsSync(producedPath)) {
-    throw new Error(`${producedPath} already exists, which should be impossible for a fresh name.`)
+    // UNIQUELY NAMED, because `replaceAtomically` decides the binary succeeded by
+    // testing that the produced file exists. A fixed name such as
+    // "<layout>.creating" survives an interrupted run, and the next run would then
+    // find that stale file, take it for this run's output, and install a layout
+    // built from a netlist nobody exported - reporting success. The name is
+    // produced beside the declared layout so the rename that puts it in place
+    // stays within one directory, and therefore atomic.
+    const producedPath = `${declaration.vrtPath}.creating-${randomUUID()}`
+    if (fs.existsSync(producedPath)) {
+      throw new Error(`${producedPath} already exists, which should be impossible for a fresh name.`)
+    }
+
+    const runImport = deps.runImport
+      ?? ((net: string, out: string) => runVerorouteImport(net, out, deps.repoRoot ?? moduleRepoRoot()))
+    const run = runImport(netPath, producedPath)
+
+    if (run.status !== 0) {
+      if (fs.existsSync(producedPath)) fs.rmSync(producedPath)
+      throw new Error(
+        `veroroute --import exited ${run.status}; no board was created at ${declaration.vrtPath}.\n` +
+          run.output,
+      )
+    }
+
+    replaceAtomically(declaration.vrtPath, producedPath)
+    return run.output
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true })
   }
-
-  const runImport = deps.runImport
-    ?? ((net: string, out: string) => runVerorouteImport(net, out, deps.repoRoot ?? moduleRepoRoot()))
-  const run = runImport(netPath, producedPath)
-
-  if (run.status !== 0) {
-    if (fs.existsSync(producedPath)) fs.rmSync(producedPath)
-    throw new Error(
-      `veroroute --import exited ${run.status}; no board was created at ${declaration.vrtPath}.\n` +
-        run.output,
-    )
-  }
-
-  replaceAtomically(declaration.vrtPath, producedPath)
-  return run.output
 }
