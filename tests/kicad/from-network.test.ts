@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import { circuit, net } from "../../lib/model/index.ts"
+import type { Component, Network } from "../../lib/model/index.ts"
 
 const DESIGNATORS = { r1: "R1", c1: "C1" }
 const PIN_NUMBERS = { resistor: { a: "1", b: "2" }, capacitor: { a: "1", b: "2" } }
@@ -131,3 +132,126 @@ test("a pin count beyond the import string's declared count refuses", () => {
   expect(() => toImportedNetlist(network, { header: "J1" }, PIN_NUMBERS))
     .toThrow(/J1.*SIP2.*declares only 2/s)
 })
+
+// Off-board components (Task 3). Scoped in a block so its POT/LOAD/NETWORK/
+// DESIGNATORS/PIN_NUMBERS fixtures - named identically to the brief - do not
+// collide with the on-board fixtures declared at module scope above.
+{
+  const POT: Component = {
+    id: "level_pot",
+    kind: "potentiometer",
+    parameters: { ohms: 47000, taper: { type: "linear" } },
+    part: { symbol: "Device:R_Potentiometer" },
+    pins: {},
+    units: [{ name: "MAIN", pins: { ccw: net("IN"), wiper: net("W"), cw: net("OUT") } }],
+  }
+
+  const LOAD: Component = {
+    id: "load",
+    kind: "resistor",
+    parameters: { ohms: 10000 },
+    part: { footprint: "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a: net("W"), b: net("OUT") } }],
+  }
+
+  const NETWORK: Network = { ports: { input: "IN" }, components: [POT, LOAD] }
+  const DESIGNATORS = { level_pot: "RV1", load: "R1" }
+  const PIN_NUMBERS = { resistor: { a: "1", b: "2" } }
+
+  test("an off-board component exports as PADS with its pin count", () => {
+    const lowered = toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "wiper", "cw"] },
+    )
+    const pot = lowered.components.find((c) => c.designator === "RV1")
+    expect(pot?.footprint).toBe("PADS3")
+  })
+
+  test("pad order decides the pin numbers, not the order the pins were written", () => {
+    const lowered = toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["cw", "wiper", "ccw"] },
+    )
+    expect(lowered.nets["OUT"]).toContain("RV1.1")
+    expect(lowered.nets["W"]).toContain("RV1.2")
+    expect(lowered.nets["IN"]).toContain("RV1.3")
+  })
+
+  test("an off-board component needs no footprint", () => {
+    expect(() => toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "wiper", "cw"] },
+    )).not.toThrow()
+  })
+
+  test("an off-board component with no declared pad order refuses", () => {
+    expect(() => toImportedNetlist(NETWORK, DESIGNATORS, PIN_NUMBERS, new Set(["level_pot"]), {}))
+      .toThrow(/no declared pad order/)
+  })
+
+  test("a pad order that is not a permutation of the component's pins refuses", () => {
+    expect(() => toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "wiper"] },
+    )).toThrow(/does not list every pin/)
+
+    expect(() => toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "wiper", "cw", "shaft"] },
+    )).toThrow(/"shaft"/)
+  })
+
+  test("a pad order that repeats a pin refuses, naming the repeat", () => {
+    expect(() => toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "ccw", "wiper"] },
+    )).toThrow(/lists ccw more than once/)
+  })
+
+  test("a repeated pin is refused even when the order is also too long", () => {
+    expect(() => toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "ccw", "wiper", "cw"] },
+    )).toThrow(/lists ccw more than once/)
+  })
+
+  test("no pad number is ever zero, for any accepted pad order", () => {
+    // The defect this guards: a displaced pin resolves through indexOf to -1 and
+    // emits pad 0. Asserting on the emitted numbers catches it whatever the cause,
+    // where asserting on the refusal only catches the causes we thought of.
+    const lowered = toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "wiper", "cw"] },
+    )
+    const members = Object.values(lowered.nets).flat()
+    expect(members.length).toBeGreaterThan(0)
+    for (const member of members) expect(member).not.toMatch(/\.0$/)
+  })
+
+  test("on-board components are untouched by the off-board machinery", () => {
+    const lowered = toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "wiper", "cw"] },
+    )
+    const load = lowered.components.find((c) => c.designator === "R1")
+    expect(load?.footprint).toBe("RESISTOR4")
+  })
+
+  test("a pad order declared for an on-board component refuses, because nothing would use it", () => {
+    expect(() => toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "wiper", "cw"], load: ["a", "b"] },
+    )).toThrow(/"load" is not off-board/)
+  })
+}

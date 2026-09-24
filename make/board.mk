@@ -40,7 +40,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts import update stripboard edit board-info netlist-agrees
+.PHONY: help perfboard-help check cuts import update stripboard edit board-info netlist-agrees wiring
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -129,7 +129,14 @@ perfboard-help:
 	@echo ""
 	@echo "Work on it (these write the layout; git is the undo)"
 	@echo "  make import                            create this board's first layout -"
-	@echo "                                          refuses if one already exists"
+	@echo "                                          refuses if one already exists. It"
+	@echo "                                          arrives in ISOLATED-HOLE mode, so"
+	@echo "                                          run \`make stripboard STRIPS=...\`"
+	@echo "                                          next, matching the way the physical"
+	@echo "                                          board's strips run - until then"
+	@echo "                                          \`make cuts\` has no strips to cut"
+	@echo "  make wiring                            regenerate the panel wiring guide"
+	@echo "                                          (check does this too)"
 	@echo "  make update                            apply the circuit to this layout IN"
 	@echo "                                          PLACE - refuses while it has"
 	@echo "                                          uncommitted changes"
@@ -161,8 +168,17 @@ perfboard-help:
 	@echo "                       such run now re-exports the schematic to check it"
 	@echo "  ALLOW_DIRTY=1        let update/stripboard write over uncommitted changes"
 
-check: veroroute netlist-agrees
+# `wiring` is a prerequisite of `check` for the same reason `netlist-agrees` is:
+# a derived artifact nobody regenerates is one that goes quietly stale, and a
+# stale wiring guide is worse than none - it is confidently wrong in a way the
+# layout cannot contradict. It rewrites rather than failing, exactly as
+# netlist-agrees does, so drift surfaces as a git diff the operator has to look
+# at. A board with nothing off it reports that and writes nothing.
+check: veroroute netlist-agrees wiring
 	@bun "$(CLI)" check -C "$(CURDIR)"
+
+wiring:
+	@bun "$(CLI)" wiring -C "$(CURDIR)"
 
 cuts: veroroute netlist-agrees
 	@bun "$(CLI)" cuts -C "$(CURDIR)"

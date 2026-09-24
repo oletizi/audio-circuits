@@ -83,7 +83,7 @@ here, recorded as unresolved item 2.
 
 ## Repository changes
 
-**`reference/pultec/partition.ts`** — `boardNetwork()` currently excludes
+**`circuits/pultec/partition.ts`** — `boardNetwork()` currently excludes
 inductors, on the grounds that the hand-wound coil is off-board behind screw
 terminals. That ceases to be true.
 
@@ -105,7 +105,7 @@ components. `tests/modules/unsplit-vs-composed.test.tsx` should pass unchanged;
 if it does not, the substitution is not as clean as this document claims, and
 that is the point of running it.
 
-**`reference/pultec/unresolved.md`** — record the DCR and tolerance results, and
+**`docs/pultec/unresolved.md`** — record the DCR and tolerance results, and
 note that the winding-coupling caveat no longer applies once the parts are
 discrete.
 

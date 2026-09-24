@@ -1,0 +1,1162 @@
+{
+  "source": "circuits/pultec/generated/three-band-eq.net.xml",
+  "components": {
+    "C1": "18n",
+    "C10": "Mid C2A",
+    "C11": "Mid C2B",
+    "C12": "Mid C3A",
+    "C13": "Mid C3B",
+    "C14": "4n7",
+    "C15": "4n7",
+    "C16": "3n3",
+    "C17": "1nF",
+    "C18": "330n",
+    "C19": "220n",
+    "C2": "10n",
+    "C20": "120n",
+    "C21": "68n",
+    "C22": "47n",
+    "C23": "33n",
+    "C24": "47n",
+    "C25": "47n",
+    "C26": "47n",
+    "C27": "22n",
+    "C28": "22n",
+    "C29": "15n",
+    "C2a2": "470pF",
+    "C3": "4.7n",
+    "C30": "33n",
+    "C31": "10n",
+    "C32": "10n",
+    "C33": "2n2",
+    "C34": "1nF",
+    "C35": "1nF",
+    "C36": "Mid C4A",
+    "C37": "Mid C4B",
+    "C38": "Mid C5A",
+    "C39": "Mid C5B",
+    "C4": "3n3",
+    "C40": "Mid C6A",
+    "C41": "Mid C6B",
+    "C4a2": "1nF",
+    "C5": "2n2",
+    "C5a2": "1n5",
+    "C6": "1n8",
+    "C7": "1n",
+    "C8": "Mid C1A",
+    "C9": "Mid C1B",
+    "J1": "IN",
+    "J10": "Lo Boost Sel Ret",
+    "J11": "Lo Boost Lvl",
+    "J12": "Hi Cut Sel Ret",
+    "J13": "Hi Boost Sel Snd",
+    "J14": "Mid L Sel send",
+    "J15": "Hi Boost L Snd",
+    "J19": "Hi Boost Sel Ret",
+    "J2": "OUT",
+    "J20": "Hi  Boost Q",
+    "J21": "Hi Boost Lvl",
+    "J29": "Mid Lvl (47 Log)",
+    "J3": "Hi Cut Sel Snd",
+    "J31": "Mid In",
+    "J32": "Mid Out",
+    "J35": "Mid L Sel Ret/C Sel Snd",
+    "J36": "Mid C Sel Ret",
+    "J38": "Mid Cut/Bst Sw",
+    "J39": "Mid Cut Q",
+    "J4": "Hi Cut Lvl",
+    "J40": "Mid L Ret",
+    "J5": "Lo Cut Sel Snd",
+    "J6": "Lo Boost Sel Snd",
+    "J7": "Low Cut Lvl",
+    "J8": "Hi Boost Sel Rtn",
+    "J9": "Low Cut Sel Ret",
+    "R1": "430R",
+    "R2": "56K",
+    "R3": "4K7"
+  },
+  "nets": [
+    {
+      "name": "/HI BOOST OUT",
+      "nodes": [
+        {
+          "ref": "C1",
+          "pin": "1"
+        },
+        {
+          "ref": "C2",
+          "pin": "1"
+        },
+        {
+          "ref": "C3",
+          "pin": "1"
+        },
+        {
+          "ref": "C4",
+          "pin": "1"
+        },
+        {
+          "ref": "C5",
+          "pin": "1"
+        },
+        {
+          "ref": "C6",
+          "pin": "1"
+        },
+        {
+          "ref": "C7",
+          "pin": "1"
+        },
+        {
+          "ref": "J21",
+          "pin": "3"
+        },
+        {
+          "ref": "J4",
+          "pin": "1"
+        },
+        {
+          "ref": "J7",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "/IN",
+      "nodes": [
+        {
+          "ref": "J1",
+          "pin": "1"
+        },
+        {
+          "ref": "J13",
+          "pin": "1"
+        },
+        {
+          "ref": "J13",
+          "pin": "2"
+        },
+        {
+          "ref": "J21",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "/LO BOOST IN",
+      "nodes": [
+        {
+          "ref": "C24",
+          "pin": "1"
+        },
+        {
+          "ref": "C25",
+          "pin": "1"
+        },
+        {
+          "ref": "C26",
+          "pin": "1"
+        },
+        {
+          "ref": "C27",
+          "pin": "1"
+        },
+        {
+          "ref": "C28",
+          "pin": "1"
+        },
+        {
+          "ref": "C29",
+          "pin": "1"
+        },
+        {
+          "ref": "C30",
+          "pin": "1"
+        },
+        {
+          "ref": "C31",
+          "pin": "1"
+        },
+        {
+          "ref": "C32",
+          "pin": "1"
+        },
+        {
+          "ref": "C33",
+          "pin": "1"
+        },
+        {
+          "ref": "J11",
+          "pin": "2"
+        },
+        {
+          "ref": "J11",
+          "pin": "3"
+        },
+        {
+          "ref": "J4",
+          "pin": "3"
+        },
+        {
+          "ref": "J6",
+          "pin": "1"
+        },
+        {
+          "ref": "J6",
+          "pin": "2"
+        },
+        {
+          "ref": "R2",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "/OUT",
+      "nodes": [
+        {
+          "ref": "J2",
+          "pin": "1"
+        },
+        {
+          "ref": "J29",
+          "pin": "3"
+        },
+        {
+          "ref": "J31",
+          "pin": "1"
+        },
+        {
+          "ref": "J7",
+          "pin": "2"
+        },
+        {
+          "ref": "J7",
+          "pin": "3"
+        },
+        {
+          "ref": "J9",
+          "pin": "1"
+        },
+        {
+          "ref": "J9",
+          "pin": "2"
+        },
+        {
+          "ref": "R2",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "/pultec-mid-band/MID L SND",
+      "nodes": [
+        {
+          "ref": "J29",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "/pultec-mid-band/MID OUT",
+      "nodes": [
+        {
+          "ref": "J29",
+          "pin": "1"
+        },
+        {
+          "ref": "J32",
+          "pin": "1"
+        },
+        {
+          "ref": "J38",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "GND",
+      "nodes": [
+        {
+          "ref": "C18",
+          "pin": "1"
+        },
+        {
+          "ref": "C19",
+          "pin": "1"
+        },
+        {
+          "ref": "C20",
+          "pin": "1"
+        },
+        {
+          "ref": "C21",
+          "pin": "1"
+        },
+        {
+          "ref": "C22",
+          "pin": "1"
+        },
+        {
+          "ref": "C23",
+          "pin": "1"
+        },
+        {
+          "ref": "J1",
+          "pin": "2"
+        },
+        {
+          "ref": "J11",
+          "pin": "1"
+        },
+        {
+          "ref": "J14",
+          "pin": "10"
+        },
+        {
+          "ref": "J14",
+          "pin": "11"
+        },
+        {
+          "ref": "J14",
+          "pin": "12"
+        },
+        {
+          "ref": "J15",
+          "pin": "5"
+        },
+        {
+          "ref": "J15",
+          "pin": "6"
+        },
+        {
+          "ref": "J2",
+          "pin": "2"
+        },
+        {
+          "ref": "J31",
+          "pin": "2"
+        },
+        {
+          "ref": "J32",
+          "pin": "2"
+        },
+        {
+          "ref": "J39",
+          "pin": "3"
+        },
+        {
+          "ref": "J40",
+          "pin": "10"
+        },
+        {
+          "ref": "J40",
+          "pin": "11"
+        },
+        {
+          "ref": "J40",
+          "pin": "12"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J10-Pin_1)",
+      "nodes": [
+        {
+          "ref": "C18",
+          "pin": "2"
+        },
+        {
+          "ref": "J10",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J10-Pin_2)",
+      "nodes": [
+        {
+          "ref": "C19",
+          "pin": "2"
+        },
+        {
+          "ref": "J10",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J10-Pin_3)",
+      "nodes": [
+        {
+          "ref": "C20",
+          "pin": "2"
+        },
+        {
+          "ref": "J10",
+          "pin": "3"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J10-Pin_4)",
+      "nodes": [
+        {
+          "ref": "C21",
+          "pin": "2"
+        },
+        {
+          "ref": "J10",
+          "pin": "4"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J10-Pin_5)",
+      "nodes": [
+        {
+          "ref": "C22",
+          "pin": "2"
+        },
+        {
+          "ref": "J10",
+          "pin": "5"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J10-Pin_6)",
+      "nodes": [
+        {
+          "ref": "C23",
+          "pin": "2"
+        },
+        {
+          "ref": "J10",
+          "pin": "6"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J12-Pin_1)",
+      "nodes": [
+        {
+          "ref": "C24",
+          "pin": "2"
+        },
+        {
+          "ref": "C30",
+          "pin": "2"
+        },
+        {
+          "ref": "J12",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J12-Pin_2)",
+      "nodes": [
+        {
+          "ref": "C25",
+          "pin": "2"
+        },
+        {
+          "ref": "C31",
+          "pin": "2"
+        },
+        {
+          "ref": "J12",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J12-Pin_3)",
+      "nodes": [
+        {
+          "ref": "C26",
+          "pin": "2"
+        },
+        {
+          "ref": "J12",
+          "pin": "3"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J12-Pin_4)",
+      "nodes": [
+        {
+          "ref": "C27",
+          "pin": "2"
+        },
+        {
+          "ref": "C32",
+          "pin": "2"
+        },
+        {
+          "ref": "J12",
+          "pin": "4"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J12-Pin_5)",
+      "nodes": [
+        {
+          "ref": "C28",
+          "pin": "2"
+        },
+        {
+          "ref": "C33",
+          "pin": "2"
+        },
+        {
+          "ref": "J12",
+          "pin": "5"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J12-Pin_6)",
+      "nodes": [
+        {
+          "ref": "C29",
+          "pin": "2"
+        },
+        {
+          "ref": "J12",
+          "pin": "6"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J14-Pin_1)",
+      "nodes": [
+        {
+          "ref": "J14",
+          "pin": "1"
+        },
+        {
+          "ref": "J40",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J14-Pin_2)",
+      "nodes": [
+        {
+          "ref": "J14",
+          "pin": "2"
+        },
+        {
+          "ref": "J40",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J14-Pin_3)",
+      "nodes": [
+        {
+          "ref": "J14",
+          "pin": "3"
+        },
+        {
+          "ref": "J40",
+          "pin": "3"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J14-Pin_4)",
+      "nodes": [
+        {
+          "ref": "J14",
+          "pin": "4"
+        },
+        {
+          "ref": "J40",
+          "pin": "4"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J14-Pin_5)",
+      "nodes": [
+        {
+          "ref": "J14",
+          "pin": "5"
+        },
+        {
+          "ref": "J40",
+          "pin": "5"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J14-Pin_6)",
+      "nodes": [
+        {
+          "ref": "J14",
+          "pin": "6"
+        },
+        {
+          "ref": "J40",
+          "pin": "6"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J14-Pin_7)",
+      "nodes": [
+        {
+          "ref": "J14",
+          "pin": "7"
+        },
+        {
+          "ref": "J40",
+          "pin": "7"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J14-Pin_8)",
+      "nodes": [
+        {
+          "ref": "J14",
+          "pin": "8"
+        },
+        {
+          "ref": "J40",
+          "pin": "8"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J14-Pin_9)",
+      "nodes": [
+        {
+          "ref": "J14",
+          "pin": "9"
+        },
+        {
+          "ref": "J40",
+          "pin": "9"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J15-Pin_1)",
+      "nodes": [
+        {
+          "ref": "C34",
+          "pin": "1"
+        },
+        {
+          "ref": "C35",
+          "pin": "1"
+        },
+        {
+          "ref": "C5a2",
+          "pin": "1"
+        },
+        {
+          "ref": "J15",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J15-Pin_2)",
+      "nodes": [
+        {
+          "ref": "C17",
+          "pin": "1"
+        },
+        {
+          "ref": "C4a2",
+          "pin": "1"
+        },
+        {
+          "ref": "J15",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J15-Pin_3)",
+      "nodes": [
+        {
+          "ref": "C15",
+          "pin": "1"
+        },
+        {
+          "ref": "C16",
+          "pin": "1"
+        },
+        {
+          "ref": "C2a2",
+          "pin": "1"
+        },
+        {
+          "ref": "J15",
+          "pin": "3"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J15-Pin_4)",
+      "nodes": [
+        {
+          "ref": "C14",
+          "pin": "1"
+        },
+        {
+          "ref": "J15",
+          "pin": "4"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J19-Pin_1)",
+      "nodes": [
+        {
+          "ref": "J19",
+          "pin": "1"
+        },
+        {
+          "ref": "J19",
+          "pin": "2"
+        },
+        {
+          "ref": "R3",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J20-Pin_1)",
+      "nodes": [
+        {
+          "ref": "J20",
+          "pin": "1"
+        },
+        {
+          "ref": "J20",
+          "pin": "2"
+        },
+        {
+          "ref": "R3",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J20-Pin_3)",
+      "nodes": [
+        {
+          "ref": "J20",
+          "pin": "3"
+        },
+        {
+          "ref": "J21",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J3-Pin_1)",
+      "nodes": [
+        {
+          "ref": "J3",
+          "pin": "1"
+        },
+        {
+          "ref": "J3",
+          "pin": "2"
+        },
+        {
+          "ref": "R1",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J35-Pin_1)",
+      "nodes": [
+        {
+          "ref": "J35",
+          "pin": "1"
+        },
+        {
+          "ref": "J35",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J36-Pin_1)",
+      "nodes": [
+        {
+          "ref": "C8",
+          "pin": "1"
+        },
+        {
+          "ref": "C9",
+          "pin": "1"
+        },
+        {
+          "ref": "J36",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J36-Pin_2)",
+      "nodes": [
+        {
+          "ref": "C10",
+          "pin": "1"
+        },
+        {
+          "ref": "C11",
+          "pin": "1"
+        },
+        {
+          "ref": "J36",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J36-Pin_3)",
+      "nodes": [
+        {
+          "ref": "C12",
+          "pin": "1"
+        },
+        {
+          "ref": "C13",
+          "pin": "1"
+        },
+        {
+          "ref": "J36",
+          "pin": "3"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J36-Pin_4)",
+      "nodes": [
+        {
+          "ref": "C36",
+          "pin": "1"
+        },
+        {
+          "ref": "C37",
+          "pin": "1"
+        },
+        {
+          "ref": "J36",
+          "pin": "4"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J36-Pin_5)",
+      "nodes": [
+        {
+          "ref": "C38",
+          "pin": "1"
+        },
+        {
+          "ref": "C39",
+          "pin": "1"
+        },
+        {
+          "ref": "J36",
+          "pin": "5"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J36-Pin_6)",
+      "nodes": [
+        {
+          "ref": "C40",
+          "pin": "1"
+        },
+        {
+          "ref": "C41",
+          "pin": "1"
+        },
+        {
+          "ref": "J36",
+          "pin": "6"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J38-Pin_2)",
+      "nodes": [
+        {
+          "ref": "C10",
+          "pin": "2"
+        },
+        {
+          "ref": "C11",
+          "pin": "2"
+        },
+        {
+          "ref": "C12",
+          "pin": "2"
+        },
+        {
+          "ref": "C13",
+          "pin": "2"
+        },
+        {
+          "ref": "C36",
+          "pin": "2"
+        },
+        {
+          "ref": "C37",
+          "pin": "2"
+        },
+        {
+          "ref": "C38",
+          "pin": "2"
+        },
+        {
+          "ref": "C39",
+          "pin": "2"
+        },
+        {
+          "ref": "C40",
+          "pin": "2"
+        },
+        {
+          "ref": "C41",
+          "pin": "2"
+        },
+        {
+          "ref": "C8",
+          "pin": "2"
+        },
+        {
+          "ref": "C9",
+          "pin": "2"
+        },
+        {
+          "ref": "J38",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J38-Pin_3)",
+      "nodes": [
+        {
+          "ref": "J38",
+          "pin": "3"
+        },
+        {
+          "ref": "J39",
+          "pin": "1"
+        },
+        {
+          "ref": "J39",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J4-Pin_2)",
+      "nodes": [
+        {
+          "ref": "J4",
+          "pin": "2"
+        },
+        {
+          "ref": "R1",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J5-Pin_1)",
+      "nodes": [
+        {
+          "ref": "C1",
+          "pin": "2"
+        },
+        {
+          "ref": "J5",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J5-Pin_2)",
+      "nodes": [
+        {
+          "ref": "C2",
+          "pin": "2"
+        },
+        {
+          "ref": "J5",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J5-Pin_3)",
+      "nodes": [
+        {
+          "ref": "C3",
+          "pin": "2"
+        },
+        {
+          "ref": "C7",
+          "pin": "2"
+        },
+        {
+          "ref": "J5",
+          "pin": "3"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J5-Pin_4)",
+      "nodes": [
+        {
+          "ref": "C4",
+          "pin": "2"
+        },
+        {
+          "ref": "J5",
+          "pin": "4"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J5-Pin_5)",
+      "nodes": [
+        {
+          "ref": "C5",
+          "pin": "2"
+        },
+        {
+          "ref": "J5",
+          "pin": "5"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J5-Pin_6)",
+      "nodes": [
+        {
+          "ref": "C6",
+          "pin": "2"
+        },
+        {
+          "ref": "J5",
+          "pin": "6"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J8-Pin_1)",
+      "nodes": [
+        {
+          "ref": "C35",
+          "pin": "2"
+        },
+        {
+          "ref": "J8",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J8-Pin_2)",
+      "nodes": [
+        {
+          "ref": "C34",
+          "pin": "2"
+        },
+        {
+          "ref": "C5a2",
+          "pin": "2"
+        },
+        {
+          "ref": "J8",
+          "pin": "2"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J8-Pin_3)",
+      "nodes": [
+        {
+          "ref": "C17",
+          "pin": "2"
+        },
+        {
+          "ref": "C4a2",
+          "pin": "2"
+        },
+        {
+          "ref": "J8",
+          "pin": "3"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J8-Pin_4)",
+      "nodes": [
+        {
+          "ref": "C16",
+          "pin": "2"
+        },
+        {
+          "ref": "J8",
+          "pin": "4"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J8-Pin_5)",
+      "nodes": [
+        {
+          "ref": "C15",
+          "pin": "2"
+        },
+        {
+          "ref": "C2a2",
+          "pin": "2"
+        },
+        {
+          "ref": "J8",
+          "pin": "5"
+        }
+      ]
+    },
+    {
+      "name": "Net-(J8-Pin_6)",
+      "nodes": [
+        {
+          "ref": "C14",
+          "pin": "2"
+        },
+        {
+          "ref": "J8",
+          "pin": "6"
+        }
+      ]
+    }
+  ]
+}

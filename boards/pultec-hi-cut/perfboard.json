@@ -1,0 +1,5 @@
+{
+  "circuit": "../../circuits/pultec/physical/hi-cut.ts",
+  "export": "pultecHiCut",
+  "vrt": "pultec-hi-cut.perfboard.vrt"
+}

@@ -12,6 +12,7 @@
  * repository's 500-line ceiling. Nothing here is compressor-specific.
  */
 import type { Component, Network } from "../../lib/model/types.ts"
+import { componentNets } from "../../lib/model/topology.ts"
 
 export function componentById(network: Network, id: string): Component {
   const found = network.components.find(c => c.id === id)
@@ -53,18 +54,11 @@ export function packageNet(network: Network, id: string, pin: string): string {
   return connection.net
 }
 
-/** Every net a component touches, across package and unit pins. */
+/** Every net a component touches, across package and unit pins. A thin
+ * re-export under this file's own naming convention - `lib/model/topology.ts`
+ * holds the single definition. */
 export function netsTouched(component: Component): readonly string[] {
-  const nets: string[] = []
-  for (const connection of Object.values(component.pins)) {
-    if (connection.kind === "net") nets.push(connection.net)
-  }
-  for (const unit of component.units) {
-    for (const connection of Object.values(unit.pins)) {
-      if (connection.kind === "net") nets.push(connection.net)
-    }
-  }
-  return nets
+  return componentNets(component)
 }
 
 /** A copy of `network` with one resistor's value replaced - a deliberately

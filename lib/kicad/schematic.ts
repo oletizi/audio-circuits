@@ -29,7 +29,7 @@ export interface SchematicStubInput {
   readonly newUuid: () => string
 }
 
-/** The file format KiCad 10.0 wrote circuits/pt2399-core.kicad_sch in. */
+/** The file format KiCad 10.0 wrote circuits/pt2399-core/pt2399-core.kicad_sch in. */
 const FORMAT_VERSION = "20260306"
 const GRID = 30.48
 const COLUMNS = 10

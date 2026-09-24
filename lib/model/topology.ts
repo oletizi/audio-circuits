@@ -73,8 +73,14 @@ export interface PartitionOptions {
 }
 
 /** Every net a component touches, across its package pins and every unit's pins.
- * A no-connect contributes nothing - it is not a net. */
-function componentNets(component: Component): readonly string[] {
+ * A no-connect contributes nothing - it is not a net.
+ *
+ * THE SINGLE DEFINITION. Board ports are derived from this (`circuits/pultec/
+ * parts.ts`), and boundary-net detection above depends on it, so a second copy
+ * that drifted would be a silent correctness bug rather than a style issue.
+ * Everything that needs this - production code and tests alike - imports it
+ * from here rather than restating it. */
+export function componentNets(component: Component): readonly string[] {
   const nets: string[] = []
   for (const connection of Object.values(component.pins)) {
     if (connection.kind === "net") nets.push(connection.net)

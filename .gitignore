@@ -20,6 +20,9 @@ build/
 .DS_Store
 Thumbs.db
 
+# Written into the repository root by browser tooling (Playwright MCP).
+.playwright-mcp/
+
 # Debug logs
 npm-debug.log*
 yarn-debug.log*

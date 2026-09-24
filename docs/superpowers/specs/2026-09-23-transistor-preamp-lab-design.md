@@ -273,7 +273,7 @@ new shapes.
 ### 4.3 Schematic stub writer (`lib/kicad/schematic.ts`, new)
 
 Input: the `Network`, `DESIGNATORS`, and a pin-number table keyed by kind (the
-`PIN_NUMBERS` convention from `circuits/pt2399-core.ts`, extended with
+`PIN_NUMBERS` convention from `circuits/pt2399-core/pt2399-core.ts`, extended with
 `bjt`, `potentiometer` and `switch`). There is no separate symbol table: the
 writer reads each part's own `part.symbol`, the same field every other
 consumer of a `Component` already uses. Output: KiCad 10 `.kicad_sch` text.
