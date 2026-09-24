@@ -2262,7 +2262,7 @@ Expected: PASS.
 
 ```bash
 bun test && bun run typecheck
-git add tools/perfboard/create.ts tools/cli/perfboard.ts tests/perfboard/create.test.ts
+git add tools/perfboard/create.ts tools/cli/perfboard.ts tools/cli/perfboard-binary-verbs.ts tests/perfboard/create.test.ts
 git commit -m "A create verb, so a declared board can come into existence"
 ```
 
