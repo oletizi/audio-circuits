@@ -29,14 +29,32 @@ const BOARDS: readonly (readonly [ModuleOwner, BoardModule, () => Network])[] = 
 ]
 
 test("each board projects back to its electrical partition", () => {
-  // The target is the PARTITION MODULE, not boardNetwork(owner). boardNetwork
-  // drops everything off-board, and the off-board parts are exactly what this
-  // design keeps in the network. Ports are {} on both sides: the terminal block
-  // and the PADS pads are the board's interface now.
+  // The target is the PARTITION MODULE. Ports come from the board because the
+  // property under test is component topology; validateNetwork independently
+  // refuses both a bogus port and a missing one.
   const modules = partitionReference().modules
   for (const [owner, , build] of BOARDS) {
-    const target: Network = { ports: {}, components: modules[owner] ?? [] }
-    expect(() => assertSameTopology(target, projectPhysical(build())), owner).not.toThrow()
+    const board = build()
+    const target: Network = { ports: board.ports, components: modules[owner] ?? [] }
+    expect(() => assertSameTopology(target, projectPhysical(board)), owner).not.toThrow()
+  }
+})
+
+test("a board's ports are exactly the crossing nets its own components touch", () => {
+  const modules = partitionReference().modules
+  for (const [owner, , build] of BOARDS) {
+    const board = build()
+    const electrical = modules[owner] ?? []
+    const touched = new Set(electrical.flatMap((component) =>
+      [component.pins, ...component.units.map((unit) => unit.pins)].flatMap((group) =>
+        Object.values(group).flatMap((c) => (c.kind === "net" ? [c.net] : [])))))
+    for (const netName of Object.keys(board.ports)) {
+      expect(touched.has(netName), `${owner}: port ${netName} touches no component`).toBe(true)
+    }
+    // Ground is physical-only on exactly the boards whose signal path does not
+    // return through it; those boards must NOT declare it as a port.
+    const declaresGround = Object.keys(board.ports).includes("0")
+    expect(declaresGround, `${owner}: ground port`).toBe(touched.has("0"))
   }
 })
 

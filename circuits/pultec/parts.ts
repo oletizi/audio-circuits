@@ -45,6 +45,17 @@ export const TOGGLE_SYMBOL = "Switch:SW_SPDT"
 export const POT_SYMBOL = "Device:R_Potentiometer"
 export const INDUCTOR_SYMBOL = "Device:L"
 
+/** Every net a component's package pins and unit pins name. A no-connect names none. */
+function componentNets(component: Component): readonly string[] {
+  const nets: string[] = []
+  for (const group of [component.pins, ...component.units.map((unit) => unit.pins)]) {
+    for (const connection of Object.values(group)) {
+      if (connection.kind === "net") nets.push(connection.net)
+    }
+  }
+  return nets
+}
+
 /** A pot's lugs, in the order a panel-mount part numbers them. */
 export const POT_PAD_ORDER: readonly string[] = ["ccw", "wiper", "cw"]
 
@@ -114,6 +125,22 @@ export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly str
       ? { ...component, part: { ...component.part, symbol: symbolFor(component) } }
       : { ...component, part: { ...component.part, footprint: footprintForKind(component) } })
 
+  // A board's ports are the crossing nets its own electrical components touch.
+  // The rest of `crossingNets` - the chassis ground on the three boards where
+  // ground is not in the signal topology - exist only because the terminal block
+  // puts a pin on them. They are physical-only, and must NOT be declared ports:
+  // `projectPhysical` removes the block, after which no pin sits on them at all,
+  // and `validateNetwork` refuses a port naming a net nothing is on.
+  //
+  // This is not a second description of the interface competing with the block.
+  // Both come from the same `crossingNets` array; the block realises it in
+  // copper, and these ports are what remains of it once the copper is projected
+  // away.
+  const touched = new Set(components.flatMap(componentNets))
+  const ports = Object.fromEntries(
+    crossingNets.filter((netName) => touched.has(netName)).map((netName) => [netName, netName]),
+  )
+
   const pins: Record<string, ReturnType<typeof net>> = {}
   crossingNets.forEach((netName, index) => { pins[String(index + 1)] = net(netName) })
 
@@ -127,10 +154,7 @@ export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly str
     provenance: { source: PHYSICAL_ONLY },
   })
 
-  // No ports. Once a landing is a physical part, the abstract port map is
-  // redundant - the terminal block and the PADS pads ARE the board's interface,
-  // and a second description of it is a second thing that can be wrong.
-  return { ports: {}, components }
+  return { ports, components }
 }
 
 /** Pad orders for every off-board component on a physicalized board. */
