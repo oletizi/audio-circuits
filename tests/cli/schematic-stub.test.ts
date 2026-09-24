@@ -30,6 +30,25 @@ test("writes the stub for a module that exports everything it needs", async () =
   expect(text).toContain("BENCH SETTINGS")
 })
 
+const PROJECT = "/tmp/schematic-stub-test/lab-board.kicad_pro"
+
+test("writes a KiCad project beside the stub, so symbols can be added as soon as it opens", async () => {
+  const h = harness(new Set())
+  expect(await runSchematicStub([MODULE, "transistorPreampLab", OUT], h.deps, h.log, h.error)).toBe(0)
+  const text = h.written.get(PROJECT)
+  if (text === undefined) throw new Error("no project written")
+  const parsed: unknown = JSON.parse(text)
+  expect(parsed).toEqual({ meta: { filename: "lab-board.kicad_pro", version: 3 } })
+})
+
+test("keeps a project that already exists, and says so", async () => {
+  const h = harness(new Set([PROJECT]))
+  expect(await runSchematicStub([MODULE, "transistorPreampLab", OUT], h.deps, h.log, h.error)).toBe(0)
+  expect(h.written.has(PROJECT)).toBe(false)
+  expect(h.written.has(OUT)).toBe(true)
+  expect(h.logs.join("\n")).toMatch(/kept the existing .*lab-board\.kicad_pro/)
+})
+
 test("refuses to overwrite an existing schematic", async () => {
   const h = harness(new Set([OUT]))
   const status = await runSchematicStub([MODULE, "transistorPreampLab", OUT], h.deps, h.log, h.error)

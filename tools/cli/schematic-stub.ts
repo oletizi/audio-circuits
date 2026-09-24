@@ -6,7 +6,10 @@
  * The module must export the named circuit function, DESIGNATORS, PIN_NUMBERS
  * and schematicNotes(). The stub is a starting point: it refuses to overwrite
  * an existing schematic, because once written the schematic belongs to the
- * operator, and the board's netlist-sync keeps it electrically honest.
+ * operator, and the board's netlist-sync keeps it electrically honest. It
+ * also writes a minimal KiCad project (<out>.kicad_pro) beside it unless one
+ * exists, because KiCad only lets a schematic gain library symbols when it is
+ * opened as part of a project.
  */
 import { randomUUID } from "node:crypto"
 import fs from "node:fs"
@@ -74,12 +77,24 @@ export async function runSchematicStub(
     }
     const notes: unknown = notesOf()
     if (!isStringArray(notes)) throw new Error(`schematicNotes() in ${modulePath} did not return strings`)
+    const projectName = path.basename(outPath, ".kicad_sch")
     deps.write(outPath, writeSchematicStub({
-      network, designators, pinNumbers, notes,
-      projectName: path.basename(outPath, ".kicad_sch"),
-      newUuid: deps.newUuid,
+      network, designators, pinNumbers, notes, projectName, newUuid: deps.newUuid,
     }))
     log(`wrote ${outPath}. Arrange it in KiCad; from here on it is yours.`)
+
+    // KiCad only lets a schematic gain library symbols (ground, power) when it
+    // is opened as part of a project, so the stub gets one. A minimal project
+    // is enough: KiCad fills in every setting it does not name. An existing
+    // project is the operator's and is never overwritten.
+    const projectPath = path.join(path.dirname(outPath), `${projectName}.kicad_pro`)
+    if (deps.exists(projectPath)) {
+      log(`kept the existing ${projectPath}.`)
+    } else {
+      const project = { meta: { filename: `${projectName}.kicad_pro`, version: 3 } }
+      deps.write(projectPath, `${JSON.stringify(project, null, 2)}\n`)
+      log(`wrote ${projectPath}. Open the project, not just the schematic, to add symbols.`)
+    }
     return 0
   } catch (caught) {
     error(caught instanceof Error ? caught.message : String(caught))
