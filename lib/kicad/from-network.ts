@@ -115,6 +115,23 @@ function padOrderFor(component: Component, padOrders: PadOrders): readonly strin
       )
     }
   }
+  // UNIQUENESS IS CHECKED SEPARATELY, and counting is not a substitute for it.
+  // A duplicate that displaces another pin keeps the length equal and every name
+  // known, so it passes both the membership loop above and the length check
+  // below. The pin it displaced then resolves through `indexOf` to -1, and its
+  // pad number comes out as 0 - a reference no pad has, emitted with no
+  // complaint. `assertPinCount` does not catch it either: that only refuses a
+  // number GREATER than the declared count, and the count is derived from this
+  // same order, so the two cannot disagree however wrong the order is.
+  const duplicated = order.filter((pin, index) => order.indexOf(pin) !== index)
+  if (duplicated.length > 0) {
+    const unique = [...new Set(duplicated)].sort()
+    throw new Error(
+      `the pad order for "${component.id}" lists ${unique.join(", ")} more than once. Each pin ` +
+        "gets exactly one pad, and a repeat silently steals the position of whichever pin it " +
+        "displaced, whose pad number then resolves to 0 - a pad that does not exist.",
+    )
+  }
   if (order.length !== pins.size) {
     const missing = [...pins].filter((pin) => !order.includes(pin)).sort()
     throw new Error(

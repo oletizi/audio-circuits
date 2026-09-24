@@ -207,6 +207,36 @@ test("a pin count beyond the import string's declared count refuses", () => {
     )).toThrow(/"shaft"/)
   })
 
+  test("a pad order that repeats a pin refuses, naming the repeat", () => {
+    expect(() => toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "ccw", "wiper"] },
+    )).toThrow(/lists ccw more than once/)
+  })
+
+  test("a repeated pin is refused even when the order is also too long", () => {
+    expect(() => toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "ccw", "wiper", "cw"] },
+    )).toThrow(/lists ccw more than once/)
+  })
+
+  test("no pad number is ever zero, for any accepted pad order", () => {
+    // The defect this guards: a displaced pin resolves through indexOf to -1 and
+    // emits pad 0. Asserting on the emitted numbers catches it whatever the cause,
+    // where asserting on the refusal only catches the causes we thought of.
+    const lowered = toImportedNetlist(
+      NETWORK, DESIGNATORS, PIN_NUMBERS,
+      new Set(["level_pot"]),
+      { level_pot: ["ccw", "wiper", "cw"] },
+    )
+    const members = Object.values(lowered.nets).flat()
+    expect(members.length).toBeGreaterThan(0)
+    for (const member of members) expect(member).not.toMatch(/\.0$/)
+  })
+
   test("on-board components are untouched by the off-board machinery", () => {
     const lowered = toImportedNetlist(
       NETWORK, DESIGNATORS, PIN_NUMBERS,
