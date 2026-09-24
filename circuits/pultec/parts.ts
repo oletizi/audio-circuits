@@ -36,11 +36,28 @@ const FILM_BY_FARADS: readonly (readonly [number, string])[] = [
   [470e-12, "Capacitor_THT:C_Rect_L7.2mm_W4.5mm_P5.00mm"],
 ]
 
+/**
+ * The largest capacitance `FILM_BY_FARADS` has a recorded footprint for
+ * (330nF, TDK/EPCOS B32529). B32529 catalogues up to 2.2uF, but nobody has
+ * read that part's body width off a datasheet yet - see
+ * `docs/pultec/capacitor-selection.md` section 7, which stops at 330nF - so a
+ * larger value must refuse rather than silently borrow the 330nF footprint.
+ */
+const FILM_MAX_FARADS = 330e-9
+
 /** The film footprint for a capacitor's value, from `FILM_BY_FARADS`. */
 function filmFootprint(component: Component): string {
   const farads: unknown = Reflect.get(component.parameters, "farads")
   if (typeof farads !== "number") {
     throw new Error(`capacitor "${component.id}" has no numeric farads parameter`)
+  }
+  if (farads > FILM_MAX_FARADS) {
+    throw new Error(
+      `no film footprint is recorded for ${farads}F ("${component.id}"): it is above ` +
+        `${FILM_MAX_FARADS}F, the largest value FILM_BY_FARADS has a footprint for. Add its ` +
+        "value to FILM_BY_FARADS in circuits/pultec/parts.ts, with the footprint of the part " +
+        "you are actually fitting - read its body width off a datasheet first.",
+    )
   }
   for (const [threshold, footprint] of FILM_BY_FARADS) {
     if (farads >= threshold) return footprint
