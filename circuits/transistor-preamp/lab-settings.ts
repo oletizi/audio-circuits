@@ -14,12 +14,12 @@ import { DESIGNATORS, LEGS } from "./lab-board.ts"
 import type { Leg, LegName } from "./lab-board.ts"
 
 /** A leg setting meaning "jumper removed: this leg is out of circuit". */
-export const OUT = "out"
+export const REMOVED = "removed"
 
 export interface LabSetting {
   readonly name: string
   readonly summary: string
-  /** Each leg's total resistance as a value string, or OUT. */
+  /** Each leg's total resistance as a value string, or REMOVED. */
   readonly legs: Readonly<Record<LegName, string>>
 }
 
@@ -35,22 +35,22 @@ export const SETTINGS: readonly LabSetting[] = [
   {
     name: "nominal",
     summary: "divider bias, the brief's Build 0",
-    legs: { upper: "80k", feedback: OUT, lowerA: "10k", lowerB: OUT, collector: "1.8k", emitterBypass: "0" },
+    legs: { upper: "80k", feedback: REMOVED, lowerA: "10k", lowerB: REMOVED, collector: "1.8k", emitterBypass: "0" },
   },
   {
     name: "dividerWithFeedback",
     summary: "divider plus collector-to-base feedback, Build 2A (DC-coupled)",
-    legs: { upper: "80k", feedback: "1M", lowerA: "10k", lowerB: OUT, collector: "1.8k", emitterBypass: "0" },
+    legs: { upper: "80k", feedback: "1M", lowerA: "10k", lowerB: REMOVED, collector: "1.8k", emitterBypass: "0" },
   },
   {
     name: "collectorFeedback",
     summary: "collector-feedback bias with a base-to-ground leg, Build 2B",
-    legs: { upper: OUT, feedback: "470k", lowerA: OUT, lowerB: "150k", collector: "1.8k", emitterBypass: "0" },
+    legs: { upper: REMOVED, feedback: "470k", lowerA: REMOVED, lowerB: "150k", collector: "1.8k", emitterBypass: "0" },
   },
   {
     name: "collectorFeedbackOnly",
     summary: "collector-feedback bias alone, Build 2B",
-    legs: { upper: OUT, feedback: "1.3M", lowerA: OUT, lowerB: OUT, collector: "1.8k", emitterBypass: "0" },
+    legs: { upper: REMOVED, feedback: "1.3M", lowerA: REMOVED, lowerB: REMOVED, collector: "1.8k", emitterBypass: "0" },
   },
 ]
 
@@ -75,7 +75,7 @@ export function controlStateFor(setting: LabSetting): ControlState {
   for (const name of LEG_NAMES) {
     const leg = LEGS[name]
     const value = setting.legs[name]
-    if (value === OUT) {
+    if (value === REMOVED) {
       if (leg.jumperId === undefined) {
         throw new Error(
           `setting "${setting.name}" takes out leg "${name}", which has no jumper and is always in circuit`,
@@ -97,11 +97,40 @@ function designatorOf(id: string): string {
   return designator
 }
 
+/**
+ * A resistance in ohms, spelled the way this table wants it: "0", "800R" below
+ * 1k, "33k"/"5.3k" at or above it. This is deliberately a small local
+ * formatter rather than a reuse of lib/kicad/value-notation.ts's resistor
+ * formatter, which refuses below 1000 ohms and at 0 - exactly the range a
+ * pot-only trim value (leg total minus its floor) needs, since a leg's floor
+ * can already supply most of a small total.
+ */
+function formatOhms(ohms: number): string {
+  if (!Number.isFinite(ohms) || ohms < 0 || ohms > 1_500_000) {
+    throw new Error(`${ohms} ohms is outside the range this table's formatter covers (0 to 1.5M)`)
+  }
+  const spelled = (n: number): string => {
+    const text = String(Number(n.toFixed(4)))
+    return text.startsWith("0.") ? text.slice(1) : text
+  }
+  if (ohms === 0) return "0"
+  return ohms < 1000 ? `${spelled(ohms)}R` : `${spelled(ohms / 1000)}k`
+}
+
+/** The pot-only resistance a leg's trim must be set to, for a total of `ohms`:
+ * the leg total minus its fixed floor (0 where the leg has none). */
+function trimOnlyOhms(leg: Leg, ohms: number): number {
+  const floorOhms = leg.floor === undefined ? 0 : parseValue(leg.floor.value)
+  return ohms - floorOhms
+}
+
 /** The bench-settings table carried as text on the generated schematic stub. */
 export function schematicNotes(): readonly string[] {
   const lines = [
     "BENCH SETTINGS (circuits/transistor-preamp/lab-settings.ts)",
-    "Jumpers: F = fitted, - = removed. Trim values are each leg's total resistance.",
+    "Jumpers: F = fitted, - = removed. Trim lines show each leg's total " +
+      "resistance and, in parens, what to dial the pot itself to (the leg " +
+      "total minus its fixed floor resistor, where it has one).",
   ]
   for (const setting of SETTINGS) {
     const jumpers: string[] = []
@@ -110,9 +139,12 @@ export function schematicNotes(): readonly string[] {
       const leg = LEGS[name]
       const value = setting.legs[name]
       if (leg.jumperId !== undefined) {
-        jumpers.push(`${designatorOf(leg.jumperId)} ${value === OUT ? "-" : "F"}`)
+        jumpers.push(`${designatorOf(leg.jumperId)} ${value === REMOVED ? "-" : "F"}`)
       }
-      if (value !== OUT) trims.push(`${designatorOf(leg.trimId)} ${value}`)
+      if (value !== REMOVED) {
+        const trimOhms = formatOhms(trimOnlyOhms(leg, parseValue(value)))
+        trims.push(`${designatorOf(leg.trimId)} leg ${value} (trim ${trimOhms})`)
+      }
     }
     jumpers.sort()
     lines.push(`${setting.name}: ${setting.summary}`)

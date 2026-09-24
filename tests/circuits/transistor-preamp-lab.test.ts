@@ -6,7 +6,7 @@ import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import { validateNetwork } from "../../lib/model/validate.ts"
 import type { Component } from "../../lib/model/types.ts"
 import {
-  SETTINGS, OUT, controlStateFor, legPosition, schematicNotes,
+  SETTINGS, REMOVED, controlStateFor, legPosition, schematicNotes,
 } from "../../circuits/transistor-preamp/index.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
 import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
@@ -92,7 +92,7 @@ test("every setting resolves, and taking out a leg with no jumper throws", () =>
   }
   const [first] = SETTINGS
   if (first === undefined) throw new Error("no settings declared")
-  expect(() => controlStateFor({ ...first, legs: { ...first.legs, collector: OUT } }))
+  expect(() => controlStateFor({ ...first, legs: { ...first.legs, collector: REMOVED } }))
     .toThrow(/collector/)
 })
 
@@ -100,6 +100,15 @@ test("the schematic notes list every setting with its jumpers", () => {
   const text = schematicNotes().join("\n")
   for (const setting of SETTINGS) expect(text).toContain(setting.name)
   for (const jumper of ["JP1", "JP2", "JP3", "JP4", "JP5"]) expect(text).toContain(jumper)
+})
+
+test("the schematic notes show a trim's leg total AND the pot-only value, not the leg total under the pot's designator", () => {
+  // RV1 (upper_bias_trim) is a 50k trim in series with a 47k fixed floor. The
+  // nominal setting asks for 80k of leg resistance, so RV1 itself must be set
+  // to 33k (80k minus the 47k floor) - printing "RV1 80k" would send someone
+  // to the bench to dial in the wrong number on the pot itself.
+  const text = schematicNotes().join("\n")
+  expect(text).toContain("RV1 leg 80k (trim 33k)")
 })
 
 /**

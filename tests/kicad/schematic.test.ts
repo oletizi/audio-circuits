@@ -83,6 +83,29 @@ test("a deliberately unconnected pin gets a no-connect flag, not a label", () =>
   expect(children(root, "label").length).toBe(5)
 })
 
+test("parts are placed in the network's declaration order, not sorted by designator", () => {
+  // "header" (designator J1) is declared AFTER "load" (designator R2) here -
+  // alphabetically R2 sorts after J1, so a designator sort would still place
+  // load first by coincidence. Add a third part whose designator sorts before
+  // both, but which is declared last, to pin the order down unambiguously:
+  // grouping a leg's jumper/floor/trim together (spec §4.3) only survives if
+  // placement follows declaration order, not a designator sort.
+  const network = circuit()
+    .connector("header", { "1": "A", "2": "B" }, HEADER)
+    .resistor("load", "1k", { a: "A", b: "B" }, RESISTOR)
+    .resistor("first_by_designator", "1k", { a: "B", b: "A" }, RESISTOR)
+    .done()
+  const text = writeSchematicStub(input(
+    network, { header: "J1", load: "R2", first_by_designator: "R1" },
+  ))
+  const at = (designator: string): number => text.indexOf(`(property "Reference" "${designator}"`)
+  expect(at("J1")).toBeGreaterThan(-1)
+  expect(at("R2")).toBeGreaterThan(-1)
+  expect(at("R1")).toBeGreaterThan(-1)
+  expect(at("J1")).toBeLessThan(at("R2"))
+  expect(at("R2")).toBeLessThan(at("R1"))
+})
+
 test("a part with no symbol, or a symbol pin the circuit leaves unmentioned, refuses", () => {
   // validateNetwork refuses a single-member net that is not a declared port, so
   // each fixture below adds a "filler" resistor purely to give every net a

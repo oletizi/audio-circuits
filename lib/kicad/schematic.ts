@@ -94,6 +94,11 @@ function assertPinsAgree(
 
 export function writeSchematicStub(input: SchematicStubInput): string {
   const root = input.newUuid()
+  // Placed in the circuit's declaration order (input.network.components is
+  // already that order - Builder.add() only ever pushes), NOT sorted by
+  // designator: a designator sort groups by part type instead of by leg,
+  // scattering a leg's jumper/floor/trim across the grid. Declaration order
+  // keeps each leg's parts together (spec §4.3).
   const placed = input.network.components
     .map((component) => ({
       component,
@@ -102,7 +107,6 @@ export function writeSchematicStub(input: SchematicStubInput): string {
         `component "${component.id}" has no designator in DESIGNATORS; a schematic symbol needs one`,
       ),
     }))
-    .sort((a, b) => a.designator.localeCompare(b.designator, "en", { numeric: true }))
 
   const libIds = new Set<string>()
   const body: string[] = []
