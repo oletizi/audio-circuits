@@ -155,7 +155,11 @@ tidied away. The two that matter most to anyone building this:
 
 ## References
 
-- [multi-channel-preamp](https://github.com/oletizi/multi-channel-preamp) — the original KiCAD designs
+- [multi-channel-preamp](https://github.com/oletizi/multi-channel-preamp) — where the
+  Pultec schematic and documentation came from originally. **This is history, not a
+  dependency:** both are vendored under `reference/pultec/`, nothing here reads
+  anything from that repository, and it has its own purpose and lifecycle. The only
+  external code this project depends on is the pinned VeroRoute fork.
 - `docs/pultec/` — the modularization plan and its review. **Superseded as software
   instruction** — its `lib/passives/`, `lib/export/` and tscircuit references describe a
   layout this repository no longer has; each file carries a banner saying so. Its
