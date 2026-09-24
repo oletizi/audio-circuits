@@ -5,6 +5,16 @@
  * selector are panel-mount and appear as PADS landings. Ground is a
  * chassis/shield landing here - the low cut section returns through its pot, so
  * net "0" has no other member on this board, and that singleton is declared.
+ *
+ * SW_LO_CUT'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
+ * low-boost BOARD (SW_LO_BOOST there). `reference/pultec/controls.ts` models
+ * both under `LO_FREQUENCY_GANG`, and `reference/pultec/unresolved.md` calls
+ * this pairing "the thing most likely to be broken by a well-meaning
+ * refactor". Physicalization does not carry the gang across board boundaries
+ * - each board sees only its own pole, valued `SW_Rotary` like any other - so
+ * this landing is NOT an independent switch to buy: it is one physical
+ * 6-position rotary whose other pole lives on the low-boost board, and the
+ * two poles must always be wired to move together.
  */
 import { designatorsFor, padOrdersFor, physicalizedBoard, PASSIVE_PIN_NUMBERS } from "./parts.ts"
 import { OFF_BOARD } from "../../reference/pultec/off-board.ts"
