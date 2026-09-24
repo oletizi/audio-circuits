@@ -1287,14 +1287,35 @@ const BOARDS: readonly (readonly [ModuleOwner, BoardModule, () => Network])[] = 
 ]
 
 test("each board projects back to its electrical partition", () => {
-  // The target is the PARTITION MODULE, not boardNetwork(owner). boardNetwork
-  // drops everything off-board, and the off-board parts are exactly what this
-  // design keeps in the network. Ports are {} on both sides: the terminal block
-  // and the PADS pads are the board's interface now.
+  // The target is the PARTITION MODULE. `boardNetwork` is gone: it dropped
+  // everything off-board, and the off-board parts are exactly what this design
+  // keeps in the network so their pads can be the landings.
+  //
+  // Ports come from the board because the property under test is component
+  // topology, and validateNetwork independently refuses both error directions -
+  // a port naming a net nothing is on, and an undeclared singleton.
   const modules = partitionReference().modules
   for (const [owner, , build] of BOARDS) {
-    const target: Network = { ports: {}, components: modules[owner] ?? [] }
-    expect(() => assertSameTopology(target, projectPhysical(build())), owner).not.toThrow()
+    const board = build()
+    const target: Network = { ports: board.ports, components: modules[owner] ?? [] }
+    expect(() => assertSameTopology(target, projectPhysical(board)), owner).not.toThrow()
+  }
+})
+
+test("a board's ports are exactly the crossing nets its own components touch", () => {
+  const modules = partitionReference().modules
+  for (const [owner, , build] of BOARDS) {
+    const board = build()
+    const electrical = modules[owner] ?? []
+    const touched = new Set(electrical.flatMap((component) =>
+      [component.pins, ...component.units.map((unit) => unit.pins)].flatMap((group) =>
+        Object.values(group).flatMap((c) => (c.kind === "net" ? [c.net] : [])))))
+    for (const netName of Object.keys(board.ports)) {
+      expect(touched.has(netName), `${owner}: port ${netName} touches no component`).toBe(true)
+    }
+    // Ground is physical-only on exactly the boards whose signal path does not
+    // return through it; those boards must NOT declare it as a port.
+    expect(Object.keys(board.ports).includes("0"), `${owner}: ground port`).toBe(touched.has("0"))
   }
 })
 
@@ -1531,6 +1552,22 @@ export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly str
       ? { ...component, part: { ...component.part, symbol: symbolFor(component) } }
       : { ...component, part: { ...component.part, footprint: footprintForKind(component) } })
 
+  // A board's ports are the crossing nets its own electrical components touch.
+  // The rest of `crossingNets` - the chassis ground on the three boards where
+  // ground is not in the signal topology - exist only because the terminal block
+  // puts a pin on them. They are physical-only, and must NOT be declared ports:
+  // `projectPhysical` removes the block, after which no pin sits on them at all,
+  // and `validateNetwork` refuses a port naming a net nothing is on. Computed
+  // BEFORE the block is appended, for exactly that reason.
+  //
+  // This is not a second description of the interface competing with the block.
+  // Both come from the same `crossingNets` array; the block realises it in
+  // copper, and these ports are what remains once the copper is projected away.
+  const touched = new Set(components.flatMap(componentNets))
+  const ports = Object.fromEntries(
+    crossingNets.filter((netName) => touched.has(netName)).map((netName) => [netName, netName]),
+  )
+
   const pins: Record<string, ReturnType<typeof net>> = {}
   crossingNets.forEach((netName, index) => { pins[String(index + 1)] = net(netName) })
 
@@ -1544,10 +1581,7 @@ export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly str
     provenance: { source: PHYSICAL_ONLY },
   })
 
-  // No ports. Once a landing is a physical part, the abstract port map is
-  // redundant - the terminal block and the PADS pads ARE the board's interface,
-  // and a second description of it is a second thing that can be wrong.
-  return { ports: {}, components }
+  return { ports, components }
 }
 
 /** Pad orders for every off-board component on a physicalized board. */
