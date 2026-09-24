@@ -55,8 +55,13 @@ audio-circuits/
 - **[KiCad](https://www.kicad.org/)**, for `kicad-cli`. Required: the perfboard
   workflow re-exports each board's netlist from its KiCad schematic on every
   run (see `make/board.mk`'s `netlist-agrees`), not just once, so `kicad-cli`
-  has to be present to run `make check` against a declared board. The default
-  assumes a standard macOS install
+  has to be present to run `make check` against a declared board. It is also
+  required for `bun test`: exactly one test, "KiCad reads the generated stub
+  as the same circuit" in `tests/circuits/transistor-preamp-lab.test.ts`,
+  deliberately invokes `kicad-cli` and **fails** (never skips) when it cannot
+  find it, because it is the only proof that KiCad reads a generated
+  schematic stub the way the circuit means it. Every other test injects
+  `kicad-cli` out. The default assumes a standard macOS install
   (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`); override
   `KICAD_CLI` if yours lives elsewhere.
 - **Homebrew's `qt@5`** (`brew install qt@5`), needed to build the VeroRoute
@@ -74,7 +79,8 @@ you want to point at your own builds instead, `VEROROUTE`, `QMAKE` and
 
 ```bash
 bun install
-bun test           # the full suite, including the SPICE simulations
+bun test           # the full suite, including the SPICE simulations and one
+                   # test that invokes kicad-cli directly (see Prerequisites)
 bun run typecheck
 ```
 

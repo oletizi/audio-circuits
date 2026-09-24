@@ -3,8 +3,12 @@
  * dispatched from `runCli` in tools/cli/perfboard.ts.
  *
  * `netlist-sync` never spawns kicad-cli here - `netlistSyncDeps` always
- * injects `runExport`/`kicadCliExists`, matching this repository's own rule
- * that no test invokes kicad-cli or builds anything.
+ * injects `runExport`/`kicadCliExists`. Exactly one test in this repository
+ * invokes kicad-cli directly - "KiCad reads the generated stub as the same
+ * circuit" in tests/circuits/transistor-preamp-lab.test.ts, kept because it
+ * is the only proof that KiCad reads the generated stub the way the circuit
+ * means it (spec §5 item 6) - and every other test, including these,
+ * injects it out instead.
  */
 import { test, expect } from "bun:test"
 import fs from "node:fs"

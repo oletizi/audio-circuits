@@ -144,7 +144,12 @@ for (const setting of SETTINGS) {
   })
 }
 
-/** The same default make/board.mk uses; KICAD_CLI overrides it. */
+/**
+ * Duplicates the default `KICAD_CLI ?= ...` line in make/board.mk (the value
+ * that recipe's `netlist-agrees` target falls back to) because a shared
+ * constant across make and TypeScript is not possible; keep the two in sync
+ * by hand if either changes. The `KICAD_CLI` env var overrides both.
+ */
 const KICAD_CLI = process.env["KICAD_CLI"] ?? "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 
 /** Nets as a partition of "designator.pin" members, ignoring net names. */
