@@ -91,9 +91,10 @@ export const FOOTPRINT_IMPORT_STRINGS: ReadonlyMap<string, string> = new Map<str
  * equivalence - a part that fits three strips because its name says 3.5mm, on a
  * board where it does not.
  *
- * So each entry is a part somebody has actually held. Empty until then: an
- * empty whitelist refuses loudly, where a general rule would quietly accept a
- * guess.
+ * So each entry is a part somebody has actually held. An unlisted footprint
+ * still refuses loudly, where a general rule would quietly accept a guess -
+ * the whitelist started empty for exactly that reason, and grows only as
+ * parts are verified this way.
  */
 export const FILM_CAPACITOR_IMPORT_STRINGS: ReadonlyMap<string, string> = new Map<string, string>([
   // TDK/EPCOS B32529, 63V, 1nF-220nF: body 2.5mm wide, one strip row.
