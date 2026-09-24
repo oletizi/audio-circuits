@@ -1,7 +1,7 @@
 ---
 title: Transistor preamp lab board - model, KiCad schematic stub, stripboard
 date: 2026-09-23
-status: Draft for review (revision 2)
+status: Implemented (revision 3)
 brief: docs/transistor-preamp/microphone-preamp-feedback-lab.md
 ---
 
@@ -11,6 +11,18 @@ brief: docs/transistor-preamp/microphone-preamp-feedback-lab.md
 > a settings table on the stub (§4.3); an explicit ownership boundary (§4.4);
 > "about 1.5M" wording; and a Build 2A setting. Declined, with reasons in
 > §3.3: a 100 Ω floor in the emitter bypass branch.
+
+> **Revision 3**, after the final whole-branch review of the implementation.
+> Corrections to bring this spec in line with what was built, not new design
+> decisions: the settings helper is named `legPosition`, not `legSetting`,
+> and has no inverse (§3.4, §5 item 3); the jumper-removed sentinel is named
+> `REMOVED`, not `OUT` (§3.2, §3.4); the footprint family match is the exact
+> name `TO-92_Inline`, not a wildcard (§4.1); the schematic writer reads each
+> part's `part.symbol` rather than a separate symbol table, and places
+> symbols in the circuit's declaration order rather than `DESIGNATORS` order,
+> which keeps each leg's parts together (§4.3); `resolveNetwork`'s single-pin
+> exemption for electrically inert connectors is recorded (§3.2); and §6
+> step 5 states what `make check` reports before the board is placed.
 
 # Transistor preamp lab board
 
@@ -126,7 +138,10 @@ Other parts:
   `COLLECTOR`, `GND`, `IN_EXT` and `OUT`, `electricallyInert`, with the
   `Connector:TestPoint` symbol and a `PinHeader_1x01` footprint (`SIP1`). The
   brief asks for `VB`, `VE` and `VC` against one ground after every change, and
-  these give each of those a probe or clip point.
+  these give each of those a probe or clip point. `resolveNetwork`'s own
+  input contract otherwise requires at least two pins per component; a single
+  pin is exempted, but only for an `electricallyInert` connector, which is
+  what every test point here is.
 
 **Capacitor values are placeholders.** The brief gives no coupling or bypass
 values. The values above are sized so that each corner sits well below 100 Hz
@@ -166,8 +181,10 @@ setting away.
 ### 3.4 Named settings
 
 Trim-pot settings are written in **ohms of total leg resistance** and converted
-to wiper positions by a helper (`legSetting`). The helper **throws** when the
-requested ohms fall outside the leg's range. It never clamps.
+to wiper positions by a helper (`legPosition`). The helper **throws** when the
+requested ohms fall outside the leg's range. It never clamps. There is no
+inverse function; nothing in this design needs to go from a wiper position
+back to ohms.
 
 | Setting | Jumpers fitted | Leg values |
 |---|---|---|
@@ -225,13 +242,17 @@ name, in the same way as connectors.
 
 ### 4.1 Footprint families (`lib/kicad/import-string.ts`)
 
-- `TO-92_Inline*` → `TO92`, a 3-pin consistency check.
-- `Potentiometer_Bourns_3006P_*` → `TRIM_3006P`, a 3-pin consistency check.
+- `TO-92_Inline` (exactly) → `TO92`, a 3-pin consistency check.
+- `Potentiometer_Bourns_3006P_Horizontal` (exactly) → `TRIM_3006P`, a 3-pin
+  consistency check.
 
-Both type names are taken from the pinned fork's `Src/CompTypes.h`, and a code
-comment cites that file as the evidence. Every other TO-92 and potentiometer
-variant keeps refusing, with the existing teaching message extended to list
-the two new shapes.
+Each name is matched EXACTLY, not as a prefix: a neighbouring variant (a
+wide-pitch TO-92, a vertical trimmer) has different geometry, and mapping it
+onto the same fixed shape would place the part on the wrong holes. Both type
+names are taken from the pinned fork's `Src/CompTypes.h`, and a code comment
+cites that file as the evidence. Every other TO-92 and potentiometer variant
+keeps refusing, with the existing teaching message extended to list the two
+new shapes.
 
 ### 4.2 Value notation (`lib/kicad/value-notation.ts`)
 
@@ -243,10 +264,11 @@ the two new shapes.
 
 ### 4.3 Schematic stub writer (`lib/kicad/schematic.ts`, new)
 
-Input: the `Network`, `DESIGNATORS`, a pin-number table keyed by kind (the
+Input: the `Network`, `DESIGNATORS`, and a pin-number table keyed by kind (the
 `PIN_NUMBERS` convention from `circuits/pt2399-core.ts`, extended with
-`bjt`, `potentiometer` and `switch`), and a symbol table mapping each component
-id to a `lib_id`. Output: KiCad 10 `.kicad_sch` text.
+`bjt`, `potentiometer` and `switch`). There is no separate symbol table: the
+writer reads each part's own `part.symbol`, the same field every other
+consumer of a `Component` already uses. Output: KiCad 10 `.kicad_sch` text.
 
 - **Vendored symbols.** The definitions for `Device:R`, `Device:C_Polarized`,
   `Device:R_Potentiometer_Trim`, `Transistor_BJT:2N3904`,
@@ -258,10 +280,13 @@ id to a `lib_id`. Output: KiCad 10 `.kicad_sch` text.
   and a schematic's embedded `lib_symbols` must be self-contained, so the
   vendored copy is **flattened**, and the note records that. Generation never
   reads the installed KiCad.
-- **Placement.** Symbols go on a plain grid, one cell per component, in
-  `DESIGNATORS` order. Each symbol carries `Reference`, `Value` and `Footprint`
-  properties. Each pin gets a short wire to a local net label named after its
-  net. Connectivity is carried entirely by labels.
+- **Placement.** Symbols go on a plain grid, one cell per component, in the
+  circuit's declaration order, which keeps each leg's parts together (a
+  designator sort would instead group by part type - all resistors, then all
+  trims - scattering a leg's jumper, floor and trim across the grid). Each
+  symbol carries `Reference`, `Value` and `Footprint` properties. Each pin
+  gets a short wire to a local net label named after its net. Connectivity is
+  carried entirely by labels.
 - **Settings table.** The stub carries a text block listing each named
   setting, which jumpers it fits and its starting trim values. The block is
   generated from the same `ControlState`s the simulations use, so the
@@ -304,8 +329,9 @@ Tests are written first, following TDD.
    unsupported shapes still refuse.
 2. **Value notation.** Trim values format like resistors. A jumper takes its
    part name, and a switch with neither an mpn nor a symbol refuses.
-3. **Settings helper.** Converting ohms to a position and back round-trips, and
-   out-of-range ohms throw.
+3. **Settings helper.** Converting ohms to a position gives the expected
+   fraction at the ends and midpoint of a leg's range, and out-of-range ohms
+   throw.
 4. **Sanity simulation, per setting.** The board is a bench instrument, and
    exact numbers are the bench's job, so these checks confirm only that the
    circuit is wired so that each setting works. The bounds are deliberately
@@ -336,3 +362,7 @@ Each step is committed and pushed when it is coherent.
    initial `.vrt` (§4.4, §4.5).
 5. Hand-off: the operator arranges the schematic in KiCad and places the
    stripboard in VeroRoute. `make check` verifies both against the circuit.
+   Until the operator has placed it, `make check` on this board reports
+   incomplete nets and cuts against the unplaced starting layout from
+   `perfboard import` (§4.5) - that is expected, not a failure - and it stays
+   the gate from then on as the layout is placed and refined.
