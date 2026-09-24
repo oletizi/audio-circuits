@@ -400,9 +400,13 @@ test("a film capacitor not on the whitelist refuses and says the list is how to 
 })
 
 test("a whitelisted film capacitor returns its recorded import string", () => {
-  const whitelist = new Map([["Capacitor_THT:C_Rect_L4.6mm_W2.5mm_P2.50mm", "CAP_FILM1"]])
-  expect(importStringFor("Capacitor_THT:C_Rect_L4.6mm_W2.5mm_P2.50mm", undefined, whitelist))
-    .toBe("CAP_FILM1")
+  // A real WIMA MKS02 footprint, present on disk. This test passes its own Map
+  // and so never reaches derive(), which means a made-up name would work here -
+  // and that is exactly why it must not be one. A fictional footprint sitting in
+  // a committed test is the first thing somebody copies into the real whitelist.
+  const name = "Capacitor_THT:C_Rect_L4.6mm_W2.0mm_P2.50mm_MKS02_FKP02"
+  const whitelist = new Map([[name, "CAP_FILM1"]])
+  expect(importStringFor(name, undefined, whitelist)).toBe("CAP_FILM1")
 })
 ```
 
@@ -711,6 +715,23 @@ function padOrderFor(component: Component, padOrders: PadOrders): readonly strin
           `component. Its pins are: ${[...pins].sort().join(", ")}.`,
       )
     }
+  }
+  // UNIQUENESS IS CHECKED SEPARATELY, and counting is not a substitute for it.
+  // A duplicate that displaces another pin keeps the length equal and every name
+  // known, so it passes both the membership loop above and the length check
+  // below. The pin it displaced then resolves through `indexOf` to -1, and its
+  // pad number comes out as 0 - a reference no pad has, emitted with no
+  // complaint. `assertPinCount` does not catch it either: that only refuses a
+  // number GREATER than the declared count, and the count is derived from this
+  // same order, so the two cannot disagree however wrong the order is.
+  const duplicated = order.filter((pin, index) => order.indexOf(pin) !== index)
+  if (duplicated.length > 0) {
+    const unique = [...new Set(duplicated)].sort()
+    throw new Error(
+      `the pad order for "${component.id}" lists ${unique.join(", ")} more than once. Each pin ` +
+        "gets exactly one pad, and a repeat silently steals the position of whichever pin it " +
+        "displaced, whose pad number then resolves to 0 - a pad that does not exist.",
+    )
   }
   if (order.length !== pins.size) {
     const missing = [...pins].filter((pin) => !order.includes(pin)).sort()
