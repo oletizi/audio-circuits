@@ -39,7 +39,7 @@
 import { circuit } from "../../lib/model/index.ts"
 import type { Network, PartSpec } from "../../lib/model/index.ts"
 import {
-  HEADER_2, RESISTOR, addLeg, electrolytic, gainTransistor, jumper, trim,
+  HEADER_2, RESISTOR, addLeg, electrolytic, jumper, transistor2N3904, trim,
 } from "./parts.ts"
 import type { Leg } from "./parts.ts"
 
@@ -112,7 +112,7 @@ export function transistorPreampLab(): Network {
   builder.add(trim(bypass.trimId, bypass.trim, "BYPASS_CAP", GND))
 
   builder
-    .add(gainTransistor(BASE, COLLECTOR, EMITTER))
+    .add(transistor2N3904("gain_transistor", BASE, COLLECTOR, EMITTER))
     .capacitor("input_coupling_cap", "10uF", { a: BASE, b: IN_EXT },
       electrolytic("CP_Radial_D5.0mm_P2.00mm"))
     .capacitor("output_coupling_cap", "10uF", { a: COLLECTOR, b: OUT },

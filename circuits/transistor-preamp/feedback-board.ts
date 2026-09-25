@@ -32,10 +32,10 @@
  */
 import { circuit } from "../../lib/model/index.ts"
 import type { ControlState } from "../../lib/model/control-state.ts"
-import type { Network } from "../../lib/model/index.ts"
+import type { Builder, Network } from "../../lib/model/index.ts"
 import { parseValue } from "../../lib/model/units.ts"
 import { formatOhms, legPosition, trimOnlyOhms } from "./leg-values.ts"
-import { HEADER_2, RESISTOR, addLeg, electrolytic, gainTransistor, trim } from "./parts.ts"
+import { HEADER_2, RESISTOR, addLeg, electrolytic, transistor2N3904, trim } from "./parts.ts"
 import type { Leg } from "./parts.ts"
 
 export { PIN_NUMBERS } from "./parts.ts"
@@ -72,7 +72,22 @@ const OUT = "OUT"
 
 export function transistorPreampFeedback(): Network {
   const builder = circuit()
+  addFeedbackStage(builder, OUT)
+  builder
+    .connector("output_header", { "1": OUT, "2": GND }, HEADER_2)
+    .port("output", OUT)
+  return builder.done()
+}
 
+/**
+ * The collector-feedback gain stage, everything up to and including its output
+ * coupling cap, whose far side lands on `couplesTo`: the output header here,
+ * the follower's base on the buffered board (./buffered-board.ts). Also the
+ * supply decoupling, the input and power headers, and the input, supply and
+ * stage-node ports. Shared so the buffered board's stage 1 is this one, part
+ * for part and id for id, rather than a copy that could drift.
+ */
+export function addFeedbackStage(builder: Builder, couplesTo: string): void {
   addLeg(builder, FEEDBACK_LEGS.feedback, "FEEDBACK", COLLECTOR, BASE)
   addLeg(builder, FEEDBACK_LEGS.baseToGround, "BASE_GROUND", BASE, GND)
   addLeg(builder, FEEDBACK_LEGS.collector, "COLLECTOR_LOAD", VCC, COLLECTOR)
@@ -84,25 +99,21 @@ export function transistorPreampFeedback(): Network {
   builder.add(trim(bypass.trimId, bypass.trim, "BYPASS_CAP", GND))
 
   builder
-    .add(gainTransistor(BASE, COLLECTOR, EMITTER))
+    .add(transistor2N3904("gain_transistor", BASE, COLLECTOR, EMITTER))
     .capacitor("input_coupling_cap", "10uF", { a: BASE, b: IN_EXT },
       electrolytic("CP_Radial_D5.0mm_P2.00mm"))
-    .capacitor("output_coupling_cap", "10uF", { a: COLLECTOR, b: OUT },
+    .capacitor("output_coupling_cap", "10uF", { a: COLLECTOR, b: couplesTo },
       electrolytic("CP_Radial_D5.0mm_P2.00mm"))
     .capacitor("supply_decoupling_cap", "100uF", { a: VCC, b: GND },
       electrolytic("CP_Radial_D6.3mm_P2.50mm"))
     .connector("input_header", { "1": IN_EXT, "2": GND }, HEADER_2)
-    .connector("output_header", { "1": OUT, "2": GND }, HEADER_2)
     .connector("power_header", { "1": VCC, "2": GND }, HEADER_2)
     .port("input", IN_EXT)
-    .port("output", OUT)
     .port("vcc", VCC)
     .port("ground", GND)
     .port("base", BASE)
     .port("emitter", EMITTER)
     .port("collector", COLLECTOR)
-
-  return builder.done()
 }
 
 /** Semantic id -> KiCad reference designator. The only place the two vocabularies meet.

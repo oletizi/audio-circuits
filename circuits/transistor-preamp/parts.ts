@@ -91,10 +91,10 @@ export function addLeg(builder: Builder, leg: Leg, netPrefix: string, from: stri
   builder.add(trim(leg.trimId, leg.trim, node, to))
 }
 
-/** The 2N3904 gain transistor, fitted in a socket so devices can be swapped. */
-export function gainTransistor(base: string, collector: string, emitter: string): Component {
+/** A 2N3904, ideally fitted in a socket so devices can be swapped. */
+export function transistor2N3904(id: string, base: string, collector: string, emitter: string): Component {
   return {
-    id: "gain_transistor", kind: "bjt", parameters: {},
+    id, kind: "bjt", parameters: {},
     part: {
       mpn: "2N3904",
       footprint: "Package_TO_SOT_THT:TO-92_Inline",
