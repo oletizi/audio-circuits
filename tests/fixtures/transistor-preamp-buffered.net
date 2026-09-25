@@ -2,7 +2,7 @@
 	(version "E")
 	(design
 		(source "circuits/transistor-preamp/buffered-board.kicad_sch")
-		(date "2026-09-24T23:40:11")
+		(date "2026-09-25T12:21:02")
 		(tool "Eeschema 10.0.5")
 		(sheet
 			(number "1")
@@ -1615,7 +1615,71 @@
 		)
 		(net
 			(code "10")
-			(name "/GND")
+			(name "/IN_EXT")
+			(class "Default")
+			(node
+				(ref "C2")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J1")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "11")
+			(name "/OUT")
+			(class "Default")
+			(node
+				(ref "C5")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J2")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "12")
+			(name "/VCC")
+			(class "Default")
+			(node
+				(ref "C4")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "Q2")
+				(pin "3")
+				(pinfunction "C_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "R3")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R5")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "13")
+			(name "GND")
 			(class "Default")
 			(node
 				(ref "C4")
@@ -1677,70 +1741,6 @@
 				(ref "RV4")
 				(pin "3")
 				(pinfunction "3_3")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "11")
-			(name "/IN_EXT")
-			(class "Default")
-			(node
-				(ref "C2")
-				(pin "2")
-				(pintype "passive")
-			)
-			(node
-				(ref "J1")
-				(pin "1")
-				(pinfunction "Pin_1_1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "12")
-			(name "/OUT")
-			(class "Default")
-			(node
-				(ref "C5")
-				(pin "2")
-				(pintype "passive")
-			)
-			(node
-				(ref "J2")
-				(pin "1")
-				(pinfunction "Pin_1_1")
-				(pintype "passive")
-			)
-		)
-		(net
-			(code "13")
-			(name "/VCC")
-			(class "Default")
-			(node
-				(ref "C4")
-				(pin "1")
-				(pintype "passive")
-			)
-			(node
-				(ref "J3")
-				(pin "1")
-				(pinfunction "Pin_1_1")
-				(pintype "passive")
-			)
-			(node
-				(ref "Q2")
-				(pin "3")
-				(pinfunction "C_3")
-				(pintype "passive")
-			)
-			(node
-				(ref "R3")
-				(pin "1")
-				(pintype "passive")
-			)
-			(node
-				(ref "R5")
-				(pin "1")
 				(pintype "passive")
 			)
 		)
