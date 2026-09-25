@@ -1,0 +1,1748 @@
+(export
+	(version "E")
+	(design
+		(source "circuits/transistor-preamp/buffered-board.kicad_sch")
+		(date "2026-09-24T23:40:11")
+		(tool "Eeschema 10.0.5")
+		(sheet
+			(number "1")
+			(name "/")
+			(tstamps "/")
+			(title_block
+				(title)
+				(company)
+				(rev)
+				(date)
+				(source "buffered-board.kicad_sch")
+				(comment
+					(number "1")
+					(value "")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+	)
+	(components
+		(comp
+			(ref "C1")
+			(value "220uF")
+			(footprint "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm")
+			(fields
+				(field
+					(name "Footprint") "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "C_Polarized")
+				(description "Polarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "CP_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "12cae235-1c95-426e-b750-12549f9dd6f9")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C2")
+			(value "10uF")
+			(footprint "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
+			(fields
+				(field
+					(name "Footprint") "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "C_Polarized")
+				(description "Polarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "CP_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "119e6ee0-6314-4430-ad90-7a7fce69ec33")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C3")
+			(value "10uF")
+			(footprint "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
+			(fields
+				(field
+					(name "Footprint") "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "C_Polarized")
+				(description "Polarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "CP_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "d15aea23-d974-4d6e-ace2-39b5a5c2550e")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C4")
+			(value "100uF")
+			(footprint "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm")
+			(fields
+				(field
+					(name "Footprint") "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "C_Polarized")
+				(description "Polarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "CP_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "47bd48f0-4d8c-4b8f-b110-9dcddfd9c447")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C5")
+			(value "10uF")
+			(footprint "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
+			(fields
+				(field
+					(name "Footprint") "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "C_Polarized")
+				(description "Polarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "CP_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "ec956047-da1e-46f8-b01a-6e7c75e2538b")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J1")
+			(value "Conn_01x02")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Connector_Generic")
+				(part "Conn_01x02")
+				(description "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "connector")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Connector*:*_1x??_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "7479266b-b330-49b5-a7bf-e69d02ad898a")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J2")
+			(value "Conn_01x02")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Connector_Generic")
+				(part "Conn_01x02")
+				(description "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "connector")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Connector*:*_1x??_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "f908940e-bb28-4f80-930a-93d697095f46")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J3")
+			(value "Conn_01x02")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Connector_Generic")
+				(part "Conn_01x02")
+				(description "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "connector")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Connector*:*_1x??_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "f333cab4-a223-4767-9758-2ce60506352b")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "Q1")
+			(value "2N3904")
+			(footprint "Package_TO_SOT_THT:TO-92_Inline")
+			(fields
+				(field
+					(name "Footprint") "Package_TO_SOT_THT:TO-92_Inline")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Transistor_BJT")
+				(part "2N3904")
+				(description "0.2A Ic, 40V Vce, Small Signal NPN Transistor, TO-92")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "NPN Transistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "TO?92*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "c98dc503-ec56-4645-9151-5b23bb913bb5")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "1")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "Q2")
+			(value "2N3904")
+			(footprint "Package_TO_SOT_THT:TO-92_Inline")
+			(fields
+				(field
+					(name "Footprint") "Package_TO_SOT_THT:TO-92_Inline")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Transistor_BJT")
+				(part "2N3904")
+				(description "0.2A Ic, 40V Vce, Small Signal NPN Transistor, TO-92")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "NPN Transistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "TO?92*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "ddc17c70-a601-4a03-a4c0-2f465308c0e4")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "1")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R1")
+			(value "470K")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R")
+				(description "Resistor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "R res resistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "R_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "bd82c0af-7b4b-4233-9f45-788f7a6df405")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R2")
+			(value "47K")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R")
+				(description "Resistor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "R res resistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "R_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "f96eee42-9015-40e3-a25a-8298d0e619e0")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R3")
+			(value "1K")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R")
+				(description "Resistor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "R res resistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "R_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "c3cc735e-ceca-419b-aeba-1d791e6296eb")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R4")
+			(value "1.5K")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R")
+				(description "Resistor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "R res resistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "R_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "af77937a-ec10-4b66-b98e-af61c5940042")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R5")
+			(value "100K")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R")
+				(description "Resistor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "R res resistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "R_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "63b5622a-f7f4-4d8b-bd5d-b8b0c86b29a1")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R6")
+			(value "100K")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R")
+				(description "Resistor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "R res resistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "R_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "f7a2266e-9840-4ea7-a9b9-813bb086a4d0")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R7")
+			(value "1.5K")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R")
+				(description "Resistor")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "R res resistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "R_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "35c87eaa-5430-4b4f-8d10-9cb0240d1cb7")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "RV1")
+			(value "1M")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R_Potentiometer_Trim")
+				(description "Trim-potentiometer")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "resistor variable trimpot trimmer")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Potentiometer*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "c96de9bd-6e29-4d48-ac6f-d80ced2154e7")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "RV2")
+			(value "200K")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R_Potentiometer_Trim")
+				(description "Trim-potentiometer")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "resistor variable trimpot trimmer")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Potentiometer*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "5dd45bd2-4b66-48ce-9d27-7bd0ba0dfd06")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "RV3")
+			(value "2K")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R_Potentiometer_Trim")
+				(description "Trim-potentiometer")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "resistor variable trimpot trimmer")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Potentiometer*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "9eb3f250-b8c5-43eb-9433-e6c83fa9fbec")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "RV4")
+			(value "1K")
+			(footprint "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "R_Potentiometer_Trim")
+				(description "Trim-potentiometer")
+			)
+			(property
+				(name "Sheetname")
+				(value "buffered-board")
+			)
+			(property
+				(name "Sheetfile")
+				(value "buffered-board.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "resistor variable trimpot trimmer")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Potentiometer*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "e5009d45-050d-438c-b00a-02b603a28113")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+	)
+	(groups)
+	(variants)
+	(libparts
+		(libpart
+			(lib "Connector_Generic")
+			(part "Conn_01x02")
+			(description "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)")
+			(footprints
+				(fp "Connector*:*_1x??_*")
+			)
+			(fields
+				(field
+					(name "Reference") "J")
+				(field
+					(name "Value") "Conn_01x02")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "Pin_1")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "Pin_2")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "Device")
+			(part "C_Polarized")
+			(description "Polarized capacitor")
+			(footprints
+				(fp "CP_*")
+			)
+			(fields
+				(field
+					(name "Reference") "C")
+				(field
+					(name "Value") "C_Polarized")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Polarized capacitor")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "Device")
+			(part "R")
+			(description "Resistor")
+			(footprints
+				(fp "R_*")
+			)
+			(fields
+				(field
+					(name "Reference") "R")
+				(field
+					(name "Value") "R")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Resistor")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "Device")
+			(part "R_Potentiometer_Trim")
+			(description "Trim-potentiometer")
+			(footprints
+				(fp "Potentiometer*")
+			)
+			(fields
+				(field
+					(name "Reference") "RV")
+				(field
+					(name "Value") "R_Potentiometer_Trim")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Trim-potentiometer")
+				(field
+					(name "Sim.Device") "R")
+				(field
+					(name "Sim.Type") "POT")
+				(field
+					(name "Sim.Pins") "1=r0 2=wiper 3=r1")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "1")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "2")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "3")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "Transistor_BJT")
+			(part "2N3904")
+			(description "0.2A Ic, 40V Vce, Small Signal NPN Transistor, TO-92")
+			(docs "https://www.onsemi.com/pub/Collateral/2N3903-D.PDF")
+			(footprints
+				(fp "TO?92*")
+			)
+			(fields
+				(field
+					(name "Reference") "Q")
+				(field
+					(name "Value") "2N3904")
+				(field
+					(name "Footprint") "Package_TO_SOT_THT:TO-92_Inline")
+				(field
+					(name "Datasheet") "https://www.onsemi.com/pub/Collateral/2N3903-D.PDF")
+				(field
+					(name "Description") "0.2A Ic, 40V Vce, Small Signal NPN Transistor, TO-92")
+				(field
+					(name "Sim.Device") "NPN")
+				(field
+					(name "Sim.Pins") "1=E 2=B 3=C")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "E")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "B")
+					(type "input")
+				)
+				(pin
+					(num "3")
+					(name "C")
+					(type "passive")
+				)
+			)
+		)
+	)
+	(libraries
+		(library
+			(logical "Connector_Generic")
+			(uri "${KICAD10_SYMBOL_DIR}/Connector_Generic.kicad_sym")
+		)
+		(library
+			(logical "Device")
+			(uri "${KICAD10_SYMBOL_DIR}/Device.kicad_sym")
+		)
+		(library
+			(logical "Transistor_BJT")
+			(uri "${KICAD10_SYMBOL_DIR}/Transistor_BJT.kicad_sym")
+		)
+	)
+	(nets
+		(net
+			(code "1")
+			(name "/BASE")
+			(class "Default")
+			(node
+				(ref "C2")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "Q1")
+				(pin "2")
+				(pinfunction "B_2")
+				(pintype "input")
+			)
+			(node
+				(ref "R2")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV1")
+				(pin "2")
+				(pinfunction "2_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV1")
+				(pin "3")
+				(pinfunction "3_3")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "2")
+			(name "/BASE_GROUND_FLOOR")
+			(class "Default")
+			(node
+				(ref "R2")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV2")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "3")
+			(name "/BUFFER_BASE")
+			(class "Default")
+			(node
+				(ref "C3")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "Q2")
+				(pin "2")
+				(pinfunction "B_2")
+				(pintype "input")
+			)
+			(node
+				(ref "R5")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R6")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "4")
+			(name "/BUFFER_EMITTER")
+			(class "Default")
+			(node
+				(ref "C5")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "Q2")
+				(pin "1")
+				(pinfunction "E_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R7")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "5")
+			(name "/BYPASS_CAP")
+			(class "Default")
+			(node
+				(ref "C1")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV4")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "6")
+			(name "/COLLECTOR")
+			(class "Default")
+			(node
+				(ref "C3")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "Q1")
+				(pin "3")
+				(pinfunction "C_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "R1")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV3")
+				(pin "2")
+				(pinfunction "2_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV3")
+				(pin "3")
+				(pinfunction "3_3")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "7")
+			(name "/COLLECTOR_LOAD_FLOOR")
+			(class "Default")
+			(node
+				(ref "R3")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV3")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "8")
+			(name "/EMITTER")
+			(class "Default")
+			(node
+				(ref "C1")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "Q1")
+				(pin "1")
+				(pinfunction "E_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R4")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "9")
+			(name "/FEEDBACK_FLOOR")
+			(class "Default")
+			(node
+				(ref "R1")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV1")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "10")
+			(name "/GND")
+			(class "Default")
+			(node
+				(ref "C4")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J1")
+				(pin "2")
+				(pinfunction "Pin_2_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J2")
+				(pin "2")
+				(pinfunction "Pin_2_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "2")
+				(pinfunction "Pin_2_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R4")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R6")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R7")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV2")
+				(pin "2")
+				(pinfunction "2_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV2")
+				(pin "3")
+				(pinfunction "3_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV4")
+				(pin "2")
+				(pinfunction "2_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "RV4")
+				(pin "3")
+				(pinfunction "3_3")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "11")
+			(name "/IN_EXT")
+			(class "Default")
+			(node
+				(ref "C2")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J1")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "12")
+			(name "/OUT")
+			(class "Default")
+			(node
+				(ref "C5")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J2")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "13")
+			(name "/VCC")
+			(class "Default")
+			(node
+				(ref "C4")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "Q2")
+				(pin "3")
+				(pinfunction "C_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "R3")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R5")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+	)
+)

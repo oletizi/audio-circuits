@@ -137,3 +137,9 @@ const BUFFERED_BOARD: BoardUnderTest = {
 test("KiCad reads the generated stub as the same circuit", () => {
   expectSameCircuit(kicadRoundTrip(BUFFERED_BOARD, "buffered-board"), BUFFERED_BOARD)
 }, 30_000)
+
+test("the schematic's netlist export describes the same circuit as the model", async () => {
+  expectSameCircuit(
+    importNetlist(await Bun.file("tests/fixtures/transistor-preamp-buffered.net").text()),
+    BUFFERED_BOARD)
+})
