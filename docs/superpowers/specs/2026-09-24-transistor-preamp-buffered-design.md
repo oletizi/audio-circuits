@@ -1,7 +1,7 @@
 ---
 title: Transistor preamp, buffered board (Build 3) - collector-feedback stage plus emitter follower
 date: 2026-09-24
-status: Approved by the operator (revision 2); implementation in progress
+status: Implemented (revision 2, approved by the operator)
 brief: docs/transistor-preamp/microphone-preamp-feedback-lab.md
 builds-on: docs/superpowers/specs/2026-09-23-transistor-preamp-lab-design.md
 ---
