@@ -1,7 +1,7 @@
 ---
 title: Transistor preamp, loop board (Build 4, first step) - global feedback around the two-stage buffered amplifier
 date: 2026-09-25
-status: Draft for operator review (provisional values - see Calibration)
+status: Draft for operator review (calibrated against the operator's Build 3 board)
 brief: docs/transistor-preamp/microphone-preamp-feedback-lab.md
 builds-on: docs/superpowers/specs/2026-09-24-transistor-preamp-buffered-design.md
 ---
@@ -70,37 +70,63 @@ Designators: the buffered board's, plus R8, R9, RV5 and C6. 25 parts. Board
 `circuits/transistor-preamp/loop-board.ts`, built on the buffered board's
 code rather than a copy of it.
 
-## Simulated behaviour (model, at the feedback board's START settings)
+## Simulated behaviour (model, at the operator's tuned stage-1 legs)
+
+Stage 1 at the operator's tuned settings (see Calibration): feedback leg
+864k, base-to-ground leg 264k (modelled at the trim's 247k maximum),
+collector 2.8k, emitter fully bypassed.
 
 | | 1 kHz gain | -3 dB band | peaking | 2k-load retention |
 |---|---|---|---|---|
-| open loop (R8 fitted, C6 out) | 17.2 | 8.9 Hz - 0.89 MHz | none | 0.990 |
-| closed, leg 33k | 4.9 | 5.0 Hz - 3.2 MHz | none | 0.997 |
-| closed, leg 68k | 7.7 | 5.6 Hz - 2.0 MHz | none | 0.995 |
-| closed, leg 150k | 11.1 | 7.1 Hz - 1.4 MHz | none | 0.993 |
+| open loop (R8 fitted, C6 out) | 21.7 | 7.1 Hz - 0.71 MHz | none | 0.988 |
+| closed, leg 33k | 5.2 | 4.0 Hz - 3.2 MHz | none | 0.997 |
+| closed, leg 68k | 8.5 | 5.0 Hz - 2.0 MHz | none | 0.995 |
+| closed, leg 150k | 12.8 | 5.6 Hz - 1.3 MHz | none | 0.992 |
 
-- **R8 halves the open-loop gain** (about 35 without it to 17 with it): it
-  forms a divider with Q1's base, which presents only about 6k (r_pi at
-  about 0.55 mA). So at a closed-loop gain of about 8 the loop gain is only
-  about 2 - the benefits are real but modest, as expected.
+(At the feedback board's START settings the picture is the same with a
+little less gain: open loop 17.2, closed 4.9 / 7.7 / 11.1.)
+
+- **R8 roughly halves the open-loop gain:** it forms a divider with Q1's
+  base, which presents only a few kilohms (r_pi at about 0.4-0.5 mA). So at a
+  closed-loop gain of about 8 the loop gain is only about 2.5 - the benefits
+  are real but modest, as expected.
 - **No peaking anywhere from 1 Hz to 10 MHz**, and the bandwidth widens as
   feedback increases: the model shows a stable loop with margin. A two-stage
   loop with this little loop gain is low-risk, but the model has no board
   parasitics, so the bench check below is still required.
-- The DC operating point is unchanged by the loop (Q1 base 1.47 V, emitter
-  0.82 V, collector 8.00 V; Q2 emitter 3.14 V).
+- The DC operating point is unchanged by the loop (at the tuned legs: Q1
+  base 1.20 V, emitter 0.56 V, collector 7.94 V; Q2 emitter 3.14 V).
 - Headroom is still set by stage 1's bias: with the collector at about 8 V,
   the output can swing only about 1 V upward before clipping. The loop does
   not create headroom; retuning stage 1 (a lower feedback leg centres the
   collector - see the earlier discussion) does.
 
-## Calibration (why the values are provisional)
+## Calibration
 
-The operator is building and measuring Build 3 first. Once the measured
-trim-pot legs, DC voltages and gains are in, the model is set to those values
-and compared with the bench. R8, the feedback leg's range and C6 are then
-confirmed or adjusted before any board is generated. The design's shape does
-not depend on that; its numbers might.
+The operator measured the built buffered board, all in circuit, at an 8.85 V
+supply. Trim-pot readings (pot alone): RV1 394k, RV2 217k, RV3 1.8k, RV4 0,
+giving legs of about 864k (feedback), 264k (base to ground) and 2.8k
+(collector). These are in-circuit ohmmeter readings, so each is the pot in
+parallel with the rest of the circuit, and approximate.
+
+The voltages are the ground truth, and the model at those legs reproduces
+them:
+
+| node | measured | model |
+|---|---|---|
+| Q1 base | 1.10 | 1.21 (1.11 with a 1 MΩ meter's loading) |
+| Q1 emitter | 0.69 | 0.57 |
+| Q1 collector | 7.87 | 7.77 |
+| Q2 base | 4.00 | 3.76 |
+| Q2 emitter | 3.50 | 3.08 |
+
+That is agreement at the resolution this bench supports: hobby meters are
+good to a percent or two, resistors are 5% parts, the carbon trimmers ±30%,
+and 2N3904 β varies by 2x or more (a high-β Q2 sags its soft divider less,
+which covers most of Q2's difference). The supply's current display is not
+used. So the model is calibrated well enough for the loop design, whose
+behaviour does not hinge on stage 1's exact values. R8 4.7k, the 22k-222k
+feedback leg and C6 10µF stand.
 
 ## Verification
 
