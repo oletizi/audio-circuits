@@ -1,7 +1,7 @@
 ---
 title: Transistor preamp, loop board (Build 4, first step) - global feedback around the two-stage buffered amplifier
 date: 2026-09-25
-status: Approved by the operator (calibrated against the Build 3 board); implementation in progress
+status: Implemented (approved by the operator; calibrated against the Build 3 board)
 brief: docs/transistor-preamp/microphone-preamp-feedback-lab.md
 builds-on: docs/superpowers/specs/2026-09-24-transistor-preamp-buffered-design.md
 ---
