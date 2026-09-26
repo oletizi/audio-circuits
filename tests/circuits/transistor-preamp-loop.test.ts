@@ -160,6 +160,11 @@ test("KiCad reads the generated stub as the same circuit", () => {
   expectSameCircuit(kicadRoundTrip(LOOP_BOARD, "loop-board"), LOOP_BOARD)
 }, 30_000)
 
+test("the schematic's netlist export describes the same circuit as the model", async () => {
+  expectSameCircuit(
+    importNetlist(await Bun.file("tests/fixtures/transistor-preamp-loop.net").text()), LOOP_BOARD)
+})
+
 test("LOOP_LEG spans about 22k to 222k", () => {
   expect(LOOP_LEG.floor?.value).toBe("22k")
   expect(LOOP_LEG.trim).toBe("200k")
