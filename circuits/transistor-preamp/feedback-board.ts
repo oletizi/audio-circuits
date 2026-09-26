@@ -72,6 +72,9 @@ const OUT = "OUT"
 
 export function transistorPreampFeedback(): Network {
   const builder = circuit()
+  builder
+    .connector("input_header", { "1": IN_EXT, "2": GND }, HEADER_2)
+    .port("input", IN_EXT)
   addFeedbackStage(builder, OUT)
   builder
     .connector("output_header", { "1": OUT, "2": GND }, HEADER_2)
@@ -83,9 +86,11 @@ export function transistorPreampFeedback(): Network {
  * The collector-feedback gain stage, everything up to and including its output
  * coupling cap, whose far side lands on `couplesTo`: the output header here,
  * the follower's base on the buffered board (./buffered-board.ts). Also the
- * supply decoupling, the input and power headers, and the input, supply and
- * stage-node ports. Shared so the buffered board's stage 1 is this one, part
- * for part and id for id, rather than a copy that could drift.
+ * supply decoupling, the power header, and the supply and stage-node ports.
+ * Its input coupling cap C2 takes the signal from net IN_EXT; the input header
+ * and "input" port are each board's own, because the loop board puts a
+ * resistor between them and IN_EXT. Shared so every later board's stage 1 is
+ * this one, part for part and id for id, rather than a copy that could drift.
  */
 export function addFeedbackStage(builder: Builder, couplesTo: string): void {
   addLeg(builder, FEEDBACK_LEGS.feedback, "FEEDBACK", COLLECTOR, BASE)
@@ -106,9 +111,7 @@ export function addFeedbackStage(builder: Builder, couplesTo: string): void {
       electrolytic("CP_Radial_D5.0mm_P2.00mm"))
     .capacitor("supply_decoupling_cap", "100uF", { a: VCC, b: GND },
       electrolytic("CP_Radial_D6.3mm_P2.50mm"))
-    .connector("input_header", { "1": IN_EXT, "2": GND }, HEADER_2)
     .connector("power_header", { "1": VCC, "2": GND }, HEADER_2)
-    .port("input", IN_EXT)
     .port("vcc", VCC)
     .port("ground", GND)
     .port("base", BASE)

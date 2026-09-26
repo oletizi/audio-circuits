@@ -21,7 +21,7 @@
  * load stage 1 far harder. C5's + terminal (pin a) faces the emitter.
  */
 import { circuit } from "../../lib/model/index.ts"
-import type { Network } from "../../lib/model/index.ts"
+import type { Builder, Network } from "../../lib/model/index.ts"
 import { addFeedbackStage, schematicNotes as feedbackNotes } from "./feedback-board.ts"
 import * as feedbackBoard from "./feedback-board.ts"
 import { HEADER_2, RESISTOR, electrolytic, transistor2N3904 } from "./parts.ts"
@@ -37,7 +37,17 @@ const OUT = "OUT"
 
 export function transistorPreampBuffered(): Network {
   const builder = circuit()
+  builder
+    .connector("input_header", { "1": "IN_EXT", "2": GND }, HEADER_2)
+    .port("input", "IN_EXT")
   addFeedbackStage(builder, COLLECTOR_COUPLED)
+  addFollower(builder)
+  return builder.done()
+}
+
+/** The emitter follower from its base (where stage 1's C3 lands) to the output
+ * header, and the "output" port. Shared with the loop board (./loop-board.ts). */
+export function addFollower(builder: Builder): void {
   builder
     .resistor("buffer_bias_upper", "100k", { a: VCC, b: COLLECTOR_COUPLED }, RESISTOR)
     .resistor("buffer_bias_lower", "100k", { a: COLLECTOR_COUPLED, b: GND }, RESISTOR)
@@ -47,7 +57,6 @@ export function transistorPreampBuffered(): Network {
       electrolytic("CP_Radial_D5.0mm_P2.00mm"))
     .connector("output_header", { "1": OUT, "2": GND }, HEADER_2)
     .port("output", OUT)
-  return builder.done()
 }
 
 /** Semantic id -> KiCad reference designator: stage 1's exactly as on the
