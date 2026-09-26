@@ -106,8 +106,15 @@ little less gain: open loop 17.2, closed 4.9 / 7.7 / 11.1.)
 The operator measured the built buffered board, all in circuit, at an 8.85 V
 supply. Trim-pot readings (pot alone): RV1 394k, RV2 217k, RV3 1.8k, RV4 0,
 giving legs of about 864k (feedback), 264k (base to ground) and 2.8k
-(collector). These are in-circuit ohmmeter readings, so each is the pot in
-parallel with the rest of the circuit, and approximate.
+(collector). These are in-circuit ohmmeter readings, taken with both
+transistors out of their sockets, so no junction path shunts them. One path
+still does: Q2's R5/R6 divider joins VCC to ground, so RV1 and RV2 each read
+in parallel with a loop of about 1M through the rest of the circuit.
+Correcting for it puts the legs nearer 1.13M and 305k. Both sets reproduce
+the measured voltages about equally well (see below), so the tuned feedback
+leg is somewhere around 0.9-1.1M; the voltages cannot resolve it further.
+Replacing a trim with a fixed resistor needs either one pot end lifted and
+read alone, or the choice checked by voltage (Q1's collector near 7.9 V).
 
 The voltages are the ground truth, and the model at those legs reproduces
 them:
