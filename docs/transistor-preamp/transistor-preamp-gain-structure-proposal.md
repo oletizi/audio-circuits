@@ -38,7 +38,8 @@ These observations support continued use of the existing 2N3904 buffer for initi
 - **Output:** a 50k pot wired as a volume control (transformer secondary to the top, wiper to the interface), into a MOTU 828mk3 line input (channel 3). The combined load on the secondary depends on the pot setting and the interface's input impedance (not checked here).
 - **Transformer:** EDCOR WSM10K/10K, full windings only, centre taps unused (the test harness is unbalanced), wired using leads already soldered to it from earlier projects. The pin numbers given below have not been verified against this unit.
 - **Scope:** 1x probes. A 1x probe presents about 1 MΩ, which is negligible at the low-impedance nodes measured above (Q2's emitter, the transformer secondary) but pulls down readings at high-impedance nodes such as the transistor bases.
-- **Still open:** the as-built capacitor values and voltage ratings (see Capacitor voltage ratings at 24 V), and whether the trim-pots are at their 9 V tuning or were retuned at 24 V.
+- **Trim-pots:** unchanged since the 9 V tuning; none was readjusted at 24 V. The 24 V model below uses those same legs.
+- **Still open:** the as-built capacitor values and voltage ratings (see Capacitor voltage ratings at 24 V).
 
 ### The existing board at 24 V (repository model)
 
@@ -132,7 +133,7 @@ Use normal scope ground clips only on intended ground/reference nodes; scope cha
 - Q3 topology, gain, operating point, and component values.
 - Whether to re-centre Q1's collector at 24 V (RV1 down) or keep its asymmetric headroom as a coloration choice.
 - The input attenuator's value: keep the 50k and accept its interaction with Q1's gain, or change to a lower value.
-- As-built capacitor values and voltage ratings, and whether the trim-pots were retuned at 24 V.
+- As-built capacitor values and voltage ratings.
 - Interstage pot resistances/tapers and coupling capacitor values.
 - Target clean output and acceptable bass loss/distortion under a defined load.
 - Whether Q2 needs redesign after isolated testing.
