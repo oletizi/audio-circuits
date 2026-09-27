@@ -1,8 +1,17 @@
 # Independently controlled transistor preamp with transformer output
 
-Status: Draft for review — architecture proposed; component values and modified circuit not yet validated.
+Status: Draft for review (revision 2) — architecture proposed; component values and modified circuit not yet validated.
 
 Date: 26 September 2026 (Pacific time)
+
+> **Revision 2**, after review against the repository model and the
+> operator's answers about the as-built circuit and test setup. Adds: the
+> as-built and test conditions; a 24 V simulation of the existing board; the
+> capacitor voltage ratings 24 V requires; Q1's upper-peak clipping explained
+> as largely a bias effect at 24 V; how the input attenuator interacts with
+> Q1's collector feedback; a numeric rule for stacked coupling networks; the
+> polarity of the extended chain; and that Build 4's loop board is paused in
+> favour of this direction. Nothing in revision 1's architecture changes.
 
 ## Purpose
 
@@ -22,6 +31,42 @@ With higher input drive, Q1's collector showed clear upper-peak clipping. Q2 rep
 
 These observations support continued use of the existing 2N3904 buffer for initial tests. They do not yet establish the maximum clean transformer drive available.
 
+### As-built and test conditions (operator's answers)
+
+- **Supply:** 24 V for the 20 Hz measurement and the clipping captures.
+- **Input attenuator:** 50k audio-taper pot, connected ahead of the input coupling capacitor C2.
+- **Output:** a 50k pot wired as a volume control (transformer secondary to the top, wiper to the interface), into a MOTU 828mk3 line input (channel 3). The combined load on the secondary depends on the pot setting and the interface's input impedance (not checked here).
+- **Transformer:** EDCOR WSM10K/10K, full windings only, centre taps unused (the test harness is unbalanced), wired using leads already soldered to it from earlier projects. The pin numbers given below have not been verified against this unit.
+- **Scope:** 1x probes. A 1x probe presents about 1 MΩ, which is negligible at the low-impedance nodes measured above (Q2's emitter, the transformer secondary) but pulls down readings at high-impedance nodes such as the transistor bases.
+- **Still open:** the as-built capacitor values and voltage ratings (see Capacitor voltage ratings at 24 V), and whether the trim-pots are at their 9 V tuning or were retuned at 24 V.
+
+### The existing board at 24 V (repository model)
+
+Simulated with the operator's tuned stage-1 legs (feedback leg about 0.86–1.13M, base-to-ground leg about 264–305k, collector 2.8k; the range reflects the in-circuit trim readings) at a 24 V supply:
+
+| Node | Model at 24 V |
+|---|---|
+| Q1 base / emitter | 2.5–2.9 V / 1.9–2.2 V (I_E about 1.3–1.5 mA) |
+| Q1 collector | 19.9–20.5 V |
+| Q2 base / emitter | 10.3 V / 9.6 V (I_E about 6.4 mA; about 90 mW in Q2) |
+
+These are model values, to be checked against the baseline measurement in step 1 below.
+
+### Capacitor voltage ratings at 24 V
+
+The board was designed for 9 V, and the repository model does not specify capacitor voltage ratings. At 24 V the electrolytics see:
+
+- **C4 (supply decoupling):** the full rail, 24 V. Rating **35 V or higher.**
+- **C5 (output):** about 9.6 V (Q2's emitter to the grounded primary). Rating **16 V or higher**; 10 V is marginal.
+- **C3 (interstage):** about 9.6 V (Q1's collector at about 20 V, Q2's base at about 10.3 V). Rating **16 V or higher.**
+- C2 and C1 see about 3 V and 2 V.
+
+Confirm these before further 24 V testing: an overstressed electrolytic can fail short. Any new coupling capacitor needs the same check against its actual node voltages.
+
+### Why Q1 clips on its upper peaks
+
+At 24 V the collector-feedback stage settles its collector at about 20 V: roughly 4 V of room upward to the rail, against about 17 V downward to the emitter. So Q1 reaches the rail on upper peaks long before it uses its downward headroom, which matches the upper-peak clipping observed. This is a bias effect that no later stage can undo. Turning RV1 down (a smaller feedback leg) moves the collector toward the middle of its range, about 13 V at 24 V, for the most symmetric swing; whether to centre it, or keep the asymmetry as a coloration choice, is a deliberate decision for this design.
+
 ## Proposed signal path and controls
 
 Input attenuator → existing Q1 gain stage → interstage attenuator → new voltage-gain stage → transformer-drive attenuator → existing Q2 output buffer → C5 → transformer → existing output attenuator → interface.
@@ -37,6 +82,8 @@ Retain Q1 and Q2's current designators; designate the new gain transistor Q3 unl
 
 These are signal attenuators, not changes to the stages' intrinsic gain. Emitter degeneration or bypass controls can separately vary gain and linearity. Bias and collector-load trims remain setup adjustments because they can also change operating point and headroom.
 
+**The input attenuator interacts with Q1.** Q1 is a collector-feedback (shunt-feedback) stage, so its input impedance is low - roughly the transistor's own few kilohms in parallel with the feedback resistance divided by the stage gain - and its gain depends on the resistance driving it. A pot's wiper resistance varies with its position, up to a quarter of the pot's value (12.5k for the 50k input pot). The repository's loop-board simulation shows the scale of the effect: a fixed 4.7k in series with Q1's input halved its gain. So the existing 50k input pot changes Q1's gain and response as well as its input level. Either use a lower-value pot there (around 5-10k), or treat the interaction as part of the design and record the pot setting with every measurement. The same applies to the interstage pot ahead of Q3 if Q3 is also a collector-feedback stage.
+
 The controls provide useful choices, not perfect independence. A later stage cannot undo upstream distortion, and available gain and headroom constrain every combination. The output pot can change reflected loading, so its setting must be recorded during electrical comparisons.
 
 ## Coupling and bias
@@ -45,11 +92,13 @@ Each voltage-gain stage and the output buffer has its own DC bias network. For e
 
 The capacitor before the pot keeps collector DC off the control; the capacitor after the wiper prevents the pot from changing the next stage's bias. Choose capacitance, voltage rating, and polarity from the actual node voltages and impedances. Do not simply assign every capacitor 10 µF. Multiple coupling networks can accumulate bass loss and phase shift.
 
+A rule of thumb for how far: the extended path has about six coupling networks (C2, two per interstage attenuator, and C5), plus the transformer. For their combined loss to stay under about 1 dB at 20 Hz, each may cost only about 0.17 dB there, which puts each network's corner at or below about 4 Hz. Size each capacitor against the resistance it actually sees, including a pot at its worst-case setting.
+
 Pot values are design decisions still to be calculated. A high-value pot can present substantial source resistance at intermediate settings and weaken drive into a transistor base. A low-value pot can excessively load the preceding collector. Select each pot with both neighboring stages, then verify its full travel.
 
 ## Output stage and transformer
 
-Keep the transformer after C5, with no intentional steady DC through its primary. For the WSM10K/10K, primary pins 1 and 4 are the full winding; secondary pins 5 and 8 are the full winding. Leave center taps 2 and 6 disconnected for these tests. C5's positive terminal faces Q2's emitter.
+Keep the transformer after C5, with no intentional steady DC through its primary. For the WSM10K/10K, primary pins 1 and 4 are the full winding; secondary pins 5 and 8 are the full winding (not yet verified against the unit on hand, which is wired through existing leads). Leave center taps 2 and 6 disconnected for these tests. C5's positive terminal faces Q2's emitter.
 
 Retain the 2N3904 initially. Additional voltage gain can produce a larger signal from a clean Q1 output, but it cannot increase Q2's current capacity or supply-limited swing. Characterize Q2 before specifying a replacement.
 
@@ -63,9 +112,13 @@ The supplied Neve schematic has two directly coupled common-emitter stages follo
 
 Here, independent stage adjustment and accessible drive controls take priority. AC coupling gives each block its own operating point and provides practical attenuator insertion points. DC coupling is not inherently necessary for strong bass, and an arbitrary pot inside a direct-coupled block would disturb bias and feedback. A complete direct-coupled amplifier can remain a later comparison experiment.
 
+This is also the opposite choice from the repository's Build 4 loop board (`loop-board.ts`, one feedback loop around Q1 and Q2), which was generated but not built. That board is paused in favour of this direction; it remains available as a later comparison between independently controlled stages and a global loop.
+
+Polarity: Q1 and Q3 both invert and Q2 does not, so the extended chain is non-inverting overall (the existing two-stage board inverts). Without global feedback this does not affect stability, but note it when comparing recordings against a dry signal.
+
 ## Development and verification
 
-1. Record the existing 24 V baseline: actual supply, both transistors' base/emitter/collector DC voltages with no signal, trim settings, input level, pot settings, and interface model/input mode. Confirm the as-built capacitor values and ratings.
+1. Record the existing 24 V baseline: actual supply, both transistors' base/emitter/collector DC voltages with no signal, trim settings, input level, pot settings, and interface model/input mode. Confirm the as-built capacitor values and voltage ratings against the minimums above (C4 at least 35 V; C3 and C5 at least 16 V) before further 24 V work. Compare the DC voltages with the model's 24 V values; read base voltages with the 1x probe's loading in mind.
 2. Compare low-level gain at 20, 40, 80, 100 Hz and 1 kHz with generator amplitude and controls fixed. Measure Q1 collector, Q2 emitter, primary, and secondary as needed. Distinguish the complete preamp response from the emitter-to-secondary transfer.
 3. Characterize Q2 separately, temporarily disconnecting Q1's signal feed and injecting a known AC-coupled signal into the existing biased buffer input. Find its clean swing with the transformer and interface load attached. This separates output-drive limits from Q1 clipping.
 4. Design Q3 and both new interstage controls. Calculate bias, loading, gain range, and coupling behavior at 24 V; simulate operating points and signal response before generating a revised schematic and stripboard extension. Do not assume Q1's values can simply be duplicated.
@@ -77,6 +130,9 @@ Use normal scope ground clips only on intended ground/reference nodes; scope cha
 ## Decisions still required
 
 - Q3 topology, gain, operating point, and component values.
+- Whether to re-centre Q1's collector at 24 V (RV1 down) or keep its asymmetric headroom as a coloration choice.
+- The input attenuator's value: keep the 50k and accept its interaction with Q1's gain, or change to a lower value.
+- As-built capacitor values and voltage ratings, and whether the trim-pots were retuned at 24 V.
 - Interstage pot resistances/tapers and coupling capacitor values.
 - Target clean output and acceptable bass loss/distortion under a defined load.
 - Whether Q2 needs redesign after isolated testing.

@@ -13,8 +13,9 @@ Brief: [From one transistor to a feedback microphone preamp](microphone-preamp-f
 |---|---|---|
 | Builds 0–2B | One common-emitter stage: divider bias, emitter degeneration, collector feedback | Modelled as the lab board (`circuits/transistor-preamp/lab-board.ts`); the collector-feedback version built and tuned as the feedback board (`feedback-board.ts`) |
 | Build 3 | An emitter-follower output buffer after the gain stage | Modelled, stub and layout generated (`buffered-board.ts`); built and measured |
-| Build 4, first step | One feedback loop around both stages | Modelled and simulated, stub and layout generated (`loop-board.ts`); not yet built |
+| Build 4, first step | One feedback loop around both stages | Modelled and simulated, stub and layout generated (`loop-board.ts`); **paused**, not built |
 | Build 4, later | Three stages, direct coupling, emitter feedback and compensation, like the 1073 preamp section | Not started; a separately gated design |
+| Gain structure (current direction) | Independently biased, AC-coupled stages with a drive control ahead of each, run at 24 V into an EDCOR WSM10K/10K | Proposal, draft for review: [gain-structure proposal](transistor-preamp-gain-structure-proposal.md). Extends the built buffered board; Build 4's loop is paused in its favour |
 
 Designs: `docs/superpowers/specs/2026-09-23-transistor-preamp-lab-design.md`,
 `2026-09-24-transistor-preamp-buffered-design.md`,
