@@ -22,6 +22,26 @@ saturation or back it off independently", to "dial in the amount of
 saturation manually on a per-source basis" - explicitly not a stage that is
 "polite until it's not" - and no need to match transistors.
 
+## Decisions
+
+Made with the operator while designing this step; each binds the design and
+the implementation plan.
+
+| Decision | By | Why |
+|---|---|---|
+| Change one thing at a time: this version adds Q3 and its controls, nothing else | Operator | Each version should be testable against the last |
+| The gain controls come as part of adding Q3, not as a version of their own | Operator | A version with independent control at each stage makes each stage testable on its own |
+| Q2 (the follower) is kept as built; its isolation test is shelved | Operator | Assumed satisfactory for now |
+| Frequency response is judged by listening, not measured | Operator | The bench instruments cannot resolve gain differences between frequencies usefully, and the operator likes the current board's sound |
+| Saturation is dialled in manually per source; not a stage that is "polite until it's not" | Operator | The point of Q3 is controllable coloration |
+| No transistor matching: the design must work with any 2N3904 | Operator | Parts from the bag, swapped freely |
+| Q3 is divider-biased with emitter degeneration (not another collector-feedback stage) | Operator, on the recommendation above | Saturates under control, with gain and bias nearly independent of β, and a high input impedance for the pot ahead of it |
+| DRIVE, CHARACTER and TRANSFORMER DRIVE are panel pots on headers, not trim-pots | Operator | They are adjusted per source |
+| Q3's collector bias is fixed and centred, not trimmed | Recommended; not contested | DRIVE and CHARACTER already give the saturation control; a fixed centred bias keeps Q3 transistor-independent; off-centre bias is a later experiment |
+| Stage 1's 24 V bass shelf (Q1's bypass) is recorded, not fixed, in this version | Follows from one change at a time | See the finding below |
+| Capacitor voltage ratings are not a concern for the test boards | Operator | Test boards only; a real build will specify proper ratings |
+| Build 4's global-feedback loop board stays paused | Operator | This AC-coupled, independently controlled direction replaces it for now |
+
 ## Signal path and controls
 
 ```
