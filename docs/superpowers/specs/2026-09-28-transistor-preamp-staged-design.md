@@ -161,7 +161,9 @@ as a finding and an option, not changed.
   existing symbols. CHARACTER is wired as a rheostat (wiper strapped to one
   end on the board), like every trim-pot.
 - **Designators:** Q3; R8-R12; C6-C9; RV5 (DRIVE), RV6 (CHARACTER), RV7
-  (TRANSFORMER DRIVE). 32 parts in all.
+  (TRANSFORMER DRIVE). 34 parts in all: the buffered board's 21, plus Q3,
+  R8-R12, C6-C9 and RV5-RV7. (The approved draft said 32, a miscount
+  corrected during planning.)
 - **Tooling:** the netlist value formatter handles resistances from 1k up;
   R12 (22 Ω) needs it extended below 1k, with a test.
 - **Board:** `boards/transistor-preamp-staged/`, with the schematic stub and
@@ -172,7 +174,7 @@ as a finding and an option, not changed.
 
 In `tests/circuits/transistor-preamp-staged.test.ts`:
 
-- validates, 32 parts, one designator each; stage 1's and Q2's parts and
+- validates, 34 parts, one designator each; stage 1's and Q2's parts and
   designators match the buffered board's;
 - each attenuator is wired cap - pot - cap as above, and CHARACTER is a
   rheostat in a branch beside R11, which alone carries the emitter's DC;

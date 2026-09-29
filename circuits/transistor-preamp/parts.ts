@@ -61,6 +61,27 @@ export function trim(id: string, value: string, from: string, to: string): Compo
   }
 }
 
+/** A panel pot's board side: the pot itself is off-board, reached through a
+ * 3-pin header. */
+export const PANEL_POT: PartSpec = {
+  footprint: "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+  symbol: "Device:R_Potentiometer",
+}
+
+/** A front-panel control: an off-board pot on a 3-pin header, modelled as a
+ * potentiometer so simulations can turn it. Its value is the panel pot's.
+ * Linear here; a real audio-taper pot changes the feel of the travel, not
+ * the circuit. */
+export function panelPot(id: string, value: string, ccw: string, wiper: string, cw: string): Component {
+  return {
+    id, kind: "potentiometer",
+    parameters: { ohms: parseValue(value), taper: { type: "linear" } },
+    part: PANEL_POT,
+    pins: {},
+    units: [{ name: "MAIN", pins: { ccw: net(ccw), wiper: net(wiper), cw: net(cw) } }],
+  }
+}
+
 /** A 2-pin header and shunt: fitted shorts its pins, removed shorts nothing. */
 export function jumper(id: string, a: string, b: string): Component {
   return {
