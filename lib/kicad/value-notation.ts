@@ -30,7 +30,7 @@ const PF_UF_BOUNDARY_FARADS = 1e-8
 const MIN_FARADS = 1e-12
 // Exclusive upper bound: spec says "farads at or above 1000uF are refused" (line 253)
 const MAX_FARADS = 1e-3
-const MIN_OHMS = 1000
+const MIN_OHMS = 1
 const MAX_OHMS_EXCLUSIVE = 1e7
 
 /**
@@ -65,10 +65,11 @@ function resistanceText(ohms: number, id: string): string {
   if (!Number.isFinite(ohms) || ohms < MIN_OHMS || ohms >= MAX_OHMS_EXCLUSIVE) {
     throw new Error(
       `resistance ${ohms}R on "${id}" is outside the range this formatter has been proven ` +
-        "over (1k up to but not including 10M). Extend lib/kicad/value-notation.ts with a test " +
+        "over (1R up to but not including 10M). Extend lib/kicad/value-notation.ts with a test " +
         "rather than letting it guess a spelling.",
     )
   }
+  if (ohms < 1000) return `${decimal(ohms)}R`
   return ohms < 1e6 ? `${decimal(ohms / 1000)}K` : `${decimal(ohms / 1e6)}M`
 }
 

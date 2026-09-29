@@ -31,9 +31,16 @@ test("resistances are expressed in uppercase K", () => {
 })
 
 test("decades the board does not exercise are refused, not guessed", () => {
-  expect(() => valueFor(resistor(470))).toThrow(/1k.*10M/s)
-  expect(() => valueFor(resistor(1e7))).toThrow(/1k.*10M/s)
+  expect(() => valueFor(resistor(0.5))).toThrow(/1R.*10M/s)
+  expect(() => valueFor(resistor(1e7))).toThrow(/1R.*10M/s)
   expect(() => valueFor(capacitor(2e-3))).toThrow(/1pF.*1000uF/s)
+})
+
+test("resistances below 1k are spelled in ohms with an R suffix", () => {
+  expect(valueFor(resistor(22))).toBe("22R")
+  expect(valueFor(resistor(470))).toBe("470R")
+  expect(valueFor(resistor(1))).toBe("1R")
+  expect(valueFor(resistor(1000))).toBe("1K")
 })
 
 test("capacitor boundary: exactly 1000uF (1e-3) is refused with clear message", () => {
@@ -49,7 +56,7 @@ test("resistor boundaries: 1k formats, the K/M boundary is 1M, 10M refuses", () 
   expect(valueFor(resistor(999000))).toBe("999K")
   expect(valueFor(resistor(1e6))).toBe("1M")
   expect(valueFor(resistor(1.5e6))).toBe("1.5M")
-  expect(() => valueFor(resistor(1e7))).toThrow(/1k.*10M/s)
+  expect(() => valueFor(resistor(1e7))).toThrow(/1R.*10M/s)
 })
 
 test("an IC's value is its manufacturer part number", () => {

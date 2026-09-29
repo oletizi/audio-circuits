@@ -1,7 +1,7 @@
 ---
 title: Transistor preamp, staged board - a second gain stage with panel drive and character controls
 date: 2026-09-28
-status: Draft for operator review
+status: Approved by the operator; implementation in progress (plan docs/superpowers/plans/2026-09-28-transistor-preamp-staged.md)
 proposal: docs/transistor-preamp/transistor-preamp-gain-structure-proposal.md (approved, revision 2)
 builds-on: docs/superpowers/specs/2026-09-24-transistor-preamp-buffered-design.md
 ---
