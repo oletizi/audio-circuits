@@ -1,6 +1,6 @@
 # Independently controlled transistor preamp with transformer output
 
-Status: Draft for review (revision 2) — architecture proposed; component values and modified circuit not yet validated.
+Status: Approved by the operator (revision 2) — architecture approved; component values and the modified circuit not yet designed or validated.
 
 Date: 26 September 2026 (Pacific time)
 
