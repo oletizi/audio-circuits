@@ -36,6 +36,7 @@ Made with the operator; each binds the design and the implementation plan.
 | A mirrored copper-side view for cutting | Recommended, not contested | Cuts are made from the copper side; no mental mirroring |
 | One command per board produces the whole packet | Operator | The request |
 | The fork change is data only: `--dump-board` reports pin positions and the grid size; no drawing in the fork | Recommended, not contested | Our renderer needs to know where every lead lands; all drawing stays in this repository |
+| Borrow VeroDesigner's bench-friendly conventions, reimplemented here: lettered rows and numbered columns, values on part bodies, off-board connections labelled at the strip ends, a summary line, a legend | Operator, on review of VeroDesigner (github.com/blazethablunt/VeroDesigner) | Its layouts read well on the bench. It has no licence, so no code is copied; the ideas are re-drawn in our renderer, in black and white |
 
 ## What one command produces
 
@@ -83,8 +84,21 @@ Pure TypeScript, reading the `--dump-board` text and the circuit's
 `DESIGNATORS` and values; SVG out. Everything is drawn on the hole grid (0.1"
 pitch, scaled for print).
 
+- **Coordinates:** rows lettered (A, B, C ...) and columns numbered (1, 2,
+  3 ...) along the board's edges, and every position in the images and the
+  guide is written that way (for example "cut 3 between F12 and F13"), not as
+  raw (row, col) pairs. The copper-side view keeps the same letters and
+  numbers, mirrored with the board, so a position means the same hole on both
+  sides.
 - **Strips:** thin light-grey lines along each row (or column, for vertical
   strips), with holes as small circles.
+- **Off-board connections:** the board's header pins that leave the board
+  (input, output, power, the panel pots) are labelled at the board edge with
+  their net or function (IN, OUT, +24V, GND, DRIVE ...), from the circuit's
+  ports and connector parts.
+- **Header:** the board's name, size in holes, and a summary line (parts,
+  wire links, cuts, solder bridges); a legend for the cut, bridge, wire and
+  checkbox marks.
 - **Cuts:** a bold black ✕ across the strip between the two holes, with its
   number beside it and a checkbox.
 - **Solder bridges:** a bold black bar joining the two holes, numbered.
@@ -99,7 +113,8 @@ pitch, scaled for print).
 
   When the pins span more than the body (stretched leads), the lead lines show
   exactly where each lead goes. Each part carries its label (designator or
-  value, per image) and a checkbox.
+  value, per image), written on its body where it fits and beside it where it
+  does not, and a checkbox.
 - **Mirroring:** the copper-side view flips columns (horizontal strips) or
   rows (vertical), and relabels nothing but the cut and bridge numbers.
 - **Numbering:** cuts and bridges are numbered in reading order (row, then
