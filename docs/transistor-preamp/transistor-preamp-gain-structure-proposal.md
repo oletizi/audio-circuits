@@ -45,20 +45,24 @@ These observations support continued use of the existing 2N3904 buffer for initi
 
 Simulated with the operator's tuned stage-1 legs (feedback leg about 0.86–1.13M, base-to-ground leg about 264–305k, collector 2.8k; the range reflects the in-circuit trim readings) at a 24 V supply:
 
-| Node | Model at 24 V |
-|---|---|
-| Q1 base / emitter | 2.5–2.9 V / 1.9–2.2 V (I_E about 1.3–1.5 mA) |
-| Q1 collector | 19.9–20.5 V |
-| Q2 base / emitter | 10.3 V / 9.6 V (I_E about 6.4 mA; about 90 mW in Q2) |
+| Node | Model at 24 V | Measured (28 Sep, no signal) |
+|---|---|---|
+| Supply | 24 V | 24 V |
+| Q1 base | 2.5–2.9 V | 2.6 V (probably read low; see below) |
+| Q1 emitter | 1.9–2.2 V (I_E about 1.3–1.5 mA) | 2.3 V (I_E about 1.5 mA) |
+| Q1 collector | 19.9–20.5 V | 20 V |
+| Q2 base | 10.3 V | 10.6 V |
+| Q2 emitter | 9.6 V (I_E about 6.4 mA) | 10 V (I_E about 6.7 mA; about 93 mW in Q2) |
+| Transformer primary, C5's far side | 0 V | 0 V |
 
-These are model values, to be checked against the baseline measurement in step 1 below.
+The board agrees with the model at the resolution this bench supports. Two cross-checks: Q1's current from its emitter (2.3 V ÷ 1.5k ≈ 1.5 mA) and from its collector load (4 V ÷ 2.8k ≈ 1.4 mA) agree. Q2's base sags from the divider's unloaded 12 V to 10.6 V, so it draws about 28 µA for 6.7 mA: a β of about 240, which is why Q2 sits slightly above the model. Q1's base-to-emitter reads only 0.3 V, which a transistor conducting 1.5 mA cannot have; the base reading is most likely pulled low by instrument loading on that high-impedance node (about 100k), not a fault.
 
 ### Capacitor voltage ratings at 24 V
 
 The board was designed for 9 V, and the repository model does not specify capacitor voltage ratings. At 24 V the electrolytics see:
 
 - **C4 (supply decoupling):** the full rail, 24 V. Rating **35 V or higher.**
-- **C5 (output):** about 9.6 V (Q2's emitter to the grounded primary). Rating **16 V or higher**; 10 V is marginal.
+- **C5 (output):** about 10 V as measured (Q2's emitter to the grounded primary). Rating **16 V or higher**; 10 V is at its limit.
 - **C3 (interstage):** about 9.6 V (Q1's collector at about 20 V, Q2's base at about 10.3 V). Rating **16 V or higher.**
 - C2 and C1 see about 3 V and 2 V.
 
