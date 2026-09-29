@@ -5,6 +5,7 @@ import {
 import type { StagedSetting } from "../../circuits/transistor-preamp/staged-board.ts"
 import * as buffered from "../../circuits/transistor-preamp/buffered-board.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
+import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { validateNetwork } from "../../lib/model/validate.ts"
 import type { Component, Network } from "../../lib/model/types.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
@@ -186,3 +187,8 @@ const STAGED_BOARD: BoardUnderTest = {
 test("KiCad reads the generated stub as the same circuit", () => {
   expectSameCircuit(kicadRoundTrip(STAGED_BOARD, "staged-board"), STAGED_BOARD)
 }, 30_000)
+
+test("the schematic's netlist export describes the same circuit as the model", async () => {
+  expectSameCircuit(
+    importNetlist(await Bun.file("tests/fixtures/transistor-preamp-staged.net").text()), STAGED_BOARD)
+})
