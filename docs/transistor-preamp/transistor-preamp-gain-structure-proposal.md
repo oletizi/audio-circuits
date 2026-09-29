@@ -39,7 +39,7 @@ These observations support continued use of the existing 2N3904 buffer for initi
 - **Transformer:** EDCOR WSM10K/10K, full windings only, centre taps unused (the test harness is unbalanced), wired using leads already soldered to it from earlier projects. The pin numbers given below have not been verified against this unit.
 - **Scope:** 1x probes. A 1x probe presents about 1 MΩ, which is negligible at the low-impedance nodes measured above (Q2's emitter, the transformer secondary) but pulls down readings at high-impedance nodes such as the transistor bases.
 - **Trim-pots:** unchanged since the 9 V tuning; none was readjusted at 24 V. The 24 V model below uses those same legs.
-- **Still open:** the as-built capacitor values and voltage ratings (see Capacitor voltage ratings at 24 V).
+- **Capacitor ratings:** not a concern for this test board, which is used only for these experiments; the operator will specify proper ratings when building a real unit.
 
 ### The existing board at 24 V (repository model)
 
@@ -57,16 +57,16 @@ Simulated with the operator's tuned stage-1 legs (feedback leg about 0.86–1.13
 
 The board agrees with the model at the resolution this bench supports. Two cross-checks: Q1's current from its emitter (2.3 V ÷ 1.5k ≈ 1.5 mA) and from its collector load (4 V ÷ 2.8k ≈ 1.4 mA) agree. Q2's base sags from the divider's unloaded 12 V to 10.6 V, so it draws about 28 µA for 6.7 mA: a β of about 240, which is why Q2 sits slightly above the model. Q1's base-to-emitter reads only 0.3 V, which a transistor conducting 1.5 mA cannot have; the base reading is most likely pulled low by instrument loading on that high-impedance node (about 100k), not a fault.
 
-### Capacitor voltage ratings at 24 V
+### Capacitor voltage ratings at 24 V (for a real build)
 
-The board was designed for 9 V, and the repository model does not specify capacitor voltage ratings. At 24 V the electrolytics see:
+Guidance for building a real unit, not a requirement on the current test board. The board was designed for 9 V, and the repository model does not specify capacitor voltage ratings. At 24 V the electrolytics see:
 
 - **C4 (supply decoupling):** the full rail, 24 V. Rating **35 V or higher.**
 - **C5 (output):** about 10 V as measured (Q2's emitter to the grounded primary). Rating **16 V or higher**; 10 V is at its limit.
 - **C3 (interstage):** about 9.6 V (Q1's collector at about 20 V, Q2's base at about 10.3 V). Rating **16 V or higher.**
 - C2 and C1 see about 3 V and 2 V.
 
-Confirm these before further 24 V testing: an overstressed electrolytic can fail short. Any new coupling capacitor needs the same check against its actual node voltages.
+Any new coupling capacitor in a real build needs the same check against its actual node voltages.
 
 ### Why Q1 clips on its upper peaks
 
@@ -123,7 +123,7 @@ Polarity: Q1 and Q3 both invert and Q2 does not, so the extended chain is non-in
 
 ## Development and verification
 
-1. Record the existing 24 V baseline: actual supply, both transistors' base/emitter/collector DC voltages with no signal, trim settings, input level, pot settings, and interface model/input mode. Confirm the as-built capacitor values and voltage ratings against the minimums above (C4 at least 35 V; C3 and C5 at least 16 V) before further 24 V work. Compare the DC voltages with the model's 24 V values; read base voltages with the 1x probe's loading in mind.
+1. Record the existing 24 V baseline: actual supply, both transistors' base/emitter/collector DC voltages with no signal, trim settings, input level, pot settings, and interface model/input mode. Compare the DC voltages with the model's 24 V values; read base voltages with the 1x probe's loading in mind.
 2. Compare low-level gain at 20, 40, 80, 100 Hz and 1 kHz with generator amplitude and controls fixed. Measure Q1 collector, Q2 emitter, primary, and secondary as needed. Distinguish the complete preamp response from the emitter-to-secondary transfer.
 3. Characterize Q2 separately, temporarily disconnecting Q1's signal feed and injecting a known AC-coupled signal into the existing biased buffer input. Find its clean swing with the transformer and interface load attached. This separates output-drive limits from Q1 clipping.
 4. Design Q3 and both new interstage controls. Calculate bias, loading, gain range, and coupling behavior at 24 V; simulate operating points and signal response before generating a revised schematic and stripboard extension. Do not assume Q1's values can simply be duplicated.
@@ -136,9 +136,7 @@ Use normal scope ground clips only on intended ground/reference nodes; scope cha
 
 - Q3 topology, gain, operating point, and component values.
 - Whether to re-centre Q1's collector at 24 V (RV1 down) or keep its asymmetric headroom as a coloration choice.
-- The input attenuator's value: keep the 50k and accept its interaction with Q1's gain, or change to a lower value.
-- As-built capacitor values and voltage ratings.
-- Interstage pot resistances/tapers and coupling capacitor values.
+- The input attenuator's value: keep the 50k and accept its interaction with Q1's gain, or change to a lower value.- Interstage pot resistances/tapers and coupling capacitor values.
 - Target clean output and acceptable bass loss/distortion under a defined load.
 - Whether Q2 needs redesign after isolated testing.
 - Whether to retain the unbalanced output attenuator for the prototype or design a balanced attenuator for the finished unit.
