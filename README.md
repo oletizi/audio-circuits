@@ -114,6 +114,24 @@ every run, is git-ignored, and is never hand-edited; the command refuses to
 write a packet when the layout has unresolved cuts, an unplaced part, or
 disagrees with the circuit it claims to be.
 
+`make bom`, run from a declared board's directory, keeps that board's parts
+list. It reads the board's circuit module (including its `bomConditions()`
+export, the operating point resistor dissipation is simulated at), the
+board's `bom.json` (which catalog part fills each line, the extras, and the
+purchasing mode) and the shared catalog in `parts/`. It derives what the
+board needs from the circuit, reports the lines with nothing chosen, choices
+the circuit no longer has, chosen parts that no longer meet their line
+(naming the field), unknown catalog ids, and prices older than 45 days, then
+rewrites the board's `BOM.md`. It exits non-zero until every line is chosen
+and met. It never edits `bom.json` or the catalog: choices are made by a
+person or the part-researcher agent. A board with no `bom.json` is refused,
+naming the file to create; the minimal one is
+`{ "purchasing": { "mode": "prototype", "shrinkage": 0.1 }, "lines": {}, "extras": [] }`.
+For a board with a `bom.json`, `make check` also fails when the committed
+`BOM.md` differs from a fresh rendering or a chosen part no longer meets its
+line; unchosen lines and stale prices do not fail `check`, and boards
+without `bom.json` are unaffected.
+
 A new board's KiCad schematic starts from a generated stub, written once with
 `bun run schematic-stub <circuit-module> <export> <out.kicad_sch>` (e.g.
 `circuits/transistor-preamp/lab-board.kicad_sch`) and arranged by hand in

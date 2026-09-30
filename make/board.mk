@@ -7,7 +7,8 @@
 # already knows how to resolve, check, and rewrite exactly one declared
 # board. No board logic is reimplemented here.
 #
-# WHAT WRITES. `check`, `cuts` and `board-info` write nothing. `update` and
+# WHAT WRITES. `check`, `cuts` and `board-info` write nothing. `bom` rewrites
+# this board's BOM.md and never its bom.json or the parts/ catalog. `update` and
 # `stripboard` rewrite the declared layout IN PLACE - the CLI itself refuses
 # while the layout has uncommitted changes, unless ALLOW_DIRTY=1 is passed
 # through as --allow-dirty. `edit` writes nothing itself; it hands the
@@ -41,7 +42,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts import update stripboard edit guide board-info netlist-agrees
+.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -150,6 +151,12 @@ perfboard-help:
 	@echo "                       guide.html) - replaces guide/, never the layout;"
 	@echo "                       refuses while cuts are unresolved or a part is unplaced"
 	@echo ""
+	@echo "Buy the parts"
+	@echo "  make bom             compare what the circuit needs with bom.json and the"
+	@echo "                       parts/ catalog, print what is unchosen, unmet or"
+	@echo "                       stale-priced, and rewrite BOM.md - never bom.json or"
+	@echo "                       the catalog; exits 1 until every line is chosen and met"
+	@echo ""
 	@echo "The toolchain"
 	@echo "  make veroroute       acquire and build the pinned VeroRoute fork (a"
 	@echo "                       no-op once it is already built)"
@@ -193,3 +200,10 @@ edit: veroroute
 # rebuilt whole from the .vrt, the schematic and the circuit on every run.
 guide: veroroute netlist-agrees
 	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)"
+
+# The parts list. No veroroute or netlist-agrees prerequisite: it reads only the
+# circuit, bom.json and the parts/ catalog, never the layout or the schematic.
+# `check` compares BOM.md with a fresh rendering (for a board with a bom.json)
+# without rewriting it.
+bom:
+	@bun "$(CLI)" bom -C "$(CURDIR)"

@@ -31,6 +31,17 @@ board also declares a layout, but its cuts are unresolved, so `make guide`
 refuses it with the same explanation `make cuts` gives. See the design:
 `docs/superpowers/specs/2026-09-29-build-guide-design.md`.
 
+The staged board has a parts list: `make -C boards/transistor-preamp-staged bom`
+derives what the board needs from `staged-board.ts` (resistor ratings from its
+operating point at START, capacitor voltage ratings from the 24 V rail), compares
+it with the board's `bom.json` and the shared `parts/` catalog, prints what is
+unchosen, unmet or stale-priced, and rewrites the committed `BOM.md`. It never
+edits `bom.json` or the catalog, and exits non-zero until every line is chosen
+and met. Its `bom.json` starts with nothing chosen, so every line currently
+reads "not chosen"; the part-researcher agent fills them. `make check` fails if
+`BOM.md` falls out of step or a chosen part stops fitting. See the design:
+`docs/superpowers/specs/2026-09-30-bom-design.md`.
+
 ## 2. The 24 V transformer-coupled preamp
 
 Proposal: [24 V transformer-coupled microphone preamp: output-stage design proposal](24v-transformer-coupled-preamp.md)
