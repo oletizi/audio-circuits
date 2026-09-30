@@ -127,7 +127,7 @@ async function evaluate(declaration: PerfboardDeclaration, deps: BomDeps): Promi
 }
 
 export interface BomRun {
-  /** 0 when the list is complete, 1 when anything is unchosen, unmet, unknown or uncovered. */
+  /** 0 when the list is complete, 1 when anything is unchosen, removed, unmet, unknown or uncovered. */
   readonly exitCode: 0 | 1
   readonly output: string
 }

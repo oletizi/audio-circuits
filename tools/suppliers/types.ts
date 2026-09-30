@@ -1,6 +1,6 @@
 /**
  * The shapes every supplier client produces and the one interface the CLI verbs
- * (`tools/cli/parts.ts`, not yet built) call through. A third supplier with a
+ * (`tools/cli/parts.ts`) and the price refresh (`tools/suppliers/refresh.ts`) call through. A third supplier with a
  * service can be added later by writing one more file behind `SupplierClient`
  * without touching any verb.
  *
