@@ -39,7 +39,8 @@
     {
       "part": "hookup-wire-22awg-solid-assortment",
       "quantity": 1,
-      "why": "point-to-point wiring on the stripboard and off-board wiring to the panel pots and headers"
+      "why": "point-to-point wiring on the stripboard and off-board wiring to the panel pots and headers",
+      "spares": false
     },
     {
       "part": "knob-19mm-set-screw-6.35mm-shaft",

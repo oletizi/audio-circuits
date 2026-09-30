@@ -15,7 +15,7 @@ test("parseBoardBom accepts a well-formed prototype file", () => {
   const bom = parseBoardBom(VALID_PROTOTYPE, FILE)
   expect(bom.purchasing).toEqual({ mode: "prototype", shrinkage: 0.1 })
   expect(bom.lines).toEqual({ "resistor 100k 0207": "r_100k_0207" })
-  expect(bom.extras).toEqual([{ part: "transistor_socket_to92", quantity: 6, why: "one per BJT, plus spares" }])
+  expect(bom.extras).toEqual([{ part: "transistor_socket_to92", quantity: 6, why: "one per BJT, plus spares", spares: true }])
 })
 
 test("parseBoardBom accepts a well-formed run file with no lines or extras chosen yet", () => {
@@ -106,6 +106,34 @@ test("parseBoardBom throws naming the field when an extra is missing part or why
       FILE,
     ),
   ).toThrow(/extras\[0\].why/)
+})
+
+test("parseBoardBom reads an extra's spares: absent is true, false is kept", () => {
+  const bom = parseBoardBom(
+    {
+      purchasing: { mode: "prototype", shrinkage: 0.1 },
+      lines: {},
+      extras: [
+        { part: "socket", quantity: 3, why: "sockets" },
+        { part: "wire_kit", quantity: 1, why: "wire", spares: false },
+      ],
+    },
+    FILE,
+  )
+  expect(bom.extras.map((extra) => extra.spares)).toEqual([true, false])
+})
+
+test("parseBoardBom throws naming the extra and the fix when spares is not a boolean", () => {
+  expect(() =>
+    parseBoardBom(
+      {
+        purchasing: { mode: "prototype", shrinkage: 0.1 },
+        lines: {},
+        extras: [{ part: "wire_kit", quantity: 1, why: "wire", spares: "no" }],
+      },
+      FILE,
+    ),
+  ).toThrow(/bom\.json: extras\[0\]\.spares is a string, not a boolean.*Write false/s)
 })
 
 test("parseBoardBom throws when lines is not an object of strings", () => {

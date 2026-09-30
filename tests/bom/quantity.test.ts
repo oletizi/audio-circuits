@@ -35,15 +35,27 @@ function source(breaks: Source["breaks"]): Source {
 }
 
 test("coverQuantity: prototype, need 1, shrinkage 0.1 -> 2", () => {
-  expect(coverQuantity(1, PROTOTYPE_10PC)).toBe(2)
+  expect(coverQuantity(1, PROTOTYPE_10PC, true)).toBe(2)
 })
 
 test("coverQuantity: prototype, need 10, shrinkage 0.1 -> 11", () => {
-  expect(coverQuantity(10, PROTOTYPE_10PC)).toBe(11)
+  expect(coverQuantity(10, PROTOTYPE_10PC, true)).toBe(11)
 })
 
 test("coverQuantity: run, need 3, 5 boards, shrinkage 0.1 -> 17", () => {
-  expect(coverQuantity(3, run(5, 0.1))).toBe(17)
+  expect(coverQuantity(3, run(5, 0.1), true)).toBe(17)
+})
+
+test("coverQuantity: spares false drops the shrinkage margin (prototype 1 -> 1, run 3 x 5 boards -> 15)", () => {
+  expect(coverQuantity(1, PROTOTYPE_10PC, false)).toBe(1)
+  expect(coverQuantity(3, run(5, 0.1), false)).toBe(15)
+})
+
+test("suggestBuy: prototype, non-stock, spares false buys exactly the need", () => {
+  const e = entry()
+  const s = source([{ quantity: 1, unitPrice: 25.33 }])
+  expect(suggestBuy(1, PROTOTYPE_10PC, e, s, false)).toEqual({ quantity: 1, unitPrice: 25.33, linePrice: 25.33 })
+  expect(suggestBuy(1, PROTOTYPE_10PC, e, s, true).quantity).toBe(2)
 })
 
 test("suggestBuy: prototype, stock part, a pack break covers the cover -> buys the pack", () => {
@@ -53,7 +65,7 @@ test("suggestBuy: prototype, stock part, a pack break covers the cover -> buys t
     { quantity: 100, unitPrice: 0.012, pack: true },
   ])
   // need 2 -> cover = ceil(2 * 1.1) = 3, well under the 100-pack.
-  const suggestion = suggestBuy(2, PROTOTYPE_10PC, e, s)
+  const suggestion = suggestBuy(2, PROTOTYPE_10PC, e, s, true)
   expect(suggestion).toEqual({ quantity: 100, unitPrice: 0.012, linePrice: 1.2 })
 })
 
@@ -64,8 +76,8 @@ test("suggestBuy: prototype, stock part, no pack covers the cover -> throws nami
     { quantity: 100, unitPrice: 0.012, pack: true },
   ])
   // need 200 -> cover = ceil(200 * 1.1) = 220, beyond the only 100-unit pack.
-  expect(() => suggestBuy(200, PROTOTYPE_10PC, e, s)).toThrow(/r_weird/)
-  expect(() => suggestBuy(200, PROTOTYPE_10PC, e, s)).toThrow(/Mouser/)
+  expect(() => suggestBuy(200, PROTOTYPE_10PC, e, s, true)).toThrow(/r_weird/)
+  expect(() => suggestBuy(200, PROTOTYPE_10PC, e, s, true)).toThrow(/Mouser/)
 })
 
 test("suggestBuy: prototype, non-stock -> buys the cover, at the break price for that quantity", () => {
@@ -75,7 +87,7 @@ test("suggestBuy: prototype, non-stock -> buys the cover, at the break price for
     { quantity: 25, unitPrice: 0.3 },
   ])
   // need 10 -> cover = ceil(10 * 1.1) = 11, which is below the 25 break, so break [1, 0.5] applies.
-  const suggestion = suggestBuy(10, PROTOTYPE_10PC, e, s)
+  const suggestion = suggestBuy(10, PROTOTYPE_10PC, e, s, true)
   expect(suggestion).toEqual({ quantity: 11, unitPrice: 0.5, linePrice: 5.5 })
 })
 
@@ -86,7 +98,7 @@ test("suggestBuy: prototype, non-stock, cover below the first break's quantity -
     { quantity: 100, unitPrice: 0.2 },
   ])
   // need 1 -> cover = ceil(1 * 1.1) = 2, below the minimum order of 10.
-  const suggestion = suggestBuy(1, PROTOTYPE_10PC, e, s)
+  const suggestion = suggestBuy(1, PROTOTYPE_10PC, e, s, true)
   expect(suggestion).toEqual({ quantity: 10, unitPrice: 0.4, linePrice: 4 })
 })
 
@@ -97,7 +109,7 @@ test("suggestBuy: run, moves up to a larger break when that costs less in total 
     { quantity: 25, unitPrice: 0.3 },
   ])
   // need chosen so cover = 17: ceil(need * 5 * 1.1) = 17 -> need = 3 (as in the coverQuantity test).
-  const suggestion = suggestBuy(3, run(5, 0.1), e, s)
+  const suggestion = suggestBuy(3, run(5, 0.1), e, s, true)
   expect(suggestion).toEqual({ quantity: 25, unitPrice: 0.3, linePrice: 7.5 })
 })
 
@@ -107,7 +119,7 @@ test("suggestBuy: run, stays at the cover when a larger break costs more in tota
     { quantity: 1, unitPrice: 0.5 },
     { quantity: 100, unitPrice: 0.3 },
   ])
-  const suggestion = suggestBuy(3, run(5, 0.1), e, s)
+  const suggestion = suggestBuy(3, run(5, 0.1), e, s, true)
   expect(suggestion).toEqual({ quantity: 17, unitPrice: 0.5, linePrice: 8.5 })
 })
 
@@ -118,7 +130,7 @@ test("suggestBuy: run, cover below the first break's quantity buys the first bre
     { quantity: 100, unitPrice: 0.39 },
   ])
   // need 1, 1 board, shrinkage 0.1 -> cover = 2, below the minimum order of 10.
-  const suggestion = suggestBuy(1, { mode: "run", boards: 1, shrinkage: 0.1 }, e, s)
+  const suggestion = suggestBuy(1, { mode: "run", boards: 1, shrinkage: 0.1 }, e, s, true)
   expect(suggestion.quantity).toBe(10)
   expect(suggestion.unitPrice).toBe(0.4)
 })
@@ -126,8 +138,8 @@ test("suggestBuy: run, cover below the first break's quantity buys the first bre
 test("suggestBuy: throws naming the entry and supplier when the source has no price breaks", () => {
   const e = entry({ id: "r_no_breaks" })
   const s = source([])
-  expect(() => suggestBuy(1, PROTOTYPE_10PC, e, s)).toThrow(/r_no_breaks/)
-  expect(() => suggestBuy(1, PROTOTYPE_10PC, e, s)).toThrow(/Mouser/)
+  expect(() => suggestBuy(1, PROTOTYPE_10PC, e, s, true)).toThrow(/r_no_breaks/)
+  expect(() => suggestBuy(1, PROTOTYPE_10PC, e, s, true)).toThrow(/Mouser/)
 })
 
 test("stockPackCovers: true when some pack break's quantity is at least the needed quantity", () => {

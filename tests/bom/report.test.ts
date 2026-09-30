@@ -114,7 +114,7 @@ test("unknownParts: a catalog id named in lines or extras that does not exist", 
   const catalog = new Map<string, CatalogEntry>()
   const board = bom({
     lines: { "resistor 100k 0207": "r_100k_0207" },
-    extras: [{ part: "missing_extra", quantity: 1, why: "test" }],
+    extras: [{ part: "missing_extra", quantity: 1, why: "test", spares: true }],
   })
   const report = compareBom([line()], board, catalog, TODAY, STALE_DAYS)
   expect([...report.unknownParts].sort()).toEqual(["missing_extra", "r_100k_0207"])
@@ -181,9 +181,21 @@ test("uncovered: applies to extras too, keyed by the extra's part", () => {
     stock: true,
     sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 50, unitPrice: 0.05, pack: true }] })],
   }]])
-  const board = bom({ lines: {}, extras: [{ part: "knob", quantity: 200, why: "test" }] })
+  const board = bom({ lines: {}, extras: [{ part: "knob", quantity: 200, why: "test", spares: true }] })
   const report = compareBom([], board, catalog, TODAY, STALE_DAYS)
   expect(report.uncovered).toEqual([{ part: "knob", supplier: "Mouser", quantity: 220 }])
+})
+
+test("uncovered: an extra with spares false is judged against its quantity alone", () => {
+  const catalog = new Map([["knob", {
+    id: "knob", kind: "accessory" as const, description: "knob", specs: {}, evidence: [], why: "test",
+    stock: true,
+    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 50, unitPrice: 0.05, pack: true }] })],
+  }]])
+  const spared = compareBom([], bom({ lines: {}, extras: [{ part: "knob", quantity: 50, why: "test", spares: true }] }), catalog, TODAY, STALE_DAYS)
+  expect(spared.uncovered).toEqual([{ part: "knob", supplier: "Mouser", quantity: 55 }])
+  const exact = compareBom([], bom({ lines: {}, extras: [{ part: "knob", quantity: 50, why: "test", spares: false }] }), catalog, TODAY, STALE_DAYS)
+  expect(exact.uncovered).toEqual([])
 })
 
 test("a line with neither removed nor unmet is skipped when its chosen part is unknown", () => {

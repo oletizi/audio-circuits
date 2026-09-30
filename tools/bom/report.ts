@@ -69,11 +69,11 @@ function daysBetween(from: string, to: string): number {
  * report (see the module comment).
  */
 function uncoveredFor(
-  partId: string, need: number, purchasing: Purchasing, entry: CatalogEntry,
+  partId: string, need: number, purchasing: Purchasing, entry: CatalogEntry, spares: boolean,
 ): readonly { readonly part: string; readonly supplier: string; readonly quantity: number }[] {
   if (!(purchasing.mode === "prototype" && entry.stock)) return []
 
-  const cover = coverQuantity(need, purchasing)
+  const cover = coverQuantity(need, purchasing, spares)
   const failingSuppliers: string[] = []
   for (const source of entry.sources) {
     if (!stockPackCovers(entry, source, cover)) failingSuppliers.push(source.supplier)
@@ -138,12 +138,12 @@ export function compareBom(
     if (line === undefined) continue
     const entry = catalog.get(partId)
     if (entry === undefined) continue
-    uncovered.push(...uncoveredFor(partId, line.quantity, bom.purchasing, entry))
+    uncovered.push(...uncoveredFor(partId, line.quantity, bom.purchasing, entry, true))
   }
   for (const extra of bom.extras) {
     const entry = catalog.get(extra.part)
     if (entry === undefined) continue
-    uncovered.push(...uncoveredFor(extra.part, extra.quantity, bom.purchasing, entry))
+    uncovered.push(...uncoveredFor(extra.part, extra.quantity, bom.purchasing, entry, extra.spares))
   }
 
   return {

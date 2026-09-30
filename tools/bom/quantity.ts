@@ -4,7 +4,8 @@
  * docs/superpowers/specs/2026-09-30-bom-design.md):
  *
  * - the quantity to cover is `need x boards x (1 + shrinkage)`, rounded up,
- *   so any line gets at least one spare (`coverQuantity`);
+ *   so any line gets at least one spare (`coverQuantity`) - except an extra that
+ *   declares `"spares": false` in bom.json, which covers need x boards alone;
  * - prototype (one board), `stock` part: the smallest stocking-pack price
  *   break that covers the cover quantity;
  * - prototype, any other part: the cover quantity, at the price break that
@@ -54,10 +55,12 @@ function ceiling(value: number): number {
 }
 
 /** The quantity to cover: need, across every board, with the shrinkage margin - rounded
- * up so any line gets at least one spare, however small its need. */
-export function coverQuantity(need: number, purchasing: Purchasing): number {
+ * up so any line gets at least one spare, however small its need. `spares` false (an extra
+ * that opts out in bom.json) drops the margin: need across every board, rounded up. */
+export function coverQuantity(need: number, purchasing: Purchasing, spares: boolean): number {
   const boards = purchasing.mode === "run" ? purchasing.boards : 1
-  return ceiling(need * boards * (1 + purchasing.shrinkage))
+  const margin = spares ? 1 + purchasing.shrinkage : 1
+  return ceiling(need * boards * margin)
 }
 
 function requireBreaks(source: Source, entry: CatalogEntry): readonly PriceBreak[] {
@@ -156,14 +159,16 @@ function runSuggestion(cover: number, entry: CatalogEntry, source: Source): BuyS
 }
 
 /** The buy quantity and price to suggest for one line's chosen part, from one of its
- * sources. See the module comment for the rule per purchasing mode. */
+ * sources. See the module comment for the rule per purchasing mode; `spares` as for
+ * `coverQuantity`. */
 export function suggestBuy(
   need: number,
   purchasing: Purchasing,
   entry: CatalogEntry,
   source: Source,
+  spares: boolean,
 ): BuySuggestion {
-  const cover = coverQuantity(need, purchasing)
+  const cover = coverQuantity(need, purchasing, spares)
   if (purchasing.mode === "prototype" && entry.stock) {
     return stockPackSuggestion(cover, entry, source)
   }

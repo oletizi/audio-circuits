@@ -38,6 +38,7 @@ Made with the operator; each binds the design and the implementation plan.
 | Buy quantities depend on the board's maturity: a prototype board suggests stocking packs of the cheap commodity parts (to amortise shipping) and the needed quantity of the rest; a production run suggests boards x need, moved up to a larger price break whenever that costs less in total | Operator | That is how the operator buys |
 | Both modes add a shrinkage margin, rounded up so every line has at least one spare | Operator | "Nothing worse than losing or breaking a part and having no extras" |
 | A price is out of date after 45 days | Operator | Tariffs make prices move quickly |
+| An extra may opt out of the shrinkage margin with `"spares": false`; absent means the margin applies | Designer, final review (Minor 5), controller ruling | The margin bought a second 150 ft wire kit, about half the staged board's order; a spare stripboard is sensible, a spare wire kit is not |
 
 ## What is stored, and where
 
@@ -96,7 +97,12 @@ One file per part, so every change is a small, readable diff. An entry holds:
 
 - `lines`: line key -> catalog id;
 - `extras`: parts the circuit does not know about - transistor sockets, the
-  stripboard, hookup wire, knobs - each a catalog id, a quantity and a reason;
+  stripboard, hookup wire, knobs - each a catalog id, a quantity and a reason,
+  and optionally `"spares": false`. Absent, `spares` is true: the documented
+  default, the same shrinkage margin every line gets. `false` buys the
+  extra's quantity x boards with no margin, for an extra where a spare is not
+  worth buying (a 150 ft six-spool wire kit). Any value other than a boolean
+  is refused;
 - `purchasing`: required, with a shrinkage margin in both modes (a fraction
   greater than zero). The quantity to cover is need x boards x (1 +
   shrinkage), rounded up - so any line gets at least one spare, however small

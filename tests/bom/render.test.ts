@@ -150,11 +150,31 @@ test("extras render under \"Extras\", using the reason as the identifying label"
   }]])
   const text = renderBomMarkdown({
     boardName: "b", conditions: "x", lines: [], catalog,
-    bom: bom({ lines: {}, extras: [{ part: "transistor_socket_to92", quantity: 6, why: "one per BJT, plus spares" }] }),
+    bom: bom({ lines: {}, extras: [{ part: "transistor_socket_to92", quantity: 6, why: "one per BJT, plus spares", spares: true }] }),
   })
   expect(text).toContain("## Extras")
   expect(text).toContain("| one per BJT, plus spares | - | 6 |")
   expect(text).toContain("TO-92 transistor socket")
+})
+
+test("an extra with spares false buys its quantity without the shrinkage margin", () => {
+  const catalog = new Map([["wire_kit", {
+    id: "wire_kit", kind: "accessory" as const, description: "hookup wire kit",
+    specs: {}, evidence: [], why: "test", stock: false,
+    sources: [source({ breaks: [{ quantity: 1, unitPrice: 25.33 }] })],
+  }]])
+  const extra = { part: "wire_kit", quantity: 1, why: "wiring" }
+  const without = renderBomMarkdown({
+    boardName: "b", conditions: "x", lines: [], catalog,
+    bom: bom({ lines: {}, extras: [{ ...extra, spares: false }] }),
+  })
+  expect(without).toContain("| wiring | - | 1 | 1 |")
+  expect(without).toContain("| Mouser | USD | 25.33 |")
+  const withSpares = renderBomMarkdown({
+    boardName: "b", conditions: "x", lines: [], catalog,
+    bom: bom({ lines: {}, extras: [{ ...extra, spares: true }] }),
+  })
+  expect(withSpares).toContain("| wiring | - | 1 | 2 |")
 })
 
 test("unit prices under 0.10 show up to four decimals; line and total prices show two", () => {

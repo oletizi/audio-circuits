@@ -109,14 +109,16 @@ interface SourceCells {
  * catalog entry with no price breaks at all, say) is a real bug and throws through,
  * uncaught - it does not belong in a rendered cell as if it were an ordinary
  * "buy a bigger pack" case. */
-function sourceCells(need: number, purchasing: Purchasing, entry: CatalogEntry, source: Source): SourceCells {
+function sourceCells(
+  need: number, purchasing: Purchasing, entry: CatalogEntry, source: Source, spares: boolean,
+): SourceCells {
   const link = `[${source.supplier} (${source.use})](${source.url}) (checked ${source.checked})`
-  const cover = coverQuantity(need, purchasing)
+  const cover = coverQuantity(need, purchasing, spares)
   if (purchasing.mode === "prototype" && entry.stock && !stockPackCovers(entry, source, cover)) {
     const message = `no pack covers ${cover}`
     return { link, buy: message, unit: message, line: message }
   }
-  const suggestion = suggestBuy(need, purchasing, entry, source)
+  const suggestion = suggestBuy(need, purchasing, entry, source, spares)
   return {
     link,
     buy: String(suggestion.quantity),
@@ -158,10 +160,10 @@ function rowForUnknownPart(label: readonly string[], needs: string, need: number
 
 function rowForChosen(
   label: readonly string[], needs: string, need: number, entry: CatalogEntry, purchasing: Purchasing,
-  totals: Map<string, Total>,
+  spares: boolean, totals: Map<string, Total>,
 ): RenderedRow {
   const cells = entry.sources.map((source) => {
-    const result = sourceCells(need, purchasing, entry, source)
+    const result = sourceCells(need, purchasing, entry, source, spares)
     if (result.linePrice !== undefined) addToTotal(totals, source.supplier, source.currency, result.linePrice)
     return result
   })
@@ -211,7 +213,8 @@ function rowForLine(line: BomLine, bom: BoardBom, catalog: ReadonlyMap<string, C
   if (partId === undefined) return rowForUnchosen(line.designators, needs, line.quantity)
   const entry = catalog.get(partId)
   if (entry === undefined) return rowForUnknownPart(line.designators, needs, line.quantity, partId)
-  return rowForChosen(line.designators, needs, line.quantity, entry, bom.purchasing, totals)
+  // A circuit line always carries the shrinkage margin; only an extra may opt out.
+  return rowForChosen(line.designators, needs, line.quantity, entry, bom.purchasing, true, totals)
 }
 
 /** An extra is not derived from the circuit, so it has no requirement to state: "-". */
@@ -220,7 +223,7 @@ const EXTRA_NEEDS = "-"
 function rowForExtra(extra: Extra, bom: BoardBom, catalog: ReadonlyMap<string, CatalogEntry>, totals: Map<string, Total>): RenderedRow {
   const entry = catalog.get(extra.part)
   if (entry === undefined) return rowForUnknownPart([extra.why], EXTRA_NEEDS, extra.quantity, extra.part)
-  return rowForChosen([extra.why], EXTRA_NEEDS, extra.quantity, entry, bom.purchasing, totals)
+  return rowForChosen([extra.why], EXTRA_NEEDS, extra.quantity, entry, bom.purchasing, extra.spares, totals)
 }
 
 /**

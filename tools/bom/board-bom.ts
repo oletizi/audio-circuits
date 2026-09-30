@@ -18,6 +18,11 @@ export interface Extra {
   readonly part: string
   readonly quantity: number
   readonly why: string
+  /** Whether the board's shrinkage margin (and so at least one spare) applies to this
+   * extra. `"spares": false` in bom.json turns it off - for an extra where a spare is not
+   * worth buying, such as a multi-spool wire kit. Absent means true: the spec's documented
+   * default, the same rule every line follows. */
+  readonly spares: boolean
 }
 
 export interface BoardBom {
@@ -95,7 +100,21 @@ function parseExtra(value: unknown, index: number, where: string): Extra {
     throw new Error(`${where}: ${what}.quantity (${quantity}) must be a positive number.`)
   }
   const why = requireNonEmptyString(record["why"], `${what}.why`, where)
-  return { part, quantity, why }
+  return { part, quantity, why, spares: parseSpares(record["spares"], what, where) }
+}
+
+/** `spares` is optional: absent means true (the documented default in the BOM spec's
+ * bom.json section - the shrinkage margin applies, as for every line). Present, it must
+ * be a boolean. */
+function parseSpares(value: unknown, what: string, where: string): boolean {
+  if (value === undefined) return true
+  if (typeof value !== "boolean") {
+    throw new Error(
+      `${where}: ${what}.spares is a ${typeof value}, not a boolean. Write false to buy this ` +
+        "extra without the shrinkage margin, or leave it out to apply the margin.",
+    )
+  }
+  return value
 }
 
 function parseExtras(value: unknown, where: string): readonly Extra[] {
