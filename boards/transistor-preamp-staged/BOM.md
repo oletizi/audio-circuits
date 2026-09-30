@@ -4,7 +4,7 @@ Supply 24 V; every control (RV1-RV7) at START.
 
 ## On the board
 
-| Designators | Needs | Need | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
+| Designators | Needs | Qty | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Q1, Q2, Q3 | 2N3904, TO-92, E-B-C | 3 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
 | C2, C3, C5, C8, C9 | 10uF, radial, <= 5 mm dia, 2 mm leads, min 35 V | 5 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
@@ -30,7 +30,7 @@ Supply 24 V; every control (RV1-RV7) at START.
 
 ## Off the board
 
-| Designators | Needs | Need | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
+| Designators | Needs | Qty | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | RV6 | 1K, linear, panel pot | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
 | RV5, RV7 | 25K, linear, panel pot | 2 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |

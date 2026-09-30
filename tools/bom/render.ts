@@ -25,7 +25,7 @@ import { needsText } from "./needs-text.ts"
 
 const NOT_CHOSEN = "not chosen"
 const TABLE_HEADER = [
-  "Designators", "Needs", "Need", "Buy", "Description", "Manufacturer / MPN", "Links", "Unit price", "Line price",
+  "Designators", "Needs", "Qty", "Buy", "Description", "Manufacturer / MPN", "Links", "Unit price", "Line price",
 ] as const
 
 const MICROS_PER_CURRENCY_UNIT = 1_000_000

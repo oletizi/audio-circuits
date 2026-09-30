@@ -98,7 +98,7 @@ test("every section table has a Needs column after Designators", () => {
   const text = renderBomMarkdown({
     boardName: "b", conditions: "x", lines: [resistorLine()], bom: bom(), catalog,
   })
-  expect(text).toContain("| Designators | Needs | Need | Buy | Description |")
+  expect(text).toContain("| Designators | Needs | Qty | Buy | Description |")
   expect(text).toContain("| R2, R10 | 100K, 0207 axial, 10.16 mm leads, min 0.25 W | 2 |")
 })
 
