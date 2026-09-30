@@ -38,6 +38,8 @@ Made with the operator; each binds the design and the implementation plan.
 | The fork change is data only: `--dump-board` reports pin positions and the grid size; no drawing in the fork | Recommended, not contested | Our renderer needs to know where every lead lands; all drawing stays in this repository |
 | The checklist follows the operator's order of operations: ICs and transistors, resistors (with trim-pots), capacitors, wire links, wire-to-board junctions, solder bridges, cuts last | Operator (placement of wire links, solder bridges and trim-pots by the designer; see Open questions) | That is how the operator builds; one checklist read top to bottom |
 | An electrolytic's + is drawn beside its pin-1 hole, not on its body | Designer, during implementation | On a stretched part the body sits between the holes; a + beside the hole marks which lead is positive unambiguously |
+| Every packet has both component-side images: one labelled with designators, one with values | Operator | Both are needed at every build |
+| Every fourth strip (rows A, E, I, M ...; columns 1, 5, 9 ... on a vertical-strip board) drawn in a darker grey, on both the component and copper views, with its row letter in bold | Operator | Makes it easy to line up the board with the drawing by counting from a marked strip |
 | Borrow VeroDesigner's bench-friendly conventions, reimplemented here: lettered rows and numbered columns, values on part bodies, off-board connections labelled at the strip ends, a summary line, a legend | Operator, on review of VeroDesigner (github.com/blazethablunt/VeroDesigner) | Its layouts read well on the bench. It has no licence, so no code is copied; the ideas are re-drawn in our renderer, in black and white |
 
 ## What one command produces
@@ -93,7 +95,9 @@ pitch, scaled for print).
   numbers, mirrored with the board, so a position means the same hole on both
   sides.
 - **Strips:** thin light-grey lines along each row (or column, for vertical
-  strips), with holes as small circles.
+  strips), with holes as small circles. Every fourth strip, counting from
+  the first (A, E, I ...), is a darker grey with its letter in bold, as an
+  alignment guide; it stays lighter than wires and parts.
 - **Off-board connections:** the board's header pins that leave the board
   (input, output, power, the panel pots) are labelled at the board edge with
   their net or function (IN, OUT, +24V, GND, DRIVE ...), from the circuit's
