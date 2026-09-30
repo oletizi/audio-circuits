@@ -24,21 +24,23 @@ and a command that refreshes the prices already in the catalog.
 | Use the Mouser Search API and the Digi-Key Product Information API, not browser automation of their sites | Operator (option 1 of 3) | Official, stable, within the suppliers' terms; scraping breaks when bot checks change |
 | The supplier data counts as evidence for what it states: supplier part number, price breaks, stock, product and datasheet links, and the parametric specs the supplier lists | Designer, accepted with this design | It is the supplier's own record of the part, read at a known time; the evidence note names the service and the date |
 | Physical dimensions (body size, lead spacing) still need the datasheet unless the supplier's parameters state them | Designer, accepted with this design | Supplier parametrics often omit or round dimensions; the footprint match depends on them |
-| Keys come from environment variables, which Bun loads from a git-ignored `.env` at the repository root | Designer, accepted with this design | Keys never reach git; nothing to configure beyond the file |
+| Keys live outside the repository, one file per supplier under `~/.config/<supplier>/`, each read from exactly one place (no environment-variable alternative) | Operator (the Mouser key is already at `~/.config/mouser/mouser-credentials.txt`) | Keys never reach git; one place per key means no question of which one was used |
 | A missing key refuses with the variable's name and where to get it; no supplier is silently skipped | Designer, accepted with this design | The no-fallback rule |
 | A separate command refreshes the prices of catalog entries in place; it updates price breaks, stock-free fields and the checked date only, never which part was chosen | Designer, accepted with this design | Prices go stale after 45 days; refreshing is mechanical and should not need a research session |
 | Tayda, specialist shops and Amazon stay manual links | Operator | They offer no such service |
 
 ## Keys (the operator registers these)
 
-- **Mouser:** a Search API key, from the API Hub in a Mouser account.
-  Variable: `MOUSER_SEARCH_API_KEY`.
+- **Mouser:** a Search API key, from the API Hub in a Mouser account, in
+  `~/.config/mouser/mouser-credentials.txt`: one line, the key (in place).
 - **Digi-Key:** an application on developer.digikey.com with the Product
   Information API, production environment, which gives a client ID and
-  secret. Variables: `DIGIKEY_CLIENT_ID`, `DIGIKEY_CLIENT_SECRET`.
+  secret, in `~/.config/digikey/digikey-credentials.txt`: two lines, the
+  client ID then the client secret.
 
-`.env` is added to `.gitignore`; `docs/parts/sourcing-notes.md` says how to
-create it.
+Each file must hold exactly that shape (surrounding whitespace ignored);
+anything else is refused naming the file and the expected shape. The tool
+never prints a key. `docs/parts/sourcing-notes.md` says where the files go.
 
 ## The tool
 
@@ -95,7 +97,8 @@ one gains "use the parts tool".
 
 ## Errors
 
-- Missing key: names the variable and the registration page.
+- Missing key file: names the file, its expected shape and the registration
+  page.
 - Refused key, rate limit, or a service error: names the supplier, the HTTP
   status and the service's own message; nothing is written.
 - A lookup that finds no exact part-number match says so; it never returns a
