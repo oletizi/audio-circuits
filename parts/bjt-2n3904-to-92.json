@@ -5,6 +5,7 @@
   "manufacturer": "Diotec Semiconductor",
   "mpn": "2N3904",
   "specs": {
+    "type": "2N3904",
     "volts": 40,
     "watts": 0.625,
     "package": "TO-92",
@@ -19,6 +20,11 @@
       "spec": "mpn",
       "url": "https://www.mouser.com/en/ProductDetail/Diotec-Semiconductor/2N3904?qs=OlC7AqGiEDlYMySw5i2rlg%3D%3D",
       "note": "Mouser Search API, 2026-09-30: exact match for 2N3904 (Diotec Semiconductor), Mouser part 637-2N3904, description 'Bipolar Transistors - BJT BJT, TO-92, 40V, 200mA, NPN'."
+    },
+    {
+      "spec": "type",
+      "url": "https://diotec.com/request/datasheet/2n3904.pdf",
+      "note": "Diotec 2N3904 datasheet (fetched 2026-09-30, Version 2026-03-10): the datasheet is titled 2N3904 - the device type this part is. Diotec's order code for it (mpn) is the same bare '2N3904'."
     },
     {
       "spec": "volts",
@@ -41,7 +47,7 @@
       "note": "Diotec 2N3904 datasheet (fetched 2026-09-30), page 1 device schematic drawn next to the package outline: pin 1 = Emitter (E), pin 2 = Base (B), pin 3 = Collector (C) - i.e. emitter, base, collector reading pin 1 to pin 3. This is the current datasheet revision; an older secondary listing (aggregator, not the manufacturer) gives a C-B-E reading for a 2N3904 - it was not used as evidence and may reflect a stale or misread revision. The footprint's own emitter/base/collector pin order matches this drawing exactly."
     }
   ],
-  "why": "Diotec's 2N3904 is sold under the bare manufacturer part number '2N3904' (matching the circuit model's mpn exactly, per tools/bom/fit.ts's equality check), from a well-known transistor manufacturer, well stocked at Mouser (43097 units), at a competitive price, and its current datasheet states an emitter-base-collector pinout that matches this board's TO-92_Inline footprint. onsemi's 2N3904BU is a cheaper, higher-stock bulk-packed alternative with the same pinout (onsemi 2N3904/D datasheet, Rev. 9/Oct 2024 marking diagram: 1 Emitter, 2 Base, 3 Collector) but its Mouser-listed manufacturer part number is the suffixed 'BU' order code rather than the bare '2N3904' the model names, so it was not chosen for this line.",
+  "why": "Diotec's 2N3904 (device type 2N3904, sold under the order code '2N3904'), from a well-known transistor manufacturer, well stocked at Mouser (43097 units), at a competitive price, and its current datasheet states an emitter-base-collector pinout that matches this board's TO-92_Inline footprint. It was chosen while the fit check still compared the circuit's part number with the entry's mpn, which ruled out onsemi's 2N3904BU (a cheaper, higher-stock bulk-packed order code for the same type, same pinout per onsemi 2N3904/D datasheet, Rev. 9/Oct 2024 marking diagram: 1 Emitter, 2 Base, 3 Collector). The check now compares specs.type, so 2N3904BU is eligible too; this choice has not been re-evaluated against it.",
   "stock": false,
   "sources": [
     {

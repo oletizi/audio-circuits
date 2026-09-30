@@ -42,9 +42,9 @@ export function needsText(line: BomLine): string {
   if (line.ohms !== undefined) parts.push(resistanceText(line.ohms, line.key))
   if (line.farads !== undefined) parts.push(capacitanceText(line.farads, line.key))
   if (line.taper !== undefined) parts.push(line.taper)
-  // A trimmer's mpn is its package ("RM-065"), already in the physical text: said once.
+  // A trimmer's part type is its package ("RM-065"), already in the physical text: said once.
   const physical = physicalText(line.physical)
-  if (line.mpn !== undefined && !physical.includes(line.mpn)) parts.push(line.mpn)
+  if (line.partType !== undefined && !physical.includes(line.partType)) parts.push(line.partType)
   parts.push(physical)
   if (line.minVolts !== undefined) parts.push(`min ${line.minVolts} V`)
   if (line.minWatts !== undefined) parts.push(`min ${wattsText(line.minWatts)} W`)

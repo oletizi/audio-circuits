@@ -110,6 +110,18 @@ test("parseCatalogEntry accepts kind \"accessory\"", () => {
   expect(entry.kind).toBe("accessory")
 })
 
+test("parseCatalogEntry reads specs.type, and requires evidence for it like every spec", () => {
+  const typed = parseCatalogEntry(valid({
+    kind: "bjt",
+    specs: { type: "2N3904" },
+    evidence: [...VALID_EVIDENCE, { spec: "type", url: "https://example.com/2n3904.pdf", note: "datasheet title" }],
+  }), FILE)
+  expect(typed.specs.type).toBe("2N3904")
+  expect(() => parseCatalogEntry(valid({ kind: "bjt", specs: { type: "2N3904" } }), FILE)).toThrow(
+    /specs.type is present but no evidence entry names it/,
+  )
+})
+
 test("parseCatalogEntry throws when a spec is present with no evidence entry naming it", () => {
   const entry = valid({ evidence: VALID_EVIDENCE.filter((e) => e["spec"] !== "ohms") })
   expect(() => parseCatalogEntry(entry, FILE)).toThrow(/specs.ohms is present but no evidence entry names it/)

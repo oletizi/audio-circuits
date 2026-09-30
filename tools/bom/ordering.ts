@@ -4,7 +4,7 @@
  * potentiometer, farads for a capacitor, pin count for a pin header
  * connector - then (breaking a tie between two potentiometers of the same
  * value) taper, then the line's key as the final tie-break. A kind with no
- * numeric value of its own (a bjt, keyed by its mpn) falls straight through
+ * numeric value of its own (a bjt, keyed by its part type) falls straight through
  * to the key.
  *
  * `key.localeCompare()` alone sorts by the key's TEXT, which is not this

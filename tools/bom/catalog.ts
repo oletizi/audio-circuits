@@ -53,6 +53,10 @@ export interface Specs {
   readonly pins?: number
   readonly pitchMm?: number
   readonly taper?: "linear" | "log"
+  /** An active device's type (bjt, diode, opamp, ic), e.g. "2N3904" or "TL072" - what the
+   * circuit's part number is compared with. `mpn` stays the real order code (e.g.
+   * "2N3904BU"), which may carry packing or grade suffixes the type does not. */
+  readonly type?: string
 }
 
 /** Every field `Specs` declares. `everySpecKey` below turns a field added to `Specs` and
@@ -60,7 +64,7 @@ export interface Specs {
  * for `ALL_KINDS`. */
 const SPEC_KEY_LIST = [
   "ohms", "farads", "tolerancePercent", "volts", "watts", "leadSpacingMm", "diameterMm",
-  "package", "pinout", "pins", "pitchMm", "taper",
+  "package", "pinout", "pins", "pitchMm", "taper", "type",
 ] as const
 
 function everySpecKey<T extends readonly (keyof Specs)[]>(
@@ -218,6 +222,7 @@ function parseSpecs(value: unknown, where: string): Specs {
     pins: optionalFiniteNumber(record["pins"], "specs.pins", where),
     pitchMm: optionalFiniteNumber(record["pitchMm"], "specs.pitchMm", where),
     taper: optionalTaper(record["taper"], "specs.taper", where),
+    type: optionalNonEmptyString(record["type"], "specs.type", where),
   }
 }
 

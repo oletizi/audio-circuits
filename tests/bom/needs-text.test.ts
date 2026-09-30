@@ -29,7 +29,7 @@ test("radial electrolytic: value, maximum diameter, lead spacing and voltage rat
 
 test("TO-92: the named part and its pin order as letters", () => {
   expect(needsText(line({
-    kind: "bjt", mpn: "2N3904",
+    kind: "bjt", partType: "2N3904",
     physical: { kind: "to92", pinOrder: ["emitter", "base", "collector"] },
   }))).toBe("2N3904, TO-92, E-B-C")
 })
@@ -43,7 +43,7 @@ test("trimmer: value, taper and package", () => {
 
 test("a part number the physical text already states is not repeated", () => {
   expect(needsText(line({
-    kind: "potentiometer", ohms: 1_000, taper: "linear", mpn: "RM-065",
+    kind: "potentiometer", ohms: 1_000, taper: "linear", partType: "RM-065",
     physical: { kind: "trimmer", package: "RM-065" },
   }))).toBe("1K, linear, RM-065 trimmer")
 })

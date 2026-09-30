@@ -16,7 +16,7 @@ export type Physical =
 
 /** One line of a board's derived needs: a requirement shared by every designator it covers. */
 export interface BomLine {
-  /** Stable, human-readable; built from kind, value, taper, mpn and footprint. */
+  /** Stable, human-readable; built from kind, value, taper, part type and footprint. */
   readonly key: string
   readonly placement: "on-board" | "off-board"
   /** Sorted naturally (R2 before R10). */
@@ -26,8 +26,10 @@ export interface BomLine {
   readonly ohms?: number
   readonly farads?: number
   readonly taper?: "linear" | "log"
-  /** When the circuit names the part (e.g. 2N3904). */
-  readonly mpn?: string
+  /** The device type the circuit requires, when it names one (e.g. 2N3904) - the circuit
+   * model's `part.mpn`. For an active device it is compared with a catalog entry's
+   * `specs.type`, never with the entry's `mpn` (tools/bom/fit.ts). */
+  readonly partType?: string
   readonly physical: Physical
   /** Capacitors: the board's highest supply rail, rounded up to the next standard rating. */
   readonly minVolts?: number

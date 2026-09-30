@@ -127,13 +127,13 @@ const TO92_LINE: BomLine = {
   designators: ["Q1"],
   quantity: 1,
   kind: "bjt",
-  mpn: "2N3904",
+  partType: "2N3904",
   physical: { kind: "to92", pinOrder: ["emitter", "base", "collector"] },
 }
 
 test("to92: package and pinout must both match", () => {
   const ok = misfits(TO92_LINE, entry({
-    kind: "bjt", mpn: "2N3904", specs: { package: "TO-92", pinout: ["emitter", "base", "collector"] },
+    kind: "bjt", mpn: "2N3904", specs: { type: "2N3904", package: "TO-92", pinout: ["emitter", "base", "collector"] },
   }))
   expect(ok).toEqual([])
 
@@ -153,17 +153,31 @@ test("to92: package and pinout must both match", () => {
   expect(missingPinout).toContainEqual({ field: "pinout", needed: "emitter, base, collector", found: "not stated" })
 })
 
-test("mpn equal when the line names one; not checked when it does not", () => {
-  const wrongMpn = misfits(TO92_LINE, entry({
-    kind: "bjt", mpn: "2N5088", specs: { package: "TO-92", pinout: ["emitter", "base", "collector"] },
-  }))
-  expect(wrongMpn).toContainEqual({ field: "mpn", needed: "2N3904", found: "2N5088" })
+const E_B_C = ["emitter", "base", "collector"]
 
-  const noMpnNeeded: BomLine = { ...TO92_LINE, mpn: undefined }
-  const noMpnOnEntry = misfits(noMpnNeeded, entry({
-    kind: "bjt", mpn: undefined, specs: { package: "TO-92", pinout: ["emitter", "base", "collector"] },
+test("type: a 2N3904BU order code whose specs.type is 2N3904 fits a 2N3904 line", () => {
+  const found = misfits(TO92_LINE, entry({
+    kind: "bjt", mpn: "2N3904BU", specs: { type: "2N3904", package: "TO-92", pinout: E_B_C },
   }))
-  expect(noMpnOnEntry.some((m) => m.field === "mpn")).toBe(false)
+  expect(found).toEqual([])
+})
+
+test("type: a wrong specs.type is a misfit, whatever the mpn says", () => {
+  const found = misfits(TO92_LINE, entry({
+    kind: "bjt", mpn: "2N3904", specs: { type: "2N5088", package: "TO-92", pinout: E_B_C },
+  }))
+  expect(found).toEqual([{ field: "type", needed: "2N3904", found: "2N5088" }])
+})
+
+test("type: a missing specs.type is \"not stated\", even when the mpn equals the line's part type", () => {
+  const found = misfits(TO92_LINE, entry({ kind: "bjt", mpn: "2N3904", specs: { package: "TO-92", pinout: E_B_C } }))
+  expect(found).toEqual([{ field: "type", needed: "2N3904", found: "not stated" }])
+})
+
+test("type: not checked when the line names no part type", () => {
+  const noTypeNeeded: BomLine = { ...TO92_LINE, partType: undefined }
+  const found = misfits(noTypeNeeded, entry({ kind: "bjt", specs: { package: "TO-92", pinout: E_B_C } }))
+  expect(found).toEqual([])
 })
 
 const TRIMMER_LINE: BomLine = {
@@ -195,7 +209,7 @@ test("trimmer: package must equal RM-065; value and taper still checked", () => 
 })
 
 test("a passive's circuit part number names its footprint family, so a compatible part under its own mpn fits", () => {
-  const namedLine: BomLine = { ...TRIMMER_LINE, mpn: "RM-065" }
+  const namedLine: BomLine = { ...TRIMMER_LINE, partType: "RM-065" }
   const substitute = misfits(namedLine, entry({
     kind: "potentiometer", mpn: "PT6KV-503A2020", specs: { ohms: 50_000, taper: "linear", package: "RM-065" },
   }))

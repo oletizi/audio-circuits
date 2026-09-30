@@ -3,7 +3,7 @@
  * cannot fall out of step with the circuit as the circuit changes.
  *
  * Components with identical requirements share one line: the same kind,
- * value, taper, mpn and footprint. A resistor line's required power is the
+ * value, taper, part type and footprint. A resistor line's required power is the
  * MAXIMUM over every designator it covers, so the one part chosen for the
  * line meets every instance's operating point, not just the first one seen.
  *
@@ -81,15 +81,16 @@ function headerValue(pins: number): string {
   return `Conn_01x${String(pins).padStart(2, "0")}`
 }
 
-/** `<kind> <value> [<taper>] [<mpn>] <footprint>`. `mpn` is dropped when it duplicates `value` -
- * e.g. a bjt's value IS its mpn (valueFor's mpn fallback), so the key does not repeat it. */
+/** `<kind> <value> [<taper>] [<partType>] <footprint>`. `partType` (the circuit's part number) is
+ * dropped when it duplicates `value` - e.g. a bjt's value IS its part number (valueFor's partType
+ * fallback), so the key does not repeat it. */
 function lineKey(
-  kind: ComponentKind, value: string, taper: string | undefined, mpn: string | undefined,
+  kind: ComponentKind, value: string, taper: string | undefined, partType: string | undefined,
   footprintToken: string,
 ): string {
   const tokens: string[] = [kind, value]
   if (taper !== undefined) tokens.push(taper)
-  if (mpn !== undefined && mpn !== value) tokens.push(mpn)
+  if (partType !== undefined && partType !== value) tokens.push(partType)
   tokens.push(footprintToken)
   return tokens.join(" ")
 }
@@ -103,7 +104,7 @@ interface Accumulator {
   readonly ohms?: number
   readonly farads?: number
   readonly taper?: "linear" | "log"
-  readonly mpn?: string
+  readonly partType?: string
   readonly physical: Physical
   readonly minVolts?: number
   minWatts?: number
@@ -117,7 +118,7 @@ interface LineInput {
   readonly ohms?: number
   readonly farads?: number
   readonly taper?: "linear" | "log"
-  readonly mpn?: string
+  readonly partType?: string
   readonly physical: Physical
   readonly minVolts?: number
   readonly minWatts?: number
@@ -128,7 +129,7 @@ function addToGroup(groups: Map<string, Accumulator>, ref: string, input: LineIn
   if (existing === undefined) {
     groups.set(input.key, {
       placement: input.placement, designators: [ref], kind: input.kind,
-      ohms: input.ohms, farads: input.farads, taper: input.taper, mpn: input.mpn,
+      ohms: input.ohms, farads: input.farads, taper: input.taper, partType: input.partType,
       physical: input.physical, minVolts: input.minVolts, minWatts: input.minWatts,
     })
     return
@@ -152,10 +153,10 @@ function resistorInput(component: ResistorComponent, dissipation: ReadonlyMap<st
     )
   }
   const value = valueFor(component)
-  const mpn = component.part?.mpn
+  const partType = component.part?.mpn
   return {
-    key: lineKey(component.kind, value, undefined, mpn, footprintName(footprint)),
-    placement: "on-board", kind: component.kind, ohms: component.parameters.ohms, mpn,
+    key: lineKey(component.kind, value, undefined, partType, footprintName(footprint)),
+    placement: "on-board", kind: component.kind, ohms: component.parameters.ohms, partType,
     physical: physicalFor(footprint, component, {}),
     minWatts: requiredResistorWatts(watts),
   }
@@ -164,10 +165,10 @@ function resistorInput(component: ResistorComponent, dissipation: ReadonlyMap<st
 function capacitorInput(component: CapacitorComponent, requiredVolts: number): LineInput {
   const footprint = footprintOf(component)
   const value = valueFor(component)
-  const mpn = component.part?.mpn
+  const partType = component.part?.mpn
   return {
-    key: lineKey(component.kind, value, undefined, mpn, footprintName(footprint)),
-    placement: "on-board", kind: component.kind, farads: component.parameters.farads, mpn,
+    key: lineKey(component.kind, value, undefined, partType, footprintName(footprint)),
+    placement: "on-board", kind: component.kind, farads: component.parameters.farads, partType,
     physical: physicalFor(footprint, component, {}),
     minVolts: requiredVolts,
   }
@@ -178,10 +179,10 @@ function capacitorInput(component: CapacitorComponent, requiredVolts: number): L
 function panelPotInput(component: PotentiometerComponent): LineInput {
   const value = valueFor(component)
   const taper = component.parameters.taper.type
-  const mpn = component.part?.mpn
+  const partType = component.part?.mpn
   return {
-    key: lineKey(component.kind, value, taper, mpn, "panel-pot"),
-    placement: "off-board", kind: component.kind, ohms: component.parameters.ohms, taper, mpn,
+    key: lineKey(component.kind, value, taper, partType, "panel-pot"),
+    placement: "off-board", kind: component.kind, ohms: component.parameters.ohms, taper, partType,
     physical: { kind: "panel-pot" },
   }
 }
@@ -207,10 +208,10 @@ function potentiometerInput(component: PotentiometerComponent): LineInput {
   const footprint = footprintOf(component)
   const value = valueFor(component)
   const taper = component.parameters.taper.type
-  const mpn = component.part?.mpn
+  const partType = component.part?.mpn
   return {
-    key: lineKey(component.kind, value, taper, mpn, footprintName(footprint)),
-    placement: "on-board", kind: component.kind, ohms: component.parameters.ohms, taper, mpn,
+    key: lineKey(component.kind, value, taper, partType, footprintName(footprint)),
+    placement: "on-board", kind: component.kind, ohms: component.parameters.ohms, taper, partType,
     physical: physicalFor(footprint, component, {}),
   }
 }
@@ -218,10 +219,10 @@ function potentiometerInput(component: PotentiometerComponent): LineInput {
 function connectorInput(component: Component, pinNumbers: BoardCircuit["pinNumbers"]): LineInput {
   const footprint = footprintOf(component)
   const value = valueFor(component)
-  const mpn = component.part?.mpn
+  const partType = component.part?.mpn
   return {
-    key: lineKey(component.kind, value, undefined, mpn, footprintName(footprint)),
-    placement: "on-board", kind: component.kind, mpn,
+    key: lineKey(component.kind, value, undefined, partType, footprintName(footprint)),
+    placement: "on-board", kind: component.kind, partType,
     physical: physicalFor(footprint, component, pinNumbers),
   }
 }
@@ -229,10 +230,10 @@ function connectorInput(component: Component, pinNumbers: BoardCircuit["pinNumbe
 function bjtInput(component: Component, pinNumbers: BoardCircuit["pinNumbers"]): LineInput {
   const footprint = footprintOf(component)
   const value = valueFor(component)
-  const mpn = component.part?.mpn
+  const partType = component.part?.mpn
   return {
-    key: lineKey(component.kind, value, undefined, mpn, footprintName(footprint)),
-    placement: "on-board", kind: component.kind, mpn,
+    key: lineKey(component.kind, value, undefined, partType, footprintName(footprint)),
+    placement: "on-board", kind: component.kind, partType,
     physical: physicalFor(footprint, component, pinNumbers),
   }
 }
@@ -302,7 +303,7 @@ export function deriveNeeds(
     ...(group.ohms !== undefined ? { ohms: group.ohms } : {}),
     ...(group.farads !== undefined ? { farads: group.farads } : {}),
     ...(group.taper !== undefined ? { taper: group.taper } : {}),
-    ...(group.mpn !== undefined ? { mpn: group.mpn } : {}),
+    ...(group.partType !== undefined ? { partType: group.partType } : {}),
     physical: group.physical,
     ...(group.minVolts !== undefined ? { minVolts: group.minVolts } : {}),
     ...(group.minWatts !== undefined ? { minWatts: group.minWatts } : {}),

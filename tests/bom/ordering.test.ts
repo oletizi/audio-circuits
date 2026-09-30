@@ -30,9 +30,9 @@ function header(key: string, pins: number): BomLine {
   }
 }
 
-function bjt(key: string, mpn: string): BomLine {
+function bjt(key: string, partType: string): BomLine {
   return {
-    key, placement: "on-board", designators: ["Q1"], quantity: 1, kind: "bjt", mpn,
+    key, placement: "on-board", designators: ["Q1"], quantity: 1, kind: "bjt", partType,
     physical: { kind: "to92", pinOrder: ["emitter", "base", "collector"] },
   }
 }

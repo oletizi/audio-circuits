@@ -115,14 +115,14 @@ test("groups identical requirements, sorts designators naturally and computes ra
 
   const transistor = byKey.get("bjt 2N3904 TO-92_Inline")
   expect(transistor?.designators).toEqual(["Q1"])
-  expect(transistor?.mpn).toBe("2N3904")
+  expect(transistor?.partType).toBe("2N3904")
   expect(transistor?.physical).toEqual({ kind: "to92", pinOrder: ["emitter", "base", "collector"] })
 
   const trimmer = byKey.get("potentiometer 50K linear RM-065 Potentiometer_Runtron_RM-065_Vertical")
   expect(trimmer?.designators).toEqual(["RV1"])
   expect(trimmer?.ohms).toBe(50_000)
   expect(trimmer?.taper).toBe("linear")
-  expect(trimmer?.mpn).toBe("RM-065")
+  expect(trimmer?.partType).toBe("RM-065")
   expect(trimmer?.physical).toEqual({ kind: "trimmer", package: "RM-065" })
 
   const panelPotOffBoard = byKey.get("potentiometer 25K linear panel-pot")
