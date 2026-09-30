@@ -83,3 +83,30 @@ What each footprint in this repo demands (`tools/bom/footprints.ts`):
 (Appended by the researcher and the operator: supplier quirks, part families
 that fit or do not fit a footprint, links that moved. One bullet each, with
 the date.)
+
+- 2026-09-30: Mouser, Digi-Key, Tayda, Newark and DigiPart all blocked
+  automated fetching of product pages from this environment - Digi-Key,
+  Newark, Tayda and DigiPart returned HTTP 403; Mouser returned HTTP 200 but
+  an Akamai "Access Denied"/captcha page instead of the product page. This
+  held across regional mirrors (mouser.co.uk, eu.mouser.com, digikey.ca) and
+  with browser-like User-Agent/Accept-Language headers. Only the
+  manufacturer's own datasheet PDF (fetched directly, e.g.
+  yageogroup.com's YAGEO-MFR_DATASHEET.pdf) was readable. Until this
+  clears, a resistor (or other standard/bulk-sourced) line cannot get a
+  valid catalog entry from here, since a source needs a distributor page
+  actually read for its SKU and price, and the mpn/price cannot be guessed;
+  finishing needs a session with a working browser against these sites, or a
+  reachable API/mirror.
+- 2026-09-30: For a 1/4 W, 1% axial metal-film resistor (0207 body,
+  R_Axial_DIN0207 footprint), Yageo's MFR-25FBF52-<value> is a good
+  one-family choice across values: the MFR-25 size is rated 1/4 W at 70 degC
+  with L=6.3+-0.5mm / diameter 2.4+-0.2mm (matches 0207), F=1% tolerance, B=
+  bulk packaging (not reel), confirmed from Yageo's MFR series datasheet
+  (yageogroup.com/content/Resource%20Library/Datasheet/YAGEO-MFR_DATASHEET.pdf),
+  "Ordering Information" and "Dimensions" tables. Value coding is standard
+  RKM (e.g. 100R = 100 ohm, 10K = 10,000 ohm, 1M = 1,000,000 ohm), so the
+  same family covers small ohm values through megohms without switching
+  parts. Distributor SKU, stock and price still need confirming per value
+  once a distributor site can actually be read (see the fetch-blocking
+  lesson above) - do not commit a catalog entry from the MPN-construction
+  rule alone.
