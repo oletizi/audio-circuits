@@ -60,6 +60,9 @@ anywhere in the repository:
   supplier part number, currency, the price breaks, today's date as
   `checked`, and the use. Stocking packs cannot be read from the services
   reliably, so `pack` is left for the researcher to mark from the listing.
+  When the mpn matches more than one listing, it refuses, listing them,
+  unless `--sku <supplier part number>` names the one to record (which must
+  carry that mpn).
 - `parts refresh [<catalog id>...]` - for each named entry (all when none
   named), re-reads every Mouser and Digi-Key source by its supplier part
   number and rewrites that source's price breaks and `checked` date, keeping
@@ -101,6 +104,10 @@ one gains "use the parts tool".
   page.
 - Refused key, rate limit, or a service error: names the supplier, the HTTP
   status and the service's own message; nothing is written.
+- A request that cannot be sent at all (DNS, connection, TLS): names the
+  supplier, the endpoint path and the error's name only - the runtime's own
+  message can carry the request URL, and with it a key. Every verb ends such
+  an error as one line and exit 1, never an uncaught stack trace.
 - A lookup that finds no exact part-number match says so; it never returns a
   near match as if it were the part.
 
