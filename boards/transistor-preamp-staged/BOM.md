@@ -12,8 +12,8 @@ Supply 24 V; every control (RV1-RV7) at START.
 | C4 | 100uF, radial, <= 6.3 mm dia, 2.5 mm leads, min 35 V | 1 | 2 | 100uF, 35V, radial aluminum electrolytic, 6.3x11.2mm body, 2.5mm lead spacing | Panasonic Industry ECA-1VM101I | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM101I?qs=Rjs8jpJ6LSQiPme8klHtJQ%3D%3D) (checked 2026-09-30) | 0.33 USD | 0.66 USD |
 | C1 | 220uF, radial, <= 8 mm dia, 3.5 mm leads, min 35 V | 1 | 2 | 220uF, 35V, radial aluminum electrolytic, 8x11.5mm body, 3.5mm lead spacing | Panasonic Industry ECA-1VM221 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM221?qs=TMd%2FqrwkF8jzDq2TCVW7zA%3D%3D) (checked 2026-09-30) | 0.45 USD | 0.90 USD |
 | C7 | 470uF, radial, <= 10 mm dia, 5 mm leads, min 35 V | 1 | 2 | 470uF, 35V, radial aluminum electrolytic, 10x16mm body, 5mm lead spacing | Panasonic Industry ECA-1VM471 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM471?qs=4indQ9AG%252BqEMpMNEQEBA0w%3D%3D) (checked 2026-09-30) | 0.69 USD | 1.38 USD |
-| J1, J2, J3 | 2-pin 2.54 mm header | 3 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| RV5, RV6, RV7 | 3-pin 2.54 mm header | 3 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
+| J1, J2, J3 | 2-pin 2.54 mm header | 3 | 4 | 2-position single-row male pin header, straight (vertical), 2.54mm (0.1in) pitch, through-hole | Samtec TSW-102-07-G-S | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/TSW-102-07-G-S?qs=iT52DjcXudsNPhlNCDp8vw%3D%3D) (checked 2026-09-30) | 0.36 USD | 1.44 USD |
+| RV5, RV6, RV7 | 3-pin 2.54 mm header | 3 | 4 | 3-position single-row male pin header, straight (vertical), 2.54mm (0.1in) pitch, through-hole | Samtec TSW-103-07-G-S | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/TSW-103-07-G-S?qs=iT52DjcXudtntd1jApTIAw%3D%3D) (checked 2026-09-30) | 0.29 USD | 1.16 USD |
 | RV4 | 1K, linear, RM-065 trimmer | 1 | 2 | 1k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher PT6KV-102A2020 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-102A2020?qs=PZ1ub9NEDaWyqo7aUZbrIA%3D%3D) (checked 2026-09-30) | 0.79 USD | 1.58 USD |
 | RV3 | 2K, linear, RM-065 trimmer | 1 | 2 | 2k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher PT6KV-202A2020 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-202A2020?qs=PZ1ub9NEDaV5ifClhl6P2g%3D%3D) (checked 2026-09-30) | 0.69 USD | 1.38 USD |
 | RV2 | 200K, linear, RM-065 trimmer | 1 | 2 | 200k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher PT6KV-204A2020 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-204A2020?qs=DPoM0jnrROXB9pG8c6GveA%3D%3D) (checked 2026-09-30) | 0.97 USD | 1.94 USD |
@@ -39,10 +39,12 @@ Supply 24 V; every control (RV1-RV7) at START.
 
 | Designators | Needs | Qty | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| point-to-point wiring on the stripboard and off-board wiring to the panel pots and headers | - | 1 | 2 | 22 AWG solid-core hookup wire, six 25ft spools (150ft total) in six colors (red, blue, yellow, green, black, white), one dispenser box | SparkFun PRT-11367 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/SparkFun/PRT-11367?qs=WyAARYrbSna84CyyeN3%252B8w%3D%3D) (checked 2026-09-30) | 25.33 USD | 50.66 USD |
 | sockets so the transistors can be swapped | - | 3 | 4 | 3-position single-row machined-pin (screw-machine) IC/SIP socket strip, 2.54mm (0.1in) pitch, for socketing a TO-92 transistor | Samtec SS-103-T-2-N | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/SS-103-T-2-N?qs=rU5fayqh%252BE2l5SxhEUcmCQ%3D%3D) (checked 2026-09-30) | 0.76 USD | 3.04 USD |
+| the perfboard the circuit is built on | - | 1 | 2 | Single-sided stripboard (uncut copper strips on 2.54mm centers), 31 strips x 39 holes per strip, 100 x 80mm, FR4 | BusBoard Prototype Systems ST2 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/BusBoard-Prototype-Systems/ST2?qs=NGErKr1RxMAdSUqgGAVpyQ%3D%3D) (checked 2026-09-30) | 6.30 USD | 12.60 USD |
 
 ## Totals
 
 | Supplier | Currency | Total |
 | --- | --- | --- |
-| Mouser | USD | 17.62 |
+| Mouser | USD | 83.48 |

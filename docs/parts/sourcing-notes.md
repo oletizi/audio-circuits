@@ -251,6 +251,64 @@ the date.)
   cover, so a compatible substitute such as Piher's PT6KV-102A2020 carries
   its own mpn. If a check ever demands recording something untrue, stop and
   report it instead.
+- 2026-09-30: A `PinHeader_1x<n>_P2.54mm_Vertical` line's fit check
+  (`tools/bom/fit.ts`) requires `specs.pins` to equal `n` exactly, so one
+  catalog entry cannot honestly cover two different position counts (e.g. a
+  board's 2-pin and 3-pin header lines) even though "buy a breakaway strip
+  and cut it to length" is the normal way to buy headers - the entry's
+  `specs.pins` would have to misstate the strip's own as-sold length.
+  Samtec's TSW series (Mouser's "2.54MM CLASSIC PCB HDR STRIP" /
+  "Through-Hole .025\" Sq Post Header" family) sells the same 0.1"/2.54mm
+  single-row header natively cut to every position count - `TSW-10<n>-07-G-S`
+  for `n` positions, e.g. `TSW-102-07-G-S` (2 pin) and `TSW-103-07-G-S`
+  (3 pin), both in stock and cheap (about $0.29-0.36 each in ones) - so a
+  genuine exact-count part exists rather than needing one invented; this is
+  the same family already used for this board's 3-position TO-92 socket
+  (`socket-to92-3position-machined-2.54mm`, Samtec's machined-pin SS
+  series). Mouser's own Search API data gives no pin-count/pitch parameter
+  for these SKUs, but Samtec's own product pages
+  (`samtec.com/products/tsw-10<n>-07-g-s`) state both directly and plainly
+  ("2 Pin", "1 Row", "Pitch: .100\" (2.54 mm)") and are readable (unlike
+  `mouser.com`-hosted PDFs or `suddendocs.samtec.com` PDFs, both blocked per
+  the lesson above) - use the product page, not the datasheet PDF, for this
+  family.
+- 2026-09-30: Amazon product pages are not fetchable in this environment
+  either, on top of the distributor sites this file already warns about -
+  `curl`/`WebFetch` on an `amazon.com` product URL returns HTTP 200/500 with
+  no product content, only Amazon's "Continue shopping" bot-check page
+  (`/errors_page/validateCaptcha`). Per this repository's own rule ("Amazon
+  ... only if you can actually read the listing; otherwise Mouser"), this
+  means Amazon is effectively unavailable for every commodity accessory
+  sourced so far (stripboard, hookup wire) and Mouser was used instead, even
+  though the sourcing notes prefer Amazon for this class of part. Re-check
+  periodically in case this changes; do not silently skip the "actually
+  read it" requirement in the meantime.
+- 2026-09-30: Mouser's hookup-wire catalog (Alpha Wire, Belden) is almost
+  entirely industrial/mil-spec PTFE or heavy PVC spools - even a plain
+  22 AWG solid PVC 100ft spool (Belden 8530-005100) lists around $125, and
+  most 22 AWG solid options are $150-1500+ per spool (PTFE-insulated,
+  600-1000V rated) - not a reasonable price for bench hookup wire. SparkFun's
+  small assortment SKUs are carried by Mouser under their own SparkFun MPNs
+  (e.g. `PRT-11367`, "Hook-Up Wire - Assortment (Solid Core, 22 AWG)", ~$25)
+  and are a much better price match for a prototype build, confirmed genuine
+  22 AWG solid-core wire from SparkFun's own product page
+  (sparkfun.com/products/11367) - but note it is honestly six 25ft spools
+  in one box (150ft total, six colors), not one continuous spool of a single
+  color; record it as what it actually is rather than as "one spool."
+- 2026-09-30: BusBoard Prototype Systems' own site (`busboard.com/<sku>`,
+  e.g. `busboard.com/ST2`) states each stripboard's exact hole grid, pitch
+  and track direction in plain text ("31 x 39 holes (31 strips)", "drilled
+  on 0.1\" (2.54mm) centers", "Tracks run the length of the board") and is
+  readable directly, unlike Mouser's hosted copy of the same datasheet PDF.
+  Mouser also lists an unrelated part (a Molex Woodhead hose-stop kit)
+  under the identical literal mpn "ST2" as BusBoard's board, which makes
+  `bun run parts source ST2 --supplier mouser --use ...` refuse with
+  "matched more than one listing" even though only one of the two is a
+  stripboard - `search "ST2 BusBoard"` (a second keyword) resolves it to
+  the one real candidate, the same fallback already noted above for
+  2N3904, but the `source` verb itself has no way to take that extra
+  keyword, so the `Source` object had to be built by hand from the `search`
+  JSON output rather than printed by `source`.
 - 2026-09-30: Both `runtron.com` (fetches 404 in this environment - the
   domain answers but not with the original site) and `piher.net` (blocks
   direct fetches, HTTP 403, the same as the distributor sites this file

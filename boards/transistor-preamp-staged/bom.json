@@ -19,13 +19,25 @@
     "potentiometer 1K linear RM-065 Potentiometer_Runtron_RM-065_Vertical": "trimmer-1k-linear-rm065",
     "potentiometer 2K linear RM-065 Potentiometer_Runtron_RM-065_Vertical": "trimmer-2k-linear-rm065",
     "potentiometer 200K linear RM-065 Potentiometer_Runtron_RM-065_Vertical": "trimmer-200k-linear-rm065",
-    "potentiometer 1M linear RM-065 Potentiometer_Runtron_RM-065_Vertical": "trimmer-1m-linear-rm065"
+    "potentiometer 1M linear RM-065 Potentiometer_Runtron_RM-065_Vertical": "trimmer-1m-linear-rm065",
+    "connector Conn_01x02 PinHeader_1x02_P2.54mm_Vertical": "pin-header-2position-2.54mm",
+    "connector Conn_01x03 PinHeader_1x03_P2.54mm_Vertical": "pin-header-3position-2.54mm"
   },
   "extras": [
     {
       "part": "socket-to92-3position-machined-2.54mm",
       "quantity": 3,
       "why": "sockets so the transistors can be swapped"
+    },
+    {
+      "part": "stripboard-31x39-100x80mm",
+      "quantity": 1,
+      "why": "the perfboard the circuit is built on"
+    },
+    {
+      "part": "hookup-wire-22awg-solid-assortment",
+      "quantity": 1,
+      "why": "point-to-point wiring on the stripboard and off-board wiring to the panel pots and headers"
     }
   ]
 }

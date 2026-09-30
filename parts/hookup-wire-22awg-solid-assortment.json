@@ -1,0 +1,30 @@
+{
+  "id": "hookup-wire-22awg-solid-assortment",
+  "kind": "accessory",
+  "description": "22 AWG solid-core hookup wire, six 25ft spools (150ft total) in six colors (red, blue, yellow, green, black, white), one dispenser box",
+  "manufacturer": "SparkFun",
+  "mpn": "PRT-11367",
+  "specs": {},
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/SparkFun/PRT-11367?qs=WyAARYrbSna84CyyeN3%252B8w%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for mpn \"PRT-11367\" (SparkFun), Mouser part 474-PRT-11367, description 'SparkFun Accessories Hook-Up Wire Assort. SolidCore, 22 AWG'."
+    }
+  ],
+  "why": "The board needs one spool of 22 AWG solid-core hookup wire for the off-board wiring between the panel pots, J1-J3 headers and the RV5-RV7 on-board headers, and for point-to-point wiring on the stripboard itself. Amazon, which the sourcing notes prefer for this kind of commodity accessory, was tried first and could not actually be read: fetching an Amazon product page in this environment returns Amazon's 'Continue shopping' captcha/robot-check page (HTTP 200, no product content), the same block the sourcing notes already record for distributor sites, so per this task's own rule ('only if you can actually read the listing; otherwise Mouser') Mouser was used instead. Mouser's own hookup-wire catalog is dominated by industrial/mil-spec PTFE and PVC spools (Alpha Wire, Belden) priced well into the hundreds of dollars even at 100ft for 22 AWG solid wire - not a reasonable price for a bench prototype - so SparkFun's PRT-11367 assortment was chosen instead: confirmed from SparkFun's own product page (sparkfun.com/products/11367, fetched 2026-09-30) as 22 AWG solid-core wire, six 25ft spools (150ft total) in six colors, in one dispenser box, at $25.95 list ($25.33 at Mouser). This is honestly NOT a single continuous spool - it is six 25ft spools bundled as one purchasable unit/box - recorded here as exactly that rather than as 'one spool' of a single color, since the catalog must not claim something the source does not state; flagged in the report so the operator can choose a true single-color single spool instead if that distinction matters for this build. No specs fields are set: Specs has no wire-gauge field, and the gauge/construction/length facts are carried in `description` and this `why` instead of forced into an unrelated spec key.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/SparkFun/PRT-11367?qs=WyAARYrbSna84CyyeN3%252B8w%3D%3D",
+      "sku": "474-PRT-11367",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 25.33 }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}

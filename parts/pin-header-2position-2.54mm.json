@@ -1,0 +1,51 @@
+{
+  "id": "pin-header-2position-2.54mm",
+  "kind": "connector",
+  "description": "2-position single-row male pin header, straight (vertical), 2.54mm (0.1in) pitch, through-hole",
+  "manufacturer": "Samtec",
+  "mpn": "TSW-102-07-G-S",
+  "specs": {
+    "pins": 2,
+    "pitchMm": 2.54
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Samtec/TSW-102-07-G-S?qs=iT52DjcXudsNPhlNCDp8vw%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for TSW-102-07-G-S (Samtec), Mouser part 200-TSW10207GS, description '2.54MM CLASSIC PCB HDR STRIP'."
+    },
+    {
+      "spec": "pins",
+      "url": "https://www.samtec.com/products/tsw-102-07-g-s",
+      "note": "Samtec's own product page for TSW-102-07-G-S (fetched 2026-09-30, manufacturer's own site, not a distributor page): titled '.100in/2.54mm Through Hole Header, 2 Pin, 1 Row' - 2 positions, single row."
+    },
+    {
+      "spec": "pitchMm",
+      "url": "https://www.samtec.com/products/tsw-102-07-g-s",
+      "note": "Samtec's own product page for TSW-102-07-G-S (fetched 2026-09-30): states 'Pitch: .100\" (2.54 mm)'."
+    }
+  ],
+  "why": "A native 2-position single-row through-hole header, chosen already cut to length rather than a breakaway strip: tools/bom/fit.ts checks a pin-header line's specs.pins for exact equality, so one catalog entry cannot honestly cover both this board's 2-pin (J1, J2, J3) and 3-pin (RV5, RV6, RV7) header lines at once - a breakaway strip's specs.pins would have to name the strip's as-sold length, not 2, to stay truthful. Samtec's TSW series sells the same family natively cut to every position count (as already used for this board's TO-92 socket strip, socket-to92-3position-machined-2.54mm), so a genuine 2-position part exists rather than requiring one to be invented. Gold-flash contacts (G) were chosen over tin (L/T) for reliable low-force pin contact when the operator repeatedly plugs and unplugs off-board jumper wires by hand; price difference over tin is a fraction of a cent at this quantity. The operator attaches off-board wires directly to these header pins (per the board's own off-board-wiring use); no mating housing is included here - female jumper wires (or hookup wire soldered/pressed onto the pins) mate directly with a bare 0.025 sq. post header of this kind without a crimped housing, and nothing about this board's layout implies one is needed. If the operator wants a proper crimped/latched mating connector instead of loose jumper wires, that would be a separate catalog entry (a 2-position female housing plus crimp contacts) - flagging this rather than adding it, since the sourcing notes say not to guess a need the layout does not state.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Samtec/TSW-102-07-G-S?qs=iT52DjcXudsNPhlNCDp8vw%3D%3D",
+      "sku": "200-TSW10207GS",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 0.36 },
+        { "quantity": 10, "unitPrice": 0.32 },
+        { "quantity": 25, "unitPrice": 0.26 },
+        { "quantity": 50, "unitPrice": 0.239 },
+        { "quantity": 100, "unitPrice": 0.215 },
+        { "quantity": 250, "unitPrice": 0.208 },
+        { "quantity": 500, "unitPrice": 0.194 },
+        { "quantity": 1000, "unitPrice": 0.186 },
+        { "quantity": 2000, "unitPrice": 0.148 }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}

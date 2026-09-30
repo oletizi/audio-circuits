@@ -1,0 +1,38 @@
+{
+  "id": "stripboard-31x39-100x80mm",
+  "kind": "accessory",
+  "description": "Single-sided stripboard (uncut copper strips on 2.54mm centers), 31 strips x 39 holes per strip, 100 x 80mm, FR4",
+  "manufacturer": "BusBoard Prototype Systems",
+  "mpn": "ST2",
+  "specs": {
+    "pitchMm": 2.54
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/BusBoard-Prototype-Systems/ST2?qs=NGErKr1RxMAdSUqgGAVpyQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for mpn \"ST2\" (BusBoard Prototype Systems), Mouser part 854-ST2, description 'StripBoard-2, 1 side 80x100mm'."
+    },
+    {
+      "spec": "pitchMm",
+      "url": "http://www.busboard.com/ST2",
+      "note": "Manufacturer's own product page (busboard.com/ST2, fetched 2026-09-30, not a distributor page): '31 x 39 holes (31 strips)', 100 x 80mm, holes 'drilled on 0.1\" (2.54mm) centers', tracks 'run the length of the board'. Specs has no rows/columns field for an accessory board, so the hole grid (31 strips x 39 holes/strip, meeting the requested minimum of 30 rows x 39 columns) is recorded in `description` and this `why`, not as a fit.ts-checked field - this is an extras entry with no circuit-derived line to check it against."
+    }
+  ],
+  "why": "The board's perfboard layout needs at least 30 rows x 39 columns of 2.54mm holes with horizontal (strip-length) runs of at least 39 holes. BusBoard's ST2 (100 x 80mm) is 31 strips x 39 holes per strip per the manufacturer's own product page (busboard.com/ST2) - at or above both minimums (31 >= 30 rows, 39 >= 39 columns) - and its tracks 'run the length of the board', i.e. horizontally along the 39-hole direction, matching the requested orientation. The next size down, ST1 (50 x 80mm), is only 19 x 31 holes and does not meet the column minimum; the next size up, ST3U (BusBoard's larger board), was not needed once ST2 was confirmed to fit, and its 1+ price ($11.90) is nearly double the ST2's. specs.pitchMm is recorded here only to carry the hole pitch as evidence for a human comparing this entry to the layout; this accessory has no circuit-derived BOM line for tools/bom/fit.ts to check it against. Bought from Mouser rather than Amazon: the sourcing notes allow Amazon for this kind of commodity accessory only where the listing can actually be read, and Mouser's Search API and the manufacturer's own product page both gave clear, readable, dated evidence, so there was no need to rely on an Amazon listing. The `source` command could not be used to emit this Source automatically: Mouser also lists an unrelated part (a Molex Woodhead hose-stop kit) under the identical literal mpn \"ST2\", so `bun run parts source ST2 --supplier mouser --use ...` refuses with \"matched more than one listing\" even though only one is a stripboard; this source was built by hand from the same `bun run parts search \"ST2 BusBoard\" --supplier mouser --json` data the tool itself reads, copying 854-ST2's own breaks, currency and URL exactly rather than retyping them.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/BusBoard-Prototype-Systems/ST2?qs=NGErKr1RxMAdSUqgGAVpyQ%3D%3D",
+      "sku": "854-ST2",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 6.30 },
+        { "quantity": 10, "unitPrice": 5.99 }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}
