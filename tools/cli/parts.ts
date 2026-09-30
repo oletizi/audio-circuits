@@ -225,10 +225,19 @@ function formatOffer(offer: SupplierOffer): string[] {
   const lines = [
     `${offer.supplier} ${offer.sku} - ${offer.mpn} (${offer.manufacturer})`,
     `  ${offer.description}`,
-    `  stock: ${offer.stock}`,
+    `  stock: ${offer.stock !== undefined ? offer.stock : "not stated"}`,
   ]
-  for (const brk of offer.breaks) {
-    lines.push(`  ${brk.quantity}+: ${formatMoney(brk.unitPrice, offer.currency)}`)
+  if (offer.breaks.length === 0) {
+    lines.push("  price: not listed")
+  } else if (offer.currency === undefined) {
+    throw new Error(
+      `${offer.supplier} ${offer.sku} has price breaks but no currency; cannot format its price.`,
+    )
+  } else {
+    const currency = offer.currency
+    for (const brk of offer.breaks) {
+      lines.push(`  ${brk.quantity}+: ${formatMoney(brk.unitPrice, currency)}`)
+    }
   }
   lines.push(`  url: ${offer.url}`)
   lines.push(`  datasheet: ${offer.datasheetUrl ?? "(none listed)"}`)
@@ -352,8 +361,13 @@ async function dispatchSource(
     for (const offer of offers) error(`  ${offer.sku} - ${offer.description}`)
     return 1
   }
-  log(JSON.stringify(offerToSource(offers[0], parsed.use), null, 2))
-  return 0
+  try {
+    log(JSON.stringify(offerToSource(offers[0], parsed.use), null, 2))
+    return 0
+  } catch (caught) {
+    error(errorMessage(caught))
+    return 1
+  }
 }
 
 function formatReport(report: SourceReport): string {
@@ -365,6 +379,8 @@ function formatReport(report: SourceReport): string {
       return `${where}: unchanged`
     case "not-listed":
       return `${where}: no longer listed`
+    case "no-price":
+      return `${where}: listed without a price`
     case "not-refreshed":
       return `${where}: not refreshed: ${report.outcome.reason}`
   }

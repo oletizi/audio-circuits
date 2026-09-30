@@ -62,3 +62,8 @@ test("offerToSource's result passes parseCatalogEntry's source validation", () =
   expect(entry.sources[0].supplier).toBe("Mouser")
   expect(entry.sources[0].use).toBe("prototype-fast")
 })
+
+test("offerToSource refuses an offer with no price breaks, naming the SKU and the supplier", () => {
+  const unpriced: SupplierOffer = { ...OFFER, sku: "511-2N3904", breaks: [], currency: undefined }
+  expect(() => offerToSource(unpriced, "standard")).toThrow(/Mouser lists no price for 511-2N3904.*choose another/s)
+})

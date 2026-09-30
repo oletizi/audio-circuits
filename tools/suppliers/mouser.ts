@@ -61,6 +61,22 @@ function parsePrice(text: string, what: string, where: string): number {
   return value
 }
 
+/** `undefined` when Mouser does not state stock (null, absent, or an empty string) - Mouser
+ * lists factory-order and discontinued parts this way, and that is not malformed data. A
+ * value that IS present but does not parse as a number still throws: that is malformed. */
+function parseStock(value: unknown, sku: string, where: string): number | undefined {
+  if (value === null || value === undefined) return undefined
+  if (typeof value !== "string") {
+    throw new Error(`Mouser ${where}: ${sku}'s "AvailabilityInStock" is a ${typeof value}, not a numeric string.`)
+  }
+  if (value.trim() === "") return undefined
+  const stock = Number(value)
+  if (!Number.isFinite(stock)) {
+    throw new Error(`Mouser ${where}: ${sku}'s "AvailabilityInStock" ("${value}") is not a number.`)
+  }
+  return stock
+}
+
 interface ParsedBreak {
   readonly quantity: number
   readonly unitPrice: number
@@ -77,14 +93,19 @@ function parseBreakRecord(value: unknown, index: number, where: string): ParsedB
   return { quantity, unitPrice, currency }
 }
 
+/** `[]`/absent `currency` when Mouser states no price breaks at all (a factory-order or
+ * discontinued listing) - not stated, not malformed. A present-but-not-an-array value is
+ * still refused as malformed data. */
 function parseBreaksAndCurrency(
   value: unknown,
   sku: string,
   where: string,
-): { readonly breaks: readonly PriceBreak[]; readonly currency: string } {
-  if (!Array.isArray(value) || value.length === 0) {
-    throw new Error(`Mouser ${where}: PriceBreaks is missing or empty; ${sku} has no price to record.`)
+): { readonly breaks: readonly PriceBreak[]; readonly currency?: string } {
+  if (value === null || value === undefined) return { breaks: [] }
+  if (!Array.isArray(value)) {
+    throw new Error(`Mouser ${where}: PriceBreaks is a ${typeof value}, not an array.`)
   }
+  if (value.length === 0) return { breaks: [] }
   const parsed = value.map((item, index) => parseBreakRecord(item, index, where))
   const currencies = new Set(parsed.map((item) => item.currency))
   if (currencies.size !== 1) {
@@ -136,17 +157,7 @@ function parsePart(value: unknown, index: number, endpoint: string, today: () =>
   const datasheetUrl =
     typeof datasheetValue === "string" && datasheetValue.trim() !== "" ? datasheetValue : undefined
 
-  const stockValue = record["AvailabilityInStock"]
-  if (typeof stockValue !== "string" || stockValue.trim() === "") {
-    throw new Error(
-      `Mouser ${where}: ${sku} has no usable "AvailabilityInStock" (got ${JSON.stringify(stockValue)}, ` +
-        "expected a numeric string, e.g. \"0\" for no stock).",
-    )
-  }
-  const stock = Number(stockValue)
-  if (!Number.isFinite(stock)) {
-    throw new Error(`Mouser ${where}: ${sku}'s "AvailabilityInStock" ("${stockValue}") is not a number.`)
-  }
+  const stock = parseStock(record["AvailabilityInStock"], sku, where)
 
   const { breaks, currency } = parseBreaksAndCurrency(record["PriceBreaks"], sku, where)
   const parameters = parseParameters(record["ProductAttributes"], where)

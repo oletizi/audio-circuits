@@ -184,7 +184,7 @@ test("mouserClient parses a price with a thousands separator", async () => {
   expect(offers[0].stock).toBe(0)
 })
 
-test("mouserClient throws naming the part when AvailabilityInStock is null", async () => {
+test("mouserClient leaves stock undefined when AvailabilityInStock is null", async () => {
   const body = JSON.stringify({
     Errors: [],
     SearchResults: {
@@ -205,10 +205,12 @@ test("mouserClient throws naming the part when AvailabilityInStock is null", asy
     },
   })
   const client = mouserClient(CREDENTIALS, fakeFetch({ "search/partnumber": body }), TODAY)
-  await expect(client.lookup("NULL-STOCK-PART")).rejects.toThrow(/1-NULL-STOCK.*AvailabilityInStock/s)
+  const offers = await client.lookup("NULL-STOCK-PART")
+  expect(offers).toHaveLength(1)
+  expect(offers[0].stock).toBeUndefined()
 })
 
-test("mouserClient throws naming the part when AvailabilityInStock is absent", async () => {
+test("mouserClient leaves stock undefined when AvailabilityInStock is absent", async () => {
   const body = JSON.stringify({
     Errors: [],
     SearchResults: {
@@ -228,7 +230,158 @@ test("mouserClient throws naming the part when AvailabilityInStock is absent", a
     },
   })
   const client = mouserClient(CREDENTIALS, fakeFetch({ "search/partnumber": body }), TODAY)
-  await expect(client.lookup("MISSING-STOCK-PART")).rejects.toThrow(/1-MISSING-STOCK.*AvailabilityInStock/s)
+  const offers = await client.lookup("MISSING-STOCK-PART")
+  expect(offers).toHaveLength(1)
+  expect(offers[0].stock).toBeUndefined()
+})
+
+test("mouserClient leaves stock undefined when AvailabilityInStock is an empty string", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 1,
+      Parts: [
+        {
+          MouserPartNumber: "1-EMPTY-STOCK",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "EMPTY-STOCK-PART",
+          Description: "Test part",
+          ProductDetailUrl: "https://www.mouser.com/x",
+          DataSheetUrl: "",
+          AvailabilityInStock: "",
+          ProductAttributes: [],
+          PriceBreaks: [{ Quantity: 1, Price: "$1.00", Currency: "USD" }],
+        },
+      ],
+    },
+  })
+  const client = mouserClient(CREDENTIALS, fakeFetch({ "search/partnumber": body }), TODAY)
+  const offers = await client.lookup("EMPTY-STOCK-PART")
+  expect(offers).toHaveLength(1)
+  expect(offers[0].stock).toBeUndefined()
+})
+
+test("mouserClient throws naming the part when AvailabilityInStock is present but not a number", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 1,
+      Parts: [
+        {
+          MouserPartNumber: "1-BAD-STOCK",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "BAD-STOCK-PART",
+          Description: "Test part",
+          ProductDetailUrl: "https://www.mouser.com/x",
+          DataSheetUrl: "",
+          AvailabilityInStock: "not-a-number",
+          ProductAttributes: [],
+          PriceBreaks: [{ Quantity: 1, Price: "$1.00", Currency: "USD" }],
+        },
+      ],
+    },
+  })
+  const client = mouserClient(CREDENTIALS, fakeFetch({ "search/partnumber": body }), TODAY)
+  await expect(client.lookup("BAD-STOCK-PART")).rejects.toThrow(/1-BAD-STOCK.*AvailabilityInStock.*not a number/s)
+})
+
+test("mouserClient yields an offer with empty breaks and no currency when PriceBreaks is missing or empty", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 2,
+      Parts: [
+        {
+          MouserPartNumber: "1-NO-PRICEBREAKS-KEY",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "NO-PRICEBREAKS-PART",
+          Description: "Test part",
+          ProductDetailUrl: "https://www.mouser.com/x",
+          DataSheetUrl: "",
+          AvailabilityInStock: "0",
+          ProductAttributes: [],
+        },
+        {
+          MouserPartNumber: "1-EMPTY-PRICEBREAKS",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "NO-PRICEBREAKS-PART",
+          Description: "Test part",
+          ProductDetailUrl: "https://www.mouser.com/y",
+          DataSheetUrl: "",
+          AvailabilityInStock: "0",
+          ProductAttributes: [],
+          PriceBreaks: [],
+        },
+      ],
+    },
+  })
+  const client = mouserClient(CREDENTIALS, fakeFetch({ "search/partnumber": body }), TODAY)
+  const offers = await client.lookup("NO-PRICEBREAKS-PART")
+  expect(offers).toHaveLength(2)
+  for (const offer of offers) {
+    expect(offer.breaks).toEqual([])
+    expect(offer.currency).toBeUndefined()
+  }
+})
+
+test("search returns every offer when one record has a null stock and another has empty PriceBreaks, alongside a normal record", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 3,
+      Parts: [
+        {
+          MouserPartNumber: "1-NORMAL",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "NORMAL-PART",
+          Description: "A normally stocked, priced part",
+          ProductDetailUrl: "https://www.mouser.com/normal",
+          DataSheetUrl: "",
+          AvailabilityInStock: "500",
+          ProductAttributes: [],
+          PriceBreaks: [{ Quantity: 1, Price: "$1.00", Currency: "USD" }],
+        },
+        {
+          MouserPartNumber: "511-2N3904",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "NULL-STOCK-PART",
+          Description: "A factory-order part with no stated stock",
+          ProductDetailUrl: "https://www.mouser.com/null-stock",
+          DataSheetUrl: "",
+          AvailabilityInStock: null,
+          ProductAttributes: [],
+          PriceBreaks: [{ Quantity: 1, Price: "$2.00", Currency: "USD" }],
+        },
+        {
+          MouserPartNumber: "1-NO-PRICE",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "NO-PRICE-PART",
+          Description: "A discontinued part with no listed price",
+          ProductDetailUrl: "https://www.mouser.com/no-price",
+          DataSheetUrl: "",
+          AvailabilityInStock: "0",
+          ProductAttributes: [],
+          PriceBreaks: [],
+        },
+      ],
+    },
+  })
+  const client = mouserClient(CREDENTIALS, fakeFetch({ "search/keyword": body }), TODAY)
+  const offers = await client.search("mixed availability", 3)
+  expect(offers).toHaveLength(3)
+
+  const normal = offers.find((offer) => offer.sku === "1-NORMAL")
+  expect(normal?.stock).toBe(500)
+  expect(normal?.breaks).toEqual([{ quantity: 1, unitPrice: 1 }])
+
+  const nullStock = offers.find((offer) => offer.sku === "511-2N3904")
+  expect(nullStock?.stock).toBeUndefined()
+  expect(nullStock?.breaks).toEqual([{ quantity: 1, unitPrice: 2 }])
+
+  const noPrice = offers.find((offer) => offer.sku === "1-NO-PRICE")
+  expect(noPrice?.stock).toBe(0)
+  expect(noPrice?.breaks).toEqual([])
+  expect(noPrice?.currency).toBeUndefined()
 })
 
 test("mouserClient throws naming the part and currency when a price break is not in USD", async () => {

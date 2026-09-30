@@ -4,6 +4,11 @@
  * touching which part was chosen and never touching a source from any other supplier
  * (Tayda, Amazon ...).
  *
+ * A source whose SKU is still listed but now carries no price break (a factory-order or
+ * discontinued listing) is reported and left untouched, the same as one no longer listed at
+ * all - it does not abort the run. Stock plays no part in any of this: refresh never reads
+ * or writes it.
+ *
  * Two phases, so a bad entry never leaves some files rewritten and others not. Phase one
  * (no writes): read and parse every selected entry, resolve every needed supplier client,
  * perform every lookup, and build and validate (`parseCatalogEntry`) every rewritten entry
@@ -43,6 +48,7 @@ export type SourceOutcome =
   | { readonly status: "updated"; readonly oldUnitPrice: number; readonly newUnitPrice: number }
   | { readonly status: "unchanged" }
   | { readonly status: "not-listed" }
+  | { readonly status: "no-price" }
   | { readonly status: "not-refreshed"; readonly reason: string }
 
 export interface SourceReport {
@@ -203,6 +209,13 @@ async function prepareEntry(
     const offer = await clientResult.client.lookupSku(skuValue)
     if (offer === undefined) {
       reports.push({ id, sourceIndex: index, supplier, sku: skuValue, outcome: { status: "not-listed" } })
+      newSources.push(rawSource)
+      continue
+    }
+    if (offer.breaks.length === 0) {
+      // Listed, but with no price break (a factory-order or discontinued listing): left
+      // untouched, reported, and does not abort the run - stock plays no part in refresh.
+      reports.push({ id, sourceIndex: index, supplier, sku: skuValue, outcome: { status: "no-price" } })
       newSources.push(rawSource)
       continue
     }

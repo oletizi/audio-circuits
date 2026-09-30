@@ -223,6 +223,105 @@ test("source refuses an invalid --use", async () => {
   expect(out.errors.join("\n")).toContain("bogus")
 })
 
+test("lookup prints 'not stated' stock and 'not listed' price for a record with null stock and empty PriceBreaks", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 1,
+      Parts: [
+        {
+          MouserPartNumber: "511-2N3904",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "2N3904",
+          Description: "Factory-order, no stated stock or price",
+          ProductDetailUrl: "https://www.mouser.com/2n3904",
+          DataSheetUrl: "",
+          AvailabilityInStock: null,
+          ProductAttributes: [],
+          PriceBreaks: [],
+        },
+      ],
+    },
+  })
+  const out = collect()
+  const code = await runCli(["lookup", "2N3904"], {
+    ...baseOpts({ fetch: fakeFetch({ "search/partnumber": body }) }),
+    log: out.log,
+    error: out.error,
+  })
+  expect(code).toBe(0)
+  const text = out.logs.join("\n")
+  expect(text).toContain("stock: not stated")
+  expect(text).toContain("price: not listed")
+})
+
+test("lookup --json omits stock and currency for a record that states neither", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 1,
+      Parts: [
+        {
+          MouserPartNumber: "511-2N3904",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "2N3904",
+          Description: "Factory-order, no stated stock or price",
+          ProductDetailUrl: "https://www.mouser.com/2n3904",
+          DataSheetUrl: "",
+          AvailabilityInStock: null,
+          ProductAttributes: [],
+          PriceBreaks: [],
+        },
+      ],
+    },
+  })
+  const out = collect()
+  const code = await runCli(["lookup", "2N3904", "--json"], {
+    ...baseOpts({ fetch: fakeFetch({ "search/partnumber": body }) }),
+    log: out.log,
+    error: out.error,
+  })
+  expect(code).toBe(0)
+  const parsed = JSON.parse(out.logs.join("\n"))
+  expect(parsed).toHaveLength(1)
+  expect("stock" in parsed[0]).toBe(false)
+  expect("currency" in parsed[0]).toBe(false)
+  expect(parsed[0].breaks).toEqual([])
+})
+
+test("source refuses an offer with no price breaks, naming the sku and the supplier", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 1,
+      Parts: [
+        {
+          MouserPartNumber: "511-2N3904",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "2N3904",
+          Description: "Factory-order, no listed price",
+          ProductDetailUrl: "https://www.mouser.com/2n3904",
+          DataSheetUrl: "",
+          AvailabilityInStock: "0",
+          ProductAttributes: [],
+          PriceBreaks: [],
+        },
+      ],
+    },
+  })
+  const out = collect()
+  const code = await runCli(["source", "2N3904", "--supplier", "mouser", "--use", "standard"], {
+    ...baseOpts({ fetch: fakeFetch({ "search/partnumber": body }) }),
+    log: out.log,
+    error: out.error,
+  })
+  expect(code).toBe(1)
+  const errorText = out.errors.join("\n")
+  expect(errorText).toContain("511-2N3904")
+  expect(errorText).toContain("no price")
+  expect(errorText).toContain("choose another")
+})
+
 test("source refuses, listing the matches, when more than one exact match is found", async () => {
   const body = JSON.stringify({
     Errors: [],

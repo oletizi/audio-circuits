@@ -22,9 +22,12 @@ export interface SupplierOffer {
   readonly description: string
   readonly url: string
   readonly datasheetUrl?: string
-  readonly stock: number
-  readonly currency: string
-  /** Ascending quantity. */
+  /** Absent when the supplier does not state it (Mouser: null, absent or empty string). */
+  readonly stock?: number
+  /** Absent exactly when `breaks` is empty - there is no price to have a currency for. */
+  readonly currency?: string
+  /** Ascending quantity; empty when the supplier lists no price breaks for this listing
+   * (a factory-order or discontinued part). */
   readonly breaks: readonly PriceBreak[]
   readonly parameters: Readonly<Record<string, string>>
   /** YYYY-MM-DD. */

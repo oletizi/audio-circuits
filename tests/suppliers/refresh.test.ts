@@ -230,6 +230,43 @@ test("reports not-listed and leaves the source untouched when the supplier no lo
   }
 })
 
+test("reports no-price and leaves the source untouched when the SKU is listed but has no price break", async () => {
+  const dir = tmpCatalogDir()
+  try {
+    writeEntry(dir, "r_100k", {
+      sources: [
+        {
+          supplier: "Mouser",
+          url: "https://mouser.com/r100k",
+          sku: "511-2N3904",
+          currency: "USD",
+          breaks: [{ quantity: 1, unitPrice: 0.1 }],
+          checked: "2026-08-01",
+          use: "standard",
+        },
+      ],
+    })
+    const io = realIo()
+    const result = await refreshCatalog(
+      dir,
+      ["r_100k"],
+      READY_CLIENT(async (sku) => (sku === "511-2N3904" ? offer({ sku, breaks: [] }) : undefined)),
+      io.readFile,
+      io.writeFile,
+    )
+    expect(result.reports).toEqual([
+      { id: "r_100k", sourceIndex: 0, supplier: "Mouser", sku: "511-2N3904", outcome: { status: "no-price" } },
+    ])
+    expect(result.writtenIds).toEqual([])
+    expect(io.written).toEqual([])
+    const unchanged = JSON.parse(fs.readFileSync(path.join(dir, "r_100k.json"), "utf8"))
+    expect(unchanged.sources[0].breaks).toEqual([{ quantity: 1, unitPrice: 0.1 }])
+    expect(unchanged.sources[0].checked).toBe("2026-08-01")
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test("a Digi-Key source with no client is left untouched and reported not-refreshed, without refusing the run", async () => {
   const dir = tmpCatalogDir()
   try {
