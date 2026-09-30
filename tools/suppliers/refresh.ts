@@ -139,6 +139,40 @@ function smallestUnitPrice(breaks: readonly unknown[]): number | undefined {
   return typeof value === "number" ? value : undefined
 }
 
+/** Whether two break lists state the same quantities at the same unit prices, in order -
+ * every break, not only the first, so a change at any quantity reads as a change. `pack`
+ * marks are carried over by `rewriteBreaks`, never changed by a refresh, so they play no
+ * part here. */
+function sameBreaks(oldBreaks: readonly unknown[], newBreaks: readonly RewrittenBreak[]): boolean {
+  if (oldBreaks.length !== newBreaks.length) return false
+  return newBreaks.every((brk, index) => {
+    const old = oldBreaks[index]
+    return isRecord(old) && old["quantity"] === brk.quantity && old["unitPrice"] === brk.unitPrice
+  })
+}
+
+/** "unchanged" only when every break is the same; otherwise "updated", carrying the
+ * smallest-quantity break's old and new price (which may be equal, when only a larger
+ * break moved). Both lists are non-empty here: `parseCatalogEntry` refuses a source with
+ * no breaks, and an offer with none is reported as "no-price" before this is reached. */
+function breaksOutcome(
+  file: string,
+  index: number,
+  oldBreaks: readonly unknown[],
+  newBreaks: readonly RewrittenBreak[],
+): SourceOutcome {
+  if (sameBreaks(oldBreaks, newBreaks)) return { status: "unchanged" }
+  const oldUnitPrice = smallestUnitPrice(oldBreaks)
+  const newUnitPrice = smallestUnitPrice(newBreaks)
+  if (oldUnitPrice === undefined || newUnitPrice === undefined) {
+    throw new Error(
+      `${file}: sources[${index}] has an empty old or new break list after validation - this is a ` +
+        "bug in tools/suppliers/refresh.ts, not a catalog problem.",
+    )
+  }
+  return { status: "updated", oldUnitPrice, newUnitPrice }
+}
+
 interface PreparedEntry {
   readonly id: string
   readonly file: string
@@ -227,12 +261,7 @@ async function prepareEntry(
 
     if (JSON.stringify(newRawSource) !== JSON.stringify(rawSource)) changed = true
 
-    const oldSmallest = smallestUnitPrice(oldBreaks)
-    const newSmallest = smallestUnitPrice(newBreaks)
-    const outcome: SourceOutcome =
-      oldSmallest !== undefined && newSmallest !== undefined && oldSmallest !== newSmallest
-        ? { status: "updated", oldUnitPrice: oldSmallest, newUnitPrice: newSmallest }
-        : { status: "unchanged" }
+    const outcome = breaksOutcome(file, index, oldBreaks, newBreaks)
     reports.push({ id, sourceIndex: index, supplier, sku: skuValue, outcome })
     newSources.push(newRawSource)
   }

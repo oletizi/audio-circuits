@@ -202,6 +202,64 @@ test("reports unchanged when the offer's prices match, but still bumps checked",
   }
 })
 
+test("reports updated when only a larger break's price changed, the smallest-quantity price being the same", async () => {
+  const dir = tmpCatalogDir()
+  try {
+    writeEntry(dir, "r_100k", {
+      sources: [
+        {
+          supplier: "Mouser",
+          url: "https://mouser.com/r100k",
+          sku: "603-TEST",
+          currency: "USD",
+          breaks: [
+            { quantity: 1, unitPrice: 0.1 },
+            { quantity: 100, unitPrice: 0.06 },
+          ],
+          checked: "2026-08-01",
+          use: "standard",
+        },
+      ],
+    })
+    const io = realIo()
+    const result = await refreshCatalog(dir, ["r_100k"], READY_CLIENT(async () => offer()), io.readFile, io.writeFile)
+    expect(result.reports).toEqual([
+      { id: "r_100k", sourceIndex: 0, supplier: "Mouser", sku: "603-TEST", outcome: { status: "updated", oldUnitPrice: 0.1, newUnitPrice: 0.1 } },
+    ])
+    const written = JSON.parse(fs.readFileSync(path.join(dir, "r_100k.json"), "utf8"))
+    expect(written.sources[0].breaks[1]).toEqual({ quantity: 100, unitPrice: 0.05 })
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test("reports updated when a break's quantity changed, even with the same prices", async () => {
+  const dir = tmpCatalogDir()
+  try {
+    writeEntry(dir, "r_100k", {
+      sources: [
+        {
+          supplier: "Mouser",
+          url: "https://mouser.com/r100k",
+          sku: "603-TEST",
+          currency: "USD",
+          breaks: [
+            { quantity: 1, unitPrice: 0.1 },
+            { quantity: 50, unitPrice: 0.05 },
+          ],
+          checked: "2026-08-01",
+          use: "standard",
+        },
+      ],
+    })
+    const io = realIo()
+    const result = await refreshCatalog(dir, ["r_100k"], READY_CLIENT(async () => offer()), io.readFile, io.writeFile)
+    expect(result.reports[0].outcome.status).toBe("updated")
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test("reports not-listed and leaves the source untouched when the supplier no longer lists it", async () => {
   const dir = tmpCatalogDir()
   try {
