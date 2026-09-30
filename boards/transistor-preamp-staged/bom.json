@@ -14,7 +14,14 @@
     "capacitor 22uF CP_Radial_D5.0mm_P2.00mm": "electrolytic-22uf-35v-radial-5x11mm",
     "capacitor 100uF CP_Radial_D6.3mm_P2.50mm": "electrolytic-100uf-35v-radial-6.3x11.2mm",
     "capacitor 220uF CP_Radial_D8.0mm_P3.50mm": "electrolytic-220uf-35v-radial-8x11.5mm",
-    "capacitor 470uF CP_Radial_D10.0mm_P5.00mm": "electrolytic-470uf-35v-radial-10x16mm"
+    "capacitor 470uF CP_Radial_D10.0mm_P5.00mm": "electrolytic-470uf-35v-radial-10x16mm",
+    "bjt 2N3904 TO-92_Inline": "bjt-2n3904-to-92"
   },
-  "extras": []
+  "extras": [
+    {
+      "part": "socket-to92-3position-machined-2.54mm",
+      "quantity": 3,
+      "why": "sockets so the transistors can be swapped"
+    }
+  ]
 }

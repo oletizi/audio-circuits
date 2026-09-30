@@ -6,7 +6,7 @@ Supply 24 V; every control (RV1-RV7) at START.
 
 | Designators | Needs | Qty | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q1, Q2, Q3 | 2N3904, TO-92, E-B-C | 3 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
+| Q1, Q2, Q3 | 2N3904, TO-92, E-B-C | 3 | 4 | 2N3904 general-purpose NPN transistor, TO-92, emitter-base-collector pinout | Diotec Semiconductor 2N3904 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Diotec-Semiconductor/2N3904?qs=OlC7AqGiEDlYMySw5i2rlg%3D%3D) (checked 2026-09-30) | 0.15 USD | 0.60 USD |
 | C2, C3, C5, C8, C9 | 10uF, radial, <= 5 mm dia, 2 mm leads, min 35 V | 5 | 6 | 10uF, 35V, radial aluminum electrolytic, 5x11mm body, 2mm lead spacing | Panasonic Industry ECA-1VM100 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM100?qs=F80sRR%252BEZdBj42PTfvMN%2FQ%3D%3D) (checked 2026-09-30) | 0.30 USD | 1.80 USD |
 | C6 | 22uF, radial, <= 5 mm dia, 2 mm leads, min 35 V | 1 | 2 | 22uF, 35V, radial aluminum electrolytic, 5x11mm body, 2mm lead spacing | Nichicon UPJ1V220MDD | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Nichicon/UPJ1V220MDD?qs=6FLRVw7s7MWVrVBkLknSZg%3D%3D) (checked 2026-09-30) | 0.31 USD | 0.62 USD |
 | C4 | 100uF, radial, <= 6.3 mm dia, 2.5 mm leads, min 35 V | 1 | 2 | 100uF, 35V, radial aluminum electrolytic, 6.3x11.2mm body, 2.5mm lead spacing | Panasonic Industry ECA-1VM101I | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM101I?qs=Rjs8jpJ6LSQiPme8klHtJQ%3D%3D) (checked 2026-09-30) | 0.33 USD | 0.66 USD |
@@ -35,8 +35,14 @@ Supply 24 V; every control (RV1-RV7) at START.
 | RV6 | 1K, linear, panel pot | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
 | RV5, RV7 | 25K, linear, panel pot | 2 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
 
+## Extras
+
+| Designators | Needs | Qty | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| sockets so the transistors can be swapped | - | 3 | 4 | 3-position single-row machined-pin (screw-machine) IC/SIP socket strip, 2.54mm (0.1in) pitch, for socketing a TO-92 transistor | Samtec SS-103-T-2-N | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/SS-103-T-2-N?qs=rU5fayqh%252BE2l5SxhEUcmCQ%3D%3D) (checked 2026-09-30) | 0.76 USD | 3.04 USD |
+
 ## Totals
 
 | Supplier | Currency | Total |
 | --- | --- | --- |
-| Mouser | USD | 7.58 |
+| Mouser | USD | 11.22 |

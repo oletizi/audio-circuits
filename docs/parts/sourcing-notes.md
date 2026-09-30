@@ -166,3 +166,52 @@ the date.)
   20% 2LS") and was used as the evidence instead - this is reasonable,
   but a real per-part datasheet would be stronger evidence if one turns
   up later.
+- 2026-09-30: `bun run parts lookup|search|source` crashes (uncaught
+  `Error`, exit 1, no output) on any Mouser query whose results include SKU
+  511-2N3904 (a Mouser catalog row with `AvailabilityInStock: null` rather
+  than a numeric string) - `tools/suppliers/mouser.ts`'s `parsePart` only
+  accepts a numeric-string stock value. This hit `lookup 2N3904`,
+  `search 2N3904` and `source 2N3904 --use standard` alike, since all three
+  go through the same exact-partnumber/keyword query. Narrowing the search
+  with a second keyword that this stale row does not match (e.g.
+  `search 2N3904 TO-92`) sidesteps it and returns the other manufacturers'
+  listings normally; this is a real tool bug (reported, not fixed by a
+  researcher) rather than anything about the part itself.
+- 2026-09-30: A BJT catalog entry's `mpn` must equal the circuit's modeled
+  part number exactly (`tools/bom/fit.ts`'s `checkEqual("mpn", ...)`) - for
+  the 2N3904 that means the entry's `mpn` field has to be the bare string
+  `"2N3904"`, not a supplier ordering-code suffix. Several Mouser-listed
+  "2N3904" parts are only available under a suffixed code: onsemi's cheap,
+  well-stocked bulk-bag part is `2N3904BU` (10000/bulk bag per its own
+  datasheet's ordering table), not bare `2N3904` - Mouser's SKU 511-2N3904
+  for onsemi's literal bare part is the crashing row above, effectively
+  unavailable through this tool. Diotec Semiconductor and Rectron both list
+  their part under the bare Mouser mpn `"2N3904"` (SKUs 637-2N3904,
+  583-2N3904) - pick one of those when the line needs an exact bare mpn
+  match, even if a suffixed part elsewhere is cheaper or better-packaged.
+- 2026-09-30: 2N3904 pinout genuinely varies by source, exactly as this
+  file already warns - onsemi's current 2N3904/D datasheet (Rev. 9, and the
+  standalone 2N3904/D, Oct 2024 Rev. 3) both draw pin 1 = emitter, pin 2 =
+  base, pin 3 = collector (E-B-C) for the whole 2N3903/2N3904 family
+  (TO-92 case 29-11, Style 1). Diotec Semiconductor's current datasheet
+  (diotec.com/request/datasheet/2n3904.pdf, "Version 2026-03-10") also
+  draws E-B-C. A secondary aggregator site (not the manufacturer) states
+  Diotec's pinning as C-B-E - it was not used as evidence and appears to be
+  either stale or a misreading; always read the manufacturer's own PDF
+  package drawing, never an aggregator's transcription of it, and note
+  which exact drawing/revision was read.
+- 2026-09-30: Samtec's precision-machined (screw-machine) socket strips -
+  series SS (standard height), ESS (elevated), SD/ESD (double row), HSS
+  (high temp) - are documented on one shared catalog page (fetched from
+  `suddendocs.samtec.com/catalog_english/ess.pdf`; Mouser's own copy of the
+  same PDF, `mouser.com/datasheet/3/85/1/ess.pdf`, returns Mouser's Akamai
+  block page like every other mouser.com-hosted PDF). The part number
+  encodes position count directly: `<series>-1<NN>-<plating>-<lead style>`,
+  where the `1` is the single-row type-strip digit and `NN` (01 thru 32) is
+  the pin count - e.g. `SS-103-T-2-N` is a native single-row 3-position
+  strip, not a longer strip that needs breaking down. A 2.54 mm / 0.1"
+  TO-92 lead (about 0.41-0.53 mm per onsemi's TO-92 dimension table) fits
+  this whole family's stated lead size range (0.38-0.56 mm / .015"-.022").
+  The plain `SS` (standard height) series is cheaper than the outwardly
+  similar `ESS` (elevated) series at the same position count and plating,
+  and is the better default for socketing a bench-build discrete part.

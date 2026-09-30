@@ -1,0 +1,50 @@
+{
+  "id": "socket-to92-3position-machined-2.54mm",
+  "kind": "accessory",
+  "description": "3-position single-row machined-pin (screw-machine) IC/SIP socket strip, 2.54mm (0.1in) pitch, for socketing a TO-92 transistor",
+  "manufacturer": "Samtec",
+  "mpn": "SS-103-T-2-N",
+  "specs": {
+    "pins": 3,
+    "pitchMm": 2.54
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Samtec/SS-103-T-2-N?qs=rU5fayqh%252BE2l5SxhEUcmCQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for SS-103-T-2-N (Samtec), Mouser part 200-SS103T2N, description '.100 Single Row Screw Machine Socket Strip'."
+    },
+    {
+      "spec": "pins",
+      "url": "https://suddendocs.samtec.com/catalog_english/ess.pdf",
+      "note": "Samtec precision-machined-socket-strips catalog page (F-226 supplement, 'SS, SD, ESD, ESS, HSS SERIES', fetched 2026-09-30 from samtec.com - Mouser's own copy of this PDF returns Mouser's Akamai block page, per the sourcing-notes Lessons, so the manufacturer's copy was fetched directly): part-number legend 'TYPE STRIP' digit '1' = single row, then 'NO. PINS PER ROW' 01 thru 32 as a two-digit field - SS-103 parses as SS + type-strip '1' + pin count '03', i.e. 3 positions."
+    },
+    {
+      "spec": "pitchMm",
+      "url": "https://suddendocs.samtec.com/catalog_english/ess.pdf",
+      "note": "Samtec precision-machined-socket-strips catalog page (fetched 2026-09-30): header '(2.54 mm) .100\"' and dimension drawing '(2.54) .100 x No. of Positions' for the SS/ESS single-row series; same page states 'Lead Size Range: (0.38mm to 0.56mm) .015\" to .022\" DIA and most all IC leads', which covers a TO-92 lead (about 0.41-0.53mm per onsemi's TO-92 dimension table)."
+    }
+  ],
+  "why": "A native 3-position single-row machined-pin socket strip - no need to break a longer strip down to size. Samtec SS (standard height) is preferred over the otherwise-identical ESS (elevated) series at this position count: cheaper (about $0.76 each in ones vs $1.52 for ESS-103-T-08) and lower-profile, which suits a bench/perfboard build. Both are 'screw machine' (machined-pin) construction, not stamped. Amazon was not used: the sourcing notes restrict Amazon/marketplace sourcing to parts where a counterfeit does not matter, and a real per-pin datasheet (Samtec's) was readable and gave a clear position-count and pitch match, so Mouser was used instead.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Samtec/SS-103-T-2-N?qs=rU5fayqh%252BE2l5SxhEUcmCQ%3D%3D",
+      "sku": "200-SS103T2N",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 0.76 },
+        { "quantity": 50, "unitPrice": 0.755 },
+        { "quantity": 100, "unitPrice": 0.717 },
+        { "quantity": 500, "unitPrice": 0.468 },
+        { "quantity": 1000, "unitPrice": 0.37 },
+        { "quantity": 2000, "unitPrice": 0.339 },
+        { "quantity": 5000, "unitPrice": 0.274 },
+        { "quantity": 10000, "unitPrice": 0.209 }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}
