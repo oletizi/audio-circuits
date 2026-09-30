@@ -15,7 +15,7 @@ import {
   isPanelPot,
   type BoardCircuit as PerfboardBoardCircuit,
 } from "../perfboard/board-circuit.ts"
-import { assertDesignators, assertPinNumbers } from "../perfboard/check.ts"
+import { assertDesignators, assertPinNumbers } from "../perfboard/circuit-exports.ts"
 import type { PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { circuitFromModule, importCircuitModule } from "../perfboard/load.ts"
 import type { BoardDump } from "./dump.ts"

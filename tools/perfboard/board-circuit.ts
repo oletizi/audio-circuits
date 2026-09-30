@@ -15,7 +15,7 @@
  */
 import type { Component, Network } from "../../lib/model/types.ts"
 import type { PinNumbers } from "../../lib/kicad/from-network.ts"
-import { assertDesignators, assertPinNumbers } from "./check.ts"
+import { assertDesignators, assertPinNumbers } from "./circuit-exports.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
 import { circuitFromModule, importCircuitModule } from "./load.ts"
 

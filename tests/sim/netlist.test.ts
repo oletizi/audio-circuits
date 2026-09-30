@@ -69,7 +69,7 @@ test("wires the source's internal node and series resistor to reproduce a purely
   // nodes fails this test even if the divider's numeric result happened to coincide:
   // the source must sit on the internal node, and the series resistor must bridge
   // the internal node to the network's source node ("sig"), not the reverse.
-  expect(deck).toMatch(/^V1 n_src_internal 0 AC /m)
+  expect(deck).toMatch(/^V1 n_src_internal 0 DC 0 AC /m)
   expect(deck).toMatch(/^RSRC n_src_internal sig /m)
 
   const [sweep] = await runAcSweep({ netlist: deck, nodes: ["sig"] })

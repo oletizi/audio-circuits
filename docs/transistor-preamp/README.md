@@ -39,7 +39,8 @@ unchosen, unmet or stale-priced, and rewrites the committed `BOM.md`. It never
 edits `bom.json` or the catalog, and exits non-zero until every line is chosen
 and met. Its `bom.json` starts with nothing chosen, so every line currently
 reads "not chosen"; the part-researcher agent fills them. `make check` fails if
-`BOM.md` falls out of step or a chosen part stops fitting. See the design:
+`BOM.md` falls out of step, a chosen part stops fitting, or `bom.json` names a
+catalog part that does not exist. See the design:
 `docs/superpowers/specs/2026-09-30-bom-design.md`.
 
 ## 2. The 24 V transformer-coupled preamp

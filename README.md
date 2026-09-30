@@ -128,8 +128,8 @@ person or the part-researcher agent. A board with no `bom.json` is refused,
 naming the file to create; the minimal one is
 `{ "purchasing": { "mode": "prototype", "shrinkage": 0.1 }, "lines": {}, "extras": [] }`.
 For a board with a `bom.json`, `make check` also fails when the committed
-`BOM.md` differs from a fresh rendering or a chosen part no longer meets its
-line; unchosen lines and stale prices do not fail `check`, and boards
+`BOM.md` differs from a fresh rendering, a chosen part no longer meets its
+line, or `bom.json` names a catalog part that does not exist; unchosen lines and stale prices do not fail `check`, and boards
 without `bom.json` are unaffected.
 
 A new board's KiCad schematic starts from a generated stub, written once with
