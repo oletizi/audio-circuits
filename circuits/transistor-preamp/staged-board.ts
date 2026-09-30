@@ -234,7 +234,7 @@ export const powerUpChecks: PowerUpChecksExport = async (): Promise<PowerUpCheck
   return {
     conditions: powerUpConditions(),
     checks: [
-      { label: `Supply (+24V at ${designatorOf("power_header")})`, node: "VCC", expectedVolts: supplyVolts() },
+      { label: `Supply (+${supplyVolts()}V at ${designatorOf("power_header")})`, node: "VCC", expectedVolts: supplyVolts() },
       { label: `${designatorOf("gain_transistor")} base`, node: "BASE", expectedVolts: at("BASE") },
       { label: `${designatorOf("gain_transistor")} emitter`, node: "EMITTER", expectedVolts: at("EMITTER") },
       { label: `${designatorOf("gain_transistor")} collector`, node: "COLLECTOR", expectedVolts: at("COLLECTOR") },
