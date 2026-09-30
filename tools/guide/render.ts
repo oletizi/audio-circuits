@@ -1,10 +1,12 @@
-import { holeName, type BoardDump } from "./dump.ts"
+import { rowName, type BoardDump } from "./dump.ts"
 import {
   drawBoard,
   drawBridges,
   drawCoordinates,
   drawCuts,
+  drawWireNumbers,
   drawWires,
+  reserveCoordinates,
 } from "./render-board.ts"
 import { drawEdgeLabels, validateEdgeLabels, type EdgeLabel } from "./render-edges.ts"
 import { drawPartBodies, drawPartLabels, placedParts } from "./render-parts.ts"
@@ -34,7 +36,8 @@ import { createOccupied } from "./placement.ts"
  * print-first SVG for the bench: the component side with parts, leads,
  * labels and checkboxes, or the copper side (mirrored) with only strips,
  * cuts and solder bridges. Cuts and bridges carry the numbers from
- * `numbering.ts` in both views, so the checklist and both images agree.
+ * `numbering.ts` in both views, and wire links (component side only) theirs,
+ * so the checklist and the images agree.
  *
  * The renderer knows nothing about circuits: what each part is called
  * (`labels`) and which pins leave the board (`edgeLabels`) come from the
@@ -53,15 +56,11 @@ const HEADER_GAP = 12
 const LEGEND_GAP = 16
 const MARGIN = 12
 
-function lastRowName(dump: BoardDump): string {
-  return holeName(dump.grid.rows - 1, 0).slice(0, -1)
-}
-
 function drawHeader(canvas: Canvas, dump: BoardDump, options: RenderOptions, top: number, left: number): void {
   const placed = dump.parts.filter((part) => part.placement !== "floating").length
   const side = options.view === "component" ? "Component side" : "Copper side, mirrored (holes keep their names)"
   const size =
-    `${dump.grid.rows} x ${dump.grid.cols} holes (rows A-${lastRowName(dump)}, columns 1-${dump.grid.cols})`
+    `${dump.grid.rows} x ${dump.grid.cols} holes (rows A-${rowName(dump.grid.rows - 1)}, columns 1-${dump.grid.cols})`
   // Each view's summary counts only what that image shows.
   const marks = `${dump.cuts.length} cuts, ${dump.bridges.length} solder bridges`
   const summary =
@@ -118,7 +117,7 @@ function legendItems(view: RenderOptions["view"], verticalStrips: boolean): read
       symbol: (x, y) =>
         line({ x: x - 8, y }, { x: x + 8, y }, { width: 2 }) +
         `<circle cx="${fmt(x - 8)}" cy="${fmt(y)}" r="3.2" fill="${INK}"/><circle cx="${fmt(x + 8)}" cy="${fmt(y)}" r="3.2" fill="${INK}"/>`,
-      text: "wire link",
+      text: "wire link (W1, W2 ...)",
     },
     {
       symbol: (x, y) =>
@@ -181,7 +180,8 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
   const placedOrRefused = placedParts(frame, dump, labels)
   validateEdgeLabels(dump, options.edgeLabels)
   // Placed in this order - fixed geometry first, then edge labels, cut
-  // numbers and part tags each clear of everything placed before - but
+  // numbers, wire numbers and part tags each clear of everything placed
+  // before - but
   // stacked bottom to top as listed in `layers`, so cuts and labels are
   // never hidden under a body.
   const board = createCanvas()
@@ -204,7 +204,11 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
   if (component) {
     drawEdgeLabels(edges, frame, dump, options.edgeLabels, occupied)
   }
+  reserveCoordinates(frame, occupied.marks)
   drawCuts(marks, frame, dump, occupied)
+  if (component) {
+    drawWireNumbers(marks, frame, dump, occupied)
+  }
   drawPartLabels(partLabels, placed, occupied)
   drawCoordinates(coordinates, frame)
   const layers = [board, parts, wires, edges, marks, partLabels, coordinates]

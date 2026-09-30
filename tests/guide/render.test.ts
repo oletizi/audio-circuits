@@ -2,6 +2,7 @@ import { test, expect } from "bun:test"
 import { parseBoardDump, holeName } from "../../tools/guide/dump.ts"
 import { numberedCuts, numberedBridges } from "../../tools/guide/numbering.ts"
 import { renderLayout, type RenderOptions } from "../../tools/guide/render.ts"
+import { attr, cutCentre, elements, holeCentre, num } from "./svg-query.ts"
 
 /**
  * A small hand-written board in the pinned fork's `--dump-board` grammar: a
@@ -45,40 +46,6 @@ function options(view: RenderOptions["view"]): RenderOptions {
 
 const COMPONENT = renderLayout(DUMP, LABELS, options("component"))
 const COPPER = renderLayout(DUMP, LABELS, options("copper"))
-
-function attr(element: string, name: string): string {
-  const match = new RegExp(`\\s${name}="([^"]*)"`).exec(element)
-  if (match === null || match[1] === undefined) {
-    throw new Error(`test: no ${name} attribute on ${element}`)
-  }
-  return match[1]
-}
-
-function num(element: string, name: string): number {
-  return Number(attr(element, name))
-}
-
-function elements(svg: string, tag: string, cls: string): string[] {
-  return [...svg.matchAll(new RegExp(`<${tag}\\s[^>]*class="${cls}"[^>]*>`, "g"))].map((m) => m[0])
-}
-
-function holeCentre(svg: string, name: string): { x: number; y: number } {
-  const hole = elements(svg, "circle", "hole").find((el) => attr(el, "data-hole") === name)
-  if (hole === undefined) {
-    throw new Error(`test: no hole ${name}`)
-  }
-  return { x: num(hole, "cx"), y: num(hole, "cy") }
-}
-
-/** The centre of cut `n`'s cross: the midpoint of the first of its two strokes. */
-function cutCentre(svg: string, n: number): { x: number; y: number } {
-  const group = new RegExp(`<g class="cut" data-cut="${n}">(.*?)</g>`).exec(svg)
-  const stroke = group?.[1]?.match(/<line\s[^>]*>/)?.[0]
-  if (stroke === undefined) {
-    throw new Error(`test: no cut ${n}`)
-  }
-  return { x: (num(stroke, "x1") + num(stroke, "x2")) / 2, y: (num(stroke, "y1") + num(stroke, "y2")) / 2 }
-}
 
 test("cuts and bridges are numbered from 1 in reading order: row, then column", () => {
   expect(numberedCuts(DUMP).map(({ number, cut }) => [number, holeName(cut.a.row, cut.a.col)])).toEqual([

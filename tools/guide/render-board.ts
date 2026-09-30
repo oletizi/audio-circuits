@@ -1,5 +1,5 @@
-import { holeName, type BoardDump, type HolePosition } from "./dump.ts"
-import { numberedBridges, numberedCuts } from "./numbering.ts"
+import { holeName, rowName, type BoardDump } from "./dump.ts"
+import { numberedBridges, numberedCuts, numberedWires } from "./numbering.ts"
 import { TAG_CLEARANCE, everything, leastCovered, type Occupancy, type Occupied } from "./placement.ts"
 import {
   CHECKBOX_SIZE,
@@ -36,10 +36,6 @@ const COORD_SIZE = 8
 const MARK_NUMBER_SIZE = 8
 /** Distance from the board outline to the row/column names. */
 const COORD_OFFSET = 9
-
-function rowName(row: number): string {
-  return holeName(row, 0).slice(0, -1)
-}
 
 export function drawBoard(canvas: Canvas, frame: Frame): void {
   const { board, grid } = frame
@@ -78,22 +74,44 @@ export function drawBoard(canvas: Canvas, frame: Frame): void {
  * white halo, so an edge label's leader line breaks around them.
  */
 export function drawCoordinates(canvas: Canvas, frame: Frame): void {
+  for (const { at, content, style } of coordinates(frame)) {
+    addText(canvas, at, content, style)
+  }
+}
+
+/**
+ * Records where the row letters and column numbers will be drawn, so the
+ * numbers and part tags placed after this keep off them. Called once the
+ * edge labels are placed: their leader lines cross the coordinates on
+ * purpose, and the coordinates' halo breaks them.
+ */
+export function reserveCoordinates(frame: Frame, marks: Occupancy): void {
+  for (const { at, content, style } of coordinates(frame)) {
+    marks.add(textExtent(at, content, style))
+  }
+}
+
+function coordinates(frame: Frame): readonly { at: Point; content: string; style: TextStyle }[] {
   const { board, grid } = frame
   const plain: TextStyle = { size: COORD_SIZE, anchor: "middle", halo: true, cls: "coord" }
   // A marked strip's name is bold at both ends, as part of the alignment guide.
   const bold: TextStyle = { ...plain, bold: true }
+  const placed: { at: Point; content: string; style: TextStyle }[] = []
   for (let col = 0; col < grid.cols; col += 1) {
     const x = frame.hole(0, col).x
-    const coord = frame.verticalStrips && isMarkedStrip(col) ? bold : plain
-    addText(canvas, { x, y: board.minY - COORD_OFFSET }, String(col + 1), coord)
-    addText(canvas, { x, y: board.maxY + COORD_OFFSET }, String(col + 1), coord)
+    const style = frame.verticalStrips && isMarkedStrip(col) ? bold : plain
+    const content = String(col + 1)
+    placed.push({ at: { x, y: board.minY - COORD_OFFSET }, content, style })
+    placed.push({ at: { x, y: board.maxY + COORD_OFFSET }, content, style })
   }
   for (let row = 0; row < grid.rows; row += 1) {
     const y = frame.hole(row, 0).y
-    const coord = !frame.verticalStrips && isMarkedStrip(row) ? bold : plain
-    addText(canvas, { x: board.minX - COORD_OFFSET, y }, rowName(row), coord)
-    addText(canvas, { x: board.maxX + COORD_OFFSET, y }, rowName(row), coord)
+    const style = !frame.verticalStrips && isMarkedStrip(row) ? bold : plain
+    const content = rowName(row)
+    placed.push({ at: { x: board.minX - COORD_OFFSET, y }, content, style })
+    placed.push({ at: { x: board.maxX + COORD_OFFSET, y }, content, style })
   }
+  return placed
 }
 
 function midpoint(a: Point, b: Point): Point {
@@ -178,22 +196,56 @@ export function drawBridges(canvas: Canvas, frame: Frame, dump: BoardDump, marks
   }
 }
 
-/** Draws every wire link, recording the lines in `marks` so labels keep off them. */
+/**
+ * Draws every wire link, recording the lines in `marks` so labels keep off
+ * them. Each line carries its number from `numbering.ts`; the number itself
+ * is printed by `drawWireNumbers`, once the parts are drawn, so it can keep
+ * clear of them.
+ */
 export function drawWires(canvas: Canvas, frame: Frame, dump: BoardDump, marks: Occupancy): void {
-  for (const wire of dump.wires) {
-    const [a, b] = wire.ends.map((end: HolePosition) => frame.hole(end.row, end.col))
-    if (a === undefined || b === undefined) {
-      throw new Error(
-        `wire ${wire.name} does not have two ends, so it cannot be drawn. parseBoardDump always gives a wire ` +
-          "two ends, so this BoardDump was built some other way; build it with parseBoardDump from a real " +
-          "--dump-board report.",
-      )
-    }
-    canvas.add(line(a, b, { width: 2, cls: "wire", data: { wire: wire.name } }), boxAround([a, b], 3))
+  for (const { number, from, to } of numberedWires(dump)) {
+    const a = frame.hole(from.row, from.col)
+    const b = frame.hole(to.row, to.col)
+    canvas.add(line(a, b, { width: 2, cls: "wire", data: { wire: String(number) } }), boxAround([a, b], 3))
     marks.add(boxAround([a, b], 2))
     for (const p of [a, b]) {
       canvas.add(circle(p, 3.2, { fill: INK }), boxAround([p], 3.2))
     }
+  }
+}
+
+/**
+ * Where a wire's number may go, by preference: beside the wire's middle on
+ * one side, then the other, then beside points further along it - always
+ * just off the wire, so it reads as that wire's.
+ */
+function wireTagSpots(a: Point, b: Point, width: number, height: number, wire: string): readonly Point[] {
+  const len = Math.hypot(b.x - a.x, b.y - a.y)
+  if (len === 0) {
+    throw new Error(
+      `wire ${wire} has both ends in one hole, so it cannot be drawn or numbered. Move one of its ends ` +
+        "in VeroRoute (`make edit`), or delete the wire, save, then run this again.",
+    )
+  }
+  const across = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len }
+  // A bold "W" prints wider than textWidth's estimate, so keep a little extra gap.
+  const offset = Math.abs(across.x) * (width / 2) + Math.abs(across.y) * (height / 2) + 5
+  return [0.5, 0.3, 0.7, 0.15, 0.85].flatMap((t) => {
+    const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+    return [1, -1].map((side) => ({ x: p.x + across.x * offset * side, y: p.y + across.y * offset * side }))
+  })
+}
+
+/** Prints "W<n>" beside every wire link, clear of whatever `occupied` records, and records it there. */
+export function drawWireNumbers(canvas: Canvas, frame: Frame, dump: BoardDump, occupied: Occupied): void {
+  const style: TextStyle = { size: MARK_NUMBER_SIZE, anchor: "middle", bold: true, halo: true, cls: "wire-number" }
+  for (const { number, wire, from, to } of numberedWires(dump)) {
+    const label = `W${number}`
+    const width = textWidth(label, MARK_NUMBER_SIZE)
+    const spots = wireTagSpots(frame.hole(from.row, from.col), frame.hole(to.row, to.col), width, MARK_NUMBER_SIZE, wire.name)
+    const at = leastCovered(spots, (p) => textExtent(p, label, style), everything(occupied))
+    addText(canvas, at, label, { ...style, data: { wire: String(number) } })
+    occupied.marks.add(grow(textExtent(at, label, style), TAG_CLEARANCE))
   }
 }
 

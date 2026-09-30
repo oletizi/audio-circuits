@@ -161,3 +161,25 @@ test("a failed schematic export leaves the previous packet in place", async () =
   await expect(writeGuidePacket(DECLARATION, failing)).rejects.toThrow(/kicad-cli exited 1/)
   expect([...h.files.entries()]).toEqual([[`${GUIDE}/guide.html`, "previous"]])
 })
+
+test("headers are labelled by what goes in their holes, on the values image and in the checklist", async () => {
+  const h = harness(DUMP_TEXT)
+  await writeGuidePacket(DECLARATION, h.deps)
+  const valuesSvg = h.files.get(`${GUIDE}/layout-values.svg`) ?? ""
+  const partLabels = [...valuesSvg.matchAll(/<text class="part-label"[^>]*>(.*?)<\/text>/g)].map((m) => m[1])
+  expect(partLabels).toContain("2-pin header")
+  expect(partLabels).toContain("3-pin header")
+  expect(partLabels).not.toContain("25K")
+  const html = h.files.get(`${GUIDE}/guide.html`) ?? ""
+  expect(html).toContain("<td>J1</td><td>2-pin header</td>")
+  expect(html).toContain("<td>RV2</td><td>3-pin header (25K pot, off-board)</td>")
+  for (const [file, contents] of h.files) {
+    expect({ file, hasSymbolName: contents.includes("Conn_01x02") }).toEqual({ file, hasSymbolName: false })
+  }
+})
+
+test("a placed part with no PIN lines is refused before anything is written, with the rebuild fix", async () => {
+  const h = harness(DUMP_TEXT.replace(/PIN RV1 .*\n/g, ""), { [`${GUIDE}/guide.html`]: "previous" })
+  await expect(writeGuidePacket(DECLARATION, h.deps)).rejects.toThrow(/part RV1 .*no PIN lines.*`make veroroute`/s)
+  expect([...h.files.entries()]).toEqual([[`${GUIDE}/guide.html`, "previous"]])
+})

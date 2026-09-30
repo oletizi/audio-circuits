@@ -27,7 +27,7 @@ import type { Env } from "../perfboard/check.ts"
 import { buildChecklist } from "./checklist.ts"
 import { assertLayoutMatchesCircuit, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
 import { buildGuideHtml } from "./guide.ts"
-import { offBoardLabels } from "./off-board.ts"
+import { offBoardLabels, valueLabel } from "./off-board.ts"
 import { buildableDump } from "./preflight.ts"
 import { renderLayout } from "./render.ts"
 
@@ -128,7 +128,7 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
 
   const name = boardName(declaration)
   const designators = new Map(dump.parts.map((part) => [part.ref, part.ref]))
-  const values = new Map(dump.parts.map((part) => [part.ref, part.value]))
+  const values = new Map(dump.parts.map((part) => [part.ref, valueLabel(dump, part, circuit, "image")]))
   const images = {
     designators: renderLayout(dump, designators, { view: "component", title: `${name} - designators`, edgeLabels }),
     values: renderLayout(dump, values, { view: "component", title: `${name} - values`, edgeLabels }),

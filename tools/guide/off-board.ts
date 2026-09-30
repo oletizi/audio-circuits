@@ -13,9 +13,13 @@
  *   goes to ("DRIVE ccw", "DRIVE wiper", "DRIVE cw"). The function is the
  *   pot's semantic id without its "_pot" suffix, in capitals with spaces
  *   ("transformer_drive_pot" -> "TRANSFORMER DRIVE").
+ *
+ * The edge labels say what each pin carries, so a header's value label
+ * (`valueLabel`) says only what is fitted there.
  */
 import type { Component } from "../../lib/model/types.ts"
 import { pinNumberFor } from "../../lib/kicad/from-network.ts"
+import { noPinLinesMessage, type BoardDump, type Part } from "./dump.ts"
 import type { EdgeLabel } from "./render-edges.ts"
 import { componentAt, isPanelPot, type BoardCircuit } from "./circuit.ts"
 
@@ -56,6 +60,34 @@ export function offBoardRefs(circuit: BoardCircuit): readonly string[] {
     .filter(([, component]) => component.kind === "connector" || isPanelPot(component))
     .map(([ref]) => ref)
     .sort()
+}
+
+/**
+ * Where a part's value is printed (the values image, or the checklist's
+ * Value column), and so how much it says.
+ */
+export type ValueLabelUse = "image" | "checklist"
+
+/**
+ * What a part's value label says: what goes in its holes. For every
+ * on-board part that is its dump value ("10K", "2N3904"). For a part whose
+ * pins leave the board it is the header fitted there - "2-pin header",
+ * "3-pin header" - with the pin count read from the part's PIN lines, never
+ * from its ref or type. A connector's dump value is a KiCad symbol name
+ * ("Conn_01x02") and a panel pot's is the pot's own value, and neither is
+ * what the builder fits at those holes. In the checklist, a panel pot's
+ * header keeps the pot as context: "3-pin header (25K pot, off-board)".
+ *
+ * One function for the values image and the checklist, so the two agree.
+ */
+export function valueLabel(dump: BoardDump, part: Part, circuit: BoardCircuit, use: ValueLabelUse): string {
+  const component = componentAt(circuit, part.ref)
+  const panelPot = isPanelPot(component)
+  if (component.kind !== "connector" && !panelPot) return part.value
+  const pins = dump.pins[part.ref] ?? []
+  if (pins.length === 0) throw new Error(noPinLinesMessage(part))
+  const header = `${pins.length}-pin header`
+  return panelPot && use === "checklist" ? `${header} (${part.value} pot, off-board)` : header
 }
 
 /**

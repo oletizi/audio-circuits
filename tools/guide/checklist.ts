@@ -8,12 +8,15 @@
  * for a potentiometer, from what VeroRoute fits (a trim-pot type goes with
  * the resistors, a panel pot's header with the junctions). A part that fits
  * no group is refused, naming it: there is no "other" bucket for a part to
- * disappear into. Cuts and bridges carry the numbers from `numbering.ts`,
- * so the checklist and the images agree.
+ * disappear into. Cuts, bridges and wire links carry the numbers from
+ * `numbering.ts`, and a part's Value is `valueLabel`'s (off-board.ts), so
+ * the checklist and the images agree.
  */
 import type { Component } from "../../lib/model/types.ts"
-import { holeName, type BoardDump, type HolePosition, type NodedHole, type Part } from "./dump.ts"
-import { numberedBridges, numberedCuts } from "./numbering.ts"
+import { holeName, noPinLinesMessage, type BoardDump, type HolePosition, type NodedHole, type Part } from "./dump.ts"
+import { numberedBridges, numberedCuts, numberedWires } from "./numbering.ts"
+import { valueLabel } from "./off-board.ts"
+import { ELECTROLYTIC_PLUS_PIN, isElectrolytic } from "./part-shapes.ts"
 import type { EdgeLabel } from "./render-edges.ts"
 import { componentAt, isPanelPot, type BoardCircuit } from "./circuit.ts"
 
@@ -58,10 +61,6 @@ function compareRefs(a: string, b: string): number {
   return aPrefix.localeCompare(bPrefix) || aNumber - bNumber || a.localeCompare(b)
 }
 
-function compareHoles(a: HolePosition, b: HolePosition): number {
-  return a.row - b.row || a.col - b.col
-}
-
 function hole(position: HolePosition): string {
   return holeName(position.row, position.col)
 }
@@ -79,8 +78,8 @@ function pinLabel(part: Part, component: Component, pin: string, circuit: BoardC
     }
     return name
   }
-  if (component.kind === "capacitor" && part.type.startsWith("CAP_ELECTRO")) {
-    return pin === "1" ? "+" : "-"
+  if (component.kind === "capacitor" && isElectrolytic(part.type)) {
+    return pin === ELECTROLYTIC_PLUS_PIN ? "+" : "-"
   }
   return undefined
 }
@@ -95,7 +94,7 @@ function leads(
 ): string {
   const pins = dump.pins[part.ref]
   if (pins === undefined || pins.length === 0) {
-    throw new Error(`part ${part.ref} has no PIN lines in the dump, so its leads' holes are unknown`)
+    throw new Error(noPinLinesMessage(part))
   }
   return [...pins]
     .sort((a, b) => compareRefs(a.pin, b.pin))
@@ -136,15 +135,13 @@ export function buildChecklist(
   const parts = [...dump.parts].sort((a, b) => compareRefs(a.ref, b.ref))
   for (const part of parts) {
     const component = componentAt(circuit, part.ref)
-    groups[groupOf(part, component)].push([part.ref, part.value, leads(dump, part, component, circuit, edges)])
+    groups[groupOf(part, component)].push([
+      part.ref,
+      valueLabel(dump, part, circuit, "checklist"),
+      leads(dump, part, component, circuit, edges),
+    ])
   }
-  const wires = dump.wires
-    .map((wire): readonly [HolePosition, HolePosition] => {
-      const [a, b] = wire.ends
-      return compareHoles(a, b) <= 0 ? [a, b] : [b, a]
-    })
-    .sort((x, y) => compareHoles(x[0], y[0]) || compareHoles(x[1], y[1]))
-    .map(([a, b], index) => [`W${index + 1}`, hole(a), hole(b)])
+  const wires = numberedWires(dump).map(({ number, from, to }) => [`W${number}`, hole(from), hole(to)])
   return [
     { title: "ICs and transistors", columns: PART_COLUMNS, rows: groups.semiconductors },
     { title: "Resistors and trim-pots", columns: PART_COLUMNS, rows: groups.resistors },

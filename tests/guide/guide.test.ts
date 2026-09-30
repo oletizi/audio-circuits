@@ -61,11 +61,19 @@ test("parts give value and leads; wires, bridges and cuts give their holes; cuts
   expect(rows[3]).toEqual(["C1", "10uF", "+ F6, - F10"])
   expect(rows[4]).toEqual(["W1", "I3", "I10"])
   expect(rows[5]).toEqual(["W2", "J5", "J7"])
-  expect(rows[6]).toEqual(["J1", "Conn_01x02", "A2 INPUT, B2 GND"])
-  expect(rows[7]).toEqual(["RV2", "25K", "H2 DRIVE ccw, I2 DRIVE wiper, J2 DRIVE cw"])
+  expect(rows[6]).toEqual(["J1", "2-pin header", "A2 INPUT, B2 GND"])
+  expect(rows[7]).toEqual(["RV2", "3-pin header (25K pot, off-board)", "H2 DRIVE ccw, I2 DRIVE wiper, J2 DRIVE cw"])
   expect(rows[8]).toEqual(["B1", "D9 to E9"])
   expect(rows[9]).toEqual(["1", "C5 and C6", "BASE | GND"])
   expect(rows[10]).toEqual(["2", "F8 and F9", "BASE | GND"])
+})
+
+test("a header's Value names what goes in its holes, its pin count read from the dump's PIN lines", () => {
+  // Three PIN lines for J1 where its type still says SIP2: the count comes from PIN, not the type.
+  const dump = parseBoardDump(DUMP_TEXT.replace("PIN J1 2 AT 1,1", "PIN J1 2 AT 1,1\nPIN J1 3 AT 2,1"))
+  const circuit = fixtureCircuit()
+  const junctions = buildChecklist(dump, circuit, offBoardLabels(circuit)).find((s) => s.title === "Wire-to-board junctions")
+  expect(junctions?.rows.map((row) => row[1])).toEqual(["3-pin header", "3-pin header (25K pot, off-board)"])
 })
 
 test("the header, then the three images, then the checklist", () => {

@@ -41,6 +41,8 @@ Made with the operator; each binds the design and the implementation plan.
 | Every packet has both component-side images: one labelled with designators, one with values | Operator | Both are needed at every build |
 | Every fourth strip (rows A, E, I, M ...; columns 1, 5, 9 ... on a vertical-strip board) drawn in a darker grey, on both the component and copper views, with its row letter in bold | Operator | Makes it easy to line up the board with the drawing by counting from a marked strip |
 | Borrow VeroDesigner's bench-friendly conventions, reimplemented here: lettered rows and numbered columns, values on part bodies, off-board connections labelled at the strip ends, a summary line, a legend | Operator, on review of VeroDesigner (github.com/blazethablunt/VeroDesigner) | Its layouts read well on the bench. It has no licence, so no code is copied; the ideas are re-drawn in our renderer, in black and white |
+| Wire links numbered W1, W2 ... once, in reading order like cuts and bridges, and the number printed beside each wire on both component-side images as well as used by the checklist | Controller, on the final review | Every other checklist identifier (cut, bridge, part) has a counterpart on the image; VeroRoute's own wire names follow placement order and match neither |
+| A header's value label names what goes in its holes - "2-pin header", "3-pin header", the pin count read from its PIN lines - on the values image and in the checklist; in the checklist a panel pot's header keeps the pot as context ("3-pin header (25K pot, off-board)") | Controller, on the final review | A connector's dump value is a KiCad symbol name ("Conn_01x02"), and a panel pot's header labelled "1K" looks like an on-board 1K trim-pot; the edge labels already say what each pin carries |
 
 ## What one command produces
 
@@ -51,7 +53,8 @@ with the same directory-as-context rule as every other verb) writes
 1. **`layout-designators.svg`** - component side, each part labelled with its
    designator (R1, C2, Q3 ...).
 2. **`layout-values.svg`** - component side, each part labelled with its value
-   (47k, 220uF, 2N3904 ...).
+   (47k, 220uF, 2N3904 ...); a header where off-board wires attach is labelled
+   by what is fitted there (2-pin header, 3-pin header).
 3. **`copper-side.svg`** - the board mirrored as seen from the copper side:
    strips, numbered cuts and numbered solder bridges only.
 4. **`schematic.pdf`** - `kicad-cli sch export pdf --black-and-white` of the
@@ -108,7 +111,8 @@ pitch, scaled for print).
 - **Cuts:** a bold black ✕ across the strip between the two holes, with its
   number beside it and a checkbox.
 - **Solder bridges:** a bold black bar joining the two holes, numbered.
-- **Wires:** solid black lines between their ends, with round end dots.
+- **Wires:** solid black lines between their ends, with round end dots, each
+  numbered (W1, W2 ...) beside it on the component side.
 - **Parts:** a simple outline by VeroRoute type, at the centroid of its pins,
   with a line from the body to each pin's hole:
   - axial resistor: a rectangle between its pins;
@@ -123,9 +127,9 @@ pitch, scaled for print).
   does not, and a checkbox.
 - **Mirroring:** the copper-side view flips columns (horizontal strips) or
   rows (vertical), and relabels nothing but the cut and bridge numbers.
-- **Numbering:** cuts and bridges are numbered in reading order (row, then
-  column, on the component side), and keep their numbers in the mirrored view
-  so the checklist and both images agree.
+- **Numbering:** cuts, bridges and wire links are numbered in reading order
+  (row, then column, on the component side); cuts and bridges keep their
+  numbers in the mirrored view, so the checklist and the images agree.
 - **Page fit:** the SVG's viewBox fits the board with a margin; printing scales
   it to the page.
 
@@ -141,7 +145,8 @@ sections), each checklist item with a printed checkbox:
    1. **ICs and transistors** (and their sockets).
    2. **Resistors**, including the trim-pots.
    3. **Capacitors.**
-   4. **Wire links** on the board: each wire's two holes.
+   4. **Wire links** on the board: number (as on the images), each wire's two
+      holes.
    5. **Wire-to-board junctions:** the headers and test points where
       off-board wires attach (input, output, power, the panel pots).
    6. **Solder bridges:** number, the two holes.
