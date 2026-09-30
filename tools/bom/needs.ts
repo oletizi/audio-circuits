@@ -87,7 +87,7 @@ function lineKey(
   kind: ComponentKind, value: string, taper: string | undefined, mpn: string | undefined,
   footprintToken: string,
 ): string {
-  const tokens = [kind as string, value]
+  const tokens: string[] = [kind, value]
   if (taper !== undefined) tokens.push(taper)
   if (mpn !== undefined && mpn !== value) tokens.push(mpn)
   tokens.push(footprintToken)
