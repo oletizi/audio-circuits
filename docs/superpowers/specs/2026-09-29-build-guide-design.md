@@ -1,7 +1,7 @@
 ---
 title: Build guide - printable layout images, schematic and checklist from one command
 date: 2026-09-29
-status: Draft for operator review
+status: Approved by the operator
 ---
 
 # Build guide
@@ -36,6 +36,7 @@ Made with the operator; each binds the design and the implementation plan.
 | A mirrored copper-side view for cutting | Recommended, not contested | Cuts are made from the copper side; no mental mirroring |
 | One command per board produces the whole packet | Operator | The request |
 | The fork change is data only: `--dump-board` reports pin positions and the grid size; no drawing in the fork | Recommended, not contested | Our renderer needs to know where every lead lands; all drawing stays in this repository |
+| The checklist follows the operator's order of operations: ICs and transistors, resistors (with trim-pots), capacitors, wire links, wire-to-board junctions, solder bridges, cuts last | Operator (placement of wire links, solder bridges and trim-pots by the designer; see Open questions) | That is how the operator builds; one checklist read top to bottom |
 | Borrow VeroDesigner's bench-friendly conventions, reimplemented here: lettered rows and numbered columns, values on part bodies, off-board connections labelled at the strip ends, a summary line, a legend | Operator, on review of VeroDesigner (github.com/blazethablunt/VeroDesigner) | Its layouts read well on the bench. It has no licence, so no code is copied; the ideas are re-drawn in our renderer, in black and white |
 
 ## What one command produces
@@ -130,14 +131,21 @@ sections), each checklist item with a printed checkbox:
 
 1. Board name, date generated, the `.vrt` and schematic it came from.
 2. The three images.
-3. **Cuts:** number, position, the two nets it separates (from the dump's
-   `NODE` names).
-4. **Solder bridges:** number, the two holes.
-5. **Wire links:** each wire's two holes.
-6. **Parts, in a suggested build order:** wire links, resistors, low parts
-   (headers, sockets, trim-pots), capacitors, transistors. Each with
-   designator, value and the holes its leads go through.
-7. **Power-up checks:** the nodes to measure with the model's expected DC
+3. **The build checklist, in the operator's order of operations**, one
+   section per step, top to bottom:
+   1. **ICs and transistors** (and their sockets).
+   2. **Resistors**, including the trim-pots.
+   3. **Capacitors.**
+   4. **Wire links** on the board: each wire's two holes.
+   5. **Wire-to-board junctions:** the headers and test points where
+      off-board wires attach (input, output, power, the panel pots).
+   6. **Solder bridges:** number, the two holes.
+   7. **Cuts, last:** number, position, the two nets it separates (from the
+      dump's `NODE` names).
+
+   Each part entry gives designator, value and the holes its leads go
+   through.
+4. **Power-up checks:** the nodes to measure with the model's expected DC
    voltages beside blank spaces for readings. A board provides these by
    exporting `powerUpChecks()` from its circuit module (supply voltage, and the
    nodes and expected voltages, computed by the same operating-point
@@ -170,5 +178,8 @@ sections), each checklist item with a printed checkbox:
 ## Open questions for review
 
 - Paper size: US Letter assumed for the print CSS.
-- Build order in the parts checklist: the order above is a common
-  convention; change it if the operator builds differently.
+- Where wire links and solder bridges fall in the build order: the operator
+  named ICs and transistors, resistors, capacitors, wire-to-board junctions,
+  then cuts last. Wire links (before the junctions) and solder bridges (just
+  before the cuts) are placed by the designer; correct them if the operator
+  does these at another point.
