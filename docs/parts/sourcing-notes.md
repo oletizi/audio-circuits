@@ -42,15 +42,19 @@ Set per board in `bom.json` (`purchasing`), not here. The researcher's job is
 to record every price break a supplier lists, mark which breaks are stocking
 packs (`pack: true`, e.g. a bag of 100 resistors), and set `stock: true` on
 cheap commodity parts worth stocking when prototyping: resistors, small film
-and ceramic capacitors, headers, wire.
+and ceramic capacitors, headers, wire. Every line and extra gets the board's
+shrinkage margin (at least one spare); an extra where a spare is not worth
+buying, such as a multi-spool wire kit, says `"spares": false` in `bom.json`.
 
 ### Prices
 
 Record the date checked. Prices older than 45 days are reported as stale
 (tariffs make them move). Refresh Mouser (and, once built, Digi-Key) prices
 with `bun run parts refresh [<catalog id>...]`: it re-reads each source by its
-supplier part number and rewrites only the price breaks and the date, and
-writes nothing unless every lookup succeeds.
+supplier part number and rewrites only the price breaks and the date. It
+writes nothing if any lookup or validation fails; a part no longer listed
+(or listed without a price) is reported and left as it is, and the rest are
+still written.
 
 ### The supplier tool and its keys
 
@@ -85,9 +89,11 @@ What each footprint in this repo demands (`tools/bom/footprints.ts`):
 - **Trimmer, `Potentiometer_Runtron_RM-065_Vertical`:** a Runtron RM-065
   footprint (6 mm square-ish trimmer, three pins in a triangle, vertical
   adjust). A compatible part must match that pin layout; record the evidence.
-- **Pin header, `PinHeader_1x<n>_P2.54mm`:** an n-pin, 2.54 mm header. Buying
-  a breakaway strip and cutting it is fine; the entry is the strip, and the
-  quantity is in pins.
+- **Pin header, `PinHeader_1x<n>_P2.54mm`:** an n-pin, 2.54 mm header. The
+  fit check requires `specs.pins` to equal n exactly, so the entry is a part
+  sold at exactly n positions (e.g. Samtec's `TSW-10<n>-07-G-S`; see
+  Lessons), never a longer breakaway strip recorded as if it were n pins.
+  The quantity is in parts, one per header on the board.
 
 ### Ratings
 
@@ -166,7 +172,11 @@ the date.)
   20% 2LS") and was used as the evidence instead - this is reasonable,
   but a real per-part datasheet would be stronger evidence if one turns
   up later.
-- 2026-09-30: `bun run parts lookup|search|source` crashes (uncaught
+- 2026-09-30 (resolved; kept for the record): `tools/suppliers/mouser.ts`
+  now reads a null, absent or empty `AvailabilityInStock` as "stock not
+  stated" and a listing with no price breaks as "price not listed", so the
+  crash below no longer happens and no second keyword is needed to avoid it.
+  As first reported: `bun run parts lookup|search|source` crashed (uncaught
   `Error`, exit 1, no output) on any Mouser query whose results include SKU
   511-2N3904 (a Mouser catalog row with `AvailabilityInStock: null` rather
   than a numeric string) - `tools/suppliers/mouser.ts`'s `parsePart` only
@@ -184,8 +194,9 @@ the date.)
   "2N3904" parts are only available under a suffixed code: onsemi's cheap,
   well-stocked bulk-bag part is `2N3904BU` (10000/bulk bag per its own
   datasheet's ordering table), not bare `2N3904` - Mouser's SKU 511-2N3904
-  for onsemi's literal bare part is the crashing row above, effectively
-  unavailable through this tool. Diotec Semiconductor and Rectron both list
+  for onsemi's literal bare part was the crashing row above (since fixed:
+  it now reads with its stock "not stated"; check it with
+  `bun run parts lookup 2N3904` rather than assuming it is unavailable). Diotec Semiconductor and Rectron both list
   their part under the bare Mouser mpn `"2N3904"` (SKUs 637-2N3904,
   583-2N3904) - pick one of those when the line needs an exact bare mpn
   match, even if a suffixed part elsewhere is cheaper or better-packaged.
@@ -308,7 +319,9 @@ the date.)
   the one real candidate, the same fallback already noted above for
   2N3904, but the `source` verb itself has no way to take that extra
   keyword, so the `Source` object had to be built by hand from the `search`
-  JSON output rather than printed by `source`.
+  JSON output rather than printed by `source`. (Since resolved: `source ST2
+  --supplier mouser --use <use> --sku <Mouser part number>` now picks the
+  one listing, and refuses if that listing's mpn is not ST2.)
 - 2026-09-30: Both `runtron.com` (fetches 404 in this environment - the
   domain answers but not with the original site) and `piher.net` (blocks
   direct fetches, HTTP 403, the same as the distributor sites this file
