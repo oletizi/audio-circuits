@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import {
-  transistorPreampStaged, DESIGNATORS, PIN_NUMBERS, START, controlStateFor, schematicNotes,
+  transistorPreampStaged, DESIGNATORS, PIN_NUMBERS, START, controlStateFor, schematicNotes, powerUpChecks,
 } from "../../circuits/transistor-preamp/staged-board.ts"
 import type { StagedSetting } from "../../circuits/transistor-preamp/staged-board.ts"
 import * as buffered from "../../circuits/transistor-preamp/buffered-board.ts"
@@ -10,9 +10,9 @@ import { validateNetwork } from "../../lib/model/validate.ts"
 import type { Component, Network } from "../../lib/model/types.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
 import { spiceNodeName, toSpiceNetlist, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
-import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 import { runAcSweep } from "../../lib/sim/ac.ts"
 import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
+import { STAGED_BOARD_ENVIRONMENT } from "../../circuits/transistor-preamp/staged-environment.ts"
 import { expectSameCircuit, kicadRoundTrip } from "./kicad-round-trip.ts"
 import type { BoardUnderTest } from "./kicad-round-trip.ts"
 
@@ -86,13 +86,7 @@ test("the schematic notes name the three panel controls", () => {
   for (const control of ["DRIVE (RV5)", "CHARACTER (RV6)", "TRANSFORMER DRIVE (RV7)"]) expect(text).toContain(control)
 })
 
-const ENVIRONMENT: SimulationEnvironment = {
-  source: { port: "input", amplitude: 1, seriesOhms: 0 },
-  load: { port: "output", ohms: 10_000 },
-  supplies: [{ port: "vcc", volts: 24 }],
-  sweep: { pointsPerDecade: 20, startHz: 5, stopHz: 100_000 },
-  groundPort: "ground",
-}
+const ENVIRONMENT = STAGED_BOARD_ENVIRONMENT
 
 test("at 24 V all three transistors are active and Q3's collector is centred", async () => {
   const deck = toSpiceOperatingPointNetlist(resolveNetwork(transistorPreampStaged(), controlStateFor(START)), ENVIRONMENT)
@@ -112,6 +106,52 @@ test("at 24 V all three transistors are active and Q3's collector is centred", a
   const centred = (vc3 - ve3) / (24 - ve3)
   expect(centred).toBeGreaterThan(0.4)
   expect(centred).toBeLessThan(0.6)
+})
+
+test("powerUpChecks: the supply, then Q1, Q3, Q2 and C5's transformer side, at START", async () => {
+  const checks = await powerUpChecks()
+  expect(checks.map((c) => c.label)).toEqual([
+    "Supply (+24V at J3)",
+    "Q1 base (at the panel controls' START settings)",
+    "Q1 emitter (at the panel controls' START settings)",
+    "Q1 collector (at the panel controls' START settings)",
+    "Q3 base (at the panel controls' START settings)",
+    "Q3 emitter (at the panel controls' START settings)",
+    "Q3 collector (at the panel controls' START settings)",
+    "Q2 base (at the panel controls' START settings)",
+    "Q2 emitter (at the panel controls' START settings)",
+    "C5 transformer side (at the panel controls' START settings)",
+  ])
+  expect(checks.map((c) => c.node)).toEqual([
+    "VCC", "BASE", "EMITTER", "COLLECTOR",
+    "Q3_BASE", "Q3_EMITTER", "Q3_COLLECTOR",
+    "BUFFER_BASE", "BUFFER_EMITTER", "OUT",
+  ])
+
+  const byNode = new Map(checks.map((c) => [c.node, c.expectedVolts]))
+  const at = (node: string): number => {
+    const volts = byNode.get(node)
+    if (volts === undefined) throw new Error(`no check for node "${node}"`)
+    return volts
+  }
+
+  expect(at("VCC")).toBe(24)
+  // Consistent with the operating-point test above: both transistors' emitter
+  // and collector well apart, Q3 roughly centred between ground and the rail.
+  expect(at("EMITTER")).toBeGreaterThan(0)
+  expect(at("COLLECTOR") - at("EMITTER")).toBeGreaterThan(1)
+  expect(at("Q3_EMITTER")).toBeGreaterThan(0)
+  expect(at("Q3_COLLECTOR") - at("Q3_EMITTER")).toBeGreaterThan(1)
+  const centred = (at("Q3_COLLECTOR") - at("Q3_EMITTER")) / (24 - at("Q3_EMITTER"))
+  expect(centred).toBeGreaterThan(0.4)
+  expect(centred).toBeLessThan(0.6)
+  expect(at("BUFFER_EMITTER")).toBeGreaterThan(0)
+  expect(24 - at("BUFFER_EMITTER")).toBeGreaterThan(1)
+  // The transformer side of C5 is DC-isolated by the coupling cap: at rest, 0 V.
+  expect(at("OUT")).toBe(0)
+
+  // Every reading is rounded to a multimeter's two decimals.
+  for (const check of checks) expect(check.expectedVolts).toBe(Math.round(check.expectedVolts * 100) / 100)
 })
 
 interface Reading { readonly gain: number; readonly phase: number }

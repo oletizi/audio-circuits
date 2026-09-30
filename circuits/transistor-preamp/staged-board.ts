@@ -33,9 +33,13 @@
  * panel pots are off-board on 3-pin headers (./parts.ts panelPot).
  */
 import { circuit } from "../../lib/model/index.ts"
+import { resolveNetwork } from "../../lib/model/control-state.ts"
 import type { ControlState } from "../../lib/model/control-state.ts"
 import type { Network } from "../../lib/model/index.ts"
 import { parseValue } from "../../lib/model/units.ts"
+import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
+import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
+import type { PowerUpCheck, PowerUpChecksExport } from "../../tools/guide/power-up.ts"
 import { addFollower, schematicNotes as bufferedNotes } from "./buffered-board.ts"
 import * as buffered from "./buffered-board.ts"
 import { addFeedbackStage } from "./feedback-board.ts"
@@ -44,6 +48,7 @@ import type { FeedbackSetting } from "./feedback-board.ts"
 import { legPosition } from "./leg-values.ts"
 import { HEADER_2, RESISTOR, electrolytic, panelPot, transistor2N3904 } from "./parts.ts"
 import type { Leg } from "./parts.ts"
+import { STAGED_BOARD_ENVIRONMENT } from "./staged-environment.ts"
 
 export { PIN_NUMBERS } from "./parts.ts"
 
@@ -103,6 +108,12 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   drive_pot: "RV5", character_pot: "RV6", transformer_drive_pot: "RV7",
 }
 
+function designatorOf(id: string): string {
+  const designator = DESIGNATORS[id]
+  if (designator === undefined) throw new Error(`"${id}" has no designator in DESIGNATORS`)
+  return designator
+}
+
 /** Stage 1's legs, plus DRIVE and TRANSFORMER DRIVE as wiper positions (0 to 1)
  * and CHARACTER as its branch's total resistance (floor plus pot). */
 export type StagedSetting = FeedbackSetting & {
@@ -144,5 +155,85 @@ export function schematicNotes(): readonly string[] {
     "  DRIVE (RV5) sets how hard Q3 is driven - the amount of saturation.",
     "  CHARACTER (RV6) shapes it: toward 0, early and gradual; toward 1k, cleaner for longer.",
     "  TRANSFORMER DRIVE (RV7) sets how hard Q2 and the output transformer are driven.",
+  ]
+}
+
+/** Rounded to two decimals: what a bench multimeter reads to. */
+function roundedVolts(volts: number): number {
+  return Math.round(volts * 100) / 100
+}
+
+/** The 24 V supply's declared voltage, read from the shared environment rather
+ * than retyped, so a changed rail cannot drift out of step with this table. */
+function supplyVolts(): number {
+  const supply = STAGED_BOARD_ENVIRONMENT.supplies.find((s) => s.port === "vcc")
+  if (supply === undefined) {
+    throw new Error('powerUpChecks: the staged board\'s environment declares no supply for port "vcc"')
+  }
+  return supply.volts
+}
+
+function voltageAt(readings: Readonly<Record<string, number>>, node: string): number {
+  const value = readings[spiceNodeName(node)]
+  if (value === undefined) {
+    throw new Error(
+      `powerUpChecks: the operating-point simulation has no reading for node "${node}" ` +
+        `(spice node "${spiceNodeName(node)}"); check the name against the circuit's nets.`,
+    )
+  }
+  return roundedVolts(value)
+}
+
+/**
+ * The staged board's power-up checks: the 24 V supply, then each transistor's
+ * bias points, then C5's transformer side (expected near 0 V, since the
+ * coupling cap blocks DC). Computed by the same operating-point simulation
+ * the staged board's tests run, at the panel controls' START settings - the
+ * expected voltages below assume those settings, which the labels say.
+ */
+export const powerUpChecks: PowerUpChecksExport = async (): Promise<readonly PowerUpCheck[]> => {
+  const resolved = resolveNetwork(transistorPreampStaged(), controlStateFor(START))
+  const deck = toSpiceOperatingPointNetlist(resolved, STAGED_BOARD_ENVIRONMENT)
+  const nodes = [
+    "VCC", "BASE", "EMITTER", "COLLECTOR",
+    "Q3_BASE", "Q3_EMITTER", "Q3_COLLECTOR",
+    "BUFFER_BASE", "BUFFER_EMITTER", "OUT",
+  ]
+  const readings = await runOperatingPoint({ netlist: deck, nodes: nodes.map(spiceNodeName) })
+  const at = (node: string): number => voltageAt(readings, node)
+  const atStart = "at the panel controls' START settings"
+
+  return [
+    { label: `Supply (+24V at ${designatorOf("power_header")})`, node: "VCC", expectedVolts: supplyVolts() },
+    { label: `${designatorOf("gain_transistor")} base (${atStart})`, node: "BASE", expectedVolts: at("BASE") },
+    { label: `${designatorOf("gain_transistor")} emitter (${atStart})`, node: "EMITTER", expectedVolts: at("EMITTER") },
+    {
+      label: `${designatorOf("gain_transistor")} collector (${atStart})`, node: "COLLECTOR",
+      expectedVolts: at("COLLECTOR"),
+    },
+    {
+      label: `${designatorOf("second_gain_transistor")} base (${atStart})`, node: "Q3_BASE",
+      expectedVolts: at("Q3_BASE"),
+    },
+    {
+      label: `${designatorOf("second_gain_transistor")} emitter (${atStart})`, node: "Q3_EMITTER",
+      expectedVolts: at("Q3_EMITTER"),
+    },
+    {
+      label: `${designatorOf("second_gain_transistor")} collector (${atStart})`, node: "Q3_COLLECTOR",
+      expectedVolts: at("Q3_COLLECTOR"),
+    },
+    {
+      label: `${designatorOf("buffer_transistor")} base (${atStart})`, node: "BUFFER_BASE",
+      expectedVolts: at("BUFFER_BASE"),
+    },
+    {
+      label: `${designatorOf("buffer_transistor")} emitter (${atStart})`, node: "BUFFER_EMITTER",
+      expectedVolts: at("BUFFER_EMITTER"),
+    },
+    {
+      label: `${designatorOf("buffer_output_cap")} transformer side (${atStart})`, node: "OUT",
+      expectedVolts: at("OUT"),
+    },
   ]
 }
