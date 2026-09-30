@@ -3,7 +3,7 @@ import { coverQuantity, suggestBuy } from "../../tools/bom/quantity.ts"
 import type { Purchasing } from "../../tools/bom/board-bom.ts"
 import type { CatalogEntry, Source } from "../../tools/bom/catalog.ts"
 
-const PROTOTYPE_10PC: Purchasing = { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 }
+const PROTOTYPE_10PC: Purchasing = { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 }
 
 function run(boards: number, shrinkage: number): Purchasing {
   return { mode: "run", boards, shrinkage }
@@ -84,7 +84,7 @@ test("suggestBuy: prototype, stock part, every break below the target -> the tar
 
 test("suggestBuy: prototype, stock part, a target between breaks buys the next break up", () => {
   const e = entry({ stock: true })
-  const purchasing: Purchasing = { mode: "prototype", shrinkage: 0.1, stockQuantity: 50 }
+  const purchasing: Purchasing = { mode: "prototype", shrinkage: 0.1, stockQuantity: 50, maxStockUnitPrice: 1, maxStockOverage: 10 }
   // cover 3, target 50: the smallest break at or above 50 is the 100 break.
   expect(suggestBuy(2, purchasing, e, source(BREAKS_1_10_100), true)).toEqual({
     quantity: 100, unitPrice: 0.03, linePrice: 3,
@@ -101,7 +101,7 @@ test("suggestBuy: prototype, stock part, a cover above stockQuantity sets the ta
 
 test("suggestBuy: prototype, stock extra with spares false keeps its no-margin cover, then the stock rule", () => {
   const e = entry({ stock: true })
-  const purchasing: Purchasing = { mode: "prototype", shrinkage: 0.1, stockQuantity: 5 }
+  const purchasing: Purchasing = { mode: "prototype", shrinkage: 0.1, stockQuantity: 5, maxStockUnitPrice: 1, maxStockOverage: 10 }
   // need 10, spares false -> cover 10 (not 11); target max(10, 5) = 10, exactly the 10 break.
   expect(suggestBuy(10, purchasing, e, source(BREAKS_1_10_100), false)).toEqual({
     quantity: 10, unitPrice: 0.07, linePrice: 0.7,

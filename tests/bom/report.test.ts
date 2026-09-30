@@ -49,7 +49,7 @@ function entry(overrides: Partial<CatalogEntry> = {}): CatalogEntry {
 
 function bom(overrides: Partial<BoardBom> = {}): BoardBom {
   return {
-    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
+    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 },
     lines: { "resistor 100k 0207": "r_100k_0207" },
     extras: [],
     ...overrides,
@@ -60,7 +60,7 @@ test("a complete, well-fitting board reports nothing and isComplete is true", ()
   const catalog = new Map([["r_100k_0207", entry()]])
   const report = compareBom([line()], bom(), catalog, TODAY, STALE_DAYS)
   expect(report).toEqual({
-    unchosen: [], removed: [], unmet: [], unknownParts: [], stalePrices: [],
+    unchosen: [], removed: [], unmet: [], unknownParts: [], stalePrices: [], bulkDropped: [],
   })
   expect(isComplete(report)).toBe(true)
 })
@@ -135,4 +135,39 @@ test("stalePrices: exactly staleDays old is not stale; one day older is", () => 
 
   const staleCatalog = new Map([["r_100k_0207", entry({ sources: [source({ checked: "2026-08-15" })] })]])
   expect(compareBom([line()], bom(), staleCatalog, TODAY, STALE_DAYS).stalePrices).toHaveLength(1)
+})
+
+test("bulkDropped: a bulk buy over the unit-price cap is reported as information, and the list is still complete", () => {
+  const catalog = new Map([["r_100k_0207", entry({
+    stock: true,
+    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.29 }, { quantity: 250, unitPrice: 0.271 }] })],
+  })]])
+  const board = bom({
+    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 0.15, maxStockOverage: 0.5 },
+  })
+  const report = compareBom([line()], board, catalog, TODAY, STALE_DAYS)
+  expect(report.bulkDropped.map((d) => [d.part, d.supplier, d.outcome])).toEqual([
+    ["r_100k_0207", "Mouser", "over-unit-price"],
+  ])
+  expect(isComplete(report)).toBe(true)
+  const text = reportText(report)
+  expect(text).toContain("The parts list matches the circuit")
+  expect(text).toContain("1 bulk buy(s) not taken (information only")
+  expect(text).toContain(
+    "R2 (r_100k_0207) at Mouser: not 250 - its unit price 0.271 USD is over the 0.15 USD bulk cap; buying 2",
+  )
+})
+
+test("bulkDropped: a bulk buy taken is not reported", () => {
+  const catalog = new Map([["r_100k_0207", entry({
+    stock: true,
+    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.03 }] })],
+  })]])
+  // Covered 2 @ 0.10 = 0.20; bulk 100 @ 0.03 = 3.00 adds 2.80, within 20 x 0.20 = 4.00.
+  const board = bom({
+    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 0.15, maxStockOverage: 20 },
+  })
+  const report = compareBom([line()], board, catalog, TODAY, STALE_DAYS)
+  expect(report.bulkDropped).toEqual([])
+  expect(reportText(report)).not.toContain("bulk")
 })

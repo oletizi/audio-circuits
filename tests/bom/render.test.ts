@@ -59,7 +59,7 @@ function entry(overrides: Partial<CatalogEntry> = {}): CatalogEntry {
 
 function bom(overrides: Partial<BoardBom> = {}): BoardBom {
   return {
-    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
+    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 },
     lines: { "resistor 100k 0207": "r_100k_0207" },
     extras: [],
     ...overrides,
@@ -253,4 +253,36 @@ test("lines are ordered deterministically within a section by kind then numeric 
   const r100Index = onBoardSection.indexOf("R1")
   expect(r47Index).toBeGreaterThan(0)
   expect(r100Index).toBeGreaterThan(r47Index)
+})
+
+test("a \"Bulk buys\" note under the totals says which lines are bought in bulk and which are not, and why", () => {
+  const catalog = new Map([
+    ["r_100k_0207", entry()],
+    ["hdr", entry({
+      id: "hdr", description: "3-pin header",
+      sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.29 }, { quantity: 250, unitPrice: 0.271 }] })],
+    })],
+  ])
+  const header = resistorLine({ key: "connector hdr", designators: ["J1"], quantity: 3 })
+  const text = renderBomMarkdown({
+    boardName: "b", conditions: "x", lines: [resistorLine(), header], catalog,
+    bom: bom({
+      purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 0.15, maxStockOverage: 10 },
+      lines: { "resistor 100k 0207": "r_100k_0207", "connector hdr": "hdr" },
+    }),
+  })
+  const note = text.slice(text.indexOf("## Totals"))
+  expect(note).toContain("## Bulk buys")
+  expect(note).toContain("Bought in bulk:\n\n- R2, R10 (r_100k_0207) at Mouser: 100 at 0.012 USD")
+  expect(note).toContain(
+    "Not bought in bulk:\n\n- J1 (hdr) at Mouser: not 250 - its unit price 0.271 USD is over the 0.15 USD bulk cap; buying 4",
+  )
+  expect(text).toContain("| J1 |")
+  expect(text).toContain("0.29 USD")
+})
+
+test("no \"Bulk buys\" note when no part is a stock part", () => {
+  const catalog = new Map([["r_100k_0207", entry({ stock: false })]])
+  const text = renderBomMarkdown({ boardName: "b", conditions: "x", lines: [resistorLine()], bom: bom(), catalog })
+  expect(text).not.toContain("## Bulk buys")
 })

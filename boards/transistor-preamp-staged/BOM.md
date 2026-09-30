@@ -12,8 +12,8 @@ Supply 24 V; every control (RV1-RV7) at START.
 | C4 | 100uF, radial, <= 6.3 mm dia, 2.5 mm leads, min 35 V | 1 | 2 | 100uF, 35V, radial aluminum electrolytic, 6.3x11.2mm body, 2.5mm lead spacing; taped variant (I suffix), arrives on cut tape | Panasonic Industry ECA-1VM101I | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM101I?qs=Rjs8jpJ6LSQiPme8klHtJQ%3D%3D) (checked 2026-09-30) | 0.33 USD | 0.66 USD |
 | C1 | 220uF, radial, <= 8 mm dia, 3.5 mm leads, min 35 V | 1 | 2 | 220uF, 35V, radial aluminum electrolytic, 8x11.5mm body, 3.5mm lead spacing | Panasonic Industry ECA-1VM221 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM221?qs=TMd%2FqrwkF8jzDq2TCVW7zA%3D%3D) (checked 2026-09-30) | 0.45 USD | 0.90 USD |
 | C7 | 470uF, radial, <= 10 mm dia, 5 mm leads, min 35 V | 1 | 2 | 470uF, 35V, radial aluminum electrolytic, 10x16mm body, 5mm lead spacing | Panasonic Industry ECA-1VM471 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM471?qs=4indQ9AG%252BqEMpMNEQEBA0w%3D%3D) (checked 2026-09-30) | 0.69 USD | 1.38 USD |
-| J1, J2, J3 | 2-pin 2.54 mm header | 3 | 100 | 2-position single-row male pin header, straight (vertical), 2.54mm (0.1in) pitch, through-hole | Samtec TSW-102-07-G-S | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/TSW-102-07-G-S?qs=iT52DjcXudsNPhlNCDp8vw%3D%3D) (checked 2026-09-30) | 0.21 USD | 21.50 USD |
-| RV5, RV6, RV7 | 3-pin 2.54 mm header | 3 | 250 | 3-position single-row male pin header, straight (vertical), 2.54mm (0.1in) pitch, through-hole | Samtec TSW-103-07-G-S | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/TSW-103-07-G-S?qs=iT52DjcXudtntd1jApTIAw%3D%3D) (checked 2026-09-30) | 0.27 USD | 67.75 USD |
+| J1, J2, J3 | 2-pin 2.54 mm header | 3 | 4 | 2-position single-row male pin header, straight (vertical), 2.54mm (0.1in) pitch, through-hole | Samtec TSW-102-07-G-S | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/TSW-102-07-G-S?qs=iT52DjcXudsNPhlNCDp8vw%3D%3D) (checked 2026-09-30) | 0.36 USD | 1.44 USD |
+| RV5, RV6, RV7 | 3-pin 2.54 mm header | 3 | 4 | 3-position single-row male pin header, straight (vertical), 2.54mm (0.1in) pitch, through-hole | Samtec TSW-103-07-G-S | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/TSW-103-07-G-S?qs=iT52DjcXudtntd1jApTIAw%3D%3D) (checked 2026-09-30) | 0.29 USD | 1.16 USD |
 | RV4 | 1K, linear, RM-065 trimmer | 1 | 2 | 1k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher PT6KV-102A2020 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-102A2020?qs=PZ1ub9NEDaWyqo7aUZbrIA%3D%3D) (checked 2026-09-30) | 0.79 USD | 1.58 USD |
 | RV3 | 2K, linear, RM-065 trimmer | 1 | 2 | 2k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher PT6KV-202A2020 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-202A2020?qs=PZ1ub9NEDaV5ifClhl6P2g%3D%3D) (checked 2026-09-30) | 0.69 USD | 1.38 USD |
 | RV2 | 200K, linear, RM-065 trimmer | 1 | 2 | 200k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher PT6KV-204A2020 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-204A2020?qs=DPoM0jnrROXB9pG8c6GveA%3D%3D) (checked 2026-09-30) | 0.97 USD | 1.94 USD |
@@ -48,4 +48,23 @@ Supply 24 V; every control (RV1-RV7) at START.
 
 | Supplier | Currency | Total |
 | --- | --- | --- |
-| Mouser | USD | 190.02 |
+| Mouser | USD | 103.37 |
+
+## Bulk buys
+
+Bought in bulk:
+
+- R12 (resistor-22r-metal-film-0207) at Mouser: 100 at 0.029 USD
+- R3 (resistor-1k-metal-film-0207) at Mouser: 100 at 0.027 USD
+- R11 (resistor-1k2-metal-film-0207) at Mouser: 100 at 0.027 USD
+- R4, R7 (resistor-1k5-metal-film-0207) at Mouser: 100 at 0.033 USD
+- R10 (resistor-5k6-metal-film-0207) at Mouser: 100 at 0.027 USD
+- R9 (resistor-15k-metal-film-0207) at Mouser: 100 at 0.027 USD
+- R2 (resistor-47k-metal-film-0207) at Mouser: 100 at 0.033 USD
+- R5, R6, R8 (resistor-100k-metal-film-0207) at Mouser: 100 at 0.027 USD
+- R1 (resistor-470k-metal-film-0207) at Mouser: 100 at 0.027 USD
+
+Not bought in bulk:
+
+- J1, J2, J3 (pin-header-2position-2.54mm) at Mouser: not 100 - its unit price 0.215 USD is over the 0.15 USD bulk cap; buying 4
+- RV5, RV6, RV7 (pin-header-3position-2.54mm) at Mouser: not 250 - its unit price 0.271 USD is over the 0.15 USD bulk cap; buying 4

@@ -38,7 +38,7 @@ export const STALE_PRICE_DAYS = 45
 
 /** What a board's `bom.json` must hold at minimum; quoted in the refusal. */
 export const MINIMAL_BOM_JSON =
-  '{ "purchasing": { "mode": "prototype", "shrinkage": 0.1, "stockQuantity": 100 }, "lines": {}, "extras": [] }'
+  '{ "purchasing": { "mode": "prototype", "shrinkage": 0.1, "stockQuantity": 100, "maxStockUnitPrice": 0.15, "maxStockOverage": 0.5 }, "lines": {}, "extras": [] }'
 
 export interface BomFs {
   readonly exists: (file: string) => boolean

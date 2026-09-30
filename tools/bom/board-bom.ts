@@ -11,7 +11,17 @@
 import { isRecord } from "../perfboard/guards.ts"
 
 export type Purchasing =
-  | { readonly mode: "prototype"; readonly shrinkage: number; readonly stockQuantity: number }
+  | {
+      readonly mode: "prototype"
+      readonly shrinkage: number
+      /** The quantity a `stock` part is bulk-bought to (at least). */
+      readonly stockQuantity: number
+      /** A bulk buy is taken only at or below this unit price, in the source's currency. */
+      readonly maxStockUnitPrice: number
+      /** Per supplier and currency, the fraction by which the order with bulk buys may exceed
+       * the same order at covered quantities. */
+      readonly maxStockOverage: number
+    }
   | { readonly mode: "run"; readonly boards: number; readonly shrinkage: number }
 
 export interface Extra {
@@ -53,6 +63,36 @@ function requireFiniteNumber(value: unknown, what: string, where: string): numbe
   return value
 }
 
+/** The purchasing fields only prototype mode reads; run mode refuses each by name. */
+const PROTOTYPE_ONLY_FIELDS = ["stockQuantity", "maxStockUnitPrice", "maxStockOverage"] as const
+
+function parseStockCaps(
+  record: Record<string, unknown>, where: string,
+): { readonly stockQuantity: number; readonly maxStockUnitPrice: number; readonly maxStockOverage: number } {
+  const stockQuantity = requireFiniteNumber(record["stockQuantity"], "purchasing.stockQuantity", where)
+  if (!Number.isInteger(stockQuantity) || stockQuantity <= 0) {
+    throw new Error(
+      `${where}: purchasing.stockQuantity (${stockQuantity}) must be a positive integer - the ` +
+        "quantity a prototype buys of each `stock` part.",
+    )
+  }
+  const maxStockUnitPrice = requireFiniteNumber(record["maxStockUnitPrice"], "purchasing.maxStockUnitPrice", where)
+  if (!(maxStockUnitPrice > 0)) {
+    throw new Error(
+      `${where}: purchasing.maxStockUnitPrice (${maxStockUnitPrice}) must be a positive number - the ` +
+        "highest unit price, in the source's currency, at which a `stock` part is bought in bulk.",
+    )
+  }
+  const maxStockOverage = requireFiniteNumber(record["maxStockOverage"], "purchasing.maxStockOverage", where)
+  if (!(maxStockOverage >= 0)) {
+    throw new Error(
+      `${where}: purchasing.maxStockOverage (${maxStockOverage}) must be a fraction of at least 0 - how ` +
+        "far bulk buys may raise a supplier's order over the same order at covered quantities.",
+    )
+  }
+  return { stockQuantity, maxStockUnitPrice, maxStockOverage }
+}
+
 function parsePurchasing(value: unknown, where: string): Purchasing {
   const record = requireRecord(value, "purchasing", where)
 
@@ -67,21 +107,16 @@ function parsePurchasing(value: unknown, where: string): Purchasing {
   }
 
   if (mode === "prototype") {
-    const stockQuantity = requireFiniteNumber(record["stockQuantity"], "purchasing.stockQuantity", where)
-    if (!Number.isInteger(stockQuantity) || stockQuantity <= 0) {
-      throw new Error(
-        `${where}: purchasing.stockQuantity (${stockQuantity}) must be a positive integer - the ` +
-          "quantity a prototype buys of each `stock` part.",
-      )
-    }
-    return { mode, shrinkage, stockQuantity }
+    return { mode, shrinkage, ...parseStockCaps(record, where) }
   }
 
-  if (record["stockQuantity"] !== undefined) {
-    throw new Error(
-      `${where}: purchasing.stockQuantity is set, but purchasing.mode is "run", which does not use ` +
-        'it. Remove "stockQuantity", or set mode to "prototype".',
-    )
+  for (const field of PROTOTYPE_ONLY_FIELDS) {
+    if (record[field] !== undefined) {
+      throw new Error(
+        `${where}: purchasing.${field} is set, but purchasing.mode is "run", which does not use ` +
+          `it. Remove "${field}", or set mode to "prototype".`,
+      )
+    }
   }
   const boards = requireFiniteNumber(record["boards"], "purchasing.boards", where)
   if (!Number.isInteger(boards) || boards <= 0) {

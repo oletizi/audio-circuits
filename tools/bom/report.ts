@@ -11,6 +11,8 @@ import { compareLines, sortLines } from "./ordering.ts"
 import type { BomLine } from "./types.ts"
 import type { BoardBom } from "./board-bom.ts"
 import type { CatalogEntry } from "./catalog.ts"
+import { buyItems, planBuys, type BulkDecision } from "./bulk.ts"
+import { bulkDecisionText } from "./bulk-text.ts"
 
 export interface BomReport {
   readonly unchosen: readonly BomLine[]
@@ -20,6 +22,10 @@ export interface BomReport {
   /** Catalog ids named in bom.json that do not exist. */
   readonly unknownParts: readonly string[]
   readonly stalePrices: readonly { readonly part: string; readonly supplier: string; readonly checked: string }[]
+  /** Prototype bulk buys NOT taken - over the unit-price cap, or dropped to keep a
+   * supplier's order within the overage cap (tools/bom/bulk.ts). Information, never a
+   * reason the list is incomplete. */
+  readonly bulkDropped: readonly BulkDecision[]
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
@@ -88,12 +94,16 @@ export function compareBom(
     }
   }
 
+  const bulkDropped = planBuys(buyItems(lines, bom, catalog), bom.purchasing).decisions
+    .filter((decision) => decision.outcome !== "bulk")
+
   return {
     unchosen,
     removed,
     unmet,
     unknownParts: [...unknownPartIds],
     stalePrices,
+    bulkDropped,
   }
 }
 
@@ -158,9 +168,15 @@ export function reportText(report: BomReport): string {
     )
   }
 
-  if (sections.length === 0) {
-    return "The parts list matches the circuit: every line is chosen and every chosen part fits."
-  }
+  const summary = sections.length === 0
+    ? ["The parts list matches the circuit: every line is chosen and every chosen part fits."]
+    : sections
 
-  return sections.join("\n")
+  if (report.bulkDropped.length === 0) return summary.join("\n")
+  return [
+    ...summary,
+    `${report.bulkDropped.length} bulk buy(s) not taken (information only - these parts are bought at ` +
+      "the covered quantity):",
+    ...report.bulkDropped.map((decision) => `  - ${bulkDecisionText(decision)}`),
+  ].join("\n")
 }

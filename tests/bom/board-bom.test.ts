@@ -4,7 +4,7 @@ import { parseBoardBom } from "../../tools/bom/board-bom.ts"
 const FILE = "boards/staged-board/bom.json"
 
 const VALID_PROTOTYPE = {
-  purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
+  purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 },
   lines: {
     "resistor 100k 0207": "r_100k_0207",
   },
@@ -13,7 +13,7 @@ const VALID_PROTOTYPE = {
 
 test("parseBoardBom accepts a well-formed prototype file", () => {
   const bom = parseBoardBom(VALID_PROTOTYPE, FILE)
-  expect(bom.purchasing).toEqual({ mode: "prototype", shrinkage: 0.1, stockQuantity: 100 })
+  expect(bom.purchasing).toEqual({ mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 })
   expect(bom.lines).toEqual({ "resistor 100k 0207": "r_100k_0207" })
   expect(bom.extras).toEqual([{ part: "transistor_socket_to92", quantity: 6, why: "one per BJT, plus spares", spares: true }])
 })
@@ -83,7 +83,7 @@ test("parseBoardBom refuses prototype mode without stockQuantity, naming the fie
 
 test("parseBoardBom refuses a stockQuantity that is not a positive integer", () => {
   const withStock = (stockQuantity: unknown): unknown => ({
-    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity }, lines: {}, extras: [],
+    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity, maxStockUnitPrice: 1, maxStockOverage: 10 }, lines: {}, extras: [],
   })
   expect(() => parseBoardBom(withStock(0), FILE)).toThrow(/purchasing\.stockQuantity \(0\) must be a positive integer/)
   expect(() => parseBoardBom(withStock(2.5), FILE)).toThrow(/purchasing\.stockQuantity/)
@@ -93,13 +93,55 @@ test("parseBoardBom refuses a stockQuantity that is not a positive integer", () 
 
 test("parseBoardBom refuses stockQuantity in run mode, naming the field", () => {
   expect(() =>
-    parseBoardBom({ purchasing: { mode: "run", boards: 5, shrinkage: 0.1, stockQuantity: 100 }, lines: {}, extras: [] }, FILE),
+    parseBoardBom({ purchasing: { mode: "run", boards: 5, shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 }, lines: {}, extras: [] }, FILE),
   ).toThrow(/purchasing\.stockQuantity is set, but purchasing\.mode is "run"/)
+})
+
+const CAPS = { stockQuantity: 100, maxStockUnitPrice: 0.15, maxStockOverage: 0.5 }
+
+function prototypeWith(fields: Record<string, unknown>): unknown {
+  return { purchasing: { mode: "prototype", shrinkage: 0.1, ...fields }, lines: {}, extras: [] }
+}
+
+test("parseBoardBom reads the prototype bulk caps", () => {
+  expect(parseBoardBom(prototypeWith(CAPS), FILE).purchasing).toEqual({ mode: "prototype", shrinkage: 0.1, ...CAPS })
+  expect(parseBoardBom(prototypeWith({ ...CAPS, maxStockOverage: 0 }), FILE).purchasing).toEqual({
+    mode: "prototype", shrinkage: 0.1, ...CAPS, maxStockOverage: 0,
+  })
+})
+
+test("parseBoardBom refuses prototype mode without maxStockUnitPrice or maxStockOverage, naming the field", () => {
+  expect(() => parseBoardBom(prototypeWith({ ...CAPS, maxStockUnitPrice: undefined }), FILE)).toThrow(
+    /purchasing\.maxStockUnitPrice is missing/,
+  )
+  expect(() => parseBoardBom(prototypeWith({ ...CAPS, maxStockOverage: undefined }), FILE)).toThrow(
+    /purchasing\.maxStockOverage is missing/,
+  )
+})
+
+test("parseBoardBom refuses a maxStockUnitPrice that is not positive, and a negative maxStockOverage", () => {
+  expect(() => parseBoardBom(prototypeWith({ ...CAPS, maxStockUnitPrice: 0 }), FILE)).toThrow(
+    /purchasing\.maxStockUnitPrice \(0\) must be a positive number/,
+  )
+  expect(() => parseBoardBom(prototypeWith({ ...CAPS, maxStockUnitPrice: -1 }), FILE)).toThrow(/maxStockUnitPrice/)
+  expect(() => parseBoardBom(prototypeWith({ ...CAPS, maxStockUnitPrice: "0.15" }), FILE)).toThrow(/maxStockUnitPrice/)
+  expect(() => parseBoardBom(prototypeWith({ ...CAPS, maxStockOverage: -0.1 }), FILE)).toThrow(
+    /purchasing\.maxStockOverage \(-0\.1\) must be a fraction of at least 0/,
+  )
+})
+
+test("parseBoardBom refuses each bulk cap in run mode, naming it", () => {
+  for (const field of ["maxStockUnitPrice", "maxStockOverage"]) {
+    const purchasing = { mode: "run", boards: 5, shrinkage: 0.1, [field]: 0.5 }
+    expect(() => parseBoardBom({ purchasing, lines: {}, extras: [] }, FILE)).toThrow(
+      new RegExp(`purchasing\\.${field} is set, but purchasing\\.mode is "run"`),
+    )
+  }
 })
 
 test("parseBoardBom throws when an extra's quantity is not positive", () => {
   const withExtra = (quantity: number): unknown => ({
-    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
+    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 },
     lines: {},
     extras: [{ part: "wire", quantity, why: "hookup wire" }],
   })
@@ -111,7 +153,7 @@ test("parseBoardBom throws naming the field when an extra is missing part or why
   expect(() =>
     parseBoardBom(
       {
-        purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
+        purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 },
         lines: {},
         extras: [{ quantity: 1, why: "x" }],
       },
@@ -121,7 +163,7 @@ test("parseBoardBom throws naming the field when an extra is missing part or why
   expect(() =>
     parseBoardBom(
       {
-        purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
+        purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 },
         lines: {},
         extras: [{ part: "wire", quantity: 1 }],
       },
@@ -133,7 +175,7 @@ test("parseBoardBom throws naming the field when an extra is missing part or why
 test("parseBoardBom reads an extra's spares: absent is true, false is kept", () => {
   const bom = parseBoardBom(
     {
-      purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
+      purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 },
       lines: {},
       extras: [
         { part: "socket", quantity: 3, why: "sockets" },
@@ -149,7 +191,7 @@ test("parseBoardBom throws naming the extra and the fix when spares is not a boo
   expect(() =>
     parseBoardBom(
       {
-        purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
+        purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 },
         lines: {},
         extras: [{ part: "wire_kit", quantity: 1, why: "wire", spares: "no" }],
       },
@@ -161,14 +203,14 @@ test("parseBoardBom throws naming the extra and the fix when spares is not a boo
 test("parseBoardBom throws when lines is not an object of strings", () => {
   expect(() =>
     parseBoardBom(
-      { purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 }, lines: "nope", extras: [] },
+      { purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 }, lines: "nope", extras: [] },
       FILE,
     ),
   ).toThrow(/lines is a string, not an object/)
   expect(() =>
     parseBoardBom(
       {
-        purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
+        purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100, maxStockUnitPrice: 1, maxStockOverage: 10 },
         lines: { "resistor 100k 0207": 42 },
         extras: [],
       },

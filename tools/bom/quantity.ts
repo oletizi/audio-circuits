@@ -9,7 +9,9 @@
  * - prototype (one board), `stock` part: the target is the larger of the
  *   cover quantity and the board's `stockQuantity`; buy the smallest listed
  *   price break at or above the target, or - when every break is smaller -
- *   the target itself at the largest break's unit price;
+ *   the target itself at the largest break's unit price (`suggestBuy`) - the
+ *   BULK suggestion, which the board-wide caps in tools/bom/bulk.ts may set
+ *   aside for the covered one (`coveredBuy`);
  * - prototype, any other part: the cover quantity, at the price break that
  *   applies to buying that many;
  * - run: the cover quantity, moved up to a larger price break whenever
@@ -35,11 +37,11 @@ export interface BuySuggestion {
 
 const MICROS_PER_CURRENCY_UNIT = 1_000_000
 
-function toMicros(price: number): number {
+export function toMicros(price: number): number {
   return Math.round(price * MICROS_PER_CURRENCY_UNIT)
 }
 
-function fromMicros(micros: number): number {
+export function fromMicros(micros: number): number {
   return micros / MICROS_PER_CURRENCY_UNIT
 }
 
@@ -151,5 +153,20 @@ export function suggestBuy(
   if (purchasing.mode === "prototype") {
     return prototypeOtherSuggestion(cover, entry, source)
   }
+  return runSuggestion(cover, entry, source)
+}
+
+/** The buy for one source ignoring `stock`: in prototype mode the cover quantity at its
+ * applicable break, in run mode the run rule. What a `stock` part is bought at when its bulk
+ * buy is set aside (tools/bom/bulk.ts), and what "the order at covered quantities" sums. */
+export function coveredBuy(
+  need: number,
+  purchasing: Purchasing,
+  entry: CatalogEntry,
+  source: Source,
+  spares: boolean,
+): BuySuggestion {
+  const cover = coverQuantity(need, purchasing, spares)
+  if (purchasing.mode === "prototype") return prototypeOtherSuggestion(cover, entry, source)
   return runSuggestion(cover, entry, source)
 }

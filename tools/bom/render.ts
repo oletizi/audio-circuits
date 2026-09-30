@@ -1,7 +1,9 @@
 /**
  * `BOM.md`: the shopping list, one markdown table per section (on the
  * board, off the board, extras), then a totals table per supplier and
- * currency. Committed, so it must be byte-for-byte deterministic for the
+ * currency, then - in prototype mode, when any `stock` part was considered for
+ * a bulk buy - a "Bulk buys" note saying which were taken and which were not,
+ * and why. Buy quantities come from the board-wide plan (tools/bom/bulk.ts). Committed, so it must be byte-for-byte deterministic for the
  * same inputs - the only date anywhere in it is each source's own
  * `checked` (Decisions; controller ruling,
  * .superpowers/sdd/2026-09-30-bom/task-4-brief.md).
@@ -15,9 +17,11 @@
  * Design: docs/superpowers/specs/2026-09-30-bom-design.md
  */
 import type { BomLine } from "./types.ts"
-import type { BoardBom, Extra, Purchasing } from "./board-bom.ts"
+import type { BoardBom, Extra } from "./board-bom.ts"
 import type { CatalogEntry, Source } from "./catalog.ts"
-import { suggestBuy } from "./quantity.ts"
+import type { BuySuggestion } from "./quantity.ts"
+import { buyItems, extraItemId, lineItemId, planBuys, type BulkDecision, type BuyPlan } from "./bulk.ts"
+import { bulkDecisionText } from "./bulk-text.ts"
 import { sortLines } from "./ordering.ts"
 import { needsText } from "./needs-text.ts"
 
@@ -100,13 +104,9 @@ interface SourceCells {
 
 /** One source's row-within-a-cell: its link (with its own `checked` date - the one
  * date `BOM.md` is allowed to carry), and its buy quantity and prices at the
- * suggested quantity. A problem `suggestBuy` finds (a malformed catalog entry with no
- * price breaks at all, say) is a real bug and throws through, uncaught. */
-function sourceCells(
-  need: number, purchasing: Purchasing, entry: CatalogEntry, source: Source, spares: boolean,
-): SourceCells {
+ * planned quantity (tools/bom/bulk.ts). */
+function sourceCells(source: Source, suggestion: BuySuggestion): SourceCells {
   const link = `[${source.supplier} (${source.use})](${source.url}) (checked ${source.checked})`
-  const suggestion = suggestBuy(need, purchasing, entry, source, spares)
   return {
     link,
     buy: String(suggestion.quantity),
@@ -147,11 +147,11 @@ function rowForUnknownPart(label: readonly string[], needs: string, need: number
 }
 
 function rowForChosen(
-  label: readonly string[], needs: string, need: number, entry: CatalogEntry, purchasing: Purchasing,
-  spares: boolean, totals: Map<string, Total>,
+  label: readonly string[], needs: string, need: number, entry: CatalogEntry, itemId: string,
+  plan: BuyPlan, totals: Map<string, Total>,
 ): RenderedRow {
-  const cells = entry.sources.map((source) => {
-    const result = sourceCells(need, purchasing, entry, source, spares)
+  const cells = entry.sources.map((source, sourceIndex) => {
+    const result = sourceCells(source, plan.buy(itemId, sourceIndex))
     addToTotal(totals, source.supplier, source.currency, result.linePrice)
     return result
   })
@@ -191,27 +191,50 @@ function renderTotalsTable(totals: ReadonlyMap<string, Total>): string {
   return [header, separator, ...body].join("\n")
 }
 
-function sortExtras(extras: readonly Extra[]): readonly Extra[] {
-  return [...extras].sort((a, b) => a.part.localeCompare(b.part))
+/** Extras sorted by catalog id, each kept with its position in bom.json (its plan identity). */
+function sortExtras(extras: readonly Extra[]): readonly { readonly extra: Extra; readonly index: number }[] {
+  return extras.map((extra, index) => ({ extra, index })).sort((a, b) => a.extra.part.localeCompare(b.extra.part))
 }
 
-function rowForLine(line: BomLine, bom: BoardBom, catalog: ReadonlyMap<string, CatalogEntry>, totals: Map<string, Total>): RenderedRow {
+interface RenderContext {
+  readonly bom: BoardBom
+  readonly catalog: ReadonlyMap<string, CatalogEntry>
+  readonly plan: BuyPlan
+  readonly totals: Map<string, Total>
+}
+
+function rowForLine(line: BomLine, context: RenderContext): RenderedRow {
+  const { bom, catalog, plan, totals } = context
   const needs = needsText(line)
   const partId = bom.lines[line.key]
   if (partId === undefined) return rowForUnchosen(line.designators, needs, line.quantity)
   const entry = catalog.get(partId)
   if (entry === undefined) return rowForUnknownPart(line.designators, needs, line.quantity, partId)
-  // A circuit line always carries the shrinkage margin; only an extra may opt out.
-  return rowForChosen(line.designators, needs, line.quantity, entry, bom.purchasing, true, totals)
+  return rowForChosen(line.designators, needs, line.quantity, entry, lineItemId(line.key), plan, totals)
 }
 
 /** An extra is not derived from the circuit, so it has no requirement to state: "-". */
 const EXTRA_NEEDS = "-"
 
-function rowForExtra(extra: Extra, bom: BoardBom, catalog: ReadonlyMap<string, CatalogEntry>, totals: Map<string, Total>): RenderedRow {
-  const entry = catalog.get(extra.part)
+function rowForExtra(extra: Extra, index: number, context: RenderContext): RenderedRow {
+  const entry = context.catalog.get(extra.part)
   if (entry === undefined) return rowForUnknownPart([extra.why], EXTRA_NEEDS, extra.quantity, extra.part)
-  return rowForChosen([extra.why], EXTRA_NEEDS, extra.quantity, entry, bom.purchasing, extra.spares, totals)
+  return rowForChosen([extra.why], EXTRA_NEEDS, extra.quantity, entry, extraItemId(index), context.plan, context.totals)
+}
+
+/** The "Bulk buys" note under the totals: which prototype `stock` parts are bought in
+ * bulk, and which are not and why. Empty (no section) when no bulk buy was considered. */
+function renderBulkNote(decisions: readonly BulkDecision[]): readonly string[] {
+  if (decisions.length === 0) return []
+  const taken = decisions.filter((decision) => decision.outcome === "bulk")
+  const dropped = decisions.filter((decision) => decision.outcome !== "bulk")
+  const list = (items: readonly BulkDecision[]): string =>
+    items.length === 0 ? "- none" : items.map((decision) => `- ${escapeCell(bulkDecisionText(decision))}`).join("\n")
+  return [
+    "", "## Bulk buys", "",
+    "Bought in bulk:", "", list(taken), "",
+    "Not bought in bulk:", "", list(dropped),
+  ]
 }
 
 /**
@@ -228,13 +251,14 @@ export function renderBomMarkdown(input: {
   readonly catalog: ReadonlyMap<string, CatalogEntry>
 }): string {
   const { boardName, conditions, lines, bom, catalog } = input
-  const totals = new Map<string, Total>()
+  const plan = planBuys(buyItems(lines, bom, catalog), bom.purchasing)
+  const context: RenderContext = { bom, catalog, plan, totals: new Map<string, Total>() }
 
   const onBoardRows = sortLines(lines.filter((line) => line.placement === "on-board"))
-    .map((line) => rowForLine(line, bom, catalog, totals))
+    .map((line) => rowForLine(line, context))
   const offBoardRows = sortLines(lines.filter((line) => line.placement === "off-board"))
-    .map((line) => rowForLine(line, bom, catalog, totals))
-  const extraRows = sortExtras(bom.extras).map((extra) => rowForExtra(extra, bom, catalog, totals))
+    .map((line) => rowForLine(line, context))
+  const extraRows = sortExtras(bom.extras).map(({ extra, index }) => rowForExtra(extra, index, context))
 
   const output: string[] = [`# ${boardName} bill of materials`, "", conditions]
 
@@ -248,7 +272,7 @@ export function renderBomMarkdown(input: {
     output.push("", "## Extras", "", renderTable(extraRows))
   }
 
-  output.push("", "## Totals", "", renderTotalsTable(totals))
+  output.push("", "## Totals", "", renderTotalsTable(context.totals), ...renderBulkNote(plan.decisions))
 
   return `${output.join("\n")}\n`
 }
