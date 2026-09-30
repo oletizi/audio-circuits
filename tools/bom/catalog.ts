@@ -317,6 +317,12 @@ function parseSources(value: unknown, where: string): readonly Source[] {
   if (!Array.isArray(value)) {
     throw new Error(`${where}: sources is a ${typeof value}, not an array.`)
   }
+  if (value.length === 0) {
+    throw new Error(
+      `${where}: sources is empty; an entry with nowhere to buy it from cannot be chosen for a ` +
+        "board. Add at least one source.",
+    )
+  }
   return value.map((item, index) => parseSource(item, index, where))
 }
 

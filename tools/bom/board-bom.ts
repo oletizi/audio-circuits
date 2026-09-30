@@ -73,7 +73,11 @@ function parsePurchasing(value: unknown, where: string): Purchasing {
 }
 
 function parseLines(value: unknown, where: string): Readonly<Record<string, string>> {
-  if (value === undefined) return {}
+  if (value === undefined) {
+    throw new Error(
+      `${where}: missing "lines". Declare it explicitly - {} if the board has no line chosen yet.`,
+    )
+  }
   const record = requireRecord(value, "lines", where)
   const lines: Record<string, string> = {}
   for (const [key, entry] of Object.entries(record)) {
@@ -95,15 +99,21 @@ function parseExtra(value: unknown, index: number, where: string): Extra {
 }
 
 function parseExtras(value: unknown, where: string): readonly Extra[] {
-  if (value === undefined) return []
+  if (value === undefined) {
+    throw new Error(
+      `${where}: missing "extras". Declare it explicitly - [] if the board needs none yet.`,
+    )
+  }
   if (!Array.isArray(value)) {
     throw new Error(`${where}: extras is a ${typeof value}, not an array.`)
   }
   return value.map((item, index) => parseExtra(item, index, where))
 }
 
-/** Validate one board's `bom.json`. `file` names it in every refusal. `lines` and `extras`
- * default to empty when absent - a brand-new board's file may declare only `purchasing`. */
+/** Validate one board's `bom.json`. `file` names it in every refusal. `purchasing`, `lines`
+ * and `extras` are all required - a fallback default for a missing key would silently accept
+ * a typo (e.g. "line" for "lines") as "no lines chosen yet". A board with genuinely no lines
+ * or extras yet must say so explicitly, with `{}` / `[]`. */
 export function parseBoardBom(json: unknown, file: string): BoardBom {
   const record = requireRecord(json, "the board bom", file)
   const purchasing = parsePurchasing(record["purchasing"], file)

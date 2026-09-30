@@ -18,14 +18,26 @@ test("parseBoardBom accepts a well-formed prototype file", () => {
   expect(bom.extras).toEqual([{ part: "transistor_socket_to92", quantity: 6, why: "one per BJT, plus spares" }])
 })
 
-test("parseBoardBom accepts a well-formed run file", () => {
+test("parseBoardBom accepts a well-formed run file with no lines or extras chosen yet", () => {
   const bom = parseBoardBom(
-    { purchasing: { mode: "run", boards: 10, shrinkage: 0.1 } },
+    { purchasing: { mode: "run", boards: 10, shrinkage: 0.1 }, lines: {}, extras: [] },
     FILE,
   )
   expect(bom.purchasing).toEqual({ mode: "run", boards: 10, shrinkage: 0.1 })
   expect(bom.lines).toEqual({})
   expect(bom.extras).toEqual([])
+})
+
+test("parseBoardBom throws naming the file and the fix when lines is missing", () => {
+  expect(() =>
+    parseBoardBom({ purchasing: { mode: "run", boards: 10, shrinkage: 0.1 }, extras: [] }, FILE),
+  ).toThrow(/boards\/staged-board\/bom\.json.*missing "lines".*\{\}/s)
+})
+
+test("parseBoardBom throws naming the file and the fix when extras is missing", () => {
+  expect(() =>
+    parseBoardBom({ purchasing: { mode: "run", boards: 10, shrinkage: 0.1 }, lines: {} }, FILE),
+  ).toThrow(/boards\/staged-board\/bom\.json.*missing "extras".*\[\]/s)
 })
 
 test("parseBoardBom throws when the json is not an object", () => {
@@ -66,6 +78,7 @@ test("parseBoardBom throws when run's boards is not a positive integer", () => {
 test("parseBoardBom throws when an extra's quantity is not positive", () => {
   const withExtra = (quantity: number): unknown => ({
     purchasing: { mode: "prototype", shrinkage: 0.1 },
+    lines: {},
     extras: [{ part: "wire", quantity, why: "hookup wire" }],
   })
   expect(() => parseBoardBom(withExtra(0), FILE)).toThrow(/extras\[0\].quantity \(0\) must be a positive number/)
@@ -75,13 +88,21 @@ test("parseBoardBom throws when an extra's quantity is not positive", () => {
 test("parseBoardBom throws naming the field when an extra is missing part or why", () => {
   expect(() =>
     parseBoardBom(
-      { purchasing: { mode: "prototype", shrinkage: 0.1 }, extras: [{ quantity: 1, why: "x" }] },
+      {
+        purchasing: { mode: "prototype", shrinkage: 0.1 },
+        lines: {},
+        extras: [{ quantity: 1, why: "x" }],
+      },
       FILE,
     ),
   ).toThrow(/extras\[0\].part/)
   expect(() =>
     parseBoardBom(
-      { purchasing: { mode: "prototype", shrinkage: 0.1 }, extras: [{ part: "wire", quantity: 1 }] },
+      {
+        purchasing: { mode: "prototype", shrinkage: 0.1 },
+        lines: {},
+        extras: [{ part: "wire", quantity: 1 }],
+      },
       FILE,
     ),
   ).toThrow(/extras\[0\].why/)
@@ -89,11 +110,18 @@ test("parseBoardBom throws naming the field when an extra is missing part or why
 
 test("parseBoardBom throws when lines is not an object of strings", () => {
   expect(() =>
-    parseBoardBom({ purchasing: { mode: "prototype", shrinkage: 0.1 }, lines: "nope" }, FILE),
+    parseBoardBom(
+      { purchasing: { mode: "prototype", shrinkage: 0.1 }, lines: "nope", extras: [] },
+      FILE,
+    ),
   ).toThrow(/lines is a string, not an object/)
   expect(() =>
     parseBoardBom(
-      { purchasing: { mode: "prototype", shrinkage: 0.1 }, lines: { "resistor 100k 0207": 42 } },
+      {
+        purchasing: { mode: "prototype", shrinkage: 0.1 },
+        lines: { "resistor 100k 0207": 42 },
+        extras: [],
+      },
       FILE,
     ),
   ).toThrow(/lines\["resistor 100k 0207"\]/)

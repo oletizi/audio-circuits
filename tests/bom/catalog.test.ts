@@ -7,6 +7,32 @@ import type { CatalogEntry } from "../../tools/bom/catalog.ts"
 
 const FILE = "parts/r_100k_0207.json"
 
+/** Typed as `Record<string, unknown>` (not inferred) so spreading it into a mutated test
+ * fixture never needs an `as Record<string, unknown>` cast at the call site. */
+const VALID_SOURCE: Record<string, unknown> = {
+  supplier: "Mouser",
+  url: "https://mouser.com/CFR-25JB-52-100K",
+  sku: "603-CFR-25JB-52-100K",
+  currency: "USD",
+  breaks: [
+    { quantity: 1, unitPrice: 0.1 },
+    { quantity: 100, unitPrice: 0.012, pack: true },
+  ],
+  checked: "2026-09-01",
+  use: "standard",
+}
+
+/** Typed as `Record<string, unknown>[]` (not inferred) so filtering it in a test never
+ * needs an `as` cast at the call site. */
+const VALID_EVIDENCE: readonly Record<string, unknown>[] = [
+  { spec: "ohms", url: "https://example.com/datasheet.pdf", note: "100k nominal, table 1" },
+  { spec: "tolerancePercent", url: "https://example.com/datasheet.pdf", note: "J tolerance = 5%" },
+  { spec: "watts", url: "https://example.com/datasheet.pdf", note: "1/4W rating, section 2" },
+  { spec: "leadSpacingMm", url: "https://example.com/datasheet.pdf", note: "0207 body, 10.16mm lead spacing" },
+  { spec: "package", url: "https://example.com/datasheet.pdf", note: "0207 axial body" },
+  { spec: "mpn", url: "https://mouser.com/CFR-25JB-52-100K", note: "Mouser product page" },
+]
+
 const VALID: Record<string, unknown> = {
   id: "r_100k_0207",
   kind: "resistor",
@@ -20,30 +46,10 @@ const VALID: Record<string, unknown> = {
     leadSpacingMm: 10.16,
     package: "0207",
   },
-  evidence: [
-    { spec: "ohms", url: "https://example.com/datasheet.pdf", note: "100k nominal, table 1" },
-    { spec: "tolerancePercent", url: "https://example.com/datasheet.pdf", note: "J tolerance = 5%" },
-    { spec: "watts", url: "https://example.com/datasheet.pdf", note: "1/4W rating, section 2" },
-    { spec: "leadSpacingMm", url: "https://example.com/datasheet.pdf", note: "0207 body, 10.16mm lead spacing" },
-    { spec: "package", url: "https://example.com/datasheet.pdf", note: "0207 axial body" },
-    { spec: "mpn", url: "https://mouser.com/CFR-25JB-52-100K", note: "Mouser product page" },
-  ],
+  evidence: VALID_EVIDENCE,
   why: "Cheap, stocked at Mouser and Tayda, meets the 0207 footprint.",
   stock: true,
-  sources: [
-    {
-      supplier: "Mouser",
-      url: "https://mouser.com/CFR-25JB-52-100K",
-      sku: "603-CFR-25JB-52-100K",
-      currency: "USD",
-      breaks: [
-        { quantity: 1, unitPrice: 0.1 },
-        { quantity: 100, unitPrice: 0.012, pack: true },
-      ],
-      checked: "2026-09-01",
-      use: "standard",
-    },
-  ],
+  sources: [VALID_SOURCE],
 }
 
 function valid(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -104,38 +110,30 @@ test("parseCatalogEntry accepts kind \"accessory\"", () => {
   expect(entry.kind).toBe("accessory")
 })
 
-function isRecordWithSpec(value: unknown): value is { spec: unknown } {
-  return typeof value === "object" && value !== null && "spec" in value
-}
-
 test("parseCatalogEntry throws when a spec is present with no evidence entry naming it", () => {
-  const entry = valid({
-    evidence: (VALID["evidence"] as unknown[]).filter((e) => !(isRecordWithSpec(e) && e.spec === "ohms")),
-  })
+  const entry = valid({ evidence: VALID_EVIDENCE.filter((e) => e["spec"] !== "ohms") })
   expect(() => parseCatalogEntry(entry, FILE)).toThrow(/specs.ohms is present but no evidence entry names it/)
 })
 
 test("parseCatalogEntry throws when mpn is present without evidence naming \"mpn\"", () => {
-  const entry = valid({
-    evidence: (VALID["evidence"] as unknown[]).filter((e) => !(isRecordWithSpec(e) && e.spec === "mpn")),
-  })
+  const entry = valid({ evidence: VALID_EVIDENCE.filter((e) => e["spec"] !== "mpn") })
   expect(() => parseCatalogEntry(entry, FILE)).toThrow(/"mpn" is present but no evidence entry names "mpn"/)
 })
 
 test("parseCatalogEntry throws when a source's use is unknown", () => {
-  const sources = [{ ...(VALID["sources"] as Record<string, unknown>[])[0], use: "ebay" }]
+  const sources = [{ ...VALID_SOURCE, use: "ebay" }]
   expect(() => parseCatalogEntry(valid({ sources }), FILE)).toThrow(/use "ebay" is not one of/)
 })
 
 test("parseCatalogEntry throws when breaks is empty", () => {
-  const sources = [{ ...(VALID["sources"] as Record<string, unknown>[])[0], breaks: [] }]
+  const sources = [{ ...VALID_SOURCE, breaks: [] }]
   expect(() => parseCatalogEntry(valid({ sources }), FILE)).toThrow(/breaks is empty/)
 })
 
 test("parseCatalogEntry throws when breaks are not ascending", () => {
   const sources = [
     {
-      ...(VALID["sources"] as Record<string, unknown>[])[0],
+      ...VALID_SOURCE,
       breaks: [
         { quantity: 100, unitPrice: 0.012 },
         { quantity: 1, unitPrice: 0.1 },
@@ -146,19 +144,19 @@ test("parseCatalogEntry throws when breaks are not ascending", () => {
 })
 
 test("parseCatalogEntry throws when checked is not YYYY-MM-DD", () => {
-  const sources = [{ ...(VALID["sources"] as Record<string, unknown>[])[0], checked: "09/01/2026" }]
+  const sources = [{ ...VALID_SOURCE, checked: "09/01/2026" }]
   expect(() => parseCatalogEntry(valid({ sources }), FILE)).toThrow(/not a valid "YYYY-MM-DD" date/)
 })
 
 test("parseCatalogEntry throws when checked is not a real calendar date", () => {
-  const sources = [{ ...(VALID["sources"] as Record<string, unknown>[])[0], checked: "2026-02-30" }]
+  const sources = [{ ...VALID_SOURCE, checked: "2026-02-30" }]
   expect(() => parseCatalogEntry(valid({ sources }), FILE)).toThrow(/not a valid "YYYY-MM-DD" date/)
 })
 
 test("parseCatalogEntry throws when stock is true and no source has a pack break", () => {
   const sources = [
     {
-      ...(VALID["sources"] as Record<string, unknown>[])[0],
+      ...VALID_SOURCE,
       breaks: [{ quantity: 1, unitPrice: 0.1 }],
     },
   ]
@@ -167,10 +165,16 @@ test("parseCatalogEntry throws when stock is true and no source has a pack break
   )
 })
 
+test("parseCatalogEntry throws when sources is empty", () => {
+  expect(() => parseCatalogEntry(valid({ sources: [] }), FILE)).toThrow(
+    /sources is empty; an entry with nowhere to buy it from cannot be chosen for a board. Add at least one source/,
+  )
+})
+
 test("parseCatalogEntry accepts stock: false with no pack break", () => {
   const sources = [
     {
-      ...(VALID["sources"] as Record<string, unknown>[])[0],
+      ...VALID_SOURCE,
       breaks: [{ quantity: 1, unitPrice: 0.1 }],
     },
   ]
