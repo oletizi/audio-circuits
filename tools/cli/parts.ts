@@ -7,6 +7,11 @@
  * (`PartsCliOptions`), so tests never touch the network, the real key files or the real
  * catalog.
  *
+ * Every verb catches its own errors and exits 1 with a one-line message; nothing leaves
+ * `runCli` as an uncaught rejection. The key never reaches that message: the HTTP layer
+ * (tools/suppliers/http.ts) names only the supplier and endpoint path, and `safeMessage`
+ * below also redacts any `apiKey=` query value, should some other error carry a URL.
+ *
  * Until Task 2 of docs/superpowers/plans/2026-09-30-supplier-search.md, the only supplier
  * this tool has is Mouser: `--supplier digikey` (on `lookup`/`search`/`source`) and a
  * Digi-Key source encountered by `refresh` both name that explicitly, rather than silently
@@ -18,13 +23,15 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { isMain } from "./entrypoint.ts"
+import { formatOffer, formatReport } from "./parts-format.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { readMouserCredentials } from "../suppliers/credentials.ts"
 import { mouserClient } from "../suppliers/mouser.ts"
 import { offerToSource } from "../suppliers/source.ts"
-import { refreshCatalog, type SourceReport, type SupplierClients } from "../suppliers/refresh.ts"
+import { refreshCatalog, type SupplierClients } from "../suppliers/refresh.ts"
 import type { FetchLike, SupplierClient, SupplierName, SupplierOffer } from "../suppliers/types.ts"
-import { isSourceUse, SOURCE_USE_LIST } from "../bom/catalog.ts"
+import { isSourceUse, SOURCE_USE_LIST, type SourceUse } from "../bom/catalog.ts"
+import { localDate } from "../bom/local-date.ts"
 
 const DIGIKEY_NOT_BUILT =
   "the Digi-Key client is not built yet; register at developer.digikey.com and run Task 2 of " +
@@ -35,8 +42,11 @@ const SUPPORTED_SUPPLIERS: readonly SupplierName[] = ["Mouser"]
 
 const SUPPLIER_NAME_BY_FLAG: Record<string, SupplierName> = { mouser: "Mouser", digikey: "Digi-Key" }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+/** An error's message, with the value of any `apiKey=` query parameter redacted - a second
+ * guard behind the HTTP layer's own, so no error path can print a key. */
+function safeMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+  return message.replace(/(apiKey=)[^&\s"'<>]*/gi, "$1<redacted>")
 }
 
 export interface PartsDeps {
@@ -67,13 +77,15 @@ const USAGE = [
   "Verbs:",
   "  lookup <mpn> [--supplier mouser|digikey] [--json]",
   "                          the exact part at each supplier this tool has (Mouser alone",
-  "                          until Task 2); refuses if a needed key file is missing.",
+  "                          until Task 2), with its price breaks and parameters;",
+  "                          refuses if a needed key file is missing.",
   "  search <keywords...> [--supplier ...] [--limit n] [--json]",
   "                          candidate parts for a requirement (default limit 10).",
-  "  source <mpn> --supplier mouser|digikey --use <use>",
+  "  source <mpn> --supplier mouser|digikey --use <use> [--sku <supplier part number>]",
   "                          print a catalog Source for the one exact match, ready to",
   "                          paste into an entry; refuses, listing the matches, unless",
-  "                          exactly one exists. <use>: " + SOURCE_USE_LIST.join(", ") + ".",
+  "                          exactly one exists - or --sku names the listing to use.",
+  "                          <use>: " + SOURCE_USE_LIST.join(", ") + ".",
   "  refresh [<id>...]      re-read every Mouser/Digi-Key source of the named catalog",
   "                          entries (all of them, when none are named) and rewrite their",
   "                          price breaks and checked date in place.",
@@ -83,10 +95,13 @@ const USAGE = [
   "  --json                      print offers as JSON instead of readable text.",
   "  --limit n                   search: the maximum number of results (default 10).",
   "  --use <use>                 source: which SourceUse to record.",
+  "  --sku <part number>         source: the supplier's own part number of the listing",
+  "                              to record, when the mpn matches more than one.",
   "",
   "Exit codes:",
   "  0  the verb completed (refresh: even when nothing changed)",
-  "  1  a bad argument, a missing key file, a supplier refusal, or no/too many exact matches",
+  "  1  a bad argument, a missing key file, a supplier or network refusal, or no/too many",
+  "     exact matches",
 ].join("\n")
 
 function defaultDeps(opts: PartsCliOptions): PartsDeps {
@@ -96,7 +111,7 @@ function defaultDeps(opts: PartsCliOptions): PartsDeps {
     readFile: opts.readFile ?? ((filePath: string) => fs.readFileSync(filePath, "utf8")),
     writeFile: opts.writeFile ?? ((filePath: string, contents: string) => fs.writeFileSync(filePath, contents)),
     fetch: opts.fetch ?? ((url: string, init) => fetch(url, init)),
-    today: opts.today ?? (() => new Date().toISOString().slice(0, 10)),
+    today: opts.today ?? (() => localDate(new Date())),
   }
 }
 
@@ -106,6 +121,7 @@ interface ParsedArgs {
   readonly json: boolean
   readonly limit?: number
   readonly use?: string
+  readonly sku?: string
 }
 
 interface AllowedFlags {
@@ -113,24 +129,33 @@ interface AllowedFlags {
   readonly json?: boolean
   readonly limit?: boolean
   readonly use?: boolean
+  readonly sku?: boolean
+}
+
+type ValueFlag = "supplier" | "use" | "sku"
+
+const VALUE_FLAG_HINT: Record<ValueFlag, string> = {
+  supplier: '"mouser" or "digikey"',
+  use: `one of ${SOURCE_USE_LIST.join(", ")}`,
+  sku: "the supplier's own part number",
 }
 
 function parseArgs(args: readonly string[], allowed: AllowedFlags, error: (line: string) => void): ParsedArgs | null {
   const positional: string[] = []
-  let supplier: string | undefined
+  const values: Partial<Record<ValueFlag, string>> = {}
   let json = false
   let limit: number | undefined
-  let use: string | undefined
 
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i]
-    if (arg === "--supplier" && allowed.supplier === true) {
+    const flag = arg === "--supplier" ? "supplier" : arg === "--use" ? "use" : arg === "--sku" ? "sku" : undefined
+    if (flag !== undefined && allowed[flag] === true) {
       const value = args[i + 1]
       if (value === undefined || value.startsWith("--")) {
-        error('--supplier needs a value: "mouser" or "digikey".')
+        error(`--${flag} needs a value: ${VALUE_FLAG_HINT[flag]}.`)
         return null
       }
-      supplier = value
+      values[flag] = value
       i += 1
       continue
     }
@@ -149,23 +174,13 @@ function parseArgs(args: readonly string[], allowed: AllowedFlags, error: (line:
       i += 1
       continue
     }
-    if (arg === "--use" && allowed.use === true) {
-      const value = args[i + 1]
-      if (value === undefined || value.startsWith("--")) {
-        error(`--use needs a value: one of ${SOURCE_USE_LIST.join(", ")}.`)
-        return null
-      }
-      use = value
-      i += 1
-      continue
-    }
     if (arg !== undefined && arg.startsWith("--")) {
       error(`unknown flag "${arg}" for this verb. Run with --help to see the flags this verb accepts.`)
       return null
     }
     if (arg !== undefined) positional.push(arg)
   }
-  return { positional, supplier, json, limit, use }
+  return { positional, supplier: values.supplier, json, limit, use: values.use, sku: values.sku }
 }
 
 /** `--supplier`'s value to the list of suppliers a verb should query: every supplier the
@@ -203,68 +218,36 @@ function buildClient(supplier: SupplierName, deps: PartsDeps, error: (line: stri
   try {
     return buildMouserClient(deps)
   } catch (caught) {
-    error(errorMessage(caught))
+    error(safeMessage(caught))
     return null
   }
 }
 
-/** US-locale currency, but with enough precision to keep sub-cent unit prices (routine for
- * passives bought by the thousand, e.g. $0.018) distinct from one another - the default
- * two-decimal currency format would round several of a resistor's real price breaks down
- * to the same "$0.02" and hide the very comparison this tool exists to show. */
-function formatMoney(amount: number, currency: string): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-  }).format(amount)
-}
+type SupplierResults = readonly { readonly supplier: SupplierName; readonly offers: readonly SupplierOffer[] }[]
 
-function formatOffer(offer: SupplierOffer): string[] {
-  const lines = [
-    `${offer.supplier} ${offer.sku} - ${offer.mpn} (${offer.manufacturer})`,
-    `  ${offer.description}`,
-    `  stock: ${offer.stock !== undefined ? offer.stock : "not stated"}`,
-  ]
-  if (offer.breaks.length === 0) {
-    lines.push("  price: not listed")
-  } else if (offer.currency === undefined) {
-    throw new Error(
-      `${offer.supplier} ${offer.sku} has price breaks but no currency; cannot format its price.`,
-    )
-  } else {
-    const currency = offer.currency
-    for (const brk of offer.breaks) {
-      lines.push(`  ${brk.quantity}+: ${formatMoney(brk.unitPrice, currency)}`)
-    }
-  }
-  lines.push(`  url: ${offer.url}`)
-  lines.push(`  datasheet: ${offer.datasheetUrl ?? "(none listed)"}`)
-  return lines
-}
-
+/** Runs `run` against each supplier's client; a supplier or network refusal is printed
+ * (the HTTP layer names only supplier and endpoint path) and ends the verb with null. */
 async function queryEach(
   suppliers: readonly SupplierName[],
   deps: PartsDeps,
   error: (line: string) => void,
   run: (client: SupplierClient) => Promise<readonly SupplierOffer[]>,
-): Promise<readonly { readonly supplier: SupplierName; readonly offers: readonly SupplierOffer[] }[] | null> {
+): Promise<SupplierResults | null> {
   const results: { supplier: SupplierName; offers: readonly SupplierOffer[] }[] = []
   for (const supplier of suppliers) {
     const client = buildClient(supplier, deps, error)
     if (client === null) return null
-    results.push({ supplier, offers: await run(client) })
+    try {
+      results.push({ supplier, offers: await run(client) })
+    } catch (caught) {
+      error(safeMessage(caught))
+      return null
+    }
   }
   return results
 }
 
-function printOffers(
-  results: readonly { readonly supplier: SupplierName; readonly offers: readonly SupplierOffer[] }[],
-  subject: string,
-  json: boolean,
-  log: (line: string) => void,
-): void {
+function printOffers(results: SupplierResults, subject: string, json: boolean, log: (line: string) => void): void {
   if (json) {
     log(JSON.stringify(results.flatMap((result) => result.offers), null, 2))
     return
@@ -325,13 +308,43 @@ async function dispatchSearch(
   return 0
 }
 
+function sameText(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase()
+}
+
+/** The one offer `source` records: the listing `--sku` names (which must carry `mpn`), or
+ * else the one exact mpn match. Throws naming the supplier and the choices otherwise. */
+async function chooseOffer(client: SupplierClient, mpn: string, sku: string | undefined): Promise<SupplierOffer> {
+  if (sku !== undefined) {
+    const offer = await client.lookupSku(sku)
+    if (offer === undefined) throw new Error(`${client.name}: no listing with part number "${sku}".`)
+    if (!sameText(offer.mpn, mpn)) {
+      throw new Error(
+        `${client.name} ${offer.sku} is mpn "${offer.mpn}", not "${mpn}". Check --sku against the ` +
+          `matches "bun run parts lookup ${mpn}" lists.`,
+      )
+    }
+    return offer
+  }
+  const offers = await client.lookup(mpn)
+  if (offers.length === 0) throw new Error(`${client.name}: no exact match for "${mpn}".`)
+  if (offers.length > 1) {
+    const listing = offers.map((offer) => `  ${offer.sku} - ${offer.description}`).join("\n")
+    throw new Error(
+      `${client.name}: "${mpn}" matched more than one listing; exactly one exact match is required, ` +
+        `or name one with --sku:\n${listing}`,
+    )
+  }
+  return offers[0]
+}
+
 async function dispatchSource(
   args: readonly string[],
   deps: PartsDeps,
   log: (line: string) => void,
   error: (line: string) => void,
 ): Promise<number> {
-  const parsed = parseArgs(args, { supplier: true, use: true }, error)
+  const parsed = parseArgs(args, { supplier: true, use: true, sku: true }, error)
   if (parsed === null) return 1
   const mpn = parsed.positional[0]
   if (mpn === undefined) {
@@ -342,47 +355,33 @@ async function dispatchSource(
     error('"source" needs --supplier mouser|digikey.')
     return 1
   }
-  if (parsed.use === undefined || !isSourceUse(parsed.use)) {
-    error(`"source" needs --use, one of ${SOURCE_USE_LIST.join(", ")} (got ${JSON.stringify(parsed.use)}).`)
+  const use = parsed.use
+  if (use === undefined || !isSourceUse(use)) {
+    error(`"source" needs --use, one of ${SOURCE_USE_LIST.join(", ")} (got ${JSON.stringify(use)}).`)
     return 1
   }
   const suppliers = resolveSuppliers(parsed.supplier, error)
   if (suppliers === null) return 1
   const client = buildClient(suppliers[0], deps, error)
   if (client === null) return 1
-
-  const offers = await client.lookup(mpn)
-  if (offers.length === 0) {
-    error(`${suppliers[0]}: no exact match for "${mpn}".`)
-    return 1
-  }
-  if (offers.length > 1) {
-    error(`${suppliers[0]}: "${mpn}" matched more than one listing; exactly one exact match is required:`)
-    for (const offer of offers) error(`  ${offer.sku} - ${offer.description}`)
-    return 1
-  }
-  try {
-    log(JSON.stringify(offerToSource(offers[0], parsed.use), null, 2))
-    return 0
-  } catch (caught) {
-    error(errorMessage(caught))
-    return 1
-  }
+  return printSource(client, mpn, parsed.sku, use, log, error)
 }
 
-function formatReport(report: SourceReport): string {
-  const where = `${report.id} sources[${report.sourceIndex}] ${report.supplier}` + (report.sku !== undefined ? ` (${report.sku})` : "")
-  switch (report.outcome.status) {
-    case "updated":
-      return `${where}: updated ${formatMoney(report.outcome.oldUnitPrice, "USD")} -> ${formatMoney(report.outcome.newUnitPrice, "USD")}`
-    case "unchanged":
-      return `${where}: unchanged`
-    case "not-listed":
-      return `${where}: no longer listed`
-    case "no-price":
-      return `${where}: listed without a price`
-    case "not-refreshed":
-      return `${where}: not refreshed: ${report.outcome.reason}`
+async function printSource(
+  client: SupplierClient,
+  mpn: string,
+  sku: string | undefined,
+  use: SourceUse,
+  log: (line: string) => void,
+  error: (line: string) => void,
+): Promise<number> {
+  try {
+    const offer = await chooseOffer(client, mpn, sku)
+    log(JSON.stringify(offerToSource(offer, use), null, 2))
+    return 0
+  } catch (caught) {
+    for (const line of safeMessage(caught).split("\n")) error(line)
+    return 1
   }
 }
 
@@ -402,7 +401,7 @@ async function dispatchRefresh(
   try {
     clients.Mouser = { kind: "ready", client: buildMouserClient(deps) }
   } catch (caught) {
-    clients.Mouser = { kind: "missing-credentials", message: errorMessage(caught) }
+    clients.Mouser = { kind: "missing-credentials", message: safeMessage(caught) }
   }
 
   const dir = path.join(deps.repoRoot, "parts")
@@ -412,16 +411,17 @@ async function dispatchRefresh(
     log(result.writtenIds.length === 0 ? "no files changed." : `wrote: ${result.writtenIds.join(", ")}`)
     return 0
   } catch (caught) {
-    error(errorMessage(caught))
+    error(safeMessage(caught))
     return 1
   }
 }
 
-export async function runCli(argv: readonly string[], opts: PartsCliOptions = {}): Promise<number> {
-  const log = opts.log ?? ((line: string) => console.log(line))
-  const error = opts.error ?? ((line: string) => console.error(line))
-  const deps = defaultDeps(opts)
-
+async function dispatch(
+  argv: readonly string[],
+  deps: PartsDeps,
+  log: (line: string) => void,
+  error: (line: string) => void,
+): Promise<number> {
   const verb = argv[0]
   if (verb === undefined || verb === "--help" || verb === "-h" || verb === "help") {
     log(USAGE)
@@ -434,6 +434,19 @@ export async function runCli(argv: readonly string[], opts: PartsCliOptions = {}
 
   error(`unknown verb "${verb}". Run with --help to see the verbs.`)
   return 1
+}
+
+export async function runCli(argv: readonly string[], opts: PartsCliOptions = {}): Promise<number> {
+  const log = opts.log ?? ((line: string) => console.log(line))
+  const error = opts.error ?? ((line: string) => console.error(line))
+  try {
+    return await dispatch(argv, defaultDeps(opts), log, error)
+  } catch (caught) {
+    // Anything a verb did not catch itself (formatting an offer, say) still ends as one
+    // line and exit 1, never as an uncaught rejection whose trace could carry a URL.
+    error(safeMessage(caught))
+    return 1
+  }
 }
 
 if (isMain(import.meta.url)) {

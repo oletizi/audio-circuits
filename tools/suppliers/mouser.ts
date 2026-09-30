@@ -22,11 +22,11 @@ const PARTNUMBER_PATH = "search/partnumber"
 const KEYWORD_PATH = "search/keyword"
 
 function partnumberUrl(apiKey: string): string {
-  return `${BASE_URL}/search/partnumber?apiKey=${apiKey}`
+  return `${BASE_URL}/${PARTNUMBER_PATH}?apiKey=${encodeURIComponent(apiKey)}`
 }
 
 function keywordUrl(apiKey: string): string {
-  return `${BASE_URL}/search/keyword?apiKey=${apiKey}`
+  return `${BASE_URL}/${KEYWORD_PATH}?apiKey=${encodeURIComponent(apiKey)}`
 }
 
 function requireRecord(value: unknown, what: string, where: string): Record<string, unknown> {

@@ -129,6 +129,43 @@ test("mouserClient never puts the api key in an error message", async () => {
   expect(message).not.toContain("super-secret-key-value")
 })
 
+test("mouserClient rewords a fetch rejection that carries the request URL, naming only supplier and endpoint path", async () => {
+  const secret = "fake-key-9f3c"
+  const rejecting: FetchLike = async (url) => {
+    throw new TypeError(`fetch failed: unable to connect to ${url}`)
+  }
+  const client = mouserClient({ apiKey: secret }, rejecting, TODAY)
+  let thrown: unknown
+  try {
+    await client.lookup("MFR-25FBF52-100K")
+  } catch (error) {
+    thrown = error
+  }
+  const message = thrown instanceof Error ? thrown.message : ""
+  expect(message).toBe(
+    "Mouser search/partnumber: request could not be sent (TypeError). Check the network connection and try again.",
+  )
+  expect(message).not.toContain(secret)
+})
+
+test("mouserClient rewrites a request URL echoed in an HTTP error body to the endpoint path", async () => {
+  const secret = "fake-key-echo"
+  const echoing: FetchLike = async (url) => ({ status: 400, text: async () => `bad request: ${url}` })
+  const client = mouserClient({ apiKey: secret }, echoing, TODAY)
+  await expect(client.search("10uF", 5)).rejects.toThrow("bad request: search/keyword")
+  await expect(client.search("10uF", 5)).rejects.not.toThrow(secret)
+})
+
+test("mouserClient URL-encodes the api key in the query string", async () => {
+  const seen: string[] = []
+  const recording: FetchLike = async (url) => {
+    seen.push(url)
+    return { status: 200, text: async () => PARTNUMBER_FIXTURE }
+  }
+  await mouserClient({ apiKey: "a&b=c d" }, recording, TODAY).lookup("MFR-25FBF52-100K")
+  expect(seen).toEqual(["https://api.mouser.com/api/v1/search/partnumber?apiKey=a%26b%3Dc%20d"])
+})
+
 test("mouserClient throws naming supplier, HTTP status and the service message on a non-2xx response", async () => {
   const client = mouserClient(CREDENTIALS, errorFetch(429, "Too Many Requests"), TODAY)
   await expect(client.lookup("MFR-25FBF52-100K")).rejects.toThrow(/Mouser search\/partnumber.*HTTP 429.*Too Many Requests/s)

@@ -5,43 +5,9 @@ import path from "node:path"
 import { runCli } from "../../tools/cli/parts.ts"
 import type { FetchLike } from "../../tools/suppliers/types.ts"
 import { isRecord } from "../../tools/perfboard/guards.ts"
-
-const FIXTURES_DIR = path.join(import.meta.dir, "../fixtures/suppliers")
-const PARTNUMBER_FIXTURE = fs.readFileSync(path.join(FIXTURES_DIR, "mouser-partnumber-mfr-25fbf52-100k.json"), "utf8")
-const KEYWORD_FIXTURE = fs.readFileSync(path.join(FIXTURES_DIR, "mouser-keyword-10uf-35v-radial.json"), "utf8")
-
-const HOME = "/home/fixture"
-const MOUSER_CREDENTIALS_PATH = path.join(HOME, ".config", "mouser", "mouser-credentials.txt")
-const TODAY = () => "2026-10-02"
-
-function readFileFrom(files: Record<string, string>): (filePath: string) => string {
-  return (filePath: string) => {
-    const text = files[filePath]
-    if (text === undefined) throw new Error(`ENOENT: no such file or directory, open '${filePath}'`)
-    return text
-  }
-}
-
-function fakeFetch(bodies: Record<string, string>): FetchLike {
-  return async (url) => {
-    for (const [needle, body] of Object.entries(bodies)) {
-      if (url.includes(needle)) return { status: 200, text: async () => body }
-    }
-    throw new Error(`fakeFetch: no fixture registered for ${url}`)
-  }
-}
-
-function neverFetch(): FetchLike {
-  return async (url) => {
-    throw new Error(`fetch must not be called; was called for ${url}`)
-  }
-}
-
-function neverWrite(): (filePath: string, contents: string) => void {
-  return (filePath: string) => {
-    throw new Error(`writeFile must not be called; was called for ${filePath}`)
-  }
-}
+import {
+  MOUSER_CREDENTIALS_PATH, baseOpts, collect, fakeFetch, neverFetch, neverWrite, readFileFrom,
+} from "./parts-test-helpers.ts"
 
 /** A keyword-search fake whose result size echoes the request's own `records` field, so a
  * test can tell the CLI's default limit from an explicit `--limit` apart - the recorded
@@ -69,23 +35,6 @@ function limitAwareKeywordFetch(): FetchLike {
   }
 }
 
-function baseOpts(overrides: Record<string, unknown> = {}) {
-  return {
-    home: HOME,
-    readFile: readFileFrom({ [MOUSER_CREDENTIALS_PATH]: "test-api-key\n" }),
-    writeFile: neverWrite(),
-    fetch: fakeFetch({ "search/partnumber": PARTNUMBER_FIXTURE, "search/keyword": KEYWORD_FIXTURE }),
-    today: TODAY,
-    ...overrides,
-  }
-}
-
-function collect() {
-  const logs: string[] = []
-  const errors: string[] = []
-  return { logs, errors, log: (line: string) => logs.push(line), error: (line: string) => errors.push(line) }
-}
-
 test("--help exits 0 and lists every verb", async () => {
   const out = collect()
   const code = await runCli(["--help"], { log: out.log })
@@ -111,6 +60,7 @@ test("lookup prints the Yageo part's fields as readable text", async () => {
   expect(text).toContain("url: https://www.mouser.com")
   expect(text).toContain("datasheet: https://www.mouser.com/datasheet")
   expect(text).toMatch(/1\+: \$0\.10/)
+  expect(text).toContain("  parameters:\n    Packaging: Bulk\n    Standard Pack Qty: 10000")
 })
 
 test("lookup --json prints the offers as JSON", async () => {
