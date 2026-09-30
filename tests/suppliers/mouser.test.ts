@@ -183,3 +183,76 @@ test("mouserClient parses a price with a thousands separator", async () => {
   expect(offers[0].breaks).toEqual([{ quantity: 1, unitPrice: 1234.56 }])
   expect(offers[0].stock).toBe(0)
 })
+
+test("mouserClient throws naming the part when AvailabilityInStock is null", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 1,
+      Parts: [
+        {
+          MouserPartNumber: "1-NULL-STOCK",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "NULL-STOCK-PART",
+          Description: "Test part",
+          ProductDetailUrl: "https://www.mouser.com/x",
+          DataSheetUrl: "",
+          AvailabilityInStock: null,
+          ProductAttributes: [],
+          PriceBreaks: [{ Quantity: 1, Price: "$1.00", Currency: "USD" }],
+        },
+      ],
+    },
+  })
+  const client = mouserClient(CREDENTIALS, fakeFetch({ "search/partnumber": body }), TODAY)
+  await expect(client.lookup("NULL-STOCK-PART")).rejects.toThrow(/1-NULL-STOCK.*AvailabilityInStock/s)
+})
+
+test("mouserClient throws naming the part when AvailabilityInStock is absent", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 1,
+      Parts: [
+        {
+          MouserPartNumber: "1-MISSING-STOCK",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "MISSING-STOCK-PART",
+          Description: "Test part",
+          ProductDetailUrl: "https://www.mouser.com/x",
+          DataSheetUrl: "",
+          ProductAttributes: [],
+          PriceBreaks: [{ Quantity: 1, Price: "$1.00", Currency: "USD" }],
+        },
+      ],
+    },
+  })
+  const client = mouserClient(CREDENTIALS, fakeFetch({ "search/partnumber": body }), TODAY)
+  await expect(client.lookup("MISSING-STOCK-PART")).rejects.toThrow(/1-MISSING-STOCK.*AvailabilityInStock/s)
+})
+
+test("mouserClient throws naming the part and currency when a price break is not in USD", async () => {
+  const body = JSON.stringify({
+    Errors: [],
+    SearchResults: {
+      NumberOfResult: 1,
+      Parts: [
+        {
+          MouserPartNumber: "1-EURO-PART",
+          Manufacturer: "Acme",
+          ManufacturerPartNumber: "EURO-PART",
+          Description: "Test part",
+          ProductDetailUrl: "https://www.mouser.com/x",
+          DataSheetUrl: "",
+          AvailabilityInStock: "5",
+          ProductAttributes: [],
+          PriceBreaks: [{ Quantity: 1, Price: "€1.00", Currency: "EUR" }],
+        },
+      ],
+    },
+  })
+  const client = mouserClient(CREDENTIALS, fakeFetch({ "search/partnumber": body }), TODAY)
+  await expect(client.lookup("EURO-PART")).rejects.toThrow(
+    /1-EURO-PART.*"EUR".*not.*"USD".*Mouser account's currency setting/s,
+  )
+})

@@ -84,6 +84,12 @@ test("readDigikeyCredentials refuses a file with only one non-blank line", () =>
   )
 })
 
+test("readDigikeyCredentials refuses an empty file", () => {
+  expect(() => readDigikeyCredentials(readFileFrom({ [DIGIKEY_PATH]: "\n" }), HOME)).toThrow(
+    /expected two lines.*found 0 non-blank line/s,
+  )
+})
+
 test("readDigikeyCredentials refuses a file with three non-blank lines", () => {
   expect(() =>
     readDigikeyCredentials(readFileFrom({ [DIGIKEY_PATH]: "a\nb\nc\n" }), HOME),

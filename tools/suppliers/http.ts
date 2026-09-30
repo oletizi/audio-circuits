@@ -25,10 +25,12 @@ export async function postJson(
     throw new Error(`${supplier} ${endpointPath} request failed (HTTP ${response.status}): ${message}`)
   }
 
+  let json: unknown
   try {
-    return JSON.parse(text) as unknown
+    json = JSON.parse(text)
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
     throw new Error(`${supplier} ${endpointPath}: response body was not valid JSON: ${detail}`)
   }
+  return json
 }

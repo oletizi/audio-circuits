@@ -92,11 +92,18 @@ function parseBreaksAndCurrency(
       `Mouser ${where}: PriceBreaks for ${sku} report more than one currency (${[...currencies].join(", ")}).`,
     )
   }
+  const currency = parsed[0].currency
+  if (currency !== "USD") {
+    throw new Error(
+      `Mouser ${where}: ${sku} is priced in "${currency}", not "USD". Check the Mouser account's ` +
+        "currency setting (this tool assumes a US-dollar, US-locale account).",
+    )
+  }
   const breaks = parsed
     .map(({ quantity, unitPrice }) => ({ quantity, unitPrice }))
     .slice()
     .sort((a, b) => a.quantity - b.quantity)
-  return { breaks, currency: parsed[0].currency }
+  return { breaks, currency }
 }
 
 function parseParameters(value: unknown, where: string): Record<string, string> {
@@ -129,10 +136,16 @@ function parsePart(value: unknown, index: number, endpoint: string, today: () =>
   const datasheetUrl =
     typeof datasheetValue === "string" && datasheetValue.trim() !== "" ? datasheetValue : undefined
 
-  const stockText = requireNonEmptyString(record["AvailabilityInStock"], "AvailabilityInStock", where)
-  const stock = Number(stockText)
+  const stockValue = record["AvailabilityInStock"]
+  if (typeof stockValue !== "string" || stockValue.trim() === "") {
+    throw new Error(
+      `Mouser ${where}: ${sku} has no usable "AvailabilityInStock" (got ${JSON.stringify(stockValue)}, ` +
+        "expected a numeric string, e.g. \"0\" for no stock).",
+    )
+  }
+  const stock = Number(stockValue)
   if (!Number.isFinite(stock)) {
-    throw new Error(`Mouser ${where}: AvailabilityInStock "${stockText}" is not a number.`)
+    throw new Error(`Mouser ${where}: ${sku}'s "AvailabilityInStock" ("${stockValue}") is not a number.`)
   }
 
   const { breaks, currency } = parseBreaksAndCurrency(record["PriceBreaks"], sku, where)
