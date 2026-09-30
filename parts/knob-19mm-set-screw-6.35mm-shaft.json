@@ -1,0 +1,35 @@
+{
+  "id": "knob-19mm-set-screw-6.35mm-shaft",
+  "kind": "accessory",
+  "description": "19mm diameter black plastic knob with a set screw, bored for a 6.35mm (0.25in) round solid potentiometer shaft - fits the RV16AF-10-15R1 panel pots' solid round metal shaft",
+  "manufacturer": "Eagle Plastic Devices",
+  "mpn": "450-AA193",
+  "specs": {},
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Eagle-Plastic-Devices/450-AA193?qs=LMMkZCEv%2Ff1%2FVCsEs14gHQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for 450-AA193 (Eagle Plastic Devices), description 'BLK 19mm 6.4 SHAFT SET SCREW', in stock 809 units."
+    }
+  ],
+  "why": "The DRIVE, CHARACTER and TRANSFORMER DRIVE panel pots (potentiometer-25k-linear-panel-pot, potentiometer-1k-linear-panel-pot) are Alpha RV16AF-10-15R1 parts with a genuinely solid (non-knurled, non-flatted) round metal shaft, 6.35mm diameter, confirmed from Taiwan Alpha's own catalog PDF (see those entries). A knob for that shaft needs a round bore and a set screw, not a push-on friction fit (push-on knobs need a knurled or D/split shaft, which this pot does not have). Eagle Plastic Devices' 450-AA193 is Mouser's stocked match for exactly that: a plain 19mm knob bored '6.4 SHAFT SET SCREW' (6.4mm rounds the pot's 6.35mm shaft), in good stock at a reasonable hobbyist price. The operator's sourcing notes prefer a specialty pedal-parts shop for knobs; a specialty shop (banzaimusic.com's 'Eagle 19mm' listing) was checked and confirms this Eagle 19mm knob family's standard shaft spec ('6,3mm round shaft, set screw') as sold to the pedal market, but it did not have a directly matching black/plain listing readable at a stable URL, so Mouser was used as the actual source per the sourcing notes' fallback rule.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Eagle-Plastic-Devices/450-AA193?qs=LMMkZCEv%2Ff1%2FVCsEs14gHQ%3D%3D",
+      "sku": "450-AA193",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 3.01 },
+        { "quantity": 50, "unitPrice": 2.31 },
+        { "quantity": 100, "unitPrice": 1.71 },
+        { "quantity": 500, "unitPrice": 1.31 },
+        { "quantity": 1000, "unitPrice": 1.28 },
+        { "quantity": 5000, "unitPrice": 1.27 }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}

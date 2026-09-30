@@ -322,3 +322,47 @@ the date.)
   the embedded text layer) or, for a dimension drawing where digits and
   labels get interleaved out of order in that text layer, by rendering
   the page to a PNG (`pdftoppm -png -r 600 ...`) and reading the image.
+- 2026-09-30: For a 16mm panel pot, "solid shaft" and "knurled shaft" are
+  genuinely different physical parts, not two names for the same thing -
+  confirmed from three independent manufacturer catalogs (Taiwan Alpha's
+  RV16AF "Metal Shaft Type" page draws separate K (knurled, 18-tooth),
+  F (flatted) and R/R1 (plain cylindrical) shafts; Piher's PC-16 datasheet
+  likewise lists separate metal/plastic "plain" (no code letter) and
+  knurled shaft-code families; TT Electronics' P160 ordering guide has an
+  explicit Shaft Type field with E=Slotted, F=Flatted, P=Plain, Q=Knurled
+  as four distinct options). A genuinely solid/plain round shaft takes a
+  set-screw knob with a round bore; a knurled or D/split shaft takes a
+  push-on or clamp knob keyed to that texture - the two knob families are
+  not interchangeable. Read the manufacturer's own shaft-type table rather
+  than assuming a "16mm potentiometer" is one standard shaft.
+- 2026-09-30: None of Alpha's RV16AF, Bourns's PDB18, or Piher's PC-16
+  families had one single in-stock-at-Mouser SKU combination that was
+  simultaneously: PCB-pin terminals, genuinely plain/solid (non-knurled)
+  round shaft, and available at BOTH a 1k and a 25k linear value (this
+  board's two panel-pot values) - Bourns PDB18's standard resistance table
+  has no 25k value at all (jumps 20k to 50k); Piher's PC16SV vertical
+  PCB-pin plain-shaft linear family stocks 25k but its only 1k SKU in that
+  configuration was a 600-unit factory-order break (0 on-hand); Alpha's
+  only in-stock PCB-pin plain-round-shaft (R1) SKU is a 100k right-angle
+  part, not 1k or 25k. Alpha's RV16AF-10-15R1-B family (solder-lug
+  terminals, R1 = plain round 6.35mm metal shaft, confirmed from Taiwan
+  Alpha's own catalog PDF, downloaded directly via
+  `taiwanalpha.com/downloads?target=products&id=94` - `taiwanalpha.com`'s
+  product-listing pages are JS-rendered and not readable via a plain
+  `curl`/static fetch, but the `WebFetch` tool's renderer found the
+  catalog-PDF download link, `/downloads?target=products&id=<id>`, which
+  itself is a direct, non-JS PDF fetch) was the one family that covered
+  both values in stock with a genuinely solid shaft, at the cost of
+  solder-lug rather than PCB-pin terminals - a reasonable trade for an
+  off-board panel pot, which is wired to its on-board header by hand
+  regardless of its own terminal style.
+- 2026-09-30: TT Electronics/BI Technologies' P160 series (16mm panel
+  potentiometer, "Model P160 Series" datasheet at
+  `ttelectronics.com/TTElectronics/media/ProductFiles/Datasheet/P160.pdf` -
+  readable directly, unlike Mouser's hosted copy of the same PDF) is
+  heavily stocked at Mouser across nearly every standard value in its
+  knurled-shaft ("Q") PC-pin style (P160KN-0QC15B<value>), but its plain-
+  shaft ("P") variants do not turn up in Mouser's stock at all under any
+  shaft-length/CCW-position code tried - useful as a knurled-shaft PC-pin
+  panel pot family if a knurled shaft (push-on knob) is acceptable, but
+  not a source for a genuinely solid/plain-shaft part.

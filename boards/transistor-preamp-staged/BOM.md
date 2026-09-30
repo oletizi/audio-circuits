@@ -32,14 +32,15 @@ Supply 24 V; every control (RV1-RV7) at START.
 
 | Designators | Needs | Qty | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| RV6 | 1K, linear, panel pot | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| RV5, RV7 | 25K, linear, panel pot | 2 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
+| RV6 | 1K, linear, panel pot | 1 | 2 | 1k ohm, linear-taper, 16mm-body panel-mount potentiometer, solid (smooth, non-knurled) round metal shaft, 6.35mm dia x 15mm long, solder-lug terminals | Taiwan Alpha Electronic Co., Ltd. RV16AF-10-15R1-B1K-3CLA | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Alpha-Taiwan/RV16AF-10-15R1-B1K-3CLA?qs=MLItCLRbWsyvhgRl7RoeRQ%3D%3D) (checked 2026-09-30) | 1.94 USD | 3.88 USD |
+| RV5, RV7 | 25K, linear, panel pot | 2 | 3 | 25k ohm, linear-taper, 16mm-body panel-mount potentiometer, solid (smooth, non-knurled) round metal shaft, 6.35mm dia x 15mm long, solder-lug terminals | Taiwan Alpha Electronic Co., Ltd. RV16AF-10-15R1-B25K-3CLA | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Alpha-Taiwan/RV16AF-10-15R1-B25K-3CLA?qs=u16ybLDytRZUC6Jgizzw%2Fg%3D%3D) (checked 2026-09-30) | 1.94 USD | 5.82 USD |
 
 ## Extras
 
 | Designators | Needs | Qty | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | point-to-point wiring on the stripboard and off-board wiring to the panel pots and headers | - | 1 | 2 | 22 AWG solid-core hookup wire, six 25ft spools (150ft total) in six colors (red, blue, yellow, green, black, white), one dispenser box | SparkFun PRT-11367 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/SparkFun/PRT-11367?qs=WyAARYrbSna84CyyeN3%252B8w%3D%3D) (checked 2026-09-30) | 25.33 USD | 50.66 USD |
+| knobs for the DRIVE, CHARACTER and TRANSFORMER DRIVE panel pots | - | 3 | 4 | 19mm diameter black plastic knob with a set screw, bored for a 6.35mm (0.25in) round solid potentiometer shaft - fits the RV16AF-10-15R1 panel pots' solid round metal shaft | Eagle Plastic Devices 450-AA193 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Eagle-Plastic-Devices/450-AA193?qs=LMMkZCEv%2Ff1%2FVCsEs14gHQ%3D%3D) (checked 2026-09-30) | 3.01 USD | 12.04 USD |
 | sockets so the transistors can be swapped | - | 3 | 4 | 3-position single-row machined-pin (screw-machine) IC/SIP socket strip, 2.54mm (0.1in) pitch, for socketing a TO-92 transistor | Samtec SS-103-T-2-N | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/SS-103-T-2-N?qs=rU5fayqh%252BE2l5SxhEUcmCQ%3D%3D) (checked 2026-09-30) | 0.76 USD | 3.04 USD |
 | the perfboard the circuit is built on | - | 1 | 2 | Single-sided stripboard (uncut copper strips on 2.54mm centers), 31 strips x 39 holes per strip, 100 x 80mm, FR4 | BusBoard Prototype Systems ST2 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/BusBoard-Prototype-Systems/ST2?qs=NGErKr1RxMAdSUqgGAVpyQ%3D%3D) (checked 2026-09-30) | 6.30 USD | 12.60 USD |
 
@@ -47,4 +48,4 @@ Supply 24 V; every control (RV1-RV7) at START.
 
 | Supplier | Currency | Total |
 | --- | --- | --- |
-| Mouser | USD | 83.48 |
+| Mouser | USD | 105.22 |
