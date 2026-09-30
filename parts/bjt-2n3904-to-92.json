@@ -8,7 +8,11 @@
     "volts": 40,
     "watts": 0.625,
     "package": "TO-92",
-    "pinout": ["emitter", "base", "collector"]
+    "pinout": [
+      "emitter",
+      "base",
+      "collector"
+    ]
   },
   "evidence": [
     {
@@ -46,15 +50,42 @@
       "sku": "637-2N3904",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 0.15 },
-        { "quantity": 10, "unitPrice": 0.101 },
-        { "quantity": 100, "unitPrice": 0.074 },
-        { "quantity": 500, "unitPrice": 0.057 },
-        { "quantity": 1000, "unitPrice": 0.045 },
-        { "quantity": 4000, "unitPrice": 0.038 },
-        { "quantity": 8000, "unitPrice": 0.025 },
-        { "quantity": 24000, "unitPrice": 0.024 },
-        { "quantity": 48000, "unitPrice": 0.023 }
+        {
+          "quantity": 1,
+          "unitPrice": 0.15
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.101
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.074
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.057
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.045
+        },
+        {
+          "quantity": 4000,
+          "unitPrice": 0.038
+        },
+        {
+          "quantity": 8000,
+          "unitPrice": 0.025
+        },
+        {
+          "quantity": 24000,
+          "unitPrice": 0.024
+        },
+        {
+          "quantity": 48000,
+          "unitPrice": 0.023
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

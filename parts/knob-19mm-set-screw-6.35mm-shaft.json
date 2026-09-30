@@ -21,12 +21,30 @@
       "sku": "450-AA193",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 3.01 },
-        { "quantity": 50, "unitPrice": 2.31 },
-        { "quantity": 100, "unitPrice": 1.71 },
-        { "quantity": 500, "unitPrice": 1.31 },
-        { "quantity": 1000, "unitPrice": 1.28 },
-        { "quantity": 5000, "unitPrice": 1.27 }
+        {
+          "quantity": 1,
+          "unitPrice": 3.01
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 2.31
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 1.71
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 1.31
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 1.28
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 1.27
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

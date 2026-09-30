@@ -7,8 +7,8 @@
   "specs": {
     "farads": 0.00047,
     "volts": 35,
-    "leadSpacingMm": 5.0,
-    "diameterMm": 10.0
+    "leadSpacingMm": 5,
+    "diameterMm": 10
   },
   "evidence": [
     {
@@ -46,9 +46,18 @@
       "sku": "667-ECA-1VM471",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 0.69 },
-        { "quantity": 10, "unitPrice": 0.433 },
-        { "quantity": 100, "unitPrice": 0.295 }
+        {
+          "quantity": 1,
+          "unitPrice": 0.69
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.433
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.295
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

@@ -21,7 +21,10 @@
       "sku": "474-PRT-11367",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 25.33 }
+        {
+          "quantity": 1,
+          "unitPrice": 25.33
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

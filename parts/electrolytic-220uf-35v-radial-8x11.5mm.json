@@ -8,7 +8,7 @@
     "farads": 0.00022,
     "volts": 35,
     "leadSpacingMm": 3.5,
-    "diameterMm": 8.0
+    "diameterMm": 8
   },
   "evidence": [
     {
@@ -46,9 +46,18 @@
       "sku": "667-ECA-1VM221",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 0.45 },
-        { "quantity": 10, "unitPrice": 0.204 },
-        { "quantity": 100, "unitPrice": 0.161 }
+        {
+          "quantity": 1,
+          "unitPrice": 0.45
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.204
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.161
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

@@ -7,8 +7,8 @@
   "specs": {
     "farads": 0.000022,
     "volts": 35,
-    "leadSpacingMm": 2.0,
-    "diameterMm": 5.0
+    "leadSpacingMm": 2,
+    "diameterMm": 5
   },
   "evidence": [
     {
@@ -46,14 +46,38 @@
       "sku": "647-UPJ1V220MDD",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 0.31 },
-        { "quantity": 10, "unitPrice": 0.179 },
-        { "quantity": 100, "unitPrice": 0.108 },
-        { "quantity": 500, "unitPrice": 0.087 },
-        { "quantity": 1000, "unitPrice": 0.073 },
-        { "quantity": 2500, "unitPrice": 0.072 },
-        { "quantity": 6000, "unitPrice": 0.064 },
-        { "quantity": 12000, "unitPrice": 0.06 }
+        {
+          "quantity": 1,
+          "unitPrice": 0.31
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.179
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.108
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.087
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.073
+        },
+        {
+          "quantity": 2500,
+          "unitPrice": 0.072
+        },
+        {
+          "quantity": 6000,
+          "unitPrice": 0.064
+        },
+        {
+          "quantity": 12000,
+          "unitPrice": 0.06
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

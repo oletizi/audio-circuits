@@ -40,15 +40,42 @@
       "sku": "313-2000F-1K",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 1.94 },
-        { "quantity": 25, "unitPrice": 1.6 },
-        { "quantity": 50, "unitPrice": 1.47 },
-        { "quantity": 100, "unitPrice": 1.33 },
-        { "quantity": 500, "unitPrice": 1.23 },
-        { "quantity": 1000, "unitPrice": 1.03 },
-        { "quantity": 3000, "unitPrice": 1.02 },
-        { "quantity": 5000, "unitPrice": 0.94 },
-        { "quantity": 10000, "unitPrice": 0.83 }
+        {
+          "quantity": 1,
+          "unitPrice": 1.94
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 1.6
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 1.47
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 1.33
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 1.23
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 1.03
+        },
+        {
+          "quantity": 3000,
+          "unitPrice": 1.02
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.94
+        },
+        {
+          "quantity": 10000,
+          "unitPrice": 0.83
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

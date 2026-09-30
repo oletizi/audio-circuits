@@ -28,8 +28,14 @@
       "sku": "854-ST2",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 6.30 },
-        { "quantity": 10, "unitPrice": 5.99 }
+        {
+          "quantity": 1,
+          "unitPrice": 6.3
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 5.99
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

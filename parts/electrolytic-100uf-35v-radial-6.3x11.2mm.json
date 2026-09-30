@@ -46,12 +46,30 @@
       "sku": "667-ECA-1VM101I",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 0.33 },
-        { "quantity": 10, "unitPrice": 0.147 },
-        { "quantity": 100, "unitPrice": 0.13 },
-        { "quantity": 500, "unitPrice": 0.099 },
-        { "quantity": 1000, "unitPrice": 0.09 },
-        { "quantity": 2000, "unitPrice": 0.089 }
+        {
+          "quantity": 1,
+          "unitPrice": 0.33
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.147
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.13
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.099
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.09
+        },
+        {
+          "quantity": 2000,
+          "unitPrice": 0.089
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

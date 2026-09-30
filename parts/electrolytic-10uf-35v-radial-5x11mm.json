@@ -7,8 +7,8 @@
   "specs": {
     "farads": 0.00001,
     "volts": 35,
-    "leadSpacingMm": 2.0,
-    "diameterMm": 5.0
+    "leadSpacingMm": 2,
+    "diameterMm": 5
   },
   "evidence": [
     {
@@ -46,9 +46,18 @@
       "sku": "667-ECA-1VM100",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 0.30 },
-        { "quantity": 10, "unitPrice": 0.175 },
-        { "quantity": 100, "unitPrice": 0.106 }
+        {
+          "quantity": 1,
+          "unitPrice": 0.3
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.175
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.106
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

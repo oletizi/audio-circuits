@@ -34,14 +34,38 @@
       "sku": "200-SS103T2N",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 0.76 },
-        { "quantity": 50, "unitPrice": 0.755 },
-        { "quantity": 100, "unitPrice": 0.717 },
-        { "quantity": 500, "unitPrice": 0.468 },
-        { "quantity": 1000, "unitPrice": 0.37 },
-        { "quantity": 2000, "unitPrice": 0.339 },
-        { "quantity": 5000, "unitPrice": 0.274 },
-        { "quantity": 10000, "unitPrice": 0.209 }
+        {
+          "quantity": 1,
+          "unitPrice": 0.76
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.755
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.717
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.468
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.37
+        },
+        {
+          "quantity": 2000,
+          "unitPrice": 0.339
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.274
+        },
+        {
+          "quantity": 10000,
+          "unitPrice": 0.209
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

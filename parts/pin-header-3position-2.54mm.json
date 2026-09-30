@@ -34,13 +34,34 @@
       "sku": "200-TSW10307GS",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 0.29 },
-        { "quantity": 250, "unitPrice": 0.271 },
-        { "quantity": 500, "unitPrice": 0.25 },
-        { "quantity": 1000, "unitPrice": 0.239 },
-        { "quantity": 2500, "unitPrice": 0.206 },
-        { "quantity": 5000, "unitPrice": 0.187 },
-        { "quantity": 10000, "unitPrice": 0.145 }
+        {
+          "quantity": 1,
+          "unitPrice": 0.29
+        },
+        {
+          "quantity": 250,
+          "unitPrice": 0.271
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.25
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.239
+        },
+        {
+          "quantity": 2500,
+          "unitPrice": 0.206
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.187
+        },
+        {
+          "quantity": 10000,
+          "unitPrice": 0.145
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"
