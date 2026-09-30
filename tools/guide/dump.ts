@@ -30,6 +30,7 @@
  * placed (a floating part prints none), so their absence only refuses when
  * some part actually needs one.
  */
+import { dumpLineFields } from "../perfboard/dump-lines.ts"
 
 /** The board's size in holes, from its one `GRID <rows> <cols>` line. */
 export interface Grid {
@@ -101,22 +102,6 @@ export interface BoardDump {
   readonly bridges: readonly Bridge[]
 }
 
-/**
- * Every line in `dump` starting with `keyword`, split into whitespace-
- * separated fields (`fields[0]` is the keyword itself).
- *
- * Shared with `tools/perfboard/cut-state.ts`, which reads `NODE`/
- * `CUT_STATE`/`CUT_CONFLICT` lines out of this same grammar for a different
- * purpose (an unresolved-cuts explanation): one tokenizer for one grammar,
- * rather than two that could drift apart.
- */
-export function dumpLineFields(dump: string, keyword: string): string[][] {
-  return dump
-    .split("\n")
-    .map((line) => line.trim().split(/\s+/))
-    .filter((fields) => fields[0] === keyword)
-}
-
 function onlyLine(dump: string, keyword: string): string[] | undefined {
   return dumpLineFields(dump, keyword)[0]
 }
@@ -145,11 +130,25 @@ function parseNodedHole(field: string | undefined, context: string): NodedHole {
   return { row: Number(rowStr), col: Number(colStr), nodeId }
 }
 
+/** The fix for a dump that lacks what the pinned fork always prints. */
+export const REBUILD_PINNED_FORK =
+  "rebuild the pinned veroroute fork (`make veroroute` in the board's directory) and run this again"
+
 function noPinnedForkFix(lineKind: string, consequence: string): string {
   return (
     `--dump-board produced no ${lineKind} line, so ${consequence}. This dump is from an ` +
-    "unpinned or older veroroute fork; rebuild the pinned one " +
-    '(`bun run perfboard veroroute`) and re-run --dump-board.'
+    `unpinned or older veroroute fork; ${REBUILD_PINNED_FORK}.`
+  )
+}
+
+/**
+ * The refusal for a placed part with no PIN lines: its leads' holes are
+ * unknown. One wording for every step that needs a part's leads.
+ */
+export function noPinLinesMessage(part: Part): string {
+  return (
+    `part ${part.ref} (${part.type}) is placed but the dump has no PIN lines for it, so where its leads go ` +
+    `is unknown. The dump came from an unpinned or older veroroute fork; ${REBUILD_PINNED_FORK}.`
   )
 }
 
@@ -353,4 +352,9 @@ export function holeName(row: number, col: number): string {
     n = Math.floor((n - 1) / ROW_LETTERS)
   }
   return `${letters}${col + 1}`
+}
+
+/** A row's letters alone: row 0 is `A`, 26 is `AA` (see `holeName`). */
+export function rowName(row: number): string {
+  return holeName(row, 0).slice(0, -1)
 }

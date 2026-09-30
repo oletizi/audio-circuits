@@ -17,7 +17,7 @@
  * here, and the cuts verb explains it rather than printing raw conflict lines.
  */
 import type { CheckRun } from "./check.ts"
-import { dumpLineFields } from "../guide/dump.ts"
+import { dumpLineFields } from "./dump-lines.ts"
 
 interface Hole {
   readonly position: string

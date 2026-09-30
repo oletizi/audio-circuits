@@ -1,4 +1,4 @@
-import type { BoardDump, Part, Pin } from "./dump.ts"
+import { noPinLinesMessage, type BoardDump, type Part, type Pin } from "./dump.ts"
 import { bodyFor, type Body, type PlacedPin } from "./part-shapes.ts"
 import { TAG_CLEARANCE, everything, leastCovered, type Occupied } from "./placement.ts"
 import {
@@ -42,11 +42,7 @@ const PIN_DOT_RADIUS = 2.4
 function pinsOf(dump: BoardDump, part: Part): readonly Pin[] {
   const pins = dump.pins[part.ref]
   if (pins === undefined || pins.length === 0) {
-    throw new Error(
-      `part ${part.ref} (${part.type}) is placed but the dump has no PIN lines for it, so its leads cannot be drawn. ` +
-        "The dump came from an unpinned or older veroroute fork; rebuild the fork at the pinned commit " +
-        "(`bun run perfboard veroroute`) and re-run --dump-board.",
-    )
+    throw new Error(noPinLinesMessage(part))
   }
   return pins
 }

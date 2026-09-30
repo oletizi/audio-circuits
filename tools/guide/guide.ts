@@ -11,6 +11,7 @@
  */
 import type { ChecklistSection } from "./checklist.ts"
 import type { PowerUpChecks } from "./power-up.ts"
+import { escapeXml } from "./svg.ts"
 
 export interface GuideImages {
   readonly designators: string
@@ -58,43 +59,39 @@ td.blank { width: 1.3in; }
 @media print { body { padding: 0; max-width: none; } }
 `
 
-function escape(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-}
-
 const CHECKBOX = '<td class="tick"><span class="box" aria-label="to do"></span></td>'
 
 function header(input: GuideInput): string {
   return [
-    `<h1>${escape(input.boardName)} - build guide</h1>`,
+    `<h1>${escapeXml(input.boardName)} - build guide</h1>`,
     '<dl class="meta">',
-    `<dt>Generated</dt><dd>${escape(input.generated)}</dd>`,
-    `<dt>Layout</dt><dd>${escape(input.layoutPath)}</dd>`,
-    `<dt>Schematic</dt><dd>${escape(input.schematicPath)}</dd>`,
+    `<dt>Generated</dt><dd>${escapeXml(input.generated)}</dd>`,
+    `<dt>Layout</dt><dd>${escapeXml(input.layoutPath)}</dd>`,
+    `<dt>Schematic</dt><dd>${escapeXml(input.schematicPath)}</dd>`,
     "</dl>",
   ].join("\n")
 }
 
 function image(title: string, svg: string, pageBreak: boolean): string {
   const cls = pageBreak ? "layout page" : "layout"
-  return `<figure class="${cls}"><figcaption>${escape(title)}</figcaption>\n${svg.trim()}\n</figure>`
+  return `<figure class="${cls}"><figcaption>${escapeXml(title)}</figcaption>\n${svg.trim()}\n</figure>`
 }
 
 /** A table whose header row repeats on every printed page it spans. */
 function tableWithHead(columns: readonly string[], bodyRows: readonly string[]): string {
-  const head = `<thead><tr><th></th>${columns.map((column) => `<th>${escape(column)}</th>`).join("")}</tr></thead>`
+  const head = `<thead><tr><th></th>${columns.map((column) => `<th>${escapeXml(column)}</th>`).join("")}</tr></thead>`
   return ["<table>", head, "<tbody>", ...bodyRows, "</tbody>", "</table>"].join("\n")
 }
 
 function table(columns: readonly string[], rows: readonly (readonly string[])[], cls: string): string {
   return tableWithHead(
     columns,
-    rows.map((row) => `<tr class="${cls}">${CHECKBOX}${row.map((cell) => `<td>${escape(cell)}</td>`).join("")}</tr>`),
+    rows.map((row) => `<tr class="${cls}">${CHECKBOX}${row.map((cell) => `<td>${escapeXml(cell)}</td>`).join("")}</tr>`),
   )
 }
 
 function checklistSection(section: ChecklistSection, index: number): string {
-  const heading = `<h3>${index + 1}. ${escape(section.title)}</h3>`
+  const heading = `<h3>${index + 1}. ${escapeXml(section.title)}</h3>`
   if (section.rows.length === 0) {
     return `${heading}\n<p class="none">None on this board.</p>`
   }
@@ -111,12 +108,12 @@ function powerUp(powerUpChecks: PowerUpChecks | undefined): string {
   }
   const rows = powerUpChecks.checks.map(
     (check) =>
-      `<tr class="power-up">${CHECKBOX}<td>${escape(check.label)}</td><td>${escape(check.node)}</td>` +
+      `<tr class="power-up">${CHECKBOX}<td>${escapeXml(check.label)}</td><td>${escapeXml(check.node)}</td>` +
       `<td>${check.expectedVolts.toFixed(2)} V</td><td class="blank"></td></tr>`,
   )
   return [
     heading,
-    `<p class="conditions">${escape(powerUpChecks.conditions)}</p>`,
+    `<p class="conditions">${escapeXml(powerUpChecks.conditions)}</p>`,
     "<p>Power the board, then measure each node to ground with a DC voltmeter.</p>",
     tableWithHead(["Check", "Node", "Expected", "Measured"], rows),
   ].join("\n")
@@ -128,7 +125,7 @@ export function buildGuideHtml(input: GuideInput): string {
     '<html lang="en">',
     "<head>",
     '<meta charset="utf-8">',
-    `<title>${escape(input.boardName)} build guide</title>`,
+    `<title>${escapeXml(input.boardName)} build guide</title>`,
     `<style>${STYLE}</style>`,
     "</head>",
     "<body>",

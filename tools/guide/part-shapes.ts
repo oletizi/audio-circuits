@@ -1,4 +1,4 @@
-import type { Part, Pin } from "./dump.ts"
+import { REBUILD_PINNED_FORK, type Part, type Pin } from "./dump.ts"
 import { INK, PAPER, PITCH, boxAround, circle, fmt, polygon, type Box, type Point } from "./svg.ts"
 
 /**
@@ -9,6 +9,20 @@ import { INK, PAPER, PITCH, boxAround, circle, fmt, polygon, type Box, type Poin
  */
 
 const PIN1_MARK = 7
+
+/** An electrolytic's VeroRoute type: CAP_ELECTRO_<diameter in mils>. */
+const ELECTROLYTIC_TYPE = /^CAP_ELECTRO_(\d+)$/
+
+/**
+ * The electrolytic polarity rule, in one place for the images and the
+ * checklist: a CAP_ELECTRO_<n> part's pin 1 is its + lead.
+ */
+export const ELECTROLYTIC_PLUS_PIN = "1"
+const ELECTROLYTIC_MINUS_PIN = "2"
+
+export function isElectrolytic(type: string): boolean {
+  return ELECTROLYTIC_TYPE.test(type)
+}
 
 export interface PlacedPin {
   readonly pin: Pin
@@ -65,8 +79,7 @@ function unit(from: Point, to: Point, part: Part): Point {
   if (len === 0) {
     throw new Error(
       `part ${part.ref} (${part.type}) has two pins on the same hole, so the dump's PIN lines are inconsistent. ` +
-        "Re-run --dump-board with the pinned veroroute fork (`bun run perfboard veroroute`); if it persists, " +
-        "the fork's PIN reporting has a bug to fix there.",
+        `First ${REBUILD_PINNED_FORK}; if it persists, the fork's PIN reporting has a bug to fix there.`,
     )
   }
   return { x: (to.x - from.x) / len, y: (to.y - from.y) / len }
@@ -137,9 +150,9 @@ function resistorBody(part: Part, pins: readonly PlacedPin[]): Body {
  */
 function electrolyticBody(part: Part, pins: readonly PlacedPin[], diameterMils: number): Body {
   expectPinCount(part, pins, 2)
-  const p1 = pinNamed(part, pins, "1").at
-  const p2 = pinNamed(part, pins, "2").at
-  const c = centroid([p1, p2])
+  const plus = pinNamed(part, pins, ELECTROLYTIC_PLUS_PIN).at
+  const minus = pinNamed(part, pins, ELECTROLYTIC_MINUS_PIN).at
+  const c = centroid([plus, minus])
   const r = (diameterMils / 100) * (PITCH / 2)
   const inner = r * 0.72
   return {
@@ -148,7 +161,7 @@ function electrolyticBody(part: Part, pins: readonly PlacedPin[], diameterMils: 
     centre: c,
     labelArea: { minX: c.x - inner, maxX: c.x + inner, minY: c.y - inner, maxY: c.y + inner },
     marks: [],
-    polarity: { hole: p1, away: unit(c, p1, part) },
+    polarity: { hole: plus, away: unit(c, plus, part) },
   }
 }
 
@@ -211,7 +224,7 @@ export function bodyFor(part: Part, pins: readonly PlacedPin[]): Body {
   if (/^RESISTOR\d*$/.test(part.type)) {
     return resistorBody(part, pins)
   }
-  const electrolytic = /^CAP_ELECTRO_(\d+)$/.exec(part.type)
+  const electrolytic = ELECTROLYTIC_TYPE.exec(part.type)
   if (electrolytic !== null) {
     return electrolyticBody(part, pins, Number(electrolytic[1]))
   }
