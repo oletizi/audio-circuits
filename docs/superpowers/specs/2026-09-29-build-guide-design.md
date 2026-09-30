@@ -37,6 +37,7 @@ Made with the operator; each binds the design and the implementation plan.
 | One command per board produces the whole packet | Operator | The request |
 | The fork change is data only: `--dump-board` reports pin positions and the grid size; no drawing in the fork | Recommended, not contested | Our renderer needs to know where every lead lands; all drawing stays in this repository |
 | The checklist follows the operator's order of operations: ICs and transistors, resistors (with trim-pots), capacitors, wire links, wire-to-board junctions, solder bridges, cuts last | Operator (placement of wire links, solder bridges and trim-pots by the designer; see Open questions) | That is how the operator builds; one checklist read top to bottom |
+| An electrolytic's + is drawn beside its pin-1 hole, not on its body | Designer, during implementation | On a stretched part the body sits between the holes; a + beside the hole marks which lead is positive unambiguously |
 | Borrow VeroDesigner's bench-friendly conventions, reimplemented here: lettered rows and numbered columns, values on part bodies, off-board connections labelled at the strip ends, a summary line, a legend | Operator, on review of VeroDesigner (github.com/blazethablunt/VeroDesigner) | Its layouts read well on the bench. It has no licence, so no code is copied; the ideas are re-drawn in our renderer, in black and white |
 
 ## What one command produces
@@ -108,7 +109,7 @@ pitch, scaled for print).
   with a line from the body to each pin's hole:
   - axial resistor: a rectangle between its pins;
   - electrolytic: a circle of its type's diameter (`CAP_ELECTRO_300` is
-    300 mil), marked + on pin 1;
+    300 mil), with a + beside its pin-1 hole;
   - TO-92: a half-circle with pin 1 marked;
   - trim-pot, header, test point, jumper: a box around the pins, pin 1 marked.
 
