@@ -27,19 +27,35 @@ instructions exactly, whichever session calls you.
 1. **Reuse first.** If an existing `parts/<id>.json` entry meets the line
    (check it the way `tools/bom/fit.ts` does, field by field), choose it and
    skip to step 6.
-2. **Search** the operator's suppliers per the sourcing notes: a `standard`
-   source (Mouser or Digi-Key) for anything with a real part number, plus
-   `bulk`, `specialty` or `prototype-fast` sources where they apply and are
-   allowed for this kind of part. Prefer a reasonable price at the
-   quantities a hobbyist buys.
-3. **Confirm every spec from a page you actually fetched** - the
-   manufacturer's datasheet, or the supplier's product page. Never from
-   memory, never from what that kind of part "usually" is. Record each in
-   `evidence` as `{ spec, url, note }`, where `note` says what the page
-   states (e.g. "dimension table: 6.3 mm dia, 2.5 mm lead spacing at
-   10 uF / 35 V"). The manufacturer part number needs evidence too. A spec
-   you cannot confirm is left OUT of `specs` and reported; it is never
-   guessed. If the missing spec is one the line needs, the line stays
+2. **Search** through the repository's `parts` tool, never by fetching
+   distributor web pages (they block automated fetches):
+   - `bun run parts search <keywords...> --supplier mouser [--limit n]` for
+     candidates (e.g. `bun run parts search 10uF 35V radial --supplier mouser`);
+   - `bun run parts lookup <mpn> --supplier mouser` for one exact part:
+     supplier part number, stock, every price break, product and datasheet
+     links, and the supplier's listed parameters. `--json` gives the same as
+     a flat array of offers.
+   The Digi-Key client is not built until the operator registers
+   (`docs/superpowers/plans/2026-09-30-supplier-search.md`, Task 2); until
+   then use `--supplier mouser` and note in your report that the Digi-Key
+   source is missing. Add `bulk`, `specialty` or `prototype-fast` sources by
+   hand only where the sourcing notes allow them for this kind of part and
+   you can read the listing. Prefer a reasonable price at the quantities a
+   hobbyist buys.
+3. **Confirm every spec from something you actually read** - the supplier
+   data from the `parts` tool, or the manufacturer's datasheet (fetch the
+   PDF directly; manufacturer sites are not blocked). Never from memory,
+   never from what that kind of part "usually" is. Record each in `evidence`
+   as `{ spec, url, note }`:
+   - from the tool: `url` is the product URL, `note` names the service and
+     date and what it states, e.g. "Mouser Search API, 2026-09-30:
+     Tolerance 1%, Power Rating 250 mW";
+   - from a datasheet: `url` is the PDF, `note` says what the page states,
+     e.g. "dimension table: 6.3 mm dia, 2.5 mm lead spacing at 10 uF / 35 V".
+   Body size and lead spacing come from the datasheet unless the supplier's
+   parameters state them. The manufacturer part number needs evidence too.
+   A spec you cannot confirm is left OUT of `specs` and reported; it is
+   never guessed. If the missing spec is one the line needs, the line stays
    unmet - say so rather than choosing the part.
 4. **Match the footprint** exactly: lead spacing, body size, package, and
    for TO-92 the pin order (the footprint here is emitter, base, collector;
@@ -50,10 +66,13 @@ instructions exactly, whichever session calls you.
    `electrolytic-10uf-35v-radial-5x11-2mm`); `kind`; `description`;
    `manufacturer`, `mpn`; `specs`; `evidence`; `why` (why this part over the
    alternatives you saw); `stock` (true for cheap commodity parts per the
-   notes); `sources`, each with supplier, URL, the supplier's part number,
-   currency, EVERY price break the supplier lists (ascending, with
-   `pack: true` on stocking packs), `checked` as today's date (YYYY-MM-DD),
-   and `use`.
+   notes); `sources`. For a Mouser source, generate it with
+   `bun run parts source <mpn> --supplier mouser --use <use>` and paste the
+   printed object - never retype prices. Then mark `pack: true` on any break
+   that is a stocking pack (a bag, not a cut quantity) if the listing says
+   so. A hand-added source needs supplier, URL, the supplier's part number,
+   currency, EVERY price break listed (ascending), `checked` as today's date
+   (YYYY-MM-DD), and `use`.
 6. **Record the choice** in `boards/<board>/bom.json` under `lines`
    (line key -> catalog id), or under `extras` for parts the circuit does
    not know about (with a quantity and a reason).
@@ -77,6 +96,8 @@ instructions exactly, whichever session calls you.
   attribution of any kind in anything you commit (no Co-Authored-By, no
   session links, no generated-with footer).
 - Do not dispatch other agents.
+- Never read, print or copy the supplier key files under `~/.config/`; the
+  `parts` tool reads them itself.
 
 ## Report
 

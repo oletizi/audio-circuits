@@ -47,8 +47,24 @@ and ceramic capacitors, headers, wire.
 ### Prices
 
 Record the date checked. Prices older than 45 days are reported as stale
-(tariffs make them move); re-check and update the date rather than keeping an
-old one.
+(tariffs make them move). Refresh Mouser (and, once built, Digi-Key) prices
+with `bun run parts refresh [<catalog id>...]`: it re-reads each source by its
+supplier part number and rewrites only the price breaks and the date, and
+writes nothing unless every lookup succeeds.
+
+### The supplier tool and its keys
+
+`bun run parts lookup|search|source|refresh` reads Mouser through its official
+Search API (distributor web pages block automated fetches). Keys live outside
+the repository and are never printed or committed:
+
+- Mouser: `~/.config/mouser/mouser-credentials.txt` - one line, the Search API
+  key (from the API Hub in a Mouser account).
+- Digi-Key: `~/.config/digikey/digikey-credentials.txt` - two lines, client ID
+  then client secret (an application on developer.digikey.com). The Digi-Key
+  client itself is built once these exist (Task 2 of
+  `docs/superpowers/plans/2026-09-30-supplier-search.md`); until then Digi-Key
+  sources are added by hand, if at all.
 
 ## Matching a line
 
@@ -91,12 +107,9 @@ the date.)
   held across regional mirrors (mouser.co.uk, eu.mouser.com, digikey.ca) and
   with browser-like User-Agent/Accept-Language headers. Only the
   manufacturer's own datasheet PDF (fetched directly, e.g.
-  yageogroup.com's YAGEO-MFR_DATASHEET.pdf) was readable. Until this
-  clears, a resistor (or other standard/bulk-sourced) line cannot get a
-  valid catalog entry from here, since a source needs a distributor page
-  actually read for its SKU and price, and the mpn/price cannot be guessed;
-  finishing needs a session with a working browser against these sites, or a
-  reachable API/mirror.
+  yageogroup.com's YAGEO-MFR_DATASHEET.pdf) was readable. Resolved: use the
+  `parts` tool (`bun run parts lookup|search|source`), which reads Mouser
+  through its official Search API. Do not fetch distributor web pages.
 - 2026-09-30: For a 1/4 W, 1% axial metal-film resistor (0207 body,
   R_Axial_DIN0207 footprint), Yageo's MFR-25FBF52-<value> is a good
   one-family choice across values: the MFR-25 size is rated 1/4 W at 70 degC
@@ -106,7 +119,6 @@ the date.)
   "Ordering Information" and "Dimensions" tables. Value coding is standard
   RKM (e.g. 100R = 100 ohm, 10K = 10,000 ohm, 1M = 1,000,000 ohm), so the
   same family covers small ohm values through megohms without switching
-  parts. Distributor SKU, stock and price still need confirming per value
-  once a distributor site can actually be read (see the fetch-blocking
-  lesson above) - do not commit a catalog entry from the MPN-construction
-  rule alone.
+  parts. Confirm each value's SKU, stock and price with
+  `bun run parts lookup MFR-25FBF52-<value> --supplier mouser` - do not
+  commit a catalog entry from the MPN-construction rule alone.
