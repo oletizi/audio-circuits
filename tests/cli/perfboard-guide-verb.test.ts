@@ -45,6 +45,7 @@ test("guide writes the five-file packet into the board's guide/ directory", asyn
     expect(errors).toEqual([])
     expect(code).toBe(0)
     expect(fs.readdirSync(path.join(dir, "guide")).sort()).toEqual([...PACKET_FILES].sort())
+    expect(fs.readdirSync(dir).sort()).toEqual(["guide", "perfboard.json"])
     expect(fs.readdirSync(dir).filter((name) => name.startsWith(".guide-staging"))).toEqual([])
     expect(kicadCalls.at(-1)?.[0]).toBe("/fake/kicad-cli")
     expect(fs.readFileSync(path.join(dir, "guide", "guide.html"), "utf8")).toContain("boards/demo/demo.vrt")

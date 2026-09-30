@@ -25,7 +25,7 @@ import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { runnerFor, type VerbRun } from "../perfboard/verbs.ts"
 import type { Env } from "../perfboard/check.ts"
 import { buildChecklist } from "./checklist.ts"
-import { loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
+import { assertLayoutMatchesCircuit, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
 import { buildGuideHtml } from "./guide.ts"
 import { offBoardLabels } from "./off-board.ts"
 import { buildableDump } from "./preflight.ts"
@@ -82,7 +82,10 @@ export function defaultExportSchematicPdf(kicadCli: string, schPath: string, pdf
   if (result.status !== 0) {
     const detail = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim()
     throw new Error(
-      `kicad-cli exited ${String(result.status)} exporting ${schPath} to PDF${detail === "" ? "" : `: ${detail}`}`,
+      `kicad-cli exited ${String(result.status)} exporting ${schPath} to PDF` +
+        `${detail === "" ? "" : `: ${detail}`}\n` +
+        `Check that ${schPath} opens in KiCad's schematic editor, and that KICAD_CLI (${kicadCli}) ` +
+        "points at a working kicad-cli; no packet was written.",
     )
   }
 }
@@ -119,7 +122,8 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   }
   const dump = buildableDump(dumpBoard(declaration, deps), declaration.vrtPath)
   const circuit = await (deps.loadCircuit ?? loadBoardCircuit)(declaration)
-  const edgeLabels = offBoardLabels(dump, circuit)
+  assertLayoutMatchesCircuit(dump, circuit)
+  const edgeLabels = offBoardLabels(circuit)
   const checklist = buildChecklist(dump, circuit, edgeLabels)
 
   const name = boardName(declaration)

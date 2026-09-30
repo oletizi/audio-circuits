@@ -85,10 +85,34 @@ test("the packet writer writes all five files into the board's guide directory",
   expect(report).toContain("guide.html")
 })
 
-test("the packet replaces what was in the guide directory before", async () => {
-  const h = harness(DUMP_TEXT, { [`${GUIDE}/stale.svg`]: "old" })
+test("the packet replaces what was in the guide directory before, and nothing outside it", async () => {
+  const outside = {
+    [DECLARATION.file]: "{}",
+    [DECLARATION.vrtPath]: "layout",
+    "/repo/boards/test-board/guide-notes.txt": "the operator's own notes",
+  }
+  const h = harness(DUMP_TEXT, { [`${GUIDE}/stale.svg`]: "old", ...outside })
   await writeGuidePacket(DECLARATION, h.deps)
   expect(h.files.has(`${GUIDE}/stale.svg`)).toBe(false)
+  for (const [file, contents] of Object.entries(outside)) expect(h.files.get(file)).toBe(contents)
+})
+
+test("a layout in isolated-hole mode is refused, naming the stripboard verb", async () => {
+  const h = harness(DUMP_TEXT.replace("CUT_STATE COMPUTED", "CUT_STATE NOT_APPLICABLE"))
+  await expect(writeGuidePacket(DECLARATION, h.deps)).rejects.toThrow(/NOT_APPLICABLE[\s\S]*"stripboard" verb/)
+  expect(h.files.size).toBe(0)
+})
+
+test("a cut state this tool does not know is refused rather than guessed at", async () => {
+  const h = harness(DUMP_TEXT.replace("CUT_STATE COMPUTED", "CUT_STATE SOMETHING_NEW"))
+  await expect(writeGuidePacket(DECLARATION, h.deps)).rejects.toThrow(/CUT_STATE SOMETHING_NEW/)
+  expect(h.files.size).toBe(0)
+})
+
+test("a layout out of step with the circuit is refused before anything is written", async () => {
+  const h = harness(DUMP_TEXT.replace("PART R1 RESISTOR 10K AT 2,3 SPAN 1\n", "").replace(/PIN R1 .*\n/g, ""))
+  await expect(writeGuidePacket(DECLARATION, h.deps)).rejects.toThrow(/in the circuit but not on the board: R1/)
+  expect(h.files.size).toBe(0)
 })
 
 const UNRESOLVED_DUMP = [

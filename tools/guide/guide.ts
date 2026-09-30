@@ -37,6 +37,8 @@ body { font: 11pt/1.35 "Helvetica Neue", Arial, sans-serif; color: #000; backgro
 h1 { font-size: 18pt; margin: 0 0 4pt; }
 h2 { font-size: 14pt; margin: 18pt 0 6pt; border-bottom: 1.5pt solid #000; padding-bottom: 2pt; }
 h3 { font-size: 12pt; margin: 14pt 0 4pt; }
+h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+thead { display: table-header-group; }
 .meta { margin: 0; }
 .meta dt { font-weight: bold; float: left; clear: left; width: 1.1in; }
 .meta dd { margin: 0 0 2pt 1.1in; font-family: Menlo, Consolas, monospace; font-size: 9.5pt; }
@@ -77,12 +79,17 @@ function image(title: string, svg: string, pageBreak: boolean): string {
   return `<figure class="${cls}"><figcaption>${escape(title)}</figcaption>\n${svg.trim()}\n</figure>`
 }
 
+/** A table whose header row repeats on every printed page it spans. */
+function tableWithHead(columns: readonly string[], bodyRows: readonly string[]): string {
+  const head = `<thead><tr><th></th>${columns.map((column) => `<th>${escape(column)}</th>`).join("")}</tr></thead>`
+  return ["<table>", head, "<tbody>", ...bodyRows, "</tbody>", "</table>"].join("\n")
+}
+
 function table(columns: readonly string[], rows: readonly (readonly string[])[], cls: string): string {
-  const head = `<tr><th></th>${columns.map((column) => `<th>${escape(column)}</th>`).join("")}</tr>`
-  const body = rows.map(
-    (row) => `<tr class="${cls}">${CHECKBOX}${row.map((cell) => `<td>${escape(cell)}</td>`).join("")}</tr>`,
+  return tableWithHead(
+    columns,
+    rows.map((row) => `<tr class="${cls}">${CHECKBOX}${row.map((cell) => `<td>${escape(cell)}</td>`).join("")}</tr>`),
   )
-  return ["<table>", head, ...body, "</table>"].join("\n")
 }
 
 function checklistSection(section: ChecklistSection, index: number): string {
@@ -109,10 +116,7 @@ function powerUp(checks: readonly PowerUpCheck[] | undefined): string {
   return [
     heading,
     "<p>Power the board, then measure each node to ground with a DC voltmeter.</p>",
-    "<table>",
-    "<tr><th></th><th>Check</th><th>Node</th><th>Expected</th><th>Measured</th></tr>",
-    ...rows,
-    "</table>",
+    tableWithHead(["Check", "Node", "Expected", "Measured"], rows),
   ].join("\n")
 }
 

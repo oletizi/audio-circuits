@@ -16,9 +16,8 @@
  */
 import type { Component } from "../../lib/model/types.ts"
 import { pinNumberFor } from "../../lib/kicad/from-network.ts"
-import type { BoardDump } from "./dump.ts"
 import type { EdgeLabel } from "./render-edges.ts"
-import { isPanelPot, type BoardCircuit } from "./circuit.ts"
+import { componentAt, isPanelPot, type BoardCircuit } from "./circuit.ts"
 
 const POT_SUFFIX = "_pot"
 
@@ -59,19 +58,14 @@ export function offBoardRefs(circuit: BoardCircuit): readonly string[] {
     .sort()
 }
 
-export function offBoardLabels(dump: BoardDump, circuit: BoardCircuit): readonly EdgeLabel[] {
+/**
+ * The edge labels for every off-board pin. That each of these parts is on
+ * the board is `assertLayoutMatchesCircuit`'s job (circuit.ts), run first.
+ */
+export function offBoardLabels(circuit: BoardCircuit): readonly EdgeLabel[] {
   const portNames = portNamesByNet(circuit.ports)
   return offBoardRefs(circuit).flatMap((ref) => {
-    const component = circuit.byRef.get(ref)
-    if (component === undefined) {
-      throw new Error(`off-board part ${ref} vanished from the circuit index (internal error in off-board.ts)`)
-    }
-    if (!dump.parts.some((part) => part.ref === ref)) {
-      throw new Error(
-        `the circuit's off-board part ${ref} ("${component.id}") is not in the layout, so its ` +
-          "connections cannot be labelled. Run `make update` to bring the layout in step with the circuit.",
-      )
-    }
+    const component = componentAt(circuit, ref)
     const fn = isPanelPot(component) ? potFunction(component, ref) : undefined
     return connectedPins(component).map(([pin, netName]) => ({
       ref,

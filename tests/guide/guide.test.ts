@@ -4,14 +4,14 @@ import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { buildChecklist } from "../../tools/guide/checklist.ts"
 import { buildGuideHtml, type GuideInput } from "../../tools/guide/guide.ts"
 import { offBoardLabels } from "../../tools/guide/off-board.ts"
-import { declaredPowerUpChecks, type PowerUpCheck } from "../../tools/guide/power-up.ts"
+import type { PowerUpCheck } from "../../tools/guide/power-up.ts"
 import { COMPONENTS, DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
 
 const DUMP = parseBoardDump(DUMP_TEXT)
 
 function guideHtml(powerUpChecks: readonly PowerUpCheck[] | undefined = undefined): string {
   const circuit = fixtureCircuit(powerUpChecks)
-  const edges = offBoardLabels(DUMP, circuit)
+  const edges = offBoardLabels(circuit)
   const input: GuideInput = {
     boardName: "test-board",
     generated: "2026-09-29",
@@ -104,22 +104,25 @@ test("a part that fits no checklist step is refused, naming it", () => {
       : component,
   )
   const circuit = fixtureCircuit(undefined, withDiode)
-  expect(() => buildChecklist(DUMP, circuit, offBoardLabels(DUMP, circuit))).toThrow(/part Q1 .*kind diode/)
+  expect(() => buildChecklist(DUMP, circuit, offBoardLabels(circuit))).toThrow(/part Q1 .*kind diode/)
 })
 
 test("a cut on a node with no stored net name is refused rather than printed", () => {
   const dump = parseBoardDump(DUMP_TEXT.replace("NODE 2 NAME GND", "NODE 2 NAME -"))
   const circuit = fixtureCircuit()
-  expect(() => buildChecklist(dump, circuit, offBoardLabels(dump, circuit))).toThrow(/stores no net name/)
+  expect(() => buildChecklist(dump, circuit, offBoardLabels(circuit))).toThrow(/stores no net name/)
 })
 
-test("an off-board part missing from the layout is refused", () => {
-  const dump = parseBoardDump(DUMP_TEXT.replace("PART RV2 SIP3 25K AT 7,0 SPAN 1\n", ""))
-  expect(() => offBoardLabels(dump, fixtureCircuit())).toThrow(/off-board part RV2/)
+test("a transistor or pot whose pin has no PIN_NUMBERS name is refused, not printed bare", () => {
+  const circuit = { ...fixtureCircuit(), pinNumbers: { resistor: { a: "1", b: "2" } } }
+  expect(() => buildChecklist(DUMP, circuit, [])).toThrow(
+    /PIN_NUMBERS has no bjt entry naming pin 1/,
+  )
 })
 
-test("powerUpChecks: absent is none, a non-function export is refused", () => {
-  expect(declaredPowerUpChecks({}, "m.ts")).toBeUndefined()
-  expect(() => declaredPowerUpChecks({ powerUpChecks: 3 }, "m.ts")).toThrow(/not a function/)
-  expect(() => declaredPowerUpChecks({ powerUpChecks: () => [{ label: "x" }] }, "m.ts")).toThrow(/no node/)
+test("every table has a header row that repeats on each printed page, and headings keep with them", () => {
+  const html = guideHtml([{ label: "Q1 collector", node: "OUT", expectedVolts: 1 }])
+  expect(html.match(/<table>/g)?.length).toBe(html.match(/<thead>/g)?.length)
+  expect(html).toContain("thead { display: table-header-group; }")
+  expect(html).toContain("break-after: avoid")
 })

@@ -15,7 +15,7 @@ import type { Component } from "../../lib/model/types.ts"
 import { holeName, type BoardDump, type HolePosition, type NodedHole, type Part } from "./dump.ts"
 import { numberedBridges, numberedCuts } from "./numbering.ts"
 import type { EdgeLabel } from "./render-edges.ts"
-import { isPanelPot, type BoardCircuit } from "./circuit.ts"
+import { componentAt, isPanelPot, type BoardCircuit } from "./circuit.ts"
 
 /** One checklist step: a heading, its column headings, and one row per item to tick. */
 export interface ChecklistSection {
@@ -29,17 +29,6 @@ type PartGroup = "semiconductors" | "resistors" | "capacitors" | "junctions"
 const SEMICONDUCTOR_KINDS = new Set(["bjt", "opamp", "ic"])
 /** Kinds whose canonical pin names say which lead is which. */
 const NAMED_PIN_KINDS = new Set(["bjt", "potentiometer"])
-
-function componentFor(part: Part, circuit: BoardCircuit): Component {
-  const component = circuit.byRef.get(part.ref)
-  if (component === undefined) {
-    throw new Error(
-      `the layout has part ${part.ref} (${part.type} ${part.value}), which the circuit has no ` +
-        "component for. Run `make update` to bring the layout in step with the circuit.",
-    )
-  }
-  return component
-}
 
 function groupOf(part: Part, component: Component): PartGroup {
   if (SEMICONDUCTOR_KINDS.has(component.kind)) return "semiconductors"
@@ -79,8 +68,16 @@ function hole(position: HolePosition): string {
 
 function pinLabel(part: Part, component: Component, pin: string, circuit: BoardCircuit): string | undefined {
   if (NAMED_PIN_KINDS.has(component.kind)) {
-    const names = circuit.pinNumbers[component.kind] ?? {}
-    return Object.entries(names).find(([, number]) => number === pin)?.[0]
+    const names = circuit.pinNumbers[component.kind]
+    const name = names === undefined ? undefined : Object.entries(names).find(([, number]) => number === pin)?.[0]
+    if (name === undefined) {
+      throw new Error(
+        `part ${part.ref} ("${component.id}", kind ${component.kind}): the circuit's PIN_NUMBERS has no ` +
+          `${component.kind} entry naming pin ${pin}, so the checklist cannot say which lead goes in ` +
+          `${part.ref}'s pin ${pin} hole. Add it to PIN_NUMBERS["${component.kind}"].`,
+      )
+    }
+    return name
   }
   if (component.kind === "capacitor" && part.type.startsWith("CAP_ELECTRO")) {
     return pin === "1" ? "+" : "-"
@@ -127,6 +124,7 @@ function netName(dump: BoardDump, at: NodedHole): string {
 
 const PART_COLUMNS = ["Part", "Value", "Leads"]
 
+/** The whole checklist. The layout and circuit must already agree (`assertLayoutMatchesCircuit`). */
 export function buildChecklist(
   dump: BoardDump,
   circuit: BoardCircuit,
@@ -137,7 +135,7 @@ export function buildChecklist(
   }
   const parts = [...dump.parts].sort((a, b) => compareRefs(a.ref, b.ref))
   for (const part of parts) {
-    const component = componentFor(part, circuit)
+    const component = componentAt(circuit, part.ref)
     groups[groupOf(part, component)].push([part.ref, part.value, leads(dump, part, component, circuit, edges)])
   }
   const wires = dump.wires
