@@ -239,6 +239,18 @@ test("with vertical strips the copper view mirrors rows instead of columns, cuts
     expect(m.x).toBe(c.x)
     expect(m.y).toBeCloseTo(top + bottom - c.y, 6)
   }
+  // Column strips are marked: 1, 5, 9 of 12, on the physical strips they name in both views.
+  for (const svg of [component, copper]) {
+    expect(markedStrips(svg)).toEqual(["1", "5", "9"])
+    for (const el of elements(svg, "line", "strip marked-strip")) {
+      const hole = holeCentre(svg, `A${attr(el, "data-strip")}`)
+      expect([num(el, "x1"), num(el, "x2")]).toEqual([hole.x, hole.x])
+    }
+    expect(coordTexts(svg, "5").every(isBold)).toBe(true)
+    expect(coordTexts(svg, "6").some(isBold)).toBe(false)
+    expect(coordTexts(svg, "A").some(isBold)).toBe(false)
+    expect(svg).toContain("every 4th strip (columns 1, 5, 9 ...), for alignment")
+  }
 })
 
 test("an edge label's leader detours round another part's pin that stands between its hole and the edge", () => {
@@ -276,14 +288,49 @@ test("the electrolytic's + is marked beside its pin 1 hole, however far that lea
   expect(Math.hypot(num(mark, "x") - p1.x, num(mark, "y") - p1.y)).toBeLessThan(15)
 })
 
-test("no colour other than black, white and the strip grey appears", () => {
+test("no colour other than black, white and the two strip greys appears", () => {
   for (const svg of [COMPONENT, COPPER]) {
     const colours = new Set([...svg.matchAll(/(?:fill|stroke|color)="([^"]*)"/g)].map((m) => m[1]))
     for (const colour of colours) {
-      expect(["none", "#000000", "#ffffff", "#c8c8c8"]).toContain(colour)
+      expect(["none", "#000000", "#ffffff", "#c8c8c8", "#999999"]).toContain(colour)
     }
     expect(svg).not.toMatch(/style=|rgb\(/)
   }
+})
+
+function markedStrips(svg: string): string[] {
+  return elements(svg, "line", "strip marked-strip").map((el) => attr(el, "data-strip"))
+}
+
+function isBold(el: string): boolean {
+  return /font-weight="bold"/.test(el)
+}
+
+test("every fourth row strip, from A, is marked in the darker grey with its letter bold at both ends, on both views", () => {
+  for (const svg of [COMPONENT, COPPER]) {
+    expect(markedStrips(svg)).toEqual(["A", "E", "I"])
+    for (const el of elements(svg, "line", "strip marked-strip")) {
+      expect(attr(el, "stroke")).toBe("#999999")
+      // The marked line runs through the holes of the strip it names, mirrored or not.
+      const hole = holeCentre(svg, `${attr(el, "data-strip")}1`)
+      expect([num(el, "y1"), num(el, "y2")]).toEqual([hole.y, hole.y])
+    }
+    for (const el of elements(svg, "line", "strip")) {
+      expect(attr(el, "stroke")).toBe("#c8c8c8")
+    }
+    for (const letter of ["A", "E", "I"]) {
+      const coords = coordTexts(svg, letter)
+      expect(coords.length).toBe(2)
+      expect(coords.every(isBold)).toBe(true)
+    }
+    for (const letter of ["B", "C", "D", "J"]) {
+      expect(coordTexts(svg, letter).some(isBold)).toBe(false)
+    }
+    // Column numbers are not strips on this board, so none is bold.
+    expect(coordTexts(svg, "1").some(isBold)).toBe(false)
+  }
+  expect(COMPONENT).toContain("every 4th strip (rows A, E, I ...), for alignment")
+  expect(COPPER).toContain("every 4th strip (rows A, E, I ...), for alignment")
 })
 
 test("an off-board connection is labelled at the nearest board edge", () => {

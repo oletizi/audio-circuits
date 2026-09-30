@@ -11,6 +11,18 @@ import type { Grid } from "./dump.ts"
 export const INK = "#000000"
 export const PAPER = "#ffffff"
 export const STRIP_GREY = "#c8c8c8"
+/**
+ * Every fourth strip's grey, an alignment guide: darker than the other
+ * strips, still clearly lighter than the black wires, cuts and parts.
+ */
+export const MARKED_STRIP_GREY = "#999999"
+
+/** Strips are counted from the first (row A, or column 1); every fourth one is marked. */
+export const MARKED_STRIP_EVERY = 4
+
+export function isMarkedStrip(index: number): boolean {
+  return index % MARKED_STRIP_EVERY === 0
+}
 
 /** One hole pitch (0.1 inch) in SVG user units. */
 export const PITCH = 20

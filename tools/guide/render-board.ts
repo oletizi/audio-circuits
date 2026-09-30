@@ -6,7 +6,9 @@ import {
   INK,
   PAPER,
   PITCH,
+  MARKED_STRIP_GREY,
   STRIP_GREY,
+  isMarkedStrip,
   addText,
   boxAround,
   checkbox,
@@ -52,7 +54,16 @@ export function drawBoard(canvas: Canvas, frame: Frame): void {
     const [a, b] = frame.verticalStrips
       ? [frame.hole(0, s), frame.hole(along - 1, s)]
       : [frame.hole(s, 0), frame.hole(s, along - 1)]
-    canvas.add(line(a, b, { width: PITCH * 0.3, colour: STRIP_GREY, cap: "butt", cls: "strip" }), boxAround([a, b], PITCH / 2))
+    // Marked by physical strip index, so the copper view marks the same strips.
+    const marked = isMarkedStrip(s)
+    const strip = line(a, b, {
+      width: PITCH * 0.3,
+      colour: marked ? MARKED_STRIP_GREY : STRIP_GREY,
+      cap: "butt",
+      cls: marked ? "strip marked-strip" : "strip",
+      data: { strip: frame.verticalStrips ? String(s + 1) : rowName(s) },
+    })
+    canvas.add(strip, boxAround([a, b], PITCH / 2))
   }
   for (let row = 0; row < grid.rows; row += 1) {
     for (let col = 0; col < grid.cols; col += 1) {
@@ -68,14 +79,18 @@ export function drawBoard(canvas: Canvas, frame: Frame): void {
  */
 export function drawCoordinates(canvas: Canvas, frame: Frame): void {
   const { board, grid } = frame
-  const coord: TextStyle = { size: COORD_SIZE, anchor: "middle", halo: true, cls: "coord" }
+  const plain: TextStyle = { size: COORD_SIZE, anchor: "middle", halo: true, cls: "coord" }
+  // A marked strip's name is bold at both ends, as part of the alignment guide.
+  const bold: TextStyle = { ...plain, bold: true }
   for (let col = 0; col < grid.cols; col += 1) {
     const x = frame.hole(0, col).x
+    const coord = frame.verticalStrips && isMarkedStrip(col) ? bold : plain
     addText(canvas, { x, y: board.minY - COORD_OFFSET }, String(col + 1), coord)
     addText(canvas, { x, y: board.maxY + COORD_OFFSET }, String(col + 1), coord)
   }
   for (let row = 0; row < grid.rows; row += 1) {
     const y = frame.hole(row, 0).y
+    const coord = !frame.verticalStrips && isMarkedStrip(row) ? bold : plain
     addText(canvas, { x: board.minX - COORD_OFFSET, y }, rowName(row), coord)
     addText(canvas, { x: board.maxX + COORD_OFFSET, y }, rowName(row), coord)
   }

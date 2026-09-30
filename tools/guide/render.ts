@@ -11,6 +11,7 @@ import { drawPartBodies, drawPartLabels, placedParts } from "./render-parts.ts"
 import {
   CHECKBOX_SIZE,
   INK,
+  MARKED_STRIP_GREY,
   PAPER,
   PITCH,
   addText,
@@ -24,6 +25,7 @@ import {
   unionBox,
   type Box,
   type Canvas,
+  type Frame,
 } from "./svg.ts"
 import { createOccupied } from "./placement.ts"
 
@@ -86,8 +88,17 @@ const CUT_SYMBOL = (x: number, y: number): string => {
   )
 }
 
-function legendItems(view: RenderOptions["view"]): readonly LegendItem[] {
+function markedStripItem(verticalStrips: boolean): LegendItem {
+  const names = verticalStrips ? "columns 1, 5, 9 ..." : "rows A, E, I ..."
+  return {
+    symbol: (x, y) => line({ x: x - 8, y }, { x: x + 8, y }, { width: PITCH * 0.3, colour: MARKED_STRIP_GREY, cap: "butt" }),
+    text: `every 4th strip (${names}), for alignment`,
+  }
+}
+
+function legendItems(view: RenderOptions["view"], verticalStrips: boolean): readonly LegendItem[] {
   const common: LegendItem[] = [
+    markedStripItem(verticalStrips),
     { symbol: CUT_SYMBOL, text: "cut the strip here (number = checklist)" },
     { symbol: (x, y) => line({ x: x - 7, y }, { x: x + 7, y }, { width: 5 }), text: "solder bridge (B1, B2 ...)" },
     {
@@ -123,11 +134,11 @@ function legendItems(view: RenderOptions["view"]): readonly LegendItem[] {
   ]
 }
 
-function drawLegend(canvas: Canvas, view: RenderOptions["view"], top: number, left: number, width: number): void {
+function drawLegend(canvas: Canvas, frame: Frame, view: RenderOptions["view"], top: number, left: number, width: number): void {
   const size = 8.5
   let x = left
   let y = top + LEGEND_GAP
-  for (const item of legendItems(view)) {
+  for (const item of legendItems(view, frame.verticalStrips)) {
     const itemWidth = 22 + textWidth(item.text, size) + 14
     if (x > left && x + itemWidth > left + width) {
       x = left
@@ -199,6 +210,6 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
   const layers = [board, parts, wires, edges, marks, partLabels, coordinates]
   const drawn = boundsOf(layers)
   drawHeader(page, dump, options, drawn.minY, drawn.minX)
-  drawLegend(page, options.view, drawn.maxY, drawn.minX, drawn.maxX - drawn.minX)
+  drawLegend(page, frame, options.view, drawn.maxY, drawn.minX, drawn.maxX - drawn.minX)
   return svgDocument([...layers, page])
 }
