@@ -73,6 +73,26 @@ test("unchosen: a line with no entry in bom.json's lines", () => {
   expect(isComplete(report)).toBe(false)
 })
 
+test("unchosen: ordered by kind then numeric value, not the key's text (47k before 100k)", () => {
+  const catalog = new Map<string, CatalogEntry>()
+  const oneHundredK = line()
+  const fortySevenK = line({ key: "resistor 47k 0207", designators: ["R7"], ohms: 47_000 })
+  const report = compareBom([oneHundredK, fortySevenK], bom({ lines: {} }), catalog, TODAY, STALE_DAYS)
+  expect(report.unchosen).toEqual([fortySevenK, oneHundredK])
+})
+
+test("unmet: ordered by kind then numeric value, not the key's text (47k before 100k)", () => {
+  const catalog = new Map([
+    ["r_100k_0207", entry({ specs: { ohms: 1, watts: 0.25, package: "0207", leadSpacingMm: 10.16 } })],
+    ["r_47k_0207", entry({ id: "r_47k_0207", specs: { ohms: 1, watts: 0.25, package: "0207", leadSpacingMm: 10.16 } })],
+  ])
+  const oneHundredK = line()
+  const fortySevenK = line({ key: "resistor 47k 0207", designators: ["R7"], ohms: 47_000 })
+  const board = bom({ lines: { "resistor 100k 0207": "r_100k_0207", "resistor 47k 0207": "r_47k_0207" } })
+  const report = compareBom([oneHundredK, fortySevenK], board, catalog, TODAY, STALE_DAYS)
+  expect(report.unmet.map((item) => item.line.key)).toEqual(["resistor 47k 0207", "resistor 100k 0207"])
+})
+
 test("removed: a bom.json key the circuit no longer has", () => {
   const catalog = new Map([["r_100k_0207", entry()]])
   const board = bom({ lines: { "resistor 100k 0207": "r_100k_0207", "resistor 47k 0207": "r_47k_0207" } })
@@ -140,6 +160,19 @@ test("uncovered: one non-covering source among covering ones is not reported", (
   const report = compareBom([line({ quantity: 200 })], bom(), catalog, TODAY, STALE_DAYS)
   expect(report.uncovered).toEqual([])
   expect(isComplete(report)).toBe(true)
+})
+
+test("a source with zero price breaks throws from compareBom rather than becoming an uncovered item", () => {
+  // Bypasses catalog.ts validation (which requires at least one price break) to
+  // exercise a malformed entry directly - a bug distinct from "no pack big enough",
+  // and one compareBom must not silently read as an ordinary uncovered line.
+  const catalog = new Map([["r_100k_0207", entry({ stock: true, sources: [source({ breaks: [] })] })]])
+  expect(() => compareBom([line({ quantity: 200 })], bom(), catalog, TODAY, STALE_DAYS)).toThrow(
+    /r_100k_0207/,
+  )
+  expect(() => compareBom([line({ quantity: 200 })], bom(), catalog, TODAY, STALE_DAYS)).toThrow(
+    /no price breaks/,
+  )
 })
 
 test("uncovered: applies to extras too, keyed by the extra's part", () => {

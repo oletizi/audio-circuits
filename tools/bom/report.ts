@@ -6,19 +6,25 @@
  *
  * `uncovered` is a controller ruling
  * (.superpowers/sdd/2026-09-30-bom/task-4-brief.md), beyond the design as
- * written: `suggestBuy` throws for a prototype `stock` part when a source has
- * no stocking pack covering the needed quantity. That is only a report item
- * when NO source of the chosen entry covers it - a single non-covering
- * source among covering ones is shown in `BOM.md`'s table (tools/bom/
- * render.ts), not flagged here.
+ * written: a prototype `stock` part is uncoverable at a source when none of
+ * its price breaks marked `pack` reaches the needed quantity - the ONLY
+ * situation `suggestBuy` can fail in that means "buy a bigger pack", so this
+ * is checked with `stockPackCovers` (tools/bom/quantity.ts), never by
+ * catching whatever `suggestBuy` throws. A source with no price breaks at
+ * all is a different, worse problem (a malformed catalog entry) and is left
+ * to throw uncaught through `compareBom` rather than folded in here as an
+ * ordinary uncovered line. That is only a report item when NO source of the
+ * chosen entry covers it - a single non-covering source among covering ones
+ * is shown in `BOM.md`'s table (tools/bom/render.ts), not flagged here.
  *
  * Design: docs/superpowers/specs/2026-09-30-bom-design.md
  */
 import { misfits, type Misfit } from "./fit.ts"
+import { compareLines, sortLines } from "./ordering.ts"
 import type { BomLine } from "./types.ts"
 import type { BoardBom, Purchasing } from "./board-bom.ts"
 import type { CatalogEntry } from "./catalog.ts"
-import { coverQuantity, suggestBuy } from "./quantity.ts"
+import { coverQuantity, stockPackCovers } from "./quantity.ts"
 
 export interface BomReport {
   readonly unchosen: readonly BomLine[]
@@ -42,32 +48,38 @@ function daysBetween(from: string, to: string): number {
   const fromMs = Date.parse(`${from}T00:00:00Z`)
   const toMs = Date.parse(`${to}T00:00:00Z`)
   if (!Number.isFinite(fromMs) || !Number.isFinite(toMs)) {
-    throw new Error(`daysBetween: could not parse "${from}" or "${to}" as a "YYYY-MM-DD" date.`)
+    throw new Error(
+      `daysBetween: could not parse "${from}" or "${to}" as a "YYYY-MM-DD" date. Pass an ISO ` +
+        '"YYYY-MM-DD" date for both `today` and the catalog entry\'s `checked` field.',
+    )
   }
   return Math.round((toMs - fromMs) / MS_PER_DAY)
 }
 
-/** Every source that covers `need`, given `purchasing` - by attempting `suggestBuy` and
- * treating any throw (no stocking pack big enough, no price breaks at all) as "does not
- * cover". When every source fails, one uncovered entry per failing source; when at
- * least one source covers, none (a single failing source among covering ones belongs in
- * the rendered table, not the report - see the module comment). */
+/**
+ * A chosen part is only ever uncoverable in one situation: it is a `stock` part bought
+ * at prototype quantities, and none of a source's price breaks marked `pack` reaches
+ * the needed quantity (`stockPackCovers`, tools/bom/quantity.ts - a plain predicate, not
+ * an exception). Every other combination of mode and `stock` always succeeds, given a
+ * well-formed catalog entry, so nothing else is checked here - a malformed entry (no
+ * price breaks at all) is left to throw uncaught rather than read as "uncovered".
+ *
+ * One uncovered entry per non-covering source, and only when EVERY source fails - a
+ * single failing source among covering ones belongs in the rendered table, not the
+ * report (see the module comment).
+ */
 function uncoveredFor(
   partId: string, need: number, purchasing: Purchasing, entry: CatalogEntry,
 ): readonly { readonly part: string; readonly supplier: string; readonly quantity: number }[] {
+  if (!(purchasing.mode === "prototype" && entry.stock)) return []
+
+  const cover = coverQuantity(need, purchasing)
   const failingSuppliers: string[] = []
-  let anyCovers = false
   for (const source of entry.sources) {
-    try {
-      suggestBuy(need, purchasing, entry, source)
-      anyCovers = true
-    } catch {
-      failingSuppliers.push(source.supplier)
-    }
+    if (!stockPackCovers(entry, source, cover)) failingSuppliers.push(source.supplier)
   }
-  if (anyCovers) return []
-  const quantity = coverQuantity(need, purchasing)
-  return failingSuppliers.map((supplier) => ({ part: partId, supplier, quantity }))
+  if (failingSuppliers.length < entry.sources.length) return [] // at least one source covers
+  return failingSuppliers.map((supplier) => ({ part: partId, supplier, quantity: cover }))
 }
 
 /**
@@ -85,7 +97,7 @@ export function compareBom(
 ): BomReport {
   const lineByKey = new Map(lines.map((line) => [line.key, line]))
 
-  const unchosen = lines.filter((line) => bom.lines[line.key] === undefined)
+  const unchosen = sortLines(lines.filter((line) => bom.lines[line.key] === undefined))
 
   const removed = Object.keys(bom.lines).filter((key) => !lineByKey.has(key))
 
@@ -106,6 +118,7 @@ export function compareBom(
     const found = misfits(line, entry)
     if (found.length > 0) unmet.push({ line, part: partId, misfits: found })
   }
+  unmet.sort((a, b) => compareLines(a.line, b.line))
 
   const referencedIds = new Set<string>([...Object.values(bom.lines), ...bom.extras.map((extra) => extra.part)])
   const stalePrices: { part: string; supplier: string; checked: string }[] = []

@@ -18,7 +18,8 @@
 import type { BomLine } from "./types.ts"
 import type { BoardBom, Extra, Purchasing } from "./board-bom.ts"
 import type { CatalogEntry, Source } from "./catalog.ts"
-import { coverQuantity, suggestBuy } from "./quantity.ts"
+import { coverQuantity, stockPackCovers, suggestBuy } from "./quantity.ts"
+import { sortLines } from "./ordering.ts"
 
 const NOT_CHOSEN = "not chosen"
 const TABLE_HEADER = [
@@ -100,23 +101,26 @@ interface SourceCells {
 
 /** One source's row-within-a-cell: its link (with its own `checked` date - the one
  * date `BOM.md` is allowed to carry), and its buy quantity and prices at the
- * suggested quantity - or, when no price break covers the needed quantity, that
- * fact in place of all three (never a thrown error reaching the page). */
+ * suggested quantity - or, for a `stock` part bought at prototype quantities with no
+ * pack big enough (checked with `stockPackCovers`, not by catching an exception), that
+ * fact in place of all three. Any OTHER problem `suggestBuy` finds (a malformed
+ * catalog entry with no price breaks at all, say) is a real bug and throws through,
+ * uncaught - it does not belong in a rendered cell as if it were an ordinary
+ * "buy a bigger pack" case. */
 function sourceCells(need: number, purchasing: Purchasing, entry: CatalogEntry, source: Source): SourceCells {
   const link = `[${source.supplier} (${source.use})](${source.url}) (checked ${source.checked})`
-  try {
-    const suggestion = suggestBuy(need, purchasing, entry, source)
-    return {
-      link,
-      buy: String(suggestion.quantity),
-      unit: formatUnitPrice(suggestion.unitPrice, source.currency),
-      line: formatMoney(suggestion.linePrice, source.currency),
-      linePrice: suggestion.linePrice,
-    }
-  } catch {
-    const cover = coverQuantity(need, purchasing)
+  const cover = coverQuantity(need, purchasing)
+  if (purchasing.mode === "prototype" && entry.stock && !stockPackCovers(entry, source, cover)) {
     const message = `no pack covers ${cover}`
     return { link, buy: message, unit: message, line: message }
+  }
+  const suggestion = suggestBuy(need, purchasing, entry, source)
+  return {
+    link,
+    buy: String(suggestion.quantity),
+    unit: formatUnitPrice(suggestion.unitPrice, source.currency),
+    line: formatMoney(suggestion.linePrice, source.currency),
+    linePrice: suggestion.linePrice,
   }
 }
 
@@ -189,14 +193,6 @@ function renderTotalsTable(totals: ReadonlyMap<string, Total>): string {
     (row) => `| ${escapeCell(row.supplier)} | ${escapeCell(row.currency)} | ${formatAmount(row.totalMicros / MICROS_PER_CURRENCY_UNIT)} |`,
   )
   return [header, separator, ...body].join("\n")
-}
-
-/** "resistor 100k 0207" before "resistor 47k 0207" is not guaranteed (this sorts by
- * the key's text, not its numeric value) - the requirement is a deterministic order
- * by kind then value, and every line key already starts with its kind, so ordering
- * by the key's text satisfies both in one comparison. */
-function sortLines(lines: readonly BomLine[]): readonly BomLine[] {
-  return [...lines].sort((a, b) => a.key.localeCompare(b.key))
 }
 
 function sortExtras(extras: readonly Extra[]): readonly Extra[] {

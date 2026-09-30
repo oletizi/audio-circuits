@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { coverQuantity, suggestBuy } from "../../tools/bom/quantity.ts"
+import { coverQuantity, stockPackCovers, suggestBuy } from "../../tools/bom/quantity.ts"
 import type { Purchasing } from "../../tools/bom/board-bom.ts"
 import type { CatalogEntry, Source } from "../../tools/bom/catalog.ts"
 
@@ -128,4 +128,30 @@ test("suggestBuy: throws naming the entry and supplier when the source has no pr
   const s = source([])
   expect(() => suggestBuy(1, PROTOTYPE_10PC, e, s)).toThrow(/r_no_breaks/)
   expect(() => suggestBuy(1, PROTOTYPE_10PC, e, s)).toThrow(/Mouser/)
+})
+
+test("stockPackCovers: true when some pack break's quantity is at least the needed quantity", () => {
+  const e = entry({ stock: true })
+  const s = source([{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012, pack: true }])
+  expect(stockPackCovers(e, s, 3)).toBe(true)
+  expect(stockPackCovers(e, s, 100)).toBe(true)
+})
+
+test("stockPackCovers: false when no pack break's quantity reaches the needed quantity", () => {
+  const e = entry({ stock: true })
+  const s = source([{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012, pack: true }])
+  expect(stockPackCovers(e, s, 220)).toBe(false)
+})
+
+test("stockPackCovers: false when the only breaks are not marked \"pack\", however large", () => {
+  const e = entry({ stock: true })
+  const s = source([{ quantity: 1, unitPrice: 0.1 }, { quantity: 1000, unitPrice: 0.01 }])
+  expect(stockPackCovers(e, s, 220)).toBe(false)
+})
+
+test("stockPackCovers: throws (does not return false) when the source has no price breaks at all", () => {
+  const e = entry({ id: "r_no_breaks" })
+  const s = source([])
+  expect(() => stockPackCovers(e, s, 1)).toThrow(/r_no_breaks/)
+  expect(() => stockPackCovers(e, s, 1)).toThrow(/Mouser/)
 })

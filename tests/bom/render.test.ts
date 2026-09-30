@@ -191,7 +191,7 @@ test("no date appears anywhere except a source's own \"checked\" date", () => {
   expect(dates).toEqual(["2026-03-15"])
 })
 
-test("lines are ordered deterministically within a section by their key", () => {
+test("lines are ordered deterministically within a section by kind then numeric value, not the key's text", () => {
   const catalog = new Map([
     ["r_100k_0207", entry()],
     ["r_47k_0207", entry({ id: "r_47k_0207", specs: { ohms: 47_000, watts: 0.25, package: "0207", leadSpacingMm: 10.16 } })],
@@ -205,10 +205,12 @@ test("lines are ordered deterministically within a section by their key", () => 
     bom: bom({ lines: { "resistor 100k 0207": "r_100k_0207", "resistor 47k 0207": "r_47k_0207" } }),
     catalog,
   })
-  // "resistor 100k 0207" sorts before "resistor 47k 0207" ("1" < "4"), so R1 (100k) precedes R2 (47k).
+  // 47k sorts before 100k numerically, even though "resistor 100k 0207" sorts before
+  // "resistor 47k 0207" as plain text ("1" < "4") - the key's text is only the final
+  // tie-break (tools/bom/ordering.ts), not the primary order.
   const onBoardSection = text.split("## On the board")[1]
-  const r100Index = onBoardSection.indexOf("R1")
   const r47Index = onBoardSection.indexOf("R2")
-  expect(r100Index).toBeGreaterThan(0)
-  expect(r47Index).toBeGreaterThan(r100Index)
+  const r100Index = onBoardSection.indexOf("R1")
+  expect(r47Index).toBeGreaterThan(0)
+  expect(r100Index).toBeGreaterThan(r47Index)
 })
