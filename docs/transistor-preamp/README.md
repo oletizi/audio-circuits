@@ -22,6 +22,12 @@ Designs: `docs/superpowers/specs/2026-09-23-transistor-preamp-lab-design.md`,
 `2026-09-24-transistor-preamp-buffered-design.md`,
 `2026-09-25-transistor-preamp-loop-design.md`.
 
+Every built board (feedback, buffered, staged) has a printable build packet:
+`make -C boards/<board> guide` writes layout SVGs, the schematic PDF and a
+`guide.html` checklist - with a power-up table of expected DC voltages for
+the staged board - into that board's git-ignored `guide/` directory. See the
+design: `docs/superpowers/specs/2026-09-29-build-guide-design.md`.
+
 ## 2. The 24 V transformer-coupled preamp
 
 Proposal: [24 V transformer-coupled microphone preamp: output-stage design proposal](24v-transformer-coupled-preamp.md)

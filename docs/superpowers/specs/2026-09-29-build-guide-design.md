@@ -1,7 +1,7 @@
 ---
 title: Build guide - printable layout images, schematic and checklist from one command
 date: 2026-09-29
-status: Approved by the operator
+status: Implemented
 ---
 
 # Build guide

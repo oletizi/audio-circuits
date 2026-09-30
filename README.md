@@ -101,6 +101,19 @@ perfboard workflow. `make check`, run from a board's directory (e.g.
 `boards/pt2399-core`) or from the repository root to check every declared
 board, is that workflow's front door - see `make help` for the rest of it.
 
+`make guide`, run from a declared board's directory (e.g.
+`boards/transistor-preamp-staged`), writes that board's printable build
+packet into `<board>/guide/`: two component-side layout SVGs (by designator
+and by value), a mirrored copper-side SVG of cuts and solder bridges, the
+schematic as a black-and-white PDF, and a `guide.html` that embeds all three
+images with a build checklist (in build order: ICs and transistors,
+resistors and trim-pots, capacitors, wire links, wire-to-board junctions,
+solder bridges, cuts) and, where the circuit module declares them, a
+power-up table of expected DC voltages. `guide/` is regenerated whole on
+every run, is git-ignored, and is never hand-edited; the command refuses to
+write a packet when the layout has unresolved cuts, an unplaced part, or
+disagrees with the circuit it claims to be.
+
 A new board's KiCad schematic starts from a generated stub, written once with
 `bun run schematic-stub <circuit-module> <export> <out.kicad_sch>` (e.g.
 `circuits/transistor-preamp/lab-board.kicad_sch`) and arranged by hand in
