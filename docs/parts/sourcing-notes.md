@@ -215,3 +215,54 @@ the date.)
   The plain `SS` (standard height) series is cheaper than the outwardly
   similar `ESS` (elevated) series at the same position count and plating,
   and is the better default for socketing a bench-build discrete part.
+- 2026-09-30: Mouser does not carry Runtron at all - `bun run parts search
+  RM-065 --supplier mouser` and `search Runtron --supplier mouser` both
+  return only unrelated parts (a Molex/AirBorn "VRM-06-..." connector
+  family, and Rectron-manufacturer parts that fuzzy-matched "Runtron"). A
+  `Potentiometer_Runtron_RM-065_Vertical` line always needs a substitute
+  from a supplier Mouser does carry.
+- 2026-09-30: The RM-065 footprint's true pin pattern (confirmed from
+  Runtron's own datasheet, and cross-checked against the repository's own
+  KiCad footprint file,
+  `Potentiometer_THT.pretty/Potentiometer_Runtron_RM-065_Vertical.kicad_mod`,
+  whose 1.0mm-drill pads sit at (0,0), (5,0) and (2.5,5) mm) is an
+  isosceles triangle with the THIRD pin centered and offset the FULL base
+  distance (5mm) perpendicular from the other two - not the shallower,
+  much more common trimmer layout (base 5mm, third pin offset only 2.5mm)
+  used by Bourns's 3306 (all of styles K/P/W - confirmed from Bourns's own
+  3306 datasheet's "SUGGESTED PWB LAYOUT - STYLES K, P, W" drawing,
+  bourns.com/docs/Product-Datasheets/3306.pdf) and by the locally-cached
+  KiCad footprints for the Bourns 3299Y, Vishay T7-YA and Piher PT-10/PT-15
+  trimmers. Do not assume any in-stock "6mm single-turn trimmer" matches
+  RM-065 on pin layout alone - measure the actual triangle (base and
+  perpendicular offset) from both datasheets before recording
+  `specs.package: "RM-065"`. Amphenol Piher's PT6-V style (rotor code "V"
+  in the part number, e.g. `PT6KV-102A2020`) does match, confirmed from
+  Piher's own PT6 datasheet's "V = horizontal mounting - vertical
+  adjustment" PCB pad drawing (page 3): both outer pins 0.9mm dia, 5mm
+  apart, third pin 0.9mm dia, centered and offset the full 5mm
+  perpendicular - the same triangle as RM-065's 1.0mm-dia holes.
+- 2026-09-30: `circuits/transistor-preamp/parts.ts` models every on-board
+  trimmer line's part with `mpn: "RM-065"` (Runtron's own designation),
+  and `tools/bom/fit.ts` checks a catalog entry's `mpn` for exact equality
+  against the line's - so a substitute part's catalog entry must carry
+  `"mpn": "RM-065"` literally (not the substitute supplier's own order
+  code) for `make bom` to report the line as met, even though no such part
+  is actually sold under that number. Record the real orderable part's
+  manufacturer, sources[].sku and a `mpn`-spec evidence note explaining
+  the substitution; do not read `make bom`'s "mpn: needed RM-065, found
+  <substitute mpn>" misfit as meaning the substitute mpn belongs in the
+  entry - it is the entry's `mpn` field itself that must read "RM-065".
+- 2026-09-30: Both `runtron.com` (fetches 404 in this environment - the
+  domain answers but not with the original site) and `piher.net` (blocks
+  direct fetches, HTTP 403, the same as the distributor sites this file
+  already warns about) were unreachable directly for their own PDF
+  datasheets. Third-party mirrors that host the identical manufacturer
+  PDF (letterhead, logo and footer URL unchanged) were readable instead:
+  `soldered.com/productdata/...` for Runtron's RM065/RM063 datasheet, and
+  `pk-components.de/fileadmin/Datenblaetter/PIHER/...` for Piher's PT6
+  datasheet. A PDF that a `WebFetch` summarizes as "encoded/unreadable" is
+  often still fully readable with the `Read` tool directly (it extracts
+  the embedded text layer) or, for a dimension drawing where digits and
+  labels get interleaved out of order in that text layer, by rendering
+  the page to a PNG (`pdftoppm -png -r 600 ...`) and reading the image.

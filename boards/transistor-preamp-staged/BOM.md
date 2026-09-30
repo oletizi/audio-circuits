@@ -14,10 +14,10 @@ Supply 24 V; every control (RV1-RV7) at START.
 | C7 | 470uF, radial, <= 10 mm dia, 5 mm leads, min 35 V | 1 | 2 | 470uF, 35V, radial aluminum electrolytic, 10x16mm body, 5mm lead spacing | Panasonic Industry ECA-1VM471 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM471?qs=4indQ9AG%252BqEMpMNEQEBA0w%3D%3D) (checked 2026-09-30) | 0.69 USD | 1.38 USD |
 | J1, J2, J3 | 2-pin 2.54 mm header | 3 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
 | RV5, RV6, RV7 | 3-pin 2.54 mm header | 3 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| RV4 | 1K, linear, RM-065 trimmer | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| RV3 | 2K, linear, RM-065 trimmer | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| RV2 | 200K, linear, RM-065 trimmer | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| RV1 | 1M, linear, RM-065 trimmer | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
+| RV4 | 1K, linear, RM-065 trimmer | 1 | 2 | 1k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher RM-065 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-102A2020?qs=PZ1ub9NEDaWyqo7aUZbrIA%3D%3D) (checked 2026-09-30) | 0.79 USD | 1.58 USD |
+| RV3 | 2K, linear, RM-065 trimmer | 1 | 2 | 2k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher RM-065 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-202A2020?qs=PZ1ub9NEDaV5ifClhl6P2g%3D%3D) (checked 2026-09-30) | 0.69 USD | 1.38 USD |
+| RV2 | 200K, linear, RM-065 trimmer | 1 | 2 | 200k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher RM-065 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-204A2020?qs=DPoM0jnrROXB9pG8c6GveA%3D%3D) (checked 2026-09-30) | 0.97 USD | 1.94 USD |
+| RV1 | 1M, linear, RM-065 trimmer | 1 | 2 | 1M ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher RM-065 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-105A2020?qs=Ebq70JplCaeT7Df5iAxbbg%3D%3D) (checked 2026-09-30) | 0.75 USD | 1.50 USD |
 | R12 | 22R, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 2 | 22 ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-22R | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-22R?qs=oAGoVhmvjhx96aHnODh%2FLA%3D%3D) (checked 2026-09-30) | 0.11 USD | 0.22 USD |
 | R3 | 1K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 2 | 1k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-1K | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K?qs=oAGoVhmvjhwCAC47ReWjsQ%3D%3D) (checked 2026-09-30) | 0.10 USD | 0.20 USD |
 | R11 | 1.2K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 2 | 1.2k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-1K2 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K2?qs=oAGoVhmvjhwubsAZsxG%2FVA%3D%3D) (checked 2026-09-30) | 0.10 USD | 0.20 USD |
@@ -45,4 +45,4 @@ Supply 24 V; every control (RV1-RV7) at START.
 
 | Supplier | Currency | Total |
 | --- | --- | --- |
-| Mouser | USD | 11.22 |
+| Mouser | USD | 17.62 |
