@@ -87,7 +87,26 @@ test("unchosen line renders a row saying \"not chosen\"", () => {
   const text = renderBomMarkdown({
     boardName: "b", conditions: "x", lines: [resistorLine()], bom: bom({ lines: {} }), catalog,
   })
-  expect(text).toMatch(/\| R2, R10 \| 2 \| not chosen \| not chosen \| not chosen \| not chosen \| not chosen \| not chosen \|/)
+  expect(text).toContain(
+    "| R2, R10 | 100K, 0207 axial, 10.16 mm leads, min 0.25 W | 2 | not chosen | not chosen | not chosen " +
+      "| not chosen | not chosen | not chosen |",
+  )
+})
+
+test("every section table has a Needs column after Designators", () => {
+  const catalog = new Map([["r_100k_0207", entry()]])
+  const text = renderBomMarkdown({
+    boardName: "b", conditions: "x", lines: [resistorLine()], bom: bom(), catalog,
+  })
+  expect(text).toContain("| Designators | Needs | Need | Buy | Description |")
+  expect(text).toContain("| R2, R10 | 100K, 0207 axial, 10.16 mm leads, min 0.25 W | 2 |")
+})
+
+test("off-board panel pot rows state what they need", () => {
+  const text = renderBomMarkdown({
+    boardName: "b", conditions: "x", lines: [PANEL_POT_LINE], bom: bom({ lines: {} }), catalog: new Map(),
+  })
+  expect(text).toContain("| RV5 | 25K, linear, panel pot | 1 | not chosen |")
 })
 
 test("a chosen id absent from the catalog renders \"unknown part\" instead of throwing", () => {
@@ -134,7 +153,7 @@ test("extras render under \"Extras\", using the reason as the identifying label"
     bom: bom({ lines: {}, extras: [{ part: "transistor_socket_to92", quantity: 6, why: "one per BJT, plus spares" }] }),
   })
   expect(text).toContain("## Extras")
-  expect(text).toContain("one per BJT, plus spares")
+  expect(text).toContain("| one per BJT, plus spares | - | 6 |")
   expect(text).toContain("TO-92 transistor socket")
 })
 

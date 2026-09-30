@@ -6,8 +6,9 @@
  * `checked` (Decisions; controller ruling,
  * .superpowers/sdd/2026-09-30-bom/task-4-brief.md).
  *
- * Rendering never dies on a part that cannot (yet) be bought: an unchosen
- * line renders as "not chosen", a chosen id absent from the catalog as
+ * Every line's row states what it needs ("Needs", tools/bom/needs-text.ts),
+ * chosen or not. Rendering never dies on a part that cannot (yet) be bought:
+ * an unchosen line renders its part columns as "not chosen", a chosen id absent from the catalog as
  * "unknown part", and a source whose price breaks do not cover the needed
  * quantity (`suggestBuy` throwing) as "no pack covers <n>" in that source's
  * own cells - the report (tools/bom/report.ts), not this file, is where
@@ -20,10 +21,11 @@ import type { BoardBom, Extra, Purchasing } from "./board-bom.ts"
 import type { CatalogEntry, Source } from "./catalog.ts"
 import { coverQuantity, stockPackCovers, suggestBuy } from "./quantity.ts"
 import { sortLines } from "./ordering.ts"
+import { needsText } from "./needs-text.ts"
 
 const NOT_CHOSEN = "not chosen"
 const TABLE_HEADER = [
-  "Designators", "Need", "Buy", "Description", "Manufacturer / MPN", "Links", "Unit price", "Line price",
+  "Designators", "Needs", "Need", "Buy", "Description", "Manufacturer / MPN", "Links", "Unit price", "Line price",
 ] as const
 
 const MICROS_PER_CURRENCY_UNIT = 1_000_000
@@ -126,6 +128,8 @@ function sourceCells(need: number, purchasing: Purchasing, entry: CatalogEntry, 
 
 interface RenderedRow {
   readonly designators: string
+  /** The line's requirement in plain words (`needsText`); "-" for an extra, which has no line. */
+  readonly needs: string
   readonly need: string
   readonly buy: string
   readonly description: string
@@ -135,25 +139,26 @@ interface RenderedRow {
   readonly linePrice: string
 }
 
-function rowForUnchosen(label: readonly string[], need: number): RenderedRow {
+function rowForUnchosen(label: readonly string[], needs: string, need: number): RenderedRow {
   return {
-    designators: label.join(", "), need: String(need),
+    designators: label.join(", "), needs, need: String(need),
     buy: NOT_CHOSEN, description: NOT_CHOSEN, manufacturer: NOT_CHOSEN, links: NOT_CHOSEN,
     unit: NOT_CHOSEN, linePrice: NOT_CHOSEN,
   }
 }
 
-function rowForUnknownPart(label: readonly string[], need: number, partId: string): RenderedRow {
+function rowForUnknownPart(label: readonly string[], needs: string, need: number, partId: string): RenderedRow {
   const message = `unknown part "${partId}"`
   return {
-    designators: label.join(", "), need: String(need),
+    designators: label.join(", "), needs, need: String(need),
     buy: message, description: message, manufacturer: message, links: message,
     unit: message, linePrice: message,
   }
 }
 
 function rowForChosen(
-  label: readonly string[], need: number, entry: CatalogEntry, purchasing: Purchasing, totals: Map<string, Total>,
+  label: readonly string[], needs: string, need: number, entry: CatalogEntry, purchasing: Purchasing,
+  totals: Map<string, Total>,
 ): RenderedRow {
   const cells = entry.sources.map((source) => {
     const result = sourceCells(need, purchasing, entry, source)
@@ -162,6 +167,7 @@ function rowForChosen(
   })
   return {
     designators: label.join(", "),
+    needs,
     need: String(need),
     buy: joinPerSource(cells.map((c) => c.buy)),
     description: entry.description,
@@ -177,7 +183,7 @@ function renderTable(rows: readonly RenderedRow[]): string {
   const separator = `| ${TABLE_HEADER.map(() => "---").join(" | ")} |`
   const body = rows.map((row) => {
     const cells = [
-      row.designators, row.need, row.buy, row.description, row.manufacturer, row.links, row.unit, row.linePrice,
+      row.designators, row.needs, row.need, row.buy, row.description, row.manufacturer, row.links, row.unit, row.linePrice,
     ]
     return `| ${cells.map(escapeCell).join(" | ")} |`
   })
@@ -200,17 +206,21 @@ function sortExtras(extras: readonly Extra[]): readonly Extra[] {
 }
 
 function rowForLine(line: BomLine, bom: BoardBom, catalog: ReadonlyMap<string, CatalogEntry>, totals: Map<string, Total>): RenderedRow {
+  const needs = needsText(line)
   const partId = bom.lines[line.key]
-  if (partId === undefined) return rowForUnchosen(line.designators, line.quantity)
+  if (partId === undefined) return rowForUnchosen(line.designators, needs, line.quantity)
   const entry = catalog.get(partId)
-  if (entry === undefined) return rowForUnknownPart(line.designators, line.quantity, partId)
-  return rowForChosen(line.designators, line.quantity, entry, bom.purchasing, totals)
+  if (entry === undefined) return rowForUnknownPart(line.designators, needs, line.quantity, partId)
+  return rowForChosen(line.designators, needs, line.quantity, entry, bom.purchasing, totals)
 }
+
+/** An extra is not derived from the circuit, so it has no requirement to state: "-". */
+const EXTRA_NEEDS = "-"
 
 function rowForExtra(extra: Extra, bom: BoardBom, catalog: ReadonlyMap<string, CatalogEntry>, totals: Map<string, Total>): RenderedRow {
   const entry = catalog.get(extra.part)
-  if (entry === undefined) return rowForUnknownPart([extra.why], extra.quantity, extra.part)
-  return rowForChosen([extra.why], extra.quantity, entry, bom.purchasing, totals)
+  if (entry === undefined) return rowForUnknownPart([extra.why], EXTRA_NEEDS, extra.quantity, extra.part)
+  return rowForChosen([extra.why], EXTRA_NEEDS, extra.quantity, entry, bom.purchasing, totals)
 }
 
 /**
