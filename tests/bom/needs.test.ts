@@ -110,7 +110,7 @@ test("groups identical requirements, sorts designators naturally and computes ra
   const cap = byKey.get("capacitor 10uF CP_Radial_D5.0mm_P2.00mm")
   expect(cap?.designators).toEqual(["C3"])
   expect(cap?.farads).toBe(1e-5)
-  expect(cap?.minVolts).toBe(25)
+  expect(cap?.minVolts).toBe(35) // rail 24 V x1.2 margin = 28.8, next standard rating is 35
   expect(cap?.physical).toEqual({ kind: "radial-electrolytic", maxDiameterMm: 5.0, leadSpacingMm: 2.0 })
 
   const transistor = byKey.get("bjt 2N3904 TO-92_Inline")

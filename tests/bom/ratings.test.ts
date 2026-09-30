@@ -5,15 +5,15 @@ import {
   requiredResistorWatts,
 } from "../../tools/bom/ratings.ts"
 
-test("requiredCapacitorVolts rounds up to the next standard rating at or above the rail", () => {
-  expect(requiredCapacitorVolts(9)).toBe(10)
-  expect(requiredCapacitorVolts(24)).toBe(25)
-  expect(requiredCapacitorVolts(25)).toBe(25)
-  expect(requiredCapacitorVolts(34)).toBe(35)
+test("requiredCapacitorVolts rounds up to the next standard rating at or above 1.2x the rail", () => {
+  expect(requiredCapacitorVolts(9)).toBe(16) // 10.8
+  expect(requiredCapacitorVolts(12)).toBe(16) // 14.4
+  expect(requiredCapacitorVolts(24)).toBe(35) // 28.8
+  expect(requiredCapacitorVolts(25)).toBe(35) // 30
 })
 
-test("requiredCapacitorVolts throws above the highest standard rating", () => {
-  expect(() => requiredCapacitorVolts(500)).toThrow(/450/)
+test("requiredCapacitorVolts throws when 1.2x the rail exceeds the highest standard rating", () => {
+  expect(() => requiredCapacitorVolts(400)).toThrow(/450/) // 480
 })
 
 test("STANDARD_CAPACITOR_VOLTS is the decided list, in order", () => {
