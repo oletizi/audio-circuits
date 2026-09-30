@@ -122,3 +122,20 @@ the date.)
   parts. Confirm each value's SKU, stock and price with
   `bun run parts lookup MFR-25FBF52-<value> --supplier mouser` - do not
   commit a catalog entry from the MPN-construction rule alone.
+- 2026-09-30: Mouser's value spelling for Yageo MFR-25FBF52 matches the
+  datasheet's RKM-style ordering code exactly, with no leading/trailing zero
+  padding - `22R` (not `22R0`), `1K`, `1K2`, `1K5`, `5K6`, `15K`, `47K`,
+  `100K`, `470K` all matched `lookup` on the first try once spelled this way.
+  `search MFR-25FBF52 <digits>` is the fallback when a guessed spelling
+  0-matches; it also returns the family's near neighbors (e.g. `22R` vs
+  `22R6` vs `22K1`), useful for confirming which one is the value wanted.
+- 2026-09-30: The Mouser Search API's price breaks for MFR-25FBF52 (and, by
+  extension, other Yageo passive reels/bulk packs sold this way) carry no
+  field distinguishing a stocking-pack quantity from an ordinary cut-tape
+  price break - every break just looks like "buy N for $/each". Do not infer
+  `pack: true` on any of them; if the listing text does not say "bag of
+  N"/"pack of N" outright, leave every break unmarked and set the entry's
+  `stock` to `false`, even though the part itself is exactly the kind of
+  cheap commodity resistor the "stock" flag is meant for. This makes the
+  `stock: true` + pack-break enforcement in `tools/bom/catalog.ts` a real
+  question for a resistor entry, not a formality.

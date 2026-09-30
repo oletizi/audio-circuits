@@ -1,1 +1,15 @@
-{ "purchasing": { "mode": "prototype", "shrinkage": 0.1 }, "lines": {}, "extras": [] }
+{
+  "purchasing": { "mode": "prototype", "shrinkage": 0.1 },
+  "lines": {
+    "resistor 22R R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-22r-metal-film-0207",
+    "resistor 1K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-1k-metal-film-0207",
+    "resistor 1.2K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-1k2-metal-film-0207",
+    "resistor 1.5K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-1k5-metal-film-0207",
+    "resistor 5.6K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-5k6-metal-film-0207",
+    "resistor 15K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-15k-metal-film-0207",
+    "resistor 47K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-47k-metal-film-0207",
+    "resistor 100K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-100k-metal-film-0207",
+    "resistor 470K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-470k-metal-film-0207"
+  },
+  "extras": []
+}
