@@ -28,7 +28,7 @@ function requireOhms(parameters: Parameters, id: string): number {
   if (!("ohms" in parameters)) {
     throw new Error(
       `resistor "${id}": resolved parameters carry no "ohms" field, so its dissipation cannot be ` +
-        "computed.",
+        'computed. Give it a ResistorParameters shape ({ ohms: number }) at resolution.',
     )
   }
   return parameters.ohms
@@ -113,8 +113,23 @@ export async function resistorDissipation(
 
   const dissipation = new Map<string, number>()
   for (const resistor of resistors) {
-    const volts = voltageAt(resistor.netA) - voltageAt(resistor.netB)
-    dissipation.set(resistor.id, (volts * volts) / resistor.ohms)
+    // A zero-ohm resistor - legal and reachable from a pot section at a taper extreme
+    // (control-state.ts's expandPot: "a zero-ohm section is legal and is still
+    // emitted") - dissipates exactly 0 W: P = I^2 R is 0 for any current when R = 0.
+    // Computing (Va - Vb)^2 / R for it would instead divide 0 by 0 (an ideal short
+    // has no voltage across it either), giving NaN - a silent numeric landmine in a
+    // map typed `number`, not the physically correct answer this case already knows.
+    const watts = resistor.ohms === 0
+      ? 0
+      : ((voltageAt(resistor.netA) - voltageAt(resistor.netB)) ** 2) / resistor.ohms
+    if (!Number.isFinite(watts)) {
+      throw new Error(
+        `resistor "${resistor.id}": computed dissipation is ${watts}, not a finite number ` +
+          `(ohms=${resistor.ohms}). Check its resolved "ohms" and the operating-point readings ` +
+          "at its terminal nets.",
+      )
+    }
+    dissipation.set(resistor.id, watts)
   }
   return dissipation
 }

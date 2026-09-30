@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { circuit } from "../../lib/model/index.ts"
+import { circuit, net } from "../../lib/model/index.ts"
 import { RESISTOR, transistor2N3904 } from "../../circuits/transistor-preamp/parts.ts"
 import { resistorDissipation } from "../../tools/bom/dissipation.ts"
 import type { BomConditions } from "../../tools/bom/conditions.ts"
@@ -67,6 +67,43 @@ test("resistorDissipation returns the resistors' dissipation and ignores an acti
     expect(watts).toBeGreaterThanOrEqual(0)
     if (id !== "raux") expect(watts).toBeGreaterThan(0)
   }
+})
+
+test("resistorDissipation maps a pot's zero-ohm section (fully ccw) to 0 W, not NaN", async () => {
+  const network = circuit()
+    .add({
+      id: "pot1", kind: "potentiometer",
+      parameters: { ohms: 1000, taper: { type: "linear" } }, pins: {},
+      units: [{ name: "MAIN", pins: { ccw: net("GND"), wiper: net("WIPER"), cw: net("CW") } }],
+    })
+    .resistor("raux", "1k", { a: "SRC", b: "GND" }, RESISTOR)
+    .port("ground", "GND")
+    .port("wiper", "WIPER")
+    .port("cw", "CW")
+    .port("source", "SRC")
+    .port("load", "SRC")
+    .done()
+
+  const conditions: BomConditions = {
+    description: "pot1 fully ccw",
+    environment: {
+      source: { port: "source", amplitude: 1, seriesOhms: 0 },
+      load: { port: "load", ohms: 100_000 },
+      supplies: [],
+      groundPort: "ground",
+    },
+    controlState: { potPositions: { pot1: 0 }, switchPositions: {} },
+  }
+
+  const dissipation = await resistorDissipation(network, conditions)
+
+  // Fraction 0 (fully ccw) puts the whole 1k on the wiper-cw section and leaves the
+  // ccw-wiper section at exactly 0 ohms - a legal, documented state
+  // (control-state.ts's expandPot), not an error.
+  expect(dissipation.get("pot1.ccw-wiper")).toBe(0)
+  const otherSection = dissipation.get("pot1.wiper-cw")
+  if (otherSection === undefined) throw new Error("missing pot1.wiper-cw dissipation")
+  expect(Number.isFinite(otherSection)).toBe(true)
 })
 
 test("resistorDissipation on a network with no resistors returns an empty map", async () => {

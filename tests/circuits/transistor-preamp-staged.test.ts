@@ -111,7 +111,7 @@ test("at 24 V all three transistors are active and Q3's collector is centred", a
 })
 
 test("resistorDissipation pins R10 and R11 against an independent operating-point run, at START", async () => {
-  const conditions = bomConditions()
+  const conditions = await bomConditions()
   const resolved = resolveNetwork(transistorPreampStaged(), conditions.controlState)
   const deck = toSpiceOperatingPointNetlist(resolved, conditions.environment)
   const nodes = ["Q3_COLLECTOR", "Q3_EMITTER"].map(spiceNodeName)

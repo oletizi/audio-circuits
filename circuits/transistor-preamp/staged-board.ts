@@ -40,7 +40,7 @@ import { parseValue } from "../../lib/model/units.ts"
 import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
 import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
 import type { PowerUpChecks, PowerUpChecksExport } from "../../tools/guide/power-up.ts"
-import type { BomConditions } from "../../tools/bom/conditions.ts"
+import type { BomConditions, BomConditionsExport } from "../../tools/bom/conditions.ts"
 import { addFollower, schematicNotes as bufferedNotes } from "./buffered-board.ts"
 import * as buffered from "./buffered-board.ts"
 import { addFeedbackStage } from "./feedback-board.ts"
@@ -165,7 +165,7 @@ export function schematicNotes(): readonly string[] {
  * from the same bench environment - minus its sweep, which an operating-point deck
  * has no use for.
  */
-export function bomConditions(): BomConditions {
+export const bomConditions: BomConditionsExport = (): BomConditions => {
   return {
     description: `Supply ${supplyVolts()} V; every control (RV1-RV7) at START.`,
     environment: {
