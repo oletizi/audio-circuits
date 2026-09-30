@@ -33,6 +33,9 @@ Made with the operator; each binds the design and the implementation plan.
 | Parts are chosen in stages: first the researcher agent searching supplier sites, later a Mouser and Digi-Key search built into the tool (its own design) | Operator (option 3) | The file format settles before the search is automated |
 | Research is done by one committed researcher agent, which reads and adds to committed sourcing notes | Operator | The expertise survives the end of any conversation |
 | A panel pot is two purchases: the pot itself and the header on the board | Designer, accepted | The board's header labels hide the pot, which is the part that actually needs choosing |
+| Default panel pot: 16 mm body, solid shaft, board (PCB) pins | Operator | The operator's standard; recorded in the sourcing notes as the researcher's default |
+| Buy quantities depend on the board's maturity: a prototype board suggests stocking packs of the cheap commodity parts (to amortise shipping) and the needed quantity of the rest; a production run suggests boards x need plus a shrinkage margin, moved up to a larger price break whenever that costs less in total | Operator | That is how the operator buys |
+| A price is out of date after 45 days | Operator | Tariffs make prices move quickly |
 
 ## What is stored, and where
 
@@ -79,21 +82,33 @@ One file per part, so every change is a small, readable diff. An entry holds:
 - `evidence`: for each spec, the datasheet or supplier page it was read from
   (URL and what it confirmed). A spec with no evidence is not allowed;
 - `why`: why this part was chosen over the alternatives;
-- `sources`: supplier, URL, supplier's part number, unit price and currency,
-  minimum quantity or price break, the date the price was checked, and the
-  use (`standard`, `bulk`, `specialty`, `prototype-fast`).
+- `stock`: whether this is a cheap commodity part worth buying in a stocking
+  pack when prototyping (resistors, small capacitors, headers, wire), set by
+  the researcher per the sourcing notes;
+- `sources`: supplier, URL, supplier's part number, currency, price breaks
+  (quantity and unit price at each, as the supplier lists them), the date the
+  prices were checked, and the use (`standard`, `bulk`, `specialty`,
+  `prototype-fast`).
 
 ### Each board's choices: `boards/<board>/bom.json`
 
 - `lines`: line key -> catalog id;
 - `extras`: parts the circuit does not know about - transistor sockets, the
-  stripboard, hookup wire, knobs - each a catalog id, a quantity and a reason.
+  stripboard, hookup wire, knobs - each a catalog id, a quantity and a reason;
+- `purchasing`: required, one of
+  - `{ "mode": "prototype" }` - for a `stock` part, suggest the smallest
+    listed price break that is a stocking pack at or above the need (the
+    researcher records which breaks are packs); for any other part, the need;
+  - `{ "mode": "run", "boards": <n>, "shrinkage": <fraction> }` - need x
+    boards x (1 + shrinkage), rounded up, then moved up to a larger price
+    break whenever the larger quantity costs less in total.
 
 ### The shopping list: `boards/<board>/BOM.md` (generated, committed)
 
 A table per section (on the board, off the board, extras): designators,
-quantity, description, manufacturer and part number, a link per supplier with
-its use, unit and line price, and a total per supplier. Committed so it can
+needed quantity, suggested buy quantity (per `purchasing`), description,
+manufacturer and part number, a link per supplier with its use, unit and line
+price at the suggested quantity, and a total per supplier. Committed so it can
 be read on GitHub from a phone while ordering.
 
 ## The command
@@ -107,7 +122,7 @@ directory-as-context rule as every other verb):
    - choices whose line the circuit no longer has;
    - chosen parts that no longer meet their line (value, rating, lead
      spacing, body size, package), naming the field;
-   - prices whose check date is older than 90 days.
+   - prices whose check date is older than 45 days.
 3. Rewrites `BOM.md`.
 
 It exits non-zero when any line is unchosen or unmet, so an incomplete list
@@ -145,7 +160,9 @@ edits it too.
 
 - Unit tests: deriving lines (grouping, keys, footprint table, unknown
   footprint refused, panel pot split); the rating rules; the comparison
-  report (unchosen, removed, unmet by field, stale price); catalog entry
+  report (unchosen, removed, unmet by field, stale price); buy quantities in
+  both purchasing modes (stocking pack; shrinkage then a cheaper larger price
+  break); catalog entry
   validation (evidence required per spec); `BOM.md` rendering.
 - `bomConditions()` missing is refused with the export named.
 - End to end: the staged board's list filled by the researcher agent as the
@@ -168,12 +185,9 @@ edits it too.
 - Combining several boards into one order, and tracking parts already on hand.
 - Putting a list into a supplier's cart.
 
-## Open questions for review
+## Resolved on review
 
-- Panel pots: preferred size and mounting (16 mm or 24 mm body, shaft type,
-  solder lugs or PCB pins)? The researcher needs a default; it will go in the
-  sourcing notes.
-- Quantities: the list shows what the board needs; should it also suggest a
-  buy quantity at a price break (for example ten resistors cost about the
-  same as four), or leave that to the operator?
-- The 90-day price staleness threshold.
+- Panel pots: 16 mm, solid shaft, board pins (Decisions table).
+- Buy quantities: by board maturity, `purchasing` in `bom.json` (Decisions
+  table). The staged board is a prototype.
+- Price staleness: 45 days.
