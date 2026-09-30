@@ -37,8 +37,9 @@ operating point at START, capacitor voltage ratings from the 24 V rail), compare
 it with the board's `bom.json` and the shared `parts/` catalog, prints what is
 unchosen, unmet or stale-priced, and rewrites the committed `BOM.md`. It never
 edits `bom.json` or the catalog, and exits non-zero until every line is chosen
-and met. Its `bom.json` starts with nothing chosen, so every line currently
-reads "not chosen"; the part-researcher agent fills them. `make check` fails if
+and met. Every line is now chosen, from Mouser, and the shopping list is
+`boards/transistor-preamp-staged/BOM.md`; the part-researcher agent
+(`.claude/agents/part-researcher.md`) chose them. `make check` fails if
 `BOM.md` falls out of step, a chosen part stops fitting, or `bom.json` names a
 catalog part that does not exist. See the design:
 `docs/superpowers/specs/2026-09-30-bom-design.md`.

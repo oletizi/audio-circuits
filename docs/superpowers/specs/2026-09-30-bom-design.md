@@ -1,7 +1,7 @@
 ---
 title: Parts lists - committed BOMs with manufacturer part numbers and supplier links, kept in step with the circuit
 date: 2026-09-30
-status: Approved by the operator
+status: Implemented
 ---
 
 # Parts lists (BOM)

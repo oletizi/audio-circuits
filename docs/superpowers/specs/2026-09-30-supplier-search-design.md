@@ -1,7 +1,7 @@
 ---
 title: Supplier search - Mouser and Digi-Key lookups for the parts researcher, and price refresh
 date: 2026-09-30
-status: Approved by the operator
+status: Implemented for Mouser; Digi-Key waits for the operator's credentials (plan Task 2)
 ---
 
 # Supplier search
