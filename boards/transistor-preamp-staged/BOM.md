@@ -7,11 +7,11 @@ Supply 24 V; every control (RV1-RV7) at START.
 | Designators | Needs | Qty | Buy | Description | Manufacturer / MPN | Links | Unit price | Line price |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Q1, Q2, Q3 | 2N3904, TO-92, E-B-C | 3 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| C2, C3, C5, C8, C9 | 10uF, radial, <= 5 mm dia, 2 mm leads, min 35 V | 5 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| C6 | 22uF, radial, <= 5 mm dia, 2 mm leads, min 35 V | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| C4 | 100uF, radial, <= 6.3 mm dia, 2.5 mm leads, min 35 V | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| C1 | 220uF, radial, <= 8 mm dia, 3.5 mm leads, min 35 V | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| C7 | 470uF, radial, <= 10 mm dia, 5 mm leads, min 35 V | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
+| C2, C3, C5, C8, C9 | 10uF, radial, <= 5 mm dia, 2 mm leads, min 35 V | 5 | 6 | 10uF, 35V, radial aluminum electrolytic, 5x11mm body, 2mm lead spacing | Panasonic Industry ECA-1VM100 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM100?qs=F80sRR%252BEZdBj42PTfvMN%2FQ%3D%3D) (checked 2026-09-30) | 0.30 USD | 1.80 USD |
+| C6 | 22uF, radial, <= 5 mm dia, 2 mm leads, min 35 V | 1 | 2 | 22uF, 35V, radial aluminum electrolytic, 5x11mm body, 2mm lead spacing | Nichicon UPJ1V220MDD | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Nichicon/UPJ1V220MDD?qs=6FLRVw7s7MWVrVBkLknSZg%3D%3D) (checked 2026-09-30) | 0.31 USD | 0.62 USD |
+| C4 | 100uF, radial, <= 6.3 mm dia, 2.5 mm leads, min 35 V | 1 | 2 | 100uF, 35V, radial aluminum electrolytic, 6.3x11.2mm body, 2.5mm lead spacing | Panasonic Industry ECA-1VM101I | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM101I?qs=Rjs8jpJ6LSQiPme8klHtJQ%3D%3D) (checked 2026-09-30) | 0.33 USD | 0.66 USD |
+| C1 | 220uF, radial, <= 8 mm dia, 3.5 mm leads, min 35 V | 1 | 2 | 220uF, 35V, radial aluminum electrolytic, 8x11.5mm body, 3.5mm lead spacing | Panasonic Industry ECA-1VM221 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM221?qs=TMd%2FqrwkF8jzDq2TCVW7zA%3D%3D) (checked 2026-09-30) | 0.45 USD | 0.90 USD |
+| C7 | 470uF, radial, <= 10 mm dia, 5 mm leads, min 35 V | 1 | 2 | 470uF, 35V, radial aluminum electrolytic, 10x16mm body, 5mm lead spacing | Panasonic Industry ECA-1VM471 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM471?qs=4indQ9AG%252BqEMpMNEQEBA0w%3D%3D) (checked 2026-09-30) | 0.69 USD | 1.38 USD |
 | J1, J2, J3 | 2-pin 2.54 mm header | 3 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
 | RV5, RV6, RV7 | 3-pin 2.54 mm header | 3 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
 | RV4 | 1K, linear, RM-065 trimmer | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
@@ -39,4 +39,4 @@ Supply 24 V; every control (RV1-RV7) at START.
 
 | Supplier | Currency | Total |
 | --- | --- | --- |
-| Mouser | USD | 2.22 |
+| Mouser | USD | 7.58 |

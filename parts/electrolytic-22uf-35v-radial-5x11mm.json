@@ -1,0 +1,62 @@
+{
+  "id": "electrolytic-22uf-35v-radial-5x11mm",
+  "kind": "capacitor",
+  "description": "22uF, 35V, radial aluminum electrolytic, 5x11mm body, 2mm lead spacing",
+  "manufacturer": "Nichicon",
+  "mpn": "UPJ1V220MDD",
+  "specs": {
+    "farads": 0.000022,
+    "volts": 35,
+    "leadSpacingMm": 2.0,
+    "diameterMm": 5.0
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Nichicon/UPJ1V220MDD?qs=6FLRVw7s7MWVrVBkLknSZg%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for UPJ1V220MDD (Nichicon), Mouser part 647-UPJ1V220MDD."
+    },
+    {
+      "spec": "farads",
+      "url": "https://www.mouser.com/en/ProductDetail/Nichicon/UPJ1V220MDD?qs=6FLRVw7s7MWVrVBkLknSZg%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '35volts 22uF 5x11 20% 2LS'."
+    },
+    {
+      "spec": "volts",
+      "url": "https://www.mouser.com/en/ProductDetail/Nichicon/UPJ1V220MDD?qs=6FLRVw7s7MWVrVBkLknSZg%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '35volts'."
+    },
+    {
+      "spec": "leadSpacingMm",
+      "url": "https://www.mouser.com/en/ProductDetail/Nichicon/UPJ1V220MDD?qs=6FLRVw7s7MWVrVBkLknSZg%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '35volts 22uF 5x11 20% 2LS' - '2LS' is 2mm lead spacing. Nichicon's own UPJ series datasheet (nichicon.co.jp/english/series_items/catalog_pdf/e-upj.pdf, fetched 2026-09-30) dimension tables list case sizes and part numbers for the 35V (1V) row starting at 100uF and do not print this smaller 22uF/35V size, so the lead spacing is taken from Mouser's supplier-stated parameters per docs/parts/sourcing-notes.md ('Body size and lead spacing come from the datasheet unless the supplier's parameters state them')."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://www.mouser.com/en/ProductDetail/Nichicon/UPJ1V220MDD?qs=6FLRVw7s7MWVrVBkLknSZg%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '35volts 22uF 5x11 20% 2LS' - '5x11' is a 5mm diameter x 11mm long case; see the leadSpacingMm evidence note for why this is read from the supplier's stated parameters rather than the series datasheet."
+    }
+  ],
+  "why": "This board's Panasonic M-A (ECA) family - used for the 10uF, 100uF, 220uF and 470uF/35V lines - does not offer 22uF at 35V in its printed dimension table (the 35V column jumps from 10uF to 47uF; Nichicon's UPJ series datasheet has the same gap at 35V, jumping from nothing below 100uF). Nichicon UPJ1V220MDD is Mouser-stocked (915 units, 2026-09-30) and its own listing states the exact case (5x11mm) and lead spacing (2mm) this line's footprint needs at exactly 35V, so no voltage margin beyond the line's minimum was spent.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Nichicon/UPJ1V220MDD?qs=6FLRVw7s7MWVrVBkLknSZg%3D%3D",
+      "sku": "647-UPJ1V220MDD",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 0.31 },
+        { "quantity": 10, "unitPrice": 0.179 },
+        { "quantity": 100, "unitPrice": 0.108 },
+        { "quantity": 500, "unitPrice": 0.087 },
+        { "quantity": 1000, "unitPrice": 0.073 },
+        { "quantity": 2500, "unitPrice": 0.072 },
+        { "quantity": 6000, "unitPrice": 0.064 },
+        { "quantity": 12000, "unitPrice": 0.06 }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}

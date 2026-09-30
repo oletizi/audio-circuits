@@ -141,3 +141,28 @@ the date.)
   cheap commodity resistor the "stock" flag is meant for. This makes the
   `stock: true` + pack-break enforcement in `tools/bom/catalog.ts` a real
   question for a resistor entry, not a formality.
+- 2026-09-30: Panasonic's M-A (ECA) series - a current, general-purpose
+  radial-leaded aluminum electrolytic family (industrial.panasonic.com,
+  datasheet ABA0000C1218.pdf; NOT blocked, unlike mouser.com-hosted copies
+  of the same datasheet, which return an Akamai block page) - covers this
+  board's 10uF, 100uF, 220uF and 470uF/35V `CP_Radial` lines from one
+  printed dimension table, each straight-lead value landing exactly on the
+  footprint's diameter and lead spacing (e.g. 10uF/35V = 5x11mm, 2mm
+  leads; 220uF/35V = 8x11.5mm, 3.5mm leads). Some values the table lists
+  are 0-stock at Mouser for the straight-lead SKU (e.g. ECA-1VM101,
+  100uF/35V); where a taped-and-formed variant ("I" or "B" suffix, the
+  12th digit) shares the same lead pitch as the straight-lead row - check
+  the datasheet's "Taping" columns, not just the "Straight" one - that
+  variant is an equally good fit and is often the one actually in stock.
+- 2026-09-30: The M-A (ECA) family's printed 35V dimension table has gaps
+  at small values - it has no 22uF row at 35V (jumps 10uF to 47uF) even
+  though Mouser lists an in-family MPN (ECA-1VM220) for exactly that
+  value and voltage; Nichicon's UPJ series datasheet has the identical
+  gap at 35V for its own 22uF part. Confirming such a value's case size
+  from the datasheet is not possible when the row does not exist. Per
+  this file's rule that body size and lead spacing may come from the
+  supplier's stated parameters, Nichicon UPJ1V220MDD's Mouser Search API
+  description text itself states the case and pitch ("35volts 22uF 5x11
+  20% 2LS") and was used as the evidence instead - this is reasonable,
+  but a real per-part datasheet would be stronger evidence if one turns
+  up later.

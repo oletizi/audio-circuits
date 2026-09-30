@@ -9,7 +9,12 @@
     "resistor 15K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-15k-metal-film-0207",
     "resistor 47K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-47k-metal-film-0207",
     "resistor 100K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-100k-metal-film-0207",
-    "resistor 470K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-470k-metal-film-0207"
+    "resistor 470K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-470k-metal-film-0207",
+    "capacitor 10uF CP_Radial_D5.0mm_P2.00mm": "electrolytic-10uf-35v-radial-5x11mm",
+    "capacitor 22uF CP_Radial_D5.0mm_P2.00mm": "electrolytic-22uf-35v-radial-5x11mm",
+    "capacitor 100uF CP_Radial_D6.3mm_P2.50mm": "electrolytic-100uf-35v-radial-6.3x11.2mm",
+    "capacitor 220uF CP_Radial_D8.0mm_P3.50mm": "electrolytic-220uf-35v-radial-8x11.5mm",
+    "capacitor 470uF CP_Radial_D10.0mm_P5.00mm": "electrolytic-470uf-35v-radial-10x16mm"
   },
   "extras": []
 }
