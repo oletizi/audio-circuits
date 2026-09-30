@@ -34,7 +34,8 @@ Made with the operator; each binds the design and the implementation plan.
 | Research is done by one committed researcher agent, which reads and adds to committed sourcing notes | Operator | The expertise survives the end of any conversation |
 | A panel pot is two purchases: the pot itself and the header on the board | Designer, accepted | The board's header labels hide the pot, which is the part that actually needs choosing |
 | Default panel pot: 16 mm body, solid shaft, board (PCB) pins | Operator | The operator's standard; recorded in the sourcing notes as the researcher's default |
-| Buy quantities depend on the board's maturity: a prototype board suggests stocking packs of the cheap commodity parts (to amortise shipping) and the needed quantity of the rest; a production run suggests boards x need plus a shrinkage margin, moved up to a larger price break whenever that costs less in total | Operator | That is how the operator buys |
+| Buy quantities depend on the board's maturity: a prototype board suggests stocking packs of the cheap commodity parts (to amortise shipping) and the needed quantity of the rest; a production run suggests boards x need, moved up to a larger price break whenever that costs less in total | Operator | That is how the operator buys |
+| Both modes add a shrinkage margin, rounded up so every line has at least one spare | Operator | "Nothing worse than losing or breaking a part and having no extras" |
 | A price is out of date after 45 days | Operator | Tariffs make prices move quickly |
 
 ## What is stored, and where
@@ -95,13 +96,17 @@ One file per part, so every change is a small, readable diff. An entry holds:
 - `lines`: line key -> catalog id;
 - `extras`: parts the circuit does not know about - transistor sockets, the
   stripboard, hookup wire, knobs - each a catalog id, a quantity and a reason;
-- `purchasing`: required, one of
-  - `{ "mode": "prototype" }` - for a `stock` part, suggest the smallest
-    listed price break that is a stocking pack at or above the need (the
-    researcher records which breaks are packs); for any other part, the need;
-  - `{ "mode": "run", "boards": <n>, "shrinkage": <fraction> }` - need x
-    boards x (1 + shrinkage), rounded up, then moved up to a larger price
-    break whenever the larger quantity costs less in total.
+- `purchasing`: required, with a shrinkage margin in both modes (a fraction
+  greater than zero). The quantity to cover is need x boards x (1 +
+  shrinkage), rounded up - so any line gets at least one spare, however small
+  its need. Then:
+  - `{ "mode": "prototype", "shrinkage": <fraction> }` (one board) - for a
+    `stock` part, suggest the smallest listed price break that is a stocking
+    pack covering that quantity (the researcher records which breaks are
+    packs); for any other part, that quantity;
+  - `{ "mode": "run", "boards": <n>, "shrinkage": <fraction> }` - that
+    quantity, moved up to a larger price break whenever the larger quantity
+    costs less in total.
 
 ### The shopping list: `boards/<board>/BOM.md` (generated, committed)
 
@@ -189,5 +194,6 @@ edits it too.
 
 - Panel pots: 16 mm, solid shaft, board pins (Decisions table).
 - Buy quantities: by board maturity, `purchasing` in `bom.json` (Decisions
-  table). The staged board is a prototype.
+  table), with a shrinkage margin in both modes. The staged board is a
+  prototype.
 - Price staleness: 45 days.
