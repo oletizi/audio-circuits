@@ -19,6 +19,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
+import { checkBoardBom, type BomCheck } from "../bom/run.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import { resolveBinary } from "./acquire.ts"
 import { foldCutState } from "./cut-state.ts"
@@ -132,8 +133,10 @@ export interface CheckDeps {
   readonly exportNetlist?: (declaration: PerfboardDeclaration) => Promise<string>
   /** Injected so no test needs the veroroute binary. */
   readonly runCheck?: (vrtPath: string, netPath: string) => CheckRun
-  /** Injected so no test resolves against this repository's own root. Only consulted when `runCheck` is not injected. */
+  /** Injected so no test resolves against this repository's own root. Only consulted when `runCheck` or `checkBom` is not injected. */
   readonly repoRoot?: string
+  /** Injected so no test needs a circuit module, bom.json or catalog on disk. */
+  readonly checkBom?: (declaration: PerfboardDeclaration) => Promise<BomCheck>
 }
 
 export interface PerfboardResult {
@@ -258,10 +261,18 @@ export async function checkPerfboard(
     fs.rmSync(dir, { recursive: true, force: true })
   }
 
-  if (run.status === 0) return { declaration, ok: true, report: run.output }
-  if (run.status === 1) return { declaration, ok: false, report: run.output }
-  throw new Error(
-    `veroroute exited with unexpected exit code ${run.status} checking ` +
-      `${declaration.vrtPath}: ${run.output}`,
-  )
+  if (run.status !== 0 && run.status !== 1) {
+    throw new Error(
+      `veroroute exited with unexpected exit code ${run.status} checking ` +
+        `${declaration.vrtPath}: ${run.output}`,
+    )
+  }
+
+  // The parts-list hook (tools/bom/run.ts): only for a board with a bom.json, and it
+  // compares a fresh in-memory rendering with the committed BOM.md - it never writes.
+  const checkBom = deps.checkBom ?? ((board) => checkBoardBom(board, { repoRoot: deps.repoRoot }))
+  const bom = await checkBom(declaration)
+  const layoutOk = run.status === 0
+  if (!bom.applies || bom.ok) return { declaration, ok: layoutOk, report: run.output }
+  return { declaration, ok: false, report: `${run.output}\nParts list (bom.json)\n${bom.report}\n` }
 }
