@@ -45,7 +45,16 @@ resistors, small film and ceramic capacitors, headers. A prototype board's
 `purchasing` names a `stockQuantity` (the staged board: 100); a `stock` part
 is then bought at the smallest listed price break at or above the larger of
 that and the quantity needed, or that target itself at the largest break's
-price when every break is smaller. Every line and extra gets the board's
+price when every break is smaller. Two caps in the same `purchasing` keep
+bulk buying cheap: a bulk buy is taken only at or below `maxStockUnitPrice`
+(the staged board: 0.15, in the source's currency), and per supplier and
+currency the bulk buys may raise the order by at most `maxStockOverage`
+(the staged board: 0.5, i.e. 50%) over the same order at covered
+quantities; the bulk buys adding the most money are set aside first. A part set aside
+is bought at the covered quantity; `make bom` and `BOM.md` say which, and
+why. So marking a pricier commodity part (the Samtec pin headers, 0.2-0.3
+USD each) `stock` costs nothing: the unit-price cap keeps it at the covered
+quantity. Every line and extra gets the board's
 shrinkage margin (at least one spare); an extra where a spare is not worth
 buying, such as a multi-spool wire kit, says `"spares": false` in `bom.json`.
 

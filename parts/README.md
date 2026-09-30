@@ -11,7 +11,8 @@ device (bjt, diode, opamp, ic) also states its device type as `specs.type`
 number is matched against. `stock: true` marks a cheap commodity part
 (resistors, small film and ceramic capacitors, headers): a prototype board
 buys its `purchasing.stockQuantity` of it, rounded up to the next listed price
-break.
+break - when that break's unit price is within `maxStockUnitPrice` and the
+supplier's order stays within `maxStockOverage` (see the board's `bom.json`).
 
 Format and rules: `docs/superpowers/specs/2026-09-30-bom-design.md` ("The shared
 catalog"), validated by `tools/bom/catalog.ts`.
