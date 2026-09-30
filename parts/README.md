@@ -5,5 +5,13 @@ Entries are added by the part-researcher agent or by hand; `bun run parts refres
 entries in place - their price breaks and `checked` date only, never which part
 was chosen - in the same 2-space JSON format these files are kept in.
 
+An entry's `mpn` is always the real order code (e.g. `2N3904BU`). An active
+device (bjt, diode, opamp, ic) also states its device type as `specs.type`
+(e.g. `2N3904`), with evidence; that, not the `mpn`, is what a line's part
+number is matched against. `stock: true` marks a cheap commodity part
+(resistors, small film and ceramic capacitors, headers): a prototype board
+buys its `purchasing.stockQuantity` of it, rounded up to the next listed price
+break.
+
 Format and rules: `docs/superpowers/specs/2026-09-30-bom-design.md` ("The shared
 catalog"), validated by `tools/bom/catalog.ts`.

@@ -118,15 +118,18 @@ disagrees with the circuit it claims to be.
 list. It reads the board's circuit module (including its `bomConditions()`
 export, the operating point resistor dissipation is simulated at), the
 board's `bom.json` (which catalog part fills each line, the extras, and the
-purchasing mode) and the shared catalog in `parts/`. It derives what the
+purchasing mode: a prototype names a `stockQuantity`, bought of every part
+the catalog marks `stock`, rounded up to the next listed price break) and the
+shared catalog in `parts/`. It derives what the
 board needs from the circuit, reports the lines with nothing chosen, choices
 the circuit no longer has, chosen parts that no longer meet their line
-(naming the field), unknown catalog ids, and prices older than 45 days, then
+(naming the field - an active device fits by its catalog `specs.type`, never
+its order code `mpn`), unknown catalog ids, and prices older than 45 days, then
 rewrites the board's `BOM.md`. It exits non-zero until every line is chosen
 and met. It never edits `bom.json` or the catalog: choices are made by a
 person or the part-researcher agent. A board with no `bom.json` is refused,
 naming the file to create; the minimal one is
-`{ "purchasing": { "mode": "prototype", "shrinkage": 0.1 }, "lines": {}, "extras": [] }`.
+`{ "purchasing": { "mode": "prototype", "shrinkage": 0.1, "stockQuantity": 100 }, "lines": {}, "extras": [] }`.
 For a board with a `bom.json`, `make check` also fails when the committed
 `BOM.md` differs from a fresh rendering, a chosen part no longer meets its
 line, or `bom.json` names a catalog part that does not exist; unchosen lines and stale prices do not fail `check`, and boards

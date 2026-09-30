@@ -60,17 +60,19 @@ instructions exactly, whichever session calls you.
 4. **Match the footprint** exactly: lead spacing, body size, package, and
    for TO-92 the pin order (the footprint here is emitter, base, collector;
    confirm the part's pinout from its package drawing). Meet the line's
-   minimum voltage and power.
+   minimum voltage and power. For an active device (bjt, diode, opamp, ic),
+   the line's part number is a device TYPE: record it as `specs.type` (e.g.
+   `"2N3904"`), with evidence from the datasheet that names it.
 5. **Write the catalog entry** `parts/<id>.json`: `id` equal to the file name,
    lowercase and hyphenated, descriptive (`resistor-100k-metal-film-0207`,
    `electrolytic-10uf-35v-radial-5x11-2mm`); `kind`; `description`;
-   `manufacturer`, `mpn`; `specs`; `evidence`; `why` (why this part over the
+   `manufacturer`, `mpn` (always the real order code the part is sold
+   under, suffixes and all - e.g. `2N3904BU` - never the circuit's type
+   copied in); `specs`; `evidence`; `why` (why this part over the
    alternatives you saw); `stock` (true for cheap commodity parts per the
    notes); `sources`. For a Mouser source, generate it with
    `bun run parts source <mpn> --supplier mouser --use <use>` and paste the
-   printed object - never retype prices. Then mark `pack: true` on any break
-   that is a stocking pack (a bag, not a cut quantity) if the listing says
-   so. A hand-added source needs supplier, URL, the supplier's part number,
+   printed object - never retype prices. A hand-added source needs supplier, URL, the supplier's part number,
    currency, EVERY price break listed (ascending), `checked` as today's date
    (YYYY-MM-DD), and `use`.
 6. **Record the choice** in `boards/<board>/bom.json` under `lines`

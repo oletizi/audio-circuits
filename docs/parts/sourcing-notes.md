@@ -39,10 +39,13 @@ the line.
 ### Buying quantities
 
 Set per board in `bom.json` (`purchasing`), not here. The researcher's job is
-to record every price break a supplier lists, mark which breaks are stocking
-packs (`pack: true`, e.g. a bag of 100 resistors), and set `stock: true` on
-cheap commodity parts worth stocking when prototyping: resistors, small film
-and ceramic capacitors, headers, wire. Every line and extra gets the board's
+to record every price break a supplier lists, exactly as listed, and set
+`stock: true` on cheap commodity parts worth stocking when prototyping:
+resistors, small film and ceramic capacitors, headers. A prototype board's
+`purchasing` names a `stockQuantity` (the staged board: 100); a `stock` part
+is then bought at the smallest listed price break at or above the larger of
+that and the quantity needed, or that target itself at the largest break's
+price when every break is smaller. Every line and extra gets the board's
 shrinkage margin (at least one spare); an extra where a spare is not worth
 buying, such as a multi-spool wire kit, says `"spares": false` in `bom.json`.
 
@@ -138,15 +141,10 @@ the date.)
   0-matches; it also returns the family's near neighbors (e.g. `22R` vs
   `22R6` vs `22K1`), useful for confirming which one is the value wanted.
 - 2026-09-30: The Mouser Search API's price breaks for MFR-25FBF52 (and, by
-  extension, other Yageo passive reels/bulk packs sold this way) carry no
-  field distinguishing a stocking-pack quantity from an ordinary cut-tape
-  price break - every break just looks like "buy N for $/each". Do not infer
-  `pack: true` on any of them; if the listing text does not say "bag of
-  N"/"pack of N" outright, leave every break unmarked and set the entry's
-  `stock` to `false`, even though the part itself is exactly the kind of
-  cheap commodity resistor the "stock" flag is meant for. This makes the
-  `stock: true` + pack-break enforcement in `tools/bom/catalog.ts` a real
-  question for a resistor entry, not a formality.
+  extension, other Yageo passive reels and bags sold this way) carry no
+  field saying which quantity is a bag and which a cut quantity - every
+  break just looks like "buy N for $/each". Record every break as listed;
+  stocking is decided by the board's `stockQuantity`, not by the listing.
 - 2026-09-30: Panasonic's M-A (ECA) series - a current, general-purpose
   radial-leaded aluminum electrolytic family (industrial.panasonic.com,
   datasheet ABA0000C1218.pdf; NOT blocked, unlike mouser.com-hosted copies
@@ -187,19 +185,20 @@ the date.)
   `search 2N3904 TO-92`) sidesteps it and returns the other manufacturers'
   listings normally; this is a real tool bug (reported, not fixed by a
   researcher) rather than anything about the part itself.
-- 2026-09-30: A BJT catalog entry's `mpn` must equal the circuit's modeled
-  part number exactly (`tools/bom/fit.ts`'s `checkEqual("mpn", ...)`) - for
-  the 2N3904 that means the entry's `mpn` field has to be the bare string
-  `"2N3904"`, not a supplier ordering-code suffix. Several Mouser-listed
-  "2N3904" parts are only available under a suffixed code: onsemi's cheap,
-  well-stocked bulk-bag part is `2N3904BU` (10000/bulk bag per its own
-  datasheet's ordering table), not bare `2N3904` - Mouser's SKU 511-2N3904
-  for onsemi's literal bare part was the crashing row above (since fixed:
-  it now reads with its stock "not stated"; check it with
-  `bun run parts lookup 2N3904` rather than assuming it is unavailable). Diotec Semiconductor and Rectron both list
-  their part under the bare Mouser mpn `"2N3904"` (SKUs 637-2N3904,
-  583-2N3904) - pick one of those when the line needs an exact bare mpn
-  match, even if a suffixed part elsewhere is cheaper or better-packaged.
+- 2026-09-30 (revised by the operator's decision): an active device (bjt,
+  diode, opamp, ic) fits a line by its device TYPE, not its order code.
+  `tools/bom/fit.ts` compares the circuit's part number with the entry's
+  `specs.type` (e.g. `"2N3904"`, with datasheet evidence like every spec);
+  the entry's `mpn` is never compared, and is always the real order code.
+  So onsemi's cheap, well-stocked bulk-bag `2N3904BU` (10000/bulk bag per
+  its own datasheet's ordering table) is eligible for a 2N3904 line under
+  its real mpn, with `specs.type: "2N3904"` - as are Diotec's and Rectron's
+  parts sold under the bare order code `2N3904` (SKUs 637-2N3904,
+  583-2N3904). An entry with no `specs.type` is reported as "type: not
+  stated". Mouser's SKU 511-2N3904 (onsemi's literal bare part) was the
+  crashing row above (since fixed: it now reads with its stock "not
+  stated"; check it with `bun run parts lookup 2N3904` rather than assuming
+  it is unavailable).
 - 2026-09-30: 2N3904 pinout genuinely varies by source, exactly as this
   file already warns - onsemi's current 2N3904/D datasheet (Rev. 9, and the
   standalone 2N3904/D, Oct 2024 Rev. 3) both draw pin 1 = emitter, pin 2 =
@@ -255,9 +254,10 @@ the date.)
   perpendicular - the same triangle as RM-065's 1.0mm-dia holes.
 - 2026-09-30 (corrected by the operator's session): a catalog entry's `mpn`
   is always the real orderable part number - never a circuit's identifier
-  copied in to satisfy a check. `tools/bom/fit.ts` checks `mpn` equality only
-  for active devices (bjt, diode, opamp, ic), where the type number is the
-  part's identity. On a passive, the circuit's part number (e.g. the
+  copied in to satisfy a check. For active devices (bjt, diode, opamp, ic),
+  where the type is the part's identity, `tools/bom/fit.ts` compares the
+  circuit's part number with `specs.type`, never with `mpn` (see the 2N3904
+  lesson above). On a passive, the circuit's part number (e.g. the
   trimmers' "RM-065") names the footprint family, which the physical checks
   cover, so a compatible substitute such as Piher's PT6KV-102A2020 carries
   its own mpn. If a check ever demands recording something untrue, stop and
