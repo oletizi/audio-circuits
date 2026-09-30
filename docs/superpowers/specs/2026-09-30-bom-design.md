@@ -35,9 +35,11 @@ Made with the operator; each binds the design and the implementation plan.
 | An axial part fits by its body size alone; lead spacing is not checked | Designer, during the first research pass | Axial leads are bent to the footprint's pitch on the bench, and no datasheet states a lead spacing; requiring one pushed the researcher to record a claim with no source |
 | A panel pot is two purchases: the pot itself and the header on the board | Designer, accepted | The board's header labels hide the pot, which is the part that actually needs choosing |
 | Default panel pot: 16 mm body, solid shaft, board (PCB) pins | Operator | The operator's standard; recorded in the sourcing notes as the researcher's default |
-| Buy quantities depend on the board's maturity: a prototype board suggests stocking packs of the cheap commodity parts (to amortise shipping) and the needed quantity of the rest; a production run suggests boards x need, moved up to a larger price break whenever that costs less in total | Operator | That is how the operator buys |
+| Buy quantities depend on the board's maturity: a prototype board suggests stocking quantities of the cheap commodity parts (see the stocking-quantity row below) (to amortise shipping) and the needed quantity of the rest; a production run suggests boards x need, moved up to a larger price break whenever that costs less in total | Operator | That is how the operator buys |
 | Both modes add a shrinkage margin, rounded up so every line has at least one spare | Operator | "Nothing worse than losing or breaking a part and having no extras" |
 | A price is out of date after 45 days | Operator | Tariffs make prices move quickly |
+| Prototype stocking is by a per-board stocking quantity, not by "pack" price breaks: a `stock` part is bought at the smallest listed price break at or above the larger of the covered quantity and `stockQuantity` (the staged board: 100). The `pack` mark on price breaks is removed | Operator ("yes. start at 100"), on the final review (Important 2) | Suppliers' search services never say which quantities are packs, so the pack rule never took effect and every cheap part was bought at need |
+| For an active device (bjt, diode, opamp, ic) the circuit's part number is compared with the entry's `specs.type` (the device type, with datasheet evidence), and the entry's `mpn` is always the real order code | Operator, on the final review (Important 4) | Exact `mpn` equality ruled out real order codes such as 2N3904BU and would force a false mpn like "TL072" onto a TL072CP |
 | An extra may opt out of the shrinkage margin with `"spares": false`; absent means the margin applies | Designer, final review (Minor 5), controller ruling | The margin bought a second 150 ft wire kit, about half the staged board's order; a spare stripboard is sensible, a spare wire kit is not |
 
 ## What is stored, and where
@@ -80,13 +82,15 @@ One file per part, so every change is a small, readable diff. An entry holds:
 
 - `id` (the file name), `kind`, a plain description;
 - `manufacturer` and `mpn` (absent only for commodity parts such as wire);
+  the `mpn` is always the real order code the part is sold under;
 - `specs`: value, tolerance, voltage or power rating, lead spacing, body size,
-  package, taper - whatever applies to its kind;
+  package, taper, and for an active device its `type` (e.g. 2N3904, TL072) -
+  whatever applies to its kind;
 - `evidence`: for each spec, the datasheet or supplier page it was read from
   (URL and what it confirmed). A spec with no evidence is not allowed;
 - `why`: why this part was chosen over the alternatives;
-- `stock`: whether this is a cheap commodity part worth buying in a stocking
-  pack when prototyping (resistors, small capacitors, headers, wire), set by
+- `stock`: whether this is a cheap commodity part worth stocking when
+  prototyping (resistors, small film and ceramic capacitors, headers), set by
   the researcher per the sourcing notes;
 - `sources`: supplier, URL, supplier's part number, currency, price breaks
   (quantity and unit price at each, as the supplier lists them), the date the
@@ -107,10 +111,12 @@ One file per part, so every change is a small, readable diff. An entry holds:
   greater than zero). The quantity to cover is need x boards x (1 +
   shrinkage), rounded up - so any line gets at least one spare, however small
   its need. Then:
-  - `{ "mode": "prototype", "shrinkage": <fraction> }` (one board) - for a
-    `stock` part, suggest the smallest listed price break that is a stocking
-    pack covering that quantity (the researcher records which breaks are
-    packs); for any other part, that quantity;
+  - `{ "mode": "prototype", "shrinkage": <fraction>, "stockQuantity": <n> }`
+    (one board) - for a `stock` part, the target is the larger of that
+    quantity and `stockQuantity` (a positive integer, required in this mode),
+    and the suggestion is the smallest listed price break at or above the
+    target, or the target itself at the largest break's price when every
+    break is smaller; for any other part, that quantity;
   - `{ "mode": "run", "boards": <n>, "shrinkage": <fraction> }` - that
     quantity, moved up to a larger price break whenever the larger quantity
     costs less in total.
@@ -173,7 +179,7 @@ edits it too.
 - Unit tests: deriving lines (grouping, keys, footprint table, unknown
   footprint refused, panel pot split); the rating rules; the comparison
   report (unchosen, removed, unmet by field, stale price); buy quantities in
-  both purchasing modes (stocking pack; shrinkage then a cheaper larger price
+  both purchasing modes (stocking quantity; shrinkage then a cheaper larger price
   break); catalog entry
   validation (evidence required per spec); `BOM.md` rendering.
 - `bomConditions()` missing is refused with the export named.

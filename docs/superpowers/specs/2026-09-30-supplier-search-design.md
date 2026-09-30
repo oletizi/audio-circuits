@@ -58,15 +58,12 @@ anywhere in the repository:
 - `parts source <mpn> --supplier mouser|digikey --use <use>` - prints a
   catalog `Source` object ready to paste into an entry: supplier, URL,
   supplier part number, currency, the price breaks, today's date as
-  `checked`, and the use. Stocking packs cannot be read from the services
-  reliably, so `pack` is left for the researcher to mark from the listing.
-  When the mpn matches more than one listing, it refuses, listing them,
+  `checked`, and the use. When the mpn matches more than one listing, it refuses, listing them,
   unless `--sku <supplier part number>` names the one to record (which must
   carry that mpn).
 - `parts refresh [<catalog id>...]` - for each named entry (all when none
   named), re-reads every Mouser and Digi-Key source by its supplier part
-  number and rewrites that source's price breaks and `checked` date, keeping
-  each break's `pack` mark where the quantity still exists. Prints what
+  number and rewrites that source's price breaks and `checked` date. Prints what
   changed. Other sources and every other field are untouched. A part the
   supplier no longer lists is reported, not removed.
 
@@ -118,8 +115,9 @@ one gains "use the parts tool".
   price strings with currency symbols), parameters, missing-key and error
   refusals, no near match returned from `lookup`.
 - `parts source` output passes `parseCatalogEntry`'s source validation.
-- `parts refresh` on a temporary catalog: breaks and date updated, `pack`
-  kept, other sources untouched, an unlisted part reported.
+- `parts refresh` on a temporary catalog: breaks and date updated, other
+  sources untouched, an unlisted part reported. (The `pack` mark on breaks was
+  removed with the parts-list design's stocking-quantity decision.)
 - One live check, run by hand once keys exist, not in `bun test`:
   `parts lookup MFR-25FBF52-100K`.
 - End to end: the staged board's list completed with the researcher using
