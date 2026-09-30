@@ -10,7 +10,7 @@
  * same from a black-and-white laser printer as on screen.
  */
 import type { ChecklistSection } from "./checklist.ts"
-import type { PowerUpCheck } from "./power-up.ts"
+import type { PowerUpChecks } from "./power-up.ts"
 
 export interface GuideImages {
   readonly designators: string
@@ -27,7 +27,7 @@ export interface GuideInput {
   readonly images: GuideImages
   readonly checklist: readonly ChecklistSection[]
   /** `undefined` when the circuit module declares no power-up checks. */
-  readonly powerUpChecks: readonly PowerUpCheck[] | undefined
+  readonly powerUpChecks: PowerUpChecks | undefined
 }
 
 const STYLE = `
@@ -54,6 +54,7 @@ td.tick { width: 0.3in; text-align: center; }
 .box { display: inline-block; width: 11pt; height: 11pt; border: 1.25pt solid #000; vertical-align: middle; }
 td.blank { width: 1.3in; }
 .none { font-style: italic; }
+.conditions { font-style: italic; }
 @media print { body { padding: 0; max-width: none; } }
 `
 
@@ -100,21 +101,22 @@ function checklistSection(section: ChecklistSection, index: number): string {
   return `${heading}\n${table(section.columns, section.rows, "item")}`
 }
 
-function powerUp(checks: readonly PowerUpCheck[] | undefined): string {
+function powerUp(powerUpChecks: PowerUpChecks | undefined): string {
   const heading = "<h2>Power-up checks</h2>"
-  if (checks === undefined) {
+  if (powerUpChecks === undefined) {
     return (
       `${heading}\n<p class="none">This board declares no power-up checks: its circuit module ` +
       "exports no <code>powerUpChecks()</code>.</p>"
     )
   }
-  const rows = checks.map(
+  const rows = powerUpChecks.checks.map(
     (check) =>
       `<tr class="power-up">${CHECKBOX}<td>${escape(check.label)}</td><td>${escape(check.node)}</td>` +
       `<td>${check.expectedVolts.toFixed(2)} V</td><td class="blank"></td></tr>`,
   )
   return [
     heading,
+    `<p class="conditions">${escape(powerUpChecks.conditions)}</p>`,
     "<p>Power the board, then measure each node to ground with a DC voltmeter.</p>",
     tableWithHead(["Check", "Node", "Expected", "Measured"], rows),
   ].join("\n")

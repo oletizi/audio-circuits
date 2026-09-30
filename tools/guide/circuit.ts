@@ -15,7 +15,7 @@ import { assertDesignators, assertPinNumbers } from "../perfboard/check.ts"
 import type { PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { circuitFromModule, importCircuitModule } from "../perfboard/load.ts"
 import type { BoardDump } from "./dump.ts"
-import { declaredPowerUpChecks, type PowerUpCheck } from "./power-up.ts"
+import { declaredPowerUpChecks, type PowerUpChecks } from "./power-up.ts"
 
 export interface BoardCircuit {
   /** Reference designator -> the circuit component it names. */
@@ -23,8 +23,8 @@ export interface BoardCircuit {
   /** Port name -> net name, from the circuit. */
   readonly ports: Readonly<Record<string, string>>
   readonly pinNumbers: PinNumbers
-  /** The module's power-up checks; `undefined` when it declares none. */
-  readonly powerUpChecks: readonly PowerUpCheck[] | undefined
+  /** The module's power-up table; `undefined` when it declares none. */
+  readonly powerUpChecks: PowerUpChecks | undefined
 }
 
 /** Index a network's components by designator, refusing a component with none. */
@@ -32,7 +32,7 @@ export function boardCircuitFrom(
   network: Network,
   designators: Readonly<Record<string, string>>,
   pinNumbers: PinNumbers,
-  powerUpChecks: readonly PowerUpCheck[] | undefined,
+  powerUpChecks: PowerUpChecks | undefined,
 ): BoardCircuit {
   const byRef = new Map<string, Component>()
   for (const component of network.components) {

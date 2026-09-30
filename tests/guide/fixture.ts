@@ -7,7 +7,7 @@
  */
 import { net, type Component } from "../../lib/model/types.ts"
 import { boardCircuitFrom, type BoardCircuit } from "../../tools/guide/circuit.ts"
-import type { PowerUpCheck } from "../../tools/guide/power-up.ts"
+import type { PowerUpChecks } from "../../tools/guide/power-up.ts"
 
 export const DUMP_TEXT = [
   "PART Q1 TO92 2N3904 AT 2,6 SPAN 1",
@@ -87,7 +87,7 @@ export const PIN_NUMBERS = {
 }
 
 export function fixtureCircuit(
-  powerUpChecks: readonly PowerUpCheck[] | undefined = undefined,
+  powerUpChecks: PowerUpChecks | undefined = undefined,
   components: readonly Component[] = COMPONENTS,
 ): BoardCircuit {
   return boardCircuitFrom({ components, ports: { input: "IN_EXT" } }, DESIGNATORS, PIN_NUMBERS, powerUpChecks)

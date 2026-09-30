@@ -108,19 +108,35 @@ test("at 24 V all three transistors are active and Q3's collector is centred", a
   expect(centred).toBeLessThan(0.6)
 })
 
-test("powerUpChecks: the supply, then Q1, Q3, Q2 and C5's transformer side, at START", async () => {
-  const checks = await powerUpChecks()
+test("powerUpChecks: one accurate conditions statement, then the supply, Q1, Q3, Q2 and C5's transformer side", async () => {
+  const { conditions, checks } = await powerUpChecks()
+
+  // One stated condition covering everything the readings depend on: the
+  // supply, the on-board trims RV1-RV4 (carried over from the feedback
+  // stage, not just the panel controls) and the panel controls RV5-RV7 -
+  // with START's actual values, not just "START" asserted by name.
+  expect(conditions).toContain("24 V")
+  for (const designator of ["RV1", "RV2", "RV3", "RV4", "RV5", "RV6", "RV7"]) expect(conditions).toContain(designator)
+  expect(conditions).toContain("START")
+  expect(conditions).toContain("470k") // RV1 feedback leg
+  expect(conditions).toContain("150k") // RV2 base-to-ground leg
+  expect(conditions).toContain("1.8k") // RV3 collector leg
+  expect(conditions).toContain("272R") // RV6 CHARACTER, formatted from START.character
+  expect(conditions).toContain("50%") // RV5 DRIVE and RV7 TRANSFORMER DRIVE, both 0.5
+
+  // Row labels are plain - the conditions line carries the settings context,
+  // not a per-row qualifier.
   expect(checks.map((c) => c.label)).toEqual([
     "Supply (+24V at J3)",
-    "Q1 base (at the panel controls' START settings)",
-    "Q1 emitter (at the panel controls' START settings)",
-    "Q1 collector (at the panel controls' START settings)",
-    "Q3 base (at the panel controls' START settings)",
-    "Q3 emitter (at the panel controls' START settings)",
-    "Q3 collector (at the panel controls' START settings)",
-    "Q2 base (at the panel controls' START settings)",
-    "Q2 emitter (at the panel controls' START settings)",
-    "C5 transformer side (at the panel controls' START settings)",
+    "Q1 base",
+    "Q1 emitter",
+    "Q1 collector",
+    "Q3 base",
+    "Q3 emitter",
+    "Q3 collector",
+    "Q2 base",
+    "Q2 emitter",
+    "C5 transformer side",
   ])
   expect(checks.map((c) => c.node)).toEqual([
     "VCC", "BASE", "EMITTER", "COLLECTOR",

@@ -39,13 +39,13 @@ import type { Network } from "../../lib/model/index.ts"
 import { parseValue } from "../../lib/model/units.ts"
 import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
 import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
-import type { PowerUpCheck, PowerUpChecksExport } from "../../tools/guide/power-up.ts"
+import type { PowerUpChecks, PowerUpChecksExport } from "../../tools/guide/power-up.ts"
 import { addFollower, schematicNotes as bufferedNotes } from "./buffered-board.ts"
 import * as buffered from "./buffered-board.ts"
 import { addFeedbackStage } from "./feedback-board.ts"
 import * as feedbackBoard from "./feedback-board.ts"
 import type { FeedbackSetting } from "./feedback-board.ts"
-import { legPosition } from "./leg-values.ts"
+import { formatOhms, legPosition } from "./leg-values.ts"
 import { HEADER_2, RESISTOR, electrolytic, panelPot, transistor2N3904 } from "./parts.ts"
 import type { Leg } from "./parts.ts"
 import { STAGED_BOARD_ENVIRONMENT } from "./staged-environment.ts"
@@ -184,14 +184,43 @@ function voltageAt(readings: Readonly<Record<string, number>>, node: string): nu
   return roundedVolts(value)
 }
 
+/** A 0-1 wiper position, in plain terms: how far up its travel it's set. */
+function percentOfTravel(position: number): string {
+  return `${Math.round(position * 100)}%`
+}
+
+/**
+ * What state the board must be in for the power-up table's voltages to
+ * hold: the supply, the on-board trims (RV1-RV4, the feedback stage's -
+ * carried over unchanged from the buffered board) and the three panel
+ * controls (RV5-RV7), all at START. Every value is read from `START` and
+ * the shared environment rather than retyped, so a changed setting cannot
+ * drift out of step with this sentence.
+ */
+function powerUpConditions(): string {
+  const trims =
+    `${designatorOf("feedback_trim")} feedback leg ${START.feedback}, ` +
+    `${designatorOf("base_ground_trim")} base-to-ground leg ${START.baseToGround}, ` +
+    `${designatorOf("collector_trim")} collector leg ${START.collector}, ` +
+    `${designatorOf("emitter_bypass_trim")} emitter bypass leg ${START.emitterBypass}`
+  const panel =
+    `${designatorOf("drive_pot")} DRIVE ${percentOfTravel(START.drive)}, ` +
+    `${designatorOf("character_pot")} CHARACTER ${formatOhms(parseValue(START.character))}, ` +
+    `${designatorOf("transformer_drive_pot")} TRANSFORMER DRIVE ${percentOfTravel(START.transformerDrive)}`
+  return (
+    `Supply ${supplyVolts()} V; on-board trims at START (${trims}); ` +
+    `panel controls at START (${panel}).`
+  )
+}
+
 /**
  * The staged board's power-up checks: the 24 V supply, then each transistor's
  * bias points, then C5's transformer side (expected near 0 V, since the
  * coupling cap blocks DC). Computed by the same operating-point simulation
- * the staged board's tests run, at the panel controls' START settings - the
- * expected voltages below assume those settings, which the labels say.
+ * the staged board's tests run, at START; `conditions` states START in plain
+ * terms once, rather than qualifying every row.
  */
-export const powerUpChecks: PowerUpChecksExport = async (): Promise<readonly PowerUpCheck[]> => {
+export const powerUpChecks: PowerUpChecksExport = async (): Promise<PowerUpChecks> => {
   const resolved = resolveNetwork(transistorPreampStaged(), controlStateFor(START))
   const deck = toSpiceOperatingPointNetlist(resolved, STAGED_BOARD_ENVIRONMENT)
   const nodes = [
@@ -201,39 +230,32 @@ export const powerUpChecks: PowerUpChecksExport = async (): Promise<readonly Pow
   ]
   const readings = await runOperatingPoint({ netlist: deck, nodes: nodes.map(spiceNodeName) })
   const at = (node: string): number => voltageAt(readings, node)
-  const atStart = "at the panel controls' START settings"
 
-  return [
-    { label: `Supply (+24V at ${designatorOf("power_header")})`, node: "VCC", expectedVolts: supplyVolts() },
-    { label: `${designatorOf("gain_transistor")} base (${atStart})`, node: "BASE", expectedVolts: at("BASE") },
-    { label: `${designatorOf("gain_transistor")} emitter (${atStart})`, node: "EMITTER", expectedVolts: at("EMITTER") },
-    {
-      label: `${designatorOf("gain_transistor")} collector (${atStart})`, node: "COLLECTOR",
-      expectedVolts: at("COLLECTOR"),
-    },
-    {
-      label: `${designatorOf("second_gain_transistor")} base (${atStart})`, node: "Q3_BASE",
-      expectedVolts: at("Q3_BASE"),
-    },
-    {
-      label: `${designatorOf("second_gain_transistor")} emitter (${atStart})`, node: "Q3_EMITTER",
-      expectedVolts: at("Q3_EMITTER"),
-    },
-    {
-      label: `${designatorOf("second_gain_transistor")} collector (${atStart})`, node: "Q3_COLLECTOR",
-      expectedVolts: at("Q3_COLLECTOR"),
-    },
-    {
-      label: `${designatorOf("buffer_transistor")} base (${atStart})`, node: "BUFFER_BASE",
-      expectedVolts: at("BUFFER_BASE"),
-    },
-    {
-      label: `${designatorOf("buffer_transistor")} emitter (${atStart})`, node: "BUFFER_EMITTER",
-      expectedVolts: at("BUFFER_EMITTER"),
-    },
-    {
-      label: `${designatorOf("buffer_output_cap")} transformer side (${atStart})`, node: "OUT",
-      expectedVolts: at("OUT"),
-    },
-  ]
+  return {
+    conditions: powerUpConditions(),
+    checks: [
+      { label: `Supply (+24V at ${designatorOf("power_header")})`, node: "VCC", expectedVolts: supplyVolts() },
+      { label: `${designatorOf("gain_transistor")} base`, node: "BASE", expectedVolts: at("BASE") },
+      { label: `${designatorOf("gain_transistor")} emitter`, node: "EMITTER", expectedVolts: at("EMITTER") },
+      { label: `${designatorOf("gain_transistor")} collector`, node: "COLLECTOR", expectedVolts: at("COLLECTOR") },
+      { label: `${designatorOf("second_gain_transistor")} base`, node: "Q3_BASE", expectedVolts: at("Q3_BASE") },
+      {
+        label: `${designatorOf("second_gain_transistor")} emitter`, node: "Q3_EMITTER",
+        expectedVolts: at("Q3_EMITTER"),
+      },
+      {
+        label: `${designatorOf("second_gain_transistor")} collector`, node: "Q3_COLLECTOR",
+        expectedVolts: at("Q3_COLLECTOR"),
+      },
+      { label: `${designatorOf("buffer_transistor")} base`, node: "BUFFER_BASE", expectedVolts: at("BUFFER_BASE") },
+      {
+        label: `${designatorOf("buffer_transistor")} emitter`, node: "BUFFER_EMITTER",
+        expectedVolts: at("BUFFER_EMITTER"),
+      },
+      {
+        label: `${designatorOf("buffer_output_cap")} transformer side`, node: "OUT",
+        expectedVolts: at("OUT"),
+      },
+    ],
+  }
 }

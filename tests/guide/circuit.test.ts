@@ -27,20 +27,31 @@ test("a layout part the circuit does not have is refused", () => {
   )
 })
 
-test("powerUpChecks: absent is none; a non-function, an empty list or a bad row is refused", async () => {
+test("powerUpChecks: absent is none; a non-function, missing conditions, an empty list or a bad row is refused", async () => {
   expect(await declaredPowerUpChecks({}, "m.ts")).toBeUndefined()
   await expect(declaredPowerUpChecks({ powerUpChecks: 3 }, "m.ts")).rejects.toThrow(/not a function/)
-  await expect(declaredPowerUpChecks({ powerUpChecks: async () => [] }, "m.ts")).rejects.toThrow(
-    /declared no checks/,
-  )
-  await expect(declaredPowerUpChecks({ powerUpChecks: () => [{ label: "x" }] }, "m.ts")).rejects.toThrow(/no node/)
   await expect(declaredPowerUpChecks({ powerUpChecks: async () => "nope" }, "m.ts")).rejects.toThrow(
-    /not an array/,
+    /not { conditions, checks }/,
   )
+  await expect(
+    declaredPowerUpChecks(
+      { powerUpChecks: async () => ({ conditions: "", checks: [{ label: "x", node: "n", expectedVolts: 1 }] }) },
+      "m.ts",
+    ),
+  ).rejects.toThrow(/declared no conditions/)
+  await expect(
+    declaredPowerUpChecks({ powerUpChecks: async () => ({ conditions: "24 V", checks: [] }) }, "m.ts"),
+  ).rejects.toThrow(/declared no checks/)
+  await expect(
+    declaredPowerUpChecks({ powerUpChecks: () => ({ conditions: "24 V", checks: [{ label: "x" }] }) }, "m.ts"),
+  ).rejects.toThrow(/no node/)
+  await expect(
+    declaredPowerUpChecks({ powerUpChecks: async () => ({ conditions: "24 V", checks: "nope" }) }, "m.ts"),
+  ).rejects.toThrow(/not an array/)
 })
 
 test("powerUpChecks: an async export is awaited", async () => {
   const row = { label: "Q1 collector", node: "COLLECTOR", expectedVolts: 12.1 }
-  const module = { powerUpChecks: async () => [row] }
-  expect(await declaredPowerUpChecks(module, "m.ts")).toEqual([row])
+  const module = { powerUpChecks: async () => ({ conditions: "24 V supply", checks: [row] }) }
+  expect(await declaredPowerUpChecks(module, "m.ts")).toEqual({ conditions: "24 V supply", checks: [row] })
 })

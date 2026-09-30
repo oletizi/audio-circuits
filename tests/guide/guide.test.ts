@@ -4,12 +4,12 @@ import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { buildChecklist } from "../../tools/guide/checklist.ts"
 import { buildGuideHtml, type GuideInput } from "../../tools/guide/guide.ts"
 import { offBoardLabels } from "../../tools/guide/off-board.ts"
-import type { PowerUpCheck } from "../../tools/guide/power-up.ts"
+import type { PowerUpChecks } from "../../tools/guide/power-up.ts"
 import { COMPONENTS, DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
 
 const DUMP = parseBoardDump(DUMP_TEXT)
 
-function guideHtml(powerUpChecks: readonly PowerUpCheck[] | undefined = undefined): string {
+function guideHtml(powerUpChecks: PowerUpChecks | undefined = undefined): string {
   const circuit = fixtureCircuit(powerUpChecks)
   const edges = offBoardLabels(circuit)
   const input: GuideInput = {
@@ -89,11 +89,15 @@ test("a board that exports no power-up checks gets a section saying so", () => {
   expect(html).not.toContain('class="power-up"')
 })
 
-test("declared power-up checks render with a blank for the reading", () => {
-  const html = guideHtml([{ label: "Q1 collector", node: "OUT", expectedVolts: 12.345 }])
+test("declared power-up checks render with a blank for the reading, and the conditions above the table", () => {
+  const html = guideHtml({
+    conditions: "Supply 24 V, at START.",
+    checks: [{ label: "Q1 collector", node: "OUT", expectedVolts: 12.345 }],
+  })
   expect(html).toContain(
     '<td>Q1 collector</td><td>OUT</td><td>12.35 V</td><td class="blank"></td>',
   )
+  expect(html).toContain('<p class="conditions">Supply 24 V, at START.</p>')
   expect(html).not.toContain("declares no power-up checks")
 })
 
@@ -121,7 +125,7 @@ test("a transistor or pot whose pin has no PIN_NUMBERS name is refused, not prin
 })
 
 test("every table has a header row that repeats on each printed page, and headings keep with them", () => {
-  const html = guideHtml([{ label: "Q1 collector", node: "OUT", expectedVolts: 1 }])
+  const html = guideHtml({ conditions: "at START", checks: [{ label: "Q1 collector", node: "OUT", expectedVolts: 1 }] })
   expect(html.match(/<table>/g)?.length).toBe(html.match(/<thead>/g)?.length)
   expect(html).toContain("thead { display: table-header-group; }")
   expect(html).toContain("break-after: avoid")
