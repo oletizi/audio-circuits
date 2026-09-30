@@ -26,7 +26,7 @@
     }
   ],
   "why": "A native 2-position single-row through-hole header, chosen already cut to length rather than a breakaway strip: tools/bom/fit.ts checks a pin-header line's specs.pins for exact equality, so one catalog entry cannot honestly cover both this board's 2-pin (J1, J2, J3) and 3-pin (RV5, RV6, RV7) header lines at once - a breakaway strip's specs.pins would have to name the strip's as-sold length, not 2, to stay truthful. Samtec's TSW series sells the same family natively cut to every position count (as already used for this board's TO-92 socket strip, socket-to92-3position-machined-2.54mm), so a genuine 2-position part exists rather than requiring one to be invented. Gold-flash contacts (G) were chosen over tin (L/T) for reliable low-force pin contact when the operator repeatedly plugs and unplugs off-board jumper wires by hand; price difference over tin is a fraction of a cent at this quantity. The operator attaches off-board wires directly to these header pins (per the board's own off-board-wiring use); no mating housing is included here - female jumper wires (or hookup wire soldered/pressed onto the pins) mate directly with a bare 0.025 sq. post header of this kind without a crimped housing, and nothing about this board's layout implies one is needed. If the operator wants a proper crimped/latched mating connector instead of loose jumper wires, that would be a separate catalog entry (a 2-position female housing plus crimp contacts) - flagging this rather than adding it, since the sourcing notes say not to guess a need the layout does not state.",
-  "stock": false,
+  "stock": true,
   "sources": [
     {
       "supplier": "Mouser",

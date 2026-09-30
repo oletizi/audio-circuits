@@ -34,7 +34,7 @@ function source(overrides: Partial<Source> = {}): Source {
     supplier: "Mouser",
     url: "https://mouser.com/x",
     currency: "USD",
-    breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012, pack: true }],
+    breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012 }],
     checked: "2026-09-01",
     use: "standard",
     ...overrides,
@@ -59,7 +59,7 @@ function entry(overrides: Partial<CatalogEntry> = {}): CatalogEntry {
 
 function bom(overrides: Partial<BoardBom> = {}): BoardBom {
   return {
-    purchasing: { mode: "prototype", shrinkage: 0.1 },
+    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
     lines: { "resistor 100k 0207": "r_100k_0207" },
     extras: [],
     ...overrides,
@@ -117,15 +117,16 @@ test("a chosen id absent from the catalog renders \"unknown part\" instead of th
   expect(text).toContain('unknown part "r_100k_0207"')
 })
 
-test("a source with no pack covering the quantity renders \"no pack covers <n>\" instead of throwing", () => {
+test("a stock part whose target is above every break buys the target at the largest break's price", () => {
   const catalog = new Map([["r_100k_0207", entry({
-    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012, pack: true }] })],
+    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012 }] })],
   })]])
-  // quantity 200 -> cover = ceil(200 * 1.1) = 220, beyond the only 100-unit pack.
+  // quantity 200 -> cover = ceil(200 * 1.1) = 220, above the largest (100) break: 220 at 0.012.
   const text = renderBomMarkdown({
     boardName: "b", conditions: "x", lines: [resistorLine({ quantity: 200, designators: ["R1"] })], bom: bom(), catalog,
   })
-  expect(text).toContain("no pack covers 220")
+  expect(text).toContain("| 200 | 220 |")
+  expect(text).toContain("2.64 USD")
 })
 
 test("off-board lines render under \"Off the board\"", () => {
@@ -146,7 +147,7 @@ test("extras render under \"Extras\", using the reason as the identifying label"
   const catalog = new Map([["transistor_socket_to92", {
     id: "transistor_socket_to92", kind: "accessory" as const, description: "TO-92 transistor socket",
     specs: {}, evidence: [], why: "test", stock: true,
-    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 50, unitPrice: 0.05, pack: true }] })],
+    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 50, unitPrice: 0.05 }] })],
   }]])
   const text = renderBomMarkdown({
     boardName: "b", conditions: "x", lines: [], catalog,
@@ -179,9 +180,9 @@ test("an extra with spares false buys its quantity without the shrinkage margin"
 
 test("unit prices under 0.10 show up to four decimals; line and total prices show two", () => {
   const catalog = new Map([["r_100k_0207", entry({
-    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012, pack: true }] })],
+    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012 }] })],
   })]])
-  // need 2 -> cover = ceil(2 * 1.1) = 3, well under the 100-pack -> the pack break applies.
+  // need 2 -> cover 3, target max(3, stockQuantity 100) = 100 -> the 100 break applies.
   const text = renderBomMarkdown({
     boardName: "b", conditions: "x", lines: [resistorLine({ quantity: 2 })], bom: bom(), catalog,
   })

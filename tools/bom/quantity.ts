@@ -6,8 +6,10 @@
  * - the quantity to cover is `need x boards x (1 + shrinkage)`, rounded up,
  *   so any line gets at least one spare (`coverQuantity`) - except an extra that
  *   declares `"spares": false` in bom.json, which covers need x boards alone;
- * - prototype (one board), `stock` part: the smallest stocking-pack price
- *   break that covers the cover quantity;
+ * - prototype (one board), `stock` part: the target is the larger of the
+ *   cover quantity and the board's `stockQuantity`; buy the smallest listed
+ *   price break at or above the target, or - when every break is smaller -
+ *   the target itself at the largest break's unit price;
  * - prototype, any other part: the cover quantity, at the price break that
  *   applies to buying that many;
  * - run: the cover quantity, moved up to a larger price break whenever
@@ -85,43 +87,17 @@ function lineOf(quantity: number, unitPrice: number): BuySuggestion {
   return { quantity, unitPrice, linePrice: fromMicros(quantity * toMicros(unitPrice)) }
 }
 
-/**
- * Whether some stocking-pack price break (`pack: true`) at `source` covers `quantity`
- * units - the one exception-free way to ask "would a stock-part prototype buy fail to
- * find a big-enough pack here", used by both `stockPackSuggestion` below and, outside
- * this module, the report and `BOM.md` (tools/bom/report.ts, tools/bom/render.ts) so
- * neither has to distinguish "no pack big enough" from every other reason `suggestBuy`
- * can throw by catching and inspecting an exception.
- *
- * Reuses `requireBreaks`, so a source with NO price breaks at all still throws here
- * (naming the entry and supplier) rather than reading as "does not cover" - that is a
- * malformed catalog entry, a different problem from "the packs listed are too small".
- */
-export function stockPackCovers(entry: CatalogEntry, source: Source, quantity: number): boolean {
-  return requireBreaks(source, entry).some((brk) => brk.pack === true && brk.quantity >= quantity)
-}
-
-/** Prototype, `stock` part: the smallest stocking-pack break (`pack: true`) that covers the
- * cover quantity. Throws, naming the entry and the supplier, when no pack break covers it. */
-function stockPackSuggestion(cover: number, entry: CatalogEntry, source: Source): BuySuggestion {
-  if (!stockPackCovers(entry, source, cover)) {
-    throw new Error(
-      `catalog entry "${entry.id}": no stocking-pack price break at supplier "${source.supplier}" ` +
-        `covers the ${cover}-unit cover. Add a larger pack break, or choose a supplier that has one.`,
-    )
-  }
-  const packs = requireBreaks(source, entry)
-    .filter((brk) => brk.pack === true && brk.quantity >= cover)
-    .sort((a, b) => a.quantity - b.quantity)
-  const covering = packs[0]
-  if (covering === undefined) {
-    throw new Error(
-      `catalog entry "${entry.id}": stockPackCovers said a pack at "${source.supplier}" covers the ` +
-        `${cover}-unit cover, but none was found when selecting one - this is a bug in ` +
-        "tools/bom/quantity.ts, not a catalog problem.",
-    )
-  }
-  return lineOf(covering.quantity, covering.unitPrice)
+/** Prototype, `stock` part: the target is the larger of the cover quantity and the board's
+ * `stockQuantity`. Buy the smallest listed price break whose quantity reaches the target, at
+ * that break's own quantity and unit price; when every break is smaller than the target, buy
+ * the target itself at the largest break's unit price. */
+function stockSuggestion(cover: number, stockQuantity: number, entry: CatalogEntry, source: Source): BuySuggestion {
+  const breaks = requireBreaks(source, entry)
+  const target = Math.max(cover, stockQuantity)
+  const reaching = breaks.find((brk) => brk.quantity >= target)
+  if (reaching !== undefined) return lineOf(reaching.quantity, reaching.unitPrice)
+  const largest = breaks[breaks.length - 1]
+  return lineOf(target, largest.unitPrice)
 }
 
 /** Prototype, non-stock: buy exactly the cover quantity (or the minimum order, whichever is
@@ -170,7 +146,7 @@ export function suggestBuy(
 ): BuySuggestion {
   const cover = coverQuantity(need, purchasing, spares)
   if (purchasing.mode === "prototype" && entry.stock) {
-    return stockPackSuggestion(cover, entry, source)
+    return stockSuggestion(cover, purchasing.stockQuantity, entry, source)
   }
   if (purchasing.mode === "prototype") {
     return prototypeOtherSuggestion(cover, entry, source)

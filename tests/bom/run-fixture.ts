@@ -111,5 +111,5 @@ export function demoDeps(
 }
 
 export function bomJson(lines: Readonly<Record<string, string>> = {}): string {
-  return JSON.stringify({ purchasing: { mode: "prototype", shrinkage: 0.1 }, lines, extras: [] })
+  return JSON.stringify({ purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 }, lines, extras: [] })
 }

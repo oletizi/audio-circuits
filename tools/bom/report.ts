@@ -4,27 +4,13 @@
  * 2026-09-30-bom-design.md - "The command"). Never writes anything; a
  * choice is made by a person or by the researcher, never inferred here.
  *
- * `uncovered` is a controller ruling
- * (.superpowers/sdd/2026-09-30-bom/task-4-brief.md), beyond the design as
- * written: a prototype `stock` part is uncoverable at a source when none of
- * its price breaks marked `pack` reaches the needed quantity - the ONLY
- * situation `suggestBuy` can fail in that means "buy a bigger pack", so this
- * is checked with `stockPackCovers` (tools/bom/quantity.ts), never by
- * catching whatever `suggestBuy` throws. A source with no price breaks at
- * all is a different, worse problem (a malformed catalog entry) and is left
- * to throw uncaught through `compareBom` rather than folded in here as an
- * ordinary uncovered line. That is only a report item when NO source of the
- * chosen entry covers it - a single non-covering source among covering ones
- * is shown in `BOM.md`'s table (tools/bom/render.ts), not flagged here.
- *
  * Design: docs/superpowers/specs/2026-09-30-bom-design.md
  */
 import { misfits, type Misfit } from "./fit.ts"
 import { compareLines, sortLines } from "./ordering.ts"
 import type { BomLine } from "./types.ts"
-import type { BoardBom, Purchasing } from "./board-bom.ts"
+import type { BoardBom } from "./board-bom.ts"
 import type { CatalogEntry } from "./catalog.ts"
-import { coverQuantity, stockPackCovers } from "./quantity.ts"
 
 export interface BomReport {
   readonly unchosen: readonly BomLine[]
@@ -34,10 +20,6 @@ export interface BomReport {
   /** Catalog ids named in bom.json that do not exist. */
   readonly unknownParts: readonly string[]
   readonly stalePrices: readonly { readonly part: string; readonly supplier: string; readonly checked: string }[]
-  /** A chosen part where NO source covers the needed quantity with any price break
-   * (e.g. a prototype `stock` part with no stocking pack big enough). One entry per
-   * non-covering source, only when every source of that entry fails. */
-  readonly uncovered: readonly { readonly part: string; readonly supplier: string; readonly quantity: number }[]
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
@@ -54,32 +36,6 @@ function daysBetween(from: string, to: string): number {
     )
   }
   return Math.round((toMs - fromMs) / MS_PER_DAY)
-}
-
-/**
- * A chosen part is only ever uncoverable in one situation: it is a `stock` part bought
- * at prototype quantities, and none of a source's price breaks marked `pack` reaches
- * the needed quantity (`stockPackCovers`, tools/bom/quantity.ts - a plain predicate, not
- * an exception). Every other combination of mode and `stock` always succeeds, given a
- * well-formed catalog entry, so nothing else is checked here - a malformed entry (no
- * price breaks at all) is left to throw uncaught rather than read as "uncovered".
- *
- * One uncovered entry per non-covering source, and only when EVERY source fails - a
- * single failing source among covering ones belongs in the rendered table, not the
- * report (see the module comment).
- */
-function uncoveredFor(
-  partId: string, need: number, purchasing: Purchasing, entry: CatalogEntry, spares: boolean,
-): readonly { readonly part: string; readonly supplier: string; readonly quantity: number }[] {
-  if (!(purchasing.mode === "prototype" && entry.stock)) return []
-
-  const cover = coverQuantity(need, purchasing, spares)
-  const failingSuppliers: string[] = []
-  for (const source of entry.sources) {
-    if (!stockPackCovers(entry, source, cover)) failingSuppliers.push(source.supplier)
-  }
-  if (failingSuppliers.length < entry.sources.length) return [] // at least one source covers
-  return failingSuppliers.map((supplier) => ({ part: partId, supplier, quantity: cover }))
 }
 
 /**
@@ -132,41 +88,24 @@ export function compareBom(
     }
   }
 
-  const uncovered: { part: string; supplier: string; quantity: number }[] = []
-  for (const [key, partId] of Object.entries(bom.lines)) {
-    const line = lineByKey.get(key)
-    if (line === undefined) continue
-    const entry = catalog.get(partId)
-    if (entry === undefined) continue
-    uncovered.push(...uncoveredFor(partId, line.quantity, bom.purchasing, entry, true))
-  }
-  for (const extra of bom.extras) {
-    const entry = catalog.get(extra.part)
-    if (entry === undefined) continue
-    uncovered.push(...uncoveredFor(extra.part, extra.quantity, bom.purchasing, entry, extra.spares))
-  }
-
   return {
     unchosen,
     removed,
     unmet,
     unknownParts: [...unknownPartIds],
     stalePrices,
-    uncovered,
   }
 }
 
 /** Whether the parts list is complete: nothing unchosen, nothing removed, every choice
- * meets its line, no unknown catalog id, and every chosen part is coverable from at
- * least one source. Staleness does not affect completeness - a stale price is still a
+ * meets its line, and no unknown catalog id. Staleness does not affect completeness - a stale price is still a
  * price, reported so it can be refreshed, not a reason `make bom` fails. */
 export function isComplete(report: BomReport): boolean {
   return (
     report.unchosen.length === 0 &&
     report.removed.length === 0 &&
     report.unmet.length === 0 &&
-    report.unknownParts.length === 0 &&
-    report.uncovered.length === 0
+    report.unknownParts.length === 0
   )
 }
 
@@ -216,14 +155,6 @@ export function reportText(report: BomReport): string {
     sections.push(
       `${report.stalePrices.length} price(s) older than the staleness limit - re-check with the researcher:`,
       ...report.stalePrices.map((item) => `  - "${item.part}" at ${item.supplier}, checked ${item.checked}`),
-    )
-  }
-
-  if (report.uncovered.length > 0) {
-    sections.push(
-      `${report.uncovered.length} part/supplier pair(s) with no price break covering the needed quantity - ` +
-        "add a larger pack break, or choose a different supplier:",
-      ...report.uncovered.map((item) => `  - "${item.part}" at ${item.supplier} (need ${item.quantity})`),
     )
   }
 

@@ -1,5 +1,5 @@
 {
-  "purchasing": { "mode": "prototype", "shrinkage": 0.1 },
+  "purchasing": { "mode": "prototype", "shrinkage": 0.1, "stockQuantity": 100 },
   "lines": {
     "resistor 22R R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-22r-metal-film-0207",
     "resistor 1K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-1k-metal-film-0207",

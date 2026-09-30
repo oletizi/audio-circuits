@@ -9,9 +9,7 @@
  * Every line's row states what it needs ("Needs", tools/bom/needs-text.ts),
  * chosen or not. Rendering never dies on a part that cannot (yet) be bought:
  * an unchosen line renders its part columns as "not chosen", a chosen id absent from the catalog as
- * "unknown part", and a source whose price breaks do not cover the needed
- * quantity (`suggestBuy` throwing) as "no pack covers <n>" in that source's
- * own cells - the report (tools/bom/report.ts), not this file, is where
+ * "unknown part" - the report (tools/bom/report.ts), not this file, is where
  * those states are flagged as problems.
  *
  * Design: docs/superpowers/specs/2026-09-30-bom-design.md
@@ -19,7 +17,7 @@
 import type { BomLine } from "./types.ts"
 import type { BoardBom, Extra, Purchasing } from "./board-bom.ts"
 import type { CatalogEntry, Source } from "./catalog.ts"
-import { coverQuantity, stockPackCovers, suggestBuy } from "./quantity.ts"
+import { suggestBuy } from "./quantity.ts"
 import { sortLines } from "./ordering.ts"
 import { needsText } from "./needs-text.ts"
 
@@ -96,28 +94,18 @@ interface SourceCells {
   readonly buy: string
   readonly unit: string
   readonly line: string
-  /** The line price to fold into this source's supplier+currency total - absent when
-   * this source does not cover the needed quantity at all. */
-  readonly linePrice?: number
+  /** The line price to fold into this source's supplier+currency total. */
+  readonly linePrice: number
 }
 
 /** One source's row-within-a-cell: its link (with its own `checked` date - the one
  * date `BOM.md` is allowed to carry), and its buy quantity and prices at the
- * suggested quantity - or, for a `stock` part bought at prototype quantities with no
- * pack big enough (checked with `stockPackCovers`, not by catching an exception), that
- * fact in place of all three. Any OTHER problem `suggestBuy` finds (a malformed
- * catalog entry with no price breaks at all, say) is a real bug and throws through,
- * uncaught - it does not belong in a rendered cell as if it were an ordinary
- * "buy a bigger pack" case. */
+ * suggested quantity. A problem `suggestBuy` finds (a malformed catalog entry with no
+ * price breaks at all, say) is a real bug and throws through, uncaught. */
 function sourceCells(
   need: number, purchasing: Purchasing, entry: CatalogEntry, source: Source, spares: boolean,
 ): SourceCells {
   const link = `[${source.supplier} (${source.use})](${source.url}) (checked ${source.checked})`
-  const cover = coverQuantity(need, purchasing, spares)
-  if (purchasing.mode === "prototype" && entry.stock && !stockPackCovers(entry, source, cover)) {
-    const message = `no pack covers ${cover}`
-    return { link, buy: message, unit: message, line: message }
-  }
   const suggestion = suggestBuy(need, purchasing, entry, source, spares)
   return {
     link,
@@ -164,7 +152,7 @@ function rowForChosen(
 ): RenderedRow {
   const cells = entry.sources.map((source) => {
     const result = sourceCells(need, purchasing, entry, source, spares)
-    if (result.linePrice !== undefined) addToTotal(totals, source.supplier, source.currency, result.linePrice)
+    addToTotal(totals, source.supplier, source.currency, result.linePrice)
     return result
   })
   return {

@@ -2,8 +2,7 @@
  * The shared parts catalog: one file per part (`parts/<id>.json`), so every
  * choice is a small, readable diff. `parseCatalogEntry` validates one entry's
  * shape - including that every spec and every `mpn` is backed by an evidence
- * entry naming it, and that a `stock` part has a stocking-pack price break
- * somewhere to buy it from. `loadCatalog` reads every entry in a directory.
+ * entry naming it. `loadCatalog` reads every entry in a directory.
  *
  * Design: docs/superpowers/specs/2026-09-30-bom-design.md
  */
@@ -25,7 +24,6 @@ export function isSourceUse(value: string): value is SourceUse {
 export interface PriceBreak {
   readonly quantity: number
   readonly unitPrice: number
-  readonly pack?: boolean
 }
 
 export interface Source {
@@ -105,7 +103,8 @@ export interface CatalogEntry {
   readonly evidence: readonly Evidence[]
   /** Why this part was chosen over the alternatives. */
   readonly why: string
-  /** Whether this is a cheap commodity part worth buying in a stocking pack when prototyping. */
+  /** Whether this is a cheap commodity part worth stocking when prototyping: a prototype
+   * buys at least the board's `purchasing.stockQuantity` of it (tools/bom/quantity.ts). */
   readonly stock: boolean
   readonly sources: readonly Source[]
 }
@@ -264,14 +263,7 @@ function parseBreak(value: unknown, sourceIndex: number, index: number, where: s
   const record = requireRecord(value, what, where)
   const quantity = requirePositiveInteger(record["quantity"], `${what}.quantity`, where)
   const unitPrice = requireNonNegativeNumber(record["unitPrice"], `${what}.unitPrice`, where)
-  const packValue = record["pack"]
-  if (packValue === undefined) {
-    return { quantity, unitPrice }
-  }
-  if (typeof packValue !== "boolean") {
-    throw new Error(`${where}: ${what}.pack is a ${typeof packValue}, not a boolean.`)
-  }
-  return { quantity, unitPrice, pack: packValue }
+  return { quantity, unitPrice }
 }
 
 function parseBreaks(value: unknown, sourceIndex: number, where: string): readonly PriceBreak[] {
@@ -368,12 +360,6 @@ export function parseCatalogEntry(json: unknown, file: string): CatalogEntry {
   const why = requireNonEmptyString(record["why"], "why", file)
   const stock = requireBoolean(record["stock"], "stock", file)
   const sources = parseSources(record["sources"], file)
-  if (stock && !sources.some((source) => source.breaks.some((brk) => brk.pack === true))) {
-    throw new Error(
-      `${file}: "stock" is true but no source has a price break marked "pack" (a stocking pack). ` +
-        'Add one, or set "stock" to false.',
-    )
-  }
 
   return { id, kind: kindText, description, manufacturer, mpn, specs, evidence, why, stock, sources }
 }

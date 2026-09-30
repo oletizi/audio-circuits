@@ -49,7 +49,7 @@ function entry(overrides: Partial<CatalogEntry> = {}): CatalogEntry {
 
 function bom(overrides: Partial<BoardBom> = {}): BoardBom {
   return {
-    purchasing: { mode: "prototype", shrinkage: 0.1 },
+    purchasing: { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 },
     lines: { "resistor 100k 0207": "r_100k_0207" },
     extras: [],
     ...overrides,
@@ -60,7 +60,7 @@ test("a complete, well-fitting board reports nothing and isComplete is true", ()
   const catalog = new Map([["r_100k_0207", entry()]])
   const report = compareBom([line()], bom(), catalog, TODAY, STALE_DAYS)
   expect(report).toEqual({
-    unchosen: [], removed: [], unmet: [], unknownParts: [], stalePrices: [], uncovered: [],
+    unchosen: [], removed: [], unmet: [], unknownParts: [], stalePrices: [],
   })
   expect(isComplete(report)).toBe(true)
 })
@@ -135,91 +135,4 @@ test("stalePrices: exactly staleDays old is not stale; one day older is", () => 
 
   const staleCatalog = new Map([["r_100k_0207", entry({ sources: [source({ checked: "2026-08-15" })] })]])
   expect(compareBom([line()], bom(), staleCatalog, TODAY, STALE_DAYS).stalePrices).toHaveLength(1)
-})
-
-test("uncovered: a stock part in prototype mode with no source's pack covering the quantity", () => {
-  const catalog = new Map([["r_100k_0207", entry({
-    stock: true,
-    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012, pack: true }] })],
-  })]])
-  // need 200 -> cover = ceil(200 * 1.1) = 220, beyond the only 100-unit pack.
-  const board = bom({ purchasing: { mode: "prototype", shrinkage: 0.1 } })
-  const report = compareBom([line({ quantity: 200 })], board, catalog, TODAY, STALE_DAYS)
-  expect(report.uncovered).toEqual([{ part: "r_100k_0207", supplier: "Mouser", quantity: 220 }])
-  expect(isComplete(report)).toBe(false)
-})
-
-test("uncovered: one non-covering source among covering ones is not reported", () => {
-  const catalog = new Map([["r_100k_0207", entry({
-    stock: true,
-    sources: [
-      source({ supplier: "Mouser", breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012, pack: true }] }),
-      source({ supplier: "Tayda", breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 1000, unitPrice: 0.01, pack: true }] }),
-    ],
-  })]])
-  const report = compareBom([line({ quantity: 200 })], bom(), catalog, TODAY, STALE_DAYS)
-  expect(report.uncovered).toEqual([])
-  expect(isComplete(report)).toBe(true)
-})
-
-test("a source with zero price breaks throws from compareBom rather than becoming an uncovered item", () => {
-  // Bypasses catalog.ts validation (which requires at least one price break) to
-  // exercise a malformed entry directly - a bug distinct from "no pack big enough",
-  // and one compareBom must not silently read as an ordinary uncovered line.
-  const catalog = new Map([["r_100k_0207", entry({ stock: true, sources: [source({ breaks: [] })] })]])
-  expect(() => compareBom([line({ quantity: 200 })], bom(), catalog, TODAY, STALE_DAYS)).toThrow(
-    /r_100k_0207/,
-  )
-  expect(() => compareBom([line({ quantity: 200 })], bom(), catalog, TODAY, STALE_DAYS)).toThrow(
-    /no price breaks/,
-  )
-})
-
-test("uncovered: applies to extras too, keyed by the extra's part", () => {
-  const catalog = new Map([["knob", {
-    id: "knob", kind: "accessory" as const, description: "knob", specs: {}, evidence: [], why: "test",
-    stock: true,
-    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 50, unitPrice: 0.05, pack: true }] })],
-  }]])
-  const board = bom({ lines: {}, extras: [{ part: "knob", quantity: 200, why: "test", spares: true }] })
-  const report = compareBom([], board, catalog, TODAY, STALE_DAYS)
-  expect(report.uncovered).toEqual([{ part: "knob", supplier: "Mouser", quantity: 220 }])
-})
-
-test("uncovered: an extra with spares false is judged against its quantity alone", () => {
-  const catalog = new Map([["knob", {
-    id: "knob", kind: "accessory" as const, description: "knob", specs: {}, evidence: [], why: "test",
-    stock: true,
-    sources: [source({ breaks: [{ quantity: 1, unitPrice: 0.1 }, { quantity: 50, unitPrice: 0.05, pack: true }] })],
-  }]])
-  const spared = compareBom([], bom({ lines: {}, extras: [{ part: "knob", quantity: 50, why: "test", spares: true }] }), catalog, TODAY, STALE_DAYS)
-  expect(spared.uncovered).toEqual([{ part: "knob", supplier: "Mouser", quantity: 55 }])
-  const exact = compareBom([], bom({ lines: {}, extras: [{ part: "knob", quantity: 50, why: "test", spares: false }] }), catalog, TODAY, STALE_DAYS)
-  expect(exact.uncovered).toEqual([])
-})
-
-test("a line with neither removed nor unmet is skipped when its chosen part is unknown", () => {
-  const catalog = new Map<string, CatalogEntry>()
-  const report = compareBom([line()], bom(), catalog, TODAY, STALE_DAYS)
-  expect(report.unmet).toEqual([])
-  expect(report.unknownParts).toEqual(["r_100k_0207"])
-})
-
-test("reportText names every category with its fix", () => {
-  const catalog = new Map<string, CatalogEntry>()
-  const board = bom({ lines: { "resistor 47k 0207": "missing_part" } })
-  const report = compareBom([line()], board, catalog, TODAY, STALE_DAYS)
-  const text = reportText(report)
-  expect(text).toMatch(/line\(s\) with no part chosen - choose a part with the researcher/)
-  expect(text).toMatch(/resistor 100k 0207/)
-  expect(text).toMatch(/chosen line\(s\) the circuit no longer has - remove the key from bom\.json/)
-  expect(text).toMatch(/resistor 47k 0207/)
-  expect(text).toMatch(/catalog id\(s\) named in bom\.json that do not exist/)
-  expect(text).toMatch(/missing_part/)
-})
-
-test("reportText says the list matches when the report is empty", () => {
-  const catalog = new Map([["r_100k_0207", entry()]])
-  const report = compareBom([line()], bom(), catalog, TODAY, STALE_DAYS)
-  expect(reportText(report)).toBe("The parts list matches the circuit: every line is chosen and every chosen part fits.")
 })

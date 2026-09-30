@@ -26,7 +26,7 @@
     }
   ],
   "why": "A native 3-position single-row through-hole header, chosen already cut to length rather than a breakaway strip: tools/bom/fit.ts checks a pin-header line's specs.pins for exact equality, so this entry cannot double as the board's 2-pin header (J1, J2, J3; see pin-header-2position-2.54mm) - a single breakaway-strip entry would have to misstate its own as-sold position count to satisfy both lines. Samtec's TSW series sells the same family natively cut to every position count (the same family already used at 3 positions for this board's TO-92 socket, socket-to92-3position-machined-2.54mm), so a genuine 3-position part exists. Gold-flash contacts (G) were chosen over tin (L/T) for reliable low-force pin contact under repeated hand mating; the price difference is negligible at this quantity. These headers are the on-board mates for the panel trimmers RV5, RV6 and RV7 (VCA-style off-board wiring from the panel pot to its board pin), so the operator attaches loose wires directly to the pins; no mating housing is included here, and nothing about this board's layout implies one is needed - a bare 0.025 sq. post header of this kind mates directly with a female jumper wire or a soldered/pressed wire end without a crimped housing. If the operator wants a proper crimped/latched connector instead, that is a separate catalog entry (a 3-position female housing plus crimp contacts), flagged here rather than added speculatively.",
-  "stock": false,
+  "stock": true,
   "sources": [
     {
       "supplier": "Mouser",

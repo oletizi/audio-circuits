@@ -16,7 +16,7 @@ const VALID_SOURCE: Record<string, unknown> = {
   currency: "USD",
   breaks: [
     { quantity: 1, unitPrice: 0.1 },
-    { quantity: 100, unitPrice: 0.012, pack: true },
+    { quantity: 100, unitPrice: 0.012 },
   ],
   checked: "2026-09-01",
   use: "standard",
@@ -153,33 +153,21 @@ test("parseCatalogEntry throws when checked is not a real calendar date", () => 
   expect(() => parseCatalogEntry(valid({ sources }), FILE)).toThrow(/not a valid "YYYY-MM-DD" date/)
 })
 
-test("parseCatalogEntry throws when stock is true and no source has a pack break", () => {
-  const sources = [
-    {
-      ...VALID_SOURCE,
-      breaks: [{ quantity: 1, unitPrice: 0.1 }],
-    },
-  ]
-  expect(() => parseCatalogEntry(valid({ sources }), FILE)).toThrow(
-    /"stock" is true but no source has a price break marked "pack"/,
-  )
-})
-
 test("parseCatalogEntry throws when sources is empty", () => {
   expect(() => parseCatalogEntry(valid({ sources: [] }), FILE)).toThrow(
     /sources is empty; an entry with nowhere to buy it from cannot be chosen for a board. Add at least one source/,
   )
 })
 
-test("parseCatalogEntry accepts stock: false with no pack break", () => {
+test("parseCatalogEntry accepts stock true or false with a single price break", () => {
   const sources = [
     {
       ...VALID_SOURCE,
       breaks: [{ quantity: 1, unitPrice: 0.1 }],
     },
   ]
-  const entry = parseCatalogEntry(valid({ stock: false, sources }), FILE)
-  expect(entry.stock).toBe(false)
+  expect(parseCatalogEntry(valid({ stock: true, sources }), FILE).stock).toBe(true)
+  expect(parseCatalogEntry(valid({ stock: false, sources }), FILE).stock).toBe(false)
 })
 
 function withTempDir(run: (dir: string) => void): void {

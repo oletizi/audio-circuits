@@ -38,7 +38,7 @@ export const STALE_PRICE_DAYS = 45
 
 /** What a board's `bom.json` must hold at minimum; quoted in the refusal. */
 export const MINIMAL_BOM_JSON =
-  '{ "purchasing": { "mode": "prototype", "shrinkage": 0.1 }, "lines": {}, "extras": [] }'
+  '{ "purchasing": { "mode": "prototype", "shrinkage": 0.1, "stockQuantity": 100 }, "lines": {}, "extras": [] }'
 
 export interface BomFs {
   readonly exists: (file: string) => boolean
@@ -127,7 +127,7 @@ async function evaluate(declaration: PerfboardDeclaration, deps: BomDeps): Promi
 }
 
 export interface BomRun {
-  /** 0 when the list is complete, 1 when anything is unchosen, removed, unmet, unknown or uncovered. */
+  /** 0 when the list is complete, 1 when anything is unchosen, removed, unmet or unknown. */
   readonly exitCode: 0 | 1
   readonly output: string
 }

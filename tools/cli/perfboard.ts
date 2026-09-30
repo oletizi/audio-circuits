@@ -139,7 +139,7 @@ const USAGE = [
   "  0  every declared layout checked clean (or --help was given)",
   "  1  an unknown verb, or a layout that was not shown to be in sync. A board",
   "     that could not be checked at all is a failure here and never a skip.",
-  "     bom: 1 while any line is unchosen, removed, unmet, unknown or uncovered",
+  "     bom: 1 while any line is unchosen, removed, unmet or unknown",
   "     (BOM.md is still written), or when the board has no bom.json (refused,",
   "     nothing written).",
   "     check: a board with a bom.json also fails when its BOM.md is stale or a",

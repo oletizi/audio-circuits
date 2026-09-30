@@ -1,8 +1,6 @@
 /**
  * Turning a supplier offer into a catalog `Source` (`tools/bom/catalog.ts`), the shape
- * `parts source` prints and a catalog entry's `sources` array holds. `pack` is left unset
- * on every break: a stocking pack cannot be read from either supplier's search service
- * reliably, so the researcher marks it by hand after reading the listing.
+ * `parts source` prints and a catalog entry's `sources` array holds.
  *
  * An offer with no price breaks (a factory-order or discontinued listing) cannot become a
  * `Source` - a source with nothing to buy at is not useful - so this refuses, naming the

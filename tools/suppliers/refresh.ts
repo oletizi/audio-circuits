@@ -1,7 +1,6 @@
 /**
  * Refreshing the Mouser and Digi-Key sources of catalog entries in place: rewriting
- * price breaks and `checked`, keeping `pack` marks on quantities that still exist, never
- * touching which part was chosen and never touching a source from any other supplier
+ * price breaks and `checked`, never touching which part was chosen and never touching a source from any other supplier
  * (Tayda, Amazon ...).
  *
  * A source whose SKU is still listed but now carries no price break (a factory-order or
@@ -111,25 +110,14 @@ function readEntryRecord(file: string, readFile: (filePath: string) => string): 
 interface RewrittenBreak {
   readonly quantity: number
   readonly unitPrice: number
-  readonly pack?: boolean
 }
 
-/** The offer's breaks (ascending, per `SupplierClient.lookupSku`'s contract), with `pack:
- * true` carried over from the old source for every quantity that still exists. A break
- * whose quantity no longer exists in the offer simply has no rewritten break to carry its
- * mark to - it is dropped, not kept with a stale quantity. */
+/** The offer's breaks (ascending, per `SupplierClient.lookupSku`'s contract), exactly as
+ * listed: quantity and unit price, nothing else. */
 function rewriteBreaks(
-  oldBreaks: readonly unknown[],
   newBreaks: readonly { readonly quantity: number; readonly unitPrice: number }[],
 ): readonly RewrittenBreak[] {
-  return newBreaks.map((brk) => {
-    const wasPack = oldBreaks.some(
-      (item) => isRecord(item) && item["quantity"] === brk.quantity && item["pack"] === true,
-    )
-    return wasPack
-      ? { quantity: brk.quantity, unitPrice: brk.unitPrice, pack: true }
-      : { quantity: brk.quantity, unitPrice: brk.unitPrice }
-  })
+  return newBreaks.map((brk) => ({ quantity: brk.quantity, unitPrice: brk.unitPrice }))
 }
 
 function smallestUnitPrice(breaks: readonly unknown[]): number | undefined {
@@ -140,9 +128,7 @@ function smallestUnitPrice(breaks: readonly unknown[]): number | undefined {
 }
 
 /** Whether two break lists state the same quantities at the same unit prices, in order -
- * every break, not only the first, so a change at any quantity reads as a change. `pack`
- * marks are carried over by `rewriteBreaks`, never changed by a refresh, so they play no
- * part here. */
+ * every break, not only the first, so a change at any quantity reads as a change. */
 function sameBreaks(oldBreaks: readonly unknown[], newBreaks: readonly RewrittenBreak[]): boolean {
   if (oldBreaks.length !== newBreaks.length) return false
   return newBreaks.every((brk, index) => {
@@ -256,7 +242,7 @@ async function prepareEntry(
 
     const oldBreaksValue = rawSource["breaks"]
     const oldBreaks = Array.isArray(oldBreaksValue) ? oldBreaksValue : []
-    const newBreaks = rewriteBreaks(oldBreaks, offer.breaks)
+    const newBreaks = rewriteBreaks(offer.breaks)
     const newRawSource: Record<string, unknown> = { ...rawSource, breaks: newBreaks, checked: offer.fetched }
 
     if (JSON.stringify(newRawSource) !== JSON.stringify(rawSource)) changed = true

@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
-import { coverQuantity, stockPackCovers, suggestBuy } from "../../tools/bom/quantity.ts"
+import { coverQuantity, suggestBuy } from "../../tools/bom/quantity.ts"
 import type { Purchasing } from "../../tools/bom/board-bom.ts"
 import type { CatalogEntry, Source } from "../../tools/bom/catalog.ts"
 
-const PROTOTYPE_10PC: Purchasing = { mode: "prototype", shrinkage: 0.1 }
+const PROTOTYPE_10PC: Purchasing = { mode: "prototype", shrinkage: 0.1, stockQuantity: 100 }
 
 function run(boards: number, shrinkage: number): Purchasing {
   return { mode: "run", boards, shrinkage }
@@ -58,26 +58,62 @@ test("suggestBuy: prototype, non-stock, spares false buys exactly the need", () 
   expect(suggestBuy(1, PROTOTYPE_10PC, e, s, true).quantity).toBe(2)
 })
 
-test("suggestBuy: prototype, stock part, a pack break covers the cover -> buys the pack", () => {
+const BREAKS_1_10_100: Source["breaks"] = [
+  { quantity: 1, unitPrice: 0.1 },
+  { quantity: 10, unitPrice: 0.07 },
+  { quantity: 100, unitPrice: 0.03 },
+]
+
+test("suggestBuy: prototype, stock part, cover 3, stockQuantity 100 -> the 100 break at 0.03", () => {
+  const e = entry({ stock: true })
+  // need 2 -> cover = ceil(2 * 1.1) = 3; target = max(3, 100) = 100, exactly the 100 break.
+  const suggestion = suggestBuy(2, PROTOTYPE_10PC, e, source(BREAKS_1_10_100), true)
+  expect(suggestion).toEqual({ quantity: 100, unitPrice: 0.03, linePrice: 3 })
+})
+
+test("suggestBuy: prototype, stock part, every break below the target -> the target at the largest break's price", () => {
   const e = entry({ stock: true })
   const s = source([
     { quantity: 1, unitPrice: 0.1 },
-    { quantity: 100, unitPrice: 0.012, pack: true },
+    { quantity: 10, unitPrice: 0.07 },
   ])
-  // need 2 -> cover = ceil(2 * 1.1) = 3, well under the 100-pack.
+  // cover 3, target 100: no break reaches 100, so buy 100 at the 10-break's 0.07.
   const suggestion = suggestBuy(2, PROTOTYPE_10PC, e, s, true)
-  expect(suggestion).toEqual({ quantity: 100, unitPrice: 0.012, linePrice: 1.2 })
+  expect(suggestion).toEqual({ quantity: 100, unitPrice: 0.07, linePrice: 7 })
 })
 
-test("suggestBuy: prototype, stock part, no pack covers the cover -> throws naming entry and supplier", () => {
-  const e = entry({ id: "r_weird", stock: true })
-  const s = source([
-    { quantity: 1, unitPrice: 0.1 },
-    { quantity: 100, unitPrice: 0.012, pack: true },
-  ])
-  // need 200 -> cover = ceil(200 * 1.1) = 220, beyond the only 100-unit pack.
-  expect(() => suggestBuy(200, PROTOTYPE_10PC, e, s, true)).toThrow(/r_weird/)
-  expect(() => suggestBuy(200, PROTOTYPE_10PC, e, s, true)).toThrow(/Mouser/)
+test("suggestBuy: prototype, stock part, a target between breaks buys the next break up", () => {
+  const e = entry({ stock: true })
+  const purchasing: Purchasing = { mode: "prototype", shrinkage: 0.1, stockQuantity: 50 }
+  // cover 3, target 50: the smallest break at or above 50 is the 100 break.
+  expect(suggestBuy(2, purchasing, e, source(BREAKS_1_10_100), true)).toEqual({
+    quantity: 100, unitPrice: 0.03, linePrice: 3,
+  })
+})
+
+test("suggestBuy: prototype, stock part, a cover above stockQuantity sets the target", () => {
+  const e = entry({ stock: true })
+  // need 200 -> cover = 220 > 100; no break reaches 220, so buy 220 at the 100-break's 0.03.
+  expect(suggestBuy(200, PROTOTYPE_10PC, e, source(BREAKS_1_10_100), true)).toEqual({
+    quantity: 220, unitPrice: 0.03, linePrice: 6.6,
+  })
+})
+
+test("suggestBuy: prototype, stock extra with spares false keeps its no-margin cover, then the stock rule", () => {
+  const e = entry({ stock: true })
+  const purchasing: Purchasing = { mode: "prototype", shrinkage: 0.1, stockQuantity: 5 }
+  // need 10, spares false -> cover 10 (not 11); target max(10, 5) = 10, exactly the 10 break.
+  expect(suggestBuy(10, purchasing, e, source(BREAKS_1_10_100), false)).toEqual({
+    quantity: 10, unitPrice: 0.07, linePrice: 0.7,
+  })
+  // With spares, cover 11 -> the smallest break reaching 11 is the 100 break.
+  expect(suggestBuy(10, purchasing, e, source(BREAKS_1_10_100), true).quantity).toBe(100)
+})
+
+test("suggestBuy: run mode ignores stock - a stock part is bought as any other", () => {
+  const stocked = suggestBuy(3, run(5, 0.1), entry({ stock: true }), source(BREAKS_1_10_100), true)
+  const plain = suggestBuy(3, run(5, 0.1), entry({ stock: false }), source(BREAKS_1_10_100), true)
+  expect(stocked).toEqual(plain)
 })
 
 test("suggestBuy: prototype, non-stock -> buys the cover, at the break price for that quantity", () => {
@@ -140,30 +176,4 @@ test("suggestBuy: throws naming the entry and supplier when the source has no pr
   const s = source([])
   expect(() => suggestBuy(1, PROTOTYPE_10PC, e, s, true)).toThrow(/r_no_breaks/)
   expect(() => suggestBuy(1, PROTOTYPE_10PC, e, s, true)).toThrow(/Mouser/)
-})
-
-test("stockPackCovers: true when some pack break's quantity is at least the needed quantity", () => {
-  const e = entry({ stock: true })
-  const s = source([{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012, pack: true }])
-  expect(stockPackCovers(e, s, 3)).toBe(true)
-  expect(stockPackCovers(e, s, 100)).toBe(true)
-})
-
-test("stockPackCovers: false when no pack break's quantity reaches the needed quantity", () => {
-  const e = entry({ stock: true })
-  const s = source([{ quantity: 1, unitPrice: 0.1 }, { quantity: 100, unitPrice: 0.012, pack: true }])
-  expect(stockPackCovers(e, s, 220)).toBe(false)
-})
-
-test("stockPackCovers: false when the only breaks are not marked \"pack\", however large", () => {
-  const e = entry({ stock: true })
-  const s = source([{ quantity: 1, unitPrice: 0.1 }, { quantity: 1000, unitPrice: 0.01 }])
-  expect(stockPackCovers(e, s, 220)).toBe(false)
-})
-
-test("stockPackCovers: throws (does not return false) when the source has no price breaks at all", () => {
-  const e = entry({ id: "r_no_breaks" })
-  const s = source([])
-  expect(() => stockPackCovers(e, s, 1)).toThrow(/r_no_breaks/)
-  expect(() => stockPackCovers(e, s, 1)).toThrow(/Mouser/)
 })

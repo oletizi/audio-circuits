@@ -11,7 +11,7 @@
 import { isRecord } from "../perfboard/guards.ts"
 
 export type Purchasing =
-  | { readonly mode: "prototype"; readonly shrinkage: number }
+  | { readonly mode: "prototype"; readonly shrinkage: number; readonly stockQuantity: number }
   | { readonly mode: "run"; readonly boards: number; readonly shrinkage: number }
 
 export interface Extra {
@@ -67,9 +67,22 @@ function parsePurchasing(value: unknown, where: string): Purchasing {
   }
 
   if (mode === "prototype") {
-    return { mode, shrinkage }
+    const stockQuantity = requireFiniteNumber(record["stockQuantity"], "purchasing.stockQuantity", where)
+    if (!Number.isInteger(stockQuantity) || stockQuantity <= 0) {
+      throw new Error(
+        `${where}: purchasing.stockQuantity (${stockQuantity}) must be a positive integer - the ` +
+          "quantity a prototype buys of each `stock` part.",
+      )
+    }
+    return { mode, shrinkage, stockQuantity }
   }
 
+  if (record["stockQuantity"] !== undefined) {
+    throw new Error(
+      `${where}: purchasing.stockQuantity is set, but purchasing.mode is "run", which does not use ` +
+        'it. Remove "stockQuantity", or set mode to "prototype".',
+    )
+  }
   const boards = requireFiniteNumber(record["boards"], "purchasing.boards", where)
   if (!Number.isInteger(boards) || boards <= 0) {
     throw new Error(`${where}: purchasing.boards (${boards}) must be a positive integer.`)

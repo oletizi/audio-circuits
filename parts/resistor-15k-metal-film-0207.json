@@ -44,7 +44,7 @@
     }
   ],
   "why": "Yageo MFR-25FBF52 is a one-family, 1% metal-film choice that covers every axial resistor value this board needs in the same 0207 body (docs/parts/sourcing-notes.md Lessons, 2026-09-30); this value's exact SKU, stock and price were confirmed by Mouser lookup rather than assumed from the family's ordering code.",
-  "stock": false,
+  "stock": true,
   "sources": [
     {
       "supplier": "Mouser",
