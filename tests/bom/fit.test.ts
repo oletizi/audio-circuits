@@ -73,12 +73,15 @@ test("watts at or above minWatts is not a misfit", () => {
   expect(exact.some((m) => m.field === "watts")).toBe(false)
 })
 
-test("axial resistor: wrong package and lead spacing are separate misfits", () => {
-  const found = misfits(AXIAL_RESISTOR_LINE, entry({
-    specs: { ohms: 100_000, watts: 0.25, package: "0805", leadSpacingMm: 5.08 },
+test("axial resistor: the body decides the fit; lead spacing is not checked (leads are bent to pitch)", () => {
+  const wrongBody = misfits(AXIAL_RESISTOR_LINE, entry({
+    specs: { ohms: 100_000, watts: 0.25, package: "0805" },
   }))
-  expect(found).toContainEqual({ field: "package", needed: "0207", found: "0805" })
-  expect(found).toContainEqual({ field: "leadSpacingMm", needed: "10.16", found: "5.08" })
+  expect(wrongBody).toContainEqual({ field: "package", needed: "0207", found: "0805" })
+  const noSpacing = misfits(AXIAL_RESISTOR_LINE, entry({
+    specs: { ohms: 100_000, watts: 0.25, package: "0207" },
+  }))
+  expect(noSpacing).toEqual([])
 })
 
 const CAPACITOR_LINE: BomLine = {

@@ -71,8 +71,9 @@ function physicalMisfits(line: BomLine, specs: Specs): readonly Misfit[] {
   }
 
   if (physical.kind === "axial-resistor") {
+    // Only the body decides whether an axial part fits: its leads are bent to the
+    // footprint's pitch on the bench, so no datasheet states a lead spacing to check.
     push(checkEqual("package", physical.body, specs.package))
-    push(checkEqual("leadSpacingMm", physical.leadSpacingMm, specs.leadSpacingMm))
   } else if (physical.kind === "radial-electrolytic") {
     push(checkAtMost("diameterMm", physical.maxDiameterMm, specs.diameterMm))
     push(checkEqual("leadSpacingMm", physical.leadSpacingMm, specs.leadSpacingMm))

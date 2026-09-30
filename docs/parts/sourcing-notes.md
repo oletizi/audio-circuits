@@ -71,8 +71,10 @@ the repository and are never printed or committed:
 What each footprint in this repo demands (`tools/bom/footprints.ts`):
 
 - **Axial resistor, `R_Axial_DIN0207_..._P10.16mm`:** a 0207 body (about
-  6.3 mm long, 2.5 mm diameter - standard 1/4 W metal film) on 10.16 mm lead
-  spacing. Metal film, 1% unless the line says otherwise.
+  6.3 mm long, 2.5 mm diameter - standard 1/4 W metal film); the leads are
+  bent to the footprint's 10.16 mm pitch on the bench, so an axial entry
+  records no lead spacing (no datasheet states one - do not invent it).
+  Metal film, 1% unless the line says otherwise.
 - **Radial electrolytic, `CP_Radial_D<d>mm_P<p>mm`:** body diameter at most
   `d`, lead spacing exactly `p`. Read both from the datasheet's dimension
   table for the exact value and voltage - diameters vary with voltage.
