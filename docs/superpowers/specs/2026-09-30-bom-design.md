@@ -39,6 +39,7 @@ Made with the operator; each binds the design and the implementation plan.
 | Both modes add a shrinkage margin, rounded up so every line has at least one spare | Operator | "Nothing worse than losing or breaking a part and having no extras" |
 | A price is out of date after 45 days | Operator | Tariffs make prices move quickly |
 | Prototype stocking is by a per-board stocking quantity, not by "pack" price breaks: a `stock` part is bought at the smallest listed price break at or above the larger of the covered quantity and `stockQuantity` (the staged board: 100). The `pack` mark on price breaks is removed | Operator ("yes. start at 100"), on the final review (Important 2) | Suppliers' search services never say which quantities are packs, so the pack rule never took effect and every cheap part was bought at need |
+| Bulk buying is capped: a bulk buy only when its unit price is at most `maxStockUnitPrice` (staged board: 0.15 USD), and per supplier order the bulk buys may add at most `maxStockOverage` (staged board: 50%) over the same order at covered quantities, dropping the costliest bulk buys first | Operator ("a 15 cent per-unit cap on bulk buys, plus a total overage max of 50% on full order") | The uncapped rule bought 250 Samtec headers at 0.27 USD for a need of 3, more than doubling the order |
 | For an active device (bjt, diode, opamp, ic) the circuit's part number is compared with the entry's `specs.type` (the device type, with datasheet evidence), and the entry's `mpn` is always the real order code | Operator, on the final review (Important 4) | Exact `mpn` equality ruled out real order codes such as 2N3904BU and would force a false mpn like "TL072" onto a TL072CP |
 | An extra may opt out of the shrinkage margin with `"spares": false`; absent means the margin applies | Designer, final review (Minor 5), controller ruling | The margin bought a second 150 ft wire kit, about half the staged board's order; a spare stripboard is sensible, a spare wire kit is not |
 
@@ -111,12 +112,20 @@ One file per part, so every change is a small, readable diff. An entry holds:
   greater than zero). The quantity to cover is need x boards x (1 +
   shrinkage), rounded up - so any line gets at least one spare, however small
   its need. Then:
-  - `{ "mode": "prototype", "shrinkage": <fraction>, "stockQuantity": <n> }`
-    (one board) - for a `stock` part, the target is the larger of that
-    quantity and `stockQuantity` (a positive integer, required in this mode),
-    and the suggestion is the smallest listed price break at or above the
-    target, or the target itself at the largest break's price when every
-    break is smaller; for any other part, that quantity;
+  - `{ "mode": "prototype", "shrinkage": <fraction>, "stockQuantity": <n>,
+    "maxStockUnitPrice": <price>, "maxStockOverage": <fraction> }` (one
+    board; all three stock fields required in this mode) - for a `stock`
+    part, the target is the larger of that quantity and `stockQuantity` (a
+    positive integer), and the bulk suggestion is the smallest listed price
+    break at or above the target, or the target itself at the largest break's
+    price when every break is smaller. The bulk suggestion is used only when
+    its unit price is at most `maxStockUnitPrice` (in the source's currency);
+    otherwise the part is bought at the covered quantity. Then, per supplier
+    and currency, the order total with bulk buys may exceed the same order
+    at covered quantities by at most `maxStockOverage` of the latter; while it
+    exceeds, the bulk buy adding the most money is dropped (ties broken by
+    line key), and the report and `BOM.md` say which were dropped. For any
+    other part, the covered quantity;
   - `{ "mode": "run", "boards": <n>, "shrinkage": <fraction> }` - that
     quantity, moved up to a larger price break whenever the larger quantity
     costs less in total.
