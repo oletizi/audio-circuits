@@ -1,7 +1,7 @@
 {
   "id": "potentiometer-1k-linear-panel-pot",
   "kind": "potentiometer",
-  "description": "1k ohm, linear-taper, 16mm-body panel-mount potentiometer, solid (smooth, non-knurled) round metal shaft, 6.35mm dia x 15mm long, solder-lug terminals",
+  "description": "1k ohm, linear-taper, 16mm-body panel-mount potentiometer, solid (smooth, non-knurled) round metal shaft, 6.35mm dia x 15mm long, solder-lug terminals - not the PCB-pin panel-pot default: no PCB-pin variant is stocked in both 1k and 25k (see catalog why)",
   "manufacturer": "Taiwan Alpha Electronic Co., Ltd.",
   "mpn": "RV16AF-10-15R1-B1K-3CLA",
   "specs": {
@@ -14,6 +14,11 @@
       "spec": "mpn",
       "url": "https://www.mouser.com/en/ProductDetail/Alpha-Taiwan/RV16AF-10-15R1-B1K-3CLA?qs=MLItCLRbWsyvhgRl7RoeRQ%3D%3D",
       "note": "Mouser Search API, 2026-09-30: exact match for RV16AF-10-15R1-B1K-3CLA (Alpha (Taiwan)), Mouser part 313-2000F-1K, in stock 720 units."
+    },
+    {
+      "spec": "mpn",
+      "url": "https://www.taiwanalpha.com/downloads?target=products&id=94",
+      "note": "Taiwan Alpha Electronic's own 'RV16A01F / RV16AF - 16mm Rotary Type, Metal Shaft Series' catalog PDF, re-read 2026-09-30, page 6 'Metal Shaft Type' table: the 'R1 Type' drawing is a plain round shaft (no knurl, no flat) dimensioned 6.35 dia, with order code 15R1 = L 15mm. The order code's shaft field, 15R1, is this type: a 6.35mm x 15mm plain shaft."
     },
     {
       "spec": "ohms",
