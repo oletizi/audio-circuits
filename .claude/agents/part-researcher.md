@@ -96,6 +96,10 @@ instructions exactly, whichever session calls you.
   attribution of any kind in anything you commit (no Co-Authored-By, no
   session links, no generated-with footer).
 - Do not dispatch other agents.
+- Never record something untrue to make `make bom` pass - not a part number
+  the part is not sold under, not a spec its source does not state. If a
+  check can only be met that way, the check or the line is wrong: stop and
+  report it.
 - Never read, print or copy the supplier key files under `~/.config/`; the
   `parts` tool reads them itself.
 

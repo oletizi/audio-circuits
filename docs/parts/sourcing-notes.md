@@ -242,17 +242,15 @@ the date.)
   adjustment" PCB pad drawing (page 3): both outer pins 0.9mm dia, 5mm
   apart, third pin 0.9mm dia, centered and offset the full 5mm
   perpendicular - the same triangle as RM-065's 1.0mm-dia holes.
-- 2026-09-30: `circuits/transistor-preamp/parts.ts` models every on-board
-  trimmer line's part with `mpn: "RM-065"` (Runtron's own designation),
-  and `tools/bom/fit.ts` checks a catalog entry's `mpn` for exact equality
-  against the line's - so a substitute part's catalog entry must carry
-  `"mpn": "RM-065"` literally (not the substitute supplier's own order
-  code) for `make bom` to report the line as met, even though no such part
-  is actually sold under that number. Record the real orderable part's
-  manufacturer, sources[].sku and a `mpn`-spec evidence note explaining
-  the substitution; do not read `make bom`'s "mpn: needed RM-065, found
-  <substitute mpn>" misfit as meaning the substitute mpn belongs in the
-  entry - it is the entry's `mpn` field itself that must read "RM-065".
+- 2026-09-30 (corrected by the operator's session): a catalog entry's `mpn`
+  is always the real orderable part number - never a circuit's identifier
+  copied in to satisfy a check. `tools/bom/fit.ts` checks `mpn` equality only
+  for active devices (bjt, diode, opamp, ic), where the type number is the
+  part's identity. On a passive, the circuit's part number (e.g. the
+  trimmers' "RM-065") names the footprint family, which the physical checks
+  cover, so a compatible substitute such as Piher's PT6KV-102A2020 carries
+  its own mpn. If a check ever demands recording something untrue, stop and
+  report it instead.
 - 2026-09-30: Both `runtron.com` (fetches 404 in this environment - the
   domain answers but not with the original site) and `piher.net` (blocks
   direct fetches, HTTP 403, the same as the distributor sites this file

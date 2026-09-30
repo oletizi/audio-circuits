@@ -3,7 +3,7 @@
   "kind": "potentiometer",
   "description": "1k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout",
   "manufacturer": "Amphenol Piher",
-  "mpn": "RM-065",
+  "mpn": "PT6KV-102A2020",
   "specs": {
     "ohms": 1000,
     "taper": "linear",
@@ -13,7 +13,7 @@
     {
       "spec": "mpn",
       "url": "https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-102A2020?qs=PZ1ub9NEDaWyqo7aUZbrIA%3D%3D",
-      "note": "circuits/transistor-preamp/parts.ts models every on-board trimmer line with mpn: \"RM-065\" (tools/bom/fit.ts requires an entry chosen for such a line to carry this mpn exactly). Mouser does not carry a part literally numbered RM-065 (bun run parts search RM-065 / search Runtron --supplier mouser, 2026-09-30, returned no matching trimmer), so this entry's mpn records the circuit's modeled/generic identifier rather than a Piher order code; the part actually sourced and stocked to fill it is Piher's PT6KV-102A2020 (Mouser Search API, 2026-09-30: exact match, Mouser part 531-PT6KV-1K, description '1Kohms 6mm Rnd Top adj') - see the package evidence below for why it is an equivalent pin-for-pin substitute."
+      "note": "Mouser Search API, 2026-09-30: exact match for PT6KV-102A2020 (Amphenol Piher), Mouser part 531-PT6KV-1K. A pin-compatible substitute for the circuit's Runtron RM-065 footprint - see the package evidence."
     },
     {
       "spec": "ohms",
@@ -45,15 +45,42 @@
       "sku": "531-PT6KV-1K",
       "currency": "USD",
       "breaks": [
-        { "quantity": 1, "unitPrice": 0.79 },
-        { "quantity": 10, "unitPrice": 0.657 },
-        { "quantity": 25, "unitPrice": 0.579 },
-        { "quantity": 100, "unitPrice": 0.548 },
-        { "quantity": 250, "unitPrice": 0.509 },
-        { "quantity": 500, "unitPrice": 0.481 },
-        { "quantity": 1000, "unitPrice": 0.412 },
-        { "quantity": 2000, "unitPrice": 0.375 },
-        { "quantity": 4000, "unitPrice": 0.353 }
+        {
+          "quantity": 1,
+          "unitPrice": 0.79
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.657
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 0.579
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.548
+        },
+        {
+          "quantity": 250,
+          "unitPrice": 0.509
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.481
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.412
+        },
+        {
+          "quantity": 2000,
+          "unitPrice": 0.375
+        },
+        {
+          "quantity": 4000,
+          "unitPrice": 0.353
+        }
       ],
       "checked": "2026-09-30",
       "use": "standard"

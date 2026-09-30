@@ -97,6 +97,8 @@ function physicalMisfits(line: BomLine, specs: Specs): readonly Misfit[] {
  * one misfit (see the module comment); otherwise every applicable field is checked,
  * so a caller sees every mismatch at once rather than one per run.
  */
+const MPN_BINDING_KINDS: ReadonlySet<string> = new Set(["bjt", "diode", "opamp", "ic"])
+
 export function misfits(line: BomLine, entry: CatalogEntry): readonly Misfit[] {
   if (entry.kind !== line.kind) {
     return [{ field: "kind", needed: line.kind, found: entry.kind }]
@@ -111,7 +113,12 @@ export function misfits(line: BomLine, entry: CatalogEntry): readonly Misfit[] {
   push(checkEqual("ohms", line.ohms, specs.ohms))
   push(checkEqual("farads", line.farads, specs.farads))
   push(checkEqual("taper", line.taper, specs.taper))
-  push(checkEqual("mpn", line.mpn, entry.mpn))
+  // The circuit's part number is binding only where it IS the part's identity - an
+  // active device, whose type number fixes its behaviour and pinout. On a passive
+  // (resistor, capacitor, trimmer) it names the footprint family the layout was drawn
+  // for, which the value, rating and physical checks already cover; a compatible part
+  // from another maker, under its own real part number, fits.
+  if (MPN_BINDING_KINDS.has(line.kind)) push(checkEqual("mpn", line.mpn, entry.mpn))
   push(checkAtLeast("volts", line.minVolts, specs.volts))
   push(checkAtLeast("watts", line.minWatts, specs.watts))
   result.push(...physicalMisfits(line, specs))

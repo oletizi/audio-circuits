@@ -194,6 +194,14 @@ test("trimmer: package must equal RM-065; value and taper still checked", () => 
   expect(wrongTaper).toContainEqual({ field: "taper", needed: "linear", found: "log" })
 })
 
+test("a passive's circuit part number names its footprint family, so a compatible part under its own mpn fits", () => {
+  const namedLine: BomLine = { ...TRIMMER_LINE, mpn: "RM-065" }
+  const substitute = misfits(namedLine, entry({
+    kind: "potentiometer", mpn: "PT6KV-503A2020", specs: { ohms: 50_000, taper: "linear", package: "RM-065" },
+  }))
+  expect(substitute).toEqual([])
+})
+
 const HEADER_LINE: BomLine = {
   key: "connector Conn_01x03 PinHeader_1x03_P2.54mm_Vertical",
   placement: "on-board",
