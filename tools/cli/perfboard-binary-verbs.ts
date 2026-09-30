@@ -1,6 +1,6 @@
 /**
  * Dispatch for the CLI's binary-backed verbs: `cuts`, `import`, `update`,
- * `stripboard`, `edit`, and the `veroroute` acquisition verb.
+ * `stripboard`, `edit`, `guide`, and the `veroroute` acquisition verb.
  *
  * Split out of `tools/cli/perfboard.ts` to keep that file under the
  * repository's file-size ceiling: this is the coherent half that shells out
@@ -13,6 +13,7 @@ import type { Env } from "../perfboard/check.ts"
 import type { Pin, BinaryResolution, AcquireOptions } from "../perfboard/acquire.ts"
 import { runCuts, runUpdate, runStripboard, runEdit, type VerbDeps } from "../perfboard/verbs.ts"
 import { runImport } from "../perfboard/import.ts"
+import { writeGuidePacket, type GuideDeps } from "../guide/packet.ts"
 import { boardHere, parseFlags, isStripsDirection, reportLines, errorMessage } from "./perfboard-support.ts"
 
 /**
@@ -145,6 +146,41 @@ export async function dispatchStripboard(
         mergedVerbDeps(verbDeps, repoRoot),
       ),
     )
+    return 0
+  } catch (caught) {
+    error(`FAIL ${declaration.vrtPath}`)
+    for (const line of reportLines(errorMessage(caught))) error(line)
+    return 1
+  }
+}
+
+/**
+ * `guide`: write this board's printable build packet into its `guide/`.
+ *
+ * Takes `--kicad-cli <path>`, as `netlist-sync` does: make/board.mk resolves
+ * KICAD_CLI with its own default and passes it, so this verb never holds a
+ * second default of its own.
+ */
+export async function dispatchGuide(
+  cwd: string,
+  args: readonly string[],
+  guideDeps: Omit<GuideDeps, "kicadCli"> | undefined,
+  repoRoot: string | undefined,
+  log: (line: string) => void,
+  error: (line: string) => void,
+): Promise<number> {
+  const [flag, kicadCli, ...rest] = args
+  if (flag !== "--kicad-cli" || kicadCli === undefined || kicadCli.startsWith("--") || rest.length > 0) {
+    error(
+      "guide takes exactly --kicad-cli <path>: the kicad-cli that exports the schematic PDF " +
+        "(`make guide` passes its KICAD_CLI).",
+    )
+    return 1
+  }
+  const declaration = boardHere(cwd, "guide", error)
+  if (declaration === null) return 1
+  try {
+    log(await writeGuidePacket(declaration, { ...guideDeps, repoRoot: guideDeps?.repoRoot ?? repoRoot, kicadCli }))
     return 0
   } catch (caught) {
     error(`FAIL ${declaration.vrtPath}`)

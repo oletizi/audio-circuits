@@ -1,0 +1,143 @@
+/**
+ * The build guide page: one self-contained HTML file, printed from a browser.
+ *
+ * In order: the header (board, date, the layout and schematic it came
+ * from); the three layout images, inline, one to a page; the build
+ * checklist in the operator's order (see `checklist.ts`), every row with a
+ * printed checkbox; then the power-up checks, with a blank for each
+ * reading. Print CSS targets US Letter, draws nothing on a background and
+ * breaks the page between the images and the checklist, so it reads the
+ * same from a black-and-white laser printer as on screen.
+ */
+import type { ChecklistSection } from "./checklist.ts"
+import type { PowerUpCheck } from "./power-up.ts"
+
+export interface GuideImages {
+  readonly designators: string
+  readonly values: string
+  readonly copper: string
+}
+
+export interface GuideInput {
+  readonly boardName: string
+  /** The day the packet was generated, as YYYY-MM-DD. */
+  readonly generated: string
+  readonly layoutPath: string
+  readonly schematicPath: string
+  readonly images: GuideImages
+  readonly checklist: readonly ChecklistSection[]
+  /** `undefined` when the circuit module declares no power-up checks. */
+  readonly powerUpChecks: readonly PowerUpCheck[] | undefined
+}
+
+const STYLE = `
+@page { size: letter; margin: 0.5in; }
+* { box-sizing: border-box; }
+body { font: 11pt/1.35 "Helvetica Neue", Arial, sans-serif; color: #000; background: #fff; margin: 0 auto; max-width: 7.5in; padding: 0.25in 0; }
+h1 { font-size: 18pt; margin: 0 0 4pt; }
+h2 { font-size: 14pt; margin: 18pt 0 6pt; border-bottom: 1.5pt solid #000; padding-bottom: 2pt; }
+h3 { font-size: 12pt; margin: 14pt 0 4pt; }
+.meta { margin: 0; }
+.meta dt { font-weight: bold; float: left; clear: left; width: 1.1in; }
+.meta dd { margin: 0 0 2pt 1.1in; font-family: Menlo, Consolas, monospace; font-size: 9.5pt; }
+figure.layout { margin: 12pt 0 0; page-break-inside: avoid; break-inside: avoid; }
+figure.layout svg { display: block; width: 100%; height: auto; max-height: 9.2in; }
+figure.layout figcaption { font-weight: bold; margin-bottom: 4pt; }
+.page { page-break-before: always; break-before: page; }
+table { border-collapse: collapse; width: 100%; font-size: 10pt; }
+th, td { border: 0.75pt solid #000; padding: 3pt 5pt; text-align: left; vertical-align: top; }
+th { font-weight: bold; }
+tr { page-break-inside: avoid; break-inside: avoid; }
+td.tick { width: 0.3in; text-align: center; }
+.box { display: inline-block; width: 11pt; height: 11pt; border: 1.25pt solid #000; vertical-align: middle; }
+td.blank { width: 1.3in; }
+.none { font-style: italic; }
+@media print { body { padding: 0; max-width: none; } }
+`
+
+function escape(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+}
+
+const CHECKBOX = '<td class="tick"><span class="box" aria-label="to do"></span></td>'
+
+function header(input: GuideInput): string {
+  return [
+    `<h1>${escape(input.boardName)} - build guide</h1>`,
+    '<dl class="meta">',
+    `<dt>Generated</dt><dd>${escape(input.generated)}</dd>`,
+    `<dt>Layout</dt><dd>${escape(input.layoutPath)}</dd>`,
+    `<dt>Schematic</dt><dd>${escape(input.schematicPath)}</dd>`,
+    "</dl>",
+  ].join("\n")
+}
+
+function image(title: string, svg: string, pageBreak: boolean): string {
+  const cls = pageBreak ? "layout page" : "layout"
+  return `<figure class="${cls}"><figcaption>${escape(title)}</figcaption>\n${svg.trim()}\n</figure>`
+}
+
+function table(columns: readonly string[], rows: readonly (readonly string[])[], cls: string): string {
+  const head = `<tr><th></th>${columns.map((column) => `<th>${escape(column)}</th>`).join("")}</tr>`
+  const body = rows.map(
+    (row) => `<tr class="${cls}">${CHECKBOX}${row.map((cell) => `<td>${escape(cell)}</td>`).join("")}</tr>`,
+  )
+  return ["<table>", head, ...body, "</table>"].join("\n")
+}
+
+function checklistSection(section: ChecklistSection, index: number): string {
+  const heading = `<h3>${index + 1}. ${escape(section.title)}</h3>`
+  if (section.rows.length === 0) {
+    return `${heading}\n<p class="none">None on this board.</p>`
+  }
+  return `${heading}\n${table(section.columns, section.rows, "item")}`
+}
+
+function powerUp(checks: readonly PowerUpCheck[] | undefined): string {
+  const heading = "<h2>Power-up checks</h2>"
+  if (checks === undefined) {
+    return (
+      `${heading}\n<p class="none">This board declares no power-up checks: its circuit module ` +
+      "exports no <code>powerUpChecks()</code>.</p>"
+    )
+  }
+  const rows = checks.map(
+    (check) =>
+      `<tr class="power-up">${CHECKBOX}<td>${escape(check.label)}</td><td>${escape(check.node)}</td>` +
+      `<td>${check.expectedVolts.toFixed(2)} V</td><td class="blank"></td></tr>`,
+  )
+  return [
+    heading,
+    "<p>Power the board, then measure each node to ground with a DC voltmeter.</p>",
+    "<table>",
+    "<tr><th></th><th>Check</th><th>Node</th><th>Expected</th><th>Measured</th></tr>",
+    ...rows,
+    "</table>",
+  ].join("\n")
+}
+
+export function buildGuideHtml(input: GuideInput): string {
+  return [
+    "<!DOCTYPE html>",
+    '<html lang="en">',
+    "<head>",
+    '<meta charset="utf-8">',
+    `<title>${escape(input.boardName)} build guide</title>`,
+    `<style>${STYLE}</style>`,
+    "</head>",
+    "<body>",
+    header(input),
+    image("Component side - designators", input.images.designators, false),
+    image("Component side - values", input.images.values, true),
+    image("Copper side (mirrored) - cuts and solder bridges", input.images.copper, true),
+    '<section class="page">',
+    "<h2>Build checklist</h2>",
+    "<p>In build order, top to bottom. Tick each item as it is done.</p>",
+    ...input.checklist.map(checklistSection),
+    "</section>",
+    powerUp(input.powerUpChecks),
+    "</body>",
+    "</html>",
+    "",
+  ].join("\n")
+}

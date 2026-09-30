@@ -14,9 +14,10 @@
  * WHAT WRITES: `check`, `cuts`, `board-info` and `boards` write nothing.
  * `update` and `stripboard` write the declared layout IN PLACE, because git is
  * the undo and a verb that wrote a copy somewhere else and told you to move it
- * into position would hand you the one step that can go wrong.
+ * into position would hand you the one step that can go wrong. `guide` never
+ * touches the layout; it replaces the board's git-ignored `guide/` directory.
  *
- * `cuts`, `import`, `update`, `stripboard`, `edit` and `veroroute` dispatch through
+ * `cuts`, `import`, `update`, `stripboard`, `edit`, `guide` and `veroroute` dispatch through
  * `./perfboard-binary-verbs.ts` - the coherent, binary-backed half of this
  * CLI, split out to keep this file under the repository's size ceiling.
  */
@@ -39,9 +40,10 @@ import type { VerbDeps } from "../perfboard/verbs.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { errorMessage, reportLines, resolveDirectoryFlag, safeTargets } from "./perfboard-support.ts"
 import {
-  dispatchCuts, dispatchEdit, dispatchImport, dispatchUpdate, dispatchStripboard, dispatchVerorouteVerb,
-  defaultBinaryExists,
+  dispatchCuts, dispatchEdit, dispatchGuide, dispatchImport, dispatchUpdate, dispatchStripboard,
+  dispatchVerorouteVerb, defaultBinaryExists,
 } from "./perfboard-binary-verbs.ts"
+import type { GuideDeps } from "../guide/packet.ts"
 import { dispatchNetlistSync } from "./perfboard-netlist-verb.ts"
 import type { NetlistSyncDeps } from "../perfboard/netlist-sync.ts"
 import { schematicNoticeLines } from "../perfboard/schematic-notice.ts"
@@ -53,6 +55,7 @@ const VERBS = [
   ["update", "apply the circuit to this layout, in place"],
   ["stripboard", "convert this layout to strip mode, in place"],
   ["edit", "open this layout in the forked VeroRoute"],
+  ["guide", "write this board's printable build packet into its guide/ directory"],
   ["board-info", "what this directory declares"],
   ["boards", "every declared board under this directory"],
   ["veroroute", "acquire the pinned VeroRoute fork (a no-op if already built)"],
@@ -67,7 +70,7 @@ const USAGE = [
   "",
   "The directory you are standing in is the context: run a verb inside a board's",
   "directory to act on that board, or higher up to walk down to every board.",
-  "cuts, import, update, stripboard and edit act on exactly one declared board,",
+  "cuts, import, update, stripboard, edit and guide act on exactly one declared board,",
   "never a batch: run them from that board's directory.",
   "",
   "`bun run perfboard` runs from the REPOSITORY ROOT, not the directory you",
@@ -99,6 +102,12 @@ const USAGE = [
   "                           every discovered board (e.g. `make -C <dir>`).",
   "  --force                  veroroute: rebuild even if a binary already exists",
   "                           at the resolved path.",
+  "  --kicad-cli <path>       guide: the kicad-cli that exports the schematic PDF",
+  "                           (required; `make guide` passes its KICAD_CLI). The",
+  "                           packet is guide/layout-designators.svg,",
+  "                           layout-values.svg, copper-side.svg, schematic.pdf",
+  "                           and guide.html. Refuses while the cuts are",
+  "                           unresolved or any part is unplaced.",
   "  --sch, --netlist, --kicad-cli <path>",
   "                           netlist-sync: the resolved schematic, netlist fixture and kicad-cli",
   "                           paths. make/board.mk passes all three - this verb never re-derives",
@@ -164,6 +173,8 @@ export interface RunCliOptions {
   readonly acquire?: (pin: Pin, opts: AcquireOptions) => string
   /** Injected so no test spawns the real kicad-cli for `netlist-sync`. */
   readonly netlistSyncDeps?: NetlistSyncDeps
+  /** Injected so `guide` needs no real binary, kicad-cli, circuit module or filesystem in tests. */
+  readonly guideDeps?: Omit<GuideDeps, "kicadCli">
 }
 
 async function runCheck(
@@ -317,6 +328,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (verb === "stripboard") {
     return dispatchStripboard(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
   }
+
+  if (verb === "guide") return dispatchGuide(cwd, args.slice(1), opts.guideDeps, opts.repoRoot, log, error)
 
   if (verb === "netlist-sync") return dispatchNetlistSync(args.slice(1), opts.netlistSyncDeps, log, error)
 

@@ -11,7 +11,8 @@
 # `stripboard` rewrite the declared layout IN PLACE - the CLI itself refuses
 # while the layout has uncommitted changes, unless ALLOW_DIRTY=1 is passed
 # through as --allow-dirty. `edit` writes nothing itself; it hands the
-# layout to the GUI, which writes only when you save.
+# layout to the GUI, which writes only when you save. `guide` never touches
+# the layout; it replaces this board's git-ignored guide/ directory.
 #
 # THE SCHEMATIC IS THE ROOT OF THIS DEPENDENCY GRAPH. SCH and NETLIST come
 # from THIS board's own declaration (perfboard.json's optional
@@ -40,7 +41,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts import update stripboard edit board-info netlist-agrees
+.PHONY: help perfboard-help check cuts import update stripboard edit guide board-info netlist-agrees
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -143,6 +144,12 @@ perfboard-help:
 	@echo "Hand it to the GUI"
 	@echo "  make edit            open this layout in the forked VeroRoute"
 	@echo ""
+	@echo "Build it on the bench"
+	@echo "  make guide           write the printable build packet into guide/ (layout"
+	@echo "                       images, black-and-white schematic PDF, checklist in"
+	@echo "                       guide.html) - replaces guide/, never the layout;"
+	@echo "                       refuses while cuts are unresolved or a part is unplaced"
+	@echo ""
 	@echo "The toolchain"
 	@echo "  make veroroute       acquire and build the pinned VeroRoute fork (a"
 	@echo "                       no-op once it is already built)"
@@ -181,3 +188,8 @@ stripboard: veroroute netlist-agrees
 
 edit: veroroute
 	@bun "$(CLI)" edit -C "$(CURDIR)"
+
+# The build packet is generated, never committed: guide/ is git-ignored and
+# rebuilt whole from the .vrt, the schematic and the circuit on every run.
+guide: veroroute netlist-agrees
+	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)"
