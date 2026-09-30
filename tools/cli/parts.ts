@@ -24,13 +24,7 @@ import { mouserClient } from "../suppliers/mouser.ts"
 import { offerToSource } from "../suppliers/source.ts"
 import { refreshCatalog, type SourceReport, type SupplierClients } from "../suppliers/refresh.ts"
 import type { FetchLike, SupplierClient, SupplierName, SupplierOffer } from "../suppliers/types.ts"
-import type { SourceUse } from "../bom/catalog.ts"
-
-const SOURCE_USE_LIST = ["standard", "bulk", "specialty", "prototype-fast"] as const
-
-function isSourceUse(value: string): value is SourceUse {
-  return (SOURCE_USE_LIST as readonly string[]).includes(value)
-}
+import { isSourceUse, SOURCE_USE_LIST } from "../bom/catalog.ts"
 
 const DIGIKEY_NOT_BUILT =
   "the Digi-Key client is not built yet; register at developer.digikey.com and run Task 2 of " +

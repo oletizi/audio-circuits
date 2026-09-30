@@ -4,6 +4,7 @@ import os from "node:os"
 import path from "node:path"
 import { runCli } from "../../tools/cli/parts.ts"
 import type { FetchLike } from "../../tools/suppliers/types.ts"
+import { isRecord } from "../../tools/perfboard/guards.ts"
 
 const FIXTURES_DIR = path.join(import.meta.dir, "../fixtures/suppliers")
 const PARTNUMBER_FIXTURE = fs.readFileSync(path.join(FIXTURES_DIR, "mouser-partnumber-mfr-25fbf52-100k.json"), "utf8")
@@ -48,8 +49,10 @@ function neverWrite(): (filePath: string, contents: string) => void {
 function limitAwareKeywordFetch(): FetchLike {
   return async (url, init) => {
     if (!url.includes("search/keyword")) throw new Error(`limitAwareKeywordFetch: unexpected url ${url}`)
-    const body = JSON.parse(init.body ?? "{}") as { SearchByKeywordRequest: { records: number } }
-    const records = body.SearchByKeywordRequest.records
+    const body: unknown = JSON.parse(init.body ?? "{}")
+    const request = isRecord(body) ? body["SearchByKeywordRequest"] : undefined
+    const records = isRecord(request) ? request["records"] : undefined
+    if (typeof records !== "number") throw new Error("limitAwareKeywordFetch: request has no numeric records")
     const parts = Array.from({ length: records }, (_, index) => ({
       MouserPartNumber: `1-PART-${index}`,
       Manufacturer: "Acme",

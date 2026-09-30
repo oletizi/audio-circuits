@@ -15,10 +15,10 @@ import { isRecord } from "../perfboard/guards.ts"
 
 export type SourceUse = "standard" | "bulk" | "specialty" | "prototype-fast"
 
-const SOURCE_USE_LIST = ["standard", "bulk", "specialty", "prototype-fast"] as const
+export const SOURCE_USE_LIST = ["standard", "bulk", "specialty", "prototype-fast"] as const
 const SOURCE_USE_SET: ReadonlySet<string> = new Set<string>(SOURCE_USE_LIST)
 
-function isSourceUse(value: string): value is SourceUse {
+export function isSourceUse(value: string): value is SourceUse {
   return SOURCE_USE_SET.has(value)
 }
 
