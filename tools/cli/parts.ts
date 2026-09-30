@@ -214,8 +214,17 @@ function buildClient(supplier: SupplierName, deps: PartsDeps, error: (line: stri
   }
 }
 
+/** US-locale currency, but with enough precision to keep sub-cent unit prices (routine for
+ * passives bought by the thousand, e.g. $0.018) distinct from one another - the default
+ * two-decimal currency format would round several of a resistor's real price breaks down
+ * to the same "$0.02" and hide the very comparison this tool exists to show. */
 function formatMoney(amount: number, currency: string): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount)
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(amount)
 }
 
 function formatOffer(offer: SupplierOffer): string[] {
