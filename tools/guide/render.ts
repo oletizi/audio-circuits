@@ -4,12 +4,10 @@ import {
   drawBridges,
   drawCoordinates,
   drawCuts,
-  drawEdgeLabels,
   drawWires,
-  validateEdgeLabels,
-  type EdgeLabel,
 } from "./render-board.ts"
-import { drawPartBodies, drawPartLabels, placedParts, validateParts } from "./render-parts.ts"
+import { drawEdgeLabels, validateEdgeLabels, type EdgeLabel } from "./render-edges.ts"
+import { drawPartBodies, drawPartLabels, placedParts } from "./render-parts.ts"
 import {
   CHECKBOX_SIZE,
   INK,
@@ -41,7 +39,7 @@ import { createOccupied } from "./placement.ts"
  * caller.
  */
 
-export type { EdgeLabel } from "./render-board.ts"
+export type { EdgeLabel } from "./render-edges.ts"
 
 export interface RenderOptions {
   readonly view: "component" | "copper"
@@ -62,8 +60,10 @@ function drawHeader(canvas: Canvas, dump: BoardDump, options: RenderOptions, top
   const side = options.view === "component" ? "Component side" : "Copper side, mirrored (holes keep their names)"
   const size =
     `${dump.grid.rows} x ${dump.grid.cols} holes (rows A-${lastRowName(dump)}, columns 1-${dump.grid.cols})`
+  // Each view's summary counts only what that image shows.
+  const marks = `${dump.cuts.length} cuts, ${dump.bridges.length} solder bridges`
   const summary =
-    `${placed} parts, ${dump.wires.length} wire links, ${dump.cuts.length} cuts, ${dump.bridges.length} solder bridges`
+    options.view === "component" ? `${placed} parts, ${dump.wires.length} wire links, ${marks}` : marks
   const lines = [summary, `${side}. ${size}`]
   let y = top - HEADER_GAP
   for (const content of lines) {
@@ -166,34 +166,37 @@ function boundsOf(layers: readonly Canvas[]): Box {
 
 export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string>, options: RenderOptions): string {
   const frame = createFrame(dump.grid, dump.verticalStrips, options.view === "copper")
-  validateParts(frame, dump, labels)
+  // Validated for both views, so the copper view refuses the same boards.
+  const placedOrRefused = placedParts(frame, dump, labels)
   validateEdgeLabels(dump, options.edgeLabels)
-  // Placed in this order - fixed geometry first, then cut numbers clear of
-  // it, then part labels clear of everything - but stacked bottom to top as
-  // listed in `layers`, so cuts and labels are never hidden under a body.
+  // Placed in this order - fixed geometry first, then edge labels, cut
+  // numbers and part tags each clear of everything placed before - but
+  // stacked bottom to top as listed in `layers`, so cuts and labels are
+  // never hidden under a body.
   const board = createCanvas()
   const parts = createCanvas()
   const wires = createCanvas()
+  const edges = createCanvas()
   const marks = createCanvas()
   const partLabels = createCanvas()
-  const edges = createCanvas()
+  const coordinates = createCanvas()
   const page = createCanvas()
   const occupied = createOccupied()
   const component = options.view === "component"
-  const placed = component ? placedParts(frame, dump) : []
+  const placed = component ? placedOrRefused : []
   drawBoard(board, frame)
   if (component) {
     drawWires(wires, frame, dump, occupied.marks)
   }
   drawBridges(marks, frame, dump, occupied.marks)
   drawPartBodies(parts, placed, occupied)
-  drawCuts(marks, frame, dump, occupied)
-  drawPartLabels(partLabels, placed, labels, occupied)
   if (component) {
-    drawEdgeLabels(edges, frame, dump, options.edgeLabels)
+    drawEdgeLabels(edges, frame, dump, options.edgeLabels, occupied)
   }
-  drawCoordinates(edges, frame)
-  const layers = [board, parts, wires, marks, partLabels, edges]
+  drawCuts(marks, frame, dump, occupied)
+  drawPartLabels(partLabels, placed, occupied)
+  drawCoordinates(coordinates, frame)
+  const layers = [board, parts, wires, edges, marks, partLabels, coordinates]
   const drawn = boundsOf(layers)
   drawHeader(page, dump, options, drawn.minY, drawn.minX)
   drawLegend(page, options.view, drawn.maxY, drawn.minX, drawn.maxX - drawn.minX)

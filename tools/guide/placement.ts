@@ -6,11 +6,11 @@ import type { Box } from "./svg.ts"
  */
 export interface Occupancy {
   add(box: Box): void
-  /** Total area of `box` already covered (overlaps counted once per occupant). */
+  /** Area of `box` already covered (counted once per occupant), times this occupancy's weight. */
   overlap(box: Box): number
 }
 
-export function createOccupancy(): Occupancy {
+export function createOccupancy(weight: number): Occupancy {
   const boxes: Box[] = []
   return {
     add(box) {
@@ -25,10 +25,16 @@ export function createOccupancy(): Occupancy {
           total += w * h
         }
       }
-      return total
+      return total * weight
     },
   }
 }
+
+/**
+ * How far a placed tag's recorded area is grown, so later tags keep a
+ * visible gap from it rather than merely not overlapping.
+ */
+export const TAG_CLEARANCE = 3
 
 /** What is already drawn where, by kind, for placing numbers and labels. */
 export interface Occupied {
@@ -40,8 +46,15 @@ export interface Occupied {
   readonly marks: Occupancy
 }
 
+/**
+ * Covering a mark (another tag, a cut, a pin) is what makes a printout
+ * ambiguous; crossing a lead or a body outline under a haloed label is only
+ * untidy. So when nothing is clear, marks weigh more.
+ */
+const MARK_WEIGHT = 2
+
 export function createOccupied(): Occupied {
-  return { bodies: createOccupancy(), leads: createOccupancy(), marks: createOccupancy() }
+  return { bodies: createOccupancy(1), leads: createOccupancy(1), marks: createOccupancy(MARK_WEIGHT) }
 }
 
 /** All three kinds together, for a placement that should avoid everything. */

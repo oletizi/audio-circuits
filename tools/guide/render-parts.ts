@@ -1,6 +1,6 @@
 import type { BoardDump, Part, Pin } from "./dump.ts"
 import { bodyFor, type Body, type PlacedPin } from "./part-shapes.ts"
-import { everything, leastCovered, type Occupied } from "./placement.ts"
+import { TAG_CLEARANCE, everything, leastCovered, type Occupied } from "./placement.ts"
 import {
   CHECKBOX_SIZE,
   INK,
@@ -9,6 +9,7 @@ import {
   boxAround,
   checkbox,
   circle,
+  grow,
   line,
   textWidth,
   type Box,
@@ -52,35 +53,37 @@ function pinsOf(dump: BoardDump, part: Part): readonly Pin[] {
 
 export interface PlacedPart {
   readonly part: Part
+  readonly label: string
   readonly pins: readonly PlacedPin[]
   readonly body: Body
 }
 
-/** Every placed part with its pins' drawn positions and its body; floating parts are not on the board. */
-export function placedParts(frame: Frame, dump: BoardDump): readonly PlacedPart[] {
-  return dump.parts
-    .filter((part) => part.placement !== "floating")
-    .map((part) => {
-      const pins = pinsOf(dump, part).map((pin) => ({ pin, at: frame.hole(pin.row, pin.col) }))
-      return { part, pins, body: bodyFor(part, pins) }
-    })
+function labelOf(labels: ReadonlyMap<string, string>, part: Part): string {
+  const label = labels.get(part.ref)
+  if (label === undefined) {
+    throw new Error(
+      `no label given for placed part ${part.ref} (${part.type} ${part.value}); ` +
+        "the caller's label map must name every placed part",
+    )
+  }
+  return label
 }
 
 /**
- * Refuses unless every placed part has a label, PIN lines and a shape for
- * its type - checked for both views, so the copper view (which draws no
- * parts) refuses the same boards the component view does.
+ * Every placed part with its label, its pins' drawn positions and its body;
+ * floating parts are not on the board. Refuses unless every placed part has
+ * a label, PIN lines and a shape for its type. Both views call it, so the
+ * copper view (which draws no parts) refuses the same boards the component
+ * view does.
  */
-export function validateParts(frame: Frame, dump: BoardDump, labels: ReadonlyMap<string, string>): void {
-  for (const part of dump.parts) {
-    if (part.placement !== "floating" && !labels.has(part.ref)) {
-      throw new Error(
-        `no label given for placed part ${part.ref} (${part.type} ${part.value}); ` +
-          "the caller's label map must name every placed part",
-      )
-    }
-  }
-  placedParts(frame, dump)
+export function placedParts(frame: Frame, dump: BoardDump, labels: ReadonlyMap<string, string>): readonly PlacedPart[] {
+  return dump.parts
+    .filter((part) => part.placement !== "floating")
+    .map((part) => {
+      const label = labelOf(labels, part)
+      const pins = pinsOf(dump, part).map((pin) => ({ pin, at: frame.hole(pin.row, pin.col) }))
+      return { part, label, pins, body: bodyFor(part, pins) }
+    })
 }
 
 function inside(inner: Box, outer: Box): boolean {
@@ -106,7 +109,7 @@ function tagSpots(body: Body, width: number, height: number): readonly Point[] {
   const left = e.minX - gap - width
   const upper = e.minY + height / 2
   const lower = e.maxY - height / 2
-  return [
+  const near: readonly Point[] = [
     { x: right, y: c.y },
     { x: left, y: c.y },
     { x: c.x - width / 2, y: e.minY - gap - height / 2 },
@@ -116,6 +119,18 @@ function tagSpots(body: Body, width: number, height: number): readonly Point[] {
     { x: left, y: upper },
     { x: left, y: lower },
   ]
+  // Failing all of those, the same spots one gap further out on each side,
+  // still close enough to read as this part's.
+  const out = PITCH / 2
+  const far: readonly Point[] = [
+    { x: right, y: e.minY - gap - height / 2 },
+    { x: right, y: e.maxY + gap + height / 2 },
+    { x: left, y: e.minY - gap - height / 2 },
+    { x: left, y: e.maxY + gap + height / 2 },
+    { x: right + out, y: c.y },
+    { x: left - out, y: c.y },
+  ]
+  return [...near, ...far]
 }
 
 function tagBox(at: Point, width: number, height: number): Box {
@@ -128,26 +143,30 @@ function tagBox(at: Point, width: number, height: number): Box {
  * never separated - on the body where the whole tag fits clear of pins and
  * marks, and otherwise beside the body wherever it covers least.
  */
-function drawLabel(canvas: Canvas, placed: PlacedPart, label: string, occupied: Occupied): void {
-  const { part, body, pins } = placed
+function drawLabel(canvas: Canvas, placed: PlacedPart, occupied: Occupied): void {
+  const { part, body, pins, label } = placed
   const width = CHECKBOX_SIZE + TAG_GAP + textWidth(label, LABEL_SIZE)
   const height = CHECKBOX_SIZE
   const area = body.labelArea
   let spot: Point | undefined
   if (area !== undefined) {
-    const onBody = { x: (area.minX + area.maxX) / 2 - width / 2, y: (area.minY + area.maxY) / 2 }
-    const box = tagBox(onBody, width, height)
+    // Centred on the body, else nudged up or down within it.
+    const x = (area.minX + area.maxX) / 2 - width / 2
+    const y = (area.minY + area.maxY) / 2
     const avoid = pins.map((p) => p.at)
-    if (inside(box, area) && clearOf(box, avoid, PIN_DOT_RADIUS + 1) && occupied.marks.overlap(box) === 0) {
-      spot = onBody
-    }
+    spot = [y, y - height, y + height]
+      .map((cy) => ({ x, y: cy }))
+      .find((p) => {
+        const box = tagBox(p, width, height)
+        return inside(box, area) && clearOf(box, avoid, PIN_DOT_RADIUS + 1) && occupied.marks.overlap(box) === 0
+      })
   }
   if (spot === undefined) {
     spot = leastCovered(tagSpots(body, width, height), (p) => tagBox(p, width, height), everything(occupied))
   }
   canvas.add(checkbox({ x: spot.x, y: spot.y - CHECKBOX_SIZE / 2 }, `part:${part.ref}`), tagBox(spot, CHECKBOX_SIZE, height))
   addText(canvas, { x: spot.x + CHECKBOX_SIZE + TAG_GAP, y: spot.y }, label, LABEL_STYLE)
-  occupied.marks.add(tagBox(spot, width, height))
+  occupied.marks.add(grow(tagBox(spot, width, height), TAG_CLEARANCE))
 }
 
 /**
@@ -206,17 +225,8 @@ function drawPolarity(canvas: Canvas, polarity: NonNullable<Body["polarity"]>, o
 }
 
 /** Draws every placed part's tag (checkbox and label), clear of everything already recorded in `occupied`. */
-export function drawPartLabels(
-  canvas: Canvas,
-  placed: readonly PlacedPart[],
-  labels: ReadonlyMap<string, string>,
-  occupied: Occupied,
-): void {
+export function drawPartLabels(canvas: Canvas, placed: readonly PlacedPart[], occupied: Occupied): void {
   for (const entry of placed) {
-    const label = labels.get(entry.part.ref)
-    if (label === undefined) {
-      throw new Error(`no label given for placed part ${entry.part.ref}`)
-    }
-    drawLabel(canvas, entry, label, occupied)
+    drawLabel(canvas, entry, occupied)
   }
 }

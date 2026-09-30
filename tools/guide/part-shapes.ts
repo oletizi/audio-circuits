@@ -41,7 +41,10 @@ function pinNamed(part: Part, pins: readonly PlacedPin[], name: string): PlacedP
   const found = pins.find((p) => p.pin.pin === name)
   if (found === undefined) {
     throw new Error(
-      `part ${part.ref} (${part.type}) has no pin ${name} in the dump; its pins are ${pins.map((p) => p.pin.pin).join(", ")}`,
+      `part ${part.ref} (${part.type}) has no pin ${name} in the dump; its pins are ` +
+        `${pins.map((p) => p.pin.pin).join(", ")}. Its drawing needs pin ${name} to orient the body: ` +
+        "give the part a footprint whose pins are numbered from 1 in VeroRoute, or if the type's numbering " +
+        "really differs, teach its shape in tools/guide/part-shapes.ts that numbering.",
     )
   }
   return found
@@ -49,14 +52,22 @@ function pinNamed(part: Part, pins: readonly PlacedPin[], name: string): PlacedP
 
 function expectPinCount(part: Part, pins: readonly PlacedPin[], count: number): void {
   if (pins.length !== count) {
-    throw new Error(`part ${part.ref} (${part.type}) should have ${count} pins but the dump places ${pins.length}`)
+    throw new Error(
+      `part ${part.ref} (${part.type}) should have ${count} pins but the dump places ${pins.length}. ` +
+        "Fix the part's footprint in the .vrt so it matches its type, or, if this type legitimately has " +
+        "that many pins, give it its own shape in tools/guide/part-shapes.ts.",
+    )
   }
 }
 
 function unit(from: Point, to: Point, part: Part): Point {
   const len = Math.hypot(to.x - from.x, to.y - from.y)
   if (len === 0) {
-    throw new Error(`part ${part.ref} (${part.type}) has two pins on the same hole; the dump's PIN lines are inconsistent`)
+    throw new Error(
+      `part ${part.ref} (${part.type}) has two pins on the same hole, so the dump's PIN lines are inconsistent. ` +
+        "Re-run --dump-board with the pinned veroroute fork (`bun run perfboard veroroute`); if it persists, " +
+        "the fork's PIN reporting has a bug to fix there.",
+    )
   }
   return { x: (to.x - from.x) / len, y: (to.y - from.y) / len }
 }
@@ -69,7 +80,29 @@ export function pin1Square(at: Point): string {
   )
 }
 
-/** An axial resistor: a rectangle between its pins, shorter than the pin gap so the leads show. */
+/**
+ * A standing (upright) resistor, its pins one hole apart: the usual
+ * stripboard mark, a circle over the hole its body stands on (pin 1 here),
+ * with the folded-back lead running to the other hole. Deliberately round,
+ * so it can never be read as a checkbox.
+ */
+function standingResistorBody(a: Point): Body {
+  const r = PITCH * 0.42
+  return {
+    outline: circle(a, r, { fill: PAPER, stroke: INK, width: 1.6, cls: "part-body" }),
+    extent: boxAround([a], r),
+    centre: a,
+    labelArea: undefined,
+    marks: [],
+    polarity: undefined,
+  }
+}
+
+/**
+ * An axial resistor: a rectangle between its pins, shorter than the pin gap
+ * so the leads show. Pins one hole apart mean it stands upright; see
+ * `standingResistorBody`.
+ */
 function resistorBody(part: Part, pins: readonly PlacedPin[]): Body {
   expectPinCount(part, pins, 2)
   const a = pinNamed(part, pins, "1").at
@@ -77,8 +110,11 @@ function resistorBody(part: Part, pins: readonly PlacedPin[]): Body {
   const c = centroid([a, b])
   const dist = Math.hypot(b.x - a.x, b.y - a.y)
   const u = unit(a, b, part)
+  if (dist < PITCH * 1.5) {
+    return standingResistorBody(a)
+  }
   const v = { x: -u.y, y: u.x }
-  const halfL = Math.min(Math.max(dist - PITCH * 0.9, PITCH * 0.6), PITCH * 3.2) / 2
+  const halfL = Math.min(Math.max(dist - PITCH * 0.9, PITCH * 1.1), PITCH * 3.2) / 2
   const halfW = PITCH * 0.28
   const corner = (sl: number, sw: number): Point => ({ x: c.x + u.x * sl + v.x * sw, y: c.y + u.y * sl + v.y * sw })
   const corners = [corner(-halfL, -halfW), corner(halfL, -halfW), corner(halfL, halfW), corner(-halfL, halfW)]
@@ -128,8 +164,10 @@ function to92Body(part: Part, pins: readonly PlacedPin[]): Body {
   const c = centroid(pins.map((p) => p.at))
   const d = unit(p1, p3, part)
   const n = { x: -d.y, y: d.x }
-  const R = PITCH * 1.5
-  const base = { x: c.x + n.x * PITCH * 0.4, y: c.y + n.y * PITCH * 0.4 }
+  // About 2 pitches (0.2") across, a TO-92's real width, with the outer
+  // pins just inside the flat's ends.
+  const R = PITCH * 1.1
+  const base = { x: c.x + n.x * PITCH * 0.25, y: c.y + n.y * PITCH * 0.25 }
   const from = { x: base.x + d.x * R, y: base.y + d.y * R }
   const to = { x: base.x - d.x * R, y: base.y - d.y * R }
   const apex = { x: base.x - n.x * R, y: base.y - n.y * R }

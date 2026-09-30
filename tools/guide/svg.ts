@@ -58,6 +58,10 @@ export function unionBox(a: Box, b: Box): Box {
   }
 }
 
+export function grow(box: Box, pad: number): Box {
+  return { minX: box.minX - pad, minY: box.minY - pad, maxX: box.maxX + pad, maxY: box.maxY + pad }
+}
+
 export function boxAround(points: readonly Point[], pad: number): Box {
   const first = points[0]
   if (first === undefined) {
@@ -172,7 +176,10 @@ export function textExtent(at: Point, content: string, style: TextStyle): Box {
   const [lo, hi] = style.anchor === "middle" ? [-w / 2, w / 2] : style.anchor === "end" ? [-w, 0] : [0, w]
   if (style.rotate !== undefined) {
     if (style.rotate !== -90) {
-      throw new Error(`textExtent: only -90 degree rotation is supported, got ${style.rotate}`)
+      throw new Error(
+        `textExtent: only -90 degree rotation is supported, got ${style.rotate}; ` +
+          "draw the text at -90 degrees, or extend textExtent in tools/guide/svg.ts to cover the new angle",
+      )
     }
     // rotate(-90): the text runs upward from its anchor.
     return { minX: at.x - h / 2, maxX: at.x + h / 2, minY: at.y - hi, maxY: at.y - lo }

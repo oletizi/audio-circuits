@@ -1,6 +1,6 @@
-import { holeName, type BoardDump, type HolePosition, type Pin } from "./dump.ts"
+import { holeName, type BoardDump, type HolePosition } from "./dump.ts"
 import { numberedBridges, numberedCuts } from "./numbering.ts"
-import { everything, leastCovered, type Occupancy, type Occupied } from "./placement.ts"
+import { TAG_CLEARANCE, everything, leastCovered, type Occupancy, type Occupied } from "./placement.ts"
 import {
   CHECKBOX_SIZE,
   INK,
@@ -12,6 +12,7 @@ import {
   checkbox,
   circle,
   fmt,
+  grow,
   line,
   textExtent,
   textWidth,
@@ -24,24 +25,15 @@ import {
 
 /**
  * The board itself: outline, strips, holes, row and column names, cuts,
- * solder bridges, wires and off-board connection labels. Parts are drawn by
- * `render-parts.ts`; the page around the board by `render.ts`.
+ * solder bridges and wires. Parts are drawn by `render-parts.ts`,
+ * off-board connection labels by `render-edges.ts`, and the page around the
+ * board by `render.ts`.
  */
-
-/** An off-board connection, labelled at the board edge nearest its pin. */
-export interface EdgeLabel {
-  readonly ref: string
-  readonly pin: string
-  readonly text: string
-}
 
 const COORD_SIZE = 8
 const MARK_NUMBER_SIZE = 8
-const EDGE_LABEL_SIZE = 9
 /** Distance from the board outline to the row/column names. */
 const COORD_OFFSET = 9
-/** Distance from the board outline to where an edge label's leader stops. */
-const EDGE_LEADER_OFFSET = 22
 
 function rowName(row: number): string {
   return holeName(row, 0).slice(0, -1)
@@ -146,7 +138,7 @@ export function drawCuts(canvas: Canvas, frame: Frame, dump: BoardDump, occupied
     const boxAt = { x: at.x + total / 2 - CHECKBOX_SIZE, y: at.y - CHECKBOX_SIZE / 2 }
     const boxExtent = boxAround([boxAt, { x: boxAt.x + CHECKBOX_SIZE, y: boxAt.y + CHECKBOX_SIZE }], 0)
     canvas.add(checkbox(boxAt, `cut:${number}`), boxExtent)
-    marks.add(tagOf(at))
+    marks.add(grow(tagOf(at), TAG_CLEARANCE))
   }
 }
 
@@ -176,7 +168,11 @@ export function drawWires(canvas: Canvas, frame: Frame, dump: BoardDump, marks: 
   for (const wire of dump.wires) {
     const [a, b] = wire.ends.map((end: HolePosition) => frame.hole(end.row, end.col))
     if (a === undefined || b === undefined) {
-      throw new Error(`wire ${wire.name} does not have two ends`)
+      throw new Error(
+        `wire ${wire.name} does not have two ends, so it cannot be drawn. parseBoardDump always gives a wire ` +
+          "two ends, so this BoardDump was built some other way; build it with parseBoardDump from a real " +
+          "--dump-board report.",
+      )
     }
     canvas.add(line(a, b, { width: 2, cls: "wire", data: { wire: wire.name } }), boxAround([a, b], 3))
     marks.add(boxAround([a, b], 2))
@@ -186,74 +182,3 @@ export function drawWires(canvas: Canvas, frame: Frame, dump: BoardDump, marks: 
   }
 }
 
-function findPin(dump: BoardDump, label: EdgeLabel): Pin {
-  const pin = dump.pins[label.ref]?.find((p) => p.pin === label.pin)
-  if (pin === undefined) {
-    throw new Error(
-      `edge label "${label.text}" names ${label.ref} pin ${label.pin}, which the dump places nowhere ` +
-        `(no "PIN ${label.ref} ${label.pin}" line); fix the caller's off-board connection list or re-dump the board`,
-    )
-  }
-  return pin
-}
-
-export function validateEdgeLabels(dump: BoardDump, labels: readonly EdgeLabel[]): void {
-  for (const label of labels) {
-    findPin(dump, label)
-  }
-}
-
-type Edge = "left" | "right" | "top" | "bottom"
-
-function nearestEdge(frame: Frame, pin: Pin): Edge {
-  const { rows, cols } = frame.grid
-  const byStrip: readonly (readonly [Edge, number])[] = [
-    ["left", pin.col],
-    ["right", cols - 1 - pin.col],
-    ["top", pin.row],
-    ["bottom", rows - 1 - pin.row],
-  ]
-  // Ties go to the strip ends, where an off-board wire naturally lands.
-  const order: readonly (readonly [Edge, number])[] = frame.verticalStrips
-    ? [...byStrip.slice(2), ...byStrip.slice(0, 2)]
-    : byStrip
-  let best = order[0]
-  for (const candidate of order) {
-    if (best === undefined || candidate[1] < best[1]) {
-      best = candidate
-    }
-  }
-  if (best === undefined) {
-    throw new Error("nearestEdge: no edges")
-  }
-  return best[0]
-}
-
-export function drawEdgeLabels(canvas: Canvas, frame: Frame, dump: BoardDump, labels: readonly EdgeLabel[]): void {
-  const { board } = frame
-  for (const label of labels) {
-    const pin = findPin(dump, label)
-    const hole = frame.hole(pin.row, pin.col)
-    const edge = nearestEdge(frame, pin)
-    const end: Point =
-      edge === "left"
-        ? { x: board.minX - EDGE_LEADER_OFFSET, y: hole.y }
-        : edge === "right"
-          ? { x: board.maxX + EDGE_LEADER_OFFSET, y: hole.y }
-          : edge === "top"
-            ? { x: hole.x, y: board.minY - EDGE_LEADER_OFFSET }
-            : { x: hole.x, y: board.maxY + EDGE_LEADER_OFFSET }
-    canvas.add(line(hole, end, { width: 0.9, cls: "edge-leader" }), boxAround([hole, end], 1))
-    const gap = 3
-    const style: TextStyle = { size: EDGE_LABEL_SIZE, bold: true, halo: true, cls: "edge-label" }
-    if (edge === "left") {
-      addText(canvas, { x: end.x - gap, y: end.y }, label.text, { ...style, anchor: "end" })
-    } else if (edge === "right") {
-      addText(canvas, { x: end.x + gap, y: end.y }, label.text, { ...style, anchor: "start" })
-    } else if (edge === "top") {
-      addText(canvas, { x: end.x, y: end.y - gap }, label.text, { ...style, anchor: "start", rotate: -90 })
-    } else {
-      addText(canvas, { x: end.x, y: end.y + gap }, label.text, { ...style, anchor: "end", rotate: -90 })
-    }
-  }
-}
