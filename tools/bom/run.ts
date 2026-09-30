@@ -23,6 +23,7 @@ import { parseBoardBom } from "./board-bom.ts"
 import { loadCatalog, type CatalogEntry } from "./catalog.ts"
 import { declaredBomConditions, highestRailVolts, type BomConditions } from "./conditions.ts"
 import { resistorDissipation } from "./dissipation.ts"
+import { localDate } from "./local-date.ts"
 import { deriveNeeds } from "./needs.ts"
 import { renderBomMarkdown } from "./render.ts"
 import { compareBom, isComplete, reportText, type BomReport } from "./report.ts"
@@ -62,13 +63,6 @@ const REAL_FS: BomFs = {
   exists: (file) => nodeFs.existsSync(file),
   readText: (file) => nodeFs.readFileSync(file, "utf8"),
   writeText: (file, text) => nodeFs.writeFileSync(file, text),
-}
-
-/** The local calendar date as "YYYY-MM-DD" - what the operator's own calendar says. */
-export function localDate(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${date.getFullYear()}-${month}-${day}`
 }
 
 export function bomJsonPath(declaration: PerfboardDeclaration): string {

@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test"
-import { checkBoardBom, runBom, STALE_PRICE_DAYS, localDate } from "../../tools/bom/run.ts"
+import { checkBoardBom, runBom, STALE_PRICE_DAYS } from "../../tools/bom/run.ts"
+import { localDate } from "../../tools/bom/local-date.ts"
 import { deriveNeeds } from "../../tools/bom/needs.ts"
 import { boardCircuitFrom } from "../../tools/perfboard/board-circuit.ts"
 import {
