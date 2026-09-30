@@ -40,6 +40,7 @@ import { parseValue } from "../../lib/model/units.ts"
 import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
 import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
 import type { PowerUpChecks, PowerUpChecksExport } from "../../tools/guide/power-up.ts"
+import type { BomConditions } from "../../tools/bom/conditions.ts"
 import { addFollower, schematicNotes as bufferedNotes } from "./buffered-board.ts"
 import * as buffered from "./buffered-board.ts"
 import { addFeedbackStage } from "./feedback-board.ts"
@@ -156,6 +157,25 @@ export function schematicNotes(): readonly string[] {
     "  CHARACTER (RV6) shapes it: toward 0, early and gradual; toward 1k, cleaner for longer.",
     "  TRANSFORMER DRIVE (RV7) sets how hard Q2 and the output transformer are driven.",
   ]
+}
+
+/**
+ * The parts-list derivation's operating conditions: the 24 V rail and every control
+ * (on-board trims and panel pots alike) at START, with the AC source and load taken
+ * from the same bench environment - minus its sweep, which an operating-point deck
+ * has no use for.
+ */
+export function bomConditions(): BomConditions {
+  return {
+    description: `Supply ${supplyVolts()} V; every control (RV1-RV7) at START.`,
+    environment: {
+      source: STAGED_BOARD_ENVIRONMENT.source,
+      load: STAGED_BOARD_ENVIRONMENT.load,
+      supplies: STAGED_BOARD_ENVIRONMENT.supplies,
+      groundPort: STAGED_BOARD_ENVIRONMENT.groundPort,
+    },
+    controlState: controlStateFor(START),
+  }
 }
 
 /** Rounded to two decimals: what a bench multimeter reads to. */

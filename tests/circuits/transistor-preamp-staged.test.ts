@@ -1,7 +1,9 @@
 import { test, expect } from "bun:test"
 import {
   transistorPreampStaged, DESIGNATORS, PIN_NUMBERS, START, controlStateFor, schematicNotes, powerUpChecks,
+  bomConditions,
 } from "../../circuits/transistor-preamp/staged-board.ts"
+import { resistorDissipation } from "../../tools/bom/dissipation.ts"
 import type { StagedSetting } from "../../circuits/transistor-preamp/staged-board.ts"
 import * as buffered from "../../circuits/transistor-preamp/buffered-board.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
@@ -106,6 +108,45 @@ test("at 24 V all three transistors are active and Q3's collector is centred", a
   const centred = (vc3 - ve3) / (24 - ve3)
   expect(centred).toBeGreaterThan(0.4)
   expect(centred).toBeLessThan(0.6)
+})
+
+test("resistorDissipation pins R10 and R11 against an independent operating-point run, at START", async () => {
+  const conditions = bomConditions()
+  const resolved = resolveNetwork(transistorPreampStaged(), conditions.controlState)
+  const deck = toSpiceOperatingPointNetlist(resolved, conditions.environment)
+  const nodes = ["Q3_COLLECTOR", "Q3_EMITTER"].map(spiceNodeName)
+  const v = await runOperatingPoint({ netlist: deck, nodes })
+  const vCollector = v[spiceNodeName("Q3_COLLECTOR")]
+  const vEmitter = v[spiceNodeName("Q3_EMITTER")]
+  if (vCollector === undefined || vEmitter === undefined) throw new Error("missing Q3 bias node")
+
+  const expectedR10 = ((24 - vCollector) ** 2) / 5600
+  const expectedR11 = (vEmitter ** 2) / 1200
+
+  const dissipation = await resistorDissipation(transistorPreampStaged(), conditions)
+  const r10 = dissipation.get("q3_collector_resistor")
+  const r11 = dissipation.get("q3_emitter_resistor")
+  if (r10 === undefined || r11 === undefined) throw new Error("missing R10/R11 dissipation")
+
+  expect(r10).toBeGreaterThan(0.001)
+  expect(r11).toBeGreaterThan(0.001)
+  expect(r10 / expectedR10).toBeGreaterThan(0.99)
+  expect(r10 / expectedR10).toBeLessThan(1.01)
+  expect(r11 / expectedR11).toBeGreaterThan(0.99)
+  expect(r11 / expectedR11).toBeLessThan(1.01)
+
+  // Sanity ceiling: every physical resistor (not a pot's expanded, sometimes
+  // zero-ohm sections - deriveNeeds never reads those) runs well under a 1/8 W part
+  // at START.
+  const physicalResistorIds = transistorPreampStaged().components
+    .filter((component) => component.kind === "resistor")
+    .map((component) => component.id)
+  expect(physicalResistorIds.length).toBeGreaterThan(0)
+  for (const id of physicalResistorIds) {
+    const watts = dissipation.get(id)
+    if (watts === undefined) throw new Error(`missing dissipation for physical resistor "${id}"`)
+    expect(watts).toBeLessThan(0.125)
+  }
 })
 
 test("powerUpChecks: one accurate conditions statement, then the supply, Q1, Q3, Q2 and C5's transformer side", async () => {
