@@ -17,22 +17,16 @@
  * here, and the cuts verb explains it rather than printing raw conflict lines.
  */
 import type { CheckRun } from "./check.ts"
+import { dumpLineFields } from "./dump-lines.ts"
 
 interface Hole {
   readonly position: string
   readonly nodeId: string
 }
 
-function lines(dump: string, keyword: string): string[][] {
-  return dump
-    .split("\n")
-    .map((line) => line.trim().split(/\s+/))
-    .filter((fields) => fields[0] === keyword)
-}
-
 /** The value of the dump's single CUT_STATE line; throws if there is none. */
 export function cutStateOf(dump: string, vrtPath: string): string {
-  const state = lines(dump, "CUT_STATE")[0]?.[1]
+  const state = dumpLineFields(dump, "CUT_STATE")[0]?.[1]
   if (state === undefined) {
     throw new Error(
       `${vrtPath}: --dump-board produced no CUT_STATE line, so whether this board's cuts ` +
@@ -55,7 +49,7 @@ function hole(field: string | undefined, vrtPath: string): Hole {
 /** The operator-facing explanation of a `CUT_STATE UNRESOLVED` dump. */
 export function unresolvedCutsMessage(vrtPath: string, dump: string): string {
   const netNames = new Map<string, string>()
-  for (const [, id, keyword, name] of lines(dump, "NODE")) {
+  for (const [, id, keyword, name] of dumpLineFields(dump, "NODE")) {
     if (id !== undefined && keyword === "NAME" && name !== undefined) netNames.set(id, name)
   }
   const describe = (h: Hole): string => {
@@ -65,7 +59,7 @@ export function unresolvedCutsMessage(vrtPath: string, dump: string): string {
     }
     return `${h.position} ${name}`
   }
-  const conflicts = lines(dump, "CUT_CONFLICT").map((fields) => {
+  const conflicts = dumpLineFields(dump, "CUT_CONFLICT").map((fields) => {
     const first = hole(fields[1], vrtPath)
     const second = hole(fields[2], vrtPath)
     return `    ${describe(first)}  ...  ${describe(second)}`

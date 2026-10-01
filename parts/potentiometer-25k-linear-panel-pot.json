@@ -1,0 +1,85 @@
+{
+  "id": "potentiometer-25k-linear-panel-pot",
+  "kind": "potentiometer",
+  "description": "25k ohm, linear-taper, 16mm-body panel-mount potentiometer, solid (smooth, non-knurled) round metal shaft, 6.35mm dia x 15mm long, solder-lug terminals - not the PCB-pin panel-pot default: no PCB-pin variant is stocked in both 1k and 25k (see catalog why)",
+  "manufacturer": "Taiwan Alpha Electronic Co., Ltd.",
+  "mpn": "RV16AF-10-15R1-B25K-3CLA",
+  "specs": {
+    "ohms": 25000,
+    "taper": "linear",
+    "diameterMm": 16.5
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Alpha-Taiwan/RV16AF-10-15R1-B25K-3CLA?qs=u16ybLDytRZUC6Jgizzw%2Fg%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for RV16AF-10-15R1-B25K-3CLA (Alpha (Taiwan)), Mouser part 313-2000F-25K, in stock 456 units."
+    },
+    {
+      "spec": "mpn",
+      "url": "https://www.taiwanalpha.com/downloads?target=products&id=94",
+      "note": "Taiwan Alpha Electronic's own 'RV16A01F / RV16AF - 16mm Rotary Type, Metal Shaft Series' catalog PDF, re-read 2026-09-30, page 6 'Metal Shaft Type' table: the 'R1 Type' drawing is a plain round shaft (no knurl, no flat) dimensioned 6.35 dia, with order code 15R1 = L 15mm. The order code's shaft field, 15R1, is this type: a 6.35mm x 15mm plain shaft."
+    },
+    {
+      "spec": "ohms",
+      "url": "https://www.taiwanalpha.com/downloads?target=products&id=94",
+      "note": "Taiwan Alpha Electronic's own 'RV16A01F / RV16AF - 16mm Rotary Type, Metal Shaft Series' catalog PDF, 2026-09-30, 'How to order' diagram: the order code's Taper-and-Resistance field 'B25K' decodes as taper code B and resistance value 25K ohm."
+    },
+    {
+      "spec": "taper",
+      "url": "https://www.taiwanalpha.com/downloads?target=products&id=94",
+      "note": "Same catalog PDF, 'How to order' diagram's Taper and Resistance Value table: order code prefix 'B' = 'Linear/B' taper (A = Log, B = Linear, C = Rev-log)."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://www.taiwanalpha.com/downloads?target=products&id=94",
+      "note": "Same catalog PDF: the whole series is titled '16mm Rotary Type, Metal Shaft Series' throughout, and the RV16AF-10 outline drawing (page 2) dimensions the case as a 16.5mm diameter body with a 17mm mounting-bushing face, consistent with the operator's 16mm panel-pot default."
+    }
+  ],
+  "why": "The line needs a 25k linear panel pot; the operator's default is 16mm body, solid shaft, PCB pins. Taiwan Alpha's RV16AF-10-15R1 family is confirmed from the manufacturer's own catalog to be a genuinely solid (smooth, non-knurled, non-flatted) round metal shaft - the catalog's 'Metal Shaft Type' page draws R/R1 shafts as plain cylinders, distinct from its knurled 'K type' and flatted 'F type' options - at a 16mm body, matching the operator's default closely. The same RV16AF-10-15R1-B family (solid shaft, linear taper) is the only one found, across Alpha, Bourns and Piher, that carries BOTH this board's panel-pot values (1k and 25k) in Mouser stock at hobbyist quantities with a genuinely solid round shaft: Piher's PC-16 family has an in-stock 25k PCB-pin solid-shaft part but no in-stock 1k in that same configuration (only a 600-unit factory-order break), and Bourns's PDB18 series has no 25k value in its standard resistance table at all. The one deviation from the operator's default this entry carries is terminal style: RV16AF-10 is Alpha's solder-lug (not PCB-pin) model - the '-10' bushing/terminal code is 'Solder lug' per the manufacturer's own model-description table - because no single in-stock Alpha/Bourns/Piher family offers PCB pins with a genuinely solid round shaft at both this board's values together. Since a panel pot is wired to its on-board header through point-to-point wiring regardless of its own terminal style, and the fit check for a panel pot line is value and taper only, solder lugs are a reasonable substitution here; this is flagged so the operator can override if PCB pins matter more than a solid shaft for this board.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Alpha-Taiwan/RV16AF-10-15R1-B25K-3CLA?qs=u16ybLDytRZUC6Jgizzw%2Fg%3D%3D",
+      "sku": "313-2000F-25K",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 1.94
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 1.6
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 1.47
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 1.33
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 1.22
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 1.03
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.94
+        },
+        {
+          "quantity": 10000,
+          "unitPrice": 0.83
+        }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}

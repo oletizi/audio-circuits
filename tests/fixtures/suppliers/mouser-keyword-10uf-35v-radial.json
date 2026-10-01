@@ -1,0 +1,604 @@
+{
+    "Errors": [],
+    "SearchResults": {
+        "NumberOfResult": 210,
+        "Parts": [
+            {
+                "Availability": "31967 In Stock",
+                "DataSheetUrl": "",
+                "Description": "Aluminum Electrolytic Capacitors - Radial Leaded",
+                "FactoryStock": "0",
+                "ImagePath": "https://www.mouser.com/images/lelon/images/sg.jpg",
+                "Category": "Aluminum Electrolytic Capacitors - Radial Leaded",
+                "LeadTime": "0 Days",
+                "LifecycleStatus": null,
+                "Manufacturer": "Lelon",
+                "ManufacturerPartNumber": "SG-100M1VBK-0507G",
+                "Min": "1",
+                "Mult": "1",
+                "MouserPartNumber": "140-SG100M1V0507P",
+                "ProductAttributes": [
+                    {
+                        "AttributeName": "Packaging",
+                        "AttributeValue": "Bulk"
+                    },
+                    {
+                        "AttributeName": "Standard Pack Qty",
+                        "AttributeValue": "1000"
+                    }
+                ],
+                "PriceBreaks": [
+                    {
+                        "Quantity": 1,
+                        "Price": "$0.13",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 10,
+                        "Price": "$0.076",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 100,
+                        "Price": "$0.046",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 500,
+                        "Price": "$0.036",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 1000,
+                        "Price": "$0.032",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 2000,
+                        "Price": "$0.028",
+                        "Currency": "USD"
+                    }
+                ],
+                "AlternatePackagings": null,
+                "ProductDetailUrl": "https://www.mouser.com/en/ProductDetail/Lelon/SG-100M1VBK-0507G?qs=T%252BzbugeAwjgweLsDRL2hmQ%3D%3D",
+                "Reeling": false,
+                "ROHSStatus": "RoHS Compliant",
+                "SuggestedReplacement": "",
+                "MultiSimBlue": 0,
+                "UnitWeightKg": {
+                    "UnitWeight": 0.000298
+                },
+                "AvailabilityInStock": "31967",
+                "AvailabilityOnOrder": [],
+                "InfoMessages": [],
+                "SurchargeMessages": [
+                    {
+                        "code": "TARIFF_US",
+                        "message": "A tariff of 30% may be applied."
+                    }
+                ],
+                "ProductCompliance": [
+                    {
+                        "ComplianceName": "USHTS",
+                        "ComplianceValue": "8532220020"
+                    },
+                    {
+                        "ComplianceName": "CNHTS",
+                        "ComplianceValue": "8532229000"
+                    },
+                    {
+                        "ComplianceName": "CAHTS",
+                        "ComplianceValue": "8532220000"
+                    },
+                    {
+                        "ComplianceName": "JPHTS",
+                        "ComplianceValue": "853222000"
+                    },
+                    {
+                        "ComplianceName": "KRHTS",
+                        "ComplianceValue": "8532220000"
+                    },
+                    {
+                        "ComplianceName": "TARIC",
+                        "ComplianceValue": "8532220000"
+                    },
+                    {
+                        "ComplianceName": "BRHTS",
+                        "ComplianceValue": "85322200"
+                    },
+                    {
+                        "ComplianceName": "ECCN",
+                        "ComplianceValue": "EAR99"
+                    }
+                ],
+                "TradeCompliance": [
+                    {
+                        "ComplianceName": "Country of Origin",
+                        "ComplianceValue": "China"
+                    },
+                    {
+                        "ComplianceName": "Assembly Country of Origin",
+                        "ComplianceValue": "Not available"
+                    },
+                    {
+                        "ComplianceName": "Country of Diffusion",
+                        "ComplianceValue": "Not available"
+                    }
+                ]
+            },
+            {
+                "Availability": "459 In Stock",
+                "DataSheetUrl": "https://www.mouser.com/catalog/specsheets/Vishay_510D.PDF",
+                "Description": "Aluminum Electrolytic Capacitors - Radial Leaded 10uF 35volts 20% 105 degree",
+                "FactoryStock": "0",
+                "ImagePath": "https://www.mouser.com/images/vishay/images/Vishay_678D.jpg",
+                "Category": "Aluminum Electrolytic Capacitors - Radial Leaded",
+                "LeadTime": "189 Days",
+                "LifecycleStatus": null,
+                "Manufacturer": "Vishay / Sprague",
+                "ManufacturerPartNumber": "510D106M035AA3D",
+                "Min": "1",
+                "Mult": "1",
+                "MouserPartNumber": "75-510D106M035AA3D",
+                "ProductAttributes": [
+                    {
+                        "AttributeName": "Standard Pack Qty",
+                        "AttributeValue": "420"
+                    }
+                ],
+                "PriceBreaks": [
+                    {
+                        "Quantity": 1,
+                        "Price": "$8.70",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 10,
+                        "Price": "$6.49",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 50,
+                        "Price": "$5.73",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 100,
+                        "Price": "$5.17",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 420,
+                        "Price": "$4.68",
+                        "Currency": "USD"
+                    }
+                ],
+                "AlternatePackagings": null,
+                "ProductDetailUrl": "https://www.mouser.com/en/ProductDetail/Vishay-Sprague/510D106M035AA3D?qs=59SSd8g%2FjhWeel4LixFm%252Bg%3D%3D",
+                "Reeling": false,
+                "ROHSStatus": "No",
+                "SuggestedReplacement": "",
+                "MultiSimBlue": 0,
+                "AvailabilityInStock": "459",
+                "AvailabilityOnOrder": [],
+                "InfoMessages": [],
+                "SurchargeMessages": null,
+                "ProductCompliance": [
+                    {
+                        "ComplianceName": "USHTS",
+                        "ComplianceValue": "8532220020"
+                    },
+                    {
+                        "ComplianceName": "CNHTS",
+                        "ComplianceValue": "8532229000"
+                    },
+                    {
+                        "ComplianceName": "CAHTS",
+                        "ComplianceValue": "8532220000"
+                    },
+                    {
+                        "ComplianceName": "JPHTS",
+                        "ComplianceValue": "853222000"
+                    },
+                    {
+                        "ComplianceName": "KRHTS",
+                        "ComplianceValue": "8532220000"
+                    },
+                    {
+                        "ComplianceName": "TARIC",
+                        "ComplianceValue": "8532220000"
+                    },
+                    {
+                        "ComplianceName": "MXHTS",
+                        "ComplianceValue": "8532220499"
+                    },
+                    {
+                        "ComplianceName": "BRHTS",
+                        "ComplianceValue": "85322200"
+                    },
+                    {
+                        "ComplianceName": "ECCN",
+                        "ComplianceValue": "EAR99"
+                    }
+                ],
+                "TradeCompliance": [
+                    {
+                        "ComplianceName": "Country of Origin",
+                        "ComplianceValue": "United States"
+                    },
+                    {
+                        "ComplianceName": "Assembly Country of Origin",
+                        "ComplianceValue": "Not available"
+                    },
+                    {
+                        "ComplianceName": "Country of Diffusion",
+                        "ComplianceValue": "Not available"
+                    }
+                ]
+            },
+            {
+                "Availability": "500 In Stock",
+                "DataSheetUrl": "https://www.mouser.com/datasheet/3/72/1/KEM_T2043_T35X.pdf",
+                "Description": "Tantalum Capacitors - Solid Leaded 35V 10uF 5% LS=5.08mm",
+                "FactoryStock": "0",
+                "ImagePath": "https://www.mouser.com/images/kemet/images/T356_series_SPL.jpg",
+                "Category": "Tantalum Capacitors - Solid Leaded",
+                "LeadTime": "364 Days",
+                "LifecycleStatus": null,
+                "Manufacturer": "KEMET",
+                "ManufacturerPartNumber": "T356G106J035AT",
+                "Min": "1",
+                "Mult": "1",
+                "MouserPartNumber": "80-T356G106J035AT",
+                "ProductAttributes": [
+                    {
+                        "AttributeName": "Packaging",
+                        "AttributeValue": "Bulk"
+                    },
+                    {
+                        "AttributeName": "Standard Pack Qty",
+                        "AttributeValue": "500"
+                    }
+                ],
+                "PriceBreaks": [
+                    {
+                        "Quantity": 1,
+                        "Price": "$9.11",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 10,
+                        "Price": "$6.83",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 50,
+                        "Price": "$5.92",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 100,
+                        "Price": "$5.59",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 500,
+                        "Price": "$5.49",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 1000,
+                        "Price": "$5.01",
+                        "Currency": "USD"
+                    }
+                ],
+                "AlternatePackagings": null,
+                "ProductDetailUrl": "https://www.mouser.com/en/ProductDetail/KEMET/T356G106J035AT?qs=uy4DrjgoFLWNUhLxr5GPUw%3D%3D",
+                "Reeling": false,
+                "ROHSStatus": "RoHS Compliant",
+                "SuggestedReplacement": "",
+                "MultiSimBlue": 0,
+                "UnitWeightKg": {
+                    "UnitWeight": 0.0004886
+                },
+                "AvailabilityInStock": "500",
+                "AvailabilityOnOrder": [],
+                "InfoMessages": [],
+                "SalesMaximumOrderQty": "1000",
+                "SurchargeMessages": null,
+                "ProductCompliance": [
+                    {
+                        "ComplianceName": "USHTS",
+                        "ComplianceValue": "8532210040"
+                    },
+                    {
+                        "ComplianceName": "CNHTS",
+                        "ComplianceValue": "8532219000"
+                    },
+                    {
+                        "ComplianceName": "CAHTS",
+                        "ComplianceValue": "8532210090"
+                    },
+                    {
+                        "ComplianceName": "JPHTS",
+                        "ComplianceValue": "853221000"
+                    },
+                    {
+                        "ComplianceName": "KRHTS",
+                        "ComplianceValue": "8532210000"
+                    },
+                    {
+                        "ComplianceName": "TARIC",
+                        "ComplianceValue": "8532210000"
+                    },
+                    {
+                        "ComplianceName": "MXHTS",
+                        "ComplianceValue": "8532210100"
+                    },
+                    {
+                        "ComplianceName": "BRHTS",
+                        "ComplianceValue": "85322190"
+                    },
+                    {
+                        "ComplianceName": "ECCN",
+                        "ComplianceValue": "EAR99"
+                    }
+                ],
+                "TradeCompliance": [
+                    {
+                        "ComplianceName": "Country of Origin",
+                        "ComplianceValue": "Mexico"
+                    },
+                    {
+                        "ComplianceName": "Assembly Country of Origin",
+                        "ComplianceValue": "Not available"
+                    },
+                    {
+                        "ComplianceName": "Country of Diffusion",
+                        "ComplianceValue": "Not available"
+                    }
+                ]
+            },
+            {
+                "Availability": "968 In Stock",
+                "DataSheetUrl": "https://www.mouser.com/datasheet/3/72/1/KEM_T2043_T35X.pdf",
+                "Description": "Tantalum Capacitors - Solid Leaded 35V 10uF 20% LS=5.08mm",
+                "FactoryStock": "0",
+                "ImagePath": "https://www.mouser.com/images/kemet/images/T356_series_SPL.jpg",
+                "Category": "Tantalum Capacitors - Solid Leaded",
+                "LeadTime": "364 Days",
+                "LifecycleStatus": null,
+                "Manufacturer": "KEMET",
+                "ManufacturerPartNumber": "T356G106M035AT",
+                "Min": "1",
+                "Mult": "1",
+                "MouserPartNumber": "80-T356G106M035AT",
+                "ProductAttributes": [
+                    {
+                        "AttributeName": "Packaging",
+                        "AttributeValue": "Bulk"
+                    },
+                    {
+                        "AttributeName": "Standard Pack Qty",
+                        "AttributeValue": "500"
+                    }
+                ],
+                "PriceBreaks": [
+                    {
+                        "Quantity": 1,
+                        "Price": "$6.87",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 10,
+                        "Price": "$4.43",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 50,
+                        "Price": "$4.09",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 100,
+                        "Price": "$3.92",
+                        "Currency": "USD"
+                    }
+                ],
+                "AlternatePackagings": [
+                    {
+                        "APMfrPN": "T356G106M035AT7301"
+                    }
+                ],
+                "ProductDetailUrl": "https://www.mouser.com/en/ProductDetail/KEMET/T356G106M035AT?qs=U4Vt3EjA%252BHZvSv45IaybWw%3D%3D",
+                "Reeling": false,
+                "ROHSStatus": "RoHS Compliant",
+                "SuggestedReplacement": "",
+                "MultiSimBlue": 0,
+                "UnitWeightKg": {
+                    "UnitWeight": 0.000402367
+                },
+                "AvailabilityInStock": "968",
+                "AvailabilityOnOrder": [],
+                "InfoMessages": [],
+                "SalesMaximumOrderQty": "1000",
+                "SurchargeMessages": null,
+                "ProductCompliance": [
+                    {
+                        "ComplianceName": "USHTS",
+                        "ComplianceValue": "8532210040"
+                    },
+                    {
+                        "ComplianceName": "CNHTS",
+                        "ComplianceValue": "8532219000"
+                    },
+                    {
+                        "ComplianceName": "CAHTS",
+                        "ComplianceValue": "8532210090"
+                    },
+                    {
+                        "ComplianceName": "JPHTS",
+                        "ComplianceValue": "853221000"
+                    },
+                    {
+                        "ComplianceName": "KRHTS",
+                        "ComplianceValue": "8532210000"
+                    },
+                    {
+                        "ComplianceName": "TARIC",
+                        "ComplianceValue": "8532210000"
+                    },
+                    {
+                        "ComplianceName": "MXHTS",
+                        "ComplianceValue": "8532210100"
+                    },
+                    {
+                        "ComplianceName": "BRHTS",
+                        "ComplianceValue": "85322190"
+                    },
+                    {
+                        "ComplianceName": "ECCN",
+                        "ComplianceValue": "EAR99"
+                    }
+                ],
+                "TradeCompliance": [
+                    {
+                        "ComplianceName": "Country of Origin",
+                        "ComplianceValue": "Mexico"
+                    },
+                    {
+                        "ComplianceName": "Assembly Country of Origin",
+                        "ComplianceValue": "Not available"
+                    },
+                    {
+                        "ComplianceName": "Country of Diffusion",
+                        "ComplianceValue": "Not available"
+                    }
+                ]
+            },
+            {
+                "Availability": "448 In Stock",
+                "DataSheetUrl": "https://www.mouser.com/datasheet/3/72/1/KEM_T2043_T35X.pdf",
+                "Description": "Tantalum Capacitors - Solid Leaded 35volt 10uF 10% G case",
+                "FactoryStock": "0",
+                "ImagePath": "https://www.mouser.com/images/kemet/images/t352.jpg",
+                "Category": "Tantalum Capacitors - Solid Leaded",
+                "LeadTime": "364 Days",
+                "LifecycleStatus": null,
+                "Manufacturer": "KEMET",
+                "ManufacturerPartNumber": "T352G106K035AT",
+                "Min": "1",
+                "Mult": "1",
+                "MouserPartNumber": "80-T352G106K035AT",
+                "ProductAttributes": [
+                    {
+                        "AttributeName": "Packaging",
+                        "AttributeValue": "Bulk"
+                    },
+                    {
+                        "AttributeName": "Standard Pack Qty",
+                        "AttributeValue": "500"
+                    }
+                ],
+                "PriceBreaks": [
+                    {
+                        "Quantity": 1,
+                        "Price": "$8.79",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 10,
+                        "Price": "$6.58",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 50,
+                        "Price": "$5.70",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 100,
+                        "Price": "$5.32",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 500,
+                        "Price": "$4.95",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 1000,
+                        "Price": "$4.81",
+                        "Currency": "USD"
+                    }
+                ],
+                "AlternatePackagings": null,
+                "ProductDetailUrl": "https://www.mouser.com/en/ProductDetail/KEMET/T352G106K035AT?qs=Wayu3YPjyUPvjfEXkdRO8Q%3D%3D",
+                "Reeling": false,
+                "ROHSStatus": "RoHS Compliant",
+                "SuggestedReplacement": "",
+                "MultiSimBlue": 0,
+                "UnitWeightKg": {
+                    "UnitWeight": 0.00023862
+                },
+                "AvailabilityInStock": "448",
+                "AvailabilityOnOrder": [],
+                "InfoMessages": [],
+                "SalesMaximumOrderQty": "1000",
+                "SurchargeMessages": null,
+                "ProductCompliance": [
+                    {
+                        "ComplianceName": "USHTS",
+                        "ComplianceValue": "8532210040"
+                    },
+                    {
+                        "ComplianceName": "CNHTS",
+                        "ComplianceValue": "8532219000"
+                    },
+                    {
+                        "ComplianceName": "CAHTS",
+                        "ComplianceValue": "8532210090"
+                    },
+                    {
+                        "ComplianceName": "JPHTS",
+                        "ComplianceValue": "853221000"
+                    },
+                    {
+                        "ComplianceName": "KRHTS",
+                        "ComplianceValue": "8532210000"
+                    },
+                    {
+                        "ComplianceName": "TARIC",
+                        "ComplianceValue": "8532210000"
+                    },
+                    {
+                        "ComplianceName": "MXHTS",
+                        "ComplianceValue": "8532210100"
+                    },
+                    {
+                        "ComplianceName": "BRHTS",
+                        "ComplianceValue": "85322190"
+                    },
+                    {
+                        "ComplianceName": "ECCN",
+                        "ComplianceValue": "EAR99"
+                    }
+                ],
+                "TradeCompliance": [
+                    {
+                        "ComplianceName": "Country of Origin",
+                        "ComplianceValue": "Mexico"
+                    },
+                    {
+                        "ComplianceName": "Assembly Country of Origin",
+                        "ComplianceValue": "Not available"
+                    },
+                    {
+                        "ComplianceName": "Country of Diffusion",
+                        "ComplianceValue": "Not available"
+                    }
+                ]
+            }
+        ]
+    }
+}

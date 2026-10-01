@@ -214,3 +214,39 @@ test("a PIN_NUMBERS nested value that is not a string names the entry and never 
     },
   )
 })
+
+test("a board the BOM hook does not apply to keeps the layout verdict and report unchanged", async () => {
+  await withVrt(async (vrtPath) => {
+    const result = await checkPerfboard(declaration(vrtPath), {
+      exportNetlist: netlist,
+      runCheck: () => ({ status: 0, output: "all nets complete\n" }),
+      checkBom: async () => ({ applies: false }),
+    })
+    expect(result).toEqual({ declaration: declaration(vrtPath), ok: true, report: "all nets complete\n" })
+  })
+})
+
+test("a failing BOM hook fails a clean layout and its report is appended", async () => {
+  await withVrt(async (vrtPath) => {
+    const result = await checkPerfboard(declaration(vrtPath), {
+      exportNetlist: netlist,
+      runCheck: () => ({ status: 0, output: "all nets complete\n" }),
+      checkBom: async () => ({ applies: true, ok: false, report: "BOM.md is out of date - run make bom" }),
+    })
+    expect(result.ok).toBe(false)
+    expect(result.report).toContain("all nets complete")
+    expect(result.report).toContain("BOM.md is out of date - run make bom")
+  })
+})
+
+test("a passing BOM hook leaves a failing layout failing", async () => {
+  await withVrt(async (vrtPath) => {
+    const result = await checkPerfboard(declaration(vrtPath), {
+      exportNetlist: netlist,
+      runCheck: () => ({ status: 1, output: "Schematic delta\n" }),
+      checkBom: async () => ({ applies: true, ok: true, report: "" }),
+    })
+    expect(result.ok).toBe(false)
+    expect(result.report).toBe("Schematic delta\n")
+  })
+})

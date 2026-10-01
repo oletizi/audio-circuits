@@ -1,0 +1,85 @@
+{
+  "id": "trimmer-1m-linear-rm065",
+  "kind": "potentiometer",
+  "description": "1M ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout",
+  "manufacturer": "Amphenol Piher",
+  "mpn": "PT6KV-105A2020",
+  "specs": {
+    "ohms": 1000000,
+    "taper": "linear",
+    "package": "RM-065"
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-105A2020?qs=Ebq70JplCaeT7Df5iAxbbg%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for PT6KV-105A2020 (Amphenol Piher), Mouser part 531-PT6KV-1M. A pin-compatible substitute for the circuit's Runtron RM-065 footprint - see the package evidence."
+    },
+    {
+      "spec": "ohms",
+      "url": "https://www.pk-components.de/fileadmin/Datenblaetter/PIHER/11-PT6v03.pdf",
+      "note": "Piher PT6 datasheet ('6 mm carbon trimmer potentiometer PT6', Piher Sensing Systems, fetched 2026-09-30 via pk-components.de mirror - piher.net itself returned HTTP 403 in this environment), page 2 'How to order' resistance table: code '105' = 1,000,000 ohm (1M). The part number's value field, PT6KV-105A2020, is this code."
+    },
+    {
+      "spec": "taper",
+      "url": "https://www.pk-components.de/fileadmin/Datenblaetter/PIHER/11-PT6v03.pdf",
+      "note": "Piher PT6 datasheet, page 2 'How to order' diagram: Taper field 'A = Lin.' (B = Log., C = Alog.). PT6KV-105A2020's taper field is 'A', i.e. linear."
+    },
+    {
+      "spec": "package",
+      "url": "https://soldered.com/productdata/2015/02/Soldered_RM065-103_datasheet.pdf",
+      "note": "Runtron RM-065 datasheet (runtron.com's own document - letterhead, logo and 'Http://www.runtron.com' footer throughout; fetched 2026-09-30 via soldered.com mirror since runtron.com itself returned HTTP 404 in this environment), 'OUTLINE DIMENSIONS' drawing: 3 pins, each hole 1.0mm(+0.2/-0.0) dia; pins 1 and 3 are 5mm apart in a line, pin 2 is centered and offset 5mm perpendicular from that line (an isosceles triangle, base 5mm, height 5mm). Confirmed against the repository's own KiCad footprint file (Potentiometer_THT.pretty/Potentiometer_Runtron_RM-065_Vertical.kicad_mod), whose pads sit at (0,0), (5,0) and (2.5,5) mm with 1.0mm drills - the same triangle."
+    },
+    {
+      "spec": "package",
+      "url": "https://www.pk-components.de/fileadmin/Datenblaetter/PIHER/11-PT6v03.pdf",
+      "note": "Piher PT6 datasheet, page 3 'V = horizontal mounting - vertical adjustment' PCB pad drawing: 2 pins 0.9mm(+0.1) dia spaced 2.5mm + 2.5mm (5mm total) apart, and a third 0.9mm(+0.1) dia pin centered on that line's midpoint and offset 2.5mm + 2.5mm (5mm total) perpendicular from it - the same isosceles triangle (base 5mm, height 5mm, apex centered) as the Runtron RM-065 drawing above. Mouser does not carry Runtron (bun run parts search RM-065 / search Runtron --supplier mouser returned no matching trimmer); Bourns's 3306 series (also in stock at Mouser) was checked and rejected - its own 3306 datasheet (bourns.com/docs/Product-Datasheets/3306.pdf) 'SUGGESTED PWB LAYOUT - STYLES K, P, W' drawing shows a shallower triangle (base 5mm, height 2.5mm, not 5mm), which does not match the RM-065 drawing."
+    }
+  ],
+  "why": "The circuit models this line as Runtron's RM-065, but Mouser does not carry Runtron, so this entry is Piher's pin-compatible PT6KV part, a substitute for the circuit's RM-065 footprint, and mpn is Piher's own order code for it. Same family choice as trimmer-1k-linear-rm065 (see that entry for the full Runtron/Bourns/Piher comparison): Piher's PT6 'V' style pin pattern matches the Runtron RM-065's own drawing exactly, and Bourns's 3306 (the other in-stock candidate) does not. PT6KV-105A2020 is the same linear-taper, vertical-adjust, cross-slot-rotor part at the 1M value, in stock at Mouser under the Amphenol Piher brand (lower stock than the other three values at 46 units - enough for a prototype run, worth re-checking before a larger build).",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-105A2020?qs=Ebq70JplCaeT7Df5iAxbbg%3D%3D",
+      "sku": "531-PT6KV-1M",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.75
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.629
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 0.554
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.524
+        },
+        {
+          "quantity": 250,
+          "unitPrice": 0.487
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.46
+        },
+        {
+          "quantity": 2000,
+          "unitPrice": 0.41
+        },
+        {
+          "quantity": 4000,
+          "unitPrice": 0.375
+        }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}

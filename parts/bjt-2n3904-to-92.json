@@ -1,0 +1,100 @@
+{
+  "id": "bjt-2n3904-to-92",
+  "kind": "bjt",
+  "description": "2N3904 general-purpose NPN transistor, TO-92, emitter-base-collector pinout",
+  "manufacturer": "Diotec Semiconductor",
+  "mpn": "2N3904",
+  "specs": {
+    "type": "2N3904",
+    "volts": 40,
+    "watts": 0.625,
+    "package": "TO-92",
+    "pinout": [
+      "emitter",
+      "base",
+      "collector"
+    ]
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Diotec-Semiconductor/2N3904?qs=OlC7AqGiEDlYMySw5i2rlg%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for 2N3904 (Diotec Semiconductor), Mouser part 637-2N3904, description 'Bipolar Transistors - BJT BJT, TO-92, 40V, 200mA, NPN'."
+    },
+    {
+      "spec": "type",
+      "url": "https://diotec.com/request/datasheet/2n3904.pdf",
+      "note": "Diotec 2N3904 datasheet (fetched 2026-09-30, Version 2026-03-10): the datasheet is titled 2N3904 - the device type this part is. Diotec's order code for it (mpn) is the same bare '2N3904'."
+    },
+    {
+      "spec": "volts",
+      "url": "https://diotec.com/request/datasheet/2n3904.pdf",
+      "note": "Diotec 2N3904 datasheet (fetched 2026-09-30, Version 2026-03-10), Maximum ratings table: Collector-Emitter voltage VCEO = 40 V."
+    },
+    {
+      "spec": "watts",
+      "url": "https://diotec.com/request/datasheet/2n3904.pdf",
+      "note": "Diotec 2N3904 datasheet (fetched 2026-09-30, Version 2026-03-10), header block and Maximum ratings table: Ptot = 625 mW."
+    },
+    {
+      "spec": "package",
+      "url": "https://diotec.com/request/datasheet/2n3904.pdf",
+      "note": "Diotec 2N3904 datasheet (fetched 2026-09-30), page 1 package drawing: 'TO-92 10D3'."
+    },
+    {
+      "spec": "pinout",
+      "url": "https://diotec.com/request/datasheet/2n3904.pdf",
+      "note": "Diotec 2N3904 datasheet (fetched 2026-09-30), page 1 device schematic drawn next to the package outline: pin 1 = Emitter (E), pin 2 = Base (B), pin 3 = Collector (C) - i.e. emitter, base, collector reading pin 1 to pin 3. This is the current datasheet revision; an older secondary listing (aggregator, not the manufacturer) gives a C-B-E reading for a 2N3904 - it was not used as evidence and may reflect a stale or misread revision. The footprint's own emitter/base/collector pin order matches this drawing exactly."
+    }
+  ],
+  "why": "Diotec's 2N3904 (device type 2N3904, sold under the order code '2N3904'), from a well-known transistor manufacturer, well stocked at Mouser (43097 units), at a competitive price, and its current datasheet states an emitter-base-collector pinout that matches this board's TO-92_Inline footprint. It was chosen while the fit check still compared the circuit's part number with the entry's mpn, which ruled out onsemi's 2N3904BU (a cheaper, higher-stock bulk-packed order code for the same type, same pinout per onsemi 2N3904/D datasheet, Rev. 9/Oct 2024 marking diagram: 1 Emitter, 2 Base, 3 Collector). The check now compares specs.type, so 2N3904BU is eligible too; this choice has not been re-evaluated against it.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Diotec-Semiconductor/2N3904?qs=OlC7AqGiEDlYMySw5i2rlg%3D%3D",
+      "sku": "637-2N3904",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.15
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.101
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.074
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.057
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.045
+        },
+        {
+          "quantity": 4000,
+          "unitPrice": 0.038
+        },
+        {
+          "quantity": 8000,
+          "unitPrice": 0.025
+        },
+        {
+          "quantity": 24000,
+          "unitPrice": 0.024
+        },
+        {
+          "quantity": 48000,
+          "unitPrice": 0.023
+        }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}

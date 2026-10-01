@@ -1,0 +1,7 @@
+{
+  "sch": "../../circuits/transistor-preamp/buffered-board.kicad_sch",
+  "circuit": "../../circuits/transistor-preamp/buffered-board.ts",
+  "export": "transistorPreampBuffered",
+  "netlist": "../../tests/fixtures/transistor-preamp-buffered.net",
+  "vrt": "transistor-preamp-buffered.perfboard.vrt"
+}

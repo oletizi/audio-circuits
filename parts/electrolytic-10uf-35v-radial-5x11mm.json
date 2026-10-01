@@ -1,0 +1,66 @@
+{
+  "id": "electrolytic-10uf-35v-radial-5x11mm",
+  "kind": "capacitor",
+  "description": "10uF, 35V, radial aluminum electrolytic, 5x11mm body, 2mm lead spacing",
+  "manufacturer": "Panasonic Industry",
+  "mpn": "ECA-1VM100",
+  "specs": {
+    "farads": 0.00001,
+    "volts": 35,
+    "leadSpacingMm": 2,
+    "diameterMm": 5
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM100?qs=F80sRR%252BEZdBj42PTfvMN%2FQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for ECA-1VM100 (Panasonic Industry), Mouser part 667-ECA-1VM100, description 'Aluminum Electrolytic Capacitors - Radial Leaded 10uF 35V'."
+    },
+    {
+      "spec": "farads",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM100?qs=F80sRR%252BEZdBj42PTfvMN%2FQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '10uF'."
+    },
+    {
+      "spec": "volts",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM100?qs=F80sRR%252BEZdBj42PTfvMN%2FQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '35V'; matches the '1V' voltage code (35V) in Panasonic's M-A series type numbering."
+    },
+    {
+      "spec": "leadSpacingMm",
+      "url": "https://industrial.panasonic.com/cdbs/www-data/pdf/RDF0000/ABA0000C1218.pdf",
+      "note": "Panasonic M-A series datasheet (fetched 2026-09-30), Characteristics list, 35V (1V) section: 10uF row - case size 5.0 x 11.0mm, lead space (straight) 2.0mm, part no. ECA1VM100( )."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://industrial.panasonic.com/cdbs/www-data/pdf/RDF0000/ABA0000C1218.pdf",
+      "note": "Panasonic M-A series datasheet (fetched 2026-09-30), Characteristics list, 35V (1V) section: 10uF row - case size (diameter x L) 5.0 x 11.0mm."
+    }
+  ],
+  "why": "Panasonic's M-A (ECA) series is a current, widely stocked general-purpose radial electrolytic family that also covers this board's 100uF, 220uF and 470uF/35V lines in the same body-size table, so one family is used across those values (docs/parts/sourcing-notes.md Lessons, 2026-09-30). This is the straight-lead, unformed part - the one whose lead spacing in the datasheet's dimension table (2.0mm) matches the footprint exactly; taped variants of this value would carry a different formed-lead pitch.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM100?qs=F80sRR%252BEZdBj42PTfvMN%2FQ%3D%3D",
+      "sku": "667-ECA-1VM100",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.3
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.175
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.106
+        }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}
