@@ -122,80 +122,94 @@ inductor with no part number on the scaffold's parts list for a dead branch.
 
 **Fit the stand-in for a section if and only if that section is absent.**
 
-That is the whole configuration rule. It is local to each stand-in, needs no knowledge of
-which other sections are present, and therefore needs no table of 31 combinations. Its
-effect is that the ladder is always whole: every element is present, either as the real
-section or as its flat-state equivalent, so every present section sees the source and load
-impedances it would see in the full EQ.
+That is the electrical rule, and it is local: whether a section's stand-in belongs in a
+build depends only on whether that section is present, never on which others are. Its effect
+is that the ladder is always whole - every element present, as the real section or as its
+flat-state equivalent - so every present section sees the source and load impedances it would
+see in the full EQ. This is what Gate B proves across all 31 combinations.
 
-### Where the scaffold lives
+**One thing it does not settle: WHICH present board fits the group.** With the scaffolding on
+the section boards rather than on a board of its own, "fit hi-cut's stand-in" has to name a
+board when two or more are built, or two boards fit it and put it in parallel. That is a
+build-instruction question, not an electrical one - the electrics are indifferent to which
+board a part sits on - and it is answered under **Exactly one supplier per absent section**
+below.
 
-**One separate scaffold board**, not stand-ins distributed across the section boards. Three
-reasons, in order of weight:
+### Where the scaffolding lives: on each section board
 
-1. **There is exactly one of each stand-in.** Distributed across boards, a stand-in for an
-   absent neighbour would have to exist on every board that could need it, with a rule to
-   fit exactly one - and fitting two would put them in parallel and quietly halve a value.
-2. **The section boards stay electrically transparent.** This is the architectural problem
-   the parent design flagged: conducting components in a physicalization layer that
-   guarantees it adds none, needing a new category in `projectPhysical` narrow enough not to
-   become a hole in `assertElectricallyTransparent`. Putting every conducting part on a board
-   whose declared purpose is to conduct makes the problem mostly go away. The section boards
-   need no new category at all.
-3. **It is honest about what it is.** A scaffold board is visibly scaffolding. A resistor
-   hidden on a section board is a part somebody will one day take for part of the circuit.
+**Every section board carries its own scaffolding.** One board, configured at build time,
+either stands alone or joins one or more others. That is what modular means here, and it is
+the owner's requirement rather than a conclusion drawn from the electrics.
 
-### Isolation: how many links a stand-in needs
+An earlier revision of this document argued the opposite - one separate scaffold board - and
+gave three reasons. Two were weak and one was a real problem used as an excuse to avoid
+solving it:
 
-An earlier revision of this spec said each stand-in sits behind "a two-pad removable link in
-series". **That is wrong, and wrong in the dangerous direction** - it would have been built
-before it was caught, because the error is in the hardware instruction rather than in the
-model.
+- *"There is exactly one of each stand-in."* The real problem, and the only one worth
+  anything: if low-boost carries a stand-in for hi-cut and low-cut carries one too, building
+  those two without hi-cut puts two hi-cut stand-ins in parallel and quietly halves a value.
+  That is a build-instruction problem, solved below, not a reason to centralise the parts.
+- *"The section boards stay electrically transparent."* This never applied. The transparency
+  guarantee is about `physicalOnly` parts, which must add no connection; a stand-in is an
+  ordinary conducting component that happens to be temporary. Nothing in `projectPhysical`
+  needs changing either way.
+- *"It is honest about what it is."* Answered by labelling, not by location. See **Build
+  legibility**.
 
-Several stand-ins are **three-terminal**. Low-boost's has a 56k to `out` and a short to
-ground, both meeting at one node. Wire that node to `lo_boost_in` through a single link and
-pull the link for a full build, and the two remaining branches still connect `out` to ground
-through the 56k. Measured on the full five-section build, that spurious load costs:
+#### Exactly one supplier per absent section
 
-```
-   Hz    reference   one link pulled    error
-    20     -21.432          -22.022    -0.589 dB
-   100     -19.469          -20.039    -0.570 dB
-  1000      -7.905           -8.134    -0.229 dB
- 10000     -37.330          -37.394    -0.064 dB
-```
+For any build, each ABSENT section's stand-in is fitted on exactly one PRESENT board, chosen
+deterministically, and the generated wiring guide states per configuration which board fits
+what. Standalone, one board fits all four other groups. With low-boost and low-cut both
+built and hi-cut absent, one of them fits hi-cut's group and the other fits none of it.
 
-**The rule, stated as a construction: for each connected component of a stand-in, isolate all
-but one of its distinct external terminals** - ground counting as a terminal. Breaking all but
-one leg leaves that component hanging by a single point, connecting nothing to nothing;
-breaking only some of them leaves a path. With both the `lo_boost_in` and `out` legs broken,
-the same build measures 0.000 dB at every frequency.
+The rule is computed, never remembered, because remembering it is exactly the failure that
+would halve a value invisibly.
 
-Per *connected component*, not per section, and this matters for durability rather than for
-today's numbers. A section whose flat state resolves into two unconnected pieces needs each
-piece isolated on its own, and a single count applied to the section as a whole would be
-wrong. It is also a sufficient rule rather than a proven minimum: a network with redundant
-terminal connections might admit fewer points. Deriving it from the connected components of
-the resolved network means a change to the electrical model cannot silently invalidate it.
+#### One layout per board, and placement is the switch
 
-For the five sections as they stand, every stand-in resolves to one connected component, so
-the rule yields:
+**There is one layout per section board, and it never varies.** It always carries its own
+parts, the footprint positions for the other four sections' stand-ins, and one junction. A
+build configures the board by **populating those positions or leaving them empty**, and by
+wiring the junction across to another board or leaving it unwired. The copper is identical
+either way.
 
-| Absent section | Boundary terminals | Links |
-| --- | --- | --- |
-| hi-boost | `in`, `hi_boost_out` | 1 |
-| hi-cut | `hi_boost_out`, `lo_boost_in` | 1 |
-| low-cut | `hi_boost_out`, `out` | 1 |
-| low-boost | `lo_boost_in`, `out`, ground | 2 |
-| mid | `in`, `hi_boost_out`, ground | 2 |
+So there are no removable links anywhere in this design. Placement is the switch. An earlier
+revision specified seven two-pad links with an `n-1` rule for multi-terminal stand-ins, and
+all of it is deleted: a group that is not fitted needs no leg broken, because its parts are
+not on the board. The consequence, accepted deliberately: changing a board's configuration
+after it is built means desoldering a group, not pulling a link.
 
-Seven links in total. **The count is derived from each stand-in's topology, never assumed** -
-that is the part that generalises, and the specific counts above are what the derivation
-yields for these five sections. No multipole switch or removable module is needed; plain
-two-pad links suffice once there are enough of them.
+#### The junction is a 2x05 header, which commits to no connector
 
-Links fitted means that section is absent; links omitted means the real board drives that
-segment.
+Each board's junction is one `PinHeader_2x05_P2.54mm_Vertical` - two rows of five holes at
+2.54 mm, the stripboard grid - replacing the 5.08 mm terminal block the five boards modelled
+before. Its pinout interleaves ground returns:
+
+| Pin | Net | Pin | Net |
+| --- | --- | --- | --- |
+| 1 | `in` | 2 | `0` |
+| 3 | `hi_boost_out` | 4 | `0` |
+| 5 | `lo_boost_in` | 6 | `0` |
+| 7 | `out` | 8 | `0` |
+| 9 | `0` | 10 | `0` |
+
+All five ladder nets appear on every board's junction, not just the ones the bare section
+touches: populate hi-cut's and mid's stand-ins on low-boost's board and it gains
+`hi_boost_out` and `in`, which the section alone never names.
+
+Dual-row is not only for ribbon. These are high-impedance nodes, 47 k to 470 k, and `in` and
+`out` would otherwise run side by side in one cable with nothing between them - a feedback
+path, and the same concern the parent design's input/output separation rule exists for. A
+ground conductor beside each signal is the reason ribbon pinouts interleave grounds at all.
+
+**The footprint asserts holes and nets, not a connector.** The odd row is the complete
+five-net set, so every option is a build-time choice on the same pattern: an IDC ribbon
+socket over both rows, individual leads, wires soldered straight to the pins, or a 1x05
+2.54 mm screw terminal in the odd row alone - its single row of pins matches the header's row
+pitch exactly. A plain pin header is deliberately specified rather than an `IDC-Header_*`
+variant: the shrouded, latched versions are the same pins with polarisation added, and that
+polarisation would then be the only thing they accept.
 
 ### Reduction: what the derivation may and may not do
 
@@ -358,13 +372,14 @@ set of control vectors: all flat, each control at maximum, the boost-and-cut pai
 maximum, and every control at maximum. The reference comparison uses the **same** vector,
 with absent sections held at their declared reference-flat settings.
 
-**Gate C - integration, and it must run on the layout, not only the model.** With every link
-omitted and all five sections present, the recovered graph must be **strictly equivalent** to
-the reference network. Not "the scaffold measures as inert" - graph equivalence.
+**Gate C - integration, and it must run on the layout, not only the model.** With all five
+sections built and no stand-in group populated on any of them, the recovered graph must be
+**strictly equivalent** to the reference network. Not "the scaffolding measures as inert" -
+graph equivalence.
 
 The graph under test is the one **derived from the physical layout**: the netlist exported
-from the perfboard layouts of the section boards and the scaffold board, plus the inter-board
-wiring, with the links in their as-built state. A model-only version of this gate would prove
+from the five boards' perfboard layouts plus the junction wiring between them, with each
+board populated as built. A model-only version of this gate would prove
 that the intended configuration is right while missing a connection accidentally left in the
 layout - and the isolation bug that forced this revision was precisely a
 hardware-realization error that the model-side gate would have passed. Checking only the
@@ -411,7 +426,7 @@ low-boost    1.04       1.04     0.39     1.04         —        0.68
 mid          0.17       0.17     0.00     0.17       0.17         —
 ```
 
-So the scaffold board must **declare which setting it emulates**, and the 0.00 dB result
+So each board must **declare which setting its stand-ins emulate**, and the 0.00 dB result
 holds only there. Making the stand-in capacitors selectable, with a switch mirroring the
 real section's positions, would lift the restriction at the cost of parts; that is a
 decision for the implementation, not something this design forecloses.
@@ -464,10 +479,15 @@ make the model true.
 The values above were computed by resolving each section at flat and reading off what
 remained. **That derivation should be code, not a table somebody maintains.**
 
-`lib/board/scaffold.ts` takes a section and a flat control state, resolves it, **applies the
-boundary-preserving reduction specified under Reduction above**, and returns the stand-in
-network together with its discovered boundary nodes and isolation points. The committed values
-are then a derived artifact, regenerated and compared by content like every other.
+`lib/board/scaffold/index.ts` takes a section and a flat control state, resolves it,
+**applies the boundary-preserving reduction specified under Reduction above**, and returns
+the stand-in network together with its discovered boundary nodes. The committed values are
+then a derived artifact, regenerated and compared by content like every other.
+
+It returns no isolation points. An earlier revision derived them for the removable links,
+with a rule about breaking all but one external terminal per connected piece; placement
+replaced the links, so that derivation is deleted rather than kept for a mechanism nothing
+uses.
 
 **It does not call `pruneFloatingBranches`.** An earlier draft of this section said it
 "prunes floating branches", which read as permission to reuse that function and contradicted
@@ -482,29 +502,32 @@ one that is typed in can, silently, and the failure would look like a measuremen
 
 ## Build legibility
 
-The configuration must be readable off the hardware.
+The configuration must be readable off the hardware, and with placement as the switch the
+thing to read is which positions are populated and why.
 
-- Each link on the scaffold board is labelled with the section it stands in for, and which
-  state means absent. Where a stand-in needs two links, both carry the same section's name,
-  so a half-disabled stand-in reads as obviously incomplete.
-- The scaffold board's silkscreen states the frequency setting it emulates, because that is
-  the limit most likely to be forgotten and the one that looks like a circuit fault rather
-  than a configuration error.
-- The generated wiring guide gains a scaffold section listing, per configuration, which
-  links are fitted.
+- Each stand-in group is labelled with the section it stands in for, so an unpopulated group
+  reads as a deliberate choice rather than a missing part. This is what carries the weight
+  the separate board was claimed to carry: a labelled group nobody mistakes for part of the
+  circuit, on the board that needs it.
+- Each board's silkscreen states the frequency setting its stand-ins emulate, because that
+  is the limit most likely to be forgotten and the one that looks like a circuit fault
+  rather than a configuration error. Up to 3.71 dB rides on it.
+- The generated wiring guide lists, per configuration, which groups to populate on which
+  board and which junction pins to wire - including the deterministic choice of supplier
+  when two or more boards are present.
 
 **The wiring guide is a verified artifact, not prose beside the design.** It is generated
-from the same configuration model the stand-ins come from, and a test asserts that its link
-instructions match the actual connectivity of the generated layout. Without that it becomes a
-second, independently maintained description of the same facts - and the drift would appear
-as a builder following correct-looking instructions onto a wrong board. The repository already
-holds guides this way: the wiring-sync test is deliberately read-only and content-compared,
-because an earlier version rewrote the files it was checking and then passed.
+from the same model the stand-ins come from, and a test asserts its instructions match the
+connectivity of the generated network. Without that it becomes a second, independently
+maintained description of the same facts, and the drift would appear as a builder following
+correct-looking instructions onto a wrong board. The repository already holds guides this
+way: the wiring-sync test is deliberately read-only and content-compared, because an earlier
+version rewrote the files it was checking and then passed.
 
-The wiring guide exists because a layout does not say that `C1` is 100 nF. A scaffold that
-does not say which links to remove has the same defect, and a worse failure mode: a link
-left fitted in a full build parallels the real section it was standing in for, which is
-quiet, plausible, and wrong.
+The guide exists because a layout does not say that `C1` is 100 nF. A scaffolding scheme
+that does not say which groups to populate has the same defect and a worse failure mode:
+two boards each fitting the same absent section's group put it in parallel and halve a
+value, which is quiet, plausible and wrong.
 
 ## Acceptance criteria
 
@@ -515,7 +538,9 @@ quiet, plausible, and wrong.
 | Boundary discovery | the boundary is every externally shared node including ground, discovered from the model, never inferred from the named ladder nodes |
 | Structural equivalence (A1) | the stand-in is a subset of the section's flat-resolved live components, with identical boundary node identities; exact, no tolerance |
 | Numerical equivalence (A2) | boundary admittances agree to relative `1e-9` with a `1e-15` S floor, real and imaginary parts, 24+ points per decade over 20 Hz - 20 kHz. Ideal shorts are merged into electrical nodes, not approximated; a network whose boundary nets are ALL shorted together (low-cut) has no finite boundary admittance, so the guard refuses and the sections it cannot cover are named and asserted rather than silently skipped |
-| Isolation | for each connected component of a stand-in, all but one distinct external terminal is broken; the count is derived from the resolved network's connected components, not assumed |
+| Exactly one supplier | for every build, each absent section's stand-in is fitted on exactly one present board, chosen deterministically and stated in the generated guide; two boards fitting the same group is a defect the guide must make impossible to reach by following it |
+| One layout per board | the layout is identical for every configuration; a configuration differs only in which positions are populated and whether the junction is wired |
+| Junction | one `PinHeader_2x05_P2.54mm_Vertical` per board carrying all five ladder nets with interleaved ground returns, the odd row being the complete net set so any of ribbon, leads, direct solder or a 1x05 screw terminal works |
 | Composition | all 31 non-empty section combinations pass, to `1e-6` dB on unrounded values |
 | Control interaction | simultaneous control vectors match the full reference, including the boost-and-cut pairs |
 | Frequency contract | the fixture's declared frequency state equals the reference model's; a mismatch fails |
@@ -536,23 +561,22 @@ quiet, plausible, and wrong.
   exact, no tolerance, proven both ways (every scaffold-originated component is dead, and the
   live subgraph matches the reference's by id, kind, parameters and nets). What it cannot
   check is the other half Gate C asks for: the SAME claim on the graph **derived from the
-  physical layout** - the netlist exported from the perfboard layouts of the section boards and
-  the scaffold board, plus the inter-board wiring, in their as-built state. That half stays
-  owner-blocked on two things that do not exist yet, in order:
+  physical layout** - the netlist exported from the five boards' perfboard layouts plus the
+  junction wiring between them, as built. That half stays owner-blocked on one thing:
 
-  1. **A declared scaffold board.** `boards/pultec-scaffold/perfboard.json` was withdrawn
-     during this feature's own execution (see `lib/board/scaffold/wiring.ts`'s module
-     comment) because a perfboard-driven board needs a physicalization - a `DESIGNATORS` map,
-     pad orders, an off-board set, the same contract every section board already supplies
-     (`circuits/pultec/physical/*.ts`) - and none exists for the scaffold. It cannot be
-     supplied the way the five section boards were: their designators are facts about the
-     vendored Pultec schematic, and the scaffold has no schematic to be a fact about.
-     Assigning `JP1..JP7` to the links without one would be invented, not derived, and this
-     repository refuses to fabricate a designator.
-  2. **A VeroRoute layout for that board**, once (1) exists - placed and routed by the human
-     designer, per this repository's own division of labour; an agent does not lay out a
-     board. Only then does `make check`'s netlist-export-and-compare machinery have a layout
-     to run the comparison against, and the layout-derived half of Gate C becomes runnable.
+  **A VeroRoute layout for each section board, redrawn.** Moving the scaffolding onto the
+  section boards changes every one of them. low-boost's committed layout is now stale twice
+  over: it holds 9 parts where the board needs roughly 22 plus the stand-in positions, and
+  it places a 5.08 mm terminal block where the junction is now a 2x05 header. The other four
+  sections were never drawn. Placing and routing them is the human designer's work, per this
+  repository's division of labour - an agent does not lay out a board - and only then does
+  `make check`'s netlist-export-and-compare machinery have layouts to run the comparison
+  against.
 
-  Until both exist, the model-side test above is what verifies this claim, and it says so in
-  its own header comment rather than silently standing in for the layout-derived half.
+  The withdrawn `boards/pultec-scaffold/perfboard.json` is no longer a prerequisite for
+  anything: there is no separate scaffold board to declare. The designator problem that
+  blocked it disappears with it, because every stand-in part now sits on a section board
+  whose designators are already facts about the vendored Pultec schematic.
+
+  Until the layouts exist, the model-side test above is what verifies this claim, and it says
+  so in its own header comment rather than silently standing in for the layout-derived half.
