@@ -60,19 +60,24 @@ the **Also on** column names which. A net reaching no other board is a chassis o
 shield landing, present so there is somewhere to put that wire rather than
 improvising one later.
 
-### board_terminals — terminal block
+### junction_signals — terminal block
 
 | Pad | Terminal | Net | Also on |
 | --- | --- | --- | --- |
 | 1 | 1 | in | hi-boost, mid |
-| 2 | 2 | 0 | low-boost, mid |
-| 3 | 3 | hi_boost_out | hi-boost, hi-cut, mid |
-| 4 | 4 | 0 | low-boost, mid |
-| 5 | 5 | lo_boost_in | hi-cut, low-boost |
-| 6 | 6 | 0 | low-boost, mid |
-| 7 | 7 | out | low-boost |
-| 8 | 8 | 0 | low-boost, mid |
-| 9 | 9 | 0 | low-boost, mid |
-| 10 | 10 | 0 | low-boost, mid |
+| 2 | 2 | hi_boost_out | hi-boost, hi-cut, mid |
+| 3 | 3 | lo_boost_in | hi-cut, low-boost |
+| 4 | 4 | out | low-boost |
+| 5 | 5 | 0 | low-boost, mid |
 
-**Pads 2 (2) and 4 (4) and 6 (6) and 8 (8) and 9 (9) and 10 (10) are one net.** The board joins them, so those terminals end up tied together — that is deliberate, not an accident of routing. Wire each terminal to its own pad and leave the tying to the board.
+### junction_grounds — terminal block
+
+| Pad | Terminal | Net | Also on |
+| --- | --- | --- | --- |
+| 1 | 1 | 0 | low-boost, mid |
+| 2 | 2 | 0 | low-boost, mid |
+| 3 | 3 | 0 | low-boost, mid |
+| 4 | 4 | 0 | low-boost, mid |
+| 5 | 5 | 0 | low-boost, mid |
+
+**Pads 1 (1) and 2 (2) and 3 (3) and 4 (4) and 5 (5) are one net.** The board joins them, so those terminals end up tied together — that is deliberate, not an accident of routing. Wire each terminal to its own pad and leave the tying to the board.

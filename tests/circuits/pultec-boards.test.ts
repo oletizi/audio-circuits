@@ -71,7 +71,8 @@ test("a board's ports are exactly the boundary nets the partition says it owns",
 test("every physical-only component is electrically transparent", () => {
   // projectPhysical enforces this itself, so this is a direct statement of the
   // same fact rather than the only thing holding it. The count assertion keeps
-  // it from passing vacuously if physicalizedBoard ever stops adding a block.
+  // it from passing vacuously if physicalizedBoard ever stops adding its
+  // junction rows - two per board (signals, grounds), not one.
   let checked = 0
   for (const [, , build] of BOARDS) {
     for (const component of build().components) {
@@ -80,7 +81,7 @@ test("every physical-only component is electrically transparent", () => {
       checked += 1
     }
   }
-  expect(checked).toBe(BOARDS.length)
+  expect(checked).toBe(BOARDS.length * 2)
 })
 
 test("every on-board component has a footprint and every off-board one does not", () => {

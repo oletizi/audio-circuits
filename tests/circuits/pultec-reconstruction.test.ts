@@ -49,10 +49,13 @@ test("every reference component is on exactly one board", () => {
   expect(missing).toEqual([])
 })
 
-test("the terminal blocks are the only thing projection removes", () => {
+test("the junction's two rows are the only thing projection removes", () => {
+  // Two per board, not one: the junction is modelled as a signal row and a
+  // ground row (no verified VeroRoute shape for a single 2x05 part - see
+  // junctionComponents in circuits/pultec/physical/parts.ts).
   let projected = 0
   for (const build of BOARDS) projected += build().components.filter(physicalOnly).length
-  expect(projected).toBe(BOARDS.length)
+  expect(projected).toBe(BOARDS.length * 2)
 })
 
 test("removing a board is caught, so the test is not vacuous", () => {

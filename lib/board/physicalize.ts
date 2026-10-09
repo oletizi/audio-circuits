@@ -23,51 +23,42 @@ export function physicalOnly(component: Component): boolean {
 }
 
 /**
- * Refuse a physical-only component that is not electrically transparent.
+ * Refuse a physical-only component that is not declared electrically inert.
  *
- * Transparent means: it contributes one pin to each of n DIFFERENT nets and
- * joins nothing to anything. That is the whole justification for projecting
- * these components away - a component that shorted two nets together would
- * change the circuit, and projecting it away would hide the change. The
- * projection is only sound because this holds, so it is asserted rather than
- * assumed.
+ * Transparent means: the part conducts nothing between its pads, so removing
+ * it changes no electrical connection. That is the whole justification for
+ * projecting these components away, and only a declaration on the PART can
+ * establish it - the same rule `lib/sim/device-lines.ts` already applies to
+ * connectors via `PartSpec.electricallyInert`: the kind cannot decide
+ * inertness, and a part that might conduct is refused rather than assumed
+ * transparent. A 0.001-ohm resistor between two nets and a six-pin ground
+ * header look identical to a pin map; only the declaration tells them apart.
  *
- * "Joins nothing to anything" is NOT something a pin map can answer. A pin
- * map says which nets a component's pins name; it says nothing about whether
- * the component conducts between its pads. A 0.001-ohm resistor between two
- * different nets passes the pin-map check below and still shorts them. The
- * only sound source for that half of the claim is a declaration on the PART,
- * the same rule `lib/sim/device-lines.ts` already applies to connectors via
- * `PartSpec.electricallyInert`: the kind cannot decide inertness, and a part
- * that might conduct is refused rather than assumed transparent.
+ * A PIN MAP CANNOT ANSWER THIS, so this function used to try a different
+ * question instead: whether two of the component's pins named the same net,
+ * refusing when they did. That was wrong, not merely incomplete - it
+ * confused "two pins on the same net" with "joining two different nets".
+ * Nets are implied by pin references rather than declared (see
+ * `lib/model/types.ts`): two pins naming the same string ARE one net, by the
+ * model's own rule, everywhere else in this repository. A physical-only
+ * component with six pins all naming net "0" joins nothing that was not
+ * already joined elsewhere in the circuit; projecting it away removes no
+ * edge, because there was never an edge there to remove. Refusing that case
+ * was refusing a correct, intentional design (a connector landing several
+ * physically interleaved ground pins on one net) for a hazard it cannot
+ * occur. The check below is the inertness declaration alone.
  */
 export function assertElectricallyTransparent(component: Component): void {
-  const seen = new Map<string, string>()
-  const groups = [component.pins, ...component.units.map((unit) => unit.pins)]
-  for (const group of groups) {
-    for (const [pin, connection] of Object.entries(group)) {
-      if (connection.kind !== "net") continue
-      const previous = seen.get(connection.net)
-      if (previous !== undefined) {
-        throw new Error(
-          `physical-only component "${component.id}" joins pins "${previous}" and "${pin}" to ` +
-            `the same net "${connection.net}". A physical-only component is projected away when ` +
-            "the board is compared against its electrical partition, and projecting away " +
-            "something that joins two nets would hide a change to the circuit.",
-        )
-      }
-      seen.set(connection.net, pin)
-    }
-  }
   if (component.part?.electricallyInert !== true) {
     throw new Error(
       `physical-only component "${component.id}" does not declare part.electricallyInert: true. ` +
-        "A pin map can only show that its pins name different nets - it cannot show that the " +
-        "part itself conducts nothing between its pads. A physical-only component is projected " +
-        "away when the board is compared against its electrical partition, so a part that MIGHT " +
-        "conduct (a ground-lift link, a chassis-ground resistor) cannot be projected away without " +
-        "declaring electricallyInert: true first, the same declaration kind \"connector\" already " +
-        "requires in lib/sim/device-lines.ts.",
+        "A pin map cannot show that a part conducts nothing between its pads - a 0.001-ohm " +
+        "resistor between two different nets names them just as cleanly as an inert connector " +
+        "does. A physical-only component is projected away when the board is compared against " +
+        "its electrical partition, so a part that MIGHT conduct (a ground-lift link, a " +
+        "chassis-ground resistor) cannot be projected away without declaring electricallyInert: " +
+        "true first, the same declaration kind \"connector\" already requires in " +
+        "lib/sim/device-lines.ts.",
     )
   }
 }

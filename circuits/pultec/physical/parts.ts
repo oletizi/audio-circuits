@@ -77,22 +77,39 @@ export const AXIAL_RESISTOR =
   "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 
 /**
- * The junction footprint and symbol: a 2x05 header at 2.54mm, VERIFIED PRESENT
+ * The junction footprint and symbol: a 1x05 header at 2.54mm, VERIFIED PRESENT
  * in KiCad's own library before being written here. Confirm with:
  *
  *   ls "/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints/\
- * Connector_PinHeader_2.54mm.pretty/PinHeader_2x05_P2.54mm_Vertical.kicad_mod"
- *   grep -n "symbol \"Conn_02x05_Odd_Even\"" \
+ * Connector_PinHeader_2.54mm.pretty/PinHeader_1x05_P2.54mm_Vertical.kicad_mod"
+ *   grep -n "symbol \"Conn_01x05\"" \
  *     "/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/Connector_Generic.kicad_sym"
  *
  * The footprint is a landing, not a purchase: a plain header, a stacking
  * (long-tail) header, a ribbon socket or individual leads all press into the
- * same two rows of five holes. See the design doc's "The junction is a
- * stacking 2x05 bus" for why the pitch and the row-of-ten shape are what let
- * the five boards stack on a shared bus.
+ * same row of five holes. See the design doc's "The junction is a stacking
+ * 2x05 bus" for why the pitch and the two-row-of-five shape (one of these
+ * headers for signals, a second for grounds - see below) are what let the
+ * five boards stack on a shared bus.
+ *
+ * MODELLED AS TWO 1x05 HEADERS, NOT ONE 2x05 PART. The hardware is one 2x05
+ * header occupying one row-of-ten pin field; the model is two, because
+ * `lib/kicad/import-string.ts` derives a VeroRoute import string only for the
+ * families the pinned fork's `Src/CompTypes.h` actually has - `SIP<n>` from
+ * `PinHeader_1x<n>_*` - and that fork has no two-row shape at 2.54mm row
+ * pitch (`SIP` is one row; `DIP`'s real row spacing is 0.3in+, not 0.1in, so
+ * mapping a 2.54mm 2x05 to it would be exactly the kind of footprint-name-
+ * lies error this repository has shipped twice already; `BLOCK_100`/
+ * `BLOCK_200` are single-row terminal blocks). Two `PinHeader_1x05` headers on
+ * adjacent rows occupy the identical pin field a single 2x05 does - a ribbon
+ * socket still mates across both, a stack still carries every net through -
+ * so nothing physical is lost. What is lost is model tidiness: KiCad sees two
+ * connectors where the hardware is one part, which matters only for a future
+ * PCB footprint placement, out of scope for this stripboard design, and is
+ * recorded here as a limitation rather than silently hidden.
  */
-export const HEADER_2X05 =
-  "Connector_PinHeader_2.54mm:PinHeader_2x05_P2.54mm_Vertical"
+export const HEADER_1X05 =
+  "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"
 
 /** Symbols for the off-board parts, so their netlist value field is not empty. */
 export const ROTARY_SYMBOL = "Switch:SW_Rotary"
@@ -147,8 +164,8 @@ function symbolFor(component: Component): string {
 }
 
 /**
- * The junction: a 2x05 header at 2.54mm carrying all five ladder nets, with a
- * ground return interleaved beside each signal pin.
+ * The junction's signal row: a 1x05 header carrying all five ladder nets, one
+ * pin each, in the odd-pin order the design doc's pinout table gives them.
  *
  * THE PINOUT IS FIXED AND IDENTICAL ON EVERY BOARD, and does not vary with
  * which nets a given section's bare circuit touches - that uniformity is what
@@ -156,29 +173,26 @@ function symbolFor(component: Component): string {
  * lets any board host any absent section's stand-in group later. See the
  * design doc's "The junction is a stacking 2x05 bus" for why.
  *
- * The grounds are interleaved rather than grouped: these are high-impedance
- * nodes (47k-470k), and `in`/`out` sitting adjacent with nothing between them
- * would be a feedback path.
+ * `electricallyInert: true` is sound here on the ordinary grounds: every pin
+ * names a DIFFERENT net, so there is nothing for the part to be accused of
+ * joining even before the declaration is read.
  */
-export function junctionComponent(): Component {
+export function junctionSignalComponent(): Component {
   return {
-    id: "board_terminals",
+    id: "junction_signals",
     kind: "connector",
     parameters: {},
     part: {
-      symbol: "Connector_Generic:Conn_02x05_Odd_Even",
-      footprint: HEADER_2X05,
+      symbol: "Connector_Generic:Conn_01x05",
+      footprint: HEADER_1X05,
       electricallyInert: true,
     },
     pins: {},
     units: [{
       name: "MAIN",
       pins: {
-        "1": net("in"), "2": net("0"),
-        "3": net("hi_boost_out"), "4": net("0"),
-        "5": net("lo_boost_in"), "6": net("0"),
-        "7": net("out"), "8": net("0"),
-        "9": net("0"), "10": net("0"),
+        "1": net("in"), "2": net("hi_boost_out"), "3": net("lo_boost_in"),
+        "4": net("out"), "5": net("0"),
       },
     }],
     provenance: { source: PHYSICAL_ONLY },
@@ -186,11 +200,50 @@ export function junctionComponent(): Component {
 }
 
 /**
+ * The junction's ground row: a second 1x05 header, every pin a ground return
+ * interleaved beside the signal row above - these are high-impedance nodes
+ * (47k-470k), and `in`/`out` sitting adjacent with nothing between them would
+ * be a feedback path.
+ *
+ * `electricallyInert: true` here is the declaration the ruling turned on:
+ * five pins on one net is not, by itself, evidence of a short - nets are
+ * implied by pin references rather than declared, so five pins naming "0"
+ * are already one net, not five nets this header has joined. What makes
+ * projecting this header away sound is that the part conducts nothing beyond
+ * what the net name already says, which only the declaration can state.
+ */
+export function junctionGroundComponent(): Component {
+  return {
+    id: "junction_grounds",
+    kind: "connector",
+    parameters: {},
+    part: {
+      symbol: "Connector_Generic:Conn_01x05",
+      footprint: HEADER_1X05,
+      electricallyInert: true,
+    },
+    pins: {},
+    units: [{
+      name: "MAIN",
+      pins: {
+        "1": net("0"), "2": net("0"), "3": net("0"), "4": net("0"), "5": net("0"),
+      },
+    }],
+    provenance: { source: PHYSICAL_ONLY },
+  }
+}
+
+/** Both junction rows, in the order they occupy on the board: signals then grounds. */
+export function junctionComponents(): readonly [Component, Component] {
+  return [junctionSignalComponent(), junctionGroundComponent()]
+}
+
+/**
  * One physicalized board: the module's components with footprints or symbols
- * attached, plus the junction that carries the shared ladder nets.
+ * attached, plus the junction's two rows that carry the shared ladder nets.
  *
  * `crossingNets` is in pin order and always ends with "0". It no longer sizes
- * the junction - every board's junction is identical, see `junctionComponent`
+ * the junction - every board's junction is identical, see `junctionComponents`
  * - but it still determines `ports` below: a board declares as a port only the
  * crossing nets ITS OWN electrical components touch, which is a strict subset
  * of what the junction carries on every board but this one.
@@ -225,7 +278,7 @@ export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly str
     crossingNets.filter((netName) => touched.has(netName)).map((netName) => [netName, netName]),
   )
 
-  components.push(junctionComponent())
+  components.push(...junctionComponents())
 
   return { ports, components }
 }
