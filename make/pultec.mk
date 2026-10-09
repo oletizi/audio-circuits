@@ -23,7 +23,19 @@
 # reverse. The recipe regenerates the export EVERY run and decides from
 # content.
 
-.PHONY: pultec-schematic-agrees
+.PHONY: pultec-schematic-agrees pultec-scaffold-agrees
 
 pultec-schematic-agrees:
 	@bun "$(REPO_ROOT)/tools/pultec/sync-schematic.ts"
+
+# Same reasoning as pultec-schematic-agrees, one step further down the chain:
+#
+#   THREE_BAND_REFERENCE + allStandIns()  (lib/board/scaffold/*)
+#     -> circuits/pultec/scaffold.ts      (pultecScaffold, SCAFFOLD_FLAT)
+#     -> circuits/pultec/generated/scaffold.json
+#
+# No schematic is involved - the scaffold board is perfboard, like the five
+# section boards it serves - so the dependency is the electrical model, and
+# the same "regenerate every run, compare by content" discipline applies.
+pultec-scaffold-agrees:
+	@bun "$(REPO_ROOT)/tools/pultec/sync-scaffold.ts"

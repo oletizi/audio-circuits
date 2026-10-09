@@ -8,4 +8,4 @@ include $(shell git rev-parse --show-toplevel)/make/perfboard.mk
 # the generic board mechanism having to know the reference exists.
 include $(shell git rev-parse --show-toplevel)/make/pultec.mk
 
-check: pultec-schematic-agrees
+check: pultec-schematic-agrees pultec-scaffold-agrees
