@@ -1,5 +1,0 @@
-{
-  "circuit": "../../circuits/pultec/scaffold.ts",
-  "export": "pultecScaffold",
-  "vrt": "pultec-scaffold.perfboard.vrt"
-}
