@@ -458,3 +458,30 @@ quiet, plausible, and wrong.
 - Any PCB form of the scaffold. This is a perfboard-era piece, like the sections it serves.
 - Compensating for anything other than an absent section's flat state. A scaffold does not
   emulate a section being *present and set somewhere* - only absent.
+
+- **The layout-derived half of Gate C.** `tests/pultec/scaffold-integration.test.ts` checks
+  the model-side claim this document calls non-negotiable: with all five sections present and
+  every link removed, the recovered network is strictly equivalent to `THREE_BAND_REFERENCE` -
+  exact, no tolerance, proven both ways (every scaffold-originated component is dead, and the
+  live subgraph matches the reference's by id, kind, parameters and nets). What it cannot
+  check is the other half Gate C asks for: the SAME claim on the graph **derived from the
+  physical layout** - the netlist exported from the perfboard layouts of the section boards and
+  the scaffold board, plus the inter-board wiring, in their as-built state. That half stays
+  owner-blocked on two things that do not exist yet, in order:
+
+  1. **A declared scaffold board.** `boards/pultec-scaffold/perfboard.json` was withdrawn
+     during this feature's own execution (see `lib/board/scaffold/wiring.ts`'s module
+     comment) because a perfboard-driven board needs a physicalization - a `DESIGNATORS` map,
+     pad orders, an off-board set, the same contract every section board already supplies
+     (`circuits/pultec/physical/*.ts`) - and none exists for the scaffold. It cannot be
+     supplied the way the five section boards were: their designators are facts about the
+     vendored Pultec schematic, and the scaffold has no schematic to be a fact about.
+     Assigning `JP1..JP7` to the links without one would be invented, not derived, and this
+     repository refuses to fabricate a designator.
+  2. **A VeroRoute layout for that board**, once (1) exists - placed and routed by the human
+     designer, per this repository's own division of labour; an agent does not lay out a
+     board. Only then does `make check`'s netlist-export-and-compare machinery have a layout
+     to run the comparison against, and the layout-derived half of Gate C becomes runnable.
+
+  Until both exist, the model-side test above is what verifies this claim, and it says so in
+  its own header comment rather than silently standing in for the layout-derived half.

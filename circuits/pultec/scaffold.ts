@@ -96,32 +96,44 @@ function linkId(section: string, point: IsolationPoint): string {
 }
 
 /**
- * Break each isolation point: the resolved component keeps its id and kind, but the
- * one pin an isolation point names is rewired from the real boundary net to a fresh
- * stub net, and a `LinkSpec` records what must rejoin it when the link is fitted.
+ * Break each isolation point: EVERY pin in this stand-in currently carrying an
+ * isolation point's net is rewired to that point's fresh stub net, and a single
+ * `LinkSpec` records what rejoins the whole stub when the link is fitted.
  *
- * Every isolation point must land on exactly one pin of exactly one component in this
- * stand-in - that is the whole content of `IsolationPoint`, which names a component, a
- * terminal and the net it should presently carry. A point that matches nothing, or
- * matches a pin already carrying a different net, means `lib/board/scaffold/isolate.ts`
- * and this module have drifted apart, and is a defect to throw on rather than skip.
+ * REWRITES BY NET VALUE, NOT BY THE POINT'S NAMED (COMPONENT, TERMINAL) ALONE. An
+ * isolation point names one representative pin - `lib/board/scaffold/isolate.ts`'s
+ * `externalTerminals` keeps only one entry per distinct boundary net, deliberately,
+ * because ONE link is meant to cut a whole shared net from the group in a single move
+ * (the design's own "breaking that net once is enough"). But "once" only holds if
+ * EVERY pin on that net is rewired to the SAME stub; rewriting only the named pin and
+ * leaving a sibling component's pin on the untouched real net defeats the link
+ * entirely, because the sibling keeps the group connected to that net regardless of
+ * the link's position. This was a real defect, not a hypothetical one: mid's
+ * `R_MID_BOOST.a` and `R_MID_SHUNT.a` both land on `in`, and the previous version here
+ * rewired only `R_MID_BOOST.a` - so `R_MID_SHUNT` stayed permanently wired to `in`
+ * through its own 100k-to-ground branch no matter the link's position. Low-cut
+ * (`hi_boost_out`, two touches) and low-boost (`lo_boost_in`, three touches) carry the
+ * identical shape. `tests/pultec/scaffold-integration.test.ts` is what caught it: it is
+ * the first test to assemble all five real sections alongside the scaffold board with
+ * every link removed, which is exactly the configuration the bug only shows up in.
+ *
+ * Every isolation point must still match at least one pin somewhere in this stand-in.
+ * A point that matches nothing means `lib/board/scaffold/isolate.ts` and this module
+ * have drifted apart, and is a defect to throw on rather than skip.
  */
 function isolate(
   standIn: StandIn,
 ): { readonly components: readonly ResolvedComponent[]; readonly links: readonly LinkSpec[] } {
-  const links: LinkSpec[] = []
   const matched = new Set<IsolationPoint>()
   const components = standIn.components.map((resolved) => {
-    const targeting = standIn.isolation.filter((point) => point.component === resolved.id)
-    if (targeting.length === 0) return resolved
     const units = resolved.units.map((unit) => {
       const pins = { ...unit.pins }
-      for (const point of targeting) {
-        if (pins[point.terminal] !== point.net) continue
-        matched.add(point)
-        const stub = stubNet(standIn.section, point)
-        links.push({ id: linkId(standIn.section, point), section: standIn.section, stubNet: stub, net: point.net })
-        pins[point.terminal] = stub
+      for (const point of standIn.isolation) {
+        for (const terminal of Object.keys(pins)) {
+          if (pins[terminal] !== point.net) continue
+          matched.add(point)
+          pins[terminal] = stubNet(standIn.section, point)
+        }
       }
       return { ...unit, pins }
     })
@@ -130,11 +142,17 @@ function isolate(
   const unmatched = standIn.isolation.filter((point) => !matched.has(point))
   if (unmatched.length > 0) {
     throw new Error(
-      `Stand-in for ${standIn.section} has isolation point(s) naming a (component, terminal) ` +
-        `that no resolved component carries: ${unmatched.map((p) => `${p.component}.${p.terminal}`).join(", ")}. ` +
+      `Stand-in for ${standIn.section} has isolation point(s) naming a net that no resolved ` +
+        `component carries: ${unmatched.map((p) => `${p.component}.${p.terminal} (${p.net})`).join(", ")}. ` +
         "lib/board/scaffold/isolate.ts and circuits/pultec/scaffold.ts have drifted apart.",
     )
   }
+  const links: LinkSpec[] = standIn.isolation.map((point) => ({
+    id: linkId(standIn.section, point),
+    section: standIn.section,
+    stubNet: stubNet(standIn.section, point),
+    net: point.net,
+  }))
   return { components, links }
 }
 

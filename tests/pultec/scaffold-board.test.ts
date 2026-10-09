@@ -111,11 +111,16 @@ test("the terminal block lands a pin on every one of the board's ports, ground l
   expect([...pinNets].sort()).toEqual(Object.keys(board.ports).sort())
 })
 
-test("every removable link's stub net is reachable from exactly one stand-in component", () => {
-  // Isolation is meant to leave the stand-in's branch hanging by one point when the
-  // link is removed - so the stub net the link's far pad lands on must belong to
-  // only the one component the isolation point named, never shared with anything
-  // else on the board.
+test("every removable link's stub net belongs only to this stand-in's own components", () => {
+  // A stub net is private to the ONE isolation point that introduced it - nothing on
+  // the rest of the board, and no OTHER section's stand-in, ever touches it. It may,
+  // however, be held by more than one of THIS stand-in's own components: a net can be
+  // touched by more than one component before isolation (mid's `R_MID_BOOST.a` and
+  // `R_MID_SHUNT.a` both land on `in`), and isolating that net means rewiring EVERY
+  // such touch to the SAME stub, not just the one the isolation point happens to name -
+  // see the next test, and `circuits/pultec/scaffold.ts`'s `isolate()` for why a
+  // version that rewired only the named touch was a real defect rather than a style
+  // choice.
   const board = pultecScaffold()
   const links = board.components.filter((component) => component.kind === "switch")
   for (const link of links) {
@@ -125,6 +130,32 @@ test("every removable link's stub net is reachable from exactly one stand-in com
     const holders = board.components.filter(
       (component) => component.id !== link.id && componentNets(component).includes(stub),
     )
-    expect(holders.length, `${link.id}: stub net ${stub}`).toBe(1)
+    expect(holders.length, `${link.id}: stub net ${stub}`).toBeGreaterThanOrEqual(1)
+  }
+})
+
+test("isolating a net cuts EVERY touch of it within the stand-in, not just one", () => {
+  // The defect this guards against: mid's `R_MID_SHUNT.a` and low-cut's and
+  // low-boost's multiply-touched nets each sit on the SAME real net as a sibling
+  // component within the same stand-in. Rewiring only the isolation point's own named
+  // (component, terminal) - as an earlier version of `isolate()` did - leaves the
+  // sibling permanently wired to the real net regardless of the link's position, which
+  // is a stray load on the real circuit that the link can never remove. After
+  // isolation, NONE of a stand-in's own components may still carry the isolated net.
+  const standIns = allStandIns(modules, SCAFFOLD_FLAT)
+  const board = pultecScaffold()
+  const byId = new Map(board.components.map((component) => [component.id, component]))
+  for (const section of SECTIONS) {
+    const standIn = standIns[section]!
+    for (const point of standIn.isolation) {
+      for (const original of standIn.components) {
+        const onBoard = byId.get(original.id)
+        if (onBoard === undefined) {
+          throw new Error(`${section}: stand-in component "${original.id}" is missing from the scaffold board`)
+        }
+        expect(componentNets(onBoard), `${section}: ${original.id} after isolating "${point.net}"`)
+          .not.toContain(point.net)
+      }
+    }
   }
 })
