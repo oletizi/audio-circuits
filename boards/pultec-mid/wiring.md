@@ -37,6 +37,15 @@ There are three kinds of thing here, and they are wired differently:
 | R_MID_BOOST | 4.7k | in ↔ mid_boost_return (boost) |
 | R_MID_CUT | 1k | mid_cut_return (cut) ↔ 0 |
 | R_MID_SHUNT | 100k | in ↔ 0 |
+| SI_HI_BOOST_RV_HI_BOOST.ccw-wiper | 0R | in ↔ si_hi_boost_j20_p3 |
+| SI_HI_BOOST_RV_HI_BOOST.wiper-cw | 47k | si_hi_boost_j20_p3 ↔ hi_boost_out |
+| SI_HI_CUT_C26 | 47nF | lo_boost_in ↔ si_hi_cut_j12_p3 |
+| SI_HI_CUT_R1 | 430R | si_hi_cut_j4_p2 ↔ si_hi_cut_j12_p3 |
+| SI_HI_CUT_RV_HI_CUT.ccw-wiper | 0R | hi_boost_out ↔ si_hi_cut_j4_p2 |
+| SI_HI_CUT_RV_HI_CUT.wiper-cw | 4.7k | si_hi_cut_j4_p2 ↔ lo_boost_in |
+| SI_LOW_CUT_RV_LO_CUT.ccw-wiper | 0R | hi_boost_out ↔ out |
+| SI_LOW_BOOST_R2 | 56k | out ↔ lo_boost_in |
+| SI_LOW_BOOST_RV_LO_BOOST.ccw-wiper | 0R | 0 ↔ lo_boost_in |
 
 ## Panel parts
 

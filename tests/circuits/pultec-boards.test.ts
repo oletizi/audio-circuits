@@ -1,3 +1,23 @@
+/**
+ * The five section boards, in both of the networks a board has.
+ *
+ * WHICH NETWORK EACH TEST BELONGS TO is the thing to get right here, and it is not a
+ * matter of taste. A section board exports the MAXIMAL network - its own parts, all
+ * four other sections' stand-in groups, and the junction - because that is what the
+ * VeroRoute layout holds and therefore the only network a layout can be checked
+ * against. Everything the perfboard workflow reads off these modules (`DESIGNATORS`,
+ * `PAD_ORDER`, `OFF_BOARD_IDS`) describes that network, so the tests about those read
+ * `build()`.
+ *
+ * The claims about PARTITIONING, by contrast, are claims about the all-five
+ * configuration: that each board projects back to its electrical module, that its ports
+ * are the boundary nets the partition assigns it, that every reference component sits
+ * on exactly one board. Those hold of `boardNetwork(owner, ALL)` - own parts plus the
+ * junction - and are false of the maximal network, because the maximal network
+ * deliberately carries four other sections' worth of parts. Checking them against the
+ * maximal network would not be a stricter test; it would be a different and wrong
+ * claim. See `circuits/pultec/physical/board.ts`.
+ */
 import { test, expect } from "bun:test"
 import { assertSameTopology, componentNets } from "../../lib/model/topology.ts"
 import { assertElectricallyTransparent, physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
@@ -6,6 +26,8 @@ import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
 import { boundaryConductors, partitionReference } from "../../circuits/pultec/partition.ts"
 import type { ModuleOwner } from "../../circuits/pultec/partition.ts"
 import type { Network } from "../../lib/model/types.ts"
+import { boardNetwork, standInGroup } from "../../circuits/pultec/physical/board.ts"
+import { LADDER_ORDER } from "../../lib/board/scaffold/supplier.ts"
 import * as lowCut from "../../circuits/pultec/physical/low-cut.ts"
 import * as lowBoost from "../../circuits/pultec/physical/low-boost.ts"
 import * as hiCut from "../../circuits/pultec/physical/hi-cut.ts"
@@ -28,13 +50,21 @@ const BOARDS: readonly (readonly [ModuleOwner, BoardModule, () => Network])[] = 
   ["mid", mid, mid.pultecMid],
 ]
 
+/** The configuration with every section built: no board carries any stand-in group. */
+const ALL: ReadonlySet<string> = new Set(LADDER_ORDER)
+
+/** Which absent sections' groups a board carries standalone: the other four. */
+function maximalGroups(owner: ModuleOwner): readonly string[] {
+  return LADDER_ORDER.filter((section) => section !== owner)
+}
+
 test("each board projects back to its electrical partition", () => {
   // The target is the PARTITION MODULE. Ports come from the board because the
   // property under test is component topology; validateNetwork independently
   // refuses both a bogus port and a missing one.
   const modules = partitionReference().modules
-  for (const [owner, , build] of BOARDS) {
-    const board = build()
+  for (const [owner] of BOARDS) {
+    const board = boardNetwork(owner, ALL)
     const target: Network = { ports: board.ports, components: modules[owner] ?? [] }
     expect(() => assertSameTopology(target, projectPhysical(board)), owner).not.toThrow()
   }
@@ -42,8 +72,8 @@ test("each board projects back to its electrical partition", () => {
 
 test("a board's ports are exactly the crossing nets its own components touch", () => {
   const modules = partitionReference().modules
-  for (const [owner, , build] of BOARDS) {
-    const board = build()
+  for (const [owner] of BOARDS) {
+    const board = boardNetwork(owner, ALL)
     const electrical = modules[owner] ?? []
     const touched = new Set(electrical.flatMap((component) => componentNets(component)))
     for (const netName of Object.keys(board.ports)) {
@@ -62,9 +92,20 @@ test("a board's ports are exactly the boundary nets the partition says it owns",
   // its output simply has nowhere to land, silently. This checks the other way:
   // every net the partition says crosses this module's boundary must be a port.
   const boundaries = boundaryConductors()
-  for (const [owner, , build] of BOARDS) {
+  for (const [owner] of BOARDS) {
     const expected = boundaries.filter((b) => b.owners.includes(owner)).map((b) => b.net).sort()
-    expect(Object.keys(build().ports).sort(), owner).toEqual(expected)
+    expect(Object.keys(boardNetwork(owner, ALL).ports).sort(), owner).toEqual(expected)
+  }
+})
+
+test("standalone, every board's ports are all five junction nets", () => {
+  // The maximal counterpart of the test above, and the reason the two have to be
+  // separate claims: populate hi-cut's and mid's groups on low-boost's board and it
+  // gains `hi_boost_out` and `in`, which the section alone never names. That is what
+  // makes any present board able to host any absent section's group.
+  for (const [owner, , build] of BOARDS) {
+    expect(Object.keys(build().ports).sort(), owner)
+      .toEqual(["0", "hi_boost_out", "in", "lo_boost_in", "out"])
   }
 })
 
@@ -97,21 +138,38 @@ test("every on-board component has a footprint and every off-board one does not"
   }
 })
 
-test("each board carries exactly the off-board components the partition assigns it", () => {
+test("every member of OFF_BOARD is assigned to exactly one section by the partition", () => {
+  // Computed from the partition modules directly, independent of any board: 6 pots,
+  // 6 switches, 9 inductors. A board that emitted none would pass the per-board check
+  // below with two empty sets, and this is what refuses that.
   const modules = partitionReference().modules
-  let total = 0
-  for (const [owner, module, ] of BOARDS) {
-    const expected = (modules[owner] ?? [])
+  const assigned: string[] = []
+  for (const [owner] of BOARDS) {
+    assigned.push(...(modules[owner] ?? [])
       .filter((component) => OFF_BOARD.has(component.id))
-      .map((component) => component.id)
-      .sort()
-    expect([...module.OFF_BOARD_IDS].sort(), owner).toEqual(expected)
-    total += expected.length
+      .map((component) => component.id))
   }
-  // Every member of the global set is on exactly one board: 6 pots, 6 switches,
-  // 9 inductors. A board that emitted none would pass the per-board check above
-  // with two empty sets, and this is what refuses that.
-  expect(total).toBe(OFF_BOARD.size)
+  expect(new Set(assigned).size).toBe(assigned.length)
+  expect(assigned.length).toBe(OFF_BOARD.size)
+})
+
+test("a board's off-board ids are its own landings plus its stand-in groups' landings", () => {
+  // The maximal board's landings, because OFF_BOARD_IDS is what the layout check reads.
+  // mid's 1H tap is the case that matters: it is an off-board landing wherever it sits,
+  // so the four boards standing in for mid each get one, and `SI_MID_L_MID_1H` must be
+  // a PADS landing rather than a part with a footprint nobody has chosen.
+  const modules = partitionReference().modules
+  for (const [owner, module] of BOARDS) {
+    const expected = new Set(
+      (modules[owner] ?? [])
+        .filter((component) => OFF_BOARD.has(component.id))
+        .map((component) => component.id),
+    )
+    for (const absent of maximalGroups(owner)) {
+      for (const id of standInGroup(absent).offBoardIds) expected.add(id)
+    }
+    expect([...module.OFF_BOARD_IDS].sort(), owner).toEqual([...expected].sort())
+  }
 })
 
 test("every part that needs a symbol has one, so its netlist value is not empty", () => {

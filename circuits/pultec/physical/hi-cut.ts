@@ -2,10 +2,22 @@
  * The hi cut section on stripboard.
  *
  * The Ccut bank and the 430R series resistor are on the board; the 4K7 level
- * pot and its selector are panel-mount and appear as PADS landings. Ground is a
- * chassis/shield landing here, but the junction's six ground pins mean "0" is
- * never a singleton regardless. `in` and `out` are: this board's own circuit
- * never names them, so the junction's one pin for each is the only member.
+ * pot and its selector are panel-mount and appear as PADS landings.
+ *
+ * THE EXPORTED NETWORK IS THE MAXIMAL ONE: this section's own parts, the
+ * stand-in groups for all four other sections, and the junction. That is what
+ * the VeroRoute layout is checked against, because the layout holds every
+ * position and never varies - a build configures the board by populating those
+ * positions or leaving them empty. See `circuits/pultec/physical/board.ts` for
+ * the maximal-versus-configuration distinction, and `boardNetwork` there for
+ * what a particular build realises.
+ *
+ * NO LADDER NET IS A SINGLETON ON THIS BOARD any more. Standalone, the four
+ * stand-in groups between them touch all five junction nets, so `in` and `out`
+ * - which this section's own circuit never names - carry real parts rather than
+ * a lone junction pin. `DECLARED_OPENS` is empty as a consequence, and that
+ * emptiness is an assertion rather than an absence: a singleton reappearing
+ * means a group lost a part.
  *
  * SW_HI_CUT'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
  * hi-boost BOARD (SW_HI_BOOST there). `circuits/pultec/electrical/controls.ts` models
@@ -17,36 +29,22 @@
  * 6-position rotary whose other pole lives on the hi-boost board, and the two
  * poles must always be wired to move together.
  */
-import {
-  designatorsFor,
-  padOrdersFor,
-  physicalizedBoard,
-  sharedByFor,
-  PASSIVE_PIN_NUMBERS,
-} from "./parts.ts"
-import { OFF_BOARD } from "../off-board.ts"
+import { sharedByFor, PASSIVE_PIN_NUMBERS } from "./parts.ts"
+import { sectionBoard } from "./board.ts"
 import type { Network } from "../../../lib/model/types.ts"
 
-const CROSSING_NETS: readonly string[] = ["hi_boost_out", "lo_boost_in", "0"]
+const BOARD = sectionBoard("hi-cut")
 
 export function pultecHiCut(): Network {
-  return physicalizedBoard("hi-cut", CROSSING_NETS)
+  return BOARD.network
 }
 
-const BOARD = pultecHiCut()
-
-export const DESIGNATORS = designatorsFor(BOARD)
+export const DESIGNATORS = BOARD.designators
 export const PIN_NUMBERS = PASSIVE_PIN_NUMBERS
-export const PAD_ORDER = padOrdersFor(BOARD)
-export const OFF_BOARD_IDS: ReadonlySet<string> = new Set(
-  BOARD.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id),
-)
+export const PAD_ORDER = BOARD.padOrders
+export const OFF_BOARD_IDS: ReadonlySet<string> = BOARD.offBoardIds
 /** Crossing net -> the other boards that touch it, for the wiring guide. */
 export const SHARED_BY = sharedByFor("hi-cut")
 
-/**
- * `in` and `out` are the ladder nets this board's own circuit does not touch -
- * the junction's single pin for each is their only member. Ground is NOT
- * here: the junction's six ground pins always outnumber one.
- */
-export const DECLARED_OPENS: readonly string[] = ["in", "out"]
+/** See the module comment: the maximal board has no singleton nets at all. */
+export const DECLARED_OPENS: readonly string[] = []

@@ -1,27 +1,40 @@
+/**
+ * THE ALL-FIVE CONFIGURATION reconstructs the reference exactly.
+ *
+ * The networks here are `boardNetwork(section, ALL)`, NOT the maximal networks the five
+ * modules export. With every section built, no board carries any stand-in group - the
+ * supplier rule has nothing to assign - so each board's configuration network is its
+ * own parts plus the junction, and the five of them must compose back into
+ * `THREE_BAND_REFERENCE` as a graph.
+ *
+ * That is a claim about the CONFIGURATION, and it is false of the maximal network on
+ * purpose: standalone, a board carries four other sections' stand-in parts, which are
+ * not in the reference and must not be. The layout is checked against the maximal
+ * network; this is checked against the model. See `circuits/pultec/physical/board.ts`.
+ */
 import { test, expect } from "bun:test"
 import { assertSameTopology } from "../../lib/model/topology.ts"
 import { physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
 import { THREE_BAND_REFERENCE } from "../../circuits/pultec/electrical/three-band.ts"
 import type { Component, Network } from "../../lib/model/types.ts"
-import { pultecLowCut } from "../../circuits/pultec/physical/low-cut.ts"
-import { pultecLowBoost } from "../../circuits/pultec/physical/low-boost.ts"
-import { pultecHiCut } from "../../circuits/pultec/physical/hi-cut.ts"
-import { pultecHiBoost } from "../../circuits/pultec/physical/hi-boost.ts"
-import { pultecMid } from "../../circuits/pultec/physical/mid.ts"
+import { boardNetwork } from "../../circuits/pultec/physical/board.ts"
+import { LADDER_ORDER } from "../../lib/board/scaffold/supplier.ts"
+
+const ALL: ReadonlySet<string> = new Set(LADDER_ORDER)
 
 // Reversed on purpose: reconstruction must not depend on board order.
 const BOARDS: readonly (() => Network)[] = [
-  pultecMid, pultecHiBoost, pultecHiCut, pultecLowBoost, pultecLowCut,
-]
+  "mid", "hi-boost", "hi-cut", "low-boost", "low-cut",
+].map((section) => () => boardNetwork(section, ALL))
 
 /**
  * The five boards wired together: every board's electrical content, with the
- * terminal blocks projected away.
+ * junction rows projected away.
  *
  * Joining the boards needs no explicit step. Nets are implied by pin references
  * and the crossing nets carry the same name on every board, so two boards'
  * components naming "hi_boost_out" are already on one net the moment they sit
- * in one component list. A terminal block is where that wire physically lands,
+ * in one component list. The junction is where that wire physically lands,
  * which is exactly why projecting it away leaves the circuit unchanged.
  */
 function reconstructed(): Network {

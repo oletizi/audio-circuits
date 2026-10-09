@@ -109,6 +109,17 @@ test("resistance below one kilohm keeps its ohms spelling", () => {
   expect(valueFor(twoPin("R2", "resistor", { ohms: 1 }))).toBe("1R")
 })
 
+test("exactly zero ohms is a wire link, spelled 0R, and the band above it stays refused", () => {
+  // A stand-in derived at a control's end stop carries ideal shorts as components, so a
+  // Pultec section board holds 0R resistors - a jumper or a wire across two pads. Zero
+  // is admitted as its own case, NOT by lowering the floor: 0.5R would render ".5R",
+  // a spelling nothing has been checked against.
+  expect(valueFor(twoPin("R6", "resistor", { ohms: 0 }))).toBe("0R")
+  expect(() => valueFor(twoPin("R7", "resistor", { ohms: 0.5 }))).toThrow(/1R.*10M/s)
+  expect(() => valueFor(twoPin("R8", "resistor", { ohms: 0.999 }))).toThrow(/1R.*10M/s)
+  expect(() => valueFor(twoPin("R9", "resistor", { ohms: -0.5 }))).toThrow(/1R.*10M/s)
+})
+
 test("resistance at or above one kilohm is unchanged by this task", () => {
   expect(valueFor(twoPin("R3", "resistor", { ohms: 4700 }))).toBe("4.7K")
   expect(valueFor(twoPin("R4", "resistor", { ohms: 1000 }))).toBe("1K")

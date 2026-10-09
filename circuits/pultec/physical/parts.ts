@@ -152,7 +152,7 @@ export function footprintForKind(component: Component): string {
 }
 
 /** The symbol an off-board component's value field takes, by kind. */
-function symbolFor(component: Component): string {
+export function symbolFor(component: Component): string {
   if (component.kind === "potentiometer") return POT_SYMBOL
   if (component.kind === "inductor") return INDUCTOR_SYMBOL
   if (component.kind === "switch") {
@@ -239,59 +239,98 @@ export function junctionComponents(): readonly [Component, Component] {
 }
 
 /**
- * One physicalized board: the module's components with footprints or symbols
- * attached, plus the junction's two rows that carry the shared ladder nets.
+ * The five nets the junction puts on every board, in the signal row's pin
+ * order, regardless of which board is asking.
  *
- * `crossingNets` is in pin order and always ends with "0". It no longer sizes
- * the junction - every board's junction is identical, see `junctionComponents`
- * - but it still determines `ports` below: a board declares as a port only the
- * crossing nets ITS OWN electrical components touch, which is a strict subset
- * of what the junction carries on every board but this one.
+ * RESTATED HERE RATHER THAN READ OFF THE COMPONENTS only because `sharedByFor`
+ * and `portsOn` need bare net names, not a pin map. That restatement is a
+ * second source of truth, so it does NOT rely on anybody keeping it in step by
+ * hand: `tests/pultec/scaffold-boards.test.ts` asserts this list against the
+ * nets `junctionSignalComponent()` and `junctionGroundComponent()` actually
+ * carry, and against the signal row's own pin order.
  */
-export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly string[]): Network {
-  // partitionReference(), NOT boardNetwork(). boardNetwork filters out everything
-  // that is not board-resident, which after Task 5 means every pot, switch and
-  // inductor - exactly the components this design keeps in the network and marks
-  // off-board so their PADS pads become the wire landings. Building from
-  // boardNetwork would leave the off-board branch below unreachable and produce
-  // boards with no landings at all.
+export const JUNCTION_NETS: readonly string[] = [
+  "in", "hi_boost_out", "lo_boost_in", "out", "0",
+]
+
+/**
+ * One section's OWN components, physicalized: footprints on the board-resident
+ * parts, symbols on the off-board landings.
+ *
+ * This is the section's own circuit only. The stand-in groups for the other
+ * four sections, and the junction, are added by
+ * `circuits/pultec/physical/board.ts`, which is the module that knows which
+ * groups a configuration carries.
+ *
+ * `partitionReference()`, NOT a configuration network: a configuration filters
+ * nothing out, but the thing that would be tempting here - a network already
+ * stripped of pots, switches and inductors - would leave the off-board branch
+ * below unreachable and produce boards with no wire landings at all.
+ */
+export function ownComponents(owner: ModuleOwner): readonly Component[] {
   const owned = partitionReference().modules[owner]
-  if (owned === undefined) throw new Error(`no such module: ${owner}`)
-  const components: Component[] = owned.map((component) =>
+  if (owned === undefined) {
+    throw new Error(
+      `no such module: ${owner}. Known modules: ` +
+        `${Object.keys(partitionReference().modules).sort().join(", ")}. Module names come ` +
+        "from circuits/pultec/partition.ts and are not defaulted.",
+    )
+  }
+  return owned.map((component) =>
     OFF_BOARD.has(component.id)
       ? { ...component, part: { ...component.part, symbol: symbolFor(component) } }
       : { ...component, part: { ...component.part, footprint: footprintForKind(component) } })
-
-  // A board's ports are the crossing nets its own electrical components touch.
-  // The rest of `crossingNets` - the chassis ground on the three boards where
-  // ground is not in the signal topology - exist only because the terminal block
-  // puts a pin on them. They are physical-only, and must NOT be declared ports:
-  // `projectPhysical` removes the block, after which no pin sits on them at all,
-  // and `validateNetwork` refuses a port naming a net nothing is on.
-  //
-  // This is not a second description of the interface competing with the block.
-  // Both come from the same `crossingNets` array; the block realises it in
-  // copper, and these ports are what remains of it once the copper is projected
-  // away.
-  const touched = new Set(components.flatMap(componentNets))
-  const ports = Object.fromEntries(
-    crossingNets.filter((netName) => touched.has(netName)).map((netName) => [netName, netName]),
-  )
-
-  components.push(...junctionComponents())
-
-  return { ports, components }
 }
 
-/** Pad orders for every off-board component on a physicalized board. */
-export function padOrdersFor(board: Network): Readonly<Record<string, readonly string[]>> {
+/**
+ * A board's ports: the junction nets its ELECTRICAL components touch.
+ *
+ * Call this with the board's electrical components and WITHOUT the junction.
+ * The junction lands a pin on all five nets on every board, so including it
+ * would declare a port for every net on every board - and a net whose only pin
+ * belongs to the junction is physical-only: `projectPhysical` removes the
+ * junction, after which nothing sits on that net at all, and `validateNetwork`
+ * refuses a port naming a net nothing is on.
+ *
+ * Which nets those are therefore varies with the CONFIGURATION, not with a
+ * per-board list: a board carrying hi-cut's and mid's stand-in groups touches
+ * `hi_boost_out` and `in`, which the section alone never names. An earlier
+ * revision passed a hand-written `crossingNets` array per section; it is
+ * deleted rather than kept, because `JUNCTION_NETS` filtered by what the
+ * components touch computes the same answer for the all-five configuration and
+ * the right one for every other.
+ */
+export function portsOn(
+  components: readonly Component[],
+): Readonly<Record<string, string>> {
+  const touched = new Set(components.flatMap(componentNets))
+  return Object.fromEntries(
+    JUNCTION_NETS.filter((netName) => touched.has(netName)).map((netName) => [netName, netName]),
+  )
+}
+
+/** The pad order for one off-board component: the landing's pin order. */
+export function padOrderFor(component: Component): readonly string[] {
+  if (component.kind === "potentiometer") return POT_PAD_ORDER
+  if (component.kind === "inductor") return TWO_PIN_PAD_ORDER
+  if (component.kind === "switch") return rotaryPadOrder(component)
+  throw new Error(
+    `no pad order rule for off-board "${component.id}" of kind "${component.kind}". An ` +
+      "off-board part's pads are the wire landings a builder solders to, so their order is " +
+      "a per-kind fact that must be stated in circuits/pultec/physical/parts.ts rather than " +
+      "defaulted to whatever order the pin map happens to iterate in.",
+  )
+}
+
+/** Pad orders for the off-board components of a physicalized board. */
+export function padOrdersFor(
+  board: Network,
+  offBoardIds: ReadonlySet<string>,
+): Readonly<Record<string, readonly string[]>> {
   const orders: Record<string, readonly string[]> = {}
   for (const component of board.components) {
-    if (!OFF_BOARD.has(component.id)) continue
-    if (component.kind === "potentiometer") orders[component.id] = POT_PAD_ORDER
-    else if (component.kind === "inductor") orders[component.id] = TWO_PIN_PAD_ORDER
-    else if (component.kind === "switch") orders[component.id] = rotaryPadOrder(component)
-    else throw new Error(`no pad order rule for off-board "${component.id}"`)
+    if (!offBoardIds.has(component.id)) continue
+    orders[component.id] = padOrderFor(component)
   }
   return orders
 }
@@ -308,14 +347,6 @@ export const PASSIVE_PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string
   resistor: { a: "1", b: "2" },
   capacitor: { a: "1", b: "2" },
 }
-
-/**
- * The five nets `junctionComponent` puts on the junction, regardless of which
- * board is asking - restated here (rather than read off the component) only
- * because `sharedByFor` needs the bare net names, not a pin map. Keep this in
- * step with `junctionComponent`'s pin table if that ever changes.
- */
-const JUNCTION_NETS: readonly string[] = ["in", "hi_boost_out", "lo_boost_in", "out", "0"]
 
 /**
  * Every junction net mapped to the OTHER boards that touch it, for the wiring

@@ -27,6 +27,18 @@ There are three kinds of thing here, and they are wired differently:
 | C4a2 | 1nF | j15_p2 (200mH inductor) ↔ j8_p3 (8kHz) |
 | C5a2 | 1.5nF | j15_p1 (100mH inductor) ↔ j8_p2 (10kHz) |
 | R3 | 4.7k | j19_p1 ↔ j20_p1 |
+| SI_HI_CUT_C26 | 47nF | lo_boost_in ↔ si_hi_cut_j12_p3 |
+| SI_HI_CUT_R1 | 430R | si_hi_cut_j4_p2 ↔ si_hi_cut_j12_p3 |
+| SI_HI_CUT_RV_HI_CUT.ccw-wiper | 0R | hi_boost_out ↔ si_hi_cut_j4_p2 |
+| SI_HI_CUT_RV_HI_CUT.wiper-cw | 4.7k | si_hi_cut_j4_p2 ↔ lo_boost_in |
+| SI_LOW_CUT_RV_LO_CUT.ccw-wiper | 0R | hi_boost_out ↔ out |
+| SI_LOW_BOOST_R2 | 56k | out ↔ lo_boost_in |
+| SI_LOW_BOOST_RV_LO_BOOST.ccw-wiper | 0R | 0 ↔ lo_boost_in |
+| SI_MID_C_MID_1kHz_A | 22nF | si_mid_mid_tap_1h (1H inductor) ↔ si_mid_mid_sel_1khz |
+| SI_MID_C_MID_1kHz_B | 3.3nF | si_mid_mid_tap_1h (1H inductor) ↔ si_mid_mid_sel_1khz |
+| SI_MID_R_MID_BOOST | 4.7k | in ↔ si_mid_mid_boost_return |
+| SI_MID_R_MID_SHUNT | 100k | in ↔ 0 |
+| SI_MID_RV_MID.ccw-wiper | 0R | hi_boost_out ↔ si_mid_mid_sel_1khz |
 
 ## Panel parts
 
@@ -91,6 +103,13 @@ Off the board, wired back to it. Nothing here is soldered to the board itself.
 | 7 | t_16kHz | 16kHz | j8_p1 |
 
 **Ganged (`hi_freq`).** This is one pole of a two-pole switch shared with another board — not a switch of its own. Both poles turn together on one shaft, and fitting two separate switches makes two controls out of what should be one.
+
+### SI_MID_L_MID_1H — 1H inductor
+
+| Pad | Terminal | Selects | Net |
+| --- | --- | --- | --- |
+| 1 | a | — | si_mid_mid_tap_1h |
+| 2 | b | — | si_mid_mid_boost_return |
 
 ## Board terminals
 
