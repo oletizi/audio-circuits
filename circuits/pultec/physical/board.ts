@@ -133,8 +133,18 @@ export interface StandInGroup {
   readonly offBoardIds: ReadonlySet<string>
 }
 
-/** The net a stand-in pin sits on once the group is placed on a board. */
-function placedNet(section: string, boundary: ReadonlySet<string>, netName: string): string {
+/**
+ * The net a stand-in pin sits on once the group is placed on a board.
+ *
+ * Exported so its two refusals can be shown to work. The live derivation never trips
+ * either of them, which is exactly why they need exercising from a test: a refusal
+ * nobody has seen fire is an unproven claim about what this module will catch.
+ */
+export function placedNet(
+  section: string,
+  boundary: ReadonlySet<string>,
+  netName: string,
+): string {
   if (boundary.has(netName)) {
     if (!JUNCTION_NET_SET.has(netName)) {
       throw new Error(
@@ -168,8 +178,11 @@ function placedNet(section: string, boundary: ReadonlySet<string>, netName: stri
  * kind the reduction can produce keeps package pins empty by this codebase's convention
  * - and that is CHECKED rather than assumed, because a non-empty package-pin map would
  * otherwise be silently dropped instead of carried onto the board.
+ *
+ * Exported for the same reason as `placedNet`: the package-pin refusal below never
+ * fires on live data, so only a test can show that it fires at all.
  */
-function placedComponent(
+export function placedComponent(
   section: ModuleOwner,
   boundary: ReadonlySet<string>,
   resolved: ResolvedComponent,

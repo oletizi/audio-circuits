@@ -112,8 +112,8 @@ test("standalone, every board's ports are all five junction nets", () => {
 test("every physical-only component is electrically transparent", () => {
   // projectPhysical enforces this itself, so this is a direct statement of the
   // same fact rather than the only thing holding it. The count assertion keeps
-  // it from passing vacuously if physicalizedBoard ever stops adding its
-  // junction rows - two per board (signals, grounds), not one.
+  // it from passing vacuously if boardNetwork ever stops adding its junction
+  // rows - two per board (signals, grounds), not one.
   let checked = 0
   for (const [, , build] of BOARDS) {
     for (const component of build().components) {

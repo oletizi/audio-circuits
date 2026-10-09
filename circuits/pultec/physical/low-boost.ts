@@ -16,8 +16,15 @@
  * stand-in groups between them touch all five junction nets, so `in` and
  * `hi_boost_out` - which this section's own circuit never names - carry real
  * parts rather than a lone junction pin. `DECLARED_OPENS` is empty as a
- * consequence, and that emptiness is an assertion rather than an absence: a
- * singleton reappearing means a group lost a part.
+ * consequence, and the both-directions singleton test in
+ * `tests/circuits/pultec-boards.test.ts` holds it that way.
+ *
+ * THAT EMPTINESS IS NOT A COMPLETENESS GUARD, and an earlier revision of this
+ * comment claimed it was. Every junction net here carries between three and
+ * fourteen pins, so losing a stand-in part - or a whole group - generally leaves
+ * no singleton behind and would pass unnoticed. Group completeness is asserted
+ * directly instead, over all five boards, in
+ * `tests/pultec/scaffold-boards.test.ts`.
  *
  * SW_LO_BOOST'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
  * low-cut BOARD (SW_LO_CUT there). `circuits/pultec/electrical/controls.ts` models both

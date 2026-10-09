@@ -286,8 +286,9 @@ export function pultecScaffold(): Network {
     for (const link of links) components.push(toLinkComponent(link))
   }
 
-  // Ground last, exactly as `physicalizedBoard` orders a section board's own
-  // terminal block.
+  // Ground last, as this board's own terminal block orders its pins. The section
+  // boards no longer have a per-board block to match: `JUNCTION_NETS` in
+  // circuits/pultec/physical/parts.ts fixes one pinout for all five, ground last.
   const crossingNets = [...boundaryNets].filter((n) => n !== GROUND_NET).sort()
   crossingNets.push(GROUND_NET)
 

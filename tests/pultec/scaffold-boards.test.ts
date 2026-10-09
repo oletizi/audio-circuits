@@ -35,6 +35,8 @@ import {
   boardNetwork,
   groupsOn,
   physicalBoard,
+  placedComponent,
+  placedNet,
   standInGroup,
 } from "../../circuits/pultec/physical/board.ts"
 import { validateNetwork } from "../../lib/model/validate.ts"
@@ -42,6 +44,7 @@ import { JUNCTION_NETS, junctionComponents } from "../../circuits/pultec/physica
 import { physicalOnly } from "../../lib/board/physicalize.ts"
 import { componentNets } from "../../lib/model/topology.ts"
 import type { Component } from "../../lib/model/types.ts"
+import type { ResolvedComponent } from "../../lib/model/control-state.ts"
 
 const STAND_INS = allStandIns(partitionReference().modules, REFERENCE_FLAT)
 const JUNCTION_IDS: ReadonlySet<string> = new Set(junctionComponents().map((c) => c.id))
@@ -60,23 +63,54 @@ function configurations(): readonly (readonly string[])[] {
   return all
 }
 
+/** How many parts each group has, and 15 in total across the five. */
+const GROUP_SIZE: Readonly<Record<string, number>> = {
+  "hi-boost": 2, "hi-cut": 4, "low-cut": 1, "low-boost": 2, mid: 6,
+}
+const ALL_GROUP_PARTS = Object.values(GROUP_SIZE).reduce((sum, n) => sum + n, 0)
+
 test("the maximal network holds every stand-in group, for the layout to be checked against", () => {
-  const maximal = physicalBoard("low-boost")
-  for (const section of ["hi-boost", "hi-cut", "low-cut", "mid"]) {
-    for (const component of STAND_INS[section]!.components) {
-      expect(maximal.components.some((c) => c.id.includes(component.id)), `${section}/${component.id}`)
-        .toBe(true)
+  // OVER EVERY BOARD, not just low-boost. Nothing else at model level asserts that a
+  // board carries all four groups, and the margin on every junction net is 3 to 14
+  // pins, so a board quietly losing a whole group produces no singleton, no port
+  // change and no topology failure. Mutation-checked: dropping low-cut's group from
+  // mid's board alone used to leave every model-level test green.
+  //
+  // EXACT ID EQUALITY, not `includes`: a substring match for "R1" is also satisfied by
+  // "R12", so the loose form could pass while the part under test was absent.
+  let checked = 0
+  for (const section of LADDER_ORDER) {
+    const ids = new Set(physicalBoard(section).components.map((c) => c.id))
+    for (const absent of LADDER_ORDER) {
+      if (absent === section) continue
+      const group = standInGroup(absent)
+      expect(group.components.length, absent).toBe(GROUP_SIZE[absent] ?? -1)
+      for (const component of group.components) {
+        expect(ids.has(component.id), `${section} <- ${absent}/${component.id}`).toBe(true)
+        checked += 1
+      }
     }
   }
+  // Not vacuous: five boards, each carrying every group but its own.
+  expect(checked).toBe(LADDER_ORDER.length * ALL_GROUP_PARTS - ALL_GROUP_PARTS)
 })
 
 test("a configuration holds only the groups this board supplies", () => {
   // low-boost with hi-boost also built: hi-boost is earlier in ladder order, so it
   // supplies every absent group and low-boost's own network carries none of them.
   const network = boardNetwork("low-boost", new Set(["hi-boost", "low-boost"]))
-  for (const component of STAND_INS["mid"]!.components) {
-    expect(network.components.some((c) => c.id.includes(component.id)), component.id).toBe(false)
+  const ids = new Set(network.components.map((c) => c.id))
+  let checked = 0
+  for (const absent of ["hi-cut", "low-cut", "mid"]) {
+    for (const component of standInGroup(absent).components) {
+      expect(ids.has(component.id), `${absent}/${component.id}`).toBe(false)
+      checked += 1
+    }
   }
+  // Not vacuous: the three absent sections' groups, every part of each.
+  expect(checked).toBe(
+    (GROUP_SIZE["hi-cut"] ?? 0) + (GROUP_SIZE["low-cut"] ?? 0) + (GROUP_SIZE["mid"] ?? 0),
+  )
 })
 
 test("standalone, the board carries all four groups", () => {
@@ -216,6 +250,36 @@ test("an unknown section refuses everywhere, naming the known ones", () => {
   expect(() => standInGroup("nope")).toThrow(/nope/)
 })
 
+test("a boundary net the junction does not carry refuses, rather than being placed", () => {
+  // Never reached by live data - every section's boundary is a subset of JUNCTION_NETS,
+  // which the property test above asserts. Exercised here because a refusal nobody has
+  // seen fire is an unproven claim: if the partition's boundary moved to a net no header
+  // carries, a stand-in would be wired to nothing and this is what must say so.
+  expect(() => placedNet("hi-cut", new Set(["mystery_rail"]), "mystery_rail"))
+    .toThrow(/the junction does not\s+carry/)
+})
+
+test("a junction net outside the group's boundary refuses, rather than being prefixed", () => {
+  // Prefixing it would hide a ladder net from the shared bus; leaving it bare would
+  // join a node the boundary says is private. Neither is defaulted.
+  expect(() => placedNet("hi-cut", new Set(["hi_boost_out"]), "out"))
+    .toThrow(/not in its boundary/)
+})
+
+test("a stand-in component with package pins refuses, rather than dropping them", () => {
+  // A dropped package pin is a connection the board would be missing with nothing to
+  // show it. Live data never has one, so this is the only place the guard is proven.
+  const resolved: ResolvedComponent = {
+    id: "C99",
+    kind: "capacitor",
+    parameters: { farads: 1e-8 },
+    pins: { shield: "0" },
+    units: [{ name: "MAIN", pins: { a: "hi_boost_out", b: "lo_boost_in" } }],
+  }
+  expect(() => placedComponent("hi-cut", new Set(["hi_boost_out", "lo_boost_in"]), resolved))
+    .toThrow(/declares package pins/)
+})
+
 test("with all five built, a board's configuration network is its own parts and the junction", () => {
   const all = new Set(LADDER_ORDER)
   for (const section of LADDER_ORDER) {
@@ -229,38 +293,96 @@ test("with all five built, a board's configuration network is its own parts and 
   }
 })
 
+/** Every net a junction row's pins name, in ascending pin-number order. */
+function rowNets(component: Component): readonly string[] {
+  if (Object.keys(component.pins).length > 0) {
+    throw new Error(
+      `junction "${component.id}" declares package pins, which this reading ignores; ` +
+        "extend it rather than letting a pin fall out of the comparison",
+    )
+  }
+  const unit = component.units[0]
+  if (unit === undefined || component.units.length !== 1) {
+    throw new Error(`junction "${component.id}" must have exactly one unit`)
+  }
+  const numbers = Object.keys(unit.pins).map((pin) => {
+    const number = Number(pin)
+    if (!Number.isInteger(number)) {
+      throw new Error(`junction "${component.id}" pin "${pin}" is not a pin number`)
+    }
+    return number
+  }).sort((a, b) => a - b)
+  return numbers.map((number) => {
+    const connection = unit.pins[String(number)]
+    if (connection === undefined || connection.kind !== "net") {
+      throw new Error(`junction "${component.id}" pin ${number} is not on a net`)
+    }
+    return connection.net
+  })
+}
+
 /**
  * DRIFT TEST 1, from the Task 1 review. `JUNCTION_NETS` hand-restates the five net
- * names the junction components emit, because `sharedByFor` needs bare names rather
- * than a pin map. Nothing enforced agreement, so a pinout edit could leave the wiring
- * guide describing nets no header carries.
+ * names the junction components emit, because `sharedByFor` and `portsOn` need bare
+ * names rather than a pin map. Nothing enforced agreement, so a pinout edit could
+ * leave every board's port set and the wiring guide describing nets no header carries.
+ *
+ * BOTH HALVES READ THE COMPONENTS. An earlier version of this test asserted the order
+ * half against a hardcoded literal, which made the test a THIRD copy of the vocabulary
+ * rather than a check of the second against the first: swapping pins "1" and "2" of
+ * `junctionSignalComponent` left it green. There is a derivable source here - the
+ * signal row's own ordered pin list - so a literal is never the right thing to compare
+ * against. (Contrast drift test 2 below, where the authority is the spec's prose and a
+ * literal in the test is the only way to hold it.)
  */
-test("JUNCTION_NETS is exactly the set of nets the junction components carry", () => {
-  const carried = new Set<string>()
-  for (const component of junctionComponents()) {
-    const groups = [component.pins, ...component.units.map((unit) => unit.pins)]
-    for (const group of groups) {
-      for (const [pin, connection] of Object.entries(group)) {
-        if (connection.kind !== "net") {
-          throw new Error(`junction "${component.id}" pin ${pin} is not on a net`)
-        }
-        carried.add(connection.net)
-      }
-    }
-  }
+test("JUNCTION_NETS is the signal row's nets, in its own pin order", () => {
+  const [signals, grounds] = junctionComponents()
+  expect(JUNCTION_NETS).toEqual(rowNets(signals))
+  // And the set half, over BOTH rows: a net appearing only on the ground row would
+  // still be one the junction carries, and must not be missing from the list.
+  const carried = new Set([...rowNets(signals), ...rowNets(grounds)])
   expect([...JUNCTION_NETS].sort()).toEqual([...carried].sort())
-  // Order is load-bearing for the pinout table in the guide, so the signal row's own
-  // pin order is asserted too, not just the set.
-  expect(JUNCTION_NETS).toEqual(["in", "hi_boost_out", "lo_boost_in", "out", "0"])
+  expect(new Set(JUNCTION_NETS).size).toBe(JUNCTION_NETS.length)
 })
+
+/**
+ * The ladder positions the spec's table fixes, section by section, each with the
+ * boundary nets that section actually presents.
+ *
+ * THE SECOND COLUMN IS WHAT GIVES THE FIRST ITS TEETH. The order cannot be derived:
+ * ordering the sections by their boundary's position along `in -> hi_boost_out ->
+ * lo_boost_in -> out` puts mid second, and the spec deliberately puts it last because
+ * it bridges rather than sits in the chain. So the order is prose, and a literal here
+ * is the only way to hold it. Pairing each name with its boundary means neither this
+ * table nor `LADDER_ORDER` can move alone: a swap in `LADDER_ORDER` fails the order
+ * assertion, and a swap in this table fails the boundary assertion against the model.
+ */
+const LADDER_POSITIONS: readonly (readonly [string, readonly string[]])[] = [
+  ["hi-boost", ["hi_boost_out", "in"]],
+  ["hi-cut", ["hi_boost_out", "lo_boost_in"]],
+  ["low-cut", ["hi_boost_out", "out"]],
+  ["low-boost", ["0", "lo_boost_in", "out"]],
+  ["mid", ["0", "hi_boost_out", "in"]],
+]
 
 /**
  * DRIFT TEST 2, from the Task 3 review. `LADDER_ORDER` is a second source of truth for
  * the section vocabulary - the first is the partition's module keys. A section renamed
  * in the partition and not here would make `suppliers()` refuse a real board, or worse,
  * silently stop assigning a group that still needs one.
+ *
+ * MEMBERSHIP IS NOT ENOUGH, and an earlier version of this test checked only that:
+ * swapping `"hi-cut"` and `"low-cut"` reassigns which board supplies which group and
+ * left the whole suite green. The order is read straight off this constant by
+ * `suppliers()`, so it is pinned too.
  */
-test("LADDER_ORDER names exactly the sections the partition has modules for", () => {
+test("LADDER_ORDER is the sections the partition has, in the spec's ladder order", () => {
   expect([...LADDER_ORDER].sort()).toEqual(Object.keys(partitionReference().modules).sort())
   expect(new Set(LADDER_ORDER).size).toBe(LADDER_ORDER.length)
+  expect(LADDER_ORDER).toEqual(LADDER_POSITIONS.map(([section]) => section))
+  for (const [section, boundary] of LADDER_POSITIONS) {
+    const derived = STAND_INS[section]
+    if (derived === undefined) throw new Error(`no stand-in derived for ${section}`)
+    expect(derived.boundary, section).toEqual(boundary)
+  }
 })
