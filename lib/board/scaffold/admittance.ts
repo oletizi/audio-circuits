@@ -193,7 +193,15 @@ export function boundaryAdmittance(
     const nets = [...new Set<string>(nodesOf(component).map(classOf))]
     if (nets.length !== 2) continue
     const y = admittanceOf(component, hz)
-    const [a, b] = nets as [string, string]
+    const a = nets[0]
+    const b = nets[1]
+    if (a === undefined || b === undefined) {
+      throw new Error(
+        `${component.id} has ${nets.length} distinct electrical nodes after dedup, ` +
+          `not the 2 this branch was just checked for. The length guard above should ` +
+          `have made this unreachable.`,
+      )
+    }
     const i = index.get(a)
     const j = index.get(b)
     if (i !== undefined) matrix[i]![i] = add(matrix[i]![i]!, y)
