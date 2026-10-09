@@ -35,9 +35,9 @@ and a command that refreshes the prices already in the catalog.
   `~/.config/mouser/mouser-credentials.txt`: one line, the key (in place).
 - **Digi-Key:** an application on developer.digikey.com with the Product
   Information API, production environment, which gives a client ID and
-  secret, in `~/.config/digikey/digikey-credentials.txt`: two labelled
-  lines, `clientID: <client id>` and `clientSecret: <client secret>` (the
-  operator's format). Digi-Key's API is OAuth2; the tool uses the
+  secret, in `~/.config/digikey/digikey-credentials.txt`: a YAML mapping,
+  `clientID: <client id>` and `clientSecret: <client secret>` (the
+  operator's format), read with a YAML parser (Bun's built-in `Bun.YAML`). Digi-Key's API is OAuth2; the tool uses the
   client-credentials flow, so the app's required callback URL (registered as
   `https://localhost`) is never called.
 
