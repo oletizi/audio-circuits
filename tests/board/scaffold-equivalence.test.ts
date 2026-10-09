@@ -88,14 +88,32 @@ test("every section's stand-in is smaller than the section", () => {
   }
 })
 
-test("hi-boost's stand-in keeps the reactive bridge, not just the ladder arm", () => {
-  // The branch whose absence made the resistor-only approach wrong by 8.23 dB. Nobody
-  // wrote it down; the derivation found it. If this ever reduces to resistors only,
-  // the reduction has started discarding live reactance.
+test("hi-boost's stand-in is exactly its two pot arms, and carries no inductor", () => {
+  // The derivation reaches hi-boost's flat network without anyone writing it down: the
+  // ladder arm is `RV_HI_BOOST` at position 0, which is a 0R arm from `in` in series
+  // with the full 47k to `hi_boost_out`, and nothing else in the section carries
+  // current at flat. The 0.3 H tap, `R3`, `RV_HI_Q` and `C16` form a loop from `in`
+  // back to `in` across that 0R arm, so they conduct nothing - and an earlier
+  // graph-only liveness test kept all four, which put an inductor with NO PART NUMBER
+  // (see "Limits, measured" in the design doc) on the scaffold's parts list for a dead
+  // branch. That is what this pins: hi-boost needs no inductor.
   const derived = standIn("hi-boost", modules, REFERENCE_FLAT)
-  const kinds = new Set(derived.components.map((c) => c.kind))
-  expect(kinds.has("inductor")).toBe(true)
-  expect(kinds.has("capacitor")).toBe(true)
+  expect(derived.components.map((c) => c.id).sort())
+    .toEqual(["RV_HI_BOOST.ccw-wiper", "RV_HI_BOOST.wiper-cw"])
+  expect(derived.components.map((c) => c.kind)).toEqual(["resistor", "resistor"])
+  expect(derived.components.map((c) => c.parameters)).toEqual([{ ohms: 0 }, { ohms: 47_000 }])
+})
+
+test("mid carries the ONLY inductor in the whole scaffold", () => {
+  // The scaffold's parts list asks for one part with no catalogue number - mid's 1 H
+  // tap - and this is the assertion that keeps it one. A reduction that started
+  // keeping dead reactive branches would quietly add hi-boost's 0.3 H back.
+  const inductors = SECTIONS.flatMap((section) =>
+    standIn(section, modules, REFERENCE_FLAT).components
+      .filter((c) => c.kind === "inductor")
+      .map((c) => `${section}/${c.id}`),
+  )
+  expect(inductors).toEqual(["mid/L_MID_1H"])
 })
 
 test("mid's stand-in keeps its inductor tap", () => {
@@ -127,11 +145,42 @@ const SAMPLE_HZ = [20, 50, 120, 300, 800, 2000, 5000, 12000, 20000]
 const RELATIVE = 1e-9
 const FLOOR = 1e-15
 
+/** The sections whose boundary nets are ALL joined into one electrical node by an ideal
+ * short at flat, so the admittance they present between those nets is infinite and
+ * `boundaryAdmittance` refuses rather than returning a number.
+ *
+ * Named here, and asserted by the test below, so the gap is loud rather than a silently
+ * shorter loop: low-cut's flat stand-in IS one 0R wire between `hi_boost_out` and
+ * `out`, and there is no finite admittance to compare. Gate A1 covers it completely -
+ * a single component, identical in kind, value and nets to the section's own - so
+ * nothing is unchecked, but the thing checking it is structural, not numerical. */
+const SHORTED_BOUNDARY: readonly string[] = ["low-cut"]
+
+test("the sections Gate A2 cannot cover are exactly the ones whose boundary is shorted", () => {
+  // A gate that quietly covers fewer sections than it claims is the failure mode this
+  // repository exists to prevent, so the refusal is asserted on BOTH sides. If the
+  // reduction ever dropped low-cut's 0R arm, the derived side would stop refusing and
+  // this fails; if a section's boundary became shorted, the loop below would throw.
+  for (const section of SHORTED_BOUNDARY) {
+    const derived = standIn(section, modules, REFERENCE_FLAT)
+    const whole = resolveSectionFlat(section, modules, REFERENCE_FLAT)
+    const boundary = new Set(derived.boundary)
+    expect(boundary.size, `${section} boundary`).toBeGreaterThanOrEqual(2)
+    expect(() => boundaryAdmittance(derived.components, boundary, 1000), `${section} derived`)
+      .toThrow(/one electrical node/)
+    expect(() => boundaryAdmittance(whole.components, boundary, 1000), `${section} whole`)
+      .toThrow(/one electrical node/)
+  }
+})
+
 test("GATE A2: stand-in and real flat section agree on boundary admittance", () => {
   // Solver-noise tolerances, not perceptual ones: Gate A1 has already shown the two
   // networks are structurally identical, so anything above arithmetic noise is a
   // defect. If this ever needs loosening, the reduction has started approximating.
+  const covered: string[] = []
   for (const section of SECTIONS) {
+    if (SHORTED_BOUNDARY.includes(section)) continue
+    covered.push(section)
     const derived = standIn(section, modules, REFERENCE_FLAT)
     const whole = resolveSectionFlat(section, modules, REFERENCE_FLAT)
     const boundary = new Set(derived.boundary)
@@ -152,6 +201,10 @@ test("GATE A2: stand-in and real flat section agree on boundary admittance", () 
       }
     }
   }
+  // Non-vacuous by construction: the four sections this gate can cover are named, so
+  // a future change that made another boundary shorted fails here rather than
+  // shortening the loop in silence.
+  expect(covered).toEqual(["hi-boost", "hi-cut", "low-boost", "mid"])
 })
 
 test("GATE A2 can fail: perturbing one value breaks the agreement", () => {

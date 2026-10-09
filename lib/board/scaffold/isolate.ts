@@ -20,6 +20,7 @@
  * link in series". The model-side integration gate would have caught it, but the error
  * was in the hardware instruction, so it would have been built first.
  */
+import { nodesOf } from "./shorts.ts"
 import type { ResolvedComponent } from "../../model/control-state.ts"
 
 /** A leg of a stand-in that must be breakable, named by the component and pin at it. */
@@ -27,14 +28,6 @@ export interface IsolationPoint {
   readonly component: string
   readonly terminal: string
   readonly net: string
-}
-
-function nodesOf(component: ResolvedComponent): readonly string[] {
-  const nodes = new Set<string>(Object.values(component.pins))
-  for (const unit of component.units) {
-    for (const net of Object.values(unit.pins)) nodes.add(net)
-  }
-  return [...nodes]
 }
 
 /** Partition components into pieces that share no net. */

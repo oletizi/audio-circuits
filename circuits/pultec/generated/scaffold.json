@@ -13,40 +13,6 @@
     ],
     "components": [
       {
-        "id": "C16",
-        "kind": "capacitor",
-        "parameters": {
-          "farads": 3.3e-9
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "j15_p3",
-              "b": "in"
-            }
-          }
-        ]
-      },
-      {
-        "id": "R3",
-        "kind": "resistor",
-        "parameters": {
-          "ohms": 4700
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "j19_p1",
-              "b": "j20_p1"
-            }
-          }
-        ]
-      },
-      {
         "id": "RV_HI_BOOST.ccw-wiper",
         "kind": "resistor",
         "parameters": {
@@ -76,40 +42,6 @@
             "pins": {
               "a": "j20_p3",
               "b": "hi_boost_out"
-            }
-          }
-        ]
-      },
-      {
-        "id": "RV_HI_Q.wiper-cw",
-        "kind": "resistor",
-        "parameters": {
-          "ohms": 10000
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "j20_p1",
-              "b": "j20_p3"
-            }
-          }
-        ]
-      },
-      {
-        "id": "L_HI_BOOST_300MH",
-        "kind": "inductor",
-        "parameters": {
-          "henries": 0.3
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "j15_p3",
-              "b": "j19_p1"
             }
           }
         ]
@@ -228,23 +160,6 @@
     ],
     "components": [
       {
-        "id": "C21",
-        "kind": "capacitor",
-        "parameters": {
-          "farads": 6.8e-8
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "0",
-              "b": "lo_boost_in"
-            }
-          }
-        ]
-      },
-      {
         "id": "R2",
         "kind": "resistor",
         "parameters": {
@@ -281,7 +196,7 @@
     ],
     "isolation": [
       {
-        "component": "C21",
+        "component": "R2",
         "terminal": "b",
         "net": "lo_boost_in"
       },
@@ -306,23 +221,6 @@
     ],
     "components": [
       {
-        "id": "C4",
-        "kind": "capacitor",
-        "parameters": {
-          "farads": 3.3e-9
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "hi_boost_out",
-              "b": "out"
-            }
-          }
-        ]
-      },
-      {
         "id": "RV_LO_CUT.ccw-wiper",
         "kind": "resistor",
         "parameters": {
@@ -342,7 +240,7 @@
     ],
     "isolation": [
       {
-        "component": "C4",
+        "component": "RV_LO_CUT.ccw-wiper",
         "terminal": "a",
         "net": "hi_boost_out"
       }

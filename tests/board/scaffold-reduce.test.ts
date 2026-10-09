@@ -86,15 +86,53 @@ test("a component touching only ONE boundary node is dropped", () => {
   expect(kept.map((k) => k.id)).toEqual(["live"])
 })
 
-test("reduction drops the five unselected low-boost capacitors", () => {
-  // Against the real section: six selector capacitors, one of which merged into
-  // lo_boost_in at the flat setting. The other five reach only their own j10 nets.
+test("reduction drops ALL SIX of low-boost's selector capacitors", () => {
+  // Against the real section: six selector capacitors. Five reach only their own j10
+  // nets, left open by the selector. The sixth, `C21`, merged onto `lo_boost_in` at
+  // the flat setting - and `RV_LO_BOOST.ccw-wiper` at position 0 is a 0R arm from
+  // `lo_boost_in` to ground, so `C21` sits directly ACROSS a short: one electrical
+  // node on both terminals, no voltage across it ever, no current through it. A
+  // graph-only liveness test kept it, which is the defect electrical-node identity in
+  // `reduce.ts` fixed. Low-boost's stand-in is the 56k and the 0R shunt, nothing else.
   const boundary = discoverBoundary("low-boost", modules, "0")
   const resolved = resolveSectionFlat("low-boost", modules, REFERENCE_FLAT)
+  expect(resolved.components.filter((k) => k.kind === "capacitor")).toHaveLength(6)
   const kept = reduceToBoundary(resolved, boundary)
-  const capacitors = kept.filter((k) => k.kind === "capacitor")
-  expect(capacitors).toHaveLength(1)
-  expect(Object.values(capacitors[0]!.units[0]!.pins).sort()).toEqual(["0", "lo_boost_in"])
+  expect(kept.filter((k) => k.kind === "capacitor")).toHaveLength(0)
+  expect(kept.map((k) => k.id).sort()).toEqual(["R2", "RV_LO_BOOST.ccw-wiper"])
+})
+
+test("a component in parallel with an ideal short is dropped; the short itself is kept", () => {
+  // The pair that makes "merge every OTHER short, never the one under test" the
+  // criterion rather than "merge every short". `C4` is across the arm, so it is inert.
+  // The arm IS low-cut's whole stand-in: merging through itself would make it a
+  // self-loop and delete the section's only component.
+  const kept = reduceToBoundary(
+    network([
+      r("flat_arm", "hi_boost_out", "out", 0),
+      c("across_the_short", "hi_boost_out", "out"),
+    ]),
+    new Set(["hi_boost_out", "out"]),
+  )
+  expect(kept.map((k) => k.id)).toEqual(["flat_arm"])
+  expect(Object.values(kept[0]!.units[0]!.pins).sort()).toEqual(["hi_boost_out", "out"])
+})
+
+test("a loop closed through an ideal short carries nothing and is dropped", () => {
+  // hi-boost, in miniature. `short` makes `IN` and `tap` one electrical node, so
+  // `bridge_one`/`bridge_two` run from that node back to itself. On the raw graph that
+  // reads as a path to `OUT` - via the merged node the other end already stands on -
+  // and four of hi-boost's six components were kept that way.
+  const kept = reduceToBoundary(
+    network([
+      r("short", "IN", "tap", 0),
+      r("arm", "tap", "OUT", 47_000),
+      c("bridge_one", "IN", "mid"),
+      r("bridge_two", "mid", "tap", 4700),
+    ]),
+    new Set(["IN", "OUT"]),
+  )
+  expect(kept.map((k) => k.id).sort()).toEqual(["arm", "short"])
 })
 
 test("reduction keeps low-boost's series element and its flat shunt", () => {

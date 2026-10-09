@@ -18,8 +18,27 @@
  * matrix is built. A piece that merely dead-ends INSIDE the network is kept and is not
  * singular: a dead-end node's Schur contribution works out to zero on its own, which is
  * precisely why the reduction is entitled to drop those components.
+ *
+ * IDEAL SHORTS ARE MERGED INTO ELECTRICAL NODES HERE, NOT APPROXIMATED BY A LARGE
+ * CONDUCTANCE. An earlier version of this file stood an ideal short in as 1e12 S "so
+ * the matrix stays invertible", and that was wrong past the point of being a tolerance
+ * question: the Schur complement of a 0R arm in series with 47k is `Ys*g/(Ys+g)`, and
+ * at Ys = 1e12 the term `g = 2.1e-5` falls below one ulp of Ys, so `Ys + g` rounds to
+ * `Ys` and the whole result collapses to EXACTLY ZERO. hi-boost's stand-in is that
+ * network. The same arithmetic made the full section read 2.207e-5 where the analytic
+ * answer is 2.128e-5 - a 3.7% error in a guard whose tolerance is 1e-9 relative. No
+ * finite Ys fixes it: getting 1e-9 relative accuracy out of this elimination needs
+ * Ys/g below about 4.5e6, which is not a short.
+ *
+ * So a short is treated as what it is, a node merge, via `lib/board/scaffold/shorts.ts`
+ * - and the consequence is faced rather than papered over: when ideal shorts join ALL
+ * of a network's boundary nets into one electrical node, the admittance it presents is
+ * infinite and this function REFUSES. low-cut's flat stand-in is exactly that (one 0R
+ * wire between its two boundary nets), so Gate A2 cannot cover it and says so out loud
+ * instead of comparing two large numbers that agree only in their leading digits.
  */
 import { connectedGroups } from "./isolate.ts"
+import { electricalNodes, nodesOf } from "./shorts.ts"
 import type { ResolvedComponent } from "../../model/control-state.ts"
 
 export interface Complex {
@@ -27,25 +46,23 @@ export interface Complex {
   readonly im: number
 }
 
-/** Conductance standing in for an ideal short. Finite so the matrix stays invertible,
- * and applied identically to both sides of any comparison, so a shared value cancels. */
-const SHORT_SIEMENS = 1e12
-
-function nodesOf(component: ResolvedComponent): readonly string[] {
-  const nodes = new Set<string>(Object.values(component.pins))
-  for (const unit of component.units) {
-    for (const net of Object.values(unit.pins)) nodes.add(net)
-  }
-  return [...nodes]
-}
-
-/** A component's branch admittance at one frequency. */
+/** A component's branch admittance at one frequency. An ideal short never reaches
+ * here: `electricalNodes` has already merged its two nets, so it is a self-loop by the
+ * time the matrix is stamped, and a self-loop carries no current. */
 function admittanceOf(component: ResolvedComponent, hz: number): Complex {
   const omega = 2 * Math.PI * hz
   const parameters = component.parameters
   if (component.kind === "resistor" && "ohms" in parameters) {
     const ohms = parameters.ohms
-    return { re: ohms === 0 ? SHORT_SIEMENS : 1 / ohms, im: 0 }
+    if (ohms === 0) {
+      throw new Error(
+        `${component.id} is an ideal short (0 ohms) and reached admittanceOf, which ` +
+          `means its nets were not merged into one electrical node first. Boundary ` +
+          `admittance merges shorts rather than approximating them with a large ` +
+          `conductance - see this module's comment for the arithmetic that forced it.`,
+      )
+    }
+    return { re: 1 / ohms, im: 0 }
   }
   if (component.kind === "capacitor" && "farads" in parameters) {
     return { re: 0, im: omega * parameters.farads }
@@ -97,10 +114,15 @@ function attachedToBoundary(
 }
 
 /**
- * The boundary admittance matrix, keyed `"<u>|<v>"` over boundary nodes other than the
- * reference. The reference is ground when the boundary includes it and the first
- * boundary net otherwise, because a network with no ground has no node to measure
- * against - and the choice is shared by both sides of a comparison.
+ * The boundary admittance matrix, keyed `"<u>|<v>"` over boundary ELECTRICAL nodes
+ * other than the reference. The reference is ground when the boundary includes it and
+ * the lexicographically first boundary node otherwise, because a network with no ground
+ * has no node to measure against - and the choice is shared by both sides of a
+ * comparison.
+ *
+ * A boundary node here is the electrical node a boundary net belongs to, named by its
+ * class representative (see `shorts.ts`), so two networks carrying the same short name
+ * the merged node identically and their matrices are comparable key by key.
  */
 export function boundaryAdmittance(
   components: readonly ResolvedComponent[],
@@ -116,26 +138,44 @@ export function boundaryAdmittance(
         `${boundaryNets.length}. A one-terminal network presents nothing.`,
     )
   }
-  const reference = boundary.has(groundNet) ? groundNet : boundaryNets[0]!
+  const classOf = electricalNodes(attached)
+  const boundaryNodes = [...new Set<string>(boundaryNets.map(classOf))].sort()
+  if (boundaryNodes.length < 2) {
+    throw new Error(
+      `Boundary admittance is infinite for this network: its boundary nets ` +
+        `${boundaryNets.join(", ")} are all one electrical node (${boundaryNodes[0]}), ` +
+        `joined by ideal shorts, so there is no finite admittance between them. This ` +
+        `is a refusal rather than a large number: an ideal short is merged here, not ` +
+        `approximated, so the caller must cover such a network structurally (Gate A1) ` +
+        `rather than numerically.`,
+    )
+  }
+  const referenceNet = boundary.has(groundNet) ? groundNet : boundaryNets[0]!
+  const reference = classOf(referenceNet)
 
-  const allNets = new Set<string>()
-  for (const component of attached) for (const net of nodesOf(component)) allNets.add(net)
-  for (const net of boundaryNets) allNets.add(net)
-  allNets.delete(reference)
+  const allNodes = new Set<string>()
+  for (const component of attached) {
+    for (const net of nodesOf(component)) allNodes.add(classOf(net))
+  }
+  for (const node of boundaryNodes) allNodes.add(node)
+  allNodes.delete(reference)
 
   // Boundary nodes first, so the matrix partitions without reordering.
-  const ports = boundaryNets.filter((net) => net !== reference)
-  const internal = [...allNets].filter((net) => !boundary.has(net)).sort()
+  const boundarySet = new Set<string>(boundaryNodes)
+  const ports = boundaryNodes.filter((node) => node !== reference)
+  const internal = [...allNodes].filter((node) => !boundarySet.has(node)).sort()
   const order = [...ports, ...internal]
-  const index = new Map(order.map((net, position) => [net, position]))
+  const index = new Map(order.map((node, position) => [node, position]))
 
   const size = order.length
   const matrix: Complex[][] = Array.from({ length: size }, () =>
     Array.from({ length: size }, () => ZERO),
   )
   for (const component of attached) {
-    const nets = nodesOf(component)
-    if (nets.length !== 2) continue // a self-loop carries no current
+    // Electrical nodes, deduplicated: an ideal short, and the rheostat wiring's
+    // one-net pot arm, are both self-loops here and carry no current.
+    const nets = [...new Set<string>(nodesOf(component).map(classOf))]
+    if (nets.length !== 2) continue
     const y = admittanceOf(component, hz)
     const [a, b] = nets as [string, string]
     const i = index.get(a)
