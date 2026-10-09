@@ -94,10 +94,14 @@ function sanitize(text: string): string {
  * algorithm that used to live in `lib/board/scaffold/isolate.ts` (deleted - see
  * "Task 2: Retire isolation"). The owner's build-time-population model has no further
  * use for it at the section-board level, but THIS module still builds a separate
- * scaffold board out of removable links, and that board is scheduled for deletion
- * outright, not for a redesign, by a later task in this plan. Keeping the computation
- * local and private - rather than reinstating it as shared machinery in `lib/` - says
- * plainly that nothing else may come to depend on it in the meantime. */
+ * scaffold board out of removable links. **Task 4, "Delete the separate scaffold
+ * board"**, deletes this whole file - and this copy with it - outright, not as a
+ * redesign. `lib/board/scaffold/wiring.ts` carries the other, identical copy, removed
+ * by **Task 6, "Population and junction instructions in the guide"** when that file
+ * is rewritten wholesale; the two must go together, or whichever survives is a lone
+ * private duplicate that will look deliberate rather than leftover. Keeping the
+ * computation local and private - rather than reinstating it as shared machinery in
+ * `lib/` - says plainly that nothing else may come to depend on it in the meantime. */
 interface IsolationLeg {
   readonly component: string
   readonly terminal: string

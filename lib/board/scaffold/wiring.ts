@@ -22,12 +22,15 @@
  *
  * `legsFor` BELOW IS A TEMPORARY, PRIVATE DUPLICATE of the leg-finding algorithm that
  * used to live in `lib/board/scaffold/isolate.ts` (deleted - see "Task 2: Retire
- * isolation"; `circuits/pultec/scaffold.ts` keeps its own identical copy, for the same
- * reason). `StandIn` no longer carries isolation data, because the owner's
- * build-time-population model has no further use for it; this module and the
- * scaffold board it describes are scheduled for a wholesale rewrite, not a redesign,
- * by a later task in this plan, so the computation stays local rather than being
- * reinstated as shared machinery in `lib/`.
+ * isolation"). `StandIn` no longer carries isolation data, because the owner's
+ * build-time-population model has no further use for it; **Task 6, "Population and
+ * junction instructions in the guide"** rewrites this file wholesale and removes this
+ * copy with it. `circuits/pultec/scaffold.ts` keeps the other, identical copy, removed
+ * outright - not redesigned - by **Task 4, "Delete the separate scaffold board"**,
+ * which deletes that whole file; the two copies must go together, or whichever
+ * survives is a lone private duplicate that will look deliberate rather than leftover.
+ * The computation stays local rather than being reinstated as shared machinery in
+ * `lib/`.
  *
  * NO BOARD IS DECLARED FOR THE SCAFFOLD YET. `boards/<name>/perfboard.json` hands a
  * board to the perfboard CLI, and that contract needs a physicalization - a
