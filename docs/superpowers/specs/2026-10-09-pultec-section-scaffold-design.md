@@ -158,13 +158,35 @@ solving it:
 
 #### Exactly one supplier per absent section
 
-For any build, each ABSENT section's stand-in is fitted on exactly one PRESENT board, chosen
-deterministically, and the generated wiring guide states per configuration which board fits
-what. Standalone, one board fits all four other groups. With low-boost and low-cut both
-built and hi-cut absent, one of them fits hi-cut's group and the other fits none of it.
+For any build, each ABSENT section's stand-in is fitted on exactly one PRESENT board, and the
+generated wiring guide states per configuration which board fits what. Standalone, one board
+fits all four other groups. With low-boost and low-cut both built and hi-cut absent, one of
+them fits hi-cut's group and the other fits none of it.
 
-The rule is computed, never remembered, because remembering it is exactly the failure that
-would halve a value invisibly.
+**The rule, stated rather than implied:** sections have a canonical order, taken from their
+position along the ladder -
+
+1. hi-boost (`in` to `hi_boost_out`)
+2. hi-cut (`hi_boost_out` to `lo_boost_in`)
+3. low-cut (`hi_boost_out` to `out`)
+4. low-boost (`lo_boost_in` to `out`)
+5. mid (bridges `in` and `hi_boost_out`)
+
+- and every absent section's group is fitted on **the first present board in that order**.
+"Deterministic" on its own was not a specification: an assignment that depended on object
+iteration order would be stable until something unrelated reordered it. The bus is what makes
+the choice free electrically - every board sees every ladder net - so the ordering only needs
+to be fixed and legible, not clever.
+
+One consequence to know before building: the assignment is stable only while boards are added
+LATER in the order. Build low-boost alone and it hosts all four groups; add hi-boost
+afterwards and hi-boost becomes the supplier, so those parts move. No derivable rule avoids
+this - "whichever board you built first" is not a property of the circuit - so the guide
+states the assignment for the configuration in front of you and the move is visible as a diff
+between two guides rather than a surprise at the bench.
+
+The assignment is computed, never remembered, because remembering it is exactly the failure
+that would halve a value invisibly.
 
 #### One layout per board, and placement is the switch
 
@@ -180,11 +202,21 @@ all of it is deleted: a group that is not fitted needs no leg broken, because it
 not on the board. The consequence, accepted deliberately: changing a board's configuration
 after it is built means desoldering a group, not pulling a link.
 
-#### The junction is a 2x05 header, which commits to no connector
+#### The junction is a stacking 2x05 bus
 
-Each board's junction is one `PinHeader_2x05_P2.54mm_Vertical` - two rows of five holes at
-2.54 mm, the stripboard grid - replacing the 5.08 mm terminal block the five boards modelled
-before. Its pinout interleaves ground returns:
+The five ladder nets are common to every board by construction - that is why the sections
+interact at all - so the interconnect is a **shared bus**, not a choice among topologies. A
+star or a daisy chain would impose a hub or an order on nets that are genuinely shared, and
+buy nothing.
+
+**The boards stack.** Each carries one 2x05 junction at 2.54 mm, the stripboard grid, fitted
+with a stacking (long-tail) header: pins below, socket above, so an assembled stack carries
+every net up through it. The footprint is the same two rows of five holes a plain
+`PinHeader_2x05_P2.54mm_Vertical` describes - a stacking header differs in the part, not the
+pads - so the layout does not change with the choice, and a bench build can still use a
+ribbon socket or individual leads on the same pattern before anything is stacked.
+
+Pinout, with a ground return beside each signal:
 
 | Pin | Net | Pin | Net |
 | --- | --- | --- | --- |
@@ -194,22 +226,23 @@ before. Its pinout interleaves ground returns:
 | 7 | `out` | 8 | `0` |
 | 9 | `0` | 10 | `0` |
 
-All five ladder nets appear on every board's junction, not just the ones the bare section
-touches: populate hi-cut's and mid's stand-ins on low-boost's board and it gains
-`hi_boost_out` and `in`, which the section alone never names.
+All five nets appear on every board's junction, not only the ones the bare section touches:
+populate hi-cut's and mid's stand-ins on low-boost's board and it gains `hi_boost_out` and
+`in`, which the section alone never names. That uniformity is what makes the bus work and
+what makes any present board able to host any absent section's group.
 
-Dual-row is not only for ribbon. These are high-impedance nodes, 47 k to 470 k, and `in` and
-`out` would otherwise run side by side in one cable with nothing between them - a feedback
-path, and the same concern the parent design's input/output separation rule exists for. A
-ground conductor beside each signal is the reason ribbon pinouts interleave grounds at all.
+The interleaved grounds are not only a ribbon convention. These are high-impedance nodes,
+47 k to 470 k, and `in` and `out` would otherwise run adjacent with nothing between them -
+a feedback path, and the same concern the parent design's input/output separation rule exists
+for. In a stack the same reasoning applies to the pin field rather than to a cable.
 
-**The footprint asserts holes and nets, not a connector.** The odd row is the complete
-five-net set, so every option is a build-time choice on the same pattern: an IDC ribbon
-socket over both rows, individual leads, wires soldered straight to the pins, or a 1x05
-2.54 mm screw terminal in the odd row alone - its single row of pins matches the header's row
-pitch exactly. A plain pin header is deliberately specified rather than an `IDC-Header_*`
-variant: the shrouded, latched versions are the same pins with polarisation added, and that
-polarisation would then be the only thing they accept.
+**A 1x05 screw terminal is NOT compatible, and an earlier revision of this document claimed
+it was.** The claim rested on pin pitch alone: a 2.54 mm 1x05 block's pins do match one row
+of the header. Its BODY does not - `TerminalBlock_Xinya_XY308-2.54-5P_1x05_P2.54mm_Horizontal`
+measures 14.20 by 7.50 mm and reaches about 3.9 mm to one side of its pin row, where the
+header's second row is 2.54 mm away, so the body overhangs it by roughly 1.4 mm. Matching
+pitch is not mechanical compatibility, and the two are easy to confuse into a claim that
+survives review. Stacking settles it regardless: a screw terminal cannot be stacked through.
 
 ### Reduction: what the derivation may and may not do
 
@@ -536,18 +569,49 @@ value, which is quiet, plausible and wrong.
 | Stand-in derivation | deterministic output from the electrical model; committed values are a derived artifact compared by content |
 | Reduction invariants | every boundary node retained; a component dropped only when no simple path through it joins two distinct boundary electrical nodes; a branch beyond an ideal short treated as live, a branch across one as inert; no node merged in the output |
 | Boundary discovery | the boundary is every externally shared node including ground, discovered from the model, never inferred from the named ladder nodes |
-| Structural equivalence (A1) | the stand-in is a subset of the section's flat-resolved live components, with identical boundary node identities; exact, no tolerance |
-| Numerical equivalence (A2) | boundary admittances agree to relative `1e-9` with a `1e-15` S floor, real and imaginary parts, 24+ points per decade over 20 Hz - 20 kHz. Ideal shorts are merged into electrical nodes, not approximated; a network whose boundary nets are ALL shorted together (low-cut) has no finite boundary admittance, so the guard refuses and the sections it cannot cover are named and asserted rather than silently skipped |
+| Structural equivalence (A1) | the stand-in is a subset of the section's flat-resolved live components, with identical boundary node identities; exact, no tolerance. Subset alone is NOT sufficient - a reduction that wrongly DROPS a live component is still a subset - so A1 is paired with the oracle row below |
+| Liveness oracle | an independent brute-force search for a simple path between two distinct boundary electrical nodes through each component, written without reference to the production implementation, agrees with `reduceToBoundary` on every component of every section and on randomised networks containing ideal shorts, parallel edges and self-loops. Restating the liveness predicate as its own acceptance criterion would be circular; only an independently derived answer catches over-dropping |
+| Numerical equivalence (A2) | boundary admittances agree to relative `1e-9` with a `1e-15` S floor, real and imaginary parts, 24+ points per decade over 20 Hz - 20 kHz. Ideal shorts are merged into electrical nodes, not approximated |
+| Short-circuit partition | the stand-in and the original flat section induce the SAME partition of boundary nets into short-circuit equivalence classes, asserted for every section. This is the general property; low-cut's exemption from numerical comparison is then a consequence of it rather than a carve-out - its two boundary nets fall in one class, so no finite admittance exists between them, the guard refuses, and the admittance comparison runs over whatever independent classes remain |
 | Exactly one supplier | for every build, each absent section's stand-in is fitted on exactly one present board, chosen deterministically and stated in the generated guide; two boards fitting the same group is a defect the guide must make impossible to reach by following it |
 | One layout per board | the layout is identical for every configuration; a configuration differs only in which positions are populated and whether the junction is wired |
-| Junction | one `PinHeader_2x05_P2.54mm_Vertical` per board carrying all five ladder nets with interleaved ground returns, the odd row being the complete net set so any of ribbon, leads, direct solder or a 1x05 screw terminal works |
+| Junction | one 2x05 at 2.54 mm per board, same pads on every board, carrying all five ladder nets with interleaved ground returns. Fitted with a stacking header so boards stack and the nets form a shared bus; a ribbon socket or individual leads work on the same pads for a bench build. A 1x05 screw terminal does NOT fit - its body overhangs the second row |
 | Composition | all 31 non-empty section combinations pass, to `1e-6` dB on unrounded values |
 | Control interaction | simultaneous control vectors match the full reference, including the boost-and-cut pairs |
 | Frequency contract | the fixture's declared frequency state equals the reference model's; a mismatch fails |
-| Integration | all sections present, all links omitted: **strict graph equivalence** with the reference network, on the graph derived from the physical layout |
-| Documentation | generated link instructions agree with the generated layout's connectivity |
+| Integration | all five sections built with no stand-in group populated on any board: **strict graph equivalence** with the reference network. Required on the model, and again on the graph derived from the physical layouts - see the two milestones below |
+| Documentation | the generated guide's population and junction-wiring instructions agree with the generated network's connectivity, including which board supplies each absent section's group |
+
+## Two milestones, and only the first is reachable now
+
+The acceptance criteria above mix two kinds of claim, and an earlier revision demanded
+layout-derived verification in the table while excluding it under Out of scope. That
+contradiction is resolved by naming the halves:
+
+**S0-model — reachable now, and complete when every row above except Integration's second
+clause passes.** Stand-in derivation, boundary discovery, the reduction invariants and the
+liveness oracle, structural and numerical equivalence, the short-circuit partition property,
+composition across all 31 combinations, control interaction, the frequency contract, supplier
+assignment, and the generated population and wiring instructions. None of it needs a layout.
+
+**S0-physical — blocked on layouts that do not exist.** The layout-derived Integration check,
+and assembly checks on a built stack. This needs all five VeroRoute layouts redrawn, which is
+the human designer's work.
+
+**S0 is not "accepted" until both are done.** Reporting the model milestone as completion of
+S0 would be the same failure the Integration row guards against: a check that cannot run
+looking like one that passed.
 
 ## Out of scope
+
+- **Reducing the per-board part count by any means** - a scaffold daughterboard per section,
+  a plug-in module, or reserving fewer positions. The owner's requirement is that each board
+  carry its own scaffolding and be configurable at build time to stand alone or join others,
+  and that is a decision taken rather than a conclusion drawn from the electrics. The cost is
+  real and worth stating plainly: every board reserves positions for roughly thirteen parts it
+  populates only when standing alone, so the design optimises the standalone case at the
+  expense of the complete assembly, which populates none of them. Recorded as accepted, not
+  overlooked.
 
 - Resolving the inductor part question. The scaffold surfaces it.
 - Selectable stand-in capacitors. Noted as an option above; not designed here.
@@ -557,7 +621,8 @@ value, which is quiet, plausible and wrong.
 
 - **The layout-derived half of Gate C.** `tests/pultec/scaffold-integration.test.ts` checks
   the model-side claim this document calls non-negotiable: with all five sections present and
-  every link removed, the recovered network is strictly equivalent to `THREE_BAND_REFERENCE` -
+  no stand-in group populated, the recovered network is strictly equivalent to
+  `THREE_BAND_REFERENCE` -
   exact, no tolerance, proven both ways (every scaffold-originated component is dead, and the
   live subgraph matches the reference's by id, kind, parameters and nets). What it cannot
   check is the other half Gate C asks for: the SAME claim on the graph **derived from the
