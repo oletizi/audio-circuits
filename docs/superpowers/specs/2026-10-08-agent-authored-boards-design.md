@@ -18,12 +18,35 @@ That principle is now partly false. The `oletizi/pedals` repository demonstrates
 real four-stage fuzz board, that an agent can place and route a PCB and generate a
 legible multi-sheet schematic, **when the result is graded by code rather than by the
 agent's own judgement.** This design brings that capability here, extends it to cover
-the one step pedals leaves to its operator, and applies the whole chain to the Pultec
-three-band EQ as five section boards in two variants.
+the one step pedals leaves to its operator.
 
 The owner's instruction is explicit: take the operator out of schematic and PCB
 creation as far as possible. This document's central problem is how to do that without
 reintroducing the failure that motivated pedals' design in the first place.
+
+## What is not decided, and must not be assumed
+
+**The form factor is unknown.** The Pultec will be packaged several ways and nobody knows
+yet what those are. An earlier revision of this document quietly decided a good deal of it -
+five section boards, a through-hole build paired with a surface-mount one, panel parts on
+headers, then board-mounted controls for a turnkey build. None of that was asked for and all
+of it over-constrained the problem.
+
+So this document commits to none of it. What it commits to is:
+
+- **Discrete boards, one per circuit**, so each can be built and worked on in isolation.
+  That is the near-term shape and the reason S0 exists at all.
+- **Perfboard first.** A perfboard version of each discrete circuit is built before any
+  decision about PCBs is made. Not as a gate this document enforces - as the actual order of
+  the work.
+- **Form-factor choices stay open in the model.** Which parts sit on a board, which
+  technology a board is built in, and how many boards a packaging uses are all *data*, not
+  structure. The sections below say how, and deliberately do not say which.
+
+The PCB pipeline below is therefore **tooling to be built, not a board set to be produced.**
+It is specified in full because specifying it is how we find out what it needs - the part
+contract and the identity chain are both things we only learned were missing by writing this
+down. Which boards it eventually renders is a later decision with no good answer today.
 
 ## The failure this design must not reproduce
 
@@ -94,7 +117,7 @@ The pipeline below is the same either way; only the top box changes.
                 │
                 ▼
       physicalization, per target and variant
-        physical/stripboard/   physical/pcb/  (tht | smd)
+        physical/perfboard/    physical/pcb/  (per build)
                 │                      │
                 │                      ▼
                 │              schematic IR  ──►  renderer  ──►  <board>.kicad_sch
@@ -176,7 +199,7 @@ almost none of pedals' templates - but this repository holds four other circuits
 The earlier reading of this, that the templates were "unused here, ported for later
 circuits", was wrong in a way that mattered: it would have shipped roughly forty files of
 template code with nothing in the repository exercising it, which is exactly what **look at
-the output, not only the tests** forbids. Those four circuits are therefore S4's
+the output, not only the tests** forbids. Those four circuits are therefore T2's
 verification material, not a future benefit.
 
 | Template | Needed by | Status |
@@ -194,7 +217,7 @@ verification material, not a future benefit.
 | `tappedReturn` | four or five discrete inductors from their taps to a common coil return | **new** |
 | `modeSwitch` | the mid section's two-throw boost/cut switch, selecting which resistor the coil returns through - no capacitors on its throws | **new** |
 
-So S4 writes five new templates, not four, and the ported ones are proven against the
+So the port writes five new templates, not four, and the ported ones are proven against the
 existing circuits rather than taken on trust.
 
 **`gates/oscar/` ports too, and this repository supplies its own reference material.**
@@ -384,7 +407,7 @@ refusal, not a default.
 - edge discipline: terminal blocks on an edge, within a setback.
 
 Each rule states the distance it enforces and why that number. **This document does not fix
-those distances** - S6 does, with the reasoning for each recorded beside it, because a
+those distances** - T5 does, with the reasoning for each recorded beside it, because a
 number chosen here without the boards in front of us would be false precision. What this
 document fixes is that the numbers live in a reviewed, archetype-keyed library rather than
 in a per-board file an agent drafts. Extending or relaxing the library is a reviewed change
@@ -392,19 +415,39 @@ with a test beside it; applying it is not.
 
 ### Variants
 
-The THT and SMD boards are **one circuit with two footprint maps**, not two circuits.
-`circuits/pultec/physical/pcb/` exports `pcbBoard(section, variant)`, and the variant
-selects footprints through a bounded, tested map keyed by kind and value range - the same
-shape as the existing `FILM_BY_FARADS`, including its hard upper bound, because an
-unbounded fallback once returned a 330 nF footprint for 10 µF.
+A build of a circuit is **one circuit plus two pieces of data**, never a second circuit.
+Nothing about a packaging is encoded in structure, because the packagings are unknown.
 
-Parts with no SMD option - the nine discrete inductors, the pots, the rotary switches,
-the terminal blocks - resolve to the same footprint in both variants. That is a fact
-recorded in the map, not a fallback.
+**Technology** - which footprint family a part gets - is a bounded, tested map keyed by kind
+and value range, the same shape as the existing `FILM_BY_FARADS` including its hard upper
+bound, because an unbounded fallback once returned a 330 nF footprint for 10 uF. A part with
+no option in some technology resolves to the same footprint in both; that is a fact recorded
+in the map, not a fallback.
 
-The THT variant is the garage build. The SMD variant is derived from it and is the one
-fabricated externally, so it alone carries the fab rules, net-class track widths, and
-`route-fab-floor.txt`. Without that floor the router necks blocked tracks to 0.127 mm.
+**Residency** - whether a part sits on the board or is wired to it - is already data, and
+`circuits/pultec/off-board.ts` already says why, in terms this document should not improve
+on:
+
+> THE SINGLE DEFINITION OF RESIDENCY, and it is data rather than a rule about kinds because
+> residency is a build decision the operator wants to keep open. Moving a part on-board is
+> removing a line here and giving it a footprint; moving one off-board is adding a line.
+
+That file anticipated this requirement before it was made, including that pots are
+panel-mount "today" with on-board mounting "admitted by the architecture but no pot footprint
+exists yet". The only change needed is that the residency set becomes **per build** rather
+than one module-level constant. Residency is per *part*, so a build with some controls wired
+and others on the board needs no new concept.
+
+One correction that falls out: `off-board.ts` calls rotary selectors permanently off-board,
+reasoning that a shaft and a bushing "does not mount on stripboard under any variant". That
+is a claim about *stripboard*, and it is right about stripboard. PCB-mount rotaries exist, so
+for a board build the claim narrows rather than holds. If no such part is named, the part
+contract refuses and asks - the same mechanism as the inductors, which is the behaviour we
+want for every form-factor question we have not answered yet.
+
+**What a build does not get to decide in code:** how many boards a packaging uses, or where a
+panel part physically sits. The first is a partition question and the second needs a panel
+that does not exist. Both stay open.
 
 ### Fabrication and assembly contracts
 
@@ -417,15 +460,16 @@ solder-mask clearances and minimum annular ring against the fab's rules; and
 BOM-to-footprint consistency, so no footprint carries a value or MPN the BOM disagrees with.
 `docs/standards/pcbway-fab-rules.md` ports from pedals and is the reference the checks read.
 
-**The assembly contract**, which exists because of something the variant design makes true
-and the first draft did not follow through: **the SMD variant is a mixed-technology board.**
-The nine inductors, the pots, the rotary switches and the terminal blocks resolve to the
-same through-hole footprint in both variants - that is stated in "Variants" as a fact
-recorded in the map. So the SMD board cannot be wholly machine-assembled, and the contract
-must partition every part into *assembled by the manufacturer* and *installed by hand*, with
-placement data generated for the first set only. A board that silently sends a through-hole
-rotary switch to a pick-and-place quote is a costing error, not a DRC error, and nothing
-upstream of this contract would catch it.
+**The assembly contract**, which exists because of a property any surface-mount build of
+this circuit will have: **it will be mixed-technology.** The nine inductors, the pots and the
+rotary switches have no surface-mount form, so they resolve to through-hole footprints
+whatever else does. No externally assembled board of this circuit is therefore wholly
+machine-assembled, and the contract must partition every part into *assembled by the
+manufacturer* and *installed by hand*, generating placement data for the first set only. A
+board that silently sends a through-hole rotary switch to a pick-and-place quote is a costing
+error, not a DRC error, and nothing upstream of this contract would catch it. This holds
+regardless of which form factors are eventually chosen, which is why it is stated here rather
+than waiting for them.
 
 **One hard constraint, carried from pedals and not negotiable by our tooling:** PCBWay sees
 only what its KiCad plugin exports from the board file, plus what is typed on the order page.
@@ -436,22 +480,30 @@ the contract checks it there rather than in a file we generate and nobody reads.
 ## Directory layout
 
 ```text
-circuits/pultec/physical/stripboard/   the five existing stripboard modules (moved)
-circuits/pultec/physical/pcb/          pcbBoard(section, variant) and the footprint maps
-pcb/<section>-<variant>/               .kicad_pro .kicad_sch .kicad_pcb
-                                       intent-overrides.json placement-policy.json
-                                       route-fab-floor.txt  (smd only)
-pcb/rules/                             the standing rule library
-tools/pcb/                             board synthesis
-tools/placement/                       ported place/route wrappers and intent derivation
-tools/schgen/                          ported schematic generator
-make/krt.mk                            place, route, adopt, check-intent targets
+circuits/pultec/physical/perfboard/  the five existing perfboard modules (moved)
+circuits/pultec/physical/pcb/        pcbBoard(circuit, build) - build is data, see Variants
+circuits/pultec/builds/              named builds: a technology map and a residency set each
+pcb/<build-name>/                    .kicad_pro .kicad_sch .kicad_pcb
+                                     classification.json intent-overrides.json
+                                     placement-policy.json route-fab-floor.txt
+pcb/rules/<archetype>.json           the rule library, keyed by archetype
+tools/pcb/                           board synthesis and the part contract
+tools/placement/                     ported place/route wrappers, classification, intent
+tools/schgen/                        ported schematic generator
+make/krt.mk                          place, route, adopt, check-intent targets
 ```
 
+A board directory is named for its **build**, not for a technology or a section count, so
+adding a packaging later adds a directory and changes no structure. `circuits/pultec/builds/`
+holds nothing today beyond what the perfboard work needs; it is where a packaging decision
+will land when there is one.
+
 `physical/` becomes symmetric: one subdirectory per physical target, neither privileged.
-Moving the five stripboard modules changes their import depth and the `circuitPath` in each
+Moving the five perfboard modules changes their import depth and the `circuitPath` in each
 `boards/*/perfboard.json`; `CLAUDE.md` already warns that an unresolved module surfaces as
 a confusing type error at an untouched line, so `bun run typecheck` is part of that task.
+**This move is not worth doing on its own** - it churns committed, working perfboard files
+for symmetry alone, so it waits until something actually needs `physical/pcb/` beside it.
 
 `pcb/` is deliberately not `boards/`. `boards/` means perfboard directories the perfboard
 CLI drives, and the two workflows should not be mistaken for each other.
@@ -535,34 +587,48 @@ loudly and fails.
 
 ## Sub-projects
 
-Each gets its own spec and plan. They are listed in dependency order.
+Two groups, and the difference between them matters more than the order within either.
+
+**Committed work — the discrete boards, on perfboard.**
 
 | | Sub-project | Deliverable | Gates | Depends on |
 | --- | --- | --- | --- | --- |
-| **S0** | Jumperable terminations | the scaffold that lets one section be built and measured alone, and the narrowed transparency category it needs | existing model and physicalization suites | - |
-| **S1** | KRT port | `krt.pin`, `make/krt.mk`, `tools/placement/`, proven against a board fixture vendored from pedals | 11, 12, 13 | - |
-| **S2** | Stripboard build and measurement | the four remaining sections laid out, built, and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S0 |
-| **S3** | PCB physicalization, variants and the part contract | `physical/pcb/`, five sections times two variants, every part naming a part or part family whose footprint satisfies the geometric checks | footprint-name tests, gate 8 | S0 |
-| **S4** | schgen port and templates | schematics and PDFs for the ten Pultec boards **and** for `opamp-buffer`, `pt2399-core`, the optical compressor and the transistor preamp. Four internal milestones, each independently testable: infrastructure parity; ported-template parity; the five new templates; cross-circuit validation | 1-6, 14 | S3 |
-| **S5** | Board synthesis | ten `.kicad_pcb` with every part present and no placement claim | 7, 8 | S4 |
-| **S6** | Intent derivation and the rule library | derived intent for all ten boards, and the library's distances fixed with the reasoning for each | 9, 15 | S1, S5 |
-| **S7** | First PCB end to end, one board all the way through | one section placed, routed, adopted **and through fabrication-output validation** before the other nine are started | 10, 11, 12, and S8's fab checks | S6 |
-| **S8** | Fabrication and assembly contracts | the contracts defined below, satisfied for the SMD variant; ordering stays the owner's | fabrication-output and assembly checks | S7 |
+| **S0** | Jumperable terminations | the scaffold that lets one discrete circuit be built and measured on its own, and the narrowed transparency category it needs | existing model and physicalization suites | - |
+| **S1** | Perfboard versions of each discrete circuit | the four remaining Pultec sections laid out, built and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S0 |
 
-**Expected order, not an enforced one.** The owner builds stripboard versions before asking
-for PCB layouts, so in practice S2 runs ahead of S5 onward. Nothing in the tooling enforces
-that and this document does not try to: the dependency column lists what a sub-project
-technically needs, and the owner steers the order. The PCB work is capable of running ahead
-of the bench whether or not it does.
+This is the work with a known shape. S0 comes first because without the scaffold a single
+Pultec section has no signal path at all, so there is nothing to measure — it is what makes
+building in isolation possible. Agents contribute the scaffold, the wiring guide and
+`make check`; the layout and the build are the owner's.
 
-S0, S1 and S2 are the near-term work. S0 comes first and gates two different things: it
-changes the part count on every board, and S3 is where part counts become footprints, so
-settling it later means redoing S3. It is also what makes S2 possible section by section -
-without the scaffold, a single Pultec section has no signal path to measure at all.
+**Tooling, built against no particular form factor.**
 
-S1 is independent of all of it and can proceed in parallel. S4's ported templates are
-exercised by the four non-Pultec circuits, which is why they appear in its deliverable
-rather than waiting for a circuit that needs them later.
+| | Sub-project | Deliverable | Gates | Depends on |
+| --- | --- | --- | --- | --- |
+| **T1** | KRT port | `krt.pin`, `make/krt.mk`, `tools/placement/`, proven against a board fixture vendored from pedals | 11, 12, 13 | - |
+| **T2** | schgen port and templates | schematics and PDFs for `opamp-buffer`, `pt2399-core`, the optical compressor and the transistor preamp — the circuits that exercise the ported templates. Four internal milestones, each independently testable: infrastructure parity; ported-template parity; the new templates; cross-circuit validation | 1-6, 14 | - |
+| **T3** | Build data: technology and residency maps, and the part contract | a per-build footprint map and a per-build residency set, with every part naming a part or part family whose footprint satisfies the geometric checks | footprint-name tests, gate 8 | S0 |
+| **T4** | Board synthesis | a `.kicad_pcb` with every part present and no placement claim, for whatever build it is given | 7, 8 | T2, T3 |
+| **T5** | Classification, intent derivation and the rule library | the three-way split, the `passive-ladder-eq` archetype, and the library's distances fixed with the reasoning for each | 9, 15 | T1, T4 |
+| **T6** | Fabrication and assembly contracts | the contracts defined above, checked | fabrication-output and assembly checks | T4 |
+
+**T2 does not wait for the Pultec, and that is the point.** Its ported templates are
+exercised by the four circuits already here, which need `opampStage`, the decoupling bank,
+`divider` and `fanoutKit` regardless of what happens to the Pultec. Those circuits also give
+the canonical-graph gate real reference material in `pt2399-core.kicad_sch` and
+`lab-board.kicad_sch`. So the schematic generator can be ported, proven and useful while
+every Pultec form-factor question stays open.
+
+**The decision point this document does not cross.** Applying the tooling to a chosen set of
+Pultec boards — which boards, which technology, which parts on them — comes after the
+perfboard versions exist and the owner decides what to package and how. There is no sub-project
+for it here, because writing one would mean inventing the answer. What the tooling owes that
+decision is that it can serve any answer: a build is data, and nothing above hardcodes a
+packaging.
+
+**The order is the owner's.** The dependency column says only what a sub-project technically
+needs. S0 and S1 are the near-term work; T1 and T2 are independent of everything and can run
+alongside.
 
 ### S0: jumperable terminations
 
@@ -646,7 +712,10 @@ The list is short by design, and nothing in the generation chain waits on it:
 - **Which parts are actually bought** where the model specifies a part only electrically -
   the nine inductors today. The part contract refuses rather than guessing, and that refusal
   lands here.
-- **Which variant gets fabricated, and ordering it.** Outward-facing and irreversible.
+- **The form factors.** How the circuit gets packaged, how many boards each packaging uses,
+  which parts sit on them and which are wired. Unknown today, and the tooling is built to
+  serve any answer rather than to assume one.
+- **Which build gets fabricated, and ordering it.** Outward-facing and irreversible.
 - **The order of the work.** The owner steers which sub-project comes next; the dependency
   column says only what is technically required.
 - **Non-technical calls:** how many sections to build, and whether a measured scaffold limit
@@ -690,42 +759,43 @@ this document does not reach into pedals.
 - **Two ported templates stay unexercised.** `regulator` and the crystal-with-load-capacitors
   template have no circuit here to prove them against. They are ported rather than dropped,
   because they will be wanted and rewriting them later is waste - but they carry no evidence
-  until a circuit uses them, and S4's spec should say so where they are introduced rather
+  until a circuit uses them, and T2's spec should say so where they are introduced rather
   than letting a passing suite imply coverage they do not have.
 - **Derived intent can be derived wrongly.** The mitigation is gate 9: an intent that
   cannot fail is rejected, and the bad-fixture tests are written before the derivation.
-  This is the riskiest part of the design and the one to build first within S6.
+  This is the riskiest part of the design and the one to build first within T5.
 - **The port is large.** Roughly 218 files and 1.2 MB of TypeScript across the two bodies
   of work, written against pedals' conventions and package manager. The earlier framing
   left faithful-port-versus-rewrite open for schgen's `render/` layer; the template
   findings close it toward a **faithful port**, because a rewrite would discard a template
   set four circuits here need and would have to reproduce the wire-safety and determinism
-  properties from scratch. S4's spec should still state the decision explicitly rather than
+  properties from scratch. T2's spec should still state the decision explicitly rather than
   inherit it.
 - **Two Python environments** in one pipeline, with KiCad's shell environment actively
   hostile to the venv. Pedals already handles this; the handling must be ported, not
   reinvented.
-- **The model is unvalidated, and that is what S2 is for.** No unit has been built from the
+- **The model is unvalidated, and that is what S1 is for.** No unit has been built from the
   Pultec model and it is known to be incomplete - `docs/pultec/unresolved.md` still carries
   R3 fitted at 4K7 where an inductive build calls for nominally 470R, about 5 dB of maximum
   high boost and half the Q. The three pot connections are documentation-derived and not
   netlist-confirmed, and the model never reaches flat. A fabricated board would inherit all
-  of it. S2 is the mitigation, and the owner's practice of building stripboard first is what
-  schedules it. The residual risk is that a measurement taken on a stripboard section with
+  of it. S1 is the mitigation, and building perfboard versions first is what schedules it. The residual risk is that a measurement taken on a stripboard section with
   the S0 scaffold fitted carries the scaffold's own limit, which is accurate through the
   shelf and under-reads above about 300 Hz.
 
 ## Out of scope
 
-- Panel-part mounting and enclosure geometry, by the owner's decision. Pots and rotary
-  switches stay off-board on header landings, and no intent anchors an enclosure-derived
-  pose.
+- **Choosing form factors**, and everything that depends on one: panel geometry, enclosure
+  fit, where a board-mounted control physically sits, how many boards a packaging uses. The
+  model keeps these open as data; this document picks none of them. A build that needs a
+  panel pose cannot be placed until there is a panel, and that is a fact to report rather
+  than a number to invent.
 - Stitching vias, and any routing pass after the first route.
 - Changes to KiCadRoutingTools. A needed engine change is reported upstream, not patched
   here.
-- **Automating stripboard layout.** KRT does nothing for it - stripboard is strips and
-  cuts, a different problem from copper on a plane - and no pipeline here places a
-  stripboard part. The four remaining sections are laid out by the owner in VeroRoute, as
-  low-boost was. Agents contribute the wiring guide, the S0 scaffold and `make check`; the
-  layout and the build are the owner's and stay so.
-- The stripboard tooling itself, which is unaffected except for the directory move in S3.
+- **Automating perfboard layout.** KRT does nothing for it - strips and cuts are a
+  different problem from copper on a plane - and no pipeline here places a perfboard part.
+  The four remaining sections are laid out by the owner in VeroRoute, as low-boost was.
+  Agents contribute the wiring guide, the S0 scaffold and `make check`. S1 is that work and
+  it is in scope; automating it is not.
+- The perfboard tooling itself, which is unaffected except for the directory move in T3.
