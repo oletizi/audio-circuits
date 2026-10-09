@@ -65,11 +65,27 @@ function admittanceOf(component: ResolvedComponent, hz: number): Complex {
     return { re: 1 / ohms, im: 0 }
   }
   if (component.kind === "capacitor" && "farads" in parameters) {
+    // A zero-farad capacitor is an OPEN, not a short - it presents zero admittance,
+    // which is a legitimate finite answer, not a degenerate one. No guard needed: the
+    // arithmetic below never diverges for farads === 0.
     return { re: 0, im: omega * parameters.farads }
   }
   if (component.kind === "inductor" && "henries" in parameters) {
+    const henries = parameters.henries
+    if (henries === 0) {
+      throw new Error(
+        `${component.id} is an ideal short (0 henries) and reached admittanceOf, ` +
+          `which means its nets were not merged into one electrical node first. A ` +
+          `zero-valued inductor is a short exactly as a zero-ohm resistor is - ` +
+          `1/(j*omega*L) diverges as L -> 0, the same divergence the ohms === 0 guard ` +
+          `above exists to catch. isIdealShort in shorts.ts only recognises a 0 ohm ` +
+          `resistor today because nothing a flat Pultec section resolves to is a ` +
+          `zero-henry inductor; if one is ever introduced, teach isIdealShort to merge ` +
+          `it rather than letting this throw stand in for that.`,
+      )
+    }
     // 1 / (j w L) = -j / (w L)
-    return { re: 0, im: -1 / (omega * parameters.henries) }
+    return { re: 0, im: -1 / (omega * henries) }
   }
   throw new Error(
     `No branch admittance for ${component.id} (kind ${component.kind}). Boundary ` +
