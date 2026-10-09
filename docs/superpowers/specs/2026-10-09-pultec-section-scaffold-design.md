@@ -148,10 +148,21 @@ through the 56k. Measured on the full five-section build, that spurious load cos
  10000     -37.330          -37.394    -0.064 dB
 ```
 
-**The rule is n-1 links for an n-terminal stand-in**, where ground counts as a terminal.
-Breaking all but one leg leaves the network hanging by a single point, connecting nothing to
-nothing. Breaking only some of them leaves a path. With both the `lo_boost_in` and `out` legs
-broken, the same build measures 0.000 dB at every frequency.
+**The rule, stated as a construction: for each connected component of a stand-in, isolate all
+but one of its distinct external terminals** - ground counting as a terminal. Breaking all but
+one leg leaves that component hanging by a single point, connecting nothing to nothing;
+breaking only some of them leaves a path. With both the `lo_boost_in` and `out` legs broken,
+the same build measures 0.000 dB at every frequency.
+
+Per *connected component*, not per section, and this matters for durability rather than for
+today's numbers. A section whose flat state resolves into two unconnected pieces needs each
+piece isolated on its own, and a single count applied to the section as a whole would be
+wrong. It is also a sufficient rule rather than a proven minimum: a network with redundant
+terminal connections might admit fewer points. Deriving it from the connected components of
+the resolved network means a change to the electrical model cannot silently invalidate it.
+
+For the five sections as they stand, every stand-in resolves to one connected component, so
+the rule yields:
 
 | Absent section | Boundary terminals | Links |
 | --- | --- | --- |
@@ -175,20 +186,43 @@ The stand-in is obtained from the section, and **the obtaining must not change w
 section presents at its boundary.** This is easy to get wrong, so the algorithm is specified
 rather than described.
 
-**Keep every component on a path between two boundary nodes. Drop only components that are
-genuinely disconnected.** No series/parallel collapsing, no star-mesh transformation, no
-elimination of internal nodes. The result is already small - three to five components per
+**Boundary discovery comes first, and is discovered rather than listed.** The terminal tables
+in this document are results, not inputs. A node is a boundary node if it is referenced by
+any component outside the section, or is a declared port of the section, **or is ground.**
+
+Ground must be in that set explicitly. Otherwise consider a resistor from a boundary node to
+an internal node with a capacitor from there to ground: with ground excluded, no path through
+that chain joins two boundary nodes, and a legitimate shunt network is discarded. The two
+statements "on a path between two boundary nodes" and "not genuinely disconnected" are **not**
+equivalent, and ground in the boundary set is what reconciles them.
+
+The hazard is narrow here but the guard is still worth having. This repository has no implicit
+or global nets - ground crosses a composition boundary only as a declared port, and it already
+appears on every section board's terminal block - so ground is discoverable rather than
+special. An implementation that inferred the boundary from the four named ladder nodes would
+nonetheless get this wrong, which is why discovery is specified.
+
+**Then: keep every component on a path between two boundary nodes, and drop only components
+that are genuinely disconnected.** No series/parallel collapsing, no star-mesh transformation,
+no elimination of internal nodes. The result is already small - three to five components per
 section - because flat is degenerate, so there is nothing to gain from reducing further and a
 whole class of impedance-altering bugs to avoid. A stand-in that is literally a subset of the
 section's own flat-state components cannot differ from it.
 
+**Ideal shorts are components, never node merges.** A pot arm that flat resolves to 0 ohms is
+kept as a zero-ohm component and used as an ordinary edge for path-finding. It must not be
+collapsed by merging its two nodes, for two reasons: the branch beyond a short is live, not
+floating - the omission that made the earlier design wrong - and merging would destroy a
+stand-in outright. Low-cut's entire stand-in *is* a short between `hi_boost_out` and `out`;
+merge those nodes and there is nothing left to make removable, and the terminal count collapses
+from two to one.
+
 Invariants the derivation must hold, and test:
 
-- every boundary node of the section is a node of the stand-in;
+- every externally shared node, ground included, is a node of the stand-in;
 - a component is dropped only if no path through it joins two boundary nodes;
-- a branch reachable through an ideal short is **not** floating. A pot arm at 0 ohms is a
-  short, and the branch beyond it is live. This is exactly the omission that made the earlier
-  design wrong.
+- a branch reachable through an ideal short is **not** floating;
+- no two distinct nodes are merged, whatever the impedance between them.
 
 **`pruneFloatingBranches` must not be reused here.** It exists to prepare a network for
 simulation under one source and load configuration, and a branch irrelevant to that
@@ -202,21 +236,42 @@ is to present the right impedance at the nodes it shares with other sections, an
 networks can agree on one input-to-output transfer function while differing at another
 boundary. So:
 
-**Gate A - boundary equivalence.** For each section, the stand-in and the real flat section
-must have equivalent multiport behaviour at their shared boundary: drive each boundary node
-in turn with the others held, sweep frequency, and compare the resulting boundary admittances.
-They must agree to tolerance across the band.
+**Gate A1 - structural equivalence, and it is exact.** Because the reduction only discards
+disconnected components, the stand-in must be a **subset of the section's flat-resolved live
+components**, with identical node identities on the boundary. That is testable as set
+equality, with no tolerance at all, and it is the real guarantee. Specifying it this way keeps
+the numerical gate from being load-bearing: there is nothing being fitted, so a tolerance is
+never what decides correctness.
 
-If the reduction above is conservative, this holds **by construction** - the stand-in is a
-subset of the section's own flat components, so there is nothing to fit. That is the point of
-specifying the reduction that way: Gate A is then a guard against reduction bugs rather than a
-curve-fitting criterion, and a failure means the derivation broke something rather than that
-the approximation is poor.
+**Gate A2 - numerical boundary equivalence**, as a guard against the invariants being
+implemented wrongly in a way that still produces a plausible network. For each section, drive
+each boundary node in turn with the others held, sweep, and compare boundary admittances
+between the stand-in and the real flat section. Specified concretely, because "to tolerance"
+decides nothing:
+
+- **Sampling:** 20 Hz to 20 kHz, logarithmically, at least 24 points per decade, plus the
+  band edges and each selector's nominal corner frequency.
+- **Comparison:** real and imaginary parts of each complex admittance, separately.
+- **Tolerance:** relative `1e-9`, with an absolute floor of `1e-15` S so that a near-zero
+  admittance cannot fail on relative error alone. These are solver-noise tolerances, not
+  perceptual ones - the two networks are structurally identical, so anything above numerical
+  noise is a defect.
 
 **Gate B - composition.** For every combination, the composed network's behaviour for each
 present section must match `THREE_BAND_REFERENCE` under the same control vector, with absent
-sections held at their declared reference-flat settings. This is the secondary check, and it
-is what the measurements below report.
+sections held at their declared reference-flat settings.
+
+Gate B needs a **looser tolerance than A2, and for a stated reason**: it compares two
+different netlists, so matrix ordering inside the solver differs and the results are not
+bit-identical even when the circuits are. `1e-6` dB is tight enough to catch any real
+electrical discrepancy and loose enough to survive reordering. It is not a perceptual
+threshold and must not be relaxed to one.
+
+**Tests compare unrounded values.** Every `0.00 dB` printed in this document is a
+two-decimal rendering of a computed figure, and a test asserting on the rendered string would
+pass on a 0.004 dB error. The assertions are on the raw numbers against the tolerances above.
+
+Gate B is the secondary check, and it is what the measurements below report.
 
 Measured, across all five singletons and five multi-section combinations:
 
@@ -251,10 +306,28 @@ set of control vectors: all flat, each control at maximum, the boost-and-cut pai
 maximum, and every control at maximum. The reference comparison uses the **same** vector,
 with absent sections held at their declared reference-flat settings.
 
-**The integrated case needs its own test**, distinct from the above: with every link omitted
-and all five sections present, the recovered graph must be **strictly equivalent** to the
-reference network. Not "the scaffold measures as inert" - graph equivalence. That is what
-protects the transparency guarantee.
+**Gate C - integration, and it must run on the layout, not only the model.** With every link
+omitted and all five sections present, the recovered graph must be **strictly equivalent** to
+the reference network. Not "the scaffold measures as inert" - graph equivalence.
+
+The graph under test is the one **derived from the physical layout**: the netlist exported
+from the perfboard layouts of the section boards and the scaffold board, plus the inter-board
+wiring, with the links in their as-built state. A model-only version of this gate would prove
+that the intended configuration is right while missing a connection accidentally left in the
+layout - and the isolation bug that forced this revision was precisely a
+hardware-realization error that the model-side gate would have passed. Checking only the
+model here would repeat that mistake in the test suite.
+
+The workflow already supports it: `make check` re-exports each board's netlist from its
+source on every run and compares by content, so this is a new comparison over existing
+machinery rather than new machinery.
+
+**One limitation, stated because it bounds what Gate C can claim.** A layout exists in one
+link configuration at a time, so the layout-derived gate verifies **the configuration as
+built** and no other. Coverage of all 31 combinations comes from Gate B, which is model-side.
+Neither gate subsumes the other: Gate B covers every configuration but only as the model
+believes it to be, and Gate C covers what was actually built but only one configuration of
+it.
 
 ## Limits, measured
 
@@ -320,9 +393,15 @@ make the model true.
 The values above were computed by resolving each section at flat and reading off what
 remained. **That derivation should be code, not a table somebody maintains.**
 
-`lib/board/scaffold.ts` takes a section and a flat control state, resolves it, prunes
-floating branches, and returns the stand-in network for its boundary nets. The committed
-values are then a derived artifact, regenerated and compared by content like every other.
+`lib/board/scaffold.ts` takes a section and a flat control state, resolves it, **applies the
+boundary-preserving reduction specified under Reduction above**, and returns the stand-in
+network together with its discovered boundary nodes and isolation points. The committed values
+are then a derived artifact, regenerated and compared by content like every other.
+
+**It does not call `pruneFloatingBranches`.** An earlier draft of this section said it
+"prunes floating branches", which read as permission to reuse that function and contradicted
+the Reduction section outright. It prepares a network for simulation under one source and load
+configuration and is wrong for this purpose.
 
 The alternative - a hand-written list of five stand-ins with their values - is a parallel
 copy of facts the model already states, and it would drift the first time a capacitor value
@@ -362,12 +441,14 @@ quiet, plausible, and wrong.
 | --- | --- |
 | Stand-in derivation | deterministic output from the electrical model; committed values are a derived artifact compared by content |
 | Reduction invariants | every boundary node retained; a component dropped only when no path through it joins two boundary nodes; a branch beyond an ideal short treated as live |
-| Boundary equivalence | stand-in and real flat section have equivalent multiport behaviour across the band |
-| Isolation | every branch of a disabled stand-in is electrically disconnected; **n-1 links for an n-terminal stand-in**, count derived from topology |
-| Composition | all 31 non-empty section combinations pass |
+| Boundary discovery | the boundary is every externally shared node including ground, discovered from the model, never inferred from the named ladder nodes |
+| Structural equivalence (A1) | the stand-in is a subset of the section's flat-resolved live components, with identical boundary node identities; exact, no tolerance |
+| Numerical equivalence (A2) | boundary admittances agree to relative `1e-9` with a `1e-15` S floor, real and imaginary parts, 24+ points per decade over 20 Hz - 20 kHz |
+| Isolation | for each connected component of a stand-in, all but one distinct external terminal is broken; the count is derived from the resolved network's connected components, not assumed |
+| Composition | all 31 non-empty section combinations pass, to `1e-6` dB on unrounded values |
 | Control interaction | simultaneous control vectors match the full reference, including the boost-and-cut pairs |
 | Frequency contract | the fixture's declared frequency state equals the reference model's; a mismatch fails |
-| Integration | all sections present, all links omitted: **strict graph equivalence** with the reference network |
+| Integration | all sections present, all links omitted: **strict graph equivalence** with the reference network, on the graph derived from the physical layout |
 | Documentation | generated link instructions agree with the generated layout's connectivity |
 
 ## Out of scope
