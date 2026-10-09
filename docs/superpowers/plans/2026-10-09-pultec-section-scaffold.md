@@ -926,7 +926,12 @@ A test that `circuits/pultec/generated/scaffold.json` equals what `standIn()` pr
 **Files:**
 - Modify: `lib/board/wiring.ts`
 - Modify: `tests/board/wiring.test.ts`
-- Create: `boards/pultec-scaffold/perfboard.json`
+- ~~Create: `boards/pultec-scaffold/perfboard.json`~~ **Withdrawn during execution.** A
+  perfboard-driven board needs a physicalization - DESIGNATORS, pad orders, an off-board
+  set - which does not exist for the scaffold, and the Pultec takes its designators from
+  its vendored schematic. Declaring the board would have meant inventing `JP1..JP7` for
+  the links, which this project forbids. Declaring and laying out the scaffold board is
+  owner-blocked work; see the ledger for the ruling.
 
 - [ ] **Step 1: Write the failing test** - the guide names each link, the section it stands in for, which state means absent, and the emulated frequency setting; a stand-in needing two links shows both under the same section name so a half-disabled stand-in reads as obviously incomplete.
 
