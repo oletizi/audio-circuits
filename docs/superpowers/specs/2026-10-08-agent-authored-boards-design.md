@@ -153,9 +153,9 @@ reporting version 10.0.5.
 
 ### Schematic generation
 
-Ported from pedals' `tools/schgen/`, which is the larger and less portable of the two
-bodies of work: 187 files and roughly 1 MB of TypeScript. The architecture ports; the
-template library largely does not.
+Ported from pedals' `tools/schgen/`: 187 files and roughly 1 MB of TypeScript, the larger
+of the two bodies of work. The architecture ports, and so does the template library - it
+is needed by circuits already in this repository, not only by later ones.
 
 **What ports:** the normalised IR and its validator; the s-expression writer; the symbol
 library loader that flattens `extends` (an unflattened copy silently drops every pin); the
@@ -171,27 +171,42 @@ places the parts on the IR's feedback net in its feedback corridor. Any IR conne
 template cannot realise is a generation error, never a silent omission. There is no
 implicit fallback to label-rendering.
 
-**What does not port:** the template set, and `gates/oscar/`. Pedals' templates serve an
-H7 platform - op-amp stages, regulators, crystals, decoupling banks, 176-pin buses. The
-Pultec is a passive EQ and shares almost none of that. Its idioms, and the templates this
-design must add:
+**The template set ports, and it is load-bearing.** The Pultec is a passive EQ and uses
+almost none of pedals' templates - but this repository holds four other circuits that do.
+The earlier reading of this, that the templates were "unused here, ported for later
+circuits", was wrong in a way that mattered: it would have shipped roughly forty files of
+template code with nothing in the repository exercising it, which is exactly what **look at
+the output, not only the tests** forbids. Those four circuits are therefore S4's
+verification material, not a future benefit.
 
-| Template | Pultec use | Status |
+| Template | Needed by | Status |
 | --- | --- | --- |
-| `selectorBank` | a rotary switch fanning out to a capacitor bank, each cap returning to a common node | **new** - the dominant Pultec idiom; five banks, four of six throws and one of eleven |
+| `opampStage` | `circuits/opamp-buffer.ts`; the optical compressor's audio path and its sidechain amplifier | ports |
+| decoupling bank | `opamp-buffer` (4 capacitors), `pt2399-core` (14), the optical compressor's power section | ports |
+| `divider` | the optical compressor's VBIAS divider - the node `power-section.ts` hands across as a port | ports |
+| `fanoutKit` | `lab-board.ts` (10 connectors), `pt2399-core`, `opamp-buffer`; and the Pultec's terminal blocks and header landings | ports |
+| `bus` / IC fan-out | `pt2399-core`'s PT2399 | ports |
+| `passiveChain` | everywhere, including the Pultec's signal-ladder resistors | ports |
+| `regulator`, crystal with load capacitors | nothing here yet | ports, unexercised - flagged in Risks |
+| `bjtStage` | the optical compressor's sidechain BJT; the whole transistor preamp | **new** - pedals has none, because its generator targets a digital platform |
+| `selectorBank` | the dominant Pultec idiom: a rotary switch fanning out to a capacitor bank, each capacitor returning to a common node. Five banks - four of six throws, one of eleven | **new** |
 | `potNetwork` | a potentiometer as rheostat (wiper tied to one end) or as divider | **new** |
 | `tappedReturn` | four or five discrete inductors from their taps to a common coil return | **new** |
 | `modeSwitch` | the mid section's two-throw boost/cut switch, selecting which resistor the coil returns through - no capacitors on its throws | **new** |
-| `passiveChain` | the series resistors on the signal ladder | ports |
-| `fanoutKit` | terminal blocks and header landings | ports |
-| `opampStage`, `regulator`, `bus`, crystal, decoupling bank | - | unused here, ported for later circuits |
 
-`gates/oscar/` compares against a reference design this repository does not have, so it
-does not port. Its **canonical graph comparison** does, and is more useful here than
-there: it reduces a schematic to component values and pin-level adjacency, independent of
-reference designators and net names. For the Pultec that gives a second, name-independent
-check against the authoritative netlist export; for an agent-designed circuit it checks
-the rendering against the `Network`.
+So S4 writes five new templates, not four, and the ported ones are proven against the
+existing circuits rather than taken on trust.
+
+**`gates/oscar/` ports too, and this repository supplies its own reference material.**
+Pedals compares its generated schematic against the OSCAR reference design at a pinned
+commit. We have no OSCAR - but `pt2399-core.kicad_sch` and
+`circuits/transistor-preamp/lab-board.kicad_sch` are hand-arranged schematics whose
+netlists are known good, pt2399-core's having been transcribed from a board that was built
+and works. The **canonical graph comparison** - values and pin-level adjacency, independent
+of reference designators and net names - checks a generated schematic against those. That
+is a stronger gate than the Pultec alone could provide, and it exercises both authority
+directions: model-to-schematic for the agent-designed circuits, schematic-to-model for the
+Pultec.
 
 This supersedes `lib/kicad/schematic.ts` (203 lines) and absorbs `lib/kicad/sexpr.ts`
 (96 lines). Per **supersede means delete**, the stub writer is removed in the same change
@@ -290,7 +305,7 @@ fail by name.
 - edge discipline: terminal blocks on an edge, within a setback.
 
 Each rule states the distance it enforces and why that number. **This document does not fix
-those distances** - S5 does, with the reasoning for each recorded beside it, because a
+those distances** - S6 does, with the reasoning for each recorded beside it, because a
 number chosen here without the boards in front of us would be false precision. What this
 document fixes is that the numbers live in a reviewed library rather than in a per-board
 file an agent drafts. Extending or relaxing the library is a reviewed change with a test
@@ -398,16 +413,28 @@ Each gets its own spec and plan. They are listed in dependency order.
 | --- | --- | --- | --- | --- |
 | **S0** | Jumperable terminations | the scaffold that lets one section be built and measured alone, and the narrowed transparency category it needs | existing model and physicalization suites | - |
 | **S1** | KRT port | `krt.pin`, `make/krt.mk`, `tools/placement/`, proven against a board fixture vendored from pedals | 10, 11, 12 | - |
-| **S2** | PCB physicalization and variants | `physical/pcb/`, five sections times two variants, every footprint resolved from a library on disk | footprint-name tests | S0 |
-| **S3** | schgen port and Pultec templates | ten `.kicad_sch` and PDFs | 1-6, 13 | S2 |
-| **S4** | Board synthesis | ten `.kicad_pcb` with every part present and no placement claim | 7 | S3 |
-| **S5** | Intent derivation and the rule library | derived intent for all ten boards, and the library's distances fixed with the reasoning for each | 8, 14 | S1, S4 |
-| **S6** | First board end to end, then the rest | one section placed, routed and adopted; then the remaining nine | 9, 10, 11 | S5 |
-| **S7** | Fab outputs for the SMD variant | PCBWay-ready outputs; ordering stays the owner's | fab-rule checks | S6 |
+| **S2** | Stripboard build and measurement | the four remaining sections laid out, built, and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S0 |
+| **S3** | PCB physicalization and variants | `physical/pcb/`, five sections times two variants, every footprint resolved from a library on disk | footprint-name tests | S0 |
+| **S4** | schgen port and templates | schematics and PDFs for the ten Pultec boards **and** for `opamp-buffer`, `pt2399-core`, the optical compressor and the transistor preamp | 1-6, 13 | S3 |
+| **S5** | Board synthesis | ten `.kicad_pcb` with every part present and no placement claim | 7 | S4 |
+| **S6** | Intent derivation and the rule library | derived intent for all ten boards, and the library's distances fixed with the reasoning for each | 8, 14 | S1, S5 |
+| **S7** | First PCB end to end, then the rest | one section placed, routed and adopted; then the remaining nine | 9, 10, 11 | S6 |
+| **S8** | Fab outputs for the SMD variant | PCBWay-ready outputs; ordering stays the owner's | fab-rule checks | S7 |
 
-S0 and S1 are independent and can proceed in either order. S0 is listed first because it
-changes the part count on every board, and S2 is where part counts become footprints -
-settling it after S2 means redoing S2.
+**Expected order, not an enforced one.** The owner builds stripboard versions before asking
+for PCB layouts, so in practice S2 runs ahead of S5 onward. Nothing in the tooling enforces
+that and this document does not try to: the dependency column lists what a sub-project
+technically needs, and the owner steers the order. The PCB work is capable of running ahead
+of the bench whether or not it does.
+
+S0, S1 and S2 are the near-term work. S0 comes first and gates two different things: it
+changes the part count on every board, and S3 is where part counts become footprints, so
+settling it later means redoing S3. It is also what makes S2 possible section by section -
+without the scaffold, a single Pultec section has no signal path to measure at all.
+
+S1 is independent of all of it and can proceed in parallel. S4's ported templates are
+exercised by the four non-Pultec circuits, which is why they appear in its deliverable
+rather than waiting for a circuit that needs them later.
 
 ### S0: jumperable terminations
 
@@ -466,6 +493,8 @@ The list is short by design, and nothing in the generation chain waits on it:
 - **The rule library**, once and on change. This is where "what makes a board good" lives,
   and it is the one thing an agent must not author for itself.
 - **Which variant gets fabricated, and ordering it.** Outward-facing and irreversible.
+- **The order of the work.** The owner steers which sub-project comes next; the dependency
+  column says only what is technically required.
 - **Non-technical calls:** board size against cost, how many sections to build, whether a
   measured scaffold limit is acceptable for what they want to hear.
 - **Veto.** The PDF and the board render are published as evidence on every run. The
@@ -498,27 +527,39 @@ this document does not reach into pedals.
 ## Risks
 
 - **Template coverage is a hard gate.** A wired block no template realises fails
-  generation, by design. The Pultec needs four new templates before any schematic exists,
+  generation, by design. The Pultec needs five new templates before any schematic exists,
   and `selectorBank` has to handle **doubled capacitors on a throw** - measured from the
   model: one of six throws on `SW_LO_CUT`, three on `SW_HI_BOOST`, four on `SW_HI_CUT`, and
   six of eleven on `SW_MID`. A template that assumes one capacitor per throw fails on four
   of the five sections. If it cannot be made to handle them, the fallback is an explicit
   label-rendered block with a stated reason - which gate 13 will challenge.
+- **Two ported templates stay unexercised.** `regulator` and the crystal-with-load-capacitors
+  template have no circuit here to prove them against. They are ported rather than dropped,
+  because they will be wanted and rewriting them later is waste - but they carry no evidence
+  until a circuit uses them, and S4's spec should say so where they are introduced rather
+  than letting a passing suite imply coverage they do not have.
 - **Derived intent can be derived wrongly.** The mitigation is gate 8: an intent that
   cannot fail is rejected, and the bad-fixture tests are written before the derivation.
-  This is the riskiest part of the design and the one to build first within S5.
+  This is the riskiest part of the design and the one to build first within S6.
 - **The port is large.** Roughly 218 files and 1.2 MB of TypeScript across the two bodies
-  of work, written against pedals' conventions and package manager. A faithful port and a
-  rewrite against our `Network` model may cost comparably; S3's spec should decide that
-  explicitly for schgen's `render/` layer rather than defaulting to one.
+  of work, written against pedals' conventions and package manager. The earlier framing
+  left faithful-port-versus-rewrite open for schgen's `render/` layer; the template
+  findings close it toward a **faithful port**, because a rewrite would discard a template
+  set four circuits here need and would have to reproduce the wire-safety and determinism
+  properties from scratch. S4's spec should still state the decision explicitly rather than
+  inherit it.
 - **Two Python environments** in one pipeline, with KiCad's shell environment actively
   hostile to the venv. Pedals already handles this; the handling must be ported, not
   reinvented.
-- **Nothing here has been built.** The Pultec model is unvalidated - no unit has been built
-  from it and it is known to be incomplete. A generated, routed, fabricated board inherits
-  every open question in `docs/pultec/unresolved.md`, including R3's value. Fabricating the
-  SMD variant before a stripboard section has been measured would be ordering ten boards
-  against an unmeasured model.
+- **The model is unvalidated, and that is what S2 is for.** No unit has been built from the
+  Pultec model and it is known to be incomplete - `docs/pultec/unresolved.md` still carries
+  R3 fitted at 4K7 where an inductive build calls for nominally 470R, about 5 dB of maximum
+  high boost and half the Q. The three pot connections are documentation-derived and not
+  netlist-confirmed, and the model never reaches flat. A fabricated board would inherit all
+  of it. S2 is the mitigation, and the owner's practice of building stripboard first is what
+  schedules it. The residual risk is that a measurement taken on a stripboard section with
+  the S0 scaffold fitted carries the scaffold's own limit, which is accurate through the
+  shelf and under-reads above about 300 Hz.
 
 ## Out of scope
 
@@ -528,6 +569,9 @@ this document does not reach into pedals.
 - Stitching vias, and any routing pass after the first route.
 - Changes to KiCadRoutingTools. A needed engine change is reported upstream, not patched
   here.
-- The stripboard workflow, which is unaffected except for the directory move in S2.
-- The four unrouted stripboard sections. They are existing work, not part of this design,
-  and KRT does nothing for them - stripboard is strips and cuts, a different problem.
+- **Automating stripboard layout.** KRT does nothing for it - stripboard is strips and
+  cuts, a different problem from copper on a plane - and no pipeline here places a
+  stripboard part. The four remaining sections are laid out by the owner in VeroRoute, as
+  low-boost was. Agents contribute the wiring guide, the S0 scaffold and `make check`; the
+  layout and the build are the owner's and stay so.
+- The stripboard tooling itself, which is unaffected except for the directory move in S3.
