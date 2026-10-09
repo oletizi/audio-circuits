@@ -593,7 +593,7 @@ Two groups, and the difference between them matters more than the order within e
 
 | | Sub-project | Deliverable | Gates | Depends on |
 | --- | --- | --- | --- | --- |
-| **S0** | Jumperable terminations | the scaffold that lets one discrete circuit be built and measured on its own, and the narrowed transparency category it needs | existing model and physicalization suites | - |
+| **S0** | The section scaffold | one scaffold board that lets any combination of discrete sections be built and measured, with stand-in values derived from the model. Designed in `2026-10-09-pultec-section-scaffold-design.md` | composition across all 31 subsets; strict graph equivalence in the integrated case | - |
 | **S1** | Perfboard versions of each discrete circuit | the four remaining Pultec sections laid out, built and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S0 |
 
 This is the work with a known shape. S0 comes first because without the scaffold a single
@@ -630,73 +630,55 @@ packaging.
 needs. S0 and S1 are the near-term work; T1 and T2 are independent of everything and can run
 alongside.
 
-### S0: jumperable terminations
+### S0: the section scaffold
 
-Measured, not assumed. The five sections do not cascade; they hang off a four-node ladder
-and each owns exactly one series element of it:
+**Designed in full in `2026-10-09-pultec-section-scaffold-design.md`.** Summarised here
+because the parent's earlier account of it was wrong in a way worth recording.
 
-| Ladder segment | Element | Section | Value at flat |
-| --- | --- | --- | --- |
-| `in` to `hi_boost_out` | `RV_HI_BOOST` arm | hi-boost | 47k |
-| `hi_boost_out` to `lo_boost_in` | `RV_HI_CUT` arm | hi-cut | 4k7 |
-| `hi_boost_out` to `out` | `RV_LO_CUT` arm | low-cut | 0 ohms - a short |
-| `lo_boost_in` to `out` | `R2` | low-boost | 56k |
+The five sections do not cascade; they hang off a four-node ladder and each owns exactly one
+series element of it. A section alone is therefore not a stage needing its ports terminated -
+it is a shunt network holding a fragment of the signal path. Build low-boost alone and it has
+no output at all at flat.
 
-Everything else is a shunt network hanging off those nodes. So a section alone is not a
-stage needing its ports terminated - it is a shunt network holding a fragment of the signal
-path. Remove its neighbours and the path is gone: low-boost alone measures no output at all
-at flat, because its pot grounds `lo_boost_in` and the only route to `out` normally runs
-through low-cut's short.
+The earlier design was **one flat-state resistor per absent section**, measured on low-boost
+and extrapolated. Measuring it across combinations showed it fails: low-cut alone was wrong
+by 18.68 dB, hi-cut by 17.98, mid by 12.14. Two modelling errors were behind it. A section's
+flat state is not only its ladder element - `RV_LO_BOOST` at position 0 shorts
+`lo_boost_in` to ground, and omitting that one shunt was most of the error. And it is not
+purely resistive - hi-cut's pot arm parallels `R1` plus a capacitor, and mid's flat path runs
+through capacitors, an inductor tap and `R_MID_BOOST`.
 
-The scaffold is therefore **stand-ins for the flat-state ladder elements the absent sections
-own**, not terminations. For low-boost that collapses to two resistors, because low-cut's
-flat state merges `hi_boost_out` into `out`:
+What replaced it: **a section's flat state reduces to an exact small R/L/C network, and the
+stand-in is that reduction.** Flat is degenerate - a pot at position 0 becomes two fixed
+resistors with one a short, and a selector leaves exactly one capacitor branch live - so
+there is nothing to approximate. The rule composes without a table: **fit the stand-in for a
+section if and only if that section is absent**, which keeps the ladder whole for any of the
+31 combinations. Verified at 0.00 dB action error across all five singletons and five
+multi-section combinations, with the all-five case as a control.
 
-```text
-R_SCAF_SOURCE  47k   standalone IN terminal <-> out      (stands in for hi-boost)
-R_SCAF_HI_CUT  4k7   out <-> lo_boost_in                 (stands in for hi-cut + low-cut)
-```
+Two consequences for this document:
 
-Measured against the same section's action inside the full EQ (full boost minus flat,
-everything else flat):
+**The physicalization problem mostly dissolves.** The stand-ins live on one separate scaffold
+board rather than distributed across the section boards. So the section boards need no new
+category in `projectPhysical`, `assertElectricallyTransparent` keeps its guarantee unweakened,
+and the conducting parts sit on a board whose declared purpose is to conduct. The earlier
+plan - a second transparency category narrow enough not to become a hole - is no longer
+needed, which is a better outcome than defining it carefully.
 
-| | 20 Hz | 50 Hz | 100 Hz | 300 Hz | 1 kHz | 10 kHz |
-| --- | --- | --- | --- | --- | --- | --- |
-| in situ | 15.29 | 14.48 | 13.01 | 7.93 | 5.16 | 2.61 |
-| scaffolded | 15.28 | 14.43 | 12.84 | 6.55 | 1.42 | 0.02 |
+**The scaffold is derived, not transcribed.** The values are computed by resolving each
+section at flat; the committed copy is a derived artifact compared by content. A hand-written
+table of stand-in values would be a parallel copy of what the model already states and would
+drift the first time a capacitor changed - and that drift would look like a measurement
+rather than a bug.
 
-Under 0.2 dB through the shelf, then under-reading above about 300 Hz, where in situ the
-tail comes from the neighbours' *reactive* networks and no resistor reproduces it. That is a
-documented limit of the scaffold, stated wherever the scaffold is offered. Omitting the
-47k collapses the action to 1.8 dB; a zero-impedance source gives exactly zero.
+The integrated case still needs its own test, and it is the one that matters most: every link
+omitted and all five sections present must recover a graph **strictly equivalent** to the
+reference network. Not "the scaffold measures as inert" - graph equivalence.
 
-Each scaffold resistor sits in series with a two-pad removable link: link fitted means
-standalone, link omitted means the real neighbour drives it.
-
-**The architectural cost, and it is the reason this is a sub-project rather than a task:**
-these are conducting components living in the physicalization layer, which today guarantees
-it adds none. `assertElectricallyTransparent` will reject them, correctly. `projectPhysical`
-needs a second category - present in the board network, excluded from the reconstruction
-check - and that category must be narrow enough that it cannot become a hole in the
-transparency guarantee. The spec for S0 has to define it before any code is written.
-
-**The two configurations are a contract, each with its own test.** A scaffold that conducts
-needs the integrated case pinned down at least as firmly as the standalone one:
-
-| Mode | Links | Required behaviour |
-| --- | --- | --- |
-| standalone | fitted | the predicted standalone response is verified, **carrying the scaffold's measured limit** - accurate through the shelf, under-reading above about 300 Hz. A test asserting a match across the whole band would be asserting something false |
-| integrated | removed | **strict graph equivalence against the original Pultec network.** Not "the scaffold is inert" but: remove the links and the recovered graph is the reference graph, exactly |
-
-The integrated test is what protects the transparency guarantee the new category punches a
-hole in. It is the reason the category can be allowed at all.
-
-**The configuration must be legible on the hardware, not remembered.** Each scaffold link is
-labelled on the generated schematic and on the PCB silkscreen with which mode fits it, and
-the board's wiring guide states the link state for both modes. The whole reason the wiring
-guide exists is that a layout does not say `C1` is 100 nF; a board that does not say which
-links to remove has the same defect, and the failure is worse - a scaffold left fitted in an
-integrated build loads the neighbour it was standing in for, silently and plausibly.
+The limits are measured and stated in the child spec: stand-in values are specific to the
+frequency setting they emulate (up to 3.71 dB error if the circuit is set elsewhere), the low
+selectors are ganged, standing in for mid needs a 1 H inductor that has no part number, and
+the metric is action rather than absolute level.
 
 ## What the operator still decides
 
@@ -779,9 +761,10 @@ this document does not reach into pedals.
   R3 fitted at 4K7 where an inductive build calls for nominally 470R, about 5 dB of maximum
   high boost and half the Q. The three pot connections are documentation-derived and not
   netlist-confirmed, and the model never reaches flat. A fabricated board would inherit all
-  of it. S1 is the mitigation, and building perfboard versions first is what schedules it. The residual risk is that a measurement taken on a stripboard section with
-  the S0 scaffold fitted carries the scaffold's own limit, which is accurate through the
-  shelf and under-reads above about 300 Hz.
+  of it. S1 is the mitigation, and building perfboard versions first is what schedules it.
+  The residual risk is narrower than it was: the scaffold reproduces the model exactly at the
+  setting it emulates, so a measurement carries the scaffold's *setting* restriction rather
+  than a band-limited error - up to 3.71 dB if the circuit is set away from it.
 
 ## Out of scope
 
