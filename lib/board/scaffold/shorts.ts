@@ -1,0 +1,86 @@
+/**
+ * Electrical node identity: which nets an ideal short makes one node.
+ *
+ * A GRAPH NODE AND AN ELECTRICAL NODE ARE NOT THE SAME THING, and conflating them has
+ * now cost this feature twice - once in `reduce.ts`, where a loop closed through a 0R
+ * pot arm read as a current-carrying path, and once in `admittance.ts`, where an ideal
+ * short stood in as a 1e12 S conductance and the Schur complement then lost the series
+ * resistance it was supposed to measure (47k in series with that short came out as
+ * exactly zero in double precision). Both wanted the same notion, so it lives here
+ * once rather than being derived twice.
+ *
+ * This module says nothing about what a stand-in CONTAINS. The spec's rule "ideal
+ * shorts are components, never node merges" governs the output of the derivation, and
+ * it still holds: every surviving 0R component is emitted as a component with both of
+ * its distinct nets. Merging is a reasoning step, not a rewrite.
+ */
+import type { ResolvedComponent } from "../../model/control-state.ts"
+
+/** Every net this component's pins name, package pins included. */
+export function nodesOf(component: ResolvedComponent): readonly string[] {
+  const nodes = new Set<string>(Object.values(component.pins))
+  for (const unit of component.units) {
+    for (const net of Object.values(unit.pins)) nodes.add(net)
+  }
+  return [...nodes]
+}
+
+/** An ideal short: a component whose terminals sit at one potential however much
+ * current flows through it.
+ *
+ * Resolution produces exactly one shape of these - a pot arm at position 0, emitted as
+ * a `resistor` with `ohms: 0` so component counts stay stable across a sweep. No other
+ * kind is recognised: a zero-farad capacitor is an OPEN, not a short, and nothing a
+ * flat Pultec section resolves to is a zero-henry inductor. A further zero-valued kind
+ * must be added here deliberately, with a test, rather than inferred from its value
+ * being zero - guessing in either direction changes which components survive the
+ * reduction and what the boundary admittance comes out as.
+ */
+export function isIdealShort(component: ResolvedComponent): boolean {
+  const parameters = component.parameters
+  return component.kind === "resistor" && "ohms" in parameters && parameters.ohms === 0
+}
+
+/**
+ * Map each net to its electrical node, merging the nets of every ideal short among the
+ * components given.
+ *
+ * WHICH COMPONENTS THE CALLER PASSES IS THE WHOLE CONTRACT. `reduceToBoundary` passes
+ * the components OTHER than the one under test, because merging a short through itself
+ * turns it into a self-loop and deletes it - and low-cut's entire stand-in IS such a
+ * short. `boundaryAdmittance` passes all of them, because it is measuring a network
+ * rather than judging one component inside it.
+ *
+ * The class representative is the lexicographically smallest member, so a class never
+ * depends on component order and two networks sharing a short name the merged node the
+ * same way.
+ */
+export function electricalNodes(
+  components: readonly ResolvedComponent[],
+): (net: string) => string {
+  const parent = new Map<string, string>()
+  const find = (net: string): string => {
+    const seen = parent.get(net)
+    if (seen === undefined) {
+      parent.set(net, net)
+      return net
+    }
+    if (seen === net) return net
+    const root = find(seen)
+    parent.set(net, root)
+    return root
+  }
+  const union = (a: string, b: string): void => {
+    const rootA = find(a)
+    const rootB = find(b)
+    if (rootA === rootB) return
+    if (rootA < rootB) parent.set(rootB, rootA)
+    else parent.set(rootA, rootB)
+  }
+  for (const component of components) {
+    if (!isIdealShort(component)) continue
+    const nodes = nodesOf(component)
+    for (let index = 1; index < nodes.length; index += 1) union(nodes[0]!, nodes[index]!)
+  }
+  return find
+}

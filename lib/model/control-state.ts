@@ -127,7 +127,7 @@ function requireNet(connection: Connection | undefined, message: string): string
  * check cannot cope with a physical network. It can: `kinds.ts` puts `switch` in
  * `OPEN_VOCABULARY`, so a rotary selector's throw names are anticipated, and
  * `validateNetwork(THREE_BAND_REFERENCE)` - 76 components, six pots, six rotaries -
- * accepts it (asserted at `tests/reference/three-band.test.ts:45`). An earlier version
+ * accepts it (asserted at `tests/pultec/three-band.test.ts:45`). An earlier version
  * of this comment claimed the opposite; it was true before `switch` joined the open
  * vocabulary and is not true now.
  *
@@ -145,7 +145,7 @@ function requireNet(connection: Connection | undefined, message: string): string
  * check, run from `Builder.done()` on every circuit this repository writes. This one is
  * `resolveNetwork`'s INPUT CONTRACT, and it runs on every network reaching resolution
  * including literals that never went through the builder - `THREE_BAND_REFERENCE`,
- * assembled from a KiCad netlist by `reference/pultec/from-netlist.ts`, is one.
+ * assembled from a KiCad netlist by `circuits/pultec/electrical/from-netlist.ts`, is one.
  * Collapsing the two would either impose an authored circuit's vocabulary rules on an
  * imported network or drop the pin-count rule from the resolution path.
  */

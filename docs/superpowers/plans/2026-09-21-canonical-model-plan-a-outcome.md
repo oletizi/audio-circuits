@@ -11,7 +11,7 @@ This records what Plan B and Plan C need to know. It is not a retelling of the p
 `lib/model/` — `Network`/`Component`/`Unit`, canonical per-kind pin vocabularies,
 structural validation, the `circuit()` builder, `include()` composition.
 `lib/kicad/` — readers for the KiCad s-expression and EESchema legacy netlist formats.
-`circuits/pt2399-core.ts` — the first circuit in the canonical model.
+`circuits/pt2399-core/pt2399-core.ts` — the first circuit in the canonical model.
 Deleted: six tscircuit Pultec modules, `lib/passives/` (consolidated into `lib/model/`),
 and `lib/export/circuit-json.ts` — a 290-line translation seam that existed only because
 the repository held two representations of the same thing.
@@ -53,7 +53,7 @@ survives, and validation provably forces `pins: {}` on every kind present in thi
 4. **`include()` has no end-to-end evidence.** Spec rung 3 wanted composition proven by a
    real circuit; `pt2399-core` never calls `include()`. It has unit tests and no more.
 5. **A value's unit is never cross-checked against its component kind** — recorded as an
-   open question in `reference/pultec/unresolved.md`. `parseValue` accepts `10k` for a
+   open question in `docs/pultec/unresolved.md`. `parseValue` accepts `10k` for a
    capacitor.
 
 ## Notes for Plan C

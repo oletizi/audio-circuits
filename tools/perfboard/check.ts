@@ -208,6 +208,62 @@ export function assertPinNumbers(
 }
 
 /**
+ * Validate `OFF_BOARD_IDS`: absent means none, otherwise a Set of strings.
+ *
+ * Absent is legitimate and common - `pt2399-core` has no off-board parts - so
+ * it defaults to empty. An export of the WRONG SHAPE does not: an array here
+ * would pass an `in`-style membership test nowhere and silently put every
+ * off-board part back on the board, demanding footprints nobody chose.
+ */
+export function assertOffBoardIds(
+  value: unknown,
+  declaration: PerfboardDeclaration,
+): ReadonlySet<string> {
+  if (value === undefined) return new Set()
+  if (!(value instanceof Set)) {
+    throw new Error(
+      `${declaration.file}: ${declaration.circuitPath} exports OFF_BOARD_IDS, but it must be a ` +
+        `Set of component ids, got ${Array.isArray(value) ? "an array" : typeof value}.`,
+    )
+  }
+  const ids = new Set<string>()
+  for (const id of value) {
+    if (typeof id !== "string") {
+      throw new Error(
+        `${declaration.file}: OFF_BOARD_IDS contains a ${typeof id}, but every entry must be a ` +
+          "component id string.",
+      )
+    }
+    ids.add(id)
+  }
+  return ids
+}
+
+/** Validate `PAD_ORDER`: absent means none, otherwise id -> array of pin names. */
+export function assertPadOrder(
+  value: unknown,
+  declaration: PerfboardDeclaration,
+): Readonly<Record<string, readonly string[]>> {
+  if (value === undefined) return {}
+  if (!isRecord(value)) {
+    throw new Error(
+      `${declaration.file}: ${declaration.circuitPath} exports PAD_ORDER, but it must be an ` +
+        `object mapping component ids to pin names, got ${typeof value}.`,
+    )
+  }
+  const orders: Record<string, readonly string[]> = {}
+  for (const [id, order] of Object.entries(value)) {
+    if (!Array.isArray(order) || order.some((pin) => typeof pin !== "string")) {
+      throw new Error(
+        `${declaration.file}: PAD_ORDER["${id}"] must be an array of pin-name strings.`,
+      )
+    }
+    orders[id] = order
+  }
+  return orders
+}
+
+/**
  * Load the declared circuit and lower it to an EESchema v1.1 netlist.
  *
  * Exported so the binary-backed write verbs (`tools/perfboard/verbs.ts`) can
@@ -225,7 +281,9 @@ export async function exportNetlistFor(declaration: PerfboardDeclaration): Promi
   }
   const designators = assertDesignators(imported["DESIGNATORS"], declaration)
   const pinNumbers = assertPinNumbers(imported["PIN_NUMBERS"], declaration)
-  const lowered = toImportedNetlist(network, designators, pinNumbers)
+  const offBoard = assertOffBoardIds(imported["OFF_BOARD_IDS"], declaration)
+  const padOrder = assertPadOrder(imported["PAD_ORDER"], declaration)
+  const lowered = toImportedNetlist(network, designators, pinNumbers, offBoard, padOrder)
   return writeLegacyNetlist(lowered, { createdAt: new Date().toISOString().slice(0, 19) })
 }
 

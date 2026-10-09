@@ -77,6 +77,40 @@ const TIE_BAND_MILS = 0.5
  */
 export const FOOTPRINT_IMPORT_STRINGS: ReadonlyMap<string, string> = new Map<string, string>()
 
+/**
+ * Film capacitors, by exact footprint name.
+ *
+ * A WHITELIST RATHER THAN A DERIVATION, and the asymmetry with the families
+ * below is the reason. Each of those derives ONE free measurement into ONE
+ * VeroRoute parameter - C_Disc's pitch to a span, CP_Radial's diameter to the
+ * nearest enumerated diameter. A film capacitor needs two: the pitch to a span,
+ * and the body width to a choice between CAP_FILM (one strip row) and
+ * CAP_FILM_WIDE (three rows, "+++1+2+++"). That second one is not a
+ * measurement, it is a classification of body geometry, and deriving it from a
+ * width field would turn dimensional similarity into assumed mechanical
+ * equivalence - a part that fits three strips because its name says 3.5mm, on a
+ * board where it does not.
+ *
+ * So each entry is a part whose body width was read off a manufacturer
+ * datasheet PDF or a `.kicad_mod` file on disk - not measured by hand, but not
+ * recalled or guessed either. See `docs/pultec/capacitor-selection.md` for
+ * what was read and where from. An unlisted footprint still refuses loudly,
+ * where a general rule would quietly accept a guess - the whitelist started
+ * empty for exactly that reason, and grows only as a footprint's body width is
+ * verified this way.
+ */
+export const FILM_CAPACITOR_IMPORT_STRINGS: ReadonlyMap<string, string> = new Map<string, string>([
+  // TDK/EPCOS B32529, 63V, 1nF-220nF: body 2.5mm wide, one strip row.
+  ["Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm", "CAP_FILM2"],
+  // TDK/EPCOS B32529, 63V, 330nF: 3.0mm body, deliberately oversize on the
+  // 3.5mm-wide footprint (no W3.0 footprint exists without naming the wrong
+  // manufacturer - see docs/pultec/capacitor-selection.md section 7). Three
+  // strip rows either way.
+  ["Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm", "CAP_FILM_WIDE2"],
+  // WIMA FKP2, 63V, 470pF: body 4.5mm wide, three strip rows.
+  ["Capacitor_THT:C_Rect_L7.2mm_W4.5mm_P5.00mm", "CAP_FILM_WIDE2"],
+])
+
 /** The shapes this derives, quoted in every refusal so the operator can fix the source. */
 const DERIVABLE_SHAPES = [
   "  R_Axial_*_P<mm>mm_*                    -> RESISTOR<n>      (n = pitch in 100-mil units)",
@@ -84,6 +118,7 @@ const DERIVABLE_SHAPES = [
   "  CP_Radial_D<mm>mm_*                    -> CAP_ELECTRO_<mil> (nearest of 200/250/300/400/500/600)",
   "  DIP-<pins>_*                           -> DIP<pins>",
   "  PinHeader_1x<pins>_*                   -> SIP<pins>",
+  "  <TerminalBlock* library>:*_1x<pins>_P<mm>mm -> BLOCK_100MIL<n> / BLOCK_200MIL<n> by pitch",
   "  TO-92_Inline (exactly)                 -> TO92",
   "  Potentiometer_Runtron_RM-065_Vertical  -> TRIM_FLAT",
 ].join("\n")
@@ -92,6 +127,12 @@ const DERIVABLE_SHAPES = [
 function bareName(footprint: string): string {
   const colon = footprint.indexOf(":")
   return colon === -1 ? footprint : footprint.slice(colon + 1)
+}
+
+/** The library a footprint names: "TerminalBlock_Altech:Altech_AK300_..." -> "TerminalBlock_Altech". */
+function libraryOf(footprint: string): string {
+  const colon = footprint.indexOf(":")
+  return colon === -1 ? "" : footprint.slice(0, colon)
 }
 
 function refuse(footprint: string, because: string): never {
@@ -233,6 +274,47 @@ function derive(footprint: string): string {
     return `SIP${pins}`
   }
 
+  // MATCHED ON THE LIBRARY, NOT THE PART NAME. KiCad keeps terminal blocks in
+  // fourteen libraries all prefixed "TerminalBlock", but the footprint names
+  // inside them follow the manufacturer's series: Altech's 46 are
+  // "Altech_AK300_1x03_P5.00mm_45-Degree" and Wuerth's 14 are similar. A rule
+  // reading the name after the colon refuses all 60 of those while looking
+  // perfectly correct on Phoenix and WAGO, which do prefix their names.
+  if (libraryOf(footprint).startsWith("TerminalBlock")) {
+    const pins = field(bare, /_1x([0-9]+)/)
+    if (pins === null) {
+      refuse(footprint, "it is a TerminalBlock part with no readable _1x<pins> pin count.")
+    }
+    if (pins < 1 || pins > 255) {
+      refuse(footprint, `a terminal block pin count of ${pins} is outside VeroRoute's range 1-255.`)
+    }
+    const pitch = field(bare, /_P([0-9.]+)mm/)
+    if (pitch === null) {
+      refuse(footprint, "it is a TerminalBlock part with no readable _P<mm>mm pitch field.")
+    }
+    // VeroRoute has exactly two block pitches. A block at any other pitch does
+    // not land on this board's holes at all, so it is refused rather than
+    // rounded to whichever is closer.
+    const steps = gridSteps(pitch, footprint)
+    if (steps === 1) return `BLOCK_100MIL${pins}`
+    if (steps === 2) return `BLOCK_200MIL${pins}`
+    refuse(
+      footprint,
+      `its lead pitch ${pitch}mm is ${steps} grid steps, and VeroRoute's terminal blocks come ` +
+        "only at 1 step (BLOCK_100MIL) or 2 steps (BLOCK_200MIL).",
+    )
+  }
+
+  if (bare.startsWith("C_Rect_")) {
+    refuse(
+      footprint,
+      "it is a film capacitor, whose import string is not derived from its name. Add it to " +
+        "FILM_CAPACITOR_IMPORT_STRINGS in lib/kicad/import-string.ts, with its VeroRoute type " +
+        "(CAP_FILM<n> for a body one strip wide, CAP_FILM_WIDE<n> for one three strips wide) " +
+        "taken from the part in your hand rather than from the name.",
+    )
+  }
+
   refuse(footprint, "its name matches none of the footprint families this repository derives.")
 }
 
@@ -243,9 +325,12 @@ function derive(footprint: string): string {
 export function importStringFor(
   footprint: string,
   overrides: ReadonlyMap<string, string> = FOOTPRINT_IMPORT_STRINGS,
+  filmCapacitors: ReadonlyMap<string, string> = FILM_CAPACITOR_IMPORT_STRINGS,
 ): string {
   const override = overrides.get(footprint)
   if (override !== undefined) return override
+  const film = filmCapacitors.get(footprint)
+  if (film !== undefined) return film
   return derive(footprint)
 }
 
@@ -263,9 +348,11 @@ const FIXED_SHAPE_PIN_COUNTS: ReadonlyMap<string, number> = new Map([
  * but still has two pins, so its suffix says nothing about pin numbering.
  */
 export function declaredPinCount(importStr: string): number | null {
+  // A fixed-shape type carries its pin count in a table rather than a suffix,
+  // so it is answered before the suffixed families are parsed.
   const fixed = FIXED_SHAPE_PIN_COUNTS.get(importStr)
   if (fixed !== undefined) return fixed
-  for (const type of ["SIP", "DIP", "PADS"]) {
+  for (const type of ["SIP", "DIP", "PADS", "BLOCK_100MIL", "BLOCK_200MIL"]) {
     // Anchored, so CAP_ELECTRO_200 is never read as a PADS-style count.
     const match = new RegExp(`^${type}([0-9]+)$`).exec(importStr)
     if (match !== null) {

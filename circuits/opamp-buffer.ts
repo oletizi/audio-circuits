@@ -25,7 +25,7 @@
  * be both. They are real parts with real footprints, so a bill of materials
  * has to see them; they are also where every net leaves the module, so
  * composition and simulation have to see those nets as declared ports.
- * `circuits/pt2399-core.ts` already does exactly this for its five-pin
+ * `circuits/pt2399-core/pt2399-core.ts` already does exactly this for its five-pin
  * header, which settles it - there was never a choice to make.
  *
  * A screw terminal contributes no device line to a SPICE deck, and it says so
@@ -101,7 +101,7 @@ export const SOURCE_PART_NAMES: Readonly<Record<string, string>> = {
  * terminals, rendered on `pinrow2`/`pinrow3` footprints, with pins named P1,
  * P2, P3. There is no genuine manufacturer part number for a generic screw
  * terminal, so `mpn` is absent rather than invented - the same reasoning
- * `circuits/pt2399-core.ts` applies to its generic header. */
+ * `circuits/pt2399-core/pt2399-core.ts` applies to its generic header. */
 const SCREW_TERMINAL_2 = { footprint: "pinrow2", electricallyInert: true } as const
 const SCREW_TERMINAL_3 = { footprint: "pinrow3", electricallyInert: true } as const
 
@@ -122,7 +122,7 @@ export function opampBuffer(): Network {
   return circuit()
     // Signal path. C_IN.pin1/pin2 and R_BIAS.pin1/pin2 map to a/b in that
     // order, matching the two-terminal pin numbering the rest of this
-    // repository uses (PIN_NUMBERS in circuits/pt2399-core.ts).
+    // repository uses (PIN_NUMBERS in circuits/pt2399-core/pt2399-core.ts).
     .capacitor("input_coupling_cap", "100nF", { a: IN_EXT, b: IN }, { footprint: "0805" })
     .resistor("input_bias_resistor", "100k", { a: IN, b: GND }, { footprint: "0805" })
 

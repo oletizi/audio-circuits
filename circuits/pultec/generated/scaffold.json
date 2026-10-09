@@ -1,0 +1,379 @@
+{
+  "hi-boost": {
+    "section": "hi-boost",
+    "flat": {
+      "loFrequency": "100Hz",
+      "hiFrequency": "5kHz",
+      "midFrequency": "1kHz",
+      "midMode": "boost"
+    },
+    "boundary": [
+      "hi_boost_out",
+      "in"
+    ],
+    "components": [
+      {
+        "id": "RV_HI_BOOST.ccw-wiper",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 0
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "in",
+              "b": "j20_p3"
+            }
+          }
+        ]
+      },
+      {
+        "id": "RV_HI_BOOST.wiper-cw",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 47000
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "j20_p3",
+              "b": "hi_boost_out"
+            }
+          }
+        ]
+      }
+    ],
+    "isolation": [
+      {
+        "component": "RV_HI_BOOST.wiper-cw",
+        "terminal": "b",
+        "net": "hi_boost_out"
+      }
+    ]
+  },
+  "hi-cut": {
+    "section": "hi-cut",
+    "flat": {
+      "loFrequency": "100Hz",
+      "hiFrequency": "5kHz",
+      "midFrequency": "1kHz",
+      "midMode": "boost"
+    },
+    "boundary": [
+      "hi_boost_out",
+      "lo_boost_in"
+    ],
+    "components": [
+      {
+        "id": "C26",
+        "kind": "capacitor",
+        "parameters": {
+          "farads": 4.7e-8
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "lo_boost_in",
+              "b": "j12_p3"
+            }
+          }
+        ]
+      },
+      {
+        "id": "R1",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 430
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "j4_p2",
+              "b": "j12_p3"
+            }
+          }
+        ]
+      },
+      {
+        "id": "RV_HI_CUT.ccw-wiper",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 0
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "hi_boost_out",
+              "b": "j4_p2"
+            }
+          }
+        ]
+      },
+      {
+        "id": "RV_HI_CUT.wiper-cw",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 4700
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "j4_p2",
+              "b": "lo_boost_in"
+            }
+          }
+        ]
+      }
+    ],
+    "isolation": [
+      {
+        "component": "RV_HI_CUT.ccw-wiper",
+        "terminal": "a",
+        "net": "hi_boost_out"
+      }
+    ]
+  },
+  "low-boost": {
+    "section": "low-boost",
+    "flat": {
+      "loFrequency": "100Hz",
+      "hiFrequency": "5kHz",
+      "midFrequency": "1kHz",
+      "midMode": "boost"
+    },
+    "boundary": [
+      "0",
+      "lo_boost_in",
+      "out"
+    ],
+    "components": [
+      {
+        "id": "R2",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 56000
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "out",
+              "b": "lo_boost_in"
+            }
+          }
+        ]
+      },
+      {
+        "id": "RV_LO_BOOST.ccw-wiper",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 0
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "0",
+              "b": "lo_boost_in"
+            }
+          }
+        ]
+      }
+    ],
+    "isolation": [
+      {
+        "component": "R2",
+        "terminal": "b",
+        "net": "lo_boost_in"
+      },
+      {
+        "component": "R2",
+        "terminal": "a",
+        "net": "out"
+      }
+    ]
+  },
+  "low-cut": {
+    "section": "low-cut",
+    "flat": {
+      "loFrequency": "100Hz",
+      "hiFrequency": "5kHz",
+      "midFrequency": "1kHz",
+      "midMode": "boost"
+    },
+    "boundary": [
+      "hi_boost_out",
+      "out"
+    ],
+    "components": [
+      {
+        "id": "RV_LO_CUT.ccw-wiper",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 0
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "hi_boost_out",
+              "b": "out"
+            }
+          }
+        ]
+      }
+    ],
+    "isolation": [
+      {
+        "component": "RV_LO_CUT.ccw-wiper",
+        "terminal": "a",
+        "net": "hi_boost_out"
+      }
+    ]
+  },
+  "mid": {
+    "section": "mid",
+    "flat": {
+      "loFrequency": "100Hz",
+      "hiFrequency": "5kHz",
+      "midFrequency": "1kHz",
+      "midMode": "boost"
+    },
+    "boundary": [
+      "0",
+      "hi_boost_out",
+      "in"
+    ],
+    "components": [
+      {
+        "id": "C_MID_1kHz_A",
+        "kind": "capacitor",
+        "parameters": {
+          "farads": 2.2e-8
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "mid_tap_1h",
+              "b": "mid_sel_1khz"
+            }
+          }
+        ]
+      },
+      {
+        "id": "C_MID_1kHz_B",
+        "kind": "capacitor",
+        "parameters": {
+          "farads": 3.3e-9
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "mid_tap_1h",
+              "b": "mid_sel_1khz"
+            }
+          }
+        ]
+      },
+      {
+        "id": "L_MID_1H",
+        "kind": "inductor",
+        "parameters": {
+          "henries": 1
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "mid_tap_1h",
+              "b": "mid_boost_return"
+            }
+          }
+        ]
+      },
+      {
+        "id": "R_MID_BOOST",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 4700
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "in",
+              "b": "mid_boost_return"
+            }
+          }
+        ]
+      },
+      {
+        "id": "R_MID_SHUNT",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 100000
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "in",
+              "b": "0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "RV_MID.ccw-wiper",
+        "kind": "resistor",
+        "parameters": {
+          "ohms": 0
+        },
+        "pins": {},
+        "units": [
+          {
+            "name": "MAIN",
+            "pins": {
+              "a": "hi_boost_out",
+              "b": "mid_sel_1khz"
+            }
+          }
+        ]
+      }
+    ],
+    "isolation": [
+      {
+        "component": "RV_MID.ccw-wiper",
+        "terminal": "a",
+        "net": "hi_boost_out"
+      },
+      {
+        "component": "R_MID_BOOST",
+        "terminal": "a",
+        "net": "in"
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "circuit": "../../circuits/pultec/physical/mid.ts",
+  "export": "pultecMid",
+  "vrt": "pultec-mid.perfboard.vrt"
+}

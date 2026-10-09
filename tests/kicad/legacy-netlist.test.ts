@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { importLegacyNetlist, writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
-import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core.ts"
+import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core/pt2399-core.ts"
 import type { ImportedNetlist } from "../../lib/kicad/netlist.ts"
 
 const SAMPLE = `( { EESchema Netlist Version 1.1 created  2026-09-15T21:32:09 }
@@ -127,7 +127,7 @@ test("the writer is self-consistent through the reader", async () => {
 
 /**
  * FIXTURE predates the operator's schematic correction to C2 (see the module
- * comment in circuits/pt2399-core.ts): it was the netlist VeroRoute actually
+ * comment in circuits/pt2399-core/pt2399-core.ts): it was the netlist VeroRoute actually
  * consumed to lay out the board that was built, back when C2 still carried
  * an inflated CAP_ELECTRO_300 footprint to buy pad span the fork could not
  * yet stretch a radial electrolytic's leads to provide. It stays checked in

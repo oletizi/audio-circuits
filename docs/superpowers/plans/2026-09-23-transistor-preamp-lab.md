@@ -1489,7 +1489,7 @@ git push
   - `export interface SchematicStubInput { readonly network: Network; readonly designators: Readonly<Record<string, string>>; readonly pinNumbers: PinNumbers; readonly notes: readonly string[]; readonly projectName: string; readonly newUuid: () => string }`
   - `export function writeSchematicStub(input: SchematicStubInput): string`
 
-Layout: symbols in designator order on a 10-column grid with 30.48 mm pitch, A3 paper. Each pin gets a 2.54 mm wire stub pointing away from the body, with a local label named after its net at the stub's end. A deliberately unconnected (`NC`) pin gets a no-connect flag instead. The notes go in a text block below the grid. The format version is `20260306`, the version KiCad 10.0 wrote `circuits/pt2399-core.kicad_sch` in.
+Layout: symbols in designator order on a 10-column grid with 30.48 mm pitch, A3 paper. Each pin gets a 2.54 mm wire stub pointing away from the body, with a local label named after its net at the stub's end. A deliberately unconnected (`NC`) pin gets a no-connect flag instead. The notes go in a text block below the grid. The format version is `20260306`, the version KiCad 10.0 wrote `circuits/pt2399-core/pt2399-core.kicad_sch` in.
 
 - [ ] **Step 1: Export `pinNumberFor`**
 
@@ -1623,7 +1623,7 @@ Expected: FAIL. The module does not exist.
  * Symbols come from lib/kicad/symbols/ (vendored), never from an installed
  * KiCad, so the output does not depend on the machine.
  */
-import type { Component, Connection, Network } from "../model/types.ts"
+import type { Component, Connection, Network } from "../electrical/types.ts"
 import { pinNumberFor } from "./from-network.ts"
 import type { PinNumbers } from "./from-network.ts"
 import { embeddedSymbol, symbolPins, vendoredSymbolText } from "./symbol-library.ts"
@@ -1641,7 +1641,7 @@ export interface SchematicStubInput {
   readonly newUuid: () => string
 }
 
-/** The file format KiCad 10.0 wrote circuits/pt2399-core.kicad_sch in. */
+/** The file format KiCad 10.0 wrote circuits/pt2399-core/pt2399-core.kicad_sch in. */
 const FORMAT_VERSION = "20260306"
 const GRID = 30.48
 const COLUMNS = 10
