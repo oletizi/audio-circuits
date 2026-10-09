@@ -29,9 +29,48 @@ test("the committed scaffold.json equals what the derivation produces right now"
 })
 
 test("the scaffold emulates the same flat state every design figure was measured at", () => {
-  // Up to 3.71 dB rides on this per the design doc, so it is asserted directly
-  // rather than only indirectly through the artifact comparison above.
-  expect(SCAFFOLD_FLAT).toEqual(REFERENCE_FLAT)
+  // THE SPEC'S "Frequency contract" ACCEPTANCE ROW, and this is the only test standing
+  // for it. An earlier version asserted `SCAFFOLD_FLAT` equals `REFERENCE_FLAT`, which
+  // CANNOT FAIL: `circuits/pultec/scaffold.ts` defines the one AS the other, so it
+  // compared an object to itself. Up to 3.71 dB rides on the claim, so it is asserted
+  // three ways that can each actually break.
+
+  // 1. The settings are the ones the design doc's measurements were taken at, written
+  // out rather than referenced. Change either constant and this fails.
+  expect(SCAFFOLD_FLAT).toEqual({
+    loFrequency: "100Hz",
+    hiFrequency: "5kHz",
+    midFrequency: "1kHz",
+    midMode: "boost",
+  })
+  expect(REFERENCE_FLAT).toEqual(SCAFFOLD_FLAT)
+
+  // 2. Each stand-in the BOARD is built from carries that same state as its own
+  // declared `flat`, so the setting travelling with the data agrees with the board's.
+  const standIns = allStandIns(modules, SCAFFOLD_FLAT)
+  for (const section of SECTIONS) {
+    expect(standIns[section]!.flat, section).toEqual(SCAFFOLD_FLAT)
+  }
+
+  // 3. The board's parts really are the ones derived AT that state, and not at
+  // another: derive the stand-ins at a different mid frequency and the board must stop
+  // matching. Without this the first two assertions only check a label. Mid is the
+  // selector to move, not the low one - after the reduction every low-selector
+  // capacitor is inert (each sits across `RV_LO_BOOST`'s 0R arm or on an open throw),
+  // so moving `loFrequency` changes no surviving value and would make a vacuous test.
+  const elsewhere = allStandIns(modules, { ...SCAFFOLD_FLAT, midFrequency: "500Hz" })
+  const valuesAt = (all: ReturnType<typeof allStandIns>): string =>
+    JSON.stringify(SECTIONS.map((s) => all[s]!.components.map((c) => [c.id, c.parameters])))
+  expect(valuesAt(elsewhere)).not.toBe(valuesAt(standIns))
+  const boardValues = new Map(
+    pultecScaffold().components.map((component) => [component.id, component.parameters]),
+  )
+  for (const section of SECTIONS) {
+    for (const component of standIns[section]!.components) {
+      expect(boardValues.get(component.id), `${section}: ${component.id}`)
+        .toEqual(component.parameters)
+    }
+  }
 })
 
 test("every stand-in's isolation points are realised as exactly that many links", () => {
@@ -111,7 +150,7 @@ test("the terminal block lands a pin on every one of the board's ports, ground l
   expect([...pinNets].sort()).toEqual(Object.keys(board.ports).sort())
 })
 
-test("every removable link's stub net belongs only to this stand-in's own components", () => {
+test("every removable link's stub net belongs ONLY to this stand-in's own components", () => {
   // A stub net is private to the ONE isolation point that introduced it - nothing on
   // the rest of the board, and no OTHER section's stand-in, ever touches it. It may,
   // however, be held by more than one of THIS stand-in's own components: a net can be
@@ -121,6 +160,17 @@ test("every removable link's stub net belongs only to this stand-in's own compon
   // see the next test, and `circuits/pultec/scaffold.ts`'s `isolate()` for why a
   // version that rewired only the named touch was a real defect rather than a style
   // choice.
+  //
+  // THE "ONLY" IS WHAT THIS ASSERTS. An earlier version checked `holders.length >= 1`,
+  // which is a tautology: `isolate()` throws on an isolation point that matched no pin,
+  // so a stub with no holder cannot reach this test. Two stubs sharing a holder, or a
+  // stub reaching another section's stand-in or the terminal block, is the failure that
+  // matters - it would let one link cut, or fail to cut, a leg it does not own.
+  const standIns = allStandIns(modules, SCAFFOLD_FLAT)
+  const ownerOf = new Map<string, string>()
+  for (const section of SECTIONS) {
+    for (const component of standIns[section]!.components) ownerOf.set(component.id, section)
+  }
   const board = pultecScaffold()
   const links = board.components.filter((component) => component.kind === "switch")
   for (const link of links) {
@@ -130,8 +180,23 @@ test("every removable link's stub net belongs only to this stand-in's own compon
     const holders = board.components.filter(
       (component) => component.id !== link.id && componentNets(component).includes(stub),
     )
-    expect(holders.length, `${link.id}: stub net ${stub}`).toBeGreaterThanOrEqual(1)
+    // The link belongs to exactly one stand-in; recovered from `StandIn.section`
+    // rather than by parsing the link's id.
+    const sections = new Set(holders.map((holder) => ownerOf.get(holder.id)))
+    expect(
+      [...sections].sort(),
+      `${link.id}: stub net ${stub} is held by ${holders.map((h) => h.id).join(", ")}`,
+    ).toHaveLength(1)
+    expect([...sections][0], `${link.id}: stub net ${stub} reaches a non-stand-in component`)
+      .toBeDefined()
+    // And no OTHER link shares it: one stub, one link.
+    const otherLinks = links.filter(
+      (other) => other.id !== link.id && componentNets(other).includes(stub),
+    )
+    expect(otherLinks.map((other) => other.id), `${link.id}: stub net ${stub}`).toEqual([])
   }
+  // Non-vacuous: every link was actually examined.
+  expect(links.length).toBeGreaterThan(0)
 })
 
 test("isolating a net cuts EVERY touch of it within the stand-in, not just one", () => {

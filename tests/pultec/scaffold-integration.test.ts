@@ -141,9 +141,72 @@ const combinedState: ControlState = {
 const resolvedComposed: ResolvedNetwork = resolveNetwork(combined, combinedState)
 const resolvedReference: ResolvedNetwork = resolveNetwork(THREE_BAND_REFERENCE, realState)
 
-/** "The circuit's ports" in the design doc's property (a) wording - the three nets
- * `THREE_BAND_REFERENCE` declares externally. */
-const PORTS: ReadonlySet<string> = new Set(Object.values(THREE_BAND_REFERENCE.ports))
+/** The boundary property (a) is asked against: EVERY net the scaffold shares with the
+ * real circuit, not the three nets `THREE_BAND_REFERENCE` declares externally.
+ *
+ * THE NARROWER SET MAKES THE GATE BLIND WHERE IT MATTERS MOST. `THREE_BAND_REFERENCE`
+ * declares `{in, out, 0}`, but the scaffold crosses FIVE nets - it also touches the two
+ * INTERIOR ladder nodes, `hi_boost_out` and `lo_boost_in`. A leak confined to those two
+ * joins no two of `{in, out, 0}`, so `reduceToBoundary` reports an empty live set and
+ * property (a) passes; property (b) cannot see it either, because it compares the REAL
+ * components' live subgraph and a stray scaffold load on an interior node need not
+ * change which real components conduct. That is not hypothetical: the Task 8 isolation
+ * defect, reconstructed for low-cut alone, is INVISIBLE under `{in, out, 0}` and caught
+ * under the five. The gate found mid's half of it only because mid happened to bridge
+ * `in` and `0`.
+ *
+ * DERIVED, NOT LISTED, for three reasons. A hardcoded pre-resolution list would be
+ * wrong as well as fragile: `lo_boost_in` is merged away by a closed selector contact
+ * and resolves to `j10_p4` in the combined network, so the name to test against is not
+ * the name the scaffold declares. The set must grow by itself if a sixth stand-in ever
+ * crosses a sixth net. And - the reason it is strongest derived - IT GROWS EXACTLY WHEN
+ * THE DEFECT IT HUNTS IS PRESENT. So it is read off the resolved scaffold-only network:
+ * every net that did NOT get the scaffold-private prefix is, by construction of
+ * `foldIn`, a net the scaffold shares with the real circuit.
+ *
+ * WHY `hi_boost_out` IS NOT IN THE DERIVED SET, AND WHY THAT IS THE POINT. Four of the
+ * five stand-ins touch `hi_boost_out`, and all four isolate it, so with every link
+ * removed NOTHING on the scaffold reaches it: `resolveNetwork` drops switches from its
+ * component list, so a link contributes no net of its own. The derived set is therefore
+ * `{0, in, j10_p4, out}` - the four nets a stand-in still touches permanently, one per
+ * connected group, exactly as the isolation rule requires. If isolation ever failed at
+ * `hi_boost_out`, the component left behind would put `hi_boost_out` back into this set
+ * and the liveness check below would then have two boundary nets to bridge. Deriving it
+ * is thus not a weaker version of the five-net list; it is equivalent to it on a correct
+ * board and identical to it on a broken one. */
+/** The three nets `THREE_BAND_REFERENCE` declares externally.
+ *
+ * This is the RIGHT boundary for property (b) and the wrong one for property (a), and
+ * the difference is what the two properties ask. Property (b) compares the REAL
+ * circuit's live subgraph against the reference's, and both must be reduced against the
+ * same thing the reference itself presents to the world - its own declared ports.
+ * Property (a) asks whether the SCAFFOLD bridges anything, and the scaffold's own
+ * boundary is wider; see `sharedBoundary`. */
+const REFERENCE_PORTS: ReadonlySet<string> = new Set(Object.values(THREE_BAND_REFERENCE.ports))
+
+function sharedBoundary(scaffoldOnly: readonly ResolvedComponent[]): ReadonlySet<string> {
+  const shared = new Set<string>()
+  for (const component of scaffoldOnly) {
+    for (const unit of component.units) {
+      for (const net of Object.values(unit.pins)) {
+        if (!net.startsWith(SCAFFOLD_NET_PREFIX)) shared.add(net)
+      }
+    }
+    for (const net of Object.values(component.pins)) {
+      if (!net.startsWith(SCAFFOLD_NET_PREFIX)) shared.add(net)
+    }
+  }
+  if (shared.size < 2) {
+    throw new Error(
+      `The scaffold shares ${shared.size} net(s) with the real circuit ` +
+        `(${[...shared].join(", ") || "none"}). Property (a) needs at least two to ` +
+        `ask whether anything bridges them; fewer means foldIn's net scoping or the ` +
+        `isolation wiring changed shape, and the gate must not be run as if it still ` +
+        `meant something.`,
+    )
+  }
+  return shared
+}
 
 function isScaffold(component: ResolvedComponent): boolean {
   return component.id.startsWith(SCAFFOLD_PREFIX)
@@ -182,7 +245,17 @@ test("GATE C (model): every scaffold-originated component is dead - on no path b
   // Scoped to ONLY the scaffold's own resolved components - see the module comment for
   // why mixing in the real circuit would make this check unsound rather than stricter.
   const scaffoldOnlyNetwork: ResolvedNetwork = { ports: resolvedComposed.ports, components: scaffoldOnly }
-  const live = reduceToBoundary(scaffoldOnlyNetwork, PORTS)
+  const boundary = sharedBoundary(scaffoldOnly)
+  // WIDER THAN `THREE_BAND_REFERENCE`'s THREE DECLARED PORTS, which is the whole point:
+  // a leak confined to the interior ladder nodes joins no two of `{in, out, 0}` and is
+  // invisible to a gate boundaried on those. The derived set must hold every declared
+  // port AND at least one interior node the reference does not declare.
+  const interior = [...boundary].filter((net) => !REFERENCE_PORTS.has(net)).sort()
+  for (const port of REFERENCE_PORTS) {
+    expect(boundary.has(port), `declared port ${port} missing from the derived boundary`).toBe(true)
+  }
+  expect(interior, "no interior ladder node in the derived boundary").not.toEqual([])
+  const live = reduceToBoundary(scaffoldOnlyNetwork, boundary)
   expect(live.map((component) => component.id)).toEqual([])
 })
 
@@ -195,8 +268,10 @@ test("GATE C (model): the live subgraph equals THREE_BAND_REFERENCE's, exactly",
   // by the previous test) scaffold board is folded in alongside it, and nothing else
   // becomes live that was not before. Filtering to real-only ids here is scoping the
   // comparison, not re-deciding property (a).
-  const liveComposed = reduceToBoundary(resolvedComposed, PORTS).filter((component) => !isScaffold(component))
-  const liveReference = reduceToBoundary(resolvedReference, PORTS)
+  const liveComposed = reduceToBoundary(resolvedComposed, REFERENCE_PORTS).filter(
+    (component) => !isScaffold(component),
+  )
+  const liveReference = reduceToBoundary(resolvedReference, REFERENCE_PORTS)
 
   const composedKeys = new Set(liveComposed.map(identity))
   const referenceKeys = new Set(liveReference.map(identity))
@@ -210,4 +285,27 @@ test("GATE C (model): the live subgraph equals THREE_BAND_REFERENCE's, exactly",
   expect(onlyInReference).toEqual([])
   expect(onlyInComposed).toEqual([])
   expect(liveComposed).toHaveLength(liveReference.length)
+})
+
+test("property (a) CAN fail: the Task 8 isolation defect, reconstructed for low-cut alone", () => {
+  // A gate that cannot fail proves nothing, and this one nearly could not. With the
+  // boundary fixed at `THREE_BAND_REFERENCE`'s three declared ports, low-cut's half of
+  // the Task 8 defect - an isolated leg never rewired, so the 0R arm still bridges
+  // `hi_boost_out` to `out` whatever the link does - is INVISIBLE: it joins no two of
+  // `{in, out, 0}`, so the live set is empty and property (a) passes. The gate caught
+  // mid's half only because mid happens to bridge `in` and `0`. Deriving the boundary
+  // is what fixes it, and the fix is asserted here rather than reasoned about.
+  const leaking: ResolvedComponent = {
+    id: `${SCAFFOLD_PREFIX}RV_LO_CUT.ccw-wiper`,
+    kind: "resistor",
+    parameters: { ohms: 0 },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a: "hi_boost_out", b: "out" } }],
+  }
+  const network: ResolvedNetwork = { ports: resolvedComposed.ports, components: [leaking] }
+
+  expect(reduceToBoundary(network, REFERENCE_PORTS).map((c) => c.id)).toEqual([])
+  const boundary = sharedBoundary([leaking])
+  expect([...boundary].sort()).toEqual(["hi_boost_out", "out"])
+  expect(reduceToBoundary(network, boundary).map((c) => c.id)).toEqual([leaking.id])
 })
