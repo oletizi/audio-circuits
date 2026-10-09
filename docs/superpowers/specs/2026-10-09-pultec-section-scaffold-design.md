@@ -76,10 +76,13 @@ reduction.** This is the whole idea, and it works because flat is a degenerate s
 - a potentiometer at position 0 resolves one arm to 0 ohms and the other to its full value,
   so the pot stops being a variable and becomes two fixed resistors, one of them a short;
 - a rotary selector closes exactly one throw, so exactly one capacitor branch is live and
-  the rest float and prune away.
+  the rest are genuinely disconnected at the open switch pins.
 
 So there is nothing to approximate or curve-fit. The stand-in is not a model of the absent
-section - it is the absent section, at flat, with everything inert removed.
+section - it is a **subset of the absent section's own flat-state components**, which is a
+stronger claim and the reason the equivalence is exact rather than close. "Inert" means
+disconnected, not merely unimportant: see **Reduction** below, because the difference between
+those two readings is what made the earlier design wrong.
 
 ### The stand-ins
 
@@ -89,12 +92,14 @@ At the reference flat settings - low frequency 100 Hz, high frequency 5 kHz, mid
 | --- | --- | --- |
 | hi-boost | 47k | `in` - `hi_boost_out` |
 | hi-cut | 4k7 **in parallel with** (430R + 47nF) | `hi_boost_out` - `lo_boost_in` |
-| low-cut | a link (0 ohms) | `hi_boost_out` - `out` |
-| low-boost | 56k, **and** a link to ground | `lo_boost_in` - `out`, `lo_boost_in` - `0` |
-| mid | 100k, **and** 25.3nF + 1H + 4k7 in series | `in` - `0`, `hi_boost_out` - `in` |
+| low-cut | a wire (0 ohms) | `hi_boost_out` - `out` |
+| low-boost | 56k, **and** a 0-ohm shunt | `lo_boost_in` - `out`, and `lo_boost_in` - ground |
+| mid | 100k, **and** 25.3nF + 1H + 4k7 in series | `in` - ground, and `hi_boost_out` - `in` |
 
 The 25.3 nF is the 22 nF and 3.3 nF of mid's 1 kHz position in parallel; the 1 H is its
-`L_MID_1H` tap; the 4k7 is `R_MID_BOOST`.
+`L_MID_1H` tap; the 4k7 is `R_MID_BOOST`. The 0-ohm branches here are **circuit elements** -
+the pot arms that flat resolves to a short - and are not to be confused with the removable
+isolation links of the next section, which are configuration hardware.
 
 ### The rule that composes
 
@@ -123,15 +128,95 @@ reasons, in order of weight:
 3. **It is honest about what it is.** A scaffold board is visibly scaffolding. A resistor
    hidden on a section board is a part somebody will one day take for part of the circuit.
 
-The scaffold board carries, per section, its stand-in components and a two-pad removable
-link in series. Link fitted means that section is absent; link omitted means the real board
-drives that segment.
+### Isolation: how many links a stand-in needs
+
+An earlier revision of this spec said each stand-in sits behind "a two-pad removable link in
+series". **That is wrong, and wrong in the dangerous direction** - it would have been built
+before it was caught, because the error is in the hardware instruction rather than in the
+model.
+
+Several stand-ins are **three-terminal**. Low-boost's has a 56k to `out` and a short to
+ground, both meeting at one node. Wire that node to `lo_boost_in` through a single link and
+pull the link for a full build, and the two remaining branches still connect `out` to ground
+through the 56k. Measured on the full five-section build, that spurious load costs:
+
+```
+   Hz    reference   one link pulled    error
+    20     -21.432          -22.022    -0.589 dB
+   100     -19.469          -20.039    -0.570 dB
+  1000      -7.905           -8.134    -0.229 dB
+ 10000     -37.330          -37.394    -0.064 dB
+```
+
+**The rule is n-1 links for an n-terminal stand-in**, where ground counts as a terminal.
+Breaking all but one leg leaves the network hanging by a single point, connecting nothing to
+nothing. Breaking only some of them leaves a path. With both the `lo_boost_in` and `out` legs
+broken, the same build measures 0.000 dB at every frequency.
+
+| Absent section | Boundary terminals | Links |
+| --- | --- | --- |
+| hi-boost | `in`, `hi_boost_out` | 1 |
+| hi-cut | `hi_boost_out`, `lo_boost_in` | 1 |
+| low-cut | `hi_boost_out`, `out` | 1 |
+| low-boost | `lo_boost_in`, `out`, ground | 2 |
+| mid | `in`, `hi_boost_out`, ground | 2 |
+
+Seven links in total. **The count is derived from each stand-in's topology, never assumed** -
+that is the part that generalises, and the specific counts above are what the derivation
+yields for these five sections. No multipole switch or removable module is needed; plain
+two-pad links suffice once there are enough of them.
+
+Links fitted means that section is absent; links omitted means the real board drives that
+segment.
+
+### Reduction: what the derivation may and may not do
+
+The stand-in is obtained from the section, and **the obtaining must not change what the
+section presents at its boundary.** This is easy to get wrong, so the algorithm is specified
+rather than described.
+
+**Keep every component on a path between two boundary nodes. Drop only components that are
+genuinely disconnected.** No series/parallel collapsing, no star-mesh transformation, no
+elimination of internal nodes. The result is already small - three to five components per
+section - because flat is degenerate, so there is nothing to gain from reducing further and a
+whole class of impedance-altering bugs to avoid. A stand-in that is literally a subset of the
+section's own flat-state components cannot differ from it.
+
+Invariants the derivation must hold, and test:
+
+- every boundary node of the section is a node of the stand-in;
+- a component is dropped only if no path through it joins two boundary nodes;
+- a branch reachable through an ideal short is **not** floating. A pot arm at 0 ohms is a
+  short, and the branch beyond it is live. This is exactly the omission that made the earlier
+  design wrong.
+
+**`pruneFloatingBranches` must not be reused here.** It exists to prepare a network for
+simulation under one source and load configuration, and a branch irrelevant to that
+configuration can matter when a different boundary node is driven by a neighbouring section.
+Scaffold derivation needs its own reduction with the invariants above.
 
 ### Verification
 
-The gate is composition, not just the standalone case. For every combination under test, the
-composed network's **action** for each present section - that section's control at full minus
-all-flat - must match the same section's action in `THREE_BAND_REFERENCE`.
+**The primary criterion is boundary equivalence, not frequency response.** A stand-in's job
+is to present the right impedance at the nodes it shares with other sections, and two
+networks can agree on one input-to-output transfer function while differing at another
+boundary. So:
+
+**Gate A - boundary equivalence.** For each section, the stand-in and the real flat section
+must have equivalent multiport behaviour at their shared boundary: drive each boundary node
+in turn with the others held, sweep frequency, and compare the resulting boundary admittances.
+They must agree to tolerance across the band.
+
+If the reduction above is conservative, this holds **by construction** - the stand-in is a
+subset of the section's own flat components, so there is nothing to fit. That is the point of
+specifying the reduction that way: Gate A is then a guard against reduction bugs rather than a
+curve-fitting criterion, and a failure means the derivation broke something rather than that
+the approximation is poor.
+
+**Gate B - composition.** For every combination, the composed network's behaviour for each
+present section must match `THREE_BAND_REFERENCE` under the same control vector, with absent
+sections held at their declared reference-flat settings. This is the secondary check, and it
+is what the measurements below report.
 
 Measured, across all five singletons and five multi-section combinations:
 
@@ -155,6 +240,16 @@ that the partition recomposes exactly.
 **The test must cover all 31 combinations**, not the ten probed here. Ten was enough to
 establish the method; the suite should be exhaustive, because it is cheap and because the
 rule's whole claim is that it composes for every subset.
+
+**And it must cover control interactions, not only one control at a time.** Every figure in
+this document was measured by sweeping a single section's control with the others flat, and
+that is not sufficient for this circuit. Two controls on the same ladder influence each
+other - the Pultec's most characteristic move is low boost and low cut raised *together* at
+the same frequency, which is the whole reason the EQP-1 is wanted - and a test that only ever
+moves one control at a time would never exercise it. So for each combination the suite runs a
+set of control vectors: all flat, each control at maximum, the boost-and-cut pairs at
+maximum, and every control at maximum. The reference comparison uses the **same** vector,
+with absent sections held at their declared reference-flat settings.
 
 **The integrated case needs its own test**, distinct from the above: with every link omitted
 and all five sections present, the recovered graph must be **strictly equivalent** to the
@@ -185,10 +280,22 @@ holds only there. Making the stand-in capacitors selectable, with a switch mirro
 real section's positions, would lift the restriction at the cost of parts; that is a
 decision for the implementation, not something this design forecloses.
 
-**The low-frequency selectors are ganged.** `SW_LO_CUT` and `SW_LO_BOOST` share one shaft
-(`lo_freq`). If one of low-cut or low-boost is present and the other absent, the real switch
-sets the frequency for the present section, and a fixed scaffold is only faithful at the one
-setting it was built for.
+**The low-frequency selectors are ganged, and that is the worse of the two cases.** There are
+two distinct scenarios and they need distinguishing:
+
+- *The absent section's selector is simply gone.* The scaffold assumes a setting; nothing can
+  move it; the only risk is forgetting which setting it is.
+- *The absent section's selector is ganged to a present one.* `SW_LO_CUT` and `SW_LO_BOOST`
+  share one shaft (`lo_freq`). If one of low-cut or low-boost is present and the other
+  absent, **turning the present section's frequency knob silently invalidates the stand-in**,
+  because in the real circuit that one knob moves both.
+
+So the design **prohibits any claim of full-range equivalence** while a ganged selector is
+away from the scaffold's reference setting. Concretely: the declared frequency state is part
+of the test fixture, and the suite asserts it equals the reference model's setting. A
+mismatch is a test failure, not a quietly degraded result. Selectable stand-in capacitors
+would lift the restriction at a parts cost; that is an implementation decision this design
+leaves open, and until it is taken the restriction is real and must be on the silkscreen.
 
 **Standing in for mid needs a 1 H inductor**, and mid's inductors have **no part number**.
 `docs/pultec/values.md` specifies them electrically - value, tolerance, DCR - and says a
@@ -228,17 +335,40 @@ one that is typed in can, silently, and the failure would look like a measuremen
 The configuration must be readable off the hardware.
 
 - Each link on the scaffold board is labelled with the section it stands in for, and which
-  state means absent.
+  state means absent. Where a stand-in needs two links, both carry the same section's name,
+  so a half-disabled stand-in reads as obviously incomplete.
 - The scaffold board's silkscreen states the frequency setting it emulates, because that is
   the limit most likely to be forgotten and the one that looks like a circuit fault rather
   than a configuration error.
 - The generated wiring guide gains a scaffold section listing, per configuration, which
   links are fitted.
 
+**The wiring guide is a verified artifact, not prose beside the design.** It is generated
+from the same configuration model the stand-ins come from, and a test asserts that its link
+instructions match the actual connectivity of the generated layout. Without that it becomes a
+second, independently maintained description of the same facts - and the drift would appear
+as a builder following correct-looking instructions onto a wrong board. The repository already
+holds guides this way: the wiring-sync test is deliberately read-only and content-compared,
+because an earlier version rewrote the files it was checking and then passed.
+
 The wiring guide exists because a layout does not say that `C1` is 100 nF. A scaffold that
 does not say which links to remove has the same defect, and a worse failure mode: a link
 left fitted in a full build parallels the real section it was standing in for, which is
 quiet, plausible, and wrong.
+
+## Acceptance criteria
+
+| Gate | Required result |
+| --- | --- |
+| Stand-in derivation | deterministic output from the electrical model; committed values are a derived artifact compared by content |
+| Reduction invariants | every boundary node retained; a component dropped only when no path through it joins two boundary nodes; a branch beyond an ideal short treated as live |
+| Boundary equivalence | stand-in and real flat section have equivalent multiport behaviour across the band |
+| Isolation | every branch of a disabled stand-in is electrically disconnected; **n-1 links for an n-terminal stand-in**, count derived from topology |
+| Composition | all 31 non-empty section combinations pass |
+| Control interaction | simultaneous control vectors match the full reference, including the boost-and-cut pairs |
+| Frequency contract | the fixture's declared frequency state equals the reference model's; a mismatch fails |
+| Integration | all sections present, all links omitted: **strict graph equivalence** with the reference network |
+| Documentation | generated link instructions agree with the generated layout's connectivity |
 
 ## Out of scope
 
