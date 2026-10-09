@@ -24,7 +24,9 @@
  * netlist fixture is kept honest.
  */
 import { physicalOnly } from "./physicalize.ts"
+import { scaffoldLinksSection } from "./scaffold/wiring.ts"
 import type { Component, Network } from "../model/types.ts"
+import type { FlatState, StandIn } from "./scaffold/index.ts"
 
 export interface WiringInput {
   /** The module name, as `boards/pultec-<name>` spells it. */
@@ -37,6 +39,15 @@ export interface WiringInput {
   readonly padOrder: Readonly<Record<string, readonly string[]>>
   /** Crossing net -> the OTHER boards that touch it. */
   readonly sharedBy: Readonly<Record<string, readonly string[]>>
+  /**
+   * Present only for the Pultec scaffold board: every section's stand-in and the flat
+   * state they emulate, from which the "Scaffold links" section is rendered. Absent
+   * for every other board, which has no stand-ins to describe.
+   */
+  readonly scaffold?: {
+    readonly standIns: Readonly<Record<string, StandIn>>
+    readonly flat: FlatState
+  }
 }
 
 /** Every pin a component declares, package pins and unit pins together. */
@@ -351,5 +362,8 @@ export function wiringDocument(input: WiringInput): string {
     "improvising one later.",
     "",
     physical.length > 0 ? physical.join("\n") : "_None._\n",
+    ...(input.scaffold === undefined
+      ? []
+      : [scaffoldLinksSection(input.scaffold.standIns, input.scaffold.flat, input.network, input.designators)]),
   ].join("\n")
 }

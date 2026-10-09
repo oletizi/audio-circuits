@@ -181,3 +181,11 @@ test("a component with no declared pad order refuses rather than guessing", () =
 test("generation is deterministic", () => {
   expect(wiringDocument(INPUT)).toBe(wiringDocument(INPUT))
 })
+
+test("a board with no declared scaffold carries no scaffold links section", () => {
+  // Every board except the Pultec scaffold has no stand-ins to describe. See
+  // tests/board/scaffold-wiring.test.ts for the scaffold board's own section,
+  // verified against its real Network.
+  const doc = wiringDocument(INPUT)
+  expect(doc).not.toContain("## Scaffold links")
+})
