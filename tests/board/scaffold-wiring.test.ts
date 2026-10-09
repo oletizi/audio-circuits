@@ -19,6 +19,7 @@ import { partitionReference } from "../../circuits/pultec/partition.ts"
 import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
 import type { Component, Connection } from "../../lib/model/types.ts"
 import type { WiringInput } from "../../lib/board/wiring.ts"
+import type { ResolvedComponent } from "../../lib/model/control-state.ts"
 
 const modules = partitionReference().modules
 const standIns = allStandIns(modules, SCAFFOLD_FLAT)
@@ -43,14 +44,15 @@ function netOnTerminal(component: Component, terminal: string): string | undefin
   return undefined
 }
 
-test("there are exactly seven links, one per isolation point the model derives", () => {
+test("there are exactly seven links, one per isolation leg the model derives", () => {
   // The design doc's count (hi-boost 1, hi-cut 1, low-cut 1, low-boost 2, mid 2 = 7)
-  // is read off `allStandIns()` here, not hardcoded as the expectation - a change to
-  // the electrical model that changed the count would change this test's own input,
-  // not just the production code's output.
-  const expected = Object.values(standIns).reduce((sum, standIn) => sum + standIn.isolation.length, 0)
+  // used to be read off `allStandIns()`'s own `isolation` field here, not hardcoded -
+  // that field was retired (Task 2: "Retire isolation") along with the shared
+  // machinery that derived it, so this cross-checks against the link components the
+  // generated board actually carries instead.
+  const linkComponents = network.components.filter((component) => component.kind === "switch")
   const entries = scaffoldLinkEntries(standIns, network)
-  expect(entries.length).toBe(expected)
+  expect(entries.length).toBe(linkComponents.length)
   expect(entries.length).toBe(7)
 })
 
@@ -96,10 +98,26 @@ test("no two isolation points resolve to the same link", () => {
   expect(new Set(links).size).toBe(links.length)
 })
 
-test("an isolation point naming a component absent from the network refuses rather than guessing", () => {
+test("an isolation leg naming a component absent from the network refuses rather than guessing", () => {
+  // `standIn.isolation` injection no longer applies - that field is gone - so this
+  // reconstructs the same drift (a leg naming a component that is not really on the
+  // generated board) by perturbing the stand-in's own `components`/`boundary`
+  // instead, which is what `legsFor` now derives legs from directly.
+  const fake: ResolvedComponent = {
+    id: "NOT_ON_BOARD",
+    kind: "resistor",
+    parameters: { ohms: 1000 },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a: "in", b: "NOT_ON_BOARD_NET" } }],
+  }
+  const hiBoost = standIns["hi-boost"]!
   const brokenStandIns = {
     ...standIns,
-    "hi-boost": { ...standIns["hi-boost"]!, isolation: [{ component: "NOT_ON_BOARD", terminal: "a", net: "in" }] },
+    "hi-boost": {
+      ...hiBoost,
+      boundary: [...hiBoost.boundary, "NOT_ON_BOARD_NET"],
+      components: [...hiBoost.components, fake],
+    },
   }
   expect(() => scaffoldLinkEntries(brokenStandIns, network)).toThrow(/NOT_ON_BOARD/)
 })

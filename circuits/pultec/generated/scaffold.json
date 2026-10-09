@@ -46,13 +46,6 @@
           }
         ]
       }
-    ],
-    "isolation": [
-      {
-        "component": "RV_HI_BOOST.wiper-cw",
-        "terminal": "b",
-        "net": "hi_boost_out"
-      }
     ]
   },
   "hi-cut": {
@@ -136,13 +129,6 @@
           }
         ]
       }
-    ],
-    "isolation": [
-      {
-        "component": "RV_HI_CUT.ccw-wiper",
-        "terminal": "a",
-        "net": "hi_boost_out"
-      }
     ]
   },
   "low-boost": {
@@ -193,18 +179,6 @@
           }
         ]
       }
-    ],
-    "isolation": [
-      {
-        "component": "R2",
-        "terminal": "b",
-        "net": "lo_boost_in"
-      },
-      {
-        "component": "R2",
-        "terminal": "a",
-        "net": "out"
-      }
     ]
   },
   "low-cut": {
@@ -236,13 +210,6 @@
             }
           }
         ]
-      }
-    ],
-    "isolation": [
-      {
-        "component": "RV_LO_CUT.ccw-wiper",
-        "terminal": "a",
-        "net": "hi_boost_out"
       }
     ]
   },
@@ -361,18 +328,6 @@
             }
           }
         ]
-      }
-    ],
-    "isolation": [
-      {
-        "component": "RV_MID.ccw-wiper",
-        "terminal": "a",
-        "net": "hi_boost_out"
-      },
-      {
-        "component": "R_MID_BOOST",
-        "terminal": "a",
-        "net": "in"
       }
     ]
   }

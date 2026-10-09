@@ -73,14 +73,20 @@ test("the scaffold emulates the same flat state every design figure was measured
   }
 })
 
-test("every stand-in's isolation points are realised as exactly that many links", () => {
-  // Derived, not hardcoded: the design doc states the per-section counts (1, 1, 1,
-  // 2, 2 - seven total) as what the derivation currently yields, not as a target to
-  // assert against directly. This checks the board against the SAME derivation
-  // instead, so a future change to the electrical model cannot silently desync the
-  // board from the rule that builds it.
-  const standIns = allStandIns(modules, SCAFFOLD_FLAT)
-  const expectedLinks = SECTIONS.reduce((sum, section) => sum + standIns[section]!.isolation.length, 0)
+test("every stand-in's isolation legs are realised as exactly that many links", () => {
+  // Used to be derived from `standIn.isolation` rather than hardcoded; that field was
+  // retired (Task 2: "Retire isolation") along with the shared machinery that
+  // computed it, so this now cross-checks against the design doc's own per-section
+  // counts (hi-boost 1, hi-cut 1, low-cut 1, low-boost 2, mid 2 - seven total), which
+  // is what the retired derivation always reported.
+  const expectedPerSection: Record<string, number> = {
+    "hi-boost": 1,
+    "hi-cut": 1,
+    "low-cut": 1,
+    "low-boost": 2,
+    mid: 2,
+  }
+  const expectedLinks = Object.values(expectedPerSection).reduce((sum, count) => sum + count, 0)
   const board = pultecScaffold()
   const links = board.components.filter((component) => component.kind === "switch")
   expect(links.length).toBe(expectedLinks)
@@ -202,25 +208,46 @@ test("every removable link's stub net belongs ONLY to this stand-in's own compon
 test("isolating a net cuts EVERY touch of it within the stand-in, not just one", () => {
   // The defect this guards against: mid's `R_MID_SHUNT.a` and low-cut's and
   // low-boost's multiply-touched nets each sit on the SAME real net as a sibling
-  // component within the same stand-in. Rewiring only the isolation point's own named
+  // component within the same stand-in. Rewiring only one isolation leg's own named
   // (component, terminal) - as an earlier version of `isolate()` did - leaves the
   // sibling permanently wired to the real net regardless of the link's position, which
   // is a stray load on the real circuit that the link can never remove. After
   // isolation, NONE of a stand-in's own components may still carry the isolated net.
+  //
+  // Reads the isolated (section, net) pairs off the generated board's own links
+  // rather than off `standIn.isolation`, which no longer exists - see Task 2:
+  // "Retire isolation". Each link's stub (pin "1") is held, elsewhere on the board,
+  // only by components belonging to one stand-in (proved by the previous test); that
+  // is how a link is traced back to its owning section here.
   const standIns = allStandIns(modules, SCAFFOLD_FLAT)
   const board = pultecScaffold()
   const byId = new Map(board.components.map((component) => [component.id, component]))
+  const ownerOf = new Map<string, string>()
   for (const section of SECTIONS) {
-    const standIn = standIns[section]!
-    for (const point of standIn.isolation) {
-      for (const original of standIn.components) {
-        const onBoard = byId.get(original.id)
-        if (onBoard === undefined) {
-          throw new Error(`${section}: stand-in component "${original.id}" is missing from the scaffold board`)
-        }
-        expect(componentNets(onBoard), `${section}: ${original.id} after isolating "${point.net}"`)
-          .not.toContain(point.net)
+    for (const component of standIns[section]!.components) ownerOf.set(component.id, section)
+  }
+  const links = board.components.filter((component) => component.kind === "switch")
+  expect(links.length).toBeGreaterThan(0)
+  for (const link of links) {
+    const stubPin = link.units[0]!.pins["1"]
+    const realPin = link.units[0]!.pins["2"]
+    if (stubPin === undefined || stubPin.kind !== "net") throw new Error(`${link.id}: pin "1" is not a net`)
+    if (realPin === undefined || realPin.kind !== "net") throw new Error(`${link.id}: pin "2" is not a net`)
+    const holders = board.components.filter(
+      (component) => component.id !== link.id && componentNets(component).includes(stubPin.net),
+    )
+    const sections = new Set(
+      holders.map((holder) => ownerOf.get(holder.id)).filter((section): section is string => section !== undefined),
+    )
+    expect(sections.size, `${link.id}: stub net ${stubPin.net}`).toBe(1)
+    const section = [...sections][0]!
+    for (const original of standIns[section]!.components) {
+      const onBoard = byId.get(original.id)
+      if (onBoard === undefined) {
+        throw new Error(`${section}: stand-in component "${original.id}" is missing from the scaffold board`)
       }
+      expect(componentNets(onBoard), `${section}: ${original.id} after isolating "${realPin.net}"`)
+        .not.toContain(realPin.net)
     }
   }
 })

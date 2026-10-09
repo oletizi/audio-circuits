@@ -63,23 +63,6 @@ test("a stand-in carries the flat state it emulates", () => {
   expect(standIn("hi-cut", modules, REFERENCE_FLAT).flat).toEqual(REFERENCE_FLAT)
 })
 
-test("the isolation count matches the spec", () => {
-  const expected: Record<string, number> = {
-    "hi-boost": 1,
-    "hi-cut": 1,
-    "low-cut": 1,
-    "low-boost": 2,
-    mid: 2,
-  }
-  let total = 0
-  for (const section of SECTIONS) {
-    const count = standIn(section, modules, REFERENCE_FLAT).isolation.length
-    expect(count, section).toBe(expected[section]!)
-    total += count
-  }
-  expect(total).toBe(7)
-})
-
 test("every section's stand-in is smaller than the section", () => {
   for (const section of SECTIONS) {
     const derived = standIn(section, modules, REFERENCE_FLAT)

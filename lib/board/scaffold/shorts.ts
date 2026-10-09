@@ -25,6 +25,39 @@ export function nodesOf(component: ResolvedComponent): readonly string[] {
   return [...nodes]
 }
 
+/** Partition components into pieces that share no net.
+ *
+ * Moved here from the retired `isolate.ts`: a graph utility over `ResolvedComponent`s,
+ * exactly like `nodesOf` and `electricalNodes` above, with nothing in it specific to
+ * isolation. `admittance.ts` uses it to find the connected piece attached to a
+ * boundary; `isolate.ts` used it the same way to find each piece needing its own
+ * isolation point, and still needing that answer is a fact about isolation, not about
+ * this function. */
+export function connectedGroups(
+  components: readonly ResolvedComponent[],
+): readonly (readonly ResolvedComponent[])[] {
+  const groups: ResolvedComponent[][] = []
+  const unassigned = [...components]
+  while (unassigned.length > 0) {
+    const group = [unassigned.shift()!]
+    const nets = new Set<string>(nodesOf(group[0]!))
+    let grew = true
+    while (grew) {
+      grew = false
+      for (let index = unassigned.length - 1; index >= 0; index -= 1) {
+        const candidate = unassigned[index]!
+        if (!nodesOf(candidate).some((net) => nets.has(net))) continue
+        for (const net of nodesOf(candidate)) nets.add(net)
+        group.push(candidate)
+        unassigned.splice(index, 1)
+        grew = true
+      }
+    }
+    groups.push(group)
+  }
+  return groups
+}
+
 /** An ideal short: a component whose terminals sit at one potential however much
  * current flows through it.
  *

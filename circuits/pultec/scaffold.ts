@@ -27,12 +27,13 @@ import { net } from "../../lib/model/types.ts"
 import { componentNets } from "../../lib/model/topology.ts"
 import { PHYSICAL_ONLY } from "../../lib/board/physicalize.ts"
 import { allStandIns, GROUND_NET, REFERENCE_FLAT } from "../../lib/board/scaffold/index.ts"
+import { connectedGroups } from "../../lib/board/scaffold/shorts.ts"
 import { OFF_BOARD } from "./off-board.ts"
 import { partitionReference } from "./partition.ts"
 import { footprintForKind, INDUCTOR_SYMBOL } from "./physical/parts.ts"
 import type { Component, Connection, Network } from "../../lib/model/types.ts"
 import type { ResolvedComponent } from "../../lib/model/control-state.ts"
-import type { FlatState, IsolationPoint, StandIn } from "../../lib/board/scaffold/index.ts"
+import type { FlatState, StandIn } from "../../lib/board/scaffold/index.ts"
 
 /**
  * The frequency state the scaffold's stand-ins emulate. Every figure in the design
@@ -87,71 +88,130 @@ function sanitize(text: string): string {
   return text.replace(/[^A-Za-z0-9]+/g, "_")
 }
 
-function stubNet(section: string, point: IsolationPoint): string {
-  return `SCAFFOLD_${sanitize(section).toUpperCase()}_${sanitize(point.component).toUpperCase()}_${point.terminal.toUpperCase()}_STUB`
+/** A leg of a stand-in that must be breakable, named by the component and pin at it.
+ *
+ * TEMPORARY, PRIVATE, AND DUPLICATED ON PURPOSE. This repeats the leg-finding
+ * algorithm that used to live in `lib/board/scaffold/isolate.ts` (deleted - see
+ * "Task 2: Retire isolation"). The owner's build-time-population model has no further
+ * use for it at the section-board level, but THIS module still builds a separate
+ * scaffold board out of removable links, and that board is scheduled for deletion
+ * outright, not for a redesign, by a later task in this plan. Keeping the computation
+ * local and private - rather than reinstating it as shared machinery in `lib/` - says
+ * plainly that nothing else may come to depend on it in the meantime. */
+interface IsolationLeg {
+  readonly component: string
+  readonly terminal: string
+  readonly net: string
 }
 
-function linkId(section: string, point: IsolationPoint): string {
-  return `link_${sanitize(section).toLowerCase()}_${sanitize(point.component).toLowerCase()}_${point.terminal.toLowerCase()}`
+/** Every (component, pin) sitting on a boundary net, one entry per distinct net. */
+function externalTerminals(
+  group: readonly ResolvedComponent[],
+  boundary: ReadonlySet<string>,
+): readonly IsolationLeg[] {
+  const terminals: IsolationLeg[] = []
+  const claimed = new Set<string>()
+  for (const component of group) {
+    for (const unit of component.units) {
+      for (const [terminal, net] of Object.entries(unit.pins)) {
+        if (!boundary.has(net) || claimed.has(net)) continue
+        claimed.add(net)
+        terminals.push({ component: component.id, terminal, net })
+      }
+    }
+  }
+  return terminals
 }
 
 /**
- * Break each isolation point: EVERY pin in this stand-in currently carrying an
- * isolation point's net is rewired to that point's fresh stub net, and a single
- * `LinkSpec` records what rejoins the whole stub when the link is fitted.
+ * For each connected piece of a stand-in, every external terminal but one - the one
+ * left is ground when the piece reaches it, because hanging off ground alone joins
+ * nothing to nothing and needs no link. See the retired `isolate.ts` for the fuller
+ * derivation this was lifted from verbatim; nothing about the rule changed, only
+ * where it lives.
+ */
+function legsFor(
+  components: readonly ResolvedComponent[],
+  boundary: ReadonlySet<string>,
+  groundNet = GROUND_NET,
+): readonly IsolationLeg[] {
+  const legs: IsolationLeg[] = []
+  for (const group of connectedGroups(components)) {
+    const terminals = externalTerminals(group, boundary)
+    const ordered = [...terminals].sort((a, b) => {
+      if (a.net === groundNet) return 1
+      if (b.net === groundNet) return -1
+      return a.net < b.net ? -1 : a.net > b.net ? 1 : 0
+    })
+    legs.push(...ordered.slice(0, Math.max(ordered.length - 1, 0)))
+  }
+  return legs
+}
+
+function stubNet(section: string, leg: IsolationLeg): string {
+  return `SCAFFOLD_${sanitize(section).toUpperCase()}_${sanitize(leg.component).toUpperCase()}_${leg.terminal.toUpperCase()}_STUB`
+}
+
+function linkId(section: string, leg: IsolationLeg): string {
+  return `link_${sanitize(section).toLowerCase()}_${sanitize(leg.component).toLowerCase()}_${leg.terminal.toLowerCase()}`
+}
+
+/**
+ * Break each isolation leg: EVERY pin in this stand-in currently carrying a leg's net
+ * is rewired to that leg's fresh stub net, and a single `LinkSpec` records what
+ * rejoins the whole stub when the link is fitted.
  *
- * REWRITES BY NET VALUE, NOT BY THE POINT'S NAMED (COMPONENT, TERMINAL) ALONE. An
- * isolation point names one representative pin - `lib/board/scaffold/isolate.ts`'s
- * `externalTerminals` keeps only one entry per distinct boundary net, deliberately,
- * because ONE link is meant to cut a whole shared net from the group in a single move
- * (the design's own "breaking that net once is enough"). But "once" only holds if
- * EVERY pin on that net is rewired to the SAME stub; rewriting only the named pin and
- * leaving a sibling component's pin on the untouched real net defeats the link
- * entirely, because the sibling keeps the group connected to that net regardless of
- * the link's position. This was a real defect, not a hypothetical one: mid's
- * `R_MID_BOOST.a` and `R_MID_SHUNT.a` both land on `in`, and the previous version here
- * rewired only `R_MID_BOOST.a` - so `R_MID_SHUNT` stayed permanently wired to `in`
- * through its own 100k-to-ground branch no matter the link's position. Low-cut
- * (`hi_boost_out`, two touches) and low-boost (`lo_boost_in`, three touches) carry the
- * identical shape. `tests/pultec/scaffold-integration.test.ts` is what caught it: it is
- * the first test to assemble all five real sections alongside the scaffold board with
- * every link removed, which is exactly the configuration the bug only shows up in.
+ * REWRITES BY NET VALUE, NOT BY THE LEG'S NAMED (COMPONENT, TERMINAL) ALONE. A leg
+ * names one representative pin - `externalTerminals` above keeps only one entry per
+ * distinct boundary net, deliberately, because ONE link is meant to cut a whole
+ * shared net from the group in a single move (the design's own "breaking that net
+ * once is enough"). But "once" only holds if EVERY pin on that net is rewired to the
+ * SAME stub; rewriting only the named pin and leaving a sibling component's pin on
+ * the untouched real net defeats the link entirely, because the sibling keeps the
+ * group connected to that net regardless of the link's position. This was a real
+ * defect, not a hypothetical one: mid's `R_MID_BOOST.a` and `R_MID_SHUNT.a` both land
+ * on `in`, and an earlier version here rewired only `R_MID_BOOST.a` - so
+ * `R_MID_SHUNT` stayed permanently wired to `in` through its own 100k-to-ground
+ * branch no matter the link's position. Low-cut (`hi_boost_out`, two touches) and
+ * low-boost (`lo_boost_in`, three touches) carry the identical shape.
+ * `tests/pultec/scaffold-integration.test.ts` is what caught it.
  *
- * Every isolation point must still match at least one pin somewhere in this stand-in.
- * A point that matches nothing means `lib/board/scaffold/isolate.ts` and this module
- * have drifted apart, and is a defect to throw on rather than skip.
+ * Every leg must still match at least one pin somewhere in this stand-in. A leg that
+ * matches nothing means `legsFor` above and this function have drifted apart, and is
+ * a defect to throw on rather than skip.
  */
 function isolate(
   standIn: StandIn,
 ): { readonly components: readonly ResolvedComponent[]; readonly links: readonly LinkSpec[] } {
-  const matched = new Set<IsolationPoint>()
+  const legs = legsFor(standIn.components, new Set(standIn.boundary))
+  const matched = new Set<IsolationLeg>()
   const components = standIn.components.map((resolved) => {
     const units = resolved.units.map((unit) => {
       const pins = { ...unit.pins }
-      for (const point of standIn.isolation) {
+      for (const leg of legs) {
         for (const terminal of Object.keys(pins)) {
-          if (pins[terminal] !== point.net) continue
-          matched.add(point)
-          pins[terminal] = stubNet(standIn.section, point)
+          if (pins[terminal] !== leg.net) continue
+          matched.add(leg)
+          pins[terminal] = stubNet(standIn.section, leg)
         }
       }
       return { ...unit, pins }
     })
     return { ...resolved, units }
   })
-  const unmatched = standIn.isolation.filter((point) => !matched.has(point))
+  const unmatched = legs.filter((leg) => !matched.has(leg))
   if (unmatched.length > 0) {
     throw new Error(
-      `Stand-in for ${standIn.section} has isolation point(s) naming a net that no resolved ` +
-        `component carries: ${unmatched.map((p) => `${p.component}.${p.terminal} (${p.net})`).join(", ")}. ` +
-        "lib/board/scaffold/isolate.ts and circuits/pultec/scaffold.ts have drifted apart.",
+      `Stand-in for ${standIn.section} has isolation leg(s) naming a net that no resolved ` +
+        `component carries: ${unmatched.map((l) => `${l.component}.${l.terminal} (${l.net})`).join(", ")}. ` +
+        "legsFor and isolate in this module have drifted apart.",
     )
   }
-  const links: LinkSpec[] = standIn.isolation.map((point) => ({
-    id: linkId(standIn.section, point),
+  const links: LinkSpec[] = legs.map((leg) => ({
+    id: linkId(standIn.section, leg),
     section: standIn.section,
-    stubNet: stubNet(standIn.section, point),
-    net: point.net,
+    stubNet: stubNet(standIn.section, leg),
+    net: leg.net,
   }))
   return { components, links }
 }

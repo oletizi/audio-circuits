@@ -37,8 +37,7 @@
  * wire between its two boundary nets), so Gate A2 cannot cover it and says so out loud
  * instead of comparing two large numbers that agree only in their leading digits.
  */
-import { connectedGroups } from "./isolate.ts"
-import { electricalNodes, nodesOf } from "./shorts.ts"
+import { connectedGroups, electricalNodes, nodesOf } from "./shorts.ts"
 import type { ResolvedComponent } from "../../model/control-state.ts"
 
 export interface Complex {
