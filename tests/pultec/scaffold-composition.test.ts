@@ -24,6 +24,7 @@
  */
 import { test, expect } from "bun:test"
 import { REFERENCE_FLAT, allStandIns } from "../../lib/board/scaffold/index.ts"
+import { flatControlState } from "../../lib/board/scaffold/flat.ts"
 import { partitionReference } from "../../circuits/pultec/partition.ts"
 import { THREE_BAND_REFERENCE } from "../../circuits/pultec/electrical/three-band.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
@@ -53,8 +54,20 @@ const SWEEP = { pointsPerDecade: 10, startHz: 20, stopHz: 20_000 }
 /** A resolved stand-in component is already net-resolved, so it goes back into a
  * `Network` as a fixed component with no control state of its own. That is the point:
  * a stand-in has no pot to turn and no switch to select. Ids are prefixed so a stand-in
- * can never collide with a reference designator already present in the live sections. */
+ * can never collide with a reference designator already present in the live sections.
+ *
+ * `resolved.pins` (package pins, as opposed to unit pins) is expected empty - every kind
+ * `reduceToBoundary` can produce (resistor, capacitor, inductor) keeps package pins empty
+ * by this codebase's convention - and that is checked rather than assumed: a non-empty
+ * package-pin map would otherwise be silently dropped rather than carried into the
+ * rebuilt `Component`. */
 function asComponent(resolved: ResolvedComponent): Component {
+  if (Object.keys(resolved.pins).length > 0) {
+    throw new Error(
+      `Stand-in component ${resolved.id} declares package pins (${Object.keys(resolved.pins).join(", ")}), ` +
+        `which asComponent() does not carry across. Extend it rather than dropping them.`,
+    )
+  }
   return {
     id: `SCAF_${resolved.id}`,
     kind: resolved.kind,
@@ -77,32 +90,6 @@ function composed(present: readonly string[]): Network {
     for (const component of STAND_INS[section]!.components) components.push(asComponent(component))
   }
   return { components, ports: { input: "in", output: "out", ground: "0" } }
-}
-
-/** Flat for every control the network actually has, so a missing setting cannot slip
- * through - resolution refuses one, and RV_HI_Q rides on hi-boost. */
-function flatState(network: Network): ControlState {
-  const potPositions: Record<string, number> = {}
-  const switchPositions: Record<string, string> = {}
-  const wanted: Record<string, string> = {
-    SW_LO_CUT: REFERENCE_FLAT.loFrequency,
-    SW_LO_BOOST: REFERENCE_FLAT.loFrequency,
-    SW_HI_CUT: REFERENCE_FLAT.hiFrequency,
-    SW_HI_BOOST: REFERENCE_FLAT.hiFrequency,
-    SW_MID: REFERENCE_FLAT.midFrequency,
-    SW_MID_MODE: REFERENCE_FLAT.midMode,
-  }
-  for (const component of network.components) {
-    if (component.kind === "potentiometer") potPositions[component.id] = 0
-    if (component.kind === "switch") {
-      const position = wanted[component.id]
-      if (position === undefined) {
-        throw new Error(`No flat setting declared for switch ${component.id} in this test's "wanted" table`)
-      }
-      switchPositions[component.id] = position
-    }
-  }
-  return { potPositions, switchPositions }
 }
 
 function raise(state: ControlState, pots: readonly string[]): ControlState {
@@ -142,13 +129,15 @@ async function response(network: Network, state: ControlState): Promise<number[]
 
 /** A control vector's effect: the response with those controls raised, minus all-flat.
  * Absolute insertion loss legitimately differs between a partial build and the full EQ
- * and is absorbed by makeup gain; what must match is the EQ action. */
+ * and is absorbed by makeup gain; what must match is the EQ action.
+ *
+ * The two sweeps are run one after the other, not concurrently: this test is the only
+ * place in the suite that would run two `runAcSweep` calls at once, so nothing else
+ * establishes that concurrent use is safe. */
 async function action(network: Network, pots: readonly string[]): Promise<number[]> {
-  const flat = flatState(network)
-  const [raised, base] = await Promise.all([
-    response(network, raise(flat, pots)),
-    response(network, flat),
-  ])
+  const flat = flatControlState(network.components, REFERENCE_FLAT)
+  const raised = await response(network, raise(flat, pots))
+  const base = await response(network, flat)
   return raised.map((value, index) => value - base[index]!)
 }
 
@@ -204,7 +193,13 @@ test("GATE B: every combination matches the full reference, under every control 
     const network = composed(present)
     for (const vector of vectors(present)) {
       const measured = await action(network, vector.pots)
-      const expected = referenceAction.get(key(vector.pots))!
+      const expected = referenceAction.get(key(vector.pots))
+      if (expected === undefined) {
+        throw new Error(
+          `No reference action cached for vector ${key(vector.pots)} (subset ${present.join("+")}, ` +
+            `${vector.label}): the reference pre-loop above must walk every vector any subset uses.`,
+        )
+      }
       measured.forEach((value, index) => {
         const error = Math.abs(value - expected[index]!)
         if (error > worst.error) {
