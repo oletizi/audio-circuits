@@ -18,6 +18,20 @@
  * reading that component's current pin there gives the stub net the isolation
  * introduced, and the one link joining that stub to the point's real net is the link
  * for that point - connectivity, not string matching.
+ *
+ * NO BOARD IS DECLARED FOR THE SCAFFOLD YET. `boards/<name>/perfboard.json` hands a
+ * board to the perfboard CLI, and that contract needs a physicalization - a
+ * `DESIGNATORS` map, pad orders, an off-board set - the same way `circuits/pultec/
+ * physical/hi-boost.ts` and its four siblings supply one for each section board. No
+ * such module exists for the scaffold board. It cannot be added by exporting
+ * `DESIGNATORS` directly from `circuits/pultec/scaffold.ts` either: every other
+ * Pultec board's designators are facts about the vendored KiCad schematic (`CLAUDE.md`
+ * - "a designator is a fact about one particular schematic"), and the scaffold board
+ * has no schematic to be a fact about. Inventing `JP1..JP7` for the links would be
+ * fabrication, not derivation. This module's `scaffoldLinkEntries`/`scaffoldLinksSection`
+ * are verified directly against the real `pultecScaffold()` network instead - that
+ * does not need a declared board - and a `perfboard.json` follows once the
+ * physicalization exists to back it.
  */
 import type { Component, Network } from "../../model/types.ts"
 import type { FlatState, IsolationPoint, StandIn } from "./index.ts"
