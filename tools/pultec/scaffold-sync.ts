@@ -14,6 +14,15 @@
  * Mirrors `tools/pultec/schematic-sync.ts`: regenerate on every run, decide from
  * content, never a timestamp - git does not preserve mtimes, so a checked-out stale
  * file would otherwise read as current.
+ *
+ * WHAT A CLEAN DIFF HERE DOES NOT COVER. The artifact serialises the DERIVATION - each
+ * section's boundary nets, its reduced components and its isolation points - and stops
+ * there. It says nothing about the board's isolation WIRING: whether `isolate()` in
+ * `circuits/pultec/scaffold.ts` actually rewired every pin on an isolated net to the
+ * stub, or left a sibling permanently attached to the real net. That defect was real,
+ * and this file was correctly unchanged by its fix, which is exactly why a clean diff
+ * here must not be read as covering it. `tests/pultec/scaffold-integration.test.ts` is
+ * the gate for the wiring.
  */
 import fs from "node:fs"
 import { allStandIns } from "../../lib/board/scaffold/index.ts"

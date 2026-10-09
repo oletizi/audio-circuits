@@ -25,8 +25,14 @@ const standIns = allStandIns(modules, SCAFFOLD_FLAT)
 const network = pultecScaffold()
 const byId = new Map(network.components.map((component) => [component.id, component]))
 
-/** Independent of `lib/board/scaffold/wiring.ts`'s own `pinNet` - this test must not
- * validate the production matcher by re-running the production matcher. */
+/** A second copy of the package-then-unit pin walk, NOT an independent one - it is the
+ * same two lines as `lib/board/scaffold/wiring.ts`'s own `pinNet`, written out here so
+ * this file does not import the module it is checking. That buys locality and nothing
+ * more: a blind spot in the walk itself would be shared, so this does not establish the
+ * production matcher is right about where a pin's net lives. What it does check is that
+ * the guide names the net the BOARD puts on that terminal, which is a different claim
+ * and the one the assertions below make. The duplication can stand; the earlier comment
+ * claiming independence was the defect. */
 function netOnTerminal(component: Component, terminal: string): string | undefined {
   const fromPackage: Connection | undefined = component.pins[terminal]
   if (fromPackage !== undefined) return fromPackage.kind === "net" ? fromPackage.net : undefined

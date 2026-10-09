@@ -86,20 +86,37 @@ those two readings is what made the earlier design wrong.
 
 ### The stand-ins
 
-At the reference flat settings - low frequency 100 Hz, high frequency 5 kHz, mid 1 kHz:
+At the reference flat settings - low frequency 100 Hz, high frequency 5 kHz, mid 1 kHz.
 
-| Absent section | Stand-in | Between |
-| --- | --- | --- |
-| hi-boost | 47k | `in` - `hi_boost_out` |
-| hi-cut | 4k7 **in parallel with** (430R + 47nF) | `hi_boost_out` - `lo_boost_in` |
-| low-cut | a wire (0 ohms) | `hi_boost_out` - `out` |
-| low-boost | 56k, **and** a 0-ohm shunt | `lo_boost_in` - `out`, and `lo_boost_in` - ground |
-| mid | 100k, **and** 25.3nF + 1H + 4k7 in series | `in` - ground, and `hi_boost_out` - `in` |
+**This table is CHECKED AGAINST THE DERIVATION, not hand-maintained.** It is prose for a
+reader; the authority is `allStandIns()` and its committed artifact
+`circuits/pultec/generated/scaffold.json`, regenerated and compared by content on every run.
+The "Parts" column is the component count the derivation actually yields, and
+`tests/board/scaffold-equivalence.test.ts` pins the entries a change could quietly move. If
+this table and the artifact ever disagree, the artifact is right and this table is stale.
 
-The 25.3 nF is the 22 nF and 3.3 nF of mid's 1 kHz position in parallel; the 1 H is its
-`L_MID_1H` tap; the 4k7 is `R_MID_BOOST`. The 0-ohm branches here are **circuit elements** -
-the pot arms that flat resolves to a short - and are not to be confused with the removable
-isolation links of the next section, which are configuration hardware.
+| Absent section | Stand-in | Between | Parts |
+| --- | --- | --- | --- |
+| hi-boost | a 0-ohm arm in series with 47k - presents 47k | `in` - `hi_boost_out` | 2 |
+| hi-cut | a 0-ohm arm, then 4k7 **in parallel with** (430R + 47nF) | `hi_boost_out` - `lo_boost_in` | 4 |
+| low-cut | a wire (0 ohms) | `hi_boost_out` - `out` | 1 |
+| low-boost | 56k, **and** a 0-ohm shunt | `lo_boost_in` - `out`, and `lo_boost_in` - ground | 2 |
+| mid | 100k, **and** a 0-ohm arm + 25.3nF + 1H + 4k7 in series | `in` - ground, and `hi_boost_out` - `in` | 6 |
+
+Fifteen components in total. The 25.3 nF is the 22 nF and 3.3 nF of mid's 1 kHz position in
+parallel; the 1 H is its `L_MID_1H` tap; the 4k7 is `R_MID_BOOST`. The 0-ohm branches here
+are **circuit elements** - the pot arms that flat resolves to a short - and are not to be
+confused with the removable isolation links of the next section, which are configuration
+hardware. They are carried as components with both of their nets, never as node merges, for
+the reasons under Reduction below; that is why hi-boost is two parts rather than one and mid
+is six rather than five.
+
+**What is NOT in the table is as derived as what is.** hi-boost's 0.3 H tap, `R3`, `RV_HI_Q`
+and `C16` form a loop from `in` back to `in` across that 0-ohm arm, and low-cut's `C4` and
+low-boost's `C21` each sit directly across one, so all six carry no current and the reduction
+drops them. An earlier implementation decided liveness on the raw graph, where an ideal short
+reads as an ordinary edge rather than as one electrical node, and kept all six - which put an
+inductor with no part number on the scaffold's parts list for a dead branch.
 
 ### The rule that composes
 
@@ -204,25 +221,60 @@ nonetheless get this wrong, which is why discovery is specified.
 
 **Then: keep every component on a path between two boundary nodes, and drop only components
 that are genuinely disconnected.** No series/parallel collapsing, no star-mesh transformation,
-no elimination of internal nodes. The result is already small - three to five components per
-section - because flat is degenerate, so there is nothing to gain from reducing further and a
-whole class of impedance-altering bugs to avoid. A stand-in that is literally a subset of the
+no elimination of internal nodes. The result is already small - **one, two, two, four and six
+components for low-cut, hi-boost, low-boost, hi-cut and mid respectively, fifteen in all** -
+because flat is degenerate, so there is nothing to gain from reducing further and a whole
+class of impedance-altering bugs to avoid. A stand-in that is literally a subset of the
 section's own flat-state components cannot differ from it.
 
-**Ideal shorts are components, never node merges.** A pot arm that flat resolves to 0 ohms is
-kept as a zero-ohm component and used as an ordinary edge for path-finding. It must not be
-collapsed by merging its two nodes, for two reasons: the branch beyond a short is live, not
-floating - the omission that made the earlier design wrong - and merging would destroy a
-stand-in outright. Low-cut's entire stand-in *is* a short between `hi_boost_out` and `out`;
-merge those nodes and there is nothing left to make removable, and the terminal count collapses
-from two to one.
+**"On a path" means a SIMPLE path, and between two distinct ELECTRICAL nodes.** Both
+qualifiers were learned the hard way and neither is decoration:
+
+- *Simple.* Two capacitors in parallel on a dead-end selector throw each reach the boundary
+  **through the other**, by a route that leaves a node and comes back to it. That is a cycle,
+  carrying no current, and an implementation that asked only "can each end reach a boundary
+  node" kept both.
+- *Electrical.* An ideal short makes its two graph nodes **one electrical node**, so a loop
+  closed through a short reads as a path on the graph while conducting nothing. Deciding
+  liveness on graph nodes kept six of the Pultec's twenty-one derived components, hi-boost's
+  dead 0.3 H branch among them. So for the component under test, merge every **other** ideal
+  short into electrical nodes, then require that component to span two distinct electrical
+  nodes and to lie on a simple path between two distinct boundary electrical nodes. **Never
+  merge through the component under test**: low-cut's 0-ohm arm *is* its stand-in and is
+  precisely what makes `hi_boost_out` and `out` one node, so merging through it would make it
+  a self-loop and delete the section's only component.
+
+This is a statement about how liveness is COMPUTED and leaves the next rule untouched: the
+stand-in that comes out still carries every surviving 0-ohm component with both of its
+distinct nets.
+
+**Ideal shorts are components, never node merges - IN THE OUTPUT.** A pot arm that flat
+resolves to 0 ohms is emitted as a zero-ohm component carrying both of its distinct nets. It
+must not be collapsed by merging its two nodes, for two reasons: the branch beyond a short is
+live, not floating - the omission that made the earlier design wrong - and merging would
+destroy a stand-in outright. Low-cut's entire stand-in *is* a short between `hi_boost_out` and
+`out`; merge those nodes and there is nothing left to make removable, and the terminal count
+collapses from two to one.
+
+This rule governs what a stand-in CONTAINS, not how liveness is computed, and the two must be
+kept apart. The liveness test above reasons over electrical nodes precisely BECAUSE a short is
+electrically a merge; it still never rewrites one. Conflating the two cost this design twice -
+once in the reduction, where a loop through a short read as a current-carrying path, and once
+in the boundary-admittance guard, where an ideal short was approximated by a 1e12 S
+conductance and the Schur complement then lost the 47k it was measuring: `g = 2.1e-5` falls
+below one ulp of `1e12`, so the result collapsed to exactly zero. The guard therefore merges
+shorts too, and **refuses** rather than returning a number when ideal shorts join all of a
+network's boundary nets into one node - which is low-cut's stand-in, whose only coverage is
+therefore the exact structural gate A1.
 
 Invariants the derivation must hold, and test:
 
 - every externally shared node, ground included, is a node of the stand-in;
-- a component is dropped only if no path through it joins two boundary nodes;
-- a branch reachable through an ideal short is **not** floating;
-- no two distinct nodes are merged, whatever the impedance between them.
+- a component is dropped only if no **simple** path through it joins two distinct boundary
+  **electrical** nodes;
+- a branch reachable **beyond** an ideal short is **not** floating; a branch **across** one
+  is inert and is dropped;
+- no two distinct nodes are merged **in the output**, whatever the impedance between them.
 
 **`pruneFloatingBranches` must not be reused here.** It exists to prepare a network for
 simulation under one source and load configuration, and a branch irrelevant to that
@@ -325,6 +377,17 @@ machinery rather than new machinery.
 **One limitation, stated because it bounds what Gate C can claim.** A layout exists in one
 link configuration at a time, so the layout-derived gate verifies **the configuration as
 built** and no other. Coverage of all 31 combinations comes from Gate B, which is model-side.
+
+**The boundary Gate C's deadness property is asked against is the scaffold's own, not the
+reference network's three declared ports.** The scaffold crosses five nets, two of them
+interior ladder nodes (`hi_boost_out`, `lo_boost_in`), and a leak confined to those two joins
+no two of `{in, out, 0}` - so a gate boundaried on the reference's ports reports an empty live
+set and passes. That is not hypothetical: the isolation defect that forced this revision is
+invisible for low-cut under the narrow boundary and caught under the wide one, and was found
+for mid only because mid happens to bridge `in` and ground. The boundary must be **derived
+from the resolved scaffold-only network** rather than listed: `lo_boost_in` is merged away by
+a closed selector contact and resolves to `j10_p4`, so a hardcoded pre-resolution list is
+itself wrong, and a derived set grows exactly when the defect it hunts is present.
 Neither gate subsumes the other: Gate B covers every configuration but only as the model
 believes it to be, and Gate C covers what was actually built but only one configuration of
 it.
@@ -375,6 +438,14 @@ leaves open, and until it is taken the restriction is real and must be on the si
 catalogue part, a pot core or a transformer winding all qualify. The scaffold inherits that
 open question rather than resolving it, and the parent design's part contract will refuse
 rather than guess.
+
+It is the **only** such part the scaffold needs - mid's `L_MID_1H` is the one inductor in all
+fifteen stand-in components - and that is a derived fact, asserted in
+`tests/board/scaffold-equivalence.test.ts` rather than assumed. It very nearly was not: an
+earlier reduction kept hi-boost's `L_HI_BOOST_300MH` on a branch that carries no current, so
+the parts list asked a builder to source a second unobtainable inductor for a dead loop. A
+reduction that starts keeping dead reactive branches again would quietly put it back, which
+is why the count is pinned rather than described.
 
 **The metric is action, not absolute level.** Insertion loss differs between a standalone
 section and the full EQ, and that difference is real and expected - the makeup stage absorbs
@@ -440,10 +511,10 @@ quiet, plausible, and wrong.
 | Gate | Required result |
 | --- | --- |
 | Stand-in derivation | deterministic output from the electrical model; committed values are a derived artifact compared by content |
-| Reduction invariants | every boundary node retained; a component dropped only when no path through it joins two boundary nodes; a branch beyond an ideal short treated as live |
+| Reduction invariants | every boundary node retained; a component dropped only when no simple path through it joins two distinct boundary electrical nodes; a branch beyond an ideal short treated as live, a branch across one as inert; no node merged in the output |
 | Boundary discovery | the boundary is every externally shared node including ground, discovered from the model, never inferred from the named ladder nodes |
 | Structural equivalence (A1) | the stand-in is a subset of the section's flat-resolved live components, with identical boundary node identities; exact, no tolerance |
-| Numerical equivalence (A2) | boundary admittances agree to relative `1e-9` with a `1e-15` S floor, real and imaginary parts, 24+ points per decade over 20 Hz - 20 kHz |
+| Numerical equivalence (A2) | boundary admittances agree to relative `1e-9` with a `1e-15` S floor, real and imaginary parts, 24+ points per decade over 20 Hz - 20 kHz. Ideal shorts are merged into electrical nodes, not approximated; a network whose boundary nets are ALL shorted together (low-cut) has no finite boundary admittance, so the guard refuses and the sections it cannot cover are named and asserted rather than silently skipped |
 | Isolation | for each connected component of a stand-in, all but one distinct external terminal is broken; the count is derived from the resolved network's connected components, not assumed |
 | Composition | all 31 non-empty section combinations pass, to `1e-6` dB on unrounded values |
 | Control interaction | simultaneous control vectors match the full reference, including the boost-and-cut pairs |
