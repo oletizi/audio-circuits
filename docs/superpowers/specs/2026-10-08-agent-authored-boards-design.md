@@ -238,6 +238,33 @@ refuse-rather-than-guess discipline the import-string whitelist already uses. Th
 repository has twice shipped a footprint that does not exist; a name is never written from
 memory.
 
+**But a resolvable name is not a buildable part**, and the first draft conflated them. A
+footprint that exists in a library proves only that KiCad can draw pads; it says nothing
+about whether a component fits them. The value-bounded maps stop a 10 uF electrolytic
+claiming a 330 nF film footprint, and stop nothing else.
+
+So the physicalization must name a **part or a mechanically specified part family**, not
+only a footprint, and `tools/pcb/part-contract.ts` checks the footprint against it:
+
+- pin pitch and lead arrangement;
+- body dimensions, and courtyard clearance against neighbours;
+- height, where a part is tall enough to matter;
+- assembly compatibility with the variant - whether this part can be placed by machine at
+  all;
+- voltage and power rating.
+
+For the Pultec the binding constraints are the geometric ones. A film capacitor's pitch and
+body length decide whether it fits; its voltage rating at line level is close to a
+formality, and `docs/pultec/capacitor-selection.md` already covers it. **Ratings are in the
+contract because other circuits will need them, not because this one is at risk.**
+
+This has a consequence worth stating plainly rather than discovering later: the nine
+inductors are specified *electrically* in `docs/pultec/values.md` - value, +/-20 % tolerance,
+DCR - with **no part number**, deliberately, and nothing physical has been measured against
+them. The contract cannot invent one. It will refuse, and that refusal is a request for an
+owner decision about which inductors are actually being bought. Surfacing that before a
+board is synthesised around a guessed footprint is the point.
+
 ### Placement and routing
 
 Ported from pedals' `tools/placement/` (31 files, ~155 KB) and `make/krt.mk`, which are
@@ -260,6 +287,35 @@ over as designed:
 - Overrides are policy: the wrapper refuses any override not listed in
   `placement-policy.json` for that operation.
 
+### Circuit classification
+
+Intent derivation and the rule library are two of three responsibilities, not two of two.
+The third is **classification**: deciding what kind of circuit each block is, which
+archetype it belongs to, and which electrical relationships matter in it. The first draft
+left this implicit inside the derivation, and that was the design's weakest joint. If the
+derivation silently classifies a sensitive feedback network as an ordinary passive block,
+the rules get applied to the wrong class and the generator and the verifier agree with each
+other, because both read the same classification. Bad-fixture tests do not close this: they
+catch failures somebody anticipated when writing the fixture.
+
+The split, stated explicitly:
+
+| Responsibility | Lives in | Who may change it |
+| --- | --- | --- |
+| classification - blocks, archetype, electrical relationships that matter | `pcb/<board>/classification.json`, a derived artifact | regenerated, then reviewed as a diff |
+| placement policy - what a good placement is, per archetype | `pcb/rules/<archetype>.json` | reviewed change, with a test |
+| verification - geometry and connectivity against the policy | `check-intent` and the repository-side rules | not an input |
+
+Classification stays honest by being **committed and compared by content**, which is already
+this repository's rule for derived artifacts. The derivation emits it; the committed copy is
+regenerated every run and any difference fails. So a reclassification cannot happen quietly -
+it arrives as a diff a reviewer reads, in the same way a human's schematic edit arrives as a
+netlist diff today. It is also in the hash set `adopt` checks.
+
+**Archetype assignment is part of the frozen classification, never a per-run choice.** This
+matters more than it looks: if an agent could choose the archetype, it could choose which
+rules it is graded against, which is finding 1 reintroduced one level up.
+
 ### Intent derivation
 
 This is where the operator is removed, and it is the part of this design with no precedent
@@ -279,7 +335,17 @@ in pedals.
   footprint is an edge connector, because that is what a terminal block is for.
 - **Anchors** come from declared ports. Panel parts are out of scope for this phase, so
   there are no enclosure-derived poses to honour.
-- **The outline** is computed from part area with margin.
+- **The outline** starts from part area with margin, and that is only a first estimate -
+  area says nothing about routing congestion, connector orientation or keepouts. So the
+  outline is a **bounded expansion loop**: if placement cannot find a solution at the
+  current size, the outline grows by a defined step and is retried, up to a maximum the
+  owner sets, because board size is cost and cost is theirs.
+
+  The loop exists to make two failures distinguishable, which a single attempt cannot:
+  *placement searched and failed* against *this geometry is impossible at this size*. The
+  second is a design finding and a hard stop with a specific message; the first is a retry.
+  Without the distinction the agent either retries a physically impossible problem forever
+  or stops with a misleading reason.
 
 `pcb/<board>/intent-overrides.json` carries what cannot be derived, empty by default. It is
 part of the hash set `adopt` checks, so an override cannot be slipped in after a run.
@@ -291,9 +357,22 @@ asserts this against deliberately bad fixture boards - a selector bank scattered
 board, a terminal block pulled off its edge, two sections interleaved - each of which must
 fail by name.
 
-### The standing rule library
+### The rule library, organised by archetype
 
-`pcb/rules/` holds circuit-independent placement rules as committed JSON, reviewed once:
+The first draft called these "properties of audio circuits in general". That overclaims.
+Strict signal-path ordering suits a passive ladder EQ; a feedback amplifier has competing
+priorities, because keeping a feedback loop tight can conflict with laying blocks out in a
+line, and differential and multi-channel circuits have their own. A single universal rule
+set would either be too weak to catch anything or wrong for most boards.
+
+So `pcb/rules/` is **keyed by archetype**, each file a reviewed set of rules for one kind of
+circuit. The Pultec establishes the first - `passive-ladder-eq` - and the circuits already
+here establish the others as they are reached: the transistor preamp and the optical
+compressor's sidechain a discrete gain stage, the compressor's audio path a feedback
+amplifier, `pt2399-core` a mixed-signal IC module. An archetype with no rules yet is a
+refusal, not a default.
+
+`passive-ladder-eq` holds:
 
 - signal-path ordering: blocks follow the ladder, zones do not overlap;
 - shunt-node proximity: a shunt network's parts sit within a distance of the node they
@@ -307,9 +386,9 @@ fail by name.
 Each rule states the distance it enforces and why that number. **This document does not fix
 those distances** - S6 does, with the reasoning for each recorded beside it, because a
 number chosen here without the boards in front of us would be false precision. What this
-document fixes is that the numbers live in a reviewed library rather than in a per-board
-file an agent drafts. Extending or relaxing the library is a reviewed change with a test
-beside it; applying it is not.
+document fixes is that the numbers live in a reviewed, archetype-keyed library rather than
+in a per-board file an agent drafts. Extending or relaxing the library is a reviewed change
+with a test beside it; applying it is not.
 
 ### Variants
 
@@ -326,6 +405,33 @@ recorded in the map, not a fallback.
 The THT variant is the garage build. The SMD variant is derived from it and is the one
 fabricated externally, so it alone carries the fab rules, net-class track widths, and
 `route-fab-floor.txt`. Without that floor the router necks blocked tracks to 0.127 mm.
+
+### Fabrication and assembly contracts
+
+"PCBWay-ready outputs" was hand-waving, and a DRC-clean board is not a manufacturable one.
+Two contracts, both checked:
+
+**The fabrication contract.** Gerbers for every copper, mask and silk layer; a drill file
+whose holes all fall inside the outline; a closed board outline with stated dimensions;
+solder-mask clearances and minimum annular ring against the fab's rules; and
+BOM-to-footprint consistency, so no footprint carries a value or MPN the BOM disagrees with.
+`docs/standards/pcbway-fab-rules.md` ports from pedals and is the reference the checks read.
+
+**The assembly contract**, which exists because of something the variant design makes true
+and the first draft did not follow through: **the SMD variant is a mixed-technology board.**
+The nine inductors, the pots, the rotary switches and the terminal blocks resolve to the
+same through-hole footprint in both variants - that is stated in "Variants" as a fact
+recorded in the map. So the SMD board cannot be wholly machine-assembled, and the contract
+must partition every part into *assembled by the manufacturer* and *installed by hand*, with
+placement data generated for the first set only. A board that silently sends a through-hole
+rotary switch to a pick-and-place quote is a costing error, not a DRC error, and nothing
+upstream of this contract would catch it.
+
+**One hard constraint, carried from pedals and not negotiable by our tooling:** PCBWay sees
+only what its KiCad plugin exports from the board file, plus what is typed on the order page.
+Our own fab outputs are **invisible to it**. So any BOM data the manufacturer must act on -
+MPN, manufacturer, substitution policy - belongs on the footprints in the `.kicad_pcb`, and
+the contract checks it there rather than in a file we generate and nobody reads.
 
 ## Directory layout
 
@@ -376,24 +482,46 @@ for a human, never a verdict.
 
 **Board:**
 
-7. **Synthesis parity.** Every netlist part is on the board, every pad bound to the right
-   net, every footprint name resolved from a library on disk.
-8. **Intent gate.** `check-intent` runs more than zero rules, passes a compliant board, and
+7. **Synthesis identity.** Not component presence and net names - the full chain, link by
+   link: **electrical terminal -> schematic pin -> footprint pad -> PCB net.** A board can
+   hold every expected part, on correctly named nets, and still have a pad mapped to the
+   wrong terminal. The gate also checks that each synthesized footprint carries the
+   schematic component's identity, so regeneration cannot silently bind a footprint to a
+   different logical component.
+
+   This is not hypothetical here. Pad order is declared per component rather than per kind
+   precisely because `t_3kHz` is throw 1 on `SW_HI_BOOST` and throw 8 on `SW_MID`; a
+   duplicate in a declared order once collapsed two terminals onto pad `0` and was caught by
+   review, not by a test. Potentiometers, rotary switches, transistors and connectors are
+   where this breaks. **Fixtures with deliberately swapped and duplicated pins are part of
+   the gate**, not an afterthought - a parity check that cannot fail a swapped IN/OUT proves
+   nothing, the same way an intent that cannot fail proves nothing.
+8. **Part contract.** Every part names a part or part family, and its footprint satisfies the
+   geometric and rating checks above. A part with no identified family is a refusal.
+9. **Intent gate.** `check-intent` runs more than zero rules, passes a compliant board, and
    fails each bad fixture by name.
-9. **Route checks.** Connectivity, the engine's DRC, KiCad's DRC, board-sync, intent
+10. **Route checks.** Connectivity, the engine's DRC, KiCad's DRC, board-sync, intent
    re-check, and no part moved.
-10. **Repository safety.** `place` and `route` leave the committed board byte-identical.
-11. **Manifest and adopt.** `adopt` refuses a missing manifest, a hash mismatch, a stale
+11. **Repository safety.** `place` and `route` leave the committed board byte-identical.
+12. **Manifest and adopt.** `adopt` refuses a missing manifest, a hash mismatch, a stale
     intent/rules/policy hash, a broken provenance chain, or any failing check.
-12. **Pin and acquire.** The pin parses; acquisition refuses a commit mismatch and an
+13. **Pin and acquire.** The pin parses; acquisition refuses a commit mismatch and an
     unreachable remote, naming which.
 
 **Agent gates**, run by a reviewer that did not author the artifact:
 
-13. **Readability review.** A reviewer reads the schematic PDF alone, without the IR, and
-    confirms they can follow each block's signal path and every selector's switching. They
-    challenge any block rendered with labels rather than wires.
-14. **Layout review.** A reviewer reads the board render and the metrics against the rule
+14. **Readability review, against a written rubric.** A reviewer reads the schematic PDF
+    alone, without the IR. "Confirms they can follow it" is too soft to hold, so the rubric
+    enumerates what following it means: trace each block's signal path end to end; state
+    which position of each selector selects which component; name the relationship between
+    parts in a block without inferring it from values; and distinguish a deliberate
+    off-sheet connection from missing wiring. **The rubric is itself tested against
+    deliberately degraded schematics** - a label-rendered block with no reason, a selector
+    whose throws are unordered, wires crossing without junctions - each of which it must
+    reject. A reviewer that cannot fail anything proves nothing, exactly as with gate 9, and
+    an unrubricked reviewer would approve the label-heavy drawing that motivated the
+    generator in the first place.
+15. **Layout review.** A reviewer reads the board render and the metrics against the rule
     library, and states whether anything passes the rules while plainly being wrong - which
     is a finding against the rule library, not the board.
 
@@ -412,14 +540,14 @@ Each gets its own spec and plan. They are listed in dependency order.
 | | Sub-project | Deliverable | Gates | Depends on |
 | --- | --- | --- | --- | --- |
 | **S0** | Jumperable terminations | the scaffold that lets one section be built and measured alone, and the narrowed transparency category it needs | existing model and physicalization suites | - |
-| **S1** | KRT port | `krt.pin`, `make/krt.mk`, `tools/placement/`, proven against a board fixture vendored from pedals | 10, 11, 12 | - |
+| **S1** | KRT port | `krt.pin`, `make/krt.mk`, `tools/placement/`, proven against a board fixture vendored from pedals | 11, 12, 13 | - |
 | **S2** | Stripboard build and measurement | the four remaining sections laid out, built, and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S0 |
-| **S3** | PCB physicalization and variants | `physical/pcb/`, five sections times two variants, every footprint resolved from a library on disk | footprint-name tests | S0 |
-| **S4** | schgen port and templates | schematics and PDFs for the ten Pultec boards **and** for `opamp-buffer`, `pt2399-core`, the optical compressor and the transistor preamp | 1-6, 13 | S3 |
-| **S5** | Board synthesis | ten `.kicad_pcb` with every part present and no placement claim | 7 | S4 |
-| **S6** | Intent derivation and the rule library | derived intent for all ten boards, and the library's distances fixed with the reasoning for each | 8, 14 | S1, S5 |
-| **S7** | First PCB end to end, then the rest | one section placed, routed and adopted; then the remaining nine | 9, 10, 11 | S6 |
-| **S8** | Fab outputs for the SMD variant | PCBWay-ready outputs; ordering stays the owner's | fab-rule checks | S7 |
+| **S3** | PCB physicalization, variants and the part contract | `physical/pcb/`, five sections times two variants, every part naming a part or part family whose footprint satisfies the geometric checks | footprint-name tests, gate 8 | S0 |
+| **S4** | schgen port and templates | schematics and PDFs for the ten Pultec boards **and** for `opamp-buffer`, `pt2399-core`, the optical compressor and the transistor preamp. Four internal milestones, each independently testable: infrastructure parity; ported-template parity; the five new templates; cross-circuit validation | 1-6, 14 | S3 |
+| **S5** | Board synthesis | ten `.kicad_pcb` with every part present and no placement claim | 7, 8 | S4 |
+| **S6** | Intent derivation and the rule library | derived intent for all ten boards, and the library's distances fixed with the reasoning for each | 9, 15 | S1, S5 |
+| **S7** | First PCB end to end, one board all the way through | one section placed, routed, adopted **and through fabrication-output validation** before the other nine are started | 10, 11, 12, and S8's fab checks | S6 |
+| **S8** | Fabrication and assembly contracts | the contracts defined below, satisfied for the SMD variant; ordering stays the owner's | fabrication-output and assembly checks | S7 |
 
 **Expected order, not an enforced one.** The owner builds stripboard versions before asking
 for PCB layouts, so in practice S2 runs ahead of S5 onward. Nothing in the tooling enforces
@@ -486,17 +614,43 @@ needs a second category - present in the board network, excluded from the recons
 check - and that category must be narrow enough that it cannot become a hole in the
 transparency guarantee. The spec for S0 has to define it before any code is written.
 
+**The two configurations are a contract, each with its own test.** A scaffold that conducts
+needs the integrated case pinned down at least as firmly as the standalone one:
+
+| Mode | Links | Required behaviour |
+| --- | --- | --- |
+| standalone | fitted | the predicted standalone response is verified, **carrying the scaffold's measured limit** - accurate through the shelf, under-reading above about 300 Hz. A test asserting a match across the whole band would be asserting something false |
+| integrated | removed | **strict graph equivalence against the original Pultec network.** Not "the scaffold is inert" but: remove the links and the recovered graph is the reference graph, exactly |
+
+The integrated test is what protects the transparency guarantee the new category punches a
+hole in. It is the reason the category can be allowed at all.
+
+**The configuration must be legible on the hardware, not remembered.** Each scaffold link is
+labelled on the generated schematic and on the PCB silkscreen with which mode fits it, and
+the board's wiring guide states the link state for both modes. The whole reason the wiring
+guide exists is that a layout does not say `C1` is 100 nF; a board that does not say which
+links to remove has the same defect, and the failure is worse - a scaffold left fitted in an
+integrated build loads the neighbour it was standing in for, silently and plausibly.
+
 ## What the operator still decides
 
 The list is short by design, and nothing in the generation chain waits on it:
 
-- **The rule library**, once and on change. This is where "what makes a board good" lives,
-  and it is the one thing an agent must not author for itself.
+- **The rule library**, once and on change, per archetype. This is where "what makes a board
+  good" lives, and it is the one thing an agent must not author for itself.
+- **Reclassifications**, as diffs. Classification is regenerated and compared by content, so
+  a block changing archetype arrives as a reviewable change rather than a silent one.
+- **The maximum board size** the outline loop may expand to, per board, because size is cost.
+  The loop stops there and reports an impossible geometry rather than growing the board to
+  make a placement fit.
+- **Which parts are actually bought** where the model specifies a part only electrically -
+  the nine inductors today. The part contract refuses rather than guessing, and that refusal
+  lands here.
 - **Which variant gets fabricated, and ordering it.** Outward-facing and irreversible.
 - **The order of the work.** The owner steers which sub-project comes next; the dependency
   column says only what is technically required.
-- **Non-technical calls:** board size against cost, how many sections to build, whether a
-  measured scaffold limit is acceptable for what they want to hear.
+- **Non-technical calls:** how many sections to build, and whether a measured scaffold limit
+  is acceptable for what they want to hear.
 - **Veto.** The PDF and the board render are published as evidence on every run. The
   operator can reject anything at any point; the pipeline does not block waiting to find
   out whether they will.
@@ -532,13 +686,13 @@ this document does not reach into pedals.
   model: one of six throws on `SW_LO_CUT`, three on `SW_HI_BOOST`, four on `SW_HI_CUT`, and
   six of eleven on `SW_MID`. A template that assumes one capacitor per throw fails on four
   of the five sections. If it cannot be made to handle them, the fallback is an explicit
-  label-rendered block with a stated reason - which gate 13 will challenge.
+  label-rendered block with a stated reason - which gate 14 will challenge.
 - **Two ported templates stay unexercised.** `regulator` and the crystal-with-load-capacitors
   template have no circuit here to prove them against. They are ported rather than dropped,
   because they will be wanted and rewriting them later is waste - but they carry no evidence
   until a circuit uses them, and S4's spec should say so where they are introduced rather
   than letting a passing suite imply coverage they do not have.
-- **Derived intent can be derived wrongly.** The mitigation is gate 8: an intent that
+- **Derived intent can be derived wrongly.** The mitigation is gate 9: an intent that
   cannot fail is rejected, and the bad-fixture tests are written before the derivation.
   This is the riskiest part of the design and the one to build first within S6.
 - **The port is large.** Roughly 218 files and 1.2 MB of TypeScript across the two bodies
