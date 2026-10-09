@@ -141,7 +141,57 @@ test("derivation is deterministic", () => {
     .toBe(JSON.stringify(allStandIns(modules, REFERENCE_FLAT)))
 })
 
-const SAMPLE_HZ = [20, 50, 120, 300, 800, 2000, 5000, 12000, 20000]
+const BAND_LOW_HZ = 20
+const BAND_HIGH_HZ = 20_000
+const POINTS_PER_DECADE = 24
+
+/** The selector corners the stand-ins were derived at. `REFERENCE_FLAT` carries these
+ * as strings ("100Hz", "5kHz", "1kHz"), but `parseValue`'s unit whitelist (ohms,
+ * farads, henries) has no entry for Hz, so parsing them would mean adding a
+ * frequency-only parsing path for exactly one caller. Literals instead, held honest by
+ * the assertion directly below rather than trusted to stay in sync by hand. */
+const LOW_CORNER_HZ = 100
+const MID_CORNER_HZ = 1000
+const HIGH_CORNER_HZ = 5000
+
+test("the sweep's corner literals agree with REFERENCE_FLAT", () => {
+  expect(REFERENCE_FLAT.loFrequency).toBe(`${LOW_CORNER_HZ}Hz`)
+  expect(REFERENCE_FLAT.midFrequency).toBe(`${MID_CORNER_HZ / 1000}kHz`)
+  expect(REFERENCE_FLAT.hiFrequency).toBe(`${HIGH_CORNER_HZ / 1000}kHz`)
+})
+
+/** A logarithmic sweep from `startHz` to `endHz` inclusive, at least `perDecade`
+ * points per decade. Generated rather than hand-listed so the density is evident from
+ * the code and cannot silently drift: a reviewer can read `POINTS_PER_DECADE` instead
+ * of counting a literal array.
+ */
+function logSweep(startHz: number, endHz: number, perDecade: number): readonly number[] {
+  if (startHz <= 0 || endHz <= startHz) {
+    throw new Error(`Invalid log sweep range: ${startHz}Hz to ${endHz}Hz`)
+  }
+  const decades = Math.log10(endHz / startHz)
+  const steps = Math.ceil(decades * perDecade)
+  const points: number[] = []
+  for (let step = 0; step <= steps; step += 1) {
+    points.push(startHz * 10 ** ((step * decades) / steps))
+  }
+  return points
+}
+
+// At least 24 points per decade over the full audio band, plus both band edges and
+// all three selector corners folded in explicitly - so a change to the generator
+// cannot silently drop one of them.
+const SAMPLE_HZ = [
+  ...new Set([
+    ...logSweep(BAND_LOW_HZ, BAND_HIGH_HZ, POINTS_PER_DECADE),
+    BAND_LOW_HZ,
+    BAND_HIGH_HZ,
+    LOW_CORNER_HZ,
+    MID_CORNER_HZ,
+    HIGH_CORNER_HZ,
+  ]),
+].sort((a, b) => a - b)
+
 const RELATIVE = 1e-9
 const FLOOR = 1e-15
 
