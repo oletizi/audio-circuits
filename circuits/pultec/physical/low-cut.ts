@@ -3,8 +3,10 @@
  *
  * Seven capacitors on the board; the 470K level pot and the six-position
  * selector are panel-mount and appear as PADS landings. Ground is a
- * chassis/shield landing here - the low cut section returns through its pot, so
- * net "0" has no other member on this board, and that singleton is declared.
+ * chassis/shield landing here - the low cut section returns through its pot,
+ * but the junction alone puts six ground pins on this board, so "0" is never a
+ * singleton. `in` and `lo_boost_in` are: this board's own circuit never names
+ * them, so the junction's one pin for each is the only member.
  *
  * SW_LO_CUT'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
  * low-boost BOARD (SW_LO_BOOST there). `circuits/pultec/electrical/controls.ts` models
@@ -41,7 +43,12 @@ export const OFF_BOARD_IDS: ReadonlySet<string> = new Set(
   BOARD.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id),
 )
 /** Crossing net -> the other boards that touch it, for the wiring guide. */
-export const SHARED_BY = sharedByFor("low-cut", CROSSING_NETS)
+export const SHARED_BY = sharedByFor("low-cut")
 
-/** Ground is physical-only here, so it has one member and is an intended open. */
-export const DECLARED_OPENS: readonly string[] = ["0"]
+/**
+ * `in` and `lo_boost_in` are the ladder nets this board's own circuit does not
+ * touch - the junction's single pin for each is their only member. Ground is
+ * NOT here: the junction's six ground pins always outnumber one, on every
+ * board, regardless of whether the board's own circuit also returns through it.
+ */
+export const DECLARED_OPENS: readonly string[] = ["in", "lo_boost_in"]

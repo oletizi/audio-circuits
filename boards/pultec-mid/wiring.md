@@ -123,6 +123,15 @@ improvising one later.
 
 | Pad | Terminal | Net | Also on |
 | --- | --- | --- | --- |
-| 1 | 1 | hi_boost_out | hi-boost, hi-cut, low-cut |
-| 2 | 2 | in | hi-boost |
-| 3 | 3 | 0 | low-boost |
+| 1 | 1 | in | hi-boost |
+| 2 | 2 | 0 | low-boost |
+| 3 | 3 | hi_boost_out | hi-boost, hi-cut, low-cut |
+| 4 | 4 | 0 | low-boost |
+| 5 | 5 | lo_boost_in | hi-cut, low-boost |
+| 6 | 6 | 0 | low-boost |
+| 7 | 7 | out | low-boost, low-cut |
+| 8 | 8 | 0 | low-boost |
+| 9 | 9 | 0 | low-boost |
+| 10 | 10 | 0 | low-boost |
+
+**Pads 2 (2) and 4 (4) and 6 (6) and 8 (8) and 9 (9) and 10 (10) are one net.** The board joins them, so those terminals end up tied together — that is deliberate, not an accident of routing. Wire each terminal to its own pad and leave the tying to the board.

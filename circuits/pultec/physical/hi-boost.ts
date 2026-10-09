@@ -3,8 +3,10 @@
  *
  * The Cboost bank and R3 (Qmax) are on the board; the tapped inductors, the
  * level and Q pots, and the selector are panel-mount / off-board and appear as
- * PADS landings. Ground is a chassis/shield landing here, so net "0" has no
- * other member on this board and that singleton is declared.
+ * PADS landings. Ground is a chassis/shield landing here, but the junction's
+ * six ground pins mean "0" is never a singleton regardless. `lo_boost_in` and
+ * `out` are: this board's own circuit never names them, so the junction's one
+ * pin for each is the only member.
  *
  * SW_HI_BOOST'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
  * hi-cut BOARD (SW_HI_CUT there). `circuits/pultec/electrical/controls.ts` models both
@@ -41,7 +43,11 @@ export const OFF_BOARD_IDS: ReadonlySet<string> = new Set(
   BOARD.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id),
 )
 /** Crossing net -> the other boards that touch it, for the wiring guide. */
-export const SHARED_BY = sharedByFor("hi-boost", CROSSING_NETS)
+export const SHARED_BY = sharedByFor("hi-boost")
 
-/** Ground is physical-only here, so it has one member and is an intended open. */
-export const DECLARED_OPENS: readonly string[] = ["0"]
+/**
+ * `lo_boost_in` and `out` are the ladder nets this board's own circuit does not
+ * touch - the junction's single pin for each is their only member. Ground is
+ * NOT here: the junction's six ground pins always outnumber one.
+ */
+export const DECLARED_OPENS: readonly string[] = ["lo_boost_in", "out"]

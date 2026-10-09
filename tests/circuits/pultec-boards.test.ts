@@ -169,13 +169,19 @@ test("every singleton net is declared, and every declaration is a singleton", ()
   }
 })
 
-test("every board carries a ground pin on its terminal block", () => {
+test("every board carries ground pins on its junction", () => {
+  // Six, not one: the junction interleaves a ground return beside each of the
+  // five signal pins (1,3,5,7,9 are in/hi_boost_out/lo_boost_in/out/0) plus the
+  // trailing all-ground pair (9,10), giving pins 2,4,6,8,9,10 - six in total,
+  // identical on every board. See "The junction is a stacking 2x05 bus" in the
+  // design doc for why: these are high-impedance nodes where in/out sitting
+  // adjacent with nothing between them would be a feedback path.
   for (const [owner, , build] of BOARDS) {
     const blocks = build().components.filter(physicalOnly)
     const groundPins = blocks.flatMap((block) =>
       block.units.flatMap((unit) =>
         Object.entries(unit.pins).filter(([, c]) => c.kind === "net" && c.net === "0")))
-    expect(groundPins.length, owner).toBe(1)
+    expect(groundPins.length, owner).toBe(6)
   }
 })
 

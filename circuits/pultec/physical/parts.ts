@@ -77,21 +77,22 @@ export const AXIAL_RESISTOR =
   "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 
 /**
- * A three-way 5.08mm terminal block: this board's crossing nets plus ground.
- *
- * VERIFIED PRESENT in KiCad's own library before being written here - the first
- * draft of this plan invented a plausible name that does not exist. Confirm with:
+ * The junction footprint and symbol: a 2x05 header at 2.54mm, VERIFIED PRESENT
+ * in KiCad's own library before being written here. Confirm with:
  *
  *   ls "/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints/\
- * TerminalBlock_Phoenix.pretty/TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal.kicad_mod"
+ * Connector_PinHeader_2.54mm.pretty/PinHeader_2x05_P2.54mm_Vertical.kicad_mod"
+ *   grep -n "symbol \"Conn_02x05_Odd_Even\"" \
+ *     "/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/Connector_Generic.kicad_sym"
  *
- * The block is a landing, not a purchase: 5.08mm pitch means a screw terminal can
- * be fitted over those holes, a header pressed into them, or a wire soldered
- * straight in. Any other 1x03 part at 5.00mm or 5.08mm substitutes without
- * changing the layout.
+ * The footprint is a landing, not a purchase: a plain header, a stacking
+ * (long-tail) header, a ribbon socket or individual leads all press into the
+ * same two rows of five holes. See the design doc's "The junction is a
+ * stacking 2x05 bus" for why the pitch and the row-of-ten shape are what let
+ * the five boards stack on a shared bus.
  */
-export const TERMINAL_BLOCK_3 =
-  "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal"
+export const HEADER_2X05 =
+  "Connector_PinHeader_2.54mm:PinHeader_2x05_P2.54mm_Vertical"
 
 /** Symbols for the off-board parts, so their netlist value field is not empty. */
 export const ROTARY_SYMBOL = "Switch:SW_Rotary"
@@ -146,13 +147,53 @@ function symbolFor(component: Component): string {
 }
 
 /**
- * One physicalized board: the module's components with footprints or symbols
- * attached, plus the terminal block that carries its crossing nets.
+ * The junction: a 2x05 header at 2.54mm carrying all five ladder nets, with a
+ * ground return interleaved beside each signal pin.
  *
- * `crossingNets` is in pin order and always ends with "0". Ground is on every
- * board, including the three where it is not in the signal topology, because a
- * board with panel wiring and no ground landing gets an improvised wire
- * soldered to it later.
+ * THE PINOUT IS FIXED AND IDENTICAL ON EVERY BOARD, and does not vary with
+ * which nets a given section's bare circuit touches - that uniformity is what
+ * makes the junction a shared bus rather than a per-board connector, and what
+ * lets any board host any absent section's stand-in group later. See the
+ * design doc's "The junction is a stacking 2x05 bus" for why.
+ *
+ * The grounds are interleaved rather than grouped: these are high-impedance
+ * nodes (47k-470k), and `in`/`out` sitting adjacent with nothing between them
+ * would be a feedback path.
+ */
+export function junctionComponent(): Component {
+  return {
+    id: "board_terminals",
+    kind: "connector",
+    parameters: {},
+    part: {
+      symbol: "Connector_Generic:Conn_02x05_Odd_Even",
+      footprint: HEADER_2X05,
+      electricallyInert: true,
+    },
+    pins: {},
+    units: [{
+      name: "MAIN",
+      pins: {
+        "1": net("in"), "2": net("0"),
+        "3": net("hi_boost_out"), "4": net("0"),
+        "5": net("lo_boost_in"), "6": net("0"),
+        "7": net("out"), "8": net("0"),
+        "9": net("0"), "10": net("0"),
+      },
+    }],
+    provenance: { source: PHYSICAL_ONLY },
+  }
+}
+
+/**
+ * One physicalized board: the module's components with footprints or symbols
+ * attached, plus the junction that carries the shared ladder nets.
+ *
+ * `crossingNets` is in pin order and always ends with "0". It no longer sizes
+ * the junction - every board's junction is identical, see `junctionComponent`
+ * - but it still determines `ports` below: a board declares as a port only the
+ * crossing nets ITS OWN electrical components touch, which is a strict subset
+ * of what the junction carries on every board but this one.
  */
 export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly string[]): Network {
   // partitionReference(), NOT boardNetwork(). boardNetwork filters out everything
@@ -184,18 +225,7 @@ export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly str
     crossingNets.filter((netName) => touched.has(netName)).map((netName) => [netName, netName]),
   )
 
-  const pins: Record<string, ReturnType<typeof net>> = {}
-  crossingNets.forEach((netName, index) => { pins[String(index + 1)] = net(netName) })
-
-  components.push({
-    id: "board_terminals",
-    kind: "connector",
-    parameters: {},
-    part: { symbol: "Connector_Generic:Conn_01x03", footprint: TERMINAL_BLOCK_3, electricallyInert: true },
-    pins: {},
-    units: [{ name: "MAIN", pins }],
-    provenance: { source: PHYSICAL_ONLY },
-  })
+  components.push(junctionComponent())
 
   return { ports, components }
 }
@@ -227,8 +257,24 @@ export const PASSIVE_PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string
 }
 
 /**
- * Each crossing net mapped to the OTHER boards that touch it, for the wiring
+ * The five nets `junctionComponent` puts on the junction, regardless of which
+ * board is asking - restated here (rather than read off the component) only
+ * because `sharedByFor` needs the bare net names, not a pin map. Keep this in
+ * step with `junctionComponent`'s pin table if that ever changes.
+ */
+const JUNCTION_NETS: readonly string[] = ["in", "hi_boost_out", "lo_boost_in", "out", "0"]
+
+/**
+ * Every junction net mapped to the OTHER boards that touch it, for the wiring
  * guide's terminal-block table.
+ *
+ * Covers all five of `JUNCTION_NETS`, NOT just the nets this board's own
+ * circuit happens to touch - the junction is identical on every board, so a
+ * net this board doesn't use can still reach another board through it, and
+ * reporting only this board's own crossing nets would print "no other board"
+ * for a net that plainly does reach one (caught by reading the regenerated
+ * low-cut guide: `in` and `lo_boost_in` are not this board's nets, but they
+ * are hi-boost/mid's and low-boost's, and the guide must say so).
  *
  * Derived from `boundaryConductors()` rather than restated, so it cannot
  * disagree with the boundary the boards were actually split along. A net no
@@ -236,13 +282,10 @@ export const PASSIVE_PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string
  * empty list rather than being absent, which is what lets the guide print "no
  * other board" instead of a blank cell that reads like missing data.
  */
-export function sharedByFor(
-  owner: ModuleOwner,
-  crossingNets: readonly string[],
-): Readonly<Record<string, readonly string[]>> {
+export function sharedByFor(owner: ModuleOwner): Readonly<Record<string, readonly string[]>> {
   const boundaries = boundaryConductors()
   const shared: Record<string, readonly string[]> = {}
-  for (const netName of crossingNets) {
+  for (const netName of JUNCTION_NETS) {
     const boundary = boundaries.find(candidate => candidate.net === netName)
     shared[netName] = boundary === undefined
       ? []

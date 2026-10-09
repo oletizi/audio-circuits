@@ -3,8 +3,10 @@
  *
  * The Cboost bank and R2 are on the board; the 47K level pot and its selector
  * are panel-mount and appear as PADS landings. Net "0" is genuinely part of
- * this section's signal topology, so it has a second member on this board and
- * no singleton is declared.
+ * this section's signal topology, and the junction adds six more ground pins
+ * regardless, so "0" is never a singleton. `in` and `hi_boost_out` are: this
+ * board's own circuit never names them, so the junction's one pin for each is
+ * the only member.
  *
  * SW_LO_BOOST'S PADS LANDING IS ONE POLE OF A TWO-POLE ROTARY SHARED WITH THE
  * low-cut BOARD (SW_LO_CUT there). `circuits/pultec/electrical/controls.ts` models both
@@ -42,6 +44,10 @@ export const OFF_BOARD_IDS: ReadonlySet<string> = new Set(
   BOARD.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id),
 )
 /** Crossing net -> the other boards that touch it, for the wiring guide. */
-export const SHARED_BY = sharedByFor("low-boost", CROSSING_NETS)
+export const SHARED_BY = sharedByFor("low-boost")
 
-export const DECLARED_OPENS: readonly string[] = []
+/**
+ * `in` and `hi_boost_out` are the ladder nets this board's own circuit does
+ * not touch - the junction's single pin for each is their only member.
+ */
+export const DECLARED_OPENS: readonly string[] = ["in", "hi_boost_out"]

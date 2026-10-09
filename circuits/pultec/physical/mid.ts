@@ -4,8 +4,10 @@
  * The mid resistors and the per-tap capacitor banks are on the board; the
  * level pot, the two selectors and the tapped inductors are panel-mount /
  * off-board and appear as PADS landings. Net "0" is genuinely part of this
- * section's signal topology, so it has a second member on this board and no
- * singleton is declared.
+ * section's signal topology, and the junction adds six more ground pins
+ * regardless, so "0" is never a singleton. `lo_boost_in` and `out` are: this
+ * board's own circuit never names them, so the junction's one pin for each is
+ * the only member.
  */
 import {
   designatorsFor,
@@ -32,6 +34,10 @@ export const OFF_BOARD_IDS: ReadonlySet<string> = new Set(
   BOARD.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id),
 )
 /** Crossing net -> the other boards that touch it, for the wiring guide. */
-export const SHARED_BY = sharedByFor("mid", CROSSING_NETS)
+export const SHARED_BY = sharedByFor("mid")
 
-export const DECLARED_OPENS: readonly string[] = []
+/**
+ * `lo_boost_in` and `out` are the ladder nets this board's own circuit does
+ * not touch - the junction's single pin for each is their only member.
+ */
+export const DECLARED_OPENS: readonly string[] = ["lo_boost_in", "out"]

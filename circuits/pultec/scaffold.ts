@@ -47,14 +47,14 @@ export const SCAFFOLD_FLAT: FlatState = REFERENCE_FLAT
  * A 5-way 5.08mm terminal block: the union of every section's boundary nets, plus
  * ground.
  *
- * VERIFIED PRESENT in KiCad's own library before being written here, the same
- * discipline `TERMINAL_BLOCK_3` in `circuits/pultec/physical/parts.ts` records.
- * Confirm with:
+ * VERIFIED PRESENT in KiCad's own library before being written here. Confirm with:
  *
  *   ls "/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints/\
  * TerminalBlock_Phoenix.pretty/TerminalBlock_Phoenix_MKDS-1,5-5-5.08_1x05_P5.08mm_Horizontal.kicad_mod"
  *
- * Same family and pitch as the section boards' 3-way block, one size up.
+ * This is the scaffold board's own landing, separate from the section boards'
+ * junction - `junctionComponent` in `circuits/pultec/physical/parts.ts`, a 2x05
+ * header at 2.54mm, not this family or pitch.
  */
 export const TERMINAL_BLOCK_5 =
   "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-5-5.08_1x05_P5.08mm_Horizontal"
