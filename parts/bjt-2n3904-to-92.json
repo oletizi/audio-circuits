@@ -95,6 +95,40 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/diotec-semiconductor/2N3904/13164701",
+      "sku": "4878-2N3904CT-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.14
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.088
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.0543
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.03924
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.03434
+        },
+        {
+          "quantity": 2000,
+          "unitPrice": 0.0302
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

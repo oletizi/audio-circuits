@@ -61,6 +61,48 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/panasonic-industry/ECA-1VM100/245020",
+      "sku": "P5161-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.23
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.137
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.099
+        },
+        {
+          "quantity": 200,
+          "unitPrice": 0.07655
+        },
+        {
+          "quantity": 600,
+          "unitPrice": 0.06375
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.05894
+        },
+        {
+          "quantity": 2600,
+          "unitPrice": 0.05151
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.04741
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

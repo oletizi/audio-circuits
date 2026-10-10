@@ -69,6 +69,20 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/samtec-inc/SS-103-T-2-N/1105684",
+      "sku": "612-SS-103-T-2-N-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.87
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

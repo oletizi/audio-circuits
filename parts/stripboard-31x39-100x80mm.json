@@ -39,6 +39,20 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/busboard-prototype-systems/ST2/19200397",
+      "sku": "4526-ST2-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 6.3
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

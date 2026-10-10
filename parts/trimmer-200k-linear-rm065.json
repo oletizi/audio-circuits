@@ -84,6 +84,52 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/amphenol-piher-sensing-systems/PT6KV-204A2020/13543627",
+      "sku": "1993-PT6KV-204A2020-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.61
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.507
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 0.4716
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.4464
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.4222
+        },
+        {
+          "quantity": 250,
+          "unitPrice": 0.39212
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.37068
+        },
+        {
+          "quantity": 2000,
+          "unitPrice": 0.33104
+        },
+        {
+          "quantity": 6000,
+          "unitPrice": 0.3025
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

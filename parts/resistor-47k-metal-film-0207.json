@@ -87,6 +87,52 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-47K/9138173",
+      "sku": "MFR-25FBF52-47K-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.1
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.042
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 0.0348
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.0304
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.0268
+        },
+        {
+          "quantity": 250,
+          "unitPrice": 0.02272
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.02016
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.01799
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.01412
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

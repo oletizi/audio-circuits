@@ -91,6 +91,52 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-22R/9138099",
+      "sku": "MFR-25FBF52-22R-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.11
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.044
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 0.0368
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.0324
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.0284
+        },
+        {
+          "quantity": 250,
+          "unitPrice": 0.02408
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.02138
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.01907
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.01497
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

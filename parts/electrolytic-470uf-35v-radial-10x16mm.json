@@ -61,6 +61,48 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/panasonic-industry/ECA-1VM471/245027",
+      "sku": "P5168-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.69
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.431
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.3226
+        },
+        {
+          "quantity": 200,
+          "unitPrice": 0.25925
+        },
+        {
+          "quantity": 600,
+          "unitPrice": 0.22318
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.20969
+        },
+        {
+          "quantity": 2600,
+          "unitPrice": 0.18887
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.1774
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

@@ -419,3 +419,34 @@ the date.)
   products found), each listing printed with its manufacturer. Choose by
   manufacturer as well as part number. Digi-Key's parameter lists use "-"
   for a parameter that does not apply; it is printed as Digi-Key states it.
+- 2026-10-09: `bun run parts search|lookup --supplier digikey` crashes
+  ("ProductsCount is a undefined, not a finite number") whenever Digi-Key's
+  keyword search returns zero products, rather than reporting "no match" -
+  hit searching for Eagle Plastic Devices' knob (450-AA193 and "Eagle
+  Plastic Devices" both 0-result) and Taiwan Alpha's panel pot
+  (RV16AF-10-15R1-B1K-3CLA, "RV16AF", "Taiwan Alpha" all 0-result): Digi-Key
+  does not carry either manufacturer at all. A narrower keyword that does
+  return results (e.g. "knob set screw") does not crash, which is how the
+  zero-result cause was confirmed rather than some other query problem.
+  This is a tool bug (reported, not fixed by a researcher) - treat a crash
+  on every keyword tried for a manufacturer as "Digi-Key does not carry
+  this manufacturer," not as a query mistake to keep retrying.
+- 2026-10-09: Digi-Key sometimes drops a SparkFun catalog number's category
+  prefix in its own "manufacturer part number" field - SparkFun's own
+  product page states the part as "PRT-11367" (sparkfun.com/products/11367,
+  "SKU: PRT-11367"), and Mouser lists it that way too, but Digi-Key's
+  keyword search returns it as bare "11367" (same manufacturer, SparkFun
+  Electronics; same description, "6 Spools, 25 ft each"; Digi-Key's own
+  datasheet filename is literally "PRT-11367_Web.pdf"). Search the bare
+  number (strip a "PRT-"/similar prefix) if the prefixed form finds nothing
+  exact, and confirm it is the same product from the manufacturer,
+  description and datasheet filename before using it.
+- 2026-10-09: Digi-Key lists several of this board's parts (Nichicon
+  UPJ1V220MDD 22uF cap, Samtec SS-103-T-2-N TO-92 socket) at 0 stock; one of
+  the two (UPJ1V220MDD) also carries no price at that 0-stock listing, and
+  `bun run parts source --supplier digikey` correctly refuses a SKU with no
+  price ("Digi-Key lists no price for <sku>: choose another SKU or
+  supplier") - that entry was left Mouser-only. A 0-stock listing that does
+  still carry a price (SS-103-T-2-N, 1 break at $0.87) is not refused and
+  was recorded as a source; 0 stock on a single listed break is not, by
+  itself, a reason to skip a `standard` source - only a missing price is.

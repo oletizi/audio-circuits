@@ -65,6 +65,44 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/samtec-inc/TSW-103-07-G-S/1101324",
+      "sku": "612-TSW-103-07-G-S-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.27
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.23
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.1955
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.17444
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.1661
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.14826
+        },
+        {
+          "quantity": 10000,
+          "unitPrice": 0.14118
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

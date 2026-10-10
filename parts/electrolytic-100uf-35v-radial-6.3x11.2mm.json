@@ -73,6 +73,40 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/panasonic-industry/ECA-1VM101I/268503",
+      "sku": "10-ECA-1VM101ICT-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.33
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.201
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.1466
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.1291
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.09902
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.0895
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }

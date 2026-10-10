@@ -61,6 +61,48 @@
       ],
       "checked": "2026-09-30",
       "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/panasonic-industry/ECA-1VM221/245025",
+      "sku": "P5166-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.45
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.276
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.2032
+        },
+        {
+          "quantity": 200,
+          "unitPrice": 0.16085
+        },
+        {
+          "quantity": 600,
+          "unitPrice": 0.13665
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.12759
+        },
+        {
+          "quantity": 2600,
+          "unitPrice": 0.1136
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.10588
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
     }
   ]
 }
