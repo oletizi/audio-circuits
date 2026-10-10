@@ -38,12 +38,32 @@ export interface FlatState {
   readonly midMode: string
 }
 
-/** The settings every figure in the scaffold spec was measured at. */
+/** The settings every figure in the scaffold spec was measured at.
+ *
+ * `midMode: "off"` IS THE NEUTRAL REFERENCE, NOT AN OVERSIGHT - do not restore `"boost"`.
+ * The mid boost/off/cut switch returns the coil's far end through 4K7 to the input for
+ * boost and through 1K to ground for cut, but **nowhere at all in the centre position**
+ * (see the module comment in `circuits/pultec/electrical/mid.ts`). With that return open
+ * the selected capacitors, the 1 H winding tap, `R_MID_BOOST` and the pot arm carry no
+ * current, so the reduction drops them as inert and mid's stand-in is exactly
+ * `R_MID_SHUNT` - one part. That is an EXACT reduction, not an approximation: the same
+ * fact is checked at the SPICE level by "the mid section is genuinely absent in the
+ * centre switch position" in `tests/pultec/ac.test.ts`.
+ *
+ * Why neutral is the right reference for a stand-in: a mid board that was never built
+ * contributes no mid action, so standing in for an absent mid with its BOOST network
+ * would model a control the builder does not have. The original Pultec EQP-1 has no mid
+ * band at all - the mid-frequency controls are the separate MEQ-5 - so for this
+ * three-band derivative no-mid-action is the faithful baseline for an absent mid.
+ *
+ * The other three settings are frequency selectors, where there is no neutral position
+ * to choose; they stay at the corners every figure in the spec was measured at.
+ */
 export const REFERENCE_FLAT: FlatState = {
   loFrequency: "100Hz",
   hiFrequency: "5kHz",
   midFrequency: "1kHz",
-  midMode: "boost",
+  midMode: "off",
 }
 
 export const GROUND_NET = "0"

@@ -320,11 +320,47 @@ test(`oracle and reduceToBoundary agree on ${CASE_COUNT} randomised networks`, (
 // An oracle that cannot fail is decoration. These two feed it reductions known to be
 // wrong in each of the two possible directions and assert it says so.
 
+/** The section with the most live components at the reference flat state.
+ *
+ * CHOSEN BY THE DERIVATION, NOT NAMED. The two mutations below need a reduction with
+ * something to take away and something to leave behind, and which section has the
+ * largest one is a property of the reference flat state rather than a fixed fact: mid
+ * had six live components while `midMode` was `boost` and has one now that it is `off`,
+ * so a hard-coded `"mid"` turned a reference-setting change into a broken negative
+ * control. Ties break on `SECTIONS` order, which is fixed, so the choice is
+ * deterministic. It refuses rather than skipping if nothing qualifies.
+ */
+function largestReduction(): {
+  readonly section: string
+  readonly boundary: ReadonlySet<string>
+  readonly resolved: ResolvedNetwork
+  readonly correct: readonly ResolvedComponent[]
+} {
+  let best: ReturnType<typeof largestReduction> | undefined
+  for (const section of SECTIONS) {
+    const boundary = discoverBoundary(section, modules, "0")
+    const resolved = resolveSectionFlat(section, modules, REFERENCE_FLAT)
+    const correct = reduceToBoundary(resolved, boundary)
+    if (best === undefined || correct.length > best.correct.length) {
+      best = { section, boundary, resolved, correct }
+    }
+  }
+  if (best === undefined || best.correct.length < 2) {
+    throw new Error(
+      `No section reduces to two or more live components at the reference flat state, ` +
+        `so the oracle's drop mutation has nothing to drop that leaves a non-empty ` +
+        `reduction behind. Largest was ${best?.section ?? "none"} with ` +
+        `${best?.correct.length ?? 0}. This is not skipped and no substitute is ` +
+        `invented: the reference state or the reduction changed, and the mutation ` +
+        `needs rewriting against it.`,
+    )
+  }
+  return best
+}
+
 test("the oracle catches a reduction that DROPS a live component", () => {
-  const boundary = discoverBoundary("mid", modules, "0")
-  const resolved = resolveSectionFlat("mid", modules, REFERENCE_FLAT)
-  const correct = reduceToBoundary(resolved, boundary)
-  expect(correct.length).toBeGreaterThan(1)
+  const { section, boundary, resolved, correct } = largestReduction()
+  expect(correct.length, section).toBeGreaterThan(1)
   const dropped = correct[0]!
   expect(disagreements(resolved, boundary, correct.slice(1))).toEqual([
     `dropped a live component: ${dropped.id}`,

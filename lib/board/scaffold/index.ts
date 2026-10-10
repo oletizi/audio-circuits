@@ -12,12 +12,16 @@
  * examples of what it settles, both from the code's own output rather than from a
  * recollection of what these sections usually look like:
  *
- * - mid's stand-in is not a resistor. It carries `C_MID_1kHz_A` and `C_MID_1kHz_B` in
- *   parallel, the `L_MID_1H` tap and `R_MID_BOOST` as a live reactive branch between
- *   `hi_boost_out` and `in`, alongside the 100k shunt to ground. That 1 H part has no
- *   catalogue number (see "Limits, measured" in the design doc), so whether it is
- *   really needed is a sourcing question, not a cosmetic one - and the derivation, not
- *   a judgement call, is what answers it.
+ * - mid's stand-in is one resistor, and WHICH one is not the one a summary would guess.
+ *   `REFERENCE_FLAT` holds the mode switch in `off`, where the coil's return is open,
+ *   so the selected capacitors, the 1 H tap and `R_MID_BOOST` all carry nothing and the
+ *   reduction drops them; what survives is `R_MID_SHUNT`, the 100k from `in` to ground,
+ *   and NOT a shunt at `hi_boost_out` where mid taps the ladder. mid's stand-in does
+ *   not touch `hi_boost_out` at all. In boost or cut the same derivation yields six
+ *   components including that 1 H tap - the part with no catalogue number (see "Limits,
+ *   measured" in the design doc) - so whether the scaffold needs an unobtainable coil
+ *   turns on the reference setting, and the derivation rather than a judgement call is
+ *   what answers it.
  * - hi-boost's stand-in is NOT the bare 47k a summary would write down either: it is
  *   two components, `RV_HI_BOOST`'s 0R arm from `in` in series with its full 47k to
  *   `hi_boost_out`, because "ideal shorts are components, never node merges". It

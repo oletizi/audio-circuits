@@ -58,15 +58,6 @@ Off the board, wired back to it. Nothing here is soldered to the board itself.
 
 **Ganged (`hi_freq`).** This is one pole of a two-pole switch shared with another board — not a switch of its own. Both poles turn together on one shaft, and fitting two separate switches makes two controls out of what should be one.
 
-### SI_MID_L_MID_1H — 1H inductor
-
-| Pad | Terminal | Selects | Net |
-| --- | --- | --- | --- |
-| 1 | a | — | si_mid_mid_tap_1h |
-| 2 | b | — | si_mid_mid_boost_return |
-
-**Part of the mid stand-in group.** Wire it only in the builds where **Stand-in groups** below tells you to populate mid on this board; in every other build this part is not fitted and these pads carry nothing.
-
 ## Board terminals
 
 Where this board joins the rest of the EQ. Each pin is one wire to another board —
@@ -123,7 +114,7 @@ nets and halve a value — at the bench that is a plausible wrong measurement, n
 fault. **What to populate, by build** below names the one board that carries each absent
 group, so a group you leave empty here is one you can see is covered somewhere else.
 
-**The stand-ins are the absent sections at one setting: low frequency 100Hz, high frequency 5kHz, mid frequency 1kHz, mid in boost.**
+**The stand-ins are the absent sections at one setting: low frequency 100Hz, high frequency 5kHz, mid frequency 1kHz, mid in off.**
 Their values are derived at that setting and at no other, so leave the frequency
 selectors you DO have there.
 One of this board's selectors is one shaft shared by two sections — **Panel parts**
@@ -170,16 +161,11 @@ Both parts of this group go in together, or neither does.
 
 #### mid — stands in for the absent mid section
 
-All 6 parts of this group go in together, or none of them do.
+This group is a single part. Either it is fitted or it is not.
 
 | Part | Fit | Between |
 | --- | --- | --- |
-| SI_MID_C_MID_1kHz_A | 22nF | si_mid_mid_tap_1h (1H inductor) ↔ si_mid_mid_sel_1khz |
-| SI_MID_C_MID_1kHz_B | 3.3nF | si_mid_mid_tap_1h (1H inductor) ↔ si_mid_mid_sel_1khz |
-| SI_MID_L_MID_1H | 1H inductor — panel part, wired back like the others under **Panel parts** | si_mid_mid_tap_1h (1H inductor) ↔ si_mid_mid_boost_return |
-| SI_MID_R_MID_BOOST | 4.7k | in ↔ si_mid_mid_boost_return |
 | SI_MID_R_MID_SHUNT | 100k | in ↔ 0 |
-| SI_MID_RV_MID.ccw-wiper | 0R | hi_boost_out ↔ si_mid_mid_sel_1khz |
 
 ### What to populate, by build
 

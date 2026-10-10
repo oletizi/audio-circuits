@@ -171,7 +171,7 @@ nets and halve a value — at the bench that is a plausible wrong measurement, n
 fault. **What to populate, by build** below names the one board that carries each absent
 group, so a group you leave empty here is one you can see is covered somewhere else.
 
-**The stand-ins are the absent sections at one setting: low frequency 100Hz, high frequency 5kHz, mid frequency 1kHz, mid in boost.**
+**The stand-ins are the absent sections at one setting: low frequency 100Hz, high frequency 5kHz, mid frequency 1kHz, mid in off.**
 Their values are derived at that setting and at no other, so leave the frequency
 selectors you DO have there.
 Nothing on this board's panel is ganged, so no knob here turns two sections at once.

@@ -63,9 +63,14 @@ function configurations(): readonly (readonly string[])[] {
   return all
 }
 
-/** How many parts each group has, and 15 in total across the five. */
+/** How many parts each group has, and 10 in total across the five.
+ *
+ * mid is ONE because `REFERENCE_FLAT` holds `midMode: "off"`, where the mode switch
+ * opens the coil's return and mid's whole reactive branch reduces away as inert; its
+ * stand-in is `R_MID_SHUNT` alone. See `tests/board/scaffold-mid-modes.test.ts`.
+ */
 const GROUP_SIZE: Readonly<Record<string, number>> = {
-  "hi-boost": 2, "hi-cut": 4, "low-cut": 1, "low-boost": 2, mid: 6,
+  "hi-boost": 2, "hi-cut": 4, "low-cut": 1, "low-boost": 2, mid: 1,
 }
 const ALL_GROUP_PARTS = Object.values(GROUP_SIZE).reduce((sum, n) => sum + n, 0)
 
@@ -114,11 +119,25 @@ test("a configuration holds only the groups this board supplies", () => {
 })
 
 test("standalone, the board carries all four groups", () => {
+  // A one-board build has no neighbour to supply anything, so this board holds every
+  // absent section's group itself. Asserted by EXACT PART ID over all four groups, and
+  // counted, rather than by a single marker part: this used to look for the one
+  // inductor in the scaffolding, mid's 1 H tap, which the scaffold no longer needs now
+  // that the reference holds mid in `off` - and a marker part is a proxy for the thing
+  // under test rather than the thing itself in any case.
   const network = boardNetwork("low-boost", new Set(["low-boost"]))
-  const kinds = network.components.filter((c) => c.kind === "inductor")
-  // mid's 1H tap is the only inductor in the whole scaffolding, and standalone
-  // low-boost needs mid's group, so it must be here.
-  expect(kinds).toHaveLength(1)
+  const ids = new Set(network.components.map((c) => c.id))
+  const absent = LADDER_ORDER.filter((section) => section !== "low-boost")
+  let checked = 0
+  for (const section of absent) {
+    for (const component of standInGroup(section).components) {
+      expect(ids.has(component.id), `low-boost alone <- ${section}/${component.id}`).toBe(true)
+      checked += 1
+    }
+  }
+  // Not vacuous: four groups, every part of each.
+  expect(absent).toHaveLength(4)
+  expect(checked).toBe(ALL_GROUP_PARTS - (GROUP_SIZE["low-boost"] ?? 0))
 })
 
 test("every stand-in part on a board is an ordinary conducting component", () => {

@@ -155,9 +155,12 @@ test("every member of OFF_BOARD is assigned to exactly one section by the partit
 
 test("a board's off-board ids are its own landings plus its stand-in groups' landings", () => {
   // The maximal board's landings, because OFF_BOARD_IDS is what the layout check reads.
-  // mid's 1H tap is the case that matters: it is an off-board landing wherever it sits,
-  // so the four boards standing in for mid each get one, and `SI_MID_L_MID_1H` must be
-  // a PADS landing rather than a part with a footprint nobody has chosen.
+  // DERIVED FROM THE GROUPS, not from a list: a stand-in group's own off-board ids are
+  // asked of `standInGroup`, so a group that acquires a panel part - mid's 1 H tap
+  // would be one again if the reference flat state put mid in boost or cut - is a PADS
+  // landing on every board holding that group rather than a part with a footprint
+  // nobody has chosen. At the reference setting no group has one; see
+  // `tests/board/scaffold-wiring.test.ts`.
   const modules = partitionReference().modules
   for (const [owner, module] of BOARDS) {
     const expected = new Set(

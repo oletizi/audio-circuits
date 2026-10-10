@@ -32,16 +32,78 @@ test("GATE A1: a stand-in is a SUBSET of the section's flat-resolved components"
   }
 })
 
+/**
+ * That the full flat SECTION presents an OPEN at one of its boundary nets: no finite
+ * admittance between that net and any other boundary net, measured on the section
+ * itself rather than on the stand-in.
+ *
+ * This is the claim a stand-in makes when it omits a boundary net, and it is PROVED
+ * against the section rather than permitted. Measured pairwise - the boundary cut down
+ * to the two nets under test - so the assertion never has to know what `shorts.ts`
+ * named a merged electrical node: a two-net boundary yields exactly one matrix entry.
+ *
+ * NOT EXACTLY ZERO, AND THAT IS ARITHMETIC AND NOT PHYSICS. The section's dead branch
+ * is eliminated by Schur complement, which leaves a rounding residue: mid's
+ * `hi_boost_out` row comes out between 1.6e-18 and 2.8e-17 S against a 1e-5 S scale for
+ * the conducting entries. So the open is asserted against the same 1e-15 S absolute
+ * floor Gate A2 compares at - ten orders below anything this circuit conducts - rather
+ * than against `=== 0`, which would be asserting the elimination's rounding.
+ */
+function expectSectionOpenAt(section: string, net: string): void {
+  const whole = resolveSectionFlat(section, modules, REFERENCE_FLAT)
+  const boundary = standIn(section, modules, REFERENCE_FLAT).boundary
+  let compared = 0
+  for (const other of boundary) {
+    if (other === net) continue
+    for (const hz of [BAND_LOW_HZ, MID_CORNER_HZ, BAND_HIGH_HZ]) {
+      const pair = boundaryAdmittance(whole.components, new Set([net, other]), hz)
+      expect(pair.size, `${section} ${net}-${other} @${hz}Hz matrix size`).toBe(1)
+      for (const [key, value] of pair) {
+        for (const part of ["re", "im"] as const) {
+          expect(
+            Math.abs(value[part]),
+            `${section} ${net}-${other} ${key}.${part} @${hz}Hz: ${value[part]} is not an open`,
+          ).toBeLessThanOrEqual(FLOOR)
+        }
+        compared += 1
+      }
+    }
+  }
+  expect(compared, `${section}: nothing was measured against ${net}`).toBeGreaterThan(0)
+}
+
 test("GATE A1: boundary node identities are unchanged by derivation", () => {
+  // A boundary net MAY be absent from a stand-in, and when it is, that is a claim about
+  // the section - that it presents nothing there - so `expectSectionOpenAt` proves it
+  // against the section's own flat network instead of the gate waving it through.
+  //
+  // mid at the reference setting is the live case. `midMode: "off"` opens the coil's
+  // return, so mid's selected capacitors, its 1 H tap, `R_MID_BOOST` and its pot arm
+  // all carry no current and the reduction drops them; what is left is `R_MID_SHUNT`
+  // between `in` and ground, which touches `hi_boost_out` not at all. A stand-in that
+  // DID touch `hi_boost_out` would be modelling a mid control the builder has not got.
+  //
+  // DERIVED, WITH NO SECTION NAMED IN THE RULE. The permission comes from the section's
+  // own boundary admittance, and the list of what used it is recorded below, so a net
+  // quietly dropping out of some other stand-in fails this test rather than inheriting
+  // mid's licence.
+  const open: string[] = []
   for (const section of SECTIONS) {
     const derived = standIn(section, modules, REFERENCE_FLAT)
     const nodes = new Set(
       derived.components.flatMap((c) => c.units.flatMap((u) => Object.values(u.pins))),
     )
     for (const boundaryNet of derived.boundary) {
-      expect(nodes.has(boundaryNet), `${section}: ${boundaryNet} vanished`).toBe(true)
+      if (nodes.has(boundaryNet)) {
+        expect(nodes.has(boundaryNet), `${section}: ${boundaryNet} vanished`).toBe(true)
+        continue
+      }
+      open.push(`${section}/${boundaryNet}`)
+      expectSectionOpenAt(section, boundaryNet)
     }
   }
+  expect(open, "which boundary nets a stand-in legitimately does not reach")
+    .toEqual(["mid/hi_boost_out"])
 })
 
 test("no stand-in invents a net the section does not have", () => {
@@ -88,26 +150,24 @@ test("hi-boost's stand-in is exactly its two pot arms, and carries no inductor",
   expect(derived.components.map((c) => c.parameters)).toEqual([{ ohms: 0 }, { ohms: 47_000 }])
 })
 
-test("mid carries the ONLY inductor in the whole scaffold", () => {
-  // The scaffold's parts list asks for one part with no catalogue number - mid's 1 H
-  // tap - and this is the assertion that keeps it one. A reduction that started
-  // keeping dead reactive branches would quietly add hi-boost's 0.3 H back.
+test("the whole scaffold asks for NO inductor", () => {
+  // The Pultec's inductors are the one class of part in this design with no catalogue
+  // number (see "Limits, measured" in the design doc), so whether the scaffold needs
+  // one is a sourcing question rather than a cosmetic one, and it is answered by the
+  // derivation. At the reference flat state it needs none: hi-boost's 0.3 H tap is on a
+  // loop from `in` back to `in` across a 0R arm, and mid's 1 H tap is behind a mode
+  // switch whose centre position opens the coil's return. Both are dropped as inert.
+  //
+  // THIS IS A GATE IN BOTH DIRECTIONS. A reduction that started keeping dead reactive
+  // branches would put hi-boost's 0.3 H back on four boards; a reference flat state
+  // that put mid in boost or cut would put mid's 1 H on four boards. Either shows up
+  // here as an inductor nobody can order.
   const inductors = SECTIONS.flatMap((section) =>
     standIn(section, modules, REFERENCE_FLAT).components
       .filter((c) => c.kind === "inductor")
       .map((c) => `${section}/${c.id}`),
   )
-  expect(inductors).toEqual(["mid/L_MID_1H"])
-})
-
-test("mid's stand-in keeps its inductor tap", () => {
-  // Standing in for an absent mid needs a 1 H inductor, which is the part mid's model
-  // specifies electrically with no part number. The contract surfaces that; it does
-  // not resolve it.
-  const derived = standIn("mid", modules, REFERENCE_FLAT)
-  const inductors = derived.components.filter((c) => c.kind === "inductor")
-  expect(inductors).toHaveLength(1)
-  expect(inductors[0]!.parameters).toEqual({ henries: 1 })
+  expect(inductors).toEqual([])
 })
 
 test("a section sharing fewer than two nets refuses rather than returning nothing", () => {
@@ -262,6 +322,64 @@ test("GATE A2: stand-in and real flat section agree on boundary admittance", () 
   // pins what that came out as. A future change that shorted another section's
   // boundary fails here rather than shortening the loop in silence.
   expect(covered).toEqual(["hi-boost", "hi-cut", "low-boost", "mid"])
+})
+
+test("GATE A2: which of its comparisons are zero against zero, said out loud", () => {
+  // A COMPARISON OF TWO OPENS IS NOT EVIDENCE, AND MUST NOT BE COUNTED AS ANY. Gate A2
+  // above walks every entry of every section's boundary admittance matrix, and some of
+  // those entries are identically zero on both sides - a boundary net the section
+  // presents nothing at has a row of them. Those entries pass the comparison without
+  // testing anything, and the 1e-15 S absolute floor, which exists so arithmetic noise
+  // in the Schur elimination does not read as disagreement, is precisely what lets them
+  // through. So they are enumerated here rather than left to swell the gate's pass
+  // count.
+  //
+  // mid's `hi_boost_out` row is the whole of it at the reference setting: `midMode` is
+  // `off`, so the section and its one-resistor stand-in both present an open there, and
+  // three of mid's four matrix entries are vacuous. The fourth, `in|in`, is the 100k
+  // shunt and is real. The recorded list is the point of the test: a section whose
+  // meaningful entries went to zero would appear in it rather than keep passing.
+  const vacuous: string[] = []
+  const meaningful = new Map<string, number>()
+  const shorted = shortedBoundarySections()
+  for (const section of SECTIONS) {
+    if (shorted.includes(section)) continue
+    const derived = standIn(section, modules, REFERENCE_FLAT)
+    const whole = resolveSectionFlat(section, modules, REFERENCE_FLAT)
+    const boundary = new Set(derived.boundary)
+    const keys = [...boundaryAdmittance(whole.components, boundary, MID_CORNER_HZ).keys()]
+    for (const key of keys) {
+      // Vacuous means BELOW THE FLOOR AT EVERY SAMPLED FREQUENCY on BOTH sides: an
+      // entry that is zero at one frequency and finite at another - a capacitive
+      // branch near DC - is a real comparison, not an open.
+      let everAboveFloor = false
+      for (const hz of SAMPLE_HZ) {
+        const reduced = boundaryAdmittance(derived.components, boundary, hz).get(key)
+        const full = boundaryAdmittance(whole.components, boundary, hz).get(key)
+        expect(reduced, `${section} ${key} @${hz}Hz missing from stand-in`).toBeDefined()
+        expect(full, `${section} ${key} @${hz}Hz missing from section`).toBeDefined()
+        for (const value of [reduced!, full!]) {
+          for (const part of ["re", "im"] as const) {
+            if (Math.abs(value[part]) > FLOOR) everAboveFloor = true
+          }
+        }
+      }
+      if (everAboveFloor) meaningful.set(section, (meaningful.get(section) ?? 0) + 1)
+      else vacuous.push(`${section} ${key}`)
+    }
+  }
+  expect(vacuous.sort(), "entries where Gate A2 compares an open with an open").toEqual([
+    "mid hi_boost_out|hi_boost_out",
+    "mid hi_boost_out|in",
+    "mid in|hi_boost_out",
+  ])
+  // And every covered section must still be carrying a real comparison, so none of
+  // them is covered only by entries this test has just disqualified.
+  for (const section of SECTIONS) {
+    if (shorted.includes(section)) continue
+    expect(meaningful.get(section) ?? 0, `${section} has no non-vacuous A2 entry`)
+      .toBeGreaterThan(0)
+  }
 })
 
 test("GATE A2 can fail: perturbing one value breaks the agreement", () => {
