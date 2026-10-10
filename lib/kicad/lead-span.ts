@@ -29,6 +29,10 @@
  * hi-boost inductors have no chosen part at all (`docs/pultec/values.md` admits a
  * catalogue part, a pot core or a transformer winding), so there is no geometry to
  * record; if one comes on-board it arrives here with its datasheet or it refuses.
+ * `docs/parts/2026-10-10-capacitor-and-inductor-research.md` records what the
+ * distributor APIs were asked about them and what came back - in short, the
+ * Carnhill VTB9050 the documentation cites is at neither distributor, and the one
+ * catalogue family found at 1H is listed everywhere at zero stock.
  *
  * The derivation, shown so a reader can check the arithmetic, is in
  * `docs/stripboard/lead-span.md`. The bend rule and the formulae are in
@@ -359,23 +363,49 @@ export const LEAD_SPANS: ReadonlyMap<string, LeadSpan> = new Map(
 export const UNSOURCED: ReadonlyMap<string, string> = new Map([
   [
     "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm",
-    "no lead length is sourced. This repository names no mpn for its ceramic discs, and on the " +
-      "closest documented part - Vishay BCcomponents D Series, Document Number 28549, Revision " +
-      "08-Jan-2026 - lead length is an ORDERING OPTION (digit 13, \"Packaging / Lead Length\", " +
-      "\"Please refer to relevant datasheet\"), with the older BCcomponents D Series design note " +
-      "giving only the catalogue range \"a lead length from 4 to 30 mm\". A 4mm lead cannot be " +
-      "formed at all and a 30mm one reaches the tool's ceiling, so the option chosen decides the " +
-      "answer entirely. Name the part and its lead-length option, then add an entry.",
+    "no lead length is sourced FOR A PART THAT COVERS THIS BOARD'S VALUES, and the two families " +
+      "searched fail for different reasons.\n" +
+      "  Vishay BCcomponents D Series (Document Number 28549, Revision 08-Jan-2026) states no " +
+      "lead length at all: digit 13 of the ordering code is \"Packaging / Lead Length\" and its " +
+      "only values are \"3 = bulk, T = tape and reel, U = ammo\" - packaging, not millimetres. " +
+      "The one length the document prints, \"Length of cut leads L 11.0 max.\", is in the TAPING " +
+      "section and is a maximum for a lead the tape has already cut, so it bounds nothing from " +
+      "below. The older design note's catalogue range \"a lead length from 4 to 30 mm\" still " +
+      "decides the answer entirely: 4mm cannot be formed at all, 30mm reaches the tool's ceiling.\n" +
+      "  Walsin's disc catalogue DOES state one - its part-number system makes length code 20 " +
+      "\"20.0mm\" with length-tolerance code C \"Min.\", pitch code 2 \"2.5+-0.8mm\" and " +
+      "phid 0.55+-0.05mm - but its parts that fit this footprint's 5.0mm diameter are diameter " +
+      "code 040, \"D max 4.5mm\", which at 50V stops around 1000pF. This footprint carries " +
+      "5600pF, 0.01uF and 0.1uF components on pt2399-core, and Walsin's whole disc catalogue " +
+      "stops at 22000pF (in a 8.5mm body); no 0.1uF ceramic DISC is in it at any diameter. So " +
+      "Walsin is a sourced lead length for a part that is not the one fitted.\n" +
+      "  What settles this: name the part actually fitted to the 0.01uF and 0.1uF positions - " +
+      "which are very likely multilayer (monolithic) ceramics rather than discs, in which case " +
+      "the footprint is the thing to change - and read its lead length off its own datasheet. " +
+      "The arithmetic is ready: a 2.5mm-pitch radial part with a 20mm lead and a 0.55mm wire " +
+      "derives to 2-15 holes, and that figure is stable across the whole +-0.05mm wire tolerance.",
   ],
   [
     "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm",
-    "no datasheet is sourced for a phi5mm can at 2.5mm lead spacing. Nichicon's PS, VZ and UM " +
-      "case tables all put phi5 at 2.0mm, and Panasonic's \"Aluminum Electrolytic Capacitors " +
-      "(Radial Lead Type) - Lead taping radial lead type\" dimensions (DMF0000COL51) confirms " +
-      "Figure C \"Lead space : 2.5 mm / phiD x L : phi5 x 11 ...\" exists but states only taped " +
-      "dimensions, not a bulk lead length. Either name the part fitted, or check whether it is " +
-      "really a phi5/P2.00mm can and change the footprint - which is the likelier answer, since " +
-      "CP_Radial_D5.0mm_P2.00mm is already used elsewhere in this repository.",
+    "no datasheet is sourced for a phi5mm can at 2.5mm lead spacing - but a PART now is, and " +
+      "only its lead length is missing, so this is no longer a question of whether the footprint " +
+      "is real.\n" +
+      "  Panasonic's M-A (ECA) series datasheet (ABA0000C1218, dated 01-Sep-25) has a " +
+      "\"Lead space\" column group with three entries per row - Straight, Taping *B, Taping *i - " +
+      "and every phi5.0 x 11.0mm row reads 2.0 / 5.0 / 2.5, with the footnote \"Lead wire pitch " +
+      "*B=5 mm, 7.5 mm, i=2.5 mm\". So the STRAIGHT-lead phi5 can is 2.0mm, as Nichicon's PS, VZ " +
+      "and UM tables also have it, and the 2.5mm part is the taped-and-formed \"i\" variant. It " +
+      "exists at exactly the two values pt2399-core puts on this footprint: ECA1HM4R7i (4.7uF, " +
+      "50V) and ECA1HM100i (10uF, 50V), with ECA2AM4R7i / ECA2AM100i at 100V, all phi5.0 x 11.0, " +
+      "phid 0.5mm. Panasonic's taping document (DMF0000COL51, 25-Aug-21) confirms the forming: " +
+      "Figure C, \"Lead space : 2.5 mm / phiD x L : phi5 x 11, ...\", F nominal 2.50 +0.5.\n" +
+      "  What is missing is the free lead length of that formed part. The M-A dimensional " +
+      "drawing's \"14min.\" and \"3min.\" are dimensions on the STRAIGHT-lead part; the \"i\" " +
+      "variant's leads are cut by the tape, and the taping document gives tape geometry " +
+      "(18.50 +0.75/-0.50, 9.0+-0.5, protrusion 0 to 1.5) from which a free lead length can only " +
+      "be inferred, not read. Ask Panasonic for the cut length of the \"i\" variant, or decide " +
+      "that the can fitted is really a straight-lead phi5/P2.00mm part and change the footprint - " +
+      "CP_Radial_D5.0mm_P2.00mm is already recorded above, with the Nichicon PS 15mm lead.",
   ],
 ])
 

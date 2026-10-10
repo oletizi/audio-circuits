@@ -111,6 +111,87 @@ test("an unsourced footprint refuses with what is missing, not with a default", 
   )
 })
 
+test("the disc refusal says which two families were read and why each one fails", () => {
+  // The 2026-10-10 search settled what is wrong with each candidate, and the two
+  // reasons are different: one family publishes no lead length, the other
+  // publishes one but does not make the values this footprint carries. A refusal
+  // that collapsed them back into "no lead length is sourced" would send the next
+  // session to re-read both documents.
+  const refuse = (): unknown => leadSpanFor("Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm")
+
+  // Vishay D Series: digit 13 is packaging, and the one printed length is a
+  // maximum for an already-cut taped lead, so it bounds nothing from below.
+  expect(refuse).toThrow(/Revision 08-Jan-2026/)
+  expect(refuse).toThrow(/packaging, not millimetres/)
+  expect(refuse).toThrow(/Length of cut leads L 11\.0 max\./)
+
+  // Walsin: a real stated lead length, on a part that stops short of the values.
+  expect(refuse).toThrow(/Walsin/)
+  expect(refuse).toThrow(/20\.0mm.*Min\./s)
+  expect(refuse).toThrow(/stops around 1000pF/)
+  expect(refuse).toThrow(/0\.1uF/)
+
+  // And the arithmetic is quoted so naming a part is the only work left.
+  expect(refuse).toThrow(/derives to 2-15 holes/)
+})
+
+test("the phi5/P2.50mm refusal names a part that fits, and wants only its lead length", () => {
+  // This footprint ships in KiCad's Capacitor_THT.pretty and pt2399-core places
+  // two components on it, so "the footprint is a phantom" was always the wrong
+  // worry. Panasonic's own lead-space column settles it: phi5 x 11 is 2.0mm with
+  // straight leads and 2.5mm as the taped-and-formed "i" variant.
+  const refuse = (): unknown => leadSpanFor("Capacitor_THT:CP_Radial_D5.0mm_P2.50mm")
+
+  expect(refuse).toThrow(/ABA0000C1218/)
+  expect(refuse).toThrow(/i=2\.5 mm/)
+  expect(refuse).toThrow(/ECA1HM4R7i/)
+  expect(refuse).toThrow(/ECA1HM100i/)
+  expect(refuse).toThrow(/DMF0000COL51/)
+
+  // What is still missing is named precisely: the formed part's free lead
+  // length, which is not the straight-lead drawing's "14min.".
+  expect(refuse).toThrow(/free lead length/)
+  expect(refuse).toThrow(/inferred, not read/)
+
+  // The alternative the refusal offers is a footprint this file already records,
+  // so the remedy it points at is one that exists.
+  expect(LEAD_SPANS.has("Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")).toBe(true)
+  expect(refuse).toThrow(/CP_Radial_D5\.0mm_P2\.00mm is already recorded above/)
+})
+
+test("the span a 20mm lead on a 2.5mm pitch derives to is stable across the wire tolerance", () => {
+  // The figure the disc refusal quotes, recomputed here rather than asserted, and
+  // recomputed at BOTH ends of Walsin's phid 0.55 +-0.05mm so the quoted "2-15
+  // holes" is not a figure that only holds at the nominal. A thicker lead eats
+  // more in the two bends and reaches less far, so 0.60mm is the worst case.
+  const walsinDisc = (leadDiameterMm: number): FormableGeometry => ({
+    kind: "formable",
+    mpn: "Walsin ceramic disc, bulk, length code 20, pitch code 2",
+    mounting: "radial-vertical",
+    bodyLengthMm: 4.5,
+    bodyDiameterMm: 3.5,
+    nominalPitchMm: 2.5,
+    leadLengthMm: 20.0,
+    leadLengthBasis: "bulk, length code 20 with length-tolerance code C (\"Min.\")",
+    leadDiameterMm,
+    manufacturerMinPitchMm: null,
+    source: STRIPBOARD.source,
+  })
+
+  for (const leadDiameterMm of [0.5, 0.55, 0.6]) {
+    const derived = deriveSpanHoles(
+      walsinDisc(leadDiameterMm),
+      "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm",
+    )
+    expect(derived).toEqual({ minSpanHoles: 2, maxSpanHoles: 15, formable: true })
+  }
+
+  // It is lead-limited rather than tool-limited: one hole further is out of
+  // reach even at the thinnest wire, which is what makes 15 a physical claim.
+  expect(maxReachPitchMm(walsinDisc(0.5))).toBeLessThan(pitchForHoles(16))
+  expect(maxReachPitchMm(walsinDisc(0.5))).toBeGreaterThan(pitchForHoles(15))
+})
+
 test("every recorded span is a sane pair of integers", () => {
   for (const [footprint, entry] of LEAD_SPANS) {
     expect(Number.isInteger(entry.minSpanHoles)).toBe(true)

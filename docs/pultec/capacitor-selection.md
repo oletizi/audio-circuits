@@ -5,6 +5,21 @@
 three footprints this document selects, so the five boards no longer refuse at
 export for lack of a whitelist entry.
 
+**A fourth axis has since appeared, and it pulls the other way.** This study
+weighed coverage, per-unit cost, body size and tolerance. It did not weigh
+*reach*, because the stripboard placement pipeline did not exist when it was
+written — and reach is now the binding constraint on clustering, which
+`docs/superpowers/specs/2026-10-10-stripboard-placement-cost-design.md` section
+3.1 makes 70% of low-cut's cut count. A B32529 can be splayed to 4 holes; the net
+graphs want 12. `docs/parts/2026-10-10-capacitor-and-inductor-research.md`
+section 1 researches the obvious answer — an axial film capacitor, which reaches
+the tool's 16-hole ceiling — and finds that it costs roughly 3–5× per unit,
+covers *fewer* of the nineteen values (E6 only, so it misses all four E12 ones),
+needs a KiCad footprint nobody has drawn, and imposes a 6-hole *minimum* in
+place of the radial part's 2. **That document does not overturn this one**, and
+the choice between them, including the cheaper option of reaching the distant
+strip with a wire link instead, is the operator's.
+
 Every dimension below was read from a manufacturer datasheet PDF or from a
 `.kicad_mod` file on this machine. Every price and stock figure was read from a
 distributor page. Nothing here comes from recall. Where a number is an estimate
