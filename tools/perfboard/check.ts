@@ -19,11 +19,13 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
+import { checkBoardBom, type BomCheck } from "../bom/run.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import { resolveBinary } from "./acquire.ts"
 import { foldCutState } from "./cut-state.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
 import { isRecord } from "./guards.ts"
+import { assertDesignators, assertPinNumbers } from "./circuit-exports.ts"
 import { loadCircuit } from "./load.ts"
 import { moduleRepoRoot } from "./repo-root.ts"
 
@@ -132,8 +134,10 @@ export interface CheckDeps {
   readonly exportNetlist?: (declaration: PerfboardDeclaration) => Promise<string>
   /** Injected so no test needs the veroroute binary. */
   readonly runCheck?: (vrtPath: string, netPath: string) => CheckRun
-  /** Injected so no test resolves against this repository's own root. Only consulted when `runCheck` is not injected. */
+  /** Injected so no test resolves against this repository's own root. Only consulted when `runCheck` or `checkBom` is not injected. */
   readonly repoRoot?: string
+  /** Injected so no test needs a circuit module, bom.json or catalog on disk. */
+  readonly checkBom?: (declaration: PerfboardDeclaration) => Promise<BomCheck>
 }
 
 export interface PerfboardResult {
@@ -141,70 +145,6 @@ export interface PerfboardResult {
   readonly ok: boolean
   /** veroroute's own report, verbatim. */
   readonly report: string
-}
-
-/** Where a circuit's exports were read from, for error messages. A PerfboardDeclaration
- * is one; the schematic-stub verb passes the module path for both fields. */
-export interface SourceOfExports {
-  readonly file: string
-  readonly circuitPath: string
-}
-
-/**
- * Validate `DESIGNATORS`: every value must be a string designator.
- *
- * The container check alone is not enough - `typeof {} === "object"` is true
- * of `{ delay_ic: 42 }` too - and this module's whole job is to fail loudly, so
- * a numeric or otherwise non-string designator must throw naming the id it
- * came from, not get lowered into a netlist as a wrong value.
- */
-export function assertDesignators(
-  value: unknown,
-  declaration: SourceOfExports,
-): Readonly<Record<string, string>> {
-  if (!isRecord(value)) {
-    throw new Error(`${declaration.file}: ${declaration.circuitPath} does not export a DESIGNATORS map`)
-  }
-  const designators: Record<string, string> = {}
-  for (const [id, designator] of Object.entries(value)) {
-    if (typeof designator !== "string") {
-      throw new Error(
-        `${declaration.file}: DESIGNATORS["${id}"] must be a string designator, got ${typeof designator}`,
-      )
-    }
-    designators[id] = designator
-  }
-  return designators
-}
-
-/** Validate `PIN_NUMBERS`: every entry must be a map of canonical pin -> string pin number. */
-export function assertPinNumbers(
-  value: unknown,
-  declaration: SourceOfExports,
-): Readonly<Record<string, Readonly<Record<string, string>>>> {
-  if (!isRecord(value)) {
-    throw new Error(`${declaration.file}: ${declaration.circuitPath} does not export a PIN_NUMBERS map`)
-  }
-  const pinNumbers: Record<string, Record<string, string>> = {}
-  for (const [kind, mapping] of Object.entries(value)) {
-    if (!isRecord(mapping)) {
-      throw new Error(
-        `${declaration.file}: PIN_NUMBERS["${kind}"] must be an object mapping canonical pins to ` +
-          `footprint pin numbers, got ${mapping === null ? "null" : typeof mapping}`,
-      )
-    }
-    const pins: Record<string, string> = {}
-    for (const [pin, number] of Object.entries(mapping)) {
-      if (typeof number !== "string") {
-        throw new Error(
-          `${declaration.file}: PIN_NUMBERS["${kind}"]["${pin}"] must be a string pin number, got ${typeof number}`,
-        )
-      }
-      pins[pin] = number
-    }
-    pinNumbers[kind] = pins
-  }
-  return pinNumbers
 }
 
 /**
@@ -316,10 +256,18 @@ export async function checkPerfboard(
     fs.rmSync(dir, { recursive: true, force: true })
   }
 
-  if (run.status === 0) return { declaration, ok: true, report: run.output }
-  if (run.status === 1) return { declaration, ok: false, report: run.output }
-  throw new Error(
-    `veroroute exited with unexpected exit code ${run.status} checking ` +
-      `${declaration.vrtPath}: ${run.output}`,
-  )
+  if (run.status !== 0 && run.status !== 1) {
+    throw new Error(
+      `veroroute exited with unexpected exit code ${run.status} checking ` +
+        `${declaration.vrtPath}: ${run.output}`,
+    )
+  }
+
+  // The parts-list hook (tools/bom/run.ts): only for a board with a bom.json, and it
+  // compares a fresh in-memory rendering with the committed BOM.md - it never writes.
+  const checkBom = deps.checkBom ?? ((board) => checkBoardBom(board, { repoRoot: deps.repoRoot }))
+  const bom = await checkBom(declaration)
+  const layoutOk = run.status === 0
+  if (!bom.applies || bom.ok) return { declaration, ok: layoutOk, report: run.output }
+  return { declaration, ok: false, report: `${run.output}\nParts list (bom.json)\n${bom.report}\n` }
 }

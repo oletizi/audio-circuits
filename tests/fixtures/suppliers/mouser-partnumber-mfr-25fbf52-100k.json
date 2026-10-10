@@ -1,0 +1,162 @@
+{
+    "Errors": [],
+    "SearchResults": {
+        "NumberOfResult": 1,
+        "Parts": [
+            {
+                "Availability": "22598 In Stock",
+                "DataSheetUrl": "https://www.mouser.com/datasheet/3/508/1/YAGEO_MFR_DATASHEET.pdf",
+                "Description": "Metal Film Resistors - Through Hole 100K OHM 1/4W 1%",
+                "FactoryStock": "0",
+                "ImagePath": "https://www.mouser.com/images/yageo/images/ITP_Yageo_MFR_t.JPG",
+                "Category": "Metal Film Resistors - Through Hole",
+                "LeadTime": "70 Days",
+                "LifecycleStatus": null,
+                "Manufacturer": "YAGEO",
+                "ManufacturerPartNumber": "MFR-25FBF52-100K",
+                "Min": "1",
+                "Mult": "1",
+                "MouserPartNumber": "603-MFR-25FBF52-100K",
+                "ProductAttributes": [
+                    {
+                        "AttributeName": "Packaging",
+                        "AttributeValue": "Bulk"
+                    },
+                    {
+                        "AttributeName": "Standard Pack Qty",
+                        "AttributeValue": "10000"
+                    }
+                ],
+                "PriceBreaks": [
+                    {
+                        "Quantity": 1,
+                        "Price": "$0.10",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 10,
+                        "Price": "$0.042",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 25,
+                        "Price": "$0.031",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 100,
+                        "Price": "$0.027",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 250,
+                        "Price": "$0.023",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 500,
+                        "Price": "$0.021",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 1000,
+                        "Price": "$0.018",
+                        "Currency": "USD"
+                    },
+                    {
+                        "Quantity": 5000,
+                        "Price": "$0.015",
+                        "Currency": "USD"
+                    }
+                ],
+                "AlternatePackagings": [
+                    {
+                        "APMfrPN": "MFR-25FRF52-100K"
+                    },
+                    {
+                        "APMfrPN": " MFR-25FTF52-100K"
+                    }
+                ],
+                "ProductDetailUrl": "https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-100K?qs=oAGoVhmvjhxAqZbyE%2Fs9bg%3D%3D",
+                "Reeling": false,
+                "ROHSStatus": "RoHS Compliant",
+                "SuggestedReplacement": "",
+                "MultiSimBlue": 0,
+                "UnitWeightKg": {
+                    "UnitWeight": 0.0004605
+                },
+                "AvailabilityInStock": "22598",
+                "AvailabilityOnOrder": [
+                    {
+                        "Quantity": 40000,
+                        "Date": "2026-10-27T00:00:00"
+                    },
+                    {
+                        "Quantity": 30000,
+                        "Date": "2026-12-03T00:00:00"
+                    }
+                ],
+                "InfoMessages": [],
+                "SalesMaximumOrderQty": "20000",
+                "SurchargeMessages": [
+                    {
+                        "code": "TARIFF_US",
+                        "message": "A tariff of 30% may be applied."
+                    }
+                ],
+                "ProductCompliance": [
+                    {
+                        "ComplianceName": "USHTS",
+                        "ComplianceValue": "8533210090"
+                    },
+                    {
+                        "ComplianceName": "CNHTS",
+                        "ComplianceValue": "8533219000"
+                    },
+                    {
+                        "ComplianceName": "CAHTS",
+                        "ComplianceValue": "8533210000"
+                    },
+                    {
+                        "ComplianceName": "JPHTS",
+                        "ComplianceValue": "853321000"
+                    },
+                    {
+                        "ComplianceName": "KRHTS",
+                        "ComplianceValue": "8533219000"
+                    },
+                    {
+                        "ComplianceName": "TARIC",
+                        "ComplianceValue": "8533210000"
+                    },
+                    {
+                        "ComplianceName": "MXHTS",
+                        "ComplianceValue": "8533210100"
+                    },
+                    {
+                        "ComplianceName": "BRHTS",
+                        "ComplianceValue": "85332190"
+                    },
+                    {
+                        "ComplianceName": "ECCN",
+                        "ComplianceValue": "EAR99"
+                    }
+                ],
+                "TradeCompliance": [
+                    {
+                        "ComplianceName": "Country of Origin",
+                        "ComplianceValue": "China"
+                    },
+                    {
+                        "ComplianceName": "Assembly Country of Origin",
+                        "ComplianceValue": "Not available"
+                    },
+                    {
+                        "ComplianceName": "Country of Diffusion",
+                        "ComplianceValue": "Not available"
+                    }
+                ]
+            }
+        ]
+    }
+}

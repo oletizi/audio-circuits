@@ -1,0 +1,51 @@
+{
+  "purchasing": { "mode": "prototype", "shrinkage": 0.1, "stockQuantity": 100, "maxStockUnitPrice": 0.15, "maxStockOverage": 0.5 },
+  "lines": {
+    "resistor 22R R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-22r-metal-film-0207",
+    "resistor 1K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-1k-metal-film-0207",
+    "resistor 1.2K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-1k2-metal-film-0207",
+    "resistor 1.5K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-1k5-metal-film-0207",
+    "resistor 5.6K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-5k6-metal-film-0207",
+    "resistor 15K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-15k-metal-film-0207",
+    "resistor 47K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-47k-metal-film-0207",
+    "resistor 100K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-100k-metal-film-0207",
+    "resistor 470K R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal": "resistor-470k-metal-film-0207",
+    "capacitor 10uF CP_Radial_D5.0mm_P2.00mm": "electrolytic-10uf-35v-radial-5x11mm",
+    "capacitor 22uF CP_Radial_D5.0mm_P2.00mm": "electrolytic-22uf-35v-radial-5x11mm",
+    "capacitor 100uF CP_Radial_D6.3mm_P2.50mm": "electrolytic-100uf-35v-radial-6.3x11.2mm",
+    "capacitor 220uF CP_Radial_D8.0mm_P3.50mm": "electrolytic-220uf-35v-radial-8x11.5mm",
+    "capacitor 470uF CP_Radial_D10.0mm_P5.00mm": "electrolytic-470uf-35v-radial-10x16mm",
+    "bjt 2N3904 TO-92_Inline": "bjt-2n3904-to-92",
+    "potentiometer 1K linear RM-065 Potentiometer_Runtron_RM-065_Vertical": "trimmer-1k-linear-rm065",
+    "potentiometer 2K linear RM-065 Potentiometer_Runtron_RM-065_Vertical": "trimmer-2k-linear-rm065",
+    "potentiometer 200K linear RM-065 Potentiometer_Runtron_RM-065_Vertical": "trimmer-200k-linear-rm065",
+    "potentiometer 1M linear RM-065 Potentiometer_Runtron_RM-065_Vertical": "trimmer-1m-linear-rm065",
+    "connector Conn_01x02 PinHeader_1x02_P2.54mm_Vertical": "pin-header-2position-2.54mm",
+    "connector Conn_01x03 PinHeader_1x03_P2.54mm_Vertical": "pin-header-3position-2.54mm",
+    "potentiometer 1K linear panel-pot": "potentiometer-1k-linear-panel-pot",
+    "potentiometer 25K linear panel-pot": "potentiometer-25k-linear-panel-pot"
+  },
+  "extras": [
+    {
+      "part": "socket-to92-3position-machined-2.54mm",
+      "quantity": 3,
+      "why": "sockets so the transistors can be swapped"
+    },
+    {
+      "part": "stripboard-31x39-100x80mm",
+      "quantity": 1,
+      "why": "the perfboard the circuit is built on"
+    },
+    {
+      "part": "hookup-wire-22awg-solid-assortment",
+      "quantity": 1,
+      "why": "point-to-point wiring on the stripboard and off-board wiring to the panel pots and headers",
+      "spares": false
+    },
+    {
+      "part": "knob-19mm-set-screw-6.35mm-shaft",
+      "quantity": 3,
+      "why": "knobs for the DRIVE, CHARACTER and TRANSFORMER DRIVE panel pots"
+    }
+  ]
+}

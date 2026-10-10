@@ -1,0 +1,138 @@
+{
+  "id": "resistor-1k-metal-film-0207",
+  "kind": "resistor",
+  "description": "1k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body",
+  "manufacturer": "Yageo",
+  "mpn": "MFR-25FBF52-1K",
+  "specs": {
+    "ohms": 1000,
+    "tolerancePercent": 1,
+    "watts": 0.25,
+    "package": "0207",
+    "diameterMm": 2.4
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K?qs=oAGoVhmvjhwCAC47ReWjsQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for MFR-25FBF52-1K (YAGEO), Mouser part 603-MFR-25FBF52-1K."
+    },
+    {
+      "spec": "ohms",
+      "url": "https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K?qs=oAGoVhmvjhwCAC47ReWjsQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description 'Metal Film Resistors - Through Hole 1K OHM 1/4W 1%'."
+    },
+    {
+      "spec": "tolerancePercent",
+      "url": "https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K?qs=oAGoVhmvjhwCAC47ReWjsQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '1%' tolerance; matches the MFR series 'F' ordering-code suffix (1%) on the datasheet's Ordering Information table."
+    },
+    {
+      "spec": "watts",
+      "url": "https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K?qs=oAGoVhmvjhwCAC47ReWjsQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '1/4W'; matches the MFR-25 size rating of 1/4 W at 70 degC on the datasheet's ratings table."
+    },
+    {
+      "spec": "package",
+      "url": "https://www.mouser.com/datasheet/3/508/1/YAGEO_MFR_DATASHEET.pdf",
+      "note": "Yageo MFR series datasheet, Dimensions table: MFR-25 size is L=6.3+-0.5mm, dia=2.4+-0.2mm - the DIN0207 body size (matches R_Axial_DIN0207_L6.3mm_D2.5mm footprint)."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://www.mouser.com/datasheet/3/508/1/YAGEO_MFR_DATASHEET.pdf",
+      "note": "Yageo MFR series datasheet, Dimensions table: MFR-25 size body diameter 2.4+-0.2mm."
+    }
+  ],
+  "why": "Yageo MFR-25FBF52 is a one-family, 1% metal-film choice that covers every axial resistor value this board needs in the same 0207 body (docs/parts/sourcing-notes.md Lessons, 2026-09-30); this value's exact SKU, stock and price were confirmed by Mouser lookup rather than assumed from the family's ordering code.",
+  "stock": true,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K?qs=oAGoVhmvjhwCAC47ReWjsQ%3D%3D",
+      "sku": "603-MFR-25FBF52-1K",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.1
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.042
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 0.031
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.027
+        },
+        {
+          "quantity": 250,
+          "unitPrice": 0.023
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.021
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.018
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.015
+        }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-1K/13011",
+      "sku": "1.00KXBK-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.1
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.042
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 0.0348
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.0304
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.0268
+        },
+        {
+          "quantity": 250,
+          "unitPrice": 0.02272
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.02016
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.01799
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.01412
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
+    }
+  ]
+}

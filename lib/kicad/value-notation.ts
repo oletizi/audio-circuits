@@ -52,7 +52,9 @@ function decimal(value: number): string {
   return text.startsWith("0.") ? text.slice(1) : text
 }
 
-function capacitanceText(farads: number, id: string): string {
+/** A capacitance as the netlist spells it ("22pF", ".1uF", "10uF"). `id` names the
+ * thing being formatted in the refusal. Exported for the parts list's "Needs" column. */
+export function capacitanceText(farads: number, id: string): string {
   if (!Number.isFinite(farads) || farads < MIN_FARADS || farads >= MAX_FARADS) {
     throw new Error(
       `capacitance ${farads}F on "${id}" is outside the range this formatter has been ` +
@@ -65,7 +67,9 @@ function capacitanceText(farads: number, id: string): string {
     : `${decimal(farads * 1e6)}uF`
 }
 
-function resistanceText(ohms: number, id: string): string {
+/** A resistance as the netlist spells it ("0R", "22R", "4.7K", "1M"). `id` names the thing
+ * being formatted in the refusal. Exported for the parts list's "Needs" column. */
+export function resistanceText(ohms: number, id: string): string {
   // EXACTLY ZERO IS A WIRE LINK, and it is admitted as its own case rather than by
   // lowering MIN_OHMS. A stand-in derived at a control's end stop contains ideal shorts
   // as components (see lib/board/scaffold/reduce.ts: "ideal shorts are components, never

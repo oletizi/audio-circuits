@@ -20,6 +20,7 @@ export const VENDORED_SYMBOLS: readonly string[] = [
   "Device:R",
   "Device:C_Polarized",
   "Device:R_Potentiometer_Trim",
+  "Device:R_Potentiometer",
   "Transistor_BJT:2N3904",
   "Connector_Generic:Conn_01x02",
   "Connector:TestPoint",
