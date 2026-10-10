@@ -276,12 +276,34 @@ test("GATE A2 can fail: perturbing one value breaks the agreement", () => {
   )
   const good = boundaryAdmittance(derived.components, boundary, 1000)
   const bad = boundaryAdmittance(perturbed, boundary, 1000)
-  let worst = 0
+
+  // ASSERTED AGAINST THE GATE'S OWN CRITERION, not against the floor. This used to
+  // assert that the worst difference exceeded FLOOR (1e-15), which demonstrates only
+  // that the comparison notices something - not that the perturbation exceeds what Gate
+  // A2 actually compares against, which at these magnitudes is the RELATIVE term
+  // (|expected| * 1e-9 is about 1.8e-14 here, where FLOOR is three orders smaller). The
+  // tolerance expression below is the same one the gate computes, so this test now
+  // demonstrates the gate rather than the floor.
+  let breaches = 0
+  let worst = { difference: 0, tolerance: Infinity, detail: "nothing compared" }
   for (const [key, expected] of good) {
-    const actual = bad.get(key)!
-    worst = Math.max(worst, Math.abs(actual.re - expected.re), Math.abs(actual.im - expected.im))
+    const actual = bad.get(key)
+    expect(actual, `${key} is missing from the perturbed matrix`).toBeDefined()
+    for (const part of ["re", "im"] as const) {
+      const difference = Math.abs(actual![part] - expected[part])
+      const tolerance = Math.max(Math.abs(expected[part]) * RELATIVE, FLOOR)
+      if (difference > tolerance) breaches += 1
+      if (difference - tolerance > worst.difference - worst.tolerance) {
+        worst = { difference, tolerance, detail: `${key}.${part}` }
+      }
+    }
   }
-  expect(worst).toBeGreaterThan(FLOOR)
+  expect(breaches, "the perturbation stayed inside the tolerance the gate uses")
+    .toBeGreaterThan(0)
+  expect(
+    worst.difference,
+    `worst ${worst.detail}: ${worst.difference} against a tolerance of ${worst.tolerance}`,
+  ).toBeGreaterThan(worst.tolerance)
 })
 
 test("boundary admittance refuses a one-terminal network", () => {

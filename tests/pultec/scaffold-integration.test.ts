@@ -134,6 +134,19 @@ test("GATE C (model): the live subgraph equals THREE_BAND_REFERENCE's, exactly",
   const onlyInReference = liveReference.map(identity).filter((key) => !composedKeys.has(key))
   const onlyInComposed = liveComposed.map(identity).filter((key) => !referenceKeys.has(key))
 
+  // THIS GATE'S OWN FLOOR, not a neighbour's. Two empty live sets satisfy every
+  // assertion below - no key is only on one side, and the lengths match at zero - so
+  // without this the gate reports a pass on a reduction that returned nothing.
+  // Confirmed by mutation: `reduceToBoundary` made to return nothing for networks over
+  // 30 components (which spares the smaller derivations the module-level stand-ins are
+  // built from) left this test GREEN and was caught only by the can-fail companion
+  // below. A companion catching it is good; a gate that reads as THE gate reporting a
+  // pass on nothing is not.
+  expect(liveReference.length, "the reference reduced to nothing, so (b) proves nothing")
+    .toBeGreaterThan(0)
+  expect(liveComposed.length, "the composition reduced to nothing, so (b) proves nothing")
+    .toBeGreaterThan(0)
+
   // Exact set equality, not a count match and not a tolerance.
   expect(onlyInReference).toEqual([])
   expect(onlyInComposed).toEqual([])
