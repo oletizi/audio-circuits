@@ -3,35 +3,59 @@
  *
  * The mid resistors and the per-tap capacitor banks are on the board; the
  * level pot, the two selectors and the tapped inductors are panel-mount /
- * off-board and appear as PADS landings. Net "0" is genuinely part of this
- * section's signal topology, so it has a second member on this board and no
- * singleton is declared.
+ * off-board and appear as PADS landings.
+ *
+ * THE EXPORTED NETWORK IS THE MAXIMAL ONE: this section's own parts, the
+ * stand-in groups for all four other sections, and the junction. That is what
+ * the VeroRoute layout is checked against, because the layout holds every
+ * position and never varies - a build configures the board by populating those
+ * positions or leaving them empty. See `circuits/pultec/physical/board.ts` for
+ * the maximal-versus-configuration distinction, and `boardNetwork` there for
+ * what a particular build realises.
+ *
+ * NO LADDER NET IS A SINGLETON ON THIS BOARD any more. Standalone, the four
+ * stand-in groups between them touch all five junction nets, so `lo_boost_in`
+ * and `out` - which this section's own circuit never names - carry real parts
+ * rather than a lone junction pin. `DECLARED_OPENS` is empty as a consequence,
+ * and the both-directions singleton test in
+ * `tests/circuits/pultec-boards.test.ts` holds it that way.
+ *
+ * THAT EMPTINESS IS NOT A COMPLETENESS GUARD, and an earlier revision of this
+ * comment claimed it was. Every junction net here carries between three and
+ * fourteen pins, so losing a stand-in part - or a whole group - generally leaves
+ * no singleton behind and would pass unnoticed. Group completeness is asserted
+ * directly instead, over all five boards, in
+ * `tests/pultec/scaffold-boards.test.ts`.
+ *
+ * THIS IS THE BUSIEST OF THE FIVE: 28 of its own components plus nine stand-in
+ * parts and the junction's two rows. The other four boards carry more
+ * scaffolding than this one precisely because mid's own group is the largest,
+ * so mid is the section they most need standing in for.
  */
-import {
-  designatorsFor,
-  padOrdersFor,
-  physicalizedBoard,
-  sharedByFor,
-  PASSIVE_PIN_NUMBERS,
-} from "./parts.ts"
-import { OFF_BOARD } from "../off-board.ts"
+import { sharedByFor, PASSIVE_PIN_NUMBERS } from "./parts.ts"
+import { sectionBoard } from "./board.ts"
+import { scaffoldDoc } from "./scaffold-doc.ts"
 import type { Network } from "../../../lib/model/types.ts"
 
-const CROSSING_NETS: readonly string[] = ["hi_boost_out", "in", "0"]
+const BOARD = sectionBoard("mid")
 
 export function pultecMid(): Network {
-  return physicalizedBoard("mid", CROSSING_NETS)
+  return BOARD.network
 }
 
-const BOARD = pultecMid()
-
-export const DESIGNATORS = designatorsFor(BOARD)
+export const DESIGNATORS = BOARD.designators
 export const PIN_NUMBERS = PASSIVE_PIN_NUMBERS
-export const PAD_ORDER = padOrdersFor(BOARD)
-export const OFF_BOARD_IDS: ReadonlySet<string> = new Set(
-  BOARD.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id),
-)
+export const PAD_ORDER = BOARD.padOrders
+export const OFF_BOARD_IDS: ReadonlySet<string> = BOARD.offBoardIds
 /** Crossing net -> the other boards that touch it, for the wiring guide. */
-export const SHARED_BY = sharedByFor("mid", CROSSING_NETS)
+export const SHARED_BY = sharedByFor("mid")
 
+/**
+ * What the wiring guide says about this board's stand-in groups: the parts of each
+ * group, which build populates which group here, which board carries the rest, and the
+ * junction pins that carry anything. Read by `tools/perfboard/wiring-sync.ts`.
+ */
+export const SCAFFOLD = scaffoldDoc("mid")
+
+/** See the module comment: the maximal board has no singleton nets at all. */
 export const DECLARED_OPENS: readonly string[] = []

@@ -2,6 +2,7 @@ import { test, expect } from "bun:test"
 import { REFERENCE_FLAT, allStandIns, standIn } from "../../lib/board/scaffold/index.ts"
 import { resolveSectionFlat } from "../../lib/board/scaffold/flat.ts"
 import { boundaryAdmittance } from "../../lib/board/scaffold/admittance.ts"
+import { boundaryPartition } from "../../lib/board/scaffold/shorts.ts"
 import { partitionReference } from "../../circuits/pultec/partition.ts"
 import type { ResolvedComponent } from "../../lib/model/control-state.ts"
 
@@ -61,23 +62,6 @@ test("no stand-in invents a net the section does not have", () => {
 
 test("a stand-in carries the flat state it emulates", () => {
   expect(standIn("hi-cut", modules, REFERENCE_FLAT).flat).toEqual(REFERENCE_FLAT)
-})
-
-test("the isolation count matches the spec", () => {
-  const expected: Record<string, number> = {
-    "hi-boost": 1,
-    "hi-cut": 1,
-    "low-cut": 1,
-    "low-boost": 2,
-    mid: 2,
-  }
-  let total = 0
-  for (const section of SECTIONS) {
-    const count = standIn(section, modules, REFERENCE_FLAT).isolation.length
-    expect(count, section).toBe(expected[section]!)
-    total += count
-  }
-  expect(total).toBe(7)
 })
 
 test("every section's stand-in is smaller than the section", () => {
@@ -195,23 +179,44 @@ const SAMPLE_HZ = [
 const RELATIVE = 1e-9
 const FLOOR = 1e-15
 
-/** The sections whose boundary nets are ALL joined into one electrical node by an ideal
- * short at flat, so the admittance they present between those nets is infinite and
+/** The sections whose boundary nets are ALL joined into one electrical node by ideal
+ * shorts at flat, so the admittance they present between those nets is infinite and
  * `boundaryAdmittance` refuses rather than returning a number.
  *
- * Named here, and asserted by the test below, so the gap is loud rather than a silently
- * shorter loop: low-cut's flat stand-in IS one 0R wire between `hi_boost_out` and
- * `out`, and there is no finite admittance to compare. Gate A1 covers it completely -
- * a single component, identical in kind, value and nets to the section's own - so
- * nothing is unchecked, but the thing checking it is structural, not numerical. */
-const SHORTED_BOUNDARY: readonly string[] = ["low-cut"]
+ * COMPUTED, NOT NAMED. This used to be the literal `["low-cut"]`, which made a general
+ * property of the network into a carve-out somebody has to remember. The short-circuit
+ * partition decides it instead: a boundary that falls into one class has no finite
+ * admittance across it. low-cut is what the computation returns today - its flat
+ * stand-in IS one 0R wire between `hi_boost_out` and `out` - and
+ * `tests/board/scaffold-partition.test.ts` holds the property this derives from,
+ * including the assertion that it comes out as low-cut and nothing else. Gate A1 covers
+ * that section completely, so nothing is unchecked; the thing checking it is structural
+ * rather than numerical.
+ *
+ * ONE CLASS, NOT "FEWER THAN TWO". A boundary of fewer than two NETS also yields fewer
+ * than two classes, and that is a degenerate boundary rather than a short-circuit
+ * collapse - a different missing thing, which `standIn` and `boundaryAdmittance` each
+ * refuse with their own message. `=== 1` says which of the two this means.
+ *
+ * CALLED FROM INSIDE EACH TEST, NOT AT MODULE SCOPE. Deriving this on import turned any
+ * throw in the derivation into a module-load error, and bun then reported one unhandled
+ * error and ran none of this file's seventeen tests instead of naming the gates that
+ * broke. See `tests/board/scaffold-partition.test.ts`. */
+function shortedBoundarySections(): readonly string[] {
+  return SECTIONS.filter((section) => {
+    const derived = standIn(section, modules, REFERENCE_FLAT)
+    return boundaryPartition(derived.components, new Set(derived.boundary)).size === 1
+  })
+}
 
 test("the sections Gate A2 cannot cover are exactly the ones whose boundary is shorted", () => {
   // A gate that quietly covers fewer sections than it claims is the failure mode this
   // repository exists to prevent, so the refusal is asserted on BOTH sides. If the
   // reduction ever dropped low-cut's 0R arm, the derived side would stop refusing and
   // this fails; if a section's boundary became shorted, the loop below would throw.
-  for (const section of SHORTED_BOUNDARY) {
+  const shorted = shortedBoundarySections()
+  expect(shorted.length, "nothing refuses, so the refusal is untested").toBeGreaterThan(0)
+  for (const section of shorted) {
     const derived = standIn(section, modules, REFERENCE_FLAT)
     const whole = resolveSectionFlat(section, modules, REFERENCE_FLAT)
     const boundary = new Set(derived.boundary)
@@ -228,8 +233,9 @@ test("GATE A2: stand-in and real flat section agree on boundary admittance", () 
   // networks are structurally identical, so anything above arithmetic noise is a
   // defect. If this ever needs loosening, the reduction has started approximating.
   const covered: string[] = []
+  const shorted = shortedBoundarySections()
   for (const section of SECTIONS) {
-    if (SHORTED_BOUNDARY.includes(section)) continue
+    if (shorted.includes(section)) continue
     covered.push(section)
     const derived = standIn(section, modules, REFERENCE_FLAT)
     const whole = resolveSectionFlat(section, modules, REFERENCE_FLAT)
@@ -251,9 +257,10 @@ test("GATE A2: stand-in and real flat section agree on boundary admittance", () 
       }
     }
   }
-  // Non-vacuous by construction: the four sections this gate can cover are named, so
-  // a future change that made another boundary shorted fails here rather than
-  // shortening the loop in silence.
+  // Non-vacuous, and the result is recorded rather than relied upon: the loop above
+  // skips whatever the short-circuit partition says has no finite admittance, and this
+  // pins what that came out as. A future change that shorted another section's
+  // boundary fails here rather than shortening the loop in silence.
   expect(covered).toEqual(["hi-boost", "hi-cut", "low-boost", "mid"])
 })
 
@@ -269,12 +276,34 @@ test("GATE A2 can fail: perturbing one value breaks the agreement", () => {
   )
   const good = boundaryAdmittance(derived.components, boundary, 1000)
   const bad = boundaryAdmittance(perturbed, boundary, 1000)
-  let worst = 0
+
+  // ASSERTED AGAINST THE GATE'S OWN CRITERION, not against the floor. This used to
+  // assert that the worst difference exceeded FLOOR (1e-15), which demonstrates only
+  // that the comparison notices something - not that the perturbation exceeds what Gate
+  // A2 actually compares against, which at these magnitudes is the RELATIVE term
+  // (|expected| * 1e-9 is about 1.8e-14 here, where FLOOR is three orders smaller). The
+  // tolerance expression below is the same one the gate computes, so this test now
+  // demonstrates the gate rather than the floor.
+  let breaches = 0
+  let worst = { difference: 0, tolerance: Infinity, detail: "nothing compared" }
   for (const [key, expected] of good) {
-    const actual = bad.get(key)!
-    worst = Math.max(worst, Math.abs(actual.re - expected.re), Math.abs(actual.im - expected.im))
+    const actual = bad.get(key)
+    expect(actual, `${key} is missing from the perturbed matrix`).toBeDefined()
+    for (const part of ["re", "im"] as const) {
+      const difference = Math.abs(actual![part] - expected[part])
+      const tolerance = Math.max(Math.abs(expected[part]) * RELATIVE, FLOOR)
+      if (difference > tolerance) breaches += 1
+      if (difference - tolerance > worst.difference - worst.tolerance) {
+        worst = { difference, tolerance, detail: `${key}.${part}` }
+      }
+    }
   }
-  expect(worst).toBeGreaterThan(FLOOR)
+  expect(breaches, "the perturbation stayed inside the tolerance the gate uses")
+    .toBeGreaterThan(0)
+  expect(
+    worst.difference,
+    `worst ${worst.detail}: ${worst.difference} against a tolerance of ${worst.tolerance}`,
+  ).toBeGreaterThan(worst.tolerance)
 })
 
 test("boundary admittance refuses a one-terminal network", () => {

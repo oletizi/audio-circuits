@@ -23,10 +23,19 @@
  * run and rewrites it only when the content differs, the same way the KiCad
  * netlist fixture is kept honest.
  */
+import {
+  PART_TABLE_HEADER,
+  describePart,
+  gangOf,
+  netOf,
+  partRow,
+  pinFieldNotes,
+  pinsOf,
+} from "./part-text.ts"
 import { physicalOnly } from "./physicalize.ts"
-import { scaffoldLinksSection } from "./scaffold/wiring.ts"
+import { standInGroupsSection, standInOwners, standInPartIds } from "./scaffold/wiring.ts"
 import type { Component, Network } from "../model/types.ts"
-import type { FlatState, StandIn } from "./scaffold/index.ts"
+import type { ScaffoldDoc } from "./scaffold/doc.ts"
 
 export interface WiringInput {
   /** The module name, as `boards/pultec-<name>` spells it. */
@@ -40,88 +49,32 @@ export interface WiringInput {
   /** Crossing net -> the OTHER boards that touch it. */
   readonly sharedBy: Readonly<Record<string, readonly string[]>>
   /**
-   * Present only for the Pultec scaffold board: every section's stand-in and the flat
-   * state they emulate, from which the "Scaffold links" section is rendered. Absent
-   * for every other board, which has no stand-ins to describe.
+   * The stand-in groups this board holds and what each build does with them, rendered
+   * as the "Stand-in groups" section.
+   *
+   * SET BY EVERY BOARD THAT CURRENTLY GETS A GUIDE. The five Pultec section boards each
+   * export a `SCAFFOLD` built by `circuits/pultec/physical/scaffold-doc.ts`, and
+   * `tools/perfboard/wiring-sync.ts` passes it through, so this is no longer a field
+   * nothing sets.
+   *
+   * WHY IT IS STILL OPTIONAL, stated accurately because the obvious reason is wrong:
+   * it is NOT that `pt2399-core` and the two transistor-preamp boards take the
+   * `undefined` branch. They get no guide at all - `wiringDocumentFor` returns
+   * `not-applicable` for a board with nothing off it - so they reach neither branch. It
+   * is optional because `wiringDocument` is a generic entry point in `lib`: a board can
+   * have panel parts and no stand-in groups, that board would then get a guide with
+   * nothing to say here, and a required field would make it invent an empty `ScaffoldDoc`
+   * (which `asScaffoldDoc` refuses anyway, since a build with no boards builds nothing).
+   * Today the `undefined` branch is exercised only by `tests/board/wiring.test.ts`, which
+   * is the honest state of it: a supported shape with no board in this repository
+   * currently in it.
+   *
+   * The previous shape - a map of every section's `StandIn` plus a flat state - described
+   * the separate scaffold board that has since been deleted, and could not answer the
+   * question a section board's guide has to: which groups does THIS board populate, in
+   * THIS build, and which board carries the rest.
    */
-  readonly scaffold?: {
-    readonly standIns: Readonly<Record<string, StandIn>>
-    readonly flat: FlatState
-  }
-}
-
-/** Every pin a component declares, package pins and unit pins together. */
-function pinsOf(component: Component): Readonly<Record<string, Component["pins"][string]>> {
-  const pins: Record<string, Component["pins"][string]> = { ...component.pins }
-  for (const unit of component.units) Object.assign(pins, unit.pins)
-  return pins
-}
-
-function ohmsText(ohms: number): string {
-  if (ohms >= 1000) {
-    const k = ohms / 1000
-    return `${Number.isInteger(k) ? k : k.toFixed(1)}k`
-  }
-  return `${ohms}R`
-}
-
-function henriesText(henries: number): string {
-  return henries < 1 ? `${Math.round(henries * 1000)}mH` : `${henries}H`
-}
-
-/**
- * Capacitance as somebody reads it off a part, not as a netlist spells it.
- *
- * `lib/kicad/value-notation.ts` answers "what text goes in a netlist field" and
- * is constrained by what VeroRoute compares; this answers "which part do I pick
- * out of the drawer", so it uses whichever unit keeps the number small.
- */
-function faradsText(farads: number): string {
-  if (farads < 1e-9) return `${Math.round(farads * 1e12)}pF`
-  if (farads < 1e-6) return `${Number((farads * 1e9).toPrecision(3))}nF`
-  return `${Number((farads * 1e6).toPrecision(3))}uF`
-}
-
-/**
- * A one-line description of the part, for somebody holding it.
- *
- * Deliberately not `valueFor` from the KiCad lowering: that answers "what text
- * goes in a netlist field", and this answers "which part do I fit". A pot's
- * taper is the clearest case - irrelevant to the netlist, and the first thing
- * a builder needs to get right.
- */
-function describe(component: Component): string {
-  const parameters: Record<string, unknown> = { ...component.parameters }
-  if (component.kind === "potentiometer") {
-    const ohms = parameters["ohms"]
-    const taper = parameters["taper"]
-    const curve = typeof taper === "object" && taper !== null && "type" in taper
-      ? String((taper as { type: unknown }).type).toUpperCase()
-      : "unknown taper"
-    return typeof ohms === "number" ? `${ohmsText(ohms)} ${curve} potentiometer` : "potentiometer"
-  }
-  if (component.kind === "inductor") {
-    const henries = parameters["henries"]
-    return typeof henries === "number" ? `${henriesText(henries)} inductor` : "inductor"
-  }
-  if (component.kind === "switch") {
-    const positions = parameters["positions"]
-    return Array.isArray(positions) ? `${positions.length}-position switch` : "switch"
-  }
-  if (component.kind === "capacitor") {
-    const farads = parameters["farads"]
-    return typeof farads === "number" ? faradsText(farads) : "capacitor"
-  }
-  if (component.kind === "resistor") {
-    const ohms = parameters["ohms"]
-    return typeof ohms === "number" ? ohmsText(ohms) : "resistor"
-  }
-  if (component.kind === "connector") return "terminal block"
-  return component.kind
-}
-
-function netOf(connection: Component["pins"][string]): string | undefined {
-  return connection.kind === "net" ? connection.net : undefined
+  readonly scaffold?: ScaffoldDoc
 }
 
 /**
@@ -157,7 +110,7 @@ function selectorLabels(
     // Only the tap end is labelled: the other end is the shared coil return,
     // which every inductor lands on, so labelling it would be noise.
     if (component.kind === "inductor") {
-      const value = describe(component)
+      const value = describePart(component)
       const pins = pinsOf(component)
       const tap = pins["a"]
       const tapNet = tap === undefined ? undefined : netOf(tap)
@@ -168,38 +121,35 @@ function selectorLabels(
 }
 
 /**
- * What you place and solder, with the value to fit.
+ * What you place and solder on EVERY build of this board, with the value to fit.
  *
  * This used to be omitted, on the reasoning that the layout already shows where
  * these parts go. That was wrong in the one situation the guide exists for:
  * somebody doing the layout is holding a bag of parts and a board full of
  * designators, and the layout does NOT say that C18 is 330nF or that its far
  * end is the 20Hz throw.
+ *
+ * STAND-IN PARTS ARE DELIBERATELY NOT HERE. They sit in positions the layout holds in
+ * every configuration, but a given build populates only some of them, and listing them
+ * beside the parts that are always fitted is read as "fit all of these" - which is the
+ * instruction that puts two copies of one group on one bus. They are listed under
+ * "Stand-in groups", by group, with the build that calls for each.
  */
 function onBoardTable(
   network: Network,
   designators: Readonly<Record<string, string>>,
   offBoard: ReadonlySet<string>,
+  standIns: ReadonlySet<string>,
 ): string {
   const labels = selectorLabels(network, offBoard)
   const rows: string[] = []
   for (const component of network.components) {
     if (offBoard.has(component.id) || physicalOnly(component)) continue
-    const pins = pinsOf(component)
-    const connections = Object.values(pins)
-      .flatMap((connection) => {
-        const netName = netOf(connection)
-        if (netName === undefined) return []
-        const label = labels[netName]
-        return [label === undefined ? netName : `${netName} (${label})`]
-      })
-      .join(" ↔ ")
-    rows.push(
-      `| ${designators[component.id] ?? component.id} | ${describe(component)} | ${connections} |`,
-    )
+    if (standIns.has(component.id)) continue
+    rows.push(partRow(component, designators[component.id] ?? component.id, labels))
   }
   if (rows.length === 0) return "_None._\n"
-  return ["| Part | Fit | Between |", "| --- | --- | --- |", ...rows].join("\n")
+  return [...PART_TABLE_HEADER, ...rows].join("\n")
 }
 
 /** Pads that land on the same net, which the builder has to link together. */
@@ -273,13 +223,26 @@ function section(
   designator: string,
   order: readonly string[],
   sharedBy: Readonly<Record<string, readonly string[]>> | undefined,
+  standInFor: string | undefined,
 ): string {
   const pins = pinsOf(component)
-  const lines = [`### ${designator} — ${describe(component)}`, ""]
+  const lines = [`### ${designator} — ${describePart(component)}`, ""]
   lines.push(padTable(component, order, pins, sharedBy), "")
 
-  const gang = Reflect.get(component.parameters, "gang")
-  if (typeof gang === "string") {
+  if (standInFor !== undefined) {
+    // A panel part can belong to a stand-in group - the 1H coil mid's stand-in needs is
+    // one - and then it is wired only in the builds that populate that group. Without
+    // this note it sits among the parts every build wires, which reads as "always".
+    lines.push(
+      `**Part of the ${standInFor} stand-in group.** Wire it only in the builds where ` +
+        `**Stand-in groups** below tells you to populate ${standInFor} on this board; in every ` +
+        "other build this part is not fitted and these pads carry nothing.",
+      "",
+    )
+  }
+
+  const gang = gangOf(component)
+  if (gang !== undefined) {
     lines.push(
       `**Ganged (\`${gang}\`).** This is one pole of a two-pole switch shared with ` +
         "another board — not a switch of its own. Both poles turn together on one shaft, " +
@@ -308,6 +271,12 @@ function section(
 export function wiringDocument(input: WiringInput): string {
   const offBoard: string[] = []
   const physical: string[] = []
+  const standIns = input.scaffold === undefined
+    ? new Set<string>()
+    : standInPartIds(input.scaffold)
+  const standInFor = input.scaffold === undefined
+    ? new Map<string, string>()
+    : standInOwners(input.scaffold)
 
   for (const component of input.network.components) {
     const isPhysical = physicalOnly(component)
@@ -324,9 +293,31 @@ export function wiringDocument(input: WiringInput): string {
           "be derived or guessed.",
       )
     }
-    const rendered = section(component, designator, order, isPhysical ? input.sharedBy : undefined)
+    const rendered = section(
+      component,
+      designator,
+      order,
+      isPhysical ? input.sharedBy : undefined,
+      standInFor.get(component.id),
+    )
     if (isPhysical) physical.push(rendered)
     else offBoard.push(rendered)
+  }
+
+  const kinds = [
+    "- **On the board** — parts you place and solder in every build. The layout says where;",
+    "  this says which part and what it sits between.",
+    "- **Panel parts** — pots and switches that are NOT on the board. Each of their",
+    "  terminals gets a wire to one pad. Pad numbers count from 1 in layout order.",
+    "- **Board terminals** — the wires that leave this board for the OTHER boards, not",
+    "  for the panel. This is the inter-board harness.",
+  ]
+  if (input.scaffold !== undefined) {
+    kinds.push(
+      "- **Stand-in groups** — positions this board holds for the sections you are NOT",
+      "  building. Which of them you populate depends on the build, and that section says",
+      "  which, for every build this board can be part of.",
+    )
   }
 
   return [
@@ -336,18 +327,14 @@ export function wiringDocument(input: WiringInput): string {
     "it on every run and overwrites anything that has drifted, so a change here shows up as a",
     "git diff you have to look at rather than as a file somebody has to remember to update.",
     "",
-    "There are three kinds of thing here, and they are wired differently:",
+    `There are ${input.scaffold === undefined ? "three" : "four"} kinds of thing here, ` +
+      "and they are wired differently:",
     "",
-    "- **On the board** — parts you place and solder. The layout says where; this says",
-    "  which part and what it sits between.",
-    "- **Panel parts** — pots and switches that are NOT on the board. Each of their",
-    "  terminals gets a wire to one pad. Pad numbers count from 1 in layout order.",
-    "- **Board terminals** — the wires that leave this board for the OTHER boards, not",
-    "  for the panel. This is the inter-board harness.",
+    ...kinds,
     "",
     "## On the board",
     "",
-    onBoardTable(input.network, input.designators, input.offBoard),
+    onBoardTable(input.network, input.designators, input.offBoard, standIns),
     "",
     "## Panel parts",
     "",
@@ -361,9 +348,23 @@ export function wiringDocument(input: WiringInput): string {
     "shield landing, present so there is somewhere to put that wire rather than",
     "improvising one later.",
     "",
+    // WHICH PART, not only which holes. The rows below are named by footprint, and a
+    // footprint is a landing rather than a purchase: the junction's two rows are one
+    // long-tail header in the hand, and a builder who ordered what the headings alone
+    // say would fit two plain headers and then be unable to stack the boards the shared
+    // bus exists for. A field declaration on the parts says they are one part; these
+    // notes say what that part is, derived from the rows' own footprints.
+    ...pinFieldNotes(input.network.components, input.designators)
+      .flatMap((note) => [note, ""]),
     physical.length > 0 ? physical.join("\n") : "_None._\n",
     ...(input.scaffold === undefined
       ? []
-      : [scaffoldLinksSection(input.scaffold.standIns, input.scaffold.flat, input.network, input.designators)]),
+      : [standInGroupsSection(
+        input.scaffold,
+        input.network,
+        input.designators,
+        selectorLabels(input.network, input.offBoard),
+        input.offBoard,
+      )]),
   ].join("\n")
 }

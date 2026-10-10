@@ -82,6 +82,36 @@ export interface PartSpec {
    * a deck; assuming `false` would refuse every screw terminal ever authored.
    */
   readonly electricallyInert?: boolean
+  /**
+   * That this connector is ONE ROW of a pin field a single part occupies, when the
+   * model splits that part into one component per row.
+   *
+   * WHY A DECLARATION AND NOT GEOMETRY. Nothing in this model says where a part sits,
+   * so two 1x05 headers cannot be seen to be adjacent rows of one 2x05 field - and the
+   * difference matters to the person buying parts, not to the netlist. Every component
+   * naming the same `field` is one row of that field; the generated wiring guide reads
+   * the rows' own footprints to say how many pins the field has and what pitch it is at
+   * (`pinFieldNotes` in `lib/board/part-text.ts`), so the words follow the parts rather
+   * than being typed in beside them.
+   */
+  readonly pinField?: PinField
+}
+
+/**
+ * One pin field, split across several connector components.
+ *
+ * `mating` is the purchase the field forces, which neither the footprint nor the kind
+ * can state: the holes take a plain header, a long-tail header, a socket or bare leads
+ * alike, and only one of those lets another board sit on top. It is a closed vocabulary
+ * of exactly the matings this repository has words for - adding one is an edit here AND
+ * in `pinFieldNotes`, with a test, rather than a free-form string that would reach a
+ * builder unexplained.
+ */
+export interface PinField {
+  /** Shared by every component that is a row of this field, e.g. "junction". */
+  readonly name: string
+  /** `stacking`: the field is fitted with long-tail pins so the next board stacks on it. */
+  readonly mating: "stacking"
 }
 
 export interface Unit {

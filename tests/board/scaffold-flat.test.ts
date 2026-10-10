@@ -30,9 +30,10 @@ test("the other arm of the same pot carries the full value", () => {
 })
 
 test("low-cut at flat is a zero-ohm short between two BOUNDARY nets", () => {
-  // Low-cut's entire stand-in is this short. If anything merged hi_boost_out with out
-  // there would be nothing left to make removable and its terminal count would
-  // collapse from two to one.
+  // Low-cut's entire stand-in is this short. If anything merged hi_boost_out with out,
+  // the stand-in would be destroyed outright: its terminal count would collapse from
+  // two to one, and a group with one terminal cannot be the ladder link low-cut's
+  // absence needs.
   const resolved = resolveSectionFlat("low-cut", modules, REFERENCE_FLAT)
   const arm = resolved.components.find((c) => c.id === "RV_LO_CUT.ccw-wiper")
   expect(arm!.parameters).toEqual({ ohms: 0 })

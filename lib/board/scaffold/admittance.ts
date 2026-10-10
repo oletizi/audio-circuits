@@ -37,8 +37,7 @@
  * wire between its two boundary nets), so Gate A2 cannot cover it and says so out loud
  * instead of comparing two large numbers that agree only in their leading digits.
  */
-import { connectedGroups } from "./isolate.ts"
-import { electricalNodes, nodesOf } from "./shorts.ts"
+import { connectedGroups, electricalNodes, nodesOf, partitionBy } from "./shorts.ts"
 import type { ResolvedComponent } from "../../model/control-state.ts"
 
 export interface Complex {
@@ -149,21 +148,38 @@ export function boundaryAdmittance(
   const attached = attachedToBoundary(components, boundary)
   const boundaryNets = [...boundary].sort()
   if (boundaryNets.length < 2) {
+    // A DEGENERATE BOUNDARY, WHICH IS NOT A SHORT-CIRCUIT COLLAPSE. Both refusals end
+    // with fewer than two electrical nodes to measure between, and they are different
+    // missing things: here the network was never given two terminals, whereas the
+    // refusal below was given them and found them joined. Conflating the two would let
+    // a caller read "nothing to measure" as "the shorts collapsed it".
     throw new Error(
       `Boundary admittance needs at least two boundary nets, got ` +
-        `${boundaryNets.length}. A one-terminal network presents nothing.`,
+        `${boundaryNets.length} (${boundaryNets.join(", ") || "none"}). A one-terminal ` +
+        `network presents nothing. This is a degenerate boundary rather than a ` +
+        `short-circuit collapse: no ideal short was involved, and discovering only one ` +
+        `shared net means the caller passed the wrong boundary, not that the network ` +
+        `is shorted - see the separate infinite-admittance refusal below.`,
     )
   }
   const classOf = electricalNodes(attached)
-  const boundaryNodes = [...new Set<string>(boundaryNets.map(classOf))].sort()
+  // The refusal below is decided by the SHORT-CIRCUIT PARTITION of the boundary, which
+  // is the general property `tests/board/scaffold-partition.test.ts` asserts of every
+  // section. One class means one node, and a section's exemption from the numerical
+  // gate therefore follows from its own network rather than from its name. Partitioned
+  // from the `classOf` above rather than from the components again: one union-find per
+  // call, not two.
+  const boundaryNodes = [...partitionBy(classOf, boundary).keys()].sort()
   if (boundaryNodes.length < 2) {
     throw new Error(
-      `Boundary admittance is infinite for this network: its boundary nets ` +
-        `${boundaryNets.join(", ")} are all one electrical node (${boundaryNodes[0]}), ` +
-        `joined by ideal shorts, so there is no finite admittance between them. This ` +
-        `is a refusal rather than a large number: an ideal short is merged here, not ` +
-        `approximated, so the caller must cover such a network structurally (Gate A1) ` +
-        `rather than numerically.`,
+      `Boundary admittance is infinite for this network: its ${boundaryNets.length} ` +
+        `boundary nets ${boundaryNets.join(", ")} are all one electrical node ` +
+        `(${boundaryNodes[0]}), joined by ideal shorts, so there is no finite ` +
+        `admittance between them. This is a short-circuit collapse, not the degenerate ` +
+        `boundary the refusal above names: the terminals are there and the shorts have ` +
+        `merged them. It is a refusal rather than a large number because an ideal short ` +
+        `is merged here, not approximated, so the caller must cover such a network ` +
+        `structurally (Gate A1) rather than numerically.`,
     )
   }
   const referenceNet = boundary.has(groundNet) ? groundNet : boundaryNets[0]!

@@ -57,6 +57,22 @@ test("every committed guide matches what its circuit generates", async () => {
   }
 })
 
+test("every committed Pultec guide says the junction is one stacking header", () => {
+  // THE DEFECT THIS CLOSES, and it cost money rather than tidiness. Each guide listed
+  // the junction as two "1x05 pin header" rows - accurate about the holes - and said
+  // nothing about the part, while the reason the hardware is one 2x05 long-tail header
+  // sat in a code comment in circuits/pultec/physical/parts.ts. A builder orders from
+  // the guide, fits two plain vertical headers, and then cannot stack the boards, which
+  // is the whole reason the junction is a shared bus. Asserted on the COMMITTED file,
+  // not on a freshly generated string: the committed guide is what somebody reads.
+  for (const board of ["low-cut", "low-boost", "hi-cut", "hi-boost", "mid"]) {
+    const guide = fs.readFileSync(path.join(REPO, `boards/pultec-${board}/wiring.md`), "utf8")
+    expect(guide, board).toContain("ONE 2x05 pin field")
+    expect(guide, board).toContain("LONG-TAIL (stacking) header")
+    expect(guide, board).toContain("`junction_signals` and `junction_grounds`")
+  }
+})
+
 test("a drifted guide is rewritten, and the message says the wiring changed", async () => {
   // Written into a scratch directory so the real board files are untouched; the
   // declaration still points at the real circuit, so the content is genuine.

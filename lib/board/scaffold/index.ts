@@ -29,12 +29,10 @@
  */
 import { discoverBoundary } from "./boundary.ts"
 import { GROUND_NET, resolveSectionFlat } from "./flat.ts"
-import { isolationPoints } from "./isolate.ts"
 import { reduceToBoundary } from "./reduce.ts"
 import type { Component } from "../../model/types.ts"
 import type { ResolvedComponent } from "../../model/control-state.ts"
 import type { FlatState } from "./flat.ts"
-import type { IsolationPoint } from "./isolate.ts"
 
 export interface StandIn {
   readonly section: string
@@ -43,7 +41,6 @@ export interface StandIn {
   readonly flat: FlatState
   readonly boundary: readonly string[]
   readonly components: readonly ResolvedComponent[]
-  readonly isolation: readonly IsolationPoint[]
 }
 
 export function standIn(
@@ -70,12 +67,15 @@ export function standIn(
         `check lib/board/scaffold/reduce.ts against the section's topology.`,
     )
   }
+  // No isolation points are derived here any more: a build-time choice of which
+  // parts to populate replaced the removable links that once needed them, so a group
+  // that is not fitted needs no leg broken - its parts are simply absent from the
+  // board.
   return {
     section: sectionName,
     flat,
     boundary: [...boundary].sort(),
     components,
-    isolation: isolationPoints(components, boundary, GROUND_NET),
   }
 }
 
@@ -93,4 +93,3 @@ export function allStandIns(
 
 export { GROUND_NET, REFERENCE_FLAT } from "./flat.ts"
 export type { FlatState } from "./flat.ts"
-export type { IsolationPoint } from "./isolate.ts"

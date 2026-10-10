@@ -66,6 +66,14 @@ function capacitanceText(farads: number, id: string): string {
 }
 
 function resistanceText(ohms: number, id: string): string {
+  // EXACTLY ZERO IS A WIRE LINK, and it is admitted as its own case rather than by
+  // lowering MIN_OHMS. A stand-in derived at a control's end stop contains ideal shorts
+  // as components (see lib/board/scaffold/reduce.ts: "ideal shorts are components, never
+  // node merges"), so a section board carries 0R resistors - a jumper, a 0R part, or a
+  // length of wire across two pads, all of which every vendor spells "0R". Lowering
+  // MIN_OHMS to 0 instead would also admit 0.5R as ".5R", a spelling nothing here has
+  // been checked against, so the band between 0 and 1R stays refused.
+  if (ohms === 0) return "0R"
   if (!Number.isFinite(ohms) || ohms < MIN_OHMS || ohms >= MAX_OHMS_EXCLUSIVE) {
     throw new Error(
       `resistance ${ohms}R on "${id}" is outside the range this formatter has been proven ` +

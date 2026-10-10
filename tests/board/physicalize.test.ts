@@ -38,31 +38,50 @@ test("projection removes physical-only components and keeps the rest", () => {
   expect(projected.ports).toEqual({ input: "IN" })
 })
 
-test("a transparent component puts each pin on a different net", () => {
+test("a transparent component declares electricallyInert: true", () => {
   expect(() => assertElectricallyTransparent(BLOCK)).not.toThrow()
 })
 
-test("a physical-only component that joins two pins to one net is not transparent", () => {
-  const shorting: Component = {
+test("two pins of a physical-only component naming the same net is not a short - it is one net, same as everywhere else in this model", () => {
+  // Ruling 2026-10-09: this used to throw. Nets are implied by pin references
+  // rather than declared, so two pins naming the same string ARE one net by
+  // construction - a physical-only component repeating a net across several
+  // pins (a connector landing six interleaved ground pins) joins nothing
+  // that was not already joined. Only `electricallyInert` decides whether
+  // projecting the component away is sound; a repeated net name is not
+  // evidence either way.
+  const repeating: Component = {
     ...BLOCK,
-    id: "shorting_block",
+    id: "repeating_block",
     units: [{ name: "MAIN", pins: { "1": net("IN"), "2": net("IN") } }],
   }
-  expect(() => assertElectricallyTransparent(shorting)).toThrow(/joins pins/)
+  expect(() => assertElectricallyTransparent(repeating)).not.toThrow()
 })
 
-test("projection REFUSES a physical-only component that is not transparent", () => {
-  // The invariant the whole abstraction rests on. Without this, the provenance
-  // marker alone is enough to make arbitrary circuitry vanish from every
-  // equivalence check, and assertElectricallyTransparent only holds where
-  // somebody remembered to call it.
-  const shorting: Component = {
+test("projection ACCEPTS a physical-only component that repeats a net across pins, given electricallyInert: true", () => {
+  const repeating: Component = {
     ...BLOCK,
-    id: "shorting_block",
+    id: "repeating_block",
     units: [{ name: "MAIN", pins: { "1": net("IN"), "2": net("IN") } }],
   }
-  const board: Network = { ports: {}, components: [CAP, shorting] }
-  expect(() => projectPhysical(board)).toThrow(/joins pins/)
+  const board: Network = { ports: {}, components: [CAP, repeating] }
+  expect(() => projectPhysical(board)).not.toThrow()
+  expect(projectPhysical(board).components.map((c) => c.id)).toEqual(["c1"])
+})
+
+test("REGRESSION: a physical-only component spanning two different nets without electricallyInert still throws", () => {
+  // The ruling that let repeated nets through was explicit that this must
+  // still bite: relaxing the pin-map check must not let an actually-shorting
+  // part (two DIFFERENT nets, no inertness declared) slip through projection.
+  const maybeShorting: Component = {
+    id: "ground_lift",
+    kind: "resistor",
+    parameters: { ohms: 0.001 },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a: net("IN"), b: net("GND") } }],
+    provenance: { source: PHYSICAL_ONLY },
+  }
+  expect(() => assertElectricallyTransparent(maybeShorting)).toThrow(/electricallyInert/)
 })
 
 test("projection REFUSES a physical-only component whose pins are on different nets but which does not declare electricallyInert", () => {

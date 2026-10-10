@@ -25,6 +25,39 @@ export function nodesOf(component: ResolvedComponent): readonly string[] {
   return [...nodes]
 }
 
+/** Partition components into pieces that share no net.
+ *
+ * Moved here from the retired `isolate.ts`: a graph utility over `ResolvedComponent`s,
+ * exactly like `nodesOf` and `electricalNodes` above, with nothing in it specific to
+ * isolation. `admittance.ts` uses it to find the connected piece attached to a
+ * boundary; `isolate.ts` used it the same way to find each piece needing its own
+ * isolation point, and still needing that answer is a fact about isolation, not about
+ * this function. */
+export function connectedGroups(
+  components: readonly ResolvedComponent[],
+): readonly (readonly ResolvedComponent[])[] {
+  const groups: ResolvedComponent[][] = []
+  const unassigned = [...components]
+  while (unassigned.length > 0) {
+    const group = [unassigned.shift()!]
+    const nets = new Set<string>(nodesOf(group[0]!))
+    let grew = true
+    while (grew) {
+      grew = false
+      for (let index = unassigned.length - 1; index >= 0; index -= 1) {
+        const candidate = unassigned[index]!
+        if (!nodesOf(candidate).some((net) => nets.has(net))) continue
+        for (const net of nodesOf(candidate)) nets.add(net)
+        group.push(candidate)
+        unassigned.splice(index, 1)
+        grew = true
+      }
+    }
+    groups.push(group)
+  }
+  return groups
+}
+
 /** An ideal short: a component whose terminals sit at one potential however much
  * current flows through it.
  *
@@ -83,4 +116,55 @@ export function electricalNodes(
     for (let index = 1; index < nodes.length; index += 1) union(nodes[0]!, nodes[index]!)
   }
   return find
+}
+
+/**
+ * The partition of `boundary` into short-circuit equivalence classes: which boundary
+ * nets this network's ideal shorts have made one electrical node. Keyed by each class's
+ * representative, with the class's boundary members sorted.
+ *
+ * THE PARTITION, NOT THE COUNT, IS THE PROPERTY. Two networks whose boundaries fall
+ * into the same NUMBER of classes can still group different nets, so a comparison of
+ * sizes passes a derivation that merged the wrong pair. Compare the classes.
+ *
+ * COMPARE THE VALUES, NOT THE KEYS. A representative is the lexicographic minimum over
+ * ALL the nets in its class, internal ones included, so a class can be named after a
+ * net that is not on the boundary at all - and two networks that join the same boundary
+ * nets through different internal nets then agree on the classes while disagreeing on
+ * what they are called. The keys exist because `boundaryAdmittance` needs a node name;
+ * the equivalence claim lives in the values.
+ *
+ * This is what makes low-cut's exemption from numerical comparison a consequence rather
+ * than a carve-out: its stand-in is one 0R arm between its two boundary nets, both
+ * boundary nets land in one class, and `boundaryAdmittance` refuses because a network
+ * whose whole boundary is one node presents no finite admittance. Nothing has to
+ * remember the section's name to know that.
+ */
+export function boundaryPartition(
+  components: readonly ResolvedComponent[],
+  boundary: ReadonlySet<string>,
+): ReadonlyMap<string, readonly string[]> {
+  return partitionBy(electricalNodes(components), boundary)
+}
+
+/** The same partition from a union-find the caller has ALREADY BUILT.
+ *
+ * `boundaryAdmittance` needs both the partition and the mapping, once each, and an
+ * earlier version built the union-find twice per call - doubling that work inside Gate
+ * A2's sweep, which runs five sections by about a hundred frequencies by two sides.
+ * Splitting the two gives the caller that holds a `classOf` the partition for free, and
+ * leaves `boundaryPartition` above as the whole-network convenience it reads as.
+ */
+export function partitionBy(
+  classOf: (net: string) => string,
+  boundary: ReadonlySet<string>,
+): ReadonlyMap<string, readonly string[]> {
+  const classes = new Map<string, string[]>()
+  for (const net of [...boundary].sort()) {
+    const representative = classOf(net)
+    const members = classes.get(representative)
+    if (members === undefined) classes.set(representative, [net])
+    else members.push(net)
+  }
+  return classes
 }

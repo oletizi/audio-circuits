@@ -28,6 +28,10 @@ import { flatControlState } from "../../lib/board/scaffold/flat.ts"
 import { partitionReference } from "../../circuits/pultec/partition.ts"
 import { THREE_BAND_REFERENCE } from "../../circuits/pultec/electrical/three-band.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
+import { boardNetwork } from "../../circuits/pultec/physical/board.ts"
+import { projectPhysical } from "../../lib/board/physicalize.ts"
+import { boundaryAdmittance } from "../../lib/board/scaffold/admittance.ts"
+import type { Complex } from "../../lib/board/scaffold/admittance.ts"
 import { pruneFloatingBranches } from "../../lib/sim/prepare.ts"
 import { toSpiceNetlist } from "../../lib/sim/netlist.ts"
 import { runAcSweep } from "../../lib/sim/ac.ts"
@@ -172,6 +176,86 @@ const ALL = subsets()
 
 test("every one of the 31 section combinations is covered", () => {
   expect(ALL).toHaveLength(31)
+})
+
+/**
+ * THE BRIDGE: the network the boards build is the network this gate proves.
+ *
+ * WHY IT IS NEEDED. Everything above composes `modules[section]` with `STAND_INS`
+ * re-wrapped under a `SCAF_` id prefix and no net prefixing at all. The boards compose
+ * something built a different way - `boardNetwork(section, present)`, with `SI_<SECTION>_`
+ * ids, `si_<section>_` internal-net prefixes and a junction on every board - and nothing
+ * tied the two together. Each was verified against the reference separately, so the
+ * 31-subset electrical result above was proven on a network the boards do not build.
+ * The structural reason they agree is asserted in pieces elsewhere (a group's only
+ * unprefixed nets are junction nets, and exactly one board carries each group), and the
+ * agreement itself was once measured by hand during a review. A one-off answer protects
+ * nothing, so it is a standing test.
+ *
+ * MEASURED AT THE BOUNDARY, not by SPICE. The two constructions differ in interior net
+ * names by design, so a graph comparison would have to translate between two naming
+ * schemes and would prove the translation. Boundary admittance over the three nets the
+ * reference itself presents is naming-independent, deterministic, and needs no solver.
+ */
+const BRIDGE_BOUNDARY: ReadonlySet<string> = new Set(Object.values(THREE_BAND_REFERENCE.ports))
+const BRIDGE_HZ = [20, 100, 1000, 5000, 20_000]
+/** Gate A2's discipline: relative, with an absolute floor for entries near zero. */
+const BRIDGE_RELATIVE = 1e-9
+const BRIDGE_FLOOR = 1e-15
+
+/** The boards of one build, composed as a bench would join them: each present board's
+ * own configuration network, with the junction headers projected away - they are
+ * physical-only landings, and every board carries a copy of them. */
+function boardComposed(present: readonly string[]): Network {
+  const built = new Set(present)
+  const components: Component[] = []
+  for (const section of present) components.push(...boardNetwork(section, built).components)
+  return projectPhysical({ ports: THREE_BAND_REFERENCE.ports, components })
+}
+
+function boundaryOf(network: Network, hz: number): ReadonlyMap<string, Complex> {
+  const resolved = resolveNetwork(network, flatControlState(network.components, REFERENCE_FLAT))
+  return boundaryAdmittance(resolved.components, BRIDGE_BOUNDARY, hz)
+}
+
+test("THE BRIDGE: the five boards' composition equals Gate B's network at the boundary", () => {
+  let compared = 0
+  let worst = { relative: 0, detail: "nothing compared" }
+  for (const present of ALL) {
+    const expectedNetwork = composed(present)
+    const boardNetworkOfBuild = boardComposed(present)
+    for (const hz of BRIDGE_HZ) {
+      const expectedMatrix = boundaryOf(expectedNetwork, hz)
+      const boardMatrix = boundaryOf(boardNetworkOfBuild, hz)
+      expect(boardMatrix.size, `${present.join("+")} @${hz}Hz matrix size`)
+        .toBe(expectedMatrix.size)
+      for (const [key, expected] of expectedMatrix) {
+        const actual = boardMatrix.get(key)
+        expect(actual, `${present.join("+")} ${key} @${hz}Hz missing`).toBeDefined()
+        for (const part of ["re", "im"] as const) {
+          const difference = Math.abs(actual![part] - expected[part])
+          const tolerance = Math.max(Math.abs(expected[part]) * BRIDGE_RELATIVE, BRIDGE_FLOOR)
+          const relative = Math.abs(expected[part]) === 0
+            ? 0
+            : difference / Math.abs(expected[part])
+          if (relative > worst.relative) {
+            worst = { relative, detail: `${present.join("+")} @${hz} ${key}.${part}` }
+          }
+          expect(
+            difference,
+            `${present.join("+")} ${key}.${part} @${hz}Hz: ${actual![part]} vs ${expected[part]}`,
+          ).toBeLessThanOrEqual(tolerance)
+          compared += 1
+        }
+      }
+    }
+  }
+  // NON-VACUOUS BY ARITHMETIC, not by a "greater than zero": the three boundary nets
+  // give a 2x2 matrix once ground is the reference, both parts of each entry are
+  // compared, and every subset at every frequency must have produced one. A subset that
+  // silently collapsed or threw would land here as a count, not as a quiet pass.
+  expect(compared).toBe(ALL.length * BRIDGE_HZ.length * (BRIDGE_BOUNDARY.size - 1) ** 2 * 2)
+  console.log(`Bridge worst relative difference: ${worst.relative} (${worst.detail})`)
 })
 
 test("GATE B: every combination matches the full reference, under every control vector", async () => {

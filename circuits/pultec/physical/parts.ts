@@ -8,7 +8,7 @@
  * `FILM_CAPACITOR_IMPORT_STRINGS` in `lib/kicad/import-string.ts` for the
  * footprints' VeroRoute import strings.
  */
-import type { Component, Network } from "../../../lib/model/types.ts"
+import type { Component, Network, PinField } from "../../../lib/model/types.ts"
 import { net } from "../../../lib/model/types.ts"
 import { componentNets } from "../../../lib/model/topology.ts"
 import { PHYSICAL_ONLY } from "../../../lib/board/physicalize.ts"
@@ -77,21 +77,53 @@ export const AXIAL_RESISTOR =
   "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 
 /**
- * A three-way 5.08mm terminal block: this board's crossing nets plus ground.
- *
- * VERIFIED PRESENT in KiCad's own library before being written here - the first
- * draft of this plan invented a plausible name that does not exist. Confirm with:
+ * The junction footprint and symbol: a 1x05 header at 2.54mm, VERIFIED PRESENT
+ * in KiCad's own library before being written here. Confirm with:
  *
  *   ls "/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints/\
- * TerminalBlock_Phoenix.pretty/TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal.kicad_mod"
+ * Connector_PinHeader_2.54mm.pretty/PinHeader_1x05_P2.54mm_Vertical.kicad_mod"
+ *   grep -n "symbol \"Conn_01x05\"" \
+ *     "/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/Connector_Generic.kicad_sym"
  *
- * The block is a landing, not a purchase: 5.08mm pitch means a screw terminal can
- * be fitted over those holes, a header pressed into them, or a wire soldered
- * straight in. Any other 1x03 part at 5.00mm or 5.08mm substitutes without
- * changing the layout.
+ * The footprint is a landing, not a purchase: a plain header, a stacking
+ * (long-tail) header, a ribbon socket or individual leads all press into the
+ * same row of five holes. See the design doc's "The junction is a stacking
+ * 2x05 bus" for why the pitch and the two-row-of-five shape (one of these
+ * headers for signals, a second for grounds - see below) are what let the
+ * five boards stack on a shared bus.
+ *
+ * MODELLED AS TWO 1x05 HEADERS, NOT ONE 2x05 PART. The hardware is one 2x05
+ * header occupying one row-of-ten pin field; the model is two, because
+ * `lib/kicad/import-string.ts` derives a VeroRoute import string only for the
+ * families the pinned fork's `Src/CompTypes.h` actually has - `SIP<n>` from
+ * `PinHeader_1x<n>_*` - and that fork has no two-row shape at 2.54mm row
+ * pitch (`SIP` is one row; `DIP`'s real row spacing is 0.3in+, not 0.1in, so
+ * mapping a 2.54mm 2x05 to it would be exactly the kind of footprint-name-
+ * lies error this repository has shipped twice already; `BLOCK_100`/
+ * `BLOCK_200` are single-row terminal blocks). Two `PinHeader_1x05` headers on
+ * adjacent rows occupy the identical pin field a single 2x05 does - a ribbon
+ * socket still mates across both, a stack still carries every net through -
+ * so nothing physical is lost. What is lost is model tidiness: KiCad sees two
+ * connectors where the hardware is one part, which matters only for a future
+ * PCB footprint placement, out of scope for this stripboard design, and is
+ * recorded here as a limitation rather than silently hidden.
  */
-export const TERMINAL_BLOCK_3 =
-  "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal"
+export const HEADER_1X05 =
+  "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"
+
+/**
+ * What both rows carry so a builder is told they are ONE part.
+ *
+ * The reasoning above was for a long time recorded only here, in a comment nobody
+ * ordering parts reads, while all five generated guides listed two "1x05 pin header"
+ * rows and said nothing about long tails. Somebody following the guide buys two plain
+ * vertical headers and then cannot stack the boards, which is the one thing the shared
+ * bus exists for. This declaration is what carries the fact into the guide:
+ * `pinFieldNotes` in `lib/board/part-text.ts` turns it into a paragraph under "Board
+ * terminals", with the field's size and pitch read off these components' own
+ * footprints.
+ */
+const JUNCTION_FIELD: PinField = { name: "junction", mating: "stacking" }
 
 /** Symbols for the off-board parts, so their netlist value field is not empty. */
 export const ROTARY_SYMBOL = "Switch:SW_Rotary"
@@ -134,7 +166,7 @@ export function footprintForKind(component: Component): string {
 }
 
 /** The symbol an off-board component's value field takes, by kind. */
-function symbolFor(component: Component): string {
+export function symbolFor(component: Component): string {
   if (component.kind === "potentiometer") return POT_SYMBOL
   if (component.kind === "inductor") return INDUCTOR_SYMBOL
   if (component.kind === "switch") {
@@ -146,69 +178,175 @@ function symbolFor(component: Component): string {
 }
 
 /**
- * One physicalized board: the module's components with footprints or symbols
- * attached, plus the terminal block that carries its crossing nets.
+ * The junction's signal row: a 1x05 header carrying all five ladder nets, one
+ * pin each, in the odd-pin order the design doc's pinout table gives them.
  *
- * `crossingNets` is in pin order and always ends with "0". Ground is on every
- * board, including the three where it is not in the signal topology, because a
- * board with panel wiring and no ground landing gets an improvised wire
- * soldered to it later.
+ * THE PINOUT IS FIXED AND IDENTICAL ON EVERY BOARD, and does not vary with
+ * which nets a given section's bare circuit touches - that uniformity is what
+ * makes the junction a shared bus rather than a per-board connector, and what
+ * lets any board host any absent section's stand-in group later. See the
+ * design doc's "The junction is a stacking 2x05 bus" for why.
+ *
+ * `electricallyInert: true` is sound here on the ordinary grounds: every pin
+ * names a DIFFERENT net, so there is nothing for the part to be accused of
+ * joining even before the declaration is read.
  */
-export function physicalizedBoard(owner: ModuleOwner, crossingNets: readonly string[]): Network {
-  // partitionReference(), NOT boardNetwork(). boardNetwork filters out everything
-  // that is not board-resident, which after Task 5 means every pot, switch and
-  // inductor - exactly the components this design keeps in the network and marks
-  // off-board so their PADS pads become the wire landings. Building from
-  // boardNetwork would leave the off-board branch below unreachable and produce
-  // boards with no landings at all.
+export function junctionSignalComponent(): Component {
+  return {
+    id: "junction_signals",
+    kind: "connector",
+    parameters: {},
+    part: {
+      symbol: "Connector_Generic:Conn_01x05",
+      footprint: HEADER_1X05,
+      electricallyInert: true,
+      pinField: JUNCTION_FIELD,
+    },
+    pins: {},
+    units: [{
+      name: "MAIN",
+      pins: {
+        "1": net("in"), "2": net("hi_boost_out"), "3": net("lo_boost_in"),
+        "4": net("out"), "5": net("0"),
+      },
+    }],
+    provenance: { source: PHYSICAL_ONLY },
+  }
+}
+
+/**
+ * The junction's ground row: a second 1x05 header, every pin a ground return
+ * interleaved beside the signal row above - these are high-impedance nodes
+ * (47k-470k), and `in`/`out` sitting adjacent with nothing between them would
+ * be a feedback path.
+ *
+ * `electricallyInert: true` here is the declaration the ruling turned on:
+ * five pins on one net is not, by itself, evidence of a short - nets are
+ * implied by pin references rather than declared, so five pins naming "0"
+ * are already one net, not five nets this header has joined. What makes
+ * projecting this header away sound is that the part conducts nothing beyond
+ * what the net name already says, which only the declaration can state.
+ */
+export function junctionGroundComponent(): Component {
+  return {
+    id: "junction_grounds",
+    kind: "connector",
+    parameters: {},
+    part: {
+      symbol: "Connector_Generic:Conn_01x05",
+      footprint: HEADER_1X05,
+      electricallyInert: true,
+      pinField: JUNCTION_FIELD,
+    },
+    pins: {},
+    units: [{
+      name: "MAIN",
+      pins: {
+        "1": net("0"), "2": net("0"), "3": net("0"), "4": net("0"), "5": net("0"),
+      },
+    }],
+    provenance: { source: PHYSICAL_ONLY },
+  }
+}
+
+/** Both junction rows, in the order they occupy on the board: signals then grounds. */
+export function junctionComponents(): readonly [Component, Component] {
+  return [junctionSignalComponent(), junctionGroundComponent()]
+}
+
+/**
+ * The five nets the junction puts on every board, in the signal row's pin
+ * order, regardless of which board is asking.
+ *
+ * RESTATED HERE RATHER THAN READ OFF THE COMPONENTS only because `sharedByFor`
+ * and `portsOn` need bare net names, not a pin map. That restatement is a
+ * second source of truth, so it does NOT rely on anybody keeping it in step by
+ * hand: `tests/pultec/scaffold-boards.test.ts` asserts this list against the
+ * nets `junctionSignalComponent()` and `junctionGroundComponent()` actually
+ * carry, and against the signal row's own pin order.
+ */
+export const JUNCTION_NETS: readonly string[] = [
+  "in", "hi_boost_out", "lo_boost_in", "out", "0",
+]
+
+/**
+ * One section's OWN components, physicalized: footprints on the board-resident
+ * parts, symbols on the off-board landings.
+ *
+ * This is the section's own circuit only. The stand-in groups for the other
+ * four sections, and the junction, are added by
+ * `circuits/pultec/physical/board.ts`, which is the module that knows which
+ * groups a configuration carries.
+ *
+ * `partitionReference()`, NOT a configuration network: a configuration filters
+ * nothing out, but the thing that would be tempting here - a network already
+ * stripped of pots, switches and inductors - would leave the off-board branch
+ * below unreachable and produce boards with no wire landings at all.
+ */
+export function ownComponents(owner: ModuleOwner): readonly Component[] {
   const owned = partitionReference().modules[owner]
-  if (owned === undefined) throw new Error(`no such module: ${owner}`)
-  const components: Component[] = owned.map((component) =>
+  if (owned === undefined) {
+    throw new Error(
+      `no such module: ${owner}. Known modules: ` +
+        `${Object.keys(partitionReference().modules).sort().join(", ")}. Module names come ` +
+        "from circuits/pultec/partition.ts and are not defaulted.",
+    )
+  }
+  return owned.map((component) =>
     OFF_BOARD.has(component.id)
       ? { ...component, part: { ...component.part, symbol: symbolFor(component) } }
       : { ...component, part: { ...component.part, footprint: footprintForKind(component) } })
-
-  // A board's ports are the crossing nets its own electrical components touch.
-  // The rest of `crossingNets` - the chassis ground on the three boards where
-  // ground is not in the signal topology - exist only because the terminal block
-  // puts a pin on them. They are physical-only, and must NOT be declared ports:
-  // `projectPhysical` removes the block, after which no pin sits on them at all,
-  // and `validateNetwork` refuses a port naming a net nothing is on.
-  //
-  // This is not a second description of the interface competing with the block.
-  // Both come from the same `crossingNets` array; the block realises it in
-  // copper, and these ports are what remains of it once the copper is projected
-  // away.
-  const touched = new Set(components.flatMap(componentNets))
-  const ports = Object.fromEntries(
-    crossingNets.filter((netName) => touched.has(netName)).map((netName) => [netName, netName]),
-  )
-
-  const pins: Record<string, ReturnType<typeof net>> = {}
-  crossingNets.forEach((netName, index) => { pins[String(index + 1)] = net(netName) })
-
-  components.push({
-    id: "board_terminals",
-    kind: "connector",
-    parameters: {},
-    part: { symbol: "Connector_Generic:Conn_01x03", footprint: TERMINAL_BLOCK_3, electricallyInert: true },
-    pins: {},
-    units: [{ name: "MAIN", pins }],
-    provenance: { source: PHYSICAL_ONLY },
-  })
-
-  return { ports, components }
 }
 
-/** Pad orders for every off-board component on a physicalized board. */
-export function padOrdersFor(board: Network): Readonly<Record<string, readonly string[]>> {
+/**
+ * A board's ports: the junction nets its ELECTRICAL components touch.
+ *
+ * Call this with the board's electrical components and WITHOUT the junction.
+ * The junction lands a pin on all five nets on every board, so including it
+ * would declare a port for every net on every board - and a net whose only pin
+ * belongs to the junction is physical-only: `projectPhysical` removes the
+ * junction, after which nothing sits on that net at all, and `validateNetwork`
+ * refuses a port naming a net nothing is on.
+ *
+ * Which nets those are therefore varies with the CONFIGURATION, not with a
+ * per-board list: a board carrying hi-cut's and mid's stand-in groups touches
+ * `hi_boost_out` and `in`, which the section alone never names. An earlier
+ * revision passed a hand-written `crossingNets` array per section; it is
+ * deleted rather than kept, because `JUNCTION_NETS` filtered by what the
+ * components touch computes the same answer for the all-five configuration and
+ * the right one for every other.
+ */
+export function portsOn(
+  components: readonly Component[],
+): Readonly<Record<string, string>> {
+  const touched = new Set(components.flatMap(componentNets))
+  return Object.fromEntries(
+    JUNCTION_NETS.filter((netName) => touched.has(netName)).map((netName) => [netName, netName]),
+  )
+}
+
+/** The pad order for one off-board component: the landing's pin order. */
+export function padOrderFor(component: Component): readonly string[] {
+  if (component.kind === "potentiometer") return POT_PAD_ORDER
+  if (component.kind === "inductor") return TWO_PIN_PAD_ORDER
+  if (component.kind === "switch") return rotaryPadOrder(component)
+  throw new Error(
+    `no pad order rule for off-board "${component.id}" of kind "${component.kind}". An ` +
+      "off-board part's pads are the wire landings a builder solders to, so their order is " +
+      "a per-kind fact that must be stated in circuits/pultec/physical/parts.ts rather than " +
+      "defaulted to whatever order the pin map happens to iterate in.",
+  )
+}
+
+/** Pad orders for the off-board components of a physicalized board. */
+export function padOrdersFor(
+  board: Network,
+  offBoardIds: ReadonlySet<string>,
+): Readonly<Record<string, readonly string[]>> {
   const orders: Record<string, readonly string[]> = {}
   for (const component of board.components) {
-    if (!OFF_BOARD.has(component.id)) continue
-    if (component.kind === "potentiometer") orders[component.id] = POT_PAD_ORDER
-    else if (component.kind === "inductor") orders[component.id] = TWO_PIN_PAD_ORDER
-    else if (component.kind === "switch") orders[component.id] = rotaryPadOrder(component)
-    else throw new Error(`no pad order rule for off-board "${component.id}"`)
+    if (!offBoardIds.has(component.id)) continue
+    orders[component.id] = padOrderFor(component)
   }
   return orders
 }
@@ -227,8 +365,16 @@ export const PASSIVE_PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string
 }
 
 /**
- * Each crossing net mapped to the OTHER boards that touch it, for the wiring
+ * Every junction net mapped to the OTHER boards that touch it, for the wiring
  * guide's terminal-block table.
+ *
+ * Covers all five of `JUNCTION_NETS`, NOT just the nets this board's own
+ * circuit happens to touch - the junction is identical on every board, so a
+ * net this board doesn't use can still reach another board through it, and
+ * reporting only this board's own crossing nets would print "no other board"
+ * for a net that plainly does reach one (caught by reading the regenerated
+ * low-cut guide: `in` and `lo_boost_in` are not this board's nets, but they
+ * are hi-boost/mid's and low-boost's, and the guide must say so).
  *
  * Derived from `boundaryConductors()` rather than restated, so it cannot
  * disagree with the boundary the boards were actually split along. A net no
@@ -236,13 +382,10 @@ export const PASSIVE_PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string
  * empty list rather than being absent, which is what lets the guide print "no
  * other board" instead of a blank cell that reads like missing data.
  */
-export function sharedByFor(
-  owner: ModuleOwner,
-  crossingNets: readonly string[],
-): Readonly<Record<string, readonly string[]>> {
+export function sharedByFor(owner: ModuleOwner): Readonly<Record<string, readonly string[]>> {
   const boundaries = boundaryConductors()
   const shared: Record<string, readonly string[]> = {}
-  for (const netName of crossingNets) {
+  for (const netName of JUNCTION_NETS) {
     const boundary = boundaries.find(candidate => candidate.net === netName)
     shared[netName] = boundary === undefined
       ? []

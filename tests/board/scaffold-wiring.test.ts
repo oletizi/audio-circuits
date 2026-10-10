@@ -1,149 +1,437 @@
 /**
- * The scaffold board's "Scaffold links" wiring-guide section
- * (`lib/board/scaffold/wiring.ts`), verified against the real scaffold `Network`.
+ * The "Stand-in groups" section of a board's wiring guide: what it tells a builder to
+ * populate, what it says is carried elsewhere, which junction pins it says to wire, and
+ * the setting it says the stand-ins emulate.
  *
- * THE VERIFICATION CLAIM IS NARROWER THAN "verify the guide against the layout" -
- * there is no VeroRoute layout for this board yet (that is the owner's work, and the
- * layout-derived comparison is a later gate). What IS checked here: the guide's link
- * instructions agree with the CONNECTIVITY OF THE GENERATED `Network` - every link
- * `scaffoldLinkEntries` reports really is a fitted/removed switch on the board, really
- * joins the stub net its named component's terminal currently carries to the real net
- * its isolation point names, and nothing is recovered by parsing a link's own id.
+ * ASSERTED AGAINST THE CONFIGURATION NETWORKS, NOT AGAINST THE DERIVATION RESTATED.
+ * `suppliers()` already has its own tests (`tests/board/scaffold-supplier.test.ts`);
+ * re-deriving the supplier rule here and comparing it with itself would pass against a
+ * guide that describes a different board. So the instructions are checked against what
+ * `boardNetwork(section, present)` actually carries: the groups a build populates are
+ * read back out of the network's own stand-in provenance, and the junction pins are
+ * recomputed from the nets two present boards' populated parts share.
+ *
+ * WHAT REPLACED WHAT. This file previously checked the separate scaffold board's
+ * removable links, every network coming from a `pultecScaffold()` that no longer
+ * exists. The links are gone - a build is configured by which parts are populated - so
+ * there is nothing here carried over from them.
  */
 import { test, expect } from "bun:test"
+import {
+  standInGroupsSection,
+  standInOwners,
+  standInPartIds,
+} from "../../lib/board/scaffold/wiring.ts"
+import { asScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 import { wiringDocument } from "../../lib/board/wiring.ts"
-import { scaffoldLinkEntries, scaffoldLinksSection } from "../../lib/board/scaffold/wiring.ts"
-import { pultecScaffold, SCAFFOLD_FLAT } from "../../circuits/pultec/scaffold.ts"
-import { allStandIns } from "../../lib/board/scaffold/index.ts"
-import { partitionReference } from "../../circuits/pultec/partition.ts"
-import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
-import type { Component, Connection } from "../../lib/model/types.ts"
-import type { WiringInput } from "../../lib/board/wiring.ts"
+import { physicalOnly } from "../../lib/board/physicalize.ts"
+import { componentNets } from "../../lib/model/topology.ts"
+import { LADDER_ORDER } from "../../lib/board/scaffold/supplier.ts"
+import { scaffoldDoc } from "../../circuits/pultec/physical/scaffold-doc.ts"
+import {
+  STAND_IN_SOURCE,
+  boardNetwork,
+  sectionBoard,
+  standInFlat,
+} from "../../circuits/pultec/physical/board.ts"
+import { JUNCTION_NETS, sharedByFor } from "../../circuits/pultec/physical/parts.ts"
+import type { ScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
+import type { Component, Network } from "../../lib/model/types.ts"
 
-const modules = partitionReference().modules
-const standIns = allStandIns(modules, SCAFFOLD_FLAT)
-const network = pultecScaffold()
-const byId = new Map(network.components.map((component) => [component.id, component]))
+const JUNCTION_NET_SET: ReadonlySet<string> = new Set(JUNCTION_NETS)
 
-/** A second copy of the package-then-unit pin walk, NOT an independent one - it is the
- * same two lines as `lib/board/scaffold/wiring.ts`'s own `pinNet`, written out here so
- * this file does not import the module it is checking. That buys locality and nothing
- * more: a blind spot in the walk itself would be shared, so this does not establish the
- * production matcher is right about where a pin's net lives. What it does check is that
- * the guide names the net the BOARD puts on that terminal, which is a different claim
- * and the one the assertions below make. The duplication can stand; the earlier comment
- * claiming independence was the defect. */
-function netOnTerminal(component: Component, terminal: string): string | undefined {
-  const fromPackage: Connection | undefined = component.pins[terminal]
-  if (fromPackage !== undefined) return fromPackage.kind === "net" ? fromPackage.net : undefined
-  for (const unit of component.units) {
-    const connection = unit.pins[terminal]
-    if (connection !== undefined) return connection.kind === "net" ? connection.net : undefined
+/** Every non-empty subset of the five sections: the 31 buildable configurations. */
+function configurations(): readonly (readonly string[])[] {
+  const all: string[][] = []
+  for (let mask = 1; mask < 1 << LADDER_ORDER.length; mask += 1) {
+    all.push(LADDER_ORDER.filter((_, index) => ((mask >> index) & 1) === 1))
   }
-  return undefined
+  return all
 }
 
-test("there are exactly seven links, one per isolation point the model derives", () => {
-  // The design doc's count (hi-boost 1, hi-cut 1, low-cut 1, low-boost 2, mid 2 = 7)
-  // is read off `allStandIns()` here, not hardcoded as the expectation - a change to
-  // the electrical model that changed the count would change this test's own input,
-  // not just the production code's output.
-  const expected = Object.values(standIns).reduce((sum, standIn) => sum + standIn.isolation.length, 0)
-  const entries = scaffoldLinkEntries(standIns, network)
-  expect(entries.length).toBe(expected)
-  expect(entries.length).toBe(7)
-})
-
-test("the per-section link counts match the design's derivation", () => {
-  const bySection = new Map<string, number>()
-  for (const entry of scaffoldLinkEntries(standIns, network)) {
-    bySection.set(entry.section, (bySection.get(entry.section) ?? 0) + 1)
+/**
+ * Which sections' stand-in parts a board really carries in one build, read off the
+ * network rather than asked of the supplier rule.
+ */
+function groupsCarried(section: string, present: ReadonlySet<string>): readonly string[] {
+  const sections = new Set<string>()
+  for (const component of boardNetwork(section, present).components) {
+    if (component.provenance?.source !== STAND_IN_SOURCE) continue
+    const location = component.provenance.location
+    if (location === undefined) {
+      throw new Error(`stand-in component ${component.id} carries no provenance.location`)
+    }
+    sections.add(location)
   }
-  expect(bySection.get("hi-boost")).toBe(1)
-  expect(bySection.get("hi-cut")).toBe(1)
-  expect(bySection.get("low-cut")).toBe(1)
-  expect(bySection.get("low-boost")).toBe(2)
-  expect(bySection.get("mid")).toBe(2)
-})
+  return [...sections].sort()
+}
 
-test("every entry's link really is a fitted/removed switch, joining the stub this component's terminal carries to the entry's net", () => {
-  for (const entry of scaffoldLinkEntries(standIns, network)) {
-    const link = byId.get(entry.link)
-    if (link === undefined) throw new Error(`entry names link "${entry.link}", not found on the board`)
-    expect(link.kind, entry.link).toBe("switch")
-    expect(link.parameters, entry.link).toEqual({
-      positions: ["fitted", "removed"],
-      contacts: { fitted: [["1", "2"]], removed: [] },
-    })
+/** Junction nets a board's populated parts sit on, recomputed here independently. */
+function junctionNets(section: string, present: ReadonlySet<string>): ReadonlySet<string> {
+  const nets = new Set<string>()
+  for (const component of boardNetwork(section, present).components) {
+    if (physicalOnly(component)) continue
+    for (const netName of componentNets(component)) {
+      if (JUNCTION_NET_SET.has(netName)) nets.add(netName)
+    }
+  }
+  return nets
+}
 
-    const component = byId.get(entry.component)
-    if (component === undefined) throw new Error(`entry names component "${entry.component}", not found`)
-    const stub = netOnTerminal(component, entry.terminal)
-    if (stub === undefined) throw new Error(`"${entry.component}" has no net on terminal "${entry.terminal}"`)
+/** One component of a network, refusing rather than reporting a vacuous pass. */
+function componentOn(network: Network, id: string): Component {
+  const found = network.components.find((component) => component.id === id)
+  if (found === undefined) throw new Error(`${id} is not on this network`)
+  return found
+}
 
-    // The component's own terminal must NOT already carry the real boundary net -
-    // that is what "isolated" means - and the link must be the one bridge between
-    // the stub it actually carries and the net the isolation point names.
-    expect(stub, entry.component).not.toBe(entry.net)
-    expect(netOnTerminal(link, "1"), entry.link).toBe(stub)
-    expect(netOnTerminal(link, "2"), entry.link).toBe(entry.net)
+function buildFor(doc: ScaffoldDoc, present: readonly string[]) {
+  const wanted = [...present].sort().join(" ")
+  const build = doc.builds.find((candidate) => [...candidate.present].sort().join(" ") === wanted)
+  if (build === undefined) {
+    throw new Error(
+      `${doc.section}'s guide has no row for the build ${wanted}; it has ` +
+        `${doc.builds.length} rows. Every build this board can be in needs one.`,
+    )
+  }
+  return build
+}
+
+const DOCS = new Map(LADDER_ORDER.map((section) => [section, scaffoldDoc(section)]))
+
+function docFor(section: string): ScaffoldDoc {
+  const doc = DOCS.get(section)
+  if (doc === undefined) throw new Error(`no scaffold doc for ${section}`)
+  return doc
+}
+
+test("the groups a build says to populate are the ones that board's network carries", () => {
+  for (const present of configurations()) {
+    const set = new Set(present)
+    for (const section of present) {
+      const build = buildFor(docFor(section), present)
+      expect([...build.populate].sort(), `${section} in ${present.join("+")}`)
+        .toEqual([...groupsCarried(section, set)])
+    }
   }
 })
 
-test("no two isolation points resolve to the same link", () => {
-  const entries = scaffoldLinkEntries(standIns, network)
-  const links = entries.map((entry) => entry.link)
-  expect(new Set(links).size).toBe(links.length)
-})
-
-test("an isolation point naming a component absent from the network refuses rather than guessing", () => {
-  const brokenStandIns = {
-    ...standIns,
-    "hi-boost": { ...standIns["hi-boost"]!, isolation: [{ component: "NOT_ON_BOARD", terminal: "a", net: "in" }] },
+test("across every build, each absent section is populated on exactly one board", () => {
+  // The defect the supplier rule exists to prevent, asserted on the INSTRUCTIONS rather
+  // than on the rule: two guides each telling a builder to populate the same group is
+  // the paralleled pair, however the assignment was computed.
+  for (const present of configurations()) {
+    const counts = new Map<string, string[]>()
+    for (const section of present) {
+      for (const group of buildFor(docFor(section), present).populate) {
+        const boards = counts.get(group) ?? []
+        boards.push(section)
+        counts.set(group, boards)
+      }
+    }
+    const set = new Set(present)
+    for (const absent of LADDER_ORDER) {
+      if (set.has(absent)) continue
+      expect(counts.get(absent) ?? [], `${absent} absent from ${present.join("+")}`)
+        .toHaveLength(1)
+    }
+    for (const section of present) {
+      expect(counts.get(section), `${section} is present in ${present.join("+")}`).toBeUndefined()
+    }
   }
-  expect(() => scaffoldLinkEntries(brokenStandIns, network)).toThrow(/NOT_ON_BOARD/)
 })
 
-test("the emulated setting in the rendered section is read from SCAFFOLD_FLAT, not transcribed", () => {
-  const designators = Object.fromEntries(network.components.map((c) => [c.id, c.id]))
-  const section = scaffoldLinksSection(standIns, SCAFFOLD_FLAT, network, designators)
-  expect(section).toContain(SCAFFOLD_FLAT.loFrequency)
-  expect(section).toContain(SCAFFOLD_FLAT.hiFrequency)
-  expect(section).toContain(SCAFFOLD_FLAT.midFrequency)
-  expect(section).toContain(SCAFFOLD_FLAT.midMode)
-})
-
-test("a two-link stand-in's rows both carry that section's name, so a half-disabled stand-in reads as incomplete", () => {
-  const designators = Object.fromEntries(network.components.map((c) => [c.id, c.id]))
-  const section = scaffoldLinksSection(standIns, SCAFFOLD_FLAT, network, designators)
-  const rows = section.split("\n").filter((line) => line.startsWith("| link"))
-  const lowBoostRows = rows.filter((row) => row.includes("| low-boost |"))
-  const midRows = rows.filter((row) => row.includes("| mid |"))
-  expect(lowBoostRows.length).toBe(2)
-  expect(midRows.length).toBe(2)
-})
-
-test("wiringDocument's scaffold section is present only when the WiringInput declares one", () => {
-  const offBoard = new Set(network.components.filter((c) => OFF_BOARD.has(c.id)).map((c) => c.id))
-  const padOrder = Object.fromEntries([...offBoard].map((id) => [id, ["a", "b"]]))
-  const designators = Object.fromEntries(network.components.map((c) => [c.id, c.id]))
-
-  const withoutScaffold: WiringInput = {
-    boardName: "pultec-scaffold",
-    circuitPath: "circuits/pultec/scaffold.ts",
-    network,
-    designators,
-    offBoard,
-    padOrder,
-    sharedBy: {},
+test("a group left empty here names the board that does populate it, and that board agrees", () => {
+  for (const present of configurations()) {
+    for (const section of present) {
+      for (const carried of buildFor(docFor(section), present).elsewhere) {
+        expect(carried.board, `${section}'s guide for ${present.join("+")}`).not.toBe(section)
+        expect(present).toContain(carried.board)
+        expect(buildFor(docFor(carried.board), present).populate, carried.board)
+          .toContain(carried.section)
+      }
+    }
   }
-  expect(wiringDocument(withoutScaffold)).not.toContain("## Scaffold links")
+})
 
-  const withScaffold: WiringInput = { ...withoutScaffold, scaffold: { standIns, flat: SCAFFOLD_FLAT } }
-  const doc = wiringDocument(withScaffold)
-  expect(doc).toContain("## Scaffold links")
-  for (const entry of scaffoldLinkEntries(standIns, network)) {
-    expect(doc).toContain(entry.link)
-    expect(doc).toContain(entry.section)
+test("every absent section is accounted for: populated here or named elsewhere", () => {
+  for (const present of configurations()) {
+    const set = new Set(present)
+    const absent = LADDER_ORDER.filter((section) => !set.has(section))
+    for (const section of present) {
+      const build = buildFor(docFor(section), present)
+      const named = [...build.populate, ...build.elsewhere.map((carried) => carried.section)]
+      expect([...named].sort(), `${section} in ${present.join("+")}`).toEqual([...absent].sort())
+    }
+  }
+})
+
+test("the junction pins a build says to wire are the nets another present board shares", () => {
+  for (const present of configurations()) {
+    const set = new Set(present)
+    for (const section of present) {
+      const mine = junctionNets(section, set)
+      const expected = new Map<string, string[]>()
+      for (const netName of mine) {
+        const reaches = present
+          .filter((other) => other !== section && junctionNets(other, set).has(netName))
+          .sort()
+        if (reaches.length > 0) expected.set(netName, reaches)
+      }
+      const build = buildFor(docFor(section), present)
+      const stated = new Map(build.junction.map((wire) => [wire.net, [...wire.reaches].sort()]))
+      expect([...stated.keys()].sort(), `${section} in ${present.join("+")}`)
+        .toEqual([...expected.keys()].sort())
+      for (const [netName, reaches] of expected) {
+        expect(stated.get(netName), `${section}.${netName} in ${present.join("+")}`)
+          .toEqual(reaches)
+      }
+    }
+  }
+})
+
+test("a one-board build states no crossing pins, because nothing else is on the bench", () => {
+  for (const section of LADDER_ORDER) {
+    expect(buildFor(docFor(section), [section]).junction, section).toEqual([])
+    expect(buildFor(docFor(section), [section]).populate.length, section).toBe(4)
+  }
+})
+
+test("every part listed in a group is a part that board carries, under that group's name", () => {
+  for (const section of LADDER_ORDER) {
+    const board = sectionBoard(section)
+    const doc = docFor(section)
+    const marked = board.network.components
+      .filter((component) => component.provenance?.source === STAND_IN_SOURCE)
+      .map((component) => component.id)
+      .sort()
+    expect([...standInPartIds(doc)].sort(), section).toEqual(marked)
+
+    for (const [id, owner] of standInOwners(doc)) {
+      expect(componentOn(board.network, id).provenance?.location, id).toBe(owner)
+    }
+  }
+})
+
+test("the rendered section lists every part of a group under the group's own heading", () => {
+  // A half-populated group has to read as unfinished, which it can only do if the
+  // group's heading is followed by all of its parts.
+  const section = "low-cut"
+  const board = sectionBoard(section)
+  const doc = docFor(section)
+  const rendered = standInGroupsSection(
+    doc,
+    board.network,
+    board.designators,
+    {},
+    board.offBoardIds,
+  )
+  for (const group of doc.groups) {
+    const heading = `#### ${group.section} — stands in for the absent ${group.section} section`
+    const start = rendered.indexOf(heading)
+    expect(start, group.section).toBeGreaterThan(-1)
+    const rest = rendered.slice(start + heading.length)
+    const end = rest.indexOf("#### ")
+    const body = end === -1 ? rest : rest.slice(0, end)
+    for (const id of group.partIds) expect(body, `${group.section}/${id}`).toContain(id)
+    const rows = body.split("\n").filter((line) => line.startsWith("| SI_"))
+    expect(rows, group.section).toHaveLength(group.partIds.length)
+  }
+})
+
+test("the emulated setting is read from the derivation, not written into the prose", () => {
+  const section = "mid"
+  const board = sectionBoard(section)
+  const doc = docFor(section)
+  const flat = standInFlat("low-cut")
+  const rendered = standInGroupsSection(doc, board.network, board.designators, {}, new Set())
+  expect(rendered).toContain(`low frequency ${flat.loFrequency}`)
+  expect(rendered).toContain(`high frequency ${flat.hiFrequency}`)
+  expect(rendered).toContain(`mid frequency ${flat.midFrequency}`)
+  expect(rendered).toContain(`mid in ${flat.midMode}`)
+
+  // Move the setting and the prose must move with it. Without this the assertions above
+  // only show that four strings appear somewhere, which a transcribed copy would also
+  // satisfy.
+  const moved: ScaffoldDoc = { ...doc, flat: { ...doc.flat, midFrequency: "3kHz" } }
+  const other = standInGroupsSection(moved, board.network, board.designators, {}, new Set())
+  expect(other).toContain("mid frequency 3kHz")
+  expect(other).not.toContain(`mid frequency ${flat.midFrequency}`)
+})
+
+test("every board's guide covers all sixteen builds it can be part of", () => {
+  for (const section of LADDER_ORDER) {
+    const doc = docFor(section)
+    expect(doc.builds, section).toHaveLength(16)
+    for (const build of doc.builds) expect(build.present, section).toContain(section)
+    const keys = doc.builds.map((build) => build.present.join(" "))
+    expect(new Set(keys).size, section).toBe(16)
+  }
+})
+
+test("the source, the load and ground are given junction pads", () => {
+  for (const section of LADDER_ORDER) {
+    const ports = docFor(section).external
+    expect(ports.map((landing) => landing.port).sort())
+      .toEqual(["ground", "input", "output"])
+    for (const landing of ports) expect(JUNCTION_NETS).toContain(landing.net)
+  }
+})
+
+test("an external landing says yes exactly when this board's OWN parts are on that net", () => {
+  // The column that says whether a lead to that pad reaches the circuit without the
+  // junction being bussed. It was added after READING a generated guide - mid has no
+  // part on `out`, so "land it wherever is convenient" was false there - and until this
+  // ran, inverting it would have been caught only by the committed-guide comparison,
+  // which is drift detection: generate and commit the guides with it inverted and the
+  // suite would be green and the document wrong.
+  //
+  // Derived here from the NETWORK rather than from ownComponents(), which is the route
+  // the production code takes: a board's own parts are the maximal network's components
+  // that are neither stand-ins nor the junction.
+  const seen = new Set<boolean>()
+  for (const section of LADDER_ORDER) {
+    const own = new Set(
+      sectionBoard(section).network.components
+        .filter((component) =>
+          component.provenance?.source !== STAND_IN_SOURCE && !physicalOnly(component))
+        .flatMap(componentNets),
+    )
+    for (const landing of docFor(section).external) {
+      expect(landing.onBoard, `${section}: ${landing.port} on ${landing.net}`)
+        .toBe(own.has(landing.net))
+      seen.add(landing.onBoard)
+    }
+  }
+  // Both answers occur across the five boards, so neither a constant true nor a constant
+  // false would satisfy the per-board assertion above by accident.
+  expect([...seen].sort()).toEqual([false, true])
+})
+
+test("the rendered landing table says which pads a lead reaches without a stack", () => {
+  const board = sectionBoard("mid")
+  const doc = docFor("mid")
+  const rendered = standInGroupsSection(doc, board.network, board.designators, {}, new Set())
+  // mid's own circuit sits on `in` and on `0`, and on nothing that is `out`.
+  expect(rendered).toMatch(/\|\s*1\s*\|\s*in\s*\|\s*input\s*\|\s*yes\s*\|/)
+  expect(rendered).toMatch(/\|\s*4\s*\|\s*out\s*\|\s*output\s*\|\s*no\s*\|/)
+})
+
+test("a part the board does not carry refuses rather than being listed", () => {
+  const board = sectionBoard("low-cut")
+  const doc = docFor("low-cut")
+  const broken: ScaffoldDoc = {
+    ...doc,
+    groups: [{ section: "mid", partIds: ["SI_MID_NOT_A_PART"] }],
+  }
+  expect(() => standInGroupsSection(broken, board.network, board.designators, {}, new Set()))
+    .toThrow(/SI_MID_NOT_A_PART/)
+})
+
+test("a part listed under two groups refuses, because it would be populated twice", () => {
+  const doc = docFor("low-cut")
+  const [first, second] = doc.groups
+  if (first === undefined || second === undefined) {
+    throw new Error(`low-cut's guide holds ${doc.groups.length} groups, expected four`)
+  }
+  const shared = first.partIds[0]
+  if (shared === undefined) throw new Error(`${first.section}'s group lists no parts`)
+  const broken: ScaffoldDoc = {
+    ...doc,
+    groups: [first, { section: second.section, partIds: [shared] }],
+  }
+  expect(() => standInOwners(broken)).toThrow(/populated twice/)
+})
+
+test("a malformed SCAFFOLD export refuses, naming the field", () => {
+  expect(() => asScaffoldDoc({ section: "low-cut" }, "boards/pultec-low-cut/perfboard.json"))
+    .toThrow(/SCAFFOLD.builds/)
+  expect(() => asScaffoldDoc(
+    { ...docFor("low-cut"), flat: { loFrequency: "100Hz" } },
+    "boards/pultec-low-cut/perfboard.json",
+  )).toThrow(/SCAFFOLD.flat.hiFrequency/)
+  expect(() => asScaffoldDoc(
+    { ...docFor("low-cut"), groups: [{ section: "mid", partIds: [] }] },
+    "boards/pultec-low-cut/perfboard.json",
+  )).toThrow(/SCAFFOLD.groups\[0\].partIds/)
+})
+
+test("stand-in parts are out of the always-populated table and into their own section", () => {
+  // The defect this task closes: the committed guides listed every stand-in part under
+  // "On the board", which reads as an instruction to fit all of them on every board.
+  const board = sectionBoard("low-cut")
+  const doc = docFor("low-cut")
+  const document = wiringDocument({
+    boardName: "pultec-low-cut",
+    circuitPath: "circuits/pultec/physical/low-cut.ts",
+    network: board.network,
+    designators: board.designators,
+    offBoard: board.offBoardIds,
+    padOrder: board.padOrders,
+    sharedBy: sharedByFor("low-cut"),
+    scaffold: doc,
+  })
+  const onBoard = document.slice(
+    document.indexOf("## On the board"),
+    document.indexOf("## Panel parts"),
+  )
+  for (const id of standInPartIds(doc)) {
+    expect(onBoard, id).not.toContain(id)
+    expect(document, id).toContain(id)
+  }
+  // The section's own parts are still there, and still always fitted.
+  expect(onBoard).toContain("| C1 | 18nF |")
+  expect(document).toContain("## Stand-in groups")
+})
+
+test("a stand-in part that is a panel part says which group it belongs to", () => {
+  const board = sectionBoard("low-cut")
+  const document = wiringDocument({
+    boardName: "pultec-low-cut",
+    circuitPath: "circuits/pultec/physical/low-cut.ts",
+    network: board.network,
+    designators: board.designators,
+    offBoard: board.offBoardIds,
+    padOrder: board.padOrders,
+    sharedBy: sharedByFor("low-cut"),
+    scaffold: docFor("low-cut"),
+  })
+  // mid's 1H tap is an off-board landing, so it appears among the panel parts a builder
+  // wires on every build unless the guide says otherwise.
+  expect(document).toContain("### SI_MID_L_MID_1H")
+  expect(document).toContain("**Part of the mid stand-in group.**")
+})
+
+test("the section is deterministic", () => {
+  const board = sectionBoard("hi-cut")
+  const doc = docFor("hi-cut")
+  const once = standInGroupsSection(doc, board.network, board.designators, {}, board.offBoardIds)
+  const twice = standInGroupsSection(doc, board.network, board.designators, {}, board.offBoardIds)
+  expect(once).toBe(twice)
+})
+
+test("a group's part that is not on the rendered board refuses, not silently renders", () => {
+  // The guide is generated per board; handing one board's doc the WRONG board's network
+  // must refuse rather than produce a document naming parts that board has no position
+  // for.
+  const wrong: Network = { ports: {}, components: [] }
+  expect(() => standInGroupsSection(docFor("mid"), wrong, {}, {}, new Set()))
+    .toThrow(/not on that board's network/)
+})
+
+test("a stand-in part carries the junction net it reaches, so the pins are real", () => {
+  // Spot-check with the model rather than with another derivation: every group part on
+  // a board sits either on a junction net or on a net prefixed for that group, never on
+  // another section's private net.
+  const board = sectionBoard("hi-boost")
+  const doc = docFor("hi-boost")
+  for (const group of doc.groups) {
+    const prefix = `si_${group.section.replace(/-/g, "_")}_`
+    for (const id of group.partIds) {
+      for (const netName of componentNets(componentOn(board.network, id))) {
+        const ok = JUNCTION_NET_SET.has(netName) || netName.startsWith(prefix)
+        expect(ok, `${id} on net ${netName}`).toBe(true)
+      }
+    }
   }
 })

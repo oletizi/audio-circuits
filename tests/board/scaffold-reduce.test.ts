@@ -45,8 +45,8 @@ test("a branch on an open switch throw is dropped", () => {
 })
 
 test("a zero-ohm component is kept and does NOT merge its nodes", () => {
-  // Low-cut's entire stand-in is a short between two boundary nets. Merging them
-  // would leave nothing to make removable and collapse its terminal count to one.
+  // Low-cut's entire stand-in is a short between two boundary nets. Merging them would
+  // destroy the stand-in outright, collapsing its terminal count from two to one.
   const kept = reduceToBoundary(
     network([r("flat_arm", "hi_boost_out", "out", 0)]),
     new Set(["hi_boost_out", "out", "0"]),
