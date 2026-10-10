@@ -23,7 +23,7 @@
  * run and rewrites it only when the content differs, the same way the KiCad
  * netlist fixture is kept honest.
  */
-import { PART_TABLE_HEADER, describePart, netOf, partRow, pinsOf } from "./part-text.ts"
+import { PART_TABLE_HEADER, describePart, gangOf, netOf, partRow, pinsOf } from "./part-text.ts"
 import { physicalOnly } from "./physicalize.ts"
 import { standInGroupsSection, standInOwners, standInPartIds } from "./scaffold/wiring.ts"
 import type { Component, Network } from "../model/types.ts"
@@ -44,16 +44,27 @@ export interface WiringInput {
    * The stand-in groups this board holds and what each build does with them, rendered
    * as the "Stand-in groups" section.
    *
-   * STILL OPTIONAL, AND NOW REACHED BY EVERY BOARD THAT HAS ONE. The five Pultec
-   * section boards each export a `SCAFFOLD` built by `circuits/pultec/physical/
-   * scaffold-doc.ts`, and `tools/perfboard/wiring-sync.ts` passes it through, so this
-   * is not a path nothing sets. It stays optional because `pt2399-core` and the
-   * transistor-preamp boards carry no stand-in groups at all: for them the section
-   * would be a heading over the word "None", which is noise a reader has to learn to
-   * skip. The previous shape - a map of every section's `StandIn` plus a flat state -
-   * described the separate scaffold board that has since been deleted, and could not
-   * answer the question a section board's guide has to: which groups does THIS board
-   * populate, in THIS build, and which board carries the rest.
+   * SET BY EVERY BOARD THAT CURRENTLY GETS A GUIDE. The five Pultec section boards each
+   * export a `SCAFFOLD` built by `circuits/pultec/physical/scaffold-doc.ts`, and
+   * `tools/perfboard/wiring-sync.ts` passes it through, so this is no longer a field
+   * nothing sets.
+   *
+   * WHY IT IS STILL OPTIONAL, stated accurately because the obvious reason is wrong:
+   * it is NOT that `pt2399-core` and the two transistor-preamp boards take the
+   * `undefined` branch. They get no guide at all - `wiringDocumentFor` returns
+   * `not-applicable` for a board with nothing off it - so they reach neither branch. It
+   * is optional because `wiringDocument` is a generic entry point in `lib`: a board can
+   * have panel parts and no stand-in groups, that board would then get a guide with
+   * nothing to say here, and a required field would make it invent an empty `ScaffoldDoc`
+   * (which `asScaffoldDoc` refuses anyway, since a build with no boards builds nothing).
+   * Today the `undefined` branch is exercised only by `tests/board/wiring.test.ts`, which
+   * is the honest state of it: a supported shape with no board in this repository
+   * currently in it.
+   *
+   * The previous shape - a map of every section's `StandIn` plus a flat state - described
+   * the separate scaffold board that has since been deleted, and could not answer the
+   * question a section board's guide has to: which groups does THIS board populate, in
+   * THIS build, and which board carries the rest.
    */
   readonly scaffold?: ScaffoldDoc
 }
@@ -222,8 +233,8 @@ function section(
     )
   }
 
-  const gang = Reflect.get(component.parameters, "gang")
-  if (typeof gang === "string") {
+  const gang = gangOf(component)
+  if (gang !== undefined) {
     lines.push(
       `**Ganged (\`${gang}\`).** This is one pole of a two-pole switch shared with ` +
         "another board — not a switch of its own. Both poles turn together on one shaft, " +

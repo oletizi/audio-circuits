@@ -54,6 +54,49 @@ function taperName(taper: unknown): string {
   return typeof type === "string" ? type.toUpperCase() : "unknown taper"
 }
 
+/**
+ * What a connector IS, read off its footprint rather than off its kind.
+ *
+ * THE KIND CANNOT ANSWER THIS, and answering it from the kind was a live defect: this
+ * function used to return "terminal block" for every `kind: "connector"`, which labelled
+ * the Pultec junction - a `PinHeader_1x05_P2.54mm_Vertical` - as a terminal block in all
+ * five guides. The design doc rules that part out in terms ("A 1x05 screw terminal does
+ * NOT fit - its body overhangs the second row"), so the guide was telling a builder to
+ * buy the one part the design had rejected. `kind: "connector"` covers a screw terminal,
+ * a pin header and a switching jack alike (`lib/model/types.ts`), exactly as inertness
+ * is a property of the part and not of the kind.
+ *
+ * A WHITELIST THAT REFUSES, not a rule that guesses. An unrecognised footprint throws
+ * naming the part and the footprint, because the failure being prevented is a confident
+ * wrong label on the one line that sends somebody to a supplier.
+ */
+function describeConnector(component: Component): string {
+  const footprint = component.part?.footprint
+  if (footprint === undefined) {
+    throw new Error(
+      `connector "${component.id}" has no footprint, so there is nothing to read its ` +
+        "description off. What a connector IS - a header, a screw terminal, a jack - is a " +
+        "property of the part, not of kind \"connector\", and it is not defaulted: the guide " +
+        "would otherwise name a part somebody has to buy on the strength of a guess. Give it " +
+        "a footprint, or keep it out of the wiring guide.",
+    )
+  }
+  const header = /PinHeader_(\d+)x(\d+)_P([\d.]+)mm/.exec(footprint)
+  const columns = header?.[1]
+  const rows = header?.[2]
+  const pitch = header?.[3]
+  if (columns !== undefined && rows !== undefined && pitch !== undefined) {
+    return `${columns}x${rows} pin header, ${pitch}mm pitch`
+  }
+  if (footprint.includes("TerminalBlock")) return "terminal block"
+  throw new Error(
+    `no description is recorded for connector "${component.id}" with footprint ` +
+      `"${footprint}". Add its family to describeConnector in lib/board/part-text.ts, with ` +
+      "the words for the part somebody actually fits. It is refused rather than described " +
+      "generically because a wrong name here is what a builder orders from.",
+  )
+}
+
 /** A one-line description of the part, for somebody holding it. */
 export function describePart(component: Component): string {
   const parameters: Record<string, unknown> = { ...component.parameters }
@@ -78,8 +121,21 @@ export function describePart(component: Component): string {
     const ohms = parameters["ohms"]
     return typeof ohms === "number" ? ohmsText(ohms) : "resistor"
   }
-  if (component.kind === "connector") return "terminal block"
+  if (component.kind === "connector") return describeConnector(component)
   return component.kind
+}
+
+/**
+ * The shaft a control shares with another, or nothing.
+ *
+ * Read through a spread into `Record<string, unknown>` rather than `Reflect.get`, which
+ * returns `any`. Shared so the panel-part flag and the stand-in section's warning about
+ * moving a ganged shaft cannot disagree about whether this board has one.
+ */
+export function gangOf(component: Component): string | undefined {
+  const parameters: Record<string, unknown> = { ...component.parameters }
+  const gang = parameters["gang"]
+  return typeof gang === "string" ? gang : undefined
 }
 
 /**

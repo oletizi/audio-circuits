@@ -27,19 +27,9 @@
  * THE PART IDS ARE RESOLVED AGAINST THE BOARD NETWORK and refuse when they miss, so
  * this section cannot describe a part the board does not carry.
  */
-import { PART_TABLE_HEADER, describePart, partRow } from "../part-text.ts"
+import { PART_TABLE_HEADER, describePart, gangOf, partRow } from "../part-text.ts"
 import type { Component, Network } from "../../model/types.ts"
 import type { BuildDoc, ScaffoldDoc, StandInGroupDoc } from "./doc.ts"
-
-export type {
-  BuildDoc,
-  CarriedElsewhere,
-  ExternalLanding,
-  JunctionWire,
-  ScaffoldDoc,
-  StandInGroupDoc,
-} from "./doc.ts"
-export { asScaffoldDoc } from "./doc.ts"
 
 /** How `describePart` renders a zero-ohm part: a wire link, not a resistor to buy. */
 const ZERO_OHM = "0R"
@@ -91,6 +81,50 @@ function wholeGroupText(parts: number): string {
   if (parts === 1) return "This group is a single part. Either it is fitted or it is not."
   if (parts === 2) return "Both parts of this group go in together, or neither does."
   return `All ${parts} parts of this group go in together, or none of them do.`
+}
+
+/**
+ * The ganged-shaft hazard, told the way it reaches THIS board.
+ *
+ * WHY THIS IS CONDITIONAL. A ganged selector turns two sections at once, so moving it
+ * when one of the two is absent moves the built section only and leaves the stand-in
+ * where it was derived - up to 3.71 dB apart, and it reads as a circuit fault. On four
+ * of the five boards the shaft is on this panel and **Panel parts** flags it. On the mid
+ * board nothing is ganged - `SW_MID` shares no shaft, the pairs being `hi_freq` and
+ * `lo_freq` - so the unconditional version sent that reader hunting upward for a flag
+ * that is not there, and a guide that points at something absent reads as a guide for a
+ * different board. The hazard still reaches mid's board, because a group IT populates
+ * can be standing in for a section whose shaft is on somebody else's panel, so the
+ * paragraph is reworded rather than dropped.
+ *
+ * Both halves read the same model the panel flag does, through `gangOf`, so the flag and
+ * this warning cannot disagree about whether this board has one.
+ */
+function gangedWarning(
+  network: Network,
+  offBoard: ReadonlySet<string>,
+): readonly string[] {
+  const ganged = network.components.some(
+    (component) => offBoard.has(component.id) && gangOf(component) !== undefined)
+  const consequence = [
+    "Moving it then moves the section you built and not the stand-in covering the one you",
+    "did not: the two disagree by up to 3.71 dB, which reads as a circuit fault rather than",
+    "as a knob in the wrong place.",
+  ]
+  if (ganged) {
+    return [
+      "One of this board's selectors is one shaft shared by two sections — **Panel parts**",
+      "above flags it — and one of those two may be a section a stand-in is covering.",
+      ...consequence,
+    ]
+  }
+  return [
+    "Nothing on this board's panel is ganged, so no knob here turns two sections at once.",
+    "A selector on ANOTHER board can be, and the section it shares a shaft with may be one",
+    "a stand-in group is covering — on this board or on whichever board the table below says",
+    "carries it.",
+    ...consequence,
+  ]
 }
 
 function groupTable(
@@ -181,11 +215,8 @@ export function standInGroupsSection(
       `${doc.flat.loFrequency}, high frequency ${doc.flat.hiFrequency}, mid frequency ` +
       `${doc.flat.midFrequency}, mid in ${doc.flat.midMode}.**`,
     "Their values are derived at that setting and at no other, so leave the frequency",
-    "selectors you DO have there. Some selectors are one shaft shared by two",
-    "sections (**Panel parts** above flags a ganged one): turning that shaft moves only the",
-    "section you built, while the stand-in covering the other stays where it was derived. The",
-    "two then disagree by up to 3.71 dB, which reads as a circuit fault rather than as a knob in",
-    "the wrong place.",
+    "selectors you DO have there.",
+    ...gangedWarning(network, offBoard),
     "",
   ]
 

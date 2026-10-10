@@ -278,6 +278,45 @@ test("the source, the load and ground are given junction pads", () => {
   }
 })
 
+test("an external landing says yes exactly when this board's OWN parts are on that net", () => {
+  // The column that says whether a lead to that pad reaches the circuit without the
+  // junction being bussed. It was added after READING a generated guide - mid has no
+  // part on `out`, so "land it wherever is convenient" was false there - and until this
+  // ran, inverting it would have been caught only by the committed-guide comparison,
+  // which is drift detection: generate and commit the guides with it inverted and the
+  // suite would be green and the document wrong.
+  //
+  // Derived here from the NETWORK rather than from ownComponents(), which is the route
+  // the production code takes: a board's own parts are the maximal network's components
+  // that are neither stand-ins nor the junction.
+  const seen = new Set<boolean>()
+  for (const section of LADDER_ORDER) {
+    const own = new Set(
+      sectionBoard(section).network.components
+        .filter((component) =>
+          component.provenance?.source !== STAND_IN_SOURCE && !physicalOnly(component))
+        .flatMap(componentNets),
+    )
+    for (const landing of docFor(section).external) {
+      expect(landing.onBoard, `${section}: ${landing.port} on ${landing.net}`)
+        .toBe(own.has(landing.net))
+      seen.add(landing.onBoard)
+    }
+  }
+  // Both answers occur across the five boards, so neither a constant true nor a constant
+  // false would satisfy the per-board assertion above by accident.
+  expect([...seen].sort()).toEqual([false, true])
+})
+
+test("the rendered landing table says which pads a lead reaches without a stack", () => {
+  const board = sectionBoard("mid")
+  const doc = docFor("mid")
+  const rendered = standInGroupsSection(doc, board.network, board.designators, {}, new Set())
+  // mid's own circuit sits on `in` and on `0`, and on nothing that is `out`.
+  expect(rendered).toMatch(/\|\s*1\s*\|\s*in\s*\|\s*input\s*\|\s*yes\s*\|/)
+  expect(rendered).toMatch(/\|\s*4\s*\|\s*out\s*\|\s*output\s*\|\s*no\s*\|/)
+})
+
 test("a part the board does not carry refuses rather than being listed", () => {
   const board = sectionBoard("low-cut")
   const doc = docFor("low-cut")

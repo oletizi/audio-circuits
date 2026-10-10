@@ -29,9 +29,13 @@ import { partitionReference } from "../../circuits/pultec/partition.ts"
 export const SCAFFOLD_JSON = "circuits/pultec/generated/scaffold.json"
 
 /**
- * The derived artifact's content: every section's stand-in (its boundary nets, its
- * resolved components and the isolation points `isolate()` in `scaffold.ts` breaks),
- * under the frequency state the board emulates.
+ * The derived artifact's content: every section's stand-in - its boundary nets and its
+ * reduced components - under the flat state each one declares.
+ *
+ * NO ISOLATION POINTS. An earlier version of this comment said the artifact also held
+ * "the isolation points `isolate()` in `scaffold.ts` breaks". Both are retired: the
+ * removable-link mechanism went with the separate scaffold board, and a build is now
+ * configured by which stand-in parts are populated on each section board.
  *
  * Ends with a trailing newline, like every other generated text fixture in this
  * repository, so a byte-for-byte diff shows only genuine content changes.
@@ -70,7 +74,8 @@ export function syncPultecScaffold(): ScaffoldSyncResult {
       existing === undefined
         ? `${SCAFFOLD_JSON} created from the stand-in derivation: no fixture was checked in yet.`
         : `${SCAFFOLD_JSON} DID NOT MATCH the stand-in derivation and has been rewritten.\n` +
-          "  The scaffold board is built from the same derivation, so read the diff before trusting " +
-          "any layout built against the previous content.",
+          "  Every section board's stand-in groups come from this same derivation, so read the " +
+          "diff before trusting a value you have already fitted or a wiring guide generated " +
+          "against the previous content.",
   }
 }

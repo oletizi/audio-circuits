@@ -72,7 +72,7 @@ the **Also on** column names which. A net reaching no other board is a chassis o
 shield landing, present so there is somewhere to put that wire rather than
 improvising one later.
 
-### junction_signals — terminal block
+### junction_signals — 1x05 pin header, 2.54mm pitch
 
 | Pad | Terminal | Net | Also on |
 | --- | --- | --- | --- |
@@ -82,7 +82,7 @@ improvising one later.
 | 4 | 4 | out | low-cut |
 | 5 | 5 | 0 | mid |
 
-### junction_grounds — terminal block
+### junction_grounds — 1x05 pin header, 2.54mm pitch
 
 | Pad | Terminal | Net | Also on |
 | --- | --- | --- | --- |
@@ -117,11 +117,12 @@ group, so a group you leave empty here is one you can see is covered somewhere e
 
 **The stand-ins are the absent sections at one setting: low frequency 100Hz, high frequency 5kHz, mid frequency 1kHz, mid in boost.**
 Their values are derived at that setting and at no other, so leave the frequency
-selectors you DO have there. Some selectors are one shaft shared by two
-sections (**Panel parts** above flags a ganged one): turning that shaft moves only the
-section you built, while the stand-in covering the other stays where it was derived. The
-two then disagree by up to 3.71 dB, which reads as a circuit fault rather than as a knob in
-the wrong place.
+selectors you DO have there.
+One of this board's selectors is one shaft shared by two sections — **Panel parts**
+above flags it — and one of those two may be a section a stand-in is covering.
+Moving it then moves the section you built and not the stand-in covering the one you
+did not: the two disagree by up to 3.71 dB, which reads as a circuit fault rather than
+as a knob in the wrong place.
 
 **A part listed as `0R` is a wire link.** A level pot sitting at its end stop
 reduces to a zero-ohm part rather than to nothing at all — an ideal short stays a part

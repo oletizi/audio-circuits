@@ -59,9 +59,33 @@ const BLOCK: Component = {
   provenance: { source: PHYSICAL_ONLY },
 }
 
+/**
+ * A pin header, beside the screw terminal above.
+ *
+ * BOTH ARE NEEDED, and their absence hid a real defect: `BLOCK` really is a Phoenix
+ * screw terminal, so a guide that called EVERY `kind: "connector"` a "terminal block"
+ * passed this suite while labelling the Pultec junction - a `PinHeader_1x05` - as a part
+ * the design doc rules out in terms ("A 1x05 screw terminal does NOT fit"). The kind
+ * cannot tell these two apart; only the footprint can, so the suite has to hold one of
+ * each.
+ */
+const HEADER: Component = {
+  id: "stack_header",
+  kind: "connector",
+  parameters: {},
+  part: {
+    symbol: "Connector_Generic:Conn_01x02",
+    footprint: "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+    electricallyInert: true,
+  },
+  pins: {},
+  units: [{ name: "MAIN", pins: { "1": net("T1"), "2": net("T2") } }],
+  provenance: { source: PHYSICAL_ONLY },
+}
+
 const NETWORK: Network = {
   ports: { IN: "IN", OUT: "OUT" },
-  components: [CAP, POT, SELECTOR, MODE, BLOCK],
+  components: [CAP, POT, SELECTOR, MODE, BLOCK, HEADER],
 }
 
 const INPUT: WiringInput = {
@@ -70,7 +94,7 @@ const INPUT: WiringInput = {
   network: NETWORK,
   designators: {
     C1: "C1", RV_LEVEL: "RV_LEVEL", SW_FREQ: "SW_FREQ", SW_MODE: "SW_MODE",
-    board_terminals: "board_terminals",
+    board_terminals: "board_terminals", stack_header: "stack_header",
   },
   offBoard: new Set(["RV_LEVEL", "SW_FREQ", "SW_MODE"]),
   padOrder: {
@@ -137,6 +161,43 @@ test("the terminal block is listed with the boards each net reaches", () => {
   expect(doc).toContain("board_terminals")
   expect(doc).toMatch(/hi-boost/)
   expect(doc).toMatch(/low-boost/)
+})
+
+test("a connector is named by what it IS, not by its kind", () => {
+  // The defect this closes: every connector was called a "terminal block", so the
+  // Pultec junction - a 2.54mm pin header, and the design doc rejects a screw terminal
+  // there because its body overhangs the second row - told a builder to buy the wrong
+  // part. The name comes off the footprint, which is the only thing that knows.
+  const doc = wiringDocument(INPUT)
+  expect(doc).toContain("### stack_header — 1x02 pin header, 2.54mm pitch")
+  expect(doc).toContain("### board_terminals — terminal block")
+  const headerSection = doc.slice(doc.indexOf("### stack_header"))
+  expect(headerSection).not.toContain("terminal block")
+})
+
+test("a connector whose footprint names no known family refuses rather than guessing", () => {
+  const unknown: Component = {
+    ...HEADER,
+    id: "mystery",
+    part: { footprint: "Connector_Nonexistent:Whatever_1x02", electricallyInert: true },
+  }
+  const input: WiringInput = {
+    ...INPUT,
+    network: { ...NETWORK, components: [CAP, POT, SELECTOR, MODE, BLOCK, unknown] },
+    designators: { ...INPUT.designators, mystery: "mystery" },
+  }
+  expect(() => wiringDocument(input)).toThrow(/mystery/)
+  expect(() => wiringDocument(input)).toThrow(/Connector_Nonexistent/)
+})
+
+test("a connector with no footprint refuses: the kind cannot say what the part is", () => {
+  const bare: Component = { ...HEADER, id: "bare", part: { electricallyInert: true } }
+  const input: WiringInput = {
+    ...INPUT,
+    network: { ...NETWORK, components: [CAP, POT, SELECTOR, MODE, BLOCK, bare] },
+    designators: { ...INPUT.designators, bare: "bare" },
+  }
+  expect(() => wiringDocument(input)).toThrow(/no footprint/)
 })
 
 test("a crossing net no other board touches says so rather than showing a blank", () => {
