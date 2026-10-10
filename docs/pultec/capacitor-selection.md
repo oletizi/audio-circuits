@@ -5,6 +5,48 @@
 three footprints this document selects, so the five boards no longer refuse at
 export for lack of a whitelist entry.
 
+**A fourth axis appeared and was resolved in this document's favour
+(2026-10-10, the owner's decision).** This study weighed coverage, per-unit cost,
+body size and tolerance. It did not weigh *reach*, because the stripboard
+placement pipeline did not exist when it was written — and reach became the
+binding constraint on clustering, which
+`docs/superpowers/specs/2026-10-10-stripboard-placement-cost-design.md` section
+3.1 makes 70% of low-cut's cut count. A B32529 can be splayed to 4 holes; the net
+graphs want 12.
+
+`docs/parts/2026-10-10-capacitor-and-inductor-research.md` section 1 researched
+the obvious answer — an axial film capacitor, which reaches the tool's 16-hole
+ceiling. **It does not survive the other three axes**, and one of those is
+decisive on its own:
+
+- **Coverage gets worse, which disqualifies it.** The axial candidate is E6 only,
+  so it misses all four E12 values the boards need (1.8, 12, 18 and 120 nF). These
+  are frequency-selection capacitors in a tuned filter; substituting 2.2 nF for
+  1.8 nF moves the corner. A reach advantage cannot buy back a value that does not
+  exist.
+- Roughly 3–5× the per-unit cost.
+- A 6-hole *minimum* span in place of the radial part's 2.
+- No on-grid KiCad footprint exists for it, so it needs one drawn by hand plus two
+  whitelist entries.
+
+**And this study's body-size finding was already a stripboard argument that the
+reach analysis walked past.** Finding 2 chose the B32529 partly because its 2.5 mm
+body occupies one strip row, and mid carries seventeen of them. The axial
+candidate's 5.0 mm body straddles two. The earlier reasoning was better informed
+about stripboard than the later reasoning that questioned it.
+
+**The resolution: keep the B32529, and reach the distant strip with a wire link.**
+`WIRE` is the layout tool's one unbounded span, so a wire reaches where no bent
+lead can, and the owner's cost weighting already favours it — `ρ_w = 0.25` in
+`2026-10-10-stripboard-pipeline-design.md` section 8.1 prices one cut at four
+wires, on the owner's reasoning that cuts are harder and more error-prone.
+
+One honest caveat on that resolution, because it is not free: a wire implies a net
+split across segments, and the cost identity `C = N + J − S_occ` takes `J` with a
+POSITIVE sign — so a wire that rejoins a split net is paid for with a cut as well.
+Reaching by wire is the cheapest of the available options, not a way of reaching
+for nothing. Section 8.1.1 of the pipeline design states the general form of this.
+
 Every dimension below was read from a manufacturer datasheet PDF or from a
 `.kicad_mod` file on this machine. Every price and stock figure was read from a
 distributor page. Nothing here comes from recall. Where a number is an estimate

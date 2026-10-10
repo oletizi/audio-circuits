@@ -171,7 +171,7 @@ nets and halve a value — at the bench that is a plausible wrong measurement, n
 fault. **What to populate, by build** below names the one board that carries each absent
 group, so a group you leave empty here is one you can see is covered somewhere else.
 
-**The stand-ins are the absent sections at one setting: low frequency 100Hz, high frequency 5kHz, mid frequency 1kHz, mid in boost.**
+**The stand-ins are the absent sections at one setting: low frequency 100Hz, high frequency 5kHz, mid frequency 1kHz, mid in off.**
 Their values are derived at that setting and at no other, so leave the frequency
 selectors you DO have there.
 Nothing on this board's panel is ganged, so no knob here turns two sections at once.
@@ -180,7 +180,9 @@ a stand-in group is covering — on this board or on whichever board the table b
 carries it.
 Moving it then moves the section you built and not the stand-in covering the one you
 did not: the two disagree by up to 3.71 dB, which reads as a circuit fault rather than
-as a knob in the wrong place.
+as a knob in the wrong place. That 3.71 dB is a worst case measured at an earlier
+reference setting, not a figure to expect — treat it as the reason to leave the knob
+alone, not as a prediction of what you will hear.
 
 **A part listed as `0R` is a wire link.** A level pot sitting at its end stop
 reduces to a zero-ohm part rather than to nothing at all — an ideal short stays a part

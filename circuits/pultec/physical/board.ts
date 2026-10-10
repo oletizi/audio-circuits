@@ -261,7 +261,8 @@ export function standInGroup(section: string): StandInGroup {
 /**
  * The setting one section's stand-in group was derived at.
  *
- * READ, NEVER RESTATED. Up to 3.71 dB rides on this setting, and it is the limit most
+ * READ, NEVER RESTATED. Up to 3.71 dB rides on this setting - a worst case measured at an
+ * earlier reference, see "Limits, measured" in the design doc - and it is the limit most
  * likely to be mistaken for a circuit fault, so the generated guide and the silkscreen
  * must state the setting the parts on the board were actually reduced at rather than a
  * constant somebody believes they were. It travels on the `StandIn` for exactly this

@@ -348,6 +348,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (verb === "bom") return dispatchBom(cwd, args.slice(1), opts.bomDeps, opts.repoRoot, log, error)
 
   if (verb === "wiring") return dispatchWiring(cwd, log, error)
+
   if (verb === "netlist-sync") return dispatchNetlistSync(args.slice(1), opts.netlistSyncDeps, log, error)
 
   if (verb === "schematic-notice") {

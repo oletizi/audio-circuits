@@ -451,3 +451,56 @@ the date.)
   still carry a price (SS-103-T-2-N, 1 break at $0.87) is not refused and
   was recorded as a source; 0 stock on a single listed break is not, by
   itself, a reason to skip a `standard` source - only a missing price is.
+- 2026-10-10: **Search Mouser by case size, Digi-Key by part number.** Mouser
+  puts the mechanical summary in its own description text - "LS=2.5mm",
+  "5x11", "2.5LS 20LL Bulk", "D: 6mm 1kV 1000pF B 10% LS:5mm" - so a keyword
+  search on a case string finds real candidates there. Digi-Key's keyword
+  search matched nothing at all for `aluminum electrolytic 10uF 25V radial
+  5x11mm` (0 results, exit 0), because its mechanical data lives in the
+  per-offer parameter list rather than the searched text. Digi-Key's
+  parameters are the better source once you have a part number, though:
+  its offer for MKT1813147635 printed "Size / Dimension: 0.197" Dia x 0.433"
+  L (5.00mm x 11.00mm)", "Package / Case: Axial" and the dielectric, where
+  Mouser's listing for the same part printed no parameters at all.
+- 2026-10-10: Mouser's own description text carries occasional unit errors
+  that look like real parts - Bel Signal Transformer `DRC-V-150K` reads
+  "12000 H" (it is a µH part) and TDK `B82552J2444J021` reads "2x440H" (µH
+  likewise). Searching for a high-inductance part turns these up first.
+  Confirm an inductance from the parameter list or the datasheet, never from
+  the description string.
+- 2026-10-10: **Walsin states a ceramic disc's lead length in its part
+  number**, where Vishay does not. Walsin's ten-field code ends
+  `... <length> <length tolerance> <pitch> <coating>`, e.g.
+  `YP500471K040B20C2P` = 20.0 mm length, tolerance code C ("Min."), pitch
+  code 2 (2.5 ± 0.8 mm) - and Mouser spells the same facts in the
+  description ("2.5LS 20LL Bulk"). Vishay BCcomponents' D Series (28549,
+  Rev 08-Jan-2026) digit 13 is "Packaging / Lead Length" but its values are
+  only `3 = bulk`, `T = tape and reel`, `U = ammo`. If a disc's lead length
+  is wanted, go to Walsin first. Caveat: Walsin's own site
+  (`passivecomponent.com`) 404s and the catalogue carries no printed
+  revision or date; the readable copies are third-party mirrors.
+- 2026-10-10: **A radial electrolytic's taped variant can have a different
+  lead pitch from its straight-lead row, and that is how a φ5 can reaches
+  2.5 mm.** Panasonic's M-A (ECA) datasheet (ABA0000C1218, 01-Sep-25) gives
+  three lead-space columns per row - Straight / Taping ✽B / Taping ✽i - and
+  every φ5.0 × 11.0 row is 2.0 / 5.0 / 2.5, with the footnote "Lead wire
+  pitch ✽B=5 mm, 7.5 mm, i=2.5 mm". So `ECA1HM100i` is a genuine φ5 part at
+  2.5 mm. Read all three columns, not just "Straight". The 2026-09-30 lesson
+  about taped variants sharing the straight row's pitch is the common case,
+  not the rule.
+- 2026-10-10: Neither distributor carries **Carnhill** (`lookup VTB9050`:
+  no exact match at both), and `carnhill.co.uk` did not resolve. Audio-EQ
+  inductors at 100 mH - 2 H are a specialist-winder category: E. A. Sowter
+  (`sowter.co.uk/eqinductors.php`) publishes per-equipment tap sets and
+  builds to order. The one catalogue family found at 1 H through a
+  distributor is **Gowanda Electronics** (`927T1007`, `930T1007`,
+  `203T1007`, `047T1007`, DCR 70-290 Ω), and every Gowanda listing Digi-Key
+  returned - fifteen of them - reads `stock: 0`. Treat Gowanda as
+  build-to-order rather than absent.
+- 2026-10-10: A manufacturer datasheet that `pdftotext -layout` garbles into
+  interleaved numbers is often a multi-level table header rather than a
+  drawing. Rendering the page (`pdftoppm -f <n> -l <n> -png -r 220 ...`) and
+  reading the image resolved both Panasonic tables here, where the text
+  layer had put "Lead length (mm)" over columns that are actually lead
+  SPACE. The 2026-09-30 lesson said this for dimension drawings; it applies
+  to tables too, and a misread header is the quieter error of the two.
