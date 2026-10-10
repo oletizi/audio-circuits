@@ -23,7 +23,15 @@
  * run and rewrites it only when the content differs, the same way the KiCad
  * netlist fixture is kept honest.
  */
-import { PART_TABLE_HEADER, describePart, gangOf, netOf, partRow, pinsOf } from "./part-text.ts"
+import {
+  PART_TABLE_HEADER,
+  describePart,
+  gangOf,
+  netOf,
+  partRow,
+  pinFieldNotes,
+  pinsOf,
+} from "./part-text.ts"
 import { physicalOnly } from "./physicalize.ts"
 import { standInGroupsSection, standInOwners, standInPartIds } from "./scaffold/wiring.ts"
 import type { Component, Network } from "../model/types.ts"
@@ -340,6 +348,14 @@ export function wiringDocument(input: WiringInput): string {
     "shield landing, present so there is somewhere to put that wire rather than",
     "improvising one later.",
     "",
+    // WHICH PART, not only which holes. The rows below are named by footprint, and a
+    // footprint is a landing rather than a purchase: the junction's two rows are one
+    // long-tail header in the hand, and a builder who ordered what the headings alone
+    // say would fit two plain headers and then be unable to stack the boards the shared
+    // bus exists for. A field declaration on the parts says they are one part; these
+    // notes say what that part is, derived from the rows' own footprints.
+    ...pinFieldNotes(input.network.components, input.designators)
+      .flatMap((note) => [note, ""]),
     physical.length > 0 ? physical.join("\n") : "_None._\n",
     ...(input.scaffold === undefined
       ? []

@@ -15,7 +15,7 @@
  * irrelevant to a netlist, and the first thing a builder has to get right - is in here.
  */
 import { isRecord } from "../guards.ts"
-import type { Component } from "../model/types.ts"
+import type { Component, PinField } from "../model/types.ts"
 
 /** Every pin a component declares, package pins and unit pins together. */
 export function pinsOf(component: Component): Readonly<Record<string, Component["pins"][string]>> {
@@ -70,6 +70,26 @@ function taperName(taper: unknown): string {
  * naming the part and the footprint, because the failure being prevented is a confident
  * wrong label on the one line that sends somebody to a supplier.
  */
+/**
+ * A pin header's shape as its footprint name spells it - "1", "05", "2.54" - kept as
+ * written rather than parsed to numbers, because "1x05" is how the part is sold and
+ * `1x5` is not.
+ */
+interface HeaderShape {
+  readonly columns: string
+  readonly rows: string
+  readonly pitch: string
+}
+
+function headerShape(footprint: string): HeaderShape | undefined {
+  const match = /PinHeader_(\d+)x(\d+)_P([\d.]+)mm/.exec(footprint)
+  const columns = match?.[1]
+  const rows = match?.[2]
+  const pitch = match?.[3]
+  if (columns === undefined || rows === undefined || pitch === undefined) return undefined
+  return { columns, rows, pitch }
+}
+
 function describeConnector(component: Component): string {
   const footprint = component.part?.footprint
   if (footprint === undefined) {
@@ -81,12 +101,9 @@ function describeConnector(component: Component): string {
         "a footprint, or keep it out of the wiring guide.",
     )
   }
-  const header = /PinHeader_(\d+)x(\d+)_P([\d.]+)mm/.exec(footprint)
-  const columns = header?.[1]
-  const rows = header?.[2]
-  const pitch = header?.[3]
-  if (columns !== undefined && rows !== undefined && pitch !== undefined) {
-    return `${columns}x${rows} pin header, ${pitch}mm pitch`
+  const header = headerShape(footprint)
+  if (header !== undefined) {
+    return `${header.columns}x${header.rows} pin header, ${header.pitch}mm pitch`
   }
   if (footprint.includes("TerminalBlock")) return "terminal block"
   throw new Error(
@@ -123,6 +140,152 @@ export function describePart(component: Component): string {
   }
   if (component.kind === "connector") return describeConnector(component)
   return component.kind
+}
+
+/** A pin field as its rows actually are: how many rows, and the shape they agree on. */
+interface FieldShape {
+  readonly name: string
+  /** The designators of its rows, in the order the board carries them. */
+  readonly rowNames: readonly string[]
+  readonly shape: HeaderShape
+}
+
+/**
+ * What to buy for a field fitted with a stacking header, and why it is modelled a row
+ * at a time.
+ *
+ * THE DEFECT THIS CLOSES. The guide named each row accurately - "1x05 pin header,
+ * 2.54mm pitch" - and said nothing about the part, so a builder ordered two plain
+ * vertical headers and could not stack the boards, which is the entire reason the
+ * junction is a shared bus rather than a daisy chain. That is the same failure as the
+ * one `describeConnector` exists for ("a wrong name here is what a builder orders
+ * from"), one step quieter: the right footprint and the wrong part.
+ */
+function stackingWords(field: FieldShape): string {
+  const rowCount = field.rowNames.length
+  const whole = `${rowCount}x${field.shape.rows}`
+  const pins = rowCount * Number(field.shape.rows)
+  return [
+    `**The ${field.name} rows are ONE ${whole} pin field — fit a single stacking header, ` +
+      `not ${rowCount} plain ones.** ${field.rowNames.join(" and ")} are the ${rowCount} rows of ` +
+      `one ${pins}-pin field at ${field.shape.pitch}mm pitch, and the part that goes in it is a ` +
+      `${whole} LONG-TAIL (stacking) header: its tails reach through this board into the socket ` +
+      "of the board above, which is what lets the boards stack and makes this junction a bus " +
+      "they all share rather than a row of pins going nowhere.",
+    "",
+    `${rowCount} plain vertical 1x${field.shape.rows} headers fit the same holes and leave ` +
+      "nothing to stack onto, so they are the one thing not to order. A ribbon socket spanning " +
+      "every row, or individual leads, is the bench substitute when the boards are not stacked.",
+    "",
+    `It is ${rowCount} parts in the model and one part in the hand: the layout tool's part ` +
+      "families (see `lib/kicad/import-string.ts`) have no multi-row shape at " +
+      `${field.shape.pitch}mm row pitch, so the field is declared a row at a time. The holes, ` +
+      "and what you fit in them, are the same either way.",
+  ].join("\n")
+}
+
+/**
+ * The words for each mating, keyed by the mating itself so a new one cannot be added to
+ * `PinField` without words reaching the guide: this record stops typechecking if a
+ * member has no entry.
+ */
+const MATING_WORDS: Readonly<Record<PinField["mating"], (field: FieldShape) => string>> = {
+  stacking: stackingWords,
+}
+
+/**
+ * One paragraph per declared pin field, saying what single part occupies the rows the
+ * guide has just listed separately.
+ *
+ * DERIVED FROM THE ROWS, not written beside them: the pin count, the pitch and the
+ * field's whole shape come off the components' own footprints, so a field that grew a
+ * row or changed pitch changes these words rather than outliving them.
+ */
+export function pinFieldNotes(
+  components: readonly Component[],
+  designators: Readonly<Record<string, string>>,
+): readonly string[] {
+  const rowsByField = new Map<string, FieldRow[]>()
+  for (const component of components) {
+    const field = component.part?.pinField
+    if (field === undefined) continue
+    const row: FieldRow = {
+      id: component.id,
+      name: designators[component.id] ?? component.id,
+      mating: field.mating,
+      shape: fieldRowShape(field.name, component),
+    }
+    const existing = rowsByField.get(field.name)
+    if (existing === undefined) rowsByField.set(field.name, [row])
+    else existing.push(row)
+  }
+  return [...rowsByField].map(([name, rows]) => fieldNote(name, rows))
+}
+
+/** One row of a pin field, with everything the note needs read off it already. */
+interface FieldRow {
+  readonly id: string
+  /** The designator the guide's own heading for this row uses. */
+  readonly name: string
+  readonly mating: PinField["mating"]
+  readonly shape: HeaderShape
+}
+
+function fieldNote(name: string, rows: readonly FieldRow[]): string {
+  const [first, ...rest] = rows
+  if (first === undefined || rest.length === 0) {
+    throw new Error(
+      `pin field "${name}" has only one row (${first?.id ?? "none"}), so it describes no ` +
+        "split: a field declaration exists to say that several connector components are rows " +
+        "of ONE part. Either drop part.pinField from that component, or - if a single-row " +
+        "field really does force a particular part - give pinFieldNotes in " +
+        "lib/board/part-text.ts the words for that case rather than letting it borrow the " +
+        "multi-row ones, which would tell a builder to stack a field with nothing to stack.",
+    )
+  }
+  for (const row of rest) {
+    if (row.shape.rows === first.shape.rows && row.shape.pitch === first.shape.pitch) continue
+    throw new Error(
+      `pin field "${name}" has rows of different shapes: ${first.id} is 1x${first.shape.rows} ` +
+        `at ${first.shape.pitch}mm and ${row.id} is 1x${row.shape.rows} at ${row.shape.pitch}mm. ` +
+        "Rows of one pin field occupy one rectangle of holes, so they must agree on length and " +
+        "pitch; they are refused rather than described by the first row, which would state a " +
+        "field size no part has.",
+    )
+  }
+  // NO ROWS-DISAGREE-ABOUT-MATING CHECK, deliberately: `PinField["mating"]` has one
+  // member, so two rows that disagree cannot be constructed and such a guard would be
+  // unreachable code with no test able to reach it. Adding a second mating means adding
+  // that refusal here with its test, in the same change as the new member.
+  return MATING_WORDS[first.mating]({
+    name,
+    rowNames: rows.map((row) => `\`${row.name}\``),
+    shape: first.shape,
+  })
+}
+
+/** One row's header shape, refusing anything a pin field cannot be made of. */
+function fieldRowShape(name: string, row: Component): HeaderShape {
+  const footprint = row.part?.footprint
+  const shape = footprint === undefined ? undefined : headerShape(footprint)
+  if (shape === undefined) {
+    throw new Error(
+      `component "${row.id}" declares part.pinField "${name}" but its footprint ` +
+        `(${footprint ?? "none"}) is not a pin header, so the field's size and pitch cannot be ` +
+        "read off it. A pin field's rows are pin headers; the words the guide prints about the " +
+        "part to fit are derived from their footprints rather than typed in, so a row with no " +
+        "readable shape is refused instead of described vaguely.",
+    )
+  }
+  if (shape.columns !== "1") {
+    throw new Error(
+      `component "${row.id}" declares part.pinField "${name}" but its footprint is a ` +
+        `${shape.columns}x${shape.rows} header, which is already a multi-row field in one part. ` +
+        "A pin field exists to rejoin SINGLE rows that the model had to split; a multi-row " +
+        "footprint needs no field and combining two of them would state a size neither has.",
+    )
+  }
+  return shape
 }
 
 /**

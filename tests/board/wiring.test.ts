@@ -190,6 +190,101 @@ test("a connector whose footprint names no known family refuses rather than gues
   expect(() => wiringDocument(input)).toThrow(/Connector_Nonexistent/)
 })
 
+/**
+ * Two single-row headers declared to be rows of ONE pin field, as the Pultec junction
+ * is: see `JUNCTION_FIELD` in `circuits/pultec/physical/parts.ts`.
+ *
+ * WHAT THESE PIN. The guide used to name each row by its footprint - accurate - and say
+ * nothing about the part, so a builder ordered two plain vertical headers and could not
+ * stack the boards the junction is a shared bus for. The note the field produces is the
+ * fix, and these check it says what somebody at a supplier needs: one part, its whole
+ * size, and long tails.
+ */
+const FIELD_ROWS: readonly Component[] = ["row_a", "row_b"].map((id) => ({
+  ...HEADER,
+  id,
+  part: {
+    symbol: "Connector_Generic:Conn_01x02",
+    footprint: "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+    electricallyInert: true,
+    pinField: { name: "junction", mating: "stacking" },
+  },
+}))
+
+function withFieldRows(rows: readonly Component[]): WiringInput {
+  return {
+    ...INPUT,
+    network: { ...NETWORK, components: [CAP, POT, SELECTOR, MODE, BLOCK, ...rows] },
+    designators: {
+      ...INPUT.designators,
+      ...Object.fromEntries(rows.map((row) => [row.id, row.id.toUpperCase()])),
+    },
+  }
+}
+
+test("rows of one pin field are named as one part to order, with its whole size", () => {
+  const doc = wiringDocument(withFieldRows(FIELD_ROWS))
+  const terminals = doc.slice(doc.indexOf("## Board terminals"))
+  // The size and pin count are read off the rows' own footprints, so a field that grew
+  // a row or changed pitch changes these words rather than outliving them.
+  expect(terminals).toContain("ONE 2x02 pin field")
+  expect(terminals).toContain("4-pin field at 2.54mm pitch")
+  expect(terminals).toContain("LONG-TAIL (stacking) header")
+  // Both rows are named by the designator their own heading uses, so the note points at
+  // the two tables below it rather than at ids nothing else in the guide shows.
+  expect(terminals).toContain("`ROW_A` and `ROW_B`")
+  // And the thing not to buy is said outright: that is the order a builder would place
+  // from the headings alone.
+  expect(terminals).toContain("2 plain vertical 1x02 headers")
+})
+
+test("a board whose connectors declare no pin field carries no field note", () => {
+  // `INPUT`'s header is a lone 1x02 that no other part shares a field with, so there is
+  // nothing to say and the guide says nothing - rather than a paragraph about stacking
+  // appearing over every pin header in the repository.
+  const doc = wiringDocument(INPUT)
+  expect(doc).not.toContain("pin field")
+})
+
+test("a pin field with one row refuses: it describes no split", () => {
+  const [only] = FIELD_ROWS
+  expect(only).toBeDefined()
+  expect(() => wiringDocument(withFieldRows([only!]))).toThrow(/only one row/)
+  expect(() => wiringDocument(withFieldRows([only!]))).toThrow(/row_a/)
+})
+
+test("rows of a pin field that disagree about shape refuse rather than taking the first", () => {
+  const [first, second] = FIELD_ROWS
+  expect(first).toBeDefined()
+  const longer: Component = {
+    ...second!,
+    part: { ...second!.part, footprint: "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" },
+  }
+  const input = withFieldRows([first!, longer])
+  // Describing the field by the first row would print a size no part has, which is the
+  // same wrong-part-to-order defect one level up.
+  expect(() => wiringDocument(input)).toThrow(/different shapes/)
+  expect(() => wiringDocument(input)).toThrow(/1x02 at 2.54mm and row_b is 1x05/)
+})
+
+test("a pin field row that is not a pin header refuses", () => {
+  const [first, second] = FIELD_ROWS
+  const screw: Component = {
+    ...second!,
+    part: { ...second!.part, footprint: BLOCK.part!.footprint! },
+  }
+  expect(() => wiringDocument(withFieldRows([first!, screw]))).toThrow(/is not a pin header/)
+})
+
+test("a pin field row that is already a multi-row header refuses", () => {
+  const [first, second] = FIELD_ROWS
+  const twoRow: Component = {
+    ...second!,
+    part: { ...second!.part, footprint: "Connector_PinHeader_2.54mm:PinHeader_2x05_P2.54mm_Vertical" },
+  }
+  expect(() => wiringDocument(withFieldRows([first!, twoRow]))).toThrow(/already a multi-row field/)
+})
+
 test("a connector with no footprint refuses: the kind cannot say what the part is", () => {
   const bare: Component = { ...HEADER, id: "bare", part: { electricallyInert: true } }
   const input: WiringInput = {

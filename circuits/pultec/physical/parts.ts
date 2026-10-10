@@ -8,7 +8,7 @@
  * `FILM_CAPACITOR_IMPORT_STRINGS` in `lib/kicad/import-string.ts` for the
  * footprints' VeroRoute import strings.
  */
-import type { Component, Network } from "../../../lib/model/types.ts"
+import type { Component, Network, PinField } from "../../../lib/model/types.ts"
 import { net } from "../../../lib/model/types.ts"
 import { componentNets } from "../../../lib/model/topology.ts"
 import { PHYSICAL_ONLY } from "../../../lib/board/physicalize.ts"
@@ -111,6 +111,20 @@ export const AXIAL_RESISTOR =
 export const HEADER_1X05 =
   "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"
 
+/**
+ * What both rows carry so a builder is told they are ONE part.
+ *
+ * The reasoning above was for a long time recorded only here, in a comment nobody
+ * ordering parts reads, while all five generated guides listed two "1x05 pin header"
+ * rows and said nothing about long tails. Somebody following the guide buys two plain
+ * vertical headers and then cannot stack the boards, which is the one thing the shared
+ * bus exists for. This declaration is what carries the fact into the guide:
+ * `pinFieldNotes` in `lib/board/part-text.ts` turns it into a paragraph under "Board
+ * terminals", with the field's size and pitch read off these components' own
+ * footprints.
+ */
+const JUNCTION_FIELD: PinField = { name: "junction", mating: "stacking" }
+
 /** Symbols for the off-board parts, so their netlist value field is not empty. */
 export const ROTARY_SYMBOL = "Switch:SW_Rotary"
 export const TOGGLE_SYMBOL = "Switch:SW_SPDT"
@@ -186,6 +200,7 @@ export function junctionSignalComponent(): Component {
       symbol: "Connector_Generic:Conn_01x05",
       footprint: HEADER_1X05,
       electricallyInert: true,
+      pinField: JUNCTION_FIELD,
     },
     pins: {},
     units: [{
@@ -221,6 +236,7 @@ export function junctionGroundComponent(): Component {
       symbol: "Connector_Generic:Conn_01x05",
       footprint: HEADER_1X05,
       electricallyInert: true,
+      pinField: JUNCTION_FIELD,
     },
     pins: {},
     units: [{

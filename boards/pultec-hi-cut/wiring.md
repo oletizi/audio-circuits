@@ -74,6 +74,12 @@ the **Also on** column names which. A net reaching no other board is a chassis o
 shield landing, present so there is somewhere to put that wire rather than
 improvising one later.
 
+**The junction rows are ONE 2x05 pin field — fit a single stacking header, not 2 plain ones.** `junction_signals` and `junction_grounds` are the 2 rows of one 10-pin field at 2.54mm pitch, and the part that goes in it is a 2x05 LONG-TAIL (stacking) header: its tails reach through this board into the socket of the board above, which is what lets the boards stack and makes this junction a bus they all share rather than a row of pins going nowhere.
+
+2 plain vertical 1x05 headers fit the same holes and leave nothing to stack onto, so they are the one thing not to order. A ribbon socket spanning every row, or individual leads, is the bench substitute when the boards are not stacked.
+
+It is 2 parts in the model and one part in the hand: the layout tool's part families (see `lib/kicad/import-string.ts`) have no multi-row shape at 2.54mm row pitch, so the field is declared a row at a time. The holes, and what you fit in them, are the same either way.
+
 ### junction_signals — 1x05 pin header, 2.54mm pitch
 
 | Pad | Terminal | Net | Also on |
