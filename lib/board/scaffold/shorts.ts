@@ -144,7 +144,21 @@ export function boundaryPartition(
   components: readonly ResolvedComponent[],
   boundary: ReadonlySet<string>,
 ): ReadonlyMap<string, readonly string[]> {
-  const classOf = electricalNodes(components)
+  return partitionBy(electricalNodes(components), boundary)
+}
+
+/** The same partition from a union-find the caller has ALREADY BUILT.
+ *
+ * `boundaryAdmittance` needs both the partition and the mapping, once each, and an
+ * earlier version built the union-find twice per call - doubling that work inside Gate
+ * A2's sweep, which runs five sections by about a hundred frequencies by two sides.
+ * Splitting the two gives the caller that holds a `classOf` the partition for free, and
+ * leaves `boundaryPartition` above as the whole-network convenience it reads as.
+ */
+export function partitionBy(
+  classOf: (net: string) => string,
+  boundary: ReadonlySet<string>,
+): ReadonlyMap<string, readonly string[]> {
   const classes = new Map<string, string[]>()
   for (const net of [...boundary].sort()) {
     const representative = classOf(net)

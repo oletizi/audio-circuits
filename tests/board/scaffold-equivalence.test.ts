@@ -191,20 +191,32 @@ const FLOOR = 1e-15
  * `tests/board/scaffold-partition.test.ts` holds the property this derives from,
  * including the assertion that it comes out as low-cut and nothing else. Gate A1 covers
  * that section completely, so nothing is unchecked; the thing checking it is structural
- * rather than numerical. */
-const SHORTED_BOUNDARY: readonly string[] = SECTIONS.filter((section) => {
-  const derived = standIn(section, modules, REFERENCE_FLAT)
-  return boundaryPartition(derived.components, new Set(derived.boundary)).size < 2
-})
+ * rather than numerical.
+ *
+ * ONE CLASS, NOT "FEWER THAN TWO". A boundary of fewer than two NETS also yields fewer
+ * than two classes, and that is a degenerate boundary rather than a short-circuit
+ * collapse - a different missing thing, which `standIn` and `boundaryAdmittance` each
+ * refuse with their own message. `=== 1` says which of the two this means.
+ *
+ * CALLED FROM INSIDE EACH TEST, NOT AT MODULE SCOPE. Deriving this on import turned any
+ * throw in the derivation into a module-load error, and bun then reported one unhandled
+ * error and ran none of this file's seventeen tests instead of naming the gates that
+ * broke. See `tests/board/scaffold-partition.test.ts`. */
+function shortedBoundarySections(): readonly string[] {
+  return SECTIONS.filter((section) => {
+    const derived = standIn(section, modules, REFERENCE_FLAT)
+    return boundaryPartition(derived.components, new Set(derived.boundary)).size === 1
+  })
+}
 
 test("the sections Gate A2 cannot cover are exactly the ones whose boundary is shorted", () => {
   // A gate that quietly covers fewer sections than it claims is the failure mode this
   // repository exists to prevent, so the refusal is asserted on BOTH sides. If the
   // reduction ever dropped low-cut's 0R arm, the derived side would stop refusing and
   // this fails; if a section's boundary became shorted, the loop below would throw.
-  expect(SHORTED_BOUNDARY.length, "nothing refuses, so the refusal is untested")
-    .toBeGreaterThan(0)
-  for (const section of SHORTED_BOUNDARY) {
+  const shorted = shortedBoundarySections()
+  expect(shorted.length, "nothing refuses, so the refusal is untested").toBeGreaterThan(0)
+  for (const section of shorted) {
     const derived = standIn(section, modules, REFERENCE_FLAT)
     const whole = resolveSectionFlat(section, modules, REFERENCE_FLAT)
     const boundary = new Set(derived.boundary)
@@ -221,8 +233,9 @@ test("GATE A2: stand-in and real flat section agree on boundary admittance", () 
   // networks are structurally identical, so anything above arithmetic noise is a
   // defect. If this ever needs loosening, the reduction has started approximating.
   const covered: string[] = []
+  const shorted = shortedBoundarySections()
   for (const section of SECTIONS) {
-    if (SHORTED_BOUNDARY.includes(section)) continue
+    if (shorted.includes(section)) continue
     covered.push(section)
     const derived = standIn(section, modules, REFERENCE_FLAT)
     const whole = resolveSectionFlat(section, modules, REFERENCE_FLAT)
