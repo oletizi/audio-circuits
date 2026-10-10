@@ -1,0 +1,89 @@
+{
+  "id": "potentiometer-1k-linear-panel-pot",
+  "kind": "potentiometer",
+  "description": "1k ohm, linear-taper, 16mm-body panel-mount potentiometer, solid (smooth, non-knurled) round metal shaft, 6.35mm dia x 15mm long, solder-lug terminals - not the PCB-pin panel-pot default: no PCB-pin variant is stocked in both 1k and 25k (see catalog why)",
+  "manufacturer": "Taiwan Alpha Electronic Co., Ltd.",
+  "mpn": "RV16AF-10-15R1-B1K-3CLA",
+  "specs": {
+    "ohms": 1000,
+    "taper": "linear",
+    "diameterMm": 16.5
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Alpha-Taiwan/RV16AF-10-15R1-B1K-3CLA?qs=MLItCLRbWsyvhgRl7RoeRQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for RV16AF-10-15R1-B1K-3CLA (Alpha (Taiwan)), Mouser part 313-2000F-1K, in stock 720 units."
+    },
+    {
+      "spec": "mpn",
+      "url": "https://www.taiwanalpha.com/downloads?target=products&id=94",
+      "note": "Taiwan Alpha Electronic's own 'RV16A01F / RV16AF - 16mm Rotary Type, Metal Shaft Series' catalog PDF, re-read 2026-09-30, page 6 'Metal Shaft Type' table: the 'R1 Type' drawing is a plain round shaft (no knurl, no flat) dimensioned 6.35 dia, with order code 15R1 = L 15mm. The order code's shaft field, 15R1, is this type: a 6.35mm x 15mm plain shaft."
+    },
+    {
+      "spec": "ohms",
+      "url": "https://www.taiwanalpha.com/downloads?target=products&id=94",
+      "note": "Taiwan Alpha Electronic's own 'RV16A01F / RV16AF - 16mm Rotary Type, Metal Shaft Series' catalog PDF, 2026-09-30, 'How to order' diagram: the order code's Taper-and-Resistance field 'B1K' decodes as taper code B and resistance value 1K ohm."
+    },
+    {
+      "spec": "taper",
+      "url": "https://www.taiwanalpha.com/downloads?target=products&id=94",
+      "note": "Same catalog PDF, 'How to order' diagram's Taper and Resistance Value table: order code prefix 'B' = 'Linear/B' taper (A = Log, B = Linear, C = Rev-log)."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://www.taiwanalpha.com/downloads?target=products&id=94",
+      "note": "Same catalog PDF: the whole series is titled '16mm Rotary Type, Metal Shaft Series' throughout, and the RV16AF-10 outline drawing (page 2) dimensions the case as a 16.5mm diameter body with a 17mm mounting-bushing face, consistent with the operator's 16mm panel-pot default."
+    }
+  ],
+  "why": "Paired with potentiometer-25k-linear-panel-pot (same board, RV7/RV5 DRIVE and TRANSFORMER DRIVE; this part is RV6 CHARACTER) - see that entry's 'why' for the full account of the family choice and the PCB-pin-versus-solder-lug deviation from the operator's default. In short: Taiwan Alpha's RV16AF-10-15R1-B family is the only one found across Alpha, Bourns and Piher that carries both this board's panel-pot values (1k and 25k) in Mouser stock at hobbyist quantities with a genuinely solid (non-knurled, non-flatted) round metal shaft and a 16mm body, confirmed from the manufacturer's own catalog PDF. The only stocked PCB-pin Alpha variant of this exact shaft/taper/body combination (RV16AF-42-15R1-B, right-angle PC mount) is in stock at Mouser for 100k only, not 1k or 25k, so it could not cover this line.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Alpha-Taiwan/RV16AF-10-15R1-B1K-3CLA?qs=MLItCLRbWsyvhgRl7RoeRQ%3D%3D",
+      "sku": "313-2000F-1K",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 1.94
+        },
+        {
+          "quantity": 25,
+          "unitPrice": 1.6
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 1.47
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 1.33
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 1.23
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 1.03
+        },
+        {
+          "quantity": 3000,
+          "unitPrice": 1.02
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.94
+        },
+        {
+          "quantity": 10000,
+          "unitPrice": 0.83
+        }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    }
+  ]
+}

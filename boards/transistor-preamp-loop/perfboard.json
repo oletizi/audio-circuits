@@ -1,0 +1,7 @@
+{
+  "sch": "../../circuits/transistor-preamp/loop-board.kicad_sch",
+  "circuit": "../../circuits/transistor-preamp/loop-board.ts",
+  "export": "transistorPreampLoop",
+  "netlist": "../../tests/fixtures/transistor-preamp-loop.net",
+  "vrt": "transistor-preamp-loop.perfboard.vrt"
+}

@@ -1,0 +1,2516 @@
+{
+  "Products": [
+    {
+      "Description": {
+        "ProductDescription": "TRANS NPN 40V 0.2A TO-92",
+        "DetailedDescription": "Bipolar (BJT) Transistor NPN 40 V 200 mA 300MHz 625 mW Through Hole TO-92"
+      },
+      "Manufacturer": {
+        "Id": 4878,
+        "Name": "Diotec Semiconductor"
+      },
+      "ManufacturerProductNumber": "2N3904",
+      "UnitPrice": 0.14,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/diotec-semiconductor/2N3904/13164701",
+      "DatasheetUrl": "https://diotec.com/request/datasheet/2n3904.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/7962/MFG_4878%7ETO92-FORMED%7E%7E3.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "4878-2N3904CT-ND",
+          "PackageType": {
+            "Id": 2,
+            "Name": "Cut Tape (CT)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.14,
+              "TotalPrice": 0.14
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.088,
+              "TotalPrice": 0.88
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.0543,
+              "TotalPrice": 5.43
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.03924,
+              "TotalPrice": 19.62
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.03434,
+              "TotalPrice": 34.34
+            },
+            {
+              "BreakQuantity": 2000,
+              "UnitPrice": 0.0302,
+              "TotalPrice": 60.4
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 4878,
+            "Name": "Diotec Semiconductor"
+          },
+          "QuantityAvailableforPackageType": 6322,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        },
+        {
+          "DigiKeyProductNumber": "4878-2N3904TB-ND",
+          "PackageType": {
+            "Id": 4,
+            "Name": "Tape & Box (TB)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 4000,
+              "UnitPrice": 0.0267,
+              "TotalPrice": 106.8
+            },
+            {
+              "BreakQuantity": 8000,
+              "UnitPrice": 0.02375,
+              "TotalPrice": 190
+            },
+            {
+              "BreakQuantity": 12000,
+              "UnitPrice": 0.02224,
+              "TotalPrice": 266.88
+            },
+            {
+              "BreakQuantity": 20000,
+              "UnitPrice": 0.02054,
+              "TotalPrice": 410.8
+            },
+            {
+              "BreakQuantity": 28000,
+              "UnitPrice": 0.01954,
+              "TotalPrice": 547.12
+            },
+            {
+              "BreakQuantity": 40000,
+              "UnitPrice": 0.01856,
+              "TotalPrice": 742.4
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 4878,
+            "Name": "Diotec Semiconductor"
+          },
+          "QuantityAvailableforPackageType": 68000,
+          "MinimumOrderQuantity": 4000,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 74322,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 74,
+          "ParameterText": "Transistor Type",
+          "ParameterType": "String",
+          "ValueId": "380569",
+          "ValueText": "NPN"
+        },
+        {
+          "ParameterId": 2101,
+          "ParameterText": "Current - Collector (Ic) (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mA",
+          "ValueText": "200 mA"
+        },
+        {
+          "ParameterId": 2103,
+          "ParameterText": "Voltage - Collector Emitter Breakdown (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "40 V",
+          "ValueText": "40 V"
+        },
+        {
+          "ParameterId": 841,
+          "ParameterText": "Vce Saturation (Max) @ Ib, Ic",
+          "ParameterType": "String",
+          "ValueId": "182598",
+          "ValueText": "300mV @ 5mA, 50mA"
+        },
+        {
+          "ParameterId": 890,
+          "ParameterText": "Current - Collector Cutoff (Max)",
+          "ParameterType": "String",
+          "ValueId": "238456",
+          "ValueText": "50nA"
+        },
+        {
+          "ParameterId": 891,
+          "ParameterText": "DC Current Gain (hFE) (Min) @ Ic, Vce",
+          "ParameterType": "String",
+          "ValueId": "67325",
+          "ValueText": "100 @ 10mA, 1V"
+        },
+        {
+          "ParameterId": 2109,
+          "ParameterText": "Power - Max",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "625 mW",
+          "ValueText": "625 mW"
+        },
+        {
+          "ParameterId": 892,
+          "ParameterText": "Frequency - Transition",
+          "ParameterType": "String",
+          "ValueId": "182367",
+          "ValueText": "300MHz"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242933",
+          "ValueText": "-55°C ~ 150°C (TJ)"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "411897",
+          "ValueText": "Through Hole"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "445278",
+          "ValueText": "TO-226-3, TO-92-3 (TO-226AA) Formed Leads"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "413704",
+          "ValueText": "TO-92"
+        }
+      ],
+      "BaseProductNumber": {},
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 276,
+                    "ParentId": 2087,
+                    "Name": "Single Bipolar Transistors",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/683/383/TO-206AA%20TO-18-3_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "10",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "Not Applicable",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0075"
+      },
+      "OtherNames": [
+        "4878-2N3904TR-ND",
+        "4878-2N3904DKRINACTIVE",
+        "4878-2N3904DKRINACTIVE-ND",
+        "4878-2N3904DKR-ND",
+        "4878-2N3904DKR",
+        "4878-2N3904",
+        "2796-2N3904TR-ND",
+        "4878-2N3904TR",
+        "4878-2N3904TB",
+        "4878-2N3904CT",
+        "2796-2N3904TR",
+        "4878-2N3904-ND"
+      ]
+    },
+    {
+      "Description": {
+        "ProductDescription": "TRANS NPN 40V 0.2A TO-92-3",
+        "DetailedDescription": "Bipolar (BJT) Transistor NPN 40 V 200 mA 300MHz 625 mW Through Hole TO-92-3"
+      },
+      "Manufacturer": {
+        "Id": 488,
+        "Name": "onsemi"
+      },
+      "ManufacturerProductNumber": "2N3904BU",
+      "UnitPrice": 0.29,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/onsemi/2N3904BU/1413",
+      "DatasheetUrl": "https://www.onsemi.com/pub/Collateral/2N3904-D.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/6157/488%7EMKT-ZA03D%7E%7E3.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "2N3904FS-ND",
+          "PackageType": {
+            "Id": 3,
+            "Name": "Bulk"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.29,
+              "TotalPrice": 0.29
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.179,
+              "TotalPrice": 1.79
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.1113,
+              "TotalPrice": 11.13
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.0819,
+              "TotalPrice": 40.95
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.07237,
+              "TotalPrice": 72.37
+            },
+            {
+              "BreakQuantity": 2000,
+              "UnitPrice": 0.06434,
+              "TotalPrice": 128.68
+            },
+            {
+              "BreakQuantity": 5000,
+              "UnitPrice": 0.05562,
+              "TotalPrice": 278.1
+            },
+            {
+              "BreakQuantity": 10000,
+              "UnitPrice": 0.05022,
+              "TotalPrice": 502.2
+            },
+            {
+              "BreakQuantity": 50000,
+              "UnitPrice": 0.04075,
+              "TotalPrice": 2037.5
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 488,
+            "Name": "onsemi"
+          },
+          "QuantityAvailableforPackageType": 312630,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 312630,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 74,
+          "ParameterText": "Transistor Type",
+          "ParameterType": "String",
+          "ValueId": "380569",
+          "ValueText": "NPN"
+        },
+        {
+          "ParameterId": 2101,
+          "ParameterText": "Current - Collector (Ic) (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mA",
+          "ValueText": "200 mA"
+        },
+        {
+          "ParameterId": 2103,
+          "ParameterText": "Voltage - Collector Emitter Breakdown (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "40 V",
+          "ValueText": "40 V"
+        },
+        {
+          "ParameterId": 841,
+          "ParameterText": "Vce Saturation (Max) @ Ib, Ic",
+          "ParameterType": "String",
+          "ValueId": "182598",
+          "ValueText": "300mV @ 5mA, 50mA"
+        },
+        {
+          "ParameterId": 890,
+          "ParameterText": "Current - Collector Cutoff (Max)",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 891,
+          "ParameterText": "DC Current Gain (hFE) (Min) @ Ic, Vce",
+          "ParameterType": "String",
+          "ValueId": "67325",
+          "ValueText": "100 @ 10mA, 1V"
+        },
+        {
+          "ParameterId": 2109,
+          "ParameterText": "Power - Max",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "625 mW",
+          "ValueText": "625 mW"
+        },
+        {
+          "ParameterId": 892,
+          "ParameterText": "Frequency - Transition",
+          "ParameterType": "String",
+          "ValueId": "182367",
+          "ValueText": "300MHz"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242933",
+          "ValueText": "-55°C ~ 150°C (TJ)"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "411897",
+          "ValueText": "Through Hole"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "413304",
+          "ValueText": "TO-226-3, TO-92-3 (TO-226AA)"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "413708",
+          "ValueText": "TO-92-3"
+        }
+      ],
+      "BaseProductNumber": {
+        "Id": 77,
+        "Name": "2N3904"
+      },
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 276,
+                    "ParentId": 2087,
+                    "Name": "Single Bipolar Transistors",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/683/383/TO-206AA%20TO-18-3_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "36",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "Not Applicable",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0075"
+      },
+      "OtherNames": [
+        "2N3904FS",
+        "2N3904FS-NDR"
+      ]
+    },
+    {
+      "Description": {
+        "ProductDescription": "TRANS NPN 40V 0.2A TO-92-3",
+        "DetailedDescription": "Bipolar (BJT) Transistor NPN 40 V 200 mA 300MHz 625 mW Through Hole TO-92-3"
+      },
+      "Manufacturer": {
+        "Id": 488,
+        "Name": "onsemi"
+      },
+      "ManufacturerProductNumber": "2N3904TA",
+      "UnitPrice": 0.28,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/onsemi/2N3904TA/973944",
+      "DatasheetUrl": "https://www.onsemi.com/pub/Collateral/2N3904-D.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/6157/488%7EMKT-ZA03F%7E%7E3.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "2N3904TAFSCT-ND",
+          "PackageType": {
+            "Id": 2,
+            "Name": "Cut Tape (CT)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.28,
+              "TotalPrice": 0.28
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.171,
+              "TotalPrice": 1.71
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.1066,
+              "TotalPrice": 10.66
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.07836,
+              "TotalPrice": 39.18
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.0692,
+              "TotalPrice": 69.2
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 488,
+            "Name": "onsemi"
+          },
+          "QuantityAvailableforPackageType": 240,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        },
+        {
+          "DigiKeyProductNumber": "2N3904TAFSTB-ND",
+          "PackageType": {
+            "Id": 4,
+            "Name": "Tape & Box (TB)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 2000,
+              "UnitPrice": 0.06147,
+              "TotalPrice": 122.94
+            },
+            {
+              "BreakQuantity": 4000,
+              "UnitPrice": 0.05496,
+              "TotalPrice": 219.84
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 488,
+            "Name": "onsemi"
+          },
+          "QuantityAvailableforPackageType": 36900,
+          "MaxQuantityForDistribution": 999999999,
+          "MinimumOrderQuantity": 2000,
+          "StandardPackage": 2000,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 37140,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 74,
+          "ParameterText": "Transistor Type",
+          "ParameterType": "String",
+          "ValueId": "380569",
+          "ValueText": "NPN"
+        },
+        {
+          "ParameterId": 2101,
+          "ParameterText": "Current - Collector (Ic) (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mA",
+          "ValueText": "200 mA"
+        },
+        {
+          "ParameterId": 2103,
+          "ParameterText": "Voltage - Collector Emitter Breakdown (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "40 V",
+          "ValueText": "40 V"
+        },
+        {
+          "ParameterId": 841,
+          "ParameterText": "Vce Saturation (Max) @ Ib, Ic",
+          "ParameterType": "String",
+          "ValueId": "182598",
+          "ValueText": "300mV @ 5mA, 50mA"
+        },
+        {
+          "ParameterId": 890,
+          "ParameterText": "Current - Collector Cutoff (Max)",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 891,
+          "ParameterText": "DC Current Gain (hFE) (Min) @ Ic, Vce",
+          "ParameterType": "String",
+          "ValueId": "67325",
+          "ValueText": "100 @ 10mA, 1V"
+        },
+        {
+          "ParameterId": 2109,
+          "ParameterText": "Power - Max",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "625 mW",
+          "ValueText": "625 mW"
+        },
+        {
+          "ParameterId": 892,
+          "ParameterText": "Frequency - Transition",
+          "ParameterType": "String",
+          "ValueId": "182367",
+          "ValueText": "300MHz"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242933",
+          "ValueText": "-55°C ~ 150°C (TJ)"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "411897",
+          "ValueText": "Through Hole"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "445278",
+          "ValueText": "TO-226-3, TO-92-3 (TO-226AA) Formed Leads"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "413708",
+          "ValueText": "TO-92-3"
+        }
+      ],
+      "BaseProductNumber": {
+        "Id": 77,
+        "Name": "2N3904"
+      },
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 276,
+                    "ParentId": 2087,
+                    "Name": "Single Bipolar Transistors",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/683/383/TO-206AA%20TO-18-3_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "34",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "Not Applicable",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0075"
+      },
+      "OtherNames": [
+        "2N3904TA-ND",
+        "2N3904TAFSCT",
+        "2N3904TAFSTB",
+        "2N3904TATB-ND",
+        "2N3904TATB"
+      ]
+    },
+    {
+      "Description": {
+        "ProductDescription": "TRANS NPN 40V 0.2A TO-92-3",
+        "DetailedDescription": "Bipolar (BJT) Transistor NPN 40 V 200 mA 300MHz 625 mW Through Hole TO-92-3"
+      },
+      "Manufacturer": {
+        "Id": 488,
+        "Name": "onsemi"
+      },
+      "ManufacturerProductNumber": "2N3904TFR",
+      "UnitPrice": 0.29,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/onsemi/2N3904TFR/458818",
+      "DatasheetUrl": "https://www.onsemi.com/pub/Collateral/2N3904-D.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/6157/488%7EMKT-ZA03F%7E%7E3.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "2N3904D26ZTR-ND",
+          "PackageType": {
+            "Id": 1,
+            "Name": "Tape & Reel (TR)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 2000,
+              "UnitPrice": 0.06434,
+              "TotalPrice": 128.68
+            },
+            {
+              "BreakQuantity": 4000,
+              "UnitPrice": 0.05757,
+              "TotalPrice": 230.28
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 488,
+            "Name": "onsemi"
+          },
+          "QuantityAvailableforPackageType": 22000,
+          "MaxQuantityForDistribution": 4000,
+          "MinimumOrderQuantity": 2000,
+          "StandardPackage": 2000,
+          "DigiReelFee": 0
+        },
+        {
+          "DigiKeyProductNumber": "2N3904D26ZCT-ND",
+          "PackageType": {
+            "Id": 2,
+            "Name": "Cut Tape (CT)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.29,
+              "TotalPrice": 0.29
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.179,
+              "TotalPrice": 1.79
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.1113,
+              "TotalPrice": 11.13
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.0819,
+              "TotalPrice": 40.95
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.07237,
+              "TotalPrice": 72.37
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 488,
+            "Name": "onsemi"
+          },
+          "QuantityAvailableforPackageType": 24697,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 24697,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 74,
+          "ParameterText": "Transistor Type",
+          "ParameterType": "String",
+          "ValueId": "380569",
+          "ValueText": "NPN"
+        },
+        {
+          "ParameterId": 2101,
+          "ParameterText": "Current - Collector (Ic) (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mA",
+          "ValueText": "200 mA"
+        },
+        {
+          "ParameterId": 2103,
+          "ParameterText": "Voltage - Collector Emitter Breakdown (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "40 V",
+          "ValueText": "40 V"
+        },
+        {
+          "ParameterId": 841,
+          "ParameterText": "Vce Saturation (Max) @ Ib, Ic",
+          "ParameterType": "String",
+          "ValueId": "182598",
+          "ValueText": "300mV @ 5mA, 50mA"
+        },
+        {
+          "ParameterId": 890,
+          "ParameterText": "Current - Collector Cutoff (Max)",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 891,
+          "ParameterText": "DC Current Gain (hFE) (Min) @ Ic, Vce",
+          "ParameterType": "String",
+          "ValueId": "67325",
+          "ValueText": "100 @ 10mA, 1V"
+        },
+        {
+          "ParameterId": 2109,
+          "ParameterText": "Power - Max",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "625 mW",
+          "ValueText": "625 mW"
+        },
+        {
+          "ParameterId": 892,
+          "ParameterText": "Frequency - Transition",
+          "ParameterType": "String",
+          "ValueId": "182367",
+          "ValueText": "300MHz"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242933",
+          "ValueText": "-55°C ~ 150°C (TJ)"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "411897",
+          "ValueText": "Through Hole"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "445278",
+          "ValueText": "TO-226-3, TO-92-3 (TO-226AA) Formed Leads"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "413708",
+          "ValueText": "TO-92-3"
+        }
+      ],
+      "BaseProductNumber": {
+        "Id": 77,
+        "Name": "2N3904"
+      },
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 276,
+                    "ParentId": 2087,
+                    "Name": "Single Bipolar Transistors",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/683/383/TO-206AA%20TO-18-3_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "36",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "Not Applicable",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0075"
+      },
+      "OtherNames": [
+        "2N3904D26ZTR-NDR",
+        "488-2N3904TFRDKR-ND",
+        "488-2N3904TFRDKR",
+        "488-2N3904TFRDKRINACTIVE",
+        "2N3904D26ZCT",
+        "2N3904D26ZCT-NDR",
+        "2N3904D26ZTR",
+        "2N3904_D26Z",
+        "2156-2N3904TFR-OS"
+      ]
+    },
+    {
+      "Description": {
+        "ProductDescription": "TRANS NPN 40V 0.2A TO-92-3",
+        "DetailedDescription": "Bipolar (BJT) Transistor NPN 40 V 200 mA 300MHz 625 mW Through Hole TO-92-3"
+      },
+      "Manufacturer": {
+        "Id": 488,
+        "Name": "onsemi"
+      },
+      "ManufacturerProductNumber": "2N3904TF",
+      "UnitPrice": 0.29,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/onsemi/2N3904TF/975251",
+      "DatasheetUrl": "https://www.onsemi.com/pub/Collateral/2N3904-D.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/6157/488%7EMKT-ZA03F%7E%7E3.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "2N3904TFTR-ND",
+          "PackageType": {
+            "Id": 1,
+            "Name": "Tape & Reel (TR)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 2000,
+              "UnitPrice": 0.06434,
+              "TotalPrice": 128.68
+            },
+            {
+              "BreakQuantity": 4000,
+              "UnitPrice": 0.05757,
+              "TotalPrice": 230.28
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 488,
+            "Name": "onsemi"
+          },
+          "QuantityAvailableforPackageType": 24000,
+          "MinimumOrderQuantity": 2000,
+          "DigiReelFee": 0
+        },
+        {
+          "DigiKeyProductNumber": "2N3904TFCT-ND",
+          "PackageType": {
+            "Id": 2,
+            "Name": "Cut Tape (CT)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.29,
+              "TotalPrice": 0.29
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.179,
+              "TotalPrice": 1.79
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.1113,
+              "TotalPrice": 11.13
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.0819,
+              "TotalPrice": 40.95
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.07237,
+              "TotalPrice": 72.37
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 488,
+            "Name": "onsemi"
+          },
+          "QuantityAvailableforPackageType": 24655,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 24655,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 74,
+          "ParameterText": "Transistor Type",
+          "ParameterType": "String",
+          "ValueId": "380569",
+          "ValueText": "NPN"
+        },
+        {
+          "ParameterId": 2101,
+          "ParameterText": "Current - Collector (Ic) (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mA",
+          "ValueText": "200 mA"
+        },
+        {
+          "ParameterId": 2103,
+          "ParameterText": "Voltage - Collector Emitter Breakdown (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "40 V",
+          "ValueText": "40 V"
+        },
+        {
+          "ParameterId": 841,
+          "ParameterText": "Vce Saturation (Max) @ Ib, Ic",
+          "ParameterType": "String",
+          "ValueId": "182598",
+          "ValueText": "300mV @ 5mA, 50mA"
+        },
+        {
+          "ParameterId": 890,
+          "ParameterText": "Current - Collector Cutoff (Max)",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 891,
+          "ParameterText": "DC Current Gain (hFE) (Min) @ Ic, Vce",
+          "ParameterType": "String",
+          "ValueId": "67325",
+          "ValueText": "100 @ 10mA, 1V"
+        },
+        {
+          "ParameterId": 2109,
+          "ParameterText": "Power - Max",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "625 mW",
+          "ValueText": "625 mW"
+        },
+        {
+          "ParameterId": 892,
+          "ParameterText": "Frequency - Transition",
+          "ParameterType": "String",
+          "ValueId": "182367",
+          "ValueText": "300MHz"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242933",
+          "ValueText": "-55°C ~ 150°C (TJ)"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "411897",
+          "ValueText": "Through Hole"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "445278",
+          "ValueText": "TO-226-3, TO-92-3 (TO-226AA) Formed Leads"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "413708",
+          "ValueText": "TO-92-3"
+        }
+      ],
+      "BaseProductNumber": {
+        "Id": 77,
+        "Name": "2N3904"
+      },
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 276,
+                    "ParentId": 2087,
+                    "Name": "Single Bipolar Transistors",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/683/383/TO-206AA%20TO-18-3_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "34",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "Not Applicable",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0075"
+      },
+      "OtherNames": [
+        "2N3904TFDKR-ND",
+        "2156-2N3904TF-OS",
+        "488-2N3904TFDKRINACTIVE",
+        "2N3904TFCT",
+        "2N3904TFDKRINACTIVE",
+        "FAIFSC2N3904TF",
+        "2N3904TFTR",
+        "2N3904TFDKR",
+        "488-2N3904TFDKR",
+        "2N3904TF-ND",
+        "488-2N3904TFDKR-ND"
+      ]
+    }
+  ],
+  "ProductsCount": 53,
+  "ExactMatches": [
+    {
+      "Description": {
+        "ProductDescription": "TRANS NPN 40V 0.2A TO-92",
+        "DetailedDescription": "Bipolar (BJT) Transistor NPN 40 V 200 mA 300MHz 625 mW Through Hole TO-92"
+      },
+      "Manufacturer": {
+        "Id": 4878,
+        "Name": "Diotec Semiconductor"
+      },
+      "ManufacturerProductNumber": "2N3904",
+      "UnitPrice": 0.14,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/diotec-semiconductor/2N3904/13164701",
+      "DatasheetUrl": "https://diotec.com/request/datasheet/2n3904.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/7962/MFG_4878%7ETO92-FORMED%7E%7E3.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "4878-2N3904CT-ND",
+          "PackageType": {
+            "Id": 2,
+            "Name": "Cut Tape (CT)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.14,
+              "TotalPrice": 0.14
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.088,
+              "TotalPrice": 0.88
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.0543,
+              "TotalPrice": 5.43
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.03924,
+              "TotalPrice": 19.62
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.03434,
+              "TotalPrice": 34.34
+            },
+            {
+              "BreakQuantity": 2000,
+              "UnitPrice": 0.0302,
+              "TotalPrice": 60.4
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 4878,
+            "Name": "Diotec Semiconductor"
+          },
+          "QuantityAvailableforPackageType": 6322,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        },
+        {
+          "DigiKeyProductNumber": "4878-2N3904TB-ND",
+          "PackageType": {
+            "Id": 4,
+            "Name": "Tape & Box (TB)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 4000,
+              "UnitPrice": 0.0267,
+              "TotalPrice": 106.8
+            },
+            {
+              "BreakQuantity": 8000,
+              "UnitPrice": 0.02375,
+              "TotalPrice": 190
+            },
+            {
+              "BreakQuantity": 12000,
+              "UnitPrice": 0.02224,
+              "TotalPrice": 266.88
+            },
+            {
+              "BreakQuantity": 20000,
+              "UnitPrice": 0.02054,
+              "TotalPrice": 410.8
+            },
+            {
+              "BreakQuantity": 28000,
+              "UnitPrice": 0.01954,
+              "TotalPrice": 547.12
+            },
+            {
+              "BreakQuantity": 40000,
+              "UnitPrice": 0.01856,
+              "TotalPrice": 742.4
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 4878,
+            "Name": "Diotec Semiconductor"
+          },
+          "QuantityAvailableforPackageType": 68000,
+          "MinimumOrderQuantity": 4000,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 74322,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 74,
+          "ParameterText": "Transistor Type",
+          "ParameterType": "String",
+          "ValueId": "380569",
+          "ValueText": "NPN"
+        },
+        {
+          "ParameterId": 2101,
+          "ParameterText": "Current - Collector (Ic) (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mA",
+          "ValueText": "200 mA"
+        },
+        {
+          "ParameterId": 2103,
+          "ParameterText": "Voltage - Collector Emitter Breakdown (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "40 V",
+          "ValueText": "40 V"
+        },
+        {
+          "ParameterId": 841,
+          "ParameterText": "Vce Saturation (Max) @ Ib, Ic",
+          "ParameterType": "String",
+          "ValueId": "182598",
+          "ValueText": "300mV @ 5mA, 50mA"
+        },
+        {
+          "ParameterId": 890,
+          "ParameterText": "Current - Collector Cutoff (Max)",
+          "ParameterType": "String",
+          "ValueId": "238456",
+          "ValueText": "50nA"
+        },
+        {
+          "ParameterId": 891,
+          "ParameterText": "DC Current Gain (hFE) (Min) @ Ic, Vce",
+          "ParameterType": "String",
+          "ValueId": "67325",
+          "ValueText": "100 @ 10mA, 1V"
+        },
+        {
+          "ParameterId": 2109,
+          "ParameterText": "Power - Max",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "625 mW",
+          "ValueText": "625 mW"
+        },
+        {
+          "ParameterId": 892,
+          "ParameterText": "Frequency - Transition",
+          "ParameterType": "String",
+          "ValueId": "182367",
+          "ValueText": "300MHz"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242933",
+          "ValueText": "-55°C ~ 150°C (TJ)"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "411897",
+          "ValueText": "Through Hole"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "445278",
+          "ValueText": "TO-226-3, TO-92-3 (TO-226AA) Formed Leads"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "413704",
+          "ValueText": "TO-92"
+        }
+      ],
+      "BaseProductNumber": {},
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 276,
+                    "ParentId": 2087,
+                    "Name": "Single Bipolar Transistors",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/683/383/TO-206AA%20TO-18-3_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "10",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "Not Applicable",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0075"
+      },
+      "OtherNames": [
+        "4878-2N3904TR-ND",
+        "4878-2N3904DKRINACTIVE",
+        "4878-2N3904DKRINACTIVE-ND",
+        "4878-2N3904DKR-ND",
+        "4878-2N3904DKR",
+        "4878-2N3904",
+        "2796-2N3904TR-ND",
+        "4878-2N3904TR",
+        "4878-2N3904TB",
+        "4878-2N3904CT",
+        "2796-2N3904TR",
+        "4878-2N3904-ND"
+      ]
+    },
+    {
+      "Description": {
+        "ProductDescription": "SOT-23",
+        "DetailedDescription": "Bipolar (BJT) Transistor NPN 40 V 200 mA 300MHz 200 mW Surface Mount SOT-23"
+      },
+      "Manufacturer": {
+        "Id": 6557,
+        "Name": "GOODWORK"
+      },
+      "ManufacturerProductNumber": "2N3904",
+      "UnitPrice": 0.00643,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/goodwork/2N3904/29292066",
+      "DatasheetUrl": "https://www.gk-goodwork.com/static/upload/file/20260818/1787046571496809.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/8910/MFG_2SC1815.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "6557-2N3904TR-ND",
+          "PackageType": {
+            "Id": 1,
+            "Name": "Tape & Reel (TR)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 3000,
+              "UnitPrice": 0.00643,
+              "TotalPrice": 19.29
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": true,
+          "TariffActive": false,
+          "Supplier": {
+            "Id": 6557,
+            "Name": "GOODWORK"
+          },
+          "QuantityAvailableforPackageType": 70000,
+          "MaxQuantityForDistribution": 999999999,
+          "MinimumOrderQuantity": 3000,
+          "StandardPackage": 3000,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 70000,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": true,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 74,
+          "ParameterText": "Transistor Type",
+          "ParameterType": "String",
+          "ValueId": "380569",
+          "ValueText": "NPN"
+        },
+        {
+          "ParameterId": 2101,
+          "ParameterText": "Current - Collector (Ic) (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mA",
+          "ValueText": "200 mA"
+        },
+        {
+          "ParameterId": 2103,
+          "ParameterText": "Voltage - Collector Emitter Breakdown (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "40 V",
+          "ValueText": "40 V"
+        },
+        {
+          "ParameterId": 841,
+          "ParameterText": "Vce Saturation (Max) @ Ib, Ic",
+          "ParameterType": "String",
+          "ValueId": "182598",
+          "ValueText": "300mV @ 5mA, 50mA"
+        },
+        {
+          "ParameterId": 890,
+          "ParameterText": "Current - Collector Cutoff (Max)",
+          "ParameterType": "String",
+          "ValueId": "69299",
+          "ValueText": "100nA"
+        },
+        {
+          "ParameterId": 891,
+          "ParameterText": "DC Current Gain (hFE) (Min) @ Ic, Vce",
+          "ParameterType": "String",
+          "ValueId": "180574",
+          "ValueText": "30 @ 100mA, 1V"
+        },
+        {
+          "ParameterId": 2109,
+          "ParameterText": "Power - Max",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mW",
+          "ValueText": "200 mW"
+        },
+        {
+          "ParameterId": 892,
+          "ParameterText": "Frequency - Transition",
+          "ParameterType": "String",
+          "ValueId": "182367",
+          "ValueText": "300MHz"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242931",
+          "ValueText": "-55°C ~ 150°C"
+        },
+        {
+          "ParameterId": 1977,
+          "ParameterText": "Grade",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "409393",
+          "ValueText": "Surface Mount"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "413318",
+          "ValueText": "TO-236-3, SC-59, SOT-23-3"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "405399",
+          "ValueText": "SOT-23"
+        }
+      ],
+      "BaseProductNumber": {},
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 276,
+                    "ParentId": 2087,
+                    "Name": "Single Bipolar Transistors",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/683/383/TO-206AA%20TO-18-3_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "0",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unknown",
+        "RohsStatus": "Unknown",
+        "MoistureSensitivityLevel": "",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0075"
+      },
+      "OtherNames": [
+        "6557-2N3904TR"
+      ]
+    },
+    {
+      "Description": {
+        "ProductDescription": "TRANS NPN 40V 0.2A TO-92",
+        "DetailedDescription": "Bipolar (BJT) Transistor NPN 40 V 200 mA 300MHz 625 mW Through Hole TO-92"
+      },
+      "Manufacturer": {
+        "Id": 4491,
+        "Name": "Lumimax Optoelectronic Technology"
+      },
+      "ManufacturerProductNumber": "2N3904",
+      "UnitPrice": 0.1,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/lumimax-optoelectronic-technology/2N3904/22116349",
+      "DatasheetUrl": "//mm.digikey.com/Volume0/opasdata/d220001/medias/docus/6284/LUMIMAX2N3904.PDF",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/5775/MFG_TRXT.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "4491-2N3904-ND",
+          "PackageType": {
+            "Id": 3,
+            "Name": "Bulk"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.1,
+              "TotalPrice": 0.1
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.075,
+              "TotalPrice": 0.75
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.0485,
+              "TotalPrice": 4.85
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.0335,
+              "TotalPrice": 16.75
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.0287,
+              "TotalPrice": 28.7
+            },
+            {
+              "BreakQuantity": 2000,
+              "UnitPrice": 0.026,
+              "TotalPrice": 52
+            },
+            {
+              "BreakQuantity": 4000,
+              "UnitPrice": 0.0248,
+              "TotalPrice": 99.2
+            },
+            {
+              "BreakQuantity": 5000,
+              "UnitPrice": 0.0215,
+              "TotalPrice": 107.5
+            },
+            {
+              "BreakQuantity": 10000,
+              "UnitPrice": 0.0195,
+              "TotalPrice": 195
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": true,
+          "TariffActive": false,
+          "Supplier": {
+            "Id": 4491,
+            "Name": "Lumimax Optoelectronic Technology"
+          },
+          "QuantityAvailableforPackageType": 9900,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 9900,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": true,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": true,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 74,
+          "ParameterText": "Transistor Type",
+          "ParameterType": "String",
+          "ValueId": "380569",
+          "ValueText": "NPN"
+        },
+        {
+          "ParameterId": 2101,
+          "ParameterText": "Current - Collector (Ic) (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mA",
+          "ValueText": "200 mA"
+        },
+        {
+          "ParameterId": 2103,
+          "ParameterText": "Voltage - Collector Emitter Breakdown (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "40 V",
+          "ValueText": "40 V"
+        },
+        {
+          "ParameterId": 841,
+          "ParameterText": "Vce Saturation (Max) @ Ib, Ic",
+          "ParameterType": "String",
+          "ValueId": "182598",
+          "ValueText": "300mV @ 5mA, 50mA"
+        },
+        {
+          "ParameterId": 890,
+          "ParameterText": "Current - Collector Cutoff (Max)",
+          "ParameterType": "String",
+          "ValueId": "821963",
+          "ValueText": "0.1µA (ICBO)"
+        },
+        {
+          "ParameterId": 891,
+          "ParameterText": "DC Current Gain (hFE) (Min) @ Ic, Vce",
+          "ParameterType": "String",
+          "ValueId": "67325",
+          "ValueText": "100 @ 10mA, 1V"
+        },
+        {
+          "ParameterId": 2109,
+          "ParameterText": "Power - Max",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "625 mW",
+          "ValueText": "625 mW"
+        },
+        {
+          "ParameterId": 892,
+          "ParameterText": "Frequency - Transition",
+          "ParameterType": "String",
+          "ValueId": "182367",
+          "ValueText": "300MHz"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242933",
+          "ValueText": "-55°C ~ 150°C (TJ)"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "411897",
+          "ValueText": "Through Hole"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "413304",
+          "ValueText": "TO-226-3, TO-92-3 (TO-226AA)"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "413704",
+          "ValueText": "TO-92"
+        }
+      ],
+      "BaseProductNumber": {},
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 276,
+                    "ParentId": 2087,
+                    "Name": "Single Bipolar Transistors",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/683/383/TO-206AA%20TO-18-3_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "0",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "RoHS Compliant",
+        "MoistureSensitivityLevel": "",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0000"
+      },
+      "OtherNames": [
+        "4491-2N3904"
+      ]
+    },
+    {
+      "Description": {
+        "ProductDescription": "TRANS NPN 40V 0.2A TO-92",
+        "DetailedDescription": "Bipolar (BJT) Transistor NPN 40 V 200 mA 300MHz 625 mW Through Hole TO-92"
+      },
+      "Manufacturer": {
+        "Id": 4878,
+        "Name": "Diotec Semiconductor"
+      },
+      "ManufacturerProductNumber": "2N3904",
+      "UnitPrice": 0.21,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/dcomponents/2N3904/13575042",
+      "DatasheetUrl": "https://diotec.com/tl_files/diotec/files/pdf/datasheets/2n3904.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/3602/MFG_BC327-16.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "5245-2N3904TR-ND",
+          "PackageType": {
+            "Id": 1,
+            "Name": "Tape & Reel (TR)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 4000,
+              "UnitPrice": 0.04123,
+              "TotalPrice": 164.92
+            },
+            {
+              "BreakQuantity": 8000,
+              "UnitPrice": 0.03693,
+              "TotalPrice": 295.44
+            },
+            {
+              "BreakQuantity": 12000,
+              "UnitPrice": 0.03474,
+              "TotalPrice": 416.88
+            },
+            {
+              "BreakQuantity": 20000,
+              "UnitPrice": 0.03228,
+              "TotalPrice": 645.6
+            },
+            {
+              "BreakQuantity": 28000,
+              "UnitPrice": 0.03082,
+              "TotalPrice": 862.96
+            },
+            {
+              "BreakQuantity": 40000,
+              "UnitPrice": 0.0294,
+              "TotalPrice": 1176
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": false,
+          "Supplier": {
+            "Id": 5245,
+            "Name": "DComponents"
+          },
+          "QuantityAvailableforPackageType": 0,
+          "MaxQuantityForDistribution": 999999999,
+          "MinimumOrderQuantity": 4000,
+          "StandardPackage": 4000,
+          "DigiReelFee": 0
+        },
+        {
+          "DigiKeyProductNumber": "5245-2N3904CT-ND",
+          "PackageType": {
+            "Id": 2,
+            "Name": "Cut Tape (CT)"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.21,
+              "TotalPrice": 0.21
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.125,
+              "TotalPrice": 1.25
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.0776,
+              "TotalPrice": 7.76
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.05666,
+              "TotalPrice": 28.33
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.04986,
+              "TotalPrice": 49.86
+            },
+            {
+              "BreakQuantity": 2000,
+              "UnitPrice": 0.04411,
+              "TotalPrice": 88.22
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": false,
+          "Supplier": {
+            "Id": 5245,
+            "Name": "DComponents"
+          },
+          "QuantityAvailableforPackageType": 1238,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        }
+      ],
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 74,
+          "ParameterText": "Transistor Type",
+          "ParameterType": "String",
+          "ValueId": "380569",
+          "ValueText": "NPN"
+        },
+        {
+          "ParameterId": 2101,
+          "ParameterText": "Current - Collector (Ic) (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "200 mA",
+          "ValueText": "200 mA"
+        },
+        {
+          "ParameterId": 2103,
+          "ParameterText": "Voltage - Collector Emitter Breakdown (Max)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "40 V",
+          "ValueText": "40 V"
+        },
+        {
+          "ParameterId": 841,
+          "ParameterText": "Vce Saturation (Max) @ Ib, Ic",
+          "ParameterType": "String",
+          "ValueId": "182598",
+          "ValueText": "300mV @ 5mA, 50mA"
+        },
+        {
+          "ParameterId": 890,
+          "ParameterText": "Current - Collector Cutoff (Max)",
+          "ParameterType": "String",
+          "ValueId": "238456",
+          "ValueText": "50nA"
+        },
+        {
+          "ParameterId": 891,
+          "ParameterText": "DC Current Gain (hFE) (Min) @ Ic, Vce",
+          "ParameterType": "String",
+          "ValueId": "67325",
+          "ValueText": "100 @ 10mA, 1V"
+        },
+        {
+          "ParameterId": 2109,
+          "ParameterText": "Power - Max",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "625 mW",
+          "ValueText": "625 mW"
+        },
+        {
+          "ParameterId": 892,
+          "ParameterText": "Frequency - Transition",
+          "ParameterType": "String",
+          "ValueId": "182367",
+          "ValueText": "300MHz"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242933",
+          "ValueText": "-55°C ~ 150°C (TJ)"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "411897",
+          "ValueText": "Through Hole"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "413304",
+          "ValueText": "TO-226-3, TO-92-3 (TO-226AA)"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "413704",
+          "ValueText": "TO-92"
+        }
+      ],
+      "BaseProductNumber": {},
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 276,
+                    "ParentId": 2087,
+                    "Name": "Single Bipolar Transistors",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/683/383/TO-206AA%20TO-18-3_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "4",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unknown",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "1  (Unlimited)",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0095"
+      },
+      "OtherNames": [
+        "5245-2N3904CT",
+        "5245-2N3904DKRINACTIVE",
+        "2721-2N3904-ND",
+        "5245-2N3904DKR-ND",
+        "5245-2N3904",
+        "5245-2N3904DKR",
+        "5245-2N3904TR",
+        "2721-2N3904",
+        "5245-2N3904-ND"
+      ]
+    },
+    {
+      "Description": {
+        "ProductDescription": "40V 625MW 200MA NPN TO-92-3",
+        "DetailedDescription": "Bipolar (BJT) Transistor Array"
+      },
+      "Manufacturer": {
+        "Id": 5399,
+        "Name": "Shenzhen Slkormicro Semicon Co., Ltd."
+      },
+      "ManufacturerProductNumber": "2N3904",
+      "UnitPrice": 0.0179,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/shenzhen-slkormicro-semicon-co-ltd/2N3904/26371060",
+      "DatasheetUrl": "//mm.digikey.com/Volume0/opasdata/d220001/medias/docus/6778/5399_2N3904%20TO-92-3.PDF",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/6662/MFG_2N3904--TO-92-3.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "5399-2N3904-ND",
+          "PackageType": {
+            "Id": 62,
+            "Name": "Bag"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.0179,
+              "TotalPrice": 17.9
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": false,
+          "Supplier": {
+            "Id": 5399,
+            "Name": "Shenzhen Slkormicro Semicon Co., Ltd."
+          },
+          "QuantityAvailableforPackageType": 0,
+          "MaxQuantityForDistribution": 999999999,
+          "MinimumOrderQuantity": 1000,
+          "StandardPackage": 1000,
+          "DigiReelFee": 0
+        }
+      ],
+      "ProductStatus": {
+        "Id": 1,
+        "Status": "Obsolete"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": false,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [],
+      "BaseProductNumber": {},
+      "Category": {
+        "CategoryId": 19,
+        "ParentId": 0,
+        "Name": "Discrete Semiconductor Products",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/350/MFG_CAB450M12XM3_tmb.jpg",
+        "SeoDescription": "Discrete semiconductor products include individual transistors, diodes, and thyristors, as well as small arrays of such composed of two, three, four, or some other small number of similar devices within a single package. They are most commonly used for constructing circuits with considerable voltage or current stress, or for realizing very basic circuit functions.",
+        "ChildCategories": [
+          {
+            "CategoryId": 2045,
+            "ParentId": 19,
+            "Name": "Transistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/955/997/448_TO252-3_tmb.jpg",
+            "SeoDescription": "Transistors are discrete semiconductor devices used to switch or amplify electrical signals. Types of transistors include bipolar (BJT), RF, pre-Biased bipolar (BJT), FETs, MOSEFETs, IGBTs, JFETs, programmable, and more.",
+            "ChildCategories": [
+              {
+                "CategoryId": 2087,
+                "ParentId": 2045,
+                "Name": "Bipolar (BJT)",
+                "ProductCount": 0,
+                "NewProductCount": 0,
+                "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/149/427/MFG_MMBT5401_1_tmb%2864x64%29.jpg",
+                "SeoDescription": "Discrete Bipolar Junction Transistors (BJTs) are commonly used to construct analog signal amplification functions in audio, radio, and other applications. One of the first semiconductor devices to be mass produced, their characteristics are less favorable than those of other device types for applications involving high frequency switching and operation with high currents or voltages, but they remain a technology of choice for applications requiring analog signal reproduction with minimal added noise and distortion.",
+                "ChildCategories": [
+                  {
+                    "CategoryId": 277,
+                    "ParentId": 2087,
+                    "Name": "Bipolar Transistor Arrays",
+                    "ProductCount": 0,
+                    "NewProductCount": 0,
+                    "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/684/564/SC-74%2C%20SOT-457_tmb%2864x64%29.jpg",
+                    "SeoDescription": "Bipolar transistor arrays incorporate two or more discrete transistors in a shared package, either as electrically separate entities or with interconnections of some form between them being made inside the device package. Arrays in which the devices contained have closely matched or complementary characteristics, the co-packaged character minimizes temperature differences between devices during operation.",
+                    "ChildCategories": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "4",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 0,
+        "Name": "*"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unknown",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "Vendor Undefined",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8541.21.0095"
+      },
+      "OtherNames": [
+        "5399-2N3904"
+      ]
+    }
+  ],
+  "FilterOptions": {
+    "Manufacturers": [
+      {
+        "Id": 1514,
+        "Value": "Central Semiconductor Corp",
+        "ProductCount": 6
+      },
+      {
+        "Id": 4878,
+        "Value": "Diotec Semiconductor",
+        "ProductCount": 4
+      },
+      {
+        "Id": 5272,
+        "Value": "EVVO",
+        "ProductCount": 1
+      },
+      {
+        "Id": 600039,
+        "Value": "Fairchild Semiconductor",
+        "ProductCount": 3
+      },
+      {
+        "Id": 6557,
+        "Value": "GOODWORK",
+        "ProductCount": 1
+      },
+      {
+        "Id": 4491,
+        "Value": "Lumimax Optoelectronic Technology",
+        "ProductCount": 1
+      },
+      {
+        "Id": 353,
+        "Value": "MCC (Micro Commercial Components)",
+        "ProductCount": 3
+      },
+      {
+        "Id": 150,
+        "Value": "Microchip Technology",
+        "ProductCount": 2
+      },
+      {
+        "Id": 568,
+        "Value": "NXP USA Inc.",
+        "ProductCount": 2
+      },
+      {
+        "Id": 488,
+        "Value": "onsemi",
+        "ProductCount": 25
+      },
+      {
+        "Id": 846,
+        "Value": "Rohm Semiconductor",
+        "ProductCount": 1
+      },
+      {
+        "Id": 600057,
+        "Value": "Sanyo",
+        "ProductCount": 1
+      },
+      {
+        "Id": 5399,
+        "Value": "Shenzhen Slkormicro Semicon Co., Ltd.",
+        "ProductCount": 1
+      },
+      {
+        "Id": 497,
+        "Value": "STMicroelectronics",
+        "ProductCount": 1
+      },
+      {
+        "Id": 112,
+        "Value": "Vishay General Semiconductor - Diodes Division",
+        "ProductCount": 1
+      }
+    ]
+  },
+  "SearchLocaleUsed": {
+    "Site": "US",
+    "Language": "en",
+    "Currency": "USD"
+  },
+  "AppliedParametricFiltersDto": []
+}

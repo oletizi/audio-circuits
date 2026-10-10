@@ -40,6 +40,14 @@ yarn-error.log*
 .*.strips-*.vrt
 .*.import-*.vrt
 
+# The build packet (`make guide`, tools/guide/packet.ts): every file in it is
+# derived from the committed .vrt, schematic and circuit and regenerates in
+# seconds, so committing it would only add a copy that can fall out of date.
+# The staging directory it is assembled in is removed on success and failure;
+# this is defence in depth against one left behind by a crash.
+boards/*/guide/
+boards/*/.guide-staging-*/
+
 # KiCad per-user and transient files. The .kicad_pro (project) and .kicad_sch
 # (schematic) are committed; these are not: .kicad_prl is each user's view
 # state, the rest are lock files, automatic backups, autosaves and caches.

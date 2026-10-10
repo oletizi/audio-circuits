@@ -134,6 +134,56 @@ perfboard workflow. `make check`, run from a board's directory (e.g.
 `boards/pt2399-core`) or from the repository root to check every declared
 board, is that workflow's front door - see `make help` for the rest of it.
 
+`make guide`, run from a declared board's directory (e.g.
+`boards/transistor-preamp-staged`), writes that board's printable build
+packet into `<board>/guide/`: two component-side layout SVGs (by designator
+and by value), a mirrored copper-side SVG of cuts and solder bridges, the
+schematic as a black-and-white PDF, and a `guide.html` that embeds all three
+images with a build checklist (in build order: ICs and transistors,
+resistors and trim-pots, capacitors, wire links, wire-to-board junctions,
+solder bridges, cuts) and, where the circuit module declares them, a
+power-up table of expected DC voltages. `guide/` is regenerated whole on
+every run, is git-ignored, and is never hand-edited; the command refuses to
+write a packet when the layout has unresolved cuts, an unplaced part, or
+disagrees with the circuit it claims to be.
+
+`make bom`, run from a declared board's directory, keeps that board's parts
+list. It reads the board's circuit module (including its `bomConditions()`
+export, the operating point resistor dissipation is simulated at), the
+board's `bom.json` (which catalog part fills each line, the extras, and the
+purchasing mode: a prototype names a `stockQuantity`, bought of every part
+the catalog marks `stock`, rounded up to the next listed price break - but
+only at or below `maxStockUnitPrice`, and only while each supplier's order
+stays within `maxStockOverage` over the same order at covered quantities,
+the costliest bulk buys set aside first) and the shared catalog in `parts/`. It derives what the
+board needs from the circuit, reports the lines with nothing chosen, choices
+the circuit no longer has, chosen parts that no longer meet their line
+(naming the field - an active device fits by its catalog `specs.type`, never
+its order code `mpn`), unknown catalog ids, and prices older than 45 days, then
+rewrites the board's `BOM.md`. It exits non-zero until every line is chosen
+and met. It never edits `bom.json` or the catalog: choices are made by a
+person or the part-researcher agent. A board with no `bom.json` is refused,
+naming the file to create; the minimal one is
+`{ "purchasing": { "mode": "prototype", "shrinkage": 0.1, "stockQuantity": 100, "maxStockUnitPrice": 0.15, "maxStockOverage": 0.5 }, "lines": {}, "extras": [] }`.
+`BOM.md` ends with a "Bulk buys" note: which parts are bought in bulk, and
+which are not and why; the report lists the latter as information only.
+For a board with a `bom.json`, `make check` also fails when the committed
+`BOM.md` differs from a fresh rendering, a chosen part no longer meets its
+line, or `bom.json` names a catalog part that does not exist; unchosen lines and stale prices do not fail `check`, and boards
+without `bom.json` are unaffected.
+
+`bun run parts` reads supplier data through Mouser's Search API and
+Digi-Key's Product Information API (both official): `lookup <mpn>` for one
+exact part's supplier part numbers, stock, price breaks and links at both
+suppliers (Digi-Key: one listing per packaging); `search <keywords...>` for
+candidates; `source <mpn> --supplier mouser|digikey --use <use> [--sku <part
+number>]` to print a catalog source ready to paste; `refresh [<catalog
+id>...]` to update the catalog's Mouser and Digi-Key prices in place (it
+writes nothing unless every lookup succeeds). `--supplier` narrows any verb
+to one supplier. Keys are read from `~/.config/mouser/mouser-credentials.txt`
+and `~/.config/digikey/digikey-credentials.txt` and never printed; see
+`docs/parts/sourcing-notes.md`.
+
 A new board's KiCad schematic starts from a generated stub, written once with
 `bun run schematic-stub <circuit-module> <export> <out.kicad_sch>` (e.g.
 `circuits/transistor-preamp/lab-board.kicad_sch`) and arranged by hand in

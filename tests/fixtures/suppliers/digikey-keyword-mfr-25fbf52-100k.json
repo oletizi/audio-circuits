@@ -1,0 +1,484 @@
+{
+  "Products": [
+    {
+      "Description": {
+        "ProductDescription": "RES 100K OHM 1% 1/4W AXIAL",
+        "DetailedDescription": "100 kOhms ±1% 0.25W, 1/4W Through Hole Resistor Axial Metal Film"
+      },
+      "Manufacturer": {
+        "Id": 13,
+        "Name": "YAGEO"
+      },
+      "ManufacturerProductNumber": "MFR-25FBF52-100K",
+      "UnitPrice": 0.1,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-100K/13473",
+      "DatasheetUrl": "https://yageogroup.com/content/Resource%20Library/Datasheet/YAGEO-MFR_DATASHEET.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/1888/MFR-25FRF52-100K.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "100KXBK-ND",
+          "PackageType": {
+            "Id": 3,
+            "Name": "Bulk"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.1,
+              "TotalPrice": 0.1
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.042,
+              "TotalPrice": 0.42
+            },
+            {
+              "BreakQuantity": 25,
+              "UnitPrice": 0.0348,
+              "TotalPrice": 0.87
+            },
+            {
+              "BreakQuantity": 50,
+              "UnitPrice": 0.0304,
+              "TotalPrice": 1.52
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.0268,
+              "TotalPrice": 2.68
+            },
+            {
+              "BreakQuantity": 250,
+              "UnitPrice": 0.02272,
+              "TotalPrice": 5.68
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.02016,
+              "TotalPrice": 10.08
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.01799,
+              "TotalPrice": 17.99
+            },
+            {
+              "BreakQuantity": 5000,
+              "UnitPrice": 0.01412,
+              "TotalPrice": 70.6
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 13,
+            "Name": "YAGEO"
+          },
+          "QuantityAvailableforPackageType": 15461,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 15461,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 2085,
+          "ParameterText": "Resistance",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "100 kOhms",
+          "ValueText": "100 kOhms"
+        },
+        {
+          "ParameterId": 3,
+          "ParameterText": "Tolerance",
+          "ParameterType": "String",
+          "ValueId": "1131",
+          "ValueText": "±1%"
+        },
+        {
+          "ParameterId": 2,
+          "ParameterText": "Power (Watts)",
+          "ParameterType": "String",
+          "ValueId": "16543",
+          "ValueText": "0.25W, 1/4W"
+        },
+        {
+          "ParameterId": 174,
+          "ParameterText": "Composition",
+          "ParameterType": "String",
+          "ValueId": "374915",
+          "ValueText": "Metal Film"
+        },
+        {
+          "ParameterId": 5,
+          "ParameterText": "Features",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 17,
+          "ParameterText": "Temperature Coefficient",
+          "ParameterType": "String",
+          "ValueId": "1378",
+          "ValueText": "±100ppm/°C"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242934",
+          "ValueText": "-55°C ~ 155°C"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "317190",
+          "ValueText": "Axial"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "317190",
+          "ValueText": "Axial"
+        },
+        {
+          "ParameterId": 46,
+          "ParameterText": "Size / Dimension",
+          "ParameterType": "String",
+          "ValueId": "9298",
+          "ValueText": "0.094\" Dia x 0.248\" L (2.40mm x 6.30mm)"
+        },
+        {
+          "ParameterId": 1500,
+          "ParameterText": "Height - Seated (Max)",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 1127,
+          "ParameterText": "Number of Terminations",
+          "ParameterType": "Double",
+          "ValueId": "2",
+          "ValueText": "2"
+        },
+        {
+          "ParameterId": 1531,
+          "ParameterText": "Failure Rate",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        }
+      ],
+      "BaseProductNumber": {},
+      "Category": {
+        "CategoryId": 2,
+        "ParentId": 0,
+        "Name": "Resistors",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/639/316/FVT%20SERIES_tmb%2864x64%29.jpg",
+        "SeoDescription": "Products within this category include fixed-value (non-adjustable) resistors and related mounting accessories, organized according to their physical form factor or the method by which they are physically and electrically connected within an end application. Adjustable or variable-value resistors (also known as potentiometers or rheostats) are found separately, in a category of their own.",
+        "ChildCategories": [
+          {
+            "CategoryId": 53,
+            "ParentId": 2,
+            "Name": "Through Hole Resistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/165/374/OX470KE_tmb%2864x64%29.jpg",
+            "SeoDescription": "Through-Hole Resistors are devices which oppose the flow of current. They have two wire terminals which are designed to be inserted and soldered to a printed circuit board (PCB) or are used in a breadboard. The characteristics are resistance (0 ohms to 500 G ohms), tolerance (jumper, ±0.001% to ±5%), power (watts), and composition (carbon composition, carbon film, ceramic, metal element, metal film, metal foil, metal oxide film, thick film, thin film, or wirewound).",
+            "ChildCategories": []
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "18",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 14142,
+        "Name": "MFR"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "Not Applicable",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8533.21.0090"
+      },
+      "OtherNames": [
+        "MFR25FBF52100K",
+        "100KXBK",
+        "MFR-25FBF 100K",
+        "100KX",
+        "MFR-25FBF-100K",
+        "MFR-25FBF52100K",
+        "MF-25-B-100K",
+        "MFR-25FBF-52-100K",
+        "100K MF-1/4W-B 1%"
+      ]
+    }
+  ],
+  "ProductsCount": 1,
+  "ExactMatches": [
+    {
+      "Description": {
+        "ProductDescription": "RES 100K OHM 1% 1/4W AXIAL",
+        "DetailedDescription": "100 kOhms ±1% 0.25W, 1/4W Through Hole Resistor Axial Metal Film"
+      },
+      "Manufacturer": {
+        "Id": 13,
+        "Name": "YAGEO"
+      },
+      "ManufacturerProductNumber": "MFR-25FBF52-100K",
+      "UnitPrice": 0.1,
+      "ProductUrl": "https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-100K/13473",
+      "DatasheetUrl": "https://yageogroup.com/content/Resource%20Library/Datasheet/YAGEO-MFR_DATASHEET.pdf",
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/1888/MFR-25FRF52-100K.jpg",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "100KXBK-ND",
+          "PackageType": {
+            "Id": 3,
+            "Name": "Bulk"
+          },
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "UnitPrice": 0.1,
+              "TotalPrice": 0.1
+            },
+            {
+              "BreakQuantity": 10,
+              "UnitPrice": 0.042,
+              "TotalPrice": 0.42
+            },
+            {
+              "BreakQuantity": 25,
+              "UnitPrice": 0.0348,
+              "TotalPrice": 0.87
+            },
+            {
+              "BreakQuantity": 50,
+              "UnitPrice": 0.0304,
+              "TotalPrice": 1.52
+            },
+            {
+              "BreakQuantity": 100,
+              "UnitPrice": 0.0268,
+              "TotalPrice": 2.68
+            },
+            {
+              "BreakQuantity": 250,
+              "UnitPrice": 0.02272,
+              "TotalPrice": 5.68
+            },
+            {
+              "BreakQuantity": 500,
+              "UnitPrice": 0.02016,
+              "TotalPrice": 10.08
+            },
+            {
+              "BreakQuantity": 1000,
+              "UnitPrice": 0.01799,
+              "TotalPrice": 17.99
+            },
+            {
+              "BreakQuantity": 5000,
+              "UnitPrice": 0.01412,
+              "TotalPrice": 70.6
+            }
+          ],
+          "MyPricing": [],
+          "MarketPlace": false,
+          "TariffActive": true,
+          "Supplier": {
+            "Id": 13,
+            "Name": "YAGEO"
+          },
+          "QuantityAvailableforPackageType": 15461,
+          "MinimumOrderQuantity": 1,
+          "DigiReelFee": 0
+        }
+      ],
+      "QuantityAvailable": 15461,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "BackOrderNotAllowed": false,
+      "NormallyStocking": true,
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Ncnr": false,
+      "PrimaryVideoUrl": "",
+      "Parameters": [
+        {
+          "ParameterId": 2085,
+          "ParameterText": "Resistance",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "100 kOhms",
+          "ValueText": "100 kOhms"
+        },
+        {
+          "ParameterId": 3,
+          "ParameterText": "Tolerance",
+          "ParameterType": "String",
+          "ValueId": "1131",
+          "ValueText": "±1%"
+        },
+        {
+          "ParameterId": 2,
+          "ParameterText": "Power (Watts)",
+          "ParameterType": "String",
+          "ValueId": "16543",
+          "ValueText": "0.25W, 1/4W"
+        },
+        {
+          "ParameterId": 174,
+          "ParameterText": "Composition",
+          "ParameterType": "String",
+          "ValueId": "374915",
+          "ValueText": "Metal Film"
+        },
+        {
+          "ParameterId": 5,
+          "ParameterText": "Features",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 17,
+          "ParameterText": "Temperature Coefficient",
+          "ParameterType": "String",
+          "ValueId": "1378",
+          "ValueText": "±100ppm/°C"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "242934",
+          "ValueText": "-55°C ~ 155°C"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "317190",
+          "ValueText": "Axial"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "317190",
+          "ValueText": "Axial"
+        },
+        {
+          "ParameterId": 46,
+          "ParameterText": "Size / Dimension",
+          "ParameterType": "String",
+          "ValueId": "9298",
+          "ValueText": "0.094\" Dia x 0.248\" L (2.40mm x 6.30mm)"
+        },
+        {
+          "ParameterId": 1500,
+          "ParameterText": "Height - Seated (Max)",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 1127,
+          "ParameterText": "Number of Terminations",
+          "ParameterType": "Double",
+          "ValueId": "2",
+          "ValueText": "2"
+        },
+        {
+          "ParameterId": 1531,
+          "ParameterText": "Failure Rate",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        }
+      ],
+      "BaseProductNumber": {},
+      "Category": {
+        "CategoryId": 2,
+        "ParentId": 0,
+        "Name": "Resistors",
+        "ProductCount": 0,
+        "NewProductCount": 0,
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/639/316/FVT%20SERIES_tmb%2864x64%29.jpg",
+        "SeoDescription": "Products within this category include fixed-value (non-adjustable) resistors and related mounting accessories, organized according to their physical form factor or the method by which they are physically and electrically connected within an end application. Adjustable or variable-value resistors (also known as potentiometers or rheostats) are found separately, in a category of their own.",
+        "ChildCategories": [
+          {
+            "CategoryId": 53,
+            "ParentId": 2,
+            "Name": "Through Hole Resistors",
+            "ProductCount": 0,
+            "NewProductCount": 0,
+            "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/001/165/374/OX470KE_tmb%2864x64%29.jpg",
+            "SeoDescription": "Through-Hole Resistors are devices which oppose the flow of current. They have two wire terminals which are designed to be inserted and soldered to a printed circuit board (PCB) or are used in a breadboard. The characteristics are resistance (0 ohms to 500 G ohms), tolerance (jumper, ±0.001% to ±5%), power (watts), and composition (carbon composition, carbon film, ceramic, metal element, metal film, metal foil, metal oxide film, thick film, thin film, or wirewound).",
+            "ChildCategories": []
+          }
+        ]
+      },
+      "ManufacturerLeadWeeks": "18",
+      "ManufacturerPublicQuantity": 0,
+      "Series": {
+        "Id": 14142,
+        "Name": "MFR"
+      },
+      "Classifications": {
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "ROHS3 Compliant",
+        "MoistureSensitivityLevel": "Not Applicable",
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8533.21.0090"
+      },
+      "OtherNames": [
+        "MFR25FBF52100K",
+        "100KXBK",
+        "MFR-25FBF 100K",
+        "100KX",
+        "MFR-25FBF-100K",
+        "MFR-25FBF52100K",
+        "MF-25-B-100K",
+        "MFR-25FBF-52-100K",
+        "100K MF-1/4W-B 1%"
+      ]
+    }
+  ],
+  "FilterOptions": {
+    "Manufacturers": [
+      {
+        "Id": 13,
+        "Value": "YAGEO",
+        "ProductCount": 1
+      }
+    ]
+  },
+  "SearchLocaleUsed": {
+    "Site": "US",
+    "Language": "en",
+    "Currency": "USD"
+  },
+  "AppliedParametricFiltersDto": []
+}

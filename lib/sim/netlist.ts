@@ -161,7 +161,9 @@ function circuitLines(
   // merely conventional, or a supply on a port named "1" would silently
   // duplicate the source line.
   reserveName(names, SOURCE_NAME, "AC source")
-  lines.push(`${SOURCE_NAME} ${sourceOutputNode} 0 AC ${environment.source.amplitude.toExponential(12)}`)
+  // `DC 0` stated, not left for ngspice to assume (it would print "has no value,
+  // DC 0 assumed" on every run): the source contributes nothing at the operating point.
+  lines.push(`${SOURCE_NAME} ${sourceOutputNode} 0 DC 0 AC ${environment.source.amplitude.toExponential(12)}`)
   if (seriesOhms !== 0) {
     reserveName(names, SERIES_RESISTOR_NAME, "source series resistor")
     lines.push(`${SERIES_RESISTOR_NAME} ${sourceOutputNode} ${node(sourceNet)} ${seriesOhms.toExponential(12)}`)

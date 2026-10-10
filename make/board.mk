@@ -7,11 +7,13 @@
 # already knows how to resolve, check, and rewrite exactly one declared
 # board. No board logic is reimplemented here.
 #
-# WHAT WRITES. `check`, `cuts` and `board-info` write nothing. `update` and
+# WHAT WRITES. `check`, `cuts` and `board-info` write nothing. `bom` rewrites
+# this board's BOM.md and never its bom.json or the parts/ catalog. `update` and
 # `stripboard` rewrite the declared layout IN PLACE - the CLI itself refuses
 # while the layout has uncommitted changes, unless ALLOW_DIRTY=1 is passed
 # through as --allow-dirty. `edit` writes nothing itself; it hands the
-# layout to the GUI, which writes only when you save.
+# layout to the GUI, which writes only when you save. `guide` never touches
+# the layout; it replaces this board's git-ignored guide/ directory.
 #
 # THE SCHEMATIC IS THE ROOT OF THIS DEPENDENCY GRAPH. SCH and NETLIST come
 # from THIS board's own declaration (perfboard.json's optional
@@ -40,7 +42,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts import update stripboard edit board-info netlist-agrees wiring
+.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -150,6 +152,21 @@ perfboard-help:
 	@echo "Hand it to the GUI"
 	@echo "  make edit            open this layout in the forked VeroRoute"
 	@echo ""
+	@echo "Build it on the bench"
+	@echo "  make guide           write the printable build packet into guide/ (layout"
+	@echo "                       images, black-and-white schematic PDF, checklist in"
+	@echo "                       guide.html) - replaces guide/, never the layout;"
+	@echo "                       refuses while cuts are unresolved or a part is unplaced"
+	@echo ""
+	@echo "Buy the parts"
+	@echo "  make bom             compare what the circuit needs with bom.json and the"
+	@echo "                       parts/ catalog, print what is unchosen, removed,"
+	@echo "                       unmet, unknown or stale-priced, and rewrite"
+	@echo "                       BOM.md - never bom.json or the catalog; exits 1 until"
+	@echo "                       every line is chosen and met, no chosen line is gone"
+	@echo "                       from the circuit and every part id is in the catalog"
+	@echo "                       (stale prices only warn)"
+	@echo ""
 	@echo "The toolchain"
 	@echo "  make veroroute       acquire and build the pinned VeroRoute fork (a"
 	@echo "                       no-op once it is already built)"
@@ -197,3 +214,15 @@ stripboard: veroroute netlist-agrees
 
 edit: veroroute
 	@bun "$(CLI)" edit -C "$(CURDIR)"
+
+# The build packet is generated, never committed: guide/ is git-ignored and
+# rebuilt whole from the .vrt, the schematic and the circuit on every run.
+guide: veroroute netlist-agrees
+	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)"
+
+# The parts list. No veroroute or netlist-agrees prerequisite: it reads only the
+# circuit, bom.json and the parts/ catalog, never the layout or the schematic.
+# `check` compares BOM.md with a fresh rendering (for a board with a bom.json)
+# without rewriting it.
+bom:
+	@bun "$(CLI)" bom -C "$(CURDIR)"

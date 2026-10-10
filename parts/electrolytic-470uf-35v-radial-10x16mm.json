@@ -1,0 +1,108 @@
+{
+  "id": "electrolytic-470uf-35v-radial-10x16mm",
+  "kind": "capacitor",
+  "description": "470uF, 35V, radial aluminum electrolytic, 10x16mm body, 5mm lead spacing",
+  "manufacturer": "Panasonic Industry",
+  "mpn": "ECA-1VM471",
+  "specs": {
+    "farads": 0.00047,
+    "volts": 35,
+    "leadSpacingMm": 5,
+    "diameterMm": 10
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM471?qs=4indQ9AG%252BqEMpMNEQEBA0w%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for ECA-1VM471 (Panasonic Industry), Mouser part 667-ECA-1VM471, description 'Aluminum Electrolytic Capacitors - Radial Leaded 470uF 35V'."
+    },
+    {
+      "spec": "farads",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM471?qs=4indQ9AG%252BqEMpMNEQEBA0w%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '470uF'."
+    },
+    {
+      "spec": "volts",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM471?qs=4indQ9AG%252BqEMpMNEQEBA0w%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '35V'."
+    },
+    {
+      "spec": "leadSpacingMm",
+      "url": "https://industrial.panasonic.com/cdbs/www-data/pdf/RDF0000/ABA0000C1218.pdf",
+      "note": "Panasonic M-A series datasheet (fetched 2026-09-30), Characteristics list, 35V (1V) section: 470uF row - case size 10.0 x 16.0mm, lead space (straight) 5.0mm, part no. ECA1VM471( )."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://industrial.panasonic.com/cdbs/www-data/pdf/RDF0000/ABA0000C1218.pdf",
+      "note": "Panasonic M-A series datasheet (fetched 2026-09-30), Characteristics list, 35V (1V) section: 470uF row - case size (diameter x L) 10.0 x 16.0mm."
+    }
+  ],
+  "why": "Same Panasonic M-A (ECA) family as this board's 10uF, 100uF and 220uF/35V lines (docs/parts/sourcing-notes.md Lessons, 2026-09-30). The straight-lead, unformed part fits this line's 5mm-lead-spacing footprint exactly and is in stock at Mouser (2357 units, 2026-09-30).",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM471?qs=4indQ9AG%252BqEMpMNEQEBA0w%3D%3D",
+      "sku": "667-ECA-1VM471",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.69
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.433
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.295
+        }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/panasonic-industry/ECA-1VM471/245027",
+      "sku": "P5168-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.69
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.431
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.3226
+        },
+        {
+          "quantity": 200,
+          "unitPrice": 0.25925
+        },
+        {
+          "quantity": 600,
+          "unitPrice": 0.22318
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.20969
+        },
+        {
+          "quantity": 2600,
+          "unitPrice": 0.18887
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.1774
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
+    }
+  ]
+}

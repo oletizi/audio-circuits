@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "perfboard": "bun run tools/cli/perfboard.ts",
-    "schematic-stub": "bun run tools/cli/schematic-stub.ts"
+    "schematic-stub": "bun run tools/cli/schematic-stub.ts",
+    "parts": "bun run tools/cli/parts.ts"
   },
   "devDependencies": {
     "bun-types": "^1.4.2",

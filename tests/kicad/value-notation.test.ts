@@ -39,6 +39,13 @@ test("decades the board does not exercise are refused, not guessed", () => {
   expect(() => valueFor(capacitor(2e-3))).toThrow(/1pF.*1000uF/s)
 })
 
+test("resistances below 1k are spelled in ohms with an R suffix", () => {
+  expect(valueFor(resistor(22))).toBe("22R")
+  expect(valueFor(resistor(470))).toBe("470R")
+  expect(valueFor(resistor(1))).toBe("1R")
+  expect(valueFor(resistor(1000))).toBe("1K")
+})
+
 test("capacitor boundary: exactly 1000uF (1e-3) is refused with clear message", () => {
   expect(() => valueFor(capacitor(1e-3))).toThrow(/up to but not including 1000uF/)
 })

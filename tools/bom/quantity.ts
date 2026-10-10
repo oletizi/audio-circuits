@@ -1,0 +1,172 @@
+/**
+ * Buy-quantity suggestions: how many of a line's chosen part to buy, and at
+ * what price, given the board's purchasing mode (Decisions,
+ * docs/superpowers/specs/2026-09-30-bom-design.md):
+ *
+ * - the quantity to cover is `need x boards x (1 + shrinkage)`, rounded up,
+ *   so any line gets at least one spare (`coverQuantity`) - except an extra that
+ *   declares `"spares": false` in bom.json, which covers need x boards alone;
+ * - prototype (one board), `stock` part: the target is the larger of the
+ *   cover quantity and the board's `stockQuantity`; buy the smallest listed
+ *   price break at or above the target, or - when every break is smaller -
+ *   the target itself at the largest break's unit price (`suggestBuy`) - the
+ *   BULK suggestion, which the board-wide caps in tools/bom/bulk.ts may set
+ *   aside for the covered one (`coveredBuy`);
+ * - prototype, any other part: the cover quantity, at the price break that
+ *   applies to buying that many;
+ * - run: the cover quantity, moved up to a larger price break whenever
+ *   buying that break's own quantity costs less in total.
+ *
+ * PRICE ARITHMETIC: totals are compared as integer MICROS (millionths of the
+ * source's currency unit - $0.012 becomes 12_000 micros) rather than as
+ * floating-point currency amounts. A run's "cheaper total" choice is a
+ * comparison between two totals that can differ by a fraction of a cent
+ * (price breaks are sometimes quoted to three decimal places, e.g.
+ * $0.012/unit), so it must not turn on floating-point rounding noise several
+ * decimal places below any real difference. `linePrice` is converted back to
+ * an ordinary number only for the returned suggestion, never compared as one.
+ */
+import type { CatalogEntry, PriceBreak, Source } from "./catalog.ts"
+import type { Purchasing } from "./board-bom.ts"
+
+export interface BuySuggestion {
+  readonly quantity: number
+  readonly unitPrice: number
+  readonly linePrice: number
+}
+
+const MICROS_PER_CURRENCY_UNIT = 1_000_000
+
+export function toMicros(price: number): number {
+  return Math.round(price * MICROS_PER_CURRENCY_UNIT)
+}
+
+export function fromMicros(micros: number): number {
+  return micros / MICROS_PER_CURRENCY_UNIT
+}
+
+/**
+ * `need * boards * (1 + shrinkage)` computed as ordinary floating-point
+ * numbers can land a hair above an exact integer (e.g. `10 * 1.1` as a
+ * float), which would ceiling to one more unit than the true cover.
+ * Subtracting a tolerance far smaller than any real fractional need before
+ * ceiling removes that noise without masking a genuine fraction.
+ */
+const CEILING_TOLERANCE = 1e-9
+
+function ceiling(value: number): number {
+  return Math.ceil(value - CEILING_TOLERANCE)
+}
+
+/** The quantity to cover: need, across every board, with the shrinkage margin - rounded
+ * up so any line gets at least one spare, however small its need. `spares` false (an extra
+ * that opts out in bom.json) drops the margin: need across every board, rounded up. */
+export function coverQuantity(need: number, purchasing: Purchasing, spares: boolean): number {
+  const boards = purchasing.mode === "run" ? purchasing.boards : 1
+  const margin = spares ? 1 + purchasing.shrinkage : 1
+  return ceiling(need * boards * margin)
+}
+
+function requireBreaks(source: Source, entry: CatalogEntry): readonly PriceBreak[] {
+  if (source.breaks.length === 0) {
+    throw new Error(
+      `catalog entry "${entry.id}": source "${source.supplier}" lists no price breaks, so a buy ` +
+        "quantity cannot be suggested from it.",
+    )
+  }
+  return source.breaks
+}
+
+/** The break that applies when buying exactly `quantity` units: the largest-quantity break
+ * at or below it, or the first (minimum-order) break when `quantity` is smaller than even
+ * that. */
+function applicableBreak(breaks: readonly PriceBreak[], quantity: number): PriceBreak {
+  const applicable = [...breaks].reverse().find((brk) => brk.quantity <= quantity)
+  return applicable ?? breaks[0]
+}
+
+function lineOf(quantity: number, unitPrice: number): BuySuggestion {
+  return { quantity, unitPrice, linePrice: fromMicros(quantity * toMicros(unitPrice)) }
+}
+
+/** Prototype, `stock` part: the target is the larger of the cover quantity and the board's
+ * `stockQuantity`. Buy the smallest listed price break whose quantity reaches the target, at
+ * that break's own quantity and unit price; when every break is smaller than the target, buy
+ * the target itself at the largest break's unit price. */
+function stockSuggestion(cover: number, stockQuantity: number, entry: CatalogEntry, source: Source): BuySuggestion {
+  const breaks = requireBreaks(source, entry)
+  const target = Math.max(cover, stockQuantity)
+  const reaching = breaks.find((brk) => brk.quantity >= target)
+  if (reaching !== undefined) return lineOf(reaching.quantity, reaching.unitPrice)
+  const largest = breaks[breaks.length - 1]
+  return lineOf(target, largest.unitPrice)
+}
+
+/** Prototype, non-stock: buy exactly the cover quantity (or the minimum order, whichever is
+ * larger), at the price break that applies to that quantity. No bumping up to a larger break -
+ * that consideration is a `run`-mode decision (see the module comment). */
+function prototypeOtherSuggestion(cover: number, entry: CatalogEntry, source: Source): BuySuggestion {
+  const breaks = requireBreaks(source, entry)
+  const quantity = Math.max(cover, breaks[0].quantity)
+  const applicable = applicableBreak(breaks, quantity)
+  return lineOf(quantity, applicable.unitPrice)
+}
+
+/** Run: the cover quantity, moved up to a larger break whenever buying THAT break's own
+ * quantity costs less in total than buying the cover at its own applicable price. Every
+ * break is a candidate purchase (its own quantity, or the cover if that is larger); the
+ * cheapest total wins. This is also where the minimum order is enforced: the first break's
+ * candidate is always at least its own quantity. */
+function runSuggestion(cover: number, entry: CatalogEntry, source: Source): BuySuggestion {
+  const breaks = requireBreaks(source, entry)
+  const candidateFor = (brk: PriceBreak): { readonly quantity: number; readonly totalMicros: number } => {
+    const quantity = Math.max(cover, brk.quantity)
+    return { quantity, totalMicros: quantity * toMicros(brk.unitPrice) }
+  }
+
+  let bestBreak = breaks[0]
+  let best = candidateFor(bestBreak)
+  for (const brk of breaks.slice(1)) {
+    const candidate = candidateFor(brk)
+    if (candidate.totalMicros < best.totalMicros) {
+      bestBreak = brk
+      best = candidate
+    }
+  }
+  return lineOf(best.quantity, bestBreak.unitPrice)
+}
+
+/** The buy quantity and price to suggest for one line's chosen part, from one of its
+ * sources. See the module comment for the rule per purchasing mode; `spares` as for
+ * `coverQuantity`. */
+export function suggestBuy(
+  need: number,
+  purchasing: Purchasing,
+  entry: CatalogEntry,
+  source: Source,
+  spares: boolean,
+): BuySuggestion {
+  const cover = coverQuantity(need, purchasing, spares)
+  if (purchasing.mode === "prototype" && entry.stock) {
+    return stockSuggestion(cover, purchasing.stockQuantity, entry, source)
+  }
+  if (purchasing.mode === "prototype") {
+    return prototypeOtherSuggestion(cover, entry, source)
+  }
+  return runSuggestion(cover, entry, source)
+}
+
+/** The buy for one source ignoring `stock`: in prototype mode the cover quantity at its
+ * applicable break, in run mode the run rule. What a `stock` part is bought at when its bulk
+ * buy is set aside (tools/bom/bulk.ts), and what "the order at covered quantities" sums. */
+export function coveredBuy(
+  need: number,
+  purchasing: Purchasing,
+  entry: CatalogEntry,
+  source: Source,
+  spares: boolean,
+): BuySuggestion {
+  const cover = coverQuantity(need, purchasing, spares)
+  if (purchasing.mode === "prototype") return prototypeOtherSuggestion(cover, entry, source)
+  return runSuggestion(cover, entry, source)
+}

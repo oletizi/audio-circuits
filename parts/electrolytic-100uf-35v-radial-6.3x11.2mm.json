@@ -1,0 +1,112 @@
+{
+  "id": "electrolytic-100uf-35v-radial-6.3x11.2mm",
+  "kind": "capacitor",
+  "description": "100uF, 35V, radial aluminum electrolytic, 6.3x11.2mm body, 2.5mm lead spacing; taped variant (I suffix), arrives on cut tape",
+  "manufacturer": "Panasonic Industry",
+  "mpn": "ECA-1VM101I",
+  "specs": {
+    "farads": 0.0001,
+    "volts": 35,
+    "leadSpacingMm": 2.5,
+    "diameterMm": 6.3
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM101I?qs=Rjs8jpJ6LSQiPme8klHtJQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: exact match for ECA-1VM101I (Panasonic Industry), Mouser part 667-ECA-1VM101I, description 'Aluminum Electrolytic Capacitors - Radial Leaded 100UF 35V ELECT M RADIAL'."
+    },
+    {
+      "spec": "farads",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM101I?qs=Rjs8jpJ6LSQiPme8klHtJQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '100UF'."
+    },
+    {
+      "spec": "volts",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM101I?qs=Rjs8jpJ6LSQiPme8klHtJQ%3D%3D",
+      "note": "Mouser Search API, 2026-09-30: description states '35V'."
+    },
+    {
+      "spec": "leadSpacingMm",
+      "url": "https://industrial.panasonic.com/cdbs/www-data/pdf/RDF0000/ABA0000C1218.pdf",
+      "note": "Panasonic M-A series datasheet (fetched 2026-09-30), Characteristics list, 35V (1V) section: 100uF row - case size 6.3 x 11.2mm, lead space straight 2.5mm and Taping *i 2.5mm (the same pitch), base part no. ECA1VM101( ); the 'I' suffix is this row's 2.5mm-pitch taped-and-formed variant, per the catalog's part-number system (12th digit = taping code)."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://industrial.panasonic.com/cdbs/www-data/pdf/RDF0000/ABA0000C1218.pdf",
+      "note": "Panasonic M-A series datasheet (fetched 2026-09-30), Characteristics list, 35V (1V) section: 100uF row - case size (diameter x L) 6.3 x 11.2mm; taping does not change the can."
+    }
+  ],
+  "why": "Same Panasonic M-A (ECA) family as this board's 10uF, 220uF and 470uF/35V lines (docs/parts/sourcing-notes.md Lessons, 2026-09-30). The straight-lead base part ECA-1VM101 showed 0 Mouser stock on 2026-09-30; the 'I' (2.5mm taping pitch) variant is the same can at the same 2.5mm lead spacing per the datasheet's dimension table (taping i = 2.5mm for this row, matching the straight-lead value) and is in stock (22557 units), so it was chosen over the out-of-stock base SKU.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM101I?qs=Rjs8jpJ6LSQiPme8klHtJQ%3D%3D",
+      "sku": "667-ECA-1VM101I",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.33
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.147
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.13
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.099
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.09
+        },
+        {
+          "quantity": 2000,
+          "unitPrice": 0.089
+        }
+      ],
+      "checked": "2026-09-30",
+      "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/panasonic-industry/ECA-1VM101I/268503",
+      "sku": "10-ECA-1VM101ICT-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.33
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.201
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.1466
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.1291
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.09902
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.0895
+        }
+      ],
+      "checked": "2026-10-09",
+      "use": "standard"
+    }
+  ]
+}

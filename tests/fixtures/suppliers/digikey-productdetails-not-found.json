@@ -1,0 +1,9 @@
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Requested Product no-such-part-zzq123 Not Found",
+  "instance": "",
+  "correlationId": "3bcf0436-a7ff-47be-dd5c-4a8103f46417",
+  "errors": {}
+}

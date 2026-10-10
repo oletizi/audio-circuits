@@ -1,0 +1,9 @@
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Duplicate Products found for 2n3904. Please narrow your search or provide manufacturerId",
+  "instance": "",
+  "correlationId": "cd651264-0a36-4baf-cb88-a49a60f28443",
+  "errors": {}
+}

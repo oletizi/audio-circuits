@@ -16,7 +16,10 @@ export function isNetwork(value: unknown): value is Network {
   return Array.isArray(value["components"]) && isRecord(value["ports"])
 }
 
-export async function loadCircuit(declaration: PerfboardDeclaration): Promise<Network> {
+/** Import the declared circuit module, refusing (naming the declaration) when it cannot be. */
+export async function importCircuitModule(
+  declaration: PerfboardDeclaration,
+): Promise<Readonly<Record<string, unknown>>> {
   let imported: unknown
   try {
     imported = await import(declaration.circuitPath)
@@ -31,8 +34,18 @@ export async function loadCircuit(declaration: PerfboardDeclaration): Promise<Ne
       `${declaration.file}: the module at ${declaration.circuitPath} did not import as an object`,
     )
   }
-  const module = imported
+  return imported
+}
 
+export async function loadCircuit(declaration: PerfboardDeclaration): Promise<Network> {
+  return circuitFromModule(await importCircuitModule(declaration), declaration)
+}
+
+/** Call the declared export of an already-imported circuit module and check it returned a Network. */
+export function circuitFromModule(
+  module: Readonly<Record<string, unknown>>,
+  declaration: PerfboardDeclaration,
+): Network {
   const exported = module[declaration.exportName]
   if (exported === undefined) {
     const available = Object.keys(module).sort().join(", ")
