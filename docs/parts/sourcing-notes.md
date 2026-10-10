@@ -61,9 +61,10 @@ buying, such as a multi-spool wire kit, says `"spares": false` in `bom.json`.
 ### Prices
 
 Record the date checked. Prices older than 45 days are reported as stale
-(tariffs make them move). Refresh Mouser (and, once built, Digi-Key) prices
+(tariffs make them move). Refresh Mouser and Digi-Key prices
 with `bun run parts refresh [<catalog id>...]`: it re-reads each source by its
-supplier part number and rewrites only the price breaks and the date. It
+supplier part number (for Digi-Key, the product number of the one packaging
+the source records) and rewrites only the price breaks and the date. It
 writes nothing if any lookup or validation fails; a part no longer listed
 (or listed without a price) is reported and left as it is, and the rest are
 still written.
@@ -71,16 +72,27 @@ still written.
 ### The supplier tool and its keys
 
 `bun run parts lookup|search|source|refresh` reads Mouser through its official
-Search API (distributor web pages block automated fetches). Keys live outside
-the repository and are never printed or committed:
+Search API and Digi-Key through its Product Information API (distributor web
+pages block automated fetches). Without `--supplier`, `lookup` and `search`
+query both. Keys live outside the repository and are never printed or
+committed:
 
 - Mouser: `~/.config/mouser/mouser-credentials.txt` - one line, the Search API
   key (from the API Hub in a Mouser account).
-- Digi-Key: `~/.config/digikey/digikey-credentials.txt` - two lines, client ID
-  then client secret (an application on developer.digikey.com). The Digi-Key
-  client itself is built once these exist (Task 2 of
-  `docs/superpowers/plans/2026-09-30-supplier-search.md`); until then Digi-Key
-  sources are added by hand, if at all.
+- Digi-Key: `~/.config/digikey/digikey-credentials.txt` - a YAML mapping of
+  two keys, `clientID: <client id>` and `clientSecret: <client secret>` (an
+  application on developer.digikey.com with the Product Information API,
+  production environment; the tool uses OAuth2 client credentials, so the
+  app's callback URL is never called).
+
+Digi-Key lists one manufacturer part under several product numbers, one per
+packaging (cut tape, tape and reel, Digi-Reel, bulk), each with its own price
+breaks; `lookup` prints each as its own offer with a `packaging:` line, and
+`source --supplier digikey` refuses until `--sku` names one. For a hobby
+quantity choose the cut-tape (CT) or bulk number: tape and reel starts at a
+full reel, and Digi-Reel carries a per-order reeling fee (shown in its
+packaging line). A Marketplace listing (sold by a third party through
+Digi-Key) names its seller in the same line.
 
 ## Matching a line
 
@@ -388,3 +400,11 @@ the date.)
   shaft-length/CCW-position code tried - useful as a knurled-shaft PC-pin
   panel pot family if a knurled shaft (push-on knob) is acceptable, but
   not a source for a genuinely solid/plain-shaft part.
+- 2026-10-09: Digi-Key's product-details service refuses a part number that
+  more than one manufacturer makes (2N3904: HTTP 404 "Duplicate Products
+  found ... provide manufacturerId"), so `bun run parts lookup` reads
+  Digi-Key's keyword search instead and keeps exact part-number matches -
+  for 2N3904 that is several makers (Diotec, DComponents, Marketplace
+  sellers), each listing printed with its manufacturer. Choose by
+  manufacturer as well as part number. Digi-Key's parameter lists use "-"
+  for a parameter that does not apply; it is printed as Digi-Key states it.

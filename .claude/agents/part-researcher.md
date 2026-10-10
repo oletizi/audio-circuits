@@ -29,16 +29,16 @@ instructions exactly, whichever session calls you.
    skip to step 6.
 2. **Search** through the repository's `parts` tool, never by fetching
    distributor web pages (they block automated fetches):
-   - `bun run parts search <keywords...> --supplier mouser [--limit n]` for
-     candidates (e.g. `bun run parts search 10uF 35V radial --supplier mouser`);
-   - `bun run parts lookup <mpn> --supplier mouser` for one exact part:
+   - `bun run parts search <keywords...> [--supplier mouser|digikey] [--limit n]`
+     for candidates (e.g. `bun run parts search 10uF 35V radial`); without
+     `--supplier` it searches Mouser and Digi-Key both;
+   - `bun run parts lookup <mpn>` for one exact part at both suppliers:
      supplier part number, stock, every price break, product and datasheet
      links, and the supplier's listed parameters. `--json` gives the same as
-     a flat array of offers.
-   The Digi-Key client is not built until the operator registers
-   (`docs/superpowers/plans/2026-09-30-supplier-search.md`, Task 2); until
-   then use `--supplier mouser` and note in your report that the Digi-Key
-   source is missing. Add `bulk`, `specialty` or `prototype-fast` sources by
+     a flat array of offers. Digi-Key prints one offer per packaging (cut
+     tape, tape and reel, Digi-Reel, bulk), each with its own product number
+     and prices; for hobby quantities use the cut-tape (CT) or bulk one.
+   Add `bulk`, `specialty` or `prototype-fast` sources by
    hand only where the sourcing notes allow them for this kind of part and
    you can read the listing. Prefer a reasonable price at the quantities a
    hobbyist buys.
@@ -48,7 +48,8 @@ instructions exactly, whichever session calls you.
    never from what that kind of part "usually" is. Record each in `evidence`
    as `{ spec, url, note }`:
    - from the tool: `url` is the product URL, `note` names the service and
-     date and what it states, e.g. "Mouser Search API, 2026-09-30:
+     date and what it states (Mouser Search API or Digi-Key Product
+     Information API), e.g. "Mouser Search API, 2026-09-30:
      Tolerance 1%, Power Rating 250 mW";
    - from a datasheet: `url` is the PDF, `note` says what the page states,
      e.g. "dimension table: 6.3 mm dia, 2.5 mm lead spacing at 10 uF / 35 V".
@@ -70,9 +71,14 @@ instructions exactly, whichever session calls you.
    under, suffixes and all - e.g. `2N3904BU` - never the circuit's type
    copied in); `specs`; `evidence`; `why` (why this part over the
    alternatives you saw); `stock` (true for cheap commodity parts per the
-   notes); `sources`. For a Mouser source, generate it with
-   `bun run parts source <mpn> --supplier mouser --use <use>` and paste the
-   printed object - never retype prices. A hand-added source needs supplier, URL, the supplier's part number,
+   notes); `sources`. Give each part a Mouser `standard` source and, where
+   Digi-Key lists it, a Digi-Key `standard` source alongside it. Generate
+   each with `bun run parts source <mpn> --supplier mouser --use <use>` or
+   `bun run parts source <mpn> --supplier digikey --use <use> --sku <Digi-Key
+   product number>` (the `--sku` picks the packaging; the command lists the
+   choices when it refuses without one) and paste the printed object - never
+   retype prices. If Digi-Key does not list the part, say so in your report.
+   A hand-added source needs supplier, URL, the supplier's part number,
    currency, EVERY price break listed (ascending), `checked` as today's date
    (YYYY-MM-DD), and `use`.
 6. **Record the choice** in `boards/<board>/bom.json` under `lines`

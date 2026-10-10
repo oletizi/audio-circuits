@@ -139,14 +139,16 @@ For a board with a `bom.json`, `make check` also fails when the committed
 line, or `bom.json` names a catalog part that does not exist; unchosen lines and stale prices do not fail `check`, and boards
 without `bom.json` are unaffected.
 
-`bun run parts` reads supplier data through Mouser's official Search API
-(Digi-Key once its client is built): `lookup <mpn>` for one exact part's
-supplier part number, stock, price breaks and links; `search <keywords...>`
-for candidates; `source <mpn> --supplier mouser --use <use>` to print a
-catalog source ready to paste; `refresh [<catalog id>...]` to update the
-catalog's Mouser prices in place (it writes nothing unless every lookup
-succeeds). Keys are read from `~/.config/mouser/mouser-credentials.txt` and
-`~/.config/digikey/digikey-credentials.txt` and never printed; see
+`bun run parts` reads supplier data through Mouser's Search API and
+Digi-Key's Product Information API (both official): `lookup <mpn>` for one
+exact part's supplier part numbers, stock, price breaks and links at both
+suppliers (Digi-Key: one listing per packaging); `search <keywords...>` for
+candidates; `source <mpn> --supplier mouser|digikey --use <use> [--sku <part
+number>]` to print a catalog source ready to paste; `refresh [<catalog
+id>...]` to update the catalog's Mouser and Digi-Key prices in place (it
+writes nothing unless every lookup succeeds). `--supplier` narrows any verb
+to one supplier. Keys are read from `~/.config/mouser/mouser-credentials.txt`
+and `~/.config/digikey/digikey-credentials.txt` and never printed; see
 `docs/parts/sourcing-notes.md`.
 
 A new board's KiCad schematic starts from a generated stub, written once with

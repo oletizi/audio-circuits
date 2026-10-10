@@ -86,6 +86,15 @@ This task is gated on credentials. A Digi-Key application (developer.digikey.com
 - [ ] **Step 2:** Remove the "not built yet" refusal from `parts`; update the sourcing notes and the researcher file to use Digi-Key too.
 - [ ] **Step 3:** `bun test && bun run typecheck`; commit and push.
 
+**Decisions made while doing this task (recorded in the spec's Decisions table):** the
+credentials file is a YAML mapping (`clientID`, `clientSecret`) read with `Bun.YAML`
+(operator); each product variation is its own offer, with a `packaging` text that also names
+a Digi-Key reeling fee or a Marketplace seller; `lookup` uses keyword search filtered to
+exact part-number matches, not product details, because the recorded product-details
+response for 2N3904 is a 404 "Duplicate Products found" where keyword search lists every
+maker; `lookupSku` uses product details. The refresh module's "not-built" client result,
+which existed only for the missing Digi-Key client, is removed.
+
 ### Task 3: The `parts` command
 
 **Files:** create `tools/suppliers/source.ts` (offer -> catalog `Source`), `tools/suppliers/refresh.ts`, `tools/cli/parts.ts`; modify `package.json` (`"parts": "bun run tools/cli/parts.ts"`); tests `tests/suppliers/source.test.ts`, `tests/suppliers/refresh.test.ts`, `tests/cli/parts.test.ts`.

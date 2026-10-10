@@ -1,7 +1,7 @@
 ---
 title: Supplier search - Mouser and Digi-Key lookups for the parts researcher, and price refresh
 date: 2026-09-30
-status: Implemented for Mouser; Digi-Key waits for the operator's credentials (plan Task 2)
+status: Implemented
 ---
 
 # Supplier search
@@ -28,6 +28,8 @@ and a command that refreshes the prices already in the catalog.
 | A missing key refuses with the variable's name and where to get it; no supplier is silently skipped | Designer, accepted with this design | The no-fallback rule |
 | A separate command refreshes the prices of catalog entries in place; it updates price breaks, stock-free fields and the checked date only, never which part was chosen | Designer, accepted with this design | Prices go stale after 45 days; refreshing is mechanical and should not need a research session |
 | Tayda, specialist shops and Amazon stay manual links | Operator | They offer no such service |
+| Each Digi-Key product variation (cut tape, tape and reel, Digi-Reel, bulk) is its own offer, with its own product number, price breaks, stock and a `packaging` text; a Digi-Reel fee and a Marketplace seller are named there | Implementer (plan Task 2), from the recorded responses | They are different orderable listings at different prices; merging them would put a reel's price on a cut-tape source |
+| Digi-Key `lookup` uses keyword search filtered to exact part-number matches, not product details; `lookupSku` (refresh, `source --sku`) uses product details | Implementer (plan Task 2), from the recorded responses | Product details answers 404 "Duplicate Products found" for a part number more than one manufacturer makes (2N3904), where keyword search lists them all |
 
 ## Keys (the operator registers these)
 
@@ -76,12 +78,13 @@ supplier with a service could be added later without touching the verbs:
 ```ts
 interface SupplierOffer {
   supplier: "Mouser" | "Digi-Key"; sku: string; manufacturer: string; mpn: string
-  description: string; url: string; datasheetUrl?: string; stock: number
-  currency: string; breaks: { quantity: number; unitPrice: number }[]
+  description: string; url: string; datasheetUrl?: string; packaging?: string
+  stock?: number; currency?: string; breaks: { quantity: number; unitPrice: number }[]
   parameters: Record<string, string>; fetched: string   // YYYY-MM-DD
 }
 interface SupplierClient {
   lookup(mpn: string): Promise<SupplierOffer[]>
+  lookupSku(sku: string): Promise<SupplierOffer | undefined>
   search(keywords: string, limit: number): Promise<SupplierOffer[]>
 }
 ```
