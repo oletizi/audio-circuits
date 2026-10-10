@@ -59,7 +59,7 @@ Copied from the spec and the project's `CLAUDE.md`. Every task's requirements in
 | `lib/model/include.ts` | composition: prefixing, port binding, global-net invariant |
 | `lib/model/index.ts` | the module's public surface |
 | `lib/kicad/netlist.ts` | parse a KiCad `.net` export into a `Network` |
-| `circuits/pt2399-core.ts` | the proving-ground circuit, authored with the builder |
+| `circuits/pt2399-core/pt2399-core.ts` | the proving-ground circuit, authored with the builder |
 | `tests/model/*.test.ts` | one file per `lib/model` unit |
 | `tests/kicad/netlist.test.ts` | importer tests |
 | `tests/circuits/pt2399-core.test.ts` | authored network vs the built unit's netlist |
@@ -1525,7 +1525,7 @@ git commit -F <message file>
 This is the plan's proving ground. The maintainer built this circuit from a private source repository and it works, so its netlist is the strongest correctness evidence available without a bench.
 
 **Files:**
-- Create: `circuits/pt2399-core.ts`
+- Create: `circuits/pt2399-core/pt2399-core.ts`
 - Create: `tests/fixtures/pt2399-core-veroroute.net` (the built board's netlist — authority)
 - Create: `tests/fixtures/pt2399-core.net` (the s-expression export — cross-check)
 - Test: `tests/circuits/pt2399-core.test.ts`
@@ -1563,7 +1563,7 @@ Create `tests/circuits/pt2399-core.test.ts`:
 
 ```ts
 import { test, expect } from "bun:test"
-import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core.ts"
+import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core/pt2399-core.ts"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { importLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import type { Network } from "../../lib/model/types.ts"
@@ -1638,11 +1638,11 @@ test("the schematic export describes the same circuit as the built board", async
 - [ ] **Step 3: Run it and confirm it fails**
 
 Run: `bun test tests/circuits/pt2399-core.test.ts`
-Expected: FAIL — cannot resolve `../../circuits/pt2399-core.ts`.
+Expected: FAIL — cannot resolve `../../circuits/pt2399-core/pt2399-core.ts`.
 
 - [ ] **Step 4: Author the circuit**
 
-Create `circuits/pt2399-core.ts`. Transcribe from the netlist output captured in Step 1 — **every component and every connection comes from that output, not from memory or from the datasheet.** Give each component a semantic id describing its role; keep the designator mapping beside it.
+Create `circuits/pt2399-core/pt2399-core.ts`. Transcribe from the netlist output captured in Step 1 — **every component and every connection comes from that output, not from memory or from the datasheet.** Give each component a semantic id describing its role; keep the designator mapping beside it.
 
 The file's shape:
 
@@ -1711,7 +1711,7 @@ The Pultec reference network already exists in `reference/pultec/`, assembled me
 **These circuits are unvalidated.** The maintainer cannot validate them without building from the schematic, which is off the table. This task moves them to the canonical model so the one-model rule holds; it does not make them trusted, and the marker added in Step 2 says so.
 
 **Files:**
-- Modify: `reference/pultec/three-band.ts`, `partition.ts`, `controls.ts`, `mid.ts` (import from `lib/model/`)
+- Modify: `circuits/pultec/electrical/three-band.ts`, `partition.ts`, `controls.ts`, `mid.ts` (import from `lib/model/`)
 - Modify: `lib/passives/*` → moved to `lib/model/` (see Step 1)
 - Delete: `modules/pultec-hi-boost/`, `modules/pultec-hi-cut/`, `modules/pultec-low-boost/`, `modules/pultec-low-cut/`, `modules/pultec-mid/`, `modules/pultec-passive-eq/`
 - Delete: `tests/modules/*.test.tsx` for those six modules
@@ -1734,7 +1734,7 @@ git mv lib/passives/mutable.ts lib/model/mutable.ts
 git mv lib/passives/net-preference.ts lib/model/net-preference.ts
 ```
 
-Update every import of `../passives/` or `lib/passives/` to `../model/` / `lib/model/`. Find them with:
+Update every import of `../passives/` or `lib/passives/` to `../electrical/` / `lib/model/`. Find them with:
 
 ```bash
 grep -rln "passives/" --include='*.ts' --include='*.tsx' . | grep -v node_modules
@@ -1744,7 +1744,7 @@ Run `bun run typecheck` until clean. Do not rename `PassiveNetwork` yet — that
 
 - [ ] **Step 2: Mark the Pultec reference unvalidated**
 
-Add this to the top of `reference/pultec/README.md`, immediately under the title:
+Add this to the top of `docs/pultec/provenance.md`, immediately under the title:
 
 ```markdown
 > **UNVALIDATED.** No unit has been built from this model. Validation would
@@ -1789,7 +1789,7 @@ bun run typecheck
 bun test
 ```
 
-Expected: green. The suite shrinks by the deleted module tests; `tests/topology.test.ts`, `tests/control-state.test.ts`, `tests/sim/*` and `tests/reference/*` must all still pass, because none of them depended on tscircuit.
+Expected: green. The suite shrinks by the deleted module tests; `tests/topology.test.ts`, `tests/control-state.test.ts`, `tests/sim/*` and `tests/pultec/*` must all still pass, because none of them depended on tscircuit.
 
 Report the before/after test counts.
 

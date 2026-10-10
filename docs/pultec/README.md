@@ -28,11 +28,16 @@ independent cascaded filters. Makeup amplification stays outside this network.
 
 ## Current status
 
-There is no Pultec circuit in this repository yet. The existing op-amp buffer
-and demo are unrelated to the reference filter. The topology utility in
-`lib/model/topology.ts` is initial validation infrastructure; its tests use a
-synthetic circuit. Passing those tests does **not** establish Pultec equivalence.
-No connector pin count, component values, or manufacturing files are approved.
+The Pultec reference and its physical split now exist. `reference/pultec/`
+holds the transcribed single reference network; `circuits/pultec/` holds the
+five physicalized board circuits (`low-cut.ts`, `low-boost.ts`, `hi-cut.ts`,
+`hi-boost.ts`, `mid.ts`); `boards/pultec-low-cut/`, `boards/pultec-low-boost/`,
+`boards/pultec-hi-cut/`, `boards/pultec-hi-boost/` and `boards/pultec-mid/`
+hold the five declared stripboard layouts built from them. Capacitor footprint
+selection for those boards is recorded in
+[`capacitor-selection.md`](capacitor-selection.md). The topology utility in
+`lib/model/topology.ts` is what `assertSameTopology` in the tests above is
+built from.
 
 ## Reference evidence and unresolved authority
 
@@ -78,22 +83,26 @@ Record unresolved junctions, tap connections, and pot conventions explicitly.
    component belongs to exactly one physical module. Derive the connector nets
    from this assignment; choose physical pins only after electrical review.
 
-## Intended organization
+## Organization, as built
 
-| Planned module | Responsibility |
-| --- | --- |
-| `pultec-lf` | LF frequency selection, boost and attenuation controls, associated R/C network |
-| `pultec-hf` | HF boost frequency, boost, bandwidth, attenuation frequency and amount, associated L/C/R network |
-| `pultec-passive-eq` | Compose the two physical modules using the reference shared nodes |
-| `pultec-lf-standalone` | LF plus a validated substitute for the missing HF network |
-| `pultec-hf-standalone` | HF plus a validated substitute for the missing LF network |
+| Module | `circuits/pultec/` | `boards/` | Responsibility |
+| --- | --- | --- | --- |
+| Low cut | `low-cut.ts` | `pultec-low-cut/` | Low frequency selection and cut network |
+| Low boost | `low-boost.ts` | `pultec-low-boost/` | Low frequency boost network |
+| Hi cut | `hi-cut.ts` | `pultec-hi-cut/` | High frequency selection and cut network |
+| Hi boost | `hi-boost.ts` | `pultec-hi-boost/` | High frequency boost, bandwidth (Q) and resonant inductor network |
+| Mid | `mid.ts` | `pultec-mid/` | Mid selection network, from Thompson-Bell's documentation |
 
-These are planned modules, not implemented exports. The interconnect adds only
-conductors and connectors. If the source requires a shared passive element,
-assign it explicitly rather than duplicating it or hiding it in the backplane.
-External signal/return ports also need routing even when they do not appear in
-the utility's inter-module boundary-net list. Signal return is not automatically
-chassis or protective earth.
+Five physical boards, one per module above, rather than the two-module LF/HF
+split this document originally proposed - `circuits/pultec/partition.ts`
+assigns every reference component to exactly one of the five, following the
+built hardware's own section boundaries. The interconnect between boards adds
+only conductors and terminal blocks (`circuits/pultec/parts.ts`); a net
+crossing a board boundary is a declared port, never implicit. External
+signal/return ports need routing even where a board's own topology does not
+put them on its critical path - see the per-board module docblocks and
+`docs/pultec/unresolved.md` for the low/high frequency selectors' shared
+physical switch, which crosses board boundaries the same way.
 
 ## Validation gates
 

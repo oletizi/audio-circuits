@@ -47,6 +47,7 @@ import {
 } from "./perfboard-binary-verbs.ts"
 import type { GuideDeps } from "../guide/packet.ts"
 import { dispatchNetlistSync } from "./perfboard-netlist-verb.ts"
+import { dispatchWiring } from "./perfboard-wiring-verb.ts"
 import type { NetlistSyncDeps } from "../perfboard/netlist-sync.ts"
 import { schematicNoticeLines } from "../perfboard/schematic-notice.ts"
 import { dispatchBom } from "./perfboard-bom-verb.ts"
@@ -64,6 +65,7 @@ const VERBS = [
   ["board-info", "what this directory declares"],
   ["boards", "every declared board under this directory"],
   ["veroroute", "acquire the pinned VeroRoute fork (a no-op if already built)"],
+  ["wiring", "regenerate this board's panel wiring guide from its circuit"],
   ["netlist-sync", "regenerate a netlist export and reconcile it with its fixture (used by make)"],
   ["schematic-notice", "print the no-schematic-declared notice (used by make)"],
 ] as const
@@ -345,6 +347,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
 
   if (verb === "bom") return dispatchBom(cwd, args.slice(1), opts.bomDeps, opts.repoRoot, log, error)
 
+  if (verb === "wiring") return dispatchWiring(cwd, log, error)
   if (verb === "netlist-sync") return dispatchNetlistSync(args.slice(1), opts.netlistSyncDeps, log, error)
 
   if (verb === "schematic-notice") {

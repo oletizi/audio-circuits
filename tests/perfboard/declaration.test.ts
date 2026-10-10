@@ -18,7 +18,7 @@ function withDeclaration(contents: string, run: (file: string) => void): void {
 }
 
 const VALID = JSON.stringify({
-  circuit: "../../circuits/pt2399-core.ts", export: "pt2399Core", vrt: "board.vrt",
+  circuit: "../../circuits/pt2399-core/pt2399-core.ts", export: "pt2399Core", vrt: "board.vrt",
 })
 
 test("resolves both paths against the declaration's own directory", () => {
@@ -27,7 +27,7 @@ test("resolves both paths against the declaration's own directory", () => {
     expect(declaration.exportName).toBe("pt2399Core")
     expect(declaration.vrtPath).toBe(path.join(path.dirname(file), "board.vrt"))
     expect(declaration.circuitPath).toBe(
-      path.resolve(path.dirname(file), "../../circuits/pt2399-core.ts"),
+      path.resolve(path.dirname(file), "../../circuits/pt2399-core/pt2399-core.ts"),
     )
   })
 })
@@ -95,7 +95,7 @@ test("a board declaring neither sch nor netlist leaves both undefined", () => {
 test("sch and netlist resolve against the declaration's own directory, like every other path", () => {
   const contents = JSON.stringify({
     sch: "../sch/board.kicad_sch",
-    circuit: "../../circuits/pt2399-core.ts",
+    circuit: "../../circuits/pt2399-core/pt2399-core.ts",
     export: "pt2399Core",
     netlist: "../fixtures/board.net",
     vrt: "board.vrt",
@@ -110,7 +110,7 @@ test("sch and netlist resolve against the declaration's own directory, like ever
 test("an absolute sch path is honored as given, unmodified by the declaration's directory", () => {
   const contents = JSON.stringify({
     sch: "/absolute/path/board.kicad_sch",
-    circuit: "../../circuits/pt2399-core.ts",
+    circuit: "../../circuits/pt2399-core/pt2399-core.ts",
     export: "pt2399Core",
     netlist: "../fixtures/board.net",
     vrt: "board.vrt",
@@ -123,7 +123,7 @@ test("an absolute sch path is honored as given, unmodified by the declaration's 
 test("declaring sch without netlist is a refusal naming the fix", () => {
   const contents = JSON.stringify({
     sch: "../sch/board.kicad_sch",
-    circuit: "../../circuits/pt2399-core.ts",
+    circuit: "../../circuits/pt2399-core/pt2399-core.ts",
     export: "pt2399Core",
     vrt: "board.vrt",
   })
@@ -134,7 +134,7 @@ test("declaring sch without netlist is a refusal naming the fix", () => {
 
 test("declaring netlist without sch is a refusal naming the fix", () => {
   const contents = JSON.stringify({
-    circuit: "../../circuits/pt2399-core.ts",
+    circuit: "../../circuits/pt2399-core/pt2399-core.ts",
     export: "pt2399Core",
     netlist: "../fixtures/board.net",
     vrt: "board.vrt",

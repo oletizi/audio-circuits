@@ -1,0 +1,284 @@
+/**
+ * The short-circuit partition property, and Gate A2's coverage derived from it.
+ *
+ * WHAT THIS REPLACES. Gate A2 compares boundary admittances numerically, and for
+ * low-cut it cannot: low-cut's entire flat stand-in is one 0R pot arm between its two
+ * boundary nets, so those nets are one electrical node and the admittance between them
+ * is genuinely infinite. `boundaryAdmittance` refuses rather than comparing two large
+ * numbers that agree only in their leading digits. That refusal was right and its
+ * EXPRESSION was wrong: a list naming low-cut, which somebody has to remember.
+ *
+ * The general property is this file. For EVERY section, the stand-in and the original
+ * flat section must induce the same partition of boundary nets into short-circuit
+ * equivalence classes. low-cut's exemption then follows - its boundary falls into one
+ * class, so no finite admittance exists across it - and the set of sections A2 can
+ * cover is computed here from the partitions rather than written down.
+ *
+ * SETS OF SETS, NOT COUNTS. Two partitions with the same number of classes can group
+ * different nets, and `low-boost` is the live example: its boundary is three nets in
+ * two classes, because its flat pot arm shorts `lo_boost_in` to ground. A derivation
+ * that shorted `out` to ground instead would still report two classes. The third
+ * mutation below is exactly that error, and it is the one a count comparison passes.
+ */
+import { test, expect } from "bun:test"
+import { REFERENCE_FLAT, standIn } from "../../lib/board/scaffold/index.ts"
+import { resolveSectionFlat } from "../../lib/board/scaffold/flat.ts"
+import { boundaryPartition, isIdealShort } from "../../lib/board/scaffold/shorts.ts"
+import { boundaryAdmittance } from "../../lib/board/scaffold/admittance.ts"
+import { partitionReference } from "../../circuits/pultec/partition.ts"
+import type { ResolvedComponent } from "../../lib/model/control-state.ts"
+
+const modules = partitionReference().modules
+const SECTIONS = ["hi-boost", "hi-cut", "low-cut", "low-boost", "mid"] as const
+
+/** A partition in the one form two of them can be compared AS SETS OF SETS: members
+ * sorted inside each class, classes ordered by their members. Keys are deliberately
+ * discarded - a class representative is the lexicographic minimum over all nets,
+ * internal ones included, so two networks can agree on the classes while naming them
+ * differently. See `boundaryPartition`. */
+function classesOf(
+  components: readonly ResolvedComponent[],
+  boundary: ReadonlySet<string>,
+): readonly (readonly string[])[] {
+  return [...boundaryPartition(components, boundary).values()]
+    .map((members) => [...members].sort())
+    .sort(lexicographic)
+}
+
+/** Lexicographic order on two sorted lists of net names, compared member by member.
+ *
+ * NO JOINED SORT KEY, DELIBERATELY. Joining the members needs a separator that cannot
+ * occur in a net name, and the first version of this file reached for a NUL byte for
+ * that - which made a 224-line test artifact BINARY to git, undiffable in `git diff`,
+ * `git blame` and a PR, in a repository whose purpose is to be legible to a human
+ * designer. Comparing element by element needs no separator and assumes nothing about
+ * what a net may be called.
+ */
+function lexicographic(a: readonly string[], b: readonly string[]): number {
+  const shared = Math.min(a.length, b.length)
+  for (let index = 0; index < shared; index += 1) {
+    const left = a[index]!
+    const right = b[index]!
+    if (left !== right) return left < right ? -1 : 1
+  }
+  return a.length - b.length
+}
+
+interface SectionPartitions {
+  readonly boundary: ReadonlySet<string>
+  readonly standInComponents: readonly ResolvedComponent[]
+  readonly sectionComponents: readonly ResolvedComponent[]
+  readonly standIn: readonly (readonly string[])[]
+  readonly section: readonly (readonly string[])[]
+}
+
+const derivations = new Map<string, SectionPartitions>()
+
+/** One section's two partitions, derived on first use and memoised.
+ *
+ * LAZY ON PURPOSE, AND THAT IS A DIAGNOSTIC DECISION. An earlier version derived the
+ * coverage sets at module scope, which turned any throw inside the derivation into a
+ * module-load error: bun then reported a single "Unhandled error between tests" and ran
+ * none of this file's tests, where the same defect against a hand-written list produced
+ * ten NAMED gate failures. A suite that reports one anonymous error where it could name
+ * ten is a worse instrument, and a check that cannot say what broke is barely a check -
+ * which is this feature's whole premise. So the derivation happens inside the test that
+ * needs it: a broken derivation fails the tests it belongs to and leaves the rest
+ * reporting.
+ */
+function partitionsFor(sectionName: string): SectionPartitions {
+  const memoised = derivations.get(sectionName)
+  if (memoised !== undefined) return memoised
+  const derived = standIn(sectionName, modules, REFERENCE_FLAT)
+  const boundary = new Set(derived.boundary)
+  const whole = resolveSectionFlat(sectionName, modules, REFERENCE_FLAT)
+  const partitions: SectionPartitions = {
+    boundary,
+    standInComponents: derived.components,
+    sectionComponents: whole.components,
+    standIn: classesOf(derived.components, boundary),
+    section: classesOf(whole.components, boundary),
+  }
+  derivations.set(sectionName, partitions)
+  return partitions
+}
+
+test("THE PROPERTY: stand-in and flat section induce the same boundary partition", () => {
+  for (const section of SECTIONS) {
+    const { standIn: reduced, section: full } = partitionsFor(section)
+    // Equal as sets of sets. A class-count comparison would pass a derivation that
+    // merged the wrong pair of nets, which is the error the third mutation below
+    // injects on purpose.
+    expect(reduced, `${section}: stand-in partition vs section partition`).toEqual(full)
+  }
+})
+
+test("a partition covers every boundary net exactly once", () => {
+  // Non-vacuity for the property above: a helper that returned no classes, or dropped
+  // a net, would make every comparison trivially agree.
+  for (const section of SECTIONS) {
+    const { boundary, standIn: reduced, section: full } = partitionsFor(section)
+    for (const partition of [reduced, full]) {
+      const members = partition.flat()
+      expect(members.slice().sort(), `${section}: partition members`).toEqual(
+        [...boundary].sort(),
+      )
+      expect(new Set(members).size, `${section}: a net in two classes`).toBe(members.length)
+    }
+  }
+})
+
+test("the five sections' boundary partitions, written out", () => {
+  // Recorded evidence, not a driver: the coverage test below computes its sets from
+  // these partitions and never consults this table. It is here so a reader can see
+  // low-cut collapse, and low-boost hold three nets in two classes.
+  const written: Record<string, readonly (readonly string[])[]> = {
+    "hi-boost": [["hi_boost_out"], ["in"]],
+    "hi-cut": [["hi_boost_out"], ["lo_boost_in"]],
+    "low-cut": [["hi_boost_out", "out"]],
+    "low-boost": [["0", "lo_boost_in"], ["out"]],
+    mid: [["0"], ["hi_boost_out"], ["in"]],
+  }
+  for (const section of SECTIONS) {
+    expect(partitionsFor(section).section, section).toEqual(written[section]!)
+  }
+})
+
+/** The sections whose whole boundary collapses to ONE short-circuit class, computed
+ * from the partitions rather than listed. No section name decides this.
+ *
+ * ONE CLASS, NOT "FEWER THAN TWO". A boundary of fewer than two NETS also yields fewer
+ * than two classes, and it is a different missing thing: a degenerate boundary, nothing
+ * to do with ideal shorts. `standIn` refuses that case before a partition exists
+ * ("A section sharing fewer than two nets ... cannot be stood in for"), and
+ * `boundaryAdmittance` refuses it with its own message, so the two are never confused
+ * here - and `=== 1` says which one this filter means instead of leaving the equality
+ * of the two conditions to be inferred.
+ */
+function collapsedSections(): readonly string[] {
+  return SECTIONS.filter((section) => partitionsFor(section).section.length === 1)
+}
+
+function independentSections(): readonly string[] {
+  return SECTIONS.filter((section) => partitionsFor(section).section.length > 1)
+}
+
+test("the collapsed and independent sections together are every section", () => {
+  const collapsed = collapsedSections()
+  const independent = independentSections()
+  expect([...collapsed, ...independent].sort()).toEqual([...SECTIONS].sort())
+  expect(collapsed.length, "nothing collapses, so the refusal is never exercised")
+    .toBeGreaterThan(0)
+  expect(independent.length, "everything collapses, so Gate A2 covers nothing")
+    .toBeGreaterThan(0)
+})
+
+test("GATE A2 COVERAGE: the guard refuses exactly the collapsed sections", () => {
+  // This is the point of the whole file. The sets being looped over were computed from
+  // the partitions above; swap low-cut's stand-in for a non-shorting one and the
+  // coverage follows, with nothing to edit.
+  for (const section of collapsedSections()) {
+    const { boundary, standInComponents, sectionComponents } = partitionsFor(section)
+    expect(boundary.size, `${section} boundary`).toBeGreaterThanOrEqual(2)
+    expect(
+      () => boundaryAdmittance(standInComponents, boundary, 1000),
+      `${section}: stand-in should refuse`,
+    ).toThrow(/one electrical node/)
+    expect(
+      () => boundaryAdmittance(sectionComponents, boundary, 1000),
+      `${section}: flat section should refuse`,
+    ).toThrow(/one electrical node/)
+  }
+  for (const section of independentSections()) {
+    const { boundary, standInComponents, sectionComponents } = partitionsFor(section)
+    const reduced = boundaryAdmittance(standInComponents, boundary, 1000)
+    const full = boundaryAdmittance(sectionComponents, boundary, 1000)
+    expect(reduced.size, `${section}: stand-in presents no admittance`).toBeGreaterThan(0)
+    // A SECOND CLAIM, STRONGER THAN THE PROPERTY, AND NOT A CONSEQUENCE OF IT. Gate A2
+    // compares the two matrices key by key, and a key is a class REPRESENTATIVE - the
+    // lexicographic minimum over all nets in the class, internal ones included. So two
+    // networks can agree on the partition and still name a class differently, which
+    // `boundaryPartition`'s warning about keys spells out. This asserts the extra fact
+    // A2 relies on, and it can fail on its own: the regrouping mutation below reports a
+    // partition failure AND a matrix-keys failure, separately. A future section whose
+    // flat network gained an internal short with a smaller net name would fail here
+    // while the property still held - and that would be worth knowing, because A2's
+    // key-by-key comparison would have become meaningless.
+    expect([...reduced.keys()].sort(), `${section}: matrix keys`).toEqual(
+      [...full.keys()].sort(),
+    )
+  }
+})
+
+test("the sections Gate A2 cannot cover come out as low-cut, and only low-cut", () => {
+  // The CONSEQUENCE, recorded. If a reduction defect ever dropped low-cut's 0R arm, or
+  // added a short across another section's boundary, this fails - which is the loud
+  // failure a derived coverage set would otherwise hide.
+  expect(collapsedSections()).toEqual(["low-cut"])
+  expect(independentSections()).toEqual(["hi-boost", "hi-cut", "low-boost", "mid"])
+})
+
+function idealShort(id: string, a: string, b: string): ResolvedComponent {
+  return {
+    id,
+    kind: "resistor",
+    parameters: { ohms: 0 },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a, b } }],
+  }
+}
+
+test("THE PROPERTY CAN FAIL: dropping an ideal short splits a collapsed boundary", () => {
+  // low-cut's stand-in IS one 0R arm. A reduction that discarded it - the exact defect
+  // "ideal shorts are components, never node merges" exists to prevent - leaves the
+  // two boundary nets in separate classes while the section still holds them as one.
+  const before = partitionsFor("low-cut")
+  expect(before.standIn).toEqual(before.section)
+  const dropped = before.standInComponents.filter((c) => !isIdealShort(c))
+  expect(dropped.length, "low-cut's stand-in held no 0R arm to drop").toBe(
+    before.standInComponents.length - 1,
+  )
+  const mutated = classesOf(dropped, before.boundary)
+  expect(mutated).not.toEqual(before.section)
+  expect(mutated).toEqual([["hi_boost_out"], ["out"]])
+  // Reverted: nothing above touched the derivation, so the property holds again.
+  expect(partitionsFor("low-cut").standIn).toEqual(partitionsFor("low-cut").section)
+})
+
+test("THE PROPERTY CAN FAIL: adding an ideal short collapses an independent boundary", () => {
+  // The mirror defect, on a section the numerical gate does cover. hi-boost's boundary
+  // is `in` and `hi_boost_out` in two classes; short them and the stand-in claims a
+  // collapse the section does not have - and `boundaryAdmittance`, which decides its
+  // refusal from this same partition, stops comparing.
+  const before = partitionsFor("hi-boost")
+  expect(before.standIn).toEqual(before.section)
+  const added = [...before.standInComponents, idealShort("MUTANT", "in", "hi_boost_out")]
+  const mutated = classesOf(added, before.boundary)
+  expect(mutated).not.toEqual(before.section)
+  expect(mutated).toEqual([["hi_boost_out", "in"]])
+  expect(() => boundaryAdmittance(added, before.boundary, 1000)).toThrow(
+    /one electrical node/,
+  )
+  expect(partitionsFor("hi-boost").standIn).toEqual(partitionsFor("hi-boost").section)
+})
+
+test("THE PROPERTY CAN FAIL: regrouping the same number of classes is still a failure", () => {
+  // The mutation a count comparison passes. low-boost's flat pot arm shorts
+  // `lo_boost_in` to ground; move that short to `out` and the boundary still falls into
+  // two classes, of the same sizes, grouping different nets.
+  const before = partitionsFor("low-boost")
+  expect(before.standIn).toEqual(before.section)
+  const regrouped = before.standInComponents.map((component) =>
+    isIdealShort(component) ? idealShort(component.id, "0", "out") : component,
+  )
+  const mutated = classesOf(regrouped, before.boundary)
+  expect(mutated.length, "the count is unchanged, which is the point").toBe(
+    before.section.length,
+  )
+  expect(mutated.map((c) => c.length).sort(), "the class sizes are unchanged too").toEqual(
+    before.section.map((c) => c.length).sort(),
+  )
+  expect(mutated).not.toEqual(before.section)
+  expect(mutated).toEqual([["0", "out"], ["lo_boost_in"]])
+  expect(partitionsFor("low-boost").standIn).toEqual(partitionsFor("low-boost").section)
+})

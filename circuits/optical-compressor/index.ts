@@ -97,7 +97,7 @@ const SC_IN = "SC_IN"
  * states it. The spec names most of its parts (R_SHUNT, C_DET, J_PEAK) rather
  * than giving reference designators, and ids here are semantic, so this is where
  * the two vocabularies meet - the same role `DESIGNATORS` plays in
- * `circuits/pt2399-core.ts`, for a source that has designators. */
+ * `circuits/pt2399-core/pt2399-core.ts`, for a source that has designators. */
 export const SPEC_NAMES: Readonly<Record<string, string>> = {
   power_power_terminal: "J_PWR (10.1)",
   power_reverse_polarity_diode: "series 1N5817 reverse-polarity protection (8.1)",

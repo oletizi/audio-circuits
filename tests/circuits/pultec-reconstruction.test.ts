@@ -1,0 +1,80 @@
+/**
+ * THE ALL-FIVE CONFIGURATION reconstructs the reference exactly.
+ *
+ * The networks here are `boardNetwork(section, ALL)`, NOT the maximal networks the five
+ * modules export. With every section built, no board carries any stand-in group - the
+ * supplier rule has nothing to assign - so each board's configuration network is its
+ * own parts plus the junction, and the five of them must compose back into
+ * `THREE_BAND_REFERENCE` as a graph.
+ *
+ * That is a claim about the CONFIGURATION, and it is false of the maximal network on
+ * purpose: standalone, a board carries four other sections' stand-in parts, which are
+ * not in the reference and must not be. The layout is checked against the maximal
+ * network; this is checked against the model. See `circuits/pultec/physical/board.ts`.
+ */
+import { test, expect } from "bun:test"
+import { assertSameTopology } from "../../lib/model/topology.ts"
+import { physicalOnly, projectPhysical } from "../../lib/board/physicalize.ts"
+import { THREE_BAND_REFERENCE } from "../../circuits/pultec/electrical/three-band.ts"
+import type { Component, Network } from "../../lib/model/types.ts"
+import { boardNetwork } from "../../circuits/pultec/physical/board.ts"
+import { LADDER_ORDER } from "../../lib/board/scaffold/supplier.ts"
+
+const ALL: ReadonlySet<string> = new Set(LADDER_ORDER)
+
+// Reversed on purpose: reconstruction must not depend on board order.
+const BOARDS: readonly (() => Network)[] = [
+  "mid", "hi-boost", "hi-cut", "low-boost", "low-cut",
+].map((section) => () => boardNetwork(section, ALL))
+
+/**
+ * The five boards wired together: every board's electrical content, with the
+ * junction rows projected away.
+ *
+ * Joining the boards needs no explicit step. Nets are implied by pin references
+ * and the crossing nets carry the same name on every board, so two boards'
+ * components naming "hi_boost_out" are already on one net the moment they sit
+ * in one component list. The junction is where that wire physically lands,
+ * which is exactly why projecting it away leaves the circuit unchanged.
+ */
+function reconstructed(): Network {
+  const components: Component[] = []
+  for (const build of BOARDS) components.push(...projectPhysical(build()).components)
+  return { ports: THREE_BAND_REFERENCE.ports, components }
+}
+
+test("partitioning, physicalization and interconnection do not change the circuit", () => {
+  expect(() => assertSameTopology(THREE_BAND_REFERENCE, reconstructed())).not.toThrow()
+})
+
+test("every reference component is on exactly one board", () => {
+  const counts = new Map<string, number>()
+  for (const component of reconstructed().components) {
+    counts.set(component.id, (counts.get(component.id) ?? 0) + 1)
+  }
+  const duplicated = [...counts].filter(([, n]) => n > 1).map(([id]) => id).sort()
+  expect(duplicated).toEqual([])
+
+  const missing = THREE_BAND_REFERENCE.components
+    .map((c) => c.id)
+    .filter((id) => !counts.has(id))
+    .sort()
+  expect(missing).toEqual([])
+})
+
+test("the junction's two rows are the only thing projection removes", () => {
+  // Two per board, not one: the junction is modelled as a signal row and a
+  // ground row (no verified VeroRoute shape for a single 2x05 part - see
+  // junctionComponents in circuits/pultec/physical/parts.ts).
+  let projected = 0
+  for (const build of BOARDS) projected += build().components.filter(physicalOnly).length
+  expect(projected).toBe(BOARDS.length * 2)
+})
+
+test("removing a board is caught, so the test is not vacuous", () => {
+  const short: Network = {
+    ports: THREE_BAND_REFERENCE.ports,
+    components: BOARDS.slice(1).flatMap((build) => [...projectPhysical(build()).components]),
+  }
+  expect(() => assertSameTopology(THREE_BAND_REFERENCE, short)).toThrow()
+})
