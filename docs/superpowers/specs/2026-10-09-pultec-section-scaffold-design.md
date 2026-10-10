@@ -105,9 +105,10 @@ this table and the artifact ever disagree, the artifact is right and this table 
 
 Fifteen components in total. The 25.3 nF is the 22 nF and 3.3 nF of mid's 1 kHz position in
 parallel; the 1 H is its `L_MID_1H` tap; the 4k7 is `R_MID_BOOST`. The 0-ohm branches here
-are **circuit elements** - the pot arms that flat resolves to a short - and are not to be
-confused with the removable isolation links of the next section, which are configuration
-hardware. They are carried as components with both of their nets, never as node merges, for
+are **circuit elements** - the pot arms that flat resolves to a short - and are not
+configuration hardware. (An earlier revision warned against confusing them with removable
+isolation links; those links are deleted, and a build is configured by which parts are
+populated.) They are carried as components with both of their nets, never as node merges, for
 the reasons under Reduction below; that is why hi-boost is two parts rather than one and mid
 is six rather than five.
 
@@ -216,6 +217,24 @@ every net up through it. The footprint is the same two rows of five holes a plai
 pads - so the layout does not change with the choice, and a bench build can still use a
 ribbon socket or individual leads on the same pattern before anything is stacked.
 
+**In the model it is TWO 1x05 components, and that is a limit of the layout tool rather
+than a second part.** `lib/kicad/import-string.ts` derives a VeroRoute import string only
+for the families the pinned fork's `Src/CompTypes.h` actually has - `SIP<n>`, from
+`PinHeader_1x<n>_*` - and that fork has no two-row shape at 2.54 mm ROW pitch: `SIP` is one
+row, `DIP`'s real row spacing is 0.3 in and more, and `BLOCK_100`/`BLOCK_200` are single-row
+terminal blocks. Mapping a 2.54 mm 2x05 onto `DIP` would be exactly the footprint-name-lies
+error this repository has shipped twice. So `junctionComponents()` returns two
+`PinHeader_1x05_P2.54mm_Vertical` rows on adjacent rows of the identical pin field, and they
+carry `part.pinField` (`lib/model/types.ts`) declaring that they are two rows of ONE part -
+which is what makes the generated build guide say "fit a single 2x05 long-tail (stacking)
+header" rather than naming two plain 1x05 headers a builder would then be unable to stack.
+Nothing physical is lost: the holes, the pitch, the pinout and the part you fit are the ones
+this section describes. What is lost is model tidiness - KiCad sees two connectors where the
+hardware is one - which would matter to a future PCB footprint placement and does not to
+this stripboard design. **Do not "correct" this back to a single `HEADER_2X05`** without
+first checking the fork's `CompTypes.h`; an earlier revision of this section named one
+component, and the ruling that split it is recorded in the plan ledger's Task 1 entry.
+
 Pinout, with a ground return beside each signal:
 
 | Pin | Net | Pin | Net |
@@ -300,8 +319,8 @@ resolves to 0 ohms is emitted as a zero-ohm component carrying both of its disti
 must not be collapsed by merging its two nodes, for two reasons: the branch beyond a short is
 live, not floating - the omission that made the earlier design wrong - and merging would
 destroy a stand-in outright. Low-cut's entire stand-in *is* a short between `hi_boost_out` and
-`out`; merge those nodes and there is nothing left to make removable, and the terminal count
-collapses from two to one.
+`out`; merge those nodes and the stand-in is gone, its terminal count collapsing from two to
+one, and a one-terminal group is no ladder link.
 
 This rule governs what a stand-in CONTAINS, not how liveness is computed, and the two must be
 kept apart. The liveness test above reasons over electrical nodes precisely BECAUSE a short is
@@ -592,7 +611,7 @@ value, which is quiet, plausible and wrong.
 | Short-circuit partition | the stand-in and the original flat section induce the SAME partition of boundary nets into short-circuit equivalence classes, asserted for every section. This is the general property; low-cut's exemption from numerical comparison is then a consequence of it rather than a carve-out - its two boundary nets fall in one class, so no finite admittance exists between them, the guard refuses, and the admittance comparison runs over whatever independent classes remain |
 | Exactly one supplier | for every build, each absent section's stand-in is fitted on exactly one present board, chosen deterministically and stated in the generated guide; two boards fitting the same group is a defect the guide must make impossible to reach by following it |
 | One layout per board | the layout is identical for every configuration; a configuration differs only in which positions are populated and whether the junction is wired |
-| Junction | one 2x05 at 2.54 mm per board, same pads on every board, carrying all five ladder nets with interleaved ground returns. Fitted with a stacking header so boards stack and the nets form a shared bus; a ribbon socket or individual leads work on the same pads for a bench build. A 1x05 screw terminal does NOT fit - its body overhangs the second row |
+| Junction | one 2x05 pin field at 2.54 mm per board, same pads on every board, carrying all five ladder nets with interleaved ground returns. Fitted with a stacking header so boards stack and the nets form a shared bus; a ribbon socket or individual leads work on the same pads for a bench build. A 1x05 screw terminal does NOT fit - its body overhangs the second row. Modelled as two 1x05 components declared to be rows of one field, because the pinned VeroRoute fork has no two-row shape at 2.54 mm row pitch - see the junction section - and the generated guide must therefore name the one stacking header rather than the two rows |
 | Composition | all 31 non-empty section combinations pass, to `1e-6` dB on unrounded values |
 | Control interaction | simultaneous control vectors match the full reference, including the boost-and-cut pairs |
 | Frequency contract | the fixture's declared frequency state equals the reference model's; a mismatch fails |

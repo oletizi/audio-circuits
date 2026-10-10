@@ -70,7 +70,9 @@ tests/board/scaffold-partition.test.ts NEW: short-circuit partition property
 
 **Files:** Modify `circuits/pultec/physical/parts.ts`; Test `tests/pultec/partition.test.ts` or the nearest existing physicalization test; the five `boards/pultec-*/wiring.md` are regenerated.
 
-**Interfaces:** Produces `HEADER_2X05`, and `junctionComponent(): Component` replacing the `board_terminals` construction.
+**Interfaces:** Produces `HEADER_1X05`, and `junctionComponents(): readonly [Component, Component]` replacing the `board_terminals` construction.
+
+**AS EXECUTED, NOT AS WRITTEN BELOW.** This task was planned around one `HEADER_2X05` and a single `junctionComponent()`, and neither exists: the pinned VeroRoute fork's `Src/CompTypes.h` has no two-row shape at 2.54 mm row pitch, so the one 2x05 pin field is modelled as two `PinHeader_1x05_P2.54mm_Vertical` rows declared to be rows of one part (`part.pinField`). The hardware is unchanged - one 2x05 long-tail stacking header - and the generated guide says so. The illustrative test code in the steps below still names the single component; the ruling is in the progress ledger's Task 1 entry and the reasoning is now in the spec's junction section, which is the authority.
 
 - [ ] **Step 1: Write the failing test**
 
