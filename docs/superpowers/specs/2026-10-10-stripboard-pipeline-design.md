@@ -150,6 +150,7 @@ is not made worse here: no new limit takes the number 8, and no new hard constra
 | H7 | The layout still matches the circuit. | `--check`'s schematic-delta section is empty. |
 | H8 | **Netlist equivalence, reconstructed from copper.** The connected components of the board's copper, computed outside VeroRoute, partition the pins exactly as the reference netlist does — no reference net split across two components (an open) and no two reference nets inside one component (a short). | Milestone 1 item M1.7, which is the only item that makes the geometry readable at all. §4.7 says why H1–H3 and H7 do not already cover this and what it costs. |
 | H9 | **Every lead span at or above the part's own physical minimum** — a `minSpanHoles` **lower** bound. | The per-family `minSpanHoles` in the same span data module, enforced the same way H5 is. §8.3 says why H4 and H5 leave this open and why a manual audit is not the remedy. |
+| H10 | **Every placed part's pins lie on straight lines parallel to the strips.** A footprint whose pins sit on a circle, an arc, or any pattern that cannot be decomposed into rows parallel to the strip direction is not placeable on stripboard, and the pipeline refuses it rather than placing it. | The owner's rule, stated 2026-10-10: *"I'm not going to mount a round switch into a stripboard. That never works. Round footprints do not work well with stripboard."* See §2.3.1 for what this does and does not forbid, and for the two places the repository already follows it. |
 
 **Overlap is not a separate constraint, and that is why H3 matters so much.**
 `Board::CanPutDown` refuses a placement that collides with occupied holes (MOVE §1.3), so
@@ -208,6 +209,42 @@ report the agent did not write or a number the owner supplied.
 Legibility is not thereby dismissed. It enters the way the parent says it may: through a
 reviewed, circuit-independent rule library, or through an independent reviewing agent that
 is never the author (§9.4). Never as a term in `F`.
+
+### 2.3.1 Round pin patterns are refused, and what that does not mean
+
+H10 forbids placing a footprint whose pins sit on a circle or an arc. A strip is a straight
+line of copper, so a circle of pins crosses a different strip at nearly every pin and shares
+one with pins it must not share with — every such hole becomes a cut, and the body sits over
+holes it does not use. The owner's judgement is blunter and worth preserving verbatim: *"I'm
+not going to mount a round switch into a stripboard. That never works."*
+
+**This is a rule about PIN GEOMETRY, not about body shape, and the distinction decides
+whether the rule is useful or catastrophic.** A radial electrolytic has a cylindrical body and
+two leads in a straight line; it is placeable, and `CP_Radial_D5.0mm_P2.00mm` and its
+siblings carry derived spans in the span data module precisely because they are. Read H10 as
+banning round bodies and every electrolytic on every board becomes unplaceable.
+
+The repository already follows this rule in two places, which is evidence it is the settled
+practice rather than a new constraint:
+
+- `circuits/pultec/off-board.ts` puts all six rotary selectors off-board **permanently**, with
+  the reason stated at the definition: a six- or eleven-position rotary is a panel-mount part
+  with a shaft and a bushing and "does not mount on stripboard under any variant". That file
+  is the single definition of residency, and it is data rather than a rule about kinds because
+  residency is a build decision the owner keeps open — but this entry is marked permanent,
+  unlike the inductors, which are off-board only pending a part choice.
+- The span data module admits `TO-92_Inline` and not the triangular TO-92. The inline variant
+  was chosen deliberately; the arc variant would fail H10.
+
+The parent design records one qualification, and it is about scope rather than correctness:
+the shaft-and-bushing reasoning "is a claim about *stripboard*, and it is right about
+stripboard. PCB-mount rotaries exist" — so H10 binds this pipeline and must not be carried
+into the PCB pipeline (T1) as though it were a general truth about rotaries.
+
+**Refuse, never route around.** A circuit needing a round-pattern part on a board gets that
+part declared off-board with its terminals wired back, as the Pultec's selectors are. The
+pipeline does not get to decide that for itself: residency is the circuit's own data, so the
+refusal names the part and points at the residency set, and a human moves it.
 
 ### 2.4 `F` and the ranking are two things, and the ranking has one geometric term
 
