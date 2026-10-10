@@ -343,11 +343,11 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     return dispatchStripboard(cwd, args.slice(1), opts.verbDeps, opts.repoRoot, log, error)
   }
 
-  if (verb === "wiring") return dispatchWiring(cwd, log, error)
-
   if (verb === "guide") return dispatchGuide(cwd, args.slice(1), opts.guideDeps, opts.repoRoot, log, error)
 
   if (verb === "bom") return dispatchBom(cwd, args.slice(1), opts.bomDeps, opts.repoRoot, log, error)
+
+  if (verb === "wiring") return dispatchWiring(cwd, log, error)
 
   if (verb === "netlist-sync") return dispatchNetlistSync(args.slice(1), opts.netlistSyncDeps, log, error)
 
