@@ -68,6 +68,11 @@ through a leave-one-in matrix, to reactive branches a resistor cannot fake: hi-c
 pot arm sits in parallel with `R1` plus the selected capacitor, and mid's flat path runs
 through its selected capacitors, an inductor tap and `R_MID_BOOST`.
 
+(Both halves of that measurement were taken with mid's mode switch in `boost`. The reference
+now holds it at `off`, where mid's flat state IS purely resistive - see **The stand-ins** -
+so hi-cut is the live example today. The conclusion is unchanged: it only takes one reactive
+flat section to rule out a resistor-per-section scaffold, and hi-cut is one.)
+
 ## The design
 
 **A section's flat state reduces to an exact, small R/L/C network, and the scaffold is that

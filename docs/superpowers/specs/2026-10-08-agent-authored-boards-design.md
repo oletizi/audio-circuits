@@ -676,9 +676,18 @@ omitted and all five sections present must recover a graph **strictly equivalent
 reference network. Not "the scaffold measures as inert" - graph equivalence.
 
 The limits are measured and stated in the child spec: stand-in values are specific to the
-frequency setting they emulate (up to 3.71 dB error if the circuit is set elsewhere), the low
-selectors are ganged, standing in for mid needs a 1 H inductor that has no part number, and
-the metric is action rather than absolute level.
+setting they emulate (up to 3.71 dB error if the circuit is set elsewhere - an upper bound
+measured at an earlier reference setting and not re-measured since), one selector gang can
+move a present section's shaft without moving the stand-in covering the absent one it shares
+with, and the metric is action rather than absolute level.
+
+**The scaffold needs no inductor, and that is a derived result rather than a given.** An
+earlier reference flat state put mid's mode switch in `boost`, which made standing in for mid
+need a 1 H coil with no part number, on four boards that carry no mid section. Holding the
+reference at `off` - where the mode switch leaves the coil's return connected to nothing, so
+the whole branch reduces away as inert - removed it. The nine inductors remain an open part
+question for the sections that really have them; the scaffold no longer spreads that question
+across every board.
 
 ## What the operator still decides
 
