@@ -114,32 +114,57 @@ function describeConnector(component: Component): string {
   )
 }
 
+/**
+ * Refuse a part whose description would be the bare kind.
+ *
+ * "potentiometer" with no value, "4-position switch" with no positions, or an unknown
+ * kind's own name are all the SAME defect `describeConnector` refuses: a line somebody
+ * orders a part from, with the part left out. The value-less form reads as a complete
+ * answer, so nothing downstream can tell it from a described part - which is the
+ * skipped check that looks like a passing one.
+ */
+function noDescription(component: Component, missing: string): never {
+  throw new Error(
+    `${component.kind} "${component.id}" has no ${missing}, so there is nothing to describe ` +
+      "it by. A build guide's part line is what somebody orders from, and a line naming only " +
+      `the kind ("${component.kind}") reads as a complete answer while leaving out the part - ` +
+      "the same defect describeConnector in lib/board/part-text.ts refuses for a connector " +
+      `with no footprint. Give it ${missing}, keep it out of the wiring guide, or - for a kind ` +
+      "this function has no words for - add that kind to describePart in " +
+      "lib/board/part-text.ts, with the words for the part somebody actually fits.",
+  )
+}
+
 /** A one-line description of the part, for somebody holding it. */
 export function describePart(component: Component): string {
   const parameters: Record<string, unknown> = { ...component.parameters }
   if (component.kind === "potentiometer") {
     const ohms = parameters["ohms"]
-    const curve = taperName(parameters["taper"])
-    return typeof ohms === "number" ? `${ohmsText(ohms)} ${curve} potentiometer` : "potentiometer"
+    if (typeof ohms !== "number") return noDescription(component, "numeric ohms")
+    return `${ohmsText(ohms)} ${taperName(parameters["taper"])} potentiometer`
   }
   if (component.kind === "inductor") {
     const henries = parameters["henries"]
-    return typeof henries === "number" ? `${henriesText(henries)} inductor` : "inductor"
+    if (typeof henries !== "number") return noDescription(component, "numeric henries")
+    return `${henriesText(henries)} inductor`
   }
   if (component.kind === "switch") {
     const positions = parameters["positions"]
-    return Array.isArray(positions) ? `${positions.length}-position switch` : "switch"
+    if (!Array.isArray(positions)) return noDescription(component, "positions array")
+    return `${positions.length}-position switch`
   }
   if (component.kind === "capacitor") {
     const farads = parameters["farads"]
-    return typeof farads === "number" ? faradsText(farads) : "capacitor"
+    if (typeof farads !== "number") return noDescription(component, "numeric farads")
+    return faradsText(farads)
   }
   if (component.kind === "resistor") {
     const ohms = parameters["ohms"]
-    return typeof ohms === "number" ? ohmsText(ohms) : "resistor"
+    if (typeof ohms !== "number") return noDescription(component, "numeric ohms")
+    return ohmsText(ohms)
   }
   if (component.kind === "connector") return describeConnector(component)
-  return component.kind
+  return noDescription(component, "words in describePart for its kind")
 }
 
 /** A pin field as its rows actually are: how many rows, and the shape they agree on. */

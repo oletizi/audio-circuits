@@ -295,6 +295,44 @@ test("a connector with no footprint refuses: the kind cannot say what the part i
   expect(() => wiringDocument(input)).toThrow(/no footprint/)
 })
 
+/**
+ * A part the guide can only name by its kind refuses, rather than printing the kind.
+ *
+ * The same defect `describeConnector` refuses, one step quieter: "capacitor" with no
+ * value, or a kind describePart has no words for, reads as a complete answer on the one
+ * line somebody orders a part from. A silent degradation is indistinguishable
+ * downstream from a described part, which is the skipped check that looks like a
+ * passing one.
+ */
+test("a part with no value refuses rather than printing its bare kind", () => {
+  const valueless: Component = { ...CAP, id: "C_NO_VALUE", parameters: {} }
+  const input: WiringInput = {
+    ...INPUT,
+    network: { ...NETWORK, components: [valueless, POT, SELECTOR, MODE, BLOCK, HEADER] },
+    designators: { ...INPUT.designators, C_NO_VALUE: "C_NO_VALUE" },
+  }
+  expect(() => wiringDocument(input)).toThrow(/C_NO_VALUE/)
+  expect(() => wiringDocument(input)).toThrow(/numeric farads/)
+})
+
+test("a kind the guide has no words for refuses, naming where to add them", () => {
+  const diode: Component = {
+    id: "D_CLAMP",
+    kind: "diode",
+    parameters: {},
+    part: { footprint: "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal" },
+    pins: {},
+    units: [{ name: "MAIN", pins: { anode: net("IN"), cathode: net("0") } }],
+  }
+  const input: WiringInput = {
+    ...INPUT,
+    network: { ...NETWORK, components: [CAP, POT, SELECTOR, MODE, BLOCK, HEADER, diode] },
+    designators: { ...INPUT.designators, D_CLAMP: "D1" },
+  }
+  expect(() => wiringDocument(input)).toThrow(/D_CLAMP/)
+  expect(() => wiringDocument(input)).toThrow(/describePart/)
+})
+
 test("a crossing net no other board touches says so rather than showing a blank", () => {
   const doc = wiringDocument(INPUT)
   // Net "0" is the chassis landing here: physical-only, reaching no other board.
