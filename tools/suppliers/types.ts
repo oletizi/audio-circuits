@@ -26,6 +26,15 @@ export interface SupplierOffer {
    * offer per product variation - "Cut Tape (CT)", "Tape & Reel (TR)" ...). Mouser lists
    * packaging among `parameters` instead, so its offers leave this absent. */
   readonly packaging?: string
+  /** Digi-Key: a per-order reeling fee (USD) this listing charges on top of its price breaks
+   * (a Digi-Reel). A catalog source cannot record it, so `parts source` refuses the listing. */
+  readonly reelingFee?: number
+  /** Digi-Key: on a listing with a reeling fee, the same product's cut-tape listing, which
+   * has the same breaks without the fee - what `parts source` names instead. */
+  readonly cutTapeSku?: string
+  /** Digi-Key: the third-party seller of a Marketplace listing (not sold by Digi-Key
+   * itself). `parts source` refuses it. */
+  readonly marketplaceSeller?: string
   /** Absent when the supplier does not state it (Mouser: null, absent or empty string;
    * Digi-Key: a variation without `QuantityAvailableforPackageType`). */
   readonly stock?: number

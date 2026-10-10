@@ -156,6 +156,18 @@ test("mouserClient rewrites a request URL echoed in an HTTP error body to the en
   await expect(client.search("10uF", 5)).rejects.not.toThrow(secret)
 })
 
+test("mouserClient redacts the api key, plain or percent-encoded, from an HTTP error body that echoes it", async () => {
+  const secret = "k/e+y=1 2"
+  const echoing: FetchLike = async () => ({
+    status: 401,
+    text: async () => `key ${secret} or ${encodeURIComponent(secret)} rejected`,
+  })
+  const message = await mouserClient({ apiKey: secret }, echoing, TODAY)
+    .search("10uF", 5)
+    .catch((error: unknown) => (error instanceof Error ? error.message : ""))
+  expect(message).toBe("Mouser search/keyword request failed (HTTP 401): key <redacted> or <redacted> rejected")
+})
+
 test("mouserClient URL-encodes the api key in the query string", async () => {
   const seen: string[] = []
   const recording: FetchLike = async (url) => {

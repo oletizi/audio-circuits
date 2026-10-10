@@ -37,12 +37,27 @@ export interface JsonResponse {
   readonly json: unknown
 }
 
-function redact(text: string, request: JsonRequest): string {
-  let out = text.split(request.url).join(request.endpointPath)
-  for (const secret of request.secrets) {
-    if (secret !== "") out = out.split(secret).join("<redacted>")
+/** Every form in which `secret` can travel in a request, and so be echoed back: as is,
+ * percent-encoded (a query string or path), and form-encoded (`URLSearchParams`: spaces as
+ * `+`). Longest first, so a longer encoding is never left half-replaced. */
+function secretForms(secret: string): readonly string[] {
+  const forms = new Set([secret, encodeURIComponent(secret), new URLSearchParams({ s: secret }).toString().slice(2)])
+  return [...forms].sort((a, b) => b.length - a.length)
+}
+
+/** `text` with every form of every secret replaced by `<redacted>`, and `url` (which may
+ * carry one) by `endpointPath`. */
+export function redactSecrets(text: string, secrets: readonly string[], url: string, endpointPath: string): string {
+  let out = text.split(url).join(endpointPath)
+  for (const secret of secrets) {
+    if (secret === "") continue
+    for (const form of secretForms(secret)) out = out.split(form).join("<redacted>")
   }
   return out
+}
+
+function redact(text: string, request: JsonRequest): string {
+  return redactSecrets(text, request.secrets, request.url, request.endpointPath)
 }
 
 export async function requestJson(fetch: FetchLike, supplier: SupplierName, request: JsonRequest): Promise<JsonResponse> {
@@ -79,8 +94,9 @@ export async function requestJson(fetch: FetchLike, supplier: SupplierName, requ
   try {
     json = JSON.parse(text)
   } catch (error) {
-    const detail = error instanceof Error ? redact(error.message, request) : String(error)
-    throw new Error(`${supplier} ${endpointPath}: response body was not valid JSON: ${detail}`)
+    const detail = error instanceof Error ? redact(error.message, request) : "unknown parse error"
+    const status = passed ? ` (HTTP ${response.status})` : ""
+    throw new Error(`${supplier} ${endpointPath}${status}: response body was not valid JSON: ${detail}`)
   }
   return { status: response.status, json }
 }
@@ -91,6 +107,7 @@ export async function postJson(
   url: string,
   endpointPath: string,
   body: unknown,
+  secrets: readonly string[],
 ): Promise<unknown> {
   const response = await requestJson(fetch, supplier, {
     method: "POST",
@@ -98,7 +115,7 @@ export async function postJson(
     endpointPath,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    secrets: [],
+    secrets,
   })
   return response.json
 }

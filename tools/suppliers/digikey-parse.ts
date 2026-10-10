@@ -98,20 +98,42 @@ function parseParameters(value: unknown, where: string): Record<string, string> 
 
 /** The variation's package type, plus what else Digi-Key states about buying it that the
  * breaks alone do not show: a Digi-Reel fee, or a Marketplace seller. */
-function parsePackaging(record: Record<string, unknown>, sku: string, where: string): string {
+interface Packaging {
+  readonly packageName: string
+  readonly packaging: string
+  readonly reelingFee?: number
+  readonly marketplaceSeller?: string
+}
+
+function parsePackaging(record: Record<string, unknown>, sku: string, where: string): Packaging {
   const packageType = requireRecord(record["PackageType"], `${sku}'s PackageType`, where)
-  let packaging = requireNonEmptyString(packageType["Name"], `${sku}'s PackageType.Name`, where)
+  const packageName = requireNonEmptyString(packageType["Name"], `${sku}'s PackageType.Name`, where)
+  let packaging = packageName
+  let reelingFee: number | undefined
+  let marketplaceSeller: string | undefined
   const fee = record["DigiReelFee"]
   if (fee !== null && fee !== undefined) {
     const amount = requireFiniteNumber(fee, `${sku}'s DigiReelFee`, where)
-    if (amount > 0) packaging += ` (plus a $${amount.toFixed(2)} Digi-Reel fee per order)`
+    if (amount > 0) {
+      reelingFee = amount
+      packaging += ` (plus a $${amount.toFixed(2)} Digi-Reel fee per order)`
+    }
   }
   if (record["MarketPlace"] === true) {
     const supplier = requireRecord(record["Supplier"], `${sku}'s Supplier`, where)
-    packaging += `, Marketplace seller ${requireNonEmptyString(supplier["Name"], `${sku}'s Supplier.Name`, where)}`
+    marketplaceSeller = requireNonEmptyString(supplier["Name"], `${sku}'s Supplier.Name`, where)
+    packaging += `, Marketplace seller ${marketplaceSeller}`
   }
-  return packaging
+  return {
+    packageName,
+    packaging,
+    ...(reelingFee !== undefined ? { reelingFee } : {}),
+    ...(marketplaceSeller !== undefined ? { marketplaceSeller } : {}),
+  }
 }
+
+/** Digi-Key's name for cut tape, as the recordings state it. */
+const CUT_TAPE = "Cut Tape (CT)"
 
 interface ProductFields {
   readonly manufacturer: string
@@ -122,7 +144,13 @@ interface ProductFields {
   readonly parameters: Readonly<Record<string, string>>
 }
 
-function parseVariation(value: unknown, index: number, product: ProductFields, where: string, fetched: string): SupplierOffer {
+interface ParsedVariation {
+  readonly offer: SupplierOffer
+  /** Digi-Key's own cut tape: no reeling fee, not a Marketplace listing. */
+  readonly isCutTape: boolean
+}
+
+function parseVariation(value: unknown, index: number, product: ProductFields, where: string, fetched: string): ParsedVariation {
   const record = requireRecord(value, `${product.mpn}'s ProductVariations[${index}]`, where)
   const sku = requireNonEmptyString(
     record["DigiKeyProductNumber"],
@@ -130,7 +158,8 @@ function parseVariation(value: unknown, index: number, product: ProductFields, w
     where,
   )
   const breaks = parseBreaks(record["StandardPricing"], sku, where)
-  return {
+  const { packageName, packaging, reelingFee, marketplaceSeller } = parsePackaging(record, sku, where)
+  const offer: SupplierOffer = {
     supplier: "Digi-Key",
     sku,
     manufacturer: product.manufacturer,
@@ -138,12 +167,18 @@ function parseVariation(value: unknown, index: number, product: ProductFields, w
     description: product.description,
     url: product.url,
     ...(product.datasheetUrl !== undefined ? { datasheetUrl: product.datasheetUrl } : {}),
-    packaging: parsePackaging(record, sku, where),
+    packaging,
+    ...(reelingFee !== undefined ? { reelingFee } : {}),
+    ...(marketplaceSeller !== undefined ? { marketplaceSeller } : {}),
     stock: parseStock(record["QuantityAvailableforPackageType"], sku, where),
     currency: breaks.length > 0 ? "USD" : undefined,
     breaks,
     parameters: product.parameters,
     fetched,
+  }
+  return {
+    offer,
+    isCutTape: packageName === CUT_TAPE && reelingFee === undefined && marketplaceSeller === undefined,
   }
 }
 
@@ -168,7 +203,12 @@ function parseProduct(value: unknown, what: string, endpoint: string, fetched: s
   if (variations.length === 0) {
     throw new Error(`Digi-Key ${where}: ${mpn} has no ProductVariations, so nothing to order it as.`)
   }
-  return variations.map((variation, index) => parseVariation(variation, index, product, where, fetched))
+  const parsed = variations.map((variation, index) => parseVariation(variation, index, product, where, fetched))
+  // A listing with a reeling fee points at the same product's own cut tape, when it has one.
+  const cutTape = parsed.find((item) => item.isCutTape)?.offer.sku
+  return parsed.map(({ offer }) =>
+    offer.reelingFee !== undefined && cutTape !== undefined ? { ...offer, cutTapeSku: cutTape } : offer,
+  )
 }
 
 /** A product-details response: every variation of the one product. */
@@ -181,18 +221,47 @@ export function parseDetails(json: unknown, endpoint: string, fetched: string): 
 export interface KeywordOffers {
   readonly products: readonly SupplierOffer[]
   readonly exactMatches: readonly SupplierOffer[]
+  /** How many products (not offers) this page's `Products` held. */
+  readonly pageProducts: number
+  /** `ProductsCount`: how many products the whole search found, across every page. */
+  readonly totalProducts: number
 }
 
-/** A keyword-search response: the offers of `Products` and of `ExactMatches`, apart. */
+/** A keyword-search response: the offers of `Products` and of `ExactMatches`, apart, and
+ * the counts `lookup` pages by. */
 export function parseKeyword(json: unknown, endpoint: string, fetched: string): KeywordOffers {
   const record = requireRecord(json, "the response", endpoint)
   requireUsd(record, endpoint)
-  const offersOf = (key: string): readonly SupplierOffer[] => {
+  const productsOf = (key: string): readonly unknown[] => {
     const value = record[key]
     if (value === null || value === undefined) return []
-    return requireArray(value, key, endpoint).flatMap((item, index) => parseProduct(item, `${key}[${index}]`, endpoint, fetched))
+    return requireArray(value, key, endpoint)
   }
-  return { products: offersOf("Products"), exactMatches: offersOf("ExactMatches") }
+  const offersOf = (key: string): readonly SupplierOffer[] =>
+    productsOf(key).flatMap((item, index) => parseProduct(item, `${key}[${index}]`, endpoint, fetched))
+  return {
+    products: offersOf("Products"),
+    exactMatches: offersOf("ExactMatches"),
+    pageProducts: productsOf("Products").length,
+    totalProducts: requireFiniteNumber(record["ProductsCount"], "ProductsCount", endpoint),
+  }
+}
+
+/** Digi-Key's 404 body for a product number it does not list, exactly as recorded
+ * (`digikey-productdetails-not-found.json`): RFC 7807, `status: 404`, `detail:
+ * "Requested Product <number> Not Found"`. Any other 404 body - "Duplicate Products
+ * found ...", a missing route, a gateway page - is not this. */
+export function isProductNotFound(json: unknown): boolean {
+  if (!isRecord(json)) return false
+  const detail = json["detail"]
+  return json["status"] === 404 && typeof detail === "string" && /^Requested Product .+ Not Found$/.test(detail)
+}
+
+/** A 404 body's `detail` (or `title`), for naming in an error; undefined when it has none. */
+export function problemDetail(json: unknown): string | undefined {
+  if (!isRecord(json)) return undefined
+  const detail = json["detail"] ?? json["title"]
+  return typeof detail === "string" && detail.trim() !== "" ? detail : undefined
 }
 
 export interface IssuedToken {

@@ -212,7 +212,7 @@ export function mouserClient(credentials: MouserCredentials, fetch: FetchLike, t
   async function searchByPartNumber(partNumber: string): Promise<readonly SupplierOffer[]> {
     const json = await postJson(fetch, "Mouser", partnumberUrl(credentials.apiKey), PARTNUMBER_PATH, {
       SearchByPartRequest: { mouserPartNumber: partNumber, partSearchOptions: "Exact" },
-    })
+    }, [credentials.apiKey])
     return parseParts(json, PARTNUMBER_PATH, today)
   }
 
@@ -229,7 +229,7 @@ export function mouserClient(credentials: MouserCredentials, fetch: FetchLike, t
   async function search(keywords: string, limit: number): Promise<readonly SupplierOffer[]> {
     const json = await postJson(fetch, "Mouser", keywordUrl(credentials.apiKey), KEYWORD_PATH, {
       SearchByKeywordRequest: { keyword: keywords, records: limit, startingRecord: 0 },
-    })
+    }, [credentials.apiKey])
     return parseParts(json, KEYWORD_PATH, today)
   }
 

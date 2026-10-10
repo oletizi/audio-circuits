@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { digikeyClient } from "../../tools/suppliers/digikey.ts"
+import { digikeyClient, LOOKUP_PAGE_SIZE } from "../../tools/suppliers/digikey.ts"
 import {
   CREDENTIALS, DETAILS_CT, DETAILS_NOT_FOUND, FAKE_TOKEN, KEYWORD_10UF, KEYWORD_2N3904, KEYWORD_RC0805, TODAY,
   keywordBody, ok, product, recordingFetch, variation,
@@ -33,6 +33,36 @@ test("the first request fetches a client-credentials token; +5 min reuses it; +1
   clock = T0 + 10 * MINUTE
   await client.lookupSku("311-100KCRCT-ND")
   expect(tokenRequests()).toHaveLength(2)
+})
+
+test("the token is renewed 30 s before it expires: at +580 s of a 599 s token, a new one is fetched", async () => {
+  let clock = T0
+  const { fetch, sent } = recordingFetch({ productdetails: ok(DETAILS_CT) })
+  const client = digikeyClient(CREDENTIALS, fetch, TODAY, () => clock)
+  await client.lookupSku("311-100KCRCT-ND")
+  clock = T0 + 568_000
+  await client.lookupSku("311-100KCRCT-ND")
+  expect(sent.filter((request) => request.url.endsWith("/v1/oauth2/token"))).toHaveLength(1)
+  clock = T0 + 580_000
+  await client.lookupSku("311-100KCRCT-ND")
+  expect(sent.filter((request) => request.url.endsWith("/v1/oauth2/token"))).toHaveLength(2)
+})
+
+test("a secret that URL-encodes is redacted in every encoded form an error body echoes", async () => {
+  const credentials = { clientId: "id/with+odd=chars", clientSecret: "s3cr/et+va=lue x" }
+  const form = new URLSearchParams({ client_id: credentials.clientId, client_secret: credentials.clientSecret })
+  const echo = `bad request: ${form.toString()} ${encodeURIComponent(credentials.clientSecret)} ${credentials.clientSecret}`
+  const { fetch } = recordingFetch({}, { status: 400, body: echo })
+  const message = await digikeyClient(credentials, fetch, TODAY, () => T0)
+    .lookup("X")
+    .catch((error: unknown) => (error instanceof Error ? error.message : ""))
+  expect(message).toContain("HTTP 400")
+  for (const value of [credentials.clientId, credentials.clientSecret]) {
+    expect(message).not.toContain(value)
+    expect(message).not.toContain(encodeURIComponent(value))
+    expect(message).not.toContain(new URLSearchParams({ v: value }).toString().slice(2))
+  }
+  expect(message).toBe("Digi-Key oauth2/token request failed (HTTP 400): bad request: client_id=<redacted>&client_secret=<redacted> <redacted> <redacted>")
 })
 
 test("product requests carry the client id, the bearer token and the US/en/USD locale headers", async () => {
@@ -100,7 +130,9 @@ test("lookup keeps each packaging variation of one mpn as its own offer, with it
   const offers = await digikeyClient(CREDENTIALS, fetch, TODAY, () => T0).lookup("RC0805FR-07100KL")
   expect(sent[1].url).toBe("https://api.digikey.com/products/v4/search/keyword")
   expect(sent[1].method).toBe("POST")
-  expect(JSON.parse(sent[1].body ?? "")).toEqual({ Keywords: "RC0805FR-07100KL", Limit: 10, Offset: 0 })
+  expect(JSON.parse(sent[1].body ?? "")).toEqual({ Keywords: "RC0805FR-07100KL", Limit: LOOKUP_PAGE_SIZE, Offset: 0 })
+  // ProductsCount is 1 and the page held it: one page, no second request.
+  expect(sent).toHaveLength(2)
 
   // The product is in both ExactMatches and Products: three offers, not six.
   expect(offers.map((offer) => [offer.sku, offer.packaging, offer.breaks[0]])).toEqual([
@@ -112,7 +144,10 @@ test("lookup keeps each packaging variation of one mpn as its own offer, with it
 })
 
 test("lookup returns only exact, case/whitespace-insensitive mpn matches, across manufacturers", async () => {
-  const { fetch } = recordingFetch({ "search/keyword": ok(KEYWORD_2N3904) })
+  // The recording is the first page (5 products) of ProductsCount 53; the count is set to the
+  // page's own here so this one page is the whole search. Paging is tested separately.
+  const onePage = JSON.stringify({ ...JSON.parse(KEYWORD_2N3904), ProductsCount: 5 })
+  const { fetch } = recordingFetch({ "search/keyword": ok(onePage) })
   const offers = await digikeyClient(CREDENTIALS, fetch, TODAY, () => T0).lookup("  2n3904 ")
   expect(offers.length).toBeGreaterThan(0)
   expect(offers.every((offer) => offer.mpn === "2N3904")).toBe(true)
