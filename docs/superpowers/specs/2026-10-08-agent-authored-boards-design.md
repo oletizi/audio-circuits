@@ -594,7 +594,7 @@ Two groups, and the difference between them matters more than the order within e
 | | Sub-project | Deliverable | Gates | Depends on |
 | --- | --- | --- | --- | --- |
 | **S0** | The section scaffold | one scaffold board that lets any combination of discrete sections be built and measured, with stand-in values derived from the model. Designed in `2026-10-09-pultec-section-scaffold-design.md` | composition across all 31 subsets; strict graph equivalence in the integrated case | - |
-| **S1a** | Stripboard placement and routing | a repeatable pipeline that places and routes a stripboard layout from a circuit: a cost model, the levers quantified, a headless move verb in the pinned VeroRoute fork, and an iterative optimiser with a stated stopping rule. Cost model designed in `2026-10-10-stripboard-placement-cost-design.md`; the pipeline gets its own spec | cuts and wire bridges within a stated factor of the derived floor, on every Pultec section board; criteria supplied by a rule file, never by the producing agent; `make check` per board | S0 |
+| **S1a** | Stripboard placement and routing | a repeatable pipeline that places and routes a stripboard layout from a circuit: a cost model, the levers quantified, a headless move verb in the pinned VeroRoute fork, and an iterative optimiser with a stated stopping rule. Cost model designed in `2026-10-10-stripboard-placement-cost-design.md`; the pipeline designed in `2026-10-10-stripboard-pipeline-design.md` | cuts and wire bridges within a stated factor of the derived floor, on every Pultec section board; criteria supplied by a rule file, never by the producing agent; `make check` per board | S0 |
 | **S1** | Perfboard versions of each discrete circuit | the four remaining Pultec sections laid out, built and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S1a |
 
 This is the work with a known shape. S0 comes first because without the scaffold a single
@@ -807,9 +807,16 @@ this document does not reach into pedals.
 - Stitching vias, and any routing pass after the first route.
 - Changes to KiCadRoutingTools. A needed engine change is reported upstream, not patched
   here.
-- **Automating perfboard layout.** KRT does nothing for it - strips and cuts are a
-  different problem from copper on a plane - and no pipeline here places a perfboard part.
-  The four remaining sections are laid out by the owner in VeroRoute, as low-boost was.
-  Agents contribute the wiring guide, the S0 scaffold and `make check`. S1 is that work and
-  it is in scope; automating it is not.
+- **~~Automating perfboard layout.~~ WITHDRAWN 2026-10-10 — this is now S1a.** This entry
+  said KRT does nothing for strips and cuts, that no pipeline here places a perfboard part,
+  and that the four remaining sections are laid out by the owner as low-boost was. The first
+  clause is still true and is the reason S1a is its own sub-project rather than a use of T1:
+  strips and cuts are a different problem from copper on a plane. The rest is withdrawn on
+  the owner's instruction. Automating it IS in scope, it is specified in
+  `2026-10-10-stripboard-pipeline-design.md`, and S1 now depends on it.
+
+  Kept from this entry, because it survived the reversal: nothing about the owner laying out
+  low-boost by hand is undone. That layout is the only one of the five that conducts, and
+  S1a adopts it as the externally authored benchmark the pipeline must meet — which is a
+  better use for it than a precedent for doing the other four the same way.
 - The perfboard tooling itself, which is unaffected except for the directory move in T3.
