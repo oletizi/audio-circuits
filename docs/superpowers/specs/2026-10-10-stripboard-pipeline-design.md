@@ -790,20 +790,33 @@ silence.
 ### 4.3 M1.3 — the zero-delta abort
 
 `Board::MoveComps` opens with `assert(deltaRow != 0 || deltaCol != 0)` and
-`assert(!GetDisableMove())`, and the generated Makefile defines `QT_NO_DEBUG` but **not**
-`NDEBUG` (MOVE §2.3 item 8):
+`assert(!GetDisableMove())`.
 
+**CORRECTED 2026-10-10: `assert` is NOT live, and this section's original reasoning was
+wrong.** It read the generated Makefile, found `-DQT_NO_DEBUG` without `-DNDEBUG`, and
+concluded that reaching `MoveComps` with a zero delta aborts the process. The Makefile is
+not the whole story: the fork defines `NDEBUG` **itself**, in `Src/Common.h:23-25`, which
+every translation unit includes.
+
+```c
+// Comment out following 3 lines on debug builds to enable assert()
+#ifndef NDEBUG
+#define NDEBUG
+#endif
 ```
-$ grep '^DEFINES' .tools/veroroute-perfboard/build/Makefile
-DEFINES       = -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
-```
 
-So `assert` is live in the shipped build, and reaching `MoveComps` with a zero delta is a
-**process abort**, not an error message. **An optimiser will propose a no-op eventually** —
-a hill-climb sweeping every single-part move enumerates `Δ = (0,0)` by construction unless
-something excludes it — and an abort mid-run is indistinguishable from a crash.
+So both asserts compile away, and a zero delta **wrote a board** rather than aborting —
+confirmed by running it and by a preprocessor probe during M1.3's implementation. That is
+worse than the abort this section feared, not better: an abort is loud, while a written
+board byte-identical to its input is a candidate a search loop cannot distinguish from one
+that actually moved something.
 
-**This must be handled in the verb, not in the build.** The two remedies have very
+**The guard is adopted anyway, and for a reason the original framing obscured.** It was
+argued as crash-avoidance, which was fiction. The real reason is the one above — a no-op
+must not be reportable as progress — and it stands on its own. Had the remedy been chosen
+to match the fiction, it would have been a build-flag change that fixed nothing.
+
+**This is handled in the verb, not in the build.** The remedies have very
 different blast radii and should not be confused:
 
 | remedy | blast radius | decision |
