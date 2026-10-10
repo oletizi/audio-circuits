@@ -37,7 +37,7 @@
  * wire between its two boundary nets), so Gate A2 cannot cover it and says so out loud
  * instead of comparing two large numbers that agree only in their leading digits.
  */
-import { connectedGroups, electricalNodes, nodesOf } from "./shorts.ts"
+import { boundaryPartition, connectedGroups, electricalNodes, nodesOf } from "./shorts.ts"
 import type { ResolvedComponent } from "../../model/control-state.ts"
 
 export interface Complex {
@@ -154,7 +154,11 @@ export function boundaryAdmittance(
     )
   }
   const classOf = electricalNodes(attached)
-  const boundaryNodes = [...new Set<string>(boundaryNets.map(classOf))].sort()
+  // The refusal below is decided by the SHORT-CIRCUIT PARTITION of the boundary, which
+  // is the general property `tests/board/scaffold-partition.test.ts` asserts of every
+  // section. One class means one node, and a section's exemption from the numerical
+  // gate therefore follows from its own network rather than from its name.
+  const boundaryNodes = [...boundaryPartition(attached, boundary).keys()].sort()
   if (boundaryNodes.length < 2) {
     throw new Error(
       `Boundary admittance is infinite for this network: its boundary nets ` +

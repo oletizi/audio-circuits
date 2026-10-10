@@ -2,6 +2,7 @@ import { test, expect } from "bun:test"
 import { REFERENCE_FLAT, allStandIns, standIn } from "../../lib/board/scaffold/index.ts"
 import { resolveSectionFlat } from "../../lib/board/scaffold/flat.ts"
 import { boundaryAdmittance } from "../../lib/board/scaffold/admittance.ts"
+import { boundaryPartition } from "../../lib/board/scaffold/shorts.ts"
 import { partitionReference } from "../../circuits/pultec/partition.ts"
 import type { ResolvedComponent } from "../../lib/model/control-state.ts"
 
@@ -178,22 +179,31 @@ const SAMPLE_HZ = [
 const RELATIVE = 1e-9
 const FLOOR = 1e-15
 
-/** The sections whose boundary nets are ALL joined into one electrical node by an ideal
- * short at flat, so the admittance they present between those nets is infinite and
+/** The sections whose boundary nets are ALL joined into one electrical node by ideal
+ * shorts at flat, so the admittance they present between those nets is infinite and
  * `boundaryAdmittance` refuses rather than returning a number.
  *
- * Named here, and asserted by the test below, so the gap is loud rather than a silently
- * shorter loop: low-cut's flat stand-in IS one 0R wire between `hi_boost_out` and
- * `out`, and there is no finite admittance to compare. Gate A1 covers it completely -
- * a single component, identical in kind, value and nets to the section's own - so
- * nothing is unchecked, but the thing checking it is structural, not numerical. */
-const SHORTED_BOUNDARY: readonly string[] = ["low-cut"]
+ * COMPUTED, NOT NAMED. This used to be the literal `["low-cut"]`, which made a general
+ * property of the network into a carve-out somebody has to remember. The short-circuit
+ * partition decides it instead: a boundary that falls into one class has no finite
+ * admittance across it. low-cut is what the computation returns today - its flat
+ * stand-in IS one 0R wire between `hi_boost_out` and `out` - and
+ * `tests/board/scaffold-partition.test.ts` holds the property this derives from,
+ * including the assertion that it comes out as low-cut and nothing else. Gate A1 covers
+ * that section completely, so nothing is unchecked; the thing checking it is structural
+ * rather than numerical. */
+const SHORTED_BOUNDARY: readonly string[] = SECTIONS.filter((section) => {
+  const derived = standIn(section, modules, REFERENCE_FLAT)
+  return boundaryPartition(derived.components, new Set(derived.boundary)).size < 2
+})
 
 test("the sections Gate A2 cannot cover are exactly the ones whose boundary is shorted", () => {
   // A gate that quietly covers fewer sections than it claims is the failure mode this
   // repository exists to prevent, so the refusal is asserted on BOTH sides. If the
   // reduction ever dropped low-cut's 0R arm, the derived side would stop refusing and
   // this fails; if a section's boundary became shorted, the loop below would throw.
+  expect(SHORTED_BOUNDARY.length, "nothing refuses, so the refusal is untested")
+    .toBeGreaterThan(0)
   for (const section of SHORTED_BOUNDARY) {
     const derived = standIn(section, modules, REFERENCE_FLAT)
     const whole = resolveSectionFlat(section, modules, REFERENCE_FLAT)
@@ -234,9 +244,10 @@ test("GATE A2: stand-in and real flat section agree on boundary admittance", () 
       }
     }
   }
-  // Non-vacuous by construction: the four sections this gate can cover are named, so
-  // a future change that made another boundary shorted fails here rather than
-  // shortening the loop in silence.
+  // Non-vacuous, and the result is recorded rather than relied upon: the loop above
+  // skips whatever the short-circuit partition says has no finite admittance, and this
+  // pins what that came out as. A future change that shorted another section's
+  // boundary fails here rather than shortening the loop in silence.
   expect(covered).toEqual(["hi-boost", "hi-cut", "low-boost", "mid"])
 })
 

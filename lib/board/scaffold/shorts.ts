@@ -117,3 +117,40 @@ export function electricalNodes(
   }
   return find
 }
+
+/**
+ * The partition of `boundary` into short-circuit equivalence classes: which boundary
+ * nets this network's ideal shorts have made one electrical node. Keyed by each class's
+ * representative, with the class's boundary members sorted.
+ *
+ * THE PARTITION, NOT THE COUNT, IS THE PROPERTY. Two networks whose boundaries fall
+ * into the same NUMBER of classes can still group different nets, so a comparison of
+ * sizes passes a derivation that merged the wrong pair. Compare the classes.
+ *
+ * COMPARE THE VALUES, NOT THE KEYS. A representative is the lexicographic minimum over
+ * ALL the nets in its class, internal ones included, so a class can be named after a
+ * net that is not on the boundary at all - and two networks that join the same boundary
+ * nets through different internal nets then agree on the classes while disagreeing on
+ * what they are called. The keys exist because `boundaryAdmittance` needs a node name;
+ * the equivalence claim lives in the values.
+ *
+ * This is what makes low-cut's exemption from numerical comparison a consequence rather
+ * than a carve-out: its stand-in is one 0R arm between its two boundary nets, both
+ * boundary nets land in one class, and `boundaryAdmittance` refuses because a network
+ * whose whole boundary is one node presents no finite admittance. Nothing has to
+ * remember the section's name to know that.
+ */
+export function boundaryPartition(
+  components: readonly ResolvedComponent[],
+  boundary: ReadonlySet<string>,
+): ReadonlyMap<string, readonly string[]> {
+  const classOf = electricalNodes(components)
+  const classes = new Map<string, string[]>()
+  for (const net of [...boundary].sort()) {
+    const representative = classOf(net)
+    const members = classes.get(representative)
+    if (members === undefined) classes.set(representative, [net])
+    else members.push(net)
+  }
+  return classes
+}
