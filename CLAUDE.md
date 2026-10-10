@@ -11,28 +11,49 @@ components intended for future designs; some are designs in their own right.
 designed, built on a bench, listened to, and revised. Nothing here reaches a
 state called "done".
 
-**The repository exists as a bridge between AI agents and human designers.**
-That is its purpose, and almost every structural decision follows from it.
+**The repository exists to let agents carry a circuit from a model to something
+buildable.** That is its purpose, and almost every structural decision follows
+from it.
 
 ## Who does what, and why
 
-**Agents are good at software and bad at hardware design.** An agent cannot draw
-a schematic a person can read, and cannot be trusted to lay out a physical
-board. Those are not gaps to work around; they are the reason the bridge exists.
+**Agents do the placing and routing, of schematics and of board layouts both.**
+This reverses what this file said until 2026-10-10, and the reversal is the
+owner's instruction, not a drift: the earlier rule held that an agent cannot
+draw a legible schematic or lay out a buildable board, and forbade it from
+trying. That rule outlived its evidence. `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`
+is the program that brings the pedals repository's place-and-route and
+schematic-generation work here, and it records the demonstration that an agent
+can place and route a board and generate a schematic. Taking the operator out of
+schematic and PCB creation is the goal, not a risk to be managed.
 
 | | Belongs to | Why |
 | --- | --- | --- |
 | `lib/`, `circuits/*.ts`, `tests/`, `tools/` | **agents** | Holding a circuit as data makes it something an agent can validate, simulate, compose, partition and be held to |
-| KiCad schematics, VeroRoute layouts | **the human designer** | Legibility and buildability are judgement calls agents fail at |
+| KiCad schematics, VeroRoute layouts | **agents** | Arrangement, placement and routing are measurable against stated criteria, so they are work an agent can be held to as well |
+| The criteria those artifacts are judged by | **never the agent producing them** | See below - this is the invariant the old prohibition was really protecting |
 
 So:
 
-- **Never place parts or route a board.** The tooling verifies a layout against
-  a circuit and reports; it does not author one. `make check` is a gate, not a
-  generator.
-- **Never call a generated schematic finished.** `lib/kicad/schematic.ts` emits
-  a stub - a correct netlist with a useless arrangement. A person turns it into
-  something readable. Say "stub", not "schematic", when that is what you made.
+- **An agent may never author the acceptance criteria for the artifact it is
+  producing.** This is the invariant, and it is what replaces the old blanket
+  prohibition. The failure that prohibition existed to prevent was not bad
+  placement; it was an agent building the floorplan intent from the layout it
+  had already produced, then checking the layout against it and passing. Every
+  check passed because the agent had chosen what the checks were. Criteria reach
+  an artifact through a rule file, a spec, or a reviewing agent that is never the
+  one that authored it - never through the producing agent's own judgement. The
+  parent design names the channels.
+- **Minimising a measurable cost is not a taste judgement.** Cut count, wire
+  bridges, board area and physical lead span are numbers, and driving them down
+  iteratively is exactly the work to automate rather than hand back. "Your
+  cycles are cheaper than mine" is the governing economics here. A first
+  solution that technically works but leaves a person doing fiddly remedial work
+  is a failure, not a delivery.
+- **`lib/kicad/schematic.ts` still emits a stub** - a correct netlist with a
+  useless arrangement. That is a statement about the current emitter, not a
+  permanent division of labour: say "stub" when that is what you made, and
+  expect it to stop being true as the schematic-generation port lands.
 - **KiCad and VeroRoute are primary tools here, not optional extras.**
   `make check` invokes `kicad-cli` on every board on every run, and one test
   invokes it directly and fails rather than skips. Treat KiCad the way you would

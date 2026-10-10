@@ -6,25 +6,30 @@ right. Nothing here is finished software — it is hardware in progress.
 
 ## What this repository is for
 
-**It is a bridge between AI agents and human designers**, and the split of
-responsibilities is deliberate:
+**It is for carrying a circuit from a model to something buildable, with agents
+doing that work end to end:**
 
-- **The TypeScript is for agents.** Agents are good at software, so a circuit
-  is held as data — built with `lib/model/`'s `circuit()` builder or read from
-  a KiCad netlist — where it can be validated, simulated in SPICE, composed,
-  partitioned and checked. That is work an agent can do well and be held to.
-- **The KiCad and VeroRoute interfaces are for the human designer.** Agents are
-  bad at hardware design: they cannot draw a legible schematic and cannot be
-  trusted to lay out a physical board. So the handoff is explicit. An agent
-  codifies and tests the circuit; a person picks it up in KiCad and VeroRoute
-  and produces the things that actually get built — readable schematics, and
-  buildable layouts for stripboard, perfboard and manufactured PCBs.
+- **A circuit is held as data** — built with `lib/model/`'s `circuit()` builder
+  or read from a KiCad netlist — where it can be validated, simulated in SPICE,
+  composed, partitioned and checked.
+- **The KiCad and VeroRoute interfaces are driven by agents too**, which
+  arrange schematics and place and route layouts for stripboard, perfboard and
+  manufactured PCBs. Until 2026-10-10 this file said the opposite — that those
+  were a person's work because agents are bad at hardware design. That is no
+  longer the project's position; see
+  `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`.
+- **What an agent never does is set the bar its own artifact is measured
+  against.** Acceptance criteria come from a rule file, a spec, or a reviewing
+  agent that did not produce the artifact. That constraint is the one thing kept
+  from the older arrangement, because the failure it prevents is real: an agent
+  that writes its own criteria from the layout it already produced will pass
+  every check it set itself.
 
 Authority runs in both directions depending on where a circuit came from.
-`lib/kicad/schematic.ts` writes a `.kicad_sch` **from** a model, as a starting
-point a person rearranges into something legible. The Pultec runs the other
-way: an existing design imported schematic-first, with the model derived from a
-netlist export.
+`lib/kicad/schematic.ts` writes a `.kicad_sch` **from** a model, though today
+only as a stub with a useless arrangement. The Pultec runs the other way: an
+existing design imported schematic-first, with the model derived from a netlist
+export.
 
 **KiCad is a primary tool here, not an optional extra.** `make check` runs
 `kicad-cli` on every board on every run. Treat it the way you would a compiler.
