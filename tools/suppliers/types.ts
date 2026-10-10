@@ -22,7 +22,12 @@ export interface SupplierOffer {
   readonly description: string
   readonly url: string
   readonly datasheetUrl?: string
-  /** Absent when the supplier does not state it (Mouser: null, absent or empty string). */
+  /** How this listing is packed, when the supplier states it per listing (Digi-Key: one
+   * offer per product variation - "Cut Tape (CT)", "Tape & Reel (TR)" ...). Mouser lists
+   * packaging among `parameters` instead, so its offers leave this absent. */
+  readonly packaging?: string
+  /** Absent when the supplier does not state it (Mouser: null, absent or empty string;
+   * Digi-Key: a variation without `QuantityAvailableforPackageType`). */
   readonly stock?: number
   /** Absent exactly when `breaks` is empty - there is no price to have a currency for. */
   readonly currency?: string
