@@ -594,12 +594,21 @@ Two groups, and the difference between them matters more than the order within e
 | | Sub-project | Deliverable | Gates | Depends on |
 | --- | --- | --- | --- | --- |
 | **S0** | The section scaffold | one scaffold board that lets any combination of discrete sections be built and measured, with stand-in values derived from the model. Designed in `2026-10-09-pultec-section-scaffold-design.md` | composition across all 31 subsets; strict graph equivalence in the integrated case | - |
-| **S1** | Perfboard versions of each discrete circuit | the four remaining Pultec sections laid out, built and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S0 |
+| **S1a** | Stripboard placement and routing | a repeatable pipeline that places and routes a stripboard layout from a circuit: a cost model, the levers quantified, a headless move verb in the pinned VeroRoute fork, and an iterative optimiser with a stated stopping rule. Cost model designed in `2026-10-10-stripboard-placement-cost-design.md`; the pipeline gets its own spec | cuts and wire bridges within a stated factor of the derived floor, on every Pultec section board; criteria supplied by a rule file, never by the producing agent; `make check` per board | S0 |
+| **S1** | Perfboard versions of each discrete circuit | the four remaining Pultec sections laid out, built and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S1a |
 
 This is the work with a known shape. S0 comes first because without the scaffold a single
 Pultec section has no signal path at all, so there is nothing to measure — it is what makes
-building in isolation possible. Agents contribute the scaffold, the wiring guide and
-`make check`; the layout and the build are the owner's.
+building in isolation possible.
+
+**S1a was added on 2026-10-10 and S1 now depends on it.** S1 previously depended on S0
+alone, and said the layout and the build were the owner's. That followed from the
+stripboard carve-out withdrawn under "Governing-document changes", and without S1a it
+means laying out five boards by hand — on boards that each carry stand-in positions for
+four absent sections, where the stale layouts already need between five and sixty-five
+strip cuts. Handing a person work that is measurable and repeatable is the failure this
+sub-project exists to remove. What remains the owner's in S1 is the build and the
+measurement, which is where their judgement and their bench actually are.
 
 **Tooling, built against no particular form factor.**
 
@@ -729,9 +738,22 @@ that an agent cannot produce either.
 The replacement rule: **an agent may author a schematic rendering and a PCB placement and
 route when the result is graded by code against criteria the agent did not write for that
 artifact, and reaches the repository through a single gate that verifies its provenance.**
-"Never place parts or route a board" narrows to stripboard, where no such pipeline exists.
 "Never call a generated schematic finished" narrows to a schematic that has not passed the
 readability review.
+
+**The stripboard carve-out is withdrawn (2026-10-10).** This section originally narrowed
+"never place parts or route a board" to stripboard, on the stated ground that no such
+pipeline exists there. The owner has rejected that narrowing: agents place and route
+stripboard layouts too. The ground was also the wrong kind of reason - "no pipeline exists"
+argues for building one, not for keeping the prohibition that makes building one
+unthinkable, and as written it left `S1` quietly depending on hand layout for four boards.
+
+Withdrawing it opens a gap this design does not cover, and that gap is now its own
+sub-project: see **S1a** below. The replacement rule above governs it unchanged - a
+stripboard placement is graded by code against criteria the producing agent did not write,
+and cut count, wire-bridge count, board area and physical lead span are measurable without
+an agent's opinion entering. `CLAUDE.md`, `AGENTS.md` and `README.md` were updated to match
+in commit 5089cda, which is why they no longer read as this section's "before" state.
 
 `README.md`'s structure tree, prerequisites (Python 3.13, Rust/cargo) and the
 `schematic-stub` instructions change with it. The two repositories' opposite postures on
