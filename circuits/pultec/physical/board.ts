@@ -61,6 +61,7 @@ import {
   symbolFor,
 } from "./parts.ts"
 import type { Component, Network } from "../../../lib/model/types.ts"
+import type { FlatState } from "../../../lib/board/scaffold/index.ts"
 import type { ResolvedComponent } from "../../../lib/model/control-state.ts"
 
 /** The derivation, run once: every section reduced to its flat-state stand-in. */
@@ -83,9 +84,11 @@ const JUNCTION_NET_SET: ReadonlySet<string> = new Set(JUNCTION_NETS)
  * A section name narrowed to a `ModuleOwner`, refusing anything else by name.
  *
  * A predicate rather than a cast: `as ModuleOwner` would let a typo through to a
- * `undefined` module lookup far downstream.
+ * `undefined` module lookup far downstream. Exported because every consumer that takes
+ * a section name off a board declaration or a CLI argument needs the same refusal, and
+ * a second copy of it would be a second list of the five names to keep in step.
  */
-function asModuleOwner(section: string): ModuleOwner {
+export function asModuleOwner(section: string): ModuleOwner {
   for (const owner of MODULE_OWNERS) if (owner === section) return owner
   throw new Error(
     `Unknown Pultec section: ${section}. Known sections: ${MODULE_OWNERS.join(", ")}. ` +
@@ -253,6 +256,29 @@ export function standInGroup(section: string): StandInGroup {
   const group: StandInGroup = { section: owner, components, offBoardIds }
   GROUPS.set(owner, group)
   return group
+}
+
+/**
+ * The setting one section's stand-in group was derived at.
+ *
+ * READ, NEVER RESTATED. Up to 3.71 dB rides on this setting, and it is the limit most
+ * likely to be mistaken for a circuit fault, so the generated guide and the silkscreen
+ * must state the setting the parts on the board were actually reduced at rather than a
+ * constant somebody believes they were. It travels on the `StandIn` for exactly this
+ * reason; this is the accessor that lets a consumer read it off the derivation instead
+ * of importing `REFERENCE_FLAT` and asserting the two agree.
+ */
+export function standInFlat(section: string): FlatState {
+  const owner = asModuleOwner(section)
+  const derived = STAND_INS[owner]
+  if (derived === undefined) {
+    throw new Error(
+      `No stand-in was derived for ${owner}, so there is no setting to read off it. ` +
+        "allStandIns() covers every key of partitionReference().modules, so this means the " +
+        "two vocabularies have diverged.",
+    )
+  }
+  return derived.flat
 }
 
 /**

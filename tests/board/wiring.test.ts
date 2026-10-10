@@ -182,10 +182,12 @@ test("generation is deterministic", () => {
   expect(wiringDocument(INPUT)).toBe(wiringDocument(INPUT))
 })
 
-test("a board with no declared scaffold carries no scaffold links section", () => {
-  // Every board except the Pultec scaffold has no stand-ins to describe. See
-  // tests/board/scaffold-wiring.test.ts for the scaffold board's own section,
-  // verified against its real Network.
+test("a board with no stand-in groups carries no stand-in section", () => {
+  // pt2399-core and the transistor-preamp boards hold no positions for absent
+  // sections, so the section would be a heading over the word "None". The five Pultec
+  // section boards DO declare one - see tests/board/scaffold-wiring.test.ts, which
+  // checks it against the configuration networks it describes.
   const doc = wiringDocument(INPUT)
-  expect(doc).not.toContain("## Scaffold links")
+  expect(doc).not.toContain("## Stand-in groups")
+  expect(doc).toContain("There are three kinds of thing here")
 })

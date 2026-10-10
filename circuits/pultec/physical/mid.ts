@@ -34,6 +34,7 @@
  */
 import { sharedByFor, PASSIVE_PIN_NUMBERS } from "./parts.ts"
 import { sectionBoard } from "./board.ts"
+import { scaffoldDoc } from "./scaffold-doc.ts"
 import type { Network } from "../../../lib/model/types.ts"
 
 const BOARD = sectionBoard("mid")
@@ -48,6 +49,13 @@ export const PAD_ORDER = BOARD.padOrders
 export const OFF_BOARD_IDS: ReadonlySet<string> = BOARD.offBoardIds
 /** Crossing net -> the other boards that touch it, for the wiring guide. */
 export const SHARED_BY = sharedByFor("mid")
+
+/**
+ * What the wiring guide says about this board's stand-in groups: the parts of each
+ * group, which build populates which group here, which board carries the rest, and the
+ * junction pins that carry anything. Read by `tools/perfboard/wiring-sync.ts`.
+ */
+export const SCAFFOLD = scaffoldDoc("mid")
 
 /** See the module comment: the maximal board has no singleton nets at all. */
 export const DECLARED_OPENS: readonly string[] = []

@@ -20,6 +20,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { wiringDocument } from "../../lib/board/wiring.ts"
+import { asScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 import { physicalOnly } from "../../lib/board/physicalize.ts"
 import { assertDesignators, assertOffBoardIds, assertPadOrder } from "./check.ts"
 import { boardName } from "./declaration.ts"
@@ -28,6 +29,7 @@ import { isRecord } from "./guards.ts"
 import { loadCircuit } from "./load.ts"
 import { repoRelativePath } from "./netlist-sync.ts"
 import { moduleRepoRoot } from "./repo-root.ts"
+import type { ScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 
 /** The file a board's guide lives in, beside its declaration. */
 export function wiringPath(declaration: PerfboardDeclaration): string {
@@ -65,6 +67,22 @@ export function assertSharedBy(
   return shared
 }
 
+/**
+ * Validate `SCAFFOLD`: absent means this board holds no stand-in groups.
+ *
+ * Absent is legitimate and common - `pt2399-core` and the transistor-preamp boards have
+ * no absent neighbours to stand in for - so it produces no section. A wrong SHAPE does
+ * not: `asScaffoldDoc` refuses it naming the field, because a board that HAS stand-in
+ * positions and no instruction for them is a guide that reads as "fit everything".
+ */
+export function assertScaffold(
+  value: unknown,
+  declaration: PerfboardDeclaration,
+): ScaffoldDoc | undefined {
+  if (value === undefined) return undefined
+  return asScaffoldDoc(value, declaration.file)
+}
+
 export interface WiringSyncResult {
   readonly status: "written" | "unchanged" | "not-applicable"
   readonly file: string
@@ -97,6 +115,7 @@ export async function wiringDocumentFor(
     offBoard,
     padOrder: assertPadOrder(imported["PAD_ORDER"], declaration),
     sharedBy: assertSharedBy(imported["SHARED_BY"], declaration),
+    scaffold: assertScaffold(imported["SCAFFOLD"], declaration),
   })
 }
 
