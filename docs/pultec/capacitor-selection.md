@@ -37,9 +37,11 @@ about stripboard than the later reasoning that questioned it.
 
 **The resolution: keep the B32529, and reach the distant strip with a wire link.**
 `WIRE` is the layout tool's one unbounded span, so a wire reaches where no bent
-lead can, and the owner's cost weighting already favours it — `ρ_w = 0.25` in
-`2026-10-10-stripboard-pipeline-design.md` section 8.1 prices one cut at four
-wires, on the owner's reasoning that cuts are harder and more error-prone.
+lead can, and the owner's cost weighting already favours it — `PAR1` in
+`docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`, which is
+the authority for the weights, prices one cut at four wires on the owner's
+reasoning that cuts are harder and more error-prone; section 8.1 of
+`2026-10-10-stripboard-pipeline-design.md` is the argument behind it.
 
 One honest caveat on that resolution, because it is not free: a wire implies a net
 split across segments, and the cost identity `C = N + J − S_occ` takes `J` with a
