@@ -6,7 +6,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import type { SupplierClients } from "../../tools/suppliers/refresh.ts"
-import type { SupplierClient, SupplierOffer } from "../../tools/suppliers/types.ts"
+import type { SupplierClient, SupplierName, SupplierOffer } from "../../tools/suppliers/types.ts"
 
 export function tmpCatalogDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "parts-refresh-test-"))
@@ -66,8 +66,15 @@ export function offer(overrides: Partial<SupplierOffer> = {}): SupplierOffer {
 }
 
 export function fakeMouserClient(lookupSku: (sku: string) => Promise<SupplierOffer | undefined>): SupplierClient {
+  return fakeClient("Mouser", lookupSku)
+}
+
+export function fakeClient(
+  name: SupplierName,
+  lookupSku: (sku: string) => Promise<SupplierOffer | undefined>,
+): SupplierClient {
   return {
-    name: "Mouser",
+    name,
     lookup: async () => {
       throw new Error("not used in these tests")
     },
@@ -81,7 +88,3 @@ export function fakeMouserClient(lookupSku: (sku: string) => Promise<SupplierOff
 export const READY_CLIENT = (lookupSku: (sku: string) => Promise<SupplierOffer | undefined>): SupplierClients => ({
   Mouser: { kind: "ready", client: fakeMouserClient(lookupSku) },
 })
-
-export const NOT_BUILT_DIGIKEY: SupplierClients = {
-  "Digi-Key": { kind: "not-built", message: "Digi-Key client not built" },
-}

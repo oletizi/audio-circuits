@@ -14,12 +14,11 @@
  * in memory. Phase two, only once every one of those succeeded: write the changed files.
  *
  * `clients` tells this module, per supplier, whether it has a client ready to call, or why
- * not - "not-built" (the tool has no client for that supplier at all, e.g. Digi-Key until
- * Task 2 of docs/superpowers/plans/2026-09-30-supplier-search.md) leaves that source
- * untouched and reports it; "missing-credentials" (the tool has a client for that supplier
- * in general, but this operator's key file could not be read) refuses the whole run before
- * any lookup, since a missing key is the operator's problem to fix, not a thing to skip
- * past silently.
+ * not - "missing-credentials" (this operator's key file for that supplier could not be
+ * read) refuses the whole run before any lookup, when a selected entry has a source from
+ * that supplier, since a missing key is the operator's problem to fix, not a thing to skip
+ * past silently. Each source is refreshed by its own `sku`: a Mouser part number, or the
+ * Digi-Key product number of the one packaging variation it records.
  *
  * Only `readFile` and `writeFile` are injected: which entries exist in `dir` is read with
  * the real filesystem (`fs.readdirSync`), exactly as `tools/bom/catalog.ts`'s `loadCatalog`
@@ -36,8 +35,6 @@ import type { SupplierClient, SupplierName } from "./types.ts"
 export type SupplierClientResult =
   | { readonly kind: "ready"; readonly client: SupplierClient }
   | { readonly kind: "missing-credentials"; readonly message: string }
-  | { readonly kind: "not-built"; readonly message: string }
-
 /** One entry per supplier this module knows how to refresh (Mouser, Digi-Key). A supplier
  * absent from this map, when a selected entry actually needs it, is refused - see the
  * module doc comment - rather than silently skipped. */
@@ -48,8 +45,6 @@ export type SourceOutcome =
   | { readonly status: "unchanged" }
   | { readonly status: "not-listed" }
   | { readonly status: "no-price" }
-  | { readonly status: "not-refreshed"; readonly reason: string }
-
 export interface SourceReport {
   readonly id: string
   readonly sourceIndex: number
@@ -201,7 +196,7 @@ async function prepareEntry(
     if (clientResult === undefined) {
       throw new Error(
         `${file}: sources[${index}] is a ${supplier} source, but no client result was supplied for ` +
-          `"${supplier}". Pass a SupplierClientResult ("ready", "missing-credentials" or "not-built") ` +
+          `"${supplier}". Pass a SupplierClientResult ("ready" or "missing-credentials") ` +
           "for every supplier that can appear in a catalog source.",
       )
     }
@@ -210,18 +205,6 @@ async function prepareEntry(
       // before any lookup, exactly as a missing key refuses every other verb.
       throw new Error(clientResult.message)
     }
-    if (clientResult.kind === "not-built") {
-      reports.push({
-        id,
-        sourceIndex: index,
-        supplier,
-        sku: typeof skuValue === "string" ? skuValue : undefined,
-        outcome: { status: "not-refreshed", reason: clientResult.message },
-      })
-      newSources.push(rawSource)
-      continue
-    }
-
     if (typeof skuValue !== "string" || skuValue.trim() === "") {
       throw new Error(`${file}: sources[${index}] (${supplier}) has no sku to refresh by.`)
     }

@@ -5,7 +5,7 @@ import path from "node:path"
 import { runCli } from "../../tools/cli/parts.ts"
 import type { FetchLike } from "../../tools/suppliers/types.ts"
 import {
-  MOUSER_CREDENTIALS_PATH, baseOpts, collect, fakeFetch, listing, neverFetch, partnumberBody, readFileFrom,
+  BOTH_KEY_FILES, MOUSER_CREDENTIALS_PATH, baseOpts, collect, fakeFetch, listing, neverFetch, partnumberBody, readFileFrom,
 } from "./parts-test-helpers.ts"
 
 const FAKE_KEY = "FAKE-KEY-7c1e0d"
@@ -21,7 +21,7 @@ function rejectingFetch(): FetchLike {
 }
 
 function keyedOpts(fetch: FetchLike) {
-  return baseOpts({ readFile: readFileFrom({ [MOUSER_CREDENTIALS_PATH]: `${FAKE_KEY}\n` }), fetch })
+  return baseOpts({ readFile: readFileFrom({ ...BOTH_KEY_FILES, [MOUSER_CREDENTIALS_PATH]: `${FAKE_KEY}\n` }), fetch })
 }
 
 function writeRefreshableEntry(partsDir: string): string {

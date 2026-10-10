@@ -31,6 +31,7 @@ export function formatOffer(offer: SupplierOffer): string[] {
   const lines = [
     `${offer.supplier} ${offer.sku} - ${offer.mpn} (${offer.manufacturer})`,
     `  ${offer.description}`,
+    ...(offer.packaging !== undefined ? [`  packaging: ${offer.packaging}`] : []),
     `  stock: ${offer.stock !== undefined ? offer.stock : "not stated"}`,
   ]
   if (offer.breaks.length === 0) {
@@ -68,7 +69,5 @@ export function formatReport(report: SourceReport): string {
       return `${where}: no longer listed`
     case "no-price":
       return `${where}: listed without a price`
-    case "not-refreshed":
-      return `${where}: not refreshed: ${report.outcome.reason}`
   }
 }

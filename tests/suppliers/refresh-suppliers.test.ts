@@ -3,10 +3,10 @@ import fs from "node:fs"
 import path from "node:path"
 import { refreshCatalog, type SupplierClients } from "../../tools/suppliers/refresh.ts"
 import {
-  tmpCatalogDir, writeEntry, realIo, offer, READY_CLIENT, NOT_BUILT_DIGIKEY,
+  tmpCatalogDir, writeEntry, realIo, offer, READY_CLIENT, fakeClient,
 } from "./refresh-fixtures.ts"
 
-test("a Digi-Key source with no client is left untouched and reported not-refreshed, without refusing the run", async () => {
+test("a Digi-Key source is refreshed through the Digi-Key client, by its own Digi-Key SKU", async () => {
   const dir = tmpCatalogDir()
   try {
     writeEntry(dir, "d_part", {
@@ -14,7 +14,7 @@ test("a Digi-Key source with no client is left untouched and reported not-refres
         {
           supplier: "Digi-Key",
           url: "https://digikey.com/d",
-          sku: "DK-1",
+          sku: "311-100KCRCT-ND",
           currency: "USD",
           breaks: [{ quantity: 1, unitPrice: 0.2 }],
           checked: "2026-08-01",
@@ -22,19 +22,32 @@ test("a Digi-Key source with no client is left untouched and reported not-refres
         },
       ],
     })
+    const asked: string[] = []
+    const clients: SupplierClients = {
+      "Digi-Key": {
+        kind: "ready",
+        client: fakeClient("Digi-Key", async (sku) => {
+          asked.push(sku)
+          return offer({ supplier: "Digi-Key", sku, breaks: [{ quantity: 1, unitPrice: 0.11 }], fetched: "2026-10-09" })
+        }),
+      },
+    }
     const io = realIo()
-    const result = await refreshCatalog(dir, ["d_part"], NOT_BUILT_DIGIKEY, io.readFile, io.writeFile)
+    const result = await refreshCatalog(dir, ["d_part"], clients, io.readFile, io.writeFile)
+    expect(asked).toEqual(["311-100KCRCT-ND"])
     expect(result.reports).toEqual([
       {
         id: "d_part",
         sourceIndex: 0,
         supplier: "Digi-Key",
-        sku: "DK-1",
-        outcome: { status: "not-refreshed", reason: "Digi-Key client not built" },
+        sku: "311-100KCRCT-ND",
+        outcome: { status: "updated", oldUnitPrice: 0.2, newUnitPrice: 0.11 },
       },
     ])
-    expect(result.writtenIds).toEqual([])
-    expect(io.written).toEqual([])
+    expect(result.writtenIds).toEqual(["d_part"])
+    const written = JSON.parse(fs.readFileSync(path.join(dir, "d_part.json"), "utf8"))
+    expect(written.sources[0].breaks).toEqual([{ quantity: 1, unitPrice: 0.11 }])
+    expect(written.sources[0].checked).toBe("2026-10-09")
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }

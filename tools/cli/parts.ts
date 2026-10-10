@@ -8,14 +8,14 @@
  * catalog.
  *
  * Every verb catches its own errors and exits 1 with a one-line message; nothing leaves
- * `runCli` as an uncaught rejection. The key never reaches that message: the HTTP layer
- * (tools/suppliers/http.ts) names only the supplier and endpoint path, and `safeMessage`
- * below also redacts any `apiKey=` query value, should some other error carry a URL.
+ * `runCli` as an uncaught rejection. No key, secret or token reaches that message: the HTTP
+ * layer (tools/suppliers/http.ts) names only the supplier and endpoint path and redacts
+ * the Digi-Key credentials and token from any quoted body, and `safeMessage` below also
+ * redacts any `apiKey=` query value or bearer token, should some other error carry one.
  *
- * Until Task 2 of docs/superpowers/plans/2026-09-30-supplier-search.md, the only supplier
- * this tool has is Mouser: `--supplier digikey` (on `lookup`/`search`/`source`) and a
- * Digi-Key source encountered by `refresh` both name that explicitly, rather than silently
- * doing nothing.
+ * Without `--supplier`, `lookup` and `search` query both Mouser and Digi-Key. Every client
+ * a verb needs is built before any request is sent, so a missing key file refuses the verb
+ * up front, naming the file, rather than after the other supplier has answered.
  *
  * Design: docs/superpowers/specs/2026-09-30-supplier-search-design.md
  */
@@ -25,7 +25,8 @@ import path from "node:path"
 import { isMain } from "./entrypoint.ts"
 import { formatOffer, formatReport } from "./parts-format.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
-import { readMouserCredentials } from "../suppliers/credentials.ts"
+import { readDigikeyCredentials, readMouserCredentials } from "../suppliers/credentials.ts"
+import { digikeyClient } from "../suppliers/digikey.ts"
 import { mouserClient } from "../suppliers/mouser.ts"
 import { offerToSource } from "../suppliers/source.ts"
 import { refreshCatalog, type SupplierClients } from "../suppliers/refresh.ts"
@@ -33,20 +34,18 @@ import type { FetchLike, SupplierClient, SupplierName, SupplierOffer } from "../
 import { isSourceUse, SOURCE_USE_LIST, type SourceUse } from "../bom/catalog.ts"
 import { localDate } from "../bom/local-date.ts"
 
-const DIGIKEY_NOT_BUILT =
-  "the Digi-Key client is not built yet; register at developer.digikey.com and run Task 2 of " +
-  "docs/superpowers/plans/2026-09-30-supplier-search.md"
-
-/** Every supplier this tool has a client for. Grows to include Digi-Key once Task 2 lands. */
-const SUPPORTED_SUPPLIERS: readonly SupplierName[] = ["Mouser"]
+/** Every supplier this tool has a client for, in the order they are queried. */
+const SUPPORTED_SUPPLIERS: readonly SupplierName[] = ["Mouser", "Digi-Key"]
 
 const SUPPLIER_NAME_BY_FLAG: Record<string, SupplierName> = { mouser: "Mouser", digikey: "Digi-Key" }
 
-/** An error's message, with the value of any `apiKey=` query parameter redacted - a second
- * guard behind the HTTP layer's own, so no error path can print a key. */
+/** An error's message, with the value of any `apiKey=` query parameter and any bearer token
+ * redacted - a second guard behind the HTTP layer's own, so no error path can print a key. */
 function safeMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error)
-  return message.replace(/(apiKey=)[^&\s"'<>]*/gi, "$1<redacted>")
+  return message
+    .replace(/(apiKey=)[^&\s"'<>]*/gi, "$1<redacted>")
+    .replace(/(Bearer\s+)[^\s"'<>]+/gi, "$1<redacted>")
 }
 
 export interface PartsDeps {
@@ -56,6 +55,8 @@ export interface PartsDeps {
   readonly writeFile: (filePath: string, contents: string) => void
   readonly fetch: FetchLike
   readonly today: () => string
+  /** Milliseconds; drives the Digi-Key token's expiry. */
+  readonly now: () => number
 }
 
 export interface PartsCliOptions {
@@ -67,6 +68,7 @@ export interface PartsCliOptions {
   readonly writeFile?: (filePath: string, contents: string) => void
   readonly fetch?: FetchLike
   readonly today?: () => string
+  readonly now?: () => number
 }
 
 const USAGE = [
@@ -76,9 +78,10 @@ const USAGE = [
   "",
   "Verbs:",
   "  lookup <mpn> [--supplier mouser|digikey] [--json]",
-  "                          the exact part at each supplier this tool has (Mouser alone",
-  "                          until Task 2), with its price breaks and parameters;",
-  "                          refuses if a needed key file is missing.",
+  "                          the exact part at Mouser and Digi-Key (or the one named),",
+  "                          one offer per listing (Digi-Key: per packaging), with its",
+  "                          price breaks and parameters; refuses if a needed key file",
+  "                          is missing.",
   "  search <keywords...> [--supplier ...] [--limit n] [--json]",
   "                          candidate parts for a requirement (default limit 10).",
   "  source <mpn> --supplier mouser|digikey --use <use> [--sku <supplier part number>]",
@@ -112,6 +115,7 @@ function defaultDeps(opts: PartsCliOptions): PartsDeps {
     writeFile: opts.writeFile ?? ((filePath: string, contents: string) => fs.writeFileSync(filePath, contents)),
     fetch: opts.fetch ?? ((url: string, init) => fetch(url, init)),
     today: opts.today ?? (() => localDate(new Date())),
+    now: opts.now ?? (() => Date.now()),
   }
 }
 
@@ -184,8 +188,7 @@ function parseArgs(args: readonly string[], allowed: AllowedFlags, error: (line:
 }
 
 /** `--supplier`'s value to the list of suppliers a verb should query: every supplier the
- * tool has, when none was given; refuses naming the flag's value when it names neither
- * supplier, or names Digi-Key before Task 2 has built it. */
+ * tool has, when none was given; refuses naming the flag's value when it names neither. */
 function resolveSuppliers(
   supplierFlag: string | undefined,
   error: (line: string) => void,
@@ -196,27 +199,21 @@ function resolveSuppliers(
     error(`--supplier "${supplierFlag}" is not "mouser" or "digikey".`)
     return null
   }
-  if (name === "Digi-Key") {
-    error(DIGIKEY_NOT_BUILT)
-    return null
-  }
   return [name]
 }
 
-function buildMouserClient(deps: PartsDeps): SupplierClient {
-  const credentials = readMouserCredentials(deps.readFile, deps.home)
-  return mouserClient(credentials, deps.fetch, deps.today)
+/** Throws naming the key file when that supplier's credentials cannot be read. */
+function buildSupplierClient(supplier: SupplierName, deps: PartsDeps): SupplierClient {
+  if (supplier === "Mouser") {
+    return mouserClient(readMouserCredentials(deps.readFile, deps.home), deps.fetch, deps.today)
+  }
+  return digikeyClient(readDigikeyCredentials(deps.readFile, deps.home), deps.fetch, deps.today, deps.now)
 }
 
-/** The one client this tool can build today. Refuses (never throws) when Mouser's
- * credentials cannot be read, naming the underlying reason. */
+/** Refuses (never throws) when a supplier's credentials cannot be read, naming the reason. */
 function buildClient(supplier: SupplierName, deps: PartsDeps, error: (line: string) => void): SupplierClient | null {
-  if (supplier !== "Mouser") {
-    error(DIGIKEY_NOT_BUILT)
-    return null
-  }
   try {
-    return buildMouserClient(deps)
+    return buildSupplierClient(supplier, deps)
   } catch (caught) {
     error(safeMessage(caught))
     return null
@@ -225,18 +222,24 @@ function buildClient(supplier: SupplierName, deps: PartsDeps, error: (line: stri
 
 type SupplierResults = readonly { readonly supplier: SupplierName; readonly offers: readonly SupplierOffer[] }[]
 
-/** Runs `run` against each supplier's client; a supplier or network refusal is printed
- * (the HTTP layer names only supplier and endpoint path) and ends the verb with null. */
+/** Builds every supplier's client first - so a missing key file refuses before any request
+ * - then runs `run` against each; a supplier or network refusal is printed (the HTTP layer
+ * names only supplier and endpoint path) and ends the verb with null. */
 async function queryEach(
   suppliers: readonly SupplierName[],
   deps: PartsDeps,
   error: (line: string) => void,
   run: (client: SupplierClient) => Promise<readonly SupplierOffer[]>,
 ): Promise<SupplierResults | null> {
-  const results: { supplier: SupplierName; offers: readonly SupplierOffer[] }[] = []
+  const clients: SupplierClient[] = []
   for (const supplier of suppliers) {
     const client = buildClient(supplier, deps, error)
     if (client === null) return null
+    clients.push(client)
+  }
+  const results: { supplier: SupplierName; offers: readonly SupplierOffer[] }[] = []
+  for (const client of clients) {
+    const supplier = client.name
     try {
       results.push({ supplier, offers: await run(client) })
     } catch (caught) {
@@ -329,7 +332,9 @@ async function chooseOffer(client: SupplierClient, mpn: string, sku: string | un
   const offers = await client.lookup(mpn)
   if (offers.length === 0) throw new Error(`${client.name}: no exact match for "${mpn}".`)
   if (offers.length > 1) {
-    const listing = offers.map((offer) => `  ${offer.sku} - ${offer.description}`).join("\n")
+    const listing = offers
+      .map((offer) => `  ${offer.sku} - ${offer.description}` + (offer.packaging !== undefined ? ` [${offer.packaging}]` : ""))
+      .join("\n")
     throw new Error(
       `${client.name}: "${mpn}" matched more than one listing; exactly one exact match is required, ` +
         `or name one with --sku:\n${listing}`,
@@ -395,13 +400,15 @@ async function dispatchRefresh(
   if (parsed === null) return 1
   const ids = parsed.positional
 
-  const clients: SupplierClients = {
-    "Digi-Key": { kind: "not-built", message: "Digi-Key client not built" },
-  }
-  try {
-    clients.Mouser = { kind: "ready", client: buildMouserClient(deps) }
-  } catch (caught) {
-    clients.Mouser = { kind: "missing-credentials", message: safeMessage(caught) }
+  // A missing key file refuses the run only when a selected entry has a source from that
+  // supplier (tools/suppliers/refresh.ts), so both are resolved here and neither is required.
+  const clients: SupplierClients = {}
+  for (const supplier of SUPPORTED_SUPPLIERS) {
+    try {
+      clients[supplier] = { kind: "ready", client: buildSupplierClient(supplier, deps) }
+    } catch (caught) {
+      clients[supplier] = { kind: "missing-credentials", message: safeMessage(caught) }
+    }
   }
 
   const dir = path.join(deps.repoRoot, "parts")

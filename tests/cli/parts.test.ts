@@ -63,31 +63,26 @@ test("lookup prints the Yageo part's fields as readable text", async () => {
   expect(text).toContain("  parameters:\n    Packaging: Bulk\n    Standard Pack Qty: 10000")
 })
 
-test("lookup --json prints the offers as JSON", async () => {
+test("lookup --json prints both suppliers' offers as JSON", async () => {
   const out = collect()
   const code = await runCli(["lookup", "MFR-25FBF52-100K", "--json"], { ...baseOpts(), log: out.log, error: out.error })
   expect(code).toBe(0)
   const parsed = JSON.parse(out.logs.join("\n"))
-  expect(parsed).toHaveLength(1)
-  expect(parsed[0].mpn).toBe("MFR-25FBF52-100K")
+  expect(parsed.map((offer: { supplier: string; sku: string }) => [offer.supplier, offer.sku])).toEqual([
+    ["Mouser", "603-MFR-25FBF52-100K"],
+    ["Digi-Key", "100KXBK-ND"],
+  ])
+  expect(parsed.every((offer: { mpn: string }) => offer.mpn === "MFR-25FBF52-100K")).toBe(true)
 })
 
-test("lookup with no exact match says so, naming the supplier and the mpn", async () => {
+test("lookup with no exact match says so, naming each supplier and the mpn", async () => {
   const out = collect()
   const code = await runCli(["lookup", "NOT-A-REAL-PART"], { ...baseOpts(), log: out.log, error: out.error })
   expect(code).toBe(0)
-  expect(out.logs.join("\n")).toBe('Mouser: no exact match for "NOT-A-REAL-PART".')
-})
-
-test("lookup --supplier digikey refuses without touching the network", async () => {
-  const out = collect()
-  const code = await runCli(["lookup", "MFR-25FBF52-100K", "--supplier", "digikey"], {
-    ...baseOpts({ fetch: neverFetch() }),
-    log: out.log,
-    error: out.error,
-  })
-  expect(code).toBe(1)
-  expect(out.errors.join("\n")).toMatch(/Digi-Key.*not built yet.*developer\.digikey\.com.*Task 2/s)
+  expect(out.logs).toEqual([
+    'Mouser: no exact match for "NOT-A-REAL-PART".',
+    'Digi-Key: no exact match for "NOT-A-REAL-PART".',
+  ])
 })
 
 test("lookup refuses naming the missing credentials file when Mouser's key is absent", async () => {
@@ -103,7 +98,7 @@ test("lookup refuses naming the missing credentials file when Mouser's key is ab
 
 test("search defaults to a limit of 10 and narrows with --limit", async () => {
   const outDefault = collect()
-  const code = await runCli(["search", "10uF", "35V", "radial"], {
+  const code = await runCli(["search", "10uF", "35V", "radial", "--supplier", "mouser"], {
     ...baseOpts({ fetch: limitAwareKeywordFetch() }),
     log: outDefault.log,
     error: outDefault.error,
@@ -113,7 +108,7 @@ test("search defaults to a limit of 10 and narrows with --limit", async () => {
   expect(offerLines).toHaveLength(10)
 
   const outLimited = collect()
-  const codeLimited = await runCli(["search", "10uF", "35V", "radial", "--limit", "3"], {
+  const codeLimited = await runCli(["search", "10uF", "35V", "radial", "--limit", "3", "--supplier", "mouser"], {
     ...baseOpts({ fetch: limitAwareKeywordFetch() }),
     log: outLimited.log,
     error: outLimited.error,
@@ -194,7 +189,7 @@ test("lookup prints 'not stated' stock and 'not listed' price for a record with 
     },
   })
   const out = collect()
-  const code = await runCli(["lookup", "2N3904"], {
+  const code = await runCli(["lookup", "2N3904", "--supplier", "mouser"], {
     ...baseOpts({ fetch: fakeFetch({ "search/partnumber": body }) }),
     log: out.log,
     error: out.error,
@@ -226,7 +221,7 @@ test("lookup --json omits stock and currency for a record that states neither", 
     },
   })
   const out = collect()
-  const code = await runCli(["lookup", "2N3904", "--json"], {
+  const code = await runCli(["lookup", "2N3904", "--json", "--supplier", "mouser"], {
     ...baseOpts({ fetch: fakeFetch({ "search/partnumber": body }) }),
     log: out.log,
     error: out.error,
