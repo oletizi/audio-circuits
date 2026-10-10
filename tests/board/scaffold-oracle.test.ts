@@ -33,6 +33,7 @@ import { electricalNodes } from "../../lib/board/scaffold/shorts.ts"
 import { REFERENCE_FLAT, resolveSectionFlat } from "../../lib/board/scaffold/flat.ts"
 import { discoverBoundary } from "../../lib/board/scaffold/boundary.ts"
 import { partitionReference } from "../../circuits/pultec/partition.ts"
+import { randomCase } from "./scaffold-oracle-networks.ts"
 import type { ResolvedComponent, ResolvedNetwork } from "../../lib/model/control-state.ts"
 
 const modules = partitionReference().modules
@@ -148,27 +149,34 @@ function oracleLive(
 }
 
 /**
- * Where a candidate reduction differs from the oracle, as readable sentences.
+ * Where a candidate reduction differs from a live set, as readable sentences.
  *
  * Both directions are reported and they are not the same failure: "kept an inert
  * component" is what Gate A1's subset check would also catch, while "dropped a live
  * component" is the one it cannot see and the reason this oracle exists.
  */
+function compare(
+  live: readonly string[],
+  candidate: readonly ResolvedComponent[],
+): readonly string[] {
+  const liveIds = new Set<string>(live)
+  const kept = new Set<string>(candidate.map((component) => component.id))
+  const found: string[] = []
+  for (const id of [...liveIds].sort()) {
+    if (!kept.has(id)) found.push(`dropped a live component: ${id}`)
+  }
+  for (const id of [...kept].sort()) {
+    if (!liveIds.has(id)) found.push(`kept an inert component: ${id}`)
+  }
+  return found
+}
+
 function disagreements(
   resolved: ResolvedNetwork,
   boundary: ReadonlySet<string>,
   candidate: readonly ResolvedComponent[],
 ): readonly string[] {
-  const live = new Set<string>(oracleLive(resolved, boundary))
-  const kept = new Set<string>(candidate.map((component) => component.id))
-  const found: string[] = []
-  for (const id of [...live].sort()) {
-    if (!kept.has(id)) found.push(`dropped a live component: ${id}`)
-  }
-  for (const id of [...kept].sort()) {
-    if (!live.has(id)) found.push(`kept an inert component: ${id}`)
-  }
-  return found
+  return compare(oracleLive(resolved, boundary), candidate)
 }
 
 // --- 1. Agreement on the five real sections -------------------------------------------
@@ -184,99 +192,94 @@ for (const section of SECTIONS) {
 
 // --- 2. Agreement on randomised networks ----------------------------------------------
 
-/** mulberry32: a small seeded PRNG, so a failure is reproducible from its seed rather
- * than a story about a run that once happened. */
-function random(seed: number): () => number {
-  let state = seed >>> 0
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0
-    let t = state
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+/** Is this a 0-ohm resistor? Judged locally rather than through production's
+ * `isIdealShort`, because this is a statement about what the generator emitted. */
+function isZeroOhm(component: ResolvedComponent): boolean {
+  const parameters = component.parameters
+  return component.kind === "resistor" && "ohms" in parameters && parameters.ohms === 0
+}
+
+/** The distinct electrical nodes component `of` spans, with the shorts named by
+ * `ignoring` left unmerged - the oracle's own discipline, so a span means what the
+ * predicate sees. */
+function spanOf(
+  components: readonly ResolvedComponent[],
+  of: number,
+  ignoring: readonly number[],
+): readonly string[] {
+  const classOf = electricalNodes(components.filter((_, index) => !ignoring.includes(index)))
+  return [...new Set(netsOf(components[of]!).map(classOf))].sort()
+}
+
+interface Shapes {
+  /** 0-ohm resistors that genuinely merge two electrical nodes. */
+  readonly merging: number
+  /** Components spanning fewer than two electrical nodes: a written self-loop, or a part
+   * whose nets another short merged. Either way it conducts nothing. */
+  readonly inertSpans: number
+  /** Pairs of components spanning the SAME two distinct electrical nodes. */
+  readonly parallels: number
+}
+
+/**
+ * What the predicate sees, not what the generator wrote.
+ *
+ * The distinction matters: a duplicated net pair whose nets another short merges is
+ * electrically two self-loops rather than a parallel edge, and a 0-ohm resistor across
+ * already-merged nets merges nothing. Counting raw pairs and raw 0-ohm values would let
+ * `toBe(CASE_COUNT)` pass while the shape it names was never electrically present.
+ */
+function shapes(components: readonly ResolvedComponent[]): Shapes {
+  let merging = 0
+  let inertSpans = 0
+  for (let index = 0; index < components.length; index += 1) {
+    const span = spanOf(components, index, [index])
+    if (span.length < 2) inertSpans += 1
+    if (isZeroOhm(components[index]!) && span.length === 2) merging += 1
   }
-}
-
-interface RandomCase {
-  readonly components: readonly ResolvedComponent[]
-  readonly boundary: ReadonlySet<string>
-  readonly idealShorts: number
-  readonly selfLoops: number
-  readonly parallelPairs: number
-}
-
-/** A small network built from the three shapes that broke earlier implementations: ideal
- * shorts, parallel edges and self-loops. Every case is guaranteed to contain at least one
- * of each - the coverage test below asserts it rather than trusting it. */
-function randomCase(seed: number): RandomCase {
-  const next = random(seed)
-  const pick = (count: number): number => Math.floor(next() * count)
-  const nodeCount = 3 + pick(4)
-  const nodes = ["0", ...Array.from({ length: nodeCount - 1 }, (_, i) => `n${i + 1}`)]
-  const node = (): string => nodes[pick(nodes.length)]!
-  const boundary = new Set<string>(["0", nodes[1]!])
-  if (pick(2) === 0 && nodes.length > 2) boundary.add(nodes[2]!)
-
-  // One guaranteed ideal short across two distinct nodes, one guaranteed self-loop.
-  const loop = node()
-  const pairs: [string, string][] = [
-    [nodes[0]!, nodes[1]!],
-    [loop, loop],
-  ]
-  const extra = 1 + pick(5)
-  for (let i = 0; i < extra; i += 1) pairs.push([node(), node()])
-  // One guaranteed parallel edge: duplicate some existing pair of distinct nodes.
-  const distinct = pairs.filter(([a, b]) => a !== b)
-  pairs.push([...distinct[pick(distinct.length)]!])
-
-  const components: ResolvedComponent[] = pairs.map(([a, b], index) => {
-    const short = index === 0 || (index > 1 && pick(4) === 0)
-    const capacitor = !short && pick(3) === 0
-    return {
-      id: `c${index}`,
-      kind: capacitor ? "capacitor" : "resistor",
-      parameters: capacitor ? { farads: 1e-7 } : { ohms: short ? 0 : 100 + index },
-      pins: {},
-      units: [{ name: "MAIN", pins: { a, b } }],
+  let parallels = 0
+  for (let a = 0; a < components.length; a += 1) {
+    for (let b = a + 1; b < components.length; b += 1) {
+      const spanA = spanOf(components, a, [a, b])
+      if (spanA.length !== 2) continue
+      const spanB = spanOf(components, b, [a, b])
+      if (spanB.length === 2 && spanA[0] === spanB[0] && spanA[1] === spanB[1]) parallels += 1
     }
-  })
-
-  const seen = new Map<string, number>()
-  let parallelPairs = 0
-  for (const [a, b] of pairs) {
-    if (a === b) continue
-    const key = [a, b].sort().join("|")
-    const count = (seen.get(key) ?? 0) + 1
-    seen.set(key, count)
-    if (count === 2) parallelPairs += 1
   }
-  return {
-    components,
-    boundary,
-    idealShorts: components.filter(
-      (c) => c.kind === "resistor" && "ohms" in c.parameters && c.parameters.ohms === 0,
-    ).length,
-    selfLoops: pairs.filter(([a, b]) => a === b).length,
-    parallelPairs,
-  }
+  return { merging, inertSpans, parallels }
 }
 
 const BASE_SEED = 0x5ca1ab1e
 const CASE_COUNT = 4000
 
+/** How many of the cases must have TWO OR MORE components judged live.
+ *
+ * The guard against this arm going degenerate again. It is a floor rather than an
+ * equality so it does not become a change-detector on the generator, and it is wide of
+ * the measured value (3873 of 4000; live-count histogram
+ * `0:3 1:124 2:708 3:1032 4:829 5:690 6:392 7:175 8:47`) rather than snug against it.
+ * For scale, the two versions review rejected scored 922 and 1745 here. */
+const MULTI_LIVE_FLOOR = 3500
+
 test(`oracle and reduceToBoundary agree on ${CASE_COUNT} randomised networks`, () => {
   const failures: string[] = []
-  let withShorts = 0
-  let withSelfLoops = 0
+  let withMerging = 0
+  let withInertSpan = 0
   let withParallel = 0
+  let multiLive = 0
+  const histogram = new Map<number, number>()
   for (let i = 0; i < CASE_COUNT; i += 1) {
     const seed = (BASE_SEED + i * 2654435761) >>> 0
-    const { components, boundary, idealShorts, selfLoops, parallelPairs } = randomCase(seed)
-    if (idealShorts > 0) withShorts += 1
-    if (selfLoops > 0) withSelfLoops += 1
-    if (parallelPairs > 0) withParallel += 1
+    const { components, boundary } = randomCase(seed)
+    const { merging, inertSpans, parallels } = shapes(components)
+    if (merging > 0) withMerging += 1
+    if (inertSpans > 0) withInertSpan += 1
+    if (parallels > 0) withParallel += 1
     const resolved: ResolvedNetwork = { ports: { ground: "0" }, components }
-    const found = disagreements(resolved, boundary, reduceToBoundary(resolved, boundary))
+    const live = oracleLive(resolved, boundary)
+    if (live.length >= 2) multiLive += 1
+    histogram.set(live.length, (histogram.get(live.length) ?? 0) + 1)
+    const found = compare(live, reduceToBoundary(resolved, boundary))
     if (found.length === 0) continue
     const shape = components
       .map((c) => `${c.id}=${JSON.stringify(c.parameters)}${JSON.stringify(c.units[0]!.pins)}`)
@@ -288,15 +291,29 @@ test(`oracle and reduceToBoundary agree on ${CASE_COUNT} randomised networks`, (
   if (failures.length > 0) {
     console.error(
       `base seed ${BASE_SEED}, ${CASE_COUNT} cases, ${failures.length} disagreed. ` +
-        `Reproduce a single case with randomCase(<seed>):\n${failures.slice(0, 5).join("\n")}`,
+        `Rebuild one exactly with randomCase(<seed>) from ` +
+        `tests/board/scaffold-oracle-networks.ts - it is a plain module, so a scratch ` +
+        `script under \`bun run\` can import it.\n${failures.slice(0, 5).join("\n")}`,
     )
   }
-  expect(failures).toEqual([])
-  // Shape coverage: an agreement over networks that never contained the hard shapes
-  // would prove nothing about them.
-  expect(withShorts).toBe(CASE_COUNT)
-  expect(withSelfLoops).toBe(CASE_COUNT)
+  // Sliced: a systemic break would otherwise dump thousands of lines into the diff and
+  // the first few are what anybody reads. The console line above carries the full count.
+  expect(failures.slice(0, 5)).toEqual([])
+  // Shape coverage, measured ELECTRICALLY - see `shapes`. An agreement over networks
+  // that never electrically contained the hard shapes would prove nothing about them.
+  expect(withMerging).toBe(CASE_COUNT)
+  expect(withInertSpan).toBe(CASE_COUNT)
   expect(withParallel).toBe(CASE_COUNT)
+  // And the arm must be answering something other than "everything is dead".
+  if (multiLive < MULTI_LIVE_FLOOR) {
+    console.error(
+      `live-count histogram: ${[...histogram.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([live, count]) => `${live}:${count}`)
+        .join(" ")}`,
+    )
+  }
+  expect(multiLive).toBeGreaterThanOrEqual(MULTI_LIVE_FLOOR)
 })
 
 // --- 3. The oracle can disagree -------------------------------------------------------
