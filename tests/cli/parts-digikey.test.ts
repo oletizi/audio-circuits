@@ -95,6 +95,25 @@ test("source --supplier digikey --sku picks the cut-tape variation and its prici
   expect(source.breaks[0]).toEqual({ quantity: 1, unitPrice: 0.11 })
 })
 
+test("source --sku of the Digi-Reel listing refuses, naming the cut-tape SKU; lookup still shows it", async () => {
+  const out = collect()
+  const code = await runCli(
+    ["source", "RC0805FR-07100KL", "--supplier", "digikey", "--use", "standard", "--sku", "311-100KCRDKR-ND"],
+    { ...baseOpts({ fetch: digikeyFetch() }), log: out.log, error: out.error },
+  )
+  expect(code).toBe(1)
+  expect(out.logs).toEqual([])
+  expect(out.errors.join("\n")).toMatch(/311-100KCRDKR-ND charges a \$7\.00 reeling fee.*--sku 311-100KCRCT-ND/s)
+
+  const shown = collect()
+  await runCli(["lookup", "RC0805FR-07100KL", "--supplier", "digikey"], {
+    ...baseOpts({ fetch: digikeyFetch() }),
+    log: shown.log,
+    error: shown.error,
+  })
+  expect(shown.logs).toContain("  packaging: Digi-Reel® (plus a $7.00 Digi-Reel fee per order)")
+})
+
 function writeDigikeyEntry(partsDir: string): string {
   const entryPath = path.join(partsDir, "r_100k_0805.json")
   const entry = {

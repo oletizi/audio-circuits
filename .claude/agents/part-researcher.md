@@ -38,6 +38,7 @@ instructions exactly, whichever session calls you.
      a flat array of offers. Digi-Key prints one offer per packaging (cut
      tape, tape and reel, Digi-Reel, bulk), each with its own product number
      and prices; for hobby quantities use the cut-tape (CT) or bulk one.
+     Both suppliers' key files are needed without `--supplier`.
    Add `bulk`, `specialty` or `prototype-fast` sources by
    hand only where the sourcing notes allow them for this kind of part and
    you can read the listing. Prefer a reasonable price at the quantities a
@@ -76,7 +77,9 @@ instructions exactly, whichever session calls you.
    each with `bun run parts source <mpn> --supplier mouser --use <use>` or
    `bun run parts source <mpn> --supplier digikey --use <use> --sku <Digi-Key
    product number>` (the `--sku` picks the packaging; the command lists the
-   choices when it refuses without one) and paste the printed object - never
+   choices when it refuses without one; it refuses a Digi-Reel listing,
+   naming the cut-tape number to use, and a Marketplace listing sold by a
+   third party) and paste the printed object - never
    retype prices. If Digi-Key does not list the part, say so in your report.
    A hand-added source needs supplier, URL, the supplier's part number,
    currency, EVERY price break listed (ascending), `checked` as today's date

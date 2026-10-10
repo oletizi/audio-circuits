@@ -93,7 +93,10 @@ a Digi-Key reeling fee or a Marketplace seller; `lookup` uses keyword search fil
 exact part-number matches, not product details, because the recorded product-details
 response for 2N3904 is a 404 "Duplicate Products found" where keyword search lists every
 maker; `lookupSku` uses product details. The refresh module's "not-built" client result,
-which existed only for the missing Digi-Key client, is removed.
+which existed only for the missing Digi-Key client, is removed. After review (fix round 1,
+controller rulings): `lookup` pages through every keyword page `ProductsCount` reports and
+refuses past a page limit; `lookupSku` treats only the recorded "Requested Product ... Not
+Found" 404 as not listed; `source` refuses Digi-Reel and Marketplace listings.
 
 ### Task 3: The `parts` command
 

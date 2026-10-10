@@ -38,6 +38,7 @@ const DIGIKEY_KEYWORD_BY_TERMS: Record<string, string> = {
 const DIGIKEY_DETAILS_BY_SKU: Record<string, string> = {
   "311-100KCRCT-ND": fixture("digikey-productdetails-311-100kcrct-nd.json"),
   "311-100KCRTR-ND": fixture("digikey-productdetails-311-100kcrct-nd.json"),
+  "311-100KCRDKR-ND": fixture("digikey-productdetails-311-100kcrct-nd.json"),
 }
 const DIGIKEY_NOT_FOUND = fixture("digikey-productdetails-not-found.json")
 const DIGIKEY_EMPTY_KEYWORD = JSON.stringify({

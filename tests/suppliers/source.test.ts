@@ -67,3 +67,34 @@ test("offerToSource refuses an offer with no price breaks, naming the SKU and th
   const unpriced: SupplierOffer = { ...OFFER, sku: "511-2N3904", breaks: [], currency: undefined }
   expect(() => offerToSource(unpriced, "standard")).toThrow(/Mouser lists no price for 511-2N3904.*choose another/s)
 })
+
+const DIGIKEY: SupplierOffer = { ...OFFER, supplier: "Digi-Key", sku: "311-100KCRCT-ND", packaging: "Cut Tape (CT)" }
+
+test("offerToSource refuses a Digi-Reel listing, naming its fee and the cut-tape SKU to use instead", () => {
+  const reel: SupplierOffer = {
+    ...DIGIKEY,
+    sku: "311-100KCRDKR-ND",
+    packaging: "Digi-Reel® (plus a $7.00 Digi-Reel fee per order)",
+    reelingFee: 7,
+    cutTapeSku: "311-100KCRCT-ND",
+  }
+  expect(() => offerToSource(reel, "standard")).toThrow(
+    /Digi-Key 311-100KCRDKR-ND charges a \$7\.00 reeling fee per order.*--sku 311-100KCRCT-ND/s,
+  )
+})
+
+test("offerToSource refuses a reeling-fee listing whose product has no cut tape, saying to choose another", () => {
+  const reel: SupplierOffer = { ...DIGIKEY, sku: "X-DKR-ND", reelingFee: 7 }
+  expect(() => offerToSource(reel, "standard")).toThrow(/X-DKR-ND charges a \$7\.00 reeling fee.*choose another listing/s)
+})
+
+test("offerToSource refuses a Marketplace listing, naming the third-party seller", () => {
+  const market: SupplierOffer = { ...DIGIKEY, sku: "6557-2N3904TR-ND", marketplaceSeller: "GOODWORK" }
+  expect(() => offerToSource(market, "standard")).toThrow(
+    /Digi-Key 6557-2N3904TR-ND is a Marketplace listing, sold by the third party "GOODWORK".*choose another listing/s,
+  )
+})
+
+test("offerToSource accepts Digi-Key's own cut-tape listing", () => {
+  expect(offerToSource(DIGIKEY, "standard").sku).toBe("311-100KCRCT-ND")
+})

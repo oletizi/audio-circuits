@@ -74,8 +74,10 @@ still written.
 `bun run parts lookup|search|source|refresh` reads Mouser through its official
 Search API and Digi-Key through its Product Information API (distributor web
 pages block automated fetches). Without `--supplier`, `lookup` and `search`
-query both. Keys live outside the repository and are never printed or
-committed:
+query both, so they need both key files and refuse, naming the missing one,
+if either is absent; with only one supplier's key, pass `--supplier mouser`
+or `--supplier digikey`. Keys live outside the repository and are never
+printed or committed:
 
 - Mouser: `~/.config/mouser/mouser-credentials.txt` - one line, the Search API
   key (from the API Hub in a Mouser account).
@@ -92,7 +94,15 @@ breaks; `lookup` prints each as its own offer with a `packaging:` line, and
 quantity choose the cut-tape (CT) or bulk number: tape and reel starts at a
 full reel, and Digi-Reel carries a per-order reeling fee (shown in its
 packaging line). A Marketplace listing (sold by a third party through
-Digi-Key) names its seller in the same line.
+Digi-Key) names its seller in the same line. `source` refuses both a
+Digi-Reel listing (naming the same product's cut-tape number to use instead)
+and a Marketplace listing: a catalog source cannot record the fee or the
+seller. `lookup` still shows them.
+
+A Digi-Key `lookup` reads every page of Digi-Key's keyword search for the
+part number. When the search finds more products than the tool pages through,
+it refuses rather than return a list that might be missing exact matches;
+name the Digi-Key product number with `source ... --sku` instead.
 
 ## Matching a line
 
@@ -405,6 +415,7 @@ the date.)
   found ... provide manufacturerId"), so `bun run parts lookup` reads
   Digi-Key's keyword search instead and keeps exact part-number matches -
   for 2N3904 that is several makers (Diotec, DComponents, Marketplace
-  sellers), each listing printed with its manufacturer. Choose by
+  sellers; the first page of 5 products held 5 exact matches out of 53
+  products found), each listing printed with its manufacturer. Choose by
   manufacturer as well as part number. Digi-Key's parameter lists use "-"
   for a parameter that does not apply; it is printed as Digi-Key states it.
