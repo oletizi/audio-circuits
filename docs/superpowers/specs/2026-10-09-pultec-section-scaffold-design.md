@@ -426,16 +426,33 @@ machinery rather than new machinery.
 link configuration at a time, so the layout-derived gate verifies **the configuration as
 built** and no other. Coverage of all 31 combinations comes from Gate B, which is model-side.
 
-**The boundary Gate C's deadness property is asked against is the scaffold's own, not the
-reference network's three declared ports.** The scaffold crosses five nets, two of them
-interior ladder nodes (`hi_boost_out`, `lo_boost_in`), and a leak confined to those two joins
-no two of `{in, out, 0}` - so a gate boundaried on the reference's ports reports an empty live
-set and passes. That is not hypothetical: the isolation defect that forced this revision is
-invisible for low-cut under the narrow boundary and caught under the wide one, and was found
-for mid only because mid happens to bridge `in` and ground. The boundary must be **derived
-from the resolved scaffold-only network** rather than listed: `lo_boost_in` is merged away by
-a closed selector contact and resolves to `j10_p4`, so a hardcoded pre-resolution list is
-itself wrong, and a derived set grows exactly when the defect it hunts is present.
+**Gate C's deadness property is a provenance check, not a liveness reduction, and that is a
+change from an earlier revision of this document.** Every stand-in component carries a
+`provenance.source` of `stand-in`, applied at one site inside the only function that builds
+them, so property (a) is simply that no component on the composed network carries that tag.
+
+The earlier design asked deadness as a liveness question over a boundary derived from the
+resolved scaffold-only network, and that was right for the design it served. Links could be
+left FITTED, so a stand-in could remain attached by a residual leg, and detecting it meant
+asking whether anything still conducted between two distinct boundary nodes. The boundary had
+to be derived rather than listed, because a leak confined to the interior ladder nodes
+(`hi_boost_out`, `lo_boost_in`) joins no two of the reference's `{in, out, 0}` and reported an
+empty live set - not hypothetical: the isolation defect that forced that revision was
+invisible for low-cut under the narrow boundary and was caught for mid only because mid
+happens to bridge `in` and ground. `lo_boost_in` also merges away to `j10_p4` under a closed
+selector contact, so a hardcoded pre-resolution list was wrong twice over.
+
+**Placement removed the question.** With no links, a group is present or absent as whole
+components; there is no residual-leg state to detect. The tag check is strictly stronger than
+the liveness check it replaces, because it catches a stand-in that is present but happens to
+conduct nothing - which liveness, by construction, passes.
+
+What the substitution moves rather than removes is where the risk sits: a tag check is only as
+good as the tag's exhaustiveness. `Provenance.source` is typed as a bare string, so the
+guarantee rests on a single chokepoint plus a biconditional test asserting that a component is
+tagged if and only if its id belongs to a derived stand-in group. That catches the realistic
+regression - a second construction path reproducing a stand-in's id and forgetting the tag -
+and would not catch a new kind of leak carrying an id no stand-in group claims.
 Neither gate subsumes the other: Gate B covers every configuration but only as the model
 believes it to be, and Gate C covers what was actually built but only one configuration of
 it.
@@ -623,8 +640,8 @@ looking like one that passed.
   the model-side claim this document calls non-negotiable: with all five sections present and
   no stand-in group populated, the recovered network is strictly equivalent to
   `THREE_BAND_REFERENCE` -
-  exact, no tolerance, proven both ways (every scaffold-originated component is dead, and the
-  live subgraph matches the reference's by id, kind, parameters and nets). What it cannot
+  exact, no tolerance, proven both ways (no component carries the stand-in provenance tag, and
+  the live subgraph matches the reference's by id, kind, parameters and nets). What it cannot
   check is the other half Gate C asks for: the SAME claim on the graph **derived from the
   physical layout** - the netlist exported from the five boards' perfboard layouts plus the
   junction wiring between them, as built. That half stays owner-blocked on one thing:
