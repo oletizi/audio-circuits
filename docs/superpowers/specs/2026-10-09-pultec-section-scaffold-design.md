@@ -681,3 +681,63 @@ looking like one that passed.
 
   Until the layouts exist, the model-side test above is what verifies this claim, and it says
   so in its own header comment rather than silently standing in for the layout-derived half.
+
+## Decisions taken while implementing this spec
+
+Each row is a decision made during execution rather than during design, recorded
+because the reasoning is not recoverable from the code and because every one of them
+is a change somebody could plausibly undo on the grounds that it looks redundant.
+
+### `pruneFloatingBranches` is forbidden in DERIVATION, not everywhere
+
+The prohibition above is scoped to the scaffold derivation, and the scope is the whole
+point. `tests/pultec/scaffold-composition.test.ts` and `tests/pultec/ac.test.ts` both
+call it, and both are legitimate: each builds a SPICE netlist with one fixed source,
+load and ground port, which is precisely the single configuration the function exists
+to prepare. What the derivation may not do is prune, because a branch irrelevant under
+one drive can carry signal when a neighbouring board drives a different boundary node.
+`lib/board/scaffold/reduce.ts` states the prohibition where it binds.
+
+Do not "fix" those two call sites, and do not relax the prohibition in `reduce.ts` on
+the grounds that the tests use it.
+
+### Gate A2's can-fail test asserts the TOLERANCE, not the FLOOR
+
+The gate compares relatively, with an absolute floor underneath. A can-fail test that
+only proves a perturbation exceeds the FLOOR certifies a sensitivity the gate does not
+have: a difference can clear the 1e-15 floor and still sit inside the relative
+tolerance, so the gate would pass while the test claimed it had been made to fail.
+
+The two thresholds are distinguishable, and the stimulus that distinguishes them is a
+perturbation applied in the TEST, not a mutation of production code. A mutation large
+enough to show up in the derivation fails both assertions and therefore proves nothing
+about which one is in force. Perturbing a 56k resistor by one part in 1e10 produces a
+worst difference of about 1.79e-15: above the floor, inside the tolerance, zero
+breaches. The discriminating band is roughly 5.6e-11 to 1e-9 in relative perturbation.
+
+### The composition-to-simulation bridge is a standing test, not a one-off check
+
+The board composition and Gate B's network were each verified, and never against each
+other - nothing proved that the network the boards compose is the network the
+composition gate sweeps. That gap was closed once by hand during review, and a check
+performed once protects nothing afterwards, so it is now a test: 31 subsets by 5
+frequencies, boundary admittance compared at `in`, `out` and `0`, under Gate A2's
+tolerance discipline. Its comparison count is asserted as arithmetic rather than as a
+literal, so a loop that silently covered fewer subsets would fail rather than pass.
+
+This repository has made the same mistake and the same repair before, with the liveness
+oracle. Treat "the reviewer checked it" as a reason to write a test, not as a result.
+
+### The pin-field note's pitch claim is verified at 2.54 mm only
+
+`pinFieldNotes` tells a builder that the layout tool's part families have no multi-row
+shape at the field's row pitch. That claim is checked against `lib/kicad/import-string.ts`
+at 2.54 mm, which is the only pitch any declared field uses. At another pitch the
+sentence would assert something nobody verified.
+
+It is left as it is because the claim is unreachable rather than merely unlikely: the
+importer's grid is 2.54 mm and it refuses a footprint whose lead pitch is not a whole
+number of grid steps, so a field at another pitch cannot reach a generated guide in the
+first place. If a non-2.54 mm pin field ever becomes declarable, this sentence must be
+either re-verified at that pitch or narrowed to the pitch it was checked at - and the
+refusal should come before the guide is written, not after somebody builds from it.
