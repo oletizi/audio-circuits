@@ -180,7 +180,9 @@ a stand-in group is covering — on this board or on whichever board the table b
 carries it.
 Moving it then moves the section you built and not the stand-in covering the one you
 did not: the two disagree by up to 3.71 dB, which reads as a circuit fault rather than
-as a knob in the wrong place.
+as a knob in the wrong place. That 3.71 dB is a worst case measured at an earlier
+reference setting, not a figure to expect — treat it as the reason to leave the knob
+alone, not as a prediction of what you will hear.
 
 **A part listed as `0R` is a wire link.** A level pot sitting at its end stop
 reduces to a zero-ohm part rather than to nothing at all — an ideal short stays a part

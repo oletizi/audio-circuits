@@ -40,8 +40,9 @@ import type { FlatState } from "./flat.ts"
 
 export interface StandIn {
   readonly section: string
-  /** The setting this stand-in emulates. Up to 3.71 dB rides on it, so it travels with
-   * the stand-in rather than being implicit. */
+  /** The setting this stand-in emulates. Up to 3.71 dB rides on it - a worst case
+   * measured at an earlier reference setting, see "Limits, measured" in the design doc -
+   * so it travels with the stand-in rather than being implicit. */
   readonly flat: FlatState
   readonly boundary: readonly string[]
   readonly components: readonly ResolvedComponent[]

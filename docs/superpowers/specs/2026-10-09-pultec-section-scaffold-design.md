@@ -86,7 +86,19 @@ those two readings is what made the earlier design wrong.
 
 ### The stand-ins
 
-At the reference flat settings - low frequency 100 Hz, high frequency 5 kHz, mid 1 kHz.
+At the reference flat settings - low frequency 100 Hz, high frequency 5 kHz, mid 1 kHz, mid
+mode **off**.
+
+**Why mid's reference is `off` and not `boost`.** The mid mode switch returns the coil's far
+end through 4K7 to the input for boost and through 1K to ground for cut, or **nowhere at all
+in the centre position**. A mid board that was never built contributes no mid action, so
+standing in for an absent mid with its BOOST network would model a control the builder does
+not have; the original Pultec EQP-1 has no mid band at all - the mid-frequency controls are
+the separate MEQ-5 - so for this three-band derivative, no-mid-action is the faithful
+baseline for an absent mid. The reduction is **exact at either setting**: with the return
+open, mid's selected capacitors, its 1 H winding tap, `R_MID_BOOST` and its pot arm carry no
+current at all and are dropped as inert, not approximated away. The other three settings are
+frequency selectors, where there is no neutral position to choose.
 
 **This table is CHECKED AGAINST THE DERIVATION, not hand-maintained.** It is prose for a
 reader; the authority is `allStandIns()` and its committed artifact
@@ -101,16 +113,20 @@ this table and the artifact ever disagree, the artifact is right and this table 
 | hi-cut | a 0-ohm arm, then 4k7 **in parallel with** (430R + 47nF) | `hi_boost_out` - `lo_boost_in` | 4 |
 | low-cut | a wire (0 ohms) | `hi_boost_out` - `out` | 1 |
 | low-boost | 56k, **and** a 0-ohm shunt | `lo_boost_in` - `out`, and `lo_boost_in` - ground | 2 |
-| mid | 100k, **and** a 0-ohm arm + 25.3nF + 1H + 4k7 in series | `in` - ground, and `hi_boost_out` - `in` | 6 |
+| mid | 100k (`R_MID_SHUNT`) and nothing else | `in` - ground | 1 |
 
-Fifteen components in total. The 25.3 nF is the 22 nF and 3.3 nF of mid's 1 kHz position in
-parallel; the 1 H is its `L_MID_1H` tap; the 4k7 is `R_MID_BOOST`. The 0-ohm branches here
-are **circuit elements** - the pot arms that flat resolves to a short - and are not
-configuration hardware. (An earlier revision warned against confusing them with removable
-isolation links; those links are deleted, and a build is configured by which parts are
-populated.) They are carried as components with both of their nets, never as node merges, for
-the reasons under Reduction below; that is why hi-boost is two parts rather than one and mid
-is six rather than five.
+Ten components in total. The 0-ohm branches here are **circuit elements** - the pot arms that
+flat resolves to a short - and are not configuration hardware. (An earlier revision warned
+against confusing them with removable isolation links; those links are deleted, and a build
+is configured by which parts are populated.) They are carried as components with both of
+their nets, never as node merges, for the reasons under Reduction below; that is why hi-boost
+is two parts rather than one.
+
+**mid's stand-in does not touch `hi_boost_out`,** although `hi_boost_out` is where mid taps
+the ladder and is in mid's boundary set. At `off` the section presents an open there, and the
+stand-in presents the same open by having no part on that net - which is a claim about the
+section, so the derivation's gate proves it against the section's own boundary admittance
+rather than permitting it. See **Verification**.
 
 **What is NOT in the table is as derived as what is.** hi-boost's 0.3 H tap, `R3`, `RV_HI_Q`
 and `C16` form a loop from `in` back to `in` across that 0-ohm arm, and low-cut's `C4` and
@@ -118,6 +134,13 @@ low-boost's `C21` each sit directly across one, so all six carry no current and 
 drops them. An earlier implementation decided liveness on the raw graph, where an ideal short
 reads as an ordinary edge rather than as one electrical node, and kept all six - which put an
 inductor with no part number on the scaffold's parts list for a dead branch.
+
+Mid's open mode return drops five more the same way: `C_MID_1kHz_A`, `C_MID_1kHz_B`,
+`L_MID_1H`, `R_MID_BOOST` and `RV_MID`'s 0-ohm arm are all behind the switch, so none of them
+conducts and the reduction keeps none. **In boost or cut the same derivation yields six
+components for mid, including that 1 H tap.** No stand-in is derived at those two settings,
+and they are exercised anyway, in `tests/board/scaffold-mid-modes.test.ts`, so choosing a
+reference setting does not narrow what the reduction is verified over.
 
 ### The rule that composes
 
@@ -287,8 +310,8 @@ nonetheless get this wrong, which is why discovery is specified.
 
 **Then: keep every component on a path between two boundary nodes, and drop only components
 that are genuinely disconnected.** No series/parallel collapsing, no star-mesh transformation,
-no elimination of internal nodes. The result is already small - **one, two, two, four and six
-components for low-cut, hi-boost, low-boost, hi-cut and mid respectively, fifteen in all** -
+no elimination of internal nodes. The result is already small - **one, two, two, four and one
+component for low-cut, hi-boost, low-boost, hi-cut and mid respectively, ten in all** -
 because flat is degenerate, so there is nothing to gain from reducing further and a whole
 class of impedance-altering bugs to avoid. A stand-in that is literally a subset of the
 section's own flat-state components cannot differ from it.
@@ -361,6 +384,16 @@ equality, with no tolerance at all, and it is the real guarantee. Specifying it 
 the numerical gate from being load-bearing: there is nothing being fitted, so a tolerance is
 never what decides correctness.
 
+**A boundary net the stand-in does not reach is PROVED, not permitted.** "Identical node
+identities on the boundary" cannot be read as "every boundary net is a node of the stand-in",
+because a section can present an open at one of its own boundary nets - mid at `off` presents
+one at `hi_boost_out` - and a stand-in that put a part there would be adding a connection the
+section has not got. The invariant is therefore the weaker and correct one: a boundary net is
+a node of the stand-in **unless the section presents no finite admittance between it and any
+other boundary net**, which is measured on the section's own network at the pairwise boundary
+and recorded per net, so no section inherits another's licence and no net drops out quietly.
+It is derived from the section, with no section named in the rule.
+
 **Gate A2 - numerical boundary equivalence**, as a guard against the invariants being
 implemented wrongly in a way that still produces a plausible network. For each section, drive
 each boundary node in turn with the others held, sweep, and compare boundary admittances
@@ -374,6 +407,16 @@ decides nothing:
   admittance cannot fail on relative error alone. These are solver-noise tolerances, not
   perceptual ones - the two networks are structurally identical, so anything above numerical
   noise is a defect.
+
+**An entry that is zero on both sides is not evidence, and is counted as none.** The absolute
+floor exists so the Schur elimination's rounding residue does not read as disagreement, and
+the same floor lets a comparison of two OPENS pass without testing anything. Where a section
+presents an open at a boundary net, that net's whole row and column are such entries: mid's
+`hi_boost_out` row is three of its four, the section reading between 1.6e-18 and 2.8e-17 S
+where its conducting entry reads 1e-5. Those entries are **enumerated by name** rather than
+left to swell the gate's pass count, and every covered section is separately required to
+carry at least one comparison above the floor, so a section cannot end up covered only by
+vacuous ones.
 
 **Gate B - composition.** For every combination, the composed network's behaviour for each
 present section must match `THREE_BAND_REFERENCE` under the same control vector, with absent
@@ -495,41 +538,83 @@ low-boost    1.04       1.04     0.39     1.04         —        0.68
 mid          0.17       0.17     0.00     0.17       0.17         —
 ```
 
-So each board must **declare which setting its stand-ins emulate**, and the 0.00 dB result
-holds only there. Making the stand-in capacitors selectable, with a switch mirroring the
-real section's positions, would lift the restriction at the cost of parts; that is a
-decision for the implementation, not something this design forecloses.
+**THAT MATRIX IS STALE HIGH, AND HAS NOT BEEN RE-MEASURED.** It was measured with the
+reference holding mid's mode switch in `boost`, where mid's stand-in carried a 25.3 nF / 1 H
+branch tuned to the mid selector's 1 kHz position - and the matrix identifies that branch as
+the dominant term itself. The `+mid` column is the one configuration in which mid is PRESENT
+and its stand-in therefore not fitted, and it is where the two large rows collapse: hi-cut
+reads 3.71 dB in every other column and **0.00 dB** there, hi-boost reads 3.34 to 3.39 dB
+elsewhere and **0.15 dB** there. The 3.71 dB headline was mid's stand-in, not hi-cut's.
+With the reference at `off`, mid's stand-in is a single
+frequency-independent 100k and contributes no setting sensitivity at all, so the true figures
+can only be lower. **How much lower is not known, and these numbers must not be quoted as
+current.** Re-measuring the matrix is outstanding work; until it is done, treat 3.71 dB as an
+upper bound carried over from a reference setting the scaffold no longer uses. The figure is
+quoted in `lib/board/scaffold/`, in `circuits/pultec/physical/board.ts` and in the generated
+wiring guides, and all of those inherit the same caveat.
 
-**The low-frequency selectors are ganged, and that is the worse of the two cases.** There are
-two distinct scenarios and they need distinguishing:
+**What IS derived, and is tested, is the scope of the restriction.**
+`tests/board/scaffold-settings.test.ts` moves one field of the flat state at a time and
+records whose stand-in changes. At the reference setting the answer is:
+
+| Setting moved | Stand-ins that change |
+| --- | --- |
+| low frequency (`lo_freq`) | none |
+| high frequency (`hi_freq`) | hi-cut |
+| mid frequency | none |
+| mid mode | mid |
+
+So **hi-cut's `C26` is the only selector-chosen part in the whole scaffold**, and `hi_freq` -
+the shaft `SW_HI_CUT` shares with `SW_HI_BOOST` - is the only knob whose movement can
+invalidate a stand-in. Each board must still **declare which setting its stand-ins emulate**,
+because a declaration nobody can check is what the 3.71 dB measurement was a warning about;
+but the two scenarios the restriction distinguishes now land differently:
 
 - *The absent section's selector is simply gone.* The scaffold assumes a setting; nothing can
   move it; the only risk is forgetting which setting it is.
-- *The absent section's selector is ganged to a present one.* `SW_LO_CUT` and `SW_LO_BOOST`
-  share one shaft (`lo_freq`). If one of low-cut or low-boost is present and the other
-  absent, **turning the present section's frequency knob silently invalidates the stand-in**,
-  because in the real circuit that one knob moves both.
+- *The absent section's selector is ganged to a present one.* This is the live hazard, and it
+  is the HIGH side rather than the low. `SW_HI_CUT` and `SW_HI_BOOST` share `hi_freq`, so with
+  hi-boost built and hi-cut absent, **turning the high-frequency knob silently invalidates
+  hi-cut's stand-in**. The low-frequency gang (`SW_LO_CUT` and `SW_LO_BOOST`, sharing
+  `lo_freq`) cannot do this any more: low-cut's stand-in is a wire and low-boost's is 56k plus
+  a 0R shunt, and no selector chooses either. An earlier revision of this document named the
+  low gang as the worse case; that was true when it was written and the derivation says
+  otherwise now.
 
 So the design **prohibits any claim of full-range equivalence** while a ganged selector is
 away from the scaffold's reference setting. Concretely: the declared frequency state is part
 of the test fixture, and the suite asserts it equals the reference model's setting. A
 mismatch is a test failure, not a quietly degraded result. Selectable stand-in capacitors
-would lift the restriction at a parts cost; that is an implementation decision this design
-leaves open, and until it is taken the restriction is real and must be on the silkscreen.
+would lift the restriction at a parts cost - and it is now **one capacitor on one stand-in**,
+which makes that a far smaller proposition than it was; that is an implementation decision
+this design leaves open, and until it is taken the restriction is real and must be on the
+silkscreen.
 
-**Standing in for mid needs a 1 H inductor**, and mid's inductors have **no part number**.
-`docs/pultec/values.md` specifies them electrically - value, tolerance, DCR - and says a
-catalogue part, a pot core or a transformer winding all qualify. The scaffold inherits that
-open question rather than resolving it, and the parent design's part contract will refuse
-rather than guess.
+**The scaffold needs NO inductor**, and that matters because the Pultec's inductors have **no
+part number**. `docs/pultec/values.md` specifies them electrically - value, tolerance, DCR -
+and says a catalogue part, a pot core or a transformer winding all qualify; a scaffold that
+needed one would hand every builder of every section board that open question for a part
+belonging to a section they are not building.
 
-It is the **only** such part the scaffold needs - mid's `L_MID_1H` is the one inductor in all
-fifteen stand-in components - and that is a derived fact, asserted in
-`tests/board/scaffold-equivalence.test.ts` rather than assumed. It very nearly was not: an
-earlier reduction kept hi-boost's `L_HI_BOOST_300MH` on a branch that carries no current, so
-the parts list asked a builder to source a second unobtainable inductor for a dead loop. A
-reduction that starts keeping dead reactive branches again would quietly put it back, which
-is why the count is pinned rather than described.
+That the scaffold needs none is a **derived fact and a close-run one**, asserted in
+`tests/board/scaffold-equivalence.test.ts` rather than assumed, and it has been wrong twice
+in two different ways:
+
+- An earlier reduction kept hi-boost's `L_HI_BOOST_300MH` on a branch that carries no
+  current, so the parts list asked for an unobtainable inductor for a dead loop. Deciding
+  liveness on electrical nodes rather than graph nodes removed it.
+- An earlier reference flat state held mid's mode switch in `boost`, which made mid's
+  stand-in six parts including the `L_MID_1H` tap - the 1 H coil on **four** boards, none of
+  them mid's. Holding the reference at `off`, where the mode switch opens the coil's return
+  and the whole branch reduces away as inert, removed it.
+
+So the assertion is two-sided: a reduction that starts keeping dead reactive branches puts
+hi-boost's coil back, and a reference flat state that moves mid off centre puts mid's back.
+Either is an inductor nobody can order appearing on the parts list of a board that does not
+need it, which is why the fact is pinned rather than described.
+
+mid's own board still carries `L_MID_1H` and the other four taps, and always did: the open
+question about inductor part numbers is mid's to inherit, not every board's.
 
 **The metric is action, not absolute level.** Insertion loss differs between a standalone
 section and the full EQ, and that difference is real and expected - the makeup stage absorbs
@@ -687,6 +772,40 @@ looking like one that passed.
 Each row is a decision made during execution rather than during design, recorded
 because the reasoning is not recoverable from the code and because every one of them
 is a change somebody could plausibly undo on the grounds that it looks redundant.
+
+### The reference flat state holds mid's mode switch at `off`, not `boost`
+
+`REFERENCE_FLAT` originally held `midMode: "boost"`, which was not a decision so much as the
+first position in the list. The reduction is exact at all three, so this is a choice about
+what a stand-in should MEAN rather than about accuracy, and the electrical argument is one
+sentence: a mid board that was never built contributes no mid action, so standing in for an
+absent mid with its BOOST network models a control the builder does not have. The original
+EQP-1 has no mid band at all - the mid-frequency controls are the separate MEQ-5 - so for
+this three-band derivative, no-mid-action is the faithful baseline for an absent mid. The
+mode switch's centre position leaves the coil's return connected to nothing, so `off` is an
+exact open rather than a small signal, and the reduction drops the whole branch as inert.
+
+Four things followed, each of which is why the decision is recorded rather than left to be
+inferred from a one-word diff:
+
+- mid's stand-in goes from six components to one (`R_MID_SHUNT`), and the scaffold from
+  fifteen to ten. Five parts come off each of the four non-mid boards.
+- **`L_MID_1H` leaves the scaffold entirely.** It was the only part in the whole scaffold
+  with no catalogue number, and it was on four boards that do not need a mid coil.
+- **Only hi-cut's `C26` remains selector-chosen**, so `hi_freq` is the only shaft whose
+  movement can invalidate a stand-in, and the ganged-selector hazard moves from the low side
+  to the high. The 3.71 dB setting-sensitivity matrix is stale high as a result, and is
+  marked as such rather than re-measured.
+- mid's stand-in no longer touches `hi_boost_out`, although that net is in mid's boundary.
+  Gate A1 asserted that every boundary net was a node of the stand-in, which was a structural
+  proxy that held only while every boundary net conducted; it now permits a net the stand-in
+  does not reach after PROVING the section presents an open there, from the section's own
+  pairwise boundary admittance, with the permitted nets recorded so one cannot be added
+  silently. No section is named in the rule - the carve-out this spec spent a task removing
+  must not come back in another form.
+
+Do not restore `"boost"` on the grounds that mid has a boost position. What that would buy is
+a mid control on a board with no mid section, and a 1 H coil nobody can order on four boards.
 
 ### `pruneFloatingBranches` is forbidden in DERIVATION, not everywhere
 

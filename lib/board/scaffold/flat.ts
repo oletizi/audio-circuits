@@ -4,7 +4,9 @@
  * A STAND-IN IS SPECIFIC TO THE SETTING IT EMULATES. An absent section has no
  * frequency selector, so the scaffold must assume one, and its capacitor values follow
  * from that assumption. Holding stand-ins at these settings while the circuit is set
- * elsewhere costs up to 3.71 dB - measured, and recorded in
+ * elsewhere costs up to 3.71 dB - measured at an earlier reference setting, where mid's
+ * stand-in carried a tuned LC branch, so a worst case rather than a current figure, and
+ * recorded with that caveat under "Limits, measured" in
  * `docs/superpowers/specs/2026-10-09-pultec-section-scaffold-design.md`. The setting is
  * therefore data carried with the stand-in, never implicit.
  *

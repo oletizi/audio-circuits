@@ -20,7 +20,8 @@
  *
  * THE EMULATED SETTING IS READ, NEVER WRITTEN DOWN HERE. It comes off
  * `doc.flat`, which travels with the stand-in derivation. Up to 3.71 dB rides on that
- * setting, it is the limit most likely to be mistaken for a circuit fault, and a
+ * setting - an upper bound measured at an earlier reference; see "Limits, measured" in
+ * the design doc - it is the limit most likely to be mistaken for a circuit fault, and a
  * transcribed copy of it in this prose would be the one sentence in the document that
  * could silently stop being true.
  *
@@ -88,7 +89,10 @@ function wholeGroupText(parts: number): string {
  *
  * WHY THIS IS CONDITIONAL. A ganged selector turns two sections at once, so moving it
  * when one of the two is absent moves the built section only and leaves the stand-in
- * where it was derived - up to 3.71 dB apart, and it reads as a circuit fault. On four
+ * where it was derived - up to 3.71 dB apart, and it reads as a circuit fault. That
+ * figure is an UPPER BOUND measured at an earlier reference setting, where mid's
+ * stand-in carried a tuned LC branch; at the current setting only hi-cut's stand-in
+ * depends on a selector at all. See "Limits, measured" in the design doc. On four
  * of the five boards the shaft is on this panel and **Panel parts** flags it. On the mid
  * board nothing is ganged - `SW_MID` shares no shaft, the pairs being `hi_freq` and
  * `lo_freq` - so the unconditional version sent that reader hunting upward for a flag
@@ -109,7 +113,9 @@ function gangedWarning(
   const consequence = [
     "Moving it then moves the section you built and not the stand-in covering the one you",
     "did not: the two disagree by up to 3.71 dB, which reads as a circuit fault rather than",
-    "as a knob in the wrong place.",
+    "as a knob in the wrong place. That 3.71 dB is a worst case measured at an earlier",
+    "reference setting, not a figure to expect — treat it as the reason to leave the knob",
+    "alone, not as a prediction of what you will hear.",
   ]
   if (ganged) {
     return [
