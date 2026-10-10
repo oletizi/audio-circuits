@@ -25,12 +25,11 @@
  * isolation"). `StandIn` no longer carries isolation data, because the owner's
  * build-time-population model has no further use for it; **Task 6, "Population and
  * junction instructions in the guide"** rewrites this file wholesale and removes this
- * copy with it. `circuits/pultec/scaffold.ts` keeps the other, identical copy, removed
- * outright - not redesigned - by **Task 4, "Delete the separate scaffold board"**,
- * which deletes that whole file; the two copies must go together, or whichever
- * survives is a lone private duplicate that will look deliberate rather than leftover.
- * The computation stays local rather than being reinstated as shared machinery in
- * `lib/`.
+ * copy with it. `circuits/pultec/scaffold.ts` carried the other, identical copy;
+ * **Task 4, "Delete the separate scaffold board"** removed it outright - not
+ * redesigned - by deleting that whole file, so this is now the sole surviving copy,
+ * and it survives only until Task 6's rewrite removes it too. The computation stays
+ * local rather than being reinstated as shared machinery in `lib/`.
  *
  * NO BOARD IS DECLARED FOR THE SCAFFOLD YET. `boards/<name>/perfboard.json` hands a
  * board to the perfboard CLI, and that contract needs a physicalization - a
