@@ -419,18 +419,19 @@ the date.)
   products found), each listing printed with its manufacturer. Choose by
   manufacturer as well as part number. Digi-Key's parameter lists use "-"
   for a parameter that does not apply; it is printed as Digi-Key states it.
-- 2026-10-09: `bun run parts search|lookup --supplier digikey` crashes
-  ("ProductsCount is a undefined, not a finite number") whenever Digi-Key's
-  keyword search returns zero products, rather than reporting "no match" -
-  hit searching for Eagle Plastic Devices' knob (450-AA193 and "Eagle
-  Plastic Devices" both 0-result) and Taiwan Alpha's panel pot
+- 2026-10-09 (fixed the same day; kept for the record): `bun run parts
+  search|lookup --supplier digikey` used to crash ("ProductsCount is a
+  undefined, not a finite number") whenever Digi-Key's keyword search found
+  nothing - hit searching for Eagle Plastic Devices' knob (450-AA193 and
+  "Eagle Plastic Devices" both 0-result) and Taiwan Alpha's panel pot
   (RV16AF-10-15R1-B1K-3CLA, "RV16AF", "Taiwan Alpha" all 0-result): Digi-Key
-  does not carry either manufacturer at all. A narrower keyword that does
-  return results (e.g. "knob set screw") does not crash, which is how the
-  zero-result cause was confirmed rather than some other query problem.
-  This is a tool bug (reported, not fixed by a researcher) - treat a crash
-  on every keyword tried for a manufacturer as "Digi-Key does not carry
-  this manufacturer," not as a query mistake to keep retrying.
+  does not carry either manufacturer at all. The cause: Digi-Key answers a
+  search that finds nothing with empty `Products` and `ExactMatches` and no
+  `ProductsCount` at all (recorded in
+  `tests/fixtures/suppliers/digikey-keyword-no-results.json`). The tool now
+  reads that as no results and prints `Digi-Key: no exact match for "..."`
+  (exit 0), as it does for Mouser. A no-match on every keyword tried for a
+  manufacturer means Digi-Key does not carry that manufacturer.
 - 2026-10-09: Digi-Key sometimes drops a SparkFun catalog number's category
   prefix in its own "manufacturer part number" field - SparkFun's own
   product page states the part as "PRT-11367" (sparkfun.com/products/11367,

@@ -114,6 +114,28 @@ test("source --sku of the Digi-Reel listing refuses, naming the cut-tape SKU; lo
   expect(shown.logs).toContain("  packaging: Digi-Reel® (plus a $7.00 Digi-Reel fee per order)")
 })
 
+test("lookup and search --supplier digikey report no match, exit 0, when Digi-Key finds nothing", async () => {
+  const looked = collect()
+  const lookupCode = await runCli(["lookup", "450-AA193", "--supplier", "digikey"], {
+    ...baseOpts({ fetch: digikeyFetch() }),
+    log: looked.log,
+    error: looked.error,
+  })
+  expect(lookupCode).toBe(0)
+  expect(looked.logs).toEqual(['Digi-Key: no exact match for "450-AA193".'])
+  expect(looked.errors).toEqual([])
+
+  const searched = collect()
+  const searchCode = await runCli(["search", "Eagle", "Plastic", "Devices", "450-AA193", "--supplier", "digikey"], {
+    ...baseOpts({ fetch: digikeyFetch() }),
+    log: searched.log,
+    error: searched.error,
+  })
+  expect(searchCode).toBe(0)
+  expect(searched.logs).toEqual(['Digi-Key: no exact match for "Eagle Plastic Devices 450-AA193".'])
+  expect(searched.errors).toEqual([])
+})
+
 function writeDigikeyEntry(partsDir: string): string {
   const entryPath = path.join(partsDir, "r_100k_0805.json")
   const entry = {

@@ -243,8 +243,21 @@ export function parseKeyword(json: unknown, endpoint: string, fetched: string): 
     products: offersOf("Products"),
     exactMatches: offersOf("ExactMatches"),
     pageProducts: productsOf("Products").length,
-    totalProducts: requireFiniteNumber(record["ProductsCount"], "ProductsCount", endpoint),
+    totalProducts: parseProductsCount(record, endpoint),
   }
+}
+
+/** `ProductsCount`, required - except in the one shape Digi-Key answers a search that finds
+ * nothing with (`digikey-keyword-no-results.json`): `Products` and `ExactMatches` both empty
+ * arrays and no `ProductsCount` at all. That is a count of 0. Products without a count, or a
+ * count that is present but not a number, is still refused. */
+function parseProductsCount(record: Record<string, unknown>, endpoint: string): number {
+  const count = record["ProductsCount"]
+  const products = record["Products"]
+  const exact = record["ExactMatches"]
+  const emptyArray = (value: unknown): boolean => Array.isArray(value) && value.length === 0
+  if (count === undefined && emptyArray(products) && emptyArray(exact)) return 0
+  return requireFiniteNumber(count, "ProductsCount", endpoint)
 }
 
 /** Digi-Key's 404 body for a product number it does not list, exactly as recorded

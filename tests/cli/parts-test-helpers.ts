@@ -41,12 +41,8 @@ const DIGIKEY_DETAILS_BY_SKU: Record<string, string> = {
   "311-100KCRDKR-ND": fixture("digikey-productdetails-311-100kcrct-nd.json"),
 }
 const DIGIKEY_NOT_FOUND = fixture("digikey-productdetails-not-found.json")
-const DIGIKEY_EMPTY_KEYWORD = JSON.stringify({
-  Products: [],
-  ProductsCount: 0,
-  ExactMatches: [],
-  SearchLocaleUsed: { Site: "US", Language: "en", Currency: "USD" },
-})
+/** Digi-Key's recorded answer to a search that finds nothing (no ProductsCount). */
+const DIGIKEY_EMPTY_KEYWORD = fixture("digikey-keyword-no-results.json")
 
 /** Answers Digi-Key's token, keyword and product-details endpoints from the recorded
  * fixtures (keyword search by the request's `Keywords`, details by the SKU in the path);

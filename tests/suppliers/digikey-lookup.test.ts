@@ -106,3 +106,42 @@ test("a Digi-Reel listing carries its fee and the product's cut-tape SKU; a Mark
   const offers = await digikeyClient(CREDENTIALS, market.fetch, TODAY, () => T0).lookup("MP-1")
   expect(offers[0].marketplaceSeller).toBe("Third Party Co")
 })
+
+const NO_RESULTS = fixture("digikey-keyword-no-results.json")
+
+test("lookup and search read Digi-Key's recorded zero-result response (no ProductsCount) as no results", async () => {
+  const { fetch, sent } = recordingFetch({ "search/keyword": ok(NO_RESULTS) })
+  const client = digikeyClient(CREDENTIALS, fetch, TODAY, () => T0)
+  expect(await client.lookup("450-AA193")).toEqual([])
+  expect(await client.search("Eagle Plastic Devices 450-AA193", 10)).toEqual([])
+  expect(sent.filter((request) => request.url.endsWith("/search/keyword"))).toHaveLength(2)
+})
+
+test("a response with products but no ProductsCount is still refused", async () => {
+  const body = JSON.stringify({ ...JSON.parse(NO_RESULTS), Products: [product("P-1", [variation("P-1-ND")])] })
+  const { fetch } = recordingFetch({ "search/keyword": ok(body) })
+  await expect(digikeyClient(CREDENTIALS, fetch, TODAY, () => T0).search("P-1", 10)).rejects.toThrow(
+    /Digi-Key products\/v4\/search\/keyword: ProductsCount is a undefined, not a finite number/,
+  )
+})
+
+test("a response with exact matches but no ProductsCount is still refused", async () => {
+  const body = JSON.stringify({ ...JSON.parse(NO_RESULTS), ExactMatches: [product("P-1", [variation("P-1-ND")])] })
+  const { fetch } = recordingFetch({ "search/keyword": ok(body) })
+  await expect(digikeyClient(CREDENTIALS, fetch, TODAY, () => T0).lookup("P-1")).rejects.toThrow(/ProductsCount/)
+})
+
+test("a ProductsCount that is present but not a number is refused, even with no products", async () => {
+  const body = JSON.stringify({ ...JSON.parse(NO_RESULTS), ProductsCount: "0" })
+  const { fetch } = recordingFetch({ "search/keyword": ok(body) })
+  await expect(digikeyClient(CREDENTIALS, fetch, TODAY, () => T0).search("x", 10)).rejects.toThrow(
+    /ProductsCount is a string, not a finite number/,
+  )
+})
+
+test("a later page in the zero-result shape, before the count is reached, is refused as an empty page", async () => {
+  const { fetch } = pagedFetch({ 0: page([product("GAP-2", [variation("GAP-2-ND")])], 3), 1: NO_RESULTS })
+  await expect(digikeyClient(CREDENTIALS, fetch, TODAY, () => T0).lookup("GAP-2")).rejects.toThrow(
+    /"GAP-2" reports 3 products, but the page at offset 1 held none/,
+  )
+})

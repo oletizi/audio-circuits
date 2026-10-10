@@ -133,22 +133,26 @@ export function digikeyClient(
   async function lookup(mpn: string): Promise<readonly SupplierOffer[]> {
     const bySku = new Map<string, SupplierOffer>()
     let seen = 0
+    let total = 0
     for (let page = 0; ; page += 1) {
       const result = await keyword(mpn.trim(), LOOKUP_PAGE_SIZE, seen)
-      if (result.totalProducts > LOOKUP_PAGE_SIZE * LOOKUP_MAX_PAGES) throw tooManyProducts(mpn, result.totalProducts)
+      // A later page in Digi-Key's empty-result shape (no count) is an empty page of a search
+      // whose count is already known - not a search that found nothing.
+      if (page === 0 || result.totalProducts > 0) total = result.totalProducts
+      if (total > LOOKUP_PAGE_SIZE * LOOKUP_MAX_PAGES) throw tooManyProducts(mpn, total)
       for (const offer of [...result.exactMatches, ...result.products]) {
         if (sameText(offer.mpn, mpn) && !bySku.has(offer.sku)) bySku.set(offer.sku, offer)
       }
       seen += result.pageProducts
-      if (seen >= result.totalProducts) return [...bySku.values()]
+      if (seen >= total) return [...bySku.values()]
       if (result.pageProducts === 0) {
         throw new Error(
-          `Digi-Key ${KEYWORD_PATH}: a search for "${mpn}" reports ${result.totalProducts} products, but the ` +
+          `Digi-Key ${KEYWORD_PATH}: a search for "${mpn}" reports ${total} products, but the ` +
             `page at offset ${seen} held none, so its exact matches cannot be known to be complete. Try ` +
             "again, or name the Digi-Key product number with --sku.",
         )
       }
-      if (page + 1 >= LOOKUP_MAX_PAGES) throw tooManyProducts(mpn, result.totalProducts)
+      if (page + 1 >= LOOKUP_MAX_PAGES) throw tooManyProducts(mpn, total)
     }
   }
 
