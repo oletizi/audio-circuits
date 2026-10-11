@@ -17,6 +17,19 @@
 - `docs/superpowers/specs/2026-10-10-stripboard-remeasurement.md` — **RE-MEASURE**, authoritative where it contradicts COST or MOVE.
 - `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md` — the parent. This plan implements its **S1a**.
 
+**Scope boundary, stated here because a reader otherwise has to infer it.** This plan delivers
+**S1a** and nothing downstream of it: a pipeline, graded and gated. **The five Pultec board
+layouts are the parent's `S1`** — *"Perfboard versions of each discrete circuit … the four
+remaining Pultec sections laid out, built and measured against the model's predictions"* — and
+`S1` was made to depend on `S1a` on 2026-10-10, with the parent recording that *"what remains the
+owner's in S1 is the build and the measurement."* So the objective is tracked, in one place, by
+one document.
+
+**No task below delivers an S1 layout and no milestone here restates S1's deliverable.** A
+deliverable stated in two documents is a deliverable that diverges, and the parent's roadmap row
+is the one with the dependency edge and the gate. If a reviewer wants the five layouts scheduled,
+the change belongs in the parent's `S1` row, not here.
+
 ---
 
 ## Global Constraints
@@ -52,6 +65,28 @@ Criteria reach an artifact through one of three channels — derived mechanicall
 **V9 — no fitted coefficient anywhere.** *"the pipeline reports no ratio fitted across boards, and any constant it carries traces to a derivation, a measurement, or an owner's parameter."* Four boards cannot support a fitted threshold and five could not either.
 
 **R2 — the generate-and-grade split.** The move generator proposes; the grader grades with the full check. The two share no code.
+
+**TEST HONESTY — a test's name and its comment may claim only what its body establishes.** This
+is a global constraint because the suite's whole value is that a green run means something, and
+*"a skipped check must never look like a passing one"* has an exact analogue here: **a weak check
+under a strong name is worse than a weak check under an honest one**, because the honest one is a
+known limit while the strong one is a false guarantee nobody re-reads. Two shapes are named
+because this plan shipped both and a reading pass did not catch them:
+
+- **A substring scan named as a structural proof.** `expect(text).not.toContain("score.ts")` does
+  not establish that a module shares no code with the scorer: one transitive import through any
+  third module satisfies it. Where this plan wants a structural claim it computes the **transitive
+  import closure** (`tests/stripboard/import-closure.ts`, added in Task 4 and reused by Tasks 14 and 18); where a text scan is
+  genuinely all that is wanted, the test's name says *scan* and the comment records what a scan
+  does not cover.
+- **A self-consistency check named as an agreement with an external authority.** Comparing two
+  fields of one hand-written literal against each other proves transcription is internally
+  consistent, not that it matches the file it came from. Where a claim names a file, the test
+  **opens that file**.
+
+Every task below that adds a check states how it was proved able to fail, **and** that its name
+and comment survive being read beside its body. Where a check is weaker than the property it is
+about, the weaker guarantee is written down as a limit rather than left as a confident name.
 
 **Repository constraints, from `CLAUDE.md` and `AGENTS.md`:**
 
@@ -92,8 +127,9 @@ The argument, in the order it has to be made:
 
 - The grader (Task 14) is one module with one entry point, and **no task may add a hard-constraint check anywhere else.** Ten constraints, ten named results, one verdict.
 - **No `HC` check may be skipped, defaulted or inferred.** Where its data is missing it refuses by name (`PAR2`'s posture, extended to `HC10` by Task 2).
-- **Every `HC` check gets a fixture it must reject by name** (V4), and the fixture is part of the task that adds the check, not a later tidy-up.
-- The grader imports nothing from `tools/stripboard/score.ts`, and Task 14 asserts that by reading the import graph.
+- **Every `HC` check gets a fixture it must reject by name** (V4), and the fixture is part of the task that adds the check, not a later tidy-up. **`HC10` gets two**, one per half, because it is checked in two places (below).
+- The grader imports nothing from `tools/stripboard/score.ts`, and Task 14 asserts that over the **transitive import closure** of `grade.ts` and `constraints.ts` — not by scanning their text, which a transitive import satisfies.
+- **`HC10` is one constraint checked in two halves, and both must hold for it to hold.** CRITERIA's criterion sentence is about a *placement* — *"every placed part's pins lie on straight lines parallel to the strips"* — while its "Checked by" column specifies a *footprint-level* classification. Task 2 implements the footprint half; **Task 14 implements the placement half**, over each placed component's resolved `PIN` positions and its `DIRECTION` against the strip axis. A footprint that could be placed compatibly and a layout that actually placed it compatibly are two claims, and the earlier draft of this plan proved only the first while the verdict asserted the criterion. There are still **exactly ten** `ConstraintId`s: no criterion is added, because both halves are clauses of `HC10`'s own wording.
 - Task 2 comes before the grader because the grader cannot be complete without it, and it comes before the search because a search graded by an incomplete verdict produces boards nobody can trust and cannot be re-graded without re-running.
 
 ---
@@ -111,6 +147,22 @@ Each was checked in this repository or in `.tools/veroroute-perfboard` while thi
 - **`.tools/veroroute-perfboard/.built-commit` reads `2d67ec6`** while the binary in that tree contains the `--move` strings. That is D25's hazard live in the working tree: the stamp claims a build the binary is not. Task 1 is what makes the two agree again.
 - **Per-family lead spans** — `lib/kicad/lead-span.ts` (451 lines) exports `LEAD_SPANS` (13 entries), `UNSOURCED` (2 entries) and `leadSpanFor(footprint, spans?, unsourced?)`, which throws by name for both an unlisted and an unsourced footprint. `lib/kicad/lead-span-model.ts` holds the arithmetic, `DatasheetRef`, `FormableGeometry`, `RigidGeometry`, `FamilyGeometry`, `LeadSpan` with `minSpanHoles` / `maxSpanHoles` / `formable` / `minBasis` / `maxBasis`, `TOOL_MIN_SPAN_HOLES = 2`, `TOOL_MAX_SPAN_HOLES = 16`. `tests/kicad/lead-span.test.ts` recomputes every recorded integer from the recorded dimensions — the split exists to catch a transcription error.
 - **`LeadSpan` carries no pin-pattern field.** Confirmed by reading the interface. CRITERIA §10.3 is that gap and Task 2 is this plan's answer to it.
+
+**The footprint files, read off disk on 2026-10-10, because Task 2's data comes from them and one of its tests must open them.**
+
+- The library root is `/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints`, and a footprint is `<Library>.pretty/<Name>.kicad_mod`. It is the same root `tests/circuits/kicad-round-trip.ts` derives `KICAD_CLI` from, and that file is the precedent for how a missing KiCad must behave: *"a missing kicad-cli FAILS them rather than skipping"*, with the refusal naming the path, the override and why the test does not skip.
+- **All thirteen footprints in `LEAD_SPANS` resolve**, every one at `(version 20260206)`, and **every pad in all thirteen carries a name** — there is no unnamed or NPTH pad in the set, so "transcribed pads" and "`(pad …)` forms in the file" are the same count today. That is a measured fact and not a rule, so Task 2 records an exclusion list rather than assuming it stays empty.
+- A pad form spans several lines: `(pad "<name>" <type> <shape>` opens it and `(at <x> <y> [rot])` is the first `(at …)` inside it. Pad counts measured: two for each of the six two-lead passives in `LEAD_SPANS` and both `UNSOURCED` entries, one for `PinHeader_1x01`, five for `PinHeader_1x05`, sixteen for `DIP-16_W7.62mm`, three each for `TO-92_Inline` and the Runtron trimmer.
+- **Three of the thirteen have an along-row pad pitch that is NOT a whole number of grid steps** within `PITCH_TOLERANCE_MM`, computed through `nearestGridSteps`: `TO-92_Inline` at 1.27 mm, `CP_Radial_D5.0mm_P2.00mm` at 2.00 mm, and `CP_Radial_D8.0mm_P3.50mm` at 3.50 mm. **`TO-92_Inline` is the one of the three that `lead-span.ts` records as `formable: false`** (`geometry.kind === "rigid"`); the two radials are formable families whose reach `lead-span.ts` already records with a datasheet. This is why Task 2's along-row clause is not simply "unconstrained" — see **Formed leads** there.
+- Every other entry's along-row pitch is on the grid, several only inside `PITCH_TOLERANCE_MM` (the 5 mm and 2.5 mm pitches), which is the phenomenon that tolerance exists for.
+
+**What `BOUNDS` actually measures, read from `Src/Board.h:710` and checked against four committed boards.** It is **not** one quantity and it is **not** the fabrication extent. `Board::GetBounds` returns the union of **three** sources and reports failure only when all three are empty:
+
+1. every grid element, on every layer, whose `GetNodeId() != BAD_NODEID` **or** whose `GetLyrHasPin()` is true — painted copper, including a wire's run and a solder-bridged hole, plus every pin hole whether painted or blank;
+2. `m_compMgr.GetBounding()` — the union of every component's `GetFootprintRect()`, which is `Rect(GetRow(), GetLastRow(), GetCol(), GetLastCol())`, plus the trax pattern's rect. **It filters on neither `GetIsPlaced()` nor type**, so an unplaced component still contributes a rect;
+3. `m_textMgr.GetBounding()` — the union of every **text label**'s rect, which is an annotation and not a physical feature at all.
+
+So `BOUNDS` can **over**-state the material a board needs (a label in a corner, a floating part's stale rect) and nothing in the fork guarantees it covers every feature a cut depends on. Measured on the four committed boards, with the extents computed from the dumps' own lines: on `transistor-preamp-feedback` **two wire endpoints** lie outside the `PIN`-hole bounding box, and on `transistor-preamp-staged` **four wire endpoints and two solder-bridge holes** do. So the physical features genuinely reach past the pin extent on real boards, which is why Task 14 computes a **fabrication extent** rather than reading one number and calling it the answer.
 - The `midMode: off` scaffold change, the governance reversal (commit `5089cda`) and the acceptance-criteria extraction are all landed; `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` is committed at 738 lines.
 
 **What the five boards in S1a's scope actually place.** Computed by iterating `physicalBoard(section).components` for all five sections and collecting `part.footprint`:
@@ -178,15 +230,35 @@ PIPELINE §4's M1 order is M1.2 → M1.7 → M1.3 → M1.4 → M1.1 → M1.5 →
 | 11 | P0 targets and the floor | Before the scorer, because `K5`'s `F ≥ F_floor` needs `F_floor` to exist before anything is scored. |
 | 12 | The scorer | After 10 and 11. Carries V1, V2 and K5. |
 | 13 | The run directory and manifest | After the scorer, so every later task writes into a run directory rather than growing one later. Carries G3 and V7. |
-| 14 | The grader | After 2, 3–5, 7 and 10: it needs `HC10`'s data, `HC8`'s module, `BOUNDS` for `HC6`, and the rules file for the stock default. **The crux.** |
+| 14 | The grader | After 2, 3–5, 7 and 10: it needs `HC10`'s footprint data, `HC8`'s module, `BOUNDS` and `DIRECTION` from 7, and the rules file for the stock default. **The crux.** **`HC10`'s placement half needs `DIRECTION`, which is Task 7 (M1.1) — and Task 14 was already after Task 7 for `BOUNDS`, so adding it reorders nothing.** Ends with **Checkpoint 1**. |
 | 15 | The ranking | After 7 (`BOUNDS`) and 14 (the grader decides which candidates are rankable). |
 | 16–19 | P1 seed, P2 climb, the escapes, stopping | In that order: construction before search (*"search is for what construction cannot reach"*), single-part climb before the escapes so the escapes have a baseline to be measured against, stopping last because `Q3` is a restart trigger before it is a stop and cannot be written before restarts exist. |
-| 20 | The verdict and the report | After stopping, because `Q1` and `Q2` require the admissibility verdict and the report is keyed by both the `bound` and the `outcome`. |
+| 20 | The verdict and the report | After stopping, because `Q1` and `Q2` require the admissibility verdict and the report is keyed by both the `bound` and the `outcome`. Ends with **Checkpoint 2**. |
 | 21 | Determinism | After the escapes, because every non-determinism this plan introduces arrives with them, and V6 compares restart boundaries. |
 | 22 | V5 and V9 | After the search, because V5 compares the pipeline's placement against `--import`'s on the same board and there is nothing to compare before. |
 | 23 | The B1-frozen run | After everything the run needs. It is the externally authored criterion and the first thing the pipeline is pointed at. |
 | 24 | The adoption gate | Last of the pipeline, because it refuses on hashes and verdicts that Tasks 13 and 20 produce. |
 | 25 | Admitting the verifiers to `make check` | **OB2.** Last, and separable: a reviewer may reject it while approving Task 24. |
+
+**Two integration checkpoints, and they are not tasks.** Twenty-five tasks, each of which lands
+its own tests, and **two points where the pieces are pointed at real artifacts and the output is
+read**. They are the last step of Task 14 and the last step of Task 20 rather than numbered tasks
+of their own, because a checkpoint delivers no module and renumbering twenty-five tasks to insert
+two would strand every cross-reference in this document.
+
+| | Where | What it runs, and what it is for |
+| --- | --- | --- |
+| **Checkpoint 1** | Task 14, final step | The grader — all ten constraints — against four **real, previously validated, hand-laid** layouts: `pultec-low-boost` (through the frozen pair), `pt2399-core`, `transistor-preamp-feedback`, `transistor-preamp-staged`. All four are committed and pass `make check` today. It is the first point at which all ten hard constraints meet, and unit fixtures are hand-written dump text: **four boards a person actually built is the first evidence the grader is pointed at reality.** The verdicts are read, not merely asserted. |
+| **Checkpoint 2** | Task 20, final step | `seed → climb → escapes → stop → verdict → report`, end to end on one Pultec board, before any optimisation benchmarking. The report is read in full. It is the first point where the `bound` and the `outcome` are produced by the machinery rather than by a test's fixture, and the thing it catches is a chain that is correct in every part and wrong when joined. |
+
+**Checkpoint 1 expects the grader to REFUSE `pt2399-core`, and that is the checkpoint passing.**
+Its extent is 17 × 36 against the declared 34 × 27 stock (`OB4`, measured again here: its `PIN`
+holes run `0,0`–`16,35`), and it places three footprints with no span data — two in `UNSOURCED`,
+one in neither map (`PAR2`, which refuses **by name**). Both are known owner-blocked conflicts. So
+the checkpoint **records the verdict and the refusal's wording** and does not treat either as a
+failure; what would be a failure is `pt2399-core` grading as **admissible**, because that would
+mean `HC6` or `PAR2`'s refusal is not wired in. The checkpoint asserts the refusal names the
+footprint and the extent, which is the discriminating observation.
 
 ---
 
@@ -198,11 +270,13 @@ stripboard/rules.json                      NEW: PAR3's one strict rules file
 lib/kicad/pin-pattern-model.ts             NEW: HC10's classification arithmetic
 lib/kicad/pin-pattern.ts                   NEW: HC10's per-footprint pad data
 docs/stripboard/pin-pattern.md             NEW: why each classification is what it is
+docs/stripboard/pipeline-verification.md   NEW: created by Task 3, extended by 7, 14, 22, 23
 tools/stripboard/rules.ts                  NEW: the strict loader
 tools/stripboard/targets.ts                NEW: P0 - N, P, C_floor, the net graph
 tools/stripboard/score.ts                  NEW: F, the identity self-check, the floor invariant
 tools/stripboard/copper.ts                 NEW: HC8's copper graph from the dump geometry
 tools/stripboard/equivalence.ts            NEW: HC8's partition comparison and verdict
+tools/stripboard/extent.ts                 NEW: HC6's fabrication extent, and the trim check
 tools/stripboard/grade.ts                  NEW: A1 over HC1-HC10 - THE CRUX
 tools/stripboard/constraints.ts            NEW: one function per hard constraint
 tools/stripboard/rank.ts                   NEW: OBJ3's declared ranking and A_occ
@@ -221,8 +295,18 @@ make/board.mk                              gains `place` and `adopt` targets
 .gitignore                                 gains build/stripboard/
 tests/fixtures/stripboard/                 NEW: the frozen fixture and the negative fixtures
 tests/stripboard/*.test.ts                 NEW: one file per module above
+tests/stripboard/import-closure.ts         NEW: the transitive import closure, shared by three tests
+tests/kicad/footprint-library.ts           NEW: the library root, resolved or refused - never skipped
 tests/kicad/pin-pattern.test.ts            NEW
 ```
+
+**The two shared test helpers are helpers and not tests**, named without `.test.ts` the way
+`tests/circuits/kicad-round-trip.ts` is, because three tasks make the same structural claim and
+three copies of a closure walker is three places for one claim to be wrong. Both **refuse** rather
+than degrade: an import the walker cannot resolve is an error naming the importer and the
+specifier, and a missing footprint library is an error naming the path and the override, because a
+closure computed over a partial graph and a scan over a library that is not there are both checks
+that pass by looking at nothing.
 
 In the fork (`.tools/veroroute-perfboard`):
 
@@ -296,30 +380,56 @@ ls "$SCRATCH/m1.vrt" 2>&1
 
 **THE CRUX'S LIVE INSTANCE. `HC10` is in `A1` and nothing classifies a footprint's pin pattern, so today the verdict would claim a constraint held that was never checked.**
 
-**Files:** create `lib/kicad/pin-pattern-model.ts`, `lib/kicad/pin-pattern.ts`, `docs/stripboard/pin-pattern.md`; test `tests/kicad/pin-pattern.test.ts`.
+**Files:** create `lib/kicad/pin-pattern-model.ts`, `lib/kicad/pin-pattern.ts`, `docs/stripboard/pin-pattern.md`, `tests/kicad/footprint-library.ts`; test `tests/kicad/pin-pattern.test.ts`.
 
 **Interfaces:**
-- *Consumes:* `GRID_MM`, `PITCH_TOLERANCE_MM`, `nearestGridSteps` from `lib/kicad/grid.ts`; `DatasheetRef` from `lib/kicad/lead-span-model.ts`.
-- *Provides, and Task 14's `HC10` check consumes exactly these:*
+- *Consumes:* `GRID_MM`, `PITCH_TOLERANCE_MM`, `nearestGridSteps` from `lib/kicad/grid.ts`; `DatasheetRef` from `lib/kicad/lead-span-model.ts`; `leadSpanFor` and `LEAD_SPANS` from `lib/kicad/lead-span.ts` (in the test and in `admitPattern` only, never in the data file).
+- *Provides, and Task 14's `HC10` footprint half consumes exactly these:*
   - `PadPosition { readonly pad: string; readonly xMm: number; readonly yMm: number }`
-  - `PadSource { readonly file: string; readonly version: string; readonly padCount: number }`
-  - `RowDecomposition { readonly axis: "x" | "y"; readonly rows: readonly (readonly string[])[]; readonly rowPitchSteps: readonly number[] }`
+  - `PadSource { readonly file: string; readonly version: string; readonly padCount: number; readonly excludedPads: readonly { readonly pad: string; readonly reason: string }[] }`
+  - `RowDecomposition { readonly axis: "x" | "y"; readonly rows: readonly (readonly string[])[]; readonly rowPitchSteps: readonly number[]; readonly alongRowPitchesMm: readonly number[]; readonly alongRowOnGrid: boolean }`
   - `PatternClassification = { readonly kind: "rows" } & RowDecomposition | { readonly kind: "off-strip-lattice"; readonly reason: string }`
   - `classifyPads(pads: readonly PadPosition[]): PatternClassification`
-  - `PinPattern { readonly footprint: string; readonly pads: readonly PadPosition[]; readonly source: PadSource; readonly classification: PatternClassification; readonly basis: string }`
+  - `GridAccommodation = { readonly kind: "as-moulded" } | { readonly kind: "formed-to-grid"; readonly preparedPitchSteps: number; readonly basis: string; readonly source: DatasheetRef }`
+  - `PatternEligibility = { readonly kind: "eligible"; readonly accommodation: GridAccommodation; readonly detail: string } | { readonly kind: "refused"; readonly reason: string }`
+  - `admitPattern(pattern: PinPattern): PatternEligibility`
+  - `preparedExtentsHoles(pattern: PinPattern): readonly number[]` — the pattern's hole extent on each of its two axes after any recorded preparation: the along-row extent and the across-axis row count, in that order, so the cross-check against `leadSpanFor` is over stated quantities rather than a re-derivation at the call site
+  - `PinPattern { readonly footprint: string; readonly pads: readonly PadPosition[]; readonly source: PadSource; readonly classification: PatternClassification; readonly accommodation: GridAccommodation; readonly basis: string }`
   - `PIN_PATTERNS: ReadonlyMap<string, PinPattern>`
   - `pinPatternFor(footprint: string, patterns?: ReadonlyMap<string, PinPattern>): PinPattern` — throws by name for an unlisted footprint.
+- **Which module each export lives in**, because `admitPattern` consumes `PinPattern` and a type declared in the data file would make the data file the arithmetic's dependency: **`lib/kicad/pin-pattern-model.ts`** holds every type above — `PadPosition`, `PadSource`, `RowDecomposition`, `PatternClassification`, `GridAccommodation`, `PatternEligibility`, `PinPattern` — and the three functions `classifyPads`, `admitPattern` and `preparedExtentsHoles`. **`lib/kicad/pin-pattern.ts`** holds `PIN_PATTERNS` and `pinPatternFor` and **declares no type**, exactly as `lead-span.ts` holds the data and `lead-span-model.ts` holds the arithmetic. That split is the one the lead-span pair already uses and the reason it exists there is the reason it is copied here: a transcription error is caught by arithmetic that cannot have been written to match it.
+- `tests/kicad/footprint-library.ts` provides `FOOTPRINT_LIBRARY_ROOT: string`, `footprintFile(name: string): string`, `FootprintPads { readonly pads: readonly PadPosition[]; readonly version: string; readonly padCount: number; readonly file: string }` and `readFootprintPads(name: string): FootprintPads` — **test-side only**, because reading a `.kicad_mod` at run time would make the pipeline depend on a KiCad install while `PIN_PATTERNS` exists precisely so it does not.
 
 **Where the classification is a decision and where it is arithmetic, decided here because `HC10`'s own words leave it open and a later task must not re-open it.**
 
 `HC10` refuses *"a pattern not decomposable into rows parallel to the strips"*, and names *"rows plural, and decomposability is the test"*. Two axes, two different rules, and the asymmetry is physical rather than chosen:
 
-- **Across the strips, the row separation must be a whole number of grid steps.** A row of pads lands on one strip and the next row on another, and the strip pitch is 2.54 mm. There is no bending that puts a lead between two strips. This is the clause that can refuse.
-- **Along a row, the pad spacing is unconstrained.** A lead moves along its own strip by entering a different hole in it, and VeroRoute's own footprint types already express that as a hole count. `Package_TO_SOT_THT:TO-92_Inline`'s three pads read `(at 0 0)`, `(at 1.27 0)` and `(at 2.54 0)` from the `.kicad_mod` — collinear, at half a grid step. A rule that demanded grid spacing *along* the row would refuse a footprint this repository deliberately admits and has built, and `lib/kicad/lead-span.ts` records `fixedSpanHoles: 3` for it, which is the leads splayed out to the grid. So the along-row clause would be wrong, and it is not written.
+- **Across the strips, the row separation must be a whole number of grid steps.** A row of pads lands on one strip and the next row on another, and the strip pitch is 2.54 mm. There is no bending that puts a lead between two strips. This is the clause that refuses outright.
+- **Along a row, the pad spacing does not have to be a grid multiple — but an off-grid pitch is an accommodation, which must be RECORDED and not inferred.** A lead moves along its own strip by entering a different hole in it, so the along-row direction has latitude the across direction does not. **What that latitude is not is unlimited**, and the worked case is the one that makes the point: `Package_TO_SOT_THT:TO-92_Inline`'s three pads read `(at 0 0)`, `(at 1.27 0)` and `(at 2.54 0)` from the `.kicad_mod` — collinear, at **half** a grid step. **Collinearity does not establish that those leads enter holes.** Two of the three are between holes as moulded, and what puts them in holes is *forming the leads* — a physical accommodation performed once with pliers, which `lib/kicad/lead-span.ts` already describes in prose: *"the part is splayed to the grid once, as a fixed preparation, and is not a lever afterwards."*
 
-So: `classifyPads` tries each axis in turn, groups the pads by their across-axis coordinate, and the classification is `rows` when every pair of distinct row coordinates is a whole number of grid steps apart within `PITCH_TOLERANCE_MM`, and `off-strip-lattice` otherwise, naming the two rows and the residual. A pattern whose pads are all on one row is `rows` with one row. A ring of pads has every pad on its own row on both axes and the row separations are not grid multiples, so it refuses.
+**Formed leads, and the discipline they get.** A footprint that needs formed leads is **explicitly
+supported and recorded as such**, with the same provenance the lead spans carry, and is never
+admitted because its pads happened to be collinear. The rule, in three clauses:
 
-**What this does not check, and it is a gap reported rather than filled.** `HC10` as worded is about a *placement* — *"every placed part's pins lie on straight lines parallel to the strips"* — while CRITERIA's own "Checked by" column makes it a **footprint-level** check that refuses *"by name before any placement exists to grade"*. A footprint that decomposes along one axis still has to be oriented so those rows lie along the strips, and nothing in the suite checks that a given placement did. That is recorded in this plan's self-review as a gap for the owner; this task implements the footprint-level check CRITERIA specifies and does not invent the placement-level one.
+1. **On-grid along the row** — every along-row pitch is a whole number of grid steps within `PITCH_TOLERANCE_MM`: the accommodation is `as-moulded` and nothing more is needed. The part drops in.
+2. **Off-grid along the row, on a family `lead-span.ts` records as `formable`** — the forming claim already exists, with its datasheet, as `minSpanHoles`/`maxSpanHoles`. The pin pattern **cites** it and does not restate it: a second copy of a datasheet figure is the thing `PAR2` exists to prevent. The accommodation is `formed-to-grid` and `admitPattern` cross-checks it against `leadSpanFor` (below).
+3. **Off-grid along the row, on a family `lead-span.ts` records as `formable: false`** — nothing in the span module says those terminals may be moved at all, so an off-grid pitch is **unmountable unless a one-time preparation is recorded.** The entry must carry a `formed-to-grid` accommodation with its own `basis` and `DatasheetRef`, and **`admitPattern` refuses by name without one.** `TO-92_Inline` is this case, measured: it is the only one of the thirteen that is both off-grid along its row and non-formable.
+
+**`admitPattern`'s cross-check against `leadSpanFor`, which is what keeps the accommodation from
+being a free-text claim.** No span figure is written here (`PAR2`): the test reads both numbers
+from the modules. The invariant is that **the prepared pattern's hole extent on one of its two
+axes lies inside `[minSpanHoles, maxSpanHoles]` as `leadSpanFor` reports them** — the along-row
+extent after any recorded preparation, or the across-axis row count. It is a **disjunction over
+two axes**, which is a stated weakness: it catches a recorded extent that matches **neither** axis
+and does not catch one that matches the wrong one, because the two modules do not say which axis a
+`fixedSpanHoles` is measured along and inventing that correspondence is not available here. It
+holds for all thirteen entries today, verified while this plan was written, and a family added
+later that breaks it has a transcription error in one module or the other and the refusal names
+both.
+
+So: `classifyPads` tries each axis in turn, groups the pads by their across-axis coordinate, and the classification is `rows` when every pair of distinct row coordinates is a whole number of grid steps apart within `PITCH_TOLERANCE_MM`, and `off-strip-lattice` otherwise, naming the two rows and the residual. It **also reports the along-row pitches and whether they are on the grid** — a fact, not a verdict, because the verdict needs the recorded accommodation and `classifyPads` is pure arithmetic over the pads. A pattern whose pads are all on one row is `rows` with one row. A ring of pads has every pad on its own row on both axes and the row separations are not grid multiples, so it refuses.
+
+**What this task checks and what Task 14 checks, because `HC10` has two halves.** `HC10` as worded is about a *placement* — *"every placed part's pins lie on straight lines parallel to the strips"* — while CRITERIA's own "Checked by" column specifies a **footprint-level** check that refuses *"by name before any placement exists to grade"*. **This task is the footprint half.** A footprint that decomposes along one axis still has to be *oriented* so those rows lie along the strips, and a layout that failed to is a layout this task's check passes. **That placement half is Task 14's**, over each placed part's `PIN` positions and its `DIRECTION`; it is the other clause of `HC10`'s own criterion sentence and not a new criterion, and the earlier draft of this plan left it as a gap while the verdict asserted `HC10` held. CRITERIA's "Checked by" column still names only the footprint half, so **that divergence is reported for the owner** in `docs/stripboard/pin-pattern.md` and in this plan's self-review: if he reads the column as the whole of `HC10`, Task 14's placement half is deleted and the gap restored.
 
 - [ ] **Step 1: Read the pads off the footprints on disk. Do not write a coordinate from memory.** The library is at `/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints/<Library>.pretty/<Name>.kicad_mod`; each file carries `(version <n>)` near the top and one `(pad "<name>" <type> ... (at <x> <y> [rot]) ...)` per pad. For each of the thirteen footprints in `LEAD_SPANS` — and for no others, because an entry for a footprint nothing places is an entry nobody can check — record `pad`, `xMm`, `yMm`, the file path, the `(version …)` token and the pad count. Two already verified while this plan was written, as the shape to follow:
 
@@ -330,17 +440,112 @@ Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical
                                    version 20260206, 3 pads, (at 0 0), (at 2.5 5), (at 5 0)
 ```
 
-  **A pad carrying a rotation in its `(at x y rot)` does not move its centre**, so `rot` is not read; a pad whose `(at …)` cannot be parsed is an error naming the file and the line, never a skipped pad. **Verify names against the thing itself:** if a footprint named in `LEAD_SPANS` is not on disk at the path above, stop and report it rather than recording coordinates for a file nobody opened — this repository has twice shipped a footprint that does not exist.
+  **A pad carrying a rotation in its `(at x y rot)` does not move its centre**, so `rot` is not read; a pad whose `(at …)` cannot be parsed is an error naming the file and the line, never a skipped pad. **Verify names against the thing itself:** if a footprint named in `LEAD_SPANS` is not on disk at the path above, stop and report it rather than recording coordinates for a file nobody opened — this repository has twice shipped a footprint that does not exist. All thirteen resolved on 2026-10-10 and every pad in all thirteen is named, so `excludedPads` is `[]` for every entry today; it exists as a field because that is a measurement and not a rule, and the alternative to the field is a count that silently disagrees the first time a footprint carries a mounting hole.
+
+- [ ] **Step 1b: Write `tests/kicad/footprint-library.ts`, which is what makes the file-reading tests honest.** It resolves the library root, reads a footprint's pads, and **refuses rather than skips** when it cannot. Match `tests/circuits/kicad-round-trip.ts` exactly in posture — it is the repository's precedent and its own comment is the argument: *"a missing kicad-cli FAILS them rather than skipping"*.
+
+```ts
+/**
+ * The KiCad footprint library, read off disk. Task 2's pad data is transcribed
+ * from these files, so one test opens them and compares; a transcription
+ * checked only against itself is a transcription nobody verified.
+ *
+ * This helper REFUSES rather than skips when the library is not resolvable,
+ * for the reason tests/circuits/kicad-round-trip.ts gives for kicad-cli: a
+ * skipped check must never look like a passing one, and a green suite on a
+ * machine with no KiCad would be exactly that. It is test-side only: nothing
+ * in lib/ or tools/ reads a .kicad_mod at run time, which is why
+ * lib/kicad/pin-pattern.ts holds the pads as committed data.
+ */
+import fs from "node:fs"
+import path from "node:path"
+import type { PadPosition } from "../../lib/kicad/pin-pattern-model.ts"
+
+/** Overridable the way KICAD_CLI is, and defaulted to the same install root. */
+export const FOOTPRINT_LIBRARY_ROOT =
+  process.env["KICAD_FOOTPRINTS"] ??
+  "/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints"
+
+/** `<Library>:<Name>` as a netlist spells it, to `<root>/<Library>.pretty/<Name>.kicad_mod`. */
+export function footprintFile(name: string): string {
+  const parts = name.split(":")
+  const library = parts[0]
+  const footprint = parts[1]
+  if (parts.length !== 2 || library === undefined || footprint === undefined) {
+    throw new Error(
+      `"${name}" is not a <Library>:<Name> footprint reference, which is the form every ` +
+        "netlist in this repository uses and the only form this helper can turn into a path.",
+    )
+  }
+  return path.join(FOOTPRINT_LIBRARY_ROOT, `${library}.pretty`, `${footprint}.kicad_mod`)
+}
+
+export interface FootprintPads {
+  readonly pads: readonly PadPosition[]
+  readonly version: string
+  /** Every `(pad ...)` form in the file, including any this repository excludes. */
+  readonly padCount: number
+  readonly file: string
+}
+
+/**
+ * Reads a footprint's pad centres. Throws, naming the path and the override,
+ * when the file is not there - this does NOT skip.
+ */
+export function readFootprintPads(name: string): FootprintPads {
+  const file = footprintFile(name)
+  if (!fs.existsSync(file)) {
+    throw new Error(
+      `footprint "${name}" is not at ${file}. Install KiCad or set KICAD_FOOTPRINTS. This ` +
+        "test does not skip: it is the only check that the pads in lib/kicad/pin-pattern.ts " +
+        "match the files they were transcribed from, and this repository has twice shipped a " +
+        "footprint that does not exist.",
+    )
+  }
+  const lines = fs.readFileSync(file, "utf8").split("\n")
+  const version = /\(version (\d+)\)/.exec(lines.join("\n"))?.[1]
+  if (version === undefined) {
+    throw new Error(`${file} carries no (version <n>) token, so its pads cannot be dated.`)
+  }
+  const pads: PadPosition[] = []
+  let padCount = 0
+  for (let index = 0; index < lines.length; index += 1) {
+    const opener = /^\s*\(pad\s+(?:"([^"]*)"|(\S+))\s+\S+/.exec(lines[index] ?? "")
+    if (opener === null) continue
+    padCount += 1
+    const pad = opener[1] ?? opener[2] ?? ""
+    // `(at x y [rot])` is the first `at` form inside the pad; a rotation does
+    // not move the centre, so the third field is read and discarded.
+    let at: RegExpExecArray | null = null
+    for (let look = index + 1; look < Math.min(index + 10, lines.length); look += 1) {
+      at = /^\s*\(at (-?[\d.]+) (-?[\d.]+)(?: (-?[\d.]+))?\)/.exec(lines[look] ?? "")
+      if (at !== null) break
+    }
+    if (at === null) {
+      throw new Error(
+        `${file}: the pad form opening at line ${index + 1} has no parseable (at x y) within ` +
+          "ten lines. This is an error and not a skipped pad: a dropped pad is how a partial " +
+          "transcription passes a count check.",
+      )
+    }
+    pads.push({ pad, xMm: Number(at[1]), yMm: Number(at[2]) })
+  }
+  if (pads.length === 0) throw new Error(`${file} declares no pads, which cannot be right.`)
+  return { pads, version, padCount, file }
+}
+```
 
 - [ ] **Step 2: Write the failing test** (`tests/kicad/pin-pattern.test.ts`):
 
 ```ts
 import { test, expect } from "bun:test"
 import { GRID_MM } from "../../lib/kicad/grid.ts"
-import { classifyPads } from "../../lib/kicad/pin-pattern-model.ts"
+import { classifyPads, admitPattern, preparedExtentsHoles }
+  from "../../lib/kicad/pin-pattern-model.ts"
 import { PIN_PATTERNS, pinPatternFor } from "../../lib/kicad/pin-pattern.ts"
-import { LEAD_SPANS } from "../../lib/kicad/lead-span.ts"
-import type { PadPosition } from "../../lib/kicad/pin-pattern-model.ts"
+import { LEAD_SPANS, leadSpanFor } from "../../lib/kicad/lead-span.ts"
+import type { PadPosition, PinPattern } from "../../lib/kicad/pin-pattern-model.ts"
+import { readFootprintPads } from "./footprint-library.ts"
 
 const ring = (count: number, radiusMm: number): readonly PadPosition[] =>
   Array.from({ length: count }, (_, index) => {
@@ -369,18 +574,55 @@ test("every recorded classification is rederived from the recorded pads, not ass
   }
 })
 
-test("every recorded pad count agrees with the footprint file the pads came from", () => {
+test("every recorded pad OPENS its .kicad_mod and agrees with the file, pad by pad", () => {
+  // THE TEST THIS REPLACES compared pattern.pads.length against
+  // pattern.source.padCount - two fields of the SAME hand-written literal. It
+  // was named "agrees with the footprint file the pads came from" and never
+  // opened a file, so transcribing eight pads from a ten-pad footprint and
+  // writing padCount: 8 passed it. That is the defect class this plan calls its
+  // crux, in this plan's own test file; the rule it broke is the repository's:
+  // verify names against the thing itself, the libraries are on disk.
+  //
+  // readFootprintPads THROWS when the library is not resolvable. It must not
+  // skip - see tests/kicad/footprint-library.ts and the precedent in
+  // tests/circuits/kicad-round-trip.ts.
   for (const pattern of PIN_PATTERNS.values()) {
-    expect(pattern.pads.length, pattern.footprint).toBe(pattern.source.padCount)
-    expect(pattern.source.file, pattern.footprint).toContain(".kicad_mod")
-    expect(pattern.source.version, pattern.footprint).not.toBe("")
+    const file = readFootprintPads(pattern.footprint)
+    expect(pattern.source.file, pattern.footprint).toBe(file.file)
+    expect(pattern.source.version, pattern.footprint).toBe(file.version)
+    // Every (pad ...) form in the file is accounted for: transcribed, or
+    // excluded with a reason. A silent shortfall is the failure above.
+    expect(pattern.source.padCount, pattern.footprint).toBe(file.padCount)
+    expect(
+      pattern.pads.length + pattern.source.excludedPads.length,
+      `${pattern.footprint}: transcribed + excluded must account for every pad in the file`,
+    ).toBe(file.padCount)
+    for (const excluded of pattern.source.excludedPads) {
+      expect(excluded.reason.length, `${pattern.footprint} pad ${excluded.pad}`).toBeGreaterThan(20)
+    }
+    // And each recorded position is the file's own (at x y), by pad name.
+    const onDisk = new Map(file.pads.map((pad) => [pad.pad, pad]))
+    for (const pad of pattern.pads) {
+      const actual = onDisk.get(pad.pad)
+      expect(actual, `${pattern.footprint} pad "${pad.pad}" is not in ${file.file}`).toBeDefined()
+      expect(actual!.xMm, `${pattern.footprint} pad ${pad.pad} x`).toBeCloseTo(pad.xMm, 4)
+      expect(actual!.yMm, `${pattern.footprint} pad ${pad.pad} y`).toBeCloseTo(pad.yMm, 4)
+    }
   }
 })
 
-test("a single row of pads decomposes, whatever the spacing along it", () => {
-  // TO-92_Inline's own geometry: three collinear pads at half a grid step. A
-  // rule demanding grid spacing ALONG a row would refuse a footprint this
-  // repository places on boards that are built and pass make check.
+test("the library helper refuses a missing footprint rather than skipping", () => {
+  // The guard on the guard. If this ever stops throwing, every assertion above
+  // becomes a loop over nothing on a machine with no KiCad.
+  expect(() => readFootprintPads("Nonexistent_Lib:Nonexistent_Footprint")).toThrow(/does not skip/)
+  expect(() => readFootprintPads("not-a-reference")).toThrow(/Library>:<Name/)
+})
+
+test("a single row of pads decomposes across the strips, and reports its along-row pitch", () => {
+  // TO-92_Inline's own geometry: three collinear pads at HALF a grid step.
+  // Decomposition is about the ACROSS direction, so one row decomposes; whether
+  // the leads reach holes is the along-row question and classifyPads reports it
+  // as a fact rather than deciding it. admitPattern decides, below.
   const inline = classifyPads([
     { pad: "1", xMm: 0, yMm: 0 },
     { pad: "2", xMm: 1.27, yMm: 0 },
@@ -390,9 +632,103 @@ test("a single row of pads decomposes, whatever the spacing along it", () => {
   if (inline.kind !== "rows") throw new Error("unreachable: kind was asserted above")
   expect(inline.rows).toEqual([["1", "2", "3"]])
   expect(inline.rowPitchSteps).toEqual([])
+  expect(inline.alongRowOnGrid).toBe(false)
+  expect(inline.alongRowPitchesMm).toEqual([1.27, 1.27])
+})
+
+test("an off-grid along-row pitch on a NON-FORMABLE family refuses without a recorded accommodation", () => {
+  // The review's sharp point, as the test that would have caught it:
+  // collinearity does not establish that the leads enter holes. TO-92_Inline's
+  // outer pads are on 1.27mm against a 2.54mm grid, and lead-span.ts records
+  // the family as formable: false - nothing there says the terminals may be
+  // moved. Admitting it on collinearity alone would be inferring a physical
+  // accommodation from a geometric coincidence.
+  const pattern = pinPatternFor("Package_TO_SOT_THT:TO-92_Inline")
+  const withoutRecord = { ...pattern, accommodation: { kind: "as-moulded" } as const }
+  const refused = admitPattern(withoutRecord)
+  expect(refused.kind).toBe("refused")
+  if (refused.kind !== "refused") throw new Error("unreachable")
+  expect(refused.reason).toMatch(/formed/)
+  expect(refused.reason).toMatch(/TO-92_Inline/)
+  expect(refused.reason).toMatch(/not defaulted/)
+})
+
+test("the recorded formed-to-grid accommodation admits it, and says the leads are formed", () => {
+  const admitted = admitPattern(pinPatternFor("Package_TO_SOT_THT:TO-92_Inline"))
+  expect(admitted.kind).toBe("eligible")
+  if (admitted.kind !== "eligible") throw new Error("unreachable")
+  expect(admitted.accommodation.kind).toBe("formed-to-grid")
+  expect(admitted.detail).toMatch(/formed/)
+})
+
+test("every formed-to-grid accommodation carries a basis and a datasheet source", () => {
+  // The same provenance discipline the lead spans carry: a physical
+  // accommodation recorded as a bare boolean is a claim nobody can check.
+  for (const pattern of PIN_PATTERNS.values()) {
+    if (pattern.accommodation.kind !== "formed-to-grid") continue
+    expect(pattern.accommodation.basis.length, pattern.footprint).toBeGreaterThan(60)
+    expect(pattern.accommodation.source.url, pattern.footprint).not.toBe("")
+    expect(pattern.accommodation.preparedPitchSteps, pattern.footprint).toBeGreaterThanOrEqual(1)
+  }
+})
+
+test("an accommodation recorded for a pattern that is already on the grid is refused as spurious", () => {
+  // The other direction, and it matters: a formed-leads record on a part that
+  // needs no forming is a claim about a physical operation nobody performs, and
+  // it would quietly license the off-grid case next to it.
+  const onGrid = pinPatternFor("Package_DIP:DIP-16_W7.62mm")
+  // The DatasheetRef is borrowed from an entry that legitimately has one, so no
+  // cast is needed: CLAUDE.md forbids `as Type`, and a test that reaches for one
+  // is usually a test building a value the types say cannot exist.
+  const formed = pinPatternFor("Package_TO_SOT_THT:TO-92_Inline")
+  if (formed.accommodation.kind !== "formed-to-grid") {
+    throw new Error("TO-92_Inline must carry a formed-to-grid accommodation; see step 5")
+  }
+  const spurious: PinPattern = {
+    ...onGrid,
+    accommodation: {
+      kind: "formed-to-grid",
+      preparedPitchSteps: 1,
+      basis: "a preparation this part does not need, recorded to prove the guard fires",
+      source: formed.accommodation.source,
+    },
+  }
+  expect(admitPattern(spurious).kind).toBe("refused")
+})
+
+test("every entry's prepared extent lies inside the span lead-span.ts records for it", () => {
+  // The cross-module check, with no span figure written here (PAR2): both
+  // numbers are read from the modules. It is a DISJUNCTION over the two axes,
+  // because neither module says which axis a recorded span is measured along -
+  // so it catches an extent matching NEITHER axis and does not catch one
+  // matching the wrong one. That is the guarantee, stated rather than implied.
+  for (const pattern of PIN_PATTERNS.values()) {
+    const span = leadSpanFor(pattern.footprint)
+    const admitted = admitPattern(pattern)
+    expect(admitted.kind, pattern.footprint).toBe("eligible")
+    const extents = preparedExtentsHoles(pattern)
+    const fits = extents.some(
+      (holes) => holes >= span.minSpanHoles && holes <= span.maxSpanHoles,
+    )
+    expect(
+      fits,
+      `${pattern.footprint}: neither axis's prepared extent ${JSON.stringify(extents)} is inside ` +
+        `[${span.minSpanHoles}, ${span.maxSpanHoles}] - one of the two modules is wrong`,
+    ).toBe(true)
+  }
 })
 
 test("two rows a whole number of strips apart decompose, and the pitch is reported in steps", () => {
+  // A DIP's four corner pads. BOTH axes decompose here - rows of constant y are
+  // one strip pitch apart, rows of constant x are three - and classifyPads
+  // tries x FIRST, so the reported axis is "x" and the pitch is ONE step.
+  //
+  // THE PREVIOUS VERSION of this test expected [3], which is the OTHER axis's
+  // answer, and it would have failed against the implementation printed in this
+  // same task. Caught by this revision's type-and-value consistency pass, and
+  // checked against the real footprint: DIP-16_W7.62mm's sixteen pads give
+  // eight rows of constant y at one step each (measured, 2026-10-10), so "x
+  // first" is also the physically useful answer and not an arbitrary tie-break.
   const dip = classifyPads([
     { pad: "1", xMm: 0, yMm: 0 },
     { pad: "2", xMm: 0, yMm: 2.54 },
@@ -401,8 +737,20 @@ test("two rows a whole number of strips apart decompose, and the pitch is report
   ])
   expect(dip.kind).toBe("rows")
   if (dip.kind !== "rows") throw new Error("unreachable: kind was asserted above")
+  expect(dip.axis).toBe("x")
   expect(dip.rows.length).toBe(2)
-  expect(dip.rowPitchSteps).toEqual([3])
+  expect(dip.rowPitchSteps).toEqual([1])
+  expect(dip.alongRowOnGrid).toBe(true)   // 7.62mm is three steps
+})
+
+test("the real DIP-16's sixteen pads decompose into eight rows one strip apart", () => {
+  // The same claim against the file rather than against four hand-picked
+  // corners, which is what makes the tie-break above a measurement.
+  const classified = classifyPads(readFootprintPads("Package_DIP:DIP-16_W7.62mm").pads)
+  expect(classified.kind).toBe("rows")
+  if (classified.kind !== "rows") throw new Error("unreachable")
+  expect(classified.rows.length).toBe(8)
+  expect(new Set(classified.rowPitchSteps)).toEqual(new Set([1]))
 })
 
 test("a ring of pads is refused, naming why - the negative case HC10 exists for", () => {
@@ -421,14 +769,45 @@ test("a ring is refused on BOTH axes, so the refusal is not an artefact of tryin
   expect(classifyPads(rotated).kind).toBe("off-strip-lattice")
 })
 
-test("a row separation off the grid by more than the tolerance is refused", () => {
+test("a row separation off the grid by more than the tolerance is refused ON BOTH AXES", () => {
+  // THE PREVIOUS VERSION put the off-grid separation on ONE axis only - pads at
+  // (0,0), (2.54,0), (0,2.94), (2.54,2.94) - and expected off-strip-lattice.
+  // But grouping by x gives two rows 2.54mm apart, which is exactly one step,
+  // so classifyPads would have returned `rows` on axis y and the test would
+  // have failed against the implementation printed in this same task. Caught by
+  // this revision's consistency pass.
+  //
+  // A 2x2 pad field decomposes whenever EITHER axis is on the grid, so a test
+  // for the refusal must put the offending separation on both.
   const offGrid = classifyPads([
+    { pad: "1", xMm: 0, yMm: 0 },
+    { pad: "2", xMm: GRID_MM + 0.4, yMm: 0 },
+    { pad: "3", xMm: 0, yMm: GRID_MM + 0.4 },
+    { pad: "4", xMm: GRID_MM + 0.4, yMm: GRID_MM + 0.4 },
+  ])
+  expect(offGrid.kind).toBe("off-strip-lattice")
+  if (offGrid.kind !== "off-strip-lattice") throw new Error("unreachable")
+  // The reason names both attempts, so a classifier that tried one axis and
+  // gave up is distinguishable from one that tried both.
+  expect(offGrid.reason).toMatch(/Along x/)
+  expect(offGrid.reason).toMatch(/Along y/)
+})
+
+test("an off-grid separation on ONE axis decomposes on the other, which is not a refusal", () => {
+  // The control for the test above, and the thing that makes "both axes" a real
+  // claim rather than a phrasing: the same offending separation with one axis
+  // on the grid must CLASSIFY, on that axis.
+  const oneAxis = classifyPads([
     { pad: "1", xMm: 0, yMm: 0 },
     { pad: "2", xMm: 2.54, yMm: 0 },
     { pad: "3", xMm: 0, yMm: GRID_MM + 0.4 },
     { pad: "4", xMm: 2.54, yMm: GRID_MM + 0.4 },
   ])
-  expect(offGrid.kind).toBe("off-strip-lattice")
+  expect(oneAxis.kind).toBe("rows")
+  if (oneAxis.kind !== "rows") throw new Error("unreachable")
+  expect(oneAxis.axis).toBe("y")   // rows of constant x, one step apart
+  expect(oneAxis.rowPitchSteps).toEqual([1])
+  expect(oneAxis.alongRowOnGrid).toBe(false)   // the 2.94mm pitch runs ALONG the row
 })
 
 test("a row separation inside PITCH_TOLERANCE_MM is accepted as that many steps", () => {
@@ -538,20 +917,58 @@ function tryAxis(
     }
     steps.push(resolved.steps)
   }
-  return { kind: "rows", axis, rows: rows.map((row) => row.pads), rowPitchSteps: steps }
+  // The ALONG-row pitches are reported as facts, never as a verdict: whether an
+  // off-grid pitch is mountable depends on a recorded accommodation, and that is
+  // admitPattern's question. See "Formed leads" above.
+  const along = axis === "x" ? (pad: PadPosition) => pad.xMm : (pad: PadPosition) => pad.yMm
+  const byName = new Map(pads.map((pad) => [pad.pad, pad]))
+  const pitches: number[] = []
+  let onGrid = true
+  for (const row of rows) {
+    const coords = row.pads
+      .map((name) => {
+        const pad = byName.get(name)
+        if (pad === undefined) throw new Error("unreachable: a row names a pad not in the input")
+        return along(pad)
+      })
+      .sort((a, b) => a - b)
+    for (let index = 1; index < coords.length; index += 1) {
+      const current = coords[index]
+      const previous = coords[index - 1]
+      if (current === undefined || previous === undefined) {
+        throw new Error("unreachable: coords was indexed inside its own length")
+      }
+      const pitch = current - previous
+      pitches.push(Number(pitch.toFixed(4)))
+      const resolved = nearestGridSteps(pitch)
+      if (resolved.errorMm > PITCH_TOLERANCE_MM || resolved.steps < 1) onGrid = false
+    }
+  }
+  return {
+    kind: "rows",
+    axis,
+    rows: rows.map((row) => row.pads),
+    rowPitchSteps: steps,
+    alongRowPitchesMm: pitches,
+    alongRowOnGrid: onGrid,
+  }
 }
 
 /**
  * Whether a footprint's pads decompose into rows a whole number of strips
  * apart - HC10's test, at footprint level, with no latitude inside it.
  *
- * ACROSS THE STRIPS THE SEPARATION MUST BE A WHOLE NUMBER OF GRID STEPS, and
- * ALONG A ROW THE SPACING IS UNCONSTRAINED. The asymmetry is physical: a row
- * of pads sits on one strip and the next row on another, and the strip pitch
- * is fixed, while a lead moves along its own strip by entering a different
- * hole in it. TO-92_Inline's three collinear pads at 1.27mm are the worked
- * case - one row, and a rule demanding grid spacing along the row would
- * refuse a part this repository has built.
+ * ACROSS THE STRIPS THE SEPARATION MUST BE A WHOLE NUMBER OF GRID STEPS. The
+ * asymmetry is physical: a row of pads sits on one strip and the next row on
+ * another, and the strip pitch is fixed, while a lead moves along its own
+ * strip by entering a different hole in it.
+ *
+ * ALONG A ROW the pitches are REPORTED, not judged. TO-92_Inline's three
+ * collinear pads at 1.27mm are the worked case, and collinearity does NOT
+ * establish that those leads enter holes: two of the three are between holes
+ * as moulded, and what puts them in holes is forming the leads. Whether that
+ * accommodation exists for a family is RECORDED DATA, so the verdict is
+ * admitPattern's and not this function's.
  *
  * BOTH AXES ARE TRIED, and the refusal is only returned when both fail. A
  * classifier that tried one axis would refuse a DIP whose rows happen to lie
@@ -577,27 +994,44 @@ export function classifyPads(pads: readonly PadPosition[]): PatternClassificatio
 }
 ```
 
-- [ ] **Step 5: Implement `lib/kicad/pin-pattern.ts`** — the thirteen entries from step 1 and nothing computed. Each entry carries its pads, its `PadSource`, the classification `classifyPads` returns for it, and a `basis` string saying in one sentence what the pattern is (*"two rows of eight at three strip pitches"*), in the voice `lead-span.ts`'s `minBasis` uses. The module comment states: why it exists (HC10 is in A1 and the verdict must not claim an unchecked constraint held); that every number came from a `.kicad_mod` on disk and none from memory; that an unlisted footprint throws; and the along-row/across-row asymmetry, citing TO-92_Inline. `pinPatternFor` mirrors `leadSpanFor`'s refusal exactly — name the footprint, say it is not in `PIN_PATTERNS`, say **this is NOT defaulted** and why (a pattern the strips cannot take is a board of cuts the owner will not build), list the classified footprints, and say how to add one (open the `.kicad_mod`, record the pads with the file and version, put the entry beside the others).
+- [ ] **Step 4b: Implement `admitPattern` and `preparedExtentsHoles` in `lib/kicad/pin-pattern-model.ts`.** `admitPattern` is the only place a footprint is declared mountable, and it refuses in four cases, each naming the footprint, the measured pitch, what is missing, where to fix it and **why it is not defaulted**:
+  1. the classification is `off-strip-lattice` — the across-strip clause, refused outright;
+  2. the along-row pitch is off the grid, the family is `formable: false` in `LEAD_SPANS`, and the accommodation is `as-moulded` — **no recorded preparation, so no admission**;
+  3. the accommodation is `formed-to-grid` while `alongRowOnGrid` is already true — a spurious record, refused so the field cannot become decoration;
+  4. the footprint is not in `LEAD_SPANS` at all — refused by name, `PAR2`'s posture, because the cross-check has nothing to check against and admitting it would be admitting an unbounded reach.
+  For case 2 on a `formable` family the admission **cites** `leadSpanFor`'s recorded reach rather than restating it, and the `detail` says which clause admitted the pattern so a pass is readable. `preparedExtentsHoles` returns the two axes' extents in holes — along-row, using `preparedPitchSteps` when one is recorded and the measured on-grid pitch otherwise, then the across-axis row count — and throws for an `off-strip-lattice` classification rather than returning a number for a pattern with no rows.
 
-- [ ] **Step 6: Run the classification over all thirteen and read the output.** Write a throwaway probe under the scratchpad that prints each footprint and its classification, and **look at it**. Three outcomes and only one of them is "carry on":
-  - every footprint classifies as `rows` → carry on;
-  - a footprint used only outside the Pultec set refuses → record it in `docs/stripboard/pin-pattern.md` as a finding, leave the classification as the module derived it, and carry on: `PAR2`'s posture is that a refusal is the honest outcome;
-  - **one of the five footprints the Pultec boards place refuses → STOP.** Do not relax the predicate. A rule that refuses a footprint on five boards in S1a's scope is either wrong or has found something real, and `K3`'s fourth condition — *"never a widening because the gate became inconvenient"* — governs by analogy. Report it to the owner with the pads, the file and the derived reason, exactly as `OB4` reports `pt2399-core`'s extent.
+- [ ] **Step 5: Implement `lib/kicad/pin-pattern.ts`** — the thirteen entries from step 1 and nothing computed. Each entry carries its pads, its `PadSource` (file, `(version …)` token, total pad count, and `excludedPads: []`), the classification `classifyPads` returns for it, its `GridAccommodation`, and a `basis` string saying in one sentence what the pattern is (*"two rows of eight at three strip pitches"*), in the voice `lead-span.ts`'s `minBasis` uses. **Three entries carry a `formed-to-grid` accommodation** — `TO-92_Inline` and the two radials whose along-row pitch is off the grid (measured in this plan's facts) — each with a `basis` saying what is formed and a `DatasheetRef`; for the two formable radials the basis cites `lead-span.ts`'s recorded reach rather than restating a figure. The module comment states: why it exists (HC10 is in A1 and the verdict must not claim an unchecked constraint held); that every number came from a `.kicad_mod` on disk and none from memory, and that one test opens those files; that an unlisted footprint throws; the across-strip rule; and that **an off-grid along-row pitch is a formed-leads accommodation recorded here, not an inference from collinearity**, citing TO-92_Inline. `pinPatternFor` mirrors `leadSpanFor`'s refusal exactly — name the footprint, say it is not in `PIN_PATTERNS`, say **this is NOT defaulted** and why (a pattern the strips cannot take is a board of cuts the owner will not build), list the classified footprints, and say how to add one (open the `.kicad_mod`, record the pads with the file and version, decide and record the accommodation, put the entry beside the others).
 
-- [ ] **Step 7: Write `docs/stripboard/pin-pattern.md`**, in the shape of `docs/stripboard/lead-span.md`: what `HC10` is and whose judgement it is (the owner's, quoted), the along-row/across-row asymmetry and why, the per-footprint table with its file and version, step 6's findings, and the one gap — that the placement-level half of `HC10`'s wording is unchecked and why this module does not invent it.
+- [ ] **Step 6: Run the classification AND the admission over all thirteen and read the output.** Write a throwaway probe under the scratchpad that prints each footprint, its classification, its along-row pitches, whether they are on the grid, its accommodation and `admitPattern`'s verdict, and **look at it**. Three outcomes and only one of them is "carry on":
+  - every footprint is `eligible` → carry on;
+  - a footprint used only outside the Pultec set is `refused` → record it in `docs/stripboard/pin-pattern.md` as a finding, leave the classification as the module derived it, and carry on: `PAR2`'s posture is that a refusal is the honest outcome;
+  - **one of the five footprints the Pultec boards place is refused → STOP.** Do not relax the predicate and do not add an accommodation to make it pass. A rule that refuses a footprint on five boards in S1a's scope is either wrong or has found something real, and `K3`'s fourth condition — *"never a widening because the gate became inconvenient"* — governs by analogy. An accommodation added to clear a refusal is exactly that widening wearing a data file's clothes. Report it to the owner with the pads, the file and the derived reason, exactly as `OB4` reports `pt2399-core`'s extent.
+  **Expected from this plan's measurements:** all five Pultec footprints are on-grid along their rows and `as-moulded`, so none of them should need an accommodation at all. **If one does, that is the finding, and it goes to the owner rather than into the data.**
 
-- [ ] **Step 8: Prove the tests can fail.** Three deliberate breaks, each run and reverted, each recorded in a comment beside the test it broke:
-  1. `classifyPads` returns `{ kind: "rows", axis: "x", rows: [pads.map((p) => p.pad)], rowPitchSteps: [] }` unconditionally — *the vacuous classifier*. The ring test and the off-grid test must fail. **This is the mutation that matters**, because it is the shape the fork's mutation harness found four times.
+- [ ] **Step 7: Write `docs/stripboard/pin-pattern.md`**, in the shape of `docs/stripboard/lead-span.md`: what `HC10` is and whose judgement it is (the owner's, quoted), the across-strip rule and why it refuses, **the formed-leads discipline and why collinearity is not evidence of mountability**, the per-footprint table with its file, version, along-row pitch and accommodation, step 6's findings, the cross-check's stated weakness (a disjunction over two axes), and **the divergence to report to the owner**: `HC10`'s criterion sentence is about a placement while CRITERIA's "Checked by" column specifies only the footprint-level check, so this module is half of `HC10` and Task 14 is the other half.
+
+- [ ] **Step 8: Prove the tests can fail.** Six deliberate breaks, each run and reverted, each recorded in a comment beside the test it broke:
+  1. `classifyPads` returns `{ kind: "rows", axis: "x", rows: [pads.map((p) => p.pad)], rowPitchSteps: [], alongRowPitchesMm: [], alongRowOnGrid: true }` unconditionally — *the vacuous classifier*. The ring test and the off-grid test must fail. **This is the mutation that matters**, because it is the shape the fork's mutation harness found four times.
   2. Drop one entry from `PIN_PATTERNS`. The coverage test must fail naming it.
-  3. Change one recorded `yMm` by 0.5 mm. The rederivation test must fail naming that footprint.
+  3. Change one recorded `yMm` by 0.5 mm. The rederivation test must fail naming that footprint, **and the file-opening test must fail too** — two independent detections, which is the point of reading the file.
+  4. **Drop one pad from one entry's `pads` and decrement nothing.** The file-opening test must fail naming the footprint. *Run this one first: it is the exact defect the replaced pad-count test could not see, and if it passes, the new test is no better than the old one.*
+  5. **Set one entry's `source.padCount` to `pads.length` instead of the file's count.** The file-opening test must fail. This is break 4's twin from the other side: it is what made the old test self-consistent and worthless.
+  6. `admitPattern` returns `{ kind: "eligible", ... }` whenever the classification is `rows` — *admission by collinearity*, the defect the review found. The non-formable refusal test and the spurious-accommodation test must both fail.
 
-- [ ] **Step 9: Run** `bun test && bun run typecheck`, **commit** ("Classify every placed footprint's pin pattern, so HC10 is a check and not a claim"), push.
+- [ ] **Step 9: Run** `bun test && bun run typecheck`, **commit** ("Classify every placed footprint's pin pattern, and record the ones whose leads are formed"), push. The body names the three footprints carrying a `formed-to-grid` accommodation and says what each one is formed from and to, so the accommodation is reviewable in a diff rather than only in the data file.
 
 ---
 
 ### Task 3: `HC8`'s geometry contract and the copper graph
 
-**Files:** create `tools/stripboard/copper.ts`; test `tests/stripboard/copper.test.ts`.
+**Files:** create `tools/stripboard/copper.ts`, `docs/stripboard/pipeline-verification.md`; test `tests/stripboard/copper.test.ts`.
+
+**`docs/stripboard/pipeline-verification.md` is created here, by the first task that has a finding
+to put in it, and is extended by Tasks 7, 14, 22 and 23** rather than created at the end. A
+document written last is a document whose early findings were held in somebody's head until then.
+Task 3 opens it with `HC8`'s trust boundary and the nine refusals; Task 22 is where it becomes the
+full `V1`–`V12` register.
 
 **Interfaces:**
 - *Consumes:* `parseBoardDump`, `BoardDump`, `Part`, `Pin`, `Cut`, `Bridge`, `Wire`, `HolePosition` from `tools/guide/dump.ts`.
@@ -609,7 +1043,53 @@ export function classifyPads(pads: readonly PadPosition[]): PatternClassificatio
   - `CopperGraph { readonly components: ReadonlyMap<HoleKey, number>; readonly componentCount: number }`
   - `copperGraph(dump: BoardDump): CopperGraph`
   - `pinHoles(dump: BoardDump): ReadonlyMap<string, HoleKey>` — keyed `` `${ref}.${pin}` ``
-- Task 4 consumes all of these; Task 14's `HC8` check consumes Task 4's verdict and never this module directly.
+  - `GeometryRefusal = "missing-line" | "out-of-bounds" | "cut-not-strip-adjacent" | "cut-across-strips" | "duplicate-pin" | "conflicting-pin" | "unsupported-strip-axis" | "cuts-not-computed" | "solder-not-strip-neighbours"` — the enumerated malformed-input refusals, so the set is a type and cannot grow silently
+- Task 4 consumes all of these; Task 14's `HC8` check consumes Task 4's verdict and never this module directly; Task 14's fabrication-extent check (`extent.ts`) consumes `copperGraph` to verify that trimming preserves connectivity.
+
+**This module REFUSES malformed geometry; it never builds a plausible graph from it.** `HC8` is
+the one gate that certifies electrical correctness, so the input it cannot trust is the input it
+must not interpret. **"Refuse rather than guess"** applies here with no latitude: a reconstruction
+that resolves an ambiguity by choosing is a reconstruction reporting a connectivity it did not
+compute, and it reports it with the same confidence as a correct one. Nine refusals, each a member
+of `GeometryRefusal`, each with a negative fixture it rejects by name:
+
+| refusal | what is malformed | why guessing is not available |
+| --- | --- | --- |
+| `missing-line` | `GRID` or `VERTICAL_STRIPS` absent | the extent and the strip axis are definitions, not defaults; CRITERIA: *"a dump with no `VERTICAL_STRIPS` line does not default to rows"* |
+| `unsupported-strip-axis` | `VERTICAL_STRIPS` is neither `0` nor `1` | a third value means the grammar moved; "the same strip" has no meaning until it is read |
+| `cuts-not-computed` | `CUT_STATE` is not `COMPUTED` | **the one that is easy to miss.** Under `UNRESOLVED` the cut list is *not emitted*, so zero `CUT` lines is indistinguishable from no cuts — and a graph built from that joins holes the board severs. `transistor-preamp-lab` is this case live, with 19 `CUT_CONFLICT` lines |
+| `out-of-bounds` | any hole named by any line lies outside `GRID` | a coordinate off the board is either a grammar change or a corrupt dump; clamping it invents a hole |
+| `cut-not-strip-adjacent` | a `CUT` names two holes on one strip more than one step apart | *"naming the two strip-adjacent holes to sever the strip between"* is the contract; which of the intervening gaps to sever is not stated and not derivable |
+| `cut-across-strips` | a `CUT` names two holes on **different** strips | a cut severs a strip along its run; a pair across strips describes nothing the fork emits |
+| `duplicate-pin` | two `PIN` lines with the same `ref.pin` at the same hole | a repeated record means the dump was concatenated or the parse is wrong; silently de-duplicating hides both |
+| `conflicting-pin` | two `PIN` lines with the same `ref.pin` at **different** holes | one lead cannot be in two holes; picking either is picking a board |
+| `solder-not-strip-neighbours` | a `SOLDER` pair is not two holes on neighbouring strips at one shared along-strip coordinate | the contract's own words; a bridge between non-neighbours is a join mechanism the edge set does not have |
+
+**`cuts-not-computed` is a change to this module's contract and is stated so a reviewer can
+disagree with it.** The earlier draft left `CUT_STATE` to Task 12's scorer. But the scorer and the
+grader are deliberately separate paths (`R2`), so a refusal that lives only in the scorer does not
+protect the grader — and `HC8` is the grader's electrical gate. The refusal therefore lives in
+**both**, with one wording, and `HC2` reads the same field a third time from the constraint side.
+Three readings of one predicate is the shape this plan already uses for `HC3`.
+
+**`HC8`'s trust boundary, stated exactly where the independence is claimed, because the honest
+scope is narrower than "independent".** This module is **independent connectivity reconstruction
+from VeroRoute-reported physical geometry.** It is independent of VeroRoute's **membership
+calculation** — `GetBoardMembership`, the subsystem the optimiser perturbs and the one with the
+demonstrated hole, which is the independence that matters because that is where the measured
+failure was. It is **not** independent of VeroRoute's **geometry export**: it consumes it. So:
+
+> **If the dump omits a cut or misreports a pin, this module produces a consistent and wrong
+> answer.** Nothing here validates the reported geometry against the binary `.vrt`, and a defect
+> in the export is a defect the optimiser and the verifier share.
+
+That limit is acceptable — stronger independence means parsing a binary `QDataStream` (`N5`), and
+it is recorded as limit **`H-13`** rather than as a plan. It is **explicit, not implied**: the
+module comment states it, `docs/stripboard/pipeline-verification.md` states it beside `V11`, and
+Task 20's report prints it beside an `HC8` pass, so a reader of a verdict sees what the pass does
+and does not cover. The nine refusals above are what narrows the gap that *is* reachable: they
+reject a dump that is malformed on its own terms, which is the part of a bad export this module
+can see.
 
 **The edge set is exactly COST §1.5's three join mechanisms and no fourth**, and it is not re-derived here: an uncut within-strip neighbour, a derived solder bridge between adjacent strips at a shared column, and a wire. The reason a fourth is refused is measured: *"A component lead can never supply a join"* — a two-terminal part's leads sit on two different nets by construction, and *"a pipeline that treats a stretched resistor as a bridge will produce boards that do not conduct and score them as if they did."*
 
@@ -674,7 +1154,22 @@ test("a SOLDER line joins two neighbouring strips at one column", () => {
 })
 
 test("VERTICAL_STRIPS 1 changes which holes share a strip, and is read rather than assumed", () => {
-  const vertical = parseBoardDump(BOARD.replace("VERTICAL_STRIPS 0", "VERTICAL_STRIPS 1"))
+  // The CUT moves WITH the axis, and it has to: BOARD's `CUT 0,1 0,2` names two
+  // holes in one row, which is one strip under VERTICAL_STRIPS 0 and TWO
+  // different strips under VERTICAL_STRIPS 1 - where it is malformed and the
+  // `cut-across-strips` refusal rejects it. So the vertical board gets a
+  // vertical cut: same column, adjacent rows.
+  //
+  // CAUGHT BY THIS REVISION'S CONSISTENCY PASS: the previous version flipped
+  // only the axis line and left the horizontal cut, so adding the
+  // cut-across-strips validation would have made this test throw instead of
+  // building a graph - a new refusal breaking an old test, which is the shape
+  // worth looking for whenever a validation is added under existing fixtures.
+  const vertical = parseBoardDump(
+    BOARD
+      .replace("VERTICAL_STRIPS 0", "VERTICAL_STRIPS 1")
+      .replace("CUT 0,1,7 0,2,8", "CUT 0,1,7 1,1,8"),
+  )
   const graph = copperGraph(vertical)
   // Down a column is now one strip; across a row is not.
   expect(graph.components.get(holeKey({ row: 0, col: 0 })))
@@ -714,13 +1209,55 @@ test("a missing contracted line refuses by name and by contract version, never a
   }
 })
 
-test("a non-adjacent CUT pair refuses rather than being interpreted", () => {
-  // No CUT line on any .vrt in this repository names a non-adjacent pair
-  // (measured, CRITERIA's HC8 contract). One would mean the grammar has moved
-  // under the contract, and guessing which holes it severs is how a verifier
-  // reports a connectivity it did not compute.
-  const wide = parseBoardDump(BOARD.replace("CUT 0,1,7 0,2,8", "CUT 0,1,7 0,3,8"))
-  expect(() => copperGraph(wide)).toThrow(/adjacent/)
+test("every enumerated malformed input refuses, naming its refusal - one case each", () => {
+  // The verifier must not construct a plausible graph from malformed input.
+  // Each row is a mutation of BOARD and the refusal it must produce; the
+  // assertion is that THAT refusal fired, because a module that threw the same
+  // error for all nine would pass a test asserting only "it threw".
+  const cases = [
+    ["unsupported-strip-axis", BOARD.replace("VERTICAL_STRIPS 0", "VERTICAL_STRIPS 2")],
+    ["cuts-not-computed", BOARD.replace("CUT_STATE COMPUTED", "CUT_STATE UNRESOLVED")],
+    ["out-of-bounds", BOARD.replace("PIN R1 2 AT 0,3", "PIN R1 2 AT 0,9")],
+    ["out-of-bounds", `${BOARD}\nSOLDER 1,3 9,3`],
+    // Same strip (row 0), two steps apart: which of the two gaps to sever is
+    // not stated by the contract and is not derivable from the line.
+    ["cut-not-strip-adjacent", BOARD.replace("CUT 0,1,7 0,2,8", "CUT 0,1,7 0,3,8")],
+    // Two different strips: a cut severs a strip ALONG its run.
+    ["cut-across-strips", BOARD.replace("CUT 0,1,7 0,2,8", "CUT 0,1,7 1,1,8")],
+    ["duplicate-pin", `${BOARD}\nPIN R1 1 AT 0,0`],
+    ["conflicting-pin", `${BOARD}\nPIN R1 1 AT 0,2`],
+    ["solder-not-strip-neighbours", `${BOARD}\nSOLDER 0,3 2,3`],
+  ] as const
+  for (const [refusal, text] of cases) {
+    let message = ""
+    try { copperGraph(parseBoardDump(text)) }
+    catch (error) { message = error instanceof Error ? error.message : String(error) }
+    expect(message, refusal).toContain(refusal)
+    expect(message, refusal).toMatch(/GEOMETRY_CONTRACT_VERSION|contract version 1/)
+  }
+})
+
+test("CUT_STATE UNRESOLVED refuses, because an absent cut list is not an empty one", () => {
+  // The refusal that is easy to leave to the scorer. Under UNRESOLVED the cut
+  // list is NOT EMITTED, so zero CUT lines and no cuts are the same text - and
+  // a graph built from it joins holes the board severs, which is the most
+  // convincing wrong answer this module can produce. R2 keeps the grader and
+  // the scorer on separate paths, so a refusal only in the scorer leaves the
+  // grader unprotected.
+  const unresolved = BOARD
+    .replace("CUT_STATE COMPUTED", "CUT_STATE UNRESOLVED")
+    .split("\n").filter((line) => !line.startsWith("CUT ")).join("\n")
+  expect(() => copperGraph(parseBoardDump(unresolved))).toThrow(/cuts-not-computed/)
+  expect(() => copperGraph(parseBoardDump(unresolved))).toThrow(/UNRESOLVED/)
+})
+
+test("a legitimately empty cut, solder or wire list is NOT a missing line", () => {
+  // The other side of the refusal above, and the reason CUT_STATE carries it:
+  // CRITERIA says the lists "may legitimately be zero lines, e.g. a strip board
+  // with only one net on it". COMPUTED is what makes zero lines evidence.
+  const noFeatures = BOARD.split("\n")
+    .filter((line) => !line.startsWith("CUT ")).join("\n")
+  expect(() => copperGraph(parseBoardDump(noFeatures))).not.toThrow()
 })
 
 test("the graph is built without reading NODE lines or any nodeId - the independence", () => {
@@ -738,17 +1275,22 @@ test("the graph is built without reading NODE lines or any nodeId - the independ
 
 - [ ] **Step 2: Run it, confirm it fails.**
 
-- [ ] **Step 3: Implement `tools/stripboard/copper.ts`.** A union-find over hole keys. The module comment states, in this order: that this is `HC8`'s reconstruction and `CRITERIA`'s `HC8` contract is its authority; `GEOMETRY_CONTRACT_VERSION` and what a version bump means; the three join mechanisms and that there is no fourth, citing COST §1.5 and the stretched-resistor correction; the definition clause for an uncut strip; that it never reads `NODE` or any `nodeId`, and that this is the independence rather than a style choice; and the honest scope — independent of VeroRoute's **membership calculation**, consuming its **geometry export**, with `.vrt` parsing recorded as limit `H-13` rather than as a plan. Build order: seed one singleton per in-bounds hole from `GRID`; union along-strip neighbours except where a `CUT` lies between them; union each `SOLDER` pair after asserting the two holes are on neighbouring strips at one shared along-strip coordinate; union each `WIRE`'s two ends, skipping a `FLOATING` wire, which joins nothing. Refuse, naming the line and `GEOMETRY_CONTRACT_VERSION`, when a contracted line is absent, when a `CUT` names a non-adjacent pair, or when any hole named by any line is outside `GRID`.
+- [ ] **Step 3: Implement `tools/stripboard/copper.ts`.** A union-find over hole keys, **with every input validated before any union is performed** — a graph half-built from input later found malformed is a graph somebody debugs instead of rejects. The module comment states, in this order: that this is `HC8`'s reconstruction and `CRITERIA`'s `HC8` contract is its authority; `GEOMETRY_CONTRACT_VERSION` and what a version bump means; the three join mechanisms and that there is no fourth, citing COST §1.5 and the stretched-resistor correction; the definition clause for an uncut strip; that it never reads `NODE` or any `nodeId`, and that this is the independence rather than a style choice; **the nine `GeometryRefusal` members and why each one cannot be guessed past**; and **the trust boundary verbatim** — independent of VeroRoute's **membership calculation**, consuming its **geometry export**, so *a dump that omits a cut or misreports a pin yields a consistent and wrong answer*, with `.vrt` parsing recorded as limit `H-13` rather than as a plan. Order: **validate** — `GRID` and `VERTICAL_STRIPS` present, the axis one of two values, `CUT_STATE COMPUTED`, every hole on every line in bounds, every `CUT` pair strip-adjacent and on one strip, every `SOLDER` pair on neighbouring strips at one shared coordinate, every `ref.pin` named at most once — **then** build: seed one singleton per in-bounds hole from `GRID`; union along-strip neighbours except where a `CUT` lies between them; union each `SOLDER` pair; union each `WIRE`'s two ends, skipping a `FLOATING` wire, which joins nothing. Every refusal names its `GeometryRefusal` member, the offending line, `GEOMETRY_CONTRACT_VERSION`, and **why it is not defaulted**. A `switch` over `GeometryRefusal` for the messages, so the type checker proves the set is covered and a tenth member cannot be added without a message.
 
-- [ ] **Step 4: Prove the tests can fail.** Four breaks, run and reverted, each noted beside its test: union every pair of holes on a strip ignoring cuts (the cut test fails); union a part's `PIN` holes to each other (the stretched-part test fails); hard-code the strip axis to rows (the `VERTICAL_STRIPS 1` test fails); read `cut.a.nodeId` into the component key (the independence test fails). **The last one is the one to run first**, because it is the defect `HC8` exists to prevent and the only one whose absence would still look like a working gate.
+- [ ] **Step 4: Prove the tests can fail.** Four breaks on the graph, run and reverted, each noted beside its test: union every pair of holes on a strip ignoring cuts (the cut test fails); union a part's `PIN` holes to each other (the stretched-part test fails); hard-code the strip axis to rows (the `VERTICAL_STRIPS 1` test fails); read `cut.a.nodeId` into the component key (the independence test fails). **The last one is the one to run first**, because it is the defect `HC8` exists to prevent and the only one whose absence would still look like a working gate.
 
-- [ ] **Step 5: Run** `bun test && bun run typecheck`, **commit** ("Reconstruct a stripboard's copper from the dump geometry, and from nothing else"), push.
+- [ ] **Step 4b: Prove each refusal can fail, one at a time.** Comment out each of the nine validations in turn and confirm **its** row of the enumerated test fails — nine mutations, each recorded beside the row it broke. Then two that matter more than the other seven:
+  1. **Replace all nine messages with one generic "malformed dump".** Every row must fail on the `toContain(refusal)` assertion. *A refusal set that cannot say which refusal fired is a refusal set a caller cannot act on, and it is also one where eight of the nine validations could be missing undetected.*
+  2. **Make `cuts-not-computed` a warning that proceeds.** The `UNRESOLVED` test must fail. Run this one against `transistor-preamp-lab`'s real dump as well as the hand-written text, and record what the graph claimed — that is the plausible-and-wrong answer the refusal exists to prevent, and seeing it once is worth more than reading about it.
+  Then add the eleventh break the type system should catch: **add a tenth `GeometryRefusal` member and no message for it**, and confirm `bun run typecheck` fails on the `switch`.
+
+- [ ] **Step 5: Run** `bun test && bun run typecheck`, **commit** ("Reconstruct a stripboard's copper from the dump geometry, and refuse geometry that is malformed"), push. The body lists the nine refusals and states the trust boundary in one sentence, because the commit is where a reviewer meets the claim.
 
 ---
 
 ### Task 4: `HC8`'s verdict — the open, the short, and the independence
 
-**Files:** create `tools/stripboard/equivalence.ts`; test `tests/stripboard/equivalence.test.ts`.
+**Files:** create `tools/stripboard/equivalence.ts`, `tests/stripboard/import-closure.ts`; test `tests/stripboard/equivalence.test.ts`.
 
 **Interfaces:**
 - *Consumes:* `copperGraph`, `pinHoles`, `holeKey`, `HoleKey`, `GEOMETRY_CONTRACT_VERSION` from Task 3; `BoardDump` from `tools/guide/dump.ts`.
@@ -768,6 +1310,7 @@ import { test, expect } from "bun:test"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { netlistEquivalence, describeVerdict } from "../../tools/stripboard/equivalence.ts"
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
+import { importClosure } from "./import-closure.ts"
 
 /**
  * Two strips, two nets, one cut between them in the middle column. R1 bridges
@@ -828,11 +1371,20 @@ test("a SHORT is rejected, naming BOTH nets - the direction no pre-existing chec
 })
 
 test("an open and a short are reported separately, not collapsed into one failure", () => {
+  // `as never` removed: the previous version passed
+  // `{ ...Object.fromEntries(REFERENCE) } as never`, which is a typing bypass
+  // (CLAUDE.md forbids `any`, `as Type` and `@ts-ignore`) AND a pointless
+  // round trip - REFERENCE is already a ReferenceNets. Caught by this
+  // revision's consistency pass.
   const both = parseBoardDump(
     `${WHOLE.split("\n").filter((l) => !l.startsWith("CUT ")).join("\n")}\nCUT 0,1,1 0,2,2`,
   )
-  const verdict = netlistEquivalence(both, { ...Object.fromEntries(REFERENCE) } as never)
+  const verdict = netlistEquivalence(both, REFERENCE)
   expect(verdict.equivalent).toBe(false)
+  // "Reported separately" is the name's claim, so both lists are asserted
+  // non-empty rather than only the conjunction they imply.
+  expect(verdict.opens.length).toBeGreaterThan(0)
+  expect(verdict.shorts.length).toBeGreaterThan(0)
 })
 
 test("a reference pin with no PIN line refuses, because a missing hole is not an open", () => {
@@ -860,26 +1412,147 @@ test("the verdict is unchanged when the NODE block is emptied and the CUT node i
     .toEqual(netlistEquivalence(parseBoardDump(withNodes), REFERENCE))
 })
 
-test("this module imports nothing from the scorer or from the check path", () => {
-  // HC8 shares no code with the scorer or with --check. Asserted by reading the
-  // import graph, because "we did not do that" is the kind of claim a later
-  // refactor breaks silently.
-  const source = Bun.file("tools/stripboard/equivalence.ts")
-  const text = await source.text()
-  expect(text).not.toContain("score.ts")
-  expect(text).not.toContain("perfboard/check.ts")
+test("nothing in this module's TRANSITIVE import closure is the scorer or the check path", async () => {
+  // HC8 shares no code with the scorer or with --check, asserted over the
+  // closure rather than over this file's text.
+  //
+  // THE TEST THIS REPLACES was `expect(text).not.toContain("score.ts")` on one
+  // file, with a comment claiming it read the import graph. It did not: one
+  // transitive import through any third module satisfies it, so the claim was
+  // stronger than the check and the gap was invisible. Same defect, same shape,
+  // as Task 14's - see tests/stripboard/import-closure.ts.
+  const closure = await importClosure("tools/stripboard/equivalence.ts")
+  for (const forbidden of ["tools/stripboard/score.ts", "tools/perfboard/check.ts"]) {
+    expect([...closure].sort(), forbidden).not.toContain(forbidden)
+  }
+})
+
+test("the closure walker finds a TRANSITIVE import, which is the whole reason it exists", async () => {
+  // The guard on the guard, and it is not optional: a walker that returned only
+  // direct imports would make every test above as weak as the substring scan it
+  // replaced, while looking stronger. equivalence.ts imports copper.ts, which
+  // imports tools/guide/dump.ts, which equivalence.ts does not name.
+  const closure = await importClosure("tools/stripboard/equivalence.ts")
+  expect([...closure]).toContain("tools/stripboard/copper.ts")
+  expect([...closure]).toContain("tools/guide/dump.ts")
+  const direct = await Bun.file("tools/stripboard/equivalence.ts").text()
+  expect(direct, "dump.ts must be reached transitively, not named here").not.toContain("guide/dump.ts")
+  // And the closure includes its own entry point, so a test asserting absence
+  // also catches the entry point BEING the forbidden module.
+  expect([...closure]).toContain("tools/stripboard/equivalence.ts")
+})
+
+test("the closure walker refuses an unresolvable import rather than dropping the edge", async () => {
+  await expect(importClosure("tools/stripboard/does-not-exist.ts")).rejects.toThrow(/not a file/)
+})
+
+test("this module never names a nodeId, which is a TEXT claim and is labelled as one", async () => {
+  // A SCAN, named as a scan. The closure cannot see this: reading `.nodeId` off
+  // a value whose type already crossed the boundary is a use, not an import.
+  // What a scan proves is that the identifiers do not appear in this file; what
+  // it does not prove is that no equivalent is reached by another spelling or
+  // through a helper. The BEHAVIOURAL version of this claim - the verdict is
+  // unchanged when the NODE block is emptied and the CUT ids garbled - is the
+  // test above it, and that one is the guarantee.
+  const text = await Bun.file("tools/stripboard/equivalence.ts").text()
   expect(text).not.toContain(".nodes")
   expect(text).not.toContain("nodeId")
 })
 ```
 
-  The last test is `async`; declare it `test("...", async () => { ... })` and read the file with `await Bun.file(...).text()`.
+  Both closure tests are `async`; declare them `test("...", async () => { ... })`.
+
+- [ ] **Step 1b: Write `tests/stripboard/import-closure.ts`.** One walker, used by this task, Task 14 and Task 18, because three copies of a structural claim is three places for it to rot. It is **not** a `.test.ts` file, following `tests/circuits/kicad-round-trip.ts`.
+
+```ts
+/**
+ * The transitive import closure of a module, as repository-relative paths.
+ *
+ * WHY THIS EXISTS. Three tests in this pipeline make a structural claim about
+ * what a module may reach: HC8's independence (Task 4), R2's generate-and-grade
+ * split (Task 14) and the search's freedom from non-determinism (Task 18). All
+ * three were first written as `expect(text).not.toContain("score.ts")` over one
+ * file, which a single transitive import through any third module satisfies -
+ * a weak check under a strong name, which is a false guarantee rather than a
+ * known limit.
+ *
+ * IT REFUSES RATHER THAN DEGRADES. An import specifier it cannot resolve to a
+ * file is an error naming the importer and the specifier, because a closure
+ * computed over a partial graph is smaller than the real one and a forbidden
+ * module may be exactly what fell out of it. A check that passes by looking at
+ * nothing is the failure mode this whole plan is built against.
+ *
+ * TYPE-ONLY IMPORTS COUNT. `import type { Score } from "./score.ts"` ships no
+ * runtime code, but R2 is about two implementations sharing nothing, and a type
+ * definition crossing the boundary is a shared definition. Counting it is the
+ * stricter and simpler rule, and nothing in this plan needs the exemption.
+ *
+ * It relies on this repository's own import convention - explicit relative
+ * paths with the .ts extension (CLAUDE.md) - and refuses a bare specifier
+ * rather than guessing at a resolver, because the only bare specifiers here
+ * would be node builtins and bun:test, which it skips by name.
+ */
+import fs from "node:fs"
+import path from "node:path"
+
+const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
+
+/** Specifiers that are not repository files and are skipped by name, not by pattern. */
+const EXTERNAL = new Set(["bun", "bun:test", "bun:sqlite"])
+
+function specifiersIn(text: string): readonly string[] {
+  // `from "..."` covers static imports and re-exports; `import("...")` covers
+  // the dynamic form. Both are matched because either one reaches a module.
+  const found = [
+    ...text.matchAll(/(?:^|\n)\s*(?:import|export)[\s\S]{0,400}?from\s*["']([^"']+)["']/g),
+    ...text.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g),
+  ]
+  return found.map((match) => match[1] ?? "")
+}
+
+/**
+ * Every module `entry` can reach, as repository-relative paths, INCLUDING
+ * `entry` itself - so a test asserting a forbidden module is absent also fails
+ * when the entry point IS the forbidden module.
+ */
+export async function importClosure(entry: string): Promise<ReadonlySet<string>> {
+  const seen = new Set<string>()
+  const queue = [path.resolve(REPO_ROOT, entry)]
+  while (queue.length > 0) {
+    const absolute = queue.pop()
+    if (absolute === undefined) throw new Error("unreachable: popped an empty queue")
+    const relative = path.relative(REPO_ROOT, absolute)
+    if (seen.has(relative)) continue
+    if (!fs.existsSync(absolute)) {
+      throw new Error(
+        `the import closure of "${entry}" reaches "${relative}", which is not a file. This is ` +
+          "an error and not a skipped edge: a closure computed over a partial graph is smaller " +
+          "than the real one, and the module that fell out of it may be the forbidden one.",
+      )
+    }
+    seen.add(relative)
+    for (const specifier of specifiersIn(fs.readFileSync(absolute, "utf8"))) {
+      if (EXTERNAL.has(specifier) || specifier.startsWith("node:")) continue
+      if (!specifier.startsWith(".")) {
+        throw new Error(
+          `"${relative}" imports "${specifier}", which is neither relative nor a known external. ` +
+            "This repository's convention is explicit relative paths with the .ts extension " +
+            "(CLAUDE.md), and this walker refuses to guess at a resolver rather than silently " +
+            "dropping an edge from a closure a test draws a conclusion from.",
+        )
+      }
+      queue.push(path.resolve(path.dirname(absolute), specifier))
+    }
+  }
+  return seen
+}
+```
 
 - [ ] **Step 2: Run it, confirm it fails.**
 
 - [ ] **Step 3: Implement `tools/stripboard/equivalence.ts`.** Map every reference pin to its hole through `pinHoles`, refusing by name for a reference pin with no `PIN` line; look each hole's component up in `copperGraph`; then two passes. An **open** is a reference net whose pins fall in two or more components, reported with the pins grouped by component. A **short** is a component holding pins of two or more reference nets, reported with the net names sorted and one hole that witnesses it. `equivalent` is `opens.length === 0 && shorts.length === 0`. `describeVerdict` renders one line per finding naming the net or nets, the components or the hole, and — for a short — that no completeness check detects this because both nets still read complete.
 
-- [ ] **Step 4: Prove the tests can fail.** Four breaks: return `{ equivalent: true, opens: [], shorts: [] }` unconditionally (every negative test fails — *the vacuous verdict*, run this one first); report opens only (the short test fails); key the components on `dump.nodes` instead of the copper graph (the independence test fails and the short test fails, which is the whole argument for `HC8` reproduced as two failing tests); treat a missing `PIN` line as an open (the floated test fails).
+- [ ] **Step 4: Prove the tests can fail.** Five breaks: return `{ equivalent: true, opens: [], shorts: [] }` unconditionally (every negative test fails — *the vacuous verdict*, run this one first); report opens only (the short test fails); key the components on `dump.nodes` instead of the copper graph (the behavioural independence test fails and the short test fails, which is the whole argument for `HC8` reproduced as two failing tests); treat a missing `PIN` line as an open (the floated test fails); **add `import { scoreDump } from "./score.ts"` to `equivalence.ts` and confirm the closure test fails, then add it to `copper.ts` instead — a module `equivalence.ts` imports but does not name — and confirm the closure test fails *again*.** That second half is the one to run, because it is exactly the case the replaced substring scan passed.
 
 - [ ] **Step 5: Run** `bun test && bun run typecheck`, **commit** ("HC8 rejects an open and a short, each by name, from the copper alone"), push.
 
@@ -941,20 +1614,38 @@ for (const [label, dumpPath, netlistPath] of BOARDS) {
   })
 }
 
-test("HC8 rejects the floated-C19 board from the copper side, not only HC3's side", () => {
+test("HC8 rejects the floated-C19 board from the copper side, not only HC3's side", async () => {
   // Two independent detections of one measured failure is the standard; one is
-  // a coincidence. C19's pins vanish from the PIN lines, so the reference nets
-  // that hold them have a pin with no hole, and HC8 refuses naming the pin.
-  const text = Bun.file("tests/fixtures/pultec-low-boost-c19-floated.dump")
-  expect(text).toBeDefined()
+  // a coincidence. C19's pins vanish from the PIN lines, so a reference net
+  // holding them has a pin with no hole, and HC8 refuses naming the pin.
+  //
+  // THIS TEST WAS A PLACEHOLDER. It read `const text =
+  // Bun.file("...c19-floated.dump"); expect(text).toBeDefined()` under the name
+  // above - and Bun.file is defined for a path that does not exist, so it
+  // asserted nothing at all while claiming HC8 rejected the board. This plan's
+  // own placeholder scan missed it because it scanned for TBD and TODO and the
+  // test had neither. A strong name over an empty body is the defect; the scan
+  // now reads bodies.
+  const dump = parseBoardDump(
+    await Bun.file("tests/fixtures/pultec-low-boost-c19-floated.dump").text(),
+  )
+  const reference = referenceNetsFromExport(
+    await Bun.file("tests/fixtures/stripboard/pultec-low-boost-frozen.netlist").text(),
+  )
+  expect(() => netlistEquivalence(dump, reference)).toThrow(/C19\./)
+  expect(() => netlistEquivalence(dump, reference)).toThrow(/PIN/)
 })
 
-test("the frozen fixture's own numbers are read from it, and its hash is recorded", async () => {
+test("the frozen fixture's grid and cut state come from the fixture, and its sha256 is recorded", async () => {
   const dump = parseBoardDump(
     await Bun.file("tests/fixtures/stripboard/pultec-low-boost-frozen.dump").text(),
   )
-  // No literal grid: B2's rule is that the fixture's GRID line is the authority.
+  // No literal grid: B2's rule is that the fixture's GRID line is the
+  // authority. What is asserted is that the parse found one and that the board
+  // is COMPUTED - NOT that any particular number is right, which is the
+  // fixture's own job and which this test deliberately does not duplicate.
   expect(dump.grid.rows).toBeGreaterThan(0)
+  expect(dump.grid.cols).toBeGreaterThan(0)
   expect(dump.cutState).toBe("COMPUTED")
   const provenance = await Bun.file(
     "tests/fixtures/stripboard/provenance.txt",
@@ -964,15 +1655,34 @@ test("the frozen fixture's own numbers are read from it, and its hash is recorde
   )
   expect(provenance).toContain(Buffer.from(hash).toString("hex"))
 })
-```
 
-  Replace the placeholder-shaped floated-`C19` test above with the real one while implementing: load the floated dump, build its reference nets from `tests/fixtures/pultec-low-boost-frozen.netlist`, call `netlistEquivalence`, and assert it throws naming `C19.1` — `C19`'s pins have no hole, which is `HC3`'s refusal arriving at `HC8`. Keep the two assertions distinct, as `tests/perfboard/floating-fixture.test.ts` does.
+test("the recorded net and pin counts agree with the fixture's own dump - B2's benchmark", async () => {
+  // B2: if the extraction cannot produce an export agreeing with the fixture
+  // board's own NODE and PIN counts, "the fixture is wrong and says which
+  // number disagreed". Both sides are READ - the dump's own lines and the
+  // netlist export's own nets - so no count is written here and a fixture
+  // tuned to pass its own test cannot.
+  const dump = parseBoardDump(
+    await Bun.file("tests/fixtures/stripboard/pultec-low-boost-frozen.dump").text(),
+  )
+  const reference = referenceNetsFromExport(
+    await Bun.file("tests/fixtures/stripboard/pultec-low-boost-frozen.netlist").text(),
+  )
+  const dumpNets = Object.keys(dump.nodes).length
+  const dumpPins = Object.values(dump.pins).reduce((total, list) => total + list.length, 0)
+  const referencePins = [...reference.values()].reduce((total, list) => total + list.length, 0)
+  expect(reference.size, "net count: the netlist export disagrees with the board's NODE lines")
+    .toBe(dumpNets)
+  expect(referencePins, "pin count: the netlist export disagrees with the board's PIN lines")
+    .toBe(dumpPins)
+})
+```
 
   **The two further benchmark boards.** `transistor-preamp-feedback` and `transistor-preamp-staged` have committed `.net` fixtures but no committed `--dump-board` capture. Add each to `BOARDS` by committing its dump beside the others with a provenance entry, produced by `--dump-board` on its committed `.vrt` at the pinned binary. If a board's dump cannot be produced — `transistor-preamp-lab` reports `CUT_STATE UNRESOLVED` with 19 `CUT_CONFLICT` lines and `HC2` excludes it — **leave it out and say so in the test file's header comment**, naming the board and the reason. `transistor-preamp-lab` is not in the benchmark set.
 
 - [ ] **Step 5: Run it, confirm it fails**, then implement `referenceNetsFromExport` and commit the fixtures.
 
-- [ ] **Step 6: Prove the test can fail.** Two breaks: flip one `PIN` row in the frozen dump by one and confirm the agreement test fails naming the board (then revert — **the fixture is not edited**, the break is applied to a copy in the test); and make `netlistEquivalence` return `equivalent: true` unconditionally and confirm every row fails. Record both beside the test.
+- [ ] **Step 6: Prove the test can fail.** Three breaks: flip one `PIN` row in the frozen dump by one and confirm the agreement test fails naming the board (then revert — **the fixture is not edited**, the break is applied to a copy in the test); make `netlistEquivalence` return `equivalent: true` unconditionally and confirm every row fails; and **put `C19`'s two `PIN` lines back into a copy of the floated dump and confirm the floated test fails** — without that, the floated test passes for any dump that happens to throw, which is how it came to be a placeholder in the first place. Record all three beside their tests.
 
 - [ ] **Step 7: Run** `bun test && bun run typecheck`, **commit** ("Freeze low-boost's hand layout as a fixture, and check HC8 against four authored boards"), push.
 
@@ -1008,7 +1718,40 @@ test("the frozen fixture's own numbers are read from it, and its hash is recorde
   - a dump line `BOUNDS <minRow>,<minCol> <maxRow>,<maxCol>`, from `Board::GetBounds` (`Board.h:710`), emitted once per board
   - a `DIRECTION <W|E|N|S>` field on every placed `PART` line, from `Component::GetDirection()`
   - in `tools/guide/dump.ts`: `Bounds { readonly minRow: number; readonly minCol: number; readonly maxRow: number; readonly maxCol: number }`, `BoardDump.bounds: Bounds`, and `Part.direction: "W" | "E" | "N" | "S" | undefined` (`undefined` exactly when the part is floating, which prints no direction)
-- Task 8's effect check consumes `Part.direction`; Task 15's `A_occ` consumes `BoardDump.bounds` and **nothing else** — the bounding box of the `PIN` and `WIRE` holes is a *different quantity* (lead extent, not the footprint rectangle) and substituting it would silently redefine a settled ranking term.
+- Task 8's effect check consumes `Part.direction`; **Task 14's `HC10` placement half consumes `Part.direction` too**; Task 15's `A_occ` consumes `BoardDump.bounds` and **nothing else** — the bounding box of the `PIN` and `WIRE` holes is a *different quantity* (lead extent, not the footprint rectangle) and substituting it would silently redefine a settled ranking term. **Task 14's `HC6` consumes `bounds` AND the enumerated feature holes**, for the reason below.
+
+**What `BOUNDS` is, read from the source rather than from its name — and it is not one quantity.**
+`Board::GetBounds` (`Src/Board.h:710`) returns the union of **three** sources, and reports failure
+only when all three are empty:
+
+1. every grid element, on every layer, whose `GetNodeId() != BAD_NODEID` **or** whose
+   `GetLyrHasPin()` is true — painted copper, including a wire's run and a solder-bridged hole,
+   plus every pin hole whether painted or blank;
+2. `m_compMgr.GetBounding()` — every component's `GetFootprintRect()`, which is
+   `Rect(GetRow(), GetLastRow(), GetCol(), GetLastCol())`, plus the trax pattern's rect. **It
+   filters on neither `GetIsPlaced()` nor type**, so an *unplaced* component still contributes a
+   rect;
+3. `m_textMgr.GetBounding()` — every **text label**'s rect, which is an annotation and not a
+   physical feature.
+
+**Three consequences, and each one is a thing a later task would otherwise assume wrongly.**
+
+- `BOUNDS` **is** the only dump-readable source of a part's *body* extent across the strips. A
+  `PART` line carries `AT <row>,<col> SPAN <n>` and `SPAN` is a column count in the current
+  direction, so a multi-row footprint's row extent is **not** otherwise in the dump. That is why
+  `A_occ` reads `BOUNDS` and why Task 14 cannot compute a body rect itself.
+- `BOUNDS` can **over**-state: a label in a corner or a floating part's stale rect inflates it. So
+  it is **not** the fabrication extent, and Task 14 does not treat it as one.
+- The dump reports only the union, so a consumer **cannot** attribute the extent to one of the
+  three sources. Task 14's `HC6` detail therefore reports both `BOUNDS` and the enumerated-feature
+  extent and names the discrepancy rather than explaining it, because the explanation is not in
+  the data.
+
+**This task does not change `GetBounds` and does not decompose it.** Emitting three lines instead
+of one is a bigger fork change than M1.1 asks for, and the conservative use Task 14 makes of the
+union is sound without it (there, with its argument). The decomposition is recorded as a finding
+for the owner in `docs/stripboard/pipeline-verification.md`, with the three sources named, so the
+option exists and nobody has to re-read `Board.h` to find it.
 
 **Also in scope and not superseded: the `--help` text is wrong about an observable.** It claims `SPAN` is *"direction-aware, so it reads the same regardless of how the part is rotated on the board"*, and `GetCols(direction)` is precisely not that. **A help text that is wrong about an observable is worse than a missing one**, and it matters more now that `PIN` makes the true lead span readable: a consumer who reads `--help` instead of `tools/guide/dump.ts` gets the false claim.
 
@@ -1058,6 +1801,45 @@ describe("BOUNDS", () => {
   it("is emitted on a perfboard as well as a stripboard", () => {
     expect(boundsLine(dump(perfBoard()))).toMatch(/^BOUNDS /);
   });
+
+  it("encloses every WIRE end and SOLDER hole too, not only the PIN holes", () => {
+    // Measured on two committed boards while this plan was written: on
+    // transistor-preamp-feedback two wire endpoints, and on
+    // transistor-preamp-staged four wire endpoints and two solder-bridge holes,
+    // lie OUTSIDE the PIN-hole bounding box. Those holes carry a nodeId, so
+    // GetBounds's first pass should cover them - this is the test that says so
+    // rather than the reader's inference from Board.h, and it is what Task 14's
+    // fabrication extent relies on when it unions the two.
+    const stdout = dump(boardWithWiresAndBridges());
+    const match = /^BOUNDS (\d+),(\d+) (\d+),(\d+)$/.exec(boundsLine(stdout))!;
+    const [minRow, minCol, maxRow, maxCol] = match.slice(1).map(Number);
+    const holes = [
+      ...stdout.matchAll(/^SOLDER (\d+),(\d+) (\d+),(\d+)$/gm),
+      ...stdout.matchAll(/^WIRE \S+ AT \d+,\d+ ENDS (\d+),(\d+)\S* (\d+),(\d+)/gm),
+    ].flatMap((m) => [
+      { row: Number(m[1]), col: Number(m[2]) },
+      { row: Number(m[3]), col: Number(m[4]) },
+    ]);
+    expect(holes.length, "the fixture must actually carry wires and bridges")
+      .toBeGreaterThan(0);
+    for (const hole of holes) {
+      expect(hole.row).toBeGreaterThanOrEqual(minRow!);
+      expect(hole.row).toBeLessThanOrEqual(maxRow!);
+      expect(hole.col).toBeGreaterThanOrEqual(minCol!);
+      expect(hole.col).toBeLessThanOrEqual(maxCol!);
+    }
+  });
+
+  it("grows when a text label is added, which is why BOUNDS is not the fabrication extent", () => {
+    // m_textMgr.GetBounding() is one of GetBounds's three sources (Board.h:710).
+    // A label is an annotation, not material, so a BOUNDS that moves when one
+    // is added cannot be read as "the board this layout needs". Asserting it
+    // here is what keeps Task 14's HC6 honest about which figure it is using,
+    // and it is also the evidence for the decomposition finding.
+    const withLabel = dump(boardWithTextLabelInACorner());
+    const without = dump(boardWithWiresAndBridges());
+    expect(boundsLine(withLabel)).not.toBe(boundsLine(without));
+  });
 });
 
 describe("DIRECTION", () => {
@@ -1079,9 +1861,9 @@ describe("DIRECTION", () => {
 });
 ```
 
-  `importedBoard()` and `perfBoard()` build a board into a `mkdtempSync` directory from a fixture netlist, as `tests/stretch.test.ts` does; reuse that file's `tmpFile` shape rather than inventing a second one.
+  `importedBoard()` and `perfBoard()` build a board into a `mkdtempSync` directory from a fixture netlist, as `tests/stretch.test.ts` does; reuse that file's `tmpFile` shape rather than inventing a second one. `boardWithWiresAndBridges()` is a copy of a committed board that carries both — `transistor-preamp-staged` is the measured case and carries wire ends and a bridge hole outside its pin box. `boardWithTextLabelInACorner()` adds a label through `--author --op move-label` or by starting from a board that already has one; **if no shipped verb can place a label, the label test is not written and the text-label inflation is recorded as unverified in `docs/stripboard/pipeline-verification.md`** — a test that cannot be written is a limit to state, not a test to fake. Task 14's `HC6` is conservative either way, and its argument there does not depend on this test existing.
 
-- [ ] **Step 3: Implement.** `BOUNDS` from `Board::GetBounds`, printed beside `GRID` and always, once. `DIRECTION` appended to the placed `PART` line; a `FLOATING` part prints no direction, which mirrors the existing rule that *"a FLOATING component prints no PIN line: it has no holes"*. Both are appended in the grammar's own append-only shape, documented at the point of change.
+- [ ] **Step 3: Implement.** `BOUNDS` from `Board::GetBounds`, printed beside `GRID` and always, once. `DIRECTION` appended to the placed `PART` line; a `FLOATING` part prints no direction, which mirrors the existing rule that *"a FLOATING component prints no PIN line: it has no holes"*. Both are appended in the grammar's own append-only shape, documented at the point of change — and **the `BOUNDS` comment in `Headless_dump.cpp` states the three sources `GetBounds` unions, including the text manager and the unfiltered component rects**, in the voice the file's existing `CUT` and `CUT_UNCONNECTED_PIN` comments use. That file is where a downstream consumer reads the contract, and a line documented as "the board's bounds" is a line somebody reads as the fabrication extent.
 
 - [ ] **Step 4: Correct the `--help` text.** Replace the direction-aware claim with what `GetCols(direction)` does: a part's `SPAN` is its footprint's own column count in its current direction, it is **not** a lead span, and a lead's actual hole comes only from a `PIN` line. Keep the sentence short enough that it stays true. **`tests/usage.test.ts` enforces flag/help agreement in both directions; this change touches the help text only and must leave that test green.**
 
@@ -1405,10 +2187,33 @@ test("the bandwidth lower bound is ceil(maxDegree / 2), and an ordering bounds i
 test("off-board components force no edge, because they break out as free single-hole pads", () => {
   // COST section 6.4's own rule for the net graph. A rotary selector off-board
   // must not make its nets adjacent in the arrangement.
-  const targets = deriveTargets(physicalBoard("low-cut"), 34, "pultec-low-cut")
-  for (const [a, b] of targets.netGraph.edges) {
-    expect(targets.netGraph.nets).toContain(a)
-    expect(targets.netGraph.nets).toContain(b)
+  //
+  // THE TEST THIS REPLACES looped over the edges asserting each endpoint was a
+  // known net - which every edge satisfies by construction, so it was a
+  // tautology under a name that claimed the off-board rule was checked. The
+  // discriminating assertion is the one below: a net PAIR joined ONLY by an
+  // off-board component must be ABSENT from the edges, and the same pair joined
+  // by an on-board component must be present. One without the other proves
+  // nothing - an implementation that emitted no edges at all would pass the
+  // first half.
+  const network = physicalBoard("low-cut")
+  const targets = deriveTargets(network, 34, "pultec-low-cut")
+  const edge = (a: string, b: string) =>
+    targets.netGraph.edges.some(([x, y]) => (x === a && y === b) || (x === b && y === a))
+  const offBoard = offBoardComponentsOf(network)
+  expect(offBoard.length, "low-cut must actually carry an off-board component").toBeGreaterThan(0)
+  for (const component of offBoard) {
+    for (const [a, b] of netPairsOf(component)) {
+      if (onBoardComponentJoins(network, a, b)) continue   // an on-board part forces it anyway
+      expect(edge(a, b), `${component.id} is off board and must force no edge ${a}-${b}`).toBe(false)
+    }
+  }
+  const onBoard = onBoardComponentsOf(network)
+  expect(onBoard.length).toBeGreaterThan(0)
+  for (const component of onBoard) {
+    for (const [a, b] of netPairsOf(component)) {
+      expect(edge(a, b), `${component.id} is on board and must force edge ${a}-${b}`).toBe(true)
+    }
   }
 })
 
@@ -1457,7 +2262,9 @@ test("a negative J refuses, because J = sum(k - 1) cannot be below zero", () => 
 
 - [ ] **Step 3: Implement.** The net graph's vertices are nets and its edges are forced by **on-board** components only; off-board components break out as free single-hole pads and force nothing. The ordering is a reverse Cuthill-McKee ordering, which is an **upper** bound on bandwidth, and `⌈maxDegree/2⌉` is the lower bound; both are recorded, and neither is reported as *the* bandwidth. `segmentJoins` throws on a negative result naming `CUT_STATE` as the likely cause, which is `V2`'s free extra reading and `H2`'s condition arriving cheaply.
 
-- [ ] **Step 4: Prove the tests can fail.** Three breaks: return `netCount` as the floor (both floor tests fail); count every `PIN` hole rather than distinct strips (the `S_occ` tests fail); drop the negative-`J` throw (its test fails).
+  `offBoardComponentsOf`, `onBoardComponentsOf`, `netPairsOf` and `onBoardComponentJoins` are helpers in the test file over `Network` — the on/off-board distinction is already a property of the physical board model and is read from there, never re-derived from a name. `netPairsOf` returns every unordered pair of distinct nets a component's pins touch, which is the same relation `deriveTargets` uses to force an edge, so the test and the implementation agree about what "forces an edge" means while deriving it independently.
+
+- [ ] **Step 4: Prove the tests can fail.** Four breaks: return `netCount` as the floor (both floor tests fail); count every `PIN` hole rather than distinct strips (the `S_occ` tests fail); drop the negative-`J` throw (its test fails); **include off-board components in the edge set** (the off-board test's first half fails) **and then emit no edges at all** (its second half fails) — two breaks on one test, because either half alone passes for a wrong implementation and that is why the replaced version proved nothing.
 
 - [ ] **Step 5: Run** `bun test && bun run typecheck`, **commit** ("Derive each board's targets and its cut floor from the identity"), push.
 
@@ -1670,12 +2477,12 @@ test("a manifest round-trips, and a hash that disagrees with its own block refus
 
 **THE CRUX. Read this plan's CRUX section again before starting.**
 
-**Files:** create `tools/stripboard/constraints.ts` and `tools/stripboard/grade.ts`; create `tests/fixtures/stripboard/negative/` with one fixture per constraint; test `tests/stripboard/grade.test.ts`; modify `boards/pultec-*/perfboard.json` only if a board declares a stock other than the default (none does today, so expect no change and say so).
+**Files:** create `tools/stripboard/constraints.ts`, `tools/stripboard/grade.ts` and `tools/stripboard/extent.ts`; create `tests/fixtures/stripboard/negative/` with one fixture per constraint and **two per `HC10`**; test `tests/stripboard/grade.test.ts` and `tests/stripboard/extent.test.ts`; modify `boards/pultec-*/perfboard.json` only if a board declares a stock other than the default (none does today, so expect no change and say so).
 
 **Interfaces:**
-- *Consumes:* `netlistEquivalence`, `describeVerdict`, `referenceNetsFromExport` (Tasks 4, 5); `pinPatternFor` (Task 2); `leadSpanFor`, `TOOL_MIN_SPAN_HOLES`, `TOOL_MAX_SPAN_HOLES` (`lib/kicad/lead-span*.ts`); `StripboardRules` (Task 10); `BoardTargets` (Task 11); `BoardDump` with `bounds` (Task 7).
+- *Consumes:* `netlistEquivalence`, `describeVerdict`, `referenceNetsFromExport` (Tasks 4, 5); `copperGraph`, `holeKey`, `HoleKey`, `pinHoles` (Task 3, into `extent.ts`); `pinPatternFor`, `admitPattern`, `preparedExtentsHoles` (Task 2); `leadSpanFor`, `TOOL_MIN_SPAN_HOLES`, `TOOL_MAX_SPAN_HOLES` (`lib/kicad/lead-span*.ts`); `StripboardRules` (Task 10); `BoardTargets` (Task 11); `BoardDump` with `bounds` and `Part.direction` (Task 7).
 - *Provides:*
-  - `ConstraintId = "HC1" | "HC2" | "HC3" | "HC4" | "HC5" | "HC6" | "HC7" | "HC8" | "HC9" | "HC10"`
+  - `ConstraintId = "HC1" | "HC2" | "HC3" | "HC4" | "HC5" | "HC6" | "HC7" | "HC8" | "HC9" | "HC10"` — **ten, unchanged**
   - `ConstraintResult { readonly id: ConstraintId; readonly held: boolean; readonly detail: string }` — `detail` names the net or part on a failure and is non-empty on a pass too, so a pass is readable
   - `CheckInput { readonly dump: BoardDump; readonly dumpText: string; readonly reference: ReferenceNets; readonly footprints: ReadonlyMap<string, string>; readonly checkReport: CheckReport; readonly stock: Stock; readonly rules: StripboardRules }`
   - `Stock { readonly rows: number; readonly cols: number; readonly source: "board" | "rules-default" }`
@@ -1683,7 +2490,87 @@ test("a manifest round-trips, and a hash that disagrees with its own block refus
   - `gradeHardConstraints(input: CheckInput): readonly ConstraintResult[]`
   - `a1(results: readonly ConstraintResult[]): boolean`
   - `stockFor(declarationFile: string, rules: StripboardRules): Stock`
-- Task 15's ranking runs over candidates that passed `a1`; Task 20's verdict consumes `ConstraintResult[]`; **no other module checks a hard constraint.**
+- *Provides from `tools/stripboard/extent.ts`:*
+  - `FeatureKind = "pin" | "cut" | "solder" | "wire"`
+  - `RequiredFeature { readonly kind: FeatureKind; readonly hole: HoleKey; readonly names: string }` — what the feature is and what it belongs to, so a refusal can say which one reached past the extent
+  - `requiredFeatures(dump: BoardDump): readonly RequiredFeature[]`
+  - `FabricationExtent { readonly minRow: number; readonly minCol: number; readonly maxRow: number; readonly maxCol: number; readonly rows: number; readonly cols: number; readonly fromBounds: boolean; readonly featuresOutsideBounds: readonly RequiredFeature[] }`
+  - `fabricationExtent(dump: BoardDump): FabricationExtent`
+  - `withinExtent(hole: HoleKey, extent: FabricationExtent): boolean`
+  - `TrimVerdict { readonly preserved: boolean; readonly detail: string }`
+  - `trimPreservesConnectivity(dump: BoardDump, extent: FabricationExtent): TrimVerdict`
+- Task 15's ranking runs over candidates that passed `a1`; Task 20's verdict consumes `ConstraintResult[]`; **no other module checks a hard constraint.** `extent.ts` is a **measurement** module like `copper.ts`, not a second place a constraint is decided: `HC6` in `constraints.ts` is the only caller that turns its numbers into a verdict.
+
+**`HC6`'s quantity is the FABRICATION EXTENT, and `BOUNDS` alone is not it.** `HC6` asks whether
+the layout *"fits the stock the owner bought"* — whether this can be **cut from that board** — and
+CRITERIA is explicit that the quantity is *"the occupied extent, not the canvas"*, with `BOUNDS`
+*"the exact figure"* that *"tightens the check"*. The trouble is what `BOUNDS` turns out to be:
+Task 7 reads `Board::GetBounds` and finds a union of three sources, one of which is **text
+labels** and one of which does not filter on `GetIsPlaced()`. So `BOUNDS` is a **good** reading of
+component bodies plus painted copper and the **only** dump-readable one, and it is **not** a
+statement about which features a cuttable board must retain.
+
+**So the extent is computed, not read, and then it is verified.** A cuttable board must include
+every physical feature that preserves connectivity — a wire endpoint, a solder bridge, the copper
+run a cut depends on — not just the component bounding box, and those features measurably reach
+past the pin extent: on `transistor-preamp-feedback` two wire endpoints do, and on
+`transistor-preamp-staged` four wire endpoints and two solder-bridge holes do. Three steps:
+
+1. **Enumerate.** `requiredFeatures` returns every `PIN` hole, both holes of every `CUT`, both
+   holes of every `SOLDER`, and both ends of every placed `WIRE`, each labelled with what it is
+   and what it belongs to. Nothing is inferred from `SPAN`, per the dump's own rule.
+2. **Union with `BOUNDS`.** `fabricationExtent` is the bounding region over the enumerated
+   features **and** `bounds`. Taking the union is **conservative in the one direction that
+   matters**: the result is never smaller than either input, so `HC6` can be stricter than the
+   truth and never looser. A stricter `HC6` can refuse a board that would in fact fit — a label in
+   a corner is the known cause — and **that refusal is reported with its cause rather than
+   relaxed**, which is `K3`'s posture applied by analogy. `featuresOutsideBounds` records any
+   feature `BOUNDS` did not already cover, which is the discriminating observation and the only
+   one the dump supports; `fromBounds` records whether `bounds` was present at all.
+3. **Verify.** `trimPreservesConnectivity` rebuilds the copper graph from a dump restricted to the
+   extent and asserts the **partition of the pin holes is identical** to the untrimmed one. That is
+   the claim "trimming to this extent preserves connectivity", made as a computation rather than
+   as an argument. It uses Task 3's `copperGraph`, which shares no code with the scorer, so the
+   check inherits `HC8`'s independence.
+
+**`HC6` refuses a dump with no `BOUNDS` rather than falling back to the feature extent**, because
+the feature extent is a **lower** bound on physical extent — a body overhangs its leads — and
+substituting it would silently loosen the constraint. That is Task 7's ruling, unchanged.
+
+**`A_occ` is NOT the fabrication extent and the two are not interchangeable.** `A_occ` (Task 15)
+is `OBJ3`'s settled ranking term, specified as a direct reading of `BOUNDS`; the fabrication extent
+is `HC6`'s constraint quantity and is a union including features `BOUNDS` may not cover. Changing
+`A_occ` to the union would change a settled ranking term, which is a decision and not an
+implementation detail (`D19`), so it is not done here — and Task 15 says so beside `occupiedArea`.
+
+**What is reported to the owner rather than decided here.** CRITERIA calls `BOUNDS` *"the exact
+figure"*; read against `Board.h:710` it is the union of three sources, one of them annotations. The
+plan does not edit CRITERIA and does not reinterpret `HC6`'s stock: it computes a conservative
+extent, reports the discrepancy, and records the wording divergence and the option of decomposing
+`BOUNDS` in the fork as findings in `docs/stripboard/pipeline-verification.md`.
+
+**`HC10` holds only when BOTH its halves hold, and it is still one of ten.** `HC10`'s criterion
+sentence is *"every placed part's pins lie on straight lines parallel to the strips"*; CRITERIA's
+"Checked by" column specifies a footprint-level classification. Task 2 proves a footprint **could**
+be placed compatibly. **Nothing proved the produced layout did**, and the verdict asserted `HC10`
+anyway — which is this plan's own crux turned on itself. So:
+
+- **The footprint half** — `admitPattern(pinPatternFor(footprint))` for every placed part's
+  footprint, refusing by name for an unlisted one. Task 2's check, called from here.
+- **The placement half** — for every **placed** part, its resolved `PIN` holes must decompose into
+  rows **along the strip axis the dump reports**: every pin's along-strip coordinate may vary
+  freely, and the pins must fall on a set of strips whose occupied strips are exactly the rows the
+  footprint's classification predicts, **consistent with the part's `DIRECTION`**. A decomposable
+  footprint turned the wrong way puts one row's pads across several strips, which is precisely the
+  board of cuts `HC10` exists to refuse, and it is readable from `PIN` and `DIRECTION` alone.
+- `detail` names **which half** failed and which part, so a failure points at the remedy: the
+  footprint half points at the data, the placement half points at the layout.
+- **Both halves get their own negative fixture** (V4), because a single fixture would let one half
+  be vacuous while the other carried the test.
+- `DIRECTION` is read **as well as** the pin positions rather than instead of them, for M1.1's own
+  reason: *"reading the orientation directly is what makes the check independent of the lead
+  pattern, and a single-pad or symmetric part has no lead pattern to read."* Two readings of two
+  things are two witnesses, which is the shape `HC3` already uses.
 
 **`CheckReport` does not exist yet and this task adds it, which is a correction to a fact worth stating.** `tools/perfboard/check.ts` spawns `--check BOARD --netlist NET` and returns `CheckRun { status, output }` — the **raw concatenated stdout and stderr**, deliberately: *"the report body is on stdout, but an unreadable board writes an empty report and puts the only diagnostic on stderr."* It does **not** parse the report into sections. So this task also exports, from `tools/stripboard/constraints.ts`:
 
@@ -1698,7 +2585,10 @@ and one fact decides how it is written: a board with no schematic delta *"has no
 import { test, expect } from "bun:test"
 import { HARD_CONSTRAINTS, gradeHardConstraints, a1, stockFor }
   from "../../tools/stripboard/grade.ts"
+import { fabricationExtent, requiredFeatures, trimPreservesConnectivity, withinExtent }
+  from "../../tools/stripboard/extent.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
+import { importClosure } from "./import-closure.ts"
 
 const IDS = ["HC1", "HC2", "HC3", "HC4", "HC5", "HC6", "HC7", "HC8", "HC9", "HC10"] as const
 
@@ -1738,6 +2628,7 @@ test("V4: each constraint has a fixture it rejects by name", async () => {
     ["HC8", "two-nets-shorted", /short|mid|out/],
     ["HC9", "span-below-minimum", /minSpanHoles|minimum/],
     ["HC10", "round-pin-pattern", /strip/],
+    ["HC10", "rows-across-the-strips", /strip/],
   ] as const
   for (const [id, fixture, pattern] of cases) {
     const results = gradeHardConstraints(await negativeInput(fixture))
@@ -1765,12 +2656,127 @@ test("HC5, HC9 and HC10 refuse by name for a footprint with no data, never defau
   expect(() => gradeHardConstraints(unknown)).toThrow(/SW_Rotary11_D30mm/)
 })
 
-test("HC6 measures the occupied extent from BOUNDS, not the canvas from GRID", async () => {
+test("HC6 measures the occupied extent, not the canvas from GRID", async () => {
   // --import leaves the canvas at a default, so a GRID larger than the stock
   // says nothing about copper. A layout whose parts fit inside the stock can be
   // cut from that board whatever its canvas says.
   const wideCanvas = await inputWithGridAndBounds({ grid: [60, 60], bounds: [0, 0, 10, 10] })
   expect(gradeHardConstraints(wideCanvas).find((r) => r.id === "HC6")!.held).toBe(true)
+})
+
+test("HC6 refuses a layout whose WIRE end is inside the stock only if BOUNDS is trusted alone", async () => {
+  // THE GAP THIS CLOSES. BOUNDS is a union of three sources (Board.h:710) and
+  // is not a statement about which features a cuttable board must retain. A
+  // wire endpoint, a solder bridge or the copper run a cut depends on can sit
+  // outside the component bounding box - measured on two committed boards - and
+  // a board trimmed to a box that excludes one does not conduct.
+  //
+  // The fixture puts a WIRE end one column past BOUNDS and past the stock. A
+  // grader reading BOUNDS alone passes it; the fabrication extent refuses it
+  // and NAMES THE WIRE, which is the discriminating observation.
+  const input = await inputWithFeatureOutsideBounds({ kind: "wire" })
+  const hc6 = gradeHardConstraints(input).find((result) => result.id === "HC6")!
+  expect(hc6.held).toBe(false)
+  expect(hc6.detail).toMatch(/wire/i)
+  expect(hc6.detail).toMatch(/stock/)
+})
+
+test("HC6's detail reports both figures when they disagree, because the dump cannot attribute it", async () => {
+  // BOUNDS over-states when a text label or an unplaced part contributes a rect,
+  // and the dump reports only the union - so the cause is NOT in the data and
+  // the detail says which two numbers disagreed rather than explaining why.
+  const input = await inputWithFeatureOutsideBounds({ kind: "solder" })
+  const hc6 = gradeHardConstraints(input).find((result) => result.id === "HC6")!
+  expect(hc6.detail).toMatch(/BOUNDS/)
+  expect(hc6.detail).toMatch(/feature/i)
+})
+
+test("the fabrication extent is the union, so it is never smaller than either input", async () => {
+  // The conservatism is the whole argument: HC6 may be STRICTER than the truth
+  // and must never be looser. A union cannot be smaller than a part.
+  for (const dump of await everyExtentFixture()) {
+    const extent = fabricationExtent(dump)
+    const bounds = dump.bounds!
+    expect(extent.minRow).toBeLessThanOrEqual(bounds.minRow)
+    expect(extent.maxRow).toBeGreaterThanOrEqual(bounds.maxRow)
+    expect(extent.minCol).toBeLessThanOrEqual(bounds.minCol)
+    expect(extent.maxCol).toBeGreaterThanOrEqual(bounds.maxCol)
+    for (const feature of requiredFeatures(dump)) {
+      expect(withinExtent(feature.hole, extent), `${feature.kind} ${feature.names}`).toBe(true)
+    }
+  }
+})
+
+test("trimming to the fabrication extent preserves the reconstructed connectivity", async () => {
+  // The claim "a cuttable board includes every feature that preserves
+  // connectivity", made as a computation: rebuild the copper graph from a dump
+  // restricted to the extent and compare the PARTITION OF THE PIN HOLES with
+  // the untrimmed one. An extent that dropped the copper run a cut depends on
+  // changes that partition, which is exactly the failure a bounding box hides.
+  for (const dump of await everyExtentFixture()) {
+    const result = trimPreservesConnectivity(dump, fabricationExtent(dump))
+    expect(result.preserved, result.detail).toBe(true)
+  }
+})
+
+test("trimming to a DELIBERATELY TOO SMALL extent is detected, so the check can fail", async () => {
+  // Without this the test above passes for a trim that drops nothing because
+  // the extent is the whole board, and it would never have been exercised.
+  const dump = (await everyExtentFixture())[0]!
+  const whole = fabricationExtent(dump)
+  const shrunk = { ...whole, maxCol: whole.maxCol - 1, cols: whole.cols - 1 }
+  const result = trimPreservesConnectivity(dump, shrunk)
+  expect(result.preserved).toBe(false)
+  expect(result.detail).toMatch(/[0-9]+,[0-9]+/)
+})
+
+test("HC10 holds only when BOTH halves hold, and the detail says which failed", async () => {
+  // HC10's criterion sentence is about a PLACEMENT; CRITERIA's Checked-by
+  // column specifies a footprint-level classification. Task 2 proves a
+  // footprint COULD be placed compatibly. This is the half that proves the
+  // produced layout DID - and without it the verdict asserted a constraint
+  // whose placement clause nothing checked.
+  const footprintFailure = await negativeInput("round-pin-pattern")
+  const footprint = gradeHardConstraints(footprintFailure).find((r) => r.id === "HC10")!
+  expect(footprint.held).toBe(false)
+  expect(footprint.detail).toMatch(/footprint/)
+
+  const placementFailure = await negativeInput("rows-across-the-strips")
+  const placement = gradeHardConstraints(placementFailure).find((r) => r.id === "HC10")!
+  expect(placement.held).toBe(false)
+  expect(placement.detail).toMatch(/placement/)
+  expect(placement.detail).toMatch(/U1|DIRECTION/)
+})
+
+test("HC10's placement half reads DIRECTION as well as the pin holes - two witnesses", async () => {
+  // M1.1's own reason for the field: reading the orientation directly is what
+  // makes the check independent of the lead pattern, and a single-pad or
+  // symmetric part has no lead pattern to read. Same shape as HC3's two signals:
+  // a change keeping one and dropping the other fails loudly.
+  const placement = gradeHardConstraints(await negativeInput("rows-across-the-strips"))
+    .find((result) => result.id === "HC10")!
+  expect(placement.detail).toMatch(/DIRECTION/)
+  expect(placement.detail).toMatch(/[0-9]+,[0-9]+/)   // the pin holes it read
+})
+
+test("HC10's placement half passes a decomposable footprint turned the RIGHT way", async () => {
+  // The positive control. Without it the placement half could refuse every
+  // multi-row part and every negative fixture would still pass.
+  const correct = await inputWithMultiRowPartAlongTheStrips()
+  const hc10 = gradeHardConstraints(correct).find((result) => result.id === "HC10")!
+  expect(hc10.held, hc10.detail).toBe(true)
+  expect(hc10.detail).toMatch(/footprint/)
+  expect(hc10.detail).toMatch(/placement/)
+})
+
+test("HC10's placement half reads the strip axis rather than assuming rows", async () => {
+  // The same layout under VERTICAL_STRIPS 0 and 1 cannot both be compatible,
+  // and a check hard-coded to rows would pass one of them for the wrong reason.
+  const horizontal = await inputWithMultiRowPartAlongTheStrips()
+  const vertical = await withStripAxisFlipped(horizontal)
+  const held = (input: Awaited<ReturnType<typeof inputWithMultiRowPartAlongTheStrips>>) =>
+    gradeHardConstraints(input).find((result) => result.id === "HC10")!.held
+  expect(held(horizontal)).not.toBe(held(vertical))
 })
 
 test("HC6 refuses a dump with no BOUNDS line rather than falling back to the pin extent", async () => {
@@ -1792,16 +2798,41 @@ test("the stock comes from the board when it declares one and from the rules oth
   expect([declared.rows, declared.cols]).toEqual([40, 30])
 })
 
-test("the grader shares no code with the scorer", async () => {
-  // R2, asserted by reading the import graph rather than by intention. The
-  // thing that mutates the board and the thing that certifies it are two
-  // implementations of nothing in common.
+test("nothing in the grader's TRANSITIVE import closure is the scorer or the search", async () => {
+  // R2: the thing that mutates the board and the thing that certifies it are
+  // two implementations of nothing in common.
+  //
+  // THE TEST THIS REPLACES was `expect(text).not.toContain("score.ts")` on two
+  // files for three filenames, under a comment claiming it was "asserted by
+  // reading the import graph rather than by intention". It was not: a
+  // transitive import through ANY third module passes it, so the comment was a
+  // stronger claim than the body and the gap was invisible. The closure is
+  // computed, and an unresolvable import is an error rather than a dropped
+  // edge - see tests/stripboard/import-closure.ts.
+  const forbidden = [
+    "tools/stripboard/score.ts",
+    "tools/stripboard/climb.ts",
+    "tools/stripboard/moves.ts",
+    "tools/stripboard/rank.ts",   // reaches score.ts, so reaching it reaches the scorer
+  ]
   for (const file of ["tools/stripboard/grade.ts", "tools/stripboard/constraints.ts"]) {
-    const text = await Bun.file(file).text()
-    expect(text, file).not.toContain("score.ts")
-    expect(text, file).not.toContain("climb.ts")
-    expect(text, file).not.toContain("moves.ts")
+    const closure = await importClosure(file)
+    for (const module of forbidden) {
+      expect([...closure].sort(), `${file} -> ${module}`).not.toContain(module)
+    }
   }
+})
+
+test("the grader and the scorer DO share the dump parser and the targets, which is intended", async () => {
+  // The honest other half. R2 is about two implementations of the objective and
+  // the verdict, not about forbidding a shared reader of the input text: both
+  // sides must agree on what the dump SAYS or they are grading different
+  // boards. Asserting the sharing makes it a decision in the record rather than
+  // an accident the closure test tolerates.
+  const graderClosure = await importClosure("tools/stripboard/grade.ts")
+  expect([...graderClosure]).toContain("tools/guide/dump.ts")
+  const scorerClosure = await importClosure("tools/stripboard/score.ts")
+  expect([...scorerClosure]).toContain("tools/guide/dump.ts")
 })
 ```
 
@@ -1814,18 +2845,41 @@ test("the grader shares no code with the scorer", async () => {
   - `two-nets-shorted` — Task 4's hand-written short, reused rather than rebuilt. **The board-level fixture is OB5 and this is not it**; say so in the fixture's `provenance.txt`.
   - `span-above-tool-range`, `span-above-reach`, `span-below-minimum` — dump text whose `PIN` lines put one part's two leads at a span above 16, above the family's `maxSpanHoles`, and below its `minSpanHoles`. **No span figure is written into the fixture or the test**: the fixture names a footprint, the test reads the bound through `leadSpanFor` and constructs the offending span from it, so a datasheet revision moves the fixture with the module rather than stranding it.
   - `over-stock` — dump text whose `BOUNDS` exceeds the stock in one axis, with the stock read from the rules file the same way.
-  - `round-pin-pattern` — dump text naming a part whose footprint is the synthetic ring Task 2's test constructs, registered for this fixture only in the test's own map rather than in `PIN_PATTERNS`, because `PIN_PATTERNS` holds footprints this repository places and nothing else.
+  - `over-stock-wire-outside-bounds` — **`HC6`'s second fixture, and the one the previous draft had no equivalent of.** Dump text whose `BOUNDS` is inside the stock while a `WIRE` end lies a column past both. A grader reading `BOUNDS` alone passes it; the fabrication extent refuses it naming the wire. **Without this fixture the whole of finding 4 is untested**, because `over-stock` alone passes for a grader that reads `BOUNDS` and nothing else.
+  - `round-pin-pattern` — **`HC10`'s footprint-half fixture.** Dump text naming a part whose footprint is the synthetic ring Task 2's test constructs, registered for this fixture only in the test's own map rather than in `PIN_PATTERNS`, because `PIN_PATTERNS` holds footprints this repository places and nothing else.
+  - `rows-across-the-strips` — **`HC10`'s placement-half fixture.** Dump text placing a decomposable multi-row footprint — a `DIP-16`, whose rows are a known quantity from Task 2's data — turned so its two rows run **across** the strips rather than along them: its `PIN` holes put one row's pins on several strips, and its `DIRECTION` is the perpendicular one. Both readings disagree with the footprint's classification, and `HC10` must fail naming the part, the half and the direction. **No pad coordinate and no row count is written into the fixture or the test**: the fixture names the footprint, and the test reads the expected rows through `pinPatternFor`, the way the span fixtures read their bounds through `leadSpanFor`.
 
-- [ ] **Step 4: Implement `tools/stripboard/constraints.ts`** — one exported function per constraint, each taking `CheckInput` and returning `ConstraintResult`, each with a comment naming the constraint, quoting the one clause of CRITERIA that decides it, and naming its negative fixture. Then `tools/stripboard/grade.ts` — `HARD_CONSTRAINTS` as a ten-entry table, `gradeHardConstraints` mapping over it, `a1` as `results.every((result) => result.held)` **after asserting the result set covers all ten ids**, because a conjunction over a short list is a verdict that ignores a constraint. Keep both files under the line ceiling by putting the ten checks in `constraints.ts` and the table, the verdict and `stockFor` in `grade.ts`.
+- [ ] **Step 4: Implement `tools/stripboard/extent.ts` first**, because `HC6` consumes it. `requiredFeatures` enumerates the four kinds and nothing else, labelling each with what names it; `fabricationExtent` unions them with `bounds` and **refuses when `bounds` is absent**, naming the line and pointing at `REBUILD_PINNED_FORK`, because the feature extent is a lower bound and substituting it loosens the constraint; `trimPreservesConnectivity` restricts the dump to the extent, rebuilds through `copperGraph`, and compares the **partition of the pin holes** — not the component ids, which are allocation order and would differ for an identical partition. The module comment states what `BOUNDS` actually is, with `Board.h:710`'s three sources named, why the union is conservative in the only direction that matters, and that `A_occ` is a different quantity that deliberately does not change.
 
-- [ ] **Step 5: Prove the grader can fail — and prove it the way the defects were actually found.** Five mutations, each applied, run and reverted, each recorded in a comment beside the assertion it broke:
+- [ ] **Step 4b: Implement `tools/stripboard/constraints.ts`** — one exported function per constraint, each taking `CheckInput` and returning `ConstraintResult`, each with a comment naming the constraint, quoting the one clause of CRITERIA that decides it, and naming its negative fixture. **`HC10` is one exported function composing two private halves** — `hc10FootprintEligibility` and `hc10PlacementOrientation` — conjoined, with `detail` naming the half that failed; **it is one entry in the table and `ConstraintId` is unchanged at ten**, because both halves are clauses of one criterion. Then `tools/stripboard/grade.ts` — `HARD_CONSTRAINTS` as a ten-entry table, `gradeHardConstraints` mapping over it, `a1` as `results.every((result) => result.held)` **after asserting the result set covers all ten ids**, because a conjunction over a short list is a verdict that ignores a constraint. Keep every file under the line ceiling by putting the ten checks in `constraints.ts`, the extent arithmetic in `extent.ts`, and the table, the verdict and `stockFor` in `grade.ts`; **if `constraints.ts` passes 500 lines, split it by constraint group and say which groups**, rather than letting one file grow.
+
+- [ ] **Step 5: Prove the grader can fail — and prove it the way the defects were actually found.** Nine mutations, each applied, run and reverted, each recorded in a comment beside the assertion it broke:
   1. **`a1` returns `results.every(...)` over a nine-entry table** (one id dropped from `HARD_CONSTRAINTS`). The ten-entry test and the one-at-a-time test must fail. *This is the defect CRITERIA found in PIPELINE: `A1` stated `H1`–`H9` and left a board free to violate a declared hard constraint while passing every admissibility condition.*
   2. **Every check returns `{ held: true }`.** Every V4 row must fail. *The vacuous grader.*
   3. **`HC3` reads only the `PART` placement field.** The both-signals test must fail.
-  4. **`HC6` reads `dump.grid` instead of `dump.bounds`.** The wide-canvas test must fail.
-  5. **`HC5` falls back to `TOOL_MAX_SPAN_HOLES` for an unlisted footprint.** The refuse-by-name test must fail. *This is the failure `PAR2` exists to prevent and the one whose symptom is a board that scores well and cannot be built.*
+  4. **`HC6` reads `dump.grid` instead of the fabrication extent.** The wide-canvas test must fail.
+  5. **`HC6` reads `dump.bounds` instead of the fabrication extent.** The `over-stock-wire-outside-bounds` row and the wire-outside test must fail. ***Run this one first.* It is the exact gap finding 4 names: a board whose bounding box fits the stock and whose wire does not, graded as fitting. The previous draft's `HC6` would have passed it and no test would have noticed.**
+  6. **`fabricationExtent` returns `bounds` unchanged.** The union test and the wire-outside test must fail.
+  7. **`trimPreservesConnectivity` returns `{ preserved: true }` unconditionally.** The too-small-extent test must fail. *The vacuous verification, which is the shape the fork's harness found four times.*
+  8. **`HC10` returns only its footprint half.** The `rows-across-the-strips` row and the both-halves test must fail. ***This is the other half of the crux turned on itself***: it is precisely the state the previous draft shipped, and the mutation existing means the state cannot return silently.
+  9. **`HC5` falls back to `TOOL_MAX_SPAN_HOLES` for an unlisted footprint.** The refuse-by-name test must fail. *This is the failure `PAR2` exists to prevent and the one whose symptom is a board that scores well and cannot be built.*
 
-- [ ] **Step 6: Run** `bun test && bun run typecheck`, **commit** ("Grade a candidate against all ten hard constraints, with a fixture each one rejects"), push.
+- [ ] **Step 6: Run** `bun test && bun run typecheck`, **commit** ("Grade a candidate against all ten hard constraints, with a fixture each one rejects"), push. Two commits if `extent.ts` lands cleanly on its own, because the fabrication extent and the ten-constraint table are two facts.
+
+- [ ] **Step 7: CHECKPOINT 1 — point the grader at four boards a person built, and read the verdicts.** This is the first place all ten hard constraints meet, and every fixture above is hand-written dump text. Four committed, hand-laid layouts that pass `make check` today are the first evidence the grader is pointed at reality rather than at its own fixtures. Run `gradeHardConstraints` on each and **read the output**, not only the assertion:
+
+  | board | reference nets from | expected |
+  | --- | --- | --- |
+  | `pultec-low-boost` | the frozen pair from Task 5, so the checkpoint needs no live export | **all ten hold** |
+  | `transistor-preamp-feedback` | `tests/fixtures/transistor-preamp-feedback.net` | **all ten hold** |
+  | `transistor-preamp-staged` | `tests/fixtures/transistor-preamp-staged.net` | **all ten hold** |
+  | `pt2399-core` | `tests/fixtures/pt2399-core-veroroute.net` | **REFUSES, and the refusal is the checkpoint passing** |
+
+  **`pt2399-core` is expected to refuse, on two known owner-blocked conflicts, and the checkpoint records the verdict rather than treating it as a failure.** Its `PIN` holes run `0,0`–`16,35`, a 17 × 36 extent against the declared 34 × 27 stock (`OB4`), and it places three footprints with no span data — two in `UNSOURCED` and one in neither map (`PAR2`, which refuses **by name**). Assert what discriminates: that the refusal **names the footprint** and that the extent failure **names both figures**. **What would be a failure is `pt2399-core` grading admissible**, because that means `HC6` or `PAR2`'s refusal is not wired in; and **a refusal with a different cause is also a finding** — report it, do not adjust the grader to produce the expected one.
+
+  **If one of the other three refuses, stop and report it.** Three hand-laid boards that pass `make check` are the closest thing this plan has to ground truth, and a constraint that refuses one of them is either wrong or has found something real — which is `OB4`'s own reasoning (*"a built board that violates a hard constraint is exactly the signal that a constraint is wrong"*). Do not relax the constraint. Record the board, the constraint, the detail and the derived figures, and take it to the owner.
+
+  Record the four verdicts, with their `detail` strings, in `docs/stripboard/pipeline-verification.md`. Commit the checkpoint's test as a standing test — a checkpoint run once is a checkpoint that stops holding.
 
 ---
 
@@ -1847,16 +2901,40 @@ test("the grader shares no code with the scorer", async () => {
 
 **A ranking term is not a term in `F`** and cannot make the search accept a worse `F`. Task 17 asserts that directly.
 
+**`A_occ` reads `BOUNDS` and is NOT `HC6`'s fabrication extent**, and the two deliberately stay
+apart. `A_occ` is `OBJ3`'s settled ranking term, specified as a direct reading of `BOUNDS`;
+`HC6`'s quantity is the union of `BOUNDS` with every required feature hole (Task 14), which is a
+larger figure and a different question — *which board can this be cut from* rather than *which of
+two equal-cost layouts is tighter*. Substituting either for the other would change a decision
+while looking like an implementation detail (`D19`), so `occupiedArea`'s comment names the other
+quantity, names `tools/stripboard/extent.ts` as where it lives, and says why it is not used here.
+
 - [ ] **Step 1: Write the failing test:**
 
 ```ts
-test("RANKING states the order and a reason for each position", () => {
-  for (const term of ["cuts", "wire", "solder", "A_occ", "wirelength"]) {
-    expect(RANKING).toContain(term)
-  }
+test("RANKING names all five terms in the tuple's order, and carries prose for each", () => {
   // A reviewable ranking beats a weighted sum with tuned coefficients, and a
   // declared order with no reasons is not reviewable.
-  expect(RANKING.length).toBeGreaterThan(400)
+  //
+  // WHAT THIS TEST PROVES is that each of the five terms is named, that they
+  // appear in the order rankingTuple produces, and that each name is followed by
+  // some prose before the next one. WHAT IT DOES NOT PROVE is that the prose is
+  // a REASON - no test can, and the previous version asserted
+  // RANKING.length > 400 under a name that claimed it did, which a single long
+  // sentence satisfies. The reason being a reason is the owner's judgement at
+  // review time, and that is stated rather than simulated.
+  const terms = ["cuts", "wire", "solder", "A_occ", "wirelength"]
+  const positions = terms.map((term) => RANKING.indexOf(term))
+  for (const [index, at] of positions.entries()) {
+    expect(at, `${terms[index]} is not named in RANKING`).toBeGreaterThanOrEqual(0)
+  }
+  expect(positions, "RANKING must name the terms in the tuple's own order")
+    .toEqual([...positions].sort((a, b) => a - b))
+  for (const [index, at] of positions.entries()) {
+    const next = positions[index + 1] ?? RANKING.length
+    const prose = RANKING.slice(at + (terms[index]?.length ?? 0), next).trim()
+    expect(prose.length, `${terms[index]} is named with no prose after it`).toBeGreaterThan(40)
+  }
   expect(RANKING).toMatch(/proxy/)
 })
 
@@ -2212,15 +3290,35 @@ test("Q3 does not stop the run on its first firing, or E2 would be unreachable",
   expect(result.climbs.length).toBe(loadRules().seeds.length)
 })
 
-test("nothing in the search consults a clock, a pid, a temp path or a directory listing", async () => {
-  for (const file of ["tools/stripboard/climb.ts", "tools/stripboard/moves.ts"]) {
+test("no file in the search's TRANSITIVE closure names a clock, a pid, a listing or Math.random", async () => {
+  // THE TEST THIS REPLACES scanned two files under the name "nothing in the
+  // search consults a clock" - and the search reaches a dozen modules, any of
+  // which could consult one. The closure is walked and every file in it is
+  // scanned, which is as strong as this claim can be made statically.
+  //
+  // WHAT IT STILL DOES NOT PROVE, written down rather than left implied: a
+  // scan cannot see an aliased access (`const now = Date["now"]`), a clock
+  // reached through a node builtin the walker skips by name, or a nondeterminism
+  // that is not one of these five identifiers. The GUARANTEE for determinism is
+  // Task 21's comparison of two runs; this test is the cheap early warning that
+  // names the file, and Task 21's step 2 exists because this one is not enough.
+  const forbidden = ["Date.now", "performance.now", "process.pid", "readdirSync", "Math.random"]
+  const closure = new Set<string>()
+  for (const entry of ["tools/stripboard/climb.ts", "tools/stripboard/moves.ts"]) {
+    for (const file of await importClosure(entry)) closure.add(file)
+  }
+  expect(closure.size, "the closure must be more than the two entry points")
+    .toBeGreaterThan(2)
+  for (const file of [...closure].sort()) {
     const text = await Bun.file(file).text()
-    for (const forbidden of ["Date.now", "performance.now", "process.pid", "readdirSync", "Math.random"]) {
-      expect(text, `${file}: ${forbidden}`).not.toContain(forbidden)
+    for (const identifier of forbidden) {
+      expect(text, `${file}: ${identifier}`).not.toContain(identifier)
     }
   }
 })
 ```
+
+  The closure includes `tools/guide/dump.ts` and `tools/perfboard/acquire.ts`, which are pre-existing. **If either names one of the five, that is a finding and not a licence to shrink the forbidden list**: establish whether the call can reach a scored evaluation, record the answer in `docs/stripboard/pipeline-verification.md`, and if it can, the fix is in that module with a test. An exemption, if one is genuinely needed, is a named entry with a reason beside it in the test — never a quietly narrowed closure, which would make every assertion above smaller than it looks.
 
 - [ ] **Step 2: Run it, confirm it fails. Step 3: Implement.** The cluster move applies one delta to every on-board part with a pin on the net, through `--move` per part or `--move-batch` when Task 9 has landed, and refuses as a whole if any part would be left floating. `search` runs one climb per seed, keeps the best, records the boundaries as evaluation indices. `seededPrng` is one named algorithm with its name in a comment and in the manifest.
 
@@ -2232,7 +3330,7 @@ test("nothing in the search consults a clock, a pid, a temp path or a directory 
 
 ### Task 19: `Q1`–`Q6` — stopping, and a stop is not a pass
 
-**Files:** create `tools/stripboard/stop.ts`; test `tests/stripboard/stop.test.ts`.
+**Files:** create `tools/stripboard/stop.ts`, `tests/stripboard/bare-literal.ts`; test `tests/stripboard/stop.test.ts`.
 
 **Interfaces:**
 - *Consumes:* `Score` (12), `BoardTargets` (11), `StripboardRules` (10), `RunResult`/`ClimbResult` counters (17, 18), and Task 20's `a1`–`a4` predicate — **which is why Task 20's `verdict.ts` exports `admissible(results, …)` and this module imports it, rather than this module re-deriving admissibility.**
@@ -2323,13 +3421,35 @@ test("no rule fires on a healthy mid-run state, so the search continues", () => 
   expect(evaluateStop(freshState(), candidate(), targets, rules)).toBeNull()
 })
 
-test("every threshold comes from the rules file and none is written here", async () => {
+test("a literal scan finds no bare threshold in stop.ts - a scan, not a proof", async () => {
+  // THE NAME THIS REPLACES was "every threshold comes from the rules file and
+  // none is written here", over a scan for three specific literals. A scan
+  // cannot establish "every": a threshold written 5e-2, or assembled from two
+  // small integers, or imported from a module that is not the rules file, all
+  // pass it.
+  //
+  // So this is the cheap per-module version of V9's scan, named as a scan, and
+  // it uses V9's OWN REGEX rather than a private list of three numbers - one
+  // pattern in one place, so a module cannot be clean here and dirty under V9.
+  // The stronger half is behavioural and is the test below it: every threshold
+  // this module applies must MOVE when the rules file's value moves.
   const text = await Bun.file("tools/stripboard/stop.ts").text()
-  expect(text).not.toMatch(/0\.05/)
-  expect(text).not.toMatch(/2000/)
-  expect(text).not.toMatch(/\b3\b *(?:consecutive|in a row)/)
+  expect([...text.matchAll(BARE_LITERAL)].map((match) => match[0])).toEqual([])
+})
+
+test("every rule this module applies moves when its rules-file value moves", async () => {
+  // The behavioural claim, which is what the scan's name used to assert. A
+  // threshold hard-coded here would not follow the parameter, whatever it was
+  // spelled as - so this catches what no scan can.
+  const strict = { ...rules, tau: rules.tau / 10, evaluationCap: 1, yieldFloor: rules.yieldFloor / 10 }
+  expect(evaluateStop(withinToleranceState(), admissibleCandidate(), targets, strict))
+    .not.toBe("Q2")
+  expect(evaluateStop({ ...freshState(), runEvaluations: 1, seedsRemaining: 3 },
+                      candidate(), targets, strict)).toBe("Q5")
 })
 ```
+
+  **`BARE_LITERAL` is declared HERE**, in `tests/stripboard/bare-literal.ts`, and **Task 22 imports it** — the dependency runs this way round because Task 19 comes first and the pattern must exist before its first use. One pattern in one file is the point: a module clean under this scan and dirty under `V9`'s would mean the two had drifted, which is the failure a second copy guarantees eventually. The file exports `BARE_LITERAL: RegExp` with its `g` flag, and **a fresh `RegExp` per call or an explicit `lastIndex` reset**, because a shared global regex carries state between `matchAll` loops and that is a test that passes on its second run for the wrong reason.
 
 - [ ] **Step 2: Run it, confirm it fails. Step 3: Implement**, with `Q1` and `Q2` calling Task 20's `admissible` and returning `null` when the arithmetic holds but admissibility does not, so the search continues to `Q3`–`Q6`, *"which report the weaker `bound` the run has actually earned"*.
 
@@ -2468,12 +3588,31 @@ test("the two wordings are not interchangeable", () => {
   expect(OUTCOME_WORDING["invalid"]).not.toBe(OUTCOME_WORDING["valid-below-target"])
 })
 
-test("REP3: the wording is generated from the fields, not written per run", async () => {
+test("REP3: every rendered quality sentence comes from a table entry, verbatim", async () => {
+  // THE TEST THIS REPLACES asserted that report.ts CONTAINS the strings
+  // "WORDING[" and "OUTCOME_WORDING[", under the name "the wording is generated
+  // from the fields, not written per run". A file can index both tables and
+  // still build a sentence of its own on the next line, so the body did not
+  // establish the name. The behavioural version: render every combination and
+  // assert each report's quality sentences are table entries and nothing else.
+  //
   // A phrasing table keyed by the field means an exhausted run cannot be
   // described as optimal by an author who was feeling good about the number.
-  const text = await Bun.file("tools/stripboard/report.ts").text()
-  expect(text).toContain("WORDING[")
-  expect(text).toContain("OUTCOME_WORDING[")
+  const entries = new Set([...Object.values(WORDING), ...Object.values(OUTCOME_WORDING)])
+  for (const status of BOUND_STATUSES) {
+    for (const outcome of OUTCOMES) {
+      const lines = renderReport(runWith({ bound: status, outcome }))
+      const quality = lines.filter((line) => QUALITY_LINE.test(line))
+      expect(quality.length, `${status}/${outcome} rendered no quality line`).toBeGreaterThan(0)
+      for (const line of quality) {
+        const bare = line.replace(QUALITY_LINE_PREFIX, "").trim()
+        expect(
+          entries.has(bare),
+          `${status}/${outcome}: "${bare}" is not a WORDING or OUTCOME_WORDING entry`,
+        ).toBe(true)
+      }
+    }
+  }
 })
 
 test("a proposed default that decided the outcome is reported as proposed (OB3)", () => {
@@ -2502,7 +3641,17 @@ test("the report names which of A1-A4 failed, one by one, never a single not adm
 
 - [ ] **Step 4: Prove the tests can fail.** Four breaks: make `outcomeOf` two-valued (the three-outcomes tests fail); add the word "optimal" to `WORDING["budget-exhausted"]` (V10 fails); have `renderReport` build its own sentence from the gap (REP3's generated-wording test fails); drop the per-condition breakdown (the last test fails).
 
+  `BOUND_STATUSES` and `OUTCOMES` are the two unions enumerated as arrays, asserted exhaustive against the types with a `satisfies`-style check so a sixth status cannot escape the loop. `QUALITY_LINE` matches the report's quality lines by their own prefix — the report lines its quality claims distinctly for exactly this reason — and `QUALITY_LINE_PREFIX` strips it. **If `renderReport` has no distinguishable quality line, give it one as part of this task**: a report whose claims cannot be located is a report nothing can check.
+
 - [ ] **Step 5: Run** `bun test && bun run typecheck`, **commit** ("Three outcomes, five bound statuses, and wording generated from both"), push.
+
+- [ ] **Step 6: CHECKPOINT 2 — run the chain end to end on one board, before any optimisation benchmarking, and read the whole report.** Task 20 is the first point at which `seed → climb → escapes → stop → verdict → report` exists as a chain. Every test above and in Tasks 16–19 drives one link with a scripted spawn; **nothing has yet produced a `bound` and an `outcome` from the machinery rather than from a fixture.** The thing this catches is a chain that is correct in every link and wrong when joined — a `StoppingRule` that never fires in a real run, a `bound` that reports a rule the search did not reach, an `outcome` that disagrees with the verdict its own grader produced.
+
+  Run `place` against **one** Pultec board — `pultec-low-boost`, the one with a hand-laid reference — with the committed `stripboard/rules.json` and a **reduced `evaluationCap` passed through the injected rules** so the checkpoint is minutes rather than hours. It is deliberately not the benchmark: Task 23 is the benchmark, and this is the integration test that must pass before benchmarking a chain that may not be wired together.
+
+  **Read, and record in `docs/stripboard/pipeline-verification.md`:** the report in full; the `bound` and which `Q` rule produced it; the `outcome` and which of `A1`–`A4` decided it; whether `worseAcceptanceRan` is false and whether the report says so; whether a proposed default (`OB3`) decided anything and whether it is marked proposed; `boards/**` unchanged by `git status --porcelain`; and the `run.json` manifest's two blocks with the canonical hash. **The expected outcome is `valid, below target` with `bound = budget-exhausted`**, because the cap is deliberately small — and an `admissible` verdict at a reduced cap is a result to look at twice, not to celebrate.
+
+  **Three things make this checkpoint fail rather than merely report:** a chain that throws; an `outcome` of `admissible` while any `ConstraintResult.held` is false; or a `bound` naming a rule `evaluateStop` did not return. Each of those is a wiring defect the per-link tests cannot see, which is the whole reason the checkpoint is here. Commit it as a standing test with an explicit long timeout, in its own file, **never skipped** — a skipped integration check looks exactly like a passing one.
 
 ---
 
@@ -2540,10 +3689,20 @@ test("a different seed list changes the canonical hash", () => {
   expect(hashOf(changed)).not.toBe(hashOf(search(input(), scriptedSpawn(SCRIPT))))
 })
 
-test("a run that takes twice as long reproduces, and one that differs does not", () => {
-  // Determinism is not reproducibility of timing.
+test("a run that takes three times as long reproduces, and one that DIFFERS does not", () => {
+  // Determinism is not reproducibility of timing - so a slower run must hash
+  // the same. The second clause was in the previous version's NAME and not in
+  // its body, which left "and one that differs does not" asserted by the title
+  // alone: a hash that ignored the metrics entirely would have passed it.
+  const baseline = hashOf(search(input(), scriptedSpawn(SCRIPT)))
   const slow = search(input(), slowedSpawn(SCRIPT, 3))
-  expect(hashOf(slow)).toBe(hashOf(search(input(), scriptedSpawn(SCRIPT))))
+  expect(hashOf(slow), "a slower run must reproduce").toBe(baseline)
+  // And a run whose RESULT differs must not hash the same, which is the half
+  // that makes the half above mean something.
+  const different = search(input(), scriptedSpawn(ONE_MOVE_FEWER))
+  expect(canonicalMetricsOf(different), "the scripts must actually produce different results")
+    .not.toEqual(canonicalMetricsOf(search(input(), scriptedSpawn(SCRIPT))))
+  expect(hashOf(different), "a differing run must not reproduce").not.toBe(baseline)
 })
 
 test("the manifest's provenance block holds the timings and the canonical block does not", () => {
@@ -2599,24 +3758,39 @@ test("V5 can fail: a statistic that ignores the placement is caught", () => {
   expect(REPORTED_STATISTICS).not.toContain("netCount")
 })
 
-test("V9: every numeric literal in the pipeline traces to a rule, a datum or a derivation", async () => {
-  // A review check with one mechanical half: no module may carry a bare
-  // numeric threshold. The judgement half - that no ratio is fitted across
-  // boards - is the document, and five boards cannot support a regression.
+test("V9's mechanical half: a literal scan finds no bare fraction or large integer", async () => {
+  // THE NAME THIS REPLACES was "every numeric literal in the pipeline traces to
+  // a rule, a datum or a derivation" - which is V9's claim, and this scan is
+  // not it. The scan catches a bare fraction and a bare integer of three digits
+  // or more. It does NOT catch a small integer used as a threshold, a value
+  // written 5e-2, or two literals combined into one. The judgement half - that
+  // no ratio is fitted across boards - is the DOCUMENT, and five boards cannot
+  // support a regression.
+  //
+  // So: a scan, named as a scan, with its blind spots written down. V9's
+  // guarantee is the document plus the owner's review, and this test is the
+  // mechanical floor under it.
   for (const file of PIPELINE_SOURCES) {
     const text = await Bun.file(file).text()
-    const literals = [...text.matchAll(/(?<![\w.])(0\.\d+|[2-9]\d{2,})(?![\w.])/g)]
-      .map((match) => match[0])
-    expect(literals, file).toEqual([])
+    expect([...text.matchAll(BARE_LITERAL)].map((match) => match[0]), file).toEqual([])
   }
+})
+
+test("V9's scan can fail, so it is not a loop over nothing", async () => {
+  // PIPELINE_SOURCES is derived rather than listed, so an empty or wrong glob
+  // would make the test above vacuous while green. Both halves are asserted.
+  expect(PIPELINE_SOURCES.length).toBeGreaterThan(10)
+  expect(PIPELINE_SOURCES).not.toContain("tools/stripboard/rules.ts")
+  expect([..."const tau = 0.05".matchAll(BARE_LITERAL)].map((m) => m[0])).toEqual(["0.05"])
+  expect([..."const cap = 2000".matchAll(BARE_LITERAL)].map((m) => m[0])).toEqual(["2000"])
 })
 ```
 
-  `acrossBoardVariation(key)` is computed from the four import-placed boards' own spread for that statistic, which is what makes the comparison "by more than its across-board variation" rather than by a number somebody chose. `PIPELINE_SOURCES` is the `tools/stripboard/*.ts` list excluding `rules.ts`, which is where numbers legitimately live.
+  `acrossBoardVariation(key)` is computed from the four import-placed boards' own spread for that statistic, which is what makes the comparison "by more than its across-board variation" rather than by a number somebody chose. `PIPELINE_SOURCES` is **derived** by listing `tools/stripboard/*.ts` and excluding `rules.ts`, which is where numbers legitimately live — derived rather than written out, so a module added in a later task is covered without anybody remembering to add it, and asserted non-empty because a glob that matched nothing is the most comfortable way for this test to pass. `BARE_LITERAL` is imported from `tests/stripboard/bare-literal.ts` (Task 19), so the per-module scan in `stop.ts` and this one are the same pattern.
 
 - [ ] **Step 2: Implement nothing; make the tests pass by fixing what they find.** If a statistic fails V5, it comes out of `REPORTED_STATISTICS` with the reason recorded — that is the test doing its job, not an obstacle. If a literal fails V9, it moves to `stripboard/rules.json` with a `note`.
 
-- [ ] **Step 3: Write `docs/stripboard/pipeline-verification.md`** — V1 through V12, each with where its test lives and what it would catch. This is the page a reviewer reads to answer *"how do we know the optimiser is not fooling itself?"*, and it is also the register the self-review below checks against.
+- [ ] **Step 3: Complete `docs/stripboard/pipeline-verification.md`**, created in Task 3 and extended since — V1 through V12, each with where its test lives and what it would catch, plus the findings Tasks 3, 7 and 14 put there: `HC8`'s trust boundary, `BOUNDS`'s three sources and the option of decomposing it in the fork, Checkpoint 1's four verdicts, and the stated weaknesses of the checks that are text scans rather than structural proofs. This is the page a reviewer reads to answer *"how do we know the optimiser is not fooling itself?"*, and it is also the register the self-review below checks against. **Every check whose guarantee is weaker than its subject appears here with the weaker guarantee written out** — that list is the honest counterpart of the `V` table and the thing a reader should look at first.
 
 - [ ] **Step 4: Prove V5 can fail.** Point `pipelinePlaced` at `importPlaced` and confirm every row fails. Record it beside the test.
 
@@ -2638,6 +3812,36 @@ test("V9: every numeric literal in the pipeline traces to a rule, a datum or a d
 **`B1-frozen`, and it is the only externally authored criterion:** against the exact electrical model, footprints and board dimensions the hand layout was built for — 9 nets, 27 pins, and **the grid the fixture's own `GRID` line reports** — the pipeline must reach `C ≤ 5` with `W = 0` and every net complete, **starting from the import-placed board**. A run that does not is a failing run. `W = 0` is a property of the artifact being reproduced, not a general preference.
 
 **`V3` may not be reported as satisfied by a run against the scaffolded board**, and Task 20's `A4` detail is what enforces it.
+
+**The acceptance criterion is ONE run, unchanged — and the report also carries a success rate
+across the seed set, as a diagnostic that is explicitly NOT a threshold.** `B1-frozen` says the
+pipeline *"must reach `C ≤ 5` with `W = 0`"*; that is the criterion and it is met or not by a run.
+What one run does not distinguish is **reaching the target on one seed from reaching it reliably**,
+and those are materially different facts about the pipeline the owner is being handed.
+
+So Task 23 reports, beside the verdict, **how many of the seed set's seeds reached it** — a
+fraction with both numbers and the per-seed `C`, `W` and `bound`. Three constraints on it, and all
+three matter:
+
+- **It is not an acceptance threshold and no number is attached to it.** A threshold the
+  implementing agent invents is the governing invariant's failure — *"an agent may never author
+  the acceptance criteria for the specific artifact it is producing"* — and a success rate with a
+  bar on it is exactly such a criterion. The run **passes or fails on the single-run criterion**,
+  and the rate changes no verdict, no `outcome`, no `bound` and no exit code.
+- **The seed set is `stripboard/rules.json`'s `seeds`**, which already exists, is already in the
+  strict rules file with a `note`, and is already in the canonical hash. **No new parameter and no
+  new number** (`V9`): the set is fixed and reviewed because `PAR3`'s file is where it lives, and
+  a run against a different seed set hashes differently.
+- **It is reported whether it is flattering or not**, as a `REP`-style field rendered from the
+  numbers, so a one-in-eight result reads as one in eight. If the owner later wants a rate to
+  *bind*, that is a criterion for him to set in CRITERIA, and the number will already have been
+  measured for several runs by then — which is the useful thing a diagnostic does and a threshold
+  cannot.
+
+**One honest qualification.** Running every seed is the full seed set's cost rather than one
+climb's, and `Q5`'s cap is run-level, so the rate is measured over runs that each get the full
+budget. That is the measurement's cost and it is stated rather than worked around by shortening
+the later seeds, which would make the rate a comparison between unlike runs.
 
 **What a failure means, and the run must say which of three it is.** (1) **The optimiser is weak** — `C > 5` on the frozen fixture while `HC1`–`HC10` hold and `κ` is well above the clustering bound. Note what this reading is **not**: the bound is deliberately set just under the best hand result, so missing it is the expected first outcome and on its own says nothing about the optimiser; this reading needs `C > 5`, a failure against the owner's achieved cut count. (2) **A constraint binds** — `maxSpanHoles` forbids the spans low-boost actually uses, or `minSpanHoles` forbids a compression it relies on, and the remedy is in the span data rather than in the search. **This reading is falsifiable on the frozen fixture**: the owner's own spans are in it, so a binding bound can be shown to be the cause by checking the hand layout's own spans against the module. (3) **The scorer is wrong** — `C ≤ 5` reported while `--check`, `HC8` or `make check` disagrees. *"That is §10's failure, and it is the worst of the three because it looks like success."*
 
@@ -2694,13 +3898,52 @@ test("the run leaves boards/** byte-identical", () => {
   place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules() })
   expect(gitStatusPorcelain("boards/")).toEqual(before)
 })
+
+test("the per-seed results are reported as a rate, and the rate changes no verdict", async () => {
+  // The diagnostic, and the guard that keeps it a diagnostic. Reaching the
+  // target on one seed and failing most others is materially different from
+  // reaching it reliably, and the report must make that visible - WITHOUT
+  // becoming a criterion the implementing agent invented, which is the
+  // governing invariant's failure.
+  const rules = loadRules()
+  const run = await placeAcrossSeeds({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules })
+  expect(run.perSeed.length, "every seed in the reviewed set is run").toBe(rules.seeds.length)
+  for (const seed of run.perSeed) {
+    expect(rules.seeds).toContain(seed.seed)
+    expect(seed.bound, `seed ${seed.seed}`).not.toBe("")
+  }
+  const lines = renderReport(reportInputOf(run)).join("\n")
+  // Both numbers, so a fraction cannot be read as a bare percentage.
+  expect(lines).toMatch(new RegExp(`\\b${run.reached}\\b[^\\n]*\\b${rules.seeds.length}\\b`))
+  // And it is labelled as what it is.
+  expect(lines).toMatch(/diagnostic/i)
+  expect(lines).not.toMatch(/success rate (?:below|above|threshold|target)/i)
+})
+
+test("the rate is not an acceptance condition: the verdict is the single run's", async () => {
+  // The discriminating test. A run that MET B1-frozen on its first seed and
+  // failed on every other must still report the same outcome and the same exit
+  // code, or the rate has silently become a criterion.
+  const rules = loadRules()
+  const one = await placeAcrossSeeds(
+    { frozen: FROZEN, netlist: FROZEN_NETLIST, rules }, scriptedSpawn(FIRST_SEED_ONLY_REACHES),
+  )
+  expect(one.reached, "the script must make exactly one seed reach the target").toBe(1)
+  expect(one.perSeed.length).toBeGreaterThan(1)
+  // The reported outcome is the FIRST seed's - the run B1-frozen is judged on -
+  // and not a function of how many others reached it.
+  expect(one.reportedOutcome).toBe(one.singleRunVerdict)
+  expect(exitCodeFor(one.reportedOutcome)).toBe(exitCodeFor(one.singleRunVerdict))
+})
 ```
 
   **This test runs the real binary and a real search, so it is slow.** Give it an explicit long timeout and keep it in its own file so `bun test tests/stripboard/benchmark.test.ts` is a thing a person can run alone. If the suite's wall clock becomes a problem, the remedy is a smaller evaluation cap for the test through the injected rules, **not** skipping it: a skipped benchmark looks exactly like a passing one.
 
 - [ ] **Step 2: Implement the `place` verb and the `make place` target.** One verb on the existing CLI acting on `$(CURDIR)` the way every other verb there does — **no `BOARD=` variable**, because two ways to say which board is two places for one fact to be wrong. It writes only under `build/stripboard/<board>/<stamp>/`.
 
-- [ ] **Step 3: Run it, read the output, and record what came back.** Not only the test's verdict: open the layout, read `run.json`, read the report. **Look at the output, not only the tests.** Record the result in `docs/stripboard/pipeline-verification.md` with the three readings and which one it was.
+  `placeAcrossSeeds` runs `place` once per seed in `rules.seeds` and returns `SeedSweep { readonly perSeed: readonly { readonly seed: number; readonly cuts: number; readonly wires: number; readonly bound: BoundStatus; readonly outcome: Outcome }[]; readonly reached: number; readonly singleRunVerdict: Outcome; readonly reportedOutcome: Outcome }`, where `singleRunVerdict` is the **first** seed's — the run `B1-frozen` is judged on — and `reportedOutcome` is what the report prints. **They are two fields of the same type on purpose**, so the test above can assert they are equal and a future change that derived the reported outcome from the rate would fail rather than pass quietly. `reached` counts the seeds meeting `B1-frozen`'s clause and **nothing reads it but the report**. `BoundStatus` and `Outcome` are Task 20's, imported, never redeclared.
+
+- [ ] **Step 3: Run it, read the output, and record what came back.** Not only the test's verdict: open the layout, read `run.json`, read the report. **Look at the output, not only the tests.** Record in `docs/stripboard/pipeline-verification.md`: the three readings and which one it was; **and the per-seed table with the rate**, with the rate labelled a diagnostic and the single-run criterion's verdict stated separately beside it. If the two disagree — the criterion met and the rate low — **say so plainly**: it is the most useful thing this task can tell the owner about what he is being handed, and it is the fact a single-run report hides.
 
 - [ ] **Step 4: If `V3` fails, do not lower the bar.** `B1-frozen` is non-negotiable; *"it means the pipeline is worse than the owner's hands at the one job it exists to take over, and the honest response is to say so and stop"*. Report which reading, with its evidence, and stop.
 
@@ -2787,14 +4030,26 @@ test("G2.6: an uncommitted layout is refused unless --allow-dirty", () => {
 })
 
 test("every refusal names what is missing, where to fix it, and why it is not defaulted", () => {
-  for (const [label, build] of EVERY_REFUSAL) {
+  // THE PREVIOUS VERSION asserted non-empty, a file extension, and length > 80
+  // under a name promising three things - so "why it is not defaulted" was in
+  // the title only, and a message that named a file twice satisfied it. Each of
+  // the three clauses is now its own assertion, and the refusal's own id has to
+  // appear so the message cannot be generic across ten cases.
+  const ids = new Set<string>()
+  for (const [label, build, id] of EVERY_REFUSAL) {
     let message = ""
     try { adoptLayout(build(), deps) }
     catch (error) { message = error instanceof Error ? error.message : String(error) }
-    expect(message, label).not.toBe("")
-    expect(message, label).toMatch(/\.(ts|json|pin|vrt)|run\.json/)   // where to fix it
+    expect(message, `${label}: nothing was thrown`).not.toBe("")
+    expect(message, `${label}: which refusal fired`).toContain(id)          // what is missing
+    expect(message, `${label}: where to fix it`).toMatch(/\.(ts|json|pin|vrt)|run\.json/)
+    expect(message, `${label}: why it is not defaulted`).toMatch(/not defaulted|rather than/)
     expect(message.length, label).toBeGreaterThan(80)
+    ids.add(id)
   }
+  // Ten distinct refusal ids across ten cases: one generic message for all ten
+  // would satisfy every assertion above except this one.
+  expect(ids.size, "each case must produce its OWN refusal").toBe(EVERY_REFUSAL.length)
 })
 
 test("a refused adoption leaves boards/** byte-identical", () => {
@@ -2814,6 +4069,8 @@ test("after adoption, make check is the verdict and a failure is a reverted adop
   expect(gitStatusPorcelain("boards/")).toEqual([])
 })
 ```
+
+  `EVERY_REFUSAL` is a list of `[label, build, id]` triples whose `id` is an `AdoptRefusal`, and the test file asserts the set of ids it carries equals the `AdoptRefusal` union — so a refusal added to the type without a case here fails rather than going untested.
 
 - [ ] **Step 2: Run it, confirm it fails. Step 3: Implement**, with `AdoptRefusal` exhaustive over the ten cases above and a `switch` the type checker proves complete. The verb runs `make -C boards/<board> check` after copying and **reverts the copy** when it does not exit 0.
 
@@ -2851,7 +4108,7 @@ test("after adoption, make check is the verdict and a failure is a reverted adop
 
 ## What this plan does NOT deliver
 
-- **The five layouts.** This plan builds the pipeline; the layouts are its output. No part is placed here and no `.vrt` is written by hand. Task 23 produces one layout, for the frozen fixture, to answer `V3`.
+- **The five layouts — and they are the parent's `S1`, not a gap here.** This plan builds the pipeline; the layouts are its output. No part is placed here and no `.vrt` is written by hand. Task 23 produces one layout, for the frozen fixture, to answer `V3`. The four remaining Pultec sections *"laid out, built and measured against the model's predictions"* is **`S1`** in `2026-10-08-agent-authored-boards-design.md`, which was made to depend on `S1a` on 2026-10-10 and which records that *"what remains the owner's in S1 is the build and the measurement."* **No milestone is added here for it**: a deliverable stated in two documents is a deliverable that diverges, and `S1` is the row with the dependency edge and the gate. See the scope boundary at the top of this plan.
 - **`HC8`'s board-level short fixture** — `OB5`, Task 6, blocked on how such a board is produced.
 - **`make check`'s new verifiers** — `OB2`, Task 25, blocked on the criteria review.
 - **A settled `τ` or `Q4` threshold** — `OB3`. Both are in the rules file as proposals and the report says so.
@@ -2880,9 +4137,10 @@ test("after adoption, make check is the verdict and a failure is a reverted adop
 | `HC3` nothing floating, both signals | 14; fixture already committed |
 | `HC4` the tool's span range | 14 |
 | `HC5` `maxSpanHoles`, `HC9` `minSpanHoles`, refusing without data | 14 |
-| `HC6` occupied extent against the stock | 14 (`BOUNDS` from 7; `OB4` bounds its scope) |
-| `HC8` copper-derived netlist equivalence, contract, independence | 3, 4, 5; board-level short fixture **6 (blocked)** |
-| `HC10` pin pattern | **2** |
+| `HC6` occupied extent against the stock | 14 (the **fabrication extent** in `extent.ts`, from `BOUNDS` in 7 unioned with the required features; `OB4` bounds its scope) |
+| `HC8` copper-derived netlist equivalence, contract, independence, **malformed-geometry refusal** | 3, 4, 5; board-level short fixture **6 (blocked)** |
+| `HC10` pin pattern — **footprint half** | **2** |
+| `HC10` *"every placed part's pins lie on straight lines parallel to the strips"* — **placement half** | **14** (needs `DIRECTION` from 7, which 14 already depended on) |
 | `A1` all ten hold | 14 |
 | `B1-frozen`, `B2` | 5, 23 |
 | `B1-current` | 20 (`A4`'s second clause, which is `A3`'s bound on that board) |
@@ -2914,27 +4172,100 @@ test("after adoption, make check is the verdict and a failure is a reverted adop
 | `E1`, `E2`, `E3`, plateau moves | 18, 17 |
 | `V1`, `V2` | 12 |
 | `V3` | 23 |
-| `V4` | 14 (ten fixtures), 2 and 4 (their own) |
+| `V4` | 14 (**twelve** fixtures: one per constraint, **two for `HC10`** — footprint and placement — and **two for `HC6`** — over-stock, and a feature outside `BOUNDS`), 2 and 4 (their own) |
 | `V5` | 22 |
 | `V6` and §10.1's split | 13, 21 |
 | `V7` | 13 |
 | `V8`, `V10`, `V12` | 20 |
 | `V9` | 22 |
 | `V11` | 3, 4 |
+| `R2`'s split and `HC8`'s independence asserted **structurally**, over the transitive import closure rather than by a text scan | 4 (the helper and `HC8`'s use), 14 (the grader's), 18 (the search's determinism scan) |
+| `HC8`'s refusal of malformed geometry — nine enumerated refusals, each with a fixture | **3** |
+| `HC8`'s trust boundary stated where the independence is claimed | 3 (the module comment and `pipeline-verification.md`), 20 (printed beside an `HC8` pass) |
+| Integration checkpoints — the grader against four hand-laid boards; the chain end to end | **Checkpoint 1** (Task 14, final step), **Checkpoint 2** (Task 20, final step) |
+| The seed-set success rate, **diagnostic and bound to no threshold** | 23 |
+| The `S1` boundary — the five layouts are the parent's row, not a milestone here | the scope boundary at the top, and "does NOT deliver" |
 
 ### Gaps — specified things with no task, each recorded rather than filled
 
-1. **`HC10`'s placement-level half.** `HC10` is worded about a *placement* — *"every placed part's pins lie on straight lines parallel to the strips"* — and CRITERIA's own check is **footprint-level**, refusing a non-decomposable family by name before any placement exists. Task 2 implements that check. **Nothing checks that a given placement oriented a decomposable footprint so its rows actually lie along the strips.** This is a gap between a criterion's wording and its stated check, it is the owner's to settle, and no task invents the placement-level rule.
-2. **`HC8`'s board-level short fixture** — `OB5`. Task 6 exists and is blocked. The module-level short is tested; the *"no pre-existing check catches it"* claim is not proven.
-3. **`A_occ`'s role in the three outcomes** — CRITERIA §10.5 records it as a question and does not answer it. **This plan's reading is that a ranking term never bears on the verdict**: Task 15 puts `A_occ` in the ranking only, Task 17 asserts it cannot make the search accept a worse `F`, and Task 20's `A1`–`A4` never read it. That reading is consistent with `OBJ3` and it is **not an answer to the question** — if the owner decides a ranking term may bear on the verdict, Task 20 changes.
-4. **A full `A1` grade of `pt2399-core` is impossible today**, because it places three footprints with no span data (two `UNSOURCED`, one in neither map). Not a gap in the plan — `PAR2`'s refusal is correct — but it means PIPELINE §3.5's benchmark set validates the grader through `HC8` only, which Task 5 states and no task contradicts.
-5. **Limits `H-1`, `H-3`, `H-7`, `H-12`** are undetermined in the suite and remain so: whether the span data covers every family (the module refuses by name where it does not), whether `C = 0` is attainable (*"run P1 once M1.4 and M1.5 exist, and read the result"* — Task 16 is that run), `PlaceFloaters`' scaling, and where the two definitions of `S_occ` diverge (`V2`'s per-candidate identity check is what would surface it). Each is named in "does NOT deliver" or in the task that would read it.
+1. **`HC10`'s placement-level half is now BUILT (Task 14), and what remains is a wording divergence for the owner.** `HC10` is worded about a *placement* — *"every placed part's pins lie on straight lines parallel to the strips"* — while CRITERIA's "Checked by" column specifies a **footprint-level** check refusing a non-decomposable family by name before any placement exists. The previous revision implemented only the footprint half (Task 2) and recorded the rest as a gap, **while `A1` asserted `HC10` held** — which is this plan's own crux applied to itself: *"a constraint whose check silently passes is worse than no constraint, because the verdict claims it held."* So Task 14 now implements the placement half over each placed part's `PIN` holes and its `DIRECTION`, both halves must hold for `HC10` to hold, and each has its own negative fixture. **The residual gap is a documentation one and it is reported rather than resolved:** CRITERIA's "Checked by" column still names only the footprint check, so the owner may read the placement half as outside `HC10`. If he does, it is deleted — one function and one fixture — and the original gap is restored. **No `ConstraintId` was added**; there are still exactly ten, because both halves are clauses of one criterion sentence.
+2. **`HC6`'s quantity diverges from CRITERIA's wording, and the plan computes rather than reinterprets.** CRITERIA calls `BOUNDS` *"the exact figure"* that *"tightens the check"*. Read against `Src/Board.h:710`, `BOUNDS` is the union of painted copper and pins, every component's footprint rect **without a `GetIsPlaced()` filter**, and every **text label**'s rect — so it can over-state the material a board needs and it is not a statement about which features a cuttable board must retain. Task 14 therefore computes a **fabrication extent** over `BOUNDS` unioned with every required feature hole, which is conservative in the only direction that matters, and verifies that trimming to it preserves the reconstructed connectivity. **What is not resolved here:** whether `HC6`'s stock figure should be compared against a figure that a text label can inflate, and whether the fork should decompose `BOUNDS` into its three sources. Both are the owner's, both are recorded in `docs/stripboard/pipeline-verification.md`, and **neither CRITERIA nor the fork's dump grammar is changed by this plan on the strength of them.**
+3. **`HC8`'s board-level short fixture** — `OB5`. Task 6 exists and is blocked. The module-level short is tested; the *"no pre-existing check catches it"* claim is not proven.
+4. **`A_occ`'s role in the three outcomes** — CRITERIA §10.5 records it as a question and does not answer it. **This plan's reading is that a ranking term never bears on the verdict**: Task 15 puts `A_occ` in the ranking only, Task 17 asserts it cannot make the search accept a worse `F`, and Task 20's `A1`–`A4` never read it. That reading is consistent with `OBJ3` and it is **not an answer to the question** — if the owner decides a ranking term may bear on the verdict, Task 20 changes.
+5. **A full `A1` grade of `pt2399-core` is impossible today**, because it places three footprints with no span data (two `UNSOURCED`, one in neither map) and its 17 × 36 extent exceeds the declared stock. Not a gap in the plan — `PAR2`'s refusal and `HC6` are both correct — but it means PIPELINE §3.5's benchmark set validates the grader through `HC8` only, which Task 5 states and no task contradicts, and **Checkpoint 1 expects the refusal and records it rather than treating it as a failure** (`OB4`).
+6. **Nothing in CRITERIA is a RELIABILITY criterion, and Task 23's seed-set success rate is not one either.** `B1-frozen` is a single-run criterion, and the suite has nothing that says how often a run should reach its target. The rate Task 23 reports is **explicitly a diagnostic**, bound to no threshold, changing no verdict and no exit code, because a threshold the implementing agent invents is the governing invariant's failure. **The gap is that the suite has no reliability criterion at all** — a question for the owner, and one he can now answer with measurements instead of a guess, which is the point of reporting the rate before anyone asks for a bar.
+7. **`HC10`'s placement predicate is decided by this plan, the way Task 2 decides its footprint predicate**, and it is load-bearing in the same way. The predicate is: a placed part's `PIN` holes must occupy exactly the strips its footprint's row decomposition predicts, consistent with the part's `DIRECTION`. **What the suite does not state** is how a `DIRECTION` of `E` relates to one of `W` for a symmetric footprint, or whether a single-row part is compatible in every direction — both are decided in Task 14 as "yes, because a single row lies along any strip it is on", and a reviewer who disagrees should reject Task 14's placement half rather than Task 2.
+8. **"Trimming to the extent preserves connectivity" is this plan's reading of `HC6`'s intent, not a criterion in the suite.** `HC6` says the layout *"fits the stock"* and names the occupied extent as the quantity; it does not say the trimmed board must still conduct. That is implied by *"can be cut from that board"* and the implication is where the verification comes from, but **it is an implication and it is labelled as one**: if the owner reads `HC6` as a pure size comparison, `trimPreservesConnectivity` becomes a reported measurement rather than part of the `HC6` verdict, and the change is one conjunct in `constraints.ts`.
+9. **Limits `H-1`, `H-3`, `H-7`, `H-12`** are undetermined in the suite and remain so: whether the span data covers every family (the module refuses by name where it does not), whether `C = 0` is attainable (*"run P1 once M1.4 and M1.5 exist, and read the result"* — Task 16 is that run), `PlaceFloaters`' scaling, and where the two definitions of `S_occ` diverge (`V2`'s per-candidate identity check is what would surface it). Each is named in "does NOT deliver" or in the task that would read it.
 
 ### Placeholder scan
 
-Searched the plan for `TBD`, `TODO`, `appropriate`, `as needed`, `similar to`, `etc.`, `and so on`, `handle errors`, `various`: **none present.** Every task names its files, its exported types with their fields, its test bodies and its commit. Where a test body uses a helper that is not spelled out — `healthyInput()`, `scriptedSpawn()`, `fixture()`, `mutate()` — the helper's contract is stated in prose beside it and, in the two cases where a weak helper would make a test vacuous (`mutate` returning its argument, `fixture` editing the committed file), the plan says so and requires an assertion about the helper itself.
+**The previous revision's scan said "none present" and was wrong**, and how it was wrong matters
+more than the finding. It searched for `TBD`, `TODO`, `appropriate`, `as needed`, `similar to`,
+`etc.`, `and so on`, `handle errors`, `various` — a **vocabulary** scan — and Task 5 contained
+this:
+
+```ts
+test("HC8 rejects the floated-C19 board from the copper side, not only HC3's side", () => {
+  const text = Bun.file("tests/fixtures/pultec-low-boost-c19-floated.dump")
+  expect(text).toBeDefined()
+})
+```
+
+No placeholder word in it, an assertion that cannot fail — `Bun.file` is defined for a path that
+does not exist — and a name claiming the rejection. The plan even said "replace the
+placeholder-shaped test while implementing", which is a note that survives exactly as long as
+somebody reads it. **A vocabulary scan cannot find a placeholder written in correct-looking
+code**, so this revision scans bodies as well as words.
+
+**This pass, re-scanned both ways:**
+
+- **Vocabulary**, as before: none present.
+- **Bodies.** Every test body in this plan read against its own name, looking for four shapes: an
+  assertion that holds for any input (`toBeDefined` on a non-nullable, a loop whose predicate is
+  true by construction); a name or comment claiming more than the body establishes; a claim about
+  an external file that never opens one; and a clause present in a name and absent from the body.
+  **Nine were found and all nine are fixed**, each with a comment beside it recording what the
+  replaced version did and why it passed. They are listed in the audit table below, which is part
+  of this scan rather than an appendix to it.
+- **Helpers.** Where a test body uses a helper that is not spelled out — `healthyInput()`,
+  `scriptedSpawn()`, `fixture()`, `mutate()`, `placeAcrossSeeds()` — the helper's contract is
+  stated in prose beside it, and in the cases where a weak helper would make a test vacuous
+  (`mutate` returning its argument, `fixture` editing the committed file, `importClosure`
+  returning only direct imports, `readFootprintPads` skipping a missing library, `PIPELINE_SOURCES`
+  matching nothing) the plan requires **an assertion about the helper itself**. Three of those five
+  guards-on-the-guard are new in this revision, and the closure one is new because the closure is
+  new.
 
 One deliberate forward reference, which is not a placeholder because it names the task and refuses rather than skips: Task 17's `applyMove` **throws** for `{ kind: "cluster" }`, naming Task 18, until Task 18 implements it.
+
+### The mislabelled-test audit, in full
+
+Every test whose name or comment claimed more than its body established. Two were the review's
+findings; **seven more came out of auditing the rest on the same criterion.**
+
+| task | test, as it was named | what the body actually did | fixed how |
+| --- | --- | --- | --- |
+| **2** | *"every recorded pad count agrees with the footprint file the pads came from"* | compared `pattern.pads.length` with `pattern.source.padCount` — **two fields of the same hand-written literal**, never opening a file | **opens the `.kicad_mod`**, compares the pad count, every pad's recorded `(at x y)` and the `(version …)` token; `excludedPads` accounts for any pad not transcribed; the helper **refuses rather than skips** when the library is unresolvable |
+| **14** | *"the grader shares no code with the scorer"*, commented *"asserted by reading the import graph"* | `expect(text).not.toContain("score.ts")` on two files for three names — **any transitive import satisfies it** | **transitive import closure**, with `rank.ts` added to the forbidden set because it reaches the scorer, plus a test asserting the intended sharing of `dump.ts` |
+| **4** | *"this module imports nothing from the scorer or from the check path"*, same comment | same substring scan on one file — **the same defect, found by the audit rather than by the review** | same closure, same helper; the `nodeId` half is split out and **named as a scan**, with the behavioural independence test identified as the actual guarantee |
+| **5** | *"HC8 rejects the floated-C19 board from the copper side"* | `expect(Bun.file(path)).toBeDefined()` — **a placeholder that cannot fail** | the real test: parse the floated dump, build the reference nets, assert `netlistEquivalence` throws naming `C19.` and `PIN`; a third break added so the test itself can fail |
+| **5** | *"the frozen fixture's own numbers are read from it"* | asserted `grid.rows > 0` — **"numbers" was one inequality** | renamed to what it checks, and `B2`'s actual benchmark added as its own test: the export's net and pin counts against the dump's own `NODE` and `PIN` lines, both sides read |
+| **11** | *"off-board components force no edge"* | asserted each edge's endpoints were known nets — **true by construction** | the discriminating pair: an off-board-only net pair must be absent **and** an on-board pair must be present; two mutations, because either half alone passes a wrong implementation |
+| **15** | *"RANKING states the order and a reason for each position"* | `RANKING.length > 400` — **one long sentence satisfies it** | asserts all five terms are named **in the tuple's order** with prose between each; records that no test can prove prose is a *reason* and that this is the owner's judgement at review |
+| **18** | *"nothing in the search consults a clock, a pid, a temp path or a directory listing"* | scanned **two** files, while the search reaches a dozen | scans every file in the transitive closure, **and writes down what a scan still cannot see** (aliased access, other spellings), naming Task 21's run comparison as the guarantee |
+| **19** | *"every threshold comes from the rules file and none is written here"* | scanned for three specific literals — **"every" is not scannable** | renamed to *"a literal scan … - a scan, not a proof"*, uses `V9`'s shared `BARE_LITERAL`, and a **behavioural** test added: every rule's threshold must move when the rules file's value moves |
+| **20** | *"REP3: the wording is generated from the fields, not written per run"* | asserted `report.ts` contains `"WORDING["` | renders **every** `bound` × `outcome` combination and asserts each quality line is a table entry verbatim |
+| **21** | *"a run that takes twice as long reproduces, **and one that differs does not**"* | tested only the first clause — **the second was in the title** | both clauses asserted, plus a guard that the two scripts really do produce different metrics |
+| **22** | *"V9: every numeric literal in the pipeline traces to a rule, a datum or a derivation"* | a bare-literal regex, which misses a small integer, `5e-2`, and a composed value | renamed to *"V9's mechanical half: a literal scan …"* with its blind spots written out; `PIPELINE_SOURCES` **derived and asserted non-empty**, and the regex asserted to match a known literal so the scan is not vacuous |
+| **24** | *"every refusal names what is missing, where to fix it, **and why it is not defaulted**"* | non-empty, a file extension, length > 80 — **the third clause was unasserted** | one assertion per clause, the refusal's own id must appear, and the ten ids must be **distinct**, so one generic message fails |
+
+**One shape was deliberately left weak and is labelled, not fixed:** Task 4's `nodeId` text scan.
+The closure cannot see it — reading `.nodeId` off a value whose type already crossed the boundary
+is a use, not an import — and the behavioural test beside it (the verdict is unchanged when the
+`NODE` block is emptied and the `CUT` ids garbled) is the real guarantee. So the scan keeps its
+place as a cheap early warning **under a name that says scan**, which is the whole distinction
+this audit is about.
 
 ### Type consistency across tasks
 
@@ -2949,8 +4280,79 @@ Checked every exported name that crosses a task boundary. Resolved inconsistenci
 - **`a1`** lives in `tools/stripboard/grade.ts` (Task 14) and `verdict.ts` imports it; `verdict.ts` does not re-derive the conjunction.
 - **`Stock`** is declared in `grade.ts` (Task 14) and read by Task 24's gate through the manifest's hashes rather than by importing the type.
 - **`BoundStatus` / `Outcome` / `StoppingRule`** are declared once each — the first two in `verdict.ts`, the third in `stop.ts` — and `run-dir.ts`'s `CanonicalMetrics` carries them as `string` deliberately, because a manifest read from disk is untyped text until it is validated and a structural type there would assert a validation that had not happened.
-- **`ConstraintId`** is the single vocabulary for the ten constraints and is used in `constraints.ts`, `grade.ts`, `stop.ts`'s signatures and `run-dir.ts`'s `constraints` record keys.
+- **`ConstraintId`** is the single vocabulary for the ten constraints and is used in `constraints.ts`, `grade.ts`, `stop.ts`'s signatures and `run-dir.ts`'s `constraints` record keys. **It is still exactly ten members after `HC10`'s split**, because `HC10`'s two halves are two private functions behind one table entry and one id — a tenth-and-a-half constraint would have broken `A1`'s cardinality test, the manifest's `constraints` record and `V4`'s row set at once.
 
-### One thing a reviewer should push back on if they disagree
+**Resolved in this revision, over the types it adds:**
 
-Task 2 decides `HC10`'s predicate — grid-multiple separation **across** the strips, unconstrained spacing **along** a row — and that decision is load-bearing for whether any footprint is ever refused. It is argued from `TO-92_Inline`'s own pads, read off the `.kicad_mod`, and from the fact that the repository places that part on boards that are built and pass `make check`. **If the owner reads `HC10` differently, Task 2 is the task to reject**, and Tasks 14 and 25 inherit the change rather than needing their own.
+- **`PinPattern` and the other six pin-pattern types live in `pin-pattern-model.ts`, not in `pin-pattern.ts`.** The first draft of this revision listed them all under Task 2 without saying which module, and `admitPattern(pattern: PinPattern)` is in the model file — so a `PinPattern` declared in the data file would have made the arithmetic depend on the data, inverting the split whose entire purpose is that the arithmetic cannot have been written to match the transcription. `pin-pattern.ts` declares **no type**, exactly as `lead-span.ts` declares none.
+- **`BARE_LITERAL` had two owners**, which is the same class of bug as the three the previous pass caught. One passage said it was "Task 22's regex" that Task 19 imports; the next said to write it in Task 19 and have Task 22 import it. **Resolved: Task 19 declares it in `tests/stripboard/bare-literal.ts` and Task 22 imports it**, because Task 19 comes first and the pattern must exist before its first use — and the file also owns the `lastIndex` discipline a shared global regex needs.
+- **`readFootprintPads`'s return type was declared twice**, once inline in Task 2's Interfaces and once as `FootprintPads` in the implementation. Resolved: named `FootprintPads` in both.
+- **`HoleKey` crosses into `extent.ts`** and was missing from Task 14's *Consumes* list while `RequiredFeature` used it. Added, with `pinHoles`, which `trimPreservesConnectivity` needs to compare partitions by pin rather than by component id.
+- **`withinExtent` was used in a Task 14 test and declared nowhere.** Resolved: it is an export of `extent.ts`, not a test-local helper, because the predicate "is this hole inside the extent" is the one `HC6` applies and two implementations of it is exactly how the extent and the constraint come to disagree.
+- **`TrimVerdict`** is named rather than left as an inline object literal in `trimPreservesConnectivity`'s signature, so `HC6`'s detail can be typed against it.
+- **`SeedSweep`** (Task 23) carries `singleRunVerdict` and `reportedOutcome` as two fields of type `Outcome`. They are deliberately the same type so the test can assert equality; a sweep type that reported only one of them could not express the property that the rate changes no verdict.
+- **`GeometryRefusal`** (Task 3) is a nine-member union with a `switch` over it for the messages, and `FeatureKind` (Task 14) is a four-member one. Both are enumerated types rather than bare strings for the same reason `AdoptRefusal` is: a set that can grow silently is a set with an unchecked case.
+**Six defects in the plan's own test fixtures, found by running the printed implementation against
+the printed tests on paper.** This is the pass the previous revision ran over *names* and not over
+*values*, and every one of these would have failed on the first `bun test` of its task:
+
+1. **Task 2's DIP test expected `rowPitchSteps` of `[3]`** while the `classifyPads` printed twenty
+   lines above it tries axis `x` first and returns `[1]` for that pad set. Fixed to `[1]`, with the
+   axis asserted explicitly and the tie-break justified against the real `DIP-16_W7.62mm`, whose
+   sixteen pads give eight rows one step apart (measured). A second test now classifies the file's
+   own pads, so the tie-break is checked against a footprint and not only against four corners.
+2. **Task 2's off-grid test put the offending separation on one axis only** — pads at `(0,0)`,
+   `(2.54,0)`, `(0,2.94)`, `(2.54,2.94)` — and expected `off-strip-lattice`. But grouping by `x`
+   gives two rows exactly one step apart, so `classifyPads` returns `rows` on axis `y`. **A 2×2 pad
+   field decomposes whenever either axis is on the grid**, so the refusal test now puts the
+   separation off-grid on both, and a control test asserts the one-axis case *does* classify.
+3. **Task 3's `VERTICAL_STRIPS 1` test would have been broken by the new `cut-across-strips`
+   refusal.** It flipped the axis line and left `CUT 0,1 0,2`, which is one strip horizontally and
+   **two different strips** vertically — malformed under the new validation, so the test would
+   throw instead of building a graph. The cut now moves with the axis. **This is the shape to look
+   for whenever a validation is added under existing fixtures**, and it is why finding 3's nine
+   refusals were each checked against every board already in the task.
+4. **Task 4 passed `{ ...Object.fromEntries(REFERENCE) } as never`**, which is a typing bypass
+   `CLAUDE.md` forbids and also a pointless round trip — `REFERENCE` is already a `ReferenceNets`.
+   Removed. The test's name claims opens and shorts are *"reported separately"*, so both lists are
+   now asserted non-empty rather than only the conjunction they imply.
+5. **This revision's own first draft of the spurious-accommodation test used `as never`** to build
+   a `DatasheetRef` out of a `PadSource`. Fixed by borrowing the ref from an entry that
+   legitimately has one — a test reaching for a cast is usually a test building a value the types
+   say cannot exist, which is a finding about the types or about the test and never a cast.
+6. **The ring fixture was verified rather than assumed.** `ring(11, 8)` must refuse on *both* axes
+   or the both-axes test proves nothing; computed, it has ten off-grid gaps grouped by `y` and four
+   grouped by `x`, so it genuinely refuses either way.
+
+- **No new name collides with an existing export.** Checked against `lib/kicad/`, `tools/guide/`, `tools/perfboard/` and `tools/cli/`: `FabricationExtent`, `RequiredFeature`, `FeatureKind`, `TrimVerdict`, `GeometryRefusal`, `GridAccommodation`, `PatternEligibility`, `FootprintPads`, `SeedSweep`, `importClosure`, `readFootprintPads`, `withinExtent` and `preparedExtentsHoles` are all new. **`Bounds`** (Task 7) remains the only name in the extent neighbourhood that already existed, and `FabricationExtent` is deliberately *not* called `Bounds2` or `OccupiedExtent`: the two are different quantities and a near-identical name is how they would come to be used interchangeably.
+
+### Three things a reviewer should push back on if they disagree
+
+**1. `HC10`'s predicate, across both halves.** Task 2 decides the footprint rule — grid-multiple
+separation **across** the strips, and an off-grid pitch **along** a row admitted only on a
+**recorded** formed-leads accommodation — and Task 14 decides the placement rule. Both are
+load-bearing for whether any footprint or any layout is ever refused. The footprint rule is argued
+from `TO-92_Inline`'s own pads read off the `.kicad_mod`, from the measurement that it is the only
+one of the thirteen that is both off-grid along its row and recorded `formable: false`, and from
+`lead-span.ts` already describing its preparation in prose. **The change from the previous
+revision is that collinearity is no longer sufficient**: the earlier draft said the along-row
+spacing was "unconstrained", which would have admitted any collinear pattern however fine its
+pitch. **If the owner reads `HC10`'s along-row clause as genuinely unconstrained, Task 2's
+accommodation machinery is the thing to reject**, and `admitPattern` collapses to the across-strip
+clause alone.
+
+**2. `HC10`'s placement half existing at all.** It implements `HC10`'s criterion sentence; CRITERIA's
+"Checked by" column specifies only the footprint check. The plan's reading is that both are clauses
+of one criterion and that implementing only the first while `A1` asserts `HC10` is the defect this
+plan calls its crux. **If the owner reads the "Checked by" column as the whole of `HC10`, Task 14's
+placement half is the thing to reject** — one function, one fixture, one conjunct — and gap 1
+returns to its previous wording. **No other task changes either way**, which is the property that
+makes it separably rejectable.
+
+**3. `HC6` being graded against a figure a text label can inflate.** The fabrication extent unions
+`BOUNDS` with every required feature hole, and `BOUNDS` includes text-label rects
+(`Board.h:710`). The union is conservative — `HC6` can be stricter than the truth and never looser
+— and the plan prefers a reported false refusal to a silent false pass. **If the owner would
+rather `HC6` not refuse on an annotation, the honest fix is in the fork**: decompose `BOUNDS` into
+its three sources, which is a larger change than M1.1 and is recorded as a finding rather than
+taken. Rejecting the union sends the work there, not into a looser `HC6`.
