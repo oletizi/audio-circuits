@@ -43,7 +43,7 @@ import type { SeedInput, SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 const FIXTURE_DIR = path.join(os.tmpdir(), "stripboard-seed-fixtures")
 export const RUN_DIR = path.join(FIXTURE_DIR, "run")
 export const IMPORTED_BOARD = path.join(FIXTURE_DIR, "imported.vrt")
-const CROWDED_BOARD = path.join(FIXTURE_DIR, "crowded.vrt")
+export const CROWDED_BOARD = path.join(FIXTURE_DIR, "crowded.vrt")
 
 /**
  * The import-placed low-boost board, CAPTURED rather than hand-written.
@@ -273,15 +273,12 @@ export function targetsFor(section: string): BoardTargets {
 /**
  * The input every arm is run on: the import-placed low-boost board.
  *
- * **SEED 3, AND THE REASON IS A MEASUREMENT RATHER THAN A PREFERENCE.** The
- * tests that loop over all three arms need an input every arm produces a start
- * on, and on this board the constructed arm produces one on seeds
- * 3, 5, 7, 8, 12, 18, 20, 25, 26, 28, 29 and 30 of the first thirty-one - four
- * of the five reviewed seeds leave one of its parts with no hole that keeps it on
- * its assigned strip. That fragility is the constructed arm's own measured
- * property and `tests/stripboard/seed-compare.test.ts` asserts it directly; it is
- * not something these fixtures paper over, and seed 3 is named here so nobody
- * reads it as an arbitrary choice.
+ * SEED 0, AND IT USED TO HAVE TO BE SEED 3. While the constructed arm emitted a
+ * fixed move-turn-stretch it produced a start on only one of the five reviewed
+ * seeds, and these fixtures had to name that one. That was a gesture-order defect
+ * and not a property of the construction: with the order chosen rather than
+ * assumed (`GESTURE_ORDERS`), all three arms produce a start on all five. The
+ * seed is back to 0 and this note records why it ever moved.
  */
 export function input(): SeedInput {
   return {
@@ -290,7 +287,7 @@ export function input(): SeedInput {
     runDir: RUN_DIR,
     rules: loadRules(),
     arm: "import",
-    seed: 3,
+    seed: 0,
   }
 }
 

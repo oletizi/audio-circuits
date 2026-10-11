@@ -54,12 +54,8 @@
  * comparison - Task 18's final step - will report that rather than a rate.
  */
 import path from "node:path"
-import {
-  constructedGestures,
-  drive,
-  importGestures,
-  randomGestures,
-} from "./seed-arms.ts"
+import { drive, importGestures, randomGestures } from "./seed-arms.ts"
+import { constructedGestures } from "./seed-constructed.ts"
 import type { StripboardRules } from "./rules.ts"
 import type { BoardTargets } from "./targets.ts"
 
@@ -78,19 +74,24 @@ export {
   type StripAssignment,
 } from "./seed-arrangement.ts"
 export {
+  occupancyOf,
+  VEROROUTE_FOOTPRINT_ROWS,
+  type Occupancy,
+  type PartRect,
+} from "./seed-geometry.ts"
+export {
   admissibleOrigins,
   admissiblePositions,
-  occupancyOf,
+  appliedGestures,
+  GESTURE_ORDERS,
   rectOf,
   turnable,
   turnedRect,
   turnsTakeable,
   withPartMoved,
   withPartTurned,
-  VEROROUTE_FOOTPRINT_ROWS,
-  type Occupancy,
-  type PartRect,
-} from "./seed-geometry.ts"
+  type GestureOrder,
+} from "./seed-placement.ts"
 
 export type SeedArm = "constructed" | "import" | "random"
 

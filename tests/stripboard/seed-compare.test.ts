@@ -36,6 +36,7 @@ import {
   ONE_CONSTRUCTED_SEED_MEETS,
   RANDOM_WINS,
   recordingRunner,
+  refusingComparisonInput,
   scriptedRunner,
   SCRIPT,
 } from "./seed-compare-fixtures.ts"
@@ -79,15 +80,11 @@ test("no arm is dropped for starting invalid, and each start's admissibility is 
     // the two are kept apart: `run?.startAdmissible === false` alone would read
     // `undefined === false` as a pass on a refused seed, which is the one
     // confusion this record exists to prevent.
-    for (const seed of arm.perSeed) {
-      if (seed.refusal !== null) {
-        expect(seed.run, `${arm.arm} seed ${seed.seed}`).toBeNull()
-        continue
-      }
-      expect(seed.run?.startAdmissible, `${arm.arm} seed ${seed.seed}`).toBe(false)
-    }
-    // AND AT LEAST ONE START REALLY HAPPENED, so the loop above is not vacuous.
-    expect(arm.perSeed.some((seed) => seed.run !== null), arm.arm).toBe(true)
+    expect(arm.refused, `${arm.arm} refused a start on the import-placed board`).toBe(0)
+    // `?.` AND NOT `!`: a refused seed carries `run: null`, and `undefined ===
+    // false` is false - so this assertion fails on a refused seed rather than
+    // passing over one, which is what it has to do to mean anything.
+    expect(arm.perSeed.every((seed) => seed.run?.startAdmissible === false), arm.arm).toBe(true)
   }
   // The table is not NOBODY_REACHES: every arm met the mark on one seed, so the
   // assertion above is read off runs that happened rather than off a blank run.
@@ -163,12 +160,12 @@ test("constructed not beating random marks it retireable, and a tie counts as no
   const tied = compareSeedArms(comparisonInput(), scriptedRunner(CONSTRUCTED_TIES_RANDOM), fakeSpawn())
   expect(tied.retireable, "a construction that ties a uniform draw buys nothing")
     .toContain("constructed")
-  // The tie is a TIE and not a loss, read off the two rates: one of five seeds
+  // The tie is a TIE and not a loss, read off the two rates: three of five seeds
   // each. A table where constructed merely lost would exercise only the `<` half
   // of the rule and leave `>=` versus `>` undistinguished.
   const rates = (comparison: typeof tied) =>
     comparison.arms.map((arm) => [arm.arm, arm.reached] as const)
-  expect(rates(tied)).toEqual([["constructed", 1], ["import", 0], ["random", 1]])
+  expect(rates(tied)).toEqual([["constructed", 3], ["import", 1], ["random", 3]])
 })
 
 test("the import arm gets the same test, and the control is never retireable", () => {
@@ -206,30 +203,44 @@ test("a refused start is recorded per seed and the comparison still completes", 
   // apart from its "too clever" one - and an aborted comparison cannot answer
   // it: an arm that refused on four seeds in five would read exactly like a
   // harness that crashed. So the refusal is a recorded value.
-  const comparison = compareSeedArms(comparisonInput(), scriptedRunner(SCRIPT), fakeSpawn())
+  //
+  // AND THE 1-OF-5 THAT PROMPTED THIS RECORD WAS NOT THAT FAILURE MODE. It was a
+  // gesture-order defect in the constructed arm, found because the refusal was
+  // recorded rather than tuned away, and fixed - all three arms now start on all
+  // five reviewed seeds of the import-placed board. The record stays because the
+  // question it answers is still open; it just has not been answered yet.
+  const comparison =
+    compareSeedArms(refusingComparisonInput(), scriptedRunner(SCRIPT), fakeSpawn())
   expect(comparison.arms.length).toBe(3)
-  const constructed = comparison.arms.find((arm) => arm.arm === "constructed")!
-  // FOUR OF THE FIVE REVIEWED SEEDS, MEASURED ON THE REAL IMPORT-PLACED BOARD.
-  // The construction completes on seed 3 and on no other seed in [0, 4]: on the
-  // rest, one of its parts has no hole on a 35x35 grid that leaves it on the
-  // strip the arrangement gave it once its turn and stretches are applied. This
-  // is the brief's "too fragile" failure mode, and the number is the finding.
-  expect(constructed.refused, "the construction refuses on four of five seeds").toBe(4)
-  expect(constructed.perSeed.filter((entry) => entry.refusal === null).map((e) => e.seed))
-    .toEqual([3])
-  for (const entry of constructed.perSeed.filter((candidate) => candidate.refusal !== null)) {
-    expect(entry.run, `seed ${entry.seed} has no run to score`).toBeNull()
-    expect(entry.metMark).toBe(false)
-    expect(entry.evaluationsToCross).toBeUndefined()
-    expect(entry.refusal ?? "", `seed ${entry.seed}`).toMatch(/no hole on this 35x35 grid/)
+  const seeds = refusingComparisonInput().rules.seeds.length
+
+  // TWO ARMS REFUSE EVERY SEED, FOR TWO DIFFERENT REASONS, which is what makes
+  // the record worth having: the constructed arm cannot join this two-part
+  // board's node pin sets to low-boost's fourteen nets, and the random arm has
+  // no admissible position for R1. Both are real refusals through the real code
+  // paths; nothing is stubbed.
+  const refusals: Readonly<Record<string, RegExp>> = {
+    constructed: /is not the pin set of any net pultec-low-boost's model exports/,
+    random: /no admissible position for R1/,
   }
-  // THE CONCENTRATION IS THE FINDING, so the other two arms must be measured
-  // beside it rather than assumed: both produced a start on every seed.
-  for (const arm of ["import", "random"] as const) {
-    const other = comparison.arms.find((result) => result.arm === arm)!
-    expect(other.refused, arm).toBe(0)
-    expect(other.perSeed.every((entry) => entry.run !== null), arm).toBe(true)
+  for (const [arm, pattern] of Object.entries(refusals)) {
+    const result = comparison.arms.find((candidate) => candidate.arm === arm)!
+    expect(result.refused, `${arm} refused every seed`).toBe(seeds)
+    expect(result.reached, arm).toBe(0)
+    for (const entry of result.perSeed) {
+      expect(entry.run, `${arm} seed ${entry.seed} has no run to score`).toBeNull()
+      expect(entry.metMark, arm).toBe(false)
+      expect(entry.evaluationsToCross, arm).toBeUndefined()
+      expect(entry.refusal ?? "", `${arm} seed ${entry.seed}`).toMatch(pattern)
+    }
   }
+
+  // THE CONCENTRATION IS THE FINDING, so the arm that does NOT refuse is
+  // measured beside them rather than assumed: the import arm starts on every
+  // seed, so the comparison completed and is readable rather than aborted.
+  const started = comparison.arms.find((result) => result.arm === "import")!
+  expect(started.refused, "import").toBe(0)
+  expect(started.perSeed.every((entry) => entry.run !== null), "import").toBe(true)
 })
 
 test("a scripted table missing a row throws rather than answering it with a default", () => {

@@ -32,7 +32,7 @@ import type { Network } from "../../lib/model/types.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { deriveTargets } from "../../tools/stripboard/targets.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
-import { constructionSpan } from "../../tools/stripboard/seed-arms.ts"
+import { constructionSpan } from "../../tools/stripboard/seed-constructed.ts"
 import { netsByPart } from "../../tools/stripboard/seed-nets.ts"
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
 import {
@@ -144,15 +144,9 @@ test("the import arm is one start for every seed; the other two arms are not", (
     seedCandidate({ ...input(), arm, seed }, recordingSpawn(spawned, DUMPS))
     return spawned.map((args) => args.join(" "))
   }
-  // 3 AND 5, NOT 0 AND 1: on the import-placed low-boost board the constructed
-  // arm produces a start on seeds 3, 5, 7, 8, 12, ... and refuses on the rest,
-  // because four of the five reviewed seeds leave one of its parts with no hole
-  // that keeps it on its assigned strip. That is the arm's own measured
-  // fragility, asserted in seed-compare.test.ts; this test is about whether a
-  // seed changes a start, so it uses two seeds on which all three arms make one.
-  expect(gestures("import", 3)).toEqual(gestures("import", 5))
-  expect(gestures("constructed", 3)).not.toEqual(gestures("constructed", 5))
-  expect(gestures("random", 3)).not.toEqual(gestures("random", 5))
+  expect(gestures("import", 0)).toEqual(gestures("import", 1))
+  expect(gestures("constructed", 0)).not.toEqual(gestures("constructed", 1))
+  expect(gestures("random", 0)).not.toEqual(gestures("random", 1))
   for (const arm of SEED_ARMS) expect(gestures(arm, 3), arm).toEqual(gestures(arm, 3))
 })
 

@@ -32,13 +32,9 @@ import { loadRules } from "../../tools/stripboard/rules.ts"
 import { deriveTargets } from "../../tools/stripboard/targets.ts"
 import { physicalBoard } from "../../circuits/pultec/physical/board.ts"
 import { seedCandidate, type SpawnVeroroute } from "../../tools/stripboard/seed.ts"
-import {
-  occupancyOf,
-  rectOf,
-  turnable,
-  turnedRect,
-  VEROROUTE_FOOTPRINT_ROWS,
-} from "../../tools/stripboard/seed-geometry.ts"
+import { constructedGestures } from "../../tools/stripboard/seed-constructed.ts"
+import { occupancyOf, VEROROUTE_FOOTPRINT_ROWS } from "../../tools/stripboard/seed-geometry.ts"
+import { rectOf, turnable, turnedRect } from "../../tools/stripboard/seed-placement.ts"
 
 /** The injected spawn, which here really is the binary. */
 const spawn: SpawnVeroroute = (args) => {
@@ -238,46 +234,77 @@ test("the pin-set join agrees with the netlist exportNetlistFor itself produces"
   expect(viaExport.size, "a board with no nets would make this vacuous").toBe(14)
 })
 
-test("the constructed arm joins an import-placed board's nameless nodes and places from them", () => {
-  // WHAT THIS REPLACED. This arm used to REFUSE on an import-placed board,
-  // because --import writes every NODE line as `NAME -` and it read net names
-  // off the board. Net identity was never lost: each NODE still carries its
-  // complete pin list, a net's pin set is unique by construction, so the join
-  // from board node to model net is a bijection over pin sets - which is what
-  // HC8's own modules have always done rather than trust a board's node names.
+test("the constructed arm places on every reviewed seed, and records which order did it", () => {
+  // TWO DEFECTS BEHIND THIS ONE TEST, and neither was the hypothesis failing.
   //
-  // ONE OF FIVE, AND THE NUMBER IS THE FINDING. With the join in place the arm
-  // reaches real placement on every seed, and then on four of the five reviewed
-  // seeds one of its parts has no hole on the 35x35 grid that leaves it on the
-  // strip the arrangement gave it once its quarter turn and its stretches are
-  // applied. That is the brief's "too fragile" failure mode, measured. It is not
-  // tuned away here: an agent adjusting the arm it is also measuring is this
-  // plan's governing invariant failing in the one place nobody would look.
+  // FIRST, the arm REFUSED on an import-placed board, because --import writes
+  // every NODE line as `NAME -` and it read net names off the board. Net identity
+  // was never lost: each NODE still carries its complete pin list, a net's pin
+  // set is unique by construction, so the join from board node to model net is a
+  // bijection over pin sets - which is what HC8's own modules have always done
+  // rather than trust a board's node names.
+  //
+  // SECOND, with the join in place it reached real placement and then stopped on
+  // four of five seeds, all on SI_HI_CUT_R1 going to strip 0 with one turn and
+  // three shrinks. That was a GESTURE-ORDER defect and not a fact about the
+  // construction: over all 1225 origins of the 35x35 grid, move-turn-shrink
+  // places it at none of them, because the turned-but-unshrunk rect is 5 rows
+  // tall; move-shrink-turn places it at 19, the first at 0,0. The order is now
+  // chosen from GESTURE_ORDERS rather than assumed, and all five seeds complete.
+  //
+  // SO THE CONSTRUCTED HYPOTHESIS IS NOW TESTABLE AND HAS NOT BEEN TESTED: what
+  // RETIREMENT needs is a rate against random's over a real search, which is
+  // Task 18's final step. Nothing may read RETIREMENT against a start count.
   const board = importedBoard()
   const rules = loadRules()
   const targets = deriveTargets(physicalBoard("low-boost"), rules.stockRows, "pultec-low-boost")
-  const completed: number[] = []
-  const refused: number[] = []
+  const gridBefore = dumpOf(board).grid
+  expect(rules.seeds.length, "a run over an empty seed set proves nothing").toBeGreaterThan(1)
+
   for (const seed of rules.seeds) {
     const runDir = path.join(WORK, `constructed-${seed}`)
     fs.mkdirSync(runDir, { recursive: true })
-    try {
-      const candidate = seedCandidate(
-        { importedBoard: board, targets, runDir, rules, arm: "constructed", seed },
-        spawn,
-      )
-      const after = dumpOf(candidate)
-      expect(after.grid, `seed ${seed} grew the board`).toEqual(dumpOf(board).grid)
-      expect(after.cutState, `seed ${seed}`).toBe("COMPUTED")
-      expect(after.parts.filter((part) => part.placement === "floating"), `seed ${seed}`).toEqual([])
-      completed.push(seed)
-    } catch (error) {
-      // AND THE REFUSAL IS THE GEOMETRIC ONE, not the net-name one it used to be.
-      expect(error instanceof Error ? error.message : String(error), `seed ${seed}`)
-        .toMatch(/no hole on this 35x35 grid leaves it there/)
-      refused.push(seed)
-    }
+    const candidate = seedCandidate(
+      { importedBoard: board, targets, runDir, rules, arm: "constructed", seed },
+      spawn,
+    )
+    const after = dumpOf(candidate)
+    expect(after.grid, `seed ${seed} grew the board`).toEqual(gridBefore)
+    expect(after.cutState, `seed ${seed}`).toBe("COMPUTED")
+    expect(after.parts.filter((part) => part.placement === "floating"), `seed ${seed}`).toEqual([])
   }
-  expect(completed, "the seeds the construction produces a start on").toEqual([3])
-  expect(refused, "and the four it does not").toEqual([0, 1, 2, 4])
+})
+
+test("the gesture order is chosen per part and recorded, and both orders are used", () => {
+  // THE ORDER IS RECORDED where this task has a channel for it: each placing
+  // gesture's `what` is what a refusal quotes, so a run that stops says which
+  // order placed the parts before it. The per-run manifest record is Task 18's.
+  //
+  // BOTH ORDERS OCCUR ON ONE BOARD, which is the assertion that matters: if only
+  // one appeared, a hardcoded order would pass this test. SI_HI_CUT_R1 is the
+  // part that forced the fix and it is placed shrink-first; the parts that placed
+  // before the fix still place turn-first, which is why turn-then-stretch is
+  // tried first.
+  const board = importedBoard()
+  const rules = loadRules()
+  const targets = deriveTargets(physicalBoard("low-boost"), rules.stockRows, "pultec-low-boost")
+  const runDir = path.join(WORK, "order-0")
+  fs.mkdirSync(runDir, { recursive: true })
+
+  // READ OFF THE ARM'S OWN GESTURE LIST: `constructedGestures` is what chooses,
+  // and its `what` text is where the choice is written down.
+  const chosen = constructedGestures(
+    { importedBoard: board, targets, runDir, rules, arm: "constructed", seed: 0 },
+    spawn,
+  )
+  const moves = chosen.filter((gesture) => gesture.verb === "--move")
+  expect(moves.length, "a run with no --move would make the counts below vacuous").toBe(17)
+  const used = new Set(
+    moves.map((gesture) => /\((turn-then-stretch|stretch-then-turn)\)/.exec(gesture.what)?.[1]),
+  )
+  expect([...used].sort(), "both orders are used on this one board")
+    .toEqual(["stretch-then-turn", "turn-then-stretch"])
+  const forced = moves.find((gesture) => gesture.what.includes("SI_HI_CUT_R1"))
+  expect(forced?.what, "the part that forced the fix is placed shrink-first")
+    .toMatch(/stretch-then-turn/)
 })
