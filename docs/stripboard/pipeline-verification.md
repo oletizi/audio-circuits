@@ -6,9 +6,11 @@ first task with a finding to put in it, and is extended as later tasks measure
 more; it is not a document written at the end, because a document written last
 is one whose early findings were held in somebody's head until then.
 
-At this point it covers `HC8` alone: its trust boundary, its nine refusals, and
-the one refusal that belongs to a different module than the one `HC8`'s
-contract names. `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
+At this point it covers `HC8` alone: its trust boundary, its nine
+geometry refusals, the one refusal that belongs to a different module than the
+one `HC8`'s contract names, and the verdict built on the
+graph — the open, the short, and the three refusals the reference side
+contributes. `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
 
@@ -176,7 +178,74 @@ Each was checked against the pinned fork's source and against real dumps under
 - A `CUT` hole's node id is an unsigned integer, so a "garbage node id" fixture
   must be a large number rather than a negative one.
 
-### 1.8 What an `HC8` pass does **not** cover
+### 1.8 The verdict on the graph: the open, the short, and the entry point
+
+`tools/stripboard/equivalence.ts` turns the copper graph into `HC8`'s verdict.
+It **partitions the pins and never compares counts**: `componentCount` is
+derived over every hole the `GRID` line declares, so it counts canvas strips
+rather than nets, and a count comparison would accept a board whose pins are
+grouped entirely wrongly whenever the two numbers happened to agree.
+
+**Both failure directions are reported, separately.** An **open** is one
+reference net whose pins fall in two or more copper components, reported with
+the pins grouped by component; a **short** is one component holding pins of two
+or more reference nets, reported with the net names and one hole as the witness.
+The short is the direction that justifies the gate: joining two nets leaves
+**both** reading complete, so a completeness check is structurally blind to it
+and nothing in `HC1`–`HC7` looks for one.
+
+**It takes dump TEXT, not a `BoardDump`.** The task brief's signature was
+`netlistEquivalence(dump: BoardDump, …)`, and that signature cannot deliver
+`HC8`'s wording: `missing-line` and `unsupported-strip-axis` are
+*inexpressible* through a parsed dump, which carries a grid and a boolean axis
+by construction. A caller that parsed the text itself would still throw — the
+parser refuses a missing `GRID` — but with the parser's wording, which names
+neither the refusal member nor the contract version. Measured: swapping
+`boardGeometry` for `parseBoardDump` replaces
+`missing-line: the dump has no VERTICAL_STRIPS line.` with
+`--dump-board produced no VERTICAL_STRIPS line, …`, a refusal that is not
+`HC8`'s.
+
+**Three refusals of its own**, each driven by a test and each shown to fail
+when its clause was removed:
+
+| refusal | what is malformed | why guessing is not available |
+| --- | --- | --- |
+| `reference-pin-not-on-board` | a reference pin for which the dump prints no `PIN` line | a missing hole is **not** an open; it is `HC3`'s refusal and `HC8`'s too, and reporting an open would name the wrong constraint and point at the wrong fix |
+| `empty-reference` | the reference netlist has no nets | every net of an empty reference is trivially in one component, so the verdict would read `equivalent` for **any** board — a pass indistinguishable from a real one |
+| `empty-reference-net` | a reference net listing no pins | a net with no members can be shown neither whole nor split, so grading it grades nothing while reporting a result |
+
+**`V11`'s equality assertion alone does not catch the node-keying mutant
+here**, and that is worth recording because the obvious test looks sufficient.
+Measured: with each pin's component taken from the node id its `CUT` line
+reports, both the garbled and the un-garbled board returned the **same** wrong
+verdict — `mid` open with the same groups, because the groups are ordered by
+component number and `3` and `999999` sort to the same side — so the equality
+held. What caught it is the assertion beside it that the verdict is
+`equivalent`. In `tests/stripboard/copper.test.ts` the equality *is* decisive,
+because there the component map itself is compared; one layer up it is not, and
+`tests/stripboard/equivalence.test.ts` says so in the test it belongs to.
+
+**The independence claim is asserted over the import closure, not over one
+file's text.** `tests/stripboard/import-closure.ts` walks the transitive graph
+and **refuses** an unresolvable specifier rather than dropping the edge, because
+a closure computed over a partial graph is smaller than the real one and the
+module that fell out of it may be the forbidden one. The earlier form,
+`expect(text).not.toContain("score.ts")` over a single file, was satisfied by
+one transitive import through any third module. Measured, both halves: importing
+`tools/perfboard/check.ts` from `equivalence.ts` fails the closure test, and
+importing it from `copper.ts` instead — a module `equivalence.ts` imports but
+does not name — fails it **again**, which is exactly the case the substring scan
+passed.
+
+The walker's `EXTERNAL` set enumerates bare specifiers by name. The brief's
+claim that the only ones here are node builtins and `bun:test` is wrong:
+`lib/sim/operating-point.ts` imports `eecircuit-engine`, this repository's one
+npm dependency, so any closure reaching `lib/sim/` hits it. It was found by
+exactly the mutation above, which first failed on the bare specifier instead of
+on the forbidden module — loud, but naming the wrong fault.
+
+### 1.9 What an `HC8` pass does **not** cover
 
 - A defect in VeroRoute's geometry export (§1.2, limit `H-13`).
 - Whether the board can be built: spans, pin patterns, stock extent and
