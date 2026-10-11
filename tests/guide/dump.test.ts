@@ -1,5 +1,9 @@
 import { test, expect } from "bun:test"
-import { parseBoardDump, holeName } from "../../tools/guide/dump.ts"
+import { spawnSync } from "node:child_process"
+import path from "node:path"
+import { boundsOf, holeName, parseBoardDump, usableDirection } from "../../tools/guide/dump.ts"
+import { verorouteBinary } from "../../tools/perfboard/check.ts"
+import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
 /**
  * A small dump shaped like the pinned fork's `--dump-board` output (see
@@ -48,10 +52,36 @@ test("VERTICAL_STRIPS is parsed as a boolean", () => {
 
 test("every PART line is parsed, placed and floating alike, with SPAN kept but not used for position", () => {
   const parts = parseBoardDump(DUMP).parts
+  // `direction: undefined` ON A PLACED PART IS THE POINT OF THIS DUMP, not an
+  // omission in it. DUMP is shaped like a capture taken BEFORE the DIRECTION
+  // field existed, which is what every committed .dump fixture here is, and the
+  // reader records the absence rather than refusing it - see the module comment
+  // and docs/stripboard/pipeline-verification.md section 2.6.
   expect(parts).toEqual([
-    { ref: "R1", type: "RESISTOR", value: "10K", placement: { row: 2, col: 3 }, span: 1 },
-    { ref: "C1", type: "CAP_ELECTRO_200", value: "10uF", placement: { row: 5, col: 5 }, span: 3 },
-    { ref: "R2", type: "RESISTOR", value: "4K7", placement: "floating", span: 1 },
+    {
+      ref: "R1",
+      type: "RESISTOR",
+      value: "10K",
+      placement: { row: 2, col: 3 },
+      span: 1,
+      direction: undefined,
+    },
+    {
+      ref: "C1",
+      type: "CAP_ELECTRO_200",
+      value: "10uF",
+      placement: { row: 5, col: 5 },
+      span: 3,
+      direction: undefined,
+    },
+    {
+      ref: "R2",
+      type: "RESISTOR",
+      value: "4K7",
+      placement: "floating",
+      span: 1,
+      direction: undefined,
+    },
   ])
 })
 
@@ -168,6 +198,162 @@ test("a FLOATING wire's `ENDS - -` refuses, naming the wire, rather than parsing
   expect(() => parseBoardDump(floatingWire)).toThrow(/W2/)
   expect(() => parseBoardDump(floatingWire)).toThrow(/is floating/)
   expect(() => parseBoardDump(floatingWire)).toThrow(/no hole positions/)
+})
+
+/**
+ * `BOUNDS` and `DIRECTION`, the two fields Task 7 (M1.1) added to the fork's
+ * grammar and this parser now reads.
+ *
+ * THE RULE THEY ARE TESTED AGAINST IS NOT THIS FILE'S AND NOT THE PARSER'S:
+ * `docs/stripboard/pipeline-verification.md` section 2.6 states it - both
+ * fields optional, including `DIRECTION` on a PLACED part, with the refusal
+ * owned by the consumer that acts on the value, the `FLOATING`-plus-direction
+ * contradiction still refused, and `UNKNOWN` received rather than normalised.
+ *
+ * ONE REAL CAPTURE IS GRADED BESIDE THE HAND-WRITTEN TEXT, and it is the
+ * frozen floated-part fixture's own `.vrt`, because hand-written dump text can
+ * only ever agree with what this file believes the grammar to be. The measured
+ * figures are in that test.
+ */
+const PLACED_WITH_DIRECTION = DUMP.replace(
+  "PART R1 RESISTOR 10K AT 2,3 SPAN 1",
+  "PART R1 RESISTOR 10K AT 2,3 SPAN 1 DIRECTION W",
+)
+
+test("BOUNDS is parsed as an inclusive rect, and its absence is not an error", () => {
+  // DUMP carries no BOUNDS line - it is shaped like a pre-BOUNDS capture - and
+  // that reads as `undefined` rather than refusing, because every committed
+  // .dump fixture here is such a capture and two of them are frozen evidence.
+  expect(parseBoardDump(DUMP).bounds).toBeUndefined()
+  const withBounds = `${DUMP}BOUNDS 3,3 10,28\n`
+  expect(parseBoardDump(withBounds).bounds).toEqual({
+    minRow: 3,
+    minCol: 3,
+    maxRow: 10,
+    maxCol: 28,
+  })
+})
+
+test('"BOUNDS - -" is the empty board and reads as no rect, never as a one-hole board', () => {
+  // GetBounds returns false for a board with nothing on it and leaves its
+  // wrong-ended sentinels behind; the dump spells that case with two dashes.
+  // Parsing them as a rect, or normalising the sentinels, would make the
+  // emptiest possible board read as the smallest possible occupied one.
+  expect(parseBoardDump(`${DUMP}BOUNDS - -\n`).bounds).toBeUndefined()
+})
+
+test("a BOUNDS line that is present and unreadable refuses, which an absent one does not", () => {
+  // The discriminating pair: absence is an old capture, and a malformed line is
+  // the grammar moving. Reading the second as the first would make a grammar
+  // change look like a file nobody may regenerate.
+  expect(() => parseBoardDump(`${DUMP}BOUNDS 3,3\n`)).toThrow(/BOUNDS/)
+  expect(() => parseBoardDump(`${DUMP}BOUNDS 3,3 10\n`)).toThrow(/BOUNDS/)
+  expect(() => parseBoardDump(`${DUMP}BOUNDS 10,28 3,3\n`)).toThrow(/maximum is below its minimum/)
+})
+
+test("DIRECTION is parsed on a placed part, and UNKNOWN is received rather than normalised to W", () => {
+  const placed = parseBoardDump(PLACED_WITH_DIRECTION).parts.find((part) => part.ref === "R1")
+  expect(placed?.direction).toBe("W")
+  for (const value of ["E", "N", "S", "UNKNOWN"] as const) {
+    const text = PLACED_WITH_DIRECTION.replace("DIRECTION W", `DIRECTION ${value}`)
+    const part = parseBoardDump(text).parts.find((entry) => entry.ref === "R1")
+    expect(part?.direction, value).toBe(value)
+  }
+})
+
+test("a sixth DIRECTION token refuses by name rather than being read as W", () => {
+  const sixth = PLACED_WITH_DIRECTION.replace("DIRECTION W", "DIRECTION X")
+  expect(() => parseBoardDump(sixth)).toThrow(/DIRECTION value "X"/)
+  expect(() => parseBoardDump(sixth)).toThrow(/not read as W/)
+})
+
+test("a FLOATING part carrying a DIRECTION refuses - the one contradiction the reader owns", () => {
+  // A floating component prints no DIRECTION field, exactly as it prints no PIN
+  // line, so the two fields on this line disagree about whether the part is on
+  // the board. Every OTHER direction fault - absent, UNKNOWN - is handed to the
+  // consumer, because there is a value to hand over; here there is not.
+  const contradiction = DUMP.replace(
+    "PART R2 RESISTOR 4K7 FLOATING SPAN 1",
+    "PART R2 RESISTOR 4K7 FLOATING SPAN 1 DIRECTION N",
+  )
+  expect(() => parseBoardDump(contradiction)).toThrow(/R2 is FLOATING and carries DIRECTION N/)
+})
+
+test("a field after SPAN that is not DIRECTION refuses, so a new field cannot be read as none", () => {
+  const stray = PLACED_WITH_DIRECTION.replace("DIRECTION W", "ROTATION 90")
+  expect(() => parseBoardDump(stray)).toThrow(/DIRECTION <W\|E\|N\|S\|UNKNOWN>/)
+})
+
+test("boundsOf refuses by name, naming BOUNDS, rather than substituting the hole extent", () => {
+  // THE SUBSTITUTION THIS REFUSAL EXISTS TO PREVENT: the extent of the holes the
+  // dump enumerates is a LOWER bound on physical extent, because a body
+  // overhangs its leads, so standing it in for BOUNDS would silently loosen
+  // whatever asked - a board graded as fitting the stock that does not.
+  const noBounds = parseBoardDump(DUMP)
+  expect(() => boundsOf(noBounds, "HC6")).toThrow(/BOUNDS/)
+  expect(() => boundsOf(noBounds, "HC6")).toThrow(/HC6/)
+  expect(() => boundsOf(noBounds, "HC6")).toThrow(/NOT defaulted/)
+  // And it returns the rect when there is one, so the refusal is not the only
+  // behaviour the name covers.
+  expect(boundsOf(parseBoardDump(`${DUMP}BOUNDS 1,2 3,4\n`), "HC6")).toEqual({
+    minRow: 1,
+    minCol: 2,
+    maxRow: 3,
+    maxCol: 4,
+  })
+})
+
+test("usableDirection separates the absent field from UNKNOWN, because the fixes differ", () => {
+  const absent = parseBoardDump(DUMP).parts.find((part) => part.ref === "R1")
+  if (absent === undefined) throw new Error("unreachable: DUMP declares R1")
+  expect(() => usableDirection(absent, "HC10")).toThrow(/carries no such field/)
+  expect(() => usableDirection(absent, "HC10")).toThrow(/HC10/)
+
+  const unknownText = PLACED_WITH_DIRECTION.replace("DIRECTION W", "DIRECTION UNKNOWN")
+  const unknown = parseBoardDump(unknownText).parts.find((part) => part.ref === "R1")
+  if (unknown === undefined) throw new Error("unreachable: the replacement keeps R1")
+  expect(() => usableDirection(unknown, "HC10")).toThrow(/reports UNKNOWN/)
+  expect(() => usableDirection(unknown, "HC10")).toThrow(/NOT read as W/)
+
+  const known = parseBoardDump(PLACED_WITH_DIRECTION).parts.find((part) => part.ref === "R1")
+  if (known === undefined) throw new Error("unreachable: the replacement keeps R1")
+  expect(usableDirection(known, "HC10")).toBe("W")
+})
+
+test("the pinned binary's own dump of a committed board parses, with the figures it reports", () => {
+  // HAND-WRITTEN DUMP TEXT CAN ONLY AGREE WITH WHAT THIS FILE BELIEVES THE
+  // GRAMMAR IS. This one grades the parser against the binary veroroute.pin
+  // names, on the frozen floated-part fixture's own .vrt - a committed input
+  // that is not regenerated, re-rendered here rather than re-captured.
+  //
+  // THE FIGURES ARE THE BINARY'S, READ OFF ITS OUTPUT AND WRITTEN DOWN, not
+  // recomputed from the dump this test just parsed: BOUNDS 3,3 10,28 (which is
+  // also the figure docs/stripboard/pipeline-verification.md section 2.1
+  // records for pultec-low-boost, the board this fixture was floated from),
+  // seven placed parts each carrying a DIRECTION, and C19 floating with none.
+  // It fails rather than skips when the binary is absent: a skipped check that
+  // looks like a passing one is the failure mode this suite exists to prevent.
+  const vrt = path.join(import.meta.dir, "..", "fixtures", "pultec-low-boost-c19-floated.vrt")
+  const binary = verorouteBinary(process.env, moduleRepoRoot())
+  const run = spawnSync(binary, ["--dump-board", vrt], { encoding: "utf8" })
+  if (run.status !== 0) {
+    throw new Error(`veroroute --dump-board exited ${String(run.status)}: ${run.stderr ?? ""}`)
+  }
+  const dump = parseBoardDump(run.stdout)
+
+  expect(dump.bounds).toEqual({ minRow: 3, minCol: 3, maxRow: 10, maxCol: 28 })
+
+  const floated = dump.parts.filter((part) => part.placement === "floating")
+  expect(floated.map((part) => part.ref)).toEqual(["C19"])
+  expect(floated[0]?.direction).toBeUndefined()
+
+  const placed = dump.parts.filter((part) => part.placement !== "floating")
+  expect(placed).toHaveLength(7)
+  // Every placed part carries one of the four real directions - UNKNOWN would
+  // pass a bare `!== undefined` and is excluded by name.
+  for (const part of placed) {
+    expect(usableDirection(part, "this test"), part.ref).toMatch(/^[WENS]$/)
+  }
 })
 
 test("holeName gives lettered rows and numbered columns: 0 -> A, 25 -> Z, 26 -> AA", () => {
