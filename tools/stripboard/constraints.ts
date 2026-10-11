@@ -29,9 +29,12 @@
  *     the board CONDUCT what the circuit says? Four of them read VeroRoute's own
  *     conclusion, from the subsystem the optimiser perturbs, and `HC8` is the
  *     same question asked of the copper instead.
- *   - `./constraints-physical.ts` - `HC4`, `HC5`, `HC6`, `HC9`, `HC10`: can the
- *     thing be BUILT? The span bounds at both ends, the stock, the pin patterns.
- *     Every one refuses rather than guessing when its data is unrecorded.
+ *   - `./constraints-physical.ts` - `HC4`, `HC5`, `HC6`, `HC9`: can the thing be
+ *     BUILT? The span bounds at both ends and the stock. Every one refuses
+ *     rather than guessing when its data is unrecorded.
+ *   - `./constraints-pattern.ts` - `HC10`: will the owner mount this part's pin
+ *     pattern at all? It belongs with the physical four by subject and left them
+ *     by line count, taking the only two `pin-pattern*` imports with it.
  *
  * And the rest of the surface: the VOCABULARY and the three shared readings of a
  * dump are in `./constraints-model.ts`; `--check`'s report parse is in
@@ -41,7 +44,8 @@
  * imports one module and the split stays an implementation detail.
  */
 export { hc1, hc2, hc3, hc7, hc8 } from "./constraints-electrical.ts"
-export { hc10, hc4, hc5, hc6, hc9 } from "./constraints-physical.ts"
+export { hc4, hc5, hc6, hc9 } from "./constraints-physical.ts"
+export { hc10 } from "./constraints-pattern.ts"
 export {
   CONSTRAINT_IDS,
   type CheckInput,

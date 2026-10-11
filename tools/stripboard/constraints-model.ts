@@ -135,6 +135,25 @@ export interface CheckInput {
    * That unconditional call is `PAR2` working as designed and must not be
    * weakened, so the ring's span is injected instead. Mirrors `leadSpanFor`'s
    * existing optional parameter; absent, the real map is used.
+   *
+   * **THIS MAP DOES NOT REACH EVERY CONSTRAINT THAT READS A SPAN. READ THIS
+   * BEFORE INJECTING ONE.** `HC4`, `HC5` and `HC9` take their bounds from here.
+   * `HC10`'s footprint half does NOT: it calls `admitPattern`, which reads the
+   * module-level `LEAD_SPANS` **directly**
+   * (`lib/kicad/pin-pattern-model.ts`) - both for its `LEAD_SPANS.has` guard
+   * and for its extent cross-check - and nothing routes this field to it. So a
+   * single grade can consult TWO DIFFERENT SPAN TABLES.
+   *
+   * It is harmless today only because of the shape of the one caller that
+   * injects: the tests pass `[...LEAD_SPANS, <synthetic>]`, which shadows no
+   * recorded entry, so both paths read the same figure for every footprint
+   * either one looks up. **An author who injects a REPLACEMENT table** -
+   * different bounds for a recorded footprint, say, to test a datasheet
+   * revision - **would get a grade that half-ignores it**: the three span
+   * constraints would use the new figure and `HC10` would quietly use the old
+   * one, which is a verdict nobody could explain from the inputs. If that is
+   * ever wanted, thread the map through `admitPattern` rather than working
+   * around it at the call site.
    */
   readonly spans?: ReadonlyMap<string, LeadSpan>
 }

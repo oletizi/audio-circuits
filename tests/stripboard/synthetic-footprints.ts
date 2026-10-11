@@ -112,22 +112,12 @@ export function ringSpan(): LeadSpan {
  * every recorded entry exactly as recorded and ADDS one entry that is marked
  * synthetic in every field.
  *
- * **TWO SPAN TABLES CAN BE CONSULTED IN ONE GRADE, AND THESE INJECTIONS ARE
- * WHY THAT IS CURRENTLY HARMLESS.** Read this before changing either map.
- * `HC4`, `HC5` and `HC9` reach their bounds through `CheckInput.spans`, so they
- * see whatever is injected here. `HC10`'s footprint half does not: it calls
- * `admitPattern`, which reads the module-level `LEAD_SPANS` **directly**
- * (`lib/kicad/pin-pattern-model.ts`) for its `LEAD_SPANS.has` guard and its
- * extent cross-check, and nothing routes `CheckInput.spans` to it. So the two
- * paths agree **only because these injections EXTEND the real tables rather
- * than REPLACING them** - `[...LEAD_SPANS, ring]` shadows no recorded entry, so
- * both paths read the same figure for every footprint either one looks up.
- *
- * A future author who injects a REPLACEMENT span table - different bounds for a
- * recorded footprint, say, to test a datasheet revision - would get a grade
- * that half-ignores it: the three span constraints would use the new figure and
- * `HC10` would quietly use the old one. If that is ever wanted, thread the map
- * into `admitPattern` rather than working around it here.
+ * **THESE INJECTIONS EXTEND THE REAL TABLES RATHER THAN REPLACING THEM, AND
+ * THAT IS LOAD-BEARING** - it is what keeps a grade from consulting two
+ * different span tables. The hazard itself is documented where a future author
+ * would meet it, on `CheckInput.spans` in
+ * `tools/stripboard/constraints-model.ts`; read that before changing either map
+ * here.
  */
 export const INJECTED_PATTERNS: ReadonlyMap<string, PinPattern> = new Map([
   ...PIN_PATTERNS,

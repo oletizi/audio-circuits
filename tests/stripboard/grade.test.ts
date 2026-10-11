@@ -298,6 +298,50 @@ test("HC10's placement half REFUSES a square pin field rather than breaking the 
   }
 })
 
+test("HC10 blames the footprint, not the owner, when a part is declared with too few pads", () => {
+  // A DEFECT THE TIE REFUSAL CAUSED. A single pad ties too - its widest row is
+  // 1 along either axis - and `hc10Rows` ran BEFORE pad membership was checked,
+  // so a two-hole part declared with `PinHeader_1x01` refused with the
+  // square-pin-field message: take an undecidable pad geometry to the owner,
+  // when the real fault is a wrong footprint name. A refusal that sends
+  // somebody to the owner for a decision when they have a typo is worse than no
+  // message, because it teaches the wrong thing - the same rule that makes the
+  // tie refuse at all. Membership is now checked first.
+  const onePad = "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical"
+  const input = inputWithFootprint(onePad)
+  expect(() => hc10(input)).toThrow(/is not a pad of footprint/)
+  expect(() => hc10(input)).toThrow(/PinHeader_1x01/)
+  // The accurate message names the pads the footprint DOES have, so the reader
+  // can see at once that it is the wrong footprint.
+  expect(() => hc10(input)).toThrow(/pads are 1$|pads are 1\./m)
+  // And it is NOT the tie message, which would point at the wrong remedy.
+  expect(() => hc10(input)).not.toThrow(/NEITHER AXIS IS THE longer one/)
+})
+
+test("HC10 passes a legitimately placed one-pad part rather than refusing it on the tie", () => {
+  // The other half of the same fix: a one-pad footprint in its one hole cannot
+  // violate the rule, because one pin cannot share a strip with itself. It must
+  // therefore not reach `hc10Rows`, whose axes tie at 1 for a single pad and
+  // which would otherwise refuse a part that trivially complies.
+  const text = read("healthy", "dump")
+    .replace("PART J1 SIP2 Conn_01x02 AT 1,5 SPAN 1 DIRECTION S", "PART J1 PAD 1 AT 1,5 SPAN 1 DIRECTION S")
+    .split("\n")
+    .filter((line) => !line.startsWith("PIN J1 2 "))
+    .join("\n")
+  const base = healthyInput()
+  const input = {
+    ...base,
+    dumpText: text,
+    dump: parseBoardDump(text),
+    footprints: new Map([
+      ...base.footprints,
+      ["J1", "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical"],
+    ]),
+  }
+  const result = hc10(input)
+  expect(result.held, result.detail).toBe(true)
+})
+
 test("HC10's placement half reads DIRECTION as well as the pin holes - two witnesses", () => {
   // M1.1's own reason for the field: reading the orientation directly is what
   // makes the check independent of the lead pattern, and a single-pad or
@@ -407,6 +451,7 @@ test("nothing in the grader's TRANSITIVE import closure is the scorer or the sea
     "tools/stripboard/constraints.ts",
     "tools/stripboard/constraints-electrical.ts",
     "tools/stripboard/constraints-physical.ts",
+    "tools/stripboard/constraints-pattern.ts",
     "tools/stripboard/extent.ts",
   ]) {
     const closure = await importClosure(file)

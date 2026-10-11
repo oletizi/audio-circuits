@@ -803,3 +803,68 @@ from it. A datasheet revision now moves the fixture with the module. The
 constructor also **asserts the derived span still offends its constraint**, so a
 revision that moved a bound far enough fails loudly instead of leaving a fixture
 that quietly tests nothing.
+
+### 4.8 The tie refusal misdiagnosed a one-pad footprint, and the order is the fix
+
+**A defect the tie refusal (§4.4) caused.** A SINGLE PAD IS A TIE TOO — its
+widest row is 1 along either axis — and `hc10Rows` ran BEFORE pad membership was
+checked. So a two-hole part mis-declared with `PinHeader_1x01` refused with the
+square-pin-field message: *"A square pin field needs a rule the owner has not
+given. Take it to him."* The real fault is a wrong footprint name.
+
+**A refusal that sends somebody to the owner for a decision when they have a
+typo is worse than no message, because it teaches the wrong thing** — and that
+is the same rule that makes the tie refuse at all, applied to the refusal rather
+than to the check. Nothing passed silently either way; this was a wrong remedy
+inside a `throw`.
+
+Two changes in `hc10PlacementOrientation`, in this order:
+
+1. **Pad membership is checked first**, so a part with holes the footprint has
+   no pads for gets the accurate refusal — which now also names the pads the
+   footprint *does* have, so the reader can see at once that it is the wrong
+   footprint.
+2. **A part with fewer than two holes skips the row derivation entirely**,
+   because one pin cannot share a strip with itself. This is what keeps a
+   LEGITIMATELY placed one-pad part — `PinHeader_1x01` is the recorded one —
+   away from `hc10Rows`, which would otherwise refuse a part that trivially
+   complies.
+
+**A false claim beside the tie is corrected too.** The comment said a single pad
+was *"decided by the comparison rather than by a tie"*. It is not: it IS a tie.
+It now says what the code does — of the thirteen recorded footprints, twelve
+have one axis strictly longer and `PinHeader_1x01` is the one-pad case the order
+above handles.
+
+Both halves are tested, and the first is proved able to fail: with the
+membership pre-check disabled, the one-pad test fails with the square-pin-field
+message quoted verbatim in the task hand-off.
+
+### 4.9 `HC10` has its own file now, at the seam that was written down first
+
+`constraints-physical.ts` passed the 500-line ceiling while fixing §4.8. The cut
+was the one its own module comment had already named rather than one found under
+pressure: `hc10`, `hc10FootprintEligibility`, `hc10PlacementOrientation`,
+`patternFor`, `rowsAlong` and `hc10Rows` to `constraints-pattern.ts`.
+
+They are the **only** dependants of `lib/kicad/pin-pattern.ts` and
+`pin-pattern-model.ts` among the ten checks, so the seam took two imports with
+it and left `HC4`, `HC5`, `HC6` and `HC9` reading only `lead-span*` and
+`./extent.ts`. `HC10` still belongs to the physical group by subject and says
+so; it left by line count. `constraints.ts` re-exports it, the import-closure
+test covers the new module, and nothing else changed.
+
+Final sizes: `constraints.ts` 56 (surface), `constraints-model.ts` 254,
+`constraints-electrical.ts` 199, `constraints-physical.ts` 263,
+`constraints-pattern.ts` 309.
+
+### 4.10 Where the two-span-tables hazard is documented
+
+§4.5's warning has moved from the test-side injection point to
+**`CheckInput.spans`'s own declaration** in
+`tools/stripboard/constraints-model.ts`. The person it is for is a future author
+adding a production `CheckInput` builder, and they will be reading the field's
+declaration, not the test fixtures where the hazard happened to be discovered. A
+one-line pointer stays at the injection site, which now says only that the
+injections EXTEND rather than REPLACE the real tables and that this is
+load-bearing.
