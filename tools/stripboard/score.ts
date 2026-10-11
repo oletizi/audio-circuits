@@ -220,15 +220,39 @@ const COUNTED_FROM_TEXT: unique symbol = Symbol("stripboard/score: counted from 
  * function instead of making the check unskippable, and it is itself a test
  * that can be weakened.
  *
- * WHAT IT PROVES AND WHAT IT DOES NOT, stated because the honest scope is
- * narrower than "V1 ran": it proves `countLines` produced these three
- * numbers, and `scoreDump` then proves they describe ITS dump by comparing
- * them against `countParsed`. What nothing here can prove is that
- * `countLines` was handed the same text `boardGeometry` was - a caller
- * passing `countLines(someOtherText)` whose three counts happen to match all
- * three of this dump's would pass. `scoreDumpText` is the entry that closes
- * that, because it reads the text once; a caller holding a parsed dump owns
- * the pairing.
+ * WHAT THE BRAND CLOSES, AND WHAT IT DOES NOT. A guard honestly described is
+ * worth more than one over-sold, and all four of these were tried:
+ *
+ * - **It closes the ACCIDENTAL bypass, which is the failure that actually
+ *   happened here** - a test calling the two-check form directly. Measured:
+ *   a three-argument call is `TS2554`, "Expected 4 arguments, but got 3"; a
+ *   hand-built `{ cuts, wires, solder }` is `TS2345`, naming
+ *   `[COUNTED_FROM_TEXT]` as missing. **Both are `bun run typecheck` gates and
+ *   not runtime ones** - a forged literal still runs under `bun test`, which
+ *   does not typecheck - so the guard is as strong as the typecheck step is
+ *   mandatory, and no stronger.
+ * - **It closes the WRONG-BOARD witness at runtime.** A count taken from
+ *   another board's text typechecks and is then refused by
+ *   `requireCountsAgree`, because `scoreDump` holds the witness against its
+ *   own dump rather than taking it on trust. Measured.
+ * - **It does NOT stop a deliberate cast.** `{ ... } as unknown as
+ *   IndependentCount` typechecks clean and scores a real `Score` with no
+ *   refusal - measured - and that is the generic limit of every branded type
+ *   in TypeScript rather than anything particular to this one. It is a
+ *   DIFFERENT ACT: somebody writing that is knowingly forging a witness to a
+ *   check they are disabling, which this project bans separately (CLAUDE.md's
+ *   "never bypass typing": no `any`, no `as Type`, no `@ts-ignore`). The brand
+ *   makes the skip impossible to reach by accident and impossible to reach
+ *   silently; it cannot make it impossible to reach on purpose, and nothing in
+ *   a type system can.
+ *
+ * SO WHAT THE WITNESS PROVES is that `countLines` produced these three
+ * numbers and that they describe the dump being scored. What nothing here can
+ * prove is that `countLines` was handed the same text `boardGeometry` was: a
+ * caller passing `countLines(someOtherText)` whose three counts happen to
+ * match all three of this dump's would pass. `scoreDumpText` closes that,
+ * because it reads the text once; a caller holding a parsed dump owns the
+ * pairing.
  */
 export interface IndependentCount extends LineCounts {
   readonly [COUNTED_FROM_TEXT]: true
