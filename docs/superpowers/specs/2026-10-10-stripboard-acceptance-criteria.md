@@ -111,7 +111,7 @@ Ten, and nothing in them is tradeable. **A1 is the verdict that all ten hold.**
 | **HC3** | **Nothing floating.** Every verb that lifts a part and puts it back records `GetIsPlaced()` for each affected component and **refuses without writing its output** if a part that was placed is not placed afterwards — because the measured failure is a verb that exits 0, prints nothing, writes the board with the part off it, and leaves every term of `F` reading healthy. **It is the overlap check too:** `CanPutDown` refuses a colliding placement, so an overlapping move yields a floating part rather than an overlapping board. | the `PART` line's placement field is not `FLOATING` **and** every placed part prints its `PIN` lines — two assertions, so a change keeping one signal and dropping the other fails loudly. Both are `Component::GetIsPlaced()`, so neither is copper; HC8 is. | [model], strengthened on measurement (D6) |
 | **HC4** | **Every lead span within the tool's range, 2–16 holes.** Its lower end is a fact about VeroRoute and not about any part, which is why it does not discharge HC9. | `CompTypes::GetMinLength`/`GetMaxLength`, as `lib/kicad/import-string.ts` already enforces `MAX_SPAN = 15` grid steps. | [model] |
 | **HC5** | **Every lead span within the part's physical reach** — at or below the family's `maxSpanHoles`, because the tool will stretch any two-terminal part to any span in its range and the part will not, and a span the part cannot make is not a lever but a fiction. | per-candidate comparison against `maxSpanHoles` in `lib/kicad/lead-span.ts`. **Refuse without it** (PAR2). | [external] values, [model] constraint |
-| **HC6** | **The layout fits the stock the owner bought.** The board's own size is the right quantity, because `MoveComps` grows the board by panning rather than letting anything leave it, so a layout that does not fit shows up as a board larger than the stock. | the dump's `GRID <rows> <cols>` against the declared rows × columns for that board. | [owner] figure (PAR4) — not yet declared, §10 |
+| **HC6** | **The layout fits the stock the owner bought: 34 strips × 27 columns**, the board he usually uses. The quantity checked is the **occupied extent**, not the canvas — `GRID` is VeroRoute's drawing area and `--import` leaves it at a default, so a canvas larger than the stock says nothing about copper. A layout whose parts fit inside 34 × 27 can be cut from that board whatever its canvas says. | the pin extent over the dump's `PIN <name> <pin> AT <row>,<col>` lines — `max − min + 1` in each axis — against 34 × 27. **Pin extent is a LOWER bound on physical extent**, because a body overhangs its leads; `BOUNDS` (M1.1) replaces it with the exact figure and tightens the check. A board cut from a different piece declares its own size in `boards/<board>/perfboard.json`, which overrides the default. | [owner] 2026-10-10, measured from his own stock: 27 columns counted, strips counted as "about 35" and recorded as **34** on his instruction to take the conservative figure |
 | **HC7** | **The layout still matches the circuit.** | `--check`'s schematic-delta section is empty. | [model] |
 | **HC8** | **Netlist equivalence, reconstructed from copper**: the connected components of the board's copper, computed outside VeroRoute, partition the pins exactly as the reference netlist does — no reference net in two components (an **open**), no two reference nets in one (a **short**). Because HC1, HC2, HC3 and HC7 each read VeroRoute's own conclusion, from the subsystem the optimiser perturbs, and that subsystem is known to have a hole — `GetBoardMembership` iterates what the *component* records rather than the copper, which is why a floated part left the `NODE` block identical and went undetected. And because a completeness check is structurally blind to a short, which leaves both joined nets reading complete: nothing in HC1–HC7 looks for one at all. | the reconstruction below, over the geometry contract below. | [review] (D16) |
 | **HC9** | **Every lead span at or above the part's own physical minimum** — the family's `minSpanHoles` — because HC4 bounds a span by the tool and HC5 bounds it above by reach, and **nothing bounded it below by the part**: `--stretch shrink` can compress a DIN0207, 6.3 mm of body on a 10.16 mm nominal pitch, to a 2-hole 5.08 mm span no bending achieves, and every other check here passes it. | as HC5, against `minSpanHoles`, **in the grader regardless of the generator**, because the generator only proposes. | [review] (D18), [external] values |
@@ -657,10 +657,39 @@ reject.
 **Parameters not yet owner-settled.** These carry numbers, or need one, and **none of them is
 chosen here.**
 
-1. **HC6 has no declared stock dimensions, for any board.** The stock rows × columns per board is
-   declared as a field in `boards/<board>/perfboard.json` and attributed to the owner (PAR4), and
-   no figure for any board appears anywhere in PIPELINE. **This one nobody else can supply**: it
-   is a fact about what the owner bought. HC6 cannot be checked until he declares them.
+1. **HC6's stock is now declared — 34 × 27 — and one measured board exceeds it.** RESOLVED
+   2026-10-10 by the owner, who measured the board he usually uses. What remains open is a
+   discrepancy worth settling rather than assuming away.
+
+   Measured pin extents against 34 × 27, read from `PIN` lines on the committed layouts:
+
+   | board | pin extent | fits |
+   | --- | --- | --- |
+   | pultec-low-boost | 8 × 26 | yes |
+   | transistor-preamp-feedback | 16 × 16 | yes |
+   | pultec-low-cut | 3 × 31 | no |
+   | pultec-hi-boost, pultec-hi-cut | 3 × 35 | no |
+   | pultec-mid | 5 × 35 | no |
+   | transistor-preamp-buffered | 20 × 32 | no |
+   | transistor-preamp-staged | 25 × 30 | no |
+   | **pt2399-core** | **17 × 36** | **no** |
+
+   **The four unfinished Pultec boards fail on shape, not on size.** Three to five strips by
+   thirty-odd columns is `--import`'s ribbon, the same fact COST states as mid occupying four of
+   thirty-five rows. They are being replaced, so their failure here is a description of the
+   placer rather than a constraint on the circuit. The owner's own low-boost fits with
+   twenty-six strips to spare, which is the evidence that 34 × 27 is adequate for a Pultec
+   section once the parts are packed rather than strung out.
+
+   **`pt2399-core` is the open question.** `README.md` describes it as transcribed from the
+   netlist of a board that was physically built and works, and its layout is 36 columns wide on
+   27-column stock. Three readings and this document does not choose between them: it was built
+   on a wider piece; the committed layout is a later reconstruction that never matched the
+   as-built board; or the stock figure does not apply to it. It is not a Pultec section and not
+   in S1a's scope, so nothing here waits on it — but a built board that violates a hard
+   constraint is exactly the signal that a constraint is wrong, and this project has already
+   shipped one such gate today (`κ_bench = 0.06`, which would have refused three working
+   boards). **Resolve it before HC6 is enforced on any board outside the Pultec set.**
 2. **`τ = 0.05` and Q4's `1/2000` are PIPELINE's proposed defaults, NOT the owner's settled
    values** — unlike PAR1 and K2, which the owner settled with reasons. They are attributed to the
    owner as parameters while carrying numbers he has not been asked about. They remain listed as
