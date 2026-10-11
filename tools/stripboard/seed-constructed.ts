@@ -139,7 +139,12 @@ export function constructionSpan(ref: string, stripA: number, stripB: number, bo
  *
  * **WHAT THIS ARM DOES NOT CLAIM.** It emits the gestures its arrangement
  * implies. The MOVE comes first because the rotation measurement forces that
- * much - no part turns where the import sweep left it - but **the order of the
+ * much - 16 of the import sweep's 17 parts cannot turn where it left them. The
+ * seventeenth is `C18`, a 3x3 `CAP_FILM_WIDE`: its rect is square, so turning
+ * about the rect's centre shifts it by nothing and the turn is accepted in
+ * place. An earlier version of this sentence said NO part turns in place, which
+ * is false by that one part - but a move-first order is still what the arm
+ * emits, because one square footprint is not a rule to build on. Then **the order of the
  * turn and the stretch is CHOSEN, not forced**, and an earlier version of this
  * comment said the measurement forced it, which was the claim the 1225-origin
  * sweep disproved: `SI_HI_CUT_R1` places at 0 origins with the turn first and at
