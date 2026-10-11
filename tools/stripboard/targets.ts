@@ -246,7 +246,7 @@ interface Vertex {
 
 /** The pair key for an unordered edge, low end first. */
 function edgeKey(a: string, b: string): string {
-  return a < b ? `${a} ${b}` : `${b} ${a}`
+  return a < b ? `${a}\u0000${b}` : `${b}\u0000${a}`
 }
 
 interface BuiltGraph {
