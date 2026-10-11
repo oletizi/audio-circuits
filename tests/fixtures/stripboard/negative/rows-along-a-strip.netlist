@@ -1,0 +1,21 @@
+( { EESchema Netlist Version 1.1 created  2026-10-11T00:00:00 }
+ ( /U1 DIP16  U1 PT2399
+  (    1 sideA )
+  (    2 sideA )
+  (    3 sideA )
+  (    4 sideA )
+  (    5 sideA )
+  (    6 sideA )
+  (    7 sideA )
+  (    8 sideA )
+  (    9 sideB )
+  (    10 sideB )
+  (    11 sideB )
+  (    12 sideB )
+  (    13 sideB )
+  (    14 sideB )
+  (    15 sideB )
+  (    16 sideB )
+ )
+)
+*

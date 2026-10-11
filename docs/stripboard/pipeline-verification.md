@@ -6,13 +6,17 @@ first task with a finding to put in it, and is extended as later tasks measure
 more; it is not a document written at the end, because a document written last
 is one whose early findings were held in somebody's head until then.
 
-At this point it covers two things. `HC8`: its trust boundary, its nine
+At this point it covers four things. `HC8`: its trust boundary, its nine
 geometry refusals, the one refusal that belongs to a different module than the
 one `HC8`'s contract names, and the verdict built on the
 graph — the open, the short, and the three refusals the reference side
-contributes. And the two dump lines Task 7 added to the fork, `BOUNDS` and
-`DIRECTION`, which are not adopted here yet and whose meaning is narrower than
-either name suggests.
+contributes. The two dump lines Task 7 added to the fork, `BOUNDS` and
+`DIRECTION`, whose meaning is narrower than either name suggests, and which
+**are** now adopted here (§2.7 — §2's opening sentence about that was stale when
+it was written, and §2.7 says why). `HC10`'s placement clause, which the owner
+decided on 2026-10-11 after the task brief's wording was measured to refuse
+every hand-laid board in the repository (§3). And CHECKPOINT 1, the ten hard
+constraints run over two boards a person built (§4).
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -454,11 +458,24 @@ function wrapping a field read would be a second spelling of one state.
 
 ## 3. `HC10`'s placement clause — measured, and it refuses every hand-laid board here
 
-**This section records a measurement and not a decision.** `HC10`'s placement
-clause is the one part of the grader (Task 14) that could not be written, because
-the only rule stated for it refuses layouts the owner built and uses, and
-choosing a different rule is a decision about what `HC10` means rather than an
-implementation detail.
+**The owner decided this clause on 2026-10-11, and the rule below is now
+criteria.** His words: *"dips should span strips with a cut down the middle, like
+a breadboard."* The rule:
+
+> **No two pins belonging to the same footprint row may share a strip.**
+
+A row lying ALONG a strip puts every pin of that row on one piece of copper —
+that is the short being ruled out. A row crossing the strips puts each of its
+pins on its own strip — that is the breadboard mounting being ruled in. The
+DIP's centre cut is `HC1`'s and `HC8`'s business, where connectivity is decided;
+`HC10` does not assert it a second time. A one-pin row cannot violate the rule,
+because a row of one pin cannot be shorted to itself.
+
+**The task brief's wording was the INVERSE of this, and §3.2–§3.3 below are the
+measurements that established it.** They are kept rather than deleted because
+they are the evidence the decision was made against, and because the inverted
+reading is the one a later reader will reach for again. §3.5 records what the
+rule needed before it could be implemented.
 
 ### 3.1 What was asked for
 
@@ -516,24 +533,59 @@ first reading fits:
   all 1, along-row extent 4 holes. `SPAN 4 DIRECTION N`.
 - `J1` (`SIP5`) has 5 pins on 5 strips, against 5 rows of 1.
 
-So **both orientations appear on boards that work**, and which one is correct is
-a property of the footprint rather than of `HC10`. A rule admitting both is
-coherent — "the pins realise the footprint's lattice in one of its two
-grid-aligned orientations" — and it would **pass** a `DIP-16` turned the wrong
-way, which is precisely the fixture Task 14's brief requires to fail. The two
-candidate rules disagree exactly on the case the brief wants graded, and the
-evidence settles only that the one-orientation rule refuses boards the owner
-built. Nothing here chooses between them: per `CLAUDE.md`, the agent producing
-the artifact may not author the criteria it is graded by.
+So **both orientations appear on boards that work** under the brief's reading,
+which is what made it a decision rather than a defect. The owner settled it:
+§3's rule, not the brief's.
 
-**What would settle it**, stated so the question can be answered rather than
-re-derived: `HC10` exists because a round pattern *"crosses a different strip at
+### 3.4 Implementing the owner's rule needed one reading, and it is this one
+
+**`classification.rows` is NOT the decomposition the rule means, for three
+recorded footprints.** Any grid pad pattern decomposes into rows along *either*
+axis, and `classifyPads` returns the first axis that works — `x` whenever `x`
+works. Measured over all thirteen recorded footprints, that disagrees with the
+longer-rowed decomposition for exactly three:
+
+| footprint | `classification.rows` | the rule's rows |
+| --- | --- | --- |
+| `DIP-16_W7.62mm` | 8 rows of 2 (the pad PAIRS `1`+`16`, `2`+`15`, …) | **2 rows of 8** (the two sides) |
+| `PinHeader_1x02` | 2 rows of 1 | **1 row of 2** |
+| `PinHeader_1x05` | 5 rows of 1 | **1 row of 5** |
+
+The other ten are identical either way.
+
+**The DIP decides it.** A breadboard-mounted `DIP-16` puts one pin from each
+side on each of eight strips, so its sixteen pins *do* sit two to a strip — and
+read against `classification.rows`, where that pair IS a row, the owner's rule
+would refuse exactly the mounting he named. Measured on `pt2399-core`'s `U1`:
+eight violations, one per strip. Read against the two rows of eight, it passes.
+
+So `hc10Rows` in `tools/stripboard/constraints-physical.ts` groups the recorded
+pads by the across-coordinate of whichever axis yields the LONGER rows.
+`classification` remains the authority for the footprint half (`admitPattern`);
+this is only the grouping the placement rule is phrased over. **It was measured
+before being relied on**, on four committed boards:
+
+| board | parts graded | violations | `make check` |
+| --- | --- | --- | --- |
+| `pt2399-core` | 12 | **0** | passes |
+| `transistor-preamp-feedback` | 16 | **0** | passes |
+| `transistor-preamp-staged` | 30 | **0** | passes |
+| `transistor-preamp-lab` | 31 | **5** | **fails** |
+
+Zero on every board that passes `make check`, and five on the one that does not
+— `C3`, `R4`, `RV2`, `RV4` and `RV5`, each with both leads of one row on a
+single strip. So the rule is satisfied by every board in service **and is not
+vacuous**: it discriminates on real data, which a rule satisfied by everything
+would not.
+
+### 3.5 What `HC10` exists for, kept as the standing reason
+
+`HC10` is a **cost judgement**: a refused pattern *"crosses a different strip at
 nearly every pin and shares one with pins it must not share with, so nearly
-every such hole becomes a cut"* — the criterion is a **cut cost**, and the cut
-cost of an orientation is computable from the layout. A rule phrased over cuts
-rather than over which axis the rows lie on would cover both measured cases
-without a special case, and `C` is already a term of `F`. That is a proposal for
-the owner, not a change made here.
+every such hole becomes a cut"*. The owner's rule is the cheap readable proxy
+for that cost. A rule phrased over the cut count directly would need no
+per-footprint row decomposition at all, and `C` is already a term of `F`; it is
+recorded here as an option, not a change made.
 
 ### 3.4 Two of the four checkpoint boards also refuse on `PAR2`, which is separate
 
@@ -553,3 +605,110 @@ divide the way the brief predicts:
   entries needs a named part and its datasheet; it is not a code change.
 - `transistor-preamp-feedback` has every footprint recorded and is the one board
   of the three whose only failure is §3.2's.
+
+### 3.6 `transistor-preamp-staged` is out of the grader's board set, and NOT because it failed
+
+The four footprint-keyed constraints refuse it by name: it places
+`Capacitor_THT:CP_Radial_D10.0mm_P5.00mm` and
+`Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical`, and **neither is in
+`LEAD_SPANS`, in `UNSOURCED`, or in `PIN_PATTERNS`** — so the refusal is the
+plain unlisted-footprint one rather than the better-worded `UNSOURCED` one. That
+is `PAR2` working as designed on data nobody has recorded yet.
+
+**The board is active work owned by another branch**, where its footprint data is
+being authored. It is not retired and nothing about it is superseded. So this
+branch neither supplies that data nor guesses it: guessing would invent a
+datasheet value, which is the failure the whitelist exists to prevent, and
+supplying it would collide with the other branch's work on the same two tables.
+Nothing under `boards/transistor-preamp-staged/` is touched here.
+
+**Its dump stays a geometry fixture**, and that is a different role.
+`tests/fixtures/stripboard/transistor-preamp-staged.dump` and the `HC8` agreement
+test are unchanged: the reconstruction either partitions those pins correctly or
+it does not, whatever branch owns the design. Only membership of the set of
+boards that must satisfy all ten constraints is affected.
+
+---
+
+## 4. CHECKPOINT 1 — the grader over boards a person built
+
+Run by `tests/stripboard/grade-checkpoint.test.ts`, which is a STANDING test: a
+checkpoint run once is a checkpoint that stops holding. Both boards are dumped
+live from the binary `veroroute.pin` names, because every committed `.dump`
+predates the `BOUNDS` line and `HC6` refuses a dump without one.
+
+**The set is two boards, and neither exclusion is a board that failed.**
+`transistor-preamp-staged` is §3.6. `pultec-low-boost` is excluded on a measured
+obstruction: the frozen benchmark's reference export is EESchema v1.1, which
+carries **no footprint field**, so the four footprint-keyed constraints have
+nothing to read; and the frozen board places `board_terminals`
+(`BLOCK_200MIL3`, three pins), which today's low-boost model no longer has at all
+— `--check` reports it as removed. Reading footprints from today's model would
+grade a 9-net hand layout against a 14-net circuit, which that fixture's own
+provenance forbids.
+
+### 4.1 `transistor-preamp-feedback` — **A1 = true, all ten hold**
+
+The ground-truth result: a board somebody laid out by hand, that passes
+`make check`, and that the grader does not refuse. Each verdict's own figures,
+read rather than merely asserted:
+
+| | verdict | the figures it measured |
+| --- | --- | --- |
+| `HC1` | holds | `--check` exited 0, no incomplete net |
+| `HC2` | holds | `CUT_STATE COMPUTED`, over **5** derived cuts |
+| `HC3` | holds | no part reads `FLOATING`; all **16** placed parts print their `PIN` lines |
+| `HC4` | holds | every measurable span inside 2–16 holes, over **11** two-lead parts; 5 parts have no bendable span |
+| `HC5` | holds | every span at or below its family's `maxSpanHoles` |
+| `HC6` | holds | extent `0,0 15,17` = **16 × 18**, fits stock 34 × 27; `BOUNDS` agrees exactly; trim keeps all **61** required features and reproduces the same **11** pin groups |
+| `HC7` | holds | `Schematic delta` heading absent, which is what a matching board prints |
+| `HC8` | holds | all **11** reference nets partition exactly — no open, no short, contract version 2 |
+| `HC9` | holds | every span at or above its family's `minSpanHoles` |
+| `HC10` | holds | footprint half admits all 16; placement half finds no footprint row with two pins on one strip |
+
+**A single all-hold board proves the grader can pass something, not that it can
+fail that board**, so the checkpoint also perturbs this same input in one place
+— the stock shrunk to one column under the board's measured 18 — and requires
+`HC6` to refuse and `A1` to go false. Without that, "all ten hold on a real
+board" is a statement about the grader's appetite.
+
+### 4.2 `pt2399-core` — **REFUSES, and the refusal is the checkpoint passing**
+
+Expected to refuse, on two conflicts the criteria already record from the owner
+himself. **What would be a failure is `pt2399-core` grading admissible.**
+
+- **`PAR2` refuses it by name**, and the name is the footprint rather than the
+  part: twelve of its twenty-four placed parts carry
+  `Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm` or
+  `Capacitor_THT:CP_Radial_D5.0mm_P2.50mm`, both listed in `UNSOURCED` precisely
+  so they refuse here. The whole table throws, which is why each constraint is
+  also exported on its own.
+- **`HC6` names both figures** (`OB4`): fabrication extent `0,0 16,35` =
+  **17 × 36** against **stock 34 × 27**, reported as *"36 columns needed against
+  27"*. The owner's own reading: *"It doesn't fit on my stock boards. I
+  improvised to make it work."*
+- `BOUNDS` and the enumerated features agree exactly on this board, so the
+  extent is not an artefact of the union.
+
+### 4.3 Two findings the checkpoint produced that were not predicted
+
+1. **`HC9` catches six resistors on `transistor-preamp-staged`** at spans of 2–4
+   holes against `R_Axial_DIN0207`'s recorded `minSpanHoles` of 5 (`R1`, `R3`,
+   `R5`, `R6`, `R7`, `R9`), and `HC5` catches `C8` at 14 holes against a
+   `maxSpanHoles` of 11. Each of those spans is measured **across** the strips —
+   a two-hole span is an axial part standing on end with one lead bent back — and
+   the recorded geometry is `mounting: "axial-horizontal"`, which does not cover
+   vertical mounting of an axial part. So this is either a different part than
+   the recorded Vishay MBB0207, a recorded minimum that does not apply to the
+   mounting used, or six strained joints. **It is a finding for the owner, not a
+   reason to widen a bound**, and it is on a board this branch does not own.
+2. **`HC2` and `HC8` interact on an unresolved board, and `HC8` reports rather
+   than throws.** `copperGraph` refuses `CUT_STATE UNRESOLVED` by name
+   (`cuts-not-computed`), correctly — the cut list is absent rather than empty.
+   `hc8` therefore checks the state first and returns `held: false` saying
+   equivalence was **not established**, naming `HC2` as the owner of the cause.
+   The distinction: a throw means "this candidate cannot be graded", which is
+   right for missing DATA (`PAR2`); an unresolved cut list is a fact about the
+   BOARD that another constraint already names, and the honest verdict is that
+   equivalence is unknown. It is not a skip that looks like a pass — `held` is
+   false, so `A1` is false.

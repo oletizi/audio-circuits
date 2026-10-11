@@ -50,6 +50,17 @@
  * explaining why. Section 2.3 records that a text label inflating `BOUNDS` is
  * UNVERIFIED and that no headless verb can demonstrate it.
  *
+ * THERE IS NO `fromBounds` FIELD, AND ITS ABSENCE IS A DECISION. The task brief
+ * specified one, *"records whether `bounds` was present at all"*, alongside the
+ * instruction that `fabricationExtent` REFUSE an absent `bounds`. Those two
+ * cannot both be live: given the refusal, the field is `true` on every value
+ * this function can return, and **a field that cannot take one of its two
+ * values is a field that lies** - a consumer branching on it would be writing
+ * dead code that reads like a guard. The refusal is the one Task 7 ruled on and
+ * it stays, so the field is the half that goes. What a consumer actually wants
+ * from it - did the enumerated features widen `BOUNDS`? - is
+ * `featuresOutsideBounds`, which is non-empty exactly then.
+ *
  * AN ABSENT `BOUNDS` REFUSES RATHER THAN FALLING BACK TO THE FEATURE EXTENT,
  * and that is Task 7's ruling, unchanged: the feature extent is a LOWER bound
  * on physical extent, because a body overhangs its leads, so substituting it
@@ -160,18 +171,6 @@ export interface FabricationExtent {
   /** `maxCol - minCol + 1`. */
   readonly cols: number
   /**
-   * Whether the dump stated a `BOUNDS` rect.
-   *
-   * IT IS `true` ON EVERY VALUE THIS FUNCTION RETURNS, because
-   * `fabricationExtent` REFUSES a dump with no `BOUNDS` rather than falling
-   * back to the feature extent, and the field is recorded here rather than
-   * silently dropped so that the brief's declared shape is the shape consumers
-   * get. A field that cannot be `false` is noise, not evidence; it is named in
-   * the task report as something to delete or to re-mean, and nothing in this
-   * module branches on it.
-   */
-  readonly fromBounds: boolean
-  /**
    * Every required feature `BOUNDS` did not already cover.
    *
    * THIS IS THE DISCRIMINATING OBSERVATION and the only one the dump supports.
@@ -214,7 +213,6 @@ export function fabricationExtent(dump: BoardDump): FabricationExtent {
     maxCol,
     rows: maxRow - minRow + 1,
     cols: maxCol - minCol + 1,
-    fromBounds: true,
     featuresOutsideBounds: features.filter((feature) => outsideBounds(feature.hole, bounds)),
   }
 }

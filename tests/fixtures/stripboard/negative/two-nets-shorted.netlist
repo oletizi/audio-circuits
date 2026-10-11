@@ -1,0 +1,11 @@
+( { EESchema Netlist Version 1.1 created  2026-10-11T00:00:00 }
+ ( /R1 RESISTOR4  R1 1k
+  (    1 in )
+  (    2 mid )
+ )
+ ( /R2 RESISTOR4  R2 1k
+  (    1 mid )
+  (    2 out )
+ )
+)
+*

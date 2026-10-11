@@ -1,0 +1,198 @@
+tests/fixtures/stripboard/negative/ - the grader's negative fixtures
+====================================================================
+
+One fixture per hard constraint, TWO for HC10, and a `healthy` board on which
+all ten hold. Every one of them is named for the constraint it must make fail,
+and tests/stripboard/grade.test.ts asserts that THAT constraint failed and that
+its detail names the offending thing - not merely that something failed.
+
+A fixture is up to five files. Each falls back to `healthy`'s when absent, so a
+fixture declares only what it changes:
+
+  <name>.dump              the board, as --dump-board prints one
+  <name>.footprints.json   designator -> the KiCad footprint it is fitted with
+  <name>.netlist           the reference export, read by referenceNetsFromExport
+  <name>.report            --check's output, verbatim
+  <name>.status            --check's exit code, beside the report
+
+WHY DUMP TEXT AND NOT BOARDS
+----------------------------
+The grader's real input seam is text: it reads a dump, a --check report and a
+netlist export. So the fixtures are those three things, and no test in
+grade.test.ts spawns a binary. The two fixtures that ARE captures are captures
+because the state they carry cannot be hand-written honestly - see below.
+
+THE FIXTURES, AND WHERE EACH CAME FROM
+--------------------------------------
+
+healthy                     HAND-WRITTEN. Three parts - two DIN0207 resistors
+                            and a 1x02 header - on a 10 x 40 canvas, with one
+                            wire. All ten hold on it. Every hand-written
+                            negative below is this board with ONE thing wrong,
+                            so a fixture isolates its constraint rather than
+                            failing for several reasons at once.
+
+incomplete-net              HAND-WRITTEN REPORT, over the healthy board. HC1
+                            reads --check's output, so the fixture IS that
+                            output: `bottom incomplete` under Layout state,
+                            exit 1.
+
+cuts-unresolved             CAPTURED, and it has to be. --dump-board on
+                            boards/transistor-preamp-lab/transistor-preamp-lab.perfboard.vrt
+                            with the binary veroroute.pin names. It reports
+                            CUT_STATE UNRESOLVED with 19 CUT_CONFLICT lines,
+                            GRID 29 46 and BOUNDS 6,4 28,40. Its .report is
+                            that board's REAL --check output (exit 1), not a
+                            hand-written one, and its .footprints.json is
+                            derived from the board's own committed export
+                            tests/fixtures/transistor-preamp-lab.net - all 31
+                            placed parts resolve, which was measured rather
+                            than assumed.
+                            It is also the board whose J = -1 Task 11 refuses,
+                            from the other direction.
+
+floated-part                HAND-WRITTEN, and the deviation from the task
+                            brief's fixture list is deliberate and recorded
+                            here. The brief names the committed
+                            tests/fixtures/pultec-low-boost-c19-floated.dump.
+                            That capture CANNOT go through the full table: it
+                            places `board_terminals` (BLOCK_200MIL3, three
+                            pins), whose footprint is recorded nowhere in this
+                            repository, so PAR2 refuses the whole grade before
+                            HC3 reports anything - and PAR2 refusing it is
+                            CORRECT. So the V4 fixture is the healthy board
+                            with one part floated, named C19 to mirror the
+                            measured failure, and the real capture is graded by
+                            hc3 DIRECTLY in grade.test.ts, which needs no
+                            footprint map at all. The measured failure is still
+                            used, and used by the real check.
+
+span-above-tool-range       HAND-WRITTEN, with the offending figure DERIVED
+span-above-reach            rather than written down. Each names a footprint and
+span-below-minimum          puts one lead at a row computed from that family's
+                            own recorded bound - 1 + TOOL_MAX_SPAN_HOLES,
+                            1 + maxSpanHoles, and minSpanHoles - 1 - so a
+                            datasheet revision moves the fixture with the module
+                            rather than stranding it. No span figure appears in
+                            any fixture or in the test.
+                            span-above-reach names a FILM CAPACITOR and not the
+                            resistor, and that is forced: the resistor's own
+                            maxSpanHoles IS the tool's ceiling, so no span can
+                            separate HC4 from HC5 on it.
+
+over-stock                  HAND-WRITTEN. The healthy board with its parts
+                            spread so BOUNDS exceeds the stock's 27 columns. The
+                            stock is read from stripboard/rules.json, not
+                            written here.
+
+over-stock-wire-outside-    HAND-WRITTEN. HC6's SECOND fixture, and the one
+bounds                      without which finding 4 is untested: BOUNDS is
+                            INSIDE the stock (0,0 6,26, so 27 columns) while a
+                            WIRE end lies at column 27, past both. A grader
+                            reading BOUNDS alone passes this board. The
+                            fabrication extent refuses it and NAMES THE WIRE.
+
+solder-outside-bounds       HAND-WRITTEN, and it is the HOLDS half of a pair. A
+                            SOLDER hole lies outside BOUNDS but INSIDE the
+                            stock, so HC6 holds AND still reports the
+                            discrepancy. Without it, "the detail reports both
+                            figures" would be asserted only where the verdict
+                            was already a failure, and could not show that the
+                            reporting is separate from the verdict.
+
+schematic-delta             HAND-WRITTEN REPORT, over the healthy board: a
+                            non-empty `Schematic delta` section, exit 1. The
+                            discriminating fact this pins is that a MATCHING
+                            board has no such heading AT ALL, so an absent
+                            heading and an unreadable report must not both
+                            resolve to "no delta".
+
+two-nets-shorted            REUSED, not rebuilt. It is Task 4's hand-written
+                            short - the WHOLE board of
+                            tests/stripboard/equivalence.test.ts with every CUT
+                            line removed, so strip 1 joins nets `mid` and `out`.
+                            The text is identical to that derivation except for
+                            two lines the grader needs and HC8 does not read: a
+                            BOUNDS line and a DIRECTION field on each placed
+                            PART. equivalence.test.ts asserts that stripping
+                            those two from this file reproduces its own UNCUT
+                            exactly, so the two cannot drift.
+                            **THE BOARD-LEVEL SHORT FIXTURE IS OB5 AND THIS IS
+                            NOT IT.** This is hand-written dump text. The
+                            end-to-end claim - that a REAL VeroRoute board
+                            carrying a short exits 0 under --check while HC8
+                            rejects it - is UNPROVEN and is owner-blocked:
+                            22,574 binary invocations produced zero shorts,
+                            because --check's completeness is paint-based, so no
+                            gesture can both create a short and leave every net
+                            complete. Nothing here may be read as evidence for
+                            that claim.
+                            It also trips HC9 and HC10, and that is expected: it
+                            is a two-strip toy board rather than a buildable
+                            layout, and V4's assertion is `toContain`.
+
+round-pin-pattern           HAND-WRITTEN. HC10's FOOTPRINT-half fixture. It
+                            names Test_Synthetic:Ring_5Pin_D10mm, a five-pin
+                            ring registered only in grade-fixtures.ts's own maps
+                            and deliberately NOT in PIN_PATTERNS, because
+                            PIN_PATTERNS holds the footprints this repository
+                            places and nothing else - and every one of those
+                            decomposes into rows, so no recorded footprint
+                            exercises admitPattern's across-strip refusal. The
+                            ring's classification is DERIVED by classifyPads
+                            from its pad coordinates, never asserted, so it is a
+                            ring because its geometry is a ring.
+
+rows-along-a-strip          HAND-WRITTEN. HC10's PLACEMENT-half fixture, and it
+                            is the INVERSE of what the task brief asked for.
+                            The brief wanted a decomposable footprint turned so
+                            its rows run ACROSS the strips. The owner settled it
+                            the other way on 2026-10-11: *"dips should span
+                            strips with a cut down the middle, like a
+                            breadboard."* So the fixture that must FAIL puts one
+                            of a DIP-16's two eight-pin rows ALONG a single
+                            strip, which puts every pin of that row on one piece
+                            of copper. No pad coordinate and no row count is
+                            written into the test: it reads the rows through the
+                            recorded pattern.
+                            The brief's wording was measured against the
+                            committed boards before being replaced - it refused
+                            13 of 16, 27 of 34 and 10 of 12 placed parts on
+                            three layouts that pass `make check`. See
+                            docs/stripboard/pipeline-verification.md section 3.
+
+rows-across-the-strips      HAND-WRITTEN. The POSITIVE control for the placement
+                            half, and the mounting the owner describes: the same
+                            DIP-16 with its sixteen pins two to a strip across
+                            eight strips, one from each row. Without it the
+                            placement half could refuse every multi-row part and
+                            every negative fixture would still pass.
+
+PROVENANCE OF THE TWO CAPTURES
+------------------------------
+  cuts-unresolved.dump
+    input board  boards/transistor-preamp-lab/transistor-preamp-lab.perfboard.vrt
+    command      veroroute --dump-board <that path>
+    binary       .tools/veroroute-perfboard at commit
+                 ed6c5a64eb5125346e8b0bc0b434b332c7750bb6, which is what
+                 veroroute.pin pins
+    sha256       ccd0b28799d5e20591294935d1bedef5ff8fb3978ba6cbb8d5340250418990ff
+
+  cuts-unresolved.report
+    command      veroroute --check <that path> --netlist <a fresh export>
+    the export   produced by this repository's own lowering path,
+                 exportNetlistFor() in tools/perfboard/check.ts, which is the
+                 same one `make check` and the write verbs use
+    exit         1, recorded in cuts-unresolved.status
+
+  floated-part.dump is HAND-WRITTEN and is NOT a capture - see its entry above.
+  The real capture it mirrors is tests/fixtures/pultec-low-boost-c19-floated.dump
+  with its own provenance file, unchanged by this directory.
+
+WHAT MAY NOT BE CONCLUDED FROM ANY OF IT
+----------------------------------------
+These fixtures establish that each constraint CAN fail and fails for its own
+reason. They establish nothing about any real board. The evidence that the
+grader is pointed at reality is tests/stripboard/grade-checkpoint.test.ts, which
+runs all ten over two committed layouts; and the one board there on which all
+ten hold is transistor-preamp-feedback, which passes `make check` today.

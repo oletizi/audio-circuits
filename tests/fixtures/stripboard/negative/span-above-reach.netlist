@@ -1,0 +1,7 @@
+( { EESchema Netlist Version 1.1 created  2026-10-11T00:00:00 }
+ ( /C1 CAP_FILM2  C1 10K
+  (    1 a )
+  (    2 b )
+ )
+)
+*

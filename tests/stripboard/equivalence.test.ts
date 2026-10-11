@@ -1,4 +1,6 @@
 import { test, expect } from "bun:test"
+import fs from "node:fs"
+import path from "node:path"
 import {
   netlistEquivalence,
   describeVerdict,
@@ -73,6 +75,37 @@ const REFERENCE: ReferenceNets = new Map([
 const UNCUT = WHOLE.split("\n")
   .filter((line) => !line.startsWith("CUT "))
   .join("\n")
+
+test("the grader's two-nets-shorted fixture IS this file's UNCUT board, so neither can drift", () => {
+  // ONE ARTIFACT, TWO CONSUMERS. Task 14's grader needs this same short as a
+  // negative fixture for HC8, and a second hand-written short would be a second
+  // thing to keep correct - the defect this repository calls supersede-means-
+  // delete, in its other shape.
+  //
+  // THE FIXTURE CARRIES TWO LINES THIS FILE'S BOARD DOES NOT, and both are
+  // lines HC8 never reads: a BOUNDS rect and a DIRECTION field on each placed
+  // PART. The grader needs them - HC6 refuses a dump with no BOUNDS and HC10
+  // refuses a placed part with no DIRECTION - and WHOLE above is deliberately
+  // left as a pre-grammar capture, because three of its tests manipulate PART
+  // line text directly. So the agreement is asserted rather than assumed:
+  // strip those two additions and the fixture must reproduce UNCUT byte for
+  // byte.
+  const fixture = fs.readFileSync(
+    path.join(import.meta.dir, "..", "fixtures", "stripboard", "negative", "two-nets-shorted.dump"),
+    "utf8",
+  )
+  const stripped = fixture
+    .split("\n")
+    .filter((line) => !line.startsWith("BOUNDS "))
+    .map((line) => (line.startsWith("PART ") ? line.replace(/ DIRECTION [A-Z]+$/, "") : line))
+    .join("\n")
+    .trimEnd()
+  expect(stripped).toBe(UNCUT.trimEnd())
+  // And it really is a short, read through HC8 rather than asserted by shape.
+  const verdict = netlistEquivalence(fixture, REFERENCE)
+  expect(verdict.equivalent).toBe(false)
+  expect(verdict.shorts.map((finding) => finding.nets)).toEqual([["mid", "out"]])
+})
 
 /** The message a call refused with, or "" when it did not refuse. */
 function refusalFrom(call: () => unknown): string {
