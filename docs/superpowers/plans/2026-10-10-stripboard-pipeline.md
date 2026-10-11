@@ -232,7 +232,7 @@ PIPELINE §4's M1 order is M1.2 → M1.7 → M1.3 → M1.4 → M1.1 → M1.5 →
 | 13 | The run directory and manifest | After the scorer, so every later task writes into a run directory rather than growing one later. Carries G3 and V7. |
 | 14 | The grader | After 2, 3–5, 7 and 10: it needs `HC10`'s footprint data, `HC8`'s module, `BOUNDS` and `DIRECTION` from 7, and the rules file for the stock default. **The crux.** **`HC10`'s placement half needs `DIRECTION`, which is Task 7 (M1.1) — and Task 14 was already after Task 7 for `BOUNDS`, so adding it reorders nothing.** Ends with **Checkpoint 1**. |
 | 15 | The ranking | After 7 (`BOUNDS`) and 14 (the grader decides which candidates are rankable). |
-| 16–19 | P1 seed, P2 climb, the escapes, stopping | In that order: construction before search (*"search is for what construction cannot reach"*), single-part climb before the escapes so the escapes have a baseline to be measured against, stopping last because `Q3` is a restart trigger before it is a stop and cannot be written before restarts exist. |
+| 16–19 | P1's three starting arms, P2 climb, the escapes, stopping | In that order: the arms before the climb because the climb needs something to start from, single-part climb before the escapes so the escapes have a baseline to be measured against, stopping last because `Q3` is a restart trigger before it is a stop and cannot be written before restarts exist. **Task 16's arm comparison is RUN at Task 18's final step, not at Task 16**: it needs a runner, and the question it answers — whether the start matters once restarts are cheap — cannot be asked before `E2` exists. |
 | 20 | The verdict and the report | After stopping, because `Q1` and `Q2` require the admissibility verdict and the report is keyed by both the `bound` and the `outcome`. Ends with **Checkpoint 2**. |
 | 21 | Determinism | After the escapes, because every non-determinism this plan introduces arrives with them, and V6 compares restart boundaries. |
 | 22 | V5 and V9 | After the search, because V5 compares the pipeline's placement against `--import`'s on the same board and there is nothing to compare before. |
@@ -270,7 +270,7 @@ stripboard/rules.json                      NEW: PAR3's one strict rules file
 lib/kicad/pin-pattern-model.ts             NEW: HC10's classification arithmetic
 lib/kicad/pin-pattern.ts                   NEW: HC10's per-footprint pad data
 docs/stripboard/pin-pattern.md             NEW: why each classification is what it is
-docs/stripboard/pipeline-verification.md   NEW: created by Task 3, extended by 7, 14, 22, 23
+docs/stripboard/pipeline-verification.md   NEW: created by Task 3, extended by 7, 14, 18, 22, 23
 tools/stripboard/rules.ts                  NEW: the strict loader
 tools/stripboard/targets.ts                NEW: P0 - N, P, C_floor, the net graph
 tools/stripboard/score.ts                  NEW: F, the identity self-check, the floor invariant
@@ -281,7 +281,8 @@ tools/stripboard/grade.ts                  NEW: A1 over HC1-HC10 - THE CRUX
 tools/stripboard/constraints.ts            NEW: one function per hard constraint
 tools/stripboard/rank.ts                   NEW: OBJ3's declared ranking and A_occ
 tools/stripboard/run-dir.ts                NEW: run directories, canonical hash, manifest
-tools/stripboard/seed.ts                   NEW: P1 seed by construction
+tools/stripboard/seed.ts                   NEW: P1's three starting arms behind one selector
+tools/stripboard/seed-compare.ts           NEW: the arm comparison, its mark and its retirement rule
 tools/stripboard/moves.ts                  NEW: the move set, including E1's net-cluster move
 tools/stripboard/climb.ts                  NEW: P2, acceptance, restarts
 tools/stripboard/stop.ts                   NEW: Q1-Q6
@@ -1886,7 +1887,7 @@ describe("DIRECTION", () => {
 **Interfaces:**
 - *Consumes:* Task 7's `DIRECTION` field; M1.2's placement refusal and M1.3's guards, both already in the fork.
 - *Provides:* `--rotate BOARD --ref NAME --direction cw|ccw -o OUTPUT`, a `kShipped` verb documented in `Headless_help.cpp`, which refuses without writing `OUTPUT` when the selection did not take, when any previously-placed component is not placed afterwards, when the board panned, or when `GetDirection()` did not change.
-- Task 17's move set consumes the verb; Task 16's seed construction consumes it to turn parts across the strips.
+- Task 17's move set consumes the verb; Task 16's constructed arm consumes it to turn parts across the strips, and its random arm draws a quarter-turn count through it.
 
 **Why this is not a nice-to-have.** Part orientation is the structural lever behind 68–75% of every unfinished board's cuts: the four import-placed boards have every part lying *along* the strips and sit at `J ≈ P − N` (48, 28, 24, 18 against `J` of 46, 27, 24, 16 — exact on hi-cut), while low-boost has every part *across* and sits at `J = 1`. `--import` never tries any direction but `'W'`, so the baseline does not explore this axis at all.
 
@@ -2389,7 +2390,7 @@ test("the scorer carries no threshold of its own: every weight comes from the ru
 **Interfaces:**
 - *Consumes:* `StripboardRules` and `RULES_PATH` from Task 10; `readPin`, `builtCommit` from `tools/perfboard/acquire.ts`.
 - *Provides:*
-  - `CanonicalInputs { readonly candidateSha256: string; readonly rulesSha256: string; readonly netlistSha256: string; readonly spanDataSha256: string; readonly pinPatternSha256: string; readonly seeds: readonly number[]; readonly seed: number; readonly verorouteCommit: string; readonly builtCommit: string; readonly pipelineCommit: string }`
+  - `CanonicalInputs { readonly candidateSha256: string; readonly rulesSha256: string; readonly netlistSha256: string; readonly spanDataSha256: string; readonly pinPatternSha256: string; readonly seeds: readonly number[]; readonly seed: number; readonly seedArm: SeedArm; readonly verorouteCommit: string; readonly builtCommit: string; readonly pipelineCommit: string }` — **`seedArm` is in the canonical inputs because two arms that hashed alike would make the two runs of Task 16's comparison indistinguishable in the record**, which is the one thing this hash exists to prevent; the type is Task 16's and is imported, never redeclared
   - `CanonicalMetrics { readonly cuts: number; readonly wires: number; readonly solder: number; readonly objective: number; readonly netCount: number; readonly joins: number; readonly occupied: number; readonly clustering: number; readonly occupiedArea: number; readonly constraints: Readonly<Record<string, boolean>>; readonly ranking: readonly number[]; readonly stoppingRule: string; readonly bound: string; readonly outcome: string; readonly restartBoundaries: readonly number[] }`
   - `ExecutionProvenance { readonly stamp: string; readonly startedAt: string; readonly durationMs: number; readonly host: string; readonly msPerInvocation: number; readonly evaluations: number }`
   - `RunManifest { readonly canonical: { readonly inputs: CanonicalInputs; readonly metrics: CanonicalMetrics; readonly hash: string }; readonly provenance: ExecutionProvenance }`
@@ -2994,30 +2995,292 @@ test("a plateau walk under this order cannot cycle", () => {
 
 ---
 
-### Task 16: P1 — the seed, by construction
+### Task 16: P1 — three starting arms, with random as the control
 
-**Files:** create `tools/stripboard/seed.ts`; test `tests/stripboard/seed.test.ts`.
+**Files:** create `tools/stripboard/seed.ts` and `tools/stripboard/seed-compare.ts`; test `tests/stripboard/seed.test.ts`, `tests/stripboard/seed-compare.test.ts`.
+
+**This task was a construction and is now an experiment, and the three questions that changed it are the owner's.**
+
+1. **Why does the start configuration matter?** Less than the previous revision implied. Every
+   restart is a fresh start (`E2`, Task 18), so the start decides how the **first** climb's share
+   of the budget is spent and nothing else; with cheap, numerous restarts its effect washes out.
+   The previous revision also read as though `--import`'s output were a working layout to improve
+   from. **It is not.** `--check` against the netlist exported from today's `physicalBoard(section)`
+   reports **19, 13, 7 and 6 incomplete nets** on mid, hi-boost, hi-cut and low-cut (PIPELINE §1,
+   COST §2.4), and `--import`'s placement is `Board::AddComponent`'s `-1,-1` first-fit sweep that
+   never consults `parsed.m_nets` at all. So the search begins in repair mode whatever the start is.
+2. **How would we know which is better?** By running them against the same seed set and the same
+   budget on the same board, not by argument. That is what this task builds.
+3. **Is anything better than random?** Unknown, and that is the point. A random start carries no
+   theory that can be wrong. A constructed start embeds a belief about what a good layout looks
+   like, and if the belief is off it is a **worse-than-random start wearing a principled costume**,
+   which is harder to detect than an obviously bad one — nobody re-examines a start that sounds
+   right.
+
+**The distinction the previous revision slid between, and which this task keeps apart.** *"One net
+per strip is what the identity says costs zero cuts"* is **arithmetic**: `C = N + J − S_occ` with
+`S_occ = N` and `J = 0` gives `C = 0`, and COST proves it. *"Therefore it is a good place to start
+searching from"* is a **conjecture**: it says a point at the cost function's floor-by-construction
+is a point the climb descends well from, and nothing in COST, MOVE or PIPELINE establishes that.
+The first stays where it is proved. The second is an arm of this experiment and is written to be
+shown wrong.
+
+**The owner's standing instruction, which is why this is shaped as a measured hypothesis** (recorded
+at `Q4` in CRITERIA): *"we won't figure it out completely by thinking really hard. We need a
+credible hypothesis for what might work that isn't obviously dumb that we continuously refine as we
+get more experience."* `Q4`'s and `Q6`'s numbers carry that discipline; so does the start.
+
+**All three arms start invalid, so validity at the start is not a discriminator.** None of the
+three is required to produce a valid layout and **no arm is rejected or penalised for failing to**:
+the import arm's start is the unfinished board whose incomplete-net counts are quoted above;
+the constructed arm moves parts and stretches them but routes no net; the random arm moves and
+rotates parts and routes no net either. The repair burden is common to all three, it is the search's
+work and not the start's, and the comparison records each start's admissibility per arm rather than
+asserting a value for it.
 
 **Interfaces:**
-- *Consumes:* `BoardTargets` (Task 11); `StripboardRules` (Task 10); the binary through an injected spawn; `--import`, `--move`, `--rotate`, `--stretch`, `--author --op autofill`.
-- *Provides:*
+- *Consumes:* `BoardTargets` (Task 11); `StripboardRules` (Task 10); `TOOL_MAX_SPAN_HOLES` and `leadSpanFor` from `lib/kicad/lead-span.ts`; `BoardDump`/`parseBoardDump` from `tools/guide/dump.ts`; the binary through an injected spawn; `--import`, `--move`, `--rotate`, `--stretch`, `--author --op autofill`.
+- *Provides:* `tools/stripboard/seed.ts` —
   - `SpawnVeroroute = (args: readonly string[]) => { readonly status: number; readonly stdout: string; readonly stderr: string }` — re-exported from `tools/perfboard/check.ts` if it already declares one, never a second declaration
-  - `StripAssignment = ReadonlyMap<string, number>` — net to strip index, from the low-bandwidth ordering
+  - `SeedArm = "constructed" | "import" | "random"`, `SEED_ARMS: readonly SeedArm[]` — the three in one place, so a loop over the arms cannot miss one
+  - `parseSeedArm(text: string): SeedArm` — refuses anything else by name, listing the three; **there is no default arm**
+  - `seededPrng(seed: number): () => number` — one named algorithm, its name in a comment and in the manifest. **Declared here rather than in Task 18**, because the random arm needs it first and two PRNGs would make two runs that claim one seed
+  - `StripAssignment = ReadonlyMap<string, number>` — net to strip index, from the low-bandwidth ordering; the **constructed** arm's own datum
   - `assignStrips(targets: BoardTargets, seed: number): StripAssignment`
-  - `seedCandidate(input: SeedInput, spawn: SpawnVeroroute): string` — the path of the seeded `.vrt` inside the run directory
-  - `SeedInput { readonly importedBoard: string; readonly targets: BoardTargets; readonly assignment: StripAssignment; readonly runDir: string; readonly rules: StripboardRules }`
-- Task 17 consumes `seedCandidate` and `assignStrips`; Task 18's E2 calls `assignStrips` with a different seed.
+  - `junctionNets(targets: BoardTargets): readonly string[]` — the nets the `SIP5` carries, **derived from the `junction_signals` component's own pins** and never written out, so the sub-arrangement cannot drift from the model; it **refuses** when the board has no such component rather than returning an empty list, because an empty list would make the constructed arm's junction clause a no-op nobody noticed
+  - `drawFrom<T>(items: readonly T[], draw: () => number): T` — `items[Math.floor(draw() · items.length)]`, refusing an empty list by name; the random arm's one point of choice, exported so the index map is testable without a board
+  - `admissiblePositions(dump: BoardDump, ref: string): readonly (readonly [number, number])[]` — every in-bounds position where that part fits beside the parts already placed, enumerated in row-major order
+  - `SeedInput { readonly importedBoard: string; readonly targets: BoardTargets; readonly runDir: string; readonly rules: StripboardRules; readonly arm: SeedArm; readonly seed: number }`
+  - `seedCandidate(input: SeedInput, spawn: SpawnVeroroute): string` — the path of the started `.vrt` inside the run directory, for the arm named in the input
+- *Provides:* `tools/stripboard/seed-compare.ts` —
+  - `QualityMark { readonly cuts: number; readonly wires: number; readonly netsComplete: true; readonly source: string }` — **no default**; `source` names the document the figure comes from
+  - `FROZEN_MARK: QualityMark` — the frozen fixture's mark and the only one this plan carries: `B1-frozen`'s own clause, with `source` naming it. Every other board's mark is the caller's parameter
+  - `markObjective(mark: QualityMark, rules: StripboardRules): number` — `mark.cuts + rules.rhoWire · mark.wires`, derived, no new number
+  - `ArmRun { readonly startAdmissible: boolean; readonly objective: number; readonly cuts: number; readonly wires: number; readonly netsComplete: boolean; readonly admissibleA1: boolean; readonly history: readonly number[]; readonly evaluations: number }`
+  - `ArmRunner = (start: string, seed: number, spawn: SpawnVeroroute) => ArmRun` — injected, because `climb` and `search` do not exist at this task and a comparison harness that imported them could not be written here
+  - `meetsMark(run: ArmRun, mark: QualityMark): boolean`
+  - `evaluationsToCross(run: ArmRun, objective: number): number | undefined`
+  - `SeedRun { readonly seed: number; readonly run: ArmRun; readonly metMark: boolean; readonly evaluationsToCross: number | undefined }`
+  - `ArmResult { readonly arm: SeedArm; readonly perSeed: readonly SeedRun[]; readonly reached: number }`
+  - `ArmComparison { readonly mark: QualityMark; readonly decisionVariable: "success-rate"; readonly arms: readonly ArmResult[]; readonly separated: boolean; readonly retireable: readonly SeedArm[] }`
+  - `ComparisonInput { readonly importedBoard: string; readonly targets: BoardTargets; readonly runDir: string; readonly rules: StripboardRules; readonly mark: QualityMark | null }` — `mark` is `QualityMark | null` rather than optional **because `null` is a value and an absent property is an omission**: the harness refuses a `null` mark by name, and a caller writing `null` has said what it is doing, exactly as `worseAcceptance: null` does in `PAR3`'s rules file
+  - `compareSeedArms(input: ComparisonInput, runner: ArmRunner, spawn: SpawnVeroroute): ArmComparison` — the seeds are `input.rules.seeds`, so the comparison's seed set is the reviewed one and no second list exists
+  - `RETIREMENT: string` — the decision variable and the retirement rule, as a string constant beside the harness, in the shape Task 15's `RANKING` uses
+- Task 17 consumes `seedCandidate` and `SpawnVeroroute`. Task 18 consumes `seedCandidate`, `SeedArm` and `seededPrng`, and its final step supplies the `ArmRunner` and runs the comparison.
 
-**The strategy, and it is construction rather than search:** assign one net per strip in a low-bandwidth linear arrangement; place each part across the strips of its two nets; stretch to reach. *"Should land at or near `J = 0`. Search is for what construction cannot reach."*
+**What changed in this contract, exactly, so Tasks 17–23 are not broken by it:**
 
-**One constraint on the arrangement, and it is not an obstruction.** `junction_signals` on every Pultec board is a `SIP5` carrying all five ladder nets at 1-hole pitch. Turned across the strips it pins those five nets to five consecutive strips in a fixed order; laid along a strip it puts five nets on one strip and costs four cuts. **It is the only component forcing more than two nets together, and the pipeline treats it as a fixed sub-arrangement rather than a part to be placed independently.**
+- `SpawnVeroroute`, `StripAssignment`, `assignStrips`, `SeedInput` and `seedCandidate` **all still exist with their names and their roles**. `assignStrips` is now identified as the constructed arm's datum rather than as *the* assignment.
+- `SeedInput` **gains `arm` and `seed` and loses `assignment`**. Both new fields are required with no default, so a caller that does not name an arm does not compile, and the text selector refuses rather than choosing. `assignment` went because the arm decides whether a strip assignment is computed at all, and passing one in for an arm that ignores it is a parameter that lies.
+- **`seededPrng` moves from Task 18 to Task 16.** Task 18 imports it instead of declaring it; its `E3` draw test and the manifest record are unchanged. This is the `BARE_LITERAL` resolution's shape — declared where it is first needed, imported by the later task — and the reason is the same: two declarations of one algorithm is one claim in two places.
+- **Task 18's `E2` restarts through `seedCandidate` with the run's arm, not through `assignStrips`.** As written it called `assignStrips` with a different seed, which would have re-constructed on every restart whatever arm the run selected — so every arm's restarts would have been the constructed arm's and the comparison would have measured only the first climb of each run. This is a correctness fix the comparison forced out.
+- **Task 13's `CanonicalInputs` gains `seedArm: SeedArm`.** Two arms that hashed alike would make the two runs of a comparison indistinguishable in the record, which is the one thing the canonical hash exists to prevent. The field's home is Task 13's type; this task only names it.
+- **`ClimbResult.history` is one entry per evaluation** (Task 17), so an index into it is an evaluation count. That was not stated and the comparison's third statistic reads a crossing index off it, so it is stated there now, and `evaluationsToCross` **refuses** a run whose `history.length` disagrees with its `evaluations` rather than reporting a misaligned index.
 
-**The injected-spawn posture is not optional.** `tools/perfboard/check.ts` injects its spawn for tests and **throws** when `VEROROUTE` is unset rather than guessing a path — *"a hardcoded `$HOME/src/...` is right on exactly one machine and wrong everywhere else… a spawn that quietly fails is the shape that reads as a clean board."* Every test below injects.
+**The three arms.**
 
-- [ ] **Step 1: Write the failing test:**
+**constructed** — one net per strip in a low-bandwidth linear arrangement, each part turned across
+the strips of its two nets, stretched to reach. *"Should land at or near `J = 0`."* This is the
+previous revision's whole content, preserved as one arm: the arrangement, the `SIP5`
+sub-arrangement below, the span refusal, and the bandwidth check across all five sections.
+
+**One constraint on the arrangement, and it is not an obstruction.** `junction_signals` on every
+Pultec board is a `SIP5` carrying all five ladder nets at 1-hole pitch. Turned across the strips it
+pins those five nets to five consecutive strips in a fixed order; laid along a strip it puts five
+nets on one strip and costs four cuts. **It is the only component forcing more than two nets
+together, and the constructed arm treats it as a fixed sub-arrangement rather than a part to be
+placed independently** (PIPELINE §5.4).
+
+**import** — `--import`'s own placement, the ribbon: the board as the first-fit sweep left it,
+copied into the run directory and painted. It costs nothing to include because it is what exists,
+and it is the only arm with no code behind its placement at all. **It has exactly one start**: the
+seed changes nothing about it, so its restarts repeat the same start and what varies across its
+seeds is only whatever the climb itself draws. That asymmetry is recorded rather than corrected —
+randomising the import arm's start would make it a second random arm wearing the ribbon's name.
+
+**random** — every part moved to a position drawn uniformly from `admissiblePositions` and rotated
+by a quarter-turn count drawn uniformly from `{0, 1, 2, 3}`, in **the dump's part order** (Task 17's
+rule for a deterministic enumeration, same reason: never iteration over a hash map), from
+`seededPrng(seed)`. Four quarter-turns being a full turn is arithmetic rather than a parameter, and
+**a quarter turn the fork refuses stops the arm and names the part** — the fork is the authority on
+a direction it will not accept and nothing here guesses the set. **This is the control and the null
+hypothesis.** Two properties it must have and one thing it must not be:
+
+- **In bounds, and the grid must not grow.** `--move --to 40,5` on a 35×35 fixture exits 0 and
+  reports `GRID 41 35` — the board grew — and `--move --to -5,5` lands the part at `0,5` **and
+  moves three parts never named on the command line** (the facts section; `Pan()` runs before any
+  wrap). A draw outside the grid therefore renumbers every hole the next draw is about to use, so
+  the arm draws only from in-bounds positions and asserts the grid is unchanged.
+- **It changes no span.** The arm moves and rotates whole parts and never stretches, so every
+  part's span is exactly what `--import` gave it. One fewer difference between the arms, and
+  `HC5`/`HC9` see the same spans on all three.
+- **It is not a retry loop.** `admissiblePositions` is enumerated and the draw is an index into it,
+  so a part with nowhere to go **refuses by name** — the part, the grid and the parts already
+  placed — rather than spinning or falling back to where it was.
+
+**The decision variable, and the two statistics reported beside it.**
+
+Per arm, per seed, the comparison reports the run's final `F`, whether the run met the mark, and
+the evaluation at which its `F` first crossed the mark's objective.
+
+**The decision variable is the success rate: how many of the seed set's seeds met the mark, over
+the size of the seed set.** Why that one and not the others: the run's product is an admissible
+layout at or under a target, and the owner's first question is the reason — each restart being a
+fresh start, the start only buys the first climb, so the only aggregate that answers *"did starting
+here make the run more likely to deliver"* is how often the run delivered. The other two are
+evidence behind it rather than rivals to it. **Final `F` per seed** is the raw number the rate is
+computed from and the tiebreak when no arm reaches the mark at all. **`evaluationsToCross` is a
+cost figure and cannot be the decision variable**: it is undefined for a seed that never crossed,
+so an arm that crossed once, early, would outrank an arm that crossed on every seed.
+
+**The mark is `B1-frozen`'s own clause and has no default.** On the frozen fixture it is `C ≤ 5`,
+`W = 0`, every net complete — the owner's achieved result, externally authored, already in
+CRITERIA. For any other board the mark is a **required parameter and the harness refuses without
+it**, because a quality bar this agent chose would be an acceptance criterion authored by the
+producing agent, which is the governing invariant's failure. `admissibleA1` is reported beside the
+mark and is not one of its clauses, because the mark is the external criterion's wording verbatim;
+an arm whose mark-meeting runs are inadmissible is a finding to report, not a rate to adjust.
+
+**The rate decides which arm the project keeps; it decides nothing about a layout.** It changes no
+`outcome`, no `bound`, no exit code and no verdict, exactly as Task 23's seed-set rate does not.
+
+**What result retires an arm**, declared before the run, in `RETIREMENT` beside the harness, so the rule cannot be adjusted after
+the numbers are in:
+
+- **constructed is retired if its rate does not exceed random's**, on the same seed set, the same
+  budget and the same board. **A tie retires it**: a construction that ties a uniform draw is
+  carrying a belief that buys nothing and costs a module, an ordering, a sub-arrangement rule and
+  their tests. Retiring it means **deleting** `assignStrips`, the `SIP5` sub-arrangement, the
+  constructed branch of `seedCandidate` and their tests in the same change — supersede means
+  delete — and recording in `docs/stripboard/pipeline-verification.md` that the construction was a
+  story. *"One net per strip costs zero cuts"* stays where it is proved, in COST, and stops being
+  a claim about where to start.
+- **import is retired on the same test**: its rate not exceeding random's. It is free to carry, so
+  its only cost is a row in the table, and retiring it as an **arm** does not touch `B1-frozen`'s
+  *"starting from the import-placed board"* clause — all three arms begin from `--import`'s output
+  and differ only in what they do to it before the first climb.
+- **random cannot be retired by this experiment.** It is the control and it is kept whatever the
+  result, because every later comparison needs a null to be measured against.
+- **If no arm meets the mark on any seed, nothing is retired** and the comparison says so: a run
+  in which every arm scored zero measured the budget, not the arms.
+
+**The plan picks no winner, and the structure is what makes that true rather than a promise.**
+There is no default arm: `SeedInput.arm` is required, `parseSeedArm("")` refuses, and `ArmComparison`
+has no field naming a chosen arm. `retireable` is a report computed by the declared rule and
+**nothing in the pipeline reads it** — the deletion is a reviewed edit by the owner or by a later
+reviewed change, carrying the run that justified it. An agent choosing the arm that flatters its
+own construction is this plan's governing invariant failing in the one place nobody would look.
+
+**Two ways the constructed arm could be wrong, and the run record distinguishes them.** **Too
+clever**: one net per strip is a point at the cost floor that the single-part climb cannot move off
+— every neighbour raises `F`, so the climb stalls immediately and spends its budget confirming the
+start. Visible as a constructed arm whose `acceptedPerRound` is near zero in its first round while
+random's is not. **Too fragile**: the arrangement is good for the board it was computed for and the
+stretch reaches fail, so most of its runs refuse before a climb begins. Visible as span refusals
+concentrated in one arm. Both are read off what `search` already records.
+
+**The injected-spawn posture is not optional.** `tools/perfboard/check.ts` injects its spawn for
+tests and **throws** when `VEROROUTE` is unset rather than guessing a path — *"a hardcoded
+`$HOME/src/...` is right on exactly one machine and wrong everywhere else… a spawn that quietly
+fails is the shape that reads as a clean board."* Every test below injects.
+
+**It is one task, and its last step is Task 18's.** The arms, the selector, the harness, the mark, the decision variable and the retirement rule are
+one task's work and are all here. **The measured run is a step of Task 18**, because the comparison
+needs a runner and `climb` is Task 17's while restarts are Task 18's — and the owner's first
+question is precisely that restarts are what decides whether the start matters, so a comparison run
+before `E2` exists would answer a question nobody asked. That is why `ArmRunner` is a parameter and
+not an import. **The deliverable of this task is therefore the comparison and its recorded result,
+with the result produced at Task 18's final step** and recorded in
+`docs/stripboard/pipeline-verification.md`. It is not a chosen seed strategy, and no step below
+selects one.
+
+- [ ] **Step 1: Write the failing tests for the arms** (`tests/stripboard/seed.test.ts`):
 
 ```ts
-test("the assignment puts one net on each strip, in the ordering's order", () => {
+test("SEED_ARMS names three arms and the text selector refuses anything else, empty included", () => {
+  // There is no default arm, and the half of that claim a body can establish
+  // is the selector's: it refuses rather than choosing. The other half is the
+  // type - SeedInput.arm is required - and the type checker is what proves it.
+  expect([...SEED_ARMS].sort()).toEqual(["constructed", "import", "random"])
+  expect(() => parseSeedArm("")).toThrow(/constructed, import, random/)
+  expect(() => parseSeedArm("best")).toThrow(/best/)
+})
+
+test("every arm returns a candidate inside the run directory and writes nowhere else", () => {
+  expect(SEED_ARMS.length, "a loop over an empty arm list proves nothing").toBe(3)
+  for (const arm of SEED_ARMS) {
+    const spawned: string[][] = []
+    const path = seedCandidate({ ...input(), arm }, recordingSpawn(spawned, DUMPS))
+    expect(path.startsWith(input().runDir), arm).toBe(true)
+    expect(spawned.length, `${arm} spawned nothing`).toBeGreaterThan(0)
+    for (const args of spawned) {
+      const output = args[args.indexOf("-o") + 1]
+      if (output !== undefined) expect(output.startsWith(input().runDir), arm).toBe(true)
+    }
+  }
+})
+
+test("every arm passes -o on every placing gesture and never writes in place", () => {
+  // The fork's own rule, which every verb meets: never write to a path it
+  // derived itself; -o required, no in-place default.
+  expect(SEED_ARMS.length).toBe(3)
+  for (const arm of SEED_ARMS) {
+    const spawned: string[][] = []
+    seedCandidate({ ...input(), arm }, recordingSpawn(spawned, DUMPS))
+    for (const args of spawned.filter((a) => a[0] !== "--dump-board" && a[0] !== "--check")) {
+      expect(args, `${arm}: ${args.join(" ")}`).toContain("-o")
+    }
+  }
+})
+
+test("every arm autofills last, because an unpainted board reports CUT_STATE UNRESOLVED", () => {
+  // AutoFillVero runs on --update and on --author --op autofill and NOT on
+  // --import --strips or --set-strips, and HC2 refuses an unresolved cut state
+  // rather than mis-scoring it. So the paint comes after the last gesture that
+  // moves anything, on all three arms including the one that moves nothing.
+  expect(SEED_ARMS.length).toBe(3)
+  for (const arm of SEED_ARMS) {
+    const spawned: string[][] = []
+    seedCandidate({ ...input(), arm }, recordingSpawn(spawned, DUMPS))
+    const lines = spawned.map((args) => args.join(" "))
+    const autofill = lines.findIndex((line) => line.includes("--op autofill"))
+    expect(autofill, `${arm} never autofilled`).toBeGreaterThanOrEqual(0)
+    expect(autofill, `${arm} autofilled before its last gesture`).toBe(lines.length - 1)
+  }
+})
+
+test("a spawn that fails stops every arm and names the gesture", () => {
+  const failing = (args: readonly string[]) =>
+    ({ status: 1, stdout: "", stderr: `refused: ${args[0]}` })
+  expect(SEED_ARMS.length).toBe(3)
+  for (const arm of SEED_ARMS) {
+    expect(() => seedCandidate({ ...input(), arm }, failing), arm).toThrow(/refused/)
+  }
+})
+
+test("the import arm is one start for every seed; the other two arms are not", () => {
+  const gestures = (arm: SeedArm, seed: number) => {
+    const spawned: string[][] = []
+    seedCandidate({ ...input(), arm, seed }, recordingSpawn(spawned, DUMPS))
+    return spawned.map((args) => args.join(" "))
+  }
+  expect(gestures("import", 0)).toEqual(gestures("import", 1))
+  expect(gestures("constructed", 0)).not.toEqual(gestures("constructed", 1))
+  expect(gestures("random", 0)).not.toEqual(gestures("random", 1))
+  for (const arm of SEED_ARMS) expect(gestures(arm, 3), arm).toEqual(gestures(arm, 3))
+})
+
+test("seededPrng is one algorithm, reproducible from its seed and different across seeds", () => {
+  const sequence = (seed: number) => Array.from({ length: 5 }, seededPrng(seed))
+  expect(sequence(7)).toEqual(sequence(7))
+  expect(sequence(7)).not.toEqual(sequence(8))
+  for (const value of sequence(7)) {
+    expect(value).toBeGreaterThanOrEqual(0)
+    expect(value).toBeLessThan(1)
+  }
+})
+
+test("the constructed arm puts one net on each strip, in the ordering's order", () => {
   const targets = deriveTargets(physicalBoard("low-boost"), 34, "pultec-low-boost")
   const assignment = assignStrips(targets, 0)
   expect(assignment.size).toBe(targets.netCount)
@@ -3026,7 +3289,7 @@ test("the assignment puts one net on each strip, in the ordering's order", () =>
     .toEqual([...targets.ordering])
 })
 
-test("a different seed gives a different low-bandwidth ordering, deterministically", () => {
+test("a different seed gives the constructed arm a different ordering, deterministically", () => {
   const targets = deriveTargets(physicalBoard("low-boost"), 34, "pultec-low-boost")
   expect(assignStrips(targets, 1)).not.toEqual(assignStrips(targets, 0))
   expect(assignStrips(targets, 1)).toEqual(assignStrips(targets, 1))
@@ -3034,20 +3297,23 @@ test("a different seed gives a different low-bandwidth ordering, deterministical
 
 test("the junction's five nets land on five consecutive strips, in one fixed order", () => {
   // The SIP5 at 1-hole pitch is the only component forcing more than two nets
-  // together, so it is placed as a sub-arrangement and the ordering is built
-  // around it rather than against it.
+  // together, so the constructed arm places it as a sub-arrangement and builds
+  // the ordering around it rather than against it.
   const targets = deriveTargets(physicalBoard("low-boost"), 34, "pultec-low-boost")
-  const strips = JUNCTION_NETS.map((net) => assignStrips(targets, 0).get(net))
+  const assignment = assignStrips(targets, 0)
+  const nets = junctionNets(targets)
+  expect(nets.length, "a junction with no nets would make the clause below vacuous").toBe(5)
+  const strips = nets.map((net) => assignment.get(net))
   expect(strips.every((strip) => strip !== undefined)).toBe(true)
   const sorted = [...strips as number[]].sort((a, b) => a - b)
   expect(sorted[sorted.length - 1]! - sorted[0]!).toBe(sorted.length - 1)
 })
 
-test("the ordering's bandwidth is inside the tool's span ceiling", () => {
-  // COST 6.4 measured every board's RCM bandwidth inside the 15-step ceiling
-  // with margin, so clustering is geometrically feasible and the tool's span
-  // limit is not the obstruction. A seeded ordering that left it is a bug in
-  // the ordering, not a fact about the circuit.
+test("the constructed ordering's bandwidth is inside the tool's span ceiling, on all five", () => {
+  // COST 6.4 measured every board's RCM bandwidth inside the ceiling with
+  // margin, so clustering is geometrically feasible and the tool's span limit
+  // is not the obstruction. A seeded ordering that left it is a bug in the
+  // ordering, not a fact about the circuit.
   for (const section of ["hi-boost", "hi-cut", "low-cut", "low-boost", "mid"]) {
     const targets = deriveTargets(physicalBoard(section), 34, `pultec-${section}`)
     expect(targets.orderingBandwidth, section).toBeLessThanOrEqual(TOOL_MAX_SPAN_HOLES - 1)
@@ -3055,46 +3321,249 @@ test("the ordering's bandwidth is inside the tool's span ceiling", () => {
 })
 
 test("a span the construction needs and the part cannot reach refuses, naming both", () => {
-  // The seed proposes and the grader grades, but a construction that KNOWS it
+  // The start proposes and the grader grades, but a construction that KNOWS it
   // is asking for an unreachable span says so where the remedy is - the span
   // data - rather than emitting a candidate for HC5 to reject anonymously.
-  expect(() => seedCandidate(reachingInput(), fakeSpawn())).toThrow(/maxSpanHoles/)
-  expect(() => seedCandidate(reachingInput(), fakeSpawn())).toThrow(/pultec-/)
+  expect(() => seedCandidate(reachingInput("constructed"), fakeSpawn())).toThrow(/maxSpanHoles/)
+  expect(() => seedCandidate(reachingInput("constructed"), fakeSpawn())).toThrow(/pultec-/)
 })
 
-test("the seed writes only inside the run directory", () => {
+test("the random arm draws inside the grid, and the grid does not grow", () => {
+  // Pan() runs before any wrap: --move --to 40,5 on a 35x35 fixture reports
+  // GRID 41 35, and --move --to -5,5 moves three parts nobody named. Either
+  // renumbers every hole the next draw is about to use.
   const spawned: string[][] = []
-  const spawn = recordingSpawn(spawned)
-  const path = seedCandidate(input(), spawn)
-  expect(path.startsWith(input().runDir)).toBe(true)
-  for (const args of spawned) {
-    const output = args[args.indexOf("-o") + 1]
-    if (output !== undefined) expect(output.startsWith(input().runDir)).toBe(true)
+  const start = seedCandidate({ ...input(), arm: "random" }, recordingSpawn(spawned, DUMPS))
+  const before = parseBoardDump(DUMPS.imported)
+  const after = parseBoardDump(dumpOf(start))
+  expect(after.grid).toEqual(before.grid)
+  for (const args of spawned.filter((a) => a[0] === "--move")) {
+    const [row, col] = args[args.indexOf("--to") + 1]!.split(",").map(Number)
+    expect(row!, args.join(" ")).toBeGreaterThanOrEqual(0)
+    expect(col!, args.join(" ")).toBeGreaterThanOrEqual(0)
+    expect(row!, args.join(" ")).toBeLessThan(before.grid.rows)
+    expect(col!, args.join(" ")).toBeLessThan(before.grid.cols)
   }
 })
 
-test("the seed never writes in place and always passes -o", () => {
-  // The fork's own rule, which every verb meets: never write to a path it
-  // derived itself; -o required, no in-place default.
+test("the random arm stretches nothing, so every span is the one --import gave it", () => {
   const spawned: string[][] = []
-  seedCandidate(input(), recordingSpawn(spawned))
-  for (const args of spawned.filter((a) => a[0] !== "--dump-board" && a[0] !== "--check")) {
-    expect(args).toContain("-o")
-  }
+  seedCandidate({ ...input(), arm: "random" }, recordingSpawn(spawned, DUMPS))
+  expect(spawned.some((args) => args[0] === "--move")).toBe(true)
+  expect(spawned.filter((args) => args[0] === "--stretch")).toEqual([])
 })
 
-test("a spawn that fails stops the construction and names the gesture", () => {
-  const failing = (args: readonly string[]) =>
-    ({ status: 1, stdout: "", stderr: `refused: ${args[0]}` })
-  expect(() => seedCandidate(input(), failing)).toThrow(/refused/)
+test("the draw indexes the enumerated admissible set, and reaches its ends and its middle", () => {
+  // WHAT THIS PROVES is the index map: a draw of 0 takes the first admissible
+  // position, one just under 1 takes the last, and a half takes the middle, so
+  // no admissible position is unreachable and none outside the set is reached.
+  // WHAT IT DOES NOT PROVE is that the STREAM is uniform - that is seededPrng,
+  // one named algorithm, tested above for reproducibility and range only.
+  const positions = admissiblePositions(parseBoardDump(DUMPS.imported), "R1")
+  expect(positions.length, "a one-position set would make every draw equal").toBeGreaterThan(2)
+  expect(drawFrom(positions, () => 0)).toEqual(positions[0])
+  expect(drawFrom(positions, () => 0.999999)).toEqual(positions[positions.length - 1])
+  expect(drawFrom(positions, () => 0.5)).toEqual(positions[Math.floor(positions.length / 2)])
+})
+
+test("a part with no admissible position refuses by name, and writes nothing", () => {
+  expect(() => seedCandidate({ ...crowdedInput(), arm: "random" }, recordingSpawn([], DUMPS)))
+    .toThrow(/R1/)
+  expect(() => seedCandidate({ ...crowdedInput(), arm: "random" }, recordingSpawn([], DUMPS)))
+    .toThrow(/admissible/)
 })
 ```
 
-- [ ] **Step 2: Run it, confirm it fails. Step 3: Implement.** The construction drives one gesture at a time, checking each result, and runs `--author --op autofill` before any scoring, because `AutoFillVero` runs on `--update` and on `--author --op autofill` and **not** on `--import --strips` or `--set-strips`, and an unpainted board reports `CUT_STATE UNRESOLVED` with no cut list — which `HC2` refuses rather than silently mis-scoring.
+  `recordingSpawn(spawned, DUMPS)` records every argument list and answers `--dump-board` from
+  `DUMPS`, a record of hand-written dump text keyed by the gesture that produced it; a
+  `--dump-board` it has no text for **throws** rather than returning an empty board, because a
+  scripted spawn that answers everything makes every test above a test of nothing.
+  `crowdedInput()` is an input whose dump leaves `R1` no position that fits.
 
-- [ ] **Step 4: Prove the tests can fail.** Two breaks: have `assignStrips` return the nets in `Object.keys` order rather than the ordering's (the bandwidth test must fail on at least one board — if it does not, the ordering is doing nothing and that is the finding); drop the `-o` argument from one gesture (the writes-only-inside test fails).
+- [ ] **Step 2: Write the failing tests for the comparison** (`tests/stripboard/seed-compare.test.ts`):
 
-- [ ] **Step 5: Run** `bun test && bun run typecheck`, **commit** ("Seed a layout by construction, one net per strip, and refuse a span no part can reach"), push.
+```ts
+test("every arm is run against the same seeds, by the one runner the harness is given", () => {
+  // The same budget is structural rather than asserted: one runner serves
+  // every arm, so there is no second place for a budget to differ. What a body
+  // can establish is the seed set and the arm set, and both are asserted.
+  const calls: { arm: SeedArm; seed: number; start: string }[] = []
+  const comparison = compareSeedArms(comparisonInput(), recordingRunner(calls, SCRIPT), fakeSpawn())
+  expect(comparison.arms.map((arm) => arm.arm).sort()).toEqual([...SEED_ARMS].sort())
+  for (const arm of SEED_ARMS) {
+    expect(calls.filter((call) => call.arm === arm).map((call) => call.seed), arm)
+      .toEqual([...comparisonInput().rules.seeds])
+  }
+  expect(new Set(calls.map((call) => call.start)).size, "each arm starts its own candidate")
+    .toBeGreaterThan(1)
+})
+
+test("no arm is dropped for starting invalid, and each start's admissibility is recorded", () => {
+  // All three starts are expected to be inadmissible: --check reports 19, 13,
+  // 7 and 6 incomplete nets on the four import-placed layouts, and neither the
+  // construction nor the draw routes a net. An arm filtered out for an invalid
+  // start would be every arm, so the repair burden is the search's and common.
+  const comparison =
+    compareSeedArms(comparisonInput(), scriptedRunner(EVERY_START_INVALID), fakeSpawn())
+  expect(comparison.arms.length).toBe(3)
+  for (const arm of comparison.arms) {
+    expect(arm.perSeed.length, arm.arm).toBe(comparisonInput().rules.seeds.length)
+    expect(arm.perSeed.every((seed) => seed.run.startAdmissible === false), arm.arm).toBe(true)
+  }
+})
+
+test("the decision variable is the success rate, counted over the seed set", () => {
+  const comparison =
+    compareSeedArms(comparisonInput(), scriptedRunner(ONE_CONSTRUCTED_SEED_MEETS), fakeSpawn())
+  expect(comparison.decisionVariable).toBe("success-rate")
+  const constructed = comparison.arms.find((arm) => arm.arm === "constructed")!
+  expect(constructed.reached).toBe(1)
+  expect(constructed.perSeed.filter((seed) => seed.metMark).length).toBe(1)
+  expect(constructed.perSeed.length).toBe(comparisonInput().rules.seeds.length)
+})
+
+test("the mark has no default: without one the harness refuses and says it is not defaulted", () => {
+  // An agent may never author the acceptance criteria for the artifact it is
+  // producing, and a quality bar chosen here would be exactly that. The frozen
+  // fixture's mark is B1-frozen's own clause; any other board's is a parameter.
+  const noMark = { ...comparisonInput(), mark: null }
+  expect(() => compareSeedArms(noMark, scriptedRunner(SCRIPT), fakeSpawn())).toThrow(/mark/)
+  expect(() => compareSeedArms(noMark, scriptedRunner(SCRIPT), fakeSpawn()))
+    .toThrow(/not defaulted/)
+  expect(FROZEN_MARK.source).toMatch(/B1-frozen/)
+})
+
+test("a run meets the mark only on all of its clauses, never on F alone", () => {
+  // F <= 5 is reachable with wires: C = 4 with four bridges scores 5 at
+  // rhoWire = 0.25, and B1-frozen requires W = 0 with every net complete. So
+  // the mark reads its clauses and markObjective is only the crossing figure.
+  expect(meetsMark(armRun({ cuts: 4, wires: 4, netsComplete: true }), FROZEN_MARK)).toBe(false)
+  expect(meetsMark(armRun({ cuts: 5, wires: 0, netsComplete: true }), FROZEN_MARK)).toBe(true)
+  expect(meetsMark(armRun({ cuts: 4, wires: 0, netsComplete: false }), FROZEN_MARK)).toBe(false)
+  expect(markObjective(FROZEN_MARK, loadRules())).toBe(FROZEN_MARK.cuts)
+})
+
+test("evaluationsToCross is an F crossing, undefined when it never crossed, refusing a misaligned history", () => {
+  // NAMED AS A CROSSING rather than as "evaluations to reach the mark": an F
+  // at or below the mark's objective is necessary for the mark and not
+  // sufficient, because the wire and completeness clauses are read off the
+  // candidate and not off F. It is the cost figure; the rate is the decision.
+  expect(evaluationsToCross(armRun({ history: [9, 8, 5, 4], evaluations: 4 }), 5)).toBe(2)
+  expect(evaluationsToCross(armRun({ history: [9, 8, 7], evaluations: 3 }), 5)).toBeUndefined()
+  expect(() => evaluationsToCross(armRun({ history: [9, 8], evaluations: 7 }), 5))
+    .toThrow(/history/)
+})
+
+test("RETIREMENT names all three arms with prose for each, names the control and the decision variable", () => {
+  // Task 15's RANKING pattern, and its limit carried with it: that each arm is
+  // named and followed by prose is assertable; that the prose is a REASON is
+  // the owner's judgement at review, and no test establishes it.
+  expect(RETIREMENT).toMatch(/success rate/)
+  expect(RETIREMENT).toMatch(/control/)
+  for (const arm of SEED_ARMS) {
+    const at = RETIREMENT.indexOf(arm)
+    expect(at, `${arm} is not named in RETIREMENT`).toBeGreaterThanOrEqual(0)
+    const later = SEED_ARMS
+      .map((other) => RETIREMENT.indexOf(other, at + arm.length))
+      .filter((index) => index > at)
+    const prose = RETIREMENT.slice(at + arm.length, Math.min(...later, RETIREMENT.length))
+    expect(prose.trim().length, `${arm} is named with no prose after it`).toBeGreaterThan(40)
+  }
+})
+
+test("constructed not beating random marks it retireable, and a tie counts as not beating", () => {
+  const lost = compareSeedArms(comparisonInput(), scriptedRunner(RANDOM_WINS), fakeSpawn())
+  expect(lost.retireable).toContain("constructed")
+  const tied = compareSeedArms(comparisonInput(), scriptedRunner(CONSTRUCTED_TIES_RANDOM), fakeSpawn())
+  expect(tied.retireable, "a construction that ties a uniform draw buys nothing")
+    .toContain("constructed")
+})
+
+test("the import arm gets the same test, and the control is never retireable", () => {
+  const lost = compareSeedArms(comparisonInput(), scriptedRunner(RANDOM_WINS), fakeSpawn())
+  expect(lost.retireable).toContain("import")
+  expect(lost.retireable).not.toContain("random")
+})
+
+test("constructed beating random marks nothing retireable, and still selects no arm", () => {
+  const won = compareSeedArms(comparisonInput(), scriptedRunner(CONSTRUCTED_WINS), fakeSpawn())
+  expect(won.retireable).toEqual([])
+  expect(Object.keys(won).sort())
+    .toEqual(["arms", "decisionVariable", "mark", "retireable", "separated"])
+  // A winning arm does not install itself: there is still no default.
+  expect(() => parseSeedArm("")).toThrow(/constructed, import, random/)
+})
+
+test("no arm meeting the mark retires nothing, because that run measured the budget", () => {
+  const flat = compareSeedArms(comparisonInput(), scriptedRunner(NOBODY_REACHES), fakeSpawn())
+  expect(flat.arms.every((arm) => arm.reached === 0)).toBe(true)
+  expect(flat.retireable).toEqual([])
+  expect(flat.separated).toBe(false)
+})
+
+test("a runner that throws fails the comparison rather than scoring that arm zero", () => {
+  // A scored zero is indistinguishable from an arm that ran and lost, which is
+  // the one confusion this comparison cannot afford.
+  const thrower: ArmRunner = () => { throw new Error("spawn exhausted") }
+  expect(() => compareSeedArms(comparisonInput(), thrower, fakeSpawn())).toThrow(/exhausted/)
+})
+```
+
+  `scriptedRunner(SCRIPT)` returns a runner whose `ArmRun` per arm and seed comes from a literal
+  table, so every rate above is a property of the harness rather than of a search. Each table is
+  named for what it encodes (`RANDOM_WINS`, `CONSTRUCTED_TIES_RANDOM`, `NOBODY_REACHES`,
+  `EVERY_START_INVALID`) and **must cover every arm and every seed** — a table missing a row
+  throws, because a runner that answered a missing row with a default would decide the rates.
+  `armRun(partial)` fills a complete `ArmRun` from a partial one and **throws for a field it
+  cannot derive**, so a test cannot silently assert over an invented history.
+
+- [ ] **Step 3: Run both files, confirm they fail.**
+
+- [ ] **Step 4: Implement.** `seedCandidate` dispatches on `input.arm` into three private functions
+  and shares the gesture driver — one gesture at a time, every result checked, `-o` always, the
+  autofill last — so the three arms differ in what they place and in nothing else. The constructed
+  arm computes `assignStrips`, places the `SIP5` sub-arrangement first and turns each remaining part
+  across the strips of its two nets, stretching to reach and refusing when the reach is not there.
+  The import arm copies the imported board into the run directory and paints it. The random arm
+  enumerates `admissiblePositions` per part in the dump's part order, draws an index and a
+  quarter-turn count from `seededPrng(input.seed)`, drives `--move` and `--rotate`, and refuses by
+  name for a part with nowhere to go. `compareSeedArms` calls `seedCandidate` once per arm per seed
+  in `rules.seeds`, hands each start to the one runner it was given, computes `metMark`,
+  `evaluationsToCross`, `reached`, `separated` and `retireable` by the declared rule, and returns
+  them. `RETIREMENT` carries the decision variable, the rule and the reason for each arm's
+  treatment.
+
+- [ ] **Step 5: Prove the tests can fail**, and each break names the test it must break:
+
+  1. Have `seedCandidate` ignore `input.arm` and always construct — the one-start test fails on the
+     import arm and the stretches-nothing test fails on the random arm.
+  2. Default `mark` to the frozen figure when it is absent — the no-default test fails.
+  3. Have `meetsMark` compare `objective` with `mark.cuts` only — the all-clauses test fails on
+     `cuts: 4, wires: 4`.
+  4. Make the retirement rule `>=` rather than `>` for constructed against random — the tie test
+     fails. **Run this one first**: it is the mutation under which a construction that bought
+     nothing would have survived its own experiment.
+  5. Draw the random arm's index from `Math.random()` — the reproducible-from-seed test fails, and
+     so does Task 18's closure scan for `Math.random`, which is the second reading of the same
+     property.
+  6. Drop `-o` from the import arm's autofill — the writes-nowhere-else test fails for that arm
+     only, which is why that test loops over `SEED_ARMS` instead of testing one.
+  7. Let the random arm draw one position past the last row — the grid-does-not-grow test fails.
+  8. Have `assignStrips` return the nets in `Object.keys` order rather than the ordering's — the
+     bandwidth test must fail on at least one board; **if it does not, the ordering is doing nothing
+     and that is the finding**, recorded in `docs/stripboard/pipeline-verification.md` rather than
+     worked around.
+
+  **Every test's name was read beside its body before this task was written.** Three carry a
+  guarantee weaker than the property they are about and say so in their own comments: the
+  no-default-arm test proves the selector's half and not the type's; the draw test proves the index
+  map and not the stream's uniformity; `evaluationsToCross` is named a crossing because an `F` at
+  the mark's objective is necessary for the mark and not sufficient. The previous revision found
+  eleven tests whose names claimed more than their bodies proved, one of them a literal placeholder
+  that could not fail — so each loop above asserts its own collection is non-empty, each scripted
+  table refuses a missing row, and no test here scans text for a structural claim.
+
+- [ ] **Step 6: Run** `bun test && bun run typecheck`, **commit** ("Three starting arms behind one selector, with random as the control and no default"), push.
 
 ---
 
@@ -3110,7 +3579,7 @@ test("a spawn that fails stops the construction and names the gesture", () => {
   - `applyMove(board: string, move: Move, out: string, spawn: SpawnVeroroute): void`
   - `Evaluation { readonly candidate: string; readonly score: Score; readonly results: readonly ConstraintResult[]; readonly ranking: readonly number[]; readonly admissibleA1: boolean }`
   - `evaluate(board: string, input: EvaluateInput, spawn: SpawnVeroroute): Evaluation`
-  - `ClimbResult { readonly best: Evaluation; readonly rounds: number; readonly evaluations: number; readonly acceptedPerRound: readonly number[]; readonly history: readonly number[] }`
+  - `ClimbResult { readonly best: Evaluation; readonly rounds: number; readonly evaluations: number; readonly acceptedPerRound: readonly number[]; readonly history: readonly number[] }` — **`history` has one entry per evaluation, so an index into it is an evaluation count.** Task 16's `evaluationsToCross` reads a crossing index off it and **refuses** a run whose `history.length` disagrees with its `evaluations`, rather than reporting an index that means nothing; a history per accepted move would have made that figure silently wrong
   - `climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): ClimbResult`
 - Task 18 extends the move set and wraps `climb` with restarts; Task 19 consumes `ClimbResult`'s counters; Task 20 consumes `Evaluation`.
 
@@ -3211,12 +3680,12 @@ test("each evaluation runs autofill before scoring, because an unpainted board h
 **Files:** modify `tools/stripboard/moves.ts` (the cluster move's implementation) and `tools/stripboard/climb.ts` (restarts and worse-acceptance); test `tests/stripboard/escapes.test.ts`.
 
 **Interfaces:**
-- *Consumes:* Task 17's `Move`, `applyMove`, `climb`, `accepts`; `StripboardRules.seeds` and `.worseAcceptance` (Task 10); `assignStrips` (Task 16).
+- *Consumes:* Task 17's `Move`, `applyMove`, `climb`, `accepts`, `evaluate`; `StripboardRules.seeds` and `.worseAcceptance` (Task 10); `seedCandidate`, `SeedArm`, `seededPrng`, `compareSeedArms`, `ArmRunner` and `FROZEN_MARK` (Task 16).
 - *Provides:*
   - `applyMove` handling `{ kind: "cluster" }` — *every on-board part with a pin on net X* moved by one delta, or rotated together
   - `RunResult { readonly best: Evaluation; readonly climbs: readonly ClimbResult[]; readonly restartBoundaries: readonly number[]; readonly worseAcceptanceRan: boolean }`
-  - `search(input: SearchInput, spawn: SpawnVeroroute): RunResult`
-  - `seededPrng(seed: number): () => number` — one algorithm, named in a comment, recorded in the manifest
+  - `search(input: SearchInput, spawn: SpawnVeroroute): RunResult` — **`SearchInput` carries the run's `SeedArm`, and `E2` produces each restart's start by calling `seedCandidate` with that arm and the restart's seed.** An earlier draft had `E2` call `assignStrips` directly, which would have re-constructed on every restart whatever arm the run selected — so every arm's restarts would have been the constructed arm's and Task 16's comparison would have measured only the first climb of each run
+  - `seededPrng` is **imported from Task 16**, not declared here: the random arm needs it first, and two declarations of one algorithm are one claim in two places. Its name is still recorded in the manifest
 - Task 19 consumes `RunResult`'s per-climb counters; Task 20 reports `worseAcceptanceRan`; Task 21 compares `restartBoundaries`.
 
 **Why an escape is required rather than optional, from the identity rather than from search folklore.** `C = (N − S_occ) + J`, and `J` counts a net's extra segments, so **a net's `J` contribution falls only when its last stray pin joins the rest**: moving one of a net's three scattered parts one hole typically changes `J` by zero and may raise it, while moving all three together to one strip removes a whole cut. *"A strictly improving single-part climb is not merely at risk of being trapped on this problem; the dominant lever is structurally invisible to it."*
@@ -3261,6 +3730,23 @@ test("E2's restart schedule is a function of the seed list alone", () => {
   const first = search(input(), scriptedSpawn(SCRIPT))
   const second = search(input(), scriptedSpawn(SCRIPT))
   expect(second.restartBoundaries).toEqual(first.restartBoundaries)
+})
+
+test("every restart starts from the run's OWN arm, one start per seed", () => {
+  // Otherwise every arm's restarts are the constructed arm's and Task 16's
+  // comparison measures only the first climb of each run. Read off the spawn
+  // record rather than through an injected seeder, so `search` keeps its two
+  // parameters: a start sequence is the gestures up to and including the
+  // `--op autofill` that ends it, and the constructed arm is the only one of
+  // the three that stretches.
+  const random: string[][] = []
+  search({ ...input(), arm: "random" }, recordingSpawn(random, SCRIPT))
+  expect(startSequences(random).length).toBe(loadRules().seeds.length)
+  expect(startSequences(random).flat().filter((args) => args[0] === "--stretch")).toEqual([])
+  const constructed: string[][] = []
+  search({ ...input(), arm: "constructed" }, recordingSpawn(constructed, SCRIPT))
+  expect(startSequences(constructed).length).toBe(loadRules().seeds.length)
+  expect(startSequences(constructed).flat().some((args) => args[0] === "--stretch")).toBe(true)
 })
 
 test("E3 does not run when no bound is configured, and the run says so", () => {
@@ -3320,11 +3806,49 @@ test("no file in the search's TRANSITIVE closure names a clock, a pid, a listing
 
   The closure includes `tools/guide/dump.ts` and `tools/perfboard/acquire.ts`, which are pre-existing. **If either names one of the five, that is a finding and not a licence to shrink the forbidden list**: establish whether the call can reach a scored evaluation, record the answer in `docs/stripboard/pipeline-verification.md`, and if it can, the fix is in that module with a test. An exemption, if one is genuinely needed, is a named entry with a reason beside it in the test — never a quietly narrowed closure, which would make every assertion above smaller than it looks.
 
-- [ ] **Step 2: Run it, confirm it fails. Step 3: Implement.** The cluster move applies one delta to every on-board part with a pin on the net, through `--move` per part or `--move-batch` when Task 9 has landed, and refuses as a whole if any part would be left floating. `search` runs one climb per seed, keeps the best, records the boundaries as evaluation indices. `seededPrng` is one named algorithm with its name in a comment and in the manifest.
+  `startSequences(spawned)` splits the recorded gestures into the per-restart start sequences, each ending at the `--author --op autofill` that closes it, and **throws when the record contains no autofill at all** — a splitter that returned an empty list would make both halves of the test above pass over nothing.
+
+- [ ] **Step 2: Run it, confirm it fails. Step 3: Implement.** The cluster move applies one delta to every on-board part with a pin on the net, through `--move` per part or `--move-batch` when Task 9 has landed, and refuses as a whole if any part would be left floating. `search` runs one climb per seed, **producing each climb's start by calling Task 16's `seedCandidate` with the run's arm and that seed**, keeps the best, and records the boundaries as evaluation indices. `seededPrng` is imported from Task 16 and its name goes in the manifest.
 
 - [ ] **Step 4: Prove the tests can fail.** Three breaks: enumerate the cluster move over parts rather than nets (the first test fails); reset `search` to one climb (the E2 tests and the Q3 test fail); default `worseAcceptance` to a number when `null` (the does-not-run test fails — **this is the mutation that matters**, because an invented annealing schedule is exactly the number this suite refuses to make up).
 
-- [ ] **Step 5: Run** `bun test && bun run typecheck`, **commit** ("The net-cluster move, seeded restarts, and a worse-acceptance that stays off without a bound"), push.
+- [ ] **Step 5: RUN TASK 16's ARM COMPARISON, on the frozen fixture, and record the result.** This is the earliest point at which it is honest: `search` is the first thing that can serve as an `ArmRunner`, and the comparison's question — whether the start matters once restarts are cheap — is a question about `E2`. **Run it before Tasks 19–23 build on top of a start nobody measured.**
+
+  The adapter is the whole of the wiring, and it lives here rather than in `seed-compare.ts` so that Task 16 imports nothing from a later task:
+
+```ts
+const runner: ArmRunner = (start, seed, spawn) => {
+  const begun = evaluate(start, evaluateInput(), spawn)
+  const result = search({ ...frozenInput(), start, arm, rules: { ...rules, seeds: [seed] } }, spawn)
+  const climb = result.climbs[0]!
+  const hc1 = result.best.results.find((constraint) => constraint.id === "HC1")!
+  return { startAdmissible: begun.admissibleA1, objective: result.best.score.objective,
+           cuts: result.best.score.cuts, wires: result.best.score.wires,
+           netsComplete: hc1.held, admissibleA1: result.best.admissibleA1,
+           history: climb.history, evaluations: climb.evaluations }
+}
+const comparison = compareSeedArms(
+  { importedBoard: importFrozen(), targets: FROZEN_TARGETS, runDir, rules, mark: FROZEN_MARK },
+  runner, spawn)
+```
+
+  **What is recorded in `docs/stripboard/pipeline-verification.md`**, whether it flatters the
+  construction or not: the per-arm, per-seed table — final `F`, `metMark`, `evaluationsToCross`,
+  `startAdmissible` and `admissibleA1` — the three rates, the arms the declared rule marks
+  retireable, and the start admissibility actually observed beside the incomplete-net counts
+  Task 16 quotes. **Nothing is deleted or selected in this step**: `retireable` is evidence, the
+  arm stays a required selection with no default, and the edit that retires an arm is the owner's
+  or a later reviewed change carrying this run as its justification. If the comparison marks an arm
+  retireable, say so in the commit message for this task and leave the code standing.
+
+  **Its cost, stated rather than worked around:** three full sweeps of the seed set, one per arm,
+  each run getting the same budget — which at this task is the climb's own stall, because `Q4` and
+  `Q5` do not exist yet. Equal for every arm is what the comparison needs; shortening an arm's
+  runs would make the rates a comparison between unlike runs. `ArmRunner` is a parameter precisely
+  so the comparison can be re-run under the stopping rules once Task 19 lands, and a re-run is a
+  new row in `pipeline-verification.md` rather than an overwrite.
+
+- [ ] **Step 6: Run** `bun test && bun run typecheck`, **commit** ("The net-cluster move, seeded restarts, a worse-acceptance that stays off without a bound, and the measured arm comparison"), push.
 
 ---
 
@@ -3790,7 +4314,7 @@ test("V9's scan can fail, so it is not a loop over nothing", async () => {
 
 - [ ] **Step 2: Implement nothing; make the tests pass by fixing what they find.** If a statistic fails V5, it comes out of `REPORTED_STATISTICS` with the reason recorded — that is the test doing its job, not an obstacle. If a literal fails V9, it moves to `stripboard/rules.json` with a `note`.
 
-- [ ] **Step 3: Complete `docs/stripboard/pipeline-verification.md`**, created in Task 3 and extended since — V1 through V12, each with where its test lives and what it would catch, plus the findings Tasks 3, 7 and 14 put there: `HC8`'s trust boundary, `BOUNDS`'s three sources and the option of decomposing it in the fork, Checkpoint 1's four verdicts, and the stated weaknesses of the checks that are text scans rather than structural proofs. This is the page a reviewer reads to answer *"how do we know the optimiser is not fooling itself?"*, and it is also the register the self-review below checks against. **Every check whose guarantee is weaker than its subject appears here with the weaker guarantee written out** — that list is the honest counterpart of the `V` table and the thing a reader should look at first.
+- [ ] **Step 3: Complete `docs/stripboard/pipeline-verification.md`**, created in Task 3 and extended since — V1 through V12, each with where its test lives and what it would catch, plus the findings Tasks 3, 7, 14 and 18 put there: `HC8`'s trust boundary, `BOUNDS`'s three sources and the option of decomposing it in the fork, Checkpoint 1's four verdicts, **Task 18's arm-comparison table and the arms its declared rule marked retireable**, and the stated weaknesses of the checks that are text scans rather than structural proofs. This is the page a reviewer reads to answer *"how do we know the optimiser is not fooling itself?"*, and it is also the register the self-review below checks against. **Every check whose guarantee is weaker than its subject appears here with the weaker guarantee written out** — that list is the honest counterpart of the `V` table and the thing a reader should look at first.
 
 - [ ] **Step 4: Prove V5 can fail.** Point `pipelinePlaced` at `importPlaced` and confirm every row fails. Record it beside the test.
 
@@ -3807,11 +4331,20 @@ test("V9's scan can fail, so it is not a loop over nothing", async () => {
 - *Provides:*
   - `dispatchPlace(context: VerbContext, deps: PlaceDeps): Promise<number>` — the `place` verb, acting on `$(CURDIR)`
   - `make place` per board, and `make place` on the frozen fixture through an explicit `--frozen` flag naming the fixture rather than a board directory
+  - **a required `--seed-arm` flag**, parsed by Task 16's `parseSeedArm`: there is no default arm, so `place` refuses and lists the three rather than choosing one
 - Task 24's `adopt` consumes the run directory `place` wrote.
 
 **`B1-frozen`, and it is the only externally authored criterion:** against the exact electrical model, footprints and board dimensions the hand layout was built for — 9 nets, 27 pins, and **the grid the fixture's own `GRID` line reports** — the pipeline must reach `C ≤ 5` with `W = 0` and every net complete, **starting from the import-placed board**. A run that does not is a failing run. `W = 0` is a property of the artifact being reproduced, not a general preference.
 
 **`V3` may not be reported as satisfied by a run against the scaffolded board**, and Task 20's `A4` detail is what enforces it.
+
+**`ARM` in the tests below is whichever arm the run is being made with, passed explicitly**, and
+`place` **refuses** without one (Task 16: the arm has no default, because the comparison that would
+justify a default is evidence for the owner and not a choice this plan makes). `B1-frozen`'s
+*"starting from the import-placed board"* clause is satisfied by every arm — all three begin from
+`--import`'s output and differ only in what they do to it — so the criterion constrains the import
+and not the arm, which is why the test below asserts `--import` was spawned rather than asserting
+an arm.
 
 **The acceptance criterion is ONE run, unchanged — and the report also carries a success rate
 across the seed set, as a diagnostic that is explicitly NOT a threshold.** `B1-frozen` says the
@@ -3863,7 +4396,7 @@ test("the hand layout's own spans are inside the recorded bounds, so reading 2 i
 })
 
 test("V3: the pipeline reaches C <= 5 with W = 0 and every net complete on the frozen fixture", async () => {
-  const run = await place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules() })
+  const run = await place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules(), arm: ARM })
   expect(run.best.score.wires, "W").toBe(0)
   expect(run.best.score.cuts, "C").toBeLessThanOrEqual(5)
   const hc1 = run.best.results.find((result) => result.id === "HC1")!
@@ -3871,14 +4404,14 @@ test("V3: the pipeline reaches C <= 5 with W = 0 and every net complete on the f
 })
 
 test("V3 names which of the three readings a failure is", async () => {
-  const run = await place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules() })
+  const run = await place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules(), arm: ARM })
   if (run.best.score.cuts <= 5 && run.best.score.wires === 0) return
   const report = renderReport(reportInputOf(run)).join("\n")
   expect(report).toMatch(/optimiser is weak|a constraint binds|the scorer is wrong/)
 })
 
 test("a run against the scaffolded board does not report B1-frozen satisfied", async () => {
-  const run = await place({ board: "boards/pultec-low-boost", rules: loadRules() })
+  const run = await place({ board: "boards/pultec-low-boost", rules: loadRules(), arm: ARM })
   const report = renderReport(reportInputOf(run)).join("\n")
   expect(report).not.toMatch(/B1-frozen/)
   expect(report).toMatch(/B1-current/)
@@ -3888,14 +4421,14 @@ test("the run starts from the import-placed board, not from the hand layout", ()
   // B1-frozen is stated "starting from the import-placed board". Seeding from
   // the owner's own layout would be reproducing a result by copying it.
   const spawned: string[][] = []
-  place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules() }, recordingSpawn(spawned))
+  place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules(), arm: ARM }, recordingSpawn(spawned))
   expect(spawned.some((args) => args[0] === "--import")).toBe(true)
   for (const args of spawned) expect(args).not.toContain(FROZEN)
 })
 
 test("the run leaves boards/** byte-identical", () => {
   const before = gitStatusPorcelain("boards/")
-  place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules() })
+  place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules(), arm: ARM })
   expect(gitStatusPorcelain("boards/")).toEqual(before)
 })
 
@@ -3906,7 +4439,7 @@ test("the per-seed results are reported as a rate, and the rate changes no verdi
   // becoming a criterion the implementing agent invented, which is the
   // governing invariant's failure.
   const rules = loadRules()
-  const run = await placeAcrossSeeds({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules })
+  const run = await placeAcrossSeeds({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules, arm: ARM })
   expect(run.perSeed.length, "every seed in the reviewed set is run").toBe(rules.seeds.length)
   for (const seed of run.perSeed) {
     expect(rules.seeds).toContain(seed.seed)
@@ -3926,7 +4459,7 @@ test("the rate is not an acceptance condition: the verdict is the single run's",
   // code, or the rate has silently become a criterion.
   const rules = loadRules()
   const one = await placeAcrossSeeds(
-    { frozen: FROZEN, netlist: FROZEN_NETLIST, rules }, scriptedSpawn(FIRST_SEED_ONLY_REACHES),
+    { frozen: FROZEN, netlist: FROZEN_NETLIST, rules, arm: ARM }, scriptedSpawn(FIRST_SEED_ONLY_REACHES),
   )
   expect(one.reached, "the script must make exactly one seed reach the target").toBe(1)
   expect(one.perSeed.length).toBeGreaterThan(1)
@@ -4163,11 +4696,11 @@ test("after adoption, make check is the verdict and a failure is a reverted adop
 | M1.6 batch via `CaptureBoardDump` | 9 |
 | M1.7 / `HC8` | 3, 4, 5 |
 | publishing M1.3/M1.4 | 1 |
-| `P0`–`P4` | 11, 16, 17, 20, 20 |
-| §5.1 replacing `--import`'s placer | 16 (seed by construction from the import-placed board) |
+| `P0`–`P4` | 11, 16 (`P1` as three arms with a random control, run at 18), 17, 20, 20 |
+| §5.1 replacing `--import`'s placer | 16 (three starting arms, of which the construction is one and `--import`'s own placement is another, **measured against a random control** rather than replaced by assertion; the run is Task 18's final step) |
 | §5.2 the two levers; the no-fourth-join-mechanism correction | 3 (the edge set), 17 and 18 (the moves) |
-| §5.4 the `SIP5` as a fixed sub-arrangement | 16 |
-| `R1` strict rules, `R2` generate-and-grade, `R3` declared ranking, `R4` two-condition termination, `R5` run directories, `R6` hashed manifests, `R7` seeded determinism, `R8` injected spawn, `R9` the Makefile pattern | 10, 14, 15, 19, 13, 13, 18/21, 16, 23/24 |
+| §5.4 the `SIP5` as a fixed sub-arrangement | 16 (the constructed arm; it goes with that arm if the arm is retired) |
+| `R1` strict rules, `R2` generate-and-grade, `R3` declared ranking, `R4` two-condition termination, `R5` run directories, `R6` hashed manifests, `R7` seeded determinism, `R8` injected spawn, `R9` the Makefile pattern | 10, 14, 15, 19, 13, 13, 16/18/21 (`seededPrng` is declared in 16, used by 18, compared by 21), 16, 23/24 |
 | `N1`–`N5` do-not-reuse | nothing to implement; honoured by using an integer grid, no mm geometry, no KRT, no `policy.ts`, and never writing a `.vrt` |
 | `E1`, `E2`, `E3`, plateau moves | 18, 17 |
 | `V1`, `V2` | 12 |
@@ -4184,6 +4717,7 @@ test("after adoption, make check is the verdict and a failure is a reverted adop
 | `HC8`'s trust boundary stated where the independence is claimed | 3 (the module comment and `pipeline-verification.md`), 20 (printed beside an `HC8` pass) |
 | Integration checkpoints — the grader against four hand-laid boards; the chain end to end | **Checkpoint 1** (Task 14, final step), **Checkpoint 2** (Task 20, final step) |
 | The seed-set success rate, **diagnostic and bound to no threshold** | 23 |
+| The starting-point comparison — **three arms with random as the control**, the declared decision variable and the retirement rule | 16 (the arms, the harness, the rule), 18 (the run and the recorded result) |
 | The `S1` boundary — the five layouts are the parent's row, not a milestone here | the scope boundary at the top, and "does NOT deliver" |
 
 ### Gaps — specified things with no task, each recorded rather than filled
@@ -4196,7 +4730,8 @@ test("after adoption, make check is the verdict and a failure is a reverted adop
 6. **Nothing in CRITERIA is a RELIABILITY criterion, and Task 23's seed-set success rate is not one either.** `B1-frozen` is a single-run criterion, and the suite has nothing that says how often a run should reach its target. The rate Task 23 reports is **explicitly a diagnostic**, bound to no threshold, changing no verdict and no exit code, because a threshold the implementing agent invents is the governing invariant's failure. **The gap is that the suite has no reliability criterion at all** — a question for the owner, and one he can now answer with measurements instead of a guess, which is the point of reporting the rate before anyone asks for a bar.
 7. **`HC10`'s placement predicate is decided by this plan, the way Task 2 decides its footprint predicate**, and it is load-bearing in the same way. The predicate is: a placed part's `PIN` holes must occupy exactly the strips its footprint's row decomposition predicts, consistent with the part's `DIRECTION`. **What the suite does not state** is how a `DIRECTION` of `E` relates to one of `W` for a symmetric footprint, or whether a single-row part is compatible in every direction — both are decided in Task 14 as "yes, because a single row lies along any strip it is on", and a reviewer who disagrees should reject Task 14's placement half rather than Task 2.
 8. **"Trimming to the extent preserves connectivity" is this plan's reading of `HC6`'s intent, not a criterion in the suite.** `HC6` says the layout *"fits the stock"* and names the occupied extent as the quantity; it does not say the trimmed board must still conduct. That is implied by *"can be cut from that board"* and the implication is where the verification comes from, but **it is an implication and it is labelled as one**: if the owner reads `HC6` as a pure size comparison, `trimPreservesConnectivity` becomes a reported measurement rather than part of the `HC6` verdict, and the change is one conjunct in `constraints.ts`.
-9. **Limits `H-1`, `H-3`, `H-7`, `H-12`** are undetermined in the suite and remain so: whether the span data covers every family (the module refuses by name where it does not), whether `C = 0` is attainable (*"run P1 once M1.4 and M1.5 exist, and read the result"* — Task 16 is that run), `PlaceFloaters`' scaling, and where the two definitions of `S_occ` diverge (`V2`'s per-candidate identity check is what would surface it). Each is named in "does NOT deliver" or in the task that would read it.
+9. **The suite says nothing about where a search should start, and this plan does not fill that in — it measures it.** `P1` names a construction and CRITERIA names no criterion about a starting point at all, so Task 16 runs the construction as one arm of three against a random control and records the result. Two things are worth a reviewer's eye. **The quality mark is borrowed, not authored**: it is `B1-frozen`'s own clause on the frozen fixture, and for any other board it is a required parameter the harness refuses without, because a bar this agent chose would be an acceptance criterion authored by the producing agent. **The retirement rule is an engineering decision about the pipeline's internals and not a criterion about a layout**: it is declared before the run, it changes no `outcome`, `bound`, verdict or exit code, and what it produces is a `retireable` list nothing in the pipeline reads. **No arm is selected by this plan**; the arm is a required selection with no default, and if the owner reads the retirement rule as his to set rather than the plan's to declare, `RETIREMENT` and `retireable` are the two things to reject and the per-arm table survives them.
+10. **Limits `H-1`, `H-3`, `H-7`, `H-12`** are undetermined in the suite and remain so: whether the span data covers every family (the module refuses by name where it does not), whether `C = 0` is attainable (*"run P1 once M1.4 and M1.5 exist, and read the result"* — Task 16's constructed arm is the construction that would reach it and **Task 18's final step is the run that reads it**, now against two other arms rather than alone), `PlaceFloaters`' scaling, and where the two definitions of `S_occ` diverge (`V2`'s per-candidate identity check is what would surface it). Each is named in "does NOT deliver" or in the task that would read it.
 
 ### Placeholder scan
 
@@ -4239,6 +4774,20 @@ code**, so this revision scans bodies as well as words.
 
 One deliberate forward reference, which is not a placeholder because it names the task and refuses rather than skips: Task 17's `applyMove` **throws** for `{ kind: "cluster" }`, naming Task 18, until Task 18 implements it.
 
+**Task 16's rewrite was scanned the same way, both ways, and three of its tests carry a guarantee
+weaker than the property they are about.** All three say so in their own comments rather than in
+their names: the no-default-arm test establishes that the selector refuses and not that the type
+requires (the type checker is what proves that half); the draw test establishes the index map over
+the admissible set and not that the stream is uniform; and `evaluationsToCross` is **named a
+crossing**, because an `F` at the mark's objective is necessary for the mark and not sufficient —
+`C = 4` with four wire bridges scores 5 at `ρ_w = 0.25` and fails `B1-frozen`'s `W = 0`. Three
+further shapes the scan went looking for and did not find: a loop over a collection that could be
+empty (every loop over `SEED_ARMS` asserts its length first, and the draw test asserts the
+admissible set has more than two members), a scripted table that could answer a row it has none
+for (each throws), and a text scan standing in for a structural claim (there is none in this task).
+**Task 16's second step is a comparison and not a construction, so there is no step whose only
+output is the plan's own opinion.**
+
 ### The mislabelled-test audit, in full
 
 Every test whose name or comment claimed more than its body established. Two were the review's
@@ -4273,6 +4822,9 @@ Checked every exported name that crosses a task boundary. Resolved inconsistenci
 
 - **`CheckReport` does not exist in `tools/perfboard/check.ts`.** An earlier draft of Task 14 said it did. Corrected: `check.ts` returns `CheckRun { status, output }` — raw concatenated output, deliberately — and Task 14 adds `parseCheckReport(run: CheckRun): CheckReport`, with the absent-heading rule from `check.ts`'s own comment.
 - **`reportLines` already exists** in `tools/cli/perfboard-support.ts`. Task 20's renderer is therefore `renderReport`, not `reportLines`.
+- **`SeedInput` keeps its name and changes two fields**: `arm: SeedArm` and `seed: number` are required, `assignment` is gone, and `seedCandidate` dispatches on the arm. Tasks 17, 18 and 23 import `seedCandidate` as before.
+- **`seededPrng` has one owner, and it is Task 16**, because the random arm is its first user; Task 18 imports it. The same resolution as `BARE_LITERAL`'s, for the same reason: one algorithm declared twice is one claim in two places, and two runs claiming one seed is the exact failure.
+- **`SeedArm` is declared in `seed.ts`** and imported by `run-dir.ts`'s `CanonicalInputs` (Task 13) and by `SearchInput` (Task 18). It is an enumerated union rather than a bare string for the reason `GeometryRefusal` and `FeatureKind` are: a set that can grow silently is a set with an unchecked case, and `parseSeedArm` is where text becomes one.
 - **`Pin` collides**: `tools/guide/dump.ts` exports `Pin { pin, row, col }` and `tools/perfboard/acquire.ts` exports `Pin { repo, commit }`. Both are pre-existing and neither is renamed; every task that imports one imports it with its module path and no task imports both into one file. Task 16's `SeedInput` therefore does not name a bare `Pin`.
 - **`SpawnVeroroute`** is declared once. Task 16 re-exports whatever `tools/perfboard/check.ts` already declares rather than declaring a second spawn type; if `check.ts` declares none, Task 16 declares it and Tasks 17, 18, 23 and 24 import it from there.
 - **`occupiedStrips` / `segmentJoins` / `clustering`** live in `tools/stripboard/targets.ts` only (Task 11), and Task 12 imports them. The identity has one implementation, which is what `V2` is checking against.
@@ -4324,9 +4876,9 @@ the printed tests on paper.** This is the pass the previous revision ran over *n
    or the both-axes test proves nothing; computed, it has ten off-grid gaps grouped by `y` and four
    grouped by `x`, so it genuinely refuses either way.
 
-- **No new name collides with an existing export.** Checked against `lib/kicad/`, `tools/guide/`, `tools/perfboard/` and `tools/cli/`: `FabricationExtent`, `RequiredFeature`, `FeatureKind`, `TrimVerdict`, `GeometryRefusal`, `GridAccommodation`, `PatternEligibility`, `FootprintPads`, `SeedSweep`, `importClosure`, `readFootprintPads`, `withinExtent` and `preparedExtentsHoles` are all new. **`Bounds`** (Task 7) remains the only name in the extent neighbourhood that already existed, and `FabricationExtent` is deliberately *not* called `Bounds2` or `OccupiedExtent`: the two are different quantities and a near-identical name is how they would come to be used interchangeably.
+- **No new name collides with an existing export.** Checked against `lib/kicad/`, `tools/guide/`, `tools/perfboard/` and `tools/cli/`: `FabricationExtent`, `RequiredFeature`, `FeatureKind`, `TrimVerdict`, `GeometryRefusal`, `GridAccommodation`, `PatternEligibility`, `FootprintPads`, `SeedSweep`, `importClosure`, `readFootprintPads`, `withinExtent` and `preparedExtentsHoles` are all new, as are Task 16's `SeedArm`, `SEED_ARMS`, `parseSeedArm`, `admissiblePositions`, `QualityMark`, `markObjective`, `ArmRun`, `ArmRunner`, `meetsMark`, `evaluationsToCross`, `SeedRun`, `ArmResult`, `ArmComparison`, `compareSeedArms` and `RETIREMENT`. **`ArmResult` is deliberately not `SeedResult`** and `SeedRun` is not `ArmRun`: an arm has many seeds and a seed has one run, and a name that blurred the two is how a rate would come to be computed over the wrong denominator. **`Bounds`** (Task 7) remains the only name in the extent neighbourhood that already existed, and `FabricationExtent` is deliberately *not* called `Bounds2` or `OccupiedExtent`: the two are different quantities and a near-identical name is how they would come to be used interchangeably.
 
-### Three things a reviewer should push back on if they disagree
+### Four things a reviewer should push back on if they disagree
 
 **1. `HC10`'s predicate, across both halves.** Task 2 decides the footprint rule — grid-multiple
 separation **across** the strips, and an off-grid pitch **along** a row admitted only on a
@@ -4356,3 +4908,16 @@ makes it separably rejectable.
 rather `HC6` not refuse on an annotation, the honest fix is in the fork**: decompose `BOUNDS` into
 its three sources, which is a larger change than M1.1 and is recorded as a finding rather than
 taken. Rejecting the union sends the work there, not into a looser `HC6`.
+
+**4. The construction being an arm rather than the start.** `P1` says *"seed by construction"*, and
+the previous revision read that as settled. This one makes it one of three arms against a random
+control, on the owner's three questions: the start only buys the first climb once restarts are
+cheap, nothing here establishes which start is better, and a construction whose belief is wrong is
+a worse-than-random start wearing a principled costume. **If the owner reads `P1` as the decision
+already taken, the thing to reject is the experiment, not the construction** — the constructed arm
+is the previous revision's content intact, so rejecting the comparison leaves `assignStrips`, the
+`SIP5` sub-arrangement and the span refusal exactly where they were, and what goes is
+`seed-compare.ts`, the two other arms and Task 18's step 5. **If instead he reads the retirement
+rule as his to set, reject `RETIREMENT` and `retireable` and keep the per-arm table**: the
+measurement and the rule for acting on it are separable, and the plan declares the rule before the
+run precisely so that it can be argued with while it still costs nothing.
