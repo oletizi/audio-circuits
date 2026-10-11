@@ -58,8 +58,6 @@ import path from "node:path"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { SEED_ARMS, type SeedArm } from "./seed.ts"
 
-export type { SeedArm }
-
 /**
  * Every fact that determines a run's RESULT, and nothing that only
  * describes its execution. `canonicalHash` hashes exactly this object plus
@@ -167,26 +165,60 @@ function sortKeysDeep(value: unknown): unknown {
 }
 
 /**
+ * Every `CanonicalInputs` string field that identifies something - a hash or
+ * a commit - rather than describing it. All eight are refused empty, for the
+ * same reason `builtCommit` alone used to be: a blank value here is never an
+ * accident of "not yet known" written honestly, because this type has no
+ * such spelling - it is either a caller papering over a value it does not
+ * have with `?? ""`, and that caller can do it to any of the eight with the
+ * same consequence, a run recording agreement with the world that it does
+ * not have.
+ */
+const REQUIRED_NONEMPTY_INPUT_FIELDS: readonly (keyof CanonicalInputs)[] = [
+  "candidateSha256",
+  "rulesSha256",
+  "netlistSha256",
+  "spanDataSha256",
+  "pinPatternSha256",
+  "verorouteCommit",
+  "builtCommit",
+  "pipelineCommit",
+]
+
+/** The refusal for one empty required field - `builtCommit` keeps its fuller, named reason. */
+function emptyInputFieldRefusal(field: keyof CanonicalInputs): string {
+  if (field === "builtCommit") {
+    return (
+      "canonicalHash: builtCommit is the empty string. tools/perfboard/acquire.ts's " +
+      "builtCommit() returns undefined for a build it cannot identify, and an unknown " +
+      "build is never the pinned commit - that is acquire.ts's own rule. Hashing \"\" " +
+      "would record an unresolved build as if it agreed with verorouteCommit; resolve " +
+      "what was actually built, or carry the unresolved state some other way than an " +
+      "empty string."
+    )
+  }
+  return (
+    `canonicalHash: ${field} is the empty string. It is not defaulted: this field ` +
+    "identifies something - a hash or a commit - and a blank value records a " +
+    "provenance claim that says nothing, which is the same hazard builtCommit's own " +
+    `refusal exists for. Compute the real value ${field} is supposed to carry, or ` +
+    'carry "not yet known" some other way than an empty string.'
+  )
+}
+
+/**
  * Hash exactly `{ inputs, metrics }`, keys sorted, nothing else admitted.
  *
- * Refuses an empty `builtCommit` rather than hashing it: `acquire.ts`'s own
- * rule is that `builtCommit()` returns `undefined` for a build it cannot
- * identify, and an unknown build is never the pinned commit. A caller
- * holding that `undefined` must decide what it means for THIS run rather
- * than paper over it with `?? ""` and let an unknown build reach the hash
- * looking like agreement with the pin - which is what this refusal exists
- * to stop before it is ever computed into the one proof the run keeps.
+ * Refuses any of `CanonicalInputs`' eight identifying string fields when it
+ * is the empty string, rather than hashing it - see
+ * `REQUIRED_NONEMPTY_INPUT_FIELDS` above for why all eight, not just
+ * `builtCommit`.
  */
 export function canonicalHash(inputs: CanonicalInputs, metrics: CanonicalMetrics): string {
-  if (inputs.builtCommit === "") {
-    throw new Error(
-      "canonicalHash: builtCommit is the empty string. tools/perfboard/acquire.ts's " +
-        "builtCommit() returns undefined for a build it cannot identify, and an unknown " +
-        "build is never the pinned commit - that is acquire.ts's own rule. Hashing \"\" " +
-        "would record an unresolved build as if it agreed with verorouteCommit; resolve " +
-        "what was actually built, or carry the unresolved state some other way than an " +
-        "empty string.",
-    )
+  for (const field of REQUIRED_NONEMPTY_INPUT_FIELDS) {
+    if (inputs[field] === "") {
+      throw new Error(emptyInputFieldRefusal(field))
+    }
   }
   const payload = JSON.stringify(sortKeysDeep({ inputs, metrics }))
   return createHash("sha256").update(payload, "utf8").digest("hex")
@@ -201,8 +233,27 @@ export function runDirectory(board: string, stamp: string): string {
  * Write `run.json` into `dir`, creating it if absent, holding exactly the
  * manifest's two top-level blocks - `canonical` and `provenance` - and
  * nothing a later reader has to reconcile against a third source.
+ *
+ * REFUSES A SELF-INCONSISTENT MANIFEST RATHER THAN WRITING IT. The caller
+ * hands over both `inputs`/`metrics` and the hash it claims those hash to;
+ * this function is in a position to check that claim before anything
+ * reaches disk, and "refuse rather than guess" means it does - a bad hash
+ * written here would otherwise sit undetected until some later reader
+ * called `readManifest`, in a different process, a different task, or
+ * Task 24's gate, long after the run that produced it has finished and the
+ * chance to diagnose it has gone. Failing at the write is failing where the
+ * fault is.
  */
 export function writeManifest(dir: string, manifest: RunManifest): void {
+  const expected = canonicalHash(manifest.canonical.inputs, manifest.canonical.metrics)
+  if (manifest.canonical.hash !== expected) {
+    throw new Error(
+      `writeManifest: the manifest's recorded hash ${manifest.canonical.hash} disagrees with ` +
+        `${expected}, computed from this same call's own inputs and metrics. A manifest is ` +
+        "never written in a state that disagrees with itself; recompute the hash with " +
+        "canonicalHash(inputs, metrics) rather than supplying one by hand.",
+    )
+  }
   fs.mkdirSync(dir, { recursive: true })
   const file = path.join(dir, MANIFEST_BASENAME)
   fs.writeFileSync(file, `${JSON.stringify({ canonical: manifest.canonical, provenance: manifest.provenance }, null, 2)}\n`)
