@@ -165,7 +165,24 @@ parsing the `.vrt` directly, and that is **an honest limit rather than a plan** 
 `.vrt` is a binary `QDataStream` (PIPELINE N5), which is already the reason the sibling
 repository's s-expression text tooling does not transfer here.
 
-**HC8's geometry contract, version 1.** Every dump line the reconstruction consumes, its fields,
+**And it consumes one line that is provenance rather than geometry, which this paragraph did not
+cover until version 2 (2026-10-11).** `PAD <name> … FROM <ref>.<pin>` records a renaming VeroRoute
+performed at import, expanding an off-board `PADS<n>` footprint into *n* one-hole pads that carry
+board names. Without it HC8 cannot grade `B1-frozen`'s own board: the netlist export names
+`SW_LO_BOOST.3` where the dump's `PIN` line names `SW_LO_BOOST_3.1`, on ten of twenty-seven pins,
+and a reconstruction that cannot match a pin to its net has nothing to compare.
+
+Reading it stays inside the boundary above, because `FROM` is produced by none of
+`GetBoardMembership`, the `NODE` lines or the nodeIds — it is the same class of fact as
+`PIN <name> <pin>`, which HC8 already must trust. **But "physical geometry" is no longer the whole
+of what HC8 consumes, and the widening is real rather than cosmetic:** a coordinate is a
+measurement, while `FROM` is a producer-asserted correspondence, so a swapped `FROM` is a shared
+defect of exactly the kind H-13 already covers. It is used for **pin identity only and adds no
+edge** — the copper reconstruction never reads a `PAD` line, and the mapping builds a lookup and
+performs no union. The correspondence was also derivable from the `<ref>_<n>` suffix, so reading
+the recorded field is the **more** conservative of the two available choices, not a shortcut.
+
+**HC8's geometry contract, version 2.** Every dump line the reconstruction consumes, its fields,
 and the fork commit that first emitted it. Each was verified against the pinned fork
 (`veroroute.pin`, `2d67ec6`) on 2026-10-10 by running `--dump-board` and by reading
 `Src/Headless_dump.cpp`, `Src/Headless_dump_pins.cpp` and `Src/Headless_dump_wires.cpp`; every
@@ -179,6 +196,11 @@ commit below is an ancestor of the pin.
 | `CUT <row>,<col>,<nodeId> <row>,<col>,<nodeId>` | **both positions only**; both `nodeId` fields are discarded | `317e6b4`, positions corrected to ground truth in `e5fdfcf` |
 | `SOLDER <row>,<col> <row>,<col>` | the two holes a derived bridge joins | `317e6b4` |
 | `WIRE <name> <FLOATING\|AT <row>,<col>> ENDS <end> <end>` | the two ends a wire joins; a `FLOATING` wire joins nothing | `121dca1` |
+| `PAD <name> … FROM <ref>.<pin>` | **pin identity only, and no edge** — the netlist name of a pad VeroRoute renamed when it expanded an off-board `PADS<n>` into *n* one-hole pads. Added in **version 2**, 2026-10-11. | — |
+
+**`PAD` is contracted but NOT required present**, and the distinction is load-bearing: a board with
+no off-board parts emits no `PAD` line, and refusing it would have been a worse break than the one
+version 2 fixes. Three of the four `B1-frozen` agreement boards have zero `PAD` lines and grade.
 
 **The one thing in the contract that is a definition rather than data**, stated precisely because
 nothing in the dump states it: **two holes are electrically connected by an uncut strip when they

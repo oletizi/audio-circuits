@@ -31,7 +31,8 @@ reference netlist does, on four boards nobody here laid out.
 The low-boost three are FROZEN, and that is the whole point of them. B1-frozen
 is stated against "the exact electrical model, footprints and board dimensions
 the hand layout was built for - 9 nets, 27 pins", and today's scaffolded
-low-boost model is a different circuit: 14 nets and 40 pins. Regenerating the
+low-boost model is a different circuit: 14 nets and 50 pin entries, of which 40
+are non-pad - see the note on that 50 below. Regenerating the
 export would quietly restate the benchmark against the newer circuit and report
 the result as a comparison with a 9-net hand layout.
 
