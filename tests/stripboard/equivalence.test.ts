@@ -7,6 +7,30 @@ import {
 import { importClosure } from "./import-closure.ts"
 
 /**
+ * OWNER-BLOCKED NOTE (OB5) - TASK 6 DELETES THIS WHOLE COMMENT BLOCK.
+ *
+ * Every board in this file is HAND-WRITTEN DUMP TEXT. That is the module's
+ * real input seam, so the tests below prove both of `HC8`'s directions: a
+ * reference net split across two copper components, and two reference nets
+ * inside one.
+ *
+ * WHAT THEY DO NOT PROVE, and nothing here may be read as proving: that a
+ * REAL VeroRoute board carrying the short exits 0 under `--check` while
+ * `HC8` rejects it. That is the end-to-end claim - "`HC8` detects a class of
+ * defect no pre-existing check detects at all" - and it is UNPROVEN. No
+ * board was ever run through `--check` to establish it, because no verb in
+ * the pinned fork edits a cut (`DeriveCuts` derives them; the fifteen
+ * shipped verbs include no cut editor), so a board with the separating `CUT`
+ * removed cannot currently be produced at all.
+ *
+ * It is Task 6's to prove, and Task 6 is owner-blocked pending the owner's
+ * choice between the three routes CRITERIA records. When Task 6 lands the
+ * real `.vrt` with its provenance and its end-to-end assertion, it DELETES
+ * THIS BLOCK - supersede means delete - rather than leaving a stale caveat
+ * beside a claim that has since been measured.
+ */
+
+/**
  * Two strips, three nets, one cut on strip 1 between columns 1 and 2. R1
  * bridges the two strips; R2 sits along strip 1 straddling the cut, which is
  * the ordinary stripboard idiom and not a short.
@@ -93,9 +117,21 @@ test("an OPEN is rejected, naming the net and the groups its pins fell into", ()
 
 test("a SHORT is rejected, naming BOTH nets - the direction no pre-existing check looks for", () => {
   // Remove the separating cut and `mid` and `out` share strip 1. This is the
-  // defect class CRITERIA's HC8 exists for: VeroRoute's membership still
-  // partitions the pins by what each component records, so both nets read
-  // complete and --check exits 0.
+  // defect class CRITERIA's HC8 exists for.
+  //
+  // WHAT THIS TEST PROVES AND WHAT IT DOES NOT, stated because an earlier
+  // revision of this comment asserted a measurement nobody took. It proves
+  // that the reconstruction finds two reference nets in one copper component
+  // and rejects the board naming both. The board is HAND-WRITTEN DUMP TEXT.
+  //
+  // IT DOES NOT PROVE that a real VeroRoute board in this state exits 0
+  // under --check while HC8 refuses it. That claim is UNPROVEN: no board was
+  // run through --check to establish it, and none can currently be produced,
+  // because no verb in the pinned fork edits a cut. CRITERIA's reasoning for
+  // why membership would still read both nets complete is an argument from
+  // GetBoardMembership's source, not a measurement, and this test is not
+  // evidence for it. Task 6 owns the proof and is owner-blocked; see the
+  // OB5 note at the top of this file, which Task 6 deletes.
   //
   // MUTATION RUN: with `shortFindings` returning `[]` unconditionally, this
   // fails at `expect(verdict.equivalent).toBe(false)` ("Expected: false /

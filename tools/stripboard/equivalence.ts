@@ -16,9 +16,15 @@
  *     is the easier half.
  *   - a SHORT: one copper component holding pins of two or more reference
  *     nets. A completeness check is STRUCTURALLY BLIND to this: joining two
- *     nets leaves both of them reading complete, every pin keeps the node id
- *     its component records, and `--check` exits 0. Nothing in HC1-HC7 looks
- *     for one at all, and that is the whole reason this gate exists.
+ *     nets leaves both of them reading complete, so a check that only asks
+ *     whether each net is whole has nothing to report. Nothing in HC1-HC7
+ *     looks for one at all, and that is the whole reason this gate exists.
+ *
+ *     THAT A REAL BOARD IN THAT STATE EXITS 0 UNDER `--check` IS CRITERIA'S
+ *     ARGUMENT FROM `GetBoardMembership`'S SOURCE, NOT A MEASUREMENT. It is
+ *     unproven and is Task 6's to prove; no verb in the pinned fork edits a
+ *     cut, so no such board can currently be produced. Nothing here may be
+ *     read as evidence for it.
  *
  * THE PINS ARE PARTITIONED, NEVER COUNTED. `CopperGraph.componentCount`
  * counts canvas strips - it is derived over every hole on the board, so an
@@ -274,8 +280,9 @@ export function describeVerdict(verdict: EquivalenceVerdict): readonly string[] 
     const nets = short.nets.map((net) => `"${net}"`).join(" and ")
     lines.push(
       `SHORT: reference nets ${nets} share one copper component, witnessed at hole ` +
-        `${short.hole}. No completeness check detects this: joining two nets leaves BOTH of ` +
-        "them reading complete, so --check exits 0 and only this reconstruction sees it.",
+        `${short.hole}. A completeness check cannot detect this: joining two nets leaves BOTH ` +
+        "of them reading complete, so a check that only asks whether each net is whole has " +
+        "nothing to report.",
     )
   }
   return lines

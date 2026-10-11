@@ -253,3 +253,17 @@ on the forbidden module — loud, but naming the wrong fault.
   all of them.
 - Whether the **reference netlist** is right. `HC8` compares the copper against
   that netlist; both being wrong the same way is not something it can see.
+- **That a real board carrying a short exits 0 under `--check` while `HC8`
+  rejects it.** This is the end-to-end form of the claim that `HC8` detects a
+  class of defect no pre-existing check detects at all, and it is **unproven**.
+  Both of `HC8`'s directions are driven from hand-written dump text, which is
+  the module's real input seam, but no board was run through `--check` to
+  establish the end-to-end half, and none can currently be produced: cuts are
+  derived by `DeriveCuts` and **no verb in the pinned fork edits one**, so a
+  board with the separating `CUT` removed cannot be written. `CRITERIA`'s
+  reasoning that `GetBoardMembership` would still read both nets complete is an
+  argument from that function's source, not a measurement. The proof belongs to
+  Task 6, which is owner-blocked (`OB5`) pending the owner's choice between the
+  three recorded routes; the `OB5` note at the top of
+  `tests/stripboard/equivalence.test.ts` says the same thing beside the tests,
+  and Task 6 deletes it when the real fixture lands.
