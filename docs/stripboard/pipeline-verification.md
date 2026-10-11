@@ -309,6 +309,7 @@ branch, comparing `BOUNDS` against the extent of the holes the dump enumerates
 | `transistor-preamp-staged` | 30 x 39 | `2,1 27,37` | `3,2 27,31` | `3,2 27,32` |
 | `transistor-preamp-feedback` | 16 x 18 | `0,0 15,17` | `0,1 15,16` | `0,0 15,16` |
 | `pultec-low-boost` | 14 x 32 | `3,3 10,28` | `3,3 10,28` | `3,3 10,28` |
+| `pt2399-core` | 17 x 36 | `0,0 16,35` | `0,0 16,35` | `0,0 16,35` |
 
 Three things follow, and each is a thing a later task would otherwise assume:
 
@@ -319,9 +320,9 @@ Three things follow, and each is a thing a later task would otherwise assume:
 - `BOUNDS` is nonetheless the **only** dump-readable source of a part's extent
   across the strips. A `PART` line carries a column span and no row span, so a
   multi-row footprint's row extent appears nowhere else.
-- They can also coincide exactly, as on `pultec-low-boost`. A test that compared
-  the two on one board and found them equal would therefore conclude the wrong
-  thing about both.
+- They can also coincide exactly, as on `pultec-low-boost` and `pt2399-core`. A
+  test that compared the two on one board and found them equal would therefore
+  conclude the wrong thing about both.
 
 ### 2.2 The decomposition that was considered and not made — a finding for the owner
 
@@ -385,3 +386,39 @@ What does change: **a dump captured as a golden file gains a line in its middle
 rather than at its end.** Any comparison of a committed capture against a freshly
 generated one will differ by that line once the pin moves, which is a fact about
 `tests/fixtures/*.dump` here and not about the fork.
+
+### 2.6 `DIRECTION` is the half of that which can actually refuse
+
+The inserted `BOUNDS` line is the cheap half, and framing the pin-move problem
+around it understates the risk. **A new line an old parser never asks for is
+ignorable; a missing field on a line it already parses is a refusal.** Every
+committed dump text in this repository — the five `.dump` fixtures and about
+eight hand-written dump literals in tests — carries **placed** `PART` lines with
+no `DIRECTION` field, because they were captured before the field existed. Two
+of those captures are frozen evidence with provenance and may not be
+regenerated.
+
+So the contract "`direction` is `undefined` exactly when the part is floating",
+which the brief states and which the fork's own reader first enforced with a
+throw, **would have refused all of them at once the moment the pin advanced** —
+a mass failure of files nobody is allowed to change, triggered by a one-line
+change to `veroroute.pin`.
+
+The rule that replaces it, and it applies to the repository-side parser just as
+much as to the fork's:
+
+- `direction` is **optional on a placed part too**, and the reason is recorded
+  beside the type: a capture is older than the grammar by construction.
+- `bounds` is optional in the same way, which is already the brief's
+  instruction for step 7.
+- **The refusal belongs to the consumer that acts on the value**, not to the
+  reader of the text: Task 15's `A_occ` for `bounds`, Task 8's effect check and
+  Task 14's `HC10` for `direction`. The fork's reader now shows the shape —
+  `maybeBoundsOf` answers "is it there", `boundsOf` and `usableDirection` refuse
+  by name for a caller that needs an answer.
+- **What is still refused is the contradiction**: a `FLOATING` part carrying a
+  direction, which no build prints and which would mean two fields on one line
+  disagree.
+- **`UNKNOWN` is received, never cast and never normalised to `W`.** It is
+  narrowed by comparison, and the caller that acts on a direction refuses it by
+  name — which is exactly what the dump itself does rather than guessing.
