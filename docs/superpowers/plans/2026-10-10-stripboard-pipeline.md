@@ -1385,6 +1385,16 @@ const UNCUT = WHOLE.split("\n")
  * `toStartWith` and read the explanation with a separate `toContain`. See the
  * note on the floated-pin test, which is where the loose form was measured
  * failing to discriminate.
+ *
+ * THE MATCHER DIFFERS BY HARNESS, AND THE RULE IS ABOUT ANCHORING, NOT ABOUT
+ * `toStartWith`. This repository runs `bun test`, whose runner provides
+ * `toStartWith` natively — verified by running it. **The vendored fork runs
+ * vitest and has no `jest-extended`, so `toStartWith` does not exist there**;
+ * Task 8 anchored by first-line equality instead, which satisfies the rule
+ * exactly. Any assertion that pins the opening clause and nothing looser will
+ * do. Recorded because the controller's dispatches repeated "anchor with
+ * `toStartWith`" as though it were universal, and in half the codebase it is
+ * not even available.
  */
 function refusalFrom(call: () => unknown): string {
   try {
@@ -3264,6 +3274,19 @@ test("a plateau walk under this order cannot cycle", () => {
 ---
 
 ### Task 16: P1 — three starting arms, with random as the control
+
+> **ROTATION IS UNAVAILABLE ON AN IMPORT-PLACED BOARD. Move before you turn.** Measured in
+> Task 8 and reproduced in its review, across all four import-placed Pultec boards: **rotatable 0,
+> refused 52** — hi-boost 0/11, hi-cut 0/12, low-cut 0/8, mid 0/21. `Board::RotateComps` turns
+> about the rect's centre, so a part near the top edge lands at a negative row and the board pans,
+> even when the rows it would occupy are free; the verb refuses, correctly, because accepting the
+> pan renumbers every hole and moves parts nobody named.
+>
+> **Two different refusals, and the move set must handle both:** shallow parts refuse with the pan,
+> deeper ones with the shared `FLOATING` refusal. Note the tempting wrong summary — *"every part is
+> in row 0"* — is **false in detail** (`board_terminals` sits at row 1 on three boards and
+> `pultec-mid` spans rows 0–3) and would send an implementer looking for a row-0 special case that
+> does not exist. The constraint is general. Task 17's move set and Task 18's escapes inherit it.
 
 **Files:** create `tools/stripboard/seed.ts` and `tools/stripboard/seed-compare.ts`; test `tests/stripboard/seed.test.ts`, `tests/stripboard/seed-compare.test.ts`.
 
