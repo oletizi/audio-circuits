@@ -1305,29 +1305,51 @@ test("the graph is built without reading NODE lines or any nodeId - the independ
 **Files:** create `tools/stripboard/equivalence.ts`, `tests/stripboard/import-closure.ts`; test `tests/stripboard/equivalence.test.ts`.
 
 **Interfaces:**
-- *Consumes:* `copperGraph`, `pinHoles`, `holeKey`, `HoleKey`, `GEOMETRY_CONTRACT_VERSION` from Task 3; `BoardDump` from `tools/guide/dump.ts`.
+- *Consumes:* `boardGeometry`, `copperGraph`, `pinHoles`, `holeKey`, `HoleKey`, `GEOMETRY_CONTRACT_VERSION` from Task 3. **Not `parseBoardDump` and not `BoardDump`:** this module reaches the parser transitively through `copper.ts` and never names it, which is what the closure test below asserts.
 - *Provides:*
   - `ReferenceNets = ReadonlyMap<string, readonly string[]>` — net name to `ref.pin` members, **from the netlist export, upstream of VeroRoute entirely**
   - `OpenFinding { readonly net: string; readonly groups: readonly (readonly string[])[] }`
   - `ShortFinding { readonly nets: readonly string[]; readonly hole: HoleKey }`
   - `EquivalenceVerdict { readonly equivalent: boolean; readonly opens: readonly OpenFinding[]; readonly shorts: readonly ShortFinding[]; readonly contractVersion: number }`
-  - `netlistEquivalence(dump: BoardDump, reference: ReferenceNets): EquivalenceVerdict`
+  - `netlistEquivalence(dumpText: string, reference: ReferenceNets): EquivalenceVerdict` — **dump TEXT, not a `BoardDump`**, calling `boardGeometry` internally so the whole geometry contract is enforced before any verdict exists
   - `describeVerdict(verdict: EquivalenceVerdict): readonly string[]` — one line per finding, naming the net or nets
-- Task 14's `HC8` check calls `netlistEquivalence` and renders `describeVerdict`; nothing else in the pipeline calls either.
+- Task 14's `HC8` check calls `netlistEquivalence` with the dump text it already holds and renders `describeVerdict`; nothing else in the pipeline calls either.
+
+**Why the signature is text, and why this is recorded as a repeat rather than as a fix.** The
+earlier draft specified `netlistEquivalence(dump: BoardDump, reference)`. Measured by Task 4's
+implementer and re-run by its reviewer: that signature **cannot deliver two of `HC8`'s own
+refusals.** A parsed `BoardDump` carries a grid and a boolean axis **by construction**, so
+`missing-line` and `unsupported-strip-axis` can never fire from it; a caller that parsed the text
+itself still throws — `parseBoardDump` refuses a missing `GRID` — but with the **parser's** wording,
+which names neither the refusal member nor the contract version, so `HC8`'s required wording is not
+delivered at all.
+
+**This is the SECOND instance of one root cause: a plan that hands a parsed object to a function
+whose contract is about the text.** Task 3 hit it first, and the plan was corrected at `d711d5c` by
+adding `boardGeometry` as the contract-enforcing entry point. Task 4 hit the identical shape one
+task later, because the correction landed on Task 3's `Provides` and not on its consumers'
+signatures. The two instances are one defect with two sites, so the rule is stated once and
+applied everywhere: **a function whose contract quotes line names takes the lines.** Task 5 and
+Task 14 are the other consumers and are corrected below for the same reason.
 
 - [ ] **Step 1: Write the failing test.**
 
 ```ts
 import { test, expect } from "bun:test"
-import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { netlistEquivalence, describeVerdict } from "../../tools/stripboard/equivalence.ts"
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
+import { GEOMETRY_CONTRACT_VERSION } from "../../tools/stripboard/copper.ts"
 import { importClosure } from "./import-closure.ts"
 
 /**
- * Two strips, two nets, one cut between them in the middle column. R1 bridges
- * the strips; R2 sits along strip 1 straddling the cut, which is the ordinary
- * stripboard idiom and not a short.
+ * Two strips, three nets, one cut on strip 1 between columns 1 and 2. R1
+ * bridges the strips; R2 sits along strip 1 straddling the cut, which is the
+ * ordinary stripboard idiom and not a short.
+ *
+ * Strip 0 (row 0) is uncut and holds R1.1 alone, so net `in` is one component;
+ * strip 1 splits into {1,0 1,1} - R1.2 and R2.1, net `mid` - and {1,2 1,3} -
+ * R2.2, net `out`. Every board in this file is DUMP TEXT, which is the
+ * module's real input seam.
  */
 const WHOLE = [
   "GRID 2 4",
@@ -1349,8 +1371,32 @@ const REFERENCE: ReferenceNets = new Map([
   ["out", ["R2.2"]],
 ])
 
+/** The same board with every `CUT` line removed: strip 1 then joins `mid` to `out`. */
+const UNCUT = WHOLE.split("\n")
+  .filter((line) => !line.startsWith("CUT "))
+  .join("\n")
+
+/**
+ * The message a call refused with, or "" when it did not refuse.
+ *
+ * WHY A HELPER RATHER THAN `toThrow(/.../)`. Every refusal here carries
+ * explanatory prose that names the same words a loose pattern would match, so
+ * the assertions below anchor on the refusal's own OPENING CLAUSE with
+ * `toStartWith` and read the explanation with a separate `toContain`. See the
+ * note on the floated-pin test, which is where the loose form was measured
+ * failing to discriminate.
+ */
+function refusalFrom(call: () => unknown): string {
+  try {
+    call()
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+  return ""
+}
+
 test("a board whose copper partitions the pins as the netlist does is equivalent", () => {
-  const verdict = netlistEquivalence(parseBoardDump(WHOLE), REFERENCE)
+  const verdict = netlistEquivalence(WHOLE, REFERENCE)
   expect(verdict.opens).toEqual([])
   expect(verdict.shorts).toEqual([])
   expect(verdict.equivalent).toBe(true)
@@ -1359,8 +1405,7 @@ test("a board whose copper partitions the pins as the netlist does is equivalent
 
 test("an OPEN is rejected, naming the net and the groups its pins fell into", () => {
   // Sever strip 1 between R1.2 at 1,0 and R2.1 at 1,1, which is net `mid`.
-  const opened = parseBoardDump(`${WHOLE}\nCUT 1,0,3 1,1,9`)
-  const verdict = netlistEquivalence(opened, REFERENCE)
+  const verdict = netlistEquivalence(`${WHOLE}\nCUT 1,0,3 1,1,9`, REFERENCE)
   expect(verdict.equivalent).toBe(false)
   expect(verdict.opens.map((finding) => finding.net)).toEqual(["mid"])
   const groups = verdict.opens[0]?.groups.map((group) => [...group].sort())
@@ -1373,8 +1418,7 @@ test("a SHORT is rejected, naming BOTH nets - the direction no pre-existing chec
   // defect class CRITERIA's HC8 exists for: VeroRoute's membership still
   // partitions the pins by what each component records, so both nets read
   // complete and --check exits 0.
-  const shorted = parseBoardDump(WHOLE.split("\n").filter((l) => !l.startsWith("CUT ")).join("\n"))
-  const verdict = netlistEquivalence(shorted, REFERENCE)
+  const verdict = netlistEquivalence(UNCUT, REFERENCE)
   expect(verdict.equivalent).toBe(false)
   expect(verdict.shorts).toHaveLength(1)
   expect([...(verdict.shorts[0]?.nets ?? [])].sort()).toEqual(["mid", "out"])
@@ -1383,45 +1427,128 @@ test("a SHORT is rejected, naming BOTH nets - the direction no pre-existing chec
 })
 
 test("an open and a short are reported separately, not collapsed into one failure", () => {
-  // `as never` removed: the previous version passed
+  // `as never` removed: an earlier version passed
   // `{ ...Object.fromEntries(REFERENCE) } as never`, which is a typing bypass
   // (CLAUDE.md forbids `any`, `as Type` and `@ts-ignore`) AND a pointless
-  // round trip - REFERENCE is already a ReferenceNets. Caught by this
-  // revision's consistency pass.
-  const both = parseBoardDump(
-    `${WHOLE.split("\n").filter((l) => !l.startsWith("CUT ")).join("\n")}\nCUT 0,1,1 0,2,2`,
-  )
+  // round trip - REFERENCE is already a ReferenceNets.
+  //
+  // THE EARLIER FIXTURE FOR THIS TEST PRODUCED NO OPEN, and this is the
+  // defect this plan exists to prevent appearing in the plan's own text: a
+  // test whose NAME claims a direction its FIXTURE cannot produce. It removed
+  // every cut and added `CUT 0,1,1 0,2,2`, severing strip 0 - and strip 0
+  // holds only R1.1, a one-pin net, so no net spans two components. Measured:
+  // `opens: 0, shorts: 1`. The test would have failed for the fixture's sake
+  // rather than the code's, and a reader would have taken the name for the
+  // guarantee.
+  //
+  // CORRECTED BY MOVING THE CUT, not by removing it. Severing strip 1 between
+  // columns 0 and 1 leaves R1.2 at 1,0 alone in its component and R2.1 at 1,1
+  // joined to R2.2 at 1,3: net `mid` spans two components, which is the OPEN,
+  // while `mid` and `out` share the second, which is the SHORT. One board,
+  // both directions, so the test does not have to be split.
+  const both = WHOLE.replace("CUT 1,1,3 1,2,4", "CUT 1,0,3 1,1,9")
   const verdict = netlistEquivalence(both, REFERENCE)
   expect(verdict.equivalent).toBe(false)
   // "Reported separately" is the name's claim, so both lists are asserted
-  // non-empty rather than only the conjunction they imply.
+  // non-empty rather than only the conjunction they imply - and then each is
+  // asserted to name the right net, so neither list can be non-empty for the
+  // wrong reason.
   expect(verdict.opens.length).toBeGreaterThan(0)
   expect(verdict.shorts.length).toBeGreaterThan(0)
+  expect(verdict.opens.map((finding) => finding.net)).toEqual(["mid"])
+  expect([...(verdict.shorts[0]?.nets ?? [])].sort()).toEqual(["mid", "out"])
+  const lines = describeVerdict(verdict)
+  expect(lines).toHaveLength(2)
+  expect(lines[0]).toStartWith("OPEN:")
+  expect(lines[1]).toStartWith("SHORT:")
 })
 
 test("a reference pin with no PIN line refuses, because a missing hole is not an open", () => {
   // A placed part with no PIN lines is HC3's refusal and HC8's too. Treating
   // it as an open would report the wrong constraint and point at the wrong fix.
-  const floated = parseBoardDump(
-    WHOLE.replace("PART R2 RESISTOR4 1k AT 1,0 SPAN 1", "PART R2 RESISTOR4 1k FLOATING SPAN 1")
-      .replace("PIN R2 1 AT 1,1\n", "").replace("PIN R2 2 AT 1,3\n", ""),
+  //
+  // ANCHORED, NOT MATCHED, AND THE PATTERN HAS NOW APPEARED THREE TIMES.
+  // `toThrow(/R2\.1/)` plus `toThrow(/PIN/)` CANNOT DISTINGUISH this refusal
+  // from its neighbour, verified by running it: the refusal's own prose names
+  // `R2.1` and `PIN` while explaining itself, and so does the neighbouring
+  // `hole-outside-copper-graph` refusal, so a mutant that returns an
+  // off-board sentinel instead of refusing passes both patterns while
+  // pointing a reader at copper.ts instead of at the floating part.
+  //
+  // THREE APPEARANCES, recorded so the next author does not reach for
+  // `toContain` again: the plan's draft shipped the loose pair; the
+  // controller's proposed fix carried the identical defect and measured
+  // 16 pass / 0 fail against the mutant; only an assertion anchored on the
+  // refusal's own OPENING CLAUSE - past the explanatory prose - discriminated.
+  // The rule for every refusal assertion in this plan: `toStartWith` on the
+  // member and its first clause, then `toContain` for the explanation. Never
+  // `toContain` or a bare regex alone, which the message's own explanation of
+  // itself satisfies.
+  const floated = WHOLE.replace(
+    "PART R2 RESISTOR4 1k AT 1,0 SPAN 1",
+    "PART R2 RESISTOR4 1k FLOATING SPAN 1",
   )
-  expect(() => netlistEquivalence(floated, REFERENCE)).toThrow(/R2\.1/)
-  expect(() => netlistEquivalence(floated, REFERENCE)).toThrow(/PIN/)
+    .replace("PIN R2 1 AT 1,1\n", "")
+    .replace("PIN R2 2 AT 1,3\n", "")
+  const message = refusalFrom(() => netlistEquivalence(floated, REFERENCE))
+  expect(message).toStartWith(
+    "reference-pin-not-on-board: R2.1 is a reference pin and the dump prints no PIN line for it.",
+  )
+  expect(message).toContain("is NOT an open")
 })
 
 test("an empty reference refuses rather than reporting equivalence vacuously", () => {
-  expect(() => netlistEquivalence(parseBoardDump(WHOLE), new Map())).toThrow(/no nets/)
+  const message = refusalFrom(() => netlistEquivalence(WHOLE, new Map()))
+  expect(message).toStartWith("empty-reference: the reference netlist has no nets")
+})
+
+test("a missing contracted line refuses in HC8's own words, which only the text entry point can say", () => {
+  // The signature correction above, as a test rather than as an argument.
+  // `missing-line` is inexpressible through a `BoardDump`, and a caller that
+  // parsed the text itself would throw in the PARSER's wording, which names
+  // neither the refusal member nor the contract version.
+  const noAxis = WHOLE.split("\n")
+    .filter((line) => !line.startsWith("VERTICAL_STRIPS"))
+    .join("\n")
+  const message = refusalFrom(() => netlistEquivalence(noAxis, REFERENCE))
+  expect(message).toStartWith("missing-line: the dump has no VERTICAL_STRIPS line.")
+  expect(message).toContain(`HC8 geometry contract version ${GEOMETRY_CONTRACT_VERSION}`)
 })
 
 test("the verdict is unchanged when the NODE block is emptied and the CUT node ids garbled", () => {
   // V11. The whole independence claim, as a comparison rather than an assertion.
-  const withNodes = `${WHOLE}\nNODE 1 mid R1.2 R2.1\nNODE 2 out R2.2`
+  //
+  // TWO GRAMMAR FAULTS CORRECTED, both checked against `parseBoardDump` and
+  // both the SECOND occurrence of a fault `d711d5c` already fixed elsewhere:
+  //
+  // - A NODE line is `NODE <id> NAME <name-or-dash> <ref>.<pin> ...`
+  //   (Headless_dump.cpp:67 and :307), so the earlier `NODE 1 mid R1.2 R2.1`
+  //   is unreadable and throws "unreadable NODE line" in the parser before
+  //   any verdict exists. The NAME keyword is not optional.
+  // - A CUT hole's node id is UNSIGNED - `parseNodedHole` matches
+  //   `^(\d+),(\d+),(\d+)$` - so the earlier `-1` throws "unreadable noded
+  //   hole position". The garbled ids are therefore large rather than
+  //   negative, which garbles them just as thoroughly and is the point of
+  //   the test.
+  //
+  // THE `toEqual` BELOW IS DECORATIVE AT THIS LAYER, and the `.equivalent`
+  // assertions after it are what carry the test. Verified under a node-keyed
+  // mutant - each pin's component taken from the node id its CUT line
+  // reports, a spare number for a hole no CUT line names: `toEqual` PASSED,
+  // because both calls returned the SAME wrong verdict, and `.equivalent`
+  // FAILED. So the equality can hold while the verdict is wrong. DO NOT
+  // DELETE THE `.equivalent` LINES as redundant with the equality: an
+  // equality-only body here would be a name claiming more than it proves,
+  // which is the defect this plan is built around.
+  const withNodes = `${WHOLE}\nNODE 1 NAME mid R1.2 R2.1\nNODE 2 NAME out R2.2`
   const garbled = withNodes
-    .replace("CUT 1,1,3 1,2,4", "CUT 1,1,-1 1,2,424242")
+    .replace("CUT 1,1,3 1,2,4", "CUT 1,1,999999 1,2,424242")
     .replace(/^NODE .*$/gm, "")
-  expect(netlistEquivalence(parseBoardDump(garbled), REFERENCE))
-    .toEqual(netlistEquivalence(parseBoardDump(withNodes), REFERENCE))
+  expect(netlistEquivalence(garbled, REFERENCE)).toEqual(netlistEquivalence(withNodes, REFERENCE))
+  // And it is the EQUIVALENT verdict both times, so the comparison is not two
+  // identical wrong answers agreeing with each other.
+  expect(netlistEquivalence(garbled, REFERENCE).equivalent).toBe(true)
+  expect(netlistEquivalence(withNodes, REFERENCE).equivalent).toBe(true)
 })
 
 test("nothing in this module's TRANSITIVE import closure is the scorer or the check path", async () => {
@@ -1501,8 +1628,19 @@ test("this module never names a nodeId, which is a TEXT claim and is labelled as
  *
  * It relies on this repository's own import convention - explicit relative
  * paths with the .ts extension (CLAUDE.md) - and refuses a bare specifier
- * rather than guessing at a resolver, because the only bare specifiers here
- * would be node builtins and bun:test, which it skips by name.
+ * rather than guessing at a resolver. `EXTERNAL` is the enumerated set of
+ * bare specifiers that are not repository files, skipped BY NAME: an empty
+ * whitelist that refuses loudly beats a general rule that quietly accepts a
+ * guess, so a new dependency arriving in a closure is a deliberate edit here.
+ *
+ * THE EARLIER CLAIM THAT THE ONLY BARE SPECIFIERS ARE NODE BUILTINS AND
+ * `bun:test` IS WRONG, measured: `lib/sim/operating-point.ts` imports
+ * `eecircuit-engine`, this repository's npm dependency, and any closure
+ * reaching `lib/sim/` hits it. `tools/perfboard/check.ts`'s own closure does,
+ * which is how it was found - the walker refused the bare specifier and a
+ * mutation test failed on "neither relative nor a known external" instead of
+ * on the forbidden module. Loud either way, but it named the wrong fault, so
+ * the package is enumerated below.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -1510,7 +1648,7 @@ import path from "node:path"
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 
 /** Specifiers that are not repository files and are skipped by name, not by pattern. */
-const EXTERNAL = new Set(["bun", "bun:test", "bun:sqlite"])
+const EXTERNAL = new Set(["bun", "bun:test", "bun:sqlite", "eecircuit-engine"])
 
 function specifiersIn(text: string): readonly string[] {
   // `from "..."` covers static imports and re-exports; `import("...")` covers
@@ -1562,9 +1700,9 @@ export async function importClosure(entry: string): Promise<ReadonlySet<string>>
 
 - [ ] **Step 2: Run it, confirm it fails.**
 
-- [ ] **Step 3: Implement `tools/stripboard/equivalence.ts`.** Map every reference pin to its hole through `pinHoles`, refusing by name for a reference pin with no `PIN` line; look each hole's component up in `copperGraph`; then two passes. An **open** is a reference net whose pins fall in two or more components, reported with the pins grouped by component. A **short** is a component holding pins of two or more reference nets, reported with the net names sorted and one hole that witnesses it. `equivalent` is `opens.length === 0 && shorts.length === 0`. `describeVerdict` renders one line per finding naming the net or nets, the components or the hole, and — for a short — that no completeness check detects this because both nets still read complete.
+- [ ] **Step 3: Implement `tools/stripboard/equivalence.ts`.** `netlistEquivalence` takes the dump **text** and its first act is `boardGeometry(dumpText)`, so every one of the nine geometry refusals is available before a verdict exists; `copperGraph` and `pinHoles` then run on what `boardGeometry` returns. Map every reference pin to its hole through `pinHoles`, refusing by name for a reference pin with no `PIN` line; look each hole's component up in `copperGraph`; then two passes. An **open** is a reference net whose pins fall in two or more components, reported with the pins grouped by component. A **short** is a component holding pins of two or more reference nets, reported with the net names sorted and one hole that witnesses it. `equivalent` is `opens.length === 0 && shorts.length === 0`. `describeVerdict` renders one line per finding naming the net or nets, the components or the hole, and — for a short — that no completeness check detects this because both nets still read complete.
 
-- [ ] **Step 4: Prove the tests can fail.** Five breaks: return `{ equivalent: true, opens: [], shorts: [] }` unconditionally (every negative test fails — *the vacuous verdict*, run this one first); report opens only (the short test fails); key the components on `dump.nodes` instead of the copper graph (the behavioural independence test fails and the short test fails, which is the whole argument for `HC8` reproduced as two failing tests); treat a missing `PIN` line as an open (the floated test fails); **add `import { scoreDump } from "./score.ts"` to `equivalence.ts` and confirm the closure test fails, then add it to `copper.ts` instead — a module `equivalence.ts` imports but does not name — and confirm the closure test fails *again*.** That second half is the one to run, because it is exactly the case the replaced substring scan passed.
+- [ ] **Step 4: Prove the tests can fail.** Seven breaks: return `{ equivalent: true, opens: [], shorts: [] }` unconditionally (every negative test fails — *the vacuous verdict*, run this one first); report opens only (the short test fails); key the components on the dump's own node records instead of the copper graph (the short test and the behavioural independence test fail, which is the whole argument for `HC8` reproduced as failing tests — **and record which assertion caught it**, because this mutant passes V11's `toEqual` and fails only on `.equivalent`); treat a missing `PIN` line as an open — `holeOfPin` returning the real hole — (the floated test fails with no refusal at all); **make `holeOfPin` return an off-board sentinel instead of refusing** (the floated test fails on a *different* refusal, which is the mutant the unanchored `toThrow(/PIN/)` passed and the reason that assertion is anchored); **swap `boardGeometry` for `parseBoardDump`** (the missing-line test fails, showing the parser's wording in place of `HC8`'s); **add `import { scoreDump } from "./score.ts"` to `equivalence.ts` and confirm the closure test fails, then add it to `copper.ts` instead — a module `equivalence.ts` imports but does not name — and confirm the closure test fails *again*.** That second half is the one to run, because it is exactly the case the replaced substring scan passed.
 
 - [ ] **Step 5: Run** `bun test && bun run typecheck`, **commit** ("HC8 rejects an open and a short, each by name, from the copper alone"), push.
 
@@ -1575,15 +1713,31 @@ export async function importClosure(entry: string): Promise<ReadonlySet<string>>
 **Files:** create `tests/fixtures/stripboard/pultec-low-boost-frozen.vrt`, `.netlist`, `.dump`, `provenance.txt`; create `tests/stripboard/agreement.test.ts`; modify `tools/stripboard/equivalence.ts` only if a reader for the netlist export does not already exist elsewhere (see Interfaces).
 
 **Interfaces:**
-- *Consumes:* Task 4's `netlistEquivalence` and `ReferenceNets`.
+- *Consumes:* Task 4's `netlistEquivalence` and `ReferenceNets`. **`netlistEquivalence` takes dump TEXT** — see Task 4's signature note — so every call here passes the text it read and **nothing here pre-parses for it**. `parseBoardDump` is still imported, for the tests that read `grid`, `cutState`, `nodes` and `pins` off a `BoardDump`; its result is never handed to `netlistEquivalence`.
 - *Provides:*
   - `tests/fixtures/stripboard/pultec-low-boost-frozen.vrt` — `B2`'s frozen board, `git show 2f62ee1:boards/pultec-low-boost/pultec-low-boost.perfboard.vrt`
   - `tests/fixtures/stripboard/pultec-low-boost-frozen.netlist` — the netlist export the layout was built against, as text
   - `tests/fixtures/stripboard/pultec-low-boost-frozen.dump` — this binary's `--dump-board` on that board
-  - `referenceNetsFromExport(text: string): ReferenceNets` in `tools/stripboard/equivalence.ts` — the one reader of a netlist export into `HC8`'s input, so no later task writes a second one
+  - `referenceNetsFromExport(text: string): ReferenceNets` in `tools/stripboard/equivalence.ts` — the one reader of a netlist export into `HC8`'s input, so no later task writes a second one, **and the owner of the one-pin-one-net rule below**
 - Task 23's `B1-frozen` run consumes the three fixture files; Task 14 consumes `referenceNetsFromExport`.
 
 **The fixture lives under `tests/fixtures/`, never under `boards/`**, because `make -C boards/<board> check` regenerates the export every run and decides freshness by content, so *"a deliberately frozen model under `boards/` is a deliberately stale one the freshness guard would be right to fail"*.
+
+**A requirement this task inherits from Task 4's review, and it is `referenceNetsFromExport`'s to
+discharge.** `equivalence.ts` as shipped **does not refuse one `ref.pin` appearing in two reference
+nets.** Measured: it reports `shorts: [{ nets: ["alias", "mid"], hole: "1,0" }]` — *blaming the
+copper for a netlist defect*, on a board whose copper is correct. One pin on two nets is not a
+board that shorts; it is an export that cannot be true, and a verdict that reports it as a short
+points a reader at a layout to fix instead of at the netlist. **So `referenceNetsFromExport`
+refuses it**, naming the pin and both nets, with the refusal saying why it is not a short and not
+defaulted — the reader of the export is where the export's own consistency is established, and
+`netlistEquivalence` keeps no second check for it, because two owners of one rule is one more than
+this plan allows. A test asserts the refusal, anchored on its opening clause the way Task 4's are,
+over the hand-written export below. The grammar is EESchema v1.1, and
+`lib/kicad/legacy-netlist.ts` is the repository's reader for it — it records a repeated pin under
+both net names without complaint, which is how the defect reaches `HC8` in the first place, so the
+refusal is a check `referenceNetsFromExport` adds over whichever reader it uses rather than one it
+inherits.
 
 - [ ] **Step 1: Extract the board and record what it dumps.** Into the scratchpad first, never over a path under `boards/`:
 
@@ -1610,6 +1764,22 @@ import { test, expect } from "bun:test"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { netlistEquivalence, referenceNetsFromExport } from "../../tools/stripboard/equivalence.ts"
 
+/**
+ * The message a call refused with, or "" when it did not refuse - the same
+ * shape as Task 4's, because every refusal assertion in this pipeline anchors
+ * on the refusal's own opening clause rather than matching its prose. Two
+ * copies is the limit: if a THIRD test file needs it, it moves beside
+ * `importClosure` in tests/stripboard/ and all three import it.
+ */
+function refusalFrom(call: () => unknown): string {
+  try {
+    call()
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+  return ""
+}
+
 const BOARDS = [
   ["the frozen low-boost fixture", "tests/fixtures/stripboard/pultec-low-boost-frozen.dump",
     "tests/fixtures/stripboard/pultec-low-boost-frozen.netlist"],
@@ -1618,9 +1788,11 @@ const BOARDS = [
 
 for (const [label, dumpPath, netlistPath] of BOARDS) {
   test(`HC8 agrees with the reference netlist on ${label}`, async () => {
-    const dump = parseBoardDump(await Bun.file(dumpPath).text())
+    // The TEXT is what HC8 consumes, so nothing here parses it first: the
+    // geometry contract is enforced inside netlistEquivalence.
+    const dumpText = await Bun.file(dumpPath).text()
     const reference = referenceNetsFromExport(await Bun.file(netlistPath).text())
-    const verdict = netlistEquivalence(dump, reference)
+    const verdict = netlistEquivalence(dumpText, reference)
     expect(verdict.opens, `${label} opens`).toEqual([])
     expect(verdict.shorts, `${label} shorts`).toEqual([])
   })
@@ -1638,14 +1810,59 @@ test("HC8 rejects the floated-C19 board from the copper side, not only HC3's sid
   // own placeholder scan missed it because it scanned for TBD and TODO and the
   // test had neither. A strong name over an empty body is the defect; the scan
   // now reads bodies.
-  const dump = parseBoardDump(
-    await Bun.file("tests/fixtures/pultec-low-boost-c19-floated.dump").text(),
-  )
+  // ANCHORED, NOT MATCHED, for Task 4's measured reason: the refusal's own
+  // prose names `C19` and `PIN` while explaining itself, and so does the
+  // neighbouring `hole-outside-copper-graph` refusal, so `toThrow(/C19\./)`
+  // plus `toThrow(/PIN/)` cannot tell the intended refusal from its
+  // neighbour - a mutant that returns an off-board sentinel instead of
+  // refusing satisfies both. The assertion anchors on the member and the
+  // reference it names, then reads the explanation separately. Which of
+  // C19's pins is named is whichever the export lists first and is NOT
+  // written here; record the full message beside the test once it is run.
+  const dumpText = await Bun.file("tests/fixtures/pultec-low-boost-c19-floated.dump").text()
   const reference = referenceNetsFromExport(
     await Bun.file("tests/fixtures/stripboard/pultec-low-boost-frozen.netlist").text(),
   )
-  expect(() => netlistEquivalence(dump, reference)).toThrow(/C19\./)
-  expect(() => netlistEquivalence(dump, reference)).toThrow(/PIN/)
+  const message = refusalFrom(() => netlistEquivalence(dumpText, reference))
+  expect(message).toStartWith("reference-pin-not-on-board: C19.")
+  expect(message).toContain("the dump prints no PIN line for it")
+  expect(message).toContain("is NOT an open")
+})
+
+/**
+ * One `ref.pin` on two nets, in EESchema v1.1 - the grammar
+ * `lib/kicad/legacy-netlist.ts` reads and the committed `.net` fixtures use.
+ * R1.1 is listed under both `mid` and `alias`, which is an export that cannot
+ * be true of any board.
+ */
+const PIN_IN_TWO_NETS = [
+  "( { EESchema Netlist Version 1.1 created 2026-10-11T00:00:00 }",
+  " ( /R1 RESISTOR4  R1 1k",
+  "  (    1 mid )",
+  "  (    1 alias )",
+  "  (    2 out )",
+  " )",
+  ")",
+  "*",
+].join("\n")
+
+test("referenceNetsFromExport refuses one ref.pin on two nets, rather than letting HC8 call it a short", () => {
+  // THE MINOR TASK 4'S REVIEW LEFT HERE, measured on the shipped
+  // equivalence.ts: with R1.1 on two nets, the verdict reported
+  // `shorts: [{ nets: ["alias", "mid"], hole: "1,0" }]` - BLAMING THE COPPER
+  // FOR A NETLIST DEFECT, on a board whose copper is correct. The remedy a
+  // reader would act on is a layout change, and there is nothing wrong with
+  // the layout.
+  //
+  // The reader of the export owns the export's own consistency, so the
+  // refusal is here and `netlistEquivalence` keeps no second check for it.
+  // Anchored on the opening clause, like every other refusal assertion in
+  // this pipeline, and it names BOTH nets so a reader can find them.
+  const message = refusalFrom(() => referenceNetsFromExport(PIN_IN_TWO_NETS))
+  expect(message).toStartWith("pin-on-two-nets: R1.1")
+  expect(message).toContain("alias")
+  expect(message).toContain("mid")
+  expect(message).toContain("not a short")
 })
 
 test("the frozen fixture's grid and cut state come from the fixture, and its sha256 is recorded", async () => {
@@ -1692,9 +1909,9 @@ test("the recorded net and pin counts agree with the fixture's own dump - B2's b
 
   **The two further benchmark boards.** `transistor-preamp-feedback` and `transistor-preamp-staged` have committed `.net` fixtures but no committed `--dump-board` capture. Add each to `BOARDS` by committing its dump beside the others with a provenance entry, produced by `--dump-board` on its committed `.vrt` at the pinned binary. If a board's dump cannot be produced — `transistor-preamp-lab` reports `CUT_STATE UNRESOLVED` with 19 `CUT_CONFLICT` lines and `HC2` excludes it — **leave it out and say so in the test file's header comment**, naming the board and the reason. `transistor-preamp-lab` is not in the benchmark set.
 
-- [ ] **Step 5: Run it, confirm it fails**, then implement `referenceNetsFromExport` and commit the fixtures.
+- [ ] **Step 5: Run it, confirm it fails**, then implement `referenceNetsFromExport` — **including the one-pin-one-net refusal above**, which is a requirement of this task and not an optional hardening — and commit the fixtures.
 
-- [ ] **Step 6: Prove the test can fail.** Three breaks: flip one `PIN` row in the frozen dump by one and confirm the agreement test fails naming the board (then revert — **the fixture is not edited**, the break is applied to a copy in the test); make `netlistEquivalence` return `equivalent: true` unconditionally and confirm every row fails; and **put `C19`'s two `PIN` lines back into a copy of the floated dump and confirm the floated test fails** — without that, the floated test passes for any dump that happens to throw, which is how it came to be a placeholder in the first place. Record all three beside their tests.
+- [ ] **Step 6: Prove the test can fail.** Four breaks: flip one `PIN` row in the frozen dump by one and confirm the agreement test fails naming the board (then revert — **the fixture is not edited**, the break is applied to a copy in the test); make `netlistEquivalence` return `equivalent: true` unconditionally and confirm every row fails; **put `C19`'s two `PIN` lines back into a copy of the floated dump and confirm the floated test fails** — without that, the floated test passes for any dump that happens to throw, which is how it came to be a placeholder in the first place; and **drop the one-pin-one-net refusal and confirm its test fails**, recording what `netlistEquivalence` then reported, because the wrong answer it gives is a short that names two nets and a hole on a board whose copper is correct. Record all four beside their tests.
 
 - [ ] **Step 7: Run** `bun test && bun run typecheck`, **commit** ("Freeze low-boost's hand layout as a fixture, and check HC8 against four authored boards"), push.
 
@@ -2492,11 +2709,11 @@ test("a manifest round-trips, and a hash that disagrees with its own block refus
 **Files:** create `tools/stripboard/constraints.ts`, `tools/stripboard/grade.ts` and `tools/stripboard/extent.ts`; create `tests/fixtures/stripboard/negative/` with one fixture per constraint and **two per `HC10`**; test `tests/stripboard/grade.test.ts` and `tests/stripboard/extent.test.ts`; modify `boards/pultec-*/perfboard.json` only if a board declares a stock other than the default (none does today, so expect no change and say so).
 
 **Interfaces:**
-- *Consumes:* `netlistEquivalence`, `describeVerdict`, `referenceNetsFromExport` (Tasks 4, 5); `copperGraph`, `holeKey`, `HoleKey`, `pinHoles` (Task 3, into `extent.ts`); `pinPatternFor`, `admitPattern`, `preparedExtentsHoles` (Task 2); `leadSpanFor`, `TOOL_MIN_SPAN_HOLES`, `TOOL_MAX_SPAN_HOLES` (`lib/kicad/lead-span*.ts`); `StripboardRules` (Task 10); `BoardTargets` (Task 11); `BoardDump` with `bounds` and `Part.direction` (Task 7).
+- *Consumes:* `netlistEquivalence` — **which takes dump TEXT**, `describeVerdict`, `referenceNetsFromExport` (Tasks 4, 5); `copperGraph`, `holeKey`, `HoleKey`, `pinHoles` (Task 3, into `extent.ts`); `pinPatternFor`, `admitPattern`, `preparedExtentsHoles` (Task 2); `leadSpanFor`, `TOOL_MIN_SPAN_HOLES`, `TOOL_MAX_SPAN_HOLES` (`lib/kicad/lead-span*.ts`); `StripboardRules` (Task 10); `BoardTargets` (Task 11); `BoardDump` with `bounds` and `Part.direction` (Task 7).
 - *Provides:*
   - `ConstraintId = "HC1" | "HC2" | "HC3" | "HC4" | "HC5" | "HC6" | "HC7" | "HC8" | "HC9" | "HC10"` — **ten, unchanged**
   - `ConstraintResult { readonly id: ConstraintId; readonly held: boolean; readonly detail: string }` — `detail` names the net or part on a failure and is non-empty on a pass too, so a pass is readable
-  - `CheckInput { readonly dump: BoardDump; readonly dumpText: string; readonly reference: ReferenceNets; readonly footprints: ReadonlyMap<string, string>; readonly checkReport: CheckReport; readonly stock: Stock; readonly rules: StripboardRules }`
+  - `CheckInput { readonly dump: BoardDump; readonly dumpText: string; readonly reference: ReferenceNets; readonly footprints: ReadonlyMap<string, string>; readonly checkReport: CheckReport; readonly stock: Stock; readonly rules: StripboardRules }` — `dumpText` is the text as read and `dump` is `parseBoardDump` of **that same text**, so the two can never describe different boards
   - `Stock { readonly rows: number; readonly cols: number; readonly source: "board" | "rules-default" }`
   - `HARD_CONSTRAINTS: readonly { readonly id: ConstraintId; readonly check: (input: CheckInput) => ConstraintResult }[]` — **exactly ten entries**
   - `gradeHardConstraints(input: CheckInput): readonly ConstraintResult[]`
@@ -2511,6 +2728,18 @@ test("a manifest round-trips, and a hash that disagrees with its own block refus
   - `withinExtent(hole: HoleKey, extent: FabricationExtent): boolean`
   - `TrimVerdict { readonly preserved: boolean; readonly detail: string }`
   - `trimPreservesConnectivity(dump: BoardDump, extent: FabricationExtent): TrimVerdict`
+**`HC8`'s check calls `netlistEquivalence(input.dumpText, input.reference)`. DO NOT PRE-PARSE.**
+Handing it `input.dump` is a type error now that the signature is text, and the reason it is text
+is the reason this sentence is here: `missing-line` and `unsupported-strip-axis` are inexpressible
+through a `BoardDump`, which carries a grid and a boolean axis by construction, so a pre-parsed
+call discards two of `HC8`'s nine refusals and replaces their wording with the parser's. This is
+the **second** site of one root cause — **a plan that hands a parsed object to a function whose
+contract is about the text** — recorded in full at Task 4's signature note; Task 3 was the first
+and was corrected at `d711d5c`. `CheckInput` therefore carries **both** fields: `dumpText` for
+`HC8`, `dump` for the checks that read parsed structure. Every helper that builds a `CheckInput`
+— `healthyInput()`, `negativeInput()`, `inputWithoutBounds()` and the rest — reads the dump text
+once and sets both from it.
+
 - Task 15's ranking runs over candidates that passed `a1`; Task 20's verdict consumes `ConstraintResult[]`; **no other module checks a hard constraint.** `extent.ts` is a **measurement** module like `copper.ts`, not a second place a constraint is decided: `HC6` in `constraints.ts` is the only caller that turns its numbers into a verdict.
 
 **`HC6`'s quantity is the FABRICATION EXTENT, and `BOUNDS` alone is not it.** `HC6` asks whether
@@ -2863,7 +3092,7 @@ test("the grader and the scorer DO share the dump parser and the targets, which 
 
 - [ ] **Step 4: Implement `tools/stripboard/extent.ts` first**, because `HC6` consumes it. `requiredFeatures` enumerates the four kinds and nothing else, labelling each with what names it; `fabricationExtent` unions them with `bounds` and **refuses when `bounds` is absent**, naming the line and pointing at `REBUILD_PINNED_FORK`, because the feature extent is a lower bound and substituting it loosens the constraint; `trimPreservesConnectivity` restricts the dump to the extent, rebuilds through `copperGraph`, and compares the **partition of the pin holes** — not the component ids, which are allocation order and would differ for an identical partition. The module comment states what `BOUNDS` actually is, with `Board.h:710`'s three sources named, why the union is conservative in the only direction that matters, and that `A_occ` is a different quantity that deliberately does not change.
 
-- [ ] **Step 4b: Implement `tools/stripboard/constraints.ts`** — one exported function per constraint, each taking `CheckInput` and returning `ConstraintResult`, each with a comment naming the constraint, quoting the one clause of CRITERIA that decides it, and naming its negative fixture. **`HC10` is one exported function composing two private halves** — `hc10FootprintEligibility` and `hc10PlacementOrientation` — conjoined, with `detail` naming the half that failed; **it is one entry in the table and `ConstraintId` is unchanged at ten**, because both halves are clauses of one criterion. Then `tools/stripboard/grade.ts` — `HARD_CONSTRAINTS` as a ten-entry table, `gradeHardConstraints` mapping over it, `a1` as `results.every((result) => result.held)` **after asserting the result set covers all ten ids**, because a conjunction over a short list is a verdict that ignores a constraint. Keep every file under the line ceiling by putting the ten checks in `constraints.ts`, the extent arithmetic in `extent.ts`, and the table, the verdict and `stockFor` in `grade.ts`; **if `constraints.ts` passes 500 lines, split it by constraint group and say which groups**, rather than letting one file grow.
+- [ ] **Step 4b: Implement `tools/stripboard/constraints.ts`** — one exported function per constraint, each taking `CheckInput` and returning `ConstraintResult`, each with a comment naming the constraint, quoting the one clause of CRITERIA that decides it, and naming its negative fixture. **`HC8` passes `input.dumpText`, never `input.dump`**, for the reason stated above, and its comment says so, because the next author's reflex will be to reach for the parsed value that is sitting right there. **`HC10` is one exported function composing two private halves** — `hc10FootprintEligibility` and `hc10PlacementOrientation` — conjoined, with `detail` naming the half that failed; **it is one entry in the table and `ConstraintId` is unchanged at ten**, because both halves are clauses of one criterion. Then `tools/stripboard/grade.ts` — `HARD_CONSTRAINTS` as a ten-entry table, `gradeHardConstraints` mapping over it, `a1` as `results.every((result) => result.held)` **after asserting the result set covers all ten ids**, because a conjunction over a short list is a verdict that ignores a constraint. Keep every file under the line ceiling by putting the ten checks in `constraints.ts`, the extent arithmetic in `extent.ts`, and the table, the verdict and `stockFor` in `grade.ts`; **if `constraints.ts` passes 500 lines, split it by constraint group and say which groups**, rather than letting one file grow.
 
 - [ ] **Step 5: Prove the grader can fail — and prove it the way the defects were actually found.** Nine mutations, each applied, run and reverted, each recorded in a comment beside the assertion it broke:
   1. **`a1` returns `results.every(...)` over a nine-entry table** (one id dropped from `HARD_CONSTRAINTS`). The ten-entry test and the one-at-a-time test must fail. *This is the defect CRITERIA found in PIPELINE: `A1` stated `H1`–`H9` and left a board free to violate a declared hard constraint while passing every admissibility condition.*
