@@ -26,7 +26,11 @@
  * ever have failed it.
  */
 import { test, expect } from "bun:test"
+import { physicalBoard } from "../../circuits/pultec/physical/board.ts"
 import { TOOL_MAX_SPAN_HOLES } from "../../lib/kicad/lead-span-model.ts"
+import type { Network } from "../../lib/model/types.ts"
+import { loadRules } from "../../tools/stripboard/rules.ts"
+import { deriveTargets } from "../../tools/stripboard/targets.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import {
   admissiblePositions,
@@ -213,13 +217,74 @@ test("the junction's five nets land on five consecutive strips, in one fixed ord
   // not written out in seed-arrangement.ts: asserted here so the fixed order
   // the clause below depends on is a stated order and not whichever one came back.
   expect([...nets]).toEqual(["in", "hi_boost_out", "lo_boost_in", "out", "0"])
-  const strips = nets.map((net) => assignment.get(net))
-  expect(strips.every((strip) => strip !== undefined)).toBe(true)
-  const sorted = [...(strips as number[])].sort((a, b) => a - b)
+  // A TYPE PREDICATE AND NOT A CAST. `as number[]` is what this read was first
+  // written as, and CLAUDE.md forbids it; the filter narrows by a guard the
+  // compiler checks, and the length assertion beside it is what makes the
+  // narrowing honest - a net whose strip was missing would shorten the list
+  // rather than slip through as undefined.
+  const strips = nets
+    .map((net) => assignment.get(net))
+    .filter((strip): strip is number => strip !== undefined)
+  expect(strips.length, "every junction net has a strip").toBe(nets.length)
+  const sorted = [...strips].sort((a, b) => a - b)
   expect(sorted[sorted.length - 1]! - sorted[0]!).toBe(sorted.length - 1)
   // Consecutive is necessary and not sufficient: the SIP5's pins are in its own
   // order, so the five strips must ASCEND in that order too.
-  expect(strips as number[]).toEqual([sorted[0]!, sorted[0]! + 1, sorted[0]! + 2, sorted[0]! + 3, sorted[0]! + 4])
+  expect(strips).toEqual([sorted[0]!, sorted[0]! + 1, sorted[0]! + 2, sorted[0]! + 3, sorted[0]! + 4])
+})
+
+test("junctionNets refuses a board that is not a Pultec section, naming it", () => {
+  // THE FIRST OF THREE REFUSALS, AND THE ONLY ONE A REAL BOARD CAN REACH.
+  // deriveTargets takes the board NAME as a parameter, so a target set can
+  // legitimately carry one that is not pultec-<section> - and the junction's
+  // pinout is a fact about these boards and no others.
+  const targets = deriveTargets(physicalBoard("low-boost"), loadRules().stockRows, "widget-mk1")
+  expect(() => junctionNets(targets)).toThrow(/widget-mk1/)
+  expect(() => junctionNets(targets)).toThrow(/junction_signals/)
+  // NOT an empty list, which is the whole reason the refusal exists.
+  expect(() => junctionNets(targets)).toThrow(/no-op nobody noticed/)
+})
+
+test("junctionNets refuses a section whose network carries no junction_signals", () => {
+  // All five committed sections carry one, so this refusal is unreachable from
+  // any real board - which is exactly why `boardFor` is injected. A guard no
+  // test can drive is a guard that has already stopped working.
+  const targets = targetsFor("low-boost")
+  const withoutJunction = (): Network => ({
+    ...physicalBoard("low-boost"),
+    components: physicalBoard("low-boost").components.filter(
+      (component) => component.id !== "junction_signals",
+    ),
+  })
+  expect(() => junctionNets(targets, withoutJunction)).toThrow(/junction_signals/)
+  expect(() => junctionNets(targets, withoutJunction)).toThrow(/pultec-low-boost/)
+  expect(() => junctionNets(targets, withoutJunction)).toThrow(/no-op nobody noticed/)
+  // And the default lookup finds one on the same board, so the fixture above is
+  // removing something that is really there rather than testing a typo.
+  expect(junctionNets(targets).length).toBe(5)
+})
+
+test("junctionNets refuses a junction whose nets the target set does not carry", () => {
+  // The condition this file cannot otherwise see: BoardTargets is derived once
+  // and passed around, so targets built from a different network would have the
+  // junction's nets assigned strips no part of this board is on.
+  const targets = targetsFor("low-boost")
+  const renamedJunction = (): Network => ({
+    ...physicalBoard("low-boost"),
+    components: physicalBoard("low-boost").components.map((component) =>
+      component.id === "junction_signals"
+        ? {
+            ...component,
+            units: component.units.map((unit) => ({
+              ...unit,
+              pins: { ...unit.pins, "1": { kind: "net" as const, net: "not_a_net_on_this_board" } },
+            })),
+          }
+        : component,
+    ),
+  })
+  expect(() => junctionNets(targets, renamedJunction)).toThrow(/not_a_net_on_this_board/)
+  expect(() => junctionNets(targets, renamedJunction)).toThrow(/derived from different networks/)
 })
 
 test("the constructed ordering's bandwidth is inside the tool's span ceiling, on all five", () => {
@@ -231,15 +296,14 @@ test("the constructed ordering's bandwidth is inside the tool's span ceiling, on
   // THE SECOND FIGURE IS THE ONE THIS TEST'S NAME IS ABOUT. `orderingBandwidth`
   // is `deriveTargets`'s own output and `assignStrips` has no part in it, so an
   // assertion on it alone could not fail for any mutation of the assignment.
-  // The per-board literals are hand-recorded from a separate script over the
-  // five committed boards, not recomputed from the implementation here.
-  const expected: Readonly<Record<string, number>> = {
-    "hi-boost": 4,
-    "hi-cut": 8,
-    "low-cut": 11,
-    "low-boost": 6,
-    mid: 6,
-  }
+  //
+  // NO PER-BOARD BANDWIDTH LITERALS. This test carried five - 4, 8, 11, 6, 6 -
+  // and they were the implementation's own output pasted back, which passes
+  // however wrong the implementation is. A graph bandwidth over fourteen to
+  // twenty-eight nets and dozens of edges is not a figure a reader can re-derive
+  // from a comment, so they are gone rather than dressed up. Both bounds that
+  // remain ARE derivable by hand, and between them they still fail the
+  // Object.keys mutation: it takes hi-boost's assignment bandwidth to 18.
   for (const section of ["hi-boost", "hi-cut", "low-cut", "low-boost", "mid"]) {
     const targets = targetsFor(section)
     expect(targets.orderingBandwidth, section).toBeLessThanOrEqual(TOOL_MAX_SPAN_HOLES - 1)
@@ -248,8 +312,17 @@ test("the constructed ordering's bandwidth is inside the tool's span ceiling, on
     for (const [a, b] of targets.netGraph.edges) {
       widest = Math.max(widest, Math.abs(assignment.get(a)! - assignment.get(b)!))
     }
-    expect(widest, `${section}'s assignment bandwidth`).toBe(expected[section]!)
-    expect(widest, section).toBeLessThanOrEqual(TOOL_MAX_SPAN_HOLES - 1)
+    // THE CEILING, which is what the test's name claims and what the tool
+    // imposes: a span of `widest + 1` holes has to be inside TOOL_MAX_SPAN_HOLES.
+    expect(widest, `${section}'s assignment bandwidth`).toBeLessThanOrEqual(TOOL_MAX_SPAN_HOLES - 1)
+    // AND A HAND-DERIVED FLOOR. The junction's five nets are mutually adjacent -
+    // one SIP5 touches all five, and a component makes every pair of its own
+    // nets an edge - so they are a K5 in the net graph. Five mutually adjacent
+    // nets laid on a line put two of them four apart whatever the order, and the
+    // gathering puts them on five consecutive strips, so the widest edge is at
+    // least 4 on every board. A bandwidth below 4 would mean the junction's own
+    // edges had gone missing.
+    expect(widest, `${section} is below the junction's own K5 floor`).toBeGreaterThanOrEqual(4)
   }
 })
 

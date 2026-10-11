@@ -27,7 +27,7 @@ import {
   type ArmRunner,
   type ComparisonInput,
 } from "../../tools/stripboard/seed-compare.ts"
-import { IMPORTED_BOARD, RUN_DIR, targetsFor } from "./seed-fixtures.ts"
+import { IMPORTED_BOARD, REACHING_BOARD, RUN_DIR, targetsFor } from "./seed-fixtures.ts"
 
 /**
  * A complete `ArmRun` from a partial one, **throwing for a field it cannot
@@ -234,6 +234,25 @@ export function comparisonInput(): ComparisonInput {
   return {
     importedBoard: IMPORTED_BOARD,
     targets: targetsFor("low-boost"),
+    runDir: RUN_DIR,
+    rules: loadRules(),
+    mark: FROZEN_MARK,
+  }
+}
+
+/**
+ * The same comparison over the `pultec-mid` board whose construction asks for a
+ * span no part can reach, so **the constructed arm refuses on every seed** while
+ * the other two produce a start.
+ *
+ * This is the input the refusal-concentration test needs, and the refusal is the
+ * real one: `seedCandidate`'s own span pre-flight, reached through the same code
+ * path a real board would reach it through. Nothing is stubbed to refuse.
+ */
+export function refusingComparisonInput(): ComparisonInput {
+  return {
+    importedBoard: REACHING_BOARD,
+    targets: targetsFor("mid"),
     runDir: RUN_DIR,
     rules: loadRules(),
     mark: FROZEN_MARK,

@@ -3,9 +3,11 @@
  * binary.
  *
  * `./seed.ts` owns the arms, the selector and the gesture driver; this file
- * owns the data two of them consult - the constructed arm's strip assignment
- * and the junction's net list, and the random arm's enumerated position set.
- * The split is by that seam and no other, for the reason `lead-span.ts` /
+ * owns the data two of them consult - the one seeded stream, the one draw, the
+ * constructed arm's strip assignment and the junction's net list. What a
+ * gesture does to the board's GEOMETRY is `./seed-geometry.ts`, transcribed
+ * from the fork's own `Board::RotateComps`.
+ * The split is by those seams and no other, for the reason `lead-span.ts` /
  * `lead-span-model.ts` and `dump.ts` / `dump-model.ts` already split: one
  * file carrying both would be past this repository's 300-500 line ceiling.
  * Every name here is re-exported from `./seed.ts`, which is the module the
@@ -23,9 +25,8 @@
  * this file should be read as evidence for the second claim.
  */
 import { physicalBoard, asModuleOwner } from "../../circuits/pultec/physical/board.ts"
-import type { BoardDump } from "../guide/dump.ts"
 import type { BoardTargets } from "./targets.ts"
-import type { Component } from "../../lib/model/types.ts"
+import type { Component, Network } from "../../lib/model/types.ts"
 
 /**
  * Net to strip index, one net per strip: the **constructed** arm's own datum
@@ -182,10 +183,20 @@ function orderedPinNames(nets: ReadonlyMap<string, string>): readonly string[] {
  * built from a DIFFERENT network than `physicalBoard(section)` returns would
  * otherwise have the junction's nets silently assigned strips no part of this
  * board is on.
+ *
+ * `boardFor` IS INJECTED FOR ONE REASON AND IT IS NOT CONVENIENCE: all five
+ * committed sections carry a junction, so the second and third refusals are
+ * unreachable from any real board and would be guards no test could ever drive.
+ * This project has shipped exactly that before - a refusal with no test, under
+ * which a mutant passed all twenty-three tests in its file. The default is
+ * `physicalBoard` and no caller passes anything else.
  */
-export function junctionNets(targets: BoardTargets): readonly string[] {
+export function junctionNets(
+  targets: BoardTargets,
+  boardFor: (section: string) => Network = physicalBoard,
+): readonly string[] {
   const section = asModuleOwner(sectionOf(targets.board))
-  const network = physicalBoard(section)
+  const network = boardFor(section)
   const junction = network.components.find((component) => component.id === JUNCTION_ID)
   if (junction === undefined) {
     throw new Error(
@@ -317,144 +328,5 @@ function transposeBlocks(blocks: string[][], count: number): void {
     }
     blocks[at] = next
     blocks[at + 1] = held
-  }
-}
-
-/** A hole, as `admissiblePositions` enumerates and compares them. */
-function holeKey(row: number, col: number): string {
-  return `${row},${col}`
-}
-
-/**
- * Where one part's leads sit relative to its own origin, read off its `PIN`
- * lines and its `AT` position.
- *
- * NOT FROM `SPAN`: a part's `SPAN` field is its footprint's own column count -
- * 1 for a two-pin part mounted vertically - and `tools/guide/dump.ts` states
- * outright that nothing derives a position from it. The lead holes are the
- * `PIN` lines and only the `PIN` lines.
- */
-function leadOffsets(dump: BoardDump, ref: string): readonly (readonly [number, number])[] {
-  const part = dump.parts.find((candidate) => candidate.ref === ref)
-  if (part === undefined) {
-    throw new Error(
-      `admissiblePositions: this board has no part "${ref}". Its parts are ` +
-        `${dump.parts.map((candidate) => candidate.ref).join(", ") || "(none)"}. It is not ` +
-        "skipped: a part the enumeration cannot find is a part the arm would then never place, " +
-        "and a start missing a part is not a start.",
-    )
-  }
-  if (part.placement === "floating") {
-    throw new Error(
-      `admissiblePositions: part "${ref}" is FLOATING, so it prints no PIN lines and its lead ` +
-        "pattern is unknown - there is no hole set to translate and therefore no admissible " +
-        "position to enumerate. It is NOT treated as a bare single hole: a floating part is " +
-        "also what --move itself refuses on (the shared FLOATING refusal), so the remedy is to " +
-        "place it before seeding rather than to guess its footprint here.",
-    )
-  }
-  const pins = dump.pins[ref]
-  if (pins === undefined || pins.length === 0) {
-    throw new Error(
-      `admissiblePositions: part "${ref}" is placed at ${part.placement.row},` +
-        `${part.placement.col} but the dump reports no PIN lines for it, so where its leads ` +
-        "sit relative to its origin is unknown. It is not assumed to be a single hole at its " +
-        "origin: that would enumerate positions for a part shape nobody measured.",
-    )
-  }
-  const origin = part.placement
-  return pins.map((pin) => [pin.row - origin.row, pin.col - origin.col] as const)
-}
-
-/** Every hole some OTHER placed part's lead occupies. */
-function occupiedByOthers(dump: BoardDump, ref: string): ReadonlySet<string> {
-  const taken = new Set<string>()
-  for (const [other, pins] of Object.entries(dump.pins)) {
-    if (other === ref) continue
-    for (const pin of pins) taken.add(holeKey(pin.row, pin.col))
-  }
-  return taken
-}
-
-/**
- * Every in-bounds origin at which `ref` fits beside the parts already placed,
- * in row-major order.
- *
- * "FITS" IS TWO CONDITIONS AND NO THIRD: every lead hole, translated to the
- * candidate origin, lies inside `GRID`; and none of them coincides with a hole
- * another placed part's lead occupies. Cuts, solder bridges and wires are not
- * consulted - none of them stops a lead going into a hole.
- *
- * IN BOUNDS IS NOT FUSSINESS. `--move --to 40,5` on a 35x35 board exits 0 and
- * reports `GRID 41 35` - the board GREW - and `--move --to -5,5` lands the part
- * at `0,5` and moves three parts never named on the command line, because
- * `Pan()` runs before any wrap. Either renumbers every hole the next draw is
- * about to use, so a draw outside the grid is not a slightly worse placement;
- * it is a different board.
- *
- * THE SET IS ENUMERATED AND THE DRAW IS AN INDEX INTO IT, which is what makes
- * `drawFrom` able to refuse: a part with nowhere to go refuses by name rather
- * than spinning in a retry loop or falling back to where it already was.
- */
-export function admissiblePositions(
-  dump: BoardDump,
-  ref: string,
-): readonly (readonly [number, number])[] {
-  const offsets = leadOffsets(dump, ref)
-  const taken = occupiedByOthers(dump, ref)
-  const positions: (readonly [number, number])[] = []
-  for (let row = 0; row < dump.grid.rows; row += 1) {
-    for (let col = 0; col < dump.grid.cols; col += 1) {
-      let fits = true
-      for (const [dRow, dCol] of offsets) {
-        const r = row + dRow
-        const c = col + dCol
-        if (r < 0 || c < 0 || r >= dump.grid.rows || c >= dump.grid.cols) {
-          fits = false
-          break
-        }
-        if (taken.has(holeKey(r, c))) {
-          fits = false
-          break
-        }
-      }
-      if (fits) positions.push([row, col])
-    }
-  }
-  return positions
-}
-
-/**
- * The same dump with one part's leads moved to a new origin.
- *
- * The random arm sweeps the parts in the dump's order and each draw has to see
- * the parts already placed, so the occupancy has to advance between draws. It
- * advances HERE, in memory, rather than by re-dumping the board after every
- * gesture: one `--dump-board` per run is one reading of the board, and a
- * re-dump per part would make the arm's gesture list depend on the fork's
- * rotation geometry, which is the thing this task measured as unavailable.
- */
-export function withPartMoved(
-  dump: BoardDump,
-  ref: string,
-  to: readonly [number, number],
-): BoardDump {
-  const offsets = leadOffsets(dump, ref)
-  const [row, col] = to
-  return {
-    ...dump,
-    parts: dump.parts.map((part) =>
-      part.ref === ref ? { ...part, placement: { row, col } } : part,
-    ),
-    pins: {
-      ...dump.pins,
-      [ref]: offsets.map(([dRow, dCol], index) => {
-        const existing = dump.pins[ref]?.[index]
-        if (existing === undefined) {
-          throw new Error(`withPartMoved: ${ref} lost pin ${index} between two readings.`)
-        }
-        return { pin: existing.pin, row: row + dRow, col: col + dCol }
-      }),
-    },
   }
 }

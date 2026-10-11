@@ -150,19 +150,36 @@ export function evaluationsToCross(run: ArmRun, objective: number): number | und
   return at === -1 ? undefined : at
 }
 
-/** One arm at one seed: the run, whether it met the mark, and the crossing. */
+/**
+ * One arm at one seed: the run, whether it met the mark, and the crossing - or,
+ * when the arm could not produce a start at all, the refusal that says why.
+ *
+ * **`run` IS `ArmRun | null` AND `refusal` IS `string | null`, EXACTLY ONE OF
+ * THEM SET.** A refused seed is not a run that scored badly, and it is not a
+ * reason to abandon the comparison either: the brief's question is whether span
+ * refusals CONCENTRATE IN ONE ARM, and an aborted comparison cannot answer it -
+ * a constructed arm that refuses on four seeds in five would look identical to a
+ * harness that crashed. So the refusal is recorded, the arm keeps its row, and
+ * the rate counts it as not having met the mark, which it did not.
+ */
 export interface SeedRun {
   readonly seed: number
-  readonly run: ArmRun
+  readonly run: ArmRun | null
   readonly metMark: boolean
   readonly evaluationsToCross: number | undefined
+  readonly refusal: string | null
 }
 
-/** One arm over the whole seed set. `reached` is the numerator of its rate. */
+/**
+ * One arm over the whole seed set. `reached` is the numerator of its rate and
+ * `refused` is how many of its seeds produced no start at all - the figure that
+ * distinguishes an arm that lost from an arm that never ran.
+ */
 export interface ArmResult {
   readonly arm: SeedArm
   readonly perSeed: readonly SeedRun[]
   readonly reached: number
+  readonly refused: number
 }
 
 /** The comparison, with no field naming a chosen arm. */
@@ -255,26 +272,48 @@ export function compareSeedArms(
   const objective = markObjective(mark, input.rules)
   const arms: ArmResult[] = SEED_ARMS.map((arm) => {
     const perSeed: SeedRun[] = input.rules.seeds.map((seed) => {
-      const start = seedCandidate(
-        {
-          importedBoard: input.importedBoard,
-          targets: input.targets,
-          runDir: input.runDir,
-          rules: input.rules,
-          arm,
+      // ONLY THE START'S REFUSAL IS CAUGHT HERE, AND THE RUNNER'S IS NOT. A
+      // seedCandidate that refuses is a fact about that arm on that seed, which
+      // is the thing being measured; a runner that throws is the harness losing
+      // its footing, and a scored zero for it would be indistinguishable from an
+      // arm that ran and lost.
+      let start: string
+      try {
+        start = seedCandidate(
+          {
+            importedBoard: input.importedBoard,
+            targets: input.targets,
+            runDir: input.runDir,
+            rules: input.rules,
+            arm,
+            seed,
+          },
+          spawn,
+        )
+      } catch (error) {
+        return {
           seed,
-        },
-        spawn,
-      )
+          run: null,
+          metMark: false,
+          evaluationsToCross: undefined,
+          refusal: error instanceof Error ? error.message : String(error),
+        }
+      }
       const run = runner(start, seed, spawn)
       return {
         seed,
         run,
         metMark: meetsMark(run, mark),
         evaluationsToCross: evaluationsToCross(run, objective),
+        refusal: null,
       }
     })
-    return { arm, perSeed, reached: perSeed.filter((entry) => entry.metMark).length }
+    return {
+      arm,
+      perSeed,
+      reached: perSeed.filter((entry) => entry.metMark).length,
+      refused: perSeed.filter((entry) => entry.refusal !== null).length,
+    }
   })
 
   const total = input.rules.seeds.length

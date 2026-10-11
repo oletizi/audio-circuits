@@ -22,14 +22,19 @@ import { TOOL_MAX_SPAN_HOLES, TOOL_MIN_SPAN_HOLES } from "../../lib/kicad/lead-s
 import { dumpLineFields } from "../perfboard/dump-lines.ts"
 import { parseBoardDump, type BoardDump, type Part } from "../guide/dump.ts"
 import {
-  admissiblePositions,
   assignStrips,
   drawFrom,
   junctionNets,
   seededPrng,
-  withPartMoved,
   type StripAssignment,
 } from "./seed-arrangement.ts"
+import {
+  admissibleOrigins,
+  occupancyOf,
+  turnsTakeable,
+  withPartMoved,
+  withPartTurned,
+} from "./seed-geometry.ts"
 import type { SeedInput, SpawnVeroroute } from "./seed.ts"
 
 /** One gesture: the verb, its own arguments, and what it is for, for a refusal. */
@@ -178,7 +183,30 @@ function leadSpanHoles(dump: BoardDump, ref: string): number {
  */
 function netsByPart(text: string): ReadonlyMap<string, readonly string[]> {
   const byPart = new Map<string, string[]>()
-  for (const fields of dumpLineFields(text, "NODE")) {
+  const lines = dumpLineFields(text, "NODE")
+  // **`--import` WRITES EVERY NODE NAME AS `-`, AND THAT IS MEASURED.** An
+  // `--import --strips horizontal` low-boost board dumps fourteen NODE lines and
+  // every one of them reads `NODE <id> NAME - <pins>`: the board carries the net
+  // TOPOLOGY and none of the net NAMES. The constructed arm turns each part
+  // across the strips of its two NETS and its strip assignment is keyed by the
+  // names `deriveTargets` orders, so on such a board there is nothing to join
+  // the two vocabularies by. It refuses here, where the cause is, rather than
+  // further down where the symptom is a junction that cannot be found.
+  if (lines.length > 0 && lines.every((fields) => fields[3] === "-")) {
+    throw new Error(
+      `seedCandidate: every one of this board's ${lines.length} NODE lines reads "NAME -", so ` +
+        "the board carries no net names at all - which is what --import writes, net topology " +
+        "without names. The constructed arm needs a net name per lead to put each part across " +
+        "the strips of its two nets, and its strip assignment is keyed by the names " +
+        "deriveTargets orders. It is NOT matched up by node id or by node order: an id is " +
+        "whatever order --import happened to allocate in, and a wrong correspondence would " +
+        "place every part on a plausible strip that is the wrong one, which scores like a " +
+        "layout and is not one. --update BOARD --netlist NETLIST is the step that reconciles " +
+        "names onto a board; SeedInput carries no netlist, so this arm cannot run that step " +
+        "itself. The random and import arms are unaffected - neither reads a net name.",
+    )
+  }
+  for (const fields of lines) {
     const [, id, keyword, net, ...pins] = fields
     if (id === undefined || keyword !== "NAME" || net === undefined) {
       throw new Error(`seedCandidate: unreadable NODE line: "${fields.join(" ")}"`)
@@ -232,7 +260,8 @@ function stripFor(assignment: StripAssignment, net: string, board: string): numb
  * the tighter per-footprint `maxSpanHoles` in `lib/kicad/lead-span.ts` is not
  * reachable from here and `HC5` is what applies it. A span outside 2-16 holes is
  * one no footprint's `maxSpanHoles` can accommodate, so that is the subset this
- * arm refuses on.
+ * arm refuses on. **`leadSpanFor` is therefore NOT consumed by this task** -
+ * the plan's interface list names it, and nothing here can call it.
  *
  * **WHAT THIS ARM DOES NOT CLAIM.** It emits the gestures its arrangement
  * implies, in the order the rotation measurement forces - move, then turn, then
@@ -368,36 +397,61 @@ export function importGestures(): readonly Gesture[] {
  *   rather than spinning or falling back to where it was.
  * - **Four quarter-turns being a full turn is arithmetic, not a parameter**, so
  *   `{0, 1, 2, 3}` is written once, here.
+ *
+ * **THE TURN COUNT IS DRAWN FIRST, AND THE ORIGIN IS THEN DRAWN FROM THE
+ * ORIGINS THAT COUNT CAN BE TAKEN FROM.** An origin a part cannot be turned from
+ * is not an admissible origin for a part that is about to be turned, and
+ * discovering that by attempting the turn would make this arm a retry loop -
+ * which reshapes the distribution the control exists to be. `turnsTakeable`
+ * narrows the set in advance, from the fork's own rotation arithmetic
+ * (`./seed-geometry.ts`), and the narrowing is stated rather than hidden: the
+ * arm draws uniformly over *the origins from which the drawn gesture can be
+ * applied*, not over every origin the part fits at.
+ *
+ * **MOVE BEFORE YOU TURN, and the measurement that settles it.** On an
+ * `--import --strips horizontal` low-boost board, 0 of 17 parts rotate where the
+ * first-fit sweep left them and 17 of 17 rotate after a move to an interior
+ * origin. The "rotatable 0, refused 60" sweep was taken on the COMMITTED boards,
+ * which is not where any arm starts.
  */
 const QUARTER_TURNS: readonly number[] = [0, 1, 2, 3]
 
 export function randomGestures(input: SeedInput, spawn: SpawnVeroroute): readonly Gesture[] {
   const { dump } = readBoard(spawn, input.importedBoard)
+  const grid = dump.grid
   const draw = seededPrng(input.seed)
   const gestures: Gesture[] = []
-  let working = dump
+  let working = occupancyOf(dump)
   // The DUMP'S PART ORDER, never an iteration over a hash map: Task 17's rule
   // for a deterministic enumeration, and the same reason - a seed has to name
   // one sequence of draws.
   for (const part of dump.parts) {
-    const positions = admissiblePositions(working, part.ref)
+    const turns = drawFrom(QUARTER_TURNS, draw)
+    const positions = admissibleOrigins(working, grid, part.ref).filter((origin) =>
+      turnsTakeable(working, grid, part.ref, origin, turns),
+    )
     if (positions.length === 0) {
       throw new Error(
-        `seedCandidate: the random arm has no admissible position for ${part.ref} on a ` +
-          `${working.grid.rows}x${working.grid.cols} grid beside the parts already placed ` +
-          `(${working.parts.map((other) => other.ref).filter((ref) => ref !== part.ref).join(", ")}). ` +
-          "It is NOT retried and the part is NOT left where it was: a start that quietly keeps " +
-          "one part's imported position is not the draw it claims to be, and a retry loop " +
-          "would spin instead of saying which part has nowhere to go.",
+        `seedCandidate: the random arm has no admissible position for ${part.ref} that it can ` +
+          `then take ${turns} clockwise quarter turn(s) from, on a ${grid.rows}x${grid.cols} ` +
+          `grid beside the parts already placed (${[...working.keys()].filter((ref) => ref !== part.ref).join(", ")}). ` +
+          "It is NOT retried, the turn count is NOT reduced, and the part is NOT left where it " +
+          "was: a start that quietly keeps one part's imported position is not the draw it " +
+          "claims to be, a retry would reshape the control arm's own distribution, and a " +
+          "reduced turn count would be a different gesture than the one drawn.",
       )
     }
     const to = drawFrom(positions, draw)
     gestures.push(move(part.ref, to[0], to[1]))
     working = withPartMoved(working, part.ref, to)
-    // MOVE BEFORE YOU TURN: the quarter-turn comes after the move, because the
-    // zero-rotatable measurement was taken on the import-placed board.
-    const turns = drawFrom(QUARTER_TURNS, draw)
-    for (let turn = 0; turn < turns; turn += 1) gestures.push(rotate(part.ref))
+    // MOVE BEFORE YOU TURN, and the occupancy follows EVERY gesture emitted -
+    // not only the moves. A turn transposes the part's rect, so a model that
+    // tracked moves alone let a later draw propose a hole an earlier turn had
+    // taken; that is what stopped this arm on C23 at seed 4.
+    for (let turn = 0; turn < turns; turn += 1) {
+      gestures.push(rotate(part.ref))
+      working = withPartTurned(working, grid, part.ref)
+    }
   }
   gestures.push(autofill())
   return gestures

@@ -64,18 +64,33 @@ import type { StripboardRules } from "./rules.ts"
 import type { BoardTargets } from "./targets.ts"
 
 /**
- * The derivations the arms read. `./seed-arrangement.ts` declares them and says
- * why each is what it is; this is the module the plan names and every consumer
+ * The derivations the arms read. `./seed-arrangement.ts` declares the stream,
+ * the draw and what the construction arranges; `./seed-geometry.ts` declares
+ * what a gesture does to the board, transcribed from the fork's own
+ * `Board::RotateComps`. This is the module the plan names and every consumer
  * imports, exactly as `tools/guide/dump.ts` re-exports `./dump-model.ts`.
  */
 export {
-  admissiblePositions,
   assignStrips,
   drawFrom,
   junctionNets,
   seededPrng,
   type StripAssignment,
 } from "./seed-arrangement.ts"
+export {
+  admissibleOrigins,
+  admissiblePositions,
+  occupancyOf,
+  rectOf,
+  turnable,
+  turnedRect,
+  turnsTakeable,
+  withPartMoved,
+  withPartTurned,
+  VEROROUTE_FOOTPRINT_ROWS,
+  type Occupancy,
+  type PartRect,
+} from "./seed-geometry.ts"
 
 export type SeedArm = "constructed" | "import" | "random"
 

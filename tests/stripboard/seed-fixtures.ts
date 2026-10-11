@@ -23,9 +23,13 @@
  * translates the named part's leads, and the board GROWS to cover a hole past
  * its edge - `--move --to 40,5` on a 35x35 board exits 0 and reports
  * `GRID 41 35`. `--rotate`, `--stretch` and `--author` leave the text
- * untouched, because what they do to the geometry was measured as unavailable
- * (`--rotate`: rotatable 0, refused 60) or is not read by any test here. **No
- * test may read anything off `dumpOf` but `GRID`.**
+ * untouched. That is a real limit and not an oversight: the random arm emits
+ * `--rotate` gestures, and a turn transposes a part's rect, so the simulated
+ * board diverges from a real one as soon as a turn is emitted. **No test may
+ * read anything off `dumpOf` but `GRID`.** What the random arm's bounds rest on
+ * instead is the enumerated set's own maxima, asserted directly, and
+ * `tests/stripboard/seed-geometry.test.ts` holds the turn model against the
+ * real binary.
  */
 import os from "node:os"
 import path from "node:path"
@@ -38,12 +42,17 @@ import type { SeedArm, SeedInput, SpawnVeroroute } from "../../tools/stripboard/
 const FIXTURE_DIR = path.join(os.tmpdir(), "stripboard-seed-fixtures")
 export const RUN_DIR = path.join(FIXTURE_DIR, "run")
 export const IMPORTED_BOARD = path.join(FIXTURE_DIR, "imported.vrt")
-const REACHING_BOARD = path.join(FIXTURE_DIR, "reaching.vrt")
+export const REACHING_BOARD = path.join(FIXTURE_DIR, "reaching.vrt")
 const CROWDED_BOARD = path.join(FIXTURE_DIR, "crowded.vrt")
 
 /**
  * The import-placed low-boost board, reduced to eight parts that between them
  * name **all fourteen** of low-boost's nets.
+ *
+ * EVERY PART'S `SPAN` AGREES WITH ITS OWN LEAD HOLES, which is not decoration:
+ * `tools/stripboard/seed-geometry.ts` reads `SPAN` as the footprint's column
+ * count and refuses a part whose leads fall outside the rectangle its `AT` and
+ * `SPAN` describe. A two-lead part one hole apart is `SPAN 2`.
  *
  * WHY ALL FOURTEEN rather than a convenient handful: the constructed arm's
  * gesture list is a function of the strip assignment, and `assignStrips`
@@ -68,13 +77,13 @@ const IMPORTED_DUMP = [
   "VERTICAL_STRIPS 0",
   "CUT_STATE COMPUTED",
   "PART J1 SIP5 Conn_01x05 AT 0,0 SPAN 5 DIRECTION W",
-  "PART R1 RESISTOR 56K AT 0,6 SPAN 1 DIRECTION W",
-  "PART R2 RESISTOR 47K AT 0,9 SPAN 1 DIRECTION W",
-  "PART C19 CAP_FILM .22uF AT 0,12 SPAN 1 DIRECTION W",
-  "PART C20 CAP_FILM .12uF AT 0,15 SPAN 1 DIRECTION W",
-  "PART C21 CAP_FILM .068uF AT 0,18 SPAN 1 DIRECTION W",
-  "PART R3 RESISTOR 10K AT 0,21 SPAN 1 DIRECTION W",
-  "PART R4 RESISTOR 22K AT 0,24 SPAN 1 DIRECTION W",
+  "PART R1 RESISTOR 56K AT 0,6 SPAN 2 DIRECTION W",
+  "PART R2 RESISTOR 47K AT 0,9 SPAN 2 DIRECTION W",
+  "PART C19 CAP_FILM .22uF AT 0,12 SPAN 2 DIRECTION W",
+  "PART C20 CAP_FILM .12uF AT 0,15 SPAN 2 DIRECTION W",
+  "PART C21 CAP_FILM .068uF AT 0,18 SPAN 2 DIRECTION W",
+  "PART R3 RESISTOR 10K AT 0,21 SPAN 2 DIRECTION W",
+  "PART R4 RESISTOR 22K AT 0,24 SPAN 2 DIRECTION W",
   "PIN J1 1 AT 0,0",
   "PIN J1 2 AT 0,1",
   "PIN J1 3 AT 0,2",
@@ -115,6 +124,13 @@ const IMPORTED_DUMP = [
  * A `pultec-mid` board on which the construction asks for a span no part can
  * make.
  *
+ * `L1` IS A `RESISTOR` AND NOT AN `INDUCTOR` for one reason:
+ * `VEROROUTE_FOOTPRINT_ROWS` records the four component types the five Pultec
+ * boards actually place, and an inductor is not one of them - mid's and
+ * hi-boost's inductors are panel-mount, carry a symbol rather than a footprint
+ * and never reach a board. A fixture naming a type the whitelist refuses would
+ * be testing the whitelist's refusal, which has its own test.
+ *
  * `L1`'s two nets are `mid_tap_0r1h` and `mid_coil_return`, which the gathered
  * arrangement puts on strips 0 and 27 of mid's twenty-eight - a span of 28
  * holes, against the tool's own ceiling of 16. The two nets were chosen by
@@ -127,7 +143,7 @@ const REACHING_DUMP = [
   "VERTICAL_STRIPS 0",
   "CUT_STATE COMPUTED",
   "PART J1 SIP5 Conn_01x05 AT 0,0 SPAN 5 DIRECTION W",
-  "PART L1 INDUCTOR 1H AT 0,6 SPAN 1 DIRECTION W",
+  "PART L1 RESISTOR 1K AT 0,6 SPAN 2 DIRECTION W",
   "PIN J1 1 AT 0,0",
   "PIN J1 2 AT 0,1",
   "PIN J1 3 AT 0,2",
@@ -167,8 +183,8 @@ const CROWDED_DUMP = [
   "BOUNDS 0,0 0,2",
   "VERTICAL_STRIPS 0",
   "CUT_STATE COMPUTED",
-  "PART R1 RESISTOR 10K AT 0,0 SPAN 1 DIRECTION W",
-  "PART X1 RESISTOR 10K AT 0,1 SPAN 1 DIRECTION W",
+  "PART R1 RESISTOR 10K AT 0,0 SPAN 2 DIRECTION W",
+  "PART X1 RESISTOR 10K AT 0,1 SPAN 2 DIRECTION W",
   "PIN R1 1 AT 0,0",
   "PIN R1 2 AT 0,1",
   "PIN X1 1 AT 0,1",

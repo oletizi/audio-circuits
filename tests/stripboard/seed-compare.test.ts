@@ -36,6 +36,7 @@ import {
   ONE_CONSTRUCTED_SEED_MEETS,
   RANDOM_WINS,
   recordingRunner,
+  refusingComparisonInput,
   scriptedRunner,
   SCRIPT,
 } from "./seed-compare-fixtures.ts"
@@ -65,7 +66,11 @@ test("no arm is dropped for starting invalid, and each start's admissibility is 
   expect(comparison.arms.length).toBe(3)
   for (const arm of comparison.arms) {
     expect(arm.perSeed.length, arm.arm).toBe(comparisonInput().rules.seeds.length)
-    expect(arm.perSeed.every((seed) => seed.run.startAdmissible === false), arm.arm).toBe(true)
+    // `?.` AND NOT `!`: a refused seed carries `run: null`, and `undefined ===
+    // false` is false - so this assertion fails on a refused seed rather than
+    // passing over one, which is what it has to do to mean anything.
+    expect(arm.perSeed.every((seed) => seed.run?.startAdmissible === false), arm.arm).toBe(true)
+    expect(arm.refused, `${arm.arm} refused a start`).toBe(0)
   }
   // The table is not NOBODY_REACHES: every arm met the mark on one seed, so the
   // assertion above is read off runs that happened rather than off a blank run.
@@ -176,6 +181,35 @@ test("a runner that throws fails the comparison rather than scoring that arm zer
   // the one confusion this comparison cannot afford.
   const thrower: ArmRunner = () => { throw new Error("spawn exhausted") }
   expect(() => compareSeedArms(comparisonInput(), thrower, fakeSpawn())).toThrow(/exhausted/)
+})
+
+test("a refused start is recorded per seed and the comparison still completes", () => {
+  // WHY THIS MATTERS MORE THAN ITS SIZE. The brief asks whether span refusals
+  // CONCENTRATE IN ONE ARM - that is how its "too fragile" failure mode is told
+  // apart from its "too clever" one - and an aborted comparison cannot answer
+  // it: an arm that refused on four seeds in five would read exactly like a
+  // harness that crashed. So the refusal is a recorded value.
+  const comparison =
+    compareSeedArms(refusingComparisonInput(), scriptedRunner(SCRIPT), fakeSpawn())
+  expect(comparison.arms.length).toBe(3)
+  const seeds = refusingComparisonInput().rules.seeds.length
+  const constructed = comparison.arms.find((arm) => arm.arm === "constructed")!
+  expect(constructed.refused, "the construction's span pre-flight refuses on every seed")
+    .toBe(seeds)
+  expect(constructed.reached).toBe(0)
+  for (const entry of constructed.perSeed) {
+    expect(entry.run, `seed ${entry.seed} has no run to score`).toBeNull()
+    expect(entry.metMark).toBe(false)
+    expect(entry.evaluationsToCross).toBeUndefined()
+    expect(entry.refusal ?? "", `seed ${entry.seed}`).toMatch(/maxSpanHoles/)
+  }
+  // THE CONCENTRATION IS THE FINDING, so the other two arms must be measured
+  // beside it rather than assumed: both produced a start on every seed.
+  for (const arm of ["import", "random"] as const) {
+    const other = comparison.arms.find((result) => result.arm === arm)!
+    expect(other.refused, arm).toBe(0)
+    expect(other.perSeed.every((entry) => entry.run !== null), arm).toBe(true)
+  }
 })
 
 test("a scripted table missing a row throws rather than answering it with a default", () => {
