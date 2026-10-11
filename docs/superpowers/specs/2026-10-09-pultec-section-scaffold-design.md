@@ -242,8 +242,18 @@ buy nothing.
 with a stacking (long-tail) header: pins below, socket above, so an assembled stack carries
 every net up through it. The footprint is the same two rows of five holes a plain
 `PinHeader_2x05_P2.54mm_Vertical` describes - a stacking header differs in the part, not the
-pads - so the layout does not change with the choice, and a bench build can still use a
-ribbon socket or individual leads on the same pattern before anything is stacked.
+pads - so the layout does not change with the choice, and a bench build can still use
+individual leads on the same pattern before anything is stacked.
+
+**Ribbon is not a build option (2026-10-10, the owner's decision).** The pattern would take a
+ribbon socket and earlier revisions of this document and the generated guides offered one. It
+is ruled out: the owner does not use ribbon on stripboard. Nothing physical changes, because
+the footprint was always a landing rather than a purchase — what changes is that the guides
+stop proposing it. **The interleaved ground row is unaffected**, and the paragraph below
+already said why: it was never a ribbon convention. These are 47 k to 470 k nodes, `in` and
+`out` would otherwise run adjacent with nothing between them, and in a stack that reasoning
+applies to the pin field rather than to a cable. A junction justified only by cable practice
+would have lost its second row here; this one does not.
 
 **In the model it is TWO 1x05 components, and that is a limit of the layout tool rather
 than a second part.** `lib/kicad/import-string.ts` derives a VeroRoute import string only

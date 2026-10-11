@@ -86,11 +86,13 @@ export const AXIAL_RESISTOR =
  *     "/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/Connector_Generic.kicad_sym"
  *
  * The footprint is a landing, not a purchase: a plain header, a stacking
- * (long-tail) header, a ribbon socket or individual leads all press into the
- * same row of five holes. See the design doc's "The junction is a stacking
- * 2x05 bus" for why the pitch and the two-row-of-five shape (one of these
- * headers for signals, a second for grounds - see below) are what let the
- * five boards stack on a shared bus.
+ * (long-tail) header or individual leads all press into the same row of five
+ * holes. A ribbon socket fits too and is NOT a build option here - the owner
+ * does not use ribbon on stripboard (2026-10-10) - so it is named only where
+ * naming it stops somebody rediscovering that it would have fitted. See the
+ * design doc's "The junction is a stacking 2x05 bus" for why the pitch and the
+ * two-row-of-five shape (one of these headers for signals, a second for
+ * grounds - see below) are what let the five boards stack on a shared bus.
  *
  * MODELLED AS TWO 1x05 HEADERS, NOT ONE 2x05 PART. The hardware is one 2x05
  * header occupying one row-of-ten pin field; the model is two, because
@@ -101,9 +103,8 @@ export const AXIAL_RESISTOR =
  * mapping a 2.54mm 2x05 to it would be exactly the kind of footprint-name-
  * lies error this repository has shipped twice already; `BLOCK_100`/
  * `BLOCK_200` are single-row terminal blocks). Two `PinHeader_1x05` headers on
- * adjacent rows occupy the identical pin field a single 2x05 does - a ribbon
- * socket still mates across both, a stack still carries every net through -
- * so nothing physical is lost. What is lost is model tidiness: KiCad sees two
+ * adjacent rows occupy the identical pin field a single 2x05 does, and a stack
+ * still carries every net through, so nothing physical is lost. What is lost is model tidiness: KiCad sees two
  * connectors where the hardware is one part, which matters only for a future
  * PCB footprint placement, out of scope for this stripboard design, and is
  * recorded here as a limitation rather than silently hidden.

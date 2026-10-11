@@ -199,8 +199,9 @@ function stackingWords(field: FieldShape): string {
       "they all share rather than a row of pins going nowhere.",
     "",
     `${rowCount} plain vertical 1x${field.shape.rows} headers fit the same holes and leave ` +
-      "nothing to stack onto, so they are the one thing not to order. A ribbon socket spanning " +
-      "every row, or individual leads, is the bench substitute when the boards are not stacked.",
+      "nothing to stack onto, so they are the one thing not to order. Individual leads soldered " +
+      "into the field are the bench substitute when the boards are not stacked. A ribbon socket " +
+      "also fits these holes and is NOT used here: the owner does not use ribbon on stripboard.",
     "",
     `It is ${rowCount} parts in the model and one part in the hand: the layout tool's part ` +
       "families (see `lib/kicad/import-string.ts`) have no multi-row shape at " +
