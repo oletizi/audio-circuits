@@ -272,11 +272,13 @@ export function compareSeedArms(
   const objective = markObjective(mark, input.rules)
   const arms: ArmResult[] = SEED_ARMS.map((arm) => {
     const perSeed: SeedRun[] = input.rules.seeds.map((seed) => {
-      // ONLY THE START'S REFUSAL IS CAUGHT HERE, AND THE RUNNER'S IS NOT. A
-      // seedCandidate that refuses is a fact about that arm on that seed, which
-      // is the thing being measured; a runner that throws is the harness losing
-      // its footing, and a scored zero for it would be indistinguishable from an
-      // arm that ran and lost.
+      // ONLY THE START'S REFUSAL IS CAUGHT HERE, AND THE RUNNER'S IS NOT.
+      // Deliberate, both halves, and the module comment above says why at
+      // length: a refused START is a measured property of that arm on that seed
+      // and the thing this comparison exists to see; a runner that throws is the
+      // harness losing its footing, and scoring it would put a harness fault
+      // into a rate where nothing could tell it from an arm that ran and lost.
+      // Note the `try` wraps the start and NOT the `runner(...)` call below.
       let start: string
       try {
         start = seedCandidate(

@@ -25,6 +25,8 @@ import { spawnSync } from "node:child_process"
 import { parseBoardDump, type BoardDump } from "../../tools/guide/dump.ts"
 import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
 import { exportNetlistFor, verorouteBinary } from "../../tools/perfboard/check.ts"
+import { referenceNetsFromExport } from "../../tools/stripboard/equivalence.ts"
+import { referenceNetsFor } from "../../tools/stripboard/seed-arrangement.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { deriveTargets } from "../../tools/stripboard/targets.ts"
@@ -216,21 +218,66 @@ test("the random arm produces a start on every reviewed seed, and the grid never
   }
 }, 120_000)
 
-test("the constructed arm refuses on an import-placed board, naming the missing net names", () => {
-  // A MEASURED FINDING AND NOT A DESIGN CHOICE. `--import` writes every NODE
-  // line as `NODE <id> NAME - <pins>`: the board carries the net TOPOLOGY and
-  // none of the net NAMES. The constructed arm turns each part across the strips
-  // of its two nets, and its strip assignment is keyed by the net names
-  // `deriveTargets` orders - so on this board there is nothing to join the two
-  // by. It refuses rather than inventing a correspondence, and the comparison
-  // records the refusal per seed (see seed-compare.test.ts) so the concentration
-  // in one arm is readable rather than fatal.
+test("the pin-set join agrees with the netlist exportNetlistFor itself produces", async () => {
+  // THE DRIFT GUARD, and the reason `referenceNetsFor` can claim not to be a
+  // second export path. It calls the same toImportedNetlist/writeLegacyNetlist
+  // pair exportNetlistFor calls, over the same four values every Pultec section
+  // module re-exports, skipping only the dynamic import that makes that function
+  // async. This test is what makes "the same" checkable rather than asserted.
+  const declaration = loadDeclaration(
+    path.join(moduleRepoRoot(), "boards", "pultec-low-boost", "perfboard.json"),
+  )
+  const viaExport = referenceNetsFromExport(await exportNetlistFor(declaration))
+  const viaModel = referenceNetsFor(
+    deriveTargets(physicalBoard("low-boost"), loadRules().stockRows, "pultec-low-boost"),
+  )
+  expect([...viaModel.keys()].sort(), "the same nets").toEqual([...viaExport.keys()].sort())
+  for (const [net, pins] of viaExport) {
+    expect([...(viaModel.get(net) ?? [])].sort(), net).toEqual([...pins].sort())
+  }
+  expect(viaExport.size, "a board with no nets would make this vacuous").toBe(14)
+})
+
+test("the constructed arm joins an import-placed board's nameless nodes and places from them", () => {
+  // WHAT THIS REPLACED. This arm used to REFUSE on an import-placed board,
+  // because --import writes every NODE line as `NAME -` and it read net names
+  // off the board. Net identity was never lost: each NODE still carries its
+  // complete pin list, a net's pin set is unique by construction, so the join
+  // from board node to model net is a bijection over pin sets - which is what
+  // HC8's own modules have always done rather than trust a board's node names.
+  //
+  // ONE OF FIVE, AND THE NUMBER IS THE FINDING. With the join in place the arm
+  // reaches real placement on every seed, and then on four of the five reviewed
+  // seeds one of its parts has no hole on the 35x35 grid that leaves it on the
+  // strip the arrangement gave it once its quarter turn and its stretches are
+  // applied. That is the brief's "too fragile" failure mode, measured. It is not
+  // tuned away here: an agent adjusting the arm it is also measuring is this
+  // plan's governing invariant failing in the one place nobody would look.
   const board = importedBoard()
   const rules = loadRules()
   const targets = deriveTargets(physicalBoard("low-boost"), rules.stockRows, "pultec-low-boost")
-  const runDir = path.join(WORK, "constructed-0")
-  fs.mkdirSync(runDir, { recursive: true })
-  expect(() =>
-    seedCandidate({ importedBoard: board, targets, runDir, rules, arm: "constructed", seed: 0 }, spawn),
-  ).toThrow(/NAME -/)
+  const completed: number[] = []
+  const refused: number[] = []
+  for (const seed of rules.seeds) {
+    const runDir = path.join(WORK, `constructed-${seed}`)
+    fs.mkdirSync(runDir, { recursive: true })
+    try {
+      const candidate = seedCandidate(
+        { importedBoard: board, targets, runDir, rules, arm: "constructed", seed },
+        spawn,
+      )
+      const after = dumpOf(candidate)
+      expect(after.grid, `seed ${seed} grew the board`).toEqual(dumpOf(board).grid)
+      expect(after.cutState, `seed ${seed}`).toBe("COMPUTED")
+      expect(after.parts.filter((part) => part.placement === "floating"), `seed ${seed}`).toEqual([])
+      completed.push(seed)
+    } catch (error) {
+      // AND THE REFUSAL IS THE GEOMETRIC ONE, not the net-name one it used to be.
+      expect(error instanceof Error ? error.message : String(error), `seed ${seed}`)
+        .toMatch(/no hole on this 35x35 grid leaves it there/)
+      refused.push(seed)
+    }
+  }
+  expect(completed, "the seeds the construction produces a start on").toEqual([3])
+  expect(refused, "and the four it does not").toEqual([0, 1, 2, 4])
 })

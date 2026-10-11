@@ -60,6 +60,17 @@ export interface PartRect {
   readonly col: number
   readonly rows: number
   readonly cols: number
+  /**
+   * Whether the part's leads run along the ROWS - an odd number of quarter turns
+   * from the `W`/`E` the import sweep leaves every part in.
+   *
+   * It is here because `--stretch` needs it and nothing else does: a stretch
+   * keeps the part's `AT` fixed and grows AWAY from it along the axis the leads
+   * run on. Measured on `R2`: facing `W` at `20,10`, `grow` takes `SPAN` 5 to 6
+   * and lead 2 from column 14 to 15; turned to `N` at `18,12`, `grow` leaves
+   * `AT` and `SPAN` alone and takes lead 2 from row 22 to 23.
+   */
+  readonly across: boolean
 }
 
 /**
@@ -184,7 +195,15 @@ export function occupancyOf(dump: BoardDump): Occupancy {
           `Recorded: ${[...VEROROUTE_FOOTPRINT_ROWS.keys()].sort().join(", ")}.`,
       )
     }
-    const rect = { row: part.placement.row, col: part.placement.col, rows, cols: part.span }
+    // `across: false` because a part facing N or S is refused above, so every
+    // rect read from a dump has its leads along the columns.
+    const rect = {
+      row: part.placement.row,
+      col: part.placement.col,
+      rows,
+      cols: part.span,
+      across: false,
+    }
     for (const pin of pins) {
       if (
         pin.row < rect.row ||
@@ -208,7 +227,7 @@ export function occupancyOf(dump: BoardDump): Occupancy {
   for (const ref of Object.keys(dump.pins)) {
     if (partRefs.has(ref)) continue
     for (const pin of dump.pins[ref] ?? []) {
-      rects.set(ref, { row: pin.row, col: pin.col, rows: 1, cols: 1 })
+      rects.set(ref, { row: pin.row, col: pin.col, rows: 1, cols: 1, across: false })
     }
   }
   return rects
@@ -281,7 +300,7 @@ export function admissibleOrigins(
   const origins: (readonly [number, number])[] = []
   for (let row = 0; row < grid.rows; row += 1) {
     for (let col = 0; col < grid.cols; col += 1) {
-      if (fits({ row, col, rows: rect.rows, cols: rect.cols }, grid, taken)) origins.push([row, col])
+      if (fits({ ...rect, row, col }, grid, taken)) origins.push([row, col])
     }
   }
   return origins
@@ -324,7 +343,36 @@ function centringShift(before: number, after: number): number {
 export function turnedRect(rect: PartRect): PartRect {
   const dy = centringShift(rect.rows, rect.cols)
   const dx = centringShift(rect.cols, rect.rows)
-  return { row: rect.row + dy, col: rect.col + dx, rows: rect.cols, cols: rect.rows }
+  return {
+    row: rect.row + dy,
+    col: rect.col + dx,
+    rows: rect.cols,
+    cols: rect.rows,
+    across: !rect.across,
+  }
+}
+
+/**
+ * Where a part's rect lands after one `--stretch --direction grow` (`by = 1`) or
+ * `shrink` (`by = -1`).
+ *
+ * **`AT` DOES NOT MOVE AND THE GROWTH IS AWAY FROM IT**, which is measured
+ * rather than assumed: `R2` facing `W` at `20,10` grows `SPAN` 5 to 6 with its
+ * `AT` unchanged and its second lead moving from column 14 to 15; turned to `N`
+ * at `18,12` it grows with `AT` and `SPAN` both unchanged and its second lead
+ * moving from row 22 to 23. So the axis that changes is the one the leads run
+ * along, which is what `across` records.
+ *
+ * The tool's own range is 2 to 16 holes for every stretchable family
+ * (`CompTypes::GetMinLength`/`GetMaxLength`), and `lib/kicad/lead-span.ts` holds
+ * the tighter per-footprint bound that `HC5` applies; neither is re-checked here,
+ * because this function answers where the rect goes and not whether the part can
+ * be bent to it.
+ */
+export function stretchedRect(rect: PartRect, by: 1 | -1): PartRect {
+  return rect.across
+    ? { ...rect, rows: rect.rows + by }
+    : { ...rect, cols: rect.cols + by }
 }
 
 /**
@@ -357,7 +405,7 @@ export function withPartMoved(
   to: readonly [number, number],
 ): Occupancy {
   const rect = rectOf(occupancy, ref)
-  return replaced(occupancy, ref, { row: to[0], col: to[1], rows: rect.rows, cols: rect.cols })
+  return replaced(occupancy, ref, { ...rect, row: to[0], col: to[1] })
 }
 
 /**
@@ -391,16 +439,49 @@ export function withPartTurned(occupancy: Occupancy, grid: Grid, ref: string): O
 }
 
 /**
- * Whether `turns` clockwise quarter turns can all be taken after moving `ref` to
- * `origin` - the predicate that narrows the random arm's draw.
+ * The occupancy after moving `ref` to `origin`, taking `turns` clockwise quarter
+ * turns and applying `stretch` steps of `--stretch` - or `undefined` when any
+ * one of those gestures is one the fork would refuse.
  *
  * **AN ORIGIN A PART CANNOT BE TURNED FROM IS NOT AN ADMISSIBLE ORIGIN FOR A
- * PART THAT IS ABOUT TO BE TURNED.** The arm draws its turn count first and then
- * draws an origin from the origins that count can be taken from, so no refusal
- * is discovered by attempting one. Narrowing the set is not the same as retrying
- * on refusal: a retry would make the surviving draws non-uniform over the set
- * the arm claims to draw from, and the control arm's whole value is that its
- * distribution is stated.
+ * PART THAT IS ABOUT TO BE TURNED**, and the same goes for the stretch. Both
+ * arms that place a part ask this question BEFORE emitting the move, so no
+ * refusal is discovered by attempting one. Narrowing a set is not the same as
+ * retrying on refusal: a retry would make the random arm's surviving draws
+ * non-uniform over the set it claims to draw from, and the control arm's whole
+ * value is that its distribution is stated.
+ *
+ * `stretch` is signed: positive grows, negative shrinks, zero does nothing.
+ */
+export function appliedGestures(
+  occupancy: Occupancy,
+  grid: Grid,
+  ref: string,
+  origin: readonly [number, number],
+  turns: number,
+  stretch: number,
+): Occupancy | undefined {
+  if (!fits({ ...rectOf(occupancy, ref), row: origin[0], col: origin[1] }, grid, cellsTakenBesides(occupancy, ref))) {
+    return undefined
+  }
+  let working = withPartMoved(occupancy, ref, origin)
+  for (let turn = 0; turn < turns; turn += 1) {
+    if (!turnable(working, grid, ref)) return undefined
+    working = withPartTurned(working, grid, ref)
+  }
+  const by = stretch > 0 ? 1 : -1
+  for (let step = 0; step < Math.abs(stretch); step += 1) {
+    const stretched = stretchedRect(rectOf(working, ref), by)
+    if (stretched.rows < 1 || stretched.cols < 1) return undefined
+    if (!fits(stretched, grid, cellsTakenBesides(working, ref))) return undefined
+    working = replaced(working, ref, stretched)
+  }
+  return working
+}
+
+/**
+ * Whether `turns` clockwise quarter turns can all be taken after moving `ref` to
+ * `origin` - the boolean the random arm, which never stretches, asks for.
  */
 export function turnsTakeable(
   occupancy: Occupancy,
@@ -409,10 +490,5 @@ export function turnsTakeable(
   origin: readonly [number, number],
   turns: number,
 ): boolean {
-  let working = withPartMoved(occupancy, ref, origin)
-  for (let turn = 0; turn < turns; turn += 1) {
-    if (!turnable(working, grid, ref)) return false
-    working = withPartTurned(working, grid, ref)
-  }
-  return true
+  return appliedGestures(occupancy, grid, ref, origin, turns, 0) !== undefined
 }

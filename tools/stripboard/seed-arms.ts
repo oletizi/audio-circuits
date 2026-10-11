@@ -19,18 +19,21 @@
  * comment has the measurement and the two refusal shapes.
  */
 import { TOOL_MAX_SPAN_HOLES, TOOL_MIN_SPAN_HOLES } from "../../lib/kicad/lead-span-model.ts"
-import { dumpLineFields } from "../perfboard/dump-lines.ts"
 import { parseBoardDump, type BoardDump, type Part } from "../guide/dump.ts"
 import {
   assignStrips,
   drawFrom,
   junctionNets,
+  referenceNetsFor,
   seededPrng,
   type StripAssignment,
 } from "./seed-arrangement.ts"
+import { netsByPart } from "./seed-nets.ts"
 import {
   admissibleOrigins,
+  appliedGestures,
   occupancyOf,
+  rectOf,
   turnsTakeable,
   withPartMoved,
   withPartTurned,
@@ -170,64 +173,6 @@ function leadSpanHoles(dump: BoardDump, ref: string): number {
   )
 }
 
-/**
- * Every net each part's pins name, read off the dump's `NODE` lines.
- *
- * **IT READS THE NODE LINES, WHICH `copper.ts` AND `equivalence.ts`
- * DELIBERATELY DO NOT, AND THE DIFFERENCE IS THE PURPOSE.** Those two exist to
- * check the fork's own net inference independently, so reading its node ids
- * would make them compare the tool against itself. This function is not
- * checking anything: a start needs to know which net each lead is on in order
- * to propose a placement, the fork's `NODE` names on an imported board ARE the
- * netlist's net names, and the start proposes while the grader grades.
- */
-function netsByPart(text: string): ReadonlyMap<string, readonly string[]> {
-  const byPart = new Map<string, string[]>()
-  const lines = dumpLineFields(text, "NODE")
-  // **`--import` WRITES EVERY NODE NAME AS `-`, AND THAT IS MEASURED.** An
-  // `--import --strips horizontal` low-boost board dumps fourteen NODE lines and
-  // every one of them reads `NODE <id> NAME - <pins>`: the board carries the net
-  // TOPOLOGY and none of the net NAMES. The constructed arm turns each part
-  // across the strips of its two NETS and its strip assignment is keyed by the
-  // names `deriveTargets` orders, so on such a board there is nothing to join
-  // the two vocabularies by. It refuses here, where the cause is, rather than
-  // further down where the symptom is a junction that cannot be found.
-  if (lines.length > 0 && lines.every((fields) => fields[3] === "-")) {
-    throw new Error(
-      `seedCandidate: every one of this board's ${lines.length} NODE lines reads "NAME -", so ` +
-        "the board carries no net names at all - which is what --import writes, net topology " +
-        "without names. The constructed arm needs a net name per lead to put each part across " +
-        "the strips of its two nets, and its strip assignment is keyed by the names " +
-        "deriveTargets orders. It is NOT matched up by node id or by node order: an id is " +
-        "whatever order --import happened to allocate in, and a wrong correspondence would " +
-        "place every part on a plausible strip that is the wrong one, which scores like a " +
-        "layout and is not one. --update BOARD --netlist NETLIST is the step that reconciles " +
-        "names onto a board; SeedInput carries no netlist, so this arm cannot run that step " +
-        "itself. The random and import arms are unaffected - neither reads a net name.",
-    )
-  }
-  for (const fields of lines) {
-    const [, id, keyword, net, ...pins] = fields
-    if (id === undefined || keyword !== "NAME" || net === undefined) {
-      throw new Error(`seedCandidate: unreadable NODE line: "${fields.join(" ")}"`)
-    }
-    for (const pin of pins) {
-      const dot = pin.lastIndexOf(".")
-      if (dot <= 0) {
-        throw new Error(
-          `seedCandidate: NODE ${id} (${net}) names "${pin}", which is not <ref>.<pin>: ` +
-            `"${fields.join(" ")}"`,
-        )
-      }
-      const ref = pin.slice(0, dot)
-      const nets = byPart.get(ref) ?? []
-      if (!nets.includes(net)) nets.push(net)
-      byPart.set(ref, nets)
-    }
-  }
-  return byPart
-}
-
 /** The strip this net is assigned, refusing a net the arrangement does not carry. */
 function stripFor(assignment: StripAssignment, net: string, board: string): number {
   const strip = assignment.get(net)
@@ -240,6 +185,43 @@ function stripFor(assignment: StripAssignment, net: string, board: string): numb
     )
   }
   return strip
+}
+
+/**
+ * The span a two-net part's construction asks for: `|strip a - strip b| + 1`,
+ * refused when it is outside the TOOL's own range.
+ *
+ * **IT IS A PRE-FLIGHT AND IT RUNS OVER EVERY PART BEFORE ANY GESTURE.** A
+ * construction that KNOWS it is asking for an unreachable span says so where the
+ * remedy is rather than emitting a candidate for `HC5` to reject anonymously,
+ * and refusing before the first gesture means a refused run has written nothing.
+ *
+ * **WHAT IT CAN KNOW IS THE TOOL'S RANGE AND NOT THE PART'S.** `SeedInput`
+ * carries no footprint map, so the tighter per-footprint `maxSpanHoles` in
+ * `lib/kicad/lead-span.ts` is unreachable from here and `HC5` is what applies
+ * it. A span outside 2-16 holes is one no footprint's `maxSpanHoles` can
+ * accommodate, so that is the subset this arm refuses on.
+ *
+ * **IT IS EXPORTED BECAUSE IT IS UNREACHABLE THROUGH `seedCandidate` ON EVERY
+ * COMMITTED BOARD, AND A GUARD NO TEST CAN DRIVE IS A GUARD THAT HAS ALREADY
+ * STOPPED WORKING.** The gathered arrangement's bandwidth is at most 11 (on
+ * low-cut), so the widest span any of the five boards asks for is 12 - inside
+ * the tool's 16 with margin. The refusal is for an arrangement nobody has
+ * produced yet, which is exactly why it is tested directly.
+ */
+export function constructionSpan(ref: string, stripA: number, stripB: number, board: string): number {
+  const needed = Math.abs(stripA - stripB) + 1
+  if (needed > TOOL_MAX_SPAN_HOLES || needed < TOOL_MIN_SPAN_HOLES) {
+    throw new Error(
+      `seedCandidate: the construction puts ${ref}'s two nets on strips ${stripA} and ` +
+        `${stripB} of ${board}, which asks for a span of ${needed} holes - outside the ` +
+        `tool's own ${TOOL_MIN_SPAN_HOLES}-${TOOL_MAX_SPAN_HOLES}, so no footprint's ` +
+        "maxSpanHoles in lib/kicad/lead-span.ts can accommodate it and no part can be bent " +
+        "to it. It is refused here rather than emitted for HC5 to reject anonymously, " +
+        "because the remedy is in the span data and in the arrangement, not in the layout.",
+    )
+  }
+  return needed
 }
 
 /**
@@ -267,16 +249,16 @@ function stripFor(assignment: StripAssignment, net: string, board: string): numb
  * implies, in the order the rotation measurement forces - move, then turn, then
  * stretch. Whether the fork's rotation about the rect's centre leaves each lead
  * exactly on the strip the arrangement named is NOT asserted here and is not
- * asserted anywhere: the start proposes and `grade.ts` measures. The column
- * packing below is the crudest part of it - a cursor advancing two columns per
- * part - and it is deliberately not dressed up as placement.
+ * asserted anywhere: the start proposes and `grade.ts` measures. What IS checked
+ * before each gesture is emitted is that the fork will accept it, through the
+ * same `appliedGestures` model the random arm draws through.
  */
 export function constructedGestures(input: SeedInput, spawn: SpawnVeroroute): readonly Gesture[] {
   const { text, dump } = readBoard(spawn, input.importedBoard)
   const assignment = assignStrips(input.targets, input.seed)
   const junction = junctionNets(input.targets)
-  const nets = netsByPart(text)
   const board = input.targets.board
+  const nets = netsByPart(text, referenceNetsFor(input.targets), board)
 
   const junctionSet = new Set(junction)
   const junctionPart = dump.parts.find((part) => {
@@ -315,50 +297,93 @@ export function constructedGestures(input: SeedInput, spawn: SpawnVeroroute): re
           "strip and cost a cut per net, silently, under a rule that claims zero.",
       )
     }
-    const needed = own.length === 1 ? leadSpanHoles(dump, part.ref) : Math.abs(own[0]! - own[1]!) + 1
-    if (own.length === 2 && (needed > TOOL_MAX_SPAN_HOLES || needed < TOOL_MIN_SPAN_HOLES)) {
-      throw new Error(
-        `seedCandidate: the construction puts ${part.ref}'s two nets on strips ${own[0]} and ` +
-          `${own[1]} of ${board}, which asks for a span of ${needed} holes - outside the ` +
-          `tool's own ${TOOL_MIN_SPAN_HOLES}-${TOOL_MAX_SPAN_HOLES}, so no footprint's ` +
-          "maxSpanHoles in lib/kicad/lead-span.ts can accommodate it and no part can be bent " +
-          "to it. It is refused here rather than emitted for HC5 to reject anonymously, " +
-          "because the remedy is in the span data and in the arrangement, not in the layout.",
-      )
-    }
+    const needed =
+      own.length === 1
+        ? leadSpanHoles(dump, part.ref)
+        : constructionSpan(part.ref, own[0]!, own[1]!, board)
     plan.push({ part, strips: own, needed })
   }
 
   const gestures: Gesture[] = []
-  let column = 0
-  const nextColumn = (): number => {
-    if (column >= dump.grid.cols) {
-      throw new Error(
-        `seedCandidate: the construction ran out of columns on ${board} at column ${column} of ` +
-          `${dump.grid.cols}. The packing is a cursor advancing two columns per part and makes ` +
-          "no attempt to be tight; it is refused rather than wrapped, because a wrap would put " +
-          "two parts in one column and the overlap would read as a placement.",
-      )
+  const grid = dump.grid
+  let working = occupancyOf(dump)
+
+  /**
+   * Place one part on the strip the arrangement gave it, at the FIRST column it
+   * fits at and can take its own turn and stretches from.
+   *
+   * **THE STRIP IS DECIDED BY THE ARRANGEMENT AND THE COLUMN IS THE ONLY
+   * FREEDOM**, so the column is searched rather than drawn: left to right, the
+   * first one that admits the whole gesture sequence. That is deterministic
+   * (this arm's only randomness is the seeded arrangement itself) and it is
+   * narrowing rather than retrying - `appliedGestures` answers before anything
+   * is emitted, so no refusal is discovered by attempting one.
+   *
+   * It replaced a cursor that advanced two columns per part and consulted
+   * nothing. That cursor is deleted rather than kept beside this: it put parts
+   * on top of each other and on top of the board's pads, and against the real
+   * binary it stopped the arm on `junction_signals`' first gestures on four
+   * seeds out of five.
+   */
+  const place = (ref: string, strip: number, turns: number, stretchBy: number): void => {
+    // THE MOVE'S ROW IS NOT THE STRIP, AND ASSUMING IT WAS IS WHAT BROKE THIS
+    // ARM AGAINST THE REAL BINARY. `--move --to` names the footprint's TOP-LEFT
+    // corner, and a quarter turn then shifts that corner by
+    // `trunc((DY - DX) / 2)` rows - upwards for every part lying along a strip -
+    // so a part sent to row 2 and turned lands at row 0 or above it and the fork
+    // refuses the pan. The row that gets the part onto its strip is therefore
+    // SEARCHED, with the model answering where each candidate ends up, rather
+    // than computed by a shift written out here: the shift depends on the rect's
+    // dimensions at each step, and a second copy of that arithmetic is the thing
+    // `./seed-geometry.ts` exists to prevent.
+    //
+    // THE TARGET IS THE TURNED RECT'S TOP ROW. The occupancy model tracks rects
+    // and not leads, and for every type `VEROROUTE_FOOTPRINT_ROWS` covers the
+    // first lead sits on the rect's edge along the axis the leads run on - so
+    // after the turn the rect's top row IS the strip the first lead lands on.
+    // That is a property of those four footprints and not of footprints in
+    // general, which is one more reason the whitelist refuses an unrecorded type.
+    for (let row = 0; row < grid.rows; row += 1) {
+      for (let col = 0; col < grid.cols; col += 1) {
+        const after = appliedGestures(working, grid, ref, [row, col], turns, stretchBy)
+        if (after === undefined) continue
+        if (rectOf(after, ref).row !== strip) continue
+        gestures.push(move(ref, row, col))
+        for (let turn = 0; turn < turns; turn += 1) gestures.push(rotate(ref))
+        const direction = stretchBy > 0 ? "grow" : "shrink"
+        for (let step = 0; step < Math.abs(stretchBy); step += 1) {
+          gestures.push(stretch(ref, direction))
+        }
+        working = after
+        return
+      }
     }
-    const at = column
-    column += 2
-    return at
+    throw new Error(
+      `seedCandidate: the construction puts ${ref} on strip ${strip} of ${board}, and no hole on ` +
+        `this ${grid.rows}x${grid.cols} grid leaves it there after its ${turns} quarter turn(s) ` +
+        `and ${Math.abs(stretchBy)} stretch step(s), beside the parts already placed ` +
+        `(${[...working.keys()].filter((other) => other !== ref).join(", ")}). It is NOT moved to ` +
+        "another strip: the strip IS the arrangement, and a part on a strip the arrangement did " +
+        "not give it makes the one-net-per-strip claim false about the board produced. This is " +
+        "the construction being too fragile for this board - the failure mode the comparison " +
+        "exists to be able to find - and it is reported per seed rather than aborting the run.",
+    )
   }
 
   // The junction first: its five 1-hole-pitch pins onto five consecutive strips,
-  // the first of them on the strip its first pin's net was assigned.
-  const junctionStrip = stripFor(assignment, junction[0]!, board)
-  gestures.push(move(junctionPart.ref, junctionStrip, nextColumn()))
-  if (alongOneStrip(dump, junctionPart)) gestures.push(rotate(junctionPart.ref))
+  // the first of them on the strip its first pin's net was assigned. It never
+  // stretches - a SIP5's pitch is fixed.
+  place(
+    junctionPart.ref,
+    stripFor(assignment, junction[0]!, board),
+    alongOneStrip(dump, junctionPart) ? 1 : 0,
+    0,
+  )
 
   for (const { part, strips, needed } of plan) {
-    gestures.push(move(part.ref, strips[0]!, nextColumn()))
-    if (strips.length === 2 && alongOneStrip(dump, part)) gestures.push(rotate(part.ref))
-    const have = leadSpanHoles(dump, part.ref)
-    const direction = needed > have ? "grow" : "shrink"
-    for (let step = 0; step < Math.abs(needed - have); step += 1) {
-      gestures.push(stretch(part.ref, direction))
-    }
+    const turns = strips.length === 2 && alongOneStrip(dump, part) ? 1 : 0
+    const stretchBy = strips.length === 2 ? needed - leadSpanHoles(dump, part.ref) : 0
+    place(part.ref, strips[0]!, turns, stretchBy)
   }
   gestures.push(autofill())
   return gestures

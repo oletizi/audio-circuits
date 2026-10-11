@@ -31,135 +31,46 @@
  * `tests/stripboard/seed-geometry.test.ts` holds the turn model against the
  * real binary.
  */
+import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { physicalBoard } from "../../circuits/pultec/physical/board.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { deriveTargets, type BoardTargets } from "../../tools/stripboard/targets.ts"
-import type { SeedArm, SeedInput, SpawnVeroroute } from "../../tools/stripboard/seed.ts"
+import type { SeedInput, SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 
 /** Nothing below ever writes a file, so these paths are names and not locations. */
 const FIXTURE_DIR = path.join(os.tmpdir(), "stripboard-seed-fixtures")
 export const RUN_DIR = path.join(FIXTURE_DIR, "run")
 export const IMPORTED_BOARD = path.join(FIXTURE_DIR, "imported.vrt")
-export const REACHING_BOARD = path.join(FIXTURE_DIR, "reaching.vrt")
 const CROWDED_BOARD = path.join(FIXTURE_DIR, "crowded.vrt")
 
 /**
- * The import-placed low-boost board, reduced to eight parts that between them
- * name **all fourteen** of low-boost's nets.
+ * The import-placed low-boost board, CAPTURED rather than hand-written.
  *
- * EVERY PART'S `SPAN` AGREES WITH ITS OWN LEAD HOLES, which is not decoration:
- * `tools/stripboard/seed-geometry.ts` reads `SPAN` as the footprint's column
- * count and refuses a part whose leads fall outside the rectangle its `AT` and
- * `SPAN` describe. A two-lead part one hole apart is `SPAN 2`.
+ * **IT HAD TO BECOME A CAPTURE, AND THE REASON IS THE JOIN.** `--import` writes
+ * every `NODE` line `NAME -`, so the constructed arm recovers net identity by
+ * joining each node's PIN SET against the model's own nets - and that join is
+ * complete in both directions, by design: a node matching no reference net, or a
+ * reference net matching no node, is a genuine disagreement about which board is
+ * being graded. A reduced hand-written board therefore cannot be joined at all;
+ * its made-up pin sets match nothing. The predecessor of this constant was eight
+ * hand-written parts, and three real defects hid behind it.
  *
- * WHY ALL FOURTEEN rather than a convenient handful: the constructed arm's
- * gesture list is a function of the strip assignment, and `assignStrips`
- * perturbs the arrangement by transposing two adjacent blocks. A dump that left
- * some nets unreferenced could have its two transposed nets be exactly the
- * unreferenced ones, and then two different seeds would produce an identical
- * gesture list and the one-start test would pass for the wrong arm.
+ * `tests/fixtures/stripboard/provenance.txt` records how it was produced and
+ * that it is regenerable rather than evidence. 17 `PART` lines, 10 `PAD` lines,
+ * 14 `NODE` lines, all fourteen reading `NAME -`.
  *
- * EVERY PART IS IN ROW 0 HERE because that is what `--import`'s first-fit sweep
- * leaves, and it is also why the rotation measurement came out at zero. It is
- * NOT a general fact about these boards - `board_terminals` sits at row 1 on
- * three of them and `pultec-mid` spans rows 0-3 - and nothing in `seed.ts` has
- * a row-0 case.
- *
- * The five junction nets sit on `J1`, a `SIP5` at 1-hole pitch, in
- * `junctionSignalComponent`'s own pin order: `in`, `hi_boost_out`,
- * `lo_boost_in`, `out`, `0`.
+ * EVERY PART IS IN ROW 0, 1 OR 2 here because that is what `--import`'s
+ * first-fit sweep leaves, and it is why only one of them can be turned where it
+ * stands. It is NOT a general fact about these boards - `board_terminals` sits at
+ * row 1 on three of them and `pultec-mid` spans rows 0-3 - and nothing in
+ * `seed.ts` has a row-0 case.
  */
-const IMPORTED_DUMP = [
-  "GRID 35 35",
-  "BOUNDS 0,0 0,25",
-  "VERTICAL_STRIPS 0",
-  "CUT_STATE COMPUTED",
-  "PART J1 SIP5 Conn_01x05 AT 0,0 SPAN 5 DIRECTION W",
-  "PART R1 RESISTOR 56K AT 0,6 SPAN 2 DIRECTION W",
-  "PART R2 RESISTOR 47K AT 0,9 SPAN 2 DIRECTION W",
-  "PART C19 CAP_FILM .22uF AT 0,12 SPAN 2 DIRECTION W",
-  "PART C20 CAP_FILM .12uF AT 0,15 SPAN 2 DIRECTION W",
-  "PART C21 CAP_FILM .068uF AT 0,18 SPAN 2 DIRECTION W",
-  "PART R3 RESISTOR 10K AT 0,21 SPAN 2 DIRECTION W",
-  "PART R4 RESISTOR 22K AT 0,24 SPAN 2 DIRECTION W",
-  "PIN J1 1 AT 0,0",
-  "PIN J1 2 AT 0,1",
-  "PIN J1 3 AT 0,2",
-  "PIN J1 4 AT 0,3",
-  "PIN J1 5 AT 0,4",
-  "PIN R1 1 AT 0,6",
-  "PIN R1 2 AT 0,7",
-  "PIN R2 1 AT 0,9",
-  "PIN R2 2 AT 0,10",
-  "PIN C19 1 AT 0,12",
-  "PIN C19 2 AT 0,13",
-  "PIN C20 1 AT 0,15",
-  "PIN C20 2 AT 0,16",
-  "PIN C21 1 AT 0,18",
-  "PIN C21 2 AT 0,19",
-  "PIN R3 1 AT 0,21",
-  "PIN R3 2 AT 0,22",
-  "PIN R4 1 AT 0,24",
-  "PIN R4 2 AT 0,25",
-  "NODE 1 NAME in J1.1 R1.1",
-  "NODE 2 NAME hi_boost_out J1.2",
-  "NODE 3 NAME lo_boost_in J1.3 R2.1",
-  "NODE 4 NAME out J1.4 R2.2",
-  "NODE 5 NAME 0 J1.5 C19.1",
-  "NODE 6 NAME j10_p1 R1.2 R4.2",
-  "NODE 7 NAME j10_p2 C19.2",
-  "NODE 8 NAME j10_p3 C20.1",
-  "NODE 9 NAME j10_p4 C20.2",
-  "NODE 10 NAME j10_p5 C21.1",
-  "NODE 11 NAME j10_p6 C21.2",
-  "NODE 12 NAME si_hi_cut_j12_p3 R3.1",
-  "NODE 13 NAME si_hi_cut_j4_p2 R3.2",
-  "NODE 14 NAME si_hi_boost_j20_p3 R4.1",
-  "",
-].join("\n")
-
-/**
- * A `pultec-mid` board on which the construction asks for a span no part can
- * make.
- *
- * `L1` IS A `RESISTOR` AND NOT AN `INDUCTOR` for one reason:
- * `VEROROUTE_FOOTPRINT_ROWS` records the four component types the five Pultec
- * boards actually place, and an inductor is not one of them - mid's and
- * hi-boost's inductors are panel-mount, carry a symbol rather than a footprint
- * and never reach a board. A fixture naming a type the whitelist refuses would
- * be testing the whitelist's refusal, which has its own test.
- *
- * `L1`'s two nets are `mid_tap_0r1h` and `mid_coil_return`, which the gathered
- * arrangement puts on strips 0 and 27 of mid's twenty-eight - a span of 28
- * holes, against the tool's own ceiling of 16. The two nets were chosen by
- * reading the arrangement, not invented: they are its first and last entries at
- * seed 0.
- */
-const REACHING_DUMP = [
-  "GRID 35 35",
-  "BOUNDS 0,0 0,7",
-  "VERTICAL_STRIPS 0",
-  "CUT_STATE COMPUTED",
-  "PART J1 SIP5 Conn_01x05 AT 0,0 SPAN 5 DIRECTION W",
-  "PART L1 RESISTOR 1K AT 0,6 SPAN 2 DIRECTION W",
-  "PIN J1 1 AT 0,0",
-  "PIN J1 2 AT 0,1",
-  "PIN J1 3 AT 0,2",
-  "PIN J1 4 AT 0,3",
-  "PIN J1 5 AT 0,4",
-  "PIN L1 1 AT 0,6",
-  "PIN L1 2 AT 0,7",
-  "NODE 1 NAME in J1.1",
-  "NODE 2 NAME hi_boost_out J1.2",
-  "NODE 3 NAME lo_boost_in J1.3",
-  "NODE 4 NAME out J1.4",
-  "NODE 5 NAME 0 J1.5",
-  "NODE 6 NAME mid_tap_0r1h L1.1",
-  "NODE 7 NAME mid_coil_return L1.2",
-  "",
-].join("\n")
+const IMPORTED_DUMP = fs.readFileSync(
+  path.join(import.meta.dir, "..", "fixtures", "stripboard", "pultec-low-boost-imported.dump"),
+  "utf8",
+)
 
 /**
  * A board on which `R1` has nowhere to go: a 1x3 grid where `X1`'s two leads
@@ -202,14 +113,12 @@ const CROWDED_DUMP = [
  */
 export const DUMPS: Readonly<Record<string, string>> = {
   imported: IMPORTED_DUMP,
-  reaching: REACHING_DUMP,
   crowded: CROWDED_DUMP,
 }
 
 /** Which named dump each board path holds. A path not here has no text and throws. */
 const BOARD_KEYS: ReadonlyMap<string, string> = new Map([
   [IMPORTED_BOARD, "imported"],
-  [REACHING_BOARD, "reaching"],
   [CROWDED_BOARD, "crowded"],
 ])
 
@@ -361,7 +270,19 @@ export function targetsFor(section: string): BoardTargets {
   return built
 }
 
-/** The input every arm is run on: the import-placed low-boost board. */
+/**
+ * The input every arm is run on: the import-placed low-boost board.
+ *
+ * **SEED 3, AND THE REASON IS A MEASUREMENT RATHER THAN A PREFERENCE.** The
+ * tests that loop over all three arms need an input every arm produces a start
+ * on, and on this board the constructed arm produces one on seeds
+ * 3, 5, 7, 8, 12, 18, 20, 25, 26, 28, 29 and 30 of the first thirty-one - four
+ * of the five reviewed seeds leave one of its parts with no hole that keeps it on
+ * its assigned strip. That fragility is the constructed arm's own measured
+ * property and `tests/stripboard/seed-compare.test.ts` asserts it directly; it is
+ * not something these fixtures paper over, and seed 3 is named here so nobody
+ * reads it as an arbitrary choice.
+ */
 export function input(): SeedInput {
   return {
     importedBoard: IMPORTED_BOARD,
@@ -369,19 +290,7 @@ export function input(): SeedInput {
     runDir: RUN_DIR,
     rules: loadRules(),
     arm: "import",
-    seed: 0,
-  }
-}
-
-/** An input whose construction asks for a span no part can reach. */
-export function reachingInput(arm: SeedArm): SeedInput {
-  return {
-    importedBoard: REACHING_BOARD,
-    targets: targetsFor("mid"),
-    runDir: RUN_DIR,
-    rules: loadRules(),
-    arm,
-    seed: 0,
+    seed: 3,
   }
 }
 

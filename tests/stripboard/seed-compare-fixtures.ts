@@ -27,7 +27,7 @@ import {
   type ArmRunner,
   type ComparisonInput,
 } from "../../tools/stripboard/seed-compare.ts"
-import { IMPORTED_BOARD, REACHING_BOARD, RUN_DIR, targetsFor } from "./seed-fixtures.ts"
+import { IMPORTED_BOARD, RUN_DIR, targetsFor } from "./seed-fixtures.ts"
 
 /**
  * A complete `ArmRun` from a partial one, **throwing for a field it cannot
@@ -186,26 +186,35 @@ export function recordingRunner(
 /**
  * The tables, each named for what it encodes. The reviewed seed set is five
  * seeds, so a rate is `n/5` and every figure below is read straight off the row.
+ *
+ * **EVERY CONSTRUCTED ROW IS A SUBSET OF `[3]`, AND THAT IS FORCED.** These
+ * tables are driven through the real import-placed low-boost board, on which the
+ * constructed arm produces a start on seed 3 and refuses on the other four - and
+ * a refused seed cannot meet the mark, so a table claiming it did would be
+ * claiming something the harness correctly contradicts. The rates are chosen so
+ * each retirement case is still reachable under that ceiling: what is under test
+ * is the harness's arithmetic, and `1/5 > 0/5` exercises it exactly as `4/5 >
+ * 2/5` would.
  */
 
-/** Rates 2/5, 1/5, 1/5: a generic table for the tests that do not read a rate. */
-export const SCRIPT: ArmScript = { constructed: [0, 1], import: [2], random: [3] }
+/** Rates 1/5, 1/5, 0/5: a generic table for the tests that do not read a rate. */
+export const SCRIPT: ArmScript = { constructed: [3], import: [2], random: [] }
 
-/** Rates 1/5, 0/5, 4/5 - the control wins outright, so the other two are retireable. */
-export const RANDOM_WINS: ArmScript = { constructed: [0], import: [], random: [0, 1, 2, 3] }
+/** Rates 0/5, 0/5, 2/5 - the control wins outright, so the other two are retireable. */
+export const RANDOM_WINS: ArmScript = { constructed: [], import: [], random: [0, 1] }
 
-/** Rates 3/5, 1/5, 3/5 - constructed TIES the control, which retires it. */
+/** Rates 1/5, 0/5, 1/5 - constructed TIES the control, which retires it. */
 export const CONSTRUCTED_TIES_RANDOM: ArmScript = {
-  constructed: [0, 1, 2],
-  import: [0],
-  random: [0, 1, 2],
+  constructed: [3],
+  import: [],
+  random: [0],
 }
 
-/** Rates 4/5, 3/5, 2/5 - both beat the control, so nothing is retireable. */
+/** Rates 1/5, 1/5, 0/5 - both beat the control, so nothing is retireable. */
 export const CONSTRUCTED_WINS: ArmScript = {
-  constructed: [0, 1, 2, 3],
-  import: [0, 1, 2],
-  random: [0, 1],
+  constructed: [3],
+  import: [2],
+  random: [],
 }
 
 /** Rates 0/5 all round: the run measured the budget, not the arms. */
@@ -213,46 +222,27 @@ export const NOBODY_REACHES: ArmScript = { constructed: [], import: [], random: 
 
 /** Only one seed of one arm meets, so `reached` is exactly 1 there and 0 elsewhere. */
 export const ONE_CONSTRUCTED_SEED_MEETS: ArmScript = {
-  constructed: [0],
+  constructed: [3],
   import: [],
   random: [],
 }
 
 /**
- * Rates 1/5 all round, and every start inadmissible - which is what all three
- * arms actually produce: `--check` reports 19, 13, 7 and 6 incomplete nets on
- * the four import-placed layouts, and neither the construction nor the draw
+ * Rates 1/5 all round, and every start that happened inadmissible - which is
+ * what all three arms produce: `--check` reports 19, 13, 7 and 6 incomplete nets
+ * on the four import-placed layouts, and neither the construction nor the draw
  * routes a net. The inadmissible start is `armRun`'s own fill (`false` for every
  * admissibility field it is not given), so this table does not have to say it;
  * the table is distinct from `NOBODY_REACHES` on purpose, so the test that reads
  * `startAdmissible` is not also reading a run where nothing happened.
  */
-export const EVERY_START_INVALID: ArmScript = { constructed: [0], import: [1], random: [2] }
+export const EVERY_START_INVALID: ArmScript = { constructed: [3], import: [1], random: [2] }
 
 /** The comparison's input: the low-boost board, the reviewed rules, the frozen mark. */
 export function comparisonInput(): ComparisonInput {
   return {
     importedBoard: IMPORTED_BOARD,
     targets: targetsFor("low-boost"),
-    runDir: RUN_DIR,
-    rules: loadRules(),
-    mark: FROZEN_MARK,
-  }
-}
-
-/**
- * The same comparison over the `pultec-mid` board whose construction asks for a
- * span no part can reach, so **the constructed arm refuses on every seed** while
- * the other two produce a start.
- *
- * This is the input the refusal-concentration test needs, and the refusal is the
- * real one: `seedCandidate`'s own span pre-flight, reached through the same code
- * path a real board would reach it through. Nothing is stubbed to refuse.
- */
-export function refusingComparisonInput(): ComparisonInput {
-  return {
-    importedBoard: REACHING_BOARD,
-    targets: targetsFor("mid"),
     runDir: RUN_DIR,
     rules: loadRules(),
     mark: FROZEN_MARK,

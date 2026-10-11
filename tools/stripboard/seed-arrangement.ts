@@ -4,7 +4,8 @@
  *
  * `./seed.ts` owns the arms, the selector and the gesture driver; this file
  * owns the data two of them consult - the one seeded stream, the one draw, the
- * constructed arm's strip assignment and the junction's net list. What a
+ * constructed arm's strip assignment, the junction's net list and the reference
+ * nets a board's nodes are joined to by pin set. What a
  * gesture does to the board's GEOMETRY is `./seed-geometry.ts`, transcribed
  * from the fork's own `Board::RotateComps`.
  * The split is by those seams and no other, for the reason `lead-span.ts` /
@@ -24,7 +25,11 @@
  * and Task 16's comparison exists to be able to come out against it. Nothing in
  * this file should be read as evidence for the second claim.
  */
-import { physicalBoard, asModuleOwner } from "../../circuits/pultec/physical/board.ts"
+import { physicalBoard, asModuleOwner, sectionBoard } from "../../circuits/pultec/physical/board.ts"
+import { PASSIVE_PIN_NUMBERS } from "../../circuits/pultec/physical/parts.ts"
+import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
+import { writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
+import { referenceNetsFromExport, type ReferenceNets } from "./equivalence.ts"
 import type { BoardTargets } from "./targets.ts"
 import type { Component, Network } from "../../lib/model/types.ts"
 
@@ -128,7 +133,7 @@ const PULTEC_PREFIX = "pultec-"
 function sectionOf(board: string): string {
   if (!board.startsWith(PULTEC_PREFIX)) {
     throw new Error(
-      `junctionNets: "${board}" is not a Pultec section board, so it has no ${JUNCTION_ID} ` +
+      `"${board}" is not a Pultec section board, so it has no ${JUNCTION_ID} ` +
         `component to read the junction's nets from. Board names reaching here are ` +
         `"${PULTEC_PREFIX}<section>" as boards/ spells them. It is NOT defaulted to an empty ` +
         "list: an empty junction would make the constructed arm's junction clause a no-op " +
@@ -229,6 +234,54 @@ export function junctionNets(
     )
   }
   return ordered
+}
+
+/**
+ * The reference nets of one Pultec section - net name to its pins, as
+ * `<ref>.<pin>` - lowered from the model.
+ *
+ * **WHY THIS EXISTS, AND IT IS NOT A SECOND EXPORT PATH.**
+ * `tools/perfboard/check.ts` says outright that two netlist export paths which
+ * could disagree is the defect class it exists to remove, and this is not one:
+ * it calls the SAME `toImportedNetlist` and `writeLegacyNetlist` pair
+ * `exportNetlistFor` calls, over the SAME four values every Pultec section
+ * module re-exports - each of those modules is literally
+ * `const BOARD = sectionBoard(section)` plus `PASSIVE_PIN_NUMBERS`, with
+ * `DESIGNATORS = BOARD.designators`, `PAD_ORDER = BOARD.padOrders`,
+ * `OFF_BOARD_IDS = BOARD.offBoardIds` and `PIN_NUMBERS = PASSIVE_PIN_NUMBERS`.
+ * What it skips is only the dynamic `import()` of the circuit module, which is
+ * the one thing that makes `exportNetlistFor` async, and `seedCandidate` is
+ * synchronous. `tests/stripboard/seed-geometry.test.ts` holds the two against
+ * each other on a real board, so the claim that they agree is checked rather
+ * than asserted.
+ *
+ * **WHAT IT IS FOR.** `--import` writes every board `NODE` line as
+ * `NAME -`: the board carries net TOPOLOGY and no net NAMES. But each `NODE`
+ * still carries its complete pin list, and a net's pin set is unique by
+ * construction - two nets with identical pin sets would BE one net - so the
+ * join from board node to model net is a bijection over pin sets. That is what
+ * the constructed arm uses, and it is what `HC8` already does: both
+ * `referenceNetsFromExport` and `netlistEquivalence` exist because the board's
+ * own node names were never trusted, and the constructed arm must not be the
+ * one component that depends on them.
+ *
+ * `createdAt` is fixed rather than a clock reading: the text is parsed back
+ * immediately and never written anywhere, and a timestamp in it would make this
+ * function impure for no benefit.
+ */
+export function referenceNetsFor(targets: BoardTargets): ReferenceNets {
+  const section = asModuleOwner(sectionOf(targets.board))
+  const board = sectionBoard(section)
+  const lowered = toImportedNetlist(
+    board.network,
+    board.designators,
+    PASSIVE_PIN_NUMBERS,
+    board.offBoardIds,
+    board.padOrders,
+  )
+  return referenceNetsFromExport(
+    writeLegacyNetlist(lowered, { createdAt: "1970-01-01T00:00:00" }),
+  )
 }
 
 /**

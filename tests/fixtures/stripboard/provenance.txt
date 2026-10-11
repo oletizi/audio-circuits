@@ -189,3 +189,28 @@ transistor-preamp-buffered agrees and passes `make check`, and is still left
 out, because PIPELINE 3.5's set is a specified four rather than every board
 that happens to pass. All three are deliberately absent from this directory,
 and tests/stripboard/agreement.test.ts names each one and why.
+
+TASK 16's IMPORT-PLACED START, which is not a hand layout and not a benchmark:
+
+  pultec-low-boost-imported.dump   --dump-board on the board
+                                   `--import <export> --strips horizontal`
+                                   produces from this repository's own netlist
+                                   export of circuits/pultec/physical/low-boost.ts
+
+  Captured at pipeline commit 8d1ff8d, veroroute pinned at
+  ed6c5a64eb5125346e8b0bc0b434b332c7750bb6.
+
+  WHY IT IS HERE AND NOT HAND-WRITTEN. It is the board all three of Task 16's
+  starting arms begin from, and the thing a hand-written stand-in cannot
+  reproduce is its NODE lines: `--import` writes every one of them `NAME -`,
+  carrying net topology and no net names, and the constructed arm recovers net
+  identity by joining those pin sets against the model's own nets. A reduced
+  fixture would have pin sets that join to nothing. Three defects in Task 16
+  were invisible to the hand-written fixture that preceded this file and visible
+  immediately against this one.
+
+  IT IS REGENERABLE AND NOT EVIDENCE. Unlike the frozen benchmark beside it,
+  nothing here is a record of a human decision: re-running the two commands
+  above on the same pin reproduces it byte for byte, and a model change that
+  moves it is a fixture to regenerate rather than a provenance to protect.
+  17 PART lines, 10 PAD lines, 14 NODE lines - all fourteen reading `NAME -`.

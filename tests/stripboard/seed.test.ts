@@ -32,6 +32,9 @@ import type { Network } from "../../lib/model/types.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { deriveTargets } from "../../tools/stripboard/targets.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
+import { constructionSpan } from "../../tools/stripboard/seed-arms.ts"
+import { netsByPart } from "../../tools/stripboard/seed-nets.ts"
+import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
 import {
   admissiblePositions,
   assignStrips,
@@ -49,7 +52,6 @@ import {
   dumpOf,
   fakeSpawn,
   input,
-  reachingInput,
   recordingSpawn,
   targetsFor,
 } from "./seed-fixtures.ts"
@@ -142,9 +144,15 @@ test("the import arm is one start for every seed; the other two arms are not", (
     seedCandidate({ ...input(), arm, seed }, recordingSpawn(spawned, DUMPS))
     return spawned.map((args) => args.join(" "))
   }
-  expect(gestures("import", 0)).toEqual(gestures("import", 1))
-  expect(gestures("constructed", 0)).not.toEqual(gestures("constructed", 1))
-  expect(gestures("random", 0)).not.toEqual(gestures("random", 1))
+  // 3 AND 5, NOT 0 AND 1: on the import-placed low-boost board the constructed
+  // arm produces a start on seeds 3, 5, 7, 8, 12, ... and refuses on the rest,
+  // because four of the five reviewed seeds leave one of its parts with no hole
+  // that keeps it on its assigned strip. That is the arm's own measured
+  // fragility, asserted in seed-compare.test.ts; this test is about whether a
+  // seed changes a start, so it uses two seeds on which all three arms make one.
+  expect(gestures("import", 3)).toEqual(gestures("import", 5))
+  expect(gestures("constructed", 3)).not.toEqual(gestures("constructed", 5))
+  expect(gestures("random", 3)).not.toEqual(gestures("random", 5))
   for (const arm of SEED_ARMS) expect(gestures(arm, 3), arm).toEqual(gestures(arm, 3))
 })
 
@@ -330,8 +338,59 @@ test("a span the construction needs and the part cannot reach refuses, naming bo
   // The start proposes and the grader grades, but a construction that KNOWS it
   // is asking for an unreachable span says so where the remedy is - the span
   // data - rather than emitting a candidate for HC5 to reject anonymously.
-  expect(() => seedCandidate(reachingInput("constructed"), fakeSpawn())).toThrow(/maxSpanHoles/)
-  expect(() => seedCandidate(reachingInput("constructed"), fakeSpawn())).toThrow(/pultec-/)
+  //
+  // DRIVEN DIRECTLY AND NOT THROUGH `seedCandidate`, which is a change from the
+  // brief's own body and a finding rather than a convenience: the gathered
+  // arrangement's bandwidth is at most 11 across the five committed boards, so
+  // the widest span any of them asks for is 12 - inside the tool's 16. The
+  // refusal cannot be reached through a board that exists, and the fixture that
+  // used to reach it was a synthetic two-part board whose NODE pin sets no
+  // longer join to any model (see seed-fixtures.ts). A guard no test can drive
+  // is a guard that has already stopped working, so it is called by hand.
+  //
+  // 0 AND 27 ARE THE ENDS OF MID'S OWN ARRANGEMENT, which is where a span like
+  // this would come from if one ever did: 28 nets, so a part on the first and
+  // last strips asks for 28 holes.
+  expect(() => constructionSpan("L1", 0, 27, "pultec-mid")).toThrow(/maxSpanHoles/)
+  expect(() => constructionSpan("L1", 0, 27, "pultec-mid")).toThrow(/pultec-/)
+  expect(() => constructionSpan("L1", 0, 27, "pultec-mid")).toThrow(/28 holes/)
+  // AND IT PASSES WHAT IT SHOULD: the widest span any committed board asks for.
+  expect(constructionSpan("R2", 3, 14, "pultec-low-cut")).toBe(12)
+  expect(constructionSpan("R2", 0, 15, "pultec-low-cut")).toBe(TOOL_MAX_SPAN_HOLES)
+})
+
+test("the pin-set join refuses an unjoinable node, in both directions, and only then", () => {
+  // THE NARROWED REFUSAL. It does NOT fire on `NAME -`, which is what every
+  // --import-placed board writes on every NODE line and is now expected and
+  // routine. It fires when the pin SETS cannot be joined - which is a genuine
+  // disagreement about which board is being graded, in either direction.
+  const nodes = (lines: readonly string[]) =>
+    ["GRID 4 4", "VERTICAL_STRIPS 0", "CUT_STATE COMPUTED", ...lines, ""].join("\n")
+  const reference: ReferenceNets = new Map([
+    ["a", ["R1.1", "R2.1"]],
+    ["b", ["R1.2", "R2.2"]],
+  ])
+
+  // JOINS, with every NAME a bare dash and the pin order reversed on one line:
+  // a pin SET has no order, so the join does not care.
+  const joined = netsByPart(
+    nodes(["NODE 7 NAME - R1.1 R2.1", "NODE 9 NAME - R2.2 R1.2"]),
+    reference,
+    "pultec-low-boost",
+  )
+  expect([...(joined.get("R1") ?? [])].sort(), "R1 is on both nets").toEqual(["a", "b"])
+  expect([...(joined.get("R2") ?? [])].sort(), "R2 is on both nets").toEqual(["a", "b"])
+
+  // A NODE MATCHING NO REFERENCE NET.
+  expect(() =>
+    netsByPart(nodes(["NODE 7 NAME - R1.1 R9.9", "NODE 9 NAME - R1.2 R2.2"]), reference, "pultec-low-boost"),
+  ).toThrow(/board node 7 carries pins R1.1 R9.9/)
+
+  // AND A REFERENCE NET WITH NO NODE: the other direction, which a one-sided
+  // join would pass over, leaving part of the circuit silently unarranged.
+  expect(() =>
+    netsByPart(nodes(["NODE 7 NAME - R1.1 R2.1"]), reference, "pultec-low-boost"),
+  ).toThrow(/exports net\(s\) b that no NODE on this board carries/)
 })
 
 test("the random arm draws inside the grid, and the grid does not grow", () => {
@@ -347,17 +406,20 @@ test("the random arm draws inside the grid, and the grid does not grow", () => {
   // is a correction the mutation run forced: widening `admissiblePositions` by
   // one row left the eight draws below unchanged - over a 35x35 grid, no draw
   // happened to land on the extra row - so the per-draw bounds caught that
-  // mutation only by luck. `R1`'s two leads sit one hole apart along a column,
-  // so the last origin that fits is column 33 of 35, and its rows are
-  // unconstrained up to the last one, 34. Both figures are read off the grid
-  // size and the part's own two-hole pattern, by hand.
-  const positions = admissiblePositions(before, "R1")
+  // mutation only by luck. `C19` is a `CAP_FILM`, whose footprint is one row by
+  // three columns (`CompTypes.h:561`, `rows = 1; cols = 3`), so on a 35x35 grid
+  // the last origin that fits is column 32 and the last row is 34 - and rows 3
+  // upward are entirely free on this board, so nothing else bounds the row.
+  // Both figures are read off the grid size and the footprint, by hand.
+  const positions = admissiblePositions(before, "C19")
   expect(Math.max(...positions.map(([row]) => row)), "an origin past the last row").toBe(34)
-  expect(Math.max(...positions.map(([, col]) => col)), "a lead past the last column").toBe(33)
+  expect(Math.max(...positions.map(([, col]) => col)), "a lead past the last column").toBe(32)
   expect(before.grid, "the figures above are read off this grid").toEqual({ rows: 35, cols: 35 })
 
   const moves = spawned.filter((a) => a[0] === "--move")
-  expect(moves.length, "a run with no --move would make every bound below vacuous").toBe(8)
+  // SEVENTEEN, which is the import-placed low-boost board's own PART count: the
+  // arm moves every part and the ten PAD holes are not parts and never move.
+  expect(moves.length, "a run with no --move would make every bound below vacuous").toBe(17)
   for (const args of moves) {
     const [row, col] = args[args.indexOf("--to") + 1]!.split(",").map(Number)
     expect(row!, args.join(" ")).toBeGreaterThanOrEqual(0)
@@ -380,7 +442,7 @@ test("the draw indexes the enumerated admissible set, and reaches its ends and i
   // no admissible position is unreachable and none outside the set is reached.
   // WHAT IT DOES NOT PROVE is that the STREAM is uniform - that is seededPrng,
   // one named algorithm, tested above for reproducibility and range only.
-  const positions = admissiblePositions(parseBoardDump(DUMPS.imported!), "R1")
+  const positions = admissiblePositions(parseBoardDump(DUMPS.imported!), "C19")
   expect(positions.length, "a one-position set would make every draw equal").toBeGreaterThan(2)
   expect(drawFrom(positions, () => 0)).toEqual(positions[0])
   expect(drawFrom(positions, () => 0.999999)).toEqual(positions[positions.length - 1])
