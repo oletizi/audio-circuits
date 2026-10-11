@@ -69,12 +69,19 @@ test("A_occ separates two candidates that F cannot", () => {
 })
 
 test("A_occ is a hand-counted rectangle, on a square board and a non-square one", () => {
-  // Square: BOUNDS 3,5 9,11. Rows 3,4,5,6,7,8,9 - seven of them. Columns
-  // 5,6,7,8,9,10,11 - seven of them. 7 * 7 = 49 holes.
+  // BOUNDS 3,5 9,11, with minRow and minCol different (3 and 5), catches a
+  // MIXED-AXIS read - subtracting minCol from maxRow by mistake, the
+  // plausible copy-paste error: (9-5+1)*(11-3+1) = 5*9 = 45, not 49. Rows
+  // 3,4,5,6,7,8,9 - seven of them. Columns 5,6,7,8,9,10,11 - seven of them.
+  // 7 * 7 = 49 holes.
   expect(occupiedArea(dumpWithBounds(3, 5, 9, 11))).toBe(49)
-  // Non-square, so a transposed row/column convention cannot pass both:
-  // BOUNDS 0,0 2,5. Rows 0,1,2 - three of them. Columns 0,1,2,3,4,5 - six of
-  // them. 3 * 6 = 18 holes.
+  // BOUNDS 0,0 2,5, non-square, catches a DOUBLED DIMENSION - rows*rows or
+  // cols*cols instead of rows*cols: 3*3 = 9 and 6*6 = 36, neither is 18. The
+  // square fixture above cannot catch this, because 7*7 is the right answer
+  // there. Neither fixture catches a swapped multiplication order
+  // (cols*rows instead of rows*cols): area is commutative, so that error is
+  // undetectable by any rectangle and these two are not for it. Rows 0,1,2
+  // - three of them. Columns 0,1,2,3,4,5 - six of them. 3 * 6 = 18 holes.
   expect(occupiedArea(dumpWithBounds(0, 0, 2, 5))).toBe(18)
 })
 
