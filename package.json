@@ -10,6 +10,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test",
+    "check": "bun run typecheck && bun test",
     "perfboard": "bun run tools/cli/perfboard.ts",
     "schematic-stub": "bun run tools/cli/schematic-stub.ts",
     "parts": "bun run tools/cli/parts.ts"
