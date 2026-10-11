@@ -94,6 +94,31 @@ because `A_occ` measures the thing while wirelength is a labelled proxy for trac
 nothing here derives (limit H-11). **A ranking term is not a term in `F`** and cannot make the
 search accept a worse `F`. `A_occ` is not a constraint — HC6 is; `A_occ` only asks which of two
 fitting boards uses less of the stock.
+
+**OBJ3.1 — Spanning to an unused strip is preferred to cutting one. [owner], 2026-10-10.**
+Given a choice between breaking a strip and moving a part onto one that is not carrying a net,
+take the strip. The owner's words: *"I want to favor spans to unused strips over cuts."*
+
+This is already what the ranking and `F` do, and it is recorded so that it stays that way. The
+identity `C = N + J − S_occ` takes `S_occ` with a **negative** sign, so every additional strip a
+layout occupies removes a cut outright — spreading is not a trade against the cost function, it is
+how the cost function is minimised. The only term that pulls the other way is `A_occ`, and it is
+lexicographically below all three construction-cost terms precisely so it can never buy a cut
+back. **Promoting `A_occ` above cuts, or folding an area term into `F`, would invert this
+preference, and is refused.**
+
+Two consequences worth stating where the preference is, rather than leaving them to be rediscovered:
+
+- **The stock is what bounds the spread, not tidiness.** HC6 refuses a layout that does not fit
+  34 × 27. Within that, a layout using more strips is not worse for using them — the board is
+  already bought. The four unfinished Pultec layouts occupy three to five strips of thirty-four
+  and pay 23 to 65 cuts for the privilege; that is the failure this preference exists to prevent.
+- **It does not make the floor reachable on its own.** `C_floor = max(0, N − R)` is zero for every
+  Pultec section, because each has fewer nets than the board has strips. Reaching it needs every
+  net on its own strip, which needs parts that can span between those strips, and the B32529 film
+  capacitors reach four holes where mid's net graph wants six. So spreading removes cuts until
+  reach stops it, and what remains is bridged by a wire — which is why PAR1 prices a wire at a
+  quarter of a cut. The constrained floor is not derived (limit H-2).
 *Checked:* the ranking tuple is a canonical metric (PIPELINE §10.1); `A_occ` is computed from
 `BOUNDS` and by a second code path over the same four integers. *Provenance:* **[external]** shape
 (the sibling repository's `RANKING`); **[review]** for `A_occ`'s presence and position (D19).
@@ -348,8 +373,28 @@ proposed default `τ = 0.05`.** The owner's tolerance, and 0.05 is a *proposed* 
 a settled value (§10). **The two 0.05s are unrelated** — one a dimensionless clustering fraction,
 one a fraction of the gap to a derived floor — and the coincidence of digits is noted so nobody
 reads one as derived from the other.
-*Checked:* arithmetic on counts. It is Q2 and A3. *Provenance:* **[owner]** owns the value; the
-default is PIPELINE's proposal from COST §6.4.
+**τ IS DELIBERATELY UNSET (owner, 2026-10-10), and the pipeline reports instead of judging.**
+The owner was asked to choose it and declined on grounds that were correct: the question was put
+to him with the wrong floor. He was offered "close 95% of the gap from 65 cuts to 19" on mid, where
+19 is `C_floor` evaluated at mid's *current* `S_occ` of four strips — the floor for keeping every
+part crammed into the four rows `--import` used. The floor against the board he actually owns is
+`max(0, N − R) = max(0, 23 − 34) =` **zero**. A tolerance chosen against a floor that is wrong by
+nineteen cuts would have been a number with no meaning, and he said so by asking why cuts could not
+be traded for strips (OBJ3.1) — which is exactly what the identity says.
+
+So `τ` has **no value and no default**, and until it has one:
+
+- **Q2 and A3 do not fire.** An outcome of "valid, below target" cannot be reported against an
+  unset target, so a run that is valid reports **valid** with its achieved `F`, its derived floor
+  and the gap, and the admissibility verdict rests on A1, A2 and A4.
+- **The pipeline reports the gap rather than grading it.** What a real run achieves on a real board
+  is the evidence a threshold should be set from, and none exists yet: every cut count in this
+  suite comes from `--import`'s placement or from a hand layout, neither of which is this pipeline.
+- Setting it is a **deliberate edit carrying the run that justifies it**, the same ratchet K3
+  imposes on the clustering bound.
+
+*Checked:* arithmetic on counts, when set. It is Q2 and A3. *Provenance:* **[owner]** owns the
+value and has not set one; the 0.05 formerly carried here was PIPELINE's proposal and is withdrawn.
 
 **K5 — Floor consistency: `F ≥ F_floor` on every candidate, and a candidate below the declared
 floor is a verification failure.** `F_floor = C_floor` is a **lower bound**, so a candidate
