@@ -331,6 +331,36 @@ test("a ring is refused on BOTH axes, so the refusal is not an artefact of tryin
   expect(classifyPads(rotated).kind).toBe("off-strip-lattice")
 })
 
+test("admitPattern refuses a round pin pattern outright - HC10's own refusal", () => {
+  // THE CLAUSE THE WHOLE TASK EXISTS FOR, and until fix round 1 nothing drove
+  // it: every other admitPattern call in this file passes a `rows` pattern, so
+  // a mutant returning eligible from the off-strip-lattice clause passed all
+  // twenty-three tests. Step 8's break 6 was gated on `rows` and missed it too.
+  //
+  // Proved it can fail: that clause was made to return eligible, and this test
+  // failed alone - "Expected: refused, Received: eligible" - 23 pass / 1 fail.
+  // Reverted.
+  //
+  // The footprint is deliberately one lead-span.ts does NOT record: the
+  // across-strip clause is checked BEFORE the span lookup, so the round
+  // refusal must not depend on a recorded span - a round family refuses "by
+  // name before any placement exists to grade", which is CRITERIA's own words.
+  const pads = ring(11, 8)
+  const round: PinPattern = {
+    ...pinPatternFor("Package_DIP:DIP-16_W7.62mm"),
+    footprint: "Rotary_SW:SW_Rotary11_D30mm",
+    pads,
+    classification: classifyPads(pads),
+  }
+  const refused = admitPattern(round)
+  expect(refused.kind).toBe("refused")
+  if (refused.kind !== "refused") throw new Error("unreachable")
+  expect(refused.reason).toMatch(/SW_Rotary11_D30mm/)
+  expect(refused.reason).toMatch(/does not decompose into rows parallel to the strips/)
+  expect(refused.reason).toMatch(/cut/)
+  expect(refused.reason).toMatch(/not defaulted/)
+})
+
 test("a row separation off the grid by more than the tolerance is refused ON BOTH AXES", () => {
   // A 2x2 pad field decomposes whenever EITHER axis is on the grid, so a test
   // for the refusal must put the offending separation on both.
@@ -380,11 +410,24 @@ test("a row separation inside PITCH_TOLERANCE_MM is accepted as that many steps"
 })
 
 test("an unlisted footprint refuses by name, listing the ones that are classified", () => {
-  expect(() => pinPatternFor("Rotary_SW:SW_Rotary11_D30mm")).toThrow(
-    /SW_Rotary11_D30mm/,
-  )
-  expect(() => pinPatternFor("Rotary_SW:SW_Rotary11_D30mm")).toThrow(/PIN_PATTERNS/)
-  expect(() => pinPatternFor("Rotary_SW:SW_Rotary11_D30mm")).toThrow(/not defaulted/)
+  const refuse = () => pinPatternFor("Rotary_SW:SW_Rotary11_D30mm")
+  expect(refuse).toThrow(/SW_Rotary11_D30mm/)
+  expect(refuse).toThrow(/PIN_PATTERNS/)
+  expect(refuse).toThrow(/not defaulted/)
+  // THE LISTING, which this test's name claims and which the three regexes
+  // above did not prove - the defect the fix-round-1 review found in the name.
+  // A refusal that says what is missing and not what IS available sends the
+  // reader to the source to find out, which is the thing the message exists to
+  // save them.
+  let message = ""
+  try {
+    refuse()
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  for (const footprint of PIN_PATTERNS.keys()) {
+    expect(message, `the refusal must list ${footprint}`).toContain(footprint)
+  }
 })
 
 test("no pattern is empty, because zero pads would classify as rows vacuously", () => {
