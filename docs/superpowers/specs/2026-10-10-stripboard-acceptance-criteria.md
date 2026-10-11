@@ -752,12 +752,36 @@ Five open questions, recorded rather than filled in, because an agent adding a c
 own acceptance set is precisely the invariant's failure. Each is the owner's to settle or to
 reject.
 
-**Parameters not yet owner-settled.** These carry numbers, or need one, and **none of them is
-chosen here.**
+## The owner's review of this document — DONE, 2026-10-10
 
-1. **HC6's stock is now declared — 34 × 27 — and one measured board exceeds it.** RESOLVED
-   2026-10-10 by the owner, who measured the board he usually uses. What remains open is a
-   discrepancy worth settling rather than assuming away.
+**This document has been reviewed and its open parameters settled.** It was worked through
+question by question in conversation rather than by reading, and the outcomes are recorded at the
+criteria themselves, not only here:
+
+| Question | Outcome | Where |
+| --- | --- | --- |
+| The stock a layout must fit | 34 × 27, the board he usually uses | HC6 |
+| `pt2399-core` exceeding it | Not a counterexample — it does not fit his stock and he improvised. The rule stands | below |
+| Round pin patterns | Refused — his rule, a cost judgement, not an impossibility | HC10 |
+| A wire against a cut | `ρ_w = 0.25` — cuts are harder and more error-prone | PAR1 |
+| Spanning to an unused strip against cutting | Spanning wins, and area may never buy a cut back | OBJ3.1 |
+| The clustering bound | Start hard at 0.05 and back off only on evidence | K2, K3 |
+| The floor tolerance | **Deliberately unset** — the question was put with the wrong floor | K4 |
+| Diminishing returns | Measured against the gap that provably remains, as a labelled hypothesis | Q4 |
+| The repeated-failure count | Three, carried as inherited rather than derived | Q6 |
+
+**Nothing in this document is now waiting on him.** The items below are open against the
+*repository*, not against his judgement: data that does not exist yet, and one factual discrepancy
+he has already explained. Do not report this document as blocked on owner review.
+
+**Still open, and none of it is a parameter he must choose.**
+
+1. **HC6's stock is declared — 34 × 27 — and one measured board exceeds it. RESOLVED.** The owner
+   measured the board he usually uses, and on `pt2399-core`'s 36 columns his answer was direct:
+   *"It doesn't fit on my stock boards. I improvised to make it work."* So the rule stands at
+   34 × 27 and `pt2399-core` is an improvisation rather than a counterexample — which strengthens
+   the constraint rather than weakening it, because a layout the pipeline produces should be
+   buildable on the stock he has rather than require improvising at the bench.
 
    Measured pin extents against 34 × 27, read from `PIN` lines on the committed layouts:
 
@@ -779,19 +803,21 @@ chosen here.**
    twenty-six strips to spare, which is the evidence that 34 × 27 is adequate for a Pultec
    section once the parts are packed rather than strung out.
 
-   **`pt2399-core` is the open question.** `README.md` describes it as transcribed from the
-   netlist of a board that was physically built and works, and its layout is 36 columns wide on
-   27-column stock. Three readings and this document does not choose between them: it was built
-   on a wider piece; the committed layout is a later reconstruction that never matched the
-   as-built board; or the stock figure does not apply to it. It is not a Pultec section and not
-   in S1a's scope, so nothing here waits on it — but a built board that violates a hard
-   constraint is exactly the signal that a constraint is wrong, and this project has already
-   shipped one such gate today (`κ_bench = 0.06`, which would have refused three working
-   boards). **Resolve it before HC6 is enforced on any board outside the Pultec set.**
-2. **`τ = 0.05` and Q4's `1/2000` are PIPELINE's proposed defaults, NOT the owner's settled
-   values** — unlike PAR1 and K2, which the owner settled with reasons. They are attributed to the
-   owner as parameters while carrying numbers he has not been asked about. They remain listed as
-   proposals, marked as such in K4 and PAR3, and are **not settled by this revision.**
+   **`pt2399-core` was the open question and is answered.** It is 36 columns on 27-column stock,
+   and the reading is the owner's own: it does not fit, and he improvised. So HC6 refusing it is
+   correct behaviour rather than a gate that is wrong — unlike `κ_bench = 0.06`, which this
+   project nearly shipped and which would have refused three boards that *do* fit and *do* work.
+   The two cases look alike and are opposites, which is why each was checked against him rather
+   than reasoned about. **`pt2399-core` is not a Pultec section; HC6 applies to it and it fails,
+   and that failure is recorded rather than suppressed.**
+2. **`τ` is unset and Q4 and Q6 are labelled hypotheses — all three settled 2026-10-10.** `τ` has
+   no value and no default, deliberately: the question was put to the owner against mid's floor of
+   19 cuts, which is the floor for keeping every part in the four rows `--import` used, where the
+   floor against his board is zero. Q4's threshold was replaced outright — a marginal-yield
+   constant tied to a unit of `F` could not characterise diminishing returns, and the rule now
+   measures the projected cost of finishing against the cost already spent. Q6's three is carried
+   as the sibling repository's number, inherited and not derived. See K4, Q4 and Q6; none of these
+   is waiting on him.
 
 **Gaps found while revising, listed rather than filled.** Each is a thing a criterion above now
 requires and the sources do not supply; none is a new criterion.
