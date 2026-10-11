@@ -453,7 +453,12 @@ reports both. **Stop at the first of:**
 | **Q2** | **Within tolerance of the floor** (K4), **and admissible.** | arithmetic on counts, plus the admissibility verdict |
 | **Q3** | **Search exhausted.** Every seed's climb has reached a full sweep of the move set — *including* the net-cluster move — that produced no accepted move, and no restart remains. **Not terminal before the seed list is spent**, because a single no-accepted-move round is a restart trigger: a rule that stopped at the first local optimum would halt the run in exactly the condition the restarts exist to leave. | the round's accepted-move counter is 0 for the last seed and the restart schedule is spent |
 | **Q4** | **Finishing would cost more than the search already has.** With `g = F − C_floor` the gap that provably remains, `r` the recent improvement per evaluation, and `e` the evaluations spent: stop when `g / r > k · e`. Default `k = 1`. **Measured across at least one restart, never within a climb** — improvement here is bursty, so a window inside a flat stretch reads as converged when a restart would have broken it. [owner], 2026-10-10. | counters and the derived floor |
-| **Q5** | **Budget spent** — the owner's evaluation cap, at **run** level. Restarts spend the same cap and the schedule's division of it is recorded, so a restart cannot quietly grant itself more. | counter |
+| **Q5** | **Budget spent** — the evaluation cap, at **run** level. **It is `[model]`, NOT the
+owner's** (see this row's provenance): Q5 is a **backstop against a bug looping forever**, not a
+measure of anything, and a run that stops on it is **reported as a failure**. Its only
+requirement is to be loose enough never to fire on a healthy run, so any sufficiently loose
+derived and labelled value serves and nothing about it waits on him. Calling it "the owner's"
+invited a later reader to treat a derived number as a decision. Restarts spend the same cap and the schedule's division of it is recorded, so a restart cannot quietly grant itself more. | counter |
 | **Q6** | **Systematic cause.** Three consecutive results share a failure signature — the failing check names, the floating parts, the `CUT_CONFLICT` positions — compared **within and across restarts**, because three sharing a signature across two seeds is stronger evidence than three within one. Reports the cause; does not retry, a repeated failure being a systematic cause to fix rather than a candidate to skip. | signature comparison |
 
 **Q1 and Q2 are successful terminations, and a successful termination may not fire on an
@@ -680,7 +685,13 @@ means the mechanism does not run, **stated in the report**, never quietly approx
 *Checked:* the strict loader errors on an unknown key rather than ignoring it; the rules file's
 content is in the canonical hash, so a parameter cannot be slipped in after a run (G2.2).
 *Provenance:* **[owner]** owns the values; **[external]** the strict schema-versioned shape.
-`τ = 0.05` and Q4's `1/2000` are PIPELINE's **proposed** defaults — §10.
+**CORRECTED 2026-10-11, this sentence was stale against K4 and Q4.** It said `τ = 0.05` and
+Q4's `1/2000` were PIPELINE's proposed defaults. Neither survives: **`τ` has no value and no
+default at all** (K4), and **Q4's marginal-yield constant was replaced outright** by the owner's
+`k = 1`, a labelled hypothesis measuring the projected cost of finishing against the cost already
+spent. A parameters paragraph that still advertises two withdrawn proposals is the kind of stale
+claim this document exists to stop, and a loader implementing it faithfully would have written
+both back in.
 
 **PAR4 — The criteria are circuit-independent, reviewed once, and there is no per-board criteria
 file.** Changing a parameter is a reviewed change with a test beside it; using one is not. OBJ3's

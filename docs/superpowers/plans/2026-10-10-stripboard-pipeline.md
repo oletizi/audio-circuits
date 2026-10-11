@@ -2364,8 +2364,10 @@ test("the two proposed defaults say in their notes that they are proposed, not t
   // as parameters while carrying numbers he has not been asked about. A number
   // used knowingly is a different failure from one used silently.
   const rules = loadRules()
-  expect(rules.notes["tau"]).toMatch(/proposed/i)
-  expect(rules.notes["yieldFloor"]).toMatch(/proposed/i)
+  // Same hazard as Task 20's: both notes record that a proposal was WITHDRAWN, so /proposed/i
+  // matches the text that says so. Assert what each note actually claims now.
+  expect(rules.notes["tau"]).toMatch(/withdrawn|no value|not settled/i)
+  expect(rules.notes["yieldFloor"]).toMatch(/hypothesis|replaced|k = 1/i)
   expect(rules.notes["rhoWire"]).toMatch(/owner/i)
   expect(rules.notes["kappaBench"]).toMatch(/owner/i)
 })
@@ -4280,7 +4282,16 @@ test("every rule this module applies moves when its rules-file value moves", asy
   // The behavioural claim, which is what the scan's name used to assert. A
   // threshold hard-coded here would not follow the parameter, whatever it was
   // spelled as - so this catches what no scan can.
-  const strict = { ...rules, tau: rules.tau / 10, evaluationCap: 1, yieldFloor: rules.yieldFloor / 10 }
+  // `tau` is `number | null` and is null by the owner's decision (K4), so arithmetic on it
+  // does not compile. A strict variant tightens only what HAS a value; an unset tau stays
+  // unset, because Q2 and A3 do not fire without one and inventing a strict value here would
+  // manufacture the threshold the owner declined to set.
+  const strict = {
+    ...rules,
+    tau: rules.tau === null ? null : rules.tau / 10,
+    evaluationCap: 1,
+    yieldFloor: rules.yieldFloor / 10,
+  }
   expect(evaluateStop(withinToleranceState(), admissibleCandidate(), targets, strict))
     .not.toBe("Q2")
   expect(evaluateStop({ ...freshState(), runEvaluations: 1, seedsRemaining: 3 },
@@ -4458,7 +4469,10 @@ test("a proposed default that decided the outcome is reported as proposed (OB3)"
   // tau and the yield floor are PIPELINE's proposals, not the owner's values.
   // A run whose verdict turned on one says so beside the number.
   const lines = renderReport(withinToleranceRun()).join("\n")
-  expect(lines).toMatch(/proposed/i)
+  // NOT /proposed/i. tau's note reads "PIPELINE'S PROPOSED DEFAULT ... IS WITHDRAWN", so a
+  // search for "proposed" MATCHES THE NEGATION of what it is checking for and passes against
+  // text saying the opposite. Measured in Task 10's review. Anchor on the claim itself.
+  expect(lines).toMatch(/not (the owner's|settled)/i)
 })
 
 test("E3 not running is stated in the report", () => {
