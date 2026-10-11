@@ -6,11 +6,14 @@ first task with a finding to put in it, and is extended as later tasks measure
 more; it is not a document written at the end, because a document written last
 is one whose early findings were held in somebody's head until then.
 
-At this point it covers `HC8` alone: its trust boundary, its nine
+At this point it covers two things. `HC8`: its trust boundary, its nine
 geometry refusals, the one refusal that belongs to a different module than the
 one `HC8`'s contract names, and the verdict built on the
 graph — the open, the short, and the three refusals the reference side
-contributes. `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
+contributes. And the two dump lines Task 7 added to the fork, `BOUNDS` and
+`DIRECTION`, which are not adopted here yet and whose meaning is narrower than
+either name suggests.
+`docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
 
@@ -267,3 +270,118 @@ on the forbidden module — loud, but naming the wrong fault.
   three recorded routes; the `OB5` note at the top of
   `tests/stripboard/equivalence.test.ts` says the same thing beside the tests,
   and Task 6 deletes it when the real fixture lands.
+
+---
+
+## 2. `BOUNDS` and `DIRECTION` — what the two new dump lines say, and what they do not
+
+Task 7 (M1.1) added two facts to the pinned fork's `--dump-board`. Neither is
+adopted here yet: `veroroute.pin` still names the commit before them, and the
+typed parser in `tools/guide/dump.ts` does not read either line. This section
+records what they mean, because the meaning of `BOUNDS` in particular is not
+what its name suggests and a later reader who assumes otherwise gets a wrong
+answer quietly.
+
+### 2.1 `BOUNDS` is a union of three sources, and it is not the fabrication extent
+
+`Board::GetBounds` (`Src/Board.h`) returns the union of three things, and
+reports failure only when all three are empty:
+
+1. every grid element, on every layer, carrying a node id **or** a pin —
+   painted copper, a wire's run, a solder-bridged hole, and every pin hole
+   whether painted or blank;
+2. `m_compMgr.GetBounding()` — every component's `GetFootprintRect()` plus the
+   trax pattern's rect, filtered on **neither** `GetIsPlaced()` **nor** type, so
+   an unplaced part still contributes the rect it last sat in;
+3. `m_textMgr.GetBounding()` — every **text label**'s rect, which is an
+   annotation and not a physical feature.
+
+So the line can **over**-state, and a consumer that sized a piece of stock from
+it would sometimes cut too much. It is also only the union: nothing in the dump
+attributes any of its four numbers to one of the three sources.
+
+**Measured on this repository's own boards**, with the fork built at the Task 7
+branch, comparing `BOUNDS` against the extent of the holes the dump enumerates
+(`PIN`, `WIRE` ends, `SOLDER`):
+
+| board | `GRID` | `BOUNDS` | `PIN`-hole box | all enumerated holes |
+| --- | --- | --- | --- | --- |
+| `transistor-preamp-staged` | 30 x 39 | `2,1 27,37` | `3,2 27,31` | `3,2 27,32` |
+| `transistor-preamp-feedback` | 16 x 18 | `0,0 15,17` | `0,1 15,16` | `0,0 15,16` |
+| `pultec-low-boost` | 14 x 32 | `3,3 10,28` | `3,3 10,28` | `3,3 10,28` |
+
+Three things follow, and each is a thing a later task would otherwise assume:
+
+- `BOUNDS` and the hole extent are **different quantities**, and the difference
+  is real rather than theoretical: on `transistor-preamp-staged` `BOUNDS` reaches
+  five columns further right than any hole, and one row further up. Substituting
+  one for the other silently redefines whatever reads it.
+- `BOUNDS` is nonetheless the **only** dump-readable source of a part's extent
+  across the strips. A `PART` line carries a column span and no row span, so a
+  multi-row footprint's row extent appears nowhere else.
+- They can also coincide exactly, as on `pultec-low-boost`. A test that compared
+  the two on one board and found them equal would therefore conclude the wrong
+  thing about both.
+
+### 2.2 The decomposition that was considered and not made — a finding for the owner
+
+`BOUNDS` could be emitted as three lines, one per source, which would let a
+consumer separate the fabrication extent from the annotation and from a floating
+part's stale rect. **Task 7 did not do it**: it is a change to `Board::GetBounds`
+or to its callers rather than an added dump line, which is a larger fork change
+than M1.1 asks for, and the conservative use the pipeline makes of the union —
+report both figures and name the discrepancy — is sound without it. The option is
+recorded here so that it exists as a choice and nobody has to re-read `Board.h`
+to find it. The three sources are named in §2.1 above and in the grammar comment
+in `Src/Headless_dump_pins.cpp`.
+
+### 2.3 Unverified: a text label inflating `BOUNDS`
+
+Source 3 above — a text label moving `BOUNDS` — **is not covered by any test,
+and the reason is not that it was forgotten**. `Board::AddTextBox` is reached
+only from `mainwindow.cpp`'s Text Box menu action; no headless verb creates or
+moves a `TextManager` rect, and `--author --op move-label` moves a *component's*
+label offsets, which `GetBounds` never reads. No committed fixture is a pair of
+boards differing only by a label, so the inflation cannot be shown by comparing
+two dumps either.
+
+What **is** measured is that `BOUNDS` exceeds the enumerated-hole extent on real
+boards (§2.1) and that it grows to enclose a wire end lying outside every pin
+(`tests/bounds.test.ts` in the fork). Those establish that the line is not the
+hole extent; they do **not** establish which of sources 2 and 3 produced any
+particular excess. Any check that depends on telling those two apart is
+unsupported by evidence today.
+
+### 2.4 `DIRECTION`, and two consequences for a consumer
+
+`DIRECTION <W|E|N|S>` is appended to every **placed** `PART` line and absent
+from a `FLOATING` one, mirroring the existing rule that a floating component
+prints no `PIN` line. Two things about it are not obvious from its shape:
+
+- **`SPAN` is not rotation-invariant, and `DIRECTION` is what tells its two
+  readings apart.** `CompElementGrid::GetCols(direction)` (`Src/Grid.h`) returns
+  the footprint's **row** count for a part facing `N` or `S`. Measured on the
+  fork's `pt2399-core-hand-placed-v63.vrt`: one `CAP_CERAMIC` footprint reads
+  `SPAN 2` facing `W` and `SPAN 1` facing `N`. The fork's grammar comment
+  asserted the opposite until Task 7 corrected it, and `--help` carried no
+  statement about `SPAN` at all; both now state the true rule.
+- **A fifth token is possible.** `Component::Load` reads the direction as a raw
+  char out of the `.vrt`, so a damaged or hand-edited board can carry a value
+  that is none of the four, and the dump prints `UNKNOWN` rather than inventing
+  `W`. A parser that types this field as the four letters alone will refuse such
+  a board — which is the right outcome, provided it refuses by name.
+
+### 2.5 `BOUNDS` is inserted, not appended, and what that costs
+
+Every previous addition to this grammar went at the end of the output. `BOUNDS`
+sits immediately after `GRID` and before the `PIN` block, because it is a
+board-level fact like `GRID` and a single board-level line printed after a
+variable-length per-pin block reads as if it belonged to the last pin. No
+existing line's shape, field count or value changes, and no two existing lines
+change their order relative to each other, so every prefix-extracting consumer is
+unaffected.
+
+What does change: **a dump captured as a golden file gains a line in its middle
+rather than at its end.** Any comparison of a committed capture against a freshly
+generated one will differ by that line once the pin moves, which is a fact about
+`tests/fixtures/*.dump` here and not about the fork.
