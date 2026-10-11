@@ -2157,7 +2157,7 @@ describe("DIRECTION", () => {
 
 **Why this is not a nice-to-have.** Part orientation is the structural lever behind 68–75% of every unfinished board's cuts: the four import-placed boards have every part lying *along* the strips and sit at `J ≈ P − N` (48, 28, 24, 18 against `J` of 46, 27, 24, 16 — exact on hi-cut), while low-boost has every part *across* and sits at `J = 1`. `--import` never tries any direction but `'W'`, so the baseline does not explore this axis at all.
 
-- [ ] **Step 1: Branch** from Task 7's pinned sha.
+- [ ] **Step 1: Branch** from Task 7's pinned sha. **NOTE (2026-10-11): Tasks 7, 8 and 9 were implemented on ONE stacked fork branch, `feature/dump-bounds-direction`, because the push that would pin each in turn is owner-authorised and was deferred to a single request. "Task 7's pinned sha" therefore names a commit on that branch, not a moved pin.**
 
 - [ ] **Step 2: Write the failing fork test:**
 
@@ -2245,11 +2245,26 @@ describe("--rotate", () => {
 - *Provides:* `--move-batch BOARD --ops FILE -o OUTPUT`, where `FILE` is one gesture per line in the one-move verbs' own grammar, and the verb either refuses the whole batch without writing `OUTPUT` or reports exactly which prefix landed.
 - Task 17's climb may use it; it must work identically without it, which Task 17 asserts.
 
-**What it buys, as a ratio between two measured numbers rather than a projection.** At 11.71 ms per invocation (n = 200), `--version` with no board costs 10.78 ms, so board I/O is about 1 ms and **launch is 91% of every invocation**. One gesture plus a dump plus a check is order 10² invocations per second, which at P2's four invocations per evaluation is order 10¹ **candidate evaluations** per second. Removing the launch floor raises the invocation rate to order 10³ — about **12× more invocations for the same machine time**. Two honest qualifications: it bounds the **launch** saving only, and it widens how much of the search space a run can cover, not whether its answers are right.
+**What it buys, measured after implementation (2026-10-11) rather than projected.** The launch
+floor is 9.1–9.3 ms against a full one-gesture `--move` at 9.6–9.9 ms (n = 50), so board I/O is
+under a millisecond and **launch is 91–93% of every invocation**.
 
-- [ ] **Step 1: Branch** from Task 8's pinned sha.
+**The "12×" this plan originally predicted was a mis-model, and the error is worth keeping
+visible.** It treated the saving as converging on a constant. It does not: batching amortises one
+launch across the whole batch, so **the ratio is approximately N, the number of gestures**, and is
+bounded only by how many gestures a caller can batch. Measured on 24 gestures — 243.92 ms as 24
+invocations against 10.45 ms as one batch — the implementer got **23.35×**, and the reviewer
+reproduced **24.43×** and **23.91×** across two independent runs, with the resulting boards
+byte-identical. A batch of 24 costs about what one invocation costs.
 
-- [ ] **Step 2: Write the failing fork test. The three assertions are the whole deliverable:**
+The original 91% launch share was right; a derived 96% figure in the first implementation report
+did **not** reproduce and was corrected. Two honest qualifications stand unchanged: this bounds
+the **launch** saving only, and it widens how much of the search space a run can cover, **not
+whether its answers are right.**
+
+- [ ] **Step 1: Branch** from Task 8's pinned sha. **NOTE (2026-10-11): Tasks 7, 8 and 9 were implemented on ONE stacked fork branch, `feature/dump-bounds-direction`, because the push that would pin each in turn is owner-authorised and was deferred to a single request. "Task 8's pinned sha" therefore names a commit on that branch, not a moved pin.**
+
+- [ ] **Step 2: Write the failing fork test.** **CORRECTED 2026-10-11, both tests below were wrong as written and the implementer measured it:** the first REFUSES — exit 1 at gesture 2, with the pan, on both fixtures — and the second DOES NOT FAIL, writing OUTPUT at exit 0. A batch whose gestures commute passes in any order and proves nothing about sequencing, so the shipped tests use a batch where **order matters** and assert that the reverse order fails. "Three assertions" also under-counts: there are four.
 
 ```ts
 describe("--move-batch", () => {
