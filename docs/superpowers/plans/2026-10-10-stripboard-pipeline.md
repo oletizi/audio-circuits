@@ -2585,7 +2585,30 @@ test("a negative J refuses, because J = sum(k - 1) cannot be below zero", () => 
 - *Consumes:* `StripboardRules` from Task 10; `BoardTargets`, `occupiedStrips`, `segmentJoins`, `clustering` from Task 11; `BoardDump` from `tools/guide/dump.ts`.
 - *Provides:*
   - `Score { readonly cuts: number; readonly wires: number; readonly solder: number; readonly objective: number; readonly netCount: number; readonly pinCount: number; readonly occupied: number; readonly joins: number; readonly clustering: number }`
-  - `scoreDump(dump: BoardDump, targets: BoardTargets, rules: StripboardRules): Score`
+  - `scoreDumpText(dumpText: string, targets: BoardTargets, rules: StripboardRules): Score` —
+    **the entry, and the only one carrying all three per-evaluation checks.** Measured in
+    Task 12: `BoardDump` carries no text, so **V1's independent count cannot ride inside
+    `scoreDump` at all** — there is nothing there to count a second way. Tasks 15, 17, 19, 20
+    and 21 call THIS, or V1 rides on nothing and a check silently applies to no evaluation.
+  - `scoreDump(dump: BoardDump, targets: BoardTargets, rules: StripboardRules): Score` —
+    carries V2 and K5 only. Reachable, and therefore a bypass; guarded structurally rather
+    than by docstring (Task 12 fix round).
+
+  **`N` AND `P` ARE DUMP-SOURCED, NOT MODEL-SOURCED. CORRECTED 2026-10-11.** `CRITERIA` `K1`
+  says it outright — "N the NODE count, P the PIN count" — and this plan drove the
+  negative-`J` case from `targets.netCount` instead. The consequence was measured on the
+  frozen low-boost dump, three ways:
+
+  | source of `N`, `P` | κ | identity |
+  | --- | --- | --- |
+  | **dump (correct)** | **1/18** — `COST` §5 verbatim | **5 = 9 + 1 − 5**, `COST` §1.6 verbatim |
+  | model `N`, dump `P` | 1/41 | `J = 5 − 14 + 5 = −4`, **refuses the benchmark board** |
+  | both model | 1/36 | — |
+
+  So the plan as written would have had the scorer **reject a board `COST` derives correctly
+  by hand.** `Score.netCount` and `Score.pinCount` are read from the dump; `targets` supplies
+  only `board` and `cutFloor`. Drive a negative `J` with extra `NODE` lines, never with a
+  model count.
   - `countLines(dumpText: string): { readonly cuts: number; readonly wires: number; readonly solder: number }` — V1's **second code path**, counting on the raw text
 - Tasks 15, 17, 19, 20 and 21 consume `Score`. **The grader imports none of this**, which Task 14 asserts.
 
@@ -2651,7 +2674,10 @@ test("V2: a dump whose terms do not satisfy C = N + J - S_occ refuses the run", 
 })
 
 test("V2: a negative J refuses, for a different reason, and says which", () => {
-  const impossible = { ...targets, netCount: 9 }
+  // NOT `{ ...targets, netCount: 9 }`: `targets.netCount` is model-sourced and `Score`'s is
+  // dump-sourced (K1), so overriding it here tests a pairing the scorer does not make.
+  // Drive the impossible J with extra NODE lines in the dump text instead.
+  const impossible = `${TEXT}\nNODE 8 NAME x R9.1\nNODE 9 NAME y R9.2`
   expect(() => scoreDump(parseBoardDump(TEXT), impossible, loadRules()))
     .toThrow(/J/)
 })
