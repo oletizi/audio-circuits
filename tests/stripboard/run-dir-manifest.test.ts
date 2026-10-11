@@ -13,7 +13,7 @@
  */
 import { test, expect } from "bun:test"
 import { readManifest } from "../../tools/stripboard/run-dir.ts"
-import { MANIFEST, gitPorcelain, readRawManifestFile, writeInto, writeRaw } from "./run-dir-fixtures.ts"
+import { MANIFEST, boardsDigest, readRawManifestFile, writeInto, writeRaw } from "./run-dir-fixtures.ts"
 
 test("a manifest round-trips, and a hash that disagrees with its own block refuses", () => {
   const dir = writeInto(MANIFEST)
@@ -59,16 +59,24 @@ test("V7: writing a scored evaluation into a run directory never modifies boards
   // emptiness (task-13 review, finding 4): this repository's own stated
   // purpose is that boards are revised on a bench, so an ordinary,
   // in-progress, uncommitted board edit sitting in the tree when this test
-  // runs is real work, not a defect, and asserting `after === ""` would fail
-  // the test for a reason that has nothing to do with the code under test.
-  // `after === before` tolerates a dirty tree and still catches the one
-  // thing this test exists to catch: THIS CODE adding to what was already
-  // there. task-13-report.md's second appendix carries the real failure
-  // text from re-running the break against this exact assertion, with the
-  // break living in the code under test rather than as a hand-edit made
-  // before the test runs (the distinction finding 4 raised).
-  const before = gitPorcelain("boards/")
+  // runs is real work, not a defect, and asserting "no boards/ content at
+  // all" would fail the test for a reason that has nothing to do with the
+  // code under test. Comparing before against after tolerates a dirty tree
+  // and still catches the one thing this test exists to catch: THIS CODE
+  // adding to what was already there.
+  //
+  // THE WITNESS IS A CONTENT DIGEST, NOT `git status --porcelain` (task-13
+  // fix round 2: round 1's `toBe(before)` over porcelain text was found
+  // INERT, not merely fragile - porcelain prints " M path" identically
+  // whether a file changed once or three times, and the three `writeInto`
+  // calls in the tests above this one already dirty `boards/` before
+  // `before` is captured here, so a FOURTH change by the code under test
+  // left `after` reading identically to `before` and the test passed over
+  // real damage). `boardsDigest()` hashes every file's path and actual
+  // bytes, so a second change to an already-dirty file moves it exactly as
+  // a first change would, and it needs no git state at all.
+  const before = boardsDigest()
   writeInto(MANIFEST)
-  const after = gitPorcelain("boards/")
+  const after = boardsDigest()
   expect(after).toBe(before)
 })

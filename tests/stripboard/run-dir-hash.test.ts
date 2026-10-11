@@ -1,6 +1,6 @@
 /**
  * `canonicalHash`: equal inputs hash equal, every field moves the hash when
- * it changes, provenance never does, and an empty `builtCommit` refuses.
+ * it changes, provenance never does, and a blank identifying field refuses.
  *
  * `./run-dir-fixtures.ts` says where `INPUTS`, `METRICS` and `mutate` come
  * from. The run directory's path and the gitignore property live in
@@ -66,32 +66,48 @@ test("an unknown built commit is recorded as unknown and never as agreement", ()
   expect(() => canonicalHash({ ...INPUTS, builtCommit: "" }, METRICS)).toThrow(/built/)
 })
 
+/** `canonicalHash`'s refusal message for `{ ...INPUTS, [field]: value }`, or `""` if it did not refuse. */
+function blankFieldRefusal(field: string, value: string): string {
+  try {
+    canonicalHash({ ...INPUTS, [field]: value }, METRICS)
+    return ""
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+}
+
+const IDENTIFYING_FIELDS = [
+  "candidateSha256",
+  "rulesSha256",
+  "netlistSha256",
+  "spanDataSha256",
+  "pinPatternSha256",
+  "verorouteCommit",
+  "pipelineCommit",
+] as const
+
 test("every identifying string field refuses empty, not only builtCommit", () => {
   // task-13 review, finding 8: a blank candidateSha256, rulesSha256,
   // netlistSha256, spanDataSha256, pinPatternSha256, verorouteCommit or
   // pipelineCommit records a provenance claim that says nothing, exactly as
   // a blank builtCommit does, and a caller can write `?? ""` to any of them.
-  const identifyingFields = [
-    "candidateSha256",
-    "rulesSha256",
-    "netlistSha256",
-    "spanDataSha256",
-    "pinPatternSha256",
-    "verorouteCommit",
-    "pipelineCommit",
-  ] as const
-  for (const field of identifyingFields) {
-    const message = (() => {
-      try {
-        canonicalHash({ ...INPUTS, [field]: "" }, METRICS)
-        return ""
-      } catch (error) {
-        return error instanceof Error ? error.message : String(error)
-      }
-    })()
+  for (const field of IDENTIFYING_FIELDS) {
+    const message = blankFieldRefusal(field, "")
     expect(message, field).toContain(field)
-    expect(message, field).toContain("empty")
+    expect(message, field).toContain("blank")
   }
+})
+
+test("whitespace-only is blank too, not a second spelling of a real value", () => {
+  // task-13 review round 2: `""` was refused but `" "` was accepted - the
+  // check was `=== ""` rather than "contains no non-whitespace". Driven
+  // over builtCommit and one sibling field; not a sentinel-word blacklist
+  // (that duty belongs to the caller, per the coordinator's ruling on this
+  // finding) - just the same blank check `""` gets, extended to whitespace.
+  expect(() => canonicalHash({ ...INPUTS, builtCommit: "   " }, METRICS)).toThrow(/blank/)
+  const message = blankFieldRefusal("candidateSha256", "\t\n ")
+  expect(message).toContain("candidateSha256")
+  expect(message).toContain("blank")
 })
 
 test("mutate throws for a type it does not handle, rather than returning it unchanged", () => {

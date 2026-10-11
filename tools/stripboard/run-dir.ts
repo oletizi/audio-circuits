@@ -166,7 +166,7 @@ function sortKeysDeep(value: unknown): unknown {
 
 /**
  * Every `CanonicalInputs` string field that identifies something - a hash or
- * a commit - rather than describing it. All eight are refused empty, for the
+ * a commit - rather than describing it. All eight are refused blank, for the
  * same reason `builtCommit` alone used to be: a blank value here is never an
  * accident of "not yet known" written honestly, because this type has no
  * such spelling - it is either a caller papering over a value it does not
@@ -174,7 +174,17 @@ function sortKeysDeep(value: unknown): unknown {
  * same consequence, a run recording agreement with the world that it does
  * not have.
  */
-const REQUIRED_NONEMPTY_INPUT_FIELDS: readonly (keyof CanonicalInputs)[] = [
+type StringInputField =
+  | "candidateSha256"
+  | "rulesSha256"
+  | "netlistSha256"
+  | "spanDataSha256"
+  | "pinPatternSha256"
+  | "verorouteCommit"
+  | "builtCommit"
+  | "pipelineCommit"
+
+const REQUIRED_NONEMPTY_INPUT_FIELDS: readonly StringInputField[] = [
   "candidateSha256",
   "rulesSha256",
   "netlistSha256",
@@ -185,24 +195,37 @@ const REQUIRED_NONEMPTY_INPUT_FIELDS: readonly (keyof CanonicalInputs)[] = [
   "pipelineCommit",
 ]
 
-/** The refusal for one empty required field - `builtCommit` keeps its fuller, named reason. */
-function emptyInputFieldRefusal(field: keyof CanonicalInputs): string {
+/**
+ * Whether a required identifying field's value is blank - the empty string,
+ * or nothing but whitespace. `""` alone used to be the check (task-13 review
+ * finding 8: `" "` passed it), and whitespace is not a second spelling of
+ * "unknown" this module invents a meaning for - it is refused for the same
+ * reason `""` is, because it is not a real hash or commit either.
+ */
+function isBlank(value: string): boolean {
+  return value.trim() === ""
+}
+
+/** The refusal for one blank required field - `builtCommit` keeps its fuller, named reason. */
+function blankInputFieldRefusal(field: StringInputField): string {
   if (field === "builtCommit") {
     return (
-      "canonicalHash: builtCommit is the empty string. tools/perfboard/acquire.ts's " +
-      "builtCommit() returns undefined for a build it cannot identify, and an unknown " +
-      "build is never the pinned commit - that is acquire.ts's own rule. Hashing \"\" " +
-      "would record an unresolved build as if it agreed with verorouteCommit; resolve " +
-      "what was actually built, or carry the unresolved state some other way than an " +
-      "empty string."
+      "canonicalHash: builtCommit is blank (empty or all whitespace). " +
+      "tools/perfboard/acquire.ts's builtCommit() returns undefined for a build it cannot " +
+      "identify, and an unknown build is never the pinned commit - that is acquire.ts's own " +
+      "rule. Hashing a blank value would record an unresolved build as if it agreed with " +
+      "verorouteCommit; resolve what was actually built, or carry the unresolved state some " +
+      "other way than a blank string. This module does not accept a sentinel word (such as " +
+      '"unknown") as an alternative spelling either - resolving what actually happened is the ' +
+      "caller's duty, not a word this hash can stand in for."
     )
   }
   return (
-    `canonicalHash: ${field} is the empty string. It is not defaulted: this field ` +
-    "identifies something - a hash or a commit - and a blank value records a " +
-    "provenance claim that says nothing, which is the same hazard builtCommit's own " +
-    `refusal exists for. Compute the real value ${field} is supposed to carry, or ` +
-    'carry "not yet known" some other way than an empty string.'
+    `canonicalHash: ${field} is blank (empty or all whitespace). It is not defaulted: this ` +
+    "field identifies something - a hash or a commit - and a blank value records a " +
+    "provenance claim that says nothing, which is the same hazard builtCommit's own refusal " +
+    `exists for. Compute the real value ${field} is supposed to carry, or carry "not yet ` +
+    'known" some other way than a blank string.'
   )
 }
 
@@ -210,14 +233,14 @@ function emptyInputFieldRefusal(field: keyof CanonicalInputs): string {
  * Hash exactly `{ inputs, metrics }`, keys sorted, nothing else admitted.
  *
  * Refuses any of `CanonicalInputs`' eight identifying string fields when it
- * is the empty string, rather than hashing it - see
+ * is blank - empty, or nothing but whitespace - rather than hashing it. See
  * `REQUIRED_NONEMPTY_INPUT_FIELDS` above for why all eight, not just
  * `builtCommit`.
  */
 export function canonicalHash(inputs: CanonicalInputs, metrics: CanonicalMetrics): string {
   for (const field of REQUIRED_NONEMPTY_INPUT_FIELDS) {
-    if (inputs[field] === "") {
-      throw new Error(emptyInputFieldRefusal(field))
+    if (isBlank(inputs[field])) {
+      throw new Error(blankInputFieldRefusal(field))
     }
   }
   const payload = JSON.stringify(sortKeysDeep({ inputs, metrics }))

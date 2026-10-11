@@ -46,8 +46,7 @@
  * typed mutation table; neither is worth it to protect a property the loop
  * does not actually rely on.
  */
-import { randomUUID } from "node:crypto"
-import { spawnSync } from "node:child_process"
+import { createHash, randomUUID } from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
@@ -239,16 +238,56 @@ export function writeAndRead(provenance: Partial<ExecutionProvenance>): RunManif
   return readManifest(writeInto(manifest))
 }
 
-/** `git status --porcelain <pathspec>`, run from the repository root, raw stdout returned. */
-export function gitPorcelain(pathspec: string): string {
-  const result = spawnSync("git", ["status", "--porcelain", pathspec], {
-    cwd: moduleRepoRoot(),
-    encoding: "utf8",
-  })
-  if (result.status !== 0) {
-    throw new Error(
-      `git status --porcelain ${pathspec} exited ${result.status}: ${result.stderr ?? ""}`,
-    )
+/** Every regular file under `dir`, recursively, as absolute paths - order not yet settled. */
+function walkFiles(dir: string): readonly string[] {
+  const files: string[] = []
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...walkFiles(full))
+    } else if (entry.isFile()) {
+      files.push(full)
+    }
   }
-  return result.stdout
+  return files
+}
+
+/**
+ * A content digest over every file under `boards/` - each file's path
+ * (relative to `boards/`) and its raw bytes, in path-sorted order, folded
+ * into one sha256.
+ *
+ * REPLACES `git status --porcelain` AS V7's WITNESS (task-13 fix round 2;
+ * the review measured round 1's `toBe(before)` inert, not merely fragile:
+ * porcelain prints ` M path` identically whether a file changed once or
+ * three times, so when earlier tests in this file already dirty `boards/`
+ * before V7 captures `before`, a FOURTH change by the code under test
+ * leaves `after` reading identically to `before` and the test passes over
+ * real damage). A content digest has none of that blind spot: it is built
+ * from what each file actually CONTAINS, not from git's record of whether
+ * it differs from HEAD, so a second change to an already-dirty file moves
+ * it exactly as a first change would, an addition or deletion moves it
+ * through the path set, and it needs no git state at all - a boards/ tree
+ * that is clean, dirty, or not inside a git repository in the first place
+ * all digest the same way. It still tolerates a PRE-EXISTING dirty tree the
+ * way the dropped `toBe("")` assertion could not: an ordinary, in-progress,
+ * uncommitted board edit sitting in the tree before a test runs is real
+ * bench work (this repository's own stated purpose), and comparing the
+ * digest before against the digest after - rather than against some fixed
+ * "clean" value - still passes when nothing in THIS run touched `boards/`.
+ *
+ * Forty-nine files, ~1.1MB as of this writing - negligible to hash on every
+ * run.
+ */
+export function boardsDigest(): string {
+  const root = path.join(moduleRepoRoot(), "boards")
+  const files = [...walkFiles(root)].sort()
+  const hash = createHash("sha256")
+  for (const file of files) {
+    hash.update(path.relative(root, file))
+    hash.update("\0")
+    hash.update(fs.readFileSync(file))
+    hash.update("\0")
+  }
+  return hash.digest("hex")
 }
