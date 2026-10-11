@@ -430,7 +430,7 @@ reports both. **Stop at the first of:**
 | **Q1** | **At the floor, and admissible.** `C = C_floor` and `W = 0`; equivalently `κ = 0`, `S_occ = min(N, R)`, `W = 0` — **and A1–A4 hold on that candidate.** Terminal, because nothing below the floor exists. `B = 0` follows rather than being assumed: `κ = 0` means no net is split, a derived bridge exists only to supply a join, and there is no join to supply. | dump counts against P0's `targets.json`, plus the admissibility verdict |
 | **Q2** | **Within tolerance of the floor** (K4), **and admissible.** | arithmetic on counts, plus the admissibility verdict |
 | **Q3** | **Search exhausted.** Every seed's climb has reached a full sweep of the move set — *including* the net-cluster move — that produced no accepted move, and no restart remains. **Not terminal before the seed list is spent**, because a single no-accepted-move round is a restart trigger: a rule that stopped at the first local optimum would halt the run in exactly the condition the restarts exist to leave. | the round's accepted-move counter is 0 for the last seed and the restart schedule is spent |
-| **Q4** | **Marginal yield collapsed.** `(F_{i−1} − F_i) / evaluations_i < 1/2000` for two consecutive rounds. **Per climb**, with the run-level total also reported, so a restart cannot reset the counter and present a collapsed yield as fresh progress. `1/2000` is a proposed default and a parameter, chosen so the threshold is a concrete amount of machine time rather than an impression (PIPELINE §7.3 does that arithmetic). | counters only |
+| **Q4** | **Finishing would cost more than the search already has.** With `g = F − C_floor` the gap that provably remains, `r` the recent improvement per evaluation, and `e` the evaluations spent: stop when `g / r > k · e`. Default `k = 1`. **Measured across at least one restart, never within a climb** — improvement here is bursty, so a window inside a flat stretch reads as converged when a restart would have broken it. [owner], 2026-10-10. | counters and the derived floor |
 | **Q5** | **Budget spent** — the owner's evaluation cap, at **run** level. Restarts spend the same cap and the schedule's division of it is recorded, so a restart cannot quietly grant itself more. | counter |
 | **Q6** | **Systematic cause.** Three consecutive results share a failure signature — the failing check names, the floating parts, the `CUT_CONFLICT` positions — compared **within and across restarts**, because three sharing a signature across two seeds is stronger evidence than three within one. Reports the cause; does not retry, a repeated failure being a systematic cause to fix rather than a candidate to skip. | signature comparison |
 
@@ -446,10 +446,49 @@ where the arithmetic holds but admissibility does not, **they do not fire**: the
 and stops under another condition — Q3, Q4, Q5 or Q6 — which reports the weaker `bound` the run
 has actually earned. Q3–Q6 are unaffected; they were never claims of success.
 
-*Provenance:* Q1–Q5 **[model]** — COST §6.4's `S1`–`S5` in order, prefixed `Q` here because the
-parent's sub-projects are `S0`/`S1`/`S1a` and `S1` would otherwise mean two things. Q6
-**[external]** — the sibling repository's failure-signature termination. Q2's `τ`, Q4's threshold,
-Q5's cap and Q6's run length are parameters (K4, PAR3).
+**Q4 IS A HYPOTHESIS, LABELLED AS ONE, AND THE PIPELINE COLLECTS WHAT WOULD REFINE IT.** The
+owner's instruction, 2026-10-10: *"we won't figure it out completely by thinking really hard. We
+need a credible hypothesis for what might work that isn't obviously dumb that we continuously
+refine as we get more experience."* Q4 is that hypothesis and is written to be revised, not
+defended.
+
+**Why this shape is credible rather than arbitrary.** What makes this problem unusual is that the
+remaining gain is bounded by something derived rather than guessed: `C_floor = max(0, N − R)` is
+exact, so `g` is a hard ceiling on what further search can win. The rule therefore has no constant
+tied to a unit of `F` — the previous default, one unit per 2,000 evaluations, was a quantity of
+machine time dressed as a measure of returns, and it did not scale with a board's difficulty. `k`
+is a dimensionless ratio of effort to effort, which is the part that transfers between boards.
+
+**Why it is only a hypothesis, stated so it can be shown wrong:**
+
+- **`g` is optimistic.** The floor ignores physical reach, and mid's net graph wants a six-hole
+  span where its B32529 capacitors reach four. So the gap the rule projects against is larger than
+  the gap that exists, which biases toward searching too long. That is the safe direction, and it
+  is a bias rather than a forecast.
+- **`r` is bursty.** A climb goes flat and then drops sharply after a restart, so a rate measured
+  inside a flat stretch is not the rate of the search. Hence the across-a-restart window, which is
+  a constraint on the implementation and not a detail.
+- **Neither has been measured on a real run of this pipeline.** Every cut count in this suite comes
+  from `--import`'s placement or from a hand layout.
+
+**What refines it.** `run.json` records the full improvement trace — evaluations, `F`, and the
+restart boundaries — so the shape of real curves can be read afterwards rather than argued about.
+And because a stopping rule cannot be calibrated by runs that obeyed it, a **control run**
+periodically ignores Q4 and continues to the backstop, recording what the rule would have left on
+the table. That number, over several boards, is the evidence `k` moves on. Revision follows K3's
+ratchet: a changed `k` is a deliberate edit carrying the runs that justify it, never a quiet
+adjustment because a gate became inconvenient.
+
+**Q5 is demoted to a backstop and is not a statement about returns.** It exists to stop a bug
+looping forever. It is set loose enough that a healthy run never reaches it, and **a run that stops
+on Q5 is reported as a failure rather than as a result** — reaching it means either the search or
+this rule is broken, and both are worth knowing.
+
+*Provenance:* Q1–Q3 and Q5 **[model]** — COST §6.4's `S1`–`S5` in order, prefixed `Q` here because
+the parent's sub-projects are `S0`/`S1`/`S1a` and `S1` would otherwise mean two things. **Q4
+[owner]**, 2026-10-10, replacing COST's marginal-yield threshold. Q6 **[external]** — the sibling
+repository's failure-signature termination. Q2's `τ`, Q4's `k`, Q5's cap and Q6's run length are
+parameters (K4, PAR3).
 
 ---
 
