@@ -215,14 +215,14 @@ test("V1: the counts are reproduced by a second code path over the same text", a
   // MUTATION RUN, AND IT IS THE MOST INSTRUCTIVE ONE IN THIS FILE. With
   // `countLines` replaced by `countParsed(parseBoardDump(dumpText))` - a
   // second CALL into the one parser rather than a second PATH - the whole file
-  // still read '18 pass, 0 fail'. THIS TEST CANNOT TELL THE DIFFERENCE, and
+  // still read '19 pass, 0 fail'. THIS TEST CANNOT TELL THE DIFFERENCE, and
   // that is why the grep-equivalent below it is a separate test: agreement
   // between a function and itself is free. With the parser then also made to
-  // drop its last `CUT` line, this test STILL passed while five others failed.
+  // drop its last `CUT` line, this test STILL passed while ten others failed.
   // With the parser dropping that line and `countLines` left alone, this
   // failed with 'error: score-count-disagreement: fixture's two line counts
-  // disagree - CUT: the parsed dump has 0 and the raw text has 1. ...' - eight
-  // tests refusing, which is the second path working. All reverted.
+  // disagree - CUT: the parsed dump has 0 and the raw text has 1. ...' -
+  // twelve tests refusing, which is the second path working. All reverted.
   const rules = loadRules()
   const frozen = await Bun.file(FROZEN_DUMP).text()
   for (const [name, text, targets] of [
@@ -263,7 +263,7 @@ test("CUT_STATE is not a cut, which a bare-prefix count would get wrong", async 
   //
   // MUTATION RUN: with `countLines` matching the bare prefix "CUT" this failed
   // with 'error: a CUT_STATE line is not a cut / Expected: 5 / Received: 6',
-  // and thirteen of the eighteen tests in this file failed with it - V1's live
+  // and fourteen of the nineteen tests in this file failed with it - V1's live
   // cross-check refusing 'score-count-disagreement: pultec-low-boost's two
   // line counts disagree - CUT: the parsed dump has 5 and the raw text has 6.'
   // Reverted.
@@ -340,8 +340,9 @@ test("N is the NODE count and not the copper graph's component count", async () 
   // MUTATION RUN: with `netCount` taken from the targets this failed with
   // 'error: negative-joins: C = 5, N = 14, S_occ = 5 gives J = C - N + S_occ =
   // -4. ...' before reaching either assertion. Reverted.
-  const dump = boardGeometry(await Bun.file(FROZEN_DUMP).text())
-  const score = scoreDump(dump, lowBoostTargets(), loadRules())
+  const text = await Bun.file(FROZEN_DUMP).text()
+  const dump = boardGeometry(text)
+  const score = scoreDump(dump, lowBoostTargets(), loadRules(), countLines(text))
   expect(score.netCount, "COST §1.6's N for low-boost").toBe(9)
   expect(copperGraph(dump).componentCount).toBeGreaterThan(score.netCount)
 })
@@ -380,6 +381,13 @@ test("V2: a dump whose CUT_STATE is not COMPUTED refuses before it scores", () =
   // what CRITERIA HC2 calls the cheap second reading of the same condition
   // only fires when the absent cut list happens to make J negative, as it does
   // on transistor-preamp-lab. So the state is read directly. Reverted.
+  //
+  // AND HC2 IS READ FIRST ON BOTH ENTRY POINTS, which is checkable rather than
+  // asserted: with the parser made to drop a `CUT` line - so this fixture is
+  // both UNRESOLVED and mis-parsed, and has a count disagreement as well -
+  // twelve tests failed on `score-count-disagreement` and THIS ONE PASSED,
+  // because `scoreDumpText` does no checking of its own and `scoreDump` reads
+  // `cutState` before it compares. Reverted.
   const unresolved = TEXT.replace("CUT_STATE COMPUTED", "CUT_STATE UNRESOLVED")
   const message = refusalFrom(() => scoreDumpText(unresolved, FIXTURE_TARGETS, loadRules()))
   expect(message).toStartWith("score-cuts-not-computed:")
@@ -418,7 +426,7 @@ test("K5: a candidate scoring below its declared floor refuses, naming both numb
   //
   // MUTATION RUN: with the floor comparison deleted this failed with 'Expected
   // to start with: "score-below-floor:" / Received: ""', and so did the two
-  // K5 tests below it - three failures and fifteen passes. Reverted.
+  // K5 tests below it - three failures and sixteen passes. Reverted.
   const overstated = { ...FIXTURE_TARGETS, cutFloor: 99 }
   const message = refusalFrom(() => scoreDumpText(TEXT, overstated, loadRules()))
   expect(message).toStartWith("score-below-floor:")
@@ -458,7 +466,42 @@ test("K5's refusal fires rather than a negative gap reaching the report", () => 
   // value: {' followed by the Score it should never have produced. Reverted.
   const overstated = { ...FIXTURE_TARGETS, cutFloor: 99 }
   expect(() => scoreDumpText(TEXT, overstated, loadRules())).toThrow()
-  expect(() => scoreDump(boardGeometry(TEXT), overstated, loadRules())).toThrow()
+  expect(() => scoreDump(boardGeometry(TEXT), overstated, loadRules(), countLines(TEXT)))
+    .toThrow()
+})
+
+test("the scorer cannot be reached without the second path having run", () => {
+  // THE STRUCTURAL GUARD, and this test is what says out loud what the type
+  // system is enforcing - the review's I1, and the bypass this file previously
+  // demonstrated by calling `scoreDump` with three arguments.
+  //
+  // `scoreDump`'s fourth parameter is an `IndependentCount`, whose brand is a
+  // `unique symbol` that `score.ts` does not export, so `countLines` is the
+  // only thing in the repository that can produce one. There is therefore no
+  // three-argument call to make and no way to score a candidate with V1
+  // skipped. It is checked HERE AS A COMPILE-TIME FACT rather than as a
+  // runtime assertion, because that is what it is: the two lines below are the
+  // shape a caller must write, and `bun run typecheck` is the gate.
+  //
+  // DRIVEN, so it is not a claim about the type system: a plain
+  // `{ cuts: 1, wires: 1, solder: 1 }` in that position fails typecheck with
+  // 'error TS2345: Argument of type "{ cuts: number; wires: number; solder:
+  // number; }" is not assignable to parameter of type "IndependentCount".
+  // Property "[COUNTED_FROM_TEXT]" is missing in type "{ cuts: number; wires:
+  // number; solder: number; }" but required in type "IndependentCount".' -
+  // and `COUNTED_FROM_TEXT` cannot be named here to supply it, because
+  // `score.ts` does not export it. Reverted.
+  const counted = countLines(TEXT)
+  expect(scoreDump(boardGeometry(TEXT), FIXTURE_TARGETS, loadRules(), counted).objective)
+    .toBe(2.25)
+  // And the witness is held against the dump rather than taken on trust: a
+  // count of some OTHER text in that position is refused, not believed.
+  const otherText = TEXT.replace("CUT 0,1,1 0,2,2", "CUT 0,1,1 0,2,2\nCUT 1,1,1 1,2,2")
+  const message = refusalFrom(
+    () => scoreDump(boardGeometry(TEXT), FIXTURE_TARGETS, loadRules(), countLines(otherText)),
+  )
+  expect(message).toStartWith("score-count-disagreement:")
+  expect(message).toContain("the parsed dump has 1 and the raw text has 2")
 })
 
 test("the floor is read from the targets and no floor is defaulted when scoring", () => {

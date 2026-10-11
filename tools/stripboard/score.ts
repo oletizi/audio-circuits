@@ -29,8 +29,12 @@
  *   kinds from the raw dump text and **imports nothing from
  *   `tools/guide/dump.ts`** - that is what makes it a second path rather than
  *   a second call. Two paths that could disagree about one board is the
- *   defect this pipeline is built to avoid, so `scoreDumpText` runs both and
- *   refuses a disagreement.
+ *   defect this pipeline is built to avoid, so `scoreDump` compares them and
+ *   refuses a disagreement - and it cannot be called without the second
+ *   path's result, which `IndependentCount` below is for. **Not a docstring
+ *   asking callers to run it first:** a check a caller may skip is a check
+ *   that looks like it passed, which is the failure this whole workflow
+ *   exists to prevent.
  * - **`V2`, the identity with its `J ≥ 0` reading.** `C = N + J − S_occ`
  *   (COST §1.4) closes on every candidate, through `segmentJoins` in
  *   `./targets.ts`, which is the ONE implementation of it: a second copy here
@@ -38,9 +42,15 @@
  *   A negative `J` is impossible - `J = Σ(k_n − 1)` and every term is at
  *   least zero - and is the detector for a board the identity cannot
  *   describe. `transistor-preamp-lab` yields `J = −1` because its `CUT_STATE`
- *   is `UNRESOLVED`, which is why the state is ALSO read directly here: the
- *   negative `J` is a sound cheap second reading of `HC2`'s condition and not
- *   a substitute for it.
+ *   is `UNRESOLVED`, which is why the state is ALSO read directly here.
+ *   **AND `J ≥ 0` IS NOT A SAFETY NET FOR AN UNRESOLVED BOARD - measured,
+ *   not argued.** With the `cutState` clause disabled, the `UNRESOLVED`
+ *   fixture in `./score.test.ts` raised NO refusal at all, because its terms
+ *   still give `J = 1 − 2 + 2 = 1`. The negative `J` catches an unresolved
+ *   board only when the absent cut list happens to drive `J` below zero, as
+ *   it does on `transistor-preamp-lab` and does not on a small one. `HC2`
+ *   calls it a cheap second reading and explicitly not a substitute; the
+ *   explicit check is the one that holds.
  * - **`K5`, the floor invariant.** `F ≥ F_floor` always, `F_floor = C_floor`.
  *   **A candidate scoring below the declared floor is a VERIFICATION
  *   FAILURE, not an unexpectedly good result**, and the run refuses rather
@@ -57,9 +67,18 @@
  * §2.3's fourteen nets, and forty on-board pins plus the frozen dump's ten
  * `PAD` lines) while its committed layout has nine `NODE` and twenty-seven
  * `PIN` lines, all five layouts being stale against the model (COST §2.3).
- * Taking the identity's `N` from the targets would give `J = 5 − 14 + 5 = −4`
- * and REFUSE a board COST §1.6 derives by hand, and taking `P` from them
- * would report `κ = 1/41` where COST §5 measures `1/18`.
+ * THREE MIXINGS ARE POSSIBLE AND ALL THREE ARE WRONG DIFFERENTLY, so each is
+ * named with its own figure - `1/41` alone identifies none of them:
+ *
+ * - `N` from the model, `P` from the dump: `J = 5 − 14 + 5 = −4` and the run
+ *   REFUSES a board COST §1.6 derives by hand. Measured.
+ * - `P` from the model, `N` from the dump (the mix): `κ = 1/(50 − 9) = 1/41`
+ *   where COST §5 measures `1/18`. Measured.
+ * - both from the model: `κ` would be `1/(50 − 14) = 1/36`, and that figure is
+ *   UNREACHABLE because the negative `J` of the first case refuses first. It
+ *   is recorded so nobody reads `1/41` as "the" wrong answer.
+ *
+ * Only the fully dump-sourced reading reproduces COST's recorded figures.
  *
  * SO WHAT `targets` IS FOR HERE: the board's NAME, which is how a refusal
  * says which candidate failed, and `cutFloor`, which is `K5`'s bound and is
@@ -179,6 +198,43 @@ export interface Score {
 const COSTED_LINES = { cuts: "CUT", wires: "WIRE", solder: "SOLDER" } as const
 
 /**
+ * The brand that makes `IndependentCount` unforgeable, and IT IS DELIBERATELY
+ * NOT EXPORTED: a symbol no other module can name is a property no other
+ * module can write, so `countLines` is the only thing in the repository that
+ * can produce an `IndependentCount`.
+ */
+const COUNTED_FROM_TEXT: unique symbol = Symbol("stripboard/score: counted from the raw text")
+
+/**
+ * `C`, `W` and `B` as `V1`'s second path counted them, carrying proof of
+ * where they came from.
+ *
+ * WHY A WITNESS TYPE RATHER THAN A DOCSTRING, which is the whole of this
+ * module's answer to "a skipped check must never look like a passing one".
+ * `scoreDump` takes one of these, so **there is no way to call the scorer at
+ * all without having run the second path**: `V1` rides on every evaluation
+ * through either entry point, and the guard cannot decay into a note, because
+ * removing it is a compile error at every call site rather than a test
+ * somebody deletes. A Task-14-style "nothing outside `score.ts` imports
+ * `scoreDump`" assertion was the alternative; it polices who may import the
+ * function instead of making the check unskippable, and it is itself a test
+ * that can be weakened.
+ *
+ * WHAT IT PROVES AND WHAT IT DOES NOT, stated because the honest scope is
+ * narrower than "V1 ran": it proves `countLines` produced these three
+ * numbers, and `scoreDump` then proves they describe ITS dump by comparing
+ * them against `countParsed`. What nothing here can prove is that
+ * `countLines` was handed the same text `boardGeometry` was - a caller
+ * passing `countLines(someOtherText)` whose three counts happen to match all
+ * three of this dump's would pass. `scoreDumpText` is the entry that closes
+ * that, because it reads the text once; a caller holding a parsed dump owns
+ * the pairing.
+ */
+export interface IndependentCount extends LineCounts {
+  readonly [COUNTED_FROM_TEXT]: true
+}
+
+/**
  * `V1`'s SECOND CODE PATH: `C`, `W` and `B` counted off the raw dump text.
  *
  * IT IMPORTS NOTHING FROM `tools/guide/dump.ts`, not even the tokenizer, and
@@ -192,7 +248,7 @@ const COSTED_LINES = { cuts: "CUT", wires: "WIRE", solder: "SOLDER" } as const
  * with `CUT`, so a bare-prefix match reports six cuts on the frozen low-boost
  * dump where there are five.
  */
-export function countLines(dumpText: string): LineCounts {
+export function countLines(dumpText: string): IndependentCount {
   const counts = { cuts: 0, wires: 0, solder: 0 }
   for (const line of dumpText.split("\n")) {
     const keyword = line.trim().split(/\s+/)[0]
@@ -200,7 +256,7 @@ export function countLines(dumpText: string): LineCounts {
     else if (keyword === COSTED_LINES.wires) counts.wires += 1
     else if (keyword === COSTED_LINES.solder) counts.solder += 1
   }
-  return counts
+  return { ...counts, [COUNTED_FROM_TEXT]: true }
 }
 
 /** The same three counts off the PARSED dump: `V1`'s first path. */
@@ -252,25 +308,31 @@ export function objectiveOf(counts: LineCounts, rules: StripboardRules): number 
 }
 
 /**
- * Score one candidate, carrying `V2` and `K5`.
+ * Score one candidate: all three checks, on every call.
  *
- * `V1` CANNOT RIDE HERE, because a `BoardDump` is already parsed and carries
- * no text to count independently: use `scoreDumpText`, which is the entry
- * point that carries all three checks. This signature exists because the
- * search holds a parsed dump, and a caller that reaches it directly has
- * already run `V1` or has skipped it.
+ * `V1` CANNOT BE COUNTED HERE, because a `BoardDump` is already parsed and
+ * carries no source text - which is a fact about the interface and not a
+ * preference. So the second path's result is an ARGUMENT, and its type is one
+ * only `countLines` can produce: a caller cannot reach this function without
+ * having counted the text independently, and `requireCountsAgree` below then
+ * holds that count against this dump. `scoreDumpText` is the convenience that
+ * reads the text once and does both.
  */
 export function scoreDump(
   dump: BoardDump,
   targets: BoardTargets,
   rules: StripboardRules,
+  counted: IndependentCount,
 ): Score {
-  // HC2 FIRST, before anything is counted: under UNRESOLVED the cut list is
-  // absent, so C, J and kappa would all be computed from a number that is not
-  // a count. The refusal `copperGraph` raises for the same condition is
-  // deliberately a separate wording in a separate module - the scorer and the
-  // grader are separate paths (R2), so a refusal living in only one of them
-  // protects only one of them.
+  // HC2 FIRST, before anything is counted or compared, and that ordering holds
+  // on BOTH entry points because `scoreDumpText` does no checking of its own:
+  // under UNRESOLVED the cut list is absent, so C, J and kappa would all be
+  // computed from a number that is not a count, and a board that is both
+  // unresolved and mis-parsed should report the unresolved state rather than
+  // the count disagreement it also has. The refusal `copperGraph` raises for
+  // the same condition is deliberately a separate wording in a separate module
+  // - the scorer and the grader are separate paths (R2), so a refusal living
+  // in only one of them protects only one of them.
   if (dump.cutState !== "COMPUTED") {
     refuse(
       "score-cuts-not-computed",
@@ -278,7 +340,12 @@ export function scoreDump(
     )
   }
 
+  // V1, and it is re-anchored to THIS dump rather than taken on trust: the
+  // witness proves the second path ran, and this comparison proves it ran on
+  // the board being scored.
   const counts = countParsed(dump)
+  requireCountsAgree(counts, counted, targets.board)
+
   const netCount = Object.keys(dump.nodes).length
   const pinCount = Object.values(dump.pins).reduce((total, pins) => total + pins.length, 0)
   const occupied = occupiedStrips(dump)
@@ -313,8 +380,12 @@ export function scoreDump(
 }
 
 /**
- * Score one candidate from its dump TEXT: the entry point, and the only one
- * on which all three checks ride.
+ * Score one candidate from its dump TEXT: the entry that reads the text once,
+ * so the independently counted lines and the parsed dump provably describe
+ * the same characters.
+ *
+ * IT CHECKS NOTHING ITSELF. Every refusal is `scoreDump`'s, in `scoreDump`'s
+ * order, so there is one ordering of the three checks rather than two.
  *
  * `boardGeometry`, NOT `parseBoardDump`: a parsed dump skips every geometry
  * refusal, so text fed through the parser never exercises the contract `HC8`
@@ -325,7 +396,5 @@ export function scoreDumpText(
   targets: BoardTargets,
   rules: StripboardRules,
 ): Score {
-  const dump = boardGeometry(dumpText)
-  requireCountsAgree(countParsed(dump), countLines(dumpText), targets.board)
-  return scoreDump(dump, targets, rules)
+  return scoreDump(boardGeometry(dumpText), targets, rules, countLines(dumpText))
 }
