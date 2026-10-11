@@ -1111,7 +1111,10 @@ can see.
 
 ```ts
 import { test, expect } from "bun:test"
-import { parseBoardDump } from "../../tools/guide/dump.ts"
+// `boardGeometry`, NOT `parseBoardDump`: a parsed dump skips every geometry refusal, so a
+// fixture fed through the parser never exercises the contract HC8 is stated in. Same
+// correction Tasks 3, 4 and 5 each needed.
+import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { copperGraph, holeKey, pinHoles, CONTRACTED_LINES, GEOMETRY_CONTRACT_VERSION }
   from "../../tools/stripboard/copper.ts"
 
@@ -1771,7 +1774,10 @@ grep '^GRID\|^VERTICAL_STRIPS\|^CUT_STATE' "$SCRATCH/frozen.dump"
 
 ```ts
 import { test, expect } from "bun:test"
-import { parseBoardDump } from "../../tools/guide/dump.ts"
+// `boardGeometry`, NOT `parseBoardDump`: a parsed dump skips every geometry refusal, so a
+// fixture fed through the parser never exercises the contract HC8 is stated in. Same
+// correction Tasks 3, 4 and 5 each needed.
+import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { netlistEquivalence, referenceNetsFromExport } from "../../tools/stripboard/equivalence.ts"
 
 /**
@@ -2452,13 +2458,23 @@ test("RULES_PATH points at the committed file, so the canonical hash hashes one 
 ```ts
 import { test, expect } from "bun:test"
 import { physicalBoard } from "../../circuits/pultec/physical/board.ts"
-import { parseBoardDump } from "../../tools/guide/dump.ts"
+// `boardGeometry`, NOT `parseBoardDump`: a parsed dump skips every geometry refusal, so a
+// fixture fed through the parser never exercises the contract HC8 is stated in. Same
+// correction Tasks 3, 4 and 5 each needed.
+import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { deriveTargets, occupiedStrips, segmentJoins, clustering }
   from "../../tools/stripboard/targets.ts"
 
 test("the floor is max(0, N - R) and is zero when the board has more strips than nets", () => {
-  const targets = deriveTargets(physicalBoard("low-boost"), 34, "pultec-low-boost")
-  expect(targets.cutFloor).toBe(Math.max(0, targets.netCount - 34))
+  // 34 is `loadRules().stockRows`, not a literal: HC6 owns the stock figure and the rules
+  // file is how it reaches the pipeline. Inlining it here would let the two drift.
+  const targets = deriveTargets(physicalBoard("low-boost"), loadRules().stockRows, "pultec-low-boost")
+  // NOT `toBe(Math.max(0, targets.netCount - 34))`. That recomputes the floor the way the
+  // code computes it and passes however wrong both are - the arithmetic form of the
+  // over-claiming pattern this plan has corrected nineteen times. Assert the RECORDED
+  // figure: COST's table gives low-boost 14 nets against the owner's 34 strips, so 0.
+  expect(targets.netCount).toBe(14)
+  expect(targets.cutFloor).toBe(0)
   expect(targets.cutFloor).toBe(0)
 })
 
@@ -2579,7 +2595,10 @@ test("a negative J refuses, because J = sum(k - 1) cannot be below zero", () => 
 
 ```ts
 import { test, expect } from "bun:test"
-import { parseBoardDump } from "../../tools/guide/dump.ts"
+// `boardGeometry`, NOT `parseBoardDump`: a parsed dump skips every geometry refusal, so a
+// fixture fed through the parser never exercises the contract HC8 is stated in. Same
+// correction Tasks 3, 4 and 5 each needed.
+import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { scoreDump, countLines } from "../../tools/stripboard/score.ts"
 import { deriveTargets } from "../../tools/stripboard/targets.ts"
@@ -3598,7 +3617,9 @@ test("seededPrng is one algorithm, reproducible from its seed and different acro
 })
 
 test("the constructed arm puts one net on each strip, in the ordering's order", () => {
-  const targets = deriveTargets(physicalBoard("low-boost"), 34, "pultec-low-boost")
+  // 34 is `loadRules().stockRows`, not a literal: HC6 owns the stock figure and the rules
+  // file is how it reaches the pipeline. Inlining it here would let the two drift.
+  const targets = deriveTargets(physicalBoard("low-boost"), loadRules().stockRows, "pultec-low-boost")
   const assignment = assignStrips(targets, 0)
   expect(assignment.size).toBe(targets.netCount)
   expect(new Set(assignment.values()).size).toBe(targets.netCount)
@@ -3607,7 +3628,9 @@ test("the constructed arm puts one net on each strip, in the ordering's order", 
 })
 
 test("a different seed gives the constructed arm a different ordering, deterministically", () => {
-  const targets = deriveTargets(physicalBoard("low-boost"), 34, "pultec-low-boost")
+  // 34 is `loadRules().stockRows`, not a literal: HC6 owns the stock figure and the rules
+  // file is how it reaches the pipeline. Inlining it here would let the two drift.
+  const targets = deriveTargets(physicalBoard("low-boost"), loadRules().stockRows, "pultec-low-boost")
   expect(assignStrips(targets, 1)).not.toEqual(assignStrips(targets, 0))
   expect(assignStrips(targets, 1)).toEqual(assignStrips(targets, 1))
 })
@@ -3616,7 +3639,9 @@ test("the junction's five nets land on five consecutive strips, in one fixed ord
   // The SIP5 at 1-hole pitch is the only component forcing more than two nets
   // together, so the constructed arm places it as a sub-arrangement and builds
   // the ordering around it rather than against it.
-  const targets = deriveTargets(physicalBoard("low-boost"), 34, "pultec-low-boost")
+  // 34 is `loadRules().stockRows`, not a literal: HC6 owns the stock figure and the rules
+  // file is how it reaches the pipeline. Inlining it here would let the two drift.
+  const targets = deriveTargets(physicalBoard("low-boost"), loadRules().stockRows, "pultec-low-boost")
   const assignment = assignStrips(targets, 0)
   const nets = junctionNets(targets)
   expect(nets.length, "a junction with no nets would make the clause below vacuous").toBe(5)
