@@ -18,7 +18,7 @@ Supply 24 V; every control (RV1-RV7) at START.
 | RV3 | 2K, linear, RM-065 trimmer | 1 | 2<br>2 | 2k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher PT6KV-202A2020 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-202A2020?qs=PZ1ub9NEDaV5ifClhl6P2g%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/amphenol-piher-sensing-systems/PT6KV-202A2020/13244535) (checked 2026-10-09) | 0.69 USD<br>0.69 USD | 1.38 USD<br>1.38 USD |
 | RV2 | 200K, linear, RM-065 trimmer | 1 | 2<br>2 | 200k ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher PT6KV-204A2020 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-204A2020?qs=DPoM0jnrROXB9pG8c6GveA%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/amphenol-piher-sensing-systems/PT6KV-204A2020/13543627) (checked 2026-10-09) | 0.97 USD<br>0.61 USD | 1.94 USD<br>1.22 USD |
 | RV1 | 1M, linear, RM-065 trimmer | 1 | 2<br>2 | 1M ohm, linear-taper, single-turn trimmer potentiometer, vertical (top) adjust, RM-065-compatible pin layout | Amphenol Piher PT6KV-105A2020 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Amphenol-Piher/PT6KV-105A2020?qs=Ebq70JplCaeT7Df5iAxbbg%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/amphenol-piher-sensing-systems/PT6KV-105A2020/9555882) (checked 2026-10-09) | 0.75 USD<br>0.75 USD | 1.50 USD<br>1.50 USD |
-| R12 | 22R, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 22 ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-22R | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-22R?qs=oAGoVhmvjhx96aHnODh%2FLA%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-22R/9138099) (checked 2026-10-09) | 0.029 USD<br>0.0284 USD | 2.90 USD<br>2.84 USD |
+| R12 | 22R, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>2 | 22 ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-22R | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-22R?qs=oAGoVhmvjhx96aHnODh%2FLA%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-22R/9138099) (checked 2026-10-09) | 0.029 USD<br>0.11 USD | 2.90 USD<br>0.22 USD |
 | R3 | 1K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 1k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-1K | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K?qs=oAGoVhmvjhwCAC47ReWjsQ%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-1K/13011) (checked 2026-10-09) | 0.027 USD<br>0.0268 USD | 2.70 USD<br>2.68 USD |
 | R11 | 1.2K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 1.2k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-1K2 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K2?qs=oAGoVhmvjhwubsAZsxG%2FVA%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-1K2/9138061) (checked 2026-10-09) | 0.027 USD<br>0.0268 USD | 2.70 USD<br>2.68 USD |
 | R4, R7 | 1.5K, 0207 axial, 10.16 mm leads, min 0.25 W | 2 | 100<br>100 | 1.5k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-1K5 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K5?qs=oAGoVhmvjhxRPUzOCLoqMQ%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-1K5/13046) (checked 2026-10-09) | 0.033 USD<br>0.0268 USD | 3.30 USD<br>2.68 USD |
@@ -42,20 +42,18 @@ Supply 24 V; every control (RV1-RV7) at START.
 | point-to-point wiring on the stripboard and off-board wiring to the panel pots and headers | - | 1 | 1<br>1 | 22 AWG solid-core hookup wire, six 25ft spools (150ft total) in six colors (red, blue, yellow, green, black, white), one dispenser box | SparkFun PRT-11367 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/SparkFun/PRT-11367?qs=WyAARYrbSna84CyyeN3%252B8w%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/sparkfun-electronics/11367/5956251) (checked 2026-10-09) | 25.33 USD<br>25.95 USD | 25.33 USD<br>25.95 USD |
 | knobs for the DRIVE, CHARACTER and TRANSFORMER DRIVE panel pots | - | 3 | 4 | 19mm diameter black plastic knob with a set screw, bored for a 6.35mm (0.25in) round solid potentiometer shaft - fits the RV16AF-10-15R1 panel pots' solid round metal shaft | Eagle Plastic Devices 450-AA193 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Eagle-Plastic-Devices/450-AA193?qs=LMMkZCEv%2Ff1%2FVCsEs14gHQ%3D%3D) (checked 2026-09-30) | 3.01 USD | 12.04 USD |
 | sockets so the transistors can be swapped | - | 3 | 4<br>4 | 3-position single-row machined-pin (screw-machine) IC/SIP socket strip, 2.54mm (0.1in) pitch, for socketing a TO-92 transistor | Samtec SS-103-T-2-N | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/SS-103-T-2-N?qs=rU5fayqh%252BE2l5SxhEUcmCQ%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/samtec-inc/SS-103-T-2-N/1105684) (checked 2026-10-09) | 0.76 USD<br>0.87 USD | 3.04 USD<br>3.48 USD |
-| the perfboard the circuit is built on | - | 1 | 2<br>2 | Single-sided stripboard (uncut copper strips on 2.54mm centers), 31 strips x 39 holes per strip, 100 x 80mm, FR4 | BusBoard Prototype Systems ST2 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/BusBoard-Prototype-Systems/ST2?qs=NGErKr1RxMAdSUqgGAVpyQ%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/busboard-prototype-systems/ST2/19200397) (checked 2026-10-09) | 6.30 USD<br>6.30 USD | 12.60 USD<br>12.60 USD |
 
 ## Totals
 
 | Supplier | Currency | Total |
 | --- | --- | --- |
-| Digi-Key | USD | 78.79 |
-| Mouser | USD | 103.37 |
+| Digi-Key | USD | 63.57 |
+| Mouser | USD | 90.77 |
 
 ## Bulk buys
 
 Bought in bulk:
 
-- R12 (resistor-22r-metal-film-0207) at Digi-Key: 100 at 0.0284 USD
 - R3 (resistor-1k-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
 - R11 (resistor-1k2-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
 - R4, R7 (resistor-1k5-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
@@ -78,5 +76,6 @@ Not bought in bulk:
 
 - J1, J2, J3 (pin-header-2position-2.54mm) at Digi-Key: not 100 - its unit price 0.1536 USD is over the 0.15 USD bulk cap; buying 4
 - RV5, RV6, RV7 (pin-header-3position-2.54mm) at Digi-Key: not 100 - its unit price 0.1955 USD is over the 0.15 USD bulk cap; buying 4
+- R12 (resistor-22r-metal-film-0207) at Digi-Key: not 100 - dropped to keep the Digi-Key USD order within 50% over its total at covered quantities; buying 2
 - J1, J2, J3 (pin-header-2position-2.54mm) at Mouser: not 100 - its unit price 0.215 USD is over the 0.15 USD bulk cap; buying 4
 - RV5, RV6, RV7 (pin-header-3position-2.54mm) at Mouser: not 250 - its unit price 0.271 USD is over the 0.15 USD bulk cap; buying 4

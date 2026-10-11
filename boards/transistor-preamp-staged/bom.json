@@ -32,11 +32,6 @@
       "why": "sockets so the transistors can be swapped"
     },
     {
-      "part": "stripboard-31x39-100x80mm",
-      "quantity": 1,
-      "why": "the perfboard the circuit is built on"
-    },
-    {
       "part": "hookup-wire-22awg-solid-assortment",
       "quantity": 1,
       "why": "point-to-point wiring on the stripboard and off-board wiring to the panel pots and headers",
