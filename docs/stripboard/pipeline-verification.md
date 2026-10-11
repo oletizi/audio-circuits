@@ -153,6 +153,16 @@ the one `HC8`'s contract names, which makes it the kind of fact that gets
 rediscovered: a board with a hand-drawn jumper left unplaced is rejected by the
 dump parser, with the parser's wording, before `HC8` is reached.
 
+**That refusal is now pinned by a test, in both places.** Task 3's review found
+it load-bearing for `HC8` and untested anywhere in the repository — a claim true
+today, relied on, and unguarded. It is now driven from the parser's side
+(`tests/guide/dump.test.ts`) and from `HC8`'s side
+(`tests/stripboard/copper.test.ts`, through `boardGeometry`), so a future change
+that modelled floating wires instead of refusing them cannot hand the
+reconstruction a wire with no ends without a test going red. Measured: deleting
+`parseWireEnd`'s `end === "-"` clause fails both, with
+`"unreadable WIRE end \"-\" on WIRE W2"` in place of the floating-wire wording.
+
 ### 1.7 Three dump-grammar corrections the pipeline's plan drafts had wrong
 
 Each was checked against the pinned fork's source and against real dumps under

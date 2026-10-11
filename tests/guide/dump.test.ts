@@ -141,6 +141,35 @@ test("GRID, VERTICAL_STRIPS and CUT_STATE are always required, even on an all-fl
   expect(() => parseBoardDump(without("CUT_STATE"))).toThrow(/CUT_STATE/)
 })
 
+test("a FLOATING wire's `ENDS - -` refuses, naming the wire, rather than parsing as a placed wire", () => {
+  // The pinned fork prints `WIRE <name> FLOATING ENDS - -` for an unplaced
+  // wire (Src/Headless_dump_wires.cpp: "a FLOATING wire prints ENDS - -", and
+  // the two dashes keep the field count the same for a consumer that splits on
+  // spaces). parseWireEnd refuses those dashes instead of inventing a hole.
+  //
+  // THIS TEST WAS ADDED BY TASK 3's REVIEW, and the refusal it pins is older
+  // than this file's coverage of it. HC8's copper reconstruction
+  // (tools/stripboard/copper.ts) carries NO branch for a floating wire, on the
+  // ground that none can reach it - so this refusal is what makes that claim
+  // true, and it was load-bearing and untested. tests/stripboard/copper.test.ts
+  // asserts the same fact from HC8's side.
+  //
+  // MUTATION RUN: deleting parseWireEnd's `if (end === "-")` clause so the
+  // dashes fall through to the regex. Observed 2 fail - this test and the
+  // copper.test.ts one - with:
+  //   error: expect(received).toThrow(expected)
+  //   Expected pattern: /is floating/
+  //   Received message: "unreadable WIRE end \"-\" on WIRE W2: \"WIRE W2
+  //   FLOATING ENDS - -\""
+  // Still a refusal, but one that reads as a grammar fault rather than as an
+  // unplaced wire, and the wording a reader would act on differently.
+  // Reverted.
+  const floatingWire = `${DUMP}WIRE W2 FLOATING ENDS - -\n`
+  expect(() => parseBoardDump(floatingWire)).toThrow(/W2/)
+  expect(() => parseBoardDump(floatingWire)).toThrow(/is floating/)
+  expect(() => parseBoardDump(floatingWire)).toThrow(/no hole positions/)
+})
+
 test("holeName gives lettered rows and numbered columns: 0 -> A, 25 -> Z, 26 -> AA", () => {
   expect(holeName(0, 0)).toBe("A1")
   expect(holeName(25, 0)).toBe("Z1")

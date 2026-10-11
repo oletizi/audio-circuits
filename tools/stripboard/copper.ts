@@ -373,11 +373,21 @@ function unionUncutStripNeighbours(dump: BoardDump, sets: UnionFind): void {
 /**
  * The connected components of the board's copper, one number per region.
  *
- * Validates FIRST - the whole of `GeometryRefusal`'s reachable set - and
- * only then unions, because a graph half-built from input later found
- * malformed is a graph somebody debugs instead of rejects. `missing-line`
- * and `unsupported-strip-axis` are checked by `boardGeometry`, which is the
- * text seam where they are expressible.
+ * `boardGeometry` IS THE ENTRY POINT THAT ENFORCES THE WHOLE CONTRACT, and a
+ * caller should reach the graph through it: `copperGraph(parseBoardDump(text))`
+ * still produces a graph, but it BYPASSES the two text-seam refusals,
+ * `missing-line` and `unsupported-strip-axis`. Nothing silently passes that
+ * way - `parseBoardDump` throws on both faults - but it throws with the
+ * PARSER's wording, which names neither the `GeometryRefusal` member nor the
+ * contract version, so CRITERIA's "refuses when any contracted line is absent,
+ * naming the missing line and the contract version" is then discharged only by
+ * an unrelated message. The narrower signature is not imposed here because
+ * Task 4 is this module's declared consumer and a signature change belongs in
+ * the plan; the obligation is recorded instead of being hidden.
+ *
+ * Validates FIRST - every refusal a `BoardDump` can express - and only then
+ * unions, because a graph half-built from input later found malformed is a
+ * graph somebody debugs instead of rejects.
  *
  * Component numbers are assigned in row-major order of first appearance, so
  * two runs over one dump agree and two dumps differing only in their `NODE`

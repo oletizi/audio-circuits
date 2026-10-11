@@ -198,6 +198,28 @@ test("pin holes are read from PIN lines, keyed ref.pin, and a floating part has 
   expect(holes.has("R2.1")).toBe(false)
 })
 
+test("a board carrying a FLOATING wire never reaches the reconstruction at all", () => {
+  // THE GUARD UNDER THIS MODULE'S "no branch for a floating wire" CLAIM.
+  // copper.ts carries no floating-wire branch because none can arrive - and
+  // what makes that true is tools/guide/dump.ts's parseWireEnd refusing
+  // `ENDS - -`. The review found that refusal load-bearing here and untested
+  // anywhere, which is why this assertion exists on HC8's side as well as in
+  // tests/guide/dump.test.ts: a future change that modelled floating wires
+  // would otherwise hand copperGraph a wire with no ends, silently.
+  //
+  // MUTATION RUN: deleting parseWireEnd's `if (end === "-")` clause. Observed
+  // 2 fail across the two files - this test, with:
+  //   error: expect(received).toThrow(expected)
+  //   Expected pattern: /is floating/
+  //   Received message: "unreadable WIRE end \"-\" on WIRE w2: \"WIRE w2
+  //   FLOATING ENDS - -\""
+  // The dump is still refused, so no wrong graph is built; what the mutant
+  // loses is the refusal's ability to say WHY. Reverted.
+  const withFloatingWire = `${BOARD}\nWIRE w2 FLOATING ENDS - -`
+  expect(() => boardGeometry(withFloatingWire)).toThrow(/w2/)
+  expect(() => boardGeometry(withFloatingWire)).toThrow(/is floating/)
+})
+
 test("a missing contracted line refuses as missing-line, naming the line and the version", () => {
   // MUTATION RUN (refusal 1 of 9): deleting boardGeometry's
   // LINES_REQUIRED_PRESENT loop. Observed, 14 pass / 1 fail, this test alone:
@@ -210,13 +232,24 @@ test("a missing contracted line refuses as missing-line, naming the line and the
   // So parseBoardDump does refuse - with a wording that names neither the
   // refusal nor the contract version, which is why this seam exists.
   // Reverted.
+  // THE ASSERTION IS POSITIONAL, and it has to be. The review caught that this
+  // test's old `toContain(keyword)` could not distinguish, because
+  // notDefaultedBecause("missing-line") itself contains both keywords. Its
+  // suggested fix - assert `no ${keyword} line` - does not close the hole
+  // either, and that was measured, not assumed: the reason's own words are "a
+  // dump with no VERTICAL_STRIPS line does not default to rows and a dump with
+  // no GRID line does not infer the extent from the pins", so BOTH `no GRID
+  // line` and `no VERTICAL_STRIPS line` appear in every missing-line message
+  // whichever line is actually absent. Asserting the message STARTS with the
+  // member and the offending clause is what pins the clause, because the reason
+  // can only ever follow it.
   for (const line of ["GRID 3 4", "VERTICAL_STRIPS 0"]) {
+    const keyword = line.split(" ")[0] ?? ""
     const without = BOARD.split("\n")
       .filter((text) => text !== line)
       .join("\n")
     const message = refusalFrom(without)
-    expect(message, line).toContain("missing-line")
-    expect(message, line).toContain(line.split(" ")[0] ?? "")
+    expect(message, line).toStartWith(`missing-line: the dump has no ${keyword} line.`)
     expect(message, line).toContain(`contract version ${GEOMETRY_CONTRACT_VERSION}`)
     expect(message, line).toContain("not defaul")
   }
