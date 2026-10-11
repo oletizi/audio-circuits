@@ -76,25 +76,39 @@ export interface MeasuredBoard {
   readonly layoutPins: number
   /** COST §5's `J / (P − N)` fraction for that layout. */
   readonly kappa: number
+  /**
+   * COST §2.2's "wires" column: `W`, the second term of `F`. Zero on all five,
+   * which is a fact about `--import`'s placement and not a convenience - it
+   * means this table cannot exercise `ρ_w` at all, and `score.test.ts` says so
+   * where it uses these rows.
+   */
+  readonly wires: number
+  /** COST §2.2's "solder bridges" column: `B`, the third term of `F`. */
+  readonly solder: number
 }
 
 /** All five Pultec sections, in COST's own table order. */
 export const BOARDS: readonly MeasuredBoard[] = [
   { section: "mid", offBoard: MID_OFF_BOARD,
     nets: 28, edges: 29, maxDegree: 6, lowerBound: 3, rcm: 5,
-    cuts: 65, layoutNets: 23, occupied: 4, joins: 46, layoutPins: 71, kappa: 46 / 48 },
+    cuts: 65, layoutNets: 23, occupied: 4, joins: 46, layoutPins: 71, kappa: 46 / 48,
+    wires: 0, solder: 3 },
   { section: "hi-boost", offBoard: HI_BOOST_OFF_BOARD,
     nets: 20, edges: 21, maxDegree: 6, lowerBound: 3, rcm: 4,
-    cuts: 40, layoutNets: 16, occupied: 3, joins: 27, layoutPins: 44, kappa: 27 / 28 },
+    cuts: 40, layoutNets: 16, occupied: 3, joins: 27, layoutPins: 44, kappa: 27 / 28,
+    wires: 0, solder: 0 },
   { section: "hi-cut", offBoard: HI_CUT_OFF_BOARD,
     nets: 14, edges: 19, maxDegree: 10, lowerBound: 5, rcm: 9,
-    cuts: 32, layoutNets: 11, occupied: 3, joins: 24, layoutPins: 35, kappa: 24 / 24 },
+    cuts: 32, layoutNets: 11, occupied: 3, joins: 24, layoutPins: 35, kappa: 24 / 24,
+    wires: 0, solder: 3 },
   { section: "low-cut", offBoard: LOW_CUT_OFF_BOARD,
     nets: 14, edges: 22, maxDegree: 12, lowerBound: 6, rcm: 11,
-    cuts: 23, layoutNets: 9, occupied: 2, joins: 16, layoutPins: 27, kappa: 16 / 18 },
+    cuts: 23, layoutNets: 9, occupied: 2, joins: 16, layoutPins: 27, kappa: 16 / 18,
+    wires: 0, solder: 0 },
   { section: "low-boost", offBoard: LOW_BOOST_OFF_BOARD,
     nets: 14, edges: 22, maxDegree: 10, lowerBound: 5, rcm: 9,
-    cuts: 5, layoutNets: 9, occupied: 5, joins: 1, layoutPins: 27, kappa: 1 / 18 },
+    cuts: 5, layoutNets: 9, occupied: 5, joins: 1, layoutPins: 27, kappa: 1 / 18,
+    wires: 0, solder: 1 },
 ]
 
 /** low-cut's residency list, for the off-board-forces-no-edge test. */
