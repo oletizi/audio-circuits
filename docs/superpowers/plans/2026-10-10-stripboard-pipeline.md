@@ -3275,9 +3275,11 @@ test("a plateau walk under this order cannot cycle", () => {
 
 ### Task 16: P1 — three starting arms, with random as the control
 
-> **ROTATION IS UNAVAILABLE ON AN IMPORT-PLACED BOARD. Move before you turn.** Measured in
-> Task 8 and reproduced in its review, across all four import-placed Pultec boards: **rotatable 0,
-> refused 52** — hi-boost 0/11, hi-cut 0/12, low-cut 0/8, mid 0/21. `Board::RotateComps` turns
+> **ROTATION IS UNAVAILABLE ON ANY COMMITTED PULTEC BOARD. Move before you turn.** Measured in
+> Task 8, reproduced independently in its review, then re-run a third time by the implementer,
+> which found a board the first two sweeps missed: **rotatable 0, refused 60** across all five —
+> hi-boost 0/11, hi-cut 0/12, low-cut 0/8, mid 0/21, **low-boost 0/8**. Forty-one refuse with the
+> pan and nineteen with the float. `Board::RotateComps` turns
 > about the rect's centre, so a part near the top edge lands at a negative row and the board pans,
 > even when the rows it would occupy are free; the verb refuses, correctly, because accepting the
 > pan renumbers every hole and moves parts nobody named.
