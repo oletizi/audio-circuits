@@ -446,6 +446,20 @@ where the arithmetic holds but admissibility does not, **they do not fire**: the
 and stops under another condition — Q3, Q4, Q5 or Q6 — which reports the weaker `bound` the run
 has actually earned. Q3–Q6 are unaffected; they were never claims of success.
 
+**Q6's THREE IS INHERITED, NOT DERIVED, AND CARRIES THE SAME HYPOTHESIS DISCIPLINE AS Q4.**
+Adopted on the owner's agreement, 2026-10-10. Three consecutive matching signatures is the sibling
+repository's number, taken from a different problem — PCB placement, not strips — so it is a
+plausible starting value and nothing stronger. Nobody has measured how often this pipeline produces
+three identical signatures for a reason other than a genuine systematic cause.
+
+Two ways it could be wrong, and the run record distinguishes them. **Too twitchy**: three restarts
+happen to fail on the same constraint by chance, the run stops, and a fourth would have succeeded —
+visible as a Q6 stop whose control run goes on to find an admissible layout. **Too patient**: a
+board genuinely cannot be done under its constraints and the run grinds through many restarts
+before three line up — visible as a long run whose signatures were identical well before it
+stopped. Both are read from the signature sequence `run.json` already records, so no extra
+instrumentation is needed. The number moves on that evidence under K3's ratchet, as `k` does.
+
 **Q4 IS A HYPOTHESIS, LABELLED AS ONE, AND THE PIPELINE COLLECTS WHAT WOULD REFINE IT.** The
 owner's instruction, 2026-10-10: *"we won't figure it out completely by thinking really hard. We
 need a credible hypothesis for what might work that isn't obviously dumb that we continuously
