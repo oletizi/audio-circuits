@@ -1042,7 +1042,18 @@ full `V1`–`V12` register.
   - `HoleKey = string` — `` `${row},${col}` ``
   - `holeKey(hole: HolePosition): HoleKey` and `parseHoleKey(key: HoleKey): HolePosition`
   - `CopperGraph { readonly components: ReadonlyMap<HoleKey, number>; readonly componentCount: number }`
-  - `copperGraph(dump: BoardDump): CopperGraph`
+  - `boardGeometry(dumpText: string)` — **the entry point, and the only one that enforces the
+    contract.** Added 2026-10-11 after implementation showed two of the enumerated refusals are
+    *inexpressible* through `copperGraph(dump: BoardDump)`: a parsed `BoardDump` carries a grid
+    and a boolean axis **by construction**, so `missing-line` and `unsupported-strip-axis` could
+    never fire from it. They belong at the text seam. This is not a second parser — it uses
+    `dump-lines.ts`, the one declared tokenizer. Shipping two refusals that cannot fire would have
+    been the precise defect this plan exists to prevent, and the alternative was deleting them
+    from the contract.
+  - `copperGraph(dump: BoardDump): CopperGraph` — **reachable without the geometry refusals.** A
+    caller holding a `parseBoardDump` result can build a graph while skipping every contract
+    check, so `HC8`'s wording is delivered only through `boardGeometry`. Task 4 and Task 14 call
+    that; `copperGraph` alone is for a caller that has already validated.
   - `pinHoles(dump: BoardDump): ReadonlyMap<string, HoleKey>` — keyed `` `${ref}.${pin}` ``
   - `GeometryRefusal = "missing-line" | "out-of-bounds" | "cut-not-strip-adjacent" | "cut-across-strips" | "duplicate-pin" | "conflicting-pin" | "unsupported-strip-axis" | "cuts-not-computed" | "solder-not-strip-neighbours"` — the enumerated malformed-input refusals, so the set is a type and cannot grow silently
 - Task 4 consumes all of these; Task 14's `HC8` check consumes Task 4's verdict and never this module directly; Task 14's fabrication-extent check (`extent.ts`) consumes `copperGraph` to verify that trimming preserves connectivity.
@@ -1119,7 +1130,7 @@ const BOARD = [
   "PIN R1 2 AT 0,3",
   "PIN R2 1 AT 2,0",
   "PIN R2 2 AT 2,3",
-  "WIRE w1 AT 0,0 ENDS 0,0 2,0",
+  "WIRE w1 AT 0,0 ENDS 0,0,7,20 2,0,9,20",
   "CUT 0,1,7 0,2,8",
 ].join("\n")
 
@@ -2298,10 +2309,10 @@ const TEXT = [
   "GRID 3 4", "VERO_TRACKS 1", "VERTICAL_STRIPS 0", "CUT_STATE COMPUTED",
   "PART R1 RESISTOR4 1k AT 0,0 SPAN 1",
   "PIN R1 1 AT 0,0", "PIN R1 2 AT 2,0",
-  "WIRE w1 AT 0,3 ENDS 0,3 2,3",
+  "WIRE w1 AT 0,3 ENDS 0,3,3,30 2,3,5,30",
   "SOLDER 0,2 1,2",
   "CUT 0,1,1 0,2,2",
-  "NODE 1 a R1.1", "NODE 2 b R1.2",
+  "NODE 1 NAME a R1.1", "NODE 2 NAME b R1.2",
 ].join("\n")
 
 const targets = { board: "fixture", netCount: 2, pinCount: 2, strips: 3, cutFloor: 0,
