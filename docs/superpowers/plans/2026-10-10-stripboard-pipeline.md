@@ -2246,8 +2246,15 @@ describe("--rotate", () => {
 - Task 17's climb may use it; it must work identically without it, which Task 17 asserts.
 
 **What it buys, measured after implementation (2026-10-11) rather than projected.** The launch
-floor is 9.1–9.3 ms against a full one-gesture `--move` at 9.6–9.9 ms (n = 50), so board I/O is
-under a millisecond and **launch is 91–93% of every invocation**.
+floor is 9.1–9.3 ms against a full one-gesture `--move` at 9.6–9.9 ms (n = 50), so board work is
+0.4–0.9 ms and **launch is 91–96% of every invocation**.
+
+**That spread is the honest figure, not a disagreement.** Five measurements at n = 50 gave 93.5,
+96.1, 93.7, 93.1 and 91.0 per cent. The quantity is a **sub-millisecond difference between two
+terms of about 9.5 ms**, so it is inherently noisy and no single percentage is the true one.
+Quoting any one of them to three significant figures would be false precision — which is why the
+first report's bare "96%" was flagged as not reproducing, and why the answer is a range rather
+than a correction in the other direction.
 
 **The "12×" this plan originally predicted was a mis-model, and the error is worth keeping
 visible.** It treated the saving as converging on a constant. It does not: batching amortises one
