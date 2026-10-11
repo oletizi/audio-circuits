@@ -270,6 +270,19 @@ test("the random arm draws inside the grid, and the grid does not grow", () => {
   const before = parseBoardDump(DUMPS.imported!)
   const after = parseBoardDump(dumpOf(start))
   expect(after.grid).toEqual(before.grid)
+  // THE SET IS WHAT IS IN BOUNDS, AND ASSERTING THE SET IS DETERMINISTIC. This
+  // is a correction the mutation run forced: widening `admissiblePositions` by
+  // one row left the eight draws below unchanged - over a 35x35 grid, no draw
+  // happened to land on the extra row - so the per-draw bounds caught that
+  // mutation only by luck. `R1`'s two leads sit one hole apart along a column,
+  // so the last origin that fits is column 33 of 35, and its rows are
+  // unconstrained up to the last one, 34. Both figures are read off the grid
+  // size and the part's own two-hole pattern, by hand.
+  const positions = admissiblePositions(before, "R1")
+  expect(Math.max(...positions.map(([row]) => row)), "an origin past the last row").toBe(34)
+  expect(Math.max(...positions.map(([, col]) => col)), "a lead past the last column").toBe(33)
+  expect(before.grid, "the figures above are read off this grid").toEqual({ rows: 35, cols: 35 })
+
   const moves = spawned.filter((a) => a[0] === "--move")
   expect(moves.length, "a run with no --move would make every bound below vacuous").toBe(8)
   for (const args of moves) {
