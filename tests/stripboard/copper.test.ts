@@ -68,10 +68,21 @@ test("the contract's version and its line list are declared, not implied", () =>
   //   lacks ending return statement and return type does not include
   //   'undefined'.
   // So the set cannot grow without a reason for the new member. Reverted.
-  expect(GEOMETRY_CONTRACT_VERSION).toBe(1)
+  //
+  // VERSION 2 AND SEVEN LINES, changed by Task 5 and not a widening done to
+  // make a test pass: `PAD` is read for pin IDENTITY, because VeroRoute
+  // expands an off-board part's `PADS<n>` component into n one-hole pads with
+  // board names of their own and the `PAD` line's `FROM <ref>.<pin>` field is
+  // the only place the dump records which reference pin each one is. Ten of
+  // the frozen low-boost fixture's twenty-seven pins are pads. The bump is
+  // what `GEOMETRY_CONTRACT_VERSION`'s own rule requires of a change to the
+  // set of lines read; CRITERIA's table still reads version 1 with six lines,
+  // and `geometry-contract.ts`'s module comment records that divergence.
+  expect(GEOMETRY_CONTRACT_VERSION).toBe(2)
   expect([...CONTRACTED_LINES].sort()).toEqual([
     "CUT",
     "GRID",
+    "PAD",
     "PIN",
     "SOLDER",
     "VERTICAL_STRIPS",
@@ -318,7 +329,7 @@ test("every enumerated malformed input refuses, naming its refusal - one case ea
   for (const [refusal, text] of cases) {
     const message = refusalFrom(text)
     expect(message, refusal).toContain(refusal)
-    expect(message, refusal).toMatch(/GEOMETRY_CONTRACT_VERSION|contract version 1/)
+    expect(message, refusal).toMatch(/GEOMETRY_CONTRACT_VERSION|contract version 2/)
   }
 })
 

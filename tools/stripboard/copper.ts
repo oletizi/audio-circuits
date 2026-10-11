@@ -15,8 +15,9 @@
  * them, CHANGED - so a consumer pinned to version 1 can no longer assume it
  * knows what was consumed. It is not a version of this file: a refactor that
  * reads the same fields does not bump it. Both are declared in, and
- * re-exported from, `geometry-contract.ts`, which also holds the nine
- * refusals' reasons.
+ * re-exported from, `geometry-contract.ts`, which also holds the thirteen
+ * refusals' reasons - and the record of how version 2 differs from CRITERIA's
+ * own table, which is `PAD` and `referencePinHoles` below.
  *
  * THE THREE JOIN MECHANISMS, AND THERE IS NO FOURTH. COST 1.5 enumerates
  * them and this module implements exactly them:
@@ -48,7 +49,10 @@
  * the graph and are not read into the refusal messages either, so there is
  * no path by which one reaches a verdict.
  *
- * THE NINE REFUSALS (`GeometryRefusal`), and why none can be guessed past.
+ * THE THIRTEEN REFUSALS (`GeometryRefusal`), and why none can be guessed
+ * past. The last four belong to `PAD`, which this file does not read at all -
+ * `./pad-provenance.ts` does, and it is the only other place `refuse` is
+ * called from.
  * `geometry-contract.ts`'s `notDefaultedBecause` carries one sentence per
  * member and is the single wording; the summary here is the map:
  *   - `missing-line`                 the extent and the strip axis are definitions, not defaults
@@ -60,6 +64,10 @@
  *   - `duplicate-pin`                de-duplicating hides a concatenated dump or a bad parse
  *   - `conflicting-pin`              one lead cannot be in two holes; picking either picks a board
  *   - `solder-not-strip-neighbours`  a non-neighbour join is a mechanism the edge set has not got
+ *   - `pad-unreadable`               a PAD line that does not read means the grammar moved
+ *   - `pad-without-provenance`       which reference pin a pad is is nowhere else in the dump
+ *   - `pad-pin-count`                a pad is one hole, so one PIN line and one FROM reference
+ *   - `pad-provenance-collision`     two holes cannot both be one reference pin
  * EVERY INPUT IS VALIDATED BEFORE ANY UNION IS PERFORMED. A graph
  * half-built from input later found malformed is a graph somebody debugs
  * instead of rejects.
@@ -89,7 +97,7 @@
  *
  * That limit is acceptable and is recorded as limit H-13 RATHER THAN AS A
  * PLAN: stronger independence means parsing a binary `QDataStream`
- * (PIPELINE N5). The nine refusals are what narrows the gap that IS
+ * (PIPELINE N5). The refusals are what narrows the gap that IS
  * reachable - they reject a dump malformed on its own terms, which is the
  * part of a bad export this module can see. `docs/stripboard/pipeline-
  * verification.md` states the same limit beside V11.
@@ -112,7 +120,7 @@ import {
 /**
  * The contract's own surface, re-exported here because this is the module
  * HC8's consumers were told to import. `geometry-contract.ts` holds the
- * declarations and the nine reasons; this file holds the reconstruction.
+ * declarations and the thirteen reasons; this file holds the reconstruction.
  */
 export {
   CONTRACTED_LINES,

@@ -12,6 +12,29 @@
  * THE AUTHORITY is HC8 and the trust-boundary paragraphs around it in
  * `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`.
  * Where this file and that document differ, the document wins.
+ *
+ * ONE PLACE WHERE THEY DIFFER TODAY, AND IT IS RECORDED RATHER THAN HIDDEN.
+ * CRITERIA's geometry-contract table is headed "version 1" and lists six
+ * lines. `PAD` is a SEVENTH, added here at version 2, and the reason is
+ * measured rather than argued: on the frozen low-boost fixture the netlist
+ * export names `RV_LO_BOOST.1` and `SW_LO_BOOST.1`..`.7` while the dump's
+ * `PIN` lines name `RV_LO_BOOST_1.1` and `SW_LO_BOOST_1.1`..`SW_LO_BOOST_7.1`
+ * - VeroRoute expands a `PADS<n>` component into n one-hole pads, and the
+ * `PAD <name> <value> <FLOATING|AT r,c> <FROM <ref>.<pin>|NOPROVENANCE>` line
+ * is the ONLY place the dump records which reference pin each expanded pad
+ * is. Without it, HC8 on that board refuses ten of its twenty-seven pins as
+ * `reference-pin-not-on-board` and the frozen fixture - B1-frozen's own
+ * benchmark - cannot be graded at all.
+ *
+ * `PAD` ADDS NO JOIN MECHANISM. It is read for pin IDENTITY only, never as an
+ * edge, so COST 1.5's three mechanisms and the absence of a fourth are
+ * untouched. What changed is the set of lines read, which is exactly what
+ * `GEOMETRY_CONTRACT_VERSION`'s own rule says a bump means.
+ *
+ * CRITERIA's table is the authority and this file is not allowed to amend it,
+ * so the divergence is reported for the spec to absorb; until it does, a
+ * reader comparing the two should treat this comment as the record of why
+ * they disagree, not as permission for a third line to arrive the same way.
  */
 
 /**
@@ -27,13 +50,18 @@
  * the commit the binary was built from), so a grammar change arriving under
  * the contract changes the hash rather than passing unnoticed.
  */
-export const GEOMETRY_CONTRACT_VERSION = 1
+export const GEOMETRY_CONTRACT_VERSION = 2
 
-/** Every dump line the reconstruction consumes. CRITERIA's geometry-contract table is the authority. */
+/**
+ * Every dump line the reconstruction consumes. CRITERIA's geometry-contract
+ * table is the authority for the first six; `PAD` is version 2's addition and
+ * the module comment above records why it is here and why it is not an edge.
+ */
 export const CONTRACTED_LINES: readonly string[] = [
   "GRID",
   "VERTICAL_STRIPS",
   "PIN",
+  "PAD",
   "CUT",
   "SOLDER",
   "WIRE",
@@ -50,11 +78,12 @@ export const CONTRACTED_LINES: readonly string[] = [
 export const LINES_REQUIRED_PRESENT: readonly string[] = ["GRID", "VERTICAL_STRIPS"]
 
 /**
- * The nine enumerated malformed-geometry refusals. A union rather than a
- * loose string so the set is a type and cannot grow silently, and so the
- * `switch` in `notDefaultedBecause` proves every member has a reason: add a
- * tenth member without an arm and `bun run typecheck` fails, because the
- * function then has a reachable end and a declared `string` return.
+ * The thirteen enumerated malformed-geometry refusals - the nine of version 1
+ * plus the four `PAD` brought with it. A union rather than a loose string so
+ * the set is a type and cannot grow silently, and so the `switch` in
+ * `notDefaultedBecause` proves every member has a reason: add a fourteenth
+ * member without an arm and `bun run typecheck` fails, because the function
+ * then has a reachable end and a declared `string` return.
  */
 export type GeometryRefusal =
   | "missing-line"
@@ -66,6 +95,10 @@ export type GeometryRefusal =
   | "unsupported-strip-axis"
   | "cuts-not-computed"
   | "solder-not-strip-neighbours"
+  | "pad-unreadable"
+  | "pad-without-provenance"
+  | "pad-pin-count"
+  | "pad-provenance-collision"
 
 /**
  * One sentence per refusal: why the malformed input is not guessed past.
@@ -133,6 +166,36 @@ export function notDefaultedBecause(refusal: GeometryRefusal): string {
         'neighbouring strips". A bridge between non-neighbours is a join mechanism this ' +
         "edge set has not got, and inventing a path for it would add COST 1.5's forbidden " +
         "fourth mechanism."
+      )
+    case "pad-unreadable":
+      return (
+        "The fork's own grammar is `PAD <name> <value> <FLOATING|AT r,c> " +
+        "<FROM <ref>.<pin>|NOPROVENANCE>` (Src/Headless_dump.cpp), and every field of it is " +
+        "whitespace-free by construction - an empty value prints as \"-\". A line that does " +
+        "not read that way means the grammar moved under the contract, so guessing which " +
+        "field is which would mis-key a pin while reporting a verdict."
+      )
+    case "pad-without-provenance":
+      return (
+        "A placed PAD prints NOPROVENANCE when the board has lost which netlist pin it came " +
+        "from, and that mapping is not recoverable from anything else in the dump: the pad's " +
+        "own name is the board's, not the schematic's. Grading the hole under the pad's board " +
+        "name would compare a reference pin against nothing and report the net as split. " +
+        "Re-import the board from its netlist so the provenance is recorded again."
+      )
+    case "pad-pin-count":
+      return (
+        "A PAD is one hole, so a placed one has exactly one PIN line, and its one FROM " +
+        "reference names exactly one pin. Choosing which of several holes the reference pin " +
+        "means would decide the connectivity question by assumption, and reporting none of " +
+        "them would read as a reference pin that is not on the board."
+      )
+    case "pad-provenance-collision":
+      return (
+        "Two holes claiming one reference pin cannot both be it, and whichever were kept " +
+        "would be graded as if it were the board on the bench. It means either the dump " +
+        "pairs two pads with one source pin or a pad's source collides with a real part's " +
+        "own PIN id - both are producer defects, and neither is resolvable here."
       )
   }
 }

@@ -44,6 +44,13 @@
  * BoardDump, ...)`; it is widened to text here for that reason, and the
  * deviation is recorded in the task report.
  *
+ * THE TWO SIDES ARE KEYED THE NETLIST'S WAY, not the board's, and that is
+ * `referencePinHoles`' job rather than `pinHoles`'. VeroRoute expands an
+ * off-board part's `PADS<n>` component into n one-hole pads with board names
+ * of their own - `SW_LO_BOOST.3` becomes `SW_LO_BOOST_3.1` - and comparing
+ * the sides by `PIN` name alone refuses ten of the frozen fixture's
+ * twenty-seven pins. See `./pad-provenance.ts`; it adds no edge.
+ *
  * IT NEVER READS THE `NODE` LINES OR ANY NODE ID, AND THAT IS THE
  * INDEPENDENCE. Every connectivity fact here comes from `copperGraph`, which
  * reads geometry only; the only other input is the reference netlist, which
@@ -60,13 +67,16 @@
  * see it. Stronger independence means parsing a binary `QDataStream`, which
  * is limit H-13 rather than a plan.
  */
+import { importLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
+import { importNetlist } from "../../lib/kicad/netlist.ts"
+import type { ImportedNetlist } from "../../lib/kicad/netlist.ts"
 import {
   boardGeometry,
   copperGraph,
-  pinHoles,
   GEOMETRY_CONTRACT_VERSION,
   type HoleKey,
 } from "./copper.ts"
+import { referencePinHoles } from "./pad-provenance.ts"
 
 /**
  * Net name to its `ref.pin` members, FROM THE NETLIST EXPORT, upstream of
@@ -243,6 +253,87 @@ function shortFindings(
 }
 
 /**
+ * Read a netlist export into `HC8`'s reference side - THE ONE READER, so no
+ * later task writes a second one and the two disagree.
+ *
+ * TWO GRAMMARS, BECAUSE THE COMMITTED EXPORTS ARE IN TWO GRAMMARS, and the
+ * one chosen is read off the text rather than guessed: `pt2399-core` and the
+ * frozen low-boost fixture are EESchema v1.1 (the format VeroRoute itself
+ * consumes, `lib/kicad/legacy-netlist.ts`), while the transistor-preamp
+ * boards' committed exports are modern KiCad s-expressions
+ * (`lib/kicad/netlist.ts`). The task brief said the grammar is EESchema v1.1
+ * and that "the committed `.net` fixtures use it", which is true of
+ * `pt2399-core-veroroute.net` alone; the deviation is recorded in the task
+ * report. A text that is neither is REFUSED, never attempted with one reader
+ * on the chance it parses.
+ *
+ * IT OWNS THE EXPORT'S OWN CONSISTENCY - specifically, that one `ref.pin`
+ * appears on at most one net. Measured on `equivalence.ts` before this
+ * existed: with `R1.1` on two nets the verdict reported
+ * `shorts: [{ nets: ["alias", "mid"], hole: "1,0" }]`, BLAMING THE COPPER FOR
+ * A NETLIST DEFECT on a board whose copper is correct - and the remedy a
+ * reader would act on is a layout change, when there is nothing wrong with
+ * the layout. One pin on two nets is not a board that shorts; it is an export
+ * that cannot be true of any board. `netlistEquivalence` keeps no second
+ * check for it, because two owners of one rule is one more than this pipeline
+ * allows: the reader of the export is where the export's consistency is
+ * established.
+ *
+ * Neither underlying reader catches it. `importLegacyNetlist` records a
+ * repeated pin under both net names without complaint - that is how the
+ * defect reaches `HC8` at all - so this is a check added over whichever
+ * reader is used, not one inherited from it.
+ */
+export function referenceNetsFromExport(text: string): ReferenceNets {
+  const netlist = readExport(text)
+  const nets = new Map<string, readonly string[]>()
+  const netByPin = new Map<string, string>()
+  for (const [net, pins] of Object.entries(netlist.nets)) {
+    for (const pin of pins) {
+      const already = netByPin.get(pin)
+      if (already !== undefined) {
+        const [first, second] = [already, net].sort()
+        refuseReference(
+          "pin-on-two-nets",
+          `${pin} is listed on reference net "${first}" and again on reference net ` +
+            `"${second}", so this export cannot be true of any board`,
+          "A pin on two nets is not a short and must not be reported as one: a short is two " +
+            "nets joined by copper, and the copper here may be perfectly correct - passing " +
+            "this through would " +
+            "point a reader at a layout to fix instead of at the netlist. It is not resolved " +
+            "by dropping either listing, because which one the schematic meant is not in the " +
+            "export. Fix the export, or the schematic it came from.",
+        )
+      }
+      netByPin.set(pin, net)
+    }
+  }
+  for (const [net, pins] of Object.entries(netlist.nets)) {
+    nets.set(net, [...pins])
+  }
+  return nets
+}
+
+/** Which grammar the export is in, read off the text and never guessed. */
+function readExport(text: string): ImportedNetlist {
+  if (/^\s*\(\s*\{\s*EESchema Netlist Version/.test(text)) {
+    return importLegacyNetlist(text)
+  }
+  if (/^\s*\(export\b/.test(text)) {
+    return importNetlist(text)
+  }
+  refuseReference(
+    "unknown-export-grammar",
+    "the export opens with neither `( { EESchema Netlist Version ...` nor `(export`, which " +
+      "are the two grammars this repository's committed netlist exports are written in",
+    "Trying each reader in turn and keeping whichever did not throw would read a THIRD " +
+      "grammar as whichever of the two it happened to resemble, and a reference netlist " +
+      "mis-read is a verdict about a circuit nobody drew. Add the grammar's reader to " +
+      "lib/kicad/ and name it here, or export the netlist in one of the two.",
+  )
+}
+
+/**
  * HC8's verdict for one dump against one reference netlist.
  *
  * Takes dump TEXT, not a `BoardDump`, so the whole geometry contract is
@@ -251,7 +342,7 @@ function shortFindings(
 export function netlistEquivalence(dumpText: string, reference: ReferenceNets): EquivalenceVerdict {
   const dump = boardGeometry(dumpText)
   const { components } = copperGraph(dump)
-  const holes = pinHoles(dump)
+  const holes = referencePinHoles(dumpText)
   const byNet = componentsByNet(reference, holes, components)
   const opens = openFindings(byNet)
   const shorts = shortFindings(byNet, holes)

@@ -89,7 +89,9 @@ test("a board whose copper partitions the pins as the netlist does is equivalent
   expect(verdict.opens).toEqual([])
   expect(verdict.shorts).toEqual([])
   expect(verdict.equivalent).toBe(true)
-  expect(verdict.contractVersion).toBe(1)
+  // 2, not 1: Task 5 added `PAD` to the contract for pin identity - see the
+  // note beside copper.test.ts's version assertion.
+  expect(verdict.contractVersion).toBe(2)
   // An equivalent verdict has no findings, so it renders no lines.
   expect(describeVerdict(verdict)).toEqual([])
 })
@@ -247,7 +249,7 @@ test("a missing contracted line refuses in HC8's own words, which only the text 
     .join("\n")
   const message = refusalFrom(() => netlistEquivalence(noAxis, REFERENCE))
   expect(message).toStartWith("missing-line: the dump has no VERTICAL_STRIPS line.")
-  expect(message).toContain("HC8 geometry contract version 1")
+  expect(message).toContain("HC8 geometry contract version 2")
 })
 
 test("the verdict is unchanged when the NODE block is emptied and the CUT node ids garbled", () => {
