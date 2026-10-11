@@ -422,3 +422,134 @@ much as to the fork's:
 - **`UNKNOWN` is received, never cast and never normalised to `W`.** It is
   narrowed by comparison, and the caller that acts on a direction refuses it by
   name — which is exactly what the dump itself does rather than guessing.
+
+### 2.7 Both fields are adopted here now, and two of section 2's claims about that were stale
+
+Section 2 opens by saying neither field is adopted: *"`veroroute.pin` still names
+the commit before them, and the typed parser in `tools/guide/dump.ts` does not
+read either line."* The second half was true until commit `4e72a17`. **The first
+half was already false when it was written**, and it was not checked at the time:
+
+- `veroroute.pin` names `ed6c5a6`, which Tasks 8 and 9 advanced it to.
+- `31c0197` — *"BOUNDS and each placed part's DIRECTION, and the SPAN claim that
+  was false"* — is an **ancestor** of `ed6c5a6` (`git merge-base --is-ancestor`
+  says so, and `git log ed6c5a6` lists it). Tasks 8 and 9 built `--rotate` and
+  `--move-batch` **on top of** the Task 7 branch.
+- So the **pinned binary has been emitting both fields all along**. Measured by
+  running it: every board under `boards/` prints a `BOUNDS` line and a
+  `DIRECTION` field on every placed `PART` line, and the four `BOUNDS` figures
+  reproduce §2.1's table exactly, including the five-column over-statement on
+  `transistor-preamp-staged`.
+
+The lesson is §2's own: a claim about an observable is worth re-measuring when
+the thing it is about has moved, and a pin bump moved it. The repository-side
+reading landed under §2.6's rule rather than the Task 7 brief's, in
+`tools/guide/dump-model.ts` (`Bounds`, `PartDirection`, `boundsOf`,
+`usableDirection`) and `tools/guide/dump.ts`. §2.6's third name,
+`maybeBoundsOf`, has no counterpart here and does not need one: on this side the
+optional **field** `BoardDump.bounds` already answers "is it there", and a
+function wrapping a field read would be a second spelling of one state.
+
+---
+
+## 3. `HC10`'s placement clause — measured, and it refuses every hand-laid board here
+
+**This section records a measurement and not a decision.** `HC10`'s placement
+clause is the one part of the grader (Task 14) that could not be written, because
+the only rule stated for it refuses layouts the owner built and uses, and
+choosing a different rule is a decision about what `HC10` means rather than an
+implementation detail.
+
+### 3.1 What was asked for
+
+CRITERIA's `HC10` criterion sentence is *"every placed part's pins lie on
+straight lines parallel to the strips"*, and its "Checked by" column specifies a
+**footprint-level** classification that *"refuses by name before any placement
+exists to grade"*. Task 2 built that half (`lib/kicad/pin-pattern.ts`,
+`admitPattern`). Task 14's brief adds a **placement** half, worded:
+
+> for every **placed** part, its resolved `PIN` holes must decompose into rows
+> along the strip axis the dump reports: every pin's along-strip coordinate may
+> vary freely, and the pins must fall on a set of strips whose occupied strips
+> are exactly the rows the footprint's classification predicts, **consistent
+> with the part's `DIRECTION`**.
+
+### 3.2 What that rule does to the boards that exist
+
+Measured with the pinned binary, each placed part's `PIN` holes grouped by
+strip, against `pinPatternFor(footprint)`'s own row decomposition, with the
+footprint read from each board's committed netlist export:
+
+| board | placed parts with pins | agree | disagree | no recorded footprint data |
+| --- | --- | --- | --- | --- |
+| `pt2399-core` | 24 | 2 | 10 | 12 |
+| `transistor-preamp-feedback` | 16 | **3** | **13** | 0 |
+| `transistor-preamp-staged` | 34 | 3 | 27 | 4 |
+
+The three that agree on `transistor-preamp-feedback` are its three `SIP2`
+headers. Everything else disagrees in **one shape**, and the shape is the point:
+
+```
+R1 R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal:
+   on 2 strip(s) sizes [1,1], classification predicts 1 row(s) sizes [2]
+Q1 TO-92_Inline:
+   on 3 strip(s) sizes [1,1,1], classification predicts 1 row(s) sizes [3]
+```
+
+**A two-terminal part's leads are on two different strips because they are on
+two different nets.** Both leads on one strip is a short across the part. So the
+correct mounting of a resistor, a film capacitor, an electrolytic, a `TO-92` and
+a `TRIM_FLAT` is with its single classification row running **across** the
+strips, which is exactly what the rule above refuses. Those three boards pass
+`make check` today and were laid out by hand.
+
+### 3.3 The transpose is not the rule either, and that is what makes this a decision
+
+Reading the rule the other way round — the classification's rows must run across
+the strips — fits every two-terminal part and the `TRIM_FLAT` (`RV1`'s three
+pins on strips 3, 4, 5, against a 2-row classification whose three distinct
+along-row positions transpose to three strips), and then fails the two parts the
+first reading fits:
+
+- `pt2399-core`'s `U1`, a `DIP-16`, has its 16 pins on **8 strips of 2**, cols
+  19 and 22, which is its classification exactly: 8 rows of 2, `rowPitchSteps`
+  all 1, along-row extent 4 holes. `SPAN 4 DIRECTION N`.
+- `J1` (`SIP5`) has 5 pins on 5 strips, against 5 rows of 1.
+
+So **both orientations appear on boards that work**, and which one is correct is
+a property of the footprint rather than of `HC10`. A rule admitting both is
+coherent — "the pins realise the footprint's lattice in one of its two
+grid-aligned orientations" — and it would **pass** a `DIP-16` turned the wrong
+way, which is precisely the fixture Task 14's brief requires to fail. The two
+candidate rules disagree exactly on the case the brief wants graded, and the
+evidence settles only that the one-orientation rule refuses boards the owner
+built. Nothing here chooses between them: per `CLAUDE.md`, the agent producing
+the artifact may not author the criteria it is graded by.
+
+**What would settle it**, stated so the question can be answered rather than
+re-derived: `HC10` exists because a round pattern *"crosses a different strip at
+nearly every pin and shares one with pins it must not share with, so nearly
+every such hole becomes a cut"* — the criterion is a **cut cost**, and the cut
+cost of an orientation is computable from the layout. A rule phrased over cuts
+rather than over which axis the rows lie on would cover both measured cases
+without a special case, and `C` is already a term of `F`. That is a proposal for
+the owner, not a change made here.
+
+### 3.4 Two of the four checkpoint boards also refuse on `PAR2`, which is separate
+
+Independently of §3.2, the four boards Task 14's CHECKPOINT 1 grades do not
+divide the way the brief predicts:
+
+- **`pt2399-core` refuses, as the brief predicts**: 12 of its 24 placed parts
+  carry `Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm` or
+  `Capacitor_THT:CP_Radial_D5.0mm_P2.50mm`, both in `UNSOURCED`, so `HC5`, `HC9`
+  and `HC10` refuse by name. Its extent also exceeds the stock (`OB4`).
+- **`transistor-preamp-staged` also refuses, which the brief expects to pass.**
+  It places `Capacitor_THT:CP_Radial_D10.0mm_P5.00mm` and
+  `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical`, and **neither is
+  in `LEAD_SPANS`, in `UNSOURCED`, or in `PIN_PATTERNS`**. So the refusal is the
+  plain unlisted-footprint one, not the better-worded `UNSOURCED` one, and it is
+  `PAR2` working as designed on data nobody has recorded yet. Adding the two
+  entries needs a named part and its datasheet; it is not a code change.
+- `transistor-preamp-feedback` has every footprint recorded and is the one board
+  of the three whose only failure is §3.2's.
