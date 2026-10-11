@@ -11,9 +11,19 @@
  * expected value is written independently of `rank.ts`'s own arithmetic -
  * never `expect(x).toBe(<the same expression x was computed by>)`, which
  * looks like a derivation and passes however wrong both sides are
- * identically. `occupiedArea`'s own test recomputes the formula from the
- * `Bounds` fields directly rather than calling any other function, which is
- * as close to a second path as a four-integer rectangle has.
+ * identically.
+ *
+ * `occupiedArea`'s own test is a LITERAL, not a recomputed formula, and that
+ * is a correction rather than a style choice: an earlier version restated
+ * `(maxRow - minRow + 1) * (maxCol - minCol + 1)` over `dump.bounds!` on the
+ * expected side, which reads like a second path but is the same formula
+ * written twice - it catches accidental drift but not a shared conceptual
+ * error, most importantly a wrong `+1` convention, because an off-by-one in
+ * the inclusive-rectangle count appears identically on both sides and the
+ * test still passes. The hardcoded figures below, stated beside the
+ * rectangle's own corners, are a real independent derivation: a reader
+ * counts the holes by hand and checks the number, which the formula cannot
+ * be checked against by anyone who does not already trust it.
  */
 import { expect, test } from "bun:test"
 import { compareRanking, occupiedArea, RANKING, rankingTuple } from "../../tools/stripboard/rank.ts"
@@ -58,12 +68,14 @@ test("A_occ separates two candidates that F cannot", () => {
   expect(compareRanking(tight, sprawling)).toBeLessThan(0)
 })
 
-test("A_occ is computed from BOUNDS and by a second path over the same four integers", () => {
-  // V1's discipline applied to the one geometric term.
-  const dump = dumpWithBounds(3, 5, 9, 11)
-  const bounds = dump.bounds!
-  expect(occupiedArea(dump))
-    .toBe((bounds.maxRow - bounds.minRow + 1) * (bounds.maxCol - bounds.minCol + 1))
+test("A_occ is a hand-counted rectangle, on a square board and a non-square one", () => {
+  // Square: BOUNDS 3,5 9,11. Rows 3,4,5,6,7,8,9 - seven of them. Columns
+  // 5,6,7,8,9,10,11 - seven of them. 7 * 7 = 49 holes.
+  expect(occupiedArea(dumpWithBounds(3, 5, 9, 11))).toBe(49)
+  // Non-square, so a transposed row/column convention cannot pass both:
+  // BOUNDS 0,0 2,5. Rows 0,1,2 - three of them. Columns 0,1,2,3,4,5 - six of
+  // them. 3 * 6 = 18 holes.
+  expect(occupiedArea(dumpWithBounds(0, 0, 2, 5))).toBe(18)
 })
 
 test("A_occ refuses a dump with no BOUNDS, rather than substituting the pin extent", () => {
