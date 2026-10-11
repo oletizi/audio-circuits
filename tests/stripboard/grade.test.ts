@@ -18,10 +18,11 @@ import {
   inputWithFeatureOutsideBounds,
   inputWithFootprint,
   inputWithGridAndBounds,
-  inputWithMultiRowPartAlongTheStrips,
+  inputWithMultiRowPartAcrossTheStrips,
   inputWithoutBounds,
   negativeInput,
   read,
+  squareFootprintInput,
   withStripAxisFlipped,
 } from "./grade-fixtures.ts"
 
@@ -240,6 +241,63 @@ test("HC10 holds only when BOTH halves hold, and the detail says which failed", 
   expect(placement?.detail).toMatch(/U1|DIRECTION/)
 })
 
+test("HC8's fixture trips HC8 and nothing avoidable, so it shows which constraint it is for", () => {
+  // An HC8 fixture that also fails HC9 and HC10 cannot show which constraint it
+  // is for. The earlier board - Task 4's short, reused - did exactly that: its
+  // R2 straddled one strip with both leads, which is HC10's own refusal and a
+  // span below the resistor's recorded minimum. The board is now three 1x02
+  // headers chained across four strips, where two nets meet on one strip
+  // without any part straddling it.
+  const results = gradeHardConstraints(negativeInput("two-nets-shorted"))
+  expect(results.filter((result) => !result.held).map((result) => result.id)).toEqual(["HC8"])
+})
+
+test("HC10's placement half REFUSES a square pin field rather than breaking the tie", () => {
+  // THE OWNER'S RULE READS OVER THE FOOTPRINT'S LONGER-ROW AXIS, and a square
+  // pad field has no longer axis - so the rule has no row decomposition to be
+  // read over and there is no answer to give. Falling to one axis would make
+  // the verdict the TIE-BREAK rather than the rule: the measured consequence is
+  // that a 2 x 2 footprint grades held=false and then, rotated a quarter turn,
+  // held=true, two verdicts for what is physically the same arrangement.
+  //
+  // NO RECORDED FOOTPRINT IS AFFECTED - all thirteen have one axis strictly
+  // longer - so this refuses for nobody today and stops an arbitrary verdict
+  // the day a square part arrives.
+  // THE KEY IS A REAL FOOTPRINT ON PURPOSE, and that is finding 5 of the review
+  // showing itself: `admitPattern` reads the module-level LEAD_SPANS DIRECTLY,
+  // so CheckInput.spans cannot reach it. Keyed to a synthetic name the footprint
+  // half refuses on its missing-span guard and the placement half is never
+  // reached. `PinHeader_1x02` is recorded at [2,2], which is what a 2 x 2 pad
+  // field at 2.54mm measures, so the footprint half admits it and the placement
+  // half gets to run.
+  const square = "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
+  const pads = [
+    { pad: "1", xMm: 0, yMm: 0 },
+    { pad: "2", xMm: 2.54, yMm: 0 },
+    { pad: "3", xMm: 0, yMm: 2.54 },
+    { pad: "4", xMm: 2.54, yMm: 2.54 },
+  ]
+  const input = squareFootprintInput(square, pads)
+  expect(() => hc10(input)).toThrow(/PinHeader_1x02/)
+  expect(() => hc10(input)).toThrow(/NEITHER AXIS IS THE longer one/)
+  expect(() => hc10(input)).toThrow(/rotated a quarter turn/)
+
+  // ROTATING THE SAME PAD FIELD A QUARTER TURN REFUSES IDENTICALLY, which is
+  // the property the refusal exists for: under a silent tie-break the two
+  // graded differently.
+  const rotated = pads.map((pad) => ({ pad: pad.pad, xMm: pad.yMm, yMm: -pad.xMm }))
+  expect(() => hc10(squareFootprintInput(square, rotated))).toThrow(
+    /NEITHER AXIS IS THE longer one/,
+  )
+
+  // AND THE DEGENERATE SHAPES STILL DECIDE, so the refusal is narrow rather
+  // than a blanket one: a single row, rows of one pin, and one pad all have an
+  // axis strictly longer than the other and are graded as before.
+  for (const fixture of ["healthy", "rows-across-the-strips"]) {
+    expect(() => hc10(negativeInput(fixture)), fixture).not.toThrow()
+  }
+})
+
 test("HC10's placement half reads DIRECTION as well as the pin holes - two witnesses", () => {
   // M1.1's own reason for the field: reading the orientation directly is what
   // makes the check independent of the lead pattern, and a single-pad or
@@ -273,7 +331,7 @@ test("HC10's placement half passes a decomposable footprint turned the RIGHT way
   // span strips with a cut down the middle, like a breadboard."* The DIP-16's
   // sixteen pins sit two to a strip across eight strips, one from each of its
   // two eight-pin rows, so no row has two pins on one strip.
-  const correct = inputWithMultiRowPartAlongTheStrips()
+  const correct = inputWithMultiRowPartAcrossTheStrips()
   const result = gradeHardConstraints(correct).find((entry) => entry.id === "HC10")
   expect(result?.held, result?.detail).toBe(true)
   expect(result?.detail).toMatch(/footprint/)
@@ -283,9 +341,9 @@ test("HC10's placement half passes a decomposable footprint turned the RIGHT way
 test("HC10's placement half reads the strip axis rather than assuming rows", () => {
   // The same layout under VERTICAL_STRIPS 0 and 1 cannot both be compatible,
   // and a check hard-coded to rows would pass one of them for the wrong reason.
-  const horizontal = inputWithMultiRowPartAlongTheStrips()
+  const horizontal = inputWithMultiRowPartAcrossTheStrips()
   const vertical = withStripAxisFlipped(horizontal)
-  const held = (input: ReturnType<typeof inputWithMultiRowPartAlongTheStrips>): boolean =>
+  const held = (input: ReturnType<typeof inputWithMultiRowPartAcrossTheStrips>): boolean =>
     hc10(input).held
   expect(held(horizontal)).not.toBe(held(vertical))
 })

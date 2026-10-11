@@ -1,6 +1,4 @@
 import { test, expect } from "bun:test"
-import fs from "node:fs"
-import path from "node:path"
 import {
   netlistEquivalence,
   describeVerdict,
@@ -76,36 +74,27 @@ const UNCUT = WHOLE.split("\n")
   .filter((line) => !line.startsWith("CUT "))
   .join("\n")
 
-test("the grader's two-nets-shorted fixture IS this file's UNCUT board, so neither can drift", () => {
-  // ONE ARTIFACT, TWO CONSUMERS. Task 14's grader needs this same short as a
-  // negative fixture for HC8, and a second hand-written short would be a second
-  // thing to keep correct - the defect this repository calls supersede-means-
-  // delete, in its other shape.
-  //
-  // THE FIXTURE CARRIES TWO LINES THIS FILE'S BOARD DOES NOT, and both are
-  // lines HC8 never reads: a BOUNDS rect and a DIRECTION field on each placed
-  // PART. The grader needs them - HC6 refuses a dump with no BOUNDS and HC10
-  // refuses a placed part with no DIRECTION - and WHOLE above is deliberately
-  // left as a pre-grammar capture, because three of its tests manipulate PART
-  // line text directly. So the agreement is asserted rather than assumed:
-  // strip those two additions and the fixture must reproduce UNCUT byte for
-  // byte.
-  const fixture = fs.readFileSync(
-    path.join(import.meta.dir, "..", "fixtures", "stripboard", "negative", "two-nets-shorted.dump"),
-    "utf8",
-  )
-  const stripped = fixture
-    .split("\n")
-    .filter((line) => !line.startsWith("BOUNDS "))
-    .map((line) => (line.startsWith("PART ") ? line.replace(/ DIRECTION [A-Z]+$/, "") : line))
-    .join("\n")
-    .trimEnd()
-  expect(stripped).toBe(UNCUT.trimEnd())
-  // And it really is a short, read through HC8 rather than asserted by shape.
-  const verdict = netlistEquivalence(fixture, REFERENCE)
-  expect(verdict.equivalent).toBe(false)
-  expect(verdict.shorts.map((finding) => finding.nets)).toEqual([["mid", "out"]])
-})
+/**
+ * THE GRADER'S `two-nets-shorted` FIXTURE IS A DIFFERENT BOARD FROM `UNCUT`,
+ * DELIBERATELY, AND THERE IS NO LONGER A TEST TYING THEM TOGETHER.
+ *
+ * There was one, asserting the fixture reproduced `UNCUT` byte for byte so the
+ * two copies could not drift. It is deleted rather than weakened, because its
+ * subject is gone: the two boards are now meant to differ.
+ *
+ * `UNCUT` is this file's board with its cut removed, and `R2` straddles one
+ * strip with BOTH leads on it. That is what makes it a short here - and it is
+ * also exactly what `HC10`'s placement half forbids, and a 3-hole span below
+ * `R_Axial_DIN0207`'s recorded minimum of 5, so the grader's `HC8` fixture was
+ * tripping `HC9` and `HC10` as well. An `HC8` fixture that fails three
+ * constraints cannot show which one the fixture is for. The grader's board is
+ * therefore three 1x02 headers chained across four strips, where the short is
+ * two nets meeting on one strip without any part straddling it.
+ *
+ * Nothing is lost by the deletion: the grader's fixture is still read through
+ * `netlistEquivalence`, by `HC8` itself, in `tests/stripboard/grade.test.ts`'s
+ * V4 table.
+ */
 
 /** The message a call refused with, or "" when it did not refuse. */
 function refusalFrom(call: () => unknown): string {

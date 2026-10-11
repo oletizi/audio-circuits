@@ -67,14 +67,27 @@ floated-part                HAND-WRITTEN, and the deviation from the task
                             footprint map at all. The measured failure is still
                             used, and used by the real check.
 
-span-above-tool-range       HAND-WRITTEN, with the offending figure DERIVED
-span-above-reach            rather than written down. Each names a footprint and
-span-below-minimum          puts one lead at a row computed from that family's
-                            own recorded bound - 1 + TOOL_MAX_SPAN_HOLES,
-                            1 + maxSpanHoles, and minSpanHoles - 1 - so a
+span-above-tool-range       NOT FILES. These three are CONSTRUCTED in
+span-above-reach            tests/stripboard/grade-fixtures.ts (SPAN_FIXTURES),
+span-below-minimum          which names a footprint, reads that family's bound
+                            through leadSpanFor, and builds the dump text and
+                            the netlist from it - 1 + TOOL_MAX_SPAN_HOLES,
+                            1 + maxSpanHoles, and minSpanHoles - 1. So a
                             datasheet revision moves the fixture with the module
-                            rather than stranding it. No span figure appears in
-                            any fixture or in the test.
+                            rather than stranding it, and NO SPAN FIGURE EXISTS
+                            ANYWHERE IN THE FIXTURE OR THE TEST.
+                            THIS CORRECTS A FALSE CLAIM THIS FILE CARRIED. They
+                            were static .dump files, which baked the derived row
+                            in - `AT 17,1`, `AT 5,1`, `AT 4,1` - while this
+                            paragraph asserted no span figure appeared in any
+                            fixture. A provenance file that misdescribes its own
+                            fixtures is worse than none, because the next reader
+                            trusts it. The files are deleted and the claim is
+                            now true rather than softened.
+                            The constructor also ASSERTS the derived span still
+                            offends its constraint, so a revision that moved a
+                            bound far enough fails loudly instead of leaving a
+                            fixture that quietly tests nothing.
                             span-above-reach names a FILM CAPACITOR and not the
                             resistor, and that is forced: the resistor's own
                             maxSpanHoles IS the tool's ceiling, so no span can
@@ -107,16 +120,32 @@ schematic-delta             HAND-WRITTEN REPORT, over the healthy board: a
                             heading and an unreadable report must not both
                             resolve to "no delta".
 
-two-nets-shorted            REUSED, not rebuilt. It is Task 4's hand-written
-                            short - the WHOLE board of
-                            tests/stripboard/equivalence.test.ts with every CUT
-                            line removed, so strip 1 joins nets `mid` and `out`.
-                            The text is identical to that derivation except for
-                            two lines the grader needs and HC8 does not read: a
-                            BOUNDS line and a DIRECTION field on each placed
-                            PART. equivalence.test.ts asserts that stripping
-                            those two from this file reproduces its own UNCUT
-                            exactly, so the two cannot drift.
+two-nets-shorted            HAND-WRITTEN, AND IT IS NO LONGER TASK 4'S BOARD.
+                            Three 1x02 headers chained across four strips: J1
+                            spans strips 0-1, J2 spans 1-2, J3 spans 2-3, and
+                            the reference puts J1.2 on `mid` and J2.1 on
+                            `other`, so those two nets meet on strip 1. The
+                            short is two nets sharing a strip WITHOUT any part
+                            straddling one.
+                            WHY IT WAS REBUILT. It was Task 4's short - that
+                            file's WHOLE board with its CUT line removed -
+                            reused so the grader and the equivalence module were
+                            held against one artifact. But that board's R2
+                            straddles a single strip with BOTH leads on it,
+                            which is what makes it a short AND is exactly what
+                            HC10's placement half forbids, at a 3-hole span
+                            below the resistor's recorded minimum of 5. So HC8's
+                            fixture was also failing HC9 and HC10, and a fixture
+                            that fails three constraints cannot show which one
+                            it is for. The overlap was avoidable, so it was
+                            removed; grade.test.ts now asserts this board's
+                            failing set is EXACTLY [HC8].
+                            The drift guard in equivalence.test.ts is deleted
+                            rather than weakened, because its subject is gone:
+                            the two boards are now meant to differ, and that
+                            file carries the reason where the test was. Nothing
+                            is lost - this board is still read through
+                            netlistEquivalence, by HC8 itself, in the V4 table.
                             **THE BOARD-LEVEL SHORT FIXTURE IS OB5 AND THIS IS
                             NOT IT.** This is hand-written dump text. The
                             end-to-end claim - that a REAL VeroRoute board
@@ -127,9 +156,6 @@ two-nets-shorted            REUSED, not rebuilt. It is Task 4's hand-written
                             gesture can both create a short and leave every net
                             complete. Nothing here may be read as evidence for
                             that claim.
-                            It also trips HC9 and HC10, and that is expected: it
-                            is a two-strip toy board rather than a buildable
-                            layout, and V4's assertion is `toContain`.
 
 round-pin-pattern           HAND-WRITTEN. HC10's FOOTPRINT-half fixture. It
                             names Test_Synthetic:Ring_5Pin_D10mm, a five-pin
@@ -184,6 +210,8 @@ PROVENANCE OF THE TWO CAPTURES
                  exportNetlistFor() in tools/perfboard/check.ts, which is the
                  same one `make check` and the write verbs use
     exit         1, recorded in cuts-unresolved.status
+
+  The three span fixtures have no files at all - see their entry above.
 
   floated-part.dump is HAND-WRITTEN and is NOT a capture - see its entry above.
   The real capture it mirrors is tests/fixtures/pultec-low-boost-c19-floated.dump

@@ -339,7 +339,34 @@ function hc10Rows(pattern: PinPattern): readonly (readonly string[])[] {
   const alongY = rowsAlong(pattern.pads, "y")
   const widest = (rows: readonly (readonly string[])[]): number =>
     Math.max(...rows.map((row) => row.length))
-  return widest(alongY) > widest(alongX) ? alongY : alongX
+  const byX = widest(alongX)
+  const byY = widest(alongY)
+  // A TIE REFUSES, AND IT IS NOT BROKEN SILENTLY. When neither axis yields the
+  // longer rows there is no longer-row axis to group by, so THE RULE HAS NO
+  // ANSWER - and a tie-break would make the verdict the tie-break rather than
+  // the rule. Measured consequence of falling to one axis: a 2 x 2 square
+  // footprint gives held=false and then, rotated 90 degrees, held=true - two
+  // different verdicts for what is physically the same arrangement.
+  //
+  // So it throws, which is this repository's standard: an empty whitelist that
+  // refuses loudly beats a general rule that quietly accepts a guess. NO
+  // RECORDED FOOTPRINT IS AFFECTED - all thirteen have one axis strictly
+  // longer, and the degenerate shapes (one row, rows of one pin, a single pad)
+  // are decided by the comparison rather than by a tie. This refuses for
+  // nobody today and stops an arbitrary verdict the day a square part arrives.
+  if (byX === byY) {
+    throw new Error(
+      `HC10's placement half cannot decide footprint "${pattern.footprint}": its pads give ` +
+        `rows of at most ${byX} along x and at most ${byY} along y, so NEITHER AXIS IS THE ` +
+        "longer one and the owner's rule - no two pins of the same footprint row may share a " +
+        "strip - has no row decomposition to be read over.\nThis is NOT broken by a tie-break: " +
+        "which axis won would then decide the verdict, and the same part rotated a quarter turn " +
+        "would grade differently. A square pin field needs a rule the owner has not given. " +
+        "Take it to him, and record the answer in docs/stripboard/pipeline-verification.md " +
+        "section 3 beside the rule it extends.",
+    )
+  }
+  return byY > byX ? alongY : alongX
 }
 
 /**

@@ -1,4 +1,5 @@
 {
-  "R1": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
-  "R2": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
+  "J1": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+  "J2": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+  "J3": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 }

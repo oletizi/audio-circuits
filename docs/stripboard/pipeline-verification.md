@@ -712,3 +712,94 @@ himself. **What would be a failure is `pt2399-core` grading admissible.**
    BOARD that another constraint already names, and the honest verdict is that
    equivalence is unknown. It is not a skip that looks like a pass — `held` is
    false, so `A1` is false.
+
+### 4.4 `HC10`'s placement half refuses a square pin field rather than breaking the tie
+
+The rule reads over the footprint's **longer-row** axis (§3.4). A square pad
+field has no longer axis, so the rule has no row decomposition to be read over
+and **there is no answer to give**. `hc10Rows` therefore throws, naming the
+footprint and both equal extents.
+
+**Why not a documented tie-break.** Under one — falling to `x`, which is what
+the first implementation did silently — the verdict becomes the tie-break rather
+than the rule. Measured: a 2 × 2 pad field at 2.54 mm grades `held = false`, and
+the *same field rotated a quarter turn* grades `held = true`. Two verdicts for
+what is physically one arrangement. The refusal is this repository's standard
+instead: an empty whitelist that refuses loudly beats a general rule that
+quietly accepts a guess.
+
+**It refuses for nobody today.** All thirteen recorded footprints have one axis
+strictly longer, and the degenerate shapes — one row, rows of one pin, a single
+pad — are decided by the comparison rather than by a tie. The refusal exists to
+stop an arbitrary verdict the day a square part arrives, and it names
+`docs/stripboard/pipeline-verification.md` §3 as where the owner's answer should
+be recorded when one is given.
+
+### 4.5 Two span tables can be consulted in one grade, and why that is latent
+
+`HC4`, `HC5` and `HC9` read their bounds through `CheckInput.spans`. `HC10`'s
+footprint half does **not**: it calls `admitPattern`, which reads the
+module-level `LEAD_SPANS` **directly** (`lib/kicad/pin-pattern-model.ts`), and
+nothing routes `CheckInput.spans` to it. So a grade can consult two different
+span tables.
+
+**It is latent rather than live, and the reason is the shape of the
+injections.** No production code builds a `CheckInput`; `checkpointInput`
+injects neither map; and the test injections are `[...LEAD_SPANS, ring]` and
+`[...PIN_PATTERNS, ring]`, which **extend rather than replace** — they shadow no
+recorded entry, so both paths read the same figure for every footprint either
+one looks up. The comment that says so lives at the injection point in
+`tests/stripboard/grade-fixtures.ts`, because a future author who injects a
+*replacement* span table would get a grade that half-ignores it: the three span
+constraints would use the new figure and `HC10` would quietly use the old one.
+
+**It showed itself while writing §4.4's test.** Keying the synthetic square to a
+synthetic footprint name made the footprint half refuse on `admitPattern`'s
+missing-span guard, so the placement half was never reached and the tie refusal
+could not be exercised at all. The test keys the square onto
+`PinHeader_1x02_P2.54mm_Vertical` — recorded at `[2, 2]`, which is what a 2 × 2
+field at 2.54 mm measures — so the footprint half admits it and the placement
+half runs. Re-plumbing `admitPattern` is scope for a later task.
+
+### 4.6 `HC8`'s fixture was failing three constraints, and now fails one
+
+`two-nets-shorted` was Task 4's board reused — that file's `WHOLE` with its
+`CUT` line removed — so that the grader and the equivalence module were held
+against one artifact. But that board's `R2` straddles a single strip with
+**both** leads on it: that is what makes it a short, and it is also exactly what
+`HC10`'s placement half forbids, at a 3-hole span below the resistor's recorded
+minimum of 5. So `HC8`'s fixture was also failing `HC9` and `HC10`, and **a
+fixture that fails three constraints cannot show which one it is for.**
+
+The overlap was avoidable, so it was removed. The board is now three 1x02
+headers chained across four strips, where two nets meet on one strip without any
+part straddling one, and `grade.test.ts` asserts the failing set is **exactly
+`[HC8]`**. The drift guard in `equivalence.test.ts` is deleted rather than
+weakened — its subject is gone, because the two boards are now meant to differ —
+and that file carries the reason where the test was. Nothing is lost: the board
+is still read through `netlistEquivalence`, by `HC8` itself, in the V4 table.
+
+**The three fixtures whose overlap is NOT avoidable** keep theirs, and each says
+so: `cuts-unresolved` fails `HC1`/`HC7` because it is a real board that fails
+`--check`, and `HC8` cannot be computed on it at all (§4.3); `span-above-tool-
+range` fails `HC5` too because the resistor's own `maxSpanHoles` IS the tool
+ceiling; `schematic-delta` fails `HC1` because `--check` exits non-zero on a
+delta.
+
+### 4.7 A provenance file that misdescribed its own fixtures
+
+`tests/fixtures/stripboard/negative/provenance.txt` claimed *"no span figure
+appears in any fixture or in the test."* The three span `.dump` files baked the
+derived row straight in — `AT 17,1`, `AT 5,1`, `AT 4,1`. **The claim was false,
+and a provenance file that misdescribes its own fixtures is worse than none,
+because the next reader trusts it** — this repository's rule being that
+transcription is evidence, not memory.
+
+Fixed by making the claim true rather than by softening it, which is also what
+the task brief asked for: the three fixtures are no longer files. They are
+constructed in `grade-fixtures.ts`'s `SPAN_FIXTURES`, which names a footprint,
+reads the bound through `leadSpanFor`, and builds the dump text and the netlist
+from it. A datasheet revision now moves the fixture with the module. The
+constructor also **asserts the derived span still offends its constraint**, so a
+revision that moved a bound far enough fails loudly instead of leaving a fixture
+that quietly tests nothing.
