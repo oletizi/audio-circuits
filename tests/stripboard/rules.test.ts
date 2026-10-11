@@ -114,8 +114,29 @@ test("the two hypotheses are labelled as hypotheses, and the owner's values as h
   expect(note(rules, "signatureRun")).toContain("INHERITED, NOT DERIVED")
   expect(note(rules, "rhoWire")).toContain("[owner]")
   expect(note(rules, "kappaBench")).toContain("[owner]")
-  // evaluationCap is the one number with nobody behind it, and says so.
-  expect(note(rules, "evaluationCap")).toContain("NOT OWNER-SETTLED")
+})
+
+test("evaluationCap's note claims the provenance CRITERIA gives it, and not the owner's", () => {
+  // Q5 IS [model] - CRITERIA section 5's provenance line tags Q1-Q3 and Q5 to
+  // COST 6.4 - and section 10 records nothing about it waiting on the owner.
+  // An earlier draft of this note called it "the owner's evaluation cap by
+  // provenance", which asserts an attribution the authority denies. That is
+  // the small version of the failure this whole programme is built around:
+  // provenance is the mechanism, and a note claiming the wrong one lets a
+  // derived value be treated as a decision, or a decision be "improved" as
+  // though it were derived. So the assertion is two-sided - it names what the
+  // note must say AND that it must not wear the owner's tag.
+  const text = note(loadRules(), "evaluationCap")
+  expect(text).toContain("[model]")
+  expect(text).not.toContain("[owner]")
+  expect(text).toContain("NOT AN OWNER DECISION")
+  // What Q5 actually is: a backstop, with the one requirement a backstop has,
+  // and a stop on it reported as a failure rather than as a result.
+  expect(text).toContain("A BACKSTOP AND NOT A MEASURE")
+  expect(text).toContain("REPORTED AS A FAILURE RATHER THAN AS A RESULT")
+  // And the value is a labelled derivation whose margin is stated as a choice.
+  expect(text).toContain("11.71 ms")
+  expect(text).toContain("A CHOICE AND NOT A MEASUREMENT")
 })
 
 test("rhoWire's note quotes the owner's instruction verbatim and keeps the corrected argument", () => {
