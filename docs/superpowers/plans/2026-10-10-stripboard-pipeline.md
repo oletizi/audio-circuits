@@ -1925,6 +1925,34 @@ test("the recorded net and pin counts agree with the fixture's own dump - B2's b
 
 **Why it is blocked.** Cuts are **derived** — `DeriveCuts`, reported under `CUT_STATE COMPUTED` — and **no verb in the pinned fork edits one.** The shipped set is `--dump-netlist`, `--dump-board`, `--import`, `--update`, `--check`, `--adopt`, `--set-strips`, `--stretch` and `--move`, and the test-only `--author` takes `group|select|move-label|add-wire|merge|autofill`. None of the fifteen edits a cut. So `tests/fixtures/pultec-low-boost-c19-floated.*`'s route does not transfer: that fixture was captured from a verb that produced the defect by itself.
 
+**MEASURED 2026-10-11, and the reason above is true but not the whole reason.** Before escalating,
+the premise was re-tested, because `--move` shipped after this block was written and the fixture
+does not strictly need a cut edited — two nets on one strip with nothing between them would do.
+An exhaustive sweep found it still cannot be produced: **22,574 invocations** — every part × every
+row delta × `dc` −6..6, plus `--stretch grow|shrink`, on `transistor-preamp-feedback` (6,464),
+`pt2399-core` (7,584) and `transistor-preamp-buffered` (8,526) — each survivor run through
+`--check` and then `netlistEquivalence`. **Zero produced a short.** Every `--check`-passing
+survivor is a pure along-strip shift whose `CUT` block is byte-identical to baseline, because a
+part gesture changes only derived `SOLDER` lines and only between strips already in one component.
+
+**The deeper reason, which this task should have stated first:** `--check`'s completeness is
+**paint-based**, and a net's paint always lies inside one copper component, so a gesture cannot
+both create a short and leave every net complete. The one gesture that did join two nets —
+`--move C2 --delta 0,-1` on buffered — left `CUT_STATE UNRESOLVED`, and **this repository's own
+gate already catches that**: `runVerorouteCheckWithCuts` exits 1 naming the holes, *"an unpainted
+hole is still copper, so as saved each of these strips shorts its two nets."* Outcome #3, not #1.
+
+**A merged netlist comes closest and still fails the criterion.** Feeding `--update` a netlist
+that merges two nets does drop the separating cut and `HC8` reports the short — but `--check`
+against the *true* netlist then exits 1, and against the *merged* netlist `HC8` is clean. One
+netlist must serve both instruments, so no single pair satisfies "`--check` exits 0 **and** `HC8`
+refuses". `--set-strips vertical` re-derives faithfully (231 cuts, check 0, `HC8` clean).
+
+**What this does NOT establish**, and the distinction matters for how much `HC8`'s short half is
+worth: the sweep perturbed boards that already pass, by gesture. It says nothing about a board the
+optimiser builds from scratch, which reaches its layout by a different route. `HC8`'s open
+direction and the floated-part case are unaffected and remain demonstrated.
+
 **What CRITERIA records as the candidate routes, none of them chosen:** a layout whose derivation yields no separating cut; a fork change; or a hand-built board under the provenance discipline. **An invented mechanism here would be a fixture nobody can reproduce**, which is the one property a negative fixture must have.
 
 **What has already landed in its place, and what it does not cover.** Task 4 proves both directions of `HC8` from hand-written dump text. That is the module's real input seam — `netlistEquivalence` reads dump text and a netlist export and nothing else — and `tests/perfboard/floating-fixture.test.ts` already establishes the technique in this repository. What it does not establish is the end-to-end claim, because there is no board for `--check` to exit 0 on. **So `HC8` ships with its short direction tested and the "no pre-existing check catches this" claim unproven**, and that is stated in Task 4's test header rather than left for a reader to infer.
