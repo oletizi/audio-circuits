@@ -238,7 +238,21 @@ export function writeAndRead(provenance: Partial<ExecutionProvenance>): RunManif
   return readManifest(writeInto(manifest))
 }
 
-/** Every regular file under `dir`, recursively, as absolute paths - order not yet settled. */
+/**
+ * Every regular file under `dir`, recursively, as absolute paths - order not
+ * yet settled.
+ *
+ * REFUSES AN ENTRY THAT IS NEITHER A FILE NOR A DIRECTORY, rather than
+ * dropping it silently. `fs.Dirent#isFile()` and `#isDirectory()` are both
+ * false for a symlink, a socket or a FIFO, and the review that asked for
+ * this digest measured that a symlink under `boards/` fell out of the walk
+ * with no sound at all - creating one IS a modification to `boards/`, and a
+ * witness that cannot see it would report "unchanged" about a tree that
+ * changed, which is exactly the shape this repository's own rule means by "a
+ * skipped check must never look like a passing one." There are no symlinks
+ * under `boards/` today, so this throws for nobody now and refuses loudly
+ * the day it would otherwise have gone quiet.
+ */
 function walkFiles(dir: string): readonly string[] {
   const files: string[] = []
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -247,6 +261,17 @@ function walkFiles(dir: string): readonly string[] {
       files.push(...walkFiles(full))
     } else if (entry.isFile()) {
       files.push(full)
+    } else {
+      const kind = entry.isSymbolicLink()
+        ? "a symlink"
+        : "neither a regular file nor a directory"
+      throw new Error(
+        `walkFiles: ${full} is ${kind}. boardsDigest cannot witness it as written - remove ` +
+          "it, or teach walkFiles to handle this entry kind deliberately (for a symlink, " +
+          "that might mean hashing its target path rather than following or skipping it) - " +
+          "rather than let it drop out of the digest silently, which would make boards/ " +
+          "look unchanged when it is not.",
+      )
     }
   }
   return files
@@ -278,16 +303,37 @@ function walkFiles(dir: string): readonly string[] {
  *
  * Forty-nine files, ~1.1MB as of this writing - negligible to hash on every
  * run.
+ *
+ * EACH PATH AND EACH CONTENT BLOCK IS PREFIXED WITH ITS OWN BYTE LENGTH
+ * (`lengthPrefixed` below), not just separated by a `\0`. A bare separator
+ * is ambiguous: one file named `"X"` holding the bytes `path\0Y` digests
+ * identically to two files named `"X"` and `"path"` holding `""` and `"Y"` -
+ * the NUL in the first file's own content reads, byte for byte, as the
+ * separator the second case would also produce. A fixed-width length prefix
+ * removes that: the exact byte count of each block is encoded ahead of it,
+ * so there is nothing left for a file's own bytes to be mistaken for.
+ *
+ * WHAT STILL DOES NOT MOVE THIS DIGEST, left open deliberately rather than
+ * found later: file MODE (permission bits, the executable bit) is read by
+ * neither `fs.Dirent` nor `fs.readFileSync`, so a `chmod` under `boards/`
+ * is invisible to `boardsDigest` exactly as it was before this fix. Closing
+ * that is not asked for here.
  */
+function lengthPrefixed(block: Buffer): Buffer {
+  const length = Buffer.alloc(4)
+  length.writeUInt32BE(block.length, 0)
+  return Buffer.concat([length, block])
+}
+
 export function boardsDigest(): string {
   const root = path.join(moduleRepoRoot(), "boards")
   const files = [...walkFiles(root)].sort()
   const hash = createHash("sha256")
   for (const file of files) {
-    hash.update(path.relative(root, file))
-    hash.update("\0")
-    hash.update(fs.readFileSync(file))
-    hash.update("\0")
+    const relativePath = Buffer.from(path.relative(root, file), "utf8")
+    const contents = fs.readFileSync(file)
+    hash.update(lengthPrefixed(relativePath))
+    hash.update(lengthPrefixed(contents))
   }
   return hash.digest("hex")
 }
