@@ -456,7 +456,7 @@ function wrapping a field read would be a second spelling of one state.
 
 ---
 
-## 3. `HC10`'s placement clause — measured, and it refuses every hand-laid board here
+## 3. `HC10`'s placement clause — the owner's rule, and the inverted one it replaced
 
 **The owner decided this clause on 2026-10-11, and the rule below is now
 criteria.** His words: *"dips should span strips with a cut down the middle, like
@@ -587,7 +587,7 @@ for that cost. A rule phrased over the cut count directly would need no
 per-footprint row decomposition at all, and `C` is already a term of `F`; it is
 recorded here as an option, not a change made.
 
-### 3.4 Two of the four checkpoint boards also refuse on `PAR2`, which is separate
+### 3.5a Two of the four checkpoint boards also refuse on `PAR2`, which is separate
 
 Independently of §3.2, the four boards Task 14's CHECKPOINT 1 grades do not
 divide the way the brief predicts:
