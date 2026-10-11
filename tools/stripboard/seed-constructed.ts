@@ -8,7 +8,9 @@
  * and stays there; that it is a good place to start searching from is this arm's
  * claim and the comparison's question. **Nothing here has tested that claim**:
  * the comparison needs a rate against random's over a real search, which is Task
- * 18's final step, and a start count is not a rate.
+ * 18's final step, and a start count is not a rate - a sentence that lives
+ * beside `RETIREMENT` in `./seed-compare.ts`, where whoever reaches for the
+ * retirement rule will read it.
  *
  * The split from `./seed-arms.ts` is at the seam between this arm, which is most
  * of the work, and the other two plus the driver they share. One file carrying
@@ -136,12 +138,19 @@ export function constructionSpan(ref: string, stripA: number, stripB: number, bo
  * the plan's interface list names it, and nothing here can call it.
  *
  * **WHAT THIS ARM DOES NOT CLAIM.** It emits the gestures its arrangement
- * implies, in the order the rotation measurement forces - move, then turn, then
- * stretch. Whether the fork's rotation about the rect's centre leaves each lead
- * exactly on the strip the arrangement named is NOT asserted here and is not
- * asserted anywhere: the start proposes and `grade.ts` measures. What IS checked
- * before each gesture is emitted is that the fork will accept it, through the
- * same `appliedGestures` model the random arm draws through.
+ * implies. The MOVE comes first because the rotation measurement forces that
+ * much - no part turns where the import sweep left it - but **the order of the
+ * turn and the stretch is CHOSEN, not forced**, and an earlier version of this
+ * comment said the measurement forced it, which was the claim the 1225-origin
+ * sweep disproved: `SI_HI_CUT_R1` places at 0 origins with the turn first and at
+ * 19 with the shrinks first. `place` tries `GESTURE_ORDERS` in sequence and takes
+ * the first that places.
+ *
+ * Whether the fork's rotation about the rect's centre leaves each lead exactly on
+ * the strip the arrangement named is NOT asserted here and is not asserted
+ * anywhere: the start proposes and `grade.ts` measures. What IS checked before
+ * each gesture is emitted is that the fork will accept it, through the same
+ * `appliedGestures` model the random arm draws through.
  */
 export function constructedGestures(input: SeedInput, spawn: SpawnVeroroute): readonly Gesture[] {
   const { text, dump } = readBoard(spawn, input.importedBoard)
@@ -280,11 +289,16 @@ export function constructedGestures(input: SeedInput, spawn: SpawnVeroroute): re
         `(${GESTURE_ORDERS.join(", ")}), beside the parts already placed ` +
         `(${[...working.keys()].filter((other) => other !== ref).join(", ")}). It is NOT moved to ` +
         "another strip: the strip IS the arrangement, and a part on a strip the arrangement did " +
-        "not give it makes the one-net-per-strip claim false about the board produced. Every " +
-        "order was tried because a fixed one reported exactly this refusal for a part that 19 " +
-        "origins could place in the other order - so a refusal here is the construction being " +
-        "genuinely unable to realise this arrangement on this board, and it is reported per seed " +
-        "rather than aborting the run.",
+        "not give it makes the one-net-per-strip claim false about the board produced.\n" +
+        "WHAT THIS ESTABLISHES, EXACTLY: no gesture order placed this part on this strip GIVEN " +
+        "THE PARTS ALREADY DOWN. It does NOT establish that the arrangement is unrealisable on " +
+        "this board. The packing is greedy and never backtracks - every earlier part took the " +
+        "first order, row and column that worked for it, and one of those choices may be what " +
+        "left this part nothing - so whether some other packing order would have placed it is " +
+        "NOT KNOWN and is not claimed here. Both readings were tried for the gesture order " +
+        "itself, because a fixed one produced exactly this refusal for a part that 19 origins " +
+        "could place in the other; the packing order has had no such treatment. Reported per " +
+        "seed rather than aborting the run.",
     )
   }
 

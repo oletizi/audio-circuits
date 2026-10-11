@@ -212,6 +212,17 @@ export interface ComparisonInput {
  * after the numbers are in. Task 15's `RANKING` is the shape; its limit comes
  * with it: that each arm is named and followed by prose is assertable, and that
  * the prose is a REASON is the owner's judgement at review.
+ *
+ * **A START COUNT IS NOT A RATE, AND THIS RULE MAY NOT BE READ AGAINST ONE.**
+ * The sentence is here, beside the rule, because this is what a Task 18
+ * implementer reaching for the retirement rule actually reads. How many of the
+ * seed set's seeds produced a candidate AT ALL is a fact about whether an arm can
+ * start; the rate below is counted from runs an `ArmRunner` returned, each having
+ * evaluated at least one candidate (`requireMeasured` refuses a run that
+ * evaluated none). At the time of writing, all three arms produce a start on all
+ * five reviewed seeds of the import-placed low-boost board and **no measured run
+ * has happened at all**, so nothing in this plan has yet produced a rate for this
+ * rule to be applied to.
  */
 export const RETIREMENT =
   "The decision variable is the success rate: how many of the seed set's seeds met the mark, " +
@@ -234,6 +245,51 @@ export const RETIREMENT =
   "it is kept whatever the result, because every later comparison needs a null to be measured " +
   "against. If no arm meets the mark on any seed, nothing is retired and the comparison says " +
   "so: a run in which every arm scored zero measured the budget, not the arms."
+
+/**
+ * A run that measured something, or a refusal.
+ *
+ * **A RUN WITH NO EVALUATIONS HAS NOT MEASURED THE START IT WAS HANDED, AND
+ * MUST NOT BE SCORED.** This was a comment and a comment is not a guard: a
+ * runner returning `evaluations: 0` with an empty `history` was accepted, scored
+ * every arm 5 of 5, and produced `retireable: ["constructed", "import"]` - a
+ * retirement recommendation out of a run that evaluated nothing. That is exactly
+ * the failure the standing ruling exists to prevent, so it is a refusal now.
+ *
+ * WHAT IS MISSING: at least one evaluation. `F` is a property of a CANDIDATE, so
+ * a run that scored no candidate has no final `F`, no history to cross and
+ * nothing a success rate can be counted from - `meetsMark` would be reading
+ * counts that came from no measurement, and `RETIREMENT`'s recommendation would
+ * rest on them.
+ *
+ * WHERE TO FIX IT: in the `ArmRunner` this comparison was given. Task 17's
+ * `climb` evaluates at least the start it is handed, and Task 18's restart loop
+ * runs at least one climb, so a runner reporting zero has either not been wired
+ * up or has failed silently - and a silent failure is what this refuses to turn
+ * into a number.
+ *
+ * WHY IT IS NOT DEFAULTED: there is no figure to default to. Treating it as a
+ * run that missed the mark counts a harness fault against the arm, which is
+ * indistinguishable from an arm that ran and lost; treating it as a run that met
+ * the mark is worse. It is the same reason a runner that THROWS is fatal here:
+ * nothing was learned about the start, so nothing may be recorded about it.
+ */
+function requireMeasured(run: ArmRun, arm: SeedArm, seed: number): ArmRun {
+  if (!Number.isInteger(run.evaluations) || run.evaluations < 1) {
+    throw new Error(
+      `compareSeedArms: the runner reported ${run.evaluations} evaluations for the "${arm}" arm ` +
+        `at seed ${seed}, so that run did not score a single candidate and has not measured the ` +
+        "start it was handed. It is NOT counted as a seed that missed the mark and NOT counted " +
+        "as one that met it: F is a property of a candidate, a run that scored none has no F, " +
+        "and a success rate counted from it would be a number that came from no measurement - " +
+        "which is how a retirement recommendation comes out of a run that evaluated nothing. " +
+        "Fix the ArmRunner: Task 17's climb evaluates at least the start it is handed and Task " +
+        "18's restart loop runs at least one climb, so zero means the runner is not wired up or " +
+        "failed silently. There is nothing to default to.",
+    )
+  }
+  return run
+}
 
 /** One arm's result, by name, refusing an absent one rather than reading a rate off nothing. */
 function resultFor(arms: readonly ArmResult[], arm: SeedArm): ArmResult {
@@ -301,7 +357,7 @@ export function compareSeedArms(
           refusal: error instanceof Error ? error.message : String(error),
         }
       }
-      const run = runner(start, seed, spawn)
+      const run = requireMeasured(runner(start, seed, spawn), arm, seed)
       return {
         seed,
         run,

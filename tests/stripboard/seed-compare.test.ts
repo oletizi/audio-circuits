@@ -243,6 +243,50 @@ test("a refused start is recorded per seed and the comparison still completes", 
   expect(started.perSeed.every((entry) => entry.run !== null), "import").toBe(true)
 })
 
+test("a runner that evaluated nothing refuses, rather than retiring two arms", () => {
+  // THE HOLE THE RE-REVIEW MEASURED, closed. A runner reporting zero evaluations
+  // and an empty history used to be ACCEPTED: it scored every arm 5 of 5 and
+  // produced retireable ["constructed", "import"] - a retirement recommendation
+  // out of a run that evaluated nothing. The structural half of the guard did
+  // hold (reached can only come from an ArmRun the injected runner returned, so a
+  // start count cannot silently become a rate), but the other half was a comment,
+  // and a comment is not a guard.
+  const measuredNothing: ArmRunner = () => ({
+    startAdmissible: false,
+    objective: 0,
+    cuts: 0,
+    wires: 0,
+    netsComplete: true,
+    admissibleA1: true,
+    history: [],
+    evaluations: 0,
+  })
+  expect(() => compareSeedArms(comparisonInput(), measuredNothing, fakeSpawn()))
+    .toThrow(/did not score a single candidate/)
+  expect(() => compareSeedArms(comparisonInput(), measuredNothing, fakeSpawn()))
+    .toThrow(/nothing to default to/)
+  // IT NAMES THE ARM AND THE SEED, because "a runner returned zero" with no
+  // subject is a refusal nobody can act on.
+  expect(() => compareSeedArms(comparisonInput(), measuredNothing, fakeSpawn()))
+    .toThrow(/the "constructed" arm at seed 0/)
+
+  // AND THE SAME RUN WITH ONE EVALUATION IS ACCEPTED, so the refusal is about the
+  // count and not about the rest of that shape - without this the test would pass
+  // against a guard that refused every run.
+  const measuredOne: ArmRunner = () => ({
+    startAdmissible: false,
+    objective: 0,
+    cuts: 0,
+    wires: 0,
+    netsComplete: true,
+    admissibleA1: true,
+    history: [0],
+    evaluations: 1,
+  })
+  const scored = compareSeedArms(comparisonInput(), measuredOne, fakeSpawn())
+  expect(scored.arms.every((arm) => arm.reached === comparisonInput().rules.seeds.length)).toBe(true)
+})
+
 test("a scripted table missing a row throws rather than answering it with a default", () => {
   // The guard the fixtures file states, driven: a runner that filled a missing
   // row would decide the rates the comparison is measuring, so the guard must

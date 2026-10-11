@@ -254,7 +254,8 @@ test("the constructed arm places on every reviewed seed, and records which order
   //
   // SO THE CONSTRUCTED HYPOTHESIS IS NOW TESTABLE AND HAS NOT BEEN TESTED: what
   // RETIREMENT needs is a rate against random's over a real search, which is
-  // Task 18's final step. Nothing may read RETIREMENT against a start count.
+  // Task 18's final step. "A start count is not a rate" is stated beside
+  // RETIREMENT itself, which is where a Task 18 implementer will read it.
   const board = importedBoard()
   const rules = loadRules()
   const targets = deriveTargets(physicalBoard("low-boost"), rules.stockRows, "pultec-low-boost")
