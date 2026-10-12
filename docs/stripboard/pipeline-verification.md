@@ -1502,16 +1502,52 @@ the honest reading is that the gather is what moved the constructed arm, and the
 random arm's three cuts are a trajectory difference this measurement cannot
 attribute to any one kind.
 
-**On the import arm not one gather was ever proposed, and that is a property of
-the board rather than of the move.** Measured directly on the import-placed
-board: 14 nets, of which several span strips 0, 1 and 2 — so candidates exist —
-and the enumeration emits `move=8 rotate=1 stretch=16 add-wire=7 cluster=2` and
-**no gather at all**. `--import`'s first-fit sweep packs all seventeen parts into
-rows 0–2 of a 35-row board, and the gather's delta crosses the strips, so every
-part's destination is another part's footprint and the sequence cannot complete
-in any pass. **The gather needs room**, and the import arm's own start does not
-have any. That is also why §6.3's `import` row is unchanged at 36 here: nothing
-was added to its move set.
+**On the import arm not one gather was proposed, and THIS PARAGRAPH SAID THAT
+WAS "a property of the board rather than of the move". IT IS NOT. IT IS A
+PROPERTY OF THE ENUMERATION, and the correction is left visible here rather than
+rewritten away.** What is true: the enumeration AT THIS POINT proposed gathers
+only onto strips the net ALREADY occupied, `--import` packs all seventeen parts
+into rows 0–2 of a 35-row board, so every such destination was another part's
+footprint and no sequence completed. What the paragraph then claimed — *"the
+gather needs room, and the import arm's own start does not have any"* — is false:
+**that board has 32 empty rows, and the enumeration never asked about one of
+them.** Widening the candidates to every strip finds 192 gathers that fit on that
+same board (§6.8). The narrow set was a deliberate cost choice and a defensible
+one; recording its consequence as a fact about the board was not, and it is the
+fifth comment of that class in four tasks. §6.3's `import` row is unchanged at 36
+here for the same reason: nothing was added to its move set, because the
+enumeration did not ask.
+
+#### WHY it moves the constructed arm: the gather finishes the arrangement the construction could not place
+
+This is the mechanism behind the headline figure, and it is measured on the
+constructed arm's own start rather than argued. `assignStrips` gives every net a
+strip of its own — on seed 0: `si_hi_cut_j12_p3`→0, `si_hi_cut_j4_p2`→1,
+`si_hi_boost_j20_p3`→2, `in`→3, `hi_boost_out`→4, `lo_boost_in`→5, `out`→6,
+`0`→7, then the junction's six pads on 8 to 13. **The placement then cannot
+finish the job: on the start it produces, 8 of its 14 nets are SPREAD over two or
+three strips**, and the assigned strip is among them in every case:
+
+```
+0[7,11 -> 7]  out[6,8 -> 6]  lo_boost_in[5,7,9 -> 5]  in[3,7 -> 3]
+si_hi_boost_j20_p3[2,4 -> 2]  hi_boost_out[4,6 -> 4]
+si_hi_cut_j12_p3[1,10 -> 0]  si_hi_cut_j4_p2[0,5,7 -> 1]
+```
+
+**A gather is exactly the gesture that pulls one of those nets back onto a single
+strip** - which is the arrangement the construction intended, so the gather is
+completing the constructed arm's own plan rather than finding a new one. Of the
+208 gathers proposed on that start, 6 aim at the net's ASSIGNED strip; the rest
+aim elsewhere, which is why the move pays even where it disagrees with the
+assignment.
+
+**And the control arm has no such plan to finish**, which is the reading
+consistent with the firing counts: `random` places uniformly, so its nets are
+spread by accident rather than by an intention one gesture can complete, and its
+gathers fire three times against the constructed arm's twelve. That is an
+explanation of the measurement rather than a second measurement: nothing has
+tested it by, say, running the construction's assignment through a random
+placement.
 
 | arm, seed 0 | candidates | of them clusters | of them gathers | compound `--move --delta` gestures | new-best-`F` steps | of those, gathers |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1613,21 +1649,41 @@ the control and cannot be retired by this experiment at all; `constructed` and
 `import` are not retireable because neither rate exceeds the control's zero.
 What has changed is which way the evidence points if a rate ever separates them.
 
-#### `import` proposed ZERO gathers, on every seed, and that is a fact about the arm
+#### Two of the constructed arm's seeds produce different boards and identical counters
 
-Measured, not inferred: across its five runs the enumeration emitted
-`single=79 cluster=3` per run and **no gather at all**. `--import`'s first-fit
-sweep packs all seventeen parts into rows 0–2 of a 35-row board, the gather's
-delta crosses the strips, so every part's destination is another part's footprint
-and no sequence completes in any pass.
+`constructed` seeds 0 and 1 report the same `F`, the same round count, the same
+evaluation count and the same invocation count in **both** sweeps. The starts are
+not the same board: all five seeds produce DISTINCT start files, measured by
+hashing them. What differs between seeds 0 and 1 is the perturbation
+`assignStrips` applies - `seed` adjacent-block transpositions - and at seed 1 the
+transposition swaps `j10_p1` and `j10_p2`, two ONE-PIN junction pads, between
+strips 12 and 13.
 
-**So the import arm is not competing on the same terms as the other two.** It is
-the only arm whose own start denies it the dominant move, which is a property of
-where `--import` leaves the parts rather than of luck or of the seed — and it is
-why its `F` is identical on all five seeds and unchanged across every run in this
-document: 36, three rounds, 83 evaluations. An arm that cannot use the move the
-comparison turns on is a row in the table that measures the placer, not the
-search.
+So two boards that differ by two single-pin pads at the far end of the
+arrangement climb to the same place at the same cost. It is recorded because the
+identical rows look like a copy-paste error and are not, and because it is the
+sharpest available illustration of `assignStrips`' own warning that *"this arm's
+restarts explore very little"*.
+
+#### `import` proposed ZERO gathers, on every seed — **and the cause stated here was wrong**
+
+Measured, and the figure stands: across its five runs the enumeration emitted
+`single=79 cluster=3` per run and **no gather at all**.
+
+**THE CAUSE THIS SECTION GAVE DOES NOT.** It said the import arm *"is not
+competing on the same terms as the other two"* and that this was *"a property of
+where `--import` leaves the parts rather than of luck or of the seed"*. The first
+half is true of this run and the second half is false: the parts are packed into
+rows 0–2 of a **35-row** board, so there are 32 empty rows, and what denied the
+arm the move was the CANDIDATE SET — gathers onto the strips a net already
+occupied, which on that packing are all taken. The enumeration never asked about
+rows 3 to 34. §6.8 is the same comparison with the candidates widened to every
+strip, where this arm proposes gathers like any other.
+
+**The honest residue of the paragraph:** on THIS run the import arm did not have
+the dominant move and the other two did, so its row measures a search missing it
+— which is a reason to read §6.8 rather than this section for what the arm can
+do.
 
 #### Where the gathers actually fired
 
