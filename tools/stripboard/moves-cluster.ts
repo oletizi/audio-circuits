@@ -177,15 +177,16 @@ export function clusterAfter(
   refs: readonly string[],
   delta: readonly [number, number],
 ): Occupancy | undefined {
-  let working: Occupancy = occupancy
-  for (const ref of refs) {
-    const rect = rectOf(working, ref)
-    const origin: readonly [number, number] = [rect.row + delta[0], rect.col + delta[1]]
-    const advanced = appliedGestures(working, grid, ref, origin, 0, 0, TRANSLATION_ONLY_ORDER)
-    if (advanced === undefined) return undefined
-    working = advanced
-  }
-  return working
+  // ONE DELTA FOR EVERY REF IS A TRANSLATION LIST, so this CALLS the shared loop
+  // rather than repeating it. It duplicated the loop until a review found the
+  // copy, which made `translationsAfter`'s own "IT IS THE ONE ADVANCE FOR BOTH
+  // COMPOUND KINDS" false - the claim is made true here rather than softened
+  // there.
+  return translationsAfter(
+    occupancy,
+    grid,
+    refs.map((ref) => ({ ref, delta })),
+  )
 }
 
 /**
@@ -328,7 +329,22 @@ export function gatherMove(
   strip: number,
 ): Move | undefined {
   const aimed = aimedHoles(dump, reference, net)
-  if (aimed.length === 0) return undefined
+  // **A NET WITH FEWER THAN TWO ON-BOARD PARTS GETS NO GATHER, and that is what
+  // the move IS rather than a cost dodge.** §7.4 defines `E1` over *every
+  // on-board part with a pin on net X*, and a gathering of one part is a part
+  // RELOCATION - which the `move` kind owns, with its own declared one-hole
+  // neighbourhood. Proposing one here would quietly widen that neighbourhood to
+  // the whole strip axis for every single-part net, which is a different change
+  // to the move set and one nobody has reviewed. It also could not pay on its
+  // own terms: a one-part net's pins keep their relative strips under any
+  // translation, so its own segment count cannot fall.
+  //
+  // THE COST THIS BOUNDS, measured on the import-placed low-boost board so the
+  // choice is visible: every strip for every net is 490 candidate attempts per
+  // round and 384 that fit; every strip for the nets with two or more parts is
+  // the figure §6.8 records. Dropping the rule is a one-line edit and the
+  // enumeration is the only thing it changes.
+  if (aimed.length < 2) return undefined
   const wanted: Translation[] = []
   for (const hole of aimed) {
     const current = stripOf(hole, dump.verticalStrips)
@@ -344,47 +360,67 @@ export function gatherMove(
   // one of the net's pins is already on this strip.
   if (wanted.length === 0) return undefined
 
-  const ordered: Translation[] = []
-  const remaining = [...wanted]
-  let working: Occupancy = occupancy
-  let moved = true
-  while (moved && remaining.length > 0) {
-    moved = false
-    for (let index = 0; index < remaining.length; index += 1) {
-      const one = remaining[index]
-      if (one === undefined) continue
-      const advanced = translationsAfter(working, dump.grid, [one])
-      if (advanced === undefined) continue
-      working = advanced
-      ordered.push(one)
-      remaining.splice(index, 1)
-      index -= 1
-      moved = true
-    }
-  }
-  if (remaining.length > 0) return undefined
-  return { kind: "gather", net, strip, gestures: ordered }
+  // ONE PASS, IN THE DUMP'S PART ORDER, AND ALL OF IT OR NONE. The whole list
+  // goes through the shared advance: if any part's destination does not fit, the
+  // gather is not proposed at all. A PARTIAL gather - the net's other parts moved
+  // onto a strip this one was never going to reach - is the one outcome that
+  // would make the move's own name false, and it is also strictly worse than not
+  // proposing: it spends an evaluation to split the net it was asked to join.
+  //
+  // **A REPEATED-PASS SCHEDULE WAS HERE AND IS GONE, AND THE REASON IS AN
+  // ARGUMENT RATHER THAN A PREFERENCE.** The cluster needs an order because its
+  // parts all translate by one delta, so one part's destination is routinely
+  // another's current footprint and the follower must wait - measured on
+  // `STACKED_DUMP`. A gather cannot have that structure. Every part keeps its
+  // coordinate on the non-strip axis and every part's pin ends on the SAME strip,
+  // so take any two parts of the net: if their footprints overlap on the
+  // non-strip axis they would have to end on top of each other and the gather is
+  // impossible in every order; if they do not overlap, neither can ever block the
+  // other. A part of some OTHER net never moves during a gather, so a destination
+  // it blocks stays blocked. There is therefore no case where a second pass
+  // places something the first could not, which is why the repeated-pass loop
+  // survived its own mutation: nothing could tell the two schedules apart.
+  //
+  // IF THAT ARGUMENT MISSES A CASE, the cost is a gather NOT PROPOSED rather than
+  // a gesture the fork refuses - the same direction every narrowing in this file
+  // errs in.
+  const advanced = translationsAfter(occupancy, dump.grid, wanted)
+  if (advanced === undefined) return undefined
+  return { kind: "gather", net, strip, gestures: wanted }
 }
 
 /**
- * The strips a net's own pins occupy, ascending: the gather's candidate targets.
+ * **EVERY STRIP OF THE BOARD, ascending: the gather's candidate targets.**
  *
- * **IT IS THE NET'S OWN STRIPS AND NOT EVERY STRIP ON THE BOARD, and that is a
- * cost choice stated rather than hidden.** A round is a full sweep, so enumerating
- * every strip would make one round `nets x strips` candidates - 14 x 35 = 490 on
- * the low-boost board, against the 30-odd a net's own strips give. Gathering onto
- * a strip none of the net's pins is on is therefore not reachable in one move;
- * whether it would pay is unmeasured, exactly as `UNIT_DELTAS` says of its own
- * one-hole neighbourhood.
+ * **IT WAS THE NET'S OWN STRIPS, AND THAT NARROWING RECORDED A FALSE CAUSE.**
+ * The cost argument for it was real - a round is a full sweep, and every strip is
+ * `nets x strips` candidate ATTEMPTS, 14 x 35 = 490 on the low-boost board
+ * against the 21 the net-own set measured there. What was not defensible is what
+ * the narrowing then made the run record SAY: on the import-placed board the
+ * enumeration proposed ZERO gathers and
+ * `docs/stripboard/pipeline-verification.md` wrote that down as *"a property of
+ * the board"* and *"the gather needs room, and the import arm's own start does
+ * not have any"*. **That board has 32 empty rows.** The parts are packed into
+ * rows 0-2 of a 35-row grid and the net-own set offers destinations only where a
+ * net ALREADY has parts, so every candidate landed on top of something - and the
+ * enumeration never asked about rows 3 to 34. Widening it finds 384 gathers that
+ * fit on that same board, 32 each for 12 of its 14 nets. §6.8 carries the
+ * measurement and the per-round cost the widening buys it with.
+ *
+ * **AND THE NARROW SET WAS NOT NEUTRAL BETWEEN THE ARMS**, which is the reason
+ * the widening is not optional: offering destinations only where a net already
+ * has parts rewards a start whose nets are already spread across distinct strips,
+ * which is precisely what the constructed arm builds. A comparison run on that
+ * set could not tell the construction's advantage from the enumeration's shape.
+ *
+ * **IT IS NOT BOUNDED TIGHTER THAN "EVERY STRIP", AND THAT IS DELIBERATE.** The
+ * only principled narrowing is the one `gatherMove` already applies - the whole
+ * net must FIT on the target - and that is a property of the arrangement rather
+ * than of the strip's index, so it cannot be read off a bound. Any tighter rule
+ * would be a guess about which strips are worth asking about, and the previous
+ * guess is what put a false cause in the record.
  */
-export function gatherStrips(
-  dump: BoardDump,
-  reference: ReferenceNets,
-  net: string,
-): readonly number[] {
-  const strips = new Set<number>()
-  for (const hole of aimedHoles(dump, reference, net)) {
-    strips.add(stripOf(hole, dump.verticalStrips))
-  }
-  return [...strips].sort((a, b) => a - b)
+export function gatherStrips(dump: BoardDump): readonly number[] {
+  const count = dump.verticalStrips ? dump.grid.cols : dump.grid.rows
+  return Array.from({ length: count }, (unused, index) => index)
 }

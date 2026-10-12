@@ -145,21 +145,22 @@ export function searchInput(runDir: string): SearchInput {
  * HOW MANY DUMPS HAVE BEEN ASKED FOR - `./climb-fixtures.ts`'s `DumpScript`,
  * and the indices below are counted off the same arithmetic.
  *
- * **ONE CLIMB OF THE `import` ARM ON `BASE_DUMP` SPENDS 28 DUMPS**, hand-derived
+ * **ONE CLIMB OF THE `import` ARM ON `BASE_DUMP` SPENDS 94 DUMPS**, hand-derived
  * and written out here because three scripts and four expectations are stated in
  * terms of it:
  *
  * - 1 for the arm, which reads the imported board to take its occupancy off it;
  * - 1 for the start evaluation;
- * - 26 for round 0's candidates - the applicable move set of `BASE_DUMP`:
+ * - 92 for round 0's candidates - the applicable move set of `BASE_DUMP`:
  *   8 one-hole moves, 2 clockwise turns, 4 stretches, 8 net clusters
- *   (2 nets x 4 unit deltas) and 4 gathers (each net onto each of the two
- *   strips its own pins sit on), the add-wires and delete-wires being deferred.
+ *   (2 nets x 4 unit deltas) and 70 gathers (each of the two nets onto every
+ *   column of the 40-wide grid the whole net fits on, 35 each), the add-wires
+ *   and delete-wires being deferred. `./moves.test.ts` derives all of those.
  *
  * With every dump the same board, nothing is accepted, `S3` ends the climb after
- * round 0 and the next climb's arm read is dump 28.
+ * round 0 and the next climb's arm read is dump 94.
  */
-export const DUMPS_PER_STALLED_CLIMB = 28
+export const DUMPS_PER_STALLED_CLIMB = 94
 
 /** Every evaluation reports `BASE_DUMP`: every climb stalls in round 0. */
 export const STALLS_IMMEDIATELY_EVERY_SEED = (): string => BASE_DUMP
@@ -168,8 +169,8 @@ export const STALLS_IMMEDIATELY_EVERY_SEED = (): string => BASE_DUMP
  * The FIRST candidate of the SECOND climb reports the better board, and nothing
  * else does.
  *
- * Climb 0 spends dumps 0-27 and stalls. Climb 1's arm read is dump 28, its start
- * is dump 29 and its first candidate is dump 30 - so that one index is
+ * Climb 0 spends dumps 0-93 and stalls. Climb 1's arm read is dump 94, its start
+ * is dump 95 and its first candidate is dump 96 - so that one index is
  * `BETTER_DUMP` and every other is `BASE_DUMP`. There is no "and thereafter"
  * branch: the function answers every index explicitly.
  */

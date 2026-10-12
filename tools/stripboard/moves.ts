@@ -352,6 +352,14 @@ function clusterMoves(
  * behind that sentence. `./moves-cluster.ts` chooses the deltas and their order;
  * this function is only the enumeration, in the one order that makes a run
  * reproducible.
+ *
+ * **IT ASKS ABOUT EVERY STRIP AND NOT ONLY THE NET'S OWN**, which is the
+ * widening `gatherStrips` carries the reason for: the narrow set proposed zero
+ * gathers on a board with 32 empty rows and let that be written down as a
+ * property of the board. The cost of asking is `nets x strips` model calls per
+ * round - no fork invocation, because a candidate that does not fit is never
+ * evaluated - and the cost of the ones that FIT is one evaluation each, which
+ * §6.8 measures rather than estimates.
  */
 function gatherMoves(
   occupancy: Occupancy,
@@ -360,7 +368,7 @@ function gatherMoves(
 ): readonly Move[] {
   const moves: Move[] = []
   for (const [net] of reference) {
-    for (const strip of gatherStrips(dump, reference, net)) {
+    for (const strip of gatherStrips(dump)) {
       const move = gatherMove(occupancy, dump, reference, net, strip)
       if (move !== undefined) moves.push(move)
     }

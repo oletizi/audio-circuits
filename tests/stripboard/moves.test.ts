@@ -128,12 +128,19 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   //               holds a pin of BOTH parts, so every cluster moves R1 and R2
   //               together, and on a 12x40 grid the pair fits one hole in
   //               every direction from 2,1 and 7,2                          = 8
-  //   gather      each net onto each strip its OWN pins sit on: `left` holds
-  //               2,1 and 7,2, so strips 1 and 2, and `right` holds 2,6 and
-  //               7,7, so strips 6 and 7 - two candidates per net, and each
-  //               moves the one part whose pin is not already there         = 4
+  //   gather      each net with TWO OR MORE on-board parts onto EVERY strip of
+  //               the board that the whole net fits on. Strips are COLUMNS here
+  //               and the grid is 12 x 40. `left` holds R1.1 at column 1 and
+  //               R2.1 at column 2, both parts six columns wide and on
+  //               different rows, so neither can block the other and the
+  //               landing bound is the grid: columns 0 to 34 inclusive, which
+  //               is 35. `right` holds R1.2 at column 6 and R2.2 at column 7,
+  //               five columns from each part's own AT, so its bound is
+  //               columns 5 to 39, which is 35 again. No candidate is dropped
+  //               for a zero delta, because no single column makes BOTH
+  //               parts' deltas zero                                       = 70
   //                                                                        ---
-  //                                                                         30
+  //                                                                         96
   const moves = enumerateMoves(OCC, DUMP, REFERENCE)
   const counted = new Map<Move["kind"], number>()
   for (const move of moves) counted.set(move.kind, (counted.get(move.kind) ?? 0) + 1)
@@ -143,15 +150,16 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   expect(counted.get("add-wire")).toBe(2)
   expect(counted.get("delete-wire")).toBe(2)
   expect(counted.get("cluster")).toBe(8)
-  expect(counted.get("gather")).toBe(4)
-  expect(moves.length).toBe(30)
-  // And the applicable subset is the 30 less the TWO deferred kinds' 4: the two
+  expect(counted.get("gather")).toBe(70)
+  expect(moves.length).toBe(96)
+  // And the applicable subset is the 96 less the TWO deferred kinds' 4: the two
   // delete-wires and the two add-wires. It was 14 while `cluster` was deferred
-  // as well, and 22 before `gather` existed - which is exactly what this figure
-  // moving is meant to signal. `rotate` was deferred for one round of Task 17
-  // and is also back: a turn's result is carried in the occupancy rather than
-  // re-read from a dump that cannot describe it.
-  expect(applicableMoves(moves).length).toBe(26)
+  // as well, 22 before `gather` existed and 26 while the gather asked only about
+  // the strips a net already occupied - which is exactly what this figure moving
+  // is meant to signal. `rotate` was deferred for one round of Task 17 and is
+  // also back: a turn's result is carried in the occupancy rather than re-read
+  // from a dump that cannot describe it.
+  expect(applicableMoves(moves).length).toBe(92)
   expect([...DEFERRED_KINDS.keys()].sort()).toEqual(["add-wire", "delete-wire"])
 })
 

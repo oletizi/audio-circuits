@@ -2,10 +2,12 @@
  * Task 18: `E1`, the net-cluster move - what is proposed, in what order the
  * gestures go out, and the `J` property the whole mechanism exists for.
  *
- * `E2`'s restarts, `E3`'s bound and `Q3`'s restart trigger are in
- * `./escapes-search.test.ts`, split off for the line ceiling at the seam the
- * task itself has: this file needs no `search` and that one needs no board
- * arithmetic. `./escapes-fixtures.ts` holds the boards both read.
+ * **THE GATHER IS `./gather.test.ts`** and `E2`'s restarts, `E3`'s bound and
+ * `Q3`'s restart trigger are `./escapes-search.test.ts`'s: the three were one
+ * file until it passed the 500-line ceiling. The seams are the ones the task
+ * has - a cluster is one delta for every part and a gather is one delta per
+ * part, and the search needs no board arithmetic while these need no `search`.
+ * `./escapes-fixtures.ts` holds the boards all three read.
  *
  * **WHAT THESE PROVE AND WHAT THEY DO NOT.** The spawn is injected, so what is
  * asserted here is the ENUMERATION, the ARGUMENT LISTS and the hole arithmetic
@@ -29,8 +31,6 @@ import {
   clusterRefs,
   describeMove,
   enumerateMoves,
-  gatherMove,
-  gatherStrips,
   occupancyAfter,
   type Move,
 } from "../../tools/stripboard/moves.ts"
@@ -308,149 +308,6 @@ test("the occupancy advances past a cluster through the same call that proposed 
   // And the original is untouched - the occupancy is a value the climb carries,
   // not a board it edits.
   expect(STACKED_OCC.get("R1")).toEqual({ row: 0, col: 0, rows: 1, cols: 2, across: false })
-})
-
-
-/* ------------------------------------------------------------------------- *
- * THE GATHER, which is the gesture E1's own justification describes.
- * ------------------------------------------------------------------------- */
-
-/** One gather move, or a failure naming the net - never a non-null assertion. */
-function gatherOrFail(
-  occupancy: Occupancy,
-  dump: BoardDump,
-  reference: ReferenceNets,
-  net: string,
-  strip: number,
-): Move {
-  const move = gatherMove(occupancy, dump, reference, net, strip)
-  if (move === undefined) {
-    throw new Error(
-      `this fixture was expected to admit a gather of "${net}" onto strip ${strip} and the model ` +
-        "says it does not, so the test below would be asserting over a move nobody made.",
-    )
-  }
-  return move
-}
-
-const gatherKind = (move: Move): move is Extract<Move, { kind: "gather" }> =>
-  move.kind === "gather"
-
-test("THE GATHER lowers J where neither a single-part move nor a one-delta cluster can", () => {
-  // THIS IS THE LEVER, AND THE TEST IS THE WHOLE REASON THE KIND EXISTS. On
-  // SPREAD_DUMP the net `mid` holds one pin on each of strips 0, 2 and 4, so
-  // its three segments are two more than it needs. J = 6 - 4 = 2, counted by
-  // hand off the layout in the fixture's own comment: one hole on each of six
-  // occupied strips, four nets.
-  const before = joinsOfDump(SPREAD, SPREAD_REFERENCE)
-  expect(before).toBe(2)
-  const holes = holesOf(SPREAD)
-  const after = (gestures: readonly { readonly ref: string; readonly delta: readonly [number, number] }[]): number =>
-    joinsOf(translatedEach(holes, SPREAD, gestures), SPREAD_REFERENCE, SPREAD.verticalStrips)
-
-  // NOT ONE SINGLE-PART MOVE LOWERS IT: a one-hole move cannot close a
-  // two-column gap, and every one of them leaves six segments standing.
-  const moves = enumerateMoves(SPREAD_OCC, SPREAD, SPREAD_REFERENCE)
-  const singles = moves.filter(moveKind)
-  expect(singles.length).toBeGreaterThan(0)
-  for (const single of singles) {
-    const origin = originOf(SPREAD, single.ref)
-    const delta: readonly [number, number] = [single.to[0] - origin[0], single.to[1] - origin[1]]
-    expect(after([{ ref: single.ref, delta }]), describeMove(single)).toBeGreaterThanOrEqual(before)
-  }
-
-  // AND NOT ONE ONE-DELTA CLUSTER LOWERS IT EITHER, which is the measured
-  // finding this kind exists because of: a cluster translates the net's parts
-  // RIGIDLY, so `mid` keeps one pin on each of three strips wherever it goes.
-  const clusters = moves.filter(clusterKind)
-  expect(clusters.length).toBeGreaterThan(0)
-  for (const cluster of clusters) {
-    const gestures = cluster.refs.map((ref) => ({ ref, delta: cluster.delta }))
-    expect(after(gestures), describeMove(cluster)).toBeGreaterThanOrEqual(before)
-  }
-
-  // THE GATHER TAKES IT TO ZERO. Onto strip 0: R1's pin is already there, R2
-  // moves by 0,-2 and R3 by 0,-4 - three parts, two deltas, one candidate - so
-  // `mid` becomes one segment and `a`, `b` and `c` pile onto strip 1 as three.
-  // 4 segments over 4 nets.
-  const gather = gatherOrFail(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, "mid", 0)
-  expect(gather.kind === "gather" ? gather.gestures : []).toEqual([
-    { ref: "R2", delta: [0, -2] },
-    { ref: "R3", delta: [0, -4] },
-  ])
-  expect(after(gather.kind === "gather" ? gather.gestures : [])).toBe(0)
-  expect(after(gather.kind === "gather" ? gather.gestures : [])).toBeLessThan(before)
-})
-
-test("a gather's candidate strips are the net's own, and a net already on one gets none", () => {
-  // THE DELTAS CROSS THE STRIPS AND NOTHING ELSE, so the candidates are the
-  // strips the net's pins already sit on - hand-read off SPREAD_DUMP: `mid` at
-  // columns 0, 2 and 4, each of its singleton neighbours at one column.
-  expect(gatherStrips(SPREAD, SPREAD_REFERENCE, "mid")).toEqual([0, 2, 4])
-  expect(gatherStrips(SPREAD, SPREAD_REFERENCE, "a")).toEqual([1])
-  // A net whose pins are all on ONE strip is already gathered: every delta
-  // would be zero, the fork refuses a zero delta, and no gather is proposed.
-  expect(gatherMove(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, "a", 1)).toBeUndefined()
-  // SCATTERED_DUMP's `mid` is the same case for a different reason - its two
-  // pins share column 0 and are INTERRUPTED there - which is why that board
-  // needs the cluster and this one needs the gather.
-  expect(gatherStrips(SCATTERED, SCATTERED_REFERENCE, "mid")).toEqual([0])
-  expect(gatherMove(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE, "mid", 0)).toBeUndefined()
-  // And the enumeration over SPREAD_DUMP is exactly `mid`'s three, in the
-  // netlist's net order and ascending by strip.
-  expect(
-    enumerateMoves(SPREAD_OCC, SPREAD, SPREAD_REFERENCE).filter(gatherKind).map(describeMove),
-  ).toEqual([
-    "gather mid onto strip 0 (R2 by 0,-2; R3 by 0,-4)",
-    "gather mid onto strip 2 (R1 by 0,2; R3 by 0,-2)",
-    "gather mid onto strip 4 (R1 by 0,4; R2 by 0,2)",
-  ])
-})
-
-test("a gather goes out as one --move --delta per part, and as one batch when asked", () => {
-  const { spawned, spawn } = recorder()
-  const out = path.join(freshRunDir(), "gathered.vrt")
-  const gather = gatherOrFail(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, "mid", 0)
-  applyMove("board.vrt", gather, out, spawn)
-  // TWO GESTURES WITH DIFFERENT DELTAS, which is the whole difference from a
-  // cluster, and only the last writes the candidate.
-  expect(spawned.map((args) => args.join(" "))).toEqual([
-    `--move board.vrt --ref R2 --delta 0,-2 -o ${out}.gather-0.vrt`,
-    `--move ${out}.gather-0.vrt --ref R3 --delta 0,-4 -o ${out}`,
-  ])
-  // And the batched transport is one invocation with one ops line per part.
-  const ops: string[] = []
-  const batchSpawn: SpawnVeroroute = (args) => {
-    const at = args.indexOf("--ops")
-    const file = args[at + 1]
-    if (file === undefined) throw new Error(`--move-batch with no --ops: ${args.join(" ")}`)
-    ops.push(fs.readFileSync(file, "utf8"))
-    const outAt = args.indexOf("-o")
-    const target = args[outAt + 1]
-    if (target === undefined) throw new Error(`no -o in ${args.join(" ")}`)
-    fs.writeFileSync(target, `${args.join(" ")}\n`)
-    return { status: 0, stdout: "", stderr: "" }
-  }
-  applyMove("board.vrt", gather, out, batchSpawn, "batched")
-  expect(ops).toEqual(["move R2 --delta 0,-2\nmove R3 --delta 0,-4\n"])
-})
-
-test("the occupancy advances past a gather through the same call that proposed it", () => {
-  // One advance for both compound kinds: `translationsAfter` underneath, which
-  // is `appliedGestures` per part - the same call a single `move` makes. The
-  // rects are hand-written: both moved parts are 1 row by 2 columns, R2 goes
-  // from column 2 to column 0 and R3 from column 4 to column 0, and neither
-  // changes row.
-  const gather = gatherOrFail(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, "mid", 0)
-  const advanced = occupancyAfter(SPREAD_OCC, SPREAD, gather)
-  if (advanced === undefined) throw new Error("the gather the model proposed could not be advanced")
-  expect(advanced.get("R1")).toEqual({ row: 0, col: 0, rows: 1, cols: 2, across: false })
-  expect(advanced.get("R2")).toEqual({ row: 2, col: 0, rows: 1, cols: 2, across: false })
-  expect(advanced.get("R3")).toEqual({ row: 4, col: 0, rows: 1, cols: 2, across: false })
-  // And a gather the sequence cannot complete is not proposed at all: on
-  // STACKED_DUMP both parts' `mid` pins are on column 0 already, so there is no
-  // gather there either - the board that needs an ORDER is the cluster's.
-  expect(gatherMove(STACKED_OCC, STACKED, STACKED_REFERENCE, "mid", 0)).toBeUndefined()
 })
 
 /**
