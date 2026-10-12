@@ -263,11 +263,9 @@ export function rulesWithoutWorseAcceptance(): StripboardRules {
  * The same rules with a bound configured, which TURNS E3 ON.
  *
  * It existed for the refusal E3 was deferred behind until Task 18 implemented
- * the mechanism; the refusal is gone, and what this now produces is a rules
- * object under which a candidate worse by at most `bound` is accepted.
- * `./escapes-search.test.ts` holds the bound's own arithmetic; the one test here
- * that uses it holds the half that belongs to the acceptance rule - that the
- * bound does not reach past the no-regression clause.
+ * the mechanism. `./escapes-search.test.ts` holds the bound's own arithmetic;
+ * the one test here that uses it holds the half belonging to the acceptance
+ * rule - that the bound does not reach past the no-regression clause.
  */
 export function rulesWithWorseAcceptance(bound: number): StripboardRules {
   return { ...rulesWithoutWorseAcceptance(), worseAcceptance: bound }
