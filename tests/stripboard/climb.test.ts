@@ -393,6 +393,31 @@ test("a candidate whose cuts cannot be computed is rejected and counted, not fat
   expect(refusal).toContain("score-cuts-not-computed")
 })
 
+test("the cap counts what the run SPENT, so unscoreable candidates bring it closer", () => {
+  // **WHY THE CAP COUNTS THEM**, which is the half the test above does not
+  // reach: an unscoreable candidate costs the same four fork invocations as a
+  // scored one, so a board whose every wire candidate shorts would sweep
+  // forever against a cap that never moved. `evaluations` still counts only
+  // SCORED candidates - Task 16's `evaluationsToCross` needs that - so the two
+  // numbers come apart here and the cap is the one that must not.
+  //
+  // HAND-DERIVED at a fixture cap of 5, the start scored and round 0's first
+  // two candidates unresolved: the start is spend 1, the two unscoreable
+  // candidates are spends 2 and 3, the next two are SCORED (spends 4 and 5),
+  // and the sixth is never started. So three evaluations, two unscoreable, and
+  // five spends - against a cap that ignored them, which would run on to five
+  // SCORED evaluations.
+  const runDir = freshRunDir()
+  const result = climb(
+    seededStart(runDir),
+    { ...climbInput(runDir, false), rules: rulesWithCap(5) },
+    scriptedSpawn((index) => (index === 1 || index === 2 ? UNRESOLVED_DUMP : BASE_DUMP)),
+  )
+  expect(result.unscoreable).toBe(2)
+  expect(result.evaluations).toBe(3)
+  expect(result.history.length).toBe(3)
+})
+
 test("a candidate the fork could not paint stops the run rather than scoring half of it", () => {
   const runDir = freshRunDir()
   const seeded = seededStart(runDir)

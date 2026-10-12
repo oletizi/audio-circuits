@@ -26,6 +26,31 @@
  * `docs/stripboard/pipeline-verification.md` §6.9 is the first sweep in which it
  * is not.
  *
+ * **AND IT BOUGHT NOTHING, WHICH IS A FACT ABOUT THE COST MODEL AND NOT ABOUT
+ * THIS MODULE.** §6.9 measured it: 11,000 `add-wire` candidates across fifteen
+ * runs, none refused by the binary, and `W = 0` in every best board - `F`, `C`
+ * and `W` identical seed for seed to the sweep without this kind. The three
+ * measurements behind that, each reproduced in §6.9:
+ *
+ *   1. at `random` seed 1's stalled board (`F = 12, C = 12, W = 0, B = 0`) ALL 21
+ *      of the final round's wire candidates score `F = 12.25, C = 12` - identical
+ *      in `N`, `P`, `S_occ`, `J` and `κ` too. **A WIRE DOES NOT REMOVE A CUT**:
+ *      `C` is the fork's own cut derivation and `S_occ` counts `PIN` holes, and a
+ *      wire's ends are not pins, so a wire is invisible to `C = N + J - S_occ`
+ *      and appears only as its own `ρ_w`;
+ *   2. the one wire in the sweep that DID pay for itself displaced a `SOLDER`
+ *      bridge (`B` 1 -> 0, `F` 20 -> 19.25) and still lost its round to a
+ *      candidate scoring 17, because the climb takes the round's best;
+ *   3. `worseAcceptance` is `null`, so `E3` does not run and no candidate worse
+ *      than the incumbent is ever accepted. A gesture whose payoff needs a SECOND
+ *      step can therefore never be the first one.
+ *
+ * So `rhoWire`'s exchange - four wires for a cut - is not reachable through this
+ * move set as scored. What would make it reachable is a configured `E3` bound or
+ * a compound gesture that adds the wire AND makes the move it enables, scored as
+ * one candidate. Neither is invented here, and the deferral that was lifted was
+ * NOT what held `W` at zero.
+ *
  * **THE THREE GESTURES, AND THE FOUR MEASUREMENTS BEHIND THEM.** All four were
  * taken on the pinned binary on the import-placed low-boost board:
  *
