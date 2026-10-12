@@ -161,6 +161,61 @@ export const BASE_PLUS_WIRE_DUMP = BASE_DUMP.replace(
   "WIRE W2 AT 3,6 ENDS 3,6,0,0 3,7,0,0\nWIRE W3 AT 4,1 ENDS 4,1,0,0 4,2,0,0\n",
 )
 
+/**
+ * `BETTER_DUMP` with `R2` moved down to row 45, so the board DOES NOT FIT THE
+ * STOCK and its connectivity is untouched: `F = 0` and `HC6` is the constraint
+ * that fails.
+ *
+ * Both parts still sit on strips 1 and 6 - the strips are the COLUMNS here
+ * (`VERTICAL_STRIPS 1`) - so each net is whole on one strip exactly as in
+ * `BETTER_DUMP`, no wire is needed and `HC8`'s partition is the same. What
+ * changes is the row extent: `45 - 2 + 1 = 44` rows against the 34 the rules
+ * declare, which `HC6` refuses.
+ *
+ * **IT EXISTS SO THE SIBLING-ORDER TEST HAS A CONSTRAINT THE ACCEPTANCE RULE'S
+ * FIRST KEY IS BLIND TO.** That test needs a constraint one sibling repairs and
+ * a later sibling merely inherits broken, and `HC1` can no longer serve: the
+ * open-net count is the ordering's first key, so a candidate that leaves a net
+ * open is rejected against an incumbent that closed it - deliberately, and not
+ * because a regression was mis-measured. `HC6` is a fact about the extent, the
+ * scripted `--check` reports every net complete on all three boards, and the
+ * key is therefore constant across the round.
+ */
+export const TALL_DUMP = [
+  "GRID 60 40",
+  "BOUNDS 2,1 45,6",
+  "VERO_TRACKS 1",
+  "VERTICAL_STRIPS 1",
+  "CUT_STATE COMPUTED",
+  "PART R1 RESISTOR 10K AT 2,1 SPAN 6 DIRECTION W",
+  "PART R2 RESISTOR 22K AT 45,1 SPAN 6 DIRECTION W",
+  "PIN R1 1 AT 2,1",
+  "PIN R1 2 AT 2,6",
+  "PIN R2 1 AT 45,1",
+  "PIN R2 2 AT 45,6",
+  "NODE 1 NAME left R1.1 R2.1",
+  "NODE 2 NAME right R1.2 R2.2",
+  "",
+].join("\n")
+
+/**
+ * `TALL_DUMP` with three REDUNDANT wires, so the oversized board has a third
+ * distinct `F` without changing connectivity: `0 + 0.25*3 + 0 = 0.75`.
+ *
+ * Every wire joins two strips that carry no pin at all - 2 to 3, 7 to 8, 9 to
+ * 10 - so none of them touches a reference net and the copper partition over
+ * the pins is `TALL_DUMP`'s. The same argument `BASE_PLUS_WIRE_DUMP` makes for
+ * its one wire, and the reason three are used rather than one is only that
+ * `F = 0.75` is the figure the sibling-order test's script needs at its start.
+ */
+export const TALL_PLUS_WIRES_DUMP = TALL_DUMP.replace(
+  "NODE 2 NAME right R1.2 R2.2\n",
+  "NODE 2 NAME right R1.2 R2.2\n" +
+    "WIRE W1 AT 3,2 ENDS 3,2,0,0 3,3,0,0\n" +
+    "WIRE W2 AT 4,7 ENDS 4,7,0,0 4,8,0,0\n" +
+    "WIRE W3 AT 5,9 ENDS 5,9,0,0 5,10,0,0\n",
+)
+
 /** The reference export both boards are checked against - two parts, two nets. */
 export const NETLIST = [
   "( { EESchema Netlist Version 1.1 created  2026-10-11T00:00:00 }",
@@ -310,6 +365,11 @@ export function evaluation(overrides: Partial<Evaluation> = {}): Evaluation {
     ),
     ranking: [1, 1, 1, 1, 1],
     admissibleA1: true,
+    // ZERO, BECAUSE THE TEN RESULTS ABOVE SAY HC1 HOLDS: `requireSelfConsistent`
+    // refuses a positive count beside an HC1 that holds, so any other default
+    // would make every caller of this fixture refuse before it compared
+    // anything. A test about the completeness key overrides BOTH fields.
+    openNets: 0,
     ...overrides,
   }
 }

@@ -90,12 +90,24 @@ test("the owner's settled values are the ones the committed file carries", () =>
   // applies to them.
   const rules = loadRules()
   expect(rules.rhoWire).toBe(0.25)
-  expect(rules.rhoSolder).toBe(1)
+  // 0.25 AND NOT PAR1's 1, on the owner's instruction of 2026-10-12: "A solder
+  // blob will turn into a wire on my bench", so the price follows the artifact
+  // he builds. The value's warrant is in the rules file's own note and the
+  // departure from PAR1 is recorded in
+  // docs/superpowers/plans/2026-10-10-stripboard-pipeline.md; the spec is left
+  // as he wrote it, so this line failing against a 1 means the deviation was
+  // reverted and not that the file drifted.
+  expect(rules.rhoSolder).toBe(0.25)
   expect(rules.kappaBench).toBe(0.05)
   expect(rules.stockRows).toBe(34)
   expect(rules.stockCols).toBe(27)
-  // One cut costs as much as four wires, which is the claim rho_w encodes.
-  expect(rules.rhoSolder / rules.rhoWire).toBe(4)
+  // One cut costs as much as four wires, which is the claim rho_w encodes. It
+  // is written as 1 / rho_w because that is the claim: the line that stood here
+  // divided rho_s by rho_w and called the quotient the cut-to-wire ratio, which
+  // was true only while rho_s happened to equal a cut.
+  expect(1 / rules.rhoWire).toBe(4)
+  // And a blob costs what a wire costs, which is the claim rho_s now encodes.
+  expect(rules.rhoSolder).toBe(rules.rhoWire)
 })
 
 test("tau is null in the committed file - unset on purpose, with no number standing in", () => {

@@ -26,7 +26,6 @@ import { applicableMoves, enumerateMoves } from "../../tools/stripboard/moves.ts
 import { evaluationsToCross, type ArmRun } from "../../tools/stripboard/seed-compare.ts"
 import {
   BASE_DUMP,
-  BASE_PLUS_WIRE_DUMP,
   BETTER_DUMP,
   CHECK_COMPLETE,
   CHECK_INCOMPLETE,
@@ -43,6 +42,8 @@ import {
   rulesWithCap,
   rulesWithoutWorseAcceptance,
   scriptedSpawn,
+  TALL_DUMP,
+  TALL_PLUS_WIRES_DUMP,
   UNRESOLVED_DUMP,
   scriptedSpawnWithChecks,
   seededStart,
@@ -338,6 +339,13 @@ test("a climb that ends inadmissible says so, rather than reading as one that fo
   expect(result.best.score.objective).toBe(0)
   const failing = result.best.results.filter((entry) => !entry.held).map((entry) => entry.id)
   expect(failing).toEqual(["HC1"])
+  // AND THE OPEN-NET COUNT IS THE REPORT'S, NOT A CONSTANT: the scripted
+  // `--check` names `left` incomplete and `right` complete, so the one count the
+  // acceptance rule's first key reads is 1. Nothing else in this file asserts
+  // the wiring from the report to that field, and a field hard-coded to zero
+  // would make the key tie on every pair of boards and every completeness test
+  // in `./climb-accepts.test.ts` pass on hand-written numbers.
+  expect(result.best.openNets).toBe(1)
 })
 
 test("the climb evaluates at least the start, so Task 16's requireMeasured is satisfiable", () => {
@@ -446,23 +454,35 @@ test("a sibling's incidental repair does not reject the later siblings of its ow
   // hash cannot see, because the hash is over inputs and outcomes rather than
   // over a round's internal order.
   //
+  // **THE CONSTRAINT IS `HC6` AND IT USED TO BE `HC1`, WHICH IS A CHANGE THE
+  // COMPLETENESS KEY FORCED RATHER THAN A TIDY-UP.** The open-net count is now
+  // the acceptance ordering's first key, so a sibling that leaves a net open is
+  // rejected against an incumbent that closed one - deliberately, and whatever
+  // its `F`. With `HC1` as the repaired constraint this test could therefore no
+  // longer distinguish the bug from the rule: the later sibling would be
+  // rejected either way, and a test that passes under the bug is a test of
+  // nothing. `HC6` is a fact about the board's extent, the key is constant
+  // across the round because every scripted `--check` reports both nets
+  // complete, and the property under test is unchanged.
+  //
   // THE SCRIPT, three boards whose F strictly decreases, hand-checked against
   // the grader (each figure is `bun run` output on the fixture, not a guess):
-  //   evaluation 0, the start: BASE_PLUS_WIRE + an incomplete --check
-  //                            -> F = 0.75, HC1 broken, nine holding
+  //   evaluation 0, the start: TALL_PLUS_WIRES + a complete --check
+  //                            -> F = 0.75, HC6 broken (44 rows against 34),
+  //                               nine holding
   //   evaluation 1, round 0 move 0: BASE + a complete --check
-  //                            -> F = 0.50, all ten hold - it REPAIRS HC1 and
+  //                            -> F = 0.50, all ten hold - it REPAIRS HC6 and
   //                               is accepted, so it becomes the incumbent
-  //   evaluation 2, round 0 move 1: BETTER + an incomplete --check
-  //                            -> F = 0, HC1 broken exactly as its predecessor
+  //   evaluation 2, round 0 move 1: TALL + a complete --check
+  //                            -> F = 0, HC6 broken exactly as its predecessor
   //                               had it, and it broke nothing
   // Evaluation 2 is the best board in the run and caused no regression, so it
-  // must be accepted. Under the bug it was rejected as an HC1 regression
+  // must be accepted. Under the bug it was rejected as an HC6 regression
   // against evaluation 1, and the climb finished at F = 0.5 instead of F = 0.
   const runDir = freshRunDir()
   const dumps: DumpScript = (index) =>
-    index === 1 ? BASE_DUMP : index === 2 ? BETTER_DUMP : BASE_PLUS_WIRE_DUMP
-  const checks: CheckScript = (index) => (index === 1 ? CHECK_COMPLETE(index) : CHECK_INCOMPLETE(index))
+    index === 1 ? BASE_DUMP : index === 2 ? TALL_DUMP : TALL_PLUS_WIRES_DUMP
+  const checks: CheckScript = (index) => CHECK_COMPLETE(index)
   const result = climb(
     seededStart(runDir),
     climbInput(runDir, false),
@@ -472,11 +492,17 @@ test("a sibling's incidental repair does not reject the later siblings of its ow
   expect(result.history[1]).toBe(0.5)
   expect(result.history[2]).toBe(0)
   // BOTH siblings are accepted: the repair, and then the cheaper board that
-  // kept HC1 broken. Under the bug this was [1, ...] and never 2.
+  // kept HC6 broken. Under the bug this was [1, ...] and never 2.
   expect(result.acceptedPerRound[0]).toBe(2)
   expect(result.best.score.objective).toBe(0)
   // And the run still reports its own inadmissibility rather than hiding it:
-  // the best board has HC1 broken, which it inherited and did not cause.
+  // the best board has HC6 broken, which it inherited and did not cause.
   expect(result.best.admissibleA1).toBe(false)
-  expect(result.best.results.filter((entry) => !entry.held).map((entry) => entry.id)).toEqual(["HC1"])
+  expect(result.best.results.filter((entry) => !entry.held).map((entry) => entry.id)).toEqual([
+    "HC6",
+  ])
+  // AND THE FIRST KEY WAS CONSTANT, which is what makes the acceptance above
+  // attributable to the no-regression clause and to `F`: every board in the
+  // round reported both nets complete.
+  expect(result.best.openNets).toBe(0)
 })

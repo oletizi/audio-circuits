@@ -30,26 +30,35 @@ test("K5: a candidate scoring below its declared floor refuses, naming both numb
   expect(message).toStartWith("score-below-floor:")
   expect(message).toContain("99")
   expect(message).toContain("fixture")
-  expect(message).toContain("2.25")
+  expect(message).toContain("1.5")
   expect(message).toContain("floor")
 })
 
 test("K5 compares F against the floor, so a candidate AT its floor is kept", async () => {
   // THE BOUNDARY, which `F < F_floor` and `F <= F_floor` disagree about and
-  // which a single overstated-floor test cannot see. low-boost's F is 6, from
-  // COST §2.2's row, so a declared floor of 6 is met and 7 is not.
+  // which a single overstated-floor test cannot see. low-boost's F is 5.25 -
+  // COST §2.2's `C = 5` and `B = 1` at the committed `rhoSolder` of 0.25 - so a
+  // declared floor of 5.25 is met and 6 is not.
+  //
+  // **THE FLOOR IS WRITTEN AT `F` RATHER THAN AT AN INTEGER, AND THAT IS WHAT
+  // THE BOUNDARY CASE COSTS NOW.** A derived `C_floor = max(0, N - R)` is an
+  // integer, so `F = F_floor` is only reachable on a board with no wire and no
+  // blob once a blob is priced at a quarter; 5.25 is this fixture's way of
+  // putting a candidate exactly AT a declared floor, which is the only
+  // candidate `K5` must not reject and the only one `Q1` may report as
+  // `at-floor`. The 6 on the other side was the figure this test used until
+  // `rhoSolder` moved, and it is now the REFUSING case rather than the met one.
   //
   // MUTATION RUN: with the comparison written `objective <= targets.cutFloor`
   // the at-floor case failed with 'Expected: "" / Received: "score-below-
-  // floor: pultec-low-boost scores F = 6, below its declared floor of 6
+  // floor: pultec-low-boost scores F = 5.25, below its declared floor of 5.25
   // (C = 5, W = 0, B = 1). ..."' - a board provably AT its floor refused as
-  // impossible, which is the one candidate K5 must not reject, and the only
-  // one Q1 may report as `at-floor`. Reverted.
+  // impossible. Reverted.
   const text = await Bun.file(FROZEN_DUMP).text()
   const targets = lowBoostTargets()
   const rules = loadRules()
-  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 6 }, rules))).toBe("")
-  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 7 }, rules)))
+  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 5.25 }, rules))).toBe("")
+  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 6 }, rules)))
     .toStartWith("score-below-floor:")
 })
 

@@ -134,8 +134,10 @@ const NUMBERS: Readonly<Record<NumericParameter, NumberSpec>> = {
     integer: false,
     min: Number.MIN_VALUE,
     why:
-      "CRITERIA PAR1 prices a solder bridge as comparable to one cut, so a weight of " +
-      "zero or less would make bridges free or profitable",
+      "a derived solder bridge is a join somebody has to make - on the owner's bench by " +
+      "running a wire for it - so a weight of zero or less would make bridges free or " +
+      "profitable. The VALUE is in stripboard/rules.json with its warrant; this bound is " +
+      "only that it is positive",
   },
   kappaBench: {
     integer: false,

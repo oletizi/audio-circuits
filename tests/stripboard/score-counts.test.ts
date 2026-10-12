@@ -138,8 +138,10 @@ test("the scorer cannot be reached without the second path having run", () => {
   //     passed. The residual, recorded rather than hidden.
   // Probe removed.
   const counted = countLines(TEXT)
+  // 1.5 is `1 + 0.25*1 + 0.25*1` at the committed weights, hand-added;
+  // `./score-objective.test.ts` is where the weights themselves are asserted.
   expect(scoreDump(boardGeometry(TEXT), FIXTURE_TARGETS, loadRules(), counted).objective)
-    .toBe(2.25)
+    .toBe(1.5)
   // And the witness is held against the dump rather than taken on trust: a
   // count of some OTHER text in that position is refused, not believed. This
   // is the runtime half, and it is what makes the brand's residual narrow -

@@ -48,7 +48,12 @@ test("V2: the identity closes on the frozen dump with COST section 1.6's own ter
   expect([score.netCount, score.pinCount, score.occupied, score.cuts]).toEqual([9, 27, 5, 5])
   expect(score.joins).toBe(1)
   expect(score.clustering).toBeCloseTo(1 / 18, 10)
-  expect(score.objective).toBe(6)
+  // 5.25, NOT COST §2.2's 6: this board carries one SOLDER line, and the
+  // committed `rhoSolder` is 0.25 rather than PAR1's 1 on the owner's
+  // instruction that a blob is built as a wire. The spec's figure is checked at
+  // the spec's own weight in `./score-objective.test.ts`; here the committed
+  // weights are what the scorer is handed, so this is `5 + 0.25*1`.
+  expect(score.objective).toBe(5.25)
   expect([targets.netCount, targets.pinCount], "the model's N and P, which are NOT these")
     .toEqual([14, 50])
 })

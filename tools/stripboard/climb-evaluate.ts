@@ -27,7 +27,10 @@ import { scoreDumpText, type Score } from "./score.ts"
 import type { SpawnVeroroute } from "./seed.ts"
 import type { BoardTargets } from "./targets.ts"
 
-/** One candidate, measured: its number, its ten verdicts, and its place in the ranking. */
+/**
+ * One candidate, measured: its number, its ten verdicts, its place in the
+ * ranking, and how many of its nets are still open.
+ */
 export interface Evaluation {
   /** The painted board this was measured from - the file, not the move that made it. */
   readonly candidate: string
@@ -35,6 +38,35 @@ export interface Evaluation {
   readonly results: readonly ConstraintResult[]
   readonly ranking: readonly number[]
   readonly admissibleA1: boolean
+  /**
+   * How many nets `--check` reports as `incomplete` on this board.
+   *
+   * **IT IS NOT A SIXTH TERM OF `F` AND NOT A SIXTH POSITION OF THE RANKING.**
+   * It is the FIRST KEY of the acceptance rule's ordering
+   * (`./climb-accepts.ts`), and that file carries the CRITERIA reading for why
+   * it is there rather than in either of the other two places.
+   *
+   * **IT IS `CheckReport.incompleteNets.length` AND NOTHING ELSE** - the same
+   * field `HC1` reads, from the same report, parsed once per evaluation
+   * (`./constraints-electrical.ts`). So the search's first key and the hard
+   * constraint cannot disagree about whether a board conducts, and
+   * `requireSelfConsistent` in `./climb-accepts.ts` refuses a record where they
+   * do.
+   *
+   * **A `blocked` NET IS NOT COUNTED HERE, AND THAT IS A LIMIT RATHER THAN A
+   * CHOICE ABOUT COMPLETENESS.** `./check-report.ts` keeps `blocked` out of
+   * `incompleteNets` deliberately - it is a net with an UNPLACED member, which
+   * is `HC3`'s signal read from the other side - so on a board with a floating
+   * part some unjoined nets print `blocked` and this count does not see them.
+   * What closes that gap is the acceptance rule's no-regression clause, which
+   * rejects a candidate that breaks `HC3` where the predecessor held it; on a
+   * board whose start ALREADY floats a part, nothing here closes it. No run
+   * recorded in `docs/stripboard/pipeline-verification.md` has `HC3` in its
+   * failing set, so the gap is not live on the board this pipeline has measured
+   * - that is the evidence for the scope of the claim, and not a claim that the
+   * gap cannot exist.
+   */
+  readonly openNets: number
 }
 
 /**
@@ -164,6 +196,10 @@ export function measure(board: string, input: EvaluateInput, spawn: SpawnVerorou
       results,
       ranking: rankingTuple(score, dump, input.reference),
       admissibleA1: a1(results),
+      // THE SAME `checkReport` THE GRADER WAS HANDED, so HC1's verdict and the
+      // acceptance rule's first key are two readings of one report rather than
+      // two reports.
+      openNets: checkReport.incompleteNets.length,
     },
     dump,
     source: board,

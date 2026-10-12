@@ -50,7 +50,10 @@ export const RANKING =
   "board that costs more cuts to build is not an improvement), then wire bridges (fewest first: " +
   "each is a hand-run patch wire soldered across two strips, the costliest join this pipeline " +
   "makes), then solder bridges (fewest first: each is one blob of solder joining two strips, " +
-  "cheaper to make than a wire bridge but still a step a tighter layout can avoid), then A_occ " +
+  "which the owner does not build as a blob - \"A solder blob will turn into a wire on my " +
+  "bench\" - so it is priced as a wire and ordered below one only because VeroRoute chooses " +
+  "where it goes while a wire is placed deliberately; either way it is a join a tighter layout " +
+  "can avoid), then A_occ " +
   "(smallest first: the occupied board area read straight off BOUNDS, settled strictly below " +
   "every construction-cost term above so a smaller board can never outrank one that is cheaper " +
   "to build, and present only to break a tie the three costs above leave equal), then " +

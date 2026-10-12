@@ -322,10 +322,14 @@ export function requireCountsAgree(
  * `F = C + ρ_w·W + ρ_s·B` (OBJ1, COST §4.1), and the one place that
  * arithmetic lives.
  *
- * Both weights are arguments rather than constants: `ρ_w = 0.25` and
- * `ρ_s = 1` are the owner's (CRITERIA PAR1, recorded with their reasoning in
- * `stripboard/rules.json`'s notes), and anybody wanting different ones edits
- * that file under `K3`'s ratchet, not this function.
+ * Both weights are arguments rather than constants: they are the owner's
+ * (CRITERIA PAR1, recorded with their reasoning in `stripboard/rules.json`'s
+ * notes), and anybody wanting different ones edits that file under `K3`'s
+ * ratchet, not this function. **No figure for either is written here**, which
+ * is why this comment did not go stale when `ρ_s` moved from PAR1's 1 to the
+ * price of a wire on the owner's instruction (recorded as a deviation in
+ * `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`); the note in the
+ * rules file is where a value and its warrant live together.
  */
 export function objectiveOf(counts: LineCounts, rules: StripboardRules): number {
   return counts.cuts + rules.rhoWire * counts.wires + rules.rhoSolder * counts.solder

@@ -112,6 +112,12 @@ export function evaluation(
     results,
     ranking: [],
     admissibleA1: results.every((result) => result.held),
+    // The stopping rules read the ten results and the counters, never this
+    // count, so every fixture here states the one value consistent with the
+    // results it was handed: zero where HC1 holds, and one net open where the
+    // caller broke it. `./climb-fixtures.ts` is where the acceptance rule's
+    // first key is exercised.
+    openNets: results.some((result) => result.id === "HC1" && !result.held) ? 1 : 0,
   }
 }
 
