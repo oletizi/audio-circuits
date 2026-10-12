@@ -90,8 +90,12 @@
  * GATHER, seed 0 reaches `F` 10 on `constructed` in 32 rounds and 4,150
  * evaluations and `F` 11 on `random` in 63 rounds and 9,698, while `import`
  * stays at 36 because no gather is proposable on a board packed into three rows.
- * Those three are the current figures; the ranges above are the arm
- * comparison's, measured before the gather existed.
+ * **§6.7 IS THE WHOLE SEED SET UNDER THAT MOVE SET** and supersedes the ranges
+ * above outright: `constructed` reaches `F` 10, 10, 10, 11 and 13 in 30 to 45
+ * rounds and 3,712 to 5,767 evaluations; `random` 11, 12, 13, 15 and 13 in 41 to
+ * 63 rounds and 6,501 to 9,698; `import` 36 on every seed in 3 rounds and 83.
+ * All fifteen stopped on `S3`, none reached the cap, and every one ended
+ * inadmissible.
  *
  * **THE START IS INADMISSIBLE AND THAT IS NORMAL.** `./seed.ts` records that
  * all three arms begin from a board whose nets are incomplete - 19, 13, 7 and 6

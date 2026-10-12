@@ -242,8 +242,20 @@ export interface ComparisonInput {
  * own last clause firing, *"a run in which every arm scored zero measured the
  * budget, not the arms"*. `docs/stripboard/pipeline-verification.md` §6.3 has
  * the per-seed table and what that rate is a rate over. The TIEBREAK this rule
- * names for that case - final `F` per seed - goes to the control arm on four of
- * the five seeds, and it retires nothing.
+ * names for that case - final `F` per seed - went to the control arm on four of
+ * the five seeds, and it retired nothing.
+ *
+ * **AND THAT TIEBREAK INVERTED WHEN THE MOVE SET WAS COMPLETED.** §6.3's run was
+ * measured before `E1`'s GATHER existed - the move §7.4's own justification
+ * describes, which the one-delta cluster cannot perform - so it was a rate about
+ * a search missing its main move. §6.7 is the same comparison re-run with the
+ * gather in: **the rate is zero on every arm again**, and the tiebreak goes to
+ * `constructed` on four seeds with a tie on the fifth, mean final `F` 10.8
+ * against the control's 12.8. Both runs stand; neither retires anything, because
+ * the decision variable is the RATE and it has never separated the arms. What
+ * changed is which way the evidence points if it ever does - and a reader
+ * reaching for this rule should know that the pre-gather reading was reversed by
+ * implementing a move the plan always specified.
  */
 export const RETIREMENT =
   "The decision variable is the success rate: how many of the seed set's seeds met the mark, " +

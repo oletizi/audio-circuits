@@ -24,8 +24,10 @@ driven against the real binary from each starting arm (§5). And Task 18's
 escapes: what `E1` as specified does and does not do, what the search's
 import-closure scan found, CHECKPOINT 3 - the measured arm comparison, whose
 rate is zero on all three arms - what the cluster move did to `F`, the stretch
-defect the comparison found on the way, and CHECKPOINT 4, the GATHER that takes
-the constructed arm from 16 cuts to 10 (§6).
+defect the comparison found on the way, CHECKPOINT 4, the GATHER that takes the
+constructed arm from 16 cuts to 10, and CHECKPOINT 5, the comparison re-run with
+the complete move set - still 0 of 5 on every arm, with the tiebreak inverted
+(§6).
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -1300,9 +1302,10 @@ rates: constructed 0/5 import 0/5 random 0/5
 and which is the move `E1`'s own justification describes: so a rate of zero on
 every arm is a fact about this move set and must not be read as a verdict on the
 arms, because the lever COST calls dominant was absent from all three of them.
-The comparison is NOT re-run to chase a better number - the same reason the
-standing ruling beside `RETIREMENT` gives for not reading a retirement against a
-non-rate.
+**§6.7 IS THE SAME COMPARISON RE-RUN WITH THE MOVE SET COMPLETE** - the rate is
+zero again and the TIEBREAK INVERTS - and the numbers below are left exactly as
+they were measured, because both runs are evidence and the difference between
+them is itself the finding.
 
 **What that rate is a rate over, exactly:** how many of the five reviewed seeds
 produced a run meeting `B1-frozen`'s mark on ALL of its clauses, on the
@@ -1535,3 +1538,124 @@ flattering in this plan so far:
 - **the gather's own schedule is one declared order**, and a gather it cannot
   sequence is not proposed. Nothing has measured how often another order would
   have placed one it rejected.
+
+### 6.7 CHECKPOINT 5 — the arm comparison RE-RUN with the gather: still 0 of 5, and **the tiebreak inverts**
+
+§6.3's rate was measured with the gather absent from all three arms, so it is a
+rate about a search missing its main move. This is the same comparison with the
+move set complete: **same five reviewed seeds, same import-placed low-boost
+board, same committed rules at `evaluationCap` 20,000, same `FROZEN_MARK`, same
+replay-runner harness — the move set is the only thing that changed.** 15 runs,
+281,935 fork invocations, 58.5 minutes of search.
+
+**§6.3 IS NOT EDITED.** Both runs are evidence and the comparison between them is
+itself the finding, so the pre-gather table stays where it is with its own
+annotation and this is a separate section.
+
+| arm | seed | `F` | `C` | `W` | `metMark` | `evaluationsToCross` | `startAdmissible` | `admissibleA1` | nets complete | evaluations | rounds | failing |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 0 | **10** | 10 | 0 | false | never | false | false | false | 4150 | 32 | `HC1 HC5 HC6 HC8 HC9 HC10` |
+| `constructed` | 1 | **10** | 10 | 0 | false | never | false | false | false | 4150 | 32 | `HC1 HC5 HC6 HC8 HC9 HC10` |
+| `constructed` | 2 | **10** | 10 | 0 | false | never | false | false | false | 4243 | 32 | `HC1 HC5 HC6 HC8 HC9 HC10` |
+| `constructed` | 3 | **11** | 11 | 0 | false | never | false | false | false | 5767 | 45 | `HC1 HC5 HC6 HC8 HC9 HC10` |
+| `constructed` | 4 | **13** | 13 | 0 | false | never | false | false | false | 3712 | 30 | `HC1 HC5 HC6 HC8 HC9 HC10` |
+| `import` | 0–4 | **36** | 36 | 0 | false | never | false | false | false | 83 | 3 | `HC1 HC6 HC8 HC10` |
+| `random` | 0 | **11** | 10 | 0 | false | never | false | false | false | 9698 | 63 | `HC1 HC8 HC10` |
+| `random` | 1 | **12** | 12 | 0 | false | never | false | false | false | 6501 | 41 | `HC1 HC8 HC10` |
+| `random` | 2 | **13** | 13 | 0 | false | never | false | false | false | 8087 | 52 | `HC1 HC8 HC10` |
+| `random` | 3 | **15** | 13 | 0 | false | never | false | false | false | 8948 | 60 | `HC1 HC8 HC10` |
+| `random` | 4 | **13** | 13 | 0 | false | never | false | false | false | 8349 | 57 | `HC1 HC6 HC8 HC10` |
+
+**THE RATE IS UNCHANGED AND IT IS STILL ZERO:**
+
+```
+separated: false
+retireable: []
+rates: constructed 0/5 import 0/5 random 0/5
+```
+
+**What it is a rate over, exactly:** how many of the five reviewed seeds
+`[0,1,2,3,4]` produced a run meeting `B1-frozen`'s mark on ALL of its clauses —
+`C <= 5`, `W = 0`, every net complete — on the import-placed `pultec-low-boost`
+board, one `search` per seed with one climb in it, under the committed rules at a
+20,000-evaluation cap. **No run met it: the best is `C = 10` against a bar of 5,
+and every net is still incomplete on all fifteen.** `evaluationsToCross` is
+`never` on all fifteen, because the crossing figure is `F <= 5`. All fifteen
+stopped on `S3`; none reached the cap. Nothing is retireable, by `RETIREMENT`'s
+own last clause — a run in which every arm scored zero measured the budget, not
+the arms.
+
+#### THE TIEBREAK INVERTED, and the pre-gather conclusion was backwards
+
+`RETIREMENT` names final `F` per seed as the tiebreak for exactly the case where
+no arm reaches the mark. Side by side:
+
+| seed | `constructed` pre → post | `random` pre → post | pre-gather winner | post-gather winner |
+| --- | --- | --- | --- | --- |
+| 0 | 16 → **10** | 14 → 11 | `random` | **`constructed`** |
+| 1 | 16 → **10** | 13 → 12 | `random` | **`constructed`** |
+| 2 | 16 → **10** | 14 → 13 | `random` | **`constructed`** |
+| 3 | 16 → **11** | 17 → 15 | `constructed` | **`constructed`** |
+| 4 | 17 → **13** | 15 → 13 | `random` | **tie at 13** |
+
+**Pre-gather the control won four of five seeds; post-gather the constructed arm
+wins four and ties the fifth, and loses none.** Mean final `F` goes from
+`constructed` 16.2 / `random` 14.6 to `constructed` 10.8 / `random` 12.8. So the
+pre-gather reading — *"the control wins twice running"* — is not merely
+incomplete: **with the dominant lever implemented it is reversed.** §5.9's
+one-seed observation and §6.3's five-seed tiebreak were both taken from a search
+that did not have the move the construction's own advantage depends on.
+
+**That still retires nothing and selects nothing.** The decision variable is the
+RATE, it is zero on every arm, and a tiebreak inside a run where nothing met the
+mark is evidence for a later comparison rather than a verdict. `random` remains
+the control and cannot be retired by this experiment at all; `constructed` and
+`import` are not retireable because neither rate exceeds the control's zero.
+What has changed is which way the evidence points if a rate ever separates them.
+
+#### `import` proposed ZERO gathers, on every seed, and that is a fact about the arm
+
+Measured, not inferred: across its five runs the enumeration emitted
+`single=79 cluster=3` per run and **no gather at all**. `--import`'s first-fit
+sweep packs all seventeen parts into rows 0–2 of a 35-row board, the gather's
+delta crosses the strips, so every part's destination is another part's footprint
+and no sequence completes in any pass.
+
+**So the import arm is not competing on the same terms as the other two.** It is
+the only arm whose own start denies it the dominant move, which is a property of
+where `--import` leaves the parts rather than of luck or of the seed — and it is
+why its `F` is identical on all five seeds and unchanged across every run in this
+document: 36, three rounds, 83 evaluations. An arm that cannot use the move the
+comparison turns on is a row in the table that measures the placer, not the
+search.
+
+#### Where the gathers actually fired
+
+| arm | gather candidates (5 runs) | new-best-`F` steps | of those, gathers | of those, clusters |
+| --- | --- | --- | --- | --- |
+| `constructed` | 767 | 34 | **12** | 0 |
+| `import` | 0 | 15 | 0 | 0 |
+| `random` | 1,054 | 56 | **3** | 4 |
+
+The biggest single steps in the whole document are gathers on the constructed
+arm: `gather r1-m147 F 15 -> 11` on seed 3 — **four cuts in one candidate** — and
+`gather r0-m114 F 19 -> 16` on seeds 0 and 1. On `random` the gathers fire on
+three of five seeds and carry one cut each; its improvement over §6.3 is mostly
+trajectory, exactly as §6.6 said of seed 0.
+
+**No compound gesture was refused by the binary** in any of the fifteen runs:
+35,907 `--move --delta` invocations across the clusters and gathers — 11,802 on
+`constructed`, 24,060 on `random`, 45 on `import` — every one accepted.
+
+#### What this still does not establish
+
+- **the mark is not met and nobody has argued it is reachable on this board**:
+  `C = 10` against 5, `HC1` failing on all fifteen, `A1` false everywhere, `κ`
+  still far from the bench;
+- **one board, one budget, one climb per seed.** The rate is over the five
+  reviewed seeds and nothing wider;
+- **`constructed` starts inadmissible on `HC5` and `HC9`** — the lead-span
+  constraints — on all five seeds, which §5.9 flagged as a defect no gesture can
+  repair, and the gather has not changed that;
+- **the two sweeps are not a controlled A/B on the gather alone for `random`**,
+  whose trajectory differs for the reason §6.6 gives.
