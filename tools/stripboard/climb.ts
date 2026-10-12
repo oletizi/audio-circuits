@@ -17,18 +17,27 @@
  * in `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md` under
  * *"Deviations from the specs"*.
  *
+ * **AND THE ORDERING'S FIRST KEY IS THE OPEN-NET COUNT, which is the second
+ * named departure and is recorded in the same place.** `./climb-accepts.ts`
+ * carries the CRITERIA reading for why completeness is a key above `F` rather
+ * than a term in it or a position in `RANKING`.
+ *
  * **ACCEPTANCE, EXACTLY, AND NOTHING ELSE:** **no regression** - a candidate
  * that breaks a hard constraint which held on the board the move was applied to
- * is rejected, whatever its `F` - then `ΔF < 0`, or `ΔF = 0` with a strictly
- * better ranking tuple, and then, only when `stripboard/rules.json` configures a
- * bound, `E3`'s bounded worse-acceptance. The committed rules leave that bound
- * unset, so no run in this repository has taken a worse candidate.
+ * is rejected, whatever its `F` - then **fewer open nets wins and more open nets
+ * loses, whatever `F` does**, then `ΔF < 0`, or `ΔF = 0` with a strictly better
+ * ranking tuple, and then, only when `stripboard/rules.json` configures a bound,
+ * `E3`'s bounded worse-acceptance. The committed rules leave that bound unset,
+ * so no run in this repository has taken a worse candidate.
  *
  * **THE INCUMBENT AND THE BEST ARE TWO RECORDS, AND `E3` IS WHY.** The incumbent
  * is the board the next round sweeps from and what `ΔF` is measured against, and
  * under a configured bound it can get WORSE - that is the escape doing its job.
  * `ClimbResult.best` is the best candidate the climb saw, by the same
- * `strictlyBetter` the acceptance rule uses, and it only ever improves. With the
+ * `strictlyBetter` the acceptance rule uses, and it only ever improves **in that
+ * ordering, which is no longer the same thing as improving in `F`**: the
+ * ordering's first key is the open-net count, so a board that closes a net at a
+ * higher `F` becomes the best and `history` rises at that step. With the
  * bound unset the two coincide, because every acceptance then improves on the
  * incumbent; a climb that reported its walk position as its result would be
  * indistinguishable until the first bound was configured, which is why they are
@@ -255,7 +264,9 @@ export interface ClimbResult {
  * it a sweep rather than a walk: a move enumerated for one board and applied to
  * a different one is a gesture nobody proposed - the part has moved, so the
  * origin the move names is no longer the origin the model checked. The best
- * candidate found becomes the next round's base, so `best` only ever improves.
+ * candidate found becomes the next round's base, so `best` only ever improves in
+ * the acceptance rule's ordering - see `ClimbResult.best`, and note that the
+ * ordering is not `F`.
  *
  * `S1` (at the floor), `S2` (within `tau` of it) and `S4`/`Q4` (yield
  * collapsed) are NOT here: they are reported by Task 19 from these counters, and
