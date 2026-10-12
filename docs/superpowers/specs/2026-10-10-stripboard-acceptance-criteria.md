@@ -61,6 +61,30 @@ govern the `notes` entries in `stripboard/rules.json`:
 
 **No value, threshold or requirement changed when the labels were added** (2026-10-12, on the
 owner's instruction to fix the provenance ambiguity). The labelling is the whole of that change.
+Of the 17 distinct `[owner]` items across this document and `stripboard/rules.json`, **9 carry a
+verbatim quote and 8 do not**, and all 8 now say so. Two near-misses are worth naming because both
+would have been easy to manufacture: **nothing verbatim is on record about HC6's 27 columns** —
+only about the strips, *"about 35"* — and §10's *"Start hard at 0.05 and back off only on
+evidence"* is an agent's summary of an outcome, not his speech.
+
+**The other tags were checked at the same time and are unchanged; what was found is recorded here
+rather than acted on, because a tag change is a different concern.** Both findings are agent-written
+and are the owner's to settle or reject.
+
+- **`[external]` spans three provenances the one tag cannot distinguish.** A vendor saying the
+  number (HC5/HC9/PAR2's span bounds, IPC-A-610E) is independently checkable by a second person
+  against a datasheet. Another codebase already doing it this way (OBJ3's ranking shape, Q6's
+  three, the seed list, G2's hashed-manifest shape, G3, PAR3's strict schema-versioned shape) is
+  an inherited convention nobody asserts, and the argument for it is agent-written in exactly the
+  pattern the three labels above were introduced to fix. The owner's own hand layout (B1-frozen's
+  `C ≤ 5` and `W = 0`) is a third thing again. Only the first is the invariant's "standing reviewed
+  rule library" in the sense the parent means.
+- **`[review]` does not carry the owner's authority, but three bare adjudication verbs do.** No
+  `[review]` item carries or implies a quote of his. But the tag's row above promises that a review
+  finding is adjudicated by the owner and that a rejection is recorded beside the criterion, and
+  REP5's *"accepted"*, G4's *"accepted"* and HC9's *"Rejected:"* name no actor — so the promise
+  lends his authority to three adjudications with no record of who performed them. Naming the actor
+  at each would close it.
 
 **The naming collision, and the mapping, stated once.** PIPELINE carries two numbered tables
 whose prefixes collide: hard constraints `H1`–`H10` without a hyphen, honest limits `H-1`–`H-13`
