@@ -212,12 +212,33 @@ test("a move that newly breaks HC6 is rejected, however much cheaper the board i
   expect(against(neverFitted, stillDoesNotFitButCheaper, rulesWithoutWorseAcceptance())).toBe(true)
 })
 
-test("a configured worseAcceptance refuses rather than being climbed without", () => {
-  // E3 is Task 18's. A bound present in the rules and ignored here would make
-  // the run record claim a search behaviour that did not happen.
-  const refusal = refusalFrom(() => against(base, base, rulesWithWorseAcceptance(2)))
-  expect(refusal).toContain("worseAcceptance = 2")
-  expect(refusal).toContain("Task 18")
+test("a configured worseAcceptance changes the rule and does not refuse", () => {
+  // THIS TEST ASSERTED A REFUSAL UNTIL TASK 18, AND IT IS REWRITTEN RATHER THAN
+  // DELETED so the change is visible: while E3 was unimplemented, a bound
+  // present in the rules had to refuse, because a configured search behaviour
+  // that did not run would make the run record claim something that did not
+  // happen. E3 is implemented now, so the bound runs - and what it buys is in
+  // `./escapes-search.test.ts`, which holds the bound's own arithmetic.
+  //
+  // What is held HERE is the half this file is about: the bound does not reach
+  // past the no-regression clause. A candidate within the bound that breaks a
+  // constraint its predecessor held is still rejected.
+  const withinTheBound = {
+    ...base,
+    score: { ...base.score, objective: base.score.objective + 1 },
+  }
+  expect(against(base, withinTheBound, rulesWithWorseAcceptance(2))).toBe(true)
+  const withinTheBoundButBroken = {
+    ...withinTheBound,
+    admissibleA1: false,
+    results: base.results.map((result) =>
+      result.id === "HC1" ? { ...result, held: false } : result,
+    ),
+  }
+  expect(against(base, withinTheBoundButBroken, rulesWithWorseAcceptance(2))).toBe(false)
+  // And with the committed rules, which leave the bound unset, the same
+  // candidate is rejected on F alone.
+  expect(against(base, withinTheBound, rulesWithoutWorseAcceptance())).toBe(false)
 })
 
 test("an Evaluation whose admissibleA1 disagrees with its own results refuses", () => {

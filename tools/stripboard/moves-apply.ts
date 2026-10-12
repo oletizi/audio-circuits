@@ -30,8 +30,17 @@ import type { SpawnVeroroute } from "./seed.ts"
  */
 export type GestureTransport = "one-gesture-per-launch" | "batched"
 
-/** The ops-file grammar's own vocabulary: the only two gestures `--move-batch` accepts. */
-const BATCHABLE_KINDS: readonly Move["kind"][] = ["move", "rotate"]
+/**
+ * The ops-file grammar's own vocabulary: the gestures `--move-batch` accepts.
+ *
+ * `cluster` is here because it is SEVERAL `move` lines, each in the grammar's own
+ * relative spelling - and batching it buys more than a launch. The verb is
+ * TRANSACTIONAL in the fork's own words: *"either the whole batch applies and
+ * OUTPUT is written, or the whole batch is refused and OUTPUT IS NEVER
+ * CREATED"*, which is what a compound gesture wants. The one-gesture transport
+ * gets the same guarantee about `out` a different way, below.
+ */
+const BATCHABLE_KINDS: readonly Move["kind"][] = ["move", "rotate", "cluster"]
 
 function refuseDeferred(kind: Move["kind"]): never {
   const reason = DEFERRED_KINDS.get(kind)
@@ -78,15 +87,67 @@ function gestureFor(move: Move, board: string, out: string): readonly string[] {
       // is refused below rather than applied as a gesture it does not describe.
       return ["--author", board, "--op", "add-wire", "--at", `${move.at[0]},${move.at[1]}`, "-o", out]
     case "delete-wire":
-    case "cluster":
       return refuseDeferred(move.kind)
+    case "cluster":
+      throw new Error(
+        "applyMove: a cluster is SEVERAL gestures and has no single argument list. It is applied " +
+          "by clusterGestures below, one --move --delta per part in the order the move records, " +
+          "or by one --move-batch when the batched transport is asked for. Reaching here means " +
+          "applyMove's cluster branch was removed.",
+      )
   }
 }
 
-/** The ops-file line for a batchable gesture, in `--move-batch`'s own grammar. */
-function opsLineFor(move: Move): string {
-  if (move.kind === "move") return `move ${move.ref} --to ${move.to[0]},${move.to[1]}`
-  if (move.kind === "rotate") return `rotate ${move.ref} --direction ${move.direction}`
+/**
+ * One `--move --delta` per part of a cluster, in the order the move records.
+ *
+ * **`--delta` AND NOT `--to`, WHICH IS WHAT KEEPS THIS MODULE FREE OF THE
+ * BOARD.** An absolute destination would need each part's current `AT`, which
+ * means reading the board here - a fifth invocation per candidate the recorded
+ * cost model (four) does not account for, and a second reader of a geometry the
+ * enumerator already holds. The fork's own header says why `--delta` exists:
+ * *"the GUI gesture is relative and ... M1.3's zero-delta case has to be
+ * reachable by the spelling an optimiser will produce."* A unit delta is never
+ * zero, so the zero-delta refusal cannot fire on a cluster.
+ *
+ * Each gesture reads the previous one's output and only the LAST writes `out`,
+ * which is what makes a refused cluster leave `out` absent: the staged files are
+ * scratch beside it and the candidate is never created.
+ */
+function clusterGestures(
+  board: string,
+  move: Extract<Move, { kind: "cluster" }>,
+  out: string,
+): readonly (readonly string[])[] {
+  const gestures: (readonly string[])[] = []
+  let current = board
+  move.refs.forEach((ref, index) => {
+    const target = index === move.refs.length - 1 ? out : `${out}.cluster-${index}.vrt`
+    gestures.push([
+      "--move",
+      current,
+      "--ref",
+      ref,
+      "--delta",
+      `${move.delta[0]},${move.delta[1]}`,
+      "-o",
+      target,
+    ])
+    current = target
+  })
+  return gestures
+}
+
+/** The ops-file lines for a batchable gesture, in `--move-batch`'s own grammar. */
+function opsLinesFor(move: Move): readonly string[] {
+  if (move.kind === "move") return [`move ${move.ref} --to ${move.to[0]},${move.to[1]}`]
+  if (move.kind === "rotate") return [`rotate ${move.ref} --direction ${move.direction}`]
+  // ONE LINE PER PART, IN THE MOVE'S OWN ORDER, which the verb applies "in the
+  // order the ops file lists them" - so the sequence the model checked is the
+  // sequence the fork takes.
+  if (move.kind === "cluster") {
+    return move.refs.map((ref) => `move ${ref} --delta ${move.delta[0]},${move.delta[1]}`)
+  }
   throw new Error(
     `applyMove: a "${move.kind}" move has no --move-batch ops line. The ops grammar is "move ` +
       '<name> --to <row>,<col>", "move <name> --delta <row>,<col>" and "rotate <name> ' +
@@ -127,25 +188,42 @@ export function applyMove(
         "through enumerateMoves, which sets both from the same hole.",
     )
   }
-  const batched = transport === "batched" && BATCHABLE_KINDS.includes(move.kind)
-  let args: readonly string[]
-  if (batched) {
-    const opsFile = `${out}.ops`
-    fs.writeFileSync(opsFile, `${opsLineFor(move)}\n`)
-    args = ["--move-batch", board, "--ops", opsFile, "-o", out]
-  } else {
-    args = gestureFor(move, board, out)
-  }
-  const result = spawn(args)
-  if (result.status !== 0) {
+  if (move.kind === "cluster" && move.refs.length === 0) {
     throw new Error(
-      `applyMove: ${describeMove(move)} exited ${result.status}, so this candidate was not ` +
-        `produced. The gesture was: ${args.join(" ")}\n${result.stdout}${result.stderr}\nIt is ` +
-        "NOT retried, NO weaker gesture is substituted and the candidate is NOT skipped: " +
-        "enumerateMoves proposes only gestures tools/stripboard/seed-placement.ts's transcribed " +
-        "arithmetic says will land, so a refusal here means that model and the binary disagree " +
-        "about what is placeable - which is the finding, not a candidate to drop. Check the " +
-        "part's rect against VEROROUTE_FOOTPRINT_ROWS and the fork's own message above.",
+      `applyMove: this cluster of "${move.net}" names no parts, so there is no gesture to apply ` +
+        "and the candidate would be byte-identical to its own parent - which is the fork's own " +
+        "reason for refusing an empty ops file and a zero delta. It is NOT written as a copy: a " +
+        "candidate that cannot differ from its parent would be scored, counted and compared " +
+        "against it. A net whose parts are all floating legitimately yields no cluster, and " +
+        "tools/stripboard/moves-cluster.ts's clusterMove declines to propose one; reaching here " +
+        "means a caller built the move itself.",
     )
   }
+  const batched = transport === "batched" && BATCHABLE_KINDS.includes(move.kind)
+  const launches: readonly (readonly string[])[] = batched
+    ? [batchLaunch(move, board, out)]
+    : move.kind === "cluster"
+      ? clusterGestures(board, move, out)
+      : [gestureFor(move, board, out)]
+  for (const args of launches) {
+    const result = spawn(args)
+    if (result.status !== 0) {
+      throw new Error(
+        `applyMove: ${describeMove(move)} exited ${result.status}, so this candidate was not ` +
+          `produced. The gesture was: ${args.join(" ")}\n${result.stdout}${result.stderr}\nIt is ` +
+          "NOT retried, NO weaker gesture is substituted and the candidate is NOT skipped: " +
+          "enumerateMoves proposes only gestures tools/stripboard/seed-placement.ts's transcribed " +
+          "arithmetic says will land, so a refusal here means that model and the binary disagree " +
+          "about what is placeable - which is the finding, not a candidate to drop. Check the " +
+          "part's rect against VEROROUTE_FOOTPRINT_ROWS and the fork's own message above.",
+      )
+    }
+  }
+}
+
+/** The one `--move-batch` invocation, with its ops file written beside the candidate. */
+function batchLaunch(move: Move, board: string, out: string): readonly string[] {
+  const opsFile = `${out}.ops`
+  fs.writeFileSync(opsFile, `${opsLinesFor(move).join("\n")}\n`)
+  return ["--move-batch", board, "--ops", opsFile, "-o", out]
 }

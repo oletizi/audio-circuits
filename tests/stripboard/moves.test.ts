@@ -117,7 +117,10 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   //               `right` holds 2,6 and 7,7 (strips 6 and 7): one
   //               cross-strip pair each                                    = 2
   //   delete-wire the two WIRE lines, W1 and W2                            = 2
-  //   cluster     2 nets x 4 one-hole deltas                               = 8
+  //   cluster     2 nets x 4 one-hole deltas, and all eight land: each net
+  //               holds a pin of BOTH parts, so every cluster moves R1 and R2
+  //               together, and on a 12x40 grid the pair fits one hole in
+  //               every direction from 2,1 and 7,2                          = 8
   //                                                                        ---
   //                                                                         26
   const moves = enumerateMoves(OCC, DUMP, REFERENCE)
@@ -130,13 +133,14 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   expect(counted.get("delete-wire")).toBe(2)
   expect(counted.get("cluster")).toBe(8)
   expect(moves.length).toBe(26)
-  // And the applicable subset is the 26 less the THREE deferred kinds' 12: the
-  // eight clusters, the two delete-wires and the two add-wires. `rotate` was
-  // deferred for one round of this task and is back: a turn's result is now
-  // carried in the occupancy rather than re-read from a dump that cannot
-  // describe it. This figure moving is the signal that the deferred set changed.
-  expect(applicableMoves(moves).length).toBe(14)
-  expect([...DEFERRED_KINDS.keys()].sort()).toEqual(["add-wire", "cluster", "delete-wire"])
+  // And the applicable subset is the 26 less the TWO deferred kinds' 4: the two
+  // delete-wires and the two add-wires. It was 14 while `cluster` was deferred
+  // as well, and Task 18 implemented that kind - which is exactly what this
+  // figure moving is meant to signal. `rotate` was deferred for one round of
+  // Task 17 and is also back: a turn's result is carried in the occupancy rather
+  // than re-read from a dump that cannot describe it.
+  expect(applicableMoves(moves).length).toBe(22)
+  expect([...DEFERRED_KINDS.keys()].sort()).toEqual(["add-wire", "delete-wire"])
 })
 
 test("only the clockwise turn is proposed, because only that case is transcribed", () => {
@@ -297,25 +301,26 @@ test("a kind --move-batch cannot carry takes its one-gesture verb even when batc
   ])
 })
 
-test("a cluster move refuses naming Task 18, and a delete-wire naming the fork", () => {
+test("a delete-wire refuses naming the fork, and an add-wire naming the measurement", () => {
+  // THE CLUSTER HALF OF THIS TEST IS GONE RATHER THAN SKIPPED, because the
+  // refusal it asserted is gone: Task 18 implemented the kind, so
+  // DEFERRED_KINDS no longer carries it and applyMove applies it.
+  // `./escapes.test.ts` is where the cluster's own behaviour is held.
   const { spawn } = recorder()
   const out = path.join(freshRunDir(), "candidate.vrt")
-  const cluster = refusalFrom(() =>
-    applyMove("board.vrt", { kind: "cluster", net: "left", delta: [1, 0] }, out, spawn),
-  )
-  expect(cluster).toContain("Task 18")
-  expect(cluster).toContain("NOT SKIPPED")
   const wire = refusalFrom(() =>
     applyMove("board.vrt", { kind: "delete-wire", name: "W1" }, out, spawn),
   )
   expect(wire).toContain("no verb in the pinned fork deletes a placed component")
   // ONE WORDING for each, read out of DEFERRED_KINDS by both applyMove and
   // applicableMoves - so the climb's omission and the refusal cannot drift.
-  for (const kind of ["cluster", "delete-wire"] as const) {
-    const reason = DEFERRED_KINDS.get(kind)
-    expect(reason === undefined).toBe(false)
-    expect(kind === "cluster" ? cluster : wire).toContain(reason ?? "<absent>")
-  }
+  const reason = DEFERRED_KINDS.get("delete-wire")
+  expect(reason === undefined).toBe(false)
+  expect(wire).toContain(reason ?? "<absent>")
+  // And add-wire is still deferred on its own measured ground, which is NOT a
+  // task waiting to be done: the wire anchors only at a FREE hole and this
+  // enumeration anchors at a PIN hole.
+  expect(DEFERRED_KINDS.get("add-wire")).toContain("cannot join two strips")
 })
 
 test("an add-wire whose at and first end disagree refuses rather than applying either", () => {

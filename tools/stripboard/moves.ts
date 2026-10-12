@@ -19,15 +19,18 @@
  * `tests/stripboard/moves.test.ts` holds the net order by reversing the
  * reference map and demanding the cluster moves reverse with it.
  *
- * **EVERY MOVE HERE IS EXACTLY ONE GESTURE, SO NO GESTURE ORDER IS BAKED IN.**
- * `tools/stripboard/seed-placement.ts`'s `GESTURE_ORDERS` exists because a turn
- * and a stretch need different clearance in each order - measured on
- * `SI_HI_CUT_R1`, 0 of 1225 origins with the turn first and 19 with the shrinks
- * first - so a COMPOUND gesture has to choose. This move set emits no compound
- * gesture: a `move`, a `rotate` and a `stretch` are one fork invocation each,
- * and `appliedGestures` is called below with one of its two counts at zero,
- * where seed-placement states outright that "both orders are the same sequence".
- * Task 18's cluster move is the first compound one and the choice is its.
+ * **FIVE OF THE SIX KINDS ARE EXACTLY ONE GESTURE, AND THE SIXTH IS THE
+ * COMPOUND ONE.** `tools/stripboard/seed-placement.ts`'s `GESTURE_ORDERS` exists
+ * because a turn and a stretch need different clearance in each order - measured
+ * on `SI_HI_CUT_R1`, 0 of 1225 origins with the turn first and 19 with the
+ * shrinks first - so a COMPOUND gesture has to choose. A `move`, a `rotate` and
+ * a `stretch` are one fork invocation each, and `appliedGestures` is called below
+ * with one of its two counts at zero, where seed-placement states outright that
+ * "both orders are the same sequence". **`cluster` is several gestures in one
+ * candidate and it chooses the order of the PARTS** - furthest along the delta
+ * first - which is `./moves-cluster.ts`'s, stated and tested there. It does NOT
+ * re-answer the turn-versus-stretch question: every gesture in a cluster is a
+ * pure translation, so both of `appliedGestures`' counts are zero.
  *
  * **THE ENUMERATION IS NARROWED BY THE TRANSCRIBED MODEL, AND THE FORK REMAINS
  * THE AUTHORITY.** A move is proposed only when `tools/stripboard/
@@ -41,7 +44,8 @@
  * finding, not a candidate to drop quietly.
  *
  * **TWO OF THE SIX KINDS CANNOT BE APPLIED TODAY AND THAT IS DECLARED, NOT
- * DISCOVERED.** `DEFERRED_KINDS` names them with the reason for each, in one
+ * DISCOVERED** - `add-wire` and `delete-wire`, since Task 18 implemented
+ * `cluster`. `DEFERRED_KINDS` names them with the reason for each, in one
  * place, and both `applicableMoves` and `applyMove` read it - so the climb's
  * sweep leaves them out by a declaration a reviewer can see, and `applyMove`
  * refuses them by the same wording rather than a second one. They are still
@@ -52,6 +56,7 @@ import type { BoardDump } from "../guide/dump.ts"
 import { parseHoleKey, pinHoles, type HoleKey } from "./copper.ts"
 import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
+import { clusterAfter, clusterMove } from "./moves-cluster.ts"
 import { stretchBoundFor, type Occupancy } from "./seed-geometry.ts"
 import { appliedGestures, rectOf } from "./seed-placement.ts"
 import type { SpawnVeroroute } from "./seed.ts"
@@ -59,9 +64,8 @@ import type { SpawnVeroroute } from "./seed.ts"
 /**
  * One difference between a candidate layout and the current one.
  *
- * `cluster` is PIPELINE §7.4's net-cluster move - every on-board part with a
- * pin on one net moved by one delta - and is Task 18's to apply. It is in the
- * union here because the union is the spec's move set.
+ * `cluster` is PIPELINE §7.4's net-cluster move - every on-board part with a pin
+ * on one net moved by one delta.
  */
 export type Move =
   | { readonly kind: "move"; readonly ref: string; readonly to: readonly [number, number] }
@@ -73,7 +77,26 @@ export type Move =
       readonly ends: readonly [readonly [number, number], readonly [number, number]]
     }
   | { readonly kind: "delete-wire"; readonly name: string }
-  | { readonly kind: "cluster"; readonly net: string; readonly delta: readonly [number, number] }
+  | {
+      readonly kind: "cluster"
+      readonly net: string
+      readonly delta: readonly [number, number]
+      /**
+       * The parts this cluster moves, **in the order the gestures go out.**
+       *
+       * **THE MOVE CARRIES THEM RATHER THAN NAMING ONLY THE NET, AND THE REASON
+       * IS THAT THE ORDER CANNOT BE RECOVERED AT APPLY TIME.** Which parts a net
+       * holds comes from the reference NETLIST, because `--import` writes every
+       * `NODE` line `NAME -`; and the order they must move in comes from the
+       * CARRIED OCCUPANCY, which is the only description of a turned part's
+       * footprint there is. `applyMove` is handed a board path and a spawn and
+       * neither of those - so a cluster whose refs it had to derive would be a
+       * second implementation of `./moves-cluster.ts`' rule in the one module
+       * that cannot see what the rule needs. `net` stays beside them as what the
+       * cluster IS, for `describeMove`, the run record and the enumeration order.
+       */
+      readonly refs: readonly string[]
+    }
 
 /**
  * Every kind, once, in the order `enumerateMoves` emits them. The one listing:
@@ -122,15 +145,6 @@ export const DEFERRED_KINDS: ReadonlyMap<Move["kind"], string> = new Map([
       "the record stays the spec's",
   ],
   [
-    "cluster",
-    "the net-cluster move (PIPELINE E1/§7.4) is Task 18's to implement: it moves EVERY on-board " +
-      "part with a pin on one net by one delta, which is several gestures in one candidate and " +
-      "the first compound gesture in this pipeline - so it also has to choose a gesture order, " +
-      "which no single-gesture move does. It is enumerated here, by Task 17's own brief, so " +
-      "that the move set in the record is the spec's move set rather than the subset that " +
-      "happened to be implementable first",
-  ],
-  [
     "delete-wire",
     "no verb in the pinned fork deletes a placed component. The shipped verbs are --adopt, " +
       "--check, --dump-board, --dump-netlist, --import, --move, --move-batch, --rotate, " +
@@ -158,7 +172,12 @@ export function describeMove(move: Move): string {
     case "delete-wire":
       return `delete-wire ${move.name}`
     case "cluster":
-      return `cluster ${move.net} by ${move.delta[0]},${move.delta[1]}`
+      // The refs are in the description because they are part of the gesture
+      // and their ORDER is a decision: a record that said only "cluster mid by
+      // 1,0" could not tell two sequences of the same parts apart, and the
+      // sequence is what makes the difference between a cluster that lands and
+      // one the fork refuses (./moves-cluster.ts's clusterSequence).
+      return `cluster ${move.net} by ${move.delta[0]},${move.delta[1]} (${move.refs.join(" ")})`
   }
 }
 
@@ -235,16 +254,21 @@ export function occupancyAfter(
   move: Move,
   type?: string,
 ): Occupancy | undefined {
-  if (move.kind === "add-wire" || move.kind === "delete-wire" || move.kind === "cluster") {
+  if (move.kind === "add-wire" || move.kind === "delete-wire") {
     throw new Error(
       `occupancyAfter: a "${move.kind}" move's effect on the part geometry is not modelled. ` +
-        "add-wire and delete-wire change the WIRE list and not any part's rect - and a wire's " +
-        "own holes are not in the occupancy at all, which is a limit of occupancyOf rather than " +
-        "a decision here - while cluster moves several parts at once and is Task 18's. All three " +
-        "are in DEFERRED_KINDS, so applicableMoves keeps them out of the sweep and this is " +
+        "Both change the WIRE list and not any part's rect - and a wire's own holes are not in " +
+        "the occupancy at all, which is a limit of occupancyOf rather than a decision here. " +
+        "Both are in DEFERRED_KINDS, so applicableMoves keeps them out of the sweep and this is " +
         "unreachable from climb; reaching it means a caller advanced past a gesture it had not " +
         "applied.",
     )
+  }
+  // THE COMPOUND KIND, THROUGH THE SAME `appliedGestures` THE SINGLE MOVE USES,
+  // one part at a time in the order the move itself records - see
+  // `Move`'s cluster arm for why the order travels on the move.
+  if (move.kind === "cluster") {
+    return clusterAfter(occupancy, dump.grid, move.refs, move.delta)
   }
   if (move.kind === "move") {
     return appliedGestures(occupancy, dump.grid, move.ref, move.to, 0, 0, SINGLE_GESTURE_ORDER)
@@ -376,11 +400,36 @@ function wireMoves(dump: BoardDump, reference: ReferenceNets): readonly Move[] {
   return moves
 }
 
-/** Every `cluster`: each net in the netlist's order, by each of the four unit deltas. */
-function clusterMoves(reference: ReferenceNets): readonly Move[] {
+/**
+ * Every `cluster` the model admits: each net in the NETLIST'S order, by each of
+ * the four unit deltas, with the parts and their gesture order from
+ * `./moves-cluster.ts`.
+ *
+ * **IT IS NARROWED LIKE EVERY OTHER KIND, AND THAT IS A CHANGE FROM TASK 17**,
+ * which emitted all four deltas of every net unconditionally because nothing
+ * could apply them yet. A cluster whose sequence cannot be completed is not
+ * proposed, for `partMoves`' reason: a set whose members were discovered by
+ * attempting them would spend four invocations per refusal, and this one would
+ * spend one per part on top.
+ *
+ * **THE DELTAS ARE THE SAME FOUR `UNIT_DELTAS` A SINGLE `move` USES, AND THAT IS
+ * A LIMIT WORTH NAMING.** A cluster therefore translates a net's parts ONE HOLE
+ * at a time, so a gathering that needs two holes takes two rounds and each
+ * intermediate step has to fit on its own. Whether a wider neighbourhood would
+ * pay is unmeasured, exactly as `UNIT_DELTAS` says of itself for the single-part
+ * case; widening it is a deliberate edit with a run behind it.
+ */
+function clusterMoves(
+  occupancy: Occupancy,
+  dump: BoardDump,
+  reference: ReferenceNets,
+): readonly Move[] {
   const moves: Move[] = []
   for (const [net] of reference) {
-    for (const delta of UNIT_DELTAS) moves.push({ kind: "cluster", net, delta })
+    for (const delta of UNIT_DELTAS) {
+      const move = clusterMove(occupancy, dump, reference, net, delta)
+      if (move !== undefined) moves.push(move)
+    }
   }
   return moves
 }
@@ -401,7 +450,11 @@ export function enumerateMoves(
   dump: BoardDump,
   reference: ReferenceNets,
 ): readonly Move[] {
-  return [...partMoves(occupancy, dump), ...wireMoves(dump, reference), ...clusterMoves(reference)]
+  return [
+    ...partMoves(occupancy, dump),
+    ...wireMoves(dump, reference),
+    ...clusterMoves(occupancy, dump, reference),
+  ]
 }
 
 /**
@@ -412,3 +465,13 @@ export function enumerateMoves(
  * is at the enumerate/apply seam and was forced by the 500-line ceiling.
  */
 export { applyMove, type GestureTransport } from "./moves-apply.ts"
+
+/**
+ * The net-cluster model, re-exported from `./moves-cluster.ts`: which parts a
+ * net's cluster moves, in what order, and where that leaves the geometry.
+ *
+ * Same arrangement and same reason as the line above: this is the module the
+ * plan names and every consumer imports, and the split is at the
+ * what-is-a-cluster seam, forced by the 500-line ceiling.
+ */
+export { clusterAfter, clusterMove, clusterRefs, clusterSequence } from "./moves-cluster.ts"
