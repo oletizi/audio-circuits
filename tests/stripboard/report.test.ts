@@ -1,0 +1,247 @@
+/**
+ * `renderReport`: what one run says about itself, and what it may not say.
+ *
+ * SPLIT FROM `./report-taxonomy.test.ts` BY CONCERN - that file drives the
+ * three outcomes, the five bound statuses and the two phrasing tables, and this
+ * one drives the lines - over the shared `./report-fixtures.ts`. The refusals
+ * are in `./report-refusals.test.ts` for the same reason and the line ceiling.
+ *
+ * **EVERY ASSERTION HERE IS OVER THE RENDERED LINES AND NOT OVER THE SOURCE.**
+ * The earlier form of `REP3`'s check asserted the module CONTAINS the strings
+ * `WORDING[` and `OUTCOME_WORDING[`, which a file can do and still write a
+ * sentence of its own on the next line. So the quality claims are located by
+ * their prefix and each one is matched against the tables.
+ */
+import { expect, test } from "bun:test"
+import { floorNote } from "../../tools/stripboard/stop.ts"
+import {
+  BOUND_STATUSES,
+  OUTCOMES,
+  OUTCOME_WORDING,
+  QUALITY_PREFIX,
+  WORDING,
+  exitCodeFor,
+  renderReport,
+  type Outcome,
+} from "../../tools/stripboard/report.ts"
+import { TARGETS } from "./stop-fixtures.ts"
+import {
+  a1Failure,
+  a2OnlyFailure,
+  reportInput,
+  runWith,
+  runWithWorseAcceptance,
+  runWithoutWorseAcceptance,
+  underBudgetedRun,
+  withinToleranceRun,
+} from "./report-fixtures.ts"
+
+/**
+ * The quality-line prefix, WRITTEN OUT HERE rather than imported into the
+ * pattern.
+ *
+ * A regex built from `QUALITY_PREFIX` would follow the module wherever it moved
+ * the prefix to, and a report whose claims became unmarked would still pass. So
+ * the literal is stated and pinned against the export by the first test below.
+ */
+const QUALITY_LINE = /^quality: /
+
+/** Every quality claim in a report, stripped of its prefix. */
+function qualityClaims(lines: readonly string[]): readonly string[] {
+  return lines.filter((line) => QUALITY_LINE.test(line)).map((line) => line.replace(QUALITY_LINE, ""))
+}
+
+test("the quality prefix the tests look for is the one the module marks claims with", () => {
+  expect(QUALITY_PREFIX).toBe("quality: ")
+  expect(QUALITY_LINE.test(`${QUALITY_PREFIX}anything`)).toBe(true)
+})
+
+test("REP2: the report names the rule, the bound, the outcome and A1-A4 one by one", () => {
+  const lines = renderReport(a2OnlyFailure())
+  const joined = lines.join("\n")
+  expect(joined).toMatch(/A1 /)
+  expect(joined).toMatch(/A2 /)
+  expect(joined).toMatch(/A3 /)
+  expect(joined).toMatch(/A4 /)
+  expect(joined).not.toMatch(/^not admissible$/m)
+  // The rule that fired and the bound derived from it, both named.
+  expect(joined).toMatch(/the stopping rule Q3 that fired/)
+  expect(joined).toMatch(/^bound: search-exhausted/m)
+  expect(joined).toMatch(/^outcome: valid-below-target$/m)
+  // And the gap remaining, which REP2 requires beside the verdict.
+  expect(joined).toMatch(/gap above the floor = 1/)
+})
+
+test("REP2: which conditions FAILED is legible, not only that one did", () => {
+  const joined = renderReport(a2OnlyFailure()).join("\n")
+  expect(joined).toMatch(/^A2 FAILED: /m)
+  expect(joined).toMatch(/^A1 held: /m)
+  expect(joined).toMatch(/^A4 held: /m)
+})
+
+test("A3's third state reaches the report by its own name, never as held", () => {
+  // THE WHOLE REASON A3 IS THREE-VALUED. The run below is admissible with tau
+  // unset, so A3 was never graded - and a report that printed "A3 held" there
+  // would report a target met that nobody set. The outcome line and the
+  // condition line say different things on purpose.
+  const joined = renderReport(reportInput()).join("\n")
+  expect(joined).toMatch(/^outcome: admissible$/m)
+  expect(joined).toMatch(/^A3 not-evaluated: /m)
+  expect(joined).not.toMatch(/^A3 held/m)
+  expect(joined).toMatch(/tau is UNSET/)
+  expect(joined).toMatch(/no target was met or missed here/)
+  // A run with a tolerance set and inside it says held instead, so the two
+  // states are distinguishable in the report and not only in the type.
+  expect(renderReport(withinToleranceRun()).join("\n")).toMatch(/^A3 held: /m)
+})
+
+test("V10: an under-budgeted run reports budget-exhausted and claims nothing", () => {
+  const lines = renderReport(underBudgetedRun())
+  const joined = lines.join("\n")
+  expect(joined).toMatch(/budget-exhausted/)
+  expect(joined).toMatch(/where the search stopped/)
+  expect(qualityClaims(lines).join("\n")).not.toMatch(
+    /optimal|minimal|lowest possible|cannot be improved/i,
+  )
+  // THE ONE LINE IN THE WHOLE REPORT THAT MAY CARRY THE WORD, and it is
+  // `floorNote`'s verbatim caveat rather than a claim about this run: an
+  // at-floor stop would be optimal against THIS strip count and says nothing
+  // about another. Pinned to the exact line, so a new optimality word anywhere
+  // else in a report fails this test.
+  expect(lines.filter((line) => /optimal|minimal|lowest possible/i.test(line))).toEqual([
+    `floor: ${floorNote(TARGETS)}`,
+  ])
+})
+
+test("V12: a run failing only A2 reports valid, below target and not a malfunction", () => {
+  const joined = renderReport(a2OnlyFailure()).join("\n")
+  expect(joined).toMatch(/valid, below target/)
+  expect(joined).not.toMatch(/malfunction|broken|bug/i)
+  expect(joined).not.toMatch(/kappa_bench should|relax the bound|loosen/i)
+  // K2 predicts this as the expected early outcome, and K3 refuses to move the
+  // bound on a search that stopped - so the report says the ratchet may not.
+  expect(joined).toMatch(/K3's ratchet may not move kappa_bench/)
+})
+
+test("V12: a run failing A1 reports invalid and does not produce the A2 wording", () => {
+  const joined = renderReport(a1Failure()).join("\n")
+  expect(joined).toMatch(/invalid/)
+  expect(joined).not.toMatch(/valid, below target/)
+  expect(joined).toMatch(/HC4/)
+})
+
+test("REP3: every rendered quality sentence comes from a table entry, verbatim", () => {
+  // A phrasing table keyed by the field means an exhausted run cannot be
+  // described as optimal by an author who was feeling good about the number.
+  // Rendering every combination is what establishes it: a report that indexed
+  // both tables and then wrote one sentence of its own would pass a source
+  // scan and fail here.
+  const entries = new Set([...Object.values(WORDING), ...Object.values(OUTCOME_WORDING)])
+  for (const bound of BOUND_STATUSES) {
+    for (const outcome of OUTCOMES) {
+      const claims = qualityClaims(renderReport(runWith({ bound, outcome })))
+      expect(claims.length, `${bound}/${outcome} rendered no quality line`).toBeGreaterThan(0)
+      for (const claim of claims) {
+        expect(
+          entries.has(claim),
+          `${bound}/${outcome}: "${claim}" is not a WORDING or OUTCOME_WORDING entry`,
+        ).toBe(true)
+      }
+    }
+  }
+})
+
+test("REP3: the claims rendered are the ones the bound and the outcome select", () => {
+  // The loop above proves every claim is SOME entry; this proves it is the
+  // RIGHT one, which a set membership check cannot see.
+  for (const bound of BOUND_STATUSES) {
+    for (const outcome of OUTCOMES) {
+      expect(qualityClaims(renderReport(runWith({ bound, outcome }))), `${bound}/${outcome}`)
+        .toEqual([OUTCOME_WORDING[outcome], WORDING[bound]])
+    }
+  }
+})
+
+test("a proposed default that decided the outcome is reported as proposed (OB3)", () => {
+  // tau is not a value the owner set. NOT /proposed/i: tau's own note reads
+  // "PIPELINE'S PROPOSED DEFAULT ... IS WITHDRAWN", so a search for "proposed"
+  // matches the NEGATION of what it is checking for and passes against text
+  // saying the opposite. Measured in Task 10's review. Anchor on the claim.
+  const joined = renderReport(withinToleranceRun()).join("\n")
+  expect(joined).toMatch(/not (the owner's|settled)/i)
+  expect(joined).toMatch(/^parameter: tau = 0\.05 decided this stop \(Q2\)/m)
+  // And the provenance comes out of the committed note rather than being
+  // restated here, so a note that changes changes the report.
+  expect(joined).toMatch(/\[owner\] 2026-10-10, CRITERIA K4\./)
+})
+
+test("a stop no rules parameter decided says that, rather than naming one anyway", () => {
+  // Q1 turns on C_floor, which is derived and may come from a board's own
+  // declaration rather than from stockRows - so naming a parameter there would
+  // name the wrong number on the boards that declare one.
+  const joined = renderReport(reportInput({ rule: "Q1" })).join("\n")
+  expect(joined).toMatch(/^parameter: no stripboard\/rules\.json parameter decided this stop/m)
+  expect(joined).toMatch(/floor's own provisionality/)
+})
+
+test("E3 not running is stated in the report, and so is its running", () => {
+  expect(renderReport(runWithoutWorseAcceptance()).join("\n")).toMatch(/worse-acceptance|E3/)
+  expect(renderReport(runWithoutWorseAcceptance()).join("\n")).toMatch(
+    /^E3: worse-acceptance DID NOT RUN/m,
+  )
+  const ran = renderReport(runWithWorseAcceptance()).join("\n")
+  expect(ran).toMatch(/^E3: worse-acceptance was IN EFFECT with a bound of 1/m)
+  // It reports the MECHANISM and not a firing, which is what RunResult's own
+  // field means.
+  expect(ran).toMatch(/not a firing/)
+})
+
+test("the floor is never printed without the owner's provisionality caveat", () => {
+  // floorNote is stop-model.ts's, written beside Q1 so the two cannot drift,
+  // and it quotes the owner verbatim. C_floor = max(0, N - R) takes R from
+  // today's stock, so a floor printed bare is a provisional figure printed as a
+  // fact. Every report prints a floor, so every report prints the note.
+  for (const input of [reportInput(), underBudgetedRun(), a1Failure(), withinToleranceRun()]) {
+    const lines = renderReport(input)
+    expect(lines).toContain(`floor: ${floorNote(input.targets)}`)
+    const cost = lines.filter((line) => line.startsWith("cost: "))
+    expect(cost.length).toBe(1)
+  }
+  // The caveat is the owner's words and not a paraphrase of them.
+  expect(floorNote(TARGETS)).toMatch(/The dimensions are ALWAYS provisional/)
+})
+
+test("the report's exit line carries REP5's own exit code for each outcome", () => {
+  // THE EXPECTED CODES ARE WRITTEN OUT rather than read back from
+  // exitCodeFor: a report line compared against the same function that
+  // produced it agrees however wrong both are. REP5's exit column is the
+  // source - non-zero for invalid, non-zero for valid-below-target (G2.5
+  // refuses it), zero for admissible - and this test also pins the exported
+  // function to those three, so a stop cannot become a pass in either place.
+  const expected: Readonly<Record<Outcome, 0 | 1>> = {
+    invalid: 1,
+    "valid-below-target": 1,
+    admissible: 0,
+  }
+  for (const outcome of OUTCOMES) {
+    const joined = renderReport(runWith({ bound: "search-exhausted", outcome })).join("\n")
+    expect(joined, outcome).toMatch(new RegExp(`^exit: ${expected[outcome]}$`, "m"))
+    expect(exitCodeFor(outcome), outcome).toBe(expected[outcome])
+  }
+})
+
+test("the report grades the run's own best candidate rather than being told a verdict", () => {
+  // ReportInput carries no AdmissibilityResult and no bound: the verdict is
+  // computed from run.best and the bound derived from the fired rule, so a
+  // report cannot name a candidate its verdict was not about. Spoiling the
+  // candidate alone moves the outcome.
+  expect(renderReport(reportInput()).join("\n")).toMatch(/^outcome: admissible$/m)
+  expect(renderReport(a1Failure()).join("\n")).toMatch(/^outcome: invalid$/m)
+  expect(renderReport(a2OnlyFailure()).join("\n")).toMatch(/^outcome: valid-below-target$/m)
+})
+
+test("the report names the board and the candidate file it is about", () => {
+  const joined = renderReport(reportInput()).join("\n")
+  expect(joined).toMatch(/^board: stop-fixture, candidate stop-fixture\.vrt$/m)
+  expect(joined).toMatch(/^run: 2 climb\(s\), 200 evaluation\(s\) spent, restarts at/m)
+})

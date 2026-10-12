@@ -19,7 +19,10 @@
  * live here and `./stop.ts` consults them. **The rest of Task 20 is NOT here**:
  * no `Outcome`, no `outcomeOf`, no `BoundStatus`, no `boundFor`, no
  * `exitCodeFor`, no `renderReport`. Those decide what a run REPORTS, which
- * needs the fired rule, and Task 20 is where they go.
+ * needs the fired rule, and they live in `./report.ts` with `./report-model.ts`
+ * under it - one import path for the taxonomy, not two. `outcomeOf` reads an
+ * `AdmissibilityResult` and `fullyAdmissible` below, so the stop's gate and the
+ * reported outcome cannot disagree about one candidate.
  *
  * WHY `Q2` COULD NOT BE FINISHED WITHOUT THIS FILE, measured rather than
  * argued, because it is the case that produced it: `kappa = J/(P - N)` divides
