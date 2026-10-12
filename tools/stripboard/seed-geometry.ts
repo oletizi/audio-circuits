@@ -216,6 +216,84 @@ export function occupancyOf(dump: BoardDump): Occupancy {
   return rects
 }
 
+/**
+ * Whether `--stretch` can change a part's length at all, and between which
+ * bounds - the SECOND table the dump cannot supply, beside
+ * `VEROROUTE_FOOTPRINT_ROWS`.
+ *
+ * **TRANSCRIBED FROM `Component::CanStretch`**
+ * (`.tools/veroroute-perfboard/Src/FootPrint.h:55`), which is a fixed family
+ * list returning `(grow && GetCols() < GetMaxLength(type)) || (!grow &&
+ * GetCols() > GetMinLength(type))` and **`false` for every type not on it**,
+ * with the bounds from `CompTypes::GetMinLength`/`GetMaxLength`
+ * (`CompTypes.h:823,863`).
+ *
+ * **IT EXISTS BECAUSE A GEOMETRIC FIT IS NOT A STRETCHABLE PART, AND THE REAL
+ * BINARY IS WHAT SHOWED THAT.** `./seed-placement.ts`'s `stretchedRect` says
+ * outright that the family bound "is not re-checked here", and nothing was
+ * checking it anywhere: the first real climb on the import-placed low-boost
+ * board proposed `--stretch junction_grounds --direction grow`, which the fork
+ * refused with *"junction_grounds cannot grow"* after 24 accepted gestures.
+ *
+ * **`SIP5` IS LISTED AS UNSTRETCHABLE ON A MEASUREMENT, NOT ON A READING OF
+ * THE SOURCE.** `CanStretch` names `COMP::SIP` and `GetMinLength`/
+ * `GetMaxLength` give it 1 and 255, which would allow both directions on a
+ * five-column part - so the source as read predicts the opposite of what
+ * happens. Measured on the import-placed low-boost board: both `SIP5` parts
+ * refuse BOTH directions (`junction_grounds cannot grow`, `cannot shrink`, and
+ * the same for `junction_signals`), while `RESISTOR` and `CAP_FILM_WIDE` parts
+ * shrink on the same board. **Which `COMP` the dump's `SIP5` really is was not
+ * established**, so the entry records the measurement and says the source
+ * reading disagrees, rather than asserting a cause.
+ *
+ * **AN UNLISTED TYPE REFUSES BY NAME**, exactly as `VEROROUTE_FOOTPRINT_ROWS`
+ * does and for the same reason: an absent entry means nobody has measured that
+ * family, which is not the same claim as "it cannot stretch", and a general
+ * rule that quietly accepts a guess is the one thing these lookups refuse to
+ * be.
+ */
+export type StretchBound =
+  | { readonly stretchable: false; readonly basis: string }
+  | { readonly stretchable: true; readonly minLength: number; readonly maxLength: number }
+
+export const VEROROUTE_STRETCH_BOUNDS: ReadonlyMap<string, StretchBound> = new Map([
+  ["RESISTOR", { stretchable: true, minLength: 2, maxLength: 16 }],
+  ["CAP_FILM", { stretchable: true, minLength: 2, maxLength: 16 }],
+  ["CAP_FILM_WIDE", { stretchable: true, minLength: 2, maxLength: 16 }],
+  [
+    "SIP5",
+    {
+      stretchable: false,
+      basis:
+        "measured on the import-placed low-boost board: --stretch refuses BOTH directions on " +
+        "both SIP5 parts (junction_grounds and junction_signals, each 5 columns at DIRECTION W) " +
+        "while RESISTOR and CAP_FILM_WIDE parts shrink on that same board. Component::CanStretch " +
+        "names COMP::SIP with GetMinLength 1 and GetMaxLength 255, which predicts the opposite, " +
+        "so which COMP the dump's SIP5 really is has NOT been established and this entry rests " +
+        "on the measurement rather than on the source reading",
+    },
+  ],
+])
+
+/** One type's stretch bound, refusing a type nobody has measured. */
+export function stretchBoundFor(type: string): StretchBound {
+  const bound = VEROROUTE_STRETCH_BOUNDS.get(type)
+  if (bound === undefined) {
+    throw new Error(
+      `no stretch bound is recorded for VeroRoute type "${type}". Component::CanStretch is a ` +
+        "fixed family list and returns false for everything not on it, so a part's length can " +
+        "only be changed where somebody has established which case it falls in. It is NOT " +
+        "assumed unstretchable and NOT assumed stretchable: the first reads as a part the " +
+        "search will never bend, and the second proposes gestures the fork refuses - which is " +
+        "how the first real climb died after 24 accepted moves. Add an entry to " +
+        "VEROROUTE_STRETCH_BOUNDS in tools/stripboard/seed-geometry.ts, with the line of " +
+        ".tools/veroroute-perfboard/Src/FootPrint.h or the measurement it rests on, and a row " +
+        `in tests/stripboard/seed-geometry.test.ts. Recorded: ${[...VEROROUTE_STRETCH_BOUNDS.keys()].sort().join(", ")}.`,
+    )
+  }
+  return bound
+}
+
 /** One ref's rect, refusing a ref this occupancy does not carry. */
 export function rectOf(occupancy: Occupancy, ref: string): PartRect {
   const rect = occupancy.get(ref)

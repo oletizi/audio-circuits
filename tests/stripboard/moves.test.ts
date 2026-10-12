@@ -31,6 +31,8 @@ import {
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 import { turnedRect } from "../../tools/stripboard/seed-placement.ts"
+import { stretchBoundFor } from "../../tools/stripboard/seed-geometry.ts"
+import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import type { PartRect } from "../../tools/stripboard/seed-geometry.ts"
 import {
   BETTER,
@@ -125,8 +127,18 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   expect(counted.get("delete-wire")).toBe(2)
   expect(counted.get("cluster")).toBe(8)
   expect(moves.length).toBe(26)
-  // And the applicable subset is the 26 minus the two deferred kinds' 10.
-  expect(applicableMoves(moves).length).toBe(16)
+  // And the applicable subset is the 26 less the FOUR deferred kinds' 14: the
+  // eight clusters, the two delete-wires, the two add-wires and the two
+  // rotates. Three of the four joined the set on a measurement from the first
+  // real-binary run - see DEFERRED_KINDS, which carries each one's evidence -
+  // so this figure moving is the signal that the deferred set changed.
+  expect(applicableMoves(moves).length).toBe(12)
+  expect([...DEFERRED_KINDS.keys()].sort()).toEqual([
+    "add-wire",
+    "cluster",
+    "delete-wire",
+    "rotate",
+  ])
 })
 
 test("only the clockwise turn is proposed, because only that case is transcribed", () => {
@@ -137,6 +149,46 @@ test("only the clockwise turn is proposed, because only that case is transcribed
     .filter((move) => move.kind === "rotate")
     .map((move) => (move.kind === "rotate" ? move.direction : ""))
   expect(directions).toEqual(["cw", "cw"])
+})
+
+test("no stretch is proposed for a family the fork will not stretch, and an unknown type refuses", () => {
+  // A GEOMETRIC FIT IS NOT A STRETCHABLE PART, which the first real climb found
+  // the hard way: it proposed `--stretch junction_grounds --direction grow` on
+  // the import-placed low-boost board - geometrically clear - and the fork
+  // refused with "junction_grounds cannot grow" after 24 accepted gestures.
+  //
+  // SIP5 is recorded as unstretchable (measured; see VEROROUTE_STRETCH_BOUNDS),
+  // RESISTOR is recorded stretchable between 2 and 16 columns, and a type
+  // nobody has measured refuses by name rather than being guessed either way.
+  expect(stretchBoundFor("SIP5").stretchable).toBe(false)
+  const resistor = stretchBoundFor("RESISTOR")
+  expect(resistor.stretchable).toBe(true)
+  if (resistor.stretchable) {
+    expect([resistor.minLength, resistor.maxLength]).toEqual([2, 16])
+  }
+  expect(refusalFrom(() => stretchBoundFor("BLOCK_200MIL3"))).toContain(
+    'no stretch bound is recorded for VeroRoute type "BLOCK_200MIL3"',
+  )
+  // And the enumeration proposes nothing for a part at its own upper bound: a
+  // 16-column RESISTOR may shrink and may not grow.
+  const atCeiling = boardGeometry(
+    [
+      "GRID 12 40",
+      "BOUNDS 2,1 2,16",
+      "VERTICAL_STRIPS 1",
+      "CUT_STATE COMPUTED",
+      "PART R1 RESISTOR 10K AT 2,1 SPAN 16 DIRECTION W",
+      "PIN R1 1 AT 2,1",
+      "PIN R1 2 AT 2,16",
+      "NODE 1 NAME left R1.1",
+      "NODE 2 NAME right R1.2",
+      "",
+    ].join("\n"),
+  )
+  const directions = enumerateMoves(atCeiling, REFERENCE)
+    .filter((move) => move.kind === "stretch")
+    .map((move) => (move.kind === "stretch" ? move.direction : ""))
+  expect(directions).toEqual(["shrink"])
 })
 
 test("no rotate is proposed where the turn would pan the board", () => {

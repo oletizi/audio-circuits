@@ -245,22 +245,36 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
     scriptedSpawn(IMPROVES_THEN_STALLS),
   )
   expect(result.acceptedPerRound[result.acceptedPerRound.length - 1]).toBe(0)
-  expect(result.evaluations).toBeGreaterThanOrEqual(enumerateMoves(DUMP, REFERENCE).length)
+  // THE BRIEF'S OWN ASSERTION HERE WAS `>= enumerateMoves(...).length`, AND IT
+  // IS REPLACED RATHER THAN DELETED, with the reason, because a changed
+  // brief-specified assertion must be visible. It was written when the whole
+  // enumerated set was expected to be applicable. Four of the six kinds are
+  // now deferred - each on evidence recorded in DEFERRED_KINDS, three of them
+  // from the first real-binary run - so the ENUMERATED count (26) is no longer
+  // a bound on evaluations at all: a round sweeps the APPLICABLE set, and that
+  // is what this asserts instead. Reading the enumerated count as a lower
+  // bound would make this test fail for a reason that has nothing to do with
+  // the sweep.
+  expect(result.evaluations).toBeGreaterThanOrEqual(
+    applicableMoves(enumerateMoves(DUMP, REFERENCE)).length,
+  )
+  expect(enumerateMoves(DUMP, REFERENCE).length).toBe(26)
 
   // HAND-DERIVED, from the two boards and the script:
-  //   round 0 sweeps BASE_DUMP's 16 applicable moves (26 enumerated less the
-  //     ten cluster and delete-wire ones), and the script hands BETTER_DUMP to
-  //     the first of them, so one move is accepted;
-  //   round 1 sweeps BETTER_DUMP's 14 applicable moves (22 less the eight
-  //     cluster ones; BETTER_DUMP has no WIRE line and no cross-strip net, so
-  //     no delete-wire and no add-wire), every one of which reports the worse
-  //     board, so none is accepted and S3 stops the climb.
-  //   one evaluation of the start, plus 16, plus 14.
-  expect(applicableMoves(enumerateMoves(DUMP, REFERENCE)).length).toBe(16)
-  expect(applicableMoves(enumerateMoves(BETTER, REFERENCE)).length).toBe(14)
+  //   round 0 sweeps BASE_DUMP's 12 applicable moves (26 enumerated less the
+  //     fourteen cluster, delete-wire, add-wire and rotate ones), and the
+  //     script hands BETTER_DUMP to the first of them, so one move is accepted;
+  //   round 1 sweeps BETTER_DUMP's 12 applicable moves (22 less the eight
+  //     clusters and the two rotates; BETTER_DUMP has no WIRE line and no
+  //     cross-strip net, so it enumerates no delete-wire and no add-wire
+  //     either way), every one of which reports the worse board, so none is
+  //     accepted and S3 stops.
+  //   one evaluation of the start, plus 12, plus 12.
+  expect(applicableMoves(enumerateMoves(DUMP, REFERENCE)).length).toBe(12)
+  expect(applicableMoves(enumerateMoves(BETTER, REFERENCE)).length).toBe(12)
   expect(result.acceptedPerRound).toEqual([1, 0])
   expect(result.rounds).toBe(2)
-  expect(result.evaluations).toBe(31)
+  expect(result.evaluations).toBe(25)
   expect(result.best.score.objective).toBe(0)
 })
 
@@ -382,7 +396,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
   // HAND-DERIVED: the start is evaluation 1, then round 0's candidates are
   // evaluations 2, 3, 4 and 5, and the cap is checked BEFORE each candidate -
   // so the fifth evaluation is the last one taken and the sixth is never
-  // started. Round 0 has 16 applicable moves, so the stop is mid-round: the
+  // started. Round 0 has 12 applicable moves, so the stop is mid-round: the
   // round is recorded with the one move it accepted before the cap bit.
   const runDir = freshRunDir()
   const result = climb(
@@ -402,7 +416,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
     climbInput(uncappedDir, false),
     scriptedSpawn(IMPROVES_THEN_STALLS),
   )
-  expect(uncapped.evaluations).toBe(31)
+  expect(uncapped.evaluations).toBe(25)
 })
 
 test("a climb that ends inadmissible says so, rather than reading as one that found nothing", () => {

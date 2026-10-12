@@ -53,7 +53,7 @@ import type { BoardDump } from "../guide/dump.ts"
 import { parseHoleKey, pinHoles, type HoleKey } from "./copper.ts"
 import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
-import { occupancyOf, type Occupancy } from "./seed-geometry.ts"
+import { occupancyOf, stretchBoundFor, type Occupancy } from "./seed-geometry.ts"
 import { appliedGestures, rectOf, turnsTakeable } from "./seed-placement.ts"
 import type { SpawnVeroroute } from "./seed.ts"
 
@@ -107,6 +107,39 @@ export const MOVE_KINDS: readonly Move["kind"][] = [
  * existed when it was written; this is the same gap, still open.
  */
 export const DEFERRED_KINDS: ReadonlyMap<Move["kind"], string> = new Map([
+  [
+    "add-wire",
+    "a one-gesture add-wire cannot join two strips, measured on the import-placed low-boost " +
+      "board with the pinned binary. TWO facts, both from the fork: (1) the wire anchors only at " +
+      "a FREE hole - `--author --op add-wire --at 1,0` is refused with \"the wire could not be " +
+      'placed at that position (it is floating)" because a part\'s footprint occupies that hole, ' +
+      "and this enumeration anchors at a PIN hole, which is the only kind of hole it can " +
+      "identify as belonging to a net; and (2) a freshly created wire is 1x3 ALONG THE ROW - " +
+      "`--at 10,10` on a free hole yields `WIRE Wire1 AT 10,10 ENDS 10,10 10,12` - so under " +
+      "horizontal strips it joins one strip to itself and connects nothing. Making it useful " +
+      "needs the wire turned across the strips and stretched to reach, which is three gestures " +
+      "in one candidate and so the same compound-gesture problem as the cluster move; or a fork " +
+      "change letting --op add-wire name both ends. It is still ENUMERATED, so the move set in " +
+      "the record stays the spec's",
+  ],
+  [
+    "rotate",
+    "a turn produces a board this enumeration cannot read back, so the climb cannot take a " +
+      "SECOND move after it. occupancyOf REFUSES a part facing N or S, by its own documented " +
+      "reason: for such a part SPAN is the footprint's ROW count and its stretched length " +
+      "appears in NO dump line (COST section 7.3 item 2, GetCompRows, the field --dump-board " +
+      "does not report). Measured on the import-placed low-boost board: with rotate applicable " +
+      "the climb accepted gestures through round 0 and then refused with `part \"C18\": it faces " +
+      'N`, and the constructed and random arms refuse at the same point for the same reason, ' +
+      "because their own gestures turn parts too. THE FIX IS NOT IN THIS FILE and is NOT to " +
+      "guess the turned rect: carry the occupancy FORWARD through accepted moves instead of " +
+      "re-deriving it from each dump, which is already seed-placement.ts's documented pattern " +
+      "for exactly this fact (\"THE OCCUPANCY IS TRACKED, NOT RE-READ ... a dump does not " +
+      'describe a TURNED part\'s footprint at all") - it needs enumerateMoves to be handed an ' +
+      "occupancy rather than deriving one, which is a change to the signature the plan declares " +
+      "and so a decision above this task. Deferring it costs the search the orientation lever " +
+      "outright, which is a real loss and is recorded as one rather than waved past",
+  ],
   [
     "cluster",
     "the net-cluster move (PIPELINE E1/§7.4) is Task 18's to implement: it moves EVERY on-board " +
@@ -190,13 +223,31 @@ function movable(
   return appliedGestures(occupancy, dump.grid, ref, origin, 0, 0, "turn-then-stretch") !== undefined
 }
 
-/** Whether one `--stretch` step in `direction` fits where the part stands. */
+/**
+ * Whether one `--stretch` step in `direction` is one the fork will take: the
+ * part's FAMILY must be stretchable and inside its length bound, AND the
+ * resulting rect must fit.
+ *
+ * **BOTH HALVES, AND THE FIRST ONE WAS MISSING UNTIL THE REAL BINARY FOUND
+ * IT.** A geometric fit is not a stretchable part: `Component::CanStretch`
+ * refuses outright for a family not on its list, and the first real climb on
+ * the import-placed low-boost board proposed `--stretch junction_grounds
+ * --direction grow` - geometrically clear, and refused by the fork - after 24
+ * accepted gestures. `stretchBoundFor` is the transcribed table, and it refuses
+ * a type nobody has measured rather than guessing either way.
+ */
 function stretchable(
   occupancy: Occupancy,
   dump: BoardDump,
+  type: string,
   ref: string,
   direction: "grow" | "shrink",
 ): boolean {
+  const bound = stretchBoundFor(type)
+  if (!bound.stretchable) return false
+  const length = rectOf(occupancy, ref).cols
+  if (direction === "grow" && !(length < bound.maxLength)) return false
+  if (direction === "shrink" && !(length > bound.minLength)) return false
   const rect = rectOf(occupancy, ref)
   return (
     appliedGestures(
@@ -247,7 +298,7 @@ function partMoves(dump: BoardDump, occupancy: Occupancy): readonly Move[] {
       moves.push({ kind: "rotate", ref: part.ref, direction: "cw" })
     }
     for (const direction of ["grow", "shrink"] as const) {
-      if (stretchable(occupancy, dump, part.ref, direction)) {
+      if (stretchable(occupancy, dump, part.type, part.ref, direction)) {
         moves.push({ kind: "stretch", ref: part.ref, direction })
       }
     }
@@ -365,6 +416,13 @@ function gestureFor(move: Move, board: string, out: string): readonly string[] {
     case "stretch":
       return ["--stretch", board, "--ref", move.ref, "--direction", move.direction, "-o", out]
     case "add-wire":
+      // STILL IMPLEMENTED, THOUGH `DEFERRED_KINDS` KEEPS IT OUT OF THE CLIMB'S
+      // SWEEP: the gesture itself is correct and placeable at a FREE hole, and
+      // what the measurement in DEFERRED_KINDS rules out is this ENUMERATION's
+      // anchor (a pin hole) and the default wire's reach (1x3 along the row).
+      // Deleting the arm would make the kind unreachable even for a caller
+      // holding a placeable one.
+      //
       // `--author --op add-wire --at R,C` places a wire with its FIRST end at
       // (R,C) and takes no option for the second: the wire is created at the
       // WIRE type's own footprint and its far end follows from that footprint,
