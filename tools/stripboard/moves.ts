@@ -140,9 +140,16 @@ export const DEFERRED_KINDS: ReadonlyMap<Move["kind"], string> = new Map([
       "`--at 10,10` on a free hole yields `WIRE Wire1 AT 10,10 ENDS 10,10 10,12` - so under " +
       "horizontal strips it joins one strip to itself and connects nothing. Making it useful " +
       "needs the wire turned across the strips and stretched to reach, which is three gestures " +
-      "in one candidate and so the same compound-gesture problem as the cluster move; or a fork " +
-      "change letting --op add-wire name both ends. It is still ENUMERATED, so the move set in " +
-      "the record stays the spec's",
+      "in one candidate; or a fork change letting --op add-wire name both ends. **THE COMPOUND " +
+      "GESTURE IS NO LONGER WHAT BLOCKS IT, AND THAT IS WORTH SAYING NOW THAT THE CLUSTER MOVE " +
+      "EXISTS**: a cluster is several gestures in one candidate and it works, so a reader could " +
+      "reasonably ask why this one does not follow. The answer is the occupancy. " +
+      "./moves-cluster.ts sequences PART translations and checks each one against the carried " +
+      "occupancy, and a WIRE's holes are not in the occupancy at all - occupancyOf builds rects " +
+      "from PART and PIN lines only - so there is no model that could say whether a turned, " +
+      "stretched wire lands clear of anything. Giving it one is a change to seed-geometry.ts " +
+      "with the fork's own wire arithmetic transcribed into it, not a reuse of the cluster's " +
+      "sequencing. It is still ENUMERATED, so the move set in the record stays the spec's",
   ],
   [
     "delete-wire",
