@@ -1887,3 +1887,228 @@ still at zero.
 - **the gather's single-pass schedule is unproven in general** - the argument for
   it is in `./moves-cluster.ts` and a case it misses shows up as a gather not
   proposed.
+
+### 6.9 CHECKPOINT 7 — the move set is complete: `add-wire` fires 7,417 counted times, is **never once accepted**, and the reason is the objective
+
+The move set is complete for the first time: `occupancyOf` carries every wire's
+holes, `add-wire` is a compound create-turn-stretch gesture, `delete-wire` is
+refused with a measurement rather than a reading, and a candidate whose cuts
+cannot be computed is rejected and counted instead of ending the run.
+`DEFERRED_KINDS` holds one kind where it held three. Everything else is §6.8's
+experiment unchanged — *same five reviewed seeds, same import-placed board, same
+committed rules at `evaluationCap` 20,000, same `FROZEN_MARK`, same harness.*
+15 runs, **763,545 fork invocations, 159 minutes of search.**
+
+**§6.3, §6.7 and §6.8 are not edited.** Four runs, four move sets, one table
+each.
+
+| arm | seed | `F` | `C` | `W` | `metMark` | nets complete | evaluations | unscoreable | rounds | failing |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 0 | **8** | 8 | **0** | false | false | 13238 | 0 | 60 | `HC1 HC5 HC8 HC9 HC10` |
+| `constructed` | 1 | **8** | 8 | **0** | false | false | 13421 | 0 | 60 | `HC1 HC5 HC8 HC9 HC10` |
+| `constructed` | 2 | **8** | 8 | **0** | false | false | 14595 | 0 | 70 | `HC1 HC5 HC8 HC9 HC10` |
+| `constructed` | 3 | **7** | 7 | **0** | false | false | 13432 | 1 | 56 | `HC1 HC5 HC8 HC9 HC10` |
+| `constructed` | 4 | **7** | 7 | **0** | false | false | 10648 | 0 | 48 | `HC1 HC5 HC6 HC8 HC9 HC10` |
+| `import` | 0–4 | **33** | 33 | **0** | false | false | 4314 | 0 | 21 | `HC1 HC6 HC8 HC10` |
+| `random` | 0 | REFUSED | — | — | — | — | — | — | — | see below |
+| `random` | 1 | **12** | 12 | **0** | false | false | 9280 | 5 | 41 | `HC1 HC8 HC10` |
+| `random` | 2 | **12** | 12 | **0** | false | false | 15218 | 0 | 70 | `HC1 HC8 HC10` |
+| `random` | 3 | **16** | 15 | **0** | false | false | 11842 | 0 | 63 | `HC1 HC8 HC10` |
+| `random` | 4 | **14** | 14 | **0** | false | false | 13641 | 3 | 65 | `HC1 HC8 HC10` |
+
+**THE RATE IS STILL ZERO.** Over the five reviewed seeds `compareSeedArms`
+REFUSES rather than reporting, because `random` seed 0 produced no run and a
+runner that answered a missing pair with a default would decide the rates this
+comparison measures. Over the four seeds every arm did produce a run:
+
+```
+crossing objective: F <= 5    decision variable: success-rate
+arm constructed: reached 0/4 refused 0
+arm import:      reached 0/4 refused 0
+arm random:      reached 0/4 refused 0
+separated: false    retireable: []
+```
+
+It is a rate over the same thing as §6.7 and §6.8: how many seeds produced a run
+meeting `B1-frozen` on ALL clauses — `C <= 5`, `W = 0`, every net complete — on
+the import-placed `pultec-low-boost` board, one climb per seed, 20,000-evaluation
+cap. `evaluationsToCross` is `never` everywhere; all fourteen runs that completed
+stopped on `S3` and none reached the cap (the fifteenth stopped on a refusal).
+
+**`HC1` fails on all fifteen runs and nothing in any of the four sweeps has
+produced a board anybody could build, and the best cut count reached is 7 against
+the owner's hand-laid bar of 5** — one sentence, because apart they read as each
+other's consolation.
+
+#### `F`, `C` and `W` are identical, seed for seed, to the sweep WITHOUT the wire kinds
+
+| arm | §6.8 `F` per seed | §6.9 `F` per seed |
+| --- | --- | --- |
+| `constructed` | 8, 8, 8, 7, 7 | **8, 8, 8, 7, 7** |
+| `import` | 33, 33, 33, 33, 33 | **33, 33, 33, 33, 33** |
+| `random` | 12, 12, 12, 16, 14 | (refused), **12, 12, 16, 14** |
+
+`W = 0` in every best board of all fifteen, as in all forty-five before them, and
+`F = C` exactly on every run but `random` 3 (where one `SOLDER` bridge the
+autofill made accounts for the 16 against 15). **Lifting the deferral changed no
+run's outcome at all** — and that is a finding about the cost model, not about the
+implementation, because the kind demonstrably fires.
+
+#### It fires: 7,417 counted wire candidates, none refused by the binary, none ever best
+
+| arm | seed | candidates | of them `add-wire` | compound gestures | refused by the fork | `add-wire` steps that set a new best `F` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 0 | 13,237 | 707 | 28,456 | 0 | **0** |
+| `constructed` | 1 | 13,420 | 707 | 28,972 | 0 | **0** |
+| `constructed` | 2 | 14,594 | 795 | 29,384 | 0 | **0** |
+| `constructed` | 4 | 10,647 | 355 | 23,844 | 0 | **0** |
+| `import` | 0–4 | 4,313 | 276 each | 9,061 | 0 | **0** |
+| `random` | 2 | 15,217 | 1,533 | 29,358 | 0 | **0** |
+| `random` | 3 | 11,841 | 1,940 | 25,292 | 0 | **0** |
+
+Eleven of the fifteen runs: 7,417 `add-wire` candidates in total, not one of
+which set a new best `F` in any run. The other three runs are the unclassifiable
+ones below, and `random` seed 0 refused.
+
+#### Why no wire is ever accepted, measured three ways
+
+1. **At a stalled board a wire is pure cost.** `random` seed 1 ends at `F = 12,
+   C = 12, W = 0, B = 0`. Scoring all 21 of its final round's wire candidates
+   gives **`F = 12.25, C = 12, W = 1, B = 0` for every one** — identical in `N`,
+   `P`, `S_occ`, `J` and `κ` too. A wire does not remove a cut: `C` is the fork's
+   cut derivation and `S_occ` counts `PIN` holes, and a wire's ends are not pins,
+   so a wire is invisible to `C = N + J − S_occ` and shows up only as its `ρ_w`.
+2. **The one wire that was better lost its round.** In round 0 of the same run
+   `r0-m109` scores `F = 19.25` against an incumbent at 20 — it displaced a
+   `SOLDER` bridge, `B` 1 → 0. The round's best candidate scored **17**, and a
+   greedy climb takes the round's best.
+3. **A wire cannot be taken on credit, by design.** `worseAcceptanceRan` is
+   `false` on all fifteen because `worseAcceptance` is `null`, which `PIPELINE E3`
+   and `CRITERIA PAR3` require be reported rather than approximated. Only strict
+   improvements are ever accepted, so a gesture whose payoff needs a SECOND step
+   can never be the first one.
+
+So `rhoWire`'s stated exchange — *"up to four wires to remove one cut"* — **is
+not reachable through this move set as scored.** Nothing in it makes a wire
+remove a cut within one accepted step, so the price is only ever paid.
+
+#### Why `netsComplete` is false on all fourteen scoreable runs
+
+The reading that the search *"structurally cannot complete a net"* is too strong:
+a net can be completed by GATHERING its pins onto one strip, which needs no wire,
+and the search does use that route. The measured account is narrower and worse.
+
+**Nothing the search optimises counts completeness.** `F = C + ρ_w·W + ρ_s·B` has
+no completeness term, and `./rank.ts`'s `RANKING` — cuts, then wire bridges, then
+solder bridges, then `A_occ`, then pin-bounding-box wirelength — has none either,
+by `OBJ2`'s own prohibition on a legibility term. `HC1` reaches acceptance only
+through the no-regression clause, which forbids BREAKING a constraint that held;
+`HC1` is already false on every arm's start, so it blocks nothing and rewards
+nothing.
+
+**What that costs, measured on `random` seed 3** (the one run whose best board is
+still on disk), with the fork's own `--check --netlist`:
+
+| board | nets incomplete | nets complete | cuts |
+| --- | --- | --- | --- |
+| its seeded start | **14 of 14** | 0 | 21 |
+| its best board (`F = 16`) | **13 of 14** | 1 | 15 |
+| the import-placed start | 13 of 14 | 1 | 38 |
+| the owner's frozen fixture | **0** | 6 | 5 |
+
+**63 rounds and 11,842 evaluations completed ONE net and removed six cuts.** That
+is the search doing exactly what it was told: an unconnected board is a cheap
+board, and `C` is what it is scored on.
+
+**And the two gestures that finish a net the gather cannot are both unavailable
+in practice.** A net spread over `k` strips needs `k − 1` joins, which is what
+`J = C − N + S_occ` counts: `random` seed 1 ends with `N = 14`, `S_occ = 25`,
+`J = 23` — twenty-three required joins and `W = 0`, `B = 0` made. Of the two ways
+to make one, the wire is priced as pure cost and never accepted (above), and the
+solder bridge **has no gesture at all** — `B` is only ever what `AutoFillVero`
+happens to produce. The owner's own frozen board uses one.
+
+**So the cause is the objective, not the geometry and not premature
+convergence**, and the evidence separates them:
+
+- **not premature convergence**: all fourteen completed runs stopped on `S3` — a
+  round in which no candidate improved — and none reached the cap. With completeness unpriced and
+  `E3` off, a larger budget stalls at the same kind of board;
+- **geometry is not EXCLUDED, and this sweep cannot exclude it.** Nothing here
+  shows a complete layout exists for this 14-net export on 35 strips. The frozen
+  fixture is complete at 5 cuts, 1 solder bridge and no wires — but its dump
+  reports 6 nets against the export's 14, so **it is not a feasibility proof for
+  this netlist** and must not be read as one. What would settle it is a complete
+  layout for THIS export, hand-laid or from another placer, or a lower bound on
+  the joins it requires;
+- **what would change the outcome is a change nobody here may make alone**:
+  admissibility gating acceptance, or `J` or the incomplete-net count entering
+  `F`, or a wire priced against what it completes. All three are objective
+  changes, which belong to `COST` and `CRITERIA` and not to a search module.
+
+#### Three runs the firing audit cannot classify, and what it does not touch
+
+`constructed` 3, `random` 1 and `random` 4 produce a directory-versus-history
+disagreement — 13,432 files against a history of 13,432, 9,284 against 9,280,
+13,643 against 13,641 — and `cluster-firing.ts` refuses to align them rather than
+guess which index is which. **The gap is exactly each run's unscoreable count**
+(1, 5 and 3): an unscoreable candidate writes its board file and produces no
+history entry. So what those three runs cannot contribute is the per-KIND
+breakdown; their `F`, `C`, `W`, evaluations and rounds come from the run record
+rather than from the directory and are unaffected.
+
+#### `add-wire` reaches real shorts, and they are counted rather than fatal
+
+Nine candidates across the fifteen runs could not be scored at all: a wire
+bridging two strips on a packed board shorts two nets, `AutoFillVero` reports
+`CUT_STATE UNRESOLVED` with `CUT_CONFLICT` lines, and `./score.ts` refuses the
+board. `./climb.ts` rejects and counts the candidate instead of stopping the run.
+**Before that change this sweep could not have run**: the first such candidate
+ended the run.
+
+#### One run refused, and the refusal's own diagnosis was wrong
+
+`random` seed 0 stopped on `occupied-missing-pins: part junction_grounds (SIP5)
+is placed but the dump has no PIN lines for it` — the guard that exists so an
+undercounted `S_occ` can never flatter a layout, because `S_occ` enters
+`C = N + J − S_occ` negatively. The message then asserted *"the dump came from an
+unpinned or older veroroute fork"*, and **that diagnosis is false here**:
+
+- the same pinned binary produced the sweep's other 763,545 invocations;
+- a replay of the same arm, seed, board and code — the sweep's own `search` call
+  with the same seeded PRNG — passed the refusal point (about 1,070 painted
+  boards, 6,436 invocations) and reached 28,000 board files without refusing. A
+  second isolated attempt passed it again, to about 8,900 evaluations, before it
+  was stopped;
+- **0 of 333** of that seed's round-0 candidates, re-autofilled and re-dumped,
+  has a placed part with no `PIN` lines, and all 333 report `CUT_STATE COMPUTED`;
+- the only thing the failing run had that the replays did not is a SECOND fork
+  process: a scratch janitor dumping boards every 60 seconds against the same
+  root. That is a correlation, not a mechanism.
+
+So the refusal is a transient divergence in one dump, unexplained, and
+`noPinLinesMessage` now names both causes and how to tell them apart — re-dump
+the same board; an unpinned binary never prints `PIN` lines, an incomplete dump
+comes back clean. **The guard itself is not softened**, and `random` seed 0 has no
+figure in this sweep: it is one refusal, not a zero.
+
+#### What this still does not establish
+
+- **the wire finding is one board and one cut derivation.** `W = 0` and "a wire
+  never removes a cut" are measured on the low-boost export with this netlist; a
+  board whose nets are split where a cut cannot separate them could behave
+  differently, and nothing here tests one;
+- **the evaluation counts moved in both directions** (`constructed` 0:
+  13,767 → 13,238; `import`: 4,086 → 4,314) although the move set only grew. Each
+  run's trajectory differs once the candidate list differs, so per-round totals
+  are not comparable between sweeps; what is comparable — and identical — is the
+  final `F`, `C` and `W`;
+- **`delete-wire` is still refused**, so a board that acquires a wire can never
+  shed one. The refusal is measured (`./moves-model.ts`) and is a limit of the
+  fork's verb set;
+- **`E3` remains unconfigured**, so the one mechanism that would let a wire be
+  taken on credit has still never run in this repository;
+- **the completeness account is measured on one run's best board.** The ranking
+  and objective argument holds for all fifteen by construction, but the
+  nets-incomplete counts above are `random` seed 3's; the other best boards were
+  deleted with their run directories to bound scratch disk.

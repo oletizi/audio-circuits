@@ -177,11 +177,29 @@ export const REBUILD_PINNED_FORK =
 /**
  * The refusal for a placed part with no PIN lines: its leads' holes are
  * unknown. One wording for every step that needs a part's leads.
+ *
+ * **IT NAMES TWO CAUSES, BECAUSE IT USED TO NAME ONE AND THE ONE WAS WRONG.**
+ * The message asserted *"the dump came from an unpinned or older veroroute
+ * fork"*, which is a diagnosis and not an observation - and
+ * `docs/stripboard/pipeline-verification.md` §6.9 measured it being false: one
+ * run in fifteen refused here while the pinned fork produced 763,545 other
+ * invocations in the same sweep, a replay of the same arm, seed, board and code
+ * passed the refusal point twice, and 333 of 333 of that seed's candidates
+ * re-dumped with every placed part pinned. A refusal that names the wrong fix
+ * sends a reader to rebuild a binary that is already correct, so this one now
+ * says how to tell the two apart: **re-dump the same board.** An unpinned
+ * binary never prints `PIN` lines, so the re-dump is identical; an incomplete
+ * dump from a binary that normally prints them comes back clean.
  */
 export function noPinLinesMessage(part: Part): string {
   return (
     `part ${part.ref} (${part.type}) is placed but the dump has no PIN lines for it, so where its leads go ` +
-    `is unknown. The dump came from an unpinned or older veroroute fork; ${REBUILD_PINNED_FORK}.`
+    "is unknown. TWO CAUSES, TOLD APART BY RE-DUMPING THE SAME BOARD: an unpinned or older " +
+    `veroroute fork never prints them, the re-dump is identical, and the fix is to ${REBUILD_PINNED_FORK}; ` +
+    "or one dump came back incomplete from a binary that does print them, the re-dump is clean, and " +
+    "the fix is to repeat the step rather than the build (docs/stripboard/pipeline-verification.md " +
+    "section 6.9 measures one such case). It is refused either way rather than read as a part with no " +
+    "leads."
   )
 }
 

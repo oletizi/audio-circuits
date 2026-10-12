@@ -27,8 +27,9 @@
  * is not.
  *
  * **AND IT BOUGHT NOTHING, WHICH IS A FACT ABOUT THE COST MODEL AND NOT ABOUT
- * THIS MODULE.** §6.9 measured it: 11,000 `add-wire` candidates across fifteen
- * runs, none refused by the binary, and `W = 0` in every best board - `F`, `C`
+ * THIS MODULE.** §6.9 measured it: 7,417 `add-wire` candidates across the eleven
+ * of fifteen runs whose candidates could be classified, none refused by the
+ * binary, and `W = 0` in every best board - `F`, `C`
  * and `W` identical seed for seed to the sweep without this kind. The three
  * measurements behind that, each reproduced in §6.9:
  *
