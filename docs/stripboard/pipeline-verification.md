@@ -26,8 +26,10 @@ import-closure scan found, CHECKPOINT 3 - the measured arm comparison, whose
 rate is zero on all three arms - what the cluster move did to `F`, the stretch
 defect the comparison found on the way, CHECKPOINT 4, the GATHER that takes the
 constructed arm from 16 cuts to 10, and CHECKPOINT 5, the comparison re-run with
-the complete move set - still 0 of 5 on every arm, with the tiebreak inverted
-(§6).
+the complete move set - still 0 of 5 on every arm, with the tiebreak inverted -
+and CHECKPOINT 6, the same comparison again with the gather able to see the empty
+board, where the rate is zero a third time and the inversion widens to all five
+seeds (§6).
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -1586,7 +1588,11 @@ replay-runner harness — the move set is the only thing that changed.** 15 runs
 
 **§6.3 IS NOT EDITED.** Both runs are evidence and the comparison between them is
 itself the finding, so the pre-gather table stays where it is with its own
-annotation and this is a separate section.
+annotation and this is a separate section. **AND THIS ONE IS SUPERSEDED IN TURN
+BY §6.8**, which is the same comparison once more with the gather's candidate
+strips widened to the whole board - the narrowing this run still carried is what
+made §6.6 record a false cause, and §6.8 is where the inversion is measured
+against a lever that can see the empty rows.
 
 | arm | seed | `F` | `C` | `W` | `metMark` | `evaluationsToCross` | `startAdmissible` | `admissibleA1` | nets complete | evaluations | rounds | failing |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -1715,3 +1721,129 @@ trajectory, exactly as §6.6 said of seed 0.
   repair, and the gather has not changed that;
 - **the two sweeps are not a controlled A/B on the gather alone for `random`**,
   whose trajectory differs for the reason §6.6 gives.
+
+### 6.8 CHECKPOINT 6 — the comparison with the gather able to see the empty board: **still 0 of 5, and the inversion WIDENS**
+
+§6.7's run was measured with the gather asking only about strips a net already
+occupied, which on the import-placed board proposed zero gathers and let §6.6
+record that as a property of the board. It is not: that board has 32 empty rows.
+This is the same comparison with the candidates widened to **every strip**, the
+whole net required to fit, and nets with fewer than two on-board parts excluded —
+*same five reviewed seeds, same board, same committed rules at `evaluationCap`
+20,000, same `FROZEN_MARK`, same harness; the candidate set is the only change.*
+15 runs, **775,016 fork invocations, 161 minutes of search** — 2.7 times §6.7's
+cost, which is what the widening is bought with.
+
+**§6.3 and §6.7 are not edited.** Three runs, three move sets, one table each.
+
+| arm | seed | `F` | `C` | `W` | `metMark` | `startAdmissible` | `admissibleA1` | nets complete | evaluations | rounds | failing |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 0 | **8** | 8 | 0 | false | false | false | false | 13767 | 60 | `HC1 HC5 HC8 HC9 HC10` |
+| `constructed` | 1 | **8** | 8 | 0 | false | false | false | false | 13969 | 60 | `HC1 HC5 HC8 HC9 HC10` |
+| `constructed` | 2 | **8** | 8 | 0 | false | false | false | false | 15300 | 70 | `HC1 HC5 HC8 HC9 HC10` |
+| `constructed` | 3 | **7** | 7 | 0 | false | false | false | false | 14084 | 56 | `HC1 HC5 HC8 HC9 HC10` |
+| `constructed` | 4 | **7** | 7 | 0 | false | false | false | false | 11306 | 48 | `HC1 HC5 HC6 HC8 HC9 HC10` |
+| `import` | 0–4 | **33** | 33 | 0 | false | false | false | false | 4086 | 21 | `HC1 HC6 HC8 HC10` |
+| `random` | 0 | **12** | 12 | 0 | false | false | false | false | 15813 | 61 | `HC1 HC8 HC10` |
+| `random` | 1 | **12** | 12 | 0 | false | false | false | false | 9423 | 41 | `HC1 HC8 HC10` |
+| `random` | 2 | **12** | 12 | 0 | false | false | false | false | 15256 | 70 | `HC1 HC8 HC10` |
+| `random` | 3 | **16** | 15 | 0 | false | false | false | false | 11238 | 63 | `HC1 HC8 HC10` |
+| `random` | 4 | **14** | 14 | 0 | false | false | false | false | 12927 | 65 | `HC1 HC8 HC10` |
+
+**THE RATE IS STILL ZERO:**
+
+```
+separated: false
+retireable: []
+rates: constructed 0/5 import 0/5 random 0/5
+```
+
+Same thing it is a rate over as §6.7: how many of the five reviewed seeds
+produced a run meeting `B1-frozen`'s mark on ALL clauses — `C <= 5`, `W = 0`,
+every net complete — on the import-placed `pultec-low-boost` board, one climb per
+seed, 20,000-evaluation cap. **No run met it.** The best is now `C = 7` against a
+bar of 5 — the closest anything in this plan has come — and `HC1` still fails on
+all fifteen, so no run meets the completeness clause whatever its cut count.
+`evaluationsToCross` is `never` everywhere. All fifteen stopped on `S3`, none
+reached the cap, so `S5` did not fire and no run is a cap failure. Nothing is
+retireable.
+
+#### The inversion did not just hold: it widened
+
+| seed | `constructed` §6.3 → §6.7 → §6.8 | `random` §6.3 → §6.7 → §6.8 | winner now |
+| --- | --- | --- | --- |
+| 0 | 16 → 10 → **8** | 14 → 11 → 12 | **`constructed`** by 4 |
+| 1 | 16 → 10 → **8** | 13 → 12 → 12 | **`constructed`** by 4 |
+| 2 | 16 → 10 → **8** | 14 → 13 → 12 | **`constructed`** by 4 |
+| 3 | 16 → 11 → **7** | 17 → 15 → 16 | **`constructed`** by 9 |
+| 4 | 17 → 13 → **7** | 15 → 13 → 14 | **`constructed`** by 7 |
+
+**`constructed` wins all five seeds**, where §6.7 had it winning four and tying
+one and §6.3 had it losing four. Mean final `F`: `constructed` 16.2 → 10.8 →
+**7.6**; `random` 14.6 → 12.8 → **13.2**. **So the pre-gather conclusion was not
+merely incomplete, and the widening strengthened rather than explained away the
+reversal** — which is the outcome the review named as the one that would make it
+a real result.
+
+**AND THE CONTROL ARM GOT SLIGHTLY WORSE**, which is worth saying plainly because
+it is the opposite direction from the lever's own effect: `random` goes 12.8 →
+13.2 on the mean, worse on three seeds and better on two. A wider move set is a
+different sweep and a different walk; it does not monotonically help. The gather
+set a new best `F` three times across its five runs (and a cluster four times),
+against the constructed arm's 38.
+
+**It still retires nothing.** The decision variable is the rate, it is zero on
+every arm, and `RETIREMENT`'s tiebreak is evidence for a later comparison rather
+than a verdict. `random` is the control and cannot be retired by this experiment
+at all.
+
+#### `import` proposes 2,962 gathers per run now, and improves
+
+**The number that was zero is 14,810 across its five runs** — 2,962 each — and
+the arm's `F` moves for the first time in this document: **36 → 33**, in 21
+rounds and 4,086 evaluations rather than 3 rounds and 83. One of its five
+new-best-`F` steps is a gather (`gather r2-m41 F 36 -> 35`).
+
+So the import arm DID have room, and §6.6's *"the gather needs room and the
+import arm's own start does not have any"* was false twice over: the room was
+there and the move could use it once the enumeration asked. What remains true is
+that the arm is far behind the other two — 33 against 7 and 12 — which is now a
+statement about `--import`'s first-fit placement rather than about what the
+search could reach from it.
+
+#### Where the gathers fired, and what the widening cost
+
+| arm | candidates (5 runs) | of them gathers | of them clusters | compound `--move --delta` gestures | new-best-`F` steps | of those, gathers | of those, clusters |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 68,421 | 28,442 | 5,825 | 118,206 | 56 | **38** | 0 |
+| `import` | 20,425 | 14,810 | 750 | 41,750 | 25 | **5** | 0 |
+| `random` | 64,652 | 20,222 | 6,680 | 77,185 | 54 | 3 | 4 |
+
+**68% of the constructed arm's new-best-`F` steps are gathers** (38 of 56), and
+on seed 0 nine of its eleven steps are a single unbroken chain of them: `F` 19 →
+18 → 16 → 15 → 14 → 12 → 11 → 10 → 9, with a one-hole move finishing 9 → 8. That
+is the lever behaving the way `COST` says clustering should.
+
+**The cost, measured rather than assumed.** Per round on the import-placed board:
+280 candidate ATTEMPTS (8 nets with two or more on-board parts by 35 strips), of
+which 192 fit and are evaluated; a candidate that does not fit costs no fork
+invocation at all. The applicable move set per round went from 27 to 219 there.
+Per run that is 4,086 evaluations against 83, and across the fifteen runs
+775,016 invocations against §6.7's 281,935 — **2.7x the machine time for 2 to 6
+cuts per arm.** 237,141 compound gestures were spent and **not one was refused by
+the binary.**
+
+#### What this still does not establish
+
+- **the mark is still unmet and the gap is still large**: `C = 7` against 5 with
+  every net incomplete, `A1` false on all fifteen, `κ` not at the bench;
+- **`constructed` still starts inadmissible on `HC5` and `HC9`** on every seed,
+  which no gesture repairs - and that is now its ONLY remaining structural
+  failure besides `HC1`/`HC8`/`HC10`, since `HC6` holds on four of its five runs;
+- **one board, one budget, one climb per seed**; the rate is over five seeds;
+- **the candidate set is now "every strip", which is not obviously the right
+  shape either.** It is the complete set rather than a measured optimum, and the
+  per-round cost above is what a tighter rule would have to beat;
+- **the gather's single-pass schedule is unproven in general** - the argument for
+  it is in `./moves-cluster.ts` and a case it misses shows up as a gather not
+  proposed.

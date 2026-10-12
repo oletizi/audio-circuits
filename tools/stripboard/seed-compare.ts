@@ -256,6 +256,13 @@ export interface ComparisonInput {
  * changed is which way the evidence points if it ever does - and a reader
  * reaching for this rule should know that the pre-gather reading was reversed by
  * implementing a move the plan always specified.
+ *
+ * **AND A THIRD RUN WIDENED IT.** §6.7's gather asked only about the strips a
+ * net already occupied; §6.8 asks about every strip, and the rate is zero for
+ * the third time while `constructed` wins ALL FIVE seeds on the tiebreak at a
+ * mean `F` of 7.6 against the control's 13.2. Three runs, three move sets, one
+ * section each, none of them edited. The rate has never separated the arms, so
+ * nothing is retireable by this rule yet.
  */
 export const RETIREMENT =
   "The decision variable is the success rate: how many of the seed set's seeds met the mark, " +

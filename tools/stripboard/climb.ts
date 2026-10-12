@@ -90,12 +90,14 @@
  * GATHER, seed 0 reaches `F` 10 on `constructed` in 32 rounds and 4,150
  * evaluations and `F` 11 on `random` in 63 rounds and 9,698, while `import`
  * stays at 36 because no gather is proposable on a board packed into three rows.
- * **§6.7 IS THE WHOLE SEED SET UNDER THAT MOVE SET** and supersedes the ranges
- * above outright: `constructed` reaches `F` 10, 10, 10, 11 and 13 in 30 to 45
- * rounds and 3,712 to 5,767 evaluations; `random` 11, 12, 13, 15 and 13 in 41 to
- * 63 rounds and 6,501 to 9,698; `import` 36 on every seed in 3 rounds and 83.
- * All fifteen stopped on `S3`, none reached the cap, and every one ended
- * inadmissible.
+ * §6.7 is the whole seed set under that move set, and **§6.8 SUPERSEDES BOTH**
+ * because the gather's candidates were widened to every strip: `constructed`
+ * reaches `F` 8, 8, 8, 7 and 7 in 48 to 70 rounds and 11,306 to 15,300
+ * evaluations; `random` 12, 12, 12, 16 and 14 in 41 to 70 rounds and 9,423 to
+ * 15,813; `import` 33 on every seed in 21 rounds and 4,086. All fifteen stopped
+ * on `S3`, none reached the cap, and every one ended inadmissible. A climb is
+ * three to four times the size it was before the widening, which is what §6.8
+ * records as its cost.
  *
  * **THE START IS INADMISSIBLE AND THAT IS NORMAL.** `./seed.ts` records that
  * all three arms begin from a board whose nets are incomplete - 19, 13, 7 and 6
