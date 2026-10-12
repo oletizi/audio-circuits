@@ -56,149 +56,35 @@ import type { BoardDump } from "../guide/dump.ts"
 import { parseHoleKey, pinHoles, type HoleKey } from "./copper.ts"
 import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
-import { clusterAfter, clusterMove } from "./moves-cluster.ts"
+import {
+  clusterAfter,
+  clusterMove,
+  gatherMove,
+  gatherStrips,
+  translationsAfter,
+} from "./moves-cluster.ts"
+import { DEFERRED_KINDS, type Move } from "./moves-model.ts"
 import { stretchBoundFor, type Occupancy } from "./seed-geometry.ts"
 import { appliedGestures, rectOf } from "./seed-placement.ts"
 import type { SpawnVeroroute } from "./seed.ts"
 
 /**
- * One difference between a candidate layout and the current one.
+ * The move set's vocabulary, re-exported from `./moves-model.ts`: the union, the
+ * one listing of its kinds, the declared deferrals, the description and the
+ * applicable subset.
  *
- * `cluster` is PIPELINE §7.4's net-cluster move - every on-board part with a pin
- * on one net moved by one delta.
+ * This is the module the plan names and every consumer imports. The split is at
+ * the what-is-a-move / which-moves-does-this-board-admit seam and was forced by
+ * the 500-line ceiling when `gather` arrived.
  */
-export type Move =
-  | { readonly kind: "move"; readonly ref: string; readonly to: readonly [number, number] }
-  | { readonly kind: "rotate"; readonly ref: string; readonly direction: "cw" | "ccw" }
-  | { readonly kind: "stretch"; readonly ref: string; readonly direction: "grow" | "shrink" }
-  | {
-      readonly kind: "add-wire"
-      readonly at: readonly [number, number]
-      readonly ends: readonly [readonly [number, number], readonly [number, number]]
-    }
-  | { readonly kind: "delete-wire"; readonly name: string }
-  | {
-      readonly kind: "cluster"
-      readonly net: string
-      readonly delta: readonly [number, number]
-      /**
-       * The parts this cluster moves, **in the order the gestures go out.**
-       *
-       * **THE MOVE CARRIES THEM RATHER THAN NAMING ONLY THE NET, AND THE REASON
-       * IS THAT THE ORDER CANNOT BE RECOVERED AT APPLY TIME.** Which parts a net
-       * holds comes from the reference NETLIST, because `--import` writes every
-       * `NODE` line `NAME -`; and the order they must move in comes from the
-       * CARRIED OCCUPANCY, which is the only description of a turned part's
-       * footprint there is. `applyMove` is handed a board path and a spawn and
-       * neither of those - so a cluster whose refs it had to derive would be a
-       * second implementation of `./moves-cluster.ts`' rule in the one module
-       * that cannot see what the rule needs. `net` stays beside them as what the
-       * cluster IS, for `describeMove`, the run record and the enumeration order.
-       */
-      readonly refs: readonly string[]
-    }
+export {
+  applicableMoves,
+  DEFERRED_KINDS,
+  describeMove,
+  MOVE_KINDS,
+  type Move,
+} from "./moves-model.ts"
 
-/**
- * Every kind, once, in the order `enumerateMoves` emits them. The one listing:
- * `tests/stripboard/moves.test.ts` holds the enumeration against it, so a
- * seventh kind added to `Move` without an arm in `applyMove` is a compile
- * error and a kind that stops being enumerated is a test failure.
- */
-export const MOVE_KINDS: readonly Move["kind"][] = [
-  "move",
-  "rotate",
-  "stretch",
-  "add-wire",
-  "delete-wire",
-  "cluster",
-]
-
-/**
- * The kinds `applyMove` cannot apply, each with what is missing and where it
- * gets fixed. **One wording, read by both `applicableMoves` and `applyMove`**,
- * so the climb's omission and the refusal's text cannot drift apart.
- *
- * `delete-wire` IS NOT DEFERRED TO A TASK - IT IS BLOCKED ON THE FORK. The
- * pinned fork's command table (`.tools/veroroute-perfboard/Src/Headless.cpp:
- * 92-106`) is `--adopt`, `--author`, `--check`, `--dump-board`,
- * `--dump-netlist`, `--import`, `--move`, `--move-batch`, `--rotate`,
- * `--update`, `--set-strips`, `--stretch` and three `--verify-*` test verbs,
- * and `--author`'s ops are `group`, `select`, `move-label`, `add-wire`, `merge`
- * and `autofill`. **None of them deletes a component.** COST §6.1 lists
- * `delete-wire` in the move set and §7 records that only some of the set
- * existed when it was written; this is the same gap, still open.
- */
-export const DEFERRED_KINDS: ReadonlyMap<Move["kind"], string> = new Map([
-  [
-    "add-wire",
-    "a one-gesture add-wire cannot join two strips, measured on the import-placed low-boost " +
-      "board with the pinned binary. TWO facts, both from the fork: (1) the wire anchors only at " +
-      "a FREE hole - `--author --op add-wire --at 1,0` is refused with \"the wire could not be " +
-      'placed at that position (it is floating)" because a part\'s footprint occupies that hole, ' +
-      "and this enumeration anchors at a PIN hole, which is the only kind of hole it can " +
-      "identify as belonging to a net; and (2) a freshly created wire is 1x3 ALONG THE ROW - " +
-      "`--at 10,10` on a free hole yields `WIRE Wire1 AT 10,10 ENDS 10,10 10,12` - so under " +
-      "horizontal strips it joins one strip to itself and connects nothing. Making it useful " +
-      "needs the wire turned across the strips and stretched to reach, which is three gestures " +
-      "in one candidate; or a fork change letting --op add-wire name both ends. **THE COMPOUND " +
-      "GESTURE IS NO LONGER WHAT BLOCKS IT, AND THAT IS WORTH SAYING NOW THAT THE CLUSTER MOVE " +
-      "EXISTS**: a cluster is several gestures in one candidate and it works, so a reader could " +
-      "reasonably ask why this one does not follow. The answer is the occupancy. " +
-      "./moves-cluster.ts sequences PART translations and checks each one against the carried " +
-      "occupancy, and a WIRE's holes are not in the occupancy at all - occupancyOf builds rects " +
-      "from PART and PIN lines only - so there is no model that could say whether a turned, " +
-      "stretched wire lands clear of anything. Giving it one is a change to seed-geometry.ts " +
-      "with the fork's own wire arithmetic transcribed into it, not a reuse of the cluster's " +
-      "sequencing. It is still ENUMERATED, so the move set in the record stays the spec's",
-  ],
-  [
-    "delete-wire",
-    "no verb in the pinned fork deletes a placed component. The shipped verbs are --adopt, " +
-      "--check, --dump-board, --dump-netlist, --import, --move, --move-batch, --rotate, " +
-      "--update, --set-strips and --stretch, and the test-only --author takes group, select, " +
-      "move-label, add-wire, merge and autofill - none of the seventeen removes a wire. Fixing " +
-      "it is a change to the fork (a --author --op delete op over Board's component removal, " +
-      "with the same effect check --op add-wire makes), not a change to this module",
-  ],
-])
-
-/** A one-line description of a move, stable across runs: the key a test compares by. */
-export function describeMove(move: Move): string {
-  switch (move.kind) {
-    case "move":
-      return `move ${move.ref} to ${move.to[0]},${move.to[1]}`
-    case "rotate":
-      return `rotate ${move.ref} ${move.direction}`
-    case "stretch":
-      return `stretch ${move.ref} ${move.direction}`
-    case "add-wire":
-      return (
-        `add-wire at ${move.at[0]},${move.at[1]} joining ${move.ends[0][0]},${move.ends[0][1]} ` +
-        `to ${move.ends[1][0]},${move.ends[1][1]}`
-      )
-    case "delete-wire":
-      return `delete-wire ${move.name}`
-    case "cluster":
-      // The refs are in the description because they are part of the gesture
-      // and their ORDER is a decision: a record that said only "cluster mid by
-      // 1,0" could not tell two sequences of the same parts apart, and the
-      // sequence is what makes the difference between a cluster that lands and
-      // one the fork refuses (./moves-cluster.ts's clusterSequence).
-      return `cluster ${move.net} by ${move.delta[0]},${move.delta[1]} (${move.refs.join(" ")})`
-  }
-}
-
-/**
- * The moves `applyMove` can actually apply, in the order given.
- *
- * **IT IS A DECLARED OMISSION AND NOT A SILENT SKIP.** The kinds it drops are
- * exactly `DEFERRED_KINDS`' keys, each of which carries its reason in the
- * record above; nothing is dropped because a gesture failed, and nothing is
- * discovered by catching a refusal.
- */
-export function applicableMoves(moves: readonly Move[]): readonly Move[] {
-  return moves.filter((move) => !DEFERRED_KINDS.has(move.kind))
-}
 
 /**
  * The four one-hole neighbours a `move` proposes, in the one order this file
@@ -271,11 +157,16 @@ export function occupancyAfter(
         "applied.",
     )
   }
-  // THE COMPOUND KIND, THROUGH THE SAME `appliedGestures` THE SINGLE MOVE USES,
-  // one part at a time in the order the move itself records - see
-  // `Move`'s cluster arm for why the order travels on the move.
+  // THE TWO COMPOUND KINDS, THROUGH THE SAME `appliedGestures` THE SINGLE MOVE
+  // USES, one part at a time in the order the move itself records - see `Move`'s
+  // cluster and gather arms for why the order travels on the move. A cluster is
+  // one delta for every part and a gather is one delta per part; underneath,
+  // both are `translationsAfter`, so there is one advance and not three.
   if (move.kind === "cluster") {
     return clusterAfter(occupancy, dump.grid, move.refs, move.delta)
+  }
+  if (move.kind === "gather") {
+    return translationsAfter(occupancy, dump.grid, move.gestures)
   }
   if (move.kind === "move") {
     return appliedGestures(occupancy, dump.grid, move.ref, move.to, 0, 0, SINGLE_GESTURE_ORDER)
@@ -453,6 +344,31 @@ function clusterMoves(
 }
 
 /**
+ * Every `gather` the model admits: each net in the NETLIST'S order, onto each of
+ * the strips that net's own pins occupy, ascending.
+ *
+ * **THIS IS THE LEVER `cluster` TURNED OUT NOT TO BE**, and
+ * `./moves-model.ts`'s `gather` arm carries the ruling and the measurement
+ * behind that sentence. `./moves-cluster.ts` chooses the deltas and their order;
+ * this function is only the enumeration, in the one order that makes a run
+ * reproducible.
+ */
+function gatherMoves(
+  occupancy: Occupancy,
+  dump: BoardDump,
+  reference: ReferenceNets,
+): readonly Move[] {
+  const moves: Move[] = []
+  for (const [net] of reference) {
+    for (const strip of gatherStrips(dump, reference, net)) {
+      const move = gatherMove(occupancy, dump, reference, net, strip)
+      if (move !== undefined) moves.push(move)
+    }
+  }
+  return moves
+}
+
+/**
  * The whole move set for one board, in `MOVE_KINDS`' order within a
  * deterministic order of parts, nets and wires.
  *
@@ -472,6 +388,7 @@ export function enumerateMoves(
     ...partMoves(occupancy, dump),
     ...wireMoves(dump, reference),
     ...clusterMoves(occupancy, dump, reference),
+    ...gatherMoves(occupancy, dump, reference),
   ]
 }
 
@@ -492,4 +409,13 @@ export { applyMove, type GestureTransport } from "./moves-apply.ts"
  * plan names and every consumer imports, and the split is at the
  * what-is-a-cluster seam, forced by the 500-line ceiling.
  */
-export { clusterAfter, clusterMove, clusterRefs, clusterSequence } from "./moves-cluster.ts"
+export {
+  clusterAfter,
+  clusterMove,
+  clusterRefs,
+  clusterSequence,
+  gatherMove,
+  gatherStrips,
+  translationsAfter,
+  type Translation,
+} from "./moves-cluster.ts"

@@ -51,8 +51,9 @@
  * zero, exactly as `occupancyAfter` already calls it for a single `move`.
  */
 import type { BoardDump, Grid } from "../guide/dump.ts"
+import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
-import type { Move } from "./moves.ts"
+import type { Move } from "./moves-model.ts"
 import { appliedGestures, rectOf } from "./seed-placement.ts"
 import type { Occupancy } from "./seed-geometry.ts"
 
@@ -218,4 +219,167 @@ export function clusterMove(
   const ordered = clusterSequence(occupancy, refs, delta)
   if (clusterAfter(occupancy, dump.grid, ordered, delta) === undefined) return undefined
   return { kind: "cluster", net, delta, refs: ordered }
+}
+
+/* ------------------------------------------------------------------------- *
+ * `E1`'s GATHER: the same net, each part by its own delta, onto one strip.
+ * ------------------------------------------------------------------------- */
+
+/** One part's translation, as the move records it. */
+export interface Translation {
+  readonly ref: string
+  readonly delta: readonly [number, number]
+}
+
+/**
+ * The occupancy after applying `translations` IN THE ORDER GIVEN, or `undefined`
+ * when the model says the fork would refuse one of them.
+ *
+ * **IT IS THE ONE ADVANCE FOR BOTH COMPOUND KINDS**: `clusterAfter` is this
+ * function over one shared delta, and a gather's own deltas differ per part.
+ * Each part goes through `appliedGestures` with zero turns and zero stretch
+ * steps - the same call `occupancyAfter` makes for a single `move` - so there is
+ * one arithmetic for where a translated part lands and not three.
+ */
+export function translationsAfter(
+  occupancy: Occupancy,
+  grid: Grid,
+  translations: readonly Translation[],
+): Occupancy | undefined {
+  let working: Occupancy = occupancy
+  for (const one of translations) {
+    const rect = rectOf(working, one.ref)
+    const origin: readonly [number, number] = [rect.row + one.delta[0], rect.col + one.delta[1]]
+    const advanced = appliedGestures(working, grid, one.ref, origin, 0, 0, TRANSLATION_ONLY_ORDER)
+    if (advanced === undefined) return undefined
+    working = advanced
+  }
+  return working
+}
+
+/**
+ * Where each part's pin on `net` sits, in the DUMP'S PART ORDER: the hole the
+ * gather aims at a common strip.
+ *
+ * **A PART WITH TWO PINS ON ONE NET AIMS ITS FIRST, IN THE DUMP'S `PIN` ORDER,
+ * AND THAT IS A DECLARED CHOICE RATHER THAN A DERIVATION.** Such a part shorts
+ * the net to itself, and it cannot put both of its pins on one strip unless its
+ * leads already run along that strip - so there is no delta that satisfies both
+ * and which one to aim is not in the data. Aiming the first is reproducible and
+ * says what it did; the other pin goes wherever the same translation takes it,
+ * which is the gather's effect on `J` like any other hole it moves.
+ */
+function aimedHoles(
+  dump: BoardDump,
+  reference: ReferenceNets,
+  net: string,
+): readonly { readonly ref: string; readonly row: number; readonly col: number }[] {
+  const wanted = new Set(reference.get(net) ?? [])
+  const aimed: { readonly ref: string; readonly row: number; readonly col: number }[] = []
+  for (const ref of clusterRefs(dump, reference, net)) {
+    const pin = (dump.pins[ref] ?? []).find((own) => wanted.has(`${ref}.${own.pin}`))
+    if (pin === undefined) {
+      throw new Error(
+        `aimedHoles: ${ref} is in the cluster of "${net}" and the dump reports no PIN line of ` +
+          "its on that net, which cannot both be true - clusterRefs selected it BY one of those " +
+          "pins. It is not skipped: a gather that quietly left a part out would move the net's " +
+          "other parts onto a strip this one was never going to reach.",
+      )
+    }
+    aimed.push({ ref, row: pin.row, col: pin.col })
+  }
+  return aimed
+}
+
+/**
+ * One net's gather onto `strip`, or `undefined` when the model admits no such
+ * candidate.
+ *
+ * **THE DELTA IS PER PART AND CROSSES THE STRIPS AND NOTHING ELSE.** A hole's
+ * strip is its column under `VERTICAL_STRIPS` and its row otherwise
+ * (`./constraints-model.ts`'s `stripOf`, the one definition), so the delta that
+ * takes a pin from its strip to `strip` is `strip - current` along that axis and
+ * zero along the other. The gather therefore never slides a part ALONG a strip:
+ * it only changes which strip each of the net's pins is on, which is the
+ * quantity `J` counts.
+ *
+ * **THE ORDER IS A DECLARED SCHEDULE AND NOT A SEARCH OVER ORDERS.** Repeated
+ * passes in the dump's part order: on each pass every part whose destination
+ * fits NOW is moved, and the pass repeats while anything moved. The parts that
+ * are still unplaced when a pass moves nothing mean the gather is not proposed.
+ * That is strictly stronger than one pass - a part blocked by another that has
+ * not moved yet gets its turn after it does - and it is deterministic, which
+ * Task 13's hash needs. **It is NOT a claim that no order could place a gather
+ * this schedule rejects**, and nothing has measured how often another would.
+ *
+ * `translationsAfter` is the fit model, so the sequence recorded on the move is
+ * the sequence the model checked, and `applyMove` needs no geometry at all.
+ */
+export function gatherMove(
+  occupancy: Occupancy,
+  dump: BoardDump,
+  reference: ReferenceNets,
+  net: string,
+  strip: number,
+): Move | undefined {
+  const aimed = aimedHoles(dump, reference, net)
+  if (aimed.length === 0) return undefined
+  const wanted: Translation[] = []
+  for (const hole of aimed) {
+    const current = stripOf(hole, dump.verticalStrips)
+    const step = strip - current
+    // A part already on the target strip is left out: its delta is zero, and the
+    // fork refuses a zero delta rather than writing a candidate identical to its
+    // parent.
+    if (step === 0) continue
+    const delta: readonly [number, number] = dump.verticalStrips ? [0, step] : [step, 0]
+    wanted.push({ ref: hole.ref, delta })
+  }
+  // A gather that moves nothing is not a gesture - which is the case where every
+  // one of the net's pins is already on this strip.
+  if (wanted.length === 0) return undefined
+
+  const ordered: Translation[] = []
+  const remaining = [...wanted]
+  let working: Occupancy = occupancy
+  let moved = true
+  while (moved && remaining.length > 0) {
+    moved = false
+    for (let index = 0; index < remaining.length; index += 1) {
+      const one = remaining[index]
+      if (one === undefined) continue
+      const advanced = translationsAfter(working, dump.grid, [one])
+      if (advanced === undefined) continue
+      working = advanced
+      ordered.push(one)
+      remaining.splice(index, 1)
+      index -= 1
+      moved = true
+    }
+  }
+  if (remaining.length > 0) return undefined
+  return { kind: "gather", net, strip, gestures: ordered }
+}
+
+/**
+ * The strips a net's own pins occupy, ascending: the gather's candidate targets.
+ *
+ * **IT IS THE NET'S OWN STRIPS AND NOT EVERY STRIP ON THE BOARD, and that is a
+ * cost choice stated rather than hidden.** A round is a full sweep, so enumerating
+ * every strip would make one round `nets x strips` candidates - 14 x 35 = 490 on
+ * the low-boost board, against the 30-odd a net's own strips give. Gathering onto
+ * a strip none of the net's pins is on is therefore not reachable in one move;
+ * whether it would pay is unmeasured, exactly as `UNIT_DELTAS` says of its own
+ * one-hole neighbourhood.
+ */
+export function gatherStrips(
+  dump: BoardDump,
+  reference: ReferenceNets,
+  net: string,
+): readonly number[] {
+  const strips = new Set<number>()
+  for (const hole of aimedHoles(dump, reference, net)) {
+    strips.add(stripOf(hole, dump.verticalStrips))
+  }
+  return [...strips].sort((a, b) => a - b)
 }

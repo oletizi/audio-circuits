@@ -101,24 +101,24 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
   // THE BRIEF'S OWN ASSERTION HERE WAS `>= enumerateMoves(...).length`, AND IT
   // IS REPLACED RATHER THAN DELETED, with the reason, because a changed
   // brief-specified assertion must be visible. It was written when the whole
-  // enumerated set was expected to be applicable. Four of the six kinds are
-  // now deferred - each on evidence recorded in DEFERRED_KINDS, three of them
-  // from the first real-binary run - so the ENUMERATED count (26) is no longer
-  // a bound on evaluations at all: a round sweeps the APPLICABLE set, and that
-  // is what this asserts instead. Reading the enumerated count as a lower
-  // bound would make this test fail for a reason that has nothing to do with
-  // the sweep.
+  // enumerated set was expected to be applicable. Two of the seven kinds are
+  // deferred - each on evidence recorded in DEFERRED_KINDS, from the first
+  // real-binary run - so the ENUMERATED count (30) is no longer a bound on
+  // evaluations at all: a round sweeps the APPLICABLE set, and that is what
+  // this asserts instead. Reading the enumerated count as a lower bound would
+  // make this test fail for a reason that has nothing to do with the sweep.
   expect(result.evaluations).toBeGreaterThanOrEqual(
     applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length,
   )
-  expect(enumerateMoves(OCC, DUMP, REFERENCE).length).toBe(26)
+  expect(enumerateMoves(OCC, DUMP, REFERENCE).length).toBe(30)
 
   // HAND-DERIVED, from the two boards and the script:
-  //   round 0 sweeps BASE_DUMP's 22 applicable moves (26 enumerated less the
+  //   round 0 sweeps BASE_DUMP's 26 applicable moves (30 enumerated less the
   //     four delete-wire and add-wire ones), and the script hands BETTER_DUMP to
   //     the first of them, so one move is accepted. It was 14 until Task 18
   //     implemented the net cluster, which adds eight - two nets by four unit
-  //     deltas, every one of which lands;
+  //     deltas, every one of which lands - and four more with the gather, each
+  //     net onto each of the two strips its own pins sit on;
   //   round 1 SWEEPS THE CARRIED OCCUPANCY, NOT `occupancyOf(BETTER)`, and
   //     that distinction is the whole point of the occupancy being carried:
   //     the accepted move was `move R1 to 1,1`, so round 1's geometry is
@@ -129,13 +129,16 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
   //     at row 1 turns to row -1 and would pan the board), two stretches; R2
   //     four neighbours, one turn, two stretches; and eight clusters again,
   //     both nets moving the same pair and fitting in all four directions from
-  //     1,1 and 7,2. 4 + 0 + 2 + 4 + 1 + 2 + 8 = 21, every one of which
+  //     1,1 and 7,2. NO GATHER: round 1 enumerates over the dump the accepted
+  //     candidate reported, which is BETTER_DUMP, and there each net's two pins
+  //     are already on ONE strip - so every gather's deltas are zero and none
+  //     is a gesture. 4 + 0 + 2 + 4 + 1 + 2 + 8 + 0 = 21, every one of which
   //     reports the worse board, so none is accepted and S3 stops.
-  //   one evaluation of the start, plus 22, plus 21.
-  expect(applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length).toBe(22)
+  //   one evaluation of the start, plus 26, plus 21.
+  expect(applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length).toBe(26)
   expect(result.acceptedPerRound).toEqual([1, 0])
   expect(result.rounds).toBe(2)
-  expect(result.evaluations).toBe(44)
+  expect(result.evaluations).toBe(48)
   expect(result.best.score.objective).toBe(0)
 })
 
@@ -283,7 +286,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
   // HAND-DERIVED: the start is evaluation 1, then round 0's candidates are
   // evaluations 2, 3, 4 and 5, and the cap is checked BEFORE each candidate -
   // so the fifth evaluation is the last one taken and the sixth is never
-  // started. Round 0 has 22 applicable moves, so the stop is mid-round: the
+  // started. Round 0 has 26 applicable moves, so the stop is mid-round: the
   // round is recorded with the one move it accepted before the cap bit.
   const runDir = freshRunDir()
   const result = climb(
@@ -295,7 +298,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
   expect(result.history.length).toBe(5)
   expect(result.rounds).toBe(1)
   expect(result.acceptedPerRound).toEqual([1])
-  // And the uncapped climb on the same script spends 44, so the cap really is
+  // And the uncapped climb on the same script spends 48, so the cap really is
   // what stopped this one rather than convergence.
   const uncappedDir = freshRunDir()
   const uncapped = climb(
@@ -303,7 +306,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
     climbInput(uncappedDir, false),
     scriptedSpawn(IMPROVES_THEN_STALLS),
   )
-  expect(uncapped.evaluations).toBe(44)
+  expect(uncapped.evaluations).toBe(48)
 })
 
 test("a climb that ends inadmissible says so, rather than reading as one that found nothing", () => {

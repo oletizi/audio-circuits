@@ -69,13 +69,15 @@ test("E2 keeps the best candidate across every climb and records the boundaries"
   expect(result.climbs.length).toBe(seeds.length)
   expect(result.restartBoundaries.length).toBe(seeds.length - 1)
   // HAND-DERIVED, from the arithmetic ./search-fixtures.ts writes out:
-  // a stalled climb spends 23 evaluations - the start plus BASE_DUMP's 22
+  // a stalled climb spends 27 evaluations - the start plus BASE_DUMP's 26
   // applicable moves - and climb 1, whose first candidate reports the better
-  // board, spends 44: the start, round 0's 22, and round 1's 21 swept from the
+  // board, spends 48: the start, round 0's 26, and round 1's 21 swept from the
   // carried occupancy, where R1 has moved to 1,1 and its clockwise turn no
-  // longer fits. So the boundaries are the running totals 23, 67, 90 and 113.
-  expect(result.climbs.map((entry) => entry.evaluations)).toEqual([23, 44, 23, 23, 23])
-  expect(result.restartBoundaries).toEqual([23, 67, 90, 113])
+  // longer fits, over BETTER_DUMP's pins, where each net sits on one strip and
+  // no gather is a gesture. So the boundaries are the running totals 27, 75,
+  // 102 and 129.
+  expect(result.climbs.map((entry) => entry.evaluations)).toEqual([27, 48, 27, 27, 27])
+  expect(result.restartBoundaries).toEqual([27, 75, 102, 129])
   expect(result.best.score.objective).toBe(
     Math.min(...result.climbs.map((entry) => entry.best.score.objective)),
   )
@@ -103,7 +105,7 @@ test("E2's restart schedule is a function of the seed list alone", () => {
     searchSpawn(STALLS_IMMEDIATELY_EVERY_SEED),
   )
   expect(short.climbs.length).toBe(3)
-  expect(short.restartBoundaries).toEqual([23, 46])
+  expect(short.restartBoundaries).toEqual([27, 54])
 })
 
 test("every restart starts from the run's OWN arm, one start per seed", () => {
@@ -246,17 +248,17 @@ test("Q3 does not stop the run on its first firing, or E2 would be unreachable",
 
 test("the evaluation cap is run-level: a restart cannot grant itself more", () => {
   // Q5's cap is shared across restarts, so the schedule's division of it is
-  // "what is left". HAND-DERIVED: a stalled climb would spend 23, so a cap of
-  // 30 leaves 7 for the second climb - the start plus six candidates - and
+  // "what is left". HAND-DERIVED: a stalled climb would spend 27, so a cap of
+  // 30 leaves 3 for the second climb - the start plus two candidates - and
   // nothing for a third, which is not started at all.
   const runDir = freshSearchDir()
   const result = search(
     { ...searchInput(runDir), rules: { ...committedRules(), evaluationCap: 30 } },
     searchSpawn(STALLS_IMMEDIATELY_EVERY_SEED),
   )
-  expect(result.climbs.map((entry) => entry.evaluations)).toEqual([23, 7])
+  expect(result.climbs.map((entry) => entry.evaluations)).toEqual([27, 3])
   expect(result.climbs.length).toBeLessThan(committedRules().seeds.length)
-  expect(result.restartBoundaries).toEqual([23])
+  expect(result.restartBoundaries).toEqual([27])
 })
 
 test("a plateau candidate with a better ranking is still accepted under a bound", () => {

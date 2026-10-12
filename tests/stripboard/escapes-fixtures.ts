@@ -170,6 +170,68 @@ export const STACKED_REFERENCE: ReferenceNets = new Map([
 ])
 
 /**
+ * Three parts of one net on THREE DIFFERENT STRIPS: the board the GATHER is
+ * asserted on, and the one `E1`'s one-delta cluster cannot do anything about.
+ *
+ * ```
+ *        col 0   col 1   col 2   col 3   col 4   col 5
+ * row 0  R1.1    R1.2
+ *        (mid)   (a)
+ * row 2                  R2.1    R2.2
+ *                        (mid)    (b)
+ * row 4                                  R3.1    R3.2
+ *                                        (mid)    (c)
+ * ```
+ *
+ * `mid` holds one pin on each of strips 0, 2 and 4 - three segments where one
+ * would do - and `a`, `b` and `c` are singletons on strips 1, 3 and 5. `J` is
+ * `6 - 4 = 2`: six segments over four nets, one hole on each occupied strip.
+ *
+ * **A COMMON DELTA CANNOT TOUCH IT.** A cluster of `mid` translates all three
+ * parts rigidly, so the net keeps one pin on each of three strips wherever it
+ * goes; and no one-hole single-part move can close a two-column gap. A GATHER
+ * onto strip 0 moves `R2` by `0,-2` and `R3` by `0,-4` - different deltas, one
+ * candidate - and `mid` becomes one segment while `a`, `b` and `c` pile onto
+ * strip 1 as three: `4 - 4 = 0`.
+ *
+ * The parts are two rows apart so that the gathered arrangement is clear in the
+ * ROW axis, which is what makes the gather land at all: translating across the
+ * strips never changes a part's rows.
+ */
+export const SPREAD_DUMP = [
+  "GRID 8 8",
+  "BOUNDS 0,0 4,5",
+  "VERO_TRACKS 1",
+  "VERTICAL_STRIPS 1",
+  "CUT_STATE COMPUTED",
+  "PART R1 RESISTOR 10K AT 0,0 SPAN 2 DIRECTION W",
+  "PART R2 RESISTOR 10K AT 2,2 SPAN 2 DIRECTION W",
+  "PART R3 RESISTOR 10K AT 4,4 SPAN 2 DIRECTION W",
+  "PIN R1 1 AT 0,0",
+  "PIN R1 2 AT 0,1",
+  "PIN R2 1 AT 2,2",
+  "PIN R2 2 AT 2,3",
+  "PIN R3 1 AT 4,4",
+  "PIN R3 2 AT 4,5",
+  "NODE 1 NAME mid R1.1 R2.1 R3.1",
+  "NODE 2 NAME a R1.2",
+  "NODE 3 NAME b R2.2",
+  "NODE 4 NAME c R3.2",
+  "",
+].join("\n")
+
+export const SPREAD: BoardDump = boardGeometry(SPREAD_DUMP)
+export const SPREAD_OCC = occupancyOf(SPREAD)
+
+/** `SPREAD_DUMP`'s four nets, in the order its `NODE` lines carry them. */
+export const SPREAD_REFERENCE: ReferenceNets = new Map([
+  ["mid", ["R1.1", "R2.1", "R3.1"]],
+  ["a", ["R1.2"]],
+  ["b", ["R2.2"]],
+  ["c", ["R3.2"]],
+])
+
+/**
  * The parts with a pin on `mid`, HAND-READ off `SCATTERED_DUMP`'s two `NODE 1`
  * pin names and written as a literal.
  *
@@ -274,6 +336,24 @@ export function joinsOf(
     }
   }
   return segments - present.size
+}
+
+/**
+ * The same holes with EACH named part translated by ITS OWN delta: a gather's
+ * effect, folded out of the one-delta arithmetic above.
+ *
+ * It folds `translated` one gesture at a time rather than carrying a second
+ * arithmetic, which is the same reason `translationsAfter` is one function in
+ * the model: a cluster and a gather differ in the deltas and in nothing else.
+ */
+export function translatedEach(
+  holes: ReadonlyMap<string, Hole>,
+  dump: BoardDump,
+  gestures: readonly { readonly ref: string; readonly delta: readonly [number, number] }[],
+): ReadonlyMap<string, Hole> {
+  let moved = holes
+  for (const one of gestures) moved = translated(moved, dump, [one.ref], one.delta)
+  return moved
 }
 
 /** `joinsOf` over a board's own holes: the figure before any gesture. */

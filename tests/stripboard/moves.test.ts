@@ -91,18 +91,24 @@ test("the move enumeration is deterministic and does not iterate a hash map", ()
   expect(clusters(reversed)).toEqual([...clusters(REFERENCE)].reverse())
 })
 
-test("every move kind the spec names is enumerated, and no sixth kind appears", () => {
+test("every move kind the spec names is enumerated, and no eighth kind appears", () => {
   const kinds = new Set(enumerateMoves(OCC, DUMP, REFERENCE).map((move) => move.kind))
   expect([...kinds].sort()).toEqual([
     "add-wire",
     "cluster",
     "delete-wire",
+    "gather",
     "move",
     "rotate",
     "stretch",
   ])
+  // `gather` is the SEVENTH kind and the documents name six: it is here by the
+  // controller's ruling of 2026-10-12, because E1's one-delta cluster cannot
+  // change the quantity E1 exists to change. tools/stripboard/moves-model.ts's
+  // `gather` arm carries the ruling and the measurement behind it.
+  //
   // MOVE_KINDS is the one listing, so the enumeration and the declaration
-  // cannot drift: a seventh kind added to `Move` and to MOVE_KINDS but never
+  // cannot drift: an eighth kind added to `Move` and to MOVE_KINDS but never
   // emitted fails here.
   expect([...kinds].sort()).toEqual([...MOVE_KINDS].sort())
 })
@@ -122,8 +128,12 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   //               holds a pin of BOTH parts, so every cluster moves R1 and R2
   //               together, and on a 12x40 grid the pair fits one hole in
   //               every direction from 2,1 and 7,2                          = 8
+  //   gather      each net onto each strip its OWN pins sit on: `left` holds
+  //               2,1 and 7,2, so strips 1 and 2, and `right` holds 2,6 and
+  //               7,7, so strips 6 and 7 - two candidates per net, and each
+  //               moves the one part whose pin is not already there         = 4
   //                                                                        ---
-  //                                                                         26
+  //                                                                         30
   const moves = enumerateMoves(OCC, DUMP, REFERENCE)
   const counted = new Map<Move["kind"], number>()
   for (const move of moves) counted.set(move.kind, (counted.get(move.kind) ?? 0) + 1)
@@ -133,14 +143,15 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   expect(counted.get("add-wire")).toBe(2)
   expect(counted.get("delete-wire")).toBe(2)
   expect(counted.get("cluster")).toBe(8)
-  expect(moves.length).toBe(26)
-  // And the applicable subset is the 26 less the TWO deferred kinds' 4: the two
+  expect(counted.get("gather")).toBe(4)
+  expect(moves.length).toBe(30)
+  // And the applicable subset is the 30 less the TWO deferred kinds' 4: the two
   // delete-wires and the two add-wires. It was 14 while `cluster` was deferred
-  // as well, and Task 18 implemented that kind - which is exactly what this
-  // figure moving is meant to signal. `rotate` was deferred for one round of
-  // Task 17 and is also back: a turn's result is carried in the occupancy rather
-  // than re-read from a dump that cannot describe it.
-  expect(applicableMoves(moves).length).toBe(22)
+  // as well, and 22 before `gather` existed - which is exactly what this figure
+  // moving is meant to signal. `rotate` was deferred for one round of Task 17
+  // and is also back: a turn's result is carried in the occupancy rather than
+  // re-read from a dump that cannot describe it.
+  expect(applicableMoves(moves).length).toBe(26)
   expect([...DEFERRED_KINDS.keys()].sort()).toEqual(["add-wire", "delete-wire"])
 })
 

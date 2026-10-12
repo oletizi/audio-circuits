@@ -14,7 +14,8 @@
  * Nothing here decides WHICH move to propose; `enumerateMoves` does that.
  */
 import fs from "node:fs"
-import { DEFERRED_KINDS, describeMove, type Move } from "./moves.ts"
+import { DEFERRED_KINDS, describeMove, type Move } from "./moves-model.ts"
+import type { Translation } from "./moves-cluster.ts"
 import type { SpawnVeroroute } from "./seed.ts"
 
 /**
@@ -33,14 +34,14 @@ export type GestureTransport = "one-gesture-per-launch" | "batched"
 /**
  * The ops-file grammar's own vocabulary: the gestures `--move-batch` accepts.
  *
- * `cluster` is here because it is SEVERAL `move` lines, each in the grammar's own
- * relative spelling - and batching it buys more than a launch. The verb is
+ * `cluster` and `gather` are here because each is SEVERAL `move` lines, in the
+ * grammar's own relative spelling - and batching them buys more than a launch. The verb is
  * TRANSACTIONAL in the fork's own words: *"either the whole batch applies and
  * OUTPUT is written, or the whole batch is refused and OUTPUT IS NEVER
  * CREATED"*, which is what a compound gesture wants. The one-gesture transport
  * gets the same guarantee about `out` a different way, below.
  */
-const BATCHABLE_KINDS: readonly Move["kind"][] = ["move", "rotate", "cluster"]
+const BATCHABLE_KINDS: readonly Move["kind"][] = ["move", "rotate", "cluster", "gather"]
 
 function refuseDeferred(kind: Move["kind"]): never {
   const reason = DEFERRED_KINDS.get(kind)
@@ -89,13 +90,31 @@ function gestureFor(move: Move, board: string, out: string): readonly string[] {
     case "delete-wire":
       return refuseDeferred(move.kind)
     case "cluster":
+    case "gather":
       throw new Error(
-        "applyMove: a cluster is SEVERAL gestures and has no single argument list. It is applied " +
-          "by clusterGestures below, one --move --delta per part in the order the move records, " +
-          "or by one --move-batch when the batched transport is asked for. Reaching here means " +
-          "applyMove's cluster branch was removed.",
+        `applyMove: a ${move.kind} is SEVERAL gestures and has no single argument list. It is ` +
+          "applied by translationGestures below, one --move --delta per part in the order the " +
+          "move records, or by one --move-batch when the batched transport is asked for. " +
+          "Reaching here means applyMove's compound branch was removed.",
       )
   }
+}
+
+/**
+ * The translations a compound move is, in the order it records them.
+ *
+ * **ONE READING FOR BOTH COMPOUND KINDS**: a `cluster` is one delta applied to
+ * every ref and a `gather` is one delta per ref, so below this function they are
+ * the same list and the emitter has no second code path. `./moves-cluster.ts`'s
+ * `translationsAfter` is the same unification on the model side.
+ */
+function translationsOf(move: Move): readonly Translation[] {
+  if (move.kind === "cluster") return move.refs.map((ref) => ({ ref, delta: move.delta }))
+  if (move.kind === "gather") return move.gestures
+  throw new Error(
+    `applyMove: a "${move.kind}" move is not a compound translation, so it has no list of them. ` +
+      "Reaching here means BATCHABLE_KINDS or applyMove's dispatch names a kind this does not.",
+  )
 }
 
 /**
@@ -114,22 +133,23 @@ function gestureFor(move: Move, board: string, out: string): readonly string[] {
  * which is what makes a refused cluster leave `out` absent: the staged files are
  * scratch beside it and the candidate is never created.
  */
-function clusterGestures(
+function translationGestures(
   board: string,
-  move: Extract<Move, { kind: "cluster" }>,
+  move: Move,
   out: string,
 ): readonly (readonly string[])[] {
+  const translations = translationsOf(move)
   const gestures: (readonly string[])[] = []
   let current = board
-  move.refs.forEach((ref, index) => {
-    const target = index === move.refs.length - 1 ? out : `${out}.cluster-${index}.vrt`
+  translations.forEach((one, index) => {
+    const target = index === translations.length - 1 ? out : `${out}.cluster-${index}.vrt`
     gestures.push([
       "--move",
       current,
       "--ref",
-      ref,
+      one.ref,
       "--delta",
-      `${move.delta[0]},${move.delta[1]}`,
+      `${one.delta[0]},${one.delta[1]}`,
       "-o",
       target,
     ])
@@ -145,8 +165,10 @@ function opsLinesFor(move: Move): readonly string[] {
   // ONE LINE PER PART, IN THE MOVE'S OWN ORDER, which the verb applies "in the
   // order the ops file lists them" - so the sequence the model checked is the
   // sequence the fork takes.
-  if (move.kind === "cluster") {
-    return move.refs.map((ref) => `move ${ref} --delta ${move.delta[0]},${move.delta[1]}`)
+  if (move.kind === "cluster" || move.kind === "gather") {
+    return translationsOf(move).map(
+      (one) => `move ${one.ref} --delta ${one.delta[0]},${one.delta[1]}`,
+    )
   }
   throw new Error(
     `applyMove: a "${move.kind}" move has no --move-batch ops line. The ops grammar is "move ` +
@@ -188,9 +210,12 @@ export function applyMove(
         "through enumerateMoves, which sets both from the same hole.",
     )
   }
-  if (move.kind === "cluster" && move.refs.length === 0) {
+  if (
+    (move.kind === "cluster" || move.kind === "gather") &&
+    translationsOf(move).length === 0
+  ) {
     throw new Error(
-      `applyMove: this cluster of "${move.net}" names no parts, so there is no gesture to apply ` +
+      `applyMove: this ${move.kind} of "${move.net}" names no parts, so there is no gesture to apply ` +
         "and the candidate would be byte-identical to its own parent - which is the fork's own " +
         "reason for refusing an empty ops file and a zero delta. It is NOT written as a copy: a " +
         "candidate that cannot differ from its parent would be scored, counted and compared " +
@@ -202,8 +227,8 @@ export function applyMove(
   const batched = transport === "batched" && BATCHABLE_KINDS.includes(move.kind)
   const launches: readonly (readonly string[])[] = batched
     ? [batchLaunch(move, board, out)]
-    : move.kind === "cluster"
-      ? clusterGestures(board, move, out)
+    : move.kind === "cluster" || move.kind === "gather"
+      ? translationGestures(board, move, out)
       : [gestureFor(move, board, out)]
   for (const args of launches) {
     const result = spawn(args)
