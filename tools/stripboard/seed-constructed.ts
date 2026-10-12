@@ -102,9 +102,13 @@ function stripFor(assignment: StripAssignment, net: string, board: string): numb
  * where the import and random arms fail neither
  * (`docs/stripboard/pipeline-verification.md` §5.9), so its own stretches put
  * spans outside a family's recorded range at both ends. A lead span is a
- * PHYSICAL REACH, so no later gesture can repair it - which makes this an
- * inadmissibility the search cannot climb out of rather than a start that is
- * merely worse.
+ * PHYSICAL REACH, and the search DID NOT repair it: `F` gives it no reason to,
+ * because a span violation costs nothing in `cuts + rhoWire*wires +
+ * rhoSolder*solder`. Not that it CANNOT be repaired - `stretch shrink` is
+ * enumerated on this board and does change `spanHoles`, so `HC5` is reachable
+ * in principle. An earlier version of this sentence said no later gesture
+ * could repair it, which overstates what was measured: what was measured is
+ * that none did.
  *
  * **IT IS EXPORTED BECAUSE IT IS UNREACHABLE THROUGH `seedCandidate` ON EVERY
  * COMMITTED BOARD, AND A GUARD NO TEST CAN DRIVE IS A GUARD THAT HAS ALREADY
