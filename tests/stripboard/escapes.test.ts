@@ -415,8 +415,8 @@ test("a gather goes out as one --move --delta per part, and as one batch when as
   // TWO GESTURES WITH DIFFERENT DELTAS, which is the whole difference from a
   // cluster, and only the last writes the candidate.
   expect(spawned.map((args) => args.join(" "))).toEqual([
-    `--move board.vrt --ref R2 --delta 0,-2 -o ${out}.cluster-0.vrt`,
-    `--move ${out}.cluster-0.vrt --ref R3 --delta 0,-4 -o ${out}`,
+    `--move board.vrt --ref R2 --delta 0,-2 -o ${out}.gather-0.vrt`,
+    `--move ${out}.gather-0.vrt --ref R3 --delta 0,-4 -o ${out}`,
   ])
   // And the batched transport is one invocation with one ops line per part.
   const ops: string[] = []

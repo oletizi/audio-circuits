@@ -141,8 +141,14 @@ function translationGestures(
   const translations = translationsOf(move)
   const gestures: (readonly string[])[] = []
   let current = board
+  // THE STAGED FILES ARE NAMED FOR THEIR OWN KIND, which is not cosmetic: a run
+  // directory is the only place a reader can tell afterwards which candidates
+  // were compound and which kind each was, and the analysis in
+  // `docs/stripboard/pipeline-verification.md` §6.4 counts exactly that. A
+  // gather staged under the cluster's name made the two indistinguishable.
   translations.forEach((one, index) => {
-    const target = index === translations.length - 1 ? out : `${out}.cluster-${index}.vrt`
+    const target =
+      index === translations.length - 1 ? out : `${out}.${move.kind}-${index}.vrt`
     gestures.push([
       "--move",
       current,
