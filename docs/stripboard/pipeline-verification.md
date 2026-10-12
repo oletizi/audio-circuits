@@ -1044,3 +1044,43 @@ derived. Until then the only start that can be climbed is the raw `--import`
 board, which is not a `SeedArm`, and **Task 16's arm comparison has nothing to
 compare**: `compareSeedArms`' own `RETIREMENT` note already says a start count
 is not a rate, and this is that case live on three arms out of three.
+
+### 5.8 The handover contract, and why 5.7's two causes were interface facts
+
+§5.7 reported that all three arms refused before the first candidate and that
+carrying the occupancy inside the climb could not help them, because both causes
+are about the board an arm HANDS OVER. Both are now fixed at the handover, and
+the fix is the one place it could have been.
+
+**`seedCandidate` returns `SeedStart { board, occupancy }`.** The occupancy is
+the one thing a dump cannot express — for a part facing `N` or `S`, `SPAN` is the
+footprint's ROW count and its stretched length appears in no line (COST §7.3
+item 2) — and every arm already TRACKED it while emitting gestures, for exactly
+that reason. Handing it over costs nothing; recovering it afterwards is
+impossible. `ClimbInput.occupancy` is required with no default, and
+`tools/stripboard/climb.ts` now reads no geometry off a dump at all.
+
+**The handed-over board is UNPAINTED.** The trailing `autofill()` is gone from
+all three arms and deleted from `seed-arms.ts` outright. It was there so the
+start could be SCORED — `HC2` refuses an unresolved cut list rather than
+mis-scoring it, which is still correct — but it was satisfied in the wrong
+place: `--move` refuses a relocation overlapping a part's own footprint once
+copper has been painted into the holes it would vacate (§5.3), so a painted
+handover made the first single-part move of any climb impossible.
+
+**WHO PAINTS, AND WHEN.** `climb` paints on EVERY evaluation — apply, autofill,
+check, dump — into its own `-filled.vrt`, so it needs the handover unpainted and
+a painted one breaks it. A consumer that wants to score the START itself (an
+`ArmRunner` reporting `ArmRun.startAdmissible`) paints a COPY and scores that,
+leaving the handover alone. Nothing paints in place and nothing paints in the
+arms. `SeedStart`'s own comment carries this, and
+`tests/stripboard/seed-geometry.test.ts` holds both halves against the real
+binary: the handover reports `CUT_STATE UNRESOLVED`, and a painted copy of it
+reports `COMPUTED`.
+
+**The import arm now emits no gesture at all**, since its start is `--import`'s
+own placement with nothing done to it, so `drive` hands over a COPY of the
+imported board. The copy does not go through the fork — it only puts the start
+where the run directory wants it, so a failed run still leaves the imported
+board untouched. The refusal this replaces claimed that "every arm ends with
+`--author --op autofill`", which is now false by design.
