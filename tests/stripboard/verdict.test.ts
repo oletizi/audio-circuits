@@ -14,12 +14,14 @@
  */
 import { expect, test } from "bun:test"
 import fs from "node:fs"
+import os from "node:os"
 import path from "node:path"
+import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { CONSTRAINT_IDS, broken, holds } from "../../tools/stripboard/constraints-model.ts"
 import { loadRules, type StripboardRules } from "../../tools/stripboard/rules.ts"
 import { FROZEN_MARK } from "../../tools/stripboard/seed-compare.ts"
-import { admissible, fullyAdmissible } from "../../tools/stripboard/verdict.ts"
-import { BARE_LITERAL } from "./bare-literal.ts"
+import { admissible, fullyAdmissible, lowBoostBoardIn } from "../../tools/stripboard/verdict.ts"
+import { bareLiteral } from "./bare-literal.ts"
 import {
   LOW_BOOST,
   TARGETS,
@@ -42,7 +44,10 @@ function scoreWith(cuts: number, wires: number, clustering: number) {
 
 test("all four hold on a healthy candidate, and fullyAdmissible is their conjunction", () => {
   const result = admissible(admissibilityInput())
-  expect([result.a1, result.a2, result.a3, result.a4]).toEqual([true, true, true, true])
+  expect([result.a1, result.a2, result.a4]).toEqual([true, true, true])
+  // `a3` is three-valued and the committed rules leave `tau` unset, so it is
+  // NEITHER held nor failed - which is the distinction a boolean erased.
+  expect(result.a3).toBe("not-evaluated")
   expect(fullyAdmissible(result)).toBe(true)
   for (const key of ["a1", "a2", "a3", "a4"] as const) {
     expect(result.detail[key], key).not.toBe("")
@@ -52,24 +57,24 @@ test("all four hold on a healthy candidate, and fullyAdmissible is their conjunc
 test("each condition failing alone is reported individually, the other three still holding", () => {
   // A1: one hard constraint broken.
   const one = admissible(admissibilityInput({ results: failedResults() }))
-  expect([one.a1, one.a2, one.a3, one.a4]).toEqual([false, true, true, true])
+  expect([one.a1, one.a2, one.a3, one.a4]).toEqual([false, true, "not-evaluated", true])
   expect(one.detail.a1).toMatch(/HC4/)
 
   // A2: clustering above the committed bound of 0.05.
   const two = admissible(admissibilityInput({ score: scoreWith(1, 0, 0.2) }))
-  expect([two.a1, two.a2, two.a3, two.a4]).toEqual([true, false, true, true])
+  expect([two.a1, two.a2, two.a3, two.a4]).toEqual([true, false, "not-evaluated", true])
 
   // A3: a gap of 1/40 against a tolerance below it.
   const three = admissible(
     admissibilityInput({ rules: { ...rules, tau: 0.001 }, initialObjective: 40 }),
   )
-  expect([three.a1, three.a2, three.a3, three.a4]).toEqual([true, true, false, true])
+  expect([three.a1, three.a2, three.a3, three.a4]).toEqual([true, true, "failed", true])
 
   // A4: the frozen fixture one cut past B1-frozen's mark.
   const four = admissible(
     admissibilityInput({ targets: LOW_BOOST, frozen: true, score: scoreWith(6, 0, 0) }),
   )
-  expect([four.a1, four.a2, four.a3, four.a4]).toEqual([true, true, true, false])
+  expect([four.a1, four.a2, four.a3, four.a4]).toEqual([true, true, "not-evaluated", false])
 
   for (const result of [one, two, three, four]) expect(fullyAdmissible(result)).toBe(false)
 })
@@ -146,7 +151,7 @@ test("A2 cannot refuse a layout at the floor, whatever kappa_bench is", () => {
 test("A3 does not fire while tau is unset, and claims no target met", () => {
   expect(rules.tau).toBeNull()
   const result = admissible(admissibilityInput())
-  expect(result.a3).toBe(true)
+  expect(result.a3).toBe("not-evaluated")
   expect(result.detail.a3).toMatch(/tau is UNSET/)
   expect(result.detail.a3).toMatch(/DOES NOT FIRE/)
   expect(result.detail.a3).toMatch(/reported rather than graded/)
@@ -157,12 +162,12 @@ test("A3 does not fire while tau is unset, and claims no target met", () => {
 test("A3 fires on the tolerance when tau is set, both ways", () => {
   // F = 1 against a floor of 0 and F_0 = 40 is a gap of 1/40 = 0.025.
   const inside = admissible(admissibilityInput({ rules: toleranceRules, initialObjective: 40 }))
-  expect(inside.a3).toBe(true)
+  expect(inside.a3).toBe("held")
   expect(inside.detail.a3).toMatch(/inside it/)
   // The same candidate against a run that started nearer the floor: F_0 = 2
   // gives a gap of 1/2, outside it.
   const outside = admissible(admissibilityInput({ rules: toleranceRules, initialObjective: 2 }))
-  expect(outside.a3).toBe(false)
+  expect(outside.a3).toBe("failed")
   expect(outside.detail.a3).toMatch(/outside it/)
 })
 
@@ -178,11 +183,67 @@ test("A3 refuses a candidate below the floor rather than passing with room to sp
   ).toThrow(/verdict-negative-gap/)
 })
 
+test("an unevaluated A3 satisfies admissibility without reading as a target met", () => {
+  // K4: while tau is unset "the admissibility verdict rests on A1, A2 and A4",
+  // so A3 may not block a layout - AND REP5 must still be able to tell a held
+  // A3 from one that never ran, which a boolean could not. Both halves here.
+  const unset = admissible(admissibilityInput())
+  expect(unset.a3).toBe("not-evaluated")
+  expect(fullyAdmissible(unset)).toBe(true)
+  const held = admissible(admissibilityInput({ rules: toleranceRules, initialObjective: 40 }))
+  expect(held.a3).toBe("held")
+  expect(fullyAdmissible(held)).toBe(true)
+  // The two are distinguishable WITHOUT reading a string, which is the fix.
+  expect(unset.a3).not.toBe(held.a3)
+  const failed = admissible(admissibilityInput({ rules: toleranceRules, initialObjective: 2 }))
+  expect(failed.a3).toBe("failed")
+  expect(fullyAdmissible(failed)).toBe(false)
+})
+
 test("A3 refuses a missing F_0 when tau is set, and does not ask for one when it is unset", () => {
   expect(() =>
     admissible(admissibilityInput({ rules: toleranceRules, initialObjective: undefined })),
   ).toThrow(/verdict-no-initial-objective/)
-  expect(admissible(admissibilityInput({ initialObjective: undefined })).a3).toBe(true)
+  expect(admissible(admissibilityInput({ initialObjective: undefined })).a3).toBe(
+    "not-evaluated",
+  )
+})
+
+test("A3 needs no F_0 at the floor, so a first-climb at-floor candidate is graded", () => {
+  // THE NUMERATOR IS ZERO THERE, so the tolerance is zero for any F_0 and the
+  // denominator is never reached. This used to throw, on the pipeline's best
+  // outcome: see stop.test.ts's first-climb Q1 test.
+  const atFloor = admissible(
+    admissibilityInput({
+      rules: toleranceRules,
+      initialObjective: undefined,
+      score: scoreWith(0, 0, 0),
+    }),
+  )
+  expect(atFloor.a3).toBe("held")
+  expect(atFloor.detail.a3).toMatch(/a gap of 0 /)
+})
+
+test("A4's board name is tied to boards/, so a rename refuses rather than going vacuous", () => {
+  // A NAME-ONLY WHITELIST FAILS SILENTLY IN THE WORST DIRECTION: the name stops
+  // matching, A4 is vacuously true everywhere, and the externally authored
+  // benchmark quietly stops applying. So the name is checked against a
+  // directory that has to exist.
+  expect(lowBoostBoardIn(moduleRepoRoot())).toBe("pultec-low-boost")
+  expect(fs.existsSync(path.join(moduleRepoRoot(), "boards", "pultec-low-boost"))).toBe(true)
+  const empty = fs.mkdtempSync(path.join(os.tmpdir(), "stripboard-verdict-"))
+  try {
+    expect(() => lowBoostBoardIn(empty)).toThrow(/verdict-low-boost-board-missing/)
+    // The refusal says what to do, and a failing check is NOT cached: asking
+    // twice refuses twice.
+    expect(() => lowBoostBoardIn(empty)).toThrow(/LOW_BOOST_BOARD/)
+    // A file where the directory should be is not a board either.
+    fs.mkdirSync(path.join(empty, "boards"))
+    fs.writeFileSync(path.join(empty, "boards", "pultec-low-boost"), "not a directory\n")
+    expect(() => lowBoostBoardIn(empty)).toThrow(/verdict-low-boost-board-missing/)
+  } finally {
+    fs.rmSync(empty, { recursive: true, force: true })
+  }
 })
 
 test("A4 is vacuous off low-boost, and says that rather than reading as a benchmark met", () => {
@@ -259,7 +320,7 @@ test("A4's scaffolded clause is A3's arithmetic once tau is set", () => {
       initialObjective: 40,
     }),
   )
-  expect([inside.a3, inside.a4]).toEqual([true, true])
+  expect([inside.a3, inside.a4]).toEqual(["held", true])
   // B1-current carries NO absolute cut count, so six cuts inside the tolerance
   // still meets it - which is exactly what distinguishes it from B1-frozen.
   const sixCuts = admissible(
@@ -301,7 +362,7 @@ test("a literal scan finds no bare threshold in verdict.ts - a scan, not a proof
   // with. The behavioural half is above: kappa_bench, tau and B1-frozen's mark
   // all move this module's verdict when their own source moves.
   const text = await Bun.file(MODULE).text()
-  expect([...text.matchAll(BARE_LITERAL)].map((match) => match[0])).toEqual([])
+  expect([...text.matchAll(bareLiteral())].map((match) => match[0])).toEqual([])
 })
 
 test("verdict.ts is within this repository's line ceiling", async () => {

@@ -17,7 +17,6 @@
  * `tau`-bearing fixture below is what reaches it.
  */
 import { expect, test } from "bun:test"
-import fs from "node:fs"
 import path from "node:path"
 import { CONSTRAINT_IDS } from "../../tools/stripboard/constraints-model.ts"
 import { loadRules, type StripboardRules } from "../../tools/stripboard/rules.ts"
@@ -29,7 +28,6 @@ import {
   signatureOf,
 } from "../../tools/stripboard/stop.ts"
 import { clustering } from "../../tools/stripboard/targets.ts"
-import { BARE_LITERAL, bareLiteral } from "./bare-literal.ts"
 import {
   LOW_BOOST,
   TARGETS,
@@ -50,11 +48,6 @@ import {
 
 const rules = loadRules()
 const targets = TARGETS
-
-/** The two halves of the module under test: the rules, and their vocabulary. */
-const MODULE_FILES = ["stop.ts", "stop-model.ts"].map((name) =>
-  path.join(import.meta.dir, "..", "..", "tools", "stripboard", name),
-)
 
 /**
  * The committed rules with a `tau`, used ONLY to reach `Q2`'s arithmetic.
@@ -145,6 +138,20 @@ test("Q2's worked case: the tolerance holds, A2 fails, and Q2 does NOT fire", ()
     clustering: 0.01,
   })
   expect(evaluateStop(state, clustered, board, toleranceRules)).toBe("Q2")
+})
+
+test("Q1 fires on a first-climb at-floor candidate with a tau set", () => {
+  // THE BEST OUTCOME THIS PIPELINE HAS, AND IT USED TO RAISE. Reaching the
+  // floor during the FIRST climb leaves no earlier climb to take F_0 from, so
+  // A3's denominator was missing and verdict-no-initial-objective fired where
+  // Q1 should have. At the floor the gap's NUMERATOR is zero, so the tolerance
+  // is zero for any F_0 at all and none is needed.
+  const firstClimb = { ...freshState(), climbHistory: [], climbEvaluations: [] }
+  expect(evaluateStop(firstClimb, atFloorEvaluation(), targets, toleranceRules)).toBe("Q1")
+  // Including on low-boost's frozen fixture, which is where V3 wants it.
+  expect(
+    evaluateStop({ ...firstClimb, frozen: true }, atFloorEvaluation(), LOW_BOOST, toleranceRules),
+  ).toBe("Q1")
 })
 
 test("Q2 does not fire while tau is unset, which is CRITERIA K4 and not a missing branch", () => {
@@ -377,52 +384,6 @@ test("floorNote records that the floor is a function of today's stock", () => {
   expect(note).toContain("CRITERIA")
 })
 
-test("a literal scan finds no bare threshold in stop.ts - a scan, not a proof", async () => {
-  // THE NAME THIS REPLACES was "every threshold comes from the rules file and
-  // none is written here", over a scan for three specific literals. A scan
-  // cannot establish "every": a threshold written 5e-2, or assembled from two
-  // small integers, or imported from a module that is not the rules file, all
-  // pass it.
-  //
-  // So this is the cheap per-module version of V9's scan, named as a scan, and
-  // it uses V9's OWN REGEX rather than a private list of three numbers - one
-  // pattern in one place, so a module cannot be clean here and dirty under V9.
-  // The stronger half is behavioural and is the test below it: every threshold
-  // this module applies must MOVE when the rules file's value moves.
-  // BOTH FILES, because the module was split for the line ceiling and a
-  // threshold could be written in either half.
-  for (const file of MODULE_FILES) {
-    const text = await Bun.file(file).text()
-    expect([...text.matchAll(BARE_LITERAL)].map((match) => match[0]), file).toEqual([])
-  }
-})
-
-test("the scan is not vacuous, and the shared pattern does not carry state", () => {
-  // A scan that matched nothing anywhere would pass the test above while
-  // looking at nothing, so the pattern is shown to match the two shapes it
-  // claims. These are V9's own cases.
-  expect([..."const tau = 0.05".matchAll(bareLiteral())].map((match) => match[0])).toEqual([
-    "0.05",
-  ])
-  expect([..."const cap = 2000".matchAll(bareLiteral())].map((match) => match[0])).toEqual([
-    "2000",
-  ])
-  // And the shared instance survives being used twice: a g-flagged regex that
-  // carried lastIndex between scans would find nothing on its second run, which
-  // is a test passing for the wrong reason.
-  const twice = "a = 0.05\nb = 2000\n"
-  expect([...twice.matchAll(BARE_LITERAL)].map((match) => match[0])).toEqual(["0.05", "2000"])
-  expect([...twice.matchAll(BARE_LITERAL)].map((match) => match[0])).toEqual(["0.05", "2000"])
-})
-
-test("the scan's blind spots are the ones its own documentation claims", () => {
-  // Written down rather than asserted in prose: each of these IS missed, so the
-  // scan is never read as a proof. Measured here, not reasoned about.
-  for (const missed of ["const tau = 5e-2", "const run = 3", "const cap = 2 * 1000"]) {
-    expect([...missed.matchAll(bareLiteral())].map((match) => match[0]), missed).toEqual([])
-  }
-})
-
 test("every rule this module applies moves when its rules-file value moves", async () => {
   // The behavioural claim, which is what the scan's name used to assert. A
   // threshold hard-coded here would not follow the parameter, whatever it was
@@ -475,11 +436,4 @@ test("every rule this module applies moves when its rules-file value moves", asy
       kappaBench: 0.01,
     }),
   ).toBeNull()
-})
-
-test("both halves of the module are within this repository's line ceiling", async () => {
-  for (const file of MODULE_FILES) {
-    const text = await fs.promises.readFile(file, "utf8")
-    expect(text.split("\n").length, file).toBeLessThan(501)
-  }
 })

@@ -11,7 +11,7 @@
  *
  * IT LIVES HERE RATHER THAN IN TWO PLACES. Task 19's per-module scan over
  * `tools/stripboard/stop.ts` and Task 22's sweep over every pipeline source
- * import this same `BARE_LITERAL`, because a module clean under one and dirty
+ * import this same `bareLiteral`, because a module clean under one and dirty
  * under the other would mean the two patterns had drifted - which is what a
  * second copy guarantees eventually. Task 19 declares it because Task 19 comes
  * first and the pattern has to exist before its first use.
@@ -43,32 +43,28 @@
  */
 
 /**
- * The pattern's text, single-sourced so `bareLiteral` and `BARE_LITERAL` cannot
- * disagree.
+ * The pattern's text, named once so the two scans cannot disagree.
  *
  * `String.raw` so the escapes reach the `RegExp` rather than the string parser.
  */
 const SOURCE = String.raw`(?<!(?:\/\/|\*)[^\n]*)(?<![\w.])(?:\d+\.\d+|\d{3,})(?![\w.])`
 
 /**
- * A FRESH instance, for any consumer that calls `exec` or `test`.
+ * The pattern, FRESH ON EVERY CALL. **This is the only export, and a function
+ * rather than a constant is the point.**
  *
- * A `g`-flagged regex carries `lastIndex` between those calls, so a shared
- * instance gives a scan that finds nothing on its second run - a test that
- * passes for the wrong reason, which is the failure this plan exists to
- * prevent.
+ * THE BRIEF ASKED FOR `BARE_LITERAL: RegExp`, AND A CONSTANT CANNOT BE MADE
+ * SAFE. A `g`-flagged regex carries `lastIndex`, and `String.prototype.matchAll`
+ * **reads** it when it clones - so one `.test()` or `.exec()` anywhere, on a
+ * shared instance, silently truncates every later `matchAll` through it. A scan
+ * that then finds nothing reads as a module with no bare literal in it. ES
+ * modules cannot export a getter, so there is no spelling of a constant that
+ * hands out a fresh instance; the brief's own alternative - *"a fresh `RegExp`
+ * per call"* - is this function, and the constant is DELETED rather than left
+ * beside it for somebody to reach for.
+ *
+ * Task 22 imports `bareLiteral` and calls it per scan.
  */
 export function bareLiteral(): RegExp {
   return new RegExp(SOURCE, "g")
 }
-
-/**
- * The shared instance the scans import.
- *
- * SAFE FOR `matchAll` AND ONLY FOR `matchAll`: `String.prototype.matchAll`
- * clones its argument and iterates the clone, so this instance's `lastIndex`
- * never advances. `tests/stripboard/stop.test.ts` asserts that by scanning the
- * same text twice through this very object. Anything reaching for `exec` or
- * `test` takes `bareLiteral()` instead.
- */
-export const BARE_LITERAL: RegExp = bareLiteral()

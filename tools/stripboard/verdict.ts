@@ -55,6 +55,9 @@
  * is the specific error `A4` exists to prevent - reporting `B1-frozen`
  * satisfied on a run against the scaffolded board (`V3`).
  */
+import fs from "node:fs"
+import path from "node:path"
+import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { a1, type ConstraintResult } from "./grade.ts"
 import type { StripboardRules } from "./rules.ts"
 import type { Score } from "./score.ts"
@@ -112,20 +115,47 @@ export interface AdmissibilityInput {
   readonly binding: BindingConstraint | undefined
 }
 
+/**
+ * `A3`'s verdict, which is THREE-VALUED because the condition is.
+ *
+ * **A BOOLEAN ERASED THE DISTINCTION THAT MATTERS.** While `tau` is `null`,
+ * `A3` *"does not fire"* (`K4`) - it neither holds nor fails, and it does not
+ * block admissibility. Reported as `true` beside a genuinely held `A3`, the two
+ * were separable only by reading a string, and `REP5`'s *"valid, below target"*
+ * taxonomy is exactly the place that distinction has to survive: a run must not
+ * report a target met that it never graded. So the fact is carried in the type.
+ */
+export type ConditionThree = "held" | "failed" | "not-evaluated"
+
 /** Each condition's verdict, and what it was read from. */
 export interface AdmissibilityResult {
   readonly a1: boolean
   readonly a2: boolean
-  readonly a3: boolean
+  readonly a3: ConditionThree
   readonly a4: boolean
   readonly detail: Readonly<Record<"a1" | "a2" | "a3" | "a4", string>>
 }
 
 /** The refusals this module raises. One arm each in `notDefaultedBecause`. */
-export type VerdictRefusal = "verdict-board-unstated" | "verdict-no-initial-objective" | "verdict-negative-gap"
+export type VerdictRefusal =
+  | "verdict-board-unstated"
+  | "verdict-no-initial-objective"
+  | "verdict-negative-gap"
+  | "verdict-low-boost-board-missing"
 
 function notDefaultedBecause(refusal: VerdictRefusal): string {
   switch (refusal) {
+    case "verdict-low-boost-board-missing":
+      return (
+        "A4's clause is about ONE board, and its name is checked against boards/ rather than " +
+        "trusted, because the way a name-only whitelist fails is silent and in the worst " +
+        "direction: a renamed board stops matching, A4 becomes vacuously true everywhere, and " +
+        "the owner's externally authored benchmark quietly stops applying - a gate that " +
+        "disappears instead of firing. It is NOT defaulted to treating A4 as vacuous. If the " +
+        "board was renamed, rename LOW_BOOST_BOARD in tools/stripboard/verdict.ts with it and " +
+        "check CRITERIA section 3, which names the board in its B1-frozen and B1-current " +
+        "clauses; if the board was removed, A4 and V3 need a decision rather than an edit."
+      )
     case "verdict-board-unstated":
       return (
         "A4 reads differently on the two low-boost boards - the frozen fixture meets B1-frozen " +
@@ -170,15 +200,48 @@ function refuse(refusal: VerdictRefusal, offending: string): never {
 }
 
 /**
- * The boards `A4`'s clause is about, BY NAME.
- *
- * An explicit list rather than a substring test, because a rule that matched
- * *any* board whose name contains the words would quietly apply the owner's
- * hand-layout benchmark to a board he never laid out. `frozen` - not the name -
- * says which of low-boost's two boards was graded, because the scaffolded board
- * and the frozen fixture are the same circuit under the same name.
+ * The board `A4`'s clause is about, BY NAME - one name, not a pattern, because
+ * a rule matching *any* board whose name contains the words would quietly apply
+ * the owner's hand-layout benchmark to a board he never laid out. `frozen` -
+ * not the name - says which of low-boost's two boards was graded, because the
+ * scaffolded board and the frozen fixture are the same circuit under the same
+ * name.
  */
-const LOW_BOOST_BOARDS: readonly string[] = ["pultec-low-boost"]
+const LOW_BOOST_BOARD = "pultec-low-boost"
+
+/**
+ * That name, CHECKED AGAINST `boards/` ON EVERY VERDICT (memoised per root).
+ *
+ * **A BARE WHITELIST FAILS SILENTLY IN THE ONE DIRECTION THAT MATTERS.** If
+ * `boards/pultec-low-boost` is renamed, a name-only test stops matching, `A4`
+ * becomes vacuously `true` on every board, and the externally authored
+ * benchmark quietly stops applying - a gate that disappears rather than fires.
+ * So the name is tied to a directory that has to exist, and a rename makes
+ * `A4` REFUSE instead. The check runs whenever `A4` is evaluated and not only
+ * when the candidate's name matches, because a check that runs only on a match
+ * is exactly the one a rename switches off.
+ *
+ * IT TAKES THE ROOT AS AN ARGUMENT so it can be shown to fail:
+ * `tests/stripboard/verdict.test.ts` drives it at a root with no such board and
+ * asserts the refusal, which a function reading its own repository root could
+ * not be made to do.
+ */
+export function lowBoostBoardIn(root: string): string {
+  const cached = LOW_BOOST_CHECKED.get(root)
+  if (cached !== undefined) return cached
+  const directory = path.join(root, "boards", LOW_BOOST_BOARD)
+  if (!fs.existsSync(directory) || !fs.statSync(directory).isDirectory()) {
+    refuse("verdict-low-boost-board-missing", `${directory} is not a directory`)
+  }
+  LOW_BOOST_CHECKED.set(root, LOW_BOOST_BOARD)
+  return LOW_BOOST_BOARD
+}
+
+/**
+ * Roots already checked. **A SUCCESSFUL CHECK IS CACHED AND A FAILING ONE IS
+ * NOT**, so a run that refuses refuses every time rather than once.
+ */
+const LOW_BOOST_CHECKED = new Map<string, string>()
 
 /** `A1`: all ten hard constraints hold. `./grade.ts` is the implementation. */
 function conditionOne(input: AdmissibilityInput): readonly [boolean, string] {
@@ -251,6 +314,15 @@ function floorGap(input: AdmissibilityInput): number {
         `${input.targets.cutFloor}`,
     )
   }
+  // AT THE FLOOR THE TOLERANCE IS ZERO WITHOUT NEEDING `F_0`, and this is exact
+  // rather than lenient: the numerator is zero and `max(1, ...)` makes every
+  // denominator at least one, so the quotient is zero for any `F_0` at all.
+  // **IT IS ON THE HAPPY PATH AND IT USED TO THROW.** A candidate that reaches
+  // the floor during the FIRST climb has no earlier climb to take `F_0` from,
+  // so with a `tau` set the best outcome this pipeline has - `Q1`, the only
+  // optimality claim it may make - raised `verdict-no-initial-objective`
+  // instead of firing.
+  if (achieved === 0) return 0
   if (input.initialObjective === undefined) {
     refuse(
       "verdict-no-initial-objective",
@@ -270,18 +342,20 @@ function floorGap(input: AdmissibilityInput): number {
  * admissibility verdict rests on `A1`, `A2` and `A4`."* So it does not block
  * admissibility, and the detail says WHY rather than claiming a target was met.
  */
-function conditionThree(input: AdmissibilityInput): readonly [boolean, string] {
+function conditionThree(input: AdmissibilityInput): readonly [ConditionThree, string] {
   const floor = `F = ${input.score.objective} against a derived floor of ${input.targets.cutFloor}`
   if (input.rules.tau === null) {
     return [
-      true,
+      "not-evaluated",
       `tau is UNSET (the owner's decision, K4), so A3 DOES NOT FIRE and no target was met or ` +
         `missed here: ${floor}, reported rather than graded. The verdict rests on A1, A2 and A4.`,
     ]
   }
   const gap = floorGap(input)
   const measured = `${floor}, a gap of ${gap} against tau = ${input.rules.tau}`
-  return gap < input.rules.tau ? [true, `${measured}: inside it`] : [false, `${measured}: outside it`]
+  return gap < input.rules.tau
+    ? ["held", `${measured}: inside it`]
+    : ["failed", `${measured}: outside it`]
 }
 
 /**
@@ -296,10 +370,11 @@ function conditionThree(input: AdmissibilityInput): readonly [boolean, string] {
 function conditionFour(
   input: AdmissibilityInput,
   a1Held: boolean,
-  a3Held: boolean,
+  a3: ConditionThree,
   a3Detail: string,
 ): readonly [boolean, string] {
-  if (!LOW_BOOST_BOARDS.includes(input.targets.board)) {
+  const lowBoost = lowBoostBoardIn(moduleRepoRoot())
+  if (input.targets.board !== lowBoost) {
     return [
       true,
       `this run graded ${input.targets.board}, which neither of low-boost's two clauses is ` +
@@ -336,7 +411,7 @@ function conditionFour(
         "grades nothing here either.",
     ]
   }
-  const met = netsComplete && a1Held && a3Held
+  const met = netsComplete && a1Held && a3 === "held"
   return [met, `the scaffolded board against B1-current: ${clauses}: ${met ? "met" : "NOT met"}`]
 }
 
@@ -345,8 +420,9 @@ function conditionFour(
  *
  * *"A layout that fails `A1` and a layout that merely misses an optimisation
  * target are not the same object and must not share a verdict"* - so this
- * returns four booleans and four details, and the three-outcome taxonomy that
- * reads them (`REP5`) is Task 20's.
+ * returns each condition with its own detail, and the three-outcome taxonomy
+ * that reads them (`REP5`) is Task 20's. `A3` is three-valued; see
+ * `ConditionThree`.
  *
  * `A1` IS COMPUTED FIRST, and not only for the ordering: `a1` refuses a result
  * set that is not exactly the ten ids, so every later condition that reads a
@@ -356,19 +432,26 @@ function conditionFour(
 export function admissible(input: AdmissibilityInput): AdmissibilityResult {
   const [a1Held, a1Detail] = conditionOne(input)
   const [a2Held, a2Detail] = conditionTwo(input)
-  const [a3Held, a3Detail] = conditionThree(input)
-  const [a4Held, a4Detail] = conditionFour(input, a1Held, a3Held, a3Detail)
+  const [a3, a3Detail] = conditionThree(input)
+  const [a4Held, a4Detail] = conditionFour(input, a1Held, a3, a3Detail)
   return {
     a1: a1Held,
     a2: a2Held,
-    a3: a3Held,
+    a3,
     a4: a4Held,
     detail: { a1: a1Detail, a2: a2Detail, a3: a3Detail, a4: a4Detail },
   }
 }
 
 /**
- * All four hold.
+ * Nothing refuses this layout: `A1`, `A2` and `A4` hold, and `A3` has not
+ * FAILED.
+ *
+ * **`A3` IS SATISFIED BY `not-evaluated` AND THAT IS `K4` RATHER THAN
+ * LENIENCE**: while `tau` is unset *"the admissibility verdict rests on `A1`,
+ * `A2` and `A4`"*, so an unevaluated `A3` may not block a layout - and, being
+ * its own value rather than `true`, it also cannot be reported as a target met.
+ * Nothing is blocked and nothing is ignorable.
  *
  * **IT IS NOT `outcomeOf`.** Task 20's taxonomy has THREE outcomes - `invalid`,
  * `valid-below-target`, `admissible` - and the distinction between the last two
@@ -376,5 +459,5 @@ export function admissible(input: AdmissibilityInput): AdmissibilityResult {
  * for `Q1` and `Q2`, which ask only *may a successful termination fire*.
  */
 export function fullyAdmissible(result: AdmissibilityResult): boolean {
-  return result.a1 && result.a2 && result.a3 && result.a4
+  return result.a1 && result.a2 && result.a3 !== "failed" && result.a4
 }

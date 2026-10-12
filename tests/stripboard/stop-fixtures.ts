@@ -14,12 +14,14 @@
  * scorer's own arithmetic: `objective` defaults to `cuts`, which is `F` exactly
  * when `W` and `B` are zero, and a fixture with either non-zero states its own.
  *
- * THE NUMBERS HERE ARE THE WORKED CASE'S, NOT A BOARD'S. CRITERIA section 5
- * argues `Q1`/`Q2` from `P - N = 10` and `F_0 - F_floor = 40`, and the tests
- * reproduce those figures so the arithmetic under test is the arithmetic in the
- * document. `TARGETS` is a nine-net board on the owner's stock because that is
- * the smallest coherent carrier for `C_floor` and `S_occ`; nothing here is
- * measured from an artifact and nothing claims to be.
+ * WHERE THE NUMBERS COME FROM, which is two places and not one. The worked
+ * case's are CRITERIA section 5's - `P - N = 10` and `F_0 - F_floor = 40` - so
+ * the arithmetic under test is the arithmetic in the document. `TARGETS`'s nine
+ * nets and twenty-seven pins are the FROZEN low-boost fixture's own recorded
+ * figures (CRITERIA section 3), carried so `LOW_BOOST` below is a coherent
+ * board rather than an invented one, and thirty-four strips are the owner's
+ * stock. **Nothing here is measured by running anything** - every figure is
+ * quoted from a document, and no fixture is evidence about an artifact.
  */
 import fs from "node:fs"
 import path from "node:path"

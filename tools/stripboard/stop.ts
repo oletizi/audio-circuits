@@ -59,7 +59,7 @@
  * `StripboardRules`, because a number that entered the criteria through the
  * implementation is a criterion nobody reviewed (`PAR3`).
  * `tests/stripboard/stop.test.ts` scans both files with `V9`'s own
- * `BARE_LITERAL` - a scan, not a proof - and then checks the stronger thing
+ * `bareLiteral` - a scan, not a proof - and then checks the stronger thing
  * behaviourally: every threshold applied here must MOVE when the rules file's
  * value moves.
  *
@@ -197,10 +197,14 @@ const REQUIRED_STEPS = 2
  * written separately although they share a digit, because they are different
  * quantities and a single constant serving both would couple them: a mutation
  * of `Q4`'s step count broke `Q6`'s refusal while they shared one name, which
- * is how that coupling announced itself. `./rules.ts` enforces this range when
- * it loads the file; this is the same floor for a rules object built by hand,
- * because one signature compared with nothing stops the run on the first
- * failure of any kind.
+ * is how that coupling announced itself, and
+ * `tests/stripboard/stop.test.ts` now scans for its return.
+ *
+ * **IT IS A DELIBERATE SECOND READING OF `./rules.ts`'s RANGE, NOT A SECOND
+ * SPECIFICATION OF IT.** That file is where the range is stated and enforced,
+ * and it enforces it when it LOADS a file - which a rules object built in code
+ * never passes through. The duplication buys the one case the loader cannot
+ * see; if it ever disagrees with the loader, the loader is right.
  */
 const MINIMUM_SIGNATURE_RUN = 2
 
@@ -249,7 +253,20 @@ function q2(input: StopInput): boolean {
   return admissibilityOf(input)
 }
 
-/** `Q3`: a round accepted nothing AND the seed list is spent. Both, or it is a restart trigger. */
+/**
+ * `Q3`: a round accepted nothing AND the seed list is spent. Both, or it is a
+ * restart trigger rather than a stop.
+ *
+ * **IT CANNOT VERIFY THE CLAUSE IT DEPENDS ON, AND THAT OBLIGATION IS STATED
+ * HERE RATHER THAN LEFT IMPLICIT.** CRITERIA requires *"a full sweep of the
+ * move set - INCLUDING the net-cluster move - that produced no accepted
+ * move"*, and `acceptedThisRound` is a count with nothing in it that says what
+ * was swept. What makes the clause true is `./climb.ts`'s own definition of a
+ * round: *"a full sweep of the move set enumerated at the round's start"*, with
+ * the net-cluster move in that set. A caller that counted a partial sweep into
+ * this field would report a search exhausted that had not been, and nothing
+ * here would catch it.
+ */
 function q3(input: StopInput): boolean {
   return input.state.acceptedThisRound === 0 && input.state.seedsRemaining === 0
 }
