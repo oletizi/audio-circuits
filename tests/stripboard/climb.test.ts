@@ -186,7 +186,6 @@ test("history has one entry per evaluation, which is what makes a crossing index
     climbInput(runDir, false),
     scriptedSpawn(IMPROVES_THEN_STALLS),
   )
-  expect(result.history.length).toBe(result.evaluations)
   const run: ArmRun = {
     startAdmissible: true,
     objective: result.best.score.objective,
@@ -200,7 +199,12 @@ test("history has one entry per evaluation, which is what makes a crossing index
   // The start scores 0.5 and the first candidate scores 0, so the first
   // evaluation at or below 0.25 is index 1 - counted by hand off the script,
   // not off the history.
+  // evaluationsToCross IS CALLED BEFORE THE LENGTHS ARE COMPARED, deliberately:
+  // under a history kept per ACCEPTED MOVE it is Task 16's own refusal that
+  // fires here, which is the failure a Task 18 author would really meet, rather
+  // than a length assertion in this file standing in for it.
   expect(evaluationsToCross(run, 0.25)).toBe(1)
+  expect(result.history.length).toBe(result.evaluations)
   expect(result.history[0]).toBe(0.5)
   expect(result.history[1]).toBe(0)
 })
