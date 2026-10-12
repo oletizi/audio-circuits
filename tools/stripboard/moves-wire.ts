@@ -175,24 +175,68 @@ export function wireBridge(
   if (to <= from) return undefined
   const holes = to - from + 1
   const stretch = holes - FRESH_WIRE_HOLES
-  const at: readonly [number, number] = dump.verticalStrips
-    ? [along, from]
-    : [from + 1, along - 1]
-  if (at[0] < 0 || at[1] < 0) return undefined
-  const ends: readonly [readonly [number, number], readonly [number, number]] = dump.verticalStrips
-    ? [[along, from], [along, to]]
-    : [[from, along], [to, along]]
+  const turns = dump.verticalStrips ? 0 : 1
   for (const order of GESTURE_ORDERS) {
-    const plan: WirePlan = {
-      at,
-      name,
-      turns: dump.verticalStrips ? 0 : 1,
-      stretch,
-      order,
-    }
-    if (wireAfter(occupancy, dump.grid, plan) !== undefined) return { plan, ends }
+    const at = wireAnchor(dump, from, along, holes, turns, order)
+    if (at === undefined) continue
+    const plan: WirePlan = { at, name, turns, stretch, order }
+    const after = wireAfter(occupancy, dump.grid, plan)
+    if (after === undefined) continue
+    const landed = after.get(plan.name)
+    if (landed === undefined) continue
+    // **THE ENDS ARE READ OFF THE RECT THE MODEL LANDED, NOT COMPUTED A SECOND
+    // TIME.** The two orders land a stretched wire in DIFFERENT places - a
+    // stretch grows away from `AT` and a turn moves `AT` by the centring shift,
+    // so the composition does not commute for any length but three - and an
+    // `ends` derived from one order's arithmetic while the other order's
+    // gestures were recorded would be a prediction about a board nobody was
+    // going to produce. This way the two cannot disagree: whichever order fit
+    // is the one whose rect this reads.
+    const ends: readonly [readonly [number, number], readonly [number, number]] = [
+      [landed.row, landed.col],
+      [landed.row + landed.rows - 1, landed.col + landed.cols - 1],
+    ]
+    return { plan, ends }
   }
   return undefined
+}
+
+/**
+ * Where the wire has to be CREATED for `order`'s gestures to land it spanning
+ * strips `from` to `from + holes - 1` at `along`.
+ *
+ * **ONE ANCHOR PER ORDER, because the two orders do not commute.** A fresh wire
+ * is `1 x 3` along the row.
+ *
+ * - **turn-then-stretch**: the turn moves a `1 x 3`'s top-left by `(-1, +1)`
+ *   (`turnedRect`'s centring shift at that shape, measured against the binary),
+ *   and the stretch then grows along the rows away from the turned `AT`. So the
+ *   final span starts where the turned wire starts: create at `(from + 1,
+ *   along - 1)`.
+ * - **stretch-then-turn**: the wire first grows along the row to `1 x holes`,
+ *   and the turn of a `1 x holes` moves its top-left by
+ *   `(-trunc((holes - 1) / 2), +trunc((holes - 1) / 2))`. So create at
+ *   `(from + t, along - t)` with `t` that shift.
+ *
+ * With no turn - `VERTICAL_STRIPS`, where a fresh wire already lies across the
+ * strips - both orders are the same sequence and the anchor is the span's own
+ * corner, which is `./seed-placement.ts`'s own statement about a zero count.
+ */
+function wireAnchor(
+  dump: BoardDump,
+  from: number,
+  along: number,
+  holes: number,
+  turns: number,
+  order: GestureOrder,
+): readonly [number, number] | undefined {
+  if (turns === 0) {
+    const at: readonly [number, number] = [along, from]
+    return at[0] < 0 || at[1] < 0 ? undefined : at
+  }
+  const shift = order === "turn-then-stretch" ? 1 : Math.trunc((holes - 1) / 2)
+  const at: readonly [number, number] = [from + shift, along - shift]
+  return at[0] < 0 || at[1] < 0 ? undefined : at
 }
 
 /**

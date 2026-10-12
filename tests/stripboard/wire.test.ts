@@ -230,6 +230,60 @@ test("a stretch in the plan goes out as one gesture per hole, after or before th
   expect(other.spawned.map((args) => args[0])).toEqual(["--author", "--stretch", "--rotate"])
 })
 
+/**
+ * A board with one single-hole obstacle, placed exactly where the
+ * TURN-THEN-STRETCH anchor would go.
+ *
+ * A `PIN` line with no `PART` of its own is a one-hole rect in the occupancy -
+ * which is what the dump's `PAD` lines are - so this blocks one hole and nothing
+ * else. For a five-hole bridge of strips 0 to 4 at column 4, the two orders
+ * anchor in different places: turn-then-stretch at `1,3` and stretch-then-turn
+ * at `2,2`, because the turn of a `1 x 5` moves its top-left by two rather than
+ * by one. Blocking `1,3` therefore leaves exactly one order that works.
+ */
+const ONE_ORDER_DUMP = [
+  "GRID 10 10",
+  "BOUNDS 0,0 0,0",
+  "VERO_TRACKS 1",
+  "VERTICAL_STRIPS 0",
+  "CUT_STATE COMPUTED",
+  "PIN P1 1 AT 1,3",
+  "NODE 1 NAME mid P1.1",
+  "",
+].join("\n")
+
+test("both gesture orders are tried, and this is the kind that question is real for", () => {
+  // **THE ORDER MATTERS HERE AND NOWHERE ELSE IN THE MOVE SET.** A cluster and a
+  // gather are pure translations, so `GESTURE_ORDERS` has nothing to decide for
+  // them; a wire is created, TURNED and STRETCHED, and `./seed-placement.ts`
+  // measured what that costs: on SI_HI_CUT_R1, 0 of 1225 origins work with the
+  // turn first and 19 with the shrinks first.
+  //
+  // HAND-DERIVED: a five-hole bridge of strips 0 to 4 landing on column 4
+  // anchors at 1,3 under turn-then-stretch (the turn of a 1x3 moves its
+  // top-left by -1,+1) and at 2,2 under stretch-then-turn (the turn of a 1x5
+  // moves it by -2,+2). With nothing in the way the first order wins, because
+  // GESTURE_ORDERS tries it first.
+  const open = boardGeometry(ONE_ORDER_DUMP.replace("PIN P1 1 AT 1,3", "PIN P1 1 AT 9,9"))
+  const first = wireBridge(occupancyOf(open), open, "Wire1", 0, 4, 4)
+  if (first === undefined) throw new Error("the open board was expected to admit the bridge")
+  expect(first.plan.order).toBe("turn-then-stretch")
+  expect(first.plan.at).toEqual([1, 3])
+  // AND WITH THAT ONE HOLE TAKEN, THE OTHER ORDER IS THE ONLY ONE LEFT - the
+  // same bridge, a different anchor, the same ends.
+  const blocked = boardGeometry(ONE_ORDER_DUMP)
+  const second = wireBridge(occupancyOf(blocked), blocked, "Wire1", 0, 4, 4)
+  if (second === undefined) throw new Error("the blocked board was expected to admit the bridge")
+  expect(second.plan.order).toBe("stretch-then-turn")
+  expect(second.plan.at).toEqual([2, 2])
+  expect(second.ends).toEqual(first.ends)
+  // THE ENDS ARE READ OFF THE RECT THE MODEL LANDED, which is why the two orders
+  // can agree on them at all: computing them from one order's arithmetic while
+  // recording the other order's gestures would be a prediction about a board
+  // nobody was going to produce.
+  expect(second.ends).toEqual([[0, 4], [4, 4]])
+})
+
 test("the wire's name is the fork's next index, predicted and loud when wrong", () => {
   // MEASURED: three adds on one board produced Wire1, Wire2 and Wire3 in order,
   // and `--op add-wire` prints nothing - so the name cannot be read off the
