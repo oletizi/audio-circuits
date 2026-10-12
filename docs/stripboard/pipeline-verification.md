@@ -868,3 +868,114 @@ declaration, not the test fixtures where the hazard happened to be discovered. A
 one-line pointer stays at the injection site, which now says only that the
 injections EXTEND rather than REPLACE the real tables and that this is
 load-bearing.
+
+---
+
+## 5. CHECKPOINT 2 — the climb against the real binary, from each starting arm
+
+The first run of Task 17's `climb` against the pinned fork, on the import-placed
+low-boost board. **The headline is that three of the four starts refuse before
+the first candidate, the fourth climbs and converges inadmissible, and four of
+the six move kinds had to be deferred on evidence this run produced.** Nothing
+below was adjusted to make a figure look better; the move set shrank because the
+fork refused what it contained.
+
+### 5.1 How it was run
+
+A scratch script, not committed, driving the repository's own paths — no second
+export and no second import:
+
+```
+VR=.tools/veroroute-perfboard/veroroute.app/Contents/MacOS/veroroute
+loadDeclaration("boards/pultec-low-boost/perfboard.json") -> exportNetlistFor()  (the netlist)
+"$VR" --import <netlist> --strips horizontal -o imported.vrt                     (the start board)
+deriveTargets(physicalBoard("low-boost"), rules.stockRows, "pultec-low-boost")   (N=14, P=50, cutFloor=0)
+referenceNetsFromExport(<netlist>)                                               (14 nets)
+footprints: component.id -> component.part.footprint over physicalBoard("low-boost")  (17 declared)
+stockFor("boards/pultec-low-boost/perfboard.json", rules)                        (34 x 27, rules-default)
+rules: the committed stripboard/rules.json, evaluationCap 20000, worseAcceptance null
+then, per start: seedCandidate({arm, seed: 0}) -> climb(start, {batch: false})
+```
+
+`unpainted-import-board` is not a `SeedArm`: it is `imported.vrt` handed straight
+to `climb` with no arm in front of it, and it is in the table because it is the
+only start that is not already painted. See 5.3.
+
+### 5.2 What each start did
+
+| start | outcome | rounds | evaluations | `acceptedPerRound` | `F0` | `F` best | `A1` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | refused before the first candidate | — | — | — | — | — | — |
+| `import` | refused before the first candidate | — | — | — | — | — | — |
+| `random` | refused before the first candidate | — | — | — | — | — | — |
+| `unpainted-import-board` | **climbed, stopped on `S3`** | **3** | **78** | **[1, 1, 0]** | **39** | **37** | **false** |
+
+The one run that happened: `C = 37`, `W = 0`, `B = 0`, 311 fork invocations,
+3.4 s wall. It accepted one move in round 0 and one in round 1, round 2 accepted
+nothing, and `S3` stopped it — a local optimum under the move set it had.
+`F` fell from 39 to 37, which is **two cuts removed by search**, against a
+derived floor of 0. The best board fails `HC1`, `HC6`, `HC8` and `HC10`, so
+`admissibleA1` is `false` and the run reports that rather than reporting nothing
+found: `A1` classifies the result, not the step.
+
+**Two cuts is not a result anybody should be pleased with**, and the reason it is
+so small is 5.4: the climb had `move` and `stretch` and nothing else.
+
+### 5.3 Why three of the four starts refuse, each with its cause
+
+- **`constructed` and `random`: `occupancyOf` refuses a part facing `N`.** Both
+  arms turn parts, and for a part across the strips `SPAN` is the footprint's ROW
+  count while its stretched length appears in no dump line at all (COST §7.3
+  item 2 — `GetCompRows`, the field `--dump-board` does not report). So the board
+  an arm hands back is one the move enumerator cannot read. Refusal, verbatim:
+  `part "C18": it faces N, and for a part across the strips SPAN is its
+  footprint's ROW count while its column extent - the stretched length - appears
+  in no dump line, so there is no rectangle to read.`
+- **`import`: `--move` refuses on a painted board.** Every arm's last gesture is
+  `--author --op autofill`, because `HC2` refuses an unresolved cut list, so an
+  arm's output is painted — and `--move` will not relocate a part onto holes that
+  overlap its own current footprint once `AutoFillVero` has painted copper into
+  them. Measured three ways on this board: `--move C18 --to 1,0` succeeds on
+  `imported.vrt` and is refused on `import.vrt` (one autofill is enough); and
+  after relocating `C18` to open space at `20,20` and repainting, `21,20` and
+  `20,21` are refused while `23,20` succeeds. A one-hole move always overlaps, so
+  the painted start refuses on round 0, move 0.
+
+  This also found a real bug in `climb`, now fixed: it was chaining gestures on
+  the PAINTED file. The paint is a scoring artifact; `Measured.source` carries
+  the board a gesture applies to, and `Evaluation.candidate` stays the painted
+  board that was scored and graded.
+
+### 5.4 The move set this run actually had, and what each deferral cost
+
+Four of the six kinds are in `DEFERRED_KINDS`, three of them on evidence from
+this run. 26 moves enumerated on the fixture board, 12 applicable.
+
+| kind | applicable | why not |
+| --- | --- | --- |
+| `move` | yes | — |
+| `stretch` | yes | — but only after `Component::CanStretch` was transcribed as `VEROROUTE_STRETCH_BOUNDS`: the run proposed `--stretch junction_grounds --direction grow`, geometrically clear, and the fork refused it (`junction_grounds cannot grow`) after 24 accepted gestures. A geometric fit is not a stretchable part. Both `SIP5` parts refuse both directions, measured, while `RESISTOR` and `CAP_FILM_WIDE` shrink on the same board — and `CanStretch` as READ predicts the opposite for `COMP::SIP` (min 1, max 255), so which `COMP` the dump's `SIP5` is has **not** been established and the entry rests on the measurement. |
+| `rotate` | **no** | A turn produces a board `occupancyOf` cannot read — 5.3's cause, reached by the climb's own accepted gesture. **This is the expensive one:** orientation is the structural lever behind COST §3.1's 68–75%, and the search does not have it. |
+| `add-wire` | **no** | The wire anchors only at a FREE hole (`--at 1,0` is refused: *"the wire could not be placed at that position (it is floating)"*), and this enumeration anchors at a PIN hole — the only hole it can identify as belonging to a net. And a fresh wire is `1x3` ALONG the row (`--at 10,10` yields `WIRE Wire1 AT 10,10 ENDS 10,10 10,12`), so under horizontal strips it joins one strip to itself. Making it useful is three gestures in one candidate, or a fork change letting `--op add-wire` name both ends. |
+| `delete-wire` | **no** | No verb in the pinned fork deletes a placed component. Blocked on the fork, not on a task. |
+| `cluster` | **no** | Task 18's. |
+
+### 5.5 What this run does and does not establish
+
+**It establishes that the search runs and moves `F`.** 78 evaluations, two
+accepted moves, two cuts removed, `S3` reached, `history` one entry per
+evaluation and `evaluationsToCross` satisfied by it. Before this run nothing in
+the plan had evaluated a single real candidate.
+
+**It does not establish a rate, and it is not an arm comparison.** One seed, one
+board, one climb; and three of the four starts produced no run at all, so
+`compareSeedArms` has nothing to compare — its own `RETIREMENT` note already
+says a start count is not a rate, and this is that case live.
+
+**It does not establish that the move set is adequate.** The opposite: a climb
+with `move` and `stretch` alone converged after two accepted moves, and the one
+lever COST calls structural (orientation) was absent. The next useful figure is
+the same run with the occupancy carried forward instead of re-derived per dump —
+already `seed-placement.ts`'s documented pattern, needing `enumerateMoves` to be
+handed an occupancy rather than deriving one, which is a change to the signature
+the plan declares.
