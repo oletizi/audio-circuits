@@ -247,12 +247,16 @@ test("an Evaluation claiming open nets beside an HC1 that holds is refused", () 
   expect(refusal).toContain("beside an HC1 that HOLDS")
   // The reverse is NOT refused, and that is deliberate: HC1 reads the exit
   // status as well as the net lines, so it can fail while naming no incomplete
-  // net.
-  expect(() =>
-    against(base, { ...base, admissibleA1: false, openNets: 0, results: base.results.map(
-      (result) => (result.id === "HC1" ? { ...result, held: false } : result),
-    ) }, rulesWithoutWorseAcceptance()),
-  ).not.toThrow()
+  // net - which is a board `tools/stripboard/constraints-electrical.ts` names.
+  const brokenWithNoneNamed = {
+    ...base,
+    admissibleA1: false,
+    openNets: 0,
+    results: base.results.map((result) =>
+      result.id === "HC1" ? { ...result, held: false } : result,
+    ),
+  }
+  expect(() => against(base, brokenWithNoneNamed, rulesWithoutWorseAcceptance())).not.toThrow()
 })
 
 test("a regression is matched by constraint id, never by position in the list", () => {

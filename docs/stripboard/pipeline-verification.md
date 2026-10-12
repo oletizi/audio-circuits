@@ -29,7 +29,12 @@ constructed arm from 16 cuts to 10, and CHECKPOINT 5, the comparison re-run with
 the complete move set - still 0 of 5 on every arm, with the tiebreak inverted -
 and CHECKPOINT 6, the same comparison again with the gather able to see the empty
 board, where the rate is zero a third time and the inversion widens to all five
-seeds (§6).
+seeds (§6). **This enumeration stopped at CHECKPOINT 6 while §6 already had two
+more**, which is the same staleness the paragraph above complains of, one level
+down: CHECKPOINT 7 is the complete move set, where `add-wire` fires 7,417 counted
+times and is never once accepted and the cause is found to be the objective
+(§6.9), and CHECKPOINT 8 is what happened when completeness entered the
+acceptance rule because of it (§6.10).
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -2112,3 +2117,203 @@ figure in this sweep: it is one refusal, not a zero.
   and objective argument holds for all fifteen by construction, but the
   nets-incomplete counts above are `random` seed 3's; the other best boards were
   deleted with their run directories to bound scratch disk.
+
+### 6.10 CHECKPOINT 8 — completeness enters the acceptance rule: **five nets close for two cuts, and no board is finished**
+
+**What changed in the search, and it is all that changed.** The acceptance rule's
+ordering gained a FIRST KEY: the number of nets `--check` reports as
+`incomplete`, compared before `F`. Fewer open nets is accepted whatever `F` does,
+more open nets is rejected whatever `F` does, and a tie falls through to the
+unchanged `ΔF`-then-ranking rule. `E3`'s bound is guarded the same way the
+no-regression clause is, so a configured bound could buy a worse `F` and never an
+open net. `rhoSolder` moved from 1 to 0.25 in the same commit, on the owner's
+instruction that a solder blob is built as a wire. Both are recorded as
+deviations in `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`; neither
+spec is edited, and ratifying either is the owner's.
+
+**Why: §6.9's finding, which named this change.** Nothing the search optimised
+mentioned completeness, so sixty-three rounds of removing cuts closed one net of
+fourteen. §6.9 listed three changes that would alter the outcome and said *"what
+would change the outcome is a change nobody here may make alone"*. The owner made
+one of them, in the form he chose: *"1 then 3"* — change the scoring first, and
+add a second pass only if that is not enough.
+
+**Everything the search sees is §6.9's experiment unchanged** — *same reviewed
+seeds, same import-placed `pultec-low-boost` board, same committed rules at
+`evaluationCap` 20,000, same `FROZEN_MARK`, one `search()` per pair.*
+**§6.3, §6.7, §6.8 and §6.9 are not edited.**
+
+**`F` IS NOT COMPARABLE WITH §6.9 AND `C`, `W`, `B` AND THE OPEN-NET COUNT ARE.**
+`rhoSolder` changed in the same commit, so a board carrying a `SOLDER` line scores
+differently for a reason that has nothing to do with the search. Every comparison
+below is made on **cuts and open nets**; `F` is carried rather than compared, and
+the isolation run below is what separates the two changes.
+
+| arm | seed | `C` | `W` | `B` | **nets open** | nets closed | evaluations | rounds | accepted | unscoreable | §6.9's `C` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 0 | **10** | 0 | 0 | **9 of 14** | **5** | 15,006 | 63 | 136 | 1 | 8 |
+| `import` | 0 | **34** | 0 | 4 | **10 of 14** | **3** | 4,592 | 24 | 45 | 36 | 33 |
+| `import` | 1 | **34** | 0 | 4 | **10 of 14** | **3** | 4,592 | 24 | 45 | 36 | 33 |
+| `random` | 0 | **13** | 0 | 4 | **9 of 14** | **5** | 13,939 | 48 | 112 | 0 | refused; 12 in §6.8 |
+
+`nets closed` is each run's own start against its own best board: `constructed`
+and `random` start at **14 of 14 open** and `import` at **13 of 14**, which are
+the figures §6.9 records for the same starts. The `import` arm's two seeds are
+identical in every column because it has one start and the seed changes nothing
+about it, which is `seed-arms.ts`'s recorded asymmetry rather than a copy-paste.
+
+#### What the key bought, and what it cost
+
+**Five nets of fourteen, for two cuts.** `constructed` seed 0 went from 14 open
+at its start to **9**, at 10 cuts against §6.9's 8. `random` seed 0 closed five
+as well, at 13 cuts against §6.8's 12 for the same arm and seed. `import` closed
+three, at 34 against 33. Set beside §6.9's measured board — *"63 rounds and 11,842
+evaluations completed ONE net and removed six cuts"* — the direction has changed
+and the price is one or two cuts.
+
+**And the search now spends `F` to do it, visibly.** Every climb's `F` history
+rises above its own start before coming down: `constructed` seed 0 reaches
+`F = 27` on the way to a best of 10, and `import` reaches 40.25 from a start of
+38.25. Under the old rule no accepted candidate could ever raise `F`. That is the
+first key doing exactly what it says.
+
+#### **NO BOARD IS FINISHED, AND THAT IS THE FINDING**
+
+Nine or ten of fourteen nets are still open on every best board. `HC1` fails on
+every run, every run ends inadmissible, and not one of these boards is buildable.
+**The change moves the number it was supposed to move and does not finish the
+job.**
+
+**It is not the budget.** Every run stopped on `S3` — a round that accepted
+nothing — and none reached the 20,000-evaluation cap: the largest spend is 15,006
+evaluations and one unscoreable candidate. So the search CONVERGES with nine nets
+open, and a larger cap stalls on the same kind of board. §6.9 reached that
+conclusion with completeness unpriced; it survives completeness being the first
+thing the search looks at.
+
+**`W` is still 0 on every run, which is the mechanism worth naming.** §6.9
+measured 7,417 `add-wire` candidates, none ever accepted, and explained it by the
+objective: a wire keeps the cut count and pays its weight with nothing rewarding
+the connection it closes. The completeness key removes that explanation — a wire
+that closed a net would now be accepted at any `F` — and **no wire is accepted
+anyway.**
+
+**`W = 0` on a best board really does mean no wire was ever accepted in that
+climb**, and the inference is worth writing down because it is not obvious: with
+`E3` unconfigured every acceptance improves on the incumbent, so the incumbent
+and the best coincide, an accepted wire board therefore becomes the best — and
+`delete-wire` is refused (`./moves-model.ts`), so a board that acquires a wire
+cannot shed one.
+
+What this sweep can say is therefore exactly this: **no wire candidate was ever
+both admissible-against-its-predecessor and better on the ordering** — which
+covers two different ways of closing nothing, and does not separate them. A wire
+that closed a net without breaking a constraint its predecessor held would have
+been accepted at any `F`. Thirty-six of `import`'s wire candidates could not be
+scored at all, which is `--author --op autofill` reporting `CUT_STATE UNRESOLVED`
+on a wire that shorted two nets — §6.9's measured failure, counted rather than
+fatal — and a wire that shorts is a wire that breaks `HC8` on a board where it
+held, which clause 1 rejects before the key is consulted. **How many of the rest
+closed no net, against how many closed one and broke something, is NOT measured
+here.**
+
+#### The isolation run: on the `import` arm `rhoSolder` changed NOTHING, and the key changed everything
+
+Two changes landed in one commit, which is one too many for a comparison. The
+`import` arm can separate them, because it has a single start and no seed
+dependence: the same pair was run again with the completeness key in place and
+`rhoSolder` back at PAR1's **1**.
+
+| `import`, seed 0 | §6.9: no key, `ρ_s = 1` | key, `ρ_s = 1` | key, `ρ_s = 0.25` |
+| --- | --- | --- | --- |
+| cuts | 33 | **34** | **34** |
+| wires | 0 | 0 | 0 |
+| solder bridges | 0 | **4** | **4** |
+| nets open | not measured per run | **10 of 14** | **10 of 14** |
+| evaluations | 4,314 | 4,592 | 4,592 |
+| rounds | 21 | 24 | 24 |
+| accepted moves | not recorded | 45 | 45 |
+| `F` | 33 | 38 | 35 |
+
+**The two key columns are identical in every figure but `F`**: same evaluation
+count, same round count, same accepted-move count, and a best board identical on
+every count taken from it. On this arm the solder weight changed no decision the
+search made and moved only the number reported, so **every structural difference
+from §6.9 here is the completeness key's.**
+
+**It also kills the obvious reading of the `B` column.** `B` went from 0 to 4 on
+this arm, and the tempting account — a blob priced at a quarter is a blob the
+search no longer bothers to remove — is **false**: at `ρ_s = 1`, where a blob
+costs a whole cut, the same four appear. What puts them there is the key. The
+import-placed start carries one bridge and 38 cuts, so these runs acquire three
+more while removing four cuts and closing three nets. **On the owner's bench each
+of those four is a short wire he has to run** — *"A solder blob will turn into a
+wire on my bench"* — which is why `B` is a column of its own and not left inside
+`F`, where four bridges contribute one.
+
+`B` is **0** on `constructed` seed 0, so this is a fact about two arms'
+trajectories and not a general effect of the change.
+
+**What the isolation run does not establish:** it is ONE arm at ONE seed. Nothing
+here says `rhoSolder` is inert on `constructed` or `random`, whose trajectories
+differ.
+
+#### Two of fifteen pairs refused when five ran at once, and both completed alone
+
+The first five pairs were run **five at a time**, and two of them — `constructed`
+seeds 0 and 1 — stopped on `missing-line: the dump has no GRID line`: a
+`--dump-board` that exited 0 and printed nothing. They refused at 74,271 and
+12,595 fork invocations, which is not a shared point in a trajectory.
+
+**Re-run alone, `constructed` seed 0 went past its own refusal point and
+finished** — 82,394 invocations against the 74,271 where it had stopped — so the
+empty dump is **not** a property of a board the new ordering leads the search
+onto. The rest of the sweep was therefore run **one pair at a time**, and this
+page records what that is evidence of and what it is not:
+
+- §6.9 saw the same CLASS of failure once in 763,545 invocations, on a transient
+  it investigated and could not explain, noting that *"the only thing the failing
+  run had that the replays did not is a SECOND fork process"*. This sweep ran
+  five, saw two failures in roughly 150,000 invocations of concurrent running,
+  and saw none in the serial runs that followed;
+- **that is a correlation at a higher density, not a mechanism.** Nothing here
+  identifies what the concurrent forks contend for, and the disk was not full
+  (33 GB free throughout);
+- **a refusal is one refusal and not a zero**, exactly as §6.9 recorded it: the
+  pair produced no run, and the two refused pairs were re-measured serially
+  rather than reported as results.
+
+#### What this still does not establish
+
+- **the arm comparison was not re-run.** `compareSeedArms` needs every arm at
+  every seed it is given and refuses a missing pair rather than defaulting it, so
+  no rate, `separated` or `retireable` verdict is quoted here. The figures above
+  are per-pair measurements, not a rate;
+- **the two changes are separated only on the `import` arm** (above);
+- **the per-KIND firing audit is not available.** §6.9 could say which gesture
+  kind set each new best because its run directories survived; this sweep deletes
+  each run directory once the best board is copied out, which is what let fifteen
+  long runs fit on the scratch disk. So *which* gesture closes a net here is
+  **not measured**, and the `W = 0` finding above is the only per-kind statement
+  that can be made from the counts;
+- **`RETIREMENT`'s tiebreak is now stated over a quantity the search
+  subordinates.** It names final `F` per seed for a run where no arm reaches the
+  mark, and `F` is no longer the first thing the ordering compares. Nothing here
+  changes that rule — it is `seed-compare.ts`'s declared text and a criteria-level
+  matter — but a tiebreak on `F` between two arms that differ in open nets is
+  ordering them by the wrong column;
+- **the run report does not carry the open-net count.** `REP`'s fields are
+  CRITERIA's, and the figure this section is about reaches a reader only through
+  `HC1`'s pass or fail in the failing-check list. Every open-net count on this
+  page was read from `Evaluation.openNets` by the harness and re-checked with the
+  fork's own `--check` on the kept board;
+- **one board, one netlist**, as §6.9 says of its own findings.
+
+#### What it means for route 3, and the owner's own sequence
+
+He said **"1 then 3"**: change the scoring, and add a second pass only if that is
+not enough. Measured: the scoring change moves completeness in the right
+direction for one or two cuts — and **it is not enough.** The search converges
+with nine or ten nets of fourteen open, under the cap, with no wire ever
+accepted. Route 3's second pass is what that leaves, and the figures above are
+the evidence for taking it rather than an argument for it.
