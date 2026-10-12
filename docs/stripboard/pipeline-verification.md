@@ -1551,6 +1551,15 @@ explanation of the measurement rather than a second measurement: nothing has
 tested it by, say, running the construction's assignment through a random
 placement.
 
+**AND IT CUTS BOTH WAYS, WHICH IS THE PART A READER MUST NOT SKIP.** If the
+gather's value on this arm is that it finishes an arrangement the construction
+intended, then what the figures show is **a placement shortfall in
+`seedCandidate` that one move happens to repair** - not that constructing a start
+is the better strategy. *"The construction is right and its placer cannot
+finish"* fits every number in §6.6, §6.7 and §6.8 exactly as well as *"a
+constructed start is better"*, and no run here separates them. §6.8's limits list
+carries the same caveat beside the inversion it qualifies.
+
 | arm, seed 0 | candidates | of them clusters | of them gathers | compound `--move --delta` gestures | new-best-`F` steps | of those, gathers |
 | --- | --- | --- | --- | --- | --- | --- |
 | `constructed` | 4,149 | 530 | 168 | 2,365 | 8 | **3** |
@@ -1835,8 +1844,39 @@ the binary.**
 
 #### What this still does not establish
 
+**NO RUN IN ANY OF THE THREE SWEEPS PRODUCED A BUILDABLE BOARD.** Forty-five
+runs, none admissible: `HC1` fails on every one, so every best board has at least
+one net the fork reports incomplete, and a board whose circuit is not connected
+is not a board anybody can build from. `C = 7` against a bar of 5 is a cut count
+on an unfinished layout, and the two facts side by side invite being read as
+"nearly done" when the one that matters to the owner - a board he can build - is
+still at zero.
+
 - **the mark is still unmet and the gap is still large**: `C = 7` against 5 with
   every net incomplete, `A1` false on all fifteen, `κ` not at the bench;
+- **THE INVERSION HAS TWO READINGS AND THIS RUN CANNOT SEPARATE THEM.** §6.6's
+  own measurement is that the gather repairs the constructed arm's OWN placement
+  shortfall: `assignStrips` intends one net per strip and the placement leaves 8
+  of 14 nets spread over two or three. So *"the construction's belief about a
+  good layout is right and its placer cannot finish the job"* fits every number
+  here exactly as well as *"a constructed start is better"* - and on the first
+  reading the gather is a REPAIR for a defect in `seedCandidate` rather than a
+  general advantage of constructing. What would separate them is not in this
+  sweep: a start built to the same arrangement by a different placer, or the
+  construction's assignment applied to a random placement. **A reader may not
+  conclude from these figures that constructing a start is the better strategy**,
+  only that this constructed start plus this gather reaches the lowest `F`
+  measured;
+- **the control arm getting worse is unexplained, and the hypothesis is named
+  rather than measured.** `random`'s mean rose 12.8 → 13.2, worse on three seeds
+  and better on two. The plausible mechanism is that a wider neighbourhood can
+  hurt a greedy climb: more candidates per round means more ways to reach a worse
+  local optimum FIRST, and `S3` then stops there. Nothing here tests it - the
+  acceptance order, not just the move set, would have to be instrumented. And
+  **0.4 of a cut over five seeds is not placed against what five seeds can
+  resolve**: no spread is computed, no repeat at another seed set is run, and the
+  figure is reported because the direction is worth knowing and not because it is
+  distinguishable from noise;
 - **`constructed` still starts inadmissible on `HC5` and `HC9`** on every seed,
   which no gesture repairs - and that is now its ONLY remaining structural
   failure besides `HC1`/`HC8`/`HC10`, since `HC6` holds on four of its five runs;
