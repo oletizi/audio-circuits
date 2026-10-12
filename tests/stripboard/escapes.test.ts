@@ -115,7 +115,7 @@ test("E1 moves every on-board part with a pin on the net, enumerated over nets n
   const { spawned, spawn } = recorder()
   const out = path.join(freshRunDir(), "candidate.vrt")
   const move = clusterOrFail(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE, "mid", [0, 1])
-  applyMove(SCATTERED_DUMP_PATH(), move, out, spawn)
+  applyMove(scatteredBoardFile(), move, out, spawn)
   const moved = spawned
     .filter((args) => args[0] === "--move")
     .map((args) => args[args.indexOf("--ref") + 1] ?? "")
@@ -304,8 +304,15 @@ test("the occupancy advances past a cluster through the same call that proposed 
   expect(STACKED_OCC.get("R1")).toEqual({ row: 0, col: 0, rows: 1, cols: 2, across: false })
 })
 
-/** Where the fixture board is written, for the one test that hands `applyMove` a path. */
-function SCATTERED_DUMP_PATH(): string {
+/**
+ * A board file for the one test that hands `applyMove` a path.
+ *
+ * ITS CONTENT IS NOT THE FIXTURE'S DUMP TEXT AND DOES NOT NEED TO BE:
+ * `applyMove` reads no board - it passes the path to the fork and the gestures
+ * are the move's own - so what this file holds is never parsed. It exists so
+ * that the first gesture's input is a real path.
+ */
+function scatteredBoardFile(): string {
   const file = path.join(freshRunDir(), "scattered.vrt")
   fs.writeFileSync(file, "written by tests/stripboard/escapes.test.ts, not by the fork\n")
   return file
