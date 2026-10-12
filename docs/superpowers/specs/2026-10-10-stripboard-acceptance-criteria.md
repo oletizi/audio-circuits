@@ -63,9 +63,20 @@ govern the `notes` entries in `stripboard/rules.json`:
 owner's instruction to fix the provenance ambiguity). The labelling is the whole of that change.
 Of the 17 distinct `[owner]` items across this document and `stripboard/rules.json`, **9 carry a
 verbatim quote and 8 do not**, and all 8 now say so. Two near-misses are worth naming because both
-would have been easy to manufacture: **nothing verbatim is on record about HC6's 27 columns** —
+would have been easy to manufacture: **nothing verbatim was on record about HC6's 27 columns** —
 only about the strips, *"about 35"* — and §10's *"Start hard at 0.05 and back off only on
 evidence"* is an agent's summary of an outcome, not his speech.
+
+**And the refusal to fill the first of those gaps is what closed it. RESOLVED 2026-10-12.** Asked
+about the columns rather than told what he must have meant, the owner answered in his own words,
+and the answer carried two facts no reconstruction would have produced: **27 is his *current* stock
+with larger on order**, and then, more generally, that **the dimensions are *always* provisional**
+— a standing rule over every dimension here rather than a caveat on one purchase. Both are at HC6,
+under *Dimensions are always provisional*, and together they are the worked argument for the whole
+convention: a manufactured quote would have recorded the number and lost both. **The 9/8 count is
+unchanged by it** — HC6 and `stockCols` already carried a quote of his, about `pt2399-core` rather
+than about the value; what changed is that the quote is now *about the thing it sits beside*, which
+is the distinction the labels exist to make visible.
 
 **The other tags were checked at the same time and are unchanged; what was found is recorded here
 rather than acted on, because a tag change is a different concern.** Both findings are agent-written
@@ -182,11 +193,54 @@ Ten, and nothing in them is tradeable. **A1 is the verdict that all ten hold.**
 | **HC3** | **Nothing floating.** Every verb that lifts a part and puts it back records `GetIsPlaced()` for each affected component and **refuses without writing its output** if a part that was placed is not placed afterwards — because the measured failure is a verb that exits 0, prints nothing, writes the board with the part off it, and leaves every term of `F` reading healthy. **It is the overlap check too:** `CanPutDown` refuses a colliding placement, so an overlapping move yields a floating part rather than an overlapping board. | the `PART` line's placement field is not `FLOATING` **and** every placed part prints its `PIN` lines — two assertions, so a change keeping one signal and dropping the other fails loudly. Both are `Component::GetIsPlaced()`, so neither is copper; HC8 is. | [model], strengthened on measurement (D6) |
 | **HC4** | **Every lead span within the tool's range, 2–16 holes.** Its lower end is a fact about VeroRoute and not about any part, which is why it does not discharge HC9. | `CompTypes::GetMinLength`/`GetMaxLength`, as `lib/kicad/import-string.ts` already enforces `MAX_SPAN = 15` grid steps. | [model] |
 | **HC5** | **Every lead span within the part's physical reach** — at or below the family's `maxSpanHoles`, because the tool will stretch any two-terminal part to any span in its range and the part will not, and a span the part cannot make is not a lever but a fiction. | per-candidate comparison against `maxSpanHoles` in `lib/kicad/lead-span.ts`. **Refuse without it** (PAR2). | [external] values, [model] constraint |
-| **HC6** | **The layout fits the stock the owner bought: 34 strips × 27 columns**, the board he usually uses. The quantity checked is the **occupied extent**, not the canvas — `GRID` is VeroRoute's drawing area and `--import` leaves it at a default, so a canvas larger than the stock says nothing about copper. A layout whose parts fit inside 34 × 27 can be cut from that board whatever its canvas says. | the pin extent over the dump's `PIN <name> <pin> AT <row>,<col>` lines — `max − min + 1` in each axis — against 34 × 27. **Pin extent is a LOWER bound on physical extent**, because a body overhangs its leads; `BOUNDS` (M1.1) replaces it with the exact figure and tightens the check. A board cut from a different piece declares its own size in `boards/<board>/perfboard.json`, which overrides the default. | [owner]. **Owner-settled:** 34 × 27, measured from his own stock on 2026-10-10 — 27 columns counted, and the strips recorded as **34** on his instruction to take the conservative figure. **Owner's words (verbatim):** he counted the strips as "about 35"; **nothing verbatim is recorded about the 27**, and nothing is reconstructed. **Agent rationale:** the rest of this row, and §10's item 1 apart from the quote it carries |
+| **HC6** | **The layout fits the stock the owner bought: 34 strips × 27 columns**, the board he usually uses. The quantity checked is the **occupied extent**, not the canvas — `GRID` is VeroRoute's drawing area and `--import` leaves it at a default, so a canvas larger than the stock says nothing about copper. A layout whose parts fit inside 34 × 27 can be cut from that board whatever its canvas says. | the pin extent over the dump's `PIN <name> <pin> AT <row>,<col>` lines — `max − min + 1` in each axis — against 34 × 27. **Pin extent is a LOWER bound on physical extent**, because a body overhangs its leads; `BOUNDS` (M1.1) replaces it with the exact figure and tightens the check. A board cut from a different piece declares its own size in `boards/<board>/perfboard.json`, which overrides the default. | [owner]. **Owner-settled:** 34 × 27, measured from his own stock on 2026-10-10 — 27 columns counted, and the strips recorded as **34** on his instruction to take the conservative figure. **BOTH FIGURES ARE PROVISIONAL — see *Dimensions are always provisional* immediately below the table, which is the owner's standing rule and the authority for their status.** The 27 is his current stock with larger on order, so it is a default pending a purchase rather than a property of the method; no dimension for the incoming stock is recorded, because he gave none. **Owner's words (verbatim, 2026-10-12, on the columns):** *"yes, my current stock is 27 columns. I have larger stock on order, but until it arrives, that will be the default width"*; and on the strips, 2026-10-10, he counted them as "about 35". **Agent rationale:** the rest of this row, the provisionality section's agent-written part, and §10's item 1 apart from the quotes it carries |
 | **HC7** | **The layout still matches the circuit.** | `--check`'s schematic-delta section is empty. | [model] |
 | **HC8** | **Netlist equivalence, reconstructed from copper**: the connected components of the board's copper, computed outside VeroRoute, partition the pins exactly as the reference netlist does — no reference net in two components (an **open**), no two reference nets in one (a **short**). Because HC1, HC2, HC3 and HC7 each read VeroRoute's own conclusion, from the subsystem the optimiser perturbs, and that subsystem is known to have a hole — `GetBoardMembership` iterates what the *component* records rather than the copper, which is why a floated part left the `NODE` block identical and went undetected. And because a completeness check is structurally blind to a short, which leaves both joined nets reading complete: nothing in HC1–HC7 looks for one at all. | the reconstruction below, over the geometry contract below. | [review] (D16) |
 | **HC9** | **Every lead span at or above the part's own physical minimum** — the family's `minSpanHoles` — because HC4 bounds a span by the tool and HC5 bounds it above by reach, and **nothing bounded it below by the part**: `--stretch shrink` can compress a DIN0207, 6.3 mm of body on a 10.16 mm nominal pitch, to a 2-hole 5.08 mm span no bending achieves, and every other check here passes it. | as HC5, against `minSpanHoles`, **in the grader regardless of the generator**, because the generator only proposes. | [review] (D18), [external] values |
 | **HC10** | **Every placed part's pins lie on straight lines parallel to the strips** — the owner's rule, and **a cost judgement rather than a geometric impossibility.** A footprint whose pins sit on a circle, an arc, or any pattern **not decomposable into rows** parallel to the strips is **refused rather than placed**, because a strip is a straight line of copper: a round pattern crosses a different strip at nearly every pin and shares one with pins it must not share with, so **nearly every such hole becomes a cut** — and the body then sits over holes it does not use. Such a board could be routed, with enough cuts; the owner's verdict is that the cut cost is prohibitive and that he will not build it. **Rows plural, and decomposability is the test:** a DIP-16 is two rows parallel to the strips, decomposes, and passes. | a **footprint-level** check against the span/footprint data, because whether a footprint's pins decompose into rows parallel to the strips is a property of the **footprint**, not of a placement: the classification is per footprint family, a non-decomposable family refuses **by name** before any placement exists to grade, and `lib/kicad/lead-span.ts` — keyed by the footprint name the netlist carries, already refusing an unlisted family by name — is the place by shape. **It carries no pin-pattern field yet; §10.3 is that gap.** In A1. | [owner], 2026-10-10. **Owner-settled:** a footprint whose pins do not decompose into rows parallel to the strips is refused rather than placed. **Owner's words (verbatim):** quoted in the HC10 paragraph below. **Agent rationale:** the rest of this row, and the HC10 paragraphs below apart from that quote |
+
+### DIMENSIONS ARE ALWAYS PROVISIONAL — the owner's standing rule
+
+**This is one principle, stated once, where a reader meets the dimensions.** It is deliberately not
+a caveat repeated on each number, because a note per value invites the reading that an unannotated
+dimension is settled. None is.
+
+**Owner's words (verbatim), 2026-10-12:** *"I may, at any time, decide to change the dimensions of
+any board at any time. The dimensions are ALWAYS provisional"*
+
+**Owner-settled:** every dimension in this repository is provisional — HC6's `stockCols` **and**
+its `stockRows`, and any per-board size a `boards/<board>/perfboard.json` declares (PAR4). Not only
+the figure he happens to be replacing. **HC6 itself is unchanged**; what the principle fixes is what
+a reader may conclude from an HC6 refusal.
+
+**Agent rationale** for the rest of this section (agent-written, no owner endorsement).
+
+**The instance in front of us, and it is an instance of the rule rather than a special case.** His
+columns figure is his *current* stock, with larger stock on order — *"yes, my current stock is 27
+columns. I have larger stock on order, but until it arrives, that will be the default width"*
+(2026-10-12). So every measured refusal is relative to **this** stock, and it is already biting:
+`pt2399-core` is refused at 17 × 36 against 34 × 27 **on width alone** — 36 columns against 27 — so
+a board in this repository is inadmissible today because of a number he expects to change. **An HC6
+width refusal may therefore be a purchasing fact rather than a layout defect**, and the remedy may
+be the delivery rather than the layout; a verdict reading it as a defect has concluded more than the
+stock supports. **The wider stock's dimensions are not stated** — he gave no figure — so none is
+guessed here, no placeholder is carried, and no conditional threshold is written: when the stock
+lands, `stockCols` is edited.
+
+**What inherits the provisionality, and it matters more than any of the numbers.** Anything
+*derived* from a dimension is provisional too. `C_floor = max(0, N − R)` takes `R` from the strip
+count, so **the derived floor is a function of today's stock and not a property of the circuit** —
+and Q4's remaining gap `g = F − C_floor`, A3's achieved objective and K1's `S_occ = min(N, R)` are
+all measured against it. A reader who treats the floor as a fixed property of a circuit passes that
+error to every judgement downstream of it.
+
+**What the principle does NOT touch: the frozen fixtures, which are frozen on purpose.** B1-frozen
+is stated against the exact electrical model, footprints and board dimensions the hand layout was
+built for, and B2 pins and hashes them. A frozen historical record is meant to be fixed, so
+**nobody "updates" a frozen fixture to today's stock** — that destroys the benchmark, and B2's hash
+is what makes such an attempt surface rather than pass quietly. The provisionality governs the
+stock a *new* layout must fit, which is HC6; it says nothing about the artifact a run is measured
+against.
 
 **HC8 is checked by a reconstruction, and the gate is only as good as its independence.** A module
 in this repository that reads the dump text and nothing else; builds the copper graph from exactly
@@ -811,7 +865,8 @@ file.** Changing a parameter is a reviewed change with a test beside it; using o
 ranking is a declared string constant beside the ranker stating the order and the reason for each
 position, and a change to it has to argue against those reasons. The stock rows × columns per
 board is a declared field in the board's existing `boards/<board>/perfboard.json` and is **the
-owner's**, because it is a fact about a purchase and not a judgement. Because a per-board criteria
+owner's**, because it is a fact about a purchase and not a judgement — **and provisional like every
+other dimension here**, under his standing rule in §2. Because a per-board criteria
 file is a file a producing agent could draft, which is the hole the invariant exists to close.
 *Checked:* review, plus G2.2's hash comparison against the committed files. *Provenance:*
 **[parent]** — the rule-library pattern.
@@ -911,7 +966,7 @@ instruction it is at the criterion, under *owner's words (verbatim)*.
 
 | Question | Outcome | Where |
 | --- | --- | --- |
-| The stock a layout must fit | 34 × 27, the board he usually uses | HC6 |
+| The stock a layout must fit | 34 × 27, the board he usually uses — **and the dimensions are always provisional, his standing rule** | HC6 |
 | `pt2399-core` exceeding it | Not a counterexample — it does not fit his stock and he improvised. The rule stands | below |
 | Round pin patterns | Refused — his rule, a cost judgement, not an impossibility | HC10 |
 | A wire against a cut | `ρ_w = 0.25` — cuts are harder and more error-prone | PAR1 |
@@ -947,6 +1002,12 @@ he has already explained. Do not report this document as blocked on owner review
    | transistor-preamp-buffered | 20 × 32 | no |
    | transistor-preamp-staged | 25 × 30 | no |
    | **pt2399-core** | **17 × 36** | **no** |
+
+   **Every verdict in this table is relative to the owner's current stock, and the dimensions are
+   always provisional** — his standing rule, stated in full under *Dimensions are always
+   provisional* in §2. `pt2399-core` fails on width alone, against the 27 columns he currently has
+   with larger stock on order, so its refusal is partly a purchasing fact; the figure is edited
+   when the wider stock arrives, and no dimension for it is recorded because he gave none.
 
    **The four unfinished Pultec boards fail on shape, not on size.** Three to five strips by
    thirty-odd columns is `--import`'s ribbon, the same fact COST states as mid occupying four of
