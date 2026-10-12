@@ -171,12 +171,38 @@ test("the enumeration proposes one wire per pair of strips a net is split across
 })
 
 test("a wire longer than the fork will stretch is not proposed", () => {
-  // Measured: a wire stretches between 2 and 16 holes. Strips 0 and 2 are three
-  // holes apart and admitted; strips 0 and 17 would be eighteen, which is past
-  // the bound, so no plan is returned - and the refusal is the model's, not a
-  // gesture the fork gets to refuse.
-  expect(wireBridge(ACROSS_OCC, ACROSS, "Wire1", 0, 2, 2)).not.toBeUndefined()
-  expect(wireBridge(ACROSS_OCC, ACROSS, "Wire1", 0, 17, 2)).toBeUndefined()
+  // Measured: a wire stretches between 2 and 16 holes - 3 shrinks once and then
+  // refuses, and grows thirteen times and then refuses.
+  //
+  // **IT IS ASSERTED ON A BOARD BIG ENOUGH FOR THE LONG WIRE TO FIT, which is
+  // what makes it a test of the BOUND rather than of the grid.** On the 8x8
+  // ACROSS_DUMP an eighteen-hole wire runs off the board, so deleting the bound
+  // changed nothing there and the mutation survived. This board is 24x24 and
+  // empty but for two pads, so a seventeen-hole wire is geometrically fine and
+  // still must not be proposed.
+  const roomy = boardGeometry(
+    [
+      "GRID 24 24",
+      "BOUNDS 0,0 0,0",
+      "VERO_TRACKS 1",
+      "VERTICAL_STRIPS 0",
+      "CUT_STATE COMPUTED",
+      "PIN P1 1 AT 0,0",
+      "PIN P2 1 AT 19,0",
+      "NODE 1 NAME mid P1.1 P2.1",
+      "",
+    ].join("\n"),
+  )
+  const open = occupancyOf(roomy)
+  // Sixteen holes is the bound and is admitted: thirteen grows on top of the
+  // fresh three.
+  const sixteen = wireBridge(open, roomy, "Wire1", 0, 15, 5)
+  if (sixteen === undefined) throw new Error("a sixteen-hole bridge was expected to be admitted")
+  expect(sixteen.plan.stretch).toBe(13)
+  expect(sixteen.ends).toEqual([[0, 5], [15, 5]])
+  // Seventeen is one past it, on a board with room for twenty.
+  expect(wireBridge(open, roomy, "Wire1", 0, 16, 5)).toBeUndefined()
+  expect(wireBridge(open, roomy, "Wire1", 0, 19, 5)).toBeUndefined()
   // And a pair in the wrong order, or the same strip twice, is not a bridge.
   expect(wireBridge(ACROSS_OCC, ACROSS, "Wire1", 2, 0, 2)).toBeUndefined()
   expect(wireBridge(ACROSS_OCC, ACROSS, "Wire1", 2, 2, 2)).toBeUndefined()
