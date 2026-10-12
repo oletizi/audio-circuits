@@ -1,0 +1,305 @@
+/**
+ * Task 17: the acceptance rule and the climb's bookkeeping.
+ *
+ * THE AUTHORITY is the brief at
+ * `.superpowers/sdd/2026-10-10-stripboard-pipeline/task-17-brief.md`, `OBJ3` in
+ * `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` and
+ * COST §6.1/§6.4.
+ *
+ * **THE FIRST TEST IS THE ONE THIS WHOLE DESIGN RESTS ON.** A ranking term
+ * cannot make the climb accept a worse `F`. If it ever passes while `F` rose,
+ * `A_occ` - the occupied board area - has become an objective nobody
+ * authorised, and every later run's number would be about a different quantity
+ * than the one `OBJ1` names.
+ *
+ * **WHAT THE CLIMB TESTS PROVE AND WHAT THEY DO NOT.** The injected spawn
+ * answers `--dump-board` from a script keyed by the dump count, so it does not
+ * simulate a gesture: the dump a candidate reports is the script's and not the
+ * move's effect. So these assert the COUNTERS, the HISTORY's one-entry-per-
+ * evaluation contract, the invocation order and the scratch-file discipline -
+ * never the fork's geometry, which `./seed-geometry.test.ts` holds against the
+ * real binary. `./climb-fixtures.ts` says the same at its own definition.
+ *
+ * Every expected count below is hand-derived from the two fixture boards, with
+ * the derivation written out, and never recomputed from the implementation's
+ * own expression.
+ */
+import { expect, test } from "bun:test"
+import fs from "node:fs"
+import { accepts, climb, evaluate } from "../../tools/stripboard/climb.ts"
+import { applicableMoves, enumerateMoves } from "../../tools/stripboard/moves.ts"
+import { evaluationsToCross, type ArmRun } from "../../tools/stripboard/seed-compare.ts"
+import {
+  BETTER,
+  BETTER_TUPLE,
+  climbInput,
+  DUMP,
+  evaluation,
+  freshRunDir,
+  IMPROVES_THEN_STALLS,
+  netlistFile,
+  recordingSpawn,
+  REFERENCE,
+  rulesWithoutWorseAcceptance,
+  rulesWithWorseAcceptance,
+  scriptedSpawn,
+  seededStart,
+  TARGETS,
+  FOOTPRINTS,
+} from "./climb-fixtures.ts"
+
+function refusalFrom(call: () => unknown): string {
+  try {
+    call()
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+  return ""
+}
+
+const base = evaluation()
+
+test("a ranking term cannot make the climb accept a worse F", () => {
+  // OBJ3. The candidate below has a strictly better ranking tuple - zero in
+  // every one of RANKING's five positions against the base's ones - and a worse
+  // F. It must be rejected. If this test ever passes while F rose, the search is
+  // optimising something nobody authorised.
+  const worseF = {
+    ...base,
+    score: { ...base.score, objective: base.score.objective + 1 },
+    ranking: [0, 0, 0, 0, 0],
+  }
+  expect(accepts(base, worseF, rulesWithoutWorseAcceptance())).toBe(false)
+})
+
+test("a strictly better F is accepted", () => {
+  const better = { ...base, score: { ...base.score, objective: base.score.objective - 1 } }
+  expect(accepts(base, better, rulesWithoutWorseAcceptance())).toBe(true)
+})
+
+test("an equal F with a strictly better ranking is accepted, and an equal tuple is not", () => {
+  const plateauBetter = { ...base, ranking: BETTER_TUPLE }
+  const plateauSame = { ...base }
+  expect(accepts(base, plateauBetter, rulesWithoutWorseAcceptance())).toBe(true)
+  expect(accepts(base, plateauSame, rulesWithoutWorseAcceptance())).toBe(false)
+})
+
+test("a candidate failing any hard constraint is rejected whatever its F", () => {
+  const cheapAndBroken = {
+    ...base,
+    admissibleA1: false,
+    score: { ...base.score, objective: 0 },
+    results: base.results.map((result) =>
+      result.id === "HC1" ? { ...result, held: false } : result,
+    ),
+  }
+  expect(accepts(base, cheapAndBroken, rulesWithoutWorseAcceptance())).toBe(false)
+})
+
+test("a configured worseAcceptance refuses rather than being climbed without", () => {
+  // E3 is Task 18's. A bound present in the rules and ignored here would make
+  // the run record claim a search behaviour that did not happen.
+  const refusal = refusalFrom(() => accepts(base, base, rulesWithWorseAcceptance(2)))
+  expect(refusal).toContain("worseAcceptance = 2")
+  expect(refusal).toContain("Task 18")
+})
+
+test("an Evaluation whose admissibleA1 disagrees with its own results refuses", () => {
+  // Neither field is preferred: admissibleA1 true beside a broken constraint
+  // would certify a board against a check that failed.
+  const forged = {
+    ...base,
+    admissibleA1: true,
+    results: base.results.map((result) =>
+      result.id === "HC8" ? { ...result, held: false } : result,
+    ),
+  }
+  const refusal = refusalFrom(() => accepts(base, forged, rulesWithoutWorseAcceptance()))
+  expect(refusal).toContain("records admissibleA1 = true")
+  expect(refusal).toContain("comes to false")
+})
+
+test("both fixture boards are admissible, so the acceptance tests run over real candidates", () => {
+  // THE ASSUMPTION THE WHOLE CLIMB SUITE RESTS ON, asserted rather than
+  // believed: if either board failed a hard constraint, every climb below would
+  // accept nothing for the one reason that rejects everything - which reads
+  // exactly like a converged search.
+  const runDir = freshRunDir()
+  const spawn = scriptedSpawn(IMPROVES_THEN_STALLS)
+  const input = {
+    painted: `${runDir}/painted.vrt`,
+    netlist: netlistFile(runDir),
+    targets: TARGETS,
+    reference: REFERENCE,
+    footprints: FOOTPRINTS,
+    stock: climbInput(runDir, false).stock,
+    rules: rulesWithoutWorseAcceptance(),
+  }
+  // Dump 0 is BASE_DUMP and dump 1 is BETTER_DUMP under this script.
+  const first = evaluate(`${runDir}/any.vrt`, input, spawn)
+  const second = evaluate(`${runDir}/any.vrt`, input, spawn)
+  expect(first.admissibleA1).toBe(true)
+  expect(second.admissibleA1).toBe(true)
+  // F = C + 0.25*W + 1*B at the committed weights. BASE_DUMP has no CUT and no
+  // SOLDER line and two WIRE lines, so 0 + 0.5 + 0; BETTER_DUMP has none of the
+  // three, so 0. Both written as the number the arithmetic comes to.
+  expect(first.score.objective).toBe(0.5)
+  expect(second.score.objective).toBe(0)
+})
+
+test("a round is a full sweep of the move set, and the accepted count is per round", () => {
+  const runDir = freshRunDir()
+  const result = climb(
+    seededStart(runDir),
+    climbInput(runDir, false),
+    scriptedSpawn(IMPROVES_THEN_STALLS),
+  )
+  expect(result.acceptedPerRound[result.acceptedPerRound.length - 1]).toBe(0)
+  expect(result.evaluations).toBeGreaterThanOrEqual(enumerateMoves(DUMP, REFERENCE).length)
+
+  // HAND-DERIVED, from the two boards and the script:
+  //   round 0 sweeps BASE_DUMP's 16 applicable moves (26 enumerated less the
+  //     ten cluster and delete-wire ones), and the script hands BETTER_DUMP to
+  //     the first of them, so one move is accepted;
+  //   round 1 sweeps BETTER_DUMP's 14 applicable moves (22 less the eight
+  //     cluster ones; BETTER_DUMP has no WIRE line and no cross-strip net, so
+  //     no delete-wire and no add-wire), every one of which reports the worse
+  //     board, so none is accepted and S3 stops the climb.
+  //   one evaluation of the start, plus 16, plus 14.
+  expect(applicableMoves(enumerateMoves(DUMP, REFERENCE)).length).toBe(16)
+  expect(applicableMoves(enumerateMoves(BETTER, REFERENCE)).length).toBe(14)
+  expect(result.acceptedPerRound).toEqual([1, 0])
+  expect(result.rounds).toBe(2)
+  expect(result.evaluations).toBe(31)
+  expect(result.best.score.objective).toBe(0)
+})
+
+test("history has one entry per evaluation, which is what makes a crossing index a count", () => {
+  // THE CONTRACT TASK 16 DEPENDS ON. evaluationsToCross REFUSES a run whose
+  // history length disagrees with its evaluations, rather than reporting an
+  // index that means nothing - so this calls it for real rather than asserting
+  // the lengths match, and a history per ACCEPTED MOVE fails here through that
+  // refusal.
+  const runDir = freshRunDir()
+  const result = climb(
+    seededStart(runDir),
+    climbInput(runDir, false),
+    scriptedSpawn(IMPROVES_THEN_STALLS),
+  )
+  expect(result.history.length).toBe(result.evaluations)
+  const run: ArmRun = {
+    startAdmissible: true,
+    objective: result.best.score.objective,
+    cuts: result.best.score.cuts,
+    wires: result.best.score.wires,
+    netsComplete: true,
+    admissibleA1: result.best.admissibleA1,
+    history: result.history,
+    evaluations: result.evaluations,
+  }
+  // The start scores 0.5 and the first candidate scores 0, so the first
+  // evaluation at or below 0.25 is index 1 - counted by hand off the script,
+  // not off the history.
+  expect(evaluationsToCross(run, 0.25)).toBe(1)
+  expect(result.history[0]).toBe(0.5)
+  expect(result.history[1]).toBe(0)
+})
+
+test("the climb evaluates on a scratch copy and leaves the start board untouched", () => {
+  // The injected spawn really writes every -o path, with content naming itself,
+  // so a climb that passed its start as an output would change these bytes.
+  const runDir = freshRunDir()
+  const seeded = seededStart(runDir)
+  const before = fs.readFileSync(seeded, "utf8")
+  climb(seeded, climbInput(runDir, false), scriptedSpawn(IMPROVES_THEN_STALLS))
+  expect(fs.readFileSync(seeded, "utf8")).toEqual(before)
+})
+
+test("the batch verb is optional: the same climb runs identically without it", () => {
+  // Task 9 buys breadth, not correctness. A climb that cannot run without it
+  // would have made an enabler into a prerequisite.
+  const runDir = freshRunDir()
+  const seeded = seededStart(runDir)
+  const withBatch = climb(
+    seeded,
+    climbInput(runDir, true),
+    scriptedSpawn(IMPROVES_THEN_STALLS),
+  )
+  const without = climb(
+    seeded,
+    climbInput(runDir, false),
+    scriptedSpawn(IMPROVES_THEN_STALLS),
+  )
+  expect(without.best.score).toEqual(withBatch.best.score)
+  expect(without.evaluations).toBe(withBatch.evaluations)
+  expect(without.acceptedPerRound).toEqual(withBatch.acceptedPerRound)
+  // And the two transports really were different: the batched run drove
+  // --move-batch and the other did not.
+  const batchedSpawned: string[][] = []
+  climb(seeded, climbInput(runDir, true), recordingSpawn(batchedSpawned, IMPROVES_THEN_STALLS))
+  const plainSpawned: string[][] = []
+  climb(seeded, climbInput(runDir, false), recordingSpawn(plainSpawned, IMPROVES_THEN_STALLS))
+  const batchVerbs = (spawned: string[][]): number =>
+    spawned.filter((args) => args[0] === "--move-batch").length
+  expect(batchVerbs(batchedSpawned)).toBeGreaterThan(0)
+  expect(batchVerbs(plainSpawned)).toBe(0)
+})
+
+test("each evaluation runs autofill before scoring, because an unpainted board has no cut list", () => {
+  const spawned: string[][] = []
+  const runDir = freshRunDir()
+  climb(
+    seededStart(runDir),
+    climbInput(runDir, false),
+    recordingSpawn(spawned, IMPROVES_THEN_STALLS),
+  )
+  const order = spawned.map((args) => args.join(" "))
+  const autofill = order.findIndex((line) => line.includes("--op autofill"))
+  const dump = order.findIndex((line) => line.includes("--dump-board"))
+  expect(autofill).toBeGreaterThanOrEqual(0)
+  expect(autofill).toBeLessThan(dump)
+  // And it holds for EVERY evaluation rather than only the first: the four
+  // invocations are apply, autofill, check, dump, so the first evaluation is
+  // the three with no apply before them and each later one is a full four.
+  expect(order.slice(0, 3)).toEqual([
+    `--author ${runDir}/seeded.vrt --op autofill -o ${runDir}/start-filled.vrt`,
+    `--check ${runDir}/start-filled.vrt --netlist ${runDir}/reference.net`,
+    `--dump-board ${runDir}/start-filled.vrt`,
+  ])
+  expect(order.slice(3, 7)).toEqual([
+    `--move ${runDir}/start-filled.vrt --ref R1 --to 1,1 -o ${runDir}/r0-m0.vrt`,
+    `--author ${runDir}/r0-m0.vrt --op autofill -o ${runDir}/r0-m0-filled.vrt`,
+    `--check ${runDir}/r0-m0-filled.vrt --netlist ${runDir}/reference.net`,
+    `--dump-board ${runDir}/r0-m0-filled.vrt`,
+  ])
+})
+
+test("the climb evaluates at least the start, so Task 16's requireMeasured is satisfiable", () => {
+  // A runner reporting zero evaluations once produced a retirement
+  // recommendation out of a run that measured nothing, which is why
+  // compareSeedArms refuses one. climb's own guarantee is this.
+  const runDir = freshRunDir()
+  const result = climb(
+    seededStart(runDir),
+    climbInput(runDir, false),
+    scriptedSpawn(IMPROVES_THEN_STALLS),
+  )
+  expect(result.evaluations).toBeGreaterThanOrEqual(1)
+  expect(result.history.length).toBeGreaterThanOrEqual(1)
+})
+
+test("a candidate the fork could not paint stops the run rather than scoring half of it", () => {
+  const runDir = freshRunDir()
+  const seeded = seededStart(runDir)
+  const input = climbInput(runDir, false)
+  const refusal = refusalFrom(() =>
+    climb(seeded, input, (args) =>
+      args[0] === "--author"
+        ? { status: 1, stdout: "", stderr: "AutoFillVero: strip connectivity unresolved\n" }
+        : { status: 0, stdout: "", stderr: "" },
+    ),
+  )
+  expect(refusal).toContain("painting the strips")
+  expect(refusal).toContain("strip connectivity unresolved")
+  expect(refusal).toContain("makes every crossing index after it wrong")
+})

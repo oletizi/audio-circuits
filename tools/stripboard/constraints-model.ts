@@ -13,7 +13,13 @@
  * footprint a part is fitted with, refusing when nobody said) and `spanHoles`
  * (how far a two-lead part's leads are apart).
  */
-import { noPinLinesMessage, type BoardDump, type Part, type Pin } from "../guide/dump.ts"
+import {
+  noPinLinesMessage,
+  type BoardDump,
+  type HolePosition,
+  type Part,
+  type Pin,
+} from "../guide/dump.ts"
 import type { PinPattern } from "../../lib/kicad/pin-pattern-model.ts"
 import type { LeadSpan } from "../../lib/kicad/lead-span-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
@@ -243,8 +249,21 @@ export function spanHoles(pins: readonly Pin[]): number | undefined {
   return Math.max(Math.abs(a.row - b.row), Math.abs(a.col - b.col)) + 1
 }
 
-/** Which strip a hole is on: its row under horizontal strips, its column under vertical ones. */
-export function stripOf(hole: Pin, verticalStrips: boolean): number {
+/**
+ * Which strip a hole is on: its row under horizontal strips, its column under
+ * vertical ones.
+ *
+ * IT TAKES A BARE `HolePosition` RATHER THAN A `Pin`, so there is ONE
+ * implementation of this reading in the repository. Every caller here passes a
+ * `Pin`, which structurally IS a `HolePosition` with a pin name attached;
+ * `tools/stripboard/moves.ts` holds positions parsed out of a hole key and has
+ * no pin name to offer, and the alternative to widening the parameter was a
+ * second one-line copy of the strip axis under a second name. What the two
+ * sides may share is "what the dump SAYS" (`R2`, and `./grade.ts`'s module
+ * comment says the same of the dump parser and the targets); the strip axis is
+ * exactly that.
+ */
+export function stripOf(hole: HolePosition, verticalStrips: boolean): number {
   return verticalStrips ? hole.col : hole.row
 }
 
