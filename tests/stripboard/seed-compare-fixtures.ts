@@ -151,7 +151,7 @@ export function armOf(start: string): SeedArm {
 /** A runner answering from a literal table, throwing on a row the table does not cover. */
 export function scriptedRunner(script: PartialArmScript): ArmRunner {
   return (start, seed) => {
-    const arm = armOf(start)
+    const arm = armOf(start.board)
     const met = script[arm]
     if (met === undefined) {
       throw new Error(
@@ -178,7 +178,7 @@ export function recordingRunner(
 ): ArmRunner {
   const inner = scriptedRunner(script)
   return (start, seed, spawn) => {
-    calls.push({ arm: armOf(start), seed, start })
+    calls.push({ arm: armOf(start.board), seed, start: start.board })
     return inner(start, seed, spawn)
   }
 }

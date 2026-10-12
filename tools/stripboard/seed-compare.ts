@@ -43,7 +43,13 @@
  * a step of Task 18** and its result is recorded in
  * `docs/stripboard/pipeline-verification.md`.
  */
-import { SEED_ARMS, seedCandidate, type SeedArm, type SpawnVeroroute } from "./seed.ts"
+import {
+  SEED_ARMS,
+  seedCandidate,
+  type SeedArm,
+  type SeedStart,
+  type SpawnVeroroute,
+} from "./seed.ts"
 import type { StripboardRules } from "./rules.ts"
 import type { BoardTargets } from "./targets.ts"
 
@@ -113,7 +119,7 @@ export interface ArmRun {
  * structural rather than asserted** - there is no second place for a budget to
  * differ.
  */
-export type ArmRunner = (start: string, seed: number, spawn: SpawnVeroroute) => ArmRun
+export type ArmRunner = (start: SeedStart, seed: number, spawn: SpawnVeroroute) => ArmRun
 
 /**
  * Whether a run met the mark - **on all of its clauses, never on `F` alone**.
@@ -335,7 +341,7 @@ export function compareSeedArms(
       // harness losing its footing, and scoring it would put a harness fault
       // into a rate where nothing could tell it from an arm that ran and lost.
       // Note the `try` wraps the start and NOT the `runner(...)` call below.
-      let start: string
+      let start: SeedStart
       try {
         start = seedCandidate(
           {

@@ -93,7 +93,7 @@ import {
   type GestureTransport,
   type Move,
 } from "./moves.ts"
-import { occupancyOf, type Occupancy } from "./seed-geometry.ts"
+import type { Occupancy } from "./seed-geometry.ts"
 import { compareRanking } from "./rank.ts"
 import type { StripboardRules } from "./rules.ts"
 import type { SpawnVeroroute } from "./seed.ts"
@@ -265,6 +265,19 @@ export interface ClimbInput {
   readonly rules: StripboardRules
   /** Whether a candidate's gesture goes through `--move-batch` or its own verb. */
   readonly batch: boolean
+  /**
+   * The PART GEOMETRY of the starting board, handed over rather than derived.
+   *
+   * **REQUIRED, WITH NO DEFAULT, AND THIS MODULE READS NO GEOMETRY OFF A DUMP.**
+   * A dump reports no column extent for a part facing `N` or `S` (COST §7.3
+   * item 2), so deriving the geometry refuses a board an arm has turned a part
+   * on - and all three starting arms turn parts. `seedCandidate` returns this
+   * beside the board for exactly that reason (`SeedStart`). A caller starting
+   * from a board nobody has turned may read its own and owns that refusal
+   * itself; defaulting here would put the refusal back in the one place the
+   * handover exists to remove it from.
+   */
+  readonly occupancy: Occupancy
 }
 
 /**
@@ -351,18 +364,12 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
   // was handed, and that refusal exists because a runner reporting zero
   // evaluations once produced a retirement recommendation out of nothing.
   const first = evaluateInto(start, "start")
-  // THE ONLY `occupancyOf` IN THE CLIMB, and the only one there may be: this is
-  // how a climb reads its FIRST geometry off the board it was handed, and every
-  // later occupancy is advanced from it by `occupancyAfter`, because a dump
-  // cannot describe a turned part's footprint.
-  //
-  // THE CONSEQUENCE, STATED BECAUSE IT IS A REAL LIMIT AND NOT AN OVERSIGHT: a
-  // STARTING board that already carries a turned part cannot be read at all,
-  // and `occupancyOf`'s own refusal says so. That is what stops a climb from
-  // the constructed and random arms - their own gestures turn parts before the
-  // climb ever sees the board - and it is a Task 16 interface question (hand
-  // back the occupancy beside the board) rather than anything this loop can fix.
-  let best: State = { measured: first, occupancy: occupancyOf(first.dump) }
+  // THE STARTING GEOMETRY IS THE CALLER'S, AND NOTHING HERE READS IT OFF A
+  // DUMP. Deriving it was the last thing standing between the constructed and
+  // random arms and a climb at all: both turn parts before the climb is called,
+  // and a turned part is exactly what a dump cannot describe. `seedCandidate`
+  // hands it over, so this module needs no read and carries no such refusal.
+  let best: State = { measured: first, occupancy: input.occupancy }
   let base = best
   let rounds = 0
   let spent = false

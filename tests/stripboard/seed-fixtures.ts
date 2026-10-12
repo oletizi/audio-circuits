@@ -39,7 +39,17 @@ import { loadRules } from "../../tools/stripboard/rules.ts"
 import { deriveTargets, type BoardTargets } from "../../tools/stripboard/targets.ts"
 import type { SeedInput, SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 
-/** Nothing below ever writes a file, so these paths are names and not locations. */
+/**
+ * The fixture paths, and **the two of them that are now REAL FILES.**
+ *
+ * They used to be names and not locations, because no arm touched the
+ * filesystem: every write went through the injected spawn. The import arm's
+ * handover changed that - it emits no gesture now that the paint has moved to
+ * the consumer, so `drive` hands over a COPY of the imported board, and
+ * `fs.copyFileSync` needs something to copy. The content is the dump text,
+ * which is not a real `.vrt` and does not need to be: nothing in these tests
+ * parses the file, because the spawn is injected and answers from `DUMPS`.
+ */
 const FIXTURE_DIR = path.join(os.tmpdir(), "stripboard-seed-fixtures")
 export const RUN_DIR = path.join(FIXTURE_DIR, "run")
 export const IMPORTED_BOARD = path.join(FIXTURE_DIR, "imported.vrt")
@@ -127,6 +137,14 @@ const BOARD_KEYS: ReadonlyMap<string, string> = new Map([
  * the arm and the seed, so two tests cannot collide on one.
  */
 const SIMULATED = new Map<string, string>()
+
+/** Write the two boards the import arm's copy needs, once per module load. */
+function writeFixtureBoards(): void {
+  fs.mkdirSync(RUN_DIR, { recursive: true })
+  fs.writeFileSync(IMPORTED_BOARD, IMPORTED_DUMP)
+  fs.writeFileSync(CROWDED_BOARD, CROWDED_DUMP)
+}
+writeFixtureBoards()
 
 /** The dump text of a board a gesture wrote, or a refusal naming the path. */
 export function dumpOf(board: string): string {

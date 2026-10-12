@@ -19,9 +19,10 @@
  * the fork refuses stops the arm and names the part.** `./seed.ts`'s module
  * comment has the measurement and the two refusal shapes.
  */
+import fs from "node:fs"
 import { parseBoardDump, type BoardDump } from "../guide/dump.ts"
 import { drawFrom, seededPrng } from "./seed-arrangement.ts"
-import { occupancyOf } from "./seed-geometry.ts"
+import { occupancyOf, type Occupancy } from "./seed-geometry.ts"
 import {
   admissibleOrigins,
   turnsTakeable,
@@ -29,6 +30,28 @@ import {
   withPartTurned,
 } from "./seed-placement.ts"
 import type { SeedInput, SpawnVeroroute } from "./seed.ts"
+
+/**
+ * What an arm produces: the gestures to drive, and the PART GEOMETRY it holds
+ * at the moment it has finished deciding.
+ *
+ * **THE OCCUPANCY IS HANDED OVER BECAUSE IT IS THE ONE THING A DUMP CANNOT
+ * EXPRESS.** For a part facing `N` or `S` the dump's `SPAN` is the footprint's
+ * ROW count and its stretched length appears in no line at all (COST §7.3 item
+ * 2 - `GetCompRows`), so `occupancyOf` REFUSES a board any arm has turned a
+ * part on. Every arm here already TRACKS the occupancy as it emits gestures,
+ * for exactly that reason; recovering it afterwards is impossible and handing
+ * it over costs nothing.
+ *
+ * Measured, before this was handed over: the constructed and random arms
+ * produced a start that Task 17's climb could not read at all, refusing with
+ * `part "C18": it faces N` on the first enumeration
+ * (`docs/stripboard/pipeline-verification.md` §5.7).
+ */
+export interface GestureSet {
+  readonly gestures: readonly Gesture[]
+  readonly occupancy: Occupancy
+}
 
 /** One gesture: the verb, its own arguments, and what it is for, for a refusal. */
 export interface Gesture {
@@ -59,16 +82,6 @@ export function stretch(ref: string, direction: "grow" | "shrink", note = ""): G
     tail: ["--ref", ref, "--direction", direction],
     what: `stretching ${ref} (${direction}${note === "" ? "" : `, ${note}`})`,
   }
-}
-
-/**
- * `AutoFillVero` runs on `--update` and on `--author --op autofill` and NOT on
- * `--import --strips` or `--set-strips`, and `HC2` refuses an unresolved cut
- * state rather than mis-scoring it. So the paint comes after the last gesture
- * that moves anything, on all three arms including the one that moves nothing.
- */
-export function autofill(): Gesture {
-  return { verb: "--author", tail: ["--op", "autofill"], what: "painting the strips" }
 }
 
 /** One spawn, checked. Nothing here reads a verdict out of a report body. */
@@ -110,13 +123,19 @@ export function drive(
   stage: (index: number) => string,
   candidate: string,
 ): string {
+  // AN ARM WITH NO GESTURES HANDS OVER A COPY, which is the import arm: its
+  // start IS `--import`'s own placement with nothing done to it, and now that
+  // the paint has moved to the consumer there is no gesture left to express
+  // that. The copy is not a gesture and does not go through the fork - it only
+  // puts the start where the run directory wants it, so a failed run still
+  // leaves the imported board untouched.
+  //
+  // THE REFUSAL THIS REPLACES said an arm with no gestures had painted nothing
+  // and that "every arm ends with --author --op autofill". Both halves are now
+  // false by design: see `SeedStart` for who paints and when.
   if (gestures.length === 0) {
-    throw new Error(
-      "seedCandidate: an arm produced no gestures at all, so there is no candidate file and " +
-        "nothing was painted - and an unpainted board reports CUT_STATE UNRESOLVED, which HC2 " +
-        "refuses rather than mis-scoring. Every arm ends with --author --op autofill, including " +
-        "the one that moves nothing.",
-    )
+    fs.copyFileSync(from, candidate)
+    return candidate
   }
   let current = from
   gestures.forEach((gesture, index) => {
@@ -138,8 +157,12 @@ export function drive(
  * corrected - randomising it would make it a second random arm wearing the
  * ribbon's name.
  */
-export function importGestures(): readonly Gesture[] {
-  return [autofill()]
+export function importGestures(input: SeedInput, spawn: SpawnVeroroute): GestureSet {
+  // It emits no gesture at all: its start is what --import left, unchanged.
+  // `drive` therefore hands over a copy, and the occupancy is read from the
+  // imported board - which is readable precisely because this arm turns
+  // nothing.
+  return { gestures: [], occupancy: occupancyOf(readBoard(spawn, input.importedBoard).dump) }
 }
 
 /**
@@ -179,7 +202,7 @@ export function importGestures(): readonly Gesture[] {
  */
 const QUARTER_TURNS: readonly number[] = [0, 1, 2, 3]
 
-export function randomGestures(input: SeedInput, spawn: SpawnVeroroute): readonly Gesture[] {
+export function randomGestures(input: SeedInput, spawn: SpawnVeroroute): GestureSet {
   const { dump } = readBoard(spawn, input.importedBoard)
   const grid = dump.grid
   const draw = seededPrng(input.seed)
@@ -216,7 +239,6 @@ export function randomGestures(input: SeedInput, spawn: SpawnVeroroute): readonl
       working = withPartTurned(working, grid, part.ref)
     }
   }
-  gestures.push(autofill())
-  return gestures
+  return { gestures, occupancy: working }
 }
 

@@ -58,6 +58,7 @@ import { drive, importGestures, randomGestures } from "./seed-arms.ts"
 import { constructedGestures } from "./seed-constructed.ts"
 import type { StripboardRules } from "./rules.ts"
 import type { BoardTargets } from "./targets.ts"
+import type { Occupancy } from "./seed-geometry.ts"
 
 /**
  * The derivations the arms read. `./seed-arrangement.ts` declares the stream,
@@ -73,6 +74,7 @@ export {
   seededPrng,
   type StripAssignment,
 } from "./seed-arrangement.ts"
+export type { GestureSet } from "./seed-arms.ts"
 export {
   occupancyOf,
   VEROROUTE_FOOTPRINT_ROWS,
@@ -157,27 +159,60 @@ export interface SeedInput {
 }
 
 /**
- * The started `.vrt` inside the run directory, for the arm named in the input.
+ * A started board and the part geometry that goes with it: **the handover
+ * contract, and the two things about it that are easy to get wrong.**
+ *
+ * **1. THE BOARD IS UNPAINTED.** It carries `CUT_STATE UNRESOLVED` and nothing
+ * may SCORE it as it stands - `HC2` refuses an unresolved cut list rather than
+ * mis-scoring it, and that refusal is correct. The arms used to end with
+ * `--author --op autofill` for exactly that reason, and the paint has moved to
+ * the consumer because it was actively harmful here: `--move` REFUSES a
+ * relocation that overlaps a part's own current footprint once `AutoFillVero`
+ * has painted copper into the holes it would vacate, so a painted handover made
+ * the first single-part move of any climb impossible
+ * (`docs/stripboard/pipeline-verification.md` §5.3 has the three measurements).
+ *
+ * **WHO PAINTS, AND WHEN, so neither case reads as an oversight.**
+ * `tools/stripboard/climb.ts` paints on EVERY evaluation - apply, autofill,
+ * check, dump - into its own `-filled.vrt`, so it needs this board unpainted
+ * and a painted one would break it. A consumer that wants to SCORE the start
+ * itself - an `ArmRunner` reporting `ArmRun.startAdmissible`, say - paints a
+ * COPY the same way and scores that, leaving this board alone. Nothing paints
+ * in place and nothing paints here.
+ *
+ * **2. THE OCCUPANCY IS HANDED OVER AND MUST NOT BE RE-DERIVED.** `occupancyOf`
+ * cannot read a board an arm has turned a part on, because a dump reports no
+ * column extent for a part facing `N` or `S`. The arm holds the real geometry
+ * at the moment it writes the board; `GestureSet` says why at more length.
  *
  * Three arms, one gesture driver: they differ in what they place and in nothing
- * else - one gesture at a time, every result checked, `-o` always, the autofill
- * last. The import arm's candidate carries no seed in its name, because it has
- * one start.
+ * else - one gesture at a time, every result checked, `-o` always. The import
+ * arm emits no gesture, so its start is a COPY of the imported board, and its
+ * name carries no seed because it has one start.
  */
-export function seedCandidate(input: SeedInput, spawn: SpawnVeroroute): string {
-  const gestures =
+export interface SeedStart {
+  /** The started `.vrt` inside the run directory. **Unpainted** - see above. */
+  readonly board: string
+  /** The part geometry at that board, as the arm tracked it. */
+  readonly occupancy: Occupancy
+}
+
+/** The started board and its occupancy, for the arm named in the input. */
+export function seedCandidate(input: SeedInput, spawn: SpawnVeroroute): SeedStart {
+  const built =
     input.arm === "constructed"
       ? constructedGestures(input, spawn)
       : input.arm === "random"
         ? randomGestures(input, spawn)
-        : importGestures()
+        : importGestures(input, spawn)
   const base = input.arm === "import" ? "import" : `${input.arm}-${input.seed}`
-  return drive(
+  const board = drive(
     spawn,
     input.importedBoard,
-    gestures,
+    built.gestures,
     (index) => path.join(input.runDir, `${base}-g${index}.vrt`),
     path.join(input.runDir, `${base}.vrt`),
   )
+  return { board, occupancy: built.occupancy }
 }
 

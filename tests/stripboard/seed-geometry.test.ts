@@ -201,13 +201,25 @@ test("the random arm produces a start on every reviewed seed, and the grid never
       { importedBoard: board, targets, runDir, rules, arm: "random", seed },
       spawn,
     )
-    const after = dumpOf(candidate)
+    const after = dumpOf(candidate.board)
     // NOT GROWN, read off the real board rather than off a simulation: a draw
     // outside the grid pans or grows it and renumbers every hole.
     expect(after.grid, `seed ${seed} grew the board`).toEqual(grid)
-    // AND PAINTED, which is what --author --op autofill is last for: HC2 refuses
-    // an unresolved cut state rather than mis-scoring it.
-    expect(after.cutState, `seed ${seed}`).toBe("COMPUTED")
+    // AND UNPAINTED, WHICH IS THE HANDOVER CONTRACT AND A CHANGE FROM WHAT
+    // THIS TEST USED TO ASSERT. It demanded COMPUTED here, because every arm
+    // ended with --author --op autofill. The paint has moved to the consumer:
+    // it made the first single-part move of any climb impossible, since --move
+    // refuses a relocation overlapping a part's own footprint once copper is
+    // painted into the holes it would vacate. So the board handed over reports
+    // UNRESOLVED, and HC2 refusing to score it is correct.
+    expect(after.cutState, `seed ${seed}`).toBe("UNRESOLVED")
+    // AND IT IS STILL SCOREABLE BY WHOEVER PAINTS A COPY, against the real
+    // binary rather than on the strength of the contract's comment. This is the
+    // consumer's step: paint a copy, score that, leave the handover alone.
+    const painted = path.join(runDir, `painted-random-${seed}.vrt`)
+    const paint = spawn(["--author", candidate.board, "--op", "autofill", "-o", painted])
+    expect(paint.status, `seed ${seed} could not be painted`).toBe(0)
+    expect(dumpOf(painted).cutState, `seed ${seed} painted`).toBe("COMPUTED")
     // AND EVERY PART STILL PLACED: a gesture that floated one exits 0 in
     // Board::PutDown and says nothing, so the floating check is the witness.
     expect(after.parts.filter((part) => part.placement === "floating"), `seed ${seed}`).toEqual([])
@@ -269,9 +281,14 @@ test("the constructed arm places on every reviewed seed, and records which order
       { importedBoard: board, targets, runDir, rules, arm: "constructed", seed },
       spawn,
     )
-    const after = dumpOf(candidate)
+    const after = dumpOf(candidate.board)
     expect(after.grid, `seed ${seed} grew the board`).toEqual(gridBefore)
-    expect(after.cutState, `seed ${seed}`).toBe("COMPUTED")
+    // UNPAINTED by the handover contract, and painted by the consumer - see the
+    // random arm's own case above for why this changed.
+    expect(after.cutState, `seed ${seed}`).toBe("UNRESOLVED")
+    const painted = path.join(runDir, `painted-constructed-${seed}.vrt`)
+    expect(spawn(["--author", candidate.board, "--op", "autofill", "-o", painted]).status).toBe(0)
+    expect(dumpOf(painted).cutState, `seed ${seed} painted`).toBe("COMPUTED")
     expect(after.parts.filter((part) => part.placement === "floating"), `seed ${seed}`).toEqual([])
   }
 })
@@ -298,7 +315,7 @@ test("the gesture order is chosen per part and recorded, and both orders are use
     { importedBoard: board, targets, runDir, rules, arm: "constructed", seed: 0 },
     spawn,
   )
-  const moves = chosen.filter((gesture) => gesture.verb === "--move")
+  const moves = chosen.gestures.filter((gesture) => gesture.verb === "--move")
   expect(moves.length, "a run with no --move would make the counts below vacuous").toBe(17)
   const used = new Set(
     moves.map((gesture) => /\((turn-then-stretch|stretch-then-turn)\)/.exec(gesture.what)?.[1]),

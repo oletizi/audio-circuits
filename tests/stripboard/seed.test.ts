@@ -82,7 +82,7 @@ test("every arm returns a candidate inside the run directory and writes nowhere 
   expect(SEED_ARMS.length, "a loop over an empty arm list proves nothing").toBe(3)
   for (const arm of SEED_ARMS) {
     const spawned: string[][] = []
-    const path = seedCandidate({ ...input(), arm }, recordingSpawn(spawned, DUMPS))
+    const path = seedCandidate({ ...input(), arm }, recordingSpawn(spawned, DUMPS)).board
     expect(path.startsWith(input().runDir), arm).toBe(true)
     expect(spawned.length, `${arm} spawned nothing`).toBeGreaterThan(0)
     // THE GUARD IS `-o` BEING PRESENT, not the value after it being defined.
@@ -113,19 +113,40 @@ test("every arm passes -o on every placing gesture and never writes in place", (
   }
 })
 
-test("every arm autofills last, because an unpainted board reports CUT_STATE UNRESOLVED", () => {
-  // AutoFillVero runs on --update and on --author --op autofill and NOT on
-  // --import --strips or --set-strips, and HC2 refuses an unresolved cut state
-  // rather than mis-scoring it. So the paint comes after the last gesture that
-  // moves anything, on all three arms including the one that moves nothing.
+test("no arm paints, because the board it hands over has to be movable", () => {
+  // **THIS TEST IS THE REVERSE OF WHAT IT ASSERTED, AND THE REVERSAL IS THE
+  // POINT.** It demanded that every arm autofill LAST, because HC2 refuses an
+  // unresolved cut state rather than mis-scoring it - which is still true of
+  // SCORING and was the wrong place to satisfy it. Measured on the real binary:
+  // `--move` REFUSES a relocation that overlaps a part's own current footprint
+  // once AutoFillVero has painted copper into the holes it would vacate, so a
+  // painted handover made the first single-part move of any climb impossible
+  // and the import arm's climb died on round 0, move 0.
+  //
+  // So the paint moved to the consumer: climb paints on every evaluation into
+  // its own -filled.vrt, and anything wanting to SCORE the start paints a copy.
+  // `SeedStart`'s comment carries the contract; this holds the arms to it.
   expect(SEED_ARMS.length).toBe(3)
   for (const arm of SEED_ARMS) {
     const spawned: string[][] = []
     seedCandidate({ ...input(), arm }, recordingSpawn(spawned, DUMPS))
-    const lines = spawned.map((args) => args.join(" "))
-    const autofill = lines.findIndex((line) => line.includes("--op autofill"))
-    expect(autofill, `${arm} never autofilled`).toBeGreaterThanOrEqual(0)
-    expect(autofill, `${arm} autofilled before its last gesture`).toBe(lines.length - 1)
+    const painted = spawned.map((args) => args.join(" ")).filter((line) => line.includes("autofill"))
+    expect(painted, `${arm} painted its handover`).toEqual([])
+  }
+})
+
+test("every arm hands over the occupancy it tracked, which a dump could not give back", () => {
+  // The one thing a dump cannot express: for a part facing N or S, SPAN is the
+  // footprint's ROW count and its stretched length appears in no line, so
+  // occupancyOf REFUSES a board an arm has turned a part on. The arm holds the
+  // real geometry when it writes the board, so it hands it over.
+  expect(SEED_ARMS.length).toBe(3)
+  for (const arm of SEED_ARMS) {
+    const start = seedCandidate({ ...input(), arm }, fakeSpawn())
+    // Every part on the board has a rect, and the import-placed low-boost board
+    // has 17 PART lines and 10 PAD lines - 27 refs, hand-counted from
+    // tests/fixtures/stripboard/pultec-low-boost-imported.dump's own provenance.
+    expect(start.occupancy.size, arm).toBe(27)
   }
 })
 
@@ -392,7 +413,7 @@ test("the random arm draws inside the grid, and the grid does not grow", () => {
   // GRID 41 35, and --move --to -5,5 moves three parts nobody named. Either
   // renumbers every hole the next draw is about to use.
   const spawned: string[][] = []
-  const start = seedCandidate({ ...input(), arm: "random" }, recordingSpawn(spawned, DUMPS))
+  const start = seedCandidate({ ...input(), arm: "random" }, recordingSpawn(spawned, DUMPS)).board
   const before = parseBoardDump(DUMPS.imported!)
   const after = parseBoardDump(dumpOf(start))
   expect(after.grid).toEqual(before.grid)

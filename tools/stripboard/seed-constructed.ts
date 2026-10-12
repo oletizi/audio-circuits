@@ -19,7 +19,7 @@
 import { TOOL_MAX_SPAN_HOLES, TOOL_MIN_SPAN_HOLES } from "../../lib/kicad/lead-span-model.ts"
 import type { BoardDump, Part } from "../guide/dump.ts"
 import { assignStrips, junctionNets, referenceNetsFor, type StripAssignment } from "./seed-arrangement.ts"
-import { autofill, move, readBoard, rotate, stretch, type Gesture } from "./seed-arms.ts"
+import { move, readBoard, rotate, stretch, type Gesture, type GestureSet } from "./seed-arms.ts"
 import { occupancyOf } from "./seed-geometry.ts"
 import { appliedGestures, GESTURE_ORDERS, rectOf } from "./seed-placement.ts"
 import { netsByPart } from "./seed-nets.ts"
@@ -157,7 +157,7 @@ export function constructionSpan(ref: string, stripA: number, stripB: number, bo
  * each gesture is emitted is that the fork will accept it, through the same
  * `appliedGestures` model the random arm draws through.
  */
-export function constructedGestures(input: SeedInput, spawn: SpawnVeroroute): readonly Gesture[] {
+export function constructedGestures(input: SeedInput, spawn: SpawnVeroroute): GestureSet {
   const { text, dump } = readBoard(spawn, input.importedBoard)
   const assignment = assignStrips(input.targets, input.seed)
   const junction = junctionNets(input.targets)
@@ -322,6 +322,5 @@ export function constructedGestures(input: SeedInput, spawn: SpawnVeroroute): re
     const stretchBy = strips.length === 2 ? needed - leadSpanHoles(dump, part.ref) : 0
     place(part.ref, strips[0]!, turns, stretchBy)
   }
-  gestures.push(autofill())
-  return gestures
+  return { gestures, occupancy: working }
 }

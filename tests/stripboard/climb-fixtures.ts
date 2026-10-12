@@ -433,5 +433,9 @@ export function climbInput(runDir: string, batch: boolean): ClimbInput {
     stock: stockFor(LOW_BOOST_DECLARATION, rules),
     rules,
     batch,
+    // The fixture's start is BASE_DUMP, which turns nothing, so its geometry is
+    // readable from its own dump. A real arm hands this over instead - see
+    // `SeedStart` - which is why ClimbInput requires it rather than deriving it.
+    occupancy: OCC,
   }
 }
