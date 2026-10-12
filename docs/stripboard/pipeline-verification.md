@@ -23,8 +23,9 @@ constraints run over two boards a person built (§4). CHECKPOINT 2, the climb
 driven against the real binary from each starting arm (§5). And Task 18's
 escapes: what `E1` as specified does and does not do, what the search's
 import-closure scan found, CHECKPOINT 3 - the measured arm comparison, whose
-rate is zero on all three arms - what the cluster move did to `F`, and the
-stretch defect the comparison found on the way (§6).
+rate is zero on all three arms - what the cluster move did to `F`, the stretch
+defect the comparison found on the way, and CHECKPOINT 4, the GATHER that takes
+the constructed arm from 16 cuts to 10 (§6).
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -1295,6 +1296,14 @@ retireable: []
 rates: constructed 0/5 import 0/5 random 0/5
 ```
 
+**IT WAS MEASURED WITH THE GATHER UNIMPLEMENTED**, which §6.6 added afterwards
+and which is the move `E1`'s own justification describes: so a rate of zero on
+every arm is a fact about this move set and must not be read as a verdict on the
+arms, because the lever COST calls dominant was absent from all three of them.
+The comparison is NOT re-run to chase a better number - the same reason the
+standing ruling beside `RETIREMENT` gives for not reading a retirement against a
+non-rate.
+
 **What that rate is a rate over, exactly:** how many of the five reviewed seeds
 produced a run meeting `B1-frozen`'s mark on ALL of its clauses, on the
 import-placed `pultec-low-boost` board, with one climb per seed and a 20,000-
@@ -1437,3 +1446,92 @@ than about `E1`:
   33,722 `--move --delta` invocations in the second and 21,327 in the nine runs
   of the first whose directories can still be read, every one of them accepted.
   The cluster's own model and the fork did not disagree once.
+
+### 6.6 CHECKPOINT 4 — the GATHER, which IS the lever: `F` 16 → 10 on the constructed arm
+
+§6.4 measured that `E1`'s one-delta cluster changed `F` on no arm, and §6.1 said
+why: a common translation cannot change the clustered net's own segment count
+across strips, so **the move cannot change the quantity it exists to change**.
+The controller's ruling of 2026-10-12 is that when a plan's mechanism cannot
+achieve its own stated purpose, the purpose survives — so the gather §7.4's
+justification describes was built: **each on-board part carrying a pin on net X
+moved by ITS OWN delta, so that its pin on net X lands on one common strip.**
+`tools/stripboard/moves-model.ts`'s `gather` arm and `./moves-cluster.ts` carry
+the mechanism; this is what it did against the real binary.
+
+**Seed 0, same board, binary and rules as §5.9 and §6.3**, so the three columns
+differ only in the move set:
+
+| arm, seed 0 | §5.9 single-part | §6.3 + one-delta cluster | **+ gather** | evaluations |
+| --- | --- | --- | --- | --- |
+| `import` | 36 | 36 | **36** | 83 → 83 |
+| `constructed` | 17 | 16 | **10** | 4,157 → 4,150 |
+| `random` | 14 | 14 | **11** | 8,858 → 9,698 |
+
+**The constructed arm falls six cuts, from 16 to 10**, and it is the lowest `F`
+anything in this plan has reached from a constructed start. The run is 32 rounds
+and 4,150 evaluations — **fewer than the 4,157 the cluster-only run spent**, so
+the six cuts cost no extra budget at all.
+
+**And the gathers are the big steps, not incidental ones.** Of the 8 candidates
+that set a new best-so-far `F` on that run, three were gathers:
+
+```
+single r0-m56  F 21 -> 20      single r1-m65  F 16 -> 15
+single r0-m113 F 20 -> 19      gather r1-m133 F 15 -> 14
+gather r0-m114 F 19 -> 16      gather r1-m138 F 14 -> 13
+                               single r2-m63  F 13 -> 12
+                               single r3-m136 F 12 -> 10
+```
+
+`gather r0-m114` takes `F` from 19 to 16 **in one candidate** — three cuts at
+once, which is the shape §7.4's argument predicts and which no single-part move
+in this pipeline has ever produced. Five of the eleven cuts that run removed came
+from a gather.
+
+**On the random arm the improvement is real and NOT attributable to a gather.**
+`F` fell from 14 to 11, and of the 16 new-best-`F` candidates not one was a
+gather (one was a cluster, 22 → 21, and the other fifteen were single-part
+moves). 224 gathers were evaluated and none set a new best `F`. What changed the
+outcome is the TRAJECTORY: a wider move set means a different sweep, different
+plateau acceptances and a different walk, and the run ended three cuts lower. So
+the honest reading is that the gather is what moved the constructed arm, and the
+random arm's three cuts are a trajectory difference this measurement cannot
+attribute to any one kind.
+
+**On the import arm not one gather was ever proposed, and that is a property of
+the board rather than of the move.** Measured directly on the import-placed
+board: 14 nets, of which several span strips 0, 1 and 2 — so candidates exist —
+and the enumeration emits `move=8 rotate=1 stretch=16 add-wire=7 cluster=2` and
+**no gather at all**. `--import`'s first-fit sweep packs all seventeen parts into
+rows 0–2 of a 35-row board, and the gather's delta crosses the strips, so every
+part's destination is another part's footprint and the sequence cannot complete
+in any pass. **The gather needs room**, and the import arm's own start does not
+have any. That is also why §6.3's `import` row is unchanged at 36 here: nothing
+was added to its move set.
+
+| arm, seed 0 | candidates | of them clusters | of them gathers | compound `--move --delta` gestures | new-best-`F` steps | of those, gathers |
+| --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 4,149 | 530 | 168 | 2,365 | 8 | **3** |
+| `random` | 9,697 | 1,452 | 224 | 5,652 | 16 | 0 |
+| `import` | 82 | 3 | 0 | 9 | 3 | 0 |
+
+**No gather gesture was refused by the binary** on either run, which is the same
+cross-check the cluster passed: the model's per-part deltas and the fork's
+`--move --delta` agreed on all 8,017 compound gestures these two runs spent.
+
+**What this does NOT establish**, written down because the figures are the most
+flattering in this plan so far:
+
+- **it is one seed on one board**, not a rate. §6.3's rate stands at 0 of 5 for
+  every arm and nothing here changes it, because `C = 10` is still twice
+  `B1-frozen`'s bar of 5 and every net is still incomplete (`HC1` fails on all
+  three runs);
+- **the arms are not re-compared.** §6.3 was measured with the gather
+  unimplemented, and re-running it to chase a better number is exactly what the
+  standing ruling beside `RETIREMENT` forbids;
+- **`κ` is still far from the bench** and `A1` is still false on every run, on
+  `HC1`, `HC8` and `HC10` at minimum;
+- **the gather's own schedule is one declared order**, and a gather it cannot
+  sequence is not proposed. Nothing has measured how often another order would
+  have placed one it rejected.
