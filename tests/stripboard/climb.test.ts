@@ -25,6 +25,11 @@ import { accepts, climb, evaluate } from "../../tools/stripboard/climb.ts"
 import { applicableMoves, enumerateMoves } from "../../tools/stripboard/moves.ts"
 import { evaluationsToCross, type ArmRun } from "../../tools/stripboard/seed-compare.ts"
 import {
+  BASE_DUMP,
+  BASE_PLUS_WIRE_DUMP,
+  BETTER_DUMP,
+  CHECK_COMPLETE,
+  CHECK_INCOMPLETE,
   climbInput,
   DUMP,
   evaluation,
@@ -38,7 +43,10 @@ import {
   rulesWithCap,
   rulesWithoutWorseAcceptance,
   scriptedSpawn,
+  scriptedSpawnWithChecks,
   seededStart,
+  type CheckScript,
+  type DumpScript,
   TARGETS,
   FOOTPRINTS,
 } from "./climb-fixtures.ts"
@@ -343,4 +351,51 @@ test("a candidate the fork could not paint stops the run rather than scoring hal
   expect(refusal).toContain("painting the strips")
   expect(refusal).toContain("strip connectivity unresolved")
   expect(refusal).toContain("makes every crossing index after it wrong")
+})
+
+test("a sibling's incidental repair does not reject the later siblings of its own round", () => {
+  // ITEM 1 OF THE TASK 17 REVIEW, AND IT WAS A CORRECTNESS BUG. Every move in a
+  // round is applied to ONE base board, so what a move BROKE is a statement
+  // about that board. `accepts` compared the candidate's constraints against
+  // the INCUMBENT instead, so a sibling that incidentally repaired a constraint
+  // and became the incumbent made every LATER sibling in the same round - none
+  // of which ever had that repair - look like it had broken the constraint, and
+  // each was rejected for a regression it did not cause. Acceptance then
+  // depended on the order siblings were swept in, which Task 13's canonical
+  // hash cannot see, because the hash is over inputs and outcomes rather than
+  // over a round's internal order.
+  //
+  // THE SCRIPT, three boards whose F strictly decreases, hand-checked against
+  // the grader (each figure is `bun run` output on the fixture, not a guess):
+  //   evaluation 0, the start: BASE_PLUS_WIRE + an incomplete --check
+  //                            -> F = 0.75, HC1 broken, nine holding
+  //   evaluation 1, round 0 move 0: BASE + a complete --check
+  //                            -> F = 0.50, all ten hold - it REPAIRS HC1 and
+  //                               is accepted, so it becomes the incumbent
+  //   evaluation 2, round 0 move 1: BETTER + an incomplete --check
+  //                            -> F = 0, HC1 broken exactly as its predecessor
+  //                               had it, and it broke nothing
+  // Evaluation 2 is the best board in the run and caused no regression, so it
+  // must be accepted. Under the bug it was rejected as an HC1 regression
+  // against evaluation 1, and the climb finished at F = 0.5 instead of F = 0.
+  const runDir = freshRunDir()
+  const dumps: DumpScript = (index) =>
+    index === 1 ? BASE_DUMP : index === 2 ? BETTER_DUMP : BASE_PLUS_WIRE_DUMP
+  const checks: CheckScript = (index) => (index === 1 ? CHECK_COMPLETE(index) : CHECK_INCOMPLETE(index))
+  const result = climb(
+    seededStart(runDir),
+    climbInput(runDir, false),
+    scriptedSpawnWithChecks(dumps, checks),
+  )
+  expect(result.history[0]).toBe(0.75)
+  expect(result.history[1]).toBe(0.5)
+  expect(result.history[2]).toBe(0)
+  // BOTH siblings are accepted: the repair, and then the cheaper board that
+  // kept HC1 broken. Under the bug this was [1, ...] and never 2.
+  expect(result.acceptedPerRound[0]).toBe(2)
+  expect(result.best.score.objective).toBe(0)
+  // And the run still reports its own inadmissibility rather than hiding it:
+  // the best board has HC1 broken, which it inherited and did not cause.
+  expect(result.best.admissibleA1).toBe(false)
+  expect(result.best.results.filter((entry) => !entry.held).map((entry) => entry.id)).toEqual(["HC1"])
 })

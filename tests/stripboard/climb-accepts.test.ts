@@ -16,7 +16,8 @@
  * numbers rather than `accepts` against the rest of its own module.
  */
 import { expect, test } from "bun:test"
-import { accepts } from "../../tools/stripboard/climb.ts"
+import { accepts, type Evaluation } from "../../tools/stripboard/climb.ts"
+import type { StripboardRules } from "../../tools/stripboard/rules.ts"
 import {
   BETTER_TUPLE,
   evaluation,
@@ -35,6 +36,21 @@ function refusalFrom(call: () => unknown): string {
 
 const base = evaluation()
 
+/**
+ * `accepts` against ONE board, where the predecessor and the incumbent
+ * coincide.
+ *
+ * Every test below compares a candidate with a single other board, which is the
+ * case the round's FIRST move is in - the base and the best are the same board
+ * until something has been accepted. The case where they DIFFER is the one a
+ * correctness bug lived in, and it has two tests of its own: the unit test at
+ * the bottom of this file, and the sibling-order test in `./climb.test.ts`
+ * which drives a real round.
+ */
+function against(current: Evaluation, candidate: Evaluation, rules: StripboardRules): boolean {
+  return accepts({ predecessor: current, incumbent: current, candidate }, rules)
+}
+
 test("a ranking term cannot make the climb accept a worse F", () => {
   // OBJ3. The candidate below has a strictly better ranking tuple - zero in
   // every one of RANKING's five positions against the base's ones - and a worse
@@ -45,19 +61,19 @@ test("a ranking term cannot make the climb accept a worse F", () => {
     score: { ...base.score, objective: base.score.objective + 1 },
     ranking: [0, 0, 0, 0, 0],
   }
-  expect(accepts(base, worseF, rulesWithoutWorseAcceptance())).toBe(false)
+  expect(against(base, worseF, rulesWithoutWorseAcceptance())).toBe(false)
 })
 
 test("a strictly better F is accepted", () => {
   const better = { ...base, score: { ...base.score, objective: base.score.objective - 1 } }
-  expect(accepts(base, better, rulesWithoutWorseAcceptance())).toBe(true)
+  expect(against(base, better, rulesWithoutWorseAcceptance())).toBe(true)
 })
 
 test("an equal F with a strictly better ranking is accepted, and an equal tuple is not", () => {
   const plateauBetter = { ...base, ranking: BETTER_TUPLE }
   const plateauSame = { ...base }
-  expect(accepts(base, plateauBetter, rulesWithoutWorseAcceptance())).toBe(true)
-  expect(accepts(base, plateauSame, rulesWithoutWorseAcceptance())).toBe(false)
+  expect(against(base, plateauBetter, rulesWithoutWorseAcceptance())).toBe(true)
+  expect(against(base, plateauSame, rulesWithoutWorseAcceptance())).toBe(false)
 })
 
 test("a candidate failing any hard constraint is rejected whatever its F", () => {
@@ -71,7 +87,7 @@ test("a candidate failing any hard constraint is rejected whatever its F", () =>
       result.id === "HC1" ? { ...result, held: false } : result,
     ),
   }
-  expect(accepts(base, cheapAndBroken, rulesWithoutWorseAcceptance())).toBe(false)
+  expect(against(base, cheapAndBroken, rulesWithoutWorseAcceptance())).toBe(false)
 })
 
 test("a constraint already broken before the move does not by itself reject the candidate", () => {
@@ -91,7 +107,7 @@ test("a constraint already broken before the move does not by itself reject the 
     ...brokenBefore,
     score: { ...brokenBefore.score, objective: brokenBefore.score.objective - 1 },
   }
-  expect(accepts(brokenBefore, stillBrokenButCheaper, rulesWithoutWorseAcceptance())).toBe(true)
+  expect(against(brokenBefore, stillBrokenButCheaper, rulesWithoutWorseAcceptance())).toBe(true)
   // And it is still rejected if it breaks a SECOND constraint on the way.
   const alsoBreaksHC3 = {
     ...stillBrokenButCheaper,
@@ -99,7 +115,7 @@ test("a constraint already broken before the move does not by itself reject the 
       result.id === "HC3" ? { ...result, held: false } : result,
     ),
   }
-  expect(accepts(brokenBefore, alsoBreaksHC3, rulesWithoutWorseAcceptance())).toBe(false)
+  expect(against(brokenBefore, alsoBreaksHC3, rulesWithoutWorseAcceptance())).toBe(false)
 })
 
 test("repairing a constraint is not an acceptance of its own: F and the ranking still decide", () => {
@@ -117,12 +133,12 @@ test("repairing a constraint is not an acceptance of its own: F and the ranking 
     ...base,
     score: { ...base.score, objective: brokenBefore.score.objective + 1 },
   }
-  expect(accepts(brokenBefore, repairedButDearer, rulesWithoutWorseAcceptance())).toBe(false)
+  expect(against(brokenBefore, repairedButDearer, rulesWithoutWorseAcceptance())).toBe(false)
   const repairedAndCheaper = {
     ...base,
     score: { ...base.score, objective: brokenBefore.score.objective - 1 },
   }
-  expect(accepts(brokenBefore, repairedAndCheaper, rulesWithoutWorseAcceptance())).toBe(true)
+  expect(against(brokenBefore, repairedAndCheaper, rulesWithoutWorseAcceptance())).toBe(true)
 })
 
 test("a regression is matched by constraint id, never by position in the list", () => {
@@ -157,7 +173,7 @@ test("a regression is matched by constraint id, never by position in the list", 
   expect(reversedAndCheaper.results[9]?.held).toBe(false)
   expect(brokenBefore.results[9]?.id).toBe("HC10")
   expect(brokenBefore.results[9]?.held).toBe(true)
-  expect(accepts(brokenBefore, reversedAndCheaper, rulesWithoutWorseAcceptance())).toBe(true)
+  expect(against(brokenBefore, reversedAndCheaper, rulesWithoutWorseAcceptance())).toBe(true)
 })
 
 test("a move that newly breaks HC6 is rejected, however much cheaper the board is", () => {
@@ -179,7 +195,7 @@ test("a move that newly breaks HC6 is rejected, however much cheaper the board i
       result.id === "HC6" ? { ...result, held: false } : result,
     ),
   }
-  expect(accepts(base, spendsTheStock, rulesWithoutWorseAcceptance())).toBe(false)
+  expect(against(base, spendsTheStock, rulesWithoutWorseAcceptance())).toBe(false)
   // And the other side of it: a board that ALREADY did not fit is not forbidden
   // from moving, which is the raw-import climb's own case.
   const neverFitted = {
@@ -193,13 +209,13 @@ test("a move that newly breaks HC6 is rejected, however much cheaper the board i
     ...neverFitted,
     score: { ...neverFitted.score, objective: neverFitted.score.objective - 1 },
   }
-  expect(accepts(neverFitted, stillDoesNotFitButCheaper, rulesWithoutWorseAcceptance())).toBe(true)
+  expect(against(neverFitted, stillDoesNotFitButCheaper, rulesWithoutWorseAcceptance())).toBe(true)
 })
 
 test("a configured worseAcceptance refuses rather than being climbed without", () => {
   // E3 is Task 18's. A bound present in the rules and ignored here would make
   // the run record claim a search behaviour that did not happen.
-  const refusal = refusalFrom(() => accepts(base, base, rulesWithWorseAcceptance(2)))
+  const refusal = refusalFrom(() => against(base, base, rulesWithWorseAcceptance(2)))
   expect(refusal).toContain("worseAcceptance = 2")
   expect(refusal).toContain("Task 18")
 })
@@ -214,8 +230,55 @@ test("an Evaluation whose admissibleA1 disagrees with its own results refuses", 
       result.id === "HC8" ? { ...result, held: false } : result,
     ),
   }
-  const refusal = refusalFrom(() => accepts(base, forged, rulesWithoutWorseAcceptance()))
+  const refusal = refusalFrom(() => against(base, forged, rulesWithoutWorseAcceptance()))
   expect(refusal).toContain("records admissibleA1 = true")
   expect(refusal).toContain("comes to false")
 })
 
+
+test("a regression is measured against the predecessor, never against the incumbent", () => {
+  // THE BUG THIS NAMES, AND IT WAS A CORRECTNESS BUG IN THE ACCEPTANCE RULE.
+  // Every move in a round is applied to ONE base board, so "the regressions
+  // this move caused" is a statement about that board and no other. When the
+  // comparison was made against the INCUMBENT, a sibling that incidentally
+  // repaired a constraint and became the incumbent made every LATER sibling in
+  // the same round - none of which ever had that repair - look like it had
+  // BROKEN the constraint. Each was then rejected for a regression it did not
+  // cause, so acceptance depended on the order siblings happened to be swept
+  // in: irreproducibility that Task 13's canonical hash cannot see, because the
+  // hash is over inputs and outcomes and not over a round's internal order.
+  //
+  // predecessor: HC1 already broken, F = 4. The board the move was applied to.
+  // incumbent:   all ten hold, F = 2. An earlier sibling that repaired HC1.
+  // candidate:   HC1 broken (as the predecessor had it), F = 1 - the best F of
+  //              the three, and it broke nothing.
+  const predecessor = {
+    ...base,
+    admissibleA1: false,
+    results: base.results.map((r) => (r.id === "HC1" ? { ...r, held: false } : r)),
+  }
+  const incumbent = { ...base, score: { ...base.score, objective: 2 } }
+  const candidate = {
+    ...predecessor,
+    score: { ...predecessor.score, objective: 1 },
+  }
+  expect(accepts({ predecessor, incumbent, candidate }, rulesWithoutWorseAcceptance())).toBe(true)
+  // And measuring the regression against the incumbent - the bug - rejects it,
+  // which is what this test would have reported before the fix.
+  expect(
+    accepts(
+      { predecessor: incumbent, incumbent, candidate },
+      rulesWithoutWorseAcceptance(),
+    ),
+  ).toBe(false)
+  // F is still measured against the INCUMBENT, so a candidate that breaks
+  // nothing and beats its predecessor while LOSING to the incumbent is
+  // rejected - which is what keeps `best` monotone.
+  const worseThanIncumbent = {
+    ...predecessor,
+    score: { ...predecessor.score, objective: 3 },
+  }
+  expect(
+    accepts({ predecessor, incumbent, candidate: worseThanIncumbent }, rulesWithoutWorseAcceptance()),
+  ).toBe(false)
+})

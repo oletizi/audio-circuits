@@ -115,7 +115,7 @@ import { measure, type Evaluation, type Measured } from "./climb-evaluate.ts"
 export { evaluate, type EvaluateInput, type Evaluation, type Measured } from "./climb-evaluate.ts"
 
 /**
- * Whether the climb accepts `candidate` in place of `current`.
+ * Whether the climb accepts `input.candidate`.
  *
  * **EXPORTED SO THE ACCEPTANCE RULE IS TESTABLE WITHOUT A SPAWN**, which is
  * the whole reason it is a function and not three lines inside the loop: the
@@ -127,11 +127,14 @@ export { evaluate, type EvaluateInput, type Evaluation, type Measured } from "./
  * 1. **A configured `worseAcceptance` refuses.** `E3` is Task 18's; a bound
  *    present in the rules and ignored here would be a search behaviour the
  *    record claims and the code does not do.
- * 2. **NO REGRESSION: a candidate that BREAKS a constraint which held before
- *    the move is rejected, before `F` is looked at at all.** Putting this
- *    clause after the `ΔF` test is precisely the mutation that would let a
- *    cheap broken candidate through.
- * 3. **`ΔF` decides, and the ranking is consulted only at `ΔF = 0`.**
+ * 2. **NO REGRESSION, against the PREDECESSOR: a candidate that BREAKS a
+ *    constraint which held on the board the move was applied to is rejected,
+ *    before `F` is looked at at all.** Putting this clause after the `ΔF` test
+ *    is precisely the mutation that would let a cheap broken candidate through,
+ *    and measuring it against the INCUMBENT instead is the bug
+ *    `AcceptanceInput.predecessor` exists to name.
+ * 3. **`ΔF` decides against the INCUMBENT, and the ranking is consulted only
+ *    at `ΔF = 0`.**
  *
  * **WHY NO-REGRESSION AND NOT `A1`, WHICH IS A CORRECTION TO THIS MODULE'S
  * FIRST VERSION AND IS RECORDED RATHER THAN TIDIED AWAY.** The rule here was
@@ -164,11 +167,35 @@ export { evaluate, type EvaluateInput, type Evaluation, type Measured } from "./
  * does not duplicate it. A candidate that reaches `accepts` has a computed cut
  * list by construction.
  */
-export function accepts(
-  current: Evaluation,
-  candidate: Evaluation,
-  rules: StripboardRules,
-): boolean {
+export interface AcceptanceInput {
+  /**
+   * The board the move was APPLIED TO - what a regression is measured against.
+   *
+   * **IT IS NOT THE INCUMBENT, AND CONFLATING THE TWO WAS A CORRECTNESS BUG.**
+   * A round applies every move to one base board, so "the regressions this move
+   * caused" is a statement about this board and no other. Measured against the
+   * INCUMBENT instead, a sibling move that incidentally repaired a constraint
+   * and became the incumbent made every LATER sibling in the same round - none
+   * of which ever had that repair - look like it had BROKEN the constraint, and
+   * each was rejected for a regression it did not cause. That made acceptance
+   * depend on the order siblings happened to be swept in, which is the shape of
+   * irreproducibility Task 13's canonical hash cannot see, because the hash is
+   * over inputs and outcomes and not over the order a round tried things in.
+   */
+  readonly predecessor: Evaluation
+  /**
+   * The best candidate so far - what `F` and the ranking are measured against.
+   *
+   * It is the incumbent and not the predecessor, so `best` only ever improves:
+   * comparing `F` against the base instead would accept a sibling that beat the
+   * base while losing to a sibling already accepted this round.
+   */
+  readonly incumbent: Evaluation
+  readonly candidate: Evaluation
+}
+
+export function accepts(input: AcceptanceInput, rules: StripboardRules): boolean {
+  const { predecessor, incumbent, candidate } = input
   if (rules.worseAcceptance !== null) {
     throw new Error(
       `accepts: this rules file configures worseAcceptance = ${rules.worseAcceptance}, and E3's ` +
@@ -180,19 +207,22 @@ export function accepts(
         "unset - which is what the committed file does, with its reason in the notes.",
     )
   }
-  requireSelfConsistent(current, "the candidate the climb is standing on")
+  requireSelfConsistent(predecessor, "the board this move was applied to")
+  requireSelfConsistent(incumbent, "the best candidate so far")
   requireSelfConsistent(candidate, "the candidate being considered")
 
-  // CLAUSE 2, BEFORE ANY ARITHMETIC ON F.
-  if (regressions(current, candidate).length > 0) return false
+  // CLAUSE 2, BEFORE ANY ARITHMETIC ON F, AND AGAINST THE PREDECESSOR: only the
+  // board this move was applied to can say what this move broke.
+  if (regressions(predecessor, candidate).length > 0) return false
 
-  const delta = candidate.score.objective - current.score.objective
+  // CLAUSES 3 AND 4, AGAINST THE INCUMBENT: `best` only ever improves.
+  const delta = candidate.score.objective - incumbent.score.objective
   if (delta < 0) return true
   // A ranking term is consulted ONLY here, where F is unchanged, and a tie on
   // every one of RANKING's five positions is NOT an improvement: accepting it
   // would let the climb swap one layout for an equivalent one forever and
   // report a round that accepted something while nothing got better.
-  if (delta === 0) return compareRanking(candidate.ranking, current.ranking) < 0
+  if (delta === 0) return compareRanking(candidate.ranking, incumbent.ranking) < 0
   return false
 }
 
@@ -418,7 +448,18 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
       }
       applyMove(base.measured.source, move, candidateBoard, spawn, transport)
       const measured = evaluateInto(candidateBoard, tag)
-      if (accepts(best.measured.evaluation, measured.evaluation, input.rules)) {
+      // THE TWO COMPARISON BOARDS ARE DIFFERENT AND BOTH ARE NAMED: a
+      // regression is measured against the board this move was applied to, and
+      // F against the best so far. See `AcceptanceInput`.
+      const verdict = accepts(
+        {
+          predecessor: base.measured.evaluation,
+          incumbent: best.measured.evaluation,
+          candidate: measured.evaluation,
+        },
+        input.rules,
+      )
+      if (verdict) {
         best = { measured, occupancy: advanced }
         accepted += 1
       }

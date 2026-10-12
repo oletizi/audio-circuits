@@ -145,6 +145,22 @@ export const TOP_EDGE_DUMP = [
   "",
 ].join("\n")
 
+/**
+ * `BASE_DUMP` with one REDUNDANT wire added, so a third distinct `F` exists
+ * without changing connectivity.
+ *
+ * `W3` joins `4,1` to `4,2` - strips 1 and 2, which `W1` already joins - so the
+ * copper partition is identical to `BASE_DUMP`'s and `HC8` holds exactly as it
+ * does there. Only `F` moves: three `WIRE` lines give `0 + 0.25*3 + 0 = 0.75`.
+ *
+ * It exists for the sibling-order test, which needs three boards whose `F`
+ * strictly decreases while one of them repairs a constraint.
+ */
+export const BASE_PLUS_WIRE_DUMP = BASE_DUMP.replace(
+  "WIRE W2 AT 3,6 ENDS 3,6,0,0 3,7,0,0\n",
+  "WIRE W2 AT 3,6 ENDS 3,6,0,0 3,7,0,0\nWIRE W3 AT 4,1 ENDS 4,1,0,0 4,2,0,0\n",
+)
+
 /** The reference export both boards are checked against - two parts, two nets. */
 export const NETLIST = [
   "( { EESchema Netlist Version 1.1 created  2026-10-11T00:00:00 }",
@@ -379,6 +395,39 @@ export function scriptedSpawn(script: DumpScript): SpawnVeroroute {
 const INCOMPLETE_REPORT = ["Layout state", "left incomplete", "right complete", "Cuts: 0", ""].join(
   "\n",
 )
+
+/** What `--check` answers for one evaluation: its exit code and its report. */
+export type CheckScript = (evaluation: number) => { readonly status: number; readonly report: string }
+
+/** `--check` reporting every net complete, exit 0. */
+export const CHECK_COMPLETE: CheckScript = () => ({ status: 0, report: REPORT })
+
+/** `--check` reporting `left` incomplete, exit 1 - which is HC1's own input. */
+export const CHECK_INCOMPLETE: CheckScript = () => ({ status: 1, report: INCOMPLETE_REPORT })
+
+/**
+ * A spawn that scripts BOTH the dump and the `--check` report, per evaluation.
+ *
+ * The two counters stay in step because each evaluation spends exactly one
+ * `--check` and one `--dump-board`, in that order (apply, autofill, check,
+ * dump). That is what lets a test say "evaluation 1 repairs HC1" - a claim
+ * about the report and the dump together.
+ */
+export function scriptedSpawnWithChecks(
+  dumps: DumpScript,
+  checks: CheckScript,
+): SpawnVeroroute {
+  const state = { dumps: 0, ops: [] as string[] }
+  let checked = 0
+  return (args) => {
+    if (args[0] === "--check") {
+      const answer = checks(checked)
+      checked += 1
+      return { status: answer.status, stdout: answer.report, stderr: "" }
+    }
+    return answer(args, dumps, state)
+  }
+}
 
 /** The scripted spawn with `--check` reporting one net incomplete and exiting 1. */
 export function incompleteNetSpawn(script: DumpScript): SpawnVeroroute {
