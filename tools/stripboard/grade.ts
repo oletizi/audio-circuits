@@ -212,7 +212,7 @@ function readDeclaredStock(
     throw new Error(
       `${file}: the "stock" field ${fault}. It must be {"rows": <positive integer>, "cols": ` +
         '<positive integer>}, the size in holes of the piece this board is cut from.\nThis is ' +
-        "NOT defaulted to the rules file's 34 x 27: a declaration that tried to say something " +
+        "NOT defaulted to the rules file's stock: a declaration that tried to say something " +
         "about the owner's stock and failed is not one that said nothing, and substituting the " +
         "default would grade this board against a piece he does not have.",
     )

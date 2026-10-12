@@ -78,6 +78,16 @@ test("the owner's settled values are the ones the committed file carries", () =>
   // K2's clustering bound, HC6's stock. A test on the numbers themselves,
   // because this file is how reviewed criteria reach the optimiser and an
   // edited value is exactly what must not pass unnoticed.
+  //
+  // THE TWO STOCK FIGURES ARE PROVISIONAL AND THIS TEST FAILING ON THEM IS NOT
+  // A DEFECT. The owner, 2026-10-12: "I may, at any time, decide to change the
+  // dimensions of any board at any time. The dimensions are ALWAYS
+  // provisional." So a failure here on `stockRows` or `stockCols` means the
+  // stock changed and this line must follow it - update the number, do not
+  // hunt a bug. That is the whole purpose of pinning them: a dimension change
+  // is a decision, and a decision should be visible in a diff rather than
+  // absorbed silently. The other three are not dimensions and no such licence
+  // applies to them.
   const rules = loadRules()
   expect(rules.rhoWire).toBe(0.25)
   expect(rules.rhoSolder).toBe(1)

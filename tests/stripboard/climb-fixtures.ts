@@ -215,6 +215,13 @@ export const TARGETS: BoardTargets = {
   board: "climb-fixture",
   netCount: 2,
   pinCount: 4,
+  // NOT the owner's stock, and nothing here depends on it being that. Any R
+  // above this fixture's N of 2 gives `max(0, 2 - R) = 0`, which is the only
+  // property the floor comment below relies on. It is written as 34 because
+  // that is today's strip count and a reader comparing the two should not have
+  // to wonder whether the difference is meaningful - but the owner has said the
+  // dimensions are ALWAYS provisional, so if the stock changes this fixture
+  // does not have to follow it and the floor stays 0 either way.
   strips: 34,
   cutFloor: 0,
   netGraph: {

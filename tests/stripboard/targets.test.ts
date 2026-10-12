@@ -62,6 +62,10 @@ test("the floor is zero on every Pultec section, because each has fewer nets tha
   // only the nets ON-BOARD components touch read 'error: mid nets / Expected:
   // 28 / Received: 26' here and failed five further tests, mid's floor at four
   // strips reading 22 instead of 24. Reverted.
+  // A PROVISIONAL figure, pinned deliberately: if the stock changes this fails,
+  // and that is the test working rather than breaking. Update it with the new
+  // strip count and re-derive the floors below, which are a function of R and
+  // not properties of the circuits.
   expect(STRIPS).toBe(34)
   for (const board of BOARDS) {
     const targets = deriveTargets(physicalBoard(board.section), STRIPS, `pultec-${board.section}`)
