@@ -360,8 +360,14 @@ test("each evaluation runs autofill before scoring, because an unpainted board h
     `--check ${runDir}/start-filled.vrt --netlist ${runDir}/reference.net`,
     `--dump-board ${runDir}/start-filled.vrt`,
   ])
+  // AND THE GESTURE IS APPLIED TO `seeded.vrt`, NOT TO `start-filled.vrt`:
+  // the paint is a scoring artifact and the gesture chain runs on the unpainted
+  // board. Applying the move to the painted file is what the first version of
+  // climb did, and the real binary refused it on round 0, move 0 - `--move`
+  // will not relocate a part onto holes that overlap its own current footprint
+  // once AutoFillVero has painted copper into them. Measured; see Measured.source.
   expect(order.slice(3, 7)).toEqual([
-    `--move ${runDir}/start-filled.vrt --ref R1 --to 1,1 -o ${runDir}/r0-m0.vrt`,
+    `--move ${runDir}/seeded.vrt --ref R1 --to 1,1 -o ${runDir}/r0-m0.vrt`,
     `--author ${runDir}/r0-m0.vrt --op autofill -o ${runDir}/r0-m0-filled.vrt`,
     `--check ${runDir}/r0-m0-filled.vrt --netlist ${runDir}/reference.net`,
     `--dump-board ${runDir}/r0-m0-filled.vrt`,

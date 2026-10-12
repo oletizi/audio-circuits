@@ -129,6 +129,29 @@ export interface EvaluateInput {
 interface Measured {
   readonly evaluation: Evaluation
   readonly dump: BoardDump
+  /**
+   * The board the NEXT gesture is applied to - the one `measure` was handed,
+   * BEFORE the autofill.
+   *
+   * **IT IS NOT `evaluation.candidate`, AND CONFUSING THE TWO WAS A REAL BUG
+   * THAT ONLY THE REAL BINARY FOUND.** `candidate` is the PAINTED board, which
+   * is what had to be scored (`HC2` refuses an unresolved cut list) - and
+   * `--move` REFUSES a relocation that overlaps a part's own current footprint
+   * on a painted board, because `AutoFillVero` has painted copper into the
+   * holes the part is about to vacate and `Board::CanPutDown` then counts them
+   * as occupied. Measured on the import-placed low-boost board: `--move C18
+   * --to 1,0` succeeds on the unpainted board and is refused on the autofilled
+   * one, and after relocating `C18` to open space at `20,20` and repainting,
+   * `21,20` and `20,21` are both refused while `23,20` - clear of its own
+   * 3x3 rect - succeeds. A one-hole move always overlaps, so chaining gestures
+   * on the painted board refuses on round 0, move 0.
+   *
+   * So the paint is a SCORING ARTIFACT and the gesture chain runs on the
+   * unpainted board, which is `tools/stripboard/seed-arms.ts`'s own rule
+   * stated from the other side: *"the paint comes after the last gesture that
+   * moves anything"*.
+   */
+  readonly source: string
 }
 
 /** One spawn whose failure means the gesture did not happen. */
@@ -203,6 +226,7 @@ function measure(board: string, input: EvaluateInput, spawn: SpawnVeroroute): Me
       admissibleA1: a1(results),
     },
     dump,
+    source: board,
   }
 }
 
@@ -457,7 +481,7 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
       }
       const tag = `r${rounds}-m${index}`
       const candidateBoard = path.join(input.runDir, `${tag}.vrt`)
-      applyMove(base.evaluation.candidate, move, candidateBoard, spawn, transport)
+      applyMove(base.source, move, candidateBoard, spawn, transport)
       const measured = evaluateInto(candidateBoard, tag)
       if (accepts(best.evaluation, measured.evaluation, input.rules)) {
         best = measured
