@@ -440,10 +440,17 @@ test("nothing in the grader's TRANSITIVE import closure is the scorer or the sea
   // stronger claim than the body and the gap was invisible. The closure is
   // computed, and an unresolvable import is an error rather than a dropped
   // edge - see tests/stripboard/import-closure.ts.
+  // EVERY MODULE OF THE SEARCH, NOT JUST THE TWO THE PLAN NAMES. Task 17 split
+  // `climb.ts` and `moves.ts` at their own seams for the line ceiling, and a
+  // list naming only the front doors would let a later edit reach the search
+  // through `climb-evaluate.ts` or `moves-apply.ts` with this test still green -
+  // which is the same shape of hole the grep this test replaced had.
   const forbidden = [
     "tools/stripboard/score.ts",
     "tools/stripboard/climb.ts",
+    "tools/stripboard/climb-evaluate.ts",
     "tools/stripboard/moves.ts",
+    "tools/stripboard/moves-apply.ts",
     "tools/stripboard/rank.ts", // reaches score.ts, so reaching it reaches the scorer
   ]
   for (const file of [
