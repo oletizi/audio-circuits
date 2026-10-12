@@ -35,6 +35,7 @@ import type { PartRect } from "../../tools/stripboard/seed-geometry.ts"
 import {
   BETTER,
   DUMP,
+  TOP_EDGE,
   freshRunDir,
   recordingSpawn,
   REFERENCE,
@@ -136,6 +137,25 @@ test("only the clockwise turn is proposed, because only that case is transcribed
     .filter((move) => move.kind === "rotate")
     .map((move) => (move.kind === "rotate" ? move.direction : ""))
   expect(directions).toEqual(["cw", "cw"])
+})
+
+test("no rotate is proposed where the turn would pan the board", () => {
+  // THE GUARD NEEDS A BOARD WHERE IT SAYS NO, and this was a mutation survivor
+  // before it existed: on both graded fixtures every part turns, so deleting
+  // the turnsTakeable guard outright left their rotate counts at 2 and nothing
+  // noticed. TOP_EDGE_DUMP puts a 1x6 part at row 0, whose turn lands at row -2
+  // and pans the board, so --rotate would refuse it.
+  const moves = enumerateMoves(TOP_EDGE, REFERENCE)
+  expect(moves.filter((move) => move.kind === "rotate").length).toBe(0)
+  // And the part IS otherwise enumerated, so this is not passing because
+  // nothing was enumerated at all: three of its four one-hole neighbours fit
+  // (row -1 does not), and both stretch directions do.
+  expect(moves.filter((move) => move.kind === "move").map(describeMove)).toEqual([
+    "move R1 to 0,2",
+    "move R1 to 1,1",
+    "move R1 to 0,0",
+  ])
+  expect(moves.filter((move) => move.kind === "stretch").length).toBe(2)
 })
 
 test("two clockwise turns return a part to its own origin, so cw-only reaches two rects", () => {

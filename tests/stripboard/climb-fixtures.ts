@@ -116,6 +116,34 @@ export const BETTER_DUMP = [
   "",
 ].join("\n")
 
+/**
+ * One part at the TOP EDGE, which is the board on which no turn is takeable.
+ *
+ * `turnedRect` on a `1 x 6` rect at row 0 lands it at row -2, which pans the
+ * board, so `--rotate` refuses - the same arithmetic that forces the two boards
+ * above to put their parts at interior rows. It exists so the enumeration's
+ * `turnsTakeable` guard has a board where it must say NO: on `BASE_DUMP` and
+ * `BETTER_DUMP` every part turns, so a guard deleted outright would leave both
+ * their rotate counts unchanged and no test would notice. A mutation run proved
+ * that gap rather than it being foreseen.
+ *
+ * It is not graded and nothing scores it; `moves.test.ts` reads its enumeration
+ * only.
+ */
+export const TOP_EDGE_DUMP = [
+  "GRID 12 40",
+  "BOUNDS 0,1 0,6",
+  "VERO_TRACKS 1",
+  "VERTICAL_STRIPS 1",
+  "CUT_STATE COMPUTED",
+  "PART R1 RESISTOR 10K AT 0,1 SPAN 6 DIRECTION W",
+  "PIN R1 1 AT 0,1",
+  "PIN R1 2 AT 0,6",
+  "NODE 1 NAME left R1.1",
+  "NODE 2 NAME right R1.2",
+  "",
+].join("\n")
+
 /** The reference export both boards are checked against - two parts, two nets. */
 export const NETLIST = [
   "( { EESchema Netlist Version 1.1 created  2026-10-11T00:00:00 }",
@@ -145,6 +173,7 @@ export const FOOTPRINTS: ReadonlyMap<string, string> = new Map([
 
 export const DUMP = boardGeometry(BASE_DUMP)
 export const BETTER = boardGeometry(BETTER_DUMP)
+export const TOP_EDGE = boardGeometry(TOP_EDGE_DUMP)
 export const REFERENCE = referenceNetsFromExport(NETLIST)
 
 /**

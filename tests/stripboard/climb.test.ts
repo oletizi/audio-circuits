@@ -154,18 +154,36 @@ test("repairing a constraint is not an acceptance of its own: F and the ranking 
 test("a regression is matched by constraint id, never by position in the list", () => {
   // Comparing the two result lists index by index would be a claim about
   // gradeHardConstraints' ordering rather than about the constraints, and would
-  // compare HC3 against HC4 the moment anything reordered the table. Here the
-  // candidate's ten are REVERSED and HC10 - last in the base, first here - is
-  // the one broken: a positional comparison would look at HC1 and accept.
-  const reversedWithHC10Broken = {
+  // compare HC3 against HC4 the moment anything reordered the table.
+  //
+  // THE FIXTURE HAS TO DISCRIMINATE IN THE ACCEPT DIRECTION, and the first
+  // version of this test did not - a survivor in the mutation run proved it.
+  // It reversed the candidate's ten with HC10 broken, where the positional
+  // reading finds HC1 held in the base at that index and rejects too: both
+  // readings said no, for different reasons, and the test passed either way.
+  //
+  // So: HC1 is broken on BOTH sides, the candidate's ten are REVERSED (HC1 now
+  // last), and the candidate is cheaper. By id this is no regression and the
+  // move is accepted. By POSITION the candidate's index 9 is broken HC1 against
+  // the base's index 9, held HC10 - so a positional reading invents a
+  // regression and rejects.
+  const brokenBefore = {
     ...base,
     admissibleA1: false,
-    results: [...base.results]
-      .reverse()
-      .map((result) => (result.id === "HC10" ? { ...result, held: false } : result)),
-    score: { ...base.score, objective: 0 },
+    results: base.results.map((result) =>
+      result.id === "HC1" ? { ...result, held: false } : result,
+    ),
   }
-  expect(accepts(base, reversedWithHC10Broken, rulesWithoutWorseAcceptance())).toBe(false)
+  const reversedAndCheaper = {
+    ...brokenBefore,
+    results: [...brokenBefore.results].reverse(),
+    score: { ...brokenBefore.score, objective: brokenBefore.score.objective - 1 },
+  }
+  expect(reversedAndCheaper.results[9]?.id).toBe("HC1")
+  expect(reversedAndCheaper.results[9]?.held).toBe(false)
+  expect(brokenBefore.results[9]?.id).toBe("HC10")
+  expect(brokenBefore.results[9]?.held).toBe(true)
+  expect(accepts(brokenBefore, reversedAndCheaper, rulesWithoutWorseAcceptance())).toBe(true)
 })
 
 test("a configured worseAcceptance refuses rather than being climbed without", () => {
