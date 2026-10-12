@@ -87,7 +87,11 @@ test("the move enumeration is deterministic and does not iterate a hash map", ()
     enumerateMoves(occupancyOf(DUMP), DUMP, nets)
       .filter((move) => move.kind === "cluster")
       .map((move) => (move.kind === "cluster" ? move.net : ""))
-  expect(clusters(REFERENCE)).toEqual(["left", "left", "left", "left", "right", "right", "right", "right"])
+  // THREE DELTAS PER NET AND NOT FOUR: W1 sits at 3,1-3,2 and W2 at 3,6-3,7, and
+  // the occupancy carries wires now - so the cluster by 1,0, which would put R1
+  // on row 3, does not fit. `./seed-geometry.ts` records the measurement that
+  // put wires in there: the fork refuses a part moved onto a wire's holes.
+  expect(clusters(REFERENCE)).toEqual(["left", "left", "left", "right", "right", "right"])
   expect(clusters(reversed)).toEqual([...clusters(REFERENCE)].reverse())
 })
 
@@ -117,17 +121,22 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   // DERIVED BY HAND FROM BASE_DUMP, which places R1 at 2,1 and R2 at 7,2, each
   // 1 row by 6 columns, on a 12 x 40 grid with two nets and two WIRE lines:
   //
-  //   move        2 parts x 4 one-hole neighbours, all four clear on both  = 8
+  //   move        2 parts x 4 one-hole neighbours, all four clear on both
+  //               EXCEPT R1's step down onto row 3, where W1 sits: the
+  //               occupancy carries wires now, measured against the fork,
+  //               which refuses a part moved onto a wire's holes            = 7
   //   rotate      1 clockwise turn each, both takeable from an interior row = 2
   //   stretch     grow and shrink, both clear on both parts                 = 4
-  //   add-wire    net `left` holds 2,1 and 7,2 (strips 1 and 2) and net
-  //               `right` holds 2,6 and 7,7 (strips 6 and 7): one
-  //               cross-strip pair each                                    = 2
+  //   add-wire    net `left` holds 2,1 and 7,2, so strips 1 and 2, and net
+  //               `right` holds 2,6 and 7,7, so strips 6 and 7: one pair of
+  //               strips each, one wire per pair at the first ROW that takes
+  //               it. Strips are columns here, so the fresh 1x3 wire already
+  //               lies across them and the plan is no turn and one shrink    = 2
   //   delete-wire the two WIRE lines, W1 and W2                            = 2
-  //   cluster     2 nets x 4 one-hole deltas, and all eight land: each net
-  //               holds a pin of BOTH parts, so every cluster moves R1 and R2
-  //               together, and on a 12x40 grid the pair fits one hole in
-  //               every direction from 2,1 and 7,2                          = 8
+  //   cluster     2 nets x 4 one-hole deltas less the one that does not land:
+  //               each net holds a pin of BOTH parts, so every cluster moves
+  //               R1 and R2 together, and the step DOWN puts R1 on row 3
+  //               where W1 is                                               = 6
   //   gather      each net with TWO OR MORE on-board parts onto EVERY strip of
   //               the board that the whole net fits on. Strips are COLUMNS here
   //               and the grid is 12 x 40. `left` holds R1.1 at column 1 and
@@ -140,27 +149,27 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   //               for a zero delta, because no single column makes BOTH
   //               parts' deltas zero                                       = 70
   //                                                                        ---
-  //                                                                         96
+  //                                                                         93
   const moves = enumerateMoves(OCC, DUMP, REFERENCE)
   const counted = new Map<Move["kind"], number>()
   for (const move of moves) counted.set(move.kind, (counted.get(move.kind) ?? 0) + 1)
-  expect(counted.get("move")).toBe(8)
+  expect(counted.get("move")).toBe(7)
   expect(counted.get("rotate")).toBe(2)
   expect(counted.get("stretch")).toBe(4)
   expect(counted.get("add-wire")).toBe(2)
   expect(counted.get("delete-wire")).toBe(2)
-  expect(counted.get("cluster")).toBe(8)
+  expect(counted.get("cluster")).toBe(6)
   expect(counted.get("gather")).toBe(70)
-  expect(moves.length).toBe(96)
-  // And the applicable subset is the 96 less the TWO deferred kinds' 4: the two
-  // delete-wires and the two add-wires. It was 14 while `cluster` was deferred
-  // as well, 22 before `gather` existed and 26 while the gather asked only about
-  // the strips a net already occupied - which is exactly what this figure moving
-  // is meant to signal. `rotate` was deferred for one round of Task 17 and is
-  // also back: a turn's result is carried in the occupancy rather than re-read
-  // from a dump that cannot describe it.
-  expect(applicableMoves(moves).length).toBe(92)
-  expect([...DEFERRED_KINDS.keys()].sort()).toEqual(["add-wire", "delete-wire"])
+  expect(moves.length).toBe(93)
+  // And the applicable subset is the 93 less the ONE deferred kind's 2: the two
+  // delete-wires. It was 14 while `cluster` was deferred as well, 22 before
+  // `gather` existed, 26 while the gather asked only about the strips a net
+  // already occupied, and 92 while `add-wire` was deferred too - which is
+  // exactly what this figure moving is meant to signal. `rotate` was deferred
+  // for one round of Task 17 and is also back: a turn's result is carried in the
+  // occupancy rather than re-read from a dump that cannot describe it.
+  expect(applicableMoves(moves).length).toBe(91)
+  expect([...DEFERRED_KINDS.keys()].sort()).toEqual(["delete-wire"])
 })
 
 test("only the clockwise turn is proposed, because only that case is transcribed", () => {
@@ -330,9 +339,15 @@ test("a net whose holes share one strip gets no add-wire, and the second board s
   const onBetter = enumerateMoves(BETTER_OCC, BETTER, REFERENCE).filter((move) => move.kind === "add-wire")
   const onBase = enumerateMoves(OCC, DUMP, REFERENCE).filter((move) => move.kind === "add-wire")
   expect(onBetter.length).toBe(0)
+  // HAND-DERIVED, and the plan is the part that moved: strips are COLUMNS on
+  // this board, so a fresh 1x3 wire already lies across them and needs no turn;
+  // bridging columns 1 and 2 is two holes, so the plan shrinks it once; and the
+  // line it is placed on is the first ROW where all three of the fresh wire's
+  // holes are free, which is row 0. The board carries W1 and W2 already, so the
+  // name the fork will give the next one is Wire3.
   expect(onBase.map(describeMove)).toEqual([
-    "add-wire at 2,1 joining 2,1 to 7,2",
-    "add-wire at 2,6 joining 2,6 to 7,7",
+    "add-wire left joining 0,1 to 0,2 (at 0,1 as Wire3, 0 turn(s), stretch -1, turn-then-stretch)",
+    "add-wire right joining 0,6 to 0,7 (at 0,6 as Wire3, 0 turn(s), stretch -1, turn-then-stretch)",
   ])
 })
 
@@ -342,13 +357,13 @@ test("each applicable kind spawns the fork's own verb, with -o and never in plac
   applyMove("board.vrt", { kind: "move", ref: "R1", to: [3, 4] }, out, spawn)
   applyMove("board.vrt", { kind: "rotate", ref: "R1", direction: "cw" }, out, spawn)
   applyMove("board.vrt", { kind: "stretch", ref: "R1", direction: "grow" }, out, spawn)
-  applyMove("board.vrt", { kind: "add-wire", at: [2, 1], ends: [[2, 1], [7, 2]] }, out, spawn)
+  // add-wire is COMPOUND now and has its own test in ./wire.test.ts; the three
+  // one-gesture kinds are what this one is about.
   // Hand-written argument lists, in the grammar the fork's own headers state.
   expect(spawned).toEqual([
     ["--move", "board.vrt", "--ref", "R1", "--to", "3,4", "-o", out],
     ["--rotate", "board.vrt", "--ref", "R1", "--direction", "cw", "-o", out],
     ["--stretch", "board.vrt", "--ref", "R1", "--direction", "grow", "-o", out],
-    ["--author", "board.vrt", "--op", "add-wire", "--at", "2,1", "-o", out],
   ])
 })
 
@@ -381,7 +396,7 @@ test("a kind --move-batch cannot carry takes its one-gesture verb even when batc
   ])
 })
 
-test("a delete-wire refuses naming the fork, and an add-wire naming the measurement", () => {
+test("a delete-wire refuses naming the fork, which is where the block is", () => {
   // THE CLUSTER HALF OF THIS TEST IS GONE RATHER THAN SKIPPED, because the
   // refusal it asserted is gone: Task 18 implemented the kind, so
   // DEFERRED_KINDS no longer carries it and applyMove applies it.
@@ -397,24 +412,14 @@ test("a delete-wire refuses naming the fork, and an add-wire naming the measurem
   const reason = DEFERRED_KINDS.get("delete-wire")
   expect(reason === undefined).toBe(false)
   expect(wire).toContain(reason ?? "<absent>")
-  // And add-wire is still deferred on its own measured ground, which is NOT a
-  // task waiting to be done: the wire anchors only at a FREE hole and this
-  // enumeration anchors at a PIN hole.
-  expect(DEFERRED_KINDS.get("add-wire")).toContain("cannot join two strips")
-})
-
-test("an add-wire whose at and first end disagree refuses rather than applying either", () => {
-  // --author --op add-wire places the FIRST end at --at and accepts no other
-  // end option, so the two fields cannot both be honoured and which the caller
-  // meant is not in the data.
-  const { spawned, spawn } = recorder()
-  const out = path.join(freshRunDir(), "candidate.vrt")
-  const refusal = refusalFrom(() =>
-    applyMove("board.vrt", { kind: "add-wire", at: [2, 1], ends: [[9, 9], [7, 2]] }, out, spawn),
-  )
-  expect(refusal).toContain("accepts no other end option")
-  // And nothing was spawned: the refusal is before the gesture, not after it.
-  expect(spawned).toEqual([])
+  // AND THE REFUSAL NOW CARRIES THE MEASUREMENT rather than a reading of a help
+  // text: --update is the one verb that rewrites a board's component set from a
+  // netlist, and it leaves wires in place.
+  expect(wire).toContain("still carries TWO wires afterwards")
+  // And `add-wire` is NOT in here any more: it was deferred beside this one
+  // until `occupancyOf` learned about wires, and ./wire.test.ts is where its
+  // behaviour is held now.
+  expect(DEFERRED_KINDS.has("add-wire")).toBe(false)
 })
 
 test("a gesture the fork refuses stops the run and quotes it, rather than being skipped", () => {

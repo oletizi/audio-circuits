@@ -110,11 +110,12 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
   expect(result.evaluations).toBeGreaterThanOrEqual(
     applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length,
   )
-  expect(enumerateMoves(OCC, DUMP, REFERENCE).length).toBe(96)
+  expect(enumerateMoves(OCC, DUMP, REFERENCE).length).toBe(93)
 
   // HAND-DERIVED, from the two boards and the script:
-  //   round 0 sweeps BASE_DUMP's 92 applicable moves (96 enumerated less the
-  //     four delete-wire and add-wire ones), and the script hands BETTER_DUMP to
+  //   round 0 sweeps BASE_DUMP's 91 applicable moves (93 enumerated less the two
+  //     delete-wire ones, which are the only deferred kind left), and the script
+  //     hands BETTER_DUMP to
   //     the first of them, so one move is accepted. It was 14 until Task 18
   //     implemented the net cluster, which adds eight - two nets by four unit
   //     deltas, every one of which lands - and 70 more with the gather, 35 per
@@ -143,11 +144,11 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
   //     `right`. 33 each.
   //     4 + 0 + 2 + 4 + 1 + 2 + 8 + 66 = 87, every one of which reports the
   //     worse board, so none is accepted and S3 stops.
-  //   one evaluation of the start, plus 92, plus 87.
-  expect(applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length).toBe(92)
+  //   one evaluation of the start, plus 91, plus 87.
+  expect(applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length).toBe(91)
   expect(result.acceptedPerRound).toEqual([1, 0])
   expect(result.rounds).toBe(2)
-  expect(result.evaluations).toBe(180)
+  expect(result.evaluations).toBe(179)
   expect(result.best.score.objective).toBe(0)
 })
 
@@ -295,7 +296,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
   // HAND-DERIVED: the start is evaluation 1, then round 0's candidates are
   // evaluations 2, 3, 4 and 5, and the cap is checked BEFORE each candidate -
   // so the fifth evaluation is the last one taken and the sixth is never
-  // started. Round 0 has 92 applicable moves, so the stop is mid-round: the
+  // started. Round 0 has 91 applicable moves, so the stop is mid-round: the
   // round is recorded with the one move it accepted before the cap bit.
   const runDir = freshRunDir()
   const result = climb(
@@ -307,7 +308,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
   expect(result.history.length).toBe(5)
   expect(result.rounds).toBe(1)
   expect(result.acceptedPerRound).toEqual([1])
-  // And the uncapped climb on the same script spends 180, so the cap really is
+  // And the uncapped climb on the same script spends 179, so the cap really is
   // what stopped this one rather than convergence.
   const uncappedDir = freshRunDir()
   const uncapped = climb(
@@ -315,7 +316,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
     climbInput(uncappedDir, false),
     scriptedSpawn(IMPROVES_THEN_STALLS),
   )
-  expect(uncapped.evaluations).toBe(180)
+  expect(uncapped.evaluations).toBe(179)
 })
 
 test("a climb that ends inadmissible says so, rather than reading as one that found nothing", () => {

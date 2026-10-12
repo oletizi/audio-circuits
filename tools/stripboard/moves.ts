@@ -53,8 +53,6 @@
  * from it would be invisible.
  */
 import type { BoardDump } from "../guide/dump.ts"
-import { parseHoleKey, pinHoles, type HoleKey } from "./copper.ts"
-import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
 import {
   clusterAfter,
@@ -64,6 +62,7 @@ import {
   translationsAfter,
 } from "./moves-cluster.ts"
 import { DEFERRED_KINDS, type Move } from "./moves-model.ts"
+import { wireAfter, wireMovesFor } from "./moves-wire.ts"
 import { stretchBoundFor, type Occupancy } from "./seed-geometry.ts"
 import { appliedGestures, rectOf } from "./seed-placement.ts"
 import type { SpawnVeroroute } from "./seed.ts"
@@ -147,14 +146,21 @@ export function occupancyAfter(
   move: Move,
   type?: string,
 ): Occupancy | undefined {
-  if (move.kind === "add-wire" || move.kind === "delete-wire") {
+  // THE WIRE KINDS. An `add-wire` PUTS A RECT ON THE BOARD - `occupancyOf` reads
+  // every wire's own rect now, measured against the fork, which is what let this
+  // kind out of DEFERRED_KINDS at all - so its advance is the plan applied to the
+  // occupancy, through the same `appliedGestures` every other kind uses.
+  if (move.kind === "add-wire") {
+    return wireAfter(occupancy, dump.grid, move.plan)
+  }
+  if (move.kind === "delete-wire") {
     throw new Error(
-      `occupancyAfter: a "${move.kind}" move's effect on the part geometry is not modelled. ` +
-        "Both change the WIRE list and not any part's rect - and a wire's own holes are not in " +
-        "the occupancy at all, which is a limit of occupancyOf rather than a decision here. " +
-        "Both are in DEFERRED_KINDS, so applicableMoves keeps them out of the sweep and this is " +
-        "unreachable from climb; reaching it means a caller advanced past a gesture it had not " +
-        "applied.",
+      "occupancyAfter: a \"delete-wire\" move's effect is not modelled, and the reason is the " +
+        "FORK rather than this module: no verb and no --author op removes a component, and " +
+        "--update leaves wires in place (both measured - see DEFERRED_KINDS). So there is no " +
+        "gesture to advance past. It is in DEFERRED_KINDS, so applicableMoves keeps it out of " +
+        "the sweep and this is unreachable from climb; reaching it means a caller advanced past " +
+        "a gesture it had not applied.",
     )
   }
   // THE TWO COMPOUND KINDS, THROUGH THE SAME `appliedGestures` THE SINGLE MOVE
@@ -267,44 +273,27 @@ function partMoves(occupancy: Occupancy, dump: BoardDump): readonly Move[] {
 }
 
 /**
- * Every `add-wire` the netlist's nets suggest: for each net in the NETLIST's
- * order, each consecutive pair of its on-board pin holes that sit on DIFFERENT
- * strips.
+ * Every `add-wire` the model admits, from `./moves-wire.ts`, and every
+ * `delete-wire` the board's own `WIRE` lines name.
  *
- * **A PAIR ON ONE STRIP IS NOT PROPOSED**, because the strip already joins
- * those two holes and the wire would add a `W` to `F` and no connectivity. A
- * pair the copper ALREADY joins by some other route is still proposed: this
- * enumeration reads pin holes and the strip axis and nothing else, and whether
- * a wire buys anything is `F`'s judgement rather than the enumerator's - which
- * keeps the proposal cheap and keeps one decision in one place.
+ * **THE ADD-WIRE ENUMERATION MOVED AND CHANGED SHAPE.** It used to propose a
+ * wire anchored at a PIN hole for each consecutive cross-strip pair of a net's
+ * pins - which `DEFERRED_KINDS` then had to refuse, because the fork anchors a
+ * wire only at a FREE hole. The kind is compound now: `./moves-wire.ts` plans a
+ * wire that is created at a free hole, turned across the strips and stretched to
+ * reach, one candidate per pair of strips a net is split across. The reasons,
+ * the four fork measurements and the narrowings are all stated there.
  *
- * A pin the dump prints no `PIN` line for contributes nothing: a floating
- * part prints none (`tools/guide/dump.ts`'s own rule), which is a legitimate
- * state and not a defect to refuse over here.
+ * `delete-wire` is still enumerated and still refused by `DEFERRED_KINDS`, whose
+ * entry now carries the measurement rather than a reading: no verb and no
+ * `--author` op removes a component, and `--update` leaves wires in place.
  */
-function wireMoves(dump: BoardDump, reference: ReferenceNets): readonly Move[] {
-  const holes = pinHoles(dump)
-  const moves: Move[] = []
-  for (const [, pins] of reference) {
-    const positions = pins
-      .map((pin) => holes.get(pin))
-      .filter((hole): hole is HoleKey => hole !== undefined)
-      .map((hole) => parseHoleKey(hole))
-    for (let index = 1; index < positions.length; index += 1) {
-      const from = positions[index - 1]
-      const to = positions[index]
-      if (from === undefined || to === undefined) continue
-      if (stripOf(from, dump.verticalStrips) === stripOf(to, dump.verticalStrips)) continue
-      moves.push({
-        kind: "add-wire",
-        at: [from.row, from.col],
-        ends: [
-          [from.row, from.col],
-          [to.row, to.col],
-        ],
-      })
-    }
-  }
+function wireMoves(
+  occupancy: Occupancy,
+  dump: BoardDump,
+  reference: ReferenceNets,
+): readonly Move[] {
+  const moves: Move[] = [...wireMovesFor(occupancy, dump, reference)]
   for (const wire of dump.wires) moves.push({ kind: "delete-wire", name: wire.name })
   return moves
 }
@@ -394,7 +383,7 @@ export function enumerateMoves(
 ): readonly Move[] {
   return [
     ...partMoves(occupancy, dump),
-    ...wireMoves(dump, reference),
+    ...wireMoves(occupancy, dump, reference),
     ...clusterMoves(occupancy, dump, reference),
     ...gatherMoves(occupancy, dump, reference),
   ]
@@ -427,3 +416,18 @@ export {
   translationsAfter,
   type Translation,
 } from "./moves-cluster.ts"
+
+/**
+ * The wire model, re-exported from `./moves-wire.ts`: the plan a compound
+ * `add-wire` carries, the bridge arithmetic and the occupancy it leaves.
+ *
+ * Same arrangement and same reason as the lines above: this is the module the
+ * plan names, and the split is at the what-is-an-add-wire seam.
+ */
+export {
+  nextWireName,
+  wireAfter,
+  wireBridge,
+  wireMovesFor,
+  type WirePlan,
+} from "./moves-wire.ts"

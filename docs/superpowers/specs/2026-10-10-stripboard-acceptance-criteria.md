@@ -40,11 +40,27 @@ at its one job:
 
 | tag | meaning |
 | --- | --- |
-| **[owner]** | the owner decided it — the value, the reasoning, or both |
+| **[owner]** | **the owner settled the value.** It says nothing about who wrote the prose beside it — see *the three labels* immediately below |
 | **[external]** | from an artifact outside this program: low-boost's hand layout, part datasheets and IPC-A-610E via `lib/kicad/lead-span.ts`, or the sibling repository's tooling |
 | **[model]** | derived mechanically from the cost identity, the circuit model, or the tool's own reported behaviour |
 | **[parent]** | the parent design's governing invariant or its stated S1a gate |
 | **[review]** | from an independent third-party review — of PIPELINE's first draft, or of this document — the invariant's third channel, not the producing agent's opinion, and the provenance the owner should check hardest. A review finding is **adjudicated by the owner** before it lands; where he rejected one, the rejection is recorded beside the criterion it was aimed at |
+
+**The three labels, and why a tag alone was not enough.** A tag records *who settled a value*. It
+does not record *who wrote the paragraph around it*, and until 2026-10-12 nothing here did: every
+`[owner]` criterion was a long agent-written argument wrapped around a short owner decision, under
+his tag. A reader quoted one of those arguments back to him as his own words; it was not, and he
+said so. So every `[owner]` item now separates three things explicitly, and the same three labels
+govern the `notes` entries in `stripboard/rules.json`:
+
+| label | what it means |
+| --- | --- |
+| **owner-settled** | the value, and that the owner settled it. This is what the `[owner]` tag asserts and the only thing it asserts |
+| **owner's words (verbatim)** | text he actually said, quoted. Where none is recorded the label says *none recorded* and **nothing is reconstructed, paraphrased or inferred** — an owner quote is never written from context, from a plan, or from a commit message |
+| **agent rationale** | the argument for the value: agent-written, carrying no owner endorsement, and revisable on its merits. Where a criterion's reasoning is interleaved with its requirement the requirement stays put and this label says so, because moving criterion text to tidy a label would change the criterion |
+
+**No value, threshold or requirement changed when the labels were added** (2026-10-12, on the
+owner's instruction to fix the provenance ambiguity). The labelling is the whole of that change.
 
 **The naming collision, and the mapping, stated once.** PIPELINE carries two numbered tables
 whose prefixes collide: hard constraints `H1`–`H10` without a hyphen, honest limits `H-1`–`H-13`
@@ -96,8 +112,14 @@ search accept a worse `F`. `A_occ` is not a constraint — HC6 is; `A_occ` only 
 fitting boards uses less of the stock.
 
 **OBJ3.1 — Spanning to an unused strip is preferred to cutting one. [owner], 2026-10-10.**
-Given a choice between breaking a strip and moving a part onto one that is not carrying a net,
-take the strip. The owner's words: *"I want to favor spans to unused strips over cuts."*
+
+**Owner-settled:** given a choice between breaking a strip and moving a part onto one that is not
+carrying a net, take the strip.
+**Owner's words (verbatim):** *"I want to favor spans to unused strips over cuts."*
+
+**Agent rationale** — the reasoning from here to the end of OBJ3.1 is agent-written and carries no
+owner endorsement. The *requirements* it carries are unchanged and still bind: the refusal of an
+area term above cuts, and HC6's stock bound.
 
 This is already what the ranking and `F` do, and it is recorded so that it stays that way. The
 identity `C = N + J − S_occ` takes `S_occ` with a **negative** sign, so every additional strip a
@@ -136,11 +158,11 @@ Ten, and nothing in them is tradeable. **A1 is the verdict that all ten hold.**
 | **HC3** | **Nothing floating.** Every verb that lifts a part and puts it back records `GetIsPlaced()` for each affected component and **refuses without writing its output** if a part that was placed is not placed afterwards — because the measured failure is a verb that exits 0, prints nothing, writes the board with the part off it, and leaves every term of `F` reading healthy. **It is the overlap check too:** `CanPutDown` refuses a colliding placement, so an overlapping move yields a floating part rather than an overlapping board. | the `PART` line's placement field is not `FLOATING` **and** every placed part prints its `PIN` lines — two assertions, so a change keeping one signal and dropping the other fails loudly. Both are `Component::GetIsPlaced()`, so neither is copper; HC8 is. | [model], strengthened on measurement (D6) |
 | **HC4** | **Every lead span within the tool's range, 2–16 holes.** Its lower end is a fact about VeroRoute and not about any part, which is why it does not discharge HC9. | `CompTypes::GetMinLength`/`GetMaxLength`, as `lib/kicad/import-string.ts` already enforces `MAX_SPAN = 15` grid steps. | [model] |
 | **HC5** | **Every lead span within the part's physical reach** — at or below the family's `maxSpanHoles`, because the tool will stretch any two-terminal part to any span in its range and the part will not, and a span the part cannot make is not a lever but a fiction. | per-candidate comparison against `maxSpanHoles` in `lib/kicad/lead-span.ts`. **Refuse without it** (PAR2). | [external] values, [model] constraint |
-| **HC6** | **The layout fits the stock the owner bought: 34 strips × 27 columns**, the board he usually uses. The quantity checked is the **occupied extent**, not the canvas — `GRID` is VeroRoute's drawing area and `--import` leaves it at a default, so a canvas larger than the stock says nothing about copper. A layout whose parts fit inside 34 × 27 can be cut from that board whatever its canvas says. | the pin extent over the dump's `PIN <name> <pin> AT <row>,<col>` lines — `max − min + 1` in each axis — against 34 × 27. **Pin extent is a LOWER bound on physical extent**, because a body overhangs its leads; `BOUNDS` (M1.1) replaces it with the exact figure and tightens the check. A board cut from a different piece declares its own size in `boards/<board>/perfboard.json`, which overrides the default. | [owner] 2026-10-10, measured from his own stock: 27 columns counted, strips counted as "about 35" and recorded as **34** on his instruction to take the conservative figure |
+| **HC6** | **The layout fits the stock the owner bought: 34 strips × 27 columns**, the board he usually uses. The quantity checked is the **occupied extent**, not the canvas — `GRID` is VeroRoute's drawing area and `--import` leaves it at a default, so a canvas larger than the stock says nothing about copper. A layout whose parts fit inside 34 × 27 can be cut from that board whatever its canvas says. | the pin extent over the dump's `PIN <name> <pin> AT <row>,<col>` lines — `max − min + 1` in each axis — against 34 × 27. **Pin extent is a LOWER bound on physical extent**, because a body overhangs its leads; `BOUNDS` (M1.1) replaces it with the exact figure and tightens the check. A board cut from a different piece declares its own size in `boards/<board>/perfboard.json`, which overrides the default. | [owner]. **Owner-settled:** 34 × 27, measured from his own stock on 2026-10-10 — 27 columns counted, and the strips recorded as **34** on his instruction to take the conservative figure. **Owner's words (verbatim):** he counted the strips as "about 35"; **nothing verbatim is recorded about the 27**, and nothing is reconstructed. **Agent rationale:** the rest of this row, and §10's item 1 apart from the quote it carries |
 | **HC7** | **The layout still matches the circuit.** | `--check`'s schematic-delta section is empty. | [model] |
 | **HC8** | **Netlist equivalence, reconstructed from copper**: the connected components of the board's copper, computed outside VeroRoute, partition the pins exactly as the reference netlist does — no reference net in two components (an **open**), no two reference nets in one (a **short**). Because HC1, HC2, HC3 and HC7 each read VeroRoute's own conclusion, from the subsystem the optimiser perturbs, and that subsystem is known to have a hole — `GetBoardMembership` iterates what the *component* records rather than the copper, which is why a floated part left the `NODE` block identical and went undetected. And because a completeness check is structurally blind to a short, which leaves both joined nets reading complete: nothing in HC1–HC7 looks for one at all. | the reconstruction below, over the geometry contract below. | [review] (D16) |
 | **HC9** | **Every lead span at or above the part's own physical minimum** — the family's `minSpanHoles` — because HC4 bounds a span by the tool and HC5 bounds it above by reach, and **nothing bounded it below by the part**: `--stretch shrink` can compress a DIN0207, 6.3 mm of body on a 10.16 mm nominal pitch, to a 2-hole 5.08 mm span no bending achieves, and every other check here passes it. | as HC5, against `minSpanHoles`, **in the grader regardless of the generator**, because the generator only proposes. | [review] (D18), [external] values |
-| **HC10** | **Every placed part's pins lie on straight lines parallel to the strips** — the owner's rule, and **a cost judgement rather than a geometric impossibility.** A footprint whose pins sit on a circle, an arc, or any pattern **not decomposable into rows** parallel to the strips is **refused rather than placed**, because a strip is a straight line of copper: a round pattern crosses a different strip at nearly every pin and shares one with pins it must not share with, so **nearly every such hole becomes a cut** — and the body then sits over holes it does not use. Such a board could be routed, with enough cuts; the owner's verdict is that the cut cost is prohibitive and that he will not build it. **Rows plural, and decomposability is the test:** a DIP-16 is two rows parallel to the strips, decomposes, and passes. | a **footprint-level** check against the span/footprint data, because whether a footprint's pins decompose into rows parallel to the strips is a property of the **footprint**, not of a placement: the classification is per footprint family, a non-decomposable family refuses **by name** before any placement exists to grade, and `lib/kicad/lead-span.ts` — keyed by the footprint name the netlist carries, already refusing an unlisted family by name — is the place by shape. **It carries no pin-pattern field yet; §10.3 is that gap.** In A1. | [owner], 2026-10-10 |
+| **HC10** | **Every placed part's pins lie on straight lines parallel to the strips** — the owner's rule, and **a cost judgement rather than a geometric impossibility.** A footprint whose pins sit on a circle, an arc, or any pattern **not decomposable into rows** parallel to the strips is **refused rather than placed**, because a strip is a straight line of copper: a round pattern crosses a different strip at nearly every pin and shares one with pins it must not share with, so **nearly every such hole becomes a cut** — and the body then sits over holes it does not use. Such a board could be routed, with enough cuts; the owner's verdict is that the cut cost is prohibitive and that he will not build it. **Rows plural, and decomposability is the test:** a DIP-16 is two rows parallel to the strips, decomposes, and passes. | a **footprint-level** check against the span/footprint data, because whether a footprint's pins decompose into rows parallel to the strips is a property of the **footprint**, not of a placement: the classification is per footprint family, a non-decomposable family refuses **by name** before any placement exists to grade, and `lib/kicad/lead-span.ts` — keyed by the footprint name the netlist carries, already refusing an unlisted family by name — is the place by shape. **It carries no pin-pattern field yet; §10.3 is that gap.** In A1. | [owner], 2026-10-10. **Owner-settled:** a footprint whose pins do not decompose into rows parallel to the strips is refused rather than placed. **Owner's words (verbatim):** quoted in the HC10 paragraph below. **Agent rationale:** the rest of this row, and the HC10 paragraphs below apart from that quote |
 
 **HC8 is checked by a reconstruction, and the gate is only as good as its independence.** A module
 in this repository that reads the dump text and nothing else; builds the copper graph from exactly
@@ -257,8 +279,12 @@ or catastrophic: a radial electrolytic has a cylindrical body and two leads in a
 is placeable. Read as banning round bodies it makes every electrolytic unplaceable.
 
 **And it is a practical verdict, not an impossibility claim; an earlier draft of this document
-overstated it.** The owner's words are the criterion: *"I'm not going to mount a round switch into
-a stripboard. That never works. Round footprints do not work well with stripboard."* That is a
+overstated it.**
+
+**Owner's words (verbatim), and they are the criterion:** *"I'm not going to mount a round switch
+into a stripboard. That never works. Round footprints do not work well with stripboard."*
+
+**Agent rationale** (agent-written, no owner endorsement): that is a
 judgement about cost and about what he will build, and it is enough — a round pin pattern **can**
 be routed, with a cut at nearly every pin, so framing the refusal as geometric impossibility
 claims more than is true and invites a counterexample that does not overturn the rule. The
@@ -337,8 +363,18 @@ the floor and a scheme treating it as one would stop early:** at `κ = 0` the bo
 the distinct strips among the `PIN` holes on the axis `VERTICAL_STRIPS` names.
 *Provenance:* **[model]** — COST §5.
 
-**K2 — The clustering bound: `κ ≤ κ_bench`, default `κ_bench = 0.05`.** A parameter with that
-default, settled by the owner as **the hard end of a ratchet**: start at a harder bound and back
+**K2 — The clustering bound: `κ ≤ κ_bench`, default `κ_bench = 0.05`.**
+
+**Owner-settled:** the value 0.05, and that it is the hard end of a ratchet — it loosens only on
+evidence (K3), never because a run failed it.
+**Owner's words (verbatim):** *none recorded.* Owner-settled; no verbatim instruction is on record
+for this bound, and none is reconstructed here. The §10 review table's *"Start hard at 0.05 and
+back off only on evidence"* is an agent's summary of the outcome, not a quotation of him.
+
+**Agent rationale** — the whole of the rest of K2 is agent-written and carries no owner
+endorsement. The requirement is the bound above; what follows is the argument for it.
+
+A parameter with that default, and **the hard end of a ratchet**: start at a harder bound and back
 off gradually, only if it proves impracticable. It sits just under low-boost's measured
 `1/18 = 0.055`, the best result any hand in this repository has reached, and **it is not the
 measured value of any artifact and does not claim to be.** Because a bound set where no artifact
@@ -364,7 +400,19 @@ nothing, and a verdict that reports it as inadmissible without reporting it as *
 not answered the owner's question.
 *Checked:* arithmetic on dump counts; it is A2. *Provenance:* **[owner]**, 2026-10-10 (D23).
 
-**K3 — The clustering bound moves only by ratchet.** Four conditions, all required:
+**K3 — The clustering bound moves only by ratchet.**
+
+**Owner-settled:** that the bound moves only by ratchet, under the four conditions below, all
+required.
+**Owner's words (verbatim):** *none recorded.* Owner-settled; no verbatim instruction is on record,
+and none is reconstructed here.
+
+**Agent rationale:** the *reasons* given inside the four conditions, and the closing paragraph
+about this repository's existing discipline, are agent-written and carry no owner endorsement. The
+four conditions themselves are the criterion and are unchanged — they stay where they are, because
+moving criterion text to tidy a label would change the criterion.
+
+Four conditions, all required:
 
 1. **A run that demonstrably could not reach it**, in the run directory, with its `bound` field
    and its evidence.
@@ -391,12 +439,20 @@ what keeps the rest of this document from drifting.**
 report side of the same distinction. *Provenance:* **[owner]**, 2026-10-10 (D23).
 
 **K4 — The floor tolerance: `(F_i − F_floor) / max(1, F_0 − F_floor) < τ`, `F_floor = C_floor`,
-proposed default `τ = 0.05`.** The owner's tolerance, and 0.05 is a *proposed* default rather than
+proposed default `τ = 0.05`.**
+
+**Owner-settled:** **τ is deliberately unset (2026-10-10).** It has no value and no default; the
+owner was asked to choose one and declined, and the pipeline reports instead of judging.
+**Owner's words (verbatim):** *none recorded.* Owner-settled as a refusal to set a number; no
+verbatim instruction is on record, and none is reconstructed here — the account below of *why* he
+declined is an agent's reading of the exchange, not a quotation of him.
+
+**Agent rationale** (agent-written, no owner endorsement): the owner's tolerance, and 0.05 is a
+*proposed* default rather than
 a settled value (§10). **The two 0.05s are unrelated** — one a dimensionless clustering fraction,
 one a fraction of the gap to a derived floor — and the coincidence of digits is noted so nobody
 reads one as derived from the other.
-**τ IS DELIBERATELY UNSET (owner, 2026-10-10), and the pipeline reports instead of judging.**
-The owner was asked to choose it and declined on grounds that were correct: the question was put
+He declined on grounds that were correct: the question was put
 to him with the wrong floor. He was offered "close 95% of the gap from 65 cuts to 19" on mid, where
 19 is `C_floor` evaluated at mid's *current* `S_occ` of four strips — the floor for keeping every
 part crammed into the four rows `--import` used. The floor against the board he actually owns is
@@ -404,7 +460,7 @@ part crammed into the four rows `--import` used. The floor against the board he 
 nineteen cuts would have been a number with no meaning, and he said so by asking why cuts could not
 be traded for strips (OBJ3.1) — which is exactly what the identity says.
 
-So `τ` has **no value and no default**, and until it has one:
+**Requirements, not rationale** — so `τ` has **no value and no default**, and until it has one:
 
 - **Q2 and A3 do not fire.** An outcome of "valid, below target" cannot be reported against an
   unset target, so a run that is valid reports **valid** with its achieved `F`, its derived floor
@@ -452,7 +508,7 @@ reports both. **Stop at the first of:**
 | **Q1** | **At the floor, and admissible.** `C = C_floor` and `W = 0`; equivalently `κ = 0`, `S_occ = min(N, R)`, `W = 0` — **and A1–A4 hold on that candidate.** Terminal, because nothing below the floor exists. `B = 0` follows rather than being assumed: `κ = 0` means no net is split, a derived bridge exists only to supply a join, and there is no join to supply. | dump counts against P0's `targets.json`, plus the admissibility verdict |
 | **Q2** | **Within tolerance of the floor** (K4), **and admissible.** | arithmetic on counts, plus the admissibility verdict |
 | **Q3** | **Search exhausted.** Every seed's climb has reached a full sweep of the move set — *including* the net-cluster move — that produced no accepted move, and no restart remains. **Not terminal before the seed list is spent**, because a single no-accepted-move round is a restart trigger: a rule that stopped at the first local optimum would halt the run in exactly the condition the restarts exist to leave. | the round's accepted-move counter is 0 for the last seed and the restart schedule is spent |
-| **Q4** | **Finishing would cost more than the search already has.** With `g = F − C_floor` the gap that provably remains, `r` the recent improvement per evaluation, and `e` the evaluations spent: stop when `g / r > k · e`. Default `k = 1`. **Measured across at least one restart, never within a climb** — improvement here is bursty, so a window inside a flat stretch reads as converged when a restart would have broken it. [owner], 2026-10-10. | counters and the derived floor |
+| **Q4** | **Finishing would cost more than the search already has.** With `g = F − C_floor` the gap that provably remains, `r` the recent improvement per evaluation, and `e` the evaluations spent: stop when `g / r > k · e`. Default `k = 1`. **Measured across at least one restart, never within a climb** — improvement here is bursty, so a window inside a flat stretch reads as converged when a restart would have broken it. [owner], 2026-10-10. **Owner-settled:** the rule's shape, `k = 1`, and that it is carried as a labelled hypothesis. **Owner's words (verbatim):** quoted in full in the Q4 paragraphs below. **Agent rationale:** the reasons in this row and those paragraphs apart from that quote | counters and the derived floor |
 | **Q5** | **Budget spent** — the evaluation cap, at **run** level. **It is `[model]`, NOT the
 owner's** (see this row's provenance): Q5 is a **backstop against a bug looping forever**, not a
 measure of anything, and a run that stops on it is **reported as a failure**. Its only
@@ -487,11 +543,14 @@ before three line up — visible as a long run whose signatures were identical w
 stopped. Both are read from the signature sequence `run.json` already records, so no extra
 instrumentation is needed. The number moves on that evidence under K3's ratchet, as `k` does.
 
-**Q4 IS A HYPOTHESIS, LABELLED AS ONE, AND THE PIPELINE COLLECTS WHAT WOULD REFINE IT.** The
-owner's instruction, 2026-10-10: *"we won't figure it out completely by thinking really hard. We
-need a credible hypothesis for what might work that isn't obviously dumb that we continuously
-refine as we get more experience."* Q4 is that hypothesis and is written to be revised, not
-defended.
+**Q4 IS A HYPOTHESIS, LABELLED AS ONE, AND THE PIPELINE COLLECTS WHAT WOULD REFINE IT.**
+
+**Owner's words (verbatim), 2026-10-10:** *"we won't figure it out completely by thinking really
+hard. We need a credible hypothesis for what might work that isn't obviously dumb that we
+continuously refine as we get more experience."*
+
+**Agent rationale** — everything in the rest of §5's Q4 discussion is agent-written and carries no
+owner endorsement. Q4 is that hypothesis and is written to be revised, not defended.
 
 **Why this shape is credible rather than arbitrary.** What makes this problem unusual is that the
 remaining gain is bounded by something derived rather than guessed: `C_floor = max(0, N − R)` is
@@ -545,7 +604,7 @@ optimisation target are not the same object and must not share a verdict.
 | | Condition | What it bounds | From |
 | --- | --- | --- | --- |
 | **A1** | HC1–HC10 all hold. | the board conducts, has the connectivity the netlist says **and no more** (HC8), is buildable within the declared reach at **both** ends (HC5, HC9), carries no part whose pin pattern the owner refuses to mount (HC10), and fits the stock. Nothing is tradeable. | [model], with HC8/HC9 [review] and HC10 [owner] |
-| **A2** | `κ ≤ κ_bench` (K2). | the clustering lever — 68–75% of every unfinished board's cuts. Deliberately set past the best demonstrated hand result, so failing it is the expected early outcome and a failure must name the binding constraint, not merely the gap. | [owner] |
+| **A2** | `κ ≤ κ_bench` (K2). | the clustering lever — 68–75% of every unfinished board's cuts. Deliberately set past the best demonstrated hand result, so failing it is the expected early outcome and a failure must name the binding constraint, not merely the gap. | [owner] — **owner-settled:** the bound (K2). **Owner's words:** *none recorded.* **Agent rationale:** this row's *what it bounds* cell |
 | **A3** | `(F − F_floor) / max(1, F_0 − F_floor) < τ` (K4). | the **whole** objective against the derived floor, which is the parent's stated S1a gate: *"cuts and wire bridges within a stated factor of the derived floor"*. A2 alone would pass a board at `κ = 0` that had spent none of its spare strips — mid occupies 4 of its 35 available rows. | [parent] |
 | **A4** | On low-boost, whichever board is being run: the frozen fixture meets B1-frozen, the scaffolded board meets B1-current. **A run states which board it ran and therefore which clause it met.** | deliberately redundant with A3 on the scaffolded board, and kept anyway so a reader looking up what low-boost has to do finds both boards named in one place rather than finding `C ≤ 5` and applying it to the wrong one. The redundancy is the cheaper error. | [review] (D15) |
 
@@ -636,9 +695,17 @@ was this document's own.
 
 ## 8. The parameters, and where they live
 
-**PAR1 — `ρ_w = 0.25` and `ρ_s = 1`.** Settled by the owner: **one cut costs as much as four
-wires.** The instruction, 2026-10-10: *"favor wires over cuts. cuts are harder and more error
-prone."* Because a wire bridge's failure modes — wrong length, lifted, shorting a neighbour — are
+**PAR1 — `ρ_w = 0.25` and `ρ_s = 1`.**
+
+**Owner-settled:** both weights — **one cut costs as much as four wires.**
+**Owner's words (verbatim, 2026-10-10, and the whole of what he said here):** *"favor wires over
+cuts. cuts are harder and more error prone."*
+
+**Agent rationale** — the whole of the rest of PAR1 is agent-written and carries no owner
+endorsement; the requirement is the two weights above. No verbatim instruction is on record for
+`ρ_s = 1` specifically, and none is reconstructed.
+
+Because a wire bridge's failure modes — wrong length, lifted, shorting a neighbour — are
 **visible on the board and reversible with an iron**, while a missed cut is visible nowhere: it is
 found by a circuit that does not work, after the board is built, and the labour difference does
 not close that gap. PIPELINE previously proposed `ρ_w = 3` by naming the cut's permanence and
@@ -657,7 +724,17 @@ that serve the owner's goal are clustering and spending strips (PIPELINE §8.1.1
 them. *Provenance:* **[owner]**, 2026-10-10 (D21).
 
 **PAR2 — The per-family lead spans are datasheet-derived data, and `lib/kicad/lead-span.ts` is
-their authority.** HC5 consumes its `maxSpanHoles`, HC9 its `minSpanHoles`. **No span figure
+their authority.**
+
+**Owner-settled:** that the bounds come from a committed datasheet-derived module rather than from
+a measurement of the parts drawer.
+**Owner's words (verbatim):** *none recorded.* Owner-settled; no verbatim instruction is on record,
+and none is reconstructed here.
+
+**Agent rationale** (agent-written, no owner endorsement) for the rest of PAR2; the requirements it
+states — both bounds required, no default, refusal by name — are unchanged and still bind.
+
+HC5 consumes its `maxSpanHoles`, HC9 its `minSpanHoles`. **No span figure
 appears in this document or in PIPELINE**, because a number copied into prose is a number that
 goes stale with nothing failing; where a document and the module could disagree, the module wins.
 **Both bounds are required parameters with no default and the pipeline refuses without them** —
@@ -676,7 +753,19 @@ from a committed datasheet-derived module rather than from a measurement of the 
 refusal (D10).
 
 **PAR3 — The remaining parameters live in one strict rules file, and one of them has no default at
-all.** `τ` (K4), Q4's threshold, Q5's cap, Q6's run length, the seed list and the
+all.**
+
+**Owner-settled:** the parameter *values* are his (each at its own criterion); nothing else in
+PAR3 is.
+**Owner's words (verbatim):** *none recorded* for PAR3. Owner-settled values; no verbatim
+instruction is on record about the file's shape or its loader, and none is reconstructed here —
+the strict schema-versioned shape is **[external]**, as the provenance line below says.
+
+**Agent rationale** (agent-written, no owner endorsement) for the rest of PAR3; the requirements it
+states — one file, strict loader, a `note` per entry, no default for the worse-acceptance bound —
+are unchanged and still bind.
+
+`τ` (K4), Q4's threshold, Q5's cap, Q6's run length, the seed list and the
 bounded-worse-acceptance bound all live in one repository-level `stripboard/rules.json`,
 schema-versioned, with **unknown keys rejected** by a strict loader and **each entry carrying a
 `note` recording why the number is what it is**. The worse-acceptance bound has **no default**:
@@ -789,7 +878,12 @@ reject.
 
 **This document has been reviewed and its open parameters settled.** It was worked through
 question by question in conversation rather than by reading, and the outcomes are recorded at the
-criteria themselves, not only here:
+criteria themselves, not only here.
+
+**The *Outcome* column is an agent's summary, not the owner's words.** What he settled is the
+value; the phrasing of each outcome below was written by an agent, and the only verbatim text of
+his anywhere in §10 is the `pt2399-core` quote in item 1. Where a criterion records a verbatim
+instruction it is at the criterion, under *owner's words (verbatim)*.
 
 | Question | Outcome | Where |
 | --- | --- | --- |
@@ -810,8 +904,9 @@ he has already explained. Do not report this document as blocked on owner review
 **Still open, and none of it is a parameter he must choose.**
 
 1. **HC6's stock is declared — 34 × 27 — and one measured board exceeds it. RESOLVED.** The owner
-   measured the board he usually uses, and on `pt2399-core`'s 36 columns his answer was direct:
-   *"It doesn't fit on my stock boards. I improvised to make it work."* So the rule stands at
+   measured the board he usually uses, and on `pt2399-core`'s 36 columns his answer was direct.
+   **Owner's words (verbatim):** *"It doesn't fit on my stock boards. I improvised to make it
+   work."* **Agent rationale** for the rest of this item. So the rule stands at
    34 × 27 and `pt2399-core` is an improvisation rather than a counterexample — which strengthens
    the constraint rather than weakening it, because a layout the pipeline produces should be
    buildable on the stock he has rather than require improvising at the bench.

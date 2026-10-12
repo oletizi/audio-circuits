@@ -71,22 +71,12 @@ function gestureFor(move: Move, board: string, out: string): readonly string[] {
     case "stretch":
       return ["--stretch", board, "--ref", move.ref, "--direction", move.direction, "-o", out]
     case "add-wire":
-      // STILL IMPLEMENTED, THOUGH `DEFERRED_KINDS` KEEPS IT OUT OF THE CLIMB'S
-      // SWEEP: the gesture itself is correct and placeable at a FREE hole, and
-      // what the measurement in DEFERRED_KINDS rules out is this ENUMERATION's
-      // anchor (a pin hole) and the default wire's reach (1x3 along the row).
-      // Deleting the arm would make the kind unreachable even for a caller
-      // holding a placeable one.
-      //
-      // `--author --op add-wire --at R,C` places a wire with its FIRST end at
-      // (R,C) and takes no option for the second: the wire is created at the
-      // WIRE type's own footprint and its far end follows from that footprint,
-      // not from the request. So `ends[1]` is the pair of holes this move is
-      // FOR and is not a command - the landed wire's real ends are read back
-      // off the next `--dump-board`, which is where `F`'s `W` comes from. The
-      // first end IS commandable, so a move whose `at` and `ends[0]` disagree
-      // is refused below rather than applied as a gesture it does not describe.
-      return ["--author", board, "--op", "add-wire", "--at", `${move.at[0]},${move.at[1]}`, "-o", out]
+      throw new Error(
+        "applyMove: an add-wire is THREE gestures and has no single argument list - create the " +
+          "wire at a free hole, turn it across the strips, stretch it to the span. It is " +
+          "applied by wireGestures below, in the order the move's own plan records. Reaching " +
+          "here means applyMove's add-wire branch was removed.",
+      )
     case "delete-wire":
       return refuseDeferred(move.kind)
     case "cluster":
@@ -164,6 +154,64 @@ function translationGestures(
   return gestures
 }
 
+/**
+ * The three gestures an `add-wire` is, in the order its plan records: create the
+ * wire at a free hole, turn it, stretch it.
+ *
+ * **ONLY THE LAST WRITES `out`**, as the compound translations do, so a refused
+ * add-wire leaves the candidate absent. The staged files are named for the kind,
+ * so a run directory still says which candidates were compound and which kind
+ * each was.
+ *
+ * `--rotate` and `--stretch` NAME THE WIRE, and the name is the plan's
+ * prediction (`Wire<n+1>`); `./moves-wire.ts` carries the measurement behind it
+ * and the reason a wrong prediction is loud rather than silent.
+ */
+function wireGestures(
+  board: string,
+  move: Extract<Move, { kind: "add-wire" }>,
+  out: string,
+): readonly (readonly string[])[] {
+  const plan = move.plan
+  const turn = Array.from({ length: plan.turns }, () => ["--rotate", "--direction", "cw"])
+  const by = plan.stretch > 0 ? "grow" : "shrink"
+  const pull = Array.from({ length: Math.abs(plan.stretch) }, () => [
+    "--stretch",
+    "--direction",
+    by,
+  ])
+  const shaping = plan.order === "turn-then-stretch" ? [...turn, ...pull] : [...pull, ...turn]
+  const total = shaping.length + 1
+  const target = (index: number): string =>
+    index === total - 1 ? out : `${out}.${move.kind}-${index}.vrt`
+  const gestures: (readonly string[])[] = []
+  let current = board
+  const created = target(0)
+  gestures.push([
+    "--author",
+    current,
+    "--op",
+    "add-wire",
+    "--at",
+    `${plan.at[0]},${plan.at[1]}`,
+    "-o",
+    created,
+  ])
+  current = created
+  shaping.forEach((gesture, index) => {
+    const verb = gesture[0]
+    const option = gesture[1]
+    const value = gesture[2]
+    if (verb === undefined || option === undefined || value === undefined) {
+      throw new Error("applyMove: a wire shaping gesture is missing its verb or its option")
+    }
+    const next = target(index + 1)
+    gestures.push([verb, current, "--ref", plan.name, option, value, "-o", next])
+    current = next
+  })
+  return gestures
+}
+
 /** The ops-file lines for a batchable gesture, in `--move-batch`'s own grammar. */
 function opsLinesFor(move: Move): readonly string[] {
   if (move.kind === "move") return [`move ${move.ref} --to ${move.to[0]},${move.to[1]}`]
@@ -206,16 +254,16 @@ export function applyMove(
   spawn: SpawnVeroroute,
   transport: GestureTransport = "one-gesture-per-launch",
 ): void {
-  if (move.kind === "add-wire" && (move.at[0] !== move.ends[0][0] || move.at[1] !== move.ends[0][1])) {
-    throw new Error(
-      `applyMove: this add-wire move asks for a wire at ${move.at[0]},${move.at[1]} whose first ` +
-        `end is ${move.ends[0][0]},${move.ends[0][1]}. --author --op add-wire places the wire's ` +
-        "FIRST end at --at and accepts no other end option, so the two cannot both be honoured " +
-        "and the gesture would not be the one this move describes. It is not reconciled by " +
-        "preferring either field: which one the caller meant is not in the data. Build the move " +
-        "through enumerateMoves, which sets both from the same hole.",
-    )
-  }
+  // THE GUARD THAT WAS HERE IS GONE, AND ITS REASON WENT WITH IT. It refused an
+  // add-wire whose `at` and whose first `end` disagreed, which was right while
+  // the kind was ONE gesture: `--op add-wire` places the wire's first end at
+  // `--at`, so the two fields had to name one hole. A compound add-wire creates
+  // the wire at an anchor and then TURNS and STRETCHES it, so `at` and `ends`
+  // describe different things by construction and are expected to differ. The
+  // consistency that matters now - that the plan's gestures really do land the
+  // wire on those ends - is the enumerator's, which derives both from one
+  // arithmetic (`./moves-wire.ts`'s `wireBridge`), and this module has no
+  // geometry to re-check it with.
   if (
     (move.kind === "cluster" || move.kind === "gather") &&
     translationsOf(move).length === 0
@@ -235,7 +283,9 @@ export function applyMove(
     ? [batchLaunch(move, board, out)]
     : move.kind === "cluster" || move.kind === "gather"
       ? translationGestures(board, move, out)
-      : [gestureFor(move, board, out)]
+      : move.kind === "add-wire"
+        ? wireGestures(board, move, out)
+        : [gestureFor(move, board, out)]
   for (const args of launches) {
     const result = spawn(args)
     if (result.status !== 0) {

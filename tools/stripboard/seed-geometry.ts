@@ -213,6 +213,39 @@ export function occupancyOf(dump: BoardDump): Occupancy {
       rects.set(ref, { row: pin.row, col: pin.col, rows: 1, cols: 1, across: false })
     }
   }
+  // **EVERY WIRE IS IN HERE TOO, AND THE FORK IS WHY.** A wire occupies holes
+  // exactly as a part does: `--move C19 --to 10,10` onto a wire's own span is
+  // refused with the shared FLOATING refusal, whose own words are
+  // *"Board::CanPutDown refuses a collision with occupied holes rather than
+  // allowing an overlap"* - measured against the pinned binary on the
+  // import-placed low-boost board with a wire at 10,10. So an occupancy without
+  // wires proposes part gestures the fork refuses, and - the reason this gap
+  // mattered - leaves `add-wire` with no model at all, because there is nothing
+  // to check a wire's own landing against.
+  //
+  // THE RECT COMES FROM `ENDS` AND NOT FROM A FOOTPRINT TABLE: a wire's two end
+  // holes bound it, so `rows` and `cols` are the span between them and `across`
+  // says which axis its length runs along - which is what `stretchedRect` needs
+  // and what `turnedRect` transposes. No `VEROROUTE_FOOTPRINT_ROWS` entry is
+  // needed or wanted for a wire; the dump states the geometry outright.
+  for (const wire of dump.wires) {
+    if (rects.has(wire.name)) {
+      refuseRef(
+        wire.name,
+        "is both a WIRE and a PART on this board, so one occupancy entry would have to describe " +
+          "two things. It is not resolved by preferring either: which one a gesture naming that " +
+          "ref would move is not in the data, and the fork's own --ref takes one name.",
+      )
+    }
+    const [from, to] = wire.ends
+    rects.set(wire.name, {
+      row: Math.min(from.row, to.row),
+      col: Math.min(from.col, to.col),
+      rows: Math.abs(from.row - to.row) + 1,
+      cols: Math.abs(from.col - to.col) + 1,
+      across: from.row !== to.row,
+    })
+  }
   return rects
 }
 
@@ -260,6 +293,16 @@ export const VEROROUTE_STRETCH_BOUNDS: ReadonlyMap<string, StretchBound> = new M
   ["RESISTOR", { stretchable: true, minLength: 2, maxLength: 16 }],
   ["CAP_FILM", { stretchable: true, minLength: 2, maxLength: 16 }],
   ["CAP_FILM_WIDE", { stretchable: true, minLength: 2, maxLength: 16 }],
+  // MEASURED ON THE PINNED BINARY, because a wire has no PART line and so no
+  // type string in any dump - `WIRE` is the name this table gives it and
+  // `./moves-wire.ts` is the only caller that asks. A wire created by
+  // `--author --op add-wire` is three holes long; it shrinks once to two and
+  // then refuses (`--stretch: Wire1 cannot shrink`), and it grows thirteen
+  // times to sixteen and then refuses. Same 2-to-16 range the stretchable
+  // families carry, arrived at by stepping the real verb rather than by reading
+  // it off `CompTypes::GetMinLength`/`GetMaxLength` for a type nobody has
+  // matched to a `COMP`.
+  ["WIRE", { stretchable: true, minLength: 2, maxLength: 16 }],
   [
     "SIP5",
     {

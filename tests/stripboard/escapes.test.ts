@@ -29,6 +29,7 @@ import {
   clusterAfter,
   clusterMove,
   clusterRefs,
+  clusterSequence,
   describeMove,
   enumerateMoves,
   occupancyAfter,
@@ -174,13 +175,17 @@ test("E1 moves the part furthest along the delta first, which is what makes it l
   expect(clusterAfter(STACKED_OCC, STACKED.grid, ["R1", "R2"], [1, 0])).toBeUndefined()
   expect(clusterAfter(STACKED_OCC, STACKED.grid, ["R2", "R1"], [1, 0])).not.toBeUndefined()
   // The other direction reverses it: travelling up, the part at the TOP goes
-  // first. `DUMP` is ./climb-fixtures.ts's board, where R1 is at row 2 and R2 at
-  // row 7 and either order fits, so the refs here are reporting the rule rather
-  // than the only sequence that works.
-  const up = clusterOrFail(OCC, DUMP, REFERENCE, "left", [-1, 0])
-  const down = clusterOrFail(OCC, DUMP, REFERENCE, "left", [1, 0])
-  expect(up.kind === "cluster" ? up.refs : []).toEqual(["R1", "R2"])
-  expect(down.kind === "cluster" ? down.refs : []).toEqual(["R2", "R1"])
+  // first. **IT IS ASSERTED THROUGH `clusterSequence` RATHER THAN THROUGH A
+  // PROPOSED MOVE**, because every fixture on this suite has a part against row
+  // 0 or column 0 - so a negative delta is off the board and no such cluster is
+  // admissible to read the order off. The rule is the ordering function's, and
+  // this is it directly: `SPREAD`'s three `mid` parts sit at rows 0, 2 and 4.
+  expect(clusterSequence(SPREAD_OCC, ["R1", "R2", "R3"], [1, 0])).toEqual(["R3", "R2", "R1"])
+  expect(clusterSequence(SPREAD_OCC, ["R1", "R2", "R3"], [-1, 0])).toEqual(["R1", "R2", "R3"])
+  // And along the other axis, where the same three parts sit at columns 0, 2
+  // and 4.
+  expect(clusterSequence(SPREAD_OCC, ["R1", "R2", "R3"], [0, 1])).toEqual(["R3", "R2", "R1"])
+  expect(clusterSequence(SPREAD_OCC, ["R1", "R2", "R3"], [0, -1])).toEqual(["R1", "R2", "R3"])
 })
 
 test("E1 is the move that makes the dominant lever reachable in one step", () => {

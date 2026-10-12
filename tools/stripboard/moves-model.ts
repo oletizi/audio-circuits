@@ -32,6 +32,8 @@
  * - and `cluster` stays, because it fires and does something real (§6.4: four
  * new-best-`F` steps), just not this.
  */
+import type { WirePlan } from "./moves-wire.ts"
+
 /**
  * One difference between a candidate layout and the current one.
  *
@@ -43,9 +45,28 @@ export type Move =
   | { readonly kind: "rotate"; readonly ref: string; readonly direction: "cw" | "ccw" }
   | { readonly kind: "stretch"; readonly ref: string; readonly direction: "grow" | "shrink" }
   | {
+      /**
+       * A wire created at a free hole and then turned and stretched to bridge
+       * two strips of one net - **a compound gesture, like the cluster and the
+       * gather, and the kind the order question in `GESTURE_ORDERS` is really
+       * for.** `./moves-wire.ts` carries the four measurements behind it and why
+       * it was deferred until the occupancy knew about wires.
+       */
       readonly kind: "add-wire"
-      readonly at: readonly [number, number]
+      /** The net whose two segments this wire is for. */
+      readonly net: string
+      /**
+       * The two holes the wire is PREDICTED to finish on, which is what makes it
+       * a bridge: one on each of the net's two strips.
+       *
+       * It is a prediction and not a command - `--op add-wire` takes one hole
+       * and the wire's own footprint decides the rest - so the next
+       * `--dump-board` is what says where the ends really are, and `F`'s `W`
+       * comes from that rather than from this field.
+       */
       readonly ends: readonly [readonly [number, number], readonly [number, number]]
+      /** Where the wire is created and the gestures that shape it, in order. */
+      readonly plan: WirePlan
     }
   | { readonly kind: "delete-wire"; readonly name: string }
   | {
@@ -132,35 +153,19 @@ export const MOVE_KINDS: readonly Move["kind"][] = [
  */
 export const DEFERRED_KINDS: ReadonlyMap<Move["kind"], string> = new Map([
   [
-    "add-wire",
-    "a one-gesture add-wire cannot join two strips, measured on the import-placed low-boost " +
-      "board with the pinned binary. TWO facts, both from the fork: (1) the wire anchors only at " +
-      "a FREE hole - `--author --op add-wire --at 1,0` is refused with \"the wire could not be " +
-      'placed at that position (it is floating)" because a part\'s footprint occupies that hole, ' +
-      "and this enumeration anchors at a PIN hole, which is the only kind of hole it can " +
-      "identify as belonging to a net; and (2) a freshly created wire is 1x3 ALONG THE ROW - " +
-      "`--at 10,10` on a free hole yields `WIRE Wire1 AT 10,10 ENDS 10,10 10,12` - so under " +
-      "horizontal strips it joins one strip to itself and connects nothing. Making it useful " +
-      "needs the wire turned across the strips and stretched to reach, which is three gestures " +
-      "in one candidate; or a fork change letting --op add-wire name both ends. **THE COMPOUND " +
-      "GESTURE IS NO LONGER WHAT BLOCKS IT, AND THAT IS WORTH SAYING NOW THAT THE CLUSTER MOVE " +
-      "EXISTS**: a cluster is several gestures in one candidate and it works, so a reader could " +
-      "reasonably ask why this one does not follow. The answer is the occupancy. " +
-      "./moves-cluster.ts sequences PART translations and checks each one against the carried " +
-      "occupancy, and a WIRE's holes are not in the occupancy at all - occupancyOf builds rects " +
-      "from PART and PIN lines only - so there is no model that could say whether a turned, " +
-      "stretched wire lands clear of anything. Giving it one is a change to seed-geometry.ts " +
-      "with the fork's own wire arithmetic transcribed into it, not a reuse of the cluster's " +
-      "sequencing. It is still ENUMERATED, so the move set in the record stays the spec's",
-  ],
-  [
     "delete-wire",
-    "no verb in the pinned fork deletes a placed component. The shipped verbs are --adopt, " +
-      "--check, --dump-board, --dump-netlist, --import, --move, --move-batch, --rotate, " +
-      "--update, --set-strips and --stretch, and the test-only --author takes group, select, " +
-      "move-label, add-wire, merge and autofill - none of the seventeen removes a wire. Fixing " +
-      "it is a change to the fork (a --author --op delete op over Board's component removal, " +
-      "with the same effect check --op add-wire makes), not a change to this module",
+    "no verb in the pinned fork deletes a placed component, and that is now MEASURED rather " +
+      "than read off a help text. Read out of the source: Headless.cpp's command table is " +
+      "--adopt, --author, --check, --dump-board, --dump-netlist, --import, --move, " +
+      "--move-batch, --rotate, --set-strips, --stretch and --update, plus the three " +
+      "--verify-* test verbs; Headless_author.cpp's ops are add-wire, autofill, group, merge, " +
+      "move-label and select. None of them removes a component. And --update, the ONE verb " +
+      "that rewrites a board's component set from a netlist, leaves wires alone: measured on " +
+      "the import-placed low-boost board with two wires added, --update against its own " +
+      "netlist exits 0 and the board still carries TWO wires afterwards. So the kind is " +
+      "blocked on the fork and not on this repository - fixing it is a --author --op delete " +
+      "over Board's component removal, with the same effect check --op add-wire makes. It is " +
+      "still ENUMERATED, so the move set in the record stays the spec's",
   ],
 ])
 
@@ -174,9 +179,15 @@ export function describeMove(move: Move): string {
     case "stretch":
       return `stretch ${move.ref} ${move.direction}`
     case "add-wire":
+      // THE WHOLE PLAN, because the gestures and their order are decisions: two
+      // add-wires bridging one pair of strips from the same anchor can differ in
+      // whether the turn or the stretch goes first, and a record that said only
+      // "add-wire at R,C" could not tell them apart.
       return (
-        `add-wire at ${move.at[0]},${move.at[1]} joining ${move.ends[0][0]},${move.ends[0][1]} ` +
-        `to ${move.ends[1][0]},${move.ends[1][1]}`
+        `add-wire ${move.net} joining ${move.ends[0][0]},${move.ends[0][1]} to ` +
+        `${move.ends[1][0]},${move.ends[1][1]} (at ${move.plan.at[0]},${move.plan.at[1]} as ` +
+        `${move.plan.name}, ${move.plan.turns} turn(s), stretch ${move.plan.stretch}, ` +
+        `${move.plan.order})`
       )
     case "delete-wire":
       return `delete-wire ${move.name}`
