@@ -6,15 +6,15 @@
  * that drives `Q1` or `Q2` drives it twice - once where admissibility holds and
  * once where it does not - and the second half is the half that matters.
  *
- * WHERE `Q2` STANDS, stated here because a test file that quietly skipped it
- * would be the exact failure this suite is written against: `A2` is
- * `kappa <= kappa_bench` and **nothing in this repository computes it yet**
- * (Task 20's `tools/stripboard/verdict.ts`). While `tau` is `null` - the
- * owner's decision, `K4` - `Q2` does not fire at all, which is CRITERIA's own
- * stated behaviour; with a `tau` set it REFUSES rather than firing on `A1`
- * alone, and the refusal is tested below. CRITERIA's worked case is precisely a
- * candidate where the tolerance holds, `A1` holds and `A2` does not, so `A1`
- * alone is not the guard and this suite does not pretend otherwise.
+ * BOTH REQUIRE ALL FOUR ADMISSIBILITY CONDITIONS, through
+ * `tools/stripboard/verdict.ts`'s `admissible` - which `tests/stripboard/
+ * verdict.test.ts` drives directly. The case that makes the difference visible
+ * from here is CRITERIA's worked one: the tolerance holds, `A1` holds and `A2`
+ * fails, and `Q2` must not fire. A `Q2` guarded by `A1` alone fires on it.
+ *
+ * `tau` IS `null` IN THE COMMITTED RULES by the owner's decision (`K4`), so
+ * `Q2` does not fire at all there - CRITERIA's own stated behaviour. The
+ * `tau`-bearing fixture below is what reaches it.
  */
 import { expect, test } from "bun:test"
 import fs from "node:fs"
@@ -31,6 +31,7 @@ import {
 import { clustering } from "../../tools/stripboard/targets.ts"
 import { BARE_LITERAL, bareLiteral } from "./bare-literal.ts"
 import {
+  LOW_BOOST,
   TARGETS,
   admissibleCandidate,
   atFloorEvaluation,
@@ -108,8 +109,19 @@ test("Q2's worked case: the tolerance holds, A2 fails, and Q2 does NOT fire", ()
   // tau = 0.05. The two are differently normalised, which is the whole point.
   const board = { ...targets, netCount: 10, pinCount: 20, cutFloor: 0 }
   const state = { ...freshState(), climbHistory: [40, 1], climbEvaluations: [100, 100] }
-  const worked = evaluation({ cuts: 1, wires: 0, solder: 0, joins: 1, occupied: 10 })
+  // `clustering` is stated as the figure, 1/(20 - 10), rather than computed
+  // here: the assertion below proves the repository's own kappa agrees with it,
+  // and A2 reads the Score's field.
+  const worked = evaluation({
+    cuts: 1,
+    wires: 0,
+    solder: 0,
+    joins: 1,
+    occupied: 10,
+    clustering: 0.1,
+  })
   expect(clustering(1, 20, 10)).toBeCloseTo(0.1, 10)
+  expect(worked.score.clustering).toBeCloseTo(clustering(1, 20, 10), 10)
   // A2 fails on it: kappa is above the committed bound.
   expect(clustering(1, 20, 10)).toBeGreaterThan(rules.kappaBench)
   // A1 holds on it, so A1 alone would have let Q2 stop the run here.
@@ -117,11 +129,22 @@ test("Q2's worked case: the tolerance holds, A2 fails, and Q2 does NOT fire", ()
   // Under the committed rules Q2 cannot fire at all: tau is unset (K4).
   expect(evaluateStop(state, worked, board, rules)).not.toBe("Q2")
   expect(evaluateStop(state, worked, board, rules)).toBeNull()
-  // With a tau set it refuses rather than firing, naming A2 and where it lives.
-  expect(() => evaluateStop(state, worked, board, toleranceRules)).toThrow(
-    /stop-tolerance-needs-a2/,
-  )
-  expect(() => evaluateStop(state, worked, board, toleranceRules)).toThrow(/verdict\.ts/)
+  // AND WITH A TAU SET IT STILL DOES NOT FIRE, which is the whole point: A3
+  // holds on this candidate and A2 does not, so admissibility fails and the
+  // search continues to the rules that report a weaker bound.
+  expect(evaluateStop(state, worked, board, toleranceRules)).not.toBe("Q2")
+  expect(evaluateStop(state, worked, board, toleranceRules)).toBeNull()
+  // The same candidate with its clustering inside the bound DOES stop: the only
+  // thing that changed is A2.
+  const clustered = evaluation({
+    cuts: 1,
+    wires: 0,
+    solder: 0,
+    joins: 1,
+    occupied: 10,
+    clustering: 0.01,
+  })
+  expect(evaluateStop(state, clustered, board, toleranceRules)).toBe("Q2")
 })
 
 test("Q2 does not fire while tau is unset, which is CRITERIA K4 and not a missing branch", () => {
@@ -130,20 +153,33 @@ test("Q2 does not fire while tau is unset, which is CRITERIA K4 and not a missin
   expect(evaluateStop(withinToleranceState(), admissibleCandidate(), targets, rules)).toBeNull()
 })
 
-test("Q2 refuses rather than firing on an A1-only guard, and only where it would fire", () => {
-  // Within tolerance and A1 holds: this is the case that would stop the run.
-  expect(() =>
-    evaluateStop(withinToleranceState(), admissibleCandidate(), targets, toleranceRules),
-  ).toThrow(/stop-tolerance-needs-a2/)
-  // Within tolerance and A1 does NOT hold: no A2 is needed to know Q2 cannot
-  // fire, so there is nothing to refuse and the search continues.
+test("Q2 fires when the tolerance holds AND the candidate is admissible", () => {
+  expect(evaluateStop(withinToleranceState(), admissibleCandidate(), targets, toleranceRules))
+    .toBe("Q2")
+  // A1 failing: Q2 does not fire whatever the arithmetic says.
   const inadmissible = evaluation({ cuts: 1, joins: 0, occupied: 9 }, failedResults())
-  expect(
-    evaluateStop(withinToleranceState(), inadmissible, targets, toleranceRules),
-  ).toBeNull()
-  // Outside the tolerance: likewise nothing to refuse.
+  expect(evaluateStop(withinToleranceState(), inadmissible, targets, toleranceRules)).toBeNull()
+  // Outside the tolerance, so A3 fails: likewise.
   const far = evaluation({ cuts: 30, joins: 0, occupied: 9 })
   expect(evaluateStop(withinToleranceState(), far, targets, toleranceRules)).toBeNull()
+})
+
+test("Q1 and Q2 refuse on low-boost when the run has not said which board it ran", () => {
+  // A4 reads differently on the frozen fixture and the scaffolded board, so
+  // neither clause is picked - see verdict.ts's verdict-board-unstated.
+  const unstated = { ...freshState(), frozen: undefined }
+  expect(() => evaluateStop(unstated, atFloorEvaluation(), LOW_BOOST, rules)).toThrow(
+    /verdict-board-unstated/,
+  )
+  expect(() =>
+    evaluateStop({ ...withinToleranceState(), frozen: undefined }, admissibleCandidate(),
+      LOW_BOOST, toleranceRules),
+  ).toThrow(/verdict-board-unstated/)
+  // Stated, and at the floor with no cuts and no wires, the frozen clause is
+  // met (B1-frozen allows up to five cuts) and Q1 fires.
+  expect(
+    evaluateStop({ ...freshState(), frozen: true }, atFloorEvaluation(), LOW_BOOST, rules),
+  ).toBe("Q1")
 })
 
 test("Q3 fires only when the round accepted nothing AND the seed list is spent", () => {
@@ -291,10 +327,11 @@ test("a malformed counter set is refused rather than skipped", () => {
   expect(() => evaluateStop(noRate, candidate(), targets, rules)).toThrow(
     /stop-counters-malformed/,
   )
-  // And Q2's denominator: with a tau set and no climb recorded there is no F_0.
+  // And A3's denominator, which is verdict.ts's refusal rather than this
+  // module's: with a tau set and no climb recorded there is no F_0.
   expect(() =>
     evaluateStop(freshState(), admissibleCandidate(), targets, toleranceRules),
-  ).toThrow(/stop-counters-malformed/)
+  ).toThrow(/verdict-no-initial-objective/)
 })
 
 test("a Q6 run length below two is refused rather than clamped", () => {
@@ -315,9 +352,8 @@ test("the stopping order and the rule table are checked against each other", () 
 })
 
 test("the first rule in Q1..Q6 order wins when several hold", () => {
-  // THE BRIEF'S PAIR WAS Q2 AND Q5 AND IS NOT USED: Q2 cannot fire until A2
-  // exists, so the precedence is shown with the pairs that can - a successful
-  // termination over the backstop, and search-exhausted over the backstop.
+  const both = { ...withinToleranceState(), runEvaluations: toleranceRules.evaluationCap }
+  expect(evaluateStop(both, admissibleCandidate(), targets, toleranceRules)).toBe("Q2")
   const atFloorAndSpent = { ...freshState(), runEvaluations: rules.evaluationCap }
   expect(evaluateStop(atFloorAndSpent, atFloorEvaluation(), targets, rules)).toBe("Q1")
   const stalledAndSpent = {
@@ -419,16 +455,24 @@ test("every rule this module applies moves when its rules-file value moves", asy
   const pair = { ...freshState(), signatures: ["s", "s"] }
   expect(evaluateStop(pair, candidate(), targets, rules)).toBeNull()
   expect(evaluateStop(pair, candidate(), targets, { ...rules, signatureRun: 2 })).toBe("Q6")
-  // And tau: the one threshold whose movement is a refusal rather than a stop,
-  // because Q2 needs A2. Set, it refuses; a tenth of that, the gap is outside
-  // it and there is nothing to refuse.
-  expect(() =>
-    evaluateStop(withinToleranceState(), admissibleCandidate(), targets, toleranceRules),
-  ).toThrow(/stop-tolerance-needs-a2/)
+  // And tau, through A3: set, the gap of 1/40 is inside it and Q2 fires; at a
+  // tenth of it the same gap is outside and Q2 does not.
+  expect(evaluateStop(withinToleranceState(), admissibleCandidate(), targets, toleranceRules))
+    .toBe("Q2")
   expect(
     evaluateStop(withinToleranceState(), admissibleCandidate(), targets, {
       ...toleranceRules,
       tau: toleranceRules.tau === null ? null : toleranceRules.tau / 10,
+    }),
+  ).toBeNull()
+  // And kappa_bench, through A2: the same admissible candidate stops under the
+  // committed bound and does not under a bound below its clustering.
+  const clustered = evaluation({ cuts: 1, joins: 1, occupied: 9, clustering: 0.02 })
+  expect(evaluateStop(withinToleranceState(), clustered, targets, toleranceRules)).toBe("Q2")
+  expect(
+    evaluateStop(withinToleranceState(), clustered, targets, {
+      ...toleranceRules,
+      kappaBench: 0.01,
     }),
   ).toBeNull()
 })

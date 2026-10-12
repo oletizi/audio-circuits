@@ -122,10 +122,25 @@ export interface ArmRun {
 export type ArmRunner = (start: SeedStart, seed: number, spawn: SpawnVeroroute) => ArmRun
 
 /**
- * Whether a run met the mark - **on all of its clauses, never on `F` alone**.
- * `markObjective` is the crossing figure and takes no part in this.
+ * The three figures a mark is read against. **`ArmRun` satisfies it
+ * structurally**, so widening `meetsMark` to this shape changed no call site.
+ *
+ * It exists because `A4`'s frozen clause in `./verdict.ts` reads the SAME mark
+ * off a `Score` and a constraint result rather than off an `ArmRun`, and a
+ * second comparison there would be a second implementation of `B1-frozen` -
+ * two places for *met the mark* to mean two things.
  */
-export function meetsMark(run: ArmRun, mark: QualityMark): boolean {
+export interface MarkCandidate {
+  readonly cuts: number
+  readonly wires: number
+  readonly netsComplete: boolean
+}
+
+/**
+ * Whether a candidate met the mark - **on all of its clauses, never on `F`
+ * alone**. `markObjective` is the crossing figure and takes no part in this.
+ */
+export function meetsMark(run: MarkCandidate, mark: QualityMark): boolean {
   return run.cuts <= mark.cuts && run.wires <= mark.wires && run.netsComplete === mark.netsComplete
 }
 

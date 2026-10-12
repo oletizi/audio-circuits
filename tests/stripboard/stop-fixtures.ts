@@ -31,9 +31,11 @@ import {
   type ConstraintResult,
 } from "../../tools/stripboard/constraints-model.ts"
 import type { Evaluation } from "../../tools/stripboard/climb.ts"
+import { loadRules } from "../../tools/stripboard/rules.ts"
 import type { Score } from "../../tools/stripboard/score.ts"
 import type { StopState } from "../../tools/stripboard/stop.ts"
 import type { BoardTargets } from "../../tools/stripboard/targets.ts"
+import type { AdmissibilityInput } from "../../tools/stripboard/verdict.ts"
 
 const NETS = ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9"]
 
@@ -127,6 +129,42 @@ export function freshState(): StopState {
     seedsRemaining: 3,
     signatures: [],
     acceptedThisRound: 1,
+    // `TARGETS.board` is not low-boost, so `A4` is vacuous and this is not
+    // read. The low-boost tests state it; see `LOW_BOOST`.
+    frozen: undefined,
+  }
+}
+
+/**
+ * The board `A4`'s clause is about, as `tools/stripboard/verdict.ts` names it.
+ *
+ * Nine nets and twenty-seven pins are the FROZEN fixture's own figures
+ * (CRITERIA section 3), and the floor is `max(0, 9 - 34) = 0` on the owner's
+ * stock, as `TARGETS`.
+ */
+export const LOW_BOOST: BoardTargets = { ...TARGETS, board: "pultec-low-boost" }
+
+/**
+ * An `AdmissibilityInput` on which all four conditions hold, for the caller to
+ * spoil one field at a time.
+ *
+ * SHARED BY `./stop.test.ts` AND `./verdict.test.ts` because the two modules
+ * were written together - the plan's own resolution of `Q1`/`Q2` needing
+ * `admissible` and `bound` needing the fired rule - so one fixture serves the
+ * pair rather than two that could drift.
+ */
+export function admissibilityInput(
+  overrides: Partial<AdmissibilityInput> = {},
+): AdmissibilityInput {
+  return {
+    results: heldResults(),
+    score: admissibleCandidate().score,
+    targets: TARGETS,
+    rules: loadRules(),
+    initialObjective: 40,
+    frozen: undefined,
+    binding: undefined,
+    ...overrides,
   }
 }
 

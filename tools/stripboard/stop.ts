@@ -27,36 +27,32 @@
  * stops, `A2` fails, and the evaluation budget is left unspent on a board the
  * pipeline was still allowed to improve.
  *
- * WHAT THIS MODULE THEREFORE DOES, AND THE ONE THING IT CANNOT YET DO:
+ * WHAT THIS MODULE THEREFORE DOES:
  *
- * - **It never re-derives admissibility.** `a1` is imported from `./grade.ts`,
- *   the one implementation of *all ten hard constraints hold*. A local copy
- *   would be a second copy of a verdict, which CRITERIA's generate/grade split
- *   (`R2`) forbids.
- * - **It calls `a1` rather than reading `Evaluation.admissibleA1`.** The cached
- *   flag carries no proof, while `a1` refuses a result set that is not exactly
- *   the ten ids - the refusal that keeps `A1` from being *"nine `&&`s and a
- *   typo"*. `evaluate()` sets the flag from this same call, so the two agree in
- *   any real run.
- * - **`Q1` is complete**, because being at the floor DERIVES the optimisation
- *   targets rather than needing them checked: `C = C_floor` requires `J = 0`,
- *   so `kappa = 0`, which is inside any `kappa_bench` (`A2`) - and `./rules.ts`
- *   refuses a `kappaBench` of zero for exactly that reason; and the floor gap is
- *   then zero, which is inside any `tau` (`A3`). **`A4` IS NOT CHECKED HERE AND
- *   IS NOT IMPLIED**: it names which low-boost board was run, which is Task
- *   20's business and is vacuous on every other board. On low-boost a `Q1` stop
- *   is therefore one condition short of CRITERIA's *"`A1`-`A4` hold on that
- *   candidate"*, and that is stated rather than papered over.
- * - **`Q2` CANNOT BE COMPLETED UNTIL `A2` EXISTS.** The worked case above is
- *   precisely a candidate where the tolerance holds, `A1` holds and `A2` does
- *   not, so `A1` alone is not the guard `Q2` needs. `A2` is
- *   `kappa <= kappa_bench` and nothing in this repository computes it yet -
- *   Task 20's `verdict.ts` owns it. While `tau` is `null` - the owner's
- *   decision (`K4`), and *"`Q2` and `A3` do not fire"* while it is - `Q2` does
- *   not fire at all, which is CRITERIA's stated behaviour and not a missing
- *   branch. If a `tau` is ever set before Task 20 lands, `Q2` REFUSES rather
- *   than firing on a weaker guard than CRITERIA states. See
- *   `stop-tolerance-needs-a2`.
+ * - **It never derives an admissibility condition.** `admissible` is imported
+ *   from `./verdict.ts`, which is the one implementation of `A1`-`A4` - and
+ *   `A1` within it is `./grade.ts`'s `a1`. A local predicate here would be a
+ *   second copy of a verdict, which CRITERIA's generate/grade split (`R2`)
+ *   forbids. **`./verdict.ts` is Task 20's file written in Task 19**, which is
+ *   the plan's own instruction for this mutual reference; its module comment
+ *   carries the note.
+ * - **It reads the candidate's ten results rather than `Evaluation.admissibleA1`.**
+ *   The cached flag carries no proof, while `a1` inside `admissible` refuses a
+ *   result set that is not exactly the ten ids - the refusal that keeps `A1`
+ *   from being *"nine `&&`s and a typo"*. `evaluate()` sets the flag from the
+ *   same call, so the two agree in any real run.
+ * - **`Q1` and `Q2` both require all four conditions**, through
+ *   `fullyAdmissible`. `Q2` requires no tolerance arithmetic of its own: `A3`
+ *   IS `K4`'s tolerance, so *"within tolerance of the floor, and admissible"*
+ *   is `admissible` with `tau` set, computed in one place.
+ * - **While `tau` is `null`** - the owner's decision (`K4`), and *"`Q2` and
+ *   `A3` do not fire"* while it is - `Q2` does not fire at all, which is
+ *   CRITERIA's stated behaviour and not a missing branch. `A3` does not block
+ *   admissibility while it is unset, so `Q1` still fires.
+ * - **`A4` NEEDS TO BE TOLD WHICH BOARD RAN**, so `StopState` carries `frozen`
+ *   and `admissible` refuses on low-boost when it is unstated. That field is an
+ *   addition to the counters the plan declares, and the reason is `A4`: a run
+ *   that cannot say which low-boost board it graded cannot satisfy it.
  *
  * NO THRESHOLD IS WRITTEN IN THIS FILE. `tau`, `k`, the evaluation cap and the
  * signature run length all come from `stripboard/rules.json` through
@@ -77,7 +73,6 @@
  * Task 20 is where it is printed.
  */
 import type { Evaluation } from "./climb.ts"
-import { a1 } from "./grade.ts"
 import type { StripboardRules } from "./rules.ts"
 import {
   STOPPING_RULES,
@@ -87,6 +82,7 @@ import {
   type StoppingRule,
 } from "./stop-model.ts"
 import type { BoardTargets } from "./targets.ts"
+import { admissible, fullyAdmissible } from "./verdict.ts"
 
 export {
   STOPPING_RULES,
@@ -105,6 +101,29 @@ interface StopInput {
   readonly best: Evaluation
   readonly targets: BoardTargets
   readonly rules: StripboardRules
+}
+
+/**
+ * `A1`-`A4` for the candidate `Q1` or `Q2` is about.
+ *
+ * **`binding` IS `undefined` AND THAT CANNOT CHANGE WHETHER A RUN STOPS.** A
+ * binding constraint is constraint-side evidence a search does not hold, and
+ * `./verdict.ts` reports its absence in `A2`'s detail rather than refusing -
+ * which matters here because `Q1` and `Q2` read only the four booleans, never a
+ * detail string. Task 20's report is where a binding constraint is supplied.
+ */
+function admissibilityOf(input: StopInput): boolean {
+  return fullyAdmissible(
+    admissible({
+      results: input.best.results,
+      score: input.best.score,
+      targets: input.targets,
+      rules: input.rules,
+      initialObjective: input.state.climbHistory[0],
+      frozen: input.state.frozen,
+      binding: undefined,
+    }),
+  )
 }
 
 /** `g = F - C_floor`: the gap the derived floor says provably remains. */
@@ -208,35 +227,26 @@ function q1(input: StopInput): boolean {
         "bridge(s)",
     )
   }
-  return a1(input.best.results)
+  return admissibilityOf(input)
 }
 
 /**
  * `Q2`: within `tau` of the floor, and admissible.
  *
- * THE TWO EXITS BEFORE THE REFUSAL ARE BOTH CRITERIA'S. An unset `tau` means
- * `Q2` does not fire (`K4`), and an inadmissible candidate means `Q2` does not
- * fire whatever the arithmetic says - and in that second case no `A2` is needed
- * to know it. So the refusal is reached only where `Q2` would otherwise STOP
- * THE RUN on a guard weaker than the one CRITERIA states.
+ * IT COMPUTES NO TOLERANCE OF ITS OWN. `A3` **is** `K4`'s tolerance - the same
+ * `(F - F_floor)/max(1, F_0 - F_floor) < tau` - and it is one of the four
+ * conditions, so *"within tolerance of the floor, and admissible"* is exactly
+ * *admissible, with a `tau` set*. Two readings of one formula would be two
+ * places for the gap to come out differently on one board.
+ *
+ * THE `tau === null` EXIT IS CRITERIA'S, NOT AN OPTIMISATION: `A3` does not
+ * block admissibility while `tau` is unset, so without this exit `Q2` would
+ * fire on every admissible candidate and report *within tolerance* against a
+ * tolerance the owner declined to set.
  */
 function q2(input: StopInput): boolean {
-  const tau = input.rules.tau
-  if (tau === null) return false
-  const first = input.state.climbHistory[0]
-  if (first === undefined) {
-    refuse(
-      "stop-counters-malformed",
-      "this state carries no climb objective, so the floor tolerance has no F_0",
-    )
-  }
-  const gap = gapToFloor(input) / Math.max(1, first - input.targets.cutFloor)
-  if (!(gap < tau)) return false
-  if (!a1(input.best.results)) return false
-  refuse(
-    "stop-tolerance-needs-a2",
-    `${input.targets.board} is within tau = ${tau} of its floor at a gap of ${gap} and A1 holds`,
-  )
+  if (input.rules.tau === null) return false
+  return admissibilityOf(input)
 }
 
 /** `Q3`: a round accepted nothing AND the seed list is spent. Both, or it is a restart trigger. */

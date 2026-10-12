@@ -52,6 +52,19 @@ export interface StopState {
   readonly signatures: readonly string[]
   /** How many moves the most recent round accepted. `Q3` needs zero. */
   readonly acceptedThisRound: number
+  /**
+   * Whether this run graded the FROZEN low-boost fixture (`true`) or the
+   * scaffolded board (`false`), or `undefined` when the run does not say.
+   *
+   * **NOT A COUNTER, AND AN ADDITION TO THE SIX FIELDS THE PLAN DECLARES.** It
+   * is here because `A4` reads differently on low-boost's two boards and
+   * CRITERIA requires that *"a run states which board it ran and therefore
+   * which clause it met"* - so `Q1` and `Q2`, which require all four
+   * conditions, cannot be decided on that board without it. `undefined` is
+   * refused there by `./verdict.ts` rather than defaulted to either clause; on
+   * every other board `A4` is vacuous and this field is not read.
+   */
+  readonly frozen: boolean | undefined
 }
 
 /**
@@ -87,7 +100,6 @@ export type StopRefusal =
   | "stop-rules-malformed"
   | "stop-bridge-without-join"
   | "stop-negative-gap"
-  | "stop-tolerance-needs-a2"
   | "stop-nothing-to-sign"
   | "stop-cut-conflicts-unavailable"
 
@@ -131,19 +143,6 @@ function notDefaultedBecause(refusal: StopRefusal): string {
         "pass with room to spare. It is not clamped to zero, which would convert the evidence " +
         "into a stop."
       )
-    case "stop-tolerance-needs-a2":
-      return (
-        "Q2 is a SUCCESSFUL TERMINATION and may not fire on an inadmissible candidate, and A1 " +
-        "alone is not that guard: kappa and the floor tolerance are differently normalised, so " +
-        "A2 can fail while the tolerance holds - which is CRITERIA section 5's worked case and " +
-        "the reason Q2 requires admissibility at all. A2 (kappa <= kappa_bench, CRITERIA K2) " +
-        "belongs to tools/stripboard/verdict.ts, which does not exist yet: Task 20 of the " +
-        "stripboard pipeline plan under docs/superpowers/plans/ creates it. It is NOT " +
-        "approximated by A1 here and no local kappa comparison is written here, because a " +
-        "second copy of an admissibility condition is what R2 forbids and what makes two " +
-        "verdicts possible for one board. Fix: land Task 20 and have Q2 consult its " +
-        "admissibility result. Until then set no tau - which is the owner's own position (K4)."
-      )
     case "stop-nothing-to-sign":
       return (
         "Q6's signature is a FAILURE signature: it stops a run whose failures repeat. A " +
@@ -184,6 +183,12 @@ export function refuse(refusal: StopRefusal, offending: string): never {
  * from today's stock, so the floor a run was judged against is a fact about a
  * purchase rather than a property of the circuit, and the owner's rule over
  * every dimension is quoted rather than paraphrased.
+ *
+ * **NOTHING CALLS IT YET, AND ITS CONSUMER IS NAMED RATHER THAN HOPED FOR**:
+ * Task 20's `renderReport` prints it beside the floor, under `REP1`'s
+ * `at-floor` wording. It is not dead code awaiting a use - it is the half of a
+ * `Q1` stop that the return type cannot carry, written where the rule is so the
+ * two cannot drift apart.
  */
 export function floorNote(targets: BoardTargets): string {
   return (
