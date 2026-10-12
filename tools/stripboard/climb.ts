@@ -64,13 +64,20 @@
  * NOT refuse a non-zero `--check`. Treating the two alike would stop the run on
  * exactly the boards the search exists to repair.
  *
+ * **WHAT A REAL CLIMB ACTUALLY DOES, so this comment is not the only evidence
+ * about it.** On the import-placed low-boost board against the pinned fork:
+ * 3 rounds, 77 evaluations, `acceptedPerRound: [2, 1, 0]`, `F` from 39 to 36 -
+ * three cuts removed - stopping on `S3`, and ending inadmissible on `HC1`,
+ * `HC6`, `HC8` and `HC10`. `docs/stripboard/pipeline-verification.md` section 5
+ * carries both runs, every refusal, and why the three starting ARMS produce no
+ * candidate at all.
+ *
  * **THE START IS INADMISSIBLE AND THAT IS NORMAL.** `./seed.ts` records that
  * all three arms begin from a board whose nets are incomplete - 19, 13, 7 and 6
  * on mid, hi-boost, hi-cut and low-cut - so `HC1` fails on the start and will
  * keep failing until the search has repaired the circuit. The no-regression
  * rule is what lets a climb move at all from there while still refusing to
- * trade a constraint away; `docs/stripboard/pipeline-verification.md` carries
- * what a real climb from each arm actually does.
+ * trade a constraint away.
  */
 import fs from "node:fs"
 import path from "node:path"

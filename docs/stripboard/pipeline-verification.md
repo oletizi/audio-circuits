@@ -901,7 +901,11 @@ then, per start: seedCandidate({arm, seed: 0}) -> climb(start, {batch: false})
 to `climb` with no arm in front of it, and it is in the table because it is the
 only start that is not already painted. See 5.3.
 
-### 5.2 What each start did
+### 5.2 What each start did — RUN 1, with `rotate` deferred
+
+**Superseded in part by 5.6, and kept because it is the evidence for 5.3 and
+5.4.** This run had `move` and `stretch` only; 5.6 is the same run with the
+occupancy carried and `rotate` restored.
 
 | start | outcome | rounds | evaluations | `acceptedPerRound` | `F0` | `F` best | `A1` |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -955,7 +959,7 @@ this run. 26 moves enumerated on the fixture board, 12 applicable.
 | --- | --- | --- |
 | `move` | yes | — |
 | `stretch` | yes | — but only after `Component::CanStretch` was transcribed as `VEROROUTE_STRETCH_BOUNDS`: the run proposed `--stretch junction_grounds --direction grow`, geometrically clear, and the fork refused it (`junction_grounds cannot grow`) after 24 accepted gestures. A geometric fit is not a stretchable part. Both `SIP5` parts refuse both directions, measured, while `RESISTOR` and `CAP_FILM_WIDE` shrink on the same board — and `CanStretch` as READ predicts the opposite for `COMP::SIP` (min 1, max 255), so which `COMP` the dump's `SIP5` is has **not** been established and the entry rests on the measurement. |
-| `rotate` | **no** | A turn produces a board `occupancyOf` cannot read — 5.3's cause, reached by the climb's own accepted gesture. **This is the expensive one:** orientation is the structural lever behind COST §3.1's 68–75%, and the search does not have it. |
+| `rotate` | **YES, since 5.6** — it was deferred for this run only | A turn produces a board `occupancyOf` cannot read — 5.3's cause, reached by the climb's own accepted gesture. **This is the expensive one:** orientation is the structural lever behind COST §3.1's 68–75%, and the search does not have it. |
 | `add-wire` | **no** | The wire anchors only at a FREE hole (`--at 1,0` is refused: *"the wire could not be placed at that position (it is floating)"*), and this enumeration anchors at a PIN hole — the only hole it can identify as belonging to a net. And a fresh wire is `1x3` ALONG the row (`--at 10,10` yields `WIRE Wire1 AT 10,10 ENDS 10,10 10,12`), so under horizontal strips it joins one strip to itself. Making it useful is three gestures in one candidate, or a fork change letting `--op add-wire` name both ends. |
 | `delete-wire` | **no** | No verb in the pinned fork deletes a placed component. Blocked on the fork, not on a task. |
 | `cluster` | **no** | Task 18's. |
@@ -979,3 +983,64 @@ the same run with the occupancy carried forward instead of re-derived per dump �
 already `seed-placement.ts`'s documented pattern, needing `enumerateMoves` to be
 handed an occupancy rather than deriving one, which is a change to the signature
 the plan declares.
+
+### 5.6 RUN 2 — the occupancy carried, `rotate` restored
+
+5.4's `rotate` deferral was the expensive one, and it was removable: the wall it
+hit is the wall Task 16 had already hit and solved. `enumerateMoves` now takes a
+CARRIED `Occupancy` instead of deriving one from each dump, advanced per applied
+gesture by `occupancyAfter` — which is Task 16's own `appliedGestures`
+underneath, transcribed from `Board::RotateComps` and held against the real
+binary across 43 gestures and 11 placements with zero divergence. **There is no
+second occupancy advance:** the enumeration proposes a move exactly when that
+call returns an occupancy, and the climb advances with the same call.
+
+Same board, same netlist, same rules, same seed, same script:
+
+| start | outcome | rounds | evaluations | `acceptedPerRound` | `F0` → `F` | `A1` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | refused before the first candidate | — | — | — | — | — |
+| `import` | refused before the first candidate | — | — | — | — | — |
+| `random` | refused before the first candidate | — | — | — | — | — |
+| `unpainted-import-board` | climbed, stopped on `S3` | 3 | **77** | **[2, 1, 0]** | 39 → **36** | **false** (`HC1`, `HC6`, `HC8`, `HC10`) |
+
+`C = 36`, `W = 0`, `B = 0`; 307 fork invocations, 3.4 s. Against run 1's
+`[1, 1, 0]` and `F = 37`: **three accepted moves instead of two, and three cuts
+removed instead of two**, for one fewer evaluation. Reproduced on two
+independent runs of the script.
+
+**That is a small improvement and restoring orientation did not transform the
+result.** It is worth saying why rather than filing it as disappointing: the
+climb still converged after three accepted moves out of 77 evaluations, so what
+limits it is not which single-part gestures are available. The two levers COST
+calls structural for the cut count — clustering a net's parts onto one strip
+(`E1`, Task 18) and spending strips — are both still absent, and COST says so
+in advance: *"a strictly improving single-part climb is not merely at risk of
+being trapped on this problem; the dominant lever is structurally invisible to
+it."* This run is that sentence measured.
+
+### 5.7 Why the three arms STILL refuse, and why carrying the occupancy could not help them
+
+Both causes are about the board an arm HANDS OVER, not about what the climb does
+afterwards, so neither moved:
+
+- **`constructed` and `random`** hand over a board that **already** carries a
+  turned part, because their own gestures turn parts before the climb sees
+  anything. A climb reads its FIRST occupancy off the board it is given —
+  `occupancyOf` is the only way to do that and there may only be one such read —
+  and `occupancyOf` refuses a part facing `N` or `S`. Carrying the occupancy
+  fixes every turn the climb itself takes and can do nothing about a turn that
+  happened before it was called.
+- **`import`** hands over a PAINTED board, because every arm's last gesture is
+  `--author --op autofill` (`HC2` refuses an unresolved cut list), and `--move`
+  refuses a relocation overlapping a part's own footprint once copper has been
+  painted into the holes it would vacate (5.3).
+
+**Both are Task 16 interface questions and neither is the climb's to fix.** The
+shape of the fix is the same for both: `seedCandidate` hands back the occupancy
+it tracked and the unpainted board beside the painted one — it already tracks
+the occupancy internally, for exactly this reason, so nothing new has to be
+derived. Until then the only start that can be climbed is the raw `--import`
+board, which is not a `SeedArm`, and **Task 16's arm comparison has nothing to
+compare**: `compareSeedArms`' own `RETIREMENT` note already says a start count
+is not a rate, and this is that case live on three arms out of three.
