@@ -6,7 +6,10 @@ first task with a finding to put in it, and is extended as later tasks measure
 more; it is not a document written at the end, because a document written last
 is one whose early findings were held in somebody's head until then.
 
-At this point it covers four things. `HC8`: its trust boundary, its nine
+At this point it covers six things, and **this sentence said "four" while the
+page already had five sections** — a stale count in the one paragraph a reader
+starts from, corrected here rather than left to be rediscovered. `HC8`: its
+trust boundary, its nine
 geometry refusals, the one refusal that belongs to a different module than the
 one `HC8`'s contract names, and the verdict built on the
 graph — the open, the short, and the three refusals the reference side
@@ -15,8 +18,11 @@ contributes. The two dump lines Task 7 added to the fork, `BOUNDS` and
 **are** now adopted here (§2.7 — §2's opening sentence about that was stale when
 it was written, and §2.7 says why). `HC10`'s placement clause, which the owner
 decided on 2026-10-11 after the task brief's wording was measured to refuse
-every hand-laid board in the repository (§3). And CHECKPOINT 1, the ten hard
-constraints run over two boards a person built (§4).
+every hand-laid board in the repository (§3). CHECKPOINT 1, the ten hard
+constraints run over two boards a person built (§4). CHECKPOINT 2, the climb
+driven against the real binary from each starting arm (§5). And Task 18's
+escapes: what `E1` as specified does and does not do, what the search's
+import-closure scan found, and the measured arm comparison (§6).
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -1152,3 +1158,82 @@ run against, not a verdict standing in for it.
    84 accepted moves did not change that. `C = 14` against a derived floor of 0
    with `κ` still far from the bench. Clustering (`E1`, Task 18) remains the
    lever nothing has tested.
+
+---
+
+## 6. Task 18's escapes — what `E1` cost, what the closure scan found, and the arm comparison
+
+Task 18 added the three escapes: `E1` the net-cluster move, `E2` seeded
+restarts, `E3` a bounded worse-acceptance that stays off until a bound is
+configured. Three things belong in this register, and the first two are findings
+rather than results.
+
+### 6.1 `E1` as specified moves a net's parts TOGETHER, which is not the gesture its own justification describes
+
+PIPELINE §7.4 defines `E1` as *"every on-board part with a pin on net X and one
+delta, or one rotation, to all of them"*, and justifies it by saying *"moving
+all three together to one strip removes a whole cut"*. **A common delta cannot
+gather a net's parts onto one strip.** A translation preserves their relative
+positions, so the strips the net's own holes sit on shift together and its
+segment count across strips is unchanged — which means the clustered net's own
+`J` contribution is unchanged by its own cluster move.
+
+What the move DOES change is where the net's holes sit relative to **the other
+nets' holes** on the strips they share. That is how `J` falls: two holes of one
+net separated along a strip by a third net's hole are two segments, and
+translating the first net's parts past the interrupter makes them one.
+`tests/stripboard/escapes.test.ts` holds that on a four-part board where all six
+enumerated single-part moves leave `J` at 3 and one cluster takes it to 1.
+
+So the mechanism is real and the sentence that motivates it is loose. Two
+gestures the spec's wording suggests are **not implemented, and that is recorded
+here rather than quietly done**:
+
+- the gathering move — several deltas, one per part — which is a different move
+  with a different enumeration;
+- §7.4's *"or one rotation"*, which the `Move` union carries no field for.
+
+A third limit, from this repository rather than from the spec: the cluster's
+deltas are the same four `UNIT_DELTAS` a single `move` uses, so a cluster
+translates a net one hole per candidate and a gathering that needs two holes
+takes two rounds, each intermediate step having to fit on its own. Whether a
+wider neighbourhood pays is unmeasured, exactly as `UNIT_DELTAS` says of itself.
+
+**The compound gesture's one choice is the order of the PARTS**: furthest along
+the delta first, so a part vacates before its follower arrives. It is one
+declared order and not a search over orders, and **a cluster that order cannot
+sequence is not proposed — which is not a claim that no order could.** Nothing
+has measured how often another order would have landed one this rejects.
+
+### 6.2 The closure scan found two `readdirSync` calls, and neither can reach a scored evaluation
+
+`tests/stripboard/escapes-search.test.ts` walks the TRANSITIVE import closure of
+`search.ts`, `climb.ts` and `moves.ts` — 104 files — and scans every one of them
+for `Date.now`, `performance.now`, `process.pid`, `readdirSync` and
+`Math.random`. Two files name one:
+
+| file | identifier | in | why it cannot reach an evaluation |
+| --- | --- | --- | --- |
+| `tools/bom/catalog.ts` | `readdirSync` | `loadCatalog(dir)` | reads the parts catalogue for the BOM comparison `--check` makes; the search calls neither |
+| `tools/perfboard/declaration.ts` | `readdirSync` | `discoverDeclarations(root)` | walks for every board's `perfboard.json`, for the CLI verb that checks all of them; the search is handed one declaration path by its caller and reads it through `stockFor` |
+
+**The edge that carries both into the closure is TYPE-ONLY.**
+`tools/stripboard/check-report.ts` imports `type { CheckRun }` from
+`tools/perfboard/check.ts`, which erases — so no runtime code of `check.ts`, or
+of anything it imports, is loaded by an evaluation at all, and these two files
+are two and three further hops beyond that. The import walker counts type-only
+edges deliberately (`tests/stripboard/import-closure.ts` says why: a shared type
+definition is a shared definition), which is what puts them in a closure nothing
+can reach them through at runtime.
+
+**The closure was NOT narrowed and the forbidden list was NOT shortened.** Both
+files are named exemptions in the test, each with its reason, and a second test
+asserts that each one still names its identifier and that the admitting import
+is still spelled `import type` — so an exemption that stopped being true fails
+rather than rots.
+
+What this still does not prove, which is the same limit the test states: a scan
+cannot see an aliased access (`const now = Date["now"]`), a clock reached
+through a node builtin the walker skips by name, or a nondeterminism that is not
+one of those five identifiers. The guarantee for determinism is Task 21's
+comparison of two runs; this is the cheap early warning that names the file.
