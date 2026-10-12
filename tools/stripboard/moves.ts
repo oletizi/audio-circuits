@@ -164,15 +164,16 @@ export function applicableMoves(moves: readonly Move[]): readonly Move[] {
  * The four one-hole neighbours a `move` proposes, in the one order this file
  * declares: up, right, down, left.
  *
- * **ONE HOLE, AND THAT IS A CHOICE WITH A STATED REASON RATHER THAN A MEASURED
- * ONE.** A round is a full sweep of the move set (COST §6.4), so the sweep's
- * cost has to stay linear in the number of parts: enumerating every origin on
- * the grid would make one round 1225 evaluations per part on a 35x35 board. The
- * one-hole neighbourhood is the smallest that can still reach any origin by
- * composition across rounds, which is what a hill climb does with it. **No
- * claim is made that it is the best neighbourhood** - nothing here has measured
- * that - and the order of the four carries no preference either; it is fixed so
- * that the sweep is reproducible.
+ * **ONE HOLE, AND IT IS AN UNMEASURED CHOICE WITH A STATED REASON.** A round is
+ * a full sweep of the move set (COST §6.4), so the sweep's cost has to stay
+ * linear in the number of parts: enumerating every origin on the grid would
+ * make one round 1225 evaluations per part on a 35x35 board. The one-hole
+ * neighbourhood is the smallest that can still reach any origin by composition
+ * across rounds, which is what a hill climb does with it. **NOTHING HAS
+ * MEASURED WHETHER IT IS THE RIGHT SHAPE OR SIZE** - not this file, not the
+ * specs, not any run - and the order of the four carries no preference either;
+ * it is fixed so that the sweep is reproducible. Widening it is a deliberate
+ * edit with a run behind it.
  */
 const UNIT_DELTAS: readonly (readonly [number, number])[] = [[-1, 0], [0, 1], [1, 0], [0, -1]]
 
@@ -227,6 +228,21 @@ function partMoves(dump: BoardDump, occupancy: Occupancy): readonly Move[] {
     // does, and `applyMove` applies either faithfully; only the PROPOSAL is
     // narrowed, and widening it means transcribing the other case with a row in
     // tests/stripboard/seed-geometry.test.ts beside it.
+    //
+    // WHAT CLOCKWISE-ONLY DOES AND DOES NOT COST, MEASURED THROUGH `turnedRect`
+    // rather than argued. Four quarter turns are a full turn, so all four
+    // facings are reachable in one, two or three steps - across rounds, each
+    // step being its own move. And the rect cycle is SHORTER than that: on a
+    // part the dump can describe (1 row by its span, leads along the columns)
+    // TWO clockwise turns land it back on its own origin exactly - `2,1 1x6` ->
+    // `0,3 6x1` -> `2,1 1x6`, and the same at spans 3, 5 and 7 - so the cw-only
+    // set reaches exactly two rect positions, not four.
+    // **SO IT IS NOT A FREE RESTRICTION, AND THE LIMIT IS STATED RATHER THAN
+    // WAVED PAST:** reaching the third facing takes three successive turns and
+    // each of them has to fit on its own, so a single `ccw` could be takeable
+    // on a crowded board where the chain is not. Whether that happens is
+    // unmeasured. `tests/stripboard/moves.test.ts` holds the two-turn cycle so
+    // this claim fails rather than rots.
     if (turnsTakeable(occupancy, dump.grid, part.ref, [rect.row, rect.col], 1)) {
       moves.push({ kind: "rotate", ref: part.ref, direction: "cw" })
     }

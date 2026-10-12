@@ -37,9 +37,11 @@ import {
   evaluation,
   freshRunDir,
   IMPROVES_THEN_STALLS,
+  incompleteNetSpawn,
   netlistFile,
   recordingSpawn,
   REFERENCE,
+  rulesWithCap,
   rulesWithoutWorseAcceptance,
   rulesWithWorseAcceptance,
   scriptedSpawn,
@@ -85,6 +87,8 @@ test("an equal F with a strictly better ranking is accepted, and an equal tuple 
 })
 
 test("a candidate failing any hard constraint is rejected whatever its F", () => {
+  // The base board holds all ten, so HC1 failing here is a REGRESSION this
+  // move caused, and no F is cheap enough to buy it.
   const cheapAndBroken = {
     ...base,
     admissibleA1: false,
@@ -94,6 +98,74 @@ test("a candidate failing any hard constraint is rejected whatever its F", () =>
     ),
   }
   expect(accepts(base, cheapAndBroken, rulesWithoutWorseAcceptance())).toBe(false)
+})
+
+test("a constraint already broken before the move does not by itself reject the candidate", () => {
+  // THE DEADLOCK THIS RULE EXISTS TO BREAK. Every starting arm begins from a
+  // board with incomplete nets, so HC1 fails on the start; under an
+  // A1-gates-every-step rule no single gesture could ever be accepted, because
+  // no one gesture flips the conjunction of ten. Here HC1 is broken on BOTH
+  // sides and the candidate is strictly cheaper, so it is accepted.
+  const brokenBefore = {
+    ...base,
+    admissibleA1: false,
+    results: base.results.map((result) =>
+      result.id === "HC1" ? { ...result, held: false } : result,
+    ),
+  }
+  const stillBrokenButCheaper = {
+    ...brokenBefore,
+    score: { ...brokenBefore.score, objective: brokenBefore.score.objective - 1 },
+  }
+  expect(accepts(brokenBefore, stillBrokenButCheaper, rulesWithoutWorseAcceptance())).toBe(true)
+  // And it is still rejected if it breaks a SECOND constraint on the way.
+  const alsoBreaksHC3 = {
+    ...stillBrokenButCheaper,
+    results: stillBrokenButCheaper.results.map((result) =>
+      result.id === "HC3" ? { ...result, held: false } : result,
+    ),
+  }
+  expect(accepts(brokenBefore, alsoBreaksHC3, rulesWithoutWorseAcceptance())).toBe(false)
+})
+
+test("repairing a constraint is not an acceptance of its own: F and the ranking still decide", () => {
+  // HC1 holding is not itself a cheaper board. A candidate that repairs it
+  // while F rises is rejected like any other worse candidate - otherwise
+  // "repair" would be a second objective nobody declared.
+  const brokenBefore = {
+    ...base,
+    admissibleA1: false,
+    results: base.results.map((result) =>
+      result.id === "HC1" ? { ...result, held: false } : result,
+    ),
+  }
+  const repairedButDearer = {
+    ...base,
+    score: { ...base.score, objective: brokenBefore.score.objective + 1 },
+  }
+  expect(accepts(brokenBefore, repairedButDearer, rulesWithoutWorseAcceptance())).toBe(false)
+  const repairedAndCheaper = {
+    ...base,
+    score: { ...base.score, objective: brokenBefore.score.objective - 1 },
+  }
+  expect(accepts(brokenBefore, repairedAndCheaper, rulesWithoutWorseAcceptance())).toBe(true)
+})
+
+test("a regression is matched by constraint id, never by position in the list", () => {
+  // Comparing the two result lists index by index would be a claim about
+  // gradeHardConstraints' ordering rather than about the constraints, and would
+  // compare HC3 against HC4 the moment anything reordered the table. Here the
+  // candidate's ten are REVERSED and HC10 - last in the base, first here - is
+  // the one broken: a positional comparison would look at HC1 and accept.
+  const reversedWithHC10Broken = {
+    ...base,
+    admissibleA1: false,
+    results: [...base.results]
+      .reverse()
+      .map((result) => (result.id === "HC10" ? { ...result, held: false } : result)),
+    score: { ...base.score, objective: 0 },
+  }
+  expect(accepts(base, reversedWithHC10Broken, rulesWithoutWorseAcceptance())).toBe(false)
 })
 
 test("a configured worseAcceptance refuses rather than being climbed without", () => {
@@ -276,6 +348,57 @@ test("each evaluation runs autofill before scoring, because an unpainted board h
     `--check ${runDir}/r0-m0-filled.vrt --netlist ${runDir}/reference.net`,
     `--dump-board ${runDir}/r0-m0-filled.vrt`,
   ])
+})
+
+test("S5 stops the climb at the evaluation cap, mid-round, and spends not one more", () => {
+  // Q5 IS A BACKSTOP AND NOT A MEASURE: it exists to stop a bug looping
+  // forever. The committed cap is 20,000, so a real climb cannot reach it in a
+  // test and this drives a fixture cap of 5 instead.
+  //
+  // HAND-DERIVED: the start is evaluation 1, then round 0's candidates are
+  // evaluations 2, 3, 4 and 5, and the cap is checked BEFORE each candidate -
+  // so the fifth evaluation is the last one taken and the sixth is never
+  // started. Round 0 has 16 applicable moves, so the stop is mid-round: the
+  // round is recorded with the one move it accepted before the cap bit.
+  const runDir = freshRunDir()
+  const result = climb(
+    seededStart(runDir),
+    { ...climbInput(runDir, false), rules: rulesWithCap(5) },
+    scriptedSpawn(IMPROVES_THEN_STALLS),
+  )
+  expect(result.evaluations).toBe(5)
+  expect(result.history.length).toBe(5)
+  expect(result.rounds).toBe(1)
+  expect(result.acceptedPerRound).toEqual([1])
+  // And the uncapped climb on the same script spends 31, so the cap really is
+  // what stopped this one rather than convergence.
+  const uncappedDir = freshRunDir()
+  const uncapped = climb(
+    seededStart(uncappedDir),
+    climbInput(uncappedDir, false),
+    scriptedSpawn(IMPROVES_THEN_STALLS),
+  )
+  expect(uncapped.evaluations).toBe(31)
+})
+
+test("a climb that ends inadmissible says so, rather than reading as one that found nothing", () => {
+  // A1 CLASSIFIES THE RESULT, NOT THE STEP. The script here hands back a board
+  // whose nets --check reports incomplete, so HC1 fails on every evaluation and
+  // no candidate ever repairs it; the climb still runs, still accepts on F, and
+  // reports best.admissibleA1 = false.
+  const runDir = freshRunDir()
+  const result = climb(
+    seededStart(runDir),
+    climbInput(runDir, false),
+    incompleteNetSpawn(IMPROVES_THEN_STALLS),
+  )
+  expect(result.best.admissibleA1).toBe(false)
+  // It is NOT a climb that found nothing: it accepted the cheaper board on the
+  // way, which is the whole content of the no-regression rule.
+  expect(result.acceptedPerRound[0]).toBe(1)
+  expect(result.best.score.objective).toBe(0)
+  const failing = result.best.results.filter((entry) => !entry.held).map((entry) => entry.id)
+  expect(failing).toEqual(["HC1"])
 })
 
 test("the climb evaluates at least the start, so Task 16's requireMeasured is satisfiable", () => {

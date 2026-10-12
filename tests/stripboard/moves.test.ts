@@ -30,6 +30,8 @@ import {
 } from "../../tools/stripboard/moves.ts"
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
+import { turnedRect } from "../../tools/stripboard/seed-placement.ts"
+import type { PartRect } from "../../tools/stripboard/seed-geometry.ts"
 import {
   BETTER,
   DUMP,
@@ -134,6 +136,35 @@ test("only the clockwise turn is proposed, because only that case is transcribed
     .filter((move) => move.kind === "rotate")
     .map((move) => (move.kind === "rotate" ? move.direction : ""))
   expect(directions).toEqual(["cw", "cw"])
+})
+
+test("two clockwise turns return a part to its own origin, so cw-only reaches two rects", () => {
+  // THE CLAIM THE cw-ONLY ENUMERATION RESTS ON, held here so it fails rather
+  // than rots. All four FACINGS are reachable in one, two or three cw steps
+  // because four quarter turns are a full turn; the RECT cycle is shorter than
+  // that, and these figures come from turnedRect driven by hand - a 1x6 part at
+  // 2,1 turns to 0,3 (6 rows by 1 column) and back to 2,1, and the same holds
+  // at spans 3, 5 and 7. So the restriction cw-only imposes is on the ROUTE to
+  // the third facing - three turns, each needing to fit on its own - and not on
+  // which facings exist.
+  const cases: readonly (readonly [number, readonly [number, number]])[] = [
+    [3, [1, 2]],
+    [5, [0, 3]],
+    [6, [0, 3]],
+    [7, [-1, 4]],
+  ]
+  for (const [span, turned] of cases) {
+    const start: PartRect = { row: 2, col: 1, rows: 1, cols: span, across: false }
+    const once = turnedRect(start)
+    expect([once.row, once.col]).toEqual([...turned])
+    expect([once.rows, once.cols]).toEqual([span, 1])
+    expect(once.across).toBe(true)
+    const twice = turnedRect(once)
+    expect([twice.row, twice.col]).toEqual([2, 1])
+    expect([twice.rows, twice.cols]).toEqual([1, span])
+    expect(twice.across).toBe(false)
+  }
+  expect(cases.length).toBe(4)
 })
 
 test("a net whose holes share one strip gets no add-wire, and the second board shows it", () => {

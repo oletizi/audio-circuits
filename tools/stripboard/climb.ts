@@ -18,12 +18,19 @@
  * authorised, and `A_occ` - the occupied board AREA - would have become an
  * objective by the back door.
  *
- * **ACCEPTANCE, EXACTLY, AND NOTHING ELSE:** `ΔF < 0`; or `ΔF = 0` with a
- * strictly better ranking tuple; and **rejection on any hard-constraint
- * failure, whatever the `F`**. `E3`'s bounded worse-acceptance is Task 18's,
- * and a rules file that CONFIGURES a bound is refused here rather than
- * silently climbed without it - a configured search behaviour that does not
- * run is worse than one that is off, because the record would say it ran.
+ * **ACCEPTANCE, EXACTLY, AND NOTHING ELSE:** **no regression** - a candidate
+ * that breaks a hard constraint which held before the move is rejected,
+ * whatever its `F` - and then `ΔF < 0`, or `ΔF = 0` with a strictly better
+ * ranking tuple. `E3`'s bounded worse-acceptance is Task 18's, and a rules file
+ * that CONFIGURES a bound is refused here rather than silently climbed without
+ * it - a configured search behaviour that does not run is worse than one that
+ * is off, because the record would say it ran.
+ *
+ * **`A1` CLASSIFIES THE RESULT, NOT THE STEP**, and `accepts`' own comment
+ * carries the correction that made that true, the deadlock it fixes and the
+ * CRITERIA reading behind it. `ClimbResult.best.admissibleA1` is where a run
+ * says whether it ended admissible, so a climb that ends inadmissible is
+ * reported as exactly that rather than as a climb that found nothing.
  *
  * **`history` HAS ONE ENTRY PER EVALUATION, AND THAT IS LOAD-BEARING ACROSS
  * TASKS.** Task 16's `evaluationsToCross` reads a crossing INDEX off it and
@@ -57,15 +64,13 @@
  * NOT refuse a non-zero `--check`. Treating the two alike would stop the run on
  * exactly the boards the search exists to repair.
  *
- * **A CONSEQUENCE OF "REJECT ON ANY HARD-CONSTRAINT FAILURE", STATED RATHER
- * THAN HIDDEN.** `./seed.ts` records that all three starting arms begin from a
- * board whose nets are incomplete - 19, 13, 7 and 6 incomplete nets on mid,
- * hi-boost, hi-cut and low-cut - so `HC1` fails on the start and on every
- * candidate one single-part gesture away from it. Under the acceptance rule as
- * the brief states it, such a climb accepts nothing and reports
- * `acceptedPerRound: [0]`. That is the rule working, not a defect in it, and it
- * is written here because the alternative - softening the rule so a run shows
- * progress - is the one change nobody would notice and everybody would rely on.
+ * **THE START IS INADMISSIBLE AND THAT IS NORMAL.** `./seed.ts` records that
+ * all three arms begin from a board whose nets are incomplete - 19, 13, 7 and 6
+ * on mid, hi-boost, hi-cut and low-cut - so `HC1` fails on the start and will
+ * keep failing until the search has repaired the circuit. The no-regression
+ * rule is what lets a climb move at all from there while still refusing to
+ * trade a constraint away; `docs/stripboard/pipeline-verification.md` carries
+ * what a real climb from each arm actually does.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -219,12 +224,42 @@ export function evaluate(board: string, input: EvaluateInput, spawn: SpawnVeroro
  * 1. **A configured `worseAcceptance` refuses.** `E3` is Task 18's; a bound
  *    present in the rules and ignored here would be a search behaviour the
  *    record claims and the code does not do.
- * 2. **Any hard-constraint failure rejects, before `F` is looked at at all.**
- *    *"Nothing in A1 is tradeable"* (CRITERIA A1), so there is no `F` cheap
- *    enough to buy an inadmissible board - and putting this clause after the
- *    `ΔF` test is precisely the mutation that would let a cheap broken
- *    candidate through.
+ * 2. **NO REGRESSION: a candidate that BREAKS a constraint which held before
+ *    the move is rejected, before `F` is looked at at all.** Putting this
+ *    clause after the `ΔF` test is precisely the mutation that would let a
+ *    cheap broken candidate through.
  * 3. **`ΔF` decides, and the ranking is consulted only at `ΔF = 0`.**
+ *
+ * **WHY NO-REGRESSION AND NOT `A1`, WHICH IS A CORRECTION TO THIS MODULE'S
+ * FIRST VERSION AND IS RECORDED RATHER THAN TIDIED AWAY.** The rule here was
+ * `if (!candidate.admissibleA1) return false`, which is the plan's acceptance
+ * mechanics read literally, and it DEADLOCKS: `HC1` is a board-level predicate,
+ * every starting arm begins from a board with incomplete nets (`./seed.ts`: 19,
+ * 13, 7 and 6 on mid, hi-boost, hi-cut and low-cut), `A1` is the conjunction of
+ * all ten, and no single gesture flips the conjunction from false to true
+ * unless it happens to be the very last repair needed - which is unreachable
+ * when nothing before it was accepted. Every round reports
+ * `acceptedPerRound: [0]`, and with `Q3` treating a barren round as a restart
+ * trigger the whole search degenerates into trying each seed once and
+ * declaring itself exhausted.
+ *
+ * CRITERIA uses `A1` to classify the OUTCOME - its *"valid, below target"* row
+ * is `A1` holding with an optimisation target unmet - and **nowhere requires an
+ * intermediate step to satisfy it.** So "reject on any hard-constraint failure"
+ * was the plan's own mechanics rather than a criteria clause, and the
+ * correction leaves what counts as an acceptable LAYOUT untouched: an
+ * inadmissible board still cannot be adopted, because Task 24's gate has its
+ * own `failing-check` refusal, and `ClimbResult.best.admissibleA1` reports
+ * plainly whether the climb ended admissible.
+ *
+ * **`HC2` IS DIFFERENT IN KIND FROM THE OTHER NINE AND IS NOT CHECKED HERE AT
+ * ALL.** Under `CUT_STATE UNRESOLVED` the cut list is ABSENT rather than empty,
+ * so `C` is not a derived count, `F` is not a number about the board and no
+ * comparison between two candidates means anything. That is a precondition for
+ * SCORING and not a property being traded, and `./score.ts` already refuses it
+ * on every evaluation - so this function inherits the guard and deliberately
+ * does not duplicate it. A candidate that reaches `accepts` has a computed cut
+ * list by construction.
  */
 export function accepts(
   current: Evaluation,
@@ -246,7 +281,7 @@ export function accepts(
   requireSelfConsistent(candidate, "the candidate being considered")
 
   // CLAUSE 2, BEFORE ANY ARITHMETIC ON F.
-  if (!candidate.admissibleA1) return false
+  if (regressions(current, candidate).length > 0) return false
 
   const delta = candidate.score.objective - current.score.objective
   if (delta < 0) return true
@@ -256,6 +291,38 @@ export function accepts(
   // report a round that accepted something while nothing got better.
   if (delta === 0) return compareRanking(candidate.ranking, current.ranking) < 0
   return false
+}
+
+/**
+ * Every constraint that HELD on `current` and is BROKEN on `candidate`: the
+ * regressions the move caused.
+ *
+ * **IT IS KEYED BY ID AND NEVER BY POSITION.** `gradeHardConstraints` returns
+ * the ten in `CONSTRAINT_IDS`' order and `a1` refuses a set that is not exactly
+ * the ten once each, so the two lists do line up today - and comparing them
+ * index by index would be a claim about that ordering rather than about the
+ * constraints, and would silently compare `HC3` against `HC4` the moment
+ * anything reordered the table.
+ *
+ * **A CONSTRAINT BROKEN ON BOTH SIDES IS NOT A REGRESSION**, and that is the
+ * whole content of the correction above: the starting board's incomplete nets
+ * must not forbid every move away from it. **A constraint this move REPAIRS is
+ * not an acceptance either** - it reaches the decision through `F` and the
+ * ranking like everything else, because `HC1` holding is not itself a cheaper
+ * board.
+ *
+ * It returns the list rather than a boolean so a caller that wants to say WHICH
+ * constraint a move broke can, without a second pass.
+ */
+function regressions(
+  current: Evaluation,
+  candidate: Evaluation,
+): readonly ConstraintResult[] {
+  const held = new Set<string>()
+  for (const result of current.results) {
+    if (result.held) held.add(result.id)
+  }
+  return candidate.results.filter((result) => !result.held && held.has(result.id))
 }
 
 /**

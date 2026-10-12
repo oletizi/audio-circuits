@@ -206,6 +206,19 @@ export function rulesWithWorseAcceptance(bound: number): StripboardRules {
 }
 
 /**
+ * The same rules with a small evaluation cap, so `S5` can be reached in a test.
+ *
+ * The committed cap is 20,000 - `Q5`'s backstop, sized so a healthy run never
+ * reaches it - which is exactly why a test cannot drive a real climb to it and
+ * why the cap needs a fixture rather than being left as the one branch nothing
+ * asserts on. `loadRules` enforces the cap's own bounds, so this spreads over a
+ * loaded object rather than inventing a rules file.
+ */
+export function rulesWithCap(cap: number): StripboardRules {
+  return { ...rulesWithoutWorseAcceptance(), evaluationCap: cap }
+}
+
+/**
  * A hand-built `Evaluation` that states nothing false and proves nothing
  * either: ten results that SAY they hold, a `Score` whose every field is zero
  * but `objective`, and a five-position tuple of ones.
@@ -310,6 +323,28 @@ function answer(
 export function scriptedSpawn(script: DumpScript): SpawnVeroroute {
   const state = { dumps: 0, ops: [] as string[] }
   return (args) => answer(args, script, state)
+}
+
+/**
+ * `--check`'s output for a board one of whose nets is not finished, and the
+ * exit code that goes with it.
+ *
+ * `--check` EXITS 1 ON SUCH A BOARD, and that code is `HC1`'s own input rather
+ * than a spawn failure. The dump text is unchanged, so `HC8`'s copper partition
+ * still matches the netlist and `HC1` is the only constraint that fails - which
+ * is what makes `best.admissibleA1 === false` attributable to one named cause.
+ */
+const INCOMPLETE_REPORT = ["Layout state", "left incomplete", "right complete", "Cuts: 0", ""].join(
+  "\n",
+)
+
+/** The scripted spawn with `--check` reporting one net incomplete and exiting 1. */
+export function incompleteNetSpawn(script: DumpScript): SpawnVeroroute {
+  const inner = scriptedSpawn(script)
+  return (args) =>
+    args[0] === "--check"
+      ? { status: 1, stdout: INCOMPLETE_REPORT, stderr: "" }
+      : inner(args)
 }
 
 /** The same spawn, recording every argument list into `spawned` and every ops file into `ops`. */
