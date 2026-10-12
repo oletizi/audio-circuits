@@ -85,7 +85,13 @@
  * 36 - and they are not deleted but moved: `docs/stripboard/
  * pipeline-verification.md` §5.9 is that run, §6.3 is this one, §6.4 is what the
  * cluster move did to `F` (nothing, at 8% to 62% more evaluations) and §6.5 is
- * the stretch defect the comparison found.
+ * the stretch defect the comparison found. **AND §6.6 SUPERSEDES THE FIGURES
+ * ABOVE ON TWO OF THE THREE ARMS**, because the move set grew again: with the
+ * GATHER, seed 0 reaches `F` 10 on `constructed` in 32 rounds and 4,150
+ * evaluations and `F` 11 on `random` in 63 rounds and 9,698, while `import`
+ * stays at 36 because no gather is proposable on a board packed into three rows.
+ * Those three are the current figures; the ranges above are the arm
+ * comparison's, measured before the gather existed.
  *
  * **THE START IS INADMISSIBLE AND THAT IS NORMAL.** `./seed.ts` records that
  * all three arms begin from a board whose nets are incomplete - 19, 13, 7 and 6

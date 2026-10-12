@@ -34,16 +34,21 @@
  * the net's holes sit RELATIVE TO THE OTHER NETS' holes on the strips they share
  * - which is what merges two runs of one net separated by a third net's hole, and
  * is how `J` falls on the fixture named above. The gathering move the sentence
- * describes is a different gesture: several different deltas, one per part, or
- * §7.4's *"or one rotation"*, which the `Move` union as declared cannot express
- * (it carries a delta and no rotation). Both are recorded in
- * `docs/stripboard/pipeline-verification.md` section 6 as findings rather than
- * silently implemented, because widening the move set is a deliberate edit with
- * a run behind it.
+ * describes is a DIFFERENT GESTURE - several deltas, one per part - and it is
+ * `gatherMove` at the foot of this file, built on the controller's ruling of
+ * 2026-10-12 after this module's own measurement showed the one-delta cluster
+ * changing `F` on no arm of the comparison
+ * (`docs/stripboard/pipeline-verification.md` §6.4, and §6.6 for what the gather
+ * then did). §7.4's *"or one rotation"* is still unbuilt and still recorded in
+ * §6.1 rather than silently added, because the `Move` union carries a delta and
+ * no rotation and widening the move set is a deliberate edit with a run behind
+ * it.
  *
  * **THE GESTURE ORDER IS THIS MODULE'S ONE CHOICE, AND IT IS THE ORDER OF THE
- * PARTS.** A cluster is the first compound gesture in this pipeline, so it is
- * the first that has to choose a sequence. The turn-versus-stretch question
+ * PARTS**, for both compound kinds. A cluster was the first compound gesture in
+ * this pipeline, so it was the first that had to choose a sequence; the gather
+ * chooses one the same way and `translationsAfter` is the one fit model under
+ * both. The turn-versus-stretch question
  * `./seed-placement.ts`'s `GESTURE_ORDERS` exists for does not arise here and is
  * not re-answered: every gesture in a cluster is a pure translation, and at zero
  * turns and zero stretch steps that module states outright that *"both orders
