@@ -306,8 +306,19 @@ export function occupancyAfter(
   }
   const bound = stretchBoundFor(type)
   if (!bound.stretchable) return undefined
-  if (move.direction === "grow" && !(rect.cols < bound.maxLength)) return undefined
-  if (move.direction === "shrink" && !(rect.cols > bound.minLength)) return undefined
+  // THE BOUND IS CHECKED AGAINST THE EXTENT THAT STRETCHES, WHICH IS THE AXIS
+  // THE LEADS RUN ALONG - `rect.rows` once the part has been turned across the
+  // strips, `rect.cols` while it lies along them. It is the SAME axis
+  // `stretchedRect` moves, and reading `rect.cols` for every part regardless of
+  // its facing is the defect this replaces: measured on the arm comparison's
+  // own run, where a turned CAP_FILM_WIDE already at its minimum length was
+  // proposed a shrink and the fork refused it, stopping the run after seven
+  // rounds (`docs/stripboard/pipeline-verification.md` section 6.3). A square
+  // footprint hides it - a 3x3 rect reads the same on both axes - which is why
+  // it survived every fixture until a real board turned a 2x3 one.
+  const along = rect.across ? rect.rows : rect.cols
+  if (move.direction === "grow" && !(along < bound.maxLength)) return undefined
+  if (move.direction === "shrink" && !(along > bound.minLength)) return undefined
   const by = move.direction === "grow" ? 1 : -1
   return appliedGestures(occupancy, dump.grid, move.ref, origin, 0, by, SINGLE_GESTURE_ORDER)
 }

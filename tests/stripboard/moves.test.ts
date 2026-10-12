@@ -26,12 +26,13 @@ import {
   describeMove,
   enumerateMoves,
   MOVE_KINDS,
+  occupancyAfter,
   type Move,
 } from "../../tools/stripboard/moves.ts"
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 import { turnedRect } from "../../tools/stripboard/seed-placement.ts"
-import { occupancyOf, stretchBoundFor } from "../../tools/stripboard/seed-geometry.ts"
+import { occupancyOf, stretchBoundFor, type Occupancy } from "../../tools/stripboard/seed-geometry.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import type { PartRect } from "../../tools/stripboard/seed-geometry.ts"
 import {
@@ -191,6 +192,66 @@ test("no stretch is proposed for a family the fork will not stretch, and an unkn
     .filter((move) => move.kind === "stretch")
     .map((move) => (move.kind === "stretch" ? move.direction : ""))
   expect(directions).toEqual(["shrink"])
+})
+
+test("a TURNED part's stretch bound is read along its leads, not along its columns", () => {
+  // MEASURED, AND THE MEASUREMENT IS WHAT FOUND IT: on the arm comparison's own
+  // run (docs/stripboard/pipeline-verification.md section 6.3) the model
+  // proposed `--stretch C18 --direction shrink` on a turned CAP_FILM_WIDE that
+  // was already at its minimum length, and the fork refused with "C18 cannot
+  // shrink" - stopping the run after seven rounds. The two probes that settle
+  // what the fork thinks the length is, on that same board:
+  //
+  //   --stretch --ref C18 --direction grow   exit 0, and the leads move from
+  //                                          31,25 / 32,25 to 31,25 / 33,25
+  //                                          while AT and SPAN stay 31,24 and 3
+  //   --stretch --ref C18 --direction shrink exit 0 on the grown board
+  //
+  // So for a part facing N the length that stretches is the LEAD DISTANCE ALONG
+  // THE ROWS, which appears in no dump line at all, and `SPAN` is the body's
+  // column count. The occupancy tracks it as the rect's ROW extent once the
+  // part is across the strips, which is the axis `stretchedRect` already moves.
+  //
+  // HAND-BUILT TO DISCRIMINATE: a turned CAP_FILM_WIDE two rows long and three
+  // columns wide. CAP_FILM_WIDE's recorded minimum is 2, so the part is AT the
+  // minimum and no shrink may be proposed - while a reading of `rect.cols`
+  // sees 3 and proposes one. The grow is admitted either way, which is what
+  // makes the pair a discrimination and not a one-sided assertion.
+  const turnedDump = boardGeometry(
+    [
+      "GRID 35 35",
+      "BOUNDS 10,10 11,12",
+      "VERTICAL_STRIPS 1",
+      "CUT_STATE COMPUTED",
+      "PART C1 CAP_FILM_WIDE .33uF AT 10,10 SPAN 3 DIRECTION N",
+      "PIN C1 1 AT 10,11",
+      "PIN C1 2 AT 11,11",
+      "NODE 1 NAME left C1.1",
+      "NODE 2 NAME right C1.2",
+      "",
+    ].join("\n"),
+  )
+  const turned: Occupancy = new Map([
+    ["C1", { row: 10, col: 10, rows: 2, cols: 3, across: true }],
+  ])
+  const shrink: Move = { kind: "stretch", ref: "C1", direction: "shrink" }
+  const grow: Move = { kind: "stretch", ref: "C1", direction: "grow" }
+  expect(occupancyAfter(turned, turnedDump, shrink, "CAP_FILM_WIDE")).toBeUndefined()
+  expect(occupancyAfter(turned, turnedDump, grow, "CAP_FILM_WIDE")).not.toBeUndefined()
+  // And the enumeration therefore proposes the grow and not the shrink.
+  expect(
+    enumerateMoves(turned, turnedDump, REFERENCE)
+      .filter((move) => move.kind === "stretch")
+      .map(describeMove),
+  ).toEqual(["stretch C1 grow"])
+  // THE SAME RECT LYING ALONG THE STRIPS IS THE OTHER HALF: three rows by two
+  // columns, `across` false, so the length is the COLUMN extent - 2, at the
+  // minimum again - and the answers are the same for the opposite reason.
+  const flat: Occupancy = new Map([
+    ["C1", { row: 10, col: 10, rows: 3, cols: 2, across: false }],
+  ])
+  expect(occupancyAfter(flat, turnedDump, shrink, "CAP_FILM_WIDE")).toBeUndefined()
+  expect(occupancyAfter(flat, turnedDump, grow, "CAP_FILM_WIDE")).not.toBeUndefined()
 })
 
 test("no rotate is proposed where the turn would pan the board", () => {
