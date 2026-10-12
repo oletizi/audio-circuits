@@ -5403,3 +5403,147 @@ when it changed.
 **What would close this.** Amending the Task 20 brief's declared signature, or
 rejecting the deviation — in which case `REP5` or `Q5` needs an answer to a
 backstop stop that exits zero.
+
+### The open-net count is the acceptance rule's FIRST KEY, above `F`
+
+**What the documents say.** `OBJ1` names the search's objective as
+`F = C + ρ_w·W + ρ_s·B` and nothing else; `OBJ3` declares the five-position
+ranking and states that *"a ranking term is not a term in `F`"* and cannot make
+the search accept a worse one. Neither mentions completeness, and `HC1` appears
+only in `A1`, which classifies an outcome. So the search as specified optimises
+`F`, breaks ties on the ranking, and **has no clause that mentions whether the
+board conducts.**
+
+**What `tools/stripboard/climb-accepts.ts` does.** `Evaluation` carries
+`openNets` — the number of nets `--check` reports as `incomplete`, read off the
+same report `HC1` reads — and `strictlyBetter` compares it **before** `F`. A
+candidate with fewer open nets is accepted whatever its `F`; one with more is
+rejected whatever its `F`; a tie falls through to the unchanged `ΔF`-then-ranking
+rule. `E3`'s bounded worse-acceptance is guarded the same way the no-regression
+clause is: the bound buys a worse `F` and never an open net.
+
+**Why — the owner's instruction, which is what makes this a decision rather than
+a reading.** He was offered three routes out of the finding below: change the
+scoring so an unfinished connection counts against it; give the search a
+solder-bridge gesture; or run two passes, cuts first then completion.
+
+**Owner's words (verbatim), 2026-10-12:** *"1 then 3"* — change the scoring
+first, and add a second pass only if that is not enough. And, on the gesture:
+*"I don't like solder blobs. They are notoriously unreliable and they make
+troubleshooting maddening."*
+
+**Agent rationale** — everything else in this entry is agent-written and carries
+no owner endorsement. He settled THAT the scoring changes and that a second pass
+waits; he did not settle where in the scoring it goes.
+
+**The measurement that forced it, which is recorded rather than argued.**
+`docs/stripboard/pipeline-verification.md` §6.9: `HC1` failed on all fifteen runs
+of the last sweep, and the cause was established rather than guessed — nothing
+the search optimised mentioned completeness. `random` seed 3 went from 14 of 14
+nets incomplete at 21 cuts to **13 of 14 incomplete at 15 cuts over 63 rounds**.
+Sixty-three rounds of removing cuts closed one net. Every run stopped on
+search-exhausted, so it was not a budget.
+
+**Why it is a KEY and not a term in `F`, which is the part CRITERIA settles.**
+
+- A term in `F` is a **weighted** term, and a weight is a price at which an open
+  net may be bought. CRITERIA §2 says of the ten hard constraints *"nothing in
+  them is tradeable"*, and `A1` repeats it: *"Nothing is tradeable."* A weight
+  merely large enough to usually win still names a price.
+- `HC1`'s own reason gives the direction: *"because a board that does not conduct
+  has no cost worth reporting."* A quantity whose absence makes the cost not
+  worth reporting belongs above the cost, not inside it.
+- `OBJ1` fixes `F` as three line counts *"in a report the producing agent did not
+  write"*, and `V1` checks exactly those three by a second code path. A fourth
+  term is not a line count in the dump, and `F` would stop being the quantity
+  `V1` checks.
+- `RANKING` is too weak by `OBJ3`'s own construction: the tuple is consulted only
+  at `ΔF = 0`, so a completeness position there could not buy the single cut that
+  closing a net costs — which is the measured reason nothing closed.
+
+**What it does NOT change.** `F` is unchanged, `RANKING` is unchanged, `A1` is
+unchanged, and what counts as an acceptable LAYOUT is untouched: an inadmissible
+board still cannot be adopted. The quantity introduced is not a new criterion —
+it is `HC1`'s own report line counted, so no number here came from an agent's
+judgement.
+
+**What it costs, stated rather than discovered.** `F` is no longer monotone in
+the best candidate: a board that closes a net at a higher `F` becomes the best,
+so `ClimbResult.history` can rise at a new best. The climb still terminates,
+because `openNets` is bounded below by zero and never rises on an acceptance, so
+it can fall at most as many times as the board has nets and between two falls the
+old rule decides. And a `blocked` net — one with an unplaced member — is not
+counted, which `tools/stripboard/climb-evaluate.ts` records as a limit: the
+no-regression clause is what stops a part being floated to shrink the count, and
+on a board whose start already floats a part nothing closes that gap.
+
+**What would close this.** Either amending `OBJ1`/`OBJ3` to state the ordering —
+which means stating that completeness is a key above `F` rather than a term in it
+— or rejecting the deviation, in which case the finding in §6.9 stands unanswered
+and route 3 (two passes) is what remains.
+
+**Where the code says so.** `tools/stripboard/climb-accepts.ts`'s module comment
+carries the whole reading, and names this entry.
+
+### `ρ_s = 0.25` and not PAR1's 1: a solder blob is priced at the wire it becomes
+
+**What the documents say.** `PAR1`: *"`ρ_w = 0.25` and `ρ_s = 1`"*, with
+`ρ_s = 1` carrying no verbatim owner instruction and this rationale: *"one blob
+at one hole pair, comparable to one cut, and VeroRoute derives where it goes
+without being asked."*
+
+**What `stripboard/rules.json` carries.** `rhoSolder: 0.25` — the same price as a
+wire — with its full warrant in the file's own `notes` entry.
+
+**Why. Owner's words (verbatim), 2026-10-12:** *"I don't like solder blobs. They
+are notoriously unreliable and they make troubleshooting maddening."* and **"A
+solder blob will turn into a wire on my bench"**.
+
+**Owner-settled:** that a solder blob is not an artifact he builds — when a
+layout calls for one he runs a short wire in its place.
+
+**Agent rationale** (agent-written, no owner endorsement; he settled the fact
+about his bench, and the value is a reading of it). The price follows the
+artifact that gets built: a blob on a layout is a wire on the bench, a wire is
+priced 0.25, so 0.25 is what a blob costs him. `PAR1`'s effort comparison was not
+wrong about blobs in general — it was about an artifact that does not reach this
+bench, which made the objective wrong by a factor of four against the thing that
+replaces it.
+
+**Two alternatives considered and refused, each for a stated reason.**
+
+- **Counting blobs as wires and dropping the parameter.** `OBJ1` states a
+  distinction that survives his instruction — *"`B` prices something the agent
+  does not place, VeroRoute deriving the bridges itself; `W` is the opposite"* —
+  and he does not choose where a derived bridge goes. Merging the counts would
+  delete a figure the dump reports and make `F` a two-term function that `V1`'s
+  three-count check is not stated over. So only the price moves.
+- **Forbidding a blob outright.** `B` is only ever what `AutoFillVero` derives and
+  no gesture in the move set can make one, so a refusal would be an **eleventh
+  hard constraint** rejecting a board for a feature the fork produced — and an
+  agent may not author a hard constraint. `tools/stripboard/grade.ts` refuses a
+  set that is not exactly CRITERIA's ten.
+
+**What it costs.** At `ρ_s = ρ_w` the objective can no longer distinguish a wire
+from a blob, so the asymmetric test that caught a swap of the two weights is
+rewritten rather than deleted: at equal weights there is nothing left to swap,
+and what still has teeth is that the solder count is a term of `F` at all.
+`RANKING`'s third position still orders fewer blobs ahead at equal `F`, and
+`score.solder` still reports the count.
+
+**What it moves in the measured record.** COST §2.2's recorded objectives were
+computed at `ρ_s = 1`, so they no longer reproduce under the committed rules;
+`tests/stripboard/score-objective.test.ts` asserts both columns — the spec's
+figure at the spec's weight, and the committed figure hand-added from the same
+three counts — rather than restating one as the other. Of §6.9's fifteen runs
+exactly one carries a `SOLDER` line (`random` seed 3, `B = 1`, `F = 16` at
+`C = 15`, which is 15.25 at this weight), so the weight is inert on fourteen of
+fifteen: **cheapening the join is not what closes a net.** The two changes in
+this section are complementary rather than independent — a wire was never
+accepted because it keeps the cut count and pays its weight with nothing in the
+objective rewarding the connection it closes, and the completeness key is what
+makes that trade worth taking.
+
+**What would close this.** Amending `PAR1` to carry the owner's instruction and
+the value, or rejecting the deviation — in which case the objective prices an
+artifact he has said he does not build.
