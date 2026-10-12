@@ -77,7 +77,16 @@ import path from "node:path"
 import type { ConstraintResult, Stock } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
 import { a1 } from "./grade.ts"
-import { applicableMoves, applyMove, enumerateMoves, type GestureTransport } from "./moves.ts"
+import {
+  applicableMoves,
+  applyMove,
+  describeMove,
+  enumerateMoves,
+  occupancyAfter,
+  type GestureTransport,
+  type Move,
+} from "./moves.ts"
+import { occupancyOf, type Occupancy } from "./seed-geometry.ts"
 import { compareRanking } from "./rank.ts"
 import type { StripboardRules } from "./rules.ts"
 import type { SpawnVeroroute } from "./seed.ts"
@@ -283,6 +292,25 @@ export interface ClimbResult {
  * both here because both are the loop's own business - one ends a converged
  * climb and the other bounds a looping bug.
  */
+/**
+ * One candidate the climb is standing on: what was measured, and the PART
+ * GEOMETRY carried forward to it.
+ *
+ * The occupancy sits beside the measurement rather than inside `Measured`,
+ * because `measure` reads a board and applies no gesture - it has no way to
+ * know what the geometry became. The climb is the only thing that does.
+ */
+interface State {
+  readonly measured: Measured
+  readonly occupancy: Occupancy
+}
+
+/** Which part a part-moving move names, for the type lookup the stretch bound needs. */
+function refOf(move: Move): string | undefined {
+  if (move.kind === "move" || move.kind === "rotate" || move.kind === "stretch") return move.ref
+  return undefined
+}
+
 export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): ClimbResult {
   fs.mkdirSync(input.runDir, { recursive: true })
   const transport: GestureTransport = input.batch ? "batched" : "one-gesture-per-launch"
@@ -315,16 +343,30 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
   // satisfiable: a run that scored no candidate has not measured the start it
   // was handed, and that refusal exists because a runner reporting zero
   // evaluations once produced a retirement recommendation out of nothing.
-  let best = evaluateInto(start, "start")
+  const first = evaluateInto(start, "start")
+  // THE ONLY `occupancyOf` IN THE CLIMB, and the only one there may be: this is
+  // how a climb reads its FIRST geometry off the board it was handed, and every
+  // later occupancy is advanced from it by `occupancyAfter`, because a dump
+  // cannot describe a turned part's footprint.
+  //
+  // THE CONSEQUENCE, STATED BECAUSE IT IS A REAL LIMIT AND NOT AN OVERSIGHT: a
+  // STARTING board that already carries a turned part cannot be read at all,
+  // and `occupancyOf`'s own refusal says so. That is what stops a climb from
+  // the constructed and random arms - their own gestures turn parts before the
+  // climb ever sees the board - and it is a Task 16 interface question (hand
+  // back the occupancy beside the board) rather than anything this loop can fix.
+  let best: State = { measured: first, occupancy: occupancyOf(first.dump) }
   let base = best
   let rounds = 0
   let spent = false
 
   while (!spent) {
-    const moves = applicableMoves(enumerateMoves(base.dump, input.reference))
+    const moves = applicableMoves(
+      enumerateMoves(base.occupancy, base.measured.dump, input.reference),
+    )
     if (moves.length === 0) {
       throw new Error(
-        `climb: the move set is empty on ${base.evaluation.candidate}, so this round would ` +
+        `climb: the move set is empty on ${base.measured.evaluation.candidate}, so this round ` +
           "sweep nothing and the climb would report a local optimum it never tested. It is not " +
           "treated as convergence: enumerateMoves found no gesture the placement model admits - " +
           "every part boxed in, nothing stretchable, no net spanning two strips - which is a " +
@@ -341,10 +383,26 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
       }
       const tag = `r${rounds}-m${index}`
       const candidateBoard = path.join(input.runDir, `${tag}.vrt`)
-      applyMove(base.source, move, candidateBoard, spawn, transport)
+      // THE SAME CALL THE ENUMERATION USED TO PROPOSE THIS MOVE, so the set
+      // the search sweeps and the state it carries cannot disagree about what a
+      // gesture does. `undefined` here is a defect in this loop and not a state
+      // to carry forward, exactly as `withPartTurned` says of itself: the
+      // occupancy is not advanced past a gesture that cannot happen.
+      const type = base.measured.dump.parts.find((part) => part.ref === refOf(move))?.type
+      const advanced = occupancyAfter(base.occupancy, base.measured.dump, move, type)
+      if (advanced === undefined) {
+        throw new Error(
+          `climb: ${describeMove(move)} was proposed by enumerateMoves and the same model now ` +
+            "says the occupancy cannot be advanced past it. The two cannot disagree - they are " +
+            "one call - so this is a defect in the climb rather than a gesture to skip, and the " +
+            "occupancy is NOT left unadvanced: a state that disagreed with the board would make " +
+            "every later round propose holes that are already taken.",
+        )
+      }
+      applyMove(base.measured.source, move, candidateBoard, spawn, transport)
       const measured = evaluateInto(candidateBoard, tag)
-      if (accepts(best.evaluation, measured.evaluation, input.rules)) {
-        best = measured
+      if (accepts(best.measured.evaluation, measured.evaluation, input.rules)) {
+        best = { measured, occupancy: advanced }
         accepted += 1
       }
     }
@@ -357,5 +415,11 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
     base = best
   }
 
-  return { best: best.evaluation, rounds, evaluations: history.length, acceptedPerRound, history }
+  return {
+    best: best.measured.evaluation,
+    rounds,
+    evaluations: history.length,
+    acceptedPerRound,
+    history,
+  }
 }

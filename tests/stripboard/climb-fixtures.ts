@@ -47,6 +47,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
+import { occupancyOf } from "../../tools/stripboard/seed-geometry.ts"
 import { CONSTRAINT_IDS, holds } from "../../tools/stripboard/constraints-model.ts"
 import { referenceNetsFromExport } from "../../tools/stripboard/equivalence.ts"
 import { stockFor } from "../../tools/stripboard/grade.ts"
@@ -175,6 +176,18 @@ export const DUMP = boardGeometry(BASE_DUMP)
 export const BETTER = boardGeometry(BETTER_DUMP)
 export const TOP_EDGE = boardGeometry(TOP_EDGE_DUMP)
 export const REFERENCE = referenceNetsFromExport(NETLIST)
+
+/**
+ * Each board's FIRST occupancy, read off its own dump.
+ *
+ * `enumerateMoves` takes a CARRIED occupancy rather than deriving one, because a
+ * dump cannot describe a turned part's footprint - so a test that enumerates
+ * reads the first one here exactly as `climb` does from its starting board, and
+ * `occupancyOf` is the one and only way either of them gets it.
+ */
+export const OCC = occupancyOf(DUMP)
+export const BETTER_OCC = occupancyOf(BETTER)
+export const TOP_EDGE_OCC = occupancyOf(TOP_EDGE)
 
 /**
  * What the two boards are scored against. The scorer reads only `board` and

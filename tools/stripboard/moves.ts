@@ -53,8 +53,8 @@ import type { BoardDump } from "../guide/dump.ts"
 import { parseHoleKey, pinHoles, type HoleKey } from "./copper.ts"
 import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
-import { occupancyOf, stretchBoundFor, type Occupancy } from "./seed-geometry.ts"
-import { appliedGestures, rectOf, turnsTakeable } from "./seed-placement.ts"
+import { stretchBoundFor, type Occupancy } from "./seed-geometry.ts"
+import { appliedGestures, rectOf } from "./seed-placement.ts"
 import type { SpawnVeroroute } from "./seed.ts"
 
 /**
@@ -121,24 +121,6 @@ export const DEFERRED_KINDS: ReadonlyMap<Move["kind"], string> = new Map([
       "in one candidate and so the same compound-gesture problem as the cluster move; or a fork " +
       "change letting --op add-wire name both ends. It is still ENUMERATED, so the move set in " +
       "the record stays the spec's",
-  ],
-  [
-    "rotate",
-    "a turn produces a board this enumeration cannot read back, so the climb cannot take a " +
-      "SECOND move after it. occupancyOf REFUSES a part facing N or S, by its own documented " +
-      "reason: for such a part SPAN is the footprint's ROW count and its stretched length " +
-      "appears in NO dump line (COST section 7.3 item 2, GetCompRows, the field --dump-board " +
-      "does not report). Measured on the import-placed low-boost board: with rotate applicable " +
-      "the climb accepted gestures through round 0 and then refused with `part \"C18\": it faces " +
-      'N`, and the constructed and random arms refuse at the same point for the same reason, ' +
-      "because their own gestures turn parts too. THE FIX IS NOT IN THIS FILE and is NOT to " +
-      "guess the turned rect: carry the occupancy FORWARD through accepted moves instead of " +
-      "re-deriving it from each dump, which is already seed-placement.ts's documented pattern " +
-      "for exactly this fact (\"THE OCCUPANCY IS TRACKED, NOT RE-READ ... a dump does not " +
-      'describe a TURNED part\'s footprint at all") - it needs enumerateMoves to be handed an ' +
-      "occupancy rather than deriving one, which is a change to the signature the plan declares " +
-      "and so a decision above this task. Deferring it costs the search the orientation lever " +
-      "outright, which is a real loss and is recorded as one rather than waved past",
   ],
   [
     "cluster",
@@ -210,66 +192,114 @@ export function applicableMoves(moves: readonly Move[]): readonly Move[] {
  */
 const UNIT_DELTAS: readonly (readonly [number, number])[] = [[-1, 0], [0, 1], [1, 0], [0, -1]]
 
-/** Whether a part can be moved to `origin` beside everything already placed. */
-function movable(
+/**
+ * The ONE gesture order named in this file, and naming it chooses nothing:
+ * every call below passes zero for one of `appliedGestures`' two counts, where
+ * `./seed-placement.ts` states outright that at zero "both orders are the same
+ * sequence". Task 18's cluster move is the first compound gesture and the
+ * choice is its.
+ */
+const SINGLE_GESTURE_ORDER = "turn-then-stretch" as const
+
+/**
+ * The occupancy after `move` is applied, or `undefined` when the model says the
+ * fork would refuse the gesture.
+ *
+ * **THIS IS THE ONE PLACE A GESTURE'S EFFECT ON THE PART GEOMETRY IS COMPUTED,
+ * AND IT IS TASK 16'S `appliedGestures` UNDERNEATH** - transcribed from
+ * `Board::RotateComps` and held against the real binary across 43 gestures and
+ * 11 placements with zero divergence. **There is no second occupancy advance in
+ * this pipeline:** `enumerateMoves` proposes a move exactly when this returns
+ * an occupancy, and `climb` advances its carried state with the same call, so
+ * the set the search sweeps and the state it carries cannot disagree about what
+ * a gesture does.
+ *
+ * **WHY THE CLIMB CARRIES AN OCCUPANCY AT ALL rather than re-reading one from
+ * each dump.** A dump does not describe a TURNED part's footprint: for a part
+ * facing `N` or `S`, `SPAN` is the footprint's ROW count and its stretched
+ * length appears in no dump line (COST §7.3 item 2 - `GetCompRows`, which
+ * `--dump-board` does not report). So `occupancyOf` REFUSES such a board, and a
+ * climb that re-derived its geometry each round could take a turn and then be
+ * unable to read the result. Measured, before this was carried: the climb
+ * accepted gestures through round 0 and then refused with `part "C18": it faces
+ * N`, which is why `rotate` was briefly in `DEFERRED_KINDS` and is not any
+ * more. `./seed-placement.ts` reached the same wall and states the same answer:
+ * *"THE OCCUPANCY IS TRACKED, NOT RE-READ."*
+ *
+ * The family bound is checked HERE and not only at the proposal, so the two
+ * cannot drift: `Component::CanStretch` returns `false` outright for a family
+ * not on its list, and a geometric fit is not a stretchable part.
+ */
+export function occupancyAfter(
   occupancy: Occupancy,
   dump: BoardDump,
-  ref: string,
-  origin: readonly [number, number],
-): boolean {
-  // `turns` and `stretch` are both zero, so this asks only whether the moved
-  // rect fits - and at zero the two gesture orders are the same sequence, which
-  // is why naming one here chooses nothing.
-  return appliedGestures(occupancy, dump.grid, ref, origin, 0, 0, "turn-then-stretch") !== undefined
+  move: Move,
+  type?: string,
+): Occupancy | undefined {
+  if (move.kind === "add-wire" || move.kind === "delete-wire" || move.kind === "cluster") {
+    throw new Error(
+      `occupancyAfter: a "${move.kind}" move's effect on the part geometry is not modelled. ` +
+        "add-wire and delete-wire change the WIRE list and not any part's rect - and a wire's " +
+        "own holes are not in the occupancy at all, which is a limit of occupancyOf rather than " +
+        "a decision here - while cluster moves several parts at once and is Task 18's. All three " +
+        "are in DEFERRED_KINDS, so applicableMoves keeps them out of the sweep and this is " +
+        "unreachable from climb; reaching it means a caller advanced past a gesture it had not " +
+        "applied.",
+    )
+  }
+  if (move.kind === "move") {
+    return appliedGestures(occupancy, dump.grid, move.ref, move.to, 0, 0, SINGLE_GESTURE_ORDER)
+  }
+  const rect = rectOf(occupancy, move.ref)
+  const origin: readonly [number, number] = [rect.row, rect.col]
+  if (move.kind === "rotate") {
+    if (move.direction === "ccw") {
+      throw new Error(
+        "occupancyAfter: an anticlockwise turn has no modelled landing rect. " +
+          "tools/stripboard/seed-placement.ts's turnedRect is Board::RotateComps's CLOCKWISE " +
+          "case, line by line, and nothing in this repository has transcribed the anticlockwise " +
+          "one - so the occupancy cannot be advanced past this gesture and the search must not " +
+          "propose it. It is NOT assumed to be the mirror of the clockwise case: that is a " +
+          "claim about arithmetic nobody has read. Transcribe the other case with a row in " +
+          "tests/stripboard/seed-geometry.test.ts beside it, or keep proposing cw only.",
+      )
+    }
+    return appliedGestures(occupancy, dump.grid, move.ref, origin, 1, 0, SINGLE_GESTURE_ORDER)
+  }
+  if (type === undefined) {
+    throw new Error(
+      `occupancyAfter: a stretch of ${move.ref} needs the part's VeroRoute TYPE to find its ` +
+        "family's length bound, and none was given. Component::CanStretch is a fixed family " +
+        "list and a geometric fit is not a stretchable part - that is what refused a --stretch " +
+        "on a SIP5 after 24 accepted gestures. Pass the dump's PART type.",
+    )
+  }
+  const bound = stretchBoundFor(type)
+  if (!bound.stretchable) return undefined
+  if (move.direction === "grow" && !(rect.cols < bound.maxLength)) return undefined
+  if (move.direction === "shrink" && !(rect.cols > bound.minLength)) return undefined
+  const by = move.direction === "grow" ? 1 : -1
+  return appliedGestures(occupancy, dump.grid, move.ref, origin, 0, by, SINGLE_GESTURE_ORDER)
 }
 
 /**
- * Whether one `--stretch` step in `direction` is one the fork will take: the
- * part's FAMILY must be stretchable and inside its length bound, AND the
- * resulting rect must fit.
+ * Every `move`, `rotate` and `stretch` the model admits, in the DUMP'S PART
+ * ORDER with each part's rect read from the CARRIED occupancy.
  *
- * **BOTH HALVES, AND THE FIRST ONE WAS MISSING UNTIL THE REAL BINARY FOUND
- * IT.** A geometric fit is not a stretchable part: `Component::CanStretch`
- * refuses outright for a family not on its list, and the first real climb on
- * the import-placed low-boost board proposed `--stretch junction_grounds
- * --direction grow` - geometrically clear, and refused by the fork - after 24
- * accepted gestures. `stretchBoundFor` is the transcribed table, and it refuses
- * a type nobody has measured rather than guessing either way.
+ * The order is the dump's and the geometry is the occupancy's, and the split
+ * matters: the order has to be reproducible (Task 13's hash) while the geometry
+ * has to survive a turn, which the dump's own `PART` line does not.
  */
-function stretchable(
-  occupancy: Occupancy,
-  dump: BoardDump,
-  type: string,
-  ref: string,
-  direction: "grow" | "shrink",
-): boolean {
-  const bound = stretchBoundFor(type)
-  if (!bound.stretchable) return false
-  const length = rectOf(occupancy, ref).cols
-  if (direction === "grow" && !(length < bound.maxLength)) return false
-  if (direction === "shrink" && !(length > bound.minLength)) return false
-  const rect = rectOf(occupancy, ref)
-  return (
-    appliedGestures(
-      occupancy,
-      dump.grid,
-      ref,
-      [rect.row, rect.col],
-      0,
-      direction === "grow" ? 1 : -1,
-      "turn-then-stretch",
-    ) !== undefined
-  )
-}
-
-/** Every `move`, `rotate` and `stretch` the model admits, in the dump's part order. */
-function partMoves(dump: BoardDump, occupancy: Occupancy): readonly Move[] {
+function partMoves(occupancy: Occupancy, dump: BoardDump): readonly Move[] {
   const moves: Move[] = []
   for (const part of dump.parts) {
     const rect = rectOf(occupancy, part.ref)
+    const admits = (move: Move): boolean =>
+      occupancyAfter(occupancy, dump, move, part.type) !== undefined
     for (const [dRow, dCol] of UNIT_DELTAS) {
       const to: readonly [number, number] = [rect.row + dRow, rect.col + dCol]
-      if (movable(occupancy, dump, part.ref, to)) moves.push({ kind: "move", ref: part.ref, to })
+      const move: Move = { kind: "move", ref: part.ref, to }
+      if (admits(move)) moves.push(move)
     }
     // CLOCKWISE ONLY, AND THE REASON IS WHAT HAS BEEN TRANSCRIBED. `turnedRect`
     // is `Board::RotateComps`'s CLOCKWISE case, line by line, and nothing in
@@ -294,13 +324,11 @@ function partMoves(dump: BoardDump, occupancy: Occupancy): readonly Move[] {
     // on a crowded board where the chain is not. Whether that happens is
     // unmeasured. `tests/stripboard/moves.test.ts` holds the two-turn cycle so
     // this claim fails rather than rots.
-    if (turnsTakeable(occupancy, dump.grid, part.ref, [rect.row, rect.col], 1)) {
-      moves.push({ kind: "rotate", ref: part.ref, direction: "cw" })
-    }
+    const turn: Move = { kind: "rotate", ref: part.ref, direction: "cw" }
+    if (admits(turn)) moves.push(turn)
     for (const direction of ["grow", "shrink"] as const) {
-      if (stretchable(occupancy, dump, part.type, part.ref, direction)) {
-        moves.push({ kind: "stretch", ref: part.ref, direction })
-      }
+      const stretch: Move = { kind: "stretch", ref: part.ref, direction }
+      if (admits(stretch)) moves.push(stretch)
     }
   }
   return moves
@@ -367,9 +395,12 @@ function clusterMoves(reference: ReferenceNets): readonly Move[] {
  * strips, a component type with no recorded footprint row count - rather than
  * enumerating moves for a rectangle nobody measured.
  */
-export function enumerateMoves(dump: BoardDump, reference: ReferenceNets): readonly Move[] {
-  const occupancy = occupancyOf(dump)
-  return [...partMoves(dump, occupancy), ...wireMoves(dump, reference), ...clusterMoves(reference)]
+export function enumerateMoves(
+  occupancy: Occupancy,
+  dump: BoardDump,
+  reference: ReferenceNets,
+): readonly Move[] {
+  return [...partMoves(occupancy, dump), ...wireMoves(dump, reference), ...clusterMoves(reference)]
 }
 
 /**

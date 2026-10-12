@@ -31,13 +31,16 @@ import {
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 import { turnedRect } from "../../tools/stripboard/seed-placement.ts"
-import { stretchBoundFor } from "../../tools/stripboard/seed-geometry.ts"
+import { occupancyOf, stretchBoundFor } from "../../tools/stripboard/seed-geometry.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import type { PartRect } from "../../tools/stripboard/seed-geometry.ts"
 import {
   BETTER,
+  BETTER_OCC,
   DUMP,
+  OCC,
   TOP_EDGE,
+  TOP_EDGE_OCC,
   freshRunDir,
   recordingSpawn,
   REFERENCE,
@@ -69,8 +72,8 @@ function refusalFrom(call: () => unknown): string {
 }
 
 test("the move enumeration is deterministic and does not iterate a hash map", () => {
-  const first = enumerateMoves(DUMP, REFERENCE).map(describeMove)
-  const second = enumerateMoves(DUMP, REFERENCE).map(describeMove)
+  const first = enumerateMoves(OCC, DUMP, REFERENCE).map(describeMove)
+  const second = enumerateMoves(OCC, DUMP, REFERENCE).map(describeMove)
   expect(first).toEqual(second)
   // The nets arrive in the netlist's order, so reordering the reference map
   // reorders the cluster moves - which is what makes the order explicit rather
@@ -80,7 +83,7 @@ test("the move enumeration is deterministic and does not iterate a hash map", ()
   // assertion above and fail this one.
   const reversed: ReferenceNets = new Map([...REFERENCE.entries()].reverse())
   const clusters = (nets: ReferenceNets): readonly string[] =>
-    enumerateMoves(DUMP, nets)
+    enumerateMoves(occupancyOf(DUMP), DUMP, nets)
       .filter((move) => move.kind === "cluster")
       .map((move) => (move.kind === "cluster" ? move.net : ""))
   expect(clusters(REFERENCE)).toEqual(["left", "left", "left", "left", "right", "right", "right", "right"])
@@ -88,7 +91,7 @@ test("the move enumeration is deterministic and does not iterate a hash map", ()
 })
 
 test("every move kind the spec names is enumerated, and no sixth kind appears", () => {
-  const kinds = new Set(enumerateMoves(DUMP, REFERENCE).map((move) => move.kind))
+  const kinds = new Set(enumerateMoves(OCC, DUMP, REFERENCE).map((move) => move.kind))
   expect([...kinds].sort()).toEqual([
     "add-wire",
     "cluster",
@@ -117,7 +120,7 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   //   cluster     2 nets x 4 one-hole deltas                               = 8
   //                                                                        ---
   //                                                                         26
-  const moves = enumerateMoves(DUMP, REFERENCE)
+  const moves = enumerateMoves(OCC, DUMP, REFERENCE)
   const counted = new Map<Move["kind"], number>()
   for (const move of moves) counted.set(move.kind, (counted.get(move.kind) ?? 0) + 1)
   expect(counted.get("move")).toBe(8)
@@ -127,25 +130,20 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   expect(counted.get("delete-wire")).toBe(2)
   expect(counted.get("cluster")).toBe(8)
   expect(moves.length).toBe(26)
-  // And the applicable subset is the 26 less the FOUR deferred kinds' 14: the
-  // eight clusters, the two delete-wires, the two add-wires and the two
-  // rotates. Three of the four joined the set on a measurement from the first
-  // real-binary run - see DEFERRED_KINDS, which carries each one's evidence -
-  // so this figure moving is the signal that the deferred set changed.
-  expect(applicableMoves(moves).length).toBe(12)
-  expect([...DEFERRED_KINDS.keys()].sort()).toEqual([
-    "add-wire",
-    "cluster",
-    "delete-wire",
-    "rotate",
-  ])
+  // And the applicable subset is the 26 less the THREE deferred kinds' 12: the
+  // eight clusters, the two delete-wires and the two add-wires. `rotate` was
+  // deferred for one round of this task and is back: a turn's result is now
+  // carried in the occupancy rather than re-read from a dump that cannot
+  // describe it. This figure moving is the signal that the deferred set changed.
+  expect(applicableMoves(moves).length).toBe(14)
+  expect([...DEFERRED_KINDS.keys()].sort()).toEqual(["add-wire", "cluster", "delete-wire"])
 })
 
 test("only the clockwise turn is proposed, because only that case is transcribed", () => {
   // tools/stripboard/seed-placement.ts's turnedRect is Board::RotateComps's
   // CLOCKWISE case, line by line; nothing in this repository has transcribed
   // the anticlockwise one. The `Move` union admits "ccw" because --rotate does.
-  const directions = enumerateMoves(DUMP, REFERENCE)
+  const directions = enumerateMoves(OCC, DUMP, REFERENCE)
     .filter((move) => move.kind === "rotate")
     .map((move) => (move.kind === "rotate" ? move.direction : ""))
   expect(directions).toEqual(["cw", "cw"])
@@ -185,7 +183,7 @@ test("no stretch is proposed for a family the fork will not stretch, and an unkn
       "",
     ].join("\n"),
   )
-  const directions = enumerateMoves(atCeiling, REFERENCE)
+  const directions = enumerateMoves(occupancyOf(atCeiling), atCeiling, REFERENCE)
     .filter((move) => move.kind === "stretch")
     .map((move) => (move.kind === "stretch" ? move.direction : ""))
   expect(directions).toEqual(["shrink"])
@@ -197,7 +195,7 @@ test("no rotate is proposed where the turn would pan the board", () => {
   // the turnsTakeable guard outright left their rotate counts at 2 and nothing
   // noticed. TOP_EDGE_DUMP puts a 1x6 part at row 0, whose turn lands at row -2
   // and pans the board, so --rotate would refuse it.
-  const moves = enumerateMoves(TOP_EDGE, REFERENCE)
+  const moves = enumerateMoves(TOP_EDGE_OCC, TOP_EDGE, REFERENCE)
   expect(moves.filter((move) => move.kind === "rotate").length).toBe(0)
   // And the part IS otherwise enumerated, so this is not passing because
   // nothing was enumerated at all: three of its four one-hole neighbours fit
@@ -245,8 +243,8 @@ test("a net whose holes share one strip gets no add-wire, and the second board s
   // and no connectivity, so none is proposed - while BASE_DUMP, whose nets
   // straddle two strips each, gets two. The pair is the point: a test on one
   // board alone could not tell "never proposed" from "not proposed here".
-  const onBetter = enumerateMoves(BETTER, REFERENCE).filter((move) => move.kind === "add-wire")
-  const onBase = enumerateMoves(DUMP, REFERENCE).filter((move) => move.kind === "add-wire")
+  const onBetter = enumerateMoves(BETTER_OCC, BETTER, REFERENCE).filter((move) => move.kind === "add-wire")
+  const onBase = enumerateMoves(OCC, DUMP, REFERENCE).filter((move) => move.kind === "add-wire")
   expect(onBetter.length).toBe(0)
   expect(onBase.map(describeMove)).toEqual([
     "add-wire at 2,1 joining 2,1 to 7,2",

@@ -1,28 +1,23 @@
 /**
- * Task 17: the acceptance rule and the climb's bookkeeping.
+ * Task 17: THE CLIMB'S BOOKKEEPING, driven against an injected fork.
  *
- * THE AUTHORITY is the brief at
- * `.superpowers/sdd/2026-10-10-stripboard-pipeline/task-17-brief.md`, `OBJ3` in
- * `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` and
- * COST §6.1/§6.4.
+ * The acceptance rule itself is `./climb-accepts.test.ts`, split off for the
+ * line ceiling at the seam the brief draws: `accepts` is testable without a
+ * spawn, and everything here needs one.
  *
- * **THE FIRST TEST IS THE ONE THIS WHOLE DESIGN RESTS ON.** A ranking term
- * cannot make the climb accept a worse `F`. If it ever passes while `F` rose,
- * `A_occ` - the occupied board area - has become an objective nobody
- * authorised, and every later run's number would be about a different quantity
- * than the one `OBJ1` names.
+ * **WHAT THESE PROVE AND WHAT THEY DO NOT.** The injected spawn answers
+ * `--dump-board` from a script keyed by the dump count, so it does not simulate
+ * a gesture: the dump a candidate reports is the script's and not the move's
+ * effect. So these assert the COUNTERS, the HISTORY's one-entry-per-evaluation
+ * contract, the invocation order, the scratch-file discipline and the CARRIED
+ * OCCUPANCY - never the fork's geometry, which `./seed-geometry.test.ts` holds
+ * against the real binary. `./climb-fixtures.ts` says the same at its own
+ * definition, and `docs/stripboard/pipeline-verification.md` section 5 carries
+ * what a real climb against the real binary actually did.
  *
- * **WHAT THE CLIMB TESTS PROVE AND WHAT THEY DO NOT.** The injected spawn
- * answers `--dump-board` from a script keyed by the dump count, so it does not
- * simulate a gesture: the dump a candidate reports is the script's and not the
- * move's effect. So these assert the COUNTERS, the HISTORY's one-entry-per-
- * evaluation contract, the invocation order and the scratch-file discipline -
- * never the fork's geometry, which `./seed-geometry.test.ts` holds against the
- * real binary. `./climb-fixtures.ts` says the same at its own definition.
- *
- * Every expected count below is hand-derived from the two fixture boards, with
- * the derivation written out, and never recomputed from the implementation's
- * own expression.
+ * Every expected count is hand-derived from the fixture boards, with the
+ * derivation written out, and never recomputed from the implementation's own
+ * expression.
  */
 import { expect, test } from "bun:test"
 import fs from "node:fs"
@@ -30,8 +25,6 @@ import { accepts, climb, evaluate } from "../../tools/stripboard/climb.ts"
 import { applicableMoves, enumerateMoves } from "../../tools/stripboard/moves.ts"
 import { evaluationsToCross, type ArmRun } from "../../tools/stripboard/seed-compare.ts"
 import {
-  BETTER,
-  BETTER_TUPLE,
   climbInput,
   DUMP,
   evaluation,
@@ -39,11 +32,11 @@ import {
   IMPROVES_THEN_STALLS,
   incompleteNetSpawn,
   netlistFile,
+  OCC,
   recordingSpawn,
   REFERENCE,
   rulesWithCap,
   rulesWithoutWorseAcceptance,
-  rulesWithWorseAcceptance,
   scriptedSpawn,
   seededStart,
   TARGETS,
@@ -60,154 +53,6 @@ function refusalFrom(call: () => unknown): string {
 }
 
 const base = evaluation()
-
-test("a ranking term cannot make the climb accept a worse F", () => {
-  // OBJ3. The candidate below has a strictly better ranking tuple - zero in
-  // every one of RANKING's five positions against the base's ones - and a worse
-  // F. It must be rejected. If this test ever passes while F rose, the search is
-  // optimising something nobody authorised.
-  const worseF = {
-    ...base,
-    score: { ...base.score, objective: base.score.objective + 1 },
-    ranking: [0, 0, 0, 0, 0],
-  }
-  expect(accepts(base, worseF, rulesWithoutWorseAcceptance())).toBe(false)
-})
-
-test("a strictly better F is accepted", () => {
-  const better = { ...base, score: { ...base.score, objective: base.score.objective - 1 } }
-  expect(accepts(base, better, rulesWithoutWorseAcceptance())).toBe(true)
-})
-
-test("an equal F with a strictly better ranking is accepted, and an equal tuple is not", () => {
-  const plateauBetter = { ...base, ranking: BETTER_TUPLE }
-  const plateauSame = { ...base }
-  expect(accepts(base, plateauBetter, rulesWithoutWorseAcceptance())).toBe(true)
-  expect(accepts(base, plateauSame, rulesWithoutWorseAcceptance())).toBe(false)
-})
-
-test("a candidate failing any hard constraint is rejected whatever its F", () => {
-  // The base board holds all ten, so HC1 failing here is a REGRESSION this
-  // move caused, and no F is cheap enough to buy it.
-  const cheapAndBroken = {
-    ...base,
-    admissibleA1: false,
-    score: { ...base.score, objective: 0 },
-    results: base.results.map((result) =>
-      result.id === "HC1" ? { ...result, held: false } : result,
-    ),
-  }
-  expect(accepts(base, cheapAndBroken, rulesWithoutWorseAcceptance())).toBe(false)
-})
-
-test("a constraint already broken before the move does not by itself reject the candidate", () => {
-  // THE DEADLOCK THIS RULE EXISTS TO BREAK. Every starting arm begins from a
-  // board with incomplete nets, so HC1 fails on the start; under an
-  // A1-gates-every-step rule no single gesture could ever be accepted, because
-  // no one gesture flips the conjunction of ten. Here HC1 is broken on BOTH
-  // sides and the candidate is strictly cheaper, so it is accepted.
-  const brokenBefore = {
-    ...base,
-    admissibleA1: false,
-    results: base.results.map((result) =>
-      result.id === "HC1" ? { ...result, held: false } : result,
-    ),
-  }
-  const stillBrokenButCheaper = {
-    ...brokenBefore,
-    score: { ...brokenBefore.score, objective: brokenBefore.score.objective - 1 },
-  }
-  expect(accepts(brokenBefore, stillBrokenButCheaper, rulesWithoutWorseAcceptance())).toBe(true)
-  // And it is still rejected if it breaks a SECOND constraint on the way.
-  const alsoBreaksHC3 = {
-    ...stillBrokenButCheaper,
-    results: stillBrokenButCheaper.results.map((result) =>
-      result.id === "HC3" ? { ...result, held: false } : result,
-    ),
-  }
-  expect(accepts(brokenBefore, alsoBreaksHC3, rulesWithoutWorseAcceptance())).toBe(false)
-})
-
-test("repairing a constraint is not an acceptance of its own: F and the ranking still decide", () => {
-  // HC1 holding is not itself a cheaper board. A candidate that repairs it
-  // while F rises is rejected like any other worse candidate - otherwise
-  // "repair" would be a second objective nobody declared.
-  const brokenBefore = {
-    ...base,
-    admissibleA1: false,
-    results: base.results.map((result) =>
-      result.id === "HC1" ? { ...result, held: false } : result,
-    ),
-  }
-  const repairedButDearer = {
-    ...base,
-    score: { ...base.score, objective: brokenBefore.score.objective + 1 },
-  }
-  expect(accepts(brokenBefore, repairedButDearer, rulesWithoutWorseAcceptance())).toBe(false)
-  const repairedAndCheaper = {
-    ...base,
-    score: { ...base.score, objective: brokenBefore.score.objective - 1 },
-  }
-  expect(accepts(brokenBefore, repairedAndCheaper, rulesWithoutWorseAcceptance())).toBe(true)
-})
-
-test("a regression is matched by constraint id, never by position in the list", () => {
-  // Comparing the two result lists index by index would be a claim about
-  // gradeHardConstraints' ordering rather than about the constraints, and would
-  // compare HC3 against HC4 the moment anything reordered the table.
-  //
-  // THE FIXTURE HAS TO DISCRIMINATE IN THE ACCEPT DIRECTION, and the first
-  // version of this test did not - a survivor in the mutation run proved it.
-  // It reversed the candidate's ten with HC10 broken, where the positional
-  // reading finds HC1 held in the base at that index and rejects too: both
-  // readings said no, for different reasons, and the test passed either way.
-  //
-  // So: HC1 is broken on BOTH sides, the candidate's ten are REVERSED (HC1 now
-  // last), and the candidate is cheaper. By id this is no regression and the
-  // move is accepted. By POSITION the candidate's index 9 is broken HC1 against
-  // the base's index 9, held HC10 - so a positional reading invents a
-  // regression and rejects.
-  const brokenBefore = {
-    ...base,
-    admissibleA1: false,
-    results: base.results.map((result) =>
-      result.id === "HC1" ? { ...result, held: false } : result,
-    ),
-  }
-  const reversedAndCheaper = {
-    ...brokenBefore,
-    results: [...brokenBefore.results].reverse(),
-    score: { ...brokenBefore.score, objective: brokenBefore.score.objective - 1 },
-  }
-  expect(reversedAndCheaper.results[9]?.id).toBe("HC1")
-  expect(reversedAndCheaper.results[9]?.held).toBe(false)
-  expect(brokenBefore.results[9]?.id).toBe("HC10")
-  expect(brokenBefore.results[9]?.held).toBe(true)
-  expect(accepts(brokenBefore, reversedAndCheaper, rulesWithoutWorseAcceptance())).toBe(true)
-})
-
-test("a configured worseAcceptance refuses rather than being climbed without", () => {
-  // E3 is Task 18's. A bound present in the rules and ignored here would make
-  // the run record claim a search behaviour that did not happen.
-  const refusal = refusalFrom(() => accepts(base, base, rulesWithWorseAcceptance(2)))
-  expect(refusal).toContain("worseAcceptance = 2")
-  expect(refusal).toContain("Task 18")
-})
-
-test("an Evaluation whose admissibleA1 disagrees with its own results refuses", () => {
-  // Neither field is preferred: admissibleA1 true beside a broken constraint
-  // would certify a board against a check that failed.
-  const forged = {
-    ...base,
-    admissibleA1: true,
-    results: base.results.map((result) =>
-      result.id === "HC8" ? { ...result, held: false } : result,
-    ),
-  }
-  const refusal = refusalFrom(() => accepts(base, forged, rulesWithoutWorseAcceptance()))
-  expect(refusal).toContain("records admissibleA1 = true")
-  expect(refusal).toContain("comes to false")
-})
 
 test("both fixture boards are admissible, so the acceptance tests run over real candidates", () => {
   // THE ASSUMPTION THE WHOLE CLIMB SUITE RESTS ON, asserted rather than
@@ -256,25 +101,30 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
   // bound would make this test fail for a reason that has nothing to do with
   // the sweep.
   expect(result.evaluations).toBeGreaterThanOrEqual(
-    applicableMoves(enumerateMoves(DUMP, REFERENCE)).length,
+    applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length,
   )
-  expect(enumerateMoves(DUMP, REFERENCE).length).toBe(26)
+  expect(enumerateMoves(OCC, DUMP, REFERENCE).length).toBe(26)
 
   // HAND-DERIVED, from the two boards and the script:
-  //   round 0 sweeps BASE_DUMP's 12 applicable moves (26 enumerated less the
-  //     fourteen cluster, delete-wire, add-wire and rotate ones), and the
-  //     script hands BETTER_DUMP to the first of them, so one move is accepted;
-  //   round 1 sweeps BETTER_DUMP's 12 applicable moves (22 less the eight
-  //     clusters and the two rotates; BETTER_DUMP has no WIRE line and no
-  //     cross-strip net, so it enumerates no delete-wire and no add-wire
-  //     either way), every one of which reports the worse board, so none is
-  //     accepted and S3 stops.
-  //   one evaluation of the start, plus 12, plus 12.
-  expect(applicableMoves(enumerateMoves(DUMP, REFERENCE)).length).toBe(12)
-  expect(applicableMoves(enumerateMoves(BETTER, REFERENCE)).length).toBe(12)
+  //   round 0 sweeps BASE_DUMP's 14 applicable moves (26 enumerated less the
+  //     twelve cluster, delete-wire and add-wire ones), and the script hands
+  //     BETTER_DUMP to the first of them, so one move is accepted;
+  //   round 1 SWEEPS THE CARRIED OCCUPANCY, NOT `occupancyOf(BETTER)`, and
+  //     that distinction is the whole point of the occupancy being carried:
+  //     the accepted move was `move R1 to 1,1`, so round 1's geometry is
+  //     BASE's with R1's 1x6 rect at row 1 - which is NOT what BETTER_DUMP
+  //     describes, because the scripted spawn answers --dump-board from a
+  //     script rather than simulating the gesture. Hand-counted on that
+  //     geometry: R1 four one-hole neighbours, no clockwise turn (a 1x6 rect
+  //     at row 1 turns to row -1 and would pan the board), two stretches; R2
+  //     four neighbours, one turn, two stretches. 4 + 0 + 2 + 4 + 1 + 2 = 13,
+  //     every one of which reports the worse board, so none is accepted and
+  //     S3 stops.
+  //   one evaluation of the start, plus 14, plus 13.
+  expect(applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length).toBe(14)
   expect(result.acceptedPerRound).toEqual([1, 0])
   expect(result.rounds).toBe(2)
-  expect(result.evaluations).toBe(25)
+  expect(result.evaluations).toBe(28)
   expect(result.best.score.objective).toBe(0)
 })
 
@@ -311,6 +161,32 @@ test("history has one entry per evaluation, which is what makes a crossing index
   expect(result.history.length).toBe(result.evaluations)
   expect(result.history[0]).toBe(0.5)
   expect(result.history[1]).toBe(0)
+})
+
+test("round 1 is enumerated from the CARRIED occupancy, not from the candidate's dump", () => {
+  // THE SIGNATURE CHANGE, PINNED BY A TEST RATHER THAN BY THE MEASUREMENT THAT
+  // FORCED IT. enumerateMoves takes a carried Occupancy because a dump cannot
+  // describe a turned part's footprint, and the discriminating consequence is
+  // visible in the gestures: round 0's accepted move is `R1 to 1,1`, so the
+  // carried geometry has R1's rect at row 1 and round 1's first R1 gesture is
+  // `to 0,1`. If the climb re-derived its geometry from the candidate's DUMP
+  // instead, it would read BETTER_DUMP - which the scripted spawn returns and
+  // which still places R1 at 2,1 - and round 1's first R1 gesture would be
+  // `to 1,1` again, repeating round 0 forever.
+  const spawned: string[][] = []
+  const runDir = freshRunDir()
+  climb(
+    seededStart(runDir),
+    climbInput(runDir, false),
+    recordingSpawn(spawned, IMPROVES_THEN_STALLS),
+  )
+  const firstOf = (round: number): string | undefined =>
+    spawned
+      .map((args) => args.join(" "))
+      .find((line) => line.startsWith("--move") && line.includes(`-o ${runDir}/r${round}-m0.vrt`))
+  expect(firstOf(0)).toBe(`--move ${runDir}/seeded.vrt --ref R1 --to 1,1 -o ${runDir}/r0-m0.vrt`)
+  expect(firstOf(1)).toContain("--ref R1 --to 0,1")
+  expect(firstOf(1)).not.toContain("--to 1,1")
 })
 
 test("the climb evaluates on a scratch copy and leaves the start board untouched", () => {
@@ -396,7 +272,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
   // HAND-DERIVED: the start is evaluation 1, then round 0's candidates are
   // evaluations 2, 3, 4 and 5, and the cap is checked BEFORE each candidate -
   // so the fifth evaluation is the last one taken and the sixth is never
-  // started. Round 0 has 12 applicable moves, so the stop is mid-round: the
+  // started. Round 0 has 14 applicable moves, so the stop is mid-round: the
   // round is recorded with the one move it accepted before the cap bit.
   const runDir = freshRunDir()
   const result = climb(
@@ -416,7 +292,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
     climbInput(uncappedDir, false),
     scriptedSpawn(IMPROVES_THEN_STALLS),
   )
-  expect(uncapped.evaluations).toBe(25)
+  expect(uncapped.evaluations).toBe(28)
 })
 
 test("a climb that ends inadmissible says so, rather than reading as one that found nothing", () => {
