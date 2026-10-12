@@ -233,8 +233,17 @@ export interface ComparisonInput {
  * ONE seed on ONE board with `compareSeedArms` never run and the mark never
  * evaluated, and the paragraph above is the reason - a success rate is counted
  * over the seed set against the mark, and a final `F` per seed is this rule's
- * tiebreak only for a run where no arm reaches the mark. Nothing has yet
- * produced a rate for this rule to be applied to.
+ * tiebreak only for a run where no arm reaches the mark.
+ *
+ * **A RATE NOW EXISTS, AND IT IS ZERO ON ALL THREE ARMS.** Task 18's final step
+ * ran this harness over the reviewed seed set against `FROZEN_MARK` on the
+ * import-placed low-boost board: 15 runs, 294k fork invocations, `reached` 0 of
+ * 5 everywhere, `separated` false and `retireable` empty - which is this rule's
+ * own last clause firing, *"a run in which every arm scored zero measured the
+ * budget, not the arms"*. `docs/stripboard/pipeline-verification.md` §6.3 has
+ * the per-seed table and what that rate is a rate over. The TIEBREAK this rule
+ * names for that case - final `F` per seed - goes to the control arm on four of
+ * the five seeds, and it retires nothing.
  */
 export const RETIREMENT =
   "The decision variable is the success rate: how many of the seed set's seeds met the mark, " +

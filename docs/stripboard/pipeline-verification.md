@@ -22,7 +22,9 @@ every hand-laid board in the repository (§3). CHECKPOINT 1, the ten hard
 constraints run over two boards a person built (§4). CHECKPOINT 2, the climb
 driven against the real binary from each starting arm (§5). And Task 18's
 escapes: what `E1` as specified does and does not do, what the search's
-import-closure scan found, and the measured arm comparison (§6).
+import-closure scan found, CHECKPOINT 3 - the measured arm comparison, whose
+rate is zero on all three arms - what the cluster move did to `F`, and the
+stretch defect the comparison found on the way (§6).
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -1237,3 +1239,200 @@ cannot see an aliased access (`const now = Date["now"]`), a clock reached
 through a node builtin the walker skips by name, or a nondeterminism that is not
 one of those five identifiers. The guarantee for determinism is Task 21's
 comparison of two runs; this is the cheap early warning that names the file.
+
+### 6.3 CHECKPOINT 3 — Task 16's arm comparison, run: **every arm's rate is 0 of 5**
+
+The first run of `compareSeedArms` against the pinned fork, and the first figure
+in this plan that is a RATE rather than a count. Fifteen searches — three arms by
+the reviewed seed list `[0, 1, 2, 3, 4]` — each one `search()` with that single
+seed, on the import-placed low-boost board, under the committed rules with
+`evaluationCap` 20,000 and `worseAcceptance` null. 293,720 fork invocations,
+59.9 minutes of search.
+
+**How it was run.** A scratch script, not committed, in two phases so the
+expensive one is resumable: `measure <arm> <seed>` runs one `search` and appends
+its `ArmRun` to a JSONL file, skipping a pair already recorded; `compare` runs
+`compareSeedArms` over a runner that REPLAYS that file and **refuses a pair the
+file does not carry**, so the rates, the mark and the retirement verdict are the
+harness's own and not the script's. The inputs are §5.1's, unchanged:
+
+```
+VR=.tools/veroroute-perfboard/veroroute.app/Contents/MacOS/veroroute
+loadDeclaration("boards/pultec-low-boost/perfboard.json") -> exportNetlistFor()
+"$VR" --import <netlist> --strips horizontal -o imported.vrt
+deriveTargets(physicalBoard("low-boost"), rules.stockRows, "pultec-low-boost")
+mark: FROZEN_MARK - B1-frozen's own clause, C <= 5, W = 0, every net complete
+```
+
+`B1-frozen`'s clause is *"starting from the import-placed board"*, so the frozen
+fixture is the MARK here and not the start.
+
+| arm | seed | `F` | `C` | `W` | `metMark` | `evaluationsToCross` | `startAdmissible` | `admissibleA1` | nets complete | evaluations | rounds | failing | s |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 0 | **16** | 16 | 0 | false | never | false | false | false | 4157 | 37 | `HC1 HC5 HC6 HC8 HC9 HC10` | 226 |
+| `constructed` | 1 | **16** | 16 | 0 | false | never | false | false | false | 4157 | 37 | `HC1 HC5 HC6 HC8 HC9 HC10` | 226 |
+| `constructed` | 2 | **16** | 16 | 0 | false | never | false | false | false | 4568 | 40 | `HC1 HC5 HC6 HC8 HC9 HC10` | 247 |
+| `constructed` | 3 | **16** | 16 | 0 | false | never | false | false | false | 5755 | 48 | `HC1 HC5 HC6 HC8 HC9 HC10` | 312 |
+| `constructed` | 4 | **17** | 17 | 0 | false | never | false | false | false | 3537 | 31 | `HC1 HC5 HC6 HC8 HC9 HC10` | 190 |
+| `import` | 0–4 | **36** | 36 | 0 | false | never | false | false | false | 83 | 3 | `HC1 HC6 HC8 HC10` | 4 |
+| `random` | 0 | **14** | 13 | 0 | false | never | false | false | false | 8858 | 63 | `HC1 HC8 HC10` | 486 |
+| `random` | 1 | **13** | 12 | 0 | false | never | false | false | false | 6072 | 41 | `HC1 HC8 HC10` | 334 |
+| `random` | 2 | **14** | 14 | 0 | false | never | false | false | false | 10226 | 70 | `HC1 HC8 HC10` | 558 |
+| `random` | 3 | **17** | 16 | 0 | false | never | false | false | false | 9391 | 64 | `HC1 HC8 HC10` | 509 |
+| `random` | 4 | **15** | 14 | 0 | false | never | false | false | false | 10028 | 73 | `HC1 HC8 HC10` | 483 |
+
+The `import` arm's five rows are identical in every field, which is not a
+copy-paste: it has exactly ONE start and the seed changes nothing about it
+(`seed-arms.ts` records that asymmetry and why it is kept), so its five restarts
+repeat the same climb. `F = 13` on `random` seed 1 with `C = 12` and `W = 0`
+means one SOLDER bridge: `F = C + 0.25W + 1B`.
+
+**THE THREE RATES, which is the decision variable:**
+
+```
+separated: false
+retireable: []
+rates: constructed 0/5 import 0/5 random 0/5
+```
+
+**What that rate is a rate over, exactly:** how many of the five reviewed seeds
+produced a run meeting `B1-frozen`'s mark on ALL of its clauses, on the
+import-placed `pultec-low-boost` board, with one climb per seed and a 20,000-
+evaluation cap per run. **No run met it, so every arm's rate is zero** — the
+nearest any came is `C = 12` against a bar of 5, with every net still incomplete.
+
+**NOTHING IS RETIREABLE AND THE HARNESS SAYS SO ITSELF.** `RETIREMENT`'s own
+last clause is the one that fires: *"If no arm meets the mark on any seed,
+nothing is retired and the comparison says so: a run in which every arm scored
+zero measured the budget, not the arms."* `retireable` is `[]` and `separated` is
+`false`. No arm is deleted, no arm is selected, and `SeedInput.arm` stays a
+required parameter with no default.
+
+**THE TIEBREAK, which is the only thing this run DOES separate the arms on.**
+`RETIREMENT` names final `F` per seed as the tiebreak for exactly this case, and
+on it the CONTROL ARM WINS: `random` reaches a lower `F` than `constructed` on
+four of the five seeds (14 vs 16, 13 vs 16, 14 vs 16, 15 vs 17) and loses one
+(17 vs 16 on seed 3). `import` is last on every seed by more than twenty cuts.
+**The uniform draw is the null hypothesis Task 16 built to be beaten, and over
+the reviewed seed set it is not beaten.** That is a tiebreak inside a run where
+nothing met the mark, not a rate, and it retires nothing by the declared rule —
+but it is the second measurement in a row pointing the same way (§5.9 was the
+first, on one seed).
+
+**START ADMISSIBILITY, measured rather than quoted.** `startAdmissible` is
+`false` on all fifteen runs, which is what Task 16 predicted from the
+incomplete-net counts it quotes — 19, 13, 7 and 6 on mid, hi-boost, hi-cut and
+low-cut. Every arm starts inadmissible, every arm ends inadmissible, and no run
+in this comparison ever had `A1` hold at any point.
+
+**`evaluationsToCross` is `never` on all fifteen**, because the crossing figure
+is `F <= 5` and the best run reached 13. The two statistics beside the rate
+therefore say the same thing the rate does.
+
+**What stopped each run.** All fifteen stopped on `S3` — a round that accepted
+nothing — and none reached the 20,000-evaluation cap, so `S5` did not fire and no
+run is reported as a cap failure. The run-level cap was never the binding
+constraint.
+
+### 6.4 What `E1` actually did, which is less than its justification predicted
+
+**Clusters fire, and only on the control arm.** Across the fifteen runs, 9,210
+cluster candidates were evaluated and **four of them set a new best-so-far `F`** —
+all four on `random` (seed 0: 22 → 21; seed 2: 21 → 20 and 20 → 19; seed 4:
+23 → 22). On `constructed` and `import` the figure is zero in every run.
+
+| arm | cluster candidates | `--move --delta` gestures | new-best-`F` steps | of those, clusters |
+| --- | --- | --- | --- | --- |
+| `constructed` (5 runs) | 2,712 | 10,232 | 22 | **0** |
+| `import` (5 runs) | 15 | 45 | 15 | **0** |
+| `random` (5 runs) | 6,483 | 23,445 | 47 | **4** |
+
+The counting is explained where it is done: a cluster candidate is identified
+from the run directory, because it is the only kind that writes staged
+`r<r>-m<i>.vrt.cluster-<n>.vrt` files beside itself, and the `F` of each
+candidate comes from the climb's own `history`. **What the table counts is
+candidates that set a new best-so-far `F`, not acceptances**: the climb also
+accepts a TIE in `F` with a strictly better ranking tuple, and a plateau
+acceptance is invisible in an `F` history. So clusters may well have been
+accepted more often than four times; what is measured is their effect on `F`.
+
+**AND `F` DID NOT MOVE.** The clean comparison is against §5.9's single-part run
+on seed 0, which used the same board, binary and rules and differed only in
+having no cluster move. It was taken on the FIRST sweep of this comparison, whose
+model still carried §6.5's stretch defect, so the only difference between the two
+columns is `E1`:
+
+| arm, seed 0 | §5.9, single-part only | with `E1` | evaluations |
+| --- | --- | --- | --- |
+| `import` | `F` 36 | `F` 36 | 77 → 83 (+8%) |
+| `constructed` | `F` 17 | `F` 17 | 2,058 → 2,989 (+45%) |
+| `random` | `F` 14 (`C` 14) | `F` 14 (`C` 13, one bridge) | 5,110 → 8,294 (+62%) |
+
+**So `E1` cost between 8% and 62% more evaluations and improved the final `F` on
+no arm.** On `random` it traded one cut for one solder bridge, which `F` prices
+identically. A cluster did set a new best `F` on the way there, and the run
+converged to the same number anyway.
+
+**This does not show that clustering is not the lever COST says it is.** It shows
+that THIS cluster move — one common delta, one hole at a time, over the four unit
+deltas — is not reaching it on this board. §6.1 is the reason to look at next: a
+common translation cannot change the clustered net's own segment count across
+strips, and the gathering gesture the justification describes (several deltas, or
+a rotation applied to the whole net) is a different move that nothing has built.
+`κ` is still far from the bench and `C = 12` against a derived floor of 0.
+
+### 6.5 The comparison found a real defect: a stretch bound read along the wrong axis
+
+**The first sweep did not finish.** On `random` seed 3 the model proposed
+`--stretch C18 --direction shrink` on a turned `CAP_FILM_WIDE` and the fork
+refused — `--stretch: C18 cannot shrink` — which stopped the run after seven
+rounds and left that seed with no run at all. `applyMove` is built to stop and
+name the gesture for exactly this case: *"a refusal here means that model and the
+binary disagree about what is placeable, which is the finding, not a candidate to
+drop."*
+
+**The cause, measured on the refusing board rather than reasoned about.** The
+board is kept at `refusing-board-r6-m5.vrt` in the run directory, where C18 reads
+`PART C18 CAP_FILM_WIDE .33uF AT 31,24 SPAN 3 DIRECTION N` with its leads at
+`31,25` and `32,25`:
+
+```
+$ "$VR" --stretch <board> --ref C18 --direction grow -o grown.vrt     # exit 0
+$ "$VR" --dump-board grown.vrt | grep C18
+PART C18 CAP_FILM_WIDE .33uF AT 31,24 SPAN 3 DIRECTION N
+PIN C18 1 AT 31,25
+PIN C18 2 AT 33,25
+$ "$VR" --stretch grown.vrt --ref C18 --direction shrink -o shrunk.vrt # exit 0
+```
+
+So for a part facing `N` the length that stretches is the LEAD DISTANCE ALONG THE
+ROWS — it changed from 1 to 2 while `AT` and `SPAN` both stayed put — and `SPAN`
+is the body's column count. `occupancyAfter` checked the family's bound against
+`rect.cols` for every part regardless of its facing, while `stretchedRect` has
+always moved the axis `across` names; on a turned part those are different axes,
+so a part already at its minimum length read as having room.
+
+**A square footprint hides it** — a 3x3 rect reads the same on both axes — which
+is why it survived every fixture until a real board turned a 2x3 one. The fix
+reads `rect.across ? rect.rows : rect.cols`, and
+`tests/stripboard/moves.test.ts` holds it on a hand-built turned
+`CAP_FILM_WIDE` at the recorded minimum, with its mirror lying along the strips
+so the test fails under a fix that merely swapped the axes.
+
+**The comparison was then re-measured from scratch under the fixed model**, which
+is why §6.3's figures are not the first sweep's: the fix narrows the proposed move
+set of any turned part, and a comparison across two different move sets is a
+comparison between unlike runs. The `import` arm, which turns nothing, produced
+byte-identical counters in both sweeps — `F` 36, 83 evaluations, 3 rounds — which
+is the cross-check that the fix touched only what it was supposed to. Under the
+fixed model `random` seed 3 completed, at `F = 17`.
+
+Two more things the two sweeps together say, both of them about the fix rather
+than about `E1`:
+
+- **the constructed arm improved**, from `F = 17` on every seed to `F = 16` on
+  four of five, and the random arm's seed-0 figure did not move at all;
+- **no cluster gesture was ever refused by the binary**, in either sweep:
+  33,722 `--move --delta` invocations in the second and 21,327 in the nine runs
+  of the first whose directories can still be read, every one of them accepted.
+  The cluster's own model and the fork did not disagree once.

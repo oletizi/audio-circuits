@@ -74,14 +74,18 @@
  *
  * **WHAT A REAL CLIMB ACTUALLY DOES, so this comment is not the only evidence
  * about it.** On the import-placed low-boost board against the pinned fork,
- * from each of the three starting arms: `random` 53 rounds and 5110
- * evaluations, 84 accepted moves, `F` from 31 to 14; `constructed` 29 rounds
- * and 2058 evaluations, 44 accepted moves, `F` from 21 to 17; `import` 3 rounds
- * and 77 evaluations, 3 accepted moves, `F` from 39 to 36. All three stopped on
- * `S3` and all three ended inadmissible.
- * `docs/stripboard/pipeline-verification.md` section 5 carries all three runs,
- * every refusal on the way, and - in §5.9 - what may and may not be concluded
- * from the control arm winning.
+ * over the reviewed seed set and the move set this file sweeps TODAY - the five
+ * single-part kinds less the two deferred, plus `E1`'s net cluster: `random`
+ * reaches `F` 13 to 17 in 41 to 73 rounds and 6,072 to 10,226 evaluations;
+ * `constructed` 16 to 17 in 31 to 48 rounds and 3,537 to 5,755; `import` 36 in 3
+ * rounds and 83 evaluations on every seed, because it has one start. All fifteen
+ * runs stopped on `S3`, none reached the evaluation cap, and every one ended
+ * inadmissible. **THE FIGURES THIS PARAGRAPH CARRIED BEFORE WERE THE SAME BOARD
+ * WITHOUT THE CLUSTER MOVE** - 5110, 2058 and 77 evaluations at `F` 14, 17 and
+ * 36 - and they are not deleted but moved: `docs/stripboard/
+ * pipeline-verification.md` §5.9 is that run, §6.3 is this one, §6.4 is what the
+ * cluster move did to `F` (nothing, at 8% to 62% more evaluations) and §6.5 is
+ * the stretch defect the comparison found.
  *
  * **THE START IS INADMISSIBLE AND THAT IS NORMAL.** `./seed.ts` records that
  * all three arms begin from a board whose nets are incomplete - 19, 13, 7 and 6
