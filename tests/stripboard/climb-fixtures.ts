@@ -240,10 +240,10 @@ const LOW_BOOST_DECLARATION = path.join(
  * The committed rules, with `worseAcceptance` asserted null rather than
  * assumed.
  *
- * The name claims the bound is unset, so the fixture CHECKS it: if the
- * committed file ever configures one, every acceptance test below would be
- * running against `accepts`' refusal while reading as if it had tested the
- * rule.
+ * The name claims the bound is unset, so the fixture CHECKS it: if the committed
+ * file ever configured one, every test using this would be exercising E3's
+ * bounded worse-acceptance while reading as if it had tested the strict rule -
+ * and a strict-rule test that passes under a bound is a test of nothing.
  */
 export function rulesWithoutWorseAcceptance(): StripboardRules {
   const rules = loadRules()
@@ -251,14 +251,24 @@ export function rulesWithoutWorseAcceptance(): StripboardRules {
     throw new Error(
       "rulesWithoutWorseAcceptance: the committed rules file configures worseAcceptance = " +
         `${rules.worseAcceptance}, so this fixture's name is false and every test using it ` +
-        "would be exercising accepts()' refusal rather than the acceptance rule. Either E3 has " +
-        "landed (Task 18) and these tests need rewriting, or the rules file changed by accident.",
+        "would be exercising E3's bounded worse-acceptance rather than the strict rule. E3 " +
+        "landed in Task 18 and the committed file records the bound as deliberately unset " +
+        "(null), with its reason in the notes - so this means the rules file changed.",
     )
   }
   return rules
 }
 
-/** The same rules with a bound configured, for the refusal `E3` is deferred behind. */
+/**
+ * The same rules with a bound configured, which TURNS E3 ON.
+ *
+ * It existed for the refusal E3 was deferred behind until Task 18 implemented
+ * the mechanism; the refusal is gone, and what this now produces is a rules
+ * object under which a candidate worse by at most `bound` is accepted.
+ * `./escapes-search.test.ts` holds the bound's own arithmetic; the one test here
+ * that uses it holds the half that belongs to the acceptance rule - that the
+ * bound does not reach past the no-regression clause.
+ */
 export function rulesWithWorseAcceptance(bound: number): StripboardRules {
   return { ...rulesWithoutWorseAcceptance(), worseAcceptance: bound }
 }
