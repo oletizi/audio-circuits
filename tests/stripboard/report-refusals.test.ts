@@ -98,6 +98,27 @@ test("a deciding parameter with no recorded note is refused, not printed bare", 
   expect(() => renderReport(unrecorded)).toThrow(/loadRules/)
 })
 
+test("a note with no sentence boundary is refused, not printed whole under that label", () => {
+  // The report labels what it prints as the note's FIRST SENTENCE, so a block
+  // with no sentence in it has none to print. Returning the block anyway is a
+  // mislabelled quotation and a fallback in production code: a reader could no
+  // longer tell which provenance was truncated and which was complete.
+  const unsentenced = reportInput({
+    rule: "Q3",
+    rules: { ...RULES, notes: { ...RULES.notes, seeds: "external, no boundary in this block" } },
+  })
+  expect(() => renderReport(unsentenced)).toThrow(/report-note-unsentenced/)
+  expect(() => renderReport(unsentenced)).toThrow(/no boundary in this block/)
+  expect(() => renderReport(unsentenced)).toThrow(/NOT defaulted to printing the whole block/)
+  // A one-sentence note ending at the end of the string is a sentence, so the
+  // boundary is a period before whitespace OR the end - not only before space.
+  const terminal = reportInput({
+    rule: "Q3",
+    rules: { ...RULES, notes: { ...RULES.notes, seeds: "[external] PIPELINE R7." } },
+  })
+  expect(renderReport(terminal).join("\n")).toMatch(/note: \[external\] PIPELINE R7\.$/m)
+})
+
 test("a candidate beneath its own derived floor is refused rather than reported", () => {
   // K5: F_floor is a LOWER bound, so this is proof that the floor derivation,
   // the scorer or the dump is not the quantity it claims to be. While tau is

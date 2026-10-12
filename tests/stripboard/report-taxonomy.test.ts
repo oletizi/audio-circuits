@@ -22,6 +22,7 @@ import {
   boundFor,
   exitCodeFor,
   outcomeOf,
+  runFailedOn,
 } from "../../tools/stripboard/report.ts"
 import { CONSTRAINT_IDS, broken, holds } from "../../tools/stripboard/constraints-model.ts"
 import {
@@ -121,7 +122,11 @@ test("an A3 that never fired is admissible, on K4's two clauses, and is not coll
   expect(unset.a3).not.toBe(held.a3)
 })
 
-test("the bound maps one-to-one from the rule that fired, and Q4 and Q5 share one", () => {
+test("the bound maps as REP1's fires-under column says, and Q4 and Q5 share one", () => {
+  // REP1's table, row by row: at-floor fires under Q1, within-tolerance under
+  // Q2, search-exhausted under Q3, budget-exhausted under "Q4, Q5", and
+  // systematic-cause under Q6. The expectations below are that column read
+  // backwards, and nothing here is derived from the module's own table.
   expect(boundFor("Q1")).toBe("at-floor")
   expect(boundFor("Q2")).toBe("within-tolerance")
   expect(boundFor("Q3")).toBe("search-exhausted")
@@ -131,9 +136,31 @@ test("the bound maps one-to-one from the rule that fired, and Q4 and Q5 share on
 })
 
 test("both non-admissible outcomes exit non-zero, and admissible exits zero", () => {
-  expect(exitCodeFor("invalid")).toBe(1)
-  expect(exitCodeFor("valid-below-target")).toBe(1)
-  expect(exitCodeFor("admissible")).toBe(0)
+  // REP5's exit column, on a rule that leaves the outcome to decide.
+  expect(exitCodeFor("invalid", "Q3")).toBe(1)
+  expect(exitCodeFor("valid-below-target", "Q3")).toBe(1)
+  expect(exitCodeFor("admissible", "Q3")).toBe(0)
+})
+
+test("a Q5 run exits non-zero on every outcome, including an admissible candidate", () => {
+  // CRITERIA says it twice - section 5's Q5 row, "a run that stops on it is
+  // REPORTED AS A FAILURE", and the paragraph under it, "a run that stops on Q5
+  // is reported as a failure rather than as a result". Q5 is a backstop against
+  // a bug looping forever and "not a measure of anything", so it says nothing
+  // about the candidate and everything about the run - which is why the exit
+  // code takes the rule as well as the outcome.
+  for (const outcome of OUTCOMES) {
+    expect(exitCodeFor(outcome, "Q5"), outcome).toBe(1)
+  }
+  expect(runFailedOn("Q5")).toBe(true)
+  // AND NO OTHER RULE DOES THIS. Q6 was considered: REP1 calls it "a cause to
+  // fix", but no clause of CRITERIA says a Q6 RUN is reported as a failure, and
+  // extending the table past the text would be this module authoring a
+  // criterion. So an admissible candidate under every other rule exits zero.
+  for (const rule of ["Q1", "Q2", "Q3", "Q4", "Q6"] as const) {
+    expect(runFailedOn(rule), rule).toBe(false)
+    expect(exitCodeFor("admissible", rule), rule).toBe(0)
+  }
 })
 
 test("V10: only at-floor may be worded as a lower bound met, and nothing else claims optimality", () => {

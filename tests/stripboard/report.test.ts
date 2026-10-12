@@ -19,6 +19,7 @@ import {
   OUTCOMES,
   OUTCOME_WORDING,
   QUALITY_PREFIX,
+  RUN_FAILURE_NOTE,
   WORDING,
   exitCodeFor,
   renderReport,
@@ -175,6 +176,14 @@ test("a proposed default that decided the outcome is reported as proposed (OB3)"
   expect(joined).toMatch(/\[owner\] 2026-10-10, CRITERIA K4\./)
 })
 
+test("a list-valued parameter prints as a list a person reads", () => {
+  // `String` on an array renders 0,1,2,3,4 - a machine's spelling in a line
+  // meant for a person. seeds is the one list in the table.
+  expect(renderReport(reportInput({ rule: "Q3" })).join("\n")).toMatch(
+    /^parameter: seeds = 0, 1, 2, 3, 4 decided this stop \(Q3\)/m,
+  )
+})
+
 test("a stop no rules parameter decided says that, rather than naming one anyway", () => {
   // Q1 turns on C_floor, which is derived and may come from a board's own
   // declaration rather than from stockRows - so naming a parameter there would
@@ -226,8 +235,33 @@ test("the report's exit line carries REP5's own exit code for each outcome", () 
   for (const outcome of OUTCOMES) {
     const joined = renderReport(runWith({ bound: "search-exhausted", outcome })).join("\n")
     expect(joined, outcome).toMatch(new RegExp(`^exit: ${expected[outcome]}$`, "m"))
-    expect(exitCodeFor(outcome), outcome).toBe(expected[outcome])
+    expect(exitCodeFor(outcome, "Q3"), outcome).toBe(expected[outcome])
   }
+})
+
+test("a Q5 run exits non-zero although its candidate is admissible, and says why", () => {
+  // THE CASE WHERE A STOP WOULD OTHERWISE READ AS A PASS. CRITERIA states twice
+  // that a run stopping on Q5 is reported as a failure rather than as a result,
+  // and the candidate here earns admissible on its own merits - so the two
+  // facts are reported separately: the outcome is about the CANDIDATE and the
+  // exit code is about the RUN.
+  const lines = renderReport(underBudgetedRun())
+  const joined = lines.join("\n")
+  expect(joined).toMatch(/^outcome: admissible$/m)
+  expect(joined).toMatch(/^bound: budget-exhausted/m)
+  expect(joined).toMatch(/^exit: 1 - /m)
+  expect(joined).toMatch(/the RUN is reported as a failure although the candidate is not/)
+  expect(joined).toMatch(/CRITERIA states twice/)
+  // The reason is the fixed note rather than a sentence assembled here, and it
+  // is NOT a quality claim: it says nothing about the layout's cost.
+  expect(lines).toContain(`exit: 1 - ${RUN_FAILURE_NOTE}`)
+  expect(qualityClaims(lines)).not.toContain(RUN_FAILURE_NOTE)
+  // Q4 SHARES THE budget-exhausted BOUND AND EXITS ZERO on the same candidate,
+  // so this is Q5's own clause rather than a severity applied to every weak
+  // bound.
+  const q4 = renderReport(reportInput({ rule: "Q4" })).join("\n")
+  expect(q4).toMatch(/^bound: budget-exhausted/m)
+  expect(q4).toMatch(/^exit: 0$/m)
 })
 
 test("the report grades the run's own best candidate rather than being told a verdict", () => {

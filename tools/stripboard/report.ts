@@ -52,11 +52,14 @@ import { admissible, type AdmissibilityResult, type BindingConstraint } from "./
 import {
   OUTCOME_WORDING,
   QUALITY_PREFIX,
+  RUN_FAILURE_NOTE,
   WORDING,
   boundFor,
   exitCodeFor,
   outcomeOf,
+  runFailedOn,
   type BoundStatus,
+  type Outcome,
 } from "./report-model.ts"
 
 export {
@@ -64,11 +67,13 @@ export {
   OUTCOMES,
   OUTCOME_WORDING,
   QUALITY_PREFIX,
+  RUN_FAILURE_NOTE,
   WORDING,
   assertEnumerated,
   boundFor,
   exitCodeFor,
   outcomeOf,
+  runFailedOn,
   type BoundStatus,
   type Outcome,
 } from "./report-model.ts"
@@ -93,6 +98,7 @@ export type ReportRefusal =
   | "report-binding-rule-disagrees"
   | "report-worse-acceptance-disagrees"
   | "report-parameter-unrecorded"
+  | "report-note-unsentenced"
   | "report-negative-gap"
 
 function notDefaultedBecause(refusal: ReportRefusal): string {
@@ -139,6 +145,18 @@ function notDefaultedBecause(refusal: ReportRefusal): string {
         "the failure OB3 exists to prevent, and a value whose standing nobody recorded is " +
         "exactly the one that must not decide an outcome unremarked. Load the rules through " +
         "loadRules, or add the note."
+      )
+    case "report-note-unsentenced":
+      return (
+        "The report prints the note's FIRST SENTENCE and labels it as that, because the notes " +
+        "are paragraphs - evaluationCap's runs to about nine hundred characters - and a report " +
+        "nobody reads to the end states nothing. A block with no sentence boundary in it has no " +
+        "first sentence to print. It is NOT defaulted to printing the whole block under that " +
+        "label, which is a mislabelled quotation: a reader who sees one sentence announced and a " +
+        "paragraph delivered cannot tell which notes were truncated and which were not, and the " +
+        "point of quoting the provenance rather than restating it is that the quotation is " +
+        "exact. Give the note an opening sentence ending in a period, in stripboard/rules.json, " +
+        "or change this label."
       )
     case "report-negative-gap":
       return (
@@ -242,9 +260,9 @@ const DECIDED_BY: Readonly<Record<StoppingRule, DecidingParameter | null>> = {
  * answers to.
  *
  * **IT IS TRUNCATED AND THE REPORT SAYS SO**, because the notes are paragraphs
- * - `evaluationCap`'s runs to nine hundred characters - and a report nobody
- * reads to the end is a report that states nothing. Measured against all five
- * notes this table reaches rather than assumed: each one opens with its
+ * - `evaluationCap`'s runs to about nine hundred characters - and a report
+ * nobody reads to the end is a report that states nothing. Measured against all
+ * five notes this table reaches rather than assumed: each one opens with its
  * bracketed tag and closes that opening sentence on the criterion, and the
  * sentence boundary is a period followed by whitespace so `COST 6.4` inside one
  * is not mistaken for the end of it.
@@ -252,6 +270,12 @@ const DECIDED_BY: Readonly<Record<StoppingRule, DecidingParameter | null>> = {
  * The `||` split comes first because three of the notes use that separator for
  * their owner-settled and agent-rationale blocks, and the tag is always in the
  * block before it.
+ *
+ * **A BLOCK WITH NO SENTENCE BOUNDARY REFUSES RATHER THAN BEING PRINTED
+ * WHOLE.** Returning the block under a label that says *first sentence* is a
+ * mislabelled quotation and a fallback in production code, and the point of
+ * quoting the provenance instead of restating it is that the quotation is
+ * exact.
  */
 function provenanceOf(rules: StripboardRules, key: string): string {
   const note = rules.notes[key]
@@ -260,7 +284,26 @@ function provenanceOf(rules: StripboardRules, key: string): string {
   }
   const head = note.split("||")[0] ?? note
   const sentence = /^[\s\S]*?\.(?=\s|$)/.exec(head)
-  return (sentence?.[0] ?? head).trim()
+  if (sentence === null) {
+    refuse(
+      "report-note-unsentenced",
+      `the note for "${key}" opens with no sentence boundary: ${head.trim()}`,
+    )
+  }
+  return sentence[0].trim()
+}
+
+/**
+ * A parameter's value as a person reads it.
+ *
+ * `seeds` IS THE ONE LIST, and `String` on an array renders `0,1,2,3,4` - a
+ * machine's spelling in a line a person is meant to read. It is keyed on the
+ * one array-valued key rather than on `Array.isArray`, so a second list
+ * entering this table has to say how it prints.
+ */
+function valueText(rules: StripboardRules, key: DecidingParameter["key"]): string {
+  if (key === "seeds") return rules.seeds.join(", ")
+  return String(rules[key])
 }
 
 /** `OB3`'s line: which parameter decided this stop, its value, and its standing. */
@@ -273,12 +316,11 @@ function parameterLine(input: ReportInput): string {
       "line above."
     )
   }
-  const value = String(input.rules[deciding.key])
   return (
-    `parameter: ${deciding.key} = ${value} decided this stop (${input.rule}). ` +
-    `${deciding.standing}. Its recorded provenance, the first sentence of that parameter's ` +
-    `note in stripboard/rules.json, which carries the whole of it: ` +
-    `${provenanceOf(input.rules, deciding.key)}`
+    `parameter: ${deciding.key} = ${valueText(input.rules, deciding.key)} decided this stop ` +
+    `(${input.rule}). ${deciding.standing}. Its recorded provenance, which is the first ` +
+    `sentence of that parameter's note in stripboard/rules.json - the file carries the whole ` +
+    `note: ${provenanceOf(input.rules, deciding.key)}`
   )
 }
 
@@ -398,6 +440,23 @@ export function renderReport(input: ReportInput): readonly string[] {
     worseAcceptanceLine(input),
     `run: ${input.run.climbs.length} climb(s), ${evaluations} evaluation(s) spent, restarts at ` +
       `evaluation [${input.run.restartBoundaries.join(", ")}]`,
-    `exit: ${exitCodeFor(outcome)}`,
+    exitLine(outcome, input.rule),
   ]
+}
+
+/**
+ * The exit code, and why it is not the outcome's where the rule overrode it.
+ *
+ * **THE ONE PLACE A RUN CAN EXIT NON-ZERO ON AN ADMISSIBLE CANDIDATE**, which
+ * is `Q5`'s own requirement and not a severity this module invented: the
+ * outcome is about the CANDIDATE and the exit code is about the RUN, and a
+ * backstop stop reading as `exit: 0` is a stop reading as a pass. The reason
+ * printed is `RUN_FAILURE_NOTE`, a fixed string carrying CRITERIA's words, and
+ * it is not a `QUALITY_PREFIX` line because it is not a claim about the
+ * layout's cost.
+ */
+function exitLine(outcome: Outcome, rule: StoppingRule): string {
+  const code = exitCodeFor(outcome, rule)
+  if (!runFailedOn(rule)) return `exit: ${code}`
+  return `exit: ${code} - ${RUN_FAILURE_NOTE}`
 }

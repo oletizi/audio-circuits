@@ -5358,3 +5358,48 @@ where it and the specs differ the specs win and the comment is the defect — so
 that clause now names this one exception explicitly, because a comment asserting
 the documents win beside code that departs from them is a contradiction a reader
 would resolve the wrong way.
+
+### Task 20's `exitCodeFor` takes the fired rule as well as the outcome
+
+**What the documents say.** This plan's Task 20 brief declares
+`exitCodeFor(outcome: Outcome): 0 | 1`, and `REP5`'s exit column is keyed on the
+outcome alone: non-zero for *invalid*, non-zero for *valid, below target*, zero
+for *admissible*.
+
+**What `tools/stripboard/report-model.ts` does.**
+`exitCodeFor(outcome: Outcome, rule: StoppingRule): 0 | 1` returns `REP5`'s code
+for the outcome, except that a run which stopped on `Q5` exits non-zero whatever
+the candidate earned. `runFailedOn` is the table that says which rules do that,
+and `Q5` is the only entry.
+
+**Why, and it is CRITERIA rather than a severity the implementation chose.**
+CRITERIA states it twice. Section 5's `Q5` row: *"`Q5` is a backstop against a
+bug looping forever, not a measure of anything, and a run that stops on it is
+**reported as a failure**."* And the paragraph under the stopping rules: *"a run
+that stops on `Q5` is reported as a failure rather than as a result — reaching
+it means either the search or this rule is broken, and both are worth knowing."*
+Under the one-argument signature a `Q5` stop on a healthy candidate rendered
+`outcome: admissible` with `exit: 0` — a backstop stop reading as a clean run,
+which is the one reading `Q5`'s demotion exists to prevent.
+
+**The signature is what blocked the fix, which is why it moved.** Admissibility
+is a fact about the CANDIDATE and the exit code is a fact about the RUN, and one
+argument cannot express *the candidate is admissible and the run failed*.
+`Q5`'s own words make that split CRITERIA's: it *"is not a measure of
+anything"*, so it says nothing about the candidate and everything about the run
+hitting its backstop. So the outcome still reads `admissible` where the
+candidate earns it, and the exit line carries `RUN_FAILURE_NOTE` saying why the
+code is 1 anyway.
+
+**What it does not change.** `REP5`'s table is untouched and is still the source
+for every outcome's code; `Q6` is **not** in `runFailedOn`, because no clause of
+CRITERIA says a `Q6` run is reported as a failure and extending the table past
+the text would be the implementation authoring a criterion.
+
+**Where this was ruled.** Task 20's review: the brief is wrong here and the
+criteria are right. Tasks 23 and 24 consume `exitCodeFor` and neither had run
+when it changed.
+
+**What would close this.** Amending the Task 20 brief's declared signature, or
+rejecting the deviation — in which case `REP5` or `Q5` needs an answer to a
+backstop stop that exits zero.

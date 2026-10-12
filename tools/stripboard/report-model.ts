@@ -153,8 +153,78 @@ const EXIT_CODES: Readonly<Record<Outcome, 0 | 1>> = {
   admissible: 0,
 }
 
-/** The process exit code for an outcome. */
-export function exitCodeFor(outcome: Outcome): 0 | 1 {
+/**
+ * Which stopping rules make the RUN a failure whatever the candidate earned.
+ *
+ * **`Q5` ALONE, AND CRITERIA SAYS IT TWICE.** Section 5's `Q5` row: *"`Q5` is a
+ * backstop against a bug looping forever, not a measure of anything, and a run
+ * that stops on it is **reported as a failure**."* And the paragraph under it:
+ * *"a run that stops on `Q5` is reported as a failure rather than as a result -
+ * reaching it means either the search or this rule is broken, and both are
+ * worth knowing."*
+ *
+ * **SO THE EXIT CODE IS ABOUT THE RUN AND THE OUTCOME IS ABOUT THE CANDIDATE,
+ * AND THOSE ARE TWO FACTS.** A `Q5` stop on a healthy candidate is a layout
+ * that earned `admissible` found by a run that hit its backstop; reported as
+ * `exit: 0` it reads as a clean pipeline run, which is the one thing `Q5`'s
+ * demotion exists to prevent. `Q5` *"is not a measure of anything"*, so it says
+ * nothing about the candidate and everything about the run - which is exactly
+ * why the two cannot share one field.
+ *
+ * **NOTHING ELSE IS IN HERE AND `Q6` WAS CONSIDERED.** A `Q6` stop reports a
+ * systematic cause, and `REP1` says it is *"not a result about cost at all - a
+ * cause to fix"* - but **no clause of CRITERIA says a `Q6` run is reported as a
+ * failure**, and extending this table past the text would be this module
+ * authoring a criterion. In practice `signatureOf` refuses to sign a candidate
+ * with no failing check, so a `Q6` run has recorded failures and its verdict
+ * will usually carry them; where it does not, the outcome decides as `REP5`
+ * says. A record keyed by `StoppingRule` means a seventh rule does not compile
+ * until it says which it is.
+ */
+const RUN_FAILURE: Readonly<Record<StoppingRule, boolean>> = {
+  Q1: false,
+  Q2: false,
+  Q3: false,
+  Q4: false,
+  Q5: true,
+  Q6: false,
+}
+
+/**
+ * Why a run can exit non-zero with an admissible candidate, in CRITERIA's own
+ * words.
+ *
+ * It is a FIXED STRING rather than a sentence assembled at render time, for the
+ * same reason `WORDING` is a table - but it is deliberately NOT under
+ * `QUALITY_PREFIX`, because it is not a claim about the layout's cost at all.
+ * It is a statement about the run, keyed by the rule that ended it.
+ */
+export const RUN_FAILURE_NOTE =
+  "the RUN is reported as a failure although the candidate is not: CRITERIA states twice that a " +
+  "run stopping on Q5 is reported as a failure rather than as a result, because Q5 is a backstop " +
+  "against a bug looping forever and not a measure of anything - reaching it means either the " +
+  "search or Q5 itself is broken, and both are worth knowing. The outcome above is about the " +
+  "CANDIDATE and this exit code is about the RUN."
+
+/** Whether the run that stopped on this rule is itself reported as a failure. */
+export function runFailedOn(rule: StoppingRule): boolean {
+  return RUN_FAILURE[rule]
+}
+
+/**
+ * The process exit code: `REP5`'s column for the candidate, forced non-zero
+ * where the RULE makes the run a failure.
+ *
+ * **IT TAKES THE FIRED RULE AS WELL AS THE OUTCOME, WHICH IS A DEVIATION FROM
+ * THE PLAN'S DECLARED SIGNATURE** (`exitCodeFor(outcome: Outcome): 0 | 1`) and
+ * is recorded as one in the plan's *Deviations from the specs* section. The
+ * one-argument form cannot express *the candidate is admissible and the run
+ * failed*, so under it a `Q5` stop on a healthy candidate exited 0 - against
+ * two clauses of CRITERIA. The criteria are the authority and the brief is
+ * wrong here.
+ */
+export function exitCodeFor(outcome: Outcome, rule: StoppingRule): 0 | 1 {
+  if (runFailedOn(rule)) return 1
   return EXIT_CODES[outcome]
 }
 
