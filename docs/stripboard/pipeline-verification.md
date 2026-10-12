@@ -1392,9 +1392,10 @@ binary disagree about what is placeable, which is the finding, not a candidate t
 drop."*
 
 **The cause, measured on the refusing board rather than reasoned about.** The
-board is kept at `refusing-board-r6-m5.vrt` in the run directory, where C18 reads
-`PART C18 CAP_FILM_WIDE .33uF AT 31,24 SPAN 3 DIRECTION N` with its leads at
-`31,25` and `32,25`:
+board is a scratch candidate from that run - round 6, move 5 - so it is not kept
+here and is reproducible by re-running that seed under the pre-fix model; what it
+said about C18 is `PART C18 CAP_FILM_WIDE .33uF AT 31,24 SPAN 3 DIRECTION N` with
+its leads at `31,25` and `32,25`, and these are the two probes taken against it:
 
 ```
 $ "$VR" --stretch <board> --ref C18 --direction grow -o grown.vrt     # exit 0
