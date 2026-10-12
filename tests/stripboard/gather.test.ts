@@ -30,10 +30,14 @@ import {
   gatherMove,
   gatherStrips,
   occupancyAfter,
+  translationsAfter,
   type Move,
 } from "../../tools/stripboard/moves.ts"
 import { freshRunDir } from "./climb-fixtures.ts"
 import {
+  BLOCKED,
+  BLOCKED_OCC,
+  BLOCKED_REFERENCE,
   holesOf,
   joinsOf,
   joinsOfDump,
@@ -179,17 +183,33 @@ test("a gather asks about EVERY strip, including the empty ones", () => {
 
 test("a gather moves EVERY part of its net or is not proposed at all", () => {
   // **A PARTIAL GATHER IS THE ONE OUTCOME THAT WOULD MAKE THE MOVE'S NAME
-  // FALSE**, and it survived as a mutation until this test: the net's other
-  // parts moved onto a strip this one was never going to reach is strictly
-  // worse than proposing nothing, because it spends an evaluation to SPLIT the
-  // net it was asked to join.
+  // FALSE**: the net's other parts moved onto a strip this one was never going
+  // to reach is strictly worse than proposing nothing, because it spends an
+  // evaluation to SPLIT the net it was asked to join.
   //
-  // HAND-DERIVED: on SPREAD_DUMP a gather onto column 7 needs R1 at column 7,
-  // whose second lead would sit in column 8 of an 8-column grid. So that one
-  // candidate cannot be completed and is absent - while columns 0 to 6 are all
-  // present, which is what makes this a discrimination rather than an empty set.
-  expect(gatherMove(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, "mid", 7)).toBeUndefined()
-  expect(gatherMove(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, "mid", 6)).not.toBeUndefined()
+  // **BLOCKED_DUMP IS THE BOARD THAT CAN TELL THAT APART, AND SPREAD_DUMP
+  // CANNOT** - which is a correction a review had to make, because the version
+  // of this test that used SPREAD_DUMP alone claimed a kill it did not achieve.
+  // On SPREAD_DUMP the only infeasible target is a column past the grid's edge,
+  // and it is out of reach for all three of `mid`'s parts at once - so a rule
+  // that proposed just the parts that fit would still propose nothing there. On
+  // BLOCKED_DUMP a gather onto column 3 asks R1 onto X1's own footprint while
+  // R2's destination is empty: ONE part fits and one does not.
+  expect(gatherMove(BLOCKED_OCC, BLOCKED, BLOCKED_REFERENCE, "mid", 3)).toBeUndefined()
+  // And R2's half really would land on its own, so the rejection is the
+  // all-or-nothing rule rather than a board where nothing fits.
+  expect(
+    translationsAfter(BLOCKED_OCC, BLOCKED.grid, [{ ref: "R2", delta: [0, 3] }]),
+  ).not.toBeUndefined()
+  expect(
+    translationsAfter(BLOCKED_OCC, BLOCKED.grid, [{ ref: "R1", delta: [0, 3] }]),
+  ).toBeUndefined()
+  // Columns 2 and 4 block R1 the same way and column 5 is off the grid for both,
+  // so the only gather this board admits is onto column 1 - the full list, not a
+  // membership check.
+  expect(
+    enumerateMoves(BLOCKED_OCC, BLOCKED, BLOCKED_REFERENCE).filter(gatherKind).map(describeMove),
+  ).toEqual(["gather mid onto strip 1 (R1 by 0,1; R2 by 0,1)", "gather y onto strip 2 (R1 by 0,1; R2 by 0,1)"])
   const proposed = enumerateMoves(SPREAD_OCC, SPREAD, SPREAD_REFERENCE).filter(gatherKind)
   expect(proposed.map((move) => move.strip)).toEqual([0, 1, 2, 3, 4, 5, 6])
   // AND EVERY PROPOSED GATHER CARRIES EVERY PART WHOSE DELTA IS NON-ZERO -

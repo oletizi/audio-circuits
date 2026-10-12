@@ -239,20 +239,26 @@ test("E1 refuses a cluster whose parts cannot all land, and writes nothing", () 
   expect(clusterMove(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE, "mid", [1, 0])).toBeUndefined()
   // AND THE ENUMERATION IS NARROWED BY IT, hand-derived over the four unit
   // deltas: up takes R1 to row -1, off the board; down takes it onto X1;
-  // leftwards takes it to column -1; only rightwards lands, and every assertion
-  // is the full list rather than a membership check, which would pass over an
-  // empty one.
+  // leftwards takes it to column -1; only rightwards lands, and the assertion is
+  // the full list rather than a membership check, which would pass over an empty
+  // one.
+  //
+  // AND IT IS TWO ENTRIES AND NOT EIGHT, because a net with ONE on-board part
+  // gets no cluster: `x` is X1's alone and `z1` and `z2` are Z1's, and a cluster
+  // of one part by a unit delta is exactly the `move` the part kind already
+  // enumerates. That rule reached `gatherMove` first and `clusterMove` only
+  // after a review found the asymmetry; this figure is where it shows.
   expect(enumerateMoves(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE).filter(clusterKind).map(describeMove))
-    .toEqual([
-      "cluster mid by 0,1 (R1 R2)",
-      "cluster y by 0,1 (R1 R2)",
-      "cluster z1 by -1,0 (Z1)",
-      "cluster z1 by 0,1 (Z1)",
-      "cluster z1 by 1,0 (Z1)",
-      "cluster z2 by -1,0 (Z1)",
-      "cluster z2 by 0,1 (Z1)",
-      "cluster z2 by 1,0 (Z1)",
-    ])
+    .toEqual(["cluster mid by 0,1 (R1 R2)", "cluster y by 0,1 (R1 R2)"])
+  // The three single-part nets really are on this board and really do have
+  // their own parts placed, so this is a rule firing rather than an empty board:
+  // each of them has an on-board part and none of them has two.
+  for (const net of ["x", "z1", "z2"]) {
+    expect(clusterRefs(SCATTERED, SCATTERED_REFERENCE, net).length).toBe(1)
+    for (const delta of [[-1, 0], [0, 1], [1, 0], [0, -1]] as const) {
+      expect(clusterMove(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE, net, delta)).toBeUndefined()
+    }
+  }
   // The fork's comes second, for a caller holding a cluster the model admitted
   // and the binary refuses anyway: the run stops, the gesture is named, and
   // `out` is NOT created - every gesture but the last writes a staged file.

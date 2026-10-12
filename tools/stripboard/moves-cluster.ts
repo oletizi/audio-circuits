@@ -221,7 +221,16 @@ export function clusterMove(
   delta: readonly [number, number],
 ): Move | undefined {
   const refs = clusterRefs(dump, reference, net)
-  if (refs.length === 0) return undefined
+  // **TWO PARTS OR MORE, THE SAME RULE `gatherMove` APPLIES, AND THE ASYMMETRY
+  // THAT WAS HERE WAS AN OVERSIGHT RATHER THAN A DECISION.** A cluster of ONE
+  // part is a single-part translation by a unit delta - which is exactly what
+  // the `move` kind enumerates, with its own declared one-hole neighbourhood -
+  // so proposing it here put the same gesture in the sweep twice under two
+  // names, and made the record say "cluster" of something that clustered
+  // nothing. The deduplication is not the point; the honesty of the kind's name
+  // is. `UNIT_DELTAS` means the duplicate was an exact duplicate, so nothing is
+  // lost: `./moves.ts`'s `partMoves` proposes every one of them.
+  if (refs.length < 2) return undefined
   const ordered = clusterSequence(occupancy, refs, delta)
   if (clusterAfter(occupancy, dump.grid, ordered, delta) === undefined) return undefined
   return { kind: "cluster", net, delta, refs: ordered }
@@ -309,14 +318,21 @@ function aimedHoles(
  * it only changes which strip each of the net's pins is on, which is the
  * quantity `J` counts.
  *
- * **THE ORDER IS A DECLARED SCHEDULE AND NOT A SEARCH OVER ORDERS.** Repeated
- * passes in the dump's part order: on each pass every part whose destination
- * fits NOW is moved, and the pass repeats while anything moved. The parts that
- * are still unplaced when a pass moves nothing mean the gather is not proposed.
- * That is strictly stronger than one pass - a part blocked by another that has
- * not moved yet gets its turn after it does - and it is deterministic, which
- * Task 13's hash needs. **It is NOT a claim that no order could place a gather
- * this schedule rejects**, and nothing has measured how often another would.
+ * **THE ORDER IS ONE PASS IN THE DUMP'S PART ORDER, AND ALL OF IT OR NONE.**
+ * The body below says why at length and the short version is that a gather
+ * cannot have the structure an order would help with: every part keeps its
+ * coordinate on the non-strip axis and every pin ends on the same strip, so two
+ * parts of the net either overlap on that axis - and then no order places them -
+ * or can never block each other. **THIS PARAGRAPH DESCRIBED A REPEATED-PASS
+ * SCHEDULE AND CALLED IT "strictly stronger than one pass"**, thirty lines above
+ * a body that has not had one since the review that measured the claim: an
+ * oracle over 1,470 (net, strip) pairs of three real starts found 514 feasible
+ * gathers and **not one** placed by repeated passes alone. The description is
+ * deleted rather than softened, because it described code that no longer exists.
+ *
+ * It is deterministic, which Task 13's hash needs. **It is NOT a claim that no
+ * order could place a gather this one rejects** - a case the argument misses
+ * shows up as a gather not proposed, never as a gesture the fork refuses.
  *
  * `translationsAfter` is the fit model, so the sequence recorded on the move is
  * the sequence the model checked, and `applyMove` needs no geometry at all.

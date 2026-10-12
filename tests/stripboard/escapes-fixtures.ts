@@ -232,6 +232,59 @@ export const SPREAD_REFERENCE: ReferenceNets = new Map([
 ])
 
 /**
+ * A net of two parts where a THIRD part blocks exactly one of them: the board a
+ * PARTIAL gather can be told apart on.
+ *
+ * ```
+ *        col 0   col 1   col 2   col 3   col 4
+ * row 0  R1.1    R1.2            X1.1    X1.2
+ *        (mid)   (y)             (x)     (x)
+ * row 2  R2.1    R2.2
+ *        (mid)   (y)
+ * ```
+ *
+ * Strips are COLUMNS. A gather of `mid` onto column 3 asks `R1` to move to
+ * `0,3`, which is `X1`'s own footprint - while `R2` moves to `2,3`, which is
+ * empty. So **one part of the net fits and the other does not**, which is the
+ * case `SPREAD_DUMP` cannot produce: there a column past the grid's edge is out
+ * of reach for every one of `mid`'s parts at once, so a rule that proposed the
+ * parts that fit would still propose nothing.
+ *
+ * Columns 2 and 4 block `R1` the same way and column 5 is off the 6-column grid
+ * for both, so the only gather this board admits is onto column 1.
+ */
+export const BLOCKED_DUMP = [
+  "GRID 6 6",
+  "BOUNDS 0,0 2,4",
+  "VERO_TRACKS 1",
+  "VERTICAL_STRIPS 1",
+  "CUT_STATE COMPUTED",
+  "PART R1 RESISTOR 10K AT 0,0 SPAN 2 DIRECTION W",
+  "PART X1 RESISTOR 10K AT 0,3 SPAN 2 DIRECTION W",
+  "PART R2 RESISTOR 10K AT 2,0 SPAN 2 DIRECTION W",
+  "PIN R1 1 AT 0,0",
+  "PIN R1 2 AT 0,1",
+  "PIN X1 1 AT 0,3",
+  "PIN X1 2 AT 0,4",
+  "PIN R2 1 AT 2,0",
+  "PIN R2 2 AT 2,1",
+  "NODE 1 NAME mid R1.1 R2.1",
+  "NODE 2 NAME y R1.2 R2.2",
+  "NODE 3 NAME x X1.1 X1.2",
+  "",
+].join("\n")
+
+export const BLOCKED: BoardDump = boardGeometry(BLOCKED_DUMP)
+export const BLOCKED_OCC = occupancyOf(BLOCKED)
+
+/** `BLOCKED_DUMP`'s three nets, in the order its `NODE` lines carry them. */
+export const BLOCKED_REFERENCE: ReferenceNets = new Map([
+  ["mid", ["R1.1", "R2.1"]],
+  ["y", ["R1.2", "R2.2"]],
+  ["x", ["X1.1", "X1.2"]],
+])
+
+/**
  * The parts with a pin on `mid`, HAND-READ off `SCATTERED_DUMP`'s two `NODE 1`
  * pin names and written as a literal.
  *
