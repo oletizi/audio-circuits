@@ -317,6 +317,23 @@ export function evaluation(overrides: Partial<Evaluation> = {}): Evaluation {
 /** A tuple that beats `evaluation()`'s on its LAST position only: the lowest-ranked term. */
 export const BETTER_TUPLE: readonly number[] = [1, 1, 1, 1, 0]
 
+/**
+ * `BASE_DUMP` with its cut state UNRESOLVED and a `CUT_CONFLICT` line: the board
+ * `--author --op autofill` produces when a wire shorts two nets.
+ *
+ * **IT IS THE REAL SHAPE, taken from a real refusal.** On the constructed arm at
+ * seed 3 of the import-placed low-boost board, an `add-wire` candidate put
+ * `Wire1` from `5,3` to `6,3` and the paint came back
+ * `CUT_STATE UNRESOLVED` with `CUT_CONFLICT 5,2,9 5,4,11` and
+ * `CUT_CONFLICT 6,2,8 6,4,14` - no cut arrangement separates two nets a wire has
+ * joined. `./score.ts` refuses to score such a board, and `climb` counts the
+ * candidate as unscoreable rather than stopping the run.
+ */
+export const UNRESOLVED_DUMP = BASE_DUMP.replace(
+  "CUT_STATE COMPUTED",
+  "CUT_STATE UNRESOLVED\nCUT_CONFLICT 5,2,9 5,4,11",
+)
+
 /** Which dump text the spawn answers the `n`th `--dump-board` with. */
 export type DumpScript = (dumpIndex: number) => string
 

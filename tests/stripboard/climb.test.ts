@@ -43,6 +43,7 @@ import {
   rulesWithCap,
   rulesWithoutWorseAcceptance,
   scriptedSpawn,
+  UNRESOLVED_DUMP,
   scriptedSpawnWithChecks,
   seededStart,
   type CheckScript,
@@ -351,6 +352,45 @@ test("the climb evaluates at least the start, so Task 16's requireMeasured is sa
   )
   expect(result.evaluations).toBeGreaterThanOrEqual(1)
   expect(result.history.length).toBeGreaterThanOrEqual(1)
+})
+
+test("a candidate whose cuts cannot be computed is rejected and counted, not fatal", () => {
+  // **THE MEASUREMENT THAT FORCED THIS.** `add-wire` can short two nets, and
+  // `AutoFillVero` then reports CUT_STATE UNRESOLVED with CUT_CONFLICT lines
+  // instead of a cut arrangement - measured on the constructed arm at seed 3 of
+  // the import-placed low-boost board, where Wire1 from 5,3 to 6,3 produced
+  // CUT_CONFLICT 5,2,9 5,4,11 and re-running the autofill never resolved it.
+  // ./score.ts refuses to score that board and is right to; a refusal that
+  // stopped the RUN made add-wire unusable on any real board.
+  //
+  // HAND-DERIVED: the script hands the unresolved board to round 0's first
+  // candidate and BASE_DUMP to everything else, so that one candidate is
+  // counted and rejected and the other 90 are scored. The climb therefore
+  // reports 91 evaluations rather than 92 - the start plus 90 scored candidates
+  // - one unscoreable, and a round that accepted nothing.
+  const runDir = freshRunDir()
+  const result = climb(
+    seededStart(runDir),
+    climbInput(runDir, false),
+    scriptedSpawn((index) => (index === 1 ? UNRESOLVED_DUMP : BASE_DUMP)),
+  )
+  expect(result.unscoreable).toBe(1)
+  expect(result.evaluations).toBe(91)
+  expect(result.history.length).toBe(91)
+  expect(result.rounds).toBe(1)
+  expect(result.acceptedPerRound).toEqual([0])
+  // AND THE CAUSE IS KEPT, not swallowed: the first refusal's own words are on
+  // the result, so a reader who sees a count can see what it was.
+  expect(result.firstUnscoreable).toContain("CUT_STATE UNRESOLVED")
+  expect(result.firstUnscoreable).toContain("score-cuts-not-computed")
+  // A CLIMB THAT SCORES NOTHING AT ALL IS STILL A CLIMB THAT MEASURED ITS START,
+  // which is what Task 16's requireMeasured needs: the start is NOT caught by
+  // this, so an unscoreable START still stops the run.
+  const startDir = freshRunDir()
+  const refusal = refusalFrom(() =>
+    climb(seededStart(startDir), climbInput(startDir, false), scriptedSpawn(() => UNRESOLVED_DUMP)),
+  )
+  expect(refusal).toContain("score-cuts-not-computed")
 })
 
 test("a candidate the fork could not paint stops the run rather than scoring half of it", () => {

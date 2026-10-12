@@ -127,6 +127,17 @@ import type { BoardTargets } from "./targets.ts"
 import { measure, type Evaluation, type Measured } from "./climb-evaluate.ts"
 
 /**
+ * The one refusal `climb` catches, matched by the NAME `./score.ts` gives it.
+ *
+ * `./score.ts` builds every refusal as the member of its own `ScoreRefusal`
+ * union followed by a colon, so this prefix is that member rather than a phrase
+ * from the prose - and a catch broad enough to swallow a fork failure or a
+ * geometry refusal would turn a defect into a skipped candidate, which is the
+ * shape this pipeline is built against.
+ */
+const UNSCOREABLE = "score-cuts-not-computed"
+
+/**
  * The evaluation half, re-exported from `./climb-evaluate.ts`.
  *
  * This is the module the plan names and Tasks 18, 19 and 20 import. The split
@@ -206,6 +217,33 @@ export interface ClimbResult {
   readonly acceptedPerRound: readonly number[]
   /** Every evaluation's `F`, in the order the candidates were evaluated. */
   readonly history: readonly number[]
+  /**
+   * How many candidates could not be SCORED at all, and the first one's refusal.
+   *
+   * **A CANDIDATE WHOSE CUT LIST CANNOT BE COMPUTED IS REJECTED AND COUNTED,
+   * NOT A RUN-STOPPING REFUSAL - A DELIBERATE CHANGE WITH A MEASUREMENT BEHIND
+   * IT.** `add-wire` produces one: a wire bridging two strips on a packed board
+   * routinely shorts two different nets, and `AutoFillVero` then reports
+   * `CUT_STATE UNRESOLVED` with `CUT_CONFLICT` lines instead of a cut
+   * arrangement. Measured on the constructed arm at seed 3 of the import-placed
+   * low-boost board: `Wire1` from `5,3` to `6,3` produced
+   * `CUT_CONFLICT 5,2,9 5,4,11` and `CUT_CONFLICT 6,2,8 6,4,14`, and re-running
+   * `--author --op autofill` leaves it unresolved every time.
+   *
+   * `./score.ts` refuses such a board and is RIGHT to - *"scoring it anyway
+   * would price a board at zero cuts and rank it first"* - but a refusal that
+   * stops the run makes `add-wire` unusable on any real board, which is the
+   * capability the move set exists to have. So the candidate is rejected, for
+   * the same reason an unscoreable board cannot be compared with anything, and
+   * **the count is reported rather than swallowed**: these are not evaluations,
+   * they are candidates the pipeline could not evaluate, and a reader seeing a
+   * large number here is looking at a search spending its budget on shorts.
+   *
+   * `evaluations` and `history.length` still count only SCORED candidates,
+   * which is what Task 16's `evaluationsToCross` requires of them.
+   */
+  readonly unscoreable: number
+  readonly firstUnscoreable: string | null
 }
 
 /**
@@ -250,6 +288,8 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
   const cap = input.rules.evaluationCap
   const history: number[] = []
   const acceptedPerRound: number[] = []
+  let unscoreable = 0
+  let firstUnscoreable: string | null = null
 
   const evaluateInto = (board: string, tag: string): Measured => {
     const measured = measure(
@@ -309,7 +349,11 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
     }
     let accepted = 0
     for (const [index, move] of moves.entries()) {
-      if (history.length >= cap) {
+      // THE CAP COUNTS WHAT THE RUN SPENT, WHICH INCLUDES THE CANDIDATES IT
+      // COULD NOT SCORE: each cost the same four fork invocations as a scored
+      // one, and a board whose every wire candidate shorts would otherwise
+      // sweep forever against a cap that never moved.
+      if (history.length + unscoreable >= cap) {
         spent = true
         break
       }
@@ -332,7 +376,21 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
         )
       }
       applyMove(base.measured.source, move, candidateBoard, spawn, transport)
-      const measured = evaluateInto(candidateBoard, tag)
+      // AN UNSCOREABLE CANDIDATE IS REJECTED AND COUNTED - see
+      // `ClimbResult.unscoreable` for the measurement that forced it and why the
+      // alternative is worse. ONLY that one refusal is caught, by its own name:
+      // a fork failure, a geometry refusal or a grader refusal still stops the
+      // run, because none of them says "this candidate cannot be compared".
+      let measured: Measured
+      try {
+        measured = evaluateInto(candidateBoard, tag)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        if (!message.startsWith(UNSCOREABLE)) throw error
+        unscoreable += 1
+        if (firstUnscoreable === null) firstUnscoreable = message
+        continue
+      }
       // THE TWO COMPARISON BOARDS ARE DIFFERENT AND BOTH ARE NAMED: a
       // regression is measured against the board this move was applied to, and
       // F against the best so far. See `AcceptanceInput`.
@@ -367,5 +425,7 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
     evaluations: history.length,
     acceptedPerRound,
     history,
+    unscoreable,
+    firstUnscoreable,
   }
 }
