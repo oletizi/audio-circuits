@@ -65,12 +65,15 @@
  * exactly the boards the search exists to repair.
  *
  * **WHAT A REAL CLIMB ACTUALLY DOES, so this comment is not the only evidence
- * about it.** On the import-placed low-boost board against the pinned fork:
- * 3 rounds, 77 evaluations, `acceptedPerRound: [2, 1, 0]`, `F` from 39 to 36 -
- * three cuts removed - stopping on `S3`, and ending inadmissible on `HC1`,
- * `HC6`, `HC8` and `HC10`. `docs/stripboard/pipeline-verification.md` section 5
- * carries both runs, every refusal, and why the three starting ARMS produce no
- * candidate at all.
+ * about it.** On the import-placed low-boost board against the pinned fork,
+ * from each of the three starting arms: `random` 53 rounds and 5110
+ * evaluations, 84 accepted moves, `F` from 31 to 14; `constructed` 29 rounds
+ * and 2058 evaluations, 44 accepted moves, `F` from 21 to 17; `import` 3 rounds
+ * and 77 evaluations, 3 accepted moves, `F` from 39 to 36. All three stopped on
+ * `S3` and all three ended inadmissible.
+ * `docs/stripboard/pipeline-verification.md` section 5 carries all three runs,
+ * every refusal on the way, and - in §5.9 - what may and may not be concluded
+ * from the control arm winning.
  *
  * **THE START IS INADMISSIBLE AND THAT IS NORMAL.** `./seed.ts` records that
  * all three arms begin from a board whose nets are incomplete - 19, 13, 7 and 6

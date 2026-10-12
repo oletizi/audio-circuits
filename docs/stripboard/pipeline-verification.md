@@ -1084,3 +1084,67 @@ imported board. The copy does not go through the fork — it only puts the start
 where the run directory wants it, so a failed run still leaves the imported
 board untouched. The refusal this replaces claimed that "every arm ends with
 `--author --op autofill`", which is now false by design.
+
+### 5.9 RUN 3 — all three arms climb, and the control wins
+
+With the handover contract of 5.8, every arm produces a candidate and every arm
+climbs. Same board, netlist, rules, seed 0 and binary as runs 1 and 2.
+
+| start | rounds | evaluations | accepted moves | `acceptedPerRound` | `F0` → `F` | `C` | `A1` | failing | invocations | wall |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 29 | 2058 | **44** | `[4,3,2,2,2,2,2,2,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1,1,1,1,1,1,0]` | **21 → 17** | 17 | false | `HC1`, `HC5`, `HC6`, `HC8`, `HC9`, `HC10` | 8,293 | 91 s |
+| `import` | 3 | 77 | 3 | `[2,1,0]` | 39 → 36 | 36 | false | `HC1`, `HC6`, `HC8`, `HC10` | 308 | 3.3 s |
+| `random` | 53 | 5110 | **84** | `[7,6,5,3,2,3,2,1,2,1,2,…,1,0]` | **31 → 14** | 14 | false | `HC1`, `HC6`, `HC8`, `HC10` | 20,484 | 234 s |
+| `raw-import-board` (not a `SeedArm`) | 3 | 77 | 3 | `[2,1,0]` | 39 → 36 | 36 | false | `HC1`, `HC6`, `HC8`, `HC10` | 308 | 3.6 s |
+
+All four stopped on `S3` — a whole round accepting nothing — and none reached the
+`20,000` evaluation cap, so `S5` did not fire on any of them.
+
+**Against runs 1 and 2, which could only climb the raw board: 3 accepted moves
+and `F = 36` then, 84 accepted moves and `F = 14` now.** The whole difference is
+which board the climb could start from.
+
+#### What this says, stated narrowly
+
+- **The control arm wins, and by a wide margin.** `random` reaches `F = 14`
+  against `constructed`'s 17 and `import`'s 36. The uniform draw is the null
+  hypothesis Task 16 built to be beaten, and on this seed it is not beaten.
+- **`constructed` starts best and finishes worse.** `F0 = 21` against `random`'s
+  31 and `import`'s 39 — the construction really does place a better board than
+  either — and it then converges 3 higher. A better start that climbs to a worse
+  layout is the shape of a start that has boxed its own parts in.
+- **`import` and `raw-import-board` agree in every single field.** That is a
+  free cross-check and it is worth keeping: the import arm now hands over a
+  COPY of the imported board, so the two must agree, and they do.
+- **4.00 to 4.03 fork invocations per evaluation**, across all four arms. That
+  independently confirms the recorded cost model — apply, autofill, check,
+  dump — against a figure nothing here was fitted to.
+
+#### What this is NOT, and the rule it must not be read against
+
+**This is not Task 16's arm comparison and nothing here may retire an arm.**
+`compareSeedArms` was not run; the decision variable is the SUCCESS RATE over
+the reviewed seed set against `B1-frozen`'s mark, and this is **one seed, one
+board, one climb, with the mark not evaluated at all**. `RETIREMENT` says in its
+own words that a start count is not a rate, and final `F` on one seed is its
+tiebreak only for a run where no arm reaches the mark — which is a question
+nobody has asked yet. The figures above are evidence for that comparison to be
+run against, not a verdict standing in for it.
+
+#### Two findings worth acting on
+
+1. **`constructed` starts already failing `HC5` and `HC9`** — the lead-span
+   constraints — where `import` and `random` do not. Its own `--stretch`
+   gestures put spans outside the family's recorded range. The no-regression
+   rule did not break them: they were broken before the climb began, and the
+   climb was right to keep moving. But a span is a PHYSICAL REACH, so this is
+   not something the search can repair — a start that is inadmissible on a
+   constraint no gesture can fix is carrying a defect rather than a head start,
+   which may be the whole explanation for why the best start converges to the
+   worst-but-one layout. `seed-constructed.ts` consults
+   `lib/kicad/lead-span.ts`'s bound through `appliedGestures`' geometry only,
+   not through `HC5`/`HC9`'s, and that gap is where to look.
+2. **Every arm still ends `A1` false on `HC1`, `HC6`, `HC8` and `HC10`**, and
+   84 accepted moves did not change that. `C = 14` against a derived floor of 0
+   with `κ` still far from the bench. Clustering (`E1`, Task 18) remains the
+   lever nothing has tested.
