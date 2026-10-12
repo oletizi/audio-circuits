@@ -5301,3 +5301,60 @@ is the previous revision's content intact, so rejecting the comparison leaves `a
 rule as his to set, reject `RETIREMENT` and `retireable` and keep the per-arm table**: the
 measurement and the rule for acting on it are separable, and the plan declares the rule before the
 run precisely so that it can be argued with while it still costs nothing.
+
+---
+
+## Deviations from the specs, recorded rather than fixed in them
+
+Following `docs/superpowers/plans/2026-09-22-canonical-model-plan-b.md`'s own
+convention: the specs are the owner's documents, so a departure is recorded here
+with its reasoning and the spec is left as written. Ratifying or rejecting one is
+the owner's call.
+
+### Task 17's acceptance rule is NO-REGRESSION, not "reject on any hard-constraint failure"
+
+**What the documents say.** `docs/superpowers/specs/
+2026-10-10-stripboard-pipeline-design.md`'s `P2` row and this plan's Task 17
+brief both state: *"Reject on any hard-constraint failure."*
+
+**What `tools/stripboard/climb.ts` does.** `accepts` rejects a candidate that
+BREAKS a hard constraint which held on the board the move was applied to, and
+does not reject one that merely inherits a constraint already broken. `ΔF < 0`,
+or `ΔF = 0` with a strictly better ranking tuple, then decides.
+
+**Why, and this is the part that is measured rather than argued.** `A1` is the
+conjunction of all ten constraints and `HC1` is a BOARD-LEVEL predicate, so no
+single-part gesture flips `A1` from false to true unless it happens to be the
+very last repair a board needs — which is unreachable when nothing before it was
+accepted. Every starting arm begins from a board with incomplete nets
+(`tools/stripboard/seed.ts` records 19, 13, 7 and 6 on mid, hi-boost, hi-cut and
+low-cut), so under the rule as written **every round of every climb from every
+arm accepts nothing**, reports `acceptedPerRound: [0]`, and — with `Q3` treating
+a barren round as a restart trigger — the whole search degenerates into trying
+each seed once and declaring itself exhausted. The no-regression rule is what
+let the first real climbs happen at all:
+`docs/stripboard/pipeline-verification.md` §5.9 records 84 accepted moves and
+`F` from 31 to 14 on the random arm, against nothing at all before.
+
+**Why this is believed not to be a criteria change.** CRITERIA uses `A1` to
+classify an OUTCOME — its *"valid, below target"* row is `A1` holding with an
+optimisation target unmet — and **states no clause requiring an intermediate
+step to satisfy it**; `OBJ3` is its only step-acceptance clause, and the
+implemented rule honours it. So "reject on any hard-constraint failure" reads as
+the plan's own acceptance MECHANICS rather than a criterion. What counts as an
+acceptable LAYOUT is untouched: an inadmissible board still cannot be adopted,
+because Task 24's gate carries its own `failing-check` refusal, and
+`ClimbResult.best.admissibleA1` reports plainly whether a climb ended admissible
+rather than hiding it.
+
+**What would close this.** Either amending the `P2` row and the Task 17 brief to
+state the no-regression rule, or rejecting the deviation — in which case the
+climb reverts to an `A1` gate and the plan needs an answer to the deadlock,
+since `E1`'s cluster move is a multi-part gesture and would face the same wall
+on the constraints a single net's repair does not complete.
+
+**Where the code says so.** `climb.ts`'s module comment opens by stating that
+where it and the specs differ the specs win and the comment is the defect — so
+that clause now names this one exception explicitly, because a comment asserting
+the documents win beside code that departs from them is a contradiction a reader
+would resolve the wrong way.

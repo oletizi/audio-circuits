@@ -1085,7 +1085,7 @@ where the run directory wants it, so a failed run still leaves the imported
 board untouched. The refusal this replaces claimed that "every arm ends with
 `--author --op autofill`", which is now false by design.
 
-### 5.9 RUN 3 — all three arms climb, and the control wins
+### 5.9 RUN 3 — all three arms climb; on ONE SEED the control reaches the lowest `F`
 
 With the handover contract of 5.8, every arm produces a candidate and every arm
 climbs. Same board, netlist, rules, seed 0 and binary as runs 1 and 2.
@@ -1106,9 +1106,13 @@ which board the climb could start from.
 
 #### What this says, stated narrowly
 
-- **The control arm wins, and by a wide margin.** `random` reaches `F = 14`
-  against `constructed`'s 17 and `import`'s 36. The uniform draw is the null
-  hypothesis Task 16 built to be beaten, and on this seed it is not beaten.
+- **On this one seed, the control reaches the lowest `F`.** `random` reaches
+  `F = 14` against `constructed`'s 17 and `import`'s 36. The uniform draw is the
+  null hypothesis Task 16 built to be beaten, and on THIS SEED it is not beaten.
+  **That is not the comparison and may not be read as one:** `compareSeedArms`
+  was not run, the mark was not evaluated, and one seed is not a rate. The
+  standing ruling is that nothing may read a retirement against a non-rate, and
+  this bullet is a non-rate.
 - **`constructed` starts best and finishes worse.** `F0 = 21` against `random`'s
   31 and `import`'s 39 — the construction really does place a better board than
   either — and it then converges 3 higher. A better start that climbs to a worse

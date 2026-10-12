@@ -6,7 +6,17 @@
  * 2026-10-10-stripboard-pipeline-design.md` §1257's `P2` row and
  * `docs/superpowers/specs/2026-10-10-stripboard-placement-cost-design.md` §6.1
  * and §6.4. Where this module and those documents differ the documents win and
- * this comment is the defect.
+ * this comment is the defect - **with ONE named exception, below.**
+ *
+ * **THE EXCEPTION: the acceptance rule here is NO-REGRESSION, and the documents
+ * say "reject on any hard-constraint failure".** This module departs from them
+ * deliberately, the departure is recorded in `docs/superpowers/plans/
+ * 2026-10-10-stripboard-pipeline.md` under *"Deviations from the specs"* with
+ * its reasoning and what would close it, and `accepts`' own comment carries the
+ * measured deadlock that forced it. It is named here because a module comment
+ * asserting the documents win, beside code that departs from them, is a
+ * contradiction a reader would resolve the wrong way - and the resolution is
+ * NOT to revert the rule.
  *
  * **THE ONE PROPERTY THIS DESIGN RESTS ON: A RANKING TERM CANNOT MAKE THE CLIMB
  * ACCEPT A WORSE `F`.** `./rank.ts`'s own comment states it from the other side

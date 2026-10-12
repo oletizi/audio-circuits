@@ -225,10 +225,16 @@ export interface ComparisonInput {
  * seed set's seeds produced a candidate AT ALL is a fact about whether an arm can
  * start; the rate below is counted from runs an `ArmRunner` returned, each having
  * evaluated at least one candidate (`requireMeasured` refuses a run that
- * evaluated none). At the time of writing, all three arms produce a start on all
- * five reviewed seeds of the import-placed low-boost board and **no measured run
- * has happened at all**, so nothing in this plan has yet produced a rate for this
- * rule to be applied to.
+ * evaluated none). All three arms produce a start on all five reviewed
+ * seeds of the import-placed low-boost board, and **measured runs have now
+ * happened**: Task 17 climbed from each arm on seed 0 of that board and recorded
+ * the results in `docs/stripboard/pipeline-verification.md` §5.9. **Those
+ * figures are NOT a rate and this rule may not be applied to them**: they are
+ * ONE seed on ONE board with `compareSeedArms` never run and the mark never
+ * evaluated, and the paragraph above is the reason - a success rate is counted
+ * over the seed set against the mark, and a final `F` per seed is this rule's
+ * tiebreak only for a run where no arm reaches the mark. Nothing has yet
+ * produced a rate for this rule to be applied to.
  */
 export const RETIREMENT =
   "The decision variable is the success rate: how many of the seed set's seeds met the mark, " +

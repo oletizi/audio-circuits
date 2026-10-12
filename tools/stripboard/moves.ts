@@ -48,7 +48,6 @@
  * ENUMERATED, because the enumeration is the spec's move set and a kind missing
  * from it would be invisible.
  */
-import fs from "node:fs"
 import type { BoardDump } from "../guide/dump.ts"
 import { parseHoleKey, pinHoles, type HoleKey } from "./copper.ts"
 import { stripOf } from "./constraints-model.ts"
@@ -390,10 +389,12 @@ function clusterMoves(reference: ReferenceNets): readonly Move[] {
  * The whole move set for one board, in `MOVE_KINDS`' order within a
  * deterministic order of parts, nets and wires.
  *
- * It reads the board's occupancy ONCE, through `occupancyOf`, which refuses a
- * board it cannot describe - a floating part, a part already turned across the
- * strips, a component type with no recorded footprint row count - rather than
- * enumerating moves for a rectangle nobody measured.
+ * **IT READS NO OCCUPANCY AT ALL: the caller hands one in.** It used to derive
+ * one with `occupancyOf`, and that is exactly what made a turn unenumerable -
+ * a dump cannot describe a turned part's footprint. The refusals `occupancyOf`
+ * raises for a board it cannot read now belong to whoever reads the FIRST
+ * occupancy off a starting board, which is `seedCandidate` and nothing else in
+ * the search.
  */
 export function enumerateMoves(
   occupancy: Occupancy,

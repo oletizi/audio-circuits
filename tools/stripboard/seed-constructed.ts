@@ -88,11 +88,23 @@ function stripFor(assignment: StripAssignment, net: string, board: string): numb
  * remedy is rather than emitting a candidate for `HC5` to reject anonymously,
  * and refusing before the first gesture means a refused run has written nothing.
  *
- * **WHAT IT CAN KNOW IS THE TOOL'S RANGE AND NOT THE PART'S.** `SeedInput`
- * carries no footprint map, so the tighter per-footprint `maxSpanHoles` in
- * `lib/kicad/lead-span.ts` is unreachable from here and `HC5` is what applies
- * it. A span outside 2-16 holes is one no footprint's `maxSpanHoles` can
- * accommodate, so that is the subset this arm refuses on.
+ * **WHAT IT CAN KNOW IS THE TOOL'S RANGE AND NOT THE PART'S, AND THE HOLE IS
+ * AT BOTH ENDS.** `SeedInput` carries no footprint map, so NEITHER
+ * per-footprint bound in `lib/kicad/lead-span.ts` is reachable from here: not
+ * the upper `maxSpanHoles`, which `HC5` applies, and not the lower
+ * `minSpanHoles`, which `HC9` applies. A span outside 2-16 holes is one no
+ * footprint can accommodate at either end, so that is the subset this arm
+ * refuses on, and anything inside the tool's range but outside a FAMILY's
+ * range reaches `HC5` or `HC9` unremarked.
+ *
+ * **THAT GAP IS NOT HYPOTHETICAL AND `HC9` IS THE HALF IT COST.** Measured on
+ * the import-placed low-boost board: this arm's start fails `HC5` AND `HC9`
+ * where the import and random arms fail neither
+ * (`docs/stripboard/pipeline-verification.md` §5.9), so its own stretches put
+ * spans outside a family's recorded range at both ends. A lead span is a
+ * PHYSICAL REACH, so no later gesture can repair it - which makes this an
+ * inadmissibility the search cannot climb out of rather than a start that is
+ * merely worse.
  *
  * **IT IS EXPORTED BECAUSE IT IS UNREACHABLE THROUGH `seedCandidate` ON EVERY
  * COMMITTED BOARD, AND A GUARD NO TEST CAN DRIVE IS A GUARD THAT HAS ALREADY

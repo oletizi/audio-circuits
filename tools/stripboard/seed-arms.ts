@@ -148,7 +148,10 @@ export function drive(
 
 /**
  * The **import** arm: `--import`'s own placement, the ribbon, copied into the
- * run directory and painted.
+ * run directory UNPAINTED and otherwise untouched.
+ *
+ * It emits no gesture at all - not even a paint. `SeedStart` carries why, and
+ * who paints instead.
  *
  * It costs nothing to include because it is what exists, and it is the only arm
  * with no code behind its placement at all. **It has exactly one start**: the
