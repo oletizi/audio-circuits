@@ -1,5 +1,6 @@
 /**
- * `place`: the stripboard pipeline's own verb on the perfboard CLI.
+ * `place` and `adopt`: the stripboard pipeline's own two verbs on the perfboard
+ * CLI.
  *
  * THE AUTHORITY is the plan's Task 23. Where this module and that document
  * differ the document wins and this comment is the defect.
@@ -19,12 +20,26 @@
  * treatment nobody named."* So a `place` with no arm prints the refusal, lists
  * the three, and exits 1 - it does not run the control.
  *
- * **IT WRITES ONLY UNDER `build/stripboard/`** (`tools/stripboard/place.ts`),
+ * **`place` WRITES ONLY UNDER `build/stripboard/`** (`tools/stripboard/place.ts`),
  * never the layout. That is why it needs no `--allow-dirty`: there is nothing
  * for git to have to undo.
+ *
+ * **`adopt` IS THE OPPOSITE AND IS THE ONLY VERB IN THIS PIPELINE THAT WRITES
+ * UNDER `boards/`** - `G1`. It takes `--run <dir>`, optionally `--candidate
+ * <vrt>`, and `--allow-dirty` for the same reason `update` and `stripboard`
+ * take it; the gate itself is `tools/stripboard/adopt.ts` and every refusal is
+ * that module's. This verb decides nothing: it parses three flags, hands the
+ * directory it is standing in to `adoptLayout`, and prints the refusal whole.
  */
+import fs from "node:fs"
 import path from "node:path"
 import { errorMessage, reportLines } from "./perfboard-support.ts"
+import {
+  adoptLayout,
+  candidateFor,
+  defaultAdoptDeps,
+  type AdoptDeps,
+} from "../stripboard/adopt.ts"
 import {
   place,
   placeAcrossSeeds,
@@ -199,4 +214,133 @@ export async function dispatchPlace(context: VerbContext, deps: PlaceDeps = {}):
   }
   for (const line of lines) context.log(line)
   return code
+}
+
+/** `adopt`'s own flags, parsed strictly: an unknown flag is a refusal, never a no-op. */
+interface AdoptFlags {
+  readonly run: string
+  readonly candidate: string | undefined
+  readonly allowDirty: boolean
+}
+
+const ADOPT_VALUE_FLAGS = new Set(["--run", "--candidate"])
+
+/**
+ * `--run <dir>`, `--candidate <vrt>`, `--allow-dirty`.
+ *
+ * `--run` IS REQUIRED AND THERE IS NO DEFAULT RUN. "The most recent run
+ * directory" would be a board adopted off whatever the clock last named, which
+ * is the one thing a provenance gate must not take on trust. `--candidate` is
+ * optional because `run.json` already identifies the candidate by its hash
+ * (`candidateFor`), and leaving the operator to find that file by hand after a
+ * report that printed only the directory would be remedial work this verb can
+ * do exactly.
+ *
+ * **BOTH PATHS RESOLVE AGAINST THE REPOSITORY ROOT AND NOT AGAINST THIS VERB'S
+ * DIRECTORY, which is a correction MEASURED on the first real run.** This verb
+ * stands in the board's directory, so `--run build/stripboard/<board>/<stamp>`
+ * resolved against `cwd` became
+ * `boards/<board>/build/stripboard/<board>/<stamp>` and the gate refused on a
+ * missing `run.json` - naming the right file at a path nobody typed. A run
+ * directory is `runDirectory`'s and is relative to the repository root by
+ * construction, so that is what a relative one resolves against; an absolute
+ * path is untouched either way.
+ */
+function parseAdoptFlags(
+  args: readonly string[],
+  cwd: string,
+  error: (line: string) => void,
+): AdoptFlags | null {
+  const values = new Map<string, string>()
+  let allowDirty = false
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index] ?? ""
+    if (arg === "--allow-dirty") {
+      allowDirty = true
+      continue
+    }
+    if (!ADOPT_VALUE_FLAGS.has(arg)) {
+      error(
+        `unknown flag "${arg}" for "adopt". Run with --help to see the flags this verb accepts.`,
+      )
+      return null
+    }
+    const value = args[index + 1]
+    if (value === undefined || value.startsWith("--")) {
+      error(`${arg} needs a value.`)
+      return null
+    }
+    values.set(arg, value)
+    index += 1
+  }
+  const run = values.get("--run")
+  if (run === undefined) {
+    error(
+      '"adopt" needs --run <dir>, the run directory `place` printed, and there is NO DEFAULT ' +
+        "RUN: adopting off the most recent directory would be adopting off whatever the clock " +
+        "last named, and this verb is the gate that checks a candidate's provenance rather " +
+        "than a verb that assumes it. Name the run.",
+    )
+    return null
+  }
+  const resolved = path.resolve(cwd, run)
+  if (!fs.existsSync(resolved)) {
+    // A MISSING RUN DIRECTORY IS ITS OWN MISTAKE AND GETS ITS OWN MESSAGE. Left
+    // to the gate it arrived as `candidate-hash: ... run.json did not read
+    // back: ENOENT`, which names a refusal about a candidate for what is
+    // actually a mistyped path - and prints the resolved path without the one
+    // the operator typed, so the difference between them is invisible.
+    error(
+      `--run ${JSON.stringify(run)} resolves to ${resolved}, and there is no directory there. ` +
+        "A relative --run resolves against the REPOSITORY ROOT, not against the board directory " +
+        "this verb stands in, because a run directory is build/stripboard/<board>/<stamp>/ by " +
+        "construction (tools/stripboard/run-dir.ts's runDirectory). Pass the path `place` " +
+        "printed on its own `run:` line.",
+    )
+    return null
+  }
+  const candidate = values.get("--candidate")
+  return {
+    run: resolved,
+    candidate: candidate === undefined ? undefined : path.resolve(cwd, candidate),
+    allowDirty,
+  }
+}
+
+/**
+ * `adopt`: admit one layout into this board's directory, or print the refusal.
+ *
+ * EXIT 0 ONLY WHEN THE LAYOUT IS IN PLACE AND `make check` EXITED 0, which is
+ * `G4`: the gate runs it after the copy and reverts when it does not, so a
+ * non-zero exit here is always a board that was not adopted.
+ */
+export async function dispatchAdopt(
+  context: VerbContext,
+  deps: AdoptDeps = defaultAdoptDeps(),
+): Promise<number> {
+  const flags = parseAdoptFlags(context.args, deps.repoRoot, context.error)
+  if (flags === null) return 1
+  try {
+    const candidate = flags.candidate ?? candidateFor(flags.run)
+    adoptLayout(
+      {
+        runDir: flags.run,
+        candidate,
+        boardDir: path.resolve(context.cwd),
+        allowDirty: flags.allowDirty,
+      },
+      deps,
+    )
+    context.log(`adopted ${candidate}`)
+    context.log(`  into ${path.resolve(context.cwd)}, and make check exited 0 on it.`)
+  } catch (caught) {
+    // A REFUSAL IS PRINTED WHOLE AND EXITS 1, exactly as `place` prints one:
+    // every throw in this pipeline names what is missing, where to fix it and
+    // why it is not defaulted, and a verb that printed one line of it would be
+    // a verb that hid the fix.
+    context.error(`FAIL adopt in ${path.resolve(context.cwd)}`)
+    for (const line of reportLines(errorMessage(caught))) context.error(line)
+    return 1
+  }
+  return 0
 }

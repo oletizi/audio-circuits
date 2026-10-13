@@ -75,6 +75,7 @@ export {
   type StripAssignment,
 } from "./seed-arrangement.ts"
 export type { GestureSet } from "./seed-arms.ts"
+import type { GestureSet } from "./seed-arms.ts"
 export {
   occupancyOf,
   VEROROUTE_FOOTPRINT_ROWS,
@@ -197,14 +198,33 @@ export interface SeedStart {
   readonly occupancy: Occupancy
 }
 
+/**
+ * The gesture set for one arm, as an EXHAUSTIVE switch over `SeedArm`.
+ *
+ * **IT IS A SWITCH WITH NO `default` BECAUSE THERE IS NO DEFAULT ARM**, and
+ * that claim is the type checker's to prove rather than a comment's. What this
+ * replaces was a nested conditional whose last branch was `importGestures` -
+ * so every arm it did not recognise ran the import arm, and a fourth member of
+ * `SeedArm` (or a typo'd one reaching here past `parseSeedArm`) would have
+ * silently run a different experiment than the one named. `parseSeedArm`
+ * enforces the no-default rule on TEXT at the CLI boundary and this enforces
+ * it on the TYPE here; a member added to `SeedArm` without a branch below is
+ * `TS2366`, which is the whole point.
+ */
+function gesturesFor(input: SeedInput, spawn: SpawnVeroroute): GestureSet {
+  switch (input.arm) {
+    case "constructed":
+      return constructedGestures(input, spawn)
+    case "random":
+      return randomGestures(input, spawn)
+    case "import":
+      return importGestures(input, spawn)
+  }
+}
+
 /** The started board and its occupancy, for the arm named in the input. */
 export function seedCandidate(input: SeedInput, spawn: SpawnVeroroute): SeedStart {
-  const built =
-    input.arm === "constructed"
-      ? constructedGestures(input, spawn)
-      : input.arm === "random"
-        ? randomGestures(input, spawn)
-        : importGestures(input, spawn)
+  const built = gesturesFor(input, spawn)
   const base = input.arm === "import" ? "import" : `${input.arm}-${input.seed}`
   const board = drive(
     spawn,

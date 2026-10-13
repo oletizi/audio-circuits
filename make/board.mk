@@ -8,12 +8,14 @@
 # board. No board logic is reimplemented here.
 #
 # WHAT WRITES. `check`, `cuts` and `board-info` write nothing. `bom` rewrites
-# this board's BOM.md and never its bom.json or the parts/ catalog. `update` and
-# `stripboard` rewrite the declared layout IN PLACE - the CLI itself refuses
-# while the layout has uncommitted changes, unless ALLOW_DIRTY=1 is passed
-# through as --allow-dirty. `edit` writes nothing itself; it hands the
+# this board's BOM.md and never its bom.json or the parts/ catalog. `update`,
+# `stripboard` and `adopt` rewrite the declared layout IN PLACE - the CLI itself
+# refuses while the layout has uncommitted changes, unless ALLOW_DIRTY=1 is
+# passed through as --allow-dirty. `edit` writes nothing itself; it hands the
 # layout to the GUI, which writes only when you save. `guide` never touches
-# the layout; it replaces this board's git-ignored guide/ directory.
+# the layout; it replaces this board's git-ignored guide/ directory. `place`
+# writes only under build/stripboard/, and `adopt` is the one target by which
+# anything the pipeline produced reaches this board (CRITERIA G1).
 #
 # THE SCHEMATIC IS THE ROOT OF THIS DEPENDENCY GRAPH. SCH and NETLIST come
 # from THIS board's own declaration (perfboard.json's optional
@@ -42,7 +44,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring place
+.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring place adopt
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -166,6 +168,27 @@ perfboard-help:
 	@echo "                                          evaluation cap. No number is attached"
 	@echo "                                          to the rate and it changes no verdict"
 	@echo ""
+	@echo "Admit one of its layouts (the ONLY pipeline target that writes this board)"
+	@echo "  make adopt RUN=<run directory>"
+	@echo "                                          admit the candidate that run"
+	@echo "                                          produced into this board, IN PLACE."
+	@echo "                                          RUN is REQUIRED: there is no default"
+	@echo "                                          run, because adopting off the most"
+	@echo "                                          recent directory would be adopting"
+	@echo "                                          off whatever the clock last named."
+	@echo "                                          It refuses ten things by name -"
+	@echo "                                          among them a candidate whose hash"
+	@echo "                                          disagrees with its run.json, a rules"
+	@echo "                                          or span file edited since the run, a"
+	@echo "                                          verdict that is not admissible, and"
+	@echo "                                          an uncommitted layout - and it runs"
+	@echo "                                          \`make check\` after the copy,"
+	@echo "                                          reverting the copy if that fails"
+	@echo "  CANDIDATE=<vrt>                         which .vrt to admit. Optional:"
+	@echo "                                          run.json identifies it by sha256"
+	@echo "  ALLOW_DIRTY=1                           accept that the write cannot be"
+	@echo "                                          undone"
+	@echo ""
 	@echo "Hand it to the GUI"
 	@echo "  make edit            open this layout in the forked VeroRoute"
 	@echo ""
@@ -200,7 +223,7 @@ perfboard-help:
 	@echo "  KICAD_CLI            override: point at your OWN kicad-cli - consulted on"
 	@echo "                       every run that declares \"sch\"/\"netlist\", since every"
 	@echo "                       such run now re-exports the schematic to check it"
-	@echo "  ALLOW_DIRTY=1        let update/stripboard write over uncommitted changes"
+	@echo "  ALLOW_DIRTY=1        let update/stripboard/adopt write over uncommitted changes"
 
 # `wiring` is a prerequisite of `check` for the same reason `netlist-agrees` is:
 # a derived artifact nobody regenerates is one that goes quietly stale, and a
@@ -252,6 +275,29 @@ guide: veroroute netlist-agrees
 # of one full evaluation cap per seed.
 place: veroroute netlist-agrees
 	@bun "$(CLI)" place -C "$(CURDIR)" $(if $(SEED_ARM),--seed-arm "$(SEED_ARM)") $(if $(FROZEN),--frozen "$(FROZEN)") $(if $(NETLIST_EXPORT),--netlist "$(NETLIST_EXPORT)") $(if $(SWEEP),--sweep)
+
+# THE ONE TARGET THAT WRITES UNDER boards/ FROM THE PIPELINE (CRITERIA G1), and
+# it writes this board's declared layout IN PLACE, so git is the undo exactly as
+# it is for update and stripboard - ALLOW_DIRTY=1 is the operator's statement
+# that this run cannot be undone.
+#
+# RUN=<dir> IS REQUIRED AND THIS FILE SUPPLIES NO DEFAULT. Passed through
+# verbatim when set and omitted when not, after which the CLI refuses and says
+# why: adopting off the most recent run directory would be adopting off whatever
+# the clock last named, and this is the verb whose whole job is not taking a
+# candidate's provenance on trust. CANDIDATE=<vrt> is optional - run.json
+# identifies the candidate by its sha256, so the gate finds the file rather than
+# being told it.
+#
+# IT RUNS `make check` ITSELF, AFTER THE COPY (G4), and reverts the copy when
+# that does not exit 0. So there is deliberately no `check` prerequisite here:
+# a prerequisite would check the board BEFORE the layout under test was in
+# place, which is the wrong board, and would then have to be run again anyway.
+# veroroute and netlist-agrees ARE prerequisites, because the gate's own
+# `make check` needs the binary built and the export fresh before it can mean
+# anything.
+adopt: veroroute netlist-agrees
+	@bun "$(CLI)" adopt -C "$(CURDIR)" $(if $(RUN),--run "$(RUN)") $(if $(CANDIDATE),--candidate "$(CANDIDATE)") $(if $(ALLOW_DIRTY),--allow-dirty)
 
 # The parts list. No veroroute or netlist-agrees prerequisite: it reads only the
 # circuit, bom.json and the parts/ catalog, never the layout or the schematic.

@@ -15,7 +15,16 @@ export type GitRunner = (
   cwd: string,
 ) => { status: number | null; stdout: string }
 
-function runGit(args: readonly string[], cwd: string): { status: number | null; stdout: string } {
+/**
+ * The production runner, exported because `tools/stripboard/adopt.ts` passes a
+ * `GitRunner` explicitly - it injects one in every test and so needs the real
+ * one by name for its production dependencies, rather than a second copy of
+ * this spawn.
+ */
+export function defaultGitRunner(
+  args: readonly string[],
+  cwd: string,
+): { status: number | null; stdout: string } {
   const result = spawnSync("git", [...args], { cwd, encoding: "utf8" })
   if (result.error) {
     throw new Error(
@@ -49,7 +58,7 @@ export interface RecoverableOptions {
  */
 export function assertLayoutRecoverable(vrtPath: string, opts: RecoverableOptions): void {
   if (opts.allowDirty) return
-  const git = opts.git ?? runGit
+  const git = opts.git ?? defaultGitRunner
   const dir = path.dirname(vrtPath)
 
   if (git(["ls-files", "--error-unmatch", "--", vrtPath], dir).status !== 0) {
