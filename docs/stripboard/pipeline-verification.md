@@ -6,9 +6,10 @@ first task with a finding to put in it, and is extended as later tasks measure
 more; it is not a document written at the end, because a document written last
 is one whose early findings were held in somebody's head until then.
 
-At this point it covers six things, and **this sentence said "four" while the
+At this point it covers seven things, and **this sentence said "four" while the
 page already had five sections** — a stale count in the one paragraph a reader
-starts from, corrected here rather than left to be rediscovered. `HC8`: its
+starts from, corrected here rather than left to be rediscovered, and corrected
+again when §7 arrived. `HC8`: its
 trust boundary, its nine
 geometry refusals, the one refusal that belongs to a different module than the
 one `HC8`'s contract names, and the verdict built on the
@@ -34,7 +35,13 @@ more**, which is the same staleness the paragraph above complains of, one level
 down: CHECKPOINT 7 is the complete move set, where `add-wire` fires 7,417 counted
 times and is never once accepted and the cause is found to be the objective
 (§6.9), and CHECKPOINT 8 is what happened when completeness entered the
-acceptance rule because of it (§6.10).
+acceptance rule because of it (§6.10). And `V5` and `V9` (§7): whether a
+reported statistic can tell a good placement from a bad one — measured on three
+good-versus-bad pairs rather than on the brief's across-board spread, which is
+the placer's own fingerprint — every numeric literal the pipeline's sources
+carry, named one by one, and **§7.4, the register of every check on this page
+whose guarantee is weaker than its subject**, which is the honest counterpart of
+the `V` table and the thing to read first.
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -2376,3 +2383,221 @@ are the evidence for taking it rather than an argument for it.
 not propose one: a gesture, a pass order and a stopping rule for a completion
 pass are objective-level decisions, which is the line §6.9 drew — *"a change
 nobody here may make alone"* — and it has not moved.
+
+---
+
+## 7. `V5` and `V9` — can a statistic tell two placements apart, and is any constant unaccounted for?
+
+`V5` is *"a metric that cannot distinguish a good placer from a bad one is not a
+metric"* (PIPELINE §10). `V9` is *"no fitted coefficient anywhere — the pipeline
+reports no ratio fitted across boards, and any constant it carries traces to a
+derivation, a measurement, or an owner's parameter"*. Both land in
+`tests/stripboard/discrimination.test.ts`, with the three layout pairs `V5` is
+measured over in `tests/stripboard/discrimination-fixtures.ts`.
+
+Neither test is the claim its criterion makes, and §7.4 says so in each case
+alongside every other check on this page whose guarantee is weaker than its
+subject.
+
+### 7.1 `V5`'s stated threshold was the placer's fingerprint, and what replaced it
+
+The task brief's form of `V5` compared each board's import-placed layout against
+the pipeline's own and required every statistic to move **"by more than its
+across-board variation"**, that variation being computed from the four
+import-placed boards' own spread. The reason for computing it rather than
+choosing it was good — a threshold nobody picked cannot be picked to pass — and
+the quantity it computes is still the wrong one.
+
+COST §5's own measurement is why. Across the four import-placed boards `C/P`
+reads **0.92, 0.91, 0.91, 0.85** — a coefficient of variation near 3%, *"which
+looks like a law until low-boost arrives at 0.19 and the five-board variation
+jumps to roughly 38%"*. The near-constant is a **property of one placer**: lay
+every part along a strip and every pin becomes its own segment, so
+`C ≈ P − S_occ` on every board that placer produces. A tolerance derived from
+that spread measures how consistent `--import` is with itself, and a statistic
+asked to beat it is being asked to differ from `--import` by more than
+`--import` differs from itself. A fitted coefficient that holds across four
+boards from one placer and collapses on a hand layout was never a property of
+stripboard.
+
+So `V5` here is not four boards against four boards. It is a **good layout
+against a bad layout of the same netlist**, three times over, which is what the
+governing sentence is about: a statistic that cannot order those two is not
+measuring the layout.
+
+### 7.2 The three pairs, what each one is for, and the mutations that prove the test discriminates
+
+Every pair is `tests/stripboard/climb-boards.ts`'s two resistors and two nets —
+`R1` and `R2`, nets `left` and `right`, strips down the columns. **The netlist is
+held fixed on both sides of every pair**, which is the only way a statistic that
+reads the circuit can be told apart from one that reads the layout.
+
+The good layout is `BETTER_DUMP`: both parts span columns 1–6, so `left` is whole
+on column 1 and `right` whole on column 6, no strip carries two net-segments, and
+under the identity's sharper form —
+
+```
+C = (net-segments) − (occupied strips) = Σ over strips of (segments on that strip − 1)
+```
+
+— **a cut exists exactly where two net-segments abut on one strip**, and this
+board has no abutment anywhere.
+
+The three bad layouts each spend a different term of `F`, which is why there are
+three: one pair leaves whichever term it does not move looking like a statistic
+nothing can separate.
+
+| | `C` | `W` | `B` | `F` | `N` | `P` | `S_occ` | `J` | `kappa` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **good** — each net whole on one strip | 0 | 0 | 0 | 0 | 2 | 4 | 2 | 0 | 0 |
+| **bad** — both nets split, joins bought with wires | 0 | 2 | 0 | 0.5 | 2 | 4 | 4 | 2 | 1 |
+| **bad** — the same two joins bought with solder | 0 | 0 | 2 | 0.5 | 2 | 4 | 4 | 2 | 1 |
+| **bad** — two net-segments abutting on one strip | 1 | 2 | 0 | 1.5 | 2 | 4 | 3 | 2 | 1 |
+
+Every figure in that table was read off `scoreDumpText` — **not `scoreDump`**,
+because `scoreDumpText` reads the text once and derives both the parsed geometry
+and `V1`'s independent line count from it, which is what keeps `V1`'s
+second-path check riding on every evaluation here as it does in a run.
+
+Three things in the table are worth reading rather than scanning past.
+
+- **The solder pair and the wire pair have the same `F`.** With
+  `rho_s = rho_w = 0.25` — the owner's instruction that a blob on a layout is a
+  wire on his bench — the objective cannot tell those two boards apart, and `B`
+  is the only statistic that can. That is why `B` is still a separately reported
+  fact about a board (`stripboard/rules.json`'s `rhoSolder` note), and why the
+  pair is in the table at all.
+- **`N` and `P` do not move anywhere**, by construction, and that is the finding
+  §7.1's framing exists to produce.
+- **The abutted board against the wire board measures the spreading rule.** Same
+  netlist, same two joins bought with wires, one more strip spent: `C` falls from
+  1 to 0 while `S_occ` rises from 3 to 4. Spreading a net onto an **empty** strip
+  is cut-neutral, onto an **occupied** one it is `+1`, and never negative — the
+  cut reduction comes from **vacating an abutment**, not from occupying a strip.
+  The same reading accounts for `boards/pultec-low-boost`, where all five cuts
+  sit on row 3 and that row carries six net-segments.
+
+**`REPORTED_STATISTICS` is derived, not listed.** The test scans every
+`tools/stripboard/*.ts` for `score.<field>` and intersects what it finds with
+`Object.keys` of a real `Score`. A hand-written list would make `V5` a check on
+one agent's opinion of what is reported. Measured, the pipeline reads seven of
+the nine: `cuts`, `wires`, `solder`, `objective`, `occupied`, `joins`,
+`clustering` — and reads neither `netCount` nor `pinCount`. Those two are exactly
+the fields that separate none of the three pairs, so **nothing had to come out of
+the reported set**: `V5` found the pipeline already clean on this point, which is
+a weaker result than a repair and is reported as what it is. The test asserts the
+closure — every field of a `Score` is either read and separates a pair, or
+separates nothing and is not read — so a tenth field lands in neither until
+somebody decides which.
+
+**It discriminates, and that was measured three ways rather than argued.** Each
+mutation was run as a WHOLE-FILE run, never a `-t` filter:
+
+| Mutation | Result |
+| --- | --- |
+| `objectiveOf` in `tools/stripboard/score.ts` returns a constant | **3 of 9 fail** — `objective` separates no pair; it does not order the good layout first; and it joins `netCount` and `pinCount` in the blind list |
+| one pair's `good` pointed at its own `bad` | **2 of 9 fail** — the sharp form, and the "inputs are real" guard that exists to catch a pair comparing a board with itself |
+| all three pairs' `good` pointed at their `bad` (the brief's Step 4) | **4 of 9 fail** — every `V5` row |
+| `const UNREVIEWED_THRESHOLD = 0.37` added to `tools/stripboard/extent.ts` | **1 of 9 fails** — `V9`'s register, naming `extent.ts` |
+
+A fourth check in the same file is there because of a caveat that would corrupt
+every figure above: `--move RV_LO_BOOST_1 --to 3,30` comes back
+`CUT_STATE UNRESOLVED`, and **a naive `grep -c '^CUT '` scores that refused board
+at zero cuts — the best possible score in the run awarded to a failed gesture.**
+Measured on the abutted board with its state flipped: the independent line count
+reports no cuts, and `scoreDumpText` refuses with `score-cuts-not-computed`
+rather than reporting a winner. Nothing on this page reads a cut count without
+`CUT_STATE` having been read first.
+
+### 7.3 `V9`: sixteen literals over forty-three modules, every one named, and a blind spot the sweep found
+
+The sweep lists `tools/stripboard/*.ts`, excludes `rules.ts` — which is where
+numbers legitimately live — and reads each remaining file with the pattern
+`tests/stripboard/bare-literal.ts` declares. The listing is **derived rather than
+written out**, so a module a later task adds is covered without anybody
+remembering to add it, and it is asserted non-empty, because a listing that
+matched nothing is the most comfortable way for a sweep to pass.
+
+Measured: **43 modules as the sweep listed them, 16 hits in 7 of them.** The module
+count moves as modules are added, which is the point of deriving the listing; the
+test asserts the listing is non-empty and names `score.ts`, not that it is 43.
+
+| Module | Literals | What they are |
+| --- | --- | --- |
+| `score.ts` | `2.1`, `1.4`, `2.1`, `4.1` | COST section citations inside refusal messages |
+| `targets.ts` | `2.1`, `6.4`, `1.4`, `1.4`, `2.1`, `6.4` | the same, in `targets.ts`'s refusals |
+| `geometry-contract.ts` | `1.5` | `"COST 1.5's forbidden …"`, in a refusal message |
+| `equivalence.ts` | `2026` | the criteria document's filename, quoted in a refusal |
+| `seed-compare.ts` | `2026` | the same filename, quoted in `B1-frozen`'s refusal |
+| `seed-geometry.ts` | `255` | the fork's own `GetMaxLength 255`, quoted in a refusal that says the source reading **disagrees** with the measurement |
+| `seed-arrangement.ts` | `4294967296`, `1970` | `2^32`, the divisor that maps a 32-bit word to `[0, 1)`; and `1970-01-01T00:00:00`, the fixed `createdAt` a deterministic netlist is written with |
+
+**Fourteen of the sixteen are citations or quoted figures inside string
+literals**, which `bare-literal.ts`'s own blind-spot list names as the scan's one
+false-positive shape — *"the fix is to say the figure in words or to splice the
+parameter in"*. **They are not fixed, and that is a decision rather than an
+omission.** The brief's Step 2 says a literal the scan finds *"moves to
+`stripboard/rules.json` with a `note`"*, which is right for a threshold and
+absurd for `COST 2.1`: rewriting fourteen refusals to say "section two point
+one" in words would cost the citations their grep-ability to buy a cleaner
+assertion, and a refusal that names its authority by section is what this
+repository's refusals are for. So the test compares the sweep's finding against
+an explicit **register** instead of against the empty list, exactly — in both
+directions, so a literal appearing in a module that is not in the register fails,
+and a register row whose literal has gone fails too. **A number nobody can
+explain is a number nobody reviewed**, and that is the one thing this test keeps
+honest.
+
+**Only the two in `seed-arrangement.ts` are values the code uses, and neither is
+a tunable.** `4294967296` is `2^32`, a property of the `>>> 0` arithmetic
+immediately above it rather than a parameter — moving it would not retune
+anything, it would make `seededPrng` stop returning a number in `[0, 1)`. The
+epoch timestamp is there so a netlist written for comparison does not carry the
+wall clock; it is a determinism device, and PIPELINE `V6` is what it serves.
+Neither is fitted to a board, and neither belongs in `rules.json`, whose entries
+are values somebody may reasonably want to change.
+
+**THE SWEEP FOUND A BLIND SPOT THAT `bare-literal.ts`'s OWN LIST DOES NOT
+NAME: a hex constant is invisible to it.** Every digit run inside `0x9e3779b9` is
+flanked by a letter, so the identifier lookbehind rejects it.
+`seed-arrangement.ts`'s mulberry32 carries two — `0x9e3779b9` and `0x6d2b79f5` —
+and the sweep reports neither. Measured, and asserted in
+`discrimination.test.ts` so the claim cannot go stale. The practical exposure is
+small, because nobody writes a weight or a bound in hex; the reason it is written
+down anyway is that the five blind spots that file **does** list were each
+measured, and a sixth found later would otherwise read as one that had been
+considered.
+
+What `V9`'s scan therefore does not establish is `V9`. A threshold written
+`5e-2`, a small integer used as a bound, two accepted literals multiplied
+together, a hex constant, or a number imported from a module that is not the
+rules file all pass it. The judgement half — that no ratio anywhere is fitted
+across boards — is this page plus the owner's review, and **five boards cannot
+support a regression test of it** either way.
+
+### 7.4 Every check whose guarantee is weaker than its subject
+
+This is the honest counterpart of PIPELINE §10's `V1`–`V12` table, and a reader
+asking *"how do we know the optimiser is not fooling itself?"* should read it
+before that table rather than after. Each row names where the weaker guarantee is
+already written out, so nothing here is a new claim; the rows are the checks this
+page's own sections and the committed rules file have measured, **not** a
+complete walk of `V1`–`V12`, and the task brief's register of all twelve with
+where each test lives is **not on this page** — twelve rows asserted from memory
+would be the failure this very section is about.
+
+| Check | What it actually guarantees, and where that is stated |
+| --- | --- |
+| `V9`'s literal sweep | A text scan, not a proof. Blind to `5e-2`, to a small integer used as a bound, to a composed value, to a value behind a `*` on a line of code, and — found here — to a hex constant; and it false-positives on a figure inside a string. `tests/stripboard/bare-literal.ts`, and §7.3 above |
+| Task 19's per-module scan over `stop.ts` | The same pattern, so the same blind spots. Named as a scan in `tests/stripboard/stop-text.test.ts`, whose stronger half is behavioural: every threshold the module applies must MOVE when the rules file's value moves |
+| `V5` | That each reported statistic **can** order a good layout ahead of a bad one, on three pairs over one two-resistor netlist. It is not a measurement of any statistic's behaviour on a Pultec board, and the brief's five-board form was replaced for the reason in §7.1 rather than performed and passed |
+| `V1`'s `IndependentCount` brand | Closes the accidental bypass and the wrong-board witness; does **not** stop a deliberate `as unknown as` cast, and both of its gates are `bun run typecheck` rather than runtime, so it is as strong as that step is mandatory and no stronger. `tools/stripboard/score.ts` states all four cases, each measured |
+| `J ≥ 0` as an `UNRESOLVED` detector | Catches an unresolved board only when the absent cut list happens to drive `J` below zero — it does on `transistor-preamp-lab` and does not on a small fixture. The `CUT_STATE` read is the check that holds; `score.ts` records the measurement |
+| `Q4`'s stopping rule | A labelled hypothesis, not a calibrated rule: `g` is optimistic and `r` is bursty, and neither has been measured on a real run. `stripboard/rules.json`'s `yieldFloor` note |
+| `Q6`'s signature run of three | Inherited from a sibling repository solving a different problem. `stripboard/rules.json`'s `signatureRun` note names both ways it could be wrong |
+| `kappa_bench = 0.05` | The hard end of a ratchet, set just under the best demonstrated hand result. **Not the measured value of any artifact**, and the first runs are expected to fail it. `stripboard/rules.json`'s `kappaBench` note |
+| `evaluationCap = 20000` | A backstop sized from measured timings, with an order-of-magnitude margin that is a choice. Nobody has measured what a healthy run of this pipeline spends. Its own note |
+| `HC6`'s stock bound | Relative to today's stock, so a width refusal may be a purchasing fact rather than a layout defect. `stripboard/rules.json`'s `stockCols` note |
+| §6.2's import-closure scan | A closure scan over imports; §6.2 states what it found and what a pass of it covers |
+| §2.3's `BOUNDS` label finding | Recorded as **unverified** in its own heading |
+| §6.11's per-kind firing audit | §6.11 records that its sweep deletes each run directory once the best board is copied out, so *which* gesture kind closes a net in that sweep is **not measured** — §6.9's figures survive because its run directories did |
