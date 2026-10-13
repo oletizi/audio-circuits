@@ -1,0 +1,51 @@
+connector,pin,owner_candidate,schematic_confirmation,review_status,action
+J101,1,"return / K101-D101 candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J101,2,"J180-2; 24 V relay-control candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J101,3,"return candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J101,4,"J121 reproduce-head candidate; K101/TR101/U101 path",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J102,1,"unresolved",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J102,2,"J131-1 line output candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J102,3,"J171-3 POWER MUTE / K102 candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J102,4,"J180-4 OFF/common relay candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J102,5,"J105-1 or J105-2: conflicting meter/output cross-reference",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J102,6,"unresolved",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J102,7,"unresolved",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J103,1,"unresolved",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J103,2,"J181-2 SYNC select candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J103,3,"unresolved",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J103,4,"J108-3 / J161 erase candidate: inconsistent function",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J103,5,"J107-4 negative supply candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J103,6,"linked to J103-4 candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J104,1,"J171-6 PLAY MUTE candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J104,2,"J180-4 common OFF candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J104,3,"J173-1 and J107-7 candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J104,4,"J181-1 INPUT select candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J104,5,"J181-2 SYNC select candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J104,6,"return candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J104,7,"unresolved",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J105,1,"J102-5 meter candidate; contradicts J102-5→J105-2",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J105,2,"unresolved; referenced by J102-5",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J105,3,"unresolved",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J105,4,"unresolved",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J105,5,"+15 V candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J105,6,"J182-5 oscillator candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J105,7,"J176-1 VU meter candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J106,1,"J141-1 line INPUT candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J106,2,"return candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J106,3,"-15 V candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J106,4,"+15 V candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J106,5,"return candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J106,6,"return candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J106,7,"J151 sync-head candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J106,8,"return candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J107,1,"return candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J107,2,"+24 V candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J107,3,"+15 V candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J107,4,"-15 V candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J107,5,"unresolved",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J107,6,"J174 unspecified candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J107,7,"J174-1 and J104-3 function candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J108,1,"return candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J108,2,"J161 erase-head candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J108,3,"J161 erase-head candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
+J108,4,"J182-8 oscillator candidate",Only connector number/contact count directly checked,UNVERIFIED_OWNER_CANDIDATE,Trace both card and motherboard sides on original schematic
