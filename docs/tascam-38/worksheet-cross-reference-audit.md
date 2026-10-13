@@ -10,15 +10,15 @@ All 50 amplifier-card contacts are represented in `50-contact-verification-matri
 
 | Source contact | Owner's claimed other contact | Finding |
 | --- | --- | --- |
-| J102-5 | J105-2 | Conflicts with J105-1 description |
-| J105-1 | J102-5 | Contradicts J102-5's J105-2 destination |
+| J102-5 | J105-2 | Card-side connection J102-5 to J105-2 verified from high-resolution scan |
+| J105-1 | J102-5 | Motherboard-side connection P102-5 to P105-1 verified from high-resolution scan; distinct from card-side cross-link |
 | J103-4 | J108-3 | Possible shared net; J108-3 described as erase |
 | J103-5 | J107-4 | Both annotated negative supply, internally plausible |
 | J103-6 | J103-4 | Could be two contacts on one net; must confirm junction |
 | J104-3 | J107-7 | Reciprocal description appears at J107-7 |
 | J107-7 | J104-3 | Reciprocal description appears at J104-3 |
 
-**Important:** A one-way worksheet reference does not prove a circuit contradiction. Two pins may legitimately share a multi-terminal net. The J102/J105 issue is an **annotation inconsistency** that cannot be settled without checking the actual conductor path.
+**Important:** A one-way worksheet reference does not prove a circuit contradiction. Two pins may legitimately share a multi-terminal net. **Resolved:** the apparent J102/J105 contradiction came from mixing the card-side and motherboard-side wiring. See `j102-j105-trace.md`. The function of each cross-connected net is still unresolved.
 
 ## Head connector geometry from the drawing
 
