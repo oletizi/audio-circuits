@@ -93,6 +93,7 @@ function footprintsOf(name: string): ReadonlyMap<string, string> {
 
 const RESISTOR = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 const FILM = "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm"
+const FILM_WIDE = "Capacitor_THT:C_Rect_L7.2mm_W4.5mm_P5.00mm"
 
 /**
  * The three span fixtures, whose offending figure is COMPUTED from the family's
@@ -110,6 +111,17 @@ const FILM = "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm"
  * `span-above-reach` NAMES A FILM CAPACITOR AND NOT THE RESISTOR, and that is
  * forced rather than chosen: the resistor's own `maxSpanHoles` IS
  * `TOOL_MAX_SPAN_HOLES`, so no span on it can separate `HC5` from `HC4`.
+ *
+ * `span-below-minimum` NAMES THE WIDE FILM CAPACITOR FOR THE MIRRORED REASON,
+ * and it named the resistor until 2026-10-13. `lead-span.ts` now derives an
+ * axial family's floor from the mounting the owner actually uses - stood on end,
+ * where the body is not between the holes - so the DIN0207's `minSpanHoles` is
+ * `TOOL_MIN_SPAN_HOLES`, and no span on it can separate `HC9` from `HC4` either.
+ * `spanFixture`'s own `offends` guard CAUGHT THAT rather than letting the
+ * fixture go quiet: the derived span fell to 1 hole, below the tool's floor, and
+ * the fixture refused by name. The WIMA FKP2 is the one remaining recorded
+ * two-lead family whose floor is strictly above the tool's - it cannot be formed
+ * at all, so both its bounds are its footprint's own 3 holes.
  */
 const SPAN_FIXTURES: Readonly<
   Record<
@@ -141,10 +153,10 @@ const SPAN_FIXTURES: Readonly<
     pin2Row: (span) => 1 + span.maxSpanHoles,
   },
   "span-below-minimum": {
-    ref: "R1",
-    dumpType: "RESISTOR",
-    footprint: RESISTOR,
-    importType: "RESISTOR4",
+    ref: "C2",
+    dumpType: "CAP_FILM_WIDE",
+    footprint: FILM_WIDE,
+    importType: "CAP_FILM_WIDE2",
     // One hole under the family's own minimum, and still at or above the tool's.
     pin2Row: (span) => span.minSpanHoles - 1,
   },
@@ -354,8 +366,14 @@ export function inputWithoutBounds(): CheckInput {
  * span or pattern refuses BY NAME.
  */
 export function inputWithFootprint(footprint: string): CheckInput {
-  const input = inputFor("span-below-minimum")
-  return { ...input, footprints: new Map([["R1", footprint]]) }
+  const name = "span-below-minimum"
+  const entry = SPAN_FIXTURES[name]
+  if (entry === undefined) throw new Error(`"${name}" is not a span fixture`)
+  // Keyed on the fixture's OWN ref rather than a repeated literal: the fixture
+  // changed designator once already when it changed family, and a second copy
+  // of the ref would have left this helper mapping a footprint onto nothing,
+  // which reads as "no footprint recorded" rather than as a broken helper.
+  return { ...inputFor(name), footprints: new Map([[entry.ref, footprint]]) }
 }
 
 /** The healthy board with a wide canvas and a small `BOUNDS`: `HC6` must still hold. */

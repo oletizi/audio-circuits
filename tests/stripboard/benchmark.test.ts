@@ -17,13 +17,19 @@
  *      `TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal`
  *      - `PAR2` refusing a footprint with no recorded span, by name.
  *
- * **AND THE HAND LAYOUT ITSELF IS INADMISSIBLE UNDER THE RECORDED SPAN DATA**,
- * which is the first test in this file and the one the plan says to run first:
- * `R2` sits at a 3-hole span on the owner's board against a recorded
- * `minSpanHoles` of 5. **That is reading 2 of the plan's three** - *"a
+ * **THE HAND LAYOUT'S OWN SPANS ARE NOW ADMISSIBLE, AND THEY WERE NOT ON
+ * 2026-10-12.** The first test in this file is the one the plan says to run
+ * first, and until 2026-10-13 it recorded `R2` at a 3-hole span against a
+ * recorded `minSpanHoles` of 5 - **reading 2 of the plan's three**, *"a
  * constraint binds ... the remedy is in the span data rather than in the
- * search"* - and the plan calls it falsifiable on this fixture for exactly this
- * reason: the owner's own spans are in it.
+ * search"*. The remedy was in the span data, and it was a defect rather than a
+ * bound: `lead-span.ts` described only the mounting the FOOTPRINT names, lying
+ * flat, and the owner stands his resistors on end. His words: *"It's standard
+ * practice to stand resistors on end when their holes are next to each other.
+ * That's should NOT be a failure condition"*. `minReachPitchMm` now takes the
+ * looser of the part's two mountings, the DIN0207's floor is the grid's 2 holes,
+ * and `R2` passes. **The refusals above are untouched by that** - they are
+ * missing data on two other footprints, not a span the owner's board uses.
  *
  * **WHAT IS THEREFORE NOT ASSERTED HERE.** No test claims `C <= 5`, `W = 0` or
  * any cut count on the frozen board, because no candidate was scored on it.
@@ -73,27 +79,28 @@ const ARM = "import" as const
 /** Long enough for a real search; every figure in the comments was measured under it. */
 const SLOW = 600_000
 
-test("reading 2 is the cause: the hand layout's own R2 span is BELOW the recorded floor", () => {
+test("every span the hand layout uses is inside its family's recorded bounds", () => {
   // THE PLAN SAYS RUN THIS FIRST AND READ IT, and read it says: *"if a span the
   // owner's own layout uses is outside maxSpanHoles or below minSpanHoles,
   // reading 2 is the cause of any failure below and the remedy is in the span
-  // data, not in the search."* It is. Measured on the committed fixture, with
-  // the footprints of the model it was built against:
+  // data, not in the search."* Measured on the committed fixture, with the
+  // footprints of the model it was built against:
   //
   //   C18..C23  span 3 holes, against 2-4 for C_Rect_L7.2mm_W2.5/3.5mm_P5.00mm  INSIDE
-  //   R2        span 3 holes, against 5-16 for R_Axial_DIN0207_...P10.16mm      BELOW
+  //   R2        span 3 holes, against 2-16 for R_Axial_DIN0207_...P10.16mm      INSIDE
   //
-  // R2's recorded minimum is the manufacturer's own 10.0mm lead spacing rounded
-  // up to four grid steps; the owner has it in two. A resistor mounted UPRIGHT
-  // spans two steps easily, and the recorded figure is keyed to the HORIZONTAL
-  // footprint - so the remedy is a vertical-mount footprint for R2, or the
-  // owner saying how he mounts it, and it is span data either way.
+  // IT READ *"R2 spans 3 against min 5"* UNTIL 2026-10-13, and that is why this
+  // test is phrased as a measurement and not as a hope. The figure moved
+  // because the span model moved: a DIN0207's recorded floor was the floor for
+  // the part LYING FLAT, where the 6.5mm body has to fit between the holes, and
+  // the owner stands his resistors on end, where it does not. The remedy was in
+  // the span data, exactly as the plan's reading 2 says, and it was a defect in
+  // it rather than a bound it legitimately imposed.
   //
-  // THIS TEST ASSERTS THE MEASUREMENT RATHER THAN THE HOPE. The plan's draft
-  // asserted every span INSIDE its bounds; that assertion fails on the
-  // repository as it stands, and an assertion inverted to pass would be the one
-  // thing this task may not do. So the shape of the finding is what is held:
-  // exactly one part is outside, it is R2, and it is outside BELOW.
+  // WHAT THIS TEST STILL CANNOT BE USED FOR. Both lists being empty says the
+  // hand layout is admissible ON THE TWO SPAN CONSTRAINTS. It says nothing
+  // about the run below, which refuses for missing footprint data on parts
+  // whose spans are not even measurable here.
   const dump = frozenDump()
   const footprints = frozenFootprints()
   const below: string[] = []
@@ -112,9 +119,15 @@ test("reading 2 is the cause: the hand layout's own R2 span is BELOW the recorde
   }
   expect(twoLead, "the frozen board's two-lead parts").toBe(7)
   expect(above, "no span on the hand layout is above its family's maximum").toEqual([])
-  expect(below, "the hand layout's own parts below their recorded minimum").toEqual([
-    "R2 spans 3 against min 5",
-  ])
+  expect(below, "no span on the hand layout is below its family's minimum").toEqual([])
+  // AND R2 IS IN THE SET THAT WAS CHECKED. An empty `below` from a loop that
+  // silently skipped the one part this test is about would read identically.
+  expect(Object.keys(dump.pins), "R2 is one of the refs measured").toContain("R2")
+  expect(spanHoles(dump.pins["R2"]!), "R2's span on the owner's own board").toBe(3)
+  expect(
+    leadSpanFor(footprints.get("R2")!).minSpanHoles,
+    "the floor R2's 3-hole span is admitted by",
+  ).toBe(2)
 })
 
 test(

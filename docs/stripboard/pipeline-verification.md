@@ -717,16 +717,27 @@ himself. **What would be a failure is `pt2399-core` grading admissible.**
 
 ### 4.3 Two findings the checkpoint produced that were not predicted
 
-1. **`HC9` catches six resistors on `transistor-preamp-staged`** at spans of 2–4
-   holes against `R_Axial_DIN0207`'s recorded `minSpanHoles` of 5 (`R1`, `R3`,
-   `R5`, `R6`, `R7`, `R9`), and `HC5` catches `C8` at 14 holes against a
+1. **`HC9` caught six resistors on `transistor-preamp-staged`** at spans of 2–4
+   holes against `R_Axial_DIN0207`'s then-recorded `minSpanHoles` of 5 (`R1`,
+   `R3`, `R5`, `R6`, `R7`, `R9`), and `HC5` caught `C8` at 14 holes against a
    `maxSpanHoles` of 11. Each of those spans is measured **across** the strips —
    a two-hole span is an axial part standing on end with one lead bent back — and
-   the recorded geometry is `mounting: "axial-horizontal"`, which does not cover
-   vertical mounting of an axial part. So this is either a different part than
-   the recorded Vishay MBB0207, a recorded minimum that does not apply to the
-   mounting used, or six strained joints. **It is a finding for the owner, not a
-   reason to widen a bound**, and it is on a board this branch does not own.
+   the recorded geometry was `mounting: "axial-horizontal"`, which did not cover
+   vertical mounting of an axial part. So this was either a different part than
+   the recorded Vishay MBB0207, a recorded minimum that did not apply to the
+   mounting used, or six strained joints. It was taken to the owner rather than
+   fixed by widening a bound.
+
+   **RESOLVED 2026-10-13, AND IT WAS THE SECOND READING.** The owner: *"It's
+   standard practice to stand resistors on end when their holes are next to each
+   other. That's should NOT be a failure condition"*. `minReachPitchMm` now
+   derives an axial family's floor from both of its mountings and takes the
+   looser, so the DIN0207's floor is the grid's 2 holes (`docs/stripboard/lead-span.md`
+   §4.1a). The six `HC9` failures are gone and so is the only other one in the
+   repository, `R2` on the owner's own hand-laid low-boost. **`C8`'s `HC5`
+   failure is unchanged**, which is the measurement that says the fix touched
+   the floor and not the ceiling: `C8` is a radial electrolytic, which was
+   already standing.
 2. **`HC2` and `HC8` interact on an unresolved board, and `HC8` reports rather
    than throws.** `copperGraph` refuses `CUT_STATE UNRESOLVED` by name
    (`cuts-not-computed`), correctly — the cut list is absent rather than empty.
@@ -792,8 +803,9 @@ half runs. Re-plumbing `admitPattern` is scope for a later task.
 `CUT` line removed — so that the grader and the equivalence module were held
 against one artifact. But that board's `R2` straddles a single strip with
 **both** leads on it: that is what makes it a short, and it is also exactly what
-`HC10`'s placement half forbids, at a 3-hole span below the resistor's recorded
-minimum of 5. So `HC8`'s fixture was also failing `HC9` and `HC10`, and **a
+`HC10`'s placement half forbids, at a 3-hole span below the resistor's
+then-recorded minimum of 5 (§4.3 records why that figure has since moved to 2).
+So `HC8`'s fixture was also failing `HC9` and `HC10`, and **a
 fixture that fails three constraints cannot show which one it is for.**
 
 The overlap was avoidable, so it was removed. The board is now three 1x02
@@ -828,6 +840,15 @@ from it. A datasheet revision now moves the fixture with the module. The
 constructor also **asserts the derived span still offends its constraint**, so a
 revision that moved a bound far enough fails loudly instead of leaving a fixture
 that quietly tests nothing.
+
+**That guard fired on 2026-10-13, which is the measurement that it has teeth.**
+When the DIN0207's `minSpanHoles` moved to the tool's own floor (§4.3), the
+`span-below-minimum` fixture's derived span fell to 1 hole — below the tool's
+range, so it would have offended `HC4` instead and `HC9` would have had no
+fixture at all. The constructor refused by name. The fixture now names the WIMA
+FKP2, the one remaining recorded two-lead family whose floor is strictly above
+the tool's, for the same reason `span-above-reach` names a film capacitor rather
+than the resistor.
 
 ### 4.8 The tie refusal misdiagnosed a one-pad footprint, and the order is the fix
 
@@ -2974,22 +2995,33 @@ the model at `2f62ee1` fits it with:
 | --- | --- | --- | --- | --- |
 | C18 | `C_Rect_L7.2mm_W3.5mm_P5.00mm` | 3 | 2–4 | inside |
 | C19–C23 | `C_Rect_L7.2mm_W2.5mm_P5.00mm` | 3 | 2–4 | inside |
-| **R2** | `R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` | **3** | **5–16** | **BELOW** |
+| **R2** | `R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` | **3** | **5–16** as recorded 2026-10-12; **2–16** as recorded now | **BELOW, then inside** |
 
-`R2`'s recorded minimum is the manufacturer's own 10.0mm lead spacing rounded up
-to four grid steps, and the owner has it in two. **The likely reading is that he
-mounts it upright** — an axial resistor stood on end spans two steps easily, and
-the recorded figure is keyed to the `_Horizontal` footprint. Either way **the
-remedy is in the span data**: a vertical-mount footprint for `R2`, or the owner
-saying how he mounts it. It is not in the search, and it is not a bound to
-loosen quietly: a span table edited to admit the artifact it is measured against
-would be a benchmark grading itself.
+`R2`'s minimum as recorded on 2026-10-12 was the manufacturer's own 10.0mm lead
+spacing rounded up to four grid steps, and the owner has it in two. **The
+reading was that he mounts it upright** — an axial resistor stood on end spans
+two steps easily, and the recorded figure was keyed to the `_Horizontal`
+footprint. So **the remedy was in the span data**, not in the search, and it was
+not a bound to loosen quietly: a span table edited to admit the artifact it is
+measured against would be a benchmark grading itself.
 
-**The consequence for the benchmark, stated exactly.** This does not prove
-`C ≤ 5, W = 0` unreachable — the pipeline could reach it with `R2` at a span of 5
-— but it does mean **no admissible board can reproduce the owner's layout**, and
-that `HC9` fails on his board as the data stands. Three data items are missing
-before his own benchmark can be run at all:
+**RESOLVED 2026-10-13, and by deriving the missing mounting rather than by
+loosening the bound.** The owner: *"It's standard practice to stand resistors on
+end when their holes are next to each other. That's should NOT be a failure
+condition"*. `minReachPitchMm` now derives an axial family's floor over both
+mountings and takes the looser; the flat floor is still 5 holes and still comes
+from `Mmin. 10.0`, and the vertical floor comes from the body DIAMETER and the
+fold, which are inside one grid step. §4.3 and `docs/stripboard/lead-span.md`
+§4.1a carry it, and the plan's deviation entry records the departure from the
+spec's `HC9` example. **`R2` is inside its bounds and so is every other two-lead
+part on every board in the repository** — the census is in
+`.superpowers/sdd/2026-10-10-stripboard-pipeline/vertical-mounting-report.md`.
+
+**The consequence for the benchmark, stated exactly.** The 2026-10-12 reading did
+not prove `C ≤ 5, W = 0` unreachable — the pipeline could have reached it with
+`R2` at a span of 5 — but it did mean no admissible board could reproduce the
+owner's layout. That obstacle is gone. The other three, which are data this task
+did not author, remain:
 
 1. `VEROROUTE_FOOTPRINT_ROWS["BLOCK_200MIL3"]` — measured here as 3, needing its
    `CompTypes.h` line and a row in `seed-geometry.test.ts` beside it;

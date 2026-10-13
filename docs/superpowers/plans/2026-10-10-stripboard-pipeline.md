@@ -5768,14 +5768,20 @@ header names it as the second exception to "the documents win",
 
 **What `tests/stripboard/benchmark.test.ts` does, and why each differs.**
 
-1. **The span assertion is inverted, because the measurement inverts it.** The
-   owner's own `R2` sits at a 3-hole span against a recorded `minSpanHoles` of 5
-   (`docs/stripboard/pipeline-verification.md` §8.4). The plan's own instruction
-   for that case is *"run this FIRST and read it … reading 2 is the cause of any
-   failure below"* — so the finding is what is asserted: exactly one part
-   outside its bounds, named, and below rather than above. **An assertion
-   rewritten to pass would be the one thing this task may not do**; an assertion
-   left as drafted would be a permanently red suite stating a hope.
+1. **The span assertion was inverted, because the measurement inverted it — and
+   on 2026-10-13 it was restored, because the span data was the defect.** As
+   measured, the owner's own `R2` sat at a 3-hole span against a recorded
+   `minSpanHoles` of 5 (`docs/stripboard/pipeline-verification.md` §8.4), so the
+   finding was what the test asserted: exactly one part outside its bounds,
+   named, and below rather than above. **An assertion rewritten to pass would
+   have been the one thing that task may not do.** The plan's instruction for
+   that case — *"run this FIRST and read it … reading 2 is the cause of any
+   failure below … the remedy is in the span data rather than in the search"* —
+   was then followed: the remedy was in the span data and it was a defect there,
+   not a bound legitimately imposed. See the DIN0207 mounting deviation at the
+   end of this section. `benchmark.test.ts` now asserts both lists empty, plus
+   that `R2` was in the set measured and at what span, so an empty list from a
+   loop that skipped it cannot read as a pass.
 2. **`C` and `W` are not asserted at all, because no candidate was scored.** The
    frozen run refuses in the starting arm (`BLOCK_200MIL3` has no recorded
    footprint row count) and, with that supplied in a reverted probe, in the
@@ -5936,3 +5942,69 @@ carries the decision, the two limits and the independence claim;
 `tools/stripboard/score.ts`'s names this entry and states what the change costs
 the "every term is a line count" property. The run is in
 `.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md`.
+
+### An axial family's `minSpanHoles` is derived over BOTH its mountings, so the DIN0207's floor is 2 holes rather than 5
+
+**What the documents say.** `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`'s
+`HC9` row states the constraint's reason as: *"`--stretch shrink` can compress a
+DIN0207, 6.3 mm of body on a 10.16 mm nominal pitch, to a 2-hole 5.08 mm span no
+bending achieves, and every other check here passes it."* The pipeline design's
+§8.3 and this plan's §6 repeat the same example, and `docs/stripboard/lead-span.md`
+recorded `R_Axial_DIN0207_...P10.16mm_Horizontal` at `5 .. 16`.
+
+**What `lib/kicad/lead-span-model.ts` does.** `minReachPitchMm` derives an axial
+family's floor from **both of the mountings such a part has** and takes the
+looser. Lying flat the body is between the holes and the floor is the
+manufacturer's own `Mmin. 10.0`, 5 holes - `axialFlatMinPitchMm`, unchanged.
+Stood on end the body is perpendicular to the board, one lead goes straight down
+and the other folds over the top, so **the body length constrains the hole
+spacing not at all**; what constrains it is the body's diameter and the fold, and
+`axialVerticalMinPitchMm` derives those from `bodyDiameterMm`, `leadDiameterMm`
+and `BEND_RULE`'s own bend radius. For the recorded Vishay MBB0207 both come to
+under one grid step (1.55 mm and 1.80 mm), so the GRID is the floor: 2 holes.
+`lead-span.md` §4.1a is the arithmetic.
+
+**Why, and it is the owner's own instruction rather than a reading of the
+documents.** His words, verbatim: *"It's standard practice to stand resistors on
+end when their holes are next to each other. That's should NOT be a failure
+condition"*. The measurement that made it concrete: on his hand-laid
+`boards/pultec-low-boost`, `R2`'s pins sit at `7,9` and `9,9`, a 3-hole span, and
+`HC9` rejected his own board - `V3`'s benchmark run refused before scoring a
+single candidate, and `tests/stripboard/benchmark.test.ts` asserted the rejection
+as the finding. The spec's clause is not wrong about the flat mounting; it is
+wrong that the flat mounting is the only one, and `LEAD_SPANS` carried only
+`..._Horizontal` with no vertical variant anywhere.
+
+**What it is NOT, because the line matters here.** It is **not** a widened
+whitelist. No bound was loosened to admit an artifact: the FLAT floor is still 5
+holes and is still derived from `Mmin. 10.0`, the vertical floor is derived from
+dimensions already recorded, and a family whose body diameter is not recorded
+**refuses by name** rather than getting a plausible figure. `minBasis`/`maxBasis`
+now name the mounting each bound comes from, because one record's two bounds are
+two different mountings and a reader must be able to tell.
+
+**`HC5` did not change, and that was checked rather than assumed.** `HC9` bounds
+a span below by the part and `HC5` above by its reach, so the vertical mounting
+had to be checked at both ends. For the one axial family recorded, the flat
+mounting's reach (55.8 mm, about 22 steps) is already past
+`TOOL_MAX_SPAN_HOLES`, where `deriveSpanHoles` clamps, so no second mounting can
+move the recorded figure. A future axial family whose flat reach fell short of
+the ceiling would make the vertical maximum a live question, and a test in
+`tests/kicad/lead-span.test.ts` fails when one is added rather than letting it be
+skipped. Measured confirmation: the repository's one `HC5` failure, `C8` at 14
+holes on `transistor-preamp-staged`, is unchanged - it is a radial electrolytic,
+which was already standing.
+
+**What would close this.** Amending the `HC9` row's example - the compression
+`--stretch shrink` reaches is unbuildable for a resistor LYING FLAT, which is
+still a real gap worth the constraint - or rejecting the deviation, in which case
+the owner's own boards are inadmissible and `B1-frozen` cannot be run against the
+layout he laid.
+
+**Where the code says so.** `lib/kicad/lead-span-model.ts`'s module comment
+quotes his sentence and states that a record's two bounds can be two mountings;
+`axialVerticalMinPitchMm` carries the derivation and the quote;
+`lib/kicad/lead-span.ts`'s `AXIAL_MIN` and `AXIAL_MAX` name their mountings and
+keep the 5-hole flat figure beside the 2-hole recorded one. The before-and-after
+census per board is in
+`.superpowers/sdd/2026-10-10-stripboard-pipeline/vertical-mounting-report.md`.

@@ -92,6 +92,16 @@ span-below-minimum          which names a footprint, reads that family's bound
                             resistor, and that is forced: the resistor's own
                             maxSpanHoles IS the tool's ceiling, so no span can
                             separate HC4 from HC5 on it.
+                            span-below-minimum names the WIDE FILM CAPACITOR for
+                            the mirrored reason, and it named the resistor until
+                            2026-10-13. lead-span.ts now derives an axial
+                            family's floor from the mounting the owner uses -
+                            stood on end, where the body is not between the
+                            holes - so the DIN0207's minSpanHoles is the tool's
+                            own floor and no span on it separates HC9 from HC4
+                            either. The offends guard above CAUGHT that: the
+                            derived span fell to 1 hole and the fixture refused
+                            by name rather than going quiet.
 
 over-stock                  HAND-WRITTEN. The healthy board with its parts
                             spread so BOUNDS exceeds the stock's 27 columns. The

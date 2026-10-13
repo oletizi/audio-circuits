@@ -6,10 +6,17 @@
  * lead on the strip its net already occupies, and the tool will happily stretch
  * any two-terminal part to any span in 2-16 holes - `CompTypes::GetMinLength`
  * returns 2 and `GetMaxLength` 16 for every stretchable family. The part will
- * not. A DIN0207 resistor is 6.3mm of body on a 10.16mm pitch; `--stretch shrink`
- * can take it to 2 holes, which is 5.08mm, which is inside its own body. So both
- * bounds are needed and both are recorded, keyed by the footprint name the
- * netlist actually carries.
+ * not: the WIMA FKP2's 4mm lead cannot be formed at any span, and a Nichicon PS
+ * can reaches 11 holes and no more. So both bounds are needed and both are
+ * recorded, keyed by the footprint name the netlist actually carries.
+ *
+ * A BOUND IS A BOUND OVER THE MOUNTINGS THE PART HAS, NOT OVER ONE OF THEM. The
+ * DIN0207 is the instructive case: lying flat, 6.5mm of body on a 10.16mm pitch,
+ * `--stretch shrink` taking it to a 5.08mm span would put the holes inside its
+ * own body - but the owner stands his resistors on end, and then the body is not
+ * between the holes and 5.08mm is ordinary. Each entry's `minBasis`/`maxBasis`
+ * therefore NAMES THE MOUNTING its figure comes from, and the two can differ
+ * within one record; `./lead-span-model.ts` has the arithmetic for both.
  *
  * A FAMILY HAS NO DATASHEET; A PART DOES. `R_Axial_DIN0207_*` names a DIN case
  * size, not something a manufacturer publishes a lead length for, so every entry
@@ -125,12 +132,20 @@ const KICAD_FOOTPRINTS: DatasheetRef = {
 /**
  * The Vishay MBB/SMA 0207 geometry, which `R_Axial_DIN0207_*` is fitted with.
  *
- * `Mmin. 10.0` IS THE MINIMUM, AND IT IS THE MANUFACTURER'S OWN. The drawing's M
- * is the distance between the formed leads, which is the hole spacing, and note
- * (1) confirms it by saying what to order for a tighter one. The body-plus-
- * standoff arithmetic independently gives 6.5 + 2 x 0.8 = 8.1mm, so the two
- * agree on the same 4-step span; the manufacturer's larger figure is the one
- * recorded because it is the one that was stated rather than computed.
+ * `Mmin. 10.0` IS THE MINIMUM FOR THE PART LYING FLAT, AND IT IS THE
+ * MANUFACTURER'S OWN. The drawing's M is the distance between the formed leads,
+ * i.e. the hole spacing, and note (1) confirms it by saying what to order for a
+ * tighter one. Body-plus-standoff gives 6.5 + 2 x 0.8 = 8.1mm independently, the
+ * same 4-step span; `axialFlatMinPitchMm` takes the manufacturer's larger figure
+ * because it was stated rather than computed.
+ *
+ * IT IS NOT THE RECORDED `minSpanHoles`, because the part has a second mounting
+ * and `M` is not about it. Stood on end the body is not between the holes at all,
+ * and the owner's own boards are built that way: *"It's standard practice to
+ * stand resistors on end when their holes are next to each other. That's should
+ * NOT be a failure condition"*. `minReachPitchMm` takes the looser mounting, so
+ * this family's floor is the grid's 2 holes and `M`'s 5-hole figure is recorded
+ * in `AXIAL_MIN` as the flat mounting's.
  */
 const MBB0207: FamilyGeometry = {
   kind: "formable",
@@ -261,6 +276,16 @@ const TRIM_WHY =
   "and VeroRoute's TRIM_FLAT is a fixed 3 x 3 hole pattern \"+2++++1+3\" with no case in " +
   `GetMinLength or GetMaxLength (${VEROROUTE_FORK.documentId}).`
 
+/**
+ * A rigid family's basis text: the mounting clause, then why the pin field is
+ * fixed. A rigid part has ONE mounting, the one the package was moulded for, and
+ * saying so is what tells a reader this record's two bounds are not two
+ * different mountings the way an axial family's are.
+ */
+function rigidBasis(why: string): string {
+  return `MOUNTING: as moulded, the only one a rigid pin field has. ${why}`
+}
+
 /** Each family's bounds, with the reasoning for each bound beside it. */
 function span(
   footprint: string,
@@ -273,20 +298,31 @@ function span(
 }
 
 const AXIAL_MIN =
-  "Mmin. 10.0mm, the manufacturer's own minimum lead spacing, which rounds up to 4 grid steps " +
-  "(10.16mm) because 10.0mm itself is not on the grid. The 6.5mm body plus a 0.8mm standoff at " +
-  "each end gives 8.1mm independently, and lands on the same 4 steps."
+  "MOUNTING: STOOD ON END, which is the looser of this part's two mountings and the owner's " +
+  "standard practice - \"It's standard practice to stand resistors on end when their holes are " +
+  "next to each other. That's should NOT be a failure condition\". Standing it up takes the body " +
+  "out from between the holes, so the 6.5mm length constrains nothing; what is left is the " +
+  "returning lead running down the outside of the 2.5mm body (1.25 + 0.3 = 1.55mm from the axis) " +
+  "and the two legs of its 180-degree fold (2 x 0.9 = 1.80mm). Both are inside one grid step, so " +
+  "the GRID binds: 1 step, 2 holes. The 28.0mm lead makes the fold easily (0.8 + 2.83 + 6.5 + " +
+  "1.6 = 11.73mm needed).\n" +
+  "LYING FLAT the floor would be 5 holes instead: Mmin. 10.0mm, the manufacturer's own minimum " +
+  "lead spacing, rounds up to 4 grid steps (10.16mm), and the 6.5mm body plus a 0.8mm standoff " +
+  "at each end gives 8.1mm independently, the same 4 steps. That is the FLAT mounting's figure."
 const AXIAL_MAX =
+  "MOUNTING: LYING FLAT, the footprint's own, which is the wider of the two at this end. " +
   "Lead-limited reach is 55.8mm, about 22 steps, so the lead is NOT the binding constraint " +
-  "here - VeroRoute's 16-hole ceiling is, and 16 is what is recorded."
+  "here - VeroRoute's 16-hole ceiling is, and 16 is what is recorded. Standing the part on end " +
+  "cannot raise this: the flat reach is already past the ceiling the derivation clamps at."
 
 const RADIAL_MIN_GRID =
-  "One grid step. Both leads leave the same face and the body stands above the board, so " +
-  "nothing has to fit between the holes and the floor is the point at which two holes stop " +
-  "being two holes. The tool's own per-diameter floor may be tighter and also binds."
+  "MOUNTING: STANDING, which is the only mounting a radial part has - both leads leave the same " +
+  "face, so there is no second way to lay it and no body to take out from between the holes. " +
+  "One grid step: nothing has to fit between the holes, so the floor is the point at which two " +
+  "holes stop being two holes. The tool's own per-diameter floor may be tighter and also binds."
 const ELECTRO_MAX =
-  "15mm of lead less 4.8-5.2mm of dog-leg overhead leaves about 9.8-10.2mm of outward run per " +
-  "lead, so about 26mm of pitch, which is 10 steps."
+  "MOUNTING: STANDING, as the minimum. 15mm of lead less 4.8-5.2mm of dog-leg overhead leaves " +
+  "about 9.8-10.2mm of outward run per lead, so about 26mm of pitch, which is 10 steps."
 
 const SPANS: readonly LeadSpan[] = [
   span(
@@ -299,22 +335,25 @@ const SPANS: readonly LeadSpan[] = [
     "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm",
     B32529,
     RADIAL_MIN_GRID,
-    "5.0mm of worst-case lead less 4.76mm of dog-leg overhead leaves 0.24mm of outward run per " +
-      "lead, so 8.49mm of pitch - 3 steps, one step past the footprint's own 2.",
+    "MOUNTING: STANDING, as the minimum. 5.0mm of worst-case lead less 4.76mm of dog-leg " +
+      "overhead leaves 0.24mm of outward run per lead, so 8.49mm of pitch - 3 steps, one step " +
+      "past the footprint's own 2.",
   ),
   span(
     "Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm",
     { ...B32529, bodyDiameterMm: 3.5 },
     RADIAL_MIN_GRID,
-    "As the 2.5mm-bodied B32529: the body width does not enter a radial part's span arithmetic, " +
-      "only the lead does, and both footprints carry the same 5mm lead on the same 5mm pitch.",
+    "MOUNTING: STANDING, as the minimum. As the 2.5mm-bodied B32529: the body width does not " +
+      "enter a radial part's span arithmetic, only the lead does, and both footprints carry the " +
+      "same 5mm lead on the same 5mm pitch.",
   ),
   span(
     "Capacitor_THT:C_Rect_L7.2mm_W4.5mm_P5.00mm",
     FKP2_470PF,
-    "Not formable: 4.0mm of worst-case lead is 0.76mm short of the 4.76mm a minimum dog-leg " +
-      "needs, so the part mounts at its own 5.00mm pitch or not at all.",
-    "Not formable - see the minimum. Both bounds are the footprint's own span.",
+    "MOUNTING: STANDING, the only one it has, and not formable in it: 4.0mm of worst-case lead " +
+      "is 0.76mm short of the 4.76mm a minimum dog-leg needs, so the part mounts at its own " +
+      "5.00mm pitch or not at all.",
+    "MOUNTING: STANDING. Not formable - see the minimum. Both bounds are the footprint's own span.",
   ),
   span("Capacitor_THT:CP_Radial_D5.0mm_P2.00mm", nichiconPs(5.0, 2.0, 0.5), RADIAL_MIN_GRID, ELECTRO_MAX),
   span("Capacitor_THT:CP_Radial_D6.3mm_P2.50mm", nichiconPs(6.3, 2.5, 0.5), RADIAL_MIN_GRID, ELECTRO_MAX),
@@ -322,28 +361,38 @@ const SPANS: readonly LeadSpan[] = [
   span(
     "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
     rigid("1x01 pin header, 2.54mm", 2.54, 1, SIP_WHY),
-    "One hole. A single pin has no span and bridges nothing.",
-    "One hole - see the minimum.",
+    rigidBasis("One hole. A single pin has no span and bridges nothing."),
+    rigidBasis("One hole - see the minimum."),
   ),
   span(
     "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
     rigid("1x02 pin header, 2.54mm", 2.54, 2, SIP_WHY),
-    SIP_WHY,
-    SIP_WHY,
+    rigidBasis(SIP_WHY),
+    rigidBasis(SIP_WHY),
   ),
   span(
     "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical",
     rigid("1x05 pin header, 2.54mm", 2.54, 5, SIP_WHY),
-    SIP_WHY,
-    SIP_WHY,
+    rigidBasis(SIP_WHY),
+    rigidBasis(SIP_WHY),
   ),
-  span("Package_DIP:DIP-16_W7.62mm", rigid("DIP-16, 7.62mm row spacing", 2.54, 8, DIP_WHY), DIP_WHY, DIP_WHY),
-  span("Package_TO_SOT_THT:TO-92_Inline", rigid("TO-92, inline leads", 1.27, 3, TO92_WHY), TO92_WHY, TO92_WHY),
+  span(
+    "Package_DIP:DIP-16_W7.62mm",
+    rigid("DIP-16, 7.62mm row spacing", 2.54, 8, DIP_WHY),
+    rigidBasis(DIP_WHY),
+    rigidBasis(DIP_WHY),
+  ),
+  span(
+    "Package_TO_SOT_THT:TO-92_Inline",
+    rigid("TO-92, inline leads", 1.27, 3, TO92_WHY),
+    rigidBasis(TO92_WHY),
+    rigidBasis(TO92_WHY),
+  ),
   span(
     "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical",
     rigid("Runtron RM-065 trimmer, vertical", 5.0, 3, TRIM_WHY),
-    TRIM_WHY,
-    TRIM_WHY,
+    rigidBasis(TRIM_WHY),
+    rigidBasis(TRIM_WHY),
   ),
 ]
 

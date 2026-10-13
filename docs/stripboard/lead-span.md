@@ -18,10 +18,23 @@ any span between 2 and 16 holes — `CompTypes::GetMinLength` returns 2 and
 `CAP_CERAMIC`, `INDUCTOR`, `DIODE` and every `CAP_ELECTRO_*`. The part will not.
 
 The maximum was already named as a gap (the pipeline spec's §8.2, hard constraint
-H5). The **minimum** was not, and it is the sharper of the two: a DIN0207
-resistor is a 6.5 mm body, and `--stretch shrink` can take it to a 2-hole span,
-which is 5.08 mm, which is inside its own body. Three of the thirteen recorded
-families turn out to have no stretch range at all.
+H5). The **minimum** was not: the WIMA FKP2's 4 mm lead cannot be formed at any
+span, and a Nichicon PS can reaches 11 holes and no more. Three of the thirteen
+recorded families turn out to have no stretch range at all.
+
+**A bound is a bound over the mountings the part has, not over one of them**, and
+the DIN0207 is the case that taught it. Lying flat, 6.5 mm of body on a 10.16 mm
+pitch, `--stretch shrink` taking it to a 5.08 mm span would put the holes inside
+its own body — but an axial part can also be **stood on end**, and then the body
+is not between the holes at all and 5.08 mm is ordinary. The owner:
+
+> It's standard practice to stand resistors on end when their holes are next to
+> each other. That's should NOT be a failure condition
+
+Until 2026-10-13 this page and the module recorded the flat mounting's floor as
+though it were the part's, which rejected the owner's own hand-laid
+`boards/pultec-low-boost` — his `R2` sits at a 3-hole span. §4.1a is the
+arithmetic for the mounting that was missing.
 
 ## 2. Units: span is counted in holes
 
@@ -106,12 +119,51 @@ each lead makes **one** 90° bend. The lead axis sits half a body diameter above
 the board, so the descent is `D/2 + 1.6`.
 
 ```
-max pitch = L_body + 2 × (l_lead − a − descent + c)
-min pitch = max(the manufacturer's stated minimum, L_body + 2 × s)
+max pitch       = L_body + 2 × (l_lead − a − descent + c)
+flat min pitch  = max(the manufacturer's stated minimum, L_body + 2 × s)
 ```
 
-The minimum is where an axial part differs in kind from a radial one: **the body
-has to fit between the holes**, with a legal standoff at each end.
+Lying down, **the body has to fit between the holes**, with a legal standoff at
+each end. That is the flat mounting's floor, and it is **not** the recorded one —
+see §4.1a.
+
+### 4.1a Axial, standing on end (the resistor again)
+
+An axial two-lead part can always be stood up: body perpendicular to the board,
+one lead straight down into its hole, the other folded over the top of the body
+and back down beside it. **The body length then constrains nothing**, because it
+is no longer between the holes. Two things constrain the spacing instead:
+
+- the body's **diameter** — the returning lead runs down the outside of the body,
+  so its centreline sits `D/2 + d/2` from the body axis, where the straight lead
+  is;
+- the **fold** — the two legs of a 180° turn at the minimum bend radius are `2c`
+  apart.
+
+```
+vertical min pitch = max(2.54 mm, D/2 + d/2, 2c)
+lead needed        = s + πc + L_body + 1.6      (the folded lead, not the straight one)
+min pitch          = min(flat min pitch, vertical min pitch)
+```
+
+`πc` is a half turn rather than a quarter, and `1.6` is the board alone: standing
+up, the lead arrives at the hole vertically, so there is no `D/2` of lead axis
+above the board to spend. On every family recorded here `D/2 + d/2` and `2c` are
+both inside one grid step, so **the grid is the floor** — the same floor a radial
+part gets, for the same reason.
+
+**If a family's body diameter is not recorded, the derivation refuses by name.**
+A guessed diameter would still give "the grid binds", which is the right answer
+for the wrong reason and would look derived.
+
+**The maximum is unaffected**, and that was checked rather than assumed. For the
+one axial family recorded, the flat mounting's reach is already past VeroRoute's
+16-hole ceiling, which is where the derivation clamps, so no second mounting can
+move the figure. A future axial family whose flat reach fell short of the ceiling
+would make the vertical maximum a live question, and `tests/kicad/lead-span.test.ts`
+fails when one is added rather than letting it be skipped. `HC9` bounds a span
+below by the part and `HC5` above by its reach, so this is the statement that
+**`HC5` did not change.**
 
 ### 4.2 Radial, standing up (the film caps, the electrolytics)
 
@@ -157,7 +209,7 @@ how far apart they sit.
 
 ## 5. The families, and the arithmetic for each
 
-### 5.1 `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` → 5 .. 16
+### 5.1 `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` → 2 .. 16
 
 The family is a DIN case size, not a part. The numbers are **Vishay MBB/SMA
 0207**'s: Vishay Beyschlag, *MBA/SMA 0204, MBB/SMA 0207, MBE/SMA 0414 —
@@ -177,16 +229,25 @@ pre-formed to a 2.5 mm or 5.0 mm lead spacing and are not covered.
   steps, so **22 steps, 23 holes** of lead reach. VeroRoute's ceiling is 16, so
   **16** is recorded: on this family the lead is not the binding constraint, the
   tool is.
-- `Mmin. 10.0` is the drawing's lead-to-lead distance, i.e. the mounting hole
-  spacing, and note (1) confirms it by saying what to order for a tighter one.
-  10.0 mm is 3.94 steps, which rounds **up** to 4 steps = 10.16 mm = **5 holes**.
-- Independently, `L_body + 2s = 6.5 + 1.6 = 8.1 mm` = 3.19 steps, also 4 steps.
-  The two agree. The manufacturer's larger figure is the one recorded, because it
-  was stated rather than computed.
+- **Lying flat**, `Mmin. 10.0` is the drawing's lead-to-lead distance, i.e. the
+  mounting hole spacing, and note (1) confirms it by saying what to order for a
+  tighter one. 10.0 mm is 3.94 steps, which rounds **up** to 4 steps = 10.16 mm =
+  **5 holes**. Independently, `L_body + 2s = 6.5 + 1.6 = 8.1 mm` = 3.19 steps,
+  also 4 steps. The two agree, and the manufacturer's larger figure is the one
+  taken because it was stated rather than computed.
+- **Stood on end** (§4.1a), the 6.5 mm body leaves the gap entirely. What is left
+  is the returning lead alongside the 2.5 mm body — `1.25 + 0.3 = 1.55 mm` from
+  the axis — and the fold's two legs, `2 × 0.9 = 1.80 mm`. Both are inside one
+  2.54 mm step, so **the grid is the floor: 1 step, 2 holes.** The fold needs
+  `0.8 + 2.827 + 6.5 + 1.6 = 11.73 mm` of lead against `lmin. 28.0`, so it is
+  made with room to spare.
+- **The recorded minimum is `min(10.0, 2.54) = 2.54 mm`, 2 holes**, because the
+  part can be built either way and the span it can reach is the union.
 
-**This is the shrink gap.** The tool's floor is 2 holes, 5.08 mm — less than the
-6.5 mm body. The part's floor is 5 holes. Three holes of the tool's range are
-unbuildable on this family, and it is the most numerous part on every board.
+**The shrink gap is a gap in the flat mounting only.** The tool's floor is 2
+holes, 5.08 mm — less than the 6.5 mm body, so a *flat* DIN0207 cannot be built
+there. Stood on end it can, which is how the owner builds his, and this is the
+most numerous part on every board.
 
 ### 5.2 `Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm` → 2 .. 4
 ### 5.3 `Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm` → 2 .. 4
@@ -386,9 +447,12 @@ accepts a guess.
 
 ## 10. Summary
 
+**The two bounds of one row can be two different mountings**, and the "Bound by"
+column says which. See §4.1a.
+
 | Footprint | min | max | Bound by | Part the numbers are |
 | --- | --- | --- | --- | --- |
-| `R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` | 5 | 16 | body / `Mmin.`; tool ceiling | Vishay MBB/SMA 0207, doc 28766 rev 05-Oct-09 |
+| `R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` | 2 | 16 | grid, stood on end; tool ceiling, lying flat | Vishay MBB/SMA 0207, doc 28766 rev 05-Oct-09 |
 | `C_Rect_L7.2mm_W2.5mm_P5.00mm` | 2 | 4 | grid; 5 mm untaped lead | TDK B32529, B32520_529, June 2026 |
 | `C_Rect_L7.2mm_W3.5mm_P5.00mm` | 2 | 4 | grid; 5 mm untaped lead | TDK B32529, B32520_529, June 2026 |
 | `C_Rect_L7.2mm_W4.5mm_P5.00mm` | 3 | 3 | not formable: 4 mm lead | WIMA FKP2, e_WIMA_FKP_2, 03.26 |

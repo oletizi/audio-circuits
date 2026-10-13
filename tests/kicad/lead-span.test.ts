@@ -23,6 +23,10 @@ import {
   STRIPBOARD,
   TOOL_MAX_SPAN_HOLES,
   TOOL_MIN_SPAN_HOLES,
+  axialFlatMinPitchMm,
+  axialStandsOnEnd,
+  axialVerticalMinPitchMm,
+  bendCentrelineRadiusMm,
   bendRadiusMm,
   deriveSpanHoles,
   maxReachPitchMm,
@@ -261,24 +265,114 @@ test("a rigid family's span is the footprint's own, and is not a reach claim", (
   expect(header.maxSpanHoles).toBe(5)
 })
 
-test("the DIN0207 resistor cannot be shrunk below five holes, which the tool would allow", () => {
+test("the DIN0207's two mountings give two floors, and the recorded one is the looser", () => {
+  // THE DELIBERATE RANGE EXTENSION, with its warrant. The owner:
+  // *"It's standard practice to stand resistors on end when their holes are
+  // next to each other. That's should NOT be a failure condition"*. This file
+  // asserted a floor of 5 holes until 2026-10-13, which was the FLAT mounting's
+  // floor recorded as though it were the part's; his own low-boost layout has
+  // R2 at a 3-hole span and was rejected by it. Both figures are asserted here
+  // so the change is a statement about which mounting binds, not a widening.
   const entry = leadSpanFor("Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
   const geometry = formable(entry)
   if (geometry === null) throw new Error("the DIN0207 entry must carry formable geometry")
 
-  expect(entry.minSpanHoles).toBe(5)
-  expect(pitchForHoles(5)).toBeCloseTo(10.16, 10)
+  // LYING FLAT: the manufacturer's own Mmin, which is 5 holes and is not the
+  // recorded bound. The body really is in the way at anything tighter.
   expect(geometry.manufacturerMinPitchMm).toBe(10.0)
-
-  // The gap this table exists to close: the tool's own floor is 2 holes, which
-  // is 5.08mm, which is inside the part's own 6.5mm body.
+  expect(axialFlatMinPitchMm(geometry)).toBe(10.0)
+  expect(holesForSteps(nearestGridSteps(axialFlatMinPitchMm(geometry)).steps)).toBe(5)
   expect(pitchForHoles(TOOL_MIN_SPAN_HOLES)).toBeLessThan(geometry.bodyLengthMm)
-  expect(entry.minSpanHoles - TOOL_MIN_SPAN_HOLES).toBe(3)
 
-  // And the maximum is the tool's ceiling, not the lead: the lead reaches much
+  // STOOD ON END: the body leaves the gap between the holes entirely, and what
+  // is left - the lead alongside the 2.5mm body, and the fold's two legs - is
+  // inside one grid step, so the grid is the floor. The 28mm lead makes the
+  // fold with room to spare.
+  expect(axialStandsOnEnd(geometry)).toBe(true)
+  expect(geometry.bodyDiameterMm / 2 + geometry.leadDiameterMm / 2).toBeLessThan(GRID_MM)
+  expect(2 * bendCentrelineRadiusMm(geometry.leadDiameterMm)).toBeLessThan(GRID_MM)
+  expect(axialVerticalMinPitchMm(geometry)).toBe(GRID_MM)
+
+  // And the recorded floor is the looser of the two, which is the vertical one.
+  expect(minReachPitchMm(geometry)).toBe(axialVerticalMinPitchMm(geometry))
+  expect(entry.minSpanHoles).toBe(TOOL_MIN_SPAN_HOLES)
+  expect(entry.minSpanHoles).toBe(2)
+
+  // The maximum is the tool's ceiling, not the lead: the lead reaches much
   // further, so the recorded 16 is a tool bound rather than a physical one.
   expect(entry.maxSpanHoles).toBe(TOOL_MAX_SPAN_HOLES)
   expect(maxReachPitchMm(geometry)).toBeGreaterThan(pitchForHoles(TOOL_MAX_SPAN_HOLES))
+})
+
+test("standing on end cannot raise any recorded maximum, so HC5's bound is untouched", () => {
+  // HC9 bounds a span below by the part and HC5 bounds it above by reach, so
+  // the vertical mounting had to be checked at BOTH ends rather than assumed to
+  // touch only one. What makes the answer definite here is not an inequality
+  // between the two geometries: it is that every recorded axial family's FLAT
+  // reach already runs past TOOL_MAX_SPAN_HOLES, where deriveSpanHoles clamps,
+  // so no second mounting can move the figure that gets recorded.
+  //
+  // THIS TEST IS ALSO THE DEMAND. An axial family whose flat reach fell short
+  // of the ceiling would make the vertical maximum a live question, and this
+  // fails rather than letting it be skipped.
+  const axial = [...LEAD_SPANS.values()].filter(
+    (entry) => formable(entry)?.mounting === "axial-horizontal",
+  )
+  expect(axial.length, "there is at least one axial family to check").toBeGreaterThan(0)
+  for (const entry of axial) {
+    const geometry = formable(entry)
+    if (geometry === null) throw new Error(`${entry.footprint} must carry formable geometry`)
+    expect(
+      maxReachPitchMm(geometry),
+      `${entry.footprint}'s flat reach falls short of the tool ceiling, so its maximum stood on ` +
+        "end is a live question - derive it rather than inheriting the flat figure",
+    ).toBeGreaterThanOrEqual(pitchForHoles(TOOL_MAX_SPAN_HOLES))
+    expect(entry.maxSpanHoles).toBe(TOOL_MAX_SPAN_HOLES)
+  }
+})
+
+test("the vertical arithmetic refuses a family whose body diameter is not recorded", () => {
+  // PAR2 applied to the dimension standing on end depends on. A zero diameter
+  // would otherwise sail through as "the grid binds", which is the right answer
+  // for the wrong reason and would look derived.
+  const entry = leadSpanFor("Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal")
+  const geometry = formable(entry)
+  if (geometry === null) throw new Error("the DIN0207 entry must carry formable geometry")
+
+  const unrecorded: FormableGeometry = { ...geometry, bodyDiameterMm: 0 }
+  expect(() => axialVerticalMinPitchMm(unrecorded)).toThrow(/bodyDiameterMm as 0/)
+  expect(() => axialVerticalMinPitchMm(unrecorded)).toThrow(new RegExp(geometry.mpn.slice(0, 20)))
+  expect(() => axialVerticalMinPitchMm(unrecorded)).toThrow(/NOT defaulted/)
+  expect(() => axialVerticalMinPitchMm(unrecorded)).toThrow(/lib\/kicad\/lead-span\.ts/)
+  // And it refuses through the bound the pipeline actually reads, not only the
+  // helper: a guard reachable from one caller and not the other is not a guard.
+  expect(() => minReachPitchMm(unrecorded)).toThrow(/bodyDiameterMm/)
+})
+
+test("the stand-on-end arithmetic refuses a radial part rather than answering for one", () => {
+  // A radial part is already standing: there is no body to turn through a right
+  // angle, so the question has no answer rather than a default one. Asking it
+  // of one is a category error and is refused by name.
+  const radial = leadSpanFor("Capacitor_THT:CP_Radial_D6.3mm_P2.50mm")
+  const geometry = formable(radial)
+  if (geometry === null) throw new Error("the Nichicon entry must carry formable geometry")
+
+  expect(() => axialVerticalMinPitchMm(geometry)).toThrow(/radial-vertical/)
+  expect(() => axialStandsOnEnd(geometry)).toThrow(/axialStandsOnEnd/)
+  expect(() => axialFlatMinPitchMm(geometry)).toThrow(/axialFlatMinPitchMm/)
+  // minReachPitchMm answers for it, because it picks the mounting itself.
+  expect(minReachPitchMm(geometry)).toBe(GRID_MM)
+})
+
+test("every recorded basis names the mounting its figure comes from", () => {
+  // Requirement of the record rather than of the prose: one entry's two bounds
+  // can be two different mountings (the DIN0207's are), so a basis that does
+  // not say which one it is leaves a floor meaning "if stood on end" reading as
+  // though the part were lying flat.
+  for (const [footprint, entry] of LEAD_SPANS) {
+    expect(entry.minBasis, `${footprint} minBasis`).toMatch(/MOUNTING:/)
+    expect(entry.maxBasis, `${footprint} maxBasis`).toMatch(/MOUNTING:/)
+  }
 })
 
 test("the untaped B32529 reaches exactly one step past its own pitch", () => {
