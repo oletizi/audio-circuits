@@ -34,7 +34,7 @@ import {
 } from "../../tools/stripboard/moves.ts"
 import { occupancyOf } from "../../tools/stripboard/seed-geometry.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
-import { DUMP, OCC, REFERENCE, freshRunDir } from "./climb-fixtures.ts"
+import { BASE_DUMP, DUMP, OCC, REFERENCE, freshRunDir } from "./climb-fixtures.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 
 /** A spawn that records every invocation and writes every `-o`. */
@@ -117,7 +117,7 @@ test("the occupancy carries every wire, which is what let add-wire out of the de
   // move set must see a wire as an obstacle, and here it does: R1 sits at row 2
   // and its step DOWN onto row 3 is W1's, so that move is not proposed.
   expect(
-    enumerateMoves(OCC, DUMP, REFERENCE)
+    enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE)
       .filter((move) => move.kind === "move" && move.ref === "R1")
       .map(describeMove),
   ).toEqual(["move R1 to 1,1", "move R1 to 2,2", "move R1 to 2,0"])
@@ -164,15 +164,16 @@ test("the enumeration proposes a wire only where its ENDS can reach the net's ow
   // are no longer on one net"). A wire that joins neither of the net's segments
   // is not a cheaper repair; it is a candidate that cannot be evaluated.
   // tools/stripboard/moves-wire.ts's `WIRE_END_REACH` carries the measurement.
-  expect(enumerateMoves(ACROSS_OCC, ACROSS, ACROSS_REFERENCE).filter(wireKind).map(describeMove))
+  expect(enumerateMoves(ACROSS_OCC, ACROSS, ACROSS_DUMP, ACROSS_REFERENCE).filter(wireKind).map(describeMove))
     .toEqual([
       "add-wire y joining 0,2 to 2,2 (at 1,1 as Wire1, 1 turn(s), stretch 0, turn-then-stretch)",
     ])
   // A net on ONE strip gets none: there is no pair to bridge. Both of
   // ACROSS_DUMP's nets are split, so this is asserted on the aligned board,
   // where ./moves.test.ts shows the same thing from the other side.
-  const aligned = boardGeometry(ACROSS_DUMP.replace("PART R2 RESISTOR 10K AT 2,0", "PART R2 RESISTOR 10K AT 0,3").replace("PIN R2 1 AT 2,0", "PIN R2 1 AT 0,3").replace("PIN R2 2 AT 2,1", "PIN R2 2 AT 0,4"))
-  expect(enumerateMoves(occupancyOf(aligned), aligned, ACROSS_REFERENCE).filter(wireKind)).toEqual([])
+  const alignedText = ACROSS_DUMP.replace("PART R2 RESISTOR 10K AT 2,0", "PART R2 RESISTOR 10K AT 0,3").replace("PIN R2 1 AT 2,0", "PIN R2 1 AT 0,3").replace("PIN R2 2 AT 2,1", "PIN R2 2 AT 0,4")
+  const aligned = boardGeometry(alignedText)
+  expect(enumerateMoves(occupancyOf(aligned), aligned, alignedText, ACROSS_REFERENCE).filter(wireKind)).toEqual([])
 })
 
 test("a wire longer than the fork will stretch is not proposed", () => {
@@ -216,7 +217,7 @@ test("a wire longer than the fork will stretch is not proposed", () => {
 test("the three gestures go out in the plan's own order, and only the last writes the candidate", () => {
   const { spawned, spawn } = recorder()
   const out = path.join(freshRunDir(), "wired.vrt")
-  const move = enumerateMoves(ACROSS_OCC, ACROSS, ACROSS_REFERENCE).filter(wireKind)[0]
+  const move = enumerateMoves(ACROSS_OCC, ACROSS, ACROSS_DUMP, ACROSS_REFERENCE).filter(wireKind)[0]
   if (move === undefined) throw new Error("the fixture proposed no add-wire")
   applyMove("board.vrt", move, out, spawn)
   // HAND-WRITTEN, in the fork's own grammar: create at 1,2, then one clockwise
@@ -332,15 +333,14 @@ test("the wire's name is the fork's next index, predicted and loud when wrong", 
   // the case the spread's L join exists for (tools/stripboard/moves-join.ts),
   // which this kind does not plan. The two wires here sit on rows 5 and 6, clear
   // of the column-2 landing, so the only thing they change is the name.
-  const withWires = boardGeometry(
-    ACROSS_DUMP.replace(
-      "NODE 1 NAME mid R1.1 R2.1",
-      "WIRE W1 AT 5,5 ENDS 5,5,0,0 5,6,0,0\nWIRE W2 AT 6,5 ENDS 6,5,0,0 6,6,0,0\nNODE 1 NAME mid R1.1 R2.1",
-    ),
+  const withWiresText = ACROSS_DUMP.replace(
+    "NODE 1 NAME mid R1.1 R2.1",
+    "WIRE W1 AT 5,5 ENDS 5,5,0,0 5,6,0,0\nWIRE W2 AT 6,5 ENDS 6,5,0,0 6,6,0,0\nNODE 1 NAME mid R1.1 R2.1",
   )
+  const withWires = boardGeometry(withWiresText)
   expect(withWires.wires.length).toBe(2)
   expect(
-    enumerateMoves(occupancyOf(withWires), withWires, ACROSS_REFERENCE)
+    enumerateMoves(occupancyOf(withWires), withWires, withWiresText, ACROSS_REFERENCE)
       .filter(wireKind)
       .map((move) => move.plan.name),
   ).toEqual(["Wire3"])
@@ -371,7 +371,7 @@ test("delete-wire is refused, and the refusal is measured rather than read", () 
   // It is the ONLY deferred kind left, and it is still enumerated so the move
   // set in the record stays the spec's.
   expect([...DEFERRED_KINDS.keys()]).toEqual(["delete-wire"])
-  expect(enumerateMoves(OCC, DUMP, REFERENCE).filter((move) => move.kind === "delete-wire").length)
+  expect(enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE).filter((move) => move.kind === "delete-wire").length)
     .toBe(2)
   // And the occupancy cannot be advanced past one either, for the same reason.
   expect(

@@ -281,7 +281,16 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
 
   while (!spent) {
     const moves = applicableMoves(
-      enumerateMoves(base.occupancy, base.measured.dump, input.reference),
+      // THE SAME CHARACTERS THE DUMP WAS PARSED FROM, handed over by `Measured`
+      // rather than re-fetched - its `dumpText` field carries the reason. The
+      // move set needs the text because a parsed dump carries no `PAD` line, so
+      // `./movable.ts` is the only thing that can see an off-board pad.
+      enumerateMoves(
+        base.occupancy,
+        base.measured.dump,
+        base.measured.dumpText,
+        input.reference,
+      ),
     )
     if (moves.length === 0) {
       throw new Error(

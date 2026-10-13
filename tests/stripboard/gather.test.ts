@@ -36,6 +36,7 @@ import {
 import { freshRunDir } from "./climb-fixtures.ts"
 import {
   BLOCKED,
+  BLOCKED_DUMP,
   BLOCKED_OCC,
   BLOCKED_REFERENCE,
   holesOf,
@@ -43,12 +44,15 @@ import {
   joinsOfDump,
   originOf,
   SCATTERED,
+  SCATTERED_DUMP,
   SCATTERED_OCC,
   SCATTERED_REFERENCE,
   SPREAD,
+  SPREAD_DUMP,
   SPREAD_OCC,
   SPREAD_REFERENCE,
   STACKED,
+  STACKED_DUMP,
   STACKED_OCC,
   STACKED_REFERENCE,
   translatedEach,
@@ -87,11 +91,12 @@ const clusterKind = (move: Move): move is Extract<Move, { kind: "cluster" }> =>
 function gatherOrFail(
   occupancy: Occupancy,
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   strip: number,
 ): Move {
-  const move = gatherMove(occupancy, dump, reference, net, strip)
+  const move = gatherMove(occupancy, dump, dumpText, reference, net, strip)
   if (move === undefined) {
     throw new Error(
       `this fixture was expected to admit a gather of "${net}" onto strip ${strip} and the model ` +
@@ -118,7 +123,7 @@ test("THE GATHER lowers J where neither a single-part move nor a one-delta clust
 
   // NOT ONE SINGLE-PART MOVE LOWERS IT: a one-hole move cannot close a
   // two-column gap, and every one of them leaves six segments standing.
-  const moves = enumerateMoves(SPREAD_OCC, SPREAD, SPREAD_REFERENCE)
+  const moves = enumerateMoves(SPREAD_OCC, SPREAD, SPREAD_DUMP, SPREAD_REFERENCE)
   const singles = moves.filter(moveKind)
   expect(singles.length).toBeGreaterThan(0)
   for (const single of singles) {
@@ -141,7 +146,7 @@ test("THE GATHER lowers J where neither a single-part move nor a one-delta clust
   // moves by 0,-2 and R3 by 0,-4 - three parts, two deltas, one candidate - so
   // `mid` becomes one segment and `a`, `b` and `c` pile onto strip 1 as three.
   // 4 segments over 4 nets.
-  const gather = gatherOrFail(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, "mid", 0)
+  const gather = gatherOrFail(SPREAD_OCC, SPREAD, SPREAD_DUMP, SPREAD_REFERENCE, "mid", 0)
   expect(gather.kind === "gather" ? gather.gestures : []).toEqual([
     { ref: "R2", delta: [0, -2] },
     { ref: "R3", delta: [0, -4] },
@@ -169,7 +174,7 @@ test("a gather asks about EVERY strip, including the empty ones", () => {
   // Columns 1, 3, 5 and 6 are empty of any `mid` pin and are now asked about;
   // under the old rule only 0, 2 and 4 were.
   expect(
-    enumerateMoves(SPREAD_OCC, SPREAD, SPREAD_REFERENCE).filter(gatherKind).map(describeMove),
+    enumerateMoves(SPREAD_OCC, SPREAD, SPREAD_DUMP, SPREAD_REFERENCE).filter(gatherKind).map(describeMove),
   ).toEqual([
     "gather mid onto strip 0 (R2 by 0,-2; R3 by 0,-4)",
     "gather mid onto strip 1 (R1 by 0,1; R2 by 0,-1; R3 by 0,-3)",
@@ -195,7 +200,7 @@ test("a gather moves EVERY part of its net or is not proposed at all", () => {
   // that proposed just the parts that fit would still propose nothing there. On
   // BLOCKED_DUMP a gather onto column 3 asks R1 onto X1's own footprint while
   // R2's destination is empty: ONE part fits and one does not.
-  expect(gatherMove(BLOCKED_OCC, BLOCKED, BLOCKED_REFERENCE, "mid", 3)).toBeUndefined()
+  expect(gatherMove(BLOCKED_OCC, BLOCKED, BLOCKED_DUMP, BLOCKED_REFERENCE, "mid", 3)).toBeUndefined()
   // And R2's half really would land on its own, so the rejection is the
   // all-or-nothing rule rather than a board where nothing fits.
   expect(
@@ -208,9 +213,9 @@ test("a gather moves EVERY part of its net or is not proposed at all", () => {
   // so the only gather this board admits is onto column 1 - the full list, not a
   // membership check.
   expect(
-    enumerateMoves(BLOCKED_OCC, BLOCKED, BLOCKED_REFERENCE).filter(gatherKind).map(describeMove),
+    enumerateMoves(BLOCKED_OCC, BLOCKED, BLOCKED_DUMP, BLOCKED_REFERENCE).filter(gatherKind).map(describeMove),
   ).toEqual(["gather mid onto strip 1 (R1 by 0,1; R2 by 0,1)", "gather y onto strip 2 (R1 by 0,1; R2 by 0,1)"])
-  const proposed = enumerateMoves(SPREAD_OCC, SPREAD, SPREAD_REFERENCE).filter(gatherKind)
+  const proposed = enumerateMoves(SPREAD_OCC, SPREAD, SPREAD_DUMP, SPREAD_REFERENCE).filter(gatherKind)
   expect(proposed.map((move) => move.strip)).toEqual([0, 1, 2, 3, 4, 5, 6])
   // AND EVERY PROPOSED GATHER CARRIES EVERY PART WHOSE DELTA IS NON-ZERO -
   // `mid`'s three parts less however many already sit on the target. Counted by
@@ -233,7 +238,7 @@ test("a net with fewer than two on-board parts gets no gather at all", () => {
   for (const net of ["a", "b", "c"]) {
     for (const strip of gatherStrips(SPREAD)) {
       expect(
-        gatherMove(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, net, strip),
+        gatherMove(SPREAD_OCC, SPREAD, SPREAD_DUMP, SPREAD_REFERENCE, net, strip),
         `${net} onto ${strip}`,
       ).toBeUndefined()
     }
@@ -241,7 +246,7 @@ test("a net with fewer than two on-board parts gets no gather at all", () => {
   // And the nets that DO have two parts are proposed, so this is not passing
   // because nothing is: `mid` on SPREAD and both of SCATTERED's two-part nets.
   expect(
-    enumerateMoves(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE)
+    enumerateMoves(SCATTERED_OCC, SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE)
       .filter(gatherKind)
       .map((move) => move.net),
   ).toEqual(["mid", "mid", "mid", "mid", "mid", "mid", "y", "y", "y", "y", "y", "y"])
@@ -250,7 +255,7 @@ test("a net with fewer than two on-board parts gets no gather at all", () => {
 test("a gather goes out as one --move --delta per part, and as one batch when asked", () => {
   const { spawned, spawn } = recorder()
   const out = path.join(freshRunDir(), "gathered.vrt")
-  const gather = gatherOrFail(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, "mid", 0)
+  const gather = gatherOrFail(SPREAD_OCC, SPREAD, SPREAD_DUMP, SPREAD_REFERENCE, "mid", 0)
   applyMove("board.vrt", gather, out, spawn)
   // TWO GESTURES WITH DIFFERENT DELTAS, which is the whole difference from a
   // cluster, and only the last writes the candidate.
@@ -281,7 +286,7 @@ test("the occupancy advances past a gather through the same call that proposed i
   // rects are hand-written: both moved parts are 1 row by 2 columns, R2 goes
   // from column 2 to column 0 and R3 from column 4 to column 0, and neither
   // changes row.
-  const gather = gatherOrFail(SPREAD_OCC, SPREAD, SPREAD_REFERENCE, "mid", 0)
+  const gather = gatherOrFail(SPREAD_OCC, SPREAD, SPREAD_DUMP, SPREAD_REFERENCE, "mid", 0)
   const advanced = occupancyAfter(SPREAD_OCC, SPREAD, gather)
   if (advanced === undefined) throw new Error("the gather the model proposed could not be advanced")
   expect(advanced.get("R1")).toEqual({ row: 0, col: 0, rows: 1, cols: 2, across: false })
@@ -290,5 +295,5 @@ test("the occupancy advances past a gather through the same call that proposed i
   // And a gather the sequence cannot complete is not proposed at all: on
   // STACKED_DUMP both parts' `mid` pins are on column 0 already, so there is no
   // gather there either - the board that needs an ORDER is the cluster's.
-  expect(gatherMove(STACKED_OCC, STACKED, STACKED_REFERENCE, "mid", 0)).toBeUndefined()
+  expect(gatherMove(STACKED_OCC, STACKED, STACKED_DUMP, STACKED_REFERENCE, "mid", 0)).toBeUndefined()
 })

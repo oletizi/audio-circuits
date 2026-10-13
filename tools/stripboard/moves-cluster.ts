@@ -58,6 +58,7 @@
 import type { BoardDump, Grid } from "../guide/dump.ts"
 import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
+import { movableRefs } from "./movable.ts"
 import type { Move } from "./moves-model.ts"
 import { appliedGestures, rectOf } from "./seed-placement.ts"
 import type { Occupancy } from "./seed-geometry.ts"
@@ -96,6 +97,7 @@ const TRANSLATION_ONLY_ORDER = "turn-then-stretch" as const
  */
 export function clusterRefs(
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
 ): readonly string[] {
@@ -111,9 +113,21 @@ export function clusterRefs(
   }
   const wanted = new Set(pins)
   const refs: string[] = []
-  for (const part of dump.parts) {
-    const own = dump.pins[part.ref] ?? []
-    if (own.some((pin) => wanted.has(`${part.ref}.${pin.pin}`))) refs.push(part.ref)
+  // THE MOVABLE SET AND NOT `dump.parts`, so an off-board pad is eligible to be
+  // in a cluster - see `./movable.ts` for why `dump.parts` is not the whole
+  // board. **WHAT THIS DOES AND DOES NOT YET BUY, MEASURED RATHER THAN
+  // CLAIMED:** the membership test below is on the REFERENCE netlist's pin id,
+  // and a pad's `PIN` line is named the BOARD's way - `SW_LO_BOOST_2.1` where
+  // the export says `SW_LO_BOOST.2` - so no pad matches `wanted` today and the
+  // cluster of every net is unchanged on every board in this repository. The
+  // mapping between the two spellings is `./pad-provenance.ts`'s
+  // `referencePinHoles`, which is keyed by reference pin rather than by board
+  // ref and so is not a net membership table; wiring one up is its own change
+  // with its own measurement. The iterator is corrected here so there is ONE
+  // answer to "what is on this board" rather than two that could drift.
+  for (const one of movableRefs(dump, dumpText)) {
+    const own = dump.pins[one.ref] ?? []
+    if (own.some((pin) => wanted.has(`${one.ref}.${pin.pin}`))) refs.push(one.ref)
   }
   return refs
 }
@@ -216,11 +230,12 @@ export function clusterAfter(
 export function clusterMove(
   occupancy: Occupancy,
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   delta: readonly [number, number],
 ): Move | undefined {
-  const refs = clusterRefs(dump, reference, net)
+  const refs = clusterRefs(dump, dumpText, reference, net)
   // **TWO PARTS OR MORE, THE SAME RULE `gatherMove` APPLIES, AND THE ASYMMETRY
   // THAT WAS HERE WAS AN OVERSIGHT RATHER THAN A DECISION.** A cluster of ONE
   // part is a single-part translation by a unit delta - which is exactly what
@@ -305,12 +320,13 @@ export function translationsAfter(
  */
 export function aimedHoles(
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
 ): readonly AimedHole[] {
   const wanted = new Set(reference.get(net) ?? [])
   const aimed: AimedHole[] = []
-  for (const ref of clusterRefs(dump, reference, net)) {
+  for (const ref of clusterRefs(dump, dumpText, reference, net)) {
     const pin = (dump.pins[ref] ?? []).find((own) => wanted.has(`${ref}.${own.pin}`))
     if (pin === undefined) {
       throw new Error(
@@ -359,11 +375,12 @@ export function aimedHoles(
 export function gatherMove(
   occupancy: Occupancy,
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   strip: number,
 ): Move | undefined {
-  const aimed = aimedHoles(dump, reference, net)
+  const aimed = aimedHoles(dump, dumpText, reference, net)
   // **A NET WITH FEWER THAN TWO ON-BOARD PARTS GETS NO GATHER, and that is what
   // the move IS rather than a cost dodge.** §7.4 defines `E1` over *every
   // on-board part with a pin on net X*, and a gathering of one part is a part

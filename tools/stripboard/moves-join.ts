@@ -49,6 +49,7 @@
 import type { BoardDump } from "../guide/dump.ts"
 import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
+import { movableRefs } from "./movable.ts"
 import { aimedHoles } from "./moves-cluster.ts"
 import {
   WIRE_END_REACH,
@@ -80,6 +81,7 @@ interface JoinEnds {
  */
 export function joinEndsFor(
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   from: number,
@@ -92,12 +94,17 @@ export function joinEndsFor(
     dump.verticalStrips ? hole.row : hole.col
   const leaving: number[] = []
   const staying: number[] = []
-  for (const part of dump.parts) {
-    for (const pin of dump.pins[part.ref] ?? []) {
-      if (owner.get(`${part.ref}.${pin.pin}`) !== net) continue
+  // THE MOVABLE SET AND NOT `dump.parts` - see `./movable.ts`, and see
+  // `./moves-cluster.ts`'s `clusterRefs` for the measured limit this shares: the
+  // `owner` test below is on the REFERENCE netlist's pin id and a pad's `PIN`
+  // line is named the BOARD's way, so no pad contributes an end today. The
+  // iterator is corrected here so there is one answer to what is on the board.
+  for (const one of movableRefs(dump, dumpText)) {
+    for (const pin of dump.pins[one.ref] ?? []) {
+      if (owner.get(`${one.ref}.${pin.pin}`) !== net) continue
       const strip = stripOf(pin, dump.verticalStrips)
-      if (strip === from && movers.has(part.ref)) leaving.push(alongOf(pin))
-      if (strip === joined && !movers.has(part.ref)) staying.push(alongOf(pin))
+      if (strip === from && movers.has(one.ref)) leaving.push(alongOf(pin))
+      if (strip === joined && !movers.has(one.ref)) staying.push(alongOf(pin))
     }
   }
   return { leaving, staying }
@@ -113,13 +120,14 @@ export function joinEndsFor(
  */
 export function straightJoinLines(
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   from: number,
   joined: number,
   movers: ReadonlySet<string>,
 ): readonly number[] {
-  const ends = joinEndsFor(dump, reference, net, from, joined, movers)
+  const ends = joinEndsFor(dump, dumpText, reference, net, from, joined, movers)
   return wireEndLines(dump, ends.leaving, ends.staying)
 }
 
@@ -135,13 +143,14 @@ export function straightJoinLines(
  */
 export function elbowAcrossLines(
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   from: number,
   joined: number,
   movers: ReadonlySet<string>,
 ): readonly number[] {
-  const ends = joinEndsFor(dump, reference, net, from, joined, movers)
+  const ends = joinEndsFor(dump, dumpText, reference, net, from, joined, movers)
   return wireEndLines(dump, ends.leaving, ends.leaving)
 }
 
@@ -204,6 +213,7 @@ export function wireElbow(
 /** The stayers' along-strip positions, nearest to `line` first: which pin an L reaches back to. */
 export function elbowAnchors(
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   from: number,
@@ -211,7 +221,7 @@ export function elbowAnchors(
   movers: ReadonlySet<string>,
   line: number,
 ): readonly number[] {
-  const ends = joinEndsFor(dump, reference, net, from, joined, movers)
+  const ends = joinEndsFor(dump, dumpText, reference, net, from, joined, movers)
   return [...new Set(ends.staying)].sort(
     (a, b) => Math.abs(a - line) - Math.abs(b - line) || a - b,
   )
@@ -220,13 +230,14 @@ export function elbowAnchors(
 /** Which parts a spread moves, and where the net's other pins stay: read once, used by both. */
 export function spreadMovers(
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   from: number,
 ): { readonly movers: ReadonlySet<string>; readonly staying: readonly number[] } {
   const movers = new Set<string>()
   const staying: number[] = []
-  for (const hole of aimedHoles(dump, reference, net)) {
+  for (const hole of aimedHoles(dump, dumpText, reference, net)) {
     const strip = stripOf(hole, dump.verticalStrips)
     if (strip === from) movers.add(hole.ref)
     else staying.push(strip)

@@ -41,8 +41,9 @@ import {
   CROWDED,
   CROWDED_NETS,
   CROWDED_OCC,
+  CROWDED_TEXT,
 } from "./spread-fixtures.ts"
-import { BASE_DUMP } from "./climb-boards.ts"
+import { BASE_DUMP, BETTER_DUMP, TOP_EDGE_DUMP } from "./climb-boards.ts"
 import {
   BETTER,
   BETTER_OCC,
@@ -63,8 +64,8 @@ function refusalFrom(call: () => unknown): string {
 }
 
 test("the move enumeration is deterministic and does not iterate a hash map", () => {
-  const first = enumerateMoves(OCC, DUMP, REFERENCE).map(describeMove)
-  const second = enumerateMoves(OCC, DUMP, REFERENCE).map(describeMove)
+  const first = enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE).map(describeMove)
+  const second = enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE).map(describeMove)
   expect(first).toEqual(second)
   // The nets arrive in the netlist's order, so reordering the reference map
   // reorders the cluster moves - which is what makes the order explicit rather
@@ -74,7 +75,7 @@ test("the move enumeration is deterministic and does not iterate a hash map", ()
   // assertion above and fail this one.
   const reversed: ReferenceNets = new Map([...REFERENCE.entries()].reverse())
   const clusters = (nets: ReferenceNets): readonly string[] =>
-    enumerateMoves(occupancyOf(DUMP), DUMP, nets)
+    enumerateMoves(occupancyOf(DUMP), DUMP, BASE_DUMP, nets)
       .filter((move) => move.kind === "cluster")
       .map((move) => (move.kind === "cluster" ? move.net : ""))
   // THREE DELTAS PER NET AND NOT FOUR: W1 sits at 3,1-3,2 and W2 at 3,6-3,7, and
@@ -93,8 +94,8 @@ test("every move kind the spec names is enumerated, and no ninth kind appears", 
   // exactly the shape of defect this test exists to catch, and the union is
   // taken over BASE_DUMP and ./spread-fixtures.ts' crowded board instead.
   const kinds = new Set([
-    ...enumerateMoves(OCC, DUMP, REFERENCE).map((move) => move.kind),
-    ...enumerateMoves(CROWDED_OCC, CROWDED, CROWDED_NETS).map((move) => move.kind),
+    ...enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE).map((move) => move.kind),
+    ...enumerateMoves(CROWDED_OCC, CROWDED, CROWDED_TEXT, CROWDED_NETS).map((move) => move.kind),
   ])
   expect([...kinds].sort()).toEqual([
     "add-wire",
@@ -128,8 +129,8 @@ test("addsWire names exactly the kinds that put a new wire on the board", () => 
   // named here would be scored with its wire joining nothing.
   const byKind = new Map<Move["kind"], boolean>()
   for (const move of [
-    ...enumerateMoves(OCC, DUMP, REFERENCE),
-    ...enumerateMoves(CROWDED_OCC, CROWDED, CROWDED_NETS),
+    ...enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE),
+    ...enumerateMoves(CROWDED_OCC, CROWDED, CROWDED_TEXT, CROWDED_NETS),
   ]) {
     byKind.set(move.kind, addsWire(move))
   }
@@ -191,7 +192,7 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   //               derives that and asserts it, on this very dump          = 0
   //                                                                        ---
   //                                                                         91
-  const moves = enumerateMoves(OCC, DUMP, REFERENCE)
+  const moves = enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE)
   const counted = new Map<Move["kind"], number>()
   for (const move of moves) counted.set(move.kind, (counted.get(move.kind) ?? 0) + 1)
   expect(counted.get("move")).toBe(7)
@@ -218,7 +219,7 @@ test("only the clockwise turn is proposed, because only that case is transcribed
   // tools/stripboard/seed-placement.ts's turnedRect is Board::RotateComps's
   // CLOCKWISE case, line by line; nothing in this repository has transcribed
   // the anticlockwise one. The `Move` union admits "ccw" because --rotate does.
-  const directions = enumerateMoves(OCC, DUMP, REFERENCE)
+  const directions = enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE)
     .filter((move) => move.kind === "rotate")
     .map((move) => (move.kind === "rotate" ? move.direction : ""))
   expect(directions).toEqual(["cw", "cw"])
@@ -244,21 +245,20 @@ test("no stretch is proposed for a family the fork will not stretch, and an unkn
   )
   // And the enumeration proposes nothing for a part at its own upper bound: a
   // 16-column RESISTOR may shrink and may not grow.
-  const atCeiling = boardGeometry(
-    [
-      "GRID 12 40",
-      "BOUNDS 2,1 2,16",
-      "VERTICAL_STRIPS 1",
-      "CUT_STATE COMPUTED",
-      "PART R1 RESISTOR 10K AT 2,1 SPAN 16 DIRECTION W",
-      "PIN R1 1 AT 2,1",
-      "PIN R1 2 AT 2,16",
-      "NODE 1 NAME left R1.1",
-      "NODE 2 NAME right R1.2",
-      "",
-    ].join("\n"),
-  )
-  const directions = enumerateMoves(occupancyOf(atCeiling), atCeiling, REFERENCE)
+  const atCeilingText = [
+    "GRID 12 40",
+    "BOUNDS 2,1 2,16",
+    "VERTICAL_STRIPS 1",
+    "CUT_STATE COMPUTED",
+    "PART R1 RESISTOR 10K AT 2,1 SPAN 16 DIRECTION W",
+    "PIN R1 1 AT 2,1",
+    "PIN R1 2 AT 2,16",
+    "NODE 1 NAME left R1.1",
+    "NODE 2 NAME right R1.2",
+    "",
+  ].join("\n")
+  const atCeiling = boardGeometry(atCeilingText)
+  const directions = enumerateMoves(occupancyOf(atCeiling), atCeiling, atCeilingText, REFERENCE)
     .filter((move) => move.kind === "stretch")
     .map((move) => (move.kind === "stretch" ? move.direction : ""))
   expect(directions).toEqual(["shrink"])
@@ -287,20 +287,19 @@ test("a TURNED part's stretch bound is read along its leads, not along its colum
   // minimum and no shrink may be proposed - while a reading of `rect.cols`
   // sees 3 and proposes one. The grow is admitted either way, which is what
   // makes the pair a discrimination and not a one-sided assertion.
-  const turnedDump = boardGeometry(
-    [
-      "GRID 35 35",
-      "BOUNDS 10,10 11,12",
-      "VERTICAL_STRIPS 1",
-      "CUT_STATE COMPUTED",
-      "PART C1 CAP_FILM_WIDE .33uF AT 10,10 SPAN 3 DIRECTION N",
-      "PIN C1 1 AT 10,11",
-      "PIN C1 2 AT 11,11",
-      "NODE 1 NAME left C1.1",
-      "NODE 2 NAME right C1.2",
-      "",
-    ].join("\n"),
-  )
+  const turnedDumpText = [
+    "GRID 35 35",
+    "BOUNDS 10,10 11,12",
+    "VERTICAL_STRIPS 1",
+    "CUT_STATE COMPUTED",
+    "PART C1 CAP_FILM_WIDE .33uF AT 10,10 SPAN 3 DIRECTION N",
+    "PIN C1 1 AT 10,11",
+    "PIN C1 2 AT 11,11",
+    "NODE 1 NAME left C1.1",
+    "NODE 2 NAME right C1.2",
+    "",
+  ].join("\n")
+  const turnedDump = boardGeometry(turnedDumpText)
   const turned: Occupancy = new Map([
     ["C1", { row: 10, col: 10, rows: 2, cols: 3, across: true }],
   ])
@@ -310,7 +309,7 @@ test("a TURNED part's stretch bound is read along its leads, not along its colum
   expect(occupancyAfter(turned, turnedDump, grow, "CAP_FILM_WIDE")).not.toBeUndefined()
   // And the enumeration therefore proposes the grow and not the shrink.
   expect(
-    enumerateMoves(turned, turnedDump, REFERENCE)
+    enumerateMoves(turned, turnedDump, turnedDumpText, REFERENCE)
       .filter((move) => move.kind === "stretch")
       .map(describeMove),
   ).toEqual(["stretch C1 grow"])
@@ -330,7 +329,7 @@ test("no rotate is proposed where the turn would pan the board", () => {
   // the turnsTakeable guard outright left their rotate counts at 2 and nothing
   // noticed. TOP_EDGE_DUMP puts a 1x6 part at row 0, whose turn lands at row -2
   // and pans the board, so --rotate would refuse it.
-  const moves = enumerateMoves(TOP_EDGE_OCC, TOP_EDGE, REFERENCE)
+  const moves = enumerateMoves(TOP_EDGE_OCC, TOP_EDGE, TOP_EDGE_DUMP, REFERENCE)
   expect(moves.filter((move) => move.kind === "rotate").length).toBe(0)
   // And the part IS otherwise enumerated, so this is not passing because
   // nothing was enumerated at all: three of its four one-hole neighbours fit
@@ -389,16 +388,15 @@ test("an add-wire needs BOTH a strip pair and a line its ends can reach the net 
   //     fresh 1x3 wire already lies across them and needs no turn; columns 1 to
   //     2 is two holes, so it shrinks once; and the line is row 1, one hole from
   //     both pins, because row 2 itself holds them.
-  const onBetter = enumerateMoves(BETTER_OCC, BETTER, REFERENCE).filter((move) => move.kind === "add-wire")
-  const onBase = enumerateMoves(OCC, DUMP, REFERENCE).filter((move) => move.kind === "add-wire")
+  const onBetter = enumerateMoves(BETTER_OCC, BETTER, BETTER_DUMP, REFERENCE).filter((move) => move.kind === "add-wire")
+  const onBase = enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE).filter((move) => move.kind === "add-wire")
   expect(onBetter.length).toBe(0)
   expect(onBase.length).toBe(0)
-  const aligned = boardGeometry(
-    BASE_DUMP.replace("PART R2 RESISTOR 22K AT 7,2", "PART R2 RESISTOR 22K AT 2,2")
-      .replace("PIN R2 1 AT 7,2", "PIN R2 1 AT 2,2")
-      .replace("PIN R2 2 AT 7,7", "PIN R2 2 AT 2,7"),
-  )
-  const onAligned = enumerateMoves(occupancyOf(aligned), aligned, REFERENCE).filter(
+  const alignedText = BASE_DUMP.replace("PART R2 RESISTOR 22K AT 7,2", "PART R2 RESISTOR 22K AT 2,2")
+    .replace("PIN R2 1 AT 7,2", "PIN R2 1 AT 2,2")
+    .replace("PIN R2 2 AT 7,7", "PIN R2 2 AT 2,7")
+  const aligned = boardGeometry(alignedText)
+  const onAligned = enumerateMoves(occupancyOf(aligned), aligned, alignedText, REFERENCE).filter(
     (move) => move.kind === "add-wire",
   )
   expect(onAligned.map(describeMove)).toEqual([

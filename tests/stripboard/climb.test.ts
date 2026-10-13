@@ -106,9 +106,9 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
   // this asserts instead. Reading the enumerated count as a lower bound would
   // make this test fail for a reason that has nothing to do with the sweep.
   expect(result.evaluations).toBeGreaterThanOrEqual(
-    applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length,
+    applicableMoves(enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE)).length,
   )
-  expect(enumerateMoves(OCC, DUMP, REFERENCE).length).toBe(91)
+  expect(enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE).length).toBe(91)
 
   // HAND-DERIVED, from the two boards and the script:
   //   round 0 sweeps BASE_DUMP's 89 applicable moves (91 enumerated less the two
@@ -151,7 +151,7 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
   //     their pins five holes apart along them, so neither is offered a wire
   //     any more. Round 1's 87 is unchanged - it carries no add-wire either way,
   //     for the same reason on BETTER_DUMP's geometry.
-  expect(applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length).toBe(89)
+  expect(applicableMoves(enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE)).length).toBe(89)
   expect(result.acceptedPerRound).toEqual([1, 0])
   expect(result.rounds).toBe(2)
   expect(result.evaluations).toBe(177)

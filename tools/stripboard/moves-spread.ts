@@ -109,6 +109,7 @@
 import type { BoardDump, Grid } from "../guide/dump.ts"
 import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
+import { movableRefs } from "./movable.ts"
 import { aimedHoles, translationsAfter, type Translation } from "./moves-cluster.ts"
 import type { Move } from "./moves-model.ts"
 import {
@@ -181,11 +182,12 @@ function netOfHole(reference: ReferenceNets): ReadonlyMap<string, string> {
  */
 export function spreadSourceStrips(
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
 ): readonly number[] {
   const owner = netOfHole(reference)
-  const aimed = aimedHoles(dump, reference, net)
+  const aimed = aimedHoles(dump, dumpText, reference, net)
   const strips = new Set<number>()
   for (const hole of aimed) strips.add(stripOf(hole, dump.verticalStrips))
   const crowded: number[] = []
@@ -195,11 +197,16 @@ export function spreadSourceStrips(
     )
     let shared = false
     let kept = false
-    for (const part of dump.parts) {
-      if (movers.has(part.ref)) continue
-      for (const pin of dump.pins[part.ref] ?? []) {
+    // THE MOVABLE SET AND NOT `dump.parts` - see `./movable.ts`, and see
+    // `./moves-cluster.ts`'s `clusterRefs` for the measured limit this shares:
+    // `owner` is keyed by the REFERENCE netlist's pin id and a pad's `PIN` line
+    // is named the BOARD's way, so no pad reads as shared or kept today. The
+    // iterator is corrected here so there is one answer to what is on the board.
+    for (const one of movableRefs(dump, dumpText)) {
+      if (movers.has(one.ref)) continue
+      for (const pin of dump.pins[one.ref] ?? []) {
         if (stripOf(pin, dump.verticalStrips) !== strip) continue
-        const own = owner.get(`${part.ref}.${pin.pin}`)
+        const own = owner.get(`${one.ref}.${pin.pin}`)
         if (own === undefined) continue
         if (own === net) kept = true
         else shared = true
@@ -389,6 +396,7 @@ function nearestRemaining(staying: readonly number[], to: number): number | unde
 export function spreadMove(
   occupancy: Occupancy,
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   from: number,
@@ -400,7 +408,7 @@ export function spreadMove(
   const gestures: Translation[] = []
   const movers = new Set<string>()
   const staying: number[] = []
-  for (const hole of aimedHoles(dump, reference, net)) {
+  for (const hole of aimedHoles(dump, dumpText, reference, net)) {
     const strip = stripOf(hole, dump.verticalStrips)
     if (strip === from) {
       gestures.push({ ref: hole.ref, delta })
@@ -436,7 +444,7 @@ export function spreadMove(
   // ONE STRAIGHT WIRE FIRST, because it is the cheaper join - `rho_w` against
   // the L's `2 x rho_w` - and because an L on a pair a straight wire serves
   // would put one join in the sweep twice at twice the price.
-  for (const along of straightJoinLines(dump, reference, net, from, joined, movers)) {
+  for (const along of straightJoinLines(dump, dumpText, reference, net, from, joined, movers)) {
     const bridge = wireBridge(moved, dump, first, low, high, along)
     if (bridge === undefined) continue
     return spread([bridge])
@@ -446,8 +454,8 @@ export function spreadMove(
   // copper under it. `./moves-join.ts` plans both and advances the occupancy
   // between them; the lines and the anchors are each tried tightest-first, so
   // the pair taken is the shortest the model admits and two runs agree.
-  for (const along of elbowAcrossLines(dump, reference, net, from, joined, movers)) {
-    for (const anchor of elbowAnchors(dump, reference, net, from, joined, movers, along)) {
+  for (const along of elbowAcrossLines(dump, dumpText, reference, net, from, joined, movers)) {
+    for (const anchor of elbowAnchors(dump, dumpText, reference, net, from, joined, movers, along)) {
       const elbow = wireElbow(moved, dump, [first, second], joined, anchor, along, low, high)
       if (elbow !== undefined) return spread(elbow)
     }

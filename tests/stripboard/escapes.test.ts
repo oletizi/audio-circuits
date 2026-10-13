@@ -43,12 +43,14 @@ import {
   originOf,
   PARTS_WITH_A_PIN_ON_MID,
   SCATTERED,
+  SCATTERED_DUMP,
   SCATTERED_OCC,
   SCATTERED_REFERENCE,
   SPREAD,
   SPREAD_OCC,
   SPREAD_REFERENCE,
   STACKED,
+  STACKED_DUMP,
   STACKED_OCC,
   STACKED_REFERENCE,
   translated,
@@ -95,11 +97,12 @@ function refusalFrom(call: () => unknown): string {
 function clusterOrFail(
   occupancy: Occupancy,
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
   net: string,
   delta: readonly [number, number],
 ): Move {
-  const move = clusterMove(occupancy, dump, reference, net, delta)
+  const move = clusterMove(occupancy, dump, dumpText, reference, net, delta)
   if (move === undefined) {
     throw new Error(
       `this fixture was expected to admit a cluster of "${net}" by ${delta[0]},${delta[1]} and ` +
@@ -121,7 +124,7 @@ test("E1 moves every on-board part with a pin on the net, enumerated over nets n
   // SCATTERED_DUMP's `NODE 1` line rather than recomputed from the map.
   const { spawned, spawn } = recorder()
   const out = path.join(freshRunDir(), "candidate.vrt")
-  const move = clusterOrFail(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE, "mid", [0, 1])
+  const move = clusterOrFail(SCATTERED_OCC, SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE, "mid", [0, 1])
   applyMove(scatteredBoardFile(), move, out, spawn)
   const moved = spawned
     .filter((args) => args[0] === "--move")
@@ -146,14 +149,14 @@ test("E1 moves every on-board part with a pin on the net, enumerated over nets n
 test("E1's refs are the parts with a pin on the net, in the dump's part order", () => {
   // `clusterRefs` is the net -> parts half on its own, so the ORDER test below
   // is about ordering and not about membership.
-  expect(clusterRefs(SCATTERED, SCATTERED_REFERENCE, "mid")).toEqual(["R1", "R2"])
-  expect(clusterRefs(SCATTERED, SCATTERED_REFERENCE, "x")).toEqual(["X1"])
+  expect(clusterRefs(SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE, "mid")).toEqual(["R1", "R2"])
+  expect(clusterRefs(SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE, "x")).toEqual(["X1"])
   // A net THIS NETLIST DOES NOT HAVE is a refusal, because the caller and the
   // netlist then disagree about what is on the board. A net the netlist has
   // whose parts are all floating is a different fact and yields an empty list,
   // which `clusterMove` declines to propose and `applyMove` refuses - a cluster
   // of no parts would write a candidate byte-identical to its own parent.
-  expect(refusalFrom(() => clusterRefs(SCATTERED, SCATTERED_REFERENCE, "absent"))).toContain(
+  expect(refusalFrom(() => clusterRefs(SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE, "absent"))).toContain(
     'no net named "absent"',
   )
 })
@@ -167,7 +170,7 @@ test("E1 moves the part furthest along the delta first, which is what makes it l
   // orders differ in outcome: R1 at 0,0 and R2 directly under it at 1,0, a
   // cluster by 1,0, so R1's destination is R2's own footprint until R2 has
   // vacated it.
-  const move = clusterOrFail(STACKED_OCC, STACKED, STACKED_REFERENCE, "mid", [1, 0])
+  const move = clusterOrFail(STACKED_OCC, STACKED, STACKED_DUMP, STACKED_REFERENCE, "mid", [1, 0])
   expect(move.kind === "cluster" ? move.refs : []).toEqual(["R2", "R1"])
   // And the two orders really do differ on this board, asserted through the
   // model rather than inferred from the refs above: the dump's order does not
@@ -205,7 +208,7 @@ test("E1 is the move that makes the dominant lever reachable in one step", () =>
   // (row -1 is off the board, 1,0 is X1's, column -1 is off); R2 to 2,1 and
   // 3,0; Z1 to 0,2, 1,3 and 2,2; and X1 to nowhere at all. NOT ONE OF THEM
   // LOWERS J.
-  const singles = enumerateMoves(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE).filter(moveKind)
+  const singles = enumerateMoves(SCATTERED_OCC, SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE).filter(moveKind)
   expect(singles.map(describeMove).sort()).toEqual([
     "move R1 to 0,1",
     "move R2 to 2,1",
@@ -241,7 +244,7 @@ test("E1 refuses a cluster whose parts cannot all land, and writes nothing", () 
   // cluster of `mid` by 1,0 on SCATTERED_DUMP puts R1 on 1,0, which is X1's
   // footprint, and X1 is not in the cluster and does not move - so the sequence
   // cannot be completed in EITHER order and the move is not proposed at all.
-  expect(clusterMove(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE, "mid", [1, 0])).toBeUndefined()
+  expect(clusterMove(SCATTERED_OCC, SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE, "mid", [1, 0])).toBeUndefined()
   // AND THE ENUMERATION IS NARROWED BY IT, hand-derived over the four unit
   // deltas: up takes R1 to row -1, off the board; down takes it onto X1;
   // leftwards takes it to column -1; only rightwards lands, and the assertion is
@@ -253,22 +256,22 @@ test("E1 refuses a cluster whose parts cannot all land, and writes nothing", () 
   // of one part by a unit delta is exactly the `move` the part kind already
   // enumerates. That rule reached `gatherMove` first and `clusterMove` only
   // after a review found the asymmetry; this figure is where it shows.
-  expect(enumerateMoves(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE).filter(clusterKind).map(describeMove))
+  expect(enumerateMoves(SCATTERED_OCC, SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE).filter(clusterKind).map(describeMove))
     .toEqual(["cluster mid by 0,1 (R1 R2)", "cluster y by 0,1 (R1 R2)"])
   // The three single-part nets really are on this board and really do have
   // their own parts placed, so this is a rule firing rather than an empty board:
   // each of them has an on-board part and none of them has two.
   for (const net of ["x", "z1", "z2"]) {
-    expect(clusterRefs(SCATTERED, SCATTERED_REFERENCE, net).length).toBe(1)
+    expect(clusterRefs(SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE, net).length).toBe(1)
     for (const delta of [[-1, 0], [0, 1], [1, 0], [0, -1]] as const) {
-      expect(clusterMove(SCATTERED_OCC, SCATTERED, SCATTERED_REFERENCE, net, delta)).toBeUndefined()
+      expect(clusterMove(SCATTERED_OCC, SCATTERED, SCATTERED_DUMP, SCATTERED_REFERENCE, net, delta)).toBeUndefined()
     }
   }
   // The fork's comes second, for a caller holding a cluster the model admitted
   // and the binary refuses anyway: the run stops, the gesture is named, and
   // `out` is NOT created - every gesture but the last writes a staged file.
   const out = path.join(freshRunDir(), "refused.vrt")
-  const move = clusterOrFail(STACKED_OCC, STACKED, STACKED_REFERENCE, "mid", [1, 0])
+  const move = clusterOrFail(STACKED_OCC, STACKED, STACKED_DUMP, STACKED_REFERENCE, "mid", [1, 0])
   const refusal = refusalFrom(() => applyMove("board.vrt", move, out, refusingSpawn))
   expect(refusal).toContain("cluster mid by 1,0")
   expect(refusal).toContain("the part would be left floating")
@@ -299,7 +302,7 @@ test("E1 goes out as one --move-batch when the batched transport is asked for", 
     return { status: 0, stdout: "", stderr: "" }
   }
   const out = path.join(freshRunDir(), "batched.vrt")
-  const move = clusterOrFail(STACKED_OCC, STACKED, STACKED_REFERENCE, "mid", [1, 0])
+  const move = clusterOrFail(STACKED_OCC, STACKED, STACKED_DUMP, STACKED_REFERENCE, "mid", [1, 0])
   applyMove("board.vrt", move, out, spawn, "batched")
   expect(spawned.map((args) => args[0])).toEqual(["--move-batch"])
   expect(ops).toEqual(["move R2 --delta 1,0\nmove R1 --delta 1,0\n"])
@@ -311,7 +314,7 @@ test("the occupancy advances past a cluster through the same call that proposed 
   // advances its carried state with the same call. The rects below are
   // hand-written: both STACKED parts are 1 row by 2 columns, and a cluster by
   // 1,0 puts R1 at row 1 and R2 at row 2 with their columns unchanged.
-  const move = clusterOrFail(STACKED_OCC, STACKED, STACKED_REFERENCE, "mid", [1, 0])
+  const move = clusterOrFail(STACKED_OCC, STACKED, STACKED_DUMP, STACKED_REFERENCE, "mid", [1, 0])
   const advanced = occupancyAfter(STACKED_OCC, STACKED, move)
   if (advanced === undefined) throw new Error("the cluster the model proposed could not be advanced")
   expect(advanced.get("R1")).toEqual({ row: 1, col: 0, rows: 1, cols: 2, across: false })

@@ -39,13 +39,13 @@ import { WIRE_NOT_REPLACEABLE, assignNodes } from "../../tools/stripboard/comple
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
 import { rectOf } from "../../tools/stripboard/seed-placement.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
-import { CROWDED, CROWDED_NETS, CROWDED_OCC } from "./spread-fixtures.ts"
-import { DUMP, OCC, REFERENCE, freshRunDir } from "./climb-fixtures.ts"
+import { CROWDED, CROWDED_NETS, CROWDED_OCC, CROWDED_TEXT } from "./spread-fixtures.ts"
+import { BASE_DUMP, DUMP, OCC, REFERENCE, freshRunDir } from "./climb-fixtures.ts"
 
 /** Every spread the fixture board admits, in the enumeration's own order. */
 function spreads(nets: ReferenceNets = CROWDED_NETS): readonly Extract<Move, { kind: "spread" }>[] {
   const found: Extract<Move, { kind: "spread" }>[] = []
-  for (const move of enumerateMoves(CROWDED_OCC, CROWDED, nets)) {
+  for (const move of enumerateMoves(CROWDED_OCC, CROWDED, CROWDED_TEXT, nets)) {
     if (move.kind === "spread") found.push(move)
   }
   return found
@@ -79,10 +79,10 @@ test("the sources are the crowded strips only, and a net's private strip is not 
   //           this function's.                                      -> [1]
   //   lone    R3.2 on row 3 and R4.2 on row 6, each a strip its own part has to
   //           itself. Neither is crowded.                           -> []
-  expect(spreadSourceStrips(CROWDED, CROWDED_NETS, "shared")).toEqual([1])
-  expect(spreadSourceStrips(CROWDED, CROWDED_NETS, "crowd")).toEqual([])
-  expect(spreadSourceStrips(CROWDED, CROWDED_NETS, "far")).toEqual([1])
-  expect(spreadSourceStrips(CROWDED, CROWDED_NETS, "lone")).toEqual([])
+  expect(spreadSourceStrips(CROWDED, CROWDED_TEXT, CROWDED_NETS, "shared")).toEqual([1])
+  expect(spreadSourceStrips(CROWDED, CROWDED_TEXT, CROWDED_NETS, "crowd")).toEqual([])
+  expect(spreadSourceStrips(CROWDED, CROWDED_TEXT, CROWDED_NETS, "far")).toEqual([1])
+  expect(spreadSourceStrips(CROWDED, CROWDED_TEXT, CROWDED_NETS, "lone")).toEqual([])
 })
 
 test("a board where no net shares a strip is offered no spread at all", () => {
@@ -95,9 +95,9 @@ test("a board where no net shares a strip is offered no spread at all", () => {
   // candidates on this very board, every one of them dC = 0 or worse by the
   // identity and therefore +0.25 in F before anything was measured.
   for (const net of ["left", "right"]) {
-    expect(spreadSourceStrips(DUMP, REFERENCE, net)).toEqual([])
+    expect(spreadSourceStrips(DUMP, BASE_DUMP, REFERENCE, net)).toEqual([])
   }
-  const kinds = new Set(enumerateMoves(OCC, DUMP, REFERENCE).map((move) => move.kind))
+  const kinds = new Set(enumerateMoves(OCC, DUMP, BASE_DUMP, REFERENCE).map((move) => move.kind))
   expect(kinds.has("spread")).toBe(false)
 })
 
@@ -171,9 +171,9 @@ test("a net whose copper on the two strips no straight wire reaches gets no spre
   // bring `far`'s copper under column 5, then a wire ACROSS. That is two wires
   // and tools/stripboard/complete-joins.ts's own pair of planners; this kind
   // plans one.
-  expect(spreadSourceStrips(CROWDED, CROWDED_NETS, "far")).toEqual([1])
+  expect(spreadSourceStrips(CROWDED, CROWDED_TEXT, CROWDED_NETS, "far")).toEqual([1])
   for (const to of spreadTargetStrips(CROWDED)) {
-    expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_NETS, "far", 1, to)).toBeUndefined()
+    expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_TEXT, CROWDED_NETS, "far", 1, to)).toBeUndefined()
   }
 })
 
@@ -347,14 +347,14 @@ test("a spread of a net wholly on one strip is not proposed, because that is a g
   // the WHOLE net - which is a gather, needs no wire, and would put one gesture
   // in the sweep twice under two names. spreadMove declines it directly, so the
   // decline is the move's own and not only the enumeration's narrowing.
-  expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_NETS, "crowd", 1, 2)).toBeUndefined()
+  expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_TEXT, CROWDED_NETS, "crowd", 1, 2)).toBeUndefined()
   // AND A ZERO DELTA IS DECLINED for the fork's own reason: a candidate
   // byte-identical to its own parent.
-  expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_NETS, "shared", 1, 1)).toBeUndefined()
+  expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_TEXT, CROWDED_NETS, "shared", 1, 1)).toBeUndefined()
   // AND A TARGET THE NET ALREADY HOLDS leaves no two strips for a wire to span:
   // `shared`'s other pin is on row 3, so a relocation onto row 3 is a
   // consolidation needing no wire, which nothing in the move set performs.
-  expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_NETS, "shared", 1, 3)).toBeUndefined()
+  expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_TEXT, CROWDED_NETS, "shared", 1, 3)).toBeUndefined()
 })
 
 test("a strip the net keeps a pin on is not a source, and the control differs by one pin's net", () => {
@@ -403,11 +403,11 @@ test("a strip the net keeps a pin on is not a source, and the control differs by
     ["other", ["A.1", "B.1"]],
     ["spare", ["A.2"]],
   ])
-  expect(spreadSourceStrips(board, keeps, "held")).toEqual([])
+  expect(spreadSourceStrips(board, text, keeps, "held")).toEqual([])
   const control: ReferenceNets = new Map([
     ["held", ["B.2", "C.1"]],
     ["other", ["A.1", "B.1"]],
     ["spare", ["A.2", "C.2"]],
   ])
-  expect(spreadSourceStrips(board, control, "held")).toEqual([1])
+  expect(spreadSourceStrips(board, text, control, "held")).toEqual([1])
 })

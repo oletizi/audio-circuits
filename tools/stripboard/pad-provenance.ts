@@ -34,16 +34,33 @@ import { boardGeometry, pinHoles, type HoleKey } from "./copper.ts"
 import { refuse } from "./geometry-contract.ts"
 
 /**
- * One `PAD` line, read into the three facts HC8 needs from it.
+ * Where a pad's one hole is, or that it has none because it is unplaced.
  *
- * `placed` comes from the placement field, which is `FLOATING` or `AT r,c`
- * exactly as a `PART` line's is; `source` is the `FROM <ref>.<pin>` reference
- * pin, or `undefined` for `NOPROVENANCE`. `line` is kept so a refusal can
- * quote what it rejected.
+ * **IT IS A UNION AND NOT AN OPTIONAL PAIR, so an unplaced pad's missing hole
+ * is unrepresentable rather than `0,0`.** A `PAD` line's placement field is
+ * `FLOATING` or `AT r,c` exactly as a `PART` line's is, so this mirrors
+ * `PartPlacement` in `tools/guide/dump-model.ts` deliberately: the two fields
+ * are the same field in the same grammar, and a reader who has learnt one
+ * should not have to learn the other.
  */
-interface PadLine {
+export type PadPlacement = { readonly row: number; readonly col: number } | "floating"
+
+/**
+ * One `PAD` line, read into the four facts its readers need from it.
+ *
+ * `placement` is the hole the pad is at, or `"floating"`; `source` is the
+ * `FROM <ref>.<pin>` reference pin, or `undefined` for `NOPROVENANCE`. `line`
+ * is kept so a refusal can quote what it rejected.
+ *
+ * **THE HOLE IS HERE BECAUSE A GESTURE NEEDS IT AND NOTHING ELSE CARRIES IT.**
+ * `parseBoardDump` reads `PART` lines only, so a pad is absent from
+ * `BoardDump.parts` and its hole appears in no typed field of the dump;
+ * `tools/stripboard/movable.ts` reads it from here rather than respelling the
+ * `PAD` grammar, because a second spelling is a second thing to keep correct.
+ */
+export interface PadLine {
   readonly ref: string
-  readonly placed: boolean
+  readonly placement: PadPlacement
   readonly source: string | undefined
   readonly line: string
 }
@@ -63,15 +80,20 @@ function refOf(pinId: string): string {
  * fixed, and a line matching none of the four shapes is a grammar change
  * rather than a variant to accommodate.
  */
-function padLines(dumpText: string): readonly PadLine[] {
+export function padLines(dumpText: string): readonly PadLine[] {
   return dumpLineFields(dumpText, "PAD").map((fields): PadLine => {
     const line = fields.join(" ")
     const ref = fields[1]
-    const placement = fields[3]
-    if (ref === undefined || (placement !== "AT" && placement !== "FLOATING")) {
+    const token = fields[3]
+    if (ref === undefined || (token !== "AT" && token !== "FLOATING")) {
       refuse("pad-unreadable", `PAD line "${line}" has no readable name and placement field`)
     }
-    const placed = placement === "AT"
+    const placed = token === "AT"
+    // THE HOLE IS READ HERE OR THE LINE IS REFUSED - never defaulted. `AT` is
+    // followed by one `<row>,<col>` token, which is `fields[4]` because the
+    // fields are PAD, name, value, placement, [r,c], ...provenance (the same
+    // count the `rest` slice below depends on).
+    const placement = placed ? parsePadHole(fields[4], line) : "floating"
     // The placement field is one token when FLOATING and two when AT r,c, so
     // the provenance that follows it starts at index 5 or at index 4. `rest` is
     // that remainder: ["FROM", "x.y"] or ["NOPROVENANCE"]. (This read "3 or 4"
@@ -82,7 +104,7 @@ function padLines(dumpText: string): readonly PadLine[] {
     // field-position bug would be silent.)
     const rest = fields.slice(placed ? 5 : 4)
     if (rest.length === 1 && rest[0] === "NOPROVENANCE") {
-      return { ref, placed, source: undefined, line }
+      return { ref, placement, source: undefined, line }
     }
     const source = rest[1]
     if (rest.length !== 2 || rest[0] !== "FROM" || source === undefined) {
@@ -91,8 +113,29 @@ function padLines(dumpText: string): readonly PadLine[] {
         `PAD line "${line}" ends in neither FROM <ref>.<pin> nor NOPROVENANCE`,
       )
     }
-    return { ref, placed, source, line }
+    return { ref, placement, source, line }
   })
+}
+
+/**
+ * One placed pad's `<row>,<col>` token, refusing anything else by name.
+ *
+ * It is `pad-unreadable` and quotes the whole line, exactly as the two
+ * surrounding grammar refusals do: an `AT` with no readable pair is a grammar
+ * change or a damaged capture, and a guessed hole would put a gesture's `--to`
+ * somewhere nobody measured.
+ */
+function parsePadHole(field: string | undefined, line: string): PadPlacement {
+  const match = field === undefined ? null : /^(\d+),(\d+)$/.exec(field)
+  const rowStr = match?.[1]
+  const colStr = match?.[2]
+  if (rowStr === undefined || colStr === undefined) {
+    refuse(
+      "pad-unreadable",
+      `PAD line "${line}" says AT and then "${field ?? ""}", which is not a <row>,<col> hole`,
+    )
+  }
+  return { row: Number(rowStr), col: Number(colStr) }
 }
 
 /**
@@ -122,7 +165,7 @@ export function referencePinHoles(dumpText: string): ReadonlyMap<string, HoleKey
     }
   }
   for (const pad of pads) {
-    if (!pad.placed) {
+    if (pad.placement === "floating") {
       continue
     }
     const own = [...boardPins].filter(([id]) => refOf(id) === pad.ref)
