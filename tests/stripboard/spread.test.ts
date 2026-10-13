@@ -33,6 +33,7 @@ import {
   spreadTargetStrips,
   type Move,
 } from "../../tools/stripboard/moves.ts"
+import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { candidateRejected } from "../../tools/stripboard/climb.ts"
 import { WIRE_NOT_REPLACEABLE, assignNodes } from "../../tools/stripboard/complete-apply.ts"
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
@@ -337,4 +338,59 @@ test("a spread of a net wholly on one strip is not proposed, because that is a g
   // `shared`'s other pin is on row 3, so a relocation onto row 3 is a
   // consolidation needing no wire, which nothing in the move set performs.
   expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_NETS, "shared", 1, 3)).toBeUndefined()
+})
+
+test("a strip the net keeps a pin on is not a source, and the control differs by one pin's net", () => {
+  // **THE CLAUSE THIS HOLDS WAS ABSENT AND THE OMISSION WAS MEASURED.** On
+  // `random` seed 3's round-0 spread candidate the net's aimed pin moved off
+  // strip 24 and the net STILL HELD that strip through a second part, so the
+  // abutment the spread exists to remove was still there: measured per strip,
+  // the net segments rose by one, `S_occ` did not move, and the fork's own cut
+  // count went 21 to 22 against the arithmetic's predicted 21 to 20.
+  //
+  // THE TWO BOARDS BELOW ARE THE SAME GEOMETRY AND DIFFER IN ONE PIN'S NET, so
+  // neither answer can be right by coincidence. `C` is a part ACROSS the strips
+  // with a lead on row 1 and a lead on row 3; `B` lies along row 1; `A` puts
+  // another net on row 1 so that the strip is crowded either way.
+  //
+  //   held = B.2, C.1, C.2   `C` keeps a pin of `held` on row 1 after `B` goes,
+  //                          so row 1 is NOT a source
+  //   held = B.2, C.1        the same hole is another net's, nothing of `held`
+  //                          stays, and row 1 IS a source
+  //
+  // `occupancyOf` is never called on either board, which is why a part facing N
+  // is admissible here: spreadSourceStrips reads the dump's PIN lines and the
+  // reference netlist and no geometry at all.
+  const text = [
+    "GRID 8 12",
+    "BOUNDS 1,0 3,5",
+    "VERTICAL_STRIPS 0",
+    "CUT_STATE COMPUTED",
+    "PART A RESISTOR 10K AT 1,4 SPAN 2 DIRECTION W",
+    "PART B RESISTOR 10K AT 1,2 SPAN 2 DIRECTION W",
+    "PART C RESISTOR 10K AT 1,0 SPAN 3 DIRECTION N",
+    "PIN A 1 AT 1,4",
+    "PIN A 2 AT 1,5",
+    "PIN B 1 AT 1,2",
+    "PIN B 2 AT 1,3",
+    "PIN C 1 AT 3,0",
+    "PIN C 2 AT 1,0",
+    "NODE 1 NAME held B.2 C.1 C.2",
+    "NODE 2 NAME other A.1 B.1",
+    "NODE 3 NAME spare A.2",
+    "",
+  ].join("\n")
+  const board = boardGeometry(text)
+  const keeps: ReferenceNets = new Map([
+    ["held", ["B.2", "C.1", "C.2"]],
+    ["other", ["A.1", "B.1"]],
+    ["spare", ["A.2"]],
+  ])
+  expect(spreadSourceStrips(board, keeps, "held")).toEqual([])
+  const control: ReferenceNets = new Map([
+    ["held", ["B.2", "C.1"]],
+    ["other", ["A.1", "B.1"]],
+    ["spare", ["A.2", "C.2"]],
+  ])
+  expect(spreadSourceStrips(board, control, "held")).toEqual([1])
 })

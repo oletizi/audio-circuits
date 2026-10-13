@@ -140,7 +140,7 @@ function netOfHole(reference: ReferenceNets): ReadonlyMap<string, string> {
  * pins sit beside **another net's pin on a part this spread would not move**,
  * ascending.
  *
- * **THAT IS CASE 3 OF THE ARITHMETIC IN THE HEADER AND NOTHING ELSE.** Both
+ * **THAT IS CASE 3 OF THE ARITHMETIC IN THE HEADER AND NOTHING ELSE.** All three
  * halves of the test are load-bearing and each rules out a different way the
  * `dC = -1` fails:
  *
@@ -151,7 +151,10 @@ function netOfHole(reference: ReferenceNets): ReadonlyMap<string, string> {
  *     OCCUPIED. Every pin of a relocated part travels with it, so if the only
  *     other net on the strip is there through a part that is itself moving, the
  *     strip empties - `S_occ` falls by one as the target's rises, the terms
- *     cancel, and `dC` is zero again.
+ *     cancel, and `dC` is zero again;
+ *   - **and NO PIN OF THIS NET may stay behind**, or the net keeps its segment
+ *     on the strip and the abutment is still there after the move. That clause
+ *     was absent and the omission was measured: see the body.
  *
  * It is a model read of the dump's `PIN` lines and the reference netlist, so it
  * spends no fork invocation and needs no painted board. **It is NOT a reading of
@@ -174,15 +177,28 @@ export function spreadSourceStrips(
     const movers = new Set(
       aimed.filter((hole) => stripOf(hole, dump.verticalStrips) === strip).map((hole) => hole.ref),
     )
-    const shared = dump.parts.some((part) => {
-      if (movers.has(part.ref)) return false
-      return (dump.pins[part.ref] ?? []).some((pin) => {
-        if (stripOf(pin, dump.verticalStrips) !== strip) return false
+    let shared = false
+    let kept = false
+    for (const part of dump.parts) {
+      if (movers.has(part.ref)) continue
+      for (const pin of dump.pins[part.ref] ?? []) {
+        if (stripOf(pin, dump.verticalStrips) !== strip) continue
         const own = owner.get(`${part.ref}.${pin.pin}`)
-        return own !== undefined && own !== net
-      })
-    })
-    if (shared) crowded.push(strip)
+        if (own === undefined) continue
+        if (own === net) kept = true
+        else shared = true
+      }
+    }
+    // **THE NET MUST LOSE ITS SEGMENT HERE, WHICH MEANS NO PIN OF ITS MAY STAY -
+    // AND THIS CLAUSE IS HERE BECAUSE ITS ABSENCE WAS MEASURED.** A pin of this
+    // net on a part the spread would NOT move keeps the net's copper on the
+    // strip, so the abutment the spread exists to remove is still there
+    // afterwards and the candidate pays a wire for nothing. Measured on
+    // `random` seed 3's round-0 candidate, where the net's pin moved off strip
+    // 24 and the net still held it through another part: the net segments rose
+    // by one, `S_occ` did not move, and the fork's own cut count went 21 to 22
+    // against a predicted 21 to 20.
+    if (shared && !kept) crowded.push(strip)
   }
   return crowded
 }
