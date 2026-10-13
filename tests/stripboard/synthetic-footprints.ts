@@ -72,6 +72,22 @@ export function ringPattern(): PinPattern {
  * exercise, would never be reached. Registering a span here keeps `HC10` the
  * constraint that refuses the ring. **It is SYNTHETIC and says so in every
  * field**, so nothing can mistake it for a sourced figure.
+ *
+ * **IT IS THE ONE `LeadSpan` IN THIS REPOSITORY ITS OWN DERIVATION DOES NOT
+ * REPRODUCE, and that deviation is stated here rather than left for a reader to
+ * infer from a real entry.** It is `kind: "rigid"` with `fixedSpanHoles: 4`, and
+ * `deriveSpanHoles` on that geometry returns `[4, 4]` - not the `[2, 16]`
+ * recorded above. `tests/kicad/lead-span.test.ts`'s "every recorded integer is
+ * reproduced by the arithmetic" is the property this breaks, and it escapes that
+ * test only because the test iterates `LEAD_SPANS` and this entry is injected.
+ *
+ * THE WIDE BAND IS THE WHOLE POINT and narrowing it to `[4, 4]` would defeat the
+ * fixture: `HC4`, `HC5` and `HC9` would refuse the ring on its span before
+ * `HC10`'s footprint half could refuse it on its pattern, which is the one thing
+ * this footprint exists to exercise. So it stays, labelled - a reader comparing
+ * it with a real entry must NOT read `[2, 16]` beside `fixedSpanHoles: 4` as a
+ * shape a rigid entry may take. Recorded in
+ * `docs/stripboard/pipeline-verification.md` §9.5.
  */
 export function ringSpan(): LeadSpan {
   return {

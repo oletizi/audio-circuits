@@ -327,6 +327,30 @@ const WHY_NOT_DEFAULTED =
  * a recorded extent matching NEITHER axis and does not catch one matching the
  * wrong one, because neither module says which axis a `fixedSpanHoles` is
  * measured along and inventing that correspondence is not available here.
+ *
+ * **IT READS THE MODULE-LEVEL `LEAD_SPANS` DIRECTLY, SO ONE GRADE CAN CONSULT
+ * TWO SPAN TABLES.** `HC4`, `HC5` and `HC9` take their bounds from
+ * `CheckInput.spans` through `spanFor` (`tools/stripboard/constraints-physical.ts`);
+ * `HC10`'s footprint half calls this function, which reads `LEAD_SPANS` out of
+ * `./lead-span.ts` with nothing routing `input.spans` to it. It is harmless today
+ * only because every injector spreads the real map
+ * (`tests/stripboard/synthetic-footprints.ts`), so no recorded footprint is
+ * shadowed. **ONE EXTRA OPTIONAL PARAMETER WOULD CLOSE IT** - the same seam
+ * `pinPatternFor` and `leadSpanFor` already have - and it is recorded with that
+ * note rather than as "if that is ever wanted", because the cost of wanting it
+ * later is a verdict in which three constraints use a revised figure and `HC10`
+ * uses the old one, which cannot be explained from the inputs. See
+ * `docs/stripboard/pipeline-verification.md` §9.4.
+ *
+ * **AND `minSpanHoles` HAS THIS AS A THIRD CONSUMER**, which the stand-on-end
+ * widening audit missed: the band check below reads it as well as
+ * `maxSpanHoles`, so the DIN0207 band went `[5, 16]` to `[2, 16]` with the
+ * widening. No wrong answer today - the resistor's prepared extents are `[5, 1]`,
+ * so the right axis is the one that matches - but it is a loss of strength in the
+ * disjunction, and a 3-row footprint whose along-row extent were wrong would now
+ * be admitted on its row count alone where 3 previously fell outside the band.
+ * Recorded in the deviation entry in
+ * `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`.
  */
 export function admitPattern(pattern: PinPattern): PatternEligibility {
   const classification = pattern.classification

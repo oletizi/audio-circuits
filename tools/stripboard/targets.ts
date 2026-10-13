@@ -352,6 +352,28 @@ function requireCount(value: number, name: string, context: string): void {
  * `J = C − N + S_occ`: the segment joins a layout requires, from COST §1.4's
  * identity rearranged.
  *
+ * **`V2` IS A TAUTOLOGY AND THAT IS STATED HERE RATHER THAN IMPLIED.** This
+ * function DEFINES `J`, and `./score.ts` reports what it returns as `joins`, so
+ * "the identity closes on every candidate" cannot fail: `J` is the
+ * rearrangement, not a second measurement of anything. NOTHING IN THIS
+ * REPOSITORY COUNTS NET SEGMENTS INDEPENDENTLY - grepped for
+ * `segmentsPerStrip`, `netSegments`, `segmentCount` and `countSegments`: zero
+ * hits - so there is no second path for the identity to close against.
+ *
+ * WHAT IS ACTUALLY CHECKED PER CANDIDATE IS TWO BOUNDS, and both are coarse:
+ * `J >= 0` here, and `J <= P - N` in `clustering` below. `./score.ts`'s own
+ * comment measures the first one toothless - with the `cutState` clause
+ * disabled, the `UNRESOLVED` fixture raised NO refusal at all, because its terms
+ * still give `J = 1`.
+ *
+ * THE IDENTITY ITSELF IS CHECKED ONCE, against COST §1.6's hand-counted `J = 1`
+ * on the frozen low-boost dump (`tests/stripboard/score-identity.test.ts`). That
+ * is good evidence, and it is evidence about ONE BOARD rather than about every
+ * candidate. An independent segment counter - walking each strip's copper and
+ * counting the runs of each net - would make `V2` a real cross-check; it is a
+ * feature nobody has built, not a fix to this function. See
+ * `docs/stripboard/pipeline-verification.md` §9.1.
+ *
  * REFUSES A NEGATIVE RESULT rather than returning it, naming `CUT_STATE` as
  * the likeliest cause. That reading is free and exact, and it is CRITERIA
  * HC2's condition arriving by a second route - not a substitute for reading

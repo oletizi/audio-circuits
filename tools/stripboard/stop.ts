@@ -111,6 +111,16 @@ interface StopInput {
  * `./verdict.ts` reports its absence in `A2`'s detail rather than refusing -
  * which matters here because `Q1` and `Q2` read only the four booleans, never a
  * detail string. Task 20's report is where a binding constraint is supplied.
+ *
+ * **AND NOTHING IN PRODUCTION EVER SUPPLIES ONE, which is a stated limit rather
+ * than a thing waiting to happen.** `reportInputOf` in `./place.ts` hardcodes
+ * `binding: undefined` as well, so `REP2`'s requirement that an `A2` failure
+ * name what bounded the clustering is never met on a real run - every report
+ * says "No binding constraint was stated" - and the `span` and `packing` arms of
+ * `BindingConstraint`, along with `report-binding-rule-disagrees`, are dead
+ * outside tests. It is safe in the conservative direction: `K3`'s ratchet can
+ * never be moved on a production run. Recorded in
+ * `docs/stripboard/pipeline-verification.md` §7 and §9.5.
  */
 function admissibilityOf(input: StopInput): boolean {
   return fullyAdmissible(
@@ -215,6 +225,31 @@ const MINIMUM_SIGNATURE_RUN = 2
  * `kappa = 0`, `S_occ = min(N, R)`, `W = 0`"*. `J === 0` is `kappa === 0`
  * without the division, which matters because `kappa = J/(P - N)` is undefined
  * on a board with `P = N` and a stopping rule may not refuse one.
+ *
+ * **IT CARRIES A FOURTH CONDITION NOBODY STATES, AND THIS IS WHERE IT IS
+ * STATED: THE CANDIDATE'S DUMP MUST REPORT THE SAME NET COUNT AS THE MODEL.**
+ * The clauses below mix two sources deliberately - the floor is a model quantity
+ * - and the consequence falls out of the algebra. `targets.cutFloor` and
+ * `targets.netCount` are MODEL-sourced (`./targets.ts`); `score.joins` is built
+ * from the DUMP's `N` (`./score.ts` reads `Object.keys(dump.nodes).length` and
+ * hands it to `segmentJoins`). On a board with `N_model <= R`: `cutFloor = 0`
+ * forces `C = 0`, `occupied = min(N_model, R) = N_model`, and `joins = 0` then
+ * forces `0 - N_dump + N_model = 0`, i.e. `N_dump === N_model`.
+ *
+ * **IT IS NOT UNSATISFIABLE**, which the final whole-branch review suspected and
+ * this records as checked rather than assumed:
+ * `tests/fixtures/stripboard/pultec-low-boost-imported.dump` carries 14 `NODE`
+ * lines against that model's 14 nets, so on the `--import`-placed board every
+ * run starts from, the clause holds and `Q1` is reachable.
+ *
+ * **WHERE IT CANNOT FIRE is on a layout whose dump disagrees with its model**,
+ * and COST §2.3 records all five committed Pultec hand layouts as exactly that
+ * (`tests/stripboard/targets-oracle.ts` carries both numbers per board -
+ * low-boost is `nets: 14` against `layoutNets: 9`). `Q1` is the only optimality
+ * claim this pipeline may make, so on such a board "Q1 did not fire" must be
+ * read as "the question was not askable here" and NOT as "the board is above its
+ * floor". Nothing in this module, `./report.ts` or `floorNote` said so until
+ * this comment; see `docs/stripboard/pipeline-verification.md` §9.2.
  */
 function q1(input: StopInput): boolean {
   const score = input.best.score

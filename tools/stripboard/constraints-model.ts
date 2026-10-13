@@ -157,9 +157,16 @@ export interface CheckInput {
    * different bounds for a recorded footprint, say, to test a datasheet
    * revision - **would get a grade that half-ignores it**: the three span
    * constraints would use the new figure and `HC10` would quietly use the old
-   * one, which is a verdict nobody could explain from the inputs. If that is
-   * ever wanted, thread the map through `admitPattern` rather than working
-   * around it at the call site.
+   * one, which is a verdict nobody could explain from the inputs.
+   *
+   * **IT IS RECORDED AS A LIMIT RATHER THAN LEFT AS "IF THAT IS EVER WANTED"**,
+   * which the final whole-branch review was right to pull up: the cost of
+   * wanting it later is a silent wrong verdict, which is the one cost this
+   * pipeline refuses everywhere else. The remedy is ONE extra optional parameter
+   * on `admitPattern`, the same seam `pinPatternFor` and `leadSpanFor` already
+   * have; it is named here and in `admitPattern`'s own comment, and in
+   * `docs/stripboard/pipeline-verification.md` §9.4. Closing it is a deliberate
+   * edit with a test beside it, not a thing to do while passing.
    */
   readonly spans?: ReadonlyMap<string, LeadSpan>
 }

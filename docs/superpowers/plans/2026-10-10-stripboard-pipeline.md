@@ -6058,6 +6058,28 @@ keep the 5-hole flat figure beside the 2-hole recorded one. The before-and-after
 census per board is in
 `.superpowers/sdd/2026-10-10-stripboard-pipeline/vertical-mounting-report.md`.
 
+**A THIRD CONSUMER OF `minSpanHoles` THAT THE "RE-CHECKED AT BOTH ENDS" AUDIT
+MISSED, added after the final whole-branch review.** The audit above checks `HC9`
+(the bound's own constraint) and `HC5` (the other end), and neither the commit
+message `84d8adf`, this entry as first written, nor `lead-span.md` §4.1a
+mentioned that **`admitPattern` reads `minSpanHoles` too**:
+`lib/kicad/pin-pattern-model.ts`'s cross-check asks whether one of the prepared
+pattern's two hole extents lies inside `[minSpanHoles, maxSpanHoles]`, so the
+DIN0207 band went `[5, 16]` to `[2, 16]` with the widening and the disjunction
+widened with it.
+
+**No wrong answer today, and the defect is the audit rather than the number.**
+The resistor's prepared extents are `[5, 1]`, so the axis that matches is the
+right one. What was lost is strength: a 3-row footprint whose along-row extent
+were wrong would now be admitted on its row count alone, where 3 previously fell
+outside the band. That is a loss in a check this plan already records as a stated
+weakness - a disjunction over two axes, one of which is a bare row count - and
+the refusal text already says why it cannot be a conjunction (*"Neither module
+says which axis a recorded span is measured along"*), which is itself a recorded
+gap worth closing. `admitPattern`'s own comment now carries this; it is NOT a
+reason to narrow the band back, because the owner's instruction above is what set
+it.
+
 ### `B1-frozen` is THE WRONG TARGET: the bar stands, the fixture does not
 
 **What the documents say.** `V3` in this plan and in

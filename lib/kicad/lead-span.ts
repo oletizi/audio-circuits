@@ -47,87 +47,16 @@
  * than part of it only because that file is already near this repository's
  * 300-500 line ceiling.
  */
-import type { DatasheetRef, FamilyGeometry, LeadSpan } from "./lead-span-model.ts"
+import type { FamilyGeometry, LeadSpan } from "./lead-span-model.ts"
 import { deriveSpanHoles } from "./lead-span-model.ts"
-
-const VISHAY_MBB0207: DatasheetRef = {
-  manufacturer: "Vishay Beyschlag",
-  document:
-    "MBA/SMA 0204, MBB/SMA 0207, MBE/SMA 0414 - Professional. Professional Thin Film " +
-    "Leaded Resistors",
-  documentId: "Vishay Document Number 28766",
-  revision: "Revision: 05-Oct-09",
-  location:
-    "page 25, table \"DIMENSIONS - Leaded resistor types, mass and relevant physical " +
-    "dimensions\", row MBB/SMA 0207: Dmax. 2.5mm, Lmax. 6.5mm, dnom. 0.6mm, lmin. 28.0mm, " +
-    "Mmin. 10.0mm, with note (1) \"For 7.5 <= M < 10.0 mm, use version MBB/SMA 0207 ... L0 " +
-    "without lacquer on the leads\"",
-  url: "https://www1.futureelectronics.com/doc/Vishay/MBB0207VC-BCC.pdf",
-}
-
-const TDK_B32529: DatasheetRef = {
-  manufacturer: "TDK Electronics (EPCOS)",
-  document:
-    "Film Capacitors. Capacitors for RFI Filtering, Smoothing, General-Purpose. " +
-    "Series/Type: B3252*C/D/E/N/Q/R/T",
-  documentId: "B32520_529",
-  revision: "Date: June 2026",
-  location:
-    "page 2 \"Dimensional drawing\", lead spacing / lead diameter table (lead spacing 5.0mm " +
-    "+-0.4, lead diameter d1 0.5mm +-0.05, type B32529); and page 6 \"Composition of ordering " +
-    "code\", packaging code \"000 = Untaped (standard lead length 6 +-1 mm)\"",
-  url: "https://www.tdk-electronics.tdk.com/inf/20/20/db/fc_2009/B32520_529.pdf",
-}
-
-const WIMA_FKP2: DatasheetRef = {
-  manufacturer: "WIMA",
-  document:
-    "WIMA FKP 2. Polypropylene (PP) Film/Foil Capacitors for Pulse Applications in PCM 5 mm",
-  documentId: "e_WIMA_FKP_2 (catalogue page 31)",
-  revision: "03.26",
-  location:
-    "the dimensional drawing: \"d = 0.5 Ø\", \"Pin length: 6-2 = SD\", \"PCM ... at the pin " +
-    "exit points (+-0.5)\"; and the 63 VDC ratings table row 470 pF: W 4.5, H 6, L 7.2, PCM 5",
-  url: "https://www.wima.de/wp-content/uploads/media/e_WIMA_FKP_2.pdf",
-}
-
-const NICHICON_PS: DatasheetRef = {
-  manufacturer: "Nichicon",
-  document:
-    "ALUMINUM ELECTROLYTIC CAPACITORS. PS series - Miniature Sized, Low Impedance, For " +
-    "Switching Power Supplies",
-  documentId: "CAT.8100Z",
-  revision: "undated - the catalogue page carries only its CAT.8100Z number",
-  location:
-    "the \"Radial Lead Type\" dimensional drawing: lead length \"15MIN\", and the case-size " +
-    "table phiD 5 / 6.3 / 8 against P 2.0 / 2.5 / 3.5 and phid 0.5 / 0.5 / 0.6",
-  url: "https://www.nichicon.co.jp/english/products/pdf/e-ps.pdf",
-}
-
-const VEROROUTE_FORK: DatasheetRef = {
-  manufacturer: "the pinned VeroRoute fork",
-  document: "veroroute-perfboard, Src/CompTypes.h",
-  documentId: ".tools/veroroute-perfboard/Src/CompTypes.h",
-  revision: "the revision `make veroroute` pins",
-  location:
-    "GetMakeInstructions (TO92: rows = 1, cols = 3; TRIM_FLAT: rows = 3, cols = 3, " +
-    "\"+2++++1+3\"), GetMinLength and GetMaxLength (SIP: pin count; DIP: pins/2; TO92 and " +
-    "TRIM_FLAT fall through to \"default: assert(0) // Non-stretchable component\")",
-  url: "https://github.com/ozzmaker/VeroRoute",
-}
-
-const KICAD_FOOTPRINTS: DatasheetRef = {
-  manufacturer: "KiCad",
-  document: "the installed footprint libraries, read as files",
-  documentId: "/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints",
-  revision: "the installed KiCad",
-  location:
-    "the pad coordinates of the .kicad_mod itself - DIP-16_W7.62mm pads 1 and 16 at x 0 and " +
-    "7.62 with 8 pads per row on 2.54; TO-92_Inline pads at x 0, 1.27, 2.54; " +
-    "Potentiometer_Runtron_RM-065_Vertical pads 1 and 3 at x 0 and 5.0 with pad 2 at (2.5, 5); " +
-    "PinHeader_1x0n_P2.54mm_Vertical pads on 2.54",
-  url: "https://gitlab.com/kicad/libraries/kicad-footprints",
-}
+import {
+  KICAD_FOOTPRINTS,
+  NICHICON_PS,
+  TDK_B32529,
+  VEROROUTE_FORK,
+  VISHAY_MBB0207,
+  WIMA_FKP2,
+} from "./lead-span-sources.ts"
 
 /**
  * The Vishay MBB/SMA 0207 geometry, which `R_Axial_DIN0207_*` is fitted with.
@@ -146,6 +75,21 @@ const KICAD_FOOTPRINTS: DatasheetRef = {
  * NOT be a failure condition"*. `minReachPitchMm` takes the looser mounting, so
  * this family's floor is the grid's 2 holes and `M`'s 5-hole figure is recorded
  * in `AXIAL_MIN` as the flat mounting's.
+ *
+ * **THESE FIGURES ARE A CONSERVATIVE STAND-IN FOR THE PART THE CATALOGUE BUYS,
+ * AND THE CEILING IS UNVERIFIED FOR IT.** `parts/resistor-*-0207.json` - nine
+ * files - fit this footprint with **Yageo MFR-25FBF52-xxx**, which bends this
+ * module's own rule (*"A FAMILY HAS NO DATASHEET; A PART DOES"*). The FLOOR does
+ * not move, traced rather than assumed: the MFR datasheet's Dimensions table
+ * gives MFR-25 as L = 6.3 +- 0.5mm and dia = 2.4 +- 0.2mm, so worst-case body
+ * 6.8mm -> `6.8 + 2 x 0.8 = 8.4mm` -> 4 steps -> 5 holes, the same figure, and
+ * the vertical floor stays grid-bound. The CEILING does: `leadLengthMm` is the
+ * only dimension that sets the maximum, the recorded 16-hole ceiling is
+ * `TOOL_MAX_SPAN_HOLES` clamping a **28mm Vishay lead**, and the Yageo part's
+ * lead length is recorded NOWHERE. No figure is invented here - closing it means
+ * reading the MFR-25's own lead length off its datasheet. `./lead-span.test.ts`'s
+ * sibling test ties `parts/*.json` to `geometry.mpn` so the divergence cannot
+ * widen silently; `docs/stripboard/pipeline-verification.md` §9.3 has the rest.
  */
 const MBB0207: FamilyGeometry = {
   kind: "formable",

@@ -3092,3 +3092,158 @@ above cannot say anything about.
 - **A reduced cap measures the chain and not the search.** Every figure in §8.2
   and §8.5 was taken at 8 or 400 evaluations against the committed 20,000, and
   the quality figures this repository has are §6's.
+
+---
+
+## 9. Stated limits from the final whole-branch review
+
+Three reviewers covered the gates and refusals, the search and scoring core, and
+the geometry and part data. Most of what they found was fixed; what follows is
+what was **recorded instead**, by ruling or because the honest answer is that
+closing it is a feature rather than a correction. Each entry is also written
+into the code it is about, so a reader who never opens this file still finds it.
+
+**Nothing in this section is a defect that was waved through.** Every one is a
+check claiming less than its name suggests, now claiming exactly what it does.
+
+### 9.1 `V2`'s identity is a tautology, and an independent counter is a feature
+
+`tools/stripboard/targets.ts`'s `segmentJoins` **defines** `J = C − N + S_occ`,
+and `score.ts` reports that value as `joins`. So the claim that *"the identity
+closes on every candidate"* cannot fail: `J` is the rearrangement, not a second
+measurement of anything. Nothing in this repository counts net segments
+independently — grepped for `segmentsPerStrip`, `netSegments`, `segmentCount`
+and `countSegments`: zero hits — so there is no second path for the identity to
+close against.
+
+What IS checked per candidate is two bounds, and both are coarse:
+
+- `J ≥ 0` (`targets.ts`'s `negative-joins` refusal). `score.ts`'s own comment
+  measures it toothless: with the `cutState` clause disabled, the `UNRESOLVED`
+  fixture raised **no refusal at all**, because its terms still give `J = 1`.
+- `J ≤ P − N` (`clustering`'s `clustering-undefined` refusal), i.e.
+  `C + S_occ ≤ P`.
+
+The identity itself is checked **once**, against COST §1.6's hand-counted
+`J = 1` on the frozen low-boost dump (`tests/stripboard/score-identity.test.ts`).
+That is good evidence, and it is evidence about one board rather than about every
+candidate.
+
+The honest wording, and the one the code now carries: *`J` is derived from `C`,
+`N` and `S_occ`; the per-candidate checks are the two bounds; the identity is
+checked once, against COST, on one board.* An independent segment counter —
+walking each strip's copper and counting the runs of each net — would make `V2`
+a real cross-check. That is a feature nobody has built, not a fix to this one.
+
+### 9.2 `Q1`'s at-floor predicate requires the dump's `N` to equal the model's
+
+**VERIFIED, and NOT the unsatisfiability the review suspected.**
+`tools/stripboard/stop.ts`'s `q1` mixes two sources, which is deliberate — the
+floor is a model quantity — and the consequence is worth stating:
+
+- `targets.cutFloor` and `targets.netCount` are **model**-sourced
+  (`targets.ts`).
+- `score.joins` is built from the **dump**'s `N`: `score.ts` reads
+  `netCount = Object.keys(dump.nodes).length` and passes it to `segmentJoins`.
+
+Solve the clauses together on a board with `N_model ≤ R`: `cutFloor = 0` forces
+`C = 0`; `occupied = min(N_model, R) = N_model`; and `joins = 0` then forces
+`0 − N_dump + N_model = 0`, i.e. **`N_dump === N_model`**.
+
+So `Q1` carries a fourth condition nobody states: *the candidate's dump must
+report the same net count as the model it is graded against.* It is **not**
+unsatisfiable. `tests/fixtures/stripboard/pultec-low-boost-imported.dump` has 14
+`NODE` lines against that model's 14 nets, so on the `--import`-placed board
+every run starts from, the clause holds and `Q1` is reachable.
+
+Where it CANNOT fire is on a layout whose dump disagrees with its model, and
+COST §2.3 records all five committed Pultec hand layouts as exactly that — the
+oracle in `tests/stripboard/targets-oracle.ts` carries both numbers per board
+(low-boost: `nets: 14`, `layoutNets: 9`). On such a board `Q1` is unsatisfiable,
+and `Q1` is the only optimality claim this pipeline may make (CRITERIA `Q1`).
+Nothing in `stop.ts`, `report.ts` or `floorNote` said so, so a reader would read
+*"`Q1` did not fire"* as *"the board is above its floor"* rather than as *"the
+question was not askable on this board."* `stop.ts`'s `q1` now says it.
+
+### 9.3 The span table's named part is not the part the catalogue buys
+
+`lib/kicad/lead-span.ts` records the DIN0207 family's geometry as **Vishay
+MBB/SMA 0207**'s — `bodyLengthMm: 6.5`, `bodyDiameterMm: 2.5`,
+`leadDiameterMm: 0.6`, `leadLengthMm: 28.0`, `manufacturerMinPitchMm: 10.0`,
+cited to Vishay document 28766 rev 05-Oct-09. `parts/resistor-*-0207.json` —
+nine files — record the part actually fitted to that footprint as **Yageo
+MFR-25FBF52-xxx**. `grep -rn "MFR-25\|Yageo" lib docs/stripboard` returns
+nothing: the geometry stack has never heard of the part the BOM orders.
+
+**The bounds do not move today.** Traced arithmetically: Yageo's worst-case body
+is 6.8mm, so the flat floor is `6.8 + 2 × 0.8 = 8.4mm` → 4 steps → 5 holes, the
+same figure, and the vertical floor is still grid-bound
+(`2.6/2 + 0.6/2 = 1.6mm < 2.54mm`).
+
+**What is broken is the provenance, which is the thing the rule protects.**
+`lead-span.ts`'s own header: *"A FAMILY HAS NO DATASHEET; A PART DOES … Fitting a
+different part in the same case size is a reason to come back here, not a reason
+to trust these."* **Yageo's lead length is recorded nowhere**, and lead length is
+the only dimension that sets the MAXIMUM. The recorded 16-hole ceiling is
+clamped by `TOOL_MAX_SPAN_HOLES` on a **28mm Vishay lead**; nobody has
+established that the Yageo part's lead also clears it. That is a reach claim
+resting on the wrong datasheet.
+
+**No lead length is invented here.** The gap is recorded in `MBB0207`'s own
+comment, which now says the Vishay figures stand in for the fitted part and which
+dimension is unverified. And `tests/kicad/lead-span.test.ts` now ties every
+`parts/*.json` resistor `mpn` to some `LEAD_SPANS` entry's `geometry.mpn`, so the
+divergence cannot widen silently — it is a FAILING test the moment a tenth part
+file names a manufacturer the span table has not heard of, which is how this one
+should have surfaced.
+
+### 9.4 `HC10` reads a different span table from `HC4`, `HC5` and `HC9`
+
+`HC4`, `HC5` and `HC9` take their bounds from `input.spans` through `spanFor`
+(`tools/stripboard/constraints-physical.ts`). `HC10`'s footprint half calls
+`admitPattern`, which reads the module-level `LEAD_SPANS` **directly**
+(`lib/kicad/pin-pattern-model.ts`, its `has` guard and its `leadSpanFor` call),
+and nothing routes `input.spans` to it. So one grade can consult two span tables.
+
+It is harmless today only because every injector spreads the real map
+(`tests/stripboard/synthetic-footprints.ts`), so no recorded footprint is
+shadowed. **One extra optional parameter would close it** — the same seam
+`pinPatternFor` and `leadSpanFor` already have. Recorded with that note rather
+than left as "if that is ever wanted": the cost of wanting it later is a verdict
+in which three constraints use a revised figure and `HC10` uses the old one,
+which cannot be explained from the inputs.
+
+### 9.5 Six smaller limits, each now stated where it lives
+
+- **`reportInputOf` hardcodes `binding: undefined`** (`tools/stripboard/place.ts`
+  and `stop.ts`), so `REP2`'s requirement that an `A2` failure name what bounded
+  the clustering is never met in production — every report says *"No binding
+  constraint was stated"* — and the `span` and `packing` arms of
+  `BindingConstraint` are dead outside tests, as is
+  `report-binding-rule-disagrees`. It is safe in the conservative direction:
+  `K3`'s ratchet can never be moved on a production run. Already recorded as
+  observed behaviour in §7; repeated here because it is a stated limit rather
+  than a hidden one.
+- **`ringSpan()` is the one `LeadSpan` its own derivation does not reproduce.**
+  `tests/stripboard/synthetic-footprints.ts` declares `kind: "rigid"` with
+  `fixedSpanHoles: 4` but `minSpanHoles: 2, maxSpanHoles: 16`, where
+  `deriveSpanHoles` on that geometry returns `[4, 4]`. It is test-only,
+  deliberate — the wide band keeps `HC4`/`HC5` from refusing the ring before
+  `HC10` can grade it — and marked `SYNTHETIC` in every field; it escapes
+  `tests/kicad/lead-span.test.ts`'s "every recorded integer is reproduced by the
+  arithmetic" because that test iterates `LEAD_SPANS` and this entry is injected.
+  The deviation is stated at the fixture.
+- **`admitPattern`'s disjunctive band check reads `minSpanHoles` too** — a third
+  consumer the stand-on-end widening audit missed. See the deviation entry in
+  `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`, which now carries
+  it.
+- **`score-objective.test.ts`'s hand arithmetic was stale to the old `ρ_s`** —
+  it read `2.25 … 1 + 0.25 + 1`, the derivation for `ρ_s = 1`, while the
+  assertion and its guard were at `0.25`. Corrected to `1.5 … 1 + 0.25 + 0.25`.
+- **`spread.test.ts`'s test NAME contradicted its body**, claiming reversing the
+  reference reverses the spread order where the body asserts (correctly, and
+  explains why) that it does not. Renamed.
+- **`kinds.ts`'s SPICE refusal named a concept rather than a file**, and
+  **`pad-provenance.ts`'s comment was off by one** about where a placed pad's
+  provenance field begins — "3 or 4" against a slice of 5 or 4. Both corrected in
+  place.
