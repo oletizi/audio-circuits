@@ -209,12 +209,16 @@ export function wireBridge(
  * for.** `wireBridge` joins two DIFFERENT strips; two of a net's pins can sit on
  * ONE strip in two different copper components, with `AutoFillVero`'s cut
  * between them, and the wire that joins those runs along the strip and over the
- * cut. Measured on the `--import`-placed low-boost board, where every part is
- * packed into rows 0 to 4: on the board one search left, **every** component
- * pair of **every** one of the twelve open nets lies on a single strip, so a
- * completion pass with only `wireBridge` planned not one wire. That measurement
- * is what this function is for; before it, the case was recorded as a declared
- * limit on the strength of the constructed arm, where it does not arise.
+ * cut. **MEASURED, and the measurement is what this function is for:** on the
+ * `--import`-placed low-boost board - every part packed into rows 0 to 4 - a
+ * completion pass with only `wireBridge` planned **not one wire** of the twelve
+ * open nets' twenty-one joins. The board's shape is why a one-strip pair is
+ * common there: six of the net `0`'s components sit on row 0 alone, at columns
+ * 2, 4, 7, 10, 13, 16 and 23 with cuts between. **What was NOT measured is how
+ * many of those twenty-one pairs were on one strip** as against out of the
+ * fork's stretch or blocked by a part, so the zero is not read as though it
+ * were. Before this function existed the case was recorded as a declared limit,
+ * on the strength of the constructed arm, where it does not arise.
  *
  * **IT IS `wireBridge`'S OWN ARITHMETIC WITH THE TURN COUNT COMPLEMENTED, AND
  * THAT IS THE WHOLE DIFFERENCE.** A fresh wire lies along a ROW, so a wire that
