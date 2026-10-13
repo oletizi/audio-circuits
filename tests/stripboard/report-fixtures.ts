@@ -124,13 +124,22 @@ export function runResult(overrides: Partial<RunResult> = {}): RunResult {
  * built on it a test of the strongest wording available by accident.
  */
 export function reportInput(overrides: Partial<ReportInput> = {}): ReportInput {
+  const run = overrides.run ?? runResult()
   return {
-    run: runResult(),
+    run,
     rule: "Q3",
     targets: TARGETS,
     rules: RULES,
     frozen: undefined,
     binding: undefined,
+    // THE AGREEING CASE BY DEFAULT, AND IT IS DERIVED FROM THE CANDIDATE RATHER
+    // THAN WRITTEN AS A NUMBER. `F` charges the reported count, so a fixture
+    // whose necessary count were some unrelated figure would print a
+    // disagreement nothing here means; every board this repository has measured
+    // agrees (`tools/stripboard/cut-necessity.ts`), so the default says so.
+    // `./divergentCutsRun` is the one fixture that passes a smaller count, and
+    // it says why.
+    necessaryCuts: run.best.score.cuts,
     ...overrides,
   }
 }
@@ -142,29 +151,25 @@ export function underBudgetedRun(): ReportInput {
 
 /**
  * A run whose two cut counts DISAGREE: seven `CUT ` lines reported, five of
- * them necessary, and `F = 5` because `F` charges the necessary count.
+ * them necessary, and `F = 7` because `F` charges the REPORTED count.
  *
- * **IT IS THE CASE THE OWNER'S "OPTION C" IS ABOUT**, and it is hand-built like
- * every fixture here: the measurement that found such boards is in
- * `docs/stripboard/pipeline-verification.md` (a board with two clusters moved
- * reported six cuts of which two were removable, and one with a
- * ground-extending wire seven of which two were), so seven-and-five is that
- * shape of divergence rather than a figure measured here. `objective` is stated
- * rather than left to default, because the default is `cuts` and the whole
- * point of this fixture is that `F` does not charge `cuts`.
+ * **IT IS THE CASE THE OWNER KEPT BOTH FIGURES IN ORDER TO SPOT**, and it is
+ * hand-built like every fixture here: the measurement that found such boards is
+ * in the phantom-cut figures the necessary-cut departure was asked for (a board
+ * with two clusters moved reported six cuts of which two were removable, and
+ * one with a ground-extending wire seven of which two were), so seven-and-five
+ * is that shape of divergence rather than a figure measured here. Those boards
+ * were assembled BY HAND outside the search, which is why no candidate the
+ * pipeline scores has ever been one of them - and why this fixture is
+ * hand-built rather than captured.
+ *
+ * `objective` is left to default to `cuts`, because that is now what `F`
+ * charges, and the divergence lives in the report input rather than in the
+ * `Score`.
  */
 export function divergentCutsRun(): ReportInput {
-  const best = evaluation({
-    cuts: 7,
-    necessaryCuts: 5,
-    wires: 0,
-    solder: 0,
-    objective: 5,
-    joins: 0,
-    occupied: 9,
-    clustering: 0,
-  })
-  return reportInput({ run: runResult({ best }) })
+  const best = evaluation({ cuts: 7, wires: 0, solder: 0, joins: 0, occupied: 9, clustering: 0 })
+  return reportInput({ run: runResult({ best }), necessaryCuts: 5 })
 }
 
 /**

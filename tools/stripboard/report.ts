@@ -105,6 +105,27 @@ export interface ReportInput {
   readonly rules: StripboardRules
   /** Which low-boost board was graded. `./verdict.ts` refuses `undefined` there. */
   readonly frozen: boolean | undefined
+  /**
+   * `C_necessary` for `run.best`: how many of its `CUT ` lines the drop test
+   * could not remove (`./cut-necessity.ts`), printed beside `Score.cuts` on the
+   * `cuts:` line.
+   *
+   * **IT IS AN INPUT RATHER THAN A FIELD OF THE `Score`, AND THAT IS THE WHOLE
+   * SHAPE OF THE REVERT.** `F` charged this count for four commits and the
+   * scorer derived it per candidate, which cost a measured 17-57% of a run's
+   * wall clock for a figure that never once differed from `Score.cuts` over
+   * 2,267 scored candidates. `F` charges the reported count again, so the drop
+   * test runs ONCE - on the candidate this report is about, where it costs
+   * about one evaluation - and the caller that ran it hands the number over.
+   * `./place.ts` is that caller; `tests/stripboard/cut-counts-agree.test.ts` is
+   * the standing guard that the two counts agree on real boards.
+   *
+   * It is REQUIRED and not optional. A report that could omit it would print no
+   * `cuts:` line on exactly the runs nobody classified, and a divergence the
+   * owner kept both figures in order to spot would be invisible on the boards
+   * where nothing looked.
+   */
+  readonly necessaryCuts: number
   /** What bounded the clustering, when the caller has it (`K2`, `REP2`, `REP4`). */
   readonly binding: BindingConstraint | undefined
   /**
@@ -385,20 +406,22 @@ export function renderReport(input: ReportInput): readonly string[] {
     // they are labelled differently because one cut above the floor is a gap of
     // one here and of one fortieth there on the same candidate.
     `cost: F = ${score.objective}, derived floor = ${input.targets.cutFloor}, gap above the ` +
-      `floor = ${gapOf(input)} (C_necessary = ${score.necessaryCuts}, W = ${score.wires}, ` +
-      `S = ${score.solder})`,
+      `floor = ${gapOf(input)} (C = ${score.cuts}, W = ${score.wires}, S = ${score.solder})`,
     // BOTH CUT COUNTS AND THE DISAGREEMENT BETWEEN THEM, IN WHAT A PERSON
-    // READS, WHICH IS THE HALF OF THE OWNER'S "OPTION C" THAT LIVES OUTSIDE THE
-    // SCORER. The wording is `./cut-necessity.ts`'s, because the module that
-    // derives the two counts is where what they MEAN belongs - and because this
-    // file is near its line ceiling, which is a bad reason to put prose
+    // READS, WHICH IS THE HALF OF THE OWNER'S "OPTION C" THAT OUTLIVED THE
+    // SCORER. `F` charges the reported count again and the drop test runs ONCE
+    // PER RUN rather than once per candidate (`ReportInput.necessaryCuts`), so
+    // this line is what tells him the two have diverged on the board he is
+    // about to build. The wording is `./cut-necessity.ts`'s, because the module
+    // that derives the two counts is where what they MEAN belongs - and because
+    // this file is near its line ceiling, which is a bad reason to put prose
     // somewhere and a fine reason not to duplicate it. A divergence is stated
     // rather than left to be worked out by subtracting one figure from another:
     // his reason for keeping both was that he wants to spot a bad one. It
     // carries no adjective - "badly" is his judgement on the figure, not this
     // module's to pass - which keeps the rule that every quality claim comes
     // from `WORDING` or `OUTCOME_WORDING`.
-    `cuts: ${describeCutCounts(score.cuts, score.necessaryCuts)}`,
+    `cuts: ${describeCutCounts(score.cuts, input.necessaryCuts)}`,
     // THE QUANTITY THE ACCEPTANCE RULE ORDERS BY, IN WHAT A PERSON READS. It is
     // not a new criterion and not a cost term - `./climb-accepts.ts` carries why
     // the open-net count is a KEY above `F` rather than a term in it - but with

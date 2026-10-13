@@ -9,7 +9,6 @@
 import { test, expect } from "bun:test"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
-import { necessaryCuts } from "../../tools/stripboard/cut-necessity.ts"
 import {
   countLines,
   requireCountsAgree,
@@ -18,12 +17,10 @@ import {
 } from "../../tools/stripboard/score.ts"
 import { refusalFrom } from "./targets-oracle.ts"
 import {
-  FIXTURE_REFERENCE,
   FIXTURE_TARGETS,
   FROZEN_DUMP,
   PT2399_DUMP,
   TEXT,
-  frozenReference,
   grepCount,
   lowBoostTargets,
 } from "./score-fixtures.ts"
@@ -45,11 +42,11 @@ test("V1: the counts are reproduced by a second code path over the same text", a
   // - twelve tests refusing, which is the second path working. All reverted.
   const rules = loadRules()
   const frozen = await Bun.file(FROZEN_DUMP).text()
-  for (const [name, text, targets, reference] of [
-    ["fixture", TEXT, FIXTURE_TARGETS, FIXTURE_REFERENCE],
-    ["low-boost", frozen, lowBoostTargets(), await frozenReference()],
+  for (const [name, text, targets] of [
+    ["fixture", TEXT, FIXTURE_TARGETS],
+    ["low-boost", frozen, lowBoostTargets()],
   ] as const) {
-    const score = scoreDumpText(text, targets, rules, reference)
+    const score = scoreDumpText(text, targets, rules)
     const counted = countLines(text)
     expect([score.cuts, score.wires, score.solder], name)
       .toEqual([counted.cuts, counted.wires, counted.solder])
@@ -129,17 +126,9 @@ test("the scorer cannot be reached without the second path having run", () => {
   // including the deliberate cast it cannot stop - is stated on
   // `IndependentCount` itself, measured, and is not re-argued here.
   //
-  // ITS FIFTH PARAMETER IS A `CutNecessity` UNDER THE SAME DEVICE, and the
-  // arity in the quoted error below moved from 4 to 5 when it arrived: the
-  // charged cut count cannot be supplied by a caller either, because only
-  // `necessaryCuts` can produce one (`tools/stripboard/cut-necessity.ts`).
-  // The quoted messages are the ones measured at arity 4; the arity figure is
-  // the only part restated rather than re-measured.
-  //
   // DRIVEN, so it is not a claim about the type system. In a throwaway probe
   // file, each attack run against `bun run typecheck` and `bun test`:
-  //   - a call one argument short: 'error TS2554: Expected 4 arguments, but
-  //     got 3.' (now 'Expected 5 arguments, but got 4.')
+  //   - three-argument call: 'error TS2554: Expected 4 arguments, but got 3.'
   //   - `{ cuts: 1, wires: 1, solder: 1 }`: 'error TS2345: Argument of type
   //     "{ cuts: number; wires: number; solder: number; }" is not assignable
   //     to parameter of type "IndependentCount".' Typecheck only - under
@@ -149,13 +138,9 @@ test("the scorer cannot be reached without the second path having run", () => {
   //     passed. The residual, recorded rather than hidden.
   // Probe removed.
   const counted = countLines(TEXT)
-  const necessity = necessaryCuts(TEXT, FIXTURE_REFERENCE)
   // 1.5 is `1 + 0.25*1 + 0.25*1` at the committed weights, hand-added;
   // `./score-objective.test.ts` is where the weights themselves are asserted.
-  // The fixture's one cut is NECESSARY - dropping it puts nets `a` and `b` on
-  // one strip - so the charged count and the reported one agree here and the
-  // 1 in that sum is both.
-  expect(scoreDump(boardGeometry(TEXT), FIXTURE_TARGETS, loadRules(), counted, necessity).objective)
+  expect(scoreDump(boardGeometry(TEXT), FIXTURE_TARGETS, loadRules(), counted).objective)
     .toBe(1.5)
   // And the witness is held against the dump rather than taken on trust: a
   // count of some OTHER text in that position is refused, not believed. This
@@ -163,14 +148,7 @@ test("the scorer cannot be reached without the second path having run", () => {
   // a forged witness still has to agree with the dump being scored.
   const otherText = TEXT.replace("CUT 0,1,1 0,2,2", "CUT 0,1,1 0,2,2\nCUT 1,1,1 1,2,2")
   const message = refusalFrom(
-    () =>
-      scoreDump(
-        boardGeometry(TEXT),
-        FIXTURE_TARGETS,
-        loadRules(),
-        countLines(otherText),
-        necessity,
-      ),
+    () => scoreDump(boardGeometry(TEXT), FIXTURE_TARGETS, loadRules(), countLines(otherText)),
   )
   expect(message).toStartWith("score-count-disagreement:")
   expect(message).toContain("the parsed dump has 1 and the raw text has 2")

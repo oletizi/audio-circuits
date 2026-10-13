@@ -10,13 +10,13 @@
  * `copper.ts` re-exports the geometry contract - so nothing outside imports
  * this file and no consumer's import path changed when it was split out.
  *
- * THE AUTHORITY is `./score.ts`'s module comment, including the ONE named
- * exception to "the documents win": the cut count `F` charges. Nothing here
- * restates it.
+ * THE AUTHORITY is `./score.ts`'s module comment, including its account of the
+ * necessary-cut departure that was made, measured inert and withdrawn. Nothing
+ * here restates it.
  */
 /**
- * The four refusals `./score.ts` raises, as a union rather than loose strings
- * so the `switch` below proves every member has a reason: add a fifth
+ * The three refusals `./score.ts` raises, as a union rather than loose strings
+ * so the `switch` below proves every member has a reason: add a fourth
  * without an arm and `bun run typecheck` fails, because `notDefaultedBecause`
  * then has a reachable end and a declared `string` return. The same device as
  * `TargetsRefusal`'s in `./targets.ts`.
@@ -29,7 +29,6 @@
 export type ScoreRefusal =
   | "score-cuts-not-computed"
   | "score-count-disagreement"
-  | "score-necessity-count-disagreement"
   | "score-below-floor"
 
 /** One sentence per refusal: what is missing, and why it is not defaulted. */
@@ -55,17 +54,6 @@ export function notDefaultedBecause(refusal: ScoreRefusal): string {
         "Fix the parse in tools/guide/dump.ts or the line matching in countLines, whichever " +
         "the two counts show to be off."
       )
-    case "score-necessity-count-disagreement":
-      return (
-        "The drop test counts the dump's CUT lines itself, off the text it was handed, so this " +
-        "disagreement means the classifier and the scorer were handed DIFFERENT TEXT - two " +
-        "boards being scored as one. Neither count is preferred and neither is reconciled: " +
-        "which text is the candidate's is not knowable here, and charging either would charge " +
-        "one board for another board's cuts. It is NOT the owner's reported-versus-necessary " +
-        "disagreement, which is expected and is reported rather than refused (see Score.cuts): " +
-        "this is the two readings of VeroRoute's OWN number failing to agree. Score through " +
-        "scoreDumpText, which reads the text once and derives both from it."
-      )
     case "score-below-floor":
       return (
         "F_floor = C_floor is a LOWER bound (CRITERIA K5, COST 2.1), so a candidate beneath " +
@@ -88,29 +76,9 @@ export function refuse(refusal: ScoreRefusal, offending: string): never {
   )
 }
 
-/** The three line counts `V1` compares, straight off the dump: `C`, `W` and `B`. */
+/** The three costed line counts: `C`, `W` and `B`. */
 export interface LineCounts {
   /** `C`: `CUT ` lines. */
-  readonly cuts: number
-  /** `W`: `WIRE` lines. */
-  readonly wires: number
-  /** `B`: `SOLDER` lines. */
-  readonly solder: number
-}
-
-/**
- * The three counts `F` is PRICED from, which is not the same object as
- * `LineCounts`: `cuts` here is `C_necessary` and the other two are line counts.
- *
- * A SEPARATE TYPE RATHER THAN REUSING `LineCounts`, because `LineCounts.cuts`
- * is documented as the `CUT ` line count and passing the charged count under
- * that name would make the type say something false about its own field. The
- * two are structurally compatible, so a caller can still price a `LineCounts`
- * - which is what a board whose every cut is necessary amounts to - but the
- * name at the call site says which number was handed over.
- */
-export interface ChargedCounts {
-  /** `C_necessary`: the cuts the drop test could not remove (`./cut-necessity.ts`). */
   readonly cuts: number
   /** `W`: `WIRE` lines. */
   readonly wires: number
@@ -121,31 +89,20 @@ export interface ChargedCounts {
 /** One candidate's number, and every term it was built from. */
 export interface Score {
   /**
-   * `C`: the `CUT ` lines the dump prints - **VeroRoute's own number, which
-   * `F` does NOT charge.**
+   * `C`: the `CUT ` lines the dump prints, which is what `F` charges.
    *
-   * It is carried because the owner asked for both counts to be visible
-   * ("option C", quoted in the module comment), and because the identity `C =
-   * N + J − S_occ` and `κ` are stated over it. `./report.ts` prints it beside
-   * `necessaryCuts` and names the disagreement.
+   * It charged the drop-tested NECESSARY count between `1aa0834` and the
+   * revert; `./score.ts`'s module comment carries why that was withdrawn. The
+   * necessary count is no longer a field of a `Score` at all, because deriving
+   * it per candidate was the cost the revert removed - it reaches the report
+   * once per run as `ReportInput.necessaryCuts`, and
+   * `tests/stripboard/cut-counts-agree.test.ts` is the standing guard that the
+   * two counts agree on real boards.
    */
   readonly cuts: number
-  /**
-   * `C_necessary`: the cuts `F` charges - the ones whose removal would leave
-   * two reference nets' leads sharing a copper component, by `HC8`'s
-   * reconstruction (`./cut-necessity.ts`).
-   *
-   * Never greater than `cuts`, and **equal to it on every board measured so
-   * far**: 5 of 5 on the owner's hand-laid low-boost, 38 of 38 on the
-   * import-placed start, and no disagreement in 2,267 scored candidates across
-   * three arms. It is reported separately because the owner asked for both
-   * counts to be visible, not because a gap has been observed in the search -
-   * `./cut-necessity.ts` carries the measurement and the reading of it.
-   */
-  readonly necessaryCuts: number
   readonly wires: number
   readonly solder: number
-  /** `F = C_necessary + ρ_w·W + ρ_s·B`. */
+  /** `F = C + ρ_w·W + ρ_s·B`. */
   readonly objective: number
   /** `N`: the dump's `NODE` count. NOT the model's net count - see above. */
   readonly netCount: number

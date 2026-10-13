@@ -5832,7 +5832,15 @@ field nothing reads"*; a recording read is the case that is not true of.
 unchanged, and a new test holds the exclusion to naming a module that exists and
 still carries the read it exists for.
 
-### `C` in `F` is the NECESSARY cut count, not VeroRoute's `CUT ` line count
+### `C` in `F` was the NECESSARY cut count for four commits - MADE, MEASURED INERT, and REVERTED
+
+**STATUS: WITHDRAWN (2026-10-13). `F` charges VeroRoute's `CUT ` line count
+again, which is what `OBJ1`, `K1` and `HC2` say, so the pipeline no longer
+departs from the specs here.** The entry is kept rather than deleted because the
+departure was made, shipped across `1aa0834`, `a1d9421`, `354bf5c` and `4714a4f`,
+measured, and taken back on the owner's approval - and a deviations section that
+deleted it would read as though the specs had never been departed from. What
+survives of the work is named at the end.
 
 **What the documents say.** `OBJ1` names the objective
 `F = C + ρ_w·W + ρ_s·B`, `K1` defines `C` as the cut count, and CRITERIA's
@@ -5841,19 +5849,18 @@ independent counts of those lines. `HC2` adds the reason the count is trusted:
 *"`C` is the count a derivation produced"*, VeroRoute's `AutoFillVero` being the
 deriver. So `C` as specified is a LINE COUNT in a report the producing agent did
 not write, which is also COST §0's warrant for cut minimisation being an agent's
-job at all.
+job at all. **`tools/stripboard/score.ts` does exactly this again.**
 
-**What `tools/stripboard/score.ts` does.** `F` charges `C_necessary` from
+**What the departure did while it stood.** `F` charged `C_necessary` from
 `tools/stripboard/cut-necessity.ts`: the cuts whose removal would leave two
 reference nets' leads sharing a copper component, by `HC8`'s reconstruction,
-drop-tested one cut at a time in dump order. `Score` carries BOTH counts -
-`cuts` is still the `CUT ` line count - and the identity `C = N + J − S_occ`,
-`J` and `κ` are all still computed on the REPORTED count, because they describe
-the copper this dump has. `V1`'s two line counts are unchanged and still ride on
-every evaluation.
+drop-tested one cut at a time in dump order. `Score` carried BOTH counts, and
+the identity `C = N + J − S_occ`, `J` and `κ` were all still computed on the
+reported count. `V1`'s two line counts were never touched.
 
-**What the owner said, verbatim (2026-10-12), which is the authority for this
-entry.** He was asked which number the search should score on, in these words:
+**What the owner said, verbatim (2026-10-12), which is the authority for the
+departure having been made at all.** He was asked which number the search should
+score on, in these words:
 
 > "Should the search score on the cuts you would actually make, or on the cuts
 > VeroRoute reports?"
@@ -5863,85 +5870,96 @@ with three options put to him. His answer was **"option C"**, which was:
 > **Both.** Score on real cuts so the search can act, keep VeroRoute's number in
 > the report so you always see both. If they ever disagree badly, you'd spot it.
 
-So both halves are his instruction: the scorer charges the necessary count, AND
-the report carries VeroRoute's beside it with any disagreement named. The second
-half is not optional and is not a debug aid - `tools/stripboard/report.ts`
-prints `cuts: F charges N necessary cut(s); VeroRoute reports M CUT line(s)` and,
-when the two differ, by how much and that the difference is removable.
+**HALF OF THAT INSTRUCTION STANDS AND HALF WAS WITHDRAWN, and the halves are
+named separately because he chose them separately.** The SCORING half - *"score
+on real cuts"* - is the one reverted, on his approval of 2026-10-13, after it
+measured inert. The REPORTING half - *"keep VeroRoute's number in the report so
+you always see both"* - is untouched and still runs: `tools/stripboard/report.ts`
+prints `cuts: F charges N reported CUT line(s); the drop test finds M of them
+necessary` and, when the two differ, by how much and that the difference is
+removable. It now costs ONE drop test per run rather than one per candidate
+(`ReportInput.necessaryCuts`, computed in `tools/stripboard/place.ts` on the
+candidate the report is about).
 
-**The measurement that put the question to him, and what re-measuring it
-found** (both agent-measured; the figures and the method are in
-`.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md`,
-which is cited rather than summarised because the two halves point different
-ways).
+**The measurement that put the question to him.** VeroRoute's count is honest on
+an UNDISTURBED board: all 5 of 5 cuts on the owner's hand-laid
+`pultec-low-boost` are individually necessary with 0 removable, and 38 of 38 on
+the import-placed board every arm starts from. **No baseline figure in the
+record needs revising.** The measurement put to him then reported that boards
+with parts moved carry cuts no net needs - one cluster moved off a row reporting
+5 cuts of which 1 was removable, two clusters 6 of which 2, a ground-extending
+wire 7 of which 2 - so a wire that should cost a quarter of a cut at
+`ρ_w = 0.25` was being charged about 2.25, which was offered as the reason the
+7,417 `add-wire` candidates of §6.9 and the 1,539 `spread` candidates of §6.11
+were enumerated with no wire on any best board (§6.9) and no spread ever best on
+seven runs of eight (§6.11).
 
-VeroRoute's count is honest on an UNDISTURBED board: all 5 of 5 cuts on the
-owner's hand-laid `pultec-low-boost` are individually necessary with 0
-removable, and 38 of 38 on the import-placed board every arm starts from. **No
-baseline figure in the record needs revising.** The measurement put to him then
-reported that boards with parts moved carry cuts no net needs - one cluster
-moved off a row reporting 5 cuts of which 1 was removable, two clusters 6 of
-which 2, a ground-extending wire 7 of which 2 - so a wire that should cost a
-quarter of a cut at `ρ_w = 0.25` was being charged about 2.25, which was offered
-as the reason the 7,417 `add-wire` candidates of §6.9 and the 1,539 `spread`
-candidates of §6.11 were enumerated with no wire on any best board (§6.9) and no
-spread ever best on seven runs of eight (§6.11).
+**THOSE PHANTOM-CUT FIGURES ARE REAL AND WERE MEASURED ON BOARDS ASSEMBLED BY
+HAND OUTSIDE THE SEARCH. Generalising them to the search's own candidates was
+the reviewing agent's error, not the implementer's**, and it is recorded here as
+such because it is the whole reason the departure was proposed.
 
 **Re-measured on the candidates this pipeline actually scores, the two counts
 AGREE EVERYWHERE**: 0 disagreements over 2,267 scored candidate boards across
 three arms of real runs, including 84 `add-wire`, 107 `cluster`, 740 `gather`
 and 2 `spread` candidates - every `--dump-board` text the pipeline read,
 classified with the same drop test. The before-and-after sweep is identical
-figure for figure on the pairs re-run, so **this change has not altered a single
-acceptance decision**, and the wire and spread rejections have another cause.
-The phantom-cut boards could not be re-derived here (the fork refuses a gesture
-on the owner's painted board), so those figures stand as reported and are
-neither confirmed nor refuted by this work. What fits both halves is that
-`AutoFillVero` re-derives the cut set every time a candidate is painted and the
-climb paints every candidate before scoring it, while a board whose parts moved
-without its cut list being re-derived would carry one spare cut per orphaned
-one.
+figure for figure on the four pairs re-run, so **the departure altered not a
+single acceptance decision**, and the wire and spread rejections have another
+cause. The figures and the method are in
+`.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md`. What
+fits both halves is that `AutoFillVero` re-derives the whole cut set every time a
+candidate is painted and the climb paints every candidate before scoring it, so a
+painted board never carries a spare cut, while a board whose parts moved without
+its cut list being re-derived would carry one spare cut per orphaned one - which
+is the hand-assembled shape.
 
-**AGENT RATIONALE (written by an agent, not by the owner, and not endorsed by
-him).** The owner settled WHICH number is charged and that both are reported. The
-following is the agent's reading of it and is where to look first if the change
-turns out wrong:
+**WHAT IT COST, WHICH IS WHY IT WAS NOT SIMPLY LEFT IN PLACE.** The drop test
+runs one `netlistEquivalence` per `CUT ` line plus a baseline, per candidate.
+Measured on the import-placed low-boost start (38 cuts), scoring one candidate:
+**39.8 ms with the drop test and 0.5 ms without**, against a 32-34 ms fork
+round-trip for the same candidate - so the scorer went from **55% of an
+evaluation's wall clock to 1.3%**. That is 17-57% of a whole run depending on the
+board's cut count, spent on a comparison that never once fired.
 
-- The risk he accepted is that scoring on our own classification rather than on
-  the tool's output is a step towards an agent grading its own work, which this
-  repository forbids in general (CLAUDE.md). What is claimed to keep it small is
-  that the classifier is **not** the scorer's reasoning: it is `HC8`'s
-  independent copper reconstruction, computed outside VeroRoute, which is the
-  same instrument that proved these artifacts removable, and no quantity the
-  scorer derives (`C`, `J`, `S_occ`, `κ`) and no `NODE` id reaches the
-  derivation. There is one classifier and not a second.
-- The greedy drop set is dump-order, so it is a LOWER bound on redundancy and
-  `C_necessary` is an UPPER bound on what the board needs: the bound errs towards
-  charging a cut, which is the direction that cannot flatter a candidate.
-- `HC8`'s reconstruction is used rather than the weaker lead test the measurement
-  applied to six further boards, because that test can over-count "necessary".
-- The ranking (`OBJ3`) is UNTOUCHED and still orders by the reported cut count.
-  That is deliberate - `OBJ3` is the owner's - and it is believed inert: the
-  ranking only breaks an `F` tie, and `F` ties between a wire-carrying candidate
-  and a wireless one need `ΔW` to be a multiple of four at `ρ_w = 0.25`.
-- `run.json`'s `CanonicalMetrics` is also untouched, so its `cuts` is
-  VeroRoute's count while its `objective` charges the necessary one. That gap is
-  recorded rather than closed: the manifest is hashed for `V6` and Task 23 was
-  editing that module concurrently.
+**WHAT SURVIVES, AND IT IS WHAT MAKES THE REVERT SAFE RATHER THAN A GAMBLE.**
+Nothing of the classifier was deleted:
 
-**What would close this.** Amending `OBJ1`/`K1` to say which cut count `F`
-charges and `HC2` to say what derives it, or rejecting the deviation. **Rejecting
-it costs less than it looked like it would**, which is this work's own finding
-reported against itself: the two counts agree on every board measured, so
-reverting to the `CUT ` line count would restore `C` to what CRITERIA says
-without changing any acceptance decision - it would only remove the second
-figure he asked to see, and the guard against the day the two ever part.
+- `tools/stripboard/cut-necessity.ts` stands whole - the drop test, its two
+  limits, its independence claim and its own refusal.
+- `tests/stripboard/cut-counts-agree.test.ts` is NEW and is the standing guard:
+  it holds the reported count against the necessary one on the four committed
+  real boards, and on the import-placed start built live through the fork, where
+  it measures 38 of 38 and also holds the scorer's own `C` against it. **If the
+  two counts ever diverge on a real board, that test says so** - which is the
+  cheap check that replaces the expensive scorer. `tests/stripboard/
+  cut-necessity.test.ts` keeps the owner's 5-of-5 figure and the mutation run
+  that proves the drop test discriminates.
+- The report's `cuts:` line and `describeCutCounts`, as above.
 
-**Where the code says so.** `tools/stripboard/cut-necessity.ts`'s module comment
-carries the decision, the two limits and the independence claim;
-`tools/stripboard/score.ts`'s names this entry and states what the change costs
-the "every term is a line count" property. The run is in
-`.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md`.
+**AGENT RATIONALE FOR THE REVERT (written by an agent; the owner approved
+reverting, and the reasoning below is not his).** The departure's own risk
+paragraph said that scoring on our own classification rather than on the tool's
+output is a step towards an agent grading its own work, which CLAUDE.md forbids
+in general, and argued the step was small because the classifier is `HC8`'s
+independent reconstruction. With the departure withdrawn that argument is no
+longer load-bearing: `F` is a line count again, every term of it comes from a
+report the producing agent did not write, and the classifier's only remaining
+jobs are a test assertion and a printed figure - neither of which prices a
+candidate. The greedy drop set being dump-order still means `necessary` is an
+upper bound on what a board needs, so the guard errs towards saying the counts
+AGREE, and a divergence it does report is one the copper provably does not need.
+
+**What closed this.** The owner's approval of the revert on 2026-10-13, after the
+inertness and the wall-clock cost were measured. `OBJ1`, `K1` and `HC2` need no
+amendment; the specs stand as he wrote them and the code now matches them.
+
+**Where the code says so.** `tools/stripboard/score.ts`'s module comment carries
+the departure, the measurement, the misgeneralisation and the withdrawal;
+`tools/stripboard/cut-necessity.ts`'s says what the module is for now and names
+its two surviving callers; `tools/stripboard/report.ts` and
+`tools/stripboard/place-model.ts` carry why the necessary count is a report
+input rather than a field of a `Score`.
 
 ### An axial family's `minSpanHoles` is derived over BOTH its mountings, so the DIN0207's floor is 2 holes rather than 5
 

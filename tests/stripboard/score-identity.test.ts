@@ -10,16 +10,13 @@
 import { test, expect } from "bun:test"
 import { boardGeometry, copperGraph } from "../../tools/stripboard/copper.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
-import { necessaryCuts } from "../../tools/stripboard/cut-necessity.ts"
 import { countLines, scoreDump, scoreDumpText } from "../../tools/stripboard/score.ts"
 import { refusalFrom } from "./targets-oracle.ts"
 import {
-  FIXTURE_REFERENCE,
   FIXTURE_TARGETS,
   FROZEN_DUMP,
   NINE_NETS,
   TEXT,
-  frozenReference,
   lowBoostTargets,
 } from "./score-fixtures.ts"
 
@@ -47,12 +44,7 @@ test("V2: the identity closes on the frozen dump with COST section 1.6's own ter
   // taken from them instead it failed on the first assertion, 'expect(received)
   // .toEqual(expected) / - Expected - 1 / + Received + 1'. Both reverted.
   const targets = lowBoostTargets()
-  const score = scoreDumpText(
-    await Bun.file(FROZEN_DUMP).text(),
-    targets,
-    loadRules(),
-    await frozenReference(),
-  )
+  const score = scoreDumpText(await Bun.file(FROZEN_DUMP).text(), targets, loadRules())
   expect([score.netCount, score.pinCount, score.occupied, score.cuts]).toEqual([9, 27, 5, 5])
   expect(score.joins).toBe(1)
   expect(score.clustering).toBeCloseTo(1 / 18, 10)
@@ -78,13 +70,7 @@ test("N is the NODE count and not the copper graph's component count", async () 
   // -4. ...' before reaching either assertion. Reverted.
   const text = await Bun.file(FROZEN_DUMP).text()
   const dump = boardGeometry(text)
-  const score = scoreDump(
-    dump,
-    lowBoostTargets(),
-    loadRules(),
-    countLines(text),
-    necessaryCuts(text, await frozenReference()),
-  )
+  const score = scoreDump(dump, lowBoostTargets(), loadRules(), countLines(text))
   expect(score.netCount, "COST §1.6's N for low-boost").toBe(9)
   expect(copperGraph(dump).componentCount).toBeGreaterThan(score.netCount)
 })
@@ -100,13 +86,8 @@ test("the identity's terms come off the dump, not off the model-sourced targets"
   // from them it failed with 'error: pinCount / Expected: 4 / Received: 99'.
   // Both reverted.
   const rules = loadRules()
-  const honest = scoreDumpText(TEXT, FIXTURE_TARGETS, rules, FIXTURE_REFERENCE)
-  const lying = scoreDumpText(
-    TEXT,
-    { ...FIXTURE_TARGETS, netCount: 7, pinCount: 99 },
-    rules,
-    FIXTURE_REFERENCE,
-  )
+  const honest = scoreDumpText(TEXT, FIXTURE_TARGETS, rules)
+  const lying = scoreDumpText(TEXT, { ...FIXTURE_TARGETS, netCount: 7, pinCount: 99 }, rules)
   expect(lying.netCount, "netCount").toBe(2)
   expect(lying.pinCount, "pinCount").toBe(4)
   expect(lying).toEqual(honest)
@@ -136,9 +117,7 @@ test("V2: a dump whose CUT_STATE is not COMPUTED refuses before it scores", () =
   // because `scoreDumpText` does no checking of its own and `scoreDump` reads
   // `cutState` before it compares. Reverted.
   const unresolved = TEXT.replace("CUT_STATE COMPUTED", "CUT_STATE UNRESOLVED")
-  const message = refusalFrom(
-    () => scoreDumpText(unresolved, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE),
-  )
+  const message = refusalFrom(() => scoreDumpText(unresolved, FIXTURE_TARGETS, loadRules()))
   expect(message).toStartWith("score-cuts-not-computed:")
   expect(message).toContain("CUT_STATE")
   expect(message).toContain("UNRESOLVED")
@@ -159,9 +138,7 @@ test("V2: a negative J refuses, for a different reason, and says which", () => {
   // it lands on a NEIGHBOURING refusal that names the wrong term and points at
   // the wrong fix. That is why the assertion is anchored on the opening clause
   // rather than written `toThrow(/J/)`, which this mutant passes. Reverted.
-  const message = refusalFrom(
-    () => scoreDumpText(NINE_NETS, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE),
-  )
+  const message = refusalFrom(() => scoreDumpText(NINE_NETS, FIXTURE_TARGETS, loadRules()))
   expect(message).toStartWith("negative-joins:")
   expect(message).toContain("J = C - N + S_occ = -6")
 })

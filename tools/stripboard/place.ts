@@ -58,6 +58,7 @@ import path from "node:path"
 import { builtCommit, readPin } from "../perfboard/acquire.ts"
 import { verorouteBinary } from "../perfboard/check.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
+import { necessaryCuts } from "./cut-necessity.ts"
 import {
   notDefaultedBecause,
   refuse,
@@ -257,12 +258,30 @@ export async function place(
     )
   }
 
+  // THE DROP TEST, ONCE, ON THE CANDIDATE THE REPORT IS ABOUT - never once per
+  // candidate, which is what `1aa0834` did and what the revert removed: it cost
+  // a measured 17-57% of the run's wall clock and found no disagreement in
+  // 2,267 scored candidates. It is a FOURTH invocation on one board rather than
+  // a fifth on every board, and the recorded four-per-evaluation cost model is
+  // untouched by it. The board is the painted file the climb already wrote, so
+  // this reads the same copper `result.best.score` was derived from.
+  const bestDump = spawn(["--dump-board", result.best.candidate])
+  if (bestDump.status !== 0) {
+    refuse(
+      "place-best-dump-failed",
+      `--dump-board ${result.best.candidate} exited ${bestDump.status}: ` +
+        bestDump.stderr.trim(),
+    )
+  }
+  const necessity = necessaryCuts(bestDump.stdout, prepared.reference)
+
   const reportInput: ReportInput = {
     run: result,
     rule,
     targets: prepared.targets,
-    rules: input.rules,
     frozen: prepared.frozen,
+    rules: input.rules,
+    necessaryCuts: necessity.necessary,
     // NO BINDING CONSTRAINT IS CLAIMED. `K3` refuses to move `kappa_bench` on a
     // search that stopped, and naming one here would be this module asserting
     // constraint-side evidence it did not measure. `./verdict.ts` reports its
@@ -347,6 +366,10 @@ export async function place(
     // `B1-current`'s. Read off the verdict rather than re-compared here, so the
     // sweep below counts the clause the run was graded by and not a second one.
     metClause: verdict.a4,
+    // THE SAME NUMBER THE REPORT ABOVE WAS RENDERED FROM, from one drop test on
+    // one dump, so `reportInputOf` rebuilding the input in the CLI cannot print
+    // a second reading of this candidate's cuts.
+    necessaryCuts: necessity.necessary,
   }
 }
 
@@ -435,6 +458,7 @@ export function reportInputOf(run: PlaceRun | SeedSweep): ReportInput {
     rules: run.rules,
     frozen: run.frozen,
     binding: undefined,
+    necessaryCuts: run.necessaryCuts,
   }
 }
 

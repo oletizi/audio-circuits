@@ -10,17 +10,9 @@
 import { test, expect } from "bun:test"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
-import { necessaryCuts } from "../../tools/stripboard/cut-necessity.ts"
 import { countLines, scoreDump, scoreDumpText } from "../../tools/stripboard/score.ts"
 import { refusalFrom } from "./targets-oracle.ts"
-import {
-  FIXTURE_REFERENCE,
-  FIXTURE_TARGETS,
-  FROZEN_DUMP,
-  TEXT,
-  frozenReference,
-  lowBoostTargets,
-} from "./score-fixtures.ts"
+import { FIXTURE_TARGETS, FROZEN_DUMP, TEXT, lowBoostTargets } from "./score-fixtures.ts"
 
 test("K5: a candidate scoring below its declared floor refuses, naming both numbers", () => {
   // F_floor is a LOWER bound, so a candidate beneath it proves one of the two
@@ -34,7 +26,7 @@ test("K5: a candidate scoring below its declared floor refuses, naming both numb
   // tests below it - three failures and sixteen passes across the four score
   // files. Reverted.
   const overstated = { ...FIXTURE_TARGETS, cutFloor: 99 }
-  const message = refusalFrom(() => scoreDumpText(TEXT, overstated, loadRules(), FIXTURE_REFERENCE))
+  const message = refusalFrom(() => scoreDumpText(TEXT, overstated, loadRules()))
   expect(message).toStartWith("score-below-floor:")
   expect(message).toContain("99")
   expect(message).toContain("fixture")
@@ -63,12 +55,10 @@ test("K5 compares F against the floor, so a candidate AT its floor is kept", asy
   // (C = 5, W = 0, B = 1). ..."' - a board provably AT its floor refused as
   // impossible. Reverted.
   const text = await Bun.file(FROZEN_DUMP).text()
-  const reference = await frozenReference()
   const targets = lowBoostTargets()
   const rules = loadRules()
-  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 5.25 }, rules, reference)))
-    .toBe("")
-  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 6 }, rules, reference)))
+  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 5.25 }, rules))).toBe("")
+  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 6 }, rules)))
     .toStartWith("score-below-floor:")
 })
 
@@ -83,14 +73,8 @@ test("K5's refusal fires rather than a negative gap reaching the report", () => 
   // 'expect(received).toThrow() / Received function did not throw / Received
   // value: {' followed by the Score it should never have produced. Reverted.
   const overstated = { ...FIXTURE_TARGETS, cutFloor: 99 }
-  expect(() => scoreDumpText(TEXT, overstated, loadRules(), FIXTURE_REFERENCE)).toThrow()
-  expect(() => scoreDump(
-    boardGeometry(TEXT),
-    overstated,
-    loadRules(),
-    countLines(TEXT),
-    necessaryCuts(TEXT, FIXTURE_REFERENCE),
-  ))
+  expect(() => scoreDumpText(TEXT, overstated, loadRules())).toThrow()
+  expect(() => scoreDump(boardGeometry(TEXT), overstated, loadRules(), countLines(TEXT)))
     .toThrow()
 })
 
@@ -100,6 +84,5 @@ test("the floor is read from the targets and no floor is defaulted when scoring"
   // own zero is the realistic case rather than a convenience, and F = 2.25
   // clears it.
   expect(lowBoostTargets().cutFloor).toBe(0)
-  expect(scoreDumpText(TEXT, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE).objective)
-    .toBeGreaterThan(0)
+  expect(scoreDumpText(TEXT, FIXTURE_TARGETS, loadRules()).objective).toBeGreaterThan(0)
 })

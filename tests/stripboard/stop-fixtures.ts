@@ -89,26 +89,13 @@ export function twoFailures(): readonly ConstraintResult[] {
   )
 }
 
-/**
- * One candidate, measured by hand. `objective` defaults to `cuts`; see above.
- *
- * **`necessaryCuts` DEFAULTS TO `cuts`, WHICH IS WHAT AN UNDISTURBED BOARD
- * MEASURES** - every cut on the owner's hand-laid low-boost and on the
- * import-placed start survives the drop test (`tools/stripboard/
- * cut-necessity.ts`). A fixture that wants the two counts to DISAGREE - which
- * is the case `./report-fixtures.ts` needs for the report's disagreement line -
- * passes both and says why. `objective` still defaults to `cuts` rather than to
- * the charged count, because every fixture here that leaves it unset leaves the
- * two counts equal, and defaulting it to `necessaryCuts` would quietly change
- * what a caller passing a smaller charged count gets.
- */
+/** One candidate, measured by hand. `objective` defaults to `cuts`; see above. */
 export function evaluation(
   counts: Partial<Score> = {},
   results: readonly ConstraintResult[] = heldResults(),
 ): Evaluation {
   const score: Score = {
     cuts: 0,
-    necessaryCuts: counts.cuts ?? 0,
     wires: 0,
     solder: 0,
     objective: 0,

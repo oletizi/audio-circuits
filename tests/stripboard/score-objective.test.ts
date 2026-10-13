@@ -12,13 +12,7 @@ import { test, expect } from "bun:test"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { objectiveOf, scoreDumpText } from "../../tools/stripboard/score.ts"
 import { BOARDS } from "./targets-oracle.ts"
-import {
-  FIXTURE_REFERENCE,
-  FIXTURE_TARGETS,
-  PT2399_DUMP,
-  TEXT,
-  grepCount,
-} from "./score-fixtures.ts"
+import { FIXTURE_TARGETS, PT2399_DUMP, TEXT, grepCount } from "./score-fixtures.ts"
 
 test("F is C + rho_w*W + rho_s*B over the dump's own line counts", () => {
   // The counts are hand-read off TEXT: one CUT, one WIRE, one SOLDER line.
@@ -40,7 +34,7 @@ test("F is C + rho_w*W + rho_s*B over the dump's own line counts", () => {
   const rules = loadRules()
   expect([rules.rhoWire, rules.rhoSolder], "1.5 below is right only at these weights")
     .toEqual([0.25, 0.25])
-  const score = scoreDumpText(TEXT, FIXTURE_TARGETS, rules, FIXTURE_REFERENCE)
+  const score = scoreDumpText(TEXT, FIXTURE_TARGETS, rules)
   expect([score.cuts, score.wires, score.solder]).toEqual([1, 1, 1])
   expect(score.objective).toBe(1.5)
 })
@@ -139,23 +133,17 @@ test("the scorer carries no threshold of its own: every weight comes from the ru
   // MUTATION RUN: with `rhoWire` replaced by a literal 0.25 in `objectiveOf`
   // this failed with 'Expected: 7 / Received: 5.25'. Reverted.
   const doubled = { ...loadRules(), rhoWire: 2, rhoSolder: 4 }
-  expect(scoreDumpText(TEXT, FIXTURE_TARGETS, doubled, FIXTURE_REFERENCE).objective).toBe(7)
+  expect(scoreDumpText(TEXT, FIXTURE_TARGETS, doubled).objective).toBe(7)
 })
 
-test("the Score reports ten counts and no verdict, because tau is unset", () => {
+test("the Score reports nine counts and no verdict, because tau is unset", () => {
   // K4: tau is null in the committed rules, so Q2 and A3 do not fire and
   // there is no tolerance for the scorer to report. The shape is pinned so a
   // later `withinTolerance` or `verdict` field cannot arrive here unnoticed -
   // the scorer is the search's number, and the grader is the product.
-  //
-  // TEN RATHER THAN NINE SINCE THE OWNER'S "OPTION C": `necessaryCuts` is the
-  // count F charges and `cuts` is VeroRoute's own, and BOTH are reported
-  // because he asked for both to be visible. A tenth COUNT is not a verdict,
-  // which is what this test is about.
   expect(loadRules().tau).toBeNull()
-  const keys = Object.keys(scoreDumpText(TEXT, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE))
-  expect(keys.sort()).toEqual([
-    "clustering", "cuts", "joins", "necessaryCuts", "netCount", "objective", "occupied",
-    "pinCount", "solder", "wires",
+  expect(Object.keys(scoreDumpText(TEXT, FIXTURE_TARGETS, loadRules())).sort()).toEqual([
+    "clustering", "cuts", "joins", "netCount", "objective", "occupied", "pinCount",
+    "solder", "wires",
   ])
 })

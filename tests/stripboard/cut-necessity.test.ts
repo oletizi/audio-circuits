@@ -8,7 +8,7 @@
  *      pultec-low-boost-frozen.dump` is a layout a person laid out by hand and
  *      built, against its committed reference export. Its five cuts are five
  *      because `COST §1.6` derives them by hand, and that every one of them is
- *      necessary is the measurement this whole change rests on.
+ *      necessary is the figure he named.
  *   2. **A hand-made board whose redundancy is visible in the text.** A cut on
  *      a strip holding no lead at all cannot be separating two nets, which a
  *      reader can see from the `PIN` lines without running anything.
@@ -29,17 +29,27 @@
  * no-op is caught by the guard rather than by the counts, which is the louder
  * of the two outcomes; the fifth test is the no-cut board, which never reaches
  * the surgery at all. Reverted.
+ *
+ * **THIS FILE IS THE CLASSIFIER'S OWN TESTS AND NOT THE STANDING GUARD.** `F`
+ * charged the necessary count for four commits and no longer does
+ * (`tools/stripboard/score.ts` carries why); what makes that revert safe is
+ * `./cut-counts-agree.test.ts`, which holds the two counts against each other
+ * on every real board including the import-placed start the search begins from.
+ * That file rests on the mutation run above for the drop test having teeth,
+ * because rows that only assert agreement would all pass on a classifier that
+ * never dropped a line.
  */
 import { expect, test } from "bun:test"
 import { necessaryCuts } from "../../tools/stripboard/cut-necessity.ts"
 import { FIXTURE_REFERENCE, FROZEN_DUMP, TEXT, frozenReference } from "./score-fixtures.ts"
 
 test("every cut on the owner's hand-laid low-boost board is necessary", async () => {
-  // THE GROUND TRUTH FOR THE WHOLE CHANGE. The scorer charging a DERIVED cut
-  // count is only defensible if that count agrees with VeroRoute's on a board
-  // nobody has disturbed - otherwise the pipeline would be quietly discounting
-  // the cuts of the one layout in this repository that was built and listened
-  // to. Five of five, nothing removable.
+  // THE GROUND TRUTH, AND THE ONE PLACE THE OWNER'S "5 OF 5" IS ASSERTED. It
+  // was the measurement the scorer's departure rested on - charging a DERIVED
+  // cut count is only defensible if that count agrees with VeroRoute's on a
+  // board nobody has disturbed - and with the scorer reverted it is the
+  // classifier's calibration against the one layout in this repository that was
+  // built and listened to. Five of five, nothing removable.
   const necessity = necessaryCuts(await Bun.file(FROZEN_DUMP).text(), await frozenReference())
   expect([necessity.reported, necessity.necessary]).toEqual([5, 5])
 })
@@ -67,15 +77,16 @@ test("the fixture's one cut is necessary, because dropping it puts two nets on o
   expect([necessity.reported, necessity.necessary]).toEqual([1, 1])
 })
 
-test("a cut that separates only two nets already shorted elsewhere is not charged for", () => {
-  // THE BASELINE CLAUSE, and it is a statement about what the scorer may charge
-  // rather than about what a board should look like. Two solder bridges at
-  // column 0 join rows 0, 1 and 2, so nets `a` and `b` share a copper component
+test("a cut that separates only two nets already shorted elsewhere is not counted necessary", () => {
+  // THE BASELINE CLAUSE, and it is a statement about what the drop test may
+  // call necessary rather than about what a board should look like. Two solder
+  // bridges at column 0 join rows 0, 1 and 2, so nets `a` and `b` share a
+  // copper component
   // whatever the cut does: the board is BROKEN, `HC8` rejects it, and the cut
-  // is not preventing anything. Charging for it would price a candidate for a
-  // cut that buys nothing - and the question the drop test asks is always
-  // whether removing a cut shorts something that was not already shorted, never
-  // whether the board shorts.
+  // is not preventing anything. Counting it necessary would report a cut that
+  // buys nothing as one the copper needs - and the question the drop test asks
+  // is always whether removing a cut shorts something that was not already
+  // shorted, never whether the board shorts.
   const shorted = TEXT.replace(
     "SOLDER 0,2 1,2",
     "SOLDER 0,2 1,2\nSOLDER 0,0 1,0\nSOLDER 1,0 2,0",
@@ -87,7 +98,7 @@ test("a cut that separates only two nets already shorted elsewhere is not charge
 test("a board with no cuts at all reports zero of zero rather than refusing", () => {
   // The common case on a board the search has just spread a net on, and the one
   // where an empty loop could hide a defect: no cut lines means nothing to drop
-  // and nothing to charge, which is a figure and not a missing answer.
+  // and nothing to count, which is a figure and not a missing answer.
   const noCuts = TEXT.replace("CUT 0,1,1 0,2,2\n", "")
   const necessity = necessaryCuts(noCuts, FIXTURE_REFERENCE)
   expect([necessity.reported, necessity.necessary]).toEqual([0, 0])

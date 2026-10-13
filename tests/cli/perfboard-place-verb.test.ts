@@ -34,6 +34,9 @@ function placeRun(overrides: Partial<PlaceRun> = {}): PlaceRun {
     targets: LOW_BOOST,
     rules: loadRules(),
     frozen: false,
+    // The fixture candidate's one cut is its own necessary count: these tests
+    // drive the verb's exit codes and output, and never the `cuts:` line.
+    necessaryCuts: search.best.score.cuts,
     runDir: "/tmp/place-verb-test",
     manifest: {
       canonical: {

@@ -3,49 +3,57 @@
  * by dropping each one and asking `HC8`'s reconstruction whether two nets'
  * leads then share a copper component.
  *
- * WHY THIS EXISTS, AND IT IS THE OWNER'S DECISION RATHER THAN AN OPTIMISATION.
- * The scorer used to charge `C` straight off VeroRoute's `CUT ` line count. A
- * measurement reported cuts on moved boards that no net needs - one cluster
- * moved off a row costing one, two clusters two, a ground-extending wire two -
- * and at `rho_w = 0.25` a wire should cost a quarter of a cut while being
- * charged about 2.25, which was offered as the reason the search had rejected
- * 7,417 `add-wire` and 1,539 `spread` candidates without taking one. The owner
- * was asked whether the search should score on the cuts he would actually make
- * or on the cuts VeroRoute reports, and chose a third option in those words -
- * **"option C"**: *"Both. Score on real cuts so the search can act, keep
- * VeroRoute's number in the report so you always see both. If they ever
- * disagree badly, you'd spot it."* So `./score.ts` charges this count, carries
- * VeroRoute's beside it, and `./report.ts` prints the disagreement; the
- * deviation is recorded in
- * `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`.
+ * **WHAT IT IS FOR NOW, AND IT IS NOT THE SCORER.** `F` charges VeroRoute's
+ * `CUT ` line count (`./score.ts`). Between `1aa0834` and the revert it charged
+ * the count below, on the owner's instruction after a measurement reported cuts
+ * on moved boards that no net needs - one cluster moved off a row costing one,
+ * two clusters two, a ground-extending wire two - and at `rho_w = 0.25` a wire
+ * should cost a quarter of a cut while being charged about 2.25. Asked whether
+ * the search should score on the cuts he would actually make or on the cuts
+ * VeroRoute reports, he chose a third option in those words - **"option C"**:
+ * *"Both. Score on real cuts so the search can act, keep VeroRoute's number in
+ * the report so you always see both. If they ever disagree badly, you'd spot
+ * it."*
  *
- * **ON EVERY BOARD THIS REPOSITORY HAS MEASURED, THE TWO COUNTS AGREE, AND
- * THAT IS A MEASUREMENT RATHER THAN AN EXPECTATION.** 5 of 5 cuts necessary on
- * the owner's hand-laid `pultec-low-boost`, 38 of 38 on the import-placed board
- * the search starts from, and **0 disagreements over 2,267 scored candidates**
- * across three arms of real runs - every `--dump-board` text the pipeline read,
- * including 84 `add-wire`, 107 `cluster`, 740 `gather` and 2 `spread`
- * candidates. The reading that fits, stated as a reading: `AutoFillVero`
- * re-derives the whole cut set every time a candidate is painted, and the climb
- * paints every candidate before scoring it, so a derived cut sits between two
- * differently-noded segments and a segment with no lead carries no node id and
- * needs no cut. A board whose parts moved while its cut list did NOT would have
- * one spare cut per orphaned one. **So nothing here is dead code and nothing
- * here has changed a decision:** the figures are carried so a person reads
- * both, which is what was asked for, and the sweep that found no decision
- * changed is in
+ * **THE SCORING HALF MEASURED INERT AND WAS WITHDRAWN; THE REPORTING HALF
+ * STANDS.** Four before-and-after pairs came out identical figure for figure,
+ * wire and spread candidates still never won, and a probe over 2,267 scored
+ * candidates found **zero disagreements** between the two counts - while the
+ * drop test cost a measured 17-57% of the run's wall clock. **The phantom-cut
+ * figures above are real and were measured on boards assembled BY HAND outside
+ * the search**; generalising them to the search's own candidates was the
+ * reviewing agent's error. The reading that fits what the search does, stated
+ * as a reading: `AutoFillVero` re-derives the whole cut set every time a
+ * candidate is painted, and the climb paints every candidate before scoring it,
+ * so a derived cut sits between two differently-noded segments and a segment
+ * with no lead carries no node id and needs no cut - a painted board never
+ * carries a spare cut. A board whose parts moved while its cut list did NOT
+ * would have one spare cut per orphaned one, which is the hand-assembled shape.
+ * The sweep is in
  * `.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md`.
  *
- * **THE CLASSIFICATION IS NOT THE SCORER'S OWN REASONING, AND THAT IS THE ONLY
- * THING THAT MAKES IT ADMISSIBLE HERE.** This repository forbids an agent
- * authoring the criteria for the artifact it produces (CLAUDE.md), and a
- * scorer grading its own cut count against its own arithmetic would be exactly
- * that. Every connectivity fact below comes from `netlistEquivalence` - `HC8`'s
- * copper reconstruction, computed outside VeroRoute from the geometry alone,
- * and the same instrument that proved those phantom cuts removable. NOTHING
- * here reads `C`, `J`, `S_occ`, `kappa` or any other quantity `./score.ts`
- * derives, and nothing here reads a `NODE` id: a count derived from what the
- * scorer already computed would be a copy agreeing with itself.
+ * SO THE TWO SURVIVING CALLERS ARE BOTH CHEAP, AND BETWEEN THEM THEY ARE WHAT
+ * MAKES THE REVERT SAFE:
+ *
+ *   - `tests/stripboard/cut-counts-agree.test.ts`, the standing guard that the
+ *     two counts agree on real boards - the owner's hand-laid low-boost and the
+ *     import-placed start the search begins from. **If they ever diverge, that
+ *     test says so**, which is the cheap check that replaces the expensive
+ *     scorer.
+ *   - `./report.ts`'s `cuts:` line, through `describeCutCounts` below, once per
+ *     run on the candidate the report is about. That is the half of "option C"
+ *     the owner chose so he would spot a divergence himself.
+ *
+ * **THE CLASSIFICATION IS NOT THE SCORER'S OWN REASONING**, which is what made
+ * it admissible as a scorer and still makes it admissible as a guard. This
+ * repository forbids an agent authoring the criteria for the artifact it
+ * produces (CLAUDE.md). Every connectivity fact below comes from
+ * `netlistEquivalence` - `HC8`'s copper reconstruction, computed outside
+ * VeroRoute from the geometry alone, and the same instrument that proved those
+ * phantom cuts removable. NOTHING here reads `C`, `J`, `S_occ`, `kappa` or any
+ * other quantity `./score.ts` derives, and nothing here reads a `NODE` id: a
+ * count derived from what the scorer already computed would be a copy agreeing
+ * with itself.
  *
  * THE TEST IS "DOES DROPPING THIS CUT SHORT TWO NETS", AND SHORTS ARE THE ONLY
  * DIRECTION ASKED ABOUT. Removing a cut only ever JOINS copper, so it can
@@ -64,8 +72,11 @@
  *     truly needs. Cuts are considered in the order the dump prints them,
  *     against the set already dropped, and a different order can drop more: two
  *     cuts can be individually droppable while the second is necessary once the
- *     first is gone. The bound errs towards CHARGING a cut, which is the
- *     direction that cannot flatter a candidate.
+ *     first is gone. The bound errs towards calling a cut NECESSARY, which is
+ *     the direction that cannot manufacture a divergence: a board this module
+ *     reports as agreeing with VeroRoute may still hold redundancy a different
+ *     drop order would find, and one it reports as disagreeing has a cut the
+ *     copper provably does not need.
  *   - **IT IS NOT THE WEAKER "LEAD TEST"**, which the measurement used on six
  *     further boards and which can over-count "necessary" - that one asks only
  *     whether a cut separates two leads, and answers yes for a cut whose nets
@@ -84,17 +95,25 @@ import {
 } from "./equivalence.ts"
 
 /**
- * The one refusal this module raises.
+ * The two refusals this module raises, neither of them about the board.
  *
- * `necessity-lines-not-dropped` is about THIS MODULE'S OWN text surgery and
- * nothing about the board: it fires when the text handed to the reconstruction
- * is not the dump with exactly the intended `CUT ` lines gone. It exists
- * because the classification harness that first measured these phantom cuts
- * would have reported success after silently dropping a line it did not mean
- * to - a drop test whose trial text is not the trial it describes reports a
- * verdict about a board nobody has.
+ * `necessity-lines-not-dropped` is about THIS MODULE'S OWN text surgery: it
+ * fires when the text handed to the reconstruction is not the dump with exactly
+ * the intended `CUT ` lines gone. It exists because the classification harness
+ * that first measured these phantom cuts would have reported success after
+ * silently dropping a line it did not mean to - a drop test whose trial text is
+ * not the trial it describes reports a verdict about a board nobody has.
+ *
+ * `necessity-count-exceeds-reported` is about the PAIR OF NUMBERS a caller
+ * hands `describeCutCounts`. It took over from the scorer's
+ * `score-necessity-count-disagreement`, which could compare the classifier's
+ * own reading of VeroRoute's count against the scorer's because both ran on one
+ * candidate; with the scorer back on the line count, the report is where the two
+ * figures meet and the subset relation is the one thing checkable there.
  */
-export type NecessityRefusal = "necessity-lines-not-dropped"
+export type NecessityRefusal =
+  | "necessity-lines-not-dropped"
+  | "necessity-count-exceeds-reported"
 
 /** What is missing, where it is fixed, and why nothing is defaulted. */
 function notDefaultedBecause(refusal: NecessityRefusal): string {
@@ -109,6 +128,17 @@ function notDefaultedBecause(refusal: NecessityRefusal): string {
         "guess at the trial that was meant. Fix withoutCutLines in " +
         "tools/stripboard/cut-necessity.ts; nothing about the dump or the fork is implicated."
       )
+    case "necessity-count-exceeds-reported":
+      return (
+        "The necessary cuts are a SUBSET of the reported ones - the drop test can only keep a " +
+        "CUT line the dump already prints - so a necessary count above the reported one means " +
+        "the two figures are about different boards. Neither is preferred and neither is " +
+        "clamped: a sentence reading 'DISAGREE by -2' or 'REDUNDANT' about a negative " +
+        "difference would be a report inviting a reader to spot a divergence while describing " +
+        "an impossible one. Both numbers come from one necessaryCuts() call on one dump text; " +
+        "fix the caller that paired them, which for the pipeline is the report input built in " +
+        "tools/stripboard/place.ts."
+      )
   }
 }
 
@@ -116,17 +146,21 @@ function refuse(refusal: NecessityRefusal, offending: string): never {
   throw new Error(
     `${refusal}: ${offending}. ${notDefaultedBecause(refusal)} (The necessary cut count is ` +
       "derived in tools/stripboard/cut-necessity.ts through HC8's reconstruction in " +
-      "tools/stripboard/equivalence.ts, and the owner's decision to charge it is recorded in " +
+      "tools/stripboard/equivalence.ts; F charges the REPORTED count, and the departure that " +
+      "charged this one is recorded as made, measured inert and reverted in " +
       "docs/superpowers/plans/2026-10-10-stripboard-pipeline.md.)",
   )
 }
 
 /**
  * The brand that makes a `CutNecessity` unforgeable, DELIBERATELY NOT
- * EXPORTED - the same device as `./score.ts`'s `COUNTED_FROM_TEXT`, and for
- * the same reason: `scoreDump` takes one of these, so there is no way to score
- * a candidate without the drop test having run on its text. A caller cannot
- * hand the scorer a cut count it worked out for itself.
+ * EXPORTED - the same device as `./score.ts`'s `COUNTED_FROM_TEXT`. It guarded
+ * `scoreDump`, which took one of these, so no candidate could be scored without
+ * the drop test having run on its text. **IT GUARDS NO CALLER NOW, AND IS KEPT
+ * RATHER THAN DROPPED BECAUSE THE CLAIM IT CARRIES IS STILL TRUE**: a value of
+ * this type is one `necessaryCuts` produced from a real dump text, which is
+ * what `tests/stripboard/cut-counts-agree.test.ts` asserts over. The report
+ * takes two plain numbers instead, for the reason `describeCutCounts` carries.
  */
 const DERIVED_BY_DROP_TEST: unique symbol = Symbol(
   "stripboard/cut-necessity: derived by the drop test through HC8's reconstruction",
@@ -136,18 +170,17 @@ const DERIVED_BY_DROP_TEST: unique symbol = Symbol(
  * Both cut counts for one board: the owner's option C in one object.
  *
  * `reported` is counted HERE, off the text this module was handed, and is not
- * taken from the scorer - so `./score.ts` can hold the two readings against
- * each other. The two share a method (the first whitespace-separated token
- * equals `CUT`), so what the comparison catches is the two being handed
- * DIFFERENT TEXT, not a blind spot they would share.
+ * taken from the scorer. That independence was what let `./score.ts` hold the
+ * two readings against each other while it charged the necessary count; it is
+ * now what lets the standing agreement test compare a figure nothing in the
+ * scorer produced against the scorer's own `C`.
  */
 export interface CutNecessity {
-  /** `C`: the `CUT ` lines the dump prints - VeroRoute's own number. */
+  /** `C`: the `CUT ` lines the dump prints - VeroRoute's own number, and what `F` charges. */
   readonly reported: number
   /**
-   * `C_necessary`: how many of them survive the drop test, which is the count
-   * `F` charges. An upper bound on the cuts the board truly needs; see the
-   * module comment's two limits.
+   * `C_necessary`: how many of them survive the drop test. An upper bound on
+   * the cuts the board truly needs; see the module comment's two limits.
    */
   readonly necessary: number
   readonly [DERIVED_BY_DROP_TEST]: true
@@ -166,17 +199,26 @@ export interface CutNecessity {
  * judgement to make on the figure and not this function's to pass, so nothing
  * here calls a divergence large, acceptable or expected.
  *
- * `necessary` can never exceed `reported` - it counts a subset of the same
- * lines - so the difference is reported as REDUNDANCY rather than as a signed
- * delta, and the agreeing case says so in words instead of printing a zero a
- * reader has to interpret.
+ * `necessary` counts a subset of the same lines, so it can never exceed
+ * `reported`: the difference is stated as REDUNDANCY rather than as a signed
+ * delta, the agreeing case says so in words instead of printing a zero a reader
+ * has to interpret, and a pair in the impossible order is REFUSED rather than
+ * described.
  *
- * IT TAKES TWO NUMBERS RATHER THAN A `CutNecessity`, so that a caller holding a
- * `Score` - which carries both counts and no brand - can print the line without
- * re-running the drop test on a board it no longer has the text of.
+ * IT TAKES TWO NUMBERS RATHER THAN A `CutNecessity`, so `./report.ts` can print
+ * the line from a `Score`'s `C` and the one necessary count its input carries,
+ * without re-running the drop test on a board it no longer has the text of.
  */
 export function describeCutCounts(reported: number, necessary: number): string {
-  const counts = `F charges ${necessary} necessary cut(s); VeroRoute reports ${reported} CUT line(s)`
+  if (necessary > reported) {
+    refuse(
+      "necessity-count-exceeds-reported",
+      `${necessary} necessary cut(s) against ${reported} reported CUT line(s)`,
+    )
+  }
+  const counts =
+    `F charges ${reported} reported CUT line(s); the drop test finds ${necessary} of them ` +
+    "necessary"
   const difference = reported - necessary
   if (difference === 0) {
     return (
@@ -188,8 +230,8 @@ export function describeCutCounts(reported: number, necessary: number): string {
   return (
     `${counts} - the two DISAGREE by ${difference}: ${difference} reported cut(s) are ` +
     "REDUNDANT, in that dropping them shorts no two nets' leads under HC8's reconstruction. " +
-    "F charges the necessary count and not the reported one, which is the owner's decision " +
-    '("option C"); the reported count is what a VeroRoute reader sees'
+    "F charges the reported count, so this candidate is priced for cuts its copper does not " +
+    "need - which is the divergence the owner kept both figures in order to spot"
   )
 }
 

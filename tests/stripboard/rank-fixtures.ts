@@ -27,7 +27,6 @@ import type { Score } from "../../tools/stripboard/score.ts"
 export function score(overrides: Partial<Score> = {}): Score {
   return {
     cuts: 0,
-    necessaryCuts: 0,
     wires: 0,
     solder: 0,
     objective: 0,

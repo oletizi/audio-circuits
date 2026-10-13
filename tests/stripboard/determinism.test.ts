@@ -86,19 +86,29 @@ function reportOf(bundle: Bundle): readonly string[] {
     rules: bundle.rules,
     frozen: undefined,
     binding: undefined,
+    // THE SCRIPTED BOARDS CARRY NO CUTS AT ALL (`./climb-boards.ts`: every net
+    // sits on its own strip), so zero necessary of zero reported is this run's
+    // own figure and not a stand-in. No test in this file reads the `cuts:`
+    // line; what they compare is that two runs render the SAME lines, and a
+    // number pulled from the candidate would make that comparison depend on a
+    // drop test neither run ran.
+    necessaryCuts: bundle.result.best.score.cuts,
   })
 }
 
 test("the same seed list and the same inputs reproduce the candidate and the metrics", () => {
   const [first, second] = twice()
   // THE RUN ACTUALLY SEARCHED, asserted as the hand-derived figures before any
-  // comparison rests on it: 92 evaluations for the stalled first climb and 3 for
+  // comparison rests on it: 90 evaluations for the stalled first climb and 5 for
   // the second, one accepted move in the second climb, one restart boundary. Two
-  // runs that evaluated nothing would agree about everything below.
-  expect(first.result.climbs.map((climb) => climb.evaluations)).toEqual([92, 3])
+  // runs that evaluated nothing would agree about everything below. The 90 was
+  // 92 until the add-wire enumeration became segment-aware - ./search-fixtures.ts
+  // carries that arithmetic - so the cap of 95 now leaves five for the second
+  // climb rather than three.
+  expect(first.result.climbs.map((climb) => climb.evaluations)).toEqual([90, 5])
   expect(evaluationsOf(first.result)).toBe(CAP)
   expect(first.result.climbs.map((climb) => climb.acceptedPerRound)).toEqual([[0], [1]])
-  expect(first.result.restartBoundaries).toEqual([92])
+  expect(first.result.restartBoundaries).toEqual([90])
 
   // The same move, in the same round of the same climb, producing the same bytes.
   expect(candidateWithinRun(second)).toBe(candidateWithinRun(first))
@@ -123,7 +133,7 @@ test("the restart boundaries reproduce, not merely the final board", () => {
 test("a run that lands on the same board by a different path is not a reproduction", () => {
   // THIS IS WHAT PUTS THE BOUNDARIES IN THE IDENTITY. The shifted run's first
   // climb loses one evaluation to an unscoreable candidate, so its restart
-  // begins at 91 instead of 92 - and everything else about the run is the same:
+  // begins at 89 instead of 90 - and everything else about the run is the same:
   // the same accepted move, the same candidate bytes, the same F, the same
   // ranking tuple, the same stopping rule, the same outcome. Drop the boundaries
   // from the comparison and these two runs are indistinguishable, which is the
@@ -134,8 +144,8 @@ test("a run that lands on the same board by a different path is not a reproducti
     { script: BOUNDARY_SHIFTED },
   )
   expect(shifted.result.climbs.map((climb) => climb.unscoreable)).toEqual([1, 0])
-  expect(shifted.result.restartBoundaries).toEqual([91])
-  expect(baseline.result.restartBoundaries).toEqual([92])
+  expect(shifted.result.restartBoundaries).toEqual([89])
+  expect(baseline.result.restartBoundaries).toEqual([90])
   expect(candidateWithinRun(shifted)).toBe(candidateWithinRun(baseline))
   expect(shifted.candidateBytes).toEqual(baseline.candidateBytes)
   const exceptBoundaries = (metrics: CanonicalMetrics): unknown => {

@@ -2936,6 +2936,17 @@ the checkpoint's own expectation is the thing that was wrong rather than the run
    hash behaving as `V6` requires. Nothing here is provisional on that work any
    more.
 
+   **AND THAT SCORER CHANGE WAS REVERTED ON 2026-10-13, WHICH MOVES NO FIGURE
+   ABOVE.** `F` charges the `CUT ` line count again — the departure measured
+   inert and is recorded as made, measured and withdrawn in
+   `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`'s deviations
+   section. It cannot move these numbers because the two counts AGREED on this
+   board: `C_necessary = 36` against 36 `CUT` lines, so `F = 37.5` is the same
+   sum either way. What a re-run would print differently is the `cost` line's
+   label (`C = 36`, not `C_necessary = 36`) and the `cuts` line's wording, which
+   now says `F charges 36 reported CUT line(s); the drop test finds 36 of them
+   necessary`. The `cuts` line itself is still printed, once per run.
+
 ### 8.3 `V3` — the `B1-frozen` run, and the two refusals it hit
 
 Run as the criterion states it: against the frozen fixture's own model (9 nets,

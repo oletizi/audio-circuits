@@ -105,20 +105,16 @@ export const NINE_NETS = [
 /**
  * The REFERENCE NETLIST the fixture is a layout of, written out by hand.
  *
- * The scorer needs it because `F` charges the cuts the drop test cannot remove
- * (`tools/stripboard/cut-necessity.ts`), and that test asks whether dropping a
- * cut joins two REFERENCE nets' leads. **It is hand-written and not derived
- * from `TEXT`'s own `NODE` lines**, which is the same rule `HC8` is stated
- * under: a reference read off the board would have the board's own bookkeeping
- * price the board's own cuts. The two nets are `TEXT`'s `a` and `b` with the
- * pins its `NODE` lines name, so the fixture states nothing the dump
- * contradicts - and the fixture's one cut IS necessary under this reference,
- * because it is the only thing keeping `a` and `b` off one strip.
- *
- * `NINE_NETS` is scored against this same map on purpose: the seven extra
- * `NODE` lines it adds have no pins, so they are nets the LAYOUT declares and
- * the netlist does not, which is exactly the `J` arithmetic that fixture
- * exists to drive.
+ * **THE SCORER DOES NOT READ IT; THE DROP TEST DOES** (`./cut-necessity.test.ts`
+ * and `./cut-counts-agree.test.ts`), and that test asks whether dropping a cut
+ * joins two REFERENCE nets' leads. `scoreDumpText` took it while `F` charged the
+ * necessary count, which is why this comment used to begin the other way round.
+ * **It is hand-written and not derived from `TEXT`'s own `NODE` lines**, which is
+ * the same rule `HC8` is stated under: a reference read off the board would have
+ * the board's own bookkeeping grade the board's own cuts. The two nets are
+ * `TEXT`'s `a` and `b` with the pins its `NODE` lines name, so the fixture states
+ * nothing the dump contradicts - and the fixture's one cut IS necessary under
+ * this reference, because it is the only thing keeping `a` and `b` off one strip.
  */
 export const FIXTURE_REFERENCE: ReferenceNets = new Map([
   ["a", ["R1.1", "R2.1"]],

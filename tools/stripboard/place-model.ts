@@ -92,6 +92,20 @@ export interface PlaceRun {
   readonly outcome: Outcome
   /** Whether this run's candidate met the `A4` clause of the board it states it ran. */
   readonly metClause: boolean
+  /**
+   * `C_necessary` for `best`: how many of its `CUT ` lines the drop test could
+   * not remove (`tools/stripboard/cut-necessity.ts`).
+   *
+   * **ONE DROP TEST PER RUN, ON THE REPORTED CANDIDATE, AND THAT IS THE POINT
+   * OF IT BEING HERE RATHER THAN ON THE `Score`.** `F` charged this count for
+   * four commits and the scorer derived it per candidate, which cost a measured
+   * 17-57% of a run's wall clock for a figure that never once differed from
+   * `Score.cuts` over 2,267 scored candidates. `F` charges the reported count
+   * again; this field is the owner's "option C" reporting half, which he chose
+   * so a divergence would be visible, and `./report.ts` prints both counts from
+   * it.
+   */
+  readonly necessaryCuts: number
 }
 
 /**
@@ -117,6 +131,7 @@ export type PlaceRefusal =
   | "place-frozen-board-unnamed"
   | "place-footprints-malformed"
   | "place-import-failed"
+  | "place-best-dump-failed"
   | "place-no-stop"
   | "place-ranking-shape"
   | "place-built-commit-unknown"
@@ -167,6 +182,17 @@ export function notDefaultedBecause(refusal: PlaceRefusal): string {
         "layout: that board is a hand-laid artifact on the frozen fixture and a previous run's " +
         "output on a declared board, and starting from either would be reporting a result the " +
         "run did not produce."
+      )
+    case "place-best-dump-failed":
+      return (
+        "The report prints VeroRoute's cut count beside the drop test's (the owner's \"option " +
+        "C\"), and the drop test works on dump TEXT - so the reported candidate is dumped once " +
+        "more at the end of the run, off the painted board the climb already wrote. A failed " +
+        "dump means that file is gone or unreadable, which also makes the candidateSha256 in " +
+        "run.json a hash of nothing. It is NOT defaulted to the reported count, and no cuts: " +
+        "line is omitted: a report printing the two counts as equal because nobody measured " +
+        "one of them is the divergence he kept both figures in order to spot, hidden. Check " +
+        "that Evaluation.candidate still names a file under the run directory."
       )
     case "place-no-stop":
       return (

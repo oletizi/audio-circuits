@@ -321,11 +321,13 @@ test("the report names the board and the candidate file it is about", () => {
 })
 
 test("both cut counts reach the report, and a disagreement between them is stated", () => {
-  // THE SECOND HALF OF THE OWNER'S "OPTION C", which is the half a scorer
-  // change alone would have left out: *"Both. Score on real cuts so the search
-  // can act, keep VeroRoute's number in the report so you always see both. If
-  // they ever disagree badly, you'd spot it."* So the assertion is not that the
-  // two numbers appear somewhere - a reader who has to subtract one from the
+  // THE HALF OF THE OWNER'S "OPTION C" THAT OUTLIVED THE SCORER: *"Both. Score
+  // on real cuts so the search can act, keep VeroRoute's number in the report
+  // so you always see both. If they ever disagree badly, you'd spot it."* The
+  // scoring half was withdrawn after measuring inert (tools/stripboard/
+  // score.ts); this line is what is left, and it is what tells him a candidate
+  // is priced for cuts its copper does not need. So the assertion is not that
+  // the two numbers appear somewhere - a reader who has to subtract one from the
   // other to notice a divergence cannot spot it - but that the line NAMES the
   // disagreement and its size.
   //
@@ -336,29 +338,48 @@ test("both cut counts reach the report, and a disagreement between them is state
   const cuts = lines.filter((line) => line.startsWith("cuts: "))
   expect(cuts.length).toBe(1)
   const line = cuts[0] ?? ""
-  expect(line).toContain("F charges 5 necessary cut(s)")
-  expect(line).toContain("VeroRoute reports 7 CUT line(s)")
+  expect(line).toContain("F charges 7 reported CUT line(s)")
+  expect(line).toContain("finds 5 of them necessary")
   expect(line).toContain("DISAGREE by 2")
   expect(line).toContain("REDUNDANT")
-  // AND THE COST LINE CHARGES THE NECESSARY COUNT, so the two lines cannot say
-  // different things about which number F is: F = 5 beside C_necessary = 5 on a
-  // board printing seven cuts.
+  // AND THE COST LINE CHARGES THE REPORTED COUNT, so the two lines cannot say
+  // different things about which number F is: F = 7 beside C = 7 on a board
+  // five of whose seven cuts the drop test could not remove.
   const cost = lines.filter((entry) => entry.startsWith("cost: "))
   expect(cost.length).toBe(1)
-  expect(cost[0] ?? "").toContain("F = 5")
-  expect(cost[0] ?? "").toContain("C_necessary = 5")
+  expect(cost[0] ?? "").toContain("F = 7")
+  expect(cost[0] ?? "").toContain("C = 7")
+  expect(cost[0] ?? "").not.toContain("C_necessary")
 })
 
 test("the agreeing case says so in words rather than printing a zero", () => {
-  // An undisturbed board is the common case - 5 of 5 on the owner's hand-laid
-  // low-boost, 38 of 38 on the import-placed start - and "DISAGREE by 0" would
-  // be a reader's problem to interpret. `healthyCandidate()`'s one cut is
-  // necessary (`./stop-fixtures.ts` defaults the charged count to the reported
-  // one for exactly that reason), so this is that case.
+  // An undisturbed board is the common case and the only one this pipeline has
+  // ever measured - 5 of 5 on the owner's hand-laid low-boost, 38 of 38 on the
+  // import-placed start, zero disagreements over 2,267 scored candidates - and
+  // "DISAGREE by 0" would be a reader's problem to interpret.
+  // `./report-fixtures.ts` derives the default input's necessary count from the
+  // candidate's own `cuts` for exactly that reason, so this is that case.
   const line = renderReport(reportInput()).filter((entry) => entry.startsWith("cuts: "))[0] ?? ""
-  expect(line).toContain("F charges 1 necessary cut(s)")
-  expect(line).toContain("VeroRoute reports 1 CUT line(s)")
+  expect(line).toContain("F charges 1 reported CUT line(s)")
+  expect(line).toContain("finds 1 of them necessary")
   expect(line).toContain("AGREE")
   expect(line).not.toContain("DISAGREE")
   expect(line).not.toContain("REDUNDANT")
+})
+
+test("a necessary count above the reported one is refused rather than described", () => {
+  // THE GUARD THAT TOOK OVER FROM THE SCORER'S OWN CROSS-CHECK. While `F`
+  // charged the necessary count, `scoreDump` held the classifier's reading of
+  // VeroRoute's number against the dump's and refused a mismatch
+  // (`score-necessity-count-disagreement`), because both ran on one candidate.
+  // The report is now where the two figures meet, and the subset relation is
+  // the one thing checkable there: the necessary cuts are a subset of the
+  // reported ones, so the impossible order means the two are about different
+  // boards. The fixture's candidate reports one cut, so two necessary of one
+  // reported is that condition.
+  expect(() => renderReport(reportInput({ necessaryCuts: 2 })))
+    .toThrow(/^necessity-count-exceeds-reported:/)
+  expect(() => renderReport(reportInput({ necessaryCuts: 2 }))).toThrow(/2 necessary cut\(s\)/)
+  expect(() => renderReport(reportInput({ necessaryCuts: 2 }))).toThrow(/1 reported CUT line\(s\)/)
+  expect(() => renderReport(reportInput({ necessaryCuts: 2 }))).toThrow(/place\.ts/)
 })
