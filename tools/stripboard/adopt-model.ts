@@ -140,12 +140,18 @@ export function notDefaultedBecause(refusal: AdoptRefusal): string {
       return (
         "B1-frozen is the ONE externally authored criterion in this pipeline and it is stated " +
         "against the four committed files under tests/fixtures/stripboard/, whose sha256s are " +
-        "recorded in provenance.txt beside them (B2). The gate hashes each file and requires " +
-        "its hash to appear there, so a silently edited benchmark surfaces as a changed hash " +
-        "rather than as a quietly easier test. It is NOT recomputed into provenance.txt and the " +
-        "fixture is NOT regenerated: a benchmark adjusted until it passes is a benchmark " +
-        "grading itself. If the fixture genuinely has to move, re-extract it by the commands " +
-        "provenance.txt records and record the new hash there in the same change."
+        "recorded in provenance.txt beside them (B2). The gate hashes each file and compares it " +
+        "with the hash that file records FOR THAT BASENAME - tools/stripboard/adopt-provenance.ts " +
+        "parses the association - so a silently edited benchmark surfaces as a changed hash " +
+        "rather than as a quietly easier test. It is NOT a search for the hash anywhere in the " +
+        "file: provenance.txt carries fourteen hashes for eight files, and under that reading " +
+        "one fixture replaced by another listed file's bytes passed, which is measured and is " +
+        "why the parser exists. A basename with no parseable record, or two records disagreeing " +
+        "about one, refuses by name rather than falling back to the weaker reading. Nothing is " +
+        "recomputed into provenance.txt and the fixture is NOT regenerated: a benchmark " +
+        "adjusted until it passes is a benchmark grading itself. If the fixture genuinely has " +
+        "to move, re-extract it by the commands provenance.txt records and record the new hash " +
+        "there in the same change."
       )
     case "provenance-chain":
       return (
@@ -157,10 +163,20 @@ export function notDefaultedBecause(refusal: AdoptRefusal): string {
         "and the board's own perfboard.json and circuit module must be byte-identical to what " +
         "they were at inputs.pipelineCommit with no uncommitted edits. None of the five is " +
         "defaulted, because a chain with a link taken on trust is a chain that proves nothing " +
-        "about the other four. KNOWN LIMIT, recorded rather than papered over: the circuit " +
-        "module is compared as ONE file and its transitive imports are not, so a change inside " +
-        "a module it imports is not caught here - tests/stripboard/import-closure.ts is the " +
-        "machinery that would close it and run.json records no closure hash to compare against."
+        "about the other four. KNOWN LIMIT, STATED HERE SO THE NAME OF THIS CHECK DOES NOT " +
+        "OVERCLAIM: the circuit module is compared as ONE FILE and its transitive imports are " +
+        "not, so a change inside a module it imports - circuits/pultec/physical/parts.ts, say - " +
+        "is not caught by this link. The remedy is named rather than hoped for: " +
+        "tests/stripboard/import-closure.ts's importClosure already computes exactly this " +
+        "closure, for exactly this failure (its own comment calls a one-file check \"a weak " +
+        "check under a strong name, which is a false guarantee rather than a known limit\"), and " +
+        "what is missing is a closure hash in run.json's canonical inputs to compare against " +
+        "plus a way to walk it from a synchronous gate. WHAT COVERS THE GAP MEANWHILE, measured " +
+        "in the Task 24 review rather than assumed: `make check` after the copy re-exports the " +
+        "netlist from the CURRENT circuit and checks the adopted board against it, so drift " +
+        "that is electrically material is refused by G4's failing-check rather than admitted. " +
+        "What this link alone would miss is drift that changes the model without changing the " +
+        "netlist."
       )
     case "veroroute-commit":
       return (

@@ -15,12 +15,13 @@
  * picked the most recent directory would adopt off whatever the clock last
  * named.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
 import { runCli } from "../../tools/cli/perfboard.ts"
 import {
   ADOPTED_RELATIVE_PATH,
+  cleanUpFixtures,
   healthyAdoption,
   withOutcome,
 } from "../stripboard/adopt-fixtures.ts"
@@ -162,4 +163,15 @@ test("adopt is listed in the usage, with its two flags and its exit code", async
 
 test("this whole file left the repository's own boards/ byte-identical", () => {
   expect(boardsDigest()).toBe(BOARDS_BEFORE)
+})
+
+/**
+ * REMOVE EVERY DIRECTORY THE FIXTURES MADE, and this is not housekeeping: its
+ * absence left 4,606 run directories under build/stripboard/pultec-low-boost/
+ * in one review round, at which point the veroroute spawn began returning exit
+ * 0 with empty stdout and twenty-three tests in nine unrelated files failed.
+ * ./adopt-fixtures.ts's CREATED registry carries the measurement.
+ */
+afterAll(() => {
+  cleanUpFixtures()
 })

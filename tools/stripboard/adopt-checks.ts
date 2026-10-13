@@ -24,6 +24,7 @@ import { createHash } from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { refuse, type AdoptDeps, type AdoptInput, type AdoptRefusal } from "./adopt-model.ts"
+import { recordedHashFor } from "./adopt-provenance.ts"
 import { exitCodeFor, OUTCOMES, OUTCOME_WORDING, type Outcome } from "./report-model.ts"
 import { runDirectory, type CanonicalInputs, type RunManifest } from "./run-dir.ts"
 import { STOPPING_RULES, type StoppingRule } from "./stop-model.ts"
@@ -91,6 +92,12 @@ export function assertFileHash(
  * edited benchmark is a changed criterion for EVERY board rather than only for
  * the one it is stated against. Four hashes cost microseconds; the conditional
  * version buys nothing and can be switched off by the edit it exists to catch.
+ *
+ * **EACH FILE IS COMPARED WITH THE HASH ITS OWN BASENAME IS RECORDED AGAINST**,
+ * parsed by `./adopt-provenance.ts`. The first version of this check asked only
+ * whether a file's hash appeared ANYWHERE in `provenance.txt`, which that module
+ * records as measured-weak: one fixture replaced by another listed file's bytes
+ * passed it.
  */
 export function assertFrozenFixtureUnchanged(deps: AdoptDeps): void {
   if (!fs.existsSync(deps.frozenProvenanceFile)) {
@@ -110,11 +117,16 @@ export function assertFrozenFixtureUnchanged(deps: AdoptDeps): void {
           `${deps.frozenProvenanceFile} records a hash for it`,
       )
     }
+    // THE HASH THIS FILE'S OWN NAME IS RECORDED AGAINST, and never "a hash
+    // somewhere in provenance.txt" - see `./adopt-provenance.ts` for the
+    // measurement that distinction comes from.
+    const recorded = recordedHashFor(basename, provenance, deps.frozenProvenanceFile)
     const actual = sha256OfFile(file)
-    if (!provenance.includes(actual)) {
+    if (actual !== recorded) {
       refuse(
         "frozen-fixture-hash",
-        `${file} hashes to ${actual}, which ${deps.frozenProvenanceFile} does not record`,
+        `${file} hashes to ${actual} and ${deps.frozenProvenanceFile} records ${recorded} for ` +
+          basename,
       )
     }
   }

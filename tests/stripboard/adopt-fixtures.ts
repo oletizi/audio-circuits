@@ -14,6 +14,10 @@
  * this one BUILDS a scenario and `./adopt-witness.ts` LOOKS AT what one did.
  * Nothing here inspects an adoption and nothing there assembles one.
  *
+ * **EVERY DIRECTORY IT MAKES IS REGISTERED AND REMOVED, and `cleanUpFixtures`
+ * is not housekeeping - its absence broke twenty-three tests in nine unrelated
+ * files.** `./adopt-scratch.ts` holds that machinery and the measurement.
+ *
  * **THE RUN DIRECTORY IS REAL, AND IT HAS TO BE.** `runDirectory` resolves
  * against `moduleRepoRoot()`, and `assertProvenanceChain` checks that the
  * manifest's own stamp reproduces the directory it was read from - so a run
@@ -34,10 +38,10 @@
  * wrong at once, a test could pass against whichever check happened to run
  * first and the refusal it names could be dead.
  */
-import { createHash, randomUUID } from "node:crypto"
+import { createHash } from "node:crypto"
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import { freshRoot, freshStamp, registerCreated } from "./adopt-scratch.ts"
 import type { AdoptDeps, AdoptInput } from "../../tools/stripboard/adopt-model.ts"
 import type { GitRunner } from "../../tools/perfboard/mutate.ts"
 import { RULES_PATH } from "../../tools/stripboard/rules.ts"
@@ -91,12 +95,12 @@ export interface Scenario {
 /** A git runner that reports a clean, tracked tree for every question asked of it. */
 const CLEAN_GIT: GitRunner = () => ({ status: 0, stdout: "" })
 
-let counter = 0
-
-function freshRoot(label: string): string {
-  counter += 1
-  return fs.mkdtempSync(path.join(os.tmpdir(), `adopt-${label}-${counter}-`))
-}
+/**
+ * `cleanUpFixtures` is re-exported from here so a test file has ONE fixture
+ * import rather than two, and `./adopt-scratch.ts` carries the measurement that
+ * made it necessary.
+ */
+export { cleanUpFixtures } from "./adopt-scratch.ts"
 
 /**
  * A board directory with the two authored sources a declaration names.
@@ -125,9 +129,9 @@ function makeBoardDir(root: string): string {
 
 /** The run directory the healthy scenario reads, with the four files a chain needs. */
 function makeRunDir(label: string): { readonly runDir: string; readonly candidate: string; readonly stamp: string } {
-  counter += 1
-  const stamp = `adopt-${label}-${process.pid}-${counter}-${randomUUID()}`
+  const stamp = freshStamp(label)
   const runDir = runDirectory(BOARD, stamp)
+  registerCreated(runDir)
   fs.mkdirSync(path.join(runDir, "seed-1"), { recursive: true })
   fs.writeFileSync(path.join(runDir, `${BOARD}.net`), "( { EESchema Netlist Version 1.1 created  1970-01-01T00:00:00 }\n)\n")
   fs.writeFileSync(path.join(runDir, "imported.vrt"), "the --import-placed board every arm starts from\n")
@@ -308,13 +312,71 @@ export function withChangedFrozenFixture(): Scenario {
   // stays the real one, because it is the authority a changed fixture has to
   // fail against - editing both would be the tampering this refusal exists to
   // catch, performed in full.
-  const dir = freshRoot("frozen")
-  for (const basename of FROZEN_FIXTURE_FILES) {
-    fs.copyFileSync(path.join(FROZEN_DIR, basename), path.join(dir, basename))
-  }
+  const dir = frozenFixtureCopy("frozen")
   const edited = path.join(dir, FROZEN_FIXTURE_FILES[1])
   fs.appendFileSync(edited, "\n; a benchmark edited to be easier\n")
   return { ...scenario, deps: { ...scenario.deps, frozenFixtureDir: dir } }
+}
+
+/** A scratch copy of the four frozen fixtures, for a scenario that damages one. */
+function frozenFixtureCopy(label: string): string {
+  const dir = freshRoot(label)
+  for (const basename of FROZEN_FIXTURE_FILES) {
+    fs.copyFileSync(path.join(FROZEN_DIR, basename), path.join(dir, basename))
+  }
+  return dir
+}
+
+/**
+ * **THE REVIEW'S OWN EXPERIMENT**: one frozen fixture file replaced by the bytes
+ * of ANOTHER file `provenance.txt` records.
+ *
+ * `pultec-low-boost-frozen.dump` gets `pt2399-core.dump`'s bytes. Both hashes
+ * are in that file, so the first version of this check - "does this hash appear
+ * anywhere in provenance.txt" - PASSED on this scenario, which is the whole of
+ * finding F1 in round 1 of the Task 24 review. It is a sharper probe than an
+ * edited file: an edit produces a hash the file does not carry at all, and any
+ * reading catches that; a swap produces a hash it carries under a different
+ * name, and only a reading that keeps the name-to-hash association catches it.
+ */
+export function withSwappedFrozenFixture(): Scenario {
+  const scenario = healthyAdoption("swapped-frozen")
+  const dir = frozenFixtureCopy("frozen-swap")
+  fs.copyFileSync(
+    path.join(FROZEN_DIR, "pt2399-core.dump"),
+    path.join(dir, `${BOARD}-frozen.dump`),
+  )
+  return { ...scenario, deps: { ...scenario.deps, frozenFixtureDir: dir } }
+}
+
+/**
+ * A `provenance.txt` whose record for one frozen fixture has been severed from
+ * its name - the fixture itself untouched.
+ *
+ * The basename line is renamed, so the hash is still in the file and the
+ * association is not. A parser that fell back to the substring search, or that
+ * read an unparseable record as agreement, would pass this; the refusal has to
+ * name the basename it could not find a record for.
+ */
+export function withUnrecordedFrozenFixture(): Scenario {
+  const scenario = healthyAdoption("unrecorded-frozen")
+  const root = freshRoot("provenance")
+  const file = path.join(root, "provenance.txt")
+  const text = fs.readFileSync(FROZEN_PROVENANCE, "utf8")
+  const damaged = text.replace(
+    `    ${BOARD}-frozen.dump\n`,
+    "    some-other-name-entirely.dump\n",
+  )
+  if (damaged === text) {
+    throw new Error(
+      `withUnrecordedFrozenFixture: the record line for ${BOARD}-frozen.dump was not found in ` +
+        `${FROZEN_PROVENANCE}, so this fixture would have handed the gate an UNDAMAGED ` +
+        "provenance file and the test driving it would have passed vacuously. The record's " +
+        "indentation or name has changed; fix this replacement rather than loosening it.",
+    )
+  }
+  fs.writeFileSync(file, damaged)
+  return { ...scenario, deps: { ...scenario.deps, frozenProvenanceFile: file } }
 }
 
 /**

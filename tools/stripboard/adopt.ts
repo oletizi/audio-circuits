@@ -10,10 +10,12 @@
  * **EVERYTHING UPSTREAM EXISTS TO EARN THIS WRITE.** Twenty-three tasks produce
  * a candidate, a canonical manifest and a verdict; this file is where those
  * become a file under `boards/`, and it either throws naming one of ten
- * refusals or **copies the candidate `.vrt` into the board's declared path and
- * does nothing else**. It writes no report, no sidecar and no record of itself:
- * a gate that also left artefacts behind would be a gate whose own output
- * somebody has to check.
+ * refusals or **copies the candidate `.vrt` into the board's declared path**. It
+ * writes no report, no sidecar and no record of itself: a gate that also left
+ * artefacts behind would be a gate whose own output somebody has to check. The
+ * `make check` it then runs rewrites one more file, `boards/<board>/wiring.md`,
+ * and `adoptLayout`'s own comment below says exactly why that is the makefile's
+ * write rather than this gate's and why it is harmless.
  *
  * **IT REFUSES EVERYTHING THE PIPELINE PRODUCES TODAY, AND THAT IS CORRECT.**
  * `HC1` fails on every board as of this writing, so no run reaches
@@ -214,8 +216,29 @@ function revert(placed: Placed): void {
 /**
  * Admit one layout, or throw naming the refusal.
  *
- * On success the candidate `.vrt` is at the board's declared path and **nothing
- * else has been written anywhere**.
+ * **WHAT THIS FUNCTION WRITES is one file: the candidate `.vrt`, copied to the
+ * board's declared path. It writes nothing else - no report, no sidecar, no
+ * record of itself.**
+ *
+ * **WHAT THE RUN AS A WHOLE MAY WRITE IS ONE FILE MORE, and the earlier wording
+ * here - "nothing else has been written anywhere" - was false in production.**
+ * `deps.makeCheck` is `make -C <boardDir> check`, whose first line is
+ * `check: veroroute netlist-agrees wiring` (`make/board.mk`), and `wiring`
+ * reaches `tools/perfboard/wiring-sync.ts`, which can write
+ * `boards/<board>/wiring.md`. The happy-path test cannot see it because
+ * `makeCheck` is injected, which is how the claim survived being written.
+ *
+ * **THE WRITE IS NOT SUPPRESSED, and why it is harmless is specific rather than
+ * general - read off that module rather than assumed.** `wiring.md` is derived
+ * from the CIRCUIT and not from the layout: it is the panel wiring guide, a list
+ * of what goes off the board. And it is rewritten ONLY when the regenerated
+ * content differs from what is on disk, with no timestamp anywhere in the
+ * document - so adopting a different ARRANGEMENT of the same circuit writes
+ * nothing there at all and leaves `git status` clean. `make/board.mk` makes
+ * `wiring` a prerequisite of `check` deliberately, *"a derived artifact nobody
+ * regenerates is one that goes quietly stale"*, and an adoption is exactly a
+ * moment that should not be exempt from it. What was wrong was the claim, not
+ * the write.
  */
 export function adoptLayout(input: AdoptInput, deps: AdoptDeps): void {
   const declarationFile = path.join(input.boardDir, "perfboard.json")
