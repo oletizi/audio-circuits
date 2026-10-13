@@ -31,7 +31,11 @@ const SELECTOR: Component = {
     contacts: { "20Hz": [["common", "t1"]], "30Hz": [["common", "t2"]] },
     gang: "lo_freq",
   },
-  part: { symbol: "Switch:SW_Rotary" },
+  // A REAL SYMBOL NAME, and the smallest rotary the installed Switch.kicad_sym
+  // has: this fixture used to carry "Switch:SW_Rotary", which no KiCad resolves.
+  // tests/kicad/symbol-names.test.ts now checks every symbol string in the
+  // repository against the installed libraries, fixtures included.
+  part: { symbol: "Switch:SW_Rotary_1x3_MP" },
   pins: {},
   units: [{ name: "MAIN", pins: { common: net("OUT"), t1: net("T1"), t2: net("T2") } }],
 }

@@ -178,7 +178,7 @@ test("a hand-counted network's nets, edges and degrees are what the graph report
     .resistor("r1", "1k", { a: "A", b: "B" }, { footprint: "R_Axial_DIN0207" })
     .capacitor("c1", "100nF", { a: "B", b: "C" }, { footprint: "C_Disc_D3.0mm" })
     .resistor("r2", "2k", { a: "A", b: "B" }, { footprint: "R_Axial_DIN0207" })
-    .connector("sw1", { "1": "C", "2": "D", "3": "A" }, { symbol: "Connector:Conn_01x03" })
+    .connector("sw1", { "1": "C", "2": "D", "3": "A" }, { symbol: "Connector_Generic:Conn_01x03" })
     // D reaches only this one pin, so the model requires it to be a declared
     // port. A port is a name for a net, not a pin, so it adds nothing to
     // either count below.

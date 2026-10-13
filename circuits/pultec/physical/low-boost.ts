@@ -32,7 +32,7 @@
  * pairing "the thing most likely to be broken by a well-meaning refactor" -
  * the builder states it "is a critical part of the pultec low cut + boost
  * sound". Physicalization does not carry the gang across board boundaries -
- * each board sees only its own pole, valued `SW_Rotary` like any other - so
+ * each board sees only its own pole, valued `SW_Rotary_1x6_MP` like any other - so
  * this landing is NOT an independent switch to buy: it is one physical
  * 6-position rotary whose other pole lives on the low-cut board, and the two
  * poles must always be wired to move together.
