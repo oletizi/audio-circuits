@@ -197,11 +197,70 @@ export function wireBridge(
   from: number,
   to: number,
   along: number,
-): { readonly plan: WirePlan; readonly ends: readonly [readonly [number, number], readonly [number, number]] } | undefined {
+): WireLanding | undefined {
+  return shapedWire(occupancy, dump, name, dump.verticalStrips ? 0 : 1, from, to, along)
+}
+
+/**
+ * The plan that joins two points `from` and `to` ALONG ONE STRIP `strip`, and
+ * the ends it lands on - or `undefined` when no order of the gestures places it.
+ *
+ * **IT EXISTS BECAUSE A CUT SEVERS A STRIP, which `wireBridge` has no spelling
+ * for.** `wireBridge` joins two DIFFERENT strips; two of a net's pins can sit on
+ * ONE strip in two different copper components, with `AutoFillVero`'s cut
+ * between them, and the wire that joins those runs along the strip and over the
+ * cut. Measured on the `--import`-placed low-boost board, where every part is
+ * packed into rows 0 to 4: on the board one search left, **every** component
+ * pair of **every** one of the twelve open nets lies on a single strip, so a
+ * completion pass with only `wireBridge` planned not one wire. That measurement
+ * is what this function is for; before it, the case was recorded as a declared
+ * limit on the strength of the constructed arm, where it does not arise.
+ *
+ * **IT IS `wireBridge`'S OWN ARITHMETIC WITH THE TURN COUNT COMPLEMENTED, AND
+ * THAT IS THE WHOLE DIFFERENCE.** A fresh wire lies along a ROW, so a wire that
+ * runs along a row needs no turn and one down a column needs one - and which of
+ * those is "along a strip" is exactly what `VERTICAL_STRIPS` decides. Both
+ * functions go through `shapedWire` below, so there is one anchor arithmetic and
+ * one reading of where the wire landed.
+ */
+export function wireAlong(
+  occupancy: Occupancy,
+  dump: BoardDump,
+  name: string,
+  from: number,
+  to: number,
+  strip: number,
+): WireLanding | undefined {
+  return shapedWire(occupancy, dump, name, dump.verticalStrips ? 1 : 0, from, to, strip)
+}
+
+/** A planned wire and the two holes the model says it will finish on. */
+export interface WireLanding {
+  readonly plan: WirePlan
+  readonly ends: readonly [readonly [number, number], readonly [number, number]]
+}
+
+/**
+ * The shared body: span `from` to `to` at the fixed coordinate `along`, with
+ * `turns` quarter-turns, trying both gesture orders.
+ *
+ * `turns` decides which axis the wire finishes on - 0 leaves it along a ROW, 1
+ * turns it down a COLUMN - and therefore what `from`, `to` and `along` mean.
+ * `wireBridge` and `wireAlong` are the two callers and each names them in its
+ * own comment; nothing else may call this, which is why it is not exported.
+ */
+function shapedWire(
+  occupancy: Occupancy,
+  dump: BoardDump,
+  name: string,
+  turns: number,
+  from: number,
+  to: number,
+  along: number,
+): WireLanding | undefined {
   if (to <= from) return undefined
   const holes = to - from + 1
   const stretch = holes - FRESH_WIRE_HOLES
-  const turns = dump.verticalStrips ? 0 : 1
   for (const order of GESTURE_ORDERS) {
     const at = wireAnchor(dump, from, along, holes, turns, order)
     if (at === undefined) continue

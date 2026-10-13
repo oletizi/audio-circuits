@@ -37,16 +37,19 @@
  * move, and it is why a wire can be accepted in this pass without any change to
  * the acceptance rule: the candidate is sized so that `openNets` really falls.
  *
- * **IT PLANS A CROSS-STRIP WIRE AND NOTHING ELSE, DECLARED RATHER THAN
- * DISCOVERED.** Two components to be joined may lie on ONE strip - two segments
- * of it with a cut between - and a wire along that strip would join them. No
- * such wire is planned here: `./moves-wire.ts`'s `wireBridge` is the only
- * transcribed wire arithmetic in this repository, it takes two STRIPS and
- * refuses `to <= from`, and an along-strip anchor would be a second arithmetic
- * nothing has held against the binary. The limit is REPORTED on the net rather
- * than hidden: `NetJoinPlan.shortfall` names it, so a board where it binds says
- * so. On the ten boards measured it never binds - every component pair of every
- * open net is on two different strips.
+ * **IT PLANS A SINGLE WIRE PER JOIN, WHICH IS THE ONE LIMIT THAT BINDS.** Two
+ * components are joined by one wire running either ACROSS the strips
+ * (`./moves-wire.ts`'s `wireBridge`) or ALONG one of them over a cut
+ * (`wireAlong`) - both are tried, and the second exists because the first alone
+ * planned not one wire on the `--import`-placed board, where every part sits in
+ * rows 0 to 4 and every component pair of every open net is on a single strip.
+ * What is NOT planned is a wire PATH: two components whose nearest holes are
+ * further apart than the fork will stretch a wire (16 holes) can still be joined
+ * by two wires through a free strip between them, and no such dogleg is
+ * proposed. The limit is REPORTED on the net rather than hidden -
+ * `NetJoinPlan.shortfall` names the component pair that stopped the plan - and
+ * `.superpowers/sdd/2026-10-10-stripboard-pipeline/completion-pass-report.md`
+ * measures how often it binds on each arm.
  *
  * **NOTHING HERE DECIDES ANYTHING ABOUT COST.** It proposes; `./complete.ts`'s
  * acceptance rule - which is the search's own `accepts`, unchanged - decides.
@@ -56,7 +59,7 @@ import { stripOf } from "./constraints-model.ts"
 import type { BoardDump } from "../guide/dump.ts"
 import type { ReferenceNets } from "./equivalence.ts"
 import type { Move } from "./moves-model.ts"
-import { nextWireName, wireAfter, wireBridge } from "./moves-wire.ts"
+import { nextWireName, wireAfter, wireAlong, wireBridge, type WireLanding } from "./moves-wire.ts"
 import { referencePinHoles } from "./pad-provenance.ts"
 import type { Occupancy } from "./seed-geometry.ts"
 
@@ -169,23 +172,73 @@ function componentsOfNet(
   return { components: [...components].sort((a, b) => a - b), absent }
 }
 
+/** A hole as the pair the strip axis decomposes it into. */
+interface Decomposed {
+  readonly strip: number
+  readonly along: number
+}
+
+/**
+ * Every hole of a component, grouped by one coordinate with the other sorted
+ * ascending.
+ *
+ * `key` picks which coordinate groups and which varies, so one function serves
+ * both searches below: grouping by `along` finds the lines across the strips
+ * where two components meet, and grouping by `strip` finds the strips they
+ * share.
+ */
+function grouped(
+  holes: readonly HoleKey[],
+  verticalStrips: boolean,
+  key: (hole: Decomposed) => readonly [number, number],
+): ReadonlyMap<number, readonly number[]> {
+  const map = new Map<number, number[]>()
+  for (const name of holes) {
+    const hole = parseHoleKey(name)
+    const [group, member] = key({
+      strip: stripOf(hole, verticalStrips),
+      along: alongOf(hole, verticalStrips),
+    })
+    const own = map.get(group) ?? []
+    own.push(member)
+    map.set(group, own)
+  }
+  for (const own of map.values()) own.sort((a, b) => a - b)
+  return map
+}
+
+/** The holes two component groupings share a group on, ascending. */
+function sharedGroups(
+  first: ReadonlyMap<number, readonly number[]>,
+  second: ReadonlyMap<number, readonly number[]>,
+): readonly number[] {
+  return [...first.keys()].filter((group) => second.has(group)).sort((a, b) => a - b)
+}
+
 /**
  * The wire that joins a hole of `from` to a hole of `to`, or `undefined` when
  * the model admits none.
  *
- * **THE SEARCH IS OVER THE LINE ACROSS THE STRIPS, ASCENDING, AND THE FIRST
- * THAT FITS WINS** - the same narrowing `wireMovesFor` states for itself, for
- * the same reason: a strip conducts along its whole length, so two wires joining
- * the same two components at two different lines join the same two components
- * and score the same `W`. What differs is which holes they take from a later
- * wire in the same candidate, and that is not modelled - so "the first that
- * fits" is a declared choice whose cost is unmeasured.
+ * **TWO SEARCHES, IN A FIXED ORDER THAT CARRIES NO PREFERENCE.** First a wire
+ * ACROSS the strips, over every line where both components have a hole,
+ * ascending; then a wire ALONG a strip both are on, over every such strip,
+ * ascending. Either costs exactly one `WIRE` line, so the order decides nothing
+ * about `F` - it is fixed because the sequence of wires this module proposes is
+ * the reproducibility `V6` rests on, and an order chosen by which search
+ * happened to be written first is still an order a run can be replayed against.
  *
- * **THE ARITHMETIC IS `wireBridge`'S AND IS NOT RE-DERIVED HERE.** This function
- * chooses two holes and asks that module whether a wire reaches between them;
- * it then **checks that the wire landed on the two holes it asked for** rather
- * than assuming it did, because `wireBridge` tries two gesture orders and
- * reports where the one that fit put the wire. A wire that landed elsewhere
+ * **THE FIRST THAT FITS WINS** - the same narrowing `wireMovesFor` states for
+ * itself, for the same reason: a strip conducts along its whole length, so two
+ * wires joining the same two components at two different lines join the same two
+ * components and score the same `W`. What differs is which holes they take from
+ * a later wire in the same candidate, and that is not modelled - so "the first
+ * that fits" is a declared choice whose cost is unmeasured.
+ *
+ * **THE ARITHMETIC IS `./moves-wire.ts`'S AND IS NOT RE-DERIVED HERE.** This
+ * function chooses two holes and asks that module whether a wire reaches between
+ * them; it then **checks that the wire landed on the two holes it asked for**
+ * rather than assuming it did, because both entry points try two gesture orders
+ * and report where the one that fit put the wire. A wire that landed elsewhere
  * would join two components nobody chose, which is a short rather than a repair.
  */
 function bridgeBetween(
@@ -196,51 +249,59 @@ function bridgeBetween(
   from: readonly HoleKey[],
   to: readonly HoleKey[],
 ): { readonly move: Move; readonly occupancy: Occupancy } | undefined {
-  const byAlong = (holes: readonly HoleKey[]): ReadonlyMap<number, readonly number[]> => {
-    const map = new Map<number, number[]>()
-    for (const key of holes) {
-      const hole = parseHoleKey(key)
-      const along = alongOf(hole, dump.verticalStrips)
-      const own = map.get(along) ?? []
-      own.push(stripOf(hole, dump.verticalStrips))
-      map.set(along, own)
+  const vertical = dump.verticalStrips
+  const holeAt = (strip: number, along: number): HoleKey =>
+    holeKey(vertical ? { row: along, col: strip } : { row: strip, col: along })
+  const take = (landing: WireLanding, first: HoleKey, second: HoleKey) => {
+    const landed = landing.ends.map((end) => holeKey({ row: end[0], col: end[1] })).sort()
+    if (landed.join(" ") !== [first, second].sort().join(" ")) return undefined
+    const advanced = wireAfter(occupancy, dump.grid, landing.plan)
+    if (advanced === undefined) {
+      throw new Error(
+        `bridgeBetween: a wire plan for ${name} came back from tools/stripboard/moves-wire.ts ` +
+          "and wireAfter now says the occupancy cannot be advanced past it. The two cannot " +
+          "disagree - the planner calls wireAfter to find the plan it returns - so this is a " +
+          "defect in one of them rather than a wire to skip, and the occupancy is NOT left " +
+          "unadvanced: a state that disagreed with the board would make every later wire in " +
+          "this candidate land on holes that are already taken.",
+      )
     }
-    for (const own of map.values()) own.sort((a, b) => a - b)
-    return map
+    return {
+      move: { kind: "add-wire", net, ends: landing.ends, plan: landing.plan } satisfies Move,
+      occupancy: advanced,
+    }
   }
-  const fromLines = byAlong(from)
-  const toLines = byAlong(to)
-  const lines = [...fromLines.keys()].filter((along) => toLines.has(along)).sort((a, b) => a - b)
-  for (const along of lines) {
+
+  // ACROSS THE STRIPS: group by the line, vary the strip.
+  const fromLines = grouped(from, vertical, (hole) => [hole.along, hole.strip])
+  const toLines = grouped(to, vertical, (hole) => [hole.along, hole.strip])
+  for (const along of sharedGroups(fromLines, toLines)) {
     for (const first of fromLines.get(along) ?? []) {
       for (const second of toLines.get(along) ?? []) {
-        // ONE STRIP IS THE DECLARED LIMIT, not a case to work around: see the
-        // module comment. `wireBridge` refuses `to <= from` itself, and this
-        // skips the pair rather than calling it so the limit is visible here.
         if (first === second) continue
         const low = Math.min(first, second)
         const high = Math.max(first, second)
-        const bridge = wireBridge(occupancy, dump, name, low, high, along)
-        if (bridge === undefined) continue
-        const wanted = [low, high].map((strip) =>
-          holeKey(
-            dump.verticalStrips ? { row: along, col: strip } : { row: strip, col: along },
-          ),
-        )
-        const landed = bridge.ends.map((end) => holeKey({ row: end[0], col: end[1] })).sort()
-        if (landed.join(" ") !== [...wanted].sort().join(" ")) continue
-        const advanced = wireAfter(occupancy, dump.grid, bridge.plan)
-        if (advanced === undefined) {
-          throw new Error(
-            `bridgeBetween: wireBridge planned ${name} across strips ${low} to ${high} at ` +
-              `${along} and wireAfter now says the occupancy cannot be advanced past it. The ` +
-              "two cannot disagree - wireBridge calls wireAfter to find the plan it returns - " +
-              "so this is a defect in one of them rather than a wire to skip, and the occupancy " +
-              "is NOT left unadvanced: a state that disagreed with the board would make every " +
-              "later wire in this candidate land on holes that are already taken.",
-          )
-        }
-        return { move: { kind: "add-wire", net, ends: bridge.ends, plan: bridge.plan }, occupancy: advanced }
+        const landing = wireBridge(occupancy, dump, name, low, high, along)
+        if (landing === undefined) continue
+        const taken = take(landing, holeAt(low, along), holeAt(high, along))
+        if (taken !== undefined) return taken
+      }
+    }
+  }
+
+  // ALONG ONE STRIP, over a cut: group by the strip, vary the line.
+  const fromStrips = grouped(from, vertical, (hole) => [hole.strip, hole.along])
+  const toStrips = grouped(to, vertical, (hole) => [hole.strip, hole.along])
+  for (const strip of sharedGroups(fromStrips, toStrips)) {
+    for (const first of fromStrips.get(strip) ?? []) {
+      for (const second of toStrips.get(strip) ?? []) {
+        if (first === second) continue
+        const low = Math.min(first, second)
+        const high = Math.max(first, second)
+        const landing = wireAlong(occupancy, dump, name, low, high, strip)
+        if (landing === undefined) continue
+        const taken = take(landing, holeAt(strip, low), holeAt(strip, high))
+        if (taken !== undefined) return taken
       }
     }
   }
@@ -324,13 +385,14 @@ function planFor(
         wires,
         occupancy,
         shortfall:
-          `no wire the model admits joins its copper components ${previous} and ${current}: ` +
-          "every line across the strips where both have a hole is either blocked by a part or " +
-          "another wire, or further apart than the fork will stretch a wire (2 to 16 holes), or " +
-          "puts both holes on ONE strip - which this pass does not plan a wire along (see the " +
-          `module comment). ${wires.length} of this net's ${components.length - 1} joins were ` +
-          "plannable and are NOT proposed on their own: a candidate that cannot close the net " +
-          "is the main search's wire move, which was measured to buy nothing.",
+          `no single wire the model admits joins its copper components ${previous} and ` +
+          `${current}: every line across the strips where both have a hole, and every strip ` +
+          "both sit on, is either blocked by a part or another wire or further apart than the " +
+          "fork will stretch a wire (2 to 16 holes). A WIRE PATH through a free strip between " +
+          "them is not planned - see the module comment - so this is a limit of this generator " +
+          `as well as of the board. ${wires.length} of this net's ${components.length - 1} ` +
+          "joins were plannable and are NOT proposed on their own: a candidate that cannot " +
+          "close the net is the main search's wire move, which was measured to buy nothing.",
       }
     }
     wires.push(bridged.move)

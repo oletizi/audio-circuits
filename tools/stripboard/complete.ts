@@ -92,10 +92,17 @@ import type { BoardTargets } from "./targets.ts"
  * `BATCHABLE_KINDS` and never was - the ops grammar has no line for it - so a
  * transport flag here would be a parameter nothing reads.
  *
- * **`rules.evaluationCap` IS THE REMAINDER, AND THE CALLER DIVIDES IT.** `Q5`'s
- * cap bounds the RUN, and this pass's evaluations are part of the run, so a
- * pass that granted itself a fresh cap would be a restart quietly buying one -
- * which is the bookkeeping `./search.ts` already states for its own climbs.
+ * **`rules.evaluationCap` IS A BACKSTOP HERE AND NOT WHAT MAKES THE PASS STOP.**
+ * The pass's own bound is the open-net count: a round that accepts nothing ends
+ * it, and every accepted round strictly reduces a count bounded below by zero,
+ * so the rounds are at most the board's net count and each round is at most one
+ * candidate per open net. A board of fourteen nets is therefore bounded by order
+ * 10^2 evaluations against `Q5`'s 20,000. **The caller decides what to hand
+ * over**, and the two defensible choices say different things: the remainder of
+ * the run's cap treats the pass as part of the run `Q5` bounds, and the full cap
+ * treats it as a stage of its own. Whichever is handed over, a net left
+ * unevaluated because the cap ran out is reported as exactly that
+ * (`CAP_SPENT`) - never as a net that could not close.
  */
 export interface CompletionInput {
   /** Every candidate board and staged wire this pass writes lands here. */
@@ -166,47 +173,66 @@ export interface CompletionResult {
   readonly unclosed: readonly UnclosedNet[]
 }
 
-/** Why a candidate that was evaluated was not accepted, read off the two evaluations. */
-function rejection(predecessor: Evaluation, incumbent: Evaluation, candidate: Evaluation): string {
-  const held = new Set(predecessor.results.filter((result) => result.held).map((r) => r.id))
-  const broke = candidate.results
+/**
+ * Why a candidate that was evaluated was not accepted.
+ *
+ * **IT STATES WHAT THE TWO MEASUREMENTS SAY AND NOTHING MORE.** An earlier
+ * wording said the wires *"closed this net and opened at least as many others,
+ * which a wire does by shorting two nets onto one piece of copper"* - a
+ * mechanism, asserted from two counts that cannot establish it. What the counts
+ * and the two check reports DO establish is which nets changed status, so that
+ * is what this names: the set that closed and the set that opened, read off the
+ * two reports, with no account of why. A reader who wants the cause has the two
+ * boards in the run directory.
+ */
+function rejection(predecessor: Measured, incumbent: Measured, candidate: Measured): string {
+  const held = new Set(
+    predecessor.evaluation.results.filter((result) => result.held).map((result) => result.id),
+  )
+  const broke = candidate.evaluation.results
     .filter((result) => !result.held && held.has(result.id))
     .map((result) => result.id)
   if (broke.length > 0) {
     return (
-      `the candidate closing it BREAKS ${broke.join(", ")}, which held on the board the wires ` +
-      "were applied to. The acceptance rule's no-regression clause rejects it before F is " +
+      `the candidate built to close it BREAKS ${broke.join(", ")}, which held on the board the ` +
+      "wires were applied to. The acceptance rule's no-regression clause rejects it before F is " +
       "looked at, so closing this net costs a hard constraint on this board."
     )
   }
+  const was = new Set(predecessor.checkReport.incompleteNets)
+  const now = new Set(candidate.checkReport.incompleteNets)
+  const closed = [...was].filter((net) => !now.has(net))
+  const opened = [...now].filter((net) => !was.has(net))
   return (
-    `the candidate closing it was not better: openNets ${incumbent.openNets} -> ` +
-    `${candidate.openNets}, F ${incumbent.score.objective} -> ${candidate.score.objective}. ` +
-    "With openNets the ordering's first key, this means the wires did not reduce the count - " +
-    "they closed this net and opened at least as many others, which a wire does by shorting two " +
-    "nets onto one piece of copper."
+    `the candidate built to close it was not better: openNets ` +
+    `${incumbent.evaluation.openNets} -> ${candidate.evaluation.openNets}, F ` +
+    `${incumbent.evaluation.score.objective} -> ${candidate.evaluation.score.objective}. ` +
+    `Against the board the wires were applied to, --check then called these nets complete that ` +
+    `were not: [${closed.join(", ")}]; and these incomplete that were not: [${opened.join(", ")}]. ` +
+    "Both lists are read off the two reports; nothing here says why the second one moved."
   )
 }
 
-/** What a plan the generator declined to complete says about its net. */
-function unclosedFromPlan(plan: NetJoinPlan): UnclosedNet {
-  const shortfall = plan.shortfall
-  if (shortfall === null) {
-    throw new Error(
-      `unclosedFromPlan: the plan for "${plan.net}" carries no shortfall, so the generator says ` +
-        "every join it needs is plannable - and this function is only reached for a net no " +
-        "candidate closed. A complete plan that was never proposed is a defect in the pass's " +
-        "sweep, not a net to report as unclosable: it would name the board's geometry as the " +
-        "cause of something this loop did.",
-    )
-  }
-  return {
-    net: plan.net,
-    components: plan.components,
-    wiresPlanned: plan.wires.length,
-    reason: shortfall,
-  }
-}
+/**
+ * The reason a net open on the reported board was never swept for.
+ *
+ * It is reachable one way only: an ACCEPTED candidate closed one net and opened
+ * this one at an EQUAL open-net count, which the acceptance rule permits when
+ * `F` improves - and the pass then stopped before a round could plan for the net
+ * that opened. Nothing else changes the board, so the cause is not a guess.
+ */
+const NEWLY_OPEN =
+  "it was NOT OPEN on the board the last round swept from, so no candidate for it was ever " +
+  "proposed. An accepted candidate closed another net and opened this one at an equal open-net " +
+  "count - which the acceptance rule permits when F improves - and the pass ended before a " +
+  "round could plan for it."
+
+/** The reason a net whose plan was complete never got its candidate evaluated. */
+const CAP_SPENT =
+  "the candidate that would close it was NOT EVALUATED, because the evaluation cap this pass " +
+  "was handed ran out first. That is a budget and not a fact about the board: the net's joins " +
+  "are all plannable, and a pass with a larger remainder would have tried them. The cap is " +
+  "Q5's run-level backstop, divided by whoever ran the search before this pass."
 
 /**
  * Apply a plan's wires to `board` in order, returning the candidate board.
@@ -288,30 +314,34 @@ export function completionPass(
   let best = base
   let rounds = 0
   let spent = false
-  // THE LAST ROUND'S PLANS, WHICH ARE THE ONES THE RESULT REPORTS ON: a net
-  // still open on the board the pass finished on, with the cause as it stood on
-  // THAT board. An earlier round's cause would describe a board that no longer
-  // exists.
-  let plans: readonly NetJoinPlan[] = []
-  const rejected = new Map<string, string>()
+  // WHY EACH OPEN NET OF THE LAST SWEPT ROUND WAS NOT CLOSED, cleared at the
+  // start of every round so a stale cause from an earlier board cannot be
+  // reported against a later one.
+  const outcome = new Map<string, string>()
 
   while (!spent) {
-    plans = netJoinPlans({
+    const plans = netJoinPlans({
       dumpText: base.measured.dumpText,
       dump: base.measured.dump,
       occupancy: base.occupancy,
       reference: input.reference,
       openNets: openNetsOf(base.measured),
     })
-    rejected.clear()
+    outcome.clear()
     let accepted = 0
     for (const plan of plans) {
       // A PARTIAL PLAN IS NOT PROPOSED, and `./complete-joins.ts` carries the
       // measurement: a candidate that cannot close its net is the main search's
       // wire move, which was enumerated 7,417 times and accepted none.
-      if (plan.shortfall !== null) continue
+      if (plan.shortfall !== null) {
+        outcome.set(plan.net, plan.shortfall)
+        continue
+      }
       if (evaluations + unscoreable >= cap) {
         spent = true
+        for (const remaining of plans) {
+          if (!outcome.has(remaining.net)) outcome.set(remaining.net, CAP_SPENT)
+        }
         break
       }
       const tag = `p${rounds}-${plan.net}`
@@ -329,7 +359,7 @@ export function completionPass(
         if (!message.startsWith(UNSCOREABLE)) throw error
         unscoreable += 1
         if (firstUnscoreable === null) firstUnscoreable = message
-        rejected.set(
+        outcome.set(
           plan.net,
           "the candidate closing it could not be SCORED: its wires left the cut state " +
             "unresolved, which is what the fork reports when a wire shorts two nets onto one " +
@@ -352,13 +382,9 @@ export function completionPass(
         accepted += 1
         continue
       }
-      rejected.set(
+      outcome.set(
         plan.net,
-        rejection(
-          base.measured.evaluation,
-          incumbent.measured.evaluation,
-          measured.evaluation,
-        ),
+        rejection(base.measured, incumbent.measured, measured),
       )
     }
     acceptedPerRound.push(accepted)
@@ -377,18 +403,44 @@ export function completionPass(
     wiresAdded: best.measured.dump.wires.length - first.dump.wires.length,
     unscoreable,
     firstUnscoreable,
-    unclosed: plans.map((plan) => {
-      const why = rejected.get(plan.net)
-      return why === undefined
-        ? unclosedFromPlan(plan)
-        : {
-            net: plan.net,
-            components: plan.components,
-            wiresPlanned: plan.wires.length,
-            reason: why,
-          }
-    }),
+    unclosed: unclosedOn(best, input, outcome),
   }
+}
+
+/**
+ * Every net still open on the board the pass is REPORTING, with its cause.
+ *
+ * **THE PLANS ARE RE-READ FROM THAT BOARD AND NOT TAKEN FROM THE LAST ROUND**,
+ * which is the one shape that cannot describe the wrong board. A round sweeps
+ * from its base and the board reported is the best candidate seen, and the two
+ * come apart two ways: the cap can end a round after an acceptance, and `E3`'s
+ * bound can move the incumbent below the best. Re-planning is a model
+ * computation and spends no invocation, so there is no reason to prefer the
+ * stale list.
+ *
+ * **THE GENERATOR'S OWN SHORTFALL WINS OVER A RECORDED REJECTION**, because the
+ * shortfall is a statement about THIS board while a rejection is a statement
+ * about a candidate built from some board - and if no complete plan exists here,
+ * that is why the net is open here.
+ */
+function unclosedOn(
+  best: Standing,
+  input: CompletionInput,
+  outcome: ReadonlyMap<string, string>,
+): readonly UnclosedNet[] {
+  const plans = netJoinPlans({
+    dumpText: best.measured.dumpText,
+    dump: best.measured.dump,
+    occupancy: best.occupancy,
+    reference: input.reference,
+    openNets: openNetsOf(best.measured),
+  })
+  return plans.map((plan) => ({
+    net: plan.net,
+    components: plan.components,
+    wiresPlanned: plan.wires.length,
+    reason: plan.shortfall ?? outcome.get(plan.net) ?? NEWLY_OPEN,
+  }))
 }
 
 /**
