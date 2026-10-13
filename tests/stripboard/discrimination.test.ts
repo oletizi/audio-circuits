@@ -45,15 +45,23 @@ const rules = loadRules()
 const PIPELINE_DIR = path.join(import.meta.dir, "..", "..", "tools", "stripboard")
 
 /**
- * The modules `V9` sweeps: every `tools/stripboard/*.ts` except `rules.ts`,
- * which is where numbers legitimately live.
+ * The modules `V9` sweeps: every `tools/stripboard/*.ts`, with no exclusions.
+ *
+ * **`rules.ts` USED TO BE EXCLUDED, "which is where numbers legitimately live",
+ * AND THE EXCLUSION WAS DEAD.** Measured with `bareLiteral()` over the current
+ * files: neither `rules.ts` nor `rules-model.ts` holds a literal of the swept
+ * shape, and the bound specs the exclusion's reason pointed at moved into
+ * `rules-model.ts` - which was never excluded and is therefore already swept. So
+ * the exclusion named a file that no longer held what it said, and unlike
+ * `RECORDING_ONLY` below nothing required it to still be needed. A dead
+ * exclusion is removed rather than guarded.
  *
  * **DERIVED RATHER THAN LISTED**, so a module a later task adds is covered
  * without anybody remembering to add it - and asserted non-empty below, because
  * a listing that matched nothing is the most comfortable way for a sweep to pass.
  */
 const PIPELINE_SOURCES: readonly string[] = readdirSync(PIPELINE_DIR)
-  .filter((name) => name.endsWith(".ts") && name !== "rules.ts")
+  .filter((name) => name.endsWith(".ts"))
   .sort()
 
 /** A `Score`'s nine field names, taken from a real one rather than written out. */
@@ -342,7 +350,10 @@ test("V9's register names only modules that exist, and the sweep is not a loop o
   // sweep above vacuous while green, and a register row for a deleted module
   // would make it fail for a reason that is not a finding. Both halves asserted.
   expect(PIPELINE_SOURCES.length).toBeGreaterThan(10)
-  expect(PIPELINE_SOURCES).not.toContain("rules.ts")
+  // rules.ts IS swept now - the exclusion that used to keep it out was dead, and
+  // naming it here is what keeps it from being quietly reintroduced.
+  expect(PIPELINE_SOURCES).toContain("rules.ts")
+  expect(PIPELINE_SOURCES).toContain("rules-model.ts")
   expect(PIPELINE_SOURCES).toContain("score.ts")
   expect(Object.keys(ACCOUNTED).length).toBeGreaterThan(0)
   for (const name of Object.keys(ACCOUNTED)) expect(PIPELINE_SOURCES).toContain(name)

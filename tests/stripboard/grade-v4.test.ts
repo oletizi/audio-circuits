@@ -103,8 +103,18 @@ test("V4: no row of the table above is satisfied by the constraint's PASSING det
     "minSpanHoles", "minimum", "strip", "incomplete"]
   const healthy = gradeHardConstraints(healthyInput())
   const held = healthy.filter((result) => result.held).map((result) => result.detail).join("\n")
-  expect(held, "the healthy board holds every constraint, so this corpus is complete")
-    .not.toBe("")
+  // THE COMPLETENESS CLAIM, ASSERTED RATHER THAN IMPLIED BY A NON-EMPTY STRING.
+  // "every constraint holds" is what makes this corpus the full set of passing
+  // wordings; `held !== ""` holds of one passing constraint out of ten. If one
+  // ever stopped holding, its passing wording would silently leave the corpus
+  // and that constraint's row could regress to a weak token with nothing to
+  // notice. Measured: all ten hold today.
+  expect(healthy.length).toBeGreaterThanOrEqual(10)
+  expect(
+    healthy.filter((result) => !result.held).map((result) => result.id),
+    "the healthy board must hold EVERY constraint, or this corpus is incomplete",
+  ).toEqual([])
+  expect(held).not.toBe("")
   // The old table's tokens ARE in the passing corpus - this states the defect
   // rather than describing it - and the new table's are not.
   const alsoPassing = weak.filter((token) => held.includes(token))
