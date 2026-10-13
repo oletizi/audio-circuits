@@ -22,7 +22,7 @@ J104,3,"J173-1 and J107-7","not independently traced",UNVERIFIED,normal
 J104,4,"INPUT select J181-1","not independently traced",UNVERIFIED,normal
 J104,5,"SYNC select J181-2","not independently traced",UNVERIFIED,normal
 J104,6,"return","not independently traced",UNVERIFIED,normal
-J104,7,"X","not independently traced",UNVERIFIED,high
+J104,7,"P107-2 shared motherboard conductor; card side unknown","motherboard side traced to P107-2",UNVERIFIED,high
 J105,1,"J102-5 (conflicts with J105-2)","not independently traced",UNVERIFIED,high
 J105,2,"X","not independently traced",UNVERIFIED,high
 J105,3,"X","not independently traced",UNVERIFIED,high
