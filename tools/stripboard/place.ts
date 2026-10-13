@@ -435,7 +435,21 @@ export async function placeAcrossSeeds(
   const runs: PlaceRun[] = []
   const perSeed: SeedSweep["perSeed"][number][] = []
   for (const seed of input.rules.seeds) {
-    const run = await place({ ...input, rules: { ...input.rules, seeds: [seed] } }, spawn)
+    // EACH SEED GETS ITS OWN RUN DIRECTORY EVEN WHEN THE CALLER NAMED A STAMP.
+    // Without the suffix a caller-supplied stamp put every seed's run in ONE
+    // directory, so each seed's `run.json`, netlist and imported board
+    // overwrote the last one's and the sweep ended holding provenance for the
+    // final seed under a manifest the earlier runs were graded by. A stamp is
+    // provenance only (`PlaceInput.stamp`), so extending it is free; sharing a
+    // directory is not.
+    const run = await place(
+      {
+        ...input,
+        rules: { ...input.rules, seeds: [seed] },
+        ...(input.stamp === undefined ? {} : { stamp: `${input.stamp}-seed-${seed}` }),
+      },
+      spawn,
+    )
     runs.push(run)
     perSeed.push({
       seed,

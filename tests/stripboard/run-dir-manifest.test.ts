@@ -11,9 +11,17 @@
  * that property), so nothing this file writes is ever a candidate for
  * `git add`.
  */
-import { test, expect } from "bun:test"
+import { afterAll, test, expect } from "bun:test"
 import { readManifest } from "../../tools/stripboard/run-dir.ts"
 import { MANIFEST, boardsDigest, readRawManifestFile, writeInto, writeRaw } from "./run-dir-fixtures.ts"
+import { cleanUpFixtures } from "./run-scratch.ts"
+
+// EVERY RUN DIRECTORY THIS FILE MADE IS REMOVED. `./run-scratch.ts` carries why
+// that is not housekeeping: the same growth, further along, made the veroroute
+// spawn return exit 0 with empty stdout and failed twenty-three tests in nine
+// unrelated files.
+afterAll(cleanUpFixtures)
+
 
 test("a manifest round-trips, and a hash that disagrees with its own block refuses", () => {
   const dir = writeInto(MANIFEST)

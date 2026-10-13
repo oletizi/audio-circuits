@@ -14,9 +14,17 @@
  * agreed to be, which is the shape Tasks 3, 4, 5, 11 and 12 each shipped
  * once.
  */
-import { test, expect } from "bun:test"
+import { afterAll, test, expect } from "bun:test"
 import { canonicalHash } from "../../tools/stripboard/run-dir.ts"
 import { INPUTS, METRICS, mutate, writeAndRead } from "./run-dir-fixtures.ts"
+import { cleanUpFixtures } from "./run-scratch.ts"
+
+// EVERY RUN DIRECTORY THIS FILE MADE IS REMOVED. `./run-scratch.ts` carries why
+// that is not housekeeping: the same growth, further along, made the veroroute
+// spawn return exit 0 with empty stdout and failed twenty-three tests in nine
+// unrelated files.
+afterAll(cleanUpFixtures)
+
 
 test("the same inputs and metrics hash the same, and a changed input changes the hash", () => {
   expect(canonicalHash(INPUTS, METRICS)).toBe(canonicalHash(INPUTS, METRICS))

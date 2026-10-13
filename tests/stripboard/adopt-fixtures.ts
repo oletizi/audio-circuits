@@ -16,7 +16,7 @@
  *
  * **EVERY DIRECTORY IT MAKES IS REGISTERED AND REMOVED, and `cleanUpFixtures`
  * is not housekeeping - its absence broke twenty-three tests in nine unrelated
- * files.** `./adopt-scratch.ts` holds that machinery and the measurement.
+ * files.** `./run-scratch.ts` holds that machinery and the measurement.
  *
  * **THE RUN DIRECTORY IS REAL, AND IT HAS TO BE.** `runDirectory` resolves
  * against `moduleRepoRoot()`, and `assertProvenanceChain` checks that the
@@ -41,7 +41,7 @@
 import { createHash } from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
-import { freshRoot, freshStamp, registerCreated } from "./adopt-scratch.ts"
+import { freshRoot, freshStamp, registerCreated } from "./run-scratch.ts"
 import type { AdoptDeps, AdoptInput } from "../../tools/stripboard/adopt-model.ts"
 import type { GitRunner } from "../../tools/perfboard/mutate.ts"
 import { closureSha256 } from "../../lib/import-closure.ts"
@@ -100,10 +100,10 @@ const CLEAN_GIT: GitRunner = () => ({ status: 0, stdout: "" })
 
 /**
  * `cleanUpFixtures` is re-exported from here so a test file has ONE fixture
- * import rather than two, and `./adopt-scratch.ts` carries the measurement that
+ * import rather than two, and `./run-scratch.ts` carries the measurement that
  * made it necessary.
  */
-export { cleanUpFixtures } from "./adopt-scratch.ts"
+export { cleanUpFixtures } from "./run-scratch.ts"
 
 /**
  * A board directory with the two authored sources a declaration names.

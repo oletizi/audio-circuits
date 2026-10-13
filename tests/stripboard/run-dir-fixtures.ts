@@ -46,10 +46,11 @@
  * typed mutation table; neither is worth it to protect a property the loop
  * does not actually rely on.
  */
-import { createHash, randomUUID } from "node:crypto"
+import { createHash } from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
+import { freshStamp, registerCreated } from "./run-scratch.ts"
 import {
   canonicalHash,
   readManifest,
@@ -164,13 +165,21 @@ export function mutate(value: unknown): unknown {
   )
 }
 
-let writeCounter = 0
-
-/** A fresh, uniquely-stamped run directory under `run-dir-test/`, not yet created on disk. */
+/**
+ * A fresh, uniquely-stamped run directory under `run-dir-test/`, not yet created
+ * on disk, AND REGISTERED FOR REMOVAL.
+ *
+ * It was not registered, and a full `bun test` left six of these behind per run.
+ * `./run-scratch.ts` carries why that matters rather than being untidiness: the
+ * same directory growth, at 4,606 entries, made `spawnSync` of the veroroute
+ * fork return exit 0 with empty stdout and failed twenty-three tests in nine
+ * unrelated files, blaming a working binary. Six a run is the same wall further
+ * away.
+ */
 function freshRunDir(label: string): string {
-  writeCounter += 1
-  const stamp = `${label}-${process.pid}-${writeCounter}-${randomUUID()}`
-  return runDirectory("run-dir-test", stamp)
+  const dir = runDirectory("run-dir-test", freshStamp(label))
+  registerCreated(dir)
+  return dir
 }
 
 /** Write `manifest` into a fresh, uniquely-stamped run directory and return its path. */

@@ -20,12 +20,17 @@
  * section 8.2**, with the full report, the three findings and the one figure
  * that is provisional. This file holds what can fail on every run.
  */
-import { expect, test } from "bun:test"
-import { place, reportInputOf } from "../../tools/stripboard/place.ts"
+import { afterAll, expect, test } from "bun:test"
+import { reportInputOf } from "../../tools/stripboard/place.ts"
 import { renderReport } from "../../tools/stripboard/report.ts"
 import { STOPPING_RULES } from "../../tools/stripboard/stop.ts"
 import { readManifest } from "../../tools/stripboard/run-dir.ts"
-import { LOW_BOOST_BOARD, reducedRules } from "./benchmark-fixtures.ts"
+import { LOW_BOOST_BOARD, placeScratch, reducedRules } from "./benchmark-fixtures.ts"
+import { cleanUpFixtures } from "./run-scratch.ts"
+
+// EVERY RUN DIRECTORY THIS FILE MADE IS REMOVED - see ./run-scratch.ts for why
+// that is not housekeeping.
+afterAll(cleanUpFixtures)
 
 const SLOW = 600_000
 
@@ -36,7 +41,10 @@ test(
     // tests cannot see. Measured at this cap on 2026-10-13: outcome `invalid`
     // (A1 fails on HC1, HC6, HC8 and HC10), bound `budget-exhausted` from Q5,
     // exit 1. Section 8.2 has the whole report.
-    const run = await place({ board: LOW_BOOST_BOARD, rules: reducedRules(64), arm: "import" })
+    const run = await placeScratch(
+      { board: LOW_BOOST_BOARD, rules: reducedRules(64), arm: "import" },
+      "checkpoint-2",
+    )
     const lines = renderReport(reportInputOf(run))
     const report = lines.join("\n")
 
@@ -102,7 +110,10 @@ test(
     // fails - and the fix is to carry them into `stopStateOf` rather than to
     // delete the assertion. It is asserted over the shape of the climb's own
     // result, which is where the data would have to appear.
-    const run = await place({ board: LOW_BOOST_BOARD, rules: reducedRules(8), arm: "import" })
+    const run = await placeScratch(
+      { board: LOW_BOOST_BOARD, rules: reducedRules(8), arm: "import" },
+      "q6",
+    )
     const climb = run.search.climbs[0]
     expect(climb, "a run reports at least one climb").toBeDefined()
     expect(Object.keys(climb!), "ClimbResult carries no signature list").not.toContain("signatures")

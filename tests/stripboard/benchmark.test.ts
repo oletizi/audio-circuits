@@ -44,13 +44,13 @@
  * passing one"*. `bun test tests/stripboard/benchmark.test.ts` is a thing a
  * person can run alone, which is why this file holds nothing else.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { leadSpanFor } from "../../lib/kicad/lead-span.ts"
 import { spanHoles } from "../../tools/stripboard/constraints-model.ts"
-import { place, placeAcrossSeeds, reportInputOf } from "../../tools/stripboard/place.ts"
+import { place, reportInputOf } from "../../tools/stripboard/place.ts"
 import { exitCodeFor, renderReport } from "../../tools/stripboard/report.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import {
@@ -62,11 +62,20 @@ import {
   LOW_BOOST_BOARD,
   frozenDump,
   frozenFootprints,
+  placeAcrossSeedsScratch,
+  placeScratch,
   recordingSpawn,
   reducedRules,
   refusalFrom,
 } from "./benchmark-fixtures.ts"
 import { boardsDigest } from "./run-dir-fixtures.ts"
+import { cleanUpFixtures, scratchStamp } from "./run-scratch.ts"
+
+// EVERY RUN DIRECTORY THIS FILE'S REAL `place` RUNS MADE IS REMOVED.
+// ./run-scratch.ts carries why: a full suite left sixteen of these behind, and
+// the same growth further along made the veroroute spawn return exit 0 with
+// empty stdout and failed twenty-three tests in nine unrelated files.
+afterAll(cleanUpFixtures)
 
 /**
  * The arm these runs take.
@@ -151,7 +160,7 @@ test(
     // _1x03_P5.08mm_Horizontal"' - which is the chain the module comment
     // records. Reverted; the table is untouched by this task.
     const message = await refusalFrom(() =>
-      place({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules(), arm: ARM }),
+      placeScratch({ frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules(), arm: ARM }, "v3"),
     )
     expect(message, "the frozen run must refuse rather than report a result").not.toBe("")
     expect(message).toContain("BLOCK_200MIL3")
@@ -182,7 +191,7 @@ test(
     // B1-frozen, the scaffolded board meets B1-current, and a run states which
     // it ran. The cap is reduced; what is asserted is which clause the report
     // names, which no cap changes.
-    const run = await place({ board: LOW_BOOST_BOARD, rules: reducedRules(8), arm: ARM })
+    const run = await placeScratch({ board: LOW_BOOST_BOARD, rules: reducedRules(8), arm: ARM }, "b1-current")
     const report = renderReport(reportInputOf(run)).join("\n")
     expect(report).not.toMatch(/B1-frozen/)
     expect(report).toMatch(/B1-current/)
@@ -203,7 +212,13 @@ test(
     const spawned: string[][] = []
     const message = await refusalFrom(() =>
       place(
-        { frozen: FROZEN, netlist: FROZEN_NETLIST, rules: loadRules(), arm: ARM },
+        {
+          frozen: FROZEN,
+          netlist: FROZEN_NETLIST,
+          rules: loadRules(),
+          arm: ARM,
+          stamp: scratchStamp(path.basename(LOW_BOOST_BOARD), "import-start"),
+        },
         recordingSpawn(spawned),
       ),
     )
@@ -223,7 +238,7 @@ test(
     // three times, so a change made over an already-dirty tree reads the same
     // as none. `./run-dir-fixtures.ts` carries the full reasoning.
     const before = boardsDigest()
-    await place({ board: LOW_BOOST_BOARD, rules: reducedRules(8), arm: ARM })
+    await placeScratch({ board: LOW_BOOST_BOARD, rules: reducedRules(8), arm: ARM }, "v7")
     expect(boardsDigest()).toBe(before)
   },
   SLOW,
@@ -243,7 +258,7 @@ test(
     // no cap changes: every reviewed seed has a row, each row names a bound,
     // and the fraction carries both numbers.
     const rules = reducedRules(8)
-    const run = await placeAcrossSeeds({ board: LOW_BOOST_BOARD, rules, arm: ARM })
+    const run = await placeAcrossSeedsScratch({ board: LOW_BOOST_BOARD, rules, arm: ARM }, "rate")
     expect(run.perSeed.length, "every seed in the reviewed set is run").toBe(rules.seeds.length)
     for (const seed of run.perSeed) {
       expect(rules.seeds).toContain(seed.seed)
@@ -274,7 +289,10 @@ test(
     // shape of a rate that had become a criterion - this failed on the rendered
     // comparison below. Reverted.
     const rules = reducedRules(8)
-    const measured = await placeAcrossSeeds({ board: LOW_BOOST_BOARD, rules, arm: ARM })
+    const measured = await placeAcrossSeedsScratch(
+      { board: LOW_BOOST_BOARD, rules, arm: ARM },
+      "rate-diagnostic",
+    )
     expect(measured.reportedOutcome).toBe(measured.singleRunVerdict)
     expect(exitCodeFor(measured.reportedOutcome, measured.first.rule)).toBe(
       exitCodeFor(measured.singleRunVerdict, measured.first.rule),
@@ -325,14 +343,20 @@ test(
     // assertion below about the EDIT rather than about the copying. It refuses
     // further downstream, on BLOCK_200MIL3, exactly as the real fixture does.
     const copied = await refusalFrom(() =>
-      place({ frozen: copiedFixture, netlist: copiedNetlist, rules: loadRules(), arm: ARM }),
+      placeScratch(
+        { frozen: copiedFixture, netlist: copiedNetlist, rules: loadRules(), arm: ARM },
+        "frozen-copied",
+      ),
     )
     expect(copied).not.toContain("place-frozen-fixture-changed")
     expect(copied).toContain("BLOCK_200MIL3")
 
     fs.appendFileSync(copiedFixture, "\n; a benchmark edited to be easier\n")
     const message = await refusalFrom(() =>
-      place({ frozen: copiedFixture, netlist: copiedNetlist, rules: loadRules(), arm: ARM }),
+      placeScratch(
+        { frozen: copiedFixture, netlist: copiedNetlist, rules: loadRules(), arm: ARM },
+        "frozen-edited",
+      ),
     )
     expect(message).toContain("place-frozen-fixture-changed")
     expect(message).toContain(path.basename(FROZEN))

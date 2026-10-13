@@ -22,7 +22,15 @@ import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { loadRules, type StripboardRules } from "../../tools/stripboard/rules.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
-import { verorouteSpawn } from "../../tools/stripboard/place.ts"
+import {
+  place,
+  placeAcrossSeeds,
+  verorouteSpawn,
+  type PlaceInput,
+  type PlaceRun,
+  type SeedSweep,
+} from "../../tools/stripboard/place.ts"
+import { scratchStamp } from "./run-scratch.ts"
 
 const ROOT = moduleRepoRoot()
 const FIXTURES = path.join(ROOT, "tests", "fixtures", "stripboard")
@@ -71,6 +79,36 @@ export function frozenFootprints(): ReadonlyMap<string, string> {
  */
 export function reducedRules(evaluationCap: number): StripboardRules {
   return { ...loadRules(), evaluationCap }
+}
+
+/**
+ * `place`, WITH ITS RUN DIRECTORY REGISTERED FOR REMOVAL.
+ *
+ * **IT IS A WRAPPER AND NOT A `stamp:` ADDED AT EACH CALL SITE**, because there
+ * are ten real runs across this file and `./checkpoint-2.test.ts` and a stamp
+ * forgotten at one of them is a leak nothing notices. `./run-scratch.ts` carries
+ * why these directories matter: the same growth, further along, made `spawnSync`
+ * of the veroroute fork return exit 0 with empty stdout and failed twenty-three
+ * tests in nine unrelated files, blaming a working binary. A full suite left
+ * sixteen of these behind before this wrapper existed.
+ *
+ * THE BOARD NAME IS DERIVED FROM `LOW_BOOST_BOARD` rather than restated, and it
+ * is the right name for a frozen run too: `prepare` resolves the frozen fixture
+ * to the same board, which is what `A4`'s frozen clause is about.
+ */
+export async function placeScratch(input: PlaceInput, label: string): Promise<PlaceRun> {
+  return place({ ...input, stamp: scratchStamp(path.basename(LOW_BOOST_BOARD), label) })
+}
+
+/** `placeAcrossSeeds`, likewise - its one-per-seed stamp suffixes are swept by prefix. */
+export async function placeAcrossSeedsScratch(
+  input: PlaceInput,
+  label: string,
+): Promise<SeedSweep> {
+  return placeAcrossSeeds({
+    ...input,
+    stamp: scratchStamp(path.basename(LOW_BOOST_BOARD), label),
+  })
 }
 
 /** One spawn that records every invocation and then really runs the fork. */
