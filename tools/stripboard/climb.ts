@@ -110,7 +110,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { accepts, strictlyBetter } from "./climb-accepts.ts"
-import { UNSCOREABLE, type ClimbInput, type ClimbResult } from "./climb-model.ts"
+import { candidateRejected, type ClimbInput, type ClimbResult } from "./climb-model.ts"
 import { assignNodes } from "./complete-apply.ts"
 import {
   addsWire,
@@ -134,7 +134,12 @@ import { measure, type Evaluation, type Measured } from "./climb-evaluate.ts"
  * the what-is-a-climb's-input / what-does-a-climb-do seam and was forced by the
  * 500-line ceiling when the wire candidates' `--update` arrived.
  */
-export { UNSCOREABLE, type ClimbInput, type ClimbResult } from "./climb-model.ts"
+export {
+  candidateRejected,
+  UNSCOREABLE,
+  type ClimbInput,
+  type ClimbResult,
+} from "./climb-model.ts"
 
 /**
  * The evaluation half, re-exported from `./climb-evaluate.ts`.
@@ -318,29 +323,31 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
         )
       }
       applyMove(base.board, move, candidateBoard, spawn, transport)
-      // A FRESH WIRE'S HOLES CARRY NODE ID 0 AND `--check`'s COMPLETENESS READS
-      // NODE IDS, so a candidate carrying one is assigned to its net before
-      // anything measures it. `./complete-apply.ts`'s `assignNodes` carries the
-      // measurement: without this invocation a wire that physically joins two of
-      // a net's pins leaves the net reported incomplete, `openNets` unchanged and
-      // `F` up by `rho_w`, and the acceptance rule then rejects it for a reason
-      // that is not about the gesture. It is ONE invocation and only for the
-      // kinds `addsWire` names, so a candidate that adds no wire costs exactly
-      // what it did before.
-      const measuredBoard = addsWire(move)
-        ? assignNodes(candidateBoard, { netlist: input.netlist }, input.runDir, tag, spawn)
-        : candidateBoard
-      // AN UNSCOREABLE CANDIDATE IS REJECTED AND COUNTED - see
-      // `ClimbResult.unscoreable` for the measurement that forced it and why the
-      // alternative is worse. ONLY that one refusal is caught, by its own name:
-      // a fork failure, a geometry refusal or a grader refusal still stops the
-      // run, because none of them says "this candidate cannot be compared".
+      // A CANDIDATE THE PIPELINE CANNOT EVALUATE IS REJECTED AND COUNTED - see
+      // `ClimbResult.unscoreable` for the measurement that forced it, and
+      // `candidateRejected` for the two refusals that mean it. ONLY those two
+      // are caught, each by its own name: a fork failure, a geometry refusal or
+      // a grader refusal still stops the run, because none of them says "this
+      // candidate cannot be compared".
+      //
+      // **THE `--update` IS INSIDE THIS `try` AND THAT IS NOT INCIDENTAL.** A
+      // fresh wire's holes carry node id 0 and `--check`'s completeness reads
+      // node ids, so a candidate carrying one is assigned to its net before
+      // anything measures it (`./complete-apply.ts`'s `assignNodes` carries the
+      // measurement) - and that same invocation is where the fork refuses a
+      // wire whose two ends turn out to be on two different nets, which on a
+      // packed board is a common candidate rather than a defect. It is ONE
+      // invocation and only for the kinds `addsWire` names, so a candidate that
+      // adds no wire costs exactly what it did before.
       let measured: Measured
       try {
+        const measuredBoard = addsWire(move)
+          ? assignNodes(candidateBoard, { netlist: input.netlist }, input.runDir, tag, spawn)
+          : candidateBoard
         measured = evaluateInto(measuredBoard, tag)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        if (!message.startsWith(UNSCOREABLE)) throw error
+        if (!candidateRejected(message)) throw error
         unscoreable += 1
         if (firstUnscoreable === null) firstUnscoreable = message
         continue

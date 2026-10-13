@@ -24,6 +24,34 @@ export interface AssignInput {
 }
 
 /**
+ * The refusal a caller CATCHES: `--update` would not put a candidate's wire
+ * back, because the wire's two ends are no longer on one net.
+ *
+ * **IT IS A SECOND NAMED REFUSAL BESIDE `UNSCOREABLE` AND FOR THE SAME REASON** -
+ * the candidate cannot be evaluated, so it is rejected and counted rather than
+ * stopping the run. `./climb-model.ts`'s `candidateRejected` is the one place
+ * the two are read, so a caller cannot catch one and miss the other.
+ *
+ * It is a CONSTANT and not a phrase from the prose below, exactly as
+ * `./score.ts` builds its refusals from its own `ScoreRefusal` union: a caller
+ * matching on a sentence would silently stop matching when the sentence were
+ * reworded.
+ */
+export const WIRE_NOT_REPLACEABLE = "complete-wire-not-replaceable"
+
+/**
+ * The fork's own words for that condition, as `Src/Reconcile_apply_wires.cpp`
+ * prints them - read out of its source rather than remembered.
+ *
+ * The full sentence is *"the layout's wire <name> (<ends>, carrying net ids
+ * <a> and <b>) cannot be put back after reconciliation: its two ends are no
+ * longer on one net. Move or delete it in the GUI, then run this again."* Only
+ * the invariant clause is matched, because the wire's name and its net ids are
+ * per-candidate.
+ */
+const RECONCILE_REFUSAL = "cannot be put back after reconciliation"
+
+/**
  * Apply a plan's wires to `board` in order, returning the candidate board.
  *
  * Each wire reads the previous one's output and only the LAST writes the
@@ -113,6 +141,37 @@ export function assignNodes(
   const args = ["--update", candidate, "--netlist", input.netlist, "-o", assigned]
   const result = spawn(args)
   if (result.status !== 0) {
+    const output = `${result.stdout}${result.stderr}`
+    // A WIRE WHOSE TWO ENDS ARE ON TWO DIFFERENT NETS IS A SHORT, AND THE
+    // CANDIDATE IS REJECTED AND COUNTED RATHER THAN STOPPING THE RUN. Read out
+    // of the fork's own source (`Src/Reconcile_apply_wires.cpp`'s
+    // `ReplaceLiftedWires`), whose comment states the two causes and why it
+    // refuses: *"the wire's two ends now sit on holes carrying two DIFFERENT
+    // nets ... or the holes are no longer free for it. Neither is papered over:
+    // a board where a jumper has become a short is not a board this tool may
+    // write."* The fork is right, and a run that stopped here would make every
+    // wire-adding kind unusable on a packed board - which is the same trade
+    // `ClimbResult.unscoreable` records for `AutoFillVero`'s `CUT_CONFLICT`,
+    // and the same measurement behind it: a wire bridging two strips on a
+    // packed board routinely shorts two nets.
+    //
+    // IT IS MATCHED ON THE FORK'S OWN SENTENCE AND NARROWLY, so every OTHER
+    // `--update` failure still stops the run: an HC7 disagreement between the
+    // board and the circuit is a finding, and a catch wide enough to swallow it
+    // would be a skipped check that looks like a passing one. If the fork ever
+    // rewords this, the candidate becomes a run-stopping refusal again - the
+    // safe direction.
+    if (output.includes(RECONCILE_REFUSAL)) {
+      throw new Error(
+        `${WIRE_NOT_REPLACEABLE}: --update refused to put ${candidate}'s wire back, because its ` +
+          "two ends are no longer on one net - which is the fork's own short-circuit check " +
+          "(Board::CanPutDown, through Src/Reconcile_apply_wires.cpp's ReplaceLiftedWires). The " +
+          "candidate is NOT measured and NOT retried: a wire nothing could assign to a net " +
+          "joins nothing, and scoring the board without the --update would price a repair it " +
+          "does not have. It is counted instead, with every other candidate the pipeline could " +
+          `not evaluate.\n${output}`,
+      )
+    }
     throw new Error(
       `completionPass: --update exited ${result.status} on ${candidate}, so this candidate's ` +
         `wires were never assigned to a net and it was not measured. The invocation was: ` +

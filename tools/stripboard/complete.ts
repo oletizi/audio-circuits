@@ -77,7 +77,7 @@
  */
 import fs from "node:fs"
 import path from "node:path"
-import { UNSCOREABLE, accepts, strictlyBetter, type Evaluation } from "./climb.ts"
+import { accepts, candidateRejected, strictlyBetter, type Evaluation } from "./climb.ts"
 import { measure, type Measured } from "./climb-evaluate.ts"
 import { applyWires, assignNodes } from "./complete-apply.ts"
 import { netJoinPlans, type NetJoinPlan } from "./complete-joins.ts"
@@ -341,29 +341,35 @@ export function completionPass(
       }
       const tag = `p${rounds}-${plan.net}`
       const candidateBoard = applyWires(base.board, plan, input.runDir, tag, spawn)
-      // THE WIRES ARE ASSIGNED TO THEIR NET BEFORE ANYTHING READS THE BOARD -
-      // see `assignNodes`, which carries the measurement that forced it. The
-      // UNPAINTED `candidateBoard` is what the next round gestures on; the
+      // THE SAME TWO REFUSALS `climb` CATCHES, BY THE SAME SHARED PREDICATE: a
+      // wire bridging two strips on a packed board routinely shorts two nets,
+      // and the fork says so at two points - `--update` refuses to put the wire
+      // back when its two ends carry two different net ids, and `AutoFillVero`
+      // reports `CUT_STATE UNRESOLVED` with no cut list at all. Either way the
+      // candidate cannot be compared with anything, so it is rejected and
+      // counted; every other refusal still stops the pass.
+      //
+      // **THE `--update` IS INSIDE THE `try` FOR THAT REASON.** The wires are
+      // assigned to their net before anything reads the board - see
+      // `assignNodes`, which carries the measurement that forced it - and the
+      // UNPAINTED `candidateBoard` is what the next round gestures on while the
       // updated copy is what is measured.
-      const assigned = assignNodes(candidateBoard, input, input.runDir, tag, spawn)
-      // THE SAME ONE REFUSAL `climb` CATCHES, BY THE SAME EXPORTED NAME: a wire
-      // bridging two strips on a packed board routinely shorts two nets, and
-      // `AutoFillVero` then reports `CUT_STATE UNRESOLVED` with no cut list at
-      // all. That candidate cannot be compared with anything, so it is rejected
-      // and counted; every other refusal still stops the pass.
       let measured: Measured
       try {
+        const assigned = assignNodes(candidateBoard, input, input.runDir, tag, spawn)
         measured = measureInto(assigned, tag)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        if (!message.startsWith(UNSCOREABLE)) throw error
+        if (!candidateRejected(message)) throw error
         unscoreable += 1
         if (firstUnscoreable === null) firstUnscoreable = message
         outcome.set(
           plan.net,
-          "the candidate closing it could not be SCORED: its wires left the cut state " +
-            "unresolved, which is what the fork reports when a wire shorts two nets onto one " +
-            `piece of copper. The refusal: ${message.split("\n")[0] ?? ""}`,
+          "the candidate closing it COULD NOT BE EVALUATED: either --update refused to put one " +
+            "of its wires back because the wire's two ends carry two different net ids, or the " +
+            "wires left the cut state unresolved - both of which are what the fork reports when " +
+            "a wire shorts two nets onto one piece of copper, at two different points. The " +
+            `refusal names which: ${message.split("\n")[0] ?? ""}`,
         )
         continue
       }

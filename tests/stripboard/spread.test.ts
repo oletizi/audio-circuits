@@ -33,6 +33,8 @@ import {
   spreadTargetStrips,
   type Move,
 } from "../../tools/stripboard/moves.ts"
+import { candidateRejected } from "../../tools/stripboard/climb.ts"
+import { WIRE_NOT_REPLACEABLE, assignNodes } from "../../tools/stripboard/complete-apply.ts"
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
 import { rectOf } from "../../tools/stripboard/seed-placement.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
@@ -246,6 +248,50 @@ test("the gestures are the relocations then the wire, and only the last writes t
     ["--rotate", `${out}.spread-1.vrt`, "--ref", "Wire1", "--direction", "cw", "-o", `${out}.spread-2.vrt`],
     ["--stretch", `${out}.spread-2.vrt`, "--ref", "Wire1", "--direction", "grow", "-o", out],
   ])
+})
+
+test("a wire --update will not put back is a rejected candidate, and any other failure is not", () => {
+  // MEASURED ON THE PINNED FORK, on the constructed arm at seed 0 of the
+  // import-placed low-boost board: round 0's candidate 83 added a wire and
+  // --update exited 1 with "the layout's wire Wire1 (7,17 to 11,17, carrying
+  // net ids 9 and 1) cannot be put back after reconciliation: its two ends are
+  // no longer on one net." THAT STOPPED THE FIRST SPREAD SWEEP OUTRIGHT, and
+  // the fork is right to refuse - its own source says "a board where a jumper
+  // has become a short is not a board this tool may write" - so the candidate
+  // is rejected and counted, exactly as an unresolved cut state is.
+  const runDir = freshRunDir()
+  const shorted: SpawnVeroroute = () => ({
+    status: 1,
+    stdout: "",
+    stderr:
+      "the layout's wire Wire1 (7,17 to 11,17, carrying net ids 9 and 1) cannot be put back " +
+      "after reconciliation: its two ends are no longer on one net. Move or delete it in the " +
+      "GUI, then run this again.\n",
+  })
+  let refusal = ""
+  try {
+    assignNodes(path.join(runDir, "c.vrt"), { netlist: "n.net" }, runDir, "t", shorted)
+  } catch (error) {
+    refusal = error instanceof Error ? error.message : String(error)
+  }
+  expect(refusal.startsWith(WIRE_NOT_REPLACEABLE)).toBe(true)
+  expect(candidateRejected(refusal)).toBe(true)
+  // AND EVERY OTHER `--update` FAILURE STILL STOPS THE RUN. An HC7 disagreement
+  // between the board and the circuit is a finding, and a catch wide enough to
+  // swallow it would be a skipped check that looks like a passing one.
+  const broken: SpawnVeroroute = () => ({
+    status: 1,
+    stdout: "",
+    stderr: "netlist names a component the board does not carry\n",
+  })
+  let other = ""
+  try {
+    assignNodes(path.join(runDir, "c.vrt"), { netlist: "n.net" }, runDir, "t", broken)
+  } catch (error) {
+    other = error instanceof Error ? error.message : String(error)
+  }
+  expect(candidateRejected(other)).toBe(false)
+  expect(other).toContain("completionPass: --update exited 1")
 })
 
 test("a spread of a net wholly on one strip is not proposed, because that is a gather", () => {

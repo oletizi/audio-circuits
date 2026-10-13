@@ -300,7 +300,9 @@ test("a wire whose board cannot be scored is counted and reported, not thrown", 
   const runDir = freshPassDir()
   // `CUT_STATE UNRESOLVED` is what the fork reports when a wire shorts two nets,
   // and `score.ts` refuses such a board rather than pricing it at zero cuts. The
-  // pass catches that ONE refusal by name and counts the candidate.
+  // pass catches it by name - one of the TWO `candidateRejected` names, the
+  // other being --update's own refusal to put a shorted wire back - and counts
+  // the candidate.
   const unresolved = SPLIT_DUMP.replace("CUT_STATE COMPUTED", "CUT_STATE UNRESOLVED")
   const result = completionPass(
     passStart(runDir, SPLIT_DUMP, SPLIT_OCC),
@@ -316,7 +318,12 @@ test("a wire whose board cannot be scored is counted and reported, not thrown", 
   // THE EVALUATION COUNT EXCLUDES IT: it is a candidate the pass could not
   // evaluate, which is `ClimbResult.unscoreable`'s own distinction.
   expect(result.evaluations).toBe(1)
-  expect(result.unclosed[0]?.reason).toContain("could not be SCORED")
+  // THE CAUSE NAMES BOTH POSSIBILITIES AND THEN QUOTES THE REFUSAL THAT FIRED,
+  // which is what tells a reader which of the two it was: the candidate's wires
+  // left the cut state unresolved here, so `score.ts`' own union member is in
+  // the detail.
+  expect(result.unclosed[0]?.reason).toContain("COULD NOT BE EVALUATED")
+  expect(result.unclosed[0]?.reason).toContain("score-cuts-not-computed")
 })
 
 test("the pass refuses a measurement whose open-net count and report disagree", () => {

@@ -1,6 +1,6 @@
 /**
- * THE CLIMB'S VOCABULARY: what one climb is handed, what it reports, and the one
- * refusal it catches.
+ * THE CLIMB'S VOCABULARY: what one climb is handed, what it reports, and the two
+ * refusals that mean "reject this candidate" rather than "stop the run".
  *
  * **SPLIT FROM `./climb.ts` FOR THE 500-LINE CEILING, AT THE SAME SEAM THIS
  * DIRECTORY SPLITS EVERYWHERE ELSE**: this one answers *what IS a climb's input
@@ -23,10 +23,12 @@ import type { StripboardRules } from "./rules.ts"
 import type { SeedStart } from "./seed.ts"
 import type { BoardTargets } from "./targets.ts"
 import type { Evaluation } from "./climb-evaluate.ts"
+import { WIRE_NOT_REPLACEABLE } from "./complete-apply.ts"
 
 
 /**
- * The one refusal `climb` catches, matched by the NAME `./score.ts` gives it.
+ * The refusal a board that cannot be SCORED raises, matched by the NAME
+ * `./score.ts` gives it.
  *
  * `./score.ts` builds every refusal as the member of its own `ScoreRefusal`
  * union followed by a colon, so this prefix is that member rather than a phrase
@@ -42,6 +44,31 @@ import type { Evaluation } from "./climb-evaluate.ts"
  * renamed.
  */
 export const UNSCOREABLE = "score-cuts-not-computed"
+
+/**
+ * Whether a refusal means **this candidate cannot be evaluated** - the one
+ * class of error a sweep rejects and counts instead of stopping on.
+ *
+ * **THERE ARE TWO, AND THEY ARE READ IN ONE PLACE SO NO CALLER CAN CATCH ONE
+ * AND MISS THE OTHER.** Both are a wire on a packed board shorting two nets,
+ * caught at two different points:
+ *
+ *   - `UNSCOREABLE` - `AutoFillVero` could not resolve a cut arrangement and
+ *     reported `CUT_CONFLICT`, so `./score.ts` refuses the board rather than
+ *     pricing it at zero cuts and ranking it first;
+ *   - `WIRE_NOT_REPLACEABLE` - `--update` would not put the wire back, because
+ *     its two ends carry two different net ids. That one is the fork's own
+ *     short-circuit check and it fires EARLIER, before anything is scored.
+ *
+ * **EVERY OTHER REFUSAL STILL STOPS THE RUN**, which is the whole point of
+ * matching named prefixes rather than catching broadly: a fork failure, a
+ * geometry refusal or a grader refusal is a defect, and a catch wide enough to
+ * swallow one would turn it into a skipped candidate - the shape this pipeline
+ * is built against.
+ */
+export function candidateRejected(message: string): boolean {
+  return message.startsWith(UNSCOREABLE) || message.startsWith(WIRE_NOT_REPLACEABLE)
+}
 
 /**
  * What one climb needs. `batch` is REQUIRED with no default: Task 9's
@@ -117,22 +144,33 @@ export interface ClimbResult {
   /** Every evaluation's `F`, in the order the candidates were evaluated. */
   readonly history: readonly number[]
   /**
-   * How many candidates could not be SCORED at all, and the first one's refusal.
+   * How many candidates could not be EVALUATED at all, and the first one's
+   * refusal.
    *
-   * **A CANDIDATE WHOSE CUT LIST CANNOT BE COMPUTED IS REJECTED AND COUNTED,
-   * NOT A RUN-STOPPING REFUSAL - A DELIBERATE CHANGE WITH A MEASUREMENT BEHIND
-   * IT.** `add-wire` produces one: a wire bridging two strips on a packed board
-   * routinely shorts two different nets, and `AutoFillVero` then reports
-   * `CUT_STATE UNRESOLVED` with `CUT_CONFLICT` lines instead of a cut
-   * arrangement. Measured on the constructed arm at seed 3 of the import-placed
-   * low-boost board: `Wire1` from `5,3` to `6,3` produced
-   * `CUT_CONFLICT 5,2,9 5,4,11` and `CUT_CONFLICT 6,2,8 6,4,14`, and re-running
-   * `--author --op autofill` leaves it unresolved every time.
+   * **A CANDIDATE THE PIPELINE CANNOT EVALUATE IS REJECTED AND COUNTED, NOT A
+   * RUN-STOPPING REFUSAL - A DELIBERATE CHANGE WITH A MEASUREMENT BEHIND IT.**
+   * `candidateRejected` above names the two refusals that mean it and both are
+   * one wire shorting two nets, which on a packed board is a common candidate
+   * rather than a defect. Measured, each on the import-placed low-boost board:
+   *
+   *   - `AutoFillVero` reports `CUT_STATE UNRESOLVED` with `CUT_CONFLICT` lines
+   *     instead of a cut arrangement - on the constructed arm at seed 3,
+   *     `Wire1` from `5,3` to `6,3` produced `CUT_CONFLICT 5,2,9 5,4,11` and
+   *     `CUT_CONFLICT 6,2,8 6,4,14`, and re-running `--author --op autofill`
+   *     leaves it unresolved every time;
+   *   - `--update` refuses to put a wire back when its two ends carry two
+   *     different net ids - on the constructed arm at seed 0, round 0 candidate
+   *     83, *"the layout's wire Wire1 (7,17 to 11,17, carrying net ids 9 and 1)
+   *     cannot be put back after reconciliation"*. **THAT ONE FIRES BEFORE
+   *     ANYTHING IS SCORED**, and it is what stopped the first spread sweep
+   *     outright until it was counted here instead.
    *
    * `./score.ts` refuses such a board and is RIGHT to - *"scoring it anyway
-   * would price a board at zero cuts and rank it first"* - but a refusal that
-   * stops the run makes `add-wire` unusable on any real board, which is the
-   * capability the move set exists to have. So the candidate is rejected, for
+   * would price a board at zero cuts and rank it first"* - and so is the fork,
+   * whose own source says *"a board where a jumper has become a short is not a
+   * board this tool may write."* But a refusal that stops the run makes every
+   * wire-adding kind unusable on any real board, which is the capability the
+   * move set exists to have. So the candidate is rejected, for
    * the same reason an unscoreable board cannot be compared with anything, and
    * **the count is reported rather than swallowed**: these are not evaluations,
    * they are candidates the pipeline could not evaluate, and a reader seeing a
