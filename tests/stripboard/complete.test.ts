@@ -32,6 +32,7 @@ import fs from "node:fs"
 import { completionPass } from "../../tools/stripboard/complete.ts"
 import { netJoinPlans } from "../../tools/stripboard/complete-joins.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
+import { importClosure } from "./import-closure.ts"
 import {
   BASE_DUMP,
   REFERENCE,
@@ -340,4 +341,44 @@ test("the pass refuses a measurement whose open-net count and report disagree", 
   // The net the report names is not in the reference netlist, which is the
   // generator's own refusal and names the two sides.
   expect(refusal).toContain("the reference netlist has no such net")
+})
+
+test("no file in the completion pass's TRANSITIVE closure names a clock, a pid, a listing or Math.random", async () => {
+  // THE SAME CLAIM `./escapes-search.test.ts` MAKES ABOUT THE SEARCH, over the
+  // pass's own entry points, because `V6`'s determinism argument has to cover
+  // every stage that writes the board a run reports - and this one adds a
+  // generator that reads a copper graph, a pad table and a netlist. A pass that
+  // proposed its wires in an order a directory listing decided would make the
+  // run irreproducible exactly where the search is not.
+  //
+  // THE EXEMPTIONS ARE THAT FILE'S and are not restated here: both are reached
+  // through the same type-only edge from `check-report.ts`, which that file
+  // holds, so a copy of the list here would be a second place to keep correct.
+  // What this test asserts is that the pass adds NO NEW hit of its own.
+  //
+  // WHAT IT DOES NOT PROVE, exactly as that file says of itself: a scan cannot
+  // see an aliased access, a clock reached through a builtin the walker skips,
+  // or a nondeterminism that is not one of these five identifiers.
+  const forbidden = ["Date.now", "performance.now", "process.pid", "readdirSync", "Math.random"]
+  const exempt = ["tools/bom/catalog.ts", "tools/perfboard/declaration.ts"]
+  const closure = new Set<string>()
+  for (const entry of [
+    "tools/stripboard/complete.ts",
+    "tools/stripboard/complete-joins.ts",
+  ]) {
+    for (const file of await importClosure(entry)) closure.add(file)
+  }
+  expect(closure.size, "the closure must be more than the two entry points").toBeGreaterThan(2)
+  // AND THE GENERATOR'S OWN DEPENDENCIES ARE REALLY IN IT, so a closure that
+  // silently came back as the two entry points alone cannot pass.
+  expect(closure).toContain("tools/stripboard/pad-provenance.ts")
+  expect(closure).toContain("tools/stripboard/copper.ts")
+  expect(closure).toContain("tools/stripboard/moves-wire.ts")
+  for (const file of [...closure].sort()) {
+    if (exempt.includes(file)) continue
+    const text = await Bun.file(file).text()
+    for (const identifier of forbidden) {
+      expect(text, `${file}: ${identifier}`).not.toContain(identifier)
+    }
+  }
 })
