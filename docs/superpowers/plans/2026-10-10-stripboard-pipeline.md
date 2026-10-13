@@ -5687,3 +5687,69 @@ carries the whole reading and names this entry;
 candidate's shape and `tools/stripboard/complete-apply.ts` the node-id defect.
 The run is in
 `.superpowers/sdd/2026-10-10-stripboard-pipeline/completion-pass-report.md`.
+
+### The move set gains an eighth kind, `spread`, which no spec describes
+
+**What the documents say.** `docs/superpowers/specs/
+2026-10-10-stripboard-placement-cost-design.md` §6.1 names five single-part
+moves and `docs/superpowers/specs/2026-10-10-stripboard-pipeline-design.md` §7.4
+adds the net cluster, which is six. §8.1.1 names the two levers that reduce the
+cut count — clustering and **spending strips** — and its table records of
+spending strips: *"effect on `W`: none at all. It adds nothing to pay for. And
+it is nearly free."*
+
+**What the owner said, verbatim (2026-10-12), which is the authority for this
+entry:**
+
+> "Wires let you spread nets across multiple strips so they don't collide with
+> other nets that would otherwise have to share the same strip. That's the way
+> wires reduce cuts. Otherwise you'd have to pack more nets adjacent to each
+> other on a the same strip. Wires let you trade strips for cuts"
+
+**Where that departs from §8.1.1.** It does not contradict the lever; it supplies
+the step the lever's costing leaves out. A net cannot leave a strip it shares
+with another net unless its pins have another strip to go to, and going there
+splits the net — so the move that spends a strip DOES buy a wire, where §8.1.1
+says it buys none. §8.1.1 is right about the case it has in mind, a whole net
+moved to one strip of its own, which is `gather` and needs no wire. It is the
+PARTIAL case that costs one, and that case is the one his sentence describes.
+
+**AGENT RATIONALE (written by an agent, not by the owner, and not endorsed by
+him).** The implementation is `tools/stripboard/moves-spread.ts`, whose header
+quotes his sentence as the warrant for the kind's existence and derives the
+enumeration from the identity rather than from his words: regrouping
+`C = N + J − S_occ` as `C = Σ_strips (m_s − 1)` over net segments shows that
+adding a strip to a net is `ΔC = 0` on a free strip and `+1` on an occupied one,
+and only VACATING a strip the net shares — onto a free one — is `ΔC = −1`. So the
+enumeration offers only that third shape, and every other pairing is left out
+because the identity says it cannot pay rather than because asking was
+expensive.
+
+**The relocation and the wire are ONE candidate, and that is forced rather than
+chosen.** The relocation alone splits a net, which the acceptance rule's first
+key refuses whatever `F` does; the wire alone removes no cut; and
+`stripboard/rules.json` leaves `worseAcceptance` unset, so no intermediate worse
+than the incumbent is ever accepted. Neither half is reachable first.
+
+**What else changed with it, named here because it moves a measured figure.** A
+fresh wire's holes carry node id 0 and `--check`'s completeness reads node ids,
+so `tools/stripboard/climb.ts` now runs one `--update` per candidate that adds a
+wire — `add-wire` as well as `spread`. Every `add-wire` candidate in the sweeps
+up to `docs/stripboard/pipeline-verification.md` §6.10 was scored without it,
+which is why §6.9 could count 7,417 of them and report `W = 0` on every best
+board. The two changes landed together and are NOT separated by a measurement;
+§6.11 records that limit with the run.
+
+**Two documented claims this work measured false and did NOT fix**, on the
+controller's instruction to report them and leave them (one concern per change):
+`stripboard/rules.json`'s `rhoWire` note says *"a split costs a cut and then
+needs a join a wire supplies"*, and §8.1.1's table says *"removes one cut per
+split eliminated"*. Both hold only while the vacated strip stays occupied. A
+split onto a FREE strip costs no cut at all — `J` and `S_occ` rise together and
+cancel — which is why a spread that merely adds a strip to a net is `ΔC = 0`
+rather than `−1`. Ratifying, rejecting or correcting either is the owner's.
+
+Ratifying or rejecting the kind is the owner's. `tools/stripboard/moves-model.ts`'s
+header names it as the second exception to "the documents win",
+`tools/stripboard/moves-spread.ts` carries the full account, and the run is in
+`.superpowers/sdd/2026-10-10-stripboard-pipeline/spread-move-report.md`.

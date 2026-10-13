@@ -341,7 +341,20 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
       // adds no wire costs exactly what it did before.
       let measured: Measured
       try {
-        const measuredBoard = addsWire(move)
+        // **THE CONDITION IS "THE CANDIDATE CARRIES A WIRE", NOT "THIS MOVE
+        // ADDED ONE", AND THE DIFFERENCE WAS A MEASURED DEFECT.** The board the
+        // climb carries forward is the UN-`--update`d one (see `State.board`),
+        // so a wire accepted in an earlier round still sits on it with node id
+        // 0. While only wire-ADDING candidates were assigned, the successors of
+        // such a board were measured without the `--update` - and `--check`
+        // then called the net that wire had closed open again, so one round's
+        // `openNets` and the next round's disagreed about the same copper. The
+        // wire count comes from the base's own dump, and `--update` on a board
+        // with no wire at all is measured byte-identical in its check report, so
+        // this costs nothing on a wireless board and keeps the node ids current
+        // on every board that has one.
+        const carriesWire = addsWire(move) || base.measured.dump.wires.length > 0
+        const measuredBoard = carriesWire
           ? assignNodes(candidateBoard, { netlist: input.netlist }, input.runDir, tag, spawn)
           : candidateBoard
         measured = evaluateInto(measuredBoard, tag)

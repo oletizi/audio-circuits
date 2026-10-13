@@ -272,6 +272,102 @@ function nearestRemaining(staying: readonly number[], to: number): number | unde
 }
 
 /**
+ * How far from one of the net's own pins a wire END may sit and still be taken
+ * to be on that net's copper: **one hole.**
+ *
+ * **IT IS A MODEL OF WHERE THE CUTS WILL FALL, AND THE NARROWEST ONE THAT IS
+ * NOT A GUESS.** `AutoFillVero` cuts a strip between two ADJACENT holes
+ * belonging to different nets, so a free hole immediately beside one of the
+ * net's pins is in that pin's piece of copper unless the cut falls between
+ * exactly those two - which it does only when the pin's other neighbour is
+ * another net's. A hole several holes away has no such argument behind it at
+ * all. Widening this is a deliberate edit with a run behind it; the cost of it
+ * being too tight is a spread NOT PROPOSED, which is the direction every
+ * narrowing in this file errs in.
+ */
+const WIRE_END_REACH = 1
+
+/**
+ * The lines of holes the rejoining wire may be tried on: the ones where the net
+ * has a pin WITHIN `WIRE_END_REACH` on **both** strips the wire has to span,
+ * nearest first.
+ *
+ * **IT IS A REQUIREMENT AND NOT A PREFERENCE, AND BOTH FACTS BEHIND THAT WERE
+ * MEASURED.** The first draft took the first line that FIT, ascending, which is
+ * what `wireMovesFor` does. On the `--import`-placed low-boost board **every one
+ * of the first twenty-five spread candidates was then refused** by `--update`
+ * with *"the layout's wire Wire1 ... cannot be put back after reconciliation:
+ * its two ends are no longer on one net"* - the lowest free line is at the far
+ * end of the board from the net, so the wire's ends landed on copper belonging
+ * to whichever other net occupies that piece of the two strips. Ranking the
+ * lines by nearness and still taking the first that FIT did not fix it, because
+ * the near lines are exactly the ones the parts' own holes block: the wire went
+ * to column 23 while the net's pins on the strip it was leaving sat at columns 3
+ * to 15.
+ *
+ * **SO A LINE THE WIRE CANNOT JOIN THE NET ON IS NOT OFFERED AT ALL.** A wire
+ * is STRAIGHT - the fork makes a `1 x n` or an `n x 1` and nothing else - so one
+ * line has to serve both ends, and the spread is proposable only where the net's
+ * copper on the two strips OVERLAPS in that line. Where it does not, no single
+ * wire rejoins the net and this kind proposes nothing.
+ *
+ * **THAT IS A REAL LIMIT OF THE KIND AND IT IS NAMED RATHER THAN HIDDEN:** the
+ * join a human would draw there is an L - a wire ALONG one strip to bring the
+ * net's copper under the other strip's, then a wire ACROSS - which is two wires
+ * and `./complete-joins.ts`'s own pair of planners (`wireAlong` and
+ * `wireBridge`). This kind plans one wire. Extending it to an L is a deliberate
+ * edit with a run behind it, and it would cost `2 x rho_w = 0.5` against the
+ * same one cut.
+ *
+ * The net's pins on the TARGET strip are the relocated ones, and a spread's
+ * delta is purely across the strips - so their coordinate ALONG a strip is the
+ * one they already have on `from`. That is why this is handed `from` and the
+ * mover refs rather than `to`.
+ */
+function wireLines(
+  dump: BoardDump,
+  reference: ReferenceNets,
+  net: string,
+  from: number,
+  joined: number,
+  movers: ReadonlySet<string>,
+): readonly number[] {
+  const owner = netOfHole(reference)
+  const alongOf = (hole: { readonly row: number; readonly col: number }): number =>
+    dump.verticalStrips ? hole.row : hole.col
+  const leaving: number[] = []
+  const staying: number[] = []
+  for (const part of dump.parts) {
+    for (const pin of dump.pins[part.ref] ?? []) {
+      if (owner.get(`${part.ref}.${pin.pin}`) !== net) continue
+      const strip = stripOf(pin, dump.verticalStrips)
+      // A MOVER'S PIN TRAVELS AND A STAYER'S DOES NOT, which is why the two
+      // lists are kept apart rather than keyed by strip alone: the net's copper
+      // on the target strip is whatever the movers carry there, and its copper
+      // on `joined` is whatever was already there.
+      if (strip === from && movers.has(part.ref)) leaving.push(alongOf(pin))
+      if (strip === joined && !movers.has(part.ref)) staying.push(alongOf(pin))
+    }
+  }
+  const nearest = (holes: readonly number[], line: number): number => {
+    let best = Number.POSITIVE_INFINITY
+    for (const along of holes) best = Math.min(best, Math.abs(along - line))
+    return best
+  }
+  const lines = dump.verticalStrips ? dump.grid.rows : dump.grid.cols
+  const reachable: { readonly line: number; readonly cost: number }[] = []
+  for (let line = 0; line < lines; line += 1) {
+    const toEnd = nearest(leaving, line)
+    const joinEnd = nearest(staying, line)
+    if (toEnd > WIRE_END_REACH || joinEnd > WIRE_END_REACH) continue
+    reachable.push({ line, cost: toEnd + joinEnd })
+  }
+  return reachable
+    .sort((a, b) => a.cost - b.cost || a.line - b.line)
+    .map((one) => one.line)
+}
+
+/**
  * One net's spread from strip `from` to strip `to`, or `undefined` when the
  * model admits no such candidate.
  *
@@ -339,11 +435,14 @@ export function spreadMove(
   const step = to - from
   const delta: readonly [number, number] = dump.verticalStrips ? [0, step] : [step, 0]
   const gestures: Translation[] = []
+  const movers = new Set<string>()
   const staying: number[] = []
   for (const hole of aimedHoles(dump, reference, net)) {
     const strip = stripOf(hole, dump.verticalStrips)
-    if (strip === from) gestures.push({ ref: hole.ref, delta })
-    else staying.push(strip)
+    if (strip === from) {
+      gestures.push({ ref: hole.ref, delta })
+      movers.add(hole.ref)
+    } else staying.push(strip)
   }
   if (gestures.length === 0) return undefined
   // THE WHOLE NET MOVING IS A GATHER AND NOT A SPREAD - decline 3 above.
@@ -361,8 +460,7 @@ export function spreadMove(
   const moved = translationsAfter(occupancy, dump.grid, gestures)
   if (moved === undefined) return undefined
   const name = nextWireName(dump.wires.length)
-  const lines = dump.verticalStrips ? dump.grid.rows : dump.grid.cols
-  for (let along = 0; along < lines; along += 1) {
+  for (const along of wireLines(dump, reference, net, from, joined, movers)) {
     const bridge = wireBridge(moved, dump, name, low, high, along)
     if (bridge === undefined) continue
     return {

@@ -268,9 +268,10 @@ test("each evaluation runs autofill before scoring, because an unpainted board h
   const dump = order.findIndex((line) => line.includes("--dump-board"))
   expect(autofill).toBeGreaterThanOrEqual(0)
   expect(autofill).toBeLessThan(dump)
-  // And it holds for EVERY evaluation rather than only the first: the four
-  // invocations are apply, autofill, check, dump, so the first evaluation is
-  // the three with no apply before them and each later one is a full four.
+  // And it holds for EVERY evaluation rather than only the first. THE START IS
+  // THREE INVOCATIONS - autofill, check, dump, with no apply before them and no
+  // --update, because the start board is measured exactly as route 1 measured
+  // it.
   expect(order.slice(0, 3)).toEqual([
     `--author ${runDir}/seeded.vrt --op autofill -o ${runDir}/start-filled.vrt`,
     `--check ${runDir}/start-filled.vrt --netlist ${runDir}/reference.net`,
@@ -282,9 +283,19 @@ test("each evaluation runs autofill before scoring, because an unpainted board h
   // climb did, and the real binary refused it on round 0, move 0 - `--move`
   // will not relocate a part onto holes that overlap its own current footprint
   // once AutoFillVero has painted copper into them. Measured; see Measured.source.
-  expect(order.slice(3, 7)).toEqual([
+  //
+  // **A CANDIDATE HERE IS FIVE INVOCATIONS AND NOT FOUR, BECAUSE THIS BOARD
+  // CARRIES WIRES.** BASE_DUMP has two WIRE lines, so every candidate derived
+  // from it carries a wire whose holes must be assigned to a net before
+  // anything reads completeness off the board - a fresh wire's holes carry node
+  // id 0 and --check's completeness reads node ids, and the climb carries the
+  // UN-updated board forward, so the ids have to be re-assigned on each
+  // candidate rather than once. On a board with no wire the --update is absent
+  // and the candidate is the recorded four.
+  expect(order.slice(3, 8)).toEqual([
     `--move ${runDir}/seeded.vrt --ref R1 --to 1,1 -o ${runDir}/r0-m0.vrt`,
-    `--author ${runDir}/r0-m0.vrt --op autofill -o ${runDir}/r0-m0-filled.vrt`,
+    `--update ${runDir}/r0-m0.vrt --netlist ${runDir}/reference.net -o ${runDir}/r0-m0-updated.vrt`,
+    `--author ${runDir}/r0-m0-updated.vrt --op autofill -o ${runDir}/r0-m0-filled.vrt`,
     `--check ${runDir}/r0-m0-filled.vrt --netlist ${runDir}/reference.net`,
     `--dump-board ${runDir}/r0-m0-filled.vrt`,
   ])

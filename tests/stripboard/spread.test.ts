@@ -62,19 +62,20 @@ test("the targets are exactly the strips holding no pin", () => {
 test("the sources are the crowded strips only, and a net's private strip is not one", () => {
   // HAND-DERIVED, NET BY NET, from the picture and the NODE lines:
   //
-  //   shared  R1.1 on row 1 and R3.1 on row 3. Row 1 also carries R2's two
+  //   shared  R1.2 on row 1 and R3.1 on row 3. Row 1 also carries R2's two
   //           leads, which are `crowd` and `far` - other nets, on a part this
   //           spread would not move - so row 1 is a source. Row 3 carries R3
   //           and nothing else, so vacating it would EMPTY it: S_occ would fall
   //           by one as the target's rose and the identity's -1 would cancel.
   //           Row 3 is therefore not offered.                      -> [1]
-  //   crowd   R1.2 and R2.1, BOTH on row 1, and the only parts on row 1 are R1
+  //   crowd   R1.1 and R2.1, BOTH on row 1, and the only parts on row 1 are R1
   //           and R2 - which are exactly the movers. Discounting them leaves no
   //           other net's pin there, so the strip is not crowded for this net.
   //                                                                 -> []
   //   far     R2.2 on row 1 and R4.1 on row 6. Row 1 also carries R1's leads
-  //           (`shared` and `crowd`), so it is a source; row 6 is R4's alone.
-  //                                                                 -> [1]
+  //           (`shared` and `crowd`), so it IS a source - the reach of a
+  //           straight wire is a separate question, and `spreadMove`'s, not
+  //           this function's.                                      -> [1]
   //   lone    R3.2 on row 3 and R4.2 on row 6, each a strip its own part has to
   //           itself. Neither is crowded.                           -> []
   expect(spreadSourceStrips(CROWDED, CROWDED_NETS, "shared")).toEqual([1])
@@ -100,65 +101,87 @@ test("a board where no net shares a strip is offered no spread at all", () => {
 })
 
 test("the enumeration is exactly the hand-counted spread set of the fixture board", () => {
-  // HAND-DERIVED: two (net, source) pairs - (shared, 1) and (far, 1), from the
-  // test above - by the five free strips 0, 2, 4, 5 and 7, and every one of the
-  // ten fits. The wire each needs is short: `shared` joins its target to row 3
-  // and `far` to row 6, the longest being row 0 to row 6 at seven holes against
-  // the fork's measured bound of sixteen, and column 2 or 3 is clear of every
-  // part for the whole span because R1, R2, R3 and R4 occupy only columns 0, 1,
-  // 4 and 5.
+  // TWO (net, source) PAIRS SURVIVE `spreadSourceStrips` - (shared, 1) and
+  // (far, 1) - AND ONLY ONE OF THEM YIELDS A CANDIDATE, because the rejoining
+  // wire is STRAIGHT.
   //
-  //   shared from 1: targets 0, 2, 4, 5, 7                            = 5
-  //   far    from 1: targets 0, 2, 4, 5, 7                            = 5
-  //                                                                  ---
-  //                                                                    10
+  //   far   its pin on row 1 is at column 5 and its pin on row 6 at column 0.
+  //         No single line of holes is within one hole of both, so no straight
+  //         wire can land one end on the net's copper on each strip and NO
+  //         candidate is proposed. This is the measured limit of the kind.  = 0
+  //   shared its pin on row 1 is at column 2 and its pin on row 3 at column 4,
+  //         so column 3 is one hole from each and free on both rows. The five
+  //         free strips are 0, 2, 4, 5 and 7, and THREE of them take it:
+  //           to 0: the wire would span rows 0 to 3, and both gesture orders
+  //                 anchor the fresh 1x3 at row 1 column 2 - whose columns 2,
+  //                 3 and 4 include R2.1 at 1,4. Blocked.
+  //           to 2: R1 lands on row 2 columns 1 to 2 and the fresh wire fits at
+  //                 row 2 columns 3 to 5, shrinks to two holes and turns onto
+  //                 rows 2 and 3 of column 3.                            TAKEN
+  //           to 4: R1 lands on row 4 columns 1 to 2, which is where
+  //                 turn-then-stretch would anchor the wire (4,2); and
+  //                 stretch-then-turn anchors at row 3 column 3, whose column 4
+  //                 is R3.1. Both blocked.
+  //           to 5: fresh wire at row 4 columns 2 to 4, turned onto rows 3 to 5
+  //                 of column 3.                                         TAKEN
+  //           to 7: the same anchor, grown twice, rows 3 to 7 of column 3.
+  //                                                                      TAKEN
+  //                                                                        = 3
+  //                                                                        ---
+  //                                                                          3
   const found = spreads()
-  expect(found.length).toBe(10)
+  expect(found.length).toBe(3)
   expect(found.map((move) => `${move.net} ${move.from}->${move.to} joined ${move.joined}`)).toEqual([
-    "shared 1->0 joined 3",
     "shared 1->2 joined 3",
-    "shared 1->4 joined 3",
     "shared 1->5 joined 3",
     "shared 1->7 joined 3",
-    "far 1->0 joined 6",
-    "far 1->2 joined 6",
-    "far 1->4 joined 6",
-    "far 1->5 joined 6",
-    "far 1->7 joined 6",
   ])
-  // THE JOIN IS THE NET'S OTHER STRIP, which is the only remaining one in both
-  // cases: `shared`'s other aimed pin is R3.1 on row 3 and `far`'s is R4.1 on
-  // row 6. A net left on three strips would still need further joins after
-  // this one, and the spread supplies only the join its own relocation makes
-  // necessary.
+  // ONE MOVER EACH, R1 - the only part whose pin on `shared` is on row 1.
   expect(found.every((move) => move.gestures.length === 1)).toBe(true)
-  expect(found.map((move) => move.gestures[0]?.ref)).toEqual([
-    "R1",
-    "R1",
-    "R1",
-    "R1",
-    "R1",
-    "R2",
-    "R2",
-    "R2",
-    "R2",
-    "R2",
+  expect(found.map((move) => move.gestures[0]?.ref)).toEqual(["R1", "R1", "R1"])
+  // AND THE WIRE RUNS DOWN COLUMN 3 IN EVERY ONE, which is the whole content of
+  // the reach rule: one end beside the net's pin on row 1's vacated copper,
+  // which travels with R1, and the other beside its pin on row 3.
+  expect(found.map((move) => [move.ends[0], move.ends[1]])).toEqual([
+    [
+      [2, 3],
+      [3, 3],
+    ],
+    [
+      [3, 3],
+      [5, 3],
+    ],
+    [
+      [3, 3],
+      [7, 3],
+    ],
   ])
+})
+
+test("a net whose copper on the two strips no straight wire reaches gets no spread", () => {
+  // `far` IS CROWDED ON ROW 1 AND IS STILL NOT PROPOSABLE, and the two facts
+  // are separate: `spreadSourceStrips` offers row 1 (asserted above), and every
+  // target is then declined because the wire cannot reach. Its pin on row 1 is
+  // at column 5 and its pin on row 6 at column 0.
+  //
+  // **THIS IS THE KIND'S OWN LIMIT AND NOT A BOARD QUIRK.** The fork makes only
+  // straight wires - a 1 x n or an n x 1 - so one line of holes has to carry
+  // both ends. The join a person would draw here is an L: a wire ALONG row 6 to
+  // bring `far`'s copper under column 5, then a wire ACROSS. That is two wires
+  // and tools/stripboard/complete-joins.ts's own pair of planners; this kind
+  // plans one.
+  expect(spreadSourceStrips(CROWDED, CROWDED_NETS, "far")).toEqual([1])
+  for (const to of spreadTargetStrips(CROWDED)) {
+    expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_NETS, "far", 1, to)).toBeUndefined()
+  }
 })
 
 test("the deltas cross the strips and never slide a part along one", () => {
   // THE SAME RULE `gatherMove` APPLIES, and here the strips are ROWS - so the
   // delta is (target - source, 0) for every mover and the column component is
-  // zero. HAND-DERIVED from the source strip 1 and the five targets.
+  // zero. HAND-DERIVED from the source strip 1 and the three targets 2, 5 and 7.
   expect(spreads().map((move) => move.gestures[0]?.delta)).toEqual([
-    [-1, 0],
     [1, 0],
-    [3, 0],
-    [4, 0],
-    [6, 0],
-    [-1, 0],
-    [1, 0],
-    [3, 0],
     [4, 0],
     [6, 0],
   ])
@@ -171,38 +194,44 @@ test("the spread order is the netlist's, so reversing the reference reverses it"
   // every other assertion here and fail this one.
   const forward = spreads().map(describeMove)
   const reversed: ReferenceNets = new Map([...CROWDED_NETS.entries()].reverse())
-  const backward = spreads(reversed).map(describeMove)
-  // The two nets' blocks swap and each block's own ascending target order is
-  // kept, because the targets are walked in strip order and not in map order.
-  expect(backward).toEqual([...forward.slice(5), ...forward.slice(0, 5)])
+  // ONLY `shared` YIELDS CANDIDATES ON THIS BOARD, so reversing the net order
+  // cannot reorder two blocks - it can only prove the enumeration still walks
+  // the map rather than a sorted key list, which is what the ascending target
+  // order inside the one block shows. The CLUSTER moves are what
+  // ./moves.test.ts holds the reversal property on, over a board with two
+  // contributing nets.
+  expect(spreads(reversed).map(describeMove)).toEqual(forward)
   expect(spreads().map(describeMove)).toEqual(forward)
 })
 
 test("the occupancy advance moves the parts AND lands the wire", () => {
   // THE FIRST CANDIDATE, hand-walked through the transcribed arithmetic:
-  //   R1 is a 1x2 rect at 1,0 and the delta is -1,0, so it lands at 0,0;
-  //   the wire is created at 1,1 as a 1x3 - row 1 columns 1 to 3, all free once
-  //     R1 has left columns 0 and 1, since R2 starts at column 4;
-  //   the clockwise turn of a 1x3 at 1,1 moves its top-left by (-1,+1) to 0,2
-  //     and makes it 3x1 (./seed-placement.ts's turnedRect, measured against
-  //     the binary);
-  //   one grow step then extends it away from AT to 4x1, rows 0 to 3 in column
-  //     2 - which is the span the move records as its ends, 0,2 to 3,2.
+  //   R1 is a 1x2 rect at 1,1 and the delta is +1,0, so it lands at 2,1;
+  //   the wire spans rows 2 to 3 of column 3 - two holes - so the fresh 1x3
+  //     has to SHRINK, and the order recorded is stretch-then-turn because
+  //     turn-then-stretch would anchor the fresh wire at row 3 column 2, whose
+  //     columns include R3.1 at 3,4;
+  //   stretch-then-turn anchors it at row 2 column 3, where columns 3, 4 and 5
+  //     are free once R1 sits at columns 1 to 2;
+  //   one shrink makes it 1x2 at 2,3, and the clockwise turn of a 1x2 moves its
+  //     top-left by (0, 0) - trunc((2-1)/2) is zero - leaving a 2x1 at 2,3,
+  //     which is rows 2 and 3 of column 3.
   const first = spreads()[0]
   expect(first).toBeDefined()
   if (first === undefined) return
-  expect(first.wire.at).toEqual([1, 1])
+  expect(first.wire.at).toEqual([2, 3])
   expect(first.wire.turns).toBe(1)
-  expect(first.wire.stretch).toBe(1)
+  expect(first.wire.stretch).toBe(-1)
+  expect(first.wire.order).toBe("stretch-then-turn")
   expect(first.ends).toEqual([
-    [0, 2],
-    [3, 2],
+    [2, 3],
+    [3, 3],
   ])
   const after = occupancyAfter(CROWDED_OCC, CROWDED, first)
   expect(after).toBeDefined()
   if (after === undefined) return
-  expect(rectOf(after, "R1")).toEqual({ row: 0, col: 0, rows: 1, cols: 2, across: false })
-  expect(rectOf(after, "Wire1")).toEqual({ row: 0, col: 2, rows: 4, cols: 1, across: true })
+  expect(rectOf(after, "R1")).toEqual({ row: 2, col: 1, rows: 1, cols: 2, across: false })
+  expect(rectOf(after, "Wire1")).toEqual({ row: 2, col: 3, rows: 2, cols: 1, across: true })
   // AND THE PARTS THAT DID NOT MOVE DID NOT MOVE. A spread relocates only the
   // movers it records; R2, R3 and R4 are where the dump put them.
   expect(rectOf(after, "R2")).toEqual(rectOf(CROWDED_OCC, "R2"))
@@ -240,13 +269,14 @@ test("the gestures are the relocations then the wire, and only the last writes t
   applyMove(path.join(runDir, "base.vrt"), first, out, spawn)
   // HAND-WRITTEN, from the plan the enumeration recorded: one --move --delta
   // for the one mover, then the three wire gestures in the planned
-  // turn-then-stretch order. Each reads the previous one's output and only the
+  // STRETCH-THEN-TURN order - the shrink before the turn, because that is the
+  // order whose anchor fits. Each reads the previous one's output and only the
   // LAST names `out`, so a refused gesture leaves the candidate absent.
   expect(spawned).toEqual([
-    ["--move", path.join(runDir, "base.vrt"), "--ref", "R1", "--delta", "-1,0", "-o", `${out}.spread-0.vrt`],
-    ["--author", `${out}.spread-0.vrt`, "--op", "add-wire", "--at", "1,1", "-o", `${out}.spread-1.vrt`],
-    ["--rotate", `${out}.spread-1.vrt`, "--ref", "Wire1", "--direction", "cw", "-o", `${out}.spread-2.vrt`],
-    ["--stretch", `${out}.spread-2.vrt`, "--ref", "Wire1", "--direction", "grow", "-o", out],
+    ["--move", path.join(runDir, "base.vrt"), "--ref", "R1", "--delta", "1,0", "-o", `${out}.spread-0.vrt`],
+    ["--author", `${out}.spread-0.vrt`, "--op", "add-wire", "--at", "2,3", "-o", `${out}.spread-1.vrt`],
+    ["--stretch", `${out}.spread-1.vrt`, "--ref", "Wire1", "--direction", "shrink", "-o", `${out}.spread-2.vrt`],
+    ["--rotate", `${out}.spread-2.vrt`, "--ref", "Wire1", "--direction", "cw", "-o", out],
   ])
 })
 
@@ -299,7 +329,7 @@ test("a spread of a net wholly on one strip is not proposed, because that is a g
   // the WHOLE net - which is a gather, needs no wire, and would put one gesture
   // in the sweep twice under two names. spreadMove declines it directly, so the
   // decline is the move's own and not only the enumeration's narrowing.
-  expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_NETS, "crowd", 1, 4)).toBeUndefined()
+  expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_NETS, "crowd", 1, 2)).toBeUndefined()
   // AND A ZERO DELTA IS DECLINED for the fork's own reason: a candidate
   // byte-identical to its own parent.
   expect(spreadMove(CROWDED_OCC, CROWDED, CROWDED_NETS, "shared", 1, 1)).toBeUndefined()
