@@ -115,16 +115,28 @@ export function clusterRefs(
   const refs: string[] = []
   // THE MOVABLE SET AND NOT `dump.parts`, so an off-board pad is eligible to be
   // in a cluster - see `./movable.ts` for why `dump.parts` is not the whole
-  // board. **WHAT THIS DOES AND DOES NOT YET BUY, MEASURED RATHER THAN
-  // CLAIMED:** the membership test below is on the REFERENCE netlist's pin id,
-  // and a pad's `PIN` line is named the BOARD's way - `SW_LO_BOOST_2.1` where
-  // the export says `SW_LO_BOOST.2` - so no pad matches `wanted` today and the
-  // cluster of every net is unchanged on every board in this repository. The
-  // mapping between the two spellings is `./pad-provenance.ts`'s
-  // `referencePinHoles`, which is keyed by reference pin rather than by board
-  // ref and so is not a net membership table; wiring one up is its own change
-  // with its own measurement. The iterator is corrected here so there is ONE
-  // answer to "what is on this board" rather than two that could drift.
+  // board. The iterator is corrected here so there is ONE answer to "what is on
+  // this board" rather than two that could drift.
+  //
+  // **NO PAD IS SELECTED YET, AND THE BRIDGE THAT WOULD SELECT ONE EXISTS.** The
+  // test below is on the REFERENCE netlist's pin id while a pad's `PIN` line is
+  // named the BOARD's way - `SW_LO_BOOST_2.1` where the export says
+  // `SW_LO_BOOST.2` - so `wanted` matches no pad as this stands. The bridge is
+  // `PadLine.source`: a placed pad has exactly one `PIN` line (`pad-pin-count`
+  // refuses otherwise) and its `FROM <ref>.<pin>` field is ALREADY in the
+  // export's spelling, so `wanted.has(pad.source)` is the whole membership test.
+  // Measured on `pultec-low-boost-imported.dump` against the frozen netlist: all
+  // ten pads' `source` fields are reference pins. **Nothing is missing and
+  // nothing needs `referencePinHoles`.**
+  //
+  // **IT IS DEFERRED FOR A STATED REASON RATHER THAN BLOCKED.** Selecting pads
+  // moves the candidate sets of FOUR generators at once - this one, `cluster`
+  // and `gather` through it, `./moves-join.ts`'s `joinEndsFor`,
+  // `./moves-spread.ts`'s `spreadSourceStrips`, and `./moves-wire.ts`'s
+  // `netPinsAlongStrips` (which already walks `dump.pins` and so already sees a
+  // pad's holes, and gates them out on the same spelling) - so it needs its own
+  // before-and-after measurement on a real board, which this change does not
+  // have. Doing it here would have moved four sets with one unmeasured edit.
   for (const one of movableRefs(dump, dumpText)) {
     const own = dump.pins[one.ref] ?? []
     if (own.some((pin) => wanted.has(`${one.ref}.${pin.pin}`))) refs.push(one.ref)

@@ -50,7 +50,6 @@ import type { BoardDump } from "../guide/dump.ts"
 import { stripOf } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
 import { movableRefs } from "./movable.ts"
-import { aimedHoles } from "./moves-cluster.ts"
 import {
   WIRE_END_REACH,
   wireAfter,
@@ -94,11 +93,16 @@ export function joinEndsFor(
     dump.verticalStrips ? hole.row : hole.col
   const leaving: number[] = []
   const staying: number[] = []
-  // THE MOVABLE SET AND NOT `dump.parts` - see `./movable.ts`, and see
-  // `./moves-cluster.ts`'s `clusterRefs` for the measured limit this shares: the
-  // `owner` test below is on the REFERENCE netlist's pin id and a pad's `PIN`
-  // line is named the BOARD's way, so no pad contributes an end today. The
-  // iterator is corrected here so there is one answer to what is on the board.
+  // THE MOVABLE SET AND NOT `dump.parts` - see `./movable.ts`. The iterator is
+  // corrected here so there is one answer to what is on the board.
+  //
+  // **NO PAD CONTRIBUTES AN END YET, AND THE BRIDGE EXISTS**: `owner` is keyed
+  // by the REFERENCE netlist's pin id while a pad's `PIN` line is named the
+  // BOARD's way, and the mapping is `PadLine.source`, which is already in the
+  // export's spelling. `./moves-cluster.ts`'s `clusterRefs` carries the
+  // measurement, why it is deferred rather than blocked, and the four sites it
+  // moves together - this one, that one, `./moves-spread.ts`'s
+  // `spreadSourceStrips` and `./moves-wire.ts`'s `netPinsAlongStrips`.
   for (const one of movableRefs(dump, dumpText)) {
     for (const pin of dump.pins[one.ref] ?? []) {
       if (owner.get(`${one.ref}.${pin.pin}`) !== net) continue
@@ -225,22 +229,4 @@ export function elbowAnchors(
   return [...new Set(ends.staying)].sort(
     (a, b) => Math.abs(a - line) - Math.abs(b - line) || a - b,
   )
-}
-
-/** Which parts a spread moves, and where the net's other pins stay: read once, used by both. */
-export function spreadMovers(
-  dump: BoardDump,
-  dumpText: string,
-  reference: ReferenceNets,
-  net: string,
-  from: number,
-): { readonly movers: ReadonlySet<string>; readonly staying: readonly number[] } {
-  const movers = new Set<string>()
-  const staying: number[] = []
-  for (const hole of aimedHoles(dump, dumpText, reference, net)) {
-    const strip = stripOf(hole, dump.verticalStrips)
-    if (strip === from) movers.add(hole.ref)
-    else staying.push(strip)
-  }
-  return { movers, staying }
 }

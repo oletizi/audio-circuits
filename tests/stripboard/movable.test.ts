@@ -2,9 +2,17 @@
  * `movableRefs` - the union of the dump's placed `PART` lines and its placed
  * `PAD` lines, which is what every move generator now enumerates over.
  *
- * The frozen low-boost fixture is the one real board in this repository
- * carrying `PAD` lines, so the happy path reads it. The three refusal and
- * exclusion boards are hand-written dump text for the reason
+ * **TWO REAL BOARDS, AND THEY ANSWER DIFFERENT QUESTIONS.** The FROZEN
+ * low-boost fixture is read for the union itself; it cannot be driven through
+ * `enumerateMoves`, because that capture predates the `DIRECTION` field and
+ * `occupancyOf` refuses it by name (`Part.direction` in
+ * `tools/guide/dump-model.ts` records why the field is optional on a placed
+ * part and why the capture may not be regenerated). The IMPORTED low-boost
+ * fixture carries `DIRECTION`, so `occupancyOf` accepts it and the move set is
+ * driven over it whole - which is what makes the production capability visible
+ * in this suite rather than inferred from `movableRefs` alone.
+ *
+ * The refusal and exclusion boards are hand-written dump text for the reason
  * `tests/stripboard/pad-provenance.test.ts` says: a fork that printed a ref
  * under both a `PART` and a `PAD` line, or an `AT` with no hole after it,
  * would be the fault the refusal exists to report, so it cannot be produced
@@ -16,9 +24,30 @@ import { movableRefs } from "../../tools/stripboard/movable.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { describeMove, enumerateMoves } from "../../tools/stripboard/moves.ts"
 import { occupancyOf } from "../../tools/stripboard/seed-geometry.ts"
-import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
+import {
+  referenceNetsFromExport,
+  type ReferenceNets,
+} from "../../tools/stripboard/equivalence.ts"
 
 const DUMP = fs.readFileSync("tests/fixtures/stripboard/pultec-low-boost-frozen.dump", "utf8")
+
+/**
+ * The same circuit as `DUMP` after `--import`'s first-fit sweep, and the
+ * schematic's own netlist export.
+ *
+ * **THE NETLIST IS THE FROZEN ONE AND THAT IS NOT A MISMATCH:** a
+ * `ReferenceNets` is derived from the SCHEMATIC, not from a board, and both
+ * fixtures are the same low-boost circuit. The imported dump's own 14 `NODE`
+ * lines all read `NAME -`, so it carries no net names of its own at all.
+ */
+const IMPORTED = fs.readFileSync(
+  "tests/fixtures/stripboard/pultec-low-boost-imported.dump",
+  "utf8",
+)
+const NETLIST = fs.readFileSync(
+  "tests/fixtures/stripboard/pultec-low-boost-frozen.netlist",
+  "utf8",
+)
 
 /** One strip, one resistor and one pad - the smallest board with both kinds on it. */
 const SMALL = [
@@ -78,6 +107,20 @@ test("a ref carried by both a PART line and a PAD line refuses, naming the ref a
   )
 })
 
+test("two lines of ONE kind read as \"two PAD lines\", not \"both a PAD line and a PAD line\"", () => {
+  // THE LIKELIER OF THE TWO COLLISIONS ON A HAND-EDITED .vrt, and the wording
+  // that came out of the first version was nonsense for it. The discriminating
+  // text is the whole phrase, so a message that reverted to the two-kind
+  // template fails here rather than reading oddly in a refusal nobody rereads.
+  const twice = SMALL.replace(
+    "PAD SW_2 SW_Rotary AT 0,1 FROM SW.2",
+    "PAD SW_2 SW_Rotary AT 0,1 FROM SW.2\nPAD SW_2 SW_Rotary AT 0,2 FROM SW.3",
+  )
+  expect(refusalFrom(() => movableRefs(parseBoardDump(twice), twice))).toStartWith(
+    'movableRefs: the ref "SW_2" is named by two PAD lines on this board',
+  )
+})
+
 test("a FLOATING pad is excluded, because --move refuses a component with no hole to leave", () => {
   const floated = SMALL.replace("AT 0,1 FROM SW.2", "FLOATING FROM SW.2").replace(
     "\nPIN SW_2 1 AT 0,1",
@@ -109,13 +152,13 @@ test("the union is larger than dump.parts by exactly the board's placed PAD line
 })
 
 test("the move set now proposes gestures naming a pad, and only the one the fork was measured on", () => {
-  // THE END-TO-END CLAIM, AND IT CANNOT BE DRIVEN ON THE FROZEN FIXTURE: that
-  // capture predates the `DIRECTION` field, so `occupancyOf` refuses it by name
-  // (`Part.direction` in tools/guide/dump-model.ts carries why the field is
-  // optional on a placed part and why the capture may not be regenerated). So
-  // this is a hand-written board with the field present, one resistor and one
-  // pad, and `enumerateMoves` is driven over it whole rather than over
-  // `movableRefs` alone - a union nothing enumerated would be invisible.
+  // **THE NARROWING IN ISOLATION, ON A BOARD BUILT TO SHOW IT.** The REAL
+  // imported board is driven in the test below and is the evidence that the
+  // capability works in production; this one exists because it is UNCROWDED, so
+  // all four of the pad's one-hole neighbours land and the full candidate list
+  // is short enough to write out. On the real board eight of the ten pads are
+  // boxed in, which would hide a regression that dropped three of the four
+  // deltas.
   const text = [
     "GRID 6 8",
     "BOUNDS 1,1 3,3",
@@ -161,4 +204,52 @@ test("the move set now proposes gestures naming a pad, and only the one the fork
       (move) => (move.kind === "rotate" || move.kind === "stretch") && move.ref === "SW_1",
     ),
   ).toEqual([])
+})
+
+test("on the REAL imported board the move set proposes exactly three pad gestures", () => {
+  // **THE PRODUCTION CAPABILITY, DRIVEN RATHER THAN INFERRED.** This is the
+  // board `--import` leaves and the one the pipeline actually climbs from, and
+  // before this change it yielded ZERO gestures naming a pad. It yields three,
+  // and the list is asserted EXACTLY so that four or two fails: a membership
+  // check would pass on a version that proposed a pad move for every pad.
+  //
+  // WHY ONLY THREE GESTURES OUT OF TEN PADS, hand-derived from the fixture's
+  // own lines rather than read back off the implementation. The ten `PAD` lines
+  // sit in ROW 0 at columns 23..32, CONTIGUOUSLY, which is what `--import`'s
+  // first-fit sweep leaves. So for every pad the neighbour above is off the
+  // board and the neighbours left and right are other pads - except the last
+  // pad's right. Measured against the same occupancy the model reads: row 0 is
+  // free from column 33 on, and row 1 is free from column 31 on.
+  //   SW_LO_BOOST_6 at 0,31   down to 1,31 is free                    -> 1
+  //   SW_LO_BOOST_7 at 0,32   right to 0,33 and down to 1,32 are free -> 2
+  //   the other eight         boxed in on all four sides              -> 0
+  // The figure is a fact about THIS capture and not about the gesture: it is
+  // the pad row being packed tight, which is the remedial work Task 2's
+  // spacing moves exist to undo.
+  const dump = parseBoardDump(IMPORTED)
+  const reference = referenceNetsFromExport(NETLIST)
+  const moves = enumerateMoves(occupancyOf(dump), dump, IMPORTED, reference)
+  const pads = new Set(
+    movableRefs(dump, IMPORTED)
+      .filter((one) => one.kind === "pad")
+      .map((one) => one.ref),
+  )
+  expect(pads.size, "the imported capture's ten PAD lines are all placed").toBe(10)
+  expect(moves.filter((move) => move.kind === "move" && pads.has(move.ref)).map(describeMove))
+    .toEqual([
+      "move SW_LO_BOOST_6 to 1,31",
+      "move SW_LO_BOOST_7 to 0,33",
+      "move SW_LO_BOOST_7 to 1,32",
+    ])
+  // AND NO `rotate` OR `stretch` NAMES A PAD HERE EITHER, which is the
+  // narrowing tools/stripboard/moves.ts's `partMoves` states - asserted on the
+  // real board and not only on the hand-written one above.
+  expect(
+    moves.filter(
+      (move) =>
+        (move.kind === "rotate" || move.kind === "stretch") && pads.has(move.ref),
+    ),
+  ).toEqual([])
+  // The parts are still enumerated, so this is not passing on an empty set.
+  expect(moves.length).toBeGreaterThan(3)
 })

@@ -199,6 +199,11 @@ export function netPinsAlongStrips(
 ): ReadonlyMap<number, readonly number[]> {
   const wanted = new Set(reference.get(net) ?? [])
   const byStrip = new Map<number, number[]>()
+  // **IT WALKS `dump.pins`, SO IT ALREADY SEES AN OFF-BOARD PAD'S HOLE AND GATES
+  // IT OUT ON THE SPELLING**: `wanted` is keyed the EXPORT's way, a pad's `PIN`
+  // line the BOARD's way. It is the FOURTH site pad net membership moves, needs
+  // no new iterator, and `./moves-cluster.ts`'s `clusterRefs` carries the bridge
+  // (`PadLine.source`) and why it is deferred rather than blocked.
   for (const [ref, own] of Object.entries(dump.pins)) {
     for (const pin of own) {
       if (!wanted.has(`${ref}.${pin.pin}`)) continue

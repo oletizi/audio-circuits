@@ -197,11 +197,16 @@ export function spreadSourceStrips(
     )
     let shared = false
     let kept = false
-    // THE MOVABLE SET AND NOT `dump.parts` - see `./movable.ts`, and see
-    // `./moves-cluster.ts`'s `clusterRefs` for the measured limit this shares:
-    // `owner` is keyed by the REFERENCE netlist's pin id and a pad's `PIN` line
-    // is named the BOARD's way, so no pad reads as shared or kept today. The
-    // iterator is corrected here so there is one answer to what is on the board.
+    // THE MOVABLE SET AND NOT `dump.parts` - see `./movable.ts`. The iterator is
+    // corrected here so there is one answer to what is on the board.
+    //
+    // **NO PAD READS AS SHARED OR KEPT YET, AND THE BRIDGE EXISTS**: `owner` is
+    // keyed by the REFERENCE netlist's pin id while a pad's `PIN` line is named
+    // the BOARD's way, and the mapping is `PadLine.source`, which is already in
+    // the export's spelling. `./moves-cluster.ts`'s `clusterRefs` carries the
+    // measurement, why it is deferred rather than blocked, and the four sites it
+    // moves together - this one, that one, `./moves-join.ts`'s `joinEndsFor` and
+    // `./moves-wire.ts`'s `netPinsAlongStrips`.
     for (const one of movableRefs(dump, dumpText)) {
       if (movers.has(one.ref)) continue
       for (const pin of dump.pins[one.ref] ?? []) {

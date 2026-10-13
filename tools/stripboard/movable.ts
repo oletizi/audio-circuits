@@ -1,12 +1,15 @@
 /**
  * The one answer to "what can a gesture move on this board".
  *
- * **WHY IT EXISTS, MEASURED RATHER THAN ARGUED.** Every move generator in this
- * directory enumerated over `dump.parts`, and `tools/guide/dump.ts`'s
- * `parseParts` reads `PART` lines only - so an off-board pad, which the fork
- * prints as a `PAD` line, was in no generator's loop and no arm could ever
- * move one. That is not a limit of the fork. Measured against the pinned
- * binary on 2026-10-13:
+ * **WHY IT EXISTS, MEASURED RATHER THAN ARGUED.** Every move generator that
+ * enumerated over a COMPONENT enumerated over `dump.parts`, and
+ * `tools/guide/dump.ts`'s `parseParts` reads `PART` lines only - so an
+ * off-board pad, which the fork prints as a `PAD` line, was in no such loop
+ * and no arm could ever move one. (`./moves-wire.ts`'s `netPinsAlongStrips` is
+ * the one generator that walked `dump.pins` instead, so it already saw a pad's
+ * HOLE; it gates the hole out on the pin-id spelling, which is a different
+ * limit and is recorded at that function.) None of this is a limit of the
+ * fork. Measured against the pinned binary on 2026-10-13:
  *
  *     $ veroroute --move t.vrt --ref SW_LO_BOOST_2 --to 13,1 -o t3.vrt
  *     MOVED SW_LO_BOOST_2 FROM 3,11 TO 13,1 IN GRID 14 32
@@ -61,6 +64,16 @@ export interface Movable {
  * to move FROM and every gesture naming it would be refused. It is excluded
  * loudly here - in this comment and in the type, which makes an unplaced pad's
  * missing hole unrepresentable - rather than silently dropped.
+ *
+ * **IT RE-PARSES THE DUMP TEXT ON EVERY CALL, AND THAT IS LEFT ALONE
+ * DELIBERATELY.** The spread's inner loops reach it roughly
+ * `nets x crowded x free x 4` times per round. Measured 2026-10-13: 0.0218 ms
+ * per call, and 4.7 ms for a whole `enumerateMoves` on the real low-boost
+ * board - against four fork spawns per evaluation, which dominate it by orders
+ * of magnitude. **A cache added on that evidence would be a cache added blind,
+ * and it would have to be invalidated per candidate.** If a later task's round
+ * times look wrong, this is the first place to look and the figures above are
+ * the before.
  */
 export function movableRefs(dump: BoardDump, dumpText: string): readonly Movable[] {
   const movable: Movable[] = []
@@ -68,9 +81,17 @@ export function movableRefs(dump: BoardDump, dumpText: string): readonly Movable
   const add = (one: Movable): void => {
     const already = kindOf.get(one.ref)
     if (already !== undefined) {
+      // TWO LINES OF ONE KIND READS AS "two PART lines", NOT "both a PART line
+      // and a PART line". The duplicate-within-one-kind case is the likelier of
+      // the two on a hand-edited `.vrt`, so it is the one that must not come out
+      // as nonsense.
+      const lines =
+        already === one.kind
+          ? `two ${one.kind.toUpperCase()} lines`
+          : `both a ${already.toUpperCase()} line and a ${one.kind.toUpperCase()} line`
       throw new Error(
-        `movableRefs: the ref "${one.ref}" is named by both a ${already.toUpperCase()} line and ` +
-          `a ${one.kind.toUpperCase()} line on this board, so two things answer to one --ref. ` +
+        `movableRefs: the ref "${one.ref}" is named by ${lines} on this board, so two things ` +
+          "answer to one --ref. " +
           "It is NOT resolved by preferring either: a gesture carries one ref and the fork moves " +
           "whichever component it finds first, so the arm would be proposing against one " +
           "geometry and the board would be changing the other. Rename one of the two in the " +
