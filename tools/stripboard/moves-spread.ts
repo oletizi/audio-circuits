@@ -44,14 +44,18 @@
  *      and becomes occupied, so **`dC = -1`** against one wire, `dF = -0.75`.
  *
  * **So only the third shape can pay, and this file enumerates only the third
- * shape.** `spreadSourceStrips` therefore offers only strips where the net's
- * pins sit beside ANOTHER net's, and `spreadTargetStrips` only strips holding
- * no pin at all. An earlier draft of this module offered every strip as a
- * target and every strip of the net as a source, which is cases 1 and 2 as well
- * - candidates whose first-order effect on `C` is zero or worse, every one of
- * them `+0.25` in `F` and rejected. The narrowing is DERIVED from the identity
- * above and is not a cost guess; `./moves-cluster.ts`'s `gatherStrips` carries
- * what a cost guess did to the record.
+ * shape.** `spreadSourceStrips` offers only strips where the net's pins abut
+ * ANOTHER net's on a part this spread would not move and where no pin of the net
+ * stays behind; `spreadTargetStrips` offers only strips holding no pin at all.
+ * An earlier draft offered every strip as a target and every strip of the net as
+ * a source, which is cases 1 and 2 as well - candidates whose FIRST-ORDER effect
+ * on `C` is zero or worse by the arithmetic above, so `+0.25` or worse in `F`
+ * before a board is painted. **What those candidates then did is not asserted
+ * here**: they were enumerated in one partial sweep and one of them was in fact
+ * accepted, so "none could ever be taken" would be false. The narrowing is
+ * DERIVED from the identity rather than measured, which is the honest statement
+ * of its warrant; `./moves-cluster.ts`'s `gatherStrips` carries what a cost
+ * GUESS did to this repository's record.
  *
  * **WHAT THE THIRD SHAPE'S `-1` DOES NOT ACCOUNT FOR, stated rather than
  * implied.** A relocated part carries ALL of its pins, so the nets its other
