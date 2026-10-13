@@ -59,7 +59,7 @@ Copied from the governing documents; every task's requirements include these.
 
 | file | responsibility |
 | --- | --- |
-| `tools/stripboard/pad-provenance.ts` | **exists** — parses `PAD` lines into `PadLine`. Task 1 reads it; does not change it. |
+| `tools/stripboard/pad-provenance.ts` | **exists** — its private `padLines()` already parses the `PAD` grammar and refuses an unreadable line. Task 1 **extends** it: `PadLine` gains the hole it is at, and both the type and a reader are exported. It is extended rather than re-parsed in `movable.ts`, because a second spelling of the grammar is a second thing to keep correct — the same reason `row-copper.ts` reuses `copperGraph` instead of respelling "the same copper". |
 | `tools/stripboard/movable.ts` | **new** — the one place that answers "what can a gesture move on this board", unioning `dump.parts` with `PadLine`s. Every generator reads it instead of `dump.parts`. |
 | `tools/stripboard/moves.ts`, `moves-cluster.ts`, `moves-join.ts`, `moves-spread.ts` | **modify** — each currently iterates `dump.parts` directly (lines 256, 114, 95, 198). Each reads `movable.ts` after Task 1. |
 | `tools/stripboard/moves-space.ts` | **new** — the spacing gesture: open a free hole between two pads of one off-board row. |
@@ -73,36 +73,49 @@ Copied from the governing documents; every task's requirements include these.
 **Files:**
 - Create: `tools/stripboard/movable.ts`
 - Create: `tests/stripboard/movable.test.ts`
+- Modify: `tools/stripboard/pad-provenance.ts` — `PadLine` gains the hole; export the type and a reader
 - Modify: `tools/stripboard/moves.ts:256`, `tools/stripboard/moves-cluster.ts:114`, `tools/stripboard/moves-join.ts:95`, `tools/stripboard/moves-spread.ts:198`
 
-**Interfaces:**
-- Consumes: `padLinesOf(dumpText)` from `./pad-provenance.ts` returning `readonly PadLine[]`; `BoardDump.parts: readonly Part[]` from `../guide/dump-model.ts`. **Read both files before writing — use their real field names, not the names guessed here.**
-- Produces: `movableRefs(dump: BoardDump, dumpText: string): readonly Movable[]` where `Movable` carries at least `ref: string`, `row: number`, `col: number`, and `kind: "part" | "pad"`. Tasks 2 and 3 consume it.
+**Interfaces — VERIFIED ON DISK 2026-10-13, use these and not the plan author's first guesses.** The pre-flight scan found four wrong names in an earlier draft of this task and they are corrected here; if a fifth is wrong, correct it and say so in your report rather than working around it.
+
+- Consumes:
+  - `parseBoardDump(dumpText: string): BoardDump` from `../guide/dump.ts`. **There is no `parseDump` and no parser exported from `dump-model.ts`.**
+  - `BoardDump.parts: readonly Part[]`, and a `Part`'s position is `part.placement`, typed `PartPlacement = { readonly row: number; readonly col: number } | "floating"`. **There is no `part.row`.**
+  - `pad-provenance.ts`'s `padLines()`, which is **private and has no position field** — `PadLine` is `{ ref, placed, source, line }`. Its parser is correct and already refuses an unreadable line; the `AT <r>,<c>` pair is `fields[4]` on a placed pad, which that function slices past without keeping. Extend it.
+  - `referencePinHoles(dumpText)` is the one thing `pad-provenance.ts` exports today. It is keyed by the NETLIST's pin id (`SW_LO_BOOST.2`), not by the board's pad ref (`SW_LO_BOOST_2`), so it is **not** the map this task needs. Do not repurpose it.
+- Produces: `movableRefs(dump: BoardDump, dumpText: string): readonly Movable[]` where `Movable` is `{ readonly ref: string; readonly row: number; readonly col: number; readonly kind: "part" | "pad" }`. Tasks 2 and 3 consume it.
+
+**Why it takes both `dump` and `dumpText`:** `climb-evaluate.ts:110` records that *"a parsed dump carries no `PAD`"* — `BoardDump` genuinely has no pad lines, so the text is the only source for them. That is also why this cannot be done inside `parseBoardDump`.
 
 - [ ] **Step 1: Write the failing test.** The discriminating assertion is that a pad's ref appears, because that is the whole gap.
 
 ```ts
 import { expect, test } from "bun:test"
-import { movableRefs } from "../../tools/stripboard/movable.ts"
-import { parseDump } from "../../tools/guide/dump-model.ts"
 import fs from "node:fs"
+import { movableRefs } from "../../tools/stripboard/movable.ts"
+import { parseBoardDump } from "../../tools/guide/dump.ts"
 
 const DUMP = fs.readFileSync("tests/fixtures/stripboard/pultec-low-boost-frozen.dump", "utf8")
 
 test("an off-board pad is movable, and is reported as a pad rather than a part", () => {
-  const movable = movableRefs(parseDump(DUMP), DUMP)
+  const movable = movableRefs(parseBoardDump(DUMP), DUMP)
   const pad = movable.find((m) => m.ref === "SW_LO_BOOST_2")
   expect(pad, "the pad row's second pad is movable").toBeDefined()
   expect(pad?.kind).toBe("pad")
   // THE HAND LAYOUT'S OWN POSITION, so a parser that invented a position fails.
+  // Measured from the committed fixture's own PAD line:
+  //   PAD SW_LO_BOOST_2 SW_Rotary_1x6_MP AT 3,11 FROM SW_LO_BOOST.2
+  // If the frozen fixture's row differs from the live board's, trust the
+  // FIXTURE and correct these two numbers - the fixture is what the test reads.
   expect(pad?.row).toBe(3)
   expect(pad?.col).toBe(11)
 })
 
 test("every part is still movable, so pads were added and nothing was traded away", () => {
-  const dump = parseDump(DUMP)
+  const dump = parseBoardDump(DUMP)
   const movable = movableRefs(dump, DUMP)
   for (const part of dump.parts) {
+    if (part.placement === "floating") continue
     expect(movable.some((m) => m.ref === part.ref), part.ref).toBe(true)
   }
   expect(movable.length).toBeGreaterThan(dump.parts.length)
@@ -111,20 +124,22 @@ test("every part is still movable, so pads were added and nothing was traded awa
 
 - [ ] **Step 2: Run it and confirm it fails.** `bun test tests/stripboard/movable.test.ts` — expect `Cannot find module '.../movable.ts'`. A failure for any other reason means the fixture or an import name is wrong; fix that before implementing.
 
-- [ ] **Step 3: Implement `movableRefs`.** Union the two sources. Refuse rather than guess: a `PAD` line whose ref collides with a `PART` ref is an error naming both, because two things answering to one `--ref` means a gesture would move whichever the fork finds first. A FLOATING pad has no hole to move from (`--move` refuses it by name), so exclude it and say so in a comment rather than silently dropping it.
+- [ ] **Step 3: Extend `pad-provenance.ts` first.** Give `PadLine` the hole — present when `placed`, absent when floating, so the type makes an unplaced pad's missing position unrepresentable rather than zero. Export `PadLine` and a reader for it. Keep the existing refusal behaviour: an unreadable `AT r,c` pair is `pad-unreadable` naming the line, never a guessed hole. Note that the comment above the `rest` slice was already corrected once for being off by one — read the grammar in that file's own words before trusting any index.
 
-- [ ] **Step 4: Run the test and confirm it passes.**
+- [ ] **Step 4: Implement `movableRefs`.** Union the two sources. Refuse rather than guess: a `PAD` line whose ref collides with a `PART` ref is an error naming both, because two things answering to one `--ref` means a gesture would move whichever the fork finds first. A FLOATING pad has no hole to move from (`--move` refuses it by name), so exclude it and say so in a comment rather than silently dropping it. A floating PART is excluded for the same reason.
 
-- [ ] **Step 5: Point the four generators at it.** Replace each `for (const part of dump.parts)` with the movable set. **Expect the candidate count to rise and some counts in existing tests to change — that is the point of the task.** Where an existing test asserts a candidate count, update it to the measured new number and note in a comment that the increase is the pads now being included.
+- [ ] **Step 5: Run the test and confirm it passes.**
 
-- [ ] **Step 6: Run the full suite and typecheck.** `bun run check`. Baseline is 1859 pass / 0 fail / 0 skip across 169 files. Any test that now fails is either a count to update (above) or a real regression — say which, per test, in the report.
+- [ ] **Step 6: Point the four generators at it.** Replace each `for (const part of dump.parts)` with the movable set. Each generator already has a `dumpText` in scope or a caller that can pass one — if one genuinely does not, say so rather than reaching for a module-level cache. **Expect the candidate count to rise and some counts in existing tests to change — that is the point of the task.** Where an existing test asserts a candidate count, update it to the measured new number and note in a comment that the increase is the pads now being included.
 
-- [ ] **Step 7: Mutate to prove the union is load-bearing.** Replace `movableRefs`'s pad branch with `return [...dump.parts].map(...)` and confirm the first test fails. Revert. Record the pass/fail counts.
+- [ ] **Step 7: Run the full suite and typecheck.** `bun run check`. Baseline is 1859 pass / 0 fail / 0 skip across 169 files. Any test that now fails is either a count to update (above) or a real regression — say which, per test, in the report.
 
-- [ ] **Step 8: Commit.**
+- [ ] **Step 8: Mutate to prove the union is load-bearing.** Replace `movableRefs`'s pad branch so it returns parts only, and confirm the first test fails. Revert. Record the pass/fail counts.
+
+- [ ] **Step 9: Commit.**
 
 ```bash
-git add tools/stripboard/movable.ts tests/stripboard/movable.test.ts tools/stripboard/moves.ts tools/stripboard/moves-cluster.ts tools/stripboard/moves-join.ts tools/stripboard/moves-spread.ts
+git add tools/stripboard/movable.ts tests/stripboard/movable.test.ts tools/stripboard/pad-provenance.ts tools/stripboard/moves.ts tools/stripboard/moves-cluster.ts tools/stripboard/moves-join.ts tools/stripboard/moves-spread.ts
 git commit -F <message file>
 ```
 
