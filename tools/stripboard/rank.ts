@@ -130,6 +130,23 @@ export function pinBoundingBoxWirelength(dump: BoardDump, reference: ReferenceNe
 }
 
 /**
+ * Where `A_occ` sits in `rankingTuple`'s output, and how long that output is.
+ *
+ * **FOR A CONSUMER HOLDING A TUPLE AND NO DUMP**, which is `Evaluation`'s
+ * shape: it carries `ranking` and no board, so `occupiedArea(dump)` cannot be
+ * called from there and the figure has to be read off the tuple by index.
+ * `tools/stripboard/place.ts` needs it for `run.json`'s canonical metrics and
+ * `tests/stripboard/determinism-fixtures.ts` needed it first; both took their
+ * own copy of the number until Task 23, and two copies of an index into one
+ * tuple is how a reordered tuple puts wirelength in the manifest under
+ * `A_occ`'s name. **An index is not a check**: a consumer also holds the first
+ * three positions against the score's own three counts, which is what proves
+ * the tuple is this tuple.
+ */
+export const A_OCC_POSITION = 3
+export const RANKING_POSITIONS = 5
+
+/**
  * One candidate's position in `RANKING`'s order: cuts, wire bridges, solder
  * bridges, `A_occ`, pin-bounding-box wirelength.
  *

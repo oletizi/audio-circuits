@@ -66,6 +66,33 @@ function scoreRead(): RegExp {
 }
 
 /**
+ * The modules whose `score.<field>` reads RECORD a figure rather than compare
+ * one, excluded from the statistics scan by name.
+ *
+ * **ADDED IN TASK 23, AND THE REASON IS A MEASUREMENT.** `V5`'s claim is about
+ * the statistics that can order one candidate ahead of another: *"a field that
+ * takes the same value on a good layout and a bad layout of the SAME netlist is
+ * reading the circuit, not the placement, and the pipeline must not read it."*
+ * `tools/stripboard/place.ts` writes `run.json`'s canonical metrics, and Task
+ * 13's `CanonicalMetrics` declares `netCount` among them - the candidate's own
+ * `NODE` count, which a layout may raise above the netlist's. That write made
+ * `score.netCount` appear in a pipeline source for the first time and both `V5`
+ * tests failed, demanding that a property of the circuit separate two layouts
+ * of it, which it cannot. **The scan's own docstring says over-inclusion "can
+ * only make V5 demand separation of a field nothing reads"; a recording read is
+ * the case that is not true of**, and this is the narrowest fix: one module,
+ * named, with its reason.
+ *
+ * **IT DOES NOT NARROW `V9`.** `PIPELINE_SOURCES` is unchanged, so the literal
+ * sweep below still reads every module including this one; only the
+ * `score.<field>` intersection skips it. And the closure test still holds every
+ * `Score` field to being either read-and-separating or blind-and-unread, so a
+ * field this exclusion hides from `V5` has to be blind - which is checked, not
+ * assumed, by that test's own two lists.
+ */
+const RECORDING_ONLY: readonly string[] = ["place.ts"]
+
+/**
  * Which `Score` fields the pipeline actually reads: `tools/stripboard/*.ts`
  * scanned for `score.<field>`, intersected with the nine field names.
  *
@@ -73,11 +100,12 @@ function scoreRead(): RegExp {
  * list is a list of the statistics an agent thought were reported and `V5` would
  * then be checking that agent's opinion. A MENTION IN A COMMENT COUNTS, which
  * over-includes rather than under-includes: it can only make `V5` demand
- * separation of a field nothing reads, never excuse a field something does.
+ * separation of a field nothing reads, never excuse a field something does -
+ * except for a read that only RECORDS, which is `RECORDING_ONLY` above.
  */
 async function readStatistics(): Promise<readonly string[]> {
   const found = new Set<string>()
-  for (const name of PIPELINE_SOURCES) {
+  for (const name of PIPELINE_SOURCES.filter((source) => !RECORDING_ONLY.includes(source))) {
     const text = await Bun.file(path.join(PIPELINE_DIR, name)).text()
     for (const match of text.matchAll(scoreRead())) {
       const field = match[1]
@@ -174,6 +202,33 @@ test("V5 can fail: the fields blind to the placement are exactly the two, and ne
   // pair, or separates nothing and is not read. A tenth field added to Score has
   // to land in one of the two, and lands in neither until somebody decides.
   expect([...reported, ...blind].sort()).toEqual([...SCORE_KEYS].sort())
+})
+
+test("the recording-only exclusion names a module that exists and really records netCount", async () => {
+  // THE EXCLUSION'S OWN GUARD, because a name-only exclusion fails silently in
+  // the one direction that matters: a renamed or deleted module stops matching,
+  // the scan quietly widens or narrows, and nobody reads an exclusion that
+  // matched nothing. So the file has to exist, and it has to still carry the
+  // read the exclusion exists for - if place.ts stops writing netCount into the
+  // manifest, this exclusion is dead and should go rather than sit here.
+  for (const name of RECORDING_ONLY) {
+    expect(PIPELINE_SOURCES, `${name} is not a module of this pipeline`).toContain(name)
+    const text = await Bun.file(path.join(PIPELINE_DIR, name)).text()
+    expect(text, `${name} no longer reads score.netCount`).toContain("score.netCount")
+  }
+  // AND THE EXCLUSION IS WHAT MAKES THE DIFFERENCE, not a coincidence: with the
+  // module included, netCount joins the reported set and V5's two tests above
+  // fail. Measured here rather than described.
+  const withRecorder = new Set<string>()
+  for (const name of PIPELINE_SOURCES) {
+    const text = await Bun.file(path.join(PIPELINE_DIR, name)).text()
+    for (const match of text.matchAll(scoreRead())) {
+      const field = match[1]
+      if (field !== undefined && SCORE_KEYS.includes(field)) withRecorder.add(field)
+    }
+  }
+  expect([...withRecorder]).toContain("netCount")
+  expect(await readStatistics()).not.toContain("netCount")
 })
 
 test("V5's inputs are real: the derivation is not vacuous and the pairs are not one board", async () => {

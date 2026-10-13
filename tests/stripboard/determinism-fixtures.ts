@@ -28,6 +28,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { CONSTRAINT_IDS } from "../../tools/stripboard/constraints-model.ts"
+import { A_OCC_POSITION, RANKING_POSITIONS } from "../../tools/stripboard/rank.ts"
 import { boundFor, outcomeOf } from "../../tools/stripboard/report.ts"
 import type { StripboardRules } from "../../tools/stripboard/rules.ts"
 import {
@@ -320,10 +321,6 @@ export function stopStateOf(bundle: Bundle): StopState {
   }
 }
 
-/** `A_occ`'s position in `rankingTuple`: cuts, wires, solder, `A_occ`, wirelength. */
-const A_OCC_POSITION = 3
-const RANKING_POSITIONS = 5
-
 /**
  * `A_occ` off the candidate's own ranking tuple, with the tuple's shape checked
  * rather than assumed.
@@ -334,6 +331,11 @@ const RANKING_POSITIONS = 5
  * ARE the score's three line counts, so holding them against the score proves
  * this tuple is that tuple: an index read off a reordered tuple would otherwise
  * put wirelength in the manifest under `A_occ`'s name and pass.
+ *
+ * **THE TWO CONSTANTS COME FROM `rank.ts` AND USED TO BE DECLARED HERE.**
+ * `tools/stripboard/place.ts` reads the same position for the same reason, and
+ * one index into one tuple with two owners is one owner too many - so the pair
+ * moved to the module that builds the tuple and this file imports them.
  */
 function occupiedAreaOf(result: RunResult): number {
   const best = result.best

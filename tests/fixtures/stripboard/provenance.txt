@@ -1,7 +1,10 @@
 tests/fixtures/stripboard/ - HC8's benchmark fixtures
 =====================================================
 
-Six files, in two groups.
+Eight files, in four groups - the frozen benchmark's four, the three further
+benchmark dumps, and Task 16's import-placed start. It read "six files, in two
+groups" while seven were here: the import-placed dump was appended without the
+count being carried, and this line is the count the directory now holds.
 
 B2's FROZEN LOW-BOOST BENCHMARK - the board B1-frozen is stated against:
 
@@ -12,6 +15,10 @@ B2's FROZEN LOW-BOOST BENCHMARK - the board B1-frozen is stated against:
                                    commit - the model the hand layout was built
                                    against. 9 nets, 27 pins.
   pultec-low-boost-frozen.dump     the pinned binary's --dump-board on that .vrt
+  pultec-low-boost-frozen.footprints.json
+                                   designator -> KiCad footprint for that same
+                                   model, which the EESchema v1.1 export above
+                                   cannot carry (see Task 23's section below)
 
 THE THREE FURTHER BENCHMARK BOARDS of PIPELINE 3.5, as --dump-board captures
 of the .vrt committed under boards/. Their reference netlists are NOT copied
@@ -214,3 +221,70 @@ TASK 16's IMPORT-PLACED START, which is not a hand layout and not a benchmark:
   above on the same pin reproduces it byte for byte, and a model change that
   moves it is a fixture to regenerate rather than a provenance to protect.
   17 PART lines, 10 PAD lines, 14 NODE lines - all fourteen reading `NAME -`.
+
+TASK 23's FROZEN FOOTPRINT MAP, the fourth file of the frozen benchmark:
+
+  pultec-low-boost-frozen.footprints.json   designator -> KiCad footprint, for
+                                            the eight board-resident components
+                                            of the model at commit 2f62ee1
+
+WHY IT IS HERE. B1-frozen is stated against "the exact electrical model,
+FOOTPRINTS and board dimensions the hand layout was built for", and the three
+files above cannot supply the footprints: the .netlist is EESchema v1.1, a
+grammar with no footprint field at all (measured in
+tests/stripboard/checkpoint-fixtures.ts, and the reason low-boost was out of
+CHECKPOINT 1), and the .dump carries VeroRoute part types - CAP_FILM,
+RESISTOR, BLOCK_200MIL3 - which are not footprint names. HC4, HC5, HC9 and
+HC10 are keyed by the footprint, so without this file a run against the frozen
+board cannot be graded at all. The map is the benchmark's own missing column,
+not a parameter of the run: no threshold, no bound and no cost figure is in it.
+
+WHERE IT COMES FROM - extracted from the SAME commit as the netlist beside it,
+by this repository's own model code, never hand-written and never read off
+today's model (which is a 14-net circuit, and the provenance above says what
+that would do to the benchmark):
+
+  git worktree add --detach $SCRATCH/wt-2f62ee1 2f62ee1
+  (in that worktree, a ten-line script importing pultecLowBoost() from
+   circuits/pultec/physical/low-boost.ts and printing, for each component,
+   its id, its part.footprint and its part.symbol)
+      bun print-footprints.ts > $SCRATCH/frozen-footprints.tsv
+  git worktree remove $SCRATCH/wt-2f62ee1
+
+  The committed JSON holds exactly the rows whose part.footprint is defined,
+  keyed by component id. At 2f62ee1 designatorsFor() is the identity map
+  (circuits/pultec/physical/parts.ts: `designators[component.id] =
+  component.id`), so a component id IS the designator the .netlist and the
+  .dump name, and no renaming step stands between the three files.
+
+  THE TWO COMPONENTS THAT ARE ABSENT, and their absence is the model's own
+  statement rather than an omission: RV_LO_BOOST and SW_LO_BOOST carry a
+  part.symbol and no part.footprint - they are panel-mount, VeroRoute expands
+  them into ten one-hole PADS, and tools/stripboard/constraints-model.ts's
+  footprintOf exempts a one-hole pad by name. A reader checking this file
+  against the dump's eighteen PART/PAD lines will find eight entries here and
+  should: the other ten holes are pads.
+
+  these fixtures
+    pultec-low-boost-frozen.footprints.json
+      sha256 ec251ed9f072700c8a731c002ce8005633eaff30dfa0c35eb410fd7ec9e2c14c
+
+WHAT MAY NOT BE CONCLUDED FROM IT, and this is the finding Task 23 recorded
+rather than worked around: two of the eight footprints make the frozen board
+UNGRADABLE and UNREPRODUCIBLE as the span data stands, both measured
+2026-10-12 and both recorded in docs/stripboard/pipeline-verification.md
+section 8.
+
+  The TerminalBlock_Phoenix entry is in neither LEAD_SPANS nor UNSOURCED nor
+  PIN_PATTERNS, so leadSpanFor refuses it by name - PAR2 working exactly as
+  designed - and every grade of a frozen-board candidate stops there. That is
+  the same refusal that keeps transistor-preamp-staged out of the grader's
+  board set, arriving on a different board.
+
+  R2's own hand-laid span is 3 holes (PIN R2 1 AT 7,9 and PIN R2 2 AT 9,9 in
+  the dump beside this file), and the recorded minSpanHoles for
+  R_Axial_DIN0207_...P10.16mm_Horizontal is 5. So the owner's own layout is
+  two steps BELOW the recorded floor for the footprint this file names, and no
+  layout the pipeline may produce can reproduce it while that pair stands.
+  Nothing here was adjusted to close that gap: a span table edited to admit
+  the artifact it is measured against would be a benchmark grading itself.

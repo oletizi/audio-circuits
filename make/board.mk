@@ -42,7 +42,7 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring
+.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring place
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -149,6 +149,23 @@ perfboard-help:
 	@echo "  ALLOW_DIRTY=1                           accept that the write cannot be"
 	@echo "                                          undone through git"
 	@echo ""
+	@echo "Let the pipeline lay it out (writes only build/stripboard/, never the layout)"
+	@echo "  make place SEED_ARM=constructed|import|random"
+	@echo "                                          run the stripboard pipeline on this"
+	@echo "                                          board and print its report. SEED_ARM"
+	@echo "                                          is REQUIRED: the three starting arms"
+	@echo "                                          are an experiment with random as its"
+	@echo "                                          control, and an arm chosen for you"
+	@echo "                                          would be a comparison nobody named -"
+	@echo "                                          so the run refuses without one"
+	@echo "  FROZEN=<fixture> NETLIST_EXPORT=<export>"
+	@echo "                                          run the FROZEN hand layout's"
+	@echo "                                          benchmark instead of this board"
+	@echo "  SWEEP=1                                 add the seed-set diagnostic: one run"
+	@echo "                                          per reviewed seed, each with the full"
+	@echo "                                          evaluation cap. No number is attached"
+	@echo "                                          to the rate and it changes no verdict"
+	@echo ""
 	@echo "Hand it to the GUI"
 	@echo "  make edit            open this layout in the forked VeroRoute"
 	@echo ""
@@ -219,6 +236,22 @@ edit: veroroute
 # rebuilt whole from the .vrt, the schematic and the circuit on every run.
 guide: veroroute netlist-agrees
 	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)"
+
+# The stripboard pipeline, on THIS board. It writes only under
+# build/stripboard/<board>/<stamp>/ - never the layout - so it needs no
+# ALLOW_DIRTY and is not guarded by the recoverability check the write verbs
+# are. netlist-agrees IS a prerequisite: the run exports this board's netlist
+# and checks every candidate against it, so a schematic the committed export
+# disagrees with would be a run graded against a stale reference.
+#
+# SEED_ARM IS REQUIRED AND THIS FILE SUPPLIES NO DEFAULT. Passed through
+# verbatim when set, and omitted when not - the CLI then refuses and lists the
+# three arms, which is the whole point: an arm chosen by a makefile would be a
+# comparison nobody named. FROZEN/NETLIST run the frozen benchmark fixture
+# instead of this board, and SWEEP=1 adds the seed-set diagnostic at the cost
+# of one full evaluation cap per seed.
+place: veroroute netlist-agrees
+	@bun "$(CLI)" place -C "$(CURDIR)" $(if $(SEED_ARM),--seed-arm "$(SEED_ARM)") $(if $(FROZEN),--frozen "$(FROZEN)") $(if $(NETLIST_EXPORT),--netlist "$(NETLIST_EXPORT)") $(if $(SWEEP),--sweep)
 
 # The parts list. No veroroute or netlist-agrees prerequisite: it reads only the
 # circuit, bom.json and the parts/ catalog, never the layout or the schematic.

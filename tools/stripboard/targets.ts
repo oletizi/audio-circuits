@@ -81,6 +81,18 @@
  */
 import { noPinLinesMessage, type BoardDump } from "../guide/dump.ts"
 import type { Component, Network } from "../../lib/model/types.ts"
+import {
+  bandwidthOf,
+  buildGraph,
+  reverseCuthillMcKee,
+  type TargetComponent,
+} from "./targets-graph.ts"
+
+// ONE IMPORT PATH FOR `TargetComponent`, which is the input shape of the
+// derivation below and lives with the graph it feeds (`./targets-graph.ts`,
+// split out at the 500-line ceiling). A consumer that had to reach past this
+// module for the type would be a consumer learning where the seam is.
+export type { TargetComponent } from "./targets-graph.ts"
 
 /**
  * The eight refusals P0 raises, as a union rather than loose strings so the
@@ -231,127 +243,6 @@ export function onBoard(component: Component): boolean {
 }
 
 /**
- * One net, its neighbours held as object references rather than by name.
- *
- * References rather than a name-keyed map so that every traversal below is
- * total by construction: there is no lookup that can miss and therefore no
- * branch that must either invent a vertex or skip an edge. `position` is the
- * ordering's assignment, and the bandwidth is read off those positions.
- */
-interface Vertex {
-  readonly net: string
-  readonly neighbours: Vertex[]
-  position: number
-}
-
-/** The pair key for an unordered edge, low end first. */
-function edgeKey(a: string, b: string): string {
-  return a < b ? `${a}\u0000${b}` : `${b}\u0000${a}`
-}
-
-interface BuiltGraph {
-  readonly vertices: readonly Vertex[]
-  readonly edges: readonly (readonly [string, string])[]
-}
-
-/**
- * The vertices and edges: every net a vertex, every on-board component's
- * distinct net pairs an edge, de-duplicated so two parts joining one pair
- * count once.
- */
-function buildGraph(network: Network): BuiltGraph {
-  const byNet = new Map<string, Vertex>()
-  const vertexFor = (netName: string): Vertex => {
-    const existing = byNet.get(netName)
-    if (existing !== undefined) return existing
-    const created: Vertex = { net: netName, neighbours: [], position: -1 }
-    byNet.set(netName, created)
-    return created
-  }
-
-  for (const component of network.components) {
-    for (const netName of pinNetsOf(component)) vertexFor(netName)
-  }
-
-  const keys = new Set<string>()
-  const edges: (readonly [string, string])[] = []
-  for (const component of network.components) {
-    if (!onBoard(component)) continue
-    const touched = [...new Set(pinNetsOf(component))].sort()
-    for (let i = 0; i < touched.length; i += 1) {
-      for (let j = i + 1; j < touched.length; j += 1) {
-        const a = touched[i]
-        const b = touched[j]
-        const key = edgeKey(a, b)
-        if (keys.has(key)) continue
-        keys.add(key)
-        edges.push([a, b])
-        const va = vertexFor(a)
-        const vb = vertexFor(b)
-        va.neighbours.push(vb)
-        vb.neighbours.push(va)
-      }
-    }
-  }
-
-  const vertices = [...byNet.values()].sort((a, b) => (a.net < b.net ? -1 : a.net > b.net ? 1 : 0))
-  edges.sort((left, right) => (left[0] === right[0]
-    ? (left[1] < right[1] ? -1 : 1)
-    : (left[0] < right[0] ? -1 : 1)))
-  return { vertices, edges }
-}
-
-/** Fewest neighbours first, then by name, so the ordering is reproducible. */
-function byDegreeThenName(a: Vertex, b: Vertex): number {
-  if (a.neighbours.length !== b.neighbours.length) return a.neighbours.length - b.neighbours.length
-  return a.net < b.net ? -1 : a.net > b.net ? 1 : 0
-}
-
-/**
- * The reverse Cuthill-McKee ordering, and the positions it assigns.
- *
- * Breadth-first from the lowest-degree unvisited vertex, neighbours taken in
- * increasing degree, each connected component laid down contiguously, the
- * whole reversed at the end. A net no on-board component touches is its own
- * component and lands in a block of its own, so it separates no edge's
- * endpoints and cannot inflate the bandwidth.
- */
-function reverseCuthillMcKee(vertices: readonly Vertex[]): readonly Vertex[] {
-  const visited = new Set<Vertex>()
-  const order: Vertex[] = []
-  for (const root of [...vertices].sort(byDegreeThenName)) {
-    if (visited.has(root)) continue
-    visited.add(root)
-    const queue: Vertex[] = [root]
-    // An index rather than `shift()`, which is typed `Vertex | undefined` and
-    // would need an unreachable branch to narrow.
-    for (let head = 0; head < queue.length; head += 1) {
-      const vertex = queue[head]
-      order.push(vertex)
-      for (const neighbour of [...vertex.neighbours].sort(byDegreeThenName)) {
-        if (visited.has(neighbour)) continue
-        visited.add(neighbour)
-        queue.push(neighbour)
-      }
-    }
-  }
-  const reversed = [...order].reverse()
-  reversed.forEach((vertex, index) => { vertex.position = index })
-  return reversed
-}
-
-/** The widest gap an edge spans in the ordering: `max |pos(a) − pos(b)|`. */
-function bandwidthOf(ordered: readonly Vertex[]): number {
-  let widest = 0
-  for (const vertex of ordered) {
-    for (const neighbour of vertex.neighbours) {
-      widest = Math.max(widest, Math.abs(vertex.position - neighbour.position))
-    }
-  }
-  return widest
-}
-
-/**
  * One board's targets: `N`, `P`, the derived floor, the net graph and one
  * arrangement of it.
  *
@@ -359,6 +250,31 @@ function bandwidthOf(ordered: readonly Vertex[]): number {
  * `targets-strips`.
  */
 export function deriveTargets(network: Network, strips: number, board: string): BoardTargets {
+  return deriveTargetsFrom(
+    network.components.map((component) => ({
+      id: component.id,
+      pinNets: pinNetsOf(component),
+      onBoard: onBoard(component),
+    })),
+    strips,
+    board,
+  )
+}
+
+/**
+ * The same derivation from components a caller read somewhere other than a
+ * `Network` - see `TargetComponent` for the one case that needs it.
+ *
+ * **IT IS THE IMPLEMENTATION AND `deriveTargets` IS AN ADAPTER ONTO IT**, which
+ * is why `N`, `P`, `C_floor`, the graph and the ordering appear once in this
+ * file. The refusals below name the board rather than the model, because the
+ * caller may not have one.
+ */
+export function deriveTargetsFrom(
+  components: readonly TargetComponent[],
+  strips: number,
+  board: string,
+): BoardTargets {
   if (board.trim() === "") {
     refuse("targets-board", `the board name is "${board}"`)
   }
@@ -366,23 +282,20 @@ export function deriveTargets(network: Network, strips: number, board: string): 
     refuse("targets-strips", `${board} was given ${strips} strips`)
   }
 
-  const { vertices, edges } = buildGraph(network)
+  const { vertices, edges } = buildGraph(components)
   const netCount = vertices.length
   if (netCount === 0) {
     refuse("targets-nets", `${board}'s network names no nets at all`)
   }
 
-  if (!network.components.some(onBoard)) {
+  if (!components.some((component) => component.onBoard)) {
     refuse(
       "targets-residency",
-      `none of ${board}'s ${network.components.length} components carries a part.footprint`,
+      `none of ${board}'s ${components.length} components carries a part.footprint`,
     )
   }
 
-  const pinCount = network.components.reduce(
-    (total, component) => total + pinNetsOf(component).length,
-    0,
-  )
+  const pinCount = components.reduce((total, component) => total + component.pinNets.length, 0)
   let maxDegree = 0
   for (const vertex of vertices) maxDegree = Math.max(maxDegree, vertex.neighbours.length)
   const ordered = reverseCuthillMcKee(vertices)

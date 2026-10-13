@@ -19,6 +19,15 @@
  * everything here, so no consumer imports this file directly and Tasks 23 and
  * 24 take `Outcome`, `BoundStatus` and `exitCodeFor` from the declared module.
  *
+ * **IT ALSO HOLDS THE SIX REFUSALS, WHICH MOVED HERE IN TASK 23 AND WERE NOT
+ * REWORDED.** `./report.ts` raises four of them and reached its ceiling when
+ * the seed-set sweep's own field arrived; the union, its exhaustive `switch`
+ * and the one `refuse` wrapper came here rather than being split between the
+ * two files, because the wrapper's tail names the authority and two tails would
+ * be two authorities. `./stop-model.ts` holds `./stop.ts`'s refusals for the
+ * same reason, and `./report-sweep.ts` - the third file of this group - raises
+ * none.
+ *
  * **WHY THE WORDING IS A TABLE AND NOT A SENTENCE PER RUN** (`REP3`): *"a
  * phrasing table keyed by `bound` means an exhausted run cannot be described as
  * optimal by an author who was feeling good about the number."* So the two
@@ -113,6 +122,139 @@ export const BOUND_STATUSES: readonly BoundStatus[] = [
   "budget-exhausted",
   "systematic-cause",
 ]
+
+/**
+ * One seed's run, as the seed-set sweep records it, and the whole sweep.
+ *
+ * **IT IS A DIAGNOSTIC AND THE TYPE IS WHERE THAT IS ENFORCED.** Task 23's
+ * criterion is ONE run - *"`B1-frozen` says the pipeline must reach `C <= 5`
+ * with `W = 0`; that is the criterion and it is met or not by a run"* - and the
+ * sweep answers the different question *"on how many of the reviewed seeds"*.
+ * So `reportedOutcome` is carried here beside the per-seed rows and **is the
+ * first seed's own verdict rather than anything computed from `reached`**:
+ * `tools/stripboard/place.ts` sets it from that run and nothing else, and a
+ * change that derived it from the rate would fail the test that holds
+ * `reportedOutcome` against `singleRunVerdict` instead of passing quietly. No
+ * number is attached to `reached` anywhere - *"a success rate with a bar on it"*
+ * is exactly the acceptance criterion the producing agent may not author.
+ *
+ * It lives in this module rather than beside `place.ts`'s `SeedSweep` so that
+ * `./report.ts` can render it without importing the module that runs the
+ * search: `SeedSweep` satisfies this shape and adds the first run itself.
+ */
+export interface SeedRunRecord {
+  readonly seed: number
+  readonly cuts: number
+  readonly wires: number
+  readonly bound: BoundStatus
+  readonly outcome: Outcome
+}
+
+export interface SeedSweepRecord {
+  /** One row per seed of `rules.seeds`, in that list's order. */
+  readonly perSeed: readonly SeedRunRecord[]
+  /** How many seeds met the `A4` clause of the board that was run. Nothing but the report reads it. */
+  readonly reached: number
+  /** What the report prints: the FIRST seed's verdict, never a function of `reached`. */
+  readonly reportedOutcome: Outcome
+}
+
+/** The refusals this module raises. One arm each in `notDefaultedBecause`. */
+export type ReportRefusal =
+  | "report-tolerance-without-tau"
+  | "report-binding-rule-disagrees"
+  | "report-worse-acceptance-disagrees"
+  | "report-parameter-unrecorded"
+  | "report-note-unsentenced"
+  | "report-negative-gap"
+
+function notDefaultedBecause(refusal: ReportRefusal): string {
+  switch (refusal) {
+    case "report-tolerance-without-tau":
+      return (
+        "REP1 ties within-tolerance to Q2, and Q2 cannot fire while tau is null - " +
+        "tools/stripboard/stop.ts returns false there, because A3 does not block " +
+        "admissibility with no tolerance set and Q2 would otherwise fire on every admissible " +
+        "candidate and report WITHIN TOLERANCE against a tolerance the owner declined to set " +
+        "(CRITERIA K4). So this pair is a bound naming a rule the search could not have " +
+        "returned, which is one of the three wiring defects the plan's CHECKPOINT 2 exists to " +
+        "catch. It is NOT defaulted to the weaker bound the run might have earned instead: " +
+        "guessing which rule really fired would put a stopping reason in the report that " +
+        "nothing measured. Pass the rule evaluateStop returned, or set tau in " +
+        "stripboard/rules.json as a deliberate edit carrying the run that justifies it."
+      )
+    case "report-binding-rule-disagrees":
+      return (
+        "REP4 requires that the bound field and the named binding constraint AGREE IN ONE " +
+        "REPORT - *a run that stopped because a span bound binds is not a run that ran out of " +
+        "budget* - and a search-stopped binding names the rule it stopped under. Two different " +
+        "rules in one report means one of them came from somewhere other than this run. It is " +
+        "NOT defaulted to either: the binding constraint is also the evidence K3 requires " +
+        "before kappa_bench may move, and a ratchet moved on a mismatched pair would be moved " +
+        "on a run nobody can reconstruct. Pass the same StoppingRule to both."
+      )
+    case "report-worse-acceptance-disagrees":
+      return (
+        "RunResult.worseAcceptanceRan is rules.worseAcceptance !== null in " +
+        "tools/stripboard/search.ts, so the two disagreeing means the run and the rules being " +
+        "reported are not the same pair. PIPELINE E3 requires that an unconfigured bound be " +
+        "STATED IN THE REPORT rather than quietly approximated, and reporting a bound of null " +
+        "as having been in effect - or an effective bound as unset - is the quiet " +
+        "approximation it forbids. It is NOT defaulted to the rules file's answer, which would " +
+        "describe the mechanism a run WOULD have had rather than the one it ran under."
+      )
+    case "report-parameter-unrecorded":
+      return (
+        "OB3 requires the report print a deciding parameter's provenance BESIDE THE NUMBER, " +
+        "and tools/stripboard/rules.ts refuses to load a file whose notes block is missing a " +
+        "parameter - so reaching this means a caller built a StripboardRules by hand without " +
+        "the note. It is NOT defaulted to printing the number alone: a number used silently is " +
+        "the failure OB3 exists to prevent, and a value whose standing nobody recorded is " +
+        "exactly the one that must not decide an outcome unremarked. Load the rules through " +
+        "loadRules, or add the note."
+      )
+    case "report-note-unsentenced":
+      return (
+        "The report prints the note's FIRST SENTENCE and labels it as that, because the notes " +
+        "are paragraphs - evaluationCap's runs to about nine hundred characters - and a report " +
+        "nobody reads to the end states nothing. A block with no sentence boundary in it has no " +
+        "first sentence to print. It is NOT defaulted to printing the whole block under that " +
+        "label, which is a mislabelled quotation: a reader who sees one sentence announced and a " +
+        "paragraph delivered cannot tell which notes were truncated and which were not, and the " +
+        "point of quoting the provenance rather than restating it is that the quotation is " +
+        "exact. Give the note an opening sentence ending in a period, in stripboard/rules.json, " +
+        "or change this label."
+      )
+    case "report-negative-gap":
+      return (
+        "F_floor is a LOWER bound (CRITERIA K5), so a candidate beneath it is proof that the " +
+        "floor derivation, the scorer or the dump is not the quantity it claims to be. " +
+        "tools/stripboard/score.ts refuses it first and is the primary reading; " +
+        "tools/stripboard/verdict.ts and tools/stripboard/stop.ts each refuse it on their own " +
+        "path. This is the one reading NEITHER of those covers: while tau is null A3 reports " +
+        "the gap rather than computing it, so no verdict arithmetic touches it, and a report " +
+        "would print a negative gap as a measured fact - an impossible score reading as the " +
+        "best result in the run. It is not clamped to zero, which would turn the evidence into " +
+        "a result."
+      )
+  }
+}
+
+/**
+ * EXPORTED BECAUSE THE REFUSALS AND THE RENDERING ARE IN TWO FILES AND THE
+ * WORDING IS IN ONE. `./report.ts` raises four of these six and this module
+ * raises none of them itself; the union, its `switch` and this wrapper live
+ * here for the reason `./stop-model.ts` holds `./stop.ts`'s - the line ceiling,
+ * at the seam between a vocabulary and what is said in it. A second `refuse`
+ * beside the rendering would be a second tail, and the tail names the authority.
+ */
+export function refuse(refusal: ReportRefusal, offending: string): never {
+  throw new Error(
+    `${refusal}: ${offending}. ${notDefaultedBecause(refusal)} ` +
+      "(CRITERIA section 7's REP1-REP5 is the authority, and tools/stripboard/report.ts is the " +
+      "only implementation of the report.)",
+  )
+}
 
 /**
  * `REP1`'s *"fires under"* column, read the other way: rule to bound.

@@ -20,7 +20,10 @@ import { bareLiteral } from "./bare-literal.ts"
 import { LOW_BOOST, TARGETS, evaluation } from "./stop-fixtures.ts"
 import { RULES, TOLERANCE_RULES, clusteredCandidate, reportInput, runResult } from "./report-fixtures.ts"
 
-const MODULES = ["report.ts", "report-model.ts"].map((name) =>
+// THE THIRD FILE IS LISTED BECAUSE TASK 23 ADDED IT, and a module absent from
+// this list is a module neither the literal scan nor the ceiling check reaches
+// - which is how a split quietly buys headroom for an unscanned file.
+const MODULES = ["report.ts", "report-model.ts", "report-sweep.ts"].map((name) =>
   path.join(import.meta.dir, "..", "..", "tools", "stripboard", name),
 )
 
@@ -167,7 +170,7 @@ test("a literal scan finds no bare threshold in either report module - a scan, n
   }
 })
 
-test("both report modules are within this repository's line ceiling", async () => {
+test("every report module is within this repository's line ceiling", async () => {
   for (const module of MODULES) {
     const text = await fs.promises.readFile(module, "utf8")
     expect(text.split("\n").length, module).toBeLessThan(501)

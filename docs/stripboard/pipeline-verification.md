@@ -2803,3 +2803,249 @@ would be the failure this very section is about.
 | §6.2's import-closure scan | A closure scan over imports; §6.2 states what it found and what a pass of it covers |
 | §2.3's `BOUNDS` label finding | Recorded as **unverified** in its own heading |
 | §6.11's per-kind firing audit | §6.11 records that its sweep deletes each run directory once the best board is copied out, so *which* gesture kind closes a net in that sweep is **not measured** — §6.9's figures survive because its run directories did |
+
+## 8. Task 23 — the `place` verb, CHECKPOINT 2, and the `B1-frozen` run
+
+**The headline, before the detail: `B1-frozen` is NOT met, and not because the
+optimiser came second to the owner's hands. The pipeline cannot score the frozen
+board at all.** Two of the eight components that layout places carry data this
+repository does not record, and the run refuses on them in order. **And the hand
+layout itself is inadmissible under the span data as recorded**: `R2` sits at a
+three-hole span against a recorded minimum of five. That is **reading 2** of the
+three the plan declares — *"a constraint binds … the remedy is in the span data
+rather than in the search"* — and the plan calls it falsifiable on this fixture
+precisely because the owner's own spans are in it.
+
+Nothing was adjusted to produce a number. `stripboard/rules.json`,
+`lib/kicad/lead-span.ts`, `lib/kicad/pin-pattern.ts` and
+`VEROROUTE_FOOTPRINT_ROWS` are untouched by this task; the one probe that
+supplied a missing figure was made in the working tree, read, and reverted, and
+it is labelled as a probe everywhere it is quoted below.
+
+### 8.1 What was built
+
+| | |
+| --- | --- |
+| `tools/stripboard/place.ts` | the run: import, seed, climb, escapes, stop, grade, `run.json`. With `place-model.ts` (what a run is) and `place-inputs.ts` (what it is graded against), split at the 500-line ceiling |
+| `tools/cli/perfboard-stripboard-verbs.ts` | the `place` verb, acting on `$(CURDIR)` like every other verb on that CLI — no `BOARD=` variable |
+| `make place` | per board, with `SEED_ARM=`, and `FROZEN=`/`NETLIST_EXPORT=` for the frozen fixture |
+| `tools/stripboard/targets-export.ts` | `P0`'s targets for a board whose model exists only as a netlist export, through `deriveTargetsFrom` so there is still one graph, one ordering and one floor |
+| `tests/fixtures/stripboard/pultec-low-boost-frozen.footprints.json` | the benchmark's missing column — see §8.4 |
+
+**`--seed-arm` is required and the verb chooses nothing.** Measured:
+
+```
+$ bun tools/cli/perfboard.ts place -C boards/pultec-low-boost
+"place" needs --seed-arm, and there is NO DEFAULT ARM: the arms are constructed,
+import, random. The three are an experiment with random as its control, so an arm
+chosen for you would be a comparison whose own treatment nobody named. Name one.
+exit 1
+```
+
+### 8.2 CHECKPOINT 2 — the chain end to end, and it ran here
+
+**It was deferred to this task by a controller ruling, and the reason is a
+dependency rather than a deferral**: Task 20 could not run it because `place` did
+not exist, and the checkpoint's own instruction is *"run `place` against one
+Pultec board"*. Its dependency is this task. Run here, at a reduced
+`evaluationCap` passed through the injected rules, on `boards/pultec-low-boost`,
+arm `import`, the committed seed list.
+
+**The chain works.** Nothing threw, the `bound` came from the rule that fired,
+and the `outcome` agrees with the verdict its own grader produced — which is all
+three of the wiring defects this checkpoint exists to catch, each absent:
+
+| what the checkpoint looks for | measured |
+| --- | --- |
+| a chain that throws | it did not |
+| `outcome: admissible` while a `ConstraintResult.held` is false | `outcome: invalid`, with four constraints failing |
+| a `bound` naming a rule `evaluateStop` did not return | `Q5` fired; `bound: budget-exhausted`, which is `Q5`'s own row |
+
+**The run, at `evaluationCap = 400`:**
+
+| | |
+| --- | --- |
+| outcome | `invalid` — `A1` fails on `HC1`, `HC6`, `HC8`, `HC10` |
+| bound | `budget-exhausted`, from `Q5` |
+| exit | 1, and the exit line says the RUN failed although the candidate's own outcome is a separate claim |
+| cost | `F = 37.5`, derived floor 0, `C = 36`, `W = 0`, `S = 6` |
+| completeness | 11 of 14 nets still open |
+| `κ` | 0.75 against `κ_bench` 0.05 — `A2` fails, naming no binding constraint (`K3`'s ratchet may not move on it) |
+| `A3` | `not-evaluated`: `tau` is unset, so it reports and does not grade |
+| `A4` | held — the scaffolded board against `B1-current`, whose clause does not fire while `tau` is unset |
+| run | 2 climbs, 400 evaluations, restart at evaluation 384 |
+| provenance | 40.4 s wall clock, 25.3 ms per fork invocation at four invocations per evaluation |
+| `run.json` | written, both blocks, canonical hash `040333a06b592b9a3e7e76cc42eef33e80ecb6441280e35a880f9d3138f04ef9` |
+| `boards/**` | unchanged — `boardsDigest()` before and after are equal, asserted as a standing test |
+
+**The plan expected `valid, below target` and the measurement is `invalid`.** The
+expectation was reasonable — *"the cap is deliberately small"* — but it assumed a
+board that conducts. At 400 evaluations the import-placed board still has 11 open
+nets, and `HC1` alone makes the outcome `invalid`. The full-cap runs of §6.3–6.11
+end the same way: 9 of 14 nets open at best. **So `valid, below target` is not an
+outcome this pipeline has ever produced on low-boost**, at any cap measured, and
+the checkpoint's own expectation is the thing that was wrong rather than the run.
+
+**Three findings the checkpoint produced:**
+
+1. **`Q6` cannot fire in any real run.** `StopState.signatures` is *"every
+   failure signature the run has recorded"*, and `ClimbResult` carries none:
+   `signatureOf` needs a dump per evaluation and the climb keeps only the dump it
+   is standing on. So `place` builds an empty list, `Q6` is `false` on every run,
+   and `systematic-cause` is unreachable. It is **not** approximated from the
+   failing-constraint ids, which would be a different signature than the one
+   `Q6` is specified over. This is exactly *"a `StoppingRule` that never fires in
+   a real run"*, which is one of the three defects the checkpoint names — found
+   by it, and left standing rather than patched, because `Q6` is Task 19's rule
+   and its signature is specified over data the search does not keep.
+2. **`A4` reads `held` on a board failing four hard constraints.** On the
+   scaffolded board `A4` is `B1-current`, whose tolerance clause does not fire
+   while `tau` is unset, so it holds vacuously. The taxonomy is not fooled —
+   `outcomeOf` keys on `A1` first and reports `invalid` — but a reader scanning
+   the four condition lines sees three failures and one `held`, and the `held`
+   line is the one that says it graded nothing. It is `K4` working as written.
+3. **The scorer changed under this run, and the run was re-measured against
+   it.** The `cost` and `cuts` lines come from the cut-necessity drop test,
+   which was uncommitted in this working tree when the checkpoint first ran
+   (another task, in flight in the same tree) and landed as `1aa0834` while this
+   one was being written. Re-run at that commit: **`F = 37.5`, `C_necessary =
+   36`, 36 `CUT` lines, 11 nets open, `κ = 0.75`, two climbs, restart at
+   evaluation 384 — identical to the first run in every figure**, with a
+   different canonical hash because `pipelineCommit` had moved, which is the
+   hash behaving as `V6` requires. Nothing here is provisional on that work any
+   more.
+
+### 8.3 `V3` — the `B1-frozen` run, and the two refusals it hit
+
+Run as the criterion states it: against the frozen fixture's own model (9 nets,
+27 pins), its own footprints, its own `GRID`, **starting from the import-placed
+board** — `--import` on the committed EESchema v1.1 export, which produces 8
+`PART` lines, 10 `PAD` lines, 27 `PIN` lines and 9 `NODE` lines, agreeing with
+the fixture's own counts.
+
+**Refusal 1, the run as committed:**
+
+```
+part "board_terminals": no footprint row count is recorded for VeroRoute type
+"BLOCK_200MIL3". SPAN gives the footprint's COLUMN count and no dump line gives
+its rows, so without an entry there is no rectangle to place or turn. … Recorded:
+CAP_FILM, CAP_FILM_WIDE, RESISTOR, SIP5.
+```
+
+The starting arm refuses before any candidate exists. `board_terminals` is a
+three-pin terminal block that today's low-boost model no longer has, so no run
+recorded in §6 ever met it.
+
+**Refusal 2, with that row count supplied in a reverted probe.** The figure is
+3, and it was read off the fork rather than guessed: moving `board_terminals` to
+open board and turning it clockwise prints `ROTATED board_terminals CW FROM W AT
+20,10 HOLES 3x7 TO N AT 18,12 HOLES 7x3`, and the turned part's `SPAN` is 3.
+With `["BLOCK_200MIL3", 3]` in the map, the run reaches the grader and refuses
+there:
+
+```
+no lead span is recorded for footprint "TerminalBlock_Phoenix:TerminalBlock_
+Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal": it is not in LEAD_SPANS in
+lib/kicad/lead-span.ts, so how far its leads can be bent apart - and how far they
+can be brought together - is unknown.
+```
+
+That is `PAR2` refusing by name, exactly as it refuses `transistor-preamp-staged`
+— the same mechanism, a different board. **The probe was reverted**; the map is
+unchanged in the commit.
+
+**A third refusal is behind it and was NOT run.** `PIN_PATTERNS` holds no entry
+for that footprint either (grep over `lib/kicad/pin-pattern.ts`), so `HC10`'s
+footprint half would refuse next. That one is read off the table rather than
+measured in a run, and is labelled accordingly.
+
+**What `V3` therefore reports:** `C` — not measured. `W` — not measured. Nets
+complete — not measured. **`B1-frozen`'s bar of `C ≤ 5, W = 0` is not met, and
+the run never reached the point where a cut could be counted.** Reading 2 of the
+three.
+
+### 8.4 The hand layout's own spans, against the span data as recorded
+
+The plan's first test, run first and read. Every two-lead part of the frozen
+layout, its span from its own `PIN` lines, against the bounds for the footprint
+the model at `2f62ee1` fits it with:
+
+| part | footprint | span | recorded bounds | |
+| --- | --- | --- | --- | --- |
+| C18 | `C_Rect_L7.2mm_W3.5mm_P5.00mm` | 3 | 2–4 | inside |
+| C19–C23 | `C_Rect_L7.2mm_W2.5mm_P5.00mm` | 3 | 2–4 | inside |
+| **R2** | `R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` | **3** | **5–16** | **BELOW** |
+
+`R2`'s recorded minimum is the manufacturer's own 10.0mm lead spacing rounded up
+to four grid steps, and the owner has it in two. **The likely reading is that he
+mounts it upright** — an axial resistor stood on end spans two steps easily, and
+the recorded figure is keyed to the `_Horizontal` footprint. Either way **the
+remedy is in the span data**: a vertical-mount footprint for `R2`, or the owner
+saying how he mounts it. It is not in the search, and it is not a bound to
+loosen quietly: a span table edited to admit the artifact it is measured against
+would be a benchmark grading itself.
+
+**The consequence for the benchmark, stated exactly.** This does not prove
+`C ≤ 5, W = 0` unreachable — the pipeline could reach it with `R2` at a span of 5
+— but it does mean **no admissible board can reproduce the owner's layout**, and
+that `HC9` fails on his board as the data stands. Three data items are missing
+before his own benchmark can be run at all:
+
+1. `VEROROUTE_FOOTPRINT_ROWS["BLOCK_200MIL3"]` — measured here as 3, needing its
+   `CompTypes.h` line and a row in `seed-geometry.test.ts` beside it;
+2. a `LEAD_SPANS` entry for the Phoenix `MKDS-1,5/3-5,08` terminal block, which
+   is a moulded pin field and would be a `rigid` entry like the pin headers';
+3. a `PIN_PATTERNS` entry for the same footprint.
+
+All three are the owner's data to admit, with their provenance; this task did not
+author any of them.
+
+### 8.5 The seed-set rate — a diagnostic, and on this board a vacuous one
+
+`placeAcrossSeeds` runs one full-budget `place` per reviewed seed and reports how
+many met the `A4` clause of the board that was run. Measured on
+`boards/pultec-low-boost` at `evaluationCap = 8` — a reporting check, not a
+quality measurement:
+
+| seed | `C` | `W` | bound | outcome |
+| --- | --- | --- | --- | --- |
+| 0 | 37 | 0 | budget-exhausted | invalid |
+| 1 | 37 | 0 | budget-exhausted | invalid |
+| 2 | 37 | 0 | budget-exhausted | invalid |
+| 3 | 37 | 0 | budget-exhausted | invalid |
+| 4 | 37 | 0 | budget-exhausted | invalid |
+
+**Rate: 5 of 5 — and that number says nothing, which is the finding.** `A4` on
+the scaffolded board is `B1-current`, whose clause does not fire while `tau` is
+unset, so every seed met a clause that graded nothing. The report line now says
+so in its own words, and the per-seed rows are what carry information: five
+identical runs, every one `invalid`, every one stopped by the backstop. **A rate
+is only as informative as the clause it counts**, and on the frozen board — where
+the clause is `B1-frozen`'s own `C ≤ 5, W = 0` — it could not be measured at all,
+because no run got that far.
+
+**No full-cap sweep was run by this task, and the reason is stated rather than
+worked around**: at the committed cap a sweep is five runs of 10,000–16,000
+evaluations (§6.11's figures), and the scorer was being changed in this same
+worktree while this task ran - a rate measured against a scorer that is about to
+change is a rate nobody can reproduce. That work has since landed (`1aa0834`),
+so **the full-cap sweep against `boards/pultec-low-boost` is now a measurement
+worth taking, and this task did not take it.** What it would answer is how often
+a full-budget run reaches the board's own clause, which the reduced-cap table
+above cannot say anything about.
+
+### 8.6 What may not be concluded from section 8
+
+- **Nothing here is a measurement of the optimiser against the owner's hands.**
+  Reading 1 — *"the optimiser is weak"* — requires `C > 5` on the frozen fixture
+  while `HC1`–`HC10` hold, and no candidate on that board was ever graded. The
+  §6 runs measure the scaffolded board, which is a different circuit.
+- **Nothing here says the scorer is wrong** (reading 3). It says the scorer was
+  never reached on the frozen board.
+- **The CHECKPOINT 2 figures are this cap's and this commit's.** They were
+  re-measured after the cut-necessity work landed and reproduced exactly
+  (§8.2's third finding), which says the two tasks' results are consistent and
+  says nothing about a full-cap run.
+- **A reduced cap measures the chain and not the search.** Every figure in §8.2
+  and §8.5 was taken at 8 or 400 evaluations against the committed 20,000, and
+  the quality figures this repository has are §6's.
