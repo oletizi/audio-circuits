@@ -127,7 +127,14 @@ perfboard-help:
 	@echo "directory you are in is the board."
 	@echo ""
 	@echo "Check (read-only)"
-	@echo "  make check           check this layout against the circuit it was built from"
+	@echo "  make check           check this layout against the circuit it was built from,"
+	@echo "                       and grade the four buildability constraints the adoption"
+	@echo "                       gate already applied: HC5 (no lead stretched past the"
+	@echo "                       part's reach), HC9 (none compressed below its floor),"
+	@echo "                       HC8 (the copper partitions the pins exactly as the"
+	@echo "                       netlist does) and HC10 (no pin pattern the strips cannot"
+	@echo "                       take). A footprint with no span or pattern recorded is"
+	@echo "                       REFUSED by name rather than guessed at"
 	@echo "  make cuts            print the cut list and solder bridges"
 	@echo "  make board-info      what this directory declares"
 	@echo ""
@@ -231,6 +238,23 @@ perfboard-help:
 # layout cannot contradict. It rewrites rather than failing, exactly as
 # netlist-agrees does, so drift surfaces as a git diff the operator has to look
 # at. A board with nothing off it reports that and writes nothing.
+#
+# CHECK IS NO LONGER WEAKER THAN `adopt`'s GATE (CRITERIA G4). As well as the
+# binary's own --check, this now grades the four buildability constraints -
+# HC5 the part's reach, HC9 the part's own floor, HC8 the netlist equivalence
+# reconstructed from copper, HC10 the pin pattern the strips can take - which
+# until 2026-10-13 ran only on the adoption path. So the command that runs on
+# boards a person laid by hand was blind to exactly the faults that make a
+# board not conduct. HC6 is deliberately NOT among them (OB4): pt2399-core is
+# 17 x 36 against a declared stock of 34 x 27 and it is a board that works.
+#
+# NO EXTRA PREREQUISITE IS NEEDED FOR IT. The bounds come from committed data
+# modules (lib/kicad/lead-span.ts, lib/kicad/pin-pattern.ts) and from
+# stripboard/rules.json, every one of which REFUSES BY NAME rather than
+# defaulting when the datum it needs is not recorded - so a board placing a
+# footprint whose span nobody has read off a datasheet now FAILS here, naming
+# the footprint. That is the gate working, not a gate to loosen: see
+# docs/stripboard/lead-span.md for how to add an entry with its evidence.
 check: veroroute netlist-agrees wiring
 	@bun "$(CLI)" check -C "$(CURDIR)"
 

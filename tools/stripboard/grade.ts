@@ -92,7 +92,78 @@ export const HARD_CONSTRAINTS: readonly {
  */
 export function gradeHardConstraints(input: CheckInput): readonly ConstraintResult[] {
   assertTableIsTheTen()
-  return HARD_CONSTRAINTS.map((entry) => {
+  return HARD_CONSTRAINTS.map(runEntry(input))
+}
+
+/**
+ * A NAMED SUBSET of the ten, graded, for a caller that admits some and not all.
+ *
+ * **IT IS NOT `A1` AND MUST NEVER BE FOLDED AS ONE.** `a1` refuses a result set
+ * that is not exactly the ten ids, and that refusal is what makes its fold safe;
+ * this function hands back fewer results on purpose, so `a1` would throw on them
+ * - correctly. Anything reading a subset's results reads a verdict about THOSE
+ * constraints and about nothing else, and must say which ones in its own output.
+ *
+ * **WHY A SUBSET EXISTS AT ALL.** `make check` admits `HC5`, `HC8`, `HC9` and
+ * `HC10` under `G4` and does NOT admit `HC6`, whose stock figure refuses a board
+ * the owner has built and is in service (`OB4`). The ids it admits are declared
+ * by the caller, in one place, with the reason - see
+ * `./buildability.ts`'s `ADMITTED`. The alternative was grading all ten and
+ * dropping the results nobody admitted, which runs a constraint whose verdict is
+ * then discarded: a check whose answer is thrown away is a check nobody can be
+ * held to, and the discard would be invisible in the output.
+ *
+ * **IT REFUSES THE SAME THINGS `gradeHardConstraints` DOES**, plus two of its
+ * own: an EMPTY set, because the empty subset's conjunction is `true` and that is
+ * the shape of a gate that looks green by checking nothing; and a REPEATED id,
+ * because two results for one constraint make a duplicate pass able to stand in
+ * for a missing one, which is the fault `a1` refuses for the same reason.
+ *
+ * The results come back in `CONSTRAINT_IDS` order, not in the caller's, so the
+ * report's ordering is a fact about CRITERIA rather than about the argument list.
+ */
+export function gradeConstraints(
+  input: CheckInput,
+  ids: readonly ConstraintId[],
+): readonly ConstraintResult[] {
+  assertTableIsTheTen()
+  if (ids.length === 0) {
+    throw new Error(
+      "gradeConstraints was asked for no constraints at all. This refuses rather than returning " +
+        "an empty result set: the conjunction of nothing is true, so an empty subset is a gate " +
+        "that reports green by checking nothing. Name the constraints being admitted, or do not " +
+        "call this.",
+    )
+  }
+  const seen = new Set<ConstraintId>()
+  for (const id of ids) {
+    if (seen.has(id)) {
+      throw new Error(
+        `gradeConstraints was asked for ${id} twice. Which result is the verdict is not in the ` +
+          "argument list, and a duplicate pass would be able to stand in for a constraint the " +
+          "caller meant to admit and did not.",
+      )
+    }
+    seen.add(id)
+  }
+  return HARD_CONSTRAINTS.filter((entry) => seen.has(entry.id)).map(runEntry(input))
+}
+
+/**
+ * One table entry's check over one candidate, with the wrong-id refusal both
+ * graders share.
+ *
+ * IT REFUSES AN ENTRY WHOSE CHECK RETURNS THE WRONG ID, because a check that
+ * reports under another's name makes two constraints look like one held and one
+ * missing, and `a1`'s coverage assertion would then fire on the wrong fault.
+ */
+function runEntry(
+  input: CheckInput,
+): (entry: {
+  readonly id: ConstraintId
+  readonly check: (input: CheckInput) => ConstraintResult
+}) => ConstraintResult {
+  return (entry) => {
     const result = entry.check(input)
     if (result.id !== entry.id) {
       throw new Error(
@@ -102,7 +173,7 @@ export function gradeHardConstraints(input: CheckInput): readonly ConstraintResu
       )
     }
     return result
-  })
+  }
 }
 
 function assertTableIsTheTen(): void {

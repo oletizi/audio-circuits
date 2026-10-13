@@ -584,7 +584,7 @@ read against `classification.rows`, where that pair IS a row, the owner's rule
 would refuse exactly the mounting he named. Measured on `pt2399-core`'s `U1`:
 eight violations, one per strip. Read against the two rows of eight, it passes.
 
-So `hc10Rows` in `tools/stripboard/constraints-physical.ts` groups the recorded
+So `hc10Rows` in `tools/stripboard/constraints-pattern.ts` groups the recorded
 pads by the across-coordinate of whichever axis yields the LONGER rows.
 `classification` remains the authority for the footprint half (`admitPattern`);
 this is only the grouping the placement rule is phrased over. **It was measured
@@ -602,6 +602,33 @@ Zero on every board that passes `make check`, and five on the one that does not
 single strip. So the rule is satisfied by every board in service **and is not
 vacuous**: it discriminates on real data, which a rule satisfied by everything
 would not.
+
+**THE `make check` COLUMN ABOVE WAS MEASURED BEFORE TASK 25 AND TWO OF ITS ROWS
+HAVE SINCE MOVED.** `make check` now grades `HC5`, `HC8`, `HC9` and `HC10`
+itself (CRITERIA `G4`), and on that gate `pt2399-core` and
+`transistor-preamp-staged` **fail**. Three things are worth separating, because
+the easy misreading is that `HC10` turned them red:
+
+- **Neither fails on `HC10`, and neither is re-measured here.** Both refuse on
+  §3.5a's `PAR2` refusal — a footprint whose lead span nobody has sourced — and
+  that refusal fires in `HC5` before `HC10` is reached, so the full grade
+  produces NO `HC10` verdict for either board. The violation counts in the table
+  stand as §3.4's own direct measurement over `hc10Rows` and are neither
+  confirmed nor contradicted by the `make check` run.
+- **The two boards that now pass `make check` outright are
+  `transistor-preamp-feedback` and `transistor-preamp-buffered`**, and `HC10`
+  holds on both — which is the positive half of the discrimination claim, read
+  off the gate rather than off a measurement script.
+- **One new violation was measured: `transistor-preamp-loop`'s `C1`**, a
+  `CP_Radial_D8.0mm_P3.50mm` at `1,31` and `1,33` with both leads on strip 1 —
+  the same shape as `transistor-preamp-lab`'s `C3`, on a board that was already
+  failing for other reasons.
+
+**Whether a two-lead row along a strip should refuse when a cut separates its
+holes is the owner's to settle.** It is the question the plan's "four things a
+reviewer should push back on" already raises about the placement half existing at
+all, and these two electrolytics are the live instances of it. Nothing is relaxed
+on the strength of them.
 
 ### 3.5 What `HC10` exists for, kept as the standing reason
 
@@ -3283,3 +3310,108 @@ which cannot be explained from the inputs.
   **`pad-provenance.ts`'s comment was off by one** about where a placed pad's
   provenance field begins — "3 or 4" against a slice of 5 or 4. Both corrected in
   place.
+
+## 10. Task 25 — admitting `HC5`, `HC8`, `HC9` and `HC10` to `make check` (`G4`)
+
+`OB2` cleared on 2026-10-13: the owner reviewed
+`docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` and
+approved it, which is what `G4`'s second admission condition reads against. The
+four verifiers were then wired into `tools/perfboard/check.ts` through
+`tools/stripboard/buildability.ts`, and this section is what the run measured.
+
+**`HC6` was deliberately not admitted** (`OB4`), so `make check` still says
+nothing about a layout's extent against the owner's stock.
+
+### 10.1 The tally, before and after, over all eleven declared boards
+
+| | before | after |
+| --- | --- | --- |
+| `ok` | 4 | **2** |
+| `FAIL` | 7 | **9** |
+
+The two boards the admission turned red are below. **Neither is a violated
+bound**: both are `PAR2` refusals — a footprint whose lead span nobody has read
+off a datasheet — so the gate reports NOT GRADED rather than NOT HELD, and both
+are red because a refusal is never a pass.
+
+| board | footprint with no recorded span | parts fitted with it | status in the span tables |
+| --- | --- | --- | --- |
+| `pt2399-core` | `Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm` | `C1`, `C4`, `C5`, `C6`, `C8`, `C9`, `C11`, `C12`, `C13`, `C14` | in `UNSOURCED`, with §9.3's reason: no datasheet lead length covers this board's values |
+| `pt2399-core` | `Capacitor_THT:CP_Radial_D5.0mm_P2.50mm` | `C7`, `C10` | in `UNSOURCED` |
+| `transistor-preamp-staged` | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` | `RV5`, `RV6`, `RV7` | in neither `LEAD_SPANS` nor `UNSOURCED` |
+| `transistor-preamp-staged` | `Capacitor_THT:CP_Radial_D10.0mm_P5.00mm` | `C7` | in neither `LEAD_SPANS` nor `UNSOURCED` |
+
+`measure` refuses on the first such footprint it reaches, so `make check` names
+one per board per run; the table above was enumerated over every placed part.
+**`transistor-preamp-staged`'s two are the pair CHECKPOINT 1 already records as
+being authored on another branch**, and this task neither supplies nor guesses
+them.
+
+### 10.2 No span bound is violated anywhere in the tree
+
+`HC5` and `HC9` **hold on every board where they can be graded** —
+`transistor-preamp-buffered`, `transistor-preamp-feedback`,
+`transistor-preamp-lab` and `transistor-preamp-loop`. So the measured answer to
+*"does admitting the reach bounds refuse a board a person built"* is no: what
+refuses a board is missing data, not a span the part cannot make.
+
+### 10.3 What the four found on boards that were already failing
+
+Reported because the section now prints on every red board, and these are new
+measurements rather than restatements:
+
+| board | constraint | what it names |
+| --- | --- | --- |
+| `pultec-hi-boost`, `pultec-hi-cut`, `pultec-low-boost`, `pultec-low-cut` | `HC8` | NOT GRADED: `reference-pin-not-on-board` — a reference pin with no `PIN` line, because `make update` added parts that arrive unplaced. `--check` already reports the same parts as `blocked`. |
+| `transistor-preamp-lab` | `HC8` | NOT HELD: `CUT_STATE UNRESOLVED`, which is `HC2`'s cause and `HC2`'s remedy |
+| `transistor-preamp-lab` | `HC10` | NOT HELD, placement half: `C3` (`CP_Radial_D5.0mm_P2.00mm`, `DIRECTION W`), pins 1 and 2 at `10,8` and `10,9` — one footprint row on one strip |
+| `transistor-preamp-loop` | `HC8` | NOT HELD: 15 opens, 0 shorts |
+| `transistor-preamp-loop` | `HC10` | NOT HELD, placement half: `C1` (`CP_Radial_D8.0mm_P3.50mm`, `DIRECTION W`), pins 1 and 2 at `1,31` and `1,33` |
+| `pultec-mid` | — | no section at all: its netlist export refuses before the binary is reached (§9.5, `SW_MID` has no part chosen) |
+
+**The two electrolytics are the live instance of the question §3.4 now carries**
+— whether a two-lead row along a strip should refuse when a cut separates its
+holes — and it is the owner's to settle.
+
+### 10.4 A refusal is carried in the report rather than thrown out of it
+
+`HC8`'s distinction between *this constraint does not hold* and *this board
+cannot be graded* is kept in the WORDING and not in the control flow:
+`checkPerfboard` renders a refusal as a `NOT GRADED` section
+(`refusedBuildability`) instead of letting it escape. **The reason is the
+output.** A refusal that escaped replaced the binary's own report with its own
+text, and the four Pultec boards in §10.3 then lost their list of incomplete and
+blocked nets — the half of `make check`'s output that says what to go and fix.
+Both now print. `ok` is false either way, so nothing is softened.
+
+**What it costs, stated rather than discovered:** a defect in the grader itself
+now reads as `NOT GRADED - <message>` under `FAIL <board>` rather than as a
+crash. It is still loud, still red, and still quotes the message; the one verdict
+it cannot produce is a board that looks clean.
+
+### 10.5 `G4`'s four admission conditions, each against the evidence
+
+1. **The constraint is one CRITERIA states.** `ADMITTED` carries the four ids and
+   `tests/stripboard/buildability.test.ts` asserts each is in `CONSTRAINT_IDS`.
+2. **The criterion has been reviewed by the owner.** The whole of CRITERIA as it
+   stood at `d0d1b3f`, reviewed 2026-10-13; the record is commit `70dba2d`.
+3. **The check is independently tested, including negatively, naming a fixture it
+   must reject.** `tests/perfboard/check.test.ts` drives `checkPerfboard` over
+   `span-above-reach` (`HC5`), `span-below-minimum` (`HC9`), `two-nets-shorted`
+   (`HC8`), `round-pin-pattern` (`HC10`'s footprint half) and
+   `rows-along-a-strip` (`HC10`'s placement half), with `healthy` as the positive
+   control. Each assertion is made against **one constraint's own line** in the
+   report, because the section prints all four and a held constraint's prose
+   names parts, footprints and other constraints' ids — a regex over the whole
+   report passes for the wrong reason, which is the defect class this plan hit
+   five times.
+4. **Every threshold is read from the rules file or a committed data module, and
+   refuses rather than defaulting.** The bounds come from `LEAD_SPANS`,
+   `PIN_PATTERNS` and `stripboard/rules.json`; §10.1 is that refusal firing on
+   two real boards, and a test drives it through `make check`'s own path with
+   `CP_Radial_D10.0mm_P5.00mm`.
+
+**One limit this task did NOT make worse**, since §9.4 records it: `HC10` reads
+the module-level `LEAD_SPANS` while `HC5` and `HC9` read `CheckInput.spans`. The
+`make check` path injects NO span table, so both read the same map and the two
+cannot diverge here. Closing §9.4 remains a deliberate edit.
