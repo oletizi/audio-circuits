@@ -1,0 +1,419 @@
+/**
+ * THE COMPLETION PASS: the stage whose only objective is closing the
+ * connections the main search left open.
+ *
+ * **IT IS ROUTE 3, AND IT RAN BECAUSE ROUTE 1 WAS NOT ENOUGH.** The owner was
+ * offered three ways out of the finding in `docs/stripboard/
+ * pipeline-verification.md` §6.9 - change the scoring, add a solder-bridge
+ * gesture, or run two passes - and chose, verbatim on 2026-10-12: *"1 then 3"*.
+ * Route 1 landed: `Evaluation.openNets` is the acceptance ordering's first key
+ * (`./climb-accepts.ts`), and it bought connections with cuts, which is the
+ * right trade. It did not finish a board. §6.10 measured nine of fourteen nets
+ * still open on every arm. This file is route 3, and the entry in
+ * `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md` under *"Deviations
+ * from the specs"* records it, because no clause of CRITERIA describes a second
+ * pass at all.
+ *
+ * **THE OBJECTIVE, EXACTLY: `openNets`, MINIMISED; `F` ONLY AS A TIEBREAK.** The
+ * main search minimises `F` with `openNets` above it. This pass does not
+ * minimise anything else: it proposes only candidates that CLOSE a net, and
+ * among those the acceptance rule's own ordering takes the one with fewer open
+ * nets and then the cheaper `F`. **The rule is not new and not weakened - it is
+ * `accepts`, imported unchanged**, so the no-regression clause still rejects a
+ * candidate that breaks a hard constraint which held on the board the wires
+ * were applied to, and `strictlyBetter` is still the one definition of better in
+ * this pipeline.
+ *
+ * **THE CRITERIA CLAUSE THAT LICENSES IT** is `HC1`'s own reason - *"Every net
+ * electrically whole, because a board that does not conduct has no cost worth
+ * reporting"* - read together with §2's *"nothing in them is tradeable"* and
+ * `A1`'s *"Nothing is tradeable."* A quantity that must not be traded against
+ * the cost cannot be priced in it, and a quantity whose absence makes the cost
+ * not worth reporting is the one to spend cost on. That is the same reading
+ * `./climb-accepts.ts` carries for the ordering's first key; this pass is that
+ * reading taken one step further, to a stage that spends cuts and wires for
+ * connections and buys nothing else. **`OBJ1` is untouched**: `F` is still the
+ * three line counts, this file adds no term to it and no eleventh constraint,
+ * and the only quantity it optimises is `--check`'s own `incomplete` count -
+ * the same field `HC1` reads, counted once per evaluation in
+ * `./climb-evaluate.ts`. No number here came from an agent's judgement.
+ *
+ * **WHAT MAKES A WIRE ACCEPTABLE HERE WHEN IT NEVER WAS IN THE MAIN SEARCH, and
+ * it is not a change to the rule.** `./complete-joins.ts` carries the
+ * measurement: a net on `m` copper components needs `m - 1` joins and one wire
+ * supplies one, so a single wire leaves the net open unless `m` is exactly 2 -
+ * `openNets` does not fall, `F` rises by `ρ_w`, and a strictly-improving rule
+ * rejects it. §6.9 counted 7,417 `add-wire` candidates and none was ever best.
+ * This pass's candidate is **every wire one net needs, at once**, so `openNets`
+ * really falls and the unchanged rule takes it.
+ *
+ * **IT CANNOT UNDO THE MAIN SEARCH'S WORK, AND THAT IS STRUCTURAL RATHER THAN
+ * ASSERTED.** Clause 1 of `accepts` rejects any candidate that breaks a
+ * constraint the board entering the pass held, and `strictlyBetter` rejects any
+ * candidate with MORE open nets whatever its `F`. So the board leaving the pass
+ * is the board entering it, or one with fewer open nets and no new broken
+ * constraint. `tests/stripboard/complete.test.ts` holds both halves against a
+ * board where the wires break `HC6`.
+ *
+ * **A SOLDER BRIDGE IS NOT AN INSTRUMENT HERE, AND THE REASON IS THE MOVE SET
+ * RATHER THAN THE OWNER'S TASTE.** `B` is only ever what `AutoFillVero`
+ * derives; no gesture in the move set makes one, which `stripboard/rules.json`'s
+ * `rhoSolder` note states from the other side. So the pass cannot propose a
+ * blob, and the blobs a board carries are the fork's - counted, priced at
+ * `ρ_s = ρ_w` on the owner's words *"A solder blob will turn into a wire on my
+ * bench"*, and reported. `CompletionResult` carries the solder count before and
+ * after precisely so that a pass which provoked a crop of derived bridges says
+ * so.
+ *
+ * **WHAT IT COSTS IN INVOCATIONS.** A candidate is `m - 1` wires, each three
+ * gestures (create, turn, stretch), plus the four invocations of one
+ * evaluation. So a net on four components costs 9 + 4 invocations against a
+ * single-part candidate's 1 + 4, and a round is one candidate per open net
+ * rather than one per gesture the board admits - tens of evaluations, not
+ * thousands. The pass is cheap next to the climb it follows, which is why it is
+ * a separate stage rather than a wider move set.
+ */
+import fs from "node:fs"
+import path from "node:path"
+import { UNSCOREABLE, accepts, strictlyBetter, type Evaluation } from "./climb.ts"
+import { measure, type Measured } from "./climb-evaluate.ts"
+import { netJoinPlans, type NetJoinPlan } from "./complete-joins.ts"
+import type { Stock } from "./constraints-model.ts"
+import type { ReferenceNets } from "./equivalence.ts"
+import { applyMove } from "./moves.ts"
+import type { StripboardRules } from "./rules.ts"
+import type { Occupancy } from "./seed-geometry.ts"
+import type { SeedStart, SpawnVeroroute } from "./seed.ts"
+import type { BoardTargets } from "./targets.ts"
+
+/**
+ * What one completion pass needs. It is `ClimbInput` without the move set's
+ * knobs: there is no `batch`, because `add-wire` is not in `applyMove`'s
+ * `BATCHABLE_KINDS` and never was - the ops grammar has no line for it - so a
+ * transport flag here would be a parameter nothing reads.
+ *
+ * **`rules.evaluationCap` IS THE REMAINDER, AND THE CALLER DIVIDES IT.** `Q5`'s
+ * cap bounds the RUN, and this pass's evaluations are part of the run, so a
+ * pass that granted itself a fresh cap would be a restart quietly buying one -
+ * which is the bookkeeping `./search.ts` already states for its own climbs.
+ */
+export interface CompletionInput {
+  /** Every candidate board and staged wire this pass writes lands here. */
+  readonly runDir: string
+  readonly netlist: string
+  readonly targets: BoardTargets
+  readonly reference: ReferenceNets
+  readonly footprints: ReadonlyMap<string, string>
+  readonly stock: Stock
+  readonly rules: StripboardRules
+}
+
+/**
+ * One net this pass finished with still open, and why.
+ *
+ * **IT IS THE RESULT AND NOT AN APOLOGY FOR ONE.** A measured *"these four
+ * cannot close because ..."* is the finding this pipeline is built on reporting,
+ * so a net that cannot close names the cause from the board's own side -
+ * component count, how many wires were plannable, and the refusal or the
+ * rejection that stopped it.
+ */
+export interface UnclosedNet {
+  readonly net: string
+  /** How many copper components the net's reference pins fall into. */
+  readonly components: number
+  /** How many of its `components - 1` joins a wire was found for. */
+  readonly wiresPlanned: number
+  readonly reason: string
+}
+
+/** One board this pass is standing on: the file, its measurement and its geometry. */
+interface Standing {
+  /** The UNPAINTED board - what the next wire is applied to. */
+  readonly board: string
+  readonly measured: Measured
+  readonly occupancy: Occupancy
+}
+
+/**
+ * What one pass did: the board it finished on, what it spent, and every net it
+ * could not close.
+ *
+ * **`best` IS THE BOARD AND ITS GEOMETRY, NOT ONLY AN `Evaluation`** - which is
+ * where this differs from `ClimbResult`, deliberately. A completion pass exists
+ * to hand a finished board onward, and a result naming only the painted
+ * candidate would hand on a board no further gesture can be applied to (a
+ * painted board refuses a move that overlaps a part's own footprint: see
+ * `Measured.source`). So the unpainted board travels with its occupancy, in the
+ * same shape `./seed.ts`'s `SeedStart` uses for the same handover.
+ */
+export interface CompletionResult {
+  /** The best board this pass saw, by `strictlyBetter` - unpainted, with its geometry. */
+  readonly best: SeedStart
+  /** That board's measurement. `best.board` is its `Measured.source`. */
+  readonly evaluation: Evaluation
+  /** The board the pass was handed, measured before anything was applied. */
+  readonly start: Evaluation
+  readonly rounds: number
+  readonly evaluations: number
+  /** How many candidates each round accepted. `acceptedPerRound.length === rounds`. */
+  readonly acceptedPerRound: readonly number[]
+  /** How many `WIRE` lines the accepted candidates added, by the dump's own count. */
+  readonly wiresAdded: number
+  /** How many candidates could not be SCORED, and the first one's refusal. */
+  readonly unscoreable: number
+  readonly firstUnscoreable: string | null
+  /** Every net still open on `best`, with the cause. */
+  readonly unclosed: readonly UnclosedNet[]
+}
+
+/** Why a candidate that was evaluated was not accepted, read off the two evaluations. */
+function rejection(predecessor: Evaluation, incumbent: Evaluation, candidate: Evaluation): string {
+  const held = new Set(predecessor.results.filter((result) => result.held).map((r) => r.id))
+  const broke = candidate.results
+    .filter((result) => !result.held && held.has(result.id))
+    .map((result) => result.id)
+  if (broke.length > 0) {
+    return (
+      `the candidate closing it BREAKS ${broke.join(", ")}, which held on the board the wires ` +
+      "were applied to. The acceptance rule's no-regression clause rejects it before F is " +
+      "looked at, so closing this net costs a hard constraint on this board."
+    )
+  }
+  return (
+    `the candidate closing it was not better: openNets ${incumbent.openNets} -> ` +
+    `${candidate.openNets}, F ${incumbent.score.objective} -> ${candidate.score.objective}. ` +
+    "With openNets the ordering's first key, this means the wires did not reduce the count - " +
+    "they closed this net and opened at least as many others, which a wire does by shorting two " +
+    "nets onto one piece of copper."
+  )
+}
+
+/** What a plan the generator declined to complete says about its net. */
+function unclosedFromPlan(plan: NetJoinPlan): UnclosedNet {
+  const shortfall = plan.shortfall
+  if (shortfall === null) {
+    throw new Error(
+      `unclosedFromPlan: the plan for "${plan.net}" carries no shortfall, so the generator says ` +
+        "every join it needs is plannable - and this function is only reached for a net no " +
+        "candidate closed. A complete plan that was never proposed is a defect in the pass's " +
+        "sweep, not a net to report as unclosable: it would name the board's geometry as the " +
+        "cause of something this loop did.",
+    )
+  }
+  return {
+    net: plan.net,
+    components: plan.components,
+    wiresPlanned: plan.wires.length,
+    reason: shortfall,
+  }
+}
+
+/**
+ * Apply a plan's wires to `board` in order, returning the candidate board.
+ *
+ * Each wire reads the previous one's output and only the LAST writes the
+ * candidate, which is `applyMove`'s own discipline for a compound gesture
+ * carried up one level: a refused wire leaves the candidate absent and the
+ * staged files beside it say how far the sequence got.
+ */
+function applyWires(
+  board: string,
+  plan: NetJoinPlan,
+  runDir: string,
+  tag: string,
+  spawn: SpawnVeroroute,
+): string {
+  const candidate = path.join(runDir, `${tag}.vrt`)
+  let current = board
+  plan.wires.forEach((wire, index) => {
+    const out =
+      index === plan.wires.length - 1 ? candidate : path.join(runDir, `${tag}-w${index}.vrt`)
+    applyMove(current, wire, out, spawn)
+    current = out
+  })
+  return candidate
+}
+
+/**
+ * Close what the search left open on `start`, as cheaply as the acceptance rule
+ * allows.
+ *
+ * **A ROUND IS ONE CANDIDATE PER OPEN NET, EVERY ONE APPLIED TO THE BOARD THE
+ * ROUND STARTED FROM** - the same sweep discipline `climb` states, for the same
+ * reason: a wire planned against one board and applied to another lands on holes
+ * the model did not check. The best candidate becomes the next round's base, and
+ * the pass stops when a round accepts nothing or the cap it was handed is spent.
+ *
+ * **THE OPEN NETS AND THE PLANS ARE RE-READ EVERY ROUND**, from the base board's
+ * own check report and dump, so a net that a previous round's wires closed
+ * incidentally is not planned for again and a net whose components changed is
+ * re-planned against what the board now is.
+ */
+export function completionPass(
+  start: SeedStart,
+  input: CompletionInput,
+  spawn: SpawnVeroroute,
+): CompletionResult {
+  fs.mkdirSync(input.runDir, { recursive: true })
+  const cap = input.rules.evaluationCap
+  const acceptedPerRound: number[] = []
+  let evaluations = 0
+  let unscoreable = 0
+  let firstUnscoreable: string | null = null
+
+  const measureInto = (board: string, tag: string): Measured => {
+    const measured = measure(
+      board,
+      {
+        painted: path.join(input.runDir, `${tag}-filled.vrt`),
+        netlist: input.netlist,
+        targets: input.targets,
+        reference: input.reference,
+        footprints: input.footprints,
+        stock: input.stock,
+        rules: input.rules,
+      },
+      spawn,
+    )
+    evaluations += 1
+    return measured
+  }
+
+  // THE START IS EVALUATED, for `climb`'s reason: a pass that scored no
+  // candidate has not measured the board it was handed, and the before/after
+  // this stage exists to report is read off this measurement and the last one.
+  const first = measureInto(start.board, "pass-start")
+  let base: Standing = { board: start.board, measured: first, occupancy: start.occupancy }
+  let incumbent = base
+  let best = base
+  let rounds = 0
+  let spent = false
+  // THE LAST ROUND'S PLANS, WHICH ARE THE ONES THE RESULT REPORTS ON: a net
+  // still open on the board the pass finished on, with the cause as it stood on
+  // THAT board. An earlier round's cause would describe a board that no longer
+  // exists.
+  let plans: readonly NetJoinPlan[] = []
+  const rejected = new Map<string, string>()
+
+  while (!spent) {
+    plans = netJoinPlans({
+      dumpText: base.measured.dumpText,
+      dump: base.measured.dump,
+      occupancy: base.occupancy,
+      reference: input.reference,
+      openNets: openNetsOf(base.measured),
+    })
+    rejected.clear()
+    let accepted = 0
+    for (const plan of plans) {
+      // A PARTIAL PLAN IS NOT PROPOSED, and `./complete-joins.ts` carries the
+      // measurement: a candidate that cannot close its net is the main search's
+      // wire move, which was enumerated 7,417 times and accepted none.
+      if (plan.shortfall !== null) continue
+      if (evaluations + unscoreable >= cap) {
+        spent = true
+        break
+      }
+      const tag = `p${rounds}-${plan.net}`
+      const candidateBoard = applyWires(base.board, plan, input.runDir, tag, spawn)
+      // THE SAME ONE REFUSAL `climb` CATCHES, BY THE SAME EXPORTED NAME: a wire
+      // bridging two strips on a packed board routinely shorts two nets, and
+      // `AutoFillVero` then reports `CUT_STATE UNRESOLVED` with no cut list at
+      // all. That candidate cannot be compared with anything, so it is rejected
+      // and counted; every other refusal still stops the pass.
+      let measured: Measured
+      try {
+        measured = measureInto(candidateBoard, tag)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        if (!message.startsWith(UNSCOREABLE)) throw error
+        unscoreable += 1
+        if (firstUnscoreable === null) firstUnscoreable = message
+        rejected.set(
+          plan.net,
+          "the candidate closing it could not be SCORED: its wires left the cut state " +
+            "unresolved, which is what the fork reports when a wire shorts two nets onto one " +
+            `piece of copper. The refusal: ${message.split("\n")[0] ?? ""}`,
+        )
+        continue
+      }
+      if (
+        accepts(
+          {
+            predecessor: base.measured.evaluation,
+            incumbent: incumbent.measured.evaluation,
+            candidate: measured.evaluation,
+          },
+          input.rules,
+        )
+      ) {
+        incumbent = { board: candidateBoard, measured, occupancy: plan.occupancy }
+        if (strictlyBetter(measured.evaluation, best.measured.evaluation)) best = incumbent
+        accepted += 1
+        continue
+      }
+      rejected.set(
+        plan.net,
+        rejection(
+          base.measured.evaluation,
+          incumbent.measured.evaluation,
+          measured.evaluation,
+        ),
+      )
+    }
+    acceptedPerRound.push(accepted)
+    rounds += 1
+    if (accepted === 0) break
+    base = incumbent
+  }
+
+  return {
+    best: { board: best.board, occupancy: best.occupancy },
+    evaluation: best.measured.evaluation,
+    start: first.evaluation,
+    rounds,
+    evaluations,
+    acceptedPerRound,
+    wiresAdded: best.measured.dump.wires.length - first.dump.wires.length,
+    unscoreable,
+    firstUnscoreable,
+    unclosed: plans.map((plan) => {
+      const why = rejected.get(plan.net)
+      return why === undefined
+        ? unclosedFromPlan(plan)
+        : {
+            net: plan.net,
+            components: plan.components,
+            wiresPlanned: plan.wires.length,
+            reason: why,
+          }
+    }),
+  }
+}
+
+/**
+ * Which nets `--check` called incomplete on a measured board.
+ *
+ * **IT IS THE SAME REPORT `HC1` AND `openNets` WERE READ FROM, AND NO SECOND
+ * `--check` IS RUN** - which is the one thing this pass must not do. A second
+ * check would be a second completeness measure, and it could disagree with the
+ * one the acceptance rule orders by; this pass would then be planning against a
+ * board the rule does not see. The length is CHECKED against `openNets` anyway:
+ * both come from one `CheckReport` in `./climb-evaluate.ts`, so a disagreement
+ * is not a case to reconcile but a defect in that handover.
+ */
+function openNetsOf(measured: Measured): readonly string[] {
+  const names = measured.checkReport.incompleteNets
+  if (names.length !== measured.evaluation.openNets) {
+    throw new Error(
+      `openNetsOf: the check report names ${names.length} incomplete net(s) ` +
+        `(${names.join(", ")}) while Evaluation.openNets is ${measured.evaluation.openNets}. ` +
+        "Both are read from the SAME CheckReport in tools/stripboard/climb-evaluate.ts - " +
+        "openNets is literally that array's length - so they cannot legitimately disagree and " +
+        "neither is reconciled to the other: planning from the names while the acceptance rule " +
+        "orders by the count would make this pass optimise a quantity it is not measuring. " +
+        "Reaching here means a Measured was built by hand rather than by measure().",
+    )
+  }
+  return names
+}

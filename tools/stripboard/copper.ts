@@ -199,8 +199,19 @@ function stripOf(hole: HolePosition, verticalStrips: boolean): number {
   return verticalStrips ? hole.col : hole.row
 }
 
-/** How far along its strip a hole sits: its column under horizontal strips, its row under vertical ones. */
-function alongOf(hole: HolePosition, verticalStrips: boolean): number {
+/**
+ * How far along its strip a hole sits: its column under horizontal strips, its
+ * row under vertical ones.
+ *
+ * **EXPORTED, AND THE REASON IS THAT IT IS THE OTHER HALF OF A PAIR.**
+ * `./constraints-model.ts` exports `stripOf` and this is the same decomposition
+ * read on the other axis, so a consumer that needs both - the completion pass's
+ * join generator, which has to find two holes on ONE line across the strips -
+ * would otherwise have to write this one line itself. A second spelling of the
+ * strip axis is exactly the kind of quiet divergence `boardGeometry` exists to
+ * prevent, so there is one.
+ */
+export function alongOf(hole: HolePosition, verticalStrips: boolean): number {
   return verticalStrips ? hole.row : hole.col
 }
 

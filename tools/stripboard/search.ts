@@ -54,7 +54,7 @@ import { climb, type ClimbResult, type Evaluation } from "./climb.ts"
 import type { Stock } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
 import type { StripboardRules } from "./rules.ts"
-import { seedCandidate, type SeedArm, type SpawnVeroroute } from "./seed.ts"
+import { seedCandidate, type SeedArm, type SeedStart, type SpawnVeroroute } from "./seed.ts"
 import type { BoardTargets } from "./targets.ts"
 
 /**
@@ -96,6 +96,16 @@ export interface RunResult {
    * `strictlyBetter`.
    */
   readonly best: Evaluation
+  /**
+   * The same board as `best`, unpainted, with the part geometry that goes with
+   * it: what a further stage is handed.
+   *
+   * It is the winning CLIMB's own `bestStart` and is never assembled here, so
+   * the board and the evaluation cannot come from two different climbs.
+   * `./climb.ts`'s `ClimbResult.bestStart` carries why a painted board and a
+   * re-derived occupancy both fail, and `./complete.ts` is the consumer.
+   */
+  readonly bestStart: SeedStart
   /** One entry per climb, in the seed list's order. */
   readonly climbs: readonly ClimbResult[]
   /**
@@ -143,6 +153,10 @@ export function search(input: SearchInput, spawn: SpawnVeroroute): RunResult {
   const restartBoundaries: number[] = []
   let spent = 0
   let best: Evaluation | undefined
+  // THE WINNING CLIMB'S OWN HANDOVER, moved across with `best` and never
+  // rebuilt here: the two are set in one statement below, so a run cannot
+  // report an evaluation of one climb's board beside another climb's geometry.
+  let bestStart: SeedStart | undefined
 
   for (const [index, seed] of seeds.entries()) {
     const remaining = cap - spent
@@ -188,10 +202,13 @@ export function search(input: SearchInput, spawn: SpawnVeroroute): RunResult {
     if (index > 0) restartBoundaries.push(spent)
     spent += result.evaluations
     climbs.push(result)
-    if (best === undefined || strictlyBetter(result.best, best)) best = result.best
+    if (best === undefined || strictlyBetter(result.best, best)) {
+      best = result.best
+      bestStart = result.bestStart
+    }
   }
 
-  if (best === undefined) {
+  if (best === undefined || bestStart === undefined) {
     throw new Error(
       `search: no climb ran, with ${seeds.length} seed(s) and an evaluation cap of ${cap}, so ` +
         "there is no best candidate to report. It is NOT reported as a run at F = 0 with an " +
@@ -204,6 +221,7 @@ export function search(input: SearchInput, spawn: SpawnVeroroute): RunResult {
   }
   return {
     best,
+    bestStart,
     climbs,
     restartBoundaries,
     worseAcceptanceRan: input.rules.worseAcceptance !== null,

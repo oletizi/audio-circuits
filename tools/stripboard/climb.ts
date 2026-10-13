@@ -144,7 +144,7 @@ import {
 } from "./moves.ts"
 import type { Occupancy } from "./seed-geometry.ts"
 import type { StripboardRules } from "./rules.ts"
-import type { SpawnVeroroute } from "./seed.ts"
+import type { SeedStart, SpawnVeroroute } from "./seed.ts"
 import type { BoardTargets } from "./targets.ts"
 import { measure, type Evaluation, type Measured } from "./climb-evaluate.ts"
 
@@ -156,8 +156,15 @@ import { measure, type Evaluation, type Measured } from "./climb-evaluate.ts"
  * from the prose - and a catch broad enough to swallow a fork failure or a
  * geometry refusal would turn a defect into a skipped candidate, which is the
  * shape this pipeline is built against.
+ *
+ * **EXPORTED BECAUSE A SECOND SWEEP CATCHES THE SAME ONE.**
+ * `./complete.ts`'s completion pass evaluates candidates the same four
+ * invocations deep and meets the same refusal - a wire that shorts two nets
+ * leaves `CUT_STATE UNRESOLVED` - and a second copy of this string would be a
+ * literal that silently stopped matching if `./score.ts`'s union member were
+ * renamed.
  */
-const UNSCOREABLE = "score-cuts-not-computed"
+export const UNSCOREABLE = "score-cuts-not-computed"
 
 /**
  * The evaluation half, re-exported from `./climb-evaluate.ts`.
@@ -233,6 +240,26 @@ export interface ClimbResult {
    * its walk position would report a board worse than one it had found.
    */
   readonly best: Evaluation
+  /**
+   * The same board as `best`, as the UNPAINTED file and the part geometry that
+   * goes with it - the handover a FURTHER STAGE needs and `best` cannot give.
+   *
+   * **IT IS THE SAME SHAPE AND THE SAME CONTRACT AS `./seed.ts`'s `SeedStart`,
+   * which is what hands a start INTO this climb**, and the two reasons that
+   * contract exists are both live here. The board is unpainted because a
+   * painted one refuses the next gesture: `--move` will not relocate a part
+   * over its own current footprint once `AutoFillVero` has painted copper into
+   * the holes it is about to vacate (`Measured.source` carries the
+   * measurement). And the occupancy travels with it because `occupancyOf`
+   * cannot read a board a part has been turned on, so a later stage that
+   * re-derived the geometry would refuse exactly the boards this search
+   * produces - measured: `occupancyOf` refuses all ten best boards of the first
+   * completeness sweep, on `C18` facing `N` or `S`.
+   *
+   * `./complete.ts` is the consumer. Without this field the completion pass
+   * could only be run by re-deriving a geometry that cannot be derived.
+   */
+  readonly bestStart: SeedStart
   readonly rounds: number
   readonly evaluations: number
   /** How many moves each round accepted. `acceptedPerRound.length === rounds`. */
@@ -352,6 +379,12 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
   // result; see the module comment. `strictlyBetter` is the acceptance rule's
   // own, so the two cannot disagree about which of two boards is better.
   let best: Evaluation = first.evaluation
+  // THE BEST CANDIDATE'S BOARD AND GEOMETRY, TRACKED BESIDE ITS `Evaluation`
+  // rather than looked up afterwards. There is nowhere to look it up from: the
+  // occupancy is this loop's own carried state and no dump can be read back
+  // into one, so a field recovered later would have to re-derive a geometry
+  // `occupancyOf` refuses. See `ClimbResult.bestStart`.
+  let bestStanding: State = incumbent
   let base = incumbent
   let rounds = 0
   let spent = false
@@ -430,7 +463,10 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
         incumbent = { measured, occupancy: advanced }
         // AND THE BEST SEEN IS UPDATED SEPARATELY, so an E3 acceptance cannot
         // make the run report a board worse than one it found.
-        if (strictlyBetter(measured.evaluation, best)) best = measured.evaluation
+        if (strictlyBetter(measured.evaluation, best)) {
+          best = measured.evaluation
+          bestStanding = incumbent
+        }
         accepted += 1
       }
     }
@@ -445,6 +481,11 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
 
   return {
     best,
+    // THE UNPAINTED SOURCE, NOT `best.candidate`: `candidate` is the painted
+    // board a score had to be read from, and a gesture on a painted board is
+    // refused. `Measured.source` is the board the paint was made from and the
+    // one a further gesture applies to.
+    bestStart: { board: bestStanding.measured.source, occupancy: bestStanding.occupancy },
     rounds,
     evaluations: history.length,
     acceptedPerRound,

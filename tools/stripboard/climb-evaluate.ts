@@ -102,6 +102,35 @@ export interface Measured {
   readonly evaluation: Evaluation
   readonly dump: BoardDump
   /**
+   * The `--dump-board` TEXT this measurement was read from - the one string
+   * `scoreDumpText` and `boardGeometry` were both handed.
+   *
+   * **IT IS HANDED OUT RATHER THAN RE-FETCHED, AND THAT IS WHAT KEEPS A LATER
+   * READER ON THE SAME CHARACTERS.** `./pad-provenance.ts` takes TEXT and not a
+   * `BoardDump`, for its own stated reason - a parsed dump carries no `PAD`
+   * lines, so a caller handing one over would get a verdict keyed the board's
+   * way without being told - so the completion pass needs the text to locate an
+   * off-board part's expanded pads. A second `--dump-board` would be a fifth
+   * invocation per evaluation that the recorded cost model (four) does not
+   * account for, AND it would be a second reading: two dumps of one board agree
+   * today and nothing here would notice if they stopped.
+   */
+  readonly dumpText: string
+  /**
+   * The parsed `--check` report this measurement's `openNets` was counted from.
+   *
+   * **IT IS HANDED OUT SO THAT NOTHING DOWNSTREAM RUNS A SECOND `--check`, AND
+   * THAT IS THE WHOLE REASON.** `Evaluation.openNets` is this report's
+   * `incompleteNets.length` and `HC1` reads the same report, so the count and
+   * the hard constraint cannot disagree. A consumer that needs the net NAMES -
+   * `./complete.ts`, which plans a join per open net - would otherwise either
+   * check again, producing a second completeness measure that could disagree
+   * with the one the acceptance rule orders by, or parse them back out of
+   * `HC1`'s prose detail. Both were tried and both are worse than handing over
+   * the object that was already parsed.
+   */
+  readonly checkReport: CheckReport
+  /**
    * The board the NEXT gesture is applied to - the one `measure` was handed,
    * BEFORE the autofill.
    *
@@ -202,6 +231,8 @@ export function measure(board: string, input: EvaluateInput, spawn: SpawnVerorou
       openNets: checkReport.incompleteNets.length,
     },
     dump,
+    dumpText,
+    checkReport,
     source: board,
   }
 }

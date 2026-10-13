@@ -27,6 +27,7 @@ import type { ReportInput } from "../../tools/stripboard/report.ts"
 import { boundFor, type BoundStatus, type Outcome } from "../../tools/stripboard/report.ts"
 import { loadRules, type StripboardRules } from "../../tools/stripboard/rules.ts"
 import type { RunResult } from "../../tools/stripboard/search.ts"
+import type { SeedStart } from "../../tools/stripboard/seed.ts"
 import type { StoppingRule } from "../../tools/stripboard/stop.ts"
 import { TARGETS, evaluation, failedResults } from "./stop-fixtures.ts"
 
@@ -43,10 +44,26 @@ export const RULES: StripboardRules = loadRules()
  */
 export const TOLERANCE_RULES: StripboardRules = { ...RULES, tau: 0.05 }
 
+/**
+ * A `bestStart` naming a board nothing wrote and an EMPTY occupancy.
+ *
+ * **NOTHING IN THESE FIXTURES READS IT, AND THE EMPTY MAP SAYS SO.** The report
+ * is a function of counters and of the candidate's grade; `bestStart` exists for
+ * the completion pass (`tools/stripboard/complete.ts`), which no test in this
+ * file reaches. An occupancy with a part in it would be geometry nobody
+ * measured, dressed as a fact about a board - so there is none, and a consumer
+ * that ever did read this would get a board with no parts rather than a
+ * plausible-looking one.
+ */
+function noBestStart(): SeedStart {
+  return { board: "report-fixture-best.vrt", occupancy: new Map() }
+}
+
 /** One climb that found `best` for `evaluations` evaluations. */
 function climbOf(best: Evaluation, evaluations: number): ClimbResult {
   return {
     best,
+    bestStart: noBestStart(),
     rounds: 1,
     evaluations,
     acceptedPerRound: [1],
@@ -90,6 +107,7 @@ export function runResult(overrides: Partial<RunResult> = {}): RunResult {
   const best = overrides.best ?? healthyCandidate()
   return {
     best,
+    bestStart: noBestStart(),
     climbs: [climbOf(startCandidate(), 100), climbOf(best, 100)],
     restartBoundaries: [100],
     worseAcceptanceRan: false,
