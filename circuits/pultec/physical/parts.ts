@@ -8,7 +8,7 @@
  * `FILM_CAPACITOR_IMPORT_STRINGS` in `lib/kicad/import-string.ts` for the
  * footprints' VeroRoute import strings.
  */
-import type { Component, Network, PinField } from "../../../lib/model/types.ts"
+import type { Component, Network, PartSpec, PinField } from "../../../lib/model/types.ts"
 import { net } from "../../../lib/model/types.ts"
 import { componentNets } from "../../../lib/model/topology.ts"
 import { PHYSICAL_ONLY } from "../../../lib/board/physicalize.ts"
@@ -141,8 +141,7 @@ export const INDUCTOR_SYMBOL = "Device:L"
  * a false provenance claim in every committed Pultec netlist. That is the third
  * time this repository has shipped a KiCad name nobody can look up, the first two
  * being footprints; `tests/kicad/symbol-names.test.ts` is the disk-backed check
- * that closes the symbol axis, the way `tests/kicad/footprint-library.ts` closed
- * the footprint one.
+ * that closes the symbol axis.
  *
  * **THE KEY IS POSITIONS, NOT PINS.** KiCad's `SW_Rotary_1xN` is one pole with `N`
  * throws, so it carries `N + 1` electrical pins plus `MP`; a six-position selector
@@ -152,9 +151,11 @@ export const INDUCTOR_SYMBOL = "Device:L"
  *
  * **THE TABLE IS THE LIBRARY'S CONTENTS AND NOTHING MORE.** `_MP` (with a mounting
  * pin) runs 3 to 9; 12 has no `_MP` variant. There is no `1x10` and no `1x11`, so
- * `rotarySymbolFor` REFUSES a selector with ten or eleven positions rather than
- * rounding up to the twelve-position symbol - see its message for why that choice
- * is not this file's to make.
+ * `rotarySymbolFor` never rounds up to the twelve-position symbol: it REFUSES a
+ * ten-position selector outright, and for the one eleven-position selector this
+ * repository actually carries it returns `undefined` so the field is omitted and
+ * the emitters refuse. See its comment for why that choice is not this file's to
+ * make.
  */
 const ROTARY_SYMBOLS_BY_POSITIONS: ReadonlyMap<number, string> = new Map([
   [3, "Switch:SW_Rotary_1x3_MP"],
@@ -170,54 +171,52 @@ const ROTARY_SYMBOLS_BY_POSITIONS: ReadonlyMap<number, string> = new Map([
 /** Every rotary symbol this repository can name, for the disk-backed check to verify. */
 export const ROTARY_SYMBOLS: readonly string[] = [...ROTARY_SYMBOLS_BY_POSITIONS.values()]
 
+/** The one throw count this repository carries with no part chosen for it: the mid's. */
+const UNRESOLVED_ROTARY_THROWS = 11
+
 /**
- * What a selector carries while nobody has chosen its switch: a value that is
- * VISIBLY NOT A KiCAD SYMBOL.
+ * The single-pole rotary symbol for a selector with `throws` throws, or
+ * `undefined` for the ONE selector whose physical part is not chosen yet.
  *
- * **ONE SELECTOR NEEDS IT, AND IT IS A PART DECISION RATHER THAN A LOOKUP.**
+ * **NO PLACEHOLDER VALUE IS RETURNED, AND NOTHING IS DEFAULTED.**
  * `circuits/pultec/electrical/mid.ts` carries all eleven of P3bandDoc.pdf page
  * 3's mid frequencies, deliberately, so any of them can be omitted at build
  * time. `Switch.kicad_sym` has `SW_Rotary_1x3_MP` through `SW_Rotary_1x9_MP` and
  * `SW_Rotary_1x12`, and NOTHING at `1x10` or `1x11`. Naming the twelve-position
  * symbol would assert which physical switch is fitted - a 12-way part with its
  * stop set to 11, rather than a part with eleven detents - and that is the
- * owner's decision, not this file's. So the gap is carried as a value nobody can
- * mistake for a library id, rather than as a plausible-looking name.
+ * owner's decision, not this file's.
  *
- * **IT IS ASSERTED ABSENT, NOT WHITELISTED PRESENT.**
- * `tests/kicad/symbol-names.test.ts` checks every symbol string in the
- * repository against the installed libraries, and this one is the single entry
- * it asserts is NOT there - so the check still has teeth over it, and it fails
- * the day a second unresolved part is added beside it or this one is resolved
- * without this constant being removed. See `docs/stripboard/pipeline-verification.md`
- * §"Stated limits" for the open decision.
- */
-export const UNCHOSEN_ROTARY_VALUE = "UNCHOSEN:rotary_part_not_selected"
-
-/**
- * The single-pole rotary symbol for a selector with `throws` throws, or
- * `UNCHOSEN_ROTARY_VALUE` where the library has no symbol at that throw count.
+ * **SO THE FIELD IS OMITTED AND THE REFUSAL HAPPENS WHERE THE DATUM IS NEEDED.**
+ * An earlier revision put a sentinel string here, which is the fallback this
+ * project's rules forbid outright. The symbol's value is consumed only at EMIT
+ * time, and both emitters already refuse without it: `valueFor`
+ * (`lib/kicad/value-notation.ts`) - *"has neither an mpn nor a symbol"* - and
+ * `schematicStub` (`lib/kicad/schematic.ts`) - *"has no part.symbol"*.
+ * Composition is unaffected, because residency reads `part.footprint`
+ * (`onBoard` in `tools/stripboard/targets.ts`) and never `part.symbol`. The
+ * refusal is pinned by `tests/circuits/pultec-boards.test.ts`.
  *
  * `componentId` is named only so the refusal can say which selector it is about.
  */
-export function rotarySymbolFor(componentId: string, throws: number): string {
+export function rotarySymbolFor(componentId: string, throws: number): string | undefined {
   const symbol = ROTARY_SYMBOLS_BY_POSITIONS.get(throws)
   if (symbol !== undefined) return symbol
   // ELEVEN IS THE ONLY COUNT THIS REPOSITORY HAS, and it is the mid's. Anything
   // else is a selector shape nobody has looked at, so it stops rather than
   // quietly inheriting the mid's open decision.
-  if (throws !== 11) {
+  if (throws !== UNRESOLVED_ROTARY_THROWS) {
     throw new Error(
       `no KiCad symbol is recorded for the ${throws}-position rotary "${componentId}", and ` +
-        "eleven is the one unresolved throw count this repository carries (the mid section's, " +
-        "see UNCHOSEN_ROTARY_VALUE above). The installed Switch.kicad_sym has SW_Rotary_1x3_MP " +
-        `through SW_Rotary_1x9_MP and SW_Rotary_1x12, and nothing at 1x${throws}. It is NOT ` +
-        "rounded up to the next symbol the library does have, because that would assert which " +
-        "physical switch is fitted. Add this count to ROTARY_SYMBOLS_BY_POSITIONS in " +
-        "circuits/pultec/physical/parts.ts once the part is chosen, with the symbol it maps to.",
+        `${UNRESOLVED_ROTARY_THROWS} is the one unresolved throw count this repository carries ` +
+        "(the mid section's - see this function's comment). The installed Switch.kicad_sym has " +
+        `SW_Rotary_1x3_MP through SW_Rotary_1x9_MP and SW_Rotary_1x12, and nothing at 1x${throws}. ` +
+        "It is NOT rounded up to the next symbol the library does have, because that would " +
+        "assert which physical switch is fitted. Add this count to ROTARY_SYMBOLS_BY_POSITIONS " +
+        "in circuits/pultec/physical/parts.ts once the part is chosen, with the symbol it maps to.",
     )
   }
-  return UNCHOSEN_ROTARY_VALUE
+  return undefined
 }
 
 /** A pot's lugs, in the order a panel-mount part numbers them. */
@@ -254,8 +253,11 @@ export function footprintForKind(component: Component): string {
   )
 }
 
-/** The symbol an off-board component's value field takes, by kind. */
-export function symbolFor(component: Component): string {
+/**
+ * The symbol an off-board component's value field takes, by kind, or
+ * `undefined` where the part is not chosen - see `rotarySymbolFor`.
+ */
+export function symbolFor(component: Component): string | undefined {
   if (component.kind === "potentiometer") return POT_SYMBOL
   if (component.kind === "inductor") return INDUCTOR_SYMBOL
   if (component.kind === "switch") {
@@ -280,6 +282,22 @@ export function symbolFor(component: Component): string {
     return rotarySymbolFor(component.id, pins.length - 1)
   }
   throw new Error(`no symbol is defined for off-board component "${component.id}"`)
+}
+
+/**
+ * The part spec an off-board component carries: whatever it already had, plus
+ * the KiCad symbol for its kind.
+ *
+ * **THE `symbol` FIELD IS ABSENT, NOT PRESENT-AND-PLACEHOLDER**, for the one
+ * selector whose part is unchosen. `symbolFor` returns `undefined` there, and
+ * writing `symbol: undefined` would leave a key for a reader to find and a
+ * `JSON.stringify` to drop; omitting it makes the gap the same shape as a part
+ * that was never given a symbol at all, which is what the emitters refuse on.
+ */
+export function offBoardPart(component: Component): PartSpec {
+  const symbol = symbolFor(component)
+  if (symbol === undefined) return { ...component.part }
+  return { ...component.part, symbol }
 }
 
 /**
@@ -399,7 +417,7 @@ export function ownComponents(owner: ModuleOwner): readonly Component[] {
   }
   return owned.map((component) =>
     OFF_BOARD.has(component.id)
-      ? { ...component, part: { ...component.part, symbol: symbolFor(component) } }
+      ? { ...component, part: offBoardPart(component) }
       : { ...component, part: { ...component.part, footprint: footprintForKind(component) } })
 }
 

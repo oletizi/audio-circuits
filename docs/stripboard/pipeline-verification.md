@@ -3243,6 +3243,21 @@ which cannot be explained from the inputs.
 - **`spread.test.ts`'s test NAME contradicted its body**, claiming reversing the
   reference reverses the spread order where the body asserts (correctly, and
   explains why) that it does not. Renamed.
+- **The mid section's eleven-position selector has no part chosen, so its
+  netlist cannot be emitted.** `Switch.kicad_sym` has `SW_Rotary_1x3_MP` through
+  `SW_Rotary_1x9_MP` and `SW_Rotary_1x12` and nothing at `1x10` or `1x11`, and
+  choosing between a 12-way part stopped at 11 and a genuine 11-detent part is
+  the owner's decision. An earlier revision carried a deliberately-not-a-lib-id
+  sentinel string in `part.symbol` so that emission would succeed; that is the
+  fallback this project's rules forbid, and both the constant and the string it
+  held are **deleted** rather than deprecated.
+  `rotarySymbolFor` now returns `undefined`, the field is omitted, and
+  `valueFor` refuses naming `SW_MID`. **Composition is unaffected** — residency
+  reads `part.footprint` (`onBoard` in `tools/stripboard/targets.ts`), so `mid`
+  still composes and still derives targets (measured: `N = 28`, `P = 96`). The
+  limit is therefore *mid's netlist export refuses until the part is chosen*, and
+  it is pinned by two tests in `tests/circuits/pultec-boards.test.ts` that must be
+  changed deliberately on the day it is.
 - **`kinds.ts`'s SPICE refusal named a concept rather than a file**, and
   **`pad-provenance.ts`'s comment was off by one** about where a placed pad's
   provenance field begins — "3 or 4" against a slice of 5 or 4. Both corrected in

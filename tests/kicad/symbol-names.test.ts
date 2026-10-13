@@ -44,7 +44,6 @@ import {
   POT_SYMBOL,
   ROTARY_SYMBOLS,
   TOGGLE_SYMBOL,
-  UNCHOSEN_ROTARY_VALUE,
 } from "../../circuits/pultec/physical/parts.ts"
 import {
   SYMBOL_LIBRARY_ROOT,
@@ -115,9 +114,6 @@ test("every symbol name swept out of the source resolves in an installed KiCad l
   const missing: string[] = []
   const malformed: string[] = []
   for (const [libId, sites] of SWEPT) {
-    // THE ONE DELIBERATE NON-SYMBOL, asserted absent below rather than skipped
-    // here - see UNCHOSEN_ROTARY_VALUE in circuits/pultec/physical/parts.ts.
-    if (libId === UNCHOSEN_ROTARY_VALUE) continue
     // A SWEPT VALUE THAT IS NOT A LIB ID IS REPORTED, NOT DROPPED. Dropping it
     // is how a declaration this check cannot verify becomes a declaration this
     // check pretends to have verified.
@@ -164,23 +160,27 @@ test("every symbol the five Pultec boards actually emit resolves, which is the d
   // checked for existence, because "it resolves" would also hold of the wrong
   // rotary.
   expect(emitted).toContain("Switch:SW_Rotary_1x6_MP")
-  const missing = [...emitted].filter(
-    (libId) => libId !== UNCHOSEN_ROTARY_VALUE && !symbolExistsOnDisk(libId),
-  )
+  // NO EXEMPTION LIST. The unresolved mid selector carries no `symbol` field at
+  // all (see `rotarySymbolFor`), so it never enters `emitted` and there is
+  // nothing here to skip past; the day it gets a symbol, that symbol is checked
+  // like every other.
+  const missing = [...emitted].filter((libId) => !symbolExistsOnDisk(libId))
   expect(missing).toEqual([])
 })
 
-test("the mid selector's value is recorded as NOT a KiCad symbol, so the gap is a result", () => {
+test("the eleven-position rotary is absent from every installed library, so the gap is a result", () => {
   // The eleven-position mid selector has no symbol in Switch.kicad_sym (which
   // stops at 1x9_MP and 1x12), and choosing between a 12-way part stopped at 11
   // and a genuine 11-detent part is a part decision. This asserts the gap rather
-  // than whitelisting it: it fails if the placeholder ever starts resolving, and
-  // it fails if the mid stops carrying it without this test moving too.
+  // than whitelisting it: the moment either name starts resolving, the decision
+  // is a lookup again and this test says so. That the mid carries NO symbol, and
+  // that emitting its netlist therefore refuses, is pinned in
+  // tests/circuits/pultec-boards.test.ts.
   expect(fs.existsSync(symbolLibraryFile("Switch:SW_SPDT"))).toBe(true)
-  expect(installedSymbolNames("Switch:SW_SPDT").has("SW_Rotary_1x11_MP")).toBe(false)
-  expect(installedSymbolNames("Switch:SW_SPDT").has("SW_Rotary")).toBe(false)
-  const midSymbols = physicalBoard("mid").components.map((c) => c.part?.symbol)
-  expect(midSymbols).toContain(UNCHOSEN_ROTARY_VALUE)
+  for (const name of ["SW_Rotary_1x11_MP", "SW_Rotary_1x10_MP", "SW_Rotary"]) {
+    expect(installedSymbolNames("Switch:SW_SPDT").has(name), name).toBe(false)
+    expect(symbolExistsOnDisk(`Switch:${name}`), name).toBe(false)
+  }
 })
 
 test("an absent library and an absent symbol both refuse, and the message says it does not skip", () => {

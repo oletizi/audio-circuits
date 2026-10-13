@@ -55,10 +55,10 @@ import {
   designatorsFor,
   footprintForKind,
   junctionComponents,
+  offBoardPart,
   ownComponents,
   padOrdersFor,
   portsOn,
-  symbolFor,
 } from "./parts.ts"
 import type { Component, Network } from "../../../lib/model/types.ts"
 import type { FlatState } from "../../../lib/board/scaffold/index.ts"
@@ -226,7 +226,7 @@ export function placedComponent(
   // a pot ARM is not: the reduction has already replaced the pot with fixed resistors,
   // and a fixed resistor sits on the board.
   return OFF_BOARD.has(resolved.id)
-    ? { ...bare, part: { symbol: symbolFor(bare) } }
+    ? { ...bare, part: offBoardPart(bare) }
     : { ...bare, part: { footprint: footprintForKind(bare) } }
 }
 

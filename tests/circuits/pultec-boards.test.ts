@@ -175,20 +175,38 @@ test("a board's off-board ids are its own landings plus its stand-in groups' lan
   }
 })
 
-test("every part that needs a symbol has one, so its netlist value is not empty", () => {
+/**
+ * The one component on the five boards whose physical part is not chosen, so it
+ * carries no `part.symbol`: the mid section's eleven-position selector. See
+ * `rotarySymbolFor` in `circuits/pultec/physical/parts.ts`.
+ */
+const UNRESOLVED_PART: readonly [ModuleOwner, string] = ["mid", "SW_MID"]
+
+test("every part that needs a symbol has one except the one unchosen selector", () => {
   // valueFor derives a value from a numeric quantity where there is one, and
   // falls back to mpn then symbol otherwise. Switches and the terminal block
-  // have no quantity, so without a symbol they refuse at export - which the
-  // parked export test would otherwise be the only thing to notice.
+  // have no quantity, so without a symbol they refuse at export - which is
+  // exactly what the unchosen selector does, asserted below.
+  //
+  // THE EXCEPTION IS PINNED BY NAME AND BY COUNT, not whitelisted by predicate:
+  // a second unresolved part, or this one resolving, moves this test.
+  const unresolved: string[] = []
   let checked = 0
   for (const [owner, , build] of BOARDS) {
     for (const component of build().components) {
       if (component.kind !== "switch" && component.kind !== "connector") continue
-      expect(component.part?.symbol ?? component.part?.mpn, `${owner}/${component.id}`).toBeDefined()
       checked += 1
+      const value = component.part?.symbol ?? component.part?.mpn
+      if (value === undefined) unresolved.push(`${owner}/${component.id}`)
     }
   }
   expect(checked).toBeGreaterThan(BOARDS.length)
+  expect(unresolved).toEqual([`${UNRESOLVED_PART[0]}/${UNRESOLVED_PART[1]}`])
+  // AND THE FIELD IS ABSENT, not present-and-undefined: the emitters key on
+  // absence, so a leftover `symbol: undefined` key would be a different shape.
+  const selector = mid.pultecMid().components.find((c) => c.id === UNRESOLVED_PART[1])
+  expect(selector?.part).toBeDefined()
+  expect(Object.keys(selector?.part ?? {})).not.toContain("symbol")
 })
 
 test("every off-board component has a pad order that is a permutation of its pins", () => {
@@ -247,10 +265,37 @@ test("every board carries ground pins on its junction", () => {
   }
 })
 
-test("each board exports to a netlist", () => {
-  for (const [owner, module, build] of BOARDS) {
-    expect(() => toImportedNetlist(
-      build(), module.DESIGNATORS, module.PIN_NUMBERS, module.OFF_BOARD_IDS, module.PAD_ORDER,
-    ), owner).not.toThrow()
+/** `toImportedNetlist` over one board module, for the two tests below. */
+function exportBoard([, module, build]: (typeof BOARDS)[number]): unknown {
+  return toImportedNetlist(
+    build(), module.DESIGNATORS, module.PIN_NUMBERS, module.OFF_BOARD_IDS, module.PAD_ORDER,
+  )
+}
+
+test("every board whose parts are all chosen exports to a netlist", () => {
+  let exported = 0
+  for (const board of BOARDS) {
+    if (board[0] === UNRESOLVED_PART[0]) continue
+    expect(() => exportBoard(board), board[0]).not.toThrow()
+    exported += 1
   }
+  // The skip is one board, named, and counted - not a silent filter.
+  expect(exported).toBe(BOARDS.length - 1)
+})
+
+test("the board carrying the unchosen selector refuses at export, naming the component", () => {
+  // THIS IS THE REFUSAL THAT REPLACED A SENTINEL. The eleven-position mid
+  // selector has no KiCad symbol (Switch.kicad_sym stops at 1x9_MP and 1x12) and
+  // which physical part is fitted is the owner's decision, so the model omits
+  // `part.symbol` rather than carrying a placeholder string. `valueFor` then has
+  // nothing to put in the netlist's value field and says so.
+  //
+  // THE DAY THE PART IS CHOSEN, THIS TEST FAILS and is deleted deliberately -
+  // which is the point of pinning it.
+  const board = BOARDS.find(([owner]) => owner === UNRESOLVED_PART[0])
+  expect(board).toBeDefined()
+  if (board === undefined) throw new Error("BOARDS no longer carries the unresolved section")
+  expect(() => exportBoard(board)).toThrow(
+    new RegExp(`"${UNRESOLVED_PART[1]}".*neither an mpn nor a symbol`),
+  )
 })
