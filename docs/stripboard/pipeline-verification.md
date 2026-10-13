@@ -2565,7 +2565,10 @@ enumeration on.
 - **the eight pairs ran on the code before the "no pin stays behind" clause**,
   which landed while they were running. The clause only REMOVES candidates, so
   by the ordering argument it cannot change a run whose spread was never best —
-  seven of the eight. `random` 3 was re-run under it;
+  seven of the eight. **`random` 3 was re-run under it and is unchanged:** `C`
+  14, `W` 2, 12 of 14 open, 57 rounds, 8,281 evaluations against 8,285, with 39
+  spread candidates instead of 43. The clause removed four candidates and moved
+  nothing else, so the table holds at the clause;
 - **one run flaked** with `--dump-board produced no PIN line` and was relaunched
   from scratch. §6.9 measured the same refusal once in fifteen; eight runs were
   in parallel on ten cores here, so load is a plausible contributor and is not
