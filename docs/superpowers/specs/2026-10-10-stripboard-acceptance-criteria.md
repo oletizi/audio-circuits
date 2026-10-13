@@ -1,7 +1,7 @@
 ---
 title: Stripboard pipeline — the acceptance criteria
 date: 2026-10-10
-status: draft-for-owner-review
+status: approved-design (reviewed by the owner 2026-10-13)
 ---
 
 # What counts as an acceptable stripboard layout
