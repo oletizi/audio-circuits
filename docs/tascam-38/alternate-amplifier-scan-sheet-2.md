@@ -1,7 +1,7 @@
-# High-resolution Tascam 38 amplifier schematic — second sheet
+# High-resolution Tascam 38 amplifier schematic — primary sheet
 
 - User-uploaded filename: `p2(1).pdf`
-- Identified document: **Tascam 38 Amplifier Schematic Diagram**, second large-format sheet showing detailed channel-1 REC/PLAY AMPL PCB, the repeated channels 2–8, MOTHER PCB, head connections, function controls, master oscillator and I/O.
+- Identified document: **Tascam 38 Amplifier Schematic Diagram**, large-format amplifier sheet showing detailed channel-1 REC/PLAY AMPL PCB, the repeated channels 2–8, MOTHER PCB, head connections, function controls, master oscillator and I/O.
 - PDF pages: 1
 - PDF page size: 1260 × 2160 points (17.5 × 30 inches)
 - PDF size: 19,379,019 bytes
