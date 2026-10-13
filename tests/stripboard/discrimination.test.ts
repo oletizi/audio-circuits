@@ -238,7 +238,10 @@ const ACCOUNTED: Readonly<Record<string, readonly string[]>> = {
   "cut-necessity.ts": ["2026"],
   "equivalence.ts": ["2026"],
   "geometry-contract.ts": ["1.5"],
-  "score.ts": ["2.1", "1.4", "2.1", "4.1"],
+  // The four section citations moved with the refusal prose when `score.ts`
+  // was split at the declarations seam for the line ceiling; `score.ts` itself
+  // now carries no literal at all.
+  "score-model.ts": ["2.1", "1.4", "2.1", "4.1"],
   "seed-arrangement.ts": ["4294967296", "1970"],
   "seed-compare.ts": ["2026"],
   "seed-geometry.ts": ["255"],

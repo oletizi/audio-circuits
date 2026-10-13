@@ -5753,3 +5753,162 @@ Ratifying or rejecting the kind is the owner's. `tools/stripboard/moves-model.ts
 header names it as the second exception to "the documents win",
 `tools/stripboard/moves-spread.ts` carries the full account, and the run is in
 `.superpowers/sdd/2026-10-10-stripboard-pipeline/spread-move-report.md`.
+
+### Task 23's benchmark tests assert the MEASURED result, and three of the brief's assertions are inverted or replaced
+
+**What the plan's Task 23 writes.** Four of its draft assertions:
+
+1. `expect(span, ref).toBeGreaterThanOrEqual(bounds.minSpanHoles)` over every
+   two-lead part of the hand layout;
+2. `expect(run.best.score.wires, "W").toBe(0)` and
+   `expect(run.best.score.cuts, "C").toBeLessThanOrEqual(5)` on the frozen run;
+3. `const before = gitStatusPorcelain("boards/")` as the unchanged-tree witness;
+4. `scriptedSpawn(FIRST_SEED_ONLY_REACHES)` to make exactly one seed reach the
+   target.
+
+**What `tests/stripboard/benchmark.test.ts` does, and why each differs.**
+
+1. **The span assertion is inverted, because the measurement inverts it.** The
+   owner's own `R2` sits at a 3-hole span against a recorded `minSpanHoles` of 5
+   (`docs/stripboard/pipeline-verification.md` §8.4). The plan's own instruction
+   for that case is *"run this FIRST and read it … reading 2 is the cause of any
+   failure below"* — so the finding is what is asserted: exactly one part
+   outside its bounds, named, and below rather than above. **An assertion
+   rewritten to pass would be the one thing this task may not do**; an assertion
+   left as drafted would be a permanently red suite stating a hope.
+2. **`C` and `W` are not asserted at all, because no candidate was scored.** The
+   frozen run refuses in the starting arm (`BLOCK_200MIL3` has no recorded
+   footprint row count) and, with that supplied in a reverted probe, in the
+   grader (`PAR2` on the terminal block's missing lead span). What the test
+   asserts is the refusal and the datum it names. **`B1-frozen` is reported NOT
+   MET**, which is `V3` failing, and §8.3 names the reading.
+3. **`boardsDigest()` replaces `git status --porcelain`**, which task 13's fix
+   round 2 measured **inert** rather than merely fragile: porcelain prints
+   ` M path` identically whether a file changed once or three times, so a change
+   made over an already-dirty tree reads the same as none.
+   `tests/stripboard/run-dir-fixtures.ts` carries the full reasoning and the
+   helper already existed.
+4. **The rate's discriminating test substitutes the rate instead of scripting a
+   spawn.** No scripted spawn can produce an ADMISSIBLE board on this pipeline
+   today — nothing has reached one — so a `FIRST_SEED_ONLY_REACHES` script would
+   be a fixture asserting its own fiction. Instead a real sweep is taken and its
+   `reached` is replaced with the opposite number; every judged line and the
+   exit code must be unchanged, and the test asserts the report DID move so the
+   comparison is not vacuous.
+
+Ratifying or rejecting any of the four is the owner's call. Nothing in
+`stripboard/rules.json`, `lib/kicad/lead-span.ts`, `lib/kicad/pin-pattern.ts` or
+`VEROROUTE_FOOTPRINT_ROWS` was edited by this task.
+
+### Task 23 added the frozen benchmark a fourth fixture file, and `V5`'s scan an exclusion
+
+**The fixture.** `B1-frozen` is stated against *"the exact electrical model,
+footprints and board dimensions the hand layout was built for"*, and the three
+committed fixtures cannot supply the footprints: the export is EESchema v1.1,
+which has no footprint field. So
+`tests/fixtures/stripboard/pultec-low-boost-frozen.footprints.json` was
+extracted from the model at the same commit `2f62ee1`, by this repository's own
+code, with its commands and `sha256` in that directory's provenance file. It
+carries no threshold and no cost figure — it is the benchmark's missing column,
+not a parameter of the run — and the result it produced is a failure rather than
+a pass.
+
+**The exclusion.** `tests/stripboard/discrimination.test.ts`'s `readStatistics`
+scans every `tools/stripboard/*.ts` for `score.<field>` and demands that every
+field found separate a good layout from a bad one. `run.json`'s
+`CanonicalMetrics` (Task 13) declares `netCount`, so `tools/stripboard/place.ts`
+writes `score.netCount` into a provenance record — the first read in this
+pipeline that records rather than compares — and both `V5` tests failed,
+demanding that a property of the circuit separate two layouts of it. The scan's
+own docstring says over-inclusion *"can only make V5 demand separation of a
+field nothing reads"*; a recording read is the case that is not true of.
+`RECORDING_ONLY = ["place.ts"]` is the narrowest fix, `V9`'s literal sweep is
+unchanged, and a new test holds the exclusion to naming a module that exists and
+still carries the read it exists for.
+
+### `C` in `F` is the NECESSARY cut count, not VeroRoute's `CUT ` line count
+
+**What the documents say.** `OBJ1` names the objective
+`F = C + ρ_w·W + ρ_s·B`, `K1` defines `C` as the cut count, and CRITERIA's
+"Checked by" for it is the dump's own `CUT ` lines — `V1` is stated as two
+independent counts of those lines. `HC2` adds the reason the count is trusted:
+*"`C` is the count a derivation produced"*, VeroRoute's `AutoFillVero` being the
+deriver. So `C` as specified is a LINE COUNT in a report the producing agent did
+not write, which is also COST §0's warrant for cut minimisation being an agent's
+job at all.
+
+**What `tools/stripboard/score.ts` does.** `F` charges `C_necessary` from
+`tools/stripboard/cut-necessity.ts`: the cuts whose removal would leave two
+reference nets' leads sharing a copper component, by `HC8`'s reconstruction,
+drop-tested one cut at a time in dump order. `Score` carries BOTH counts -
+`cuts` is still the `CUT ` line count - and the identity `C = N + J − S_occ`,
+`J` and `κ` are all still computed on the REPORTED count, because they describe
+the copper this dump has. `V1`'s two line counts are unchanged and still ride on
+every evaluation.
+
+**What the owner said, verbatim (2026-10-12), which is the authority for this
+entry.** He was asked which number the search should score on, in these words:
+
+> "Should the search score on the cuts you would actually make, or on the cuts
+> VeroRoute reports?"
+
+with three options put to him. His answer was **"option C"**, which was:
+
+> **Both.** Score on real cuts so the search can act, keep VeroRoute's number in
+> the report so you always see both. If they ever disagree badly, you'd spot it.
+
+So both halves are his instruction: the scorer charges the necessary count, AND
+the report carries VeroRoute's beside it with any disagreement named. The second
+half is not optional and is not a debug aid - `tools/stripboard/report.ts`
+prints `cuts: F charges N necessary cut(s); VeroRoute reports M CUT line(s)` and,
+when the two differ, by how much and that the difference is removable.
+
+**The measurement that put the question to him** (agent-measured, recorded in
+`docs/stripboard/pipeline-verification.md`). VeroRoute's count is honest on an
+UNDISTURBED board: all 5 of 5 cuts on the owner's hand-laid `pultec-low-boost`
+are individually necessary with 0 removable, and 38 of 38 on the import-placed
+board every arm starts from. **No baseline figure in the record needs revising.**
+But boards the SEARCH produces carry cuts no net needs - one cluster moved off a
+row reported 5 cuts of which 1 was removable, two clusters 6 of which 2 were, and
+a ground-extending wire 7 of which 2 were - so a wire that should cost a quarter
+of a cut at `ρ_w = 0.25` was being charged about 2.25. 7,417 `add-wire`
+candidates (§6.9) and 1,539 `spread` candidates (§6.11) were enumerated and not
+one was ever accepted.
+
+**AGENT RATIONALE (written by an agent, not by the owner, and not endorsed by
+him).** The owner settled WHICH number is charged and that both are reported. The
+following is the agent's reading of it and is where to look first if the change
+turns out wrong:
+
+- The risk he accepted is that scoring on our own classification rather than on
+  the tool's output is a step towards an agent grading its own work, which this
+  repository forbids in general (CLAUDE.md). What is claimed to keep it small is
+  that the classifier is **not** the scorer's reasoning: it is `HC8`'s
+  independent copper reconstruction, computed outside VeroRoute, which is the
+  same instrument that proved these artifacts removable, and no quantity the
+  scorer derives (`C`, `J`, `S_occ`, `κ`) and no `NODE` id reaches the
+  derivation. There is one classifier and not a second.
+- The greedy drop set is dump-order, so it is a LOWER bound on redundancy and
+  `C_necessary` is an UPPER bound on what the board needs: the bound errs towards
+  charging a cut, which is the direction that cannot flatter a candidate.
+- `HC8`'s reconstruction is used rather than the weaker lead test the measurement
+  applied to six further boards, because that test can over-count "necessary".
+- The ranking (`OBJ3`) is UNTOUCHED and still orders by the reported cut count.
+  That is deliberate - `OBJ3` is the owner's - and it is believed inert: the
+  ranking only breaks an `F` tie, and `F` ties between a wire-carrying candidate
+  and a wireless one need `ΔW` to be a multiple of four at `ρ_w = 0.25`.
+- `run.json`'s `CanonicalMetrics` is also untouched, so its `cuts` is
+  VeroRoute's count while its `objective` charges the necessary one. That gap is
+  recorded rather than closed: the manifest is hashed for `V6` and Task 23 was
+  editing that module concurrently.
+
+**What would close this.** Amending `OBJ1`/`K1` to say which cut count `F`
+charges and `HC2` to say what derives it, or rejecting the deviation - in which
+case the phantom charge returns and the pipeline needs another answer to a search
+that cannot use the instrument the owner has four times asked it to use.
+
+**Where the code says so.** `tools/stripboard/cut-necessity.ts`'s module comment
+carries the decision, the two limits and the independence claim;
+`tools/stripboard/score.ts`'s names this entry and states what the change costs
+the "every term is a line count" property. The run is in
+`.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md`.
