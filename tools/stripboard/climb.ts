@@ -355,7 +355,14 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
         // on every board that has one.
         const carriesWire = addsWire(move) || base.measured.dump.wires.length > 0
         const measuredBoard = carriesWire
-          ? assignNodes(candidateBoard, { netlist: input.netlist }, input.runDir, tag, spawn)
+          ? assignNodes(
+              candidateBoard,
+              { netlist: input.netlist },
+              input.runDir,
+              tag,
+              "climb",
+              spawn,
+            )
           : candidateBoard
         measured = evaluateInto(measuredBoard, tag)
       } catch (error) {

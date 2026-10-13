@@ -68,6 +68,21 @@ test(
     const written = readManifest(run.runDir)
     expect(written.canonical.hash).toBe(run.manifest.canonical.hash)
     expect(written.provenance.evaluations).toBeGreaterThan(0)
+
+    // 4. `msPerInvocation` IS A MEASUREMENT AND ITS DIVISOR IS IN THE RECORD.
+    //    It was durationMs / (evaluations * 4) - a prediction from the
+    //    four-per-evaluation cost model, under a name that reads as a
+    //    measurement - and the divisor was wrong four ways: `evaluations`
+    //    excludes unscoreable candidates, climb.ts's fifth invocation fires for
+    //    every candidate once the base board carries a wire, the start
+    //    evaluation is three, and the import, the arm gestures and the final
+    //    --dump-board are uncounted. This holds the two properties a counted
+    //    figure has and the predicted one did not: invocations STRICTLY EXCEEDS
+    //    four per evaluation on this run (the import and the arm gestures alone
+    //    put it over), and the recorded rate is exactly durationMs over it.
+    const { invocations, evaluations, durationMs, msPerInvocation } = written.provenance
+    expect(invocations).toBeGreaterThan(evaluations * 4)
+    expect(msPerInvocation).toBe(durationMs / invocations)
   },
   SLOW,
 )

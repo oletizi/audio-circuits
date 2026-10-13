@@ -210,7 +210,24 @@ export async function place(
 ): Promise<PlaceRun> {
   const repoRoot = moduleRepoRoot()
   const startedAt = new Date()
-  const prepared = await prepare(input, repoRoot, spawn)
+  // EVERY INVOCATION THIS RUN MAKES IS COUNTED HERE, at the one choke point it
+  // has. `provenance.msPerInvocation` used to be `durationMs / (evaluations * 4)`
+  // - a PREDICTION from the recorded four-per-evaluation cost model, under a
+  // name that reads as a measurement - and the review found the divisor wrong
+  // four ways the branch itself records: `evaluations` excludes `unscoreable`
+  // candidates, which spent their gestures anyway; `./climb.ts`'s fifth
+  // invocation fires for EVERY candidate once the base board carries a wire,
+  // not only for wire-adding ones; the start evaluation is three, not four; and
+  // the `--import`, the per-seed arm gestures and the final `--dump-board` are
+  // invocations with no entry in that denominator at all. Counting is cheap, so
+  // the field is now a measurement and `provenance.invocations` carries the
+  // count it was divided by.
+  let invocations = 0
+  const counted: SpawnVeroroute = (args) => {
+    invocations += 1
+    return spawn(args)
+  }
+  const prepared = await prepare(input, repoRoot, counted)
   const stamp = input.stamp ?? `${stampNow()}-${input.arm}${prepared.frozen === true ? "-frozen" : ""}`
   const runDir = runDirectory(prepared.board, stamp)
   fs.mkdirSync(runDir, { recursive: true })
@@ -218,7 +235,7 @@ export async function place(
   const netlistPath = path.join(runDir, `${prepared.board}.net`)
   fs.writeFileSync(netlistPath, prepared.netlistText)
   const imported = path.join(runDir, "imported.vrt")
-  const importRun = spawn(["--import", netlistPath, "-o", imported, "--strips", prepared.strips])
+  const importRun = counted(["--import", netlistPath, "-o", imported, "--strips", prepared.strips])
   if (importRun.status !== 0) {
     refuse(
       "place-import-failed",
@@ -243,7 +260,7 @@ export async function place(
       batch: false,
       arm: input.arm,
     },
-    spawn,
+    counted,
   )
   const rule = evaluateStop(
     stopStateOf(result, input.rules.seeds.length, prepared.frozen),
@@ -266,7 +283,7 @@ export async function place(
   // a fifth on every board, and the recorded four-per-evaluation cost model is
   // untouched by it. The board is the painted file the climb already wrote, so
   // this reads the same copper `result.best.score` was derived from.
-  const bestDump = spawn(["--dump-board", result.best.candidate])
+  const bestDump = counted(["--dump-board", result.best.candidate])
   if (bestDump.status !== 0) {
     refuse(
       "place-best-dump-failed",
@@ -348,10 +365,14 @@ export async function place(
       startedAt: startedAt.toISOString(),
       durationMs,
       host: process.platform,
-      // FOUR INVOCATIONS PER EVALUATION is the recorded cost model
-      // (`./climb-evaluate.ts`), so this is the per-invocation figure that cost
-      // model predicts and not a second measurement of it.
-      msPerInvocation: evaluations === 0 ? 0 : durationMs / (evaluations * 4),
+      // MEASURED, NOT PREDICTED: `invocations` is every call this run made
+      // through the one spawn choke point - the import, every arm gesture,
+      // every gesture and paint and dump of every candidate including the
+      // unscoreable ones, and the final --dump-board. The comment at the top of
+      // `place` carries the four ways the old `evaluations * 4` divisor was
+      // wrong.
+      msPerInvocation: invocations === 0 ? 0 : durationMs / invocations,
+      invocations,
       evaluations,
     },
   }

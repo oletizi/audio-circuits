@@ -133,8 +133,12 @@ export interface ClimbResult {
    * produces - measured: `occupancyOf` refuses all ten best boards of the first
    * completeness sweep, on `C18` facing `N` or `S`.
    *
-   * `./complete.ts` is the consumer. Without this field the completion pass
-   * could only be run by re-deriving a geometry that cannot be derived.
+   * **NOTHING PRODUCTION-SIDE READS IT**, and this comment used to say
+   * `./complete.ts` was the consumer. `completionPass` has no production caller
+   * (see its own module comment), so what this field actually buys is that a
+   * completion stage COULD be run without re-deriving a geometry that cannot be
+   * derived - not that one does. `./search.ts`'s `RunResult.bestStart` carries
+   * the same correction.
    */
   readonly bestStart: SeedStart
   readonly rounds: number

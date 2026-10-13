@@ -200,6 +200,7 @@ function manifestFor(
       durationMs: 1000,
       host: "fixture-host",
       msPerInvocation: 1,
+      invocations: 1000,
       evaluations: 250,
     },
   }

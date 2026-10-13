@@ -489,6 +489,7 @@ export function manifestOf(bundle: Bundle): RunManifest {
       durationMs: bundle.durationMs,
       host: os.hostname(),
       msPerInvocation: bundle.durationMs / bundle.invocations,
+      invocations: bundle.invocations,
       evaluations: evaluationsOf(bundle.result),
     },
   }

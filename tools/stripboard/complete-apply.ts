@@ -135,6 +135,7 @@ export function assignNodes(
   input: AssignInput,
   runDir: string,
   tag: string,
+  caller: string,
   spawn: SpawnVeroroute,
 ): string {
   const assigned = path.join(runDir, `${tag}-updated.vrt`)
@@ -172,15 +173,23 @@ export function assignNodes(
           `not evaluate.\n${output}`,
       )
     }
+    // THE CALLER IS PASSED IN AND NOT ASSUMED, because this refusal STOPS THE
+    // RUN (`candidateRejected` does not match it) and it used to open
+    // "completionPass:" from both call sites. `./climb.ts` calls this for every
+    // move `addsWire` names and for every candidate once the base board carries
+    // a wire, so the message a real `place` run died with named a pass that had
+    // never run and sent the reader upstream of the wrong stage - against this
+    // repository's rule that every throw names where to fix it.
     throw new Error(
-      `completionPass: --update exited ${result.status} on ${candidate}, so this candidate's ` +
+      `${caller}: --update exited ${result.status} on ${candidate}, so this candidate's ` +
         `wires were never assigned to a net and it was not measured. The invocation was: ` +
         `${args.join(" ")}\n${result.stdout}${result.stderr}\nIt is NOT retried and the ` +
         "candidate is NOT measured without it: a wire on holes carrying no node id is invisible " +
         "to --check's completeness, so scoring it would price a repair the board does not have " +
-        "and report this pass as having closed nothing. --update rewrites a board's component " +
+        "and report the caller as having closed nothing. --update rewrites a board's component " +
         "set from the netlist, so a refusal here is most likely HC7's own fault - the board and " +
-        "the circuit disagree - and the remedy is upstream of this pass.",
+        `the circuit disagree - and the remedy is upstream of ${caller}, in the board and the ` +
+        "circuit rather than in this invocation.",
     )
   }
   return assigned

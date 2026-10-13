@@ -103,7 +103,15 @@ export interface RunResult {
    * It is the winning CLIMB's own `bestStart` and is never assembled here, so
    * the board and the evaluation cannot come from two different climbs.
    * `./climb.ts`'s `ClimbResult.bestStart` carries why a painted board and a
-   * re-derived occupancy both fail, and `./complete.ts` is the consumer.
+   * re-derived occupancy both fail.
+   *
+   * **NOTHING PRODUCTION-SIDE READS IT.** This comment claimed
+   * `./complete.ts` was the consumer and that was false: `completionPass` has
+   * no production caller (its own module comment says so), this field is in no
+   * `CanonicalMetrics`, and `./place.ts` never passes it on. It is kept rather
+   * than deleted because it is what a completion stage would be handed and the
+   * owner is deciding whether that stage runs - but it is carried as an unread
+   * field and named as one, not as a contract with a consumer.
    */
   readonly bestStart: SeedStart
   /** One entry per climb, in the seed list's order. */

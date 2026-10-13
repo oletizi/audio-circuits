@@ -126,7 +126,25 @@ export interface ExecutionProvenance {
   readonly startedAt: string
   readonly durationMs: number
   readonly host: string
+  /**
+   * `durationMs / invocations`, MEASURED.
+   *
+   * It was `durationMs / (evaluations * 4)` - a prediction from the recorded
+   * four-per-evaluation cost model under a name that reads as a measurement -
+   * and the divisor was wrong four ways the branch itself records.
+   * `./place.ts`'s counting wrapper names all four.
+   */
   readonly msPerInvocation: number
+  /**
+   * How many times the run invoked the fork, counted at the one spawn choke
+   * point: the import, every per-seed arm gesture, every gesture, paint and
+   * dump of every candidate INCLUDING the unscoreable ones, and the final
+   * `--dump-board`.
+   *
+   * It is recorded beside `msPerInvocation` rather than left implicit, because a
+   * rate whose denominator is not in the record is a rate nobody can check.
+   */
+  readonly invocations: number
   readonly evaluations: number
 }
 
@@ -416,6 +434,7 @@ function toExecutionProvenance(value: unknown, file: string): ExecutionProvenanc
     durationMs: requireNumber(requireField(record, "durationMs", file), "durationMs", file),
     host: requireString(requireField(record, "host", file), "host", file),
     msPerInvocation: requireNumber(requireField(record, "msPerInvocation", file), "msPerInvocation", file),
+    invocations: requireNumber(requireField(record, "invocations", file), "invocations", file),
     evaluations: requireNumber(requireField(record, "evaluations", file), "evaluations", file),
   }
 }

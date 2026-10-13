@@ -2,6 +2,32 @@
  * THE COMPLETION PASS: the stage whose only objective is closing the
  * connections the main search left open.
  *
+ * **IT HAS NO PRODUCTION CALLER TODAY, AND THAT IS STATED HERE SO ROUTE 3 IS NOT
+ * MISTAKEN FOR SOMETHING THAT RUNS.** `completionPass` below is called only by
+ * `tests/stripboard/complete.test.ts`. The CLI exposes two stripboard verbs,
+ * `place` and `adopt` (`tools/cli/perfboard-stripboard-verbs.ts`), and `place`
+ * runs prepare -> --import -> search -> evaluateStop -> necessaryCuts -> report
+ * and never reaches this file; nothing in `Makefile` or `tools/` reaches it
+ * either. Two module comments used to assert that this file was the consumer of
+ * `RunResult.bestStart` and `ClimbResult.bestStart` - it is not, and those
+ * claims are gone.
+ *
+ * Three things follow, and none of them is hidden:
+ *
+ * - The plan's recorded figure for this pass - 103 open nets to 85, eighteen
+ *   closed for forty wires - was produced by a harness that is not in the
+ *   repository, so it cannot be reproduced from a committed command.
+ * - A reader of `place`'s report gets route 1's result, nine or ten of fourteen
+ *   nets open, with no line saying a second stage exists. `report.ts` has no
+ *   completion section.
+ * - `./complete-joins.ts` is the only wire planner in this repository that plans
+ *   against `copperGraph` COMPONENTS rather than against strips and hole
+ *   distance, and it is reachable only from here. So the planner built to fix
+ *   the 7,417-enumerations-no-best finding cannot fire in a real run.
+ *
+ * Wiring it into `place` is a behaviour change the owner is deciding, and it is
+ * deliberately NOT made here. What is fixed is the code claiming otherwise.
+ *
  * **IT IS ROUTE 3, AND IT RAN BECAUSE ROUTE 1 WAS NOT ENOUGH.** The owner was
  * offered three ways out of the finding in `docs/stripboard/
  * pipeline-verification.md` §6.9 - change the scoring, add a solder-bridge
@@ -356,7 +382,14 @@ export function completionPass(
       // updated copy is what is measured.
       let measured: Measured
       try {
-        const assigned = assignNodes(candidateBoard, input, input.runDir, tag, spawn)
+        const assigned = assignNodes(
+          candidateBoard,
+          input,
+          input.runDir,
+          tag,
+          "completionPass",
+          spawn,
+        )
         measured = measureInto(assigned, tag)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)

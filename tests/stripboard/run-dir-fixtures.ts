@@ -104,6 +104,7 @@ const DEFAULT_PROVENANCE: ExecutionProvenance = {
   durationMs: 1,
   host: "fixture-host",
   msPerInvocation: 1,
+  invocations: 1,
   evaluations: 1,
 }
 

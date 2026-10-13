@@ -78,6 +78,7 @@ function placeRun(overrides: Partial<PlaceRun> = {}): PlaceRun {
         durationMs: 1,
         host: "test",
         msPerInvocation: 1,
+        invocations: 1,
         evaluations: 1,
       },
     },

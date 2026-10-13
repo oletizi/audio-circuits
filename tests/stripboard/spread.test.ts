@@ -305,7 +305,7 @@ test("a wire --update will not put back is a rejected candidate, and any other f
   })
   let refusal = ""
   try {
-    assignNodes(path.join(runDir, "c.vrt"), { netlist: "n.net" }, runDir, "t", shorted)
+    assignNodes(path.join(runDir, "c.vrt"), { netlist: "n.net" }, runDir, "t", "climb", shorted)
   } catch (error) {
     refusal = error instanceof Error ? error.message : String(error)
   }
@@ -321,12 +321,19 @@ test("a wire --update will not put back is a rejected candidate, and any other f
   })
   let other = ""
   try {
-    assignNodes(path.join(runDir, "c.vrt"), { netlist: "n.net" }, runDir, "t", broken)
+    assignNodes(path.join(runDir, "c.vrt"), { netlist: "n.net" }, runDir, "t", "climb", broken)
   } catch (error) {
     other = error instanceof Error ? error.message : String(error)
   }
   expect(candidateRejected(other)).toBe(false)
-  expect(other).toContain("completionPass: --update exited 1")
+  // THE CALLER IS WHICHEVER ONE CALLED, AND IT IS "climb" HERE. This assertion
+  // read "completionPass: --update exited 1" while the message was hard-coded to
+  // that one name, so a run-stopping refusal on a real `place` run - which
+  // reaches assignNodes through ./climb.ts for every move addsWire names, and
+  // for every candidate once the base board carries a wire - named a pass that
+  // had never run. The caller is passed in now, and this drives the climb's.
+  expect(other).toContain("climb: --update exited 1")
+  expect(other).not.toContain("completionPass")
 })
 
 test("a spread of a net wholly on one strip is not proposed, because that is a gather", () => {
