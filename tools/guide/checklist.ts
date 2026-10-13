@@ -11,9 +11,24 @@
  * disappear into. Cuts, bridges and wire links carry the numbers from
  * `numbering.ts`, and a part's Value is `valueLabel`'s (off-board.ts), so
  * the checklist and the images agree.
+ *
+ * **EVERY PART ROW CARRIES ITS MOUNTING, and that column exists because a
+ * layout alone does not say it.** A span below the part's flat floor is one
+ * the body cannot lie between, so the part has to be STOOD ON END - body
+ * perpendicular to the board, one lead straight down, the other folded over
+ * and back down beside it. The owner: *"It's standard practice to stand
+ * resistors on end when their holes are next to each other."* Standard
+ * practice to him, and invisible to anybody else handed the board: without
+ * this column a builder sees a resistor in two nearly adjacent holes and no
+ * instruction at all. The condition is DERIVED, by
+ * `lib/kicad/lead-span-mounting.ts`, from the flat floor the span model
+ * already records; nothing here is a judgement about a part.
  */
+import { LEAD_SPANS } from "../../lib/kicad/lead-span.ts"
+import { MOUNTING_LABEL, mountingForSpan } from "../../lib/kicad/lead-span-mounting.ts"
 import type { Component } from "../../lib/model/types.ts"
-import { holeName, noPinLinesMessage, type BoardDump, type HolePosition, type NodedHole, type Part } from "./dump.ts"
+import { spanHoles } from "../stripboard/constraints-model.ts"
+import { holeName, noPinLinesMessage, type BoardDump, type HolePosition, type NodedHole, type Part, type Pin } from "./dump.ts"
 import { numberedBridges, numberedCuts, numberedWires } from "./numbering.ts"
 import { valueLabel } from "./off-board.ts"
 import { ELECTROLYTIC_PLUS_PIN, isElectrolytic } from "./part-shapes.ts"
@@ -121,7 +136,57 @@ function netName(dump: BoardDump, at: NodedHole): string {
   return name
 }
 
-const PART_COLUMNS = ["Part", "Value", "Leads"]
+const PART_COLUMNS = ["Part", "Value", "Leads", "Mounting"]
+
+/**
+ * What the Mounting cell says when the mounting cannot be DERIVED, and why each
+ * is a sentence rather than an empty cell.
+ *
+ * An empty cell would be the exact failure this column was added to fix: a
+ * builder reading nothing where an instruction belongs cannot tell "no mounting
+ * is required of you" from "nobody worked it out". So the two gaps say which
+ * gap they are. Neither is a guess and neither is a default - `PAR2`'s rule,
+ * applied to a build sheet instead of to a bound.
+ *
+ * `NO_FOOTPRINT` is the ordinary case for a panel-mount part: the circuit
+ * records a symbol and no footprint, VeroRoute expands it into one-hole pads,
+ * and there is no body to mount either way. `NO_SPAN` is a footprint that is in
+ * neither `LEAD_SPANS` nor the geometry it would need - `pt2399-core`'s disc
+ * ceramics and phi5 cans are live examples, listed in `UNSOURCED` with what is
+ * missing from each, and that is the file to fix.
+ */
+const NO_FOOTPRINT = "unknown: the circuit records no footprint for this part"
+const NO_SPAN = "unknown: no lead span recorded (lib/kicad/lead-span.ts)"
+
+/**
+ * Which mounting this part's span requires, as the builder reads it.
+ *
+ * **IT READS THE SPAN OFF THE HOLES AND NOTHING OFF A `PART` LINE's `SPAN`.**
+ * `spanHoles` is `tools/stripboard/constraints-model.ts`'s, the same reading
+ * `HC4`, `HC5` and `HC9` are graded on, imported rather than copied: a build
+ * sheet and the grader disagreeing about how wide a part sits would be two
+ * answers about one board. `undefined` from it means the part has other than
+ * two leads, so its span is fixed by a moulded pin field - one mounting, with
+ * nothing to decide.
+ *
+ * `LEAD_SPANS.get` RATHER THAN `leadSpanFor`, which is the one deliberate
+ * difference from the grader: `leadSpanFor` refuses an unrecorded footprint,
+ * which is right for a check and wrong here - a build packet that refused
+ * outright would leave `pt2399-core` with no printable guide at all over twelve
+ * disc ceramics whose mounting was never in question. The gap is NAMED in the
+ * cell instead (`NO_SPAN`), which keeps it visible without making it fatal. The
+ * two accessors agree wherever a span IS recorded, because `leadSpanFor`'s
+ * first act is this same lookup.
+ */
+function mountingCell(component: Component, pins: readonly Pin[]): string {
+  const footprint = component.part?.footprint
+  if (footprint === undefined) return NO_FOOTPRINT
+  const holes = spanHoles(pins)
+  if (holes === undefined) return MOUNTING_LABEL["one-mounting"]
+  const span = LEAD_SPANS.get(footprint)
+  if (span === undefined) return NO_SPAN
+  return MOUNTING_LABEL[mountingForSpan(span, holes)]
+}
 
 /** The whole checklist. The layout and circuit must already agree (`assertLayoutMatchesCircuit`). */
 export function buildChecklist(
@@ -139,6 +204,7 @@ export function buildChecklist(
       part.ref,
       valueLabel(dump, part, circuit, "checklist"),
       leads(dump, part, component, circuit, edges),
+      mountingCell(component, dump.pins[part.ref] ?? []),
     ])
   }
   const wires = numberedWires(dump).map(({ number, from, to }) => [`W${number}`, hole(from), hole(to)])
@@ -147,7 +213,11 @@ export function buildChecklist(
     { title: "Resistors and trim-pots", columns: PART_COLUMNS, rows: groups.resistors },
     { title: "Capacitors", columns: PART_COLUMNS, rows: groups.capacitors },
     { title: "Wire links", columns: ["Wire", "From", "To"], rows: wires },
-    { title: "Wire-to-board junctions", columns: ["Part", "Value", "Connections"], rows: groups.junctions },
+    {
+      title: "Wire-to-board junctions",
+      columns: ["Part", "Value", "Connections", "Mounting"],
+      rows: groups.junctions,
+    },
     {
       title: "Solder bridges",
       columns: ["Bridge", "Joins"],

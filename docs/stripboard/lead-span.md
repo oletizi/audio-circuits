@@ -165,6 +165,46 @@ fails when one is added rather than letting it be skipped. `HC9` bounds a span
 below by the part and `HC5` above by its reach, so this is the statement that
 **`HC5` did not change.**
 
+#### 4.1b Which parts stand up is PRINTED, not left to the reader
+
+Making the mounting legal is not the same as making it legible, and for one day
+it was only the first. A layout alone says nothing: a builder handed a board with
+a resistor in two nearly adjacent holes, and no instruction, has no way to know
+that the part is meant to be vertical. The owner's words are why the bound
+exists and also why this does — *"It's standard practice to stand resistors on
+end when their holes are next to each other"* — standard practice to him, and
+invisible to anybody else.
+
+So **`lib/kicad/lead-span-mounting.ts` derives which mounting a placed span
+requires, and two emitters print it**:
+
+- `tools/guide/checklist.ts` — the build packet's checklist carries a
+  **Mounting** column, one cell per part. `STAND ON END` is the only one of its
+  answers in capitals, because it is the only one that is an instruction; `flat
+  ok` says the body fits between the holes; `one mounting` says the family has
+  no second way to mount it. A cell is never empty: where the mounting cannot be
+  derived it says which gap it is - no footprint on the component, or no
+  recorded span for the footprint - because a blank cannot be told from "nobody
+  worked it out".
+- `tools/stripboard/constraints-physical.ts` — `HC9`'s detail names the parts
+  and their spans, so a run's report says it too. That clause changes no
+  verdict: `HC9` holds or breaks on the floor comparison alone, and standing the
+  part up is the mounting its floor already allows for.
+
+**Nothing records a mounting anywhere.** The condition is `span < flat floor`,
+and the flat floor is `axialFlatMinPitchMm` through the same grid conversion
+`deriveSpanHoles` uses - §4.1's figure, read rather than restated. A per-part or
+per-footprint mounting field would be a second place to keep that correct.
+
+**Measured on the committed boards (2026-10-13):** 12 parts annotated `STAND ON
+END`, and they are the same twelve joints the `HC9` fix cleared - `pt2399-core`
+2 (`R3`, `R4`), `pultec-low-boost` 1 (`R2`), `transistor-preamp-buffered` 3
+(`R1`, `R4`, `R5`), `transistor-preamp-staged` 6 (`R1`, `R3`, `R5`, `R6`, `R7`,
+`R9`), and zero on the other seven boards. Every one is a DIN0207 resistor at 2
+to 4 holes against the 5-hole flat floor. The two counts agree because they are
+the same condition read twice: a span `HC9` used to reject for being below the
+flat floor is exactly a span that obliges the part to stand up.
+
 ### 4.2 Radial, standing up (the film caps, the electrolytics)
 
 Both leads leave the same face and the body stands above the board, so nothing
@@ -448,7 +488,8 @@ accepts a guess.
 ## 10. Summary
 
 **The two bounds of one row can be two different mountings**, and the "Bound by"
-column says which. See §4.1a.
+column says which. See §4.1a. **Which mounting a PLACED part's span requires is
+printed in the build checklist and in `HC9`'s detail** - §4.1b.
 
 | Footprint | min | max | Bound by | Part the numbers are |
 | --- | --- | --- | --- | --- |

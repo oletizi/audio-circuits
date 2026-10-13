@@ -57,15 +57,81 @@ test("the step headings come in the operator's order of operations", () => {
 
 test("parts give value and leads; wires, bridges and cuts give their holes; cuts their nets", () => {
   const rows = itemRows(guideHtml())
-  expect(rows[0]).toEqual(["Q1", "2N3904", "emitter E7, base D7, collector C7"])
-  expect(rows[3]).toEqual(["C1", "10uF", "+ F6, - F10"])
+  // THE FOURTH CELL ON EVERY PART ROW IS THE MOUNTING, and these rows cover
+  // three of the column's four answers by the fixture's own data rather than by
+  // coincidence: Q1's component records no footprint, which is the ordinary case
+  // for a part VeroRoute expands into pads; C1's is a radial can, one mounting
+  // because both leads leave the same face; J1's 1x02 header and RV2's 3-pin
+  // field are rigid, so there is nothing to decide there either. R1's row is the
+  // axial family with two mountings and is asserted in the tests below, where
+  // the span is what varies, and the fourth answer - no recorded span - has its
+  // own test after them.
+  expect(rows[0]).toEqual([
+    "Q1", "2N3904", "emitter E7, base D7, collector C7",
+    "unknown: the circuit records no footprint for this part",
+  ])
+  expect(rows[3]).toEqual(["C1", "10uF", "+ F6, - F10", "one mounting"])
   expect(rows[4]).toEqual(["W1", "I3", "I10"])
   expect(rows[5]).toEqual(["W2", "J5", "J7"])
-  expect(rows[6]).toEqual(["J1", "2-pin header", "A2 INPUT, B2 GND"])
-  expect(rows[7]).toEqual(["RV2", "3-pin header (25K pot, off-board)", "H2 DRIVE ccw, I2 DRIVE wiper, J2 DRIVE cw"])
+  expect(rows[6]).toEqual(["J1", "2-pin header", "A2 INPUT, B2 GND", "one mounting"])
+  expect(rows[7]).toEqual([
+    "RV2", "3-pin header (25K pot, off-board)",
+    "H2 DRIVE ccw, I2 DRIVE wiper, J2 DRIVE cw", "one mounting",
+  ])
   expect(rows[8]).toEqual(["B1", "D9 to E9"])
   expect(rows[9]).toEqual(["1", "C5 and C6", "BASE | GND"])
   expect(rows[10]).toEqual(["2", "F8 and F9", "BASE | GND"])
+})
+
+test("a resistor at a span its body fits between is not told to stand on end", () => {
+  // R1's holes are rows 2 and 6 of column 3, so it spans 5 - which is exactly
+  // the MBB0207's flat floor, and the floor is read rather than restated here:
+  // `Mmin. 10.0` rounds up to 4 grid steps, and 4 steps is 5 holes
+  // (`lib/kicad/grid.ts`). At the floor the body fits, so nothing is required of
+  // the builder, and the cell says that rather than shouting.
+  const rows = itemRows(guideHtml())
+  expect(rows[1]).toEqual(["R1", "10K", "C4, G4", "flat ok"])
+})
+
+test("a resistor compressed below its flat floor is told to STAND ON END", () => {
+  // THE CASE THE WHOLE COLUMN EXISTS FOR, and the owner's own board is this
+  // shape: *"It's standard practice to stand resistors on end when their holes
+  // are next to each other."* R1's second lead is moved from row 6 to row 4, so
+  // it spans 3 holes against a flat floor of 5 - his hand-laid low-boost's R2 to
+  // the hole. The dump is modified rather than the fixture, so every other row
+  // above is unaffected and what varies between this test and the one before it
+  // is one lead position.
+  const dump = parseBoardDump(DUMP_TEXT.replace("PIN R1 2 AT 6,3", "PIN R1 2 AT 4,3"))
+  const circuit = fixtureCircuit()
+  const resistors = buildChecklist(dump, circuit, offBoardLabels(circuit)).find(
+    (section) => section.title === "Resistors and trim-pots",
+  )
+  expect(resistors?.columns).toEqual(["Part", "Value", "Leads", "Mounting"])
+  expect(resistors?.rows.find((row) => row[0] === "R1")).toEqual([
+    "R1", "10K", "C4, E4", "STAND ON END",
+  ])
+})
+
+test("a footprint with no recorded span says so in the cell rather than leaving it blank", () => {
+  // THE FOURTH ANSWER, and an empty cell is what it must never be: a builder
+  // reading nothing where an instruction belongs cannot tell "no mounting is
+  // required of you" from "nobody worked it out". `pt2399-core` is this case
+  // live - twelve disc ceramics and two phi5 cans whose lead length is in
+  // `UNSOURCED` with what is missing from each - so the resistor is refitted
+  // here with one of those footprints rather than with an invented name.
+  const circuit = fixtureCircuit(undefined, [
+    ...COMPONENTS.filter((component) => component.id !== "bias_resistor"),
+    {
+      id: "bias_resistor", kind: "resistor", parameters: {},
+      part: { footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" }, pins: {},
+      units: [{ name: "MAIN", pins: { a: net("BASE"), b: net("GND") } }],
+    },
+  ])
+  const resistors = buildChecklist(DUMP, circuit, offBoardLabels(circuit)).find(
+    (section) => section.title === "Resistors and trim-pots",
+  )
+  expect(resistors?.rows.find((row) => row[0] === "R1")?.[3])
+    .toBe("unknown: no lead span recorded (lib/kicad/lead-span.ts)")
 })
 
 test("a header's Value names what goes in its holes, its pin count read from the dump's PIN lines", () => {

@@ -24,6 +24,7 @@
  */
 import { boundsOf, type Part, type Pin } from "../guide/dump.ts"
 import { leadSpanFor } from "../../lib/kicad/lead-span.ts"
+import { flatMinSpanHoles, mountingForSpan } from "../../lib/kicad/lead-span-mounting.ts"
 import type { LeadSpan } from "../../lib/kicad/lead-span-model.ts"
 import { TOOL_MAX_SPAN_HOLES, TOOL_MIN_SPAN_HOLES } from "../../lib/kicad/lead-span-model.ts"
 import { fabricationExtent, trimPreservesConnectivity } from "./extent.ts"
@@ -257,7 +258,51 @@ export function hc9(input: CheckInput): ConstraintResult {
     "HC9",
     `every measurable lead span is at or above its family's minSpanHoles, over ` +
       `${measured.filter((entry) => entry.span !== undefined).length} two-lead part(s).` +
-      unmeasured(measured),
+      unmeasured(measured) +
+      standing(measured, input),
+  )
+}
+
+/**
+ * Which parts a builder has to STAND ON END, named on the line about spans.
+ *
+ * **IT IS HERE BECAUSE `HC9` IS WHERE THE PIPELINE TELLS A PERSON ABOUT SPANS,
+ * AND BECAUSE THE SILENCE WAS THE DEFECT.** The floor this check compares
+ * against is the LOOSER of an axial part's two mountings, so a span `HC9` holds
+ * on can be one the part cannot lie flat at - and until this clause, a held
+ * `HC9` said "every span is at or above its minimum" about a board carrying six
+ * resistors that have to be mounted vertically, and said nothing about them. The
+ * owner: *"It's standard practice to stand resistors on end when their holes are
+ * next to each other."* Standard practice to him; invisible in the report.
+ *
+ * **IT IS NOT A SECOND CONDITION AND CHANGES NO VERDICT.** `HC9` holds or breaks
+ * on the comparison above and on nothing here; this appends to the DETAIL of a
+ * result already decided. The mounting itself is derived by
+ * `lib/kicad/lead-span-mounting.ts` from the flat floor the span model already
+ * records, so the grader states no geometry of its own. `tools/guide/
+ * checklist.ts` prints the same fact, from the same function, in the sheet a
+ * person builds from.
+ */
+function standing(measured: readonly Measured[], input: CheckInput): string {
+  const standing = measured.filter(
+    (entry) =>
+      entry.span !== undefined &&
+      mountingForSpan(spanFor(entry.footprint, input), entry.span) === "stood-on-end",
+  )
+  if (standing.length === 0) return ""
+  return (
+    ` ${standing.length} part(s) must be STOOD ON END, the body perpendicular to the board with ` +
+    "one lead folded over it, because their span is below the floor for the part lying flat: " +
+    standing
+      .map((entry) => {
+        const flat = flatMinSpanHoles(spanFor(entry.footprint, input))
+        return (
+          `${entry.part.ref} spans ${String(entry.span)} holes against a flat floor of ` +
+          `${String(flat)}`
+        )
+      })
+      .join("; ") +
+    ". That is the mounting HC9's own floor already allows for, not a failure."
   )
 }
 
