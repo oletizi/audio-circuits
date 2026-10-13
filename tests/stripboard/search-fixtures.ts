@@ -179,12 +179,21 @@ export const SECOND_SEED_WINS = (dumpIndex: number): string =>
 
 const WRITTEN = "written by tests/stripboard/escapes-fixtures.ts's injected spawn, not by the fork"
 
+/**
+ * The verbs that write a board. **`--update` IS ONE OF THEM because a candidate
+ * that adds a wire is assigned to its net before it is measured** -
+ * `tools/stripboard/moves-model.ts`'s `addsWire` and
+ * `tools/stripboard/complete-apply.ts`'s `assignNodes` carry the reason. It is
+ * listed rather than answered by a catch-all: the spawn still throws for a verb
+ * nobody described.
+ */
 const WRITE_VERBS: readonly string[] = [
   "--move",
   "--rotate",
   "--stretch",
   "--author",
   "--move-batch",
+  "--update",
 ]
 
 function outputOf(args: readonly string[]): string {

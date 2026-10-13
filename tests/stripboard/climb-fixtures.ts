@@ -254,7 +254,25 @@ function opsOf(args: readonly string[]): string {
   return fs.readFileSync(file, "utf8")
 }
 
-const WRITE_VERBS: readonly string[] = ["--move", "--rotate", "--stretch", "--author", "--move-batch"]
+/**
+ * The verbs that write a board, which this spawn answers by writing a marker
+ * file at `-o`.
+ *
+ * **`--update` IS ONE OF THEM because a candidate that adds a wire is assigned
+ * to its net before it is measured** - `tools/stripboard/moves-model.ts`'s
+ * `addsWire` and `tools/stripboard/complete-apply.ts`'s `assignNodes` carry the
+ * reason, which is that a fresh wire's holes carry node id 0 and `--check`'s
+ * completeness reads node ids. It is listed here and NOT answered by a
+ * catch-all: the spawn still throws for a verb nobody described.
+ */
+const WRITE_VERBS: readonly string[] = [
+  "--move",
+  "--rotate",
+  "--stretch",
+  "--author",
+  "--move-batch",
+  "--update",
+]
 
 /**
  * One invocation's answer. A verb it does not know THROWS rather than returning

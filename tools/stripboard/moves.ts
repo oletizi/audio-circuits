@@ -7,50 +7,49 @@
  * single-part moves (`move`, `rotate`, `stretch`, `add-wire`, `delete-wire`),
  * and §7.4 of `docs/superpowers/specs/2026-10-10-stripboard-pipeline-design.md`,
  * which adds the net-cluster move. Where this module and those documents differ
- * the documents win and this comment is the defect.
+ * the documents win and this comment is the defect - **with the two named
+ * exceptions `./moves-model.ts`'s header carries, `gather` and `spread`, each
+ * with the ruling or the owner's instruction that put it there.**
  *
  * **THE ORDER IS DECLARED, NEVER INCIDENTAL.** `enumerateMoves` iterates the
  * dump's `parts` ARRAY, the dump's `wires` ARRAY, this file's own
  * `UNIT_DELTAS` and the reference netlist's `Map` - whose iteration order is
  * its INSERTION order, which `referenceNetsFromExport` fills in the netlist's
- * own order. Nothing here iterates a `Record` with `Object.keys`, and nothing
- * reads `dump.pins` directly: a run whose move order varies between runs cannot
- * be reproduced, and Task 13's `canonicalHash` exists to prove runs reproduce.
- * `tests/stripboard/moves.test.ts` holds the net order by reversing the
- * reference map and demanding the cluster moves reverse with it.
+ * own order. **No move's POSITION depends on a `Record`'s iteration:** where a
+ * strip set is gathered off `dump.pins` - the spread's two, and `wireMovesFor`'s
+ * - it goes into a `Set` and is then walked in ascending STRIP order, which is
+ * `./targets.ts`'s `occupiedStrips`' own shape. A run whose move order varied
+ * between runs could not be reproduced, and Task 13's `canonicalHash` exists to
+ * prove runs reproduce. `tests/stripboard/moves.test.ts` holds the net order by
+ * reversing the reference map and demanding the cluster moves reverse with it.
  *
- * **FIVE OF THE SIX KINDS ARE EXACTLY ONE GESTURE, AND THE SIXTH IS THE
- * COMPOUND ONE.** `tools/stripboard/seed-placement.ts`'s `GESTURE_ORDERS` exists
- * because a turn and a stretch need different clearance in each order - measured
- * on `SI_HI_CUT_R1`, 0 of 1225 origins with the turn first and 19 with the
- * shrinks first - so a COMPOUND gesture has to choose. A `move`, a `rotate` and
- * a `stretch` are one fork invocation each, and `appliedGestures` is called below
- * with one of its two counts at zero, where seed-placement states outright that
- * "both orders are the same sequence". **`cluster` is several gestures in one
- * candidate and it chooses the order of the PARTS** - furthest along the delta
- * first - which is `./moves-cluster.ts`'s, stated and tested there. It does NOT
- * re-answer the turn-versus-stretch question: every gesture in a cluster is a
- * pure translation, so both of `appliedGestures`' counts are zero.
+ * **FOUR OF THE EIGHT KINDS ARE EXACTLY ONE GESTURE AND FOUR ARE COMPOUND** -
+ * `move`, `rotate`, `stretch` and `delete-wire` against `add-wire`, `cluster`,
+ * `gather` and `spread`. A compound gesture has to choose a SEQUENCE, and each
+ * one's choice is stated and tested where that kind lives: the order of the
+ * PARTS in `./moves-cluster.ts`, the turn-versus-stretch order in
+ * `./moves-wire.ts` through `GESTURE_ORDERS`, and the relocations-then-wire
+ * order in `./moves-spread.ts`. The three single-part kinds are one fork
+ * invocation each and call `appliedGestures` with one of its two counts at zero,
+ * where `./seed-placement.ts` states outright that "both orders are the same
+ * sequence".
  *
  * **THE ENUMERATION IS NARROWED BY THE TRANSCRIBED MODEL, AND THE FORK REMAINS
  * THE AUTHORITY.** A move is proposed only when `tools/stripboard/
  * seed-placement.ts`'s arithmetic - transcribed from `Board::RotateComps` and
  * held against the real binary by `tests/stripboard/seed-geometry.test.ts` -
- * says the gesture lands in bounds and clear of the other parts. The same
- * reason the seed arms narrow in advance applies here: a set whose members were
- * discovered by attempting them would spend four invocations per refusal. When
- * the fork refuses anyway, `applyMove` stops the run and names the gesture
- * rather than skipping it - a divergence between the model and the binary is a
- * finding, not a candidate to drop quietly.
+ * says the gesture lands in bounds and clear of the other parts. A set whose
+ * members were discovered by attempting them would spend four invocations per
+ * refusal. When the fork refuses anyway, `applyMove` stops the run and names
+ * the gesture rather than skipping it - a divergence between the model and the
+ * binary is a finding, not a candidate to drop quietly.
  *
- * **TWO OF THE SIX KINDS CANNOT BE APPLIED TODAY AND THAT IS DECLARED, NOT
- * DISCOVERED** - `add-wire` and `delete-wire`, since Task 18 implemented
- * `cluster`. `DEFERRED_KINDS` names them with the reason for each, in one
- * place, and both `applicableMoves` and `applyMove` read it - so the climb's
- * sweep leaves them out by a declaration a reviewer can see, and `applyMove`
- * refuses them by the same wording rather than a second one. They are still
- * ENUMERATED, because the enumeration is the spec's move set and a kind missing
- * from it would be invisible.
+ * **ONE OF THE EIGHT KINDS CANNOT BE APPLIED TODAY AND THAT IS DECLARED, NOT
+ * DISCOVERED** - `delete-wire`, blocked on the FORK and not on this repository.
+ * `DEFERRED_KINDS` names it with the reason, in one place, and both
+ * `applicableMoves` and `applyMove` read it. It is still ENUMERATED, because
+ * the enumeration is the spec's move set and a kind missing from it would be
+ * invisible.
  */
 import type { BoardDump } from "../guide/dump.ts"
 import type { ReferenceNets } from "./equivalence.ts"
@@ -62,6 +61,12 @@ import {
   translationsAfter,
 } from "./moves-cluster.ts"
 import { DEFERRED_KINDS, type Move } from "./moves-model.ts"
+import {
+  spreadAfter,
+  spreadMove,
+  spreadSourceStrips,
+  spreadTargetStrips,
+} from "./moves-spread.ts"
 import { wireAfter, wireMovesFor } from "./moves-wire.ts"
 import { stretchBoundFor, type Occupancy } from "./seed-geometry.ts"
 import { appliedGestures, rectOf } from "./seed-placement.ts"
@@ -77,12 +82,28 @@ import type { SpawnVeroroute } from "./seed.ts"
  * the 500-line ceiling when `gather` arrived.
  */
 export {
+  addsWire,
   applicableMoves,
   DEFERRED_KINDS,
   describeMove,
   MOVE_KINDS,
   type Move,
 } from "./moves-model.ts"
+
+/**
+ * The spread model, re-exported from `./moves-spread.ts`: what one net's partial
+ * relocation plus its rejoining wire IS, and where that leaves the geometry.
+ *
+ * Same arrangement and same reason as the cluster and the wire below: this is
+ * the module the plan names and every consumer imports, and the split is at the
+ * what-is-a-spread seam.
+ */
+export {
+  spreadAfter,
+  spreadMove,
+  spreadSourceStrips,
+  spreadTargetStrips,
+} from "./moves-spread.ts"
 
 
 /**
@@ -173,6 +194,13 @@ export function occupancyAfter(
   }
   if (move.kind === "gather") {
     return translationsAfter(occupancy, dump.grid, move.gestures)
+  }
+  // THE THIRD COMPOUND KIND, AND IT IS THE OTHER TWO ADVANCES COMPOSED: the
+  // relocations through `translationsAfter`, then the wire through `wireAfter`.
+  // `./moves-spread.ts`'s `spreadAfter` is that composition and nothing else, so
+  // a spread's geometry is computed by exactly the arithmetic its halves are.
+  if (move.kind === "spread") {
+    return spreadAfter(occupancy, dump.grid, move.gestures, move.wire)
   }
   if (move.kind === "move") {
     return appliedGestures(occupancy, dump.grid, move.ref, move.to, 0, 0, SINGLE_GESTURE_ORDER)
@@ -366,6 +394,51 @@ function gatherMoves(
 }
 
 /**
+ * Every `spread` the model admits: each net in the NETLIST'S order, off each
+ * strip where that net's pins ABUT ANOTHER NET'S (ascending), onto each strip
+ * holding NO PIN (ascending).
+ *
+ * **THIS IS THE LEVER THE OWNER CORRECTED US ON, and `./moves-spread.ts`'s
+ * header carries his words, the identity's three cases and the whole account of
+ * the gesture.** That module chooses the movers, the delta, the strip the wire
+ * joins back to, the line the wire sits on AND which two strips are worth
+ * asking about; this function is only the enumeration, in the one order that
+ * makes a run reproducible.
+ *
+ * **THE TWO STRIP SETS ARE NARROW BECAUSE THE IDENTITY SAYS THE OTHERS CANNOT
+ * PAY, not because asking was expensive.** A spread onto an occupied strip is
+ * `dC = +1` and a spread that only adds a strip to a net is `dC = 0`, so both
+ * are `+0.25` in `F` before anything is measured. That is a derivation and not
+ * a cost guess - which matters, because `./moves-cluster.ts`'s `gatherStrips`
+ * records what a cost guess did to this repository's own record.
+ *
+ * **WHAT IT COSTS TO ASK.** The attempts are
+ * `nets x (that net's crowded strips) x (free strips)` per round - no fork
+ * invocation, because a candidate that does not fit is never evaluated - and
+ * the ones that FIT cost one evaluation each PLUS one `--update`, which
+ * `addsWire` decides. The figure for the import-placed low-boost board is in
+ * `docs/stripboard/pipeline-verification.md`, measured on the sweep this kind
+ * was added for rather than projected here.
+ */
+function spreadMoves(
+  occupancy: Occupancy,
+  dump: BoardDump,
+  reference: ReferenceNets,
+): readonly Move[] {
+  const targets = spreadTargetStrips(dump)
+  const moves: Move[] = []
+  for (const [net] of reference) {
+    for (const from of spreadSourceStrips(dump, reference, net)) {
+      for (const to of targets) {
+        const move = spreadMove(occupancy, dump, reference, net, from, to)
+        if (move !== undefined) moves.push(move)
+      }
+    }
+  }
+  return moves
+}
+
+/**
  * The whole move set for one board, in `MOVE_KINDS`' order within a
  * deterministic order of parts, nets and wires.
  *
@@ -386,6 +459,7 @@ export function enumerateMoves(
     ...wireMoves(occupancy, dump, reference),
     ...clusterMoves(occupancy, dump, reference),
     ...gatherMoves(occupancy, dump, reference),
+    ...spreadMoves(occupancy, dump, reference),
   ]
 }
 

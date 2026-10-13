@@ -131,10 +131,20 @@ export interface Measured {
    */
   readonly checkReport: CheckReport
   /**
-   * The board the NEXT gesture is applied to - the one `measure` was handed,
+   * The board this measurement was read from - the one `measure` was handed,
    * BEFORE the autofill.
    *
-   * **IT IS NOT `evaluation.candidate`, AND CONFUSING THE TWO WAS A REAL BUG
+   * **IT IS NOT, IN GENERAL, THE BOARD THE NEXT GESTURE IS APPLIED TO, AND IT
+   * SAID SO UNTIL THE WIRE CANDIDATES' `--update` ARRIVED.** A candidate that
+   * adds a wire is measured on its `--update`d copy (`addsWire`, and
+   * `./complete-apply.ts`'s `assignNodes` for why), and `--update` runs
+   * `AutoFillVero` itself - so for such a candidate this field names a PAINTED
+   * board, and the paragraph below is exactly why a gesture must not be applied
+   * to it. The board the next gesture goes to is the caller's own carried state:
+   * `./climb.ts`'s `State.board` and `./complete.ts`'s `Standing.board`, which
+   * both existed for this reason before the field's claim stopped being true.
+   *
+   * **IT IS NOT `evaluation.candidate` EITHER, AND CONFUSING THOSE TWO WAS A BUG
    * THAT ONLY THE REAL BINARY FOUND.** `candidate` is the PAINTED board, which
    * is what had to be scored (`HC2` refuses an unresolved cut list) - and
    * `--move` REFUSES a relocation that overlaps a part's own current footprint

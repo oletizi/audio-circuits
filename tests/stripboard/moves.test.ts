@@ -20,6 +20,7 @@
  */
 import { expect, test } from "bun:test"
 import {
+  addsWire,
   applicableMoves,
   applyMove,
   DEFERRED_KINDS,
@@ -35,6 +36,11 @@ import { turnedRect } from "../../tools/stripboard/seed-placement.ts"
 import { occupancyOf, stretchBoundFor, type Occupancy } from "../../tools/stripboard/seed-geometry.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import type { PartRect } from "../../tools/stripboard/seed-geometry.ts"
+import {
+  CROWDED,
+  CROWDED_NETS,
+  CROWDED_OCC,
+} from "./spread-fixtures.ts"
 import {
   BETTER,
   BETTER_OCC,
@@ -95,8 +101,17 @@ test("the move enumeration is deterministic and does not iterate a hash map", ()
   expect(clusters(reversed)).toEqual([...clusters(REFERENCE)].reverse())
 })
 
-test("every move kind the spec names is enumerated, and no eighth kind appears", () => {
-  const kinds = new Set(enumerateMoves(OCC, DUMP, REFERENCE).map((move) => move.kind))
+test("every move kind the spec names is enumerated, and no ninth kind appears", () => {
+  // TWO BOARDS, AND THE SECOND ONE IS NOT PADDING. `spread` is proposed only off
+  // a strip where one net's pins abut another's, and BASE_DUMP has no such strip
+  // - its two nets hold one column each (./spread.test.ts derives that and
+  // asserts it). So the kind would be invisible here on one board, which is
+  // exactly the shape of defect this test exists to catch, and the union is
+  // taken over BASE_DUMP and ./spread-fixtures.ts' crowded board instead.
+  const kinds = new Set([
+    ...enumerateMoves(OCC, DUMP, REFERENCE).map((move) => move.kind),
+    ...enumerateMoves(CROWDED_OCC, CROWDED, CROWDED_NETS).map((move) => move.kind),
+  ])
   expect([...kinds].sort()).toEqual([
     "add-wire",
     "cluster",
@@ -104,17 +119,48 @@ test("every move kind the spec names is enumerated, and no eighth kind appears",
     "gather",
     "move",
     "rotate",
+    "spread",
     "stretch",
   ])
-  // `gather` is the SEVENTH kind and the documents name six: it is here by the
-  // controller's ruling of 2026-10-12, because E1's one-delta cluster cannot
-  // change the quantity E1 exists to change. tools/stripboard/moves-model.ts's
-  // `gather` arm carries the ruling and the measurement behind it.
+  // THE DOCUMENTS NAME SIX AND THERE ARE EIGHT, each extra one with its own
+  // authority recorded in tools/stripboard/moves-model.ts's header: `gather` by
+  // the controller's ruling of 2026-10-12, because E1's one-delta cluster cannot
+  // change the quantity E1 exists to change; and `spread` on the owner's own
+  // correction of the cost model the same day, quoted in full at the head of
+  // tools/stripboard/moves-spread.ts.
   //
   // MOVE_KINDS is the one listing, so the enumeration and the declaration
-  // cannot drift: an eighth kind added to `Move` and to MOVE_KINDS but never
+  // cannot drift: a ninth kind added to `Move` and to MOVE_KINDS but never
   // emitted fails here.
   expect([...kinds].sort()).toEqual([...MOVE_KINDS].sort())
+})
+
+test("addsWire names exactly the kinds that put a new wire on the board", () => {
+  // IT DECIDES WHETHER A CANDIDATE GETS THE ONE `--update` THAT ASSIGNS ITS WIRE
+  // TO A NET, which is what makes the wire visible to --check's completeness at
+  // all (tools/stripboard/complete-apply.ts's assignNodes carries the
+  // measurement). So this is asserted over the enumerated set rather than over a
+  // hand-written list of kinds: a kind that starts adding a wire and is not
+  // named here would be scored with its wire joining nothing.
+  const byKind = new Map<Move["kind"], boolean>()
+  for (const move of [
+    ...enumerateMoves(OCC, DUMP, REFERENCE),
+    ...enumerateMoves(CROWDED_OCC, CROWDED, CROWDED_NETS),
+  ]) {
+    byKind.set(move.kind, addsWire(move))
+  }
+  expect([...byKind.entries()].filter(([, adds]) => adds).map(([kind]) => kind).sort()).toEqual([
+    "add-wire",
+    "spread",
+  ])
+  expect([...byKind.entries()].filter(([, adds]) => !adds).map(([kind]) => kind).sort()).toEqual([
+    "cluster",
+    "delete-wire",
+    "gather",
+    "move",
+    "rotate",
+    "stretch",
+  ])
 })
 
 test("the enumeration is exactly the hand-counted move set of the fixture board", () => {
@@ -148,6 +194,11 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   //               columns 5 to 39, which is 35 again. No candidate is dropped
   //               for a zero delta, because no single column makes BOTH
   //               parts' deltas zero                                       = 70
+  //   spread      NONE, and that is a fact about this board rather than a gap:
+  //               a spread vacates a strip where one net's pins abut another
+  //               net's, and here every net has its column to itself - `left`
+  //               at columns 1 and 2, `right` at 6 and 7. ./spread.test.ts
+  //               derives that and asserts it, on this very dump          = 0
   //                                                                        ---
   //                                                                         93
   const moves = enumerateMoves(OCC, DUMP, REFERENCE)
@@ -160,14 +211,15 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   expect(counted.get("delete-wire")).toBe(2)
   expect(counted.get("cluster")).toBe(6)
   expect(counted.get("gather")).toBe(70)
+  expect(counted.get("spread")).toBeUndefined()
   expect(moves.length).toBe(93)
   // And the applicable subset is the 93 less the ONE deferred kind's 2: the two
   // delete-wires. It was 14 while `cluster` was deferred as well, 22 before
   // `gather` existed, 26 while the gather asked only about the strips a net
   // already occupied, and 92 while `add-wire` was deferred too - which is
   // exactly what this figure moving is meant to signal. `rotate` was deferred
-  // for one round of Task 17 and is also back: a turn's result is carried in the
-  // occupancy rather than re-read from a dump that cannot describe it.
+  // for one round of Task 17 and is also back: a turn's result is carried in
+  // the occupancy rather than re-read from a dump that cannot describe it.
   expect(applicableMoves(moves).length).toBe(91)
   expect([...DEFERRED_KINDS.keys()].sort()).toEqual(["delete-wire"])
 })

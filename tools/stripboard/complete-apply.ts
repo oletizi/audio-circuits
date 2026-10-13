@@ -72,12 +72,22 @@ export function applyWires(
  * general:** `boards/transistor-preamp-feedback` carries four wires whose
  * `ENDS` report a non-zero node id on both ends, and `--check` passes that board.
  *
- * **IT IS APPLIED TO THE CANDIDATE AND NOT INSIDE `measure`, deliberately.**
- * `./climb-evaluate.ts`'s four invocations are the main search's recorded cost
- * model and the quantity route 1 was measured on; adding a fifth there would
- * change the search this pass is being compared against. So the `--update` is
+ * **IT IS APPLIED TO THE CANDIDATE AND NOT INSIDE `measure`, deliberately, AND
+ * THAT IS STILL TRUE NOW THAT THE MAIN SEARCH CALLS IT TOO.** The `--update` is
  * part of PRODUCING a candidate - a wire nothing has assigned to a net is an
- * unconnected jumper rather than a candidate - and `measure` is untouched.
+ * unconnected jumper rather than a candidate - so it belongs beside the gestures
+ * and not inside the measurement, and `measure` is untouched. `./climb.ts` calls
+ * this for every move `addsWire` names, which is `add-wire` and `spread`; a
+ * candidate that adds no wire costs the same four invocations it always did, and
+ * one that adds a wire costs five.
+ *
+ * **WHAT THAT MOVED IN THE RECORD, named rather than left for a reader to
+ * notice:** every `add-wire` candidate in the sweeps up to
+ * `docs/stripboard/pipeline-verification.md` §6.10 was scored WITHOUT this
+ * invocation, which is why §6.9 could count 7,417 of them and report `W = 0` on
+ * every best board. §6.11 is the first sweep in which a wire candidate's join is
+ * visible to `--check` at all, so a comparison across that boundary is comparing
+ * two different scorings of the same gesture.
  *
  * **AND THE UNPAINTED, UN-UPDATED BOARD IS WHAT THE NEXT ROUND GESTURES ON.**
  * `--update` runs `AutoFillVero` itself, so its output is PAINTED, and a gesture

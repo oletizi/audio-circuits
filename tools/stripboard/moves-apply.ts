@@ -16,6 +16,7 @@
 import fs from "node:fs"
 import { DEFERRED_KINDS, describeMove, type Move } from "./moves-model.ts"
 import type { Translation } from "./moves-cluster.ts"
+import type { WirePlan } from "./moves-wire.ts"
 import type { SpawnVeroroute } from "./seed.ts"
 
 /**
@@ -42,6 +43,20 @@ export type GestureTransport = "one-gesture-per-launch" | "batched"
  * gets the same guarantee about `out` a different way, below.
  */
 const BATCHABLE_KINDS: readonly Move["kind"][] = ["move", "rotate", "cluster", "gather"]
+
+/**
+ * The kinds that are SEVERAL gestures and therefore have no single argument
+ * list: `compoundLaunches` builds a staged chain for each.
+ *
+ * **`spread` IS NOT BATCHABLE AND THAT IS THE OPS GRAMMAR'S DOING, NOT A
+ * CHOICE.** A spread ends in an `--author --op add-wire`, and the grammar is
+ * `move <name> --to`, `move <name> --delta` and `rotate <name> --direction`
+ * with the fork's own *"Nothing else is accepted"* - so its relocations could be
+ * batched and its wire could not, and a transport that batched half a compound
+ * gesture would lose the transactional guarantee that is the only reason to
+ * batch it.
+ */
+const COMPOUND_KINDS: readonly Move["kind"][] = ["add-wire", "cluster", "gather", "spread"]
 
 function refuseDeferred(kind: Move["kind"]): never {
   const reason = DEFERRED_KINDS.get(kind)
@@ -70,22 +85,18 @@ function gestureFor(move: Move, board: string, out: string): readonly string[] {
       return ["--rotate", board, "--ref", move.ref, "--direction", move.direction, "-o", out]
     case "stretch":
       return ["--stretch", board, "--ref", move.ref, "--direction", move.direction, "-o", out]
-    case "add-wire":
-      throw new Error(
-        "applyMove: an add-wire is THREE gestures and has no single argument list - create the " +
-          "wire at a free hole, turn it across the strips, stretch it to the span. It is " +
-          "applied by wireGestures below, in the order the move's own plan records. Reaching " +
-          "here means applyMove's add-wire branch was removed.",
-      )
     case "delete-wire":
       return refuseDeferred(move.kind)
+    case "add-wire":
     case "cluster":
     case "gather":
+    case "spread":
       throw new Error(
         `applyMove: a ${move.kind} is SEVERAL gestures and has no single argument list. It is ` +
-          "applied by translationGestures below, one --move --delta per part in the order the " +
-          "move records, or by one --move-batch when the batched transport is asked for. " +
-          "Reaching here means applyMove's compound branch was removed.",
+          "applied by compoundLaunches below - one --move --delta per part, and for a wire the " +
+          "create, turn and stretch its plan records - or by one --move-batch when the batched " +
+          "transport is asked for and the kind is in BATCHABLE_KINDS. Reaching here means " +
+          "COMPOUND_KINDS and applyMove's dispatch disagree.",
       )
   }
 }
@@ -93,14 +104,20 @@ function gestureFor(move: Move, board: string, out: string): readonly string[] {
 /**
  * The translations a compound move is, in the order it records them.
  *
- * **ONE READING FOR BOTH COMPOUND KINDS**: a `cluster` is one delta applied to
- * every ref and a `gather` is one delta per ref, so below this function they are
- * the same list and the emitter has no second code path. `./moves-cluster.ts`'s
- * `translationsAfter` is the same unification on the model side.
+ * **ONE READING FOR ALL THREE TRANSLATING KINDS**: a `cluster` is one delta
+ * applied to every ref, a `gather` is one delta per ref, and a `spread` is one
+ * delta applied to the refs whose aimed pin sat on the vacated strip - so below
+ * this function they are the same list and the emitter has no second code path.
+ * `./moves-cluster.ts`'s `translationsAfter` is the same unification on the
+ * model side.
+ *
+ * **A SPREAD'S WIRE IS NOT IN THIS LIST**, because it is not a translation: the
+ * wire's own gestures come from `wireSteps`, and `compoundLaunches` is where the
+ * two sequences are concatenated.
  */
 function translationsOf(move: Move): readonly Translation[] {
   if (move.kind === "cluster") return move.refs.map((ref) => ({ ref, delta: move.delta }))
-  if (move.kind === "gather") return move.gestures
+  if (move.kind === "gather" || move.kind === "spread") return move.gestures
   throw new Error(
     `applyMove: a "${move.kind}" move is not a compound translation, so it has no list of them. ` +
       "Reaching here means BATCHABLE_KINDS or applyMove's dispatch names a kind this does not.",
@@ -108,7 +125,20 @@ function translationsOf(move: Move): readonly Translation[] {
 }
 
 /**
- * One `--move --delta` per part of a cluster, in the order the move records.
+ * One gesture of a compound move, as a function of the board it reads and the
+ * board it writes.
+ *
+ * **THE STEP DOES NOT KNOW WHERE IT SITS IN THE SEQUENCE, AND THAT IS WHAT LETS
+ * TWO SEQUENCES BE CONCATENATED.** A `spread` is the relocations of a cluster
+ * followed by the shaping gestures of an add-wire, and before this shape the two
+ * were two loops that each decided for themselves which file was last - so a
+ * spread built from them would have had TWO gestures writing `out`. `staged`
+ * below is the one place the chaining rule lives.
+ */
+type Step = (current: string, target: string) => readonly string[]
+
+/**
+ * One `--move --delta` for one part of a compound translation.
  *
  * **`--delta` AND NOT `--to`, WHICH IS WHAT KEEPS THIS MODULE FREE OF THE
  * BOARD.** An absolute destination would need each part's current `AT`, which
@@ -118,76 +148,58 @@ function translationsOf(move: Move): readonly Translation[] {
  * *"the GUI gesture is relative and ... M1.3's zero-delta case has to be
  * reachable by the spelling an optimiser will produce."* A unit delta is never
  * zero, so the zero-delta refusal cannot fire on a cluster.
- *
- * Each gesture reads the previous one's output and only the LAST writes `out`,
- * which is what makes a refused cluster leave `out` absent: the staged files are
- * scratch beside it and the candidate is never created.
  */
-function translationGestures(
-  board: string,
-  move: Move,
-  out: string,
-): readonly (readonly string[])[] {
-  const translations = translationsOf(move)
-  const gestures: (readonly string[])[] = []
-  let current = board
-  // THE STAGED FILES ARE NAMED FOR THEIR OWN KIND, which is not cosmetic: a run
-  // directory is the only place a reader can tell afterwards which candidates
-  // were compound and which kind each was, and the analysis in
-  // `docs/stripboard/pipeline-verification.md` §6.4 counts exactly that. A
-  // gather staged under the cluster's name made the two indistinguishable.
-  translations.forEach((one, index) => {
-    const target =
-      index === translations.length - 1 ? out : `${out}.${move.kind}-${index}.vrt`
-    gestures.push([
-      "--move",
-      current,
-      "--ref",
-      one.ref,
-      "--delta",
-      `${one.delta[0]},${one.delta[1]}`,
-      "-o",
-      target,
-    ])
-    current = target
-  })
-  return gestures
+function translationStep(one: Translation): Step {
+  return (current, target) => [
+    "--move",
+    current,
+    "--ref",
+    one.ref,
+    "--delta",
+    `${one.delta[0]},${one.delta[1]}`,
+    "-o",
+    target,
+  ]
 }
 
 /**
- * The three gestures an `add-wire` is, in the order its plan records: create the
- * wire at a free hole, turn it, stretch it.
- *
- * **ONLY THE LAST WRITES `out`**, as the compound translations do, so a refused
- * add-wire leaves the candidate absent. The staged files are named for the kind,
- * so a run directory still says which candidates were compound and which kind
- * each was.
+ * The gestures a planned wire is, in the order its plan records: create the
+ * wire at a free hole, then turn it and stretch it in the planned order.
  *
  * `--rotate` and `--stretch` NAME THE WIRE, and the name is the plan's
  * prediction (`Wire<n+1>`); `./moves-wire.ts` carries the measurement behind it
  * and the reason a wrong prediction is loud rather than silent.
+ *
+ * **IT IS SHARED BY `add-wire` AND BY `spread`**, which is the whole reason it
+ * takes a `WirePlan` rather than a move: a spread's rejoining wire is shaped by
+ * the same three verbs in the same planned order, and a second emitter would let
+ * the two kinds ask the fork for different sequences from one plan.
  */
-function wireGestures(
-  board: string,
-  move: Extract<Move, { kind: "add-wire" }>,
-  out: string,
-): readonly (readonly string[])[] {
-  const plan = move.plan
-  const turn = Array.from({ length: plan.turns }, () => ["--rotate", "--direction", "cw"])
+function wireSteps(plan: WirePlan): readonly Step[] {
+  const turn: Step = (current, target) => [
+    "--rotate",
+    current,
+    "--ref",
+    plan.name,
+    "--direction",
+    "cw",
+    "-o",
+    target,
+  ]
   const by = plan.stretch > 0 ? "grow" : "shrink"
-  const pull = Array.from({ length: Math.abs(plan.stretch) }, () => [
+  const pull: Step = (current, target) => [
     "--stretch",
+    current,
+    "--ref",
+    plan.name,
     "--direction",
     by,
-  ])
-  const shaping = plan.order === "turn-then-stretch" ? [...turn, ...pull] : [...pull, ...turn]
-  const total = shaping.length + 1
-  const target = (index: number): string =>
-    index === total - 1 ? out : `${out}.${move.kind}-${index}.vrt`
-  const gestures: (readonly string[])[] = []
-  let current = board
-  const created = target(0)
-  gestures.push([
+    "-o",
+    target,
+  ]
+  const turns = Array.from({ length: plan.turns }, () => turn)
+  const pulls = Array.from({ length: Math.abs(plan.stretch) }, () => pull)
+  const create: Step = (current, target) => [
     "--author",
     current,
     "--op",
@@ -195,21 +207,68 @@ function wireGestures(
     "--at",
     `${plan.at[0]},${plan.at[1]}`,
     "-o",
-    created,
-  ])
-  current = created
-  shaping.forEach((gesture, index) => {
-    const verb = gesture[0]
-    const option = gesture[1]
-    const value = gesture[2]
-    if (verb === undefined || option === undefined || value === undefined) {
-      throw new Error("applyMove: a wire shaping gesture is missing its verb or its option")
-    }
-    const next = target(index + 1)
-    gestures.push([verb, current, "--ref", plan.name, option, value, "-o", next])
-    current = next
+    target,
+  ]
+  return [create, ...(plan.order === "turn-then-stretch" ? [...turns, ...pulls] : [...pulls, ...turns])]
+}
+
+/**
+ * The launches for a sequence of steps: each reads the previous one's output and
+ * **only the LAST writes `out`.**
+ *
+ * That is what makes a refused compound move leave `out` absent - the staged
+ * files are scratch beside it and the candidate is never created - and it is the
+ * one-gesture transport's way of getting what `--move-batch` gets from being
+ * transactional.
+ *
+ * THE STAGED FILES ARE NAMED FOR THEIR OWN KIND, which is not cosmetic: a run
+ * directory is the only place a reader can tell afterwards which candidates were
+ * compound and which kind each was, and the analysis in
+ * `docs/stripboard/pipeline-verification.md` §6.4 counts exactly that. A gather
+ * staged under the cluster's name made the two indistinguishable.
+ */
+function staged(
+  board: string,
+  kind: Move["kind"],
+  out: string,
+  steps: readonly Step[],
+): readonly (readonly string[])[] {
+  const launches: (readonly string[])[] = []
+  let current = board
+  steps.forEach((step, index) => {
+    const target = index === steps.length - 1 ? out : `${out}.${kind}-${index}.vrt`
+    launches.push(step(current, target))
+    current = target
   })
-  return gestures
+  return launches
+}
+
+/** The staged launches for one compound move, by kind. */
+function compoundLaunches(
+  board: string,
+  move: Move,
+  out: string,
+): readonly (readonly string[])[] {
+  if (move.kind === "cluster" || move.kind === "gather") {
+    return staged(board, move.kind, out, translationsOf(move).map(translationStep))
+  }
+  if (move.kind === "add-wire") {
+    return staged(board, move.kind, out, wireSteps(move.plan))
+  }
+  // THE RELOCATIONS THEN THE WIRE, IN ONE CHAIN - which is the ORDER the model
+  // checked: `./moves-spread.ts`'s `spreadAfter` advances the translations first
+  // and plans the wire against what they left, because the holes the wire needs
+  // may be the holes the relocated parts just vacated or just took.
+  if (move.kind === "spread") {
+    return staged(board, move.kind, out, [
+      ...translationsOf(move).map(translationStep),
+      ...wireSteps(move.wire),
+    ])
+  }
+  throw new Error(
+    `applyMove: a "${move.kind}" move is not a compound gesture, so it has no staged chain. ` +
+      "Reaching here means applyMove's dispatch names a kind this function does not.",
+  )
 }
 
 /** The ops-file lines for a batchable gesture, in `--move-batch`'s own grammar. */
@@ -264,6 +323,22 @@ export function applyMove(
   // wire on those ends - is the enumerator's, which derives both from one
   // arithmetic (`./moves-wire.ts`'s `wireBridge`), and this module has no
   // geometry to re-check it with.
+  // A SPREAD THAT RELOCATES NOTHING IS A BARE `add-wire` UNDER A NAME THAT
+  // CLAIMS A RELOCATION, which is a different defect from the empty cluster
+  // below and gets its own words. It would not be byte-identical to its parent -
+  // it would carry the wire - so it would be scored, counted and recorded as a
+  // spread, and the run's own analysis of which kinds did what would be wrong.
+  if (move.kind === "spread" && translationsOf(move).length === 0) {
+    throw new Error(
+      `applyMove: this spread of "${move.net}" from strip ${move.from} to strip ${move.to} ` +
+        "relocates no part, so it is a bare add-wire wearing the spread's name. It is NOT " +
+        "applied as one: the kind exists because the relocation and the wire have to be ONE " +
+        "candidate, and a record calling a lone wire a spread would make every count of what " +
+        "this kind did wrong. tools/stripboard/moves-spread.ts's spreadMove declines to propose " +
+        "one - its decline 2, no aimed pin on the source strip - so reaching here means a " +
+        "caller built the move itself.",
+    )
+  }
   if (
     (move.kind === "cluster" || move.kind === "gather") &&
     translationsOf(move).length === 0
@@ -281,11 +356,9 @@ export function applyMove(
   const batched = transport === "batched" && BATCHABLE_KINDS.includes(move.kind)
   const launches: readonly (readonly string[])[] = batched
     ? [batchLaunch(move, board, out)]
-    : move.kind === "cluster" || move.kind === "gather"
-      ? translationGestures(board, move, out)
-      : move.kind === "add-wire"
-        ? wireGestures(board, move, out)
-        : [gestureFor(move, board, out)]
+    : COMPOUND_KINDS.includes(move.kind)
+      ? compoundLaunches(board, move, out)
+      : [gestureFor(move, board, out)]
   for (const args of launches) {
     const result = spawn(args)
     if (result.status !== 0) {

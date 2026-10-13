@@ -247,6 +247,20 @@ export interface Translation {
 }
 
 /**
+ * One part and the hole of its that a compound move AIMS at a strip - the pin
+ * `aimedHoles` picked for the net.
+ *
+ * It is the part's ref beside a hole position and nothing else, so `stripOf`
+ * reads it directly: a named type rather than an inline one because two
+ * modules now take it (`gatherMove` and `./moves-spread.ts`'s `spreadMove`).
+ */
+export interface AimedHole {
+  readonly ref: string
+  readonly row: number
+  readonly col: number
+}
+
+/**
  * The occupancy after applying `translations` IN THE ORDER GIVEN, or `undefined`
  * when the model says the fork would refuse one of them.
  *
@@ -283,14 +297,19 @@ export function translationsAfter(
  * and which one to aim is not in the data. Aiming the first is reproducible and
  * says what it did; the other pin goes wherever the same translation takes it,
  * which is the gather's effect on `J` like any other hole it moves.
+ *
+ * **IT IS EXPORTED BECAUSE `./moves-spread.ts` AIMS THE SAME HOLE.** A spread
+ * relocates the net's pins that sit on ONE strip, so it has to agree with the
+ * gather about which hole of a part is the net's - a second definition would
+ * let the two kinds disagree about what strip a part's pin is on, on one board.
  */
-function aimedHoles(
+export function aimedHoles(
   dump: BoardDump,
   reference: ReferenceNets,
   net: string,
-): readonly { readonly ref: string; readonly row: number; readonly col: number }[] {
+): readonly AimedHole[] {
   const wanted = new Set(reference.get(net) ?? [])
-  const aimed: { readonly ref: string; readonly row: number; readonly col: number }[] = []
+  const aimed: AimedHole[] = []
   for (const ref of clusterRefs(dump, reference, net)) {
     const pin = (dump.pins[ref] ?? []).find((own) => wanted.has(`${ref}.${own.pin}`))
     if (pin === undefined) {

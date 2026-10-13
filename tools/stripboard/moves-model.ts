@@ -31,6 +31,19 @@
  * part moved by ITS OWN delta so that its pin on net X lands on one common strip
  * - and `cluster` stays, because it fires and does something real (§6.4: four
  * new-best-`F` steps), just not this.
+ *
+ * **`spread` IS AN EIGHTH KIND THE DOCUMENTS DO NOT NAME EITHER, AND IT IS HERE
+ * ON THE OWNER'S OWN CORRECTION OF THE COST MODEL (2026-10-12).** His sentence
+ * is quoted in full at the head of `./moves-spread.ts`, which is also where the
+ * enumeration and the gap it leaves are stated. The one line of it: a cut exists
+ * because two nets share a strip, a net cannot leave a shared strip without
+ * splitting itself, and a wire is what pays for the split - so wires buy the
+ * freedom to spread and spreading is what removes the cut. PIPELINE §8.1.1
+ * names *"spending strips"* as the lever and records *"effect on W: none at
+ * all"*, which holds for a whole net moved to one strip and not for a net moved
+ * PARTLY off a shared one; the departure is recorded in
+ * `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md` under *"Deviations
+ * from the specs"*.
  */
 import type { WirePlan } from "./moves-wire.ts"
 
@@ -119,12 +132,56 @@ export type Move =
         readonly delta: readonly [number, number]
       }[]
     }
+  | {
+      /**
+       * THE SPREAD: the net's pins on ONE strip relocated to a strip of their
+       * own, WITH the wire that rejoins the net, in one candidate.
+       *
+       * **IT IS HERE ON THE OWNER'S OWN CORRECTION OF THE COST MODEL
+       * (2026-10-12), quoted in full in `./moves-spread.ts`'s header**, which is
+       * also where the enumeration, the five ways it declines and the gap it
+       * leaves are stated. The short form of why the two halves travel together:
+       * the relocation alone splits a whole net and the acceptance rule's first
+       * key rejects it, the wire alone removes no cut, and with
+       * `worseAcceptance` unset no intermediate worse than the incumbent is ever
+       * accepted - so the pair is unreachable one step at a time.
+       */
+      readonly kind: "spread"
+      readonly net: string
+      /** The strip the net's relocated pins came OFF - the one being vacated. */
+      readonly from: number
+      /** The strip they land on. */
+      readonly to: number
+      /** The strip the wire joins `to` back to: one the net still occupies. */
+      readonly joined: number
+      /**
+       * The relocations, in the order the gestures go out - the same reason
+       * `cluster` and `gather` carry theirs: `applyMove` is handed a board path
+       * and a spawn and has no geometry at all.
+       *
+       * Every entry carries the SAME delta, because every mover's aimed pin
+       * starts on `from`.
+       */
+      readonly gestures: readonly {
+        readonly ref: string
+        readonly delta: readonly [number, number]
+      }[]
+      /** Where the rejoining wire is created and the gestures that shape it. */
+      readonly wire: WirePlan
+      /**
+       * The two holes the wire is PREDICTED to finish on - one on `to` and one
+       * on `joined`. A prediction and not a command, for `add-wire`'s own
+       * stated reason: the next `--dump-board` is what says where the ends
+       * really are.
+       */
+      readonly ends: readonly [readonly [number, number], readonly [number, number]]
+    }
 
 /**
  * Every kind, once, in the order `enumerateMoves` emits them. The one listing:
- * `tests/stripboard/moves.test.ts` holds the enumeration against it, so an
- * eighth kind added to `Move` without an arm in `applyMove` is a compile error
- * and a kind that stops being enumerated is a test failure.
+ * `tests/stripboard/moves.test.ts` holds the enumeration against it, so a ninth
+ * kind added to `Move` without an arm in `applyMove` is a compile error and a
+ * kind that stops being enumerated is a test failure.
  */
 export const MOVE_KINDS: readonly Move["kind"][] = [
   "move",
@@ -134,7 +191,48 @@ export const MOVE_KINDS: readonly Move["kind"][] = [
   "delete-wire",
   "cluster",
   "gather",
+  "spread",
 ]
+
+/**
+ * Whether applying this move puts a NEW wire on the board.
+ *
+ * **IT DECIDES WHETHER A CANDIDATE NEEDS `--update` BEFORE IT IS SCORED, AND
+ * THAT IS THE WHOLE REASON IT EXISTS.** A wire created by
+ * `--author --op add-wire` lands on holes carrying NODE ID 0, and `--check`'s
+ * completeness reads node ids - so a wire that physically joins two of a net's
+ * pins leaves that net reported incomplete, `openNets` unchanged and `F` up by
+ * `rho_w`, which the acceptance rule then correctly rejects.
+ * `./complete-apply.ts`'s `assignNodes` carries the measurement that found it
+ * and is the one invocation that fixes it; `./climb.ts` calls it for exactly the
+ * kinds this function names.
+ *
+ * **IT IS A `switch` AND NOT A LIST, so a ninth kind must be classified rather
+ * than default to "no wire".** Defaulting is the failure this would have: a new
+ * wire-adding kind would be scored with its wire joining nothing, and would be
+ * rejected for a reason that is not about the gesture at all. That is precisely
+ * how `add-wire` spent 7,417 candidates registering nothing
+ * (`docs/stripboard/pipeline-verification.md` §6.9).
+ *
+ * `delete-wire` answers `false` and is never asked: it is in `DEFERRED_KINDS`,
+ * so `applicableMoves` keeps it out of the sweep. It is answered rather than
+ * refused because the question - does this ADD a wire - has a true answer for
+ * it.
+ */
+export function addsWire(move: Move): boolean {
+  switch (move.kind) {
+    case "add-wire":
+    case "spread":
+      return true
+    case "move":
+    case "rotate":
+    case "stretch":
+    case "delete-wire":
+    case "cluster":
+    case "gather":
+      return false
+  }
+}
 
 /**
  * The kinds `applyMove` cannot apply, each with what is missing and where it
@@ -206,6 +304,20 @@ export function describeMove(move: Move): string {
       return (
         `gather ${move.net} onto strip ${move.strip} (` +
         `${move.gestures.map((one) => `${one.ref} by ${one.delta[0]},${one.delta[1]}`).join("; ")})`
+      )
+    case "spread":
+      // THE PARTS, THE TWO STRIPS AND THE WHOLE WIRE PLAN, for both reasons the
+      // kinds above carry theirs: the parts and their order are a decision the
+      // enumerator made from an occupancy nothing else holds, and two wires
+      // joining one pair of strips from the same anchor can differ in whether
+      // the turn or the stretch goes first.
+      return (
+        `spread ${move.net} from strip ${move.from} to strip ${move.to} joined to strip ` +
+        `${move.joined} (` +
+        `${move.gestures.map((one) => `${one.ref} by ${one.delta[0]},${one.delta[1]}`).join("; ")}` +
+        `; wire ${move.ends[0][0]},${move.ends[0][1]} to ${move.ends[1][0]},${move.ends[1][1]} ` +
+        `at ${move.wire.at[0]},${move.wire.at[1]} as ${move.wire.name}, ${move.wire.turns} ` +
+        `turn(s), stretch ${move.wire.stretch}, ${move.wire.order})`
       )
   }
 }

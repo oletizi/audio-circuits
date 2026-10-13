@@ -68,11 +68,13 @@
  * it reads `--dump-board`'s stdout into ONE local `string` that both
  * `scoreDumpText` and `boardGeometry` are handed.
  *
- * **THE EVALUATION IS FOUR INVOCATIONS** - apply, autofill, check, dump -
- * which is why a candidate evaluation is order 10^1 per second at PIPELINE
+ * **A CANDIDATE IS FOUR INVOCATIONS, OR FIVE WHEN IT ADDS A WIRE** - apply,
+ * then the one `--update` that `addsWire` calls for, then autofill, check, dump
+ * - which is why a candidate evaluation is order 10^1 per second at PIPELINE
  * §4.6's 11.71 ms per invocation, and why Task 9's `--move-batch` buys breadth.
- * `apply` is `./moves.ts`'s; the other three are below, in that order, because
- * an UNPAINTED board reports `CUT_STATE UNRESOLVED` and `HC2` refuses it rather
+ * `apply` is `./moves.ts`'s, the `--update` is `./complete-apply.ts`'s
+ * `assignNodes`, and the last three are below in that order, because an
+ * UNPAINTED board reports `CUT_STATE UNRESOLVED` and `HC2` refuses it rather
  * than mis-scoring it - so the paint comes before anything reads a cut list.
  *
  * **`--check`'S EXIT STATUS IS DATA, NOT A FAILURE.** It exits 1 on a board
@@ -82,42 +84,19 @@
  * exactly the boards the search exists to repair.
  *
  * **WHAT A REAL CLIMB ACTUALLY DOES, so this comment is not the only evidence
- * about it.** On the import-placed low-boost board against the pinned fork,
- * over the reviewed seed set and the move set this file sweeps TODAY - the five
- * single-part kinds less the two deferred, plus `E1`'s net cluster: `random`
- * reaches `F` 13 to 17 in 41 to 73 rounds and 6,072 to 10,226 evaluations;
- * `constructed` 16 to 17 in 31 to 48 rounds and 3,537 to 5,755; `import` 36 in 3
- * rounds and 83 evaluations on every seed, because it has one start. All fifteen
- * runs stopped on `S3`, none reached the evaluation cap, and every one ended
- * inadmissible. **THE FIGURES THIS PARAGRAPH CARRIED BEFORE WERE THE SAME BOARD
- * WITHOUT THE CLUSTER MOVE** - 5110, 2058 and 77 evaluations at `F` 14, 17 and
- * 36 - and they are not deleted but moved: `docs/stripboard/
- * pipeline-verification.md` §5.9 is that run, §6.3 is this one, §6.4 is what the
- * cluster move did to `F` (nothing, at 8% to 62% more evaluations) and §6.5 is
- * the stretch defect the comparison found. **AND §6.6 SUPERSEDES THE FIGURES
- * ABOVE ON TWO OF THE THREE ARMS**, because the move set grew again: with the
- * GATHER, seed 0 reaches `F` 10 on `constructed` in 32 rounds and 4,150
- * evaluations and `F` 11 on `random` in 63 rounds and 9,698, while `import`
- * stays at 36 because no gather is proposable on a board packed into three rows.
- * §6.7 is the whole seed set under that move set, and **§6.8 SUPERSEDES BOTH**
- * because the gather's candidates were widened to every strip: `constructed`
- * reaches `F` 8, 8, 8, 7 and 7 in 48 to 70 rounds and 11,306 to 15,300
- * evaluations; `random` 12, 12, 12, 16 and 14 in 41 to 70 rounds and 9,423 to
- * 15,813; `import` 33 on every seed in 21 rounds and 4,086. All fifteen stopped
- * on `S3`, none reached the cap, and every one ended inadmissible. A climb is
- * three to four times the size it was before the widening, which is what §6.8
- * records as its cost.
- *
- * **AND §6.10 SUPERSEDES ALL OF THEM, because the ACCEPTANCE RULE changed rather
- * than the move set.** With the open-net count as the ordering's first key,
- * `constructed` reaches `C` 10, 10, 11, 12 and 11 in 41 to 72 rounds and 10,378
- * to 17,669 evaluations; `random` 13 at seed 0 and 16 at seed 3; `import` 34 on
- * both measured seeds in 24 rounds and 4,592. **Every one of those boards has
- * NINE or TEN of its fourteen nets still open, from starts with fourteen or
- * thirteen** - four or five closed per run, where the one run §6.9 measured
- * closed one. All nine stopped on `S3` with the cap unspent and every one ended
- * inadmissible. `F` is NOT compared with the earlier figures, because `ρ_s`
- * changed in the same commit; `C` and the open-net count are.
+ * about it.** `docs/stripboard/pipeline-verification.md` is the record and
+ * carries every sweep in order - §5.9, §6.3, §6.6, §6.7, §6.8, §6.9, §6.10 and
+ * §6.11 - each naming what changed in the move set or the rule between it and
+ * the one before. **THE FIGURES THIS PARAGRAPH USED TO REPEAT ARE NOT COPIED
+ * HERE, because six of the seven were superseded while they sat in this comment
+ * and a module header is the wrong place to keep a changing measurement.** The
+ * live one, from §6.10 on the import-placed low-boost board over the reviewed
+ * seeds at the committed cap: `constructed` reaches `C` 10, 10, 11, 12 and 11 in
+ * 41 to 72 rounds and 10,378 to 17,669 evaluations, `random` 13 at seed 0 and 16
+ * at seed 3, `import` 34 on both measured seeds. Every one of those boards has
+ * NINE or TEN of its fourteen nets still open, all nine stopped on `S3` with the
+ * cap unspent, and every one ended inadmissible. §6.11 is the same comparison
+ * with the `spread` kind and the wire candidates' `--update` in play.
  *
  * **THE START IS INADMISSIBLE AND THAT IS NORMAL.** `./seed.ts` records that
  * all three arms begin from a board whose nets are incomplete - 19, 13, 7 and 6
@@ -131,9 +110,10 @@
 import fs from "node:fs"
 import path from "node:path"
 import { accepts, strictlyBetter } from "./climb-accepts.ts"
-import type { Stock } from "./constraints-model.ts"
-import type { ReferenceNets } from "./equivalence.ts"
+import { UNSCOREABLE, type ClimbInput, type ClimbResult } from "./climb-model.ts"
+import { assignNodes } from "./complete-apply.ts"
 import {
+  addsWire,
   applicableMoves,
   applyMove,
   describeMove,
@@ -143,28 +123,18 @@ import {
   type Move,
 } from "./moves.ts"
 import type { Occupancy } from "./seed-geometry.ts"
-import type { StripboardRules } from "./rules.ts"
-import type { SeedStart, SpawnVeroroute } from "./seed.ts"
-import type { BoardTargets } from "./targets.ts"
+import type { SpawnVeroroute } from "./seed.ts"
 import { measure, type Evaluation, type Measured } from "./climb-evaluate.ts"
 
 /**
- * The one refusal `climb` catches, matched by the NAME `./score.ts` gives it.
+ * The climb's vocabulary, re-exported from `./climb-model.ts`: what one climb is
+ * handed, what it reports, and the one refusal it catches.
  *
- * `./score.ts` builds every refusal as the member of its own `ScoreRefusal`
- * union followed by a colon, so this prefix is that member rather than a phrase
- * from the prose - and a catch broad enough to swallow a fork failure or a
- * geometry refusal would turn a defect into a skipped candidate, which is the
- * shape this pipeline is built against.
- *
- * **EXPORTED BECAUSE A SECOND SWEEP CATCHES THE SAME ONE.**
- * `./complete.ts`'s completion pass evaluates candidates the same four
- * invocations deep and meets the same refusal - a wire that shorts two nets
- * leaves `CUT_STATE UNRESOLVED` - and a second copy of this string would be a
- * literal that silently stopped matching if `./score.ts`'s union member were
- * renamed.
+ * This is the module the plan names and every consumer imports. The split is at
+ * the what-is-a-climb's-input / what-does-a-climb-do seam and was forced by the
+ * 500-line ceiling when the wire candidates' `--update` arrived.
  */
-export const UNSCOREABLE = "score-cuts-not-computed"
+export { UNSCOREABLE, type ClimbInput, type ClimbResult } from "./climb-model.ts"
 
 /**
  * The evaluation half, re-exported from `./climb-evaluate.ts`.
@@ -193,107 +163,6 @@ export {
   type AcceptanceInput,
 } from "./climb-accepts.ts"
 
-/**
- * What one climb needs. `batch` is REQUIRED with no default: Task 9's
- * `--move-batch` buys breadth and not correctness, and a flag that defaulted
- * would make an enabler read as a prerequisite in the one place a reader looks.
- */
-export interface ClimbInput {
-  /** Every scratch board, ops file and painted board this climb writes lands here. */
-  readonly runDir: string
-  readonly netlist: string
-  readonly targets: BoardTargets
-  readonly reference: ReferenceNets
-  readonly footprints: ReadonlyMap<string, string>
-  readonly stock: Stock
-  readonly rules: StripboardRules
-  /** Whether a candidate's gesture goes through `--move-batch` or its own verb. */
-  readonly batch: boolean
-  /**
-   * The PART GEOMETRY of the starting board, handed over rather than derived.
-   *
-   * **REQUIRED, WITH NO DEFAULT, AND THIS MODULE READS NO GEOMETRY OFF A DUMP.**
-   * A dump reports no column extent for a part facing `N` or `S` (COST §7.3
-   * item 2), so deriving the geometry refuses a board an arm has turned a part
-   * on - and all three starting arms turn parts. `seedCandidate` returns this
-   * beside the board for exactly that reason (`SeedStart`). A caller starting
-   * from a board nobody has turned may read its own and owns that refusal
-   * itself; defaulting here would put the refusal back in the one place the
-   * handover exists to remove it from.
-   */
-  readonly occupancy: Occupancy
-}
-
-/**
- * One climb's counters. **`history` is one entry per evaluation** - see the
- * module comment, and Task 16's `evaluationsToCross`, which refuses a run where
- * that is not true.
- */
-export interface ClimbResult {
-  /**
-   * The best candidate this climb SAW, by `strictlyBetter` - not the board it
-   * finished standing on.
-   *
-   * The two are the same board under the committed rules, where every
-   * acceptance improves on the incumbent. They come apart when `E3`'s bound is
-   * configured, and then this is the one that may be reported: a run that named
-   * its walk position would report a board worse than one it had found.
-   */
-  readonly best: Evaluation
-  /**
-   * The same board as `best`, as the UNPAINTED file and the part geometry that
-   * goes with it - the handover a FURTHER STAGE needs and `best` cannot give.
-   *
-   * **IT IS THE SAME SHAPE AND THE SAME CONTRACT AS `./seed.ts`'s `SeedStart`,
-   * which is what hands a start INTO this climb**, and the two reasons that
-   * contract exists are both live here. The board is unpainted because a
-   * painted one refuses the next gesture: `--move` will not relocate a part
-   * over its own current footprint once `AutoFillVero` has painted copper into
-   * the holes it is about to vacate (`Measured.source` carries the
-   * measurement). And the occupancy travels with it because `occupancyOf`
-   * cannot read a board a part has been turned on, so a later stage that
-   * re-derived the geometry would refuse exactly the boards this search
-   * produces - measured: `occupancyOf` refuses all ten best boards of the first
-   * completeness sweep, on `C18` facing `N` or `S`.
-   *
-   * `./complete.ts` is the consumer. Without this field the completion pass
-   * could only be run by re-deriving a geometry that cannot be derived.
-   */
-  readonly bestStart: SeedStart
-  readonly rounds: number
-  readonly evaluations: number
-  /** How many moves each round accepted. `acceptedPerRound.length === rounds`. */
-  readonly acceptedPerRound: readonly number[]
-  /** Every evaluation's `F`, in the order the candidates were evaluated. */
-  readonly history: readonly number[]
-  /**
-   * How many candidates could not be SCORED at all, and the first one's refusal.
-   *
-   * **A CANDIDATE WHOSE CUT LIST CANNOT BE COMPUTED IS REJECTED AND COUNTED,
-   * NOT A RUN-STOPPING REFUSAL - A DELIBERATE CHANGE WITH A MEASUREMENT BEHIND
-   * IT.** `add-wire` produces one: a wire bridging two strips on a packed board
-   * routinely shorts two different nets, and `AutoFillVero` then reports
-   * `CUT_STATE UNRESOLVED` with `CUT_CONFLICT` lines instead of a cut
-   * arrangement. Measured on the constructed arm at seed 3 of the import-placed
-   * low-boost board: `Wire1` from `5,3` to `6,3` produced
-   * `CUT_CONFLICT 5,2,9 5,4,11` and `CUT_CONFLICT 6,2,8 6,4,14`, and re-running
-   * `--author --op autofill` leaves it unresolved every time.
-   *
-   * `./score.ts` refuses such a board and is RIGHT to - *"scoring it anyway
-   * would price a board at zero cuts and rank it first"* - but a refusal that
-   * stops the run makes `add-wire` unusable on any real board, which is the
-   * capability the move set exists to have. So the candidate is rejected, for
-   * the same reason an unscoreable board cannot be compared with anything, and
-   * **the count is reported rather than swallowed**: these are not evaluations,
-   * they are candidates the pipeline could not evaluate, and a reader seeing a
-   * large number here is looking at a search spending its budget on shorts.
-   *
-   * `evaluations` and `history.length` still count only SCORED candidates,
-   * which is what Task 16's `evaluationsToCross` requires of them.
-   */
-  readonly unscoreable: number
-  readonly firstUnscoreable: string | null
-}
 
 /**
  * Climb from `start` until a round accepts nothing (`S3`) or the run-level
@@ -323,6 +192,22 @@ export interface ClimbResult {
  * know what the geometry became. The climb is the only thing that does.
  */
 interface State {
+  /**
+   * The UNPAINTED, un-`--update`d board - **what the next gesture is applied
+   * to**, and NOT necessarily the board that was measured.
+   *
+   * **IT IS A FIELD HERE RATHER THAN `measured.source` BECAUSE A WIRE CANDIDATE
+   * IS MEASURED ON A DIFFERENT FILE.** A move that adds a wire has its node ids
+   * assigned by one `--update` before it is scored (`addsWire`, and
+   * `./complete-apply.ts`'s `assignNodes` for the measurement that forced it),
+   * and `--update` runs `AutoFillVero` itself - so the measured file is PAINTED,
+   * and `--move` refuses a relocation that overlaps a part's own current
+   * footprint on a painted board (`Measured.source` carries that measurement).
+   * So the two files are kept apart, exactly as `./complete.ts`'s `Standing`
+   * keeps them apart for the same reason. For every kind that adds no wire the
+   * two are the same file.
+   */
+  readonly board: string
   readonly measured: Measured
   readonly occupancy: Occupancy
 }
@@ -373,7 +258,7 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
   // random arms and a climb at all: both turn parts before the climb is called,
   // and a turned part is exactly what a dump cannot describe. `seedCandidate`
   // hands it over, so this module needs no read and carries no such refusal.
-  let incumbent: State = { measured: first, occupancy: input.occupancy }
+  let incumbent: State = { board: start, measured: first, occupancy: input.occupancy }
   // THE BEST CANDIDATE SEEN, WHICH IS NOT THE INCUMBENT ONCE `E3` IS
   // CONFIGURED. A bounded worse-acceptance moves the walk and must not move the
   // result; see the module comment. `strictlyBetter` is the acceptance rule's
@@ -432,7 +317,19 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
             "every later round propose holes that are already taken.",
         )
       }
-      applyMove(base.measured.source, move, candidateBoard, spawn, transport)
+      applyMove(base.board, move, candidateBoard, spawn, transport)
+      // A FRESH WIRE'S HOLES CARRY NODE ID 0 AND `--check`'s COMPLETENESS READS
+      // NODE IDS, so a candidate carrying one is assigned to its net before
+      // anything measures it. `./complete-apply.ts`'s `assignNodes` carries the
+      // measurement: without this invocation a wire that physically joins two of
+      // a net's pins leaves the net reported incomplete, `openNets` unchanged and
+      // `F` up by `rho_w`, and the acceptance rule then rejects it for a reason
+      // that is not about the gesture. It is ONE invocation and only for the
+      // kinds `addsWire` names, so a candidate that adds no wire costs exactly
+      // what it did before.
+      const measuredBoard = addsWire(move)
+        ? assignNodes(candidateBoard, { netlist: input.netlist }, input.runDir, tag, spawn)
+        : candidateBoard
       // AN UNSCOREABLE CANDIDATE IS REJECTED AND COUNTED - see
       // `ClimbResult.unscoreable` for the measurement that forced it and why the
       // alternative is worse. ONLY that one refusal is caught, by its own name:
@@ -440,7 +337,7 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
       // run, because none of them says "this candidate cannot be compared".
       let measured: Measured
       try {
-        measured = evaluateInto(candidateBoard, tag)
+        measured = evaluateInto(measuredBoard, tag)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         if (!message.startsWith(UNSCOREABLE)) throw error
@@ -460,7 +357,9 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
         input.rules,
       )
       if (verdict) {
-        incumbent = { measured, occupancy: advanced }
+        // THE BOARD CARRIED FORWARD IS THE GESTURED ONE, never the measured one:
+        // see `State.board`.
+        incumbent = { board: candidateBoard, measured, occupancy: advanced }
         // AND THE BEST SEEN IS UPDATED SEPARATELY, so an E3 acceptance cannot
         // make the run report a board worse than one it found.
         if (strictlyBetter(measured.evaluation, best)) {
@@ -481,11 +380,12 @@ export function climb(start: string, input: ClimbInput, spawn: SpawnVeroroute): 
 
   return {
     best,
-    // THE UNPAINTED SOURCE, NOT `best.candidate`: `candidate` is the painted
-    // board a score had to be read from, and a gesture on a painted board is
-    // refused. `Measured.source` is the board the paint was made from and the
-    // one a further gesture applies to.
-    bestStart: { board: bestStanding.measured.source, occupancy: bestStanding.occupancy },
+    // THE GESTURED BOARD, NOT `best.candidate` AND NOT `best`'s MEASURED FILE:
+    // `candidate` is the painted board a score had to be read from, and a
+    // gesture on a painted board is refused. `State.board` is the one a further
+    // gesture applies to, and for a wire candidate it is not the file that was
+    // measured either - see that field.
+    bestStart: { board: bestStanding.board, occupancy: bestStanding.occupancy },
     rounds,
     evaluations: history.length,
     acceptedPerRound,
