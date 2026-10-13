@@ -108,12 +108,25 @@
  * three to four times the size it was before the widening, which is what §6.8
  * records as its cost.
  *
+ * **AND §6.10 SUPERSEDES ALL OF THEM, because the ACCEPTANCE RULE changed rather
+ * than the move set.** With the open-net count as the ordering's first key,
+ * `constructed` reaches `C` 10, 10, 11, 12 and 11 in 41 to 72 rounds and 10,378
+ * to 17,669 evaluations; `random` 13 at seed 0 and 16 at seed 3; `import` 34 on
+ * both measured seeds in 24 rounds and 4,592. **Every one of those boards has
+ * NINE or TEN of its fourteen nets still open, from starts with fourteen or
+ * thirteen** - four or five closed per run, where the one run §6.9 measured
+ * closed one. All nine stopped on `S3` with the cap unspent and every one ended
+ * inadmissible. `F` is NOT compared with the earlier figures, because `ρ_s`
+ * changed in the same commit; `C` and the open-net count are.
+ *
  * **THE START IS INADMISSIBLE AND THAT IS NORMAL.** `./seed.ts` records that
  * all three arms begin from a board whose nets are incomplete - 19, 13, 7 and 6
  * on mid, hi-boost, hi-cut and low-cut - so `HC1` fails on the start and will
  * keep failing until the search has repaired the circuit. The no-regression
  * rule is what lets a climb move at all from there while still refusing to
- * trade a constraint away.
+ * trade a constraint away, and the open-net count is what gives the climb a
+ * reason to repair rather than merely permission to try: it is a DEGREE of the
+ * same fact `HC1` reports as a boolean, so it moves while `HC1` is still false.
  */
 import fs from "node:fs"
 import path from "node:path"
