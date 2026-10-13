@@ -1,7 +1,7 @@
 ---
 title: Tascam 38 external electronics — interface analysis plan
 date: 2026-10-12
-status: Draft for execution
+status: Revised for motherboard-compatible card first
 spec: ../specs/2026-10-12-tascam-38-external-electronics-design.md
 ---
 
@@ -9,7 +9,7 @@ spec: ../specs/2026-10-12-tascam-38-external-electronics-design.md
 
 ## Objective
 
-Establish an evidence-backed electrical boundary for replacing the Tascam 38's record/reproduce electronics with an external chassis, using the Tascam MS-16 as a packaging and wiring reference. This phase produces documentation, **not** replacement hardware or speculative connector pinouts.
+Establish the existing Tascam 38 amplifier-card electrical and mechanical interface so a pin-compatible replacement can be designed and tested using the **unmodified motherboard**. The MS-16 external-chassis architecture remains a later reference. This phase produces documentation, not replacement hardware or speculative connector pinouts.
 
 ## Sources located
 
@@ -26,7 +26,7 @@ These links establish document availability, **not** validation of any connector
 | Assembly | Known role / investigation |
 | --- | --- |
 | HEAD PCB | Reproduce, record/sync and erase head terminations |
-| MOTHER PCB | Channel-card and cross-board interconnects; candidate for bypass |
+| MOTHER PCB | Retain unmodified for first working replacement card; document connector signals and dependencies |
 | REC/PLAY AMPL PCB | Channel reproduce, record, bias amplification and EQ |
 | MASTER OSC PCB | Shared oscillator; determine erase/bias distribution |
 | FUNCTION PCB and FUNCTION LED PCB | Arm and mode selection signals |
@@ -45,15 +45,15 @@ These links establish document availability, **not** validation of any connector
 
 **Acceptance:** Every referenced schematic is retrievable and every claimed connector has a page/sheet source or is marked unknown.
 
-## Task B — 38 pin-level interface matrix
+## Task B — 38 amplifier-card pin-level interface matrix
 
 Create `docs/tascam-38/interface-matrix.csv` with columns:
 
 `assembly,connector,pin,signal_name,source,destination,signal_class,mode,nominal_voltage_or_level,source_impedance,shield_return,source_document,source_page,verification_status,notes`
 
-Trace head and audio first, then control, bias/erase, supply, meter and ground. Unknown fields stay blank; never infer pins from connector numbering alone.
+Trace every existing amplifier-card edge contact, including head/audio, control, bias/erase, supply, meter and ground. Document connector geometry, pin numbering, keying, mating and mechanical clearance. Unknown fields stay blank; never infer pins from connector numbering alone.
 
-**Acceptance:** For each head winding and relevant operating mode, the signal path can be traced from physical head connector to channel card, with unresolved segments called out explicitly.
+**Acceptance:** Every amplifier-card edge contact is accounted for (including no-connects) and traced to the motherboard or explicitly marked unresolved. The motherboard remains unchanged.
 
 ## Task C — MS-16 architectural comparison
 
@@ -61,19 +61,23 @@ Document where its head preamps, oscillator, erase drivers, control decoding and
 
 **Acceptance:** A sourced transport-versus-chassis block comparison, plus a list of transferable practices and machine-specific constraints.
 
-## Task D — feasibility and reversible breakout
+## Task D — pin-compatible card feasibility and safe validation
 
-- Identify the smallest safe internal 38 adapter point that avoids the old amplifier card-edge connector.
-- Evaluate whether an external unbuffered head cable is plausible given measured/documented inductance, impedance and capacitance.
-- Specify grounding, connector segregation, strain relief, protection and fail-safe record switching.
-- Document what the original motherboard still supplies to transport logic and what cannot be removed.
+- Specify a pin-compatible replacement card using the original motherboard connector, with no transport or motherboard modifications.
+- Document card-edge geometry, signal levels, power rails, grounding, head loading, switching and calibration requirements. Defer external cable feasibility until the card works.
+- Specify bench tests and protection checks before plugging a prototype into the motherboard; include safe record switching and head protection.
+- Document all original motherboard dependencies and preserve them in the first prototype.
 - Define a non-destructive measurement procedure; do not inject DC into heads or connect record/erase drive to sensitive test inputs.
 
-**Acceptance:** Written go/no-go for single-channel reproduce prototype and a list of measurements required before selecting its first-stage circuit.
+**Acceptance:** Written go/no-go for a pin-compatible single-channel reproduce card, with required bench tests and measurements before first insertion.
 
 ## Task E — review gate
 
-A reviewer independently checks each source-backed claim, the completeness of interface coverage, and the separation of verified facts from hypotheses. Only then write a single-channel reproduce implementation plan with numerical acceptance thresholds derived from the service manual and a known-good machine.
+A reviewer independently checks each source-backed claim, the completeness of interface coverage, and the separation of verified facts from hypotheses. Only then write a motherboard-compatible single-channel reproduce-card implementation plan with numerical acceptance thresholds derived from the service manual and a known-good machine.
+
+## Deferred work
+
+Motherboard replacement, card-edge bypass, external cabling and the full external electronics chassis are explicitly out of scope until a usable replacement amplifier card has been validated on the existing motherboard.
 
 ## Current blockers
 
