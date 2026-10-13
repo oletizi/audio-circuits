@@ -17,10 +17,16 @@ import { FIXTURE_TARGETS, PT2399_DUMP, TEXT, grepCount } from "./score-fixtures.
 test("F is C + rho_w*W + rho_s*B over the dump's own line counts", () => {
   // The counts are hand-read off TEXT: one CUT, one WIRE, one SOLDER line.
   //
-  // 2.25 IS HAND ARITHMETIC AND NOT THE CODE'S EXPRESSION RE-EVALUATED:
-  // 1 + 0.25 + 1, written as the one number it comes to. The two guards above
-  // it say which rules values it is right at, so a change to either weight
-  // fails by naming the weight rather than by leaving 2.25 unexplained.
+  // 1.5 IS HAND ARITHMETIC AND NOT THE CODE'S EXPRESSION RE-EVALUATED:
+  // 1 + 0.25 + 0.25, written as the one number it comes to. The guard below it
+  // says which rules values it is right at, so a change to either weight fails
+  // by naming the weight rather than by leaving 1.5 unexplained.
+  //
+  // THIS COMMENT READ "2.25 ... 1 + 0.25 + 1" UNTIL THE WHOLE-BRANCH REVIEW,
+  // which was the hand arithmetic for the OLD rho_s of 1 while the assertion and
+  // the guard were already at 0.25. The independent-derivation discipline this
+  // file is built on was defeated for this one test: the only hand arithmetic
+  // present was for a weight the file does not use.
   //
   // WHAT THIS FIXTURE CANNOT SEE, AND IT IS NO LONGER A GAP A TEST CAN CLOSE:
   // the two weights are now EQUAL - the owner builds a solder blob as a wire

@@ -262,8 +262,16 @@ test("a prepared extent outside the recorded span is refused, naming both module
   const refused = admitPattern(overreaching)
   expect(refused.kind).toBe("refused")
   if (refused.kind !== "refused") throw new Error("unreachable")
-  expect(refused.reason).toMatch(/lead-span\.ts/)
-  expect(refused.reason).toMatch(/pin-pattern\.ts/)
+  // ANCHORED ON THE CLAUSE ONLY THIS BRANCH EMITS. `/lead-span\.ts/` and
+  // `/pin-pattern\.ts/` alone could not tell this refusal from the other four
+  // `admitPattern` raises: ALL FIVE end in WHY_NOT_DEFAULTED and every remedy
+  // clause cites both modules by path, so a reordering that made an earlier
+  // branch fire first would keep this test green while the branch it exists for
+  // went unexercised. "neither axis's prepared hole extent" is the cross-check's
+  // own sentence, and the extent pair beside it is the measurement.
+  expect(refused.reason).toContain("neither axis's prepared hole extent [19,1]")
+  expect(refused.reason).toContain("3-3 holes lib/kicad/lead-span.ts records")
+  expect(refused.reason).toContain("lib/kicad/pin-pattern.ts")
 })
 
 test("preparedExtentsHoles refuses the two patterns whose holes it cannot state", () => {

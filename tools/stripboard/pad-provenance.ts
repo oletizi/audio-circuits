@@ -73,8 +73,13 @@ function padLines(dumpText: string): readonly PadLine[] {
     }
     const placed = placement === "AT"
     // The placement field is one token when FLOATING and two when AT r,c, so
-    // the provenance that follows it starts at 3 or at 4. `rest` is that
-    // remainder: ["FROM", "x.y"] or ["NOPROVENANCE"].
+    // the provenance that follows it starts at index 5 or at index 4. `rest` is
+    // that remainder: ["FROM", "x.y"] or ["NOPROVENANCE"]. (This read "3 or 4"
+    // until the whole-branch review - off by one against the slice directly
+    // below it and against the grammar quoted above. The code is right: the
+    // fields are PAD, name, value, placement, [r,c], ...provenance, so a placed
+    // pad's provenance begins at 5. A comment off by one in the one place a
+    // field-position bug would be silent.)
     const rest = fields.slice(placed ? 5 : 4)
     if (rest.length === 1 && rest[0] === "NOPROVENANCE") {
       return { ref, placed, source: undefined, line }

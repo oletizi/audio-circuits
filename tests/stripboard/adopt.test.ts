@@ -87,10 +87,14 @@ test("G2.1: a candidate whose sha256 differs from run.json's is refused", () => 
   // this test, "every refusal names what is missing" and "a refused adoption
   // leaves the board tree byte-identical", the last because with no refusal left
   // the edited candidate was adopted. Reverted.
-  expect(() => {
-    const scenario = withTamperedCandidate()
-    adoptLayout(scenario.input, scenario.deps)
-  }).toThrow(/sha256/)
+  // THE ID AND THE OFFENDING CLAUSE, not `/sha256/` alone: `rules-hash`'s own
+  // not-defaulted statement carries the word "sha256" too, so the bare pattern
+  // was satisfied by a refusal about a different file. MUTATION: with the
+  // candidate comparison left in place and `assertFileHash`'s rules call forced
+  // to refuse, `/sha256/` passed and both assertions below fail.
+  const message = refusalFrom(withTamperedCandidate)
+  expect(message).toContain("candidate-hash")
+  expect(message).toContain("hashes to sha256")
 })
 
 test("G2.1: a candidate whose canonical artifact hash differs is refused", () => {
@@ -114,10 +118,12 @@ test("G2.2: a rules file that changed since the run is refused, so no parameter 
   // MUTATION RUN (M4): with the rules-hash assertFileHash call commented out,
   // 24 passed and 3 failed - this test, "every refusal names what is missing",
   // and "a refused adoption leaves the board tree byte-identical". Reverted.
-  expect(() => {
-    const scenario = withChangedRules()
-    adoptLayout(scenario.input, scenario.deps)
-  }).toThrow(/rules/)
+  // THE ID AND THE FILE. `/rules/` alone is matched by the word "rules.json" in
+  // several other statements, and by `failing-check`'s prose; what discriminates
+  // is the refusal id plus the clause naming what hashed differently.
+  const message = refusalFrom(withChangedRules)
+  expect(message).toContain("rules-hash")
+  expect(message).toContain("the reviewed rules file at")
 })
 
 test("G2.2: changed span data or pin-pattern data is refused, each named by its own id", () => {
@@ -195,10 +201,13 @@ test("G2.2: a changed frozen fixture is refused", () => {
   // 4 failed: this test, "a frozen fixture replaced by ANOTHER recorded file's
   // bytes", "every refusal names what is missing", and "a refused adoption
   // leaves the board tree byte-identical". Reverted.
-  expect(() => {
-    const scenario = withChangedFrozenFixture()
-    adoptLayout(scenario.input, scenario.deps)
-  }).toThrow(/fixture/)
+  // THE ID AND THE BASENAME. `/fixture/` is matched by the word "fixture" in
+  // `provenance-chain`'s and `failing-check`'s statements as well, so the bare
+  // pattern could not tell this refusal from a later one; the basename is what
+  // tells the operator which of the four files moved.
+  const message = refusalFrom(withChangedFrozenFixture)
+  expect(message).toContain("frozen-fixture-hash")
+  expect(message).toContain("pultec-low-boost-frozen.netlist")
 })
 
 test("G2.2: a frozen fixture replaced by ANOTHER recorded file's bytes is refused", () => {
@@ -359,14 +368,21 @@ test("G2.5: a non-admissible verdict is refused, including valid-below-target", 
   // branch replaced by `if (false)`, 23 passed and 4 failed - this test, the Q5
   // test below, "every refusal names what is missing", and "a refused adoption
   // leaves the board tree byte-identical". Reverted.
-  expect(() => {
-    const scenario = withOutcome("invalid")
-    adoptLayout(scenario.input, scenario.deps)
-  }).toThrow(/invalid/)
-  expect(() => {
-    const scenario = withOutcome("valid-below-target")
-    adoptLayout(scenario.input, scenario.deps)
-  }).toThrow(/valid, below target/)
+  // BOTH PATTERNS WERE SATISFIED BY THE STATEMENT RATHER THAN BY THE VERDICT,
+  // and the second was the review's own finding. `notDefaultedBecause("failing-check")`
+  // ends "...valid, below target is a result the pipeline reports and does not
+  // adopt", so `/valid, below target/` matched EVERY failing-check refusal
+  // whatever outcome the manifest recorded - DRIVEN: the withOutcome("invalid")
+  // scenario's message contains "valid, below target" as well as "reports
+  // invalid". `/invalid/` has the same shape through the word "invalid" in that
+  // same sentence. What discriminates is the OFFENDING clause, which is where
+  // OUTCOME_WORDING[outcome] actually lands.
+  const invalid = refusalFrom(() => withOutcome("invalid"))
+  expect(invalid).toContain("failing-check")
+  expect(invalid).toContain("reports invalid")
+  const below = refusalFrom(() => withOutcome("valid-below-target"))
+  expect(below).toContain("failing-check")
+  expect(below).toContain("reports valid, below target")
 })
 
 test("G2.5: an admissible candidate out of a Q5 run is refused, because the RUN failed", () => {
@@ -424,10 +440,11 @@ test("G2.6: an uncommitted layout is refused unless --allow-dirty", () => {
   // `void declaration.vrtPath`, 24 passed and 3 failed - this test's first
   // assertion, "every refusal names what is missing", and "a refused adoption
   // leaves the board tree byte-identical". Reverted.
-  expect(() => {
-    const scenario = withDirtyBoard()
-    adoptLayout(scenario.input, scenario.deps)
-  }).toThrow(/--allow-dirty/)
+  // THE ID BESIDE THE FLAG. `--allow-dirty` is named in `uncommitted-layout`'s
+  // own statement, so the pattern held whether or not the refusal was this one.
+  const dirty = refusalFrom(withDirtyBoard)
+  expect(dirty).toContain("uncommitted-layout")
+  expect(dirty).toContain("--allow-dirty")
   expect(() => {
     const scenario = withDirtyBoard()
     adoptLayout({ ...scenario.input, allowDirty: true }, scenario.deps)

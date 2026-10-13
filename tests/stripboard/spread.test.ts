@@ -188,7 +188,13 @@ test("the deltas cross the strips and never slide a part along one", () => {
   ])
 })
 
-test("the spread order is the netlist's, so reversing the reference reverses it", () => {
+test("the spread order is the netlist's, and on this board reversing it changes nothing", () => {
+  // THE NAME READ "so reversing the reference reverses it" UNTIL THE
+  // WHOLE-BRANCH REVIEW, and the body asserts the order does NOT change - the
+  // measured result, correctly, for the reason the next comment gives. The name
+  // was not rewritten with the assertion, so `bun test`'s own output stated a
+  // property no assertion here holds.
+  //
   // A Map iterates in INSERTION order and referenceNetsFromExport fills one in
   // the netlist's own order, so the enumeration's net order is the netlist's. An
   // enumeration that sorted the net names, or read them off a Set, would survive

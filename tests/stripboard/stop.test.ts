@@ -93,7 +93,14 @@ test("Q1 does not fire when the arithmetic holds and admissibility does not", ()
 test("Q1 reads the ten results and refuses a candidate carrying fewer", () => {
   const short = evaluation({ cuts: 0, wires: 0, solder: 0, joins: 0, occupied: 9 }, heldResults()
     .slice(0, CONSTRAINT_IDS.length - 1))
-  expect(() => evaluateStop(freshState(), short, targets, rules)).toThrow(/hard/)
+  // `/hard/` MATCHED THE WORD AND NOT THE VERDICT: a1's message is long prose
+  // and the clause that carries the finding is "N of CRITERIA's ten hard
+  // constraints are absent" (grade.ts), so the bare pattern was equally
+  // satisfied by any other refusal containing the word "hard". The count and the
+  // clause are what discriminate.
+  expect(() => evaluateStop(freshState(), short, targets, rules)).toThrow(
+    "1 of CRITERIA's ten hard constraints are absent",
+  )
 })
 
 test("Q2's worked case: the tolerance holds, A2 fails, and Q2 does NOT fire", () => {

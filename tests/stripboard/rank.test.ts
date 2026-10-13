@@ -90,7 +90,18 @@ test("A_occ refuses a dump with no BOUNDS, rather than substituting the pin exte
   // rather than the footprint rectangle, so substituting it would silently
   // redefine a settled ranking term, which is a change to a decision and not
   // an implementation detail.
-  expect(() => occupiedArea(dumpWithoutBounds())).toThrow(/BOUNDS/)
+  // `/BOUNDS/` MATCHED THE WORD AND NOT THE REFUSAL: the word appears in the
+  // not-defaulted prose of this refusal and in neighbouring ones, so what is
+  // asserted now is the offending clause - that the dump carries no such line -
+  // beside the remedy the message is required to name.
+  expect(() => occupiedArea(dumpWithoutBounds())).toThrow(
+    "needs this board's BOUNDS rect and the dump states none",
+  )
+  // AND THE REFUSAL SAYS WHY IT IS NOT DEFAULTED TO THE PIN EXTENT, which is the
+  // half that makes it a decision rather than a missing-field error.
+  expect(() => occupiedArea(dumpWithoutBounds())).toThrow(
+    "NOT defaulted to the extent of the holes the dump enumerates",
+  )
 })
 
 test("the wirelength term is named and documented as a proxy, not as a measurement", async () => {
