@@ -5653,8 +5653,37 @@ search-then-completion and CRITERIA to state that a completion stage orders by
 stands as the result, and nine or ten of fourteen nets open is what the pipeline
 produces.
 
+**What it measured, so the entry is not an argument without a result.** On the
+same ground as §6.10 — the import-placed low-boost board, the five reviewed
+seeds, the committed rules — across eleven pairs: **103 open nets became 85.
+Eighteen closed, for forty wires, and the cut count and the solder count are
+IDENTICAL before and after on every one of the eleven pairs.** `constructed` went
+45 → 34 for fifteen wires, `random` 48 → 41 for twenty-five, `import` 10 → 10 for
+none. **`A1` still fails on every board**, and the reason is not the pass: six of
+the fourteen nets have their off-board pad in a copper component whose every hole
+a pad already fills, so no wire can anchor in it and no gesture in the move set
+can move a pad. That ceiling is measured on all eleven boards, and against it the
+pass closed two of the three closable nets on most of them. Of the 85 still-open
+net-instances, 80 are a join no single wire reaches and **5 are the
+no-regression clause refusing a candidate that would have closed a net by
+breaking a hard constraint** - the requirement firing rather than being asserted.
+
+**One defect the first sweep found and the second one did not have, recorded
+because it changes how §6.9 reads.** A wire added by `--author --op add-wire`
+lands on holes carrying no node id, and `--check`'s completeness reads node ids,
+so the first sweep closed NOTHING: a wire that joined a net's two pins in one
+copper component by `HC8`'s own reconstruction still left `--check` calling that
+net incomplete. One `--update` fixes it, and `tools/stripboard/complete-apply.ts`
+carries the measurement and the control. **The consequence for §6.9: none of its
+7,417 rejected `add-wire` candidates was ever `--update`d either, so not one of
+them could have registered a repair even if it made one.** That does not overturn
+§6.9's conclusion - a single wire still cannot close a net on more than two
+components - but re-measuring the MAIN search with its wire moves updated is a
+question nobody has asked.
+
 **Where the code says so.** `tools/stripboard/complete.ts`'s module comment
 carries the whole reading and names this entry;
 `tools/stripboard/complete-joins.ts` carries the measurement behind the
-candidate's shape. The run is in
+candidate's shape and `tools/stripboard/complete-apply.ts` the node-id defect.
+The run is in
 `.superpowers/sdd/2026-10-10-stripboard-pipeline/completion-pass-report.md`.
