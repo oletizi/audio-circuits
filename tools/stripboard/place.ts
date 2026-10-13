@@ -52,7 +52,6 @@
  * defects that checkpoint exists to catch.
  */
 import { spawnSync } from "node:child_process"
-import { createHash } from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { builtCommit, readPin } from "../perfboard/acquire.ts"
@@ -67,22 +66,14 @@ import {
   type SeedSweep,
 } from "./place-model.ts"
 import { prepare } from "./place-inputs.ts"
+import { manifestFor } from "./place-manifest.ts"
 import { A_OCC_POSITION, RANKING_POSITIONS } from "./rank.ts"
 import { boundFor, outcomeOf, verdictOf, type ReportInput } from "./report.ts"
-import { pinPatternClosureHash, spanClosureHash } from "./geometry-inputs.ts"
-import { RULES_PATH, type StripboardRules } from "./rules.ts"
-import {
-  canonicalHash,
-  runDirectory,
-  writeManifest,
-  type CanonicalInputs,
-  type CanonicalMetrics,
-} from "./run-dir.ts"
+import { runDirectory, writeManifest } from "./run-dir.ts"
 import { search, type RunResult } from "./search.ts"
 import { FROZEN_MARK, meetsMark } from "./seed-compare.ts"
 import { type SpawnVeroroute } from "./seed.ts"
 import { evaluateStop, type StopState } from "./stop.ts"
-import type { BoardTargets } from "./targets.ts"
 
 export {
   notDefaultedBecause,
@@ -118,14 +109,6 @@ export function verorouteSpawn(): SpawnVeroroute {
       stderr: typeof run.stderr === "string" ? run.stderr : "",
     }
   }
-}
-
-function sha256(text: string): string {
-  return createHash("sha256").update(text, "utf8").digest("hex")
-}
-
-function sha256OfFile(file: string): string {
-  return createHash("sha256").update(fs.readFileSync(file)).digest("hex")
 }
 
 /** This repository's own commit, for `run.json`'s canonical inputs. */
@@ -313,69 +296,25 @@ export async function place(
   if (stampedBuild === undefined) {
     refuse("place-built-commit-unknown", `no build stamp under ${repoRoot}/.tools`)
   }
-  const inputs: CanonicalInputs = {
-    candidateSha256: sha256OfFile(result.best.candidate),
-    rulesSha256: sha256OfFile(RULES_PATH),
-    netlistSha256: sha256(prepared.netlistText),
-    // THE CLOSURE, NOT THE FILE, and `lib/import-closure.ts` carries why: the
-    // bounds HC4/HC5/HC9/HC10 grade a candidate by are computed at module load
-    // by files neither entry point IS, so a one-file hash let the bend
-    // arithmetic and the hole clamp move after a run with the hash still
-    // matching. The gate recomputes the same two numbers with the same
-    // function, so producer and gate cannot disagree about what was covered.
-    spanClosureSha256: spanClosureHash(),
-    pinPatternClosureSha256: pinPatternClosureHash(),
-    seeds: input.rules.seeds,
-    // THE SEED OF THE CLIMB THAT PRODUCED `best`, read off the candidate's own
-    // directory rather than guessed: `search` writes each climb under
-    // `seed-<n>/`, so the winning board's path names its seed and a run whose
-    // best came from the third restart does not record the first.
+  // THE RECORD IS ASSEMBLED IN ./place-manifest.ts, which decides nothing: every
+  // figure below is already settled by the time it is handed over. The seam is
+  // running versus recording.
+  const manifest = manifestFor({
+    result,
+    prepared,
+    rules: input.rules,
+    arm: input.arm,
+    rule,
+    outcome,
+    occupiedArea: occupiedAreaOf(result),
+    stamp,
+    startedAt,
+    invocations,
     seed: seedOfCandidate(result.best.candidate, input.rules.seeds),
-    seedArm: input.arm,
     verorouteCommit: readPin(path.join(repoRoot, "veroroute.pin")).commit,
     builtCommit: stampedBuild,
     pipelineCommit: pipelineCommit(repoRoot),
-  }
-  const metrics: CanonicalMetrics = {
-    cuts: result.best.score.cuts,
-    wires: result.best.score.wires,
-    solder: result.best.score.solder,
-    objective: result.best.score.objective,
-    netCount: result.best.score.netCount,
-    joins: result.best.score.joins,
-    occupied: result.best.score.occupied,
-    clustering: result.best.score.clustering,
-    occupiedArea: occupiedAreaOf(result),
-    constraints: Object.fromEntries(
-      result.best.results.map((entry) => [entry.id, entry.held] as const),
-    ),
-    ranking: result.best.ranking,
-    stoppingRule: rule,
-    bound,
-    outcome,
-    restartBoundaries: result.restartBoundaries,
-  }
-  const evaluations = result.climbs.reduce((total, climb) => total + climb.evaluations, 0)
-  const finished = new Date()
-  const durationMs = finished.getTime() - startedAt.getTime()
-  const manifest = {
-    canonical: { inputs, metrics, hash: canonicalHash(inputs, metrics) },
-    provenance: {
-      stamp,
-      startedAt: startedAt.toISOString(),
-      durationMs,
-      host: process.platform,
-      // MEASURED, NOT PREDICTED: `invocations` is every call this run made
-      // through the one spawn choke point - the import, every arm gesture,
-      // every gesture and paint and dump of every candidate including the
-      // unscoreable ones, and the final --dump-board. The comment at the top of
-      // `place` carries the four ways the old `evaluations * 4` divisor was
-      // wrong.
-      msPerInvocation: invocations === 0 ? 0 : durationMs / invocations,
-      invocations,
-      evaluations,
-    },
-  }
+  })
   writeManifest(runDir, manifest)
   return {
     search: result,

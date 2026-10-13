@@ -88,8 +88,20 @@ function scoreRead(): RegExp {
  * `Score` field to being either read-and-separating or blind-and-unread, so a
  * field this exclusion hides from `V5` has to be blind - which is checked, not
  * assumed, by that test's own two lists.
+ *
+ * **IT NAMES `place-manifest.ts` AND NO LONGER `place.ts`, AND THE MOVE IS THE
+ * EXCLUSION FOLLOWING THE CODE RATHER THAN THE FILE NAME.** `run.json`'s two
+ * blocks are now assembled in `place-manifest.ts`, split out of `place.ts` at the
+ * running-versus-recording seam, and the `score.netCount` read this exclusion
+ * exists for went with them. `place.ts` still reads `score.cuts`, `score.wires`,
+ * `score.solder` and `score.objective` - all of which DO separate a good layout
+ * from a bad one - so it needs no exclusion any more, and the guard below is what
+ * forced that conclusion rather than letting a dead entry sit here: it requires
+ * every excluded module to still carry the read, which `place.ts` does not. The
+ * split is also what caught the move in the first place, all three tests in this
+ * file failing the moment `score.netCount` appeared in an unexcluded module.
  */
-const RECORDING_ONLY: readonly string[] = ["place.ts"]
+const RECORDING_ONLY: readonly string[] = ["place-manifest.ts"]
 
 /**
  * Which `Score` fields the pipeline actually reads: `tools/stripboard/*.ts`

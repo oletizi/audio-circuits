@@ -2,31 +2,25 @@
  * THE COMPLETION PASS: the stage whose only objective is closing the
  * connections the main search left open.
  *
- * **IT HAS NO PRODUCTION CALLER TODAY, AND THAT IS STATED HERE SO ROUTE 3 IS NOT
- * MISTAKEN FOR SOMETHING THAT RUNS.** `completionPass` below is called only by
- * `tests/stripboard/complete.test.ts`. The CLI exposes two stripboard verbs,
- * `place` and `adopt` (`tools/cli/perfboard-stripboard-verbs.ts`), and `place`
- * runs prepare -> --import -> search -> evaluateStop -> necessaryCuts -> report
- * and never reaches this file; nothing in `Makefile` or `tools/` reaches it
- * either. Two module comments used to assert that this file was the consumer of
- * `RunResult.bestStart` and `ClimbResult.bestStart` - it is not, and those
- * claims are gone.
- *
- * Three things follow, and none of them is hidden:
- *
- * - The plan's recorded figure for this pass - 103 open nets to 85, eighteen
- *   closed for forty wires - was produced by a harness that is not in the
- *   repository, so it cannot be reproduced from a committed command.
- * - A reader of `place`'s report gets route 1's result, nine or ten of fourteen
- *   nets open, with no line saying a second stage exists. `report.ts` has no
- *   completion section.
- * - `./complete-joins.ts` is the only wire planner in this repository that plans
- *   against `copperGraph` COMPONENTS rather than against strips and hole
- *   distance, and it is reachable only from here. So the planner built to fix
- *   the 7,417-enumerations-no-best finding cannot fire in a real run.
- *
- * Wiring it into `place` is a behaviour change the owner is deciding, and it is
- * deliberately NOT made here. What is fixed is the code claiming otherwise.
+ * **IT HAS NO PRODUCTION CALLER TODAY, STATED HERE SO ROUTE 3 IS NOT MISTAKEN
+ * FOR SOMETHING THAT RUNS.** `completionPass` below is called only by
+ * `tests/stripboard/complete.test.ts`: the CLI exposes `place` and `adopt`
+ * (`tools/cli/perfboard-stripboard-verbs.ts`), `place` runs prepare -> --import
+ * -> search -> evaluateStop -> necessaryCuts -> report and never reaches this
+ * file, and nothing in `Makefile` or `tools/` reaches it either. Two module
+ * comments used to assert that this file was the consumer of `RunResult.bestStart`
+ * and `ClimbResult.bestStart`; it is not, and those claims are gone. Three things
+ * follow, none hidden: the plan's recorded figure for this pass (103 open nets to
+ * 85, eighteen closed for forty wires) came from a harness that is not in the
+ * repository, so it cannot be reproduced from a committed command; a reader of
+ * `place`'s report gets route 1's nine-or-ten-of-fourteen with no line saying a
+ * second stage exists, because `report.ts` has no completion section; and
+ * `./complete-joins.ts` is the only wire planner here that plans against
+ * `copperGraph` COMPONENTS rather than strips and hole distance, reachable only
+ * from this file - so the planner built to fix the 7,417-enumerations-no-best
+ * finding cannot fire in a real run. Wiring it into `place` is a behaviour change
+ * the owner is deciding and is deliberately NOT made here; what is fixed is the
+ * code claiming otherwise.
  *
  * **IT IS ROUTE 3, AND IT RAN BECAUSE ROUTE 1 WAS NOT ENOUGH.** The owner was
  * offered three ways out of the finding in `docs/stripboard/
@@ -106,7 +100,8 @@ import path from "node:path"
 import { accepts, candidateRejected, strictlyBetter, type Evaluation } from "./climb.ts"
 import { measure, type Measured } from "./climb-evaluate.ts"
 import { applyWires, assignNodes } from "./complete-apply.ts"
-import { netJoinPlans, type NetJoinPlan } from "./complete-joins.ts"
+import { CAP_SPENT, NEWLY_OPEN, rejection } from "./complete-reasons.ts"
+import { netJoinPlans } from "./complete-joins.ts"
 import type { Stock } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
 import type { StripboardRules } from "./rules.ts"
@@ -207,69 +202,6 @@ export interface CompletionResult {
   /** Every net still open on `best`, with the cause. */
   readonly unclosed: readonly UnclosedNet[]
 }
-
-/**
- * Why a candidate that was evaluated was not accepted.
- *
- * **IT STATES WHAT THE TWO MEASUREMENTS SAY AND NOTHING MORE.** An earlier
- * wording said the wires *"closed this net and opened at least as many others,
- * which a wire does by shorting two nets onto one piece of copper"* - a
- * mechanism, asserted from two counts that cannot establish it. What the counts
- * and the two check reports DO establish is which nets changed status, so that
- * is what this names: the set that closed and the set that opened, read off the
- * two reports, with no account of why. A reader who wants the cause has the two
- * boards in the run directory.
- */
-function rejection(predecessor: Measured, incumbent: Measured, candidate: Measured): string {
-  const held = new Set(
-    predecessor.evaluation.results.filter((result) => result.held).map((result) => result.id),
-  )
-  const broke = candidate.evaluation.results
-    .filter((result) => !result.held && held.has(result.id))
-    .map((result) => result.id)
-  if (broke.length > 0) {
-    return (
-      `the candidate built to close it BREAKS ${broke.join(", ")}, which held on the board the ` +
-      "wires were applied to. The acceptance rule's no-regression clause rejects it before F is " +
-      "looked at, so closing this net BY THESE WIRES costs a hard constraint. That is a fact " +
-      "about the wires this generator planned and not about every way the net could be closed: " +
-      "a different set of holes, or a wire path, might not break it."
-    )
-  }
-  const was = new Set(predecessor.checkReport.incompleteNets)
-  const now = new Set(candidate.checkReport.incompleteNets)
-  const closed = [...was].filter((net) => !now.has(net))
-  const opened = [...now].filter((net) => !was.has(net))
-  return (
-    `the candidate built to close it was not better: openNets ` +
-    `${incumbent.evaluation.openNets} -> ${candidate.evaluation.openNets}, F ` +
-    `${incumbent.evaluation.score.objective} -> ${candidate.evaluation.score.objective}. ` +
-    `Against the board the wires were applied to, --check then called these nets complete that ` +
-    `were not: [${closed.join(", ")}]; and these incomplete that were not: [${opened.join(", ")}]. ` +
-    "Both lists are read off the two reports; nothing here says why the second one moved."
-  )
-}
-
-/**
- * The reason a net open on the reported board was never swept for.
- *
- * It is reachable one way only: an ACCEPTED candidate closed one net and opened
- * this one at an EQUAL open-net count, which the acceptance rule permits when
- * `F` improves - and the pass then stopped before a round could plan for the net
- * that opened. Nothing else changes the board, so the cause is not a guess.
- */
-const NEWLY_OPEN =
-  "it was NOT OPEN on the board the last round swept from, so no candidate for it was ever " +
-  "proposed. An accepted candidate closed another net and opened this one at an equal open-net " +
-  "count - which the acceptance rule permits when F improves - and the pass ended before a " +
-  "round could plan for it."
-
-/** The reason a net whose plan was complete never got its candidate evaluated. */
-const CAP_SPENT =
-  "the candidate that would close it was NOT EVALUATED, because the evaluation cap this pass " +
-  "was handed ran out first. That is a budget and not a fact about the board: the net's joins " +
-  "are all plannable, and a pass with a larger remainder would have tried them. The cap is " +
-  "Q5's run-level backstop, divided by whoever ran the search before this pass."
 
 /**
  * The candidate-producing half, re-exported from `./complete-apply.ts`: the

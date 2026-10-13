@@ -472,11 +472,9 @@ export function hashOf(bundle: Bundle): string {
 
 /**
  * The manifest a run would leave behind: the canonical block, and the provenance
- * this file measured.
- *
- * The stamp carries the start time and the run directory's basename - a
- * temporary path, and therefore one string that must not appear in the canonical
- * block. The test file asserts exactly that.
+ * this file measured. The stamp carries the start time and the run directory's
+ * basename - a temporary path, and therefore one string that must not appear in
+ * the canonical block. The test file asserts exactly that.
  */
 export function manifestOf(bundle: Bundle): RunManifest {
   const inputs = canonicalInputsOf(bundle)
