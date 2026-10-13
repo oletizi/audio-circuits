@@ -45,6 +45,7 @@
  *   cannot read as a target met.
  */
 import { floorNote, type StoppingRule } from "./stop-model.ts"
+import { describeCutCounts } from "./cut-necessity.ts"
 import type { RunResult } from "./search.ts"
 import type { StripboardRules } from "./rules.ts"
 import type { BoardTargets } from "./targets.ts"
@@ -433,7 +434,20 @@ export function renderReport(input: ReportInput): readonly string[] {
     // they are labelled differently because one cut above the floor is a gap of
     // one here and of one fortieth there on the same candidate.
     `cost: F = ${score.objective}, derived floor = ${input.targets.cutFloor}, gap above the ` +
-      `floor = ${gapOf(input)} (C = ${score.cuts}, W = ${score.wires}, S = ${score.solder})`,
+      `floor = ${gapOf(input)} (C_necessary = ${score.necessaryCuts}, W = ${score.wires}, ` +
+      `S = ${score.solder})`,
+    // BOTH CUT COUNTS AND THE DISAGREEMENT BETWEEN THEM, IN WHAT A PERSON
+    // READS, WHICH IS THE HALF OF THE OWNER'S "OPTION C" THAT LIVES OUTSIDE THE
+    // SCORER. The wording is `./cut-necessity.ts`'s, because the module that
+    // derives the two counts is where what they MEAN belongs - and because this
+    // file is near its line ceiling, which is a bad reason to put prose
+    // somewhere and a fine reason not to duplicate it. A divergence is stated
+    // rather than left to be worked out by subtracting one figure from another:
+    // his reason for keeping both was that he wants to spot a bad one. It
+    // carries no adjective - "badly" is his judgement on the figure, not this
+    // module's to pass - which keeps the rule that every quality claim comes
+    // from `WORDING` or `OUTCOME_WORDING`.
+    `cuts: ${describeCutCounts(score.cuts, score.necessaryCuts)}`,
     // THE QUANTITY THE ACCEPTANCE RULE ORDERS BY, IN WHAT A PERSON READS. It is
     // not a new criterion and not a cost term - `./climb-accepts.ts` carries why
     // the open-net count is a KEY above `F` rather than a term in it - but with

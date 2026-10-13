@@ -42,11 +42,16 @@
  * what was run.
  */
 import { physicalBoard } from "../../circuits/pultec/physical/board.ts"
+import {
+  referenceNetsFromExport,
+  type ReferenceNets,
+} from "../../tools/stripboard/equivalence.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { deriveTargets, type BoardTargets } from "../../tools/stripboard/targets.ts"
 
 export const FROZEN_DUMP = "tests/fixtures/stripboard/pultec-low-boost-frozen.dump"
 export const PT2399_DUMP = "tests/fixtures/stripboard/pt2399-core.dump"
+export const FROZEN_NETLIST = "tests/fixtures/stripboard/pultec-low-boost-frozen.netlist"
 
 /**
  * The hand-counted fixture. Three by four holes, horizontal strips, with
@@ -96,6 +101,34 @@ export const NINE_NETS = [
   "NODE 3 NAME c", "NODE 4 NAME d", "NODE 5 NAME e", "NODE 6 NAME f",
   "NODE 7 NAME g", "NODE 8 NAME h", "NODE 9 NAME i",
 ].join("\n")
+
+/**
+ * The REFERENCE NETLIST the fixture is a layout of, written out by hand.
+ *
+ * The scorer needs it because `F` charges the cuts the drop test cannot remove
+ * (`tools/stripboard/cut-necessity.ts`), and that test asks whether dropping a
+ * cut joins two REFERENCE nets' leads. **It is hand-written and not derived
+ * from `TEXT`'s own `NODE` lines**, which is the same rule `HC8` is stated
+ * under: a reference read off the board would have the board's own bookkeeping
+ * price the board's own cuts. The two nets are `TEXT`'s `a` and `b` with the
+ * pins its `NODE` lines name, so the fixture states nothing the dump
+ * contradicts - and the fixture's one cut IS necessary under this reference,
+ * because it is the only thing keeping `a` and `b` off one strip.
+ *
+ * `NINE_NETS` is scored against this same map on purpose: the seven extra
+ * `NODE` lines it adds have no pins, so they are nets the LAYOUT declares and
+ * the netlist does not, which is exactly the `J` arithmetic that fixture
+ * exists to drive.
+ */
+export const FIXTURE_REFERENCE: ReferenceNets = new Map([
+  ["a", ["R1.1", "R2.1"]],
+  ["b", ["R1.2", "R2.2"]],
+])
+
+/** The frozen low-boost board's committed reference export, read once per call. */
+export async function frozenReference(): Promise<ReferenceNets> {
+  return referenceNetsFromExport(await Bun.file(FROZEN_NETLIST).text())
+}
 
 /** `grep -c '^<keyword> '` over raw text: a third spelling of the count. */
 export function grepCount(text: string, prefix: string): number {

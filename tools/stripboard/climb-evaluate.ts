@@ -212,7 +212,12 @@ export function measure(board: string, input: EvaluateInput, spawn: SpawnVerorou
   // same characters - see the module comment on scoreDumpText.
   const dumpText = run(spawn, ["--dump-board", input.painted], `reading ${input.painted}`)
 
-  const score = scoreDumpText(dumpText, input.targets, input.rules)
+  // THE REFERENCE NETS GO TO THE SCORER TOO, AND IT IS THE SAME OBJECT THE
+  // GRADER IS HANDED BELOW. `F` charges the cuts the drop test cannot remove
+  // (`tools/stripboard/cut-necessity.ts`), and a cut is necessary when dropping
+  // it joins two REFERENCE nets' leads - so the scorer and the grader read one
+  // reference side rather than two that could disagree about which nets exist.
+  const score = scoreDumpText(dumpText, input.targets, input.rules, input.reference)
   // `boardGeometry`, not `parseBoardDump`: a parsed dump skips every geometry
   // refusal, so text fed through the bare parser never exercises the contract
   // HC8 is stated in. The same correction Tasks 3, 4, 5, 11 and 12 each needed.

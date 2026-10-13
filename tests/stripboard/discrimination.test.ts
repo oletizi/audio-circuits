@@ -37,6 +37,7 @@ import path from "node:path"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { countLines, scoreDumpText, type Score } from "../../tools/stripboard/score.ts"
 import { TARGETS } from "./climb-fixtures.ts"
+import { REFERENCE } from "./climb-boards.ts"
 import { bareLiteral } from "./bare-literal.ts"
 import { BAD_CUT_DUMP, GOOD_DUMP, PLACEMENT_PAIRS } from "./discrimination-fixtures.ts"
 
@@ -57,7 +58,7 @@ const PIPELINE_SOURCES: readonly string[] = readdirSync(PIPELINE_DIR)
   .sort()
 
 /** A `Score`'s nine field names, taken from a real one rather than written out. */
-const SCORE_KEYS: readonly string[] = Object.keys(scoreDumpText(GOOD_DUMP, TARGETS, rules))
+const SCORE_KEYS: readonly string[] = Object.keys(scoreDumpText(GOOD_DUMP, TARGETS, rules, REFERENCE))
 
 /** The reader for `score.<field>`, FRESH PER CALL for `bareLiteral`'s reason. */
 function scoreRead(): RegExp {
@@ -89,8 +90,8 @@ async function readStatistics(): Promise<readonly string[]> {
 /** Every pair scored on both sides, once, so each test reads numbers not boards. */
 const SCORED = PLACEMENT_PAIRS.map((pair) => ({
   pair,
-  good: scoreDumpText(pair.good, TARGETS, rules),
-  bad: scoreDumpText(pair.bad, TARGETS, rules),
+  good: scoreDumpText(pair.good, TARGETS, rules, REFERENCE),
+  bad: scoreDumpText(pair.bad, TARGETS, rules, REFERENCE),
 }))
 
 /** How many of the pairs a field takes a different value on. */
@@ -200,14 +201,14 @@ test("an UNRESOLVED board is refused rather than scored, where a line count woul
   // awarded to a board nothing is known about. Measured here on the one fixture
   // whose cuts are non-zero: the independent line count reports no cuts, and the
   // scorer refuses instead of reporting the best score in the run.
-  const resolved = scoreDumpText(BAD_CUT_DUMP, TARGETS, rules)
+  const resolved = scoreDumpText(BAD_CUT_DUMP, TARGETS, rules, REFERENCE)
   expect(resolved.cuts).toBeGreaterThan(0)
   const unresolved = BAD_CUT_DUMP.replace("CUT_STATE COMPUTED", "CUT_STATE UNRESOLVED").replace(
     "CUT 4,6,2 5,6,1\n",
     "",
   )
   expect(countLines(unresolved).cuts).toBe(0)
-  expect(() => scoreDumpText(unresolved, TARGETS, rules)).toThrow("score-cuts-not-computed")
+  expect(() => scoreDumpText(unresolved, TARGETS, rules, REFERENCE)).toThrow("score-cuts-not-computed")
 })
 
 /**
@@ -230,6 +231,11 @@ test("an UNRESOLVED board is refused rather than scored, where a line count woul
  * the register cannot go stale while reading as a pass.
  */
 const ACCOUNTED: Readonly<Record<string, readonly string[]>> = {
+  // The plan filename `2026-10-10-stripboard-pipeline.md`, cited in the module
+  // comment and in the refusal's tail because that document is where the
+  // owner's decision to charge the necessary cut count is recorded. A citation,
+  // like `equivalence.ts`'s and `seed-compare.ts`'s - not a value the code uses.
+  "cut-necessity.ts": ["2026"],
   "equivalence.ts": ["2026"],
   "geometry-contract.ts": ["1.5"],
   "score.ts": ["2.1", "1.4", "2.1", "4.1"],

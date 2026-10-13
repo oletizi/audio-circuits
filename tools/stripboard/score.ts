@@ -10,12 +10,34 @@
  * §4.1 and §5. Where this module and those documents differ, the documents
  * win and this comment is the defect.
  *
- *     F = C + ρ_w·W + ρ_s·B            (OBJ1, COST §4.1)
+ *     F = C_necessary + ρ_w·W + ρ_s·B            (OBJ1, COST §4.1)
  *
- * `C`, `W` and `B` are the counts of `CUT `, `WIRE` and `SOLDER` lines, so
- * **every term is a line count in a report the producing agent did not
- * write** - which is the whole reason cut minimisation is allowed to be an
- * agent's job at all (COST §0). `ρ_w` and `ρ_s` come from
+ * `W` and `B` are the counts of `WIRE` and `SOLDER` lines. **`C` IS NO LONGER
+ * THE `CUT ` LINE COUNT, AND THAT IS THE OWNER'S DECISION RATHER THAN A
+ * REFINEMENT OF OBJ1'S ARITHMETIC.** He was asked whether the search should
+ * score on the cuts he would actually make or on the cuts VeroRoute reports,
+ * and answered **"option C"**: *"Both. Score on real cuts so the search can
+ * act, keep VeroRoute's number in the report so you always see both. If they
+ * ever disagree badly, you'd spot it."* So `F` charges `C_necessary` from
+ * `./cut-necessity.ts`, `Score.cuts` still carries VeroRoute's own count
+ * beside it, and `./report.ts` prints both and the disagreement between them.
+ * The deviation is recorded in
+ * `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`, because `C` is a
+ * term of `F` and `F` is the owner's criteria; CRITERIA and COST are left as he
+ * wrote them.
+ *
+ * **WHAT THAT COSTS IS THE "EVERY TERM IS A LINE COUNT" PROPERTY, AND THE
+ * REPLACEMENT IS NAMED RATHER THAN GLOSSED.** This file used to say that every
+ * term of `F` is a line count in a report the producing agent did not write,
+ * which is why cut minimisation is allowed to be an agent's job at all (COST
+ * §0). `C_necessary` is a DERIVED count, so that sentence no longer covers it.
+ * What stands in its place is that the derivation is not this module's and not
+ * the search's: it is `HC8`'s copper reconstruction
+ * (`./cut-necessity.ts`, `./equivalence.ts`), computed outside VeroRoute from
+ * the exported geometry and the netlist export, and the same instrument that
+ * proved the phantom cuts removable. Nothing in the necessary count is derived
+ * from a quantity this file computes - see that module's own comment. `ρ_w` and
+ * `ρ_s` come from
  * `stripboard/rules.json` and from nowhere else: no weight, bound or
  * threshold is written in this file, because a number that entered the
  * criteria through the implementation is a criterion nobody reviewed
@@ -35,7 +57,14 @@
  *   asking callers to run it first:** a check a caller may skip is a check
  *   that looks like it passed, which is the failure this whole workflow
  *   exists to prevent.
- * - **`V2`, the identity with its `J ≥ 0` reading.** `C = N + J − S_occ`
+ * - **`V2`, the identity with its `J ≥ 0` reading. IT IS COMPUTED ON THE
+ *   REPORTED CUT COUNT AND NOT ON THE CHARGED ONE**, because `C = N + J −
+ *   S_occ` is a statement about the copper this dump describes - one cut per
+ *   place where two net segments abut on one strip - and `C_necessary` is a
+ *   count of the subset of those cuts the board cannot do without. Feeding the
+ *   charged count in would make `J` and `κ` describe a board with cuts taken
+ *   out of it, which is not the board being scored and is not the board COST
+ *   §1.6's figures were derived from. `C = N + J − S_occ`
  *   (COST §1.4) closes on every candidate, through `segmentJoins` in
  *   `./targets.ts`, which is the ONE implementation of it: a second copy here
  *   would turn `V2` into a comparison of one module against a copy of itself.
@@ -100,6 +129,8 @@
  */
 import type { BoardDump } from "../guide/dump.ts"
 import { boardGeometry } from "./copper.ts"
+import { necessaryCuts, type CutNecessity } from "./cut-necessity.ts"
+import type { ReferenceNets } from "./equivalence.ts"
 import type { StripboardRules } from "./rules.ts"
 import { clustering, occupiedStrips, segmentJoins, type BoardTargets } from "./targets.ts"
 
@@ -118,6 +149,7 @@ import { clustering, occupiedStrips, segmentJoins, type BoardTargets } from "./t
 export type ScoreRefusal =
   | "score-cuts-not-computed"
   | "score-count-disagreement"
+  | "score-necessity-count-disagreement"
   | "score-below-floor"
 
 /** One sentence per refusal: what is missing, and why it is not defaulted. */
@@ -143,6 +175,17 @@ function notDefaultedBecause(refusal: ScoreRefusal): string {
         "Fix the parse in tools/guide/dump.ts or the line matching in countLines, whichever " +
         "the two counts show to be off."
       )
+    case "score-necessity-count-disagreement":
+      return (
+        "The drop test counts the dump's CUT lines itself, off the text it was handed, so this " +
+        "disagreement means the classifier and the scorer were handed DIFFERENT TEXT - two " +
+        "boards being scored as one. Neither count is preferred and neither is reconciled: " +
+        "which text is the candidate's is not knowable here, and charging either would charge " +
+        "one board for another board's cuts. It is NOT the owner's reported-versus-necessary " +
+        "disagreement, which is expected and is reported rather than refused (see Score.cuts): " +
+        "this is the two readings of VeroRoute's OWN number failing to agree. Score through " +
+        "scoreDumpText, which reads the text once and derives both from it."
+      )
     case "score-below-floor":
       return (
         "F_floor = C_floor is a LOWER bound (CRITERIA K5, COST 2.1), so a candidate beneath " +
@@ -165,7 +208,7 @@ function refuse(refusal: ScoreRefusal, offending: string): never {
   )
 }
 
-/** The three costed line counts: `C`, `W` and `B`. */
+/** The three line counts `V1` compares, straight off the dump: `C`, `W` and `B`. */
 export interface LineCounts {
   /** `C`: `CUT ` lines. */
   readonly cuts: number
@@ -175,12 +218,52 @@ export interface LineCounts {
   readonly solder: number
 }
 
+/**
+ * The three counts `F` is PRICED from, which is not the same object as
+ * `LineCounts`: `cuts` here is `C_necessary` and the other two are line counts.
+ *
+ * A SEPARATE TYPE RATHER THAN REUSING `LineCounts`, because `LineCounts.cuts`
+ * is documented as the `CUT ` line count and passing the charged count under
+ * that name would make the type say something false about its own field. The
+ * two are structurally compatible, so a caller can still price a `LineCounts`
+ * - which is what a board whose every cut is necessary amounts to - but the
+ * name at the call site says which number was handed over.
+ */
+export interface ChargedCounts {
+  /** `C_necessary`: the cuts the drop test could not remove (`./cut-necessity.ts`). */
+  readonly cuts: number
+  /** `W`: `WIRE` lines. */
+  readonly wires: number
+  /** `B`: `SOLDER` lines. */
+  readonly solder: number
+}
+
 /** One candidate's number, and every term it was built from. */
 export interface Score {
+  /**
+   * `C`: the `CUT ` lines the dump prints - **VeroRoute's own number, which
+   * `F` does NOT charge.**
+   *
+   * It is carried because the owner asked for both counts to be visible
+   * ("option C", quoted in the module comment), and because the identity `C =
+   * N + J − S_occ` and `κ` are stated over it. `./report.ts` prints it beside
+   * `necessaryCuts` and names the disagreement.
+   */
   readonly cuts: number
+  /**
+   * `C_necessary`: the cuts `F` charges - the ones whose removal would leave
+   * two reference nets' leads sharing a copper component, by `HC8`'s
+   * reconstruction (`./cut-necessity.ts`).
+   *
+   * Never greater than `cuts`. Equal to it on an undisturbed board - measured
+   * 5 of 5 on the owner's hand-laid low-boost and 38 of 38 on the
+   * import-placed start - and smaller on a board the search has moved parts
+   * on, which is the whole reason it exists.
+   */
+  readonly necessaryCuts: number
   readonly wires: number
   readonly solder: number
-  /** `F = C + ρ_w·W + ρ_s·B`. */
+  /** `F = C_necessary + ρ_w·W + ρ_s·B`. */
   readonly objective: number
   /** `N`: the dump's `NODE` count. NOT the model's net count - see above. */
   readonly netCount: number
@@ -319,8 +402,42 @@ export function requireCountsAgree(
 }
 
 /**
- * `F = C + ρ_w·W + ρ_s·B` (OBJ1, COST §4.1), and the one place that
+ * `HC2`, in ONE wording and ONE place: refuse a dump whose cut list is absent
+ * rather than empty.
+ *
+ * **IT IS A FUNCTION RATHER THAN A CLAUSE INSIDE `scoreDump` BECAUSE THE DROP
+ * TEST FORCED IT, AND THE ALTERNATIVE WAS A LIVE BUG.** `scoreDumpText` has to
+ * classify the cuts before it can call `scoreDump` - an argument is evaluated
+ * before the call it is an argument to - and `necessaryCuts` reaches
+ * `copperGraph`, which refuses an unresolved board with the GEOMETRY CONTRACT's
+ * wording (`cuts-not-computed`) rather than the scorer's. That rename is not
+ * cosmetic: `./climb-model.ts`'s `UNSCOREABLE` matches
+ * `score-cuts-not-computed` by name to tell *this candidate cannot be
+ * evaluated* from *this run has a defect*, and an unresolved board arriving
+ * under the other name would STOP A RUN where the search is supposed to reject
+ * and count the candidate - on the import-placed low-boost board that is
+ * hundreds of candidates per run (`ClimbResult.unscoreable`). So both entry
+ * points call this, `scoreDumpText` before it classifies and `scoreDump` as its
+ * first act, and HC2 is still the first refusal either one can raise.
+ */
+export function requireCutsComputed(dump: BoardDump, board: string): void {
+  if (dump.cutState !== "COMPUTED") {
+    refuse(
+      "score-cuts-not-computed",
+      `${board}'s dump reports CUT_STATE ${dump.cutState}, which is not COMPUTED`,
+    )
+  }
+}
+
+/**
+ * `F = C_necessary + ρ_w·W + ρ_s·B` (OBJ1, COST §4.1), and the one place that
  * arithmetic lives.
+ *
+ * **IT PRICES WHATEVER CUT COUNT IT IS HANDED, and the caller is where the
+ * owner's decision is applied**: `scoreDump` passes `C_necessary`, and the
+ * `ChargedCounts` name at that call site says so. This function cannot tell
+ * the two counts apart and must not try - a scorer that re-derived which
+ * number to charge would be a second place the decision lives.
  *
  * Both weights are arguments rather than constants: they are the owner's
  * (CRITERIA PAR1, recorded with their reasoning in `stripboard/rules.json`'s
@@ -331,8 +448,8 @@ export function requireCountsAgree(
  * `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`); the note in the
  * rules file is where a value and its warrant live together.
  */
-export function objectiveOf(counts: LineCounts, rules: StripboardRules): number {
-  return counts.cuts + rules.rhoWire * counts.wires + rules.rhoSolder * counts.solder
+export function objectiveOf(charged: ChargedCounts, rules: StripboardRules): number {
+  return charged.cuts + rules.rhoWire * charged.wires + rules.rhoSolder * charged.solder
 }
 
 /**
@@ -345,28 +462,34 @@ export function objectiveOf(counts: LineCounts, rules: StripboardRules): number 
  * having counted the text independently, and `requireCountsAgree` below then
  * holds that count against this dump. `scoreDumpText` is the convenience that
  * reads the text once and does both.
+ *
+ * **`necessity` IS AN ARGUMENT FOR THE SAME REASON AND BY THE SAME DEVICE.**
+ * The drop test works on dump TEXT - it hands a trial board to `HC8`'s
+ * reconstruction, and two of that contract's refusals are inexpressible
+ * through a `BoardDump` - so it cannot run from a parsed dump either. Its
+ * result type is branded and only `necessaryCuts` can produce one, so a caller
+ * cannot score a candidate while skipping the classification or substitute a
+ * cut count of its own: both are compile errors rather than a docstring asking
+ * callers to behave.
  */
 export function scoreDump(
   dump: BoardDump,
   targets: BoardTargets,
   rules: StripboardRules,
   counted: IndependentCount,
+  necessity: CutNecessity,
 ): Score {
   // HC2 FIRST, before anything is counted or compared, and that ordering holds
-  // on BOTH entry points because `scoreDumpText` does no checking of its own:
-  // under UNRESOLVED the cut list is absent, so C, J and kappa would all be
-  // computed from a number that is not a count, and a board that is both
-  // unresolved and mis-parsed should report the unresolved state rather than
-  // the count disagreement it also has. The refusal `copperGraph` raises for
-  // the same condition is deliberately a separate wording in a separate module
-  // - the scorer and the grader are separate paths (R2), so a refusal living
-  // in only one of them protects only one of them.
-  if (dump.cutState !== "COMPUTED") {
-    refuse(
-      "score-cuts-not-computed",
-      `${targets.board}'s dump reports CUT_STATE ${dump.cutState}, which is not COMPUTED`,
-    )
-  }
+  // on BOTH entry points - `scoreDumpText` raises this same refusal through
+  // this same function before it classifies the cuts, for the reason
+  // `requireCutsComputed` carries. Under UNRESOLVED the cut list is absent, so
+  // C, J and kappa would all be computed from a number that is not a count, and
+  // a board that is both unresolved and mis-parsed should report the unresolved
+  // state rather than the count disagreement it also has. The refusal
+  // `copperGraph` raises for the same condition is deliberately a separate
+  // wording in a separate module - the scorer and the grader are separate paths
+  // (R2), so a refusal living in only one of them protects only one of them.
+  requireCutsComputed(dump, targets.board)
 
   // V1, and it is re-anchored to THIS dump rather than taken on trust: the
   // witness proves the second path ran, and this comparison proves it ran on
@@ -374,11 +497,30 @@ export function scoreDump(
   const counts = countParsed(dump)
   requireCountsAgree(counts, counted, targets.board)
 
+  // THE CLASSIFIER'S OWN READING OF VEROROUTE'S NUMBER, HELD AGAINST THIS
+  // DUMP'S. `necessaryCuts` counts the CUT lines of the text it was handed
+  // rather than being told, so this comparison catches the one way the two can
+  // be about different boards: a caller pairing a dump with another board's
+  // classification. It is NOT the owner's reported-versus-necessary gap, which
+  // is expected and reported; both counts here are VeroRoute's.
+  if (necessity.reported !== counts.cuts) {
+    refuse(
+      "score-necessity-count-disagreement",
+      `${targets.board}'s dump has ${counts.cuts} CUT line(s) and the drop test was run over a ` +
+        `text with ${necessity.reported}`,
+    )
+  }
+
   const netCount = Object.keys(dump.nodes).length
   const pinCount = Object.values(dump.pins).reduce((total, pins) => total + pins.length, 0)
   const occupied = occupiedStrips(dump)
+  // THE IDENTITY TAKES THE REPORTED COUNT, NOT THE CHARGED ONE - see the module
+  // comment's V2 bullet. J and kappa describe the copper this dump has.
   const joins = segmentJoins(counts.cuts, netCount, occupied)
-  const objective = objectiveOf(counts, rules)
+  const objective = objectiveOf(
+    { cuts: necessity.necessary, wires: counts.wires, solder: counts.solder },
+    rules,
+  )
 
   // K5, and the comparison is `<` rather than `<=`: a candidate AT its floor
   // is the one Q1 reports as `at-floor`, the only optimality claim this
@@ -387,15 +529,17 @@ export function scoreDump(
     refuse(
       "score-below-floor",
       `${targets.board} scores F = ${objective}, below its declared floor of ` +
-        `${targets.cutFloor} (C = ${counts.cuts}, W = ${counts.wires}, B = ${counts.solder})`,
+        `${targets.cutFloor} (C_necessary = ${necessity.necessary} of ${counts.cuts} reported, ` +
+        `W = ${counts.wires}, B = ${counts.solder})`,
     )
   }
 
   // Written out field by field rather than spread, because `./score.test.ts`
-  // pins the nine keys: a spread would carry a fourth field out of
-  // `LineCounts` into a `Score` without anybody naming it here.
+  // pins the keys: a spread would carry a further field out of `LineCounts`
+  // into a `Score` without anybody naming it here.
   return {
     cuts: counts.cuts,
+    necessaryCuts: necessity.necessary,
     wires: counts.wires,
     solder: counts.solder,
     objective,
@@ -412,17 +556,33 @@ export function scoreDump(
  * so the independently counted lines and the parsed dump provably describe
  * the same characters.
  *
- * IT CHECKS NOTHING ITSELF. Every refusal is `scoreDump`'s, in `scoreDump`'s
- * order, so there is one ordering of the three checks rather than two.
+ * IT RAISES EXACTLY ONE REFUSAL OF ITS OWN ACCORD, AND IT IS `scoreDump`'s
+ * FIRST ONE, THROUGH `scoreDump`'s OWN FUNCTION. This function used to check
+ * nothing at all; the drop test changed that, because the classification is an
+ * ARGUMENT to `scoreDump` and therefore runs before it, and an unresolved board
+ * reaching `copperGraph` refuses under the geometry contract's name instead of
+ * the scorer's. `requireCutsComputed` carries what that would have cost. Every
+ * other refusal is still `scoreDump`'s, in `scoreDump`'s order, and the order
+ * of the three checks is unchanged on both entry points.
  *
  * `boardGeometry`, NOT `parseBoardDump`: a parsed dump skips every geometry
  * refusal, so text fed through the parser never exercises the contract `HC8`
  * is stated in. The same correction Tasks 3, 4, 5 and 11 each needed.
+ *
+ * **IT TAKES THE REFERENCE NETLIST BECAUSE THE DROP TEST DOES.** A cut is
+ * necessary when removing it joins two REFERENCE nets' leads, and the
+ * reference side comes from the netlist export - upstream of VeroRoute
+ * entirely (`./equivalence.ts`). Deriving it from the dump's own `NODE` lines
+ * instead would be the search asking VeroRoute's bookkeeping to price
+ * VeroRoute's own cuts, which is the circularity `HC8` exists to break.
  */
 export function scoreDumpText(
   dumpText: string,
   targets: BoardTargets,
   rules: StripboardRules,
+  reference: ReferenceNets,
 ): Score {
-  return scoreDump(boardGeometry(dumpText), targets, rules, countLines(dumpText))
+  const dump = boardGeometry(dumpText)
+  requireCutsComputed(dump, targets.board)
+  return scoreDump(dump, targets, rules, countLines(dumpText), necessaryCuts(dumpText, reference))
 }

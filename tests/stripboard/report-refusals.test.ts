@@ -182,6 +182,9 @@ test("the fixtures' hand-built candidate is a whole Evaluation, not a cast", () 
     "clustering",
     "cuts",
     "joins",
+    // The count F charges, which is not `cuts` - see tools/stripboard/
+    // cut-necessity.ts and the owner's "option C".
+    "necessaryCuts",
     "netCount",
     "objective",
     "occupied",

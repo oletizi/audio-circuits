@@ -30,6 +30,7 @@ import { TARGETS, evaluation } from "./stop-fixtures.ts"
 import {
   a1Failure,
   a2OnlyFailure,
+  divergentCutsRun,
   reportInput,
   runResult,
   runWith,
@@ -317,4 +318,47 @@ test("the report names the board and the candidate file it is about", () => {
   const joined = renderReport(reportInput()).join("\n")
   expect(joined).toMatch(/^board: stop-fixture, candidate stop-fixture\.vrt$/m)
   expect(joined).toMatch(/^run: 2 climb\(s\), 200 evaluation\(s\) spent, restarts at/m)
+})
+
+test("both cut counts reach the report, and a disagreement between them is stated", () => {
+  // THE SECOND HALF OF THE OWNER'S "OPTION C", which is the half a scorer
+  // change alone would have left out: *"Both. Score on real cuts so the search
+  // can act, keep VeroRoute's number in the report so you always see both. If
+  // they ever disagree badly, you'd spot it."* So the assertion is not that the
+  // two numbers appear somewhere - a reader who has to subtract one from the
+  // other to notice a divergence cannot spot it - but that the line NAMES the
+  // disagreement and its size.
+  //
+  // THE FIGURES ARE THE FIXTURE'S OWN, 7 and 5, and the 2 is written out here
+  // rather than computed from them: `expect(line).toContain(`by ${7 - 5}`)`
+  // would be this test evaluating the expression the module evaluates.
+  const lines = renderReport(divergentCutsRun())
+  const cuts = lines.filter((line) => line.startsWith("cuts: "))
+  expect(cuts.length).toBe(1)
+  const line = cuts[0] ?? ""
+  expect(line).toContain("F charges 5 necessary cut(s)")
+  expect(line).toContain("VeroRoute reports 7 CUT line(s)")
+  expect(line).toContain("DISAGREE by 2")
+  expect(line).toContain("REDUNDANT")
+  // AND THE COST LINE CHARGES THE NECESSARY COUNT, so the two lines cannot say
+  // different things about which number F is: F = 5 beside C_necessary = 5 on a
+  // board printing seven cuts.
+  const cost = lines.filter((entry) => entry.startsWith("cost: "))
+  expect(cost.length).toBe(1)
+  expect(cost[0] ?? "").toContain("F = 5")
+  expect(cost[0] ?? "").toContain("C_necessary = 5")
+})
+
+test("the agreeing case says so in words rather than printing a zero", () => {
+  // An undisturbed board is the common case - 5 of 5 on the owner's hand-laid
+  // low-boost, 38 of 38 on the import-placed start - and "DISAGREE by 0" would
+  // be a reader's problem to interpret. `healthyCandidate()`'s one cut is
+  // necessary (`./stop-fixtures.ts` defaults the charged count to the reported
+  // one for exactly that reason), so this is that case.
+  const line = renderReport(reportInput()).filter((entry) => entry.startsWith("cuts: "))[0] ?? ""
+  expect(line).toContain("F charges 1 necessary cut(s)")
+  expect(line).toContain("VeroRoute reports 1 CUT line(s)")
+  expect(line).toContain("AGREE")
+  expect(line).not.toContain("DISAGREE")
+  expect(line).not.toContain("REDUNDANT")
 })

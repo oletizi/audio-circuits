@@ -141,6 +141,33 @@ export function underBudgetedRun(): ReportInput {
 }
 
 /**
+ * A run whose two cut counts DISAGREE: seven `CUT ` lines reported, five of
+ * them necessary, and `F = 5` because `F` charges the necessary count.
+ *
+ * **IT IS THE CASE THE OWNER'S "OPTION C" IS ABOUT**, and it is hand-built like
+ * every fixture here: the measurement that found such boards is in
+ * `docs/stripboard/pipeline-verification.md` (a board with two clusters moved
+ * reported six cuts of which two were removable, and one with a
+ * ground-extending wire seven of which two were), so seven-and-five is that
+ * shape of divergence rather than a figure measured here. `objective` is stated
+ * rather than left to default, because the default is `cuts` and the whole
+ * point of this fixture is that `F` does not charge `cuts`.
+ */
+export function divergentCutsRun(): ReportInput {
+  const best = evaluation({
+    cuts: 7,
+    necessaryCuts: 5,
+    wires: 0,
+    solder: 0,
+    objective: 5,
+    joins: 0,
+    occupied: 9,
+    clustering: 0,
+  })
+  return reportInput({ run: runResult({ best }) })
+}
+
+/**
  * `V12`: a run failing ONLY `A2` - valid, below target, and not a malfunction.
  *
  * **ITS RULE IS `Q3` AND THE CHOICE IS LOAD-BEARING.** `Q5`'s own `OB3` line
