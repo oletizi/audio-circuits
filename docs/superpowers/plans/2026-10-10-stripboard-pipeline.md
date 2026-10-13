@@ -5749,6 +5749,37 @@ split onto a FREE strip costs no cut at all — `J` and `S_occ` rise together an
 cancel — which is why a spread that merely adds a strip to a net is `ΔC = 0`
 rather than `−1`. Ratifying, rejecting or correcting either is the owner's.
 
+**THE KIND NOW PLANS AN L OF TWO WIRES WHERE ONE STRAIGHT WIRE CANNOT REACH,
+and that is an addition to this entry rather than a new one.** A spread's
+rejoining wire is straight, so it was proposable only where the net's copper on
+the two strips overlapped within one hole along them - and that gate declined
+**313 of 1,389 enumerated triples (23%)**, the largest on two of the four boards
+measured, with ZERO spread candidates surviving round 0 on any of them.
+`tools/stripboard/moves-join.ts` composes `wireAlong` and `wireBridge` - the two
+planners already here, no third one - into the L this file's own text named as
+the remedy, and `Move`'s spread arm carries `wires` rather than one `wire`. **It
+costs `2 x rho_w = 0.5` against the one cut**, charged through `W` off the dump
+like any other wire, so an L that does not pay loses on cost one evaluation
+later. Measured on the four pairs at the committed cap: **the cut count falls on
+three of four** - `constructed` 0 from 10 to 7, `random` 0 from 13 to 12,
+`random` 3 from 14 to 13, `import` 0 unchanged at 34 - with wires on the best
+board where there were none, and 2,314 spread candidates enumerated against 219.
+The run is in
+`.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md` §8.
+
+**AND `add-wire`'s ENDS NOW HAVE TO REACH THEIR OWN NET'S PIN**, which is the
+same rule (`WIRE_END_REACH`) applied to the other wire kind. It is a NARROWING
+of what `wireMovesFor` offers, so it is recorded here beside the kind it serves:
+that enumerator took the first line of holes that geometrically fit, and the
+fork refused **103 of 187 such candidates (55%)** with *"its two ends are no
+longer on one net"* before any acceptance key saw them. After the change, **0 of
+62 were refused** in the same two populations. Round-0 `add-wire` candidates
+across the four starts fall from 152 to 7, and a pair of strips with no line
+serving both ends now yields no `add-wire` at all - the shape the L exists for.
+The rule is necessary and NOT sufficient (a cut can sit between a pin and the
+hole beside it), which the code states and which is why spread wires are still
+refused deeper in a run.
+
 Ratifying or rejecting the kind is the owner's. `tools/stripboard/moves-model.ts`'s
 header names it as the second exception to "the documents win",
 `tools/stripboard/moves-spread.ts` carries the full account, and the run is in
