@@ -129,6 +129,7 @@ export type PlaceRefusal =
   | "place-target-unstated"
   | "place-frozen-companion-missing"
   | "place-frozen-board-unnamed"
+  | "place-frozen-fixture-changed"
   | "place-footprints-malformed"
   | "place-import-failed"
   | "place-best-dump-failed"
@@ -166,6 +167,23 @@ export function notDefaultedBecause(refusal: PlaceRefusal): string {
         "low-boost's name, would be graded against the owner's hand-layout benchmark for a " +
         "board he never laid out. Check LOW_BOOST_BOARD in tools/stripboard/verdict.ts and the " +
         "fixture's name against each other."
+      )
+    case "place-frozen-fixture-changed":
+      return (
+        "B1-frozen is the ONE externally authored criterion in this pipeline, and B2 states it " +
+        "against the committed files under tests/fixtures/stripboard/ whose sha256s are " +
+        "recorded in provenance.txt beside them. THIS RUN IS THE ONLY PATH THAT PRINTS " +
+        "\"B1-frozen met\", and until this check landed it graded the benchmark with no hash " +
+        "check on the fixture at all: the gate's assertFrozenFixtureUnchanged runs in adopt, " +
+        "the frozen fixture is not a declared board, and so adopt never runs on a frozen run. " +
+        "The one externally authored criterion was graded against evidence nothing had checked. " +
+        "It is NOT defaulted and the fixture is NOT regenerated: a benchmark adjusted until it " +
+        "passes is a benchmark grading itself. The hash is compared against the record FOR THAT " +
+        "BASENAME (tools/stripboard/adopt-provenance.ts parses the association) rather than " +
+        "searched for anywhere in the file, because provenance.txt carries fourteen hashes for " +
+        "eight files and the weaker reading admitted one fixture replaced by another listed " +
+        "file's bytes. If the fixture genuinely has to move, re-extract it by the commands " +
+        "provenance.txt records and record the new hash there in the same change."
       )
     case "place-footprints-malformed":
       return (

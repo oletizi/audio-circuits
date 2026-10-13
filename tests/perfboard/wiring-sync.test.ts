@@ -41,6 +41,33 @@ test("a board with nothing off it produces no guide at all", async () => {
   expect(fs.existsSync(result.file)).toBe(false)
 })
 
+test("a board that STOPS having off-board parts has its stale guide removed", async () => {
+  // THE FAILURE SHAPE THIS CLOSES: status `not-applicable`, exit 0, file
+  // untouched. A circuit that stopped having off-board parts left its old
+  // wiring.md exactly where it was and `make check` stayed green, so a
+  // reconciliation that did not run read as a clean result - on a derived
+  // artifact the layout cannot contradict. A builder went on reading wiring
+  // instructions for parts the circuit no longer has.
+  //
+  // IT IS DRIVEN ON pt2399-core, which genuinely has nothing off it, with a
+  // wiring.md PLANTED beside its declaration - so the file being removed is the
+  // code's act and not the fixture's. It is removed afterwards either way, and
+  // the board's own tree carries no wiring.md to begin with (the test above
+  // asserts that), so nothing committed is disturbed.
+  const declaration = loadDeclaration(path.join(REPO, "boards/pt2399-core/perfboard.json"))
+  const stale = path.join(declaration.dir, "wiring.md")
+  expect(fs.existsSync(stale), "pt2399-core carries no committed guide").toBe(false)
+  fs.writeFileSync(stale, "# a guide for parts this circuit no longer has\n")
+  try {
+    const result = await syncWiringDoc(declaration)
+    expect(result.status).toBe("removed")
+    expect(result.message).toContain("HAS BEEN REMOVED")
+    expect(fs.existsSync(stale), "and the stale file is gone").toBe(false)
+  } finally {
+    fs.rmSync(stale, { force: true })
+  }
+})
+
 test("every committed guide matches what its circuit generates", async () => {
   // The property the whole sync rests on: an unchanged circuit must leave the
   // working tree clean, or `make check` would report drift on every run and the

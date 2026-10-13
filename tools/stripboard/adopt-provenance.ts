@@ -45,7 +45,6 @@
  * agreement. A parser that silently finds nothing is the defect above in a new
  * place.
  */
-import { refuse } from "./adopt-model.ts"
 
 /**
  * `sha256 <64 lowercase hex>`, and nothing else on the line.
@@ -61,8 +60,22 @@ const SHA256_LINE = /^sha256 ([0-9a-f]{64})$/
  *
  * `file` is `text`'s own path, so a refusal says where to fix it rather than
  * only what is wrong.
+ *
+ * **THE REFUSAL IS THE CALLER'S AND IS PASSED IN**, because there are now two
+ * callers in two vocabularies: `./adopt-checks.ts` refuses as
+ * `frozen-fixture-hash` and `./place-inputs.ts` as
+ * `place-frozen-fixture-changed`. A parser that threw one caller's refusal id
+ * from the other caller's path would name the wrong gate - the same defect
+ * `./complete-apply.ts` carried about `completionPass`. It is NOT defaulted to
+ * either id: a hard-coded one would be right half the time and silently wrong
+ * the other half.
  */
-export function recordedHashFor(basename: string, text: string, file: string): string {
+export function recordedHashFor(
+  basename: string,
+  text: string,
+  file: string,
+  refuse: (offending: string) => never,
+): string {
   const lines = text.split("\n")
   const found: string[] = []
   for (let index = 0; index < lines.length; index += 1) {
@@ -80,7 +93,6 @@ export function recordedHashFor(basename: string, text: string, file: string): s
   const only = distinct[0]
   if (distinct.length === 1 && only !== undefined) return only
   refuse(
-    "frozen-fixture-hash",
     distinct.length === 0
       ? `${file} records no sha256 for ${basename}: no line reading exactly "${basename}" is ` +
         "followed by a \"sha256 <64 hex>\" line, so there is nothing to check that fixture " +

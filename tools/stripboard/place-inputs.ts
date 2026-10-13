@@ -24,8 +24,10 @@
  * it is *"a fact about the board in hand"*, and the board in hand is the one
  * that states it.
  */
+import { createHash } from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
+import { recordedHashFor } from "./adopt-provenance.ts"
 import { boardCircuitFrom } from "../perfboard/board-circuit.ts"
 import { exportNetlistFor } from "../perfboard/check.ts"
 import { assertDesignators, assertPinNumbers } from "../perfboard/circuit-exports.ts"
@@ -104,6 +106,57 @@ function requireFile(file: string, what: string): string {
   return file
 }
 
+/**
+ * `B2` ON THE ONE PATH THAT PRINTS "B1-frozen met".
+ *
+ * **THIS WAS MISSING ENTIRELY AND THE HOLE WAS STRUCTURAL, not an oversight in
+ * one line.** `./adopt-checks.ts`'s `assertFrozenFixtureUnchanged` is
+ * unconditional - deliberately, for the reasons it records - but the frozen
+ * fixture is not a declared board, so `adopt` NEVER RUNS on a frozen run. The
+ * fixture was identified here by basename prefix plus the presence of two
+ * companion files and nothing else: no hash, no comparison against
+ * `provenance.txt`. So `make place FROZEN=<fixture> NETLIST_EXPORT=<net>` on an
+ * edited fixture reported the owner's benchmark met, and `B1-frozen` - the ONE
+ * externally authored criterion in this pipeline - was graded against evidence
+ * nothing had checked.
+ *
+ * **IT CHECKS ALL FOUR FILES THIS RUN READS**, by their own basenames against
+ * the record for that basename, which is `recordedHashFor`'s whole subject: the
+ * weaker "is this hash anywhere in provenance.txt" reading admitted one fixture
+ * replaced by another listed file's bytes, measured. The `.vrt` is included
+ * although this run never starts from it, because it is the layout `FROZEN_MARK`
+ * is quoted from and an edit to it changes what the benchmark IS.
+ *
+ * **IT REFUSES AND DOES NOT SKIP** when `provenance.txt` is absent, for the
+ * reason every other guard in this pipeline does: a check that cannot run must
+ * not read as one that ran.
+ */
+function assertFrozenFixtureRecorded(fixture: string, netlist: string, base: string): void {
+  const directory = path.dirname(fixture)
+  const provenanceFile = path.join(directory, "provenance.txt")
+  if (!fs.existsSync(provenanceFile)) {
+    refuse(
+      "place-frozen-fixture-changed",
+      `${provenanceFile} is not there, so the recorded sha256 of the fixture files this run ` +
+        "grades B1-frozen from cannot be read at all",
+    )
+  }
+  const provenance = fs.readFileSync(provenanceFile, "utf8")
+  for (const file of [fixture, netlist, `${base}.dump`, `${base}.footprints.json`]) {
+    const basename = path.basename(file)
+    const recorded = recordedHashFor(basename, provenance, provenanceFile, (offending) =>
+      refuse("place-frozen-fixture-changed", offending),
+    )
+    const actual = createHash("sha256").update(fs.readFileSync(file)).digest("hex")
+    if (actual !== recorded) {
+      refuse(
+        "place-frozen-fixture-changed",
+        `${file} hashes to ${actual} and ${provenanceFile} records ${recorded} for ${basename}`,
+      )
+    }
+  }
+}
+
 /** The frozen fixture's run: the model from its export, the rest from beside it. */
 function prepareFrozen(
   fixture: string,
@@ -123,6 +176,7 @@ function prepareFrozen(
   const footprints = frozenFootprints(
     requireFile(`${base}.footprints.json`, "the fixture's footprint map"),
   )
+  assertFrozenFixtureRecorded(fixture, netlist, base)
   const netlistText = fs.readFileSync(netlist, "utf8")
   const reference = referenceNetsFromExport(netlistText)
   return {

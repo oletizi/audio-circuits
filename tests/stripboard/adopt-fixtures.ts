@@ -143,7 +143,21 @@ function makeRunDir(label: string): { readonly runDir: string; readonly candidat
   return { runDir, candidate, stamp }
 }
 
-function metricsWith(outcome: Outcome, stoppingRule: string): CanonicalMetrics {
+/**
+ * **THE BOUND IS PASSED IN AS A LITERAL AND NOT DERIVED FROM THE RULE.** The gate
+ * now re-derives `boundFor(stoppingRule)` and refuses a manifest where the two
+ * disagree, and a fixture that computed its bound with the same `boundFor` the
+ * gate compares against would make that check compare a value to itself. So
+ * every scenario states the pairing REP4's table states, by hand - and the
+ * mismatched-pairing scenario states a wrong one on purpose. (This fixture
+ * carried `bound: "at-floor"` beside `stoppingRule: "Q5"` until the check landed,
+ * which the check found on its first run: Q5's bound is `budget-exhausted`.)
+ */
+function metricsWith(
+  outcome: Outcome,
+  stoppingRule: string,
+  bound: string,
+): CanonicalMetrics {
   return {
     cuts: 5,
     wires: 0,
@@ -157,7 +171,7 @@ function metricsWith(outcome: Outcome, stoppingRule: string): CanonicalMetrics {
     constraints: { HC1: true, HC2: true },
     ranking: [5, 0, 1, 18, 0.2],
     stoppingRule,
-    bound: "at-floor",
+    bound,
     outcome,
     restartBoundaries: [0],
   }
@@ -189,9 +203,10 @@ function manifestFor(
   stamp: string,
   outcome: Outcome,
   stoppingRule: string,
+  bound: string,
 ): RunManifest {
   const inputs = inputsFor(runDir, candidate)
-  const metrics = metricsWith(outcome, stoppingRule)
+  const metrics = metricsWith(outcome, stoppingRule, bound)
   return {
     canonical: { inputs, metrics, hash: canonicalHash(inputs, metrics) },
     provenance: {
@@ -235,7 +250,8 @@ export function healthyAdoption(label = "healthy"): Scenario {
   const root = freshRoot(label)
   const boardDir = makeBoardDir(root)
   const { runDir, candidate, stamp } = makeRunDir(label)
-  writeManifest(runDir, manifestFor(runDir, candidate, stamp, "admissible", "Q1"))
+  // Q1's bound is `at-floor` in REP4's table, written here as a literal.
+  writeManifest(runDir, manifestFor(runDir, candidate, stamp, "admissible", "Q1", "at-floor"))
   return {
     root,
     input: { runDir, candidate, boardDir, allowDirty: false },
@@ -276,6 +292,7 @@ export function withTamperedMetrics(): Scenario {
     path.basename(scenario.input.runDir),
     "admissible",
     "Q1",
+    "at-floor",
   )
   const tampered = {
     canonical: {
@@ -473,6 +490,7 @@ export function withOutcome(outcome: Outcome): Scenario {
       path.basename(scenario.input.runDir),
       outcome,
       "Q1",
+      "at-floor",
     ),
   )
   return scenario
@@ -489,6 +507,34 @@ export function withQ5Backstop(): Scenario {
       path.basename(scenario.input.runDir),
       "admissible",
       "Q5",
+      // Q5's bound, from REP4's table. This fixture read "at-floor" until the
+      // bound/rule cross-check landed and refused it before the Q5 clause this
+      // scenario is about could fire.
+      "budget-exhausted",
+    ),
+  )
+  return scenario
+}
+
+/**
+ * A manifest whose recorded bound is not the bound its stopping rule pairs with.
+ *
+ * REP4 requires that the two agree in one report, and `run.json` is the one
+ * artifact where they can disagree undetected, because a tamperer recomputes the
+ * canonical hash over the values it edited. `Q1` pairs with `at-floor`, so
+ * `search-exhausted` beside it is a claim the table does not make.
+ */
+export function withMismatchedBound(): Scenario {
+  const scenario = healthyAdoption("mismatched-bound")
+  writeManifest(
+    scenario.input.runDir,
+    manifestFor(
+      scenario.input.runDir,
+      scenario.input.candidate,
+      path.basename(scenario.input.runDir),
+      "admissible",
+      "Q1",
+      "search-exhausted",
     ),
   )
   return scenario

@@ -30,6 +30,7 @@ import {
   withChangedPinPatterns,
   withChangedRules,
   withChangedSpanData,
+  withMismatchedBound,
   withDirtyBoard,
   withOtherBuiltCommit,
   withOtherPin,
@@ -394,6 +395,26 @@ test("G2.5: an admissible candidate out of a Q5 run is refused, because the RUN 
   expect(message, "and the message itself names the rule that fired").toContain(
     "the run stopped on Q5",
   )
+})
+
+test("G2.5: a bound that is not its rule's bound is refused, re-derived rather than trusted", () => {
+  // `metrics.bound` was folded into the canonical hash and compared against
+  // NOTHING, so the gate trusted the producer's pairing of the bound with the
+  // rule - and a tamperer recomputes the hash over whatever it edited, which
+  // makes run.json the one artifact where the two can disagree undetected while
+  // REP4 requires they agree in one report. `boundFor` is now called here and
+  // one side derived, which is a different act from reading both off the record.
+  //
+  // THE FIXTURE'S OWN HISTORY IS THE EVIDENCE THIS HAS TEETH: every scenario in
+  // adopt-fixtures.ts recorded `bound: "at-floor"` whatever the rule, so the Q5
+  // scenario carried at-floor beside Q5 - and this check refused it on its first
+  // run, before the Q5 clause that test is about could fire. Each scenario now
+  // states REP4's pairing as a literal rather than computing it with the same
+  // boundFor the gate compares against.
+  const message = refusalFrom(withMismatchedBound)
+  expect(message).toContain("failing-check")
+  expect(message).toContain("records the bound \"search-exhausted\"")
+  expect(message).toContain("pairs Q1 with at-floor")
 })
 
 test("G2.6: an uncommitted layout is refused unless --allow-dirty", () => {

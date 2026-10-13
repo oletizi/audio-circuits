@@ -25,7 +25,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { refuse, type AdoptDeps, type AdoptInput, type AdoptRefusal } from "./adopt-model.ts"
 import { recordedHashFor } from "./adopt-provenance.ts"
-import { exitCodeFor, OUTCOMES, OUTCOME_WORDING, type Outcome } from "./report-model.ts"
+import { boundFor, exitCodeFor, OUTCOMES, OUTCOME_WORDING, type Outcome } from "./report-model.ts"
 import { runDirectory, type CanonicalInputs, type RunManifest } from "./run-dir.ts"
 import { STOPPING_RULES, type StoppingRule } from "./stop-model.ts"
 
@@ -163,7 +163,12 @@ export function assertFrozenFixtureUnchanged(deps: AdoptDeps): void {
     // THE HASH THIS FILE'S OWN NAME IS RECORDED AGAINST, and never "a hash
     // somewhere in provenance.txt" - see `./adopt-provenance.ts` for the
     // measurement that distinction comes from.
-    const recorded = recordedHashFor(basename, provenance, deps.frozenProvenanceFile)
+    const recorded = recordedHashFor(
+      basename,
+      provenance,
+      deps.frozenProvenanceFile,
+      (offending) => refuse("frozen-fixture-hash", offending),
+    )
     const actual = sha256OfFile(file)
     if (actual !== recorded) {
       refuse(
@@ -355,6 +360,23 @@ function ruleFrom(text: string, file: string): StoppingRule {
 export function assertVerdictAdmits(manifest: RunManifest, file: string): void {
   const outcome = outcomeFrom(manifest.canonical.metrics.outcome, file)
   const rule = ruleFrom(manifest.canonical.metrics.stoppingRule, file)
+  // THE BOUND IS RE-DERIVED FROM THE RULE RATHER THAN TRUSTED AS RECORDED, and
+  // that closes a gap this check had from the start: `metrics.bound` was folded
+  // into the canonical hash and compared against nothing, so the gate trusted
+  // the PRODUCER's pairing of the two. A tamperer recomputes the hash over the
+  // values it edited, and `run.json` is the one artifact where the bound and the
+  // rule can disagree undetected - while REP4 requires that they agree in one
+  // report. `BOUNDS` is the one table that pairs them (`./report-model.ts`), so
+  // one side is now derived here and compared, which is a different act from
+  // reading both off the record.
+  const derived = boundFor(rule)
+  if (manifest.canonical.metrics.bound !== derived) {
+    refuse(
+      "failing-check",
+      `${file} records the bound ${JSON.stringify(manifest.canonical.metrics.bound)} beside the ` +
+        `stopping rule ${rule}, and REP4's own table pairs ${rule} with ${derived}`,
+    )
+  }
   if (exitCodeFor(outcome, rule) !== 0) {
     refuse(
       "failing-check",

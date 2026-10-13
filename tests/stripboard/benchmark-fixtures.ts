@@ -35,6 +35,8 @@ export const FROZEN_NETLIST = path.join(FIXTURES, "pultec-low-boost-frozen.netli
 export const FROZEN_DUMP = path.join(FIXTURES, "pultec-low-boost-frozen.dump")
 /** Designator to KiCad footprint for that same model - what v1.1 cannot carry. */
 export const FROZEN_FOOTPRINTS = path.join(FIXTURES, "pultec-low-boost-frozen.footprints.json")
+/** The record those four files' sha256s are kept in, which `B2` is stated against. */
+export const FROZEN_PROVENANCE = path.join(FIXTURES, "provenance.txt")
 
 /** The scaffolded board, which meets `B1-current` and never `B1-frozen`. */
 export const LOW_BOOST_BOARD = "boards/pultec-low-boost"

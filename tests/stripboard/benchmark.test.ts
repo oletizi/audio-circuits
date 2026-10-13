@@ -46,6 +46,8 @@
  */
 import { expect, test } from "bun:test"
 import fs from "node:fs"
+import os from "node:os"
+import path from "node:path"
 import { leadSpanFor } from "../../lib/kicad/lead-span.ts"
 import { spanHoles } from "../../tools/stripboard/constraints-model.ts"
 import { place, placeAcrossSeeds, reportInputOf } from "../../tools/stripboard/place.ts"
@@ -53,7 +55,10 @@ import { exitCodeFor, renderReport } from "../../tools/stripboard/report.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import {
   FROZEN,
+  FROZEN_DUMP,
+  FROZEN_FOOTPRINTS,
   FROZEN_NETLIST,
+  FROZEN_PROVENANCE,
   LOW_BOOST_BOARD,
   frozenDump,
   frozenFootprints,
@@ -291,6 +296,48 @@ test(
     expect(judged(after), "the verdict is not a function of the rate").toEqual(judged(before))
     // And the rate itself DID move, so the comparison above is not vacuous.
     expect(after.join("\n")).not.toBe(before.join("\n"))
+  },
+  SLOW,
+)
+
+test(
+  "B2 is checked on the frozen RUN too, so B1-frozen is not graded on an unchecked fixture",
+  async () => {
+    // THE HOLE WAS STRUCTURAL. assertFrozenFixtureUnchanged is unconditional in
+    // the ADOPTION gate, but the frozen fixture is not a declared board, so
+    // adopt never runs on a frozen run - and `place --frozen` identified the
+    // fixture by basename prefix plus two companion files and nothing else. So
+    // a run on an edited fixture reported the owner's benchmark met, with no
+    // hash checked anywhere. This drives the check that closed it.
+    //
+    // THE WHOLE FIXTURE SET IS COPIED, provenance.txt included, and ONE FILE IS
+    // EDITED - which is the real shape of the tampering: the record stays as it
+    // is, because a change that edited both would be the tampering performed in
+    // full, and the hash is what notices. The copy is under the system temp
+    // directory, so nothing under tests/fixtures/ is touched.
+    const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "frozen-edited-"))
+    for (const source of [FROZEN, FROZEN_NETLIST, FROZEN_DUMP, FROZEN_FOOTPRINTS, FROZEN_PROVENANCE]) {
+      fs.copyFileSync(source, path.join(scratch, path.basename(source)))
+    }
+    const copiedFixture = path.join(scratch, path.basename(FROZEN))
+    const copiedNetlist = path.join(scratch, path.basename(FROZEN_NETLIST))
+    // THE UNEDITED COPY STILL PASSES THE HASH CHECK, which is what keeps the
+    // assertion below about the EDIT rather than about the copying. It refuses
+    // further downstream, on BLOCK_200MIL3, exactly as the real fixture does.
+    const copied = await refusalFrom(() =>
+      place({ frozen: copiedFixture, netlist: copiedNetlist, rules: loadRules(), arm: ARM }),
+    )
+    expect(copied).not.toContain("place-frozen-fixture-changed")
+    expect(copied).toContain("BLOCK_200MIL3")
+
+    fs.appendFileSync(copiedFixture, "\n; a benchmark edited to be easier\n")
+    const message = await refusalFrom(() =>
+      place({ frozen: copiedFixture, netlist: copiedNetlist, rules: loadRules(), arm: ARM }),
+    )
+    expect(message).toContain("place-frozen-fixture-changed")
+    expect(message).toContain(path.basename(FROZEN))
+    expect(message).toContain("provenance.txt")
+    fs.rmSync(scratch, { recursive: true, force: true })
   },
   SLOW,
 )
