@@ -23,11 +23,25 @@
  * clock rather than on the result.
  *
  * WHERE THE FIELDS COME FROM, so nothing here looks invented:
- *   - `candidateSha256`, `netlistSha256`, `spanDataSha256` and
- *     `pinPatternSha256` identify the candidate board, the netlist it is
- *     checked against, and the two derived inputs the search works from -
- *     each a hash of a file, not the file's path, because a path says where
- *     something currently lives and a hash says what it IS.
+ *   - `candidateSha256` and `netlistSha256` identify the candidate board and
+ *     the netlist it is checked against - each a hash of a file, not the
+ *     file's path, because a path says where something currently lives and a
+ *     hash says what it IS.
+ *   - `spanClosureSha256` and `pinPatternClosureSha256` identify the two
+ *     derived inputs the search works from, and each is a hash over the
+ *     entry module's whole IMPORT CLOSURE rather than over one file
+ *     (`lib/import-closure.ts`'s `closureSha256`). One file was measurably
+ *     too narrow: `lead-span.ts` builds `LEAD_SPANS` at module load by
+ *     calling `deriveSpanHoles` out of `lead-span-model.ts`, which also
+ *     holds `BEND_RULE`, the stripboard pitch and the tool span clamp, and
+ *     `pin-pattern.ts` only type-imports the runtime `admitPattern` that
+ *     `pin-pattern-model.ts` defines. So the bend arithmetic or the hole
+ *     clamp could be edited after a run with both one-file hashes still
+ *     matching, and `make check` does not cover that: it changes the bounds
+ *     the candidate was graded under without changing the netlist. The field
+ *     names carry "Closure" so no reader takes them for a file hash, and an
+ *     older `run.json` carrying the one-file names refuses by field name
+ *     rather than being compared against a different quantity.
  *   - `rulesSha256` is the hash of the one committed rules file
  *     `tools/stripboard/rules.ts`'s `RULES_PATH` names (Task 10) - this
  *     module does not read that file itself; it only hashes whatever
@@ -67,8 +81,8 @@ export interface CanonicalInputs {
   readonly candidateSha256: string
   readonly rulesSha256: string
   readonly netlistSha256: string
-  readonly spanDataSha256: string
-  readonly pinPatternSha256: string
+  readonly spanClosureSha256: string
+  readonly pinPatternClosureSha256: string
   readonly seeds: readonly number[]
   readonly seed: number
   readonly seedArm: SeedArm
@@ -178,8 +192,8 @@ type StringInputField =
   | "candidateSha256"
   | "rulesSha256"
   | "netlistSha256"
-  | "spanDataSha256"
-  | "pinPatternSha256"
+  | "spanClosureSha256"
+  | "pinPatternClosureSha256"
   | "verorouteCommit"
   | "builtCommit"
   | "pipelineCommit"
@@ -188,8 +202,8 @@ const REQUIRED_NONEMPTY_INPUT_FIELDS: readonly StringInputField[] = [
   "candidateSha256",
   "rulesSha256",
   "netlistSha256",
-  "spanDataSha256",
-  "pinPatternSha256",
+  "spanClosureSha256",
+  "pinPatternClosureSha256",
   "verorouteCommit",
   "builtCommit",
   "pipelineCommit",
@@ -354,8 +368,10 @@ function toCanonicalInputs(value: unknown, file: string): CanonicalInputs {
     candidateSha256: requireString(requireField(record, "candidateSha256", file), "candidateSha256", file),
     rulesSha256: requireString(requireField(record, "rulesSha256", file), "rulesSha256", file),
     netlistSha256: requireString(requireField(record, "netlistSha256", file), "netlistSha256", file),
-    spanDataSha256: requireString(requireField(record, "spanDataSha256", file), "spanDataSha256", file),
-    pinPatternSha256: requireString(requireField(record, "pinPatternSha256", file), "pinPatternSha256", file),
+    spanClosureSha256: requireString(
+      requireField(record, "spanClosureSha256", file), "spanClosureSha256", file),
+    pinPatternClosureSha256: requireString(
+      requireField(record, "pinPatternClosureSha256", file), "pinPatternClosureSha256", file),
     seeds: requireNumberArray(requireField(record, "seeds", file), "seeds", file),
     seed: requireNumber(requireField(record, "seed", file), "seed", file),
     seedArm: requireSeedArm(requireField(record, "seedArm", file), "seedArm", file),

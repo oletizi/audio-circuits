@@ -42,7 +42,7 @@ import {
   startSequences,
   STALLS_IMMEDIATELY_EVERY_SEED,
 } from "./search-fixtures.ts"
-import { importClosure } from "./import-closure.ts"
+import { importClosure } from "../../lib/import-closure.ts"
 import { IMPORTED_BOARD } from "./seed-fixtures.ts"
 
 const base = evaluation()
@@ -297,7 +297,7 @@ test("no file in the search's TRANSITIVE closure names a clock, a pid, a listing
     "tools/stripboard/climb.ts",
     "tools/stripboard/moves.ts",
   ]) {
-    for (const file of await importClosure(entry)) closure.add(file)
+    for (const file of importClosure(entry)) closure.add(file)
   }
   expect(closure.size, "the closure must be more than the three entry points").toBeGreaterThan(3)
   for (const file of [...closure].sort()) {

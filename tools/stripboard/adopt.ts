@@ -62,6 +62,7 @@ import { assertLayoutRecoverable, defaultGitRunner } from "../perfboard/mutate.t
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { refuse, type AdoptDeps, type AdoptInput, type MakeCheckRun } from "./adopt-model.ts"
 import {
+  assertClosureHash,
   assertFileHash,
   assertForkCommits,
   assertFrozenFixtureUnchanged,
@@ -69,6 +70,12 @@ import {
   assertVerdictAdmits,
   sha256OfFile,
 } from "./adopt-checks.ts"
+import {
+  PIN_PATTERN_ENTRY,
+  SPAN_DATA_ENTRY,
+  pinPatternClosureHash,
+  spanClosureHash,
+} from "./geometry-inputs.ts"
 import { RULES_PATH } from "./rules.ts"
 import { readManifest, type RunManifest } from "./run-dir.ts"
 
@@ -89,8 +96,11 @@ export function defaultAdoptDeps(repoRoot: string = moduleRepoRoot()): AdoptDeps
     // RULES_PATH RATHER THAN A SECOND JOIN: `./rules.ts` is the one place the
     // reviewed parameter file's location is written down (PAR3).
     rulesPath: RULES_PATH,
-    spanDataPath: path.join(repoRoot, "lib", "kicad", "lead-span.ts"),
-    pinPatternPath: path.join(repoRoot, "lib", "kicad", "pin-pattern.ts"),
+    // THE CLOSURE HASHES, FROM THE SAME FUNCTIONS ./place.ts RECORDED WITH, so
+    // the gate cannot compare one quantity against another and call them equal.
+    // ./geometry-inputs.ts carries why a one-file hash was measurably too narrow.
+    spanClosureHash,
+    pinPatternClosureHash,
     frozenFixtureDir: path.join(repoRoot, "tests", "fixtures", "stripboard"),
     frozenProvenanceFile: path.join(repoRoot, "tests", "fixtures", "stripboard", "provenance.txt"),
     readPin: defaultReadPin,
@@ -270,12 +280,19 @@ export function adoptLayout(input: AdoptInput, deps: AdoptDeps): void {
   }
 
   assertFileHash(deps.rulesPath, inputs.rulesSha256, "rules-hash", "the reviewed rules file")
-  assertFileHash(deps.spanDataPath, inputs.spanDataSha256, "span-hash", "the lead-span data")
-  assertFileHash(
-    deps.pinPatternPath,
-    inputs.pinPatternSha256,
+  assertClosureHash(
+    deps.spanClosureHash,
+    inputs.spanClosureSha256,
+    "span-hash",
+    "the lead-span data and every module it imports",
+    SPAN_DATA_ENTRY,
+  )
+  assertClosureHash(
+    deps.pinPatternClosureHash,
+    inputs.pinPatternClosureSha256,
     "pin-pattern-hash",
-    "the pin-pattern data",
+    "the pin-pattern data and every module it imports",
+    PIN_PATTERN_ENTRY,
   )
   assertFrozenFixtureUnchanged(deps)
   assertProvenanceChain(input, manifest, board, deps)

@@ -11,7 +11,7 @@ import { hc10, hc3, hc4, hc5, hc6, hc9 } from "../../tools/stripboard/constraint
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { checkpointInput, primeCheckpointNetlists } from "./checkpoint-fixtures.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
-import { importClosure } from "./import-closure.ts"
+import { importClosure } from "../../lib/import-closure.ts"
 import {
   fixtureDeclaration,
   healthyInput,
@@ -439,7 +439,7 @@ test("nothing in the grader's TRANSITIVE import closure is the scorer or the sea
   // transitive import through ANY third module passes it, so the comment was a
   // stronger claim than the body and the gap was invisible. The closure is
   // computed, and an unresolvable import is an error rather than a dropped
-  // edge - see tests/stripboard/import-closure.ts.
+  // edge - see lib/import-closure.ts.
   // EVERY MODULE OF THE SEARCH, NOT JUST THE TWO THE PLAN NAMES. Task 17 split
   // `climb.ts` and `moves.ts` at their own seams for the line ceiling, and a
   // list naming only the front doors would let a later edit reach the search
@@ -461,7 +461,7 @@ test("nothing in the grader's TRANSITIVE import closure is the scorer or the sea
     "tools/stripboard/constraints-pattern.ts",
     "tools/stripboard/extent.ts",
   ]) {
-    const closure = await importClosure(file)
+    const closure = importClosure(file)
     for (const module of forbidden) {
       expect([...closure].sort(), `${file} -> ${module}`).not.toContain(module)
     }
@@ -474,8 +474,8 @@ test("the grader and the scorer DO share the dump parser, which is intended", as
   // sides must agree on what the dump SAYS or they are grading different
   // boards. Asserting the sharing makes it a decision in the record rather than
   // an accident the closure test tolerates.
-  const graderClosure = await importClosure("tools/stripboard/grade.ts")
+  const graderClosure = importClosure("tools/stripboard/grade.ts")
   expect([...graderClosure]).toContain("tools/guide/dump.ts")
-  const scorerClosure = await importClosure("tools/stripboard/score.ts")
+  const scorerClosure = importClosure("tools/stripboard/score.ts")
   expect([...scorerClosure]).toContain("tools/guide/dump.ts")
 })

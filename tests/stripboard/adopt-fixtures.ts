@@ -44,6 +44,11 @@ import path from "node:path"
 import { freshRoot, freshStamp, registerCreated } from "./adopt-scratch.ts"
 import type { AdoptDeps, AdoptInput } from "../../tools/stripboard/adopt-model.ts"
 import type { GitRunner } from "../../tools/perfboard/mutate.ts"
+import { closureSha256 } from "../../lib/import-closure.ts"
+import {
+  pinPatternClosureHash,
+  spanClosureHash,
+} from "../../tools/stripboard/geometry-inputs.ts"
 import { RULES_PATH } from "../../tools/stripboard/rules.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import {
@@ -67,8 +72,6 @@ const PIN_COMMIT = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"
 const OTHER_COMMIT = "99887766554433221100ffeeddccbbaa99887766"
 const PIPELINE_COMMIT = "0f1e2d3c4b5a69788796a5b4c3d2e1f001234567"
 
-const SPAN_DATA = path.join(REPO_ROOT, "lib", "kicad", "lead-span.ts")
-const PIN_PATTERN_DATA = path.join(REPO_ROOT, "lib", "kicad", "pin-pattern.ts")
 const FROZEN_DIR = path.join(REPO_ROOT, "tests", "fixtures", "stripboard")
 const FROZEN_PROVENANCE = path.join(FROZEN_DIR, "provenance.txt")
 
@@ -165,8 +168,12 @@ function inputsFor(runDir: string, candidate: string): CanonicalInputs {
     candidateSha256: sha256OfFile(candidate),
     rulesSha256: sha256OfFile(RULES_PATH),
     netlistSha256: sha256OfFile(path.join(runDir, `${BOARD}.net`)),
-    spanDataSha256: sha256OfFile(SPAN_DATA),
-    pinPatternSha256: sha256OfFile(PIN_PATTERN_DATA),
+    // THE REAL CLOSURE HASHES, from the same functions the gate recomputes
+    // with. A fixture that recorded a made-up pair here would make the healthy
+    // scenario refuse, and a fixture that hashed one file would record a
+    // quantity the gate never compares.
+    spanClosureSha256: spanClosureHash(),
+    pinPatternClosureSha256: pinPatternClosureHash(),
     seeds: [1],
     seed: 1,
     seedArm: "constructed",
@@ -203,8 +210,8 @@ function depsFor(root: string): AdoptDeps {
     repoRoot: REPO_ROOT,
     pinFile: path.join(REPO_ROOT, "veroroute.pin"),
     rulesPath: RULES_PATH,
-    spanDataPath: SPAN_DATA,
-    pinPatternPath: PIN_PATTERN_DATA,
+    spanClosureHash,
+    pinPatternClosureHash,
     frozenFixtureDir: FROZEN_DIR,
     frozenProvenanceFile: FROZEN_PROVENANCE,
     // READ NEITHER FROM THE REAL PIN FILE NOR FROM THE REAL BUILD STAMP: both
@@ -290,11 +297,31 @@ export function withChangedRules(): Scenario {
   }
 }
 
+/**
+ * A closure hash standing in for "that closure is not what it was when the run
+ * recorded it".
+ *
+ * **IT IS AN INJECTED FUNCTION AND NOT AN EDITED COPY ON DISK**, and the change
+ * of shape is forced rather than chosen: the gate now compares a digest over an
+ * IMPORT CLOSURE, and a copy of `lead-span.ts` in a scratch directory cannot
+ * resolve its own relative imports, so a copy would make the walker refuse
+ * "reaches ... which is not a file" instead of refusing the hash. Editing the
+ * real `lib/kicad/lead-span.ts` under a test is not an option either. What the
+ * gate must do with a closure that has moved is exactly what it does with a
+ * digest that disagrees, and that is what this drives.
+ *
+ * The one property this shape CANNOT demonstrate - that the closure genuinely
+ * covers `lead-span-model.ts` and `pin-pattern-model.ts`, which is the whole
+ * reason the hash changed from a file to a closure - is asserted directly
+ * against `closureSha256`'s own walk in `./adopt.test.ts`.
+ */
+const MOVED_CLOSURE = `${"9".repeat(63)}0`
+
 export function withChangedSpanData(): Scenario {
   const scenario = healthyAdoption("changed-span")
   return {
     ...scenario,
-    deps: { ...scenario.deps, spanDataPath: changedCopy(SPAN_DATA, "span") },
+    deps: { ...scenario.deps, spanClosureHash: () => MOVED_CLOSURE },
   }
 }
 
@@ -302,7 +329,25 @@ export function withChangedPinPatterns(): Scenario {
   const scenario = healthyAdoption("changed-pin-pattern")
   return {
     ...scenario,
-    deps: { ...scenario.deps, pinPatternPath: changedCopy(PIN_PATTERN_DATA, "pin-pattern") },
+    deps: { ...scenario.deps, pinPatternClosureHash: () => MOVED_CLOSURE },
+  }
+}
+
+/**
+ * A closure walk that CANNOT RUN, so the gate's handling of it can be driven.
+ *
+ * A skipped check must never look like a passing one, and a walk that throws is
+ * the one way this check can fail to produce an answer at all - `closureSha256`
+ * refuses an import it cannot resolve to a file rather than dropping the edge.
+ */
+export function withUnwalkableSpanClosure(): Scenario {
+  const scenario = healthyAdoption("unwalkable-span")
+  return {
+    ...scenario,
+    deps: {
+      ...scenario.deps,
+      spanClosureHash: () => closureSha256("lib/kicad/does-not-exist.ts"),
+    },
   }
 }
 

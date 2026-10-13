@@ -80,15 +80,15 @@ const IDENTIFYING_FIELDS = [
   "candidateSha256",
   "rulesSha256",
   "netlistSha256",
-  "spanDataSha256",
-  "pinPatternSha256",
+  "spanClosureSha256",
+  "pinPatternClosureSha256",
   "verorouteCommit",
   "pipelineCommit",
 ] as const
 
 test("every identifying string field refuses empty, not only builtCommit", () => {
   // task-13 review, finding 8: a blank candidateSha256, rulesSha256,
-  // netlistSha256, spanDataSha256, pinPatternSha256, verorouteCommit or
+  // netlistSha256, spanClosureSha256, pinPatternClosureSha256, verorouteCommit or
   // pipelineCommit records a provenance claim that says nothing, exactly as
   // a blank builtCommit does, and a caller can write `?? ""` to any of them.
   for (const field of IDENTIFYING_FIELDS) {

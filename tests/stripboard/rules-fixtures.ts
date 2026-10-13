@@ -2,7 +2,7 @@
  * Fixtures for `rules.test.ts`: a modified copy of the COMMITTED rules file,
  * written somewhere temporary.
  *
- * Its own module for the reason `import-closure.ts` is: the test file is the
+ * Its own module for the reason `lib/import-closure.ts` is: the test file is the
  * assertions, and a helper that writes files is a different kind of thing. It
  * NEVER touches `stripboard/rules.json`.
  */

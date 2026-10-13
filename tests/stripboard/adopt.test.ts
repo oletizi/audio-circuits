@@ -40,9 +40,17 @@ import {
   withTamperedCandidate,
   withTamperedMetrics,
   withUnknownBuiltCommit,
+  withUnwalkableSpanClosure,
   withUnrecordedFrozenFixture,
 } from "./adopt-fixtures.ts"
 import { boardsDigest } from "./run-dir-fixtures.ts"
+import { closureSha256, importClosure } from "../../lib/import-closure.ts"
+import {
+  PIN_PATTERN_ENTRY,
+  SPAN_DATA_ENTRY,
+  pinPatternClosureHash,
+  spanClosureHash,
+} from "../../tools/stripboard/geometry-inputs.ts"
 
 /** The real `boards/` tree, hashed before this file ran anything. */
 const BOARDS_BEFORE = boardsDigest()
@@ -111,24 +119,64 @@ test("G2.2: a rules file that changed since the run is refused, so no parameter 
   }).toThrow(/rules/)
 })
 
-test("G2.2: changed span data or pin-pattern data is refused, each named", () => {
+test("G2.2: changed span data or pin-pattern data is refused, each named by its own id", () => {
   // EACH NAMED: one refusal covering both would satisfy a `/hash/` assertion
-  // and leave the operator looking in the wrong file. The two patterns are the
-  // two FILES, not the two ids.
+  // and leave the operator looking in the wrong file. The REFUSAL ID is
+  // asserted beside the file name, because the two statements each run to
+  // several hundred words and the words "lead-span" and "pin-pattern" both
+  // appear in prose about the other - the id is the only token that cannot.
   //
   // MUTATION RUN (M5, M6): with the span-hash call commented out this failed on
   // the first assertion; with the pin-pattern-hash call commented out it failed
   // on the second. Each run was 24 pass / 3 fail - this test, "every refusal
   // names what is missing", and "a refused adoption leaves the board tree
   // byte-identical". Both reverted.
-  expect(() => {
-    const scenario = withChangedSpanData()
-    adoptLayout(scenario.input, scenario.deps)
-  }).toThrow(/lead-span/)
-  expect(() => {
-    const scenario = withChangedPinPatterns()
-    adoptLayout(scenario.input, scenario.deps)
-  }).toThrow(/pin-pattern/)
+  const spanMessage = refusalFrom(withChangedSpanData)
+  expect(spanMessage).toContain("span-hash")
+  expect(spanMessage).toContain("lib/kicad/lead-span.ts")
+  const patternMessage = refusalFrom(withChangedPinPatterns)
+  expect(patternMessage).toContain("pin-pattern-hash")
+  expect(patternMessage).toContain("lib/kicad/pin-pattern.ts")
+})
+
+test("G2.2: the two hashes cover the IMPORT CLOSURE, so a model file cannot move after a run", () => {
+  // THE PROPERTY THE FIXTURES CANNOT SHOW, and the one the whole-branch review
+  // found missing. span-hash and pin-pattern-hash each used to hash ONE FILE
+  // while their own statements called that file "the authority": lead-span.ts
+  // builds LEAD_SPANS at module load out of lead-span-model.ts (which also
+  // holds BEND_RULE, the stripboard pitch and TOOL_MIN/MAX_SPAN_HOLES), and
+  // pin-pattern.ts only TYPE-imports the runtime admitPattern that
+  // pin-pattern-model.ts defines. So the bend arithmetic or the hole clamp
+  // could be edited after a run with both hashes still matching - and
+  // `make check` does not cover it, because such an edit changes the bounds the
+  // candidate was graded under without changing the netlist.
+  //
+  // This asserts the closures by MEMBERSHIP rather than by a digest value: a
+  // digest literal would have to be updated on every edit to those files and
+  // would say nothing about which files it covered.
+  const spanClosure = importClosure(SPAN_DATA_ENTRY)
+  expect([...spanClosure]).toContain("lib/kicad/lead-span.ts")
+  expect([...spanClosure]).toContain("lib/kicad/lead-span-model.ts")
+  const patternClosure = importClosure(PIN_PATTERN_ENTRY)
+  expect([...patternClosure]).toContain("lib/kicad/pin-pattern.ts")
+  expect([...patternClosure]).toContain("lib/kicad/pin-pattern-model.ts")
+  // And the digest genuinely reads those files: hashing a closure that omitted
+  // the model modules would give the same answer as hashing the entry alone.
+  expect(spanClosureHash()).not.toBe(closureSha256("lib/kicad/lead-span-model.ts"))
+  expect(spanClosureHash()).toMatch(/^[0-9a-f]{64}$/)
+  expect(pinPatternClosureHash()).toMatch(/^[0-9a-f]{64}$/)
+})
+
+test("a closure that cannot be walked is this gate's refusal, never a pass", () => {
+  // A SKIPPED CHECK MUST NEVER LOOK LIKE A PASSING ONE. closureSha256 throws
+  // when the walk reaches a file that is not there; the gate reports that as
+  // span-hash rather than letting a read error escape from somewhere else in
+  // the pipeline, where it would read as a pipeline bug rather than a refused
+  // adoption.
+  const message = refusalFrom(withUnwalkableSpanClosure)
+  expect(message).toContain("span-hash")
+  expect(message).toContain("could not be hashed")
+  expect(message).toContain("not a file")
 })
 
 test("G2.2: a changed frozen fixture is refused", () => {

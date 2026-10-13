@@ -4,7 +4,7 @@ import {
   describeVerdict,
   type ReferenceNets,
 } from "../../tools/stripboard/equivalence.ts"
-import { importClosure } from "./import-closure.ts"
+import { importClosure } from "../../lib/import-closure.ts"
 
 /**
  * OWNER-BLOCKED NOTE (OB5) - TASK 6 DELETES THIS WHOLE COMMENT BLOCK.
@@ -338,7 +338,7 @@ test("nothing in this module's TRANSITIVE import closure is the scorer or the ch
   // dependency is now enumerated in the walker's EXTERNAL set - see the note
   // there, which also records that the brief's claim about bare specifiers
   // was wrong.
-  const closure = await importClosure("tools/stripboard/equivalence.ts")
+  const closure = importClosure("tools/stripboard/equivalence.ts")
   for (const forbidden of ["tools/stripboard/score.ts", "tools/perfboard/check.ts"]) {
     expect([...closure].sort(), forbidden).not.toContain(forbidden)
   }
@@ -350,7 +350,7 @@ test("the closure walker finds a TRANSITIVE import, which is the whole reason it
   // scan it replaced, while looking stronger. equivalence.ts imports
   // copper.ts, which imports tools/guide/dump.ts, which equivalence.ts does
   // not name.
-  const closure = await importClosure("tools/stripboard/equivalence.ts")
+  const closure = importClosure("tools/stripboard/equivalence.ts")
   expect([...closure]).toContain("tools/stripboard/copper.ts")
   expect([...closure]).toContain("tools/guide/dump.ts")
   const direct = await Bun.file("tools/stripboard/equivalence.ts").text()
@@ -362,11 +362,11 @@ test("the closure walker finds a TRANSITIVE import, which is the whole reason it
   expect([...closure]).toContain("tools/stripboard/equivalence.ts")
 })
 
-test("the closure walker refuses an unresolvable import rather than dropping the edge", async () => {
-  await expect(importClosure("tools/stripboard/does-not-exist.ts")).rejects.toThrow(/not a file/)
+test("the closure walker refuses an unresolvable import rather than dropping the edge", () => {
+  expect(() => importClosure("tools/stripboard/does-not-exist.ts")).toThrow(/not a file/)
 })
 
-test("the closure walker refuses a bare specifier rather than guessing at a resolver", async () => {
+test("the closure walker refuses a bare specifier rather than guessing at a resolver", () => {
   // The walker's second refusal, driven rather than assumed. `node:` builtins
   // and `bun:test` are skipped by name, so the only way to reach this clause
   // is a specifier that is neither - and a test file is the nearest module
@@ -380,7 +380,7 @@ test("the closure walker refuses a bare specifier rather than guessing at a reso
   // written for it rather than by editing a shipped file; the fixture's
   // `.ts.txt` extension is explained at the top of the fixture itself.)
   const fixture = "tests/fixtures/bare-specifier-importer.ts.txt"
-  await expect(importClosure(fixture)).rejects.toThrow(
+  expect(() => importClosure(fixture)).toThrow(
     /imports "some-package", which is neither relative nor a known external/,
   )
 })

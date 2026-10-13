@@ -259,7 +259,7 @@ because there the component map itself is compared; one layer up it is not, and
 `tests/stripboard/equivalence.test.ts` says so in the test it belongs to.
 
 **The independence claim is asserted over the import closure, not over one
-file's text.** `tests/stripboard/import-closure.ts` walks the transitive graph
+file's text.** `lib/import-closure.ts` walks the transitive graph
 and **refuses** an unresolvable specifier rather than dropping the edge, because
 a closure computed over a partial graph is smaller than the real one and the
 module that fell out of it may be the forbidden one. The earlier form,
@@ -1262,7 +1262,7 @@ for `Date.now`, `performance.now`, `process.pid`, `readdirSync` and
 `tools/perfboard/check.ts`, which erases — so no runtime code of `check.ts`, or
 of anything it imports, is loaded by an evaluation at all, and these two files
 are two and three further hops beyond that. The import walker counts type-only
-edges deliberately (`tests/stripboard/import-closure.ts` says why: a shared type
+edges deliberately (`lib/import-closure.ts` says why: a shared type
 definition is a shared definition), which is what puts them in a closure nothing
 can reach them through at runtime.
 

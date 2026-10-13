@@ -69,6 +69,7 @@ import {
 import { prepare } from "./place-inputs.ts"
 import { A_OCC_POSITION, RANKING_POSITIONS } from "./rank.ts"
 import { boundFor, outcomeOf, verdictOf, type ReportInput } from "./report.ts"
+import { pinPatternClosureHash, spanClosureHash } from "./geometry-inputs.ts"
 import { RULES_PATH, type StripboardRules } from "./rules.ts"
 import {
   canonicalHash,
@@ -299,8 +300,14 @@ export async function place(
     candidateSha256: sha256OfFile(result.best.candidate),
     rulesSha256: sha256OfFile(RULES_PATH),
     netlistSha256: sha256(prepared.netlistText),
-    spanDataSha256: sha256OfFile(path.join(repoRoot, "lib", "kicad", "lead-span.ts")),
-    pinPatternSha256: sha256OfFile(path.join(repoRoot, "lib", "kicad", "pin-pattern.ts")),
+    // THE CLOSURE, NOT THE FILE, and `lib/import-closure.ts` carries why: the
+    // bounds HC4/HC5/HC9/HC10 grade a candidate by are computed at module load
+    // by files neither entry point IS, so a one-file hash let the bend
+    // arithmetic and the hole clamp move after a run with the hash still
+    // matching. The gate recomputes the same two numbers with the same
+    // function, so producer and gate cannot disagree about what was covered.
+    spanClosureSha256: spanClosureHash(),
+    pinPatternClosureSha256: pinPatternClosureHash(),
     seeds: input.rules.seeds,
     // THE SEED OF THE CLIMB THAT PRODUCED `best`, read off the candidate's own
     // directory rather than guessed: `search` writes each climb under

@@ -120,21 +120,36 @@ export function notDefaultedBecause(refusal: AdoptRefusal): string {
       )
     case "span-hash":
       return (
-        "lib/kicad/lead-span.ts is the authority for every physical lead span HC5 and HC9 grade " +
-        "a candidate by (PAR2), so a board graded against one table and adopted under another " +
-        "has been graded against nothing that is now true. It is not defaulted: the table " +
-        "refuses an unlisted footprint by name rather than widening, and this gate holds the " +
-        "same line one step later. Re-run the pipeline against the span data as it now stands."
+        "lib/kicad/lead-span.ts AND EVERY MODULE IT IMPORTS are the authority for every " +
+        "physical lead span HC5 and HC9 grade a candidate by (PAR2), so a board graded against " +
+        "one table and adopted under another has been graded against nothing that is now true. " +
+        "WHAT IS COVERED IS THE IMPORT CLOSURE AND NOT THE ONE FILE, which is a correction " +
+        "rather than a flourish: this statement used to name lead-span.ts alone while the hash " +
+        "read lead-span.ts alone, and lead-span.ts builds LEAD_SPANS at module load by calling " +
+        "deriveSpanHoles out of lead-span-model.ts, which also holds BEND_RULE, the 0.1in " +
+        "stripboard pitch and TOOL_MIN/MAX_SPAN_HOLES. So the bend arithmetic or the hole clamp " +
+        "could be edited after a run with the hash still matching, and `make check` does not " +
+        "cover that - it changes the bounds the candidate was graded under without changing the " +
+        "netlist. The hash is now lib/import-closure.ts's closureSha256 over the whole closure, " +
+        "computed by the same function tools/stripboard/place.ts recorded with. It is not " +
+        "defaulted: the table refuses an unlisted footprint by name rather than widening, and " +
+        "this gate holds the same line one step later. Re-run the pipeline against the span " +
+        "data as it now stands."
       )
     case "pin-pattern-hash":
       return (
-        "lib/kicad/pin-pattern.ts is the authority for every package's pin geometry, which is " +
-        "what HC4, HC9 and HC10 read to decide whether a part can sit where the layout puts it " +
-        "(PAR2). A candidate graded against an earlier pattern table proves nothing about the " +
-        "board that would be built from today's. It is not defaulted, for the same reason the " +
-        "span table is not: an empty whitelist that refuses loudly beats a general rule that " +
-        "quietly accepts a guess. Re-run the pipeline against the pin-pattern data as it now " +
-        "stands."
+        "lib/kicad/pin-pattern.ts AND EVERY MODULE IT IMPORTS are the authority for every " +
+        "package's pin geometry, which is what HC4, HC9 and HC10 read to decide whether a part " +
+        "can sit where the layout puts it (PAR2). A candidate graded against an earlier pattern " +
+        "table proves nothing about the board that would be built from today's. WHAT IS COVERED " +
+        "IS THE IMPORT CLOSURE AND NOT THE ONE FILE: pin-pattern.ts only TYPE-imports from " +
+        "pin-pattern-model.ts, which is where the runtime admitPattern HC10 calls actually " +
+        "lives, so a one-file hash left that function free to move after a run. The hash is now " +
+        "lib/import-closure.ts's closureSha256 over the whole closure, computed by the same " +
+        "function tools/stripboard/place.ts recorded with. It is not defaulted, for the same " +
+        "reason the span table is not: an empty whitelist that refuses loudly beats a general " +
+        "rule that quietly accepts a guess. Re-run the pipeline against the pin-pattern data as " +
+        "it now stands."
       )
     case "frozen-fixture-hash":
       return (
@@ -166,17 +181,19 @@ export function notDefaultedBecause(refusal: AdoptRefusal): string {
         "about the other four. KNOWN LIMIT, STATED HERE SO THE NAME OF THIS CHECK DOES NOT " +
         "OVERCLAIM: the circuit module is compared as ONE FILE and its transitive imports are " +
         "not, so a change inside a module it imports - circuits/pultec/physical/parts.ts, say - " +
-        "is not caught by this link. The remedy is named rather than hoped for: " +
-        "tests/stripboard/import-closure.ts's importClosure already computes exactly this " +
-        "closure, for exactly this failure (its own comment calls a one-file check \"a weak " +
-        "check under a strong name, which is a false guarantee rather than a known limit\"), and " +
-        "what is missing is a closure hash in run.json's canonical inputs to compare against " +
-        "plus a way to walk it from a synchronous gate. WHAT COVERS THE GAP MEANWHILE, measured " +
-        "in the Task 24 review rather than assumed: `make check` after the copy re-exports the " +
-        "netlist from the CURRENT circuit and checks the adopted board against it, so drift " +
-        "that is electrically material is refused by G4's failing-check rather than admitted. " +
-        "What this link alone would miss is drift that changes the model without changing the " +
-        "netlist."
+        "is not caught by THIS link. THAT LIMIT IS RULED ACCEPTABLE AND IT IS NOT THE SAME " +
+        "SHAPE AS span-hash's WAS, which is why the two were resolved differently and why this " +
+        "statement says so rather than implying closure coverage it does not have: `make check` " +
+        "after the copy re-exports the netlist from the CURRENT circuit and checks the adopted " +
+        "board against it (measured in the Task 24 review rather than assumed), so drift " +
+        "through an imported circuit module is electrically material and IS refused by G4's " +
+        "failing-check. The span and pattern closures had no such second reader - an edited " +
+        "hole clamp changes the bounds a candidate was graded under without changing the " +
+        "netlist - so those two moved to a closure hash and this one did not. THE KNOWN REMEDY, " +
+        "named rather than hoped for, is the same walker: lib/import-closure.ts's closureSha256 " +
+        "over the circuit module, recorded in run.json's canonical inputs beside the other two. " +
+        "What this link alone misses meanwhile is drift that changes the model without changing " +
+        "the netlist."
       )
     case "veroroute-commit":
       return (
@@ -288,10 +305,16 @@ export interface AdoptDeps {
   readonly pinFile: string
   /** `stripboard/rules.json` - `RULES_PATH` in production. */
   readonly rulesPath: string
-  /** `lib/kicad/lead-span.ts`. */
-  readonly spanDataPath: string
-  /** `lib/kicad/pin-pattern.ts`. */
-  readonly pinPatternPath: string
+  /**
+   * The sha256 of the span table's import closure, AS IT NOW STANDS - a
+   * function rather than a path, because the gate compares a closure and not a
+   * file. `./geometry-inputs.ts`'s `spanClosureHash` is the production answer
+   * and is the same function `./place.ts` recorded with, so the two cannot
+   * disagree about which files were covered.
+   */
+  readonly spanClosureHash: () => string
+  /** The same, for the pin-pattern table's import closure. */
+  readonly pinPatternClosureHash: () => string
   /** `tests/fixtures/stripboard/`, holding B1-frozen's four files. */
   readonly frozenFixtureDir: string
   /** The `provenance.txt` beside them, which records their hashes. */

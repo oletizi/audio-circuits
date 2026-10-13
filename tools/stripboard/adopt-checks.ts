@@ -77,6 +77,49 @@ export function assertFileHash(
 }
 
 /**
+ * One recorded CLOSURE hash against the closure as it now stands, refused by its
+ * own id.
+ *
+ * **IT TAKES THE HASHING FUNCTION AND NOT A PATH**, which is the whole point:
+ * the quantity being compared is a digest over an import closure, so the gate
+ * must run the same function `./place.ts` recorded with rather than re-derive a
+ * digest of its own. `./geometry-inputs.ts` holds that function and the
+ * measurement behind the change from a one-file hash.
+ *
+ * **A WALK THAT CANNOT RUN IS A REFUSAL, NEVER A PASS.** `closureSha256` throws
+ * when the closure reaches a file that is not there or a specifier it will not
+ * guess at, and that is reported as this gate's own refusal rather than escaping
+ * as a read error from somewhere else in the pipeline - a check that could not
+ * run must not look like one that ran.
+ */
+export function assertClosureHash(
+  hashNow: () => string,
+  recorded: string,
+  refusal: AdoptRefusal,
+  what: string,
+  entry: string,
+): void {
+  let actual: string
+  try {
+    actual = hashNow()
+  } catch (caught) {
+    const detail = caught instanceof Error ? caught.message : String(caught)
+    refuse(
+      refusal,
+      `${what} could not be hashed, so the ${recorded} run.json records for it cannot be ` +
+        `checked: walking ${entry}'s import closure failed with ${detail}`,
+    )
+  }
+  if (actual !== recorded) {
+    refuse(
+      refusal,
+      `${what} hashes to ${actual} over ${entry}'s import closure, and run.json records ` +
+        `${recorded} for it`,
+    )
+  }
+}
+
+/**
  * `B2`: each of the frozen benchmark's four files still hashes to what
  * `provenance.txt` beside them records.
  *

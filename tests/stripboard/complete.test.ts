@@ -32,7 +32,7 @@ import fs from "node:fs"
 import { completionPass } from "../../tools/stripboard/complete.ts"
 import { netJoinPlans } from "../../tools/stripboard/complete-joins.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
-import { importClosure } from "./import-closure.ts"
+import { importClosure } from "../../lib/import-closure.ts"
 import {
   BASE_DUMP,
   REFERENCE,
@@ -373,7 +373,7 @@ test("no file in the completion pass's TRANSITIVE closure names a clock, a pid, 
     "tools/stripboard/complete.ts",
     "tools/stripboard/complete-joins.ts",
   ]) {
-    for (const file of await importClosure(entry)) closure.add(file)
+    for (const file of importClosure(entry)) closure.add(file)
   }
   expect(closure.size, "the closure must be more than the two entry points").toBeGreaterThan(2)
   // AND THE GENERATOR'S OWN DEPENDENCIES ARE REALLY IN IT, so a closure that
