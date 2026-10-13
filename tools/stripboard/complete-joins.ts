@@ -19,15 +19,15 @@
  * combination unable to close a net:
  *
  *   1. **A net's pins fall into COPPER COMPONENTS, not strips, and a cut severs
- *      a strip.** On `constructed` seed 0's best board the net `j10_p1` has both
- *      its pins on different strips but the net `0` has eleven pins on ONE strip
- *      and three components in total, because `AutoFillVero`'s cuts divide it.
- *      Strip count and component count are different numbers and the join count
- *      is the second one.
+ *      a strip.** On the `import` arm's best board the net `0` has its fourteen
+ *      pins on THREE strips - rows 0, 2 and 3 - and in EIGHT copper components,
+ *      because six of them sit on row 0 at columns 2, 4, 7, 10, 13, 16 and 23
+ *      with `AutoFillVero`'s cuts between. Strip count and component count are
+ *      different numbers and the join count is the second one.
  *   2. **A net on `m` components needs `m - 1` joins, and one wire supplies
- *      one.** Measured over the ten best boards of the first completeness sweep:
- *      every open net needs one to seven joins and the boards need 12, 12, 13,
- *      14, 14 and 21 in total. A single wire therefore leaves the net open
+ *      one.** Measured over the eleven best boards of the first completeness
+ *      sweep: every open net needs one to seven joins, and each board needs
+ *      TWELVE TO TWENTY-ONE in total. A single wire therefore leaves the net open
  *      except when `m` is exactly 2 - so `openNets` does not fall, `F` rises by
  *      `ρ_w`, and a strictly-improving rule rejects it. §6.9 counted 7,417
  *      `add-wire` candidates across one sweep and none was ever best.
@@ -41,8 +41,11 @@
  * components are joined by one wire running either ACROSS the strips
  * (`./moves-wire.ts`'s `wireBridge`) or ALONG one of them over a cut
  * (`wireAlong`) - both are tried, and the second exists because the first alone
- * planned not one wire on the `--import`-placed board, where every part sits in
- * rows 0 to 4 and every component pair of every open net is on a single strip.
+ * **planned not one wire of the twelve open nets' twenty-one joins on the
+ * `--import`-placed board**, where every part sits in rows 0 to 4. That is what
+ * was measured; which of the three ways a pair can be unreachable - one strip,
+ * no clearance, out of stretch - accounted for each of those twenty-one is NOT,
+ * and the figure is not read as though it were.
  * What is NOT planned is a wire PATH: two components whose nearest holes are
  * further apart than the fork will stretch a wire (16 holes) can still be joined
  * by two wires through a free strip between them, and no such dogleg is

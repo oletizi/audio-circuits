@@ -196,7 +196,9 @@ function rejection(predecessor: Measured, incumbent: Measured, candidate: Measur
     return (
       `the candidate built to close it BREAKS ${broke.join(", ")}, which held on the board the ` +
       "wires were applied to. The acceptance rule's no-regression clause rejects it before F is " +
-      "looked at, so closing this net costs a hard constraint on this board."
+      "looked at, so closing this net BY THESE WIRES costs a hard constraint. That is a fact " +
+      "about the wires this generator planned and not about every way the net could be closed: " +
+      "a different set of holes, or a wire path, might not break it."
     )
   }
   const was = new Set(predecessor.checkReport.incompleteNets)
