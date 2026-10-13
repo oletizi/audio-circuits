@@ -4,24 +4,37 @@
  * leads then share a copper component.
  *
  * WHY THIS EXISTS, AND IT IS THE OWNER'S DECISION RATHER THAN AN OPTIMISATION.
- * The scorer used to charge `C` straight off VeroRoute's `CUT ` line count.
- * On an UNDISTURBED board that count is honest - measured on the owner's
- * hand-laid `pultec-low-boost` (5 of 5 cuts necessary, 0 removable) and on the
- * import-placed board this pipeline searches from (38 of 38) - but a board the
- * SEARCH has moved a cluster on carries cuts that no net needs, and the
- * measurement that found them is recorded in
- * `docs/stripboard/pipeline-verification.md`: one cluster moved off a row cost
- * one phantom cut, two clusters cost two, and a ground-extending wire cost two.
- * At `rho_w = 0.25` a wire should cost a quarter of a cut and was being charged
- * about 2.25, which is why the search rejected 7,417 `add-wire` candidates and
- * 1,539 `spread` candidates without ever taking one. The owner was asked
- * whether the search should score on the cuts he would actually make or on the
- * cuts VeroRoute reports, and chose a third option in those words - **"option
- * C"**: *"Both. Score on real cuts so the search can act, keep VeroRoute's
- * number in the report so you always see both. If they ever disagree badly,
- * you'd spot it."* So `./score.ts` charges this count, carries VeroRoute's
- * beside it, and `./report.ts` prints the disagreement; the deviation is
- * recorded in `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`.
+ * The scorer used to charge `C` straight off VeroRoute's `CUT ` line count. A
+ * measurement reported cuts on moved boards that no net needs - one cluster
+ * moved off a row costing one, two clusters two, a ground-extending wire two -
+ * and at `rho_w = 0.25` a wire should cost a quarter of a cut while being
+ * charged about 2.25, which was offered as the reason the search had rejected
+ * 7,417 `add-wire` and 1,539 `spread` candidates without taking one. The owner
+ * was asked whether the search should score on the cuts he would actually make
+ * or on the cuts VeroRoute reports, and chose a third option in those words -
+ * **"option C"**: *"Both. Score on real cuts so the search can act, keep
+ * VeroRoute's number in the report so you always see both. If they ever
+ * disagree badly, you'd spot it."* So `./score.ts` charges this count, carries
+ * VeroRoute's beside it, and `./report.ts` prints the disagreement; the
+ * deviation is recorded in
+ * `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`.
+ *
+ * **ON EVERY BOARD THIS REPOSITORY HAS MEASURED, THE TWO COUNTS AGREE, AND
+ * THAT IS A MEASUREMENT RATHER THAN AN EXPECTATION.** 5 of 5 cuts necessary on
+ * the owner's hand-laid `pultec-low-boost`, 38 of 38 on the import-placed board
+ * the search starts from, and **0 disagreements over 2,267 scored candidates**
+ * across three arms of real runs - every `--dump-board` text the pipeline read,
+ * including 84 `add-wire`, 107 `cluster`, 740 `gather` and 2 `spread`
+ * candidates. The reading that fits, stated as a reading: `AutoFillVero`
+ * re-derives the whole cut set every time a candidate is painted, and the climb
+ * paints every candidate before scoring it, so a derived cut sits between two
+ * differently-noded segments and a segment with no lead carries no node id and
+ * needs no cut. A board whose parts moved while its cut list did NOT would have
+ * one spare cut per orphaned one. **So nothing here is dead code and nothing
+ * here has changed a decision:** the figures are carried so a person reads
+ * both, which is what was asked for, and the sweep that found no decision
+ * changed is in
+ * `.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md`.
  *
  * **THE CLASSIFICATION IS NOT THE SCORER'S OWN REASONING, AND THAT IS THE ONLY
  * THING THAT MAKES IT ADMISSIBLE HERE.** This repository forbids an agent

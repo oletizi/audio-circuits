@@ -135,10 +135,12 @@ export interface Score {
    * two reference nets' leads sharing a copper component, by `HC8`'s
    * reconstruction (`./cut-necessity.ts`).
    *
-   * Never greater than `cuts`. Equal to it on an undisturbed board - measured
-   * 5 of 5 on the owner's hand-laid low-boost and 38 of 38 on the
-   * import-placed start - and smaller on a board the search has moved parts
-   * on, which is the whole reason it exists.
+   * Never greater than `cuts`, and **equal to it on every board measured so
+   * far**: 5 of 5 on the owner's hand-laid low-boost, 38 of 38 on the
+   * import-placed start, and no disagreement in 2,267 scored candidates across
+   * three arms. It is reported separately because the owner asked for both
+   * counts to be visible, not because a gap has been observed in the search -
+   * `./cut-necessity.ts` carries the measurement and the reading of it.
    */
   readonly necessaryCuts: number
   readonly wires: number

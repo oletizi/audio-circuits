@@ -66,7 +66,8 @@ test("K5 compares F against the floor, so a candidate AT its floor is kept", asy
   const reference = await frozenReference()
   const targets = lowBoostTargets()
   const rules = loadRules()
-  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 5.25 }, rules, reference))).toBe("")
+  expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 5.25 }, rules, reference)))
+    .toBe("")
   expect(refusalFrom(() => scoreDumpText(text, { ...targets, cutFloor: 6 }, rules, reference)))
     .toStartWith("score-below-floor:")
 })
@@ -99,5 +100,6 @@ test("the floor is read from the targets and no floor is defaulted when scoring"
   // own zero is the realistic case rather than a convenience, and F = 2.25
   // clears it.
   expect(lowBoostTargets().cutFloor).toBe(0)
-  expect(scoreDumpText(TEXT, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE).objective).toBeGreaterThan(0)
+  expect(scoreDumpText(TEXT, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE).objective)
+    .toBeGreaterThan(0)
 })

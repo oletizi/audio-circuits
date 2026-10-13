@@ -42,12 +42,12 @@
  * What stands in its place is that the derivation is not this module's and not
  * the search's: it is `HC8`'s copper reconstruction
  * (`./cut-necessity.ts`, `./equivalence.ts`), computed outside VeroRoute from
- * the exported geometry and the netlist export, and the same instrument that
- * proved the phantom cuts removable. Nothing in the necessary count is derived
- * from a quantity this file computes - see that module's own comment. `ρ_w` and
- * `ρ_s` come from
- * `stripboard/rules.json` and from nowhere else: no weight, bound or
- * threshold is written in this file, because a number that entered the
+ * the exported geometry and the netlist export, and the same instrument the
+ * phantom cuts were reported removable by. Nothing in the necessary count is
+ * derived from a quantity this file computes - see that module's own comment,
+ * which also carries what the two counts measured on every board so far (they
+ * agree). `ρ_w` and `ρ_s` come from `stripboard/rules.json` and from nowhere
+ * else: no weight, bound or threshold is written in this file, because a number that entered the
  * criteria through the implementation is a criterion nobody reviewed
  * (CRITERIA PAR3). `OBJ2` forbids a legibility, tidiness or neatness term,
  * and that is a standing prohibition rather than an omission.

@@ -136,7 +136,9 @@ test("V2: a dump whose CUT_STATE is not COMPUTED refuses before it scores", () =
   // because `scoreDumpText` does no checking of its own and `scoreDump` reads
   // `cutState` before it compares. Reverted.
   const unresolved = TEXT.replace("CUT_STATE COMPUTED", "CUT_STATE UNRESOLVED")
-  const message = refusalFrom(() => scoreDumpText(unresolved, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE))
+  const message = refusalFrom(
+    () => scoreDumpText(unresolved, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE),
+  )
   expect(message).toStartWith("score-cuts-not-computed:")
   expect(message).toContain("CUT_STATE")
   expect(message).toContain("UNRESOLVED")
@@ -157,7 +159,9 @@ test("V2: a negative J refuses, for a different reason, and says which", () => {
   // it lands on a NEIGHBOURING refusal that names the wrong term and points at
   // the wrong fix. That is why the assertion is anchored on the opening clause
   // rather than written `toThrow(/J/)`, which this mutant passes. Reverted.
-  const message = refusalFrom(() => scoreDumpText(NINE_NETS, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE))
+  const message = refusalFrom(
+    () => scoreDumpText(NINE_NETS, FIXTURE_TARGETS, loadRules(), FIXTURE_REFERENCE),
+  )
   expect(message).toStartWith("negative-joins:")
   expect(message).toContain("J = C - N + S_occ = -6")
 })
