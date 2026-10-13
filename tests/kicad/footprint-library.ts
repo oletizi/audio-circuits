@@ -86,3 +86,107 @@ export function readFootprintPads(name: string): FootprintPads {
   if (pads.length === 0) throw new Error(`${file} declares no pads, which cannot be right.`)
   return { pads, version, padCount, file }
 }
+
+/**
+ * Every `<Library>.pretty` installed under `FOOTPRINT_LIBRARY_ROOT`.
+ *
+ * **IT REFUSES AND DOES NOT SKIP** when the root is not there or holds no
+ * libraries, which is the whole point: `tests/kicad/footprint-names.test.ts`
+ * checks every footprint name this repository writes down against these files,
+ * and on a machine with no KiCad an empty set would make every one of those
+ * names pass for the wrong reason.
+ */
+/**
+ * Reading 155 directory entries per name checked is wasteful, so each root's
+ * library set is listed once per process. Keyed by root, because `root` is a
+ * parameter: a cache keyed by nothing would hand one root's answer to another.
+ */
+const LIBRARIES = new Map<string, ReadonlySet<string>>()
+
+export function installedFootprintLibraries(
+  root: string = FOOTPRINT_LIBRARY_ROOT,
+): ReadonlySet<string> {
+  const cached = LIBRARIES.get(root)
+  if (cached !== undefined) return cached
+  if (!fs.existsSync(root)) {
+    throw new Error(
+      `the KiCad footprint libraries are not at ${root}. Install KiCad or set ` +
+        "KICAD_FOOTPRINTS. This check does not skip: it is the only thing standing between a " +
+        "footprint name nobody can look up and a committed netlist, and this repository has " +
+        "twice shipped a footprint that does not exist.",
+    )
+  }
+  const libraries = new Set(
+    fs.readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name.endsWith(".pretty"))
+      .map((entry) => entry.name.slice(0, -".pretty".length)),
+  )
+  if (libraries.size === 0) {
+    throw new Error(
+      `${root} holds no .pretty footprint libraries, which cannot be right - an empty install ` +
+        "would make every name checked against it pass for the wrong reason, which is the " +
+        "skipped-check-that-looks-like-a-pass this helper exists to refuse. This does not skip.",
+    )
+  }
+  LIBRARIES.set(root, libraries)
+  return libraries
+}
+
+/** Why a footprint name did not resolve, so the two causes can be reported apart. */
+export type FootprintResolution = "resolved" | "no-such-library" | "no-such-footprint"
+
+/**
+ * Whether `name` resolves in the installed libraries, and if not, which half of
+ * it is missing.
+ *
+ * The two causes are reported SEPARATELY rather than collapsed into a boolean,
+ * because they have different remedies: a missing library is usually a wholly
+ * invented `<Library>` half, and a missing footprint within a real library is a
+ * misspelling or a name from a different KiCad version. A refusal that says
+ * which one saves the reader the lookup.
+ */
+export function resolveFootprintOnDisk(name: string): FootprintResolution {
+  const file = footprintFile(name)
+  const library = name.split(":")[0] ?? ""
+  if (!installedFootprintLibraries().has(library)) return "no-such-library"
+  return fs.existsSync(file) ? "resolved" : "no-such-footprint"
+}
+
+/** Whether `name` resolves in the installed libraries. Refuses an absent install. */
+export function footprintExistsOnDisk(name: string): boolean {
+  return resolveFootprintOnDisk(name) === "resolved"
+}
+
+/** Listed once per root: 155 directories is not a per-name cost worth paying. */
+const ALL_NAMES = new Map<string, ReadonlySet<string>>()
+
+/**
+ * Every footprint name any installed library holds, WITHOUT its library prefix.
+ *
+ * This is what gives the `SYNTHETIC:` exemption teeth. The prefix replaces the
+ * library half, so `resolveFootprintOnDisk` on an exempt name can only ever
+ * answer `no-such-library` - a tautology, and no check at all. Asking instead
+ * whether the NAME half exists in ANY library catches the thing the exemption
+ * could otherwise hide: a real footprint relabelled synthetic to get past the
+ * disk check.
+ */
+export function allInstalledFootprintNames(
+  root: string = FOOTPRINT_LIBRARY_ROOT,
+): ReadonlySet<string> {
+  const cached = ALL_NAMES.get(root)
+  if (cached !== undefined) return cached
+  const names = new Set<string>()
+  for (const library of installedFootprintLibraries(root)) {
+    for (const entry of fs.readdirSync(path.join(root, `${library}.pretty`))) {
+      if (entry.endsWith(".kicad_mod")) names.add(entry.slice(0, -".kicad_mod".length))
+    }
+  }
+  if (names.size === 0) {
+    throw new Error(
+      `${root} holds libraries but no .kicad_mod files at all, which cannot be right. This ` +
+        "does not skip: an empty name set would make every synthetic label pass unexamined.",
+    )
+  }
+  ALL_NAMES.set(root, names)
+  return names
+}

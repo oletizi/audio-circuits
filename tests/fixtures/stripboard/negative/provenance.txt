@@ -168,7 +168,7 @@ two-nets-shorted            HAND-WRITTEN, AND IT IS NO LONGER TASK 4'S BOARD.
                             that claim.
 
 round-pin-pattern           HAND-WRITTEN. HC10's FOOTPRINT-half fixture. It
-                            names Test_Synthetic:Ring_5Pin_D10mm, a five-pin
+                            names SYNTHETIC:Ring_5Pin_D10mm, a five-pin
                             ring registered only in grade-fixtures.ts's own maps
                             and deliberately NOT in PIN_PATTERNS, because
                             PIN_PATTERNS holds the footprints this repository

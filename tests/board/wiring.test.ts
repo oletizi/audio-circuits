@@ -183,7 +183,11 @@ test("a connector whose footprint names no known family refuses rather than gues
   const unknown: Component = {
     ...HEADER,
     id: "mystery",
-    part: { footprint: "Connector_Nonexistent:Whatever_1x02", electricallyInert: true },
+    // SYNTHETIC: the prefix tests/kicad/footprint-names.test.ts exempts from its
+    // disk sweep, and the rest of the name still says what it is. It read
+    // "Connector_Nonexistent:Whatever_1x02" before that sweep landed - an
+    // invented library name that nothing checked, however honest its wording.
+    part: { footprint: "SYNTHETIC:Connector_Nonexistent_Whatever_1x02", electricallyInert: true },
   }
   const input: WiringInput = {
     ...INPUT,

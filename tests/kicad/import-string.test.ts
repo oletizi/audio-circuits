@@ -50,8 +50,14 @@ test("a diameter equidistant between two enumerated types refuses", () => {
 })
 
 test("a diameter outside the enumerated range refuses", () => {
-  expect(() => importStringFor("Capacitor_THT:CP_Radial_D3.0mm_P2.00mm")).toThrow(/175.*650/s)
-  expect(() => importStringFor("Capacitor_THT:CP_Radial_D20.0mm_P7.50mm")).toThrow(/175.*650/s)
+  // BOTH ARE REAL FOOTPRINTS, verified against Capacitor_THT.pretty on disk,
+  // and both are genuinely outside the 175-650 mil band: D4.0mm is 157 mil and
+  // D17.0mm is 669. These read D3.0mm_P2.00mm and D20.0mm_P7.50mm until
+  // ./footprint-names.test.ts swept for names the libraries do not hold -
+  // invented names that the library happens to make unnecessary, since the band
+  // has real parts on both sides of it.
+  expect(() => importStringFor("Capacitor_THT:CP_Radial_D4.0mm_P2.00mm")).toThrow(/175.*650/s)
+  expect(() => importStringFor("Capacitor_THT:CP_Radial_D17.0mm_P7.50mm")).toThrow(/175.*650/s)
 })
 
 test("an unrecognized family refuses, listing the shapes that derive", () => {
@@ -172,7 +178,13 @@ test("a terminal block at a pitch that is neither one nor two grid steps refuses
 })
 
 test("a terminal block with no readable pin count refuses", () => {
-  expect(() => importStringFor("TerminalBlock_Phoenix:Phoenix_MKDS_P5.08mm")).toThrow(/pin count/)
+  // A REAL footprint with no _1x<pins> field, verified against
+  // TerminalBlock_Wuerth.pretty on disk - the one installed terminal block whose
+  // name carries a pitch and no pin count, which is exactly the shape this
+  // refusal is about. It named an invented Phoenix_MKDS_P5.08mm until
+  // ./footprint-names.test.ts swept for names the libraries do not hold.
+  expect(() => importStringFor("TerminalBlock_Wuerth:Wuerth_691311400102_P7.62mm"))
+    .toThrow(/pin count/)
 })
 
 test("block pin counts are declared, so a netlist cannot reference a pin the block lacks", () => {

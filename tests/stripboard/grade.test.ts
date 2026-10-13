@@ -127,7 +127,9 @@ test("HC5, HC9 and HC10 refuse by name for a footprint with no data, never defau
   // figure for. The same posture now covers HC10's pin pattern.
   const input = inputWithFootprint("Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm")
   expect(() => gradeHardConstraints(input)).toThrow(/C_Disc_D5\.0mm/)
-  const unknown = inputWithFootprint("Rotary_SW:SW_Rotary11_D30mm")
+  // SYNTHETIC: a footprint no KiCad library holds, labelled with the prefix
+  // tests/kicad/footprint-names.test.ts exempts from its disk sweep.
+  const unknown = inputWithFootprint("SYNTHETIC:SW_Rotary11_D30mm")
   expect(() => gradeHardConstraints(unknown)).toThrow(/SW_Rotary11_D30mm/)
 
   // EACH LOOKUP REFUSES ON ITS OWN, AND THIS WAS ADDED BECAUSE A MUTATION

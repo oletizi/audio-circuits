@@ -3243,6 +3243,27 @@ which cannot be explained from the inputs.
 - **`spread.test.ts`'s test NAME contradicted its body**, claiming reversing the
   reference reverses the spread order where the body asserts (correctly, and
   explains why) that it does not. Renamed.
+- **The footprint-name sweep covers what programs read, not what prose cites.**
+  `tests/kicad/footprint-names.test.ts` closes the footprint axis the way
+  `symbol-names.test.ts` closed the symbol one, and it is WIDER than the symbol
+  sweep: besides the declaration shapes it also checks every `<Library>:<Name>`
+  literal in a `.ts` file whose library half is an installed footprint library,
+  wherever it appears, because both footprint names this repository has shipped
+  that nobody can look up were a real library plus a name that library does not
+  hold. Two things are deliberately outside it. **Markdown under `docs/` is not
+  swept** — it discusses footprint names, including fictional ones held up as
+  cautionary examples, and no text sweep can tell a cited name from a claimed
+  one. **`circuits/pultec/generated/three-band-eq.net.xml` is not swept** — it is
+  an export of the owner's own schematic and names footprints from his personal
+  `OL Library`, which is on no other machine. The first run of the sweep found
+  nine fictional names: five were replaced with the real name verified on disk,
+  three are recorded in `CONSTRUCTED_FOR_A_REFUSAL` with why no installed
+  footprint has the property the refusal under test is about, and one took the
+  now-enforced `SYNTHETIC:` prefix. The `SYNTHETIC:` exemption checks the name
+  half against every installed library rather than the lib id, because the prefix
+  replaces the library and a lib-id lookup could only ever answer
+  "no such library" — a tautology. Both the sweep and that enforcement were
+  driven with a negative control that fails alone.
 - **The mid section's eleven-position selector has no part chosen, so its
   netlist cannot be emitted.** `Switch.kicad_sym` has `SW_Rotary_1x3_MP` through
   `SW_Rotary_1x9_MP` and `SW_Rotary_1x12` and nothing at `1x10` or `1x11`, and

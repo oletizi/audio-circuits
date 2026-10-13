@@ -25,6 +25,17 @@ const ring = (count: number, radiusMm: number): readonly PadPosition[] =>
  */
 const AS_MOULDED: GridAccommodation = { kind: "as-moulded" }
 
+/**
+ * An eleven-position rotary footprint that EXISTS NOWHERE, for the two tests
+ * that need an unrecorded name: one drives `admitPattern`'s across-strip
+ * refusal, the other drives `pinPatternFor`'s unlisted-footprint refusal.
+ *
+ * The `SYNTHETIC:` prefix is the exemption `./footprint-names.test.ts` honours,
+ * and that test also asserts an exempt name resolves in no installed library -
+ * so the label cannot drift into covering a real name.
+ */
+const SYNTHETIC_ROTARY = "SYNTHETIC:SW_Rotary11_D30mm"
+
 test("every footprint with a recorded lead span also has a recorded pin pattern", () => {
   // HC10 is in A1. A footprint the pipeline may place and HC10 cannot classify
   // is a hard constraint that silently passes, which is the one failure this
@@ -356,7 +367,12 @@ test("admitPattern refuses a round pin pattern outright - HC10's own refusal", (
   const pads = ring(11, 8)
   const round: PinPattern = {
     ...pinPatternFor("Package_DIP:DIP-16_W7.62mm"),
-    footprint: "Rotary_SW:SW_Rotary11_D30mm",
+    // SYNTHETIC: deliberately a footprint no KiCad library holds, and the
+    // prefix is what exempts it from ./footprint-names.test.ts's disk sweep -
+    // which also asserts that an exempt name resolves nowhere. This read
+    // "Rotary_SW:" until that sweep landed, which was an invented library name
+    // with nothing enforcing the convention.
+    footprint: SYNTHETIC_ROTARY,
     pads,
     classification: classifyPads(pads),
   }
@@ -418,7 +434,7 @@ test("a row separation inside PITCH_TOLERANCE_MM is accepted as that many steps"
 })
 
 test("an unlisted footprint refuses by name, listing the ones that are classified", () => {
-  const refuse = () => pinPatternFor("Rotary_SW:SW_Rotary11_D30mm")
+  const refuse = () => pinPatternFor(SYNTHETIC_ROTARY)
   expect(refuse).toThrow(/SW_Rotary11_D30mm/)
   expect(refuse).toThrow(/PIN_PATTERNS/)
   expect(refuse).toThrow(/not defaulted/)

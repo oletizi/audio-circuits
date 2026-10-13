@@ -141,7 +141,8 @@ export const INDUCTOR_SYMBOL = "Device:L"
  * a false provenance claim in every committed Pultec netlist. That is the third
  * time this repository has shipped a KiCad name nobody can look up, the first two
  * being footprints; `tests/kicad/symbol-names.test.ts` is the disk-backed check
- * that closes the symbol axis.
+ * that closes the symbol axis, and `tests/kicad/footprint-names.test.ts` is its
+ * mirror on the footprint axis.
  *
  * **THE KEY IS POSITIONS, NOT PINS.** KiCad's `SW_Rotary_1xN` is one pole with `N`
  * throws, so it carries `N + 1` electrical pins plus `MP`; a six-position selector

@@ -28,8 +28,17 @@ import type { LeadSpan } from "../../lib/kicad/lead-span-model.ts"
  * exist without a map of its own. **The classification is DERIVED by
  * `classifyPads` from the pads, never asserted here**, so the fixture is a ring
  * because its pad geometry is a ring rather than because this file says so.
+ *
+ * **THE `SYNTHETIC:` LIBRARY PREFIX IS LOAD-BEARING, NOT DECORATION.**
+ * `tests/kicad/footprint-names.test.ts` checks every footprint name in this
+ * repository against the installed KiCad libraries and exempts exactly the names
+ * carrying this prefix - and asserts that an exempt name's NAME HALF exists in no
+ * installed library, so the prefix cannot be used to wave a real-but-wrong name
+ * past the sweep. The library half read `Test_Synthetic:` until that check
+ * landed, which was a library name nothing enforced; renaming it is what makes
+ * the convention a check.
  */
-const RING_FOOTPRINT = "Test_Synthetic:Ring_5Pin_D10mm"
+const RING_FOOTPRINT = "SYNTHETIC:Ring_5Pin_D10mm"
 
 function ringPads(): readonly PadPosition[] {
   // Five pads on a 10mm-diameter circle, which lands on no grid at all.

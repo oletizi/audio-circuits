@@ -96,9 +96,15 @@ test("the two unsourced families are exactly the ones with no sourced lead lengt
 })
 
 test("an unknown footprint refuses, names itself, and quotes what is recorded", () => {
-  expect(() => leadSpanFor("Capacitor_THT:C_Rect_L13.0mm_W4.0mm_P10.00mm")).toThrow(
-    /no lead span is recorded for footprint "Capacitor_THT:C_Rect_L13\.0mm_W4\.0mm_P10\.00mm"/,
-  )
+  // A REAL footprint with no recorded span, not an invented one. It named this
+  // C_Rect without the family suffix until ./footprint-names.test.ts swept for
+  // names the libraries do not hold; the library's name carries the suffix,
+  // verified against Capacitor_THT.pretty on disk. An unknown-footprint test
+  // needs a footprint absent from LEAD_SPANS, which a real name satisfies.
+  expect(() => leadSpanFor("Capacitor_THT:C_Rect_L13.0mm_W4.0mm_P10.00mm_FKS3_FKP3_MKS4"))
+    .toThrow(
+      /no lead span is recorded for footprint "Capacitor_THT:C_Rect_L13\.0mm_W4\.0mm_P10\.00mm_FKS3_FKP3_MKS4"/,
+    )
   expect(() => leadSpanFor("Nonexistent:Thing")).toThrow(/Footprints with a recorded span:/)
   expect(() => leadSpanFor("Nonexistent:Thing")).toThrow(
     /Resistor_THT:R_Axial_DIN0207_L6\.3mm_D2\.5mm_P10\.16mm_Horizontal/,
