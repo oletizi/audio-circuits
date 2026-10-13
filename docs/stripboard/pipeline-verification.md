@@ -2149,33 +2149,76 @@ differently for a reason that has nothing to do with the search. Every compariso
 below is made on **cuts and open nets**; `F` is carried rather than compared, and
 the isolation run below is what separates the two changes.
 
-| arm | seed | `C` | `W` | `B` | **nets open** | nets closed | evaluations | rounds | accepted | unscoreable | §6.9's `C` |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `constructed` | 0 | **10** | 0 | 0 | **9 of 14** | **5** | 15,006 | 63 | 136 | 1 | 8 |
-| `import` | 0 | **34** | 0 | 4 | **10 of 14** | **3** | 4,592 | 24 | 45 | 36 | 33 |
-| `import` | 1 | **34** | 0 | 4 | **10 of 14** | **3** | 4,592 | 24 | 45 | 36 | 33 |
-| `random` | 0 | **13** | 0 | 4 | **9 of 14** | **5** | 13,939 | 48 | 112 | 0 | refused; 12 in §6.8 |
+| arm | seed | `F` | `C` | `W` | `B` | **nets open** | nets closed | evaluations | rounds | accepted | unscoreable | §6.9's `C` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 0 | 10 | **10** | 0 | 0 | **9 of 14** | **5** | 15,006 | 63 | 136 | 1 | 8 |
+| `constructed` | 1 | 10 | **10** | 0 | 0 | **9 of 14** | **5** | 15,659 | 65 | 140 | 19 | 8 |
+| `constructed` | 2 | 11.5 | **11** | 0 | 2 | **9 of 14** | **5** | 17,669 | 72 | 136 | 6 | 8 |
+| `constructed` | 3 | 12 | **12** | 0 | 0 | **9 of 14** | **5** | 17,063 | 65 | 121 | 7 | 7 |
+| `constructed` | 4 | 11 | **11** | 0 | 0 | **9 of 14** | **4** | 10,378 | 41 | 79 | 19 | 7 |
+| `import` | 0 | 35 | **34** | 0 | 4 | **10 of 14** | **3** | 4,592 | 24 | 45 | 36 | 33 |
+| `import` | 1 | 35 | **34** | 0 | 4 | **10 of 14** | **3** | 4,592 | 24 | 45 | 36 | 33 |
+| `random` | 0 | 14 | **13** | 0 | 4 | **9 of 14** | **5** | 13,939 | 48 | 112 | 0 | refused; 12 in §6.8 |
+| `random` | 3 | 17.25 | **16** | 0 | 5 | **10 of 14** | **4** | 16,793 | 78 | 163 | 0 | 15 |
 
-`nets closed` is each run's own start against its own best board: `constructed`
-and `random` start at **14 of 14 open** and `import` at **13 of 14**, which are
-the figures §6.9 records for the same starts. The `import` arm's two seeds are
-identical in every column because it has one start and the seed changes nothing
-about it, which is `seed-arms.ts`'s recorded asymmetry rather than a copy-paste.
+`nets closed` is each run's own start against its own best board, and the start
+counts are not uniform: `constructed` seeds 0 to 3 and `random` start at **14 of
+14 open**, while `import` and `constructed` seed 4 start at **13 of 14**. Those
+are the figures §6.9 records for the same starts. The `import` arm's two seeds
+are identical in every column because it has one start and the seed changes
+nothing about it, which is `seed-arms.ts`'s recorded asymmetry rather than a
+copy-paste.
+
+**NINE OR TEN OF FOURTEEN, on nine runs from seven different starts** — nine on
+all five `constructed` seeds and on `random` 0, ten on `random` 3 and on both
+`import` runs — across cut counts from 10 to 34, evaluation counts from 4,592 to
+17,669 and round counts from 24 to 78. That the number lands in a two-wide band
+is an observation and nothing more here: **this sweep does not establish why
+nine**, and the consistency is not evidence that nine is a property of the
+circuit rather than of this move set and this ordering.
+
+**Every best board was re-checked outside the harness.** `--check --netlist` and
+`--dump-board` run by hand on each kept board report the same open-net count, the
+same `B` and the same `C` as the record: nine pairs, nine agreements, no
+exceptions. The open-net figures above are the fork's, not the harness's
+arithmetic.
 
 #### What the key bought, and what it cost
 
-**Five nets of fourteen, for two cuts.** `constructed` seed 0 went from 14 open
-at its start to **9**, at 10 cuts against §6.9's 8. `random` seed 0 closed five
-as well, at 13 cuts against §6.8's 12 for the same arm and seed. `import` closed
-three, at 34 against 33. Set beside §6.9's measured board — *"63 rounds and 11,842
-evaluations completed ONE net and removed six cuts"* — the direction has changed
-and the price is one or two cuts.
+**Four or five nets of fourteen, for one to five cuts.** The `constructed` arm
+closed five on every seed but the fourth, where it closed four from a start that
+had thirteen open rather than fourteen, and paid 10, 10, 11, 12 and 11 cuts
+against §6.9's 8, 8, 8, 7 and 7. `random` 0 closed five at 13 cuts against
+§6.8's 12 for the same arm and seed, `random` 3 closed four at 16 against §6.9's
+15, and `import` closed three at 34 against 33. Set beside §6.9's measured
+board — *"63 rounds and 11,842 evaluations completed ONE net and removed six
+cuts"* — the direction has changed.
+
+**THE PAIRED COMPARISON, which is the one figure both sweeps measured on the same
+arm at the same seed.** §6.9 reported the per-net counts for exactly one run,
+*"the one run whose best board is still on disk"* — `random` seed 3 — so that
+pair is where the before and after are both from a measurement rather than from
+an inference:
+
+| `random`, seed 3 | §6.9: no completeness in the ordering | §6.10: it is the first key |
+| --- | --- | --- |
+| its seeded start | 14 of 14 nets open, 21 cuts | 14 of 14 nets open, 21 cuts |
+| its best board | **13 of 14 open**, 15 cuts | **10 of 14 open**, 16 cuts |
+| nets closed | **1** | **4** |
+| rounds | 63 | 78 |
+| evaluations | 11,842 | 16,793 |
+
+**Four nets for one cut**, on the pair §6.9 chose to measure. Everywhere else the
+open-net column is new, because §6.9 had no per-run figure for it: it recorded
+`netsComplete: false` on all fifteen runs and the counts for that one board.
 
 **And the search now spends `F` to do it, visibly.** Every climb's `F` history
 rises above its own start before coming down: `constructed` seed 0 reaches
-`F = 27` on the way to a best of 10, and `import` reaches 40.25 from a start of
-38.25. Under the old rule no accepted candidate could ever raise `F`. That is the
-first key doing exactly what it says.
+`F = 27` on the way to a best of 10, `random` 0 reaches 30, and `import` reaches
+40.25 from a start of 38.25. Under the old rule no accepted candidate could ever
+raise `F`. That is the first key doing exactly what it says. The accepted-move
+counts moved with it — 79 to 163 per run, where a round sweeps the whole move
+set.
 
 #### **NO BOARD IS FINISHED, AND THAT IS THE FINDING**
 
@@ -2185,11 +2228,13 @@ every run, every run ends inadmissible, and not one of these boards is buildable
 job.**
 
 **It is not the budget.** Every run stopped on `S3` — a round that accepted
-nothing — and none reached the 20,000-evaluation cap: the largest spend is 15,006
-evaluations and one unscoreable candidate. So the search CONVERGES with nine nets
-open, and a larger cap stalls on the same kind of board. §6.9 reached that
-conclusion with completeness unpriced; it survives completeness being the first
-thing the search looks at.
+nothing — and none reached the 20,000-evaluation cap: the largest spend is 17,669
+evaluations with six unscoreable candidates, against a cap that counts both. So
+the search CONVERGES with nine or ten nets open, and a larger cap stalls on the
+same kind of board. §6.9 reached that conclusion with completeness unpriced; it
+survives completeness being the first thing the search looks at. **A climb is
+also bigger than it was** — 10,378 to 17,669 evaluations where §6.9's were 4,314
+to 15,218 — so the change costs search as well as cuts.
 
 **`W` is still 0 on every run, which is the mechanism worth naming.** §6.9
 measured 7,417 `add-wire` candidates, none ever accepted, and explained it by the
@@ -2202,14 +2247,14 @@ anyway.**
 climb**, and the inference is worth writing down because it is not obvious: with
 `E3` unconfigured every acceptance improves on the incumbent, so the incumbent
 and the best coincide, an accepted wire board therefore becomes the best — and
-`delete-wire` is refused (`./moves-model.ts`), so a board that acquires a wire
-cannot shed one.
+`delete-wire` is refused (`tools/stripboard/moves-model.ts`), so a board that
+acquires a wire cannot shed one.
 
 What this sweep can say is therefore exactly this: **no wire candidate was ever
 both admissible-against-its-predecessor and better on the ordering** — which
 covers two different ways of closing nothing, and does not separate them. A wire
 that closed a net without breaking a constraint its predecessor held would have
-been accepted at any `F`. Thirty-six of `import`'s wire candidates could not be
+been accepted at any `F`. Between 0 and 36 candidates per run could not be
 scored at all, which is `--author --op autofill` reporting `CUT_STATE UNRESOLVED`
 on a wire that shorted two nets — §6.9's measured failure, counted rather than
 fatal — and a wire that shorts is a wire that breaks `HC8` on a board where it
@@ -2251,8 +2296,9 @@ of those four is a short wire he has to run** — *"A solder blob will turn into
 wire on my bench"* — which is why `B` is a column of its own and not left inside
 `F`, where four bridges contribute one.
 
-`B` is **0** on `constructed` seed 0, so this is a fact about two arms'
-trajectories and not a general effect of the change.
+`B` is **0** on four of the five `constructed` seeds and 2 on the fifth, so this
+is a fact about particular trajectories and not a general effect of the change.
+The `random` arm carries 4 and 5.
 
 **What the isolation run does not establish:** it is ONE arm at ONE seed. Nothing
 here says `rhoSolder` is inert on `constructed` or `random`, whose trajectories
@@ -2285,6 +2331,12 @@ page records what that is evidence of and what it is not:
 
 #### What this still does not establish
 
+- **NINE OF THE FIFTEEN PAIRS ARE MEASURED HERE**, and the section says which
+  rather than implying a sweep: all five `constructed` seeds, `import` 0 and 1,
+  and `random` 0 and 3. The other six — `random` 1, 2 and 4 and `import` 2, 3 and
+  4 — were still being measured, one at a time, when this was written. Three of
+  those six are `import` seeds repeating a start the seed does not change, so
+  what is genuinely open is `random` 1, 2 and 4;
 - **the arm comparison was not re-run.** `compareSeedArms` needs every arm at
   every seed it is given and refuses a missing pair rather than defaulting it, so
   no rate, `separated` or `retireable` verdict is quoted here. The figures above
@@ -2292,8 +2344,9 @@ page records what that is evidence of and what it is not:
 - **the two changes are separated only on the `import` arm** (above);
 - **the per-KIND firing audit is not available.** §6.9 could say which gesture
   kind set each new best because its run directories survived; this sweep deletes
-  each run directory once the best board is copied out, which is what let fifteen
-  long runs fit on the scratch disk. So *which* gesture closes a net here is
+  each run directory once the best board is copied out, which is what lets a run
+  of 17,669 evaluations - nearly 100,000 fork invocations and some gigabytes of
+  scratch boards - be followed by another. So *which* gesture closes a net here is
   **not measured**, and the `W = 0` finding above is the only per-kind statement
   that can be made from the counts;
 - **`RETIREMENT`'s tiebreak is now stated over a quantity the search
@@ -2312,8 +2365,14 @@ page records what that is evidence of and what it is not:
 #### What it means for route 3, and the owner's own sequence
 
 He said **"1 then 3"**: change the scoring, and add a second pass only if that is
-not enough. Measured: the scoring change moves completeness in the right
-direction for one or two cuts — and **it is not enough.** The search converges
-with nine or ten nets of fourteen open, under the cap, with no wire ever
-accepted. Route 3's second pass is what that leaves, and the figures above are
-the evidence for taking it rather than an argument for it.
+not enough. Measured: the scoring change moves completeness in the direction it
+was supposed to move — four or five nets per run where the one measured run
+before it closed one, for one to five cuts — and **it is not enough.** The search
+converges with nine or ten nets of fourteen open, with the cap unspent and no
+wire ever accepted. Route 3's second pass is what that leaves, and these figures
+are the evidence for taking it rather than an argument for it.
+
+**What they do not say is what the second pass should do**, and this page will
+not propose one: a gesture, a pass order and a stopping rule for a completion
+pass are objective-level decisions, which is the line §6.9 drew — *"a change
+nobody here may make alone"* — and it has not moved.
