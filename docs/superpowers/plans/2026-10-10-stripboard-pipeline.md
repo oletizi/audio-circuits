@@ -5863,17 +5863,38 @@ half is not optional and is not a debug aid - `tools/stripboard/report.ts`
 prints `cuts: F charges N necessary cut(s); VeroRoute reports M CUT line(s)` and,
 when the two differ, by how much and that the difference is removable.
 
-**The measurement that put the question to him** (agent-measured, recorded in
-`docs/stripboard/pipeline-verification.md`). VeroRoute's count is honest on an
-UNDISTURBED board: all 5 of 5 cuts on the owner's hand-laid `pultec-low-boost`
-are individually necessary with 0 removable, and 38 of 38 on the import-placed
-board every arm starts from. **No baseline figure in the record needs revising.**
-But boards the SEARCH produces carry cuts no net needs - one cluster moved off a
-row reported 5 cuts of which 1 was removable, two clusters 6 of which 2 were, and
-a ground-extending wire 7 of which 2 were - so a wire that should cost a quarter
-of a cut at `ρ_w = 0.25` was being charged about 2.25. 7,417 `add-wire`
-candidates (§6.9) and 1,539 `spread` candidates (§6.11) were enumerated and not
-one was ever accepted.
+**The measurement that put the question to him, and what re-measuring it
+found** (both agent-measured; the figures and the method are in
+`.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md`,
+which is cited rather than summarised because the two halves point different
+ways).
+
+VeroRoute's count is honest on an UNDISTURBED board: all 5 of 5 cuts on the
+owner's hand-laid `pultec-low-boost` are individually necessary with 0
+removable, and 38 of 38 on the import-placed board every arm starts from. **No
+baseline figure in the record needs revising.** The measurement put to him then
+reported that boards with parts moved carry cuts no net needs - one cluster
+moved off a row reporting 5 cuts of which 1 was removable, two clusters 6 of
+which 2, a ground-extending wire 7 of which 2 - so a wire that should cost a
+quarter of a cut at `ρ_w = 0.25` was being charged about 2.25, which was offered
+as the reason the 7,417 `add-wire` candidates of §6.9 and the 1,539 `spread`
+candidates of §6.11 were enumerated with no wire on any best board (§6.9) and no
+spread ever best on seven runs of eight (§6.11).
+
+**Re-measured on the candidates this pipeline actually scores, the two counts
+AGREE EVERYWHERE**: 0 disagreements over 2,267 scored candidate boards across
+three arms of real runs, including 84 `add-wire`, 107 `cluster`, 740 `gather`
+and 2 `spread` candidates - every `--dump-board` text the pipeline read,
+classified with the same drop test. The before-and-after sweep is identical
+figure for figure on the pairs re-run, so **this change has not altered a single
+acceptance decision**, and the wire and spread rejections have another cause.
+The phantom-cut boards could not be re-derived here (the fork refuses a gesture
+on the owner's painted board), so those figures stand as reported and are
+neither confirmed nor refuted by this work. What fits both halves is that
+`AutoFillVero` re-derives the cut set every time a candidate is painted and the
+climb paints every candidate before scoring it, while a board whose parts moved
+without its cut list being re-derived would carry one spare cut per orphaned
+one.
 
 **AGENT RATIONALE (written by an agent, not by the owner, and not endorsed by
 him).** The owner settled WHICH number is charged and that both are reported. The
@@ -5903,9 +5924,12 @@ turns out wrong:
   editing that module concurrently.
 
 **What would close this.** Amending `OBJ1`/`K1` to say which cut count `F`
-charges and `HC2` to say what derives it, or rejecting the deviation - in which
-case the phantom charge returns and the pipeline needs another answer to a search
-that cannot use the instrument the owner has four times asked it to use.
+charges and `HC2` to say what derives it, or rejecting the deviation. **Rejecting
+it costs less than it looked like it would**, which is this work's own finding
+reported against itself: the two counts agree on every board measured, so
+reverting to the `CUT ` line count would restore `C` to what CRITERIA says
+without changing any acceptance decision - it would only remove the second
+figure he asked to see, and the guard against the day the two ever part.
 
 **Where the code says so.** `tools/stripboard/cut-necessity.ts`'s module comment
 carries the decision, the two limits and the independence claim;
