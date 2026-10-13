@@ -92,11 +92,9 @@ export {
 
 /**
  * The spread model, re-exported from `./moves-spread.ts`: what one net's partial
- * relocation plus its rejoining wire IS, and where that leaves the geometry.
- *
- * Same arrangement and same reason as the cluster and the wire below: this is
- * the module the plan names and every consumer imports, and the split is at the
- * what-is-a-spread seam.
+ * relocation plus its rejoining wire IS, which two strips it may use, and where
+ * that leaves the geometry. Same arrangement and reason as the cluster and the
+ * wire below, at the what-is-a-spread seam.
  */
 export {
   spreadAfter,
@@ -117,18 +115,15 @@ export {
  * neighbourhood is the smallest that can still reach any origin by composition
  * across rounds, which is what a hill climb does with it. **NOTHING HAS
  * MEASURED WHETHER IT IS THE RIGHT SHAPE OR SIZE** - not this file, not the
- * specs, not any run - and the order of the four carries no preference either;
- * it is fixed so that the sweep is reproducible. Widening it is a deliberate
- * edit with a run behind it.
+ * specs, not any run - and the order of the four carries no preference; it is
+ * fixed so the sweep is reproducible. Widening it needs a run behind it.
  */
 const UNIT_DELTAS: readonly (readonly [number, number])[] = [[-1, 0], [0, 1], [1, 0], [0, -1]]
 
 /**
- * The ONE gesture order named in this file, and naming it chooses nothing:
- * every call below passes zero for one of `appliedGestures`' two counts, where
- * `./seed-placement.ts` states outright that at zero "both orders are the same
- * sequence". Task 18's cluster move is the first compound gesture and the
- * choice is its.
+ * The ONE gesture order named in this file, and naming it chooses nothing: every
+ * call below passes zero for one of `appliedGestures`' two counts, where
+ * `./seed-placement.ts` states that at zero "both orders are the same sequence".
  */
 const SINGLE_GESTURE_ORDER = "turn-then-stretch" as const
 
@@ -304,16 +299,13 @@ function partMoves(occupancy: Occupancy, dump: BoardDump): readonly Move[] {
  * Every `add-wire` the model admits, from `./moves-wire.ts`, and every
  * `delete-wire` the board's own `WIRE` lines name.
  *
- * **THE ADD-WIRE ENUMERATION MOVED AND CHANGED SHAPE.** It used to propose a
- * wire anchored at a PIN hole for each consecutive cross-strip pair of a net's
- * pins - which `DEFERRED_KINDS` then had to refuse, because the fork anchors a
- * wire only at a FREE hole. The kind is compound now: `./moves-wire.ts` plans a
- * wire that is created at a free hole, turned across the strips and stretched to
- * reach, one candidate per pair of strips a net is split across. The reasons,
- * the four fork measurements and the narrowings are all stated there.
+ * `./moves-wire.ts` plans a wire created at a FREE hole - the fork anchors one
+ * nowhere else - then turned across the strips and stretched to reach, one
+ * candidate per pair of strips a net is split across; its reasons, the four fork
+ * measurements and the narrowings are stated there.
  *
  * `delete-wire` is still enumerated and still refused by `DEFERRED_KINDS`, whose
- * entry now carries the measurement rather than a reading: no verb and no
+ * entry carries the measurement rather than a reading: no verb and no
  * `--author` op removes a component, and `--update` leaves wires in place.
  */
 function wireMoves(
@@ -331,12 +323,10 @@ function wireMoves(
  * the four unit deltas, with the parts and their gesture order from
  * `./moves-cluster.ts`.
  *
- * **IT IS NARROWED LIKE EVERY OTHER KIND, AND THAT IS A CHANGE FROM TASK 17**,
- * which emitted all four deltas of every net unconditionally because nothing
- * could apply them yet. A cluster whose sequence cannot be completed is not
- * proposed, for `partMoves`' reason: a set whose members were discovered by
- * attempting them would spend four invocations per refusal, and this one would
- * spend one per part on top.
+ * **IT IS NARROWED LIKE EVERY OTHER KIND.** A cluster whose sequence cannot be
+ * completed is not proposed, for `partMoves`' reason: a set whose members were
+ * discovered by attempting them would spend four invocations per refusal, and
+ * this one would spend one per part on top.
  *
  * **THE DELTAS ARE THE SAME FOUR `UNIT_DELTAS` A SINGLE `move` USES, AND THAT IS
  * A LIMIT WORTH NAMING.** A cluster therefore translates a net's parts ONE HOLE
