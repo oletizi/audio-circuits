@@ -483,18 +483,67 @@ function wrapping a field read would be a second spelling of one state.
 
 ## 3. `HC10`'s placement clause — the owner's rule, and the inverted one it replaced
 
-**The owner decided this clause on 2026-10-11, and the rule below is now
-criteria.** His words: *"dips should span strips with a cut down the middle, like
-a breadboard."* The rule:
+**The owner decided this clause on 2026-10-11 and AMENDED it on 2026-10-13. The
+rule below is the amended one and is now criteria.** His words on the mounting:
+*"dips should span strips with a cut down the middle, like a breadboard."* His
+words approving the amendment, after being shown §3.4b's measurement and the
+proposed rule, verbatim and complete: *"follow your recommendation on HC10."*
+The rule:
 
-> **No two pins belonging to the same footprint row may share a strip.**
+> **No two pins belonging to the same footprint row may share a PIECE OF COPPER
+> — the copper as it is after cuts — unless the netlist puts them on the same
+> net.**
 
-A row lying ALONG a strip puts every pin of that row on one piece of copper —
-that is the short being ruled out. A row crossing the strips puts each of its
-pins on its own strip — that is the breadboard mounting being ruled in. The
-DIP's centre cut is `HC1`'s and `HC8`'s business, where connectivity is decided;
-`HC10` does not assert it a second time. A one-pin row cannot violate the rule,
-because a row of one pin cannot be shorted to itself.
+**Owner-settled:** a row whose pins share a piece of copper is unbuildable only
+when nothing separates pins that must not be joined.
+
+**Agent rationale** (agent-written; he approved the rule, not this wording): a
+row lying ALONG a strip is the *candidate* for the fault and not the fault
+itself. On an uncut strip it joins every pin of that row, which is a short if
+those pins are on different nets; with a cut between them it joins nothing, and
+that is the same construction his DIP ruling describes — the DIP's two rows
+share each strip pairwise and the centre cut divides them. So the predicate is
+*same copper component after cuts, AND different reference nets*. Two pins of one
+part on one strip that are on the same net need no cut and pass. The DIP's centre
+cut is still `HC1`'s and `HC8`'s business: it divides pins of two DIFFERENT rows,
+which are grouped separately, so that pair never meets in one group here. A
+one-pin row cannot violate the rule, because a row of one pin cannot be shorted
+to itself.
+
+**What was superseded, named rather than left for a reader to infer:** the
+2026-10-11 rule was *"no two pins belonging to the same footprint row may share a
+strip"*, justified by *"a row lying along a strip puts every pin of that row on
+one piece of copper"*. It read the geometry and never the cut state, and §3.4b is
+the measurement that retired it.
+
+### 3.4a The word *parallel* in `HC10`'s headline, and which reading the code implements
+
+CRITERIA's criterion sentence is *"every placed part's pins lie on straight lines
+parallel to the strips"*, and read literally that is in tension with the
+implementation, where a row lying along a strip is the failure CANDIDATE rather
+than the requirement. Stated plainly rather than left for the next reader to
+guess at:
+
+- **The headline sentence is the FOOTPRINT half, and it is about
+  decomposability.** The straight lines are the footprint's own rows, and
+  *parallel to the strips* says the pin field is a rectangular grid aligned with
+  the board — so a circle, an arc or any pattern that does not decompose into
+  rows is refused **by name**, before any placement exists to grade. That is what
+  CRITERIA's own "Checked by" column describes, and it is the clause carrying the
+  owner's cost judgement: *"nearly every such hole becomes a cut."*
+- **The PLACEMENT half is about MOUNTING, and the headline does not settle it.**
+  Once a footprint's rows exist, how they sit on the board is a separate
+  question, and the owner answered it the other way round from the literal
+  reading: the mounting he names puts a row ACROSS the strips. The literal
+  reading was measured against the boards and refused 13 of 16, 27 of 34 and 10
+  of 12 placed parts on layouts that pass `make check` — §3.2.
+- **So the code implements: footprint rows must DECOMPOSE and be grid-aligned
+  (the headline, footprint-level), and a row that shares a piece of copper may do
+  so only among pins of one net (the placement half, as amended 2026-10-13).**
+  Neither half asserts that a row lies along a strip, and neither forbids it.
+- **The criterion sentence is NOT rewritten here**, because it is the owner's
+  provenance line and an agent may not restate his criterion in its own words.
+  CRITERIA's `HC10` row now carries this distinction and points at this section.
 
 **The task brief's wording was the INVERSE of this, and §3.2–§3.3 below are the
 measurements that established it.** They are kept rather than deleted because
@@ -624,11 +673,86 @@ the easy misreading is that `HC10` turned them red:
   the same shape as `transistor-preamp-lab`'s `C3`, on a board that was already
   failing for other reasons.
 
-**Whether a two-lead row along a strip should refuse when a cut separates its
-holes is the owner's to settle.** It is the question the plan's "four things a
-reviewer should push back on" already raises about the placement half existing at
-all, and these two electrolytics are the live instances of it. Nothing is relaxed
-on the strength of them.
+**THE VIOLATION COUNTS IN THE TABLE ABOVE ARE AGAINST THE SUPERSEDED RULE.**
+They were measured over the geometry-only reading, which §3.4b retired on
+2026-10-13, and they are kept because they are the evidence the decision was made
+against. Under the amended rule the count on `transistor-preamp-loop` is **0 of
+25** rows that share a strip, and the five on `transistor-preamp-lab` are
+reported as **no verdict** rather than as violations — see §3.4b for both.
+
+### 3.4b The question §3.4 carried is settled: a cut between the pins is the normal pattern
+
+**The open question was** *"whether a two-lead row along a strip should refuse
+when a cut separates its holes"*, and the two electrolytics above were its live
+instances. It was put to the owner with the measurement below.
+
+**Owner's words (verbatim and complete), 2026-10-13:** *"follow your
+recommendation on HC10."*
+
+**Owner-settled:** a row whose pins share a piece of copper is unbuildable only
+when nothing separates pins that must not be joined. **The same principle in his
+own earlier words (verbatim):** *"dips should span strips with a cut down the
+middle, like a breadboard."*
+
+**What was measured, with the pinned fork, before the rule was changed:**
+
+| board | part | pins | reference nets | `CUT_STATE` | what the dump says | old verdict | amended verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `transistor-preamp-loop` | `C1` (`CP_Radial_D8.0mm_P3.50mm`) | `1,31`, `1,33` | `EMITTER`, `BYPASS_CAP` | `COMPUTED` | `CUT 1,31,10 1,32,11` — **between the two pins** | refused | **holds**, and the held detail quotes the cut |
+| `transistor-preamp-lab` | `C3` (`CP_Radial_D5.0mm_P2.00mm`) | `10,8`, `10,9` | `COLLECTOR`, `OUT` | `UNRESOLVED` | no cut list at all; `CUT_CONFLICT 10,9,18` names that location, so a cut IS required there | refused | **no verdict**, naming `CUT_STATE` and `HC2` |
+
+The refusal's own remedy — *"turn the part so its rows cross the strips; the
+remedy is in the layout, not in the data"* — was wrong in both cases, because the
+layout was already right.
+
+**Agent rationale** (agent-written; he approved the rule, not this wording):
+
+- **The predicate.** Pins of one footprint row on the **same copper component
+  after cuts** that belong to **different reference nets**. The partition is
+  `copperGraph`'s — `HC8`'s reconstruction, which also accounts for solder
+  bridges and wires — so there is no second spelling of "the same copper" in the
+  repository. The nets come from the reference netlist, never from a `NODE` line.
+  `tools/stripboard/row-copper.ts` holds the reading; `hc10` holds the verdict.
+- **Same net needs no cut and passes.** Measured across the whole tree: on
+  `transistor-preamp-loop` all **25** rows that share a strip are divided by the
+  board's own cuts, and all 25 carry two or more nets; `transistor-preamp-buffered`
+  and `transistor-preamp-feedback` have **none**. So the amended rule is not
+  vacuous on real data in the other direction either — every live instance of
+  shared copper on a passing board is one a cut divides.
+- **`CUT_STATE UNRESOLVED` means NO VERDICT, and it is said in those words.**
+  Both tempting readings are refused explicitly in the detail string: *no cuts,
+  so refuse* condemns `transistor-preamp-lab`'s five such rows, which may be
+  perfectly correct, and *assume a cut, so pass* is a check that cannot fail.
+  `held` is false, the wording says nothing was computed, and `HC2` owns the
+  cause and the remedy — the identical posture `hc8` already takes for the
+  identical cause (§1.4). It is a `broken` and **not** a throw, because an
+  unresolved cut list is a fact about the board rather than missing data.
+- **The cut state is read BEFORE the nets**, so the no-verdict path does not
+  depend on a reference netlist lookup. Both the partition and the net index are
+  built on first use and not before: a board whose every footprint row crosses the
+  strips asks neither question.
+- **The refusal IS a short, and `HC8` reports the same board.** One component
+  carrying two nets is exactly `HC8`'s short, so no fixture can trip the
+  placement half and leave `HC8` held — asserted in
+  `tests/perfboard/check-buildability.test.ts` rather than left to be discovered.
+  What `HC10` adds is the diagnosis: one part, one row, one strip, and the cut
+  that would fix it.
+- **The footprint half is untouched.** Its substance is the cut-COST judgement,
+  which no cut state can answer; a circle or arc still refuses by name.
+
+**The fixtures moved with the rule.** `rows-along-a-strip` — a DIP-16 row along
+one uncut strip with every pin of it on ONE net — is now
+`row-along-a-strip-one-net` and is the amendment's **positive control**, because
+the amended rule admits it. The negative is `row-along-a-strip-two-nets`: the same
+geometry with that row's pins split across two nets and nothing dividing them.
+The live boards are asserted from the real dump in
+`tests/stripboard/hc10-cut-state.test.ts`, which spawns the binary rather than
+copying its lines into a fixture that could drift from the board.
+
+**`make check`'s tally did not move: 2 `ok` / 9 `FAIL`, and no board changed
+state.** `transistor-preamp-loop` still fails, on `HC8`'s 15 opens rather than on
+`HC10`; `transistor-preamp-lab` still fails, on `HC8`'s unresolved cuts and now
+on `HC10`'s no-verdict for the same cause.
 
 ### 3.5 What `HC10` exists for, kept as the standing reason
 
@@ -3364,14 +3488,19 @@ measurements rather than restatements:
 | --- | --- | --- |
 | `pultec-hi-boost`, `pultec-hi-cut`, `pultec-low-boost`, `pultec-low-cut` | `HC8` | NOT GRADED: `reference-pin-not-on-board` — a reference pin with no `PIN` line, because `make update` added parts that arrive unplaced. `--check` already reports the same parts as `blocked`. |
 | `transistor-preamp-lab` | `HC8` | NOT HELD: `CUT_STATE UNRESOLVED`, which is `HC2`'s cause and `HC2`'s remedy |
-| `transistor-preamp-lab` | `HC10` | NOT HELD, placement half: `C3` (`CP_Radial_D5.0mm_P2.00mm`, `DIRECTION W`), pins 1 and 2 at `10,8` and `10,9` — one footprint row on one strip |
+| `transistor-preamp-lab` | `HC10` | **NO VERDICT**, placement half: `C3` (`CP_Radial_D5.0mm_P2.00mm`, `DIRECTION W`), pins 1 and 2 at `10,8` and `10,9` on strip 10, and `CUT_STATE UNRESOLVED` is not `COMPUTED`, so whether anything divides those holes cannot be read. `HC2`'s cause and `HC2`'s remedy. **Read before 2026-10-13 as NOT HELD on the geometry** — one footprint row on one strip — which §3.4b retired |
 | `transistor-preamp-loop` | `HC8` | NOT HELD: 15 opens, 0 shorts |
-| `transistor-preamp-loop` | `HC10` | NOT HELD, placement half: `C1` (`CP_Radial_D8.0mm_P3.50mm`, `DIRECTION W`), pins 1 and 2 at `1,31` and `1,33` |
+| `transistor-preamp-loop` | `HC10` | **HELD** since 2026-10-13: all 25 of its footprint rows that share a strip are divided by the board's own cuts, `C1` (`CP_Radial_D8.0mm_P3.50mm`, `DIRECTION W`) among them — pins 1 and 2 at `1,31` and `1,33` with `CUT 1,31 1,32` between them. **Read before the amendment as NOT HELD**, with the remedy *turn the part*, which was wrong advice about a correct layout |
 | `pultec-mid` | — | no section at all: its netlist export refuses before the binary is reached (§9.5, `SW_MID` has no part chosen) |
 
-**The two electrolytics are the live instance of the question §3.4 now carries**
-— whether a two-lead row along a strip should refuse when a cut separates its
-holes — and it is the owner's to settle.
+**The two electrolytics WERE the live instance of the question §3.4 carried** —
+whether a two-lead row along a strip should refuse when a cut separates its holes
+— and the owner settled it on 2026-10-13. His words, verbatim and complete:
+*"follow your recommendation on HC10."* §3.4b is the record: the measurement, the
+owner-settled rule, the derived predicate, and what an unresolved `CUT_STATE`
+means for it. **The tally in §10.1 is unchanged by the amendment — 2 `ok` / 9
+`FAIL`, with no board changing state** — because both boards were already failing
+on `HC8` for reasons `HC10` never owned.
 
 ### 10.4 A refusal is carried in the report rather than thrown out of it
 
@@ -3399,8 +3528,9 @@ it cannot produce is a board that looks clean.
    must reject.** `tests/perfboard/check.test.ts` drives `checkPerfboard` over
    `span-above-reach` (`HC5`), `span-below-minimum` (`HC9`), `two-nets-shorted`
    (`HC8`), `round-pin-pattern` (`HC10`'s footprint half) and
-   `rows-along-a-strip` (`HC10`'s placement half), with `healthy` as the positive
-   control. Each assertion is made against **one constraint's own line** in the
+   `row-along-a-strip-two-nets` (`HC10`'s placement half, renamed and re-netted
+   by §3.4b's amendment), with `healthy` and `row-along-a-strip-one-net` as the
+   positive controls. Each assertion is made against **one constraint's own line** in the
    report, because the section prints all four and a held constraint's prose
    names parts, footprints and other constraints' ids — a regex over the whole
    report passes for the wrong reason, which is the defect class this plan hit

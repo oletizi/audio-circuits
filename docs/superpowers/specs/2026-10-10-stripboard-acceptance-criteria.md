@@ -197,7 +197,7 @@ Ten, and nothing in them is tradeable. **A1 is the verdict that all ten hold.**
 | **HC7** | **The layout still matches the circuit.** | `--check`'s schematic-delta section is empty. | [model] |
 | **HC8** | **Netlist equivalence, reconstructed from copper**: the connected components of the board's copper, computed outside VeroRoute, partition the pins exactly as the reference netlist does — no reference net in two components (an **open**), no two reference nets in one (a **short**). Because HC1, HC2, HC3 and HC7 each read VeroRoute's own conclusion, from the subsystem the optimiser perturbs, and that subsystem is known to have a hole — `GetBoardMembership` iterates what the *component* records rather than the copper, which is why a floated part left the `NODE` block identical and went undetected. And because a completeness check is structurally blind to a short, which leaves both joined nets reading complete: nothing in HC1–HC7 looks for one at all. | the reconstruction below, over the geometry contract below. | [review] (D16) |
 | **HC9** | **Every lead span at or above the part's own physical minimum** — the family's `minSpanHoles` — because HC4 bounds a span by the tool and HC5 bounds it above by reach, and **nothing bounded it below by the part**: `--stretch shrink` can compress a DIN0207, 6.3 mm of body on a 10.16 mm nominal pitch, to a 2-hole 5.08 mm span no bending achieves, and every other check here passes it. | as HC5, against `minSpanHoles`, **in the grader regardless of the generator**, because the generator only proposes. | [review] (D18), [external] values |
-| **HC10** | **Every placed part's pins lie on straight lines parallel to the strips** — the owner's rule, and **a cost judgement rather than a geometric impossibility.** A footprint whose pins sit on a circle, an arc, or any pattern **not decomposable into rows** parallel to the strips is **refused rather than placed**, because a strip is a straight line of copper: a round pattern crosses a different strip at nearly every pin and shares one with pins it must not share with, so **nearly every such hole becomes a cut** — and the body then sits over holes it does not use. Such a board could be routed, with enough cuts; the owner's verdict is that the cut cost is prohibitive and that he will not build it. **Rows plural, and decomposability is the test:** a DIP-16 is two rows parallel to the strips, decomposes, and passes. | a **footprint-level** check against the span/footprint data, because whether a footprint's pins decompose into rows parallel to the strips is a property of the **footprint**, not of a placement: the classification is per footprint family, a non-decomposable family refuses **by name** before any placement exists to grade, and `lib/kicad/lead-span.ts` — keyed by the footprint name the netlist carries, already refusing an unlisted family by name — is the place by shape. **It carries no pin-pattern field yet; §10.3 is that gap.** In A1. | [owner], 2026-10-10. **Owner-settled:** a footprint whose pins do not decompose into rows parallel to the strips is refused rather than placed. **Owner's words (verbatim):** quoted in the HC10 paragraph below. **Agent rationale:** the rest of this row, and the HC10 paragraphs below apart from that quote |
+| **HC10** | **Every placed part's pins lie on straight lines parallel to the strips** — the owner's rule, and **a cost judgement rather than a geometric impossibility.** A footprint whose pins sit on a circle, an arc, or any pattern **not decomposable into rows** parallel to the strips is **refused rather than placed**, because a strip is a straight line of copper: a round pattern crosses a different strip at nearly every pin and shares one with pins it must not share with, so **nearly every such hole becomes a cut** — and the body then sits over holes it does not use. Such a board could be routed, with enough cuts; the owner's verdict is that the cut cost is prohibitive and that he will not build it. **Rows plural, and decomposability is the test:** a DIP-16 is two rows parallel to the strips, decomposes, and passes. **AND THE HEADLINE SENTENCE IS ABOUT DECOMPOSABILITY, NOT ABOUT MOUNTING** — the straight lines it requires are the footprint's own rows, and *parallel to the strips* says the pin field is a rectangular grid aligned with the board rather than a circle or an arc. It does **not** say a row must lie ALONG a strip; the mounting the owner names puts a row ACROSS them. That tension is resolved in `docs/stripboard/pipeline-verification.md` §3.4a, which says which reading the code implements and why. **The placement half, amended 2026-10-13, refuses only where pins of one footprint row land on the SAME PIECE OF COPPER after cuts are taken into account AND belong to DIFFERENT reference nets.** Two pins of one part on one strip that are on the **same** net need no cut and pass; a cut between pins that must not be joined is the normal, intended pattern, which is the principle the owner's own DIP ruling states. A `CUT_STATE` other than `COMPUTED` leaves the placement half with **no verdict** — `held` false, said in those words, never a pass and never the row refusal. | a **footprint-level** check against the span/footprint data, because whether a footprint's pins decompose into rows parallel to the strips is a property of the **footprint**, not of a placement: the classification is per footprint family, a non-decomposable family refuses **by name** before any placement exists to grade, and `lib/kicad/lead-span.ts` — keyed by the footprint name the netlist carries, already refusing an unlisted family by name — is the place by shape. **It carries no pin-pattern field yet; §10.3 is that gap.** In A1. **The PLACEMENT half is a second, placement-level check on top of that one, and it does not weaken it:** it groups a placed part's `PIN` holes by footprint row and by strip, and for a row with two or more holes on one strip it reads the copper partition `HC8` already reconstructs (`copperGraph`, which accounts for cuts, solder bridges and wires) together with the reference netlist, refusing only a piece of copper that carries two or more nets. `tools/stripboard/row-copper.ts` holds that reading and `tools/stripboard/constraints-pattern.ts` the verdict. A non-decomposable family still refuses **by name** in the footprint half before any placement exists to grade. | [owner], 2026-10-10; placement half amended by him 2026-10-13. **Owner-settled:** (a) a footprint whose pins do not decompose into rows parallel to the strips is refused rather than placed; (b) a row whose pins share a piece of copper is unbuildable only when nothing separates pins that must not be joined. **Owner's words (verbatim):** the footprint half's are quoted in the HC10 paragraph below; the amendment's are *"dips should span strips with a cut down the middle, like a breadboard"* and, approving the amended rule after being shown the measurement, *"follow your recommendation on HC10."* **Agent rationale:** everything else — the rest of this row, the derived predicate (same copper component after cuts, and different nets), the no-verdict reading of an unresolved `CUT_STATE`, and the HC10 paragraphs below apart from the quoted sentences |
 
 ### DIMENSIONS ARE ALWAYS PROVISIONAL — the owner's standing rule
 
@@ -368,6 +368,58 @@ be routed, with a cut at nearly every pin, so framing the refusal as geometric i
 claims more than is true and invites a counterexample that does not overturn the rule. The
 justification is the prohibitive cut cost; the authority is the owner, and the provenance stays
 **[owner]**.
+
+**HC10's PLACEMENT half was amended on 2026-10-13, and what it had been doing was reading the
+geometry as though no board ever had a cut in it.** The clause the owner settled on 2026-10-11 was
+*"no two pins belonging to the same footprint row may share a strip"*, and the sentence justifying
+it was *"a row lying along a strip puts every pin of that row on one piece of copper."* That is
+true only of an uncut strip. Measured with the pinned fork on two committed boards:
+
+| board | part | footprint | pins | nets | `CUT_STATE` | what the dump actually says |
+| --- | --- | --- | --- | --- | --- | --- |
+| `transistor-preamp-loop` | `C1` | `Capacitor_THT:CP_Radial_D8.0mm_P3.50mm` | `1,31` and `1,33` | `EMITTER`, `BYPASS_CAP` | `COMPUTED` | `CUT 1,31,10 1,32,11` — a cut **between the two pins**, so the two nets are separated and the placement is correct |
+| `transistor-preamp-lab` | `C3` | `Capacitor_THT:CP_Radial_D5.0mm_P2.00mm` | `10,8` and `10,9` | `COLLECTOR`, `OUT` | `UNRESOLVED` | no cut list at all, and `CUT_CONFLICT 10,9,18` naming that very location, so a cut is required there and the fork could not work it out |
+
+Both refused, and the refusal's own remedy — *"turn the part so its rows cross the strips; the
+remedy is in the layout, not in the data"* — was **wrong in both cases**, because the layout was
+already right.
+
+**Owner's words (verbatim and complete), approving the amendment after being shown that
+measurement and the proposed rule:** *"follow your recommendation on HC10."*
+
+**Owner-settled:** a row whose pins share a piece of copper is unbuildable only when nothing
+separates pins that must not be joined. **This is the same principle as his own earlier DIP
+ruling, in his words (verbatim):** *"dips should span strips with a cut down the middle, like a
+breadboard."* A DIP's rows cross the strips, its two rows share each strip pairwise, and the cut
+down the middle divides them: shared copper plus a dividing cut is correct construction, not a
+defect.
+
+**Agent rationale** (agent-written; the owner approved the rule above, not this wording): the
+predicate the amendment needs is *pins of one footprint row on the SAME COPPER COMPONENT, cuts
+taken into account, that belong to DIFFERENT reference nets.* Three consequences, each stated
+because each is a thing a reader could get wrong:
+
+- **Same net, one piece of copper, no cut: PASSES.** There is nothing to separate. A check that
+  refused it would demand a cut whose only effect is an open, which `HC1` and `HC8` would then
+  report.
+- **`CUT_STATE` other than `COMPUTED` means NO VERDICT**, and the two tempting readings are both
+  refused by name in the detail string. *No cuts, so refuse* condemns five placements on
+  `transistor-preamp-lab` that may be perfectly correct. *Assume a cut, so pass* is a check that
+  cannot fail. So the row is reported with `held` false and wording that says it computed nothing
+  — exactly `HC8`'s posture for the identical cause, with `HC2` owning the cause and the remedy.
+  A skipped check must never look like a passing one, and this is the shape that rule takes here.
+- **The refusal is a SHORT, so `HC8` reports the same board, and that overlap is not hidden.** One
+  copper component carrying two reference nets is precisely `HC8`'s short. What the placement half
+  adds is the diagnosis rather than the detection: it localises the short to one part, one
+  footprint row and one strip, and names the cheap remedy — cut the strip between those two holes,
+  or turn the part. No fixture can trip the placement half and leave `HC8` held, which is asserted
+  rather than left to be discovered (`tests/perfboard/check-buildability.test.ts`).
+
+**The FOOTPRINT half is untouched by the amendment**, and that is deliberate rather than
+incidental: its substance is the owner's cost judgement quoted above — *"nearly every such hole
+becomes a cut"* — which no cut state can answer, because the objection is to the number of cuts
+and not to their absence. A circle or arc pattern still refuses **by name** before any placement
+exists to grade.
 
 **HC10 and the residency data are two different instruments and both are needed.** The rotary
 exclusion also lives in residency data: `circuits/pultec/off-board.ts` puts all six rotary

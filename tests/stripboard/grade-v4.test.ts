@@ -50,7 +50,15 @@ const V4_CASES: readonly (readonly [ConstraintId, string, readonly string[]])[] 
     "C2 spans 2 holes against minSpanHoles 3",
   ]],
   ["HC10", "round-pin-pattern", ["the footprint half refuses part SW1"]],
-  ["HC10", "rows-along-a-strip", ["the placement half refuses part U1"]],
+  // THE PLACEMENT HALF'S FIXTURE CHANGED ON 2026-10-13, with the owner's
+  // amendment to HC10. `rows-along-a-strip` was a DIP-16 with one eight-pin row
+  // along one strip and every pin of it on ONE NET, which the amended rule
+  // ADMITS: shared copper is a fault only when nothing separates pins that must
+  // not be joined, and pins of one net need no cut. That board is now
+  // `row-along-a-strip-one-net` and is a POSITIVE control (grade.test.ts). This
+  // fixture is the same geometry with the row's pins split across two reference
+  // nets and nothing dividing them, which is genuinely unbuildable.
+  ["HC10", "row-along-a-strip-two-nets", ["the placement half refuses part U1"]],
 ]
 
 test("V4: each constraint has a fixture it rejects by name", () => {

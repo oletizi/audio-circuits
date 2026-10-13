@@ -22,6 +22,14 @@ import { usableDirection, type Pin } from "../guide/dump.ts"
 import { pinPatternFor } from "../../lib/kicad/pin-pattern.ts"
 import { admitPattern } from "../../lib/kicad/pin-pattern-model.ts"
 import type { PadPosition, PinPattern } from "../../lib/kicad/pin-pattern-model.ts"
+import type { HoleKey } from "./copper.ts"
+import {
+  copperComponents,
+  copperShares,
+  cutsAcross,
+  netByPin,
+  type CopperShare,
+} from "./row-copper.ts"
 import {
   at,
   broken,
@@ -32,6 +40,23 @@ import {
   type CheckInput,
   type ConstraintResult,
 } from "./constraints-model.ts"
+
+/**
+ * What the placement half read, so a PASS can print its figures too.
+ *
+ * `failure` is the detail of a refusal OR of a no-verdict, both of which make
+ * `held` false; the wording is what tells the two apart, exactly as it does in
+ * `hc8`. The three counts are over footprint ROWS rather than parts, because a
+ * part can have two rows sharing two different strips.
+ */
+interface PlacementReading {
+  readonly failure: string | undefined
+  readonly sharedRows: number
+  readonly dividedRows: number
+  readonly oneNetRows: number
+  /** The first shared row read, quoted with what the board does about it. */
+  readonly witness: string | undefined
+}
 
 /** `HC10`'s footprint half: Task 2's check, called from here. */
 function hc10FootprintEligibility(input: CheckInput): string | undefined {
@@ -158,29 +183,50 @@ function hc10Rows(pattern: PinPattern): readonly (readonly string[])[] {
 }
 
 /**
- * `HC10`'s placement half - **THE OWNER'S RULE, decided by him on 2026-10-11**:
+ * `HC10`'s placement half - **THE OWNER'S RULE, as amended by him on
+ * 2026-10-13**:
  *
- *   > **No two pins belonging to the same footprint row may share a strip.**
+ *   > **No two pins belonging to the same footprint row may share a PIECE OF
+ *   > COPPER unless they are pins the netlist puts on the same net.**
  *
  * His sentence, quoted: *"dips should span strips with a cut down the middle,
  * like a breadboard."*
  *
- * THE TASK BRIEF'S ORIGINAL WORDING WAS INVERTED, and recording that is the
- * point of this paragraph rather than tidiness. It asked that a part's pins
- * *"fall on a set of strips whose occupied strips are exactly the rows the
- * footprint's classification predicts"* - which requires a footprint row to lie
- * ALONG a strip. Measured against the three committed boards that pass
- * `make check`, that refused 13 of 16, 27 of 34 and 10 of 12 placed parts,
- * because a two-terminal part's leads sit on two strips BECAUSE THEY SIT ON TWO
- * NETS: both leads on one strip is a short across the part. The owner settled
+ * **IT READ THE GEOMETRY AND NOT THE CUTS UNTIL 2026-10-13, AND THAT WAS A
+ * DEFECT.** The rule was *"no two pins of the same footprint row may share a
+ * STRIP"*, justified by the sentence *"a row lying along a strip puts every pin
+ * of that row on one piece of copper"* - which is true only of a strip nobody
+ * cut. Measured on two committed boards: `transistor-preamp-loop`'s `C1`
+ * (`CP_Radial_D8.0mm_P3.50mm`, pins at `1,31` and `1,33`, on `EMITTER` and
+ * `BYPASS_CAP`) is divided by `CUT 1,31,10 1,32,11`, a cut sitting between the
+ * two pins, and the layout is correct; `transistor-preamp-lab`'s `C3` is the
+ * same shape. Both refused, and the refusal's remedy - turn the part - was
+ * wrong, because the layout was already right. The owner was shown the
+ * measurement and approved the amendment: **his words (verbatim and complete):**
+ * *"follow your recommendation on HC10."* Everything below beyond his two quoted
+ * sentences is agent rationale he approved, and
+ * `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` keeps
+ * the three apart.
+ *
+ * **SHARED COPPER PLUS A DIVIDING CUT IS CORRECT CONSTRUCTION**, which is the
+ * principle his DIP ruling already states: the DIP's rows cross the strips, its
+ * two rows share each strip pairwise, and the cut down the middle divides them.
+ * So the fault is never the sharing; it is the sharing with nothing separating
+ * pins that must not be joined.
+ *
+ * **THE TASK BRIEF'S ORIGINAL WORDING WAS INVERTED**, and recording that is
+ * still the point of this paragraph. It asked that a part's pins *"fall on a set
+ * of strips whose occupied strips are exactly the rows the footprint's
+ * classification predicts"* - which requires a footprint row to lie ALONG a
+ * strip. Measured against the three committed boards that passed `make check`,
+ * that refused 13 of 16, 27 of 34 and 10 of 12 placed parts. The owner settled
  * it the other way round, and the measurements are in
  * `docs/stripboard/pipeline-verification.md` section 3.
  *
- * WHY IT IS A SHORT AND NOT A PREFERENCE: a row lying along a strip puts every
- * pin of that row on ONE piece of copper. A row crossing the strips puts each
- * of its pins on its own strip, which is the breadboard mounting. The DIP's
- * centre cut is `HC1`'s and `HC8`'s business, where connectivity is decided;
- * `HC10` does not assert it a second time.
+ * **THE DIP'S CENTRE CUT IS STILL NOT ASSERTED HERE.** That cut divides pins of
+ * TWO DIFFERENT rows sharing a strip, and the rows are grouped separately below,
+ * so the pair never meets in one group. Connectivity across rows is `HC1`'s and
+ * `HC8`'s business and `HC10` does not assert it a second time.
  *
  * `DIRECTION` IS READ AS WELL AS THE PIN HOLES - TWO WITNESSES, for `M1.1`'s
  * own reason: *"reading the orientation directly is what makes the check
@@ -203,9 +249,33 @@ function hc10Rows(pattern: PinPattern): readonly (readonly string[])[] {
  *
  * A ONE-PIN ROW CANNOT VIOLATE THE RULE, and that is correct rather than a gap:
  * a row of one pin cannot be shorted to itself. Negative fixture:
- * `rows-along-a-strip`.
+ * `row-along-a-strip-two-nets`; positive control for the amendment:
+ * `row-along-a-strip-one-net`, which is the same geometry on one net.
+ *
+ * **`CUT_STATE UNRESOLVED` MEANS NO VERDICT, AND IT IS SAID OUT LOUD.** The
+ * question "do these two pins share a piece of copper" has no answer when the
+ * cut list is absent rather than empty, and the two tempting readings are both
+ * wrong: *no cuts, so refuse* condemns `transistor-preamp-lab`'s five such rows,
+ * which may well be correct, and *assume a cut, so pass* is a check that cannot
+ * fail. So the row is reported as having NO VERDICT, with `held` false, exactly
+ * as `hc8` reports the same cause - a fact about the board that `HC2` names and
+ * owns the remedy for, never missing data and never a throw.
  */
-function hc10PlacementOrientation(input: CheckInput): string | undefined {
+function hc10PlacementOrientation(input: CheckInput): PlacementReading {
+  // BOTH ARE BUILT ON FIRST USE AND NOT BEFORE. `copperComponents` walks every
+  // hole the GRID line declares, and the net index walks the whole reference
+  // netlist; a board whose every footprint row crosses the strips - which is
+  // most of them - needs neither, and building them unconditionally would make
+  // every grade pay for a question it never asks. It also keeps the net lookup
+  // away from a board that has no row sharing a strip at all, so a fixture whose
+  // reference netlist describes a different board is not refused for a reason
+  // that has nothing to do with it.
+  let components: ReadonlyMap<HoleKey, number> | undefined
+  let nets: ReadonlyMap<string, string> | undefined
+  let sharedRows = 0
+  let dividedRows = 0
+  let oneNetRows = 0
+  let witness: string | undefined
   for (const [part, pins] of placedParts(input.dump)) {
     const footprint = footprintOf(part, pins, input.footprints)
     if (footprint === undefined) continue
@@ -265,22 +335,79 @@ function hc10PlacementOrientation(input: CheckInput): string | undefined {
       group.push(pin)
       byRowAndStrip.set(key, group)
     }
-    const shared = [...byRowAndStrip.entries()].filter(([, group]) => group.length > 1)
-    const first = shared[0]
-    if (first !== undefined) {
-      const [key, group] = first
+    for (const [key, group] of byRowAndStrip) {
+      if (group.length < 2) continue
+      sharedRows += 1
       const [row, strip] = key.split("|")
-      return (
-        `the placement half refuses part ${part.ref} (${footprint}, DIRECTION ${direction}): ` +
-        `row ${row ?? ""} of its footprint has ${group.length} pins on strip ${strip ?? ""} - ` +
-        `pins ${group.map((pin) => pin.pin).join(" and ")} at ${group.map(at).join(" and ")}` +
-        `${shared.length > 1 ? `, and ${shared.length - 1} further row(s) likewise` : ""}. ` +
-        "A row lying along a strip puts every pin of that row on one piece of copper. Turn the " +
-        "part so its rows cross the strips; the remedy is in the layout, not in the data."
-      )
+      const where =
+        `part ${part.ref} (${footprint}, DIRECTION ${direction}): row ${row ?? ""} of its ` +
+        `footprint puts ${group.length} pins on strip ${strip ?? ""} - pins ` +
+        `${group.map((pin) => pin.pin).join(" and ")} at ${group.map(at).join(" and ")}`
+      // THE CUT STATE IS READ BEFORE THE NETS, because the first question is
+      // which piece of copper each pin is on and that question has no answer
+      // without the cut list. Reading the nets first would answer a narrower
+      // question - are these pins even allowed to be joined - for a board whose
+      // copper nobody can reconstruct, and then still have no verdict.
+      if (input.dump.cutState !== "COMPUTED") {
+        return { failure: noVerdict(where, input.dump.cutState), sharedRows, dividedRows, oneNetRows, witness }
+      }
+      components ??= copperComponents(input.dump)
+      nets ??= netByPin(input.reference)
+      const shares = copperShares(part.ref, group, components, nets)
+      const joined = shares.find((share) => share.nets.length > 1)
+      if (joined !== undefined) {
+        return { failure: refusal(where, joined), sharedRows, dividedRows, oneNetRows, witness }
+      }
+      if (shares.length > 1) {
+        dividedRows += 1
+        const cuts = cutsAcross(input.dump, group)
+        witness ??=
+          `${where}, which the board divides into ${shares.length} pieces of copper` +
+          `${cuts.length > 0 ? ` - the dump prints ${cuts.join(", ")} between them` : ""}`
+        continue
+      }
+      oneNetRows += 1
+      witness ??= `${where}, all of them on net ${joinedNet(shares)}, which needs no cut`
     }
   }
-  return undefined
+  return { failure: undefined, sharedRows, dividedRows, oneNetRows, witness }
+}
+
+/** The one net a single undivided share carries, for the witness wording. */
+function joinedNet(shares: readonly CopperShare[]): string {
+  const only = shares[0]?.nets[0]
+  if (only === undefined) {
+    throw new Error(
+      "unreachable: a copper share with no net reached HC10's witness wording, although " +
+        "copperShares derives every share's nets from its pins and netOf refuses a pin the " +
+        "reference netlist does not list",
+    )
+  }
+  return only
+}
+
+/** The placement half's refusal: one piece of copper, two or more nets, nothing dividing them. */
+function refusal(where: string, joined: CopperShare): string {
+  return (
+    `the placement half refuses ${where}, and the board puts ` +
+    `${joined.pins.map((pin) => pin.pin).join(" and ")} on ONE piece of copper carrying ` +
+    `${joined.nets.length} different reference nets - ${joined.nets.join(" and ")}. Nothing ` +
+    "divides them, so the row joins nets the netlist keeps apart. Cut the strip between those " +
+    "holes, or turn the part so the row crosses the strips: a row sharing a strip is a fault " +
+    "only when nothing separates pins that must not be joined."
+  )
+}
+
+/** The placement half's NO VERDICT, for a dump whose cut list is absent rather than empty. */
+function noVerdict(where: string, cutState: string): string {
+  return (
+    `the placement half has NO VERDICT for ${where}, and whether anything divides those ` +
+    `holes cannot be read: CUT_STATE ${cutState} is not COMPUTED, so the cut list is absent ` +
+    "rather than empty. This is HC2's cause and HC2's remedy. It is NOT read as `no cuts, so " +
+    "refuse`, which would condemn a layout that may be correct, and NOT as `assume a cut, so " +
+    "pass`, which would be a check that cannot fail; HC10 reports that it has no verdict, and " +
+    "held is false either way."
+  )
 }
 
 /**
@@ -291,19 +418,29 @@ function hc10PlacementOrientation(input: CheckInput): string | undefined {
  * ONE ENTRY CONJOINING TWO HALVES, with `detail` naming WHICH half failed so a
  * failure points at the remedy: the footprint half points at the data, the
  * placement half points at the layout.
+ *
+ * **THE HELD DETAIL CARRIES THE THREE FIGURES THE AMENDED RULE TURNS ON** - how
+ * many footprint rows shared a strip, how many of those the board divides, and
+ * how many are on one net and so need no cut. A pass saying only that nothing
+ * was found would be indistinguishable from a pass that looked for nothing, and
+ * before 2026-10-13 it also said *"each row crosses the strips"*, which was a
+ * claim the check no longer makes.
  */
 export function hc10(input: CheckInput): ConstraintResult {
   const footprintFailure = hc10FootprintEligibility(input)
   if (footprintFailure !== undefined) return broken("HC10", footprintFailure)
-  const placementFailure = hc10PlacementOrientation(input)
-  if (placementFailure !== undefined) return broken("HC10", placementFailure)
+  const placement = hc10PlacementOrientation(input)
+  if (placement.failure !== undefined) return broken("HC10", placement.failure)
   const placed = placedParts(input.dump).filter(
     ([part, pins]) => footprintOf(part, pins, input.footprints) !== undefined,
   )
   return holds(
     "HC10",
-    `the footprint half admits all ${placed.length} placed part(s) with a declared footprint, ` +
-      "and the placement half finds no footprint row with two pins on one strip - each row " +
-      "crosses the strips, which is the mounting the owner's rule requires.",
+    `the footprint half admits all ${placed.length} placed part(s) with a declared footprint. ` +
+      `The placement half read ${placement.sharedRows} footprint row(s) with two or more pins ` +
+      `on one strip: ${placement.dividedRows} that the board divides into separate pieces of ` +
+      `copper, and ${placement.oneNetRows} on one piece carrying one net, where no cut is ` +
+      `called for` +
+      `${placement.witness === undefined ? "" : `. First of them: ${placement.witness}`}.`,
   )
 }

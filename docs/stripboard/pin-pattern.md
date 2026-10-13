@@ -185,11 +185,21 @@ footprint, and they are not the same claim.**
 
 These two modules are the **footprint half**: they answer "do this footprint's
 pads decompose into rows at all?". A footprint that decomposes along one axis
-still has to be **oriented** so those rows lie along the strips, and a layout
-that failed to orient it is a layout this check passes. That placement half
-needs each placed part's pin positions and its direction, which the layout dump
-does not yet carry, and it is the other clause of `HC10`'s own criterion
-sentence rather than a new criterion.
+still has to be **mounted** compatibly, and a layout that was not is a layout
+this check passes. That placement half needs each placed part's pin positions
+and its direction, and it is the other clause of `HC10`'s own criterion sentence
+rather than a new criterion.
+
+**THE SENTENCE ABOVE SAID "so those rows lie ALONG the strips" UNTIL 2026-10-13,
+AND THAT WAS STALE IN TWO SEPARATE WAYS.** The owner reversed it on 2026-10-11 —
+*"dips should span strips with a cut down the middle, like a breadboard"* — so a
+row CROSSES the strips, and he amended it again on 2026-10-13 so that a row
+sharing a piece of copper is a fault only when nothing separates pins that must
+not be joined. The placement half is built (`tools/stripboard/constraints-pattern.ts`
+and `row-copper.ts`) and the dump does carry `DIRECTION`. **The authorities are
+`docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`'s `HC10`
+row and `docs/stripboard/pipeline-verification.md` §3, §3.4a and §3.4b**; this
+section states only the footprint/placement division, which is unchanged.
 
 **The owner's call:** if the "Checked by" column is read as the whole of `HC10`,
 the placement half is deleted and the gap it covers is restored — a layout could

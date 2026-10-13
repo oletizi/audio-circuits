@@ -51,10 +51,23 @@ function checkWithFixture(
   })
 }
 
-/** The three the fixture under test is NOT for; each must still hold. */
-function expectOthersHeld(report: string, offending: ConstraintId): void {
-  const others = ADMITTED_IDS.filter((id) => id !== offending)
-  expect(others.length).toBe(3)
+/**
+ * The admitted ids the fixture under test is NOT for; each must still hold.
+ *
+ * **IT TAKES MORE THAN ONE OFFENDING ID SINCE 2026-10-13**, and the reason is a
+ * fact about the amended `HC10` rather than a loosening. `HC10`'s placement half
+ * now refuses only where pins of one footprint row land on ONE PIECE OF COPPER
+ * on DIFFERENT NETS - which is what a SHORT is, so `HC8` reports the same board
+ * too, from the whole-board partition. The two differ in diagnosis, not in
+ * detection: `HC10` localises it to one part, one row and one strip, and names
+ * the cut that would fix it. No fixture can trip the placement half and leave
+ * `HC8` held, so a helper demanding exactly three others would make that
+ * impossible pair a test requirement.
+ */
+function expectOthersHeld(report: string, ...offending: readonly ConstraintId[]): void {
+  const others = ADMITTED_IDS.filter((id) => !offending.includes(id))
+  expect(others.length).toBe(ADMITTED_IDS.length - offending.length)
+  expect(others.length).toBeGreaterThan(0)
   for (const id of others) {
     expect(lineFor(report, id), `${id} should still hold on a single-fault fixture`)
       .toContain(`${id} held`)
@@ -159,14 +172,20 @@ test("G4: HC10's FOOTPRINT half fails make check on the round-pin-pattern fixtur
   })
 })
 
-test("G4: HC10's PLACEMENT half fails make check on the rows-along-a-strip fixture, naming the part and its DIRECTION", async () => {
+test("G4: HC10's PLACEMENT half fails make check on the row-along-a-strip-two-nets fixture, naming the part and its DIRECTION", async () => {
   // THE TWO HALVES ARE TESTED SEPARATELY because they point at different
   // remedies - the footprint half at the data, the placement half at the layout
   // - and one id covering both is exactly how one of them could stop running
   // without any verdict changing.
+  //
+  // HC8 FAILS ON THIS BOARD TOO, and that is the amended rule being honest
+  // rather than a fixture with two faults in it: a row on one piece of copper
+  // carrying two nets IS a short, so the whole-board partition sees it as well.
+  // HC10's own line is still asserted on its own, which is the point of
+  // `lineFor`.
   await withVrt(async (vrtPath) => {
     const result = await checkWithFixture(vrtPath, () =>
-      Promise.resolve(negativeInput("rows-along-a-strip")),
+      Promise.resolve(negativeInput("row-along-a-strip-two-nets")),
     )
     expect(result.ok).toBe(false)
     const hc10 = lineFor(result.report, "HC10")
@@ -174,7 +193,27 @@ test("G4: HC10's PLACEMENT half fails make check on the rows-along-a-strip fixtu
     expect(hc10).toContain("the placement half refuses part U1")
     expect(hc10).toContain("Package_DIP:DIP-16_W7.62mm")
     expect(hc10).toContain("DIRECTION")
-    expectOthersHeld(result.report, "HC10")
+    expect(lineFor(result.report, "HC8")).toContain("HC8 NOT HELD")
+    expectOthersHeld(result.report, "HC10", "HC8")
+  })
+})
+
+test("G4: HC10's PLACEMENT half HOLDS through make check on the one-net board that used to fail it", async () => {
+  // THE AMENDMENT'S POSITIVE CONTROL ON THIS PATH, not only on the grader's.
+  // `row-along-a-strip-one-net` is the fixture the placement half refused until
+  // 2026-10-13: one DIP-16 row along one uncut strip, every pin of it on one
+  // net. Nothing separates those pins and nothing needs to, so all four
+  // admitted constraints hold and `make check` is green on it.
+  await withVrt(async (vrtPath) => {
+    const result = await checkWithFixture(vrtPath, () =>
+      Promise.resolve(negativeInput("row-along-a-strip-one-net")),
+    )
+    expect(result.ok, result.report).toBe(true)
+    for (const id of ADMITTED_IDS) {
+      expect(lineFor(result.report, id)).toContain(`${id} held`)
+    }
+    expect(result.report).not.toContain("NOT HELD")
+    expect(result.report).not.toContain("NOT GRADED")
   })
 })
 

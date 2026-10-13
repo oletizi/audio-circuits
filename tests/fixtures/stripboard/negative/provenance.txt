@@ -6,6 +6,12 @@ all ten hold. Every one of them is named for the constraint it must make fail,
 and tests/stripboard/grade.test.ts asserts that THAT constraint failed and that
 its detail names the offending thing - not merely that something failed.
 
+THREE OF THEM ARE POSITIVE CONTROLS rather than negatives, and they sit here
+because they are the same boards with the fault taken out:
+`rows-across-the-strips` and `row-along-a-strip-one-net` for HC10's placement
+half, and `healthy` itself. A directory of negatives alone cannot tell a check
+that refuses the right thing from a check that refuses everything.
+
 A fixture is up to five files. Each falls back to `healthy`'s when absent, so a
 fixture declares only what it changes:
 
@@ -179,22 +185,60 @@ round-pin-pattern           HAND-WRITTEN. HC10's FOOTPRINT-half fixture. It
                             from its pad coordinates, never asserted, so it is a
                             ring because its geometry is a ring.
 
-rows-along-a-strip          HAND-WRITTEN. HC10's PLACEMENT-half fixture, and it
-                            is the INVERSE of what the task brief asked for.
-                            The brief wanted a decomposable footprint turned so
-                            its rows run ACROSS the strips. The owner settled it
-                            the other way on 2026-10-11: *"dips should span
+row-along-a-strip-two-nets  HAND-WRITTEN. HC10's PLACEMENT-half NEGATIVE
+                            fixture since the owner's amendment of 2026-10-13.
+                            A DIP-16 with one of its two eight-pin rows ALONG a
+                            single uncut strip, and that row's pins split across
+                            TWO reference nets - `sideA` for pins 1-4 and
+                            `other` for pins 5-8. Nothing divides them, so the
+                            strip joins two nets the netlist keeps apart, which
+                            is the fault the amended rule names. The geometry
+                            alone is NOT the fault; the netlist is what makes
+                            this board unbuildable, and `row-along-a-strip-
+                            one-net` below is the same geometry passing.
+                            HC8 FAILS ON IT TOO, and that is the amended rule
+                            being honest rather than a fixture with two faults:
+                            one piece of copper carrying two nets IS a short, so
+                            the whole-board partition sees it as well. The two
+                            differ in diagnosis - HC10 localises it to one part,
+                            one footprint row and one strip, and names the cut
+                            that would fix it - not in detection.
+                            No pad coordinate and no row count is written into
+                            the test: it reads the rows through the recorded
+                            pattern.
+
+row-along-a-strip-one-net   HAND-WRITTEN. THIS WAS `rows-along-a-strip`, HC10's
+                            placement-half negative fixture until 2026-10-13,
+                            and it is now the POSITIVE CONTROL for the owner's
+                            amendment - renamed and unchanged in content, which
+                            is the honest record of what the amendment did.
+                            It puts one of a DIP-16's eight-pin rows along a
+                            single uncut strip with every pin of that row on net
+                            `sideA`. The old rule refused it on the geometry,
+                            *"because a row lying along a strip puts every pin of
+                            that row on one piece of copper"*; the amended rule
+                            admits it, because those pins are pins the netlist
+                            puts on ONE net and nothing needs to separate them.
+                            WHAT THE AMENDMENT REPLACED, kept here because this
+                            file is the record: the 2026-10-11 rule was *"no two
+                            pins of the same footprint row may share a strip"*,
+                            settled from the owner's sentence *"dips should span
                             strips with a cut down the middle, like a
-                            breadboard."* So the fixture that must FAIL puts one
-                            of a DIP-16's two eight-pin rows ALONG a single
-                            strip, which puts every pin of that row on one piece
-                            of copper. No pad coordinate and no row count is
-                            written into the test: it reads the rows through the
-                            recorded pattern.
-                            The brief's wording was measured against the
-                            committed boards before being replaced - it refused
-                            13 of 16, 27 of 34 and 10 of 12 placed parts on
-                            three layouts that pass `make check`. See
+                            breadboard."* It read the geometry and never the cut
+                            state, and it refused two correct placements on
+                            committed boards - `transistor-preamp-loop`'s C1,
+                            which a cut between its two pins separates, and
+                            `transistor-preamp-lab`'s C3. The owner approved the
+                            amendment; his words, verbatim and complete:
+                            *"follow your recommendation on HC10."* The live
+                            boards are asserted in
+                            tests/stripboard/hc10-cut-state.test.ts and the
+                            criteria document carries the rule.
+                            The original brief's wording - rows running ACROSS
+                            the strips - was measured against the committed
+                            boards before being replaced: it refused 13 of 16,
+                            27 of 34 and 10 of 12 placed parts on three layouts
+                            that pass `make check`. See
                             docs/stripboard/pipeline-verification.md section 3.
 
 rows-across-the-strips      HAND-WRITTEN. The POSITIVE control for the placement

@@ -215,7 +215,7 @@ test("HC10 holds only when BOTH halves hold, and the detail says which failed", 
   expect(footprint?.held).toBe(false)
   expect(footprint?.detail).toMatch(/footprint/)
 
-  const placement = gradeHardConstraints(negativeInput("rows-along-a-strip")).find(
+  const placement = gradeHardConstraints(negativeInput("row-along-a-strip-two-nets")).find(
     (entry) => entry.id === "HC10",
   )
   expect(placement?.held).toBe(false)
@@ -329,7 +329,7 @@ test("HC10's placement half reads DIRECTION as well as the pin holes - two witne
   // makes the check independent of the lead pattern, and a single-pad or
   // symmetric part has no lead pattern to read. Same shape as HC3's two
   // signals: a change keeping one and dropping the other fails loudly.
-  const placement = gradeHardConstraints(negativeInput("rows-along-a-strip")).find(
+  const placement = gradeHardConstraints(negativeInput("row-along-a-strip-two-nets")).find(
     (result) => result.id === "HC10",
   )
   expect(placement?.detail).toMatch(/DIRECTION/)
@@ -341,7 +341,7 @@ test("HC10 refuses a placed part whose DIRECTION the dump does not state", () =>
   // than decoration: it can fail on its own. A capture older than the grammar
   // reaches HC10 with no orientation at all, and HC10 says so by name rather
   // than grading the holes and calling the constraint checked.
-  const noDirection = negativeInput("rows-along-a-strip")
+  const noDirection = negativeInput("row-along-a-strip-two-nets")
   const stripped = noDirection.dumpText.replace(/ DIRECTION [A-Z]+$/m, "")
   expect(stripped).not.toBe(noDirection.dumpText)
   expect(() => hc10({ ...noDirection, dumpText: stripped, dump: parseBoardDump(stripped) })).toThrow(
