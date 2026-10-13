@@ -1,7 +1,7 @@
 ---
 title: Tascam 38 external record/reproduce electronics
 date: 2026-10-12
-status: Draft for review
+status: Approved for staged feasibility work
 ---
 
 # Tascam 38 external record/reproduce electronics
@@ -14,7 +14,7 @@ This is a feasibility and interface-definition proposal, not an approved schemat
 
 ## Goals
 
-- Bypass the original amplifier card-edge connections and preferably the amplifier motherboard signal paths.
+- First develop a usable, interchangeable replacement amplifier card using the existing motherboard and card-edge interface. Investigate bypassing those connections only after a working card is validated.
 - Preserve transport, record-arm, sync/repro, punch-in/out, and erase behavior.
 - Meet or exceed verified original playback and record performance; avoid trading away low-frequency response, noise, or reliability.
 - Provide accessible channel-level calibration, diagnostic test points, and independently replaceable modules.
@@ -30,13 +30,13 @@ This is a feasibility and interface-definition proposal, not an approved schemat
 
 ## Proposed architecture (hypothesis)
 
-Transport: original heads, motors, transport control and user interface. External chassis: eight channel modules, shared power, mode interface, bias/erase electronics when validated, and line I/O. A purpose-built internal transport breakout should replace dependency on the original amplifier card-edge connections. A bundled, shielded, locking cable assembly may carry head, control and drive connections; cable topology and connector partitioning remain open.
+**Stage 1:** retain the original motherboard, connectors, transport, head wiring, control, power and bias infrastructure. Develop a pin-compatible replacement amplifier card and validate it in one channel. **Stage 2 (deferred):** consider moving proven channel electronics to an external chassis with an appropriate transport interface and cable bundle. Do not redesign or bypass the motherboard until the replacement card works.
 
 Sensitive reproduce/sync head signals require a dedicated noise/loading/capacitance analysis. Compare external first-stage preamplification with a small local buffer near the head connector before deciding. Keep record/erase drive and oscillator interference away from low-level head wiring.
 
-## First milestone: transport/electronics boundary study
+## First milestone: existing-card interface and replacement feasibility
 
-Review original Tascam 38 and MS-16 service schematics, verify machine model identifiers, and inspect actual harness construction. Produce a **pin-level interface specification** with:
+First trace the existing Tascam 38 amplifier-card edge connector and all circuits required to make a pin-compatible replacement. Review the MS-16 architecture as background for the deferred external enclosure. Produce a **pin-level interface specification** with:
 
 | Signal family | Questions to resolve |
 | --- | --- |
@@ -51,12 +51,12 @@ Review original Tascam 38 and MS-16 service schematics, verify machine model ide
 
 Each interface row must carry source schematic sheet/reference, confidence (documented/measured/unknown), operating states, electrical limits and proposed connection. Do not assume that one physical bundle implies a single undifferentiated electrical connector.
 
-## Second milestone: single-channel reproduce prototype
+## Second milestone: single-channel motherboard-compatible reproduce prototype
 
 1. Select one known-good 38 channel and document baseline measurements using a suitable calibration tape and repeatable test setup.
 2. Identify the actual reproduce-head source and loading. Measure head and cable parameters without exposing the head to damaging DC or test current.
-3. Prototype a low-noise first stage, reproduce equalization and line driver on a test PCB or equivalent stable assembly.
-4. Test the proposed external shielded cable and compare alternate lengths and, if needed, a local head buffer.
+3. Prototype a low-noise first stage, reproduce equalization and line driver, with a motherboard-compatible card interface. Bench-test before inserting the card.
+4. Verify connector fit, power rails, signal routing and switching compatibility with the unmodified motherboard; defer external cable experiments.
 5. Compare level, frequency response, noise, distortion, hum and susceptibility to transport/record circuitry against the baseline.
 6. Verify reversibility and that unmodified channels remain functional.
 
@@ -67,7 +67,7 @@ Each interface row must carry source schematic sheet/reference, confidence (docu
 - Complete sync/repro switching and mode validation.
 - Add record amplifier and equalization while initially retaining original bias generation where feasible.
 - Validate bias/erase distribution, switching transients, punch behavior and calibration.
-- Design shared power/control hardware, eight-channel carrier and external enclosure.
+- After a usable card is proven, investigate a new transport breakout, shared power/control hardware, eight-channel carrier and external enclosure.
 - Validate all eight channels, crosstalk, thermal behavior, serviceability and fault recovery.
 
 ## Risks and open decisions
@@ -88,5 +88,5 @@ Record service manual edition, schematic sheet, revision and physical measuremen
 1. Obtain and verify readable 38 and MS-16 schematics, especially head wiring, amplifier motherboard, bias oscillator and mode control.
 2. Produce a transport/electronics interface inventory with citations to exact schematic sheets.
 3. Inspect the MS-16 harness and document which signal classes travel in it.
-4. Identify a safe reversible 38 single-channel head breakout and baseline measurement procedure.
+4. Document the original amplifier-card connector and a safe bench-test / single-slot insertion procedure, preserving the motherboard as-is.
 5. Review this spec and separately approve measurable acceptance criteria before implementing a prototype.
