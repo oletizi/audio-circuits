@@ -5547,3 +5547,114 @@ makes that trade worth taking.
 **What would close this.** Amending `PAR1` to carry the owner's instruction and
 the value, or rejecting the deviation — in which case the objective prices an
 artifact he has said he does not build.
+
+### There is a SECOND PASS after the search, and CRITERIA describes one search
+
+**What the documents say.** PIPELINE `P2` is the hill climb and `E2` is the run —
+*"one climb per seed … keeping the best candidate across all climbs"* — and
+CRITERIA §5's six stopping rules end a RUN. Neither document describes a stage
+after the search, and `OBJ1` names one objective for the whole pipeline:
+`F = C + ρ_w·W + ρ_s·B`. So the pipeline as specified is one search minimising
+one quantity.
+
+**What `tools/stripboard/complete.ts` does.** After `search` returns, a
+COMPLETION PASS runs on the board it finished with. The pass minimises
+`Evaluation.openNets` — the count of nets `--check` calls `incomplete`, the same
+field `HC1` reads — and uses `F` only as a tiebreak. It proposes one candidate
+per open net, each being *every wire that net needs*, and accepts through the
+search's own `accepts` and `strictlyBetter`, unchanged.
+
+**Why — the owner's instruction, which is what makes this a decision rather than
+a reading.** He was offered three routes out of the finding in
+`docs/stripboard/pipeline-verification.md` §6.9: change the scoring, add a
+solder-bridge gesture, or run two passes.
+
+**Owner's words (verbatim), 2026-10-12:** *"1 then 3"* — change the scoring
+first, and add a second pass **only if that is not enough.**
+
+**Agent rationale** — everything else in this entry is agent-written and carries
+no owner endorsement. He settled THAT a second pass follows if route 1 falls
+short, and that is the condition the measurement below reports against; he did
+not settle what the pass does, what it optimises, or what instrument it uses.
+
+**Route 1 was measured and was not enough.** §6.10: with the open-net count as
+the acceptance ordering's first key, `constructed` reached `C` 10 to 12 and
+`random` 13 and 16, and **nine or ten of fourteen nets were still open on every
+one of the nine runs measured.** Four or five nets closed per run against the one
+run §6.9 measured, so the change did buy connections with cuts — and nothing was
+buildable. That is the condition the owner's *"only if that is not enough"*
+names.
+
+**Why the pass's objective is `openNets` and not `F`, which is the part CRITERIA
+settles.** The same reading recorded for the acceptance ordering's first key, one
+step further:
+
+- `HC1`'s own reason gives the direction: *"because a board that does not conduct
+  has no cost worth reporting."* A stage that exists to make the board conduct
+  cannot be ordering candidates by the cost that is not worth reporting until it
+  does.
+- CRITERIA §2 says of the ten hard constraints *"nothing in them is tradeable"*,
+  and `A1` repeats it: *"Nothing is tradeable."* So the pass spends cuts and wires
+  for connections and takes no price for a connection in return.
+- `OBJ1` is UNTOUCHED. `F` is still the three line counts, the pass adds no term
+  to it, no position to `RANKING` and no eleventh hard constraint. The only
+  quantity it introduces is one `--check` already prints.
+
+**Why the ACCEPTANCE RULE is not changed, which is what bounds the risk.** The
+pass imports `accepts` and `strictlyBetter` from the search. So clause 1 rejects
+any candidate that breaks a hard constraint which held on the board the wires
+were applied to, and `strictlyBetter` rejects any candidate with MORE open nets
+whatever its `F`. **A board leaving the pass is therefore the board that entered
+it, or one with fewer open nets and no newly broken constraint** — structurally,
+not by assertion, and `tests/stripboard/complete.test.ts` holds both halves
+against a board whose joining wires break `HC6`.
+
+**What is new is the CANDIDATE, not the rule, and the reason is measured.** A
+net whose reference pins fall into `m` copper components needs `m − 1` joins, and
+one wire supplies one — so a single wire leaves the net open unless `m` is
+exactly 2, `openNets` does not fall, `F` rises by `ρ_w`, and a strictly improving
+rule rejects it. §6.9 enumerated 7,417 `add-wire` candidates across one sweep and
+**none was ever best.** Over the ten best boards of §6.10's sweep every open net
+needs one to seven joins and each board needs twelve to twenty-one in total. The
+pass's candidate is every wire one net needs, applied at once, so the open-net
+count really falls and the unchanged rule takes it.
+
+**Three limits of the pass, declared rather than discovered.**
+
+- **It plans a single wire per join and never a wire PATH.** Two components whose
+  nearest collinear holes are further apart than the fork stretches a wire
+  (16 holes) can still be joined by two wires through a free strip, and no such
+  dogleg is proposed. `NetJoinPlan.shortfall` names the component pair that
+  stopped the plan, and the report measures how often it binds.
+- **A partial plan is not proposed at all.** A candidate that cannot close its
+  net is the main search's wire move, and that was measured to buy nothing.
+- **It cannot propose a SOLDER BRIDGE, and the reason is the move set rather
+  than the owner's taste.** `B` is only ever what `AutoFillVero` derives and no
+  gesture makes one, which `stripboard/rules.json`'s `rhoSolder` note already
+  states. The pass therefore produces no blob of its own; the blobs a board
+  carries are the fork's, and the report carries the count before and after so a
+  pass that provoked a crop of them says so.
+
+**What it costs in interface.** `ClimbResult` and `RunResult` carry a new
+`bestStart` — the best board UNPAINTED with the part geometry that goes with it,
+the same shape and the same contract as `SeedStart`. It is required rather than
+derived because **neither half can be recovered**: a painted board refuses the
+next gesture (`--move` will not relocate a part over its own current footprint
+once copper is painted into the holes it vacates), and `occupancyOf` refuses a
+board with a part facing `N` or `S`, which is all ten best boards of §6.10's
+sweep. `Measured` likewise carries the dump TEXT and the parsed `CheckReport` it
+already had, so nothing downstream runs a second `--check` or a second
+`--dump-board` — which is what keeps the pass's open-net count the same reading
+the acceptance rule orders by rather than a second measure of the same thing.
+
+**What would close this.** Either amending PIPELINE to describe the pipeline as
+search-then-completion and CRITERIA to state that a completion stage orders by
+`HC1`'s own count, or rejecting the deviation — in which case route 1's finding
+stands as the result, and nine or ten of fourteen nets open is what the pipeline
+produces.
+
+**Where the code says so.** `tools/stripboard/complete.ts`'s module comment
+carries the whole reading and names this entry;
+`tools/stripboard/complete-joins.ts` carries the measurement behind the
+candidate's shape. The run is in
+`.superpowers/sdd/2026-10-10-stripboard-pipeline/completion-pass-report.md`.

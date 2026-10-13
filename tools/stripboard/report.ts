@@ -434,6 +434,16 @@ export function renderReport(input: ReportInput): readonly string[] {
     // one here and of one fortieth there on the same candidate.
     `cost: F = ${score.objective}, derived floor = ${input.targets.cutFloor}, gap above the ` +
       `floor = ${gapOf(input)} (C = ${score.cuts}, W = ${score.wires}, S = ${score.solder})`,
+    // THE QUANTITY THE ACCEPTANCE RULE ORDERS BY, IN WHAT A PERSON READS. It is
+    // not a new criterion and not a cost term - `./climb-accepts.ts` carries why
+    // the open-net count is a KEY above `F` rather than a term in it - but with
+    // that key in force it is the figure that decided every acceptance in the
+    // run, and it appeared in no line of this report. A reader could see `F`
+    // fall and `A1` fail with nothing saying how far from conducting the board
+    // was. It carries no adjective, which is what keeps this module's rule that
+    // every quality claim comes from `WORDING` or `OUTCOME_WORDING`.
+    `completeness: ${best.openNets} net(s) still open, the count --check reports as incomplete ` +
+      "and the first key of the acceptance ordering",
     `floor: ${floorNote(input.targets)}`,
     ...conditionLines(verdict),
     parameterLine(input),

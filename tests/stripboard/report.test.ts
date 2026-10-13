@@ -25,11 +25,13 @@ import {
   renderReport,
   type Outcome,
 } from "../../tools/stripboard/report.ts"
-import { TARGETS } from "./stop-fixtures.ts"
+import { CONSTRAINT_IDS, broken, holds } from "../../tools/stripboard/constraints-model.ts"
+import { TARGETS, evaluation } from "./stop-fixtures.ts"
 import {
   a1Failure,
   a2OnlyFailure,
   reportInput,
+  runResult,
   runWith,
   runWithWorseAcceptance,
   runWithoutWorseAcceptance,
@@ -272,6 +274,43 @@ test("the report grades the run's own best candidate rather than being told a ve
   expect(renderReport(reportInput()).join("\n")).toMatch(/^outcome: admissible$/m)
   expect(renderReport(a1Failure()).join("\n")).toMatch(/^outcome: invalid$/m)
   expect(renderReport(a2OnlyFailure()).join("\n")).toMatch(/^outcome: valid-below-target$/m)
+})
+
+test("the open-net count the acceptance rule orders by appears in the report", () => {
+  // IT DID NOT, AND THAT WAS THE GAP. Route 1 made `Evaluation.openNets` the
+  // acceptance ordering's FIRST KEY, so it decided every acceptance in a run -
+  // and no line of this report carried it. A reader could see `F` fall and `A1`
+  // fail with nothing saying how far from conducting the board was.
+  //
+  // THE EXPECTED COUNTS ARE THE FIXTURES' OWN, written out rather than read back
+  // off the same field the line prints. `./stop-fixtures.ts`'s builder sets
+  // openNets to one where the caller broke `HC1` and to zero where every result
+  // holds, so `reportInput()` is zero and `a1Failure()` is one.
+  const healthy = renderReport(reportInput()).join("\n")
+  expect(healthy).toMatch(/^completeness: 0 net\(s\) still open, /m)
+  // AND A CANDIDATE WITH HC1 BROKEN REPORTS THE COUNT, NOT THE BOOLEAN. It is
+  // built here rather than taken from `a1Failure()`, whose fixture breaks HC4:
+  // openNets is a reading of HC1 alone, so a candidate failing a different
+  // constraint legitimately carries zero and would have proved nothing.
+  const incomplete = reportInput({
+    run: runResult({
+      best: evaluation(
+        { cuts: 1 },
+        CONSTRAINT_IDS.map((id) =>
+          id === "HC1" ? broken(id, "fixture: one net is incomplete") : holds(id, "fixture: held"),
+        ),
+      ),
+    }),
+    rule: "Q3",
+  })
+  const rendered = renderReport(incomplete)
+  expect(rendered.join("\n")).toMatch(/^completeness: 1 net\(s\) still open, /m)
+  // AND IT CARRIES NO ADJECTIVE: every quality claim in this report comes from
+  // WORDING or OUTCOME_WORDING under the quality prefix, and a completeness line
+  // calling a board nearly finished would be this module writing one of its own.
+  const line = rendered.find((text) => text.startsWith("completeness: "))
+  expect(line?.startsWith(QUALITY_PREFIX)).toBe(false)
+  expect(line).toContain("the count --check reports as incomplete")
 })
 
 test("the report names the board and the candidate file it is about", () => {
