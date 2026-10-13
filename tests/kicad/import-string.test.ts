@@ -21,10 +21,19 @@ test("an 8.0mm body rounds DOWN to the nearest enumerated diameter", () => {
 })
 
 test("rounded-metric names for imperial parts are inside the pitch tolerance", () => {
+  // BOTH NAMES ARE REAL FOOTPRINTS, verified against Capacitor_THT.pretty, and
+  // that matters here more than anywhere else in this file: these two lines are
+  // the whole evidence base for PITCH_TOLERANCE_MM in lib/kicad/grid.ts. The
+  // second one used to read "C_Disc_D9.0mm_W2.5mm_P7.50mm", which the library
+  // does not have (it has D9.0mm_W2.5mm_P5.00mm and D9.0mm_W5.0mm_P7.50mm) -
+  // the same defect docs/pultec/capacitor-selection.md section "Required
+  // follow-up: a fictional footprint in a committed test" opened against line
+  // 180 of this file, fixed there and missed here.
+  //
   // P2.50mm is a nominal 0.1in part, 0.04mm from the grid.
   expect(importStringFor("Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm")).toBe("CAP_CERAMIC1")
   // P7.50mm is a nominal 0.3in part, 0.12mm from the grid.
-  expect(importStringFor("Capacitor_THT:C_Disc_D9.0mm_W2.5mm_P7.50mm")).toBe("CAP_CERAMIC3")
+  expect(importStringFor("Capacitor_THT:C_Disc_D9.0mm_W5.0mm_P7.50mm")).toBe("CAP_CERAMIC3")
 })
 
 test("an off-grid pitch refuses, naming the measurement", () => {
