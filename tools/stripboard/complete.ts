@@ -65,22 +65,24 @@
  * after precisely so that a pass which provoked a crop of derived bridges says
  * so.
  *
- * **WHAT IT COSTS IN INVOCATIONS.** A candidate is `m - 1` wires, each three
- * gestures (create, turn, stretch), plus the four invocations of one
- * evaluation. So a net on four components costs 9 + 4 invocations against a
- * single-part candidate's 1 + 4, and a round is one candidate per open net
- * rather than one per gesture the board admits - tens of evaluations, not
- * thousands. The pass is cheap next to the climb it follows, which is why it is
- * a separate stage rather than a wider move set.
+ * **WHAT IT COSTS IN INVOCATIONS.** A candidate is `m - 1` wires at up to three
+ * gestures each (create, turn, stretch), then ONE `--update` to assign those
+ * wires to their net - `./complete-apply.ts`'s `assignNodes`, and the pass
+ * closes nothing without it - and then the four invocations of one evaluation.
+ * So a net on four components costs 9 + 1 + 4 against a single-part candidate's
+ * 1 + 4, and a round is one candidate per open net rather than one per gesture
+ * the board admits: tens of evaluations, not thousands. The pass is cheap next
+ * to the climb it follows, which is why it is a separate stage rather than a
+ * wider move set.
  */
 import fs from "node:fs"
 import path from "node:path"
 import { UNSCOREABLE, accepts, strictlyBetter, type Evaluation } from "./climb.ts"
 import { measure, type Measured } from "./climb-evaluate.ts"
+import { applyWires, assignNodes } from "./complete-apply.ts"
 import { netJoinPlans, type NetJoinPlan } from "./complete-joins.ts"
 import type { Stock } from "./constraints-model.ts"
 import type { ReferenceNets } from "./equivalence.ts"
-import { applyMove } from "./moves.ts"
 import type { StripboardRules } from "./rules.ts"
 import type { Occupancy } from "./seed-geometry.ts"
 import type { SeedStart, SpawnVeroroute } from "./seed.ts"
@@ -156,7 +158,14 @@ interface Standing {
 export interface CompletionResult {
   /** The best board this pass saw, by `strictlyBetter` - unpainted, with its geometry. */
   readonly best: SeedStart
-  /** That board's measurement. `best.board` is its `Measured.source`. */
+  /**
+   * That board's measurement.
+   *
+   * **`best.board` IS NOT ITS `Measured.source`**, and the pair is the one place
+   * this pass differs in shape from the climb: the measurement is of the
+   * `--update`d copy, which is painted, and `best.board` is the unpainted board
+   * the wires were applied to. `assignNodes` carries why both files exist.
+   */
   readonly evaluation: Evaluation
   /** The board the pass was handed, measured before anything was applied. */
   readonly start: Evaluation
@@ -237,30 +246,14 @@ const CAP_SPENT =
   "Q5's run-level backstop, divided by whoever ran the search before this pass."
 
 /**
- * Apply a plan's wires to `board` in order, returning the candidate board.
+ * The candidate-producing half, re-exported from `./complete-apply.ts`: the
+ * wires in order, and the `--update` that assigns them to their net.
  *
- * Each wire reads the previous one's output and only the LAST writes the
- * candidate, which is `applyMove`'s own discipline for a compound gesture
- * carried up one level: a refused wire leaves the candidate absent and the
- * staged files beside it say how far the sequence got.
+ * Split at the take-a-candidate / produce-a-candidate seam for the 500-line
+ * ceiling, exactly as `./moves.ts` re-exports `./moves-apply.ts`. This stays the
+ * module a consumer imports.
  */
-function applyWires(
-  board: string,
-  plan: NetJoinPlan,
-  runDir: string,
-  tag: string,
-  spawn: SpawnVeroroute,
-): string {
-  const candidate = path.join(runDir, `${tag}.vrt`)
-  let current = board
-  plan.wires.forEach((wire, index) => {
-    const out =
-      index === plan.wires.length - 1 ? candidate : path.join(runDir, `${tag}-w${index}.vrt`)
-    applyMove(current, wire, out, spawn)
-    current = out
-  })
-  return candidate
-}
+export { applyWires, assignNodes, type AssignInput } from "./complete-apply.ts"
 
 /**
  * Close what the search left open on `start`, as cheaply as the acceptance rule
@@ -348,6 +341,11 @@ export function completionPass(
       }
       const tag = `p${rounds}-${plan.net}`
       const candidateBoard = applyWires(base.board, plan, input.runDir, tag, spawn)
+      // THE WIRES ARE ASSIGNED TO THEIR NET BEFORE ANYTHING READS THE BOARD -
+      // see `assignNodes`, which carries the measurement that forced it. The
+      // UNPAINTED `candidateBoard` is what the next round gestures on; the
+      // updated copy is what is measured.
+      const assigned = assignNodes(candidateBoard, input, input.runDir, tag, spawn)
       // THE SAME ONE REFUSAL `climb` CATCHES, BY THE SAME EXPORTED NAME: a wire
       // bridging two strips on a packed board routinely shorts two nets, and
       // `AutoFillVero` then reports `CUT_STATE UNRESOLVED` with no cut list at
@@ -355,7 +353,7 @@ export function completionPass(
       // and counted; every other refusal still stops the pass.
       let measured: Measured
       try {
-        measured = measureInto(candidateBoard, tag)
+        measured = measureInto(assigned, tag)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         if (!message.startsWith(UNSCOREABLE)) throw error

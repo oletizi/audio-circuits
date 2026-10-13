@@ -36,7 +36,6 @@ import { importClosure } from "./import-closure.ts"
 import {
   BASE_DUMP,
   REFERENCE,
-  scriptedSpawnWithChecks,
   type CheckScript,
   type DumpScript,
 } from "./climb-fixtures.ts"
@@ -59,6 +58,7 @@ import {
   WHOLE_REPORT,
   completionInput,
   freshPassDir,
+  passSpawn,
   passStart,
 } from "./complete-fixtures.ts"
 
@@ -90,7 +90,7 @@ test("one wire closes the split net, and the pass reports the board that carries
   const result = completionPass(
     start,
     completionInput(runDir),
-    scriptedSpawnWithChecks(CLOSES_ON_FIRST, CHECK_CLOSES),
+    passSpawn(CLOSES_ON_FIRST, CHECK_CLOSES),
   )
 
   // ONE OPEN NET ON THE START AND NONE ON THE RESULT: `SPLIT_REPORT` names
@@ -217,7 +217,7 @@ test("a net whose components no single wire reaches is reported, not proposed", 
   const result = completionPass(
     passStart(runDir, FAR_DUMP, FAR_OCC),
     completionInput(runDir),
-    scriptedSpawnWithChecks(
+    passSpawn(
       () => FAR_DUMP,
       () => ({ status: 1, report: FAR_REPORT }),
     ),
@@ -251,7 +251,7 @@ test("a candidate that closes the net but breaks a constraint the start held is 
   const result = completionPass(
     passStart(runDir, SPLIT_DUMP, SPLIT_OCC),
     completionInput(runDir),
-    scriptedSpawnWithChecks(
+    passSpawn(
       (index) => (index === 0 ? SPLIT_DUMP : TALL_JOINED_DUMP),
       CHECK_CLOSES,
     ),
@@ -282,7 +282,7 @@ test("a candidate with more open nets is refused whatever its F", () => {
   const result = completionPass(
     passStart(runDir, SPLIT_DUMP, SPLIT_OCC),
     completionInput(runDir),
-    scriptedSpawnWithChecks(
+    passSpawn(
       (index) => (index === 0 ? SPLIT_DUMP : FAR_DUMP),
       (index) => (index === 0
         ? { status: 1, report: SPLIT_REPORT }
@@ -305,7 +305,7 @@ test("a wire whose board cannot be scored is counted and reported, not thrown", 
   const result = completionPass(
     passStart(runDir, SPLIT_DUMP, SPLIT_OCC),
     completionInput(runDir),
-    scriptedSpawnWithChecks(
+    passSpawn(
       (index) => (index === 0 ? SPLIT_DUMP : unresolved),
       CHECK_CLOSES,
     ),
@@ -332,7 +332,7 @@ test("the pass refuses a measurement whose open-net count and report disagree", 
     completionPass(
       passStart(runDir, SPLIT_DUMP, SPLIT_OCC),
       completionInput(runDir),
-      scriptedSpawnWithChecks(
+      passSpawn(
         () => SPLIT_DUMP,
         () => ({ status: 1, report: "Layout state\nnot_a_net incomplete\nCuts: 0\n" }),
       ),
@@ -381,4 +381,46 @@ test("no file in the completion pass's TRANSITIVE closure names a clock, a pid, 
       expect(text, `${file}: ${identifier}`).not.toContain(identifier)
     }
   }
+})
+
+test("every candidate's wires are assigned to their net by an --update before it is measured", () => {
+  // THE STEP WITHOUT WHICH THE PASS CLOSES NOTHING, and the first sweep against
+  // the real binary is what found that. A wire added by `--author --op add-wire`
+  // lands on holes carrying no node id, `--check`'s completeness reads node ids,
+  // so the net stays incomplete and the acceptance rule correctly rejects a
+  // candidate that cost a wire and repaired nothing. Measured on `constructed`
+  // seed 0's best board: one wire placed by hand put both of `j10_p6`'s pins in
+  // ONE copper component and `--check` still called it incomplete; after
+  // `--update` the same wire reads a node id on both ends and the net is
+  // complete. `tools/stripboard/complete-apply.ts` carries the whole record.
+  //
+  // THIS INJECTED SPAWN CANNOT SIMULATE THAT, so what is asserted is the thing a
+  // refactor would drop: that the update is RUN, on the candidate, with the
+  // netlist, before the board is painted and checked.
+  const runDir = freshPassDir()
+  const spawned: string[][] = []
+  const input = completionInput(runDir)
+  const result = completionPass(
+    passStart(runDir, SPLIT_DUMP, SPLIT_OCC),
+    input,
+    passSpawn(CLOSES_ON_FIRST, CHECK_CLOSES, spawned),
+  )
+  expect(result.acceptedPerRound[0]).toBe(1)
+  const updates = spawned.filter((args) => args[0] === "--update")
+  // ONE PER CANDIDATE AND NOT ONE PER WIRE: the pass evaluated the start and one
+  // candidate, so exactly one candidate was produced.
+  expect(updates.length).toBe(1)
+  const update = updates[0]
+  expect(update?.includes("--netlist")).toBe(true)
+  expect(update?.[update.indexOf("--netlist") + 1]).toBe(input.netlist)
+  // AND IT COMES BEFORE THE PAINT, because an autofill of a board whose wires
+  // are on no net is what produced the inert candidate in the first place.
+  const order = spawned.map((args) => args[0] ?? "")
+  const firstUpdate = order.indexOf("--update")
+  const paintAfter = order.indexOf("--author", firstUpdate)
+  expect(firstUpdate).toBeGreaterThan(-1)
+  expect(paintAfter).toBeGreaterThan(firstUpdate)
+  // THE START IS NOT UPDATED, which keeps the before figure the same quantity
+  // route 1 reported: autofill then check, with no --update.
+  expect(order.slice(0, firstUpdate)).not.toContain("--update")
 })

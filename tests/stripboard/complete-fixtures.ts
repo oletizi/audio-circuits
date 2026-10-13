@@ -39,7 +39,7 @@ import { stockFor } from "../../tools/stripboard/grade.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { occupancyOf } from "../../tools/stripboard/seed-geometry.ts"
 import type { CompletionInput } from "../../tools/stripboard/complete.ts"
-import type { SeedStart } from "../../tools/stripboard/seed.ts"
+import type { SeedStart, SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 import {
   BASE_DUMP,
   FOOTPRINTS,
@@ -47,6 +47,9 @@ import {
   REFERENCE,
   TARGETS,
   rulesWithoutWorseAcceptance,
+  scriptedSpawnWithChecks,
+  type CheckScript,
+  type DumpScript,
 } from "./climb-fixtures.ts"
 
 const LOW_BOOST_DECLARATION = path.join(
@@ -273,6 +276,50 @@ export function completionInput(runDir: string): CompletionInput {
     footprints: FOOTPRINTS,
     stock: stockFor(LOW_BOOST_DECLARATION, rules),
     rules,
+  }
+}
+
+/**
+ * The scripted spawn, with `--update` answered.
+ *
+ * **`./climb-fixtures.ts`'s spawn THROWS on a verb it does not know**, which is
+ * its own stated rule - *"a spawn that answers everything makes every assertion
+ * about the climb pass over invocations nobody described"* - and the completion
+ * pass spends one `--update` per candidate that the climb never spends. So this
+ * wrapper answers that one verb and delegates everything else, rather than
+ * widening the shared fixture's verb list for a verb the climb must still refuse.
+ *
+ * **IT WRITES THE OUTPUT AND CHANGES NOTHING ELSE**, which is what `--update` was
+ * MEASURED to do on a board with no added wire: the check report and the cut
+ * count are identical with and without it
+ * (`tools/stripboard/complete-apply.ts`'s `assignNodes` records the
+ * measurement). What it cannot simulate is the thing that makes `--update`
+ * necessary - assigning a new wire a node id - because this spawn does not
+ * simulate a gesture at all; the dumps and the check reports come from the
+ * scripts. So these tests assert that the pass RUNS the update and what it does
+ * with the result, never that the update worked.
+ *
+ * `spawned` records every argument list, so a test can assert that the
+ * `--update` really happens - the one step without which the whole pass closes
+ * nothing, and the one a refactor would most plausibly drop.
+ */
+export function passSpawn(
+  dumps: DumpScript,
+  checks: CheckScript,
+  spawned: string[][] = [],
+): SpawnVeroroute {
+  const inner = scriptedSpawnWithChecks(dumps, checks)
+  return (args) => {
+    spawned.push([...args])
+    if (args[0] !== "--update") return inner(args)
+    const at = args.indexOf("-o")
+    const out = at === -1 ? undefined : args[at + 1]
+    const from = args[1]
+    if (out === undefined || from === undefined) {
+      throw new Error(`the injected spawn was given --update with no board or no -o: ${args.join(" ")}`)
+    }
+    fs.copyFileSync(from, out)
+    return { status: 0, stdout: "", stderr: "" }
   }
 }
 
