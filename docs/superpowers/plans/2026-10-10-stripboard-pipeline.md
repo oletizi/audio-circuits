@@ -6057,3 +6057,123 @@ quotes his sentence and states that a record's two bounds can be two mountings;
 keep the 5-hole flat figure beside the 2-hole recorded one. The before-and-after
 census per board is in
 `.superpowers/sdd/2026-10-10-stripboard-pipeline/vertical-mounting-report.md`.
+
+### `B1-frozen` is THE WRONG TARGET: the bar stands, the fixture does not
+
+**What the documents say.** `V3` in this plan and in
+`docs/superpowers/specs/2026-10-10-stripboard-pipeline-design.md` asks that the
+pipeline reach *`C <= 5`* with *`W = 0`* and every net complete **on the frozen
+fixture, starting from the import-placed board**. Task 23's Step 4 adds, and it
+is quoted here because it binds this entry too: *"If `V3` fails, do not lower
+the bar. `B1-frozen` is non-negotiable"* - because a failure *"means the
+pipeline is worse than the owner's hands at the one job it exists to take over,
+and the honest response is to say so and stop"*.
+
+**What was measured.** `B1-frozen` does not FAIL. It cannot RUN. Task 23
+measured the two refusals on 2026-10-12 and
+`tests/stripboard/benchmark.test.ts` quotes both verbatim; they fire in order,
+before any candidate exists, and **both are missing geometry for the same
+part**:
+
+1. `board_terminals` is a `BLOCK_200MIL3` and `VEROROUTE_FOOTPRINT_ROWS` has no
+   row count for that VeroRoute type, so the starting arm refuses.
+2. With that row count supplied in a scratch probe and reverted, `leadSpanFor`
+   refuses
+   `TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal`
+   under `PAR2`, having no recorded span for it.
+
+**Why the fixture is now the wrong target, and this is the owner's instruction
+rather than a reading of the documents.** His words, the second time he said
+it: *"Forget terminal blocks. We arent using them for the perfboard layout.
+THATS THE SECOND TIME IVE TOLD YOU THAT"*. `9f57dcc` carried that through: the
+model had already agreed - `circuits/pultec/physical/parts.ts` builds two 1x05
+header rows and `grep board_terminals circuits/` finds nothing - and the five
+committed `.vrt` layouts were reconciled through `make update`, so **no
+`BLOCK_200MIL*` type appears in any live Pultec layout**. The frozen fixture is
+deliberately untouched by that commit, because it is a byte-frozen record of a
+board the owner built by hand and it legitimately contains a terminal block.
+
+So `V3` as written measures the pipeline's ability to reproduce an artifact the
+project has since left behind, and the only way to make it runnable is to
+record geometry for a part nothing is going to use - *"refuse rather than
+guess"* pointed at a part no design carries. The remaining options were
+measured, not assumed: the refusals are not a span the owner's board USES
+(`R2`'s 3-hole span was reading 2 of the plan's three, it was a real defect in
+the span data, and it is fixed - see the `minSpanHoles` entry above), so there
+is no fix here that does not amount to entering fiction into
+`VEROROUTE_FOOTPRINT_ROWS` and `LEAD_SPANS`.
+
+**The ruling, and what it does NOT do.** The BAR is unchanged and is not
+lowered: 5 cuts, 0 wires, every net complete, which is the quality the owner's
+own hands reached. What is repointed is the FIXTURE the bar is measured on -
+today's model rather than a reproduction of a superseded artifact. The current
+distance to it is recorded rather than softened: the best run reaches **7 cuts
+on low-boost against the hand-laid 5**, and `HC1` fails on every board.
+**Nothing in this entry closes `V3`**; it says the benchmark named in `V3`
+cannot be the thing that closes it.
+
+**Adoption does not depend on a `B1-frozen` run.** Task 24's
+`frozen-fixture-hash` refusal is implemented and tested, and it is the narrow
+claim that *the frozen fixture's bytes did not change between the run and the
+adoption* - NOT a claim that `B1-frozen` was met. Had adoption been made to
+require a passing `B1-frozen` run, the gate would have been permanently
+deadlocked on a benchmark that cannot execute, and *"a skipped check must never
+look like a passing one"* cuts the other way too: a gate nothing can pass is
+not a gate, it is a stop.
+
+**What would close this.** Either restating `V3` against a live board - the
+hand-laid low-boost layout as it stands after `9f57dcc`, with the same three
+numbers - or recording the terminal block's geometry anyway and accepting that
+`B1-frozen` measures a part the design dropped. The first is the recommendation.
+The owner's call either way.
+
+**Where the code says so.** `tests/stripboard/benchmark.test.ts`'s module
+comment opens with the finding and quotes both refusals;
+`tools/stripboard/adopt-model.ts`'s `frozen-fixture-hash` case states what that
+refusal does and does not claim; `docs/stripboard/pipeline-verification.md`
+section 8 carries the measurement.
+
+### Task 24's gate has TEN refusals across `G2`'s SIX clauses, and the enumeration governs
+
+**What the documents say.** The Task 24 brief's `G2` counts **six** refusals.
+The `AdoptRefusal` union the same brief declares enumerates **ten**:
+`candidate-hash`, `rules-hash`, `span-hash`, `pin-pattern-hash`,
+`frozen-fixture-hash`, `provenance-chain`, `veroroute-commit`, `built-commit`,
+`failing-check`, `uncommitted-layout`.
+
+**The ruling: the enumeration governs, and all ten are implemented and each one
+individually tested.** The brief's own warning is the reason - *"a gate with
+five of six refusals is a gate"* names exactly the hole a suite written to the
+prose would leave, and writing tests to the smaller count would have left four
+refusals unexercised while reporting full coverage.
+
+**Why it is not a contradiction in the end.** `G2`'s six are CLAUSES, and two of
+them carry more than one refusal: `G2.2` carries four (`rules-hash`,
+`span-hash`, `pin-pattern-hash`, `frozen-fixture-hash`) and `G2.4` two
+(`veroroute-commit`, `built-commit`); the other four clauses carry one each.
+1 + 4 + 1 + 2 + 1 + 1 = 10. Same set, finer grain. The brief's prose should read
+*"ten refusals across six clauses"*, and its *"five of six"* warning should read
+*"nine of ten"*;
+`docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` section 9
+needs no change.
+
+**A CONDITION IS NOT A REFUSAL, and the count only closes once they are kept
+apart.** The implementer's report put `G2.1` at two refusals, which totals
+eleven and so cannot be right. `G2.1` has two distinct FAILING CONDITIONS - the
+candidate's `sha256` disagreeing with `run.json`, and its canonical artifact
+hash disagreeing - that report under ONE id, `candidate-hash`.
+`tests/stripboard/adopt-fixtures.ts`'s `EVERY_REFUSAL` carries one case per id
+and so holds exactly ten entries, and the second `G2.1` test says so in its own
+comment; both conditions still have their own test, which is what the brief's
+warning actually asks for.
+
+**What holds it true.** `tests/stripboard/adopt.test.ts` asserts the coverage in
+BOTH directions - an id in the union with no test case fails, and a case naming
+an id the union does not carry fails - so an eleventh refusal added without a
+test is a red suite rather than a silent gap. Adding one also costs three
+compile errors (`TS2366` on the switch, `TS2741` on the completeness record, and
+the import-time `assertEnumerated` against the array), which is the point of
+keeping the three forms beside each other.
+
+**Where the code says so.** `tools/stripboard/adopt-model.ts` records the
+six-versus-ten reading beside the union.
