@@ -2384,6 +2384,205 @@ not propose one: a gesture, a pass order and a stopping rule for a completion
 pass are objective-level decisions, which is the line §6.9 drew — *"a change
 nobody here may make alone"* — and it has not moved.
 
+### 6.11 CHECKPOINT 9 — the SPREAD move, the lever the owner corrected us on: **1,539 candidates, not one ever best, and the cut count moves on one run of eight**
+
+**What changed in the search, and it is two things.**
+
+1. **An eighth move kind, `spread`.** ONE candidate relocates the pins a net has
+   on a single strip onto a strip holding no pin, AND adds the wire that rejoins
+   the net to a strip it still occupies. `tools/stripboard/moves-spread.ts` is
+   the implementation and quotes the owner's own correction of the cost model as
+   the warrant for the kind existing.
+2. **A fresh wire's holes are assigned to their net before the candidate is
+   scored.** `climb` runs one `--update` for every candidate that CARRIES a
+   wire. Every `add-wire` candidate in §6.3 to §6.10 was scored without it,
+   which is why §6.9 counted 7,417 of them and reported `W = 0` on every best
+   board: a wire's holes carry node id 0 and `--check`'s completeness reads node
+   ids, so the join was invisible to the one key the ordering puts first.
+
+**Why: the owner's words (2026-10-12).**
+
+> "Wires let you spread nets across multiple strips so they don't collide with
+> other nets that would otherwise have to share the same strip. That's the way
+> wires reduce cuts. Otherwise you'd have to pack more nets adjacent to each
+> other on a the same strip. Wires let you trade strips for cuts"
+
+**Everything else is §6.10's experiment unchanged** — same reviewed seeds, same
+import-placed `pultec-low-boost` board, same committed rules at `evaluationCap`
+20,000, one `search()` per pair, the pinned fork. **§6.3, §6.7, §6.8, §6.9 and
+§6.10 are not edited.** Cut counts come from `scoreDumpText`, which REFUSES a
+board whose `CUT_STATE` is `UNRESOLVED` rather than pricing it at zero cuts.
+
+#### Where the gain has to come from, which is what decided the enumeration
+
+Regroup the identity `C = N + J − S_occ`. `N + J` is the total count of NET
+SEGMENTS — one per net per strip it has holes on — and `S_occ` is the strips
+holding a pin, so `C = Σ_strips (m_s − 1)`: **a cut sits exactly where two net
+segments abut on one strip.** Three cases follow, each a reading of that sum:
+
+| the move | segments | occupied strips | `ΔC` | `ΔF` at `ρ_w = 0.25` |
+| --- | --- | --- | --- | --- |
+| add a strip to a net, new strip FREE | `+1` | `+1` | **0** | `+0.25` |
+| add a strip to a net, new strip OCCUPIED | `+1` | `0` | **`+1`** | `+1.25` |
+| **vacate a SHARED strip onto a FREE one** | `0` | `+1` | **`−1`** | **`−0.75`** |
+
+Only the third can pay, so only the third is enumerated. The sources are the
+strips where the net's pins abut another net's **on a part the spread would not
+move** and where **no pin of the net stays behind**; the targets are the strips
+holding no pin at all.
+
+#### The eight pairs
+
+| arm | seed | `F` | `C` | `W` | `B` | **nets open** | evaluations | rounds | accepted | unscoreable | spread candidates | spread ever best | §6.10's `C` / `W` / open |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `constructed` | 0 | 10 | **10** | 0 | 0 | **9 of 14** | 14,944 | 63 | 136 | 243 | 180 | **no** | 10 / 0 / 9 |
+| `constructed` | 1 | 10 | **10** | 0 | 0 | **9 of 14** | 15,631 | 65 | 140 | 227 | 180 | **no** | 10 / 0 / 9 |
+| `constructed` | 2 | 11.75 | **11** | **1** | 2 | **8 of 14** | 13,116 | 66 | 121 | 3,580 | 549 | **no** | 11 / 0 / 9 |
+| `constructed` | 3 | 12.25 | **12** | **1** | 0 | **8 of 14** | 11,980 | 59 | 105 | 3,135 | 84 | **no** | 12 / 0 / 9 |
+| `constructed` | 4 | 11 | **11** | 0 | 0 | **9 of 14** | 10,722 | 41 | 79 | 178 | 503 | **no** | 11 / 0 / 9 |
+| `import` | 0 | 35 | **34** | 0 | 4 | **10 of 14** | 4,350 | 24 | 45 | 278 | 0 | **no** | 34 / 0 / 10 |
+| `random` | 0 | 14 | **13** | 0 | 4 | **9 of 14** | 13,289 | 48 | 113 | 650 | 0 | **no** | 13 / 0 / 9 |
+| `random` | 3 | 14.5 | **14** | **2** | 0 | **12 of 14** | 8,285 | 57 | 116 | 2,209 | 43 | **yes, once** | 16 / 0 / 10 |
+
+Every run stopped on `S3` with the cap unspent — the largest total is
+`constructed` 2's 16,696 of 20,000 — and every one ended inadmissible.
+
+#### What the spread did: nothing, on seven runs of eight
+
+**1,539 spread candidates across the eight runs and not one was ever the board a
+later round swept from.** On five of the eight the cut count, the wire count and
+the open-net count are all **identical to §6.10's** — `constructed` 0, 1 and 4,
+`import` 0 and `random` 0 — and three of those five enumerated 180, 180 and 503
+spread candidates while matching the earlier figures exactly.
+
+**That identity is not a coincidence and it is stronger than it looks.**
+`enumerateMoves` appends the spreads LAST, after every other kind, so in each
+round every non-spread candidate is evaluated against the same incumbent it
+would have met without them; if no spread is accepted, the incumbent at the end
+of each round is exactly what it was before the kind existed. No run reached the
+cap, so no candidate was dropped for budget. **So on any run whose spread count
+is non-zero and whose spread-ever-best is "no", the kind added evaluations and
+changed nothing else** — which is five of the eight rows above, and is why the
+`constructed` arm's cut counts are 10, 10, 11, 12 and 11, the same five numbers
+§6.10 recorded.
+
+**The one run where the cut count moved is `random` 3, and it is not a clean
+win.** `C` 16 → 14 and `F` 17.25 → 14.5, for `W` 0 → 2 and `B` 5 → 0 — and
+**the open-net count went 10 → 12, which is worse.** One spread was accepted in
+that run and one `add-wire` was. Completeness is the ordering's FIRST key, so a
+board with twelve open nets is not better than one with ten; the two runs
+diverged and this one found a cheaper, less complete board.
+
+#### What the `--update` did, which is the half that paid
+
+**Two nets closed, on two seeds, for one wire each, at no cost in cuts.**
+`constructed` 2 and 3 both reach **8 of 14 open** against §6.10's 9, with `C`
+unchanged at 11 and 12, `W` 0 → 1, and one `add-wire` candidate accepted in each.
+That is the first time in this repository's record that a wire has been accepted
+by the main search: §6.9 counted 7,417 `add-wire` candidates and none was best,
+and the reason was the node id, not the gesture.
+
+**`import` 0 is the isolation, and it is exact.** Zero spread candidates, so the
+`--update` is the only change — and `C`, `W`, `B`, the open-net count, the round
+count and the accepted count are all identical to §6.10's. What moved is where
+the shorted candidates are counted: 4,350 + 278 against §6.10's 4,592 + 36, the
+same 4,628 total, with 242 candidates now rejected at `--update` instead of
+being scored as wires that joined nothing.
+
+**And it costs reach.** Once a wire is on the board, a candidate that moves a
+part can leave that wire's two ends on two different nets, and `--update` then
+refuses to put it back — correctly, in the fork's own words, *"a board where a
+jumper has become a short is not a board this tool may write."* That is what
+took `random` 3's unevaluable count from §6.10's 0 to 2,209 and `constructed` 2's
+from 6 to 3,580. Those candidates are rejected and counted, not skipped
+silently.
+
+#### Why the spread cannot fire, measured
+
+**A wire's end joins the net only if it lands on the same PIECE of copper as the
+net's pins**, and `AutoFillVero` cuts a strip between two adjacent holes of
+different nets. **The fork makes only straight wires** — a `1 × n` or an `n × 1`
+— so one line of holes must serve both ends, which means the net's copper on the
+two strips has to overlap in that line. Three measurements:
+
+1. taking the first line that FIT, ascending — `wireMovesFor`'s own rule — had
+   **every one of the first twenty-five spread candidates refused** by `--update`
+   on the import-placed board, because the lowest free line is at the far end of
+   the board from the net;
+2. ranking the lines by nearness and still taking the first that fit did not fix
+   it: the near lines are the ones the parts' own holes block, so the wire went
+   to column 23 while the net's pins on the strip it was leaving sat at columns 3
+   to 15;
+3. with the reach made a REQUIREMENT, the import-placed board admits **zero**
+   spread candidates, and the diagnostic says why per net: the best single line
+   for the net `0` pair (strip 0 to strip 2) is at reach 0 — a hole that already
+   holds a pin — and every reach-1 line is blocked by a part.
+
+**The join a person would draw there is an L** — a wire ALONG one strip to bring
+the net's copper under the other strip's, then a wire ACROSS. That is two wires,
+and `complete-joins.ts` already plans both halves. At `2 × ρ_w = 0.5` against one
+cut the trade would still be `ΔF = −0.5`. **This kind plans one wire and the L is
+not built.**
+
+#### One spread measured end to end, which is where the `−1` goes
+
+`random` 3's round-0 spread candidate, decomposed per strip from the two boards'
+own `PIN` lines:
+
+| strip | nets before | nets after |
+| --- | --- | --- |
+| 17 (free) | — | `0` |
+| 20 | `in` | — |
+| 13 | `hi_boost_out`, `si_hi_cut_j4_p2` | the same plus `in` |
+
+Net segments 36 → 37, occupied strips 22 → 22, so the identity predicts `C + 1`
+and the fork's own cut count went **21 → 22** with `W` 0 → 1 and `F` 22.25 →
+23.50. Two causes, both in that table: the net KEPT its segment on the strip the
+spread was supposed to vacate — a second part held it — and the relocated part
+carried its other pin, which emptied strip 20 (taking the `S_occ` gain back) and
+landed on strip 13 beside two other nets (adding the cut). The first cause is now
+a clause in `spreadSourceStrips`; the second is unmodelled and named.
+
+**No model of the ABSOLUTE cut count was adopted, having been tested.** Counting
+net changes along each strip gives 14 where the fork cuts 21 on one board and 30
+where it cuts 38 on another; `(segments − strips)` gives 14 and 18 for the same
+two. Only the DELTA matched, on one pair, which is not enough to gate an
+enumeration on.
+
+#### What this does not establish
+
+- **the two changes are separated only where the spread never fires** —
+  `import` 0 and `random` 0 enumerate no spread at all and are therefore the
+  `--update` alone. Elsewhere the separation rests on the ordering argument
+  above (spreads enumerated last, never accepted, cap unspent), which is a
+  reading of the counts rather than a second sweep;
+- **seven of the fifteen pairs were not run** — `random` 1, 2 and 4 and `import`
+  1, 2, 3 and 4. Four of those are `import` seeds repeating a start the seed
+  does not change;
+- **the arm comparison was not re-run.** `compareSeedArms` refuses a missing
+  pair rather than defaulting it, so no rate, `separated` or `retireable`
+  verdict is quoted here;
+- **the eight pairs ran on the code before the "no pin stays behind" clause**,
+  which landed while they were running. The clause only REMOVES candidates, so
+  by the ordering argument it cannot change a run whose spread was never best —
+  seven of the eight. `random` 3 was re-run under it;
+- **one run flaked** with `--dump-board produced no PIN line` and was relaunched
+  from scratch. §6.9 measured the same refusal once in fifteen; eight runs were
+  in parallel on ten cores here, so load is a plausible contributor and is not
+  established as the cause;
+- **one board, one netlist**, as §6.9 and §6.10 say of their own findings.
+
+#### What it means
+
+**The owner's mechanism is real and this move set still cannot perform it.** The
+arithmetic says vacating a shared strip onto a free one is worth exactly one cut
+for one wire; what blocks it is not the cost model, the acceptance rule or the
+enumeration, but **the shape of the wire the fork will make.** A straight jumper
+can rejoin a spread net only where the net's copper on two strips happens to line
+up in a free column, and on a board whose parts are packed into three rows it
+never does. The next thing to build is the L-shaped join, and that is a decision
+about the move set rather than a tuning of this one.
+
 ---
 
 ## 7. `V5` and `V9` — can a statistic tell two placements apart, and is any constant unaccounted for?
