@@ -427,7 +427,9 @@ export {
 export {
   nextWireName,
   wireAfter,
+  wireAlong,
   wireBridge,
   wireMovesFor,
+  type WireLanding,
   type WirePlan,
 } from "./moves-wire.ts"

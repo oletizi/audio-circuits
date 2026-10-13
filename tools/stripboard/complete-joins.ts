@@ -61,8 +61,14 @@ import { alongOf, copperGraph, holeKey, parseHoleKey, type HoleKey } from "./cop
 import { stripOf } from "./constraints-model.ts"
 import type { BoardDump } from "../guide/dump.ts"
 import type { ReferenceNets } from "./equivalence.ts"
-import type { Move } from "./moves-model.ts"
-import { nextWireName, wireAfter, wireAlong, wireBridge, type WireLanding } from "./moves-wire.ts"
+import {
+  nextWireName,
+  wireAfter,
+  wireAlong,
+  wireBridge,
+  type Move,
+  type WireLanding,
+} from "./moves.ts"
 import { referencePinHoles } from "./pad-provenance.ts"
 import type { Occupancy } from "./seed-geometry.ts"
 
