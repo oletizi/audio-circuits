@@ -93,6 +93,30 @@ import { stretchBoundFor, type Occupancy, type PartRect } from "./seed-geometry.
 /** The length, in holes, of the wire `--author --op add-wire` creates. Measured. */
 const FRESH_WIRE_HOLES = 3
 
+/**
+ * How far along a strip a wire's end may land from a pin OF THE NET IT JOINS,
+ * in holes.
+ *
+ * **ONE HOLE, AND THE RULE IS `b725c19`'s RATHER THAN A TOLERANCE INVENTED
+ * HERE.** A strip conducts until `AutoFillVero` cuts it, and it cuts between
+ * holes carrying DIFFERENT node ids - so an end beside the net's own pin is in
+ * that pin's segment, while an end chosen for geometric convenience lands on
+ * whatever copper is at that line, which on a crowded strip is another net's.
+ * That is not a cost but a SHORT, and the fork refuses to reconcile it
+ * (`--update`: *"its two ends are no longer on one net"*).
+ *
+ * **MEASURED, AND IT IS WHY THIS NOW GOVERNS `add-wire` TOO.** `wireMovesFor`
+ * used to take the first line that geometrically fit: over two instrumented
+ * runs **103 of 187 `add-wire` candidates (55%) were refused by `--update`
+ * before any acceptance key saw them**, every one with that message.
+ * `.superpowers/sdd/2026-10-10-stripboard-pipeline/necessary-cuts-report.md` §7.
+ *
+ * **NECESSARY AND NOT SUFFICIENT:** a cut can sit between a pin and the hole
+ * beside it, because the cut list exists only after a candidate is painted, so
+ * a candidate the fork still refuses is still counted as unscoreable.
+ */
+export const WIRE_END_REACH = 1
+
 /** The type name `VEROROUTE_STRETCH_BOUNDS` records a wire's length bound under. */
 const WIRE_TYPE = "WIRE"
 
@@ -115,6 +139,77 @@ const WIRE_TYPE = "WIRE"
  */
 export function nextWireName(count: number): string {
   return `Wire${count + 1}`
+}
+
+/**
+ * The lines of holes at which a wire can land ONE END beside each of two given
+ * sets of along-strip coordinates, cheapest first.
+ *
+ * `firstEnd` and `secondEnd` are the along-strip coordinates of the net's pins
+ * that each end has to reach - one list per strip the wire spans. A line
+ * qualifies when it is within `WIRE_END_REACH` of a coordinate in BOTH lists,
+ * and the order is by total distance from the two nearest pins, then by line, so
+ * the first line a caller tries is the tightest one and two runs agree.
+ *
+ * **IT IS THE ONE IMPLEMENTATION OF THE REACH RULE, and that is the point of it
+ * being here.** `wireMovesFor` below and `./moves-join.ts`'s spread lines are the
+ * two callers; each decides WHICH pins its ends must reach (a spread's mover pins
+ * travel to the target strip and its stayers do not), and neither one spells the
+ * arithmetic out again. A second copy would be two readings of one rule, and the
+ * rule is the difference between a wire and a short.
+ *
+ * An empty list on either side yields NO line, not every line: a wire with no
+ * pin of its net to reach on one of the two strips has no end that could be in
+ * the net's own copper there.
+ */
+export function wireEndLines(
+  dump: BoardDump,
+  firstEnd: readonly number[],
+  secondEnd: readonly number[],
+): readonly number[] {
+  if (firstEnd.length === 0 || secondEnd.length === 0) return []
+  const nearest = (holes: readonly number[], line: number): number => {
+    let best = Number.POSITIVE_INFINITY
+    for (const along of holes) best = Math.min(best, Math.abs(along - line))
+    return best
+  }
+  const lines = dump.verticalStrips ? dump.grid.rows : dump.grid.cols
+  const reachable: { readonly line: number; readonly cost: number }[] = []
+  for (let line = 0; line < lines; line += 1) {
+    const first = nearest(firstEnd, line)
+    const second = nearest(secondEnd, line)
+    if (first > WIRE_END_REACH || second > WIRE_END_REACH) continue
+    reachable.push({ line, cost: first + second })
+  }
+  return reachable.sort((a, b) => a.cost - b.cost || a.line - b.line).map((one) => one.line)
+}
+
+/**
+ * Where a net's pins sit ALONG each strip, keyed by strip - the dump's `PIN`
+ * lines read through the reference netlist.
+ *
+ * A wire end may land only beside a pin of the net it joins, so an enumerator
+ * needs the along-strip positions and not merely which strips are occupied.
+ * `./moves-join.ts` is the other caller.
+ */
+export function netPinsAlongStrips(
+  dump: BoardDump,
+  reference: ReferenceNets,
+  net: string,
+): ReadonlyMap<number, readonly number[]> {
+  const wanted = new Set(reference.get(net) ?? [])
+  const byStrip = new Map<number, number[]>()
+  for (const [ref, own] of Object.entries(dump.pins)) {
+    for (const pin of own) {
+      if (!wanted.has(`${ref}.${pin.pin}`)) continue
+      const strip = stripOf(pin, dump.verticalStrips)
+      const along = dump.verticalStrips ? pin.row : pin.col
+      const holes = byStrip.get(strip) ?? []
+      holes.push(along)
+      byStrip.set(strip, holes)
+    }
+  }
+  return byStrip
 }
 
 /**
@@ -348,12 +443,23 @@ function wireAnchor(
  * whose cost is unmeasured, exactly as `UNIT_DELTAS` says of its own
  * neighbourhood.
  *
- * **WHAT IT DOES NOT CHECK, and `./moves.ts`'s own `wireMoves` said the same:**
- * whether the wire's end holes are in the same CUT SEGMENT as the net's pins on
- * those strips. Cuts are `AutoFillVero`'s and exist only after the candidate is
- * painted, so a wire that lands on an isolated piece of its strip buys nothing -
- * and `F` is what says so, one evaluation later. The enumerator reads pin holes
- * and the strip axis and nothing else.
+ * **ITS ENDS LAND BESIDE THE NET'S OWN PINS, AND THAT REPLACED "THE FIRST LINE
+ * THAT FITS".** The line is chosen by `wireEndLines` - within `WIRE_END_REACH`
+ * of a pin of this net on EACH of the two strips, tightest first - rather than
+ * by walking every line of the board until the geometry admits one. The old
+ * rule was measured: it proposed wires whose ends sat on whatever copper
+ * happened to be at that line, and the fork refused **103 of 187 of them**
+ * (55%) with *"its two ends are no longer on one net"* - a short, not a cost,
+ * and a candidate no acceptance key ever saw. `WIRE_END_REACH` carries the
+ * measurement and the rule's own limit.
+ *
+ * **WHAT IT STILL DOES NOT CHECK:** whether a CUT sits between the end hole and
+ * the pin beside it. Cuts are `AutoFillVero`'s and exist only after the
+ * candidate is painted, so the reach rule is necessary and not sufficient, and a
+ * candidate the fork still refuses is still counted as unscoreable. A pair of
+ * strips with no line serving both ends yields NO candidate here - which is the
+ * shape `./moves-join.ts`'s elbow exists for, and this kind does not plan one:
+ * a lone wire that cannot reach the net's own copper joins nothing at all.
  */
 export function wireMovesFor(
   occupancy: Occupancy,
@@ -361,25 +467,22 @@ export function wireMovesFor(
   reference: ReferenceNets,
 ): readonly Move[] {
   const name = nextWireName(dump.wires.length)
-  const lines = dump.verticalStrips ? dump.grid.rows : dump.grid.cols
   const bound = stretchBoundFor(WIRE_TYPE)
   const moves: Move[] = []
-  for (const [net, pins] of reference) {
-    const wanted = new Set(pins)
-    const strips = new Set<number>()
-    for (const [ref, own] of Object.entries(dump.pins)) {
-      for (const pin of own) {
-        if (wanted.has(`${ref}.${pin.pin}`)) strips.add(stripOf(pin, dump.verticalStrips))
-      }
-    }
-    const ordered = [...strips].sort((a, b) => a - b)
+  for (const [net] of reference) {
+    const alongByStrip = netPinsAlongStrips(dump, reference, net)
+    const ordered = [...alongByStrip.keys()].sort((a, b) => a - b)
     for (let first = 0; first < ordered.length; first += 1) {
       for (let second = first + 1; second < ordered.length; second += 1) {
         const from = ordered[first]
         const to = ordered[second]
         if (from === undefined || to === undefined) continue
         if (!bound.stretchable || to - from + 1 > bound.maxLength) continue
-        for (let along = 0; along < lines; along += 1) {
+        // THE LINES THE NET'S OWN PINS CAN BE REACHED AT, not every line of the
+        // board: see WIRE_END_REACH for the 103-of-187 measurement that put this
+        // call here.
+        const lines = wireEndLines(dump, alongByStrip.get(from) ?? [], alongByStrip.get(to) ?? [])
+        for (const along of lines) {
           const bridge = wireBridge(occupancy, dump, name, from, to, along)
           if (bridge === undefined) continue
           moves.push({ kind: "add-wire", net, ends: bridge.ends, plan: bridge.plan })

@@ -195,7 +195,7 @@ export function occupancyAfter(
   // `./moves-spread.ts`'s `spreadAfter` is that composition and nothing else, so
   // a spread's geometry is computed by exactly the arithmetic its halves are.
   if (move.kind === "spread") {
-    return spreadAfter(occupancy, dump.grid, move.gestures, move.wire)
+    return spreadAfter(occupancy, dump.grid, move.gestures, move.wires.map((one) => one.plan))
   }
   if (move.kind === "move") {
     return appliedGestures(occupancy, dump.grid, move.ref, move.to, 0, 0, SINGLE_GESTURE_ORDER)

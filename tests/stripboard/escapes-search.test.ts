@@ -69,14 +69,16 @@ test("E2 keeps the best candidate across every climb and records the boundaries"
   expect(result.climbs.length).toBe(seeds.length)
   expect(result.restartBoundaries.length).toBe(seeds.length - 1)
   // HAND-DERIVED, from the arithmetic ./search-fixtures.ts writes out:
-  // a stalled climb spends 92 evaluations - the start plus BASE_DUMP's 91
+  // a stalled climb spends 90 evaluations - the start plus BASE_DUMP's 89
   // applicable moves - and climb 1, whose first candidate reports the better
-  // board, spends 179: the start, round 0's 91, and round 1's 87 swept from the
+  // board, spends 177: the start, round 0's 89, and round 1's 87 swept from the
   // carried occupancy, where R1 has moved to 1,1 and its clockwise turn no
   // longer fits, over BETTER_DUMP's pins (./climb.test.ts derives that 87). So
-  // the boundaries are the running totals 92, 271, 363 and 455.
-  expect(result.climbs.map((entry) => entry.evaluations)).toEqual([92, 179, 92, 92, 92])
-  expect(result.restartBoundaries).toEqual([92, 271, 363, 455])
+  // the boundaries are the running totals 90, 267, 357 and 447. The 89 was 91
+  // until the add-wire enumeration became segment-aware; ./search-fixtures.ts
+  // carries that.
+  expect(result.climbs.map((entry) => entry.evaluations)).toEqual([90, 177, 90, 90, 90])
+  expect(result.restartBoundaries).toEqual([90, 267, 357, 447])
   expect(result.best.score.objective).toBe(
     Math.min(...result.climbs.map((entry) => entry.best.score.objective)),
   )
@@ -104,7 +106,7 @@ test("E2's restart schedule is a function of the seed list alone", () => {
     searchSpawn(STALLS_IMMEDIATELY_EVERY_SEED),
   )
   expect(short.climbs.length).toBe(3)
-  expect(short.restartBoundaries).toEqual([92, 184])
+  expect(short.restartBoundaries).toEqual([90, 180])
 })
 
 test("every restart starts from the run's OWN arm, one start per seed", () => {
@@ -247,17 +249,17 @@ test("Q3 does not stop the run on its first firing, or E2 would be unreachable",
 
 test("the evaluation cap is run-level: a restart cannot grant itself more", () => {
   // Q5's cap is shared across restarts, so the schedule's division of it is
-  // "what is left". HAND-DERIVED: a stalled climb would spend 92, so a cap of
-  // 95 leaves 3 for the second climb - the start plus two candidates - and
+  // "what is left". HAND-DERIVED: a stalled climb would spend 90, so a cap of
+  // 95 leaves 5 for the second climb - the start plus four candidates - and
   // nothing for a third, which is not started at all.
   const runDir = freshSearchDir()
   const result = search(
     { ...searchInput(runDir), rules: { ...committedRules(), evaluationCap: 95 } },
     searchSpawn(STALLS_IMMEDIATELY_EVERY_SEED),
   )
-  expect(result.climbs.map((entry) => entry.evaluations)).toEqual([92, 3])
+  expect(result.climbs.map((entry) => entry.evaluations)).toEqual([90, 5])
   expect(result.climbs.length).toBeLessThan(committedRules().seeds.length)
-  expect(result.restartBoundaries).toEqual([92])
+  expect(result.restartBoundaries).toEqual([90])
 })
 
 test("a plateau candidate with a better ranking is still accepted under a bound", () => {

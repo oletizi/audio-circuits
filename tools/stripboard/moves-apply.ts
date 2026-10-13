@@ -262,7 +262,11 @@ function compoundLaunches(
   if (move.kind === "spread") {
     return staged(board, move.kind, out, [
       ...translationsOf(move).map(translationStep),
-      ...wireSteps(move.wire),
+      // EVERY WIRE THE SPREAD CARRIES, IN ITS OWN ORDER - one for a straight
+      // join and two for an L (`./moves-join.ts`). `wireSteps` is the one
+      // emitter either way, so the two kinds ask the fork for the same sequence
+      // from one plan.
+      ...move.wires.flatMap((one) => wireSteps(one.plan)),
     ])
   }
   throw new Error(

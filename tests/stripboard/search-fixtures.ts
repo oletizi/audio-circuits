@@ -145,22 +145,28 @@ export function searchInput(runDir: string): SearchInput {
  * HOW MANY DUMPS HAVE BEEN ASKED FOR - `./climb-fixtures.ts`'s `DumpScript`,
  * and the indices below are counted off the same arithmetic.
  *
- * **ONE CLIMB OF THE `import` ARM ON `BASE_DUMP` SPENDS 93 DUMPS**, hand-derived
+ * **ONE CLIMB OF THE `import` ARM ON `BASE_DUMP` SPENDS 91 DUMPS**, hand-derived
  * and written out here because three scripts and four expectations are stated in
  * terms of it:
  *
  * - 1 for the arm, which reads the imported board to take its occupancy off it;
  * - 1 for the start evaluation;
- * - 91 for round 0's candidates - the applicable move set of `BASE_DUMP`:
- *   7 one-hole moves, 2 clockwise turns, 4 stretches, 6 net clusters, 70
- *   gathers and 2 add-wires, the two delete-wires being the only deferred kind
- *   left. `./moves.test.ts` derives every one of those figures, including the
- *   two the wires in the occupancy removed.
+ * - 89 for round 0's candidates - the applicable move set of `BASE_DUMP`:
+ *   7 one-hole moves, 2 clockwise turns, 4 stretches, 6 net clusters and 70
+ *   gathers, the two delete-wires being the only deferred kind left.
+ *   `./moves.test.ts` derives every one of those figures.
+ *
+ * **IT WAS 93 UNTIL THE ADD-WIRE ENUMERATION BECAME SEGMENT-AWARE.** The two
+ * add-wires this board used to offer put both of a wire's ends on copper where
+ * the net has no pin - the shape the fork refused in 103 of 187 candidates over
+ * two instrumented runs - and `WIRE_END_REACH` now requires an end within one
+ * hole of a pin of its own net on both strips, which `BASE_DUMP`'s two nets
+ * cannot offer: their pins sit five holes apart along the strips they straddle.
  *
  * With every dump the same board, nothing is accepted, `S3` ends the climb after
- * round 0 and the next climb's arm read is dump 93.
+ * round 0 and the next climb's arm read is dump 91.
  */
-export const DUMPS_PER_STALLED_CLIMB = 93
+export const DUMPS_PER_STALLED_CLIMB = 91
 
 /** Every evaluation reports `BASE_DUMP`: every climb stalls in round 0. */
 export const STALLS_IMMEDIATELY_EVERY_SEED = (): string => BASE_DUMP
@@ -169,8 +175,8 @@ export const STALLS_IMMEDIATELY_EVERY_SEED = (): string => BASE_DUMP
  * The FIRST candidate of the SECOND climb reports the better board, and nothing
  * else does.
  *
- * Climb 0 spends dumps 0-92 and stalls. Climb 1's arm read is dump 93, its start
- * is dump 94 and its first candidate is dump 95 - so that one index is
+ * Climb 0 spends dumps 0-90 and stalls. Climb 1's arm read is dump 91, its start
+ * is dump 92 and its first candidate is dump 93 - so that one index is
  * `BETTER_DUMP` and every other is `BASE_DUMP`. There is no "and thereafter"
  * branch: the function answers every index explicitly.
  */

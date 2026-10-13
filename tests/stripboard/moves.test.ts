@@ -41,6 +41,7 @@ import {
   CROWDED_NETS,
   CROWDED_OCC,
 } from "./spread-fixtures.ts"
+import { BASE_DUMP } from "./climb-boards.ts"
 import {
   BETTER,
   BETTER_OCC,
@@ -173,11 +174,17 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   //               which refuses a part moved onto a wire's holes            = 7
   //   rotate      1 clockwise turn each, both takeable from an interior row = 2
   //   stretch     grow and shrink, both clear on both parts                 = 4
-  //   add-wire    net `left` holds 2,1 and 7,2, so strips 1 and 2, and net
-  //               `right` holds 2,6 and 7,7, so strips 6 and 7: one pair of
-  //               strips each, one wire per pair at the first ROW that takes
-  //               it. Strips are columns here, so the fresh 1x3 wire already
-  //               lies across them and the plan is no turn and one shrink    = 2
+  //   add-wire    NONE, and the reason changed when `WIRE_END_REACH` began
+  //               governing this kind. Net `left` holds 2,1 and 7,2 and net
+  //               `right` 2,6 and 7,7, so each straddles two strips (columns)
+  //               - but their pins sit FIVE holes apart along those strips,
+  //               rows 2 and 7, and a wire's end must land within one hole of
+  //               a pin of its own net on BOTH strips. No row is within one of
+  //               both, so neither pair is offered. The old rule took the
+  //               first row that geometrically fit - row 0, seven holes from
+  //               one pin - and the fork refused that shape in 103 of 187
+  //               candidates over two instrumented runs. The L join is what
+  //               this shape needs and only the spread plans one             = 0
   //   delete-wire the two WIRE lines, W1 and W2                            = 2
   //   cluster     2 nets x 4 one-hole deltas less the one that does not land:
   //               each net holds a pin of BOTH parts, so every cluster moves
@@ -200,27 +207,27 @@ test("the enumeration is exactly the hand-counted move set of the fixture board"
   //               at columns 1 and 2, `right` at 6 and 7. ./spread.test.ts
   //               derives that and asserts it, on this very dump          = 0
   //                                                                        ---
-  //                                                                         93
+  //                                                                         91
   const moves = enumerateMoves(OCC, DUMP, REFERENCE)
   const counted = new Map<Move["kind"], number>()
   for (const move of moves) counted.set(move.kind, (counted.get(move.kind) ?? 0) + 1)
   expect(counted.get("move")).toBe(7)
   expect(counted.get("rotate")).toBe(2)
   expect(counted.get("stretch")).toBe(4)
-  expect(counted.get("add-wire")).toBe(2)
+  expect(counted.get("add-wire")).toBeUndefined()
   expect(counted.get("delete-wire")).toBe(2)
   expect(counted.get("cluster")).toBe(6)
   expect(counted.get("gather")).toBe(70)
   expect(counted.get("spread")).toBeUndefined()
-  expect(moves.length).toBe(93)
-  // And the applicable subset is the 93 less the ONE deferred kind's 2: the two
+  expect(moves.length).toBe(91)
+  // And the applicable subset is the 91 less the ONE deferred kind's 2: the two
   // delete-wires. It was 14 while `cluster` was deferred as well, 22 before
   // `gather` existed, 26 while the gather asked only about the strips a net
   // already occupied, and 92 while `add-wire` was deferred too - which is
   // exactly what this figure moving is meant to signal. `rotate` was deferred
   // for one round of Task 17 and is also back: a turn's result is carried in
   // the occupancy rather than re-read from a dump that cannot describe it.
-  expect(applicableMoves(moves).length).toBe(91)
+  expect(applicableMoves(moves).length).toBe(89)
   expect([...DEFERRED_KINDS.keys()].sort()).toEqual(["delete-wire"])
 })
 
@@ -382,24 +389,38 @@ test("two clockwise turns return a part to its own origin, so cw-only reaches tw
   expect(cases.length).toBe(4)
 })
 
-test("a net whose holes share one strip gets no add-wire, and the second board shows it", () => {
-  // BETTER_DUMP aligns R2 under R1, so net `left` sits entirely on strip 1 and
-  // net `right` entirely on strip 6. A wire across either would add a W to F
-  // and no connectivity, so none is proposed - while BASE_DUMP, whose nets
-  // straddle two strips each, gets two. The pair is the point: a test on one
-  // board alone could not tell "never proposed" from "not proposed here".
+test("an add-wire needs BOTH a strip pair and a line its ends can reach the net on", () => {
+  // THREE BOARDS, BECAUSE THERE ARE NOW TWO WAYS TO GET NO CANDIDATE and a test
+  // on one board could not tell them apart - nor either from "never proposed".
+  //
+  //   BETTER_DUMP: each net is whole on ONE strip, so there is no pair to
+  //     bridge at all. A wire there would add a `W` to `F` and no connectivity.
+  //   BASE_DUMP: each net straddles two strips, so the pair exists - and still
+  //     gets nothing, because its pins are five holes apart ALONG those strips
+  //     (rows 2 and 7) and no line is within `WIRE_END_REACH` of a pin on both.
+  //     This is the case the spread's L join exists for, which this kind does
+  //     not plan: a lone wire that reaches neither segment joins nothing.
+  //   ALIGNED: the same two parts with R2 moved so that `left`'s two pins share
+  //     a ROW - 2,1 and 2,2 - which puts a line within reach of both ends. One
+  //     candidate, and the plan is hand-derived: strips are COLUMNS here, so a
+  //     fresh 1x3 wire already lies across them and needs no turn; columns 1 to
+  //     2 is two holes, so it shrinks once; and the line is row 1, one hole from
+  //     both pins, because row 2 itself holds them.
   const onBetter = enumerateMoves(BETTER_OCC, BETTER, REFERENCE).filter((move) => move.kind === "add-wire")
   const onBase = enumerateMoves(OCC, DUMP, REFERENCE).filter((move) => move.kind === "add-wire")
   expect(onBetter.length).toBe(0)
-  // HAND-DERIVED, and the plan is the part that moved: strips are COLUMNS on
-  // this board, so a fresh 1x3 wire already lies across them and needs no turn;
-  // bridging columns 1 and 2 is two holes, so the plan shrinks it once; and the
-  // line it is placed on is the first ROW where all three of the fresh wire's
-  // holes are free, which is row 0. The board carries W1 and W2 already, so the
-  // name the fork will give the next one is Wire3.
-  expect(onBase.map(describeMove)).toEqual([
-    "add-wire left joining 0,1 to 0,2 (at 0,1 as Wire3, 0 turn(s), stretch -1, turn-then-stretch)",
-    "add-wire right joining 0,6 to 0,7 (at 0,6 as Wire3, 0 turn(s), stretch -1, turn-then-stretch)",
+  expect(onBase.length).toBe(0)
+  const aligned = boardGeometry(
+    BASE_DUMP.replace("PART R2 RESISTOR 22K AT 7,2", "PART R2 RESISTOR 22K AT 2,2")
+      .replace("PIN R2 1 AT 7,2", "PIN R2 1 AT 2,2")
+      .replace("PIN R2 2 AT 7,7", "PIN R2 2 AT 2,7"),
+  )
+  const onAligned = enumerateMoves(occupancyOf(aligned), aligned, REFERENCE).filter(
+    (move) => move.kind === "add-wire",
+  )
+  expect(onAligned.map(describeMove)).toEqual([
+    "add-wire left joining 1,1 to 1,2 (at 1,1 as Wire3, 0 turn(s), stretch -1, turn-then-stretch)",
+    "add-wire right joining 1,6 to 1,7 (at 1,6 as Wire3, 0 turn(s), stretch -1, turn-then-stretch)",
   ])
 })
 

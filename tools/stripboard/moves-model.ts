@@ -45,7 +45,7 @@
  * `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md` under *"Deviations
  * from the specs"*.
  */
-import type { WirePlan } from "./moves-wire.ts"
+import type { WireLanding, WirePlan } from "./moves-wire.ts"
 
 /**
  * One difference between a candidate layout and the current one.
@@ -166,15 +166,21 @@ export type Move =
         readonly ref: string
         readonly delta: readonly [number, number]
       }[]
-      /** Where the rejoining wire is created and the gestures that shape it. */
-      readonly wire: WirePlan
       /**
-       * The two holes the wire is PREDICTED to finish on - one on `to` and one
-       * on `joined`. A prediction and not a command, for `add-wire`'s own
-       * stated reason: the next `--dump-board` is what says where the ends
+       * The REJOINING WIRES, in the order their gestures go out: **one for a
+       * straight join and TWO for an L**, each with where it is created, the
+       * gestures that shape it, and the holes it is predicted to finish on.
+       *
+       * **IT IS A LIST BECAUSE A SINGLE STRAIGHT WIRE CANNOT ALWAYS REACH THE
+       * NET'S OWN COPPER ON BOTH STRIPS**, which was 313 of 1,389 enumerated
+       * triples (23%) and the largest gate on two of four boards:
+       * `./moves-join.ts` plans the L - a wire ALONG the kept strip, then one
+       * ACROSS - and carries what it costs (`2 x rho_w`) and what it does not
+       * establish. The ends are a prediction and not a command, for
+       * `add-wire`'s own stated reason: the next `--dump-board` says where they
        * really are.
        */
-      readonly ends: readonly [readonly [number, number], readonly [number, number]]
+      readonly wires: readonly WireLanding[]
     }
 
 /**
@@ -315,9 +321,16 @@ export function describeMove(move: Move): string {
         `spread ${move.net} from strip ${move.from} to strip ${move.to} joined to strip ` +
         `${move.joined} (` +
         `${move.gestures.map((one) => `${one.ref} by ${one.delta[0]},${one.delta[1]}`).join("; ")}` +
-        `; wire ${move.ends[0][0]},${move.ends[0][1]} to ${move.ends[1][0]},${move.ends[1][1]} ` +
-        `at ${move.wire.at[0]},${move.wire.at[1]} as ${move.wire.name}, ${move.wire.turns} ` +
-        `turn(s), stretch ${move.wire.stretch}, ${move.wire.order})`
+        `; ${move.wires.length === 1 ? "wire" : "L of 2 wires"} ` +
+        move.wires
+          .map(
+            (one) =>
+              `${one.ends[0][0]},${one.ends[0][1]} to ${one.ends[1][0]},${one.ends[1][1]} at ` +
+              `${one.plan.at[0]},${one.plan.at[1]} as ${one.plan.name}, ${one.plan.turns} ` +
+              `turn(s), stretch ${one.plan.stretch}, ${one.plan.order}`,
+          )
+          .join("; then ") +
+        ")"
       )
   }
 }

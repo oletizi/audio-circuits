@@ -149,18 +149,23 @@ test("an add-wire that must cross the rows is planned as create, turn, stretch",
   expect(after.get("Wire1")).toEqual({ row: 0, col: 2, rows: 3, cols: 1, across: true })
 })
 
-test("the enumeration proposes one wire per pair of strips a net is split across", () => {
-  // HAND-DERIVED: `mid` holds 0,0 and 2,0, so it is split across strips 0 and 2
-  // - one pair, one candidate. `y` holds 0,1 and 2,1 and is split the same way,
-  // so it gets one too. The column each lands on is the first where the WHOLE
-  // gesture fits, and that is column 2: landing on column 0 or 1 would put the
-  // turned wire's ends on the parts' own leads, while column 2's rows 0 to 2 are
-  // empty - the parts are two columns wide. The creation is at 1,1, one column
-  // left of the landing, because `turnedRect` moves a 1x3 to (r-1, c+1); row 1
-  // is empty, which is what lets the fresh three-hole wire sit there at all.
+test("the enumeration proposes a wire only where its ENDS can reach the net's own pins", () => {
+  // HAND-DERIVED, AND THE DERIVATION CHANGED WHEN `WIRE_END_REACH` BEGAN
+  // GOVERNING THIS KIND. Strips are rows. `mid` holds 0,0 and 2,0 and `y` holds
+  // 0,1 and 2,1, so both are split across strips 0 and 2 - but a wire bridging
+  // those rows can only land in column 2: columns 0 and 1 are the parts' own
+  // lead holes. Column 2 is ONE hole from `y`'s pins and TWO from `mid`'s, so
+  // `y` gets its candidate and **`mid` gets none**.
+  //
+  // THAT IS THE FIX AND NOT A LOSS. `mid`'s old candidate put both ends on
+  // column 2, where the net has no pin at all - copper belonging to whatever
+  // segment row 0 and row 2 have there - which is the shape the fork refused in
+  // 103 of 187 `add-wire` candidates over two instrumented runs ("its two ends
+  // are no longer on one net"). A wire that joins neither of the net's segments
+  // is not a cheaper repair; it is a candidate that cannot be evaluated.
+  // tools/stripboard/moves-wire.ts's `WIRE_END_REACH` carries the measurement.
   expect(enumerateMoves(ACROSS_OCC, ACROSS, ACROSS_REFERENCE).filter(wireKind).map(describeMove))
     .toEqual([
-      "add-wire mid joining 0,2 to 2,2 (at 1,1 as Wire1, 1 turn(s), stretch 0, turn-then-stretch)",
       "add-wire y joining 0,2 to 2,2 (at 1,1 as Wire1, 1 turn(s), stretch 0, turn-then-stretch)",
     ])
   // A net on ONE strip gets none: there is no pair to bridge. Both of
@@ -317,13 +322,28 @@ test("the wire's name is the fork's next index, predicted and loud when wrong", 
   // count only grows.
   expect(nextWireName(0)).toBe("Wire1")
   expect(nextWireName(2)).toBe("Wire3")
-  // BASE_DUMP carries two wires, so its next is Wire3 - which is what the
+  // A BOARD CARRYING TWO WIRES NAMES ITS NEXT ONE Wire3, which is what the
   // enumeration puts on the plan.
+  //
+  // **IT IS DRIVEN ON `ACROSS` WITH TWO WIRES ADDED AND NO LONGER ON
+  // `BASE_DUMP`**, because `BASE_DUMP` now yields no `add-wire` at all: its
+  // nets' pins sit five holes apart ALONG the two strips they straddle (rows 2
+  // and 7), so no line of holes is within `WIRE_END_REACH` of a pin on both -
+  // the case the spread's L join exists for (tools/stripboard/moves-join.ts),
+  // which this kind does not plan. The two wires here sit on rows 5 and 6, clear
+  // of the column-2 landing, so the only thing they change is the name.
+  const withWires = boardGeometry(
+    ACROSS_DUMP.replace(
+      "NODE 1 NAME mid R1.1 R2.1",
+      "WIRE W1 AT 5,5 ENDS 5,5,0,0 5,6,0,0\nWIRE W2 AT 6,5 ENDS 6,5,0,0 6,6,0,0\nNODE 1 NAME mid R1.1 R2.1",
+    ),
+  )
+  expect(withWires.wires.length).toBe(2)
   expect(
-    enumerateMoves(OCC, DUMP, REFERENCE)
+    enumerateMoves(occupancyOf(withWires), withWires, ACROSS_REFERENCE)
       .filter(wireKind)
       .map((move) => move.plan.name),
-  ).toEqual(["Wire3", "Wire3"])
+  ).toEqual(["Wire3"])
   // And a plan whose name is already on the board is refused rather than
   // applied: two rects would have to be one.
   const taken = wireAfter(OCC, DUMP.grid, {

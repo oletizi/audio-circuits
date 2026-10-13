@@ -143,7 +143,7 @@ test("the enumeration is exactly the hand-counted spread set of the fixture boar
   // AND THE WIRE RUNS DOWN COLUMN 3 IN EVERY ONE, which is the whole content of
   // the reach rule: one end beside the net's pin on row 1's vacated copper,
   // which travels with R1, and the other beside its pin on row 3.
-  expect(found.map((move) => [move.ends[0], move.ends[1]])).toEqual([
+  expect(found.map((move) => [move.wires[0]?.ends[0], move.wires[0]?.ends[1]])).toEqual([
     [
       [2, 3],
       [3, 3],
@@ -220,11 +220,15 @@ test("the occupancy advance moves the parts AND lands the wire", () => {
   const first = spreads()[0]
   expect(first).toBeDefined()
   if (first === undefined) return
-  expect(first.wire.at).toEqual([2, 3])
-  expect(first.wire.turns).toBe(1)
-  expect(first.wire.stretch).toBe(-1)
-  expect(first.wire.order).toBe("stretch-then-turn")
-  expect(first.ends).toEqual([
+  // ONE WIRE, which is the straight join: `wires` is a list because the L form
+  // carries two (tools/stripboard/moves-join.ts), and this candidate is the
+  // straight one.
+  expect(first.wires.length).toBe(1)
+  expect(first.wires[0]?.plan.at).toEqual([2, 3])
+  expect(first.wires[0]?.plan.turns).toBe(1)
+  expect(first.wires[0]?.plan.stretch).toBe(-1)
+  expect(first.wires[0]?.plan.order).toBe("stretch-then-turn")
+  expect(first.wires[0]?.ends).toEqual([
     [2, 3],
     [3, 3],
   ])

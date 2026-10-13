@@ -112,11 +112,14 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
   expect(result.evaluations).toBeGreaterThanOrEqual(
     applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length,
   )
-  expect(enumerateMoves(OCC, DUMP, REFERENCE).length).toBe(93)
+  expect(enumerateMoves(OCC, DUMP, REFERENCE).length).toBe(91)
 
   // HAND-DERIVED, from the two boards and the script:
-  //   round 0 sweeps BASE_DUMP's 91 applicable moves (93 enumerated less the two
-  //     delete-wire ones, which are the only deferred kind left), and the script
+  //   round 0 sweeps BASE_DUMP's 89 applicable moves (91 enumerated less the two
+  //     delete-wire ones, which are the only deferred kind left; it was 91 of 93
+  //     until the add-wire enumeration began requiring a wire's ends to reach
+  //     the net's own pins, which this board's two nets cannot offer - see
+  //     ./moves.test.ts), and the script
   //     hands BETTER_DUMP to
   //     the first of them, so one move is accepted. It was 14 until Task 18
   //     implemented the net cluster, which adds eight - two nets by four unit
@@ -146,11 +149,16 @@ test("a round is a full sweep of the move set, and the accepted count is per rou
   //     `right`. 33 each.
   //     4 + 0 + 2 + 4 + 1 + 2 + 8 + 66 = 87, every one of which reports the
   //     worse board, so none is accepted and S3 stops.
-  //   one evaluation of the start, plus 91, plus 87.
-  expect(applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length).toBe(91)
+  //   one evaluation of the start, plus 89, plus 87. Round 0's figure was 91
+  //     until the add-wire enumeration began requiring a wire's ends to reach
+  //     the net's own pins: BASE_DUMP's two nets straddle two strips each with
+  //     their pins five holes apart along them, so neither is offered a wire
+  //     any more. Round 1's 87 is unchanged - it carries no add-wire either way,
+  //     for the same reason on BETTER_DUMP's geometry.
+  expect(applicableMoves(enumerateMoves(OCC, DUMP, REFERENCE)).length).toBe(89)
   expect(result.acceptedPerRound).toEqual([1, 0])
   expect(result.rounds).toBe(2)
-  expect(result.evaluations).toBe(179)
+  expect(result.evaluations).toBe(177)
   expect(result.best.score.objective).toBe(0)
 })
 
@@ -321,7 +329,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
   expect(result.history.length).toBe(5)
   expect(result.rounds).toBe(1)
   expect(result.acceptedPerRound).toEqual([1])
-  // And the uncapped climb on the same script spends 179, so the cap really is
+  // And the uncapped climb on the same script spends 177, so the cap really is
   // what stopped this one rather than convergence.
   const uncappedDir = freshRunDir()
   const uncapped = climb(
@@ -329,7 +337,7 @@ test("S5 stops the climb at the evaluation cap, mid-round, and spends not one mo
     climbInput(uncappedDir, false),
     scriptedSpawn(IMPROVES_THEN_STALLS),
   )
-  expect(uncapped.evaluations).toBe(179)
+  expect(uncapped.evaluations).toBe(177)
 })
 
 test("a climb that ends inadmissible says so, rather than reading as one that found nothing", () => {
@@ -384,8 +392,8 @@ test("a candidate whose cuts cannot be computed is rejected and counted, not fat
   //
   // HAND-DERIVED: the script hands the unresolved board to round 0's first
   // candidate and BASE_DUMP to everything else, so that one candidate is
-  // counted and rejected and the other 90 are scored. The climb therefore
-  // reports 91 evaluations rather than 92 - the start plus 90 scored candidates
+  // counted and rejected and the other 88 are scored. The climb therefore
+  // reports 89 evaluations rather than 90 - the start plus 88 scored candidates
   // - one unscoreable, and a round that accepted nothing.
   const runDir = freshRunDir()
   const result = climb(
@@ -394,8 +402,8 @@ test("a candidate whose cuts cannot be computed is rejected and counted, not fat
     scriptedSpawn((index) => (index === 1 ? UNRESOLVED_DUMP : BASE_DUMP)),
   )
   expect(result.unscoreable).toBe(1)
-  expect(result.evaluations).toBe(91)
-  expect(result.history.length).toBe(91)
+  expect(result.evaluations).toBe(89)
+  expect(result.history.length).toBe(89)
   expect(result.rounds).toBe(1)
   expect(result.acceptedPerRound).toEqual([0])
   // AND THE CAUSE IS KEPT, not swallowed: the first refusal's own words are on

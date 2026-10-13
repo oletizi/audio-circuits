@@ -17,8 +17,8 @@
  * **WHY THE RUN IS TINY, AND WHERE THE FIGURES COME FROM.** A determinism test
  * does not need a long run; it needs two identical short ones. These take the
  * `import` arm over `./climb-fixtures.ts`'s two-part `BASE_DUMP` with two seeds
- * and an evaluation cap of 95, which is one stalled climb (92 evaluations: its
- * start plus that board's 91 applicable moves, the arithmetic
+ * and an evaluation cap of 95, which is one stalled climb (90 evaluations: its
+ * start plus that board's 89 applicable moves, the arithmetic
  * `./search-fixtures.ts` writes out) plus a second climb's start and two
  * candidates. Every figure the tests assert is derived from that arithmetic and
  * nothing here is measured by running anything.
@@ -61,7 +61,7 @@ import { IMPORTED_BOARD } from "./seed-fixtures.ts"
  * The seed list these runs restart on, and the cap that bounds them.
  *
  * TWO SEEDS AND 95 EVALUATIONS, DERIVED RATHER THAN CHOSEN: a cap of 95 leaves
- * the second climb a start and two candidates after the first climb's 92, the
+ * the second climb a start and four candidates after the first climb's 90, the
  * shortest run that still has a restart boundary in it. A third seed would never
  * be reached, so the list names two.
  */
@@ -115,8 +115,8 @@ export const ONE_MOVE_LATER = (dumpIndex: number): string =>
  * restart boundary and nothing else.
  *
  * An unscoreable candidate is rejected and counted rather than evaluated
- * (`ClimbResult.unscoreable`), so the first climb reports 91 evaluations instead
- * of 92 and the restart therefore begins at 91. It still consumed its dump, so
+ * (`ClimbResult.unscoreable`), so the first climb reports 89 evaluations instead
+ * of 90 and the restart therefore begins at 89. It still consumed its dump, so
  * every later index is where `SCRIPT` put it and the second climb accepts the
  * same move: the run reports the same candidate bytes, the same `F`, the same
  * ranking tuple, the same stopping rule and the same outcome. **The boundaries
