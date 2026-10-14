@@ -250,6 +250,15 @@ one state. On the reading above, K101 released selects the reproduce head,
 and K103 released connects the head to the sync line and puts J108-1 on TP1.
 It wants a bench continuity check (A1).
 
+**Bench evidence (owner, 2026-10-13, ohmmeter on a card, coils unpowered):**
+J101-4 to J101-3 read 0 ohms and J106-7 to TP1 read open. Released, K101
+therefore connects the reproduce head (J101-4) through the TR101 primary to
+the common bus, and K103's upper set does not put the head on the record
+drive - both as the "drawn energised" reading predicts, and opposite to what
+"drawn released" would give. K103's lower set (J108-1 to J108-3 open,
+J108-1 to TP1 near 0 ohms, predicted) has not yet been measured. The 0 ohm
+reading also implies a very low TR101 primary DC resistance.
+
 ## Control sources
 
 | Line | Driven by | Traced behaviour |
@@ -360,7 +369,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 
 | ID | Item | Location / evidence | What resolves it |
 | --- | --- | --- | --- |
-| A1 | Which relay position is energised for K101 and K103 (Relay drawn state) | block-sync-headswitch.md U1; control-outselect.md | Continuity across each relay with its coil driven and undriven |
+| A1 | Which relay position is energised for K101 and K103. K101 and K103's upper set confirmed by bench continuity: drawn energised (Relay drawn state). K103's lower set not yet measured | block-sync-headswitch.md U1; control-outselect.md; bench 2026-10-13 | J108-1 to J108-3 and J108-1 to TP1, coil unpowered |
 | A2 | *Resolved by Pass 4:* POWER MUTE is Q801; PLAY MUTE is Q534, and -6.8V is its PLAY level | control-transport.md | - |
 | A3 | Q118 base annotated -14.4V (bias off) while J107-7 is annotated 24V (bias on) | block-record-bias-erase.md; Pass 5 audit | Either the annotations come from different modes or a value is misplaced (-14.4V is what Q119's base reads when on); not decidable from the sheet - measure in RECORD |
 | A4 | U103 internals and part number not on this sheet | parts table lists "BIAS AMPL" only | Service manual or physical part |
