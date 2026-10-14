@@ -206,7 +206,7 @@ flowchart LR
   through the C134 100p trimmer onto the head-side lead J106-7 at
   (6620, 1930), not through K103. *Interpretation:* C134 is the bias-level
   adjustment.
-- **Erase:** AC65V node through L108 (no value printed) to J108-2; return on
+- **Erase:** AC65V node through L108 (marked "201", read as 200 uH, A5) to J108-2; return on
   J108-3 through K103's lower contact to J108-1 / U103 pin 6. No separate
   erase-current trim is drawn.
 - **Bias control:** U103 pin 2 goes through R198 8.2 to Q119 (NPN, emitter on
@@ -431,7 +431,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | A2 | *Resolved by Pass 4:* POWER MUTE is Q801; PLAY MUTE is Q534, and -6.8V is its PLAY level | control-transport.md | - |
 | A3 | Q118 base annotated -14.4V (bias off) while J107-7 is annotated 24V (bias on) | block-record-bias-erase.md; Pass 5 audit | Either the annotations come from different modes or a value is misplaced (-14.4V is what Q119's base reads when on); not decidable from the sheet - measure in RECORD |
 | A4 | U103 is a TEAC "BIAS Ampl. Module" (5292210600, per the manual's parts list); its internals are unpublished. The can is stamped "TEAC / 52922 / -016" (the character before "-016" is unclear in the photo), so "52922" matches the start of the manual's number. The can has an adjustment hole | pass6-datasheets.md; owner photo 2026-10-14, `bench/photos/2026-10-14-u103-k103-area.jpg` | Physical module, if its behaviour matters for a replacement |
-| A5 | L108 value not printed. *Bias frequency resolved:* 150 kHz (manual specifications) | block-record-bias-erase.md; pass6-datasheets.md | Physical part for L108 |
+| A5 | L108 value not printed on the sheet. *Resolved by inspection (owner, 2026-10-14):* L108 is the black drum choke beside TP2 / TP3, marked "201". Read as the standard three-digit inductor code, that is 20 x 10^1 uH = 200 uH; this reading is not measured. *Bias frequency resolved:* 150 kHz (manual specifications) | block-record-bias-erase.md; pass6-datasheets.md; `bench/photos/2026-10-14-u103-k103-area.jpg` | Optional: LCR meter on a spare card's L108 to confirm 200 uH |
 | A6 | *Resolved by datasheet:* 2SK68A VGS(off) is -1.5 V worst case, so -5.2 / -6.2 V holds the JFETs off with margin while the signal stays near 0V (see A12) | pass6-datasheets.md | - |
 | A7 | *Resolved by inspection:* R139 is 68 ohm. Its bands, read from the end opposite the gold tolerance band, are blue, grey, black: 68 x 1. The grey band shows weakly against the tan body, but blue-black is not a standard value. The same reading direction gives the drawn values for its neighbours: R138 blue-grey-orange 68k, R137 yellow-violet-orange 47k, R136 red-violet-orange 27k | owner photo 2026-10-14, `bench/photos/2026-10-14-r139-q108-area.jpg` (a spare card; all cards are the same, C10) | - |
 | A8 | W119 drawn faint and broken; W109 / W110 / W112 / W132 drawn linked - whether fitted is a physical-board question. *Partly resolved (owner photos, 2026-10-14, one spare card):* W119 is fitted, so the faint drawing does not mean it is absent. The owner could not find W132 on the component side; its silkscreen label is not visible near U103. The drawing puts W132 directly between U103 pins 4 and 5, so it may sit under the U103 can, be a track, or be absent. Also seen fitted: W108, W111, W123, W124, W127-W131, W133-W135. Seen empty: W116, W117, W120, W121, W122, and the C128-C130 / R184-R186 positions | block-record-bias-erase.md, block-reproduce-output.md; `bench/photos/2026-10-14-*.jpg` | W132: ohmmeter across U103 pins 4 and 5. W109 / W110 / W112: look |
@@ -499,7 +499,5 @@ Powered, measured (optional confirmations unless noted):
 Physical inspection:
 
 10. OUT SELECT switch latching and interlock (M5).
-11. L108 marking (A5). The "201" choke beside TP2 / TP3 may be it (201 =
-    200 uH), if its silkscreen label confirms. W109 / W110 / W112 fitted
-    (A8). The cards are all the same (owner, C10), so any
+11. W109 / W110 / W112 fitted (A8). The cards are all the same (owner, C10), so any
     spare card will do for these and for item 1.
