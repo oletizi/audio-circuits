@@ -148,6 +148,16 @@ test("a candidate whose parts occupy distinct holes reports no overlap", () => {
 - Consumes: `Candidate`, `Hole`, `Wire` from Task 1.
 - Produces: `componentsOf(candidate, cuts): ReadonlyMap<string, number>` keyed by hole; `derivedCuts(candidate, reference): readonly Cut[]`; `type Cut = { readonly strip: number; readonly afterColumn: number }`.
 
+**ORDERING RULING (pre-flight, 2026-10-14): Task 8 runs BEFORE this task, so the task
+numbers no longer match execution order.** Revision 2 had this task's differential test
+building a `Candidate` from a dump while the importer that does exactly that was Task 8,
+five tasks later — so the test would have needed a second, throwaway converter, and
+`supersede means delete` forbids leaving two. Task 8 is therefore executed second, and its
+own tests assert **only that the import is faithful** — placements, pins, wires and bridges
+against the dump's own `PART`, `PIN`, `WIRE` and `SOLDER` lines — with **no cut
+assertions**, because cuts do not exist until this task. Execution order is
+**1, 8, 2, 3, 4, 5, 6, 7, 9, 10, 11**.
+
 **THE CONTRACT, from the spec — implement it exactly, and do not simplify it.**
 
 **A significant contact is a component pin OR a wire endpoint.** A wire endpoint in an otherwise empty hole makes that hole electrically meaningful, and **a strip carrying no pins at all can still be a routing conductor between two wire endpoints.** A derivation walking only pins misses both.
@@ -224,7 +234,11 @@ test("a wire whose declared net no pin reaches is refused, naming the wire and t
 
 - [ ] **Step 4: Run the tests and confirm they pass.**
 
-- [ ] **Step 5: THE DIFFERENTIAL TEST, and it is this task's real deliverable.** Eleven boards are committed with cut counts VeroRoute derived itself. Import each (Task 8's adapter is not written yet, so read the dump directly with `parseBoardDump` from `tools/guide/dump.ts`), run `derivedCuts`, and **compare against the dump's own `CUT` lines, board by board.**
+- [ ] **Step 5: THE DIFFERENTIAL TEST, and it is this task's real deliverable.** Eleven
+  boards are committed with cut sets VeroRoute derived itself. Import each with
+  **`candidateFromDump` from Task 8, which now runs BEFORE this task** (see the ordering
+  ruling below), run `derivedCuts`, and **compare against the dump's own `CUT` lines, board
+  by board.**
 
 ```ts
 test("our derived cuts match VeroRoute's own on every committed board", () => {
@@ -380,20 +394,37 @@ Decide which strip hosts each net, place parts so their pins land there, run a w
 - Create: `lib/stripboard/moves.ts`
 - Create: `tests/stripboard/model/moves.test.ts`
 
-**This is the move the old architecture could not express, and the reason for the rewrite.** A candidate may carry several gestures at once — in particular, moving a part onto a strip **and** running the wire that makes the move pay, as **one** proposal scored as a unit.
+**This is the move the old architecture could not express, and the reason for the rewrite.**
+A generator **returns whole `Candidate`s**, each differing from the base in as many ways as
+it likes — in particular, a part moved onto a strip **and** the wire that makes the move
+pay, in one candidate scored as a unit.
+
+**There is no gesture type, and that is deliberate** (see Task 5). A gesture vocabulary is
+an artifact of driving VeroRoute's CLI. A move is a function from `Candidate` to
+`Candidate`, so "several gestures at once" is not a feature to build — it is the absence of
+a restriction that only ever existed because the old search spoke to a subprocess.
 
 - [ ] **Step 1: Write the failing test**, and make it the discriminating one:
 
 ```ts
 test("a move that only pays once its wire exists is proposed as ONE candidate", () => {
-  const proposals = movesFrom(padContiguousOnOneStrip(), reference(), spans())
-  const compound = proposals.filter((p) => p.gestures.length > 1 && p.gestures.some(isWire))
-  expect(compound.length, "move-and-wire is proposed as a unit").toBeGreaterThan(0)
-  // AND EACH HALF ALONE DOES NOT PAY - which is why the old search never found it.
-  for (const one of compound) {
-    expect(objectiveOf(apply(one.gestures.slice(0, 1))), "the move alone").toBeGreaterThanOrEqual(
-      objectiveOf(base()),
-    )
+  const base = padContiguousOnOneStrip()
+  const proposals = movesFrom(base, reference(), spans(), patterns())
+  // A candidate that both relocated a part AND added a wire, relative to base.
+  const compound = proposals.filter(
+    (next) => next.wires.length > base.wires.length && movedRefs(base, next).length > 0,
+  )
+  expect(compound.length, "move-and-wire is proposed as one candidate").toBeGreaterThan(0)
+
+  // AND THE RELOCATION ALONE DOES NOT PAY - which is exactly why the old search
+  // never found it, and why this assertion is the discriminating one rather than
+  // the count above. Build the same move WITHOUT its wire and score both.
+  for (const next of compound) {
+    const withoutWire = { ...next, wires: base.wires }
+    expect(
+      objectiveOf(withoutWire, derivedCuts(withoutWire, reference()), weights()),
+      "the relocation alone is no better than the base",
+    ).toBeGreaterThanOrEqual(objectiveOf(base, derivedCuts(base, reference()), weights()))
   }
 })
 ```
@@ -425,7 +456,15 @@ buildability all read that field, so a guess there is wrong in three places at o
 
 This is the adapter that lets a human layout become a starting point — the owner's *"even a human starting point"* — and it is what the benchmarks need.
 
-- [ ] **Step 1: Write the failing test.** Round trip each committed board: import, derive cuts, and assert the cut count and the connectivity match the dump's own. **Assert per board by name**, not an aggregate — an aggregate hides which board broke.
+**THIS TASK RUNS SECOND, immediately after Task 1** (pre-flight ordering ruling, recorded
+in Task 2). Task 2's differential test needs a dump-to-`Candidate` converter, and writing a
+throwaway one there would leave two converters to keep correct.
+
+- [ ] **Step 1: Write the failing test. NO CUT ASSERTIONS — cuts do not exist yet.** Round
+  trip each committed board and assert the import is faithful: every `PART` line becomes a
+  placement at the same origin and direction, every `PIN` line's hole matches
+  `geometryOf`'s, every `WIRE` and `SOLDER` line becomes a wire or bridge. **Assert per
+  board by name**, not an aggregate — an aggregate hides which board broke.
 
 - [ ] **Step 2–4: fail, implement, pass. Step 5: `bun run check`. Commit.**
 
