@@ -262,8 +262,10 @@ sources).
 
 ## Relay drawn state
 
-The sheet does not mark relay states. *Interpretation:* K101 and K103 are
-drawn in their **energised** positions. The support is functional coherence:
+The sheet does not mark relay states. K101 and K103 are drawn in their
+**energised** positions: first read from functional coherence, then
+confirmed for all three contact sets by bench continuity (below). The
+functional argument:
 the OUT SELECT board drives K101 (P180-2) only when SYNC is pressed, so
 "K101 energised = sync line" routes the sync head into the SYNC path; and
 FUNCTION, which enables bias, energises K103, so "K103 energised = head on
@@ -277,16 +279,18 @@ every settled state, so the sheet does not use one convention for all three
 relays, and the A3 conflict suggests the annotations were not all taken in
 one state. On the reading above, K101 released selects the reproduce head,
 and K103 released connects the head to the sync line and puts J108-1 on TP1.
-It wants a bench continuity check (A1).
+The bench continuity checks below settle it (A1).
 
 **Bench evidence (owner, 2026-10-13, ohmmeter on a card, coils unpowered):**
 J101-4 to J101-3 read 0 ohms and J106-7 to TP1 read open. Released, K101
 therefore connects the reproduce head (J101-4) through the TR101 primary to
 the common bus, and K103's upper set does not put the head on the record
 drive - both as the "drawn energised" reading predicts, and opposite to what
-"drawn released" would give. K103's lower set (J108-1 to J108-3 open,
-J108-1 to TP1 near 0 ohms, predicted) has not yet been measured. The 0 ohm
-reading also implies a very low TR101 primary DC resistance.
+"drawn released" would give. K103's lower set (owner, 2026-10-14, a spare
+card, coil unpowered): J108-1 to J108-3 read open and J108-1 to TP1 read a
+short, again as predicted. Released, K103 therefore puts the record output
+TP1 onto J108-1 and opens the erase return. The 0 ohm J101 reading also
+implies a very low TR101 primary DC resistance.
 
 ## Control sources
 
@@ -427,7 +431,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 
 | ID | Item | Location / evidence | What resolves it |
 | --- | --- | --- | --- |
-| A1 | Which relay position is energised for K101 and K103. K101 and K103's upper set confirmed by bench continuity: drawn energised (Relay drawn state). K103's lower set not yet measured | block-sync-headswitch.md U1; control-outselect.md; bench 2026-10-13 | J108-1 to J108-3 and J108-1 to TP1, coil unpowered |
+| A1 | *Resolved by bench continuity:* K101 and both K103 contact sets are drawn energised (Relay drawn state). Released: K101 selects the reproduce head; K103 puts the head on the sync line and TP1 on J108-1 | block-sync-headswitch.md U1; control-outselect.md; bench 2026-10-13 and 2026-10-14 | - |
 | A2 | *Resolved by Pass 4:* POWER MUTE is Q801; PLAY MUTE is Q534, and -6.8V is its PLAY level | control-transport.md | - |
 | A3 | Q118 base annotated -14.4V (bias off) while J107-7 is annotated 24V (bias on) | block-record-bias-erase.md; Pass 5 audit | Either the annotations come from different modes or a value is misplaced (-14.4V is what Q119's base reads when on); not decidable from the sheet - measure in RECORD |
 | A4 | U103 is a TEAC "BIAS Ampl. Module" (5292210600, per the manual's parts list); its internals are unpublished. The can is stamped "TEAC / 52922 / -016" (the character before "-016" is unclear in the photo), so "52922" matches the start of the manual's number. The can has an adjustment hole | pass6-datasheets.md; owner photo 2026-10-14, `bench/photos/2026-10-14-u103-k103-area.jpg` | Physical module, if its behaviour matters for a replacement |
@@ -463,19 +467,19 @@ without suitable instruments.
 
 Done (owner, 2026-10-13, card unpowered): J101-4 to J101-3 = 0 ohms;
 J106-7 to TP1 = open. Both as predicted (Relay drawn state).
+Done (owner, 2026-10-14, spare card unpowered): J108-1 to J108-3 = open;
+J108-1 to TP1 = short. Both as predicted; A1 closed.
 Done (owner photo, 2026-10-14): R139 colour code reads 68 ohm (A7). The
 same photo shows W108 and W111 fitted; neither is in A8's list.
 Done (owner photo, 2026-10-14, U103 / K103 area): W119 fitted; W132 not
 found on the component side (A8); U103 stamped "TEAC 52922 -016" (A4); a
-a blue wire link, which the owner found bridges J106-7 to C134 (A13).
+blue wire link, which the owner found bridges J106-7 to C134 (A13).
 
 On a removed card, unpowered (ohmmeter):
 
-1. J108-1 to J108-3 (predict open) and J108-1 to TP1 (predict near 0 ohms):
-   completes A1 for K103's lower set.
-1a. U103 pins 4 to 5 (W132, A8): near 0 ohms if fitted. The module's
-    internals between the two pins are unknown, so a reading in between is
-    not decisive on its own.
+1. U103 pins 4 to 5 (W132, A8): near 0 ohms if fitted. The module's
+   internals between the two pins are unknown, so a reading in between is
+   not decisive on its own.
 
 On the motherboard, power off, cards out (ohmmeter):
 
