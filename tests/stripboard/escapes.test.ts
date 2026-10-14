@@ -21,9 +21,10 @@
  * comment a reader can check, and written as a literal. Nothing here is
  * `expect(x).toBe(<the expression that computed x>)`.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import {
   applyMove,
   clusterAfter,
@@ -60,6 +61,8 @@ import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 import type { Occupancy } from "../../tools/stripboard/seed-geometry.ts"
 import type { ReferenceNets } from "../../tools/stripboard/equivalence.ts"
 import type { BoardDump } from "../../tools/guide/dump.ts"
+
+afterAll(cleanUpTempScratch)
 
 /** A spawn that records every invocation and writes every `-o`, with no dump in play. */
 function recorder(): { readonly spawned: string[][]; readonly spawn: SpawnVeroroute } {

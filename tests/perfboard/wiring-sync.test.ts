@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test"
+import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 import { assertSharedBy, syncWiringDoc, wiringDocumentFor } from "../../tools/perfboard/wiring-sync.ts"
 import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
 import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
@@ -15,6 +15,8 @@ const DECLARATION: PerfboardDeclaration = {
 }
 
 const REPO = path.resolve(import.meta.dir, "../..")
+
+afterAll(cleanUpTempScratch)
 
 test("an absent SHARED_BY is an empty map, so a board without one still works", () => {
   expect(assertSharedBy(undefined, DECLARATION)).toEqual({})
@@ -103,7 +105,7 @@ test("every committed Pultec guide says the junction is one stacking header", ()
 test("a drifted guide is rewritten, and the message says the wiring changed", async () => {
   // Written into a scratch directory so the real board files are untouched; the
   // declaration still points at the real circuit, so the content is genuine.
-  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "wiring-sync-"))
+  const scratch = freshTempScratch("wiring-sync-")
   const declaration: PerfboardDeclaration = {
     file: path.join(scratch, "perfboard.json"),
     dir: scratch,

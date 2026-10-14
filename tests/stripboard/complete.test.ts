@@ -27,8 +27,9 @@
  * is what `./seed-geometry.test.ts` would catch first. No test here claims to
  * provide it.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
 import fs from "node:fs"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import { completionPass } from "../../tools/stripboard/complete.ts"
 import { netJoinPlans } from "../../tools/stripboard/complete-joins.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
@@ -61,6 +62,8 @@ import {
   passSpawn,
   passStart,
 } from "./complete-fixtures.ts"
+
+afterAll(cleanUpTempScratch)
 
 function refusalFrom(call: () => unknown): string {
   try {

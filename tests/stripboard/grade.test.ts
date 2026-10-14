@@ -1,6 +1,7 @@
-import { test, expect } from "bun:test"
+import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import {
   HARD_CONSTRAINTS,
   a1,
@@ -25,6 +26,8 @@ import {
   squareFootprintInput,
   withStripAxisFlipped,
 } from "./grade-fixtures.ts"
+
+afterAll(cleanUpTempScratch)
 
 /**
  * `V4` - every constraint's negative fixture and the clauses that discriminate a

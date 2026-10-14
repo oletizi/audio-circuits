@@ -5,10 +5,16 @@
  * Its own module for the reason `lib/import-closure.ts` is: the test file is the
  * assertions, and a helper that writes files is a different kind of thing. It
  * NEVER touches `stripboard/rules.json`.
+ *
+ * **`fixture` IS CALLED SIXTY TIMES AND EVERY CALL MADE A DIRECTORY NOTHING
+ * REMOVED** - 65 a run, the largest single contributor to the 134 directories
+ * one `bun test` leaked into `TMPDIR` on 2026-10-13. Its scratch goes through
+ * `../support/temp-scratch.ts`, so `rules.test.ts` arms
+ * `afterAll(cleanUpTempScratch)`.
  */
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import { freshTempScratch } from "../support/temp-scratch.ts"
 import { RULES_PATH } from "../../tools/stripboard/rules.ts"
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -53,8 +59,7 @@ export function fixture(mutation: Readonly<Record<string, unknown>>): string {
   }
   if (!("notes" in mutation)) built["notes"] = notes
 
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "stripboard-rules-"))
-  const file = path.join(dir, "rules.json")
+  const file = path.join(freshTempScratch("stripboard-rules-"), "rules.json")
   fs.writeFileSync(file, JSON.stringify(built, null, 2))
   return file
 }

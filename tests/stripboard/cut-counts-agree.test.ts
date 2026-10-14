@@ -46,10 +46,10 @@
  * Measured here: about 50ms for the classification and well under a second for
  * the three invocations.
  */
-import { test, expect } from "bun:test"
+import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 import { exportNetlistFor } from "../../tools/perfboard/check.ts"
 import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
@@ -60,6 +60,8 @@ import { loadRules } from "../../tools/stripboard/rules.ts"
 import { scoreDumpText } from "../../tools/stripboard/score.ts"
 import { deriveTargets, type BoardTargets } from "../../tools/stripboard/targets.ts"
 import { physicalBoard } from "../../circuits/pultec/physical/board.ts"
+
+afterAll(cleanUpTempScratch)
 
 const ROOT = moduleRepoRoot()
 
@@ -137,7 +139,7 @@ test("the import-placed start the search begins from measures thirty-eight of th
   // the figure is a figure to re-measure and restate here, which is the point of
   // it being a literal.
   const spawn = verorouteSpawn()
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), "cut-counts-agree-"))
+  const work = freshTempScratch("cut-counts-agree-")
   const declaration = loadDeclaration(
     path.join(ROOT, "boards", "pultec-low-boost", "perfboard.json"),
   )

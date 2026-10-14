@@ -18,9 +18,10 @@
  *
  * Every figure is hand-derived from the fixture with the derivation beside it.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import {
   applyMove,
   DEFERRED_KINDS,
@@ -36,6 +37,8 @@ import { occupancyOf } from "../../tools/stripboard/seed-geometry.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { BASE_DUMP, DUMP, OCC, REFERENCE, freshRunDir } from "./climb-fixtures.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
+
+afterAll(cleanUpTempScratch)
 
 /** A spawn that records every invocation and writes every `-o`. */
 function recorder(): { readonly spawned: string[][]; readonly spawn: SpawnVeroroute } {

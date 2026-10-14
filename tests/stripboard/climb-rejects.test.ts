@@ -24,7 +24,8 @@
  * derivation written out, and never recomputed from the implementation's own
  * expression.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import { climb } from "../../tools/stripboard/climb.ts"
 import {
   BASE_DUMP,
@@ -41,6 +42,8 @@ import {
   type CheckScript,
   type DumpScript,
 } from "./climb-fixtures.ts"
+
+afterAll(cleanUpTempScratch)
 
 function refusalFrom(call: () => unknown): string {
   try {

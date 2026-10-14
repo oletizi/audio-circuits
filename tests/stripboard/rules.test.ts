@@ -24,12 +24,15 @@
  * spliced into it, and three file-level faults that all collapsed into one
  * misleading refusal. Both are recorded where they were found.
  */
-import { test, expect } from "bun:test"
+import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 import { loadRules, RULES_PATH, type StripboardRules } from "../../tools/stripboard/rules.ts"
 import { fixture, refusalFrom } from "./rules-fixtures.ts"
+
+afterAll(cleanUpTempScratch)
 
 /** The eleven parameters, as the plan's interface names them. */
 const PARAMETERS = [
@@ -476,7 +479,7 @@ test("a file that is not there, not JSON, or not an object refuses in three diff
     "rules-unreadable: the stripboard rules file could not be read:",
   )
 
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "stripboard-rules-bad-"))
+  const dir = freshTempScratch("stripboard-rules-bad-")
   const notJson = path.join(dir, "rules.json")
   fs.writeFileSync(notJson, "{ schema: 1, ")
   expect(refusalFrom(() => loadRules(notJson))).toStartWith(

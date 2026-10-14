@@ -17,11 +17,11 @@
  * random arm on all five reviewed seeds against the real binary. A model of
  * another program's behaviour has to be checked against that program.
  */
-import { test, expect } from "bun:test"
+import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
+import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 import { parseBoardDump, type BoardDump } from "../../tools/guide/dump.ts"
 import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
 import { exportNetlistFor, verorouteBinary } from "../../tools/perfboard/check.ts"
@@ -59,7 +59,9 @@ function dumpOf(board: string): BoardDump {
 }
 
 /** Where this file's throwaway boards go. Nothing here writes into the repository. */
-const WORK = fs.mkdtempSync(path.join(os.tmpdir(), "stripboard-seed-geometry-"))
+const WORK = freshTempScratch("stripboard-seed-geometry-")
+
+afterAll(cleanUpTempScratch)
 
 /**
  * The import-placed low-boost board, built once: the netlist this repository

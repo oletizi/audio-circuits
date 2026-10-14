@@ -4166,3 +4166,225 @@ pruned after the figures were taken to its `run.json`, its netlist, its
 `imported.vrt` and its reported candidate — the full runs were **3.9 GB, 5.0 GB
 and 3.9 GB** of candidate boards, and 596 KB of the 12.8 GB remains. `build/` is
 git-ignored and `boards/**` is untouched by all three runs.
+
+## 13. Task 9 of the buildable-layouts plan — the suite leaked **134 directories a run** into `TMPDIR`, and the metric that said otherwise **measured the wrong directory**
+
+**THE LESSON IS THE METRIC, NOT THE LINE COUNT.** "A full suite leaves zero run
+directories behind" was reported repeatedly, across several tasks, as a clean
+bill of health for the scratch-leak fix. It was true and it was about
+`build/stripboard/` — the one directory that fix had touched. The fixtures write
+in **two** places, and nothing ever counted the other. On 2026-10-13 the owner's
+disk filled: `TMPDIR` held **over 60,000** scratch directories across eight
+prefixes, plus 20 GB under `/private/tmp`. A success metric measured the wrong
+directory, and the metric being green is what kept anybody from looking.
+
+### 13.1 What was measured, against a floor the owner had just cleaned
+
+One `bun test` run leaked **134** directories into `TMPDIR`:
+
+| prefix | per run | made by |
+| --- | --- | --- |
+| `stripboard-rules-` | 65 | `tests/stripboard/rules-fixtures.ts` `fixture()`, called ~60 times |
+| `stripboard-climb-` | 55 | `tests/stripboard/climb-fixtures.ts` `freshRunDir()`, 8 test files |
+| `stripboard-search-` | 40 | `tests/stripboard/search-fixtures.ts` `freshSearchDir()` |
+| `stripboard-stock-` | 10 | `tests/stripboard/grade-fixtures.ts` `fixtureDeclaration()` |
+| `checkpoint-` | 8 | `tests/stripboard/checkpoint-fixtures.ts` `checkRunFor()` |
+| `stripboard-complete-` | 7 | `tests/stripboard/complete-fixtures.ts` `freshPassDir()` |
+| `wiring-sync-` | 2 | `tests/perfboard/wiring-sync.test.ts` |
+| `stripboard-seed-geometry-` | 2 | `tests/stripboard/seed-geometry.test.ts` `WORK` |
+
+**WHY THAT IS NOT A TIDINESS NUMBER.** `tests/stripboard/run-scratch.ts`'s header
+carries the mechanism: at roughly **4,606** directories in one directory,
+`spawnSync` of the pinned fork began returning **exit status 0 with empty
+stdout**, and **23 tests in nine unrelated files** failed on *"--dump-board
+produced no GRID line"* — a refusal pointing at the fork, about a fork that was
+fine. At 134 a run, **34 suite runs** reaches that threshold again. And the
+failure presents as a *legitimate refusal*, so a measurement taken on a poisoned
+machine is not merely slow; it is **wrong in a way that reads as a finding.**
+That is why this task ran ahead of Task 8, whose Task 3 equivalent cost about 80
+minutes of fork time.
+
+### 13.2 Two lifetimes, and only one of them is a hook
+
+Thirty-eight files under `tests/` make a temp directory, and they were not all
+broken. Sorting them produced two correct shapes and one bug:
+
+1. **The directory's lifetime is one call or one scope** — twenty-seven files
+   already did the right thing, naming it and removing it in a `finally`. An
+   immediate removal in the scope that made the directory is a *stronger*
+   guarantee than a hook at the end of the file, so **none of them was
+   converted**: that would have been churn that weakened them.
+   `checkpoint-fixtures.ts`'s netlist directory was one of these in everything
+   but the removal — the fork reads it during `runVerorouteCheck` and nothing
+   reads it after — so it gained the `finally` rather than a registration.
+2. **The directory's lifetime is a test, or a whole file** — a run directory
+   handed to `climb`, `search` or `complete`; `seed-geometry.test.ts`'s
+   module-scope `WORK`. These cannot be removed at the point of creation, and
+   they are what the registry is for.
+3. **Two helpers hand the directory to the caller** — `tree()` and
+   `tmpCatalogDir()`. Every caller already removes what it was handed, and
+   neither prefix appeared in the 134. Registering them *as well* would have been
+   a second cleanup path beside a first that works, so they were left alone and
+   declared instead, so the guard holds their callers to the removal.
+
+`tests/support/temp-scratch.ts` is the registry — one for the whole suite, not
+one per fixture module, which is precisely the mistake that produced this bug.
+`run-scratch.ts` kept a private `CREATED` list, so the registry that worked was
+invisible to every fixture that did not already use it; its list is **deleted**
+and it now delegates, keeping only the stamp prefixes, which are run directories
+under `build/stripboard/` and genuinely its own.
+
+**`cleanUpTempScratch` RETURNS THE COUNT IT REMOVED.** A cleanup hook that
+silently does nothing when its registry is empty looks exactly like a cleanup
+hook that worked — the same failure shape as the metric above, one level down.
+The return value is what lets the guard refuse that.
+
+**A MODULE-LEVEL `afterAll` IN THE REGISTRY WOULD NOT HAVE WORKED, AND THAT WAS
+MEASURED RATHER THAN ASSUMED.** Bun evaluates a module once for the whole run,
+so a hook registered at the registry's own module scope attaches to whichever
+test file imported it first and to no other — confirmed with a two-file probe.
+Every test file that reaches a registering fixture arms the hook itself, which is
+the proven pattern and also the one that needs a guard to stay true.
+
+### 13.3 The guard, and what each half of it can and cannot catch
+
+`tests/stripboard/temp-scratch.test.ts`, thirteen tests. It was written first and
+it **failed on the real leak** — five behavioural failures reporting
+`removed: 0`, and a static failure naming all thirteen offending files — before
+anything was fixed.
+
+- **Behavioural (5).** One per leaking prefix: drive the fixture, run the hook,
+  assert both that the hook removed something and that no directory under that
+  prefix outlived the fixture. These only cover fixtures somebody listed.
+- **`every mkdtemp site under tests/ either removes its own directory or
+  registers it`.** This is the half that covers the fixtures nobody will list.
+  For each `fs.mkdtempSync` site it extracts the name the directory is bound to
+  and requires an `rmSync` of that name in the same file; a site that is not
+  bound to a name at all, or whose name is never removed, fails and is reported
+  by file. A new leaking fixture fails here rather than being found in a year by
+  a full disk.
+- **`every test file that reaches a registering fixture arms the cleanup
+  hook`.** Import-based, so a file that imports a fixtures module without
+  touching its registering export is **not** asked for a hook that would do
+  nothing — a vacuous hook is the thing this section is about. It also catches a
+  `.test.ts` that registers scratch of its own: three of the eight prefixes were
+  made in a test file rather than in a fixtures module.
+- **`every caller of a hand-it-over helper removes what it was handed`.** Holds
+  shape 3 above to its contract instead of waving those two files through.
+- **Two tests over the tables themselves** — every declared module really does
+  register, really does export the names claimed, and every registering module is
+  declared. A stale table is a check that passes while guarding nothing.
+- **`make prune-temp derives every prefix the behavioural cases above drive`.**
+  The two halves have to agree or neither is worth much: the guard keeps the
+  suite from adding to the pile and the verb clears what is already there, so a
+  prefix the guard tests and the verb cannot derive is a prefix that accumulates
+  for ever.
+
+**WHAT IT DOES NOT COVER, SAID PLAINLY.** `tools/` is not scanned by the site
+check: four files there (`tools/perfboard/verbs.ts`, `check.ts`, `import.ts`,
+`netlist-sync.ts`, `tools/pultec/schematic-sync.ts`) make temp directories in
+production paths, and all of them remove their own. They are production code with
+a different review surface, and extending the check to them is a separate change.
+`tests/circuits/kicad-round-trip.ts`'s prefix is `` `${stem}-stub-` `` — the
+literal begins with an interpolation, so `prune-temp` reports it as a prefix it
+cannot derive instead of guessing one.
+
+### 13.4 The result, measured twice
+
+Two consecutive full `bun test` runs, each bracketed by
+`find "$TMPDIR" -maxdepth 1 -type d | wc -l`:
+
+| | run 1 | run 2 |
+| --- | --- | --- |
+| `bun test` | 1891 pass / 0 fail / 0 skip, 172 files, 84.32 s | 1891 pass / 0 fail / 0 skip, 172 files, 83.42 s |
+| `TMPDIR` delta | **0** | **0** |
+| `build/stripboard` run directories | 0 | 0 |
+| `build/stripboard` bytes | 0 | 0 |
+
+The baseline this task inherited was 1878 pass across 171 files; the thirteen
+tests and one file added are §13.3's guard. Two earlier pairs of runs, taken
+before the guard's last test landed and at a `TMPDIR` holding 28,986 directories
+rather than 6,819, also measured **0** — §13.6 is the second of them.
+`bun run typecheck` is clean.
+
+**`find`, NEVER A SHELL GLOB.** A zsh glob like `${TMPDIR}adopt-*` **aborts the
+whole expansion on a no-match** rather than expanding to nothing, and it silently
+produced a wrong count during this task's own measurement before `find` replaced
+it. `tempScratchMatching` in the registry reads the directory and filters in
+TypeScript for the same reason.
+
+### 13.5 `make prune-temp`, and the 21,362 directories that are the fork's
+
+`prune-temp` is the companion `prune-runs` never had. Like it, it is a
+**deliberate verb and a prerequisite of nothing**, and it names every prefix and
+its count before it deletes anything.
+
+**ITS PREFIX LIST IS DERIVED FROM THE SOURCES.** Every
+`mkdtempSync(path.join(os.tmpdir(), "…"))` and every `freshTempScratch("…")`
+under `tests/` and `tools/` is read out of the files, because a hand-kept list of
+forty-odd prefixes goes stale the first time a fixture is renamed, and a prune
+verb that quietly misses a prefix is the same silence as the metric at the top of
+this section. An empty derivation **refuses** rather than reporting a successful
+sweep of nothing.
+
+**`vr-gui-*` IS THE FORK'S OWN AND IS DECLARED SEPARATELY, NOT CLAIMED.** No
+fixture creates one — they did not appear among the directories a suite run
+creates, which is how that was established. The pinned binary makes one per
+spawn, so the source is `oletizi/veroroute-perfboard` and fixing it there is a
+change to the fork. This verb removes them from **this** side and says whose they
+are. Two other groups of accumulated prefixes are from sibling worktrees that
+share one `TMPDIR` and from code that no longer exists (`vr-declared-span-`,
+`symtext-`, `vr-strips-`, `vr-`, `verify-`, `time-score-`): nothing in any
+current checkout creates them, so the derived list does not cover them and the
+verb does not pretend to.
+
+**WHAT IT REMOVED WHEN IT WAS RUN.** `TMPDIR` went from **28,986** directories
+to **6,819**: **805** of ours, counting a nested prefix once (`stripboard-rules-`
+matches every `stripboard-rules-bad-` directory, so summing the per-prefix counts
+would over-report, and a verb whose stated count is wrong has not named what it
+did), and **21,362** `vr-gui-*`. The 6,819 that remain are the sibling-worktree
+and no-longer-created prefixes above, plus macOS's own.
+
+Three literals were found and reported rather than treated as prefixes:
+`` `${stem}-stub-` `` in `tests/circuits/kicad-round-trip.ts` begins with an
+interpolation, and the guard's own refusal-test arguments (`""`, `"noDash"`,
+`"nested/dir-"`) are not prefixes. A literal with no trailing `-` is rejected by
+the same rule `freshTempScratch` enforces on its callers, because matching
+`TMPDIR` against a stray string could delete another program's work.
+
+### 13.6 The intermittent 50.6 s test: accumulation was the leading candidate and **it is not supported**
+
+The unexplained slow run on record is `escapes-search.test.ts`'s *"every restart
+starts from the run's OWN arm"* taking **50.6 s** where it runs in under 5 s
+alone, alongside `seed-geometry.test.ts`'s constructed-arm test. Both pass in
+isolation and when `tests/stripboard/` runs whole, and an A/B had already ruled
+out the spacing generator. Temp-directory accumulation became the leading
+candidate because of the mechanism in §13.1 — and the state of this machine made
+it directly testable, since `TMPDIR` was sitting at **28,986** directories, six
+times the 4,606 at which the fork's `spawnSync` is documented to start returning
+empty stdout.
+
+Two full `bun test` runs with per-test times (`--reporter=junit`), one at each
+count:
+
+| | `TMPDIR` at 28,986 | `TMPDIR` at 6,819 (after `make prune-temp`) |
+| --- | --- | --- |
+| *every restart starts from the run's OWN arm* | **2.24 s** | **2.15 s** |
+| *the constructed arm places on every reviewed seed* | 4.10 s | 4.11 s |
+| slowest test in the suite (`GATE B`) | 20.27 s | 20.14 s |
+| whole suite | 84.23 s, 1890 pass / 0 fail | 83.56 s, 1891 pass / 0 fail |
+| `TMPDIR` delta | 0 | 0 |
+
+**THE FINDING IS NEGATIVE AND IT IS WORTH AS MUCH AS A POSITIVE ONE.** The test
+does not slow down at six times the documented threshold; the 0.09 s between the
+two arms is noise, and the constructed-arm test is identical to two decimal
+places. **Accumulation is not supported as the cause of the 50.6 s run**, and
+the candidate should be struck rather than left as a plausible-sounding
+explanation nobody tested. The cause remains unexplained.
+
+**WHAT WAS NOT TESTED, AND WHY.** The 50.6 s run was observed at an unknown
+count, possibly nearer the 60,000 the tree held before the owner cleaned it out.
+Reaching that figure again would mean deliberately re-poisoning the machine this
+task exists to clear, so it was not done. Siblings created anywhere other than
+`TMPDIR` itself would not exercise the same lookup and would prove nothing. What
+can be said is bounded and measured: not at 28,986.

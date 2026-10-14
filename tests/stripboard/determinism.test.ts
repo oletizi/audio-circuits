@@ -42,9 +42,10 @@
  * why every comparison runs through one directory, and that no `Q6` stop is
  * covered.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
 import os from "node:os"
 import path from "node:path"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import { renderReport } from "../../tools/stripboard/report.ts"
 import {
   readManifest,
@@ -71,6 +72,8 @@ import {
   type Bundle,
 } from "./determinism-fixtures.ts"
 import { freshSearchDir } from "./search-fixtures.ts"
+
+afterAll(cleanUpTempScratch)
 
 /** The same run twice, which is the pair most of these tests want. */
 function twice(): readonly [Bundle, Bundle] {

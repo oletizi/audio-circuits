@@ -40,30 +40,49 @@
  * test uses when it hands `place` a stamp; the prefix is unique per process and
  * per call, so it can never match another test's directory.
  *
+ * **AND IT WAS APPLIED TO ONLY ONE OF THE TWO PLACES THE FIXTURES WRITE.** The
+ * registry above was private to this module, so the fixtures that did not use
+ * it kept leaking - into `os.tmpdir()`, where nothing counted. On 2026-10-13
+ * `TMPDIR` held over 60,000 such directories and the owner's disk filled, while
+ * "zero run directories" was being reported as a clean bill of health: that
+ * metric counted `build/stripboard/`, the directory this comment had already
+ * made correct. **A SUCCESS METRIC MEASURED THE WRONG DIRECTORY.** The
+ * directory registry now lives in `../support/temp-scratch.ts` for the whole
+ * suite, and `./temp-scratch.test.ts` is the standing guard over both places.
+ *
  * **ITS OWN MODULE** because it is the machinery every scenario and every real
  * run shares, and because `./adopt-fixtures.ts` passed the 500-line ceiling when
  * the registry landed in it. The seam is scratch-space versus
  * what-gets-built-in-it.
  */
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import {
+  cleanUpTempScratch,
+  freshTempScratch,
+  registerTempScratch,
+} from "../support/temp-scratch.ts"
 import { runDirectory } from "../../tools/stripboard/run-dir.ts"
-
-/** Every directory the fixtures created, for `cleanUpFixtures` to remove. */
-const CREATED: string[] = []
 
 /** Every `<board>` / `<stamp prefix>` pair a real run was handed. */
 const STAMP_PREFIXES: { readonly board: string; readonly prefix: string }[] = []
 
 let counter = 0
 
-/** A unique, empty scratch directory under the system temp directory. */
+/**
+ * A unique, empty scratch directory under the system temp directory.
+ *
+ * **THE DIRECTORY REGISTRY LIVES IN `../support/temp-scratch.ts` AND NOT HERE.**
+ * This module held its own `CREATED` list, which is why the fix it documents
+ * covered `build/stripboard/` and nothing covered the other place every fixture
+ * writes: the registry that worked was private to the fixtures that happened to
+ * use it. There is now one registry for the whole suite, and what remains below
+ * is the part that is genuinely this module's - the stamp prefixes, which are
+ * run directories under `build/stripboard/` rather than temp directories.
+ */
 export function freshRoot(label: string): string {
   counter += 1
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), `adopt-${label}-${counter}-`))
-  CREATED.push(root)
-  return root
+  return freshTempScratch(`adopt-${label}-${counter}-`)
 }
 
 /**
@@ -81,7 +100,7 @@ export function freshStamp(label: string): string {
 
 /** Register a directory the fixtures made outside `freshRoot` - a run directory. */
 export function registerCreated(created: string): void {
-  CREATED.push(created)
+  registerTempScratch(created)
 }
 
 /**
@@ -110,17 +129,17 @@ export function registerStampPrefix(board: string, prefix: string): void {
  *
  * **EVERY TEST FILE THAT USES THESE FIXTURES CALLS IT IN `afterAll`**, which is
  * the only place that can: a fixture cannot know when the last test that reads
- * it has finished. `force: true` so a directory a test already removed is not
- * an error, and both registries are emptied so a second call is a no-op rather
- * than a second walk.
+ * it has finished. It sweeps BOTH places a fixture writes: the temp-directory
+ * registry in `../support/temp-scratch.ts`, and the run directories under
+ * `build/stripboard/` that only this module knows how to find. Each registry is
+ * emptied, so a second call is a no-op rather than a second walk.
  *
  * A STAMP PREFIX WHOSE BOARD DIRECTORY DOES NOT EXIST IS NOT AN ERROR: a test
  * that registered a stamp and then refused before `place` created anything is an
  * ordinary case, and the registration is the honest thing for it to have done.
  */
 export function cleanUpFixtures(): void {
-  for (const created of CREATED) fs.rmSync(created, { recursive: true, force: true })
-  CREATED.length = 0
+  cleanUpTempScratch()
   for (const { board, prefix } of STAMP_PREFIXES) {
     const boardDir = path.dirname(runDirectory(board, prefix))
     if (!fs.existsSync(boardDir)) continue

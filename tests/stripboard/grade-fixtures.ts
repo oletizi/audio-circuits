@@ -26,8 +26,8 @@
  * following `tests/stripboard/score-fixtures.ts`.
  */
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import { freshTempScratch } from "../support/temp-scratch.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { classifyPads, type PadPosition, type PinPattern } from "../../lib/kicad/pin-pattern-model.ts"
 import { leadSpanFor } from "../../lib/kicad/lead-span.ts"
@@ -444,10 +444,13 @@ export function withStripAxisFlipped(input: CheckInput): CheckInput {
  * It exists because **no board in this repository declares one** - all eleven
  * carry `circuit`, `export`, `vrt` and sometimes the `sch`/`netlist` pair - so
  * `stockFor`'s board branch has nothing in the tree to exercise it.
+ *
+ * Its directory is registered with `../support/temp-scratch.ts`, so
+ * `grade.test.ts` arms `afterAll(cleanUpTempScratch)` - it left **10**
+ * directories in `TMPDIR` a run.
  */
 export function fixtureDeclaration(fields: Record<string, unknown>): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "stripboard-stock-"))
-  const file = path.join(dir, "perfboard.json")
+  const file = path.join(freshTempScratch("stripboard-stock-"), "perfboard.json")
   fs.writeFileSync(file, JSON.stringify({ circuit: "./c.ts", export: "c", vrt: "c.vrt", ...fields }))
   return file
 }

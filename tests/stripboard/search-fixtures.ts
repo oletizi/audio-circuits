@@ -17,8 +17,8 @@
  * geometry is `./seed-geometry.test.ts`'s, against the real binary.
  */
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import { freshTempScratch } from "../support/temp-scratch.ts"
 import { referenceNetsFromExport } from "../../tools/stripboard/equivalence.ts"
 import { stockFor } from "../../tools/stripboard/grade.ts"
 import { loadRules, type StripboardRules } from "../../tools/stripboard/rules.ts"
@@ -27,9 +27,15 @@ import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 import { BASE_DUMP, BETTER_DUMP, REPORT } from "./climb-fixtures.ts"
 import { DUMPS, IMPORTED_BOARD, targetsFor } from "./seed-fixtures.ts"
 
-/** A fresh run directory, so no two searches in one suite share a scratch file. */
+/**
+ * A fresh run directory, so no two searches in one suite share a scratch file.
+ *
+ * Registered with `../support/temp-scratch.ts`: it left **40** directories in
+ * `TMPDIR` a run, so every test file that calls it arms
+ * `afterAll(cleanUpTempScratch)`.
+ */
 export function freshSearchDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "stripboard-search-"))
+  return freshTempScratch("stripboard-search-")
 }
 
 /**

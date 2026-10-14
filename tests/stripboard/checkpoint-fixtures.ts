@@ -144,10 +144,6 @@ export function checkpointInput(board: string): CheckInput {
 function checkRunFor(declarationPath: string): { readonly status: number; readonly output: string } {
   const root = moduleRepoRoot()
   const declaration = loadDeclaration(path.join(root, declarationPath))
-  const netPath = path.join(
-    fs.mkdtempSync(path.join(os.tmpdir(), "checkpoint-")),
-    "board.net",
-  )
   // The SAME lowering `make check` and the write verbs use, so there is no
   // second export path here.
   const text = exportedNetlist.get(declarationPath)
@@ -157,8 +153,19 @@ function checkRunFor(declarationPath: string): { readonly status: number; readon
         "be awaited before checkpointInput is called for this board.",
     )
   }
-  fs.writeFileSync(netPath, text)
-  return runVerorouteCheck(declaration.vrtPath, netPath, root)
+  // REMOVED HERE AND NOT BY A HOOK, because the fork reads the netlist during
+  // `runVerorouteCheck` and nothing reads it afterwards: the directory's
+  // lifetime is this call. Leaving it behind cost **8** directories in `TMPDIR`
+  // a run - see `../support/temp-scratch.ts` for why that matters and for the
+  // registry the fixtures whose scratch outlives one call use instead.
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "checkpoint-"))
+  try {
+    const netPath = path.join(scratch, "board.net")
+    fs.writeFileSync(netPath, text)
+    return runVerorouteCheck(declaration.vrtPath, netPath, root)
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true })
+  }
 }
 
 const exportedNetlist = new Map<string, string>()

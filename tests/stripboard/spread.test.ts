@@ -19,9 +19,10 @@
  * skips when it is absent. Here the spawn is injected and what is asserted is
  * the ENUMERATION, the OCCUPANCY ADVANCE and the ARGUMENT LISTS.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import {
   addsWire,
   applyMove,
@@ -41,6 +42,8 @@ import { rectOf } from "../../tools/stripboard/seed-placement.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 import { CROWDED, CROWDED_NETS, CROWDED_OCC, CROWDED_TEXT } from "./spread-fixtures.ts"
 import { BASE_DUMP, DUMP, OCC, REFERENCE, freshRunDir } from "./climb-fixtures.ts"
+
+afterAll(cleanUpTempScratch)
 
 /** Every spread the fixture board admits, in the enumeration's own order. */
 function spreads(nets: ReferenceNets = CROWDED_NETS): readonly Extract<Move, { kind: "spread" }>[] {

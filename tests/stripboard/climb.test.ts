@@ -23,8 +23,9 @@
  * derivation written out, and never recomputed from the implementation's own
  * expression.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
 import fs from "node:fs"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import { accepts, climb, evaluate } from "../../tools/stripboard/climb.ts"
 import { applicableMoves, enumerateMoves } from "../../tools/stripboard/moves.ts"
 import { evaluationsToCross, type ArmRun } from "../../tools/stripboard/seed-compare.ts"
@@ -48,6 +49,8 @@ import {
   TARGETS,
   FOOTPRINTS,
 } from "./climb-fixtures.ts"
+
+afterAll(cleanUpTempScratch)
 
 function refusalFrom(call: () => unknown): string {
   try {

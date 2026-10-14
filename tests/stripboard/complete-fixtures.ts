@@ -33,8 +33,8 @@
  * gesture, and a test that asserted the name would be asserting the script.
  */
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import { freshTempScratch } from "../support/temp-scratch.ts"
 import { stockFor } from "../../tools/stripboard/grade.ts"
 import { boardGeometry } from "../../tools/stripboard/copper.ts"
 import { occupancyOf } from "../../tools/stripboard/seed-geometry.ts"
@@ -246,9 +246,14 @@ export const FAR_OCC = occupancyOf(FAR)
 export const CUT_SPLIT_OCC = occupancyOf(CUT_SPLIT)
 export const PAD_SPLIT_OCC = occupancyOf(PAD_SPLIT)
 
-/** A fresh run directory, so no two passes in one suite share a scratch file. */
+/**
+ * A fresh run directory, so no two passes in one suite share a scratch file.
+ *
+ * Registered with `../support/temp-scratch.ts`: it left **7** directories in
+ * `TMPDIR` a run, so `complete.test.ts` arms `afterAll(cleanUpTempScratch)`.
+ */
 export function freshPassDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "stripboard-complete-"))
+  return freshTempScratch("stripboard-complete-")
 }
 
 /** The start board, written for real so a stray write to it is visible in the bytes. */

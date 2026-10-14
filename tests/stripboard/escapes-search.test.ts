@@ -16,7 +16,8 @@
  * fork's geometry. Every figure is hand-derived from the fixture with the
  * derivation written out beside it.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import { accepts, climb, type Evaluation } from "../../tools/stripboard/climb.ts"
 import { search } from "../../tools/stripboard/search.ts"
 import { seededPrng } from "../../tools/stripboard/seed.ts"
@@ -44,6 +45,8 @@ import {
 } from "./search-fixtures.ts"
 import { importClosure } from "../../lib/import-closure.ts"
 import { IMPORTED_BOARD } from "./seed-fixtures.ts"
+
+afterAll(cleanUpTempScratch)
 
 const base = evaluation()
 

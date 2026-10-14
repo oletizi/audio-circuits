@@ -57,7 +57,24 @@
 # directory at the repository root rather than one per board. Running it from a
 # subdirectory does the same thing, which is why the help text says so.
 
-.PHONY: help perfboard-help check boards prune-runs
+# `prune-temp` IS ITS COMPANION, AND ITS ABSENCE IS WHY THE OWNER'S DISK FILLED.
+# `prune-runs` above sweeps `build/stripboard/`, which is one of the TWO places
+# the fixtures write. Nothing swept the other - `os.tmpdir()` - and on 2026-10-13
+# that held over 60,000 scratch directories across eight prefixes, with "zero run
+# directories" being reported all the while as a clean bill of health: that
+# metric counted the directory already fixed. A SUCCESS METRIC MEASURED THE WRONG
+# DIRECTORY. `tests/support/temp-scratch.ts` is why the suite no longer
+# contributes and `tests/stripboard/temp-scratch.test.ts` is the standing guard;
+# this verb is for what has already accumulated.
+#
+# Its prefix list is DERIVED FROM THE SOURCES rather than written here, and the
+# fork's own `vr-gui-*` (21,362 of them by that date, one per spawn, created by
+# the pinned binary and by no fixture) is declared separately so the verb says
+# whose they are instead of claiming them. `tools/stripboard/prune-temp.ts`
+# carries the reasoning. Like `prune-runs` it is a deliberate verb and a
+# prerequisite of nothing, and it names what it will delete and how many first.
+
+.PHONY: help perfboard-help check boards prune-runs prune-temp
 
 .DEFAULT_GOAL := help
 
@@ -76,6 +93,11 @@ perfboard-help:
 	@echo "                       run from). Each run's run.json is its only record,"
 	@echo "                       so this throws evidence away deliberately - nothing"
 	@echo "                       else runs it."
+	@echo "  make prune-temp      remove the scratch directories this repository's tests"
+	@echo "                       and tools leave under the system temp directory, and the"
+	@echo "                       vr-gui-* ones the pinned fork leaves there itself. Names"
+	@echo "                       every prefix and its count before deleting. --dry-run via"
+	@echo "                       bun tools/stripboard/prune-temp.ts --dry-run."
 	@echo ""
 	@echo "One board at a time"
 	@echo "  cd <board directory> && make cuts|update|stripboard|edit|check"
@@ -115,3 +137,6 @@ prune-runs:
 	echo "removing $$count run directory(ies) under $$runs"; \
 	find "$$runs" -mindepth 2 -maxdepth 2 -type d -exec rm -rf {} +; \
 	echo "$$runs now holds $$(find "$$runs" -mindepth 2 -maxdepth 2 -type d | wc -l | tr -d ' ')."
+
+prune-temp:
+	@bun "$(REPO_ROOT)/tools/stripboard/prune-temp.ts"

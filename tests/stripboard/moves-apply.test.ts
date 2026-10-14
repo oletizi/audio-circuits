@@ -19,12 +19,15 @@
  * rotation and stretch arithmetic against the real binary and fails rather than
  * skips when it is absent.
  */
-import { expect, test } from "bun:test"
+import { afterAll, expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import { DEFERRED_KINDS, applyMove } from "../../tools/stripboard/moves.ts"
 import type { SpawnVeroroute } from "../../tools/stripboard/seed.ts"
 import { IMPROVES_THEN_STALLS, freshRunDir, recordingSpawn } from "./climb-fixtures.ts"
+
+afterAll(cleanUpTempScratch)
 
 /** A spawn that records and answers every write verb, with no dump in play. */
 function recorder(): { readonly spawned: string[][]; readonly spawn: SpawnVeroroute } {

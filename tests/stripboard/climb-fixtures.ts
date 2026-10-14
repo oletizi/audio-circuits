@@ -50,8 +50,8 @@
  * file's bytes.
  */
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import { freshTempScratch } from "../support/temp-scratch.ts"
 import { CONSTRAINT_IDS, holds } from "../../tools/stripboard/constraints-model.ts"
 import { stockFor } from "../../tools/stripboard/grade.ts"
 import { loadRules, type StripboardRules } from "../../tools/stripboard/rules.ts"
@@ -367,9 +367,15 @@ export function recordingSpawn(
   }
 }
 
-/** A fresh run directory, so no two climbs in one suite share a scratch file. */
+/**
+ * A fresh run directory, so no two climbs in one suite share a scratch file.
+ *
+ * Registered with `../support/temp-scratch.ts`: eight test files call this and
+ * it left **55** directories in `TMPDIR` a run, so every one of them arms
+ * `afterAll(cleanUpTempScratch)`.
+ */
 export function freshRunDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "stripboard-climb-"))
+  return freshTempScratch("stripboard-climb-")
 }
 
 /** The start board, written for real so a stray write to it is visible. */
