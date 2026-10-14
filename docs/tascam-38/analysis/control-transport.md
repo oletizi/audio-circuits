@@ -177,7 +177,10 @@ Levels (computed from drawn values; 24V and -15V taken at their printed values):
   it falls.
 
 U519 is a custom part (H54410P), so its output polarity is not knowable from
-this sheet. Evidence that "PLAY OUT high = play": the same net drives NPN
+this sheet. (**Since resolved:** the 38 manual's parts list names U519 as a
+Mitsubishi M54410P, whose datasheet gives PLAY OUT and REC OUT active high,
+PLAY OUT high in REC/PLAY, and PLAY OUT low / REC OUT high in REC/PAUSE -
+see `pass6-datasheets.md`.) Evidence that "PLAY OUT high = play": the same net drives NPN
 stages to the capstan solenoid (D534 -> Q537) and the brake solenoid (R618
 -> Q539 -> Q541; Q541 collector to the brake solenoid / R723 node at
 (7533, 1495)). Only a high level can turn on NPN stages driven through series

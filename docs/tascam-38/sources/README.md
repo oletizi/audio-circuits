@@ -31,6 +31,18 @@ hypothesis set to check against the drawings, not an authority**. In it, `X`
 means unknown, not a verified no-connect; a blank `Source Junction` cell
 continues the connector named above it.
 
+## External references
+
+Read for Pass 6 and cited, not committed (third-party documents):
+
+- Tascam 38 Operation and Maintenance manual, ManualsLib:
+  https://www.manualslib.com/manual/1008533/Tascam-38.html - parts lists
+  (REC/REP amplifier and control boards), section 1-16-2 and Fig. 1-16(B)
+  (bias timing), specifications (bias frequency 150 kHz).
+- Component datasheets (NJM4558, RC4558, 2SK68A, M54410P, 2SC1318, 2SA720),
+  with URLs and the exact lines relied on, in
+  `../analysis/pass6-datasheets.md`.
+
 ## Not in the repository
 
 - The lower-resolution two-page `Tascam 38 Complete schematics (High quality

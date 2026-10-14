@@ -1,9 +1,11 @@
 # Tascam 38 REC/PLAY AMPL card - circuit analysis
 
 **Status:** Passes 0-5 of `docs/superpowers/plans/2026-10-13-tascam-38-electrical-analysis.md`
-complete. The analysis is complete with open evidence questions: the items
-under Open items, several of which (M3, M7) could still be traced further on
-these sheets, and the rest of which need the physical machine. This is an
+complete, followed by a further round (Pass 6) that traced the remaining
+drawing-traceable unknowns, read the component datasheets and the Tascam 38
+Operation and Maintenance manual, and recorded the first bench results. The
+analysis is complete with open evidence questions: the items under Open
+items, most of which now need the physical machine. This is an
 analysis of the existing card, not a replacement design, and nothing here is
 a basis for building or powering a replacement card. No state, delay or level
 below has been measured on a machine.
@@ -25,6 +27,10 @@ section, with drawing coordinates for every claim, are:
 | Transport sheet: POWER MUTE, PLAY MUTE, REC MODE, REC SIGNAL | `analysis/control-transport.md` |
 | Per-contact traces and the independent re-traces | `trace/` |
 | Pass 5 independent audits of this document and of the earlier notes | `analysis/pass5-audit-analysis.md`, `analysis/pass5-audit-notes.md` |
+| Pass 6: PAUSE, auto-stop guard, punch logic, PLAY OUT loads | `analysis/pass6-transport-pause-autostop.md` |
+| Pass 6: record entry, REC MODE, RECORD lamp, the "+2V" tap | `analysis/pass6-transport-record-entry.md` |
+| Pass 6: master oscillator, channel-2 FUNCTION, sheet notes, relay timing | `analysis/pass6-amp-osc-notes-timing.md` |
+| Pass 6: datasheets and the Tascam 38 manual (external, cited with URLs) | `analysis/pass6-datasheets.md` |
 
 Each report separates what the drawing shows from interpretation, and so
 does this summary: statements marked *interpretation* are reasoning from the
@@ -39,6 +45,7 @@ traced topology, not printed facts.
 | UNRESOLVED - no wire drawn on at least one side (11), one disputed junction (1) | 12 |
 | CANDIDATE / CONTRADICTED | 0 / 0 |
 | Drawing claims spot-checked by the Pass 5 auditor | 25 (24 confirmed, 1 undecidable: M4) |
+| Bench measurements recorded | 2 (both as predicted; K101 and K103 upper set) |
 
 The card is a full record/reproduce module. One preamp serves both heads;
 three JFETs select the monitored source; one FUNCTION line per channel
@@ -92,7 +99,7 @@ From the parts table on the amplifier sheet (around (1980-2900, 1150-1640)):
 | --- | --- | --- |
 | U101 | JRC-4558D-D | dual op-amp: reproduce/sync preamp (1/2), line amplifier (2/2) |
 | U102 | RC-4558T1 | dual op-amp: input buffer (1/2), record amplifier (2/2) |
-| U103 | listed only as "BIAS AMPL" | bias / erase amplifier; no part number or internals on this sheet |
+| U103 | listed only as "BIAS AMPL"; the 38 manual's parts list gives "BIAS Ampl. Module", TEAC 5292210600 | bias / erase amplifier module; internals unpublished |
 | Q101, Q103, Q105, Q106, Q107, Q110 | 2SK68AM | N-channel JFET switches |
 | Q108, Q111, Q118, Q120 | 2SC1684S | NPN |
 | Q109, Q112 | 2SA733P | PNP |
@@ -101,6 +108,18 @@ From the parts table on the amplifier sheet (around (1980-2900, 1150-1640)):
 | K101, K102, K103 | - | relays; K102 drawn as a reed contact |
 
 OUT SELECT: Q201 / Q203 2SC1684S, Q202 / Q204 2SA720Q, D201-D207 1S2473HJ.
+MASTER OSC: U301 "OSC UNIT", a sealed four-pin module (nothing drawn inside;
++B on pin 3, -B on pins 1 and 6, output pin 4 to J182-8), Q301 2SC1684S,
+Q302 2SA564R. Transport: U519 is printed "H54410P" on the sheet; the 38
+manual's parts list gives M54410P (Mitsubishi "Key Controller for Tape
+Deck"), and its datasheet matches the traced pins.
+
+Datasheet facts the analysis relies on (sources in `analysis/pass6-datasheets.md`):
+2SK68A (NEC) M grade IDSS 2.0-6.0 mA, VGS(off) -1.5 V worst case, so the
+-5.2 / -6.2 V off-state gate bias holds the selection JFETs off with margin
+(but see A12); 4558 pinout 1 OUT A, 2 -IN A, 3 +IN A, 4 V-, 5 +IN B,
+6 -IN B, 7 OUT B, 8 V+, consistent with every traced pin; 2SC1318 VCEO 50 V,
+IC 500 mA; 2SA720 VCEO -50 V, IC -500 mA.
 
 ## Block diagram
 
@@ -195,6 +214,14 @@ flowchart LR
   with C132 10u in the base chain (time constant about 0.15 s).
   *Interpretation:* J107-7 high returns U103 pin 2 to -B through Q119, read
   as enabling the bias amplifier; U103's internals are not on the sheet (A4).
+  The 38 manual (section 1-16-2) confirms this role: U103 amplifies the U301
+  master-oscillator signal when Q119 turns on. Its Fig. 1-16(B) gives bias
+  starting 80 ms after REC ON and taking 90 ms to rise, and starting 40 ms
+  after REC OFF and taking 70 ms to fall.
+- **Bias frequency:** 150 kHz, from the manual's specifications (the
+  oscillator module U301 runs whenever the machine is powered; REC SIGNAL
+  does not gate it). It agrees with the card's L105 / C131 trap near
+  147 kHz.
 
 ### Head switching (K103) and its drive
 
@@ -205,8 +232,10 @@ flowchart LR
   which it is drawn resting on, and the TP1 record-output node.
 - Coil: J107-2 (24V) to Q120 collector, D114 across it; Q120 (NPN) emitter
   J107-1 (0V), base from J107-7 via D117 / R200 39k / R201 1.5k with R199 22k
-  and C135 33u slowing it. **K103 is energised when J107-7 is high.** Its
-  pull-in and release times were not reliably computed (M6).
+  and C135 33u slowing it. **K103 is energised when J107-7 is high.**
+  Computed from part values: pull-in about 40-70 ms after J107-7 rises,
+  release about 0.1-0.2 s after it drops (assumes Q120 hFE 100-400 and a
+  1-2k coil, neither printed; M6).
 
 ### Control inputs and muting
 
@@ -264,14 +293,36 @@ reading also implies a very low TR101 primary DC resistance.
 | Line | Driven by | Traced behaviour |
 | --- | --- | --- |
 | POWER MUTE (P171-3) | Q801 NPN on the POWER SUPPLY PCB, base RC-fed from the unregulated 6V rail | sinks current about 1.8 s after power-on if the rail is 6V (M6), in every mode; releases within about 0.5-1 s of power-off (computed). No transport logic reaches it |
-| PLAY MUTE (P171-6) | Q534 NPN on the CONTROL PCB from U519 "PLAY OUT"; level-shifted by R827 / R828 to -15V on the POWER SUPPLY PCB | -6.8V (passes) in PLAY, RECORD (M2) and punch; about -6.6V with CUE closed; +5.3V (mutes SYNC / REPRO) in STOP and FF / REW (M1) |
-| REC SIGNAL (P171-5) | Q525 PNP on the CONTROL PCB from U519 "REC OUT" | 24V in RECORD and after punch-in; open in STOP, PLAY, FF / REW, after punch-out, and whenever the U516A override is asserted (M7) (M1) |
-| REC MODE (P171-4) | FUNCTION PCB pole B | pulled to 0V while any channel switch is ON; open when all are OFF. On the transport sheet it is traced only as far as the RECORD-lamp gate; whether it also gates record entry is not traced (M8) |
+| PLAY MUTE (P171-6) | Q534 NPN on the CONTROL PCB from U519 "PLAY OUT"; level-shifted by R827 / R828 to -15V on the POWER SUPPLY PCB | -6.8V (passes) in PLAY, RECORD and punch; about -6.6V with CUE closed; +5.3V (mutes SYNC / REPRO) in STOP, FF / REW, PAUSE, record-pause, and while the auto-stop guard is asserted |
+| REC SIGNAL (P171-5) | Q525 PNP on the CONTROL PCB from U519 "REC OUT" | 24V in RECORD, record-pause and after punch-in; open in STOP, PLAY, PAUSE, FF / REW, after punch-out, and while the auto-stop guard is asserted |
+| REC MODE (P171-4) | FUNCTION PCB pole B | pulled to 0V while any channel switch is ON; open when all are OFF. On the transport it reaches only the RECORD-lamp gate: lamp steady when recording with a channel armed, flashing about 1 Hz when recording with none. It does not gate record entry |
 | FUNCTION, ch n (J174-1..4, J175-1..4) | FUNCTION PCB pole C, fed from Q302 on the MASTER OSC PCB, switched by REC SIGNAL via Q301 | about 24V only when that channel's switch is ON **and** REC SIGNAL is high; otherwise open, never driven low |
 | P180 / P181 | OUT SELECT PCB switches | see the table below |
 
-OUT SELECT, steady state (P180-1 is 24V in, P180-5 is 0V; "open" means
-undriven):
+The PLAY OUT / REC OUT polarities above come from the M54410P datasheet
+(outputs active high; PLAY OUT high in PLAY and REC/PLAY; REC OUT high in
+REC/PLAY and REC/PAUSE; PAUSE OUT high in PAUSE, with PLAY OUT low). The
+traced loads agree: the capstan solenoid is driven from PLAY OUT alone.
+
+### Transport logic that reaches the card
+
+- **Record entry:** the RECORD key (S605) and the remote's RECORD line pull
+  U519 pin 7 (REC IN) low; per the datasheet, REC takes effect only together
+  with PLAY. REC MODE plays no part, so the transport enters record with no
+  channel armed (nothing is recorded; the RECORD lamp flashes).
+- **Punch in:** the footswitch, through U505 and Q505, pulls the PLAY and
+  RECORD key lines low together - the same as pressing both. **Punch out:**
+  Q506 pulses U519 pin 9 (AR, record inhibit), dropping REC OUT. PLAY OUT is
+  not touched, so PLAY MUTE stays at -6.8V through a punch. STOP, FF and REW
+  clear the punch latch; every rise of REC OUT presets it, so the footswitch
+  can also punch out of a record started from the panel.
+- **Auto-stop / start-up guard:** comparator U516A, timed by R569 / C524,
+  pulls PLAY OUT and REC OUT low through Q522 / Q523. It is asserted for
+  about 1 s at power-up, throughout FF / REW, and while the reels coast
+  after FF / REW plus about 1 s (including when PLAY or RECORD is pressed
+  during the coast). It is not asserted in STOP at rest, PLAY, RECORD or
+  PAUSE. When the tape sensor PH501 sees no tape, Q518 holds the STOP key
+  line low instead. Durations are computed and assume a single 5V logic rail.
 
 | Pressed | P180-2 (K101) | P180-3 (K102) | P180-4 | P181-1 INPUT | P181-2 SYNC | P181-3 REPRO |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -290,8 +341,8 @@ from part values, not printed.
 Per channel. "Armed" means that channel's FUNCTION switch is ON. Monitor =
 what reaches the line output J102-2 and, through J102-5 / J105-1, the meter.
 The table assumes latching OUT SELECT switches with one pressed at a time
-(M5), and no PAUSE (M3) or auto-stop override (M7). Head identities in the
-Monitor column assume A1.
+(M5). Head identities in the Monitor column follow A1 (bench-confirmed for
+K101 and K103's upper set).
 
 | Transport | Armed | Selected | K101 | K103, bias, erase | Source on | PLAY MUTE | K102 | Monitor |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -304,12 +355,16 @@ Monitor column assume A1.
 | PLAY | any | SYNC | energised | released, off | Q106 | passes | closed | sync head off tape |
 | PLAY | any | REPRO | released | released, off | Q105 | passes | closed | repro head off tape |
 | any except RECORD with armed | any | none | released | per transport | none | - | open | silent |
-| RECORD | yes | none | released | energised, on | Q110 (Q109 override; P180-4 is live) | passes (M2) | open | silent |
-| RECORD | no | any | as PLAY | released, off | as PLAY | passes (M2) | as PLAY | as PLAY |
-| RECORD | yes | INPUT | released | energised, on | Q110 | passes (M2) | closed | line input |
-| RECORD | yes | SYNC | energised | energised, on | Q110 (Q108 forces SYNC off, Q109 forces INPUT on) | passes (M2) | closed | line input |
-| RECORD | yes | REPRO | released | energised, on | Q105 (no override: REPRO removes P180-4, Q109's supply) | passes (M2) | closed | repro head off tape |
-| PAUSE; auto-stop override | - | - | - | unknown (M3, M7) | - | unknown | - | unknown |
+| RECORD | yes | none | released | energised, on | Q110 (Q109 override; P180-4 is live) | passes | open | silent |
+| RECORD | no | any | as PLAY | released, off | as PLAY | passes | as PLAY | as PLAY |
+| RECORD | yes | INPUT | released | energised, on | Q110 | passes | closed | line input |
+| RECORD | yes | SYNC | energised | energised, on | Q110 (Q108 forces SYNC off, Q109 forces INPUT on) | passes | closed | line input |
+| RECORD | yes | REPRO | released | energised, on | Q105 (no override: REPRO removes P180-4, Q109's supply) | passes | closed | repro head off tape |
+| PAUSE (from PLAY) | any | any | per selection | released, off | per selection | mutes | closed if selected | line input if INPUT, else silent |
+| Record-pause | no | any | per selection | released, off | per selection | mutes | closed if selected | line input if INPUT, else silent |
+| Record-pause | yes | INPUT / SYNC / none | per selection | energised, on (tape stopped) | Q110 (override) | mutes | closed if a button is pressed | line input with INPUT or SYNC; silent with none |
+| Record-pause | yes | REPRO | released | energised, on (tape stopped) | Q105 | mutes | closed | silent |
+| Auto-stop guard asserted (power-up, FF / REW, coast) | any | any | per selection | released, off | per selection | mutes (passes with CUE) | per selection and POWER MUTE | line input if INPUT, else silent |
 
 If two buttons are held together (no interlock is drawn, M5), the traced
 topology gives: **REPRO + SYNC** - K101 energised and P180-4 open, so Q106
@@ -324,12 +379,15 @@ K102.
 Transitions:
 
 - **Punch in** (REC SIGNAL rises): armed channels go to their RECORD row.
-  K103 pulls in (timing not computed, M6); U103 bias ramps on over roughly
-  0.15 s; an armed channel monitoring SYNC switches to INPUT. PLAY MUTE is
-  unaffected.
-- **Punch out** (REC SIGNAL drops): FUNCTION goes open, K103 releases and
-  bias turns off; D109 / C119 hold Q108 on (roughly 0.5 s if R139 is 68 ohm,
-  A7), so the INPUT override outlasts the record state before SYNC returns.
+  K103 pulls in after about 40-70 ms (computed); bias starts 80 ms after
+  REC ON and rises over 90 ms (manual Fig. 1-16(B)); an armed channel
+  monitoring SYNC switches to INPUT. PLAY MUTE is unaffected.
+- **Punch out** (REC SIGNAL drops): FUNCTION goes open; bias starts falling
+  40 ms later over 70 ms (manual); K103 releases after about 0.1-0.2 s
+  (computed); D109 / C119 hold Q108 on for about 0.4-0.5 s (R139 68 ohm) or
+  0.3-0.4 s (68k), so the INPUT override outlasts K103 before SYNC returns.
+- **Record-pause** keeps REC OUT, so an armed channel holds K103, bias and
+  erase on while the tape is stopped.
 - **K103 released** puts the record-amplifier output TP1 onto J108-1, which
   is 0V if C17 holds - the record drive is grounded when not recording.
 - Recording does not need a selection button: with none pressed K102 stays
@@ -372,57 +430,62 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | A1 | Which relay position is energised for K101 and K103. K101 and K103's upper set confirmed by bench continuity: drawn energised (Relay drawn state). K103's lower set not yet measured | block-sync-headswitch.md U1; control-outselect.md; bench 2026-10-13 | J108-1 to J108-3 and J108-1 to TP1, coil unpowered |
 | A2 | *Resolved by Pass 4:* POWER MUTE is Q801; PLAY MUTE is Q534, and -6.8V is its PLAY level | control-transport.md | - |
 | A3 | Q118 base annotated -14.4V (bias off) while J107-7 is annotated 24V (bias on) | block-record-bias-erase.md; Pass 5 audit | Either the annotations come from different modes or a value is misplaced (-14.4V is what Q119's base reads when on); not decidable from the sheet - measure in RECORD |
-| A4 | U103 internals and part number not on this sheet | parts table lists "BIAS AMPL" only | Service manual or physical part |
-| A5 | L108 value not printed; bias frequency not on this sheet | block-record-bias-erase.md | Service manual; physical part; measurement |
-| A6 | Whether -5.2V / -6.2V gate bias fully pinches off a 2SK68AM (M grade) | block-control-muting.md | 2SK68A datasheet pinch-off range |
+| A4 | U103 is a TEAC "BIAS Ampl. Module" (5292210600, per the manual's parts list); its internals are unpublished | pass6-datasheets.md | Physical module, if its behaviour matters for a replacement |
+| A5 | L108 value not printed. *Bias frequency resolved:* 150 kHz (manual specifications) | block-record-bias-erase.md; pass6-datasheets.md | Physical part for L108 |
+| A6 | *Resolved by datasheet:* 2SK68A VGS(off) is -1.5 V worst case, so -5.2 / -6.2 V holds the JFETs off with margin while the signal stays near 0V (see A12) | pass6-datasheets.md | - |
 | A7 | R139 printed "68" (ohms, or a missing k) | block-control-muting.md | Physical part or parts list |
 | A8 | W119 drawn faint and broken; W109 / W110 / W112 / W132 drawn linked - whether fitted is a physical-board question | block-record-bias-erase.md, block-reproduce-output.md | Physical card |
-| A9 | U101 / U102 input polarity (no +/- marks drawn) | block-reproduce-output.md | 4558 pinout |
+| A9 | *Resolved by datasheet:* 4558 pinout consistent with every traced pin; U101 1/2 is section B (in pin 5, out pin 7), U101 2/2 is section A (in pin 3, out pin 1); inputs on pins 3 and 5 are non-inverting | pass6-datasheets.md | - |
 | A10 | J108-1 to 0V (C17) decides whether the released K103 grounds the record output | interface-matrix.csv | Continuity P108-1 to P171-7 |
 | A11 | *Resolved by Pass 4:* OUT SELECT drivers traced | control-outselect.md | - |
-| M1 | U519 (H54410P) is a custom chip; "PLAY OUT / REC OUT high = active" rests on it driving NPN solenoid stages, not on a datasheet | control-transport.md U1 | Measure U519 outputs in each transport mode |
-| M2 | Whether PLAY OUT stays high in RECORD. If it drops, PLAY MUTE mutes SYNC / REPRO during record and the REPRO-while-recording row changes | control-transport.md U2 | Measure P171-6 in RECORD |
-| M3 | PAUSE: whether U519 drops PLAY OUT and / or REC OUT | control-transport.md U3 | Trace further on the transport sheet, or measure |
+| M1 | *Resolved by datasheet:* U519 is an M54410P (manual parts list; the sheet prints "H54410P"); PLAY OUT, REC OUT and PAUSE OUT are active high | pass6-datasheets.md | - |
+| M2 | *Resolved:* PLAY OUT is high in REC/PLAY (M54410P truth table), and the capstan solenoid is driven only from PLAY OUT, so PLAY MUTE stays at -6.8V while recording and REPRO monitoring works | pass6-datasheets.md; pass6-transport-pause-autostop.md | Optional: measure P171-6 in RECORD to confirm |
+| M3 | *Resolved:* in PAUSE, PLAY OUT is low (SYNC / REPRO muted); in record-pause REC OUT stays high (armed channels keep K103 and bias on) | pass6-datasheets.md; pass6-transport-pause-autostop.md | - |
 | M4 | REC SIGNAL crosses the P173-3 wire at (1562, 3692) with heavier ink; read as a crossing (audit: undecidable on the scan). A junction would make Q301 / Q302 pointless | control-function.md | Continuity P182-1 to P182-2 |
 | M5 | OUT SELECT switches: latching or momentary, and any interlock between the three, are not shown | control-outselect.md | Physical switch, or the service manual |
-| M6 | Delays are computed from part values, not measured: POWER MUTE ~1.8 s (assumes a 6V rail), K102 ~0.5 s, K101 ~0.1 s (C208), bias ~0.15 s, PLAY MUTE ~0.1 s plus ~45 ms (C850), Q108 hold ~0.5 s (A7). K103 drive (C135 / R200 / R201 / R199) not reliably computed | control-*.md, block-*.md, Pass 5 audit | Scope measurement |
-| M7 | The transport's auto-stop / start-up guard (U516A timer, PH501 sensor) can pull PLAY OUT and REC OUT low; only partly traced | control-transport.md | Trace the U516 / U512-U514 chain |
-| M8 | REC MODE on the transport: traced only to the RECORD-lamp gate (U501); whether it also gates record entry is not traced | control-transport.md U7 | Trace U501-5's source further |
+| M6 | Delays are computed from part values, not measured: POWER MUTE ~1.8 s (assumes a 6V rail), K102 ~0.5 s, K101 ~0.1 s (C208), K103 pull-in ~40-70 ms and release ~0.1-0.2 s, PLAY MUTE ~0.1 s plus ~45 ms (C850), Q108 hold 0.3-0.5 s, auto-stop guard ~1 s. Bias timing is from the manual (80 + 90 ms on, 40 + 70 ms off) | pass6-amp-osc-notes-timing.md; control-*.md | Scope measurement |
+| M7 | *Traced:* the guard is asserted at power-up, in FF / REW and while the reels coast, and pulls PLAY OUT and REC OUT low (Transport logic). Remaining: PH501's conduction sense relative to tape; the logic rail value; U514 / U516-1 onward to the reel-motor drivers; R705's value | pass6-transport-pause-autostop.md | Measure, or trace the reel-motor side further |
+| M8 | *Resolved:* REC MODE reaches only the RECORD-lamp gate (steady if a channel is armed, flashing if none); it does not gate record entry | pass6-transport-record-entry.md | - |
+| A12 | The selection JFETs stay off only while their source / drain stay above about -3.7 V (gate -5.2 V) or -4.7 V (gate -6.2 V). The 38's maximum line input is +18 dBV (8 V rms); whether any JFET node swings that far on negative peaks depends on the levels at Q105 / Q106 / Q110 | pass6-datasheets.md | Check signal swing at the JFET nodes at maximum input |
+| M9 | The "+2V" power-supply tap (R830 / R831 junction) feeds the COUNTER PCB, probably a display filament; the drawn values give about 0.4 V on a 6V rail, not 2 V - a misprinted value or a nominal label | pass6-transport-record-entry.md | Measure PS terminal 41 with the counter connected |
 
 ## Bench verification checklist
 
-What the drawings cannot settle, grouped by the instrument it needs. None of
-this has been done. Continuity checks are with the machine unpowered and the
-card removed unless stated; the bias / erase nodes carry tens of volts AC
+What the drawings, datasheets and manual cannot settle, grouped by the
+instrument it needs. Continuity checks are with the machine unpowered and
+the card removed unless stated; the bias / erase nodes carry tens of volts AC
 (annotated AC65V) and are not to be probed with the record circuitry live
 without suitable instruments.
 
-Continuity, unpowered:
+Done (owner, 2026-10-13, card unpowered): J101-4 to J101-3 = 0 ohms;
+J106-7 to TP1 = open. Both as predicted (Relay drawn state).
 
-1. P108-1 to P171-7 (C17, A10).
-2. Each no-wire contact against every motherboard net it might reach:
-   P102-1/6/7, P103-1/3, P104-7, P105-2/3/4, P107-5/6 (C08, C09); and on the
-   card, J102-1 / J102-6 to the common bus.
-3. P182-1 to P182-2 must be open (M4); P104-5 to P171-11 open (C18); P171-9
-   to the 2ch P102-2 line open (C19).
-4. Head connectors P121 / P151 / P161: contact order, winding polarity and
+On a removed card, unpowered (ohmmeter):
+
+1. J108-1 to J108-3 (predict open) and J108-1 to TP1 (predict near 0 ohms):
+   completes A1 for K103's lower set.
+
+On the motherboard, power off, cards out (ohmmeter):
+
+2. P108-1 to P171-7 (predict 0 ohms; C17, A10).
+3. Each no-wire contact against 0V and each rail: P102-1/6/7, P103-1/3,
+   P104-7, P105-2/3/4, P107-5/6 (predict open; C08, C09).
+4. P182-1 to P182-2 (M4), P104-5 to P171-11 (C18), P171-9 to the channel-2
+   P102-2 line (C19) - all predicted open.
+5. Head connectors P121 / P151 / P161: contact order, winding polarity and
    shield termination on the HEAD PCB (C12, C20).
 
-On a removed card, coil driven from a bench supply:
+Powered, measured (optional confirmations unless noted):
 
-5. K101 and K103: which fixed contact each moving contact meets with the
-   coil driven and undriven (A1).
-
-Powered, measured:
-
-6. P171-6 (PLAY MUTE) and P171-5 (REC SIGNAL) in STOP, PLAY, FF / REW,
-   RECORD, PAUSE, punch in / out and auto-stop (M1, M2, M3, M7).
+6. P171-6 (PLAY MUTE) in STOP, PLAY, RECORD and PAUSE - predicted +5.3V,
+   -6.8V, -6.8V, +5.3V (confirms M2 / M3).
 7. Q118 base and U103 pin 2 in RECORD and PLAY (A3).
-8. Scope the delays in M6: P171-3 at power-on / off, P180-2 / P180-3 on
-   button presses, J107-7 / K103 and U103 bias at punch in / out.
+8. PS terminal 41 ("+2V") with the counter connected (M9).
+9. Scope, if available: the delays in M6, and the bias at J182-8 (150 kHz
+   per the manual).
 
 Physical inspection:
 
-9. OUT SELECT switch latching and interlock (M5).
-10. R139, L108, U103 part number, W109 / W110 / W112 / W119 / W132 fitted
-    (A4, A5, A7, A8); per-channel component differences (C10).
+10. OUT SELECT switch latching and interlock (M5).
+11. R139 colour code (A7), L108 marking (A5), W109 / W110 / W112 / W119 /
+    W132 fitted (A8); per-channel component differences (C10).

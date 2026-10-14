@@ -341,7 +341,11 @@ Record drive node (6432, 1942), the record side of K103 (no further) [rec-out.pn
   stated as such. C135 33 uF, charged through R200 39k and discharged through
   R201 / R199 into the base, will slow Q120's turn-on and turn-off, roughly
   on the order of the R200 x C135 product of about 1.3 s. This is computed
-  from the values, not measured.
+  from the values, not measured. **Superseded:** the base clamp stops C135
+  charging toward 24V, so the real figures are about 40-70 ms pull-in and
+  0.1-0.2 s release - see `pass6-amp-osc-notes-timing.md`. Bench continuity
+  (2026-10-13) also confirms the drawn-energised reading of K101 and K103's
+  upper set (`../circuit-analysis.md`, Relay drawn state).
 - interpretation: the series L-C shunts L101 (1.2 mH) with C101 parallel C136
   (940 pF) at the preamp input, and L107 (1.2 mH) with C137 parallel C138
   (940 pF) at the preamp output, both resonate near
