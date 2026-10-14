@@ -200,7 +200,8 @@ Two formed **shapes** are refused by name, under
 All three recorded formed footprints are single-row and evenly moulded, so both
 refusals are reached only from a constructed pattern. They are exercised rather
 than left present and unexamined, in `tests/kicad/formed-frame.test.ts` and
-`tests/stripboard/model/board.test.ts`.
+`tests/stripboard/model/board.test.ts`; the layout half of the evidence is in
+`tests/kicad/formed-frame-layouts.test.ts`.
 
 ### The owner's correction, and what it does and does not make moot
 

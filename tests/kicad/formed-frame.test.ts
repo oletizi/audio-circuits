@@ -1,7 +1,11 @@
 /**
- * The forming anchor, checked against the only two records that could settle
- * it: KiCad's own second footprint for each formed body, and the owner's
- * committed layouts.
+ * The forming anchor, checked against the record that settles it: KiCad's own
+ * second footprint for each formed body.
+ *
+ * The other record - the owner's committed layouts - is in
+ * `./formed-frame-layouts.test.ts`, split off when the two together went past
+ * this repository's 300-500 line ceiling. What both need is in
+ * `./formed-frame-fixtures.ts`.
  *
  * **THE FIRST TEST IS THE ONE THAT MATTERS AND IT IS NOT A TEST OF THIS CODE.**
  * It opens six `.kicad_mod` files - each of this repository's three formed
@@ -12,15 +16,6 @@
  * `last-lead` were right it would be the outermost pad's own travel. The three
  * pairs disagree with both alternatives, separately, so no single file is load
  * bearing. Nothing in this repository wrote those files.
- *
- * **THE SECOND GROUP ASSERTS AGAINST THE OWNER'S LAYOUTS, NOT AGAINST A RULE.**
- * The committed `--dump-board` captures under `tests/fixtures/stripboard/` say
- * where every lead of every part sits. For each formed part placed at its own
- * prepared span, the recorded anchor's holes are checked against every OTHER
- * part's leads - and the loop board's `C6` is named, because it is the one
- * placement in this repository that refutes both alternatives by itself: its
- * row carries `J2.2` in the hole before its first lead and `R9.1` in the hole
- * after its last.
  *
  * WHAT THESE TESTS DELIBERATELY DO NOT DO is assert the holes a formed footprint
  * covers against a figure written here. That figure is the module's own output;
@@ -33,8 +28,6 @@
  * NOTHING HERE SKIPS. On a machine without the KiCad libraries every test below
  * fails by name rather than passing quietly.
  */
-import fs from "node:fs"
-import path from "node:path"
 import { expect, test } from "bun:test"
 import { GRID_MM } from "../../lib/kicad/grid.ts"
 import { occupiedAreaFor } from "../../lib/kicad/footprint-extent.ts"
@@ -44,73 +37,15 @@ import type { PinPattern } from "../../lib/kicad/pin-pattern-model.ts"
 import { leadSpanFor } from "../../lib/kicad/lead-span.ts"
 import { geometryOf } from "../../lib/stripboard/board.ts"
 import { PIN_PATTERNS, pinPatternFor } from "../../lib/kicad/pin-pattern.ts"
-import { parseBoardDump, type BoardDump } from "../../tools/guide/dump.ts"
 import { readFootprintPads } from "./footprint-library.ts"
+import {
+  FORMED,
+  midpointOf,
+  PAIRS,
+  refusalFrom,
+  rowCoordinates,
+} from "./formed-frame-fixtures.ts"
 import { ringPattern } from "../stripboard/synthetic-footprints.ts"
-
-/** The three recorded formed footprints, named here so a fourth fails loudly. */
-const FORMED = [
-  "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm",
-  "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
-  "Package_TO_SOT_THT:TO-92_Inline",
-] as const
-
-/**
- * Each formed body's other pitch, as KiCad ships it, and the VeroRoute type
- * the dumps name the part by.
- *
- * The `type` column is how a committed dump's `PART` line identifies the
- * footprint: a dump carries VeroRoute types, not footprint names, and
- * `lib/kicad/import-string.ts` is the one place the correspondence is written
- * down - `CP_Radial_D<mm>mm` by nearest enumerated diameter, `TO-92_Inline`
- * exactly. The three here are the three that module maps these footprints to.
- */
-const PAIRS = [
-  {
-    moulded: "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm",
-    prepared: "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm",
-    type: "CAP_ELECTRO_200",
-  },
-  {
-    moulded: "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
-    prepared: "Capacitor_THT:CP_Radial_D8.0mm_P2.50mm",
-    type: "CAP_ELECTRO_300",
-  },
-  {
-    moulded: "Package_TO_SOT_THT:TO-92_Inline",
-    prepared: "Package_TO_SOT_THT:TO-92_Inline_Wide",
-    type: "TO92",
-  },
-] as const
-
-function refusalFrom(call: () => unknown): string {
-  try {
-    call()
-  } catch (error) {
-    if (error instanceof Error) return error.message
-    throw error
-  }
-  throw new Error("expected a refusal and none was thrown")
-}
-
-/** The along-row coordinates of a footprint's pads, read out of its own file. */
-function rowCoordinates(footprint: string): readonly number[] {
-  const read = readFootprintPads(footprint)
-  // All six files put their pads in one row along x, which is asserted rather
-  // than assumed: a file whose pads were not collinear along x would make the
-  // midpoint below a different quantity.
-  for (const pad of read.pads) {
-    expect(pad.yMm, `${footprint} pad ${pad.pad} y`).toBe(0)
-  }
-  return read.pads.map((pad) => pad.xMm).sort((a, b) => a - b)
-}
-
-const midpointOf = (coords: readonly number[]): number => {
-  const low = coords[0]
-  const high = coords[coords.length - 1]
-  if (low === undefined || high === undefined) throw new Error("a row with no pads")
-  return (low + high) / 2
-}
 
 test("KiCad's own prepared-pitch footprints put the body on the lead row's midpoint", () => {
   for (const pair of PAIRS) {
@@ -284,168 +219,6 @@ test("the recorded anchor is load bearing, and for a family lead-span.ts calls r
       "constraint, and the anchor record can be deleted - see docs/stripboard/pin-pattern.md " +
       "section 3.1",
   ).toContain("Package_TO_SOT_THT:TO-92_Inline")
-})
-
-// ---------------------------------------------------------------------------
-// The owner's own layouts.
-// ---------------------------------------------------------------------------
-
-const FIXTURES = path.resolve(import.meta.dir, "..", "fixtures", "stripboard")
-
-/**
- * The five committed dumps that carry a formed part.
- *
- * `transistor-preamp-loop` and `transistor-preamp-buffered` were captured for
- * this test; the other three were already here. Their provenance, and the
- * commands that made them, are in `tests/fixtures/stripboard/provenance.txt`.
- */
-const BOARDS = [
-  "pt2399-core",
-  "transistor-preamp-buffered",
-  "transistor-preamp-feedback",
-  "transistor-preamp-loop",
-  "transistor-preamp-staged",
-] as const
-
-const dumpOf = (board: string): BoardDump =>
-  parseBoardDump(fs.readFileSync(path.join(FIXTURES, `${board}.dump`), "utf8"))
-
-interface Placed {
-  readonly board: string
-  readonly ref: string
-  readonly footprint: string
-  /** Leads in pin-number order, each as a board hole. */
-  readonly pins: readonly { readonly pin: string; readonly row: number; readonly col: number }[]
-  /** Whether the placement's own lead span is the footprint's prepared span. */
-  readonly atPreparedSpan: boolean
-}
-
-/** Every placed formed part on the committed boards, with its leads. */
-function formedPlacements(): readonly Placed[] {
-  const byType = new Map<string, string>(PAIRS.map((pair) => [pair.type, pair.moulded]))
-  const found: Placed[] = []
-  for (const board of BOARDS) {
-    const dump = dumpOf(board)
-    for (const part of dump.parts) {
-      const footprint = byType.get(part.type)
-      if (footprint === undefined) continue
-      const pins = [...(dump.pins[part.ref] ?? [])].sort((a, b) => Number(a.pin) - Number(b.pin))
-      if (pins.length < 2) continue
-      const pattern = pinPatternFor(footprint)
-      if (pattern.accommodation.kind !== "formed-to-grid") throw new Error("unreachable")
-      const first = pins[0]
-      const last = pins[pins.length - 1]
-      if (first === undefined || last === undefined) throw new Error("unreachable")
-      const steps = Math.abs(last.row - first.row) + Math.abs(last.col - first.col)
-      const prepared = (pins.length - 1) * pattern.accommodation.preparedPitchSteps
-      found.push({ board, ref: part.ref, footprint, pins, atPreparedSpan: steps === prepared })
-    }
-  }
-  return found
-}
-
-/** Every hole some part's lead sits in on one board, by `ref.pin`. */
-function occupiedHoles(board: string): ReadonlyMap<string, string> {
-  const occupied = new Map<string, string>()
-  for (const [ref, pins] of Object.entries(dumpOf(board).pins)) {
-    for (const pin of pins) occupied.set(`${pin.row},${pin.col}`, `${ref}.${pin.pin}`)
-  }
-  return occupied
-}
-
-/**
- * The holes an anchor's body outline would claim BEYOND the lead holes, as
- * positions on the board, for one placement.
- *
- * It walks only the along-row axis, which is the axis the anchor decides. The
- * across-strip extent is the same under every anchor - forming moves a lead
- * along its own strip - so including it would put the same holes in all three
- * answers and hide the difference the test is looking for.
- */
-function extraAlongRow(placement: Placed, shiftMm: number): readonly string[] {
-  const extent = occupiedAreaFor(placement.footprint)
-  const pattern = pinPatternFor(placement.footprint)
-  if (pattern.accommodation.kind !== "formed-to-grid") throw new Error("unreachable")
-  const lo = extent.outlineMm.minXMm + shiftMm
-  const hi = extent.outlineMm.maxXMm + shiftMm
-  const half = GRID_MM / 2
-  const slack = 1e-9
-  const firstHole = Math.floor((lo - half) / GRID_MM + slack) + 1
-  const lastHole = Math.ceil((hi + half) / GRID_MM - slack) - 1
-  const span = (placement.pins.length - 1) * pattern.accommodation.preparedPitchSteps
-  const first = placement.pins[0]
-  const last = placement.pins[placement.pins.length - 1]
-  if (first === undefined || last === undefined) throw new Error("unreachable")
-  const stepRow = Math.sign(last.row - first.row)
-  const stepCol = Math.sign(last.col - first.col)
-  const holes: string[] = []
-  for (let before = 1; before <= 0 - firstHole; before += 1) {
-    holes.push(`${first.row - stepRow * before},${first.col - stepCol * before}`)
-  }
-  for (let after = 1; after <= lastHole - span; after += 1) {
-    holes.push(`${last.row + stepRow * after},${last.col + stepCol * after}`)
-  }
-  return holes
-}
-
-const shiftFor = (footprint: string, anchor: "lead-row-midpoint" | "first-lead" | "last-lead") => {
-  const pattern = pinPatternFor(footprint)
-  if (pattern.accommodation.kind !== "formed-to-grid") throw new Error("unreachable")
-  return formedFrameOf({
-    ...pattern,
-    accommodation: { ...pattern.accommodation, anchor },
-  }).shiftMm
-}
-
-test("the committed boards carry formed parts at their prepared span, so this test has teeth", () => {
-  const placements = formedPlacements()
-  expect(placements.length, "formed parts across the five committed dumps").toBeGreaterThan(20)
-  const atSpan = placements.filter((placement) => placement.atPreparedSpan)
-  expect(atSpan.length, "placements at the footprint's own prepared span").toBeGreaterThan(9)
-  // A measurement, reported rather than engineered around: VeroRoute stretches
-  // a two-pin part to whatever span the layout wants, so most electrolytics on
-  // these boards are placed WIDER than the prepared pitch. A placement like
-  // that is not evidence about the anchor - the body sits somewhere along a span
-  // the footprint does not describe - so the anchor checks below use `atSpan`.
-  expect(atSpan.length, "and most are not").toBeLessThan(placements.length)
-})
-
-test("the recorded anchor claims no hole another part's lead occupies", () => {
-  const shift = new Map<string, number>(
-    FORMED.map((footprint) => [footprint, shiftFor(footprint, "lead-row-midpoint")]),
-  )
-  for (const placement of formedPlacements()) {
-    if (!placement.atPreparedSpan) continue
-    const occupied = occupiedHoles(placement.board)
-    const taken = extraAlongRow(placement, shift.get(placement.footprint) ?? NaN).filter((hole) => {
-      const holder = occupied.get(hole)
-      return holder !== undefined && !holder.startsWith(`${placement.ref}.`)
-    })
-    expect(taken, `${placement.board} ${placement.ref} (${placement.footprint})`).toEqual([])
-  }
-})
-
-test("the loop board's C6 refutes both alternatives by itself", () => {
-  // The decisive placement: a 5mm can at its prepared span with its row full on
-  // both sides. `first-lead` puts the can over the hole before its first lead
-  // and `last-lead` over the hole after its last, and the owner's layout has a
-  // lead in each. Both holder names are read out of the dump, not written here.
-  const c6 = formedPlacements().find(
-    (placement) => placement.board === "transistor-preamp-loop" && placement.ref === "C6",
-  )
-  if (c6 === undefined) throw new Error("the loop board's C6 is missing from the committed dump")
-  expect(c6.footprint).toBe("Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
-  expect(c6.atPreparedSpan, "C6 is placed at the prepared one-step span").toBe(true)
-  const occupied = occupiedHoles("transistor-preamp-loop")
-  for (const anchor of ["first-lead", "last-lead"] as const) {
-    const extras = extraAlongRow(c6, shiftFor(c6.footprint, anchor))
-    expect(extras.length, `${anchor} claims a hole beyond C6's leads`).toBe(1)
-    const hole = extras[0]
-    if (hole === undefined) throw new Error("unreachable")
-    expect(occupied.get(hole), `${anchor}'s extra hole ${hole} is another part's lead`).toBeString()
-  }
-  // And the recorded anchor claims neither.
-  expect(extraAlongRow(c6, shiftFor(c6.footprint, "lead-row-midpoint"))).toEqual([])
 })
 
 // ---------------------------------------------------------------------------
