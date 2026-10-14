@@ -15,12 +15,14 @@ Execute the work queue to its defined completion or to an explicitly evidenced b
 
 ## Source manifest and precedence
 
-1. **Primary:** user-provided high-resolution **amplifier** schematic `p2(1).pdf`, SHA-256 `fda7f796a0bfb159d2f5d2c1ce68046df89cf2459f382cc89aba471853310e0d`. ChatGPT Library: `/Tascam 38/Tascam 38 amplifier schematic - sheet 2.pdf`. Despite its Library name, this is the **amplifier drawing**.
-2. **Control cross-reference:** user-provided high-resolution **tape transport** schematic `p1(1).pdf`, SHA-256 `cd656f66db0c474cc126da80a28d387f09c9740c06df080353edc38d95eda76b`. Library: `/Tascam 38/Tascam 38 amplifier schematic - 300dpi.pdf`. Despite its Library name, this is the **transport drawing**.
-3. **Independent hypothesis set:** user-provided `Tascam 38.xlsx`, `Junctions` sheet. Library: `/Tascam 38/Tascam 38 connector analysis.xlsx`. This is prior analysis, **not authoritative proof**.
-4. **Lower-resolution corroboration:** `Tascam 38 Complete schematics (High quality scan).pdf`, two sheets, Library: `/Tascam 38/Tascam 38 Complete schematics (High quality scan).pdf`.
+The two drawings are committed in `docs/tascam-38/sources/`; its `README.md` records their identity (title block, resolution, SHA-256) and provenance.
 
-Use **only these preserved sources** for the core trace. Do not repeatedly search the web for a document already available. Preserve source-specific claims; distinguish direct observation from inference and worksheet hypotheses. If Library files are not mounted in a new execution environment, materialize them by exact Library path before tracing. Never claim to have read a source that could not be accessed.
+1. **Primary:** `docs/tascam-38/sources/tascam-38-amplifier-schematic.pdf`, the high-resolution **amplifier** drawing (formerly referred to as `p2(1).pdf`, now rotated to landscape).
+2. **Control cross-reference:** `docs/tascam-38/sources/tascam-38-transport-schematic.pdf`, the high-resolution **tape transport** drawing (formerly `p1(1).pdf`, now rotated to landscape).
+3. **Independent hypothesis set:** owner's `Tascam 38.xlsx`, `Junctions` sheet. Not yet in the repository. This is prior analysis, **not authoritative proof**.
+4. **Lower-resolution corroboration:** `Tascam 38 Complete schematics (High quality scan).pdf`, two sheets. Not in the repository.
+
+Use **only these preserved sources** for the core trace. Do not repeatedly search the web for a document already available. Preserve source-specific claims; distinguish direct observation from inference and worksheet hypotheses. Never claim to have read a source that could not be accessed.
 
 ## Canonical deliverables
 

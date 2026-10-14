@@ -81,7 +81,7 @@ Each interface row must carry source schematic sheet/reference, confidence (docu
 
 ## Evidence and documentation
 
-Record service manual edition, schematic sheet, revision and physical measurements for every interface claim. Keep scans/third-party copyrighted service documents as external references unless redistribution rights are established. Add lab notes, test procedures, connector tables and design decisions to this repository as original work.
+Record service manual edition, schematic sheet, revision and physical measurements for every interface claim. The owner has chosen to commit the high-resolution amplifier and transport schematic scans to `docs/tascam-38/sources/` so traces are reproducible; other third-party service documents stay external references. Add lab notes, test procedures, connector tables and design decisions to this repository as original work.
 
 ## Immediate next actions
 

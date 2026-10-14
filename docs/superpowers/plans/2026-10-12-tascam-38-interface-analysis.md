@@ -19,7 +19,7 @@ Establish the existing Tascam 38 amplifier-card electrical and mechanical interf
 - Tascam MS-16 153-page operation/service manual listing: https://www.audioservicemanuals.com/t/tascam/tascam-ms/6435738-tascam-ms-16-operating-service-manual
 - Additional MS-16 manual source (publisher requests links rather than reposting): https://www.analogrules.com/manuals/tascam1.html
 
-These links establish document availability, **not** validation of any connector pin or electrical value. Record page/sheet identifiers only after direct inspection. Do not commit third-party scans without redistribution rights.
+These links establish document availability, **not** validation of any connector pin or electrical value. Record page/sheet identifiers only after direct inspection. The owner has chosen to commit the high-resolution amplifier and transport scans; see `docs/tascam-38/sources/README.md`.
 
 ## Initial 38 board inventory (source index, pinouts unverified)
 
