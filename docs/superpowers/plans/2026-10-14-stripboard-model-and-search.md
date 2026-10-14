@@ -47,6 +47,85 @@ HEAD at plan start: `bun test` **1900 pass / 0 fail / 0 skip across 173 files**;
 
 ---
 
+### Task 12: What a footprint OCCUPIES, sourced from the `.kicad_mod` — ADDED AFTER TASK 1, AND IT RUNS SECOND
+
+**Execution order is now 1, 12, 8, 2, 3, 4, 5, 6, 7, 9, 10, 11.**
+
+**Files:**
+- Create: `lib/kicad/footprint-extent.ts`
+- Create: `tests/kicad/footprint-extent.test.ts`
+
+**Interfaces — Produces:** `occupiedAreaFor(footprint): FootprintExtent`, giving the holes a
+part covers relative to its origin. Task 1's `geometryOf` consumes it; Tasks 8, 6 and 2
+depend on `geometryOf` working at all.
+
+**WHY, measured by Task 1 rather than assumed.** `geometryOf` cannot be built from
+`pinPatternFor` alone, because **a `PinPattern` records pads and says nothing about the
+body** — its own comment states that *"a body width is not a pin position and does not enter
+this classification at all."* Measured: the three `C_Rect` footprints in
+`lib/kicad/pin-pattern.ts` carry **byte-identical pads** — `pad("1", 0, 0)`, `pad("2", 5, 0)`
+— at body widths 2.5, 3.5 and 4.5 mm. And the difference is not cosmetic: the frozen
+low-boost board places the 3.5 mm one as a three-row `CAP_FILM_WIDE` and the 2.5 mm one as
+a one-row `CAP_FILM`. So today `geometryOf` **refuses every footprint**, correctly.
+
+**`VEROROUTE_FOOTPRINT_ROWS` is not the answer**, and Task 1 checked: it lives in `tools/`
+behind the core boundary, it is keyed by VeroRoute type rather than KiCad footprint, and its
+own record says deriving an extent from the leads was wrong by one on `C18`.
+
+**THE SOURCE IS THE `.kicad_mod` ON DISK, AND IT HAS THE ANSWER.** Verified 2026-10-14: the
+courtyard start Y for those same three footprints reads `-1.25`, `-1.75`, `-2.25` — exactly
+half of each body width, distinguishing precisely what the pads cannot. `PinPattern` already
+carries each footprint's `.kicad_mod` path and its `(version <n>)` token, so the provenance
+chain exists.
+
+**RULING: a separate module, not a field on `PinPattern`.** That type's stated scope is pad
+classification and it says so; widening it to carry body data would contradict its own
+comment. `footprint-extent.ts` keyed by KiCad footprint name keeps one responsibility each,
+and both live in `lib/` so the core can reach them.
+
+**This is part geometry, so the project's rule governs it: refuse rather than guess, and
+prove it with a test over the range it claims.** The extent is **derived from the
+`.kicad_mod`, never transcribed by hand**, and a footprint whose file does not record a
+courtyard **refuses by name**. This repository has shipped three library names that did not
+exist; a hand-typed extent table would be the same failure in a new place.
+
+- [ ] **Step 1: Write the failing test.** Open the three `C_Rect` files and assert the
+  extents **differ**, which is the whole point — a derivation that returned the same answer
+  for all three would satisfy any weaker test.
+
+```ts
+test("three footprints with identical pads have different occupied areas", () => {
+  const widths = ["2.5", "3.5", "4.5"].map(
+    (w) => occupiedAreaFor(`Capacitor_THT:C_Rect_L7.2mm_W${w}mm_P5.00mm`),
+  )
+  const distinct = new Set(widths.map((e) => JSON.stringify(e)))
+  expect(distinct.size, "the three are told apart").toBe(3)
+})
+
+test("a footprint whose .kicad_mod records no courtyard refuses by name", () => {
+  expect(() => occupiedAreaFor(SYNTHETIC_NO_COURTYARD)).toThrow(/^footprint-extent-no-courtyard:/)
+})
+```
+
+- [ ] **Step 2: Run them and confirm they fail.**
+
+- [ ] **Step 3: Implement**, reading the courtyard from the file `PinPattern`'s `source`
+  names. **Verify the `(version <n>)` token matches** what the pattern recorded — a file that
+  has changed under us is a refusal, not a silent re-read.
+
+- [ ] **Step 4: Confirm they pass. Then check the derivation against the one board that
+  disagreed with a lead-derived extent:** the frozen low-boost places `C18` as three rows.
+  Assert the derived extent agrees. **If it does not, report the disagreement — do not adjust
+  the derivation until you understand it**, which is how a wrong model acquires a passing test.
+
+- [ ] **Step 5: Wire `geometryOf` to it and confirm Task 1's refusals narrow** — the
+  unrecorded-pattern and unmountable-pattern refusals stay; `no-occupied-area` should now
+  fire only for footprints genuinely missing a courtyard.
+
+- [ ] **Step 6: Run `bun run check`. Commit.**
+
+---
+
 ### Task 1: The model, as data with no behaviour
 
 **Files:**
@@ -97,7 +176,9 @@ Tasks 2 and 4–8 consume all of these.
 `F = C + ρ_w·W + ρ_s·B`, and revision 1 of this plan gave `Candidate` no way to express
 `B` at all — so scoring would have had to assume zero, infer it, or wait for VeroRoute,
 and all three defeat in-process scoring. A bridge joins ADJACENT strips at a column (the
-frozen fixture carries `SOLDER 3,8 4,8`), which makes it a short-hop alternative to a
+frozen fixture carries `SOLDER 9,6 10,6`, and all fifteen `SOLDER` lines across the five
+committed dumps join adjacent strips at one shared column — counted, not eyeballed), which
+makes it a short-hop alternative to a
 wire and therefore a **routing decision, not a consequence**. The owner's reason for
 pricing it beside a wire, verbatim: *"A solder blob will turn into a wire on my bench."*
 
