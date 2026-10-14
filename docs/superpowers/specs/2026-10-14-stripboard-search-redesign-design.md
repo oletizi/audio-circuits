@@ -1,7 +1,7 @@
 ---
 title: Stripboard placement and routing — owning the model, and why the search must change
 date: 2026-10-14
-status: draft-for-owner-review (revision 2, after third-party review)
+status: draft-for-owner-review (revision 3, after a second third-party review)
 ---
 
 # Owning the board model, and putting wires back in reach
@@ -13,9 +13,12 @@ owner 2026-10-13), amended in the two places named under *Corrections to the rec
 
 **This is a specification.** No implementation code was written producing it.
 
-**Revision 2** answers a third-party review of revision 1: two blocking findings (cut
+**Revision 2** answered a third-party review of revision 1: two blocking findings (cut
 derivation, materialization), two high (termination, benchmark interpretation) and three
-medium. Where this document pushes back rather than accepting, it says so and why.
+medium. **Revision 3** answers a second review of revision 2: wire net identity, the
+round-trip equivalence contract, a bounded budget experiment, and an architectural
+invariant that the core must run without VeroRoute. Where this document pushes back
+rather than accepting, it says so and why.
 
 ## Why
 
@@ -83,7 +86,7 @@ contract below, which revision 1 stated too loosely.
 different species in the fork's dump. Here they are one thing at different sizes, and
 **that class of defect stops being expressible.**
 
-### Cut derivation — the contract (review finding 1, accepted with one correction)
+### Cut derivation — the contract (first review, finding 1 — accepted with one correction)
 
 **An electrically significant contact is a component pin OR a wire endpoint.** Revision 1
 said "two different nets in adjacent runs of holes," which reads as pins only. A wire
@@ -95,6 +98,41 @@ So, per strip: take its significant contacts in column order, label each with it
 reference net, and group them into maximal runs of one net. **A cut is required between
 each adjacent pair of runs belonging to different nets.** The count is
 `Σ(runs per strip) − (occupied strips)`, the identity this repository already uses.
+
+#### How a wire endpoint gets its net (second review, finding 1)
+
+A component pin's net comes from the circuit. **A wire endpoint has none intrinsically**,
+and revision 2 did not say where one comes from — the largest remaining gap in it.
+
+**A wire carries a DECLARED net, and both of its endpoints must resolve to that net.**
+
+**Where this document pushes back on the review's diagnosis, because it changes the fix.**
+The review describes a circular dependency — cuts need net labels, labels depend on wire
+connectivity, connectivity depends on cuts. **That is a fixpoint, not a cycle**, and it
+resolves in a fixed order: build the uncut graph (each strip whole, plus wires), propagate
+net identity outward from component pins, find conductors carrying two nets, derive cuts,
+re-split, recompute. It terminates. And the safety does not come from the derivation being
+acyclic — **it comes from the verifier being independent of the derivation**, which is why
+`HC8` moves inward as a precondition rather than remaining a post-hoc check.
+
+**Why declared ownership is nonetheless right, for a stronger reason than the review
+gives.** The review favours it because invalid proposals become easier to detect. The real
+reason is that **a wire's net is an INPUT to the decision to add it, never a discovery.**
+The constructive seed adds a wire *because* net X must span two strips; the identity is
+known before the wire exists. A wire whose net cannot be named from pins is not ambiguous
+— **it is a wire that connects nothing**, and the model refuses to propose it rather than
+labelling it after the fact.
+
+So: a wire declares its net; a wire whose declared net is not reachable from a component
+pin through the candidate's own connectivity is **refused by name, at construction**; and
+a strip carrying only wire endpoints is a legitimate intermediate conductor whose net is
+the one its wires declare.
+
+**The verifier ignores the declaration entirely.** Copper reconstruction establishes what
+a candidate actually connects, from geometry alone, and compares that against the
+reference netlist. The optimizer may use intended identities to build; the verifier may
+not use them to judge. A candidate whose declared nets agree with its wiring but whose
+geometry does not is exactly the failure this separation exists to catch.
 
 **Cut position needs a convention, because several positions are electrically
 equivalent and not physically equivalent.** Between two runs there may be many empty
@@ -116,7 +154,7 @@ the acceptance ordering already puts open-net count first. The defect was in rev
 a check on an exported artifact to a precondition on every candidate — which is cheap
 in-memory and was not affordable at 12 ms a look.
 
-### Materialization — model to `.vrt` (review finding 2, accepted in full)
+### Materialization — model to `.vrt` (first review, finding 2 — accepted in full)
 
 Revision 1 assigned VeroRoute the job of writing the `.vrt` and never said how a complete
 desired board state becomes one. That was the largest hole in it.
@@ -139,18 +177,70 @@ physical model.**
 not silently repair or reinterpret a candidate. **If it changes the layout, the exported
 result is a different candidate and must be graded again.**
 
+#### Two equivalences, and a fork behaviour that forces the distinction (second review, finding 2)
+
+Revision 2 required both that VeroRoute not reinterpret a candidate **and** that it derive
+cuts independently. The second review is right that those conflict as written: if our
+model and AutoFill choose different but electrically equivalent cut positions, revision 2
+does not say whether that is a failed round trip.
+
+Two equivalences, and they are not interchangeable:
+
+- **Physical-state equivalence** — identical placements, orientations, wire endpoints,
+  strip geometry **and cut positions**.
+- **Electrical equivalence** — identical connectivity, wherever interchangeable cuts land.
+
+**The importer's round-trip check requires PHYSICAL-STATE equivalence.** Electrical
+equivalence is insufficient for an artifact a person builds from: two electrically
+identical cut placements are not equally easy to make, and one of them may foul a lead or
+a wire anchor. VeroRoute's independently derived cut set is compared **separately**, and a
+disagreement is **reported, never silently adopted.**
+
+**A fork behaviour makes this a requirement on the import feature rather than a
+preference, and the second review could not have known it.** `tools/stripboard/score.ts:32`
+and `tools/stripboard/cut-necessity.ts:26` both record that **`AutoFillVero` re-derives the
+whole cut set every time a candidate is painted.** So the fork does not merely hold an
+opinion about cuts — it will overwrite ours on materialization. The declarative importer
+must therefore **suppress or survive AutoFill**, and physical-state equivalence has to be
+actively defended rather than obtained by passing cut positions in and hoping. Without
+that, every materialized board silently becomes AutoFill's candidate rather than the
+optimizer's.
+
 **Dependency risk the review did not name:** this makes the fork a hard dependency on a
 feature only this project uses, and pushing to `oletizi/veroroute-perfboard` was an
 owner-authorised block (`OB1`) for weeks. It is unblocked — *"you can do whatever you
 want with the fork"* — but the fork now sits on the critical path for producing a
 buildable artifact, where today it sits on the critical path for searching.
 
+### The core runs without VeroRoute, and a test enforces it (second review, finding 4)
+
+The owner's decision rejects tying core logic to a forked GUI. Revision 2 then made a
+custom fork feature necessary to produce any artifact — so the dependency was pushed
+outward and nothing stopped it creeping back.
+
+**The invariant:** the model, cut derivation, the connectivity verifier and the search
+**run with VeroRoute not installed.** VeroRoute is invoked for exactly three things:
+importing an existing layout as a starting point, materializing a selected candidate, and
+independent comparison. The core's tests use **native TypeScript fixtures — not `.vrt`
+files and not subprocesses** — and the materialization adapter is replaceable without
+touching the optimizer.
+
+**This is enforced by a test rather than stated as a principle**, which is the part the
+review left implicit and the part that matters here: a test that exercises the core with
+the binary absent, and fails if anything in the model reaches for it. This project has
+repeatedly had principles that nothing enforced — the renderer that could not draw a
+Pultec board, the leak metric that watched the wrong directory, the `[external]` mark on
+an agent-written claim. A stated boundary with no test is the same shape.
+
+It also buys the thing the owner's decision was actually for: if the export tool is ever
+replaced, the optimizer does not move.
+
 ### The search
 
 Constructive seeds, then local improvement with **compound candidates**, including
 move-and-wire as one proposal.
 
-**Seeds are constraint-aware (review finding 6, accepted).** A part's terminals have a
+**Seeds are constraint-aware (first review, finding 6 — accepted).** A part's terminals have a
 bounded separation — `minSpanHoles` and `maxSpanHoles`, which exist and are tested — so
 assigning its two nets to strips it cannot span produces a seed that is impossible to
 realise and wastes the optimizer's time repairing a decision that should never have been
@@ -164,7 +254,7 @@ and which wins is a measurement. What this spec fixes is the shape. Naming an al
 here would assert what nobody has measured — the failure mode this project's record
 documents five times over.
 
-### Termination (review finding 3, accepted — revision 1 was wrong)
+### Termination (first review, finding 3 — accepted; revision 1 was wrong)
 
 Revision 1 said the search should run "to convergence rather than to a budget." **That is
 not a termination policy.** A hill climber converges to a local optimum; annealing can run
@@ -180,7 +270,7 @@ An exhausted run reports the best valid candidate found and **does not claim opt
 That separation — stopping is about the run, admissibility is about the candidate — is
 already recorded as a deviation in the previous plan and stands.
 
-## Verification chain (review finding 5, accepted and sharpened)
+## Verification chain (first review, finding 5 — accepted and sharpened)
 
 ```
 circuit netlist + physical constraints
@@ -199,7 +289,7 @@ come from us. **A wrong footprint makes both implementations agree and both wron
 is the precise residual risk, and it is why the copper-reconstruction verifier is retained
 as a distinct acceptance mechanism rather than folded into the comparison.
 
-## Benchmarks (review finding 4, accepted)
+## Benchmarks (first review, finding 4 — accepted)
 
 The benchmark is **boards the owner laid out by hand and then built and used.** Both
 currently pass `make check` and both declare a schematic, so neither has drifted from the
@@ -234,7 +324,7 @@ support.
   the repository does not record who placed it.
 - **`B1-frozen`** — withdrawn as a benchmark. See below.
 
-### `lab`'s role as negative control (review finding 7, accepted with a guard)
+### `lab`'s role as negative control (first review, finding 7 — accepted with a guard)
 
 "Warn when a layout is lab-shaped" is not testable, and revision 1 should not have left it
 there. `lab` exercises the **human-review workflow**, not the optimizer: present the
@@ -304,6 +394,9 @@ judged only by the existing acceptance rule, never hand-tuned against a benchmar
 | Algorithm left unfixed | agent | which search wins is a measurement |
 | `HC8` moves inward as a per-candidate precondition | agent, after review | cheap in-memory; it was unaffordable at 12 ms a look |
 | The budget is set by experiment, and no number is proposed here | **[owner]** 2026-10-14 | verbatim: *"We need to arrive at that by experimenting and gathering empirical evidence, not by fiat"* |
+| A wire declares its net; the verifier ignores the declaration | agent, after second review | a wire's net is an input to the decision to add it, not a discovery; a wire whose net is unnameable connects nothing |
+| The importer's round trip requires physical-state equivalence, not electrical | agent, after second review | two electrically identical cut placements are not equally buildable, and `AutoFillVero` re-derives every cut on paint |
+| The core model, verifier and search run with VeroRoute absent, enforced by a test | agent, after second review | the owner's boundary was a principle nothing enforced; this project has had several |
 | Panel connectors are a hardware preference, not a design dependency | agent, from the owner's earlier suggestion | the problem it addressed does not exist once a landing hole is a one-hole part |
 
 ## How the budget is set — by experiment, not by fiat
@@ -322,10 +415,15 @@ anything the moment the inner loop moved in-process.
 **The experiment that yields it**, run once the model exists and reported like any other
 measurement:
 
-- Run each benchmark instance with a budget far beyond any plausible setting, recording the
-  best objective seen against evaluations spent.
-- Report the improvement curve per instance: where it flattens, and how much is bought after
-  each order of magnitude.
+- **A bounded ladder, not one enormous run** (second review, finding 3). Revision 2 said
+  "far beyond any plausible setting," which is undefined and an invitation to an unbounded
+  experiment. Instead: run each benchmark instance at **successive orders of magnitude**,
+  recording the best objective seen at each, and **stop at a stated resource ceiling** —
+  wall-clock and disk, both named in the implementation plan, both reported.
+  This is not pedantry in this repository: an implementer reading a measurement instruction
+  this week produced 126,435 invocations and 3.2 GB of output, and a full disk followed.
+- Report the **marginal improvement** each step of the ladder buys, which is the figure a
+  budget is actually chosen from — not the raw curve.
 - Report the spread across seeded restarts at several budgets, because a budget that only
   one lucky seed needs is not a budget.
 - **Set the value from those curves, as a deliberate edit carrying the run that justifies
