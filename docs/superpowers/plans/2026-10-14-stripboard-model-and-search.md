@@ -66,9 +66,12 @@ Every layout here, including the two he built, already honours this.
 side. It's harder to solder."* So a placement is on the component side, always; there is no
 second face to search over and no flipped variant of a part.
 
-**Still open and NOT assumed either way:** whether a cut must fall between adjacent holes, or
-whether a hole can be cut through or a longer run scraped. This bears on **Task 2's cut-position
-convention** and nothing earlier. Task 2 must put it to the owner rather than pick one.
+**A cut falls between holes.** His words: *"Cuts should be between holes."* So no hole is cut
+through and no longer run is scraped. `Cut { strip, afterColumn }` — the type Task 2 already
+declares — is therefore the whole vocabulary, and the position question narrows to *which gap
+between which two holes*, never *what shape of removal*. This **simplifies** Task 2's
+convention rather than complicating it, and with the body ruling above, the only thing a cut
+can foul is a lead's solder joint or a solder bridge.
 
 ## Global Constraints
 
