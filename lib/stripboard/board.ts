@@ -86,10 +86,12 @@ export interface Wire {
  * A BRIDGE IS A ROUTING DECISION, NOT A CONSEQUENCE, which is why it is priced
  * beside a wire rather than counted as free. The owner's reason, verbatim: *"A
  * solder blob will turn into a wire on my bench."* It is a short-hop
- * alternative to a wire, and the committed boards use them - every `SOLDER`
- * line in every dump under `tests/fixtures/stripboard/` joins two
- * consecutively-numbered strips at a single shared column, and the frozen
- * low-boost board's one bridge is `SOLDER 9,6 10,6`.
+ * alternative to a wire, and the committed boards use them. MEASURED, not
+ * assumed: the dumps under `tests/fixtures/stripboard/` carry 15 `SOLDER` lines
+ * between them (6, 5, 3 and 1, with `pultec-low-boost-imported` carrying none),
+ * and all 15 join two consecutively-numbered strips at a single shared column -
+ * checked by arithmetic over the coordinates rather than by reading them. The
+ * frozen low-boost board's one bridge is `SOLDER 9,6 10,6`.
  *
  * ADJACENCY IS A CLAIM THIS TYPE CANNOT ENFORCE. `readonly [number, number]`
  * admits `[1, 7]`, and nothing in this file rejects it: a predicate here would
