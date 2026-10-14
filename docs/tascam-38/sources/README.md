@@ -20,8 +20,17 @@ current identity.
 The owner's original transport filename was spelled `trasport`; it is
 committed here as `transport`.
 
-## Not yet in the repository
+## Owner's junction hypotheses
 
-- `Tascam 38.xlsx` (`Junctions` sheet): the owner's prior connector analysis.
-  A hypothesis set, not an authority.
+`tascam-38-junctions.csv` (SHA-256
+`d6bce1c546750614521f5627c1a70967292a094889c7aa9ac46c79eac6c4c862`) is the
+`Junctions` sheet of the owner's `Tascam 38.xlsx`, exported to CSV by the owner
+(2026-10-13). It proposes an endpoint for each of the 50 J101-J108 contacts plus
+the OUT SELECT J180/J181 contacts. It is prior reverse-engineering work, **a
+hypothesis set to check against the drawings, not an authority**. In it, `X`
+means unknown, not a verified no-connect; a blank `Source Junction` cell
+continues the connector named above it.
+
+## Not in the repository
+
 - The lower-resolution `Tascam 38 Complete schematics (High quality scan).pdf`.

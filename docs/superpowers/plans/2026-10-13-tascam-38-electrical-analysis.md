@@ -19,7 +19,7 @@ The two drawings are committed in `docs/tascam-38/sources/`; its `README.md` rec
 
 1. **Primary:** `docs/tascam-38/sources/tascam-38-amplifier-schematic.pdf`, the high-resolution **amplifier** drawing (formerly referred to as `p2(1).pdf`, now rotated to landscape).
 2. **Control cross-reference:** `docs/tascam-38/sources/tascam-38-transport-schematic.pdf`, the high-resolution **tape transport** drawing (formerly `p1(1).pdf`, now rotated to landscape).
-3. **Independent hypothesis set:** owner's `Tascam 38.xlsx`, `Junctions` sheet. Not yet in the repository. This is prior analysis, **not authoritative proof**.
+3. **Independent hypothesis set:** `docs/tascam-38/sources/tascam-38-junctions.csv`, the owner's `Tascam 38.xlsx` `Junctions` sheet exported to CSV. This is prior analysis, **not authoritative proof**.
 4. **Lower-resolution corroboration:** `Tascam 38 Complete schematics (High quality scan).pdf`, two sheets. Not in the repository.
 
 Use **only these preserved sources** for the core trace. Do not repeatedly search the web for a document already available. Preserve source-specific claims; distinguish direct observation from inference and worksheet hypotheses. Never claim to have read a source that could not be accessed.
