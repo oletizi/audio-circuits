@@ -50,6 +50,26 @@ verified work — but `supersede means delete` applies, and **if nothing claims 
 end of this plan they go.** Recorded here so the decision is deliberate rather than
 forgotten.
 
+## OWNER RULINGS, 2026-10-14: ONE LEAD PER HOLE, AND NOTHING MOUNTS ON THE COPPER SIDE
+
+**Leads do not share holes.** His words: *"I would prefer leads not share holes—it makes
+building easier."* Recorded as **stated** — a preference with a build reason, not a physical
+impossibility. Two leads *can* be twisted into one hole; he would rather they were not. The
+model therefore treats one occupant per hole as a rule, and **if a search ever finds a board
+reachable only by sharing one, that is a finding to put back to him rather than a licence to
+relax it.**
+
+Measured, and it agrees: Task 13 found **pad-point overlap on none of the committed boards**.
+Every layout here, including the two he built, already honours this.
+
+**Nothing mounts on the copper side.** His words: *"I don't want to mount parts on the copper
+side. It's harder to solder."* So a placement is on the component side, always; there is no
+second face to search over and no flipped variant of a part.
+
+**Still open and NOT assumed either way:** whether a cut must fall between adjacent holes, or
+whether a hole can be cut through or a longer run scraped. This bears on **Task 2's cut-position
+convention** and nothing earlier. Task 2 must put it to the owner rather than pick one.
+
 ## Global Constraints
 
 - **An agent may never author the acceptance criteria for the artifact it is producing.** No new term in `F`, no eleventh hard constraint, **no legibility metric**, no tuned threshold introduced by the thing being measured.
