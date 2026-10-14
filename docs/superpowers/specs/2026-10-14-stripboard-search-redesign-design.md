@@ -20,6 +20,45 @@ round-trip equivalence contract, a bounded budget experiment, and an architectur
 invariant that the core must run without VeroRoute. Where this document pushes back
 rather than accepting, it says so and why.
 
+## What a stripboard is FOR, in the owner's words
+
+Recorded because it is the purpose every criterion in this project serves, and until
+2026-10-14 it was nowhere in the repository in his own words. Verbatim:
+
+> *"Cuts are as far as I'm willing to go to modify the board. Modifying the board
+> introduces uncertainty that becomes a troubleshooting nightmare. The point of building a
+> stripboard version of a circuit is to test the circuit. If the board modifications
+> introduce enough uncertainty, it becomes an exercise in testing the board build, which I
+> have no interest in, since ALL of these circuits will eventually be manufactured on real
+> printed circuit boards at pcbway or similar."*
+
+**Four things follow, and three of them were being assumed rather than known.**
+
+**The objective is aligned, and now has a reason behind it.** `F` minimises cuts above all
+else. Cuts are modifications; modifications are uncertainty; uncertainty means debugging the
+board instead of the circuit. So *minimise `C`* is not an aesthetic preference about tidy
+boards — it is **minimise the number of ways the board can lie to you about the circuit.**
+Nothing in `OBJ1` changes; what changes is that it can now be justified rather than merely
+cited.
+
+**No modification beyond a cut is available to the search, ever.** Not spot-facing a pad,
+not scraping a run, not drilling. This is a **hard bound on the move set**, not a
+preference, and it is why `Cut { strip, afterColumn }` is the whole vocabulary.
+
+**`lab`'s rejection was not taste.** This document previously recorded it as a board the
+owner *"abandoned as weirdly complicated"* and treated that as a judgement a metric could
+not capture. In the light of the above it is sharper than that: **a complicated board
+defeats the purpose**, because complexity is uncertainty and uncertainty is what makes the
+exercise a test of the build rather than of the circuit. `lab` still may not become an
+optimisation target — `OBJ2` holds and any tidiness metric would still be an agent's
+invention — but the reason it was rejected is now legible rather than mysterious.
+
+**The stripboard is a test fixture, not the deliverable.** Every circuit here is bound for a
+manufactured PCB. That bounds how much effort is worth spending past the benchmark: the
+target is to **match a board the owner built and used**, not to find an optimum. A search
+that reaches the hand result has done its job; one that spends ten times the budget to shave
+a further cut has misunderstood what the board is for.
+
 ## Why
 
 Four days of work on the existing pipeline produced a layout with **28 cuts on 14 nets
