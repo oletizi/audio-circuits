@@ -19,8 +19,9 @@
  * missed for every pad on every board.
  *
  * **WHAT THAT COST, MEASURED RATHER THAN ARGUED.**
- * `docs/stripboard/pipeline-verification.md` §12 is the measurement and §12.6 is
- * this fix's own re-measurement. On the low-boost `import` arm:
+ * `docs/stripboard/pipeline-verification.md` §12.4 is the measurement that
+ * warrants this, and §12.9 and §12.10 are this fix's own. On the low-boost
+ * `import` arm:
  *
  *   1. `wireMovesFor` admitted **ZERO** `add-wire` candidates - on the start
  *      board, on the before board and on the after board - and the trace of

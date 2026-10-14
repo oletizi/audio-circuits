@@ -205,7 +205,7 @@ export function spreadSourceStrips(
     // the BOARD's way, and the mapping is `PadLine.source`, which is already in
     // the export's spelling. `./moves-cluster.ts`'s `clusterRefs` carries the
     // four sites, which of them is translated - `./moves-wire-nets.ts`'s
-    // `netPinsAlongStrips`, on §12's measurement - and the measured reason this
+    // `netPinsAlongStrips`, on §12.4's measurement - and the measured reason this
     // one is declined: it is 47 of the 186 extra candidates the translation adds
     // to a spaced board's round, in a kind accepted 0 times in 1,787 evaluations.
     for (const one of movableRefs(dump, dumpText)) {

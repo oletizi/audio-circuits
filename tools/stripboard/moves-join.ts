@@ -101,7 +101,7 @@ export function joinEndsFor(
   // BOARD's way, and the mapping is `PadLine.source`, which is already in the
   // export's spelling. `./moves-cluster.ts`'s `clusterRefs` carries the four
   // sites, which of them is translated - `./moves-wire-nets.ts`'s
-  // `netPinsAlongStrips`, on §12's measurement - and the measured reason this
+  // `netPinsAlongStrips`, on §12.4's measurement - and the measured reason this
   // one, that one and `./moves-spread.ts`'s `spreadSourceStrips` are declined:
   // translating them widens the move set by 60% in the kinds whose measured
   // acceptance is 0 of 1,787 and 2 of 9,086.

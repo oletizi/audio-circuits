@@ -10,7 +10,7 @@
  * two files.
  *
  * **WHAT WAS BROKEN, MEASURED BEFORE IT WAS FIXED.**
- * `docs/stripboard/pipeline-verification.md` §12 measured that `wireMovesFor`
+ * `docs/stripboard/pipeline-verification.md` §12.4 measured that `wireMovesFor`
  * admitted ZERO `add-wire` candidates on the low-boost `import` arm - on the
  * start board, the before board and the after board - and that a 19,997-
  * candidate trace contained no `add-wire` entry at all. All seven still-open
@@ -65,7 +65,7 @@ const SELECTOR_NETS = ["j10_p2", "j10_p3", "j10_p4"] as const
  *
  * **IT IS THE SHAPE OF TASK 3'S AFTER BOARD AND NOT A COPY OF IT.** That board
  * was produced inside a 20,000-evaluation run whose candidate directories were
- * pruned (§12 records the 3.9 GB), so it is not available to assert against; its
+ * pruned (§12.8 records the 3.9 GB), so it is not available to assert against; its
  * reported `BOUNDS 0,0 8,26` say the climb had spread the parts over rows 0 to 8
  * and moved three selector pads onto strips 6, 7 and 8, which is what is
  * reconstructed here from the committed fixture by moving six components:
@@ -162,7 +162,7 @@ test("and the imported board still admits no wire, because one strip is not a pa
   // strips; on the board `--import` produces, every one of these nets has both
   // its pins on strip 0 - the capacitor's at columns 5, 8 and 11 and the pad's
   // at 28, 29 and 30 - split ALONG one strip, where `wireBridge` has nothing to
-  // bridge. §12's finding that the three nets are repairable is about the board
+  // bridge. §12.4's finding that the three nets are repairable is about the board
   // the SPACING gesture produces, and it took both changes.
   expect(
     wireMovesFor(occupancyOf(IMPORTED), IMPORTED, IMPORTED_TEXT, REFERENCE)
@@ -194,7 +194,7 @@ test("the spaced board's three selector nets are each split across two strips", 
 test("each of the three nets then gets an add-wire, and the count is a measurement", () => {
   const wires = wireMovesFor(occupancyOf(SPACED), SPACED, SPACED_TEXT, REFERENCE).filter(wireKind)
   // **A NON-ZERO COUNT AND NOT A PREDICTED ONE.** How many candidates this
-  // board admits is a figure this change MEASURES - §12.6 records it - so the
+  // board admits is a figure this change MEASURES - §12.9 records it - so the
   // assertion is that the generator proposes something at all and that it
   // proposes for each of the three nets by name. A literal total here would be
   // this test asserting the number it was written from.
