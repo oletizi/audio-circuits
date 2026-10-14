@@ -1,9 +1,10 @@
 # Tascam 38 REC/PLAY AMPL card - circuit analysis
 
-**Status:** Pass 3 (functional blocks) complete to the limit of the amplifier
-sheet. Pass 4 (operating-mode table) and Pass 5 (audit) not yet done. This is
-an analysis of the existing card, not a replacement design, and nothing here
-is a basis for powering a replacement card.
+**Status:** Pass 3 (functional blocks) and Pass 4 (operating modes) complete
+to the limit of the two sheets. Pass 5 (audit) not yet done. This is an
+analysis of the existing card, not a replacement design, and nothing here is
+a basis for powering a replacement card. No state, delay or level below has
+been measured on a machine.
 
 **Authority:** `sources/tascam-38-amplifier-schematic.pdf`, channel-1 card
 drawing. Card contacts are as in `interface-matrix.csv` (38 VERIFIED, 12
@@ -16,6 +17,9 @@ are in `analysis/`:
 | Sync pickup, K101/K103 head switching, K103 drive | `analysis/block-sync-headswitch.md` |
 | Line input, record amplifier, bias, erase, meter amplifier | `analysis/block-record-bias-erase.md` |
 | Relay coils, mutes, selection-gate drive, FUNCTION override | `analysis/block-control-muting.md` |
+| OUT SELECT board: switch poles, K101 / K102 drivers and delays | `analysis/control-outselect.md` |
+| FUNCTION board and the REC SIGNAL switch on MASTER OSC | `analysis/control-function.md` |
+| Transport sheet: POWER MUTE, PLAY MUTE, REC MODE, REC SIGNAL | `analysis/control-transport.md` |
 
 Each report separates what the drawing shows from interpretation. This
 summary keeps that separation: statements marked *interpretation* are
@@ -167,22 +171,87 @@ REPRO therefore also removes the INPUT/SYNC supply and the Q109 override.
 
 ## Relay drawn state
 
-The sheet does not mark relay states. The printed operating voltages show the
-K101 and K103 coils energised and the selection nodes in the INPUT-selected
-state (SYNC pressed, FUNCTION high). *Interpretation:* the sheet appears to
-draw K101 and K103 in their **energised** positions, matching the printed
-state - K103 energised puts the head on record drive and closes the erase
-loop; K101 energised selects the sync line. On that reading K101 released
-selects the reproduce head, and K103 released connects the head to the sync
-line and puts J108-1 on TP1. This is not established by the drawing and is
-the first item for a bench check.
+The sheet does not mark relay states, but the evidence on both sheets now
+points one way. The OUT SELECT board drives K101 (P180-2) **only when SYNC is
+pressed**, and draws SYNC pressed; K101 is drawn on the sync line. K103 is
+energised by FUNCTION, and the printed Q120 voltages show it on; K103 is
+drawn with the head on record drive and the erase loop closed.
+*Interpretation:* the sheet draws K101 and K103 in their **energised**
+positions, matching its printed operating state (SYNC pressed, channel in
+record). So K101 released selects the reproduce head, and K103 released
+connects the head to the sync line and puts J108-1 on TP1. This is
+consistent across both sheets but still wants a bench continuity check (A1).
+
+## Control sources
+
+| Line | Driven by | Traced behaviour |
+| --- | --- | --- |
+| POWER MUTE (P171-3) | Q801 NPN on the POWER SUPPLY PCB, base RC-fed from the unregulated 6V rail | sinks current about 1.8 s after power-on in every mode; releases quickly at power-off. No transport logic reaches it |
+| PLAY MUTE (P171-6) | Q534 NPN on the CONTROL PCB from U519 "PLAY OUT", divider R827 / R828 to -15V | -6.8V (passes) in PLAY, RECORD, punch and with CUE closed; +5.3V (mutes SYNC / REPRO) in STOP and FF / REW |
+| REC SIGNAL (P171-5) | Q525 PNP on the CONTROL PCB from U519 "REC OUT" | 24V in RECORD and after punch-in; open in STOP, PLAY, FF / REW and after punch-out |
+| REC MODE (P171-4) | FUNCTION PCB pole B | pulled to 0V while any channel switch is ON; open when all are OFF. The transport uses it only to gate the RECORD lamp |
+| FUNCTION, ch n (J174-1..4, J175-1..4) | FUNCTION PCB pole C, fed from Q302 on the MASTER OSC PCB, switched by REC SIGNAL via Q301 | about 24V only when that channel's switch is ON **and** REC SIGNAL is high; otherwise open, never driven low |
+| P180 / P181 | OUT SELECT PCB switches | see the table below |
+
+OUT SELECT, steady state (P180-1 is 24V in, P180-5 is 0V; "open" means
+undriven):
+
+| Pressed | P180-2 (K101) | P180-3 (K102) | P180-4 | P181-1 INPUT | P181-2 SYNC | P181-3 REPRO |
+| --- | --- | --- | --- | --- | --- | --- |
+| INPUT | open | 24V | 24V | 24V | open | open |
+| SYNC | 24V | 24V | 24V | open | 24V | open |
+| REPRO | open | 24V | open | open | open | 24V |
+| none | open | open | 24V | open | open | open |
+
+P180-3 rises about 0.5 s after any press and drops almost at once on
+release, so every change of selection opens K102 briefly; K101 switches
+inside that mute. These delays are computed from part values, not printed.
+
+## Operating modes
+
+Per channel. "Armed" means that channel's FUNCTION switch is ON. Monitor =
+what reaches the line output J102-2 and, through J102-5 / J105-1, the meter.
+
+| Transport | Armed | Selected | K101 | K103, bias, erase | Source on | PLAY MUTE | K102 | Monitor |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Power-up, first ~1.8 s | any | any | - | released, off | - | - | open | silent |
+| STOP, FF / REW | any | INPUT | released | released, off | Q110 | mutes | closed | line input |
+| STOP, FF / REW | any | SYNC | energised | released, off | Q106 | mutes | closed | silent |
+| STOP, FF / REW | any | REPRO | released | released, off | Q105 | mutes | closed | silent |
+| FF / REW, CUE closed | any | SYNC / REPRO | as above | released, off | Q106 / Q105 | passes | closed | sync / repro head (cue) |
+| PLAY | any | INPUT | released | released, off | Q110 | passes | closed | line input |
+| PLAY | any | SYNC | energised | released, off | Q106 | passes | closed | sync head off tape |
+| PLAY | any | REPRO | released | released, off | Q105 | passes | closed | repro head off tape |
+| any | any | none | released | per transport | none | - | open | silent |
+| RECORD | no | any | as PLAY | released, off | as PLAY | passes (M2) | as PLAY | as PLAY |
+| RECORD | yes | INPUT | released | energised, on | Q110 | passes (M2) | closed | line input |
+| RECORD | yes | SYNC | energised | energised, on | Q110 (Q108 forces SYNC off, Q109 forces INPUT on) | passes (M2) | closed | line input |
+| RECORD | yes | REPRO | released | energised, on | Q105 (no override: REPRO removes P180-4, Q109's supply) | passes (M2) | closed | repro head off tape |
+
+Transitions:
+
+- **Punch in** (REC SIGNAL rises): armed channels go to their RECORD row.
+  K103 pulls in; U103 bias comes on after the C132 delay (about 0.15 s); an
+  armed channel monitoring SYNC switches to INPUT. PLAY MUTE is unaffected.
+- **Punch out** (REC SIGNAL drops): FUNCTION goes open, K103 releases and
+  bias turns off; D109 / C119 hold Q108 on briefly, so the INPUT override
+  outlasts the record state before SYNC returns.
+- **K103 released** puts the record-amplifier output TP1 onto J108-1, which
+  is 0V if C17 holds - the record drive is grounded when not recording.
+- Recording does not need a selection button: with none pressed K102 stays
+  open and the monitor is silent, but an armed channel still records.
+
+*Interpretation:* SYNC monitoring is overdubbing from the record head;
+selecting SYNC on an armed track while recording falls back to INPUT
+because the head cannot pick up while it records. REPRO bypasses that
+fallback, giving off-tape monitoring through the separate reproduce head.
 
 ## Open items
 
 | ID | Item | Location / evidence | What resolves it |
 | --- | --- | --- | --- |
-| A1 | Which relay position is energised for K101 and K103 (see above) | block-sync-headswitch.md U1; block-control-muting.md | Continuity check across each relay with its coil driven and undriven |
-| A2 | What drives POWER MUTE and PLAY MUTE, and why PLAY MUTE is annotated -6.8V | P171-3 / P171-6 leave this sheet | Trace on the transport sheet (power supply / control PCB) |
+| A1 | Which relay position is energised for K101 and K103. Both sheets now point to "drawn energised" (see Relay drawn state); not yet confirmed on hardware | block-sync-headswitch.md U1; control-outselect.md | Continuity check across each relay with its coil driven and undriven |
+| A2 | *Resolved by Pass 4:* POWER MUTE is Q801 on the power supply PCB; PLAY MUTE is Q534 on the control PCB, and -6.8V is its PLAY level | control-transport.md | - |
 | A3 | Q118 base annotated -14.4V (bias off) while J107-7 is annotated 24V (bias on) | block-record-bias-erase.md | Probably measured in different modes; confirm by measurement |
 | A4 | U103 internals and part number not on this sheet | parts table lists "BIAS AMPL" only | Service manual or physical part |
 | A5 | L108 value not printed; bias frequency not on this sheet | block-record-bias-erase.md | Service manual; master oscillator sheet |
