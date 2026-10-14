@@ -411,7 +411,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | C07 | J106-8 marked GND | Resolved: J106-8 is the second sync-head lead (P151), tied to the card common bus |
 | C08 | J107-6 unknown; J107-7 to J174-1 | J107-7 resolved (P174-1). J107-6: no wire on either side - physical check |
 | C09 | Worksheet X cells | No wire on either side (J102-7, J103-1/3, J104-7, J105-2/3/4, J107-5) or on the motherboard side (J102-1/6) - physical check |
-| C10 | Channel-1 drawing vs channels 2-8 | Open: one card design for all eight (owner); the sheet's note says some components differ between channels and does not list them |
+| C10 | Channel-1 drawing vs channels 2-8 | *Resolved for the cards (owner, 2026-10-14):* all cards are the same; the owner has 16 spare cards from two non-working units. The sheet's note says some components differ between channels and does not list them. My reading, not verified, is that the note means the per-channel motherboard parts (J17x pins, channel bus lines), which are drawn for every channel. Remaining: any per-channel difference on the motherboard |
 | C11 | Three 0V supply contacts | Resolved as to connection (J106-5/6 to P171-11, others to P171-7); current-return distribution not analysed |
 | C12 | Head shield / winding conductor interpretation | Open: winding polarity and shield termination need the physical HEAD PCB |
 | C13 | P104-7 joined to P107-2 | Resolved: refuted; P104-7 has no wire |
@@ -433,7 +433,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | A4 | U103 is a TEAC "BIAS Ampl. Module" (5292210600, per the manual's parts list); its internals are unpublished | pass6-datasheets.md | Physical module, if its behaviour matters for a replacement |
 | A5 | L108 value not printed. *Bias frequency resolved:* 150 kHz (manual specifications) | block-record-bias-erase.md; pass6-datasheets.md | Physical part for L108 |
 | A6 | *Resolved by datasheet:* 2SK68A VGS(off) is -1.5 V worst case, so -5.2 / -6.2 V holds the JFETs off with margin while the signal stays near 0V (see A12) | pass6-datasheets.md | - |
-| A7 | *Resolved by inspection:* R139 is 68 ohm. Its bands, read from the end opposite the gold tolerance band, are blue, grey, black: 68 x 1. The grey band shows weakly against the tan body, but blue-black is not a standard value. The same reading direction gives the drawn values for its neighbours: R138 blue-grey-orange 68k, R137 yellow-violet-orange 47k, R136 red-violet-orange 27k | owner photo 2026-10-14, `bench/photos/2026-10-14-r139-q108-area.jpg` (channel not recorded) | - |
+| A7 | *Resolved by inspection:* R139 is 68 ohm. Its bands, read from the end opposite the gold tolerance band, are blue, grey, black: 68 x 1. The grey band shows weakly against the tan body, but blue-black is not a standard value. The same reading direction gives the drawn values for its neighbours: R138 blue-grey-orange 68k, R137 yellow-violet-orange 47k, R136 red-violet-orange 27k | owner photo 2026-10-14, `bench/photos/2026-10-14-r139-q108-area.jpg` (a spare card; all cards are the same, C10) | - |
 | A8 | W119 drawn faint and broken; W109 / W110 / W112 / W132 drawn linked - whether fitted is a physical-board question | block-record-bias-erase.md, block-reproduce-output.md | Physical card |
 | A9 | *Resolved by datasheet:* 4558 pinout consistent with every traced pin; U101 1/2 is section B (in pin 5, out pin 7), U101 2/2 is section A (in pin 3, out pin 1); inputs on pins 3 and 5 are non-inverting | pass6-datasheets.md | - |
 | A10 | J108-1 to 0V (C17) decides whether the released K103 grounds the record output | interface-matrix.csv | Continuity P108-1 to P171-7 |
@@ -493,4 +493,5 @@ Physical inspection:
 
 10. OUT SELECT switch latching and interlock (M5).
 11. L108 marking (A5), W109 / W110 / W112 / W119 /
-    W132 fitted (A8); per-channel component differences (C10).
+    W132 fitted (A8). The cards are all the same (owner, C10), so any
+    spare card will do for these and for item 1.
