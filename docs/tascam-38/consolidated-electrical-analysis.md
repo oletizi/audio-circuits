@@ -124,6 +124,8 @@ Owner proposes **J105-6** connected to MASTER OSC J182-5 and **J108-4** to J182-
 
 **Pass 2 outcomes for earlier items:** C02 resolved (card J102-5 joins J102-2; motherboard U-link P102-5 to P105-1 only). C03 resolved (erase head is J108-2/3 via P161; J103-4 is an OUT SELECT line to P181-3). C04 resolved (J103-4 and J103-6 join on the motherboard at P181-3, not on the card). C05 resolved (J103-5 is -B on P171-10). C07 resolved (J106-8 is a sync/record head lead via P151, tied to the card common bus). C13 resolved (no wire on J104-7 or P104-7; the P107-2 join is refuted).
 
+**Pass 3 outcome:** C14 resolved - the Q105 / Q106 / Q110 gates are driven from bias nodes fed by J103-6 (P181-3), J104-5 (P181-2) and J104-4 (P181-1) / Q109, with Q108 (from FUNCTION, J104-3) overriding SYNC and INPUT; see `circuit-analysis.md` and `analysis/block-control-muting.md`. Open circuit questions continue in `circuit-analysis.md` (A1-A11).
+
 ## 7. Schematic-only verification protocol
 
 For every row of `interface-matrix.csv`:
