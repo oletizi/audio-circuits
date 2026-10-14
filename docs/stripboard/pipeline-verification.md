@@ -4314,11 +4314,11 @@ than something these figures answer. Three runs have now ended this way.
 ### 12.10.1 **One `add-wire` candidate in 20,000 evaluations — and the fork refused it**
 
 The run directory is the record: `applyMove` stages one file per gesture, named
-for the kind, and across both climbs' 78,000-odd candidate files the pattern
-`.add-wire-*.vrt` appears **exactly twice** — `r26-m56.vrt.add-wire-0.vrt` and
-`…-1.vrt`, one candidate, in seed 0's round 26. (`.gather-*` appears 5,329
-times in that same directory, `.spread-*` 1,206, so the counting method is not
-in doubt.)
+for the kind, and across the run's three climbs — 78,000-odd candidate files —
+the pattern `.add-wire-*.vrt` appears **exactly twice**:
+`r26-m56.vrt.add-wire-0.vrt` and `…-1.vrt`, one candidate, in seed 0's round 26.
+(`.gather-*` appears 5,329 times in that same directory and `.spread-*` 1,206,
+so the counting method is not in doubt.)
 
 **There is no `r26-m56-filled.vrt`, so that candidate was never scored**, and
 re-running the step it died at names the reason exactly:
