@@ -48,7 +48,10 @@ arrived after it are named rather than counted: the SPACING gesture measured
 against the fork, where 227 of 315 candidates strictly reduce `C` (§11), and the
 same gesture measured in a real climb, where it is accepted fifteen times, takes
 the board from 34 cuts to 28 and from 10 open nets to 7, and **leaves `HC1`
-failing** (§12).
+failing** (§12). §12 then grew three subsections of its own when Task 8 closed
+the wire-generator gate §12.4 found: the generator can see an off-board pad now,
+it offered one wire in 20,000 evaluations, the fork refused that one, and the
+reported board is **byte-identical** to the one before the fix (§12.9–§12.11).
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -4073,6 +4076,12 @@ either; after it they are exactly the shape a wire repairs, and nothing proposes
 one. That is a wire-generator defect surfaced BY this measurement, not a reason
 to doubt the gesture.
 
+**THAT FINDING IS WHAT TASK 8 ACTED ON, AND §12.9 TO §12.11 ARE ITS
+MEASUREMENT.** The function now reads the pad's `FROM` field and has moved to
+`tools/stripboard/moves-wire-nets.ts`; the three nets' cause of shape (b)
+changed and their outcome did not, for a reason §12.10.2 measures. The paragraph
+above is left exactly as it was written, because it was right about this board.
+
 ### 12.5 What else moved, and must not be read as nothing
 
 **`HC6` IS NO LONGER INERT ON THIS BOARD.** The caution carried into this task
@@ -4109,7 +4118,9 @@ concluded from it here.
 1. **`HC1` DOES NOT HOLD.** 7 of 14 nets are open on the best board any arm
    produced. The plan's `HC1`-on-low-boost gate is **not** met, and Task 5's
    precondition — *"Task 5 does not start unless `HC1` holds on low-boost"* — is
-   **not satisfied by this measurement.**
+   **not satisfied by this measurement.** Task 8's re-measurement (§12.10)
+   reports the same seven nets from the same bytes, so it is not satisfied by
+   that one either.
 2. **It is one board and one arm.** `import`, low-boost, the committed seeds.
    The `constructed` and `random` arms were not run, and §6.10 records them
    reaching 9 of 14 open from a start the spacing gesture has never been
@@ -4164,8 +4175,265 @@ Three run directories are left under `build/stripboard/pultec-low-boost/`
 (`task3-before-import`, `task3-after-import` and the verb's own stamp), each
 pruned after the figures were taken to its `run.json`, its netlist, its
 `imported.vrt` and its reported candidate — the full runs were **3.9 GB, 5.0 GB
-and 3.9 GB** of candidate boards, and 596 KB of the 12.8 GB remains. `build/` is
-git-ignored and `boards/**` is untouched by all three runs.
+and 3.9 GB** of candidate boards, and 596 KB of the 12.8 GB remained. `build/` is
+git-ignored and `boards/**` is untouched by all three runs. **Those three
+directories are gone**: Task 9 cleared them with `make prune-runs` before taking
+its floor measurement, so the 596 KB is now zero and those runs are not
+re-readable. §12.10's run directory is pruned the same way and to the same four
+files, plus the one `add-wire` candidate §12.10.1 rests on.
+
+### 12.9 Task 8 — the gate §12.4 found, closed: `netPinsAlongStrips` now reads a pad's `FROM` field
+
+**THE FIX IS ONE EXPRESSION AND THE MEASUREMENT IS WHY IT IS THERE.** §12.4
+named the defect and left it: `netPinsAlongStrips` built its wanted set from the
+reference netlist, which spells a pad's pin `SW_LO_BOOST.3`, and tested it
+against the `PIN` line's own id, which spells it `SW_LO_BOOST_3.1`, so the
+lookup missed for every pad on every board. `PadLine.source` is that same field
+already in the export's spelling, so the whole translation is to ask it for a
+pad ref and the `PIN` line's id for everything else. The enumeration moved to
+`tools/stripboard/moves-wire-nets.ts` in the same change, because
+`tools/stripboard/moves-wire.ts` was at exactly the 500-line ceiling; the seam
+is *how one wire is shaped* against *which wires the netlist asks for*.
+
+**WHAT IT CHANGES, ON THE COMMITTED FIXTURE AND WITH THE DERIVATION FROM THE
+FIXTURE'S OWN LINES.** `tests/fixtures/stripboard/pultec-low-boost-imported.dump`,
+graded against `pultec-low-boost-frozen.netlist`:
+
+| net | before | after |
+| --- | --- | --- |
+| `j10_p2` | `{0: [5]}` | `{0: [5, 28]}` |
+| `j10_p3` | `{0: [8]}` | `{0: [8, 29]}` |
+| `j10_p4` | `{0: [11]}` | `{0: [11, 30]}` |
+
+The added column is the pad's: `PAD SW_LO_BOOST_3 … AT 0,28 FROM SW_LO_BOOST.3`
+against `NODE 3 … C19.2 SW_LO_BOOST.3`. **The STRIP was always right and the
+pad was always missing**, which is why the test asserts the along-strip columns
+and not the strip set — an assertion on the strips alone passes against the
+defect.
+
+**AND THE CANDIDATE COUNT ON THAT BOARD IS STILL ZERO, WHICH IS NOT A
+DISAPPOINTMENT BUT THE SECOND CONDITION.** A wire bridges a PAIR of strips, and
+on the board `--import` produces both holes of each of these nets are on strip
+0 — split ALONG one strip, where `wireBridge` has nothing to bridge.
+
+**THE SECOND CONDITION IS A FREE HOLE BESIDE THE NET'S OTHER PIN, AND IT IS
+MEASURED RATHER THAN REASONED.** With the three selector pads moved onto strips
+6, 7 and 8 — the shape §12.3's gesture produces — and the capacitors LEFT in row
+0, `netPinsAlongStrips` reports the split (`j10_p2: {0: [5], 6: [5]}`),
+`wireEndLines` offers lines 5, 4 and 6, and **zero candidates are admitted**:
+`--import` packs row 0 from column 0 to column 32, `WIRE_END_REACH` is one hole,
+and every one of those three holes in row 0 is another part's. Move the three
+capacitors off row 0 as well — `C19` to `4,3`, `C20` to `4,7`, `C21` to `4,11`,
+with the pads at `6,5`, `7,9` and `8,13` — and **each of the three nets is
+offered one wire**:
+
+```
+  add-wire j10_p2 joining 4,6 to 6,6 (at 5,5 as Wire1, 1 turn(s), stretch 0, turn-then-stretch)
+  add-wire j10_p3 joining 4,10 to 7,10 (at 5,9 as Wire1, 1 turn(s), stretch 1, turn-then-stretch)
+  add-wire j10_p4 joining 4,14 to 8,14 (at 5,13 as Wire1, 1 turn(s), stretch 2, turn-then-stretch)
+```
+
+`j10_p2`'s is the worked case: its pins sit at `4,5` and `6,5`, so `wireEndLines`
+offers column 5 first (cost 0), then 4 and 6 (cost 2 each, ties to the lower).
+Column 5 is refused — the wire's own ends would sit ON `C19.2` and ON the pad —
+and column 4 is `C19`'s body cell at `4,4`. Column 6 is free in rows 4, 5 and 6,
+so the wire spans those rows there, one hole from each of the net's own pins.
+**These are the first `add-wire` candidates any board derived from the real
+low-boost layout has admitted since `WIRE_END_REACH` began governing the kind.**
+(The purpose-built boards in `tests/stripboard/wire.test.ts` admit one and
+always did; what had never produced one is a Pultec board.)
+
+**SO THE TWO CHANGES ARE BOTH NECESSARY AND NEITHER IS SUFFICIENT.** Task 2's
+gesture splits a net across two strips; this translation lets the generator see
+that it did; and a wire is plannable only where the net's other pin has a free
+hole beside it. §12.4 attributed three of the seven open nets to the spelling
+alone — that was the right cause of (b) and not the whole condition, and the
+board the climb actually reaches decides the rest (§12.10).
+
+**THE MUTATIONS, recorded so the result is not re-derived.** Three, on
+2026-10-13, against `tests/stripboard/moves-wire.test.ts`:
+
+  - the translation removed, so the id is spelled the board's way again: **three
+    tests fail**, the candidate count on the spaced board goes to **zero**, and
+    that is §12.4's finding reproduced as a test;
+  - the `NOPROVENANCE` refusal turned into a skip: one test fails, and it is the
+    only test holding that condition;
+  - the two-`PIN`-lines refusal disabled: one test fails. With the translation in
+    place both holes would be attributed to the SAME reference pin, so the net
+    would appear split across a strip it is not on and a wire would be planned
+    for a split that does not exist.
+
+Mutation cannot catch a predicate that is too PERMISSIVE, which is why the two
+board assertions face opposite ways: the imported board must admit NOTHING and
+the spaced board must admit something.
+
+### 12.10 Task 8's re-measurement: the same board, **byte for byte**, and `HC1` still does not hold
+
+```
+  commit        f97849b  (pipelineCommit, recorded in run.json)
+  board         boards/pultec-low-boost      arm  import
+  rules         stripboard/rules.json unedited - seeds [0, 1, 2, 3, 4],
+                evaluationCap 20000, tau null, worseAcceptance null
+  fork          ed6c5a64eb5125346e8b0bc0b434b332c7750bb6
+  command       make -C boards/pultec-low-boost place SEED_ARM=import
+```
+
+| | §12.2's AFTER (722c13d) | **this run (f97849b)** | delta |
+| --- | --- | --- | --- |
+| **cuts `C`** | 28 (`C_necessary` 28) | **28** (`C_necessary` 28) | **none** |
+| **open nets** | 7 of 14 | **7 of 14** | **none** |
+| **`F`** | 29.25 | **29.25** | **none** |
+| **stopping rule** | `Q4`, budget-exhausted | **`Q4`, budget-exhausted** | **none** |
+| **nets still open** | `0`, `hi_boost_out`, `j10_p2`, `j10_p3`, `j10_p4`, `lo_boost_in`, `si_hi_cut_j4_p2` | **the same seven** | **none** |
+| `W` / `S` | 0 / 5 | 0 / 5 | none |
+| `A1` fails on | `HC1`, `HC8` | `HC1`, `HC8` | none |
+| `kappa` | 0.6389 | 0.6389 | none |
+| climbs / evaluations | 3 / 20,000 | 3 / 20,000 | none |
+| restarts at | 11,789 · 19,986 | 11,789 · 19,986 | none |
+| `candidateSha256` | `2aeaeb9f…` | **`2aeaeb9fd20b8fdd…`** | **the same bytes** |
+| invocations / ms each | 126,435 / 12.28 ms | 126,435 / 11.86 ms | none / −0.42 |
+| wall clock | 1,552 s | 1,500 s | −52 s |
+
+**THE REPORTED BOARD IS THE SAME FILE.** `candidateSha256` matches §12.2's after
+arm exactly, and so do the cut count, the objective, the seven open nets, the
+stopping rule, the restart boundaries and the invocation count. **So the
+translation bought nothing on this board and this arm, and that is the
+result** — not a disappointment to be explained away, and the reason is
+measurable rather than speculative. It is below.
+
+**`HC1` DOES NOT HOLD.** `--check` exits 1 with seven incomplete nets, `A1`
+fails on `HC1` and `HC8`, and **Task 5's precondition is still not satisfied.**
+
+**THE RUN DID NOT CONVERGE, AND THAT IS NOT A RESULT.** It stopped on `Q4` —
+`yieldFloor = 1` — having spent the whole 20,000-evaluation cap, with restarts
+at 11,789 and 19,986, exactly as both of Task 3's arms did. `S3` never fired, so
+**no board in this measurement is a local optimum under this move set**, and
+whether the cap is the binding constraint is a live question for the owner rather
+than something these figures answer. Three runs have now ended this way.
+
+### 12.10.1 **One `add-wire` candidate in 20,000 evaluations — and the fork refused it**
+
+The run directory is the record: `applyMove` stages one file per gesture, named
+for the kind, and across both climbs' 78,000-odd candidate files the pattern
+`.add-wire-*.vrt` appears **exactly twice** — `r26-m56.vrt.add-wire-0.vrt` and
+`…-1.vrt`, one candidate, in seed 0's round 26. (`.gather-*` appears 5,329
+times in that same directory, `.spread-*` 1,206, so the counting method is not
+in doubt.)
+
+**There is no `r26-m56-filled.vrt`, so that candidate was never scored**, and
+re-running the step it died at names the reason exactly:
+
+```
+  $ veroroute --update seed-0/r26-m56.vrt --netlist pultec-low-boost.net -o x.vrt
+  the layout's wire Wire1 (1,18 to 2,18, carrying net ids 12 and 13) cannot be
+  put back after reconciliation: its two ends are no longer on one net. Move or
+  delete it in the GUI, then run this again.
+  $ echo $?
+  1
+```
+
+**That is `WIRE_END_REACH`'s own documented limit, caught in the wild.** The rule
+puts a wire's end within one hole of a pin of its net on each strip, and
+`tools/stripboard/moves-wire.ts` states that this is *"necessary and not
+sufficient: a cut can sit between a pin and the hole beside it, because the cut
+list exists only after a candidate is painted"*. Here both ends were in reach and
+the copper under them belonged to node ids 12 and 13. The candidate therefore
+counted as **unscoreable**, which spends a slot of the cap (`./climb.ts` counts
+`history.length + unscoreable` against it) and changes nothing else — which is
+consistent with the identical restart boundaries and the identical best board.
+
+So the honest accounting of the kind on this arm is: **enumerated once, refused
+by the binary once, accepted zero times, and `W = 0` is still not the objective
+declining a wire.** It is no longer *"nothing offers one"* either.
+
+### 12.10.2 The seven open nets, re-classified on the reported board — **three move from invisible to out of reach**
+
+`occupancyOf` refuses the reported board for the reason §12.7 records (*"part
+`C18`: it faces N … there is no rectangle to read"*), so `wireMovesFor` cannot be
+run against it. What CAN be read from its dump is what the enumeration reads
+first: which strips each net holds, and whether any line of holes is within
+`WIRE_END_REACH` of the net's own pins on both strips. That is the condition
+that was gating these three nets, so it is the condition to re-measure.
+
+| net | strips it holds (along-strip positions) | pairs, and the end lines each offers | shape |
+| --- | --- | --- | --- |
+| `j10_p2` | 0 `[5]`, **6 `[0]`** | 0/6: **none** | **(b)**, newly for a REACH reason |
+| `j10_p3` | 0 `[8]`, **7 `[0]`** | 0/7: **none** | **(b)**, the same |
+| `j10_p4` | 0 `[11]`, **8 `[0]`** | 0/8: **none** | **(b)**, the same |
+| `si_hi_cut_j4_p2` | 1 `[15, 21, 22]` | no pair at all | **(b)**, unchanged |
+| `0` | 0 `[1,3,6,9,12,15]`, 2 `[12]`, 3 `[18..22,17]`, **5 `[0]`** | 0/2: `[12,11,13]`, 0/3: `[16]`, **0/5: `[0,1]`** | lines offered; bridge unmeasurable |
+| `lo_boost_in` | 4 `[21]`, 0 `[24,25,26]`, 2 `[14,22]`, 3 `[15]` | 0/2: `[23]`, 2/3: `[14,15]`, 2/4: `[21,22]` | lines offered; bridge unmeasurable |
+| `hi_boost_out` | 1 `[13,17]`, 4 `[12]`, 3 `[14]` | 1/3: `[13,14]`, 1/4: `[12,13]`, 3/4: `[13]` | lines offered; bridge unmeasurable |
+
+**(c) IS STILL EMPTY**: `HC3` holds, every reference pin of every open net
+resolves to a hole, and no `blocked (… unplaced)` line appears.
+
+**THE THREE SELECTOR NETS HAVE CHANGED SHAPE WITHOUT CHANGING OUTCOME, and that
+is the whole content of this measurement.** §12.4 recorded the cause as *"the
+wire generator sees its pins on ONE strip"*. It now sees both strips and the
+pair. **What it finds there is that no line serves both ends**: the pad sits at
+position 0 of its own strip and the capacitor at position 5, 8 or 11 of strip 0,
+and `WIRE_END_REACH` is one hole. The nets moved from (b)-because-invisible to
+(b)-because-out-of-reach, which is progress in the diagnosis and none at all in
+the board.
+
+**AND THE CAUSE OF THAT IS A RULE THIS PAGE ALREADY NAMED.** §11.5 records
+`spacingMoves`' destination rule — the first admissible hole on each strip,
+**ascending** — and says of it: *"It is systematically at the LOW END of a strip,
+which is not neutral with respect to `RANKING`'s `A_occ` and wirelength
+positions"*, and that **a destination-choice rule was written and NOT taken**
+because the measured benefit was zero. This run is the first measurement in
+which it is not zero: every one of the three pads was parked at position 0 while
+its own net's other pin is five, eight or eleven holes along another strip, and
+a destination in the pin's own COLUMN would put the pair within reach. **That is
+a finding for the owner and for Task 4's question, and nothing was changed for it
+here** — the measured claim is about reach, and whether a bridge would then fit,
+be accepted, and survive `--update` is three further questions this run does not
+answer.
+
+**WHAT CANNOT BE CONCLUDED.** It is one board and one arm; `constructed` and
+`random` were not run. Nothing here shows that a reachable pair would be
+ACCEPTED: the one candidate the run did produce was refused by the binary, and
+§6.9's cost-model finding — a wire removes no cut by itself, so `add-wire` is
+pure `ρ_w` to the objective — is untouched by this task and remains the standing
+reason to expect a lone wire to lose its round.
+
+### 12.11 The other three pad-spelling sites: measured, and **declined with a number**
+
+**FOUR SITES GATE A PAD OUT ON THE SAME SPELLING** —
+`tools/stripboard/moves-cluster.ts`'s `clusterRefs` (and `aimedHoles` behind
+it), `tools/stripboard/moves-join.ts`'s `joinEndsFor`,
+`tools/stripboard/moves-spread.ts`'s `spreadSourceStrips`, and the
+`netPinsAlongStrips` §12.9 translated. Task 1 deferred all four together for
+want of a measurement. This is the measurement, taken by translating the other
+three temporarily and counting the move set on two boards — the working tree was
+restored with `git checkout --` and the counts re-checked afterwards.
+
+| board | before | after | the difference |
+| --- | --- | --- | --- |
+| `pultec-low-boost-imported.dump` | **374** | **598** | +224, **all of them `gather`** (31 → 255) |
+| the same board, pads spaced onto strips 6/7/8 | **275** | **461** | +186: `gather` 0 → 126, `spread` 0 → 47, `cluster` 0 → 13 |
+
+**THE WIDENING LANDS IN THE THREE KINDS WITH THE WORST MEASURED HIT RATE.**
+§12.3's per-kind acceptance over the whole run: `gather` **2 accepted in 9,086
+evaluations**, `spread` **0 in 1,787**, `cluster` **2 in 453**. A 60% wider round
+inside an unchanged 20,000-evaluation cap is **about 37% fewer rounds**, on a run
+that already spends the whole cap without converging (§12.6 item 4). §6.11
+records what this repository paid for the same first-order argument last time:
+1,539 extra candidates, never once best.
+
+**SO IT IS DECLINED WITH A NUMBER RATHER THAN DEFERRED WITHOUT ONE**, and what
+would change it is a run in which a pad's `cluster`, `gather` or `spread` is
+accepted — not a further reading of the code.
+
+**AND THE THREE SITES ARE FOUR, COUPLED: `clusterRefs` CANNOT BE TRANSLATED
+ALONE.** `aimedHoles` selects the pin that put a ref in the cluster, by the same
+spelling, so a pad selected by a translated `clusterRefs` has no pin there and
+it refuses — *"aimedHoles: RV_LO_BOOST_1 is in the cluster of "0" and the dump
+reports no PIN line of its on that net"* — on the FIRST net of the imported
+board. That refusal is doing its job, and it means the pair moves together or
+not at all. Anyone taking this on later should budget for two functions and not
+one.
 
 ## 13. Task 9 of the buildable-layouts plan — the suite leaked **134 directories a run** into `TMPDIR`, and the metric that said otherwise **measured the wrong directory**
 
