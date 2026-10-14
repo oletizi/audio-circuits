@@ -65,7 +65,7 @@ import { occupancyAfter } from "./moves-advance.ts"
 import { DEFERRED_KINDS, type Move } from "./moves-model.ts"
 import { spacingMoves } from "./moves-space.ts"
 import { spreadMove, spreadSourceStrips, spreadTargetStrips } from "./moves-spread.ts"
-import { wireMovesFor } from "./moves-wire.ts"
+import { wireMovesFor } from "./moves-wire-nets.ts"
 import type { Occupancy } from "./seed-geometry.ts"
 import { rectOf } from "./seed-placement.ts"
 import type { SpawnVeroroute } from "./seed.ts"
@@ -223,13 +223,21 @@ function partMoves(occupancy: Occupancy, dump: BoardDump, dumpText: string): rea
 }
 
 /**
- * Every `add-wire` the model admits, from `./moves-wire.ts`, and every
+ * Every `add-wire` the model admits, from `./moves-wire-nets.ts`, and every
  * `delete-wire` the board's own `WIRE` lines name.
  *
  * `./moves-wire.ts` plans a wire created at a FREE hole - the fork anchors one
- * nowhere else - then turned across the strips and stretched to reach, one
- * candidate per pair of strips a net is split across; its reasons, the four fork
- * measurements and the narrowings are stated there.
+ * nowhere else - then turned across the strips and stretched to reach, and
+ * `./moves-wire-nets.ts` asks the netlist which pairs of strips a net is split
+ * across, one candidate per pair; their reasons, the four fork measurements and
+ * the narrowings are stated there.
+ *
+ * **IT TAKES THE DUMP TEXT for `./movable.ts`'s reason**, which is the reason
+ * every other generator here takes it: a parsed `BoardDump` carries no `PAD`
+ * line, and a pad's net membership is in the `PAD` line's `FROM` field and
+ * nowhere else. Until that field was read here no `add-wire` was ever proposed
+ * for a net one of whose members is an off-board pad - `./moves-wire-nets.ts`
+ * carries the measurement.
  *
  * `delete-wire` is still enumerated and still refused by `DEFERRED_KINDS`, whose
  * entry carries the measurement rather than a reading: no verb and no
@@ -238,9 +246,10 @@ function partMoves(occupancy: Occupancy, dump: BoardDump, dumpText: string): rea
 function wireMoves(
   occupancy: Occupancy,
   dump: BoardDump,
+  dumpText: string,
   reference: ReferenceNets,
 ): readonly Move[] {
-  const moves: Move[] = [...wireMovesFor(occupancy, dump, reference)]
+  const moves: Move[] = [...wireMovesFor(occupancy, dump, dumpText, reference)]
   for (const wire of dump.wires) moves.push({ kind: "delete-wire", name: wire.name })
   return moves
 }
@@ -383,7 +392,7 @@ export function enumerateMoves(
     // untouched: no kind appears for the first time at this position, so the
     // listing's "in the order enumerateMoves emits them" still reads true.
     ...spacingMoves(occupancy, dump, dumpText, reference),
-    ...wireMoves(occupancy, dump, reference),
+    ...wireMoves(occupancy, dump, dumpText, reference),
     ...clusterMoves(occupancy, dump, dumpText, reference),
     ...gatherMoves(occupancy, dump, dumpText, reference),
     ...spreadMoves(occupancy, dump, dumpText, reference),
@@ -430,7 +439,16 @@ export {
   wireAfter,
   wireAlong,
   wireBridge,
-  wireMovesFor,
   type WireLanding,
   type WirePlan,
 } from "./moves-wire.ts"
+
+/**
+ * The wire ENUMERATION, re-exported from `./moves-wire-nets.ts`: which strips a
+ * net is split across, and the candidates that bridge them.
+ *
+ * It is a second module for the same reason `./moves-space-measure.ts` is one -
+ * the 500-line ceiling, taken at the seam the file already had - and it is
+ * re-exported here so this stays the one module a consumer imports.
+ */
+export { netPinsAlongStrips, wireMovesFor } from "./moves-wire-nets.ts"

@@ -5,11 +5,12 @@
  * enumerated over a COMPONENT enumerated over `dump.parts`, and
  * `tools/guide/dump.ts`'s `parseParts` reads `PART` lines only - so an
  * off-board pad, which the fork prints as a `PAD` line, was in no such loop
- * and no arm could ever move one. (`./moves-wire.ts`'s `netPinsAlongStrips` is
- * the one generator that walked `dump.pins` instead, so it already saw a pad's
- * HOLE; it gates the hole out on the pin-id spelling, which is a different
- * limit and is recorded at that function.) None of this is a limit of the
- * fork. Measured against the pinned binary on 2026-10-13:
+ * and no arm could ever move one. (`./moves-wire-nets.ts`'s
+ * `netPinsAlongStrips` is the one generator that walked `dump.pins` instead, so
+ * it already saw a pad's HOLE; it gated the hole out on the pin-id spelling
+ * until that function was translated, and the measurement that cost is recorded
+ * there.) None of this is a limit of the fork. Measured against the pinned
+ * binary on 2026-10-13:
  *
  *     $ veroroute --move t.vrt --ref SW_LO_BOOST_2 --to 13,1 -o t3.vrt
  *     MOVED SW_LO_BOOST_2 FROM 3,11 TO 13,1 IN GRID 14 32

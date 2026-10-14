@@ -12,7 +12,7 @@
  * `./complete.ts`'s; this file only answers *which wires*.
  *
  * **WHY A SEPARATE GENERATOR AT ALL, WHICH IS A MEASURED ANSWER AND NOT A
- * PREFERENCE.** `./moves-wire.ts`'s `wireMovesFor` enumerates ONE wire per pair
+ * PREFERENCE.** `./moves-wire-nets.ts`'s `wireMovesFor` enumerates ONE wire per pair
  * of STRIPS a net's pins occupy, and the main search accepts a candidate only
  * when it is strictly better in an ordering whose first key is the open-net
  * count. Two facts measured on the import-placed low-boost board make that

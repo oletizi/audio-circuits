@@ -96,13 +96,15 @@ export function joinEndsFor(
   // THE MOVABLE SET AND NOT `dump.parts` - see `./movable.ts`. The iterator is
   // corrected here so there is one answer to what is on the board.
   //
-  // **NO PAD CONTRIBUTES AN END YET, AND THE BRIDGE EXISTS**: `owner` is keyed
+  // **NO PAD CONTRIBUTES AN END HERE, AND THE BRIDGE EXISTS**: `owner` is keyed
   // by the REFERENCE netlist's pin id while a pad's `PIN` line is named the
   // BOARD's way, and the mapping is `PadLine.source`, which is already in the
-  // export's spelling. `./moves-cluster.ts`'s `clusterRefs` carries the
-  // measurement, why it is deferred rather than blocked, and the four sites it
-  // moves together - this one, that one, `./moves-spread.ts`'s
-  // `spreadSourceStrips` and `./moves-wire.ts`'s `netPinsAlongStrips`.
+  // export's spelling. `./moves-cluster.ts`'s `clusterRefs` carries the four
+  // sites, which of them is translated - `./moves-wire-nets.ts`'s
+  // `netPinsAlongStrips`, on §12's measurement - and the measured reason this
+  // one, that one and `./moves-spread.ts`'s `spreadSourceStrips` are declined:
+  // translating them widens the move set by 60% in the kinds whose measured
+  // acceptance is 0 of 1,787 and 2 of 9,086.
   for (const one of movableRefs(dump, dumpText)) {
     for (const pin of dump.pins[one.ref] ?? []) {
       if (owner.get(`${one.ref}.${pin.pin}`) !== net) continue

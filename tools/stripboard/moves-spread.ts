@@ -200,13 +200,14 @@ export function spreadSourceStrips(
     // THE MOVABLE SET AND NOT `dump.parts` - see `./movable.ts`. The iterator is
     // corrected here so there is one answer to what is on the board.
     //
-    // **NO PAD READS AS SHARED OR KEPT YET, AND THE BRIDGE EXISTS**: `owner` is
+    // **NO PAD READS AS SHARED OR KEPT HERE, AND THE BRIDGE EXISTS**: `owner` is
     // keyed by the REFERENCE netlist's pin id while a pad's `PIN` line is named
     // the BOARD's way, and the mapping is `PadLine.source`, which is already in
     // the export's spelling. `./moves-cluster.ts`'s `clusterRefs` carries the
-    // measurement, why it is deferred rather than blocked, and the four sites it
-    // moves together - this one, that one, `./moves-join.ts`'s `joinEndsFor` and
-    // `./moves-wire.ts`'s `netPinsAlongStrips`.
+    // four sites, which of them is translated - `./moves-wire-nets.ts`'s
+    // `netPinsAlongStrips`, on §12's measurement - and the measured reason this
+    // one is declined: it is 47 of the 186 extra candidates the translation adds
+    // to a spaced board's round, in a kind accepted 0 times in 1,787 evaluations.
     for (const one of movableRefs(dump, dumpText)) {
       if (movers.has(one.ref)) continue
       for (const pin of dump.pins[one.ref] ?? []) {

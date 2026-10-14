@@ -82,13 +82,22 @@
  * component; and `--update`, the one verb that rewrites a board's component set
  * from a netlist, LEAVES BOTH WIRES IN PLACE - measured, two before and two
  * after.
+ *
+ * **THE ENUMERATION IS NO LONGER HERE.** `netPinsAlongStrips` and
+ * `wireMovesFor` moved to `./moves-wire-nets.ts` when pad net membership reached
+ * them and this file hit the 500-line ceiling: that module answers *which wires
+ * does this board's netlist ask for* and this one *how is one wire shaped*. The
+ * seam is the planner's, and both halves are re-exported from `./moves.ts` as
+ * before.
  */
 import type { BoardDump, Grid } from "../guide/dump.ts"
-import { stripOf } from "./constraints-model.ts"
-import type { ReferenceNets } from "./equivalence.ts"
-import type { Move } from "./moves-model.ts"
 import { GESTURE_ORDERS, appliedGestures, type GestureOrder } from "./seed-placement.ts"
-import { stretchBoundFor, type Occupancy, type PartRect } from "./seed-geometry.ts"
+import {
+  stretchBoundFor,
+  type Occupancy,
+  type PartRect,
+  type StretchBound,
+} from "./seed-geometry.ts"
 
 /** The length, in holes, of the wire `--author --op add-wire` creates. Measured. */
 const FRESH_WIRE_HOLES = 3
@@ -152,7 +161,8 @@ export function nextWireName(count: number): string {
  * the first line a caller tries is the tightest one and two runs agree.
  *
  * **IT IS THE ONE IMPLEMENTATION OF THE REACH RULE, and that is the point of it
- * being here.** `wireMovesFor` below and `./moves-join.ts`'s spread lines are the
+ * being here.** `./moves-wire-nets.ts`'s `wireMovesFor` and `./moves-join.ts`'s
+ * spread lines are the
  * two callers; each decides WHICH pins its ends must reach (a spread's mover pins
  * travel to the target strip and its stayers do not), and neither one spells the
  * arithmetic out again. A second copy would be two readings of one rule, and the
@@ -185,36 +195,16 @@ export function wireEndLines(
 }
 
 /**
- * Where a net's pins sit ALONG each strip, keyed by strip - the dump's `PIN`
- * lines read through the reference netlist.
+ * The fork's length bound for a wire, under the name
+ * `VEROROUTE_STRETCH_BOUNDS` records it by.
  *
- * A wire end may land only beside a pin of the net it joins, so an enumerator
- * needs the along-strip positions and not merely which strips are occupied.
- * `./moves-join.ts` is the other caller.
+ * **ONE PLACE NAMES THE TYPE**, which is what keeps `./seed-geometry.ts`'s
+ * statement that *"`./moves-wire.ts` is the only caller that asks"* true now
+ * that the enumeration lives in `./moves-wire-nets.ts`: that module asks this
+ * function and never the table, so `WIRE_TYPE` stays private to this file.
  */
-export function netPinsAlongStrips(
-  dump: BoardDump,
-  reference: ReferenceNets,
-  net: string,
-): ReadonlyMap<number, readonly number[]> {
-  const wanted = new Set(reference.get(net) ?? [])
-  const byStrip = new Map<number, number[]>()
-  // **IT WALKS `dump.pins`, SO IT ALREADY SEES AN OFF-BOARD PAD'S HOLE AND GATES
-  // IT OUT ON THE SPELLING**: `wanted` is keyed the EXPORT's way, a pad's `PIN`
-  // line the BOARD's way. It is the FOURTH site pad net membership moves, needs
-  // no new iterator, and `./moves-cluster.ts`'s `clusterRefs` carries the bridge
-  // (`PadLine.source`) and why it is deferred rather than blocked.
-  for (const [ref, own] of Object.entries(dump.pins)) {
-    for (const pin of own) {
-      if (!wanted.has(`${ref}.${pin.pin}`)) continue
-      const strip = stripOf(pin, dump.verticalStrips)
-      const along = dump.verticalStrips ? pin.row : pin.col
-      const holes = byStrip.get(strip) ?? []
-      holes.push(along)
-      byStrip.set(strip, holes)
-    }
-  }
-  return byStrip
+export function wireStretchBound(): StretchBound {
+  return stretchBoundFor(WIRE_TYPE)
 }
 
 /**
@@ -258,7 +248,7 @@ export function wireAfter(
   plan: WirePlan,
 ): Occupancy | undefined {
   if (occupancy.has(plan.name)) return undefined
-  const bound = stretchBoundFor(WIRE_TYPE)
+  const bound = wireStretchBound()
   if (!bound.stretchable) return undefined
   const holes = FRESH_WIRE_HOLES + plan.stretch
   if (holes < bound.minLength || holes > bound.maxLength) return undefined
@@ -426,75 +416,4 @@ function wireAnchor(
   const shift = order === "turn-then-stretch" ? 1 : Math.trunc((holes - 1) / 2)
   const at: readonly [number, number] = [from + shift, along - shift]
   return at[0] < 0 || at[1] < 0 ? undefined : at
-}
-
-/**
- * Every `add-wire` the model admits: for each net in the NETLIST's order, for
- * each PAIR of distinct strips its on-board pins occupy, one wire bridging that
- * pair at the first line of holes that takes it.
- *
- * **IT IS ENUMERATED OVER THE NET'S OWN STRIP PAIRS, which is what makes a wire
- * a repair rather than a decoration.** A wire's whole purpose in the cost
- * identity is to join two of a net's segments, so the pairs that matter are the
- * strips the net is already split across. A pair further apart than the fork
- * will stretch a wire (16 holes) is not proposed.
- *
- * **ONE CANDIDATE PER PAIR, AT THE FIRST LINE THAT FITS, ascending** - and the
- * narrowing is an equivalence rather than a budget: a strip conducts along its
- * whole length, so two wires bridging the same pair at different lines join the
- * same two strips and score the same `W`. What differs is which holes they take
- * from later gestures and what they do to the occupied extent `HC6` measures,
- * and NEITHER is modelled here - so "the first that fits" is a declared choice
- * whose cost is unmeasured, exactly as `UNIT_DELTAS` says of its own
- * neighbourhood.
- *
- * **ITS ENDS LAND BESIDE THE NET'S OWN PINS, AND THAT REPLACED "THE FIRST LINE
- * THAT FITS".** The line is chosen by `wireEndLines` - within `WIRE_END_REACH`
- * of a pin of this net on EACH of the two strips, tightest first - rather than
- * by walking every line of the board until the geometry admits one. The old
- * rule was measured: it proposed wires whose ends sat on whatever copper
- * happened to be at that line, and the fork refused **103 of 187 of them**
- * (55%) with *"its two ends are no longer on one net"* - a short, not a cost,
- * and a candidate no acceptance key ever saw. `WIRE_END_REACH` carries the
- * measurement and the rule's own limit.
- *
- * **WHAT IT STILL DOES NOT CHECK:** whether a CUT sits between the end hole and
- * the pin beside it. Cuts are `AutoFillVero`'s and exist only after the
- * candidate is painted, so the reach rule is necessary and not sufficient, and a
- * candidate the fork still refuses is still counted as unscoreable. A pair of
- * strips with no line serving both ends yields NO candidate here - which is the
- * shape `./moves-join.ts`'s elbow exists for, and this kind does not plan one:
- * a lone wire that cannot reach the net's own copper joins nothing at all.
- */
-export function wireMovesFor(
-  occupancy: Occupancy,
-  dump: BoardDump,
-  reference: ReferenceNets,
-): readonly Move[] {
-  const name = nextWireName(dump.wires.length)
-  const bound = stretchBoundFor(WIRE_TYPE)
-  const moves: Move[] = []
-  for (const [net] of reference) {
-    const alongByStrip = netPinsAlongStrips(dump, reference, net)
-    const ordered = [...alongByStrip.keys()].sort((a, b) => a - b)
-    for (let first = 0; first < ordered.length; first += 1) {
-      for (let second = first + 1; second < ordered.length; second += 1) {
-        const from = ordered[first]
-        const to = ordered[second]
-        if (from === undefined || to === undefined) continue
-        if (!bound.stretchable || to - from + 1 > bound.maxLength) continue
-        // THE LINES THE NET'S OWN PINS CAN BE REACHED AT, not every line of the
-        // board: see WIRE_END_REACH for the 103-of-187 measurement that put this
-        // call here.
-        const lines = wireEndLines(dump, alongByStrip.get(from) ?? [], alongByStrip.get(to) ?? [])
-        for (const along of lines) {
-          const bridge = wireBridge(occupancy, dump, name, from, to, along)
-          if (bridge === undefined) continue
-          moves.push({ kind: "add-wire", net, ends: bridge.ends, plan: bridge.plan })
-          break
-        }
-      }
-    }
-  }
-  return moves
 }

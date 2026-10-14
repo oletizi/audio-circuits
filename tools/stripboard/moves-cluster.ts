@@ -118,9 +118,9 @@ export function clusterRefs(
   // board. The iterator is corrected here so there is ONE answer to "what is on
   // this board" rather than two that could drift.
   //
-  // **NO PAD IS SELECTED YET, AND THE BRIDGE THAT WOULD SELECT ONE EXISTS.** The
-  // test below is on the REFERENCE netlist's pin id while a pad's `PIN` line is
-  // named the BOARD's way - `SW_LO_BOOST_2.1` where the export says
+  // **NO PAD IS SELECTED HERE, AND THE BRIDGE THAT WOULD SELECT ONE EXISTS.**
+  // The test below is on the REFERENCE netlist's pin id while a pad's `PIN` line
+  // is named the BOARD's way - `SW_LO_BOOST_2.1` where the export says
   // `SW_LO_BOOST.2` - so `wanted` matches no pad as this stands. The bridge is
   // `PadLine.source`: a placed pad has exactly one `PIN` line (`pad-pin-count`
   // refuses otherwise) and its `FROM <ref>.<pin>` field is ALREADY in the
@@ -129,14 +129,34 @@ export function clusterRefs(
   // ten pads' `source` fields are reference pins. **Nothing is missing and
   // nothing needs `referencePinHoles`.**
   //
-  // **IT IS DEFERRED FOR A STATED REASON RATHER THAN BLOCKED.** Selecting pads
-  // moves the candidate sets of FOUR generators at once - this one, `cluster`
-  // and `gather` through it, `./moves-join.ts`'s `joinEndsFor`,
-  // `./moves-spread.ts`'s `spreadSourceStrips`, and `./moves-wire.ts`'s
-  // `netPinsAlongStrips` (which already walks `dump.pins` and so already sees a
-  // pad's holes, and gates them out on the same spelling) - so it needs its own
-  // before-and-after measurement on a real board, which this change does not
-  // have. Doing it here would have moved four sets with one unmeasured edit.
+  // **ONE OF THE FOUR SITES HAS BEEN TRANSLATED AND THIS ONE IS DECLINED ON A
+  // MEASUREMENT.** `./moves-wire-nets.ts`'s `netPinsAlongStrips` was translated
+  // when `docs/stripboard/pipeline-verification.md` §12 measured what gating a
+  // pad out of it cost - zero `add-wire` candidates in a 19,997-candidate trace,
+  // and three of seven open nets unrepairable for that reason alone. The other
+  // sites were measured in the same task (§12.5) by translating them
+  // temporarily and counting the move set on two boards:
+  //
+  //   - the import-placed low-boost board goes from **374 candidates to 598**,
+  //     and every one of the 224 is a `gather`;
+  //   - the same board with three selector pads spaced onto strips 6, 7 and 8
+  //     goes from **275 to 461** - 126 `gather`, 47 `spread`, 13 `cluster`.
+  //
+  // Against Task 3's measured acceptance of those kinds - `gather` 2 accepted in
+  // 9,086 evaluations, `spread` 0 in 1,787, `cluster` 2 in 453 - on a run that
+  // spends its whole 20,000-evaluation cap WITHOUT converging, a 60% wider round
+  // buys 37% fewer rounds inside the cap for no measured gain. §6.11 records
+  // what this repository paid for the same first-order argument last time: 1,539
+  // candidates, never once best. **So this is declined with a number rather than
+  // deferred without one**, and what would change it is a run showing a pad's
+  // cluster or spread being accepted.
+  //
+  // **AND IT IS NOT A ONE-LINE CHANGE: translating this function alone is
+  // BROKEN, measured.** `aimedHoles` below selects the pin that put a ref in the
+  // cluster, by the same spelling, so a pad selected here has no pin there and
+  // it refuses - *"aimedHoles: RV_LO_BOOST_1 is in the cluster of "0" and the
+  // dump reports no PIN line of its on that net"*, on the first net of the
+  // imported board. The pair moves together or not at all.
   for (const one of movableRefs(dump, dumpText)) {
     const own = dump.pins[one.ref] ?? []
     if (own.some((pin) => wanted.has(`${one.ref}.${pin.pin}`))) refs.push(one.ref)
