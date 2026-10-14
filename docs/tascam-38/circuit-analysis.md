@@ -452,7 +452,10 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 ## Bench verification checklist
 
 What the drawings, datasheets and manual cannot settle, grouped by the
-instrument it needs. Continuity checks are with the machine unpowered and
+instrument it needs. A printable fill-in version is `bench/bench-worksheet.pdf`
+(source `bench/bench-worksheet.html`; regenerate with headless Chrome
+`--print-to-pdf` after editing the HTML, and keep the two in step with this
+list). Continuity checks are with the machine unpowered and
 the card removed unless stated; the bias / erase nodes carry tens of volts AC
 (annotated AC65V) and are not to be probed with the record circuitry live
 without suitable instruments.

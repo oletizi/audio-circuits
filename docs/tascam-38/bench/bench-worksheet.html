@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tascam 38 bench worksheet</title>
+<style>
+  @page { size: letter; margin: 0.5in 0.55in; }
+  * { box-sizing: border-box; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #111; margin: 0; }
+  h1 { font-size: 17pt; margin: 0 0 2pt; letter-spacing: -0.2pt; }
+  h2 { font-size: 11.5pt; margin: 14pt 0 3pt; padding-bottom: 2pt; border-bottom: 1.5pt solid #111; break-after: avoid; }
+  h2 .tag { font-weight: normal; font-size: 9pt; color: #444; }
+  p { margin: 3pt 0; line-height: 1.3; }
+  .sub { color: #444; font-size: 9pt; margin-bottom: 8pt; }
+  table { width: 100%; border-collapse: collapse; margin: 4pt 0 2pt; break-inside: auto; }
+  tr { break-inside: avoid; }
+  th, td { border: 0.6pt solid #777; padding: 3pt 4pt; vertical-align: top; text-align: left; }
+  th { background: #e8e8e8; font-size: 8.5pt; font-weight: 600; }
+  td.read { width: 0.95in; height: 0.3in; }
+  td.wide { width: 1.6in; }
+  td.box, th.box { width: 0.42in; text-align: center; }
+  td.num { width: 0.28in; text-align: center; color: #444; }
+  td.exp { width: 0.95in; }
+  td.id { width: 0.55in; color: #444; font-size: 8.5pt; }
+  .chk { display: inline-block; width: 9pt; height: 9pt; border: 0.8pt solid #111; vertical-align: -1pt; margin-right: 3pt; }
+  .done td { background: #f3f3f3; color: #444; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6pt 14pt; margin: 8pt 0 4pt; }
+  .field { border-bottom: 0.8pt solid #111; padding-top: 12pt; font-size: 8.5pt; color: #444; }
+  .note { border: 0.8pt solid #111; padding: 5pt 7pt; margin: 6pt 0; background: #fafafa; }
+  .note .title { display: block; font-weight: 700; margin-bottom: 2pt; }
+  table.keep { break-inside: avoid; }
+  td.exp { white-space: nowrap; }
+  .grid td { height: 0.3in; }
+  .grid td.lbl { width: 0.75in; font-weight: 600; }
+  .lines div { border-bottom: 0.6pt solid #999; height: 0.3in; }
+  .page { break-before: page; }
+  .small { font-size: 8.5pt; color: #444; }
+</style>
+</head>
+<body>
+
+<h1>Tascam 38 amplifier card - bench worksheet</h1>
+<p class="sub">Checks that the schematics, datasheets and manual cannot settle. Fill in each reading, tick whether it matches the expected value, and report the readings back so they can be recorded in <code>docs/tascam-38/circuit-analysis.md</code>. IDs (A1, C17, ...) refer to that document.</p>
+
+<div class="fields">
+  <div class="field">Date</div>
+  <div class="field">Machine serial</div>
+  <div class="field">Meter used</div>
+  <div class="field">Card measured (channel / slot)</div>
+  <div class="field">Meter leads shorted reads (ohms)</div>
+  <div class="field">Initials</div>
+</div>
+
+<div class="note"><span class="title">Before you start</span>
+Continuity checks are with the machine <b>unpowered</b> (mains disconnected). Card checks are on a card removed from the motherboard. The bias / erase circuit (J108-2, the U103 output) carries tens of volts AC at 150 kHz while recording - do not probe it with the record circuit live. Confirm pin 1 on each physical connector from the board silkscreen before measuring: the schematic numbers J105 / P105 from the opposite end to the other card connectors. Subtract the shorted-lead reading from low-ohm results.</div>
+
+<h2>1. On a removed card, unpowered <span class="tag">- ohmmeter; finishes the relay question (A1)</span></h2>
+<table>
+  <tr><th>#</th><th>Measure between</th><th>Expect</th><th>Reading</th><th class="box">Match?</th><th>Notes</th><th>ID</th></tr>
+  <tr class="done"><td class="num">-</td><td>J101-4 and J101-3</td><td class="exp">low (TR101 primary)</td><td class="read">0 ohm (done)</td><td class="box">yes</td><td class="wide">recorded 2026-10-13</td><td class="id">A1</td></tr>
+  <tr class="done"><td class="num">-</td><td>J106-7 and TP1</td><td class="exp">open</td><td class="read">open (done)</td><td class="box">yes</td><td class="wide">recorded 2026-10-13</td><td class="id">A1</td></tr>
+  <tr><td class="num">1a</td><td>J108-1 and J108-3</td><td class="exp">open</td><td class="read"></td><td class="box"><span class="chk"></span></td><td class="wide"></td><td class="id">A1</td></tr>
+  <tr><td class="num">1b</td><td>J108-1 and TP1</td><td class="exp">near 0 ohm</td><td class="read"></td><td class="box"><span class="chk"></span></td><td class="wide"></td><td class="id">A1</td></tr>
+</table>
+<p class="small">If 1a reads near 0 and 1b open, K103's lower set is drawn released, not energised - note it and stop to report.</p>
+
+<h2>2. Motherboard, power off, all cards out <span class="tag">- ohmmeter</span></h2>
+<table>
+  <tr><th>#</th><th>Measure between</th><th>Expect</th><th>Reading</th><th class="box">Match?</th><th>Notes</th><th>ID</th></tr>
+  <tr><td class="num">2a</td><td>P108-1 and P171-7 (0V)</td><td class="exp">0 ohm</td><td class="read"></td><td class="box"><span class="chk"></span></td><td class="wide"></td><td class="id">C17 A10</td></tr>
+  <tr><td class="num">2b</td><td>P182-1 and P182-2 (MASTER OSC connector)</td><td class="exp">open</td><td class="read"></td><td class="box"><span class="chk"></span></td><td class="wide"></td><td class="id">M4</td></tr>
+  <tr><td class="num">2c</td><td>P104-5 and P171-11 (0V)</td><td class="exp">open</td><td class="read"></td><td class="box"><span class="chk"></span></td><td class="wide"></td><td class="id">C18</td></tr>
+  <tr><td class="num">2d</td><td>P171-9 (+B 15V) and channel-2 P102-2 (ch2 line out)</td><td class="exp">open</td><td class="read"></td><td class="box"><span class="chk"></span></td><td class="wide"></td><td class="id">C19</td></tr>
+</table>
+
+<h2 class="page">2e. Contacts with no wire drawn <span class="tag">- motherboard, power off; C08, C09</span></h2>
+<p>Channel-1 motherboard sockets. Measure each against every rail on P171; expect <b>open</b> everywhere. Write the reading, or tick if open.</p>
+<table class="grid keep">
+  <tr><th>Contact</th><th>0V (P171-7)</th><th>24V (P171-8)</th><th>+B (P171-9)</th><th>-B (P171-10)</th><th>6V (P171-1)</th><th>Any other net found</th></tr>
+  <tr><td class="lbl">P102-1</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P102-6</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P102-7</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P103-1</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P103-3</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P104-7</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P105-2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P105-3</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P105-4</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P107-5</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P107-6</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+</table>
+<p style="margin-top:6pt">On a removed card, J102-1 and J102-6 should each read near 0 ohm to J101-3 (the card common bus):</p>
+<table class="keep">
+  <tr><th>Measure between</th><th>Expect</th><th>Reading</th><th class="box">Match?</th></tr>
+  <tr><td>J102-1 and J101-3</td><td class="exp">near 0 ohm</td><td class="read"></td><td class="box"><span class="chk"></span></td></tr>
+  <tr><td>J102-6 and J101-3</td><td class="exp">near 0 ohm</td><td class="read"></td><td class="box"><span class="chk"></span></td></tr>
+</table>
+
+<h2>3. Head connectors <span class="tag">- inspection plus ohmmeter; C12, C20</span></h2>
+<p>The schematic gives no pin numbers for P121 / P151 / P161, only "upper" and "lower" contacts. For each, record the physical pin number, wire colour, and what it reaches (winding end, shield). Expected card mapping in brackets.</p>
+<table class="grid">
+  <tr><th>Connector</th><th>Contact on drawing</th><th>Physical pin no.</th><th>Wire colour</th><th>Goes to (winding / shield)</th><th>Winding resistance</th></tr>
+  <tr><td class="lbl">P121 repro</td><td>upper (J101-4)</td><td></td><td></td><td></td><td rowspan="2"></td></tr>
+  <tr><td class="lbl">P121 repro</td><td>lower (J101-3)</td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P151 sync</td><td>lower (J106-7)</td><td></td><td></td><td></td><td rowspan="2"></td></tr>
+  <tr><td class="lbl">P151 sync</td><td>upper (J106-8)</td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">P161 erase</td><td>upper (J108-2)</td><td></td><td></td><td></td><td rowspan="2"></td></tr>
+  <tr><td class="lbl">P161 erase</td><td>lower (J108-3)</td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">Shield</td><td>head-board shield bus (J401-J403)</td><td></td><td></td><td></td><td></td></tr>
+</table>
+
+<h2 class="page">4. Inspection <span class="tag">- no meter</span></h2>
+<table class="keep">
+  <tr><th>#</th><th>Check</th><th>Result</th><th>ID</th></tr>
+  <tr><td class="num">4a</td><td>OUT SELECT buttons: do they latch? <span class="chk"></span>latch <span class="chk"></span>momentary</td><td class="wide"></td><td class="id">M5</td></tr>
+  <tr><td class="num">4b</td><td>Can two OUT SELECT buttons stay pressed together? <span class="chk"></span>yes <span class="chk"></span>no (interlocked)</td><td class="wide"></td><td class="id">M5</td></tr>
+  <tr><td class="num">4c</td><td>R139 colour code (card, near Q108): <span class="chk"></span>68 ohm <span class="chk"></span>68k <span class="chk"></span>other</td><td class="wide"></td><td class="id">A7</td></tr>
+  <tr><td class="num">4d</td><td>L108 marking / value (card, erase feed)</td><td class="wide"></td><td class="id">A5</td></tr>
+  <tr><td class="num">4e</td><td>Jumpers fitted: <span class="chk"></span>W109 <span class="chk"></span>W110 <span class="chk"></span>W112 <span class="chk"></span>W119 <span class="chk"></span>W132</td><td class="wide"></td><td class="id">A8</td></tr>
+  <tr><td class="num">4f</td><td>U103 module marking (bias amp; manual: TEAC 5292210600)</td><td class="wide"></td><td class="id">A4</td></tr>
+  <tr><td class="num">4g</td><td>Any visible component differences between channel cards</td><td class="wide"></td><td class="id">C10</td></tr>
+</table>
+
+<h2>5. Optional - machine powered <span class="tag">- DC voltmeter to 0V; confirms the datasheet reading</span></h2>
+<table>
+  <tr><th>Transport state</th><th>P171-6 PLAY MUTE expect</th><th>Reading</th><th>P171-5 REC SIGNAL expect</th><th>Reading</th><th class="box">Match?</th></tr>
+  <tr><td>STOP</td><td>about +5.3 V</td><td class="read"></td><td>open / ~0 V</td><td class="read"></td><td class="box"><span class="chk"></span></td></tr>
+  <tr><td>PLAY</td><td>about -6.8 V</td><td class="read"></td><td>open / ~0 V</td><td class="read"></td><td class="box"><span class="chk"></span></td></tr>
+  <tr><td>FF or REW</td><td>about +5.3 V</td><td class="read"></td><td>open / ~0 V</td><td class="read"></td><td class="box"><span class="chk"></span></td></tr>
+  <tr><td>RECORD, one track armed</td><td>about -6.8 V</td><td class="read"></td><td>about 24 V</td><td class="read"></td><td class="box"><span class="chk"></span></td></tr>
+  <tr><td>PAUSE (from PLAY)</td><td>about +5.3 V</td><td class="read"></td><td>open / ~0 V</td><td class="read"></td><td class="box"><span class="chk"></span></td></tr>
+  <tr><td>Record-pause</td><td>about +5.3 V</td><td class="read"></td><td>about 24 V</td><td class="read"></td><td class="box"><span class="chk"></span></td></tr>
+</table>
+<table>
+  <tr><th>#</th><th>Measure</th><th>Expect</th><th>Reading</th><th>ID</th></tr>
+  <tr><td class="num">5a</td><td>P171-3 POWER MUTE, settled after power-on (and roughly how long it takes)</td><td class="exp">near 0 V, ~1.8 s</td><td class="read"></td><td class="id">M6</td></tr>
+  <tr><td class="num">5b</td><td>Q118 base on a card, in RECORD (armed) and in PLAY</td><td class="exp">unknown</td><td class="read"></td><td class="id">A3</td></tr>
+  <tr><td class="num">5c</td><td>Power supply terminal 41 ("+2V"), counter connected</td><td class="exp">unknown</td><td class="read"></td><td class="id">M9</td></tr>
+  <tr><td class="num">5d</td><td>Scope, if available: bias frequency at J182-8</td><td class="exp">150 kHz</td><td class="read"></td><td class="id">A5</td></tr>
+</table>
+
+<h2>Notes</h2>
+<div class="lines"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+
+</body>
+</html>
