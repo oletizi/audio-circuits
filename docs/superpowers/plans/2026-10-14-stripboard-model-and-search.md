@@ -274,7 +274,21 @@ builds, geometry judges.** A candidate whose declared nets agree with its wiring
 geometry does not is exactly what phase 2 exists to catch, and a derivation that reused
 phase 1's labels in phase 2 would be unable to catch it.
 
-**Cut position is a declared convention with a test**, not an emergent property of a loop. Between two runs there may be several empty holes and they are not equally safe: a cut can foul a lead, a solder bridge or a wire anchor. State the rule in the module comment and test it directly.
+**A CUT UNDER A PART'S BODY IS NORMAL AND MUST NOT BE AVOIDED** (owner, 2026-10-14).
+His words: *"parts definitely straddle cuts. All dip packages have cuts under them to
+separate the two pin rows."* The physical reason makes it obvious once stated: **a cut is
+made on the COPPER side and a body sits on the COMPONENT side** — opposite faces, so they
+cannot foul each other. This also restates his earlier `HC10` ruling, *"dips should span
+strips with a cut down the middle, like a breadboard."* A derivation treating a body as an
+obstacle would refuse the standard way every DIP is mounted.
+
+**Cut position is a declared convention with a test**, not an emergent property of a loop.
+Between two runs there may be several empty holes and they are not equally safe — but
+**only what shares the copper side with the cut can make one unsafe: a hole carrying a
+lead's solder joint, and a solder bridge.** Not a body, and not a link wire, which runs
+over the top. An earlier draft of this plan listed "a lead, a solder bridge or a wire
+anchor"; one of those three is not a constraint and another is on the wrong side of the
+board. State the rule in the module comment and test it directly.
 
 - [ ] **Step 1: Write the failing tests**, both directions.
 
