@@ -448,7 +448,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | M8 | *Resolved:* REC MODE reaches only the RECORD-lamp gate (steady if a channel is armed, flashing if none); it does not gate record entry | pass6-transport-record-entry.md | - |
 | A12 | The selection JFETs stay off only while their source / drain stay above about -3.7 V (gate -5.2 V) or -4.7 V (gate -6.2 V). The 38's maximum line input is +18 dBV (8 V rms); whether any JFET node swings that far on negative peaks depends on the levels at Q105 / Q106 / Q110 | pass6-datasheets.md | Check signal swing at the JFET nodes at maximum input |
 | M9 | The "+2V" power-supply tap (R830 / R831 junction) feeds the COUNTER PCB, probably a display filament; the drawn values give about 0.4 V on a 6V rail, not 2 V - a misprinted value or a nominal label | pass6-transport-record-entry.md | Measure PS terminal 41 with the counter connected |
-| A13 | A blue insulated wire on the component side runs from a pad marked "c", at U103's corner beside Q116, to the lettered pads "d" / "e" near K103 and J107-1. The drawing shows no wire link. It may be a lettered factory link standing in for a long drawn line (for example, K103 to C134, or a W132 equivalent), or a later modification. Not known whether it is on every card | owner photo 2026-10-14, `bench/photos/2026-10-14-u103-k103-area.jpg` | Continuity from each end to U103 pins 4 / 5, C134's terminals, K103's contacts and J106-7; check whether other spare cards have it |
+| A13 | *Resolved (owner, 2026-10-14):* the blue insulated wire, from pad "c" at U103's corner to pads "d" / "e" near K103, bridges J106-7 to C134. That is the drawn J106-7 (K103 upper moving contact) to C134 100p line, made on the board as a wire link instead of a track. It is not a modification and adds no connection to the drawing | owner photo 2026-10-14, `bench/photos/2026-10-14-u103-k103-area.jpg`; interface-matrix.csv J106-7 | - |
 
 ## Bench verification checklist
 
@@ -467,7 +467,7 @@ Done (owner photo, 2026-10-14): R139 colour code reads 68 ohm (A7). The
 same photo shows W108 and W111 fitted; neither is in A8's list.
 Done (owner photo, 2026-10-14, U103 / K103 area): W119 fitted; W132 not
 found on the component side (A8); U103 stamped "TEAC 52922 -016" (A4); a
-blue wire not on the drawing (A13).
+a blue wire link, which the owner found bridges J106-7 to C134 (A13).
 
 On a removed card, unpowered (ohmmeter):
 
@@ -476,9 +476,6 @@ On a removed card, unpowered (ohmmeter):
 1a. U103 pins 4 to 5 (W132, A8): near 0 ohms if fitted. The module's
     internals between the two pins are unknown, so a reading in between is
     not decisive on its own.
-1b. The blue wire's two ends (A13): continuity to U103 pins 4 / 5, both
-    C134 terminals, K103's contacts and J106-7. Also note whether other
-    spare cards have the wire.
 
 On the motherboard, power off, cards out (ohmmeter):
 
