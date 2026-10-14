@@ -117,6 +117,12 @@ Owner proposes **J105-6** connected to MASTER OSC J182-5 and **J108-4** to J182-
 | C14 | No card contact reaches the Q110/Q106/Q105 selection network or its gate diodes D112/D107/D106 | trace/pass1-j107-j104.md (select lines seen near x 6412, 6455, 6599, untraced) | Trace those lines on the card to their source |
 | C15 | Italic voltage annotations ("24V", "-15V", "15V") are node DC values, not rail names; three "-15V" lines are separated by 100k resistors | trace/pass1-j101-j103.md | Identify each rail by its motherboard route to P171, not by annotation |
 | C16 | A "24V" annotation leader near (7020,1950) is ambiguous between the J104-3 and J104-5 lines | trace/pass1-j107-j104.md | Re-check at higher zoom; resolve from the motherboard side |
+| C17 | Crossing at (4245,3731) on the P171-7 riser: one tracer reads a junction dot, another reads it as uncertain. It decides whether P108-1 (and the y~3734 bus with P176-2/4) is on 0V | trace/pass2-p106-p108.md vs trace/pass2-p101-p103.md | Independent re-trace at high zoom; physical continuity check if still ambiguous |
+| C18 | Slight thickening where the P104-5 bus crosses the P171-11 0V vertical at (4145,3033); read as no dot | trace/pass2-p107-p104.md | Independent re-trace |
+| C19 | Ink blob at (4195,3472) where the +B(15V) riser crosses the 2ch P102-2 line; read as no dot by two tracers independently | trace/pass2-p102-p105.md, trace/pass2-p106-p108.md | Independent re-trace; a dot here would short +15 V to a line output, so likely a print defect |
+| C20 | P121, P151, P161 head connectors have no printed pin numbers; contacts cited as upper/lower | trace/pass2-p101-p103.md, trace/pass2-p106-p108.md | Physical inspection of the HEAD PCB connectors |
+
+**Pass 2 outcomes for earlier items:** C02 resolved (card J102-5 joins J102-2; motherboard U-link P102-5 to P105-1 only). C03 resolved (erase head is J108-2/3 via P161; J103-4 is an OUT SELECT line to P181-3). C04 resolved (J103-4 and J103-6 join on the motherboard at P181-3, not on the card). C05 resolved (J103-5 is -B on P171-10). C07 resolved (J106-8 is a sync/record head lead via P151, tied to the card common bus). C13 resolved (no wire on J104-7 or P104-7; the P107-2 join is refuted).
 
 ## 7. Schematic-only verification protocol
 

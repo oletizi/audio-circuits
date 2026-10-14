@@ -38,6 +38,11 @@ zoom, and `GRID` draws labelled lines every that many pixels.
 | `pass1-j106-j108.md` | J106-1..8, J108-1..4 | 1, card side |
 | `pass1-j107-j104.md` | J107-1..7, J104-1..7 | 1, card side |
 | `pass1-j102-j105.md` | J102-1..7, J105-1..7 | 1, card side |
+| `pass2-p101-p103.md` | P101-1..4, P103-1..6 | 2, motherboard side |
+| `pass2-p106-p108.md` | P106-1..8, P108-1..4 | 2, motherboard side |
+| `pass2-p107-p104.md` | P107-1..7, P104-1..7 | 2, motherboard side |
+| `pass2-p102-p105.md` | P102-1..7, P105-1..7 | 2, motherboard side |
 
-Each Pass 1 report was produced by one agent and has not yet been re-traced
-independently, so no matrix row derived from it is `VERIFIED`.
+Each report was produced by one agent and has not yet been re-traced
+independently, so no matrix row derived from it is `VERIFIED`. The Pass 2
+reports cite `scratchpad/agent2-*/` crops; recreate them as above.
