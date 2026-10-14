@@ -6,7 +6,7 @@ Inspected the original user-uploaded two-sheet PDF at high magnification, includ
 
 ### Directly verified at the amplifier-card end
 
-- **J101-1:** common return below the TR101 stage.
+- **J101-1:** common return below the TR101 stage. **Corrected by `trace/pass1-j101-j103.md`:** J101-1 is the K101 coil bottom end and D101 anode; the common return below TR101 is J101-3.
 - **J101-2:** K101 coil / D101 suppression-diode return; upper coil terminal labeled 24V.
 - **J101-3:** common return.
 - **J101-4:** reproduce-head signal input to K101's *signal contacts* and the TR101 primary/input network.

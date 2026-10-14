@@ -114,6 +114,9 @@ Owner proposes **J105-6** connected to MASTER OSC J182-5 and **J108-4** to J182-
 | C11 | Three 0V supply contacts | P171 labeling | Trace ground distribution rather than collapsing them |
 | C12 | Head shield / winding conductor interpretation | Head drawing | Verify shielding and polarity before input topology |
 | C13 | P104-7 joined to P107-2 on motherboard; J104-7 marked X | p107-2-p104-7-motherboard-link.md vs worksheet | Trace J104-7 card-side node and P107-2 route to P171 |
+| C14 | No card contact reaches the Q110/Q106/Q105 selection network or its gate diodes D112/D107/D106 | trace/pass1-j107-j104.md (select lines seen near x 6412, 6455, 6599, untraced) | Trace those lines on the card to their source |
+| C15 | Italic voltage annotations ("24V", "-15V", "15V") are node DC values, not rail names; three "-15V" lines are separated by 100k resistors | trace/pass1-j101-j103.md | Identify each rail by its motherboard route to P171, not by annotation |
+| C16 | A "24V" annotation leader near (7020,1950) is ambiguous between the J104-3 and J104-5 lines | trace/pass1-j107-j104.md | Re-check at higher zoom; resolve from the motherboard side |
 
 ## 7. Schematic-only verification protocol
 
