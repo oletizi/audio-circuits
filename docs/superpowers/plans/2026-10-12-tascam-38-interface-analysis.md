@@ -13,7 +13,7 @@ Establish the existing Tascam 38 amplifier-card electrical and mechanical interf
 
 ## Sources located
 
-- Tascam 38 complete schematics (12-page scan): https://peel.dk/Archive/Tascam/Tascam%2038%20Complete%20schematics%20%28High%20quality%20scan%29.pdf
+- Tascam 38 complete schematics (two-sheet lower-resolution scan, not in the repository; superseded by the high-resolution sheets in `docs/tascam-38/sources/`): https://peel.dk/Archive/Tascam/Tascam%2038%20Complete%20schematics%20%28High%20quality%20scan%29.pdf
 - Alternate 38 schematics and searchable board inventory: https://manuals.plus/tascam/38-8-track-analog-tape-recorder-manual
 - Tascam 38 service manual/calibration index: https://www.manualslib.com/products/Tascam-38-3978544.html
 - Tascam MS-16 153-page operation/service manual listing: https://www.audioservicemanuals.com/t/tascam/tascam-ms/6435738-tascam-ms-16-operating-service-manual
@@ -37,9 +37,9 @@ These links establish document availability, **not** validation of any connector
 
 ## Task A — evidence inventory
 
-- [ ] Obtain readable copies of both original schematics.
-- [ ] Record document title, scan edition, page, drawing number and revision where available.
-- [ ] Identify every relevant 38 board and its physical connector designation.
+- [x] Obtain readable copies of both original schematics. (Committed in `docs/tascam-38/sources/`.)
+- [ ] Record document title, scan edition, page, drawing number and revision where available. (Partial: title block, format and SHA-256 are in `docs/tascam-38/sources/README.md`; drawing number and revision are not recorded.)
+- [ ] Identify every relevant 38 board and its physical connector designation. (Done from the drawings - `docs/tascam-38/circuit-analysis.md`, `analysis/control-*.md`; not yet confirmed on the physical machine.)
 - [ ] Identify MS-16 transport-to-amplifier bundle connector(s), cable groups, shielding and grounding.
 - [ ] Photograph the actual 38 and MS-16 wiring/connector assemblies and note any revisions differing from the drawings.
 
@@ -47,9 +47,7 @@ These links establish document availability, **not** validation of any connector
 
 ## Task B — 38 amplifier-card pin-level interface matrix
 
-Create `docs/tascam-38/interface-matrix.csv` with columns:
-
-`assembly,connector,pin,signal_name,source,destination,signal_class,mode,nominal_voltage_or_level,source_impedance,shield_return,source_document,source_page,verification_status,notes`
+`docs/tascam-38/interface-matrix.csv` uses the schema defined in `2026-10-13-tascam-38-electrical-analysis.md`, which superseded the column list first proposed here. Status: complete electrically (50 rows, 38 VERIFIED, 12 UNRESOLVED); the mechanical part below (geometry, keying, mating, clearance) is not started.
 
 Trace every existing amplifier-card edge contact, including head/audio, control, bias/erase, supply, meter and ground. Document connector geometry, pin numbering, keying, mating and mechanical clearance. Unknown fields stay blank; never infer pins from connector numbering alone.
 
@@ -81,6 +79,6 @@ Motherboard replacement, card-edge bypass, external cabling and the full externa
 
 ## Current blockers
 
-- Full connector-level reading of both schematics is not yet complete.
+- The connector-level reading of both drawings is complete for the amplifier card and its control sources. What remains is evidence the drawings cannot give: the bench checks listed in `docs/tascam-38/circuit-analysis.md` (Bench verification checklist).
 - Actual cable construction and machine revision need physical verification.
 - Head impedance and cable capacitance are not yet established.

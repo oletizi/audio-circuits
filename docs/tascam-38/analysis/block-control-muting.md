@@ -42,7 +42,7 @@ touches the gate line in any crop.
 | J101-1 | P171-7 0V | K101 coil bottom / D101 anode, line y ~1093 | - |
 | J102-4 | P180-3 (OUT SELECT) | K102 coil top / D120 cathode, line y ~960 to x ~7393 | 24V (7225, 945) |
 | J102-3 | P171-3 POWER MUTE | K102 coil bottom / D120 anode, line y ~1036 to x ~7366 | none |
-| J104-1 | P171-6 PLAY MUTE | D119 cathode (line y ~1488) | -6.8V (6060, 1480) |
+| J104-1 | P171-6 PLAY MUTE | D119 cathode (line y ~1438) | -6.8V (~6060, 1425) |
 | J104-2 | P180-4 (OUT SELECT) | Q109 emitter, R133 right end (dot 6953, 1618) | 24V (6935, 1530) |
 | J104-3 | P174-1 (FUNCTION PCB) | D109 anode (line annotated 24V, ~7000, 1950) | 24V |
 | J104-4 | P181-1 (OUT SELECT) | D118 anode (line y ~1497) | none read |
@@ -110,8 +110,9 @@ touches the gate line in any crop.
 - Gate goes right to (6098, 1200), then down to D119 at (6098, 1310). D119's
   triangle points down with the bar at the bottom: anode at the gate, cathode
   below. The cathode line crosses the bus at (6098, 1362) with no dot and
-  continues to y ~1488, where it is annotated -6.8V and runs right towards
-  J104-1.
+  continues to y ~1438, where it is annotated -6.8V (text at ~(6060, 1425))
+  and runs right towards J104-1. (Corrected in the Pass 5 audit: this report
+  first gave y ~1488 and (6060, 1480).)
 
 3d. Q101 / Q103 (q101-q103.png, u101a-fb.png, bus-crossings.png)
 - U101 1/2 pin 6 node: pin 6 goes to x 5652, then to dot (5652, 1197), then to
@@ -380,7 +381,7 @@ Q201-Q204 [OUT SELECT]
 
 Card:
 - 24V on the K101 coil top (5250, 1005) and the K102 coil top (7225, 945)
-- -6.8V on the D119 cathode line (6060, 1480)
+- -6.8V on the D119 cathode line (~6060, 1425)
 - -15V on the J103-4 line (5570, 1495) and 24V on the J103-2 line (5590, 1572)
 - 20.6V INPUT bias node (6310, 1530); -5.8V SYNC bias node (6450, 1580);
   -15V REPRO bias node (6620, 1495)

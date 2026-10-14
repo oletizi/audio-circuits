@@ -85,8 +85,8 @@ Record service manual edition, schematic sheet, revision and physical measuremen
 
 ## Immediate next actions
 
-1. Obtain and verify readable 38 and MS-16 schematics, especially head wiring, amplifier motherboard, bias oscillator and mode control.
-2. Produce a transport/electronics interface inventory with citations to exact schematic sheets.
+1. Obtain and verify readable 38 and MS-16 schematics, especially head wiring, amplifier motherboard, bias oscillator and mode control. *Progress:* done for the 38 amplifier and transport drawings (`docs/tascam-38/sources/`); MS-16 open.
+2. Produce a transport/electronics interface inventory with citations to exact schematic sheets. *Progress:* done for the amplifier card - `docs/tascam-38/interface-matrix.csv` and `docs/tascam-38/circuit-analysis.md`.
 3. Inspect the MS-16 harness and document which signal classes travel in it.
-4. Document the original amplifier-card connector and a safe bench-test / single-slot insertion procedure, preserving the motherboard as-is.
+4. Document the original amplifier-card connector and a safe bench-test / single-slot insertion procedure, preserving the motherboard as-is. *Progress:* connector documented electrically; mechanical geometry and the bench-test procedure open.
 5. Review this spec and separately approve measurable acceptance criteria before implementing a prototype.

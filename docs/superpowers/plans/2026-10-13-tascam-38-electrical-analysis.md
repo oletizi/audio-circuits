@@ -1,7 +1,7 @@
 ---
 title: Tascam 38 electrical analysis execution plan
 date: 2026-10-13
-status: Ready for execution
+status: Passes 0-5 complete - analysis complete with open evidence questions; not a basis for building or powering a replacement card
 spec: ../specs/2026-10-12-tascam-38-external-electronics-design.md
 ---
 
@@ -31,7 +31,7 @@ Maintain **two authoritative files**, not a new report for each contact:
 - `docs/tascam-38/interface-matrix.csv` — exactly 50 rows, one per J101–J108 contact.
 - `docs/tascam-38/circuit-analysis.md` — circuit blocks, mode-state behavior, evidence register, unresolved items, and a final summary.
 
-A machine-readable validator lives at `tools/tascam-38/validate-interface.py` and checks completeness, uniqueness, statuses and evidence requirements. Existing investigative documents remain provenance/history, not competing authorities.
+A machine-readable validator lives at `tools/tascam-38/validate-interface.py` and checks completeness, uniqueness, statuses and evidence requirements. The per-contact trace reports (`docs/tascam-38/trace/`) and per-block analyses (`docs/tascam-38/analysis/`) are the evidence behind those two files. The earlier investigative notes were deleted in Pass 5 once their content was carried into the canonical files (supersede means delete); git history is their provenance.
 
 ### Interface-matrix schema
 
@@ -67,19 +67,19 @@ For each connector in order **J101, J103, J106, J108, J107, J104, J102, J105**, 
 
 For each of the same 50 pins, trace the mating P10x contact through the motherboard to head connectors (P121/P151/P161), line I/O (P131/P141), function board (J173–J175), output select (J180/J181), oscillator (J182), power/control (P171), or another explicitly identified contact. Record all junctions and crossings. Maintain **separate net identities** for the card and motherboard.
 
-Resolve known issues:
-- J102-5 ↔ J105-2 on card versus P102-5 ↔ P105-1 on motherboard.
-- J106-8 contact exists; ground candidate not automatically verified.
-- P108-1 / P107-1 / P104-6 common return.
-- P107-2 / P104-7 candidate shared supply net.
-- J103-4/6 and J108-2/3 erase/oscillator ambiguity.
-- All `X` cells in the original worksheet.
+Resolve known issues (outcomes recorded after Pass 2 and the independent re-trace):
+- J102-5 ↔ J105-2 on card versus P102-5 ↔ P105-1 on motherboard. *Outcome:* the card-side premise was refuted - J102-5 joins J102-2 on the card and J105-2 has no wire; P102-5 joins P105-1 on the motherboard.
+- J106-8 contact exists; ground candidate not automatically verified. *Outcome:* J106-8 is the second sync-head lead (P151), tied to the card common bus.
+- P108-1 / P107-1 / P104-6 common return. *Outcome:* P107-1 and P104-6 are VERIFIED 0V; P108-1 is UNRESOLVED on one disputed junction (C17).
+- P107-2 / P104-7 candidate shared supply net. *Outcome:* refuted; P104-7 has no wire.
+- J103-4/6 and J108-2/3 erase/oscillator ambiguity. *Outcome:* J103-4/6 are OUT SELECT P181-3; J108-2/3 are the erase head via P161.
+- All `X` cells in the original worksheet. *Outcome:* eleven contacts have no wire on either side, or on one side, and stay UNRESOLVED pending a physical check.
 
 **Gate:** every row has a motherboard endpoint or a specific unresolved reason; no implied ground/NC based solely on proximity. Commit and continue.
 
 ### Pass 3 — circuit-functional analysis
 
-Document, with trace references, the full REPRO head → K101/TR101/U101 → EQ/selection → K102 → line output path; the SYNC pickup and monitoring path; INPUT/record amplification and EQ; bias oscillator feed and per-channel bias amplification; erase-head routing; meter feed; power rails and returns; and protection/muting. Distinguish Q110/Q106/Q105 **gating/shunt behavior** from simplistic series input selection. Document K101/K102/K103 separately.
+Document, with trace references, the full REPRO head → K101/TR101/U101 → EQ/selection → K102 → line output path; the SYNC pickup and monitoring path; INPUT/record amplification and EQ; bias oscillator feed and per-channel bias amplification; erase-head routing; meter feed; power rails and returns; and protection/muting. Distinguish Q110/Q106/Q105 **gating/shunt behavior** from simplistic series input selection. *Outcome:* Q105/Q106/Q110 are series selection JFETs joining at one node; the shunt mute is Q107. Document K101/K102/K103 separately.
 
 **Gate:** every functional block has explicit inputs, outputs, control conditions and evidence; unknown behavior stays marked unknown. Commit and continue.
 
@@ -104,10 +104,10 @@ Derive a state table for INPUT, SYNC, REPRO, REC armed/unarmed, transport stoppe
 
 - Execute passes in order; intermediate commits **must not terminate execution**.
 - When one pin is ambiguous, log it and **continue to the next pin**. A single unresolved junction does not block the other 49 contacts.
-- If GitHub rejects a write, save the exact artifact locally or in Library, retry a smaller or alternate supported write, and continue analysis. A transient GitHub write failure is not an electrical blocker.
+- Commit and push each pass as it completes. If a push fails, keep the commit locally, retry, and continue analysis. A transient push failure is not an electrical blocker.
 - Do not stop merely because an analysis step is tedious, the chat has a convenient summary, or a checkpoint was reached.
 - **Stop only** after the full acceptance audit, or when an actual tool/runtime limitation prevents further execution. In that case report exactly which work remains, what was attempted, and why it cannot continue.
-- No claim of background work unless a long-running workflow has actually been started. In an ordinary chat, execution ends when the assistant's turn ends; for uninterrupted multi-hour work, run this plan in **ChatGPT Work** with access to the connected GitHub account and preserved source files.
+- No claim of background work unless it has actually been started.
 - Final report must explicitly say `COMPLETE`, `BLOCKED`, or `INCOMPLETE — EXECUTION STOPPED`, with commit links and validation counts. Never say `BLOCKED` merely because the analysis is unfinished.
 
 ## Out of scope

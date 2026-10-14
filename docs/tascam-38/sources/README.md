@@ -33,4 +33,8 @@ continues the connector named above it.
 
 ## Not in the repository
 
-- The lower-resolution `Tascam 38 Complete schematics (High quality scan).pdf`.
+- The lower-resolution two-page `Tascam 38 Complete schematics (High quality
+  scan).pdf` (scan credited to peel.dk), SHA-256
+  `b9d7cb5f16964db0def11d54ae059681e07d02f86720e102469009b2d5ccea69`.
+  Earlier notes used it before the high-resolution sheets arrived; nothing in
+  the current analysis depends on it.
