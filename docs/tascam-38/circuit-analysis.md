@@ -336,7 +336,7 @@ traced loads agree: the capstan solenoid is driven from PLAY OUT alone.
 | none | open | open | 24V | open | open | open |
 
 P180-3 rises about 0.5 s after a press and drops almost at once on release,
-so - assuming one button at a time (M5) - every change of selection opens
+so - with one button latched at a time (M5) - every change of selection opens
 K102 briefly, and K101 switches inside that mute. These delays are computed
 from part values, not printed.
 
@@ -344,8 +344,8 @@ from part values, not printed.
 
 Per channel. "Armed" means that channel's FUNCTION switch is ON. Monitor =
 what reaches the line output J102-2 and, through J102-5 / J105-1, the meter.
-The table assumes latching OUT SELECT switches with one pressed at a time
-(M5). Head identities in the Monitor column follow A1 (bench-confirmed for
+The OUT SELECT switches latch and are interlocked, so one is pressed at a
+time (M5, owner inspection). Head identities in the Monitor column follow A1 (bench-confirmed for
 K101 and K103's upper set).
 
 | Transport | Armed | Selected | K101 | K103, bias, erase | Source on | PLAY MUTE | K102 | Monitor |
@@ -370,8 +370,9 @@ K101 and K103's upper set).
 | Record-pause | yes | REPRO | released | energised, on (tape stopped) | Q105 | mutes | closed | silent |
 | Auto-stop guard asserted (power-up, FF / REW, coast) | any | any | per selection | released, off | per selection | mutes (passes with CUE) | per selection and POWER MUTE | line input if INPUT, else silent |
 
-If two buttons are held together (no interlock is drawn, M5), the traced
-topology gives: **REPRO + SYNC** - K101 energised and P180-4 open, so Q106
+The switches are interlocked (M5), so two buttons cannot stay pressed
+together in use; this is kept for completeness. If two were held together,
+the traced topology gives: **REPRO + SYNC** - K101 energised and P180-4 open, so Q106
 and Q103 are off and Q105 and Q101 on: the sync head through the REPRO trim
 and EQ (silent apart from bias pickup on an armed channel in RECORD, where
 K103 opens the sync line); **INPUT + SYNC** - Q110 and Q106 both on, the two
@@ -434,11 +435,11 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | A1 | *Resolved by bench continuity:* K101 and both K103 contact sets are drawn energised (Relay drawn state). Released: K101 selects the reproduce head; K103 puts the head on the sync line and TP1 on J108-1 | block-sync-headswitch.md U1; control-outselect.md; bench 2026-10-13 and 2026-10-14 | - |
 | A2 | *Resolved by Pass 4:* POWER MUTE is Q801; PLAY MUTE is Q534, and -6.8V is its PLAY level | control-transport.md | - |
 | A3 | Q118 base annotated -14.4V (bias off) while J107-7 is annotated 24V (bias on) | block-record-bias-erase.md; Pass 5 audit | Either the annotations come from different modes or a value is misplaced (-14.4V is what Q119's base reads when on); not decidable from the sheet - measure in RECORD |
-| A4 | U103 is a TEAC "BIAS Ampl. Module" (5292210600, per the manual's parts list); its internals are unpublished. The can is stamped "TEAC / 52922 / -016" (the character before "-016" is unclear in the photo), so "52922" matches the start of the manual's number. The can has an adjustment hole | pass6-datasheets.md; owner photo 2026-10-14, `bench/photos/2026-10-14-u103-k103-area.jpg` | Physical module, if its behaviour matters for a replacement |
+| A4 | U103 is a TEAC "BIAS Ampl. Module" (5292210600, per the manual's parts list); its internals are unpublished. The can is stamped "TEAC" on one face and "150KHZ / 52922 / 01600" on the other. The earlier partial reading "-016" was the start of "01600". The stamp reads 52922-01600 where the parts list as transcribed reads 52922-10600. This is either a transcription slip or a different module revision; not resolved. "150KHZ" agrees with the manual's bias frequency. The can has an adjustment hole | pass6-datasheets.md; owner photos 2026-10-14, `bench/photos/2026-10-14-u103-k103-area.jpg`, `bench/photos/2026-10-14-u103-l108.jpg` | Physical module, if its behaviour matters for a replacement |
 | A5 | L108 value not printed on the sheet. *Resolved by inspection (owner, 2026-10-14):* L108 is the black drum choke beside TP2 / TP3, marked "201". Read as the standard three-digit inductor code, that is 20 x 10^1 uH = 200 uH; this reading is not measured. *Bias frequency resolved:* 150 kHz (manual specifications) | block-record-bias-erase.md; pass6-datasheets.md; `bench/photos/2026-10-14-u103-k103-area.jpg` | Optional: LCR meter on a spare card's L108 to confirm 200 uH |
 | A6 | *Resolved by datasheet:* 2SK68A VGS(off) is -1.5 V worst case, so -5.2 / -6.2 V holds the JFETs off with margin while the signal stays near 0V (see A12) | pass6-datasheets.md | - |
 | A7 | *Resolved by inspection:* R139 is 68 ohm. Its bands, read from the end opposite the gold tolerance band, are blue, grey, black: 68 x 1. The grey band shows weakly against the tan body, but blue-black is not a standard value. The same reading direction gives the drawn values for its neighbours: R138 blue-grey-orange 68k, R137 yellow-violet-orange 47k, R136 red-violet-orange 27k | owner photo 2026-10-14, `bench/photos/2026-10-14-r139-q108-area.jpg` (a spare card; all cards are the same, C10) | - |
-| A8 | W119 drawn faint and broken; W109 / W110 / W112 / W132 drawn linked - whether fitted is a physical-board question. *Partly resolved (owner photos, 2026-10-14, one spare card):* W119 is fitted, so the faint drawing does not mean it is absent. The owner could not find W132 on the component side; its silkscreen label is not visible near U103. The drawing puts W132 directly between U103 pins 4 and 5, so it may sit under the U103 can, be a track, or be absent. Also seen fitted: W108, W111, W123, W124, W127-W131, W133-W135. Seen empty: W116, W117, W120, W121, W122, and the C128-C130 / R184-R186 positions | block-record-bias-erase.md, block-reproduce-output.md; `bench/photos/2026-10-14-*.jpg` | W132: ohmmeter across U103 pins 4 and 5. W109 / W110 / W112: look |
+| A8 | W119 drawn faint and broken; W109 / W110 / W112 / W132 drawn linked - whether fitted is a physical-board question. *Partly resolved (owner, 2026-10-14, spare cards):* W109, W110, W112 and W119 are fitted; W119's faint drawing does not mean it is absent. The owner could not find W132 on the component side; its silkscreen label is not visible near U103. The drawing puts W132 directly between U103 pins 4 and 5, so it may sit under the U103 can, be a track, or be absent. Also seen fitted: W108, W111, W123, W124, W127-W131, W133-W135. Seen empty: W116, W117, W120, W121, W122, and the C128-C130 / R184-R186 positions | block-record-bias-erase.md, block-reproduce-output.md; `bench/photos/2026-10-14-*.jpg` | W132: ohmmeter across U103 pins 4 and 5 |
 | A9 | *Resolved by datasheet:* 4558 pinout consistent with every traced pin; U101 1/2 is section B (in pin 5, out pin 7), U101 2/2 is section A (in pin 3, out pin 1); inputs on pins 3 and 5 are non-inverting | pass6-datasheets.md | - |
 | A10 | J108-1 to 0V (C17) decides whether the released K103 grounds the record output | interface-matrix.csv | Continuity P108-1 to P171-7 |
 | A11 | *Resolved by Pass 4:* OUT SELECT drivers traced | control-outselect.md | - |
@@ -446,7 +447,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | M2 | *Resolved:* PLAY OUT is high in REC/PLAY (M54410P truth table), and the capstan solenoid is driven only from PLAY OUT, so PLAY MUTE stays at -6.8V while recording and REPRO monitoring works | pass6-datasheets.md; pass6-transport-pause-autostop.md | Optional: measure P171-6 in RECORD to confirm |
 | M3 | *Resolved:* in PAUSE, PLAY OUT is low (SYNC / REPRO muted); in record-pause REC OUT stays high (armed channels keep K103 and bias on) | pass6-datasheets.md; pass6-transport-pause-autostop.md | - |
 | M4 | REC SIGNAL crosses the P173-3 wire at (1562, 3692) with heavier ink; read as a crossing (audit: undecidable on the scan). A junction would make Q301 / Q302 pointless | control-function.md | Continuity P182-1 to P182-2 |
-| M5 | OUT SELECT switches: latching or momentary, and any interlock between the three, are not shown | control-outselect.md | Physical switch, or the service manual |
+| M5 | *Resolved by inspection (owner, 2026-10-14):* the OUT SELECT switches latch, and two cannot stay pressed together (interlocked). Not checked: whether pressing the latched button again releases it, which would give the drawn "none" state | control-outselect.md; bench worksheet 4a / 4b | Optional: whether all three can be released together |
 | M6 | Delays are computed from part values, not measured: POWER MUTE ~1.8 s (assumes a 6V rail), K102 ~0.5 s, K101 ~0.1 s (C208), K103 pull-in ~40-70 ms and release ~0.1-0.2 s, PLAY MUTE ~0.1 s plus ~45 ms (C850), Q108 hold 0.4-0.5 s, auto-stop guard ~1 s. Bias timing is from the manual (80 + 90 ms on, 40 + 70 ms off) | pass6-amp-osc-notes-timing.md; control-*.md | Scope measurement |
 | M7 | *Traced:* the guard is asserted at power-up, in FF / REW and while the reels coast, and pulls PLAY OUT and REC OUT low (Transport logic). Remaining: PH501's conduction sense relative to tape; the logic rail value; U514 / U516-1 onward to the reel-motor drivers; R705's value | pass6-transport-pause-autostop.md | Measure, or trace the reel-motor side further |
 | M8 | *Resolved:* REC MODE reaches only the RECORD-lamp gate (steady if a channel is armed, flashing if none); it does not gate record entry | pass6-transport-record-entry.md | - |
@@ -475,8 +476,12 @@ side only).
 Done (owner photo, 2026-10-14): R139 colour code reads 68 ohm (A7). The
 same photo shows W108 and W111 fitted; neither is in A8's list.
 Done (owner photo, 2026-10-14, U103 / K103 area): W119 fitted; W132 not
-found on the component side (A8); U103 stamped "TEAC 52922 -016" (A4); a
+found on the component side (A8); U103 stamped "150KHZ 52922 01600" (A4,
+corrected from a partial first reading); a
 blue wire link, which the owner found bridges J106-7 to C134 (A13).
+Done (owner, 2026-10-14, worksheet section 4): OUT SELECT switches latch
+and are interlocked (M5); W109, W110, W112, W119 fitted (A8); no
+differences between cards (C10).
 
 On a removed card, unpowered (ohmmeter):
 
@@ -505,6 +510,5 @@ Powered, measured (optional confirmations unless noted):
 
 Physical inspection:
 
-10. OUT SELECT switch latching and interlock (M5).
-11. W109 / W110 / W112 fitted (A8). The cards are all the same (owner, C10), so any
-    spare card will do for these and for item 1.
+10. Nothing left to inspect. The cards are all the same (owner, C10), so any
+    spare card will do for item 1.
