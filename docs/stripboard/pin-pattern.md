@@ -94,6 +94,138 @@ already on the grid is a claim about an operation nobody performs. Left standing
 it would be decoration, and decoration here would quietly license the off-grid
 case beside it.
 
+## 3.1 Where the body sits once the leads are bent — the forming anchor
+
+A `formed-to-grid` accommodation says the leads end up at a whole number of
+grid steps. It does **not** say where the part's *body* ends up, and that is a
+second question with its own answer. A `.kicad_mod`'s `F.Fab` outline is drawn
+around the **moulded** lead positions; forming re-spaces the leads along their
+row; so after the bend the body and the leads are stated in two different
+frames and nothing in the file relates them. A bounding box is
+translation-invariant, and the pads land on holes under every candidate, so the
+offset cannot be derived — it is a physical fact about how the bend was made.
+
+Three bends are expressible, and `FormingAnchor` in `pin-pattern-model.ts` names
+them:
+
+| anchor | what does not move | what the body does |
+| --- | --- | --- |
+| `lead-row-midpoint` | the midpoint between the outermost leads | stays centred over the formed row |
+| `first-lead` | the lowest-numbered lead | sits off-centre, towards that lead |
+| `last-lead` | the highest-numbered lead | sits off-centre, the other way |
+
+**They disagree, and `lib/kicad/footprint-extent.ts` refused all three formed
+footprints outright until the choice was recorded** — under
+`footprint-extent-formed-frame-unrecorded`, on the grounds that picking one
+would be the module choosing the geometry it exists to report.
+
+### What settled it: KiCad ships every one of the three bodies twice
+
+All three formed bodies have a second footprint in the installed libraries, the
+same body at a different lead pitch. Comparing each pair's pads and `F.Fab` box
+answers the question directly, and the answer is the same in all three:
+
+| body | moulded | prepared | lead midpoint | body box moved by |
+| --- | --- | --- | --- | --- |
+| `CP_Radial_D5.0mm` | pads 0, 2.00 | `_P2.50mm`, pads 0, 2.50 | 1.00 → 1.25 | **+0.25** |
+| `CP_Radial_D8.0mm` | pads 0, 3.50 | `_P2.50mm`, pads 0, 2.50 | 1.75 → 1.25 | **−0.50** |
+| `TO-92_Inline` | pads 0, 1.27, 2.54 | `_Wide`, pads 0, 2.54, 5.08 | 1.27 → 2.54 | **+1.27** |
+
+In each pair the box is **translated, not resized** — width unchanged to the
+last digit, `y` identical — and the translation equals the lead midpoint's
+travel. `first-lead` predicts 0 in all three; `last-lead` predicts +0.50, −1.00
+and +2.54. Each pair refutes both alternatives on its own, so no single file is
+load bearing. `tests/kicad/formed-frame.test.ts` reads the six files and checks
+this rather than restating the table.
+
+The accommodations' own forming prose, written before the frame was ever asked
+about, already described the same bend: the `D5.0mm` pair is *"splayed outward
+by 0.27mm **each**"* and the `D8.0mm` pair *"brought inward by 0.48mm **each**"*.
+Equal and opposite is a midpoint-preserving bend. The record existed; it was
+prose rather than a field.
+
+### What the choice costs, per footprint — measured
+
+| footprint | `lead-row-midpoint` | `first-lead` | `last-lead` |
+| --- | --- | --- | --- |
+| `CP_Radial_D5.0mm_P2.00mm` | **2 holes** along the row | 3, extra at the pad-1 end | 3, extra at the pad-2 end |
+| `CP_Radial_D8.0mm_P3.50mm` | 4 holes | 4 | 4 |
+| `TO-92_Inline` | 3 holes (the lead holes) | 3 | 3 |
+
+Only the 5mm can is sensitive, and its margins are **0.04 mm** — a midpoint
+anchor puts its body at −1.23…3.77 mm against hole boundaries at ±1.27 and 3.81.
+`TO-92_Inline` is insensitive because its 4.96 mm body is narrower than its
+5.08 mm formed span, with 0.06 mm to spare at each end; the 8 mm can is
+insensitive because it overhangs a hole at both ends whichever way it is bent.
+That agreement is a fact about those two bodies' sizes, not a reason to leave
+the field off.
+
+### Corroboration from the committed layouts, and its limit
+
+Across the eleven boards under `boards/`, **no placement contradicts the
+midpoint anchor** — it claims no hole beyond the leads for any 5mm can, so it
+cannot collide. The alternatives do collide, on `transistor-preamp-loop`:
+
+- `C6` (pads at `3,10` and `3,11`) has `J2.2` at `3,9` and `R9.1` at `3,12`, so
+  `first-lead` and `last-lead` each put its can over an occupied hole. **One
+  part refutes both.**
+- `C2`/`C3` are adjacent cans — `1,15`–`1,16` and `1,17`–`1,18` — so each
+  refutes one.
+- `C5` (`2,25`–`2,26`) has `C4.2` at `2,24`, refuting `first-lead`.
+
+**That board is laid out and not built** (`docs/transistor-preamp/README.md`,
+Build 4: *"paused, not built"*). It is the owner's own hand layout, which
+VeroRoute admitted, but no iron has touched it — so it is corroboration and not
+the basis. The two **built** boards, `transistor-preamp-feedback` and
+`transistor-preamp-buffered`, place no formed part with a neighbouring lead in
+its own row, and therefore do not distinguish the three anchors at all. The
+basis is the file pairs above.
+
+### What still refuses, and why
+
+Two formed **shapes** are refused by name, under
+`formed-frame-row-unmeasured`, because no record covers them:
+
+- **more than one row** — nothing says whether a multi-row package's rows are
+  bent alike, so the body's offset from one row need not be its offset from
+  another;
+- **a row whose moulded pitches are not all equal** — one
+  `preparedPitchSteps` covers the whole row, so forming an unevenly-moulded row
+  moves every lead by a different distance and every interior lead becomes a
+  candidate anchor too.
+
+All three recorded formed footprints are single-row and evenly moulded, so both
+refusals are reached only from a constructed pattern. They are exercised rather
+than left present and unexamined, in `tests/kicad/formed-frame.test.ts` and
+`tests/stripboard/model/board.test.ts`.
+
+### Two findings the anchor measurement turned up, which are NOT about the anchor
+
+Both were measured against the committed boards while testing the anchor, both
+are anchor-independent, and neither is fixed here — they belong to whatever
+imports and grades these boards.
+
+1. **The occupancy rule over-claims across the strips.** `geometryOf` takes a
+   bounding box over `F.Fab` and counts a hole as covered when the box overlaps
+   that hole's whole strip cell. For a round can that is too greedy: a 5 mm can
+   centred on a lead reaches 2.50 mm across, 0.04 mm short of the neighbouring
+   hole, yet the rule claims that hole because the cell starts at 1.27 mm. The
+   owner's layouts place leads there — `transistor-preamp-loop`'s `C2` has
+   `R2.1` and `R6.1` in the columns either side, and `transistor-preamp-lab`'s
+   `Q1` has `TP2.1` and `TP3.1` — so the rule refuses boards the owner drew.
+   The strip-cell rule is right for the film capacitors it was measured against
+   (`C18`/`C19` on the frozen low-boost board); a point-overlap rule would be
+   right for the cans and wrong for `C18`. The two cannot both be satisfied by
+   one box-plus-cell rule, and choosing between them is a criteria decision.
+2. **A stretched two-pin part has no model at all.** VeroRoute stretches an
+   electrolytic to whatever span a layout wants — the committed boards place
+   `CAP_ELECTRO_200` at 1, 2, 3, 5, 6, 8, 9, 10 and 13 steps — while
+   `preparedPitchSteps` is one figure for the footprint. For such a placement the
+   can sits *somewhere* along the lead row and `geometryOf`, which knows only
+   the footprint, claims the body band over the *whole* span. **16 of the 25
+   formed electrolytic placements across the eleven boards are in this shape**,
+   and so are all five `CAP_ELECTRO_300`s.
+
 ## 4. The thirteen footprints, as measured
 
 Every file is under

@@ -30,12 +30,10 @@ import fs from "node:fs"
 import path from "node:path"
 import { expect, test } from "bun:test"
 import { GRID_MM } from "../../lib/kicad/grid.ts"
-import { occupiedAreaFor, padHolesFor } from "../../lib/kicad/footprint-extent.ts"
-import { classifyPads } from "../../lib/kicad/pin-pattern-model.ts"
-import type { PinPattern } from "../../lib/kicad/pin-pattern-model.ts"
+import { occupiedAreaFor } from "../../lib/kicad/footprint-extent.ts"
+import { padHolesFor } from "../../lib/kicad/formed-frame.ts"
 import { PIN_PATTERNS, pinPatternFor } from "../../lib/kicad/pin-pattern.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
-import { ringPattern } from "../stripboard/synthetic-footprints.ts"
 import {
   MISSING_FILE,
   NO_BODY_OUTLINE,
@@ -284,30 +282,21 @@ test("every as-moulded pattern's pads land inside the holes its body covers", ()
   expect(checked, "ten of the thirteen recorded patterns are as-moulded").toBe(10)
 })
 
-test("a formed-to-grid pattern refuses a pad-to-hole map, by name", () => {
-  const formed = [...PIN_PATTERNS.values()].filter(
-    (pattern) => pattern.accommodation.kind === "formed-to-grid",
-  )
-  expect(formed.map((pattern) => pattern.footprint).sort(), "the three formed patterns").toEqual([
-    "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm",
-    "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
-    "Package_TO_SOT_THT:TO-92_Inline",
-  ])
-  for (const pattern of formed) {
-    const message = refusalFrom(() => padHolesFor(pattern))
-    expect(message, pattern.footprint).toStartWith(
-      `footprint-extent-formed-frame-unrecorded: "${pattern.footprint}"`,
-    )
-  }
-})
-
-test("a formed-to-grid pattern still yields a body, which is what was derivable", () => {
-  // The two halves are independent, and the refusal above is about the pads.
-  // Were the body refused with them, the remedy named in that refusal - record
-  // the anchor - would look as though it were about the outline instead.
+test("outlineMm is the FILE's box, unshifted, even for a formed footprint", () => {
+  // The two halves of the record are stated in two frames and the field names
+  // say which: `outlineMm` is what the file draws, around the MOULDED leads,
+  // while `alongX`/`alongY` are counted in the PREPARED frame. A derivation
+  // that shifted the box itself would make this test pass by 1.27mm.
   const extent = occupiedAreaFor("Package_TO_SOT_THT:TO-92_Inline")
   expect(extent.forms).toContain("fp_arc")
   expect(extent.outlineMm.maxXMm - extent.outlineMm.minXMm).toBeGreaterThan(GRID_MM)
+  const pattern = pinPatternFor("Package_TO_SOT_THT:TO-92_Inline")
+  const moulded = pattern.pads.map((pad) => pad.xMm)
+  const midpoint = (Math.min(...moulded) + Math.max(...moulded)) / 2
+  const centre = (extent.outlineMm.minXMm + extent.outlineMm.maxXMm) / 2
+  expect(centre, "the file draws the body centred on the MOULDED row").toBeCloseTo(midpoint, 9)
+  expect(extent.anchorShiftMm, "and the shift that takes it to the formed frame is carried")
+    .toBeGreaterThan(0)
 })
 
 test("a .kicad_mod with no F.Fab graphic at all refuses by name", () => {
@@ -342,51 +331,6 @@ test("an F.Fab graphic with a truncated coordinate refuses rather than being dro
     occupiedAreaFor(RE_POINTED, withRePointed(UNREADABLE_COORDINATE)),
   )
   expect(message).toStartWith("footprint-extent-unreadable-coordinate:")
-})
-
-test("a pattern whose pads do not decompose into rows refuses a pad map, by name", () => {
-  // The ring from tests/stripboard/synthetic-footprints.ts: the one pad field in
-  // this repository that does NOT decompose into rows parallel to the strips,
-  // with its classification derived by classifyPads from its pads rather than
-  // asserted. No file is read - this refusal is about the pads, so it fires
-  // before any geometry is wanted.
-  const ring = ringPattern()
-  const message = refusalFrom(() => padHolesFor(ring))
-  expect(message).toStartWith(`footprint-extent-no-rows: "${ring.footprint}"`)
-})
-
-test("an as-moulded pad off the grid refuses rather than being rounded to a hole", () => {
-  // CONSTRUCTED, because no recorded pattern can reach it: an off-grid pitch
-  // with no recorded accommodation is exactly what admitPattern refuses, so
-  // every footprint this repository places is either on the grid or formed onto
-  // it. The pads are 9.4mm apart - 0.86mm from four whole steps, well past the
-  // 0.15mm tolerance - and classifyPads derives the classification from them, so
-  // the fixture is off-grid because its geometry is, not because it says so.
-  const pads = [
-    { pad: "1", xMm: 0, yMm: 0 },
-    { pad: "2", xMm: 9.4, yMm: 0 },
-  ]
-  const offGrid: PinPattern = {
-    footprint: "SYNTHETIC:Off_Grid_Pitch_P9.40mm",
-    pads,
-    source: {
-      file: "tests/kicad/footprint-extent.test.ts - SYNTHETIC, not a KiCad footprint",
-      version: "none",
-      padCount: pads.length,
-      excludedPads: [],
-    },
-    classification: classifyPads(pads),
-    accommodation: { kind: "as-moulded" },
-    basis:
-      "Two pads 9.40mm apart and recorded as-moulded. Synthetic: it exists so that " +
-      "padHolesFor's off-grid refusal is exercised, and admitPattern refuses this shape, so no " +
-      "footprint this repository places can reach it.",
-  }
-  expect(offGrid.classification.kind, "it classifies as rows, so the rows guard is passed").toBe(
-    "rows",
-  )
-  const message = refusalFrom(() => padHolesFor(offGrid))
-  expect(message).toStartWith(`footprint-extent-pad-off-grid: "${offGrid.footprint}" pad "2"`)
 })
 
 test("a recorded file that is not on disk refuses by name", () => {

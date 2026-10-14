@@ -191,6 +191,15 @@ test("every formed-to-grid accommodation carries a basis and a datasheet source"
     expect(pattern.accommodation.basis.length, pattern.footprint).toBeGreaterThan(60)
     expect(pattern.accommodation.source.url, pattern.footprint).not.toBe("")
     expect(pattern.accommodation.preparedPitchSteps, pattern.footprint).toBeGreaterThanOrEqual(1)
+    // The FRAME half, held to the same discipline as the reach half above and
+    // with its own citation: where the body sits after the bend and how far the
+    // leads reach are two claims from two documents, and one `source` covering
+    // both would hide which it supports. What the anchor must BE is not
+    // asserted here - tests/kicad/formed-frame.test.ts reads KiCad's own
+    // prepared-pitch footprints and checks the recorded value against them.
+    expect(pattern.accommodation.anchorBasis.length, pattern.footprint).toBeGreaterThan(60)
+    expect(pattern.accommodation.anchorSource.url, pattern.footprint).not.toBe("")
+    expect(pattern.accommodation.anchorSource.documentId, pattern.footprint).not.toBe("")
   }
 })
 
@@ -213,6 +222,9 @@ test("an accommodation recorded for a pattern that is already on the grid is ref
       preparedPitchSteps: 1,
       basis: "a preparation this part does not need, recorded to prove the guard fires",
       source: formed.accommodation.source,
+      anchor: formed.accommodation.anchor,
+      anchorBasis: "borrowed with the source beside it, for the same no-cast reason",
+      anchorSource: formed.accommodation.anchorSource,
     },
   }
   expect(admitPattern(spurious).kind).toBe("refused")

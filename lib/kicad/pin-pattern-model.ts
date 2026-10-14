@@ -80,6 +80,42 @@ export type PatternClassification =
   | { readonly kind: "off-strip-lattice"; readonly reason: string }
 
 /**
+ * WHICH POINT OF THE LEAD ROW THE BENDING HOLDS FIXED - the one fact about a
+ * formed part that neither its pads nor its body outline states, and without
+ * which the two cannot be put in one frame.
+ *
+ * WHY IT IS NEEDED AT ALL. A `.kicad_mod`'s `F.Fab` outline is drawn around the
+ * MOULDED lead positions. Forming re-spaces the leads along their row, so after
+ * the bend the body and the leads are stated in two different frames, and the
+ * offset between them is a physical fact about how the bend was made. It cannot
+ * be derived from the file: an extent is translation-invariant, and the pads
+ * after forming are on the grid under every one of these three choices.
+ * `lib/kicad/footprint-extent.ts` refused all three formed footprints outright
+ * until this field existed, under `footprint-extent-formed-frame-unrecorded`.
+ *
+ * WHAT EACH VALUE MEANS PHYSICALLY:
+ *
+ * - `lead-row-midpoint` - the midpoint between the outermost leads does not
+ *   move; the outer leads travel equal and opposite distances. A pair splayed
+ *   outward by half the shortfall EACH, or a TO-92 whose middle lead stays
+ *   where it is while the outer two go out by one half-step each.
+ * - `first-lead` - the lowest-numbered lead is left standing and every other
+ *   lead moves. The body then sits off-centre over the formed row by the whole
+ *   displacement.
+ * - `last-lead` - the same, from the other end. It differs from `first-lead` by
+ *   the full forming displacement, which for TO-92_Inline is a whole grid step.
+ *
+ * THE THREE ARE ALL EXPRESSIBLE AND THEY DISAGREE, which is why this is a
+ * recorded choice and not a default. For `CP_Radial_D5.0mm_P2.00mm` they give
+ * two, three and three holes along the row, and the two threes differ in which
+ * side the extra hole is on. For `TO-92_Inline` and `CP_Radial_D8.0mm_P3.50mm`
+ * they happen to agree, which is a measurement rather than a reason to leave the
+ * field off: the agreement is a fact about those two bodies' widths against
+ * their formed spans, and `tests/kicad/formed-frame.test.ts` asserts it.
+ */
+export type FormingAnchor = "lead-row-midpoint" | "first-lead" | "last-lead"
+
+/**
  * What was done to the part's terminals before it met the board.
  *
  * `as-moulded` is the part as it ships. `formed-to-grid` is a one-time physical
@@ -95,6 +131,14 @@ export type GridAccommodation =
       readonly preparedPitchSteps: number
       readonly basis: string
       readonly source: DatasheetRef
+      /** Which point of the lead row the bend holds fixed. See `FormingAnchor`. */
+      readonly anchor: FormingAnchor
+      /** Why that anchor and not the other two, and what the claim rests on. */
+      readonly anchorBasis: string
+      /** The document or file the anchor was read off. Separate from `source`:
+       * the reach and the frame are two different claims from two different
+       * places, and one citation covering both would hide which it supports. */
+      readonly anchorSource: DatasheetRef
     }
 
 export type PatternEligibility =

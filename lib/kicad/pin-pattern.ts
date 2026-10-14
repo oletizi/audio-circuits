@@ -122,6 +122,69 @@ const NICHICON_PS_AS_RECORDED: DatasheetRef = {
   url: "https://www.nichicon.co.jp/english/products/pdf/e-ps.pdf",
 }
 
+/**
+ * WHERE THE BODY SITS ONCE THE LEADS ARE FORMED, read off KiCad's own second
+ * footprint for the SAME body at a different pitch.
+ *
+ * THIS IS THE RECORD `footprint-extent.ts` REFUSED FOR WANT OF, and it is a
+ * measurement over files on disk rather than a judgement. KiCad ships all three
+ * of this repository's formed bodies twice - once at the moulded pitch and once
+ * at another - and in all three pairs the `F.Fab` box of the second is the box
+ * of the first TRANSLATED, by exactly the distance the midpoint between the
+ * outermost pads moved, with the box's width unchanged to the last digit:
+ *
+ *   CP_Radial_D5.0mm  P2.00 pads 0, 2.00  box -1.50..3.50  | P2.50 pads 0, 2.50
+ *                     midpoint 1.00 -> 1.25, dx +0.25      | box -1.25..3.75
+ *   CP_Radial_D8.0mm  P3.50 pads 0, 3.50  box -2.25..5.75  | P2.50 pads 0, 2.50
+ *                     midpoint 1.75 -> 1.25, dx -0.50      | box -2.75..5.25
+ *   TO-92_Inline      pads 0, 1.27, 2.54  box -1.21..3.75  | _Wide pads 0, 2.54, 5.08
+ *                     midpoint 1.27 -> 2.54, dx +1.27      | box 0.06..5.02
+ *
+ * AND IT DISCRIMINATES, which is why it is worth having rather than merely
+ * consistent. `first-lead` predicts dx = 0 in all three pairs and `last-lead`
+ * predicts +0.50, -1.00 and +2.54; the measured dx is +0.25, -0.50 and +1.27.
+ * Each pair refutes both alternatives on its own.
+ * `tests/kicad/formed-frame.test.ts` reads the six files and asserts this
+ * rather than restating the figures above.
+ *
+ * WHAT MAY NOT BE CONCLUDED FROM IT. These are KiCad's drawings, not a
+ * manufacturer's lead-forming clause, and nothing here is attributed to the
+ * datasheets those files' `descr` fields point at. What they establish is that
+ * the library draws a formed body centred on its lead row - which is the frame
+ * question - and not how far a lead may be bent, which is `./lead-span.ts`'s
+ * and `BEND_RULE`'s.
+ */
+const KICAD_PREPARED_PITCH_VARIANTS: DatasheetRef = {
+  manufacturer: "KiCad",
+  document: "the installed footprint libraries, read as files",
+  documentId:
+    `${LIBRARY_ROOT}/Capacitor_THT.pretty/CP_Radial_D5.0mm_P2.50mm.kicad_mod, ` +
+    `${LIBRARY_ROOT}/Capacitor_THT.pretty/CP_Radial_D8.0mm_P2.50mm.kicad_mod and ` +
+    `${LIBRARY_ROOT}/Package_TO_SOT_THT.pretty/TO-92_Inline_Wide.kicad_mod`,
+  revision: "each file's own (version 20260206) token",
+  location:
+    "each file's pads and its F.Fab body outline, against the same two fields of the " +
+    "moulded-pitch footprint for the same body. In all three pairs the body outline is " +
+    "translated by exactly the travel of the midpoint between the outermost pads, and its " +
+    "width is unchanged - so the library draws a formed body centred on its lead row.",
+  url: "https://gitlab.com/kicad/libraries/kicad-footprints",
+}
+
+/**
+ * The anchor's own basis text, shared by all three entries because the
+ * measurement behind it is one measurement over three pairs of files.
+ *
+ * The per-footprint half - what the alternatives would have cost THIS
+ * footprint - is appended at each entry, because that part differs.
+ */
+const MIDPOINT_ANCHOR_BASIS =
+  "KiCad ships this body at a second pitch, and its F.Fab outline there is this footprint's " +
+  "outline translated by exactly the travel of the midpoint between the outermost pads, width " +
+  "unchanged - see KICAD_PREPARED_PITCH_VARIANTS above, which records all three pairs and the " +
+  "dx each alternative would have predicted instead. It also agrees with this entry's own " +
+  "forming basis below, which was written before the frame was ever asked about and already " +
+  "describes an equal-and-opposite bend."
+
 const TWO_TERMINAL_ON_GRID =
   "One row of two pads, so the across-strip clause is satisfied by having a single row, and " +
   "the pair spans a whole number of strip holes along it."
@@ -220,6 +283,15 @@ const PATTERNS: readonly PinPattern[] = [
         "fitted. One step is the nearest whole step to the moulded pitch and is inside the reach " +
         "lib/kicad/lead-span.ts derives for this family, which this cites rather than restates.",
       source: NICHICON_PS_AS_RECORDED,
+      anchor: "lead-row-midpoint",
+      anchorBasis:
+        `${MIDPOINT_ANCHOR_BASIS} THIS IS THE ONE FOOTPRINT OF THE THREE WHERE THE CHOICE ` +
+        "CHANGES THE ANSWER: the can is 5.00mm across and the formed pair spans 2.54mm, so a " +
+        "midpoint anchor puts the body at -1.23..3.77 and covers the two lead holes alone, " +
+        "while first-lead reaches -1.50 and last-lead reaches 4.04 and each claims a THIRD " +
+        "hole, on opposite sides. The margins are 0.04mm, so this is a real physical question " +
+        "and not a rounding one.",
+      anchorSource: KICAD_PREPARED_PITCH_VARIANTS,
     },
     basis:
       "One row of two pads at the moulded 2.00mm, which is not a whole number of strip holes: " +
@@ -265,6 +337,15 @@ const PATTERNS: readonly PinPattern[] = [
         "fitted. One step is the nearest whole step to the moulded pitch and is inside the reach " +
         "lib/kicad/lead-span.ts derives for this family, which this cites rather than restates.",
       source: NICHICON_PS_AS_RECORDED,
+      anchor: "lead-row-midpoint",
+      anchorBasis:
+        `${MIDPOINT_ANCHOR_BASIS} HERE ALL THREE ANCHORS HAPPEN TO AGREE, and that is measured ` +
+        "rather than a reason to leave the field off: the can is 8.00mm across against a " +
+        "2.54mm formed span, so the body overhangs a hole at each end under every anchor and " +
+        "the derived occupancy is four holes along the row whichever is chosen. The field still " +
+        "records which bend is performed, because nothing else does and the agreement is a " +
+        "property of this can's size rather than of forming.",
+      anchorSource: KICAD_PREPARED_PITCH_VARIANTS,
     },
     basis:
       "One row of two pads at the moulded 3.50mm, which is not a whole number of strip holes: " +
@@ -404,6 +485,16 @@ const PATTERNS: readonly PinPattern[] = [
         "cols = 3. lead-span.ts records this family as formable: false, so this record is the " +
         "only thing that admits it, and the bend obeys BEND_RULE in lead-span-model.ts.",
       source: KICAD_TO92_INLINE_WIDE,
+      anchor: "lead-row-midpoint",
+      anchorBasis:
+        `${MIDPOINT_ANCHOR_BASIS} FOR THIS PACKAGE THE PAIR IS TO-92_Inline_Wide, which the ` +
+        "forming basis above already cites for its PADS; the frame is the same file's F.Fab " +
+        "outline, and it is translated by 1.27mm - exactly the middle lead's own position, " +
+        "which does not move under this anchor. ALL THREE ANCHORS AGREE on the derived " +
+        "occupancy, measured: the body is 4.96mm across and the formed row spans 5.08mm, so " +
+        "the body never reaches past the outer lead holes under any of them and the answer is " +
+        "the three lead holes either way. The clearance is 0.06mm at each end.",
+      anchorSource: KICAD_PREPARED_PITCH_VARIANTS,
     },
     basis:
       "One row of three at the moulded 1.27mm, which is HALF a strip pitch: the row decomposes " +

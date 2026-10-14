@@ -46,8 +46,16 @@
  * outline is a bounding box over a dozen graphic forms, and a committed one
  * would be exactly the hand-typed table the rule above forbids. What keeps this
  * honest is the version check and the fact that an unreadable file refuses.
+ *
+ * **`padHolesFor` AND `PadHole` LIVE IN `./formed-frame.ts`**, which is where
+ * the forming anchor's arithmetic is. They were declared here until that file
+ * existed, and they are NOT re-exported from here: two names for one function
+ * is how the next reader comes to guess which is current. Both importers moved
+ * in the same change. This module imports `formedFrameOf` from there, because
+ * the hole spans below cannot be stated without it.
  */
-import { GRID_MM, PITCH_TOLERANCE_MM, nearestGridSteps } from "./grid.ts"
+import { GRID_MM } from "./grid.ts"
+import { formedFrameOf } from "./formed-frame.ts"
 import { PIN_PATTERNS, pinPatternFor } from "./pin-pattern.ts"
 import type { PinPattern } from "./pin-pattern-model.ts"
 import { parseSexpr, type SNode } from "./sexpr.ts"
@@ -114,11 +122,25 @@ export interface FootprintExtent {
   /** The `.kicad_mod` read, and its own `(version <n>)` token. */
   readonly file: string
   readonly version: string
+  /** The box as the FILE states it, around the MOULDED lead positions. */
   readonly outlineMm: OutlineBoxMm
-  /** Holes the body covers along the footprint's own x axis. */
+  /** Holes the body covers along the footprint's own x axis, in the PREPARED frame. */
   readonly alongX: HoleSpan
-  /** Holes the body covers along the footprint's own y axis. */
+  /** Holes the body covers along the footprint's own y axis, in the PREPARED frame. */
   readonly alongY: HoleSpan
+  /**
+   * How far the body was moved along the lead row to get from `outlineMm` into
+   * the frame `alongX`/`alongY` are counted in, and along which axis.
+   *
+   * IT IS CARRIED BECAUSE IT IS THE EVIDENCE for the two hole spans, which are
+   * otherwise a derived number with nothing to check it against. Zero, with the
+   * axis the row runs along, for every `as-moulded` footprint - which is all
+   * ten of them - so a non-zero value here names a formed part and says which
+   * bend was recorded for it. `./formed-frame.ts` derives it from the recorded
+   * `FormingAnchor` and never from the box above.
+   */
+  readonly anchorShiftMm: number
+  readonly alongRowAxis: "x" | "y" | null
   /** Every `F.Fab` graphic form the box was taken over, in file order. */
   readonly forms: readonly string[]
 }
@@ -373,7 +395,15 @@ export function occupiedAreaFor(
   // there is no file to read, and inventing a path is the opposite of the
   // provenance this module runs on.
   const pattern = pinPatternFor(footprint, patterns)
-  const cacheKey = `${pattern.source.file}|${pattern.source.version}`
+  // Refuses by name for a formed pattern in a shape no anchor record covers,
+  // BEFORE the file is read: a box derived and then discarded would put the
+  // refusal behind an I/O error on a library that is not installed.
+  const frame = formedFrameOf(pattern)
+  // KEYED ON THE FRAME AS WELL AS THE FILE. Two patterns may name one file and
+  // record different anchors - the fixtures in tests/kicad do exactly that -
+  // and a key on the file alone would serve the first one's spans to the second.
+  const cacheKey =
+    `${pattern.source.file}|${pattern.source.version}|${frame.axis ?? "none"}|${frame.shiftMm}`
   const cached = DERIVED.get(cacheKey)
   if (cached !== undefined) return cached
   const text = readFile(pattern)
@@ -392,98 +422,23 @@ export function occupiedAreaFor(
     )
   }
   const { box, forms } = outlineBox(root, pattern)
+  // The shift moves the body along the lead row and NEVER across the strips: a
+  // formed lead travels along its own strip, which is the asymmetry
+  // classifyPads is built on. So exactly one of the two spans is shifted.
+  const shiftX = frame.axis === "x" ? frame.shiftMm : 0
+  const shiftY = frame.axis === "y" ? frame.shiftMm : 0
   const extent: FootprintExtent = {
     footprint: pattern.footprint,
     file: pattern.source.file,
     version,
     outlineMm: box,
-    alongX: holeSpan(box.minXMm, box.maxXMm),
-    alongY: holeSpan(box.minYMm, box.maxYMm),
+    alongX: holeSpan(box.minXMm + shiftX, box.maxXMm + shiftX),
+    alongY: holeSpan(box.minYMm + shiftY, box.maxYMm + shiftY),
+    anchorShiftMm: frame.shiftMm,
+    alongRowAxis: frame.axis,
     forms,
   }
   DERIVED.set(cacheKey, extent)
   return extent
 }
 
-/** One pad's hole, in grid steps along the footprint's own two axes. */
-export interface PadHole {
-  readonly pad: string
-  readonly xSteps: number
-  readonly ySteps: number
-}
-
-function stepsOnGrid(valueMm: number, pattern: PinPattern, axis: string, pad: string): number {
-  const resolved = nearestGridSteps(valueMm)
-  if (resolved.errorMm > PITCH_TOLERANCE_MM) {
-    throw new Error(
-      `footprint-extent-pad-off-grid: "${pattern.footprint}" pad "${pad}" sits at ` +
-        `${valueMm.toFixed(3)}mm along ${axis}, which is ${resolved.errorMm.toFixed(3)}mm from ` +
-        `${resolved.steps} whole ${GRID_MM}mm steps - past the ${PITCH_TOLERANCE_MM}mm ` +
-        "tolerance, so that pad is not at a hole.\nThis is not rounded to the nearest hole " +
-        "anyway: a lead seated in the wrong hole is a net joined to the wrong strip, and " +
-        "admitPattern in lib/kicad/pin-pattern-model.ts admits a pattern only when its pads " +
-        "land on holes. A pattern reaching here with an off-grid pad has a recorded " +
-        "accommodation that does not cover this axis - record one in lib/kicad/pin-pattern.ts " +
-        "or leave the footprint refused.",
-    )
-  }
-  return resolved.steps
-}
-
-/**
- * Each pad's hole, in grid steps along the footprint's own axes - for an
- * `as-moulded` pattern, and **a refusal by name for a formed one.**
- *
- * **WHY A `formed-to-grid` PATTERN REFUSES HERE, which is a missing record and
- * not a missing line of code.** Forming re-spaces the leads along their row, so
- * a formed footprint's pads and its body are stated in two different frames:
- * `F.Fab` draws the body around the MOULDED lead positions, and the formed
- * positions are elsewhere. Which of the two the bending holds fixed is a
- * physical claim - on a TO-92 the body plausibly stays with the middle lead
- * while the outer two move - and nothing in this repository records it. It
- * cannot be derived either: `Package_TO_SOT_THT:TO-92_Inline` is moulded at 0,
- * 1.27 and 2.54mm and prepared at two steps, so holding the row's CENTROID
- * fixed puts all three leads half a step off the grid, while holding either end
- * fixed moves the body by a step. Both are expressible and they disagree, so
- * picking one here would be this module choosing the geometry it is supposed to
- * report.
- *
- * `preparedExtentsHoles` is not the missing record: it returns an EXTENT, which
- * is translation-invariant and therefore says nothing about where the body sits
- * relative to the formed leads.
- */
-export function padHolesFor(pattern: PinPattern): readonly PadHole[] {
-  const classification = pattern.classification
-  if (classification.kind !== "rows") {
-    throw new Error(
-      `footprint-extent-no-rows: "${pattern.footprint}" does not decompose into rows parallel ` +
-        `to the strips (${classification.reason}), so its pads do not sit in holes and there is ` +
-        "no pad-to-hole map to build.\nThis is not approximated to the nearest holes: " +
-        "admitPattern in lib/kicad/pin-pattern-model.ts refuses such a pattern outright, and " +
-        "holes for it would be the geometry of a part that is never mounted.",
-    )
-  }
-  if (pattern.accommodation.kind === "formed-to-grid") {
-    throw new Error(
-      `footprint-extent-formed-frame-unrecorded: "${pattern.footprint}" carries a ` +
-        `formed-to-grid accommodation at ${pattern.accommodation.preparedPitchSteps} ` +
-        "step(s) per adjacent pair, and nothing records WHERE THE BODY SITS once the leads have " +
-        "been bent, so its pads and its F.Fab outline cannot be put in one frame.\n" +
-        "WHAT IS MISSING: the forming moves the leads along their row; the body outline in the " +
-        ".kicad_mod is drawn around the MOULDED positions. Holding the row's centroid fixed " +
-        "puts TO-92_Inline's three leads half a step off the grid; holding either end fixed " +
-        "moves the body by a whole step. The two disagree and both are expressible.\n" +
-        "WHY IT IS NOT PICKED HERE: the choice decides which holes the part covers, which is " +
-        "the answer this module exists to report - so choosing it here would be the module " +
-        "authoring its own result. preparedExtentsHoles does not settle it either: an extent is " +
-        "translation-invariant.\nWHERE TO FIX IT: record the anchor on the GridAccommodation in " +
-        "lib/kicad/pin-pattern-model.ts, with its basis and the datasheet or bench observation " +
-        "it comes from, as the accommodation's own pitch already is.",
-    )
-  }
-  return pattern.pads.map((pad) => ({
-    pad: pad.pad,
-    xSteps: stepsOnGrid(pad.xMm, pattern, "x", pad.pad),
-    ySteps: stepsOnGrid(pad.yMm, pattern, "y", pad.pad),
-  }))
-}

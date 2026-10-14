@@ -22,6 +22,8 @@
  */
 import { expect, test } from "bun:test"
 import { PIN_PATTERNS, pinPatternFor } from "../../../lib/kicad/pin-pattern.ts"
+import { admitPattern, classifyPads } from "../../../lib/kicad/pin-pattern-model.ts"
+import type { PinPattern } from "../../../lib/kicad/pin-pattern-model.ts"
 import { geometryOf, holesOverlap, type Candidate, type Hole, type Placement }
   from "../../../lib/stripboard/board.ts"
 import { NO_BODY_OUTLINE, RE_POINTED, withRePointed }
@@ -192,16 +194,92 @@ test("geometryOf still refuses a footprint whose file states no occupied area, b
 })
 
 /**
- * The pad-to-hole half refuses separately, and the two are not interchangeable:
- * a formed footprint HAS a derivable body and no recorded frame to put its bent
- * leads in. Collapsing both into one key would make the remedy - record the
- * anchor - read as though a body outline were missing.
+ * The pad-to-hole half still refuses separately, and the two are not
+ * interchangeable: a formed footprint HAS a derivable body, and what it may be
+ * missing is a frame to put its bent leads in.
+ *
+ * **THIS TEST USED TO ASSERT THE REFUSAL FOR ALL THREE RECORDED FORMED
+ * FOOTPRINTS, and they are now derived.** `footprint-extent-formed-frame-unrecorded`
+ * is gone, replaced by a recorded `FormingAnchor` on each accommodation - read
+ * off KiCad's own prepared-pitch footprints for the same three bodies, in
+ * `tests/kicad/formed-frame.test.ts`. The KEY survives, narrowed to the formed
+ * SHAPES no anchor record covers, and this is its fixture: a multi-row formed
+ * pattern, where nothing says whether the rows are bent alike.
+ *
+ * It keeps DIP-16's NAME, for the reason the other fixtures keep theirs -
+ * `admitPattern` reads the module-level `LEAD_SPANS` and nothing routes an
+ * injected span to it. Its pads are two rows of eight at the off-grid 1.27mm,
+ * so the prepared extent is 8 holes along the row, which is the 8 that module
+ * records for DIP-16 - without that the pattern refuses one step earlier, at
+ * `unmountable-pattern`, and the geometry is never reached.
  */
-test("geometryOf refuses a formed-to-grid footprint for want of a pad-to-hole map, by name", () => {
-  const formed = "Package_TO_SOT_THT:TO-92_Inline"
-  const message = refusalFrom(() => geometryOf(formed, ORIGIN, "E", PIN_PATTERNS))
-  expect(message).toStartWith(`stripboard-geometry-no-pad-holes: "${formed}"`)
-  expect(message).toContain("footprint-extent-formed-frame-unrecorded")
+test("geometryOf refuses a multi-row formed pattern for want of a pad-to-hole map, by name", () => {
+  const name = "Package_DIP:DIP-16_W7.62mm"
+  const recorded = pinPatternFor(name, PIN_PATTERNS)
+  if (recorded.accommodation.kind !== "as-moulded") {
+    throw new Error("DIP-16 is recorded as-moulded; see lib/kicad/pin-pattern.ts")
+  }
+  const formed = pinPatternFor("Package_TO_SOT_THT:TO-92_Inline", PIN_PATTERNS)
+  if (formed.accommodation.kind !== "formed-to-grid") {
+    throw new Error("TO-92_Inline must carry a formed-to-grid accommodation")
+  }
+  const pads = [0, 2.54].flatMap((yMm, row) =>
+    [0, 1, 2, 3, 4, 5, 6, 7].map((index) => ({
+      pad: `${row * 8 + index + 1}`,
+      xMm: index * 1.27,
+      yMm,
+    })),
+  )
+  const multiRow: PinPattern = {
+    ...recorded,
+    pads,
+    source: { ...recorded.source, padCount: pads.length },
+    classification: classifyPads(pads),
+    accommodation: formed.accommodation,
+    basis: "Two rows of eight at the off-grid 1.27mm. SYNTHETIC: see the comment above.",
+  }
+  const patterns = new Map([...PIN_PATTERNS, [name, multiRow]])
+  expect(admitPattern(multiRow).kind, "it must reach the geometry to refuse there").toBe("eligible")
+  const message = refusalFrom(() => geometryOf(name, ORIGIN, "E", patterns))
+  expect(message).toStartWith(`stripboard-geometry-no-pad-holes: "${name}"`)
+  expect(message).toContain("formed-frame-row-unmeasured")
+})
+
+/**
+ * And the three recorded formed footprints now return, which is the whole point
+ * of the anchor.
+ *
+ * NO HOLE COUNT IS WRITTEN HERE. The count is the derivation's own output and a
+ * figure for it in this file would be the derivation grading itself; what is
+ * asserted is the relation the anchor was recorded to make true - every pin sits
+ * in a hole the part occupies, at the prepared pitch the accommodation states.
+ */
+test("geometryOf returns for all three formed footprints, with pins at the prepared pitch", () => {
+  const formed = [...PIN_PATTERNS.values()].filter(
+    (pattern) => pattern.accommodation.kind === "formed-to-grid",
+  )
+  expect(formed.length, "three recorded formed footprints").toBe(3)
+  for (const pattern of formed) {
+    const accommodation = pattern.accommodation
+    if (accommodation.kind !== "formed-to-grid") throw new Error("unreachable")
+    const { holes, pins } = geometryOf(pattern.footprint, ORIGIN, "E", PIN_PATTERNS)
+    expect([...pins.keys()].sort(), pattern.footprint).toEqual(
+      pattern.pads.map((pad) => pad.pad).sort(),
+    )
+    const keys = new Set(holes.map((hole) => `${hole.strip},${hole.column}`))
+    for (const [pin, hole] of pins) {
+      expect(keys.has(`${hole.strip},${hole.column}`), `${pattern.footprint} pin ${pin}`).toBe(true)
+    }
+    // Facing `E`, the footprint's x axis runs along the columns, and all three
+    // formed footprints decompose into one row along x - so consecutive pins sit
+    // `preparedPitchSteps` columns apart and share a strip.
+    const columns = [...pins.values()].map((hole) => hole.column).sort((a, b) => a - b)
+    const strips = new Set([...pins.values()].map((hole) => hole.strip))
+    expect(strips.size, `${pattern.footprint} is one row`).toBe(1)
+    expect(columns, pattern.footprint).toEqual(
+      pattern.pads.map((_, index) => index * accommodation.preparedPitchSteps),
+    )
+  }
 })
 
 /**

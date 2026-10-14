@@ -1,10 +1,12 @@
 tests/fixtures/stripboard/ - HC8's benchmark fixtures
 =====================================================
 
-Eight files, in four groups - the frozen benchmark's four, the three further
-benchmark dumps, and Task 16's import-placed start. It read "six files, in two
-groups" while seven were here: the import-placed dump was appended without the
-count being carried, and this line is the count the directory now holds.
+Ten files, in five groups - the frozen benchmark's four, the three further
+benchmark dumps, Task 16's import-placed start, and Task 13's two
+forming-anchor dumps. It read "six files, in two groups" while seven were here,
+then "eight, in four" while ten are: each time a capture was appended without
+the count being carried, and this line is the count the directory now holds.
+(The `negative/` subdirectory and this file are not counted among the ten.)
 
 B2's FROZEN LOW-BOOST BENCHMARK - the board B1-frozen is stated against:
 
@@ -288,3 +290,63 @@ section 8.
   layout the pipeline may produce can reproduce it while that pair stands.
   Nothing here was adjusted to close that gap: a span table edited to admit
   the artifact it is measured against would be a benchmark grading itself.
+
+TASK 13's TWO FORMING-ANCHOR DUMPS, added when the forming anchor was settled.
+They are the same kind of file as the three above - a --dump-board capture of a
+.vrt committed under boards/ - and they are here because
+tests/kicad/formed-frame.test.ts needs a board that DISTINGUISHES the three
+candidate anchors, and the three above do not.
+
+  transistor-preamp-loop.dump      the board that settles it from the layout
+                                   side: its C6 is a 5mm can at its prepared
+                                   one-step span with J2.2 in the hole before
+                                   its first lead and R9.1 in the hole after its
+                                   last, so a first-lead or last-lead anchor
+                                   puts that can over an occupied hole. C2, C3
+                                   and C5 refute one alternative each.
+  transistor-preamp-buffered.dump  one of the two boards the owner has BUILT,
+                                   and the one Task 13 was asked whether the
+                                   derivation can now import. It carries 2 TO92
+                                   and 5 electrolytics.
+
+WHAT MAY NOT BE CONCLUDED FROM THE LOOP CAPTURE, stated here because the test
+that reads it says the same: the loop board is laid out and NOT BUILT
+(docs/transistor-preamp/README.md, Build 4: "paused, not built"). It is the
+owner's own hand layout and VeroRoute admitted it, but no iron has touched it.
+The anchor's primary basis is therefore NOT this file - it is KiCad's own
+prepared-pitch footprints for the same three bodies, recorded as
+KICAD_PREPARED_PITCH_VARIANTS in lib/kicad/pin-pattern.ts and read file-by-file
+in that test. This capture is corroboration that no placement in the repository
+contradicts the anchor those files state, and that two of the alternatives are
+contradicted.
+
+THEY ARE FROM A DIFFERENT FORK COMMIT FROM THE THREE ABOVE, and that is visible
+in the files rather than hidden: these two carry DIRECTION on every placed PART
+line and a BOUNDS line, which the three older captures do not, because those
+were taken before either field existed. tools/guide/dump.ts treats both fields
+as optional for exactly this reason and its own header says so. Nothing was
+regenerated to make them match: the older three are frozen evidence.
+
+  binary         .tools/veroroute-perfboard at commit
+                 ed6c5a64eb5125346e8b0bc0b434b332c7750bb6, which is what
+                 veroroute.pin pins and what
+                 .tools/veroroute-perfboard/.built-commit records as built
+  command        VR=.tools/veroroute-perfboard/veroroute.app/Contents/MacOS/veroroute
+                 "$VR" --dump-board boards/transistor-preamp-loop/transistor-preamp-loop.perfboard.vrt \
+                     > tests/fixtures/stripboard/transistor-preamp-loop.dump
+                 "$VR" --dump-board boards/transistor-preamp-buffered/transistor-preamp-buffered.perfboard.vrt \
+                     > tests/fixtures/stripboard/transistor-preamp-buffered.dump
+
+  input boards
+    boards/transistor-preamp-loop/transistor-preamp-loop.perfboard.vrt
+      last changed in commit 6663cd8d28d4932af629c2acd296de2f7dede49e
+      sha256 d16ce08cf7b3091d06b1adcf9f2086d72cdfcba9b8a177b47484ca6e4f835cae
+    boards/transistor-preamp-buffered/transistor-preamp-buffered.perfboard.vrt
+      last changed in commit e0d4f04f17404bf24c72f783dc96809da175c762
+      sha256 b424ddcbaccb1c0271fca673b917b4d4c041c7fe1b5fc8f96c4ac3557f00c765
+
+  these fixtures
+    transistor-preamp-loop.dump
+      sha256 d5cdbb48e0f898af89a6ebbc1589f7cce339767de05fb658ec28bf8fdcfe91ed
+    transistor-preamp-buffered.dump
+      sha256 5b32c5a6586e584467ceee53bee3a90c24403ac37aed45c8840b4413008382f2

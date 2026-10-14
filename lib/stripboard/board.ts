@@ -35,8 +35,10 @@
  *      strip. Where the body outline cannot be read, `geometryOf` still
  *      refuses.
  */
-import { occupiedAreaFor, padHolesFor } from "../kicad/footprint-extent.ts"
-import type { FootprintExtent, PadHole } from "../kicad/footprint-extent.ts"
+import { occupiedAreaFor } from "../kicad/footprint-extent.ts"
+import type { FootprintExtent } from "../kicad/footprint-extent.ts"
+import { padHolesFor } from "../kicad/formed-frame.ts"
+import type { PadHole } from "../kicad/formed-frame.ts"
 import { admitPattern } from "../kicad/pin-pattern-model.ts"
 import type { PinPattern } from "../kicad/pin-pattern-model.ts"
 import { pinPatternFor } from "../kicad/pin-pattern.ts"
@@ -242,12 +244,20 @@ function holeAt(origin: Hole, facing: Facing, xSteps: number, ySteps: number): H
  * still sees it; what has changed is that a recorded, mountable footprint with a
  * body outline no longer reaches it.
  *
- * ONLY A `footprint-extent-` REFUSAL IS WRAPPED. A `TypeError` from a bug in the
- * derivation would otherwise come back wearing this key and read as a missing
- * record, which is the shape of mistake this file's comments keep warning about.
+ * ONLY A `footprint-extent-` OR `formed-frame-` REFUSAL IS WRAPPED. A
+ * `TypeError` from a bug in the derivation would otherwise come back wearing
+ * this key and read as a missing record, which is the shape of mistake this
+ * file's comments keep warning about. The second prefix arrived with
+ * `lib/kicad/formed-frame.ts`, and it is listed rather than loosened to
+ * "anything with a hyphen": the point of the test is that the message came from
+ * a module that states its refusals, not that it has a key-shaped first word.
  */
+const DERIVATION_REFUSALS: readonly string[] = ["footprint-extent-", "formed-frame-"]
+
 function asGeometryRefusal(error: unknown, key: string, footprint: string, asked: string): never {
-  if (!(error instanceof Error) || !error.message.startsWith("footprint-extent-")) throw error
+  const named =
+    error instanceof Error && DERIVATION_REFUSALS.some((prefix) => error.message.startsWith(prefix))
+  if (!named) throw error
   throw new Error(
     `${key}: "${footprint}" has a recorded pin pattern and is mountable on the strips, and the ` +
       `geometry it needs could not be derived from its own .kicad_mod (${asked}).\n` +
@@ -332,17 +342,26 @@ export function geometryOf(
         "that is never mounted.",
     )
   }
-  let extent: FootprintExtent
-  try {
-    extent = occupiedAreaFor(footprint, patterns)
-  } catch (error) {
-    asGeometryRefusal(error, "stripboard-geometry-no-occupied-area", footprint, asked)
-  }
+  // THE PADS ARE RESOLVED FIRST, AND THE ORDER IS LOAD BEARING. Both halves
+  // need the formed frame - `occupiedAreaFor` shifts the body into it - so a
+  // formed pattern in a shape no anchor record covers would refuse in whichever
+  // of the two is called first. It belongs under the PADS key: the frame is a
+  // fact about where the bent leads are, and reporting it as "no occupied area"
+  // would send the reader to the `.kicad_mod`'s F.Fab layer, which is present
+  // and fine. The body-only refusals - no F.Fab graphic, a missing file, a
+  // changed version, an unhandled form - are unaffected by this order, because
+  // the three fixtures that reach them are all as-moulded.
   let pads: readonly PadHole[]
   try {
     pads = padHolesFor(pattern)
   } catch (error) {
     asGeometryRefusal(error, "stripboard-geometry-no-pad-holes", footprint, asked)
+  }
+  let extent: FootprintExtent
+  try {
+    extent = occupiedAreaFor(footprint, patterns)
+  } catch (error) {
+    asGeometryRefusal(error, "stripboard-geometry-no-occupied-area", footprint, asked)
   }
   const facing = FACINGS[direction]
   const byKey = new Map<string, Hole>()
