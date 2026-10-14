@@ -4,7 +4,7 @@ Source: owner-supplied `Tascam 38.xlsx` / `Junctions`, compared with the high-re
 
 ## Coverage
 
-All 50 amplifier-card contacts are represented in `50-contact-verification-matrix.csv`. Of these, **11** are recorded as `X` (unknown), not established NC: J102-1/6/7, J103-1/3, J104-7, J105-2/3/4, J107-5/6. A schematic-based full-route verification has **not** been completed for any of the 50.
+All 50 amplifier-card contacts are represented in `interface-matrix.csv`. Of these, **11** are recorded as `X` (unknown), not established NC: J102-1/6/7, J103-1/3, J104-7, J105-2/3/4, J107-5/6. A schematic-based full-route verification has **not** been completed for any of the 50.
 
 ## Intra-card references requiring consistency checks
 

@@ -47,7 +47,7 @@ The repeated 2–8 groups are J122–J128/P122–P128, J152–J158/P152–P158, 
 | J107 | P107 | 7 | +24 V, ±15 V, function control |
 | J108 | P108 | 4 | Erase head, oscillator, return |
 
-**Correction:** previous investigation documents counted J106 as seven contacts and therefore 49 total. The enlarged original drawing and owner worksheet both show **eight** J106 contacts, giving **50 total**. Treat earlier 49-contact tables as superseded. Connector count is verified, but **none of the 50 detailed owner net assignments has yet been fully checked end-to-end against both sides of the drawing**. See `50-contact-audit.csv` for every contact and its provisional interpretation.
+**Correction:** previous investigation documents counted J106 as seven contacts and therefore 49 total. The enlarged original drawing and owner worksheet both show **eight** J106 contacts, giving **50 total**. Treat earlier 49-contact tables as superseded. Connector count is verified, but **none of the 50 detailed owner net assignments has yet been fully checked end-to-end against both sides of the drawing**. See `interface-matrix.csv` for every contact and its current status.
 
 ## 4. Supply and control bus (verified named connector)
 
@@ -113,10 +113,11 @@ Owner proposes **J105-6** connected to MASTER OSC J182-5 and **J108-4** to J182-
 | C10 | Physical channel-1 diagram vs repeated 2–8 | Drawing layout vs owner confirmation | Same card; trace motherboard bus fan-out, not different cards |
 | C11 | Three 0V supply contacts | P171 labeling | Trace ground distribution rather than collapsing them |
 | C12 | Head shield / winding conductor interpretation | Head drawing | Verify shielding and polarity before input topology |
+| C13 | P104-7 joined to P107-2 on motherboard; J104-7 marked X | p107-2-p104-7-motherboard-link.md vs worksheet | Trace J104-7 card-side node and P107-2 route to P171 |
 
 ## 7. Schematic-only verification protocol
 
-For every row of `50-contact-audit.csv`:
+For every row of `interface-matrix.csv`:
 
 1. Find the card-side J10x pin and trace through **every junction** to named component terminal(s), including relay coil versus contacts.
 2. Find the matching P10x pin below the motherboard boundary and trace to a **labeled** destination connector or P171 bus.
