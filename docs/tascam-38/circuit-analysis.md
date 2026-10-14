@@ -260,4 +260,11 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | A8 | W119 drawn faint and broken (fitted or not); W109 / W110 / W112 fitted | block-record-bias-erase.md, block-reproduce-output.md | Physical card |
 | A9 | U101 / U102 input polarity (no +/- marks drawn) | block-reproduce-output.md | 4558 pinout |
 | A10 | J108-1 to 0V (matrix C17) decides whether the released K103 grounds the record output | interface-matrix.csv | Continuity P108-1 to P171-7 |
-| A11 | OUT SELECT upper-pole network that decides when the K101 / K102 drivers turn on | block-control-muting.md | Trace the OUT SELECT board fully (Pass 4) |
+| A11 | *Resolved by Pass 4:* OUT SELECT drivers traced; K102 follows any press after a delay, K101 follows SYNC only | control-outselect.md | - |
+| M1 | U519 (H54410P) is a custom chip; "PLAY OUT / REC OUT high = active" rests on it driving NPN solenoid stages, not on a datasheet | control-transport.md U1 | Measure U519 outputs in each transport mode |
+| M2 | Whether PLAY OUT stays high in RECORD. If it drops, PLAY MUTE mutes SYNC / REPRO during record and the REPRO-while-recording row changes | control-transport.md U2 | Measure P171-6 in RECORD |
+| M3 | PAUSE: whether U519 drops PLAY OUT and / or REC OUT | control-transport.md U3 | Trace U519 PAUSE logic further, or measure |
+| M4 | Amplifier sheet: REC SIGNAL crosses the P173-3 wire at (1562, 3692) with heavier ink than a plain crossing; read as a crossing. A junction would make Q301 / Q302 pointless | control-function.md | Continuity P182-1 to P182-2 |
+| M5 | OUT SELECT switches: latching or momentary, and any interlock between the three, are not shown | control-outselect.md | Physical switch, or the service manual |
+| M6 | All delays (POWER MUTE ~1.8 s, K102 ~0.5 s, bias ~0.15 s, PLAY MUTE ~0.1 s) are computed from part values | control-*.md | Scope measurement |
+| M7 | The transport's auto-stop / start-up guard (U516A timer, PH501 sensor) can pull PLAY OUT and REC OUT low; only partly traced | control-transport.md | Trace the U516 / U512-U514 chain |
