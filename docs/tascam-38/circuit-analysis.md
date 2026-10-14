@@ -414,7 +414,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | C06 | J101-2 K101 relay behaviour | Resolved: J101-2 / J101-1 are the coil (P180-2 / 0V); contacts are J101-4 and the sync line |
 | C07 | J106-8 marked GND | Resolved: J106-8 is the second sync-head lead (P151), tied to the card common bus |
 | C08 | J107-6 unknown; J107-7 to J174-1 | J107-7 resolved (P174-1). J107-6: no wire on either side - physical check |
-| C09 | Worksheet X cells | No wire on either side (J102-7, J103-1/3, J104-7, J105-2/3/4, J107-5) or on the motherboard side (J102-1/6) - physical check |
+| C09 | Worksheet X cells | No wire on either side (J102-7, J103-1/3, J104-7, J105-2/3/4, J107-5) or on the motherboard side (J102-1/6) - physical check. J102-1 and J102-6 to the card common bus bench-confirmed short (owner, 2026-10-14); their motherboard side is still open |
 | C10 | Channel-1 drawing vs channels 2-8 | *Resolved for the cards (owner, 2026-10-14):* all cards are the same; the owner has 16 spare cards from two non-working units. The sheet's note says some components differ between channels and does not list them. My reading, not verified, is that the note means the per-channel motherboard parts (J17x pins, channel bus lines), which are drawn for every channel. Remaining: any per-channel difference on the motherboard |
 | C11 | Three 0V supply contacts | Resolved as to connection (J106-5/6 to P171-11, others to P171-7); current-return distribution not analysed |
 | C12 | Head shield / winding conductor interpretation | Open: winding polarity and shield termination need the physical HEAD PCB |
@@ -469,6 +469,9 @@ Done (owner, 2026-10-13, card unpowered): J101-4 to J101-3 = 0 ohms;
 J106-7 to TP1 = open. Both as predicted (Relay drawn state).
 Done (owner, 2026-10-14, spare card unpowered): J108-1 to J108-3 = open;
 J108-1 to TP1 = short. Both as predicted; A1 closed.
+Done (owner, 2026-10-14, spare card unpowered): J102-1 and J102-6 to
+J101-3 = short, so both reach the card common bus as drawn (C09, card
+side only).
 Done (owner photo, 2026-10-14): R139 colour code reads 68 ohm (A7). The
 same photo shows W108 and W111 fitted; neither is in A8's list.
 Done (owner photo, 2026-10-14, U103 / K103 area): W119 fitted; W132 not
