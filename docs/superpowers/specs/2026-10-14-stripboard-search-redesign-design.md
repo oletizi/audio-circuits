@@ -303,12 +303,54 @@ judged only by the existing acceptance rule, never hand-tuned against a benchmar
 | No legibility term despite `lab` | agent, under `OBJ2` | adding one would be an agent authoring the criterion its own output is graded by |
 | Algorithm left unfixed | agent | which search wins is a measurement |
 | `HC8` moves inward as a per-candidate precondition | agent, after review | cheap in-memory; it was unaffordable at 12 ms a look |
+| The budget is set by experiment, and no number is proposed here | **[owner]** 2026-10-14 | verbatim: *"We need to arrive at that by experimenting and gathering empirical evidence, not by fiat"* |
+| Panel connectors are a hardware preference, not a design dependency | agent, from the owner's earlier suggestion | the problem it addressed does not exist once a landing hole is a one-hole part |
 
-## Open questions for the owner
+## How the budget is set — by experiment, not by fiat
 
-1. **The budget.** `Q1`–`Q6` are retained and the budget rises. How far? A number set by an
-   agent here would be a parameter nobody chose, and `PAR3` makes the rules file strict.
-2. **Connector grouping.** The owner proposed moving controls off-board behind wire-to-board
-   connectors and stated no strong preference on grouping. Under this design a pad is just a
-   one-hole part, so the pad problem dissolves without it. **Deferred, not rejected** — a
-   packaging choice, decidable by measurement if ever needed.
+`Q1`–`Q6` are retained and the budget rises. **How far is a measurement, and this document
+deliberately names no number.**
+
+The owner was offered the choice and declined it on the right grounds — *"We need to arrive
+at that by experimenting and gathering empirical evidence, not by fiat."* That is also a
+correction to how revision 2 framed it: offering an arbitrary number to the owner for
+ratification would have repeated the previous budget's mistake with better provenance. **The
+20,000 that three runs died against was never measured either**; it was sized from timings
+of a pipeline that spent 6.3 subprocess launches per candidate, and it stopped meaning
+anything the moment the inner loop moved in-process.
+
+**The experiment that yields it**, run once the model exists and reported like any other
+measurement:
+
+- Run each benchmark instance with a budget far beyond any plausible setting, recording the
+  best objective seen against evaluations spent.
+- Report the improvement curve per instance: where it flattens, and how much is bought after
+  each order of magnitude.
+- Report the spread across seeded restarts at several budgets, because a budget that only
+  one lucky seed needs is not a budget.
+- **Set the value from those curves, as a deliberate edit carrying the run that justifies
+  it**, under `K3`'s ratchet — the same discipline every other parameter in
+  `stripboard/rules.json` is held to.
+
+Until that run exists the budget stays a **declared unknown** rather than a plausible
+default, for the reason `CRITERIA` already gives for `τ`: a number used silently is a worse
+failure than one used knowingly, and a proposed default with nobody behind it is the worst
+of both.
+
+## Open question for the owner
+
+**Panel wiring: soldered or plugged?** Earlier today the owner suggested moving the controls
+off the board and connecting them with wire-to-board connections — in plain terms, putting a
+pin header on the board for the panel wiring instead of soldering each pot and switch wire
+into its own bare hole.
+
+**That suggestion was aimed at a problem this design removes.** Scattered single landing
+holes were unmovable, unspaceable and invisible to the wire planner; a connector is an
+ordinary part with an ordinary footprint, so the difficulty disappeared. Here a landing hole
+is already just a part with one hole, so **nothing in the search needs it.**
+
+What remains is a **hardware preference about building and servicing the board**, not a fix:
+soldering panel wires directly into holes, against plugging them into a header. It blocks
+nothing, no agent should decide it, and it can be answered whenever the owner is next
+thinking about the enclosure. If the answer is "connectors," grouping is then decidable by
+measurement, since the owner has said he has no strong preference there.
