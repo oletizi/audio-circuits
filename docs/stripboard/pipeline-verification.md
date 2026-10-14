@@ -42,6 +42,13 @@ the placer's own fingerprint — every numeric literal the pipeline's sources
 carry, named one by one, and **§7.4, the register of every check on this page
 whose guarantee is weaker than its subject**, which is the honest counterpart of
 the `V` table and the thing to read first.
+**The count above said "seven things" while the page had ten sections and then
+eleven, which is the third time this paragraph has gone stale**, so the two that
+arrived after it are named rather than counted: the SPACING gesture measured
+against the fork, where 227 of 315 candidates strictly reduce `C` (§11), and the
+same gesture measured in a real climb, where it is accepted fifteen times, takes
+the board from 34 cuts to 28 and from 10 open nets to 7, and **leaves `HC1`
+failing** (§12).
 `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`
 is the authority for every criterion; where this page and that document differ,
 that document wins.
@@ -3809,7 +3816,9 @@ sequence**, which is §11.7's first limit.
    a hand-picked ladder of them. `accepts` was not consulted once, so nothing
    here says any of the 227 improving candidates is ACCEPTED in a round — a
    round's winner is the best of its siblings, and the spread, gather and
-   cluster candidates compete in the same round. Task 3 is what measures that.
+   cluster candidates compete in the same round. Task 3 is what measures that,
+   and **§12 is that measurement**: fifteen of the run's 152 accepted gestures
+   are spacing gestures, two of them accepted while `F` rose.
 2. **It is one board.** The ten pads of low-boost's `PADS3` and `PADS7` on one
    `--import` output. The other four Pultec sections have their own pad counts
    and their own packing, and §11.3's predicate was tested here and nowhere
@@ -3841,3 +3850,319 @@ sequence**, which is §11.7's first limit.
    own `CUT` lines, and §11.2's fourteen-net model of the identity reproduces
    them exactly, which is the strongest evidence this section can offer for
    them.
+
+## 12. Task 3 of the buildable-layouts plan — the two gestures measured in a real climb: **six cuts and three nets, `HC6` flips to holding, and `HC1` still does not hold**
+
+**THE DELIVERABLE IS THE NUMBER AND THE NUMBER IS NOT A PASS.** On
+`boards/pultec-low-boost`, arm `import`, the committed seed list and the
+committed cap, the spacing gesture takes the reported board from **34 cuts and
+10 of 14 nets open** to **28 cuts and 7 of 14 nets open**, and **`HC1` is false
+on both**. No board is finished. §11 measured one gesture against the fork and
+said *"Task 3 is what measures that"* — this is that measurement, and §11's
+reachability figures survive it: the gesture IS accepted in a real climb,
+fifteen times, and it does not close the board.
+
+### 12.1 The two arms, the command, and how the "before" arm was obtained
+
+```
+  commit        722c13d  (pipelineCommit, recorded in every run.json below)
+  board         boards/pultec-low-boost      arm  import
+  rules         stripboard/rules.json unedited - seeds [0, 1, 2, 3, 4],
+                evaluationCap 20000, tau null, worseAcceptance null
+  fork          ed6c5a64eb5125346e8b0bc0b434b332c7750bb6 (veroroute.pin, .built-commit)
+
+  AFTER   make -C boards/pultec-low-boost place SEED_ARM=import
+  BEFORE  the same run with the SPACING GENERATOR'S OUTPUT EXCLUDED
+```
+
+**NOTHING IN THE WORKING TREE WAS EDITED TO PRODUCE EITHER ARM.** Tasks 1 and 2
+have both landed, so "before" had to be reconstructed, and it was reconstructed
+with a **Bun runtime preload** that rewrites two modules AT LOAD TIME:
+`tools/stripboard/moves.ts`, whose one `spacingMoves(...)` spread in
+`enumerateMoves` returns `[]` in the before arm, and `tools/stripboard/climb.ts`,
+where one line beside the acceptance decision records the gesture, its verdict
+and the candidate's `openNets`/`F`/`C`. `git status` was clean before and after;
+there is no edit to revert and none was made. **A reverted edit would have been
+the alternative and this is strictly better: there is no window in which the
+tree differs from `HEAD`.**
+
+**THE EXCLUSION IS EXACT, MEASURED RATHER THAN ASSERTED.** On the committed
+`pultec-low-boost-imported.dump` fixture with the frozen nine-net reference,
+`enumerateMoves` returns **374** moves in the with-spacing arm and **59** in the
+without-spacing arm; the removed set is **315** keys, it is **exactly** the set
+`spacingMoves` returned, and it is **disjoint** from the 59 that survive. Those
+are §11's own figures reproduced at the enumeration seam, which is what makes
+the A/B a one-variable comparison.
+
+**WHAT THE "BEFORE" ARM IS NOT.** It is `HEAD` minus Task 2, **not** the
+pre-Task-1 pipeline: `./movable.ts`'s union is in it, so a pad still gets its
+three unit-delta `move` gestures. The before arm is therefore the right control
+for *"what did the SPACING gesture buy"* and the wrong one for *"what did Tasks 1
+and 2 together buy"*, and the second question is not answered here.
+
+**THE LITERAL `make place` RUN AGREES WITH THE HARNESS BIT FOR BIT.** The verb
+was run on its own, unpreloaded, after both arms
+(`build/stripboard/pultec-low-boost/2026-10-14T02-40-45-001Z-import/`), and its
+reported candidate's **`candidateSha256` is `2aeaeb9f…`, the same bytes** as the
+with-spacing harness run's, with the same `F`, the same `C`, the same seven open
+nets, the same stopping rule and the same restart boundaries. So the figures
+below are the verb's own and not the harness's.
+
+### 12.2 Both arms' five figures
+
+| | **BEFORE** (spacing excluded) | **AFTER** (`HEAD`, 722c13d) | delta |
+| --- | --- | --- | --- |
+| **cuts `C`** | **34** (`C_necessary` 34) | **28** (`C_necessary` 28) | **−6** |
+| **open nets** | **10 of 14** | **7 of 14** | **−3** |
+| **`F`** | **35** | **29.25** | **−5.75** |
+| **stopping rule** | **`Q4`**, `bound: budget-exhausted` | **`Q4`**, `bound: budget-exhausted` | same rule |
+| **nets still open** | `0`, `hi_boost_out`, `j10_p1`, `j10_p2`, `j10_p3`, `j10_p4`, `j10_p5`, `j10_p6`, `lo_boost_in`, `si_hi_cut_j4_p2` | `0`, `hi_boost_out`, `j10_p2`, `j10_p3`, `j10_p4`, `lo_boost_in`, `si_hi_cut_j4_p2` | `j10_p1`, `j10_p5`, `j10_p6` closed |
+| `W` / `B` | 0 / 4 | 0 / 5 | `W` still zero |
+| `A1` fails on | **`HC1`, `HC6`, `HC8`** | **`HC1`, `HC8`** | **`HC6` flips to HOLDING** |
+| `BOUNDS` | `0,1 4,32` — 5 x 32, **32 columns against 27** | `0,0 8,26` — 9 x 27, **fits** | — |
+| occupied strips | 5 | 9 | +4 |
+| `kappa` | 0.6944 | 0.6389 | −0.055, still 13x `kappa_bench` |
+| `A_occ` | 160 | 243 | +83 |
+| climbs / evaluations | 4 / 20,000 | 3 / 20,000 | both spend the cap |
+| restarts at | 7,745 · 15,490 · 19,986 | 11,789 · 19,986 | — |
+| accepted gestures, run | **163** | **152** | −11 |
+| invocations / ms each | 150,049 / 11.70 ms | 126,435 / 12.28 ms | 7.5 vs 6.3 per evaluation |
+| wall clock | 1,756 s | 1,552 s | the bigger move set ran **faster** |
+| `run.json` hash | `03e3529e…` | `74c130c9…` | §12.7 on why these do not compare |
+
+**ONE CLIMB, ONE SEED - the sharper measurement, and on this arm it is the same
+board.** The `import` arm has ONE start and the seed changes nothing about it
+(`./seed-arms.ts`' recorded asymmetry), so the run's best candidate is the FIRST
+climb's and the single-seed figures carry the whole result:
+
+| seed 0, arm `import` | BEFORE | AFTER |
+| --- | --- | --- |
+| evaluations | 7,745 | 11,789 |
+| rounds | 38 | 45 |
+| accepted | 59 | 87 |
+| **of which spacing gestures** | **0** | **8** |
+| unscoreable | 15 | 15 |
+| its best | 10 open, `F` 35, `C` 34 | 7 open, `F` 29.25, `C` 28 |
+
+The before arm's climbs 0 and 1 are identical in every counter — 7,745
+evaluations, 38 rounds, 59 accepted, 15 unscoreable — which is that one-start
+property showing up as reproducibility rather than as an assertion about it.
+
+**THE BEFORE ARM REPRODUCES §6.10's `import` ROW EXACTLY ON THE BOARD AND NOT ON
+THE PATH.** §6.10 records `F = 35`, `C = 34`, `W = 0`, `B = 4`, **10 of 14 open**
+for this arm, and all five agree. Its path does not: §6.10's climb is 4,592
+evaluations over 24 rounds with 45 accepted and 36 unscoreable, against 7,745 /
+38 / 59 / 15 here. Task 1's three pad `move` gestures are in this arm and were
+not in that one, so the search walks differently and converges on the same
+board. **That the destination survived a change to the move set is the strongest
+evidence available that the before arm is the real before.**
+
+### 12.3 Were the spacing gestures actually ACCEPTED? Yes — **15 of 152**, and the kind exhausts itself twice
+
+Every acceptance decision in both runs was recorded. Per kind, over the whole
+run (`evaluated` counts only candidates the pipeline could score; the
+`unscoreable` 29 and 44 are not in it):
+
+| kind | BEFORE evaluated / accepted | AFTER evaluated / accepted |
+| --- | --- | --- |
+| `move` (unit deltas) | 2,686 / **119** | 2,306 / **106** |
+| **`move` (spacing)** | **0 / 0** | **4,830 / 15** |
+| `rotate` | 132 / 15 | 102 / 13 |
+| `stretch` | 2,100 / 18 | 1,433 / 14 |
+| `cluster` | 662 / 8 | 453 / 2 |
+| `gather` | 11,135 / 3 | 9,086 / 2 |
+| `spread` | 3,281 / **0** | 1,787 / **0** |
+| `add-wire` | **0 / 0** | **0 / 0** |
+| total | 19,996 / 163 | 19,997 / 152 |
+
+**The spacing kind takes 24% of the run's evaluations and produces 10% of its
+acceptances.** That is a worse hit rate than the unit-delta `move` (4.6%
+against 0.31%) and far better than `gather`'s 0.02%; it is **not** free, and
+`gather` is the kind spending half this budget for three acceptances.
+
+**The eight accepted in the first climb, with the board they left:**
+
+| round | pad | `openNets` after | `C` after | `F` after |
+| --- | --- | --- | --- | --- |
+| 0 | `RV_LO_BOOST_1` | 13 | 36 | 36.25 |
+| 1 | `SW_LO_BOOST_7` | 11 | 36 | 37 |
+| 3 | `SW_LO_BOOST_2` | 9 | 35 | 36.75 |
+| 5 | `SW_LO_BOOST_6` | **7** | 36 | 38.25 |
+| 8 | `RV_LO_BOOST_1` | 7 | 33 | 34.75 |
+| 9 | `SW_LO_BOOST_3` | 7 | 32 | 33.75 |
+| 10 | `SW_LO_BOOST_4` | 7 | 31 | 32.75 |
+| 35 | `SW_LO_BOOST_5` | 7 | 30 | 32 |
+
+**Rounds 1 and 5 are accepted while `F` RISES** — 36.25 to 37 and 36.75 to
+38.25 — because the open-net count is the ordering's first key and it fell. That
+is §11.4's gate working in the direction §11.4 said it could not be assumed to
+work in, on candidates §11 never evaluated.
+
+**And the kind exhausts itself, twice, as §11.6 predicted in kind if not in
+sequence.** The spacing set offered per round of the first climb:
+
+```
+  315 315 280 280 210 210 175 175 175 105 70 0 0 ... 0 70 0 0 0 0 0 35 35 35 35
+   r0                                        r10  r11      r35          r41-44
+```
+
+Eleven rounds to silence, not §11.6's seven — the ladder there moved one pad per
+step and a real round sometimes moves two (315 → 315 → 280 is two pads leaving
+between enumerations). **It then comes BACK, at rounds 35 and 41–44**, because
+other kinds pack a pad back into an abutment and the generator names it again.
+§11.6's *"seven applications and the kind is silent"* is therefore a floor on the
+cost and not the cost: the real figure on this climb is 4,830 evaluations,
+**24% of the run's budget**, against §11.6's projected 1,260.
+
+**In the before arm the generator would have offered 315 on EVERY ONE of the 98
+rounds** — the row never unpacks when nothing can unpack it. That is the control
+arm confirming the diagnosis the plan opened with, measured rather than argued.
+
+### 12.4 Step 4: **`HC1` does not hold**, and all seven still-open nets are the SAME shape
+
+`HC1` is false on both reported boards. `--check` exits 1, and the fork's own
+`Layout state` block is the authority for the list:
+
+```
+  AFTER:  0 incomplete · hi_boost_out incomplete · in COMPLETE · j10_p1 COMPLETE
+          j10_p2 incomplete · j10_p3 incomplete · j10_p4 incomplete
+          j10_p5 COMPLETE · j10_p6 COMPLETE · lo_boost_in incomplete
+          out COMPLETE · si_hi_boost_j20_p3 COMPLETE · si_hi_cut_j12_p3 COMPLETE
+          si_hi_cut_j4_p2 incomplete                              Cuts: 28
+```
+
+**NOT ONE NET IS SHAPE (a) AND NOT ONE IS SHAPE (c). ALL SEVEN ARE SHAPE (b) —
+no wire was plannable.** The three shapes have different remedies and this one
+is unanimous:
+
+| net | shape | why, from the generator's own conditions |
+| --- | --- | --- |
+| `j10_p2` | **(b)** | the wire generator sees its pins on **one strip** (0); its other half is the `SW_LO_BOOST` **PAD** on strip 6, which `netPinsAlongStrips` gates out |
+| `j10_p3` | **(b)** | the same, pad on strip 7 |
+| `j10_p4` | **(b)** | the same, pad on strip 8 |
+| `si_hi_cut_j4_p2` | **(b)** | all three of its pins really are on **strip 1**, split along it by a cut — a wire bridges strip PAIRS, so there is nothing to propose |
+| `0` | **(b)** | pins on strips 0, 2, 3 (plus a pad on 5); every pair offers end lines and **no offered line takes a bridge** |
+| `hi_boost_out` | **(b)** | pins on strips 1, 3, 4; the same — no pair yields a bridge |
+| `lo_boost_in` | **(b)** | pins on strips 2, 3, 4 (plus a pad on 0); the same |
+
+**(a) IS EMPTY BECAUSE NO `add-wire` CANDIDATE EXISTS ANYWHERE ON THIS BOARD, AT
+ANY POINT IN EITHER RUN.** `wireMovesFor` admits **zero** candidates on the
+`--import` start board both arms share, **zero** on the after arm's reported
+board and **zero** on the before arm's; and the trace of 19,997 and 19,996
+scored candidates contains **no `add-wire` entry at all**. So no net's wire was
+rejected on cost, no net's wire was rejected by a hard constraint, and `W = 0`
+is not the objective declining to pay for a wire — **it is the generator never
+offering one.** §6.9's *"`add-wire` fires 7,417 counted times and is never once
+accepted"* does not describe this pipeline any more.
+
+**(c) IS EMPTY, CHECKED BOTH WAYS.** Neither report carries a
+`<net> blocked (<member> unplaced)` line, and every reference pin of every open
+net resolves to a hole through `referencePinHoles` — so no open net is waiting
+on an unplaced part. `HC3` holds on both boards.
+
+**THE ONE FINDING THIS LEAVES FOR A LATER TASK, and it is a production change
+this task did not make.** `tools/stripboard/moves-wire.ts`'
+`netPinsAlongStrips` walks `dump.pins` and matches against export-spelled ids,
+so **a placed `PAD`'s hole is gated out on the spelling** — its own comment says
+so and calls it the fourth site pad net membership has to reach, deferred rather
+than blocked. The consequence is now measured: **the spacing gesture moves the
+selector pads onto strips 6, 7 and 8, which SPLITS `j10_p2`, `j10_p3` and
+`j10_p4` across two strips — and the wire generator cannot see that it did.**
+Before the gesture those nets were split along one strip and no wire could help
+either; after it they are exactly the shape a wire repairs, and nothing proposes
+one. That is a wire-generator defect surfaced BY this measurement, not a reason
+to doubt the gesture.
+
+### 12.5 What else moved, and must not be read as nothing
+
+**`HC6` IS NO LONGER INERT ON THIS BOARD.** The caution carried into this task
+was that `HC6` fails on width (33 against 27) and so cannot reject anything —
+its silence must not be read as a pass. On the AFTER board it is not silent:
+`BOUNDS 0,0 8,26` is **9 x 27 and fits the declared stock exactly**, so `HC6`
+**HOLDS**, and `A1` names two failures instead of three. The gesture traded
+width for height — 5 strips by 32 columns became 9 by 27 — which is the one
+dimension the owner's stock is tight in. **It also means `HC6` was a live
+no-regression clause for part of this climb** rather than a constraint already
+lost, and that is a change in what the acceptance rule was enforcing.
+
+**`kappa` BARELY MOVES AND `A2` STILL FAILS**: 0.6944 to 0.6389 against
+`kappa_bench` 0.05. Nothing here approaches the clustering bound, and no binding
+constraint is named, so `K3`'s ratchet may not move on either run.
+
+**ROUND TIMES LOOK FINE AND THE CACHE IS STILL NOT NEEDED.** The after arm's
+move set is the bigger one — up to **568** moves per round against the before
+arm's **274** — and it spent **1,552 s** against the before arm's **1,756 s**.
+Per-invocation cost is flat (12.28 ms against 11.70 ms, and §11.6's governing
+11.71 ms), and the difference is in invocations per evaluation: **6.3 after,
+7.5 before**, because the before arm spends more of its budget on `gather` and
+`spread`, which cost an extra `--update`. `movableRefs` re-parsing the dump per
+call was named as the first place to look if round times looked wrong; they do
+not, and no cache was added.
+
+**`spread` WAS ACCEPTED ZERO TIMES IN 5,068 EVALUATIONS ACROSS THE TWO ARMS**,
+which is the kind §6.11 and `./moves-spread.ts` carry the owner's own
+instruction about. That is an observation for a later task and nothing is
+concluded from it here.
+
+### 12.6 What may not be concluded from section 12
+
+1. **`HC1` DOES NOT HOLD.** 7 of 14 nets are open on the best board any arm
+   produced. The plan's `HC1`-on-low-boost gate is **not** met, and Task 5's
+   precondition — *"Task 5 does not start unless `HC1` holds on low-boost"* — is
+   **not satisfied by this measurement.**
+2. **It is one board and one arm.** `import`, low-boost, the committed seeds.
+   The `constructed` and `random` arms were not run, and §6.10 records them
+   reaching 9 of 14 open from a start the spacing gesture has never been
+   measured on.
+3. **The six cuts and three nets are not attributable to the spacing gesture
+   alone.** The arms differ by one variable in the ENUMERATION, and the climb
+   that follows is a different walk: the after arm accepted 106 unit-delta
+   `move`s and 13 `rotate`s on boards the before arm never stood on. **The
+   gesture is what made the difference possible; the final board is the whole
+   move set's.**
+4. **Both runs stopped on `Q4` having spent the entire 20,000-evaluation cap.**
+   `Q4` is the marginal-yield rule and its `k = 1` is a labelled hypothesis;
+   `Q5` did not fire, but neither run converged on `S3` either, so **neither
+   board is a local optimum under this move set** and a larger cap is untested.
+   §6.10's runs all stopped on `S3`; these do not, which is a change in the
+   search's behaviour this section does not explain.
+5. **No completion pass ran.** `./complete.ts` still has no production caller,
+   so the three shapes above are read from the generator's conditions and the
+   acceptance trace, not from a pass that tried to close each net.
+
+### 12.7 Two things the record cannot do, found while measuring
+
+1. **`canonicalHash` DOES NOT REPRODUCE ACROSS RUNS ON THIS BOARD, AND THE
+   CAUSE IS A CLOCK IN THE NETLIST.** The literal `make place` run and the
+   with-spacing harness run produced a **byte-identical best candidate**
+   (`candidateSha256` `2aeaeb9f…` both) and **different** canonical hashes,
+   because `netlistSha256` differs: the export this board's own model produces
+   carries `{ EESchema Netlist Version 1.1 created 2026-10-14T02:40:44 }`, a
+   wall-clock stamp, and the two exports differ in that line and in nothing
+   else (2,033 bytes each, one line of diff). `V6` wants the hash to prove two
+   runs reproduce; on a board with no declared `sch`/`netlist` pair it cannot,
+   and the comparison has to be made on `candidateSha256` instead. **That is a
+   finding for a later task and nothing was changed for it.**
+2. **The carried occupancy cannot be recovered from a reported board**, so the
+   per-net bridge test in §12.4 was run against the dump for conditions one and
+   two and `wireEndLines`, and the "zero candidates admitted" figure comes from
+   inside the run, where the geometry the climb carried was still in hand.
+   `occupancyOf` refuses the reported board by name — *"part `C18`: it faces N
+   … there is no rectangle to read"* — which is that refusal doing its job.
+
+### 12.8 Reproducing it
+
+```
+  bash <scratch>/run-arms.sh          # both arms, then the literal verb; resumable
+  bun --preload instrument.ts measure.ts     # one arm; MEASURE_ARM, MEASURE_STAMP
+```
+
+`MEASURE_ARM` is `with-spacing` or `without-spacing` and **has no default**, for
+the reason `--seed-arm` has none. The committed rules are loaded unedited;
+`MEASURE_CAP` exists for a smoke test and **was unset for every figure above.**
+Three run directories are left under `build/stripboard/pultec-low-boost/`
+(`task3-before-import`, `task3-after-import` and the verb's own stamp), each
+pruned after the figures were taken to its `run.json`, its netlist, its
+`imported.vrt` and its reported candidate — the full runs were **3.9 GB, 5.0 GB
+and 3.9 GB** of candidate boards, and 596 KB of the 12.8 GB remains. `build/` is
+git-ignored and `boards/**` is untouched by all three runs.
