@@ -43,6 +43,21 @@ zoom, and `GRID` draws labelled lines every that many pixels.
 | `pass2-p107-p104.md` | P107-1..7, P104-1..7 | 2, motherboard side |
 | `pass2-p102-p105.md` | P102-1..7, P105-1..7 | 2, motherboard side |
 
-Each report was produced by one agent and has not yet been re-traced
-independently, so no matrix row derived from it is `VERIFIED`. The Pass 2
-reports cite `scratchpad/agent2-*/` crops; recreate them as above.
+| `retrace-j101-j102.md` | J101, J102 both sides | independent blind re-trace |
+| `retrace-j103-j104.md` | J103, J104 both sides | independent blind re-trace |
+| `retrace-j105-j106.md` | J105, J106 both sides | independent blind re-trace |
+| `retrace-j107-j108.md` | J107, J108 both sides | independent blind re-trace |
+
+The Pass 1 and Pass 2 reports cite `scratchpad/agent*/` crops; recreate them
+as above.
+
+## How a row became VERIFIED
+
+The `retrace-*` reports were written by four further agents working under
+`retrace-protocol.md`, which forbade them to read the Pass 1/2 reports, the
+matrix or the owner's worksheet, and required them to establish the
+connector-numbering convention for themselves. They were also grouped
+differently from the Pass 1/2 agents. A row is `VERIFIED` only where the
+re-trace reached the same card-side node and the same motherboard endpoint as
+the first trace. Where the two agree that a contact has no wire, the row stays
+`UNRESOLVED`: absence on the drawing is not a verified no-connect.
