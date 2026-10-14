@@ -430,11 +430,11 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | A1 | Which relay position is energised for K101 and K103. K101 and K103's upper set confirmed by bench continuity: drawn energised (Relay drawn state). K103's lower set not yet measured | block-sync-headswitch.md U1; control-outselect.md; bench 2026-10-13 | J108-1 to J108-3 and J108-1 to TP1, coil unpowered |
 | A2 | *Resolved by Pass 4:* POWER MUTE is Q801; PLAY MUTE is Q534, and -6.8V is its PLAY level | control-transport.md | - |
 | A3 | Q118 base annotated -14.4V (bias off) while J107-7 is annotated 24V (bias on) | block-record-bias-erase.md; Pass 5 audit | Either the annotations come from different modes or a value is misplaced (-14.4V is what Q119's base reads when on); not decidable from the sheet - measure in RECORD |
-| A4 | U103 is a TEAC "BIAS Ampl. Module" (5292210600, per the manual's parts list); its internals are unpublished | pass6-datasheets.md | Physical module, if its behaviour matters for a replacement |
+| A4 | U103 is a TEAC "BIAS Ampl. Module" (5292210600, per the manual's parts list); its internals are unpublished. The can is stamped "TEAC / 52922 / -016" (the character before "-016" is unclear in the photo), so "52922" matches the start of the manual's number. The can has an adjustment hole | pass6-datasheets.md; owner photo 2026-10-14, `bench/photos/2026-10-14-u103-k103-area.jpg` | Physical module, if its behaviour matters for a replacement |
 | A5 | L108 value not printed. *Bias frequency resolved:* 150 kHz (manual specifications) | block-record-bias-erase.md; pass6-datasheets.md | Physical part for L108 |
 | A6 | *Resolved by datasheet:* 2SK68A VGS(off) is -1.5 V worst case, so -5.2 / -6.2 V holds the JFETs off with margin while the signal stays near 0V (see A12) | pass6-datasheets.md | - |
 | A7 | *Resolved by inspection:* R139 is 68 ohm. Its bands, read from the end opposite the gold tolerance band, are blue, grey, black: 68 x 1. The grey band shows weakly against the tan body, but blue-black is not a standard value. The same reading direction gives the drawn values for its neighbours: R138 blue-grey-orange 68k, R137 yellow-violet-orange 47k, R136 red-violet-orange 27k | owner photo 2026-10-14, `bench/photos/2026-10-14-r139-q108-area.jpg` (a spare card; all cards are the same, C10) | - |
-| A8 | W119 drawn faint and broken; W109 / W110 / W112 / W132 drawn linked - whether fitted is a physical-board question | block-record-bias-erase.md, block-reproduce-output.md | Physical card |
+| A8 | W119 drawn faint and broken; W109 / W110 / W112 / W132 drawn linked - whether fitted is a physical-board question. *Partly resolved (owner photos, 2026-10-14, one spare card):* W119 is fitted, so the faint drawing does not mean it is absent. The owner could not find W132 on the component side; its silkscreen label is not visible near U103. The drawing puts W132 directly between U103 pins 4 and 5, so it may sit under the U103 can, be a track, or be absent. Also seen fitted: W108, W111, W123, W124, W127-W131, W133-W135. Seen empty: W116, W117, W120, W121, W122, and the C128-C130 / R184-R186 positions | block-record-bias-erase.md, block-reproduce-output.md; `bench/photos/2026-10-14-*.jpg` | W132: ohmmeter across U103 pins 4 and 5. W109 / W110 / W112: look |
 | A9 | *Resolved by datasheet:* 4558 pinout consistent with every traced pin; U101 1/2 is section B (in pin 5, out pin 7), U101 2/2 is section A (in pin 3, out pin 1); inputs on pins 3 and 5 are non-inverting | pass6-datasheets.md | - |
 | A10 | J108-1 to 0V (C17) decides whether the released K103 grounds the record output | interface-matrix.csv | Continuity P108-1 to P171-7 |
 | A11 | *Resolved by Pass 4:* OUT SELECT drivers traced | control-outselect.md | - |
@@ -448,6 +448,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | M8 | *Resolved:* REC MODE reaches only the RECORD-lamp gate (steady if a channel is armed, flashing if none); it does not gate record entry | pass6-transport-record-entry.md | - |
 | A12 | The selection JFETs stay off only while their source / drain stay above about -3.7 V (gate -5.2 V) or -4.7 V (gate -6.2 V). The 38's maximum line input is +18 dBV (8 V rms); whether any JFET node swings that far on negative peaks depends on the levels at Q105 / Q106 / Q110 | pass6-datasheets.md | Check signal swing at the JFET nodes at maximum input |
 | M9 | The "+2V" power-supply tap (R830 / R831 junction) feeds the COUNTER PCB, probably a display filament; the drawn values give about 0.4 V on a 6V rail, not 2 V - a misprinted value or a nominal label | pass6-transport-record-entry.md | Measure PS terminal 41 with the counter connected |
+| A13 | A blue insulated wire on the component side runs from a pad marked "c", at U103's corner beside Q116, to the lettered pads "d" / "e" near K103 and J107-1. The drawing shows no wire link. It may be a lettered factory link standing in for a long drawn line (for example, K103 to C134, or a W132 equivalent), or a later modification. Not known whether it is on every card | owner photo 2026-10-14, `bench/photos/2026-10-14-u103-k103-area.jpg` | Continuity from each end to U103 pins 4 / 5, C134's terminals, K103's contacts and J106-7; check whether other spare cards have it |
 
 ## Bench verification checklist
 
@@ -464,11 +465,20 @@ Done (owner, 2026-10-13, card unpowered): J101-4 to J101-3 = 0 ohms;
 J106-7 to TP1 = open. Both as predicted (Relay drawn state).
 Done (owner photo, 2026-10-14): R139 colour code reads 68 ohm (A7). The
 same photo shows W108 and W111 fitted; neither is in A8's list.
+Done (owner photo, 2026-10-14, U103 / K103 area): W119 fitted; W132 not
+found on the component side (A8); U103 stamped "TEAC 52922 -016" (A4); a
+blue wire not on the drawing (A13).
 
 On a removed card, unpowered (ohmmeter):
 
 1. J108-1 to J108-3 (predict open) and J108-1 to TP1 (predict near 0 ohms):
    completes A1 for K103's lower set.
+1a. U103 pins 4 to 5 (W132, A8): near 0 ohms if fitted. The module's
+    internals between the two pins are unknown, so a reading in between is
+    not decisive on its own.
+1b. The blue wire's two ends (A13): continuity to U103 pins 4 / 5, both
+    C134 terminals, K103's contacts and J106-7. Also note whether other
+    spare cards have the wire.
 
 On the motherboard, power off, cards out (ohmmeter):
 
@@ -492,6 +502,7 @@ Powered, measured (optional confirmations unless noted):
 Physical inspection:
 
 10. OUT SELECT switch latching and interlock (M5).
-11. L108 marking (A5), W109 / W110 / W112 / W119 /
-    W132 fitted (A8). The cards are all the same (owner, C10), so any
+11. L108 marking (A5). The "201" choke beside TP2 / TP3 may be it (201 =
+    200 uH), if its silkscreen label confirms. W109 / W110 / W112 fitted
+    (A8). The cards are all the same (owner, C10), so any
     spare card will do for these and for item 1.
