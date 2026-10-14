@@ -240,6 +240,31 @@ export function bodyFor(part: Part, pins: readonly PlacedPin[]): Body {
     expectPinCount(part, pins, 3)
     return boxBody(part, pins)
   }
+  // THE PULTEC TYPES, AND THIS RENDERER HAD NEVER DRAWN A PULTEC BOARD. Its
+  // shapes were written for the transistor-preamp boards - TO92, electrolytics,
+  // trim pots, headers - and the five Pultec layouts carry CAP_FILM,
+  // CAP_FILM_WIDE and BLOCK_200MIL3, three of the four types on
+  // `tests/fixtures/stripboard/pultec-low-boost-frozen.dump`. So "look at the
+  // output, not only the tests" was unavailable for exactly the boards this
+  // repository is named for, and the gap surfaced only when someone asked to
+  // SEE one.
+  //
+  // **A BOX AROUND THE PINS IS NOT A CLAIM ABOUT THE BODY'S DIMENSIONS.** A film
+  // cap's real body is wider than its lead span and a WIDE one wider still, but
+  // no body dimension for either is recorded anywhere in this repository, and
+  // drawing one from memory is the guess `lib/kicad/lead-span.ts` refuses for
+  // the same parts. The box is the honest drawing: it says where the part's
+  // holes are and that something non-polarised sits over them. If a body
+  // dimension is ever sourced, this is where it belongs.
+  if (part.type === "CAP_FILM" || part.type === "CAP_FILM_WIDE") {
+    expectPinCount(part, pins, 2)
+    return boxBody(part, pins)
+  }
+  const block = /^BLOCK_(?:100|200)MIL(\d+)$/.exec(part.type)
+  if (block !== null) {
+    expectPinCount(part, pins, Number(block[1]))
+    return boxBody(part, pins)
+  }
   throw new Error(
     `no drawing for VeroRoute part type "${part.type}" (part ${part.ref}); ` +
       "add a shape for that type to tools/guide/part-shapes.ts",
