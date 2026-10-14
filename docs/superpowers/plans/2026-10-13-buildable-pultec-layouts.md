@@ -326,3 +326,46 @@ Batched because each is a small independent edit of the same kind.
 - [ ] **Step 8: Commit and push.**
 
 - [ ] **Step 9: Re-measure, as Task 3 did, and append to `pipeline-verification.md` §12.** One arm is enough: `HEAD`, board `pultec-low-boost`, arm `import`, the committed rules and seeds. Report cuts, open nets, `F`, the stopping rule, the still-open nets with causes, and **whether `HC1` now holds.** Both of Task 3's arms stopped on `Q4` having spent the whole 20,000-evaluation cap without converging, so **say whether this run converged** — if it is still budget-exhausted, the cap is a live question for the owner rather than a result.
+
+---
+
+### Task 9: The suite must leave `TMPDIR` as it found it — ADDED 2026-10-13, AND IT RUNS BEFORE TASK 8
+
+**Ordering: FIRST, ahead of Task 8.** Task 8 ends in a real-run re-measurement; Task 3's equivalent cost about 80 minutes of fork time. The documented failure mode of temp-directory accumulation is that `spawnSync` of the fork returns **exit 0 with empty stdout**, which this pipeline reports as a legitimate refusal — so a measurement taken on a poisoned machine is not merely slow, it is **wrong in a way that reads as a finding**. Fix the floor before spending the time.
+
+**Files:**
+- Modify: the fixtures listed by prefix below. Start from `grep -rn "mkdtempSync" tests/ tools/` — 47 files mention `mkdtemp`.
+- Create: `tests/stripboard/temp-scratch.test.ts` (the standing guard)
+- Modify: `make/board.mk` or the root `Makefile` — a prune verb
+- Modify: `docs/stripboard/pipeline-verification.md` — the measurement
+
+**THE MEASUREMENT, taken 2026-10-13 against a floor the owner had just cleaned.** One `bun test` run leaked **134** directories into `TMPDIR`, by prefix: `stripboard-rules-` 65, `stripboard-climb-` 55, `stripboard-search-` 40, `stripboard-stock-` 10, `checkpoint-` 8, `stripboard-complete-` 7, `wiring-sync-` 2, `stripboard-seed-geometry-` 2. Before the clean-out the same tree held **over 60,000** such directories across eight prefixes.
+
+**Why this is not a tidiness task.** `tests/stripboard/run-scratch.ts`'s own header records the mechanism: at roughly **4,606** directories the fork's `spawnSync` began returning exit 0 with empty stdout and **23 tests in nine unrelated files failed** on *"--dump-board produced no GRID line"* — blaming a binary that was working. That fix was applied to `build/stripboard` and **worked**: a full suite run leaves zero there, verified repeatedly. **It was only ever applied to one of the two places fixtures write.** At 134 per run, 34 suite runs reaches the threshold again. There is an unexplained intermittent failure on record — `escapes-search.test.ts`'s *"every restart starts from the run's OWN arm"* taking 50.6 s where it takes under 5 s alone, alongside `seed-geometry.test.ts` — and this is now the leading candidate for it. **Do not claim it as the cause without evidence; do say whether it reproduces at a high directory count.**
+
+**`vr-gui-*` IS THE FORK'S OWN AND IS NOT YOURS TO FIX IN THE FORK.** 21,362 of them accumulated, created by the pinned binary on spawn, not by any fixture — they did not appear among the directories the suite run created. Changing that is a change to `oletizi/veroroute-perfboard`, and a push there is **owner-authorised (OB1)**. So: clean them up from THIS side with the prune verb, report the count, and do not modify the fork.
+
+- [ ] **Step 1: Write the failing guard first.** A test that counts `TMPDIR` entries matching the fixtures' own prefixes, runs nothing, and asserts the count is unchanged across a before/after of the operations a fixture performs. It must **fail now**, on the real leak, not on a synthetic one.
+
+```ts
+test("a fixture leaves TMPDIR as it found it", () => {
+  const before = tempDirCount()
+  // drive the fixture whose prefix leaked most - stripboard-rules-
+  withRulesFixture(() => {})
+  expect(tempDirCount(), "the fixture removed its own temp directory").toBe(before)
+})
+```
+
+- [ ] **Step 2: Run it and confirm it fails**, by exactly the number that fixture creates.
+
+- [ ] **Step 3: Fix the fixtures, following the pattern that already works.** `tests/stripboard/run-scratch.ts` is the proven shape — a registry plus an `afterAll` hook, and its comment carries the reasoning. Apply it per prefix. **Supersede means delete:** if a fixture's temp directory was never removed because nothing registered it, register it rather than adding a second cleanup path beside the first.
+
+- [ ] **Step 4: Run the full suite twice and assert the delta is ZERO.** Baseline `bun test` 1878 pass / 0 fail / 0 skip across 171 files; `bun run typecheck` clean; `build/stripboard` 0 bytes with zero run directories — that one is already right and must stay right. Report the `TMPDIR` delta for both runs. **Zero, not "small".**
+
+- [ ] **Step 5: Add a prune verb** — `make prune-temp`, the companion to the existing `make prune-runs`. It removes this repository's own prefixes and the fork's `vr-gui-*`, and it **names what it will delete and how many before deleting**. It is a prerequisite of nothing: a developer runs it deliberately.
+
+- [ ] **Step 6: Record it** in `pipeline-verification.md` with the before-and-after figures, the per-prefix table above, the threshold from `run-scratch.ts`, and the fact that the earlier "zero run directories" result measured `build/stripboard` only. **State plainly that a success metric measured the wrong directory** — that is the reusable lesson, not the line count.
+
+- [ ] **Step 7: Commit and push.**
+
+**Constraint specific to this task and to every task after it:** write scratch to the session scratchpad, never to `/tmp` or `/private/var` directly. Measurement runs clean up after themselves. This constraint was missing from earlier dispatches and 20 GB of `/private/tmp/stripboard-*` is the result.
