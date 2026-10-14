@@ -1,7 +1,7 @@
 ---
 title: Stripboard placement and routing — owning the model, and why the search must change
 date: 2026-10-14
-status: draft-for-owner-review
+status: draft-for-owner-review (revision 2, after third-party review)
 ---
 
 # Owning the board model, and putting wires back in reach
@@ -13,196 +13,302 @@ owner 2026-10-13), amended in the two places named under *Corrections to the rec
 
 **This is a specification.** No implementation code was written producing it.
 
+**Revision 2** answers a third-party review of revision 1: two blocking findings (cut
+derivation, materialization), two high (termination, benchmark interpretation) and three
+medium. Where this document pushes back rather than accepting, it says so and why.
+
 ## Why
 
 Four days of work on the existing pipeline produced a layout with **28 cuts on 14 nets
-and zero wires**, against hand layouts of **0.38–0.45 cuts per net with four wires
-each**. The pipeline is roughly **four to five times worse per net than a person**, and
-the gap is not closing: the last three tasks bought 6 cuts, then 0, then 0.
+and zero wires**, against hand layouts of **5 cuts on 11 and 13 nets, with four wires
+each**. The last three tasks bought 6 cuts, then 0, then 0.
 
 The reason is not that the problem is hard. These are small instances — 11 to 22 nets,
 16 to 34 parts, grids of a few hundred holes — and a person solves one in an evening.
-The reason is architectural, and it is in two parts.
+The reason is architectural, in three parts, each measured.
 
 ### The search cannot express the move that matters
 
-`tools/stripboard/place.ts:239` states the rule: **one gesture per candidate.** Each
-candidate is a single gesture, scored alone, accepted greedily. But using a wire
-requires three coordinated decisions — move a pad onto its own strip, move it to a
-column a wire can reach, *then* run the wire. The first two pay nothing on their own.
-**A one-gesture-per-candidate greedy climber cannot see past the first**, so the third
-never becomes available.
-
-Measured: a full 20,000-evaluation run enumerated **one** `add-wire` candidate, and the
-fork refused it on reach. §6.9 of `docs/stripboard/pipeline-verification.md` records
-7,417 such candidates in an earlier era. The lever the owner identified as primary is,
-in practice, absent.
+`tools/stripboard/place.ts:239` states the rule: **one gesture per candidate.** Using a
+wire requires three coordinated decisions — move a pad onto its own strip, move it to a
+column a wire can reach, *then* run the wire. The first two pay nothing alone. **A
+one-gesture greedy climber cannot see past the first**, so the third never becomes
+available. Measured: a 20,000-evaluation run enumerated **one** `add-wire` candidate and
+the fork refused it on reach, where §6.9 of `docs/stripboard/pipeline-verification.md`
+records 7,417 in an earlier era.
 
 ### The tool cannot express it either
 
 The pinned fork documents eleven verbs. **Adding a wire is not one of them** — wires go
-on through `--author --op add-wire`, which does not appear in `--help` at all. And
-`--move-batch`, the one primitive that applies several gestures atomically and lets a
-caller score from stdout, accepts **only `move` and `rotate`**.
-
-So the gesture needing coordination with a placement change is exactly the gesture that
-cannot share a candidate with one. This is not fixable in this repository's TypeScript.
+on through `--author --op add-wire`, absent from `--help`. And `--move-batch`, the one
+primitive applying several gestures atomically, accepts **only `move` and `rotate`**.
 
 ### And the inner loop is a subprocess
 
-The same run made **126,435 fork invocations** for 20,000 evaluations — 6.3 process
-launches per candidate, ~12 ms each, ~25 minutes. Three runs in a row ended on
-`Q4 budget-exhausted` without converging. **Every figure this project has reported is
-"best found before the clock ran out," not "best."**
+**126,435 fork invocations for 20,000 evaluations** — 6.3 launches per candidate, ~12 ms
+each, ~25 minutes. Three runs ended `Q4 budget-exhausted` without settling, so **every
+figure this project has reported is "best found before the clock ran out."**
+
+### The decision, and its reason
+
+The owner ruled out the cheaper alternative — extending the fork so a candidate could
+express move-and-wire while keeping the architecture — on grounds stronger than the
+performance argument this document originally made. **His words, verbatim:**
+
+> *"I think being tied to a forked gui for our core logic is a bad idea. We can use
+> veroroute as a reference and a witness—even a human starting point, but the core
+> agent-focused layout solution code should be ours."*
+
+That settles the boundary on where the dependency sits rather than on how fast it runs,
+and it holds even if the fork were free to call.
 
 ## What changes
 
-**The model moves into this repository. VeroRoute becomes the witness.**
+**The model moves into this repository. VeroRoute becomes reference, witness, and a
+human's input device.**
 
 ### The model
 
-A stripboard is small and exactly describable: a grid of holes; strips of copper broken
-by cuts into segments; parts occupying hole sets; wires joining two holes; nets as sets
-of pins that must be connected. Connectivity is union-find over segments and wire
-endpoints. Low-boost is 448 cells.
+A grid of holes; strips of copper broken by cuts into segments; parts occupying hole
+sets; wires joining two holes; nets as sets of pins that must be connected. Connectivity
+is union-find over segments and wire endpoints. Low-boost is 448 cells.
 
-Two consequences follow immediately, and both dissolve problems rather than managing
-them:
+Two things dissolve rather than being managed:
 
-**Cuts stop being a decision.** A cut is fully determined by placement plus wires: on
-any strip, two different nets in adjacent runs of holes force a cut between them. That
-is the identity `C = Σ(blocks per strip) − (occupied strips)` this repository already
-uses. **The search space is placements and wires only**, and every candidate's cost is
-exact and immediate.
+**Cuts stop being a decision.** A cut is determined by placement plus wires — see the
+contract below, which revision 1 stated too loosely.
 
 **A pad becomes a part with one hole.** Tasks 1, 2, 8 and 9 of
 `2026-10-13-buildable-pultec-layouts.md` exist solely because `PAD` and `PART` are
-different species in the fork's dump. In our own model they are one thing at different
-sizes, and **that entire class of defect stops being expressible.**
+different species in the fork's dump. Here they are one thing at different sizes, and
+**that class of defect stops being expressible.**
 
-### The boundary
+### Cut derivation — the contract (review finding 1, accepted with one correction)
 
-VeroRoute keeps three jobs it is genuinely good at and loses the one it is not:
+**An electrically significant contact is a component pin OR a wire endpoint.** Revision 1
+said "two different nets in adjacent runs of holes," which reads as pins only. A wire
+endpoint anchored in an otherwise empty hole makes that hole — and its strip —
+electrically meaningful, and **a strip carrying no pins at all can still be a routing
+conductor between two wire endpoints.** A derivation that walks only pins misses both.
 
-| job | who |
-| --- | --- |
-| netlist → starting placement (`--import`) | VeroRoute |
-| the search, cut derivation, scoring | **this repository** |
-| independent confirmation of cuts and completeness (`--check`, AutoFill) | VeroRoute |
-| writing the `.vrt` a person opens, prints and builds from | VeroRoute |
+So, per strip: take its significant contacts in column order, label each with its
+reference net, and group them into maximal runs of one net. **A cut is required between
+each adjacent pair of runs belonging to different nets.** The count is
+`Σ(runs per strip) − (occupied strips)`, the identity this repository already uses.
 
-**This strengthens CRITERIA's governing invariant rather than straining it.** Today
-VeroRoute is inside the thing being judged. In this design it is a second,
-independently written implementation that checks our answer — and a disagreement
-between our cut count and AutoFill's is a **bug alarm**, not an ambiguity. The
-machinery to detect it already exists as `HC8`'s netlist equivalence.
+**Cut position needs a convention, because several positions are electrically
+equivalent and not physically equivalent.** Between two runs there may be many empty
+holes; a cut in the wrong one can foul a component lead, a solder bridge, or a wire
+anchor. The convention is stated in the implementation plan, not invented here, and it
+must be a declared rule with a test rather than an emergent property of a loop.
+
+**Required is not sufficient, and both are verified per candidate.** Separating nets does
+not prove each net is whole. Two invariants, checked in the model **before** a candidate
+is scored, not after optimisation:
+
+1. no copper-connected component holds terminals of two different reference nets;
+2. every reference net's terminals lie in one component.
+
+**Where this document pushes back on the review:** these are not new invariants to
+define. They are `HC8`, which exists, is tested, and has a negative-fixture suite, and
+the acceptance ordering already puts open-net count first. The defect was in revision
+1's prose, not in the project's model. What changes is that `HC8` moves **inward** — from
+a check on an exported artifact to a precondition on every candidate — which is cheap
+in-memory and was not affordable at 12 ms a look.
+
+### Materialization — model to `.vrt` (review finding 2, accepted in full)
+
+Revision 1 assigned VeroRoute the job of writing the `.vrt` and never said how a complete
+desired board state becomes one. That was the largest hole in it.
+
+**A declarative board-state import is added to the fork**, and the optimizer emits a
+complete placement-and-routing description that VeroRoute materializes atomically.
+Gesture replay is rejected: replaying thousands of moves would carry the old
+architecture's coordinate shifts, failed moves and state divergence into the new one,
+which is four days of this project's evidence. Writing `.vrt` bytes ourselves is also
+rejected — it is a binary format, and making us the writer of the artifact VeroRoute is
+meant to witness would destroy the independence the boundary exists for.
+
+The contract specifies: stable component identity and pin mapping; absolute placement
+coordinates and orientation; wire endpoints and explicitly required cuts; board
+dimensions and strip orientation; failure behaviour when a state cannot be represented;
+and a **round-trip check that the exported `.vrt` reconstructs the same electrical and
+physical model.**
+
+**The governing clause, from the review and adopted verbatim in intent:** VeroRoute must
+not silently repair or reinterpret a candidate. **If it changes the layout, the exported
+result is a different candidate and must be graded again.**
+
+**Dependency risk the review did not name:** this makes the fork a hard dependency on a
+feature only this project uses, and pushing to `oletizi/veroroute-perfboard` was an
+owner-authorised block (`OB1`) for weeks. It is unblocked — *"you can do whatever you
+want with the fork"* — but the fork now sits on the critical path for producing a
+buildable artifact, where today it sits on the critical path for searching.
 
 ### The search
 
-Constructive seeds, then local improvement. Seed by deciding which strip hosts each
-net, placing parts so their pins land there, and running a wire where a net must span —
-the way a person works. Then improve from several such seeds, with **compound
-candidates**, including move-and-wire as one proposal.
+Constructive seeds, then local improvement with **compound candidates**, including
+move-and-wire as one proposal.
 
-**The algorithm is deliberately not fixed here.** Once an evaluation costs microseconds
-rather than 75 ms, annealing, late-acceptance hill climbing and near-exhaustive search
-all become available, and which wins is a measurement. What this spec fixes is the
-*shape*: constructive seeds, compound moves, the existing acceptance ordering, and
-**running to convergence rather than to a budget**. A design doc that named the
-algorithm would be asserting something nobody has measured, which is the failure mode
-this plan's own record documents five times over.
+**Seeds are constraint-aware (review finding 6, accepted).** A part's terminals have a
+bounded separation — `minSpanHoles` and `maxSpanHoles`, which exist and are tested — so
+assigning its two nets to strips it cannot span produces a seed that is impossible to
+realise and wastes the optimizer's time repairing a decision that should never have been
+made. The seed builder checks feasibility before committing a strip assignment, and **a
+failed construction names the conflicting assignments** rather than silently substituting
+a different placement.
 
-## Benchmarks
+**The algorithm is deliberately not fixed here.** Once an evaluation costs microseconds,
+annealing, late-acceptance hill climbing and near-exhaustive search all become available,
+and which wins is a measurement. What this spec fixes is the shape. Naming an algorithm
+here would assert what nobody has measured — the failure mode this project's record
+documents five times over.
 
-The benchmark is **boards the owner laid out by hand and then built and used.**
+### Termination (review finding 3, accepted — revision 1 was wrong)
 
-| board | nets | cuts | cuts/net | wires | extent | status |
-| --- | --- | --- | --- | --- | --- | --- |
-| **feedback** | 11 | 5 | **0.45** | 4 | 16 × 18 | **primary** — built, passes `make check` |
-| **buffered** | 13 | 5 | **0.38** | 4 | 20 × 34 | secondary — built, passes `make check` |
+Revision 1 said the search should run "to convergence rather than to a budget." **That is
+not a termination policy.** A hill climber converges to a local optimum; annealing can run
+forever; a search can stall for millions of evaluations without proving anything. Cheaper
+evaluations do not remove the need for a limit.
 
-**Target:** match `feedback`'s cuts-per-net, using wires at a comparable rate, within the
-declared stock of **34 strips × 27 columns**.
+Worse, revision 1 loosened something this project already had right. `CRITERIA`'s `Q1`–`Q6`
+already encode a budget, a stagnation stop, and `Q1`'s at-floor clause **is** the
+proven-lower-bound termination the review asks for. **The stopping taxonomy is retained
+unchanged; only the budget rises**, because the reason it was small is gone.
 
-`buffered` exceeds that stock by seven columns. **This is not evidence of a limit of
-hand layout** — the owner's account is that he did not measure his stock before laying
-it out. Fitting 27 columns is an ordinary constraint to meet, not a victory over the
-hand result, and this spec does not claim otherwise.
+An exhausted run reports the best valid candidate found and **does not claim optimality.**
+That separation — stopping is about the run, admissibility is about the candidate — is
+already recorded as a deviation in the previous plan and stands.
+
+## Verification chain (review finding 5, accepted and sharpened)
+
+```
+circuit netlist + physical constraints
+  → TypeScript model: candidate, derived cuts, HC8 invariants per candidate
+    → VeroRoute: declarative import, atomic materialization, round-trip check
+      → independent copper-reconstruction verifier against the reference netlist
+        → existing acceptance and adoption gates, unchanged
+```
+
+**Where this document is sharper than the review:** "agreement is not conclusive proof"
+is true but blunt. The useful statement is *which* parts are independent. VeroRoute's cut
+derivation and AutoFill are third-party C++ written years ago with no knowledge of this
+model, so **that** comparison is genuinely independent and a disagreement is a real bug
+alarm. The **inputs** are not independent: footprints, pin patterns and the netlist all
+come from us. **A wrong footprint makes both implementations agree and both wrong.** That
+is the precise residual risk, and it is why the copper-reconstruction verifier is retained
+as a distinct acceptance mechanism rather than folded into the comparison.
+
+## Benchmarks (review finding 4, accepted)
+
+The benchmark is **boards the owner laid out by hand and then built and used.** Both
+currently pass `make check` and both declare a schematic, so neither has drifted from the
+netlist it was laid against — verified 2026-10-14.
+
+| board | nets | cuts | wires | extent | status |
+| --- | --- | --- | --- | --- | --- |
+| **feedback** | 11 | 5 | 4 | 16 × 18 | **primary** — built, passes |
+| **buffered** | 13 | 5 | 4 | 20 × 34 | secondary — built, passes |
+
+**Primary measure: exact-instance regression.** Run the optimizer on the same circuit,
+the same footprint set and the same board constraints as each hand layout, and require it
+to **match or improve the construction cost** on that instance.
+
+**Cuts-per-net is demoted to a cross-circuit diagnostic**, and revision 1 was wrong to
+build a target on it. This project's own cost identity says cut count is driven by
+occupied strips and segment runs, **not** by net count, so two circuits with equal net
+counts can differ entirely in pin count, connectivity and routing difficulty. The ratio is
+reported across boards; it is not a law.
+
+**Stock:** 34 strips × 27 columns. `buffered` exceeds it by seven columns. **This is not
+evidence of a limit of hand layout** — the owner's account is that he did not measure his
+stock first. Fitting 27 columns is an ordinary constraint, not a victory over the hand
+result, and revision 1's framing of it as one was a flattering story the facts do not
+support.
 
 ### Excluded, and why
 
-- **`lab`** — never built; the owner abandoned it as *"weirdly complicated."* Its zero
-  cuts are therefore **not** an achievement to emulate. It is retained as a **negative
-  control**: a board that would score perfectly on everything this pipeline minimises
-  and that a person rejected on sight. If the new search produces something lab-shaped,
-  that is a warning.
+- **`lab`** — never built; abandoned as *"weirdly complicated."* Its zero cuts are **not**
+  an achievement to emulate.
 - **`staged`** — provenance unestablished; the owner does not trust his recollection and
   the repository does not record who placed it.
-- **`B1-frozen` (`pultec-low-boost-frozen`)** — **withdrawn as a benchmark.** See below.
+- **`B1-frozen`** — withdrawn as a benchmark. See below.
+
+### `lab`'s role as negative control (review finding 7, accepted with a guard)
+
+"Warn when a layout is lab-shaped" is not testable, and revision 1 should not have left it
+there. `lab` exercises the **human-review workflow**, not the optimizer: present the
+generated layout and `lab` side by side, with their metrics and their renderings, and have
+a reviewer say why one is harder to build or follow.
+
+**The guard this document adds:** anything that exercise produces lands as an
+**owner-settled rule**, never an agent-derived one. "Identify deficiencies in the standing
+rule library" is one step from a legibility metric arriving through the back door, and
+`lab` is precisely the evidence that such a metric would be an agent's invention standing
+in for the owner's taste. `OBJ2` holds.
 
 ## Corrections to the record
 
-Two, both to be made before implementation starts.
-
 **`B1-frozen`'s provenance is not `[external]`.** CRITERIA line 455 records it as *"the
-owner's hand layout."* The owner states he did not produce it. The only source for the
-claim was an agent-written sentence in `tests/fixtures/stripboard/provenance.txt`, which
-was then cited into an owner-approved specification. **An unverified agent assertion
-became the external standard the pipeline is graded against** — the precise failure the
-governing invariant exists to prevent. The mark becomes *unverified*; the fixture is
-retained for regression, not as a bar.
+owner's hand layout."* The owner states he did not produce it. The only source was an
+agent-written sentence in `tests/fixtures/stripboard/provenance.txt`, cited into an
+owner-approved specification — so **an unverified agent assertion became the external
+standard the pipeline is graded against**, the precise failure the governing invariant
+exists to prevent. The mark becomes *unverified*; the fixture is retained for regression,
+not as a bar.
 
-**`V3`'s deviation is superseded, not revived.** A deviation recorded on 2026-10-13 held
-that `B1-frozen` was the wrong target because it could not run. It is now the wrong
-target for a better reason: nobody can say what it measures. The benchmark moves to
-`feedback` and `buffered`.
+**`V3`'s deviation is superseded.** A deviation of 2026-10-13 held `B1-frozen` the wrong
+target because it could not run. It is the wrong target for a better reason: nobody can
+say what it measures.
 
 ## What is explicitly NOT changing
 
 The criteria document; the adoption gate and its ten refusals; the span, footprint and
 pin-pattern data; the provenance chain; the refusal discipline; the report; `make check`
-and the four buildability verifiers. **None of those is the problem.** This replaces the
-inner loop — `climb*`, `moves*`, and the per-candidate fork traffic — and nothing above it.
+and the four buildability verifiers; `Q1`–`Q6`. **None of those is the problem.** This
+replaces the inner loop — `climb*`, `moves*`, and the per-candidate fork traffic.
 
 **`OBJ1` and `OBJ2` are untouched.** No new term in `F`, no eleventh hard constraint, and
-**no legibility metric.** `lab` is the reason that prohibition is right rather than
-merely stated: the owner rejected it on judgment, so any tidiness measure would be an
-agent's invention standing in for his taste. `G5` — human review — remains load-bearing,
-and the renderer fixed on 2026-10-14 is what makes exercising it possible.
+no legibility metric.
 
 ## Risks, stated rather than buried
 
-**We would own a cut-derivation implementation.** If ours and AutoFill's disagree we have
-two truths. Accepted, because the disagreement is detectable by construction here and
-the alternative is inferring cost through a 12 ms subprocess we cannot see inside.
+**We own a cut-derivation implementation.** If ours and AutoFill's disagree we have two
+truths. Accepted: the disagreement is detectable by construction, and the alternative is
+inferring cost through a subprocess we cannot see inside.
 
-**A rewrite of the inner loop discards working code.** `climb*` and `moves*` are tested
-and correct for what they do. The case for replacing them is that what they do cannot
-reach the answer, not that they are faulty.
+**Shared inputs defeat the witness.** A wrong footprint or pin pattern makes both
+implementations agree and both wrong. Mitigated by retaining copper reconstruction against
+the reference netlist, not by the VeroRoute comparison.
 
-**The constructive seed could encode taste.** Deciding which strip hosts a net is a
-placement heuristic, and a heuristic chosen to make the benchmark pass would be an agent
-grading its own work. Mitigation: seeds are generated from several orderings and judged
-only by the existing acceptance rule, never hand-tuned against a benchmark figure.
+**The fork moves onto the artifact critical path.** See *Materialization*.
+
+**A rewrite discards working code.** `climb*` and `moves*` are tested and correct for what
+they do. The case is that what they do cannot reach the answer, not that they are faulty.
+
+**The constructive seed could encode taste.** A seed heuristic tuned to make a benchmark
+pass would be an agent grading its own work. Mitigation: seeds come from several orderings,
+judged only by the existing acceptance rule, never hand-tuned against a benchmark figure.
 
 ## Decisions
 
 | decision | who | why |
 | --- | --- | --- |
-| Own the model; VeroRoute becomes importer, verifier and exporter | **[owner]** 2026-10-14 | *"yes, your recommendation"*, after the alternative — extending the fork and keeping the architecture — was offered and costed |
+| Core layout logic is ours; VeroRoute is reference, witness and human starting point | **[owner]** 2026-10-14 | verbatim: *"being tied to a forked gui for our core logic is a bad idea… the core agent-focused layout solution code should be ours"* |
+| Option A (extend the fork, keep the architecture) is rejected | **[owner]** 2026-10-14 | *"Don't worry about option A"* — decided on where the dependency sits, not on speed |
 | The fork is in scope to change, or to abandon | **[owner]** 2026-10-14 | verbatim: *"you can do whatever you want with the fork, including abandon it for something more suitable if need be"* |
 | Benchmark is `feedback` and `buffered` | **[owner]** 2026-10-14 | the two boards he hand-laid and built; `lab` and `staged` excluded on his instruction |
 | `lab` is a negative control, not a target | **[owner]** 2026-10-14 | verbatim: *"It was weirdly complicated. so I abandoned it"* |
+| `buffered`'s width overrun is not a human limit | **[owner]** 2026-10-14 | verbatim: *"I was lazy and didn't measure my stock… not because I was incapable"* |
 | No legibility term despite `lab` | agent, under `OBJ2` | adding one would be an agent authoring the criterion its own output is graded by |
-| Algorithm left unfixed | agent | which search wins is a measurement; naming one here would assert what nobody has measured |
+| Algorithm left unfixed | agent | which search wins is a measurement |
+| `HC8` moves inward as a per-candidate precondition | agent, after review | cheap in-memory; it was unaffordable at 12 ms a look |
 
 ## Open questions for the owner
 
-1. **The evaluation budget.** Three runs have ended budget-exhausted. Under this design
-   the budget largely stops mattering — but if a run still fails to converge, what should
-   it do: report, or keep going?
-2. **Connector grouping.** The owner proposed moving controls off-board behind
-   wire-to-board connectors and stated no strong preference on grouping. Under this
-   design a pad is just a one-hole part, so the pad problem dissolves without it. The
-   proposal is therefore **deferred, not rejected**: it remains available as a packaging
-   choice, to be decided by measurement if it is ever needed.
+1. **The budget.** `Q1`–`Q6` are retained and the budget rises. How far? A number set by an
+   agent here would be a parameter nobody chose, and `PAR3` makes the rules file strict.
+2. **Connector grouping.** The owner proposed moving controls off-board behind wire-to-board
+   connectors and stated no strong preference on grouping. Under this design a pad is just a
+   one-hole part, so the pad problem dissolves without it. **Deferred, not rejected** — a
+   packaging choice, decidable by measurement if ever needed.
