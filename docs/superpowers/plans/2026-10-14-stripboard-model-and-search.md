@@ -12,6 +12,44 @@
 
 ---
 
+## OWNER RULING, 2026-10-14: BODY COLLISIONS ARE NOT MODELLED
+
+**His words, verbatim:** *"Don't worry about body collisions on the stripboard. It's
+extremely flexible."* Taken with his earlier *"the whole point of stripboards is to use the
+flexibility of the leads… The only time you care about the body dimensions is if the leads
+are very short… or rigid like dip packaged chips."*
+
+**What this changes, measured by Task 13 rather than assumed.** `Placement.holes` — a
+part's body-derived occupied area — is read by **exactly one consumer**: `holesOverlap`,
+i.e. body-to-body collision. Stock fit reads the dump's `BOUNDS` (`rank.ts`); the
+buildability check reads feature holes (`extent.ts`). Task 13 corrected a comment in
+`board.ts` that claimed all three read it; only the first does. **So this ruling removes
+the single consumer of body occupancy.**
+
+**What it unblocks, and it is the benchmark itself.** Task 13 reported two obstacles to
+importing the owner's built boards: a hole-ownership rule that refused `feedback` (a
+resistor lead sits in a hole the `RV4` trimmer's body covers — on a board he built and
+uses), and 13 of `buffered`'s 21 parts being undescribable because a stretched two-pin part
+has no body model. **Both were body questions. Both are now moot.** A placement is its
+pins.
+
+**What is NOT changed by it, and must not be dropped on this ruling's authority:**
+
+- **Pin holes still matter.** Whether two *leads* may share one hole is a **separate,
+  still-open question** the owner has not answered. Do not fold it into this ruling.
+- **Lead reach still matters.** `HC5`/`HC9` bound whether a part's leads can span the holes
+  assigned to it, and they are unaffected.
+- **Pin pattern still matters.** `HC10`'s footprint half — whether a package's pins
+  decompose into rows the strips can take — is pin geometry, not body area.
+
+**`lib/kicad/footprint-extent.ts` and `formed-frame.ts` (Tasks 12 and 13) now have no
+consumer in the core.** They are correct, tested, and were built to answer a question that
+has since been withdrawn. They are **kept for now rather than deleted**, because this plan's
+author is not confident enough in one reading of one sentence to destroy two tasks of
+verified work — but `supersede means delete` applies, and **if nothing claims them by the
+end of this plan they go.** Recorded here so the decision is deliberate rather than
+forgotten.
+
 ## Global Constraints
 
 - **An agent may never author the acceptance criteria for the artifact it is producing.** No new term in `F`, no eleventh hard constraint, **no legibility metric**, no tuned threshold introduced by the thing being measured.
