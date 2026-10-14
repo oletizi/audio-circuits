@@ -73,6 +73,32 @@ between which two holes*, never *what shape of removal*. This **simplifies** Tas
 convention rather than complicating it, and with the body ruling above, the only thing a cut
 can foul is a lead's solder joint or a solder bridge.
 
+## STANDING EXCLUSION: THE TERMINAL BLOCK IS NOT A GAP TO FILL
+
+**No task in this plan may report the Phoenix terminal block as missing data, a blocker, or
+`part-researcher` work.** It has now been raised three times and the owner has had to say
+so three times: *"We don't use terminal blocks on stripboards. I've told you that MANY
+times."*
+
+**Why it keeps resurfacing, and the fix.** `tests/fixtures/stripboard/pultec-low-boost-frozen.dump`
+is a byte-frozen capture from before the part left the design, so it legitimately contains
+`board_terminals`. Anything that tries to import that fixture hits a footprint recorded in
+no table and correctly reports "no record" — and a reader then relays it as a gap to close.
+**It is not a gap. It is a superseded part in a historical capture.**
+
+Verified 2026-10-14: `BLOCK_200MIL*` appears in **zero** live board layouts; the live design
+carries none; `9f57dcc` removed it from all five Pultec layouts on the owner's instruction.
+The only other traces are a stale `ki_fp_filters` hint in `pultec-mid-band.kicad_sch` — a
+KiCad footprint-picker suggestion, not a part.
+
+**So the frozen fixture is EXCLUDED, not blocked.** It cannot be fully imported and that is
+the correct and final state. It remains valuable for what it is: a regression fixture whose
+7 parts and 10 pads do import, and a record of a layout as it stood. `B1-frozen` was already
+withdrawn as a benchmark on separate grounds.
+
+**If a task finds itself about to write "the terminal block needs a record", the correct
+sentence is "the frozen fixture is excluded; see the standing exclusion."**
+
 ## Global Constraints
 
 - **An agent may never author the acceptance criteria for the artifact it is producing.** No new term in `F`, no eleventh hard constraint, **no legibility metric**, no tuned threshold introduced by the thing being measured.
