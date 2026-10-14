@@ -25,10 +25,16 @@
  * across these boards. A fit therefore compares the ORDER and AXIS of a
  * two-pin part's leads, not their spacing, and only for a footprint
  * `lib/kicad/lead-span.ts` records as formable. **The span bounds are NOT
- * applied here**: `HC5`/`HC9` own them, this module would be a second owner, and
- * two of the owner's built `buffered` resistors sit at a span of one hole
- * against a recorded floor of two - a finding to report, not a board to refuse
- * inside an adapter.
+ * applied here**: `HC5`/`HC9` own them and this module would be a second owner.
+ * Measured with `spanHoles`' own INCLUSIVE convention
+ * (`tools/stripboard/constraints-model.ts`: `max(|dRow|, |dCol|) + 1`, so two
+ * leads in adjacent holes span TWO), exactly one placement on the committed
+ * boards is outside its recorded bound: `transistor-preamp-staged`'s `C8` at 14
+ * holes against a ceiling of 11, which is this repository's one already-recorded
+ * `HC5` failure. **An earlier version of this comment claimed two of
+ * `buffered`'s resistors were under the DIN0207's floor of two; they are at
+ * exactly the floor, and the claim was a pitch count read as an inclusive
+ * span.**
  *
  * **THE EIGHTH TRANSFORM, AND WHY IT IS A LABELLING FACT RATHER THAN A FLIP.**
  * The fit is sought over the eight symmetries of the square - the four facings,

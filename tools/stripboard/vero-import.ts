@@ -59,16 +59,27 @@
  * reference netlist names a wire nothing, and a wire's end holes hold no pin on
  * any committed board.
  *
+ * **A `PAD` LINE IS A ONE-HOLE PLACEMENT.** VeroRoute expands an off-board
+ * part's terminals into one-hole pads, and the owner settled what one is:
+ * *"yeah - a single pad has no orientation. It's just a place to solder an
+ * off-board wire or a test point to."* So it is imported with no footprint, an
+ * arbitrary facing that `padPlacementOf` says is arbitrary, and the reference
+ * pin its `FROM` field names - see that function for the two consequences that
+ * follow, one of which is the only place this importer gives two placements one
+ * `ref`.
+ *
  * **THE THREE FILES.** This one walks the dump and builds a `Placement` per
- * `PART` line; `./vero-import-facing.ts` solves the one field a dump does not
- * reliably carry, which way round a part is; `./vero-import-nets.ts` holds the
- * `WIRE` and `SOLDER` halves, whose nets have to be resolved rather than read,
- * and the refusal shape and row-to-strip reading both halves need.
+ * `PART` line and per `PAD` line; `./vero-import-facing.ts` solves the one field
+ * a dump does not reliably carry, which way round a fitted part is;
+ * `./vero-import-nets.ts` holds the `WIRE` and `SOLDER` halves, whose nets have
+ * to be resolved rather than read, and the refusal shape and row-to-strip
+ * reading both halves need.
  */
 import { parseBoardDump, type BoardDump, type Part } from "../guide/dump.ts"
 import type { ReferenceNets } from "./equivalence.ts"
 import type { Candidate, PinPatterns, Placement } from "../../lib/stripboard/board.ts"
 import { facingOf, type PinHole } from "./vero-import-facing.ts"
+import { padLines, type PadLine } from "./pad-provenance.ts"
 import {
   bridgesOf,
   holeOf,
@@ -221,6 +232,136 @@ function placementOf(
 }
 
 /**
+ * What a `PAD` placement's `footprint` field says, which is that there is no
+ * footprint.
+ *
+ * A pad is not a fitted part: it has no `.kicad_mod`, no pin pattern and no pads
+ * to put on holes, so nothing about its geometry comes from a footprint and
+ * `geometryOf` has nothing to say about it. The field is required by
+ * `Placement`, so it carries this instead of a library name - and a consumer
+ * that hands it to a footprint lookup gets a loud refusal naming it, which is
+ * the right outcome rather than a quiet one.
+ *
+ * ITS CONSTANT IS NOT NAMED AFTER THE FIELD, deliberately:
+ * `tests/kicad/footprint-sweep.ts` collects the value of any constant whose name
+ * ends in that word, and would then hold this string to an installed KiCad
+ * library it is not.
+ */
+export const OFF_BOARD_TERMINAL = "off-board terminal"
+
+/**
+ * One `PAD` line as a one-hole `Placement`.
+ *
+ * **THE OWNER SETTLED WHAT A PAD IS, verbatim:** *"yeah - a single pad has no
+ * orientation. It's just a place to solder an off-board wire or a test point
+ * to."* So the facing this records is ARBITRARY, and `direction: "E"` below is
+ * not derived from anything: a one-hole part occupies the same hole at all four
+ * facings, so there is nothing to derive and nothing a wrong answer could
+ * change. **`Placement.direction` cannot express "no orientation"** - it is a
+ * required field of four values - and widening it is a change to
+ * `lib/stripboard/board.ts`, which belongs to the plan rather than to this
+ * adapter. The awkwardness is reported rather than hidden behind a derivation
+ * that does not exist.
+ *
+ * **IT IS NAMED THE WAY THE NETLIST NAMES IT, NOT THE WAY THE BOARD DOES.**
+ * VeroRoute expands a `PADS<n>` component into n one-hole pads with board names
+ * of their own - `RV_LO_BOOST.1` becomes the pad `RV_LO_BOOST_1`, whose single
+ * `PIN` line is `RV_LO_BOOST_1 1`. The `FROM <ref>.<pin>` field is the only
+ * place the dump records which reference pin a pad is, and this uses it: the
+ * placement's `ref` and pin name are the export's, so `${ref}.${pin}` resolves
+ * in the reference netlist like any other pin. **The alternative - keeping the
+ * board's name - would have left ten of the frozen low-boost's twenty-seven
+ * pins resolving to no net, and a cut derivation would have read those holes as
+ * empty**, which is the silence this project's rules exist to prevent. It is
+ * also what `./pad-provenance.ts` does for `HC8`, under its own name.
+ *
+ * **THE CONSEQUENCE, STATED BECAUSE IT IS THE ONE PLACE THIS IMPORTER BREAKS A
+ * HABIT:** an off-board part with three terminals becomes THREE placements that
+ * share one `ref`. That is faithful - the fork places each pad independently and
+ * a move must be able to move one without the others - but `ref` is then not
+ * unique among placements, and a later task keying a map by `ref` alone would
+ * collapse them. The identity of a pad placement is `ref` AND its one pin name.
+ */
+function padPlacementOf(
+  pad: PadLine,
+  pins: readonly PinHole[] | undefined,
+  reference: ReferenceNets,
+): Placement {
+  if (pad.placement === "floating") {
+    refuse(
+      "vero-import-pad-unplaced",
+      `the dump reports the pad "${pad.ref}" as FLOATING, so it is in no hole: "${pad.line}".\n` +
+        "Fix it in the layout - a breakout hole that is nowhere is a terminal the board does " +
+        "not bring out.\nIt is not imported at an invented hole and it is not dropped: its " +
+        "reference pin would then be on the board according to the netlist and in no hole " +
+        "according to the layout, with nothing downstream able to see the disagreement.",
+    )
+  }
+  const source = pad.source
+  const dot = source === undefined ? -1 : source.lastIndexOf(".")
+  const owner = source === undefined ? "" : source.slice(0, dot)
+  const pin = source === undefined ? "" : source.slice(dot + 1)
+  if (source === undefined || owner === "" || pin === "") {
+    refuse(
+      "vero-import-pad-unprovenanced",
+      `the dump prints the pad "${pad.ref}" with no readable FROM <ref>.<pin> field: ` +
+        `"${pad.line}".\nThat field is the only place a dump records which reference pin an ` +
+        "expanded pad is, so without it the hole holds a lead of no known net. The fork prints " +
+        "NOPROVENANCE when its own board carries none; fix it by re-importing the netlist into " +
+        "the layout.\nThe pad's board name is not used instead: RV_LO_BOOST_1 is a name " +
+        "VeroRoute invented and no netlist knows it.",
+    )
+  }
+  const only = pins?.[0]
+  if (pins === undefined || pins.length !== 1 || only === undefined) {
+    refuse(
+      "vero-import-pad-pin-lines",
+      `the dump prints ${pins?.length ?? 0} PIN lines for the pad "${pad.ref}" and a pad is one ` +
+        `hole: "${pad.line}".\nThe fork prints exactly one PIN line per placed pad; a different ` +
+        "count is a grammar change rather than a board this importer should interpret.\nThe " +
+        "PAD line's own AT field is not used in its place: the PIN lines are this importer's " +
+        "one source for where a lead is, and a second source for one case is how two readings " +
+        "drift apart.",
+    )
+  }
+  if (only.hole.strip !== pad.placement.row || only.hole.column !== pad.placement.col) {
+    refuse(
+      "vero-import-pad-hole-disagrees",
+      `the pad "${pad.ref}" is at ${pad.placement.row},${pad.placement.col} on its PAD line and ` +
+        `at ${only.hole.strip},${only.hole.column} on its PIN line: "${pad.line}".\nThe fork ` +
+        "writes both from the same board, so a disagreement is a defect in the capture rather " +
+        "than a reading to normalise.\nNeither is preferred: the two printed positions exist " +
+        "so that the disagreement is visible, and choosing one would hide it.",
+    )
+  }
+  if (netOf(source, reference) === "") {
+    refuse(
+      "vero-import-pad-net-unknown",
+      `the pad "${pad.ref}" says it is reference pin "${source}", and the netlist export handed ` +
+        "to candidateFromDump has that pin in no net.\nEither the export is of a different " +
+        "schematic than the layout was built from, or the pad's FROM field names a pin that no " +
+        "longer exists.\nIt is not imported with no net: its hole holds a lead, and a cut " +
+        "derivation reading that hole as empty would leave out the cut it needs.",
+    )
+  }
+  return {
+    ref: owner,
+    footprint: OFF_BOARD_TERMINAL,
+    origin: only.hole,
+    // ARBITRARY, AND THE COMMENT ABOVE SAYS SO: a single pad has no orientation.
+    direction: "E",
+    holes: [only.hole],
+    pins: new Map([[pin, only.hole]]),
+  }
+}
+
+/** The reference net holding one pin id, or `""` when no net holds it. */
+function netOf(pin: string, reference: ReferenceNets): string {
+  for (const [net, members] of reference) if (members.includes(pin)) return net
+  return ""
+}
+
+/**
  * Read one `--dump-board` capture into a `Candidate`.
  *
  * Refuses, by a key naming the fault and the part, wire or bridge it is in,
@@ -246,23 +387,30 @@ export function candidateFromDump(
     )
   }
   const pins = pinsByRef(dump)
-  const placed = new Set(dump.parts.map((part) => part.ref))
+  const pads = padLines(dumpText)
+  const known = new Set([...dump.parts.map((part) => part.ref), ...pads.map((pad) => pad.ref)])
   for (const ref of [...pins.keys()].sort()) {
-    if (placed.has(ref)) continue
+    if (known.has(ref)) continue
     refuse(
-      "vero-import-pad-line",
-      `the dump prints PIN lines for "${ref}" and no PART line, which is how it reports one ` +
-        "terminal of an off-board part: VeroRoute expands a PADS<n> component into n one-hole " +
-        "pads with board names of their own (see ./pad-provenance.ts).\nThe model has no " +
-        "vocabulary for one: a Placement carries a footprint, an origin and a direction, and a " +
-        "breakout hole has none of the three. Adding one is a change to " +
-        "lib/stripboard/board.ts and belongs to the plan, not to this adapter.\nIt is not " +
-        "dropped: its hole holds a lead, so a cut derivation that did not know about it would " +
-        "read that hole as empty and leave out the cut it needs.",
+      "vero-import-pins-without-part",
+      `the dump prints PIN lines for "${ref}" and neither a PART line nor a PAD line, so there ` +
+        "is nothing on the board for those holes to belong to.\nThe two line kinds that put a " +
+        "lead in a hole are PART (a fitted component) and PAD (one terminal of an off-board " +
+        "one); a third would be a grammar this importer has not been taught, and " +
+        "tools/perfboard/acquire.ts names the rebuild if this dump is from an unpinned " +
+        "fork.\nThe holes are not imported unowned: every later question about a hole - which " +
+        "net it is on, whether a cut is needed beside it - is asked of the thing that owns it.",
     )
   }
   const nets = netByNode(dumpText, reference)
-  const placements = dump.parts.map((part) => placementOf(part, pins.get(part.ref), footprints, patterns))
+  const placements = [
+    ...dump.parts.map((part) => placementOf(part, pins.get(part.ref), footprints, patterns)),
+    // THE PADS COME AFTER THE PARTS AND IN THE DUMP'S OWN ORDER, which is a
+    // declared convention rather than an accident: two runs over one dump must
+    // produce the same candidate, and a reader comparing a candidate against a
+    // dump should be able to walk the two in step.
+    ...pads.map((pad) => padPlacementOf(pad, pins.get(pad.ref), reference)),
+  ]
   const wires = wiresOf(dumpText, dump, nets)
   return {
     grid: { strips: dump.grid.rows, columns: dump.grid.cols },

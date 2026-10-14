@@ -13,18 +13,21 @@
  * mention the words a loose regex would match - so `toStartWith` on the key is
  * the only form that distinguishes one refusal from another.
  *
- * **TWO REFUSALS CANNOT FIRE TODAY, AND THAT IS ASSERTED RATHER THAN LEFT
+ * **ONE REFUSAL CANNOT FIRE TODAY, AND THAT IS ASSERTED RATHER THAN LEFT
  * SILENT.** `vero-import-copper-side` needs a footprint whose pads are chiral,
  * and all thirteen recorded footprints are mirror-symmetric as a pad set - which
- * is measured here, so the day a chiral one is recorded this file says so.
- * `vero-import-wire-two-nets` and the rest are reachable and are below.
+ * is measured here, so the day a chiral one is recorded this file says so. One
+ * other, `vero-import-wire-unreadable-node`, cannot fire through
+ * `candidateFromDump` because the dump READER enforces that grammar first; both
+ * halves of that are asserted below. Every other refusal is reachable and is
+ * exercised here or by a committed board.
  */
 import { expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
 import { geometryOf } from "../../lib/stripboard/board.ts"
 import { PIN_PATTERNS } from "../../lib/kicad/pin-pattern.ts"
-import { candidateFromDump } from "../../tools/stripboard/vero-import.ts"
+import { candidateFromDump, OFF_BOARD_TERMINAL } from "../../tools/stripboard/vero-import.ts"
 import { facingOf, FACINGS } from "../../tools/stripboard/vero-import-facing.ts"
 import { wireNodes } from "../../tools/stripboard/vero-import-nets.ts"
 import { refusalFrom, syntheticDump, syntheticReference } from "./vero-import-fixtures.ts"
@@ -220,6 +223,96 @@ test("a solder bridge in two empty holes refuses, naming the grammar gap", () =>
   const message = refusal([...ONE_RESISTOR, "SOLDER 3,8 4,8"])
   expect(message).toStartWith("vero-import-bridge-net-unknown: ")
   expect(message).toContain("SOLDER 3,8 4,8")
+})
+
+/**
+ * THE `PAD` LINE'S FIVE REFUSALS, and the one that used to stand in their place.
+ *
+ * `vero-import-pad-line` refused every board carrying a `PAD` line, on the
+ * grounds that the model had no vocabulary for a one-hole terminal. **The owner
+ * settled that:** *"yeah - a single pad has no orientation. It's just a place to
+ * solder an off-board wire or a test point to."* A pad is now imported as a
+ * one-hole placement, that key is gone, and what it was guarding is covered by
+ * the five below plus `vero-import-pins-without-part` - which is the narrowed
+ * survivor, for a ref with `PIN` lines and neither a `PART` nor a `PAD` line.
+ */
+const ONE_PAD = "PAD RV1_1 10K AT 3,3 FROM RV1.1"
+
+/** The synthetic board's reference, widened by the pin a pad can be. */
+const PAD_REFERENCE = syntheticReference({
+  top: ["R1.1", "R2.1", "RV1.1"],
+  bottom: ["R1.2", "R2.2"],
+})
+
+function padRefusal(lines: readonly string[]): string {
+  return refusalFrom(() =>
+    candidateFromDump(syntheticDump({ lines }), PAD_REFERENCE, FOOTPRINTS, PIN_PATTERNS),
+  )
+}
+
+test("a PAD line imports as a one-hole placement named the way the netlist names it", () => {
+  const candidate = candidateFromDump(
+    syntheticDump({ lines: [...ONE_RESISTOR, ONE_PAD, "PIN RV1_1 1 AT 3,3"] }),
+    PAD_REFERENCE,
+    FOOTPRINTS,
+    PIN_PATTERNS,
+  )
+  const pad = candidate.placements.find((placement) => placement.footprint === OFF_BOARD_TERMINAL)
+  expect(pad?.ref, "the netlist's name for the part, not the board's").toBe("RV1")
+  expect([...(pad?.pins ?? [])], "its one reference pin, in its one hole").toEqual([
+    ["1", { strip: 3, column: 3 }],
+  ])
+  expect(pad?.holes, "a placement is its pins").toEqual([{ strip: 3, column: 3 }])
+  // THE FACING IS ARBITRARY AND THE TEST SAYS SO RATHER THAN BLESSING IT. A
+  // one-hole part occupies the same hole at all four facings, so this asserts
+  // only that the field is filled - not that "E" was derived from anything.
+  expect(pad?.direction, "an arbitrary facing, because a single pad has none").toBe("E")
+})
+
+test("a FLOATING pad refuses, naming it", () => {
+  const message = padRefusal([...ONE_RESISTOR, "PAD RV1_1 10K FLOATING FROM RV1.1"])
+  expect(message).toStartWith("vero-import-pad-unplaced: ")
+  expect(message).toContain("RV1_1")
+})
+
+test("a pad with no FROM field refuses, because nothing else says which pin it is", () => {
+  const message = padRefusal([...ONE_RESISTOR, "PAD RV1_1 10K AT 3,3 NOPROVENANCE", "PIN RV1_1 1 AT 3,3"])
+  expect(message).toStartWith("vero-import-pad-unprovenanced: ")
+  expect(message).toContain("RV1_1")
+})
+
+test("a pad with more than one PIN line refuses, because a pad is one hole", () => {
+  const message = padRefusal([
+    ...ONE_RESISTOR,
+    ONE_PAD,
+    "PIN RV1_1 1 AT 3,3",
+    "PIN RV1_1 2 AT 3,4",
+  ])
+  expect(message).toStartWith("vero-import-pad-pin-lines: ")
+  expect(message).toContain("RV1_1")
+})
+
+test("a pad whose PAD and PIN lines disagree about its hole refuses, preferring neither", () => {
+  const message = padRefusal([...ONE_RESISTOR, ONE_PAD, "PIN RV1_1 1 AT 4,4"])
+  expect(message).toStartWith("vero-import-pad-hole-disagrees: ")
+  expect(message).toContain("3,3")
+  expect(message).toContain("4,4")
+})
+
+test("a pad whose reference pin is in no net refuses, naming the pin", () => {
+  const message = padRefusal([
+    ...ONE_RESISTOR,
+    "PAD RV9_1 10K AT 3,3 FROM RV9.1",
+    "PIN RV9_1 1 AT 3,3",
+  ])
+  expect(message).toStartWith("vero-import-pad-net-unknown: ")
+  expect(message).toContain("RV9.1")
+})
+
+test("a ref with PIN lines and neither a PART nor a PAD line refuses, naming it", () => {
+  const message = padRefusal([...ONE_RESISTOR, "PIN GHOST 1 AT 3,3"])
+  expect(message).toStartWith("vero-import-pins-without-part: ")
+  expect(message).toContain('"GHOST"')
 })
 
 /**

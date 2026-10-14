@@ -16,9 +16,14 @@
  *     have no recorded pin pattern at all (`C_Disc_D5.0mm`,
  *     `CP_Radial_D5.0mm_P2.50mm`, `CP_Radial_D10.0mm_P5.00mm`,
  *     `PinHeader_1x03`), so there are no pads to put on holes.
- *   - both low-boost dumps carry `PAD` lines - VeroRoute's expansion of an
- *     off-board part's terminals - which the `Candidate` model has no
- *     vocabulary for.
+ *   - `pultec-low-boost-frozen` imports its seven parts and all ten of its
+ *     `PAD` lines and refuses on `board_terminals`, a Phoenix terminal block
+ *     with no recorded pin pattern and no recorded lead span - a part nobody has
+ *     looked at yet rather than one this importer cannot read.
+ *   - `pultec-low-boost-imported` refuses because no committed footprint map
+ *     covers the synthetic refs an `--import` run invents
+ *     (`SI_HI_BOOST_RV_HI_BOOST.ccw-wiper`); the frozen board's map is the
+ *     nearest one there is and it names eight designators of the seventeen.
  *   - `transistor-preamp-buffered`, the owner's OTHER built board, imports
  *     every one of its 21 parts and all four of its wires and refuses on ONE of
  *     its six solder bridges: `SOLDER 13,21 14,21` joins two holes that hold no
@@ -27,15 +32,32 @@
  *     is the only thing standing in the way, by importing the same board with
  *     that one line removed.
  *
+ * **A `PAD` LINE IS A ONE-HOLE PLACEMENT, and the owner settled why:** *"yeah -
+ * a single pad has no orientation. It's just a place to solder an off-board wire
+ * or a test point to."* So it has no facing to solve and no footprint to check,
+ * and the three assertions the `PART` lines are held to do not apply to it - it
+ * gets its own test instead, asserting the one thing that matters about it:
+ * that its `ref.pin` is the reference pin its `FROM` field names, and that that
+ * pin is on a net of the reference netlist.
+ *
  * **NO CUT IS ASSERTED ANYWHERE IN THIS FILE.** Cuts do not exist in the model
  * yet; this task runs before the one that derives them, so that the differential
  * test there has one converter to use rather than a throwaway second one.
  */
 import { expect, test } from "bun:test"
-import { geometryOf, holesOverlap, type Candidate } from "../../lib/stripboard/board.ts"
+import {
+  geometryOf,
+  holesOverlap,
+  type Candidate,
+  type Hole,
+  type Placement,
+} from "../../lib/stripboard/board.ts"
 import { PIN_PATTERNS } from "../../lib/kicad/pin-pattern.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
-import { candidateFromDump } from "../../tools/stripboard/vero-import.ts"
+import { spanHoles } from "../../tools/stripboard/constraints-model.ts"
+import { leadSpanFor } from "../../lib/kicad/lead-span.ts"
+import { candidateFromDump, OFF_BOARD_TERMINAL } from "../../tools/stripboard/vero-import.ts"
+import { padLines } from "../../tools/stripboard/pad-provenance.ts"
 import {
   COMMITTED_BOARDS,
   dumpTextOf,
@@ -48,8 +70,11 @@ import {
 /** What each committed board does, measured: it imports, or it refuses with this key and names this. */
 const OUTCOMES: Readonly<Record<string, { readonly key: string; readonly names: string } | "imports">> = {
   "pt2399-core": { key: "vero-import-no-geometry", names: '"C1"' },
-  "pultec-low-boost-frozen": { key: "vero-import-pad-line", names: '"RV_LO_BOOST_1"' },
-  "pultec-low-boost-imported": { key: "vero-import-pad-line", names: '"RV_LO_BOOST_1"' },
+  "pultec-low-boost-frozen": { key: "vero-import-no-geometry", names: '"board_terminals"' },
+  "pultec-low-boost-imported": {
+    key: "vero-import-footprint-unmapped",
+    names: '"SI_HI_BOOST_RV_HI_BOOST.ccw-wiper"',
+  },
   "transistor-preamp-buffered": { key: "vero-import-bridge-net-unknown", names: "SOLDER 13,21 14,21" },
   "transistor-preamp-feedback": "imports",
   "transistor-preamp-loop": "imports",
@@ -89,28 +114,57 @@ for (const board of COMMITTED_BOARDS) {
 }
 
 /**
- * The faithfulness assertions, over the boards that import.
+ * The one part of the frozen low-boost board this importer cannot read, and the
+ * bridge that lands in one of its holes.
  *
- * `buffered` is here through the one-line edit its own refusal test describes:
- * the dump with `SOLDER 13,21 14,21` removed. That is this file manipulating a
- * copy of a fixture's TEXT, which is the only way to assert that the other
- * twenty-one parts, four wires and five bridges of the owner's second built
- * board do import - and the unedited file is asserted to refuse above, so the
- * edit cannot make the refusal disappear unnoticed.
+ * `board_terminals` is fitted with
+ * `TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal`,
+ * which has **no recorded pin pattern and no recorded lead span** - it is in
+ * neither `PIN_PATTERNS` nor `LEAD_SPANS` nor `lead-span.ts`'s `UNSOURCED`, so
+ * nobody has yet looked at it. Recording one is a datasheet transcription with a
+ * test beside it, and this plan's rule is to stop and report rather than widen a
+ * table to make something pass.
+ *
+ * The `SOLDER` line goes with it rather than being a second concession: the
+ * bridge's own holes are `9,6` and `10,6`, and `board_terminals.1` is the only
+ * contact in either, so removing the part removes the only statement of what net
+ * that bridge carries.
  */
-const FAITHFUL: readonly (readonly [string, string | null])[] = [
-  ["transistor-preamp-feedback", null],
-  ["transistor-preamp-loop", null],
-  ["transistor-preamp-buffered", "SOLDER 13,21 14,21"],
+const TERMINAL_BLOCK_LINES: readonly string[] = [
+  "PART board_terminals BLOCK_200MIL3 Conn_01x03 AT 4,5 SPAN 3",
+  "PIN board_terminals 1 AT 9,6",
+  "PIN board_terminals 2 AT 7,6",
+  "PIN board_terminals 3 AT 5,6",
+  "SOLDER 9,6 10,6",
 ]
 
-function textFor(board: CommittedBoard, without: string | null): string {
+/**
+ * The faithfulness assertions, over the boards that import.
+ *
+ * **TWO BOARDS ARE HERE THROUGH AN EDIT TO A COPY OF THE FIXTURE'S TEXT**, each
+ * removing exactly the lines its own refusal test names, and each unedited file
+ * is asserted to refuse above - so an edit cannot make a refusal disappear
+ * unnoticed. It is the only way to assert what the REST of a board does:
+ * `buffered`'s other twenty-one parts, four wires and five bridges, and the
+ * frozen low-boost's seven parts and ten pads.
+ */
+const FAITHFUL: readonly (readonly [string, readonly string[]])[] = [
+  ["transistor-preamp-feedback", []],
+  ["transistor-preamp-loop", []],
+  ["transistor-preamp-buffered", ["SOLDER 13,21 14,21"]],
+  ["pultec-low-boost-frozen", TERMINAL_BLOCK_LINES],
+]
+
+function textFor(board: CommittedBoard, without: readonly string[]): string {
   const text = dumpTextOf(board)
-  if (without === null) return text
+  if (without.length === 0) return text
   const lines = text.split("\n")
-  const kept = lines.filter((line) => line.trim() !== without)
-  if (kept.length !== lines.length - 1) {
-    throw new Error(`"${without}" is not one line of ${board.name}'s dump; the fixture has moved`)
+  const kept = lines.filter((line) => !without.includes(line.trim()))
+  if (kept.length !== lines.length - without.length) {
+    throw new Error(
+      `${without.length} lines were named for removal from ${board.name}'s dump and ` +
+        `${lines.length - kept.length} matched; the fixture has moved`,
+    )
   }
   return kept.join("\n")
 }
@@ -122,11 +176,16 @@ for (const [name, without] of FAITHFUL) {
     const text = textFor(board, without)
     const dump = parseBoardDump(text)
     const candidate = importOf(board, text)
-    expect(candidate.placements.map((placement) => placement.ref), name).toEqual(
+    // THE PADS ARE EXCLUDED HERE AND ASSERTED ON THEIR OWN BELOW. A pad is not a
+    // PART line, is not named the way the board names it, and has no footprint
+    // to check - so holding it to any of the three below would be holding it to
+    // a contract it is not under.
+    const parts = fittedParts(candidate)
+    expect(parts.map((placement) => placement.ref), name).toEqual(
       dump.parts.map((part) => part.ref),
     )
     const footprints = footprintsOf(board)
-    for (const placement of candidate.placements) {
+    for (const placement of parts) {
       const pins = dump.pins[placement.ref] ?? []
       const first = pins.find((pin) => pin.pin === "1")
       expect(first, `${name} ${placement.ref} has a PIN 1 line`).toBeDefined()
@@ -149,7 +208,7 @@ for (const [name, without] of FAITHFUL) {
     const text = textFor(board, without)
     const dump = parseBoardDump(text)
     const candidate = importOf(board, text)
-    for (const placement of candidate.placements) {
+    for (const placement of fittedParts(candidate)) {
       const pins = dump.pins[placement.ref] ?? []
       expect([...placement.pins.keys()].sort(), `${name} ${placement.ref} pin names`).toEqual(
         pins.map((pin) => pin.pin).sort(),
@@ -168,6 +227,42 @@ for (const [name, without] of FAITHFUL) {
         [...placement.holes].map((hole) => `${hole.strip},${hole.column}`).sort(),
         `${name} ${placement.ref} holes`,
       ).toEqual(pins.map((pin) => `${pin.row},${pin.col}`).sort())
+    }
+  })
+
+  test(`${name}: every PAD line is a one-hole placement named the way the netlist names it`, () => {
+    const text = textFor(board, without)
+    const candidate = importOf(board, text)
+    const pads = padLines(text)
+    const imported = candidate.placements.filter(
+      (placement) => placement.footprint === OFF_BOARD_TERMINAL,
+    )
+    expect(imported.length, `${name} pad count`).toBe(pads.length)
+    const reference = referenceOf(board)
+    for (const [index, pad] of pads.entries()) {
+      const placement = imported[index]
+      const entries = [...(placement?.pins ?? new Map<string, Hole>())]
+      const first = entries[0]
+      expect(entries.length, `${name} pad ${pad.ref} is one hole`).toBe(1)
+      // ITS IDENTITY IS THE `FROM <ref>.<pin>` FIELD, which is the only place the
+      // dump records which reference pin an expanded pad is - so `ref.pin`
+      // resolves in the netlist export, and this asserts that it does rather
+      // than only that it is spelled that way.
+      expect(`${placement?.ref ?? ""}.${first?.[0] ?? ""}`, `${name} pad ${pad.ref} id`).toBe(
+        pad.source ?? "",
+      )
+      const net = [...reference].find(([, members]) => members.includes(pad.source ?? ""))
+      expect(net?.[0], `${name} pad ${pad.ref} is on a reference net`).toBeDefined()
+      // ITS HOLE IS ITS PIN LINE'S, AND THE PAD LINE'S OWN `AT` AGREES - the
+      // importer refuses when they do not, so this is the agreement itself.
+      expect(placement?.origin, `${name} pad ${pad.ref} hole`).toEqual(
+        pad.placement === "floating"
+          ? { strip: -1, column: -1 }
+          : { strip: pad.placement.row, column: pad.placement.col },
+      )
+      expect(placement?.holes, `${name} pad ${pad.ref} occupies its one hole`).toEqual([
+        first?.[1] ?? { strip: -1, column: -1 },
+      ])
     }
   })
 
@@ -224,6 +319,11 @@ for (const [name, without] of FAITHFUL) {
       ).toBe(true)
     }
   })
+}
+
+/** Every placement that came from a `PART` line, which is every one with a real footprint. */
+function fittedParts(candidate: Candidate): readonly Placement[] {
+  return candidate.placements.filter((placement) => placement.footprint !== OFF_BOARD_TERMINAL)
 }
 
 /**
@@ -290,6 +390,58 @@ for (const board of COMMITTED_BOARDS) {
 }
 
 /**
+ * WHICH PLACEMENTS ARE OUTSIDE THEIR RECORDED LEAD SPAN, per board, because the
+ * importer deliberately does not apply the bound and a claim about it was wrong
+ * once already.
+ *
+ * `./vero-import-facing.ts` states that `HC5`/`HC9` own these bounds and that
+ * this adapter is not a second owner of them. That is a licence to be silent
+ * about the figures, so they are asserted here instead - and the first version
+ * of the claim was an off-by-one: `spanHoles` is INCLUSIVE
+ * (`max(|dRow|, |dCol|) + 1`), so two leads in adjacent holes span TWO, which is
+ * exactly the DIN0207's floor rather than one under it.
+ *
+ * It reads the dump rather than the candidate, so the five boards that do not
+ * import are measured too.
+ */
+const SPAN_FINDINGS: Readonly<Record<string, readonly string[]>> = {
+  "pt2399-core": [],
+  "pultec-low-boost-frozen": [],
+  "pultec-low-boost-imported": [],
+  "transistor-preamp-buffered": [],
+  "transistor-preamp-feedback": [],
+  "transistor-preamp-loop": [],
+  // The one already-recorded HC5 failure in this repository, and the only
+  // placement on any committed board outside its own recorded bound.
+  "transistor-preamp-staged": ["C8 spans 14 holes, outside 2..11"],
+}
+
+for (const board of COMMITTED_BOARDS) {
+  test(`${board.name}: lead spans against the recorded bounds`, () => {
+    const dump = parseBoardDump(dumpTextOf(board))
+    const footprints = footprintsOf(board)
+    const outside: string[] = []
+    for (const [ref, pins] of Object.entries(dump.pins)) {
+      const span = spanHoles(pins)
+      const footprint = footprints.get(ref)
+      if (span === undefined || footprint === undefined) continue
+      let bounds
+      try {
+        bounds = leadSpanFor(footprint)
+      } catch {
+        // A footprint with no recorded span bounds nothing; geometryOf refuses
+        // such a part anyway, under its own key.
+        continue
+      }
+      if (span < bounds.minSpanHoles || span > bounds.maxSpanHoles) {
+        outside.push(`${ref} spans ${span} holes, outside ${bounds.minSpanHoles}..${bounds.maxSpanHoles}`)
+      }
+    }
+    expect(outside.sort(), board.name).toEqual([...(SPAN_FINDINGS[board.name] ?? ["UNDECLARED"])])
+  })
+}
+
+/**
  * THE FIT IS CROSS-CHECKED AGAINST THE FORK'S OWN `DIRECTION` FIELD, on the two
  * dumps that carry one.
  *
@@ -307,7 +459,7 @@ const DIRECTED: readonly string[] = ["transistor-preamp-loop", "transistor-pream
 for (const name of DIRECTED) {
   const board = boardNamed(name)
   test(`${name}: one dump DIRECTION and one pad axis give one facing`, () => {
-    const without = FAITHFUL.find(([boardName]) => boardName === name)?.[1] ?? null
+    const without = FAITHFUL.find(([boardName]) => boardName === name)?.[1] ?? []
     const text = textFor(board, without)
     const dump = parseBoardDump(text)
     const candidate = importOf(board, text)
