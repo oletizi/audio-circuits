@@ -257,6 +257,38 @@ test("spacingMoves narrows to one destination per pad and strip, and the count i
   }
 })
 
+test("the 315 split 245 / 70 by whether the pad is its own net-block, which is the figure the derivation rests on", () => {
+  // **THE NUMBER THE NEXT TASK BUDGETS OFF, PINNED SO IT FAILS RATHER THAN
+  // ROTS.** `docs/stripboard/pipeline-verification.md` section 11.3 measures,
+  // against the fork, that `dC < 0` happens exactly when the pad's hole is its
+  // own net-BLOCK on the strip it leaves - 227 of 315 candidates - and that the
+  // two pads sitting INSIDE their net's block account for every candidate that
+  // cannot reduce `C`. `lo_boost_in` holds columns 24, 25 and 26 of row 0
+  // contiguously, so `RV_LO_BOOST_2` (24) and `SW_LO_BOOST_1` (26) are those
+  // two, and 2 x 35 = 70 of the 315 are theirs.
+  //
+  // IT IS ASSERTED HERE AND NOT IN THE DOCUMENT because the document cannot
+  // fail: a later narrowing that dropped those 70 - section 11.3 names it as
+  // available and says why it was not taken - would make the derivation's own
+  // arithmetic wrong with nothing complaining. This test is what complains.
+  // The MEASURE does not compute the block condition, which is exactly why the
+  // two sides have to be held against each other rather than derived from one
+  // another.
+  const moves = spacingMoves(occupancyOf(IMPORTED), IMPORTED, IMPORTED_TEXT, REFERENCE)
+  const inBlock = moves.filter(
+    (move) => move.ref === "RV_LO_BOOST_2" || move.ref === "SW_LO_BOOST_1",
+  )
+  expect(inBlock.length).toBe(70)
+  expect(moves.length - inBlock.length).toBe(245)
+  // AND THE WITHIN-STRIP SUBSET IS NINE, which is what makes the whole-board
+  // destination set load-bearing rather than a preference: row 0 has two free
+  // holes, the collapse takes one per strip, and exactly one of those nine
+  // reduces `C` (section 11.2's `move RV_LO_BOOST_1 to 0,33` at `dC = -1`). A
+  // generator narrowed to the pad's own strip would reach one improving
+  // candidate out of 227.
+  expect(moves.filter((move) => move.to[0] === 0).length).toBe(9)
+})
+
 test("a placed pad with more than one PIN line refuses rather than picking one hole", () => {
   // A `PADS<n>` expands into n ONE-HOLE pads, so a placed pad has exactly one
   // `PIN` line - the fact `tools/stripboard/pad-provenance.ts` records and this

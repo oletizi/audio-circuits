@@ -3545,3 +3545,299 @@ it cannot produce is a board that looks clean.
 the module-level `LEAD_SPANS` while `HC5` and `HC9` read `CheckInput.spans`. The
 `make check` path injects NO span table, so both read the same map and the two
 cannot diverge here. Closing §9.4 remains a deliberate edit.
+
+## 11. Task 2 of the buildable-layouts plan — the SPACING gesture, measured against the fork: **227 of 315 candidates strictly reduce `C`, none raises the open-net count, and the kind exhausts itself in seven steps**
+
+**WHY THIS SECTION EXISTS.** `tools/stripboard/moves-space.ts` proposes a pad's
+move out of the row `--import` packs it into, and its first draft carried a
+derivation of what one such gesture does to the cost that was **wrong in three
+ways and wrong in the direction that understates the gesture** — a reader
+budgeting reachability off it would have read a seven-fold smaller improving set
+and could have misdiagnosed a null result as *"the gesture cannot be accepted"*.
+The review of 2026-10-13 caught it. Everything below is measured against the
+pinned binary rather than derived, and the code's comments now cite this section
+instead of restating it.
+
+### 11.1 Method, and the one place the board differs from the committed fixture
+
+```
+  VR=.tools/veroroute-perfboard/veroroute.app/Contents/MacOS/veroroute
+  (export the low-boost netlist through the repository's own path:
+   loadDeclaration(boards/pultec-low-boost/perfboard.json) into exportNetlistFor)
+  "$VR" --import low-boost.net -o imported.vrt --strips horizontal
+  "$VR" --dump-board imported.vrt                       # the base board
+  "$VR" --move imported.vrt --ref <pad> --to <r>,<c> -o cand.vrt
+  "$VR" --author cand.vrt --op autofill -o painted.vrt  # AutoFillVero
+  "$VR" --check painted.vrt --netlist low-boost.net     # the open-net count
+  "$VR" --dump-board painted.vrt                        # the CUT lines
+```
+
+`.tools/veroroute-perfboard/.built-commit` is
+`ed6c5a64eb5125346e8b0bc0b434b332c7750bb6`, which is what `veroroute.pin` pins.
+**`C` is the painted board's own `CUT` line count and `openNets` is
+`--check`'s own `incomplete` net count** — neither is this repository's
+arithmetic.
+
+**The board is a REGENERATED import and not the committed dump**, because a
+`--move` needs a `.vrt` and the fixture is a `--dump-board` capture. Diffed
+against `tests/fixtures/stripboard/pultec-low-boost-imported.dump`, the
+regeneration agrees on every `PART` line, every `PAD` hole, every `PIN` line and
+all fourteen `NODE` lines, and differs **only** in the selector pads' VALUE
+field — today's model gives `SW_Rotary_1x6_MP` where the capture says
+`SW_Rotary`. Nothing in this pipeline parses that field.
+
+**TWO REFERENCE NETLISTS ARE IN PLAY AND THE SPLIT IS DELIBERATE.** The gesture
+set is enumerated against the FROZEN nine-net export, which is what
+`tests/stripboard/moves-space.test.ts` uses and what makes the 315 below
+comparable with the suite; `--check` runs against the board's own fourteen-net
+export, because that is the netlist the board was imported from and a
+completeness verdict against any other netlist is a verdict about another
+circuit. §11.2 shows this split is not inert.
+
+Base board: **`C` = 38 cuts, 13 of 14 nets open.**
+
+### 11.2 `dC` over all 315 candidates — and the model that reproduces it, against the one that does not
+
+Every one of the 315 gestures `spacingMoves` proposes on the base board was
+applied, painted and dumped. **All 315 were accepted by `--move`** — no refusal,
+which is the narrowing by `occupancyAfter` doing its job.
+
+| `dC` | count | what it is |
+| --- | --- | --- |
+| **−2** | 33 | the pad's departure MERGES two blocks of one net that it sat between |
+| **−1** | 194 | the pad's departure removes its own block |
+| **0** | 84 | the departure removes no block, or removes one and the arrival adds one |
+| **+1** | 4 | the departure removes no block and the arrival adds one |
+
+**227 of 315 strictly reduce `C`.** No `move` can create or destroy a `WIRE` or
+a `SOLDER` line, so `W` and `B` are fixed and **`dF = dC`**: 227 candidates
+strictly improve `F` on their own, with no plateau machinery and no new rule.
+
+**THE IDENTITY THAT REPRODUCES THE FORK, stated exactly, because a near-miss
+version of it is what went wrong.** With `blocks_s` the number of maximal runs
+of ONE net in the sequence of OCCUPIED holes along strip `s`, taken in position
+order:
+
+```
+  C = sum over occupied strips of (blocks_s - 1) = sum(blocks_s) - S_occ
+```
+
+A model of that identity, run over the same 315 and keyed by the **fourteen-net**
+export, reproduces the fork's histogram **exactly** — `−2:33, −1:194, 0:84,
++1:4`, every bucket. Keyed by the **nine-net** frozen export instead it gives
+`−2:33, −1:201, 0:77, +1:4` and claims **234** reducing rather than 227: the
+frozen export carries none of the other Pultec sections' nets, so the model sees
+no net at all on most of rows 1 and 2 and under-counts seven abutments the fork
+charges for. **That is the §11.1 split not being inert, and it is also the reason
+a figure derived from the frozen reference may not be reported as a cut count.**
+
+**THE RELATION BETWEEN THE TWO ADJACENCIES IS ONE-DIRECTIONAL.** Two holes in
+adjacent positions are necessarily consecutive in occupation order, so every
+abutment `tools/stripboard/moves-space-measure.ts` counts IS a block boundary
+and a cut; the converse fails. The packing measure is a LOWER BOUND on a strip's
+boundaries, never an over-count — which is why it can reach zero on the owner's
+row while that row still carries five cuts.
+
+**TWO THINGS THE BLOCK IS NOT.** It is not one block per `(net, strip)` pair —
+a net appearing twice on a strip with another net between it is TWO blocks and
+two cuts, and the pair-counting reading was the first draft's first error. And a
+block boundary is **occupation-order adjacency, not physical adjacency**: two
+holes of different nets two apart with nothing between them are still
+consecutive in the sequence and still take a cut.
+
+### 11.3 The controlling condition for `dC < 0`, and it is a perfect predictor
+
+The first draft's condition was *"the net keeps no other hole on the strip it
+leaves"*. That is satisfied by only **32** of the 288 free-strip destinations
+while **227** achieve `dC < 0`, so it is wrong by about seven-fold in the
+direction that understates the gesture.
+
+**The controlling condition is that the pad's hole is its OWN NET-BLOCK on the
+strip it leaves** — both of its occupation-order neighbours on that strip are
+other nets, or absent. Tested as a predicate over the nine pads the gesture
+names:
+
+| pad | its own block? | fork `dC < 0` |
+| --- | --- | --- |
+| `RV_LO_BOOST_1` | yes | **35 of 35** |
+| `SW_LO_BOOST_2` … `SW_LO_BOOST_7` | yes | **32 of 35** each |
+| `RV_LO_BOOST_2` | no | **0 of 35** |
+| `SW_LO_BOOST_1` | no | **0 of 35** |
+
+`35 + 6 x 32 = 227`, which is the whole improving set: **the predicate has no
+false positive and no false negative on this board.** The three misses per `SW`
+pad are its three occupied-strip destinations, where the departure's `−1` is
+cancelled by the arrival's `+1`; `RV_LO_BOOST_1` misses none because its
+departure is a `−2` (it sits between two `lo_boost_in` holes, which merge) and
+survives an arrival's `+1`.
+
+`RV_LO_BOOST_2` and `SW_LO_BOOST_1` are the two pads that sit INSIDE their own
+net's block — `lo_boost_in` holds columns 24, 25 and 26 of row 0 contiguously —
+so their departure removes no block and **70 of the 315 candidates (22%) cannot
+reduce `C` at all**: 66 are `dC = 0` and 4 are `dC = +1`.
+
+**THEY ARE NOT NARROWED OUT, AND THE REASON IS NOT OVERSIGHT.** The own-block
+predicate above would cut 315 to 245 and would remove exactly those 70. 66 of
+them are `dC = 0` candidates whose benefit, if any, is in `RANKING`'s `A_occ`
+and wirelength positions, which `strictlyBetter` consults precisely at
+`dF = 0` — and §6.11 records what happened the last time a kind's candidates
+were excluded on a first-order cost argument: *"they were enumerated in one
+partial sweep and one of them was in fact accepted, so 'none could ever be
+taken' would be false."* Nothing has measured whether any of the 66 is accepted.
+The narrowing is RECORDED here as available, with its exact size, for a task
+that has a run behind it.
+
+### 11.4 The open-net count: **zero of 315 raise it**, and why that is a property of this board rather than of the gesture
+
+`tools/stripboard/climb-accepts.ts`'s `strictlyBetter` compares `openNets`
+**before** `F`, so a candidate that opens a net is rejected whatever it does to
+the cost. The first draft's derivation never mentioned that gate.
+
+Measured over all 315: **`dOpenNets = 0` for every single one.** The histogram
+has one bucket. The subset the review flagged — the gestures naming a pad on
+`lo_boost_in` — is **70** of them (`RV_LO_BOOST_2` and `SW_LO_BOOST_1`, 35
+strips each; the review's figure of 64 is not reproduced, and
+`RV_LO_BOOST_3` is also on that net but abuts nothing and so is named by no
+gesture at all), and all 70 are `dOpenNets = 0`.
+
+**The reason, and it is why this must not be read as a general result.**
+`lo_boost_in` is ALREADY one of the 13 nets `--check` calls incomplete on the
+base board: its holes on row 0 are column 22 and then columns 24, 25, 26, with
+the net-`0` hole of `RV_LO_BOOST_1` at column 23 between them, so the cuts
+either side of column 23 already split it. **A net already counted cannot raise
+a count of nets.** On a board where such a net were whole, a gesture that lifted
+one of its holes onto a strip of its own WOULD raise `openNets` by one and be
+rejected outright — so the gate is named in the derivation as the first gate it
+is, measured inert here, and not assumed inert elsewhere.
+
+### 11.5 The per-`(pad, strip)` collapse: the identity behind it is weaker than stated, and it costs **nothing** on this board
+
+`spacingMoves` proposes at most one destination per `(pad, strip)` — the first
+in ascending position that `occupancyAfter` admits — and justified it by *"a
+strip conducts along its whole length, so two destinations on one strip put the
+pad on the same copper and score the same `C`"*. **That is true of a FREE strip
+and false of an occupied one**, because a destination's occupation-order
+neighbours change with its position, which is §11.2's second paragraph applied
+to the arrival instead of the departure.
+
+So every admissible destination on each of the three occupied strips was scored
+individually against the fork — **27 `(pad, strip)` slots, 157 destinations**:
+
+| pad | strip 0 | strip 1 | strip 2 |
+| --- | --- | --- | --- |
+| `RV_LO_BOOST_1` | 33, 34 → **−1, −1** | 31–34 → **−1 each** | 23–34 → **−2 each** |
+| `RV_LO_BOOST_2` | 34 → **+1** | 31–34 → **0 each** | 23–34 → **+1 each** |
+| `SW_LO_BOOST_1` | 34 → **+1** | 31–34 → **0 each** | 23–34 → **+1 each** |
+| `SW_LO_BOOST_2` … `_7` | **0 each** | **0 each** | **0 each** |
+
+**In 0 of the 27 slots is the ascending-first hole worse than the best hole on
+that strip**, and in 0 of them does a strictly better hole exist. Every
+destination on one strip scores identically for one pad.
+
+**The mechanism, so this is a measurement with a cause rather than a
+coincidence.** `--import`'s first-fit sweep leaves each occupied strip's free
+holes in ONE contiguous run at the high end — row 0 free from column 33, row 1
+from 31, row 2 from 23 — so every proposed hole on one strip has the same
+occupation-order predecessor (that strip's last occupied hole) and no successor,
+and therefore the same arrival cost. **The collapse is therefore sound on this
+board for a reason the rule does not state**, and the honest standing is the one
+`UNIT_DELTAS` gives itself: it is not known to be the right shape, changing it
+needs a run behind it, and the run done here says changing it buys nothing. A
+destination-choice rule was written and NOT taken, because it would have added a
+second notion of adjacency to the module for a measured benefit of zero.
+
+### 11.6 What it costs, with the units kept straight, and **the kind exhausts itself**
+
+The first draft's cost figures were right in direction and wrong in both
+magnitudes, and mixed a run's budget with a climb's rounds.
+
+**The cap is RUN-LEVEL and divided.** `tools/stripboard/search.ts` hands each
+climb `rules: { ...input.rules, evaluationCap: remaining }`, so the 20,000 of
+`stripboard/rules.json` is shared across the restart schedule. **§6.9's round
+counts are PER CLIMB**: `random` seed 3 is 11,842 evaluations over 63 rounds,
+which is **188 evaluations per round** — and every row there spends 4,314 to
+15,218 in one climb, so those rows are each a run of their own seed rather than
+five climbs sharing one cap.
+
+**So the marginal multiplier mid-climb is about 2.7x and not 6.3x.** 315 added
+to a round averaging 188 is a round of about 503. The 6.3x figure (59 to 374) is
+**round 0 on the import-placed board only**, which is the smallest round a climb
+has and therefore the largest multiplier it will ever show.
+
+**The MODEL pass is not where the cost is**, and the figures are measured rather
+than assumed: `spacingGestures` 2.0 ms per call, `spacingMoves` 6.1 ms, and
+`enumerateMoves` **31.3 ms with this generator removed and 40.9 ms with it** — so
+about 9.6 ms more enumeration per round, against a 374-evaluation round that at
+4.6's governing 11.71 ms per invocation and four invocations per evaluation is
+about 17.5 seconds. A fifth of one percent.
+
+**And the gesture is SELF-LIMITING, which is the figure that matters and was
+absent.** Its guard is a strict reduction in a pad's own abutment count, so a
+pad that leaves the row stops being named. Measured by applying one spacing
+gesture at a time (the lowest free strip for the first pad still abutting — a
+stand-in for a step the climb might take, chosen here rather than by `accepts`,
+which is the caveat on the sequence and not on the decay):
+
+| step | `enumerateMoves` | of which spacing | pads still abutting | gesture applied |
+| --- | --- | --- | --- | --- |
+| 0 | 374 | **315** | 9 | `move RV_LO_BOOST_1 to 3,0` |
+| 1 | 306 | **245** | 7 | `move SW_LO_BOOST_1 to 3,2` |
+| 2 | 276 | **210** | 6 | `move SW_LO_BOOST_2 to 3,4` |
+| 3 | 243 | **175** | 5 | `move SW_LO_BOOST_3 to 3,6` |
+| 4 | 211 | **140** | 4 | `move SW_LO_BOOST_4 to 3,8` |
+| 5 | 178 | **105** | 3 | `move SW_LO_BOOST_5 to 3,10` |
+| 6 | 147 | **70** | 2 | `move SW_LO_BOOST_6 to 3,12` |
+| 7 | 79 | **0** | 0 | — none proposed |
+
+**Unpacking the row completely costs about 1,260 extra evaluations in total**
+(the spacing column summed), which is under 11% of one §6.9-sized climb's
+11,842 — not a 6.3x tax on every round. Seven applications and the kind is
+silent.
+
+**AND THE DESTINATIONS THE ASCENDING TIE-BREAK PRODUCED ARE
+`3,0 / 3,2 / 3,4 / 3,6 / 3,8 / 3,10 / 3,12` — every second hole of strip 3.**
+Spacing with a gap of one hole, EMERGENT from the measure, with no gap encoded
+anywhere in the module: a pad declines a hole whose strip-neighbour is another
+net, so the next pad lands two holes along. The owner's own row uses a gap of
+two. That the arrangement has the same shape as his is evidence the measure
+points the right way and **is not a claim that the climb would choose this
+sequence**, which is §11.7's first limit.
+
+### 11.7 What may not be concluded from section 11
+
+1. **No search ran.** Every figure above is one gesture applied to one board, or
+   a hand-picked ladder of them. `accepts` was not consulted once, so nothing
+   here says any of the 227 improving candidates is ACCEPTED in a round — a
+   round's winner is the best of its siblings, and the spread, gather and
+   cluster candidates compete in the same round. Task 3 is what measures that.
+2. **It is one board.** The ten pads of low-boost's `PADS3` and `PADS7` on one
+   `--import` output. The other four Pultec sections have their own pad counts
+   and their own packing, and §11.3's predicate was tested here and nowhere
+   else.
+3. **`dOpenNets = 0` is this board's answer and not the gesture's**, for the
+   reason §11.4 gives in full.
+4. **The 227 is `dF` and not an acceptance.** `accepts`' first clause is
+   no-regression against the PREDECESSOR over all ten hard constraints, and a
+   pad landing on row 34 of a 35-row grid grows the pin extent; `HC6` already
+   fails on this board for width, so no regression arises here, but that is a
+   property of a board that is already failing.
+5. **A FIGURE RECORDED ELSEWHERE DOES NOT REPRODUCE, and it is recorded here
+   rather than corrected in place because it predates this work.**
+   `tools/stripboard/movable.ts` states, measured 2026-10-13, *"0.0218 ms per
+   call [for `movableRefs`], and 4.7 ms for a whole `enumerateMoves` on the real
+   low-boost board"*. The first reproduces here at **0.0279 ms** over 2,000
+   calls — the same order, machine noise. The second does not: the same call on
+   the same fixture with the spacing generator removed is **31.3 ms**, about 6.6
+   times the recorded figure. That file's own instruction is *"If a later task's
+   round times look wrong, this is the first place to look and the figures above
+   are the before"*, so this is that observation being written down. Nothing
+   above depends on either figure.
+6. **The review's own histogram is not reproduced bucket for bucket.** It
+   reports `−2:32, −1:195, 0:82, +1:6`; the fork gives `−2:33, −1:194, 0:84,
+   +1:4`. Both total 315 and both agree exactly on **227 strictly reducing**,
+   which is the figure every conclusion above rests on. The two disagree by one
+   in the `−2`/`−1` split and by two in the `0`/`+1` split, and the
+   disagreement is not resolved here: the numbers above are the painted boards'
+   own `CUT` lines, and §11.2's fourteen-net model of the identity reproduces
+   them exactly, which is the strongest evidence this section can offer for
+   them.

@@ -38,33 +38,74 @@
  * function is exported and re-exported from `./moves.ts` rather than kept
  * private.
  *
- * **WHETHER A SINGLE SPACING GESTURE CAN BE ACCEPTED AT ALL, DERIVED HERE
- * BECAUSE IT DECIDES WHETHER THE KIND IS REACHABLE.** Acceptance is
- * lexicographic - open nets, then `F = C + 0.25W + 0.25B`, then `RANKING` at
- * `dF = 0` (`./climb-accepts.ts`) - and the committed rules leave
- * `worseAcceptance` null, so no worse intermediate is ever taken. Read one pad's
- * move in the cost identity `C = (net segments) - (occupied strips)`, which is
- * `./moves-spread.ts`'s own regrouping, and there are three shapes:
+ * **WHETHER A SINGLE SPACING GESTURE CAN BE ACCEPTED AT ALL - MEASURED AGAINST
+ * THE FORK, BECAUSE IT DECIDES WHETHER THE KIND IS REACHABLE AND BECAUSE THE
+ * FIRST VERSION OF THIS PARAGRAPH GOT IT WRONG BY SEVEN-FOLD IN THE DIRECTION
+ * THAT UNDERSTATES IT.** `docs/stripboard/pipeline-verification.md` section 11
+ * carries the whole measurement, its commands and its limits; this is the
+ * derivation and the headline.
  *
- *   1. ONTO A STRIP NO PIN IS ON, where the pad's net keeps no other hole on the
- *      strip it leaves: segments unchanged (one lost, one gained), occupied
- *      strips `+1`, so **`dC = -1`** - a straight improvement in `F`, and
- *      `./moves-spread.ts`'s case 3 WITHOUT the wire, because the net's segment
- *      count does not rise;
- *   2. ONTO A STRIP NO PIN IS ON, where the net DOES keep a hole behind:
- *      segments `+1`, occupied strips `+1`, **`dC = 0`**;
- *   3. ALONG THE PAD'S OWN STRIP, or onto a strip a pin is already on: neither
- *      the segment count nor the occupied-strip count moves, so **`dC = 0`**.
+ * Acceptance is lexicographic (`./climb-accepts.ts`): **`openNets` FIRST**, then
+ * `F = C + 0.25W + 0.25B`, then `RANKING` at `dF = 0`, with `worseAcceptance`
+ * null in the committed rules so no worse intermediate is ever taken. A `move`
+ * can neither create nor destroy a `WIRE` or a `SOLDER` line, so `W` and `B` are
+ * fixed and **`dF = dC`**.
  *
- * So shape 1 is accepted on `F` alone and needs no plateau machinery, and shapes
- * 2 and 3 are decided by `RANKING`'s fourth and fifth positions - `A_occ` off
- * `BOUNDS`, then the pin bounding-box wirelength proxy - which `strictlyBetter`
- * consults exactly when `dF = 0`. **That plateau already exists and this kind
- * does not add one**; nothing here invents an acceptance rule, and `accepts` and
- * `strictlyBetter` are untouched. What it means for the gesture is that the
- * in-row spacing shape is the one that has to win on `A_occ` and the wirelength
- * proxy, and spreading a row outward works AGAINST both - which is a real limit
- * on reachability, is not repaired here, and is what Task 3 measures.
+ * `C` IS A BLOCK COUNT AND NOT A `(net, strip)` PAIR COUNT, which is where the
+ * first version went wrong. With `blocks_s` the number of maximal runs of ONE
+ * net in the sequence of OCCUPIED holes along strip `s`, in position order:
+ *
+ *     C = sum over strips of (blocks_s - 1) = sum(blocks_s) - S_occ
+ *
+ * A model of exactly that, keyed by the board's own fourteen-net export,
+ * reproduces the fork's `dC` for all 315 of this board's candidates bucket for
+ * bucket (section 11.2). **A block boundary is OCCUPATION-ORDER adjacency and
+ * not physical adjacency:** two different-net holes two apart with nothing
+ * between them are still consecutive in the sequence and still take a cut.
+ *
+ * **THE CONTROLLING CONDITION FOR `dC < 0` IS THAT THE PAD'S HOLE IS ITS OWN
+ * NET-BLOCK ON THE STRIP IT LEAVES** - both of its occupation-order neighbours
+ * there are other nets, or absent. Its departure then removes a block, or TWO
+ * when the neighbours it sat between are one net and merge. Measured on the
+ * import-placed low-boost board, the predicate has no false positive and no
+ * false negative over the nine pads the gesture names: the seven that are their
+ * own block reduce `C` on 35 of 35 (`RV_LO_BOOST_1`, whose departure merges) and
+ * 32 of 35 (each `SW_LO_BOOST_2..7`, missing only their three occupied-strip
+ * destinations), and the two that sit INSIDE their net's block
+ * (`RV_LO_BOOST_2` and `SW_LO_BOOST_1`, in `lo_boost_in`'s run of columns
+ * 24-26) reduce it on 0 of 35.
+ *
+ * **THE FORK'S OWN HISTOGRAM over all 315: `dC` = -2 (x33), -1 (x194), 0 (x84),
+ * +1 (x4) - so 227 of 315 STRICTLY REDUCE `C`**, each a straight improvement in
+ * `F` needing no plateau at all. **84 are `dC = 0`** and fall to `RANKING`'s
+ * fourth and fifth positions (`A_occ` off `BOUNDS`, then the pin bounding-box
+ * wirelength proxy), which `strictlyBetter` consults exactly at `dF = 0`; **that
+ * plateau already exists and this kind does not add one** - `accepts`,
+ * `strictlyBetter` and `compareRanking` are untouched. **And 4 are `dC = +1` and
+ * are rejected on `F`**, which is the shape the first version of this paragraph
+ * flatly denied by saying a within-strip or occupied-strip move is always
+ * `dC = 0`: a departure that removes no block, with an arrival that adds one.
+ *
+ * **`openNets` IS THE FIRST GATE AND IS MEASURED INERT ON THIS BOARD, NOT
+ * ASSUMED SO.** All 315 candidates were `--check`ed: `dOpenNets = 0` for every
+ * one, including all 70 that name a pad on `lo_boost_in`. The reason is specific
+ * - `lo_boost_in` is ALREADY one of the 13 nets `--check` calls incomplete,
+ * because the net-`0` hole of `RV_LO_BOOST_1` sits between its column 22 and its
+ * columns 24-26 and the cuts either side already split it, and a net already
+ * counted cannot raise a count of nets. **On a board where such a net were
+ * whole, lifting one of its holes onto a strip of its own WOULD raise `openNets`
+ * and be rejected outright whatever it did to `F`.** So the gate is named here
+ * because it is first, and its inertness is this board's property rather than
+ * the gesture's.
+ *
+ * **THE KIND EXHAUSTS ITSELF, which is the reachability figure that matters.**
+ * The guard is a strict reduction in a pad's OWN abutment count, so a pad that
+ * leaves the row stops being named: applying one gesture at a time takes the
+ * proposal count 315 -> 245 -> 210 -> 175 -> 140 -> 105 -> 70 -> 0 in seven
+ * steps, about 1,260 extra evaluations in total - under 11% of one §6.9-sized
+ * climb - rather than a standing tax on every round. Section 11.6 has the ladder
+ * and the units; it is a hand-picked sequence and not a prediction of what the
+ * climb would choose, which is section 11.7's first limit.
  */
 import type { BoardDump } from "../guide/dump.ts"
 import { stripOf } from "./constraints-model.ts"
@@ -125,8 +166,12 @@ export type PadMove = Extract<Move, { readonly kind: "move" }>
  * the parts are in the way, and the owner's own layout puts the selector row on
  * a strip of its own. A narrowing that cannot reach the arrangement the gesture
  * exists for is the mistake `./moves-cluster.ts`'s `gatherStrips` records
- * against itself, and the module comment's shape 1 is the half of the
- * arithmetic that only a different strip can reach.
+ * against itself. **And the measurement says the same from the other side:** of
+ * the 315 candidates this board admits, only nine are within-strip at all - row
+ * 0 has two free holes and the collapse below takes one per strip - and exactly
+ * ONE of them is among the 227 that reduce `C` (`move RV_LO_BOOST_1 to 0,33`,
+ * at `dC = -1`). A within-strip-only generator would therefore reach one
+ * improving candidate out of 227.
  *
  * **IT STRICTLY REDUCES OR IT IS NOT PROPOSED, which is the already-spaced
  * guard and is the whole of it.** A pad with no different-net abutment is named
@@ -210,45 +255,89 @@ export function spacingGestures(
  * The spacing gestures the move set actually sweeps: **the first destination on
  * each strip, per pad, that the shared advance says lands.**
  *
- * **ONE PER (PAD, STRIP), AND THE NARROWING IS `./moves-wire.ts`' OWN, with its
- * reason.** A strip conducts along its whole length, so two destinations on one
- * strip whose neighbours are equally clear put the pad on the same copper and
- * score the same `C`; the measure this pair is built on therefore cannot tell
- * them apart, and proposing both spends an evaluation it cannot justify.
- * `./moves-wire.ts` says it of a wire's line of holes - *"two wires joining one
- * pair of strips at different lines join the same two strips and score the same
- * `W`; what differs is which holes they take from later gestures, and that is
- * not modelled"* - and the same sentence is true of a pad's position along a
- * strip.
+ * **ONE PER (PAD, STRIP), AND THE IDENTITY BEHIND IT IS WEAKER THAN THIS
+ * COMMENT FIRST CLAIMED.** The claim was `./moves-wire.ts`' own - *"two wires
+ * joining one pair of strips at different lines join the same two strips and
+ * score the same `W`; what differs is which holes they take from later gestures,
+ * and that is not modelled"* - read across to a pad's position along a strip. It
+ * **holds for a strip NO PIN IS ON** (the arrival is the strip's only block
+ * wherever it lands) and **fails for an OCCUPIED one**, because a destination's
+ * occupation-order neighbours change with its position and the module comment's
+ * block count is what charges for them. So the collapse is sound on 32 of this
+ * board's 35 strips by the identity, and on the other three by measurement
+ * rather than by the rule.
  *
- * **IT IS NOT COLLAPSED ACROSS STRIPS, AND THE DIFFERENCE IS THE IDENTITY AND
- * NOT A TASTE.** The sentence above rests on two holes of one strip being the
- * same copper; two holes on DIFFERENT strips are not, and the module comment's
- * three shapes give them different `dC` outright. So the collapse is exactly as
- * wide as the electrical identity licenses and no wider: one candidate per
- * strip, 35 strips on this board, and `RANKING` is what tells them apart.
+ * **THE MEASUREMENT, because the gap above is exactly where a tie-break can
+ * silently take a worse hole.** Every admissible destination on each of the
+ * three occupied strips was scored against the fork - 27 `(pad, strip)` slots,
+ * 157 destinations, `docs/stripboard/pipeline-verification.md` section 11.5 has
+ * the table: **in 0 of the 27 is the ascending-first hole worse than the best on
+ * its strip, and in 0 does a strictly better hole exist.** The cause is not
+ * luck - `--import`'s first-fit sweep leaves each occupied strip's free holes in
+ * ONE contiguous run at the high end (row 0 from column 33, row 1 from 31, row 2
+ * from 23), so every proposed hole on one strip has the same occupation-order
+ * predecessor and no successor, and therefore the same arrival cost. **A
+ * destination-choice rule was written and NOT taken**: it would have put a
+ * second notion of adjacency in this module for a measured benefit of zero, and
+ * the standing is `./moves.ts`' `UNIT_DELTAS`' own - changing it needs a run
+ * behind it, and the run done here says changing it buys nothing.
  *
- * **THE ASCENDING TIE-BREAK IS FOR REPRODUCIBILITY AND IT IS NOT NEUTRAL, which
- * is stated rather than implied.** Ties break to the lowest position so two runs
- * agree, exactly as `./moves-spread.ts`'s `nearestRemaining` breaks its own -
- * but the lowest position is systematically at the LOW END of the strip, and
- * `RANKING`'s fourth and fifth positions are what decide a candidate at
- * `dF = 0`. So the tie-break is the one the ACCEPTANCE RULE may like least,
- * nothing here has measured what that costs, and widening it to several
- * positions per strip is a deliberate edit with a run behind it - the same
- * standing `./moves.ts`' `UNIT_DELTAS` gives its own one-hole neighbourhood.
+ * **IT IS NOT COLLAPSED ACROSS STRIPS, AND THAT DIFFERENCE IS REAL.** Two holes
+ * on one strip are the same copper; two on different strips are not, and the
+ * module comment's block arithmetic gives them different `dC` outright - a free
+ * strip pays nothing for the arrival and an occupied one may pay `+1`. So the
+ * collapse is as wide as the identity licenses and no wider: one candidate per
+ * strip, 35 on this board, and `F` then `RANKING` tell them apart.
  *
- * **WHAT IT COSTS TO ASK, MEASURED ON 2026-10-13 AND NOT PROJECTED.**
- * `pads x strips x positions` model reads per round and no fork invocation - a
- * candidate the advance refuses is never evaluated - which is 1.65 ms per call
- * on the import-placed low-boost board against `enumerateMoves`' own 4.7 ms.
- * **The ones that SURVIVE cost one evaluation each, and on that board there are
- * 315**: nine of the ten pads abut another net and each gets one destination on
- * each of the 35 strips. That takes the board's whole move set from 59 to 374, a
- * 6.3x round, and at CRITERIA `Q5`'s run-level cap of 20,000 evaluations it is
- * the figure Task 3 weighs against what the gesture buys. It is reported here
- * rather than narrowed on a guess, which is what `./moves-cluster.ts`'s
- * `gatherStrips` records a cost guess doing to this repository's record.
+ * **THE ASCENDING TIE-BREAK IS FOR REPRODUCIBILITY.** Ties break to the lowest
+ * position so two runs agree, exactly as `./moves-spread.ts`'s
+ * `nearestRemaining` breaks its own. It is systematically at the LOW END of a
+ * strip, which is not neutral with respect to `RANKING`'s `A_occ` and
+ * wirelength positions; what it DOES produce, measured rather than feared, is
+ * the ladder in section 11.6, whose seven destinations came out as columns 0, 2,
+ * 4, 6, 8, 10 and 12 of strip 3 - **every second hole, a gap emergent from the
+ * measure with no gap encoded anywhere in the pair.**
+ *
+ * **WHAT IT COSTS TO ASK, MEASURED ON 2026-10-13 AND WITH THE UNITS KEPT
+ * STRAIGHT, because the first version of this paragraph mixed a run's budget
+ * with a climb's rounds.** The proposal pass is `pads x strips x positions`
+ * model reads and no fork invocation - a candidate the advance refuses is never
+ * evaluated. Measured on the import-placed low-boost board: `spacingGestures`
+ * 2.0 ms per call, `spacingMoves` 6.1 ms, and `enumerateMoves` **31.3 ms
+ * without this generator and 40.9 ms with it** - so the enumeration costs about
+ * 9.6 ms more per round, against a round of 374 evaluations at four fork spawns
+ * each, which at PIPELINE 4.6's governing 11.71 ms per invocation is about 17.5
+ * seconds. **The model pass is a fifth of a percent of the round it enumerates**
+ * and is not where the cost is. (`./movable.ts` records *"4.7 ms for a whole
+ * `enumerateMoves` on the real low-boost board"*; that figure does not
+ * reproduce - the same call on the same fixture with this generator removed is
+ * 31.3 ms - and section 11.7 records the discrepancy rather than this comment
+ * citing it.)
+ *
+ * **The survivors cost one evaluation each, and on that board there are 315**,
+ * taking its whole move set from 59 to 374.
+ *
+ *   - **That 6.3x is ROUND 0 ONLY**, the smallest round a climb has. §6.9's
+ *     `random` seed 3 is 11,842 evaluations over 63 rounds, so a round there
+ *     averages **188**; 315 on top of that is a round of about 503, a **~2.7x**
+ *     marginal multiplier mid-climb.
+ *   - **CRITERIA `Q5`'s 20,000 cap is RUN-LEVEL and divided** -
+ *     `./search.ts` hands each climb `evaluationCap: remaining` - while §6.9's
+ *     round counts are PER CLIMB. At the committed five seeds a climb would get
+ *     about 4,000, so about **8 rounds at 503 against §6.9's 63**; driven at one
+ *     seed it gets the whole 20,000, so about **40**.
+ *   - **But the kind exhausts itself**, so neither squeeze is the real figure:
+ *     the whole ladder from 315 to 0 is about **1,260 extra evaluations**, under
+ *     11% of one §6.9-sized climb. Section 11.6 has it.
+ *
+ * It is reported rather than narrowed on a guess, which is what
+ * `./moves-cluster.ts`'s `gatherStrips` records a cost guess doing to this
+ * repository's record. **Section 11.3 names one narrowing that IS available with
+ * its exact size** - the own-block predicate would take 315 to 245 and remove
+ * exactly the 70 candidates that cannot reduce `C` - and says why it was not
+ * taken: 66 of those 70 are `dC = 0` candidates whose benefit, if any, is in the
+ * ranking, and §6.11 records what excluding such candidates on a first-order
+ * cost argument cost this repository last time.
  */
 export function spacingMoves(
   occupancy: Occupancy,

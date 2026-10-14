@@ -21,14 +21,45 @@
  * artifact it is producing.
  *
  * **WHY IT IS AN ABUTMENT AND NOT A SEGMENT'S FREE HOLES, stated so the proxy
- * is not mistaken for the thing.** A cut sits BETWEEN two holes rather than in
- * one, so two different-net holes two apart on a strip still need a cut:
- * driving adjacency down does not by itself drive `C` down. What it does is
- * leave a FREE HOLE inside each net's own stretch of strip, which is where a
- * wire can anchor - the thing the brief says a packed pad row denies, since a
- * net whose every hole is a pad has nowhere to solder one. This file does not
- * count free holes per segment; it counts adjacency, which is the quantity the
- * brief named, and `F` is what says what a candidate did one evaluation later.
+ * is not mistaken for the thing - and the distinction below was got wrong once
+ * and corrected on measurement.** `alongStrip` below reads PHYSICALLY ADJACENT
+ * holes, one position either side. **The quantity `C` counts is a different
+ * adjacency: OCCUPATION ORDER.** A cut sits between two holes rather than in
+ * one, so two different-net holes two apart with nothing between them are still
+ * consecutive in the sequence of occupied holes along the strip and still take a
+ * cut - `docs/stripboard/pipeline-verification.md` section 11.2 states the block
+ * identity that reproduces the fork's cut count exactly, and it is
+ * occupation-order throughout.
+ *
+ * **THE RELATION BETWEEN THE TWO IS ONE-DIRECTIONAL, which is worth having
+ * straight.** Two holes in adjacent positions are necessarily consecutive in
+ * occupation order, so **every abutment this file counts IS a block boundary and
+ * a cut**; the converse fails. This measure is therefore a LOWER BOUND on the
+ * boundaries a strip carries, never an over-count, and it falls to zero on a row
+ * whose holes are all spaced apart however many cuts that row still needs.
+ *
+ * **SO THIS IS A PACKING MEASURE AND NOT A CUT PREDICTOR, AND THE GATE HAS TO BE
+ * THE PACKING ONE.** Read the owner's hand-laid selector row in occupation
+ * order: columns 9, 11, 13, 14, 16, 17, 19, 20, 22, 23, 25, 26 of strip 3, in
+ * nets `j10_p1 j10_p1 j10_p2 j10_p2 j10_p3 j10_p3 j10_p4 j10_p4 j10_p6 j10_p6
+ * j10_p5 j10_p5` - six blocks, so **five cuts on that strip, which a six-throw
+ * selector sharing one strip cannot avoid.** An occupation-order gate would
+ * therefore score his row non-zero and keep proposing gestures against a layout
+ * that is already right. The PHYSICAL reading scores it ZERO on all ten pads,
+ * which is the signal the gesture actually needs: *is this row packed*. What his
+ * spacing buys is a FREE HOLE inside each net's own stretch of strip, which is
+ * where a wire can anchor - the thing the brief says a packed pad row denies,
+ * since a net whose every hole is a pad has nowhere to solder one.
+ *
+ * This file does not count free holes per block and does not predict `C`; it
+ * counts physical adjacency, which is the quantity the brief named and the one
+ * that tells a packed row from a spaced one, and `F` is what says what a
+ * candidate did one evaluation later. The two readings are CORRELATED and not
+ * the same: section 11.3 measures the controlling condition for `dC < 0` and
+ * finds it is the pad being its own net-BLOCK, which this measure does not
+ * compute - 70 of this board's 315 candidates pass the packing gate and cannot
+ * reduce `C`, and `./moves-space.ts` carries that figure and why they are not
+ * narrowed out.
  *
  * **IT TAKES NO `Occupancy`, AND THAT IS MEASURED RATHER THAN CONVENIENT.** The
  * one board that proves the gesture STOPS proposing is the owner's hand layout,
@@ -208,12 +239,17 @@ export function holesWithCopper(dump: BoardDump): ReadonlySet<string> {
  * The two holes beside `(row, col)` ALONG ITS OWN STRIP: one position down, one
  * up, off-board positions left out.
  *
- * **ALONG THE STRIP AND NOT THE FOUR NEIGHBOURS, because an abutment is an
- * electrical fact and not a geometric one.** A strip conducts along its length,
- * so two holes on one strip are joined unless a cut separates them; two holes on
- * ADJACENT strips are not joined at all and no cut is needed between them. The
- * strip axis is `./constraints-model.ts`'s `stripOf`, the one definition, read
- * here off `dump.verticalStrips` for a bare pair rather than a `Pin`.
+ * **ALONG THE STRIP AND NOT THE FOUR NEIGHBOURS**, because only the strip axis
+ * can carry a cut at all: a strip conducts along its length, so two holes on it
+ * are joined unless a cut separates them, while two holes on ADJACENT strips are
+ * not joined and no cut is needed between them. The strip axis is
+ * `./constraints-model.ts`'s `stripOf`, the one definition, read here off
+ * `dump.verticalStrips` for a bare pair rather than a `Pin`.
+ *
+ * **ONE POSITION EITHER SIDE AND NOT THE NEXT OCCUPIED HOLE**, which is the
+ * module comment's correction and the whole of what makes this a packing measure
+ * rather than a cut predictor. Read the other way it would score the owner's own
+ * row at five cuts on strip 3 and never stop proposing against it.
  */
 function alongStrip(
   dump: BoardDump,
