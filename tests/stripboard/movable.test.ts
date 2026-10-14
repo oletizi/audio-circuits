@@ -206,20 +206,27 @@ test("the move set now proposes gestures naming a pad, and only the one the fork
   ).toEqual([])
 })
 
-test("on the REAL imported board the move set proposes exactly three pad gestures", () => {
+test("on the REAL imported board the one-hole neighbourhood reaches exactly three pad gestures", () => {
   // **THE PRODUCTION CAPABILITY, DRIVEN RATHER THAN INFERRED.** This is the
   // board `--import` leaves and the one the pipeline actually climbs from, and
-  // before this change it yielded ZERO gestures naming a pad. It yields three,
-  // and the list is asserted EXACTLY so that four or two fails: a membership
-  // check would pass on a version that proposed a pad move for every pad.
+  // before Task 1 it yielded ZERO gestures naming a pad.
   //
-  // WHY ONLY THREE GESTURES OUT OF TEN PADS, hand-derived from the fixture's
-  // own lines rather than read back off the implementation. The ten `PAD` lines
-  // sit in ROW 0 at columns 23..32, CONTIGUOUSLY, which is what `--import`'s
-  // first-fit sweep leaves. So for every pad the neighbour above is off the
-  // board and the neighbours left and right are other pads - except the last
-  // pad's right. Measured against the same occupancy the model reads: row 0 is
-  // free from column 33 on, and row 1 is free from column 31 on.
+  // **THE THREE ARE NOW THE UNIT-DELTA SUBSET AND NOT THE WHOLE PAD SET, which
+  // is Task 2 arriving rather than this assertion weakening.** Task 2's
+  // `tools/stripboard/moves-space.ts` widens a pad's `move` to free holes
+  // further off, so the board yields 318 pad gestures: these three plus
+  // `spacingMoves`' 315. Both halves are asserted - the subset EXACTLY here, so
+  // four or two still fails, and the spacing count exactly in the test below -
+  // because the interesting regression is a widening that quietly swallowed the
+  // narrow neighbourhood, and a single total would not show it.
+  //
+  // WHY THE ONE-HOLE NEIGHBOURHOOD REACHES ONLY THREE OF TEN PADS, hand-derived
+  // from the fixture's own lines rather than read back off the implementation.
+  // The ten `PAD` lines sit in ROW 0 at columns 23..32, CONTIGUOUSLY, which is
+  // what `--import`'s first-fit sweep leaves. So for every pad the neighbour
+  // above is off the board and the neighbours left and right are other pads -
+  // except the last pad's right. Measured against the same occupancy the model
+  // reads: row 0 is free from column 33 on, and row 1 is free from column 31 on.
   //   SW_LO_BOOST_6 at 0,31   down to 1,31 is free                    -> 1
   //   SW_LO_BOOST_7 at 0,32   right to 0,33 and down to 1,32 are free -> 2
   //   the other eight         boxed in on all four sides              -> 0
@@ -229,18 +236,31 @@ test("on the REAL imported board the move set proposes exactly three pad gesture
   const dump = parseBoardDump(IMPORTED)
   const reference = referenceNetsFromExport(NETLIST)
   const moves = enumerateMoves(occupancyOf(dump), dump, IMPORTED, reference)
-  const pads = new Set(
-    movableRefs(dump, IMPORTED)
-      .filter((one) => one.kind === "pad")
-      .map((one) => one.ref),
-  )
+  const placed = movableRefs(dump, IMPORTED).filter((one) => one.kind === "pad")
+  const pads = new Set(placed.map((one) => one.ref))
   expect(pads.size, "the imported capture's ten PAD lines are all placed").toBe(10)
-  expect(moves.filter((move) => move.kind === "move" && pads.has(move.ref)).map(describeMove))
-    .toEqual([
-      "move SW_LO_BOOST_6 to 1,31",
-      "move SW_LO_BOOST_7 to 0,33",
-      "move SW_LO_BOOST_7 to 1,32",
-    ])
+  // THE ONE-HOLE SUBSET, PICKED OUT BY THE DISTANCE AND NOT BY THE GENERATOR: a
+  // filter that asked which function produced a move would be asserting over
+  // the implementation's own bookkeeping, and `UNIT_DELTAS` is defined by the
+  // distance.
+  const oneHoleAway = moves.filter((move) => {
+    if (move.kind !== "move") return false
+    const from = placed.find((one) => one.ref === move.ref)
+    if (from === undefined) return false
+    return Math.abs(move.to[0] - from.row) + Math.abs(move.to[1] - from.col) === 1
+  })
+  expect(oneHoleAway.map(describeMove)).toEqual([
+    "move SW_LO_BOOST_6 to 1,31",
+    "move SW_LO_BOOST_7 to 0,33",
+    "move SW_LO_BOOST_7 to 1,32",
+  ])
+  // AND NO GESTURE IS PROPOSED TWICE. `move SW_LO_BOOST_7 to 0,33` is both a
+  // unit delta and the first free hole on the pad's own strip, so the two
+  // generators overlap by construction; `moves-space.ts` excludes the unit
+  // neighbourhood for exactly this reason, and a regression that dropped the
+  // exclusion would spend a second evaluation on a byte-identical candidate.
+  const described = moves.map(describeMove)
+  expect(new Set(described).size, "no move is enumerated twice").toBe(described.length)
   // AND NO `rotate` OR `stretch` NAMES A PAD HERE EITHER, which is the
   // narrowing tools/stripboard/moves.ts's `partMoves` states - asserted on the
   // real board and not only on the hand-written one above.

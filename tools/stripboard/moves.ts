@@ -25,6 +25,9 @@
  * between runs could not be reproduced, and Task 13's `canonicalHash` exists to
  * prove runs reproduce. `tests/stripboard/moves.test.ts` holds the net order by
  * reversing the reference map and demanding the cluster moves reverse with it.
+ * **The SPACING gestures take their order from the same union** - the dump's
+ * `PAD` lines in their own order, then strips ascending, then positions along
+ * each strip ascending - and `./moves-space.ts` states it there.
  *
  * **FOUR OF THE EIGHT KINDS ARE EXACTLY ONE GESTURE AND FOUR ARE COMPOUND** -
  * `move`, `rotate`, `stretch` and `delete-wire` against `add-wire`, `cluster`,
@@ -60,6 +63,7 @@ import { clusterMove, gatherMove, gatherStrips } from "./moves-cluster.ts"
 import { movableRefs } from "./movable.ts"
 import { occupancyAfter } from "./moves-advance.ts"
 import { DEFERRED_KINDS, type Move } from "./moves-model.ts"
+import { spacingMoves } from "./moves-space.ts"
 import { spreadMove, spreadSourceStrips, spreadTargetStrips } from "./moves-spread.ts"
 import { wireMovesFor } from "./moves-wire.ts"
 import type { Occupancy } from "./seed-geometry.ts"
@@ -96,6 +100,19 @@ export {
   spreadSourceStrips,
   spreadTargetStrips,
 } from "./moves-spread.ts"
+
+/**
+ * The spacing model, re-exported from `./moves-space.ts`: the different-net
+ * abutment count a packed pad row scores, the destinations the measure admits,
+ * and the narrowed set the sweep takes.
+ *
+ * Same arrangement and reason as the blocks around it - this is the module every
+ * consumer names. `spacingGestures` is exported rather than kept private
+ * because a spacing gesture is a `move` and carries no kind of its own, so a
+ * reader counting what the gesture did intersects the enumeration with it;
+ * `./moves-space.ts`'s header records that decision and what it costs.
+ */
+export { padAbutments, spacingGestures, spacingMoves } from "./moves-space.ts"
 
 /**
  * The occupancy advance, re-exported from `./moves-advance.ts`: what one gesture
@@ -162,6 +179,15 @@ function partMoves(occupancy: Occupancy, dump: BoardDump, dumpText: string): rea
     // carries none, so `occupancyAfter` refuses by name rather than returning
     // `undefined`. Widening either is a deliberate edit with a fork run beside
     // it, exactly as `./seed-geometry.ts`'s whitelist entries are.
+    //
+    // **AND A PAD'S `move` IS NO LONGER ONLY THESE FOUR UNIT DELTAS.**
+    // `./moves-space.ts`'s `spacingMoves`, enumerated beside this function in
+    // `enumerateMoves`, proposes a pad's move to a free hole further off - for
+    // the measured reason that a one-hole neighbourhood cannot unpack a row
+    // `--import` packed: on the import-placed low-boost board eight of the ten
+    // pads are boxed in on all four sides and THIS loop yields three pad
+    // gestures in total. That widening is a `move` and not a ninth kind, and
+    // the reason for that decision is recorded in that file's header.
     if (one.kind === "pad") continue
     // CLOCKWISE ONLY, AND THE REASON IS WHAT HAS BEEN TRANSCRIBED. `turnedRect`
     // is `Board::RotateComps`'s CLOCKWISE case, line by line, and nothing in
@@ -351,6 +377,12 @@ export function enumerateMoves(
 ): readonly Move[] {
   return [
     ...partMoves(occupancy, dump, dumpText),
+    // THE SPACING GESTURES, IMMEDIATELY AFTER THE MOVES THEY WIDEN. They are
+    // `move` gestures and not a ninth kind - `./moves-space.ts`'s header carries
+    // the reason, and the consequence here is that `MOVE_KINDS`' order is
+    // untouched: no kind appears for the first time at this position, so the
+    // listing's "in the order enumerateMoves emits them" still reads true.
+    ...spacingMoves(occupancy, dump, dumpText, reference),
     ...wireMoves(occupancy, dump, reference),
     ...clusterMoves(occupancy, dump, dumpText, reference),
     ...gatherMoves(occupancy, dump, dumpText, reference),
