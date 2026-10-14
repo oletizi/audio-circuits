@@ -6,9 +6,18 @@
  * This helper REFUSES rather than skips when the library is not resolvable,
  * for the reason tests/circuits/kicad-round-trip.ts gives for kicad-cli: a
  * skipped check must never look like a passing one, and a green suite on a
- * machine with no KiCad would be exactly that. It is test-side only: nothing
- * in lib/ or tools/ reads a .kicad_mod at run time, which is why
- * lib/kicad/pin-pattern.ts holds the pads as committed data.
+ * machine with no KiCad would be exactly that.
+ *
+ * IT IS STILL TEST-SIDE, AND IT IS NO LONGER THE ONLY READER. This comment said
+ * that nothing in lib/ or tools/ reads a .kicad_mod at run time; that stopped
+ * being true when lib/kicad/footprint-extent.ts landed, and it reads the file
+ * through its own code rather than this helper, because lib/ may not import
+ * tests/. The two are not in tension and the split is deliberate:
+ * lib/kicad/pin-pattern.ts keeps its PADS as committed data, small enough to be
+ * worth having in a diff and compared against the file by the test below, while
+ * a body outline is a bounding box over a dozen graphic forms and a committed
+ * one would be the hand-transcribed table the extent module refuses to be. What
+ * keeps that module honest is the same (version <n>) token this helper reads.
  */
 import fs from "node:fs"
 import path from "node:path"

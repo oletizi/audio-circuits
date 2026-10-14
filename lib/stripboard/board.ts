@@ -17,19 +17,26 @@
  * code should be ours."* This is the model that core rests on.
  *
  * `lib/stripboard/` IS THE CORE AND MAY NOT IMPORT FROM `tools/`. Everything
- * here reaches `lib/` only, and the one thing this module wanted from `tools/`
- * and did NOT take is recorded in `geometryOf`'s refusal below.
+ * here reaches `lib/` only. The one thing this module wanted from `tools/` and
+ * did NOT take is `VEROROUTE_FOOTPRINT_ROWS`: it is behind that boundary, and it
+ * is keyed by VeroRoute component TYPE rather than by KiCad footprint, so it
+ * answers a different question in a different vocabulary. What replaced it is
+ * `lib/kicad/footprint-extent.ts`, which derives a part's body outline from the
+ * `.kicad_mod` the footprint's own `PinPattern` names.
  *
  * TWO REFUSALS ARE THE POINT OF THE MODULE, not decoration:
  *
  *   1. a footprint with no recorded pin pattern refuses BY NAME, rather than
  *      getting a plausible default;
- *   2. a part's occupied holes are NEVER reconstructed from its pins, and
- *      nothing in `lib/` records them, so `geometryOf` refuses rather than
- *      inferring. The evidence for that is in its own comment and in
- *      `tests/stripboard/model/board.test.ts`, which reads it off the recorded
- *      pads instead of restating it.
+ *   2. a part's occupied holes are NEVER reconstructed from its pins. The body
+ *      half and the pads' half are derived separately and unioned, because the
+ *      three `C_Rect` footprints carry identical pads at three body widths and
+ *      the frozen low-boost board puts two of them on three strips and one
+ *      strip. Where the body outline cannot be read, `geometryOf` still
+ *      refuses.
  */
+import { occupiedAreaFor, padHolesFor } from "../kicad/footprint-extent.ts"
+import type { FootprintExtent, PadHole } from "../kicad/footprint-extent.ts"
 import { admitPattern } from "../kicad/pin-pattern-model.ts"
 import type { PinPattern } from "../kicad/pin-pattern-model.ts"
 import { pinPatternFor } from "../kicad/pin-pattern.ts"
@@ -180,56 +187,109 @@ export function holesOverlap(candidate: Candidate): HoleClash | null {
   return first
 }
 
+
 const WHERE_THE_HOLES_ARE_READ =
   "a placement's holes are read by overlap detection (holesOverlap, here), by the stock-fit " +
   "measurement and by the buildability check, so a guessed occupied area is wrong in three " +
   "places at once rather than one"
 
 /**
- * A footprint's occupied holes and its pin-to-hole map, at an origin and
- * direction - **and it refuses every footprint today.**
+ * Where a footprint's own x and y axes point on the board, at each of the four
+ * directions.
  *
- * **IT CANNOT BE BUILT FROM `pinPatternFor` ALONE, AND THAT IS THE FINDING, NOT
- * A BUG IN THIS FILE.** A `PinPattern` (`lib/kicad/pin-pattern-model.ts`)
- * records PADS and says nothing about a part's body. Its own entry for
- * `Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm` says so outright - *"a body
- * width is not a pin position and does not enter this classification at all"* -
- * and the three `C_Rect` footprints in `lib/kicad/pin-pattern.ts` carry
- * IDENTICAL pads, `(0,0)` and `(5,0)`, across body widths of 2.5mm, 3.5mm and
- * 4.5mm. No function of the pads can tell those three apart, so no derivation
- * from the recorded pattern yields an occupied area.
+ * **A DECLARED CONVENTION OF THIS MODEL, and deliberately NOT a claim about what
+ * VeroRoute's `DIRECTION` token means.** The four entries are the quarter-turns
+ * of one rotation - `E` is the identity, `S` is a quarter turn with column
+ * increasing to the east and strip increasing to the south, and `W`/`N` are the
+ * other two - so a part cannot acquire a shear or a reflection by being turned.
+ * Which of these four a dump's `DIRECTION W` corresponds to is NOT asserted
+ * here: the frozen low-boost dump carries no `DIRECTION` field at all, so there
+ * is nothing in the fixtures to check such a mapping against, and that mapping
+ * belongs where a dump is read. Asserting one from this side would be a guess
+ * with a board's worth of consequences.
+ */
+interface Facing {
+  readonly columnPerX: number
+  readonly columnPerY: number
+  readonly stripPerX: number
+  readonly stripPerY: number
+}
+
+const FACINGS: Readonly<Record<Placement["direction"], Facing>> = {
+  E: { columnPerX: 1, columnPerY: 0, stripPerX: 0, stripPerY: 1 },
+  S: { columnPerX: 0, columnPerY: -1, stripPerX: 1, stripPerY: 0 },
+  W: { columnPerX: -1, columnPerY: 0, stripPerX: 0, stripPerY: -1 },
+  N: { columnPerX: 0, columnPerY: 1, stripPerX: -1, stripPerY: 0 },
+}
+
+/** A footprint-frame offset in grid steps, turned and placed at an origin hole. */
+function holeAt(origin: Hole, facing: Facing, xSteps: number, ySteps: number): Hole {
+  return {
+    strip: origin.strip + facing.stripPerX * xSteps + facing.stripPerY * ySteps,
+    column: origin.column + facing.columnPerX * xSteps + facing.columnPerY * ySteps,
+  }
+}
+
+/**
+ * Re-raises a `lib/kicad/footprint-extent.ts` refusal under this module's own
+ * key, and lets anything else through untouched.
  *
- * **THE DIFFERENCE IS NOT COSMETIC, AND THE FROZEN BOARD MEASURES IT.** On
- * `tests/fixtures/stripboard/pultec-low-boost-frozen.dump`, `C18` is a
- * `CAP_FILM_WIDE` and `C19` a `CAP_FILM`;
- * `pultec-low-boost-frozen.footprints.json` gives `C18` the 3.5mm-bodied
- * `C_Rect` and `C19` the 2.5mm one - the two whose pads are identical - and
- * `VEROROUTE_FOOTPRINT_ROWS` in `tools/stripboard/seed-geometry.ts` records
- * three footprint rows for the first and one for the second, transcribed from
- * `CompTypes::GetMakeInstructions`. That file also records what happens to code
- * that derives the row count from the leads instead: it was wrong by one on
- * `C18`, whose leads sit in the middle row of three, and the fork refused the
- * moves it proposed.
+ * TASK 1's `no-occupied-area` REFUSAL IS KEPT RATHER THAN REPLACED, narrowed to
+ * the cases that genuinely have no body outline to read - a footprint whose
+ * `.kicad_mod` carries no `F.Fab` graphic, a file that is not there, a file
+ * whose `(version <n>)` no longer matches the one its pads were recorded at,
+ * and an `F.Fab` form nothing has looked at. A caller that was handling this key
+ * still sees it; what has changed is that a recorded, mountable footprint with a
+ * body outline no longer reaches it.
  *
- * **AND THAT TABLE IS NOT THE FIX.** It lives in `tools/`, which this module
- * may not import, and it is keyed by VeroRoute component TYPE rather than by
- * KiCad footprint - so it answers a different question in a different
- * vocabulary, and routing it here would both breach the boundary and make the
- * core's geometry depend on the fork it exists to replace.
+ * ONLY A `footprint-extent-` REFUSAL IS WRAPPED. A `TypeError` from a bug in the
+ * derivation would otherwise come back wearing this key and read as a missing
+ * record, which is the shape of mistake this file's comments keep warning about.
+ */
+function asGeometryRefusal(error: unknown, key: string, footprint: string, asked: string): never {
+  if (!(error instanceof Error) || !error.message.startsWith("footprint-extent-")) throw error
+  throw new Error(
+    `${key}: "${footprint}" has a recorded pin pattern and is mountable on the strips, and the ` +
+      `geometry it needs could not be derived from its own .kicad_mod (${asked}).\n` +
+      `${error.message}\nWHY IT IS NOT DEFAULTED: ${WHERE_THE_HOLES_ARE_READ}. Deriving the ` +
+      "extent from the leads is recorded in tools/stripboard/seed-geometry.ts as having been " +
+      "wrong by one on C18, whose leads sit in the middle row of three.",
+  )
+}
+
+/**
+ * A footprint's occupied holes and its pin-to-hole map, at an origin and a
+ * direction.
  *
- * **SO THE REMEDY IS A RECORD, AND WHERE IT GOES IS NOT THIS AGENT'S CALL.**
- * The occupied area has to be recorded per KiCad footprint, from the
- * `.kicad_mod` whose path and `(version <n>)` token every `PinPattern` already
- * carries, with a test that opens that file - the shape
- * `tests/kicad/pin-pattern.test.ts` already has, and for the reason it has it:
- * this repository has twice shipped a footprint that does not exist. Until such
- * a record exists this function refuses, because the alternative is a plausible
- * number in a field three checks believe.
+ * **WHAT THE ORIGIN IS: the hole that the footprint's OWN (0,0) lands on.** It
+ * is not "the first pad" and not a corner. For all thirteen recorded footprints
+ * (0,0) happens to be pad 1's centre, which
+ * `tests/kicad/footprint-extent.test.ts` asserts rather than assumes - but the
+ * definition is the footprint's coordinate system, because that is the frame
+ * both the pads and the `F.Fab` body outline are stated in, and a part's body
+ * can and does reach to negative coordinates on either axis.
  *
- * **NO PIN DERIVATION IS WRITTEN HERE EITHER**, although the pads do determine
- * it. Code after an unconditional refusal cannot run and cannot be tested, and
- * untested unreachable code that looks like a derivation is worse than its
- * absence: the next reader would take it for a working one.
+ * **THE OCCUPIED HOLES ARE THE BODY'S HOLES UNIONED WITH THE PADS'.** A part
+ * occupies more than its leads: `tools/stripboard/seed-geometry.ts` records the
+ * fork refusing a move because `C18`'s *footprint* would occupy three rows while
+ * both its leads sit in the middle one, and a lead-derived extent was wrong by
+ * exactly that one row. The body half comes from `occupiedAreaFor`, which reads
+ * the `F.Fab` outline out of the `.kicad_mod` the footprint's `PinPattern`
+ * names; the pads' half comes from `padHolesFor`. **Neither is inferred from the
+ * other**, which is the point: the three `C_Rect` footprints carry identical
+ * pads at three body widths, and the frozen low-boost board places two of them
+ * on three strips and one strip respectively.
+ *
+ * **MEASURED AGAINST THAT BOARD.** Derived, the 3.5mm-bodied `C_Rect` covers
+ * three holes along its lead axis and three across it, and the 2.5mm one covers
+ * three along and ONE across. `tests/fixtures/stripboard/pultec-low-boost-frozen.dump`
+ * places `C18` - the 3.5mm part - as a `CAP_FILM_WIDE` at `AT 3,8 SPAN 3` with
+ * its leads at rows 3 and 5, a 3x3 footprint; and `C19` - the 2.5mm part - as a
+ * `CAP_FILM` at `AT 3,13 SPAN 1` with its leads at rows 3 and 5, a 3x1
+ * footprint. Both agree.
+ *
+ * The three refusals are: a footprint with no recorded pin pattern, a pattern
+ * `admitPattern` will not mount, and geometry its own file cannot supply.
  */
 export function geometryOf(
   footprint: string,
@@ -272,20 +332,34 @@ export function geometryOf(
         "that is never mounted.",
     )
   }
-  throw new Error(
-    `stripboard-geometry-no-occupied-area: "${footprint}" has a recorded pin pattern and is ` +
-      `mountable on the strips, and nothing records WHICH HOLES IT OCCUPIES, so geometryOf ` +
-      `cannot return (${asked}).\n` +
-      "WHAT IS MISSING: a PinPattern records pads and nothing about the part's body. The three " +
-      "C_Rect footprints in lib/kicad/pin-pattern.ts carry identical pads at three different " +
-      "body widths, and the 3.5mm and 2.5mm ones are the two parts the frozen low-boost board " +
-      "places as a three-row CAP_FILM_WIDE and a one-row CAP_FILM.\n" +
-      `WHY IT IS NOT INFERRED FROM THE PINS: ${WHERE_THE_HOLES_ARE_READ}. Deriving the extent ` +
-      "from the leads is recorded in tools/stripboard/seed-geometry.ts as having been wrong by " +
-      "one on C18, whose leads sit in the middle row of three.\n" +
-      "WHERE TO FIX IT: record the occupied area per KiCad footprint, from the .kicad_mod whose " +
-      "path and (version <n>) token the PinPattern already carries, with a test that opens that " +
-      "file. VEROROUTE_FOOTPRINT_ROWS is not that record: it is in tools/, which lib/stripboard " +
-      "may not import, and it is keyed by VeroRoute component type rather than by footprint.",
-  )
+  let extent: FootprintExtent
+  try {
+    extent = occupiedAreaFor(footprint, patterns)
+  } catch (error) {
+    asGeometryRefusal(error, "stripboard-geometry-no-occupied-area", footprint, asked)
+  }
+  let pads: readonly PadHole[]
+  try {
+    pads = padHolesFor(pattern)
+  } catch (error) {
+    asGeometryRefusal(error, "stripboard-geometry-no-pad-holes", footprint, asked)
+  }
+  const facing = FACINGS[direction]
+  const byKey = new Map<string, Hole>()
+  // The WHOLE rectangle, not its outline: the fork's own placement moves a
+  // part's entire element grid, body cells included, so two parts whose leads
+  // miss each other can still collide.
+  for (let xSteps = extent.alongX.minSteps; xSteps <= extent.alongX.maxSteps; xSteps += 1) {
+    for (let ySteps = extent.alongY.minSteps; ySteps <= extent.alongY.maxSteps; ySteps += 1) {
+      const hole = holeAt(origin, facing, xSteps, ySteps)
+      byKey.set(holeKey(hole), hole)
+    }
+  }
+  const pins = new Map<string, Hole>()
+  for (const pad of pads) {
+    const hole = holeAt(origin, facing, pad.xSteps, pad.ySteps)
+    byKey.set(holeKey(hole), hole)
+    pins.set(pad.pad, hole)
+  }
+  return { holes: [...byKey.values()], pins }
 }

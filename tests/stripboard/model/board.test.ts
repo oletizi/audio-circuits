@@ -1,15 +1,18 @@
 /**
- * The model's two testable behaviours: `holesOverlap`, and every refusal
- * `geometryOf` makes.
+ * The model's two testable behaviours: `holesOverlap`, and what `geometryOf`
+ * returns and refuses.
  *
- * WHY THERE IS NO TEST OF A `geometryOf` RETURN VALUE. There is no return value
- * to test. `geometryOf` refuses every footprint today, because nothing in
- * `lib/` records a footprint's occupied area and the model forbids
- * reconstructing it from the pins. The last test below is the EVIDENCE for that
- * refusal rather than a restatement of it: it reads the recorded pads of the
- * three `C_Rect` footprints out of `lib/kicad/pin-pattern.ts` and shows they are
- * identical across three different body widths, so no function of the pads can
- * tell the three apart.
+ * **THE RETURN VALUE IS TESTED HERE NOW, AND IT WAS NOT ALWAYS.** When this file
+ * was written `geometryOf` refused every footprint, because nothing in `lib/`
+ * said which holes a part's body covers; the comment that stood here said so and
+ * the last test below was the evidence for it. `lib/kicad/footprint-extent.ts`
+ * supplied the missing half by deriving the body outline from the footprint's own
+ * `.kicad_mod`, so the refusals NARROWED rather than went away - and each of
+ * them is still asserted below, including the one that used to fire for
+ * everything.
+ *
+ * The three-identical-pads test at the end stays exactly as it was: it is still
+ * true, and it is still the reason the occupied area cannot come from the pads.
  *
  * REFUSALS ARE ASSERTED ON THEIR LEADING KEY, never with a regex over the whole
  * message. This repository has five times had a test match a refusal's
@@ -21,6 +24,8 @@ import { expect, test } from "bun:test"
 import { PIN_PATTERNS, pinPatternFor } from "../../../lib/kicad/pin-pattern.ts"
 import { geometryOf, holesOverlap, type Candidate, type Hole, type Placement }
   from "../../../lib/stripboard/board.ts"
+import { NO_BODY_OUTLINE, RE_POINTED, withRePointed }
+  from "../../kicad/footprint-extent-fixtures.ts"
 import { INJECTED_PATTERNS, ringPattern } from "../synthetic-footprints.ts"
 
 const GRID = { strips: 6, columns: 12 }
@@ -163,13 +168,79 @@ const C_RECT_FAMILY = [
   "Capacitor_THT:C_Rect_L7.2mm_W4.5mm_P5.00mm",
 ] as const
 
-test("geometryOf refuses a recorded, mountable footprint for want of an occupied area", () => {
+/**
+ * THE REFUSAL THAT NARROWED. Until `lib/kicad/footprint-extent.ts` existed this
+ * key fired for every recorded footprint, including all three of these. It is
+ * still here and still reachable - a footprint whose own `.kicad_mod` carries no
+ * body outline cannot be given one - and what has changed is that a recorded,
+ * mountable footprint with a body outline no longer reaches it. A refusal that
+ * vanished would be a guard removed rather than a guard satisfied.
+ *
+ * The fixture is the RECORDED footprint with its `source` re-pointed at a file
+ * that has a courtyard, two pads and no `F.Fab` graphic. It has to be a recorded
+ * name: `admitPattern` reads the module-level `LEAD_SPANS` and nothing routes an
+ * injected span to it, so an invented name refuses one step earlier, at
+ * `unmountable-pattern`, and never reaches the geometry. See
+ * `tests/kicad/footprint-extent-fixtures.ts`.
+ */
+test("geometryOf still refuses a footprint whose file states no occupied area, by name", () => {
+  const message = refusalFrom(() =>
+    geometryOf(RE_POINTED, ORIGIN, "E", withRePointed(NO_BODY_OUTLINE)),
+  )
+  expect(message).toStartWith(`stripboard-geometry-no-occupied-area: "${RE_POINTED}"`)
+  expect(message, "and it carries the cause").toContain("footprint-extent-no-body-outline")
+})
+
+/**
+ * The pad-to-hole half refuses separately, and the two are not interchangeable:
+ * a formed footprint HAS a derivable body and no recorded frame to put its bent
+ * leads in. Collapsing both into one key would make the remedy - record the
+ * anchor - read as though a body outline were missing.
+ */
+test("geometryOf refuses a formed-to-grid footprint for want of a pad-to-hole map, by name", () => {
+  const formed = "Package_TO_SOT_THT:TO-92_Inline"
+  const message = refusalFrom(() => geometryOf(formed, ORIGIN, "E", PIN_PATTERNS))
+  expect(message).toStartWith(`stripboard-geometry-no-pad-holes: "${formed}"`)
+  expect(message).toContain("footprint-extent-formed-frame-unrecorded")
+})
+
+/**
+ * THE RETURN VALUE, AND THE PART OF IT NO FUNCTION OF THE PADS COULD PRODUCE.
+ *
+ * All three footprints carry the same two pads, so all three put pin 1 and pin 2
+ * two columns apart facing `E`. What differs is the hole count: the 2.5mm body
+ * covers its own strip and the other two reach into the strips either side. The
+ * figures are the ones `tests/kicad/footprint-extent.test.ts` checks against the
+ * frozen low-boost board for `C18` and `C19`.
+ */
+test("geometryOf returns holes and pins for a recorded, mountable footprint", () => {
+  const holeCounts = C_RECT_FAMILY.map(
+    (footprint) => geometryOf(footprint, ORIGIN, "E", PIN_PATTERNS).holes.length,
+  )
+  expect(holeCounts, "three along the leads, by one strip and by three").toEqual([3, 9, 9])
   for (const footprint of C_RECT_FAMILY) {
-    const message = refusalFrom(() => geometryOf(footprint, ORIGIN, "E", PIN_PATTERNS))
-    expect(message, footprint).toStartWith(
-      `stripboard-geometry-no-occupied-area: "${footprint}"`,
-    )
+    const { pins } = geometryOf(footprint, ORIGIN, "E", PIN_PATTERNS)
+    expect([...pins.keys()].sort(), footprint).toEqual(["1", "2"])
+    expect(pins.get("1"), footprint).toEqual({ strip: 0, column: 0 })
+    expect(pins.get("2"), footprint).toEqual({ strip: 0, column: 2 })
   }
+})
+
+/**
+ * Turning a part turns its body with it. The 3.5mm cap facing `E` is three
+ * columns by three strips either way, so the discriminating case is the 2.5mm
+ * one, which is three columns by one strip facing `E` and one column by three
+ * strips facing `S`.
+ */
+test("a quarter turn exchanges a part's along-lead and across-lead extents", () => {
+  const narrow = "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm"
+  const east = geometryOf(narrow, ORIGIN, "E", PIN_PATTERNS)
+  const south = geometryOf(narrow, ORIGIN, "S", PIN_PATTERNS)
+  expect(new Set(east.holes.map((hole) => hole.strip)).size, "one strip facing E").toBe(1)
+  expect(new Set(east.holes.map((hole) => hole.column)).size, "three columns facing E").toBe(3)
+  expect(new Set(south.holes.map((hole) => hole.strip)).size, "three strips facing S").toBe(3)
+  expect(new Set(south.holes.map((hole) => hole.column)).size, "one column facing S").toBe(1)
+  expect(south.pins.get("2"), "pin 2 two strips along, facing S").toEqual({ strip: 2, column: 0 })
 })
 
 /**
