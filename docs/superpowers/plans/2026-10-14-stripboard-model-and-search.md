@@ -634,7 +634,21 @@ throwaway one there would leave two converters to keep correct.
 
 **The fork gains a declarative board-state import.** The optimizer emits a complete placement-and-routing description and VeroRoute materializes it atomically. Gesture replay is rejected — it would carry the old architecture's coordinate shifts and state divergence into the new one. Writing `.vrt` bytes ourselves is rejected — making us the writer of the artifact VeroRoute witnesses destroys the independence the boundary exists for.
 
-**The round trip requires PHYSICAL-STATE equivalence** — identical placements, orientations, wire endpoints, strip geometry **and cut positions** — not merely electrical equivalence. Two electrically identical cut placements are not equally buildable.
+**The round trip requires PHYSICAL-STATE equivalence for PLACEMENTS — identical placements,
+orientations, wire endpoints and bridge positions — and ELECTRICAL equivalence for cuts.**
+
+An earlier revision required exact cut positions too. **The owner has ruled that out:
+*"the cut position doesn't matter. That's false precision."*** Tracks are cut before the
+board is populated, so the clearance argument behind the old requirement has no force.
+Task 2 measured the consequence: our cuts and the fork's agree on 54 of 54 as to strip,
+count and which run pair each separates, on 38 of 54 exact gaps, and the electrical result
+is identical either way — and the fork's gap is a function of what AutoFill painted rather
+than of any building rule.
+
+**So this task no longer has to defend cut positions against AutoFill.** It must verify
+AutoFill's cuts give the **same electrical result** — a different *set* is a real
+disagreement — but a different *gap* between the same two runs is **not** a round-trip
+failure and must not be reported as one.
 
 **And it must defend that against the fork itself.** `tools/stripboard/score.ts:32` and `tools/stripboard/cut-necessity.ts:26` both record that **`AutoFillVero` re-derives the whole cut set every time a candidate is painted.** The fork will overwrite our cuts on materialization. **The importer must suppress or survive AutoFill**, or every exported board silently becomes AutoFill's candidate rather than the optimizer's. Prove it with a test that materializes a candidate whose cuts differ from AutoFill's preference and asserts ours survive.
 

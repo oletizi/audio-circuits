@@ -229,11 +229,33 @@ Two equivalences, and they are not interchangeable:
   strip geometry **and cut positions**.
 - **Electrical equivalence** — identical connectivity, wherever interchangeable cuts land.
 
-**The importer's round-trip check requires PHYSICAL-STATE equivalence.** Electrical
-equivalence is insufficient for an artifact a person builds from: two electrically
-identical cut placements are not equally easy to make, and one of them may foul a lead or
-a wire anchor. VeroRoute's independently derived cut set is compared **separately**, and a
-disagreement is **reported, never silently adopted.**
+**The importer's round-trip check requires PHYSICAL-STATE equivalence FOR PLACEMENTS, and
+ELECTRICAL equivalence for cuts** (owner, 2026-10-14, correcting revision 3).
+
+Revision 3 required exact cut positions too, on a reviewer's argument that *"two
+electrically identical cut placements are not equally easy to make."* **The owner has
+refuted that: "the cut position doesn't matter. That's false precision."** The clearance
+reasoning behind it does not survive contact with how a board is built — tracks are cut
+before the board is populated, so there is no solder joint for a nearby cut to nick.
+
+Measured, which is what made the requirement look defensible and is also what undoes it:
+our derivation and the fork agree on **54 of 54** cuts as to strip, count and which pair of
+net-runs each one separates, and on **38 of 54** exact gaps. The electrical result is
+identical on both boards either way. And the fork's gap is a function of **what AutoFill
+painted** rather than of any building rule — `Reconcile_cuts.cpp`'s `DeriveCuts` places a
+cut immediately before the hole where the node id changes, over painted holes. On a
+hand-laid board it matched us on 1 of 5; on a machine-placed one, 49 of 49. **So the
+fork's positions are not evidence of anything worth matching.**
+
+**What this simplifies, and it is the point of recording it:** the declarative importer no
+longer has to defend cut positions against `AutoFillVero` re-deriving them on paint. It
+must still verify that AutoFill's cuts produce the **same electrical result** — a different
+*set* of cuts is a real disagreement — but a different *gap* between the same two runs is
+not a round-trip failure and must not be reported as one. One fewer false failure, and one
+less thing for Task 9 to fight.
+
+Placements, orientations, wire endpoints and bridge positions are unaffected: those still
+require exact equivalence.
 
 **A fork behaviour makes this a requirement on the import feature rather than a
 preference, and the second review could not have known it.** `tools/stripboard/score.ts:32`
