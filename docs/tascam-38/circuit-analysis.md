@@ -384,8 +384,8 @@ Transitions:
   monitoring SYNC switches to INPUT. PLAY MUTE is unaffected.
 - **Punch out** (REC SIGNAL drops): FUNCTION goes open; bias starts falling
   40 ms later over 70 ms (manual); K103 releases after about 0.1-0.2 s
-  (computed); D109 / C119 hold Q108 on for about 0.4-0.5 s (R139 68 ohm) or
-  0.3-0.4 s (68k), so the INPUT override outlasts K103 before SYNC returns.
+  (computed); D109 / C119 hold Q108 on for about 0.4-0.5 s (R139 is 68 ohm,
+  A7), so the INPUT override outlasts K103 before SYNC returns.
 - **Record-pause** keeps REC OUT, so an armed channel holds K103, bias and
   erase on while the tape is stopped.
 - **K103 released** puts the record-amplifier output TP1 onto J108-1, which
@@ -433,7 +433,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | A4 | U103 is a TEAC "BIAS Ampl. Module" (5292210600, per the manual's parts list); its internals are unpublished | pass6-datasheets.md | Physical module, if its behaviour matters for a replacement |
 | A5 | L108 value not printed. *Bias frequency resolved:* 150 kHz (manual specifications) | block-record-bias-erase.md; pass6-datasheets.md | Physical part for L108 |
 | A6 | *Resolved by datasheet:* 2SK68A VGS(off) is -1.5 V worst case, so -5.2 / -6.2 V holds the JFETs off with margin while the signal stays near 0V (see A12) | pass6-datasheets.md | - |
-| A7 | R139 printed "68" (ohms, or a missing k) | block-control-muting.md | Physical part or parts list |
+| A7 | *Resolved by inspection:* R139 is 68 ohm. Its bands, read from the end opposite the gold tolerance band, are blue, grey, black: 68 x 1. The grey band shows weakly against the tan body, but blue-black is not a standard value. The same reading direction gives the drawn values for its neighbours: R138 blue-grey-orange 68k, R137 yellow-violet-orange 47k, R136 red-violet-orange 27k | owner photo 2026-10-14, `bench/photos/2026-10-14-r139-q108-area.jpg` (channel not recorded) | - |
 | A8 | W119 drawn faint and broken; W109 / W110 / W112 / W132 drawn linked - whether fitted is a physical-board question | block-record-bias-erase.md, block-reproduce-output.md | Physical card |
 | A9 | *Resolved by datasheet:* 4558 pinout consistent with every traced pin; U101 1/2 is section B (in pin 5, out pin 7), U101 2/2 is section A (in pin 3, out pin 1); inputs on pins 3 and 5 are non-inverting | pass6-datasheets.md | - |
 | A10 | J108-1 to 0V (C17) decides whether the released K103 grounds the record output | interface-matrix.csv | Continuity P108-1 to P171-7 |
@@ -443,7 +443,7 @@ fallback, giving off-tape monitoring through the separate reproduce head.
 | M3 | *Resolved:* in PAUSE, PLAY OUT is low (SYNC / REPRO muted); in record-pause REC OUT stays high (armed channels keep K103 and bias on) | pass6-datasheets.md; pass6-transport-pause-autostop.md | - |
 | M4 | REC SIGNAL crosses the P173-3 wire at (1562, 3692) with heavier ink; read as a crossing (audit: undecidable on the scan). A junction would make Q301 / Q302 pointless | control-function.md | Continuity P182-1 to P182-2 |
 | M5 | OUT SELECT switches: latching or momentary, and any interlock between the three, are not shown | control-outselect.md | Physical switch, or the service manual |
-| M6 | Delays are computed from part values, not measured: POWER MUTE ~1.8 s (assumes a 6V rail), K102 ~0.5 s, K101 ~0.1 s (C208), K103 pull-in ~40-70 ms and release ~0.1-0.2 s, PLAY MUTE ~0.1 s plus ~45 ms (C850), Q108 hold 0.3-0.5 s, auto-stop guard ~1 s. Bias timing is from the manual (80 + 90 ms on, 40 + 70 ms off) | pass6-amp-osc-notes-timing.md; control-*.md | Scope measurement |
+| M6 | Delays are computed from part values, not measured: POWER MUTE ~1.8 s (assumes a 6V rail), K102 ~0.5 s, K101 ~0.1 s (C208), K103 pull-in ~40-70 ms and release ~0.1-0.2 s, PLAY MUTE ~0.1 s plus ~45 ms (C850), Q108 hold 0.4-0.5 s, auto-stop guard ~1 s. Bias timing is from the manual (80 + 90 ms on, 40 + 70 ms off) | pass6-amp-osc-notes-timing.md; control-*.md | Scope measurement |
 | M7 | *Traced:* the guard is asserted at power-up, in FF / REW and while the reels coast, and pulls PLAY OUT and REC OUT low (Transport logic). Remaining: PH501's conduction sense relative to tape; the logic rail value; U514 / U516-1 onward to the reel-motor drivers; R705's value | pass6-transport-pause-autostop.md | Measure, or trace the reel-motor side further |
 | M8 | *Resolved:* REC MODE reaches only the RECORD-lamp gate (steady if a channel is armed, flashing if none); it does not gate record entry | pass6-transport-record-entry.md | - |
 | A12 | The selection JFETs stay off only while their source / drain stay above about -3.7 V (gate -5.2 V) or -4.7 V (gate -6.2 V). The 38's maximum line input is +18 dBV (8 V rms); whether any JFET node swings that far on negative peaks depends on the levels at Q105 / Q106 / Q110 | pass6-datasheets.md | Check signal swing at the JFET nodes at maximum input |
@@ -462,6 +462,8 @@ without suitable instruments.
 
 Done (owner, 2026-10-13, card unpowered): J101-4 to J101-3 = 0 ohms;
 J106-7 to TP1 = open. Both as predicted (Relay drawn state).
+Done (owner photo, 2026-10-14): R139 colour code reads 68 ohm (A7). The
+same photo shows W108 and W111 fitted; neither is in A8's list.
 
 On a removed card, unpowered (ohmmeter):
 
@@ -490,5 +492,5 @@ Powered, measured (optional confirmations unless noted):
 Physical inspection:
 
 10. OUT SELECT switch latching and interlock (M5).
-11. R139 colour code (A7), L108 marking (A5), W109 / W110 / W112 / W119 /
+11. L108 marking (A5), W109 / W110 / W112 / W119 /
     W132 fitted (A8); per-channel component differences (C10).
