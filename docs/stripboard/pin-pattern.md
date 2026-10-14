@@ -162,9 +162,12 @@ the field off.
 
 ### Corroboration from the committed layouts, and its limit
 
-Across the eleven boards under `boards/`, **no placement contradicts the
-midpoint anchor** — it claims no hole beyond the leads for any 5mm can, so it
-cannot collide. The alternatives do collide, on `transistor-preamp-loop`:
+Along the lead row — the axis the anchor decides, the across-strip axis being
+the same under all three — **no placement on the eleven boards under `boards/`
+contradicts the midpoint anchor**: it claims no hole beyond the leads for any
+5 mm can, so it cannot collide there. (Its ACROSS-strip claim does collide, and
+so does every anchor's; that is the rule's doing and is below.) The
+alternatives collide along the row, on `transistor-preamp-loop`:
 
 - `C6` (pads at `3,10` and `3,11`) has `J2.2` at `3,9` and `R9.1` at `3,12`, so
   `first-lead` and `last-lead` each put its can over an occupied hole. **One
@@ -199,32 +202,161 @@ refusals are reached only from a constructed pattern. They are exercised rather
 than left present and unexamined, in `tests/kicad/formed-frame.test.ts` and
 `tests/stripboard/model/board.test.ts`.
 
-### Two findings the anchor measurement turned up, which are NOT about the anchor
+### The owner's correction, and what it does and does not make moot
 
-Both were measured against the committed boards while testing the anchor, both
-are anchor-independent, and neither is fixed here — they belong to whatever
-imports and grades these boards.
+Partway through the measurement above the owner stated the principle directly:
 
-1. **The occupancy rule over-claims across the strips.** `geometryOf` takes a
-   bounding box over `F.Fab` and counts a hole as covered when the box overlaps
-   that hole's whole strip cell. For a round can that is too greedy: a 5 mm can
-   centred on a lead reaches 2.50 mm across, 0.04 mm short of the neighbouring
-   hole, yet the rule claims that hole because the cell starts at 1.27 mm. The
-   owner's layouts place leads there — `transistor-preamp-loop`'s `C2` has
-   `R2.1` and `R6.1` in the columns either side, and `transistor-preamp-lab`'s
-   `Q1` has `TP2.1` and `TP3.1` — so the rule refuses boards the owner drew.
-   The strip-cell rule is right for the film capacitors it was measured against
-   (`C18`/`C19` on the frozen low-boost board); a point-overlap rule would be
-   right for the cans and wrong for `C18`. The two cannot both be satisfied by
-   one box-plus-cell rule, and choosing between them is a criteria decision.
-2. **A stretched two-pin part has no model at all.** VeroRoute stretches an
-   electrolytic to whatever span a layout wants — the committed boards place
-   `CAP_ELECTRO_200` at 1, 2, 3, 5, 6, 8, 9, 10 and 13 steps — while
-   `preparedPitchSteps` is one figure for the footprint. For such a placement the
-   can sits *somewhere* along the lead row and `geometryOf`, which knows only
-   the footprint, claims the body band over the *whole* span. **16 of the 25
-   formed electrolytic placements across the eleven boards are in this shape**,
-   and so are all five `CAP_ELECTRO_300`s.
+> *"the whole point of stripboards is to use the flexibility of the leads to
+> afford more layout possibilities. The only time you care about the body
+> dimensions is if the leads are very short (like certain box capacitors) or
+> rigid like dip packaged chips."*
+
+So for a `formable` family the body is not a constraint and the anchor cannot
+matter. **That reads as making the anchor moot. Measured, it does not** — and
+the measurement corrected two earlier readings of mine, both wrong in the same
+direction. Which footprints' derived occupancy actually changes with the anchor,
+taken through `geometryOf`, which is the whole rectangle from both spans with
+the pads unioned in:
+
+| footprint | `lead-span.ts` | anchor changes `geometryOf`'s holes? |
+| --- | --- | --- |
+| `CP_Radial_D5.0mm_P2.00mm` | formable | **yes** — 6 holes against 9 |
+| `CP_Radial_D8.0mm_P3.50mm` | formable | no |
+| `TO-92_Inline` | **rigid** | **yes** — 9 holes against 7 |
+
+`TO-92_Inline` is a family `lead-span.ts` records as `formable: false`, and its
+occupancy depends on the anchor. **So the anchor is a record a rigid part's
+geometry rests on, and it is not moot.**
+
+**What the two earlier wrong readings were**, recorded because both are the same
+mistake: the first compared `alongX`, the body's span **alone**, which differs
+for `TO-92_Inline` under every anchor (`0..2`, `0..1`, `1..2`) while the union
+with the pads is the same three holes; the second took that 1-D union along the
+lead row and concluded the anchor was immaterial. `geometryOf` builds a
+**rectangle** from both spans, and the rectangle is what a caller sees. The
+first version of the test asserting this failed, which is how both were found.
+`tests/kicad/formed-frame.test.ts` now asserts the direction of the conclusion -
+that at least one anchor-sensitive footprint is one whose body genuinely
+constrains - so that if the hole-ownership rule below changes and that stops
+being true, the test says so and the anchor becomes deletable.
+
+### The classification the owner's two exceptions map onto already exists
+
+`lead-span.ts` carries `kind: "formable" | "rigid"` per family and derives a
+`formable` boolean per footprint. Across the thirteen:
+
+| | footprints | span | body box claims holes beyond the pads? |
+| --- | --- | --- | --- |
+| **formable** | DIN0207 resistor | 2–16 | no |
+| | `C_Rect` W2.5 | 2–4 | no |
+| | `C_Rect` W3.5 | 2–4 | yes, ±1 across |
+| | `CP_Radial` D5.0 / D6.3 / D8.0 | 2–11 | yes |
+| **rigid** | `C_Rect` W4.5 | 3–3 | yes, ±1 across |
+| | pin headers 1x01 / 1x02 / 1x05 | 1 / 2 / 5 | no — exactly the pads |
+| | DIP-16 | 8–8 | yes — the interior of its own outline |
+| | `TO-92_Inline` | 3–3 | yes, ±1 across |
+| | RM-065 trimmer | 3–3 | yes, −1 across |
+
+`C_Rect` W4.5 coming out **rigid** is the owner's *"certain box capacitors"*
+arriving from the arithmetic: 4.0 mm of worst-case lead is 0.76 mm short of what
+a dog-leg needs, so it mounts at its own pitch or not at all.
+
+**But the boolean does not discriminate what needs discriminating**, and that is
+a finding rather than a gap to fill: `C_Rect` W3.5 is `formable: true` and its
+body claim is the one Task 12 measured against the frozen low-boost board, while
+`TO-92_Inline` and the RM-065 are `rigid` and their body claims are the ones the
+layouts contradict. Keying the body constraint on `formable` alone would drop
+the claim that was confirmed and keep the two that are refuted — the wrong way
+round on both counts.
+
+### What the layouts say about the hole-ownership rule itself
+
+`geometryOf` counts a hole as covered when the `F.Fab` bounding box **overlaps
+that hole's whole strip cell** `[k·2.54 − 1.27, k·2.54 + 1.27]`. The alternative
+is to ask whether the box **contains the hole itself**, `k·2.54`. Measured over
+the six boards whose committed netlist gives a footprint per designator, counting
+only placements whose lead geometry IS their footprint's (see the stretch
+finding below), and solving both footprint axes from the pads rather than
+assuming either:
+
+| rule | placements claiming a hole another part's lead occupies |
+| --- | --- |
+| **strip cell** (what the code does) | **14 holes, 11 parts, 4 boards** |
+| **point** | **none, on any board** |
+
+The strip-cell clashes, by part:
+
+- **`feedback` — a board the owner BUILT** — `RV4` (RM-065) claims `14,13`,
+  which holds `R4.2`. **One clash is enough: the rule as it stands refuses a
+  board that exists on his bench.**
+- `lab` — `Q1` (TO-92) claims `19,32`=`TP3.1` and `18,30`=`TP2.1`; `RV1` claims
+  `18,28`=`JP3.1`; `RV3` claims `13,27`=`R3.2`.
+- `loop` — `C2`, `C4`, `C5` and `C6` (cans), `Q1` and `Q2` (two TO-92s on
+  adjacent strips over the same three columns), and `RV1`.
+- `staged` — `Q1` (TO-92) claims `8,12`=`R1.1`; `RV2` claims `21,28`=`R2.2`.
+- `buffered` and `pt2399-core` — none; but see the stretch finding, because 13
+  of `buffered`'s 21 parts have no body model at all.
+
+**And the frozen low-boost board does not settle it the other way.** Task 12's
+`C18`/`C19` check compares the derivation against VeroRoute's own
+`CAP_FILM`/`CAP_FILM_WIDE` row counts, and it holds. But measured on that same
+dump, **nothing at all sits in the ring of holes around `C18`'s leads**, so the
+board never tests whether a lead could have gone there; `C19`'s one neighbour,
+`SW_LO_BOOST_3.1` at `3,14`, is consistent with both rules. The strip-cell
+rule's support is agreement with VeroRoute's model of a film capacitor; the
+point rule's support is every placement on every board.
+
+**What the point rule would cost**, so the trade is visible: `C_Rect` W3.5 and
+W4.5 drop from three rows to one, disagreeing with `CAP_FILM_WIDE`. That
+disagreement is in the *conservative* direction — the derivation would claim
+less than the fork does — so it cannot refuse one of the owner's layouts, but it
+could admit one the fork would then refuse. It would also move which footprint
+the anchor matters for: under the point rule `TO-92_Inline` and the 5 mm can
+become anchor-insensitive and the 8 mm can becomes sensitive, so the one
+sensitive footprint would be `formable` and the anchor record would then be
+deletable under the owner's rule. **Measured, not predicted** — that is the
+condition the test in `tests/kicad/formed-frame.test.ts` watches for.
+
+**The two rules answer two different questions, which is why neither fits.** A
+hole is a point; a body is an area. *"Can a lead go in hole `k`?"* is the point
+question. *"Does this body overlap the strip the neighbouring part's body is
+on?"* is a body-to-body clearance question, and `CAP_FILM_WIDE`'s three rows are
+VeroRoute's answer to **that**. Collapsing both into one hole set is what makes
+the rule refuse `feedback`. **Choosing between them, or splitting them, is a
+criteria decision and is not made here.**
+
+### A stretched two-pin part has no body model at all
+
+VeroRoute moves a two-pin part's leads to whatever span the layout wants.
+`CAP_ELECTRO_200` appears across these boards at 1, 2, 3, 5, 6, 8, 9, 10 and 13
+steps while `preparedPitchSteps` is one figure for the footprint; the DIN0207
+resistors appear from a quarter to three times their footprint's own 4-step
+pitch. **16 of the 25 formed electrolytic placements** are in this shape, and so
+are most resistors on the larger boards. For such a placement the body sits
+*somewhere* along a lead row the footprint does not describe, and `geometryOf` —
+handed a footprint and a direction — has nothing to say about where. On
+`buffered` this accounts for 13 of 21 parts, which makes it the larger of the
+two problems facing an import.
+
+### What actually reads a placement's holes
+
+`board.ts` says *"a placement's holes are read by overlap detection
+(holesOverlap, here), by the stock-fit measurement and by the buildability
+check"*. **Measured: only the first of those three is true today.** `geometryOf`
+is imported by nothing outside `lib/stripboard/board.ts` and its tests;
+`tools/stripboard/rank.ts`'s `occupiedArea` reads the dump's `BOUNDS`, and
+`tools/stripboard/extent.ts`'s `fabricationExtent` reads the dump's `PIN`,
+`CUT`, `SOLDER` and `WIRE` holes. Neither goes through the model. So dropping
+the body claim for a formable part would change exactly one thing:
+**`holesOverlap` would stop detecting body-to-body collisions**, and nothing
+else.
+
+**That one thing is not nothing, and the check is not dropped on this page's
+authority.** The worked case is `loop`'s `Q1` and `Q2`: two TO-92s on adjacent
+strips occupying the same three columns, bodies 4.23 mm deep and 2.54 mm apart.
+Either they interleave, or they are tilted, or that pair is unbuildable — and
+that board is laid out and not built, so nothing here settles which. Reported
+rather than decided.
 
 ## 4. The thirteen footprints, as measured
 

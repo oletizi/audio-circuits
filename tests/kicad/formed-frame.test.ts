@@ -41,6 +41,8 @@ import { occupiedAreaFor } from "../../lib/kicad/footprint-extent.ts"
 import { formedFrameOf, padHolesFor } from "../../lib/kicad/formed-frame.ts"
 import { classifyPads } from "../../lib/kicad/pin-pattern-model.ts"
 import type { PinPattern } from "../../lib/kicad/pin-pattern-model.ts"
+import { leadSpanFor } from "../../lib/kicad/lead-span.ts"
+import { geometryOf } from "../../lib/stripboard/board.ts"
 import { PIN_PATTERNS, pinPatternFor } from "../../lib/kicad/pin-pattern.ts"
 import { parseBoardDump, type BoardDump } from "../../tools/guide/dump.ts"
 import { readFootprintPads } from "./footprint-library.ts"
@@ -223,6 +225,65 @@ test("a formed pattern's pads are counted off the prepared pitch, not read off t
     ).toEqual(pattern.pads.map((_, index) => index * pitch))
     for (const hole of holes) expect(hole.ySteps, `${footprint} across`).toBe(0)
   }
+})
+
+test("the recorded anchor is load bearing, and for a family lead-span.ts calls rigid", () => {
+  /*
+   * WHY THIS TEST EXISTS, AND WHAT IT CORRECTS. The owner's rule is that "the
+   * only time you care about the body dimensions is if the leads are very short
+   * (like certain box capacitors) or rigid like dip packaged chips" - so for a
+   * `formable` family the body is not a constraint and the anchor cannot matter.
+   * That reads as making the anchor moot. IT DOES NOT, and the correction came
+   * from running this:
+   *
+   *   footprint                   lead-span.ts   anchor changes geometryOf's holes?
+   *   CP_Radial_D5.0mm_P2.00mm    formable       yes - 6 holes against 9
+   *   CP_Radial_D8.0mm_P3.50mm    formable       no
+   *   TO-92_Inline                RIGID          YES - 9 holes against 7
+   *
+   * `TO-92_Inline` is a family `lead-span.ts` records as `formable: false`, and
+   * its occupancy changes with the anchor, so the anchor is a record a rigid
+   * part's geometry depends on. Two earlier versions of this measurement said
+   * otherwise - one compared `alongX`, the BODY span alone, and one took a 1-D
+   * union along the lead row; `geometryOf` builds the whole RECTANGLE from both
+   * spans and unions the pads into it, and the rectangle is what a caller sees.
+   *
+   * THE TEST IS DIRECTIONAL, not a table of hole counts: it asserts that at
+   * least one anchor-sensitive footprint is one the body genuinely constrains.
+   * If that stops being true - because the hole-ownership rule changes, which
+   * docs/stripboard/pin-pattern.md section 3.1 records as an open criteria
+   * decision - this fails and says so, and the anchor becomes deletable.
+   */
+  const sensitive: string[] = []
+  for (const footprint of FORMED) {
+    const pattern = pinPatternFor(footprint)
+    const accommodation = pattern.accommodation
+    if (accommodation.kind !== "formed-to-grid") throw new Error("unreachable")
+    const sets = new Set(
+      (["lead-row-midpoint", "first-lead", "last-lead"] as const).map((anchor) => {
+        const patterns: ReadonlyMap<string, PinPattern> = new Map([
+          ...PIN_PATTERNS,
+          [footprint, { ...pattern, accommodation: { ...accommodation, anchor } }],
+        ])
+        const { holes } = geometryOf(footprint, { strip: 0, column: 0 }, "E", patterns)
+        return holes
+          .map((hole) => `${hole.strip},${hole.column}`)
+          .sort()
+          .join(" ")
+      }),
+    )
+    if (sets.size > 1) sensitive.push(footprint)
+  }
+  expect(sensitive.length, "at least one formed footprint's holes depend on the anchor")
+    .toBeGreaterThan(0)
+  const rigidAndSensitive = sensitive.filter((footprint) => !leadSpanFor(footprint).formable)
+  expect(
+    rigidAndSensitive,
+    "the anchor is recorded because a RIGID family's occupancy depends on it. If this list is " +
+      "empty, every anchor-sensitive footprint is one whose body the owner says is not a " +
+      "constraint, and the anchor record can be deleted - see docs/stripboard/pin-pattern.md " +
+      "section 3.1",
+  ).toContain("Package_TO_SOT_THT:TO-92_Inline")
 })
 
 // ---------------------------------------------------------------------------
