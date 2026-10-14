@@ -286,3 +286,43 @@ Batched because each is a small independent edit of the same kind.
 **Type consistency.** `movableRefs(dump, dumpText)` and `Movable { ref, row, col, kind }` are used identically in Tasks 1, 2 and 3. Task 1 Step 1 instructs the implementer to read `pad-provenance.ts` and `dump-model.ts` for their real field names before writing, because this plan's author did not verify every field name and says so rather than inventing one.
 
 **Ordering.** Task 3 gates Task 5, and Task 3's result changes the question Task 4 asks. Tasks 6 and 7 are independent and can run at any point.
+
+---
+
+### Task 8: The wire generator must see a pad — ADDED 2026-10-13 AFTER TASK 3'S MEASUREMENT, AND IT IS THE CRITICAL PATH
+
+**Ordering: this task runs NEXT, before Tasks 4 and 5.** Task 5's precondition is `HC1` holding on low-boost; Task 3 measured that it does not, and identified one cause for three of the seven open nets. Task 4's question to the owner also changes depending on this task's result. Re-measure after it (Task 3's §12 is the baseline to beat: `C` 28, 7 of 14 open, `F` 29.25).
+
+**Files:**
+- Modify: `tools/stripboard/moves-wire.ts:195-215` (`netPinsAlongStrips`)
+- Test: `tests/stripboard/moves-wire.test.ts`, and a new case on `pultec-low-boost-imported.dump`
+
+**Interfaces:**
+- Consumes: `padLines(dumpText)` and `PadLine` from `./pad-provenance.ts` — `PadLine.source` is the `FROM <ref>.<pin>` field, **already in the export's spelling**. Task 1 verified all ten of the imported board's `source` fields are present in the reference netlist.
+- Produces: no new export. `netPinsAlongStrips`'s existing signature gains whatever it needs to reach the pad lines; `wireMovesFor` at `:478` is its only caller.
+
+**What Task 3 measured, which is this task's whole warrant.** Three facts, all from §12:
+
+1. **`wireMovesFor` admits ZERO `add-wire` candidates** — on the shared `--import` start board, on the before board and on the after board. The 19,997-candidate trace contains no `add-wire` entry at all. So `W = 0` is **not the objective declining a wire; nothing offers one.** §6.9's 7,417 add-wire candidates no longer describe this pipeline.
+2. **All seven still-open nets are shape (b), "no wire plannable"** — zero were a wire rejected on cost, and zero were parts unplaced.
+3. **The spacing gesture moved the selector pads onto strips 6, 7 and 8, splitting `j10_p2`/`j10_p3`/`j10_p4` across two strips — exactly the shape a wire repairs — and the wire generator cannot see that it did.** Before the gesture those nets were split *along* one strip, where no wire helps either. The gesture created repairable nets and the repair is gated out.
+
+**The gate, read at the source.** `moves-wire.ts:200` builds `wanted` from the reference netlist, keyed the **export's** way (`SW_LO_BOOST.2`); `:207-209` walks `dump.pins` and tests `wanted.has(`${ref}.${pin.pin}`)`, where a pad's `PIN` line is keyed the **board's** way (`SW_LO_BOOST_2.1`). The lookup therefore always misses for a pad. The module's own comment at `:202-206` names this as the fourth site pad net membership must reach and records it as deferred — Task 1 deferred it with my ruling, and Task 3's measurement is what converts that deferral into the blocker.
+
+- [ ] **Step 1: Write the failing test.** Over `pultec-low-boost-imported.dump` with the pads spaced as Task 3's after-run left them, assert `netPinsAlongStrips` returns the pad's hole for a net whose only other member is a pad, and that `wireMovesFor` then admits at least one `add-wire` candidate. **Assert a non-zero count, not a specific one** — the exact number is a measurement this task produces, not a value to predict. Pin the specific nets by name: `j10_p2`, `j10_p3`, `j10_p4`.
+
+- [ ] **Step 2: Run it and confirm it fails**, with zero candidates admitted — which is Task 3's measured finding reproduced as a test.
+
+- [ ] **Step 3: Translate the spelling, in one place.** For each placed pad, `PadLine.source` is its export-spelled pin id; use it instead of `${ref}.${pin.pin}` when the ref names a pad. **Refuse rather than guess:** a placed pad with no `source` (the `NOPROVENANCE` case the parser already models) cannot be attributed to a net, and silently dropping it would be the same class of defect as the gate itself — name it. Do not reach for `referencePinHoles`; it is keyed for a different question.
+
+- [ ] **Step 4: Run the test and confirm it passes.** Report how many `add-wire` candidates are now admitted on that board, and on the `--import` start board.
+
+- [ ] **Step 5: Run the full suite and typecheck.** Baseline `bun test` 1878 pass / 0 fail / 0 skip across 171 files. **Expect wire-related counts to change** — that is this task working. Distinguish, per test, a count to update from a real regression, and say which.
+
+- [ ] **Step 6: Decide the other three sites with a measurement, not a guess.** `clusterRefs`, `joinEndsFor` and `spreadSourceStrips` gate on the same spelling. Task 1 deferred all four together. Report what each would gain if translated, and translate only what you can measure a benefit for — an unmeasured widening of three generators' candidate sets is exactly what §6.11 records costing this repository before.
+
+- [ ] **Step 7: Mutate.** Remove the translation and confirm the Step 1 test fails with zero candidates. Revert, record counts.
+
+- [ ] **Step 8: Commit and push.**
+
+- [ ] **Step 9: Re-measure, as Task 3 did, and append to `pipeline-verification.md` §12.** One arm is enough: `HEAD`, board `pultec-low-boost`, arm `import`, the committed rules and seeds. Report cuts, open nets, `F`, the stopping rule, the still-open nets with causes, and **whether `HC1` now holds.** Both of Task 3's arms stopped on `Q4` having spent the whole 20,000-evaluation cap without converging, so **say whether this run converged** — if it is still budget-exhausted, the cap is a live question for the owner rather than a result.
