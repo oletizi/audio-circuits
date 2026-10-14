@@ -67,13 +67,25 @@ export interface Movable {
  *
  * **IT RE-PARSES THE DUMP TEXT ON EVERY CALL, AND THAT IS LEFT ALONE
  * DELIBERATELY.** The spread's inner loops reach it roughly
- * `nets x crowded x free x 4` times per round. Measured 2026-10-13: 0.0218 ms
- * per call, and 4.7 ms for a whole `enumerateMoves` on the real low-boost
- * board - against four fork spawns per evaluation, which dominate it by orders
- * of magnitude. **A cache added on that evidence would be a cache added blind,
- * and it would have to be invalidated per candidate.** If a later task's round
- * times look wrong, this is the first place to look and the figures above are
- * the before.
+ * `nets x crowded x free x 4` times per round. Per call: 0.0218 ms measured
+ * 2026-10-13, 0.0279 ms on re-measurement over 2,000 calls the same day - the
+ * same reading. Against four fork spawns per evaluation, which dominate it by
+ * orders of magnitude. **A cache added on that evidence would be a cache added
+ * blind, and it would have to be invalidated per candidate.** If a later task's
+ * round times look wrong, this is the first place to look.
+ *
+ * **ONE FIGURE THIS COMMENT CARRIED DID NOT REPRODUCE, AND IT IS CORRECTED
+ * RATHER THAN FOOTNOTED.** It read *"4.7 ms for a whole `enumerateMoves` on the
+ * real low-boost board"*. Re-measured on the same fixture later the same day:
+ * **31.3 ms with the spacing generator removed, 40.9 ms with it.** So the whole
+ * enumeration is roughly 7x what was recorded, and the spacing kind adds about
+ * 9.6 ms of model work to a round whose fork time is ~17.5 s - a fifth of a
+ * percent, which is why the conclusion above is unchanged. The 4.7 ms was
+ * written in this plan's Task 1 and the non-reproduction found in its Task 2,
+ * two commits apart, so it is this comment's to fix: a figure left standing
+ * with its correction in another file is the stale-claim shape this repository
+ * keeps paying for. `docs/stripboard/pipeline-verification.md` section 11.7
+ * holds the measurement.
  */
 export function movableRefs(dump: BoardDump, dumpText: string): readonly Movable[] {
   const movable: Movable[] = []
