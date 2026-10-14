@@ -7,5 +7,6 @@ include $(shell git rev-parse --show-toplevel)/make/perfboard.mk
 # a prerequisite here gives the root's `check` one more thing to verify without
 # the generic board mechanism having to know the reference exists.
 include $(shell git rev-parse --show-toplevel)/make/pultec.mk
+include $(shell git rev-parse --show-toplevel)/make/tascam-38.mk
 
-check: pultec-schematic-agrees pultec-scaffold-agrees
+check: pultec-schematic-agrees pultec-scaffold-agrees tascam-38-interface-valid
