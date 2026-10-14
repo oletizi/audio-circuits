@@ -1,0 +1,409 @@
+# Stripboard Model and Search Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** An in-process stripboard model, cut derivation and search that reaches the construction cost of the owner's hand-built `feedback` and `buffered` boards on those same instances, with VeroRoute demoted to importer, witness and exporter.
+
+**Architecture:** A board is a grid of strips, parts occupying hole sets, wires joining holes, nets as pin sets. Cuts are **derived** from placement plus wires, never searched. Connectivity is union-find in memory, so a candidate costs microseconds instead of six subprocess launches. The search uses constructive seeds and **compound candidates** — move-and-wire as one proposal — which is the move the old architecture could not express.
+
+**Tech Stack:** TypeScript on Bun. KiCad 9 libraries on disk. The pinned VeroRoute fork (`veroroute.pin` → `ed6c5a6`), invoked for exactly three things and never from the core.
+
+**Spec:** `docs/superpowers/specs/2026-10-14-stripboard-search-redesign-design.md` (S1b, revision 3), which argues from `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` (**CRITERIA**, approved by the owner 2026-10-13).
+
+---
+
+## Global Constraints
+
+- **An agent may never author the acceptance criteria for the artifact it is producing.** No new term in `F`, no eleventh hard constraint, **no legibility metric**, no tuned threshold introduced by the thing being measured.
+- **Never widen a bound, span table, whitelist or rules value to make something pass.** If a fix would need it, stop and report.
+- **No fallbacks or mock data outside test code.** Throw instead; every `throw` names what is missing, where to fix it, and why it is not defaulted.
+- **No `any`, no `as Type`, no `@ts-ignore`.** Files 300–500 lines. Relative imports carry the `.ts` extension. Supersede means delete.
+- **A skipped check must never look like a passing one.**
+- **Report what you measure, never what was hoped.**
+- **Scratch goes in the session scratchpad** — never `/tmp`, never `/private/var`. Measurement runs clean up after themselves; `make prune-runs` and `make prune-temp` exist. The absence of this constraint filled the owner's disk on 2026-10-13.
+- **A regex asserted against a long message matches its reasoning rather than its verdict.** Assert the discriminating identifier; `toStartWith` on the front-of-message identifier is the pattern already used here. This class recurred five times in the previous plan.
+- **Mutation testing cannot catch a predicate that is too permissive.** "N mutations, N killed" is evidence a check exists, not that it is tight.
+- **A derivation written beside correct code gets less scrutiny than the code.** Three times in the previous plan the code was right and its stated explanation was wrong. Check arithmetic against a run before writing it down.
+
+## Baseline
+
+HEAD at plan start: `bun test` **1900 pass / 0 fail / 0 skip across 173 files**; `bun run typecheck` clean; `build/stripboard` 0 bytes with zero run directories; `TMPDIR` delta zero across consecutive suite runs; `make check` 2 ok / 9 FAIL.
+
+## File Structure
+
+| file | responsibility |
+| --- | --- |
+| `lib/stripboard/board.ts` | **new** — the model: `Grid`, `Placement`, `Wire`, `Candidate`. Data only, no behaviour. |
+| `lib/stripboard/connectivity.ts` | **new** — union-find over strip segments and wire endpoints; `componentsOf`. |
+| `lib/stripboard/cuts.ts` | **new** — significant contacts, runs, derived cuts, the cut-position convention. |
+| `lib/stripboard/invariants.ts` | **new** — the two `HC8` invariants as a per-candidate precondition. |
+| `lib/stripboard/seed.ts` | **new** — constraint-aware constructive seeds. |
+| `lib/stripboard/moves.ts` | **new** — compound candidates, including move-and-wire. |
+| `lib/stripboard/search.ts` | **new** — the loop, consuming `CRITERIA`'s existing `Q1`–`Q6`. |
+| `tools/stripboard/vero-import.ts` | **new** — `.vrt` dump → `Candidate`. Adapter, outside the core. |
+| `tools/stripboard/vero-export.ts` | **new** — `Candidate` → declarative import → `.vrt`, with the round trip. |
+
+**`lib/stripboard/` is the core and may not import from `tools/`.** That direction is the enforceable form of the owner's boundary and Task 3 tests it.
+
+---
+
+### Task 1: The model, as data with no behaviour
+
+**Files:**
+- Create: `lib/stripboard/board.ts`
+- Create: `tests/stripboard/model/board.test.ts`
+
+**Interfaces — Produces:**
+```ts
+export interface Grid { readonly strips: number; readonly columns: number }
+export interface Hole { readonly strip: number; readonly column: number }
+export interface Placement {
+  readonly ref: string
+  readonly footprint: string
+  readonly origin: Hole
+  readonly direction: "W" | "E" | "N" | "S"
+  /** Every hole this part occupies, derived from its footprint and direction. */
+  readonly holes: readonly Hole[]
+  /** Pin name to the hole it sits in. */
+  readonly pins: ReadonlyMap<string, Hole>
+}
+export interface Wire {
+  readonly from: Hole
+  readonly to: Hole
+  /** The net this wire exists to carry. Declared, never discovered. */
+  readonly net: string
+}
+export interface Candidate {
+  readonly grid: Grid
+  readonly placements: readonly Placement[]
+  readonly wires: readonly Wire[]
+}
+```
+
+Tasks 2 and 4–7 consume all of these.
+
+- [ ] **Step 1: Write the failing test.**
+
+```ts
+import { expect, test } from "bun:test"
+import { holesOverlap, type Candidate } from "../../../lib/stripboard/board.ts"
+
+test("two placements occupying one hole are detected, by the hole and both refs", () => {
+  const clash = holesOverlap(twoPartsOnOneHole())
+  expect(clash, "an overlap is reported").not.toBeNull()
+  expect(clash?.hole).toEqual({ strip: 2, column: 3 })
+  expect([...(clash?.refs ?? [])].sort(), "both parts are named").toEqual(["C1", "R1"])
+})
+
+test("a candidate whose parts occupy distinct holes reports no overlap", () => {
+  expect(holesOverlap(twoPartsApart())).toBeNull()
+})
+```
+
+- [ ] **Step 2: Run it and confirm it fails** with the module missing.
+
+- [ ] **Step 3: Implement the types and `holesOverlap`.** Data only — no scoring, no connectivity, no cut logic. A `Wire` whose `net` is absent does not compile; that is the point of putting it in the type.
+
+- [ ] **Step 4: Run the tests and confirm they pass. Run `bun run check`.**
+
+- [ ] **Step 5: Commit.**
+
+---
+
+### Task 2: Connectivity and cut derivation — the heart, and the one place a subtle error is invisible
+
+**Files:**
+- Create: `lib/stripboard/connectivity.ts`, `lib/stripboard/cuts.ts`
+- Create: `tests/stripboard/model/cuts.test.ts`, `tests/stripboard/model/cuts-agree.test.ts`
+
+**Interfaces:**
+- Consumes: `Candidate`, `Hole`, `Wire` from Task 1.
+- Produces: `componentsOf(candidate, cuts): ReadonlyMap<string, number>` keyed by hole; `derivedCuts(candidate, reference): readonly Cut[]`; `type Cut = { readonly strip: number; readonly afterColumn: number }`.
+
+**THE CONTRACT, from the spec — implement it exactly, and do not simplify it.**
+
+**A significant contact is a component pin OR a wire endpoint.** A wire endpoint in an otherwise empty hole makes that hole electrically meaningful, and **a strip carrying no pins at all can still be a routing conductor between two wire endpoints.** A derivation walking only pins misses both.
+
+Per strip: significant contacts in column order, each labelled with its reference net, grouped into maximal runs of one net. **A cut is required between each adjacent pair of runs of different nets.**
+
+**A wire's net is declared** (Task 1's type). A wire whose declared net is not reachable from a component pin through the candidate's own connectivity is **refused by name** — it connects nothing.
+
+**The order is a fixpoint, not a cycle:** build the uncut graph (each strip whole, plus wires), propagate net identity outward from component pins, find conductors carrying two nets, derive cuts, re-split, recompute.
+
+**Cut position is a declared convention with a test**, not an emergent property of a loop. Between two runs there may be several empty holes and they are not equally safe: a cut can foul a lead, a solder bridge or a wire anchor. State the rule in the module comment and test it directly.
+
+- [ ] **Step 1: Write the failing tests**, both directions.
+
+```ts
+test("a strip carrying two nets needs one cut, between their runs", () => {
+  const cuts = derivedCuts(twoNetsOnStripThree(), reference())
+  expect(cuts).toEqual([{ strip: 3, afterColumn: 5 }])
+})
+
+test("a wire endpoint in an empty hole is a significant contact", () => {
+  // THE CASE A PIN-ONLY DERIVATION MISSES: strip 7 carries no pins at all and
+  // is a conductor between two wire endpoints. Its net comes from the wires.
+  const cuts = derivedCuts(wireOnlyStrip(), reference())
+  expect(cuts.some((cut) => cut.strip === 7), "strip 7 is considered").toBe(true)
+})
+
+test("a wire whose declared net no pin reaches is refused, naming the wire and the net", () => {
+  expect(() => derivedCuts(wireToNowhere(), reference())).toThrow(/connects nothing/)
+})
+```
+
+- [ ] **Step 2: Run them and confirm they fail.**
+
+- [ ] **Step 3: Implement connectivity, then cut derivation.** Union-find over strip segments and wire endpoints.
+
+- [ ] **Step 4: Run the tests and confirm they pass.**
+
+- [ ] **Step 5: THE DIFFERENTIAL TEST, and it is this task's real deliverable.** Eleven boards are committed with cut counts VeroRoute derived itself. Import each (Task 8's adapter is not written yet, so read the dump directly with `parseBoardDump` from `tools/guide/dump.ts`), run `derivedCuts`, and **compare against the dump's own `CUT` lines, board by board.**
+
+```ts
+test("our derived cuts match VeroRoute's own on every committed board", () => {
+  for (const board of COMMITTED_BOARDS) {
+    const dump = parseBoardDump(fs.readFileSync(board.dump, "utf8"))
+    expect(derivedCuts(candidateFrom(dump), referenceFor(board)).length, board.name)
+      .toBe(dump.cuts.length)
+  }
+})
+```
+
+**This is the strongest evidence available and it is free: an independent C++ implementation, written years ago with no knowledge of this model, on eleven real boards.** A mismatch is a finding either way — report the board, both counts and the strip they differ on. **Do not adjust the derivation to make a board agree without understanding why it disagreed**; that is how a wrong model acquires a passing test.
+
+- [ ] **Step 6: Run `bun run check`. Commit.**
+
+---
+
+### Task 3: The core runs with VeroRoute absent, and a test says so
+
+**Files:**
+- Create: `tests/stripboard/model/no-fork.test.ts`
+
+**Why now rather than later:** the spec's boundary is the owner's decision, and this plan makes a fork feature necessary for materialization. Without a test, the dependency creeps back and nobody notices. This project has repeatedly had principles nothing enforced — a renderer that could not draw its own boards, a leak metric watching the wrong directory, an `[external]` mark on an agent's sentence.
+
+- [ ] **Step 1: Write the test.** Two halves, and the second is the one with teeth.
+
+```ts
+test("no core module imports from tools/ or spawns a process", async () => {
+  for (const entry of CORE_MODULES) {
+    const closure = await importClosure(entry)
+    for (const reached of closure) {
+      expect(reached.startsWith("tools/"), `${entry} reaches ${reached}`).toBe(false)
+    }
+  }
+})
+
+test("the core's own suite passes with the binary absent", () => {
+  // MOVED ASIDE, NOT MOCKED: a mock proves the mock works. The binary is
+  // renamed for the duration and restored in a finally.
+  const result = withBinaryAbsent(() => runCoreSuite())
+  expect(result.exitCode, "the core does not need the fork").toBe(0)
+})
+```
+
+`importClosure` is in `lib/import-closure.ts` and is synchronous despite its `async` signature; use it.
+
+- [ ] **Step 2: Run it. If it already passes, make it fail** by adding a `tools/` import to a core module temporarily, confirm the failure names the module and the reached file, then revert. A guard that has never failed is not known to work.
+
+- [ ] **Step 3: Run `bun run check`. Commit.**
+
+---
+
+### Task 4: Scoring, against the criteria that already exist
+
+**Files:**
+- Create: `lib/stripboard/score.ts`
+- Create: `tests/stripboard/model/score.test.ts`
+
+**Interfaces:**
+- Consumes: `derivedCuts` (Task 2); `loadRules(file?)` from `tools/stripboard/rules.ts` — **but the core may not import `tools/`**, so the rules are passed IN as a plain value by the caller. Task 3's test fails otherwise.
+- Produces: `objectiveOf(candidate, cuts, weights): number` — `F = C + ρ_w·W + ρ_s·B`.
+
+**Nothing in this task invents a number.** The weights come from `stripboard/rules.json`, which is the owner's reviewed parameter file under `PAR3`. A weight hard-coded here would be an agent setting a criterion.
+
+- [ ] **Step 1: Write the failing test**, asserting `F` against hand arithmetic with the committed weights, and that an absent weight **refuses** rather than defaulting.
+
+- [ ] **Step 2: Run it and confirm it fails. Step 3: Implement. Step 4: Confirm it passes.**
+
+- [ ] **Step 5: Run `bun run check`. Commit.**
+
+---
+
+### Task 5: The two `HC8` invariants as a per-candidate precondition
+
+**Files:**
+- Create: `lib/stripboard/invariants.ts`
+- Create: `tests/stripboard/model/invariants.test.ts`
+
+**Interfaces:**
+- Produces: `violationsOf(candidate, cuts, reference): readonly Violation[]` — empty when both invariants hold.
+
+Two invariants, checked **before** a candidate is scored:
+1. no copper-connected component holds terminals of two different reference nets;
+2. every reference net's terminals lie in one component.
+
+**These are not new.** They are `HC8`, which exists in `tools/stripboard/equivalence.ts` with a negative-fixture suite. What changes is that they move **inward** — from a check on an exported artifact to a precondition on every candidate — which is affordable in memory and was not at 12 ms a look.
+
+- [ ] **Step 1: Write the failing tests**, one per invariant, each asserting the violation names the net and the component.
+
+- [ ] **Step 2–4: fail, implement, pass.**
+
+- [ ] **Step 5: Cross-check against the existing verifier.** On each committed board, `violationsOf` and `netlistEquivalence(dumpText, reference)` from `tools/stripboard/equivalence.ts` must agree about whether the board is sound. **Disagreement is a finding to report, not to paper over** — one of the two is wrong and it matters which.
+
+- [ ] **Step 6: Run `bun run check`. Commit.**
+
+---
+
+### Task 6: Constraint-aware constructive seeds
+
+**Files:**
+- Create: `lib/stripboard/seed.ts`
+- Create: `tests/stripboard/model/seed.test.ts`
+
+**Interfaces:**
+- Consumes: span bounds, passed in as data — `leadSpanFor(footprint)` from `lib/kicad/lead-span.ts` returns a `LeadSpan` with `minSpanHoles` and `maxSpanHoles`.
+- Produces: `seedsFrom(netlist, grid, spans, orderings): readonly Candidate[]`.
+
+Decide which strip hosts each net, place parts so their pins land there, run a wire where a net must span.
+
+**Feasibility is checked before a strip assignment is committed.** A part's terminals have a bounded separation, so assigning its two nets to strips it cannot span produces a seed that is impossible to realise and wastes the optimizer's time repairing a decision that should never have been made. **A failed construction names the conflicting assignments** rather than silently substituting a placement.
+
+**Seeds come from several orderings and are judged only by the acceptance rule.** A seed heuristic hand-tuned until a benchmark passes is an agent grading its own work — the invariant this whole project rests on.
+
+- [ ] **Step 1: Write the failing tests** — a feasible assignment yields a seed; an infeasible one **refuses naming both nets and the part**; several orderings yield several distinct seeds.
+
+- [ ] **Step 2–4: fail, implement, pass. Step 5: `bun run check`. Commit.**
+
+---
+
+### Task 7: Compound candidates, including move-and-wire
+
+**Files:**
+- Create: `lib/stripboard/moves.ts`
+- Create: `tests/stripboard/model/moves.test.ts`
+
+**This is the move the old architecture could not express, and the reason for the rewrite.** A candidate may carry several gestures at once — in particular, moving a part onto a strip **and** running the wire that makes the move pay, as **one** proposal scored as a unit.
+
+- [ ] **Step 1: Write the failing test**, and make it the discriminating one:
+
+```ts
+test("a move that only pays once its wire exists is proposed as ONE candidate", () => {
+  const proposals = movesFrom(padContiguousOnOneStrip(), reference(), spans())
+  const compound = proposals.filter((p) => p.gestures.length > 1 && p.gestures.some(isWire))
+  expect(compound.length, "move-and-wire is proposed as a unit").toBeGreaterThan(0)
+  // AND EACH HALF ALONE DOES NOT PAY - which is why the old search never found it.
+  for (const one of compound) {
+    expect(objectiveOf(apply(one.gestures.slice(0, 1))), "the move alone").toBeGreaterThanOrEqual(
+      objectiveOf(base()),
+    )
+  }
+})
+```
+
+- [ ] **Step 2–4: fail, implement, pass. Step 5: `bun run check`. Commit.**
+
+---
+
+### Task 8: Import an existing `.vrt` into the model
+
+**Files:**
+- Create: `tools/stripboard/vero-import.ts`
+- Create: `tests/stripboard/vero-import.test.ts`
+
+**Interfaces:**
+- Consumes: `parseBoardDump(dumpText)` from `tools/guide/dump.ts`.
+- Produces: `candidateFromDump(dumpText, reference): Candidate`.
+
+This is the adapter that lets a human layout become a starting point — the owner's *"even a human starting point"* — and it is what the benchmarks need.
+
+- [ ] **Step 1: Write the failing test.** Round trip each committed board: import, derive cuts, and assert the cut count and the connectivity match the dump's own. **Assert per board by name**, not an aggregate — an aggregate hides which board broke.
+
+- [ ] **Step 2–4: fail, implement, pass. Step 5: `bun run check`. Commit.**
+
+---
+
+### Task 9: Declarative materialization, and what it must defend against
+
+**Files:**
+- Create: `tools/stripboard/vero-export.ts`, plus the fork change
+- Create: `tests/stripboard/vero-export.test.ts`
+
+**The fork gains a declarative board-state import.** The optimizer emits a complete placement-and-routing description and VeroRoute materializes it atomically. Gesture replay is rejected — it would carry the old architecture's coordinate shifts and state divergence into the new one. Writing `.vrt` bytes ourselves is rejected — making us the writer of the artifact VeroRoute witnesses destroys the independence the boundary exists for.
+
+**The round trip requires PHYSICAL-STATE equivalence** — identical placements, orientations, wire endpoints, strip geometry **and cut positions** — not merely electrical equivalence. Two electrically identical cut placements are not equally buildable.
+
+**And it must defend that against the fork itself.** `tools/stripboard/score.ts:32` and `tools/stripboard/cut-necessity.ts:26` both record that **`AutoFillVero` re-derives the whole cut set every time a candidate is painted.** The fork will overwrite our cuts on materialization. **The importer must suppress or survive AutoFill**, or every exported board silently becomes AutoFill's candidate rather than the optimizer's. Prove it with a test that materializes a candidate whose cuts differ from AutoFill's preference and asserts ours survive.
+
+VeroRoute's independently derived cut set is compared **separately**, and a disagreement is **reported, never silently adopted.**
+
+- [ ] **Step 1: Build and pin the fork change**, following `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`'s Task 1 shape for building and pinning. **The push to `oletizi/veroroute-perfboard` is the owner's to authorise** — he has authorised fork changes in general (*"you can do whatever you want with the fork"*), but confirm before pushing a branch.
+
+- [ ] **Step 2: Write the failing round-trip test** — physical-state equivalence per field, and the AutoFill-survival case.
+
+- [ ] **Step 3–4: implement, pass. Step 5: `bun run check`. Commit.**
+
+---
+
+### Task 10: The search loop, and the benchmark that judges it
+
+**Files:**
+- Create: `lib/stripboard/search.ts`
+- Create: `tests/stripboard/model/benchmark.test.ts`
+
+**Interfaces:**
+- Consumes: Tasks 4–7. Stopping comes from `CRITERIA`'s `Q1`–`Q6`, retained unchanged.
+- Produces: `search(seeds, rules, budget): SearchResult`.
+
+**The algorithm is not fixed by this plan.** Implement the loop so that the acceptance rule, the compound move set and the stopping rules are the fixed parts, and the strategy is swappable. Then **measure at least two strategies** on the benchmark instances and report both. Naming a winner before measuring is the failure this project's record documents five times.
+
+**The benchmark is exact-instance regression.** Run `feedback` and `buffered` — the owner's hand-built boards — on their own circuits, footprints and constraints, and compare construction cost.
+
+| board | nets | cuts | wires | extent |
+| --- | --- | --- | --- | --- |
+| `feedback` | 11 | 5 | 4 | 16 × 18 |
+| `buffered` | 13 | 5 | 4 | 20 × 34 |
+
+**Cuts-per-net is a cross-circuit diagnostic only** — cut count follows occupied strips and segment runs, not net count.
+
+- [ ] **Step 1: Record the before state.** Nothing to beat yet; record the seeds' own cost so the search's contribution is separable from the constructive seed's.
+
+- [ ] **Step 2: Run both benchmark instances. Report cuts, wires, `F`, the stopping rule, and whether every net is whole.**
+
+- [ ] **Step 3: Write the comparison into `docs/stripboard/pipeline-verification.md`** as a new numbered section: the command, the commit, the seed, the strategy, both figure sets, the delta against the hand result.
+
+- [ ] **Step 4: State plainly whether the hand result was matched.** If it was not, say by how much and name the binding constraint. **A disappointing number reported honestly is worth more than a flattering one** — the previous plan's honest null is what produced this design.
+
+- [ ] **Step 5: Commit.**
+
+---
+
+### Task 11: Calibrate the budget, bounded
+
+**Files:**
+- Modify: `stripboard/rules.json`, `docs/stripboard/pipeline-verification.md`
+
+**No number is proposed by this plan, and none may be invented.** The owner's words: *"We need to arrive at that by experimenting and gathering empirical evidence, not by fiat."*
+
+- [ ] **Step 1: Run the ladder.** Each benchmark instance at **successive orders of magnitude**, stopping at a stated wall-clock and disk ceiling, both named in the report. **Not one enormous run** — an implementer reading a measurement instruction on 2026-10-13 produced 126,435 invocations and 3.2 GB, and a full disk followed.
+
+- [ ] **Step 2: Report the marginal improvement each step buys**, and the spread across seeded restarts at several budgets — a budget only one lucky seed needs is not a budget.
+
+- [ ] **Step 3: Put the value to the owner with those curves.** It is a `PAR3` parameter; an agent setting it is an agent choosing a criterion. Record it as a deliberate edit carrying the run that justifies it, under `K3`'s ratchet.
+
+- [ ] **Step 4: Commit.**
+
+---
+
+## Self-review
+
+**Spec coverage.** The model, cut derivation with wire-endpoint contacts, declared wire nets, the fixpoint ordering and the cut-position convention are Task 2. The two `HC8` invariants as a precondition are Task 5. Materialization with physical-state equivalence and AutoFill survival is Task 9. The no-VeroRoute invariant is Task 3. Constraint-aware seeds are Task 6. Compound moves are Task 7. Termination via retained `Q1`–`Q6` is Task 10. Exact-instance benchmarking is Task 10. The bounded budget ladder is Task 11.
+
+**Gaps I am naming rather than hiding.** `lab`'s negative-control role — presenting it beside a generated layout for human review — is **not a task here**, because it is a workflow for the owner rather than code, and inventing a test for it would be inventing the legibility metric `OBJ2` forbids. The two corrections to `CRITERIA`'s record — `B1-frozen`'s provenance mark and `V3`'s superseded deviation — are **documentation edits the owner should ratify**, not implementation, and are deliberately left out of the task list.
+
+**Placeholder scan.** No "TBD", no "handle edge cases". Every test step carries real assertions against named values. Tasks 10 and 11 are measurement tasks whose deliverable is a number, and their steps are concrete actions.
+
+**Type consistency.** `Candidate`, `Placement`, `Wire`, `Hole`, `Grid` are defined in Task 1 and used identically in 2, 4–8. `derivedCuts(candidate, reference)` is produced in Task 2 and consumed in 4, 5, 8. `Cut` is `{ strip, afterColumn }` throughout. Interfaces consumed from existing code were verified on disk on 2026-10-14: `parseBoardDump` in `tools/guide/dump.ts`, `copperGraph(dump)` and `CopperGraph { components, componentCount }` in `tools/stripboard/copper.ts`, `netlistEquivalence(dumpText, reference)` and `ReferenceNets` in `tools/stripboard/equivalence.ts`, `loadRules(file?)` in `tools/stripboard/rules.ts`, `leadSpanFor(footprint, spans?, unsourced?)` in `lib/kicad/lead-span.ts`.
+
+**Ordering.** Task 2 gates everything; Task 3 runs early so the boundary cannot erode; Task 9 needs the owner's nod before a fork push; Task 10 gates Task 11.
