@@ -4987,7 +4987,10 @@ and **no move was added to or removed from `movesFrom`**. The only figures this
 task chose are the evaluation cap of §14.8 and the test's own wall-clock timeout,
 both declared as experiment parameters and neither readable by the gate.
 
-## 15. Task 11 of the model-and-search plan — the evaluation cap measured as a ladder: **HEADING WRITTEN AFTER THE RUNS; THE CEILINGS BELOW WERE COMMITTED BEFORE THEM**
+## 15. Task 11 of the model-and-search plan — the evaluation cap measured as a five-rung ladder, 70 runs: **`F` flattens at 20,000 on all fourteen run shapes and both strategies, so no larger cap buys a cheaper board — but the largest healthy run spends 36,250 evaluations, so at the committed 20,000 five of fourteen healthy runs report `Q5`, the rules file's own label for a FAILURE, including the cheapest board this project has made. The recommendation put to the owner is 200,000 and `stripboard/rules.json` is LEFT UNEDITED**
+
+**§15.1 was committed before anything was measured** (`b8a8ad5`); everything
+from §15.2 on was written afterwards.
 
 ### 15.1 THE CEILINGS, DECLARED AND COMMITTED BEFORE THE FIRST RUN
 
@@ -5032,5 +5035,389 @@ setting it is an agent choosing a criterion, which is the one thing `CLAUDE.md`
 forbids outright. The owner's words, carried from the brief: *"We need to arrive
 at that by experimenting and gathering empirical evidence, not by fiat."* This
 section's deliverable is the curves and a recommendation; the edit to
-`stripboard/rules.json` is written out in §15.7 and **deliberately left
+`stripboard/rules.json` is written out in §15.8 and **deliberately left
 unmade.**
+
+### 15.2 The command, the commit, and what moved
+
+The ladder is 70 runs: both instances, both strategies, five rungs, and four run
+shapes per instance — the seeded restart schedule, the imported hand board, and
+each constructed seed climbed **alone** so that the spread across restarts can
+be read rather than inferred.
+
+```
+  bun run <scratch>/ladder.ts <scratch>/ladder.jsonl
+```
+
+The script is a scratch file and is **not** committed: it adds nothing to the
+repository, it reads `tests/stripboard/model/benchmark-fixtures.ts`'s
+`benchmarkInstances()`, `setupFor()` and `figuresOf()` as they stand, and it
+spreads one field over the setup those return:
+
+```ts
+  { ...setup, stopping: { ...setup.stopping, evaluationCap: cap } }
+```
+
+Measured at **`b8a8ad5`** — the commit of §15.1 above, which is the state of
+`lib/stripboard/` as Task 10 delivered it plus this document's ceilings. No
+file under `lib/`, `tools/`, `tests/` or `stripboard/` differs from
+`3b4b700`, Task 10's last.
+
+**ONE PARAMETER MOVED AND NOTHING ELSE DID.** `stripboard/rules.json` is
+untouched — `loadRules()` reads it for every other parameter on every one of
+the 70 runs, including `rhoWire`, `rhoSolder`, `yieldFloor` (`Q4`'s `k` = 1),
+`tau` (`null`) and the 34 × 27 stock. The seeds, `movesFrom` and the objective
+are as committed.
+
+**Every one of the 70 runs leaves every reference net whole**, measured by
+`violationsOf` over each result's own `derivedCuts`. Not one exception, at any
+rung.
+
+**Three starting points are unavailable on `transistor-preamp-buffered` and the
+ladder reports each refusal at every rung** rather than quietly running a
+narrower experiment: `seed part-walk s3` and `seed rcm s3` both put a net on
+strip 36 against 34 strips at a stride of 3, and the hand board does not import
+(`vero-import-bridge-net-unknown`, `SOLDER 13,21 14,21`). These are §14.4's
+refusals unchanged; that instance therefore offers one seed and no hand start,
+which is why its spread column below is a single value and is reported as a
+property of the ordering stock rather than as a tight spread.
+
+### 15.3 THE LADDER — best `F` at each rung, every run shape
+
+The cap is the **only** difference between the columns.
+
+| instance | run shape | strategy | `200` | `2,000` | **`20,000`** (committed) | `200,000` | **`2,000,000`** (Task 10's) | `C`/`W`/`B` once flat |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `feedback` | seeded schedule | `steepest` | 3.75 | 3.50 | **3.25** | 3.25 | 3.25 | 0 / 9 / 4 |
+| `feedback` | seeded schedule | `first-impr` | 3.75 | 3.50 | **3.25** | 3.25 | 3.25 | 0 / 9 / 4 |
+| `feedback` | hand board | `steepest` | 6.75 | 6.00 | 6.00 | 6.00 | 6.00 | 4 / 5 / 3 |
+| `feedback` | hand board | `first-impr` | 6.75 | 6.00 | 6.00 | 6.00 | 6.00 | 4 / 5 / 3 |
+| `feedback` | alone: `part-walk s3` | `steepest` | 3.75 | 3.50 | 3.25 | 3.25 | 3.25 | 0 / 9 / 4 |
+| `feedback` | alone: `part-walk s3` | `first-impr` | 3.75 | 3.50 | 3.25 | 3.25 | 3.25 | 0 / 9 / 4 |
+| `feedback` | alone: `rcm s2` | `steepest` | 3.75 | 3.75 | 3.75 | 3.75 | 3.75 | 0 / 11 / 4 |
+| `feedback` | alone: `rcm s2` | `first-impr` | 3.75 | 3.75 | 3.75 | 3.75 | 3.75 | 0 / 11 / 4 |
+| `feedback` | alone: `rcm s3` | `steepest` | 3.50 | 3.50 | **3.00** | 3.00 | 3.00 | **0 / 8 / 4** |
+| `feedback` | alone: `rcm s3` | `first-impr` | 3.50 | 3.50 | **3.00** | 3.00 | 3.00 | **0 / 8 / 4** |
+| `buffered` | seeded schedule | `steepest` | 4.25 | 4.25 | 4.25 | 4.25 | 4.25 | 0 / 12 / 5 |
+| `buffered` | seeded schedule | `first-impr` | 4.25 | 4.25 | 4.25 | 4.25 | 4.25 | 0 / 12 / 5 |
+| `buffered` | alone: `rcm s2` | `steepest` | 4.25 | 4.25 | 4.25 | 4.25 | 4.25 | 0 / 12 / 5 |
+| `buffered` | alone: `rcm s2` | `first-impr` | 4.25 | 4.25 | 4.25 | 4.25 | 4.25 | 0 / 12 / 5 |
+
+And the same 70 runs by the stop they reported and the evaluations they actually
+spent — which is the half of the ladder that matters, because `F` and the stop
+label do not flatten at the same place:
+
+| instance | run shape | strategy | `200` | `2,000` | **`20,000`** | `200,000` | `2,000,000` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `feedback` | seeded schedule | `steepest` | `Q5` 200 | `Q5` 2,000 | **`Q5` 20,000** | `Q4` **36,250** | `Q4` 36,250 |
+| `feedback` | seeded schedule | `first-impr` | `Q5` 200 | `Q5` 2,000 | **`Q5` 20,000** | `Q4` 22,428 | `Q4` 22,428 |
+| `feedback` | hand board | `steepest` | `Q5` 200 | `Q5` 2,000 | `Q3` 3,069 | `Q3` 3,069 | `Q3` 3,069 |
+| `feedback` | hand board | `first-impr` | `Q5` 200 | `Q5` 2,000 | `Q3` 2,062 | `Q3` 2,062 | `Q3` 2,062 |
+| `feedback` | alone: `part-walk s3` | `steepest` | `Q5` 200 | `Q5` 2,000 | **`Q5` 20,000** | `Q3` 26,854 | `Q3` 26,854 |
+| `feedback` | alone: `part-walk s3` | `first-impr` | `Q5` 200 | `Q5` 2,000 | `Q3` 13,032 | `Q3` 13,032 | `Q3` 13,032 |
+| `feedback` | alone: `rcm s2` | `steepest` | `Q5` 200 | `Q5` 2,000 | `Q3` 9,396 | `Q3` 9,396 | `Q3` 9,396 |
+| `feedback` | alone: `rcm s2` | `first-impr` | `Q5` 200 | `Q5` 2,000 | `Q3` 9,396 | `Q3` 9,396 | `Q3` 9,396 |
+| `feedback` | alone: `rcm s3` | `steepest` | `Q5` 200 | `Q5` 2,000 | **`Q5` 20,000** | `Q3` 28,083 | `Q3` 28,083 |
+| `feedback` | alone: `rcm s3` | `first-impr` | `Q5` 200 | `Q5` 2,000 | **`Q5` 20,000** | `Q3` 20,909 | `Q3` 20,909 |
+| `buffered` | seeded schedule | `steepest` | `Q5` 200 | `Q5` 2,000 | `Q3` 11,255 | `Q3` 11,255 | `Q3` 11,255 |
+| `buffered` | seeded schedule | `first-impr` | `Q5` 200 | `Q5` 2,000 | `Q3` 11,255 | `Q3` 11,255 | `Q3` 11,255 |
+| `buffered` | alone: `rcm s2` | `steepest` | `Q5` 200 | `Q5` 2,000 | `Q3` 11,255 | `Q3` 11,255 | `Q3` 11,255 |
+| `buffered` | alone: `rcm s2` | `first-impr` | `Q5` 200 | `Q5` 2,000 | `Q3` 11,255 | `Q3` 11,255 | `Q3` 11,255 |
+
+| rung | runs stopping on `Q5` | largest evaluation count any run spent | wall clock, all 14 runs |
+| --- | --- | --- | --- |
+| `200` | **14 of 14** | 200 | 8.6 s |
+| `2,000` | **14 of 14** | 2,000 | 10.1 s |
+| **`20,000`** (committed) | **5 of 14** | 20,000 | 18.7 s |
+| `200,000` | **0 of 14** | **36,250** | 20.0 s |
+| `2,000,000` | **0 of 14** | **36,250** | 20.2 s |
+
+### 15.4 Step 3 — THE MARGINAL IMPROVEMENT EACH RUNG BUYS, and where the curve flattens
+
+Stated as the plain difference in best `F`, per run shape, per step up the
+ladder. A zero is written as a zero.
+
+| run shape | `200`→`2,000` | `2,000`→`20,000` | `20,000`→`200,000` | `200,000`→`2,000,000` |
+| --- | --- | --- | --- | --- |
+| `feedback` seeded schedule (both strategies) | **−0.25** | **−0.25** | **0** | **0** |
+| `feedback` hand board (both strategies) | **−0.75** | 0 | **0** | **0** |
+| `feedback` alone `part-walk s3` (both) | −0.25 | −0.25 | **0** | **0** |
+| `feedback` alone `rcm s2` (both) | 0 | 0 | **0** | **0** |
+| `feedback` alone `rcm s3` (both) | 0 | **−0.50** | **0** | **0** |
+| `buffered`, every shape, both strategies | 0 | 0 | **0** | **0** |
+
+**THE CURVE FLATTENS AT 20,000, ON ALL FOURTEEN RUN SHAPES AND BOTH
+STRATEGIES.** Above it the objective does not move by one hundredth on any run
+in the ladder, and `C`, `W` and `B` are identical cell for cell. The brief
+predicted exactly this and asked for it to be said plainly: *"a cap above the
+point where the curve flattens buys nothing but a different stop label."* It is
+true here, and it is **the whole finding** — with the one qualification §15.5
+and §15.7 draw out, which is that the different stop label is not cosmetic.
+
+So the honest reading of the objective curve on these two circuits: **no cap
+above 20,000 buys a cheaper board.** Anyone arguing for a larger figure has to
+argue for it on something other than `F`, and §15.7 is that argument.
+
+### 15.5 Step 3 — THE SPREAD ACROSS SEEDED RESTARTS, which is not what the schedule reports
+
+*"A budget only one lucky seed needs is not a budget."* So each of
+`feedback`'s three constructed seeds was climbed **alone** at every rung. The
+spread is over those three runs.
+
+| rung | `feedback`, three seeds climbed alone | min | max | spread |
+| --- | --- | --- | --- | --- |
+| `200` | 3.75 / 3.75 / 3.50 | 3.50 | 3.75 | 0.25 |
+| `2,000` | 3.50 / 3.75 / 3.50 | 3.50 | 3.75 | 0.25 |
+| **`20,000`** | 3.25 / 3.75 / **3.00** | **3.00** | 3.75 | **0.75** |
+| `200,000` | 3.25 / 3.75 / **3.00** | **3.00** | 3.75 | **0.75** |
+| `2,000,000` | 3.25 / 3.75 / **3.00** | **3.00** | 3.75 | **0.75** |
+
+Identical under both strategies at every rung. **`buffered`'s spread is a single
+value, 4.25, at every rung** — not because its restarts agree but because it has
+exactly one constructed seed that does not refuse (§15.2), so there is nothing
+there to spread. That is reported as the absence of a measurement rather than as
+a tight one.
+
+**The spread WIDENS with the budget rather than narrowing**, which is the
+opposite of the shape "a budget only one lucky seed needs" warns about: at 200
+and 2,000 all three seeds are stuck within 0.25 of each other because none has
+finished its first climb, and at 20,000 and above the seeds separate because
+each has climbed as far as the move set lets it. The budget is not buying
+agreement between seeds; it is buying each seed's own local optimum. Both facts
+are then true at once, and the second is the one that matters:
+
+- **No seed needs more than 20,000 evaluations to reach its final `F`.** Not one
+  of the three improves above that rung.
+- **The best board in this entire ladder is one the seeded schedule never
+  reports.** `rcm s3` climbed alone reaches `F` **3.00** at 0 cuts, **8** wires
+  and 4 bridges — cheaper than the 3.25 of §14.4 and of every schedule run here
+  — and the schedule returns 3.25 at every rung, because `Q4` fires at the third
+  climb's boundary and hands `rcm s3` **zero evaluations** (its `climbs` entry
+  is `3.5 -> 3.5, accepted 0, rounds 0, e=0` at both top rungs). This is Task
+  10 §8.5's concern, measured: *"it would have mattered on a board where a later
+  seed was the good one"* — and on this board it does. **IT IS NOT AN ARGUMENT
+  ABOUT THE CAP and must not be used as one.** It is evidence about `Q4`'s `k`,
+  a separate `K3` parameter, and raising the cap does not reach it: the
+  schedule returns 3.25 at 2,000,000 just as at 20,000.
+
+### 15.6 Both strategies, at every rung
+
+`STEEPEST_DESCENT` and `FIRST_IMPROVEMENT`, both from
+`lib/stripboard/search-strategy.ts`, measured at all five rungs because Task 10
+found first-improvement reaching the same cost for 38–62% fewer evaluations and
+that is directly a question about how large a cap has to be.
+
+**The two strategies reach an identical `F` in all 70 cells**, and
+`first-improvement` reaches it for fewer evaluations on **four of the seven run
+shapes** (Task 10 measured 38–62% on the four runs it had; the saving here is
+26–51% on a larger set, which widens the range rather than contradicting it):
+
+| run shape | `steepest` evaluations | `first-impr` evaluations | saving |
+| --- | --- | --- | --- |
+| `feedback` seeded schedule | 36,250 | 22,428 | 38% |
+| `feedback` alone `part-walk s3` | 26,854 | 13,032 | 51% |
+| `feedback` alone `rcm s3` | 28,083 | 20,909 | 26% |
+| `feedback` alone `rcm s2` | 9,396 | 9,396 | 0% |
+| `feedback` hand board | 3,069 | 2,062 | 33% |
+| `buffered`, both shapes | 11,255 | 11,255 | 0% |
+
+(At the two top rungs, where no run is truncated.) The 0% rows are the runs that
+accept nothing: with no admitted proposal there is no first one to take early,
+so the two strategies sweep the identical move set. **The consequence for the
+cap: the strategy changes the evaluation count by up to half, so a cap sized
+tightly against one strategy's count is the wrong size for the other.**
+`steepest-descent` is the more expensive of the two on every shape where they
+differ, so **36,250 — the largest count in the ladder — is a steepest-descent
+figure**, and sizing the cap off it covers both.
+
+### 15.7 `Q5`: WHAT THE COMMITTED CAP ACTUALLY DOES, which is not to cost the search anything but to LIE ABOUT IT — and to starve the restart schedule
+
+This is the inconsistency §14.8.1 handed forward, now measured across a ladder
+rather than at one point.
+
+`stripboard/rules.json`'s own note on `evaluationCap`, verbatim: *"Q5 IS A
+BACKSTOP AND NOT A MEASURE: it exists to stop a bug looping forever, its only
+requirement is to be loose enough that a healthy run never reaches it, and A RUN
+THAT STOPS ON Q5 IS REPORTED AS A FAILURE RATHER THAN AS A RESULT — reaching it
+means either the search or Q4 is broken, and both are worth knowing."* CRITERIA
+`Q5` says the same.
+
+Read the second table of §15.3 against that sentence:
+
+- **At the committed 20,000, five of fourteen runs report `Q5`** — so five
+  healthy runs are reported as failures. Among them are **both** `feedback`
+  seeded-schedule runs, which produce the board that clears the owner's hand
+  layout 3.25 against 6.75, and **both** `rcm s3`-alone runs, which produce the
+  cheapest board this project has yet made: 0 cuts, 8 wires, `F` 3.00.
+- **At 200 and 2,000, fourteen of fourteen report `Q5`.** At those rungs the cap
+  is not a backstop at all; it is the rule that ends every run.
+- **At 200,000 and 2,000,000, none do.** Every run reaches a rule that says
+  something about the board — `Q3` on twelve, `Q4` on two.
+
+**AND THE CAP DOES NOT ONLY MISLABEL; IT SILENTLY REDISTRIBUTES THE RESTART
+SCHEDULE.** The cap is run-level and the restarts share it, so a cap below what
+one climb costs is spent entirely on that climb and the later seeds never run.
+Measured on `feedback`'s seeded schedule:
+
+| cap | `steepest` climbs actually run | which seeds were spent |
+| --- | --- | --- |
+| `200` | 1 | `part-walk s3` only, 200 of its 26,854 |
+| `2,000` | 1 | `part-walk s3` only |
+| **`20,000`** | **1** | `part-walk s3` only — **`rcm s2` and `rcm s3` never start** |
+| `200,000` | 3 | all three |
+| `2,000,000` | 3 | all three |
+
+Under `first-improvement` the same cap of 20,000 buys **two** climbs (13,032 +
+6,968) because its first climb is cheaper — so **how many of the owner's
+reviewed seeds get climbed at all is currently a function of the cap and the
+strategy**, which is not a property anybody chose. `Q3` is *"every seed's climb
+has reached a full sweep… that produced no accepted move"*, and at 20,000 that
+condition is never tested on two of three seeds.
+
+So the measured answer to *what does the committed 20,000 cost?* is: **nothing in
+`F` on these two circuits, and the truth of what the run reports.** The brief's
+own framing is confirmed exactly — a cap above the flattening point buys only a
+different stop label — with the correction that the label at 20,000 is the wrong
+one, on the best runs in the ladder, and that the restart schedule is truncated
+with it.
+
+### 15.8 THE RECOMMENDATION, PUT TO THE OWNER — and the edit deliberately LEFT UNMADE
+
+**`stripboard/rules.json` IS UNTOUCHED BY THIS TASK.** The cap is `PAR3`; an
+agent setting it is an agent choosing a criterion. What follows is a
+recommendation with its evidence, for the owner to accept, change or reject.
+
+**THE RECOMMENDED VALUE: `evaluationCap` = 200,000.**
+
+The one-line evidence: **the largest healthy run in the ladder spends 36,250
+evaluations, `F` does not improve above 20,000 on any of the fourteen run
+shapes, and 200,000 is the smallest rung at which no run reports `Q5` — so it is
+the smallest measured figure that leaves `Q5` a backstop instead of a verdict,
+with the order-of-magnitude margin the existing note already asks for.**
+
+The reasoning, each step from the ladder rather than from preference:
+
+1. **The cap must exceed the most expensive healthy run, or the backstop fires
+   on health.** That run is `feedback`'s seeded schedule under
+   `steepest-descent`: **36,250** evaluations, about 2.75 s.
+2. **It needs a margin, and the note already says what kind.** The existing note
+   constructs 20,000 as *"an order of magnitude above the 2,000 evaluations
+   PIPELINE sized as… its threshold of returns"* and then concedes the part this
+   task closes: *"THE ORDER-OF-MAGNITUDE MARGIN IS A CHOICE AND NOT A
+   MEASUREMENT: nobody has measured how many evaluations a healthy run of this
+   pipeline spends, which is the figure that would settle it, and the first real
+   runs produce it."* **These are those runs.** 200,000 is that same
+   construction with the measurement substituted for the guess: one order of
+   magnitude above 36,250, rounded to the decade.
+3. **Nothing above it buys a board.** `F`, `C`, `W` and `B` are identical at
+   200,000 and 2,000,000 on all fourteen shapes, and 2,000,000 is 55× the
+   largest healthy run — a margin with no evidence under it.
+4. **It is still a usable backstop.** At the measured **0.076 ms per
+   evaluation** on the ladder's largest runs, 200,000 evaluations is about
+   **15 seconds** of machine time, against 2.75 s for the largest healthy run.
+   A looping bug is bounded to seconds, which is what a backstop is for. The
+   old 20,000 was derived as *"about 15.6 minutes"* at the fork's 46.84 ms per
+   evaluation; the whole derivation is void at 0.076 ms, and it is replaced
+   rather than rescaled.
+5. **It has headroom for a circuit bigger than these two.** Both instances are
+   small — 11 and 13 nets. 200,000 is 5.5× the largest observed run; a figure
+   sized tightly against 36,250 (50,000, say) would put the next larger board
+   straight back into `Q5`, which is the failure being fixed.
+
+**THE DEFENSIBLE ALTERNATIVE, named rather than buried: 2,000,000.** It also
+resolves the mislabelling, and it is what Task 10 ran with. The case for it is
+that it preserves the *wall-clock* bound the old note argued for — bounding a
+looping bug to *"minutes rather than a machine left running"*, about 2.5 min at
+0.076 ms — where 200,000 bounds it to 15 s. The case against it is that 55× the
+largest measured run is exactly the unmeasured margin step 2 is replacing.
+**Choosing between seconds and minutes as the bound on a looping bug is a
+judgement about the owner's own machine time and is his, not an agent's.**
+
+**WHAT IS NOT RECOMMENDED, and why, so the option is on the record as rejected
+rather than unconsidered: keeping 20,000.** It costs nothing in `F` on these two
+circuits — that is measured, twice now — but it reports five of fourteen healthy
+runs as failures, including the cheapest board this project has produced, and it
+truncates the owner's reviewed restart schedule to one seed of three under
+`steepest-descent` (§15.7). *"A skipped check must never look like a passing
+one"* has a mirror image, and this is it: a healthy run must not look like a
+malfunction.
+
+**THE EXACT EDIT, PREPARED AND LEFT UNMADE.** One line of
+`stripboard/rules.json`:
+
+```
+  -  "evaluationCap": 20000,
+  +  "evaluationCap": 200000,
+```
+
+and, under `K3`'s ratchet, the `notes.evaluationCap` entry gains the run that
+justifies it: that the figure is now **[model], derived from a measurement
+rather than from a timing estimate**, that the largest healthy run measured is
+36,250 evaluations at about 0.076 ms each, that `F` flattens at 20,000 on both
+benchmark instances and both strategies, and that this document's §15 is where
+the ladder is. The sentence *"nobody has measured how many evaluations a healthy
+run of this pipeline spends"* is the sentence this edit would retire, and the
+note should say so rather than dropping it.
+
+**Nothing else in that file changes**, and `tests/stripboard/model/benchmark-fixtures.ts`'s
+own declared cap of 2,000,000 (§14.8) should then be deleted in the same edit
+and the setup read the committed figure — which is the point of calibrating it,
+and is the one consequence of this recommendation that is code rather than data.
+
+### 15.9 What may not be concluded from section 15, and what was not tuned
+
+**Not tuned, stated because this plan's record documents the failure five
+times.** `stripboard/rules.json` — untouched, no parameter moved, including the
+one this section is about. `lib/stripboard/seed.ts`, `derivedOrderings`,
+`movesFrom`, `objectiveOf` and the weights — untouched. No move family added, no
+term added to `OBJ1`, no ordering added or dropped, no instance added to or
+removed from `BENCHMARK_BOARDS`. The only figure this section chose is the rung
+ladder itself, declared in §15.1 before the first run.
+
+**What may not be concluded:**
+
+1. **Nothing here is an optimality claim.** No run at any rung stopped on `Q1`
+   or `Q2`: `Q1` needs `C = C_floor` *and* `W = 0`, every result carries wires,
+   and `Q2` cannot fire while `tau` is `null`. And §14.5's caveat stands — the
+   predicate handed to `Q1` is `violationsOf`, not `A1`–`A4`, so even a `Q1`
+   from this harness would be weaker than CRITERIA's.
+2. **This is two circuits, of 11 and 13 nets.** 36,250 is the largest healthy
+   run **on these**, and the evaluation count per round grows with the part and
+   placement count. A Pultec section will cost more, and the recommended figure
+   has headroom for that (§15.8 step 5) rather than evidence about it.
+3. **`buffered` contributes no spread** (§15.2, §15.5) and the search accepts
+   nothing on it at any rung — `F` 4.25 in all ten of its cells. That is Task 10
+   §8.1's null, reproduced five times over at five budgets, and it is now
+   measured that **no budget fixes it**: the move family is sparse on that
+   board, and the levers are the ones `lib/stripboard/moves.ts` names as absent.
+   **No move was added here to change that number.**
+4. **The `F` 3.00 board has not been looked at.** 0 cuts, 8 wires, 4 bridges on
+   34 × 27, from `rcm s3` climbed alone — the cheapest board in the record, and
+   it exists only as a `Candidate` in memory. *"Look at the output, not only the
+   tests."* It has not been materialized, exported or rendered, and it is the
+   largest unexamined thing this section produces.
+5. **The ladder is five points, not a continuous curve.** Where the stop label
+   changes between two rungs — between 20,000 and 200,000 — the ladder locates
+   the transition only to that decade. The evaluation counts in §15.3's second
+   table pin it more precisely than the rungs do: the largest healthy run is
+   36,250, so any cap above that figure removes every `Q5` in this ladder. The
+   ladder does not say which figure above it is right, and that is the decision
+   being put to the owner rather than a gap in the measurement.
+
+### 15.10 THE CEILINGS HELD, reported against §15.1's declaration
+
+| ceiling | declared | actual |
+| --- | --- | --- |
+| wall clock | 45 minutes | **under 2 minutes** end to end for all 70 runs; **77.6 s** of it inside `search` |
+| disk | 500 MB, nothing outside the scratchpad | **63 KB** — the script, 70 JSON lines, a log and an analysis dump |
+| rungs | at most 5, at orders of magnitude | **5**: 200, 2,000, 20,000, 200,000, 2,000,000 |
+
+The ladder ran to completion inside the ceilings, so nothing is partial and no
+rung was dropped. Nothing was written outside the session scratchpad; `git
+status` is clean apart from this document. **One observation worth recording
+rather than leaving to be rediscovered:** the session scratchpad it ran in
+already held **1.4 GB** from earlier tasks of this plan, dated 11–14 October —
+`frag/` at 753 MB and `order/` at 401 MB are the bulk. None of it is this
+section's and none was deleted here, but a disk ceiling expressed as a total over
+a shared scratchpad is already blown by history before a new task starts, and
+the next such ceiling should be stated as the task's own footprint.
