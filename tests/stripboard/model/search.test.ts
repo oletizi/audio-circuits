@@ -154,6 +154,9 @@ test("Q3 fires when a FULL SWEEP accepts nothing and no start remains", () => {
     setupFor(instance, { admissible: () => false }),
   )
   expect(result.stoppedOn).toBe("Q3")
+  // Q3's OWN CONDITION, read off the counters the rule was decided on: a full
+  // sweep that accepted nothing, with no start left.
+  expect(result.counters.acceptedThisRound).toBe(0)
   expect(result.counters.startsRemaining).toBe(0)
   // A guard against a run that examined nothing: Q3 says these moves from these
   // seeds found nothing better, which is a statement about proposals that were
@@ -181,6 +184,11 @@ test("Q5 fires when the run-level cap is spent, and the cap is the parameter", (
   )
   expect(result.stoppedOn).toBe("Q5")
   expect(result.evaluations).toBeGreaterThanOrEqual(1)
+  expect(result.counters.runEvaluations).toBeGreaterThanOrEqual(1)
+  // THE ROUND WAS TRUNCATED AND SAYS SO, which is why Q3 did not fire ahead of
+  // Q5: a partial sweep of the move set reports `undefined` rather than
+  // nothing-accepted.
+  expect(result.counters.acceptedThisRound).toBeUndefined()
 })
 
 test("the acceptance rule is the loop's and not the strategy's: cheaper AND sound", () => {

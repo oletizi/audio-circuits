@@ -201,6 +201,14 @@ export interface SearchResult {
   readonly untested: readonly UntestedRule[]
   readonly climbs: readonly ClimbRecord[]
   readonly evaluations: number
+  /**
+   * The counters `stoppedOn` was DECIDED on, not a summary assembled afterwards.
+   *
+   * So a reader can check the rule against its own condition - `Q3` against
+   * `acceptedThisRound === 0 && startsRemaining === 0`, `Q5` against
+   * `runEvaluations`. A set rebuilt at the end would carry zeros for the first
+   * two whichever rule fired, and a check against them could not fail.
+   */
   readonly counters: RunCounters
 }
 
@@ -298,7 +306,11 @@ function climb(
   setup: SearchSetup,
   state: RunState,
   best: { value: Scored; start: string },
-): { readonly record: ClimbRecord; readonly stoppedOn: StoppingRule | null } {
+): {
+  readonly record: ClimbRecord
+  readonly stoppedOn: StoppingRule | null
+  readonly decidedOn: RunCounters
+} {
   const initial = admittedStart(start, setup)
   let incumbent = initial
   if (initial.objective < best.value.objective) {
@@ -312,14 +324,23 @@ function climb(
   let accepted = 0
   let rounds = 0
   const startsRemaining = total - index - 1
-  const stopNow = (acceptedThisRound: number | undefined): StoppingRule | null =>
-    evaluateStop(
-      countersOf(state, startsRemaining, acceptedThisRound),
+  // THE COUNTERS THE STOP WAS DECIDED ON ARE KEPT, not rebuilt afterwards. A
+  // result carrying counters assembled at the end would report zeros for
+  // `acceptedThisRound` and `startsRemaining` whichever rule fired - and a
+  // reader checking "did Q3's condition really hold" would be reading two
+  // fields that are zero by construction. That is a predicate that cannot fail,
+  // which is the defect this plan has caught three times.
+  let decidedOn: RunCounters = countersOf(state, startsRemaining, undefined)
+  const stopNow = (acceptedThisRound: number | undefined): StoppingRule | null => {
+    decidedOn = countersOf(state, startsRemaining, acceptedThisRound)
+    return evaluateStop(
+      decidedOn,
       best.value,
       setup.reference,
       setup.stopping,
       setup.admissible,
     )
+  }
 
   // THE STOP IS EVALUATED BEFORE THE FIRST ROUND, with `acceptedThisRound`
   // UNDEFINED. `Q1` is terminal - nothing below the floor exists - so a start
@@ -378,7 +399,7 @@ function climb(
     state.climbHistory.push(incumbent.objective)
     state.climbEvaluations.push(climbEvaluations)
   }
-  return { record, stoppedOn }
+  return { record, stoppedOn, decidedOn }
 }
 
 /**
@@ -422,15 +443,17 @@ export function search(starts: readonly Start[], setup: SearchSetup): SearchResu
   const best = { value: opening, start: first.name }
   const climbs: ClimbRecord[] = []
   let stoppedOn: StoppingRule | null = null
+  let decidedOn: RunCounters | undefined
   for (const [index, start] of starts.entries()) {
     const outcome = climb(start, index, starts.length, setup, state, best)
     climbs.push(outcome.record)
     if (outcome.stoppedOn !== null) {
       stoppedOn = outcome.stoppedOn
+      decidedOn = outcome.decidedOn
       break
     }
   }
-  if (stoppedOn === null) {
+  if (stoppedOn === null || decidedOn === undefined) {
     refuse(
       "stopped-for-no-reason",
       `the run climbed all ${starts.length} start(s) and no rule of Q1-Q6 fired`,
@@ -444,6 +467,6 @@ export function search(starts: readonly Start[], setup: SearchSetup): SearchResu
     untested: UNTESTED_IN_CORE,
     climbs,
     evaluations: state.runEvaluations,
-    counters: countersOf(state, 0, 0),
+    counters: decidedOn,
   }
 }
