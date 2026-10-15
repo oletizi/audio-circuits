@@ -560,7 +560,16 @@ candidate is checked.
 
 Decide which strip hosts each net, place parts so their pins land there, run a wire where a net must span.
 
-**Feasibility is checked before a strip assignment is committed.** A part's terminals have a bounded separation, so assigning its two nets to strips it cannot span produces a seed that is impossible to realise and wastes the optimizer's time repairing a decision that should never have been made. **A failed construction names the conflicting assignments** rather than silently substituting a placement.
+**Feasibility is checked before a strip assignment is committed, and span is only its first condition.** A part's terminals have a bounded separation, so assigning its two nets to strips it cannot span produces a seed impossible to realise and wastes the optimizer's time repairing a decision that should never have been made. **But a feasible separation can still be impossible** because the holes are already taken, or the board edge intervenes.
+
+**What feasibility means here, after the owner's rulings:**
+
+- **Lead reach** — `minSpanHoles`/`maxSpanHoles` from `lib/kicad/lead-span.ts`, which is `HC5`/`HC9` and is unaffected by anything decided today.
+- **Holes actually free** — *"I would prefer leads not share holes—it makes building easier."* One lead per hole.
+- **The board edge** — a placement must fit the declared stock, 34 strips × 27 columns.
+- **NOT body collision.** *"Don't worry about body collisions on the stripboard. It's extremely flexible."* A placement is its pins; bodies are not modelled, and `geometryOf`'s occupied-area half has no consumer. **Do not reach for `lib/kicad/footprint-extent.ts` or `formed-frame.ts`** — both are unclaimed and slated for deletion.
+
+**A failed construction names the conflicting assignments** rather than silently substituting a placement — a seed the optimizer must repair is a decision that should never have been accepted.
 
 **Seeds come from several orderings and are judged only by the acceptance rule.** A seed heuristic hand-tuned until a benchmark passes is an agent grading its own work — the invariant this whole project rests on.
 
