@@ -11,18 +11,34 @@
  * model. The two `Candidate`s are then comparable field by field.
  *
  * **WHAT IS COMPARED EXACTLY.** Placements, because that is the task's stated
- * requirement: the same refs, the same footprints, the same origin holes, the
- * same facings and the same pin-to-hole maps. Wire endpoints and wire nets, for
- * the same reason. The grid.
+ * requirement: the same refs, the same origin holes, the same facings and the
+ * same pin-to-hole maps. Wire endpoints and wire nets, for the same reason. The
+ * grid.
+ *
+ * **`footprint` IS NOT IN THAT LIST, AND SAYING SO IS THE POINT.** An earlier
+ * revision of this comment named it among the compared fields, and it could
+ * never have fired: both candidates get a placement's footprint from the SAME
+ * injected map (`footprintsOf`), never from the dump, so comparing it would be
+ * comparing a fixture against itself and would pass on a board that came back
+ * wrong in every other way. The four fields that remain are all dump-derived -
+ * `origin` and `direction` through `facingOf` over the dumped `PIN` lines, and
+ * the pin map from those lines directly - so each of them can disagree, which is
+ * what makes the composite key worth asserting.
  *
  * **WHAT IS COMPARED ELECTRICALLY, AND THE RULING THAT MADE IT SO.** Cuts. The
  * owner, 2026-10-14: *"the cut position doesn't matter. That's false precision."*
  * Tracks are cut before the board is populated, so the clearance argument behind
  * the old exact-position requirement has no force. So a cut's GAP is not a
  * round-trip field; a cut's STRIP, the COUNT on each strip, and WHICH PAIR OF
- * RUNS it separates are. `tests/stripboard/model/cuts-agree.test.ts` holds the
- * measurement that made the ruling actionable - 54 of 54 agree on strip, count
- * and run pair, 38 of 54 on the exact gap, with identical electrical results.
+ * RUNS it separates are. **All three are checked, the third by walking each cut
+ * to the two runs it falls between** (`separatedRunPairs` below) - an earlier
+ * revision of this comment claimed the run pair while the file compared only
+ * strips and counts, which do not imply it: two cuts can sit one on each side of
+ * a three-run strip's middle run and produce identical per-strip counts while
+ * separating different pairs. `tests/stripboard/model/cuts-agree.test.ts` holds
+ * the measurement that made the ruling actionable - 54 of 54 agree on strip,
+ * count and run pair, 38 of 54 on the exact gap, with identical electrical
+ * results.
  *
  * **AND BRIDGES ARE IN THE SAME BUCKET AS CUTS, WHICH IS MEASURED HERE RATHER
  * THAN ASSUMED.** A `SOLDER` line is not board state in VeroRoute: `CalcSolder`
@@ -56,7 +72,13 @@ import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { PIN_PATTERNS } from "../../lib/kicad/pin-pattern.ts"
 import type { Candidate } from "../../lib/stripboard/board.ts"
-import { derivedCuts, type Cut, type ReferenceNets } from "../../lib/stripboard/cuts.ts"
+import {
+  derivedCuts,
+  runsOf,
+  significantContacts,
+  type Cut,
+  type ReferenceNets,
+} from "../../lib/stripboard/cuts.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { verorouteBinary } from "../../tools/perfboard/check.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
@@ -170,7 +192,15 @@ function roundTrip(name: string): {
   }
 }
 
-/** A placement as one comparable string: every field of it, pins included. */
+/**
+ * A placement as one comparable string: every DUMP-DERIVED field of it, pins
+ * included.
+ *
+ * **`footprint` IS DELIBERATELY ABSENT** - see this module's comment. It comes
+ * from the injected map on both sides rather than from the board, so it cannot
+ * differ, and a key carrying a field that cannot differ reads as more coverage
+ * than it is.
+ */
 function placementKeys(candidate: Candidate): readonly string[] {
   return candidate.placements
     .map((placement) => {
@@ -180,7 +210,6 @@ function placementKeys(candidate: Candidate): readonly string[] {
         .join(" ")
       return [
         placement.ref,
-        placement.footprint,
         `${placement.origin.strip},${placement.origin.column}`,
         placement.direction,
         pins,
@@ -231,6 +260,52 @@ const cutsPerStrip = (cuts: readonly Cut[]): readonly string[] => {
   return [...counts].sort((a, b) => a[0] - b[0]).map(([strip, n]) => `strip ${strip}: ${n}`)
 }
 
+/**
+ * Which PAIR OF RUNS each cut separates, named by the runs themselves rather
+ * than by the gap it sits in.
+ *
+ * **THIS IS THE FIELD THAT MAKES "ELECTRICALLY OURS" MEAN SOMETHING.** A cut's
+ * gap is the fork's own to choose; what must not change is which two runs of
+ * declared net end up on two different conductors. Strips and per-strip counts
+ * do not imply it: a three-run strip needs two cuts either way, and a pair that
+ * moved from separating runs 1|2 and 2|3 to separating 1|2 twice would keep both
+ * numbers identical. So each cut is walked to the adjacent pair of OUR runs it
+ * falls between, and the pair is keyed by both runs' nets and extents.
+ *
+ * The runs are always this model's own (`runsOf` over the candidate the document
+ * was built from), for both cut lists: the question is which of OUR runs each
+ * cut separates, so re-deriving runs from the materialized board would be asking
+ * a different question and could hide a disagreement behind a matching
+ * re-derivation. A cut that falls between no adjacent pair returns a key saying
+ * so, which fails the comparison by name rather than being dropped.
+ */
+function separatedRunPairs(
+  candidate: Candidate,
+  reference: ReferenceNets,
+  cuts: readonly Cut[],
+): readonly string[] {
+  const runs = runsOf(significantContacts(candidate, reference))
+  return cuts
+    .map((cut) => {
+      const onStrip = runs
+        .filter((run) => run.strip === cut.strip)
+        .sort((a, b) => a.firstColumn - b.firstColumn)
+      for (let index = 1; index < onStrip.length; index += 1) {
+        const earlier = onStrip[index - 1]
+        const later = onStrip[index]
+        if (earlier === undefined || later === undefined) continue
+        if (earlier.lastColumn <= cut.afterColumn && cut.afterColumn < later.firstColumn) {
+          return (
+            `strip ${cut.strip}: ${earlier.net}@${earlier.firstColumn}-${earlier.lastColumn} | ` +
+            `${later.net}@${later.firstColumn}-${later.lastColumn}`
+          )
+        }
+      }
+      return `strip ${cut.strip}: cut after column ${cut.afterColumn} separates no pair of our runs`
+    })
+    .sort()
+}
+
 test("the fork the pin names understands --materialize, by its own flag table", () => {
   // VERIFIED AGAINST THE THING ITSELF rather than written from memory: this
   // repository has twice shipped a name that does not exist, and a CLI flag is
@@ -272,8 +347,50 @@ for (const name of ROUND_TRIP) {
     expect(cutsPerStrip(theirs), "on the same strips, with the same count on each").toEqual(
       cutsPerStrip(ours),
     )
+    expect(
+      separatedRunPairs(trip.before, trip.reference, theirs),
+      "and separating the same pairs of runs, which is what the gap does not have to match",
+    ).toEqual(separatedRunPairs(trip.before, trip.reference, ours))
   })
 }
+
+test("the run-pair comparison is gap-insensitive and can still fail", () => {
+  // A COMPARISON THAT CANNOT FAIL IS THE DEFECT THIS SUITE EXISTS TO PREVENT, so
+  // `separatedRunPairs` is shown to discriminate rather than assumed to. Two
+  // halves, and both are needed:
+  //
+  //   - GAP-INSENSITIVE: `transistor-preamp-feedback` arrived with cuts whose
+  //     gaps agree with ours on only one of five, and they separate the SAME five
+  //     run pairs. That is the owner's ruling restated as an assertion - a
+  //     different gap between the same two runs is not a disagreement.
+  //   - STILL ABLE TO FAIL: strip 5 carries two cuts, so moving the first of them
+  //     onto the second's gap leaves the per-strip counts identical while making
+  //     both cuts separate the same pair. The key changes, so a cut set that
+  //     merged two runs could not pass the comparison above.
+  const trip = roundTrip("transistor-preamp-feedback")
+  const ours = derivedCuts(trip.before, trip.reference)
+  const pairsOf = (cuts: readonly Cut[]): readonly string[] =>
+    separatedRunPairs(trip.before, trip.reference, cuts)
+
+  expect(canonicalCuts(forkCuts(trip.beforeDump)), "the as-built gaps really do differ").not.toEqual(
+    canonicalCuts(ours),
+  )
+  expect(pairsOf(forkCuts(trip.beforeDump)), "and separate the same run pairs anyway").toEqual(
+    pairsOf(ours),
+  )
+
+  const onStripFive = ours.filter((cut) => cut.strip === 5)
+  expect(onStripFive.length, "strip 5 is the two-cut strip this leans on").toBe(2)
+  const second = onStripFive[1]
+  if (second === undefined) return
+  const merged = ours.map((cut) =>
+    cut.strip === 5 && cut.afterColumn === onStripFive[0]?.afterColumn ? second : cut,
+  )
+  expect(cutsPerStrip(merged), "the mutation keeps every per-strip count").toEqual(
+    cutsPerStrip(ours),
+  )
+  expect(pairsOf(merged), "and the run pairs catch it").not.toEqual(pairsOf(ours))
+})
 
 test("how many derived positions also agree exactly, which is NOT the requirement", () => {
   // THE FIGURES, KEPT AS A TEST SO THAT A CHANGE SAYS SO - the pattern
@@ -314,14 +431,17 @@ test("the paint is not a no-op, which a run count alone would not say", () => {
   // A DOCUMENT WHOSE RUNS PAINTED NOTHING would leave the strips as the wipe left
   // them, and every assertion above about cuts would then be about a board with
   // no copper identity between the leads. The fork reports what it actually
-  // filled, so that is read rather than assumed - and no pin was found on no net,
-  // which is the other thing its stdout would have said.
+  // filled, so that is read rather than assumed - and it reported no hole inside
+  // a run that it declined to paint, which is the other thing its stdout would
+  // have said. The reason tokens themselves are exercised in the fork's own
+  // suite (.tools/veroroute-perfboard/tests/materialize.test.ts), on a fixture
+  // built to put a pin on no net inside a run; neither board here has one.
   const feedback = roundTrip("transistor-preamp-feedback")
   expect(feedback.result.painted, "blank holes filled on the feedback board").toBe(104)
-  expect(feedback.result.unpaintedPins, "no pin was on no net").toEqual([])
+  expect(feedback.result.unpaintedHoles, "and no hole inside a run was skipped").toEqual([])
   const loop = roundTrip("transistor-preamp-loop")
   expect(loop.result.painted, "blank holes filled on the loop board").toBe(60)
-  expect(loop.result.unpaintedPins, "no pin was on no net").toEqual([])
+  expect(loop.result.unpaintedHoles, "and no hole inside a run was skipped").toEqual([])
 })
 
 test("transistor-preamp-feedback: AutoFill's own gaps do not survive materialization", () => {

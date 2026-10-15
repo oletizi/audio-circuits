@@ -292,14 +292,43 @@ function copperStatements(
       )
     }
     for (let index = 0; index < onStrip.length; index += 1) {
+      // EVERY ONE OF THE THREE LOOKUPS BELOW REFUSES RATHER THAN SKIPPING, and
+      // that is the house rule this branch settled in commit 7bf6490 - "A skipped
+      // part would read as a part with no moves, so it refuses instead". The
+      // indices cannot be out of range: `index` walks this strip's own run list
+      // and the boundary count was just checked to be one less than it. So a
+      // `continue` here could only ever fire on a bug in that arithmetic, and it
+      // would drop a COPPER statement - leaving a run of copper the fork never
+      // paints, which is an unpainted gap between two runs of different nets and
+      // therefore a board that dumps CUT_STATE UNRESOLVED for a reason nothing
+      // would name. A refusal names it here instead.
       const run = onStrip[index]
-      if (run === undefined) continue
-      const previous = boundaries[index - 1]
-      const next = boundaries[index]
-      const firstColumn = index === 0 || previous === undefined ? run.firstColumn : previous + 1
-      const lastColumn =
-        index === onStrip.length - 1 || next === undefined ? run.lastColumn : next
-      out.push(runStatement(run, firstColumn, lastColumn, anchors))
+      if (run === undefined) {
+        refuse(
+          "vero-export-run-index-lost",
+          `strip ${strip} reported ${onStrip.length} runs and run ${index} of them could not be ` +
+            "read back out of that list.\nThat is a defect in this function's own arithmetic " +
+            "rather than anything about the candidate - the index walks the list it indexes.\n" +
+            "It is not skipped: a dropped COPPER statement leaves a stretch of copper unpainted " +
+            "between two runs of different nets, which the fork reports as CUT_STATE UNRESOLVED " +
+            "with nothing naming the run that went missing.",
+        )
+      }
+      const previous = index === 0 ? run.firstColumn - 1 : boundaries[index - 1]
+      const next = index === onStrip.length - 1 ? run.lastColumn : boundaries[index]
+      if (previous === undefined || next === undefined) {
+        refuse(
+          "vero-export-boundary-index-lost",
+          `strip ${strip} carries ${onStrip.length} runs and ${boundaries.length} cuts, and the ` +
+            `boundary for run ${index} could not be read out of that cut list.\nThat is a defect ` +
+            "in this function's own arithmetic rather than anything about the candidate: the " +
+            "count was checked to be exactly one less than the run count immediately above.\nIt " +
+            "is not defaulted to the run's own extent: that would silently paint a shorter run " +
+            "than the partition asked for, and a short run is an unpainted gap the fork reports " +
+            "as CUT_STATE UNRESOLVED.",
+        )
+      }
+      out.push(runStatement(run, previous + 1, next, anchors))
     }
   }
   return out
@@ -350,8 +379,18 @@ export interface MaterializeResult {
   readonly document: string
   /** How many blank holes the fork actually painted, from its own summary line. */
   readonly painted: number
-  /** Every `UNPAINTED_PIN` hole the fork reported - a pin it found on no net. */
-  readonly unpaintedPins: readonly string[]
+  /**
+   * Every hole inside a declared run the fork reported NOT painting, verbatim after
+   * the `UNPAINTED ` keyword - `"<strip>,<column> <reason>"`, where the reason is
+   * one of `NO_COPPER`, `SOIC_PROTECTED` or `PIN_ON_NO_NET`.
+   *
+   * **THE REASON IS KEPT RATHER THAN STRIPPED.** All three are holes the fork
+   * declined to paint for a stated cause, and a list of bare holes would make a
+   * strip with no copper in it read the same as a lead on no net. It is the fork's
+   * own token, not re-worded here, so a reason added on that side arrives intact
+   * rather than being silently dropped by a parser that only knows three.
+   */
+  readonly unpaintedHoles: readonly string[]
 }
 
 /** `MATERIALIZED ... PAINTED <n>`, or a refusal naming what the fork printed instead. */
@@ -417,9 +456,9 @@ export function materialize(input: MaterializeInput, spawn: SpawnVeroroute): Mat
     layoutPath: input.layoutPath,
     document,
     painted: paintedFrom(run.stdout, input.outPath),
-    unpaintedPins: run.stdout
+    unpaintedHoles: run.stdout
       .split("\n")
-      .filter((line) => line.startsWith("UNPAINTED_PIN "))
-      .map((line) => line.slice("UNPAINTED_PIN ".length).trim()),
+      .filter((line) => line.startsWith("UNPAINTED "))
+      .map((line) => line.slice("UNPAINTED ".length).trim()),
   }
 }
