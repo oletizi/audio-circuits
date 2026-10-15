@@ -139,7 +139,21 @@ function cutTagSpots(frame: Frame, m: Point): readonly Point[] {
  * covers there in turn.
  */
 export function drawCuts(canvas: Canvas, frame: Frame, dump: BoardDump, occupied: Occupied): void {
-  const s = PITCH * 0.32
+  // **THE ARM REACHES 0.22 OF A PITCH AND NOT 0.32, so the cross stays inside
+  // the gap it marks.** A cut's centre is half a pitch (10 units) from each of
+  // the two holes it separates. At 0.32 the arm reached 6.4 units and the 2.6
+  // stroke another 1.3, stopping 2.3 units from a hole centre - INSIDE a lead's
+  // 3.2-unit dot, so a cut was drawn across the lead beside it. The owner read
+  // the result as parts and marks sharing holes: *"those overlaps make it
+  // extremely difficult to figure out which part goes in which hole. It's a
+  // foot gun and a trap."* The boards were measured clean - 0 shared holes on
+  // every one of them, his own two included - so this was the drawing lying
+  // about the layout, which is worse than a bad layout.
+  //
+  // At 0.22 the arm reaches 4.4 and stops 4.3 units clear of a hole centre,
+  // outside the dot with room to spare. The cross stays the symbol he already
+  // knows; only its size changes.
+  const s = PITCH * 0.22
   const marks = occupied.marks
   for (const { number, cut } of numberedCuts(dump)) {
     const m = midpoint(frame.hole(cut.a.row, cut.a.col), frame.hole(cut.b.row, cut.b.col))
@@ -175,12 +189,61 @@ export function drawCuts(canvas: Canvas, frame: Frame, dump: BoardDump, occupied
   }
 }
 
-/** Draws every solder bridge with its number, recording what it covers in `marks`. */
+/** How far a bridge bar stops short of each hole it joins, so both stay visible. */
+export const BRIDGE_INSET = 4
+
+/**
+ * The same segment with both ends pulled back by `inset`, or the original pair
+ * when the two points are closer together than the inset can take.
+ *
+ * The degenerate case is refused rather than drawn shorter than nothing: a
+ * bridge joins two ADJACENT strips, so its ends are one pitch apart and the
+ * guard can only fire on a malformed board. Returning the ends unchanged would
+ * draw a full-length bar that looks exactly like the thing this inset exists to
+ * distinguish.
+ */
+function insetEnds(a: Point, b: Point, inset: number): readonly [Point, Point] {
+  const length = Math.hypot(b.x - a.x, b.y - a.y)
+  if (length <= inset * 2) {
+    throw new Error(
+      `a solder bridge was drawn between two holes ${length.toFixed(1)} units apart, which is ` +
+        `not enough for the ${inset}-unit inset at each end that keeps both holes visible.\n` +
+        "A bridge joins two ADJACENT strips, so its ends are one pitch apart on any well-formed " +
+        "board - reaching this means the bridge's two holes are the same hole or closer than one " +
+        "pitch, which is a defect in whatever produced the board, not in this renderer.\n" +
+        "Nothing is substituted: drawing it full length would restore exactly the mark the inset " +
+        "exists to tell apart from a wire.",
+    )
+  }
+  const ux = (b.x - a.x) / length
+  const uy = (b.y - a.y) / length
+  return [
+    { x: a.x + ux * inset, y: a.y + uy * inset },
+    { x: b.x - ux * inset, y: b.y - uy * inset },
+  ]
+}
+
+/**
+ * Draws every solder bridge with its number, recording what it covers in `marks`.
+ *
+ * **THE BAR STOPS SHORT OF BOTH HOLES, and that is what tells it apart from a
+ * wire.** Drawn hole-centre to hole-centre at width 5 it covered both holes
+ * completely, so a reader could not see whether a lead sat under it - and a
+ * SHORT WIRE drawn at width 2 with 3.2-unit end dots read as the same mark. One
+ * is a blob of solder on the copper side and the other is a jumper over the
+ * component side; they are different build actions and were the same picture.
+ *
+ * Inset by `BRIDGE_INSET`, the two holes stay open and visible, so a bridge now
+ * reads as a fat bar BETWEEN two empty holes and a wire as a thin line ENDING in
+ * two filled ones. The inset is geometric rather than chosen: 4 units clears the
+ * 2.2-unit hole and its 0.6 stroke with margin, out of the 20-unit pitch.
+ */
 export function drawBridges(canvas: Canvas, frame: Frame, dump: BoardDump, marks: Occupancy): void {
   for (const { number, bridge } of numberedBridges(dump)) {
     const a = frame.hole(bridge.a.row, bridge.a.col)
     const b = frame.hole(bridge.b.row, bridge.b.col)
-    canvas.add(line(a, b, { width: 5, cls: "bridge", data: { bridge: String(number) } }), boxAround([a, b], 3))
+    const [from, to] = insetEnds(a, b, BRIDGE_INSET)
+    canvas.add(line(from, to, { width: 5, cls: "bridge", data: { bridge: String(number) } }), boxAround([a, b], 3))
     marks.add(boxAround([a, b], 3))
     const m = midpoint(a, b)
     const at = frame.verticalStrips ? { x: m.x, y: m.y - 7 } : { x: m.x + 5, y: m.y }

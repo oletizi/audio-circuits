@@ -3,6 +3,7 @@ import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { writeGuidePacket, type GuideFs } from "../../tools/guide/packet.ts"
 import { DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
 import { attr, cutCentre, elements, holeCentre, lineEnds, num, type At } from "./svg-query.ts"
+import { BRIDGE_INSET } from "../../tools/guide/render-board.ts"
 
 /**
  * End to end: the fixture's hand-written dump through the real preflight,
@@ -84,6 +85,29 @@ function sameEnds(ends: readonly [At, At], a: At, b: At): boolean {
   return (eq(ends[0], a) && eq(ends[1], b)) || (eq(ends[0], b) && eq(ends[1], a))
 }
 
+/**
+ * The bar runs between `a` and `b` but stops `BRIDGE_INSET` short of each, which
+ * is what keeps both holes visible under it and tells a bridge apart from a
+ * short wire.
+ *
+ * **ASSERTED RATHER THAN RELAXED.** The obvious repair when the inset landed was
+ * to widen `sameEnds`' tolerance past 4 units, which would have made this test
+ * pass for a bar drawn anywhere near its holes - including the full-length bar
+ * the inset exists to stop. So the inset is pinned exactly: same midpoint, same
+ * direction, and each end exactly `BRIDGE_INSET` from its hole.
+ */
+function insetEnds(ends: readonly [At, At], a: At, b: At, inset: number): boolean {
+  const gap = (p: At, q: At): number => Math.hypot(p.x - q.x, p.y - q.y)
+  const near = (value: number, want: number): boolean => Math.abs(value - want) < 0.01
+  const [first, second] = ends
+  const forward = near(gap(first, a), inset) && near(gap(second, b), inset)
+  const reversed = near(gap(first, b), inset) && near(gap(second, a), inset)
+  if (!forward && !reversed) return false
+  const barMid = midpoint(first, second)
+  const holeMid = midpoint(a, b)
+  return near(gap(barMid, holeMid), 0) && near(gap(first, second), gap(a, b) - inset * 2)
+}
+
 const files = await writtenPacket()
 const HTML = file(files, "guide.html")
 const IMAGES = ["layout-designators.svg", "layout-values.svg", "copper-side.svg"] as const
@@ -114,7 +138,10 @@ test("bridge BN in the checklist joins the two holes bridge N's bar joins, on ev
       if (a === undefined || b === undefined) throw new Error(`test: unreadable bridge row ${cells.join(" | ")}`)
       const bar = elements(svg, "line", "bridge").find((el) => attr(el, "data-bridge") === String(number))
       if (bar === undefined) throw new Error(`test: ${image} draws no bridge ${number}`)
-      expect(sameEnds(lineEnds(bar), holeCentre(svg, a), holeCentre(svg, b))).toBe(true)
+      expect(
+        insetEnds(lineEnds(bar), holeCentre(svg, a), holeCentre(svg, b), BRIDGE_INSET),
+        `${image}: bridge ${number}'s bar runs between ${a} and ${b}, inset at both ends`,
+      ).toBe(true)
       const label = [...svg.matchAll(/<text class="bridge-number"[^>]*>(.*?)<\/text>/g)].map((m) => m[1])
       expect(label).toContain(`B${number}`)
     }
