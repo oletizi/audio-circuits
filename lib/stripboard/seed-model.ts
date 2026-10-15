@@ -37,6 +37,7 @@
  */
 import type { Grid } from "./board.ts"
 import type { ReferenceNets } from "./cuts.ts"
+import type { BodyMargins } from "./seed-area.ts"
 import type { LeadSpan } from "../kicad/lead-span-model.ts"
 
 /** One terminal of a part: the pin name the netlist uses, and the net it is on. */
@@ -61,20 +62,35 @@ export interface SeedFieldPin extends SeedLead {
   readonly acrossSteps: number
 }
 
-/** A part whose one geometric lever is how far apart its two leads are bent. */
-export interface TwoLeadPart {
-  readonly kind: "two-lead"
+/**
+ * What every part carries whatever its shape: what it is, and how much room it
+ * takes.
+ *
+ * `rigid` is `LeadSpan.geometry.kind` and `body` comes from the part's own
+ * `.kicad_mod`; both are DATA on the part for the reason the pin field is (see
+ * the module comment), and `lib/stripboard/seed-parts.ts` is the one place they
+ * are derived. The owner's rule - *"Rigid parts shouldn't be routed
+ * through/under"* - needs both: which parts are rigid, and where they reach.
+ */
+export interface SeedPartBase {
   readonly ref: string
   readonly footprint: string
+  /** Terminals that cannot be formed, so the part cannot be jostled out of the way. */
+  readonly rigid: boolean
+  /** How far its body reaches past its outermost pads, in holes, in its own frame. */
+  readonly body: BodyMargins
+}
+
+/** A part whose one geometric lever is how far apart its two leads are bent. */
+export interface TwoLeadPart extends SeedPartBase {
+  readonly kind: "two-lead"
   /** The two terminals. Their separation is the seed's to choose, inside the recorded span. */
   readonly leads: readonly [SeedLead, SeedLead]
 }
 
 /** A part whose terminals are moulded where they are, so the seed may only turn it. */
-export interface FixedFieldPart {
+export interface FixedFieldPart extends SeedPartBase {
   readonly kind: "fixed-field"
-  readonly ref: string
-  readonly footprint: string
   /** The moulded field, which the seed may orient and may not reshape. */
   readonly field: readonly SeedFieldPin[]
 }
@@ -189,9 +205,25 @@ export function validateNetlist(netlist: SeedNetlist): void {
       )
     }
     seen.add(part.ref)
+    checkBody(part.ref, part.body)
     if (part.kind === "fixed-field") checkField(part.ref, part.field)
   }
   crossCheck(netlist)
+}
+
+function checkBody(ref: string, body: BodyMargins): void {
+  for (const [side, steps] of Object.entries(body)) {
+    if (Number.isInteger(steps) && steps >= 0) continue
+    refuse(
+      "body-margin-not-whole",
+      `"${ref}" declares a body margin of ${String(steps)} holes ${side}, and a margin is how ` +
+        `far the part's body reaches past its outermost pads - a whole number of holes, never ` +
+        `negative.\n${WHY_NOT_DEFAULTED}.\nA body that stops SHORT of a pad still has that ` +
+        "pad's hole in the part's area, because a lead is soldered there, so the floor is zero " +
+        "rather than a signed reach. lib/stripboard/seed-parts.ts derives these from the " +
+        "footprint's own .kicad_mod and clamps at zero for that reason.",
+    )
+  }
 }
 
 function checkField(ref: string, field: readonly SeedFieldPin[]): void {

@@ -52,18 +52,36 @@
  *     than read off the layout. Two of its three `SOLDER` lines DO sit on a lead
  *     (`5,5` is `RV1.3`, `7,9` is `R1.1`), so the strictness is this module's
  *     choice and not the owner's practice;
- *   - **the board edge** - every hole inside the declared stock.
+ *   - **the board edge** - every hole inside the declared stock, and every part's
+ *     whole rectangle too;
+ *   - **nothing routed under a rigid part** - the owner, 2026-10-14: *"Rigid
+ *     parts shouldn't be routed through/under."* This is the one HARD geometric
+ *     rule, it is checked per candidate column in `./seed-place.ts` and checked
+ *     again over the finished board below, and his own two boards hold it in 0
+ *     of 85 leads;
+ *   - **room to work where there is room** - *"if there's room for parts to have
+ *     their own space, they should be given that space"*, which `./seed-area.ts`
+ *     applies as a preference order over positions rather than as a cost.
  *
- * **AND NOT BODY COLLISION.** The owner, 2026-10-14: *"Don't worry about body
- * collisions on the stripboard. It's extremely flexible."* A placement is its
- * pins, `Placement.holes` here is exactly `Placement.pins`' holes, and neither
- * `lib/kicad/footprint-extent.ts` nor `lib/kicad/formed-frame.ts` is imported -
- * both lost their only consumer to that ruling and a dependency here would
- * re-open a closed question.
+ * **BODY COLLISION IS STILL NOT REFUSED, and the distinction is the whole of how
+ * these rules coexist with the earlier ruling.** The owner, 2026-10-14: *"Don't
+ * worry about body collisions on the stripboard. It's extremely flexible."* So
+ * two bodies overlapping is admitted - his `buffered` board has four such pairs -
+ * and what is refused is a LEAD or a lead-bearing placement inside a RIGID
+ * part's area, which is routing under it rather than brushing against it.
+ *
+ * **`Placement.holes` IS STILL EXACTLY `Placement.pins`' HOLES.** The body enters
+ * through `./seed-area.ts`, which is a placement RULE, and never through the
+ * model's own notion of what a part occupies. `lib/kicad/footprint-extent.ts`
+ * and `lib/kicad/formed-frame.ts` are imported again - by
+ * `./seed-parts.ts` alone - because the two rules above cannot be applied without
+ * knowing how much space a part takes, and those two modules are the only things
+ * that derive it from the KiCad files rather than from memory.
  */
 import { holesOverlap, type Candidate, type Grid } from "./board.ts"
 import { derivedCuts, type ReferenceNets } from "./cuts.ts"
 import { describeViolations, violationsOf } from "./invariants.ts"
+import { routedUnderRigid } from "./seed-area.ts"
 import {
   placementOrder,
   refuse,
@@ -71,7 +89,8 @@ import {
   type Ordering,
   type SeedNetlist,
 } from "./seed-model.ts"
-import { joinNets, placeFixedField, placeTwoLead, workspaceFor } from "./seed-place.ts"
+import { placeFixedField, placeTwoLead } from "./seed-fit.ts"
+import { joinNets, workspaceFor } from "./seed-place.ts"
 import type { LeadSpan } from "../kicad/lead-span-model.ts"
 
 /** One ordering's candidate: placed, joined, and checked before it is handed back. */
@@ -87,6 +106,21 @@ function seedFrom(
     else placeTwoLead(workspace, part)
   }
   joinNets(workspace, netlist)
+  for (const area of workspace.areas) {
+    const under = routedUnderRigid(area, workspace.areas.filter((other) => other !== area))
+    if (under === null) continue
+    refuse(
+      "routed-under-rigid",
+      `ordering "${ordering.name}" produced a board on which "${under.guest}" has a lead in hole ` +
+        `${under.hole.strip},${under.hole.column}, inside the area "${under.host}" covers - and ` +
+        `"${under.host}" is a rigid part.\nThe owner's rule is that nothing is routed under one: ` +
+        "its terminals cannot be formed, so it cannot be jostled aside to get at the joint " +
+        "beneath it.\nEvery candidate column is checked for this before it is ranked " +
+        "(chooseColumn in lib/stripboard/seed-place.ts), so reaching here is a defect in that " +
+        "check rather than in the input - and it is refused rather than returned, because a " +
+        "board a person cannot solder is not a seed.",
+    )
+  }
   const candidate: Candidate = {
     grid,
     placements: workspace.placements,

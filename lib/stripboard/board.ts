@@ -233,6 +233,28 @@ function holeAt(origin: Hole, facing: Facing, xSteps: number, ySteps: number): H
 }
 
 /**
+ * The same turn, by DIRECTION rather than by `Facing`, for a caller outside this
+ * module that has a footprint-frame offset and needs the hole it lands on.
+ *
+ * **IT IS EXPORTED SO THAT `FACINGS` HAS ONE OWNER.** The four quarter-turns are
+ * a declared convention of this model (see `Facing` above), and
+ * `lib/stripboard/seed-area.ts` needs exactly that convention to turn a part's
+ * BODY box into board coordinates. The alternative was a second copy of the four
+ * sign triples, which is the shape of mistake this repository keeps finding: two
+ * places to keep in step, and a layout that disagrees with its own geometry when
+ * they drift. Re-spelling it there and leaving this one private would have been
+ * a supersede without the delete.
+ */
+export function holeInFrame(
+  origin: Hole,
+  direction: Placement["direction"],
+  xSteps: number,
+  ySteps: number,
+): Hole {
+  return holeAt(origin, FACINGS[direction], xSteps, ySteps)
+}
+
+/**
  * Re-raises a `lib/kicad/footprint-extent.ts` refusal under this module's own
  * key, and lets anything else through untouched.
  *

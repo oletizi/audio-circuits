@@ -25,11 +25,12 @@
  * `tests/kicad/footprint-names.test.ts` asserts exists in no installed library.
  * A plain placeholder name would be held to a real library it is not.
  */
-import { padHolesFor } from "../../../lib/kicad/formed-frame.ts"
 import { LEAD_SPANS } from "../../../lib/kicad/lead-span.ts"
 import type { LeadSpan } from "../../../lib/kicad/lead-span-model.ts"
 import { PIN_PATTERNS } from "../../../lib/kicad/pin-pattern.ts"
 import type { ReferenceNets } from "../../../lib/stripboard/cuts.ts"
+import type { BodyMargins } from "../../../lib/stripboard/seed-area.ts"
+import { seedPartsFrom } from "../../../lib/stripboard/seed-parts.ts"
 import type {
   Ordering,
   SeedFieldPin,
@@ -97,16 +98,33 @@ export function netlistOf(parts: readonly SeedPart[]): SeedNetlist {
   return { nets, parts }
 }
 
+/**
+ * A fixture part with NO body beyond its pads and nothing rigid about it, so a
+ * test of the strip rules is not also a test of the clearance rules.
+ *
+ * The clearance and rigidity rules get their own fixtures, which pass a body and
+ * `rigid: true` explicitly - see `bodied` and `rigidPart`.
+ */
+export const BARE: BodyMargins = {
+  beforeAlong: 0,
+  afterAlong: 0,
+  beforeAcross: 0,
+  afterAcross: 0,
+}
+
 export function twoLead(
   ref: string,
   footprint: string,
   a: readonly [string, string],
   b: readonly [string, string],
+  shape: { readonly rigid?: boolean; readonly body?: BodyMargins } = {},
 ): SeedPart {
   return {
     kind: "two-lead",
     ref,
     footprint,
+    rigid: shape.rigid === true,
+    body: shape.body ?? BARE,
     leads: [
       { pin: a[0], net: a[1] },
       { pin: b[0], net: b[1] },
@@ -118,8 +136,26 @@ export function fixedField(
   ref: string,
   footprint: string,
   field: readonly SeedFieldPin[],
+  shape: { readonly rigid?: boolean; readonly body?: BodyMargins } = {},
 ): SeedPart {
-  return { kind: "fixed-field", ref, footprint, field }
+  return {
+    kind: "fixed-field",
+    ref,
+    footprint,
+    rigid: shape.rigid === true,
+    body: shape.body ?? BARE,
+    field,
+  }
+}
+
+/** Margins that reach `holes` past the pads on every side. */
+export function bodied(holes: number): BodyMargins {
+  return {
+    beforeAlong: holes,
+    afterAlong: holes,
+    beforeAcross: holes,
+    afterAcross: holes,
+  }
 }
 
 export function ordering(name: string, nets: readonly string[], stride: number): Ordering {
@@ -137,88 +173,46 @@ export function refusalFrom(call: () => unknown): string {
 }
 
 /**
- * `transistor-preamp-feedback` as a `SeedNetlist`: the owner's hand-built board's
- * own circuit, read from the committed KiCad export it was laid out against.
+ * A committed board's circuit as a `SeedNetlist`, built by the core's own
+ * `seedPartsFrom` from the KiCad export the layout was made against.
  *
  * **NOTHING ABOUT THE HAND LAYOUT IS READ** - not its dump, not its placements,
  * not its cuts. The board is the benchmark and its figures are fixed data
- * (`C = 5`, `W = 4`, `B = 3`, counted from `transistor-preamp-feedback.dump`);
- * a seed built from its layout would be a seed graded against its own input.
+ * (`feedback`: `C = 5`, `W = 4`, `B = 3`; `buffered`: `C = 5`, `W = 4`,
+ * `B = 6`, each counted from its own dump); a seed built from a layout would be
+ * a seed graded against its own input.
  *
- * A part with exactly two terminals becomes a `two-lead` part, and the span lever
- * is the seed's; anything else becomes a `fixed-field` part whose geometry comes
- * from its recorded `PinPattern` (see the module comment).
+ * **THE GEOMETRY IS NOT DERIVED HERE ANY MORE.** The first version of this file
+ * read `padHolesFor` itself, because the core was forbidden to. That prohibition
+ * was lifted when the owner's clearance rules needed a part's real size, and
+ * `lib/stripboard/seed-parts.ts` is now the one place the pin field, the body
+ * margins and the rigidity are read. A second derivation here would be exactly
+ * the "supersede without the delete" this repository keeps catching.
  */
-export function feedbackNetlist(): { readonly netlist: SeedNetlist; readonly nets: ReferenceNets } {
-  const board = COMMITTED_BOARDS.find((entry) => entry.name === "transistor-preamp-feedback")
+export function committedNetlist(
+  name: string,
+): { readonly netlist: SeedNetlist; readonly nets: ReferenceNets } {
+  const board = COMMITTED_BOARDS.find((entry) => entry.name === name)
   if (board === undefined) {
     throw new Error(
-      "transistor-preamp-feedback is not in COMMITTED_BOARDS in " +
-        "tests/stripboard/vero-import-fixtures.ts, and it is the primary benchmark this plan " +
-        "measures against. Nothing is substituted: a seed measured on a different board is a " +
-        "figure against a different benchmark.",
+      `"${name}" is not in COMMITTED_BOARDS in tests/stripboard/vero-import-fixtures.ts. ` +
+        "Nothing is substituted: a seed measured on a different board is a figure against a " +
+        "different benchmark.",
     )
   }
   const nets = referenceOf(board)
-  const footprints = footprintsOf(board)
-  const byRef = new Map<string, SeedLead[]>()
-  for (const [net, pins] of nets) {
-    for (const id of pins) {
-      const dot = id.lastIndexOf(".")
-      const ref = id.slice(0, dot)
-      const lead: SeedLead = { pin: id.slice(dot + 1), net }
-      const already = byRef.get(ref)
-      if (already === undefined) byRef.set(ref, [lead])
-      else already.push(lead)
-    }
+  return {
+    netlist: seedPartsFrom(nets, footprintsOf(board), {
+      patterns: PIN_PATTERNS,
+      spans: LEAD_SPANS,
+    }),
+    nets,
   }
-  const parts: SeedPart[] = []
-  for (const [ref, leads] of [...byRef.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    const footprint = footprints.get(ref)
-    if (footprint === undefined) {
-      throw new Error(`the board's footprint map does not name "${ref}", so it cannot be placed.`)
-    }
-    const sorted = [...leads].sort((a, b) => a.pin.localeCompare(b.pin))
-    const [first, second] = sorted
-    if (sorted.length === 2 && first !== undefined && second !== undefined) {
-      parts.push({ kind: "two-lead", ref, footprint, leads: [first, second] })
-      continue
-    }
-    parts.push({ kind: "fixed-field", ref, footprint, field: fieldFor(footprint, sorted) })
-  }
-  return { netlist: { nets, parts }, nets }
 }
 
-function fieldFor(footprint: string, leads: readonly SeedLead[]): readonly SeedFieldPin[] {
-  const pattern = PIN_PATTERNS.get(footprint)
-  if (pattern === undefined) {
-    throw new Error(
-      `"${footprint}" has no recorded pin pattern, so the moulded field of a part fitted with ` +
-        "it cannot be derived. Record one in lib/kicad/pin-pattern.ts; nothing is guessed.",
-    )
-  }
-  if (pattern.classification.kind !== "rows") {
-    throw new Error(
-      `"${footprint}" does not decompose into rows (${pattern.classification.reason}), so there ` +
-        "is no along-row axis to lay across the strips.",
-    )
-  }
-  const axis = pattern.classification.axis
-  const holes = padHolesFor(pattern)
-  return leads.map((lead) => {
-    const hole = holes.find((candidate) => candidate.pad === lead.pin)
-    if (hole === undefined) {
-      throw new Error(
-        `"${footprint}" has no pad named "${lead.pin}", which the netlist puts on net ` +
-          `"${lead.net}". The pattern and the export disagree about this part's pin names.`,
-      )
-    }
-    return {
-      ...lead,
-      alongSteps: axis === "x" ? hole.xSteps : hole.ySteps,
-      acrossSteps: axis === "x" ? hole.ySteps : hole.xSteps,
-    }
-  })
+/** The primary benchmark: the owner laid it out by hand, built it, and uses it. */
+export function feedbackNetlist(): { readonly netlist: SeedNetlist; readonly nets: ReferenceNets } {
+  return committedNetlist("transistor-preamp-feedback")
 }
 
 /** Every recorded span, which is what a real board's parts are looked up in. */
