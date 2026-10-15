@@ -289,18 +289,15 @@ export function setupFor(instance: BenchmarkInstance, strategy: Strategy): Searc
       cutFloor: instance.targets.cutFloor,
       tau: RULES.tau,
       yieldFloor: RULES.yieldFloor,
-      // **THE CAP IS THIS RUN'S DECLARED BUDGET AND IS NOT THE COMMITTED ONE.**
-      // `stripboard/rules.json` carries 20,000, derived in its own note from
-      // the fork pipeline's 46.84 ms per evaluation - four subprocess launches.
-      // An evaluation here is a scored candidate in memory, so that derivation
-      // is void, and the plan says so: *"The stopping taxonomy is retained
-      // unchanged; only the budget rises, because the reason it was small is
-      // gone."* WHAT THE NEW FIGURE SHOULD BE IS A DECLARED UNKNOWN that Task
-      // 11 measures with a ladder and puts to the owner; nothing here proposes
-      // one. This figure exists only so that `Q5` is a backstop rather than the
-      // rule that ends every run, it is reported with every result, and the
-      // committed cap's behaviour on these instances is reported beside it.
-      evaluationCap: 2_000_000,
+      // **THE COMMITTED CAP, now that there is one worth committing.** This read
+      // a literal 2,000,000 while Task 11's ladder was the declared unknown that
+      // would settle it. The ladder ran, the owner set the parameter to 200,000
+      // on 2026-10-15, and the literal is DELETED rather than left beside the
+      // value it was standing in for - a fixture that keeps its own budget would
+      // mean the gate ran at a figure nobody chose, and would go on passing if
+      // the committed one were set to something a healthy run could not finish
+      // in.
+      evaluationCap: RULES.evaluationCap,
       signatureRun: RULES.signatureRun,
     },
     admissible: soundnessOnly(instance),
