@@ -380,7 +380,24 @@ function relocation(
     for (let at = 1; at < strips.length; at += 1) {
       const low = strips[at - 1]
       const high = strips[at]
-      if (low === undefined || high === undefined) continue
+      if (low === undefined || high === undefined) {
+        // **A TYPE NARROWING AND NOT A GUARD**, and it REFUSES rather than
+        // skipping, for the reason the skip would be wrong: a `continue` here
+        // omits one join from the chain that makes `net` whole, so the proposal
+        // comes back with an OPEN in it and reads to a search exactly like a
+        // sound board. The honest "no column will serve" answer is the
+        // `undefined` `joinColumnFor` returns, which rejects the whole
+        // proposal; a dropped pair is neither. The loop runs `1 <= at <
+        // strips.length` over the array `stripsOfNet` just returned, so the
+        // branch is here only because `noUncheckedIndexedAccess` types an index
+        // read `| undefined`. No test asserts it; a mutation run cannot kill it.
+        refuse(
+          "join-strip-index-lost",
+          `index ${at} names no strip of net "${net}", and this loop walks the ${strips.length} ` +
+            "strips stripsOfNet just returned, so the read cannot be absent.\nFix stripsOfNet " +
+            "or this loop; nothing is substituted and the join is not quietly dropped.",
+        )
+      }
       const column = joinColumnFor(site, low, high)
       if (column === undefined) return undefined
       if (high - low === 1) bridges.push({ column, strips: [low, high], net })

@@ -349,7 +349,26 @@ export function derivedCuts(candidate: Candidate, reference: ReferenceNets): rea
   for (let index = 1; index < runs.length; index += 1) {
     const earlier = runs[index - 1]
     const later = runs[index]
-    if (earlier === undefined || later === undefined) continue
+    if (earlier === undefined || later === undefined) {
+      // **A TYPE NARROWING AND NOT A GUARD**, and it REFUSES rather than
+      // skipping, for the reason the skip would be wrong: a `continue` here
+      // omits the cut between two runs of different nets, so the pair is left
+      // joined and the board carries a short that `./connectivity.ts` then has
+      // to catch - a defect reported one module away from the derivation that
+      // caused it. The loop runs `1 <= index < runs.length` over the array
+      // `runsOf` just returned, so neither read can be absent; the branch is
+      // here only because `noUncheckedIndexedAccess` types an index read as
+      // `| undefined` and this repository forbids `as` and `@ts-ignore`, which
+      // leaves a throw as the only way to narrow it. Same shape and same loud
+      // answer as `invariants.ts`'s witness narrowing and `join-column.ts`'s
+      // `better`. No test asserts it and a mutation run cannot kill it.
+      refuse(
+        "cuts-run-index-lost",
+        `index ${index} names no run, and this loop walks the run list runsOf just built from ` +
+          `${runs.length} runs, so the read cannot be absent.\nFix runsOf or this loop; nothing ` +
+          "is substituted and the gap is not quietly left uncut.",
+      )
+    }
     if (earlier.strip !== later.strip) continue
     cuts.push({ strip: earlier.strip, afterColumn: gapFor(earlier.lastColumn, later.firstColumn) })
   }
