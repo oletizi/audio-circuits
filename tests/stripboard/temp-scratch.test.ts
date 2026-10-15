@@ -42,6 +42,7 @@ import { freshRunDir } from "./climb-fixtures.ts"
 import { freshSearchDir } from "./search-fixtures.ts"
 import { freshPassDir } from "./complete-fixtures.ts"
 import { fixtureDeclaration } from "./grade-fixtures.ts"
+import { roundTrip } from "./vero-export-fixtures.ts"
 
 afterAll(cleanUpTempScratch)
 
@@ -64,6 +65,7 @@ const REGISTERING: Readonly<Record<string, readonly string[]>> = {
   "search-fixtures.ts": ["freshSearchDir"],
   "complete-fixtures.ts": ["freshPassDir"],
   "grade-fixtures.ts": ["fixtureDeclaration"],
+  "vero-export-fixtures.ts": ["roundTrip"],
   "run-scratch.ts": ["freshRoot", "registerCreated", "scratchStamp", "registerStampPrefix"],
 }
 
