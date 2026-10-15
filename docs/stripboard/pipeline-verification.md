@@ -5060,8 +5060,15 @@ spreads one field over the setup those return:
 
 Measured at **`b8a8ad5`** — the commit of §15.1 above, which is the state of
 `lib/stripboard/` as Task 10 delivered it plus this document's ceilings. No
-file under `lib/`, `tools/`, `tests/` or `stripboard/` differs from
-`3b4b700`, Task 10's last.
+file under `lib/`, `tools/`, `tests/` or `stripboard/` differed from
+`3b4b700`, Task 10's last, at the moment the 70 runs were made.
+
+**A commit from a concurrent session landed nineteen seconds after the ladder
+finished** — `0e8b9ab`, two comments and two assertions in
+`tests/stripboard/model/search.test.ts` and `search-stop.test.ts`. It is
+recorded here rather than left for a reader to trip over: it touches no file
+under `lib/`, no fixture and no parameter, so every figure below reproduces at
+`HEAD`, but the ladder was measured at `b8a8ad5` and not at it.
 
 **ONE PARAMETER MOVED AND NOTHING ELSE DID.** `stripboard/rules.json` is
 untouched — `loadRules()` reads it for every other parameter on every one of
