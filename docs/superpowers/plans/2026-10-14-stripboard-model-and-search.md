@@ -99,6 +99,42 @@ withdrawn as a benchmark on separate grounds.
 **If a task finds itself about to write "the terminal block needs a record", the correct
 sentence is "the frozen fixture is excluded; see the standing exclusion."**
 
+## OWNER RULINGS, 2026-10-14: CLUSTER, AND LEAVE ROOM TO WORK
+
+**Verbatim:** *"I try to cluster related parts, AND I try to give myself room to work. I have
+actual fingers—I'm not a pick and place machine."* And on spacing: *"Rigid parts shouldn't be
+routed through/under. Resistors, diodes, most capacitors can be jostled out of the way of
+each other, but if there's room for parts to have their own space, they should be given that
+space. Dense layouts are harder to work with than layouts with enough room."*
+
+**This is a build constraint, not a taste one.** A part wedged between two others cannot be
+soldered by a person with a hand and an iron. That is why it is the owner's to state and why
+it does not fall under `OBJ2`'s ban — a legibility metric invented by an agent would be the
+agent's taste; a clearance a builder's fingers require is a fact about building.
+
+**THE DEFECT THIS NAMES, measured on Task 6's best seed.** The stock is 34 strips × 27
+columns — **918 holes**. The seed used 31 strips × **3 columns** and put 37 leads in them,
+leaving roughly **790 holes untouched** while stacking a 10 mm electrolytic on a trim pot.
+It spread along one axis to the limit and never reached sideways at all. The owner's word
+for the result: *"kafkaesque"*.
+
+**IT IS A CONSTRUCTION DEFECT, NOT AN OBJECTIVE DEFECT, and that distinction decides who
+may fix it.** `F = C + 0.25·W + 0.25·B` contains nothing that prefers a narrow board. A
+layout using the width, with parts near their own nets, needs *fewer* wires and therefore
+scores **better** than the ribbon. The seeder assigns one net per strip and drops parts into
+the first free columns; nothing in it reaches sideways. It is not choosing density — it
+never considers the alternative. **So the objective is not touched**, which matters because
+changing it is the one thing an agent may not do on its own judgement, while changing a
+constructor is ordinary work.
+
+**THE NUMBER COMES FROM HIS OWN BUILT BOARDS, NOT FROM AN AGENT.** "Enough room" needs a
+figure, and an agent choosing one would be setting its own grade. `transistor-preamp-feedback`
+and `transistor-preamp-buffered` were laid out by hand **and built and used**, so the
+clearance he actually leaves is recorded in them. Measure it there and cite the boards, the
+same way the forming anchor was settled from KiCad's own files rather than from a guess. If
+the measurement does not yield a usable figure, **report that and ask him** — do not
+substitute one.
+
 ## Global Constraints
 
 - **An agent may never author the acceptance criteria for the artifact it is producing.** No new term in `F`, no eleventh hard constraint, **no legibility metric**, no tuned threshold introduced by the thing being measured.
