@@ -57,6 +57,7 @@ import {
   type StoppingParameters,
 } from "../../../lib/stripboard/search-stop.ts"
 import { objectiveOf } from "../../../lib/stripboard/score.ts"
+import { loadRules } from "../../../tools/stripboard/rules.ts"
 import { at } from "./cuts-fixtures.ts"
 import {
   AXIAL,
@@ -76,6 +77,14 @@ import { refusalFrom, WEIGHTS } from "./seed-fixtures.ts"
  * beside them: `C_floor = max(0, N - R)` (CRITERIA), and on every fixture here
  * `N <= R`, so it is 0. The figure is checked rather than asserted - each
  * fixture's net count and strip count are read below.
+ *
+ * **THE FOUR RULES PARAMETERS ARE SPELLED AND NOT READ**, which is the pattern
+ * `./score.test.ts` and `./seed-fixtures.ts` use for the weights: a figure the
+ * fixtures were worked out against is written where a reader can see it, and the
+ * claim that it is the committed one is PINNED by the test below rather than
+ * asserted in prose. The first round of this file carried the claim and no pin,
+ * and `evaluationCap` moved from 20000 to 200000 while it stood - which would
+ * have left the comment quietly false. The pin fails loudly on the next move.
  */
 function stopping(overrides: Partial<StoppingParameters> = {}): StoppingParameters {
   return {
@@ -87,6 +96,24 @@ function stopping(overrides: Partial<StoppingParameters> = {}): StoppingParamete
     ...overrides,
   }
 }
+
+test("the stopping figures `stopping` spells are the ones the committed rules file carries", () => {
+  // A test may import `tools/`; the module under test may not - the division
+  // `./invariants-agree.test.ts` states, and `./benchmark-fixtures.ts` and
+  // `./score.test.ts` both already read the rules file from here.
+  const committed = loadRules()
+  const spelled = stopping()
+  expect(committed.tau, "tau, from stripboard/rules.json").toBe(spelled.tau)
+  expect(committed.yieldFloor, "yieldFloor, from stripboard/rules.json").toBe(spelled.yieldFloor)
+  expect(committed.evaluationCap, "evaluationCap, from stripboard/rules.json")
+    .toBe(spelled.evaluationCap)
+  expect(committed.signatureRun, "signatureRun, from stripboard/rules.json")
+    .toBe(spelled.signatureRun)
+  // AND `cutFloor` IS NOT PINNED HERE BECAUSE IT IS NOT IN THE FILE: it is
+  // `max(0, N - R)` per fixture, and this line is the witness that the rules
+  // file does not carry one, so a later reader does not look for it above.
+  expect(Object.keys(committed)).not.toContain("cutFloor")
+})
 
 /** Soundness as the model states it, which is what the fixtures can prove. */
 function soundOnly(candidate: Candidate, cuts: ReturnType<typeof derivedCuts>): boolean {
