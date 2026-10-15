@@ -66,6 +66,7 @@ import {
 } from "../../../lib/stripboard/seed-area.ts"
 import { bodyMarginsFor, seedPartsFrom } from "../../../lib/stripboard/seed-parts.ts"
 import { seedsFrom } from "../../../lib/stripboard/seed.ts"
+import { rigidOverlapPlaces, routedUnderRigidPlaces } from "./area-places.ts"
 import {
   RECORDED_SPANS,
   STOCK,
@@ -110,34 +111,15 @@ function overlappingPairs(areas: readonly PartArea[]): readonly string[] {
 }
 
 /**
- * The overlapping pairs in which at least one part is RIGID - the ones the
- * owner's 2026-10-15 directive refuses, as against the formable-on-formable ones
- * his earlier directives admit.
+ * **BOTH MEASUREMENTS MOVED TO `./area-places.ts`**, which is now their one
+ * owner: `./benchmark-fixtures.ts` needs the same two answers about an imported
+ * hand board and `../exemptions.test.ts` consults the recorded exemptions
+ * against them, and a second spelling of "where does this board break
+ * `rigidOverlap`" is a second place for the answer to come out differently. The
+ * local names are kept so the assertions below read as they did.
  */
-function rigidOverlappingPairs(areas: readonly PartArea[]): readonly string[] {
-  const pairs: string[] = []
-  for (const [index, a] of areas.entries()) {
-    for (const b of areas.slice(index + 1)) {
-      if (!a.rigid && !b.rigid) continue
-      if (rectsOverlap(a.rect, b.rect)) pairs.push(`${a.ref}/${b.ref}`)
-    }
-  }
-  return pairs
-}
-
-function leadsUnderRigid(areas: readonly PartArea[]): readonly string[] {
-  const found: string[] = []
-  for (const host of areas) {
-    if (!host.rigid) continue
-    for (const guest of areas) {
-      if (guest.ref === host.ref) continue
-      for (const lead of guest.leads) {
-        if (holeInRect(lead, host.rect)) found.push(`${guest.ref} under ${host.ref}`)
-      }
-    }
-  }
-  return found
-}
+const rigidOverlappingPairs = rigidOverlapPlaces
+const leadsUnderRigid = routedUnderRigidPlaces
 
 test("the hard rule against his own boards, measured: ONE lead under a rigid part", () => {
   // 37 parts and 85 leads between the two, and this figure MOVED when the
@@ -174,6 +156,26 @@ test("the hard rule against his own boards, measured: ONE lead under a rigid par
     "feedback puts R4's lower lead in RV4's rectangle, and nothing else under a rigid part",
   ).toEqual(["R4 under RV4"])
   expect(leadsUnderRigid(buffered.areas), "buffered routes nothing under a rigid part").toEqual([])
+
+  // **AND IT IS A RECORDED EXEMPTION RATHER THAN AN ARGUMENT HAD AGAIN.** Both
+  // boards are exempt from both hard rules - `stripboard/exemptions.json`,
+  // granted by the owner on 2026-10-15 with his words and the reason - so what
+  // these counts mean is settled: *"My ad-built boards should be exempt from the
+  // stricter standards of our new tooling"*, his typo preserved. **IT IS
+  // REPORTED, NOT INVISIBLE**: three of the four measured rule/board pairs have
+  // something to say and each says it in one line naming the board, the rule and
+  // the count. An exempt breach that went quiet would be a skipped check wearing
+  // a pass.
+  for (const board of [feedback, buffered]) {
+    for (const verdict of board.exemptions) {
+      expect(verdict.outcome, `${board.name} / ${verdict.rule}`).not.toBe("unexcused")
+    }
+  }
+  expect([...feedback.notices, ...buffered.notices]).toHaveLength(3)
+  for (const notice of [...feedback.notices, ...buffered.notices]) {
+    expect(notice).toStartWith("stripboard-exempt:")
+    expect(notice.includes("\n"), "one line").toBe(false)
+  }
 })
 
 test("THE PREMISE OF EVERY FIGURE HERE: a part's rectangle contains its own leads", () => {

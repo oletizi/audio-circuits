@@ -312,6 +312,15 @@ const ACCOUNTED: Readonly<Record<string, readonly string[]>> = {
   // a value the code uses.
   "cut-necessity.ts": ["2026"],
   "equivalence.ts": ["2026"],
+  // The spec filename `2026-10-08-agent-authored-boards-design.md`, cited inside
+  // the refusal that only the owner may grant an exemption - that document is
+  // where "an agent may never author the acceptance criteria for the artifact it
+  // is producing" is recorded, and the refusal names its authority rather than
+  // asserting the rule on its own account. A citation, not a value. It sits in
+  // `exemptions-read.ts` rather than `exemptions.ts` because that is where the
+  // per-entry refusals went when the loader was split at the 500-line ceiling -
+  // the same move `score.ts`/`score-model.ts` above records.
+  "exemptions-read.ts": ["2026"],
   "geometry-contract.ts": ["1.5"],
   // The four section citations moved with the refusal prose when `score.ts`
   // was split at the declarations seam for the line ceiling; `score.ts` itself

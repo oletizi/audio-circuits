@@ -47,6 +47,13 @@
  */
 import fs from "node:fs"
 import { parseBoardDump } from "../../../tools/guide/dump.ts"
+import {
+  EXEMPTABLE_RULES,
+  loadExemptions,
+  noticesOf,
+  verdictFor,
+  type ExemptionVerdict,
+} from "../../../tools/stripboard/exemptions.ts"
 import { facingOf, type PinHole } from "../../../tools/stripboard/vero-import-facing.ts"
 import { LEAD_SPANS } from "../../../lib/kicad/lead-span.ts"
 import { PIN_PATTERNS } from "../../../lib/kicad/pin-pattern.ts"
@@ -54,6 +61,7 @@ import type { Hole, Placement } from "../../../lib/stripboard/board.ts"
 import { partAreasOf } from "../../../lib/stripboard/moves.ts"
 import type { PartArea } from "../../../lib/stripboard/seed-area.ts"
 import { COMMITTED_BOARDS, footprintsOf } from "../vero-import-fixtures.ts"
+import { rigidOverlapPlaces, routedUnderRigidPlaces } from "./area-places.ts"
 
 /** One hand-built board, reduced to the areas its parts cover and the wires it carries. */
 export interface HandBoard {
@@ -61,6 +69,52 @@ export interface HandBoard {
   readonly areas: readonly PartArea[]
   readonly wires: readonly { readonly from: Hole; readonly to: Hole }[]
   readonly skipped: readonly string[]
+  /**
+   * What the two hard area rules find on this board, answered against
+   * `stripboard/exemptions.json` - one verdict per rule, in `EXEMPTABLE_RULES`
+   * order.
+   *
+   * **THE REGISTRY IS CONSULTED WHERE THE BOARD IS MEASURED**, which is here: a
+   * measurement that reported a breach with no idea whether it was excused would
+   * make somebody re-litigate the question, and the owner granted the exemption
+   * precisely so that stops happening - *"so we don't have to keep having this
+   * dumb conversation"*. A verdict is a union and not a boolean, so a caller
+   * cannot take it for silence; `notices` is what it has to say out loud.
+   */
+  readonly exemptions: readonly ExemptionVerdict[]
+  /** The lines `exemptions` requires a run to report. Empty only if nothing was found. */
+  readonly notices: readonly string[]
+}
+
+/**
+ * The two hard area rules measured over one board's areas and answered against
+ * the recorded exemptions.
+ *
+ * **AN EXEMPT BOARD DOES NOT FAIL AND DOES NOT GO QUIET.** `transistor-preamp-
+ * feedback` and `transistor-preamp-buffered` were laid out by hand, built, and
+ * are in use; they predate this tooling and were never held to it, and that is
+ * recorded with its reason and provenance rather than argued again. What is NOT
+ * recorded anywhere is permission to stop mentioning it.
+ */
+function exemptionsFor(name: string, areas: readonly PartArea[]): readonly ExemptionVerdict[] {
+  const registry = loadExemptions()
+  const places: ReadonlyMap<string, readonly string[]> = new Map([
+    ["rigidOverlap", rigidOverlapPlaces(areas)],
+    ["routedUnderRigid", routedUnderRigidPlaces(areas)],
+  ])
+  return EXEMPTABLE_RULES.map((rule) => {
+    const found = places.get(rule)
+    if (found === undefined) {
+      throw new Error(
+        `${name}: no measurement for "${rule}". Every rule in EXEMPTABLE_RULES must be measured ` +
+          "here before it is consulted about, because a rule nothing measures is a rule whose " +
+          "exemption can never be checked - and an unmeasured rule reported as clean is the " +
+          "skipped check that looks like a passing one. Add its measurement to " +
+          "tests/stripboard/model/area-places.ts and name it above; nothing is assumed clean.",
+      )
+    }
+    return verdictFor(registry, { subject: name, rule, places: found })
+  })
 }
 
 /**
@@ -120,29 +174,33 @@ export function handBoard(name: string): HandBoard {
     }
     placements.push(placed)
   }
+  // THE WIRES AND BRIDGES OF THIS Candidate ARE EMPTY AND THE VALUE NEVER
+  // LEAVES THIS FUNCTION. `partAreasOf` answers a question about PARTS - it
+  // reads `candidate.placements` and nothing else - and this board's real
+  // wires are returned beside the areas below, read off the dump. Carrying
+  // them here would mean inventing each one's declared net, which `Wire`
+  // requires and the dump does not state for `buffered`; that invention is
+  // the whole reason `candidateFromDump` refuses that board.
+  const areas = partAreasOf(
+    {
+      grid: { strips: dump.grid.rows, columns: dump.grid.cols },
+      placements,
+      wires: [],
+      bridges: [],
+    },
+    LEAD_SPANS,
+    PIN_PATTERNS,
+  )
+  const exemptions = exemptionsFor(name, areas)
   return {
     name,
-    // THE WIRES AND BRIDGES OF THIS Candidate ARE EMPTY AND THE VALUE NEVER
-    // LEAVES THIS FUNCTION. `partAreasOf` answers a question about PARTS - it
-    // reads `candidate.placements` and nothing else - and this board's real
-    // wires are returned beside the areas below, read off the dump. Carrying
-    // them here would mean inventing each one's declared net, which `Wire`
-    // requires and the dump does not state for `buffered`; that invention is
-    // the whole reason `candidateFromDump` refuses that board.
-    areas: partAreasOf(
-      {
-        grid: { strips: dump.grid.rows, columns: dump.grid.cols },
-        placements,
-        wires: [],
-        bridges: [],
-      },
-      LEAD_SPANS,
-      PIN_PATTERNS,
-    ),
+    areas,
     wires: dump.wires.map((wire) => ({
       from: { strip: wire.ends[0].row, column: wire.ends[0].col },
       to: { strip: wire.ends[1].row, column: wire.ends[1].col },
     })),
     skipped,
+    exemptions,
+    notices: noticesOf(exemptions),
   }
 }

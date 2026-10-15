@@ -45,6 +45,7 @@ import { PIN_PATTERNS } from "../../../lib/kicad/pin-pattern.ts"
 import type { Candidate } from "../../../lib/stripboard/board.ts"
 import { derivedCuts, type ReferenceNets } from "../../../lib/stripboard/cuts.ts"
 import { violationsOf } from "../../../lib/stripboard/invariants.ts"
+import { partAreasOf } from "../../../lib/stripboard/moves.ts"
 import { objectiveOf } from "../../../lib/stripboard/score.ts"
 import { seedsFrom } from "../../../lib/stripboard/seed.ts"
 import type { Ordering, SeedNetlist } from "../../../lib/stripboard/seed-model.ts"
@@ -55,6 +56,13 @@ import {
   type Start,
   type Strategy,
 } from "../../../lib/stripboard/search.ts"
+import {
+  EXEMPTABLE_RULES,
+  loadExemptions,
+  noticesOf,
+  verdictFor,
+  type ExemptionVerdict,
+} from "../../../tools/stripboard/exemptions.ts"
 import { loadRules, type StripboardRules } from "../../../tools/stripboard/rules.ts"
 import {
   countLines,
@@ -70,6 +78,7 @@ import {
   referenceOf,
   type CommittedBoard,
 } from "../vero-import-fixtures.ts"
+import { rigidOverlapPlaces, routedUnderRigidPlaces } from "./area-places.ts"
 import { committedNetlist, derivedOrderings } from "./seed-fixtures.ts"
 
 /** The owner's reviewed parameters, read from `stripboard/rules.json` as committed. */
@@ -130,6 +139,56 @@ export interface BenchmarkInstance {
   readonly importedStart: Start | undefined
   /** Every start that was attempted and refused. Reported, never hidden. */
   readonly unavailableStarts: readonly UnavailableStart[]
+  /**
+   * What the two hard area rules find on the IMPORTED start, answered against
+   * `stripboard/exemptions.json` - empty when there is no imported start.
+   *
+   * **A HAND BOARD ENTERS THE SEARCH CARRYING WHAT IT CARRIES, AND THE RUN SAYS
+   * SO.** `transistor-preamp-feedback` imports with two rigid overlaps (`Q1/RV3`
+   * and `R4/RV4`) and one lead under a rigid part (`R4 under RV4`): breaches of
+   * two rules the move generator refuses to CREATE and which an imported start
+   * was never held to. Nothing in `lib/stripboard/` re-checks the start against
+   * them - `movesFrom` checks the part it moves, not the board it was handed -
+   * so without this the run would climb from a board breaking two hard rules and
+   * never mention it. **That is the shape of silence this repository punishes
+   * hardest**, and an exemption is what makes it a stated fact rather than
+   * either a failure or a secret.
+   */
+  readonly importedStartExemptions: readonly ExemptionVerdict[]
+}
+
+/**
+ * The two hard area rules measured over an imported start, answered against the
+ * recorded exemptions, **and reported on the spot**.
+ *
+ * The `console.log` is the point rather than debug output: the design the owner
+ * approved is that an exempt breach is *reported, not invisible* - one line
+ * naming the board, the rule and the count - and the run then proceeds. The
+ * lines are carried on the instance as well, so a test can assert them; printing
+ * without keeping them would make the claim unverifiable, and keeping them
+ * without printing would make it silent.
+ */
+function importedExemptions(name: string, candidate: Candidate): readonly ExemptionVerdict[] {
+  const registry = loadExemptions()
+  const areas = partAreasOf(candidate, LEAD_SPANS, PIN_PATTERNS)
+  const places: ReadonlyMap<string, readonly string[]> = new Map([
+    ["rigidOverlap", rigidOverlapPlaces(areas)],
+    ["routedUnderRigid", routedUnderRigidPlaces(areas)],
+  ])
+  const verdicts = EXEMPTABLE_RULES.map((rule) => {
+    const found = places.get(rule)
+    if (found === undefined) {
+      throw new Error(
+        `${name}: no measurement for "${rule}" on the imported start. Every rule in ` +
+          "EXEMPTABLE_RULES must be measured before it is consulted about: an unmeasured rule " +
+          "reported as clean is a skipped check that looks like a passing one. Add it to " +
+          "tests/stripboard/model/area-places.ts and name it above; nothing is assumed clean.",
+      )
+    }
+    return verdictFor(registry, { subject: name, rule, places: found })
+  })
+  for (const line of noticesOf(verdicts)) console.log(line)
+  return verdicts
 }
 
 function boardNamed(name: string): CommittedBoard {
@@ -246,6 +305,7 @@ function instanceFor(name: string): BenchmarkInstance {
     importedStart:
       imported === undefined ? undefined : { name: "imported hand board", candidate: imported },
     unavailableStarts,
+    importedStartExemptions: imported === undefined ? [] : importedExemptions(name, imported),
   }
 }
 
