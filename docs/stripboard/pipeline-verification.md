@@ -4656,3 +4656,263 @@ Reaching that figure again would mean deliberately re-poisoning the machine this
 task exists to clear, so it was not done. Siblings created anywhere other than
 `TMPDIR` itself would not exercise the same lookup and would prove nothing. What
 can be said is bounded and measured: not at 28,986.
+
+## 14. Task 10 of the model-and-search plan — the search loop against the owner's own boards: **the gate is MATCHED on both instances and both strategies, `F` 6.75 to 3.25 and 7.5 to 4.25, and the search contributed nothing on one of the two**
+
+**WHY THIS SECTION EXISTS.** Task 10 is the point the model-and-search rewrite
+was aimed at, and its deliverable is a number rather than a feature. The
+benchmark is exact-instance regression against two boards the owner laid out by
+hand, built, and uses — so the threshold is fixed data, already measured and
+committed, and **not adjustable by whoever is trying to pass it.** Everything
+below is read off a run rather than derived, and the two figures that are NOT
+flattering are stated in the heading beside the two that are.
+
+### 14.1 The command, the commit, and where every number comes from
+
+```
+  bun test tests/stripboard/model/benchmark.test.ts
+  bun test tests/stripboard/model/search.test.ts
+```
+
+Commit: `54147c3` on `feature/pultec-modular-scaffolding`. **No
+VeroRoute is involved**: `lib/stripboard/` may not import from `tools/` and may
+not spawn a process, which `tests/stripboard/model/no-fork.test.ts` enforces over
+the whole import closure, and the benchmark runs inside that guarded suite.
+
+| quantity | where it comes from | not |
+| --- | --- | --- |
+| the hand boards' `C`, `W`, `B` | `countLines` in `tools/stripboard/score.ts`, over each board's own committed `.dump` | a figure typed into a test |
+| the hand boards' `F` | that module's own `objectiveOf`, with `stripboard/rules.json`'s weights | this plan's arithmetic |
+| a candidate's `C` | `derivedCuts` in `lib/stripboard/cuts.ts` | a `CUT` line count |
+| a candidate's `F` | `objectiveOf` in `lib/stripboard/score.ts` | a second weight table |
+| `C_floor`, `N`, `P`, the `rcm` ordering | `targetsFromReference` in `tools/stripboard/targets-export.ts` | a formula respelled in a fixture |
+| whether every net is whole | `violationsOf` in `lib/stripboard/invariants.ts` | the absence of a complaint |
+
+### 14.2 The two strategies, declared before they were measured
+
+Both are in `lib/stripboard/search-strategy.ts`, and **neither is called the
+default.** The acceptance rule, the move set and the stopping rules are fixed and
+belong to the loop; a strategy owns only *which proposals a round looks at, in
+what order, and when it commits*, and it sees a proposal only through
+`Acceptance.consider` — which is where the weights, the cut derivation, the
+soundness check and the evaluation counter all live.
+
+- **`steepest-descent`** — consider every proposal of a round, take the cheapest
+  the acceptance rule admitted, ties to `movesFrom`'s declared order.
+- **`first-improvement`** — take the first admitted proposal and stop looking.
+
+### 14.3 Step 1 — the before state, per starting point
+
+Nothing to beat yet. These are the starts' own costs, so that the search's
+contribution is separable from the constructive seed's.
+
+| instance | starting point | grid | `C` | `W` | `B` | `F` | nets whole |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `transistor-preamp-feedback` | hand board, as built (the threshold) | 16 × 18 | 5 | 4 | 3 | **6.75** | — |
+| | `seed part-walk s3` | 34 × 27 | 0 | 10 | 5 | 3.75 | yes |
+| | `seed rcm s2` | 34 × 27 | 0 | 11 | 4 | 3.75 | yes |
+| | `seed rcm s3` | 34 × 27 | 0 | 9 | 5 | 3.50 | yes |
+| | `imported hand board` | 16 × 18 | 5 | 4 | 3 | 6.75 | yes |
+| `transistor-preamp-buffered` | hand board, as built (the threshold) | — | 5 | 4 | 6 | **7.50** | — |
+| | `seed rcm s2` | 34 × 27 | 0 | 12 | 5 | 4.25 | yes |
+
+**THE CONSTRUCTED SEED ALREADY BEATS BOTH HAND BOARDS ON `F` BEFORE ANY SEARCH
+RUNS**, and that is the honest reading of the first four rows: 3.50 against 6.75,
+and 4.25 against 7.50. It is paid in board area — the seed spreads across the
+whole 34 × 27 stock where the owner's `feedback` board is 16 × 18 — and **area is
+not a criterion.** He was shown three rendered boards for one circuit on
+2026-10-14, was told plainly that his own beat both of ours on size *and* on cut,
+wire and bridge count together, and ruled *"I much prefer the one with zero
+cuts."* So the comparison against the hand board is reported as context and the
+benchmark question is whether the search improves on the SEED.
+
+**THREE STARTING POINTS WERE ATTEMPTED AND REFUSED, and they are listed because
+an unavailable start must not read as one nobody tried.**
+
+| instance | start | refusal |
+| --- | --- | --- |
+| `transistor-preamp-buffered` | `seed part-walk s3` | `stripboard-seed-ordering-off-board` — the thirteenth net lands on strip 36 against 34 strips |
+| `transistor-preamp-buffered` | `seed rcm s3` | the same, on `/BASE_GROUND_FLOOR` |
+| `transistor-preamp-buffered` | `imported hand board` | `vero-import-bridge-net-unknown` — `SOLDER 13,21 14,21` joins two holes holding no pin and no wire end, so the net it carries is nowhere in the dump |
+
+**ALL FIFTEEN OF `derivedOrderings`' RULES REFUSE ON `buffered`** — five rules at
+strides 1, 2 and 3, measured rather than assumed: at stride 3 the layout runs off
+the stock, at stride 2 `RV3`/`RV4`'s moulded field cannot be seated, and at
+stride 1 `J1`'s two leads cannot reach. That is why a sixth ordering is in the
+start list at all: `rcm` is `tools/stripboard/targets.ts`'s own reverse
+Cuthill-McKee arrangement — **the repository's, not a rule invented for this
+benchmark** — and it was put in front of BOTH boards rather than only the one
+that needed it. Without it the `buffered` instance has no constructed start and
+cannot be run.
+
+### 14.4 Step 2 — the result, per instance, per starting point, per strategy
+
+| instance | run | strategy | `C` | `W` | `B` | `F` | stop | evaluations | nets whole |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `feedback` | from the seeds | `steepest-descent` | 0 | 9 | 4 | **3.25** | `Q4` | 36,250 | yes |
+| `feedback` | from the seeds | `first-improvement` | 0 | 9 | 4 | **3.25** | `Q4` | 22,428 | yes |
+| `feedback` | from the hand board | `steepest-descent` | 4 | 5 | 3 | **6.00** | `Q3` | 3,069 | yes |
+| `feedback` | from the hand board | `first-improvement` | 4 | 5 | 3 | **6.00** | `Q3` | 2,062 | yes |
+| `buffered` | from the seeds | `steepest-descent` | 0 | 12 | 5 | **4.25** | `Q3` | 11,255 | yes |
+| `buffered` | from the seeds | `first-improvement` | 0 | 12 | 5 | **4.25** | `Q3` | 11,255 | yes |
+
+**Every net is whole on every result**, by `violationsOf` over the result's own
+derived cuts — which is also the acceptance rule, so no run could have returned
+otherwise without the loop being wrong.
+
+**The climbs, which is where the search's own contribution is.**
+
+```
+  feedback, from the seeds, steepest-descent        stop Q4
+    seed part-walk s3   F 3.75 -> 3.50 -> 3.25   2 moves accepted, 3 rounds, 26,854 evaluations
+    seed rcm s2         F 3.75 -> 3.75           0 moves accepted, 1 round,   9,396 evaluations
+    seed rcm s3         F 3.50                   never climbed - Q4 fired at this climb's boundary
+
+  feedback, from the seeds, first-improvement       stop Q4
+    seed part-walk s3   F 3.75 -> 3.50 -> 3.25   2 moves accepted, 3 rounds, 13,032 evaluations
+    seed rcm s2         F 3.75 -> 3.75           0 moves accepted, 1 round,   9,396 evaluations
+    seed rcm s3         F 3.50                   never climbed - Q4 fired at this climb's boundary
+
+  feedback, from the hand board, steepest-descent   stop Q3
+    imported            F 6.75 -> 6.00           1 move accepted,  2 rounds,  3,069 evaluations
+
+  buffered, from the seeds, both strategies         stop Q3
+    seed rcm s2         F 4.25                   0 moves accepted, 1 round,  11,255 evaluations
+```
+
+**THE `part-walk s3` CLIMB REPRODUCES THE RECORDED BASELINE EXACTLY** — `F` 3.75
+→ 3.50 → 3.25 in two accepted moves, ending at 0 cuts, 9 wires and 4 bridges —
+which is the check that the loop is doing what the move generator's own
+measurements said it could.
+
+**THE SEARCH IMPROVED THE OWNER'S OWN BOARD.** From his `feedback` layout, both
+strategies trade one cut for one wire: `C` 5 → 4, `W` 4 → 5, `F` 6.75 → 6.00, on
+the 16 × 18 piece he actually cut and with every net whole. That is the
+*"even a human starting point"* case working, and it is one accepted move rather
+than a redesign.
+
+### 14.5 Which stopping rule fired, and what each one does and does not claim
+
+| run | rule | what it claims |
+| --- | --- | --- |
+| `feedback` from the seeds, both strategies | `Q4` | *finishing would cost more than the search already has* — `g/r > k·e` over the last two climb steps, at `k = 1`. **The weakest statement available**: where the search stopped, not where the problem bottoms out |
+| `feedback` from the hand board, both strategies | `Q3` | *these moves from these seeds did not find better.* **Nothing about whether better exists** |
+| `buffered` from the seeds, both strategies | `Q3` | the same |
+
+**NO RUN STOPPED ON `Q1` OR `Q2`, so this benchmark makes no optimality claim at
+all.** `Q1` needs `C = C_floor` **and** `W = 0`; `C_floor` is 0 on both boards
+(`N = 11` and `13` against `R = 34`), every result has `C = 0`, and every result
+carries wires — so the floor is not reached and `Q1` correctly does not fire.
+`Q2` cannot fire while `tau` is `null`, which is the owner's recorded decision
+(`K4`) and CRITERIA's stated behaviour rather than a missing branch.
+
+**`Q6` WAS NOT TESTED, AND THAT IS DECLARED RATHER THAN SILENT.** Its signature
+is the failing hard-constraint names, the floating parts and the `CUT_CONFLICT`
+positions, all of which exist only in a graded dump behind the `tools/` boundary
+the core may not cross — and the core has no failure to sign at all, because the
+acceptance rule never admits an unsound candidate and an unsound start is
+refused. `lib/stripboard/search-stop.ts` carries it in `UNTESTED_IN_CORE` with
+that reason, `assertTaxonomy` refuses unless the decided and declared-untested
+rules cover `Q1`-`Q6` exactly with none in both, and every `SearchResult` reports
+it. A rule that can never fire reads exactly like a rule that was tested and did
+not, which is a defect this plan has already caught three times.
+
+**`A1`-`A4` WERE NOT EVALUATED EITHER, AND A `Q1` FROM THIS BENCHMARK WOULD HAVE
+BEEN WEAKER THAN CRITERIA'S.** The predicate handed to `Q1` and `Q2` is
+`violationsOf` and nothing else; the full verdict is `HC1`-`HC10` plus the
+clustering bound, the floor tolerance and `A4`, it lives in
+`tools/stripboard/verdict.ts`, and it needs a materialized dump. No run here
+reached `Q1`, so nothing was claimed on the weaker predicate — but the gap is
+recorded because the next run might.
+
+### 14.6 Step 4 — THE GATE
+
+**MATCHED, on both instances and both strategies.** The comparison carries no
+tolerance: `<=` against the hand board's own `F`, counted off its own dump.
+
+| instance | hand `F` (fixed data) | search `F` | margin |
+| --- | --- | --- | --- |
+| `transistor-preamp-feedback` | 6.75 | 3.25 | 3.50 cheaper |
+| `transistor-preamp-buffered` | 7.50 | 4.25 | 3.25 cheaper |
+
+On cuts alone — the term the owner's ruling is about — the hand boards carry five
+each and every search result carries **zero**.
+
+### 14.7 What is NOT a success here, stated because it is the useful part
+
+**THE SEARCH CONTRIBUTED NOTHING ON `buffered`.** Of 11,255 proposals from
+`seed rcm s2`, **zero** were strictly cheaper than the incumbent — not zero
+*accepted*, zero *cheaper*, so the soundness check never ran on one. The gate
+passes on that instance entirely on the constructive seed's own work. Under the
+plan's own correction this is *"a signal to investigate the search, not a correct
+result to accept."*
+
+**IT IS THE SEED AND NOT THE BOARD, which was checked rather than assumed.**
+3,000 random permutations of `buffered`'s thirteen nets at stride 2 were
+constructed: 557 produce a seed at all, 1,675 refuse on lead reach and 768 on
+field seating. Six of the feasible ones were then climbed with
+`steepest-descent`:
+
+```
+  random-1   F 4.75 -> 4.50   1 move accepted
+  random-2   F 4.25 -> 4.25   0
+  random-7   F 5.25 -> 5.00   1 move accepted
+  random-10  F 4.75 -> 4.75   0
+  random-19  F 4.75 -> 4.75   0
+  random-23  F 4.50 -> 4.50   0
+```
+
+So two of six have a gradient and four do not, and **none of the six reaches
+4.25 by searching that `rcm s2` does not reach by construction.** The same shape
+as the `degree-ascending` orderings on `feedback`, which have 0 sound cheaper
+proposals out of ~8,800. **The single-part rigid translation is a sparse move
+family on these circuits**: the gradient is there on seven of nine `feedback`
+orderings and on two of six sampled `buffered` orderings, and where it is absent
+the loop correctly reports `Q3` rather than inventing progress. The families
+`lib/stripboard/moves.ts` names as absent — rotation, a change of lead span, a
+two-part move — are the obvious next lever, and **adding one is a plan decision
+rather than something to reach for in order to move this number.**
+
+**`Q4` ENDED BOTH SEEDED `feedback` RUNS BEFORE THE THIRD SEED WAS CLIMBED.**
+`seed rcm s3` starts at `F` 3.50, cheaper than either of the other two seeds'
+3.75, and it was never climbed: the rule fired at its climb boundary because the
+second climb won nothing. That is `Q4` behaving as specified — *"a restart that
+won nothing projects an unbounded cost to close a gap that remains"* — and it is
+also exactly the bluntness its own note calls a labelled hypothesis. It did not
+change the result here, because climb 1 had already reached 3.25.
+
+### 14.8 The budget this run used, and why it is not the committed one
+
+Every run above was given a run-level evaluation cap of **2,000,000**, and the
+largest actually spent **36,250**. `Q5` therefore never fired, which is what a
+backstop is for.
+
+**`stripboard/rules.json` carries 20,000, and on these instances that figure
+would have fired `Q5` mid-round** — `feedback`'s `steepest-descent` run spends
+26,854 evaluations in its first climb alone. The committed figure is not wrong so
+much as void: its own note derives it from the fork pipeline's 46.84 ms per
+evaluation, four subprocess launches, and an evaluation here is a scored
+candidate in memory at roughly 0.07 ms. The plan says so outright — *"The
+stopping taxonomy is retained unchanged; only the budget rises, because the
+reason it was small is gone."*
+
+**NO NEW VALUE IS PROPOSED HERE.** The 2,000,000 above is a declared
+experiment parameter whose only job was to keep `Q5` out of the way so the other
+five rules could be observed, it is reported with every figure it produced, and
+it is **not** a recommendation. Setting the cap is Task 11's measurement and a
+`PAR3` decision for the owner, under `K3`'s ratchet. The one datum this run
+contributes to it: a three-climb seeded run of an eleven-net board costs 36,250
+evaluations and about 2.7 seconds, and a climb from a sixteen-by-eighteen hand
+board costs 3,069 and about 0.1 seconds.
+
+### 14.9 Nothing was tuned to make a number improve
+
+Stated because the plan asks for it and this repository's record documents the
+failure five times. Across Task 10: **no weight was changed** (`stripboard/rules.json`
+is untouched), **no term was added to `OBJ1`** — no area term, no tidiness term,
+`OBJ2` forbidding the second outright — **no seed rule was altered**
+(`lib/stripboard/seed.ts` and `derivedOrderings` are untouched; the `rcm`
+ordering is read from `tools/stripboard/targets.ts`, which predates this task),
+and **no move was added to or removed from `movesFrom`**. The only figures this
+task chose are the evaluation cap of §14.8 and the test's own wall-clock timeout,
+both declared as experiment parameters and neither readable by the gate.

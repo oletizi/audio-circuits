@@ -82,6 +82,19 @@ const CORE_FLOOR: readonly string[] = ["board.ts", "connectivity.ts", "cuts.ts"]
  */
 const ABSENT_FORK = path.join(REPO_ROOT, ".tools", "no-such-veroroute-binary")
 
+/**
+ * How long the spawned core suite is given, in milliseconds.
+ *
+ * **IT IS HEADROOM OVER A MEASURED FIGURE AND BOUNDS NOTHING THIS FILE
+ * ASSERTS.** `bun test`'s default is 5,000 ms, and the core suite now runs in
+ * about 9,000 ms because `./benchmark.test.ts` climbs the owner's two boards
+ * inside it - six runs, roughly 86,000 scored candidates. The figure below is an
+ * order of magnitude over that: a slower machine must not turn this guard into a
+ * timeout, because a timeout here is indistinguishable from the core having
+ * reached for the fork, which is the one thing the guard exists to detect.
+ */
+const SUITE_TIMEOUT_MS = 120_000
+
 /** This file, excluded from the suite it spawns - see `coreSuite` below. */
 const SELF = path.basename(import.meta.path)
 
@@ -217,4 +230,4 @@ test("the core's own suite passes with the fork unavailable", () => {
   }
   expect(Number(ran[1])).toBeGreaterThan(0)
   expect(Number(ran[2])).toBe(suite.length)
-})
+}, SUITE_TIMEOUT_MS)
