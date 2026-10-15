@@ -107,6 +107,12 @@ routed through/under. Resistors, diodes, most capacitors can be jostled out of t
 each other, but if there's room for parts to have their own space, they should be given that
 space. Dense layouts are harder to work with than layouts with enough room."*
 
+**THE TWO RULES ARE ORDERED, and the order is his.** *"Clustering is nice, but secondary to
+ease of assembly."* Where they conflict — and they will, since keeping parts near their nets
+packs them together while leaving room spreads them apart — **room to work wins.** Clustering
+is satisfied with whatever freedom remains after the board is comfortable to build; a seed
+made tighter to improve clustering is not an improvement but the trade he has ruled against.
+
 **This is a build constraint, not a taste one.** A part wedged between two others cannot be
 soldered by a person with a hand and an iron. That is why it is the owner's to state and why
 it does not fall under `OBJ2`'s ban — a legibility metric invented by an agent would be the
