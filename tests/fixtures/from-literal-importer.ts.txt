@@ -1,0 +1,27 @@
+// A module whose DATA holds the word `from` as a string literal, so
+// `importClosure` can be driven over the shape that once made it refuse a file
+// for importing something nobody wrote.
+//
+// THE DEFECT THIS PINS, DRIVEN RATHER THAN DESCRIBED. The walker matched
+// `from` followed by a quote, and in `"from", "why"` the literal's own closing
+// quote served as the specifier's opening one - so it read a specifier of
+// `", "` (or `",\n  "` when the array is wrapped) and refused
+// `tools/stripboard/exemptions-model.ts`, whose `ENTRY_KEYS` names the fields
+// of a recorded exemption and one of those fields is `from`. The fix requires
+// the keyword to be preceded by whitespace or `}`, which every real import and
+// re-export is.
+//
+// ITS EXTENSION IS `.ts.txt` for the reason `./bare-specifier-importer.ts.txt`
+// gives: the walker reads a file's text and never its extension.
+import { closureSha256 } from "../../lib/import-closure.ts"
+
+// Both spellings: wrapped, as a formatter leaves a long array, and on one line.
+export const ENTRY_KEYS = [
+  "id",
+  "from",
+  "why",
+]
+
+export const LIST_KEYS = ["from", "doesNotExcuse", "consultedBy"]
+
+export const hash = closureSha256

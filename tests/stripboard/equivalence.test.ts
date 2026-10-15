@@ -366,6 +366,24 @@ test("the closure walker refuses an unresolvable import rather than dropping the
   expect(() => importClosure("tools/stripboard/does-not-exist.ts")).toThrow(/not a file/)
 })
 
+test("the word `from` inside a STRING is not an import, and reading it as one was a bug", () => {
+  // **A DRIVEN DEFECT, FOUND BY A DATA FILE AND FIXED IN THE WALKER.** The
+  // match used to be `from` followed by a quote, so a literal `"from",` in a
+  // data array handed the specifier its opening quote: the walker read `", "` -
+  // or `",\n  "` where a formatter wrapped the array - and refused
+  // `tools/stripboard/exemptions-model.ts`, whose `ENTRY_KEYS` names the fields
+  // of a recorded exemption and one of them is `from`. The fixture carries both
+  // spellings.
+  //
+  // MUTATION RUN: with the `[\s}]` boundary removed from `specifiersIn`, this
+  // fails with 'imports ",\n  ", which is neither relative nor a known
+  // external' - the walker refusing a file over an import nobody wrote.
+  // Reverted.
+  const fixture = "tests/fixtures/from-literal-importer.ts.txt"
+  const closure = importClosure(fixture)
+  expect([...closure].sort()).toEqual(["lib/import-closure.ts", fixture].sort())
+})
+
 test("the closure walker refuses a bare specifier rather than guessing at a resolver", () => {
   // The walker's second refusal, driven rather than assumed. `node:` builtins
   // and `bun:test` are skipped by name, so the only way to reach this clause

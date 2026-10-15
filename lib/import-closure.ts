@@ -68,11 +68,35 @@ const REPO_ROOT = path.resolve(import.meta.dir, "..")
 const EXTERNAL = new Set(["bun", "bun:test", "bun:sqlite", "eecircuit-engine"])
 
 function specifiersIn(text: string): readonly string[] {
-  // `from "..."` covers static imports and re-exports; `import("...")` covers
-  // the dynamic form. Both are matched because either one reaches a module.
+  // The first pattern covers static imports and re-exports, the second the
+  // dynamic `import()` call. Both are matched because either one reaches a
+  // module.
+  //
+  // **NEITHER FORM IS SPELLED OUT WITH A QUOTED SPECIFIER IN THIS FILE'S OWN
+  // COMMENTS, AND THAT IS NOT FASTIDIOUSNESS.** The dynamic pattern is not
+  // anchored to the start of a line, so it reads a quoted specifier inside a
+  // COMMENT as a real one: this comment used to illustrate the call with a
+  // quoted ellipsis, and the walker consequently read a specifier of `...` from
+  // itself - which nothing noticed, because no file in the repository imported
+  // the walker until `tests/fixtures/from-literal-importer.ts.txt` did, and a
+  // module's own specifiers are only read when something reaches it. Illustrate
+  // the syntax without a quoted argument.
+  //
+  // **`from` MUST BE PRECEDED BY WHITESPACE OR `}`, AND THAT IS A BUG FIX WITH A
+  // DRIVEN FAILURE BEHIND IT.** Without the boundary, the word `from` INSIDE A
+  // STRING LITERAL was read as the keyword: a data array holding `"from",` -
+  // `ENTRY_KEYS` in `tools/stripboard/exemptions-model.ts`, whose entries name
+  // the fields of an exemption, one of which is `from` - matched with the
+  // literal's own closing quote as the specifier's opening one, and the walker
+  // refused the file with `imports ",\n  "`. The fault was in the walker and not
+  // in the file: a module specifier never begins at a string's closing quote. In
+  // a real statement - a default import, a braced one, or a re-export - the
+  // keyword is always preceded by whitespace or by a closing brace, so nothing
+  // real is dropped, and `tests/stripboard/equivalence.test.ts` drives both
+  // halves. (Spelled out without a quoted specifier, for the reason just above.)
   const found = [
-    ...text.matchAll(/(?:^|\n)\s*(?:import|export)[\s\S]{0,400}?from\s*["']([^"']+)["']/g),
-    ...text.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g),
+    ...text.matchAll(/(?:^|\n)\s*(?:import|export)[\s\S]{0,400}?[\s}]from\s*["']([^"'\n]+)["']/g),
+    ...text.matchAll(/\bimport\(\s*["']([^"'\n]+)["']\s*\)/g),
   ]
   return found.map((match) => match[1] ?? "")
 }
