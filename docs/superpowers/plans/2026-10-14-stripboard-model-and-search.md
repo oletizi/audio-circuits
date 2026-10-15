@@ -736,7 +736,7 @@ VeroRoute's independently derived cut set is then compared as a **separate verif
 step**, and a disagreement is **reported, never silently adopted.** This matters more now
 that bridges are in the model, since they are a second thing the fork has opinions about.
 
-- [ ] **Step 1: Build and pin the fork change**, following `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`'s Task 1 shape for building and pinning. **The push to `oletizi/veroroute-perfboard` is the owner's to authorise** — he has authorised fork changes in general (*"you can do whatever you want with the fork"*), but confirm before pushing a branch.
+- [ ] **Step 1: Build and pin the fork change**, following `docs/superpowers/plans/2026-10-10-stripboard-pipeline.md`'s Task 1 shape for building and pinning. **The push to `oletizi/veroroute-perfboard` is authorised**, 2026-10-14, in the owner's words: *"you are free to make any changes you need to the veroroute fork."* This supersedes the earlier reading of *"you can do whatever you want with the fork"* as general permission that still needed a per-branch confirmation — it does not. No further nod is required for a fork change or a push of one. What still holds is everything that was never about permission: the change is pinned by commit so the build is reproducible, the fork stays an INDEPENDENT WITNESS (we do not write `.vrt` bytes ourselves), and a disagreement between its cut set and ours is reported rather than adopted.
 
 - [ ] **Step 2: Write the failing round-trip test** — physical-state equivalence per field, and the AutoFill-survival case.
 
@@ -829,4 +829,4 @@ asserting that a wire-only strip must be cut, which was simply false and would h
 
 **Type consistency.** `Candidate`, `Placement`, `Wire`, `Bridge`, `Hole`, `Grid` are defined in Task 1 and used identically in 2, 4–8. `derivedCuts(candidate, reference)` is produced in Task 2 and consumed in 4, 5, 8. `Cut` is `{ strip, afterColumn }` throughout. Interfaces consumed from existing code were verified on disk on 2026-10-14: `parseBoardDump` in `tools/guide/dump.ts`, `copperGraph(dump)` and `CopperGraph { components, componentCount }` in `tools/stripboard/copper.ts`, `netlistEquivalence(dumpText, reference)` and `ReferenceNets` in `tools/stripboard/equivalence.ts`, `loadRules(file?)` in `tools/stripboard/rules.ts`, `leadSpanFor(footprint, spans?, unsourced?)` in `lib/kicad/lead-span.ts`.
 
-**Ordering.** Task 2 gates everything; Task 3 runs early so the boundary cannot erode; Task 9 needs the owner's nod before a fork push; Task 10 gates Task 11.
+**Ordering.** Task 2 gates everything; Task 3 runs early so the boundary cannot erode; Task 10 gates Task 11. **Task 9 no longer waits on anything** — the fork push was authorised on 2026-10-14 (see its Step 1).
