@@ -256,8 +256,19 @@ export function requireCountsAgree(
 }
 
 /**
- * `F = C + ρ_w·W + ρ_s·B` (OBJ1, COST §4.1), and the one place that
- * arithmetic lives.
+ * `F = C + ρ_w·W + ρ_s·B` (OBJ1, COST §4.1), over a DUMP's three line counts.
+ *
+ * **IT IS NO LONGER THE ONLY PLACE THAT ARITHMETIC LIVES, and saying so would
+ * now be false.** `lib/stripboard/score.ts` computes the same `F` over a
+ * `Candidate` held in memory, because the core scores candidates it has not
+ * exported and a `BoardDump` is an artifact that has been. **Two
+ * implementations of one identity is a condition to be reported rather than
+ * tidied away quietly**, and the two are held to the same arithmetic by a direct
+ * comparison in `tests/stripboard/model/score.test.ts`. They could be collapsed
+ * - a candidate's counts are exactly this function's three arguments, and
+ * `tools/` may import `lib/` though not the other way round - but that is a
+ * change to this pipeline, which the model-and-search plan demotes, and it is
+ * the plan's call and not the scorer's.
  *
  * Both weights are arguments rather than constants: they are the owner's
  * (CRITERIA PAR1, recorded with their reasoning in `stripboard/rules.json`'s

@@ -72,7 +72,9 @@ export function refuse(refusal: ScoreRefusal, offending: string): never {
   throw new Error(
     `${refusal}: ${offending}. ${notDefaultedBecause(refusal)} ` +
       "(CRITERIA OBJ1, PAR1, HC2, K5 and V1/V2 and COST sections 1.4, 2.1 and 4.1 are the " +
-      "authority, and tools/stripboard/score.ts is the only implementation of F.)",
+      "authority, and tools/stripboard/score.ts is F over a DUMP's line counts. The core's " +
+      "lib/stripboard/score.ts is F over a Candidate in memory; the two are held to the same " +
+      "arithmetic by tests/stripboard/model/score.test.ts.)",
   )
 }
 
