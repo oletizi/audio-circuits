@@ -4657,7 +4657,7 @@ task exists to clear, so it was not done. Siblings created anywhere other than
 `TMPDIR` itself would not exercise the same lookup and would prove nothing. What
 can be said is bounded and measured: not at 28,986.
 
-## 14. Task 10 of the model-and-search plan — the search loop against the owner's own boards: **the gate is MATCHED on both instances and both strategies, `F` 6.75 to 3.25 and 7.5 to 4.25, and the search contributed nothing on one of the two**
+## 14. Task 10 of the model-and-search plan — the search loop against the owner's own boards: **the gate is MATCHED on both instances and both strategies, `F` 6.75 to 3.25 and 7.5 to 4.25 — but it is matched by the seed-plus-search PIPELINE, because on BOTH boards the constructive seed already clears the hand result before a move is made, and on one of the two the search then contributes nothing**
 
 **WHY THIS SECTION EXISTS.** Task 10 is the point the model-and-search rewrite
 was aimed at, and its deliverable is a number rather than a feature. The
@@ -4672,9 +4672,20 @@ flattering are stated in the heading beside the two that are.
 ```
   bun test tests/stripboard/model/benchmark.test.ts
   bun test tests/stripboard/model/search.test.ts
+  bun test tests/stripboard/model/search-stop.test.ts
 ```
 
-Commit: `54147c3` on `feature/pultec-modular-scaffolding`. **No
+Commit: **`ed8196c`** on `feature/pultec-modular-scaffolding`, which is the state
+every figure below was measured at, and re-measured at `998f462`. **Corrected:
+this section first cited `54147c3`**, which was the commit that added the gate
+rather than the delivered state — a reader could not reproduce from it. The
+substance did not move, because `ed8196c` changed only the summary a
+`SearchResult` returns and no stop decision, and `998f462` added tests and
+comments only; the figures reproduce at all three. The review of this task
+re-derived every one of them from an independent script and counted the dump
+files by hand outside the code path, and they agreed exactly.
+
+**No**
 VeroRoute is involved**: `lib/stripboard/` may not import from `tools/` and may
 not spawn a process, which `tests/stripboard/model/no-fork.test.ts` enforces over
 the whole import closure, and the benchmark runs inside that guarded suite.
@@ -4812,10 +4823,22 @@ positions, all of which exist only in a graded dump behind the `tools/` boundary
 the core may not cross — and the core has no failure to sign at all, because the
 acceptance rule never admits an unsound candidate and an unsound start is
 refused. `lib/stripboard/search-stop.ts` carries it in `UNTESTED_IN_CORE` with
-that reason, `assertTaxonomy` refuses unless the decided and declared-untested
-rules cover `Q1`-`Q6` exactly with none in both, and every `SearchResult` reports
-it. A rule that can never fire reads exactly like a rule that was tested and did
-not, which is a defect this plan has already caught three times.
+that reason, and every `SearchResult` reports it. A rule that can never fire
+reads exactly like a rule that was tested and did not, which is a defect this
+plan has already caught three times.
+
+**WHICH GUARD ACTUALLY KEEPS THAT HONEST, corrected — this section first credited
+`assertTaxonomy` with protection it does not provide.** That function compares
+the decided and declared-untested lists as SETS: coverage of `Q1`-`Q6`, and no
+rule in both. So it catches a rule that fell out of the taxonomy altogether, and
+it would **accept** `Q3` being moved out of the decided table and into the
+untested list — covered exactly, nothing in both, and a rule silently no longer
+decided. **The thing that pins the untested list to exactly `Q6` is
+`expect(untested).toEqual(["Q6"])` in `tests/stripboard/model/search.test.ts`.**
+`tests/stripboard/model/search-stop.test.ts` asserts the gap itself, so the limit
+is not taken on trust, and it is also what makes `assertTaxonomy`'s own claim to
+be reachable true — four tests call it, where in the first round of this task
+none did.
 
 **`A1`-`A4` WERE NOT EVALUATED EITHER, AND A `Q1` FROM THIS BENCHMARK WOULD HAVE
 BEEN WEAKER THAN CRITERIA'S.** The predicate handed to `Q1` and `Q2` is
@@ -4830,10 +4853,21 @@ recorded because the next run might.
 **MATCHED, on both instances and both strategies.** The comparison carries no
 tolerance: `<=` against the hand board's own `F`, counted off its own dump.
 
-| instance | hand `F` (fixed data) | search `F` | margin |
-| --- | --- | --- | --- |
-| `transistor-preamp-feedback` | 6.75 | 3.25 | 3.50 cheaper |
-| `transistor-preamp-buffered` | 7.50 | 4.25 | 3.25 cheaper |
+| instance | hand `F` (fixed data) | search `F` | margin | **cheapest seed, unaided** | seed alone clears? |
+| --- | --- | --- | --- | --- | --- |
+| `transistor-preamp-feedback` | 6.75 | 3.25 | 3.50 cheaper | 3.50 (`seed rcm s3`) | **yes** |
+| `transistor-preamp-buffered` | 7.50 | 4.25 | 3.25 cheaper | 4.25 (`seed rcm s2`) | **yes** |
+
+**WHAT IS MATCHED IS THE SEED-PLUS-SEARCH PIPELINE AND NOT THE SEARCH, and the
+last two columns are why.** On **both** instances the cheapest constructed seed
+already clears the hand board before a single move is made. The review of this
+task put it in one sentence and it is the fairest summary of this whole section:
+*"a match for the seed-plus-search PIPELINE rather than for the search, because
+the constructive seed alone already clears both hand boards before a move is
+made."* **Corrected: §14.7 below first framed this as holding on one instance of
+the two.** The search's own contribution is real but smaller than the gate's
+margin — `F` 3.75 → 3.25 on `feedback`'s `part-walk s3`, 6.75 → 6.00 from his own
+layout, and **nothing at all on `buffered`.**
 
 On cuts alone — the term the owner's ruling is about — the hand boards carry five
 each and every search result carries **zero**.
@@ -4888,13 +4922,49 @@ largest actually spent **36,250**. `Q5` therefore never fired, which is what a
 backstop is for.
 
 **`stripboard/rules.json` carries 20,000, and on these instances that figure
-would have fired `Q5` mid-round** — `feedback`'s `steepest-descent` run spends
-26,854 evaluations in its first climb alone. The committed figure is not wrong so
-much as void: its own note derives it from the fork pipeline's 46.84 ms per
+fires `Q5` mid-round** — `feedback`'s `steepest-descent` run spends 26,854
+evaluations in its first climb alone. The committed figure is not wrong so much
+as void: its own note derives it from the fork pipeline's 46.84 ms per
 evaluation, four subprocess launches, and an evaluation here is a scored
 candidate in memory at roughly 0.07 ms. The plan says so outright — *"The
 stopping taxonomy is retained unchanged; only the budget rises, because the
 reason it was small is gone."*
+
+#### 14.8.1 THE COUNTERFACTUAL, RUN RATHER THAN REASONED ABOUT: the cap did not buy the pass, it moved the reported stop — **into a state the rules file calls a FAILURE**
+
+The first version of this section left the committed cap as a caveat and did not
+run it. The review of this task ran it; it was then re-run independently here,
+and both agree. Every setting identical, `evaluationCap` read straight from
+`stripboard/rules.json`:
+
+| instance | run | strategy | `C` | `W` | `B` | `F` | nets whole | stop at 2,000,000 | stop at 20,000 | gate |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `feedback` | seeds | `steepest-descent` | 0 | 9 | 4 | 3.25 | yes | `Q4` | **`Q5`** | clears |
+| `feedback` | seeds | `first-improvement` | 0 | 9 | 4 | 3.25 | yes | `Q4` | **`Q5`** | clears |
+| `feedback` | hand board | `steepest-descent` | 4 | 5 | 3 | 6.00 | yes | `Q3` | `Q3` | clears |
+| `feedback` | hand board | `first-improvement` | 4 | 5 | 3 | 6.00 | yes | `Q3` | `Q3` | clears |
+| `buffered` | seeds | `steepest-descent` | 0 | 12 | 5 | 4.25 | yes | `Q3` | `Q3` | clears |
+| `buffered` | seeds | `first-improvement` | 0 | 12 | 5 | 4.25 | yes | `Q3` | `Q3` | clears |
+
+**`F` is identical on all six runs, and the gate clears on all six.** So the
+2,000,000 cap **did not buy the gate's pass** — that had to be checked rather
+than assumed, and the honest reading is that the declared budget bought nothing
+except the ability to observe the other rules. The four runs that finish under
+20,000 are unaffected; the two `feedback` seeded runs stop at exactly 20,000
+evaluations instead of running to `Q4`.
+
+**AND THAT IS THE PART TASK 11 MUST NOT MISS.** `stripboard/rules.json`'s own
+note on `evaluationCap` says, verbatim: *"A RUN THAT STOPS ON Q5 IS REPORTED AS A
+FAILURE RATHER THAN AS A RESULT — reaching it means either the search or Q4 is
+broken, and both are worth knowing."* CRITERIA `Q5` says the same. So at the
+committed cap, **the two `feedback` seeded runs produce a board that clears the
+hand result and are simultaneously runs the rules file declares failures.** A
+result and a failure at once is not a contradiction in the taxonomy — a stop is
+not a pass, and that separation is the point — but it is a live, measured
+inconsistency between the committed cap and this architecture, and it is the
+single most important thing this section hands forward. The cap is not a
+nice-to-have calibration: at its current value a healthy run of the new search
+reports as a malfunction.
 
 **NO NEW VALUE IS PROPOSED HERE.** The 2,000,000 above is a declared
 experiment parameter whose only job was to keep `Q5` out of the way so the other
