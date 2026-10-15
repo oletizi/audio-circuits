@@ -60,7 +60,13 @@
  * Nothing is proposed that puts a lead inside a RIGID part's area, in either
  * direction - a lead moved under a rigid part, or a rigid part moved over a
  * lead. The owner, 2026-10-14: *"Rigid parts shouldn't be routed
- * through/under."* His two built boards hold it in **0 of 85 leads**, it is a
+ * through/under."* His two built boards hold it in **84 of 85 leads** - the one
+ * exception is a lead under a trimmer's moulded body overhang rather than
+ * between its terminals, and he ruled on it on 2026-10-15: *"Rigid parts are
+ * rigid. You cant push them out of the way or rout under them."* So the rule
+ * covers the whole area and is NOT narrowed to the terminal span; see
+ * `./seed-area.ts` for the measurement and for why the figure read 0 until the
+ * fixture that produced it was corrected. It is a
  * REJECTION rather than a tier in `./seed-place.ts` for that reason, and
  * `violationsOf` cannot see it at all - it answers electrical soundness, not
  * whether a person can get an iron to the joint. A generator that proposed such

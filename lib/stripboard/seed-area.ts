@@ -33,8 +33,33 @@
  * and none is chosen here.** The measurements, over 37 parts and 85 leads with
  * each part's area derived from its own `.kicad_mod`:
  *
- *   - **no lead sits inside a rigid part's occupied area: 0 of 85, on both
- *     boards.** That is `routedUnderRigid` below, and it is the one HARD rule;
+ *   - **one lead of 85 sits inside a rigid part's occupied area**, and the rule
+ *     stands anyway BY THE OWNER'S RULING. That is `routedUnderRigid` below, and
+ *     it is the one HARD rule.
+ *
+ *     **THIS FIGURE WAS 0 UNTIL 2026-10-15 AND THE 0 WAS AN ARTEFACT**, which is
+ *     why it is spelled out rather than quietly updated. `handBoard` built each
+ *     rectangle from the FOOTPRINT'S PAD TABLE instead of from the leads as
+ *     placed, and an RM-065 trimmer can only be fitted REFLECTED (the fork's cell
+ *     map exchanges its end terminals) - a reflection `Placement` does not carry.
+ *     So all eight trimmer rectangles across the two boards were drawn on the
+ *     wrong side of their own origin, each by two strips, and none of them
+ *     contained its own leads. The fixture now derives areas through
+ *     `partAreasOf`, the same derivation the placer and the move generator use,
+ *     and a test asserts the premise every figure here rests on: a part's
+ *     rectangle contains that part's own leads.
+ *
+ *     The one lead is `R4`'s lower lead at strip 14, column 13 on `feedback`,
+ *     inside `RV4`'s rectangle. It is under the trimmer's moulded BODY OVERHANG
+ *     and not between its terminals - `RV4`'s three terminals span columns 10-12
+ *     and the body reaches one column further. So his board keeps the rule on
+ *     terminals and breaks it on overhang, once, and the question was put to him
+ *     in exactly those terms. **His ruling, verbatim: *"Rigid parts are rigid.
+ *     You cant push them out of the way or rout under them."*** The rule
+ *     therefore tests the whole RECTANGLE, body included, and is not narrowed to
+ *     the terminal span. What the one lead means is that one spot on a board he
+ *     built is harder to work on than it needed to be - not that the rule is
+ *     wrong;
  *   - **nearest-neighbour clearance on `feedback`: 15 of 16 parts are ADJACENT to
  *     their nearest neighbour with no free hole between, one has two free holes,
  *     and NO pair of occupied areas overlaps.** So `touching` is what he mostly
