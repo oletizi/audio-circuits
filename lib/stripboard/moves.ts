@@ -56,32 +56,30 @@
  * which of those happens is a consequence of where the leads land rather than a
  * decision taken here.
  *
- * **ONE HARD RULE IS ENFORCED AND EVERY PREFERENCE IS LEFT TO THE CALLER.**
- * Nothing is proposed that puts a lead inside a RIGID part's area, in either
- * direction - a lead moved under a rigid part, or a rigid part moved over a
- * lead. The owner, 2026-10-14: *"Rigid parts shouldn't be routed
- * through/under."* His two built boards hold it in **84 of 85 leads** - the one
- * exception is a lead under a trimmer's moulded body overhang rather than
- * between its terminals, and he ruled on it on 2026-10-15: *"Rigid parts are
- * rigid. You cant push them out of the way or rout under them."* So the rule
- * covers the whole area and is NOT narrowed to the terminal span; see
- * `./seed-area.ts` for the measurement and for why the figure read 0 until the
- * fixture that produced it was corrected. It is a
- * REJECTION rather than a tier in `./seed-place.ts` for that reason, and
- * `violationsOf` cannot see it at all - it answers electrical soundness, not
- * whether a person can get an iron to the joint. A generator that proposed such
- * a board would be handing the search a candidate that scores well and cannot be
- * built, which is the failure this project has documented repeatedly. **It is
- * not this module's criterion**: it is the owner's, stated in his words,
- * measured in `./seed-area.ts`, and applied here through that module's
- * `routedUnderRigid`.
+ * **TWO HARD RULES ARE ENFORCED AND EVERY PREFERENCE IS LEFT TO THE CALLER**, and
+ * both are the owner's, applied through `./seed-area.ts`'s `routedUnderRigid` and
+ * `rigidOverlap` rather than restated here. Nothing is proposed that puts a lead
+ * inside a RIGID part's area, in either direction (*"Rigid parts shouldn't be
+ * routed through/under."*, 2026-10-14), and nothing whose areas OVERLAP when
+ * either part is rigid, because the part that would have to give way cannot
+ * (*"Rigid parts are rigid. You cant push them out of the way or rout under
+ * them."*, 2026-10-15). Neither subsumes the other: a bodyless formable part's
+ * rectangle is the bare line between its leads, so a lead can be under a rigid
+ * part with the rectangles apart, and two rectangles can meet with neither part's
+ * lead inside the other. **HIS DIRECTIVES OUTRANK HIS AS-BUILT BOARDS AND HE SAID
+ * SO**: *"The as-built diagram is instructive, but my directives are more
+ * authoritative than a file on disk."* Four of the five overlapping pairs on his
+ * two boards are refused by these rules, and `./seed-area.ts` records which and
+ * why that is the intended outcome. Both are REJECTIONS rather than tiers, here
+ * and in `./seed-place.ts`, and `violationsOf` cannot see either - it answers
+ * electrical soundness, not whether a person can get an iron to the joint.
  *
- * The things that are NOT enforced here are the ones his own boards break:
- * **body overlap** (*"Don't worry about body collisions on the stripboard. It's
- * extremely flexible."* - `buffered` has four overlapping pairs), comfort tiers,
- * and a wire crossing a part. Comfort is not even consulted - `comfortOf` ranks
- * positions for a CONSTRUCTOR choosing one, and a generator that preferred roomy
- * positions would be filtering its own proposals.
+ * What is NOT enforced: **formable-on-formable body overlap** (*"Resistors,
+ * diodes, most capacitors can be jostled out of the way of each other"* -
+ * `buffered` has one such pair, `C3`/`R1`), comfort tiers, and a wire crossing a
+ * part. Comfort is not even consulted - `comfortOf` ranks positions for a
+ * CONSTRUCTOR choosing one, and a generator that preferred roomy positions would
+ * be filtering its own proposals.
  *
  * **ONE LEAD PER HOLE IS KEPT, AND IT IS THE SEED'S STRICTER READING OF THE
  * OWNER'S RULE.** A relocated lead takes a hole no other part's hole and no
@@ -106,7 +104,8 @@
 import { holeInFrame, type Candidate, type Hole, type PinPatterns, type Placement } from "./board.ts"
 import { holeKey, significantContacts, type ReferenceNets } from "./cuts.ts"
 import { joinColumnFor, type JoinSite } from "./join-column.ts"
-import { routedUnderRigid, type BodyMargins, type PartArea, type Rect } from "./seed-area.ts"
+import { rigidOverlap, routedUnderRigid } from "./seed-area.ts"
+import type { BodyMargins, PartArea, Rect } from "./seed-area.ts"
 import { bodyMarginsFor } from "./seed-parts.ts"
 import { leadSpanFor } from "../kicad/lead-span.ts"
 import type { LeadSpan } from "../kicad/lead-span-model.ts"
@@ -145,12 +144,12 @@ function asMovesRefusal(error: unknown, footprint: string): never {
       `"${footprint}", and the two things a move has to know about that part - whether its ` +
       `terminals can be formed, and how far its body reaches past its pads - could not be ` +
       `read.\n${error.message}\nWHY NOTHING IS SUBSTITUTED: both figures decide whether a ` +
-      "proposal is buildable. Rigidity is what the owner's one hard geometric rule turns on - " +
-      "nothing is routed under a part that cannot be jostled aside - and the body is where that " +
-      "part reaches. A part assumed formable is a board with a joint under a trimmer, and a part " +
-      "given a guessed body is a part given the wrong amount of room. Record the footprint, or " +
-      "hand movesFrom a span and pin-pattern map that covers it: both are parameters for " +
-      "exactly this reason.",
+      "proposal is buildable. Rigidity is what both of the owner's hard geometric rules turn " +
+      "on - nothing is routed under a part that cannot be jostled aside, and nothing overlaps " +
+      "one either - and the body is where that part reaches. A part assumed formable is a board " +
+      "with a joint under a trimmer, and a part given a guessed body is a part given the wrong " +
+      "amount of room. Record the footprint, or hand movesFrom a span and pin-pattern map " +
+      "that covers it: both are parameters for exactly this reason.",
   )
 }
 
@@ -314,10 +313,10 @@ function translated(placement: Placement, dStrip: number, dColumn: number): Plac
  * One relocation, with the nets the moved part touches re-joined - or
  * `undefined` when the board cannot be built that way.
  *
- * The three ways it comes back empty, each a physical impossibility rather than
- * a judgement: a hole already holding a lead, a wire end or a surviving bridge;
- * a lead inside a rigid part's area; and a join with no column where both its
- * end holes are free.
+ * The four ways it comes back empty, each a physical impossibility rather than a
+ * judgement: a hole already holding a lead, a wire end or a surviving bridge; a
+ * lead inside a rigid part's area; an area overlapping a rigid part's; and a join
+ * with no column where both its end holes are free.
  *
  * **IT DOES NOT RE-TEST THE BOARD EDGE.** `movesFrom`'s displacement bounds are
  * derived from this part's own occupied holes and rectangle, so every
@@ -351,6 +350,7 @@ function relocation(
   }
   const others = areas.filter((_, at) => at !== index)
   if (routedUnderRigid(movedArea, others) !== null) return undefined
+  if (rigidOverlap(movedArea, others) !== null) return undefined
 
   const placements = base.placements.map((each, at) => (at === index ? moved : each))
   const affected = new Set(

@@ -18,11 +18,13 @@
  * neither was typed from memory; the pad steps quoted in the comments came from
  * `padHolesFor` the same way.
  *
- * **THE RESISTOR IS FORMABLE AND THE TRIMMER IS RIGID**, which is the
- * distinction the owner's one hard geometric rule turns on: *"Rigid parts
- * shouldn't be routed through/under."* A board of resistors alone can never
- * exercise it, so the third fixture puts a trimmer on the board for exactly that
- * purpose.
+ * **THE RESISTOR AND THE CAN ARE FORMABLE AND THE TRIMMER IS RIGID**, which is
+ * the distinction both of the owner's hard geometric rules turn on: *"Rigid parts
+ * shouldn't be routed through/under."* and *"Rigid parts are rigid. You cant push
+ * them out of the way or rout under them."* A board of resistors alone can never
+ * exercise either, so `trimmerBesideAResistor` puts a trimmer down for exactly
+ * that purpose - and `twoCansSideBySide` is the matching NEGATIVE, two formable
+ * bodies that may still be slid into each other.
  */
 import type { Candidate, Hole, Placement } from "../../../lib/stripboard/board.ts"
 import type { ReferenceNets } from "../../../lib/stripboard/cuts.ts"
@@ -33,6 +35,19 @@ export const AXIAL = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizo
 
 /** RM-065 trimmer: pads at (0,0), (1,2), (2,0) steps, span [3, 3] holes, RIGID. */
 export const TRIMMER = "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical"
+
+/**
+ * 8mm radial electrolytic: span [2, 11] holes, FORMABLE, and a body that reaches
+ * one hole along and TWO holes across past its pads.
+ *
+ * It is here because the axial resistor cannot express a body overlap at all -
+ * its margins are zero on all four sides, so its rectangle is exactly the line
+ * of holes between its leads, and two such lines overlap only by sharing a hole,
+ * which `lib/stripboard/moves.ts` already refuses as two leads in one hole. The
+ * figures were printed from `bodyMarginsFor` and `LEAD_SPANS`, not typed from
+ * memory.
+ */
+export const CAN = "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm"
 
 /** A board and the reference nets it must be read against, which is one fact in two halves. */
 export interface MoveCase {
@@ -166,6 +181,38 @@ export function trimmerBesideAResistor(): MoveCase {
       ["NET_Y", ["RV1.3"]],
       ["NET_IN", ["R1.1"]],
       ["NET_OUT", ["R1.2"]],
+    ]),
+  }
+}
+
+/**
+ * **TWO FORMABLE PARTS WHOSE BODIES CAN BE SLID INTO EACH OTHER**, and no rigid
+ * part anywhere on the board.
+ *
+ * Both cans face `S` with their leads 3 strips apart - a span of 4 holes, inside
+ * the recorded `[2, 11]` - so each one's rectangle is strips 1-6 of five
+ * columns: `C1` covers columns 0-4 and `C2` columns 7-11. Translate `C1` three
+ * columns to the right and the two rectangles meet at column 7, with neither
+ * part's leads inside the other's rectangle.
+ *
+ * **IT IS THE NEGATIVE CASE FOR THE AREA RULE, and without it that rule would be
+ * silently stricter than the owner stated.** He admitted this overlap in terms -
+ * *"Resistors, diodes, most capacitors can be jostled out of the way of each
+ * other"*, *"Don't worry about body collisions on the stripboard. It's extremely
+ * flexible."* - so a generator that stopped proposing it would be refusing a
+ * board he builds. Every net here is a single pin, so nothing needs a join.
+ */
+export function twoCansSideBySide(): MoveCase {
+  return {
+    base: board([
+      fitted("C1", CAN, "S", { "1": at(2, 2), "2": at(5, 2) }),
+      fitted("C2", CAN, "S", { "1": at(2, 9), "2": at(5, 9) }),
+    ]),
+    reference: new Map<string, readonly string[]>([
+      ["NET_P", ["C1.1"]],
+      ["NET_Q", ["C1.2"]],
+      ["NET_R", ["C2.1"]],
+      ["NET_S", ["C2.2"]],
     ]),
   }
 }

@@ -55,20 +55,29 @@
  *   - **the board edge** - every hole inside the declared stock, and every part's
  *     whole rectangle too;
  *   - **nothing routed under a rigid part** - the owner, 2026-10-14: *"Rigid
- *     parts shouldn't be routed through/under."* This is the one HARD geometric
- *     rule, it is checked per candidate column in `./seed-place.ts` and checked
- *     again over the finished board below, and his own two boards hold it in 0
- *     of 85 leads;
+ *     parts shouldn't be routed through/under."* Checked per candidate column in
+ *     `./seed-place.ts` and checked again over the finished board below; his own
+ *     two boards hold it in 84 of 85 leads;
+ *   - **nothing overlapping a rigid part's area at all** - the owner,
+ *     2026-10-15: *"Rigid parts are rigid. You cant push them out of the way or
+ *     rout under them."* Checked per candidate column in `./seed-place.ts`
+ *     (`rigidOverlap`) and NOT re-checked over the finished board: `joinNets`
+ *     adds no part and moves none, so a second pass here could not fire and *"a
+ *     predicate that can never fire"* is the defect this plan has caught four
+ *     times. The lead rule IS re-checked below because that check predates the
+ *     reasoning and removing it is not this change's business;
  *   - **room to work where there is room** - *"if there's room for parts to have
  *     their own space, they should be given that space"*, which `./seed-area.ts`
  *     applies as a preference order over positions rather than as a cost.
  *
- * **BODY COLLISION IS STILL NOT REFUSED, and the distinction is the whole of how
- * these rules coexist with the earlier ruling.** The owner, 2026-10-14: *"Don't
- * worry about body collisions on the stripboard. It's extremely flexible."* So
- * two bodies overlapping is admitted - his `buffered` board has four such pairs -
- * and what is refused is a LEAD or a lead-bearing placement inside a RIGID
- * part's area, which is routing under it rather than brushing against it.
+ * **BODY COLLISION BETWEEN TWO FORMABLE PARTS IS STILL NOT REFUSED, and that is
+ * the whole of how these rules coexist.** The owner, 2026-10-14: *"Resistors,
+ * diodes, most capacitors can be jostled out of the way of each other"*, and
+ * *"Don't worry about body collisions on the stripboard. It's extremely
+ * flexible."* So two FORMABLE bodies overlapping is admitted - his `buffered`
+ * board has one such pair, `C3`/`R1` - because either of the two can be bent
+ * aside. An overlap where EITHER part is rigid is refused, because the part that
+ * would have to be bent aside cannot be.
  *
  * **`Placement.holes` IS STILL EXACTLY `Placement.pins`' HOLES.** The body enters
  * through `./seed-area.ts`, which is a placement RULE, and never through the

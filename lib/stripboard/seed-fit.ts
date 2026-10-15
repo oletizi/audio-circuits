@@ -116,7 +116,10 @@ export function placeTwoLead(workspace: Workspace, part: TwoLeadPart): void {
       `[${span.minSpanHoles}, ${span.maxSpanHoles}].\nNo scratch strip the anchor lead can ` +
       "reach is free either, so neither a direct placement nor a single join can realise this " +
       `assignment - the board edge, the holes already taken, or a rigid part it would have to ` +
-      `be routed under is what closed it off.\n${SPAN_SOURCE}.\nNothing is substituted: a ` +
+      `be routed under or laid over is what closed it off. A rigid part cannot be pushed aside ` +
+      `to make room, so an overlap with one is refused as flatly as a lead under one; two ` +
+      `FORMABLE parts overlapping is admitted and is never what closed a column off.\n` +
+      `${SPAN_SOURCE}.\nNothing is substituted: a ` +
       "placement outside the band is a seed the optimizer would have to repair, and a decision " +
       "that should never have been accepted is worse than a construction that stopped. Change " +
       "the ordering - the stride is what sets how far apart two hosted nets are - or give the " +
@@ -307,7 +310,8 @@ export function placeFixedField(workspace: Workspace, part: FixedFieldPart): voi
         .join("\n") +
       `\n${windows.length} of the ${ACROSS_DIRECTIONS.length * workspace.grid.strips} windows ` +
       "were sound in strips, and none of those had an admissible column - every one was off " +
-      "the stock, had a hole already taken, or would have put a lead under a rigid part.\nA " +
+      "the stock, had a hole already taken, would have put a lead under a rigid part, or would " +
+      "have overlapped a rigid part's area, which cannot be pushed aside to make room.\nA " +
       "field pin may land on its own net's home strip or on a strip no net hosts and no other " +
       "lead has claimed; a pin on another net's home strip is refused rather than placed, " +
       "because two nets' leads on one conductor is the open no cut list can close.\nNothing is " +

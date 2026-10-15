@@ -21,12 +21,22 @@
  */
 import { expect, test } from "bun:test"
 import { PIN_PATTERNS } from "../../../lib/kicad/pin-pattern.ts"
-import { holesOverlap, type Candidate, type Placement } from "../../../lib/stripboard/board.ts"
+import {
+  holesOverlap,
+  type Candidate,
+  type Hole,
+  type Placement,
+} from "../../../lib/stripboard/board.ts"
 import { derivedCuts, holeKey, type ReferenceNets } from "../../../lib/stripboard/cuts.ts"
 import { violationsOf } from "../../../lib/stripboard/invariants.ts"
 import { movesFrom, partAreasOf } from "../../../lib/stripboard/moves.ts"
 import { objectiveOf } from "../../../lib/stripboard/score.ts"
-import { holeInRect, routedUnderRigid } from "../../../lib/stripboard/seed-area.ts"
+import {
+  holeInRect,
+  rectsOverlap,
+  routedUnderRigid,
+  type PartArea,
+} from "../../../lib/stripboard/seed-area.ts"
 import { RECORDED_SPANS, WEIGHTS, refusalFrom } from "./seed-fixtures.ts"
 import {
   movedRefs,
@@ -35,6 +45,7 @@ import {
   partFittedWithNothing,
   pinPrint,
   trimmerBesideAResistor,
+  twoCansSideBySide,
   twoNetsShareStripZero,
 } from "./moves-fixtures.ts"
 
@@ -227,6 +238,139 @@ test("nothing is proposed that routes a lead under a rigid part", () => {
       expect(routedUnderRigid(area, placed.filter((other) => other !== area))).toBeNull()
     }
   }
+})
+
+/** Every pair of placed areas whose rectangles meet with at least one rigid. */
+function rigidOverlaps(areas: readonly PartArea[]): readonly string[] {
+  const found: string[] = []
+  for (const [index, a] of areas.entries()) {
+    for (const b of areas.slice(index + 1)) {
+      if (!a.rigid && !b.rigid) continue
+      if (rectsOverlap(a.rect, b.rect)) found.push(`${a.ref}/${b.ref}`)
+    }
+  }
+  return found
+}
+
+/** `base` with one ref's placement translated bodily, which is all a move does. */
+function slid(base: Candidate, ref: string, dStrip: number, dColumn: number): Candidate {
+  return {
+    ...base,
+    placements: base.placements.map((placement) => {
+      if (placement.ref !== ref) return placement
+      const move = (hole: Hole): Hole => ({
+        strip: hole.strip + dStrip,
+        column: hole.column + dColumn,
+      })
+      return {
+        ...placement,
+        origin: move(placement.origin),
+        holes: placement.holes.map(move),
+        pins: new Map([...placement.pins].map(([pin, hole]) => [pin, move(hole)])),
+      }
+    }),
+  }
+}
+
+test("nothing is proposed that overlaps a RIGID part's area, lead or no lead", () => {
+  // THE OWNER, 2026-10-15: *"Rigid parts are rigid. You cant push them out of
+  // the way or rout under them."* So the rule is wider than `routedUnderRigid`:
+  // a rigid part's rectangle may not be overlapped at all, because the part
+  // that would have to give way cannot.
+  const { base, reference } = trimmerBesideAResistor()
+  const areas = partAreasOf(base, RECORDED_SPANS, PIN_PATTERNS)
+  const trimmer = areas.find((area) => area.ref === "RV1")
+  const resistor = base.placements.find((placement) => placement.ref === "R1")
+  if (trimmer === undefined || resistor === undefined) throw new Error("the fixture changed")
+  expect(trimmer.rigid, "the trimmer is the rigid part").toBe(true)
+
+  const taken = new Set(
+    base.placements
+      .filter((placement) => placement.ref !== "R1")
+      .flatMap((placement) => placement.holes.map(holeKey)),
+  )
+  // EVERY POSITION THE NEW RULE MUST EXCLUDE AND THE OLD ONE ADMITS, enumerated
+  // independently of the generator: the resistor translated so its rectangle
+  // meets the trimmer's, every hole free and on the stock, and NO lead of either
+  // part inside the other's rectangle - so `routedUnderRigid` is silent on all
+  // of it and only the area rule can refuse it. The axial resistor has no body
+  // margin, so its rectangle is the line of holes BETWEEN its leads: it crosses
+  // the trimmer's body with its leads clear on either side.
+  const bodyOnRigid = new Set<string>()
+  for (let dStrip = -base.grid.strips; dStrip < base.grid.strips; dStrip += 1) {
+    for (let dColumn = -base.grid.columns; dColumn < base.grid.columns; dColumn += 1) {
+      if (dStrip === 0 && dColumn === 0) continue
+      const next = slid(base, "R1", dStrip, dColumn)
+      const moved = next.placements.find((placement) => placement.ref === "R1")
+      if (moved === undefined) throw new Error("the slide lost the resistor")
+      const onStock = moved.holes.every(
+        (hole) =>
+          hole.strip >= 0 &&
+          hole.column >= 0 &&
+          hole.strip < base.grid.strips &&
+          hole.column < base.grid.columns,
+      )
+      if (!onStock) continue
+      if (moved.holes.some((hole) => taken.has(holeKey(hole)))) continue
+      const movedArea = partAreasOf(next, RECORDED_SPANS, PIN_PATTERNS).find(
+        (area) => area.ref === "R1",
+      )
+      if (movedArea === undefined) throw new Error("the slide lost the resistor's area")
+      if (!rectsOverlap(movedArea.rect, trimmer.rect)) continue
+      if (routedUnderRigid(movedArea, [trimmer]) !== null) continue
+      bodyOnRigid.add(moved.holes.map(holeKey).sort().join(" "))
+    }
+  }
+  expect(
+    bodyOnRigid.size,
+    "the area rule has something to exclude that routedUnderRigid admits",
+  ).toBeGreaterThan(0)
+
+  const proposals = moves({ base, reference })
+  let checked = 0
+  for (const next of proposals) {
+    const moved = next.placements.find((placement) => placement.ref === "R1")
+    if (moved === undefined) throw new Error("a proposal dropped the resistor")
+    checked += 1
+    expect(
+      bodyOnRigid.has(moved.holes.map(holeKey).sort().join(" ")),
+      "no proposal lays a body across the trimmer's area",
+    ).toBe(false)
+    expect(
+      rigidOverlaps(partAreasOf(next, RECORDED_SPANS, PIN_PATTERNS)),
+      "and no proposal's finished board has a rigid part overlapped at all",
+    ).toEqual([])
+  }
+  expect(checked, "every proposal was checked").toBe(proposals.length)
+})
+
+test("a FORMABLE part's body may still be slid into another formable one's", () => {
+  // The other half of the owner's ruling, and the reason the rule turns on
+  // rigidity rather than on overlap: *"Resistors, diodes, most capacitors can be
+  // jostled out of the way of each other"*. Without this assertion the area rule
+  // could be hardened to "no overlap at all" and every other test would pass.
+  const { base, reference } = twoCansSideBySide()
+  const areas = partAreasOf(base, RECORDED_SPANS, PIN_PATTERNS)
+  expect(
+    areas.map((area) => area.rigid),
+    "nothing on this board is rigid",
+  ).toEqual([false, false])
+  expect(rigidOverlaps(areas), "so the rule cannot bite on the base either").toEqual([])
+
+  const overlapping = moves({ base, reference }).filter((next) => {
+    const placed = partAreasOf(next, RECORDED_SPANS, PIN_PATTERNS)
+    const first = placed[0]
+    const second = placed[1]
+    if (first === undefined || second === undefined) throw new Error("a proposal lost a can")
+    return rectsOverlap(first.rect, second.rect)
+  })
+  expect(
+    overlapping.length,
+    "a formable body over a formable body is proposed, not withheld",
+  ).toBeGreaterThan(0)
+  // And none of those is a lead in a hole another part's lead holds, which is
+  // the thing that IS refused - so what is admitted here is body-on-body only.
+  for (const next of overlapping) expect(holesOverlap(next)).toBeNull()
 })
 
 test("proposals are not ranked, filtered by cost, or sorted", () => {

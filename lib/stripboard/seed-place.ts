@@ -36,6 +36,7 @@ import {
   areaRect,
   comfortOf,
   rectOnBoard,
+  rigidOverlap,
   routedUnderRigid,
   type FramePin,
   type PartArea,
@@ -166,10 +167,14 @@ function clusterDistance(workspace: Workspace, part: SeedPart, rect: Rect): numb
  * `seatsAt` says where the terminals go at a given origin column and `framePins`
  * says where they are in the part's own frame, which is the frame the body
  * margins are stated in. A column is rejected outright - never ranked - when a
- * hole is taken or off the board, when the part's rectangle leaves the stock, or
- * when it would put a lead under a rigid part. That last is the owner's hard
- * rule and it is a rejection rather than a tier, because *"rigid parts shouldn't
- * be routed through/under"* has no cheaper version.
+ * hole is taken or off the board, when the part's rectangle leaves the stock,
+ * when it would put a lead under a rigid part, or when its area would overlap a
+ * rigid part's. The last two are the owner's two hard geometric rules and they
+ * are rejections rather than tiers, because *"rigid parts shouldn't be routed
+ * through/under"* and *"Rigid parts are rigid. You cant push them out of the way
+ * or rout under them."* have no cheaper version. A formable part overlapping
+ * another formable part is NOT rejected - it ranks `crowded`, which is the tier
+ * that case exists for.
  */
 export function chooseColumn(
   workspace: Workspace,
@@ -193,6 +198,7 @@ export function chooseColumn(
       leads: seated.map(({ hole }) => hole),
     }
     if (routedUnderRigid(area, workspace.areas) !== null) continue
+    if (rigidOverlap(area, workspace.areas) !== null) continue
     const comfortRank = COMFORT_ORDER.indexOf(comfortOf(rect, workspace.areas))
     const position: Position = {
       origin,

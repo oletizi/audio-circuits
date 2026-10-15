@@ -2,38 +2,43 @@
  * ROOM TO WORK: the figures the construction cites, re-derived from the owner's
  * own built boards, and the behaviour they produce on a seed.
  *
- * **WHAT THESE ESTABLISH.** What the four measurements `lib/stripboard/seed-area.ts`
- * states as its evidence actually come out as on his boards - which since the
- * trimmer rectangles were corrected is NOT in every case what that file's
- * comment quotes; that a part's body margins come out of its `.kicad_mod` rather
- * than a table; that the hard rule - no lead inside a rigid part's area - holds
- * on every seed; that a seed no longer piles its parts into one column band,
- * which is the defect this round exists to fix; and that comfort beats
- * clustering when the two disagree, which is the owner's stated priority.
+ * **WHAT THESE ESTABLISH.** How his as-built boards COMPARE to the rules
+ * `lib/stripboard/seed-area.ts` states - not the evidence for those rules, which
+ * is a distinction the 2026-10-15 ruling forced and which that file's own comment
+ * now spells out; that a part's body margins come out of its `.kicad_mod` rather
+ * than a table; that both hard rules hold on every seed - no lead inside a rigid
+ * part's area (`routedUnderRigid`) and no two areas overlapping when either part
+ * is rigid (`rigidOverlap`); that a formable body over a formable body is still
+ * ADMITTED, which is the owner's other directive and the thing that keeps the
+ * second rule from being silently stricter than he asked; that a seed no longer
+ * piles its parts into one column band; and that comfort beats clustering when
+ * the two disagree.
  *
- * **THREE OF THE FOUR FIGURES MOVED WHEN THE INSTRUMENT WAS CORRECTED, AND THE
- * RULES THEY ARE EVIDENCE FOR ARE LEFT EXACTLY AS THEY WERE.** The defect and
- * the eight rectangles it displaced are `./seed-room-fixtures.ts`'s to state.
- * Corrected: one lead of 85 under a rigid part rather than none, two overlapping
- * pairs on `feedback` rather than none, three on `buffered` rather than four,
- * both clearance histograms shifted, the wire split unchanged. **No threshold,
- * tier, refusal or argument in `seed-area.ts` or `seed-place.ts` is adjusted to
- * fit them**: an agent may never author the acceptance criteria for the artifact
- * it is producing, so this file reports and the owner decides.
+ * **THE FIGURES MOVED WHEN THE INSTRUMENT WAS CORRECTED, AND NO RULE WAS
+ * ADJUSTED TO FIT THEM.** The defect and the eight rectangles it displaced are
+ * `./seed-room-fixtures.ts`'s to state. Corrected: one lead of 85 under a rigid
+ * part rather than none, two overlapping pairs on `feedback` rather than none,
+ * three on `buffered` rather than four, both clearance histograms shifted, the
+ * wire split unchanged. **No threshold, tier, refusal or argument in
+ * `seed-area.ts` or `seed-place.ts` is adjusted to fit them**: an agent may never
+ * author the acceptance criteria for the artifact it is producing, so this file
+ * reports and the owner decides. The owner then decided, and
+ * ***"my directives are more authoritative than a file on disk"*** is why four
+ * of the five overlapping pairs these tests measure are pairs the tool refuses to
+ * reproduce.
  *
  * **WHAT THEY DO NOT ESTABLISH.**
  *
  *   - **nothing here asserts a width, a density or a score.** The regression
- *     assertion is a PROPERTY - no two parts' occupied areas overlap - which a
- *     31-strip-by-3-column board with sixteen parts cannot satisfy. **It is no
- *     longer a property `feedback` has**, which is a finding about the stated
- *     justification and not a licence to weaken the assertion; see the
- *     regression test's own comment. A column count would be a threshold of mine;
- *   - **the clearance figures are asserted as they were measured, including
- *     where they are unflattering to the rule.** `buffered` has three overlapping
- *     pairs and one wire over a rigid part, so neither is refused by the
- *     construction, and these tests pin those counts so that a later reading
- *     cannot quietly harden the rule past what he builds;
+ *     assertion is a PROPERTY - no overlap in which either part is rigid - which
+ *     a 31-strip-by-3-column board that stacks an electrolytic on a trimmer
+ *     cannot satisfy. A column count would be a threshold of mine. Why it is that
+ *     property and not the absolute one is argued where it is asserted;
+ *   - **the figures are asserted as they were measured, including where they are
+ *     unflattering to the rules.** `feedback` overlaps two pairs and `buffered`
+ *     three, and one of his eight wires crosses a rigid part; these tests pin
+ *     those counts so that neither a later hardening nor a later softening can
+ *     happen without the comparison moving in plain sight;
  *   - **`areaRect` is conservative on a stretched part** by up to
  *     `beforeAlong + afterAlong` holes, which is 2 for the three radial cans and
  *     0 for the other ten footprints. Every figure here is measured with that
@@ -53,6 +58,7 @@ import {
   holeInRect,
   freeHolesBetween,
   rectsOverlap,
+  rigidOverlap,
   routeOf,
   routedUnderRigid,
   spanHoles,
@@ -74,6 +80,9 @@ import {
   twoLead,
 } from "./seed-fixtures.ts"
 import { handBoard } from "./seed-room-fixtures.ts"
+import type { Grid } from "../../../lib/stripboard/board.ts"
+import type { LeadSpan } from "../../../lib/kicad/lead-span-model.ts"
+import type { Ordering, SeedNetlist } from "../../../lib/stripboard/seed-model.ts"
 
 const SOURCE = { patterns: PIN_PATTERNS, spans: LEAD_SPANS }
 
@@ -94,6 +103,22 @@ function overlappingPairs(areas: readonly PartArea[]): readonly string[] {
   const pairs: string[] = []
   for (const [index, a] of areas.entries()) {
     for (const b of areas.slice(index + 1)) {
+      if (rectsOverlap(a.rect, b.rect)) pairs.push(`${a.ref}/${b.ref}`)
+    }
+  }
+  return pairs
+}
+
+/**
+ * The overlapping pairs in which at least one part is RIGID - the ones the
+ * owner's 2026-10-15 directive refuses, as against the formable-on-formable ones
+ * his earlier directives admit.
+ */
+function rigidOverlappingPairs(areas: readonly PartArea[]): readonly string[] {
+  const pairs: string[] = []
+  for (const [index, a] of areas.entries()) {
+    for (const b of areas.slice(index + 1)) {
+      if (!a.rigid && !b.rigid) continue
       if (rectsOverlap(a.rect, b.rect)) pairs.push(`${a.ref}/${b.ref}`)
     }
   }
@@ -127,11 +152,12 @@ test("the hard rule against his own boards, measured: ONE lead under a rigid par
   // between its terminals - the rectangle-free lower bound, the box a rigid
   // part's own leads span, is still 0 of 85 on both boards.
   //
-  // **NOTHING IN `lib/stripboard/seed-area.ts` IS ADJUSTED TO THIS FIGURE.** The
-  // rule there still refuses a lead inside a rigid part's area outright, and its
-  // comment still cites 0 of 85. An agent may never author the acceptance
-  // criteria for the artifact it is producing: this file reports what his boards
-  // measure and the owner decides what the rule should be.
+  // **THE RULE WAS NOT ADJUSTED TO THIS FIGURE AND THE OWNER WIDENED IT INSTEAD.**
+  // `lib/stripboard/seed-area.ts` still refuses a lead inside a rigid part's area
+  // outright - *"Rigid parts are rigid. You cant push them out of the way or rout
+  // under them."* - and now refuses an area overlap with one too. An agent may
+  // never author the acceptance criteria for the artifact it is producing: this
+  // file reports what his boards measure and he decides what the rules are.
   const feedback = handBoard("transistor-preamp-feedback")
   const buffered = handBoard("transistor-preamp-buffered")
   expect(feedback.skipped, "every part on feedback is measured").toEqual([])
@@ -198,12 +224,25 @@ test("the clearance his boards actually leave, measured rather than quoted", () 
     "Q1/RV3",
     "R4/RV4",
   ])
+  // BOTH of feedback's involve a rigid part - Q1/RV3 is rigid on rigid, where
+  // NEITHER can be moved aside - so the tool refuses both.
+  expect(
+    [...rigidOverlappingPairs(feedback.areas)].sort(),
+    "and both are ones the area rule refuses",
+  ).toEqual(["Q1/RV3", "R4/RV4"])
 
   // buffered overlaps in three pairs rather than four: C1/RV4, C3/Q1 and C3/R1
   // stand, and RV1/RV2 was an artifact of both trimmers being measured two strips
-  // out. An overlap is still admitted rather than refused.
+  // out. **Two of the three are ones the tool now refuses** - C1/RV4 and C3/Q1
+  // each involve a rigid part - and C3/R1 is formable on formable and stays
+  // admitted. So four of the five overlaps across both boards are spots the tool
+  // will not reproduce, which is the ruling working rather than a contradiction.
   const buffered = handBoard("transistor-preamp-buffered")
   expect([...overlappingPairs(buffered.areas)].sort()).toEqual(["C1/RV4", "C3/Q1", "C3/R1"])
+  expect(
+    [...rigidOverlappingPairs(buffered.areas)].sort(),
+    "the two of the three that the area rule refuses",
+  ).toEqual(["C1/RV4", "C3/Q1"])
   expect([...clearanceHistogram(buffered.areas).entries()].sort((a, b) => a[0] - b[0])).toEqual([
     [0, 17],
     [1, 3],
@@ -282,19 +321,33 @@ test("a body margin that is not a whole number of holes refuses by name", () => 
 
 test("THE REGRESSION: a seed no longer piles its parts into one column band", () => {
   // The defect: on a 34 x 27 stock the first version returned a board 31 strips
-  // by THREE columns with 37 leads in it, overlapping an electrolytic with a
-  // trimmer. The property asserted here is that no two parts' occupied areas
-  // overlap, which that board cannot satisfy. A width or a density figure is
-  // deliberately NOT asserted: it would be a threshold chosen by the thing being
-  // measured.
+  // by THREE columns with 37 leads in it, **overlapping an electrolytic with a
+  // trimmer** - and a trimmer is rigid, so that is exactly the pair the property
+  // below forbids and the ribbon board cannot satisfy it. A width or a density
+  // figure is deliberately NOT asserted: it would be a threshold chosen by the
+  // thing being measured.
   //
-  // **ITS STATED JUSTIFICATION HAS LOST ITS EVIDENCE AND THE ASSERTION STANDS
-  // UNCHANGED.** This comment used to call it "the one his own feedback board
-  // has"; measured with the corrected trimmer rectangles, `feedback` has two
-  // overlapping pairs (Q1/RV3, R4/RV4) and `buffered` three, so no-overlap is a
-  // property neither built board holds. Whether a GENERATED seed should still be
-  // held to it is the owner's call, and loosening it here on evidence I measured
-  // would be authoring the criterion for the artifact.
+  // **THE ASSERTION IS NARROWED TO RIGID-INVOLVING OVERLAPS, AND THAT IS A
+  // DECISION ABOUT AUTHORITY RATHER THAN ABOUT EVIDENCE.** A previous round left
+  // it absolute - no two parts' areas overlap at all - and wrote that its
+  // justification had lost its evidence, because `feedback` turned out to have
+  // two overlapping pairs and `buffered` three, so no-overlap is a property
+  // neither built board holds. The owner has since ruled, and the ruling decides
+  // it both ways:
+  //
+  //   - *"Rigid parts are rigid. You cant push them out of the way or rout under
+  //     them."* and *"my directives are more authoritative than a file on disk"*
+  //     give the rigid cases their justification back. A generated seed is held
+  //     to them even though his own boards break them four times;
+  //   - *"Resistors, diodes, most capacitors can be jostled out of the way of
+  //     each other"* and *"Don't worry about body collisions on the stripboard.
+  //     It's extremely flexible."* mean the absolute form asserted something he
+  //     never asked for. Nothing authorises it, so it is not asserted: it would
+  //     be a criterion authored by the thing being measured.
+  //
+  // Generated seeds happen to have NO overlap of either kind today. That is a
+  // measurement and is deliberately not pinned here - pinning it would forbid a
+  // placement the owner permits, and quietly.
   const { netlist, nets } = committedNetlist("transistor-preamp-feedback")
   const byRef = new Map(netlist.parts.map((part) => [part.ref, part]))
   let built = 0
@@ -337,8 +390,8 @@ test("THE REGRESSION: a seed no longer piles its parts into one column band", ()
         `ordering "${entry.name}" routes no lead under a rigid part`,
       ).toEqual([])
       expect(
-        overlappingPairs(areas),
-        `ordering "${entry.name}" gives every part its own space`,
+        rigidOverlappingPairs(areas),
+        `ordering "${entry.name}" overlaps no rigid part's area`,
       ).toEqual([])
       expect(
         violationsOf(seed, derivedCuts(seed, nets), nets),
@@ -347,6 +400,158 @@ test("THE REGRESSION: a seed no longer piles its parts into one column band", ()
     }
   }
   expect(built, "at least one derived ordering admits this circuit").toBeGreaterThan(0)
+})
+
+/**
+ * **A ONE-COLUMN BOARD WITH TWO PARTS WHOSE BODIES MUST OVERLAP**, and nothing
+ * else it can do about it.
+ *
+ * Ten strips, ONE column, four nets at stride 3 - so `A` hosts strip 0, `B`
+ * strip 3, `C` strip 6, `D` strip 9 - and a synthetic span fixed at 4 holes, so
+ * a lead pair reaches its two home strips and nothing else. `blocker` takes
+ * strips 0 and 3 with its body reaching 2 strips further on, covering strips
+ * 0-5; `C1` takes strips 6 and 9 with its body reaching 2 strips back, covering
+ * strips 4-9. The two rectangles meet at strips 4 and 5.
+ *
+ * **NEITHER PART HAS A LEAD IN THE OTHER'S RECTANGLE, WHICH IS THE WHOLE POINT.**
+ * `blocker`'s leads are on strips 0 and 3, outside 4-9; `C1`'s are on 6 and 9,
+ * outside 0-5. So `routedUnderRigid` is silent on this board whichever part is
+ * rigid, and only the AREA rule can see it - which is what makes the pair of
+ * tests below a test of that rule rather than of the older one.
+ *
+ * `rigid` is the parameter because the two outcomes differ only in it.
+ */
+const OVERLAP_FOOTPRINT = "SYNTHETIC:Seed_Overlap"
+
+interface BodyCase {
+  readonly netlist: SeedNetlist
+  readonly spans: ReadonlyMap<string, LeadSpan>
+  readonly ordering: Ordering
+  readonly grid: Grid
+}
+
+function bodiesMustMeet(rigid: boolean): BodyCase {
+  return {
+    netlist: netlistOf([
+      twoLead("RV1", OVERLAP_FOOTPRINT, ["1", "A"], ["2", "B"], {
+        rigid,
+        body: { beforeAlong: 0, afterAlong: 2, beforeAcross: 0, afterAcross: 0 },
+      }),
+      twoLead("C1", OVERLAP_FOOTPRINT, ["1", "C"], ["2", "D"], {
+        body: { beforeAlong: 2, afterAlong: 0, beforeAcross: 0, afterAcross: 0 },
+      }),
+    ]),
+    spans: new Map([[OVERLAP_FOOTPRINT, syntheticSpan(OVERLAP_FOOTPRINT, 4, 4)]]),
+    ordering: ordering("abcd", ["A", "B", "C", "D"], 3),
+    grid: { strips: 10, columns: 1 },
+  }
+}
+
+test("rigidOverlap, over the whole 2x2 of rigidity, and it reports which part cannot move", () => {
+  // THE FOUR CASES THE OWNER'S TWO DIRECTIVES DECIDE BETWEEN, asserted here
+  // rather than inferred from the placer's behaviour: rigid/rigid REFUSED,
+  // rigid/formable REFUSED, formable/formable ADMITTED, and no overlap at all
+  // ADMITTED whatever the rigidity. Each rectangle holds its own lead, which is
+  // the premise the test above asserts over his real boards.
+  // `leadStrip` is at the far END of each rectangle from the pair it overlaps, so
+  // that NO lead sits inside another part's rectangle anywhere in this test and
+  // `routedUnderRigid` is silent on every case - which is what makes these
+  // assertions about the new rule rather than about the old one.
+  const area = (
+    ref: string,
+    rigid: boolean,
+    minStrip: number,
+    maxStrip: number,
+    leadStrip: number,
+  ): PartArea => ({
+    ref,
+    rigid,
+    rect: { minStrip, maxStrip, minColumn: 0, maxColumn: 2 },
+    leads: [{ strip: leadStrip, column: 0 }],
+  })
+  const rigidLow = area("RV1", true, 0, 3, 0)
+  const rigidHigh = area("RV2", true, 2, 5, 5)
+  const formableHigh = area("R1", false, 2, 5, 5)
+  const formableFar = area("R2", false, 8, 9, 8)
+
+  const both = rigidOverlap(rigidLow, [rigidHigh])
+  expect(both?.rigid, "rigid on rigid is refused").toBe("RV1")
+  expect(both?.other).toBe("RV2")
+  expect(both?.bothRigid, "and neither of the two can be moved aside").toBe(true)
+
+  // Either argument order names the rigid part as the one that cannot move, so a
+  // refusal message cannot blame the part that could have been bent.
+  const mixed = rigidOverlap(formableHigh, [rigidLow])
+  expect(mixed?.rigid, "the rigid part is named as the immovable one").toBe("RV1")
+  expect(mixed?.other).toBe("R1")
+  expect(mixed?.bothRigid).toBe(false)
+  const reversed = rigidOverlap(rigidLow, [formableHigh])
+  expect(reversed?.rigid, "whichever way round the pair is handed in").toBe("RV1")
+  expect(reversed?.other).toBe("R1")
+
+  expect(
+    rigidOverlap(formableHigh, [area("R3", false, 0, 3, 0)]),
+    "formable on formable is ADMITTED - the owner's other directive",
+  ).toBeNull()
+  expect(rigidOverlap(rigidLow, [formableFar]), "and a pair that does not overlap").toBeNull()
+  expect(rigidOverlap(rigidLow, []), "nothing placed yet").toBeNull()
+
+  // AND IT IS NOT A RESTATEMENT OF routedUnderRigid: neither part has a lead in
+  // the other's rectangle here, so the older rule is silent on a pair this one
+  // refuses.
+  expect(routedUnderRigid(formableHigh, [rigidLow]), "no lead of either is inside the other").toBe(
+    null,
+  )
+})
+
+test("THE AREA RULE: a formable body is refused over a RIGID part's area", () => {
+  // THE OWNER, 2026-10-15: *"Rigid parts are rigid. You cant push them out of
+  // the way or rout under them."* There is exactly one column on this stock and
+  // the only placement that reaches `C1`'s two home strips lays its body over
+  // the rigid part's, so the construction has nothing left to try and refuses.
+  const { netlist, spans, ordering: order, grid } = bodiesMustMeet(true)
+  const message = refusalFrom(() => seedsFrom(netlist, grid, spans, [order]))
+  expect(message, "the construction stops rather than returning the board").toStartWith(
+    "stripboard-seed-leads-cannot-reach",
+  )
+  expect(message, "it names the part that could not be put down").toContain('"C1"')
+  expect(message, "and says a rigid part's area is what closed the column off").toContain("rigid")
+})
+
+test("THE AREA RULE'S OTHER HALF: two FORMABLE bodies may still overlap", () => {
+  // *"Resistors, diodes, most capacitors can be jostled out of the way of each
+  // other"*, and *"Don't worry about body collisions on the stripboard. It's
+  // extremely flexible."* The identical board with the blocker declared formable
+  // BUILDS, and the board it builds has the overlap in it - so the rule turns on
+  // rigidity and is not quietly "no overlap at all".
+  const { netlist, spans, ordering: order, grid } = bodiesMustMeet(false)
+  const [seed] = seedsFrom(netlist, grid, spans, [order])
+  if (seed === undefined) throw new Error("unreachable: one seed per ordering")
+  const byRef = new Map(netlist.parts.map((part) => [part.ref, part]))
+  const areas: PartArea[] = seed.placements.map((placement) => {
+    const part = byRef.get(placement.ref)
+    if (part === undefined) throw new Error(`no part ${placement.ref}`)
+    return {
+      ref: placement.ref,
+      rigid: part.rigid,
+      rect: areaRect(
+        [...placement.pins.values()].map((hole) => ({
+          alongSteps: Math.abs(hole.strip - placement.origin.strip),
+          acrossSteps: 0,
+        })),
+        part.body,
+        placement.origin,
+        placement.direction,
+      ),
+      leads: [...placement.pins.values()],
+    }
+  })
+  expect(areas.map((area) => area.rigid), "nothing on this board is rigid").toEqual([false, false])
+  expect(
+    [...overlappingPairs(areas)].sort(),
+    "the two bodies do overlap, so the refusing twin above is not refusing for another reason",
+  ).toEqual(["RV1/C1"])
+  expect(leadsUnderRigid(areas), "and no lead is under anything rigid either way").toEqual([])
 })
 
 test("comfort beats clustering, which is the owner's stated priority", () => {

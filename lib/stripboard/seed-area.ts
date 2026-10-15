@@ -1,6 +1,7 @@
 /**
- * THE SPACE A PART ACTUALLY TAKES UP, and the two rules the owner stated about
- * it: nothing routed under a rigid part, and room to work where there is room.
+ * THE SPACE A PART ACTUALLY TAKES UP, and the rules the owner stated about it:
+ * nothing routed under a rigid part, nothing overlapping a rigid part at all, and
+ * room to work where there is room.
  *
  * **WHY THIS EXISTS, AND IT IS A DEFECT REPORT RATHER THAN A FEATURE.** The
  * first version of the seed builder placed every part at the lowest free column,
@@ -28,14 +29,51 @@
  * fewer wires and therefore scores better on the owner's own objective than the
  * ribbon did.
  *
- * **EVERY FIGURE BELOW IS MEASURED ON `transistor-preamp-feedback` AND
- * `transistor-preamp-buffered` - boards he laid out by hand, built, and uses -
- * and none is chosen here.** The measurements, over 37 parts and 85 leads with
- * each part's area derived from its own `.kicad_mod`:
+ * **WHERE THE RULES COME FROM, AND IT IS NOT THE MEASUREMENTS.** Every hard rule
+ * here is one of the owner's stated directives. The figures below are measured on
+ * `transistor-preamp-feedback` and `transistor-preamp-buffered` - boards he laid
+ * out by hand, built and uses - and they record **how his as-built boards compare
+ * to the rules**, which is a different claim from being the evidence for them.
  *
- *   - **one lead of 85 sits inside a rigid part's occupied area**, and the rule
- *     stands anyway BY THE OWNER'S RULING. That is `routedUnderRigid` below, and
- *     it is the one HARD rule.
+ * **THAT DISTINCTION IS A CORRECTION AND NOT A NUANCE.** Until 2026-10-15 this
+ * comment presented the figures as the justification, and "this rule would refuse
+ * a board he built" was treated here as a veto on the rule. He ruled otherwise,
+ * verbatim: ***"I've already told you how rigid parts operate. The as-built
+ * diagram is instructive, but my directives are more authoritative than a file on
+ * disk."*** So a spot on one of his boards that a rule refuses is a spot that was
+ * harder to build than it needed to be, not a counter-example. The figures stay
+ * because a rule whose disagreement with the built boards is unmeasured is a rule
+ * nobody can see the cost of.
+ *
+ * **THE TWO HARD RULES, both his words, both refusals rather than tiers.**
+ *
+ *   - *"Rigid parts shouldn't be routed through/under."* - `routedUnderRigid`
+ *     below: no LEAD inside a rigid part's area;
+ *   - *"Rigid parts are rigid. You cant push them out of the way or rout under
+ *     them."* (2026-10-15) - `rigidOverlap` below: two AREAS may not overlap when
+ *     EITHER part is rigid, because the one that would have to give way cannot.
+ *     Formable-on-formable overlap stays admitted, by his other directive:
+ *     *"Resistors, diodes, most capacitors can be jostled out of the way of each
+ *     other"*, and *"Don't worry about body collisions on the stripboard. It's
+ *     extremely flexible."*
+ *
+ * **HOW HIS BOARDS COMPARE, over 37 parts and 85 leads with each part's area
+ * derived from its own `.kicad_mod`. FOUR OF THE FIVE OVERLAPS ON HIS TWO BOARDS
+ * ARE ONES THIS TOOL WILL NOT REPRODUCE**, and that is the intended outcome of
+ * the ruling above rather than a contradiction of it:
+ *
+ *   - `feedback` has 2 overlapping pairs - `Q1`(rigid)/`RV3`(rigid) and
+ *     `R4`(formable)/`RV4`(rigid). **Both refused** by `rigidOverlap`;
+ *   - `buffered` has 3 - `C1`(formable)/`RV4`(rigid), `C3`(formable)/`Q1`(rigid)
+ *     and `C3`(formable)/`R1`(formable). **The first two refused, the third
+ *     admitted**, which is the rigid/formable split doing exactly what he said;
+ *   - **one lead of 85 sits inside a rigid part's occupied area**: `R4`'s lower
+ *     lead at strip 14, column 13 on `feedback`, inside `RV4`'s rectangle. It is
+ *     under the trimmer's moulded BODY OVERHANG and not between its terminals -
+ *     `RV4`'s three terminals span columns 10-12 and the body reaches one column
+ *     further - and the question was put to him in exactly those terms, which is
+ *     what produced the 2026-10-15 ruling. The rule therefore tests the whole
+ *     RECTANGLE, body included, and is not narrowed to the terminal span.
  *
  *     **THIS FIGURE WAS 0 UNTIL 2026-10-15 AND THE 0 WAS AN ARTEFACT**, which is
  *     why it is spelled out rather than quietly updated. `handBoard` built each
@@ -47,31 +85,16 @@
  *     contained its own leads. The fixture now derives areas through
  *     `partAreasOf`, the same derivation the placer and the move generator use,
  *     and a test asserts the premise every figure here rests on: a part's
- *     rectangle contains that part's own leads.
- *
- *     The one lead is `R4`'s lower lead at strip 14, column 13 on `feedback`,
- *     inside `RV4`'s rectangle. It is under the trimmer's moulded BODY OVERHANG
- *     and not between its terminals - `RV4`'s three terminals span columns 10-12
- *     and the body reaches one column further. So his board keeps the rule on
- *     terminals and breaks it on overhang, once, and the question was put to him
- *     in exactly those terms. **His ruling, verbatim: *"Rigid parts are rigid.
- *     You cant push them out of the way or rout under them."*** The rule
- *     therefore tests the whole RECTANGLE, body included, and is not narrowed to
- *     the terminal span. What the one lead means is that one spot on a board he
- *     built is harder to work on than it needed to be - not that the rule is
- *     wrong;
- *   - **nearest-neighbour clearance on `feedback`: 15 of 16 parts are ADJACENT to
- *     their nearest neighbour with no free hole between, one has two free holes,
- *     and NO pair of occupied areas overlaps.** So `touching` is what he mostly
- *     leaves and no-overlap is the condition that board never breaks;
- *   - **`buffered` has 4 overlapping pairs** (C1/RV4, C3/Q1, C3/R1, RV1/RV2) and
- *     7 of its 21 parts are adjacent, so **overlap is NOT refused here.** The
- *     owner ruled body collisions out of the model outright - *"Don't worry
- *     about body collisions on the stripboard. It's extremely flexible."* - and
- *     a rule that refused them would refuse a board he built;
+ *     rectangle contains that part's own leads;
+ *   - **nearest-neighbour clearance on `feedback`: 14 of 16 parts are ADJACENT to
+ *     their nearest neighbour with no free hole between, one has one free hole and
+ *     one has two.** So `touching` is what he mostly leaves, and both looser tiers
+ *     are things he builds - which is why neither is REFUSED and `crowded` is a
+ *     tier rather than an error;
  *   - **5 of his 8 wires cross no part's area at all**; two cross a formable part
- *     and one crosses a rigid trimmer on `buffered`. So a crossing is ordered
- *     last rather than forbidden.
+ *     and one crosses a rigid trimmer on `buffered`. A crossing is ordered last
+ *     rather than forbidden: he gave no directive against one, and absent a
+ *     directive the measurement is all there is.
  *
  * **THE TIERS ARE THEREFORE A PREFERENCE ORDER OVER POSITIONS, NOT A COST.** A
  * placer asks for the best tier available and takes it; nothing is added up and
@@ -218,7 +241,7 @@ export function rectsOverlap(a: Rect, b: Rect): boolean {
 }
 
 /**
- * **THE HARD RULE: a lead inside a rigid part's area.**
+ * **THE FIRST HARD RULE: a lead inside a rigid part's area.**
  *
  * Returns the offending pair, or `null`. It is checked in both directions - a
  * new part's leads against the rigid parts already down, and the placed parts'
@@ -254,19 +277,82 @@ export function routedUnderRigid(
   return null
 }
 
+/** The offending pair `rigidOverlap` reports, with which of the two cannot move. */
+export interface RigidOverlap {
+  /** A part of the pair whose terminals cannot be formed, so it cannot give way. */
+  readonly rigid: string
+  /** The other part of the pair, rigid or formable. */
+  readonly other: string
+  /** `true` when `other` is rigid too, so NEITHER of the two can be moved aside. */
+  readonly bothRigid: boolean
+}
+
+/**
+ * **THE SECOND HARD RULE: two areas overlapping when EITHER part is rigid.**
+ *
+ * Returns the offending pair, or `null`. It needs no second direction the way
+ * `routedUnderRigid` does, because `rectsOverlap` is symmetric and so is "either
+ * of these two is rigid".
+ *
+ * **IT DOES NOT REPLACE `routedUnderRigid` AND NEITHER SUBSUMES THE OTHER.** A
+ * lead can sit inside a rigid part's rectangle while the two RECTANGLES do not
+ * meet - a formable part with no body margin whose rectangle is the bare line
+ * between its leads is the ordinary case - and two rectangles can meet with
+ * neither part's lead inside the other, which is body-on-body. Both are checked,
+ * at the same two sites.
+ *
+ * **WHY IT IS A REFUSAL AND NOT A TIER, in the owner's words, 2026-10-15:**
+ * ***"Rigid parts are rigid. You cant push them out of the way or rout under
+ * them."*** A formable part sharing space with a trimmer, a transistor, a header
+ * or a DIP is a part that has to be bent aside, and the only candidate for being
+ * bent is the one that cannot be. When both are rigid neither can, which is why
+ * `bothRigid` is reported rather than inferred by the caller.
+ *
+ * **FORMABLE-ON-FORMABLE IS DELIBERATELY ADMITTED**, by his other directives:
+ * *"Resistors, diodes, most capacitors can be jostled out of the way of each
+ * other"*, and *"Don't worry about body collisions on the stripboard. It's
+ * extremely flexible."* A rule here that refused every overlap would be stricter
+ * than anything he stated, and `comfortOf`'s `crowded` tier is where that case
+ * goes instead - ranked last, never rejected.
+ *
+ * **`rigid` IS NOT THIS MODULE'S JUDGEMENT**, for the reason `routedUnderRigid`
+ * gives: it is `LeadSpan.geometry.kind` from `lib/kicad/lead-span.ts`.
+ */
+export function rigidOverlap(
+  candidate: PartArea,
+  placed: readonly PartArea[],
+): RigidOverlap | null {
+  for (const other of placed) {
+    if (!candidate.rigid && !other.rigid) continue
+    if (!rectsOverlap(candidate.rect, other.rect)) continue
+    return {
+      rigid: candidate.rigid ? candidate.ref : other.ref,
+      other: candidate.rigid ? other.ref : candidate.ref,
+      bothRigid: candidate.rigid && other.rigid,
+    }
+  }
+  return null
+}
+
 /**
  * How good a position is for BUILDING it, in three tiers, best first.
  *
  * `roomy` is at least one free hole all round; `touching` is adjacent with none;
- * `crowded` is an overlap. **A position where the hard rule breaks is not a tier
- * at all** - it is rejected.
+ * `crowded` is an overlap. **A position where either hard rule breaks is not a
+ * tier at all** - it is rejected.
  *
- * **WHERE THE THREE COME FROM, measured with this file's own `areaRect` so the
- * figures and the rule are the same quantity.** On `feedback`, 15 of 16 parts
- * are `touching` their nearest neighbour and one has two free holes; NO pair
- * overlaps. On `buffered`, four pairs overlap. So **his own boards sit mostly at
- * `touching`, and both of the looser tiers are things he builds** - which is why
- * neither is refused here and why `crowded` is a tier rather than an error.
+ * **SO `crowded` NOW MEANS EXACTLY ONE THING: A FORMABLE PART OVERLAPPING ANOTHER
+ * FORMABLE PART.** Every other overlap is refused by `rigidOverlap` before a tier
+ * is asked for, and a caller that ranks positions is ranking positions that
+ * already passed both rules. The tier is still reached - his `buffered` board has
+ * one such pair, `C3`/`R1`, and the owner admits that case in terms - so it is
+ * not a tier that cannot fire.
+ *
+ * **WHAT THE TIERS ARE MEASURED AGAINST, with this file's own `areaRect` so the
+ * figures and the rules are the same quantity.** On `feedback`, 14 of 16 parts
+ * are `touching` their nearest neighbour, one has one free hole and one has two.
+ * So **his own boards sit mostly at `touching`, and both of the looser tiers are
+ * things he builds** - which is why neither is refused here.
  *
  * **THE TIERS STOP AT ONE FREE HOLE, AND THAT IS NOT A CHOSEN THRESHOLD.** One
  * free hole all round is the smallest amount of "its own space" there is, and it
