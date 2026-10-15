@@ -432,7 +432,19 @@ const RULES: Readonly<Record<Exclude<StoppingRule, "Q6">, (input: StopInput) => 
  * **IT TAKES ITS LISTS AS ARGUMENTS SO IT CAN BE SHOWN TO FAIL**, following
  * `assertOrderCoversTable` in `tools/stripboard/stop-model.ts`, whose own
  * equivalent in `tools/stripboard/grade.ts` reads its own table and is therefore
- * a guard no test can reach.
+ * a guard no test can reach. **`tests/stripboard/model/search-stop.test.ts`
+ * calls it** - with a short list, with a rule in both, and with a rule the order
+ * does not name - which is what makes that sentence true rather than a claim
+ * about a reachability nobody exercised. The first round of this task made the
+ * claim without the caller; the review caught it.
+ *
+ * **WHAT IT DOES NOT CATCH.** It compares the lists as SETS - coverage and
+ * disjointness - so it would accept `Q3` moving out of `RULES` and into
+ * `UNTESTED_IN_CORE`: covered exactly, nothing in both, and a rule silently no
+ * longer decided. The `RULES` type makes that edit a typecheck failure today,
+ * but type and guard could move together. **What pins the untested list to
+ * exactly `Q6` is an assertion in `tests/stripboard/model/search.test.ts`**, and
+ * `docs/stripboard/pipeline-verification.md` section 14.5 credits it there.
  */
 export function assertTaxonomy(
   order: readonly string[],

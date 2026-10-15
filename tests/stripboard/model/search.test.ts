@@ -7,11 +7,36 @@
  * the loop over the small fixtures in `./moves-fixtures.ts`, where one question
  * is answerable at a time and a refusal can be made to fire.
  *
- * **EVERY STOPPING RULE THE CORE CAN TEST IS MADE TO FIRE HERE, and the one it
- * cannot is asserted to be DECLARED untested rather than silently absent.** A
- * stopping rule nobody has seen fire is a rule nobody knows works, and a rule
+ * **WHERE EACH STOPPING RULE IS MADE TO FIRE, because the first round of this
+ * task claimed all of them were made to fire here and `Q4` was not.** That was
+ * a false claim about a load-bearing rule - `Q4` ended both seeded
+ * `transistor-preamp-feedback` runs - and the review caught it. The division
+ * now:
+ *
+ *   - `Q1`, `Q2`, `Q3` and `Q5` fire **through `search`** in this file, because
+ *     a real climb reaches each of them;
+ *   - `Q4` fires **through `search` in this file too**, by the threshold moving:
+ *     one board, one set of restarts, `Q3` at the committed `k = 1` and `Q4` at
+ *     a smaller `k`. That is the pattern `tests/stripboard/stop.test.ts` uses
+ *     for the same rule on the pipeline side - *"every threshold applied here
+ *     must MOVE when the rules file's value moves"* - and it is what proves the
+ *     LOOP builds the counters `Q4` reads. Its arithmetic, at a `g`, `r` and `e`
+ *     no fixture happens to produce, is driven directly through `evaluateStop`
+ *     in `./search-stop.test.ts`;
+ *   - `Q6` is not decided by the core at all, and the assertion below is that it
+ *     is DECLARED untested with a reason rather than silently absent.
+ *
+ * A stopping rule nobody has seen fire is a rule nobody knows works, and a rule
  * that can never fire reads exactly like one that was tested and did not -
- * which is the defect this plan has caught three times.
+ * which is the defect this plan has caught three times, and the `Q4` gap above
+ * was a fourth.
+ *
+ * **WHICH REFUSALS ARE DRIVEN, counted rather than claimed in general.** Of
+ * `lib/stripboard/search.ts`'s five, four fire here: `no-starts`,
+ * `unsound-start`, `cap-unusable` and `no-proposals`. The fifth,
+ * `stopped-for-no-reason`, is **not reachable from outside this module** and the
+ * reason is stated at the refusal itself. `./search-stop.test.ts` drives all
+ * four of `lib/stripboard/search-stop.ts`'s.
  */
 import { expect, test } from "bun:test"
 import { PIN_PATTERNS } from "../../../lib/kicad/pin-pattern.ts"
@@ -31,7 +56,11 @@ import {
   UNTESTED_IN_CORE,
   type StoppingParameters,
 } from "../../../lib/stripboard/search-stop.ts"
+import { objectiveOf } from "../../../lib/stripboard/score.ts"
+import { at } from "./cuts-fixtures.ts"
 import {
+  AXIAL,
+  fitted,
   padContiguousOnOneStrip,
   trimmerBesideAResistor,
   twoNetsShareStripZero,
@@ -283,4 +312,104 @@ test("a non-positive evaluation cap refuses, because a run that evaluates nothin
     search(startOf("one-cut", instance.base), setupFor(instance, { stopping: { evaluationCap: 0 } })),
   )
   expect(message).toStartWith("stripboard-search-cap-unusable:")
+})
+
+/**
+ * A board whose two rows each carry one net per column, so cuts abound: `parts`
+ * resistors across strips 0 and 4, every lead on a net of its own.
+ *
+ * **IT IS HERE TO GIVE `Q4` A GAP WORTH PROJECTING AGAINST.** Every other
+ * fixture in `./moves-fixtures.ts` costs 0 or 1, and `Q4` compares the gap that
+ * remains against the rate the search is closing it - so on a board that costs
+ * 1 there is nothing to project. Five parts cost `F` 8: four cuts on each of the
+ * two occupied strips, no wire, no bridge.
+ *
+ * **NOTHING ABOUT ITS SHAPE WAS CHOSEN AFTER SEEING A STOP.** The part count is
+ * the smallest that does not descend to the objective's floor - at four parts
+ * both strategies reach `F` 0 and `Q1` fires, which is measured and is why the
+ * number is five.
+ */
+function crowdedRows(parts: number): MoveCase {
+  const placements = []
+  const reference = new Map<string, readonly string[]>()
+  for (let index = 0; index < parts; index += 1) {
+    placements.push(fitted(`R${index}`, AXIAL, "S", { "1": at(0, index), "2": at(4, index) }))
+    reference.set(`TOP_${index}`, [`R${index}.1`])
+    reference.set(`BOTTOM_${index}`, [`R${index}.2`])
+  }
+  return {
+    base: { grid: { strips: 12, columns: 12 }, placements, wires: [], bridges: [] },
+    reference,
+  }
+}
+
+test("Q4 FIRES THROUGH THE LOOP, and at the committed k = 1 the same run stops on Q3", () => {
+  // THE PAIR IS THE TEST. One board, three identical restarts, both strategies,
+  // one parameter moved: Q3 at the owner's k = 1 and Q4 below it. So Q4 is
+  // applied rather than merely present, the LOOP really does append one entry
+  // per climb to both counter arrays and sum e across the run, and a Q4 stuck
+  // at false would show up as the two halves agreeing.
+  //
+  // Identical restarts are the condition Q4 is about - "a restart that won
+  // nothing" - and the loop does not dedupe starts. Both climbs reach F 1 from
+  // F 8, so the second step is exactly flat and the first is what the threshold
+  // is compared against.
+  const instance = crowdedRows(5)
+  const before = derivedCuts(instance.base, instance.reference)
+  expect(objectiveOf(instance.base, before, WEIGHTS)).toBe(8)
+
+  const restarts: readonly Start[] = [0, 1, 2].map((index) => ({
+    name: `restart-${index}`,
+    candidate: instance.base,
+  }))
+  let measured = 0
+  for (const strategy of [STEEPEST_DESCENT, FIRST_IMPROVEMENT]) {
+    const committed = search(restarts, setupFor(instance, { strategy }))
+    expect(committed.stoppedOn).toBe("Q3")
+
+    const lowered = search(
+      restarts,
+      setupFor(instance, { strategy, stopping: { yieldFloor: 0.05 } }),
+    )
+    expect(lowered.stoppedOn).toBe("Q4")
+
+    // The two runs are the SAME search up to the stop: same board reached, same
+    // counters. Only the rule that read them differs, which is what makes the
+    // pair evidence about Q4 rather than about two different climbs.
+    expect(lowered.best.objective).toBe(committed.best.objective)
+    expect(lowered.counters.climbHistory).toEqual(committed.counters.climbHistory)
+    expect(lowered.counters.climbEvaluations).toEqual(committed.counters.climbEvaluations)
+    // Q4 is measured ACROSS restarts, so the history must carry F_0 and two
+    // climbs: a two-entry history would make the rule decline for want of steps
+    // rather than for want of a projection.
+    expect(lowered.counters.climbHistory.length).toBe(3)
+    expect(lowered.counters.climbEvaluations.filter((count) => count > 0).length).toBe(2)
+    measured += 1
+  }
+  expect(measured).toBe(2)
+})
+
+test("a board with no move available refuses, rather than reading as a search exhausted", () => {
+  // A five-hole strip one column wide, with one axial resistor filling it: every
+  // displacement is off the stock, so `movesFrom` returns an empty list. The
+  // admissibility predicate refuses so that Q1 - which this board satisfies -
+  // does not stop the run before a round is attempted.
+  const wedged: Candidate = {
+    grid: { strips: 5, columns: 1 },
+    placements: [fitted("R1", AXIAL, "S", { "1": at(0, 0), "2": at(4, 0) })],
+    wires: [],
+    bridges: [],
+  }
+  const reference = new Map<string, readonly string[]>([
+    ["NET_A", ["R1.1"]],
+    ["NET_B", ["R1.2"]],
+  ])
+  const message = refusalFrom(() =>
+    search(startOf("wedged", wedged), {
+      ...setupFor({ base: wedged, reference }),
+      admissible: () => false,
+    }),
+  )
+  expect(message).toStartWith("stripboard-search-no-proposals:")
+  expect(message).toContain("examined nothing")
 })

@@ -138,7 +138,14 @@ function body(refusal: SearchRefusal): string {
         "stated reason for being over. Q3 should fire when a round accepts nothing and no start " +
         "remains; reaching here means that rule or this loop's counters are wrong. It is " +
         "refused rather than reported as a result, because a stop IS the weakest claim a run " +
-        "makes and a run with none is making a claim nobody can read."
+        "makes and a run with none is making a claim nobody can read. " +
+        "THIS ONE IS NOT REACHABLE FROM OUTSIDE THIS MODULE AND IS SAID SO RATHER THAN LEFT TO " +
+        "BE DISCOVERED: the last start's climb ends either on a rule or on a full sweep that " +
+        "accepted nothing, and that second case IS Q3's condition with startsRemaining at zero, " +
+        "so Q3 fires. It is a detector for a defect in this loop or in Q3, which is why no test " +
+        "drives it - the same standing as placement-index-lost in lib/stripboard/moves.ts. " +
+        "tests/stripboard/model/search.test.ts states which refusals are driven and names this " +
+        "one as the exception."
       )
   }
 }
