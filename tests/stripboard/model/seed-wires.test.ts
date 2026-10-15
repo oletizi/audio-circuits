@@ -16,9 +16,9 @@
  * `transistor-preamp-buffered` he placed 8 wires with no two of them on top of
  * each other; that he nevertheless DID put two wires in one column where their
  * spans do not overlap, so the measured rule is non-coincidence and not a
- * column of one's own; that he ran a solder bridge in a column a wire crosses,
- * which is why a bridge takes no penalty; and that no seed built from a derived
- * ordering stacks two wires any more.
+ * column of one's own; that he ran a bridge under a wire 3 times in 9 bridges,
+ * which is why that is ordered last rather than refused; and that no seed built
+ * from a derived ordering stacks two wires or puts a bridge under one any more.
  *
  * **WHAT THEY DO NOT ESTABLISH.**
  *
@@ -100,6 +100,30 @@ function coincidentPairs(
   return pairs
 }
 
+/**
+ * Every bridge that shares a column with a wire and overlaps it in strips, as
+ * `B<n> under W<m>`.
+ *
+ * A bridge joins two ADJACENT strips, so its span is two holes and the overlap
+ * test is the same inclusive one the wires use.
+ */
+function bridgesUnderWires(
+  wires: readonly { readonly from: Hole; readonly to: Hole }[],
+  bridges: readonly { readonly column: number; readonly strips: readonly [number, number] }[],
+): readonly string[] {
+  const spans = verticalSpans(wires)
+  const hits: string[] = []
+  bridges.forEach((bridge, index) => {
+    const lo = Math.min(bridge.strips[0], bridge.strips[1])
+    const hi = Math.max(bridge.strips[0], bridge.strips[1])
+    for (const span of spans) {
+      if (span.column !== bridge.column) continue
+      if (lo <= span.hi && span.lo <= hi) hits.push(`B${index + 1} under ${span.ref}`)
+    }
+  })
+  return hits
+}
+
 test("THE EVIDENCE: none of his own wires lies on top of another", () => {
   let counted = 0
   for (const name of BUILT) {
@@ -129,26 +153,37 @@ test("THE RULE IS NON-COINCIDENCE, NOT A COLUMN OF ONE'S OWN", () => {
   expect(coincidentPairs(board.wires), "whose spans do not overlap").toEqual([])
 })
 
-test("A BRIDGE MAY SIT IN A COLUMN A WIRE CROSSES, which is why it takes no penalty", () => {
-  // A bridge is solder on the copper side and a wire is a jumper over the
-  // component side, so the two share no space. His `feedback` board has exactly
-  // that: SOLDER 13,3 14,3 sits under Wire1, which runs down column 3 from
-  // strip 8 to 14. Penalising a bridge for "coinciding" would steer the
-  // construction away from a configuration he built.
-  const entry = COMMITTED_BOARDS.find((board) => board.name === "transistor-preamp-feedback")
-  if (entry === undefined) throw new Error("transistor-preamp-feedback is not in COMMITTED_BOARDS")
-  const dump = parseBoardDump(fs.readFileSync(entry.dump, "utf8"))
-  const under = dump.bridges.filter((bridge) =>
-    dump.wires.some((wire) => {
-      const [from, to] = wire.ends
-      if (from.col !== to.col) return false
-      if (bridge.a.col !== from.col || bridge.b.col !== from.col) return false
-      const lo = Math.min(from.row, to.row)
-      const hi = Math.max(from.row, to.row)
-      return Math.min(bridge.a.row, bridge.b.row) <= hi && lo <= Math.max(bridge.a.row, bridge.b.row)
-    }),
-  )
-  expect(under.length, "one of his three bridges lies under a wire").toBe(1)
+test("A BRIDGE UNDER A WIRE IS SOMETHING HE DOES, so it is ordered last and not refused", () => {
+  // It is also the thing he could not read. A bridge is solder on the copper
+  // side and a wire is a jumper over the component side, so the two share no
+  // SPACE - but where they sit on each other the drawing cannot say whether the
+  // wire ends at the bridge or passes through it, and those are different
+  // builds. He does it 3 times in 9 bridges, which is why the construction
+  // orders it last instead of refusing it: a refusal would reject both his
+  // boards.
+  let bridges = 0
+  let under = 0
+  for (const name of BUILT) {
+    const entry = COMMITTED_BOARDS.find((board) => board.name === name)
+    if (entry === undefined) throw new Error(`${name} is not in COMMITTED_BOARDS`)
+    const dump = parseBoardDump(fs.readFileSync(entry.dump, "utf8"))
+    const wires = dump.wires.map((wire) => ({
+      from: { strip: wire.ends[0].row, column: wire.ends[0].col },
+      to: { strip: wire.ends[1].row, column: wire.ends[1].col },
+    }))
+    const marks = dump.bridges.map((bridge) => ({
+      column: bridge.a.col === bridge.b.col ? bridge.a.col : -1,
+      strips: [bridge.a.row, bridge.b.row] as const,
+    }))
+    expect(
+      marks.filter((mark) => mark.column === -1).length,
+      `every bridge on ${name} joins two strips in one column`,
+    ).toBe(0)
+    bridges += marks.length
+    under += bridgesUnderWires(wires, marks).length
+  }
+  expect(bridges, "nine bridges between the two boards").toBe(9)
+  expect(under, "three of them lie under a wire").toBe(3)
 })
 
 test("THE REGRESSION: a seed no longer stacks its wires in one column", () => {
@@ -172,7 +207,12 @@ test("THE REGRESSION: a seed no longer stacks its wires in one column", () => {
       built += 1
       expect(seed.wires.length, `"${entry.name}" needs wires for this to mean anything`)
         .toBeGreaterThan(1)
+      expect(seed.bridges.length, `and bridges, for the second half of this`).toBeGreaterThan(0)
       expect(coincidentPairs(seed.wires), `"${entry.name}" stacks no wires`).toEqual([])
+      expect(
+        bridgesUnderWires(seed.wires, seed.bridges),
+        `"${entry.name}" puts no bridge under a wire`,
+      ).toEqual([])
     }
   }
   expect(built, "the orderings that build, so this is not a vacuous pass").toBeGreaterThan(0)

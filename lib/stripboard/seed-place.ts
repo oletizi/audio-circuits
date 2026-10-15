@@ -253,23 +253,8 @@ const JOIN_WHY =
   "a join is what makes a net whole across two strips, so a strip left unjoined is an OPEN " +
   "that no cut list can close (lib/stripboard/invariants.ts)"
 
-/**
- * Does a wire from `low` to `high` in `column` lie on top of one already
- * placed?
- *
- * **WIRE AGAINST WIRE ONLY, and the asymmetry is physical rather than
- * cautious.** A wire is a jumper over the component side, so two wires sharing
- * a column with overlapping spans occupy the same run of air above the same run
- * of holes. A BRIDGE is a solder blob on the copper side between two adjacent
- * strips, so it shares no space with a wire above it - and his own `feedback`
- * board has exactly that, `Wire1` down column 3 from strip 8 to 14 with
- * `SOLDER 13,3 14,3` under its lower end. Counting a bridge here would refuse a
- * board he built.
- *
- * Spans are compared inclusive at both ends, which is what `spanHoles` means
- * everywhere else in this repository.
- */
-function coincident(workspace: Workspace, column: number, low: number, high: number): boolean {
+/** Does `low`-`high` in `column` overlap a WIRE already placed? Inclusive at both ends. */
+function underWire(workspace: Workspace, column: number, low: number, high: number): boolean {
   return workspace.wires.some((wire) => {
     if (wire.from.column !== column || wire.to.column !== column) return false
     const lo = Math.min(wire.from.strip, wire.to.strip)
@@ -278,10 +263,33 @@ function coincident(workspace: Workspace, column: number, low: number, high: num
   })
 }
 
+/** Does `low`-`high` in `column` overlap a BRIDGE already placed? Inclusive at both ends. */
+function overBridge(workspace: Workspace, column: number, low: number, high: number): boolean {
+  return workspace.bridges.some((bridge) => {
+    if (bridge.column !== column) return false
+    const lo = Math.min(bridge.strips[0], bridge.strips[1])
+    const hi = Math.max(bridge.strips[0], bridge.strips[1])
+    return low <= hi && lo <= high
+  })
+}
+
+/** Lexicographic: is `a` the better rank? Equal-length by construction. */
+function better(a: readonly number[], b: readonly number[]): boolean {
+  for (let index = 0; index < a.length; index += 1) {
+    const left = a[index]
+    const right = b[index]
+    if (left === undefined || right === undefined) {
+      throw new Error("unreachable: joinColumn builds every rank with the same keys")
+    }
+    if (left !== right) return left < right
+  }
+  return false
+}
+
 /**
  * The column a join runs in: **the clearest route first, then a column where
- * this wire does not lie on top of one already placed, and only then the lowest
- * column.**
+ * this wire does not lie on top of another wire, then one where a wire and a
+ * bridge do not sit on each other, and only then the lowest column.**
  *
  * A wire crossing a part is not refused, because his own boards have it - but it
  * is ordered last, because 7 of his 8 wires cross nothing at all. Both end holes
@@ -295,7 +303,24 @@ function coincident(workspace: Workspace, column: number, low: number, high: num
  * down the same line. The owner could not read the rendering and said so; the
  * drawing was faithful and the board was a bundle.
  *
- * **IT IS A PREFERENCE AND NOT A REFUSAL, and the sample size is why.** Across
+ * **THE THIRD KEY IS A CORRECTION OF THE SECOND, MADE THE SAME DAY.** The first
+ * version of this function exempted bridges from the spreading rule outright, on
+ * the grounds that a bridge is solder on the COPPER side and a wire is a jumper
+ * over the COMPONENT side, so the two share no space. That is true about space
+ * and wrong about reading: where a bridge sits on a wire, the drawing cannot say
+ * whether the wire ENDS at the bridge or PASSES THROUGH it, and those are
+ * different builds. The owner asked the question that found it - *"can you
+ * figure out how to place the overlapping wires and bridges?"* - with three of
+ * the seed's five bridges sitting on a wire.
+ *
+ * **THE TWO KEYS ARE ORDERED BY HIS OWN BOARDS AND NOT BY MY ACCOUNT OF THE
+ * PHYSICS.** Across the two built boards he has 0 wire-on-wire pairs in 8 wires
+ * and 3 bridge-on-wire pairs in 9 bridges, so one is something he never does and
+ * the other is something he does about a third of the time. Wire-on-wire is
+ * therefore avoided first and a wire-bridge crossing second, which is the order
+ * those two counts state.
+ *
+ * **BOTH ARE A PREFERENCE AND NOT A REFUSAL, and the sample size is why.** Across
  * `transistor-preamp-feedback` and `transistor-preamp-buffered` he placed 8
  * wires with 0 coincident pairs - and he did share a column where the spans do
  * NOT overlap (`feedback` has two wires in column 3, strips 0-5 and 8-14), so
@@ -307,21 +332,21 @@ function coincident(workspace: Workspace, column: number, low: number, high: num
  * nowhere clear left still gets built.
  */
 function joinColumn(workspace: Workspace, low: number, high: number): number | undefined {
-  let best: { readonly column: number; readonly rank: readonly [number, number] } | undefined
+  // A one-strip gap is joined by a BRIDGE and anything wider by a WIRE, which is
+  // the rule `joinNets` applies below. The two are penalised against different
+  // things: a wire can lie on another wire, a bridge cannot.
+  const isWire = high - low > 1
+  let best: { readonly column: number; readonly rank: readonly number[] } | undefined
   for (let column = 0; column < workspace.grid.columns; column += 1) {
     const from = { strip: low, column }
     const to = { strip: high, column }
     if (!free(workspace, from) || !free(workspace, to)) continue
-    // A one-strip gap is joined by a BRIDGE, not a wire, and a bridge is on the
-    // copper side - so it is never on top of anything and takes no penalty.
-    // Penalising it here would steer away from a configuration his `feedback`
-    // board uses (`SOLDER 13,3 14,3` under `Wire1`'s lower end in column 3).
     const rank = [
       ROUTE_ORDER.indexOf(routeOf(from, to, workspace.areas)),
-      high - low > 1 && coincident(workspace, column, low, high) ? 1 : 0,
-    ] as const
-    if (best === undefined || rank[0] < best.rank[0] ||
-      (rank[0] === best.rank[0] && rank[1] < best.rank[1])) best = { column, rank }
+      isWire && underWire(workspace, column, low, high) ? 1 : 0,
+      (isWire ? overBridge : underWire)(workspace, column, low, high) ? 1 : 0,
+    ]
+    if (best === undefined || better(rank, best.rank)) best = { column, rank }
   }
   return best?.column
 }
