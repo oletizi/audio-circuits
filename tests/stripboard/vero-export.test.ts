@@ -177,7 +177,11 @@ test("the run-pair comparison is gap-insensitive and can still fail", () => {
   const onStripFive = ours.filter((cut) => cut.strip === 5)
   expect(onStripFive.length, "strip 5 is the two-cut strip this leans on").toBe(2)
   const second = onStripFive[1]
-  if (second === undefined) return
+  // A `return` here would end the test having asserted nothing about the
+  // mutation, and pass. The count above makes it unreachable; it throws anyway,
+  // because a vacuous pass is what this file's whole discrimination argument
+  // exists to rule out.
+  if (second === undefined) throw new Error("unreachable: strip 5's cut count is asserted above")
   const merged = ours.map((cut) =>
     cut.strip === 5 && cut.afterColumn === onStripFive[0]?.afterColumn ? second : cut,
   )

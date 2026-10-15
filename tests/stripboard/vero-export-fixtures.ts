@@ -7,7 +7,15 @@
  * against this repository's 300-500 ceiling, and the seam that falls out of it is
  * the one those files already use - the machinery that produces a measurement on
  * one side, the assertions that judge it on the other. Nothing here asserts
- * anything, and nothing in the test file spawns the fork.
+ * anything, and the ROUND TRIP is spawned only from here.
+ *
+ * **THE TEST FILE DOES STILL SPAWN**, and saying otherwise was the defect this
+ * sentence used to carry: it claimed nothing in the test file spawns the fork,
+ * while that file spawns `--help` and `--materialize` directly for the two
+ * assertions it makes about them. A seam described more cleanly than it is cuts
+ * is the same failure as a check described more broadly than it runs - which is
+ * what this whole round was about - so it is stated as it is rather than as it
+ * reads better.
  *
  * **WHAT EACH COMPARISON KEY DOES AND DOES NOT INCLUDE is argued at the key
  * itself**, because that is where a reader checking whether the round trip claims
@@ -234,7 +242,18 @@ export function separatedRunPairs(
       for (let index = 1; index < onStrip.length; index += 1) {
         const earlier = onStrip[index - 1]
         const later = onStrip[index]
-        if (earlier === undefined || later === undefined) continue
+        // Unreachable - the loop indexes the array it walks - and a THROW rather
+        // than a `continue` because a skip here would drop the cut from the key
+        // silently, which is the exact shape this round removed from
+        // tools/stripboard/vero-export.ts one directory over.
+        if (earlier === undefined || later === undefined) {
+          throw new Error(
+            `separatedRunPairs walked off the runs on strip ${cut.strip} at index ${index} of ` +
+              `${onStrip.length}, which the loop bound makes impossible.\nThis is a defect in this ` +
+              "function, not in the board. Nothing is skipped: a dropped cut would leave the key " +
+              "agreeing with a board it was never compared against.",
+          )
+        }
         if (earlier.lastColumn <= cut.afterColumn && cut.afterColumn < later.firstColumn) {
           return (
             `strip ${cut.strip}: ${earlier.net}@${earlier.firstColumn}-${earlier.lastColumn} | ` +
