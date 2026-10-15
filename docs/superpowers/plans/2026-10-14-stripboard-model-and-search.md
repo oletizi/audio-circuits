@@ -765,7 +765,11 @@ that bridges are in the model, since they are a second thing the fork has opinio
 
 **Cuts-per-net is a cross-circuit diagnostic only** — cut count follows occupied strips and segment runs, not net count.
 
-- [ ] **Step 1: Record the before state.** Nothing to beat yet; record the seeds' own cost so the search's contribution is separable from the constructive seed's.
+**THE SEARCH IS RUN FROM IMPORTED BOARDS AS WELL AS FROM SEEDS, and the owner's ruling of 2026-10-14 is why.** Task 7 reported that from a zero-cut seed **no single-part move is an improvement**, because the seed assigns one net per strip and therefore already sits at the objective's floor for its net layout: every move can only add cuts or wires. Three readings were put to the owner — the seed is simply good; the objective is missing a board-area term; the seed should start deliberately worse — and he ruled: *"The seed is fine. No complaints."*
+
+So **no area or tidiness term is added** (OBJ2 forbade the second outright, and inventing one would be an agent authoring the criteria for its own artifact), **the seed is not degraded on purpose**, and the move generator's benchmark value is measured where boards actually carry cuts: the hand layouts Task 8 imports. Run the search from BOTH starting points and report both — from the constructive seed, where the honest expected result is "no improvement found, stopped at Q<n>", and from the imported hand board, where there are 5 cuts to work against. **A search that finds nothing from the seed is a correct result and must be reported as one**, not tuned until it moves: this repository's whole record is agents adjusting the thing being measured until the number looked better.
+
+- [ ] **Step 1: Record the before state.** Nothing to beat yet; record the seeds' own cost so the search's contribution is separable from the constructive seed's. Record the imported hand board's cost the same way, since it is the second starting point.
 
 - [ ] **Step 2: Run both benchmark instances. Report cuts, wires, `F`, the stopping rule, and whether every net is whole.**
 
