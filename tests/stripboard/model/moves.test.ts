@@ -88,16 +88,28 @@ test("a move that only pays once its wire exists is proposed as ONE candidate", 
 
   // AND THE RELOCATION ALONE DOES NOT PAY - which is exactly why the old search
   // never found it. Build the same move WITHOUT its wire and score both.
-  let examined = 0
+  //
+  // **THIS ASSERTION IS NOT FALSIFIABLE ON THIS FIXTURE AND IS KEPT ANYWAY.**
+  // The base is asserted above to cost 0, and `F = C + rho_w*W + rho_s*B` is a
+  // sum of non-negative terms, so the inequality reduces to `x >= 0` and no
+  // generator could fail it. It is the brief's own assertion and it states the
+  // shape of the claim, so it stays - but the weight is carried by the two
+  // tests that follow: `the wire is load bearing`, which fails if the wire can
+  // be stripped without opening a net, and `a compound move reaches a board
+  // strictly cheaper than a base that has a cut`, which fails if no compound
+  // proposal improves on a board that is not already at the cut term's floor.
+  // Why the inequality cannot be made falsifiable HERE rather than being moved:
+  // a wire only ever ADDS contacts, contacts only ever split a strip's runs
+  // further, so `C` never falls when a wire is added - which means on a base
+  // that already carries cuts a relocation can pay off on its own, and the
+  // inequality is then false of a perfectly good compound move.
   for (const next of compound) {
     const withoutWire = { ...next, wires: base.wires }
-    examined += 1
     expect(
       costOf(withoutWire, reference),
       "the relocation alone is no better than the base",
     ).toBeGreaterThanOrEqual(costOf(base, reference))
   }
-  expect(examined, "the inequality was asserted over a non-empty set").toBe(compound.length)
 })
 
 test("the wire is load bearing: the same relocation without it leaves a net open", () => {
@@ -277,13 +289,15 @@ test("a relocation whose join has nowhere to run is not proposed", () => {
   // R1 one strip up: both holes it needs are empty, no rigid part is anywhere
   // near, and NET_A's two strips then have no column with a free hole on both.
   const blocked = "1@1,0 2@5,0"
-  const freeHoles = new Set(
+  const takenByOthers = new Set(
     base.placements.flatMap((placement) =>
       placement.ref === "R1" ? [] : placement.holes.map(holeKey),
     ),
   )
-  expect(freeHoles.has("1,0"), "the hole it would move to is empty").toBe(false)
-  expect(freeHoles.has("5,0"), "and so is the other one").toBe(false)
+  expect(takenByOthers.has("1,0"), "no other part holds the hole it would move to").toBe(false)
+  expect(takenByOthers.has("5,0"), "nor the other one, so the move is not blocked by a lead").toBe(
+    false,
+  )
   const at = proposals
     .map((next) => next.placements.find((placement) => placement.ref === "R1"))
     .map((placement) => (placement === undefined ? "" : pinPrint(placement)))

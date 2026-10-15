@@ -438,7 +438,20 @@ export function movesFrom(
   const proposals: Candidate[] = []
   for (const [index, placement] of base.placements.entries()) {
     const area = areas[index]
-    if (area === undefined) continue
+    if (area === undefined) {
+      // `areas` is `placements.map(...)`, so this cannot fire - and it REFUSES
+      // rather than skipping the part for the reason the skip would be wrong:
+      // a `continue` here drops one part's whole neighbourhood, and the result
+      // reads exactly like "no feasible move for that part" to a search that
+      // then reports a local optimum. Same condition, same loud answer as
+      // `relocation`'s own guard above.
+      refuse(
+        "placement-index-lost",
+        `index ${index} names no area, and the area list is built by mapping over this same ` +
+          "placement list, so the two cannot differ in length. Fix partAreasOf or this loop; " +
+          "nothing is substituted and the part is not quietly skipped.",
+      )
+    }
     const strips = [...placement.holes.map((hole) => hole.strip), area.rect.minStrip, area.rect.maxStrip]
     const columns = [
       ...placement.holes.map((hole) => hole.column),
