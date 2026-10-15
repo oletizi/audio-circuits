@@ -4986,3 +4986,51 @@ ordering is read from `tools/stripboard/targets.ts`, which predates this task),
 and **no move was added to or removed from `movesFrom`**. The only figures this
 task chose are the evaluation cap of §14.8 and the test's own wall-clock timeout,
 both declared as experiment parameters and neither readable by the gate.
+
+## 15. Task 11 of the model-and-search plan — the evaluation cap measured as a ladder: **HEADING WRITTEN AFTER THE RUNS; THE CEILINGS BELOW WERE COMMITTED BEFORE THEM**
+
+### 15.1 THE CEILINGS, DECLARED AND COMMITTED BEFORE THE FIRST RUN
+
+**This subsection was committed before anything was measured**, which is the
+brief's Step 1 and the reason it reads as intent rather than as a report. Its
+own words: revision 1 of the plan *"told the implementer to stop at 'a stated
+ceiling' without saying who states it or when — which left a significant
+operational decision to the agent mid-experiment, and this repository has a full
+disk from exactly that shape of instruction."*
+
+**THE CEILINGS WERE DECLARED BY THE COORDINATOR DISPATCHING THIS TASK, NOT BY
+THE AGENT MEASURING IT.** Recorded with that attribution so that a later reader
+does not take them for the measuring agent's own judgement about when to stop
+measuring.
+
+| ceiling | value | who declared it |
+| --- | --- | --- |
+| total wall clock for the whole ladder | **45 minutes** | the coordinator's dispatch |
+| total disk | **500 MB**, and nothing written outside the session scratchpad | the coordinator's dispatch |
+| rungs | **at most 5**, at successive orders of magnitude, **not one enormous run** | the coordinator's dispatch, and the brief's Step 2 |
+
+An unfinished ladder at the wall-clock ceiling stops and is reported partial:
+*"a partial ladder reported honestly is the deliverable; an overrun is not."*
+
+The two incidents these ceilings exist because of, named rather than alluded to:
+the leak of about 60 GB of temporary directories the owner had to delete
+mid-session (§13), and a later measurement instruction that produced 126,435
+subprocess invocations and 3.2 GB.
+
+**THE FIVE RUNGS, DECLARED BEFORE THE FIRST RUN:** `200`, `2,000`, **`20,000`**,
+`200,000`, **`2,000,000`**. The third is the value committed in
+`stripboard/rules.json`; the fifth is Task 10's declared experiment parameter
+(§14.8). Both endpoints of the existing record are rungs on this ladder rather
+than figures it has to be reconciled with afterwards.
+
+**ONE PARAMETER MOVES AND NOTHING ELSE DOES** — `setup.stopping.evaluationCap`.
+`stripboard/rules.json`, `lib/stripboard/seed.ts`, `movesFrom` and the objective
+are untouched by this task.
+
+**AND THE NUMBER IS NOT THE AGENT'S TO SET.** The cap is `PAR3`; an agent
+setting it is an agent choosing a criterion, which is the one thing `CLAUDE.md`
+forbids outright. The owner's words, carried from the brief: *"We need to arrive
+at that by experimenting and gathering empirical evidence, not by fiat."* This
+section's deliverable is the curves and a recommendation; the edit to
+`stripboard/rules.json` is written out in §15.7 and **deliberately left
+unmade.**
