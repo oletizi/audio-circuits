@@ -45,13 +45,14 @@ cited.
 not scraping a run, not drilling. This is a **hard bound on the move set**, not a
 preference, and it is why `Cut { strip, afterColumn }` is the whole vocabulary.
 
-**`lab`'s rejection was not taste.** This document previously recorded it as a board the
-owner *"abandoned as weirdly complicated"* and treated that as a judgement a metric could
-not capture. In the light of the above it is sharper than that: **a complicated board
-defeats the purpose**, because complexity is uncertainty and uncertainty is what makes the
-exercise a test of the build rather than of the circuit. `lab` still may not become an
-optimisation target — `OBJ2` holds and any tidiness metric would still be an agent's
-invention — but the reason it was rejected is now legible rather than mysterious.
+**`lab` IS NOT A REFERENCE OF ANY KIND AND MUST NOT BE USED AS ONE.** The owner has said so
+more than once, most recently: *"forget about lab as a reference. I abandoned it because the
+*circuit* was complicated. I've told you more than once to ignore the lab circuit—it's
+abandoned and not to be used as a reference."* Earlier revisions of this document built an
+argument on it — that a board scoring well on every term and still rejected proved the
+objective's optimum was unbuildable. **That argument was void from the start**, because the
+layout was never what he rejected. Removed rather than reworded; see the standing exclusion
+below.
 
 **The stripboard is a test fixture, not the deliverable.** Every circuit here is bound for a
 manufactured PCB. That bounds how much effort is worth spending past the benchmark: the
@@ -385,18 +386,18 @@ support.
   the repository does not record who placed it.
 - **`B1-frozen`** — withdrawn as a benchmark. See below.
 
-### `lab`'s role as negative control (first review, finding 7 — accepted with a guard)
+### STANDING EXCLUSION: `lab` is not a reference
 
-"Warn when a layout is lab-shaped" is not testable, and revision 1 should not have left it
-there. `lab` exercises the **human-review workflow**, not the optimizer: present the
-generated layout and `lab` side by side, with their metrics and their renderings, and have
-a reviewer say why one is harder to build or follow.
+**No part of this project may cite `transistor-preamp-lab` as a benchmark, a negative
+control, a counterexample, or evidence of anything about layout.** The owner abandoned it
+because the **circuit** was complicated; its layout was never the subject. He has had to say
+so more than once, and it kept returning because earlier revisions of this document gave it
+a role.
 
-**The guard this document adds:** anything that exercise produces lands as an
-**owner-settled rule**, never an agent-derived one. "Identify deficiencies in the standing
-rule library" is one step from a legibility metric arriving through the back door, and
-`lab` is precisely the evidence that such a metric would be an agent's invention standing
-in for the owner's taste. `OBJ2` holds.
+A section here previously proposed using it to exercise the human-review workflow. That is
+withdrawn. `OBJ2`'s ban on a legibility term stands on its own — an agent inventing a
+tidiness metric would be setting its own grade, and that argument needs no board to prop it
+up.
 
 ## Corrections to the record
 
@@ -449,9 +450,9 @@ judged only by the existing acceptance rule, never hand-tuned against a benchmar
 | Option A (extend the fork, keep the architecture) is rejected | **[owner]** 2026-10-14 | *"Don't worry about option A"* — decided on where the dependency sits, not on speed |
 | The fork is in scope to change, or to abandon | **[owner]** 2026-10-14 | verbatim: *"you can do whatever you want with the fork, including abandon it for something more suitable if need be"* |
 | Benchmark is `feedback` and `buffered` | **[owner]** 2026-10-14 | the two boards he hand-laid and built; `lab` and `staged` excluded on his instruction |
-| `lab` is a negative control, not a target | **[owner]** 2026-10-14 | verbatim: *"It was weirdly complicated. so I abandoned it"* |
+| `lab` is not a reference of any kind | **[owner]** 2026-10-14 | verbatim: *"forget about lab as a reference. I abandoned it because the *circuit* was complicated… not to be used as a reference"* — an earlier revision read "weirdly complicated" as a verdict on the layout, which it never was |
 | `buffered`'s width overrun is not a human limit | **[owner]** 2026-10-14 | verbatim: *"I was lazy and didn't measure my stock… not because I was incapable"* |
-| No legibility term despite `lab` | agent, under `OBJ2` | adding one would be an agent authoring the criterion its own output is graded by |
+| No legibility term | agent, under `OBJ2` | an agent inventing a tidiness metric would be setting its own grade; the argument needs no board to prop it up |
 | Algorithm left unfixed | agent | which search wins is a measurement |
 | `HC8` moves inward as a per-candidate precondition | agent, after review | cheap in-memory; it was unaffordable at 12 ms a look |
 | The budget is set by experiment, and no number is proposed here | **[owner]** 2026-10-14 | verbatim: *"We need to arrive at that by experimenting and gathering empirical evidence, not by fiat"* |
