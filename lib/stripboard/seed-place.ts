@@ -254,21 +254,74 @@ const JOIN_WHY =
   "that no cut list can close (lib/stripboard/invariants.ts)"
 
 /**
- * The column a join runs in: **the clearest route first, then the lowest
+ * Does a wire from `low` to `high` in `column` lie on top of one already
+ * placed?
+ *
+ * **WIRE AGAINST WIRE ONLY, and the asymmetry is physical rather than
+ * cautious.** A wire is a jumper over the component side, so two wires sharing
+ * a column with overlapping spans occupy the same run of air above the same run
+ * of holes. A BRIDGE is a solder blob on the copper side between two adjacent
+ * strips, so it shares no space with a wire above it - and his own `feedback`
+ * board has exactly that, `Wire1` down column 3 from strip 8 to 14 with
+ * `SOLDER 13,3 14,3` under its lower end. Counting a bridge here would refuse a
+ * board he built.
+ *
+ * Spans are compared inclusive at both ends, which is what `spanHoles` means
+ * everywhere else in this repository.
+ */
+function coincident(workspace: Workspace, column: number, low: number, high: number): boolean {
+  return workspace.wires.some((wire) => {
+    if (wire.from.column !== column || wire.to.column !== column) return false
+    const lo = Math.min(wire.from.strip, wire.to.strip)
+    const hi = Math.max(wire.from.strip, wire.to.strip)
+    return low <= hi && lo <= high
+  })
+}
+
+/**
+ * The column a join runs in: **the clearest route first, then a column where
+ * this wire does not lie on top of one already placed, and only then the lowest
  * column.**
  *
  * A wire crossing a part is not refused, because his own boards have it - but it
  * is ordered last, because 7 of his 8 wires cross nothing at all. Both end holes
  * must be free of leads whichever route is taken.
+ *
+ * **THE SECOND KEY IS THE SAME MISTAKE THIS MODULE'S HEADER ALREADY RECORDS,
+ * FOUND A SECOND TIME IN A SECOND PLACE.** `chooseColumn` stopped taking the
+ * lowest free column for PLACEMENTS and this function kept taking it for JOINS,
+ * so on the `feedback` netlist nine of ten wires came back in column 5 - 24 of
+ * the 45 pairs physically on top of each other, three of them spanning 20 holes
+ * down the same line. The owner could not read the rendering and said so; the
+ * drawing was faithful and the board was a bundle.
+ *
+ * **IT IS A PREFERENCE AND NOT A REFUSAL, and the sample size is why.** Across
+ * `transistor-preamp-feedback` and `transistor-preamp-buffered` he placed 8
+ * wires with 0 coincident pairs - and he did share a column where the spans do
+ * NOT overlap (`feedback` has two wires in column 3, strips 0-5 and 8-14), so
+ * what his practice shows is that wires do not lie on each other, not that they
+ * each get a column of their own. 8 wires is thin evidence for a hard
+ * constraint, so this follows the clearance round: leads under a rigid part are
+ * refused because 85 leads hold that rule universally, and everything measured
+ * on a smaller sample orders positions instead of rejecting them. A board with
+ * nowhere clear left still gets built.
  */
 function joinColumn(workspace: Workspace, low: number, high: number): number | undefined {
-  let best: { readonly column: number; readonly rank: number } | undefined
+  let best: { readonly column: number; readonly rank: readonly [number, number] } | undefined
   for (let column = 0; column < workspace.grid.columns; column += 1) {
     const from = { strip: low, column }
     const to = { strip: high, column }
     if (!free(workspace, from) || !free(workspace, to)) continue
-    const rank = ROUTE_ORDER.indexOf(routeOf(from, to, workspace.areas))
-    if (best === undefined || rank < best.rank) best = { column, rank }
+    // A one-strip gap is joined by a BRIDGE, not a wire, and a bridge is on the
+    // copper side - so it is never on top of anything and takes no penalty.
+    // Penalising it here would steer away from a configuration his `feedback`
+    // board uses (`SOLDER 13,3 14,3` under `Wire1`'s lower end in column 3).
+    const rank = [
+      ROUTE_ORDER.indexOf(routeOf(from, to, workspace.areas)),
+      high - low > 1 && coincident(workspace, column, low, high) ? 1 : 0,
+    ] as const
+    if (best === undefined || rank[0] < best.rank[0] ||
+      (rank[0] === best.rank[0] && rank[1] < best.rank[1])) best = { column, rank }
   }
   return best?.column
 }
