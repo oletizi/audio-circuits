@@ -65,8 +65,11 @@ function parameters(overrides: Partial<StoppingParameters> = {}): StoppingParame
  * nothing.
  *
  * **THE FIGURES ARE A REAL RUN'S**, taken from the synthetic five-resistor board
- * `./search.test.ts` climbs: `F` 8 at the start, 1 after each climb, 2,175
- * evaluations per climb. They are written here rather than computed so that one
+ * `./search.test.ts` climbs: `F` 8 at the start, 1 after each climb, and 2,175
+ * evaluations per climb UNDER STEEPEST DESCENT - first-improvement reaches the
+ * same board on the same fixture for 1,061, and the strategy was left unnamed
+ * here until a review pointed out that a bare "2,175 per climb" reads as a
+ * property of the board. They are written here rather than computed so that one
  * `g`, `r` and `e` can be held still while `k` moves.
  */
 function threeClimbs(overrides: Partial<RunCounters> = {}): RunCounters {

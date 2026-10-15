@@ -374,8 +374,15 @@ test("Q4 FIRES THROUGH THE LOOP, and at the committed k = 1 the same run stops o
     expect(lowered.stoppedOn).toBe("Q4")
 
     // The two runs are the SAME search up to the stop: same board reached, same
-    // counters. Only the rule that read them differs, which is what makes the
-    // pair evidence about Q4 rather than about two different climbs.
+    // per-climb counters. Only the rule that read them differs, which is what
+    // makes the pair evidence about Q4 rather than about two different climbs.
+    //
+    // **`runEvaluations` is NOT among them and the sentence used to imply it
+    // was** - it is 6,525 at the committed k against 4,350 below it, because the
+    // k = 1 run climbs on past where the lowered one stops. That is the stop
+    // differing, which is the whole point, so the two figures SHOULD diverge;
+    // what must match is everything the rule reads, and `climbHistory` and
+    // `climbEvaluations` are asserted below because those are it.
     expect(lowered.best.objective).toBe(committed.best.objective)
     expect(lowered.counters.climbHistory).toEqual(committed.counters.climbHistory)
     expect(lowered.counters.climbEvaluations).toEqual(committed.counters.climbEvaluations)
