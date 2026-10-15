@@ -2,23 +2,35 @@
  * ROOM TO WORK: the figures the construction cites, re-derived from the owner's
  * own built boards, and the behaviour they produce on a seed.
  *
- * **WHAT THESE ESTABLISH.** That the four measurements `lib/stripboard/seed-area.ts`
- * states as its evidence are what his boards actually say; that a part's body
- * margins come out of its `.kicad_mod` rather than a table; that the hard rule -
- * no lead inside a rigid part's area - holds on every seed; that a seed no
- * longer piles its parts into one column band, which is the defect this round
- * exists to fix; and that comfort beats clustering when the two disagree, which
- * is the owner's stated priority.
+ * **WHAT THESE ESTABLISH.** What the four measurements `lib/stripboard/seed-area.ts`
+ * states as its evidence actually come out as on his boards - which since the
+ * trimmer rectangles were corrected is NOT in every case what that file's
+ * comment quotes; that a part's body margins come out of its `.kicad_mod` rather
+ * than a table; that the hard rule - no lead inside a rigid part's area - holds
+ * on every seed; that a seed no longer piles its parts into one column band,
+ * which is the defect this round exists to fix; and that comfort beats
+ * clustering when the two disagree, which is the owner's stated priority.
+ *
+ * **THREE OF THE FOUR FIGURES MOVED WHEN THE INSTRUMENT WAS CORRECTED, AND THE
+ * RULES THEY ARE EVIDENCE FOR ARE LEFT EXACTLY AS THEY WERE.** The defect and
+ * the eight rectangles it displaced are `./seed-room-fixtures.ts`'s to state.
+ * Corrected: one lead of 85 under a rigid part rather than none, two overlapping
+ * pairs on `feedback` rather than none, three on `buffered` rather than four,
+ * both clearance histograms shifted, the wire split unchanged. **No threshold,
+ * tier, refusal or argument in `seed-area.ts` or `seed-place.ts` is adjusted to
+ * fit them**: an agent may never author the acceptance criteria for the artifact
+ * it is producing, so this file reports and the owner decides.
  *
  * **WHAT THEY DO NOT ESTABLISH.**
  *
  *   - **nothing here asserts a width, a density or a score.** The regression
  *     assertion is a PROPERTY - no two parts' occupied areas overlap - which a
- *     31-strip-by-3-column board with sixteen parts cannot satisfy and which is
- *     measured on `feedback` rather than chosen here. A column count would be a
- *     threshold of mine;
+ *     31-strip-by-3-column board with sixteen parts cannot satisfy. **It is no
+ *     longer a property `feedback` has**, which is a finding about the stated
+ *     justification and not a licence to weaken the assertion; see the
+ *     regression test's own comment. A column count would be a threshold of mine;
  *   - **the clearance figures are asserted as they were measured, including
- *     where they are unflattering to the rule.** `buffered` has four overlapping
+ *     where they are unflattering to the rule.** `buffered` has three overlapping
  *     pairs and one wire over a rigid part, so neither is refused by the
  *     construction, and these tests pin those counts so that a later reading
  *     cannot quietly harden the rule past what he builds;
@@ -102,10 +114,24 @@ function leadsUnderRigid(areas: readonly PartArea[]): readonly string[] {
   return found
 }
 
-test("THE HARD RULE holds on both built boards: no lead under a rigid part", () => {
-  // 37 parts and 85 leads between the two. This is the owner's rule - "Rigid
-  // parts shouldn't be routed through/under" - and his own work obeys it
-  // exactly, which is what makes it safe to refuse on.
+test("the hard rule against his own boards, measured: ONE lead under a rigid part", () => {
+  // 37 parts and 85 leads between the two, and this figure MOVED when the
+  // instrument was corrected (the defect is `./seed-room-fixtures.ts`'s to
+  // state; eight trimmer rectangles moved and the other 29 did not). It read
+  // 0 of 85 and it is now 1 of 85: on `feedback`, R4's lower lead at strip 14
+  // column 13 lies inside RV4's rectangle.
+  //
+  // WHAT THAT ONE LEAD IS AND IS NOT. RV4's own leads span strips 13..15 and
+  // columns 10..12; column 13 is the hole the RM-065's moulded body reaches into
+  // (`beforeAcross: 1`). So the lead is under the trimmer's BODY OVERHANG and not
+  // between its terminals - the rectangle-free lower bound, the box a rigid
+  // part's own leads span, is still 0 of 85 on both boards.
+  //
+  // **NOTHING IN `lib/stripboard/seed-area.ts` IS ADJUSTED TO THIS FIGURE.** The
+  // rule there still refuses a lead inside a rigid part's area outright, and its
+  // comment still cites 0 of 85. An agent may never author the acceptance
+  // criteria for the artifact it is producing: this file reports what his boards
+  // measure and the owner decides what the rule should be.
   const feedback = handBoard("transistor-preamp-feedback")
   const buffered = handBoard("transistor-preamp-buffered")
   expect(feedback.skipped, "every part on feedback is measured").toEqual([])
@@ -117,34 +143,70 @@ test("THE HARD RULE holds on both built boards: no lead under a rigid part", () 
       buffered.areas.reduce((total, area) => total + area.leads.length, 0),
     "85 leads between them",
   ).toBe(85)
-  expect(leadsUnderRigid(feedback.areas), "feedback routes nothing under a rigid part").toEqual([])
-  expect(leadsUnderRigid(buffered.areas), "nor does buffered").toEqual([])
+  expect(
+    leadsUnderRigid(feedback.areas),
+    "feedback puts R4's lower lead in RV4's rectangle, and nothing else under a rigid part",
+  ).toEqual(["R4 under RV4"])
+  expect(leadsUnderRigid(buffered.areas), "buffered routes nothing under a rigid part").toEqual([])
+})
+
+test("THE PREMISE OF EVERY FIGURE HERE: a part's rectangle contains its own leads", () => {
+  // THE DEFECT THIS CATCHES, AND IT WAS REAL. A rectangle built from a
+  // footprint's moulded pad offsets is the mirror image of a reflected part's
+  // real position, and the eight RM-065 trimmers across these boards were each
+  // measured two strips from where their leads are. Every figure here is derived
+  // from these rectangles, so one that excludes its own lead holes makes all of
+  // them measurements of nothing - silently, which is why this is asserted and
+  // not trusted. It is not vacuous: displace a rigid part's rectangle in
+  // `./seed-room-fixtures.ts` and it reports the leads left outside.
+  for (const name of ["transistor-preamp-feedback", "transistor-preamp-buffered"]) {
+    const board = handBoard(name)
+    const outside: string[] = []
+    let leads = 0
+    for (const area of board.areas) {
+      for (const lead of area.leads) {
+        leads += 1
+        if (!holeInRect(lead, area.rect)) {
+          outside.push(`${area.ref} lead ${lead.strip},${lead.column}`)
+        }
+      }
+    }
+    expect(leads, `${name} contributes leads to check`).toBeGreaterThan(0)
+    expect(outside, `${name}: every part's rectangle holds its own leads`).toEqual([])
+  }
 })
 
 test("the clearance his boards actually leave, measured rather than quoted", () => {
+  // EVERY FIGURE IN THIS TEST MOVED WHEN THE TRIMMER RECTANGLES WERE CORRECTED,
+  // and each is asserted exactly as measured. `lib/stripboard/seed-area.ts`'s
+  // comment still quotes the pre-correction figures; it is deliberately NOT
+  // edited here - see the hard-rule test above for why.
   const feedback = handBoard("transistor-preamp-feedback")
-  // 15 of 16 parts are ADJACENT to their nearest neighbour with no free hole
-  // between, and one has two free holes; NO pair of occupied areas overlaps. So
-  // "touching" is what he mostly leaves, and no-overlap is the condition this
-  // board never breaks.
+  // 14 of 16 parts are ADJACENT to their nearest neighbour with no free hole
+  // between, one has a single free hole and one has two. **And feedback DOES
+  // have overlapping pairs - two of them, Q1/RV3 and R4/RV4.** The earlier
+  // reading that it had none was the displaced trimmers: RV3 and RV4 were each
+  // measured two strips off their real position, which moved them off the parts
+  // they really sit against. So "no pair overlaps" is not a condition either of
+  // his boards keeps.
   expect([...clearanceHistogram(feedback.areas).entries()].sort((a, b) => a[0] - b[0])).toEqual([
-    [0, 15],
+    [0, 14],
+    [1, 1],
     [2, 1],
   ])
-  expect(overlappingPairs(feedback.areas), "feedback has no overlapping pair").toEqual([])
-
-  // buffered is the unflattering half and is asserted as measured: four pairs
-  // overlap, so the construction admits an overlap rather than refusing one.
-  const buffered = handBoard("transistor-preamp-buffered")
-  expect([...overlappingPairs(buffered.areas)].sort()).toEqual([
-    "C1/RV4",
-    "C3/Q1",
-    "C3/R1",
-    "RV1/RV2",
+  expect([...overlappingPairs(feedback.areas)].sort(), "feedback's overlapping pairs").toEqual([
+    "Q1/RV3",
+    "R4/RV4",
   ])
+
+  // buffered overlaps in three pairs rather than four: C1/RV4, C3/Q1 and C3/R1
+  // stand, and RV1/RV2 was an artifact of both trimmers being measured two strips
+  // out. An overlap is still admitted rather than refused.
+  const buffered = handBoard("transistor-preamp-buffered")
+  expect([...overlappingPairs(buffered.areas)].sort()).toEqual(["C1/RV4", "C3/Q1", "C3/R1"])
   expect([...clearanceHistogram(buffered.areas).entries()].sort((a, b) => a[0] - b[0])).toEqual([
-    [0, 16],
-    [1, 4],
+    [0, 17],
+    [1, 3],
     [2, 1],
   ])
 })
@@ -221,10 +283,18 @@ test("a body margin that is not a whole number of holes refuses by name", () => 
 test("THE REGRESSION: a seed no longer piles its parts into one column band", () => {
   // The defect: on a 34 x 27 stock the first version returned a board 31 strips
   // by THREE columns with 37 leads in it, overlapping an electrolytic with a
-  // trimmer. The property asserted here is the one his own feedback board has -
-  // no two parts' occupied areas overlap - which that board cannot satisfy.
-  // A width or a density figure is deliberately NOT asserted: it would be a
-  // threshold chosen by the thing being measured.
+  // trimmer. The property asserted here is that no two parts' occupied areas
+  // overlap, which that board cannot satisfy. A width or a density figure is
+  // deliberately NOT asserted: it would be a threshold chosen by the thing being
+  // measured.
+  //
+  // **ITS STATED JUSTIFICATION HAS LOST ITS EVIDENCE AND THE ASSERTION STANDS
+  // UNCHANGED.** This comment used to call it "the one his own feedback board
+  // has"; measured with the corrected trimmer rectangles, `feedback` has two
+  // overlapping pairs (Q1/RV3, R4/RV4) and `buffered` three, so no-overlap is a
+  // property neither built board holds. Whether a GENERATED seed should still be
+  // held to it is the owner's call, and loosening it here on evidence I measured
+  // would be authoring the criterion for the artifact.
   const { netlist, nets } = committedNetlist("transistor-preamp-feedback")
   const byRef = new Map(netlist.parts.map((part) => [part.ref, part]))
   let built = 0
