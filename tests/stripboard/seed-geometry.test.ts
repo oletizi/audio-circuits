@@ -89,6 +89,22 @@ function importedBoard(): string {
   return BOARD
 }
 
+/**
+ * How long one per-seed arm sweep in this file is given, in milliseconds.
+ *
+ * **IT IS HEADROOM AGAINST FULL-SUITE CONTENTION AND IS NOT A MEASUREMENT OF
+ * EITHER TEST.** Each of the two sweeps below seeds, paints and dumps the board
+ * once per reviewed seed through the real fork, at 3.7 s and 4.0 s measured on
+ * an idle machine against `bun test`'s 5,000 ms default - inside it by a margin
+ * the rest of a 194-file run eats, which is how a suite goes red on a busy
+ * machine and green on an idle one. The figure was already declared for the
+ * random sweep as a bare `120_000`; it is named here and applied to the
+ * constructed sweep too, which does the same work and had no ceiling at all.
+ * **NEITHER TEST IS SPED UP AND NEITHER COVERS LESS** - what was wrong was the
+ * undeclared ceiling.
+ */
+const ARM_TIMEOUT_MS = 120_000
+
 test("every recorded footprint row count is the one the fork itself places by", () => {
   // HOW THE FORK IS ASKED. A clockwise quarter turn transposes a footprint, so
   // the SPAN the dump prints AFTER a turn is the part's row count BEFORE it -
@@ -226,7 +242,7 @@ test("the random arm produces a start on every reviewed seed, and the grid never
     // Board::PutDown and says nothing, so the floating check is the witness.
     expect(after.parts.filter((part) => part.placement === "floating"), `seed ${seed}`).toEqual([])
   }
-}, 120_000)
+}, ARM_TIMEOUT_MS)
 
 test("the pin-set join agrees with the netlist exportNetlistFor itself produces", async () => {
   // THE DRIFT GUARD, and the reason `referenceNetsFor` can claim not to be a
@@ -293,7 +309,7 @@ test("the constructed arm places on every reviewed seed, and records which order
     expect(dumpOf(painted).cutState, `seed ${seed} painted`).toBe("COMPUTED")
     expect(after.parts.filter((part) => part.placement === "floating"), `seed ${seed}`).toEqual([])
   }
-})
+}, ARM_TIMEOUT_MS)
 
 test("the gesture order is chosen per part and recorded, and both orders are used", () => {
   // THE ORDER IS RECORDED where this task has a channel for it: each placing

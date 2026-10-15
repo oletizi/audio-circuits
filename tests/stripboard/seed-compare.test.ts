@@ -41,6 +41,23 @@ import {
   SCRIPT,
 } from "./seed-compare-fixtures.ts"
 
+/**
+ * How long one comparison in this file is given, in milliseconds.
+ *
+ * **IT IS HEADROOM AGAINST FULL-SUITE CONTENTION AND IS NOT A MEASUREMENT OF
+ * ANY TEST HERE.** `bun test`'s default is 5,000 ms, and `comparisonInput()`
+ * imports and places the real low-boost board once per call, which takes 1.7 to
+ * 3.5 s on an idle machine - under the default by a margin that the rest of a
+ * 194-file run eats. Measured on a loaded one, the 3.5 s comparison took 7.9 s
+ * and the 1.9 s comparison took 7.2 s, so the suite went red on a busy machine
+ * and green on an idle one minutes later. The figure below is an order of
+ * magnitude over the slowest of them. **THE TESTS ARE NOT SPED UP AND COVER NO
+ * LESS**: what was wrong was an undeclared ceiling, so the fix is a declared
+ * one. It is applied to every test here measured above half a second, which is
+ * every test that runs the harness over that board.
+ */
+const HARNESS_TIMEOUT_MS = 60_000
+
 test("every arm is run against the same seeds, by the one runner the harness is given", () => {
   // The same budget is structural rather than asserted: one runner serves
   // every arm, so there is no second place for a budget to differ. What a body
@@ -64,7 +81,7 @@ test("every arm is run against the same seeds, by the one runner the harness is 
   }
   expect(new Set(calls.map((call) => call.start)).size, "each arm starts its own candidate")
     .toBeGreaterThan(1)
-})
+}, HARNESS_TIMEOUT_MS)
 
 test("no arm is dropped for starting invalid, and each start's admissibility is recorded", () => {
   // All three starts are expected to be inadmissible: --check reports 19, 13,
@@ -89,7 +106,7 @@ test("no arm is dropped for starting invalid, and each start's admissibility is 
   // The table is not NOBODY_REACHES: every arm met the mark on one seed, so the
   // assertion above is read off runs that happened rather than off a blank run.
   expect(comparison.arms.map((arm) => arm.reached)).toEqual([1, 1, 1])
-})
+}, HARNESS_TIMEOUT_MS)
 
 test("the decision variable is the success rate, counted over the seed set", () => {
   const comparison =
@@ -99,7 +116,7 @@ test("the decision variable is the success rate, counted over the seed set", () 
   expect(constructed.reached).toBe(1)
   expect(constructed.perSeed.filter((seed) => seed.metMark).length).toBe(1)
   expect(constructed.perSeed.length).toBe(comparisonInput().rules.seeds.length)
-})
+}, HARNESS_TIMEOUT_MS)
 
 test("the mark has no default: without one the harness refuses and says it is not defaulted", () => {
   // An agent may never author the acceptance criteria for the artifact it is
@@ -166,13 +183,13 @@ test("constructed not beating random marks it retireable, and a tie counts as no
   const rates = (comparison: typeof tied) =>
     comparison.arms.map((arm) => [arm.arm, arm.reached] as const)
   expect(rates(tied)).toEqual([["constructed", 3], ["import", 1], ["random", 3]])
-})
+}, HARNESS_TIMEOUT_MS)
 
 test("the import arm gets the same test, and the control is never retireable", () => {
   const lost = compareSeedArms(comparisonInput(), scriptedRunner(RANDOM_WINS), fakeSpawn())
   expect(lost.retireable).toContain("import")
   expect(lost.retireable).not.toContain("random")
-})
+}, HARNESS_TIMEOUT_MS)
 
 test("constructed beating random marks nothing retireable, and still selects no arm", () => {
   const won = compareSeedArms(comparisonInput(), scriptedRunner(CONSTRUCTED_WINS), fakeSpawn())
@@ -181,14 +198,14 @@ test("constructed beating random marks nothing retireable, and still selects no 
     .toEqual(["arms", "decisionVariable", "mark", "retireable", "separated"])
   // A winning arm does not install itself: there is still no default.
   expect(() => parseSeedArm("")).toThrow(/constructed, import, random/)
-})
+}, HARNESS_TIMEOUT_MS)
 
 test("no arm meeting the mark retires nothing, because that run measured the budget", () => {
   const flat = compareSeedArms(comparisonInput(), scriptedRunner(NOBODY_REACHES), fakeSpawn())
   expect(flat.arms.every((arm) => arm.reached === 0)).toBe(true)
   expect(flat.retireable).toEqual([])
   expect(flat.separated).toBe(false)
-})
+}, HARNESS_TIMEOUT_MS)
 
 test("a runner that throws fails the comparison rather than scoring that arm zero", () => {
   // A scored zero is indistinguishable from an arm that ran and lost, which is
@@ -285,7 +302,7 @@ test("a runner that evaluated nothing refuses, rather than retiring two arms", (
   })
   const scored = compareSeedArms(comparisonInput(), measuredOne, fakeSpawn())
   expect(scored.arms.every((arm) => arm.reached === comparisonInput().rules.seeds.length)).toBe(true)
-})
+}, HARNESS_TIMEOUT_MS)
 
 test("a scripted table missing a row throws rather than answering it with a default", () => {
   // The guard the fixtures file states, driven: a runner that filled a missing
@@ -298,4 +315,4 @@ test("a scripted table missing a row throws rather than answering it with a defa
       fakeSpawn(),
     ),
   ).toThrow(/no row for the "random" arm/)
-})
+}, HARNESS_TIMEOUT_MS)

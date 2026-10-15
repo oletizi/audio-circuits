@@ -64,6 +64,21 @@ function worseBy(by: number): Evaluation {
   return { ...base, score: { ...base.score, objective: base.score.objective + by } }
 }
 
+/**
+ * How long the one test here that runs two whole searches is given, in
+ * milliseconds.
+ *
+ * **IT IS HEADROOM AGAINST FULL-SUITE CONTENTION AND IS NOT A MEASUREMENT OF
+ * THAT TEST.** It is the slowest in this file at 2.5 s measured on an idle
+ * machine, against `bun test`'s 5,000 ms default - half the ceiling, which the
+ * rest of a 194-file run can eat. The same undeclared margin in
+ * `./seed-compare.test.ts` turned a 1.9 s test into a 7.2 s failure on a loaded
+ * machine, so the ceiling is declared here rather than left to be discovered.
+ * **THE TEST IS NOT SPED UP AND COVERS NO LESS**: both searches it runs are the
+ * point of it.
+ */
+const TWO_SEARCHES_TIMEOUT_MS = 60_000
+
 test("E2 keeps the best candidate across every climb and records the boundaries", () => {
   const runDir = freshSearchDir()
   const result = search(searchInput(runDir), searchSpawn(SECOND_SEED_WINS))
@@ -140,7 +155,7 @@ test("every restart starts from the run's OWN arm, one start per seed", () => {
   const constructedStarts = startSequences(constructed, IMPORTED_BOARD)
   expect(constructedStarts.length).toBe(seeds.length)
   expect(constructedStarts.flat().some((args) => args[0] === "--stretch")).toBe(true)
-})
+}, TWO_SEARCHES_TIMEOUT_MS)
 
 test("a record with no autofill in it is a refusal, not an empty list of starts", () => {
   // A splitter that returned an empty list would make both halves of the test
