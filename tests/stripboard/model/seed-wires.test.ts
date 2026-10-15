@@ -2,7 +2,10 @@
  * WIRES DO NOT LIE ON TOP OF EACH OTHER: what his two built boards actually do
  * with their jumpers, and the behaviour that measurement produces on a seed.
  *
- * **THE DEFECT THIS ROUND EXISTS TO FIX.** `joinColumn` ranked candidate
+ * **THE DEFECT THIS ROUND EXISTS TO FIX.** The join-column rule - private to
+ * `lib/stripboard/seed-place.ts` then, `joinColumnFor` in
+ * `lib/stripboard/join-column.ts` now that the move generator reads it too -
+ * ranked candidate
  * columns by route clarity and then by lowest column number, so every join took
  * the first column where both its end holes happened to be free. On the
  * `feedback` netlist that put NINE of ten wires in column 5, with 24 of the 45

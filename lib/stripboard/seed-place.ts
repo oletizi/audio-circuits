@@ -30,13 +30,12 @@
  */
 import { type Grid, type Hole, type Placement, type Wire, type Bridge } from "./board.ts"
 import { holeKey } from "./cuts.ts"
+import { joinColumnFor } from "./join-column.ts"
 import {
   COMFORT_ORDER,
-  ROUTE_ORDER,
   areaRect,
   comfortOf,
   rectOnBoard,
-  routeOf,
   routedUnderRigid,
   type FramePin,
   type PartArea,
@@ -253,104 +252,6 @@ const JOIN_WHY =
   "a join is what makes a net whole across two strips, so a strip left unjoined is an OPEN " +
   "that no cut list can close (lib/stripboard/invariants.ts)"
 
-/** Does `low`-`high` in `column` overlap a WIRE already placed? Inclusive at both ends. */
-function underWire(workspace: Workspace, column: number, low: number, high: number): boolean {
-  return workspace.wires.some((wire) => {
-    if (wire.from.column !== column || wire.to.column !== column) return false
-    const lo = Math.min(wire.from.strip, wire.to.strip)
-    const hi = Math.max(wire.from.strip, wire.to.strip)
-    return low <= hi && lo <= high
-  })
-}
-
-/** Does `low`-`high` in `column` overlap a BRIDGE already placed? Inclusive at both ends. */
-function overBridge(workspace: Workspace, column: number, low: number, high: number): boolean {
-  return workspace.bridges.some((bridge) => {
-    if (bridge.column !== column) return false
-    const lo = Math.min(bridge.strips[0], bridge.strips[1])
-    const hi = Math.max(bridge.strips[0], bridge.strips[1])
-    return low <= hi && lo <= high
-  })
-}
-
-/** Lexicographic: is `a` the better rank? Equal-length by construction. */
-function better(a: readonly number[], b: readonly number[]): boolean {
-  for (let index = 0; index < a.length; index += 1) {
-    const left = a[index]
-    const right = b[index]
-    if (left === undefined || right === undefined) {
-      throw new Error("unreachable: joinColumn builds every rank with the same keys")
-    }
-    if (left !== right) return left < right
-  }
-  return false
-}
-
-/**
- * The column a join runs in: **the clearest route first, then a column where
- * this wire does not lie on top of another wire, then one where a wire and a
- * bridge do not sit on each other, and only then the lowest column.**
- *
- * A wire crossing a part is not refused, because his own boards have it - but it
- * is ordered last, because 7 of his 8 wires cross nothing at all. Both end holes
- * must be free of leads whichever route is taken.
- *
- * **THE SECOND KEY IS THE SAME MISTAKE THIS MODULE'S HEADER ALREADY RECORDS,
- * FOUND A SECOND TIME IN A SECOND PLACE.** `chooseColumn` stopped taking the
- * lowest free column for PLACEMENTS and this function kept taking it for JOINS,
- * so on the `feedback` netlist nine of ten wires came back in column 5 - 24 of
- * the 45 pairs physically on top of each other, three of them spanning 20 holes
- * down the same line. The owner could not read the rendering and said so; the
- * drawing was faithful and the board was a bundle.
- *
- * **THE THIRD KEY IS A CORRECTION OF THE SECOND, MADE THE SAME DAY.** The first
- * version of this function exempted bridges from the spreading rule outright, on
- * the grounds that a bridge is solder on the COPPER side and a wire is a jumper
- * over the COMPONENT side, so the two share no space. That is true about space
- * and wrong about reading: where a bridge sits on a wire, the drawing cannot say
- * whether the wire ENDS at the bridge or PASSES THROUGH it, and those are
- * different builds. The owner asked the question that found it - *"can you
- * figure out how to place the overlapping wires and bridges?"* - with three of
- * the seed's five bridges sitting on a wire.
- *
- * **THE TWO KEYS ARE ORDERED BY HIS OWN BOARDS AND NOT BY MY ACCOUNT OF THE
- * PHYSICS.** Across the two built boards he has 0 wire-on-wire pairs in 8 wires
- * and 3 bridge-on-wire pairs in 9 bridges, so one is something he never does and
- * the other is something he does about a third of the time. Wire-on-wire is
- * therefore avoided first and a wire-bridge crossing second, which is the order
- * those two counts state.
- *
- * **BOTH ARE A PREFERENCE AND NOT A REFUSAL, and the sample size is why.** Across
- * `transistor-preamp-feedback` and `transistor-preamp-buffered` he placed 8
- * wires with 0 coincident pairs - and he did share a column where the spans do
- * NOT overlap (`feedback` has two wires in column 3, strips 0-5 and 8-14), so
- * what his practice shows is that wires do not lie on each other, not that they
- * each get a column of their own. 8 wires is thin evidence for a hard
- * constraint, so this follows the clearance round: leads under a rigid part are
- * refused because 85 leads hold that rule universally, and everything measured
- * on a smaller sample orders positions instead of rejecting them. A board with
- * nowhere clear left still gets built.
- */
-function joinColumn(workspace: Workspace, low: number, high: number): number | undefined {
-  // A one-strip gap is joined by a BRIDGE and anything wider by a WIRE, which is
-  // the rule `joinNets` applies below. The two are penalised against different
-  // things: a wire can lie on another wire, a bridge cannot.
-  const isWire = high - low > 1
-  let best: { readonly column: number; readonly rank: readonly number[] } | undefined
-  for (let column = 0; column < workspace.grid.columns; column += 1) {
-    const from = { strip: low, column }
-    const to = { strip: high, column }
-    if (!free(workspace, from) || !free(workspace, to)) continue
-    const rank = [
-      ROUTE_ORDER.indexOf(routeOf(from, to, workspace.areas)),
-      isWire && underWire(workspace, column, low, high) ? 1 : 0,
-      (isWire ? overBridge : underWire)(workspace, column, low, high) ? 1 : 0,
-    ]
-    if (best === undefined || better(rank, best.rank)) best = { column, rank }
-  }
-  return best?.column
-}
-
 /**
  * Every net whose leads landed on more than one strip gets those strips joined,
  * lowest to highest.
@@ -365,6 +266,12 @@ function joinColumn(workspace: Workspace, low: number, high: number): number | u
  * weights are not an input to `seedsFrom`, `F` prices `W` and `B` separately for
  * the owner's stated reason, and a module that read `stripboard/rules.json` to
  * choose would be a core module reading the file the scorer is handed.
+ *
+ * **WHICH COLUMN A JOIN RUNS IN IS `./join-column.ts`'s, and it used to be
+ * here.** The move generator has to make the same decision when a relocated
+ * lead needs a wire back to its net, so the rule moved out to where both can
+ * read it and the private copy was deleted. `Workspace` satisfies that module's
+ * `JoinSite` structurally, which is why this call passes it unchanged.
  */
 export function joinNets(workspace: Workspace, netlist: SeedNetlist): void {
   for (const net of [...netlist.nets.keys()].sort()) {
@@ -374,7 +281,7 @@ export function joinNets(workspace: Workspace, netlist: SeedNetlist): void {
       const previous = low
       low = high
       if (previous === undefined) continue
-      const column = joinColumn(workspace, previous, high)
+      const column = joinColumnFor(workspace, previous, high)
       if (column === undefined) {
         refuse(
           "no-column-to-join",
