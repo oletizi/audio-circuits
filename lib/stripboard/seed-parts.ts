@@ -192,9 +192,15 @@ export function seedPartsFrom(
       )
     }
     const body = bodyMarginsFor(footprint, source)
-    // leadSpanFor refuses an unrecorded footprint by name, and the map is always
-    // the caller's: there is no branch here where the module-level table is read
-    // instead, which is the seam spanFor states and admitPattern lacks.
+    // leadSpanFor refuses an unrecorded footprint by name, and the map is
+    // whatever `source` resolved to - the caller's when it passed one, and
+    // LEAD_SPANS when it did not, because that is this function's declared
+    // default at its signature. What this line claims is narrower and is the
+    // part that matters: the module-level table is reached for in ONE place,
+    // that default, and never again inside the body, so a caller that hands in
+    // geometry for a part this repository does not record is never
+    // second-guessed by a fallback. That is the seam spanFor states and
+    // admitPattern lacks; the module comment above states it for the file.
     const rigid = leadSpanFor(footprint, source.spans).geometry.kind === "rigid"
     const sorted = [...leads].sort((a, b) => a.pin.localeCompare(b.pin))
     const [first, second] = sorted
