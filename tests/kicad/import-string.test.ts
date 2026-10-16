@@ -21,10 +21,19 @@ test("an 8.0mm body rounds DOWN to the nearest enumerated diameter", () => {
 })
 
 test("rounded-metric names for imperial parts are inside the pitch tolerance", () => {
+  // BOTH NAMES ARE REAL FOOTPRINTS, verified against Capacitor_THT.pretty, and
+  // that matters here more than anywhere else in this file: these two lines are
+  // the whole evidence base for PITCH_TOLERANCE_MM in lib/kicad/grid.ts. The
+  // second one used to read "C_Disc_D9.0mm_W2.5mm_P7.50mm", which the library
+  // does not have (it has D9.0mm_W2.5mm_P5.00mm and D9.0mm_W5.0mm_P7.50mm) -
+  // the same defect docs/pultec/capacitor-selection.md section "Required
+  // follow-up: a fictional footprint in a committed test" opened against line
+  // 180 of this file, fixed there and missed here.
+  //
   // P2.50mm is a nominal 0.1in part, 0.04mm from the grid.
   expect(importStringFor("Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm")).toBe("CAP_CERAMIC1")
   // P7.50mm is a nominal 0.3in part, 0.12mm from the grid.
-  expect(importStringFor("Capacitor_THT:C_Disc_D9.0mm_W2.5mm_P7.50mm")).toBe("CAP_CERAMIC3")
+  expect(importStringFor("Capacitor_THT:C_Disc_D9.0mm_W5.0mm_P7.50mm")).toBe("CAP_CERAMIC3")
 })
 
 test("an off-grid pitch refuses, naming the measurement", () => {
@@ -41,8 +50,14 @@ test("a diameter equidistant between two enumerated types refuses", () => {
 })
 
 test("a diameter outside the enumerated range refuses", () => {
-  expect(() => importStringFor("Capacitor_THT:CP_Radial_D3.0mm_P2.00mm")).toThrow(/175.*650/s)
-  expect(() => importStringFor("Capacitor_THT:CP_Radial_D20.0mm_P7.50mm")).toThrow(/175.*650/s)
+  // BOTH ARE REAL FOOTPRINTS, verified against Capacitor_THT.pretty on disk,
+  // and both are genuinely outside the 175-650 mil band: D4.0mm is 157 mil and
+  // D17.0mm is 669. These read D3.0mm_P2.00mm and D20.0mm_P7.50mm until
+  // ./footprint-names.test.ts swept for names the libraries do not hold -
+  // invented names that the library happens to make unnecessary, since the band
+  // has real parts on both sides of it.
+  expect(() => importStringFor("Capacitor_THT:CP_Radial_D4.0mm_P2.00mm")).toThrow(/175.*650/s)
+  expect(() => importStringFor("Capacitor_THT:CP_Radial_D17.0mm_P7.50mm")).toThrow(/175.*650/s)
 })
 
 test("an unrecognized family refuses, listing the shapes that derive", () => {
@@ -163,7 +178,13 @@ test("a terminal block at a pitch that is neither one nor two grid steps refuses
 })
 
 test("a terminal block with no readable pin count refuses", () => {
-  expect(() => importStringFor("TerminalBlock_Phoenix:Phoenix_MKDS_P5.08mm")).toThrow(/pin count/)
+  // A REAL footprint with no _1x<pins> field, verified against
+  // TerminalBlock_Wuerth.pretty on disk - the one installed terminal block whose
+  // name carries a pitch and no pin count, which is exactly the shape this
+  // refusal is about. It named an invented Phoenix_MKDS_P5.08mm until
+  // ./footprint-names.test.ts swept for names the libraries do not hold.
+  expect(() => importStringFor("TerminalBlock_Wuerth:Wuerth_691311400102_P7.62mm"))
+    .toThrow(/pin count/)
 })
 
 test("block pin counts are declared, so a netlist cannot reference a pin the block lacks", () => {

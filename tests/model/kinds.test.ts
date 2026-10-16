@@ -55,9 +55,17 @@ test("a SPICE primitive's argument order comes from the kind, not from its vocab
   expect(isSpicePrimitive("resistor")).toBe(true)
 })
 
-test("a subcircuit-backed kind has no kind-level pin order and says why", () => {
+test("a subcircuit-backed kind has no kind-level pin order and says where to read one", () => {
+  // AND THE REFUSAL NAMES A FILE, which it did not until the whole-branch
+  // review: it said what was missing and why, and then named a CONCEPT ("its
+  // pin order comes from its model") where every other refusal in this stack
+  // names a path. The three assertions are the three things a refusal here owes
+  // a reader - what is missing, where to read the real answer, and which table
+  // must NOT be extended to paper over it.
   expect(isSpicePrimitive("opamp")).toBe(false)
-  expect(() => spicePinOrder("opamp")).toThrow(/opamp.*pin order comes from its model/i)
+  expect(() => spicePinOrder("opamp")).toThrow(/opamp.*not emitted as a SPICE primitive/i)
+  expect(() => spicePinOrder("opamp")).toThrow("lib/sim/models/index.ts")
+  expect(() => spicePinOrder("opamp")).toThrow("must not be extended")
 })
 
 test("an unknown kind is rejected by the SPICE pin-order lookups too", () => {

@@ -175,20 +175,44 @@ test("a board's off-board ids are its own landings plus its stand-in groups' lan
   }
 })
 
-test("every part that needs a symbol has one, so its netlist value is not empty", () => {
+/**
+ * The mid section's eleven-position selector, which was the one component on the
+ * five boards with no chosen part and therefore no `part.symbol`.
+ *
+ * **IT IS RESOLVED.** The owner chose a twelve-position switch with its stop set
+ * to eleven on 2026-10-13 - his words, *"Assume a 1x12"* - so `symbolFor` now
+ * answers for it and there is no unresolved part left. What this constant pins
+ * is the resolution: the selector by name, and the symbol it resolved to.
+ */
+const RESOLVED_SELECTOR: readonly [ModuleOwner, string, string] =
+  ["mid", "SW_MID", "Switch:SW_Rotary_1x12"]
+
+test("every part that needs a symbol has one, with none left unresolved", () => {
   // valueFor derives a value from a numeric quantity where there is one, and
   // falls back to mpn then symbol otherwise. Switches and the terminal block
-  // have no quantity, so without a symbol they refuse at export - which the
-  // parked export test would otherwise be the only thing to notice.
+  // have no quantity, so without a symbol they refuse at export.
+  //
+  // THIS REPLACED AN EXCEPTION PINNED BY NAME. Until the owner chose the mid's
+  // part, `unresolved` was asserted to be exactly ["mid/SW_MID"]; now it is
+  // asserted EMPTY, so a part losing its symbol fails here rather than being
+  // absorbed by a whitelist the way the old shape would have absorbed it.
+  const unresolved: string[] = []
   let checked = 0
   for (const [owner, , build] of BOARDS) {
     for (const component of build().components) {
       if (component.kind !== "switch" && component.kind !== "connector") continue
-      expect(component.part?.symbol ?? component.part?.mpn, `${owner}/${component.id}`).toBeDefined()
       checked += 1
+      const value = component.part?.symbol ?? component.part?.mpn
+      if (value === undefined) unresolved.push(`${owner}/${component.id}`)
     }
   }
   expect(checked).toBeGreaterThan(BOARDS.length)
+  expect(unresolved).toEqual([])
+  // AND THE RESOLUTION IS THE OWNER'S CHOSEN SYMBOL, named rather than merely
+  // non-undefined: a selector silently valued some other rotary would satisfy
+  // the emptiness above and fail here.
+  const selector = mid.pultecMid().components.find((c) => c.id === RESOLVED_SELECTOR[1])
+  expect(selector?.part?.symbol, RESOLVED_SELECTOR[1]).toBe(RESOLVED_SELECTOR[2])
 })
 
 test("every off-board component has a pad order that is a permutation of its pins", () => {
@@ -247,10 +271,54 @@ test("every board carries ground pins on its junction", () => {
   }
 })
 
-test("each board exports to a netlist", () => {
-  for (const [owner, module, build] of BOARDS) {
-    expect(() => toImportedNetlist(
-      build(), module.DESIGNATORS, module.PIN_NUMBERS, module.OFF_BOARD_IDS, module.PAD_ORDER,
-    ), owner).not.toThrow()
+/** `toImportedNetlist` over one board module, for the two tests below. */
+function exportBoard([, module, build]: (typeof BOARDS)[number]): unknown {
+  return toImportedNetlist(
+    build(), module.DESIGNATORS, module.PIN_NUMBERS, module.OFF_BOARD_IDS, module.PAD_ORDER,
+  )
+}
+
+test("every board exports to a netlist, with no section skipped", () => {
+  // NO BOARD IS EXEMPT ANY MORE, AND THE COUNT IS WHAT HOLDS THAT TRUE. This
+  // loop used to skip the mid and assert BOARDS.length - 1, because the mid's
+  // selector had no chosen part and `valueFor` refused on the missing symbol.
+  // The owner chose a 1x12 on 2026-10-13, so the skip is gone and the assertion
+  // is the full count - a reintroduced exemption fails here rather than reading
+  // as a smaller number nobody checks.
+  let exported = 0
+  for (const board of BOARDS) {
+    expect(() => exportBoard(board), board[0]).not.toThrow()
+    exported += 1
   }
+  expect(exported).toBe(BOARDS.length)
+})
+
+test("the resolved mid selector reaches the netlist with its chosen symbol", () => {
+  // WHAT THIS REPLACED, AND WHY IT IS NOT JUST A DELETION. Its predecessor
+  // asserted the mid REFUSED at export, naming the component, and said in its
+  // own comment that the day the part was chosen it would fail and be deleted
+  // deliberately. Deleting it outright would leave the resolution unpinned, so
+  // it is inverted instead: the same board, the same component, now asserted to
+  // carry the owner's chosen symbol through the export rather than to refuse.
+  //
+  // The twelve-throw symbol on an eleven-throw selector is the owner's part
+  // decision - a 12-way switch stopped at 11 - not a derivation, and
+  // ELEVEN_THROW_SYMBOL in circuits/pultec/physical/parts.ts records it.
+  const board = BOARDS.find(([owner]) => owner === RESOLVED_SELECTOR[0])
+  expect(board).toBeDefined()
+  if (board === undefined) throw new Error("BOARDS no longer carries the mid section")
+  const netlist = JSON.stringify(exportBoard(board))
+  expect(netlist, "the selector's own designator reaches the netlist").toContain(
+    RESOLVED_SELECTOR[1],
+  )
+  // THE VALUE FIELD CARRIES THE SYMBOL'S NAME HALF, NOT THE LIB-ID, and that is
+  // measured rather than assumed: `symbolPartName` in lib/kicad/value-notation.ts
+  // slices at the colon, so the netlist reads `SW_Rotary_1x12` and never
+  // `Switch:SW_Rotary_1x12`. Asserting the lib-id here failed, which is how the
+  // transform was found; the name half is asserted with the library half checked
+  // separately below, so neither half can drift unnoticed.
+  const [library, name] = RESOLVED_SELECTOR[2].split(":")
+  expect(name, "the chosen symbol has a name half to assert").toBeDefined()
+  expect(netlist, "valued with the name half of the symbol the owner chose").toContain(name ?? "")
+  expect(library, "and the library half is the installed Switch library").toBe("Switch")
 })

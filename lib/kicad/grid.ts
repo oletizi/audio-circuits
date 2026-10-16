@@ -22,6 +22,16 @@ export const GRID_MM = 2.54
  * part and is 0.12mm off; `P10.16mm` is exact. A tighter tolerance refuses
  * real, correct footprints. A much looser one starts accepting genuinely
  * off-pitch parts as though they fitted their holes.
+ *
+ * EACH PITCH FIELD IS NAMED ON A FOOTPRINT THAT EXISTS, so the warrant can be
+ * looked up: `Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm` carries the 2.50,
+ * `Capacitor_THT:C_Disc_D9.0mm_W5.0mm_P7.50mm` the 7.50, and
+ * `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` the exact
+ * 10.16. The 0.12mm observation was for a while illustrated in
+ * `tests/kicad/import-string.test.ts` by a footprint name the library does not
+ * have; the ARITHMETIC was never in doubt (7.50 against 3 x 2.54 = 7.62), and
+ * real P7.50mm footprints are plentiful, so the tolerance did not move - but a
+ * warrant whose example cannot be opened is a warrant nobody checked.
  */
 export const PITCH_TOLERANCE_MM = 0.15
 

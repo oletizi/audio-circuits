@@ -11,7 +11,8 @@
  * `-C <dir>`. That is a PATH, not a second way to name a board: see
  * `resolveDirectoryFlag` in `./perfboard-support.ts`.
  *
- * WHAT WRITES: `check`, `cuts`, `board-info` and `boards` write nothing.
+ * WHAT WRITES: `check`, `cuts`, `board-info` and `boards` write nothing, and
+ * `place` writes only under `build/stripboard/<board>/<stamp>/`.
  * `update` and `stripboard` write the declared layout IN PLACE, because git is
  * the undo and a verb that wrote a copy somewhere else and told you to move it
  * into position would hand you the one step that can go wrong. `guide` never
@@ -21,7 +22,10 @@
  *
  * `cuts`, `import`, `update`, `stripboard`, `edit`, `guide` and `veroroute` dispatch through
  * `./perfboard-binary-verbs.ts` - the coherent, binary-backed half of this
- * CLI, split out to keep this file under the repository's size ceiling.
+ * CLI, split out to keep this file under the repository's size ceiling. `place`
+ * dispatches through `./perfboard-stripboard-verbs.ts` for the same reason; it
+ * writes only under `build/stripboard/`, never the layout, which is why it
+ * takes no `--allow-dirty`.
  */
 import path from "node:path"
 import { isMain } from "./entrypoint.ts"
@@ -52,6 +56,8 @@ import type { NetlistSyncDeps } from "../perfboard/netlist-sync.ts"
 import { schematicNoticeLines } from "../perfboard/schematic-notice.ts"
 import { dispatchBom } from "./perfboard-bom-verb.ts"
 import type { BomDeps } from "../bom/run.ts"
+import { dispatchAdopt, dispatchPlace, type PlaceDeps } from "./perfboard-stripboard-verbs.ts"
+import type { AdoptDeps } from "../stripboard/adopt.ts"
 
 const VERBS = [
   ["check", "check this layout against the circuit it was built from"],
@@ -62,6 +68,8 @@ const VERBS = [
   ["edit", "open this layout in the forked VeroRoute"],
   ["guide", "write this board's printable build packet into its guide/ directory"],
   ["bom", "compare this board's needs with bom.json and the catalog; rewrite BOM.md"],
+  ["place", "run the stripboard pipeline on this board and print its report"],
+  ["adopt", "admit a pipeline-produced layout into this board, in place"],
   ["board-info", "what this directory declares"],
   ["boards", "every declared board under this directory"],
   ["veroroute", "acquire the pinned VeroRoute fork (a no-op if already built)"],
@@ -99,8 +107,20 @@ const USAGE = [
   "                           name - there is deliberately no BOARD=<name>",
   "                           lookup. Refuses if <dir> does not exist or is not",
   "                           a directory, rather than falling back to cwd.",
-  "  --allow-dirty            update, stripboard: accept that this write cannot",
-  "                           be undone through git.",
+  "  --allow-dirty            update, stripboard, adopt: accept that this write",
+  "                           cannot be undone through git.",
+  "  --run <dir>              adopt: the run directory `place` printed, holding",
+  "                           the run.json whose provenance is checked. REQUIRED,",
+  "                           with no default: adopting off the most recent",
+  "                           directory would be adopting off whatever the clock",
+  "                           last named. A relative path resolves against the",
+  "                           REPOSITORY ROOT, not the board directory, because",
+  "                           a run directory is build/stripboard/<board>/<stamp>",
+  "                           by construction.",
+  "  --candidate <vrt>        adopt: which .vrt in that run directory to admit.",
+  "                           Optional - run.json identifies it by sha256, so it",
+  "                           is found rather than typed; name it only when two",
+  "                           files hold the same bytes.",
   "  --strips horizontal|vertical",
   "                           stripboard: which way the strips run. There is no",
   "                           default; it is a fact about the board in hand.",
@@ -119,6 +139,21 @@ const USAGE = [
   "                           netlist-sync: the resolved schematic, netlist fixture and kicad-cli",
   "                           paths. make/board.mk passes all three - this verb never re-derives",
   "                           them from a directory, so it is not meant to be typed by hand.",
+  "  --seed-arm constructed|import|random",
+  "                           place: which starting arm the run takes. REQUIRED,",
+  "                           with no default: the three are an experiment with",
+  "                           random as its control, so an arm chosen for you",
+  "                           would be a comparison nobody named.",
+  "  --frozen <fixture> --netlist <export>",
+  "                           place: run the FROZEN hand layout's benchmark",
+  "                           instead of this directory's board - the fixture",
+  "                           under tests/fixtures/stripboard/ and the export of",
+  "                           the model it was built against. Both or neither.",
+  "  --sweep                  place: run one search per seed of",
+  "                           stripboard/rules.json's seeds and report how many",
+  "                           reached the board's own clause. It is a DIAGNOSTIC",
+  "                           and no number is attached to it; it costs the full",
+  "                           evaluation cap per seed.",
   "  --field sch|netlist      board-info: print only that resolved path (or an",
   "                           empty line if it was not declared), for scripts.",
   "",
@@ -146,6 +181,13 @@ const USAGE = [
   "     nothing written).",
   "     check: a board with a bom.json also fails when its BOM.md is stale or a",
   "     chosen part no longer meets its line.",
+  "     place: the outcome's own code (CRITERIA REP5) - 0 only for an admissible",
+  "     layout, 1 for invalid AND for valid-below-target, and 1 for an",
+  "     admissible layout whose run hit Q5's backstop. A missing --seed-arm or a",
+  "     refusal anywhere in the chain is also 1, with the refusal printed whole.",
+  "     adopt: 0 only when the layout is in place AND `make check` exited 0 on",
+  "     it. Any of the gate's ten refusals is 1 with nothing adopted, and a",
+  "     `make check` that fails after the copy is 1 with the copy reverted.",
 ].join("\n")
 
 export interface RunCliOptions {
@@ -189,6 +231,15 @@ export interface RunCliOptions {
   readonly guideDeps?: Omit<GuideDeps, "kicadCli">
   /** Injected so `bom` needs no real circuit module, simulator, catalog or filesystem in tests. */
   readonly bomDeps?: BomDeps
+  /** Injected so `place` needs no fork, circuit module or search in tests. */
+  readonly placeDeps?: PlaceDeps
+  /**
+   * Injected so `adopt` never spawns git or `make`, and never reads the real
+   * pin or build stamp, in tests. **It is also the only way a test can let
+   * `adopt` run at all without writing under the repository's own `boards/`**,
+   * which is the one thing that verb exists to do.
+   */
+  readonly adoptDeps?: AdoptDeps
 }
 
 async function runCheck(
@@ -348,6 +399,19 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (verb === "bom") return dispatchBom(cwd, args.slice(1), opts.bomDeps, opts.repoRoot, log, error)
 
   if (verb === "wiring") return dispatchWiring(cwd, log, error)
+
+  if (verb === "place") {
+    return dispatchPlace({ cwd, args: args.slice(1), log, error }, opts.placeDeps)
+  }
+
+  if (verb === "adopt") {
+    // NO `?? defaultAdoptDeps()` HERE: `dispatchAdopt`'s own parameter default
+    // is the production path, and resolving it a second time in this file would
+    // be two places deciding which pin and which build stamp the gate reads.
+    return opts.adoptDeps === undefined
+      ? dispatchAdopt({ cwd, args: args.slice(1), log, error })
+      : dispatchAdopt({ cwd, args: args.slice(1), log, error }, opts.adoptDeps)
+  }
 
   if (verb === "netlist-sync") return dispatchNetlistSync(args.slice(1), opts.netlistSyncDeps, log, error)
 

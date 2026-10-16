@@ -149,11 +149,11 @@ test("a switch is valued by its part identity, because it has no quantity", () =
     id: "SW1",
     kind: "switch",
     parameters: { positions: ["a", "b"], contacts: { a: [["common", "t1"]], b: [["common", "t2"]] } },
-    part: { symbol: "Switch:SW_Rotary6" },
+    part: { symbol: "Switch:SW_Rotary_1x3_MP" },
     pins: {},
     units: [{ name: "MAIN", pins: { common: net("c"), t1: net("x"), t2: net("y") } }],
   }
-  expect(valueFor(sw)).toBe("SW_Rotary6")
+  expect(valueFor(sw)).toBe("SW_Rotary_1x3_MP")
 })
 
 test("a switch with no part identity refuses rather than emitting an empty value", () => {

@@ -233,7 +233,16 @@ All five layouts are stale. `--check` against the netlist exported from today's
 board - the scaffold stand-in parts are not placed yet. A future placement works from the
 model, so these are the numbers to aim at:
 
-| board | nets (model) | on-board components | on-board pins | off-board components (break out as free single-hole pads) | **C floor at R = 35** |
+**CORRECTED 2026-10-11: the heading below said `R = 35`, and HC6 declares the owner's stock at
+34 strips by 27 columns.** Thirty-five came from the canvas `--import` happens to leave, not
+from a board anybody owns, and it is wrong on this document's own terms too, since low-boost's
+grid is 14 by 34. The error is harmless for every figure in the table - the largest `N` here is
+28, so `max(0, N - R)` is zero at either value - and it would stop being harmless the moment a
+constrained floor is derived, where one spare strip is one cut. It mattered enough to fix
+because `R` is the floor's only other term: a reader taking 35 from here while the rules file
+says 34 computes every floor by hand one too low and concludes the code is broken.
+
+| board | nets (model) | on-board components | on-board pins | off-board components (break out as free single-hole pads) | **C floor at R = 34** |
 | --- | --- | --- | --- | --- | --- |
 | mid | 28 | 31 | 68 | 8 | 0 |
 | hi-boost | 20 | 20 | 46 | 7 | 0 |

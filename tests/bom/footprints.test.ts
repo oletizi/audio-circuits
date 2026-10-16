@@ -61,5 +61,12 @@ test("a pin header footprint parses its pin count", () => {
 })
 
 test("an unrecognised footprint throws, naming it", () => {
-  expect(() => physicalFor("Capacitor_SMD:C_0805", resistor("c9"), {})).toThrow(/Capacitor_SMD:C_0805/)
+  // A REAL footprint that this module does not recognise, not an invented one.
+  // It named a bare C_0805 until tests/kicad/footprint-names.test.ts swept for
+  // names the libraries do not hold; the library spells it
+  // C_0805_2012Metric, verified against Capacitor_SMD.pretty on disk. An
+  // unrecognised-footprint test needs a footprint the module cannot classify,
+  // which a real SMD name satisfies, so nothing was gained by inventing one.
+  expect(() => physicalFor("Capacitor_SMD:C_0805_2012Metric", resistor("c9"), {}))
+    .toThrow(/Capacitor_SMD:C_0805/)
 })

@@ -182,11 +182,30 @@ void MakeToroid(int& row, int& col) const
     while ( row >= GetRows() )  { row -= GetRows(); }
 ```
 
-So an out-of-range destination silently **wraps** rather than being refused. Combined
-with the `Pan()` calls at step 2 — which grow the board when the *group bounds* leave
-the grid — the relationship between a requested delta and the resulting row/column is
-not the identity. An optimiser that assumes "I asked for (r,c), I got (r,c)" will be
-wrong at the edges, and wrong in a way that looks like a successful move.
+**CORRECTED 2026-10-10: the wrap never fires, and what happens instead is worse.** This
+section reasoned from `MakeToroid`'s source that an out-of-range destination silently wraps.
+The code is quoted correctly and the conclusion is wrong, because `Pan()` runs **first** and
+either grows the board or clamps, so the coordinate reaching `MakeToroid` is already in
+range. Measured during M1.3/M1.4's implementation, on a 35×35 fixture:
+
+- `--move --to 40,5` — **exit 0**, `PART R1 … AT 40,5`, and `GRID 41 35`. The board *grew*
+  to accommodate a destination off it.
+- `--move --to -5,5` — **exit 0**, the part landed at `0,5`, **and R2, R3 and R4 — never
+  named on the command line — moved from row 0 to row 5.** The pan moved the whole circuit.
+
+A wrap would at least leave the named part somewhere and the rest alone. A silent pan
+renumbers every hole on the board and drags parts nobody mentioned, so a caller holding
+hole coordinates from before the gesture now holds coordinates into a different numbering.
+
+**The remedy in §4 of the pipeline design is unchanged by this correction**, and that is
+the useful part: it verifies the part's actual landing against the request, and reports any
+pan, rather than reasoning about which mechanism moved it. A check written against the
+observed result survived a wrong account of the cause. A check written against
+`MakeToroid` specifically would not have.
+
+The general lesson for this document: its measurements held up and two of its **mechanism**
+claims did not. Treat its quoted source as evidence of what the code says, not of what the
+code does.
 
 There is also a **rotation** axis, `Component::GetDirection()` returning `'W'`, `'E'`,
 `'N'` or `'S'` (`Component.h:408`), with `Board::RotateComps`

@@ -37,9 +37,11 @@ about stripboard than the later reasoning that questioned it.
 
 **The resolution: keep the B32529, and reach the distant strip with a wire link.**
 `WIRE` is the layout tool's one unbounded span, so a wire reaches where no bent
-lead can, and the owner's cost weighting already favours it — `ρ_w = 0.25` in
-`2026-10-10-stripboard-pipeline-design.md` section 8.1 prices one cut at four
-wires, on the owner's reasoning that cuts are harder and more error-prone.
+lead can, and the owner's cost weighting already favours it — `PAR1` in
+`docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md`, which is
+the authority for the weights, prices one cut at four wires on the owner's
+reasoning that cuts are harder and more error-prone; section 8.1 of
+`2026-10-10-stripboard-pipeline-design.md` is the argument behind it.
 
 One honest caveat on that resolution, because it is not free: a wire implies a net
 split across segments, and the cost identity `C = N + J − S_occ` takes `J` with a
@@ -462,7 +464,28 @@ where its price advantage over MKT370 widens further.
 
 ## 9. Required follow-up: a fictional footprint in a committed test
 
-`tests/kicad/import-string.test.ts` line 180 contains:
+**STATUS: both instances fixed.** Line 180 took the real
+`C_Rect_L4.6mm_W2.0mm_P2.50mm_MKS02_FKP02` when this section was first acted on.
+The whole-branch review then found a SECOND one in the same file that the first
+pass had missed — `Capacitor_THT:C_Disc_D9.0mm_W2.5mm_P7.50mm`, asserted
+*positively* at line 27, where `Capacitor_THT.pretty` has
+`C_Disc_D9.0mm_W2.5mm_P5.00mm` and `C_Disc_D9.0mm_W5.0mm_P7.50mm` and no W2.5 /
+P7.50 combination. It now reads `C_Disc_D9.0mm_W5.0mm_P7.50mm`, which is on disk
+and derives the same `CAP_CERAMIC3` because only the pitch field is read.
+
+That second instance mattered more than the first, because it was the stated
+evidence for `PITCH_TOLERANCE_MM` in `lib/kicad/grid.ts` — the one number
+deciding whether a footprint classifies as `rows`, whether a nominal span is
+recordable, and whether a part gets an import string at all. **The tolerance did
+not move**: its warrant is arithmetic over the *pitch field* (7.50 against
+3 × 2.54 = 7.62, so 0.12mm off), real P7.50mm footprints are plentiful, and the
+fictional name was the illustration rather than the evidence. `grid.ts`'s
+docstring now names a real footprint for each of its three observations, so the
+warrant can be opened.
+
+The original finding, kept because it is the reasoning:
+
+`tests/kicad/import-string.test.ts` line 180 contained:
 
 ```
 Capacitor_THT:C_Rect_L4.6mm_W2.5mm_P2.50mm

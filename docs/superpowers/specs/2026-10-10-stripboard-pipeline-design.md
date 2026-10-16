@@ -11,6 +11,20 @@ specification. No implementation code was written producing it, no C++ was modif
 `.vrt` was written, and the only existing document it changes is the parent's `S1a`
 Deliverable row, which now cites this file.
 
+**Its criteria live in one short document, and that document is their authority.**
+`2026-10-10-stripboard-acceptance-criteria.md` — cited below as **CRITERIA** — carries the
+complete set of claims about what counts as an acceptable layout: the objective `OBJ1`–`OBJ3`, the
+hard constraints `HC1`–`HC10`, the benchmark `B1-frozen`/`B1-current`/`B2`, the bounds `K1`–`K5`,
+the stopping rules `Q1`–`Q6`, the admissibility verdict `A1`–`A4`, the reporting rules
+`REP1`–`REP5`, the parameters `PAR1`–`PAR4` and the adoption gate `G1`–`G5`. **`HC`*n* is this
+document's hard constraint `H`*n***, prefixed there so that it cannot be mistaken for §13's honest
+limits `H-`*n*; nothing is renumbered here. This document keeps **no second copy** of any
+criterion — two documents stating one criterion will diverge, and supersede means delete — so
+where the argument below needs a criterion it cites it by number, and a criterion's wording is
+settled in CRITERIA and nowhere else. It is also the document the owner reviews: a 2,036-line
+specification is not practically reviewable, and the invariant requires the criteria to have been
+reviewed by somebody who is not producing the artifact.
+
 Three documents are its evidence base and are cited rather than restated:
 
 - `2026-10-10-stripboard-placement-cost-design.md` — the identity `C = N + J − S_occ`, its
@@ -42,6 +56,18 @@ traces to COST, to MOVE, or to the owner's instruction. What changed, and where:
 | 7 | **`ρ_w = 0.25` and the span data's new source** | §8.1, §8.2, §8.4, §9.2, D21, D10, D11, H-1, H-5 | the owner settled both, and §8.1's reasoning had the risk term's sign backwards |
 | 8 | **H-9 deleted** | §13 | the parent's stale "Out of scope" entry was withdrawn in commit `60b0192`; supersede means delete |
 | 9 | **One governing timing figure, and a derived claim recomputed** | §4.6, §7.3, D8, H-10 | two samples, and a gloss derived from the smaller one |
+
+**CRITERIA has since been revised against a review of its own, and five further changes landed
+there.** They are the owner's adjudications, recorded as D26–D30, and CRITERIA remains the
+authority for every criterion they touch:
+
+| | change | where | why it was needed |
+| --- | --- | --- | --- |
+| 10 | **Three outcomes — invalid, valid-below-target, admissible — and the "nothing has been proved" claim deleted** | §7.2.1, §7.3, §10 V8/V12/§10.1, CRITERIA `REP5`, D26 | a buildable board that missed an aggressive target was indistinguishable from one that does not conduct |
+| 11 | **`H10` in `A1`, with a footprint-level check, re-framed as a cost judgement** | §2.3.1, §7.3, §3.3, §5.5, §10 V4/V12/§10.1, CRITERIA `HC10`/`A1`, D27 | `A1` named `H1`–`H9`, so a hard constraint sat outside the verdict; and impossibility claimed more than is true |
+| 12 | **`H8`'s versioned geometry contract, its refusal on a missing line, its negative fixture, and its honestly scoped independence** | §4.7, CRITERIA `HC8`, H-13, D28 | the contract was implicit, a missing line could degrade into a partial reconstruction, and "independent" was stated more broadly than it holds |
+| 13 | **`Q1`/`Q2` require admissibility; `K5` makes `F < F_floor` a verification failure** | §7.3, §10 V2/V4, CRITERIA `Q1`/`Q2`/`K5`, D29 | `Q2` could stop an inadmissible search with budget unspent, and a sub-floor score could read as a good result |
+| 14 | **Authorising a criterion separated from implementing its test** | §9.4, CRITERIA `G4`, D30 | `make check` would otherwise stay permanently weaker than the adoption gate |
 
 The per-family lead-span bounds H5 and H9 consume are **not defined here.** They are a separate
 data module with its own documentation page, being added alongside this revision, and **that
@@ -109,13 +135,9 @@ settles.
 
 ### 2.1 The function
 
-COST §4.1 fixes it, and this document adopts it unchanged:
-
-> **minimise  F = C + ρ_w · W + ρ_s · B**
-
-with `C` the count of `CUT ` lines, `W` the count of `WIRE` lines and `B` the count of
-`SOLDER` lines in `--dump-board` on the candidate. Every term is a line count in a report
-the producing agent did not write.
+**The function is `OBJ1` in CRITERIA, which is the authority for it.** COST §4.1 fixes it and
+this document adopts it unchanged; what follows is why it is admissible, not a second statement
+of it. Every term is a line count in a report the producing agent did not write.
 
 `C` is not an opinion about the placement. It is an exact function of it:
 `C = N + J − S_occ`, derived from `DeriveCuts` and verified to the unit on all five boards
@@ -129,28 +151,26 @@ directly. `W` is the opposite — a wire is a component somebody puts down.
 
 ### 2.2 The hard constraints
 
-COST §4.1's H1–H7, adopted with one strengthening and one clarification, plus **H8 and H9
-added here** for reasons the sections named in their rows give.
+**The ten hard constraints and their checks are `HC1`–`HC10` in CRITERIA, which is the authority
+for them.** They are COST §4.1's `H1`–`H7`, adopted with one strengthening and one clarification,
+plus `HC8` and `HC9` added by this document's revision and `HC10` supplied by the owner; the
+sections below are the reasons each one exists and the measurements that forced them, not a
+second statement of the constraints.
 
-**A naming note, because two tables in this document would otherwise collide.** The hard
-constraints are `H1`–`H9`, written without a hyphen. The honest limits in §13 are `H-1`–`H-12`,
-written with one. They are different sequences and a citation must carry the hyphen or omit it
-deliberately; `H8` and `H-8` were never the same claim, and `H-8` has since been **deleted**
-(§13), so a citation of it resolves to nothing rather than to the hard constraint. The collision
-is not made worse here: no new limit takes the number 8, and no new hard constraint is added.
+**The naming collision is resolved in CRITERIA by prefixing, and nothing here is renumbered.**
+This document's hard constraints keep the names `H1`–`H10`, written without a hyphen, and §13's
+honest limits keep `H-1`–`H-12`, written with one. They are different sequences and a citation
+must carry the hyphen or omit it deliberately; `H8` and `H-8` were never the same claim, and
+`H-8` has since been **deleted** (§13), so a citation of it resolves to nothing rather than to
+the hard constraint. CRITERIA calls the constraints `HC1`–`HC10` so that the two sequences cannot
+be confused there, and **`HC`*n* is this document's `H`*n*** — the mapping stated once, in both
+documents, rather than a silent renumbering that would invalidate COST's and
+`docs/stripboard/lead-span.md`'s existing citations of `H4` and `H5`.
 
-| | Constraint | Checked by |
-| --- | --- | --- |
-| H1 | Every net electrically whole. | `--check BOARD --netlist NET` exits 0 and reports no `incomplete` net. |
-| H2 | Cuts actually derivable. | `CUT_STATE COMPUTED`; never `UNRESOLVED`, never `NOT_APPLICABLE`. |
-| H3 | **Nothing floating, established from copper rather than from component state.** | Milestone 1 item M1.2. COST's H3 reads the `FLOATING` field on `PART`/`PAD`; against `2cfaad8` a floating part also prints **no `PIN` line at all**, so the dump says it twice. §4.2 says why two component-reported signals are still not a copper reading and what M1.2 adds. |
-| H4 | Every lead span within the **tool's** range: 2–16 holes. Its lower end is a fact about VeroRoute, not about any part. | `CompTypes::GetMinLength`/`GetMaxLength`, enforced the same way `lib/kicad/import-string.ts` already enforces `MAX_SPAN = 15` grid steps. |
-| H5 | Every lead span within the part's **physical** reach — an **upper** bound. | The per-family `maxSpanHoles` in the span data module (§8.2). **Refuse without it.** |
-| H6 | The layout fits the stock the owner bought. | The dump's `GRID <rows> <cols>` line against the declared stripboard rows × columns. **This no longer waits on M1.1**: `GRID` is printed by `2cfaad8` and is always emitted, once (RE-MEASURE, "What the newer fork adds"). The board's own size is the right quantity here, because `MoveComps` grows the board by panning rather than letting anything leave it (§4.4), so a layout that does not fit shows up as a board larger than the stock. |
-| H7 | The layout still matches the circuit. | `--check`'s schematic-delta section is empty. |
-| H8 | **Netlist equivalence, reconstructed from copper.** The connected components of the board's copper, computed outside VeroRoute, partition the pins exactly as the reference netlist does — no reference net split across two components (an open) and no two reference nets inside one component (a short). | Milestone 1 item M1.7, which is the only item that makes the geometry readable at all. §4.7 says why H1–H3 and H7 do not already cover this and what it costs. |
-| H9 | **Every lead span at or above the part's own physical minimum** — a `minSpanHoles` **lower** bound. | The per-family `minSpanHoles` in the same span data module, enforced the same way H5 is. §8.3 says why H4 and H5 leave this open and why a manual audit is not the remedy. |
-| H10 | **Every placed part's pins lie on straight lines parallel to the strips.** A footprint whose pins sit on a circle, an arc, or any pattern that cannot be decomposed into rows parallel to the strip direction is not placeable on stripboard, and the pipeline refuses it rather than placing it. | The owner's rule, stated 2026-10-10: *"I'm not going to mount a round switch into a stripboard. That never works. Round footprints do not work well with stripboard."* See §2.3.1 for what this does and does not forbid, and for the two places the repository already follows it. |
+Which section carries which constraint's argument: `H3` is §4.2's measured defect and §2.2's
+overlap paragraph below; `H5` and `H9` are §8.2 and §8.3, with the span data module as their
+numbers' authority; `H6` reads a `GRID` line that `2cfaad8` now always emits, which is why it no
+longer waits on M1.1; `H8` is §4.7; `H10` is §2.3.1.
 
 **Overlap is not a separate constraint, and that is why H3 matters so much.**
 `Board::CanPutDown` refuses a placement that collides with occupied holes (MOVE §1.3), so
@@ -203,8 +223,9 @@ The parent's governing invariant:
 A legibility, tidiness or neatness term is a term an agent scores itself on. Adding one
 would reintroduce the exact failure the parent records — a floorplan graded against intent
 the grading agent had chosen, reporting success on a board with the input stage 8 mm from
-the output stage. So `F` carries no such term, and `H1`–`H7` are each either a line in a
-report the agent did not write or a number the owner supplied.
+the output stage. **`OBJ2` in CRITERIA is the resulting criterion**, and the reason it holds is
+that `H1`–`H7` are each either a line in a report the agent did not write or a number the owner
+supplied.
 
 Legibility is not thereby dismissed. It enters the way the parent says it may: through a
 reviewed, circuit-independent rule library, or through an independent reviewing agent that
@@ -214,9 +235,19 @@ is never the author (§9.4). Never as a term in `F`.
 
 H10 forbids placing a footprint whose pins sit on a circle or an arc. A strip is a straight
 line of copper, so a circle of pins crosses a different strip at nearly every pin and shares
-one with pins it must not share with — every such hole becomes a cut, and the body sits over
-holes it does not use. The owner's judgement is blunter and worth preserving verbatim: *"I'm
-not going to mount a round switch into a stripboard. That never works."*
+one with pins it must not share with — nearly every such hole becomes a cut, and the body sits
+over holes it does not use. The owner's judgement is blunter and worth preserving verbatim: *"I'm
+not going to mount a round switch into a stripboard. That never works. Round footprints do not
+work well with stripboard."*
+
+**It is a cost judgement, not a geometric impossibility, and an earlier revision framed it as the
+latter.** A round pin pattern *can* be routed, with a cut at nearly every pin; what makes H10 a
+hard constraint is that the cut cost is prohibitive and the owner will not build it. The
+over-framing invited a counterexample — parallel pin rows, which the criterion was never about —
+that does not actually overturn the rule, and the criterion's own words already admit the plural:
+pins lie on straight **lines**, and what is refused is a pattern **not decomposable into rows**
+parallel to the strips. A DIP-16 is two such rows, decomposes, and passes. **CRITERIA's `HC10` is
+the authority**, carries the re-framing and names its footprint-level check.
 
 **This is a rule about PIN GEOMETRY, not about body shape, and the distinction decides
 whether the rule is useful or catastrophic.** A radial electrolytic has a cylindrical body and
@@ -284,13 +315,10 @@ anywhere in this document (H-11). Two candidates with equal `C`, `W` and `B` can
 much board they occupy, and the ranking as it stood would separate them only by a proxy for
 something else.
 
-**The term.** Occupied bounding-box area, as a direct reading of M1.1's `BOUNDS`:
-
-> `A_occ = (maxRow − minRow + 1) × (maxCol − minCol + 1)`
-
-placed **below all three construction-cost terms and above the wirelength proxy**, giving R3's
-order: cuts, wire bridges, solder bridges, `A_occ`, pin-bounding-box wirelength. Two reasons for
-that exact position, each stated so the position is reviewable rather than felt:
+**The term.** Occupied bounding-box area, as a direct reading of M1.1's `BOUNDS`, placed **below
+all three construction-cost terms and above the wirelength proxy**. **`OBJ3` in CRITERIA states
+the ranking and `A_occ`'s definition and is the authority for both.** Two reasons for that exact
+position, each stated so the position is reviewable rather than felt:
 
 1. **Below the construction-cost terms**, because a smaller board that costs more to build is
    not an improvement, and lexicographic order is what guarantees `A_occ` can never buy a cut.
@@ -381,10 +409,8 @@ was spending it on the wrong circuit.
 
 #### 3.2.2 B1-frozen — the benchmark, kept at full force
 
-> **B1-frozen. Against the exact electrical model, footprints and board dimensions the hand
-> layout was built for — 9 nets, 27 pins, and the grid the fixture's own `GRID` line reports —
-> the pipeline must reach `C ≤ 5` with `W = 0` and every net complete, starting from the
-> import-placed board.** A run that does not is a failing run.
+**`B1-frozen` in CRITERIA is the criterion and is the authority for it.** What follows is why it
+has the shape it has, and how the fixture it is stated against is pinned.
 
 **The grid is cited to the fixture's `GRID` line and not restated as a number, and that is a
 correction.** This document previously said "the 14 × 34 grid", citing COST §2.2. Dumping the
@@ -428,31 +454,19 @@ a benchmark.
 
 The mechanism is one this repository already uses and the fixture sits with the others:
 `tests/fixtures/` already holds a committed netlist export and a committed `--dump-board`
-capture for `pt2399-core`, for the same reason. Three rules govern the fixture, each because
-its absence has a named failure:
-
-1. **It lives under `tests/fixtures/`, never under `boards/`.** `make -C boards/<board> check`
-   runs `netlist-agrees`, which regenerates the export every run and decides freshness by
-   content (§9.4). A deliberately frozen model under `boards/` is a deliberately stale one, and
-   the freshness guard would be right to fail it. Put the fixture where the guard does not run,
-   rather than weakening the guard.
-2. **It records `a33cb4d` and `2f62ee1` as its provenance, in the fixture directory, in text.**
-   A fixture whose origin is in somebody's memory is not evidence (**transcription is evidence,
-   not memory**).
-3. **It is hashed like any other input.** The run manifest records the fixture's `sha256` the
-   way R6 records `source.sha256`, so a silently edited benchmark is a changed hash rather than
-   a quietly easier test.
+capture for `pt2399-core`, for the same reason. **The three rules that govern the fixture — where
+it lives, the provenance it records, and that it is hashed like any other input — are `B2` in
+CRITERIA**, each there with the named failure its absence has; the run manifest records its
+`sha256` the way R6 records `source.sha256`.
 
 #### 3.2.3 B1-current — the scaffolded board's own criterion
 
 The scaffolded low-boost board is a different circuit and gets a criterion derived from **its
-own** floor, by the identity, with nothing inherited from the hand layout:
+own** floor, by the identity, with nothing inherited from the hand layout: **`B1-current` in
+CRITERIA, which is the authority for it.** P0 derives the floor it is stated against (§5.5).
 
-> **B1-current. On the scaffolded low-boost board, the pipeline must reach
-> `(F − F_floor) / max(1, F_0 − F_floor) < τ` against that board's own `C_floor` as P0 derives
-> it (§5.5), with every net complete and H1–H9 holding.**
-
-Three things it deliberately does **not** say:
+Three things it deliberately does **not** say, and why — CRITERIA names the three exclusions;
+these are the arguments for them:
 
 - **No absolute cut count.** `C ≤ 5` on this board means `S_occ ≥ 9 + J`, a requirement nobody
   derived and nobody achieved. The bound is floor-relative because the floor is the only lower
@@ -477,7 +491,7 @@ are of **B1-frozen**, because that is the criterion a failure of which carries t
 B1-current failure is an ordinary failure to reach a derived floor and reads under §7.3. Three
 readings are distinguishable and the run must say which:
 
-1. **The optimiser is weak.** `C > 5` on the frozen fixture while H1–H9 all hold and `κ` is
+1. **The optimiser is weak.** `C > 5` on the frozen fixture while H1–H10 all hold and `κ` is
    well above the clustering bound of §7.2. A search problem: the move set, the escape mechanisms
    of §7.4, the seed construction or the stopping rule. **Note what this reading is not.** The
    bound is deliberately set just under the best hand result (§7.2.1), so missing it is the
@@ -798,20 +812,33 @@ silence.
 ### 4.3 M1.3 — the zero-delta abort
 
 `Board::MoveComps` opens with `assert(deltaRow != 0 || deltaCol != 0)` and
-`assert(!GetDisableMove())`, and the generated Makefile defines `QT_NO_DEBUG` but **not**
-`NDEBUG` (MOVE §2.3 item 8):
+`assert(!GetDisableMove())`.
 
+**CORRECTED 2026-10-10: `assert` is NOT live, and this section's original reasoning was
+wrong.** It read the generated Makefile, found `-DQT_NO_DEBUG` without `-DNDEBUG`, and
+concluded that reaching `MoveComps` with a zero delta aborts the process. The Makefile is
+not the whole story: the fork defines `NDEBUG` **itself**, in `Src/Common.h:23-25`, which
+every translation unit includes.
+
+```c
+// Comment out following 3 lines on debug builds to enable assert()
+#ifndef NDEBUG
+#define NDEBUG
+#endif
 ```
-$ grep '^DEFINES' .tools/veroroute-perfboard/build/Makefile
-DEFINES       = -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
-```
 
-So `assert` is live in the shipped build, and reaching `MoveComps` with a zero delta is a
-**process abort**, not an error message. **An optimiser will propose a no-op eventually** —
-a hill-climb sweeping every single-part move enumerates `Δ = (0,0)` by construction unless
-something excludes it — and an abort mid-run is indistinguishable from a crash.
+So both asserts compile away, and a zero delta **wrote a board** rather than aborting —
+confirmed by running it and by a preprocessor probe during M1.3's implementation. That is
+worse than the abort this section feared, not better: an abort is loud, while a written
+board byte-identical to its input is a candidate a search loop cannot distinguish from one
+that actually moved something.
 
-**This must be handled in the verb, not in the build.** The two remedies have very
+**The guard is adopted anyway, and for a reason the original framing obscured.** It was
+argued as crash-avoidance, which was fiction. The real reason is the one above — a no-op
+must not be reportable as progress — and it stands on its own. Had the remedy been chosen
+to match the fiction, it would have been a build-flag change that fixed nothing.
+
+**This is handled in the verb, not in the build.** The remedies have very
 different blast radii and should not be confused:
 
 | remedy | blast radius | decision |
@@ -1045,6 +1072,17 @@ Two inputs the original table did not list and the reconstruction also needs, bo
 **`GRID <rows> <cols>`** for each strip's extent, and **`WIRE <name> AT <row>,<col> ENDS <end>
 <end>`** for the wire edges.
 
+**CRITERIA's `HC8` geometry contract is the authority for all of it, and this table is not a
+second statement of it.** The contract is versioned and names every line the reconstruction
+consumes, the fields it reads from each, the fork commit that first emitted it, the one clause
+that is a *definition* rather than data — when two holes are electrically connected by an uncut
+strip — and the rule that a missing contracted line **refuses by name** rather than degrading
+into a partial reconstruction. The table above is the record of how the first draft's four rows
+were retired. CRITERIA also scopes the independence honestly: `H8` is independent of VeroRoute's
+**membership calculation** and **consumes** its geometry export, so a defect in the export is one
+the optimiser and the verifier share; parsing the `.vrt` directly is an honest limit rather than a
+plan, N5 being why.
+
 **So M1.7 is no longer a fork change at all, and §4.7's own caveat is what caught it.** The first
 draft wrote: *"the implementation plan must enumerate the remaining fields, rather than assuming
 this table is a complete list of what is missing."* Enumerated against `2cfaad8`, the remaining
@@ -1081,7 +1119,10 @@ are two implementations of nothing in common.
    pins fell into.**
 2. **A short.** A fixture board on which two nets share a strip with the separating cut removed.
    H8 must reject it and **name both nets.** This is the fixture no existing check catches, and
-   it is the reason the gate exists.
+   it is the reason the gate exists. **CRITERIA's `HC8` states its contents, what it proves and
+   the provenance discipline it carries**, and records as an open question how such a board gets
+   produced — no verb in the pinned fork edits a cut, so the floated-`C19` capture route does not
+   transfer and nothing here invents one.
 3. **Agreement where agreement is expected.** On the frozen low-boost fixture (§3.2.2) and on
    **every board of §3.5's benchmark set** — three of which pass `make check` independently —
    H8's partition equals the reference netlist's. A disagreement is a bug in one of the two and
@@ -1213,7 +1254,7 @@ Following COST §6.2's phases, with the actuators Milestone 1 supplies:
 | --- | --- | --- |
 | **P0 targets** | per board: `N`, `P`, `C_floor = max(0, N − R)`, the net graph, max degree, the bandwidth bounds. COST §2 and §6.4 are this stage, already done for the five boards. | the run directory's `targets.json` |
 | **P1 seed by construction** | assign one net per strip in a low-bandwidth linear arrangement; place each part across the strips of its two nets; stretch to reach. Should land at or near `J = 0`. **Search is for what construction cannot reach.** | a candidate `.vrt` |
-| **P2 climb** | search on `F` with the move set `move / rotate / stretch / add-wire / delete-wire` **plus §7.4's net-cluster move**, evaluating each candidate by applying it to a scratch copy, running `--author --op autofill`, dumping, computing `F` and checking H1–H9. Reject on any hard-constraint failure. Accept on `ΔF < 0`, or on `ΔF = 0` with a strictly better R3 ranking, or under §7.4's bounded worse-acceptance if a bound is configured. Restart per §7.4 when a climb exhausts. | candidates and their scores |
+| **P2 climb** | search on `F` with the move set `move / rotate / stretch / add-wire / delete-wire` **plus §7.4's net-cluster move**, evaluating each candidate by applying it to a scratch copy, running `--author --op autofill`, dumping, computing `F` and checking H1–H10. Reject on any hard-constraint failure. Accept on `ΔF < 0`, or on `ΔF = 0` with a strictly better R3 ranking, or under §7.4's bounded worse-acceptance if a bound is configured. Restart per §7.4 when a climb exhausts. | candidates and their scores |
 | **P3 grade** | the full acceptance check (§9.2) on the best candidate, independent of the generator; rank the admissible candidates by R3 | `run.json` |
 | **P4 report** | the layout, the canonical metrics, which stopping rule fired, **the bound status (§7.3)**, and what remains open. Then a human makes the judgement calls `CLAUDE.md` reserves. | the run directory |
 
@@ -1246,7 +1287,7 @@ already spawns **this fork's binary** and parses `--dump-board` `CUT` lines.
 | --- | --- | --- |
 | R1 | **Schema-versioned JSON rules with a strict loader.** `placement-rules.json` carries `"schema": 1`; `tools/placement/rules.ts` loads it through `rejectUnknown`, `requireArray`, `requireNumber` (`strict.ts`), so an unknown key is an error, not ignored. Each entry carries a free-text `note` recording *why* the number is what it is. | This project's "refuse rather than guess" and "an empty whitelist that refuses loudly beats a general rule that quietly accepts a guess", and "refusals teach". Reuse the shape and the strictness; the rule vocabulary is different. |
 | R2 | **The generate-and-grade split, where repair only PROPOSES.** `repair.ts`: *"The repair only proposes; the caller grades the result with the full intent check, so a repair can never weaken acceptance."* | The single most valuable property to carry: an optimiser's move generator must never also be its acceptance test. It maps onto Milestone 1 exactly — the move verb actuates, the dump scores, and the two share no code. |
-| R3 | **A declared, lexicographic ranking.** `routeAll.ts` exports `RANKING` as a string constant stating the order in prose, with the reason for each position beside it. | A reviewable ranking beats a weighted sum with tuned coefficients. The stripboard order is §2.4's five terms: **cuts, then wire bridges, then solder bridges, then occupied bounding-box area, then pin-bounding-box wirelength** — and `F`'s `ρ` weights exist for the one trade the owner actually has an opinion about (§8.1), not as a knob to fit. |
+| R3 | **A declared, lexicographic ranking.** `routeAll.ts` exports `RANKING` as a string constant stating the order in prose, with the reason for each position beside it. | A reviewable ranking beats a weighted sum with tuned coefficients. The stripboard order is `OBJ3` in CRITERIA, argued in §2.4 — and `F`'s `ρ` weights exist for the one trade the owner actually has an opinion about (`PAR1`, §8.1), not as a knob to fit. |
 | R4 | **Two-condition termination, one of which is "stop and fix the cause".** `routeAll` stops once `passes` candidates pass (default 5) **or** when `sameFailures` results in a row share a failure signature (default 3), because a repeated failure is *"a systematic cause to fix, not a candidate to skip"*. | Directly portable. The stripboard failure signature is the failing check names plus the set of floating parts and the `CUT_CONFLICT` positions. It gives a principled stop that is not an iteration cap. |
 | R5 | **Run directories, never the canonical artifact; adoption separate.** Runs land under `build/`; only an explicit `adopt-<board>` writes a board. | Matches the fork's own rule — `-o` required, the input board never edited in place (`Headless.cpp:76-86`) — and §9's single gate. |
 | R6 | **Provenance manifests keyed by content hash.** `manifest.ts`'s `run.json` records `source.sha256`, `intent_sha256`, `rules_sha256`, `policy_sha256`, `engine_commit`, the overrides used, and per-candidate `sha256` plus checks plus metrics. | This project's "derived artifacts are regenerated every run and compared by content, never by timestamp", with the hashes written down. Hash the pinned veroroute commit where that tooling hashes `engine_commit`. |
@@ -1273,10 +1314,8 @@ The owner asked for a target ratio **driven at iteratively**, not a first soluti
 ### 7.1 The progress variable
 
 COST §5 established that `C/N`, `C/parts` and `C/P` have no predictive power, and the one
-dimensionless number worth tracking is
-
-> **κ = J / (P − N) ∈ [0, 1]** — the fraction of the available splitting a layout has
-> committed, so that `C = (N − S_occ) + κ · (P − N)`.
+dimensionless number worth tracking is `κ`. **`K1` in CRITERIA defines it and states the drive
+target, and is the authority for both.** What this section adds is the measured values.
 
 Measured: **0.96, 0.96, 1.00, 0.89** on the four import-placed Pultec boards. The four unfinished
 boards are at or within 11% of the worst possible value.
@@ -1295,11 +1334,9 @@ and §3.5 are that reading, on four hand-laid boards.
 
 ### 7.2 The targets
 
-| | target | value | status |
-| --- | --- | --- | --- |
-| **Drive target** | `κ → 0` | 0 | Not a parameter. `κ = 0` means every net occupies one segment, which is COST §2.1's condition (a). P1 seeds *at* it by construction. |
-| **Clustering bound** (admissibility condition A2, not the whole of admissibility) | `κ ≤ κ_bench` | **0.05** | A **parameter** with that default, **settled by the owner as the hard end of a ratchet** (§7.2.1, D23). It sits just under low-boost's measured 1/18 = 0.055, the best result any hand in this repository has reached (§3.5). It is **not** the measured value of any artifact and does not claim to be: it is deliberately just past the best demonstrated one. **The first runs are expected to fail it** (§7.2.1). |
-| **Floor tolerance** | `(F_i − F_floor) / max(1, F_0 − F_floor) < τ` | **0.05** | COST §6.4's `S2`, which is `Q2` in §7.3's naming. The owner's tolerance; this is its proposed default. **The two 0.05s are unrelated** — one is a dimensionless clustering fraction, the other a fraction of the gap to a derived floor — and the coincidence of the digits is noted here so nobody reads one as derived from the other. |
+**The three targets are `K1`'s drive target, `K2`'s clustering bound and `K4`'s floor tolerance in
+CRITERIA, which is the authority for all three** — including the note that the two `0.05`s are
+unrelated quantities whose digits merely coincide. §7.2.1 below is `K2`'s and `K3`'s argument.
 
 **`κ = 0` is not by itself the floor, and a scheme that treated it as one would stop early.**
 `C = (N − S_occ) + κ·(P − N)`, so at `κ = 0` the board still carries `N − S_occ` cuts — 19,
@@ -1312,11 +1349,11 @@ carries a floor bound as well as a `κ` bound.
 
 ### 7.2.1 The clustering bound is a ratchet, and it starts hard
 
-> **Settled: `κ_bench` starts at 0.05, and every relaxation of it is a deliberate edit carrying
-> the evidence that forced it.** The owner's decision: start at a harder bound and back off
-> gradually, only if it proves impracticable.
+**`K2` in CRITERIA carries the bound and `K3` carries the ratchet, and CRITERIA is the authority
+for both.** The owner's decision was to start at a harder bound and back off gradually, only if
+it proves impracticable. This section is why that decision is the right one.
 
-**Why 0.05 rather than the measured values.** The first revision set the bound at low-boost's own
+**Why the bound sits where it does rather than at the measured values.** The first revision set the bound at low-boost's own
 `κ`, rounded to 0.06, because low-boost was the only hand-laid board then in view. RE-MEASURE
 shows three more, all passing `make check`, at 0.181, 0.196 and 0.269 — so a bound at 0.06 would
 **refuse layouts the owner has already built and which are in service**, including `pt2399-core`,
@@ -1325,11 +1362,12 @@ A bar no existing artifact clears is not a bar; it is a bug that happens to be s
 
 The obvious repair is to loosen the bound to admit them. **That is not the decision.** The four
 measured values are recorded in §3.5 so that nobody can re-derive a loose bound without seeing
-them, and the bound is set at 0.05 anyway, for a reason about information rather than about rigour:
+them, and `K2`'s bound is set where it is anyway, for a reason about information rather than about
+rigour:
 
 - **A bound set where no artifact has ever reached yields nothing when it fails.** Set it at 0
   and every run fails, and the failure says only that 0 was not reached — which was already known.
-- **A bound just past the best demonstrated result makes a failure informative.** 0.05 is just
+- **A bound just past the best demonstrated result makes a failure informative.** `K2` is just
   under 1/18, a value one person reached by hand on one board. A run that misses it has missed
   something a human has done, and the verdict then has to say *what stopped it* — which is the
   reading §7.3 requires and the thing nobody knows yet.
@@ -1353,25 +1391,10 @@ widening."* `lib/kicad/value-notation.ts` is the worked example — `MIN_OHMS` a
 `MAX_OHMS_EXCLUSIVE` carry a comment recording that *"Both ends were widened independently and
 both widenings are kept: down to 1R for the Pultec's 430R hi-cut series resistor, up to 10M for
 the transistor preamp's bias network"*, each widening named to the artifact that forced it, with
-tests asserting both boundaries. `κ_bench` moves the same way:
-
-1. **Moving it requires a run that demonstrably could not reach it**, in the run directory, with
-   its `bound` field and its evidence.
-2. **The binding constraint is named, and it is named from the constraint side.** §8.4's
-   vocabulary is the one that counts: `maxSpanHoles` forbidding the reach, or `minSpanHoles`
-   forbidding the compression, with the board and the net pair. H-3's packing feasibility is the
-   other admissible answer, and §5.3's arithmetic is what sizes it. **"The search did not get
-   there" is not an admissible cause** — that is §7.3's `search-exhausted` or `budget-exhausted`,
-   which says nothing about whether a better layout exists, so a relaxation resting on it is a
-   relaxation of the wrong number.
-3. **It is a deliberate edit to `stripboard/rules.json`**, with the evidence in the entry's
-   `note`, a test beside it, and the previous value and its reason **kept** rather than
-   overwritten — the union is the record, exactly as the value-notation comment keeps both
-   widenings.
-4. **Never a silent widening, and never a widening because the gate became inconvenient.** A gate
-   relaxed to let a run pass is not a gate. If the reason to move the number is that runs keep
-   failing it, the number does not move; the verdict reports the shortfall (§7.3) and the pipeline
-   is what gets worked on.
+tests asserting both boundaries. **`K3` in CRITERIA states the four conditions `κ_bench` moves
+under and is the authority for them**; the vocabulary its second condition demands is §8.4's, the
+other admissible cause is H-3's packing feasibility, which §5.3's arithmetic sizes, and the
+`search-exhausted` / `budget-exhausted` statuses it rules out as causes are §7.3's.
 
 **The first runs are expected to fail this bound, and that is the intent.** It is written here so
 that nobody reads the expected outcome as a defect:
@@ -1387,12 +1410,16 @@ that nobody reads the expected outcome as a defect:
   the owner's own value.
 
 **Why the bound cannot refuse a provably optimal layout, which bounds the damage an aggressive
-value can do.** The only optimality claim this pipeline may make is `bound = at-floor` under Q1
-(§7.3), and `C = C_floor` requires `κ = 0` and `S_occ = min(N, R)` (§7.2). So a layout that
-reaches the floor sits at `κ = 0`, which is inside **any** positive `κ_bench`. **A2 can therefore
-only ever refuse a layout about which nothing has been proved** — never one that reached a derived
-lower bound. The number is a gate on unproven work, which is the only kind of work an aggressive
-gate should be allowed to hold up.
+value can do — and is all it bounds.** The only optimality claim this pipeline may make is
+`bound = at-floor` under Q1 (§7.3), and `C = C_floor` requires `κ = 0` and `S_occ = min(N, R)`
+(§7.2). So a layout that reaches the floor sits at `κ = 0`, which is inside **any** positive
+`κ_bench`: **A2 cannot refuse a provably optimal layout.** An earlier revision went further and
+said A2 could only ever refuse a layout about which nothing had been proved. **That was wrong and
+is deleted, not softened** — a layout can satisfy every hard constraint, be the lowest-cost
+candidate the run found and be buildable, and still miss an aggressive clustering target. That is
+a third outcome, `CRITERIA`'s **REP5** states the taxonomy and the exit codes, and **CRITERIA is
+the authority for it**: what A2 holds up is work that is valid and below target, which a verdict
+must say in those words rather than as a flat refusal.
 
 ### 7.3 Stopping is not accepting
 
@@ -1407,16 +1434,8 @@ In a document that cites both, `S1` would mean two things. The stopping rules ar
 sibling repository's failure-signature termination (R4). `S0`/`S1`/`S1a` keep their parent
 meanings throughout this document and refer only to sub-projects.
 
-**Stop at the first of:**
-
-| | Rule | Measured how |
-| --- | --- | --- |
-| Q1 | **At the floor.** `C = C_floor` and `W = 0` — equivalently `κ = 0` and `S_occ = min(N, R)` and `W = 0`. | Dump counts against P0's `targets.json`. Terminal: nothing below the floor exists. |
-| Q2 | **Within tolerance of the floor.** `(F_i − F_floor) / max(1, F_0 − F_floor) < τ`, `F_floor = C_floor`, default `τ = 0.05`. | Arithmetic on counts. |
-| Q3 | **Search exhausted.** Every seed's climb has reached a round — a full sweep of the move set of §7.4, *including* the net-cluster move — that produced no accepted move, and no restart remains in the seed list. | The round's accepted-move counter is 0 for the last seed, and the restart schedule is spent. **Not terminal before the seed list is spent:** §7.4 says why a single no-accepted-move round is a restart trigger, not a stop. |
-| Q4 | **Marginal yield collapsed.** `(F_{i−1} − F_i) / evaluations_i < 1/2000` for two consecutive rounds: under one unit of `F` bought per 2,000 candidate evaluations. | Counters only. Evaluated **per climb**, with the run-level total also reported, so a restart cannot reset the counter and present a collapsed yield as fresh progress. |
-| Q5 | **Budget spent.** The owner's evaluation cap reached. | Counter, at **run** level. Restarts spend the same cap; the schedule's division of it across seeds is recorded (§7.4). |
-| Q6 | **Systematic cause.** Three consecutive results share a failure signature (R4). | Signature comparison, **within and across restarts**. Three results sharing a signature across two different seeds is stronger evidence of a systematic cause than three within one, not weaker. Reports the cause; does not retry. |
+**The six rules and how each is measured are `Q1`–`Q6` in CRITERIA, which is the authority for
+them**, and §7.4 below is why `Q3` is a restart trigger before it is a stop.
 
 **Q1 is stated in `C` and `W` while Q2 and A3 are stated in `F`, and the two agree.** `F_floor`
 is `C_floor`, so `F = F_floor` needs `W = 0` *and* `B = 0`, and Q1 names only the first. The
@@ -1440,61 +1459,48 @@ owner's.
 distinction for constrained cut floors — H-2 records that no constrained floor is derived, so a
 board whose reach forbids one net per strip has no stated lower bound at all — and the
 optimiser's verdict must carry it too. **A run that exhausted its search budget has not proved
-that a lower bound exists.** So `run.json` carries a `bound` field with exactly one of:
+that a lower bound exists.** So `run.json` carries a `bound` field with exactly one of five
+values: **`REP1` in CRITERIA lists them with what each licenses saying, and `REP3` carries the
+three rules that keep the distinction from eroding** — the wording generated from the field
+rather than written per run, only `at-floor` reportable as a bound met, and even `at-floor`
+relative to the unconstrained floor where a span bound binds (H-2). CRITERIA is the authority for
+all of it.
 
-| `bound` | fires under | what it licenses saying |
-| --- | --- | --- |
-| `at-floor` | Q1 | **The only optimality claim this pipeline may make**, and only against the *unconstrained* floor `max(0, N − R)` (COST §2.1). Nothing below it exists, so the search cannot have missed anything. |
-| `within-tolerance` | Q2 | The result is within `τ` of a derived lower bound. A bound, not an optimum: something better may exist inside the tolerance. |
-| `search-exhausted` | Q3 | Every seeded climb stopped improving under this move set. **Says nothing about whether a better layout exists** — only that these moves from these seeds did not find one. |
-| `budget-exhausted` | Q4, Q5 | The run ran out of yield or of cap. **The weakest statement available**, and the one most easily misread: a number reached at the end of a budget is where the search stopped, not where the problem bottoms out. |
-| `systematic-cause` | Q6 | A repeated failure signature. Not a result about cost at all; a cause to fix. |
-
-Three rules keep the distinction from eroding:
-
-1. **The report's wording is generated from the `bound` field**, not written per run. A phrasing
-   table keyed by `bound` means an exhausted run cannot be described as optimal by an author who
-   was feeling good about the number.
-2. **Only `at-floor` may be reported as a lower bound having been met.** Every other value
-   reports the achieved `F`, the derived floor and the gap, with no claim about the gap being
-   irreducible.
-3. **Where `maxSpanHoles` or `minSpanHoles` binds, even `at-floor` is relative to the
-   unconstrained floor** and must say so (H-2). The constrained floor is undetermined; a run may
-   not invent one by stopping at it.
-
-**Admissible** is a separate verdict, reached only when **all four** of:
-
-| | Condition | What it bounds |
-| --- | --- | --- |
-| A1 | H1–H9 all hold. | The board conducts, **has the connectivity the netlist says and no more** (H8), is buildable within the declared reach at both ends (H5, H9), and fits the stock. Nothing is tradeable here. |
-| A2 | `κ ≤ κ_bench`, default **0.05** (§7.2.1). | The clustering lever — 68–75% of every unfinished board's cuts. **Deliberately set past the best demonstrated hand result**, so failing it is the expected early outcome and a failure must name the binding constraint, not merely the gap (below, and V12). |
-| A3 | `(F − F_floor) / max(1, F_0 − F_floor) < τ`. | The **whole** objective against the derived floor, which is the parent's stated S1a gate: *"cuts and wire bridges within a stated factor of the derived floor"*. A2 alone would pass a board at `κ = 0` that had spent none of its spare strips — mid has 31 unused rows. |
-| A4 | On low-boost, **whichever of the two boards is being run**: on the frozen fixture, B1-frozen (`C ≤ 5`, `W = 0`, every net complete); on the scaffolded board, B1-current (A3's bound against that board's own floor, every net complete, and no `W` clause). | A4 previously named one criterion and left which board ambiguous, which is §3.2.1's error reproduced in the admissibility table. The externally authored benchmark is B1-frozen; B1-current is derived. A run states which board it ran and therefore which clause of A4 it met. |
-
-A2 and A3 are independent bounds on purpose: one on the dominant lever, one on the total.
-Neither implies the other.
+**Admissible is a separate verdict, reached only when all four of `A1`–`A4` hold, and CRITERIA is
+the authority for them.** `A1` is `H1`–`H10`: `H10` was added to the hard-constraint table and the
+admissibility verdict was not extended to name it, so an earlier revision stated `A1` over
+`H1`–`H9` and left a board free to violate a declared hard constraint while passing every
+admissibility condition. **`H10` is in `A1`**, its verifier is a footprint-level check, and
+CRITERIA's `HC10` row states both. **Admissible is also one of three outcomes rather than one of
+two** — invalid, valid-below-target, admissible — and CRITERIA's `REP5` is the authority for the
+taxonomy and for which of them exit non-zero. A4 previously named one criterion and left which board ambiguous, which
+is §3.2.1's error reproduced in the admissibility table; the externally authored benchmark is
+B1-frozen and B1-current is derived. A2 and A3 are independent bounds on purpose: one on the
+dominant lever, one on the total. Neither implies the other.
 
 **A4's second clause is deliberately redundant with A3** and is stated anyway. On the scaffolded
-low-boost board B1-current *is* A3's bound, so A4 adds nothing there; it is kept as a row so
-that a reader looking up "what does low-boost have to do" finds both boards named in one place
-rather than finding `C ≤ 5` and applying it to the wrong one. The redundancy is the cheaper
-error.
+low-boost board B1-current *is* A3's bound, so A4 adds nothing there; it is kept so that a reader
+looking up "what does low-boost have to do" finds both boards named in one place rather than
+finding a cut count and applying it to the wrong one. The redundancy is the cheaper error.
 
-**A run that stops without being admissible exits non-zero and names the rule that fired, the
-bound status, and the gap remaining.** It does not hand over a layout as though it were
-finished. A skipped check must never look like a passing one, and neither must an abandoned
-search.
+**`Q1` and `Q2` are successful terminations and may not fire on an inadmissible candidate.** `κ`
+and the floor tolerance are differently normalised — `κ` divides by `P − N`, the tolerance by
+`F₀ − F_floor` — so `Q2` can fire while `A2` fails and leave the budget unspent on a board the
+pipeline was still allowed to improve. **CRITERIA's `Q1` and `Q2` carry the admissibility
+requirement and the worked arithmetic**; where it holds but admissibility does not, the search
+continues to `Q3`–`Q6`, which report the weaker `bound` the run actually earned.
 
-**And it must say which kind of non-admissible run it was, because `κ_bench` is set past the best
-hand result and the expected early outcome is a failure (§7.2.1).** The verdict therefore reports
-**which conditions of A1–A4 failed, individually**, and never a single "not admissible":
-
-| what failed | what the verdict must say | what it may not be read as |
-| --- | --- | --- |
-| **A2 alone**, with A1, A3 and A4 holding | `κ` achieved, `κ_bench`, and **what bound the clustering**: a span bound with its board and net pair (§8.4), a packing infeasibility (H-3), or — where neither applies — the stopping rule that fired, said plainly as the search having stopped rather than as a constraint. The board met every hard constraint and came within `τ` of its own derived floor. | the pipeline being broken, or `κ_bench` needing to move — moving it is the ratchet's business and takes the named evidence, and a stopped search is not that evidence (§7.2.1) |
-| **A1** — any of H1–H9 | which constraint, and which net or part | a search result at all. A board that does not conduct has no cost worth reporting |
-| **A3** | the achieved `F`, the derived floor and the gap, with the `bound` field's wording (§7.3's three rules) | a bound on what is achievable, unless `bound = at-floor` |
-| **A4** | which board was run and therefore which clause applied | B1-frozen having been met, when the run was against the scaffolded board (V3) |
+**A run that stops without being admissible exits non-zero and says which of A1–A4 failed,
+individually: `REP2` in CRITERIA is that criterion and is the authority for it**, including what
+an A2-only failure must name — a span bound with its board and net pair (§8.4), a packing
+infeasibility (H-3), or the stopping rule said plainly as the search having stopped. It is needed
+because `κ_bench` is set past the best hand result and the expected early outcome is a failure
+(§7.2.1), and because a skipped check must never look like a passing one — nor must an abandoned
+search. What a failure may **not** be read as: an A2-only failure is not the pipeline being broken
+and not `κ_bench` needing to move, moving it being the ratchet's business and a stopped search not
+being its evidence; an A1 failure is not a search result at all, a board that does not conduct
+having no cost worth reporting; an A3 failure is not a bound on what is achievable unless
+`bound = at-floor`; and a run against the scaffolded board may not report B1-frozen met (V3).
 
 The distinction is not stylistic. **A2 failing and the pipeline being broken produce the same exit
 code**, so the only thing that separates them is what the report says, and §7.3's first rule
@@ -1574,11 +1580,11 @@ unchanged; only the source of the data moved.
 
 ### 8.1 `ρ_w` — a wire bridge against a cut, in the owner's own hands
 
-> **Settled: `ρ_w = 0.25`.** One cut costs as much as four wires. The owner's instruction:
-> *"favor wires over cuts. cuts are harder and more error prone."* `ρ_s = 1` stands.
+**`PAR1` in CRITERIA carries both weights and the owner's instruction, and is the authority for
+them.** This section is the finding that came with the value.
 
-**This inverts the reasoning this document previously carried, and the inversion is the finding
-— not the number.** The superseded argument ran:
+**The value inverts the reasoning this document previously carried, and the inversion is the
+finding — not the number.** The superseded argument ran:
 
 > *A cut is one operation... A wire bridge is several... Pulling the other way: a cut is
 > permanent and hard to inspect. A missed cut is an invisible short, and an over-enthusiastic
@@ -1611,8 +1617,8 @@ cut, and VeroRoute derives where it goes without being asked.
 
 **The parameter's effect at both ends, restated for a value below 1:**
 
-- At `ρ_w = 0.25` the optimiser will spend up to four wires to remove one cut, and will not
-  spend five. Wire-heavy boards are now a *permitted* outcome rather than a symptom.
+- At `PAR1`'s value the optimiser will spend wires to remove a cut, up to the ratio and no
+  further. Wire-heavy boards are now a *permitted* outcome rather than a symptom.
 - As `ρ_w → ∞` it never bridges, and H1 then forces one net per strip — which is the
   `C_floor = 0` regime. **A large `ρ_w` and a large board are the same instruction.** The owner's
   value is at the far other end, so that equivalence no longer describes the configured
@@ -1660,10 +1666,12 @@ drawer. It is **a per-family span data module, derived from datasheets**, carryi
 `minSpanHoles` and `maxSpanHoles` per part family, being added to the repository alongside its
 own documentation page.
 
-**That module is the authority on the span bounds, and this document does not restate its
-numbers.** No span figure appears here. H5 consumes its `maxSpanHoles`; H9 (§8.3) consumes its
-`minSpanHoles`; and where the two documents could disagree, the module wins, because a number
-copied into prose is a number that goes stale without anything failing.
+**`PAR2` in CRITERIA states the criterion — the module is the authority on the bounds, both are
+required with no default, and a family without a datasheet figure refuses by name — and CRITERIA
+is the authority for it.** No span figure appears in either document. H5 consumes the module's
+`maxSpanHoles`; H9 (§8.3) consumes its `minSpanHoles`; and where a document and the module could
+disagree, the module wins, because a number copied into prose is a number that goes stale without
+anything failing.
 
 What this document continues to own is the **arithmetic the bounds will be checked against**,
 which is unchanged: the repository fixes the footprints and nothing more — a grep of `docs/`
@@ -1691,14 +1699,11 @@ bound the part is sold against, so it survives restocking and it is checkable by
 person without access to the drawer. **Verify names against the thing itself** applies: a
 datasheet is a thing on disk to be cited, where a remembered caliper reading is not.
 
-**What the pipeline does without the data: it refuses.** Both bounds are required parameters
-with **no default**, and the pipeline will not run without them. Per this project's practice,
-refusing loudly beats defaulting to a guess: the whole point of the stretch lever is reach, and
-a span the part cannot physically make is not a lever but a fiction. A default here would
-produce boards that score well and cannot be built, which is the worst available outcome
-because the arithmetic looks right. **The refusal is the mechanism and it is unchanged by the
-source moving** — including for a family the module has no datasheet figure for, which must
-refuse by name rather than fall back to the tool's 2–16 bound.
+**Why the refusal (`PAR2`) is the only honest behaviour without the data.** The whole point of
+the stretch lever is reach, and a span the part cannot physically make is not a lever but a
+fiction. A default here would produce boards that score well and cannot be built, which is the
+worst available outcome because the arithmetic looks right. **The refusal is unchanged by the
+source of the data moving** from the owner's rule to a datasheet-derived module.
 
 ### 8.3 The minimum span — the bound H4 and H5 both leave open
 
@@ -1755,16 +1760,10 @@ not a substitute for the gate, and it is not the author checking its own spans.
 
 ### 8.4 Two failures the span data forces the pipeline to distinguish
 
-With the bounds supplied, the pipeline must tell these apart, the way the parent's
-outline-expansion loop does:
-
-- *the search did not find the floor* — a retry, a wider move set, a different seed, or one of
-  §7.4's escape mechanisms. Reported with a `bound` of `search-exhausted` or
-  `budget-exhausted` (§7.3), never as a bound on what is achievable;
-- *the floor is unreachable under the supplied bounds* — a design finding and a hard stop,
-  reporting which board, which net pair, **which bound bound it** (`maxSpanHoles` forbidding
-  the reach, or `minSpanHoles` forbidding the compression) and how much reach would be needed
-  (§5.3's table is that arithmetic).
+With the bounds supplied, the pipeline must tell a search that stopped apart from a constraint
+that binds, the way the parent's outline-expansion loop does. **`REP4` in CRITERIA is that
+criterion and is the authority for it**; §5.3's table is the arithmetic that sizes how much reach
+would be needed.
 
 Without the distinction the pipeline either searches an impossible problem forever or stops
 with a misleading reason. **No constrained floor is derived in this document** — the
@@ -1778,79 +1777,73 @@ budget.
 
 ## 9. How a produced layout reaches the repository
 
+**The whole of this section's criteria are `G1`–`G5` and `PAR1`–`PAR4` in CRITERIA, which is the
+authority for them.** What is below is why each is shaped the way it is, in this repository's own
+machinery.
+
 ### 9.1 Where candidates live
 
-Under `build/stripboard/<board>/<stamp>/`, gitignored, never `boards/`. This satisfies both
+`G3`. Under `build/stripboard/<board>/<stamp>/`, gitignored, never `boards/`. This satisfies both
 the sibling repository's run-directory discipline (R5) and the fork's own rule that a verb
 never writes to a path it derived for itself (`Headless.cpp:76-86`). `place` and `route` leave
 `boards/**` byte-identical, and a test asserts it (§10 V7).
 
 ### 9.2 The criteria, and where they live
 
-Per the invariant, the producing agent authors none of these.
+Per the invariant, the producing agent authors none of them. **`PAR1`–`PAR4` are the criteria**:
+`PAR1` the two weights, `PAR2` the span bounds and the module that is their authority, `PAR3` the
+remaining parameters in one schema-versioned `stripboard/rules.json` with unknown keys rejected
+(R1) and a `note` per entry, and `PAR4` the rule that they are circuit-independent and reviewed
+once — changing one is a reviewed change with a test beside it, using one is not.
 
-| What | Where | Who may change it |
-| --- | --- | --- |
-| `ρ_w` (**0.25**, the owner's), `ρ_s` (**1**), `τ`, `κ_bench` (**0.05**, the owner's, ratcheted), Q4's threshold, Q5's cap, Q6's run length, the seed list, E3's acceptance bound (**no default**) | one repository-level `stripboard/rules.json`, schema-versioned, unknown keys rejected (R1), each entry carrying its `note` — and for `ρ_w` the note records the owner's instruction and §8.1's sign correction, not just the value | a reviewed change, with a test beside it. **`κ_bench` is additionally a ratchet**: its `note` keeps every previous value with the run and the named binding constraint that moved it, and a relaxation without that evidence is refused (§7.2.1, D23) |
-| per-family `minSpanHoles` and `maxSpanHoles` | the span data module (§8.2), with datasheet provenance per family. **That module is the authority; nothing here duplicates its numbers.** | a reviewed change, with a test over the range it claims |
-| the R3 ranking, including `A_occ`'s position in it | a declared string constant beside the ranker (R3), stating the order and the reason for each position | a reviewed change. §2.4's two reasons for `A_occ`'s position are what a change has to argue against. |
-| the stock the owner bought: rows × columns per board | a new declared field in the board's existing `boards/<board>/perfboard.json` | the owner — it is a fact about a purchase, not a judgement |
+Two of them point at machinery in this repository rather than at a rules file, and that is
+deliberate: the ranking is a declared string constant beside the ranker (R3), where §2.4's two
+reasons for `A_occ`'s position are what a change has to argue against; and the stock is a declared
+field in the board's existing `boards/<board>/perfboard.json`, because it is a fact about a
+purchase. **`κ_bench` is additionally a ratchet** (`K3`): its `note` keeps every previous value
+with the run and the named binding constraint that moved it, and a relaxation without that
+evidence is refused.
 
-**The parameters are circuit-independent and reviewed once, deliberately, in the parent's rule
-library pattern**: changing them is a reviewed change, using them is not. There is no per-board
-criteria file an agent could draft, which is the hole a per-board file would open.
+**There is no per-board criteria file an agent could draft**, which is the hole a per-board file
+would open.
 
 ### 9.3 The gate
 
-**One command admits a layout, and it is the only thing that writes under `boards/`.** A new
-verb on the existing CLI (`tools/cli/perfboard.ts`), named in the implementation plan, acting
-on `$(CURDIR)` the way every other verb there does — no `BOARD=` variable, because two ways to
-say which board is two places for one fact to be wrong.
+**`G1` and `G2` are the criteria**: one command admits a layout, it is the only thing that writes
+under `boards/`, and `G2` enumerates the six things it refuses. The verb is a new one on the
+existing CLI (`tools/cli/perfboard.ts`), named in the implementation plan, acting on `$(CURDIR)`
+the way every other verb there does.
 
-It refuses:
-
-1. a candidate whose `sha256` differs from the one `run.json` records, and a candidate whose
-   **canonical artifact hash** (§10, V6) differs from the recorded one;
-2. a `run.json` whose rules / span-data / stock hashes differ from the current committed
-   files — so a parameter cannot be slipped in after a run. Where the run is B1-frozen's, the
-   frozen fixture's hash too (§3.2.2);
-3. a provenance chain that does not start from the board as it now is;
-4. a veroroute commit in `run.json` that differs from `veroroute.pin`, **and separately a built
-   commit in `run.json` that differs from either** — the pin is what was intended and
-   `tools/perfboard/acquire.ts`'s `builtCommit()` is what ran, they have disagreed once already,
-   and an unknown built commit is refused rather than taken as agreement (§10.1, D25);
-5. any failing check, including a non-admissible verdict under §7.3;
-6. an uncommitted layout, unless `--allow-dirty` — which is exactly how `update` and
-   `stripboard` already behave, so git stays the undo.
-
-Each refusal names what is missing, where to fix it, and why it is not defaulted.
+Where each refusal's machinery lives: the canonical artifact hash is §10's V6 and §10.1; the
+frozen fixture's hash is §3.2.2's; the built commit is `tools/perfboard/acquire.ts`'s
+`builtCommit()` (§10.1, D25); the admissibility verdict is §7.3's. Each refusal names what is
+missing, where to fix it, and why it is not defaulted.
 
 ### 9.4 `make check` is the existing gate and stays the gate
 
-`make -C boards/<board> check` already runs `veroroute`, `netlist-agrees`, `wiring` and then
-`bun tools/cli/perfboard.ts check -C .`, which checks the layout against the circuit it was
-built from. Three consequences, stated so nothing is quietly weakened:
+`G4`. `make -C boards/<board> check` already runs `veroroute`, `netlist-agrees`, `wiring` and then
+`bun tools/cli/perfboard.ts check -C .`, which checks the layout against the circuit it was built
+from. `G4` states the consequences and **CRITERIA is the authority for them**: adoption is
+post-gated by `make check` as it stands, and the freshness guards still apply to a
+pipeline-produced layout.
 
-- **Nothing is added to `make check` that the pipeline authored.** The pipeline's own
-  admissibility check is *upstream* of adoption, not a new clause in the gate.
-- **Adoption is post-gated by `make check` as it stands.** An adopted board on which
-  `make check` does not exit 0 is a failed adoption and is reverted; `make check`'s verdict is
-  the repository's verdict, before and after.
-- **The freshness guards still apply.** `netlist-agrees` regenerates the export every run and
-  decides freshness from content, never from a timestamp, and `wiring` rewrites the panel
-  guide so drift surfaces as a git diff. A pipeline-produced layout is subject to both.
+**What `make check` may not gain is an unreviewed *criterion*, not a *verifier*.** An earlier
+wording — *nothing the pipeline authored is added to `make check`* — collapsed the two, and the
+invariant is about who **authorises a criterion**, not about who writes the code that tests one.
+Collapsed, it would leave `make check` permanently weaker than the adoption gate on exactly the
+constraints that catch a board which does not conduct — `H8`'s copper reconstruction and
+`H5`/`H9`/`H10`'s buildability checks would run only on the adoption path. **`G4` in CRITERIA
+carries the conditions a check must meet to be admitted, and is the authority for them**; nothing
+here restates them.
 
 ### 9.5 The judgement calls that remain a human's
 
-Buildability and the feel of the thing in the hand. The parent's replacement rule governs
+`G5`. Buildability and the feel of the thing in the hand. The parent's replacement rule governs
 unchanged — *an agent may author a placement and a route when the result is graded by code
 against criteria the agent did not write for that artifact, and reaches the repository through
-a single gate that verifies its provenance* — and the parent's third channel stays available:
-**an independent reviewing agent, never the one that authored the artifact**, reading the board
-and the metrics against the rule library and stating whether anything passes the rules while
-plainly being wrong. That is a finding against the rule library, not against the board. Nothing
-in §5 decides whether a board is nice to build, and **look at the output, not only the tests**:
-the layout is rendered and read before anyone calls it good.
+a single gate that verifies its provenance* — and the parent's third channel stays available: an
+independent reviewing agent that never authored the artifact. Nothing in §5 decides whether a
+board is nice to build.
 
 ---
 
@@ -1873,17 +1866,17 @@ good placer from a bad one is not a metric.**
 | | Check | Why |
 | --- | --- | --- |
 | V1 | **The scorer's counts are reproduced independently.** On a fixture, the scorer's `C`, `W`, `B` equal `grep -c '^CUT '`, `'^WIRE'`, `'^SOLDER'` on the same dump, computed by a different code path. | The scorer must not be the only thing that can read its own input. |
-| V2 | **The identity as a per-candidate self-check, with two readings.** `C = N + J − S_occ` must hold on every candidate scored, with `N` the `NODE` count, `S_occ` the distinct strips among the `PIN` holes on the axis `VERTICAL_STRIPS` names, and `J = C − N + S_occ`. **A disagreement is a scorer bug and refuses the run. A negative `J` refuses too**, and for a different reason: `J = Σ(kₙ − 1) ≥ 0`, so `J < 0` means one of the three terms is not the quantity the identity names — in practice a `CUT_STATE` that is not `COMPUTED`, which H2 also catches (§2.2.1). | Exact on all five Pultec boards with no residual (COST §1.6) and on all four benchmark boards as a direct reading (§3.5). It is free and exact on every single evaluation, and there is no excuse for not taking it. The `J < 0` clause costs one comparison and documents a case RE-MEASURE found by accident. |
-| V3 | **The benchmark, re-derived — on the frozen fixture, and only there.** Starting from the import-placed board built from the **frozen** low-boost model (§3.2.2), the pipeline must reach `C ≤ 5`, `W = 0`, every net complete: B1-frozen. The scaffolded low-boost board is checked separately against B1-current, and **V3 may not be reported as satisfied by a run against the scaffolded board.** | Externally authored, and §3.2.1 is why the two cannot share one check: `C ≤ 5` at `N = 14` is a requirement nobody derived. §3.3 says what each failure mode of B1-frozen means. |
-| V4 | **Negative fixtures: the grader must fail things, by name.** A layout with a floated part; one with a net left incomplete; **one with two nets shorted together (§4.7)**; one with a span above `maxSpanHoles`; **one with a span below `minSpanHoles` (§8.3)**; one not fitting the declared stock. Each must be rejected and each must name which constraint and which net or part. | A grader that cannot fail proves nothing — the parent's gate-9 discipline, and §4.2's measured gap is exactly a check that failed silently. The open and the short are H8's two directions and **neither is optional**: the short is the one no pre-existing check catches at all. |
+| V2 | **The identity as a per-candidate self-check, with two readings.** `C = N + J − S_occ` must hold on every candidate scored, with `N` the `NODE` count, `S_occ` the distinct strips among the `PIN` holes on the axis `VERTICAL_STRIPS` names, and `J = C − N + S_occ`. **A disagreement is a scorer bug and refuses the run. A negative `J` refuses too**, and for a different reason: `J = Σ(kₙ − 1) ≥ 0`, so `J < 0` means one of the three terms is not the quantity the identity names — in practice a `CUT_STATE` that is not `COMPUTED`, which H2 also catches (§2.2.1). **`CRITERIA`'s `K5` is the same discipline applied to `F`**: `F ≥ F_floor` on every candidate, a candidate beneath the declared floor refusing by name rather than reporting a negative gap. | Exact on all five Pultec boards with no residual (COST §1.6) and on all four benchmark boards as a direct reading (§3.5). It is free and exact on every single evaluation, and there is no excuse for not taking it. The `J < 0` clause costs one comparison and documents a case RE-MEASURE found by accident. |
+| V3 | **The benchmark, re-derived — on the frozen fixture, and only there.** Starting from the import-placed board built from the **frozen** low-boost model (§3.2.2), the pipeline must meet `B1-frozen` as CRITERIA states it. The scaffolded low-boost board is checked separately against `B1-current`, and **V3 may not be reported as satisfied by a run against the scaffolded board.** | Externally authored, and §3.2.1 is why the two cannot share one check: `B1-frozen`'s cut count at `N = 14` is a requirement nobody derived. §3.3 says what each failure mode of it means. |
+| V4 | **Negative fixtures: the grader must fail things, by name.** A layout with a floated part; one with a net left incomplete; **one with two nets shorted together (§4.7)**; one with a span above `maxSpanHoles`; **one with a span below `minSpanHoles` (§8.3)**; one not fitting the declared stock; **one carrying a footprint whose pin pattern does not decompose into rows parallel to the strips (H10, §2.3.1)**; and **one scoring below its declared floor (`K5`)**. Each must be rejected and each must name which constraint and which net or part. | A grader that cannot fail proves nothing — the parent's gate-9 discipline, and §4.2's measured gap is exactly a check that failed silently. The open and the short are H8's two directions and **neither is optional**: the short is the one no pre-existing check catches at all. |
 | V5 | **The placer-discrimination test.** Any statistic the pipeline reports must separate the pipeline's placement from `--import`'s first-fit on the *same* board by more than its across-board variation. A statistic that is stable across the four import-placed boards and changes on the hand-laid one is fingerprinting the placer; one that does *not* change when the placer is replaced is measuring nothing. | This is COST §5's finding turned into a test. It is the check that catches a pipeline grading itself against its own habits. |
 | V6 | **Determinism, as two separate contracts.** See the split below the table: **canonical artifact identity** must reproduce exactly; **execution provenance** need not and is not compared. | R7, and this project's rule for derived artifacts. The old single sentence said *metrics*, which was already narrower than a byte-identical manifest — but "metrics" named no subset, so the contract was underspecified in exactly the place a reproduction argument happens. |
 | V7 | **Repository safety.** A full run leaves `boards/**` byte-identical. | Parent gate 11. The run directory is the only thing that changes. |
-| V8 | **Termination honesty.** A run that stops without an admissible verdict exits non-zero and names the rule that fired, **which conditions of A1–A4 failed individually**, and the gap remaining. A test asserts the non-zero exit on a deliberately under-budgeted run. | §7.3. A stop is not a pass. The per-condition breakdown is what keeps a run that failed only the clustering bound from reading as a run that failed everything (§7.2.1, V12). |
+| V8 | **Termination honesty.** A run that stops without an admissible verdict exits non-zero and names the rule that fired, **which conditions of A1–A4 failed individually**, **`REP5`'s `outcome` value**, and the gap remaining. A test asserts the non-zero exit on a deliberately under-budgeted run. | §7.3. A stop is not a pass. The per-condition breakdown is what keeps a run that failed only the clustering bound from reading as a run that failed everything (§7.2.1, V12). |
 | V9 | **No fitted coefficient anywhere.** A review check, not a code one: the pipeline reports no ratio fitted across boards, and any constant it carries traces to a derivation, a measurement, or an owner's parameter. | Five boards cannot support a regression, and four of them are not routed (COST §5). A curve through these points is a curve through four broken layouts and one working one. |
-| V10 | **An exhausted run cannot read as an optimal one.** `run.json` carries `bound` with exactly one of §7.3's five values; the report's wording is generated from that field; and a test over a deliberately under-budgeted run asserts `bound = budget-exhausted` and that the generated wording contains no optimality or minimality claim. | §7.3, and the same discipline H-2 already applies to constrained floors: **a run that exhausted its budget has not proved a lower bound exists.** Q1 is the only rule that proves anything of the kind, and only against the unconstrained floor. |
+| V10 | **An exhausted run cannot read as an optimal one.** `run.json` carries `bound` with exactly one of `REP1`'s five values; the report's wording is generated from that field; and a test over a deliberately under-budgeted run asserts `bound = budget-exhausted` and that the generated wording contains no optimality or minimality claim. | §7.3, and the same discipline H-2 already applies to constrained floors: **a run that exhausted its budget has not proved a lower bound exists.** Q1 is the only rule that proves anything of the kind, and only against the unconstrained floor. |
 | V11 | **H8 is independent of what it checks.** The reconstruction module produces a verdict from a dump whose `NODE` block has been emptied **and whose `CUT` lines' node ids have been replaced with garbage**, and shares no symbol with the scorer or with `--check`'s path. | §4.7. A gate that re-reads `GetBoardMembership` under a new name reports an independence it does not have, which is worse than no gate because it looks like one. The `CUT` node ids are the same subsystem's output arriving by a second route, so the test covers both. |
-| V12 | **A hard bound cannot read as a broken pipeline.** On a run that fails **only** A2 — H1–H9 holding, A3 met, A4 met — the verdict names `κ` achieved, `κ_bench`, and what bound the clustering (§7.3's table); a test asserts the generated wording contains no claim that the pipeline malfunctioned and no claim that `κ_bench` should move. Conversely, a run that fails A1 must not produce the A2 wording. | §7.2.1. `κ_bench = 0.05` is set past the best demonstrated hand result on purpose, so the expected early outcome is this exact verdict — and an expected outcome that reads as a defect will be "fixed" by moving the number, which is the one thing the ratchet forbids. V10 applies the same discipline to an exhausted budget; this is its sibling for an aggressive bound. |
+| V12 | **A hard bound cannot read as a broken pipeline.** On a run that fails **only** A2 — H1–H10 holding, A3 met, A4 met — the verdict says what `REP2` requires of an A2-only failure, **reports `REP5`'s middle outcome, *valid, below target***, and a test asserts the generated wording contains no claim that the pipeline malfunctioned and no claim that `κ_bench` should move. Conversely, a run that fails A1 must report **invalid** and must not produce the A2 wording. | §7.2.1. `K2`'s bound is set past the best demonstrated hand result on purpose, so the expected early outcome is this exact verdict — and an expected outcome that reads as a defect will be "fixed" by moving the number, which is the one thing the ratchet (`K3`) forbids. V10 applies the same discipline to an exhausted budget; this is its sibling for an aggressive bound. |
 
 ### 10.1 The determinism contract, split
 
@@ -1904,8 +1897,9 @@ only over:
 | **the commit the binary was BUILT from**, as `tools/perfboard/acquire.ts`'s `builtCommit()` returns it | the pin is the *intended* fork and this is the one that ran. They have disagreed, and every figure in COST and MOVE went through the disagreement (D25). `undefined` is recorded as unknown and treated as "not the pinned commit", never as agreement — which is `acquire.ts`'s own stated rule |
 
 Same inputs, same hash, byte-identical `.vrt`, and **identical canonical metrics**: `C`, `W`,
-`B`, `F`, `N`, `J`, `S_occ`, `κ`, `A_occ`, every H1–H9 pass/fail, the R3 ranking tuple, the
-stopping rule that fired, the `bound` value, and §7.4's restart boundaries. That list **is** what
+`B`, `F`, `N`, `J`, `S_occ`, `κ`, `A_occ`, every H1–H10 pass/fail, the R3 ranking tuple, the
+stopping rule that fired, the `bound` value, `REP5`'s `outcome` value, and §7.4's restart
+boundaries. That list **is** what
 "metrics" meant and it is now enumerated, because an unenumerated subset is one somebody can
 quietly shrink when a comparison fails.
 
@@ -1947,9 +1941,10 @@ Two consequences worth stating so nothing is quietly weakened:
 - **Panel wiring, enclosure and form factor.** The parent keeps these open as data and picks
   none of them.
 - **Defining the per-family lead spans.** H5's `maxSpanHoles` and H9's `minSpanHoles` are a
-  separate data module with datasheet provenance and its own documentation page (§8.2). **That
-  module is their authority.** This document states no span number and must not acquire one; a
-  figure copied into prose is a figure that goes stale with nothing failing.
+  separate data module with datasheet provenance and its own documentation page (§8.2, and
+  `PAR2` in CRITERIA). **That module is their authority.** Neither this document nor CRITERIA
+  states a span number, and neither must acquire one; a figure copied into prose is a figure that
+  goes stale with nothing failing.
 - **A worse-acceptance schedule for E3.** §7.4 specifies the mechanism and leaves its bound a
   parameter with no default, because nothing in COST, MOVE or the owner's instruction supplies
   one. Inventing an annealing schedule here would be inventing a number, which this document
@@ -1988,6 +1983,11 @@ Two consequences worth stating so nothing is quietly weakened:
 | D23 | **The clustering bound starts at `κ_bench = 0.05` and relaxes only by ratchet.** | **The owner**, 2026-10-10: start at a harder bound and back off gradually, only if it proves impracticable | RE-MEASURE settles that `κ_bench = 0.06` is wrong, and the direction of the error is the surprise: three hand-laid boards that **pass `make check`** sit at 0.181, 0.196 and 0.269, so a bound at 0.06 would refuse layouts that are built and in service, `pt2399-core` among them. The obvious repair is to loosen it to admit them, and **that is not the decision.** 0.05 sits just under low-boost's 1/18 = 0.055, the best result any hand here has reached, and the reasoning is about information: a bound where no artifact has ever reached — 0, say — yields nothing when it fails, while one just past the best demonstrated result makes a failure informative, because something stopped the pipeline short of a thing a person has done and the verdict has to name it. The other three values are the cost of **not** minimising cuts, not the cost of trying and failing, so calibrating a gate on them would license the former. **Relaxation is modelled on this repository's discipline for proven value ranges** (`CLAUDE.md`: ranges "are proven with tests over the range they claim. Extending one is a deliberate edit with a test beside it, never a silent widening" — `lib/kicad/value-notation.ts` is the worked example, keeping both of its independent widenings and naming the artifact that forced each). So moving `κ_bench` takes a run that demonstrably could not reach it **with the binding constraint named**, committed as a deliberate edit carrying that evidence, previous values kept — never a silent widening, and never because the gate became inconvenient. **The first runs are expected to fail it, and that is the intent**; A2's failure must therefore be reported distinctly from a malfunction (§7.3, V12). What makes it affordable is that `κ` is not load-bearing alone: the per-board floor from the identity is the real grounding and A3 already bounds the whole of `F` against it. The four measured values are recorded in §3.5 so a later reader cannot re-derive a loose bound without seeing that 0.05 was chosen first and deliberately. |
 | D24 | **The benchmark set is four hand-laid boards; B1-frozen remains the only externally authored criterion.** | This spec, 2026-10-10, from RE-MEASURE | B1-frozen rested on low-boost, which RE-MEASURE shows is **the one hand-laid board in the repository that fails `make check`** — for the known reason that it is stale against the scaffolded model, holding nine parts where the model needs nineteen. The B1-frozen / B1-current split is exactly the remedy for that staleness and stands unchanged (D15). What does not stand is resting the set on that board while `pt2399-core`, `transistor-preamp-feedback` and `transistor-preamp-staged` — externally authored, physically built, passing — sat unused. All three are added with their measured `N`, `P`, cuts, `S_occ`, `J` and `κ`, each contributing something the others do not (§3.5): the only multi-pin IC, hence COST §1.5's third join mechanism; the loosest `κ` and the clearest case of strips spent past `N`; and the largest board, nearest mid's size. **They are a benchmark set, not a criterion**: none gets a `C ≤ n` clause, because nobody set out to minimise cuts on them and this document will not retrofit an intention onto somebody else's board. They ground D23's bound and they validate M1.7's grader before any actuator exists (§4.7). §3.4's "n = 1" risk is **relieved, not eliminated** — four boards still cannot support a fitted threshold, which COST §5 and RE-MEASURE both say in their own words, and V9 still forbids one. |
 | D25 | **A run records the commit its binary was BUILT from, not only the commit the pin names.** | This spec, 2026-10-10, from what RE-MEASURE had to exist to fix | Merging `feature/transistor-preamp` moved `veroroute.pin` to `2cfaad8` and left the local build at `5a282a6`, so **every figure in COST and in MOVE was measured with the wrong binary** and RE-MEASURE is the cost of finding out. Every measurement in this sub-project passes through that one executable. **§10.1 already puts the tool versions in the canonical artifact identity** — it hashes `veroroute.pin` and the pipeline's own commit, where R6 hashes `engine_commit` — so nothing here duplicates that requirement, and §9.3's fourth refusal already compares the run's veroroute commit against the pin. **What the pin cannot witness is which build ran.** `--version` prints `VeroRoute Version 2.40` (measured here, second revision) — the upstream app version, carrying no fork commit — so the binary cannot identify its own source. The repository already holds the answer and already records why: `tools/perfboard/acquire.ts`'s `.built-commit` stamp exists because *"advancing `veroroute.pin` left the old binary in place and the run reported the NEW commit while executing the OLD code"*, it is written only after a build has been verified to produce a binary, and `builtCommit()` returns `undefined` for an unknown build, which callers must treat as "not the pinned commit" rather than as agreement. So the canonical block carries `builtCommit()`'s value beside the pin and the gate compares both. **A run's numbers can then never be read without knowing which fork produced them**, which is the property whose absence cost a full re-measurement. |
+| D26 | **A verdict has three outcomes — invalid, valid-below-target, admissible — and the claim that A2 could only ever refuse a layout about which nothing had been proved is deleted.** | The owner, 2026-10-10, adjudicating a review of CRITERIA | The claim was false: a layout can satisfy every hard constraint, be the lowest-cost candidate found and be buildable, and still miss an aggressive clustering target. Reported as a flat refusal, such a board is indistinguishable from one that does not conduct. **The owner's practical question is "can I build this?", which is a different question from "is it as good as we wanted?"**, and a two-valued verdict can only answer the second. `REP5` in CRITERIA carries the taxonomy, the `outcome` field and which outcomes exit non-zero; both non-admissible outcomes exit non-zero, so the report is the only thing that separates them — the same reasoning `REP2` already applied to an A2-only failure. Adoption is unchanged: `G2.5` admits only **admissible**. |
+| D27 | **`H10` is in `A1`, and its framing is corrected from geometric impossibility to a cost judgement.** | The owner, 2026-10-10, adjudicating the same review | Two defects, one accepted scope fix and one accepted self-correction. **Scope:** `A1` stated `H1`–`H9`, so a board could pass every admissibility condition while violating a declared hard constraint; `H10`'s verifier is a **footprint-level** check, decomposability into rows parallel to the strips being a property of the footprint rather than of a placement. **Framing:** a round pin pattern can be routed with enough cuts, so impossibility claims more than is true; the owner's actual words — *"Round footprints do not work well with stripboard"* — are a practical verdict, and prohibitive cut cost is the justification. **Rejected from the same review:** that `H10` should not require every pin on a single straight line. It never did — *lines*, plural, and what is refused is a pattern *not decomposable into rows* — so a DIP-16 decomposes and passes, and the criterion is not weakened to fix a problem it does not have. `HC10` keeps its `[owner]` provenance. |
+| D28 | **`H8` gets a versioned geometry contract and a negative fixture; its independence is scoped to the membership calculation.** | The owner, 2026-10-10, adjudicating the same review | The review's requirement is accepted and **its premise that today's dump cannot satisfy it is rejected**: five of the six inputs it listed are printed by the pinned fork today, verified against `--dump-board` and the fork's `Headless_dump*.cpp` and recorded with the commit that first emitted each. Occupied-versus-connected is answered by the grammar — a `PIN` line reports a **lead's** hole and `tools/guide/dump.ts` states that nothing derives a position from `SPAN` — so occupancy and electrical contact were already separate primitives. What is added: the contract itself, including the one clause that is a **definition** rather than data; a refusal by name when a contracted line is absent, never a partial reconstruction; and **the review's best contribution**, a fixture carrying a wrong copper connection that VeroRoute's own membership reporting does not detect. The independence claim is narrowed to what is true — independent of the **membership calculation**, consuming the **geometry export** — with `.vrt` parsing recorded as `H-13` rather than as a plan. |
+| D29 | **`Q1` and `Q2` are successful terminations only when admissibility holds; and `F ≥ F_floor` is a verification failure when violated.** | The owner, 2026-10-10, adjudicating the same review | `κ = J/(P − N)` and the floor tolerance normalise against different quantities, so `Q2` can fire while `A2` fails: with `P − N = 10` one unit of `J` is `κ = 0.1`, twice a 0.05 bound, while at `F₀ − F_floor = 40` the same unit is a gap near 0.03, inside `τ = 0.05` — a stop, a failed admissibility check and an unspent budget. `CRITERIA`'s `Q1`/`Q2` now require admissibility and the search continues to `Q3`–`Q6` otherwise. `K5` adds the floor invariant: `F_floor` is a **lower bound**, so a candidate beneath it proves one of the two numbers is not the quantity it claims, and the run refuses rather than reporting a negative gap. The precedent is `transistor-preamp-lab`'s `J = −1` — an impossible value that correctly revealed a board the identity cannot describe (§2.2.1), where the same value treated as a result would have hidden it. |
+| D30 | **Who authorises a criterion is separated from who implements its test, and `make check` may gain a reviewed criterion's verifier.** | The owner, 2026-10-10, adjudicating the same review | §9.4's *nothing the pipeline authored is added to `make check`* collapsed authorship of criteria with authorship of verifiers. The invariant is about the first. Collapsed, `make check` — the repository's main verification command, which also runs on boards a human laid — would stay permanently weaker than the adoption gate on exactly the constraints that catch a board which does not conduct. `G4` in CRITERIA carries the admission conditions — about provenance, owner review, negative testing, and deriving no threshold of its own — and is the authority for them; §9.4 states the reasoning and keeps no second copy. |
 
 ---
 
@@ -2004,13 +2004,14 @@ says why a resolved row is deleted rather than annotated.
 | H-1 | **Whether the span data covers every family these five boards use.** The bounds themselves are no longer undetermined — they are datasheet-derived data in the span data module (§8.2), which is their authority, and this document states none of its numbers. What this document cannot determine is whether every family has a datasheet figure; COST §3.2 notes the B32529's datasheet gives a minimum body-to-bend distance and the DIN0207's does not. §5.3's arithmetic — about 10.8 mm of lead past a DIN0207 shoulder and 11.5 mm of splay on a B32529 for the worst of the five — remains arithmetic on footprints, and the module is what turns it into a reach claim. | The module, per family. Where it has no figure it refuses by name rather than falling back to the tool's 2–16 bound (D10), so the gap is loud rather than silently filled. |
 | H-2 | **What the floor becomes when either span bound binds.** The unconstrained floor `max(0, N − R)` is derived and stands. No constrained floor is derived here, so a board whose reach forbids one net per strip has no stated lower bound to be measured against. **This is the distinction §7.3's `bound` field generalises** to the optimiser's whole verdict: only `at-floor` under Q1 is a bound, and it is a bound against the unconstrained floor. | A derivation, or — faster — running P1 under the supplied bounds and reading the result. Until then the pipeline reports the shortfall rather than a second floor, and never reports an exhausted search as a bound (V10). |
 | H-3 | **Whether `C = 0` is attainable on any of these boards** (COST L2). It is the floor and §5.3 shows no span-ceiling obstruction, but no packing feasibility argument exists: parts across the strips consume columns, and nothing proves mid's 31 on-board components fit in 37 columns without overlap. | Run P1 once M1.4 and M1.5 exist, and read the result. Construction answers this faster than any proof. |
-| H-4 | **Whether `κ_bench = 0.05` is reachable at all.** The limit this row recorded — that `κ_bench = 0.06` rested on one board — is **closed by measurement**: four hand-laid boards are measured (§3.5) and the bound is no longer an extrapolation from any of them, because it is not fitted to them. It is set just under the best single demonstrated result, deliberately (§7.2.1, D23). What is undetermined is whether any pipeline, or any hand, reaches it on the Pultec boards, and the three passing boards at 0.181, 0.196 and 0.269 are a reason to doubt it. **The first runs are expected to fail it, and a failure is not evidence that the bound is wrong** — the ratchet needs a named binding constraint, not a string of failures. | A run that cannot reach it, with what bound the clustering named (§7.2.1's ratchet, §7.3's table). Until then the bound stands and the shortfall is reported (V8, V12). More externally authored layouts would inform it and only the owner can supply them. |
+| H-4 | **Whether `κ_bench = 0.05` is reachable at all.** The limit this row recorded — that `κ_bench = 0.06` rested on one board — is **closed by measurement**: four hand-laid boards are measured (§3.5) and the bound is no longer an extrapolation from any of them, because it is not fitted to them. It is set just under the best single demonstrated result, deliberately (§7.2.1, D23). What is undetermined is whether any pipeline, or any hand, reaches it on the Pultec boards, and the three passing boards at 0.181, 0.196 and 0.269 are a reason to doubt it. **The first runs are expected to fail it, and a failure is not evidence that the bound is wrong** — the ratchet needs a named binding constraint, not a string of failures. | A run that cannot reach it, with what bound the clustering named (§7.2.1's ratchet, which is `K3`, and `REP2`'s verdict). Until then the bound stands and the shortfall is reported (V8, V12). More externally authored layouts would inform it and only the owner can supply them. |
 | H-5 | **The `ρ_w · W` trade is unexercised, though the term is not.** `ρ_w` and `ρ_s` are settled at 0.25 and 1 (§8.1, D21), so COST L6 is closed. **This row previously said no board in the repository exercises the term, and that is now false**: three of the four benchmark boards carry wires — 4 on `pt2399-core`, 4 on `transistor-preamp-feedback`, 7 on `transistor-preamp-staged` (measured here, second revision, §3.5) — so a hand-laid board that spends wires is a thing this repository has, four times over, and `F` can be computed on each with a real `W`. What survives is narrower and still real: **no board here is evidence about the *trade*.** None was laid out against this objective, so none says whether 0.25 is the right exchange rate; and the Pultec boards still carry zero `WIRE` lines (MOVE §5.1), so the circuits the pipeline is actually pointed at have no wire precedent. | The first **produced** board with a wire on it is the trade's first real test, and at `ρ_w = 0.25` that board arrives sooner than it would have at the superseded default of 3. A timed bench trial would settle the *ratio*, which is no longer the open question. |
 | H-6 | **The committed cut counts are not a baseline** (COST L8). 65 / 40 / 32 / 23 come from layouts with 19, 13, 7 and 6 incomplete nets, and all five are stale against today's model. | Re-measure after S0 lands and the boards are updated. COST §2.3's floor table is already stated against the current model, so it will not need redoing. |
 | H-7 | **`PlaceFloaters`' scaling is undetermined** (MOVE §4.1). It is a `while(true)` loop over all components, inside the ~1 ms figure for boards of mid's size; nothing larger was tried, and the cost of `MoveComps` itself in isolation was not measured. | Measure on a board substantially larger than mid, once M1.4 exists. It bears on search breadth, not on correctness. |
 | H-10 | **The two source documents' per-gesture timings differ**: ~13 ms (n = 20, COST §6.3) against 11.71 ms (n = 200, MOVE §4.1), and their conclusions about batching differ in emphasis. **Both were measured against the stale `5a282a6` build and neither is re-measured here** (D25). | **The 200-run sample governs**, on sample size alone — the two agree to within about 11%, so there is no substantive disagreement, and the larger sample is the better estimate of the same quantity. Every timing claim in this document is stated against 11.71 ms, and §7.3's Q4 gloss was recomputed from it (§4.6). §4.6 resolves the conclusions: batching is an enabler of breadth, not a prerequisite. **What the fork change could have moved is the ~1 ms board-I/O term, not the 10.78 ms launch floor**: `2cfaad8` adds one `GRID` line plus one `PIN` line per placed lead, which is 28 extra lines on low-boost and 66 on `pt2399-core`. Re-measuring on `2cfaad8` would settle it, and nothing in this document's conclusions about order of magnitude turns on a term of that size. |
 | H-11 | **Whether the dump's geometry supports a defensible per-net track-length measure.** This is what survived the deletion of H-8, stated in its own row rather than left inside a resolved one. The geometry is readable now — `PIN` gives each lead's hole, `GRID` the strip extent, `CUT`/`SOLDER`/`WIRE` the edges — so the obstruction is no longer observability. It is that no track-length term is **derived** anywhere here. | A term derived from that geometry with a test beside it. Until then R3's pin-bounding-box wirelength stays **labelled a proxy** — for track length, not for missing data — and `A_occ` (§2.4) is the ranking's one measured geometric term because it reads `BOUNDS` directly. |
 | H-12 | **Where the two definitions of `S_occ` diverge.** This document computes `S_occ` as the number of distinct strips holding at least one placed lead, from the `PIN` lines. On the five Pultec boards that agrees with COST's probe-derived value exactly (RE-MEASURE's own Limits), and §3.5's four hand-laid boards agree with the identity to the unit. But a strip can in principle carry a net through painted holes with no lead on it, so the two definitions are **not identical in general**, and the identity's `S_occ` is the term COST derived from `DeriveCuts`. | Where they could diverge is not established. V2's per-candidate identity check is what would surface it: a board on which the two definitions differ would fail `C = N + J − S_occ` and refuse the run, which is the right outcome — a residual in the identity is a scorer bug until somebody proves otherwise. |
+| H-13 | **`H8` consumes VeroRoute's geometry export, so a defect in that export is shared.** The independence `H8` has, and the one that matters, is from the **membership calculation** — `GetBoardMembership`, the subsystem the optimiser perturbs and the one with the demonstrated hole. The reconstruction nonetheless reads its inputs from `--dump-board`, so a `PIN`, `CUT`, `SOLDER`, `WIRE`, `GRID` or `VERTICAL_STRIPS` line that is wrong is wrong for the optimiser and the verifier alike, and `H8` would not see it. CRITERIA's `HC8` states the scope in those words rather than claiming independence flatly. | Stronger independence means parsing the `.vrt` directly, and **that is an honest limit rather than a plan**: a `.vrt` is a binary `QDataStream` (N5), which is already the reason the sibling repository's s-expression text tooling does not transfer. What is in reach instead is breadth of agreement — `H8` is checked against the reference netlist on the frozen fixture and on all four hand-laid boards (§4.7), so a systematic export defect would have to be consistent across four externally authored layouts to survive. |
 
 **H-8 and H-9 are deliberately absent, and neither number is reused.**
 

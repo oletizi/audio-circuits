@@ -1,0 +1,11 @@
+// A module that imports a bare specifier, so `importClosure`'s refusal for
+// one can be driven by a test instead of asserted about.
+//
+// ITS EXTENSION IS `.ts.txt` AND NOT `.ts` ON PURPOSE. `tsconfig.json`
+// includes `**/*.ts`, so a real `.ts` file importing a package that is not
+// installed would fail `bun run typecheck` - a fixture breaking the build it
+// is meant to protect. The walker reads a file's text and never its
+// extension, so the `.txt` suffix changes nothing it does.
+import { something } from "some-package"
+
+export const used = something

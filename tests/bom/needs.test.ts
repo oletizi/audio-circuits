@@ -58,9 +58,19 @@ function connector(id: string, footprint: string, symbol: string): Component {
   }
 }
 
+/**
+ * A diode fixture whose footprint is SYNTHETIC, and labelled so.
+ *
+ * `Diode_THT.pretty` exists on disk and has no `D_5mm`: its 5-series entries are
+ * `D_5KP_*` and `D_5W_*`. Nothing here opens the footprint - the BOM's needs are
+ * derived from kind, parameters and mpn - so the string is a placeholder rather
+ * than a claim about a part. It carries the `SYNTHETIC` library prefix because an
+ * unlabelled plausible name is how this repository has three times shipped a
+ * KiCad name that does not exist.
+ */
 function diode(id: string): Component {
   return {
-    id, kind: "diode", parameters: {}, part: { footprint: "Diode_THT:D_5mm" }, pins: {},
+    id, kind: "diode", parameters: {}, part: { footprint: "SYNTHETIC:D_5mm" }, pins: {},
     units: [{ name: "MAIN", pins: { a: net("A"), k: net("K") } }],
   }
 }

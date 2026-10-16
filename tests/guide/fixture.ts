@@ -55,20 +55,43 @@ function pot(id: string, footprint: string, ccw: string, wiper: string, cw: stri
   }
 }
 
-function twoPin(id: string, kind: "resistor" | "capacitor", a: string, b: string): Component {
-  return { id, kind, parameters: {}, pins: {}, units: [{ name: "MAIN", pins: { a: net(a), b: net(b) } }] }
+/**
+ * A two-lead part, with the footprint it is fitted with where that is part of
+ * what a test reads.
+ *
+ * **THE FOOTPRINT IS WHAT THE CHECKLIST'S Mounting COLUMN IS DERIVED FROM**
+ * (`lib/kicad/lead-span-mounting.ts`), so the two parts given one here are the
+ * two whose mounting the guide tests assert. `undefined` is left on the
+ * transistor deliberately: a component with no recorded footprint is the
+ * ordinary case for a panel-mount part, and the column has to say so rather
+ * than print an empty cell.
+ */
+function twoPin(
+  id: string,
+  kind: "resistor" | "capacitor",
+  a: string,
+  b: string,
+  footprint: string | undefined = undefined,
+): Component {
+  const units = [{ name: "MAIN", pins: { a: net(a), b: net(b) } }]
+  if (footprint === undefined) return { id, kind, parameters: {}, pins: {}, units }
+  return { id, kind, parameters: {}, part: { footprint }, pins: {}, units }
 }
+
+/** The Vishay MBB0207 axial resistor family: the one family with TWO mountings. */
+export const AXIAL_RESISTOR = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 
 export const COMPONENTS: readonly Component[] = [
   {
     id: "gain_transistor", kind: "bjt", parameters: {}, pins: {},
     units: [{ name: "MAIN", pins: { emitter: net("GND"), base: net("BASE"), collector: net("OUT") } }],
   },
-  twoPin("bias_resistor", "resistor", "BASE", "GND"),
+  twoPin("bias_resistor", "resistor", "BASE", "GND", AXIAL_RESISTOR),
   pot("gain_trim", "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical", "BASE", "GND", "GND"),
-  twoPin("input_cap", "capacitor", "BASE", "IN_EXT"),
+  twoPin("input_cap", "capacitor", "BASE", "IN_EXT", "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm"),
   {
-    id: "input_header", kind: "connector", parameters: {}, pins: {},
+    id: "input_header", kind: "connector", parameters: {},
+    part: { footprint: "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" }, pins: {},
     units: [{ name: "MAIN", pins: { "1": net("IN_EXT"), "2": net("GND") } }],
   },
   pot("drive_pot", HEADER, "GND", "DRIVE_WIPER", "DRIVE_TOP"),

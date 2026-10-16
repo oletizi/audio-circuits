@@ -1,0 +1,15 @@
+( { EESchema Netlist Version 1.1 created  2026-10-11T00:00:00 }
+ ( /J1 SIP2  J1 Conn_01x02
+  (    1 in )
+  (    2 mid )
+ )
+ ( /J2 SIP2  J2 Conn_01x02
+  (    1 other )
+  (    2 tap )
+ )
+ ( /J3 SIP2  J3 Conn_01x02
+  (    1 tap )
+  (    2 out )
+ )
+)
+*

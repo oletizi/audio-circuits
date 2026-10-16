@@ -44,6 +44,25 @@ So:
   an artifact through a rule file, a spec, or a reviewing agent that is never the
   one that authored it - never through the producing agent's own judgement. The
   parent design names the channels.
+- **A stated directive outranks what the as-built boards happen to contain.**
+  The owner, 2026-10-15: *"I've already told you how rigid parts operate. The
+  as-built diagram is instructive, but my directives are more authoritative than
+  a file on disk."* Measuring his built boards is how an agent learns what a
+  directive means in holes and strips, and it is the right way to discover a rule
+  nobody has stated. It is NOT a veto. **"This rule would refuse a board he
+  built" is not an argument against the rule** - it means that spot on that board
+  was harder to build than it needed to be, and the tool should decline to
+  reproduce it. He applied that reasoning twice in one sitting: to a lead under a
+  trimmer's body overhang, and to four of the five overlapping part pairs across
+  his two boards.
+
+  **The failure this corrects is subtle and was live here for a whole plan.**
+  Deriving a rule from his layouts and then treating those layouts as the rule's
+  ceiling quietly makes the as-built artifact the criterion - which is the
+  invariant above, wearing a measurement's clothes, since the agent chose which
+  artifact to measure and what to read off it. Where a directive and a board
+  disagree, record the disagreement so its cost is visible, follow the directive,
+  and put it to him if the gap looks like it matters.
 - **Minimising a measurable cost is not a taste judgement.** Cut count, wire
   bridges, board area and physical lead span are numbers, and driving them down
   iteratively is exactly the work to automate rather than hand back. "Your

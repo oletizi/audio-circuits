@@ -1,0 +1,352 @@
+tests/fixtures/stripboard/ - HC8's benchmark fixtures
+=====================================================
+
+Ten files, in five groups - the frozen benchmark's four, the three further
+benchmark dumps, Task 16's import-placed start, and Task 13's two
+forming-anchor dumps. It read "six files, in two groups" while seven were here,
+then "eight, in four" while ten are: each time a capture was appended without
+the count being carried, and this line is the count the directory now holds.
+(The `negative/` subdirectory and this file are not counted among the ten.)
+
+B2's FROZEN LOW-BOOST BENCHMARK - the board B1-frozen is stated against:
+
+  pultec-low-boost-frozen.vrt      the owner's hand layout, byte for byte as it
+                                   stood at commit 2f62ee1
+  pultec-low-boost-frozen.netlist  the EESchema v1.1 netlist export of the
+                                   electrical model as it stood at that same
+                                   commit - the model the hand layout was built
+                                   against. 9 nets, 27 pins.
+  pultec-low-boost-frozen.dump     the pinned binary's --dump-board on that .vrt
+  pultec-low-boost-frozen.footprints.json
+                                   designator -> KiCad footprint for that same
+                                   model, which the EESchema v1.1 export above
+                                   cannot carry (see Task 23's section below)
+
+THE THREE FURTHER BENCHMARK BOARDS of PIPELINE 3.5, as --dump-board captures
+of the .vrt committed under boards/. Their reference netlists are NOT copied
+here: each already has a committed export in tests/fixtures/, and a second copy
+is a second thing to keep in step.
+
+  pt2399-core.dump                 reference: tests/fixtures/pt2399-core-veroroute.net
+  transistor-preamp-feedback.dump  reference: tests/fixtures/transistor-preamp-feedback.net
+  transistor-preamp-staged.dump    reference: tests/fixtures/transistor-preamp-staged.net
+
+WHY THESE FILES EXIST, AND WHY THEY ARE COMMITTED RATHER THAN REGENERATED
+-------------------------------------------------------------------------
+They are what tests/stripboard/agreement.test.ts grades HC8 against: the
+reconstruction must partition each board's pins exactly as that board's
+reference netlist does, on four boards nobody here laid out.
+
+The low-boost three are FROZEN, and that is the whole point of them. B1-frozen
+is stated against "the exact electrical model, footprints and board dimensions
+the hand layout was built for - 9 nets, 27 pins", and today's scaffolded
+low-boost model is a different circuit: 14 nets and 50 pin entries, of which 40
+are non-pad - see the note on that 50 below. Regenerating the
+export would quietly restate the benchmark against the newer circuit and report
+the result as a comparison with a 9-net hand layout.
+
+THEY LIVE UNDER tests/fixtures/ AND NEVER UNDER boards/, which is B2's own
+rule: `make -C boards/<board> check` regenerates the export every run and
+decides freshness by content, so a deliberately frozen model under boards/ is a
+deliberately stale one the freshness guard would be right to fail. The fixture
+goes where the guard does not run, rather than the guard being weakened.
+
+The three further dumps are committed for the reason
+tests/fixtures/pt2399-core-board.dump was: a dump is the readable form of a
+board, and a test can assert over it without spawning the binary. They are
+reproducible from the .vrt files beside them and their hashes are below, so a
+silently edited one surfaces as a changed hash rather than as a quietly easier
+test.
+
+HOW THEY WERE MADE - the exact commands, into a scratch directory first, never
+over a path under boards/
+--------------------------------------------------------------------------------
+  VR=.tools/veroroute-perfboard/veroroute.app/Contents/MacOS/veroroute
+
+  git show 2f62ee1:boards/pultec-low-boost/pultec-low-boost.perfboard.vrt \
+      > $SCRATCH/frozen.vrt
+  "$VR" --dump-board $SCRATCH/frozen.vrt > $SCRATCH/frozen.dump
+
+  git worktree add --detach $SCRATCH/wt-2f62ee1 2f62ee1
+  (in that worktree, a four-line script calling the repository's own export
+   path - loadDeclaration() from tools/perfboard/declaration.ts into
+   exportNetlistFor() from tools/perfboard/check.ts, which is the same lowering
+   `make check` and the write verbs use, so there is no second export path here)
+      bun run export-net.ts boards/pultec-low-boost/perfboard.json \
+          > $SCRATCH/frozen.netlist
+  git worktree remove $SCRATCH/wt-2f62ee1
+
+  "$VR" --dump-board boards/pt2399-core/pt2399-core.perfboard.vrt \
+      > tests/fixtures/stripboard/pt2399-core.dump
+  "$VR" --dump-board \
+      boards/transistor-preamp-feedback/transistor-preamp-feedback.perfboard.vrt \
+      > tests/fixtures/stripboard/transistor-preamp-feedback.dump
+  "$VR" --dump-board \
+      boards/transistor-preamp-staged/transistor-preamp-staged.perfboard.vrt \
+      > tests/fixtures/stripboard/transistor-preamp-staged.dump
+
+B2's BENCHMARK, RUN BEFORE ANY TEST WAS WRITTEN. B2: "if the extraction cannot
+produce an export agreeing with the fixture board's own 9 NODE and 27 PIN
+lines, the fixture is wrong and says which number disagreed". Measured on the
+files above: the export has 9 nets and 27 pins; the dump has 9 NODE lines and
+27 PIN lines; and the two sides' pin identities agree exactly - no pin in one
+and not the other - once the dump's PAD provenance is read (see below). The
+same comparison on the other three: 21/65, 11/37 and 22/78, agreeing on both
+counts and on every pin identity. Nothing was adjusted to make it agree.
+
+THE ONE FIELD THAT IS NOT BYTE-REPRODUCIBLE: the .netlist's header comment
+carries the timestamp the export ran at, `{ EESchema Netlist Version 1.1
+created 2026-10-11T08:00:38 }`. A re-run at 2f62ee1 reproduces every other byte
+and a different timestamp. The readers strip brace comments before tokenising
+(lib/kicad/legacy-netlist.ts), so nothing downstream reads it.
+
+THE PAD LINES, AND WHY HC8 READS THEM. The low-boost export names the off-board
+selector and pot terminals RV_LO_BOOST.1..3 and SW_LO_BOOST.1..7, while the
+dump's PIN lines name them RV_LO_BOOST_1.1 .. SW_LO_BOOST_7.1: VeroRoute
+expands a PADS<n> component into n one-hole pads with board names of their own,
+and the dump's `PAD <name> <value> AT <row>,<col> FROM <ref>.<pin>` line is the
+only place it records which reference pin each pad is. Ten of this board's
+twenty-seven pins are pads. HC8 reads that line for pin identity only, never as
+a copper join; see tools/stripboard/pad-provenance.ts.
+
+PROVENANCE OF THE INPUTS, AND THE BINARY THAT WROTE THE OUTPUTS
+---------------------------------------------------------------
+  input board    boards/pultec-low-boost/pultec-low-boost.perfboard.vrt
+                 at commit 2f62ee1d643e15e73bd220c10215957ab4c460a9
+                 sha256 411412bdf087c5aeea15195ae6ffc2bd1e453c3ca81fcdcf64307effd21b43ae
+                 (the same input, at the same commit and the same hash, that
+                 tests/fixtures/pultec-low-boost-c19-floated.provenance.txt
+                 records - they are two fixtures over one board)
+  input model    circuits/pultec/physical/low-boost.ts and what it imports,
+                 at that same commit 2f62ee1
+  input board    boards/pt2399-core/pt2399-core.perfboard.vrt
+                 last changed in commit 4310c434a556f82903a23366ec2ff08c283ac26b
+                 sha256 e9aea3a51a74cfdb8ab5f5922d53361e6db0a71434ec074a9b6744024780b4ba
+  input board    boards/transistor-preamp-feedback/transistor-preamp-feedback.perfboard.vrt
+                 last changed in commit 153dea950e38515b6b43e327dea9f363efb5db7f
+                 sha256 b52e3858521a3e8616b3bf7088bb235b4cfa614baf30b102ebf19609ed10e85e
+  input board    boards/transistor-preamp-staged/transistor-preamp-staged.perfboard.vrt
+                 last changed in commit 7e1406c3d4c2e20dedd9e46d449e87d049e51cc3
+                 sha256 cb55f3ee15f0636bd8bef267bc3223243126eb9b0f8130402cc301bb5cb347a8
+
+  these fixtures
+    pultec-low-boost-frozen.vrt
+      sha256 411412bdf087c5aeea15195ae6ffc2bd1e453c3ca81fcdcf64307effd21b43ae
+    pultec-low-boost-frozen.netlist
+      sha256 6038e301bc032dc991361e816de91b1ac5ec293eadbec6bfa103c3f4feeb2ae6
+    pultec-low-boost-frozen.dump
+      sha256 8827e09ff7a7d0aa1f165026054b72ef660819714ea0a8cd8c8c7363b352d13d
+    pt2399-core.dump
+      sha256 f13b52ce81e60e702ec0930541ffa184db860da7d68bf1a7faa008718222411e
+    transistor-preamp-feedback.dump
+      sha256 b1bf9e56c0738476c6db5e24c88fdef7d9dd20d12730e93657a899de1c2a545a
+    transistor-preamp-staged.dump
+      sha256 d0dac0ce9765f8fdd24c0c3181341559173a39099d24c253ded5dd1c60d5e797
+
+  the reference netlists the three further dumps are graded against are not
+  copied here and are not hashed here either; they are committed sources with
+  their own history
+    tests/fixtures/pt2399-core-veroroute.net
+      sha256 b405f4760aaf382829e07d145a738e281f64b880f6c428dd9bceb857b858bea8
+    tests/fixtures/transistor-preamp-feedback.net
+      sha256 b686f5409744c8a16173565a3678f7f5822349e8f53dbbed203a483c88bedc0c
+    tests/fixtures/transistor-preamp-staged.net
+      sha256 2a0c547156e951876ca1ce4b1f84684bc159cc433ab92eeb579470c926027e31
+
+  binary         .tools/veroroute-perfboard at commit
+                 0bf46e5b1b97c6bd206af39e7217ba1fe278a207, which is what
+                 veroroute.pin pins, built from that commit
+                 (.tools/veroroute-perfboard/.built-commit agrees - D25's two
+                 figures, recorded separately because they have disagreed)
+                 --version prints "VeroRoute Version 2.40", the upstream app
+                 version, which carries no fork commit; the stamp is the only
+                 witness of which build ran
+
+WHAT MAY NOT BE CONCLUDED FROM IT
+---------------------------------
+The frozen low-boost fixture is NOT today's low-boost board. It is 9 nets and
+27 pins; the scaffolded model is 14 nets and 50 pins, and a figure measured
+here says nothing about that board.
+
+  ON THAT 50. PIPELINE 3.4 and D15 both say "14 nets and 40 pins against
+  today's model". Measured here by running the same export path against the
+  board's declaration at this commit: 14 nets and 50 pin entries, of which 10
+  are the off-board pad terminals (PADS3 + PADS7) and 40 are everything else.
+  So 40 is the non-pad count and the two figures are the same measurement
+  counted two ways, not a disagreement about the circuit - but 40 is not the
+  number the export's own pin entries total, and the figure is recorded both
+  ways here rather than one of them being restated without its basis.
+
+B1-frozen's C <= 5 and W = 0 are stated
+against THIS model and apply here and nowhere else: C <= 5 at N = 14 would
+require nine occupied strips before a single net may split, and W = 0 is a
+property of the artifact being reproduced - the owner's layout carries zero
+WIRE lines - not a general preference. B1-current is the scaffolded board's own
+criterion and carries neither clause.
+
+A PASS HERE IS AGREEMENT WITH A NETLIST, NOT A BUILDABLE BOARD. These files
+grade HC8 only. The frozen low-boost board FAILS `make check` today, for the
+staleness above, and nothing in this directory is evidence that it does not.
+
+AND IT IS NOT EVIDENCE ABOUT THE BOARDS THAT ARE NOT HERE.
+transistor-preamp-lab's dump reports CUT_STATE UNRESOLVED with 19
+CUT_CONFLICT lines, so its cut list is absent rather than empty and HC2
+excludes it; its export also names J2.1 and J2.2, for which the dump prints no
+PIN line. transistor-preamp-loop is COMPUTED but HC8 reports 15 opens on it,
+agreeing net for net with the 15 incomplete nets `make check` reports there.
+transistor-preamp-buffered agrees and passes `make check`, and is still left
+out, because PIPELINE 3.5's set is a specified four rather than every board
+that happens to pass. All three are deliberately absent from this directory,
+and tests/stripboard/agreement.test.ts names each one and why.
+
+TASK 16's IMPORT-PLACED START, which is not a hand layout and not a benchmark:
+
+  pultec-low-boost-imported.dump   --dump-board on the board
+                                   `--import <export> --strips horizontal`
+                                   produces from this repository's own netlist
+                                   export of circuits/pultec/physical/low-boost.ts
+
+  Captured at pipeline commit 8d1ff8d, veroroute pinned at
+  ed6c5a64eb5125346e8b0bc0b434b332c7750bb6.
+
+  WHY IT IS HERE AND NOT HAND-WRITTEN. It is the board all three of Task 16's
+  starting arms begin from, and the thing a hand-written stand-in cannot
+  reproduce is its NODE lines: `--import` writes every one of them `NAME -`,
+  carrying net topology and no net names, and the constructed arm recovers net
+  identity by joining those pin sets against the model's own nets. A reduced
+  fixture would have pin sets that join to nothing. Three defects in Task 16
+  were invisible to the hand-written fixture that preceded this file and visible
+  immediately against this one.
+
+  IT IS REGENERABLE AND NOT EVIDENCE. Unlike the frozen benchmark beside it,
+  nothing here is a record of a human decision: re-running the two commands
+  above on the same pin reproduces it byte for byte, and a model change that
+  moves it is a fixture to regenerate rather than a provenance to protect.
+  17 PART lines, 10 PAD lines, 14 NODE lines - all fourteen reading `NAME -`.
+
+TASK 23's FROZEN FOOTPRINT MAP, the fourth file of the frozen benchmark:
+
+  pultec-low-boost-frozen.footprints.json   designator -> KiCad footprint, for
+                                            the eight board-resident components
+                                            of the model at commit 2f62ee1
+
+WHY IT IS HERE. B1-frozen is stated against "the exact electrical model,
+FOOTPRINTS and board dimensions the hand layout was built for", and the three
+files above cannot supply the footprints: the .netlist is EESchema v1.1, a
+grammar with no footprint field at all (measured in
+tests/stripboard/checkpoint-fixtures.ts, and the reason low-boost was out of
+CHECKPOINT 1), and the .dump carries VeroRoute part types - CAP_FILM,
+RESISTOR, BLOCK_200MIL3 - which are not footprint names. HC4, HC5, HC9 and
+HC10 are keyed by the footprint, so without this file a run against the frozen
+board cannot be graded at all. The map is the benchmark's own missing column,
+not a parameter of the run: no threshold, no bound and no cost figure is in it.
+
+WHERE IT COMES FROM - extracted from the SAME commit as the netlist beside it,
+by this repository's own model code, never hand-written and never read off
+today's model (which is a 14-net circuit, and the provenance above says what
+that would do to the benchmark):
+
+  git worktree add --detach $SCRATCH/wt-2f62ee1 2f62ee1
+  (in that worktree, a ten-line script importing pultecLowBoost() from
+   circuits/pultec/physical/low-boost.ts and printing, for each component,
+   its id, its part.footprint and its part.symbol)
+      bun print-footprints.ts > $SCRATCH/frozen-footprints.tsv
+  git worktree remove $SCRATCH/wt-2f62ee1
+
+  The committed JSON holds exactly the rows whose part.footprint is defined,
+  keyed by component id. At 2f62ee1 designatorsFor() is the identity map
+  (circuits/pultec/physical/parts.ts: `designators[component.id] =
+  component.id`), so a component id IS the designator the .netlist and the
+  .dump name, and no renaming step stands between the three files.
+
+  THE TWO COMPONENTS THAT ARE ABSENT, and their absence is the model's own
+  statement rather than an omission: RV_LO_BOOST and SW_LO_BOOST carry a
+  part.symbol and no part.footprint - they are panel-mount, VeroRoute expands
+  them into ten one-hole PADS, and tools/stripboard/constraints-model.ts's
+  footprintOf exempts a one-hole pad by name. A reader checking this file
+  against the dump's eighteen PART/PAD lines will find eight entries here and
+  should: the other ten holes are pads.
+
+  these fixtures
+    pultec-low-boost-frozen.footprints.json
+      sha256 ec251ed9f072700c8a731c002ce8005633eaff30dfa0c35eb410fd7ec9e2c14c
+
+WHAT MAY NOT BE CONCLUDED FROM IT, and this is the finding Task 23 recorded
+rather than worked around: two of the eight footprints make the frozen board
+UNGRADABLE and UNREPRODUCIBLE as the span data stands, both measured
+2026-10-12 and both recorded in docs/stripboard/pipeline-verification.md
+section 8.
+
+  The TerminalBlock_Phoenix entry is in neither LEAD_SPANS nor UNSOURCED nor
+  PIN_PATTERNS, so leadSpanFor refuses it by name - PAR2 working exactly as
+  designed - and every grade of a frozen-board candidate stops there. That is
+  the same refusal that keeps transistor-preamp-staged out of the grader's
+  board set, arriving on a different board.
+
+  R2's own hand-laid span is 3 holes (PIN R2 1 AT 7,9 and PIN R2 2 AT 9,9 in
+  the dump beside this file), and the recorded minSpanHoles for
+  R_Axial_DIN0207_...P10.16mm_Horizontal is 5. So the owner's own layout is
+  two steps BELOW the recorded floor for the footprint this file names, and no
+  layout the pipeline may produce can reproduce it while that pair stands.
+  Nothing here was adjusted to close that gap: a span table edited to admit
+  the artifact it is measured against would be a benchmark grading itself.
+
+TASK 13's TWO FORMING-ANCHOR DUMPS, added when the forming anchor was settled.
+They are the same kind of file as the three above - a --dump-board capture of a
+.vrt committed under boards/ - and they are here because
+tests/kicad/formed-frame.test.ts needs a board that DISTINGUISHES the three
+candidate anchors, and the three above do not.
+
+  transistor-preamp-loop.dump      the board that settles it from the layout
+                                   side: its C6 is a 5mm can at its prepared
+                                   one-step span with J2.2 in the hole before
+                                   its first lead and R9.1 in the hole after its
+                                   last, so a first-lead or last-lead anchor
+                                   puts that can over an occupied hole. C2, C3
+                                   and C5 refute one alternative each.
+  transistor-preamp-buffered.dump  one of the two boards the owner has BUILT,
+                                   and the one Task 13 was asked whether the
+                                   derivation can now import. It carries 2 TO92
+                                   and 5 electrolytics.
+
+WHAT MAY NOT BE CONCLUDED FROM THE LOOP CAPTURE, stated here because the test
+that reads it says the same: the loop board is laid out and NOT BUILT
+(docs/transistor-preamp/README.md, Build 4: "paused, not built"). It is the
+owner's own hand layout and VeroRoute admitted it, but no iron has touched it.
+The anchor's primary basis is therefore NOT this file - it is KiCad's own
+prepared-pitch footprints for the same three bodies, recorded as
+KICAD_PREPARED_PITCH_VARIANTS in lib/kicad/pin-pattern.ts and read file-by-file
+in that test. This capture is corroboration that no placement in the repository
+contradicts the anchor those files state, and that two of the alternatives are
+contradicted.
+
+THEY ARE FROM A DIFFERENT FORK COMMIT FROM THE THREE ABOVE, and that is visible
+in the files rather than hidden: these two carry DIRECTION on every placed PART
+line and a BOUNDS line, which the three older captures do not, because those
+were taken before either field existed. tools/guide/dump.ts treats both fields
+as optional for exactly this reason and its own header says so. Nothing was
+regenerated to make them match: the older three are frozen evidence.
+
+  binary         .tools/veroroute-perfboard at commit
+                 ed6c5a64eb5125346e8b0bc0b434b332c7750bb6, which is what
+                 veroroute.pin pins and what
+                 .tools/veroroute-perfboard/.built-commit records as built
+  command        VR=.tools/veroroute-perfboard/veroroute.app/Contents/MacOS/veroroute
+                 "$VR" --dump-board boards/transistor-preamp-loop/transistor-preamp-loop.perfboard.vrt \
+                     > tests/fixtures/stripboard/transistor-preamp-loop.dump
+                 "$VR" --dump-board boards/transistor-preamp-buffered/transistor-preamp-buffered.perfboard.vrt \
+                     > tests/fixtures/stripboard/transistor-preamp-buffered.dump
+
+  input boards
+    boards/transistor-preamp-loop/transistor-preamp-loop.perfboard.vrt
+      last changed in commit 6663cd8d28d4932af629c2acd296de2f7dede49e
+      sha256 d16ce08cf7b3091d06b1adcf9f2086d72cdfcba9b8a177b47484ca6e4f835cae
+    boards/transistor-preamp-buffered/transistor-preamp-buffered.perfboard.vrt
+      last changed in commit e0d4f04f17404bf24c72f783dc96809da175c762
+      sha256 b424ddcbaccb1c0271fca673b917b4d4c041c7fe1b5fc8f96c4ac3557f00c765
+
+  these fixtures
+    transistor-preamp-loop.dump
+      sha256 d5cdbb48e0f898af89a6ebbc1589f7cce339767de05fb658ec28bf8fdcfe91ed
+    transistor-preamp-buffered.dump
+      sha256 5b32c5a6586e584467ceee53bee3a90c24403ac37aed45c8840b4413008382f2

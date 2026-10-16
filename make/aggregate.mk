@@ -36,7 +36,45 @@
 # still reads as the refusal it always was, not as an empty, silently
 # successful sweep.
 
-.PHONY: help perfboard-help check boards
+# `prune-runs` EXISTS BECAUSE NOTHING PRUNED `build/stripboard/` AND THE GROWTH
+# IS NOT COSMETIC. Every `make place` writes one directory per run under
+# `build/stripboard/<board>/<stamp>/`, and that directory is never reused and
+# never removed. At roughly 4,606 entries in one board's directory, `spawnSync`
+# of the pinned VeroRoute fork began returning exit status 0 with EMPTY STDOUT,
+# which failed twenty-three tests in nine unrelated files with "--dump-board
+# produced no GRID line" - a refusal pointing at the fork, about a fork that was
+# fine. Measured both ways: moving `build/` aside fixed it, moving it back broke
+# it again. `tests/stripboard/run-scratch.ts` carries the whole measurement and
+# is how the test suite stopped contributing to it.
+#
+# IT IS A DELIBERATE VERB AND NOT A PREREQUISITE OF ANYTHING. A run directory is
+# the only record of a run - `run.json`'s canonical block is what the adoption
+# gate compares a candidate against - so removing one is throwing evidence away,
+# and a `check` that quietly did it would be a gate deleting the provenance it
+# exists to read. It prints the count before it removes anything.
+#
+# IT IS ROOT-SCOPED WHEREVER IT IS RUN, because `build/stripboard/` is one
+# directory at the repository root rather than one per board. Running it from a
+# subdirectory does the same thing, which is why the help text says so.
+
+# `prune-temp` IS ITS COMPANION, AND ITS ABSENCE IS WHY THE OWNER'S DISK FILLED.
+# `prune-runs` above sweeps `build/stripboard/`, which is one of the TWO places
+# the fixtures write. Nothing swept the other - `os.tmpdir()` - and on 2026-10-13
+# that held over 60,000 scratch directories across eight prefixes, with "zero run
+# directories" being reported all the while as a clean bill of health: that
+# metric counted the directory already fixed. A SUCCESS METRIC MEASURED THE WRONG
+# DIRECTORY. `tests/support/temp-scratch.ts` is why the suite no longer
+# contributes and `tests/stripboard/temp-scratch.test.ts` is the standing guard;
+# this verb is for what has already accumulated.
+#
+# Its prefix list is DERIVED FROM THE SOURCES rather than written here, and the
+# fork's own `vr-gui-*` (21,362 of them by that date, one per spawn, created by
+# the pinned binary and by no fixture) is declared separately so the verb says
+# whose they are instead of claiming them. `tools/stripboard/prune-temp.ts`
+# carries the reasoning. Like `prune-runs` it is a deliberate verb and a
+# prerequisite of nothing, and it names what it will delete and how many first.
+
+.PHONY: help perfboard-help check boards prune-runs prune-temp
 
 .DEFAULT_GOAL := help
 
@@ -50,6 +88,16 @@ perfboard-help:
 	@echo ""
 	@echo "  make check           check every declared board beneath here"
 	@echo "  make boards          every declared board beneath here"
+	@echo "  make prune-runs      remove every stripboard run directory under"
+	@echo "                       build/stripboard/ (repository-wide, wherever it is"
+	@echo "                       run from). Each run's run.json is its only record,"
+	@echo "                       so this throws evidence away deliberately - nothing"
+	@echo "                       else runs it."
+	@echo "  make prune-temp      remove the scratch directories this repository's tests"
+	@echo "                       and tools leave under the system temp directory, and the"
+	@echo "                       vr-gui-* ones the pinned fork leaves there itself. Names"
+	@echo "                       every prefix and its count before deleting. --dry-run via"
+	@echo "                       bun tools/stripboard/prune-temp.ts --dry-run."
 	@echo ""
 	@echo "One board at a time"
 	@echo "  cd <board directory> && make cuts|update|stripboard|edit|check"
@@ -74,3 +122,21 @@ check: veroroute
 
 boards:
 	@bun "$(CLI)" boards -C "$(CURDIR)"
+
+prune-runs:
+	@runs="$(REPO_ROOT)/build/stripboard"; \
+	if [ ! -d "$$runs" ]; then \
+	  echo "$$runs does not exist, so there is nothing to prune."; \
+	  exit 0; \
+	fi; \
+	count=$$(find "$$runs" -mindepth 2 -maxdepth 2 -type d | wc -l | tr -d ' '); \
+	if [ "$$count" = "0" ]; then \
+	  echo "$$runs holds no run directories."; \
+	  exit 0; \
+	fi; \
+	echo "removing $$count run directory(ies) under $$runs"; \
+	find "$$runs" -mindepth 2 -maxdepth 2 -type d -exec rm -rf {} +; \
+	echo "$$runs now holds $$(find "$$runs" -mindepth 2 -maxdepth 2 -type d | wc -l | tr -d ' ')."
+
+prune-temp:
+	@bun "$(REPO_ROOT)/tools/stripboard/prune-temp.ts"

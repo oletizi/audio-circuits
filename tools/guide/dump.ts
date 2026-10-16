@@ -29,78 +29,80 @@
  * state. `PIN` lines are legitimately absent when nothing on the board is
  * placed (a floating part prints none), so their absence only refuses when
  * some part actually needs one.
+ *
+ * `BOUNDS` AND `DIRECTION` ARE OPTIONAL HERE, WHICH IS NOT WHAT THE FORK
+ * DOES. The pinned fork always emits `BOUNDS` and always appends `DIRECTION`
+ * to a placed `PART` line, so a dump from it carries both; but a dump
+ * CAPTURED BEFORE EITHER EXISTED is still a readable board, and two such
+ * captures in this repository are frozen evidence with provenance that may
+ * not be regenerated. A reader that refused them would reject files nobody
+ * is allowed to change, triggered by a one-line change to `veroroute.pin`.
+ * So the rule, whose authority is
+ * `docs/stripboard/pipeline-verification.md` section 2.6 and not this file:
+ * both fields optional - including `DIRECTION` on a PLACED part; the refusal
+ * owned by the CONSUMER that acts on the value (`boundsOf`,
+ * `usableDirection`), never by this reader; the CONTRADICTION still refused,
+ * which is a `FLOATING` part carrying a direction; a present-but-unreadable
+ * line still refused, because that is the grammar moving rather than an old
+ * capture; and `UNKNOWN` received, narrowed by comparison rather than cast,
+ * and refused by name rather than read as `W`.
+ *
+ * THE TYPES AND THE CONSUMER-SIDE REFUSALS LIVE IN `./dump-model.ts` and are
+ * re-exported from here, so every consumer still imports this module. Task 7's
+ * two new fields took the single file past this repository's 300-500 line
+ * ceiling; the split follows `lead-span-model.ts` / `lead-span.ts`'s own
+ * precedent, and nothing moved but location.
  */
 import { dumpLineFields } from "../perfboard/dump-lines.ts"
+import {
+  boundsOf,
+  holeName,
+  noPinLinesMessage,
+  REBUILD_PINNED_FORK,
+  rowName,
+  usableDirection,
+  type BoardDump,
+  type Bounds,
+  type Bridge,
+  type Cut,
+  type Grid,
+  type HolePosition,
+  type NodedHole,
+  type Part,
+  type PartDirection,
+  type PartPlacement,
+  type Pin,
+  type Wire,
+} from "./dump-model.ts"
 
-/** The board's size in holes, from its one `GRID <rows> <cols>` line. */
-export interface Grid {
-  readonly rows: number
-  readonly cols: number
+/**
+ * The grammar's types and the consumer-side refusals, re-exported because this
+ * is the module every consumer was told to import. `./dump-model.ts` holds the
+ * declarations; this file holds the reading of the text.
+ */
+export {
+  boundsOf,
+  holeName,
+  noPinLinesMessage,
+  REBUILD_PINNED_FORK,
+  rowName,
+  usableDirection,
+  type BoardDump,
+  type Bounds,
+  type Bridge,
+  type Cut,
+  type Grid,
+  type HolePosition,
+  type NodedHole,
+  type Part,
+  type PartDirection,
+  type PartPlacement,
+  type Pin,
+  type Wire,
 }
 
-/** Where a part's pins land, or that it has none yet because it is unplaced. */
-export type PartPlacement = { readonly row: number; readonly col: number } | "floating"
-
-/** One `PART <ref> <type> <value> <FLOATING|AT <row>,<col>> SPAN <n>` line. */
-export interface Part {
-  readonly ref: string
-  readonly type: string
-  readonly value: string
-  readonly placement: PartPlacement
-  /** The footprint's own column span (body width for an electrolytic) - NOT a lead span. */
-  readonly span: number
-}
-
-/** One `PIN <ref> <pin> AT <row>,<col>` line: one lead's actual hole. */
-export interface Pin {
-  readonly pin: string
-  readonly row: number
-  readonly col: number
-}
-
-/** A bare hole position, with no node id. */
-export interface HolePosition {
-  readonly row: number
-  readonly col: number
-}
-
-/** A hole position paired with the node id painted there. */
-export interface NodedHole extends HolePosition {
-  readonly nodeId: string
-}
-
-/** One `WIRE <name> AT <row>,<col> ENDS <end> <end>` line: a placed wire's two ends. */
-export interface Wire {
-  readonly name: string
-  readonly ends: readonly [HolePosition, HolePosition]
-}
-
-/** One computed cut: the two strip-adjacent holes to sever, each carrying its own net. */
-export interface Cut {
-  readonly a: NodedHole
-  readonly b: NodedHole
-}
-
-/** One computed solder bridge: the two strip-adjacent holes to join. No node ids - see above. */
-export interface Bridge {
-  readonly a: HolePosition
-  readonly b: HolePosition
-}
-
-/** A full, typed `--dump-board` report. */
-export interface BoardDump {
-  readonly grid: Grid
-  readonly verticalStrips: boolean
-  readonly parts: readonly Part[]
-  /** Every placed part's leads, by ref. A ref with no entry here is floating. */
-  readonly pins: Readonly<Record<string, readonly Pin[]>>
-  readonly wires: readonly Wire[]
-  /** Node id -> the net name stored for it (`-` when the board stores none). */
-  readonly nodes: Readonly<Record<string, string>>
-  readonly cutState: string
-  readonly cuts: readonly Cut[]
-  readonly bridges: readonly Bridge[]
-}
+/** The five direction tokens the dump prints, narrowed by comparison never by cast. */
+const PART_DIRECTIONS: readonly PartDirection[] = ["W", "E", "N", "S", "UNKNOWN"]
 
 function onlyLine(dump: string, keyword: string): string[] | undefined {
   return dumpLineFields(dump, keyword)[0]
@@ -130,10 +132,6 @@ function parseNodedHole(field: string | undefined, context: string): NodedHole {
   return { row: Number(rowStr), col: Number(colStr), nodeId }
 }
 
-/** The fix for a dump that lacks what the pinned fork always prints. */
-export const REBUILD_PINNED_FORK =
-  "rebuild the pinned veroroute fork (`make veroroute` in the board's directory) and run this again"
-
 function noPinnedForkFix(lineKind: string, consequence: string): string {
   return (
     `--dump-board produced no ${lineKind} line, so ${consequence}. This dump is from an ` +
@@ -141,16 +139,6 @@ function noPinnedForkFix(lineKind: string, consequence: string): string {
   )
 }
 
-/**
- * The refusal for a placed part with no PIN lines: its leads' holes are
- * unknown. One wording for every step that needs a part's leads.
- */
-export function noPinLinesMessage(part: Part): string {
-  return (
-    `part ${part.ref} (${part.type}) is placed but the dump has no PIN lines for it, so where its leads go ` +
-    `is unknown. The dump came from an unpinned or older veroroute fork; ${REBUILD_PINNED_FORK}.`
-  )
-}
 
 function parseGrid(dump: string): Grid {
   const fields = onlyLine(dump, "GRID")
@@ -187,6 +175,97 @@ function parseCutState(dump: string): string {
   return state
 }
 
+/**
+ * The `BOUNDS` rect, or `undefined` for an absent line and for `BOUNDS - -`.
+ *
+ * Unlike `GRID`, `VERTICAL_STRIPS` and `CUT_STATE`, an absent `BOUNDS` line
+ * does NOT refuse here. It is not that the pinned fork omits it - it always
+ * emits it - but that a dump captured before the line existed is still a
+ * readable board, and two such captures are frozen evidence with provenance
+ * (`tests/fixtures/pultec-low-boost-c19-floated.dump` and the frozen low-boost
+ * benchmark). A refusal here would reject files nobody is allowed to change;
+ * the refusal belongs to `boundsOf`, called by the consumer that needs a rect.
+ *
+ * A line that is PRESENT and unreadable still refuses: that is the grammar
+ * moving under the parser, which is a different fault from the line not being
+ * there, and reading it as "no bounds" would make a grammar change look like
+ * an old capture.
+ */
+function parseBounds(dump: string): Bounds | undefined {
+  const fields = onlyLine(dump, "BOUNDS")
+  if (fields === undefined) return undefined
+  const rawLine = fields.join(" ")
+  const [, minField, maxField] = fields
+  if (fields.length !== 3) {
+    throw new Error(
+      `unreadable BOUNDS line (expected two hole positions, or "- -" for a board with ` +
+        `nothing on it): "${rawLine}"`,
+    )
+  }
+  if (minField === "-" && maxField === "-") return undefined
+  const min = parsePosition(minField, "BOUNDS min")
+  const max = parsePosition(maxField, "BOUNDS max")
+  if (max.row < min.row || max.col < min.col) {
+    throw new Error(
+      `unreadable BOUNDS line: "${rawLine}" names a rect whose maximum is below its minimum. ` +
+        'Board::GetBounds leaves wrong-ended sentinels behind when it reports failure, and the ' +
+        'dump spells that case "BOUNDS - -" rather than printing them; a rect in this shape ' +
+        "therefore means the grammar moved, not that the board is empty, and it is not " +
+        "normalised by swapping the ends.",
+    )
+  }
+  return { minRow: min.row, minCol: min.col, maxRow: max.row, maxCol: max.col }
+}
+
+/**
+ * The `DIRECTION <W|E|N|S|UNKNOWN>` field of one `PART` line, or `undefined`
+ * when the line carries none.
+ *
+ * `rest` is the part of the line after `SPAN <n>`. An empty tail is the
+ * capture-is-older-than-the-grammar case (`Part.direction`); a tail that is
+ * anything other than exactly `DIRECTION <value>` refuses, because a field
+ * nobody can read is the grammar moving rather than a field that is absent.
+ */
+function parseDirection(
+  rest: readonly (string | undefined)[],
+  placement: PartPlacement,
+  ref: string,
+  rawLine: string,
+): PartDirection | undefined {
+  const tail = rest.filter((field): field is string => field !== undefined)
+  if (tail.length === 0) return undefined
+  const [keyword, value] = tail
+  if (keyword !== "DIRECTION" || value === undefined || tail.length !== 2) {
+    throw new Error(
+      `unreadable PART line (the fields after SPAN must be exactly "DIRECTION <W|E|N|S|UNKNOWN>" ` +
+        `or nothing at all): "${rawLine}"`,
+    )
+  }
+  // Narrowed by COMPARISON against the whitelist, never cast: `value as
+  // PartDirection` would make every sixth token a valid direction at the type
+  // level and a wrong placement at runtime.
+  const direction = PART_DIRECTIONS.find((candidate) => candidate === value)
+  if (direction === undefined) {
+    throw new Error(
+      `unreadable PART DIRECTION value "${value}" on PART ${ref}: "${rawLine}". The dump prints ` +
+        "W, E, N, S or UNKNOWN - UNKNOWN being what it prints for a .vrt carrying a raw " +
+        "direction char that is none of the four. A sixth value means the grammar moved; it is " +
+        "not read as W.",
+    )
+  }
+  if (placement === "floating") {
+    throw new Error(
+      `PART ${ref} is FLOATING and carries DIRECTION ${direction}: "${rawLine}". No build prints ` +
+        "this, and it means two fields on one line disagree about whether the part is on the " +
+        "board. A floating component prints no DIRECTION field, exactly as it prints no PIN " +
+        "line. This is the one direction fault the reader refuses rather than handing to a " +
+        `consumer: there is no value to hand over. ${REBUILD_PINNED_FORK}.`,
+    )
+  }
+  return direction
+}
+
+
 function parseSpan(spanKeyword: string | undefined, spanValue: string | undefined, rawLine: string): number {
   if (spanKeyword !== "SPAN" || spanValue === undefined) {
     throw new Error(`unreadable PART line (expected "SPAN <n>"): "${rawLine}"`)
@@ -207,12 +286,15 @@ function parseParts(dump: string): Part[] {
     }
     if (rest[0] === "FLOATING") {
       const span = parseSpan(rest[1], rest[2], rawLine)
-      return { ref, type, value, placement: "floating" as const, span }
+      const placement = "floating" as const
+      const direction = parseDirection(rest.slice(3), placement, ref, rawLine)
+      return { ref, type, value, placement, span, direction }
     }
     if (rest[0] === "AT") {
       const placement = parsePosition(rest[1], `PART ${ref}`)
       const span = parseSpan(rest[2], rest[3], rawLine)
-      return { ref, type, value, placement, span }
+      const direction = parseDirection(rest.slice(4), placement, ref, rawLine)
+      return { ref, type, value, placement, span, direction }
     }
     throw new Error(`unreadable PART line (expected FLOATING or AT <row>,<col>): "${rawLine}"`)
   })
@@ -318,6 +400,7 @@ export function parseBoardDump(dump: string): BoardDump {
 
   return {
     grid: parseGrid(dump),
+    bounds: parseBounds(dump),
     verticalStrips: parseVerticalStrips(dump),
     parts,
     pins,
@@ -329,32 +412,3 @@ export function parseBoardDump(dump: string): BoardDump {
   }
 }
 
-const ROW_LETTERS = 26
-
-/**
- * The lettered-row, numbered-column name of a hole: row 0 is `A`, 25 is
- * `Z`, 26 is `AA` (a bijective base-26 numbering, like a spreadsheet's
- * columns); column 0 is `1`. Used everywhere a position is written, per the
- * design's convention (borrowed from VeroDesigner, reimplemented here).
- */
-export function holeName(row: number, col: number): string {
-  if (!Number.isInteger(row) || row < 0) {
-    throw new Error(`holeName: row must be a non-negative integer, got ${row}`)
-  }
-  if (!Number.isInteger(col) || col < 0) {
-    throw new Error(`holeName: col must be a non-negative integer, got ${col}`)
-  }
-  let n = row + 1
-  let letters = ""
-  while (n > 0) {
-    const remainder = (n - 1) % ROW_LETTERS
-    letters = String.fromCharCode(65 + remainder) + letters
-    n = Math.floor((n - 1) / ROW_LETTERS)
-  }
-  return `${letters}${col + 1}`
-}
-
-/** A row's letters alone: row 0 is `A`, 26 is `AA` (see `holeName`). */
-export function rowName(row: number): string {
-  return holeName(row, 0).slice(0, -1)
-}

@@ -20,7 +20,14 @@ const BLOCK: Component = {
   id: "terminals",
   kind: "connector",
   parameters: {},
-  part: { footprint: "TerminalBlock:TerminalBlock_1x02_P5.08mm", electricallyInert: true },
+  // SYNTHETIC, AND SAID SO HERE. `TerminalBlock.pretty` exists on disk and has
+  // no `TerminalBlock_1x02_P5.08mm`; its real two-way entries are named by
+  // manufacturer (`TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm` and the
+  // like). Nothing in this file looks the footprint up - `physicalOnly` reads
+  // provenance, not geometry - so the string is a placeholder rather than a
+  // claim, and it is labelled because an unlabelled plausible name is how this
+  // repository has three times shipped a KiCad name that does not exist.
+  part: { footprint: "SYNTHETIC:TerminalBlock_1x02_P5.08mm", electricallyInert: true },
   pins: {},
   units: [{ name: "MAIN", pins: { "1": net("IN"), "2": net("GND") } }],
   provenance: { source: PHYSICAL_ONLY },
