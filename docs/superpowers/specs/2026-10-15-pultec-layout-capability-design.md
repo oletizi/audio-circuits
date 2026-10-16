@@ -50,12 +50,29 @@ always indexes strips. Verified directly against the recorded patterns:
 | `DIP-16_W7.62mm` | 16 | 2 | 8 |
 | `TO-92_Inline` | 3 | 3 | 1 |
 
-So a 1×5 header puts all five pins on ONE strip, shorting five different nets,
-and `checkField` correctly refuses. **The mapping is right for a DIP** — two
-rows straddling strips with a cut between them is exactly what the owner
-described — **and wrong for a 1×N header**, which needs the quarter-turn that
-does not exist. This blocks every board carrying a header or a DIP, not only
-the Pultec ones.
+`seed-parts.ts` takes `alongSteps` from the footprint's **x** unconditionally,
+and `checkField` requires every pin of a field to land on a DISTINCT strip. So
+the seeder can only place a part whose pins happen to spread along x:
+
+| footprint | pads | distinct `alongSteps` | outcome |
+| --- | --- | --- | --- |
+| `TO-92_Inline` | 3 | 3 | placed |
+| `RM-065_Vertical` | 3 | 3 | placed |
+| `PinHeader_1x05` | 5 | **1** | refused — five nets on one strip |
+| `DIP-16_W7.62mm` | 16 | **2** | refused — sixteen pins on two strips |
+
+**A DIP IS REFUSED TOO, and an earlier draft of this spec said it was fine.**
+That was wrong and is corrected here rather than quietly fixed. The owner's own
+description is the check: *"dips should span strips with a cut down the middle,
+like a breadboard"* — the eight-pin direction runs ACROSS strips so each pin has
+its own, the two rows sit a few columns apart on those same eight strips, and
+each strip then carries one pin from each row, which is exactly why it needs the
+cut. The code attempts the opposite and then correctly refuses its own idea.
+
+**The two modules' wording is a symptom and not the disease.** They describe
+different things — one a footprint, one a placement — and neither is wrong
+alone. The defect is that the seeder never CHOOSES between the two orientations.
+This blocks every board carrying a header or a DIP, not only the Pultec ones.
 
 **B2a — the guard meant to catch this cannot fire.** `parts-row-axis` in
 `lib/stripboard/seed-parts.ts` refuses a pattern whose `axis !== "x"`, but
@@ -83,8 +100,9 @@ The binding arithmetic, which is the whole design problem:
   reach of the anchor lead for the wire-join fallback. The refusal says so
   itself.
 
-**One net per strip is what guarantees zero cuts, and it is also what makes
-this circuit infeasible.**
+**One net per strip is what makes every seed come out with zero cuts, and it is
+also what makes this circuit inexpressible.** Those zero cuts are a CONSEQUENCE
+of how the constructor works, not a target it was given — see the ruling below.
 
 ## The owner's rulings this design is built on
 
@@ -96,6 +114,16 @@ this circuit infeasible.**
   possible."* — cuts are admissible. **No new criterion follows from this**: the
   committed objective already prices a cut at 1.0 against 0.25 for a wire or a
   bridge, so "as few as possible" is already what the search minimises.
+- *"Zero cuts was* never *a requirement. I have an overwhelmingly strong
+  preference for AS FEW CUTS AS POSSIBLE. That does not nor has it ever meant
+  zero cuts is a requirement."* (2026-10-15) — **a correction of this project's
+  record, not a new ruling.** The previous plan had elevated a choice he made
+  between three rendered boards into a structural requirement, and then declared
+  a shared-strip seed *"not wanted"*. He never asked for either. The plan's
+  passage is struck and annotated rather than deleted so the drift stays
+  legible, and **D3a below exists because of this correction**: one net per strip
+  is what makes a Pultec section inexpressible, and nothing he said forbids
+  relaxing it.
 - *"Rigid parts are rigid. You cant push them out of the way or rout under
   them."* — both hard area rules stand unchanged and bind every generated board.
 - *"The as-built diagram is instructive, but my directives are more authoritative
@@ -207,10 +235,15 @@ that already exist rather than inventing a bar.
 
 ## Risks and open questions
 
-- **D3a changes what the seeder guarantees.** Zero cuts was structural; it
-  becomes a thing the objective pursues rather than a property of construction.
-  Several modules state the old guarantee in prose and each must be corrected
-  rather than left to go quietly false.
+- **D3a changes an incidental property of the constructor, and the prose that
+  described it must follow.** Every seed coming out with zero cuts was a
+  consequence of one net per strip, never a requirement anybody set; after D3a
+  the cut count is what the objective minimises, which is what it was always
+  supposed to be. **This is not a loss of a guarantee**, and any wording that
+  reads that way is the drift the ruling above corrects. Several modules state
+  the old property in prose and each must be re-worded rather than left to go
+  quietly false — `lib/stripboard/seed.ts`'s header states it accurately today
+  and will not after D3a.
 - **Cut count on the Pultec boards is unknown.** The owner prefers as few as
   possible and his own boards carry five; no figure is predicted here, and none
   should be adopted as a target.
