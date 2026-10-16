@@ -85,6 +85,43 @@ the cut crosses in the same row.
 Open: a fix would settle these
 ------------------------------
 
+### G18 - the fork's two stretch bounds disagree, so a 2-increment type can shrink below its minimum
+
+`FootPrint::CanStretch` (`Src/FootPrint.h:90-91`) permits a shrink whenever
+`GetCols() > CompTypes::GetMinLength(m_type)`. `Grid::StretchComplex`
+(`Src/Grid.h:241`) refuses one only when `GetCols() == GetMinLength(eType)` -
+**exact equality** - and otherwise allocates `GetCols() - GetStretchIncrement`.
+
+For a type whose increment is 2 - `SWITCH_ST`, `SWITCH_DT`, `BLOCK_200` - a
+component sitting at `min + 1` therefore passes the permission test (`min + 1 >
+min`), misses the equality guard (`min + 1 != min`), and is allocated at
+**`min - 1`**, one hole below the minimum the type declares.
+
+The same shape applies at the top end: `CanStretch` permits a grow at
+`max - 1`, and `StretchComplex`'s equality guard does not catch it.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 2's re-reviewer, while
+  checking that the new parity guard's arithmetic refused nothing legitimate.
+- **Evidence** the two files and lines above, read side by side.
+- **Verified** yes - the controller read both, rather than relaying the
+  reviewer's claim.
+- **Why it is open** it is **PRE-EXISTING in the fork's own stretch machinery**
+  and predates every change this program made. The parity guard added in Task 2
+  only refuses lengths that were already unreachable; it neither caused this nor
+  widened it. Nothing in this program is known to reach it: a moulded part
+  carrying nets cannot be stretched at all, which is what keeps the Pultec
+  boards clear of it.
+- **What would settle it** make the two agree - most likely by giving
+  `StretchComplex` the same `>`/`<` test `CanStretch` uses - with a test that
+  puts a 2-increment type at `min + 1` and asserts it does not go below `min`.
+- **A cosmetic relative, recorded here rather than as its own entry.**
+  `Headless_materialize_span.cpp:217-219`'s out-of-range refusal is now on the
+  wire path too, and `GetMaxLength(COMP::WIRE)` is `INT_MAX`, so a wire refusal
+  would read *"outside the 2..2147483647 holes this build allows a Wire to be"*.
+  Unreachable today - `ParseWire` refuses a degenerate wire and a fresh `WIRE`
+  is 3 cols against a minimum of 2 - but it is a message path that did not exist
+  before the two loops were merged.
+
 ### G13 - `--stretch` cannot change a part's span on a packed board
 
 **Read the narrowing at the end of this entry before relying on it.** As first
