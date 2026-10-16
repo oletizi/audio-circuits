@@ -128,6 +128,22 @@ the row a person ticks off says `LO BOOST 100Hz` against a hole. **This could
 not be designed before the label was decided**, which is why G10 recorded its
 dependency on G1 rather than being fixed alongside the pads.
 
+**AMENDED after Task 3 of the five-board plan reported, before the owner
+reviewed this spec.** The dependency is worse than G10 recorded. A materialised
+low-boost comes out of the fork with `NET_NAMES 0`, so `buildChecklist` refuses
+OUTRIGHT - the table is not merely missing its pad rows, it cannot be built at
+all for a materialised board. That is G14, and it is a different defect in a
+different layer from this spec's subject.
+
+**So the junction rows are IN this spec's scope and BLOCKED behind G14, which
+is not.** The honest consequence: the label work, the plumbing and the
+both-representations refusal can all land and be judged on their own, and the
+checklist cannot be finished until G14 is fixed elsewhere. An implementation
+plan must sequence it last and must not report this spec complete on the
+strength of the other three. **If G14 is not fixed first, the junction-row task
+is removed from the plan rather than carried as a task that cannot run** -
+supersede means delete, and a task blocked on another plan's work is not a task.
+
 A board that carries both representations
 -----------------------------------------
 
@@ -182,12 +198,23 @@ physical model without modifying it.
 Risk, and a sequencing note
 ---------------------------
 
-**This spec was written while Task 3 of the five-board plan was still running.**
-That task materialises low-boost end to end and reports what else is missing,
-and its findings may add to this work or reorder it - most plausibly if the
-packet build refuses before it reaches the checklist at all. **The
-implementation plan for this spec should be written after Task 3 reports**, so
-it is planned against measured facts rather than around them.
+**This spec was written while Task 3 of the five-board plan was still running**,
+and said its findings might reorder this work *"most plausibly if the packet
+build refuses before it reaches the checklist at all."* **That is what
+happened**, by a different mechanism than guessed: not the packet build but
+`NET_NAMES 0` on the materialised board, recorded as G14 and amended into the
+checklist section above. The guess was right about the shape and wrong about the
+cause, which is the argument for having waited rather than planned around it.
+
+Task 3 also produced evidence on two entries this spec leans on. G2 is now
+confirmed by eye on a materialised board rather than a frozen one: each pad
+label is individually readable and tight in its row, and two of them print over
+a dark alignment strip so they read as struck through. And **G17** - PART labels
+running clear off the board outline - is the same question as G2 asked from the
+other side of the renderer. **Whether these two are one problem is worth
+settling before either is fixed**, because a single change to how labels are
+placed may answer both, and two separate fixes to one layout engine is how a
+renderer becomes unpredictable.
 
 A second risk worth stating: the control model is the authority for the Pultec,
 and this design makes the guide depend on it. If a control is ever added to a
