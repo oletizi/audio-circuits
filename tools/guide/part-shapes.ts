@@ -14,6 +14,19 @@ const PIN1_MARK = 7
 const ELECTROLYTIC_TYPE = /^CAP_ELECTRO_(\d+)$/
 
 /**
+ * A film capacitor's VeroRoute type, with or without the lead-span digit a
+ * fresh import carries: `--dump-board` prints the bare `CAP_FILM` /
+ * `CAP_FILM_WIDE` the fork's `CompTypes.h` aliases (see
+ * `tests/fixtures/stripboard/pultec-low-boost-frozen.dump`), while
+ * `lib/kicad/import-string.ts`'s `FILM_CAPACITOR_IMPORT_STRINGS` emits the
+ * same two names suffixed with the span the import carried in, e.g.
+ * `CAP_FILM2` and `CAP_FILM_WIDE2` - the same `<name><span>` convention as
+ * `RESISTOR<n>` and `CAP_CERAMIC<n>` above. Both spellings get the same
+ * drawing (see the comment at their use below), so one pattern covers both.
+ */
+const FILM_CAPACITOR_TYPE = /^CAP_FILM(_WIDE)?\d*$/
+
+/**
  * The electrolytic polarity rule, in one place for the images and the
  * checklist: a CAP_ELECTRO_<n> part's pin 1 is its + lead.
  */
@@ -256,7 +269,19 @@ export function bodyFor(part: Part, pins: readonly PlacedPin[]): Body {
   // the same parts. The box is the honest drawing: it says where the part's
   // holes are and that something non-polarised sits over them. If a body
   // dimension is ever sourced, this is where it belongs.
-  if (part.type === "CAP_FILM" || part.type === "CAP_FILM_WIDE") {
+  //
+  // THE MATCH IS WIDER THAN THE BARE NAME FOR THE SAME REASON RESISTOR<n> IS A
+  // PATTERN AND NOT A LIST: `lib/kicad/import-string.ts` maps the Pultec rect
+  // capacitors to `CAP_FILM2` and `CAP_FILM_WIDE2` (its span-suffixed import
+  // string, not the `--dump-board` spelling), and a renderer that only knew the
+  // bare names refused those with "no drawing for VeroRoute part type
+  // CAP_FILM2" - the rendering layer failing to read a shape the physical model
+  // already names, rather than the physical model being wrong. Fixing that here
+  // is the point: `importStringFor` in `lib/kicad/import-string.ts` is
+  // untouched, because the import string IS part of the physical model and
+  // changing it to suit the drawing would turn a presentation bug into an
+  // electrical-model change.
+  if (FILM_CAPACITOR_TYPE.test(part.type)) {
     expectPinCount(part, pins, 2)
     return boxBody(part, pins)
   }
