@@ -6,11 +6,36 @@
  * `./seed-area.ts` holds the geometry and the measured rules. This file is the
  * state in between and the one decision every placement shares.
  *
- * **THE RULE EVERYTHING HERE KEEPS, stated once:** a lead lands either on its
- * own net's HOME strip - the strip the ordering gave that net - or on a SCRATCH
- * strip, which is a strip no net calls home and which exactly one lead claims.
- * A lead never lands on another net's home strip. So no strip carries two nets'
- * leads, every strip is a single run, and `derivedCuts` returns nothing.
+ * **THE RULE EVERYTHING HERE KEEPS, stated once:** a lead lands on any strip
+ * whose contacts, with that lead added, leave no net INTERLEAVED with another -
+ * `interleavingOn` in `./separable.ts` is the check, and `chooseColumn` runs it
+ * on every candidate position beside the two rigid-part rejections.
+ *
+ * **THAT IS A RELAXATION OF 2026-10-15 AND THE SENTENCE IT REPLACED IS QUOTED
+ * HERE RATHER THAN DELETED**, because it is why this file was built the way it
+ * was: *"a lead lands either on its own net's HOME strip ... or on a SCRATCH
+ * strip, which is a strip no net calls home and which exactly one lead claims. A
+ * lead never lands on another net's home strip. So no strip carries two nets'
+ * leads, every strip is a single run, and `derivedCuts` returns nothing."* That
+ * prohibition made a Pultec board impossible to express, and the owner's
+ * correction is that it was never what he asked for: ***"Zero cuts was never a
+ * requirement. I have an overwhelmingly strong preference for AS FEW CUTS AS
+ * POSSIBLE. That does not nor has it ever meant zero cuts is a requirement."***
+ *
+ * **SO THE HOME/SCRATCH RULE IS NOW A PRICE ORDER AND NOT A PROHIBITION.** A
+ * home strip costs nothing, a scratch strip costs a join at `rho_w` or `rho_s`
+ * (0.25 in `stripboard/rules.json`), and a strip another net already occupies
+ * costs a join AND a cut (1.0). `./seed-fit.ts` tries the three shapes in that
+ * order, which is the committed objective's own ranking of them rather than a
+ * preference of this file's - and `objectiveOf` remains the only thing that
+ * PRICES a board, `violationsOf` the only thing that judges it.
+ *
+ * **WHY INTERLEAVING IS REFUSED BY THE CONSTRUCTOR AND NOT BY THE MODEL.** `A B
+ * A` along one strip leaves `A` in two runs that no cut list can rejoin. A wire
+ * could rejoin them, so it is not electrically illegal; it is refused here
+ * because the seed's join step joins a net's STRIPS, not two runs on one strip,
+ * so a seed that produced it would hand the search a board its own joiner cannot
+ * finish.
  *
  * **AND THE RULE THAT WAS MISSING, which is why this file was rewritten.** The
  * first version took the lowest free column every time, so a 34 x 27 stock came
@@ -29,8 +54,10 @@
  * against.
  */
 import { type Grid, type Hole, type Placement, type Wire, type Bridge } from "./board.ts"
-import { holeKey } from "./cuts.ts"
+import { holeKey, type ReferenceNets } from "./cuts.ts"
 import { joinColumnFor } from "./join-column.ts"
+import { contactsByStrip, interleavingAfter, joinSiteFor } from "./seed-contacts.ts"
+import { type Interleaving, type StripContact } from "./separable.ts"
 import {
   COMFORT_ORDER,
   areaRect,
@@ -63,12 +90,25 @@ export interface Workspace {
   readonly grid: Grid
   readonly ordering: string
   readonly spans: ReadonlyMap<string, LeadSpan>
+  /**
+   * The netlist's own account of which pin is on which net.
+   *
+   * It is here so that `contactsByStrip` can read what is already on a strip
+   * with `significantContacts` - the one derivation of "what counts as a contact"
+   * this model has - rather than with a second spelling of it. A placement
+   * records pin names and holes and not nets, so the net of a committed contact
+   * is not recoverable from the workspace without it.
+   */
+  readonly nets: ReferenceNets
   readonly home: ReadonlyMap<string, number>
   /** Strip to the net that calls it home - the inverse of `home`. */
   readonly hosted: ReadonlyMap<number, string>
   /** Holes holding a lead, a wire end or a bridge. One lead per hole. */
   readonly taken: Set<string>
-  /** Scratch strip to the `<ref>.<pin>` that claimed it. One lead per scratch strip. */
+  /**
+   * Strip to the `<ref>.<pin>` of a lead that landed on it off its own net's
+   * home - so a strip no net hosts stops being scratch once one lead is on it.
+   */
   readonly claimed: Map<number, string>
   /** Net to every strip a lead of it landed on. */
   readonly landed: Map<string, Set<number>>
@@ -94,7 +134,16 @@ export function free(workspace: Workspace, hole: Hole): boolean {
   return onBoard(workspace, hole) && !workspace.taken.has(holeKey(hole))
 }
 
-/** A strip no net calls home and no lead has claimed. */
+/**
+ * A strip no net calls home and no lead has claimed.
+ *
+ * **IT IS THE CHEAP TIER AND NO LONGER THE ONLY ONE.** Before 2026-10-15 a
+ * stray lead that could not reach one of these had nowhere to go and the
+ * construction refused; now it may share an occupied strip and pay a cut for it
+ * (`./seed-fit.ts` tries this tier first for that reason). What the predicate
+ * itself says is unchanged, so a board that had a scratch strip to take still
+ * takes the same one.
+ */
 export function scratchFree(workspace: Workspace, strip: number): boolean {
   return (
     strip >= 0 &&
@@ -125,6 +174,34 @@ function record(workspace: Workspace, net: string, strip: number): void {
   const strips = workspace.landed.get(net)
   if (strips === undefined) workspace.landed.set(net, new Set([strip]))
   else strips.add(strip)
+}
+
+/**
+ * The first net these seats would leave interleaved on a strip they touch, or
+ * `null` when every net on every strip they touch stays in one run.
+ *
+ * This is the `Seat` side of `interleavingAfter`: it says which contact each
+ * lead would make and hands the question to `./seed-contacts.ts`. See this
+ * module's header for why interleaving is the constructor's refusal and not the
+ * model's.
+ */
+function interleavingAt(
+  placed: ReadonlyMap<number, readonly StripContact[]>,
+  part: SeedPart,
+  seated: readonly Seat[],
+): Interleaving | null {
+  const additions = new Map<number, StripContact[]>()
+  for (const { lead, hole } of seated) {
+    const contact: StripContact = {
+      column: hole.column,
+      net: lead.net,
+      owner: `${part.ref}.${lead.pin}`,
+    }
+    const already = additions.get(hole.strip)
+    if (already === undefined) additions.set(hole.strip, [contact])
+    else already.push(contact)
+  }
+  return interleavingAfter(placed, additions)
 }
 
 /**
@@ -168,8 +245,10 @@ function clusterDistance(workspace: Workspace, part: SeedPart, rect: Rect): numb
  * says where they are in the part's own frame, which is the frame the body
  * margins are stated in. A column is rejected outright - never ranked - when a
  * hole is taken or off the board, when the part's rectangle leaves the stock,
+ * when seating it would leave a net INTERLEAVED on one of the strips it lands on,
  * when it would put a lead under a rigid part, or when its area would overlap a
- * rigid part's. The last two are the owner's two hard geometric rules and they
+ * rigid part's. The interleaving rejection is D3a's and is argued in this
+ * module's header; the last two are the owner's two hard geometric rules and they
  * are rejections rather than tiers, because *"rigid parts shouldn't be routed
  * through/under"* and *"Rigid parts are rigid. You cant push them out of the way
  * or rout under them."* have no cheaper version. A formable part overlapping
@@ -185,12 +264,14 @@ export function chooseColumn(
   seatsAt: (column: number) => readonly Seat[],
 ): Position | undefined {
   let best: Position | undefined
+  const placed = contactsByStrip(workspace)
   for (let column = 0; column < workspace.grid.columns; column += 1) {
     const origin = originAt(column)
     const seated = seatsAt(column)
     if (!seated.every(({ hole }) => free(workspace, hole))) continue
     const rect = areaRect(framePins, part.body, origin, direction)
     if (!rectOnBoard(rect, workspace.grid.strips, workspace.grid.columns)) continue
+    if (interleavingAt(placed, part, seated) !== null) continue
     const area: PartArea = {
       ref: part.ref,
       rigid: part.rigid,
@@ -222,8 +303,14 @@ export function isBetter(a: Position, b: Position): boolean {
 }
 
 /**
- * Commit one placement: its holes become taken, its scratch strips claimed, its
- * rectangle recorded, and each lead's strip and column recorded against its net.
+ * Commit one placement: its holes become taken, every strip it reached off a
+ * net's own home claimed, its rectangle recorded, and each lead's strip and
+ * column recorded against its net.
+ *
+ * A lead that landed on ANOTHER net's home strip claims it too. That claim
+ * changes nothing for `scratchFree`, which already excludes a hosted strip; it
+ * is recorded so that one notion of "a lead is on this strip off its own home"
+ * covers both cases rather than two.
  */
 export function commit(workspace: Workspace, part: SeedPart, position: Position): void {
   const pins = new Map<string, Hole>()
@@ -277,7 +364,21 @@ const JOIN_WHY =
  * here.** The move generator has to make the same decision when a relocated
  * lead needs a wire back to its net, so the rule moved out to where both can
  * read it and the private copy was deleted. `Workspace` satisfies that module's
- * `JoinSite` structurally, which is why this call passes it unchanged.
+ * `JoinSite` structurally, which is why `joinSiteFor` in `./seed-contacts.ts`
+ * hands it on with one field replaced rather than adapted.
+ *
+ * **AND A JOIN END MAY NOT LAND IN ANOTHER NET'S RUN, which is a hole rule and
+ * not a ranking one.** A wire end and a bridge hole are significant contacts
+ * (`./cuts.ts`), so on a strip two nets share they decide where the cut falls. An
+ * end dropped inside the other net's run leaves this net's own leads on the far
+ * side of that cut - an OPEN, reported by `violationsOf` as a net in two
+ * components, which is exactly what the first run of the 2026-10-15 relaxation
+ * produced on five of the orderings measured. So `joinSiteFor` in
+ * `./seed-contacts.ts` marks every hole that would interleave as UNAVAILABLE and
+ * the ranking rule then chooses among what is left; when nothing is left the
+ * refusal below says so. **On a board where no strip carries two nets this
+ * filter is empty**, because adding a contact of the only net on a strip cannot
+ * interleave anything.
  */
 export function joinNets(workspace: Workspace, netlist: SeedNetlist): void {
   for (const net of [...netlist.nets.keys()].sort()) {
@@ -287,17 +388,20 @@ export function joinNets(workspace: Workspace, netlist: SeedNetlist): void {
       const previous = low
       low = high
       if (previous === undefined) continue
-      const column = joinColumnFor(workspace, previous, high)
+      const column = joinColumnFor(joinSiteFor(workspace, net, previous, high), previous, high)
       if (column === undefined) {
         refuse(
           "no-column-to-join",
           `net "${net}" has leads on strips ${previous} and ${high} and there is no column ` +
-            `where both strips still have a free hole, so neither a wire nor a bridge can be ` +
-            `put between them.\nThe stock is ${workspace.grid.strips} strips of ` +
-            `${workspace.grid.columns} holes and ordering "${workspace.ordering}" filled it.\n` +
-            `This is not skipped and no hole is shared: ${JOIN_WHY}, and a lead sharing a hole ` +
-            "with a wire end is what the owner asked not to build - \"I would prefer leads not " +
-            "share holes - it makes building easier\".",
+            `where both strips still have a free hole this join may use, so neither a wire nor ` +
+            `a bridge can be put between them.\nThe stock is ${workspace.grid.strips} strips of ` +
+            `${workspace.grid.columns} holes and ordering "${workspace.ordering}" filled it. A ` +
+            "hole is unusable to this join when it already holds a lead, a wire end or a " +
+            "bridge, and ALSO when putting this net's end there would leave a net interleaved " +
+            "on that strip - which is the case a strip carrying two nets adds (see this " +
+            `function's comment).\nThis is not skipped and no hole is shared: ${JOIN_WHY}, and ` +
+            "a lead sharing a hole with a wire end is what the owner asked not to build - \"I " +
+            "would prefer leads not share holes - it makes building easier\".",
         )
       }
       if (high - previous === 1) {
@@ -327,6 +431,7 @@ export function workspaceFor(
     grid,
     ordering: ordering.name,
     spans,
+    nets: netlist.nets,
     home,
     hosted: new Map([...home].map(([net, strip]) => [strip, net])),
     taken: new Set<string>(),

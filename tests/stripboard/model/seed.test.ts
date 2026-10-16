@@ -39,7 +39,7 @@
  *     `stripboard-seed-net-has-no-home`, `stripboard-seed-holes-shared` and
  *     `stripboard-seed-unsound`. All three are internal-defect guards -
  *     reachable only if `homeStripsFor`'s own ordering check, or the placer's
- *     hole set, or the home/scratch rule has a bug - so there is no well-formed
+ *     hole set, or its interleaving rejection has a bug - so there is no well-formed
  *     call that fires them, and a fixture that forced one would be testing a
  *     board this module cannot construct. The last two are the self-check
  *     `seedsFrom` runs on every seed it returns, so they execute on every test
@@ -66,18 +66,21 @@ import {
 
 /** A two-lead fixture part that reaches 2 to 6 holes. */
 const WIDE = "SYNTHETIC:Seed_TwoLead_Wide"
-/** A two-lead fixture part fixed at exactly 2 holes, as a 2.54mm header is. */
-const RIGID_PAIR = "SYNTHETIC:Seed_TwoLead_Pair"
 /** A three-terminal fixture part whose row is three holes long. */
 const TRIPLE = "SYNTHETIC:Seed_Triple_Row"
 /** A two-lead fixture part that reaches 2 to 4 holes and no further. */
 const NARROW = "SYNTHETIC:Seed_TwoLead_Narrow"
+/** A two-lead fixture part fixed at exactly 4 holes, so its two strips are three apart. */
+const FAR_PAIR = "SYNTHETIC:Seed_TwoLead_Far"
+/** A three-terminal fixture part whose outer pins are three steps apart. */
+const SPREAD_TRIPLE = "SYNTHETIC:Seed_Triple_Spread"
 
 const SPANS = new Map([
   [WIDE, syntheticSpan(WIDE, 2, 6)],
-  [RIGID_PAIR, syntheticSpan(RIGID_PAIR, 2, 2)],
   [TRIPLE, syntheticSpan(TRIPLE, 3, 3)],
   [NARROW, syntheticSpan(NARROW, 2, 4)],
+  [FAR_PAIR, syntheticSpan(FAR_PAIR, 4, 4)],
+  [SPREAD_TRIPLE, syntheticSpan(SPREAD_TRIPLE, 4, 4)],
 ])
 
 const SMALL = { strips: 8, columns: 8 } as const
@@ -165,12 +168,21 @@ test("a stray lead one strip from its own net's home is joined by a bridge, not 
 })
 
 test("an infeasible assignment refuses, naming the part and BOTH of its nets", () => {
-  // A pair fixed at two holes needs its two nets on ADJACENT strips, or a free
-  // strip beside one of them to put the stray lead on. Three nets fill a
-  // three-strip board, so IN and GND are two apart and the only strip between
-  // them is MID's home - which a lead of another net may never land on.
+  // A pair fixed at FOUR holes needs its two strips three apart. Three nets fill
+  // a three-strip board, IN and GND are two apart, and no strip on the stock is
+  // three from either of their homes - so the stray lead has nowhere to go in
+  // EITHER tier and the band is not met anywhere.
+  //
+  // **THE OLD FIXTURE REFUSED FOR A REASON THAT NO LONGER EXISTS**, and it is
+  // recorded rather than quietly replaced: it used a pair fixed at TWO holes,
+  // which left the one strip between IN and GND reachable, and relied on *"the
+  // only strip between them is MID's home - which a lead of another net may
+  // never land on."* After the 2026-10-15 relaxation a lead MAY land there, so
+  // that board now builds with a cut in it. What closes a placement off is now
+  // reach and interleaving; the interleaving half is asserted in
+  // `./seed-shared-strip.test.ts`, and this test keeps the reach half.
   const netlist = netlistOf([
-    twoLead("J1", RIGID_PAIR, ["1", "IN"], ["2", "GND"]),
+    twoLead("J1", FAR_PAIR, ["1", "IN"], ["2", "GND"]),
     twoLead("R1", WIDE, ["1", "MID"], ["2", "GND"]),
   ])
   const message = refusalFrom(() =>
@@ -182,30 +194,39 @@ test("an infeasible assignment refuses, naming the part and BOTH of its nets", (
   expect(message, "it names the part").toContain('"J1"')
   expect(message, "it names the first net").toContain('"IN"')
   expect(message, "it names the second net").toContain('"GND"')
-  expect(message, "it names the footprint").toContain(RIGID_PAIR)
-  expect(message, "it names the band that was not met").toContain("[2, 2]")
+  expect(message, "it names the footprint").toContain(FAR_PAIR)
+  expect(message, "it names the band that was not met").toContain("[4, 4]")
 })
 
 test("a moulded field with nowhere to go refuses, naming every terminal and its strip", () => {
   const netlist = netlistOf([
-    fixedField("Q1", TRIPLE, [
+    fixedField("Q1", SPREAD_TRIPLE, [
       { pin: "1", net: "A", alongSteps: 0, acrossSteps: 0 },
       { pin: "2", net: "B", alongSteps: 1, acrossSteps: 0 },
-      { pin: "3", net: "C", alongSteps: 2, acrossSteps: 0 },
+      { pin: "3", net: "C", alongSteps: 3, acrossSteps: 0 },
     ]),
   ])
-  // Three nets on three strips: every strip is some net's home, so there is no
-  // scratch strip at all, and the field's pins must land on A, B, C in pin order
-  // either forwards or backwards. `A, C, B` is neither, and nothing else is
-  // left. (`C, B, A` WOULD be seated, facing N - which is why the two
-  // directions are not decoration.)
+  // A moulded field whose outer pins are three steps apart needs FOUR strips,
+  // and this stock has three: every window, in both directions and from every
+  // starting strip, puts a pin off the board. The field is never reshaped, so
+  // there is nothing else to try.
+  //
+  // **THE OLD FIXTURE REFUSED FOR A REASON THAT NO LONGER EXISTS**, recorded
+  // rather than quietly replaced: a three-step field on three strips whose nets
+  // were ordered `A, C, B`, refused because *"every strip is some net's home, so
+  // there is no scratch strip at all"* and a pin on another net's home strip was
+  // forbidden. After the 2026-10-15 relaxation such a pin is admitted and pays a
+  // cut, so that board now seats the field across two shared strips. What a
+  // window is still held to is the board edge and, per column, interleaving.
   const message = refusalFrom(() =>
     seedsFrom(netlist, { strips: 3, columns: 8 }, SPANS, [ordering("packed", ["A", "C", "B"], 1)]),
   )
   expect(message).toStartWith("stripboard-seed-field-cannot-be-seated")
   expect(message, "it names the part").toContain('"Q1"')
   for (const net of ["A", "B", "C"]) expect(message, `it names net ${net}`).toContain(`"${net}"`)
-  expect(message, "it says how many windows were sound in strips").toContain("0 of the 6 windows")
+  expect(message, "it says how many windows put every pin on the stock").toContain(
+    "0 of the 6 windows",
+  )
 })
 
 test("several orderings yield several distinct seeds, in the order they were given", () => {

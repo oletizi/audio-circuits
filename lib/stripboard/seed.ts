@@ -16,24 +16,38 @@
  *
  *   1. each net gets a HOME STRIP from the ordering, at `index * stride`;
  *   2. a part's leads land on their own nets' home strips wherever its recorded
- *      span reaches that far, and otherwise on a SCRATCH strip - a strip no net
- *      calls home, claimed by exactly one lead;
+ *      span reaches that far; failing that on a SCRATCH strip - a strip no net
+ *      calls home, claimed by exactly one lead - and failing that on a strip
+ *      another net already occupies, which is admitted provided no net is left
+ *      INTERLEAVED on it;
  *   3. a net whose leads ended up on several strips has those strips joined,
  *      lowest to highest, by a solder bridge where they are adjacent and a wire
  *      where they are not.
  *
- * **SO NO STRIP EVER CARRIES TWO NETS' LEADS, AND EVERY SEED THIS MODULE
- * PRODUCES HAS ZERO CUTS.** That is a structural property rather than a lucky
- * measurement: `derivedCuts` cuts between adjacent runs of DIFFERENT nets on one
- * strip, a home strip holds only its own net and a scratch strip holds one lead,
- * so each strip is a single run. It is also what the cost function asks for -
- * `rho_w` is 0.25 in `stripboard/rules.json`, one cut for four wires, on the
- * owner's *"favor wires over cuts. cuts are harder and more error prone"* - and
- * the trade it makes is PAID IN BOARD AREA, which `OBJ1`'s closed term list does
- * not price. A seed here spreads across more strips than a person would use.
- * **That is a finding for the owner and not a defect to fix here**: adding an
- * area or wire-length term would be authoring a criterion, and `OBJ2` forbids a
- * tidiness term outright.
+ * **A STRIP MAY THEREFORE CARRY SEVERAL NETS, AND THE CUTS THAT PART THEM ARE
+ * DERIVED RATHER THAN PLANNED** - `derivedCuts` cuts between adjacent runs of
+ * DIFFERENT nets on one strip, and this module neither counts those cuts nor
+ * prices them.
+ *
+ * **THE SENTENCE THIS REPLACES IS STRUCK RATHER THAN DELETED, because it is why
+ * the module was built as it was:** ~~*"SO NO STRIP EVER CARRIES TWO NETS'
+ * LEADS, AND EVERY SEED THIS MODULE PRODUCES HAS ZERO CUTS"*~~ - stated here as
+ * a structural property of the home/scratch rule, and true of this construction
+ * until 2026-10-15. It made a Pultec board impossible to express, and the owner
+ * corrected the premise under it: ***"Zero cuts was never a requirement. I have
+ * an overwhelmingly strong preference for AS FEW CUTS AS POSSIBLE. That does not
+ * nor has it ever meant zero cuts is a requirement."***
+ *
+ * **SO "AS FEW AS POSSIBLE" IS THE OBJECTIVE'S BUSINESS AND NO NEW CRITERION
+ * FOLLOWS.** `stripboard/rules.json` already prices a cut at 1.0 against 0.25
+ * for a wire or a bridge - the owner's *"favor wires over cuts. cuts are harder
+ * and more error prone"* - so the three shapes in step 2 are tried in that
+ * committed price order and nothing here ranks the result. What the construction
+ * still does NOT price is BOARD AREA, which `OBJ1`'s closed term list leaves out,
+ * so a seed here spreads across more strips than a person would use. **That is a
+ * finding for the owner and not a defect to fix here**: adding an area or
+ * wire-length term would be authoring a criterion, and `OBJ2` forbids a tidiness
+ * term outright.
  *
  * **WHAT IS CHECKED BEFORE A PLACEMENT IS COMMITTED**, after the owner's rulings:
  *
@@ -54,6 +68,13 @@
  *     choice and not the owner's practice;
  *   - **the board edge** - every hole inside the declared stock, and every part's
  *     whole rectangle too;
+ *   - **no net left interleaved on a strip the part lands on** - `interleavingOn`
+ *     in `./separable.ts`, applied per candidate column in `./seed-place.ts`.
+ *     Interleaving is not electrically illegal, and the refusal is not a claim
+ *     that it is: a wire could rejoin the two runs, but `joinNets` below joins a
+ *     net's STRIPS rather than two runs on one strip, so a seed carrying one
+ *     would hand the search a board its own joiner cannot finish. `violationsOf`
+ *     remains the authority on soundness and is unchanged;
  *   - **nothing routed under a rigid part** - the owner, 2026-10-14: *"Rigid
  *     parts shouldn't be routed through/under."* Checked per candidate column in
  *     `./seed-place.ts` and checked again over the finished board below; his own
@@ -145,8 +166,9 @@ function seedFrom(
  * than argued for.**
  *
  * The construction is meant to make both impossible - one lead per hole is
- * enforced by the `taken` set, and one net per strip is what the home/scratch
- * rule buys - and that is exactly why they are checked: *"a skipped check must
+ * enforced by the `taken` set, and a net whole in one component is what the
+ * interleaving rejection plus `joinNets` buys - and that is exactly why they are
+ * checked: *"a skipped check must
  * never look like a passing one"*, and a structural argument that has gone
  * stale looks precisely like a sound one. A seed the optimizer must repair is a
  * decision that should never have been accepted, so a failure here refuses
@@ -179,9 +201,10 @@ function checkSeed(candidate: Candidate, reference: ReferenceNets, ordering: Ord
     "unsound",
     `ordering "${ordering.name}" produced a board that does not realise the netlist:\n` +
       `${describeViolations(violations).map((line) => `  ${line}`).join("\n")}\n` +
-      "This construction is meant to make both violations impossible - every lead lands on its " +
-      "own net's strip or on a strip claimed by nothing else, and every net's strips are joined " +
-      "- so a violation here is a defect in lib/stripboard/seed-place.ts.\nIt is refused rather " +
+      "This construction is meant to make both violations impossible - no lead lands where it " +
+      "would leave a net interleaved on a strip, so every net is in one run on each strip it " +
+      "touches and every net's strips are joined - so a violation here is a defect in " +
+      "lib/stripboard/seed-place.ts.\nIt is refused rather " +
       "than returned: a seed the search has to repair is a decision that should never have been " +
       "accepted, and a search handed an unsound seed reports the fault as a defect in whichever " +
       "move it was holding at the time.",
