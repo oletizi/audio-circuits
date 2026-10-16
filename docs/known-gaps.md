@@ -99,11 +99,51 @@ refuses on its first capacitor:
 > `this verb starts from.`
 
 **C18 is the first instance and not the only one.** On `rcm s0`, five of the
-seventeen two-lead parts need a LONGER span than the base is at and seven need
-a SHORTER one. **Every separation the candidate asks for is inside the model's
-own recorded range for that footprint**, so this is not a candidate bending a
-lead further than the part allows - it is two records of one part's span that
-nobody keeps in step.
+**FIFTEEN** two-lead parts need a LONGER span than the base is at, seven need a
+SHORTER one, and three already agree. **Every separation the candidate asks for
+is inside the model's own recorded range for that footprint**, so this is not a
+candidate bending a lead further than the part allows - it is two records of one
+part's span that nobody keeps in step.
+
+**THE COUNT WAS WRONG UNTIL 2026-10-16 and the table is now inline**, because
+the one load-bearing scoping claim for the fix was uncheckable from this
+register. It read *"seventeen two-lead parts"*, which conflated the board's 17
+PARTS with its two-lead parts; the Task 1 reviewer caught it by counting the
+`.vrt`. The board holds **15 two-lead parts + 2 SIP headers = 17 parts, plus 10
+pads = 27 placements**, which is the figure the evidence line below cites. The
+controller carried the wrong number into the implementation plan as well, and
+corrected it there in the same change.
+
+| ref | candidate wants | committed base is at | `--import` base is at |
+| --- | --- | --- | --- |
+| C18 | 3 | 2 | 2 |
+| C19 | 3 | 2 | 2 |
+| C20 | 3 | 2 | 2 |
+| C21 | 3 | 2 | 2 |
+| C22 | 2 | 2 | 2 |
+| C23 | 1 | 2 | 2 |
+| R2 | 1 | 2 | 4 |
+| SI_HI_BOOST_RV_HI_BOOST.ccw-wiper | 1 | 4 | 4 |
+| SI_HI_BOOST_RV_HI_BOOST.wiper-cw | 2 | 4 | 4 |
+| SI_HI_CUT_C26 | 3 | 2 | 2 |
+| SI_HI_CUT_R1 | 1 | 4 | 4 |
+| SI_HI_CUT_RV_HI_CUT.ccw-wiper | 3 | 4 | 4 |
+| SI_HI_CUT_RV_HI_CUT.wiper-cw | 4 | 4 | 4 |
+| SI_LOW_CUT_RV_LO_CUT.ccw-wiper | 2 | 4 | 4 |
+| SI_MID_R_MID_SHUNT | 4 | 4 | 4 |
+
+Separation in holes; `LEAD_SPANS` records both film-cap footprints at
+`minSpanHoles 2 … maxSpanHoles 4` and the axial resistor at `2 … 16`, and a
+separation of `n` holes is `n + 1` span holes.
+
+**The two SIP headers are NOT in that table and the span step will still run
+over them.** `junction_grounds` and `junction_signals` are `Conn_01x05`, COMP
+type `SIP`, with nets assigned - exactly the type whose `Stretch` reallocates
+pins (constraint 1). **They are safe for a reason that must be stated rather
+than assumed:** `LEAD_SPANS` records the 1x05 header as RIGID at 5 holes
+(`lib/kicad/lead-span.ts:317-322`), which is the length the SIP constructor
+already builds it at (`Component.h:120-126`), so the required length equals the
+current one and no stretch is attempted.
 
 - **Found** `2026-10-16-pultec-five-boards`, Task 3, on the first real
   materialisation.
@@ -127,15 +167,25 @@ nobody keeps in step.
   (`Headless_materialize_place.cpp:388-437`) derives a span from the document,
   takes the component off, stretches it to that span with a named refusal when
   it stops short, and puts it down.
-- **FIVE CONSTRAINTS ON THE FIX**, established by reading the fork rather than
+- **SIX CONSTRAINTS ON THE FIX**, established by reading the fork rather than
   by running it:
   1. `Component::CanStretch` (`Component.h:578-592`) returns
      `!GetHasAssignedPins()` for `SIP`, `DIP`, `STRIP_100`, `BLOCK_100`,
      `BLOCK_200` and the three switch types, and `Component::Stretch`
-     (`:594-611`) calls `AllocatePins(...)` for exactly those - which discards
-     the nodeIds `PutDown` reads a net from. **A moulded pin field must be
-     refused, not stretched.** Every part in the table above is in `Stretch`'s
-     `default:` branch.
+     (`:594-611`) calls `AllocatePins(...)` for exactly those - which resets
+     `m_nodeIdPins` to `BAD_NODEID` (`:298-309`), and `PutDown` writes each
+     hole's net from `comp.GetNodeId(pinIndex)`
+     (`Board_components.cpp:516-523`). **Stretching a moulded pin field is
+     therefore SILENT NET LOSS, not a refusal.**
+
+     **The rule is NOT "refuse any moulded part".** Worded that way - as it was
+     until 2026-10-16 - an implementation refuses low-boost on
+     `junction_grounds`, which needs no change at all. The rule is: **derive
+     the required length, compare it with the current one, and refuse only when
+     they DIFFER for a type whose `Stretch` reallocates pins.** Every part in
+     the span table above is in `Stretch`'s `default:` branch and reallocates
+     nothing; the two parts that are not in that table are the SIP headers,
+     whose required length already equals their current one.
   2. `FootPrint::CanStretch` (`FootPrint.h:55-93`) bounds the length by
      `CompTypes::GetMinLength`/`GetMaxLength`, and `FootPrint::Stretch`
      (`:104-106`) **asserts** `CanStretch`. A required length outside the type's
@@ -153,6 +203,23 @@ nobody keeps in step.
      `Headless_materialize_apply.cpp:306-310` - the last of which hands the
      caller *"Stretch the part on the board this verb starts from"* as a remedy
      that would then be wrong.
+  6. **THE TURN LOOP CARRIES ITS MUTATION, and a stretch written naively inside
+     it puts down a wrongly-lengthed footprint.** `SolvePlacement` keeps
+     iterating all four facings AFTER the first fit, in order to detect two
+     turns occupying different rectangles (`place.cpp:87-118`, `:138-145`), and
+     records `bestRow`/`bestCol`/`bestDirection` from the FIRST fit only
+     (`:117`). It mutates the component in the loop (`comp.SetDirection`,
+     `:88`), and `PlaceTarget` restores only the DIRECTION afterwards (`:161`).
+     So a stretch added inside that loop leaves the footprint at whatever length
+     the LAST facing tried needed, not the length the CHOSEN facing needs, and
+     `PutDown` (`:183`) places that. **It is not silent** - PHASE 7's grid read
+     (`apply.cpp:284-312`) catches it as a named refusal - but it fails
+     confusingly. The solve must return the required length alongside the turn,
+     or the winning length must be re-applied before `PutDown`.
+
+     Found by the Task 1 REVIEWER, not by the task: the five constraints above
+     were all read off the stretch machinery, and this one lives in the loop
+     that calls it.
 - **A witness exists.** `tests/stripboard/materialize-span.test.ts` materialises
   low-boost on `rcm s0` against the committed board and asserts this refusal.
   **It PASSES while this gap is open and goes red when the gap closes, at which

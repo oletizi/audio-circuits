@@ -79,9 +79,18 @@ test("materialising low-boost refuses on the first span disagreement", async () 
 - Consumes: Task 1's finding file, which says whether and where the span may be set.
 - Produces: a materialised low-boost whose figures equal the model's.
 
-**The defect (G12).** `--materialize` takes the component SET from a base `.vrt` and solves each part's facing against THAT board's footprints, which carry whatever span they were last at. The candidate declares its own lead separation. Nothing reconciles them. On `rcm s0`, **five of seventeen two-lead parts want a LONGER span than the base holds and seven want a SHORTER one** — and every separation asked for is inside the model's recorded range (`LEAD_SPANS`: both film-cap footprints `minSpanHoles 2 … maxSpanHoles 4`, the axial resistor `2 … 16`; a separation of `n` holes is `n + 1` span holes). **This is not a candidate bending a lead too far.**
+**The defect (G12).** `--materialize` takes the component SET from a base `.vrt` and solves each part's facing against THAT board's footprints, which carry whatever span they were last at. The candidate declares its own lead separation. Nothing reconciles them. On `rcm s0`, **five of FIFTEEN two-lead parts want a LONGER span than the base holds, seven want a SHORTER one, and three already agree** — and every separation asked for is inside the model's recorded range (`LEAD_SPANS`: both film-cap footprints `minSpanHoles 2 … maxSpanHoles 4`, the axial resistor `2 … 16`; a separation of `n` holes is `n + 1` span holes). **This is not a candidate bending a lead too far.**
 
-**The constraint (G13).** A span cannot be changed on a packed board: six of seven placed parts refuse `--stretch` on the committed layout, and every GROW refuses on an `--import` board. Setting the span during the turn search is what avoids this — the part is being positioned, not put back.
+**CORRECTED 2026-10-16:** this plan said "seventeen two-lead parts", which conflated the board's 17 PARTS with its two-lead parts. It is 15 two-lead parts + 2 SIP headers = 17 parts, plus 10 pads = 27 placements. The inline table now lives in G12 of `docs/known-gaps.md`; **read it there rather than trusting a count in prose.**
+
+**G13 is NOT a constraint on this task, and the plan was wrong to say it was.** Task 1 established that `MaterializeLayout`'s phase 2 calls `board.FloatAllComps()` (`Headless_materialize_apply.cpp:369`) before the turn search, so every part is already off the board and `PlaceTarget`'s single `PutDown` (`place.cpp:183`) is the document's own placement. **There is no "put it back", which is the entirety of G13.** G13 remains true of `--stretch` and `--move`, and its register heading was corrected to say so.
+
+**`--materialize` already does this gesture for WIRES**, so this task is a PORT, not an invention: `PlaceDeclaredWire` (`place.cpp:388-437`) derives a span from the document, takes the component off, stretches it with a named refusal when it stops short, bounds-checks against `GRID`, and puts it down.
+
+**READ ALL SIX CONSTRAINTS in G12 of `docs/known-gaps.md` before writing anything.** Two of them will cost you a day if you meet them by surprise:
+
+- **Constraint 1 is not "refuse any moulded part".** The two SIP headers on this board (`junction_grounds`, `junction_signals`) are exactly the type whose `Stretch` reallocates pins and loses nets silently — and they need no change, because their required length already equals their current one. Derive, compare, and refuse only on a DIFFERENCE.
+- **Constraint 6 is the trap.** The turn loop keeps iterating after the first fit and records the best from the first, so a stretch written naively inside it leaves the footprint at the LAST facing's length.
 
 **What must NOT happen.** A span outside the model's recorded range for that footprint must still refuse. Reconciling two records of one part's span is not permission to bend a lead further than the part allows.
 
