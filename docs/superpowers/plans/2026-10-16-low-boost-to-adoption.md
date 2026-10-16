@@ -248,6 +248,10 @@ VeroRoute (`make edit`), save, then run this again.
 - [ ] **Step 4: Implement the producer.** Every hash is computed, never copied.
 - [ ] **Step 5: Perturb each recorded field in turn** and confirm the corresponding check refuses by name. **A manifest that satisfies a gate because the gate cannot see it is the defect this repository punishes hardest.**
 - [ ] **Step 6: Adopt low-boost**, then run `make -C boards/pultec-low-boost check` and report its output verbatim, pass or fail.
+
+  **CARRIED FROM TASK 2, and look for it specifically.** `--materialize` now leaves a part at a span the base board never had, and it deliberately does NOT call `AdoptCurrentSpanAsDeclared` — the fork's own comment at `Component.h:330-348` says *"a bend is exactly the case where the declared span must stay put"*, and `SetDeclaredSpanCols(int)` was removed so nobody can add it to the stretch path. **So a materialised part's CURRENT span can legitimately differ from its DECLARED one, which the fork calls a bend, and `--check --netlist` and `--update` report span changes.**
+
+  That is the fork working, not drift. What is unmeasured is **what `make check` does about it on a real board**, and this step is the first time anyone finds out. Task 2's reviewer judged that recording this as a register entry would have been recording a guess, and that it belongs here instead — which is why it is written into this step rather than into `docs/known-gaps.md`. **If it bites, it becomes a register entry with evidence, not before.**
 - [ ] **Step 7: Commit.**
 
 ---
