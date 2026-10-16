@@ -504,3 +504,44 @@ the date.)
   layer had put "Lead length (mm)" over columns that are actually lead
   SPACE. The 2026-09-30 lesson said this for dimension drawings; it applies
   to tables too, and a misread header is the quieter error of the two.
+- 2026-10-16: **There is no genuine 0.1 uF ceramic DISC at 2.5 mm lead
+  spacing.** Searching Mouser for ceramic discs at 0.1 uF with a 2.5LS /
+  2.54 mm keyword returns only radial-dipped MLCCs; Walsin's disc (YP) family
+  reaches 0.1 uF only at 5 mm lead spacing, and its 2.5LS disc rows stop at
+  0.01 uF. So a `C_Disc_D5.0mm_W2.5mm_P2.50mm` line at 0.1 uF is filled by a
+  radial-dipped multilayer part, which is what that pitch is actually sold at
+  - record it as the MLCC it is, not as a disc.
+- 2026-10-16: **Vishay BCcomponents' K Series is the radial MLCC family whose
+  datasheet states every dimension a lead-span derivation needs**, and its
+  ordering code carries them: document 45171 (Rev. 05-Sep-2025, readable
+  directly at `vishay.com/docs/45171/kseries.pdf`) gives a body table per size
+  code (15 = Wb 4.0 / H 4.0 / T 2.6 mm max), a maximum seating height per lead
+  style (L2 = 1.6 mm), lead spacing with tolerance from the outline drawings
+  (2.5 +- 0.8 mm), lead diameter in the DESIGN section and ordering-code digit
+  12 (0.50 +- 0.05 mm), and lead length in a note under the dimension table
+  ("Bulk packed types have a standard lead length L = 30 mm +- 5 mm"). The
+  code `K<cap><tol><size><TC><volts><leadDia><packaging><leadStyle><spacing>`
+  decodes completely, e.g. `K104K15X7RF53L2` = 100 nF, 10 %, size 15, X7R,
+  50 V, 0.50 mm leads, bulk, straight, 2.5 mm. KEMET's C315/C320, KYOCERA
+  AVX's SR155/AR155 and Vishay/Sprague's 1C10 cover the same value and pitch
+  but each is 2x-3x the price, and none of their datasheets gave lead length.
+- 2026-10-16: **The catalog has no spec field for body thickness, lead
+  diameter or lead length.** `Specs` in `tools/bom/catalog.ts` carries one body
+  dimension (`diameterMm`) and `leadSpacingMm`, and an `evidence` entry is
+  rejected unless its `spec` is a known field or `mpn` - so a part's thickness,
+  lead diameter and lead length cannot be recorded as specs at all. Put them in
+  `why`, each with the document and table named, and say in the report that is
+  where they are. A rectangular dipped body also has no diameter: record `Wb`
+  (the width across the lead axis, the dimension a `C_Disc` footprint's `D`
+  constrains) as `diameterMm` and say so in the evidence note.
+- 2026-10-16: **`make bom`'s refusals are ordered, and a board can be blocked
+  before any line is graded.** On `boards/pt2399-core` it refuses first for a
+  missing `bom.json` (printing the skeleton), then for the circuit module's
+  missing `bomConditions()` export - and `tools/bom/footprints.ts` knows
+  neither `C_Disc_D5.0mm_W2.5mm_P2.50mm` nor `Package_DIP:DIP-16_W7.62mm`,
+  while `UNSUPPORTED_KINDS` in `tools/bom/needs.ts` still refuses kind `ic`.
+  A line key therefore cannot always be confirmed by running the tool. Derive
+  it from `lineKey` in `tools/bom/needs.ts` (`<kind> <value> [<taper>]
+  [<partType>] <footprint-without-library>`, with the value as
+  `lib/kicad/value-notation.ts`'s `valueFor` spells it - ".1uF", not "100nF")
+  and report that it is unverified rather than implying the line is met.
