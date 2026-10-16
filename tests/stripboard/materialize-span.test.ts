@@ -25,11 +25,13 @@
  * and measuring it is the independent half, because it measures the FILE a later
  * step consumes rather than the in-memory board the verb verified.
  *
- * **THE SEPARATION, NOT THE SPAN, IS WHAT IS COMPARED.** A part's separation is
- * the distance in holes between its two leads; the footprint's span is one hole
- * more. The candidate and the dump are both read for separations here, so no
- * conversion is done in this file and neither side's convention has to be
- * restated.
+ * **THE HOLES ARE WHAT IS COMPARED, NOT THE SPAN AND NOT EVEN THE SEPARATION.**
+ * A part's separation is the distance in holes between its two leads and the
+ * footprint's span is one hole more, so comparing either would need a convention
+ * restated on both sides - and a separation is a Manhattan distance, which a
+ * diagonal displacement of the same total would satisfy. Both sides are read for
+ * the two HOLES instead, as an unordered pair, and the separation is carried only
+ * so a failure says by how much.
  *
  * **IT DOES NOT SKIP WHEN THE FORK IS UNAVAILABLE.** `spawnSync` failing is a
  * loud throw naming the binary, because a skipped check that looks like a
@@ -151,23 +153,39 @@ function runFork(args: readonly string[]): { status: number; stdout: string; std
 }
 
 /**
- * The separation in holes between a placement's two declared leads.
+ * What a two-lead placement declares: the two holes, and how far apart they are.
  *
- * Refuses a placement that is not two-lead rather than returning a number for
- * it: the caller filters on the lead count, so reaching here with another count
- * would mean the filter and this function disagree, and a Chebyshev-like
- * fallback over three holes would quietly answer a question nobody asked.
+ * **THE HOLES ARE WHAT IS COMPARED, AND THE SEPARATION IS ONLY REPORTED.** A
+ * separation is a Manhattan distance, which does not distinguish a diagonal
+ * displacement of the same total from the arrangement the document asked for -
+ * so asserting it alone would be a weaker claim than this test's name. The holes
+ * are compared as an unordered pair (two holes, not pin 1 and pin 2: which pin
+ * of a two-terminal passive sits in which end is a fact about the fitted part's
+ * polarity, which the fork's own facing solve is entitled to choose), and the
+ * separation is carried alongside so a failure message says by how much.
+ *
+ * Refuses a placement that is not two-lead rather than answering for it: the
+ * caller filters on the lead count, so reaching here with another count would
+ * mean the filter and this function disagree.
  */
-function declaredSeparation(ref: string, holes: readonly { strip: number; column: number }[]): number {
+interface TwoLead {
+  readonly holes: readonly string[]
+  readonly separation: number
+}
+
+function twoLeadOf(ref: string, holes: readonly { strip: number; column: number }[]): TwoLead {
   const [a, b] = holes
-  if (a === undefined || b === undefined) {
+  if (a === undefined || b === undefined || holes.length !== 2) {
     throw new Error(
-      `${ref} reached declaredSeparation with ${holes.length} declared leads, and a separation ` +
-        "is a fact about exactly two. The caller filters on the lead count, so this is a defect " +
-        "in that filter rather than in the candidate; nothing is substituted.",
+      `${ref} reached twoLeadOf with ${holes.length} declared leads, and this is a fact about ` +
+        "exactly two. The caller filters on the lead count, so this is a defect in that filter " +
+        "rather than in the candidate; nothing is substituted.",
     )
   }
-  return Math.abs(a.strip - b.strip) + Math.abs(a.column - b.column)
+  return {
+    holes: [`${a.strip},${a.column}`, `${b.strip},${b.column}`].sort(),
+    separation: Math.abs(a.strip - b.strip) + Math.abs(a.column - b.column),
+  }
 }
 
 /**
@@ -179,7 +197,7 @@ function declaredSeparation(ref: string, holes: readonly { strip: number; column
  */
 function materializeLowBoost(): {
   readonly dump: BoardDump
-  readonly declared: ReadonlyMap<string, number>
+  readonly declared: ReadonlyMap<string, TwoLead>
   readonly candidate: Candidate
   readonly reference: ReferenceNets
 } {
@@ -203,11 +221,26 @@ function materializeLowBoost(): {
         `just written, so what went onto it cannot be read back.\n${run.stderr}${run.stdout}`,
     )
   }
-  const declared = new Map<string, number>()
+  // **THE MAP REFUSES A COLLISION RATHER THAN COLLAPSING INTO ONE ENTRY.** The
+  // premise below asserts a COUNT, and keying by ref without this check would let
+  // two placements sharing a ref under-count it - a quieter failure than the one
+  // the premise exists to catch, and the one spot in this file that was out of
+  // step with the rest of it. `vero-import.ts`'s pads are the real case where one
+  // ref carries several placements, so this is not hypothetical, only filtered
+  // out above.
+  const declared = new Map<string, TwoLead>()
   for (const placement of candidate.placements) {
     if (placement.footprint === OFF_BOARD_TERMINAL) continue
     if (placement.pins.size !== 2) continue
-    declared.set(placement.ref, declaredSeparation(placement.ref, [...placement.pins.values()]))
+    if (declared.has(placement.ref)) {
+      throw new Error(
+        `the candidate carries two two-lead placements both called "${placement.ref}", so the ` +
+          "separations below cannot be keyed by ref and the count asserted as the premise " +
+          "would silently be one short. Nothing is merged: two placements with one ref is a " +
+          "statement about the candidate that this test is not the place to resolve.",
+      )
+    }
+    declared.set(placement.ref, twoLeadOf(placement.ref, [...placement.pins.values()]))
   }
   return { dump: parseBoardDump(run.stdout), declared, candidate, reference }
 }
@@ -217,7 +250,7 @@ test("every two-lead part materialises at the separation the document declares",
   expect(declared.size, "the premise: low-boost places fifteen two-lead parts").toBe(
     TWO_LEAD_PARTS,
   )
-  for (const [ref, separation] of declared) {
+  for (const [ref, lead] of declared) {
     const pins = dump.pins[ref]
     if (pins === undefined || pins.length !== 2) {
       throw new Error(
@@ -231,10 +264,11 @@ test("every two-lead part materialises at the separation the document declares",
     if (a === undefined || b === undefined) {
       throw new Error(`${ref} reported two PIN lines and one of them could not be read back.`)
     }
+    const onBoard = [`${a.row},${a.col}`, `${b.row},${b.col}`].sort()
     expect(
-      Math.abs(a.row - b.row) + Math.abs(a.col - b.col),
-      `${ref} is on the board at the separation the document declares`,
-    ).toBe(separation)
+      onBoard,
+      `${ref} is in the two holes the document declares, ${lead.separation} apart`,
+    ).toEqual([...lead.holes])
   }
 })
 
