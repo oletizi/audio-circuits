@@ -153,6 +153,42 @@ exercised on the transistor-preamp boards.
 - **Why it is open** predicted, not yet observed.
 - **What would settle it** a packet build on a materialised Pultec board.
 
+### G11 - a pad's hole is checked against the grid only when something draws it
+
+The guide refuses a pad whose hole is outside the dump's `GRID`
+(`guide-pad-off-board`, added in Task 2's fix round). Nothing else does. The
+IMPORT path reads `dump.grid` only to build the candidate's grid
+(`tools/stripboard/vero-import.ts:408`) and never tests a pad hole against it;
+the export path writes the `GRID` line and bound-checks nothing.
+
+**The nuance matters, and the first report of this was wider than the truth.**
+The CONSTRUCTION path does keep pads on the board - `onBoard`
+(`lib/stripboard/seed-place.ts:135`) is a workspace containment check applied
+while a seed is built, and `seed-homes.ts:32` documents the board edge as a
+constraint the placer respects. So a pad the search places cannot be off the
+board. The gap is that the import path does not VERIFY what the construction
+path guarantees, which matters for a dump that came from somewhere else: a
+hand-edited file, an older build, or a board a person moved parts around in.
+
+Consequence: such a pad surfaces when someone draws a guide, rather than when
+the board is imported or exported.
+
+- **Found** `2026-10-16-pultec-five-boards`, Task 2 fix round, raised by the
+  implementer as being wider than its remit.
+- **Evidence** `grep -n 'rows\|cols\|bounds\|GRID'` over
+  `tools/stripboard/vero-import.ts` and `vero-export.ts` finds only the two
+  construction/emission lines above; `onBoard` at
+  `lib/stripboard/seed-place.ts:135` is the construction-side check.
+- **Verified** yes - the controller read both paths, and NARROWED the claim from
+  what was reported.
+- **Why it is open** Task 2's remit was the guide. Where this check belongs is a
+  design question: the importer, the exporter, the model's own rule set, or more
+  than one.
+- **What would settle it** a decision on which layer owns hole containment for
+  an imported board, then the guard with a perturbation. Task 3 materialises and
+  re-imports a real board, so it may produce evidence about whether this is
+  reachable in practice.
+
 ### G6 - `tests/stripboard/model/seed-room.test.ts` is 760 lines
 
 Against this repository's 300-500 line ceiling.
