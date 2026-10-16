@@ -116,9 +116,53 @@ nobody keeps in step.
   the fork - is a design question.
 - **What would settle it** a step that sets each base part's span from the
   candidate before `--materialize` runs, with a perturbation proving it fires.
-  **It is not independent of G13**, which constrains how it can be written.
+- **WHERE THE STEP BELONGS IS SETTLED, 2026-10-16.** It belongs inside
+  `--materialize`'s own turn search, and **not** in a preparation pass: the
+  turn search reads the component's current footprint through
+  `PinOffsets(comp, offsets)` at
+  `.tools/veroroute-perfboard/Src/Headless_materialize_place.cpp:91`, inside the
+  `for ( char direction : kDirections )` loop at `:87-118`, and the component is
+  FLOATING at that moment - see the narrowing recorded under G13.
+  `--materialize` already does the same gesture for wires: `PlaceDeclaredWire`
+  (`Headless_materialize_place.cpp:388-437`) derives a span from the document,
+  takes the component off, stretches it to that span with a named refusal when
+  it stops short, and puts it down.
+- **FIVE CONSTRAINTS ON THE FIX**, established by reading the fork rather than
+  by running it:
+  1. `Component::CanStretch` (`Component.h:578-592`) returns
+     `!GetHasAssignedPins()` for `SIP`, `DIP`, `STRIP_100`, `BLOCK_100`,
+     `BLOCK_200` and the three switch types, and `Component::Stretch`
+     (`:594-611`) calls `AllocatePins(...)` for exactly those - which discards
+     the nodeIds `PutDown` reads a net from. **A moulded pin field must be
+     refused, not stretched.** Every part in the table above is in `Stretch`'s
+     `default:` branch.
+  2. `FootPrint::CanStretch` (`FootPrint.h:55-93`) bounds the length by
+     `CompTypes::GetMinLength`/`GetMaxLength`, and `FootPrint::Stretch`
+     (`:104-106`) **asserts** `CanStretch`. A required length outside the type's
+     range must refuse by name rather than assert-fail or spin.
+  3. `AdoptCurrentSpanAsDeclared` (`Component.h:330-348`) is deliberately not
+     called by `Stretch` - *"a bend is exactly the case where the declared span
+     must stay put"* - so a materialise-time stretch must leave
+     `m_declaredSpanCols` alone, which calling `Stretch` gets for free.
+  4. `Stretch` acts on the UNTURNED `GetCols()` while the turn search reads
+     `GetCompCols()` = `GetCols( GetDirection() )` (`Component.h:484-485`), so
+     the required length is derived PER TURN.
+  5. Three places in the fork assert that this verb never stretches and go
+     stale in the same change: `Headless_materialize.h:98-101`,
+     `Headless_materialize_place.cpp:129-133`, and
+     `Headless_materialize_apply.cpp:306-310` - the last of which hands the
+     caller *"Stretch the part on the board this verb starts from"* as a remedy
+     that would then be wrong.
+- **A witness exists.** `tests/stripboard/materialize-span.test.ts` materialises
+  low-boost on `rcm s0` against the committed board and asserts this refusal.
+  **It PASSES while this gap is open and goes red when the gap closes, at which
+  point it is DELETED rather than inverted** - its own comment says so.
 
-### G13 - a part's span cannot be changed on a packed board, so the span step needs an ordering
+### G13 - `--stretch` cannot change a part's span on a packed board
+
+**Read the narrowing at the end of this entry before relying on it.** As first
+written this entry claimed the span step needs an ordering; that claim is true of
+`--stretch` and false of `--materialize`.
 
 `--stretch` takes the part off, changes it, and refuses when it cannot put it
 back. Both boards a materialisation could start from are packed, so the gesture
@@ -142,6 +186,29 @@ free, and a destination outside the board's `GRID` (the `--import` board is
 - **Why it is open** it is the constraint on G12's fix rather than a defect of
   its own, and naming it was the point.
 - **What would settle it** G12's step, written so the ordering is part of it.
+- **NARROWED, 2026-10-16, by reading the fork.** This entry is true of
+  `--stretch` and **is not true of `--materialize`**, so it does not constrain
+  G12's fix the way the sentence above expected. `MaterializeLayout`'s PHASE 2
+  calls `board.FloatAllComps()` at
+  `.tools/veroroute-perfboard/Src/Headless_materialize_apply.cpp:369` -
+  `Board::FloatAllComps` (`Board_components.cpp:781-784`) is `TakeOff` on every
+  component in the manager - and `WipeCopper` on the line after it. By the time
+  the turn search runs in PHASE 4, **every part is already off the board and the
+  copper carries no nets**, and `PlaceTarget`
+  (`Headless_materialize_place.cpp:154-190`) performs the single `Board::PutDown`
+  of the run at the hole the document declares. There is no "put it back", which
+  is the gesture this entry is about. A span set inside the turn search therefore
+  needs no spread-first ordering.
+  - **What survives of it:** `PlaceTarget`'s `PutDown` (`place.cpp:183`) can
+    still refuse a longer footprint that overlaps a hole an earlier target
+    claimed. That is a NAMED refusal with nothing written and nothing left
+    floating - not this entry's silent float - and the rectangle after a stretch
+    is the one the document declares, which is the rectangle the model's own
+    overlap checks were run over. Today's rectangle is whatever the base `.vrt`
+    was left at, which the model has never checked anything against.
+  - **The entry stays open** because `--stretch` and `--move` still behave
+    exactly as recorded, and anything that reaches for them as the span step
+    will still hit this. It is no longer a blocker on G12.
 
 ### G14 - a materialised board carries no net names, so the checklist cannot be built
 
