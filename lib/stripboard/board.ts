@@ -184,10 +184,31 @@ const holeKey = (hole: Hole): string => `${hole.strip},${hole.column}`
  * reports a clash to a human needs.
  *
  * A placement's own hole list is read as a SET, so a hole mentioned twice in
- * one list is not a part clashing with itself. Two placements sharing one
- * `ref` are not checked for: that is a malformed candidate rather than an
- * overlap, and this function would report it as a part clashing with itself
- * under its own name.
+ * one list is not a part clashing with itself.
+ *
+ * **SEVERAL PLACEMENTS MAY SHARE ONE `ref`, AND THE SENTENCE THAT SAID
+ * OTHERWISE IS QUOTED RATHER THAN DELETED, because it is why this paragraph
+ * exists**: ~~*"Two placements sharing one `ref` are not checked for: that is a
+ * malformed candidate rather than an overlap, and this function would report it
+ * as a part clashing with itself under its own name."*~~ That was written when
+ * one ref meant one fitted part. It is false of an OFF-BOARD part: a pad's
+ * identity is its ref AND its pin name, so a three-terminal panel pot is three
+ * one-hole placements sharing one ref - which `padPlacementOf` in
+ * `tools/stripboard/vero-import.ts` has produced for every imported board that
+ * carries a `PAD` line, and which `seedPartsFrom` and `placeOffBoard` now
+ * construct as well. `checkSeed` in `./seed.ts` runs this function over every
+ * constructed seed, so the claim was live as well as wrong.
+ *
+ * **IT CHANGES NOTHING ABOUT WHAT THIS FUNCTION DOES, because it reads HOLES
+ * and never refs.** Two placements of one ref in two holes are two claimants of
+ * two keys and are not a clash; what is still caught is two placements - one
+ * ref or two - whose hole sets intersect, which is the only thing the name
+ * claims. A ref carrying several placements that is NOT off-board is still a
+ * malformed candidate, and it is still not this function's business: the netlist
+ * side refuses it by name (`repeated-ref` and `repeated-pad` in
+ * `./seed-validate.ts`, which admit the repetition for landing pads alone),
+ * because that is a question about the parts list rather than about where their
+ * holes are.
  */
 export function holesOverlap(candidate: Candidate): HoleClash | null {
   const claimants = new Map<string, { readonly hole: Hole; readonly refs: string[] }>()
