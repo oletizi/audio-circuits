@@ -213,15 +213,20 @@ of different nets — which it already does, and which was measured to agree wit
 VeroRoute on 54 of 54 cuts as to strip, count and separated run pair. This is
 the change that opens the saturated window around ground.
 
-**A PLACEMENT IS ACCEPTED ONLY WHEN THE CUT SET IT IMPLIES IS ONE THE OWNER
-WOULD CUT** (third-party review, finding 1, accepted as a GAP — its premise
-rejected, see **Open questions**). Electrical correctness is not the whole test:
-a strip shared by two nets is only admissible if the cut that separates them is
-something a person will actually make. This is the one shared validation D2 also
-uses, and it is where a negative fixture belongs — adjacent contacts of
-different nets with no admissible cut between them, proving the placer either
-finds another arrangement or refuses, rather than returning a board that is
-sound in the graph and uncuttable on the bench.
+**A PLACEMENT IS ACCEPTED ONLY WHEN THE DERIVED CUT SET SEPARATES EVERY PAIR OF
+CONTACTS THAT MUST NOT BE CONNECTED** — and that is the WHOLE test (third-party
+review, finding 1: gap accepted, premise refuted by the owner; see **Risks**).
+The review argued a placement must also reserve physical room for the cut. It
+need not: *"there is plenty of room between adjacent holes to make a cut, even if
+there are [parts] soldered into both holes."* So no cut position is inadmissible
+on grounds of occupancy, and this check carries no physical-room term.
+
+**It is the one shared validation D2 also uses**, and it is where a negative
+fixture belongs: two contacts of different nets adjacent on one strip with the
+cut between them MISSING from the derived set, proving the placer refuses rather
+than returning a board that shorts two nets. The fixture the review asked for —
+contacts with no admissible cut position between them — **cannot be built**, and
+that is the right outcome rather than a gap in coverage.
 
 **D3b — strip assignment becomes per-net rather than a uniform stride.**
 `Ordering` is `{ name, nets, stride }` and `homeStripsFor(netlist, ordering,
@@ -300,29 +305,29 @@ path works.
 
 ## Risks and open questions
 
-- **OPEN, AND THE OWNER'S TO SETTLE: may a cut sit between two OCCUPIED holes?**
-  The third-party review assumed not — that a cut needs an unoccupied hole for a
-  drill bit — and used that to argue the placer must reserve room. **The premise
-  is rejected and the question is kept.** A cut severs the track BETWEEN two
-  holes rather than consuming one, and the owner ruled its exact position is
-  *"false precision"*, so nothing about a cut obviously requires a free hole.
-  What is measured, across `transistor-preamp-feedback`, `transistor-preamp-
-  buffered` and `pt2399-core` — 22 cuts in total:
+- **CLOSED BY THE OWNER, 2026-10-15: hole occupancy does not constrain a cut.**
+  His words: *"there is plenty of room between adjacent holes to make a cut, even
+  if there are [parts] soldered into both holes."* So a cut is admissible in any
+  gap between two adjacent holes on a strip, and the placer need reserve nothing.
 
-  | both holes occupied | exactly one | neither |
-  | --- | --- | --- |
-  | **0** | 8 | 14 |
+  **This was the third-party review's first finding, and its premise is refuted
+  rather than merely unproven.** The review assumed a cut requires an unoccupied
+  hole for a drill bit and built a reservation requirement on it. It does not: a
+  cut severs the track BETWEEN holes rather than consuming one.
 
-  So he has never cut between two occupied holes, and he has cut beside one
-  eight times. **That is not sufficient to make a rule.** His layouts are sparse,
-  so the zero may be incidental; and `CLAUDE.md` now records his own ruling that
-  a directive outranks what the as-built boards contain — which cuts both ways,
-  and forbids inferring a directive he has not given. **Until he answers, the
-  implementation must not assume either way**: the shared cut-aware check should
-  take the admissibility of a cut position as an injected rule, so the answer is
-  a parameter rather than a buried assumption. The question to put to him is
-  exactly this: *with a lead soldered in the holes on both sides, will you still
-  cut the track between them, or do you want at least one of the two free?*
+  **The measurement that looked like evidence for the review's position was a
+  red herring, and that is worth keeping.** Across `transistor-preamp-feedback`,
+  `transistor-preamp-buffered` and `pt2399-core` there are 22 cuts, and **none**
+  sits between two occupied holes — 8 have exactly one occupied neighbour, 14
+  have none. Read as practice that is a perfect zero; read correctly it is an
+  artefact of sparse layouts, and the owner says plainly he would cut there. It
+  is exactly the case `CLAUDE.md`'s directive-over-artefact rule exists for, and
+  the figures are kept here so the next reader does not re-derive the wrong rule
+  from them.
+
+  **What this simplifies:** the shared validation D2 and D3a use is PURELY
+  ELECTRICAL — does the derived cut set separate the contacts that must not be
+  connected — with no physical-room term and no injected occupancy parameter.
 - **D3a changes an incidental property of the constructor, and the prose that
   described it must follow.** Every seed coming out with zero cuts was a
   consequence of one net per strip, never a requirement anybody set; after D3a
