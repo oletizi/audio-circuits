@@ -51,11 +51,15 @@ export interface SeedLead {
  *
  * `alongSteps` runs along the pin row and `acrossSteps` across the rows - the
  * two axes `classifyPads` in `lib/kicad/pin-pattern-model.ts` decomposes a
- * footprint into. **Every pin of one field must have a DISTINCT `alongSteps`**,
- * which `validateNetlist` enforces: the along axis is laid across the strips
- * (see `./seed.ts`), so two pins sharing it would share a strip, and a strip
- * carrying two nets' leads is the interleaved OPEN this plan's Task 5 measured
- * as the realistic failure after a correct cut derivation.
+ * footprint into. The along axis is laid across the strips (see `./seed.ts`),
+ * so two pins sharing an `alongSteps` land on the same strip - a correctly
+ * quarter-turned DIP does exactly this, by construction, and needs a cut
+ * between them rather than a refusal. A shared strip is not itself the open: a
+ * strip carrying two nets' leads is fine with a cut between them, and only
+ * INTERLEAVING - one net's leads split into two runs by the other net's, which
+ * no single cut can rejoin - is the open. Whether a placed field interleaves is
+ * answered on the PLACED board, by `interleavingOn` in
+ * `lib/stripboard/separable.ts`, not here on the unplaced field.
  */
 export interface SeedFieldPin extends SeedLead {
   readonly alongSteps: number
@@ -184,12 +188,15 @@ export function spanFor(footprint: string, spans: ReadonlyMap<string, LeadSpan>)
 }
 
 /**
- * Both halves of a netlist agree, every ref is distinct, and every moulded field
- * puts one pin per strip.
+ * Both halves of a netlist agree, every ref is distinct, and every moulded
+ * field's steps are on the grid.
  *
  * The three checks are here rather than in the placer because all three are true
  * or false of the INPUT, before any ordering is applied, so a caller with four
- * orderings hears about a malformed netlist once.
+ * orderings hears about a malformed netlist once. Whether two of a field's pins
+ * sharing a strip is buildable is NOT one of these three: it depends on what
+ * else lands on that strip once the field is placed, which `interleavingOn` in
+ * `lib/stripboard/separable.ts` answers on the placed board.
  */
 export function validateNetlist(netlist: SeedNetlist): void {
   const seen = new Set<string>()
@@ -227,7 +234,6 @@ function checkBody(ref: string, body: BodyMargins): void {
 }
 
 function checkField(ref: string, field: readonly SeedFieldPin[]): void {
-  const byAlong = new Map<number, string>()
   for (const pin of field) {
     if (!Number.isInteger(pin.alongSteps) || !Number.isInteger(pin.acrossSteps)) {
       refuse(
@@ -239,21 +245,6 @@ function checkField(ref: string, field: readonly SeedFieldPin[]): void {
           "refused there, by name, before a placement exists.",
       )
     }
-    const already = byAlong.get(pin.alongSteps)
-    if (already !== undefined) {
-      refuse(
-        "field-shares-a-strip",
-        `"${ref}" pins "${already}" and "${pin.pin}" are both ${pin.alongSteps} steps along the ` +
-          "pin row, and this placer lays that row ACROSS the strips - so the two leads would " +
-          "share one strip.\nThat is refused rather than placed: a strip carrying two nets' " +
-          "leads needs a cut between them, and leads of two nets INTERLEAVED on one strip is " +
-          "the open no cut list can close (lib/stripboard/invariants.ts, and this plan's Task " +
-          "5 measured it as the realistic failure after a correct derivation).\nIf the two pins " +
-          "really are one net's, they are still two strips' worth of copper to join; state the " +
-          "field with distinct alongSteps and let the join be a wire or a bridge.",
-      )
-    }
-    byAlong.set(pin.alongSteps, pin.pin)
   }
 }
 

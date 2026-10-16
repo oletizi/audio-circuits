@@ -6,7 +6,7 @@
  * candidate whose leads are on the strips hosting their nets; that an infeasible
  * one refuses by name, naming the part and both its nets; that several orderings
  * yield several distinct candidates, returned in the order they were handed in
- * with nothing ranked or filtered; that seventeen refusals fire, each on its own
+ * with nothing ranked or filtered; that sixteen refusals fire, each on its own
  * leading key; and that on the owner's own `transistor-preamp-feedback` circuit
  * every seed holds `violationsOf` empty - every net whole in one copper
  * component, no component carrying two nets - over the cuts `derivedCuts`
@@ -34,7 +34,7 @@
  *   - **the refusal tests assert the leading key and the facts the message must
  *     carry, not its prose.** A message rewritten keeps passing, which is
  *     intended; a message that stops naming the part or a net does not;
- *   - **three of the twenty refusal keys the two modules carry are NOT asserted,
+ *   - **three of the nineteen refusal keys the two modules carry are NOT asserted,
  *     and they are named here rather than left for a reader to count**:
  *     `stripboard-seed-net-has-no-home`, `stripboard-seed-holes-shared` and
  *     `stripboard-seed-unsound`. All three are internal-defect guards -
@@ -50,6 +50,7 @@ import type { Candidate } from "../../../lib/stripboard/board.ts"
 import { derivedCuts } from "../../../lib/stripboard/cuts.ts"
 import { violationsOf } from "../../../lib/stripboard/invariants.ts"
 import { seedsFrom } from "../../../lib/stripboard/seed.ts"
+import { validateNetlist } from "../../../lib/stripboard/seed-model.ts"
 import type { SeedPart } from "../../../lib/stripboard/seed-model.ts"
 import {
   RECORDED_SPANS,
@@ -74,6 +75,8 @@ const NARROW = "SYNTHETIC:Seed_TwoLead_Narrow"
 const FAR_PAIR = "SYNTHETIC:Seed_TwoLead_Far"
 /** A three-terminal fixture part whose outer pins are three steps apart. */
 const SPREAD_TRIPLE = "SYNTHETIC:Seed_Triple_Spread"
+/** A two-row fixture footprint, for a field whose pins share an `alongSteps`. */
+const SYNTHETIC_TWO_ROW = "SYNTHETIC:Seed_TwoRow"
 
 const SPANS = new Map([
   [WIDE, syntheticSpan(WIDE, 2, 6)],
@@ -394,15 +397,18 @@ test("every netlist refusal fires on its own leading key", () => {
     "stripboard-seed-repeated-ref",
   )
 
-  const shared = netlistOf([
-    fixedField("Q1", TRIPLE, [
-      { pin: "1", net: "A", alongSteps: 0, acrossSteps: 0 },
-      { pin: "2", net: "B", alongSteps: 0, acrossSteps: 1 },
-    ]),
-  ])
-  expect(refusalFrom(() => seedsFrom(shared, SMALL, SPANS, [good]))).toStartWith(
-    "stripboard-seed-field-shares-a-strip",
-  )
+  // **THE OLD FIXTURE REFUSED FOR A REASON THAT NO LONGER EXISTS**, recorded
+  // rather than quietly dropped: two pins at the same `alongSteps` used to
+  // refuse outright under `stripboard-seed-field-shares-a-strip`, on the
+  // premise that *"the along axis is laid across the strips...so two pins
+  // sharing it would share a strip, and a strip carrying two nets' leads is
+  // the interleaved OPEN."* That conflated "shares a strip" with
+  // "interleaves" - a correctly quarter-turned DIP puts pin 1 and pin 16 on
+  // one strip with a cut down the middle, which is buildable. Whether a
+  // placed field's shared strip interleaves is now answered on the PLACED
+  // board by `interleavingOn` (lib/stripboard/separable.ts); see
+  // "a field with two pins on one strip is no longer refused outright" below
+  // for the input-layer half of this.
 
   const fractional = netlistOf([
     fixedField("Q1", TRIPLE, [
@@ -435,6 +441,18 @@ test("every netlist refusal fires on its own leading key", () => {
   expect(refusalFrom(() => seedsFrom(disagreeing, SMALL, SPANS, [good]))).toStartWith(
     "stripboard-seed-lead-net-disagrees",
   )
+})
+
+test("a field with two pins on one strip is no longer refused outright", () => {
+  // Two pins of DIFFERENT nets at the same alongSteps - the exact shape
+  // `field-shares-a-strip` refused. It is now a placement question, not a
+  // field question, so building the netlist must succeed.
+  const part = fixedField("U1", SYNTHETIC_TWO_ROW, [
+    { pin: "1", net: "A", alongSteps: 0, acrossSteps: 0 },
+    { pin: "2", net: "B", alongSteps: 0, acrossSteps: 3 },
+  ])
+  expect(() => netlistOf([part])).not.toThrow()
+  expect(refusalFrom(() => validateNetlist(netlistOf([part])))).toBe("")
 })
 
 test("the board edge refuses a join that has no column left", () => {
