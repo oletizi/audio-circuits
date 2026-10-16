@@ -142,11 +142,20 @@ two are mechanical.
 ### D1 — an off-board pad kind in the seed model
 
 A third `SeedPart` kind: a one-hole terminal with no footprint geometry and no
-orientation. `seedPartsFrom` builds it for a ref the footprint map does not name
-**because the component carries only `part.symbol`** — distinguished from a ref
-genuinely absent from the map, which must keep refusing by name. The shape to
-match is `vero-import.ts`'s `padPlacementOf` and `OFF_BOARD_TERMINAL`;
-`vero-export.ts` already round-trips such a placement.
+orientation. The shape to match is `vero-import.ts`'s `padPlacementOf` and
+`OFF_BOARD_TERMINAL`; `vero-export.ts` already round-trips such a placement.
+
+**THE PREDICATE IS THE DECLARED OFF-BOARD RESIDENCY, NOT A MISSING FOOTPRINT**
+(third-party review, finding 3, accepted). An earlier draft said the kind is
+built for a ref the footprint map does not name *because the component carries
+only `part.symbol`*, which is an INFERENCE and ambiguous: a missing footprint
+means either "panel-mounted, represented by landing pads" or "physicalization
+data is wrong or absent", and those must not become the same thing. `onBoard()`
+in `tools/stripboard/targets.ts` already draws the residency distinction and is
+the authority. **Only a component declared off-board becomes a one-hole
+terminal; a component missing a footprint without that declaration keeps
+refusing by name.** Turning missing data into apparently valid landing pads is
+precisely the silent-success failure this repository refuses.
 
 Touches: `seed-model.ts`, `seed-parts.ts`, `seed-fit.ts`, and whatever
 `moves.ts` needs so a pad can be relocated like any other placement.
@@ -174,6 +183,24 @@ along-pitch), or the check reads the derived pad holes instead of the claimed
 axis. A test over `PinHeader_1x02`, `PinHeader_1x05` and `DIP-16_W7.62mm` — the
 three recorded footprints that expose it — is the evidence.
 
+**TURNING THE PART IS NOT ENOUGH: `checkField`'S DISTINCT-STRIP RULE MUST GO
+TOO** (third-party review, finding 2, accepted — the sharpest thing in that
+review, and a hole this spec had). `checkField` requires every pin of a fixed
+field to land on a DISTINCT strip. A correctly quarter-turned DIP-16 breaks that
+by construction: with its eight-pin direction across the strips, pin 1 and pin
+16 sit on the SAME strip a few columns apart, separated by the cut down the
+middle — which is exactly the arrangement the owner described (*"dips should
+span strips with a cut down the middle, like a breadboard"*). So without this
+change the seeder would orient the DIP correctly and then refuse it for the
+wrong reason, and the refusal would look like a geometry failure rather than a
+stale rule.
+
+**The replacement is not a second rule — it is the SAME rule as D3a.** Two pins
+of one part sharing a strip and two nets sharing a strip are one question:
+whether the derived cut set separates contacts that must not be connected. The
+distinct-strip test is replaced by that check, and D2 and D3a share one
+validation path rather than two that can drift apart.
+
 ### D3 — widen the seed's strip model
 
 Two relaxations, both of restrictions the constructor imposes on itself. Neither
@@ -186,6 +213,16 @@ of different nets — which it already does, and which was measured to agree wit
 VeroRoute on 54 of 54 cuts as to strip, count and separated run pair. This is
 the change that opens the saturated window around ground.
 
+**A PLACEMENT IS ACCEPTED ONLY WHEN THE CUT SET IT IMPLIES IS ONE THE OWNER
+WOULD CUT** (third-party review, finding 1, accepted as a GAP — its premise
+rejected, see **Open questions**). Electrical correctness is not the whole test:
+a strip shared by two nets is only admissible if the cut that separates them is
+something a person will actually make. This is the one shared validation D2 also
+uses, and it is where a negative fixture belongs — adjacent contacts of
+different nets with no admissible cut between them, proving the placer either
+finds another arrangement or refuses, rather than returning a board that is
+sound in the graph and uncuttable on the bench.
+
 **D3b — strip assignment becomes per-net rather than a uniform stride.**
 `Ordering` is `{ name, nets, stride }` and `homeStripsFor(netlist, ordering,
 grid)` already returns a `ReadonlyMap<string, number>`. Widen `Ordering` so an
@@ -194,6 +231,19 @@ form is what `tools/stripboard/seed-arrangement.ts`'s `assignStrips` already
 returns, so the repository's own gathered arrangement becomes usable directly.
 This is what lets the rigid header take five consecutive strips without forcing
 every other net one strip apart.
+
+**A HOME STRIP IS A PREFERENCE, NOT EXCLUSIVE OWNERSHIP** (third-party review,
+finding 4, accepted with one qualification). Once D3a lets a strip carry several
+nets, "the strip this net owns" is no longer a coherent idea, and an assignment
+read as exclusive would reproduce the inflexibility the uniform stride had. So
+the map is where the placer STARTS a net, not where it is confined.
+
+**The qualification matters and is the repository's own invariant.** "The placer
+may use another strip when required" must be MECHANICAL, never judgement: a
+deviation is admissible only when a hard constraint forces it — reach, a taken
+hole, the board edge, a rigid area — and the candidate still satisfies every
+hard constraint afterwards. A placer free to leave its assignment because a
+position looked better would be choosing its own criteria.
 
 **Both are needed and neither is sufficient.** D3a without D3b leaves the header
 unable to get consecutive strips at a workable global stride; D3b without D3a
@@ -233,8 +283,46 @@ that already exist rather than inventing a bar.
    for every seed in the previous plan. That judgement is not delegated to a
    figure and not made by the producing agent.
 
+**WHAT THIS MILESTONE IS NOT, labelled rather than left to be assumed**
+(third-party review, finding 5 — its labelling accepted, its proposal declined).
+The review asked that the milestone also materialise the board through VeroRoute
+and clear the verification gates. **That is declined here and strengthened in
+piece 2 instead:** folding materialisation in defeats the split this spec exists
+to make, and the review's own fallback — label piece 1 model-level only — is too
+weak on its own.
+
+So, plainly: **piece 1 proves the MODEL can represent a Pultec section. It does
+not prove the pipeline can produce a buildable Pultec layout**, and no report
+from it may claim otherwise. The stronger remedy is in **Decomposition**:
+materialising low-boost becomes piece 2's FIRST task rather than its last, so an
+export blocker surfaces before four more boards are built on the assumption that
+path works.
+
 ## Risks and open questions
 
+- **OPEN, AND THE OWNER'S TO SETTLE: may a cut sit between two OCCUPIED holes?**
+  The third-party review assumed not — that a cut needs an unoccupied hole for a
+  drill bit — and used that to argue the placer must reserve room. **The premise
+  is rejected and the question is kept.** A cut severs the track BETWEEN two
+  holes rather than consuming one, and the owner ruled its exact position is
+  *"false precision"*, so nothing about a cut obviously requires a free hole.
+  What is measured, across `transistor-preamp-feedback`, `transistor-preamp-
+  buffered` and `pt2399-core` — 22 cuts in total:
+
+  | both holes occupied | exactly one | neither |
+  | --- | --- | --- |
+  | **0** | 8 | 14 |
+
+  So he has never cut between two occupied holes, and he has cut beside one
+  eight times. **That is not sufficient to make a rule.** His layouts are sparse,
+  so the zero may be incidental; and `CLAUDE.md` now records his own ruling that
+  a directive outranks what the as-built boards contain — which cuts both ways,
+  and forbids inferring a directive he has not given. **Until he answers, the
+  implementation must not assume either way**: the shared cut-aware check should
+  take the admissibility of a cut position as an injected rule, so the answer is
+  a parameter rather than a buried assumption. The question to put to him is
+  exactly this: *with a lead soldered in the holes on both sides, will you still
+  cut the track between them, or do you want at least one of the two free?*
 - **D3a changes an incidental property of the constructor, and the prose that
   described it must follow.** Every seed coming out with zero cuts was a
   consequence of one net per strip, never a requirement anybody set; after D3a
@@ -264,3 +352,12 @@ eye on them, and materialising them through the fork — is a separate spec with
 its own plan, written once piece 1 has shown the machinery can express one of
 these circuits. Splitting them keeps a demonstrable milestone in the middle
 instead of five boards arriving at the end.
+
+**PIECE 2'S FIRST TASK IS MATERIALISING LOW-BOOST, NOT ITS LAST.** The board
+piece 1 produces goes straight out through `--materialize` and the existing
+verification gates before any further section is attempted. The third-party
+review was right that a model-level candidate proves less than it sounds like;
+the remedy is to prove the whole path on ONE board early, rather than to inflate
+piece 1 or to discover an export blocker after four more boards assume it works.
+This also puts a thing the owner can open and look at in front of him at the
+earliest point there is one.
