@@ -5,7 +5,8 @@ import { OFF_BOARD_TERMINAL } from "../../lib/stripboard/board.ts"
 import { candidateFromDump } from "../../tools/stripboard/vero-import.ts"
 import { layoutDocument } from "../../tools/stripboard/vero-export.ts"
 import { holeName, parseBoardDump } from "../../tools/guide/dump.ts"
-import { placedPads } from "../../tools/guide/pads.ts"
+import { padTerminals } from "../../tools/guide/pads.ts"
+import { padLines } from "../../tools/stripboard/pad-provenance.ts"
 import { renderLayout } from "../../tools/guide/render.ts"
 import { attr, elements, holeCentre, num } from "./svg-query.ts"
 import {
@@ -173,7 +174,7 @@ test("the imported pad placement and the exported statement agree on both halves
 })
 
 test("the guide reads each pad under the same identity, and keeps the hole the dump gives it", () => {
-  const pads = placedPads(TEXT)
+  const pads = padTerminals(TEXT)
   expect(pads.length, "the premise: the guide sees ten placed pads").toBe(10)
   expect([...pads.map((pad) => pad.identity)].sort(), "the guide's identities are the exporter's").toEqual(
     [...exportedPads().map(identityOf)].sort(),
@@ -189,7 +190,7 @@ test("the guide reads each pad under the same identity, and keeps the hole the d
 
 test("the drawn board shows every pad, each under its own identity and its own checkbox", () => {
   const dump = parseBoardDump(TEXT)
-  const pads = placedPads(TEXT)
+  const pads = padTerminals(TEXT)
   const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
   const svg = renderLayout(dump, labels, {
     view: "component",
@@ -229,6 +230,81 @@ test("the drawn board shows every pad, each under its own identity and its own c
     (element) => num(element, "cx") === centre.x && num(element, "cy") === centre.y,
   )
   expect(ring, `a ring centred on ${holeName(wiper.row, wiper.col)}`).toBeDefined()
+})
+
+/**
+ * The three faults no committed board carries, in dump text rather than in a
+ * fixture file.
+ *
+ * All thirty `PAD` lines across `tests/fixtures/` are placed and provenanced, so
+ * a board cannot drive these guards; `tests/stripboard/vero-import-fixtures.ts`
+ * builds its refusal dumps the same way and for the same stated reason - a
+ * stored file bakes the offending figure into something whose name says
+ * otherwise. `GRID`, `VERTICAL_STRIPS` and `CUT_STATE` are present because
+ * `parseBoardDump` refuses without them, and `padTerminals` reads the `PAD`
+ * lines out of the same text.
+ */
+function dumpWith(lines: readonly string[], rows = 14, cols = 32): string {
+  return [`GRID ${rows} ${cols}`, "VERTICAL_STRIPS 0", "CUT_STATE COMPUTED", ...lines].join("\n")
+}
+
+test("a pad that is in no hole, or names no terminal, refuses by name instead of being left out", () => {
+  const floating = dumpWith(["PAD RV_LO_BOOST_1 47K FLOATING FROM RV_LO_BOOST.1"])
+  expect(refusalFrom(() => padTerminals(floating)), "a FLOATING pad").toStartWith("guide-pad-unplaced: ")
+  expect(refusalFrom(() => padTerminals(floating)), "and it names the pad").toContain('"RV_LO_BOOST_1"')
+
+  const noProvenance = dumpWith(["PAD RV_LO_BOOST_1 47K AT 5,28 NOPROVENANCE"])
+  expect(refusalFrom(() => padTerminals(noProvenance)), "a NOPROVENANCE pad").toStartWith(
+    "guide-pad-unprovenanced: ",
+  )
+  // AND A DOTLESS `FROM` IS THE SAME FAULT, not a readable field: there is no
+  // terminal in "RV_LO_BOOST", so there is nothing to tell the builder.
+  const dotless = dumpWith(["PAD RV_LO_BOOST_1 47K AT 5,28 FROM RV_LO_BOOST"])
+  expect(refusalFrom(() => padTerminals(dotless)), "a dotless FROM").toStartWith("guide-pad-unprovenanced: ")
+
+  // NEITHER IS SKIPPED: a pad dropped here is a terminal the guide prints
+  // nothing about, so the premise is that these dumps carry a pad at all.
+  expect(padLines(floating).length, "the premise: the dump does carry a PAD line").toBe(1)
+})
+
+test("a dotless FROM field refuses on import rather than inventing an owner ref", () => {
+  // THE LATENT BUG THIS CLOSED, which the first round of this task did not
+  // notice. The importer used to split with `lastIndexOf(".")` and guard only on
+  // either half being empty, so `FROM RV1` gave dot = -1, owner "RV" and pin
+  // "RV1" - two non-empty halves, a component nobody declared, and a pad
+  // imported onto a net that pin is not on. `pinIdParts` has no reading for a
+  // dotless id, so the refusal is the importer's own.
+  const text = dumpWith(["PAD RV_1 47K AT 5,28 FROM RV1", "PIN RV_1 1 AT 5,28"])
+  const message = refusalFrom(() =>
+    candidateFromDump(text, referenceOf(FROZEN), footprintsOf(FROZEN), PIN_PATTERNS),
+  )
+  expect(message, "the importer refuses it").toStartWith("vero-import-pad-unprovenanced: ")
+  expect(message, "and quotes the line it rejected").toContain("FROM RV1")
+})
+
+test("a pad whose hole is not on the board refuses rather than being drawn beside it", () => {
+  const dump = parseBoardDump(TEXT)
+  const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
+  const offBoard = padTerminals(TEXT).map((pad) =>
+    pad.identity === "RV_LO_BOOST.1" ? { ...pad, row: dump.grid.rows } : pad,
+  )
+  // The premise, asserted rather than assumed: the board really is that size, so
+  // one row past it really is off it.
+  expect(dump.grid.rows, "the frozen low-boost's own GRID").toBe(14)
+  const message = refusalFrom(() =>
+    renderLayout(dump, labels, { view: "component", title: "off the board", edgeLabels: [], pads: offBoard }),
+  )
+  expect(message, "the renderer refuses it").toStartWith("guide-pad-off-board: ")
+  expect(message, "naming the terminal, the hole and the grid").toContain('"RV_LO_BOOST.1" is at 14,28')
+  expect(message, "and the grid it is outside").toContain("14 x 32 holes")
+  // BOTH VIEWS, so the copper side refuses the same board the component side
+  // does - which is what `drawnPads` being called outside the view test buys.
+  expect(
+    refusalFrom(() =>
+      renderLayout(dump, labels, { view: "copper", title: "off the board", edgeLabels: [], pads: offBoard }),
+    ),
+    "the copper view too",
+  ).toStartWith("guide-pad-off-board: ")
 })
 
 test("a pin id's two halves survive being joined and split, and an unusable half refuses", () => {

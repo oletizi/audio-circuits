@@ -28,7 +28,7 @@ import { buildChecklist } from "./checklist.ts"
 import { assertLayoutMatchesCircuit, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
 import { buildGuideHtml } from "./guide.ts"
 import { offBoardLabels, valueLabel } from "./off-board.ts"
-import { placedPads } from "./pads.ts"
+import { padTerminals } from "./pads.ts"
 import { buildableDump } from "./preflight.ts"
 import { renderLayout } from "./render.ts"
 
@@ -127,7 +127,7 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   // `./pads.ts`. A board with no off-board terminals gets an empty list; a
   // Pultec section gets one entry per panel-control terminal, and the images
   // then say so rather than leaving them off in silence.
-  const pads = placedPads(dumpText)
+  const pads = padTerminals(dumpText)
   const circuit = await (deps.loadCircuit ?? loadBoardCircuit)(declaration)
   assertLayoutMatchesCircuit(dump, circuit)
   const edgeLabels = offBoardLabels(circuit)

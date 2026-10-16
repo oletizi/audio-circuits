@@ -24,6 +24,17 @@
  * nothing in that closure imports this one, and `./checklist.ts` already imports
  * `tools/stripboard/constraints-model.ts` in the same direction.
  *
+ * **IT IS `PadTerminal` AND NOT `PlacedPad`, AND THE NAME IS THE WHOLE POINT.**
+ * `tools/stripboard/moves-space-measure.ts` already exports a `PlacedPad` whose
+ * `ref` is the fork's INVENTED per-pad board name (`RV_LO_BOOST_1`) - correctly,
+ * because it keys `dump.pins[pad.ref]` with it, and the `PIN` lines are printed
+ * under that name. The `ref` here is the OWNER's netlist ref (`RV_LO_BOOST`),
+ * read off the `FROM` field. That is the invented-versus-owner distinction this
+ * whole piece of work exists to keep straight, so the two must not share a name:
+ * a reader who saw `PlacedPad` in both files would have no way to tell which
+ * `ref` was in front of them. `PadTerminal` says what this one holds - ONE
+ * TERMINAL of a component, named the way the netlist names it.
+ *
  * **WHAT THIS DOES NOT DO, so the next person does not read more into it.** It
  * does not touch `./off-board.ts`, which labels a panel pot that reaches the
  * board as a HEADER PART with `PIN` lines - a different representation of the
@@ -42,8 +53,11 @@ import { pinId, pinIdParts } from "../../lib/stripboard/pin-id.ts"
  * again by every reader - see `lib/stripboard/pin-id.ts` for why the pair is
  * formed in one place. Three pads of one potentiometer share a `ref` and have
  * three identities; a map keyed by `ref` alone would keep one of the three.
+ *
+ * `ref` IS THE OWNER'S, NOT THE BOARD'S - see this module's comment on the name,
+ * and `tools/stripboard/moves-space-measure.ts`'s `PlacedPad` for the other one.
  */
-export interface PlacedPad {
+export interface PadTerminal {
   /** `<ref>.<pin>`, the way the reference netlist names this terminal. */
   readonly identity: string
   /** The component the terminal belongs to - never the per-pad name the fork invents. */
@@ -67,8 +81,8 @@ export interface PlacedPad {
  * this module exists to end - and a builder reading that guide would leave a
  * panel control unwired with every box ticked.
  */
-export function placedPads(dumpText: string): readonly PlacedPad[] {
-  return padLines(dumpText).map((pad): PlacedPad => {
+export function padTerminals(dumpText: string): readonly PadTerminal[] {
+  return padLines(dumpText).map((pad): PadTerminal => {
     if (pad.placement === "floating") {
       throw new Error(
         `guide-pad-unplaced: the dump reports the pad "${pad.ref}" as FLOATING, so it is in no ` +

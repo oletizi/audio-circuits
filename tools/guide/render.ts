@@ -8,7 +8,7 @@ import {
   drawWires,
   reserveCoordinates,
 } from "./render-board.ts"
-import type { PlacedPad } from "./pads.ts"
+import type { PadTerminal } from "./pads.ts"
 import { drawEdgeLabels, validateEdgeLabels, type EdgeLabel } from "./render-edges.ts"
 import {
   drawPadBodies,
@@ -69,7 +69,7 @@ export interface RenderOptions {
    * word. An optional field would let exactly that happen again by omission, and
    * a board with no pads says so by passing an empty list.
    */
-  readonly pads: readonly PlacedPad[]
+  readonly pads: readonly PadTerminal[]
 }
 
 const HEADER_GAP = 12
@@ -214,7 +214,9 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
   const placedOrRefused = placedParts(frame, dump, labels)
   validateEdgeLabels(dump, options.edgeLabels)
   // Built for both views, so the copper view refuses the same boards - the same
-  // reason `placedParts` is called above whichever view this is.
+  // reason `placedParts` is called above whichever view this is. `drawnPads`
+  // refuses a pad whose hole is off the board, which is the fault that makes
+  // this call worth making whichever view is being drawn.
   const padsOrRefused = drawnPads(frame, options.pads)
   // Placed in this order - fixed geometry first, then edge labels, cut
   // numbers, wire numbers and part tags each clear of everything placed
