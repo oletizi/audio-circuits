@@ -110,6 +110,18 @@ twice shipped a footprint that does not exist.
 say so loudly. Silence that resembles success is the failure mode the whole
 workflow exists to prevent.
 
+**A defect you are not fixing goes in `docs/known-gaps.md`, committed, in the
+change that found it.** Telling the owner in conversation is not recording it,
+and neither is a plan ledger: `.superpowers/` is gitignored, so a ledger entry
+is invisible to review, absent from the history, and destroyed by `git clean
+-fdx`. This rule exists because findings accumulated in scratch across two
+plans and reached the owner only as remarks in a session. The owner, 2026-10-16:
+*"Telling me is not the same as recording them durably and instituting a
+remediation plan."* Every entry says what is wrong, where, what evidence
+establishes it, whether the writer confirmed it or is relaying another agent's
+report, and what would settle it - a fix, a measurement, or an owner decision.
+An entry is DELETED when it is resolved, never marked closed.
+
 **Derived artifacts are regenerated every run and compared by content**, never
 by timestamp - git does not preserve mtimes, and every mtime accident makes
 stale look current. Where a generated netlist is committed, it is committed
