@@ -87,7 +87,9 @@ test("materialising low-boost refuses on the first span disagreement", async () 
 
 **`--materialize` already does this gesture for WIRES**, so this task is a PORT, not an invention: `PlaceDeclaredWire` (`place.cpp:388-437`) derives a span from the document, takes the component off, stretches it with a named refusal when it stops short, bounds-checks against `GRID`, and puts it down.
 
-**READ ALL SIX CONSTRAINTS in G12 of `docs/known-gaps.md` before writing anything.** Two of them will cost you a day if you meet them by surprise:
+**LANDED at `ec9a5ed`, fork `d99415b`. Low-boost materialises: 4 cuts / 4 wires / 5 bridges, extent 19 x 23, matching the model exactly.** The text below is kept as the record of what this task was asked to do. **Two of its pointers are now dangling and deliberately not repaired:** G12 was DELETED from `docs/known-gaps.md` when the gap closed, per that file's own rule, so read its six constraints from this task's diff rather than from the register; and the witness test it names was deleted by this task, as it was meant to be. G13 remains, rewritten to stand alone as a limitation of `--stretch` and `--move`.
+
+**READ ALL SIX CONSTRAINTS before writing anything.** Two of them will cost you a day if you meet them by surprise:
 
 - **Constraint 1 is not "refuse any moulded part".** The two SIP headers on this board (`junction_grounds`, `junction_signals`) are exactly the type whose `Stretch` reallocates pins and loses nets silently — and they need no change, because their required length already equals their current one. Derive, compare, and refuse only on a DIFFERENCE.
 - **Constraint 6 is the trap.** The turn loop keeps iterating after the first fit and records the best from the first, so a stretch written naively inside it leaves the footprint at the LAST facing's length.
