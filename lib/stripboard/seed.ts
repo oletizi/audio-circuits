@@ -134,6 +134,21 @@ function seedFrom(
   // compile error here rather than a part that is silently never placed. The
   // `if`/`else` this replaces would have sent an off-board pad to the two-lead
   // placer and refused inside it, naming the wrong thing.
+  //
+  // THE `never` ASSIGNMENT IS WHAT MAKES THAT CLAIM TRUE, AND IT WAS MISSING
+  // UNTIL 2026-10-16 - the comment asserted a guarantee the compiler was not
+  // giving. Measured with this repository's own `tsc` (`strict: true`, no
+  // `noImplicitReturns`): a VALUE-RETURNING switch over three of four members
+  // fails with `TS2366: Function lacks ending return statement`, which is why
+  // `leadsOf` and `constraintRank` in `./seed-model.ts` did hold the claim; a
+  // VOID switch over three of four members and no `default` COMPILES CLEAN, and
+  // this is a void switch. A fourth kind would have been accepted here, never
+  // placed, and never mentioned.
+  //
+  // IT IS THE ONE `default` THIS FAMILY ADMITS BECAUSE IT HANDLES NOTHING. The
+  // prohibition `SeedPart`'s own comment states is on a `default` that absorbs
+  // an unknown kind into some plausible behaviour; this one says only that
+  // there is no unknown kind to absorb, and stops compiling the moment there is.
   for (const part of placementOrder(netlist.parts)) {
     switch (part.kind) {
       case "fixed-field":
@@ -145,6 +160,11 @@ function seedFrom(
       case "off-board":
         placeOffBoard(workspace, part)
         break
+      default: {
+        const unplaceable: never = part
+        void unplaceable
+        break
+      }
     }
   }
   joinNets(workspace, netlist)

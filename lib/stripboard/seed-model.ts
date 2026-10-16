@@ -174,12 +174,27 @@ export function offBoardPart(ref: string, lead: SeedLead): OffBoardPart {
  * tested and an untested unreachable derivation reads like a working one"* -
  * Task 1's finding, applied here.
  *
- * **EVERY DISCRIMINATION ON `kind` IS EXHAUSTIVE AND NONE HAS A `default`.** A
- * `default` branch would have let `off-board` be added without a single call
- * site noticing; written as a complete `switch` over the union instead, a fourth
- * member makes every one of them a compile error. The two below (`leadsOf`,
- * `placementOrder`), `seedFrom` in `./seed.ts` and `validateNetlist`'s per-kind
- * checks in `./seed-validate.ts` are all of them in the core.
+ * **EVERY DISCRIMINATION ON `kind` IS EXHAUSTIVE, AND NONE OF THEM ABSORBS AN
+ * UNKNOWN KIND INTO PLAUSIBLE BEHAVIOUR.** A `default` branch that DID would
+ * have let `off-board` be added without a single call site noticing; written as
+ * a complete `switch` over the union instead, a fourth member is a compile
+ * error at every one of them. The four in the core are the two below (`leadsOf`,
+ * `constraintRank` under `placementOrder`), `seedFrom` in `./seed.ts` and
+ * `validateNetlist`'s per-kind checks in `./seed-validate.ts`.
+ *
+ * **THE COMPILER GIVES THAT FOR FREE ONLY WHERE THE SWITCH RETURNS A VALUE, and
+ * this comment claimed it everywhere until 2026-10-16.** Measured with this
+ * repository's own `tsc` (`strict: true`, no `noImplicitReturns`): a
+ * value-returning switch over three of four members fails with `TS2366:
+ * Function lacks ending return statement`, which covers `leadsOf` and
+ * `constraintRank` below; a VOID switch over three of four with no `default`
+ * compiles clean and silently does nothing, which is what `seedFrom` and
+ * `validateNetlist` are. Both of those now close the gap with a `default` whose
+ * whole body is `const x: never = part` - a type-level assertion that handles no
+ * kind, and so is not the absorbing `default` this paragraph forbids. **Say
+ * which mechanism a given switch relies on rather than asserting the guarantee
+ * generally:** the general assertion was false for half of them for as long as
+ * the off-board kind has existed.
  */
 export type SeedPart = TwoLeadPart | FixedFieldPart | OffBoardPart
 

@@ -56,6 +56,21 @@ export function validateNetlist(netlist: SeedNetlist): void {
         // all to be self-inconsistent about. Both still pass `checkBody` above
         // and both halves of `crossCheck` below.
         break
+      default: {
+        // WHAT ACTUALLY MAKES "CANNOT ARRIVE HERE UNCONSIDERED" TRUE, and it
+        // was missing until 2026-10-16. Measured with this repository's own
+        // `tsc` (`strict: true`, no `noImplicitReturns`): a value-returning
+        // switch over three of four union members fails with `TS2366`, but a
+        // VOID switch over three of four with no `default` compiles clean - and
+        // this is a void switch, so a fourth kind would have reached a seed
+        // with none of its input checked. The assignment below is a type-level
+        // assertion and nothing else: it handles no kind, which is why it is
+        // not the absorbing `default` that `SeedPart`'s comment forbids, and it
+        // stops compiling the moment the union widens.
+        const unchecked: never = part
+        void unchecked
+        break
+      }
     }
   }
   crossCheck(netlist)
