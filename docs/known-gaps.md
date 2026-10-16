@@ -68,17 +68,183 @@ the cut crosses in the same row.
 
 - **Found** `2026-10-16-pultec-five-boards`, Task 2.
 - **Evidence** the implementer rendered the frozen low-boost and read the PNG.
-- **Verified** NO - relayed from the Task 2 implementer's report, not
-  independently confirmed by the controller.
+- **Verified** yes, 2026-10-16, Task 3 - confirmed by eye on a MATERIALISED
+  low-boost rather than on the frozen one, by a second agent. Each pad
+  identity is individually readable beside its own target ring and is tight in
+  its row; two of them (`SW_LO_BOOST.7` on row I, `SW_LO_BOOST.3` on row M) are
+  printed over a dark every-fourth-row alignment strip, which reads as a
+  strikethrough. Usable, not comfortable.
 - **Why it is open** how a drawing should look is the owner's call on a render,
   by this repository's own acceptance rule.
 - **What would settle it** the owner looks at a low-boost render and says
-  whether it needs shortening.
+  whether it needs shortening. **See also G17**, which is the same question
+  asked of PART labels and reaches the renderer from the other side.
 
 ---
 
 Open: a fix would settle these
 ------------------------------
+
+### G12 - nothing brings a base board's footprint spans to the candidate's lead spans, so `--materialize` refuses
+
+`--materialize` takes the component SET from a base `.vrt` and solves each
+part's facing against THAT board's footprint. The footprint carries whatever
+span it was last at; the candidate declares its own lead separation. Nothing in
+the pipeline reconciles them, so the first materialisation of a Pultec board
+refuses on its first capacitor:
+
+> `--materialize: no turn of "C18"'s footprint puts its leads in the holes the`
+> `document declares ( 1@7,3 2@10,3 ). The footprint on this board is 3x3`
+> `unturned, and this verb never stretches one … Stretch the part on the board`
+> `this verb starts from.`
+
+**C18 is the first instance and not the only one.** On `rcm s0`, five of the
+seventeen two-lead parts need a LONGER span than the base is at and seven need
+a SHORTER one. **Every separation the candidate asks for is inside the model's
+own recorded range for that footprint**, so this is not a candidate bending a
+lead further than the part allows - it is two records of one part's span that
+nobody keeps in step.
+
+- **Found** `2026-10-16-pultec-five-boards`, Task 3, on the first real
+  materialisation.
+- **Evidence** the refusal above, from `materialize` at
+  `tools/stripboard/vero-export.ts:442`; the full span accounting over all 27
+  placements, against both the committed `.vrt` and an `--import` board.
+- **Verified** yes - run, not relayed.
+- **Why it is open** Task 3 was a discovery run forbidden from fixing what it
+  found, and WHERE this step belongs - the exporter, a new preparation verb, or
+  the fork - is a design question.
+- **What would settle it** a step that sets each base part's span from the
+  candidate before `--materialize` runs, with a perturbation proving it fires.
+  **It is not independent of G13**, which constrains how it can be written.
+
+### G13 - a part's span cannot be changed on a packed board, so the span step needs an ordering
+
+`--stretch` takes the part off, changes it, and refuses when it cannot put it
+back. Both boards a materialisation could start from are packed, so the gesture
+G12 needs cannot be run in place:
+
+- on the owner's committed hand layout, **six of the seven placed parts refuse
+  `--stretch` in both directions**;
+- on a board built fresh by `--import`, every SHRINK succeeds and **every GROW
+  refuses** - `--import` packs the parts shoulder to shoulder in rows 0-2.
+
+Standing the step in by hand required `--move`ing all seventeen two-lead parts
+onto rows of their own, in two column bands, before any span could be set.
+`--move` has its own two refusals that bear on this: a destination that is not
+free, and a destination outside the board's `GRID` (the `--import` board is
+`GRID 35 35`, which will not take seventeen parts strung down one column).
+
+- **Found** `2026-10-16-pultec-five-boards`, Task 3, while probing past G12.
+- **Evidence** the fork's `--stretch` and `--move` refusals, both quoted in
+  full in that task's report; the probe that got through by spreading first.
+- **Verified** yes - run, not relayed.
+- **Why it is open** it is the constraint on G12's fix rather than a defect of
+  its own, and naming it was the point.
+- **What would settle it** G12's step, written so the ordering is part of it.
+
+### G14 - a materialised board carries no net names, so the checklist cannot be built
+
+`buildChecklist` names which nets each cut separates, and refuses when it
+cannot:
+
+> `the cut at C5 is on node 11, which the dump stores no net name for, so the`
+> `checklist cannot say which nets that cut separates. Run `make update` so the`
+> `layout's nets carry the circuit's names.`
+
+The cause is upstream of the checklist: `--import` writes every `NODE` line as
+`NAME -` (`tools/stripboard/seed-nets.ts` states this), a materialised board
+inherits that, and it dumps `NET_NAMES 0`. The owner's hand-laid
+`pultec-low-boost.perfboard.vrt` carries `NET_NAMES 14` with real names, which
+is why the checklist has never hit this.
+
+**It is not G10 and it fires first.** G10 is a junction table with no rows;
+this stops the checklist being built at all, so **G10 cannot be verified on a
+real board until this is settled**.
+
+- **Found** `2026-10-16-pultec-five-boards`, Task 3, rendering the first
+  materialised Pultec board.
+- **Evidence** the refusal above; `NET_NAMES 0` and fourteen `NODE n NAME -`
+  lines in the materialised dump, against `NET_NAMES 14` in the committed one.
+- **Verified** yes - run.
+- **Why it is open** Task 3 could not fix what it found, and whether the names
+  should arrive through `--import`, through the layout document, or through an
+  `--update` afterwards is a design question.
+- **What would settle it** net names surviving onto a materialised board, with
+  a test that reads them back off a dump.
+
+### G16 - `boards/pultec-low-boost` declares no schematic, so `make guide` cannot run on it
+
+`writeGuidePacket` refuses a declaration with no `sch`
+(`tools/guide/packet.ts:117-123`): *"declares no \"sch\", so the packet has no
+schematic to print."* `boards/pultec-low-boost/perfboard.json` declares
+`circuit`, `export` and `vrt` and nothing else, so the packet step of the
+workflow is unreachable on this board however good the layout is.
+
+- **Found** `2026-10-16-pultec-five-boards`, Task 3.
+- **Evidence** the declaration file and the throw in `packet.ts`.
+- **Verified** yes by READING both, NOT by running `writeGuidePacket` - that
+  function writes into `boards/<board>/guide/`, which Task 3 was forbidden to
+  do. The renders Task 3 produced came from calling `renderLayout` directly.
+- **Why it is open** out of a discovery run's scope, and all five Pultec
+  sections are likely in the same state.
+- **What would settle it** a schematic for the section and an `sch`/`netlist`
+  pair in the declaration - or a ruling that these boards do not get packets.
+
+### G17 - a part label longer than the board runs off the drawing
+
+On the first materialised low-boost render, three stand-in part labels leave
+the board outline: `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper` off the left edge,
+`SI_MID_R_MID_SHUNT` and `SI_LOW_CUT_RV_LO_CUT.ccw-wiper` off the right. Others
+cross each other, and two pad labels are printed on top of a dark
+every-fourth-row alignment strip, which reads as a strikethrough.
+
+**This is adjacent to G2 and is a different text.** G2 is about PAD identities
+crowding their row; these are PART labels, which reach the renderer through
+`renderLayout`'s `labels` map from the caller. A stand-in's id is long because
+it names the section it stands in for, so the length is a property of the
+model rather than of the drawing.
+
+- **Found** `2026-10-16-pultec-five-boards`, Task 3.
+- **Evidence** the implementer rendered the materialised low-boost at
+  `rsvg-convert -z 3` and read the PNG.
+- **Verified** yes.
+- **Why it is open** how a drawing should look is the owner's call on a render,
+  by this repository's own acceptance rule - the same reason G2 is open.
+- **What would settle it** the owner looks at the render and says whether a
+  label that leaves the board is acceptable, needs shortening, or needs the
+  renderer to place it differently.
+
+### G15 - the frozen low-boost fixture and the physical model hold different parts
+
+`tests/fixtures/stripboard/pultec-low-boost-frozen.*` carries
+`board_terminals`, a 3-way Phoenix terminal block, and `candidateFromDump`
+refuses it:
+
+> `vero-import-no-geometry: "board_terminals" (BLOCK_200MIL3) is fitted with`
+> `"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal",`
+> `whose pad geometry the model cannot derive …`
+> `stripboard-geometry-unrecorded-pattern: … is not in the pin-pattern map`
+> `handed to geometryOf …`
+
+The missing pin pattern is the visible half. The half that matters more is that
+`sectionBoard("low-boost")` carries `junction_grounds` and `junction_signals` -
+two 5-pin headers - and no `board_terminals` at all. **The fixture and the
+model are two different boards**, and recording a pattern for the terminal
+block would make the fixture importable without making the two agree.
+
+- **Found** `2026-10-16-pultec-five-boards`, Task 3. The REFUSAL was relayed to
+  that task from an earlier agent; the divergence behind it was not.
+- **Evidence** the refusal above, run against the unedited fixture; the
+  component lists of the fixture and of `sectionBoard("low-boost")`.
+- **Verified** yes - run, not relayed.
+- **Why it is open** a frozen fixture is a benchmark and **nobody updates one
+  to today's model** (`stripboard/rules.json` says so outright, under
+  `stockCols`), so this is a decision about what the benchmark now measures
+  rather than a file to edit.
+- **What would settle it** the owner, or the plan, says whether the frozen
+  low-boost still benchmarks the circuit the model now describes. Until then
+  nothing should read a `board_terminals` refusal as a missing pin pattern.
 
 ### G3 - a ceramic disc capacitor has no shape, and pt2399-core carries one
 
@@ -125,6 +291,11 @@ this is a MISSING ROW. Answering G1 either way leaves the table empty.
   parts, with a test that counts rows against the board's pad count. **Note it
   is not independent of G1**: a junction row has to say what the wire carries,
   which is the label G1 decides.
+- **BLOCKED behind G14, found 2026-10-16 in Task 3.** This was still unverified
+  on a real board at the end of Task 3, and not for want of trying:
+  `buildChecklist` refuses a materialised board outright, for a different
+  reason, before any junction row is built. G14 has to be settled before this
+  one can even be observed.
 
 ### G4 - nothing refuses a board carrying both a header PART and pads for one control
 
@@ -145,13 +316,29 @@ carries both for the same control is a contradiction no guard detects.
 A pads-only control has no PART line, and this check has only ever been
 exercised on the transistor-preamp boards.
 
-- **Found** `2026-10-16-pultec-five-boards`, Task 2.
-- **Evidence** the Task 2 implementer reports it as a likely next refusal in a
-  packet build.
-- **Verified** NO - relayed. **A later task in the same plan runs the whole
-  path and will establish this by measurement**, so it may resolve itself.
-- **Why it is open** predicted, not yet observed.
-- **What would settle it** a packet build on a materialised Pultec board.
+**OBSERVED, 2026-10-16, Task 3.** It did not resolve itself. On the first
+materialised low-boost it refuses:
+
+> `the layout and the circuit do not hold the same parts, so a build packet`
+> `would be wrong:`
+> `  in the circuit but not on the board: RV_LO_BOOST, SW_LO_BOOST`
+> `Bring the .vrt in step with the circuit's netlist (`make update`), place any`
+> `new parts in VeroRoute (`make edit`), save, then run this again.`
+
+Both refs ARE on the board, as ten `PAD` lines; `onBoard` is built from
+`dump.parts` alone (`tools/guide/circuit.ts:61`). **The remedy the message
+gives is wrong for this cause** - nothing is missing, so `make update` and
+`make edit` will not help - and a refusal that names the wrong fix is worse
+than one that names none.
+
+- **Found** `2026-10-16-pultec-five-boards`, Task 2; observed in Task 3.
+- **Evidence** the refusal above, run against a materialised
+  `pultec-low-boost`; `tools/guide/circuit.ts:60-72`.
+- **Verified** yes - run in Task 3, no longer relayed.
+- **Why it is open** Task 3 was forbidden from fixing what it found.
+- **What would settle it** `onBoard` built from the `PAD` lines as well as the
+  `PART` lines, the remedy text corrected for this cause, and a perturbation
+  proving the check still fires on a genuinely absent part.
 
 ### G11 - a pad's hole is checked against the grid only when something draws it
 
@@ -185,9 +372,14 @@ the board is imported or exported.
   design question: the importer, the exporter, the model's own rule set, or more
   than one.
 - **What would settle it** a decision on which layer owns hole containment for
-  an imported board, then the guard with a perturbation. Task 3 materialises and
-  re-imports a real board, so it may produce evidence about whether this is
-  reachable in practice.
+  an imported board, then the guard with a perturbation.
+- **THE EVIDENCE THIS ASKED FOR, 2026-10-16, Task 3.** A real low-boost was
+  materialised and re-imported. **All ten pads came back inside the grid**, so
+  the gap is NOT reachable through the construction-to-materialisation path -
+  which is what the narrowed claim above predicted, since `onBoard` keeps a
+  placed pad on the board. It says nothing about a dump that came from
+  somewhere else, which is the case the entry is actually about, and it does
+  not close the entry.
 
 ### G6 - `tests/stripboard/model/seed-room.test.ts` is 760 lines
 
