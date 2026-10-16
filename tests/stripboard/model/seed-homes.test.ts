@@ -28,9 +28,11 @@
  * The refusal tests assert the leading key and the facts the message must carry,
  * never its prose.
  *
- * **ITS OWN FILE** rather than a section of `./seed.test.ts`, which is at 486
- * lines against this repository's 500-line ceiling, following `./seed-off-board.test.ts`
- * and `./seed-shared-strip.test.ts`.
+ * **ITS OWN FILE** rather than a section of `./seed.test.ts`, which this change
+ * took to within a few lines of this repository's 500-line ceiling, following
+ * `./seed-off-board.test.ts` and `./seed-shared-strip.test.ts`. No line count is
+ * quoted here on purpose: the first version of this sentence quoted one that the
+ * same commit falsified.
  */
 import { expect, test } from "bun:test"
 import { derivedCuts } from "../../../lib/stripboard/cuts.ts"
@@ -72,25 +74,31 @@ function stripsOf(candidate: Candidate, ref: string): readonly number[] {
   return [...placement.pins.values()].map((hole) => hole.strip)
 }
 
-/** A circuit with a net at each end and a landing pad on the far one. */
+/** A circuit of one part on one net and a landing pad on each of two others. */
 const SPLIT: readonly SeedPart[] = [
   twoLead("R1", WIDE, ["1", "A"], ["2", "A"]),
   offBoard("J1", { pin: "1", net: "B" }),
+  offBoard("J2", { pin: "1", net: "C" }),
 ]
 
 test("an explicit net-to-strip map is used as given", () => {
-  // Strip 7 for B is the point: it is where the map says, and no ordering of two
-  // nets at any whole stride puts the SECOND one there while the first is on 0
-  // and the board is ten strips - stride 7 would, and then B would be the only
-  // other net it could host. A is on 0 and R1 has both leads on it, so the part
-  // lies along A's own strip.
+  // **STRIPS 0, 7 AND 8 ARE WHAT NO STRIDE CAN PRODUCE, which is why the fixture
+  // has three nets and not two.** A stride lays three nets on `0, k, 2k`, and no
+  // whole `k` gives `{0, 7, 8}` in any order - `k = 7` gives `{0, 7, 14}`,
+  // `k = 8` gives `{0, 8, 16}`, `k = 4` gives `{0, 4, 8}`. With two nets the
+  // claim would have been false: `{0, 7}` is just `stride: 7`, which an earlier
+  // version of this comment asserted was impossible and then contradicted in its
+  // own next clause. A is on 0 and R1 has both leads on it, so the part lies
+  // along A's own strip; each pad has one terminal and goes on its net's strip.
   const homes = new Map([
     ["A", 0],
     ["B", 7],
+    ["C", 8],
   ])
   const seed = onlySeed(netlistOf(SPLIT), { name: "explicit", homes })
   expect(stripsOf(seed, "R1"), "A's leads start on A's home").toEqual([0, 0])
   expect(stripsOf(seed, "J1"), "and B's pad on the strip the map names").toEqual([7])
+  expect(stripsOf(seed, "J2"), "and C's on the one no stride could have given it").toEqual([8])
 })
 
 test("the stride form and the map it implies build the same board, hole for hole", () => {
@@ -164,15 +172,18 @@ test("a net missing from an explicit map refuses rather than defaulting to a str
   const message = refusalFrom(() =>
     seedsFrom(netlist, STOCK, SPANS, [{ name: "partial", homes: new Map([["A", 0]]) }]),
   )
-  expect(message).toStartWith("stripboard-seed-net-has-no-home")
+  // **THE KEY IS ONE ONLY `statedHomes` CAN EMIT, and that is the whole point of
+  // its name.** It was `net-has-no-home`, which `homeOf` in
+  // lib/stripboard/seed-place.ts also raises when a net reaches a PLACER with no
+  // home; under that shared key the three assertions below all held with the
+  // input check deleted and the placer's guard firing instead, so this test
+  // passed while the thing it is about was gone. The owner's ruling R13
+  // separated the keys. The count is still asserted - it is a fact the message
+  // should carry, and it mirrors the stride form's `ordering-missing-net` - but
+  // it is no longer the only thing telling the two refusals apart.
+  expect(message).toStartWith("stripboard-seed-ordering-net-has-no-home")
   expect(message, "it names the ordering").toContain('"partial"')
   expect(message, "and the net left without a strip").toContain('"B"')
-  // **AND IT SAYS HOW MANY NETS THE MAP COVERS, which is what gives this test
-  // teeth.** `homeOf` in lib/stripboard/seed-place.ts refuses under the SAME key
-  // when a net reaches a placer with no home, so the three assertions above all
-  // hold with the input check deleted and the placer's guard firing instead -
-  // the test would pass while the thing it is about was gone. The counts are
-  // carried only by the input-layer refusal.
   expect(message, "it says how much of the netlist the map covers").toContain(
     "1 of the netlist's 2 nets",
   )

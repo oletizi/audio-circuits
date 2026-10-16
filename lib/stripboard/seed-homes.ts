@@ -15,9 +15,10 @@
  * a strip may carry several nets with the cuts parting them derived, so
  * exclusive ownership is not a thing this model can express and reading an
  * assignment as exclusive would reproduce the very inflexibility the uniform
- * stride had. What a home strip buys is a FIRST CHOICE: `./seed-fit.ts` seats a
+ * stride had. What a home strip buys is a FIRST CHOICE: `acrossTwoHomes` seats a
  * two-lead part across its two nets' homes when the recorded span reaches, and
- * `./seed-fit.ts` lands a pad on its net's home and nowhere else.
+ * `placeOffBoard` lands a pad on its net's home and nowhere else - both in
+ * `./seed-fit.ts`.
  *
  * **WHEN A LEAD MAY LAND SOMEWHERE ELSE IS MECHANICAL AND IS NEVER A
  * PREFERENCE.** A deviation is admissible only where a HARD constraint forces
@@ -114,6 +115,12 @@ export type Ordering = StrideOrdering | StatedOrdering
 /**
  * Net to the strip it starts on, from one ordering in whichever form it was
  * stated.
+ *
+ * **A NET THE ORDERING LEAVES OUT IS REFUSED UNDER A DIFFERENT KEY PER FORM** -
+ * `ordering-missing-net` for the stride form, `ordering-net-has-no-home` for the
+ * stated map - and neither is `net-has-no-home`, which belongs to `homeOf` in
+ * `./seed-place.ts` and means a net reached a PLACER with no home, i.e. that
+ * this function accepted an ordering it should have refused.
  *
  * **IT DISCRIMINATES ON THE PRESENCE OF `homes`, and the two forms are not
  * mixed.** An ordering carrying both a stride and a map is refused rather than
@@ -239,15 +246,21 @@ function statedHomes(
   }
   for (const net of netlist.nets.keys()) {
     if (ordering.homes.has(net)) continue
-    // **THE COUNT IS IN THE MESSAGE SO THAT THIS CHECK CANNOT BE DELETED
-    // SILENTLY.** `homeOf` in `./seed-place.ts` refuses under the SAME key when
-    // a net reaches a placer with no home - deliberately, because it is the same
-    // condition at a later layer - so a test asserting only the key would still
-    // pass with this loop removed, which is this repository's named recurring
-    // defect wearing a passing test's clothes. The placer's guard names no
-    // counts; this one does, and `./seed-homes.test.ts` asserts them.
+    // **THE KEY IS THIS SITE'S ALONE, AND IT DID NOT START THAT WAY.** It was
+    // `net-has-no-home`, shared with `homeOf`'s internal-defect guard in
+    // `./seed-place.ts` on the argument that it is one condition at two layers.
+    // Perturbation showed what that cost: with this loop neutered the placer's
+    // guard fires under the same name, so a test asserting the key alone passes
+    // with the input check GONE - this repository's named recurring defect
+    // wearing a passing test's clothes. The owner's ruling R13 is that the two
+    // get separate keys, so a test can assert one only this site can emit.
+    //
+    // **THE COUNT STAYS IN THE MESSAGE AND IS NO LONGER WHAT HOLDS THE CHECK
+    // UP.** It says how much of the netlist the map covers, which is a fact
+    // worth carrying - the stride form's `ordering-missing-net` carries the
+    // same one - rather than the single thread keeping two refusals apart.
     refuse(
-      "net-has-no-home",
+      "ordering-net-has-no-home",
       `ordering "${ordering.name}" is an explicit net-to-strip map, it gives ` +
         `${ordering.homes.size} of the netlist's ${netlist.nets.size} nets a strip, and ` +
         `"${net}" is not one of them - so that net has no strip to start on.\n` +

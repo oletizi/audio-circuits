@@ -169,18 +169,23 @@ export function homeOf(workspace: Workspace, net: string): number {
   if (strip === undefined) {
     // Unreachable through seedsFrom: homeStripsFor refuses an ordering that
     // leaves a net out - `ordering-missing-net` for the stride form and
-    // `net-has-no-home` for the stated map - and validateNetlist refuses a lead
-    // whose net the reference does not carry. Stated rather than silently
-    // defaulted, because a 0 here would be every unhosted net shorted onto strip
-    // 0. **IT SHARES THE MAP FORM'S KEY DELIBERATELY**, because it is the same
-    // condition named at a later layer, as `parts-row-axis` is already shared by
-    // two sites in `./seed-parts.ts`.
+    // `ordering-net-has-no-home` for the stated map - and validateNetlist
+    // refuses a lead whose net the reference does not carry. Stated rather than
+    // silently defaulted, because a 0 here would be every unhosted net shorted
+    // onto strip 0.
+    //
+    // **THIS KEY IS THIS GUARD'S ALONE, AND THE MAP FORM'S INPUT REFUSAL USED TO
+    // SHARE IT.** Sharing it meant a test asserting the key could not tell an
+    // input the caller got wrong from a defect in this repository's own code, and
+    // perturbation showed the input check could be deleted with its test still
+    // green. The owner's ruling R13 separated them. So a `net-has-no-home` in a
+    // log is always what it says here: a bug in homeStripsFor, never a bad input.
     refuse(
       "net-has-no-home",
       `net "${net}" has no home strip under ordering "${workspace.ordering}", and reaching ` +
         "this point means homeStripsFor accepted an ordering it should have refused. Fix " +
-        "lib/stripboard/seed-homes.ts's ordering-missing-net and net-has-no-home checks; " +
-        "nothing is substituted.",
+        "lib/stripboard/seed-homes.ts's ordering-missing-net and ordering-net-has-no-home " +
+        "checks; nothing is substituted.",
     )
   }
   return strip

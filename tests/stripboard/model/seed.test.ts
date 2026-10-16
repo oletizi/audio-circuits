@@ -6,8 +6,10 @@
  * candidate whose leads are on the strips hosting their nets; that an infeasible
  * one refuses by name, naming the part and both its nets; that several orderings
  * yield several distinct candidates, returned in the order they were handed in
- * with nothing ranked or filtered; that sixteen refusals fire, each on its own
- * leading key; and that on the owner's own `transistor-preamp-feedback` circuit
+ * with nothing ranked or filtered; that the three refusals a PLACEMENT can cause
+ * fire, each on its own leading key - a pair that cannot reach, a field that
+ * cannot be seated, and a join with no column left; and that on the owner's own
+ * `transistor-preamp-feedback` circuit
  * every seed holds `violationsOf` empty - every net whole in one copper
  * component, no component carrying two nets - over the cuts `derivedCuts`
  * derives for it.
@@ -34,30 +36,17 @@
  *   - **the refusal tests assert the leading key and the facts the message must
  *     carry, not its prose.** A message rewritten keeps passing, which is
  *     intended; a message that stops naming the part or a net does not;
- *   - **five of the refusal keys the five modules behind `seedsFrom` carry are
- *     NOT asserted here** (`seed.ts` 5, `seed-place.ts` 2, `seed-model.ts` 1,
- *     `seed-homes.ts` 8, `seed-validate.ts` 7 - 23 refusal sites under 22
- *     distinct keys, counted rather than remembered), **and they are named
- *     rather than left for a reader to count.** Three are asserted elsewhere:
- *     `stripboard-seed-repeated-pad` is a fact about the off-board kind and is
- *     driven by `./seed-off-board.test.ts`, beside the positive case it is the
- *     negative of, and `stripboard-seed-home-not-a-strip` and
- *     `stripboard-seed-ordering-states-both-forms` are facts about the per-net
- *     map form of an ordering and are driven by `./seed-homes.test.ts`. The
- *     other two are `stripboard-seed-holes-shared` and
- *     `stripboard-seed-unsound`: both are internal-defect guards - reachable
- *     only if the placer's hole set or its interleaving rejection has a bug - so
- *     there is no well-formed call that fires them, and a fixture that forced
- *     one would be testing a board this module cannot construct. They are the
- *     self-check `seedsFrom` runs on every seed it returns, so they execute on
- *     every test below; what is untested is their refusal branch, not the check.
- *
- *     **`stripboard-seed-net-has-no-home` WAS IN THAT LAST GROUP AND IS NOT ANY
- *     MORE**: it is raised at two sites under one key - `homeOf` in
- *     `lib/stripboard/seed-place.ts`, still an internal-defect guard, and
- *     `statedHomes` in `lib/stripboard/seed-homes.ts`, where a stated map
- *     leaving a net out is an INPUT refusal. `./seed-homes.test.ts` drives it
- *     and asserts a count the placer's guard does not carry.
+ *   - **nothing here inventories the family's refusal keys any more, and the
+ *     census is NOT deleted - it is `./seed-refusals.test.ts`**, with the
+ *     thirteen input-and-netlist key assertions that used to sit below. The
+ *     census had to say which of the twenty-three keys no test drives; it read
+ *     four, then five, and is ten, and each correction cost lines this file did
+ *     not have - it reached the 500-line ceiling on the last one. So the
+ *     inventory now lives with the assertions that make it up. What stays here
+ *     is `stripboard-seed-no-column-to-join`, `stripboard-seed-leads-cannot-reach`
+ *     and `stripboard-seed-field-cannot-be-seated`: those are facts about
+ *     PLACEMENT, which is this file's subject, and the census names them as
+ *     driven here.
  */
 import { expect, test } from "bun:test"
 import type { Candidate } from "../../../lib/stripboard/board.ts"
@@ -65,7 +54,6 @@ import { derivedCuts } from "../../../lib/stripboard/cuts.ts"
 import { violationsOf } from "../../../lib/stripboard/invariants.ts"
 import { seedsFrom } from "../../../lib/stripboard/seed.ts"
 import { leadsOf } from "../../../lib/stripboard/seed-model.ts"
-import { validateNetlist } from "../../../lib/stripboard/seed-validate.ts"
 import type { SeedPart } from "../../../lib/stripboard/seed-model.ts"
 import {
   RECORDED_SPANS,
@@ -90,8 +78,6 @@ const NARROW = "SYNTHETIC:Seed_TwoLead_Narrow"
 const FAR_PAIR = "SYNTHETIC:Seed_TwoLead_Far"
 /** A three-terminal fixture part whose outer pins are three steps apart. */
 const SPREAD_TRIPLE = "SYNTHETIC:Seed_Triple_Spread"
-/** A two-row fixture footprint, for a field whose pins share an `alongSteps`. */
-const SYNTHETIC_TWO_ROW = "SYNTHETIC:Seed_TwoRow"
 
 const SPANS = new Map([
   [WIDE, syntheticSpan(WIDE, 2, 6)],
@@ -373,106 +359,6 @@ test("the hand-built board's own figures are what Task 10's gate is against", ()
   // test exists so that a later reading of them cannot drift: the gate's
   // threshold is not adjustable by whoever is trying to pass it.
   expect(FEEDBACK_HAND).toEqual({ cuts: 5, wires: 4, bridges: 3 })
-})
-
-test("every input refusal fires on its own leading key", () => {
-  const netlist = netlistOf([twoLead("R1", WIDE, ["1", "A"], ["2", "B"])])
-  const good = ordering("abc", ["A", "B"], 1)
-
-  expect(refusalFrom(() => seedsFrom(netlist, SMALL, SPANS, []))).toStartWith(
-    "stripboard-seed-no-orderings",
-  )
-  expect(
-    refusalFrom(() => seedsFrom({ nets: new Map(), parts: [] }, SMALL, SPANS, [good])),
-  ).toStartWith("stripboard-seed-no-parts")
-  expect(
-    refusalFrom(() => seedsFrom(netlist, SMALL, SPANS, [ordering("x", ["A", "B", "Z"], 1)])),
-  ).toStartWith("stripboard-seed-ordering-unknown-net")
-  expect(
-    refusalFrom(() => seedsFrom(netlist, SMALL, SPANS, [ordering("x", ["A"], 1)])),
-  ).toStartWith("stripboard-seed-ordering-missing-net")
-  expect(
-    refusalFrom(() => seedsFrom(netlist, SMALL, SPANS, [ordering("x", ["A", "A", "B"], 1)])),
-  ).toStartWith("stripboard-seed-ordering-repeated-net")
-  expect(
-    refusalFrom(() => seedsFrom(netlist, SMALL, SPANS, [ordering("x", ["A", "B"], 0)])),
-  ).toStartWith("stripboard-seed-ordering-stride-not-positive")
-  expect(
-    refusalFrom(() => seedsFrom(netlist, { strips: 2, columns: 8 }, SPANS, [
-      ordering("x", ["A", "B"], 2),
-    ])),
-  ).toStartWith("stripboard-seed-ordering-off-board")
-  expect(refusalFrom(() => seedsFrom(netlist, SMALL, new Map(), [good]))).toStartWith(
-    "stripboard-seed-no-span-recorded",
-  )
-})
-
-test("every netlist refusal fires on its own leading key", () => {
-  const good = ordering("abc", ["A", "B"], 1)
-  const twice = netlistOf([
-    twoLead("R1", WIDE, ["1", "A"], ["2", "B"]),
-    twoLead("R1", WIDE, ["1", "A"], ["2", "B"]),
-  ])
-  expect(refusalFrom(() => seedsFrom(twice, SMALL, SPANS, [good]))).toStartWith(
-    "stripboard-seed-repeated-ref",
-  )
-
-  // **THE OLD FIXTURE REFUSED FOR A REASON THAT NO LONGER EXISTS**, recorded
-  // rather than quietly dropped: two pins at the same `alongSteps` used to
-  // refuse outright under `stripboard-seed-field-shares-a-strip`, on the
-  // premise that *"the along axis is laid across the strips...so two pins
-  // sharing it would share a strip, and a strip carrying two nets' leads is
-  // the interleaved OPEN."* That conflated "shares a strip" with
-  // "interleaves" - a correctly quarter-turned DIP puts pin 1 and pin 16 on
-  // one strip with a cut down the middle, which is buildable. Whether a
-  // placed field's shared strip interleaves is now answered on the PLACED
-  // board by `interleavingOn` (lib/stripboard/separable.ts); see
-  // "a field with two pins on one strip is no longer refused outright" below
-  // for the input-layer half of this.
-
-  const fractional = netlistOf([
-    fixedField("Q1", TRIPLE, [
-      { pin: "1", net: "A", alongSteps: 0, acrossSteps: 0 },
-      { pin: "2", net: "B", alongSteps: 0.5, acrossSteps: 0 },
-    ]),
-  ])
-  expect(refusalFrom(() => seedsFrom(fractional, SMALL, SPANS, [good]))).toStartWith(
-    "stripboard-seed-field-off-grid",
-  )
-
-  const base = netlistOf([twoLead("R1", WIDE, ["1", "A"], ["2", "B"])])
-  const extra = {
-    nets: new Map([...base.nets, ["C", ["R9.1"]]]),
-    parts: base.parts,
-  }
-  expect(
-    refusalFrom(() => seedsFrom(extra, SMALL, SPANS, [ordering("x", ["A", "B", "C"], 1)])),
-  ).toStartWith("stripboard-seed-reference-pin-not-a-part")
-
-  const missing = { nets: new Map([["A", ["R1.1"]], ["B", []]]), parts: base.parts }
-  expect(refusalFrom(() => seedsFrom(missing, SMALL, SPANS, [good]))).toStartWith(
-    "stripboard-seed-part-pin-not-in-reference",
-  )
-
-  const disagreeing = {
-    nets: new Map([["A", ["R1.1", "R1.2"]], ["B", []]]),
-    parts: base.parts,
-  }
-  expect(refusalFrom(() => seedsFrom(disagreeing, SMALL, SPANS, [good]))).toStartWith(
-    "stripboard-seed-lead-net-disagrees",
-  )
-})
-
-test("a field with two pins on one strip is no longer refused outright", () => {
-  // Two pins of DIFFERENT nets at the same alongSteps - the exact shape
-  // `field-shares-a-strip` refused. It is now a placement question, not a
-  // field question, so building the netlist must succeed.
-  const part = fixedField("U1", SYNTHETIC_TWO_ROW, [
-    { pin: "1", net: "A", alongSteps: 0, acrossSteps: 0 },
-    { pin: "2", net: "B", alongSteps: 0, acrossSteps: 3 },
-  ])
-  expect(() => netlistOf([part])).not.toThrow()
-  expect(refusalFrom(() => validateNetlist(netlistOf([part])))).toBe("")
 })
 
 test("the board edge refuses a join that has no column left", () => {
