@@ -85,155 +85,21 @@ the cut crosses in the same row.
 Open: a fix would settle these
 ------------------------------
 
-### G12 - nothing brings a base board's footprint spans to the candidate's lead spans, so `--materialize` refuses
-
-`--materialize` takes the component SET from a base `.vrt` and solves each
-part's facing against THAT board's footprint. The footprint carries whatever
-span it was last at; the candidate declares its own lead separation. Nothing in
-the pipeline reconciles them, so the first materialisation of a Pultec board
-refuses on its first capacitor:
-
-> `--materialize: no turn of "C18"'s footprint puts its leads in the holes the`
-> `document declares ( 1@7,3 2@10,3 ). The footprint on this board is 3x3`
-> `unturned, and this verb never stretches one … Stretch the part on the board`
-> `this verb starts from.`
-
-**C18 is the first instance and not the only one.** On `rcm s0`, five of the
-**FIFTEEN** two-lead parts need a LONGER span than the base is at, seven need a
-SHORTER one, and three already agree. **Every separation the candidate asks for
-is inside the model's own recorded range for that footprint**, so this is not a
-candidate bending a lead further than the part allows - it is two records of one
-part's span that nobody keeps in step.
-
-**THE COUNT WAS WRONG UNTIL 2026-10-16 and the table is now inline**, because
-the one load-bearing scoping claim for the fix was uncheckable from this
-register. It read *"seventeen two-lead parts"*, which conflated the board's 17
-PARTS with its two-lead parts; the Task 1 reviewer caught it by counting the
-`.vrt`. The board holds **15 two-lead parts + 2 SIP headers = 17 parts, plus 10
-pads = 27 placements**, which is the figure the evidence line below cites. The
-controller carried the wrong number into the implementation plan as well, and
-corrected it there in the same change.
-
-| ref | candidate wants | committed base is at | `--import` base is at |
-| --- | --- | --- | --- |
-| C18 | 3 | 2 | 2 |
-| C19 | 3 | 2 | 2 |
-| C20 | 3 | 2 | 2 |
-| C21 | 3 | 2 | 2 |
-| C22 | 2 | 2 | 2 |
-| C23 | 1 | 2 | 2 |
-| R2 | 1 | 2 | 4 |
-| SI_HI_BOOST_RV_HI_BOOST.ccw-wiper | 1 | 4 | 4 |
-| SI_HI_BOOST_RV_HI_BOOST.wiper-cw | 2 | 4 | 4 |
-| SI_HI_CUT_C26 | 3 | 2 | 2 |
-| SI_HI_CUT_R1 | 1 | 4 | 4 |
-| SI_HI_CUT_RV_HI_CUT.ccw-wiper | 3 | 4 | 4 |
-| SI_HI_CUT_RV_HI_CUT.wiper-cw | 4 | 4 | 4 |
-| SI_LOW_CUT_RV_LO_CUT.ccw-wiper | 2 | 4 | 4 |
-| SI_MID_R_MID_SHUNT | 4 | 4 | 4 |
-
-Separation in holes; `LEAD_SPANS` records both film-cap footprints at
-`minSpanHoles 2 … maxSpanHoles 4` and the axial resistor at `2 … 16`, and a
-separation of `n` holes is `n + 1` span holes.
-
-**The two SIP headers are NOT in that table and the span step will still run
-over them.** `junction_grounds` and `junction_signals` are `Conn_01x05`, COMP
-type `SIP`, with nets assigned - exactly the type whose `Stretch` reallocates
-pins (constraint 1). **They are safe for a reason that must be stated rather
-than assumed:** `LEAD_SPANS` records the 1x05 header as RIGID at 5 holes
-(`lib/kicad/lead-span.ts:317-322`), which is the length the SIP constructor
-already builds it at (`Component.h:120-126`), so the required length equals the
-current one and no stretch is attempted.
-
-- **Found** `2026-10-16-pultec-five-boards`, Task 3, on the first real
-  materialisation.
-- **Evidence** the refusal above, from `materialize` at
-  `tools/stripboard/vero-export.ts:442`; the full span accounting over all 27
-  placements, against both the committed `.vrt` and an `--import` board.
-- **Verified** yes - run, not relayed.
-- **Why it is open** Task 3 was a discovery run forbidden from fixing what it
-  found, and WHERE this step belongs - the exporter, a new preparation verb, or
-  the fork - is a design question.
-- **What would settle it** a step that sets each base part's span from the
-  candidate before `--materialize` runs, with a perturbation proving it fires.
-- **WHERE THE STEP BELONGS IS SETTLED, 2026-10-16.** It belongs inside
-  `--materialize`'s own turn search, and **not** in a preparation pass: the
-  turn search reads the component's current footprint through
-  `PinOffsets(comp, offsets)` at
-  `.tools/veroroute-perfboard/Src/Headless_materialize_place.cpp:91`, inside the
-  `for ( char direction : kDirections )` loop at `:87-118`, and the component is
-  FLOATING at that moment - see the narrowing recorded under G13.
-  `--materialize` already does the same gesture for wires: `PlaceDeclaredWire`
-  (`Headless_materialize_place.cpp:388-437`) derives a span from the document,
-  takes the component off, stretches it to that span with a named refusal when
-  it stops short, and puts it down.
-- **SIX CONSTRAINTS ON THE FIX**, established by reading the fork rather than
-  by running it:
-  1. `Component::CanStretch` (`Component.h:578-592`) returns
-     `!GetHasAssignedPins()` for `SIP`, `DIP`, `STRIP_100`, `BLOCK_100`,
-     `BLOCK_200` and the three switch types, and `Component::Stretch`
-     (`:594-611`) calls `AllocatePins(...)` for exactly those - which resets
-     `m_nodeIdPins` to `BAD_NODEID` (`:298-309`), and `PutDown` writes each
-     hole's net from `comp.GetNodeId(pinIndex)`
-     (`Board_components.cpp:516-523`). **Stretching a moulded pin field is
-     therefore SILENT NET LOSS, not a refusal.**
-
-     **The rule is NOT "refuse any moulded part".** Worded that way - as it was
-     until 2026-10-16 - an implementation refuses low-boost on
-     `junction_grounds`, which needs no change at all. The rule is: **derive
-     the required length, compare it with the current one, and refuse only when
-     they DIFFER for a type whose `Stretch` reallocates pins.** Every part in
-     the span table above is in `Stretch`'s `default:` branch and reallocates
-     nothing; the two parts that are not in that table are the SIP headers,
-     whose required length already equals their current one.
-  2. `FootPrint::CanStretch` (`FootPrint.h:55-93`) bounds the length by
-     `CompTypes::GetMinLength`/`GetMaxLength`, and `FootPrint::Stretch`
-     (`:104-106`) **asserts** `CanStretch`. A required length outside the type's
-     range must refuse by name rather than assert-fail or spin.
-  3. `AdoptCurrentSpanAsDeclared` (`Component.h:330-348`) is deliberately not
-     called by `Stretch` - *"a bend is exactly the case where the declared span
-     must stay put"* - so a materialise-time stretch must leave
-     `m_declaredSpanCols` alone, which calling `Stretch` gets for free.
-  4. `Stretch` acts on the UNTURNED `GetCols()` while the turn search reads
-     `GetCompCols()` = `GetCols( GetDirection() )` (`Component.h:484-485`), so
-     the required length is derived PER TURN.
-  5. Three places in the fork assert that this verb never stretches and go
-     stale in the same change: `Headless_materialize.h:98-101`,
-     `Headless_materialize_place.cpp:129-133`, and
-     `Headless_materialize_apply.cpp:306-310` - the last of which hands the
-     caller *"Stretch the part on the board this verb starts from"* as a remedy
-     that would then be wrong.
-  6. **THE TURN LOOP CARRIES ITS MUTATION, and a stretch written naively inside
-     it puts down a wrongly-lengthed footprint.** `SolvePlacement` keeps
-     iterating all four facings AFTER the first fit, in order to detect two
-     turns occupying different rectangles (`place.cpp:87-118`, `:138-145`), and
-     records `bestRow`/`bestCol`/`bestDirection` from the FIRST fit only
-     (`:117`). It mutates the component in the loop (`comp.SetDirection`,
-     `:88`), and `PlaceTarget` restores only the DIRECTION afterwards (`:161`).
-     So a stretch added inside that loop leaves the footprint at whatever length
-     the LAST facing tried needed, not the length the CHOSEN facing needs, and
-     `PutDown` (`:183`) places that. **It is not silent** - PHASE 7's grid read
-     (`apply.cpp:284-312`) catches it as a named refusal - but it fails
-     confusingly. The solve must return the required length alongside the turn,
-     or the winning length must be re-applied before `PutDown`.
-
-     Found by the Task 1 REVIEWER, not by the task: the five constraints above
-     were all read off the stretch machinery, and this one lives in the loop
-     that calls it.
-- **A witness exists.** `tests/stripboard/materialize-span.test.ts` materialises
-  low-boost on `rcm s0` against the committed board and asserts this refusal.
-  **It PASSES while this gap is open and goes red when the gap closes, at which
-  point it is DELETED rather than inverted** - its own comment says so.
-
 ### G13 - `--stretch` cannot change a part's span on a packed board
 
 **Read the narrowing at the end of this entry before relying on it.** As first
-written this entry claimed the span step needs an ordering; that claim is true of
-`--stretch` and false of `--materialize`.
+written this entry claimed that bringing a base board's footprint spans to a
+candidate's lead spans needs an ordering; that claim is true of `--stretch` and
+false of `--materialize`, and the span step landed inside `--materialize`
+(`.tools/veroroute-perfboard/Src/Headless_materialize_place.cpp`'s
+`SolvePlacement`) without needing one. **The gap that entry recorded - nothing
+reconciling a base board's spans with the candidate's, so `--materialize`
+refused on low-boost's first capacitor - is CLOSED and its entry is deleted
+rather than marked, per this file's own rule.**
 
 `--stretch` takes the part off, changes it, and refuses when it cannot put it
-back. Both boards a materialisation could start from are packed, so the gesture
-G12 needs cannot be run in place:
+back. Both boards a materialisation could start from are packed, so a span
+gesture driven from OUTSIDE the fork cannot be run in place:
 
 - on the owner's committed hand layout, **six of the seven placed parts refuse
   `--stretch` in both directions**;
@@ -246,16 +112,21 @@ onto rows of their own, in two column bands, before any span could be set.
 free, and a destination outside the board's `GRID` (the `--import` board is
 `GRID 35 35`, which will not take seventeen parts strung down one column).
 
-- **Found** `2026-10-16-pultec-five-boards`, Task 3, while probing past G12.
+- **Found** `2026-10-16-pultec-five-boards`, Task 3, while probing past the span
+  disagreement that `--materialize` now settles itself.
 - **Evidence** the fork's `--stretch` and `--move` refusals, both quoted in
   full in that task's report; the probe that got through by spreading first.
 - **Verified** yes - run, not relayed.
-- **Why it is open** it is the constraint on G12's fix rather than a defect of
-  its own, and naming it was the point.
-- **What would settle it** G12's step, written so the ordering is part of it.
+- **Why it is open** it was recorded as the constraint on the span step rather
+  than as a defect of its own, and naming it was the point. The span step no
+  longer goes through these two verbs, so what is left is a limitation of
+  `--stretch` and `--move` with no current caller.
+- **What would settle it** either a `--stretch` that pans or spreads to make
+  room, or an owner ruling that a packed board is simply not stretchable in
+  place and the refusal is correct as it stands.
 - **NARROWED, 2026-10-16, by reading the fork.** This entry is true of
-  `--stretch` and **is not true of `--materialize`**, so it does not constrain
-  G12's fix the way the sentence above expected. `MaterializeLayout`'s PHASE 2
+  `--stretch` and **is not true of `--materialize`**, so it never constrained
+  the span step the way the sentence above expected. `MaterializeLayout`'s PHASE 2
   calls `board.FloatAllComps()` at
   `.tools/veroroute-perfboard/Src/Headless_materialize_apply.cpp:369` -
   `Board::FloatAllComps` (`Board_components.cpp:781-784`) is `TakeOff` on every
@@ -265,17 +136,17 @@ free, and a destination outside the board's `GRID` (the `--import` board is
   (`Headless_materialize_place.cpp:154-190`) performs the single `Board::PutDown`
   of the run at the hole the document declares. There is no "put it back", which
   is the gesture this entry is about. A span set inside the turn search therefore
-  needs no spread-first ordering.
-  - **What survives of it:** `PlaceTarget`'s `PutDown` (`place.cpp:183`) can
-    still refuse a longer footprint that overlaps a hole an earlier target
-    claimed. That is a NAMED refusal with nothing written and nothing left
-    floating - not this entry's silent float - and the rectangle after a stretch
-    is the one the document declares, which is the rectangle the model's own
-    overlap checks were run over. Today's rectangle is whatever the base `.vrt`
-    was left at, which the model has never checked anything against.
+  needs no spread-first ordering, and the one that landed there has none.
+  - **What survives of it:** `PlaceTarget`'s `PutDown` can still refuse a longer
+    footprint that overlaps a hole an earlier target claimed. That is a NAMED
+    refusal with nothing written and nothing left floating - not this entry's
+    silent float - and the rectangle after a stretch is the one the document
+    declares, which is the rectangle the model's own overlap checks were run
+    over. It has not been seen: low-boost materialises with every part at its
+    declared separation and nothing collides.
   - **The entry stays open** because `--stretch` and `--move` still behave
-    exactly as recorded, and anything that reaches for them as the span step
-    will still hit this. It is no longer a blocker on G12.
+    exactly as recorded, and anything that reaches for them to change a span on
+    a packed board will still hit this.
 
 ### G14 - a materialised board carries no net names, so the checklist cannot be built
 
