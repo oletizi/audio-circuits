@@ -143,4 +143,53 @@ test("freshImportBase refuses by name when --import cannot read the netlist, and
   expect(fs.existsSync(outPath), "a refused import leaves nothing behind").toBe(false)
 })
 
+/**
+ * `--import` can be killed AFTER it has already created the file at `-o`, and
+ * guard 2 (`run.status !== 0`) is what catches that case - guard 3
+ * (`!fs.existsSync`) alone would not, because the file is there.
+ *
+ * **REACHABILITY, ESTABLISHED RATHER THAN ASSUMED.** `RunImport`
+ * (`Headless_commands.cpp:160-225`) never touches `-o` until
+ * `Headless::SaveBoard` (`Headless.cpp:158-172`), which `Open()`s - creating
+ * or truncating the file - BEFORE the write that can fail. Capping the file-
+ * size `rlimit` to zero with `ulimit -f 0` before exec'ing the real fork lets
+ * `Open()` succeed and the first byte written past it trip `SIGXFSZ`: on this
+ * machine that is a real, reproducible kill, observed directly (not inferred)
+ * before this test was written - `spawnSync` reports `status: null, signal:
+ * "SIGXFSZ"` and a **zero-byte file survives at `outPath`**. Guard 2 and
+ * guard 3 are therefore NOT redundant - this is the one case F3 of the fix
+ * round asked for, found by reading `Headless::SaveBoard`'s own ordering
+ * rather than guessed at.
+ */
+function spawnWithZeroFileSizeLimit(args: readonly string[]): {
+  status: number
+  stdout: string
+  stderr: string
+} {
+  const binary = verorouteBinary(process.env, REPO)
+  const run = spawnSync(
+    "sh",
+    ["-c", 'ulimit -f 0; exec "$0" "$@"', binary, ...args],
+    { encoding: "utf8" },
+  )
+  return { status: run.status ?? -1, stdout: run.stdout ?? "", stderr: run.stderr ?? "" }
+}
+
+test("freshImportBase refuses by name when --import is killed after creating the file, which guard 3 alone would miss", async () => {
+  const declaration = loadDeclaration(
+    path.join(REPO, "boards", "pultec-low-boost", "perfboard.json"),
+  )
+  const netlist = await exportNetlistFor(declaration)
+  const scratch = freshTempScratch("stripboard-materialize-base-")
+  const outPath = path.join(scratch, "killed-mid-write.vrt")
+  expect(() =>
+    freshImportBase({ netlist, outPath }, spawnWithZeroFileSizeLimit),
+  ).toThrow(/vero-export-fresh-base-refused/)
+  // THE PREMISE THIS TEST RESTS ON: a file DOES exist here, zero bytes, which
+  // is exactly why a version of this function with only guard 3 would have
+  // returned `outPath` as a built base instead of refusing.
+  expect(fs.existsSync(outPath), "the kill happens after Open(), so the file is there").toBe(true)
+  expect(fs.statSync(outPath).size, "and nothing was written into it before the kill").toBe(0)
+})
+
 afterAll(cleanUpTempScratch)

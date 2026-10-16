@@ -103,7 +103,45 @@ export function committed(name: string): {
   }
 }
 
-/** Materialize one candidate onto its own committed board, and read the result back. */
+/**
+ * Materialize one candidate onto its own committed board, and read the result
+ * back.
+ *
+ * **`base: vrtOf(name)` BELOW IS THE COMMITTED `.vrt`, AND THAT IS NOT THE
+ * VIOLATION IT LOOKS LIKE.** `tools/stripboard/materialize-base.ts` states the
+ * rule that a materialisation starts from a base built fresh by `--import`
+ * from the circuit, never the committed file - but that rule is about what
+ * ADOPTION may start from, and this function makes a different claim than
+ * adoption does.
+ *
+ * `roundTrip` asks: "if `--materialize` is handed a document describing
+ * exactly the board that is already sitting in `base`, does it reproduce that
+ * board?" That is round-trip FIDELITY of `--materialize` itself, measured
+ * against a board's own prior bytes - a claim about the verb, not a claim
+ * about where a real materialisation's component set should come from. The
+ * committed `.vrt` is the only board on hand that is GUARANTEED to carry
+ * exactly the components `committed(name)`'s candidate places, which is what
+ * makes it the right fixture for this specific question.
+ *
+ * **WHY ITS OUTPUT CANNOT CAUSE THE HARM THE RULE EXISTS TO PREVENT.** The
+ * rule's reasons are about incidental state leaking into what adoption writes
+ * under `boards/`: this function writes only into `freshTempScratch`'s
+ * directory, is never on adoption's path, and the committed file itself is
+ * opened read-only (through `fork(["--dump-board", ...])` and as
+ * `--materialize`'s `--base` argument, which the fork never mutates). Nothing
+ * here feeds `boards/pultec-low-boost/pultec-low-boost.perfboard.vrt` or any
+ * other committed layout back into itself.
+ *
+ * **THE ENFORCED GUARD IS NARROWER THAN THE PROSE RULE, AND THAT IS WHY THIS
+ * IS A COMMENT RATHER THAN A SECOND GUARD.** `materialize()` refuses only an
+ * EMPTY `base`; it has no way to tell "this base happens to be a committed
+ * `.vrt`" from any other real path, and should not grow one - a check that
+ * tried would have to know what `boards/` holds, which is exactly the kind of
+ * coupling `lib/stripboard/`'s "no reading a file" rule exists to keep out of
+ * the model, and this is `tools/`-side code calling a general-purpose
+ * function. So this exemption is carried here, at the one call site that
+ * takes it, in prose - not as a loophole in the guard.
+ */
 export function roundTrip(name: string): {
   readonly before: Candidate
   readonly after: Candidate
