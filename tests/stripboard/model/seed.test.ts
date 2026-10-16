@@ -209,27 +209,35 @@ test("a moulded field with nowhere to go refuses, naming every terminal and its 
       { pin: "3", net: "C", alongSteps: 3, acrossSteps: 0 },
     ]),
   ])
-  // A moulded field whose outer pins are three steps apart needs FOUR strips,
-  // and this stock has three: every window, in both directions and from every
-  // starting strip, puts a pin off the board. The field is never reshaped, so
-  // there is nothing else to try.
+  // A moulded field whose outer pins are three steps apart needs FOUR holes in
+  // whichever axis its pin row is laid along, and this stock is three by three.
+  // At `S` and `N` the row lies across the strips, so all six of those windows
+  // put a pin off the last strip; at `E` and `W` it lies along one, so all six
+  // of those are on a strip that exists and then run off the end of it at every
+  // column. The field is never reshaped, so there is nothing else to try.
   //
-  // **THE OLD FIXTURE REFUSED FOR A REASON THAT NO LONGER EXISTS**, recorded
-  // rather than quietly replaced: a three-step field on three strips whose nets
-  // were ordered `A, C, B`, refused because *"every strip is some net's home, so
-  // there is no scratch strip at all"* and a pin on another net's home strip was
-  // forbidden. After the 2026-10-15 relaxation such a pin is admitted and pays a
-  // cut, so that board now seats the field across two shared strips. What a
-  // window is still held to is the board edge and, per column, interleaving.
+  // **THE FIXTURE HAS NOW OUTLIVED TWO REASONS FOR REFUSING, and both are
+  // recorded rather than quietly replaced.** It began as a three-step field on
+  // three strips whose nets were ordered `A, C, B`, refusing because *"every
+  // strip is some net's home, so there is no scratch strip at all"* and a pin on
+  // another net's home strip was forbidden; after the 2026-10-15 relaxation such
+  // a pin is admitted and pays a cut. It was then a field needing four strips on
+  // a stock of three, EIGHT columns wide - which refused only while `S` and `N`
+  // were the sole facings tried. Task 4 added `E` and `W`, and on eight columns
+  // this field now lies happily along one strip, three nets deep with two cuts.
+  // So the stock is narrowed to three columns: the point of the fixture is a
+  // field with nowhere to go, and after the quarter-turn "nowhere" means neither
+  // axis has room rather than just the one.
   const message = refusalFrom(() =>
-    seedsFrom(netlist, { strips: 3, columns: 8 }, SPANS, [ordering("packed", ["A", "C", "B"], 1)]),
+    seedsFrom(netlist, { strips: 3, columns: 3 }, SPANS, [ordering("packed", ["A", "C", "B"], 1)]),
   )
   expect(message).toStartWith("stripboard-seed-field-cannot-be-seated")
   expect(message, "it names the part").toContain('"Q1"')
   for (const net of ["A", "B", "C"]) expect(message, `it names net ${net}`).toContain(`"${net}"`)
-  expect(message, "it says how many windows put every pin on the stock").toContain(
-    "0 of the 6 windows",
+  expect(message, "it says how many windows put every pin on a strip that exists").toContain(
+    "6 of the 12 windows",
   )
+  expect(message, "and it names the edge the other six ran off").toContain("off the end of a strip")
 })
 
 test("several orderings yield several distinct seeds, in the order they were given", () => {
