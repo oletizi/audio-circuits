@@ -64,7 +64,8 @@ import {
   spanHoles,
   type PartArea,
 } from "../../../lib/stripboard/seed-area.ts"
-import { bodyMarginsFor, seedPartsFrom } from "../../../lib/stripboard/seed-parts.ts"
+import { padHolesFor } from "../../../lib/kicad/formed-frame.ts"
+import { bodyMarginsFor, seedPartsFrom, unmeasuredAlongAxis } from "../../../lib/stripboard/seed-parts.ts"
 import { seedsFrom } from "../../../lib/stripboard/seed.ts"
 import { rigidOverlapPlaces, routedUnderRigidPlaces } from "./area-places.ts"
 import {
@@ -83,6 +84,7 @@ import {
 import { handBoard } from "./seed-room-fixtures.ts"
 import type { Grid } from "../../../lib/stripboard/board.ts"
 import type { LeadSpan } from "../../../lib/kicad/lead-span-model.ts"
+import type { PinPattern } from "../../../lib/kicad/pin-pattern-model.ts"
 import type { Ordering, SeedNetlist } from "../../../lib/stripboard/seed-model.ts"
 
 const SOURCE = { patterns: PIN_PATTERNS, spans: LEAD_SPANS }
@@ -285,6 +287,65 @@ test("a part's body margins come out of its own .kicad_mod", () => {
       expect(Number.isInteger(steps), `${footprint} ${side} is whole`).toBe(true)
     }
   }
+})
+
+test("the row-axis guard fires on a footprint with no measured along-pitch", () => {
+  // PinHeader_1x05: five pads, one distinct xSteps. classifyPads calls that
+  // axis "x" and the old guard believed it.
+  const pattern = PIN_PATTERNS.get("Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical")
+  if (pattern === undefined) throw new Error("the fixture footprint is not recorded")
+  const pads = padHolesFor(pattern)
+  expect(new Set(pads.map((p) => p.xSteps)).size, "the premise: one distinct xSteps").toBe(1)
+  expect(unmeasuredAlongAxis(pattern), "and the guard sees it").toBe(true)
+
+  // The negative: a footprint whose along-row pitch WAS measured must not be
+  // flagged, or the guard is merely stricter rather than correct.
+  const to92 = PIN_PATTERNS.get("Package_TO_SOT_THT:TO-92_Inline")
+  if (to92 === undefined) throw new Error("the fixture footprint is not recorded")
+  expect(new Set(padHolesFor(to92).map((p) => p.xSteps)).size, "three distinct xSteps").toBe(3)
+  expect(unmeasuredAlongAxis(to92), "TO-92 measured a real pitch").toBe(false)
+
+  const dip16 = PIN_PATTERNS.get("Package_DIP:DIP-16_W7.62mm")
+  if (dip16 === undefined) throw new Error("the fixture footprint is not recorded")
+  expect(new Set(padHolesFor(dip16).map((p) => p.xSteps)).size, "two distinct xSteps").toBe(2)
+  expect(unmeasuredAlongAxis(dip16), "DIP-16 measured a real pitch").toBe(false)
+})
+
+test("the row-axis guard refuses a margin read off an axis nothing measured", () => {
+  // PinHeader_1x05 itself is unmeasured-along-x AND harmless: its margins are
+  // all zero, because nothing varies along the unmeasured axis to overhang
+  // from - the "every recorded footprint derives" test above covers exactly
+  // that, unchanged. What the guard must still catch is the combination this
+  // repository has no recorded footprint for: an unmeasured axis claim paired
+  // with a REAL overhang on it. Built here from a real, as-moulded entry
+  // (`CP_Radial_D6.3mm_P2.50mm`, a one-row-of-two with a measured 1-hole
+  // along-margin each side) with its pads re-stated as two singleton rows -
+  // the PinHeader shape - while keeping its real `.kicad_mod` file and
+  // version, so the body overhang `occupiedAreaFor` reads is genuine and not
+  // invented for the test.
+  const real = PIN_PATTERNS.get("Capacitor_THT:CP_Radial_D6.3mm_P2.50mm")
+  if (real === undefined) throw new Error("the fixture footprint is not recorded")
+  const vacuous: PinPattern = {
+    ...real,
+    pads: [
+      { pad: "1", xMm: 0, yMm: 0 },
+      { pad: "2", xMm: 0, yMm: 2.54 },
+    ],
+    classification: {
+      kind: "rows",
+      axis: "x",
+      rows: [["1"], ["2"]],
+      rowPitchSteps: [1],
+      alongRowPitchesMm: [],
+      alongRowOnGrid: true,
+    },
+  }
+  expect(unmeasuredAlongAxis(vacuous), "the premise: no measured along-pitch").toBe(true)
+  const patterns = new Map([[vacuous.footprint, vacuous]])
+  const synthetic = { patterns, spans: LEAD_SPANS }
+  expect(refusalFrom(() => bodyMarginsFor(vacuous.footprint, synthetic))).toStartWith(
+    "stripboard-seed-parts-row-axis",
+  )
 })
 
 test("the geometry derivation refuses by name rather than guessing a box", () => {

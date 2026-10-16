@@ -56,6 +56,49 @@ const WHY_NOT_GUESSED =
   "routed through/under\" - is a fact about the real part"
 
 /**
+ * Whether a "rows" pattern's claimed x axis was ever actually measured.
+ *
+ * `classifyPads` (`lib/kicad/pin-pattern-model.ts`) tries x first and accepts
+ * the first axis that decomposes into rows a whole number of strip pitches
+ * apart - with no requirement that any row hold more than one pad. A footprint
+ * whose pads are N rows of one pad each (every pad on its own strip) passes
+ * that test trivially, because there is no pair within a singleton row for an
+ * along-row pitch to be measured from, and `classifyPads` returns `axis: "x"`
+ * for it exactly as it would for a footprint whose rows genuinely run along x.
+ * The two are not the same claim, and this reads the derived pad holes - not
+ * the classification's own `axis` field - to tell them apart: a pattern whose
+ * pads land at only one `xSteps` never varied along x at all, so nothing was
+ * measured and the claim is unfounded.
+ *
+ * **WHY HERE AND NOT IN `classifyPads` ITSELF.** The wrong claim is made
+ * there, and correcting it there - declining to report an axis with nothing
+ * measured along it - is the more direct fix. It was not taken: `classifyPads`
+ * is read by callers outside this plan's scope (`admitPattern`, `padHolesFor`,
+ * every one of the thirteen recorded classifications in
+ * `lib/kicad/pin-pattern.ts`, and the tests that rederive them), and a
+ * footprint whose only row structure is one pad per strip - `PinHeader_1x05`
+ * among them - is a shape this repository already places correctly by
+ * deliberately rotating it so that degenerate axis runs ACROSS the strips
+ * (`lib/stripboard/seed-fit.ts`, Task 4). Changing what axis such a footprint
+ * CLAIMS would ripple into that already-working, already-reviewed placement
+ * logic and its tests for a correction this module does not need: reading the
+ * pad holes here, instead, keeps the fix inside `lib/stripboard/seed-parts.ts`
+ * and touches nothing `classifyPads` is already trusted to report.
+ *
+ * **THIS IS NOT, BY ITSELF, A REASON TO REFUSE A MARGIN.** `PinHeader_1x05`'s
+ * margins come out `{0, 0, 0, 0}` precisely because nothing varies along the
+ * unmeasured axis to compute an overhang from, and that is a fact about the
+ * footprint, not a gap in the check. What this function exists to catch is a
+ * footprint whose UNMEASURED axis claim is paired with a NONZERO overhang, for
+ * which this module would silently read a margin from a direction nothing
+ * measured.
+ */
+export function unmeasuredAlongAxis(pattern: PinPattern): boolean {
+  const pads = padHolesFor(pattern)
+  return new Set(pads.map((pad) => pad.xSteps)).size === 1
+}
+
+/**
  * A part's body margins: how far its `F.Fab` outline reaches past its outermost
  * pads, in whole holes, on each of the four sides of its own frame.
  *
@@ -91,19 +134,36 @@ export function bodyMarginsFor(footprint: string, source: GeometrySource): BodyM
       "parts-row-axis",
       `"${footprint}" classifies with its pin rows running along ${axis}, and this module maps ` +
         "the ALONG axis onto the footprint's own x so that the margins it returns and " +
-        "holeInFrame's turns agree about which axis is which.\nAll thirteen recorded footprints " +
-        `classify along x, so reaching this means a new one does not.\n${WHY_NOT_GUESSED}.\n` +
-        "The fix is to swap the two axes here deliberately, with a test over the new footprint, " +
-        "rather than to let the two conventions disagree silently.",
+        `holeInFrame's turns agree about which axis is which.\n${WHY_NOT_GUESSED}.\nThe fix is ` +
+        "to swap the two axes here deliberately, with a test over the new footprint, rather than " +
+        "to let the two conventions disagree silently.",
     )
   }
   const pads = padHolesFor(pattern)
   const extent = occupiedAreaFor(footprint, source.patterns)
   const along = pads.map((pad: PadHole) => pad.xSteps)
   const across = pads.map((pad: PadHole) => pad.ySteps)
+  const beforeAlong = Math.max(0, Math.min(...along) - extent.alongX.minSteps)
+  const afterAlong = Math.max(0, extent.alongX.maxSteps - Math.max(...along))
+  if ((beforeAlong > 0 || afterAlong > 0) && unmeasuredAlongAxis(pattern)) {
+    refuse(
+      "parts-row-axis",
+      `"${footprint}" classifies along x, but every one of its pads lands at the same xSteps: ` +
+        "classifyPads (lib/kicad/pin-pattern-model.ts) reports \"x\" because a footprint whose " +
+        "pads are N rows of one pad each decomposes along x trivially - there is no pair within " +
+        "any row for it to have measured a pitch from, so the claim that this module's ALONG " +
+        `margins read along x is unfounded.\nAnd here it is not an idle claim: the body reaches ` +
+        `${beforeAlong} hole(s) before and ${afterAlong} after the pads on the axis nothing ` +
+        `measured, which is exactly the overhang this check exists to catch rather than report ` +
+        `on the strength of an unmeasured claim.\n${WHY_NOT_GUESSED}.\nThe fix is to read the ` +
+        "axis that was actually measured - the one with more than one distinct step - rather " +
+        "than the one classifyPads happened to try first; record it here deliberately, with a " +
+        "test over the new footprint.",
+    )
+  }
   return {
-    beforeAlong: Math.max(0, Math.min(...along) - extent.alongX.minSteps),
-    afterAlong: Math.max(0, extent.alongX.maxSteps - Math.max(...along)),
+    beforeAlong,
+    afterAlong,
     beforeAcross: Math.max(0, Math.min(...across) - extent.alongY.minSteps),
     afterAcross: Math.max(0, extent.alongY.maxSteps - Math.max(...across)),
   }
