@@ -89,6 +89,7 @@ import {
   type ReferenceNets,
   type StripRun,
 } from "../../lib/stripboard/cuts.ts"
+import { noBaseNamedRefusal } from "./materialize-base.ts"
 import type { SpawnVeroroute } from "./seed.ts"
 
 /** Every refusal in this module, in one shape: the key, then what is wrong and why. */
@@ -370,6 +371,12 @@ export interface MaterializeInput {
    * The `.vrt` whose COMPONENT SET the fork places - a board it built from the
    * netlist this candidate's reference nets came from. See this module's comment
    * for why the document does not carry the component set itself.
+   *
+   * **ALWAYS A BASE `./materialize-base.ts`'s `freshImportBase` BUILT, NEVER THE
+   * COMMITTED `.vrt`.** That module states the rule and the reasons behind it.
+   * The empty string means "no base to name" rather than a path, and
+   * `materialize` refuses it rather than guessing between the two boards that
+   * could otherwise be meant.
    */
   readonly base: string
   /** Where the document is written. It is a real file because the fork reads one. */
@@ -426,6 +433,9 @@ function paintedFrom(stdout: string, outPath: string): number {
  * rather than returning a path to a file that may not exist.
  */
 export function materialize(input: MaterializeInput, spawn: SpawnVeroroute): MaterializeResult {
+  if (input.base.trim() === "") {
+    refuse("vero-export-no-base-named", noBaseNamedRefusal())
+  }
   const document = layoutDocument(input.candidate, input.reference)
   fs.mkdirSync(path.dirname(input.layoutPath), { recursive: true })
   fs.mkdirSync(path.dirname(input.outPath), { recursive: true })

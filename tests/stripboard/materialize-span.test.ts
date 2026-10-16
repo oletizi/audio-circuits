@@ -38,6 +38,13 @@
  * passing one is the failure mode the whole stripboard workflow exists to
  * prevent. Nothing under `boards/` is written: the document and the output board
  * are both in a registered scratch directory.
+ *
+ * **THE BASE IS NO LONGER THE COMMITTED `.vrt`.** It was, when this file was
+ * written for the span fix above - a convenience named inline, not a rule.
+ * `tools/stripboard/materialize-base.ts` states the rule a later task made of
+ * that choice (a base built fresh by `--import` from the circuit, never the
+ * committed file, which is adoption's OUTPUT), and this file's base was moved
+ * onto it rather than left as the exception the rule forgot.
  */
 import { afterAll, expect, test } from "bun:test"
 import path from "node:path"
@@ -50,9 +57,11 @@ import { derivedCuts, type ReferenceNets } from "../../lib/stripboard/cuts.ts"
 import { seedPartsFrom } from "../../lib/stripboard/seed-parts.ts"
 import { seedsFrom } from "../../lib/stripboard/seed.ts"
 import { parseBoardDump, type BoardDump } from "../../tools/guide/dump.ts"
-import { verorouteBinary } from "../../tools/perfboard/check.ts"
+import { exportNetlistFor, verorouteBinary } from "../../tools/perfboard/check.ts"
+import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { fabricationExtent } from "../../tools/stripboard/extent.ts"
+import { freshImportBase } from "../../tools/stripboard/materialize-base.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { assignStrips, referenceNetsFor } from "../../tools/stripboard/seed-arrangement.ts"
 import { deriveTargets } from "../../tools/stripboard/targets.ts"
@@ -189,26 +198,37 @@ function twoLeadOf(ref: string, holes: readonly { strip: number; column: number 
 }
 
 /**
- * Materialise low-boost onto its committed board, then dump what was written.
+ * Materialise low-boost onto a base built fresh by `--import` from the
+ * circuit, then dump what was written.
+ *
+ * **NEVER THE COMMITTED `.vrt`** - `tools/stripboard/materialize-base.ts`
+ * states the rule and the reasons for it. `--import` reads the SAME circuit
+ * export (`boards/pultec-low-boost/perfboard.json`'s declared module) that
+ * `lowBoostCandidate` above read through `sectionBoard`, so the two agree on
+ * which components exist; building the base this way is what this test is
+ * now itself a measurement of.
  *
  * The declared separations come from the candidate rather than from the document
  * text, because the candidate is what the document is generated from and
  * re-parsing the generated text here would compare the exporter with itself.
  */
-function materializeLowBoost(): {
+async function materializeLowBoost(): Promise<{
   readonly dump: BoardDump
   readonly declared: ReadonlyMap<string, TwoLead>
   readonly candidate: Candidate
   readonly reference: ReferenceNets
-} {
+}> {
   const { candidate, reference } = lowBoostCandidate()
   const scratch = freshTempScratch("stripboard-materialize-span-")
   const outPath = path.join(scratch, "materialized.vrt")
+  const declaration = loadDeclaration(path.join(REPO, "boards", BOARD, "perfboard.json"))
+  const netlist = await exportNetlistFor(declaration)
+  const base = freshImportBase({ netlist, outPath: path.join(scratch, "fresh-base.vrt") }, runFork)
   materialize(
     {
       candidate,
       reference,
-      base: path.join(REPO, "boards", BOARD, `${BOARD}.perfboard.vrt`),
+      base,
       layoutPath: path.join(scratch, "low-boost-layout.txt"),
       outPath,
     },
@@ -245,8 +265,8 @@ function materializeLowBoost(): {
   return { dump: parseBoardDump(run.stdout), declared, candidate, reference }
 }
 
-test("every two-lead part materialises at the separation the document declares", () => {
-  const { dump, declared } = materializeLowBoost()
+test("every two-lead part materialises at the separation the document declares", async () => {
+  const { dump, declared } = await materializeLowBoost()
   expect(declared.size, "the premise: low-boost places fifteen two-lead parts").toBe(
     TWO_LEAD_PARTS,
   )
@@ -290,8 +310,8 @@ test("every two-lead part materialises at the separation the document declares",
  * was recorded at, so a change in either is a change in the board this pipeline
  * produces and should be read rather than accommodated.
  */
-test("the materialised low-boost board is the board the model asked for", () => {
-  const { dump, candidate, reference } = materializeLowBoost()
+test("the materialised low-boost board is the board the model asked for", async () => {
+  const { dump, candidate, reference } = await materializeLowBoost()
   expect(dump.cutState, "the fork computed the partition rather than giving up on it").toBe(
     "COMPUTED",
   )
