@@ -77,6 +77,7 @@
  */
 import { parseBoardDump, type BoardDump, type Part } from "../guide/dump.ts"
 import type { ReferenceNets } from "./equivalence.ts"
+import { OFF_BOARD_TERMINAL } from "../../lib/stripboard/board.ts"
 import type { Candidate, PinPatterns, Placement } from "../../lib/stripboard/board.ts"
 import { facingOf, type PinHole } from "./vero-import-facing.ts"
 import { padLines, type PadLine } from "./pad-provenance.ts"
@@ -230,24 +231,6 @@ function placementOf(
     pins: new Map(pins.map((pin) => [pin.pin, pin.hole])),
   }
 }
-
-/**
- * What a `PAD` placement's `footprint` field says, which is that there is no
- * footprint.
- *
- * A pad is not a fitted part: it has no `.kicad_mod`, no pin pattern and no pads
- * to put on holes, so nothing about its geometry comes from a footprint and
- * `geometryOf` has nothing to say about it. The field is required by
- * `Placement`, so it carries this instead of a library name - and a consumer
- * that hands it to a footprint lookup gets a loud refusal naming it, which is
- * the right outcome rather than a quiet one.
- *
- * ITS CONSTANT IS NOT NAMED AFTER THE FIELD, deliberately:
- * `tests/kicad/footprint-sweep.ts` collects the value of any constant whose name
- * ends in that word, and would then hold this string to an installed KiCad
- * library it is not.
- */
-export const OFF_BOARD_TERMINAL = "off-board terminal"
 
 /**
  * One `PAD` line as a one-hole `Placement`.

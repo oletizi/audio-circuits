@@ -2,7 +2,8 @@
  * THE WORKSPACE A CONSTRUCTION MUTATES, and how a column is chosen: by how
  * comfortable the position is to build, and only then by clustering.
  *
- * `./seed.ts` is the API and the gate; `./seed-fit.ts` holds the two placers;
+ * `./seed.ts` is the API and the gate; `./seed-fit.ts` holds the placers that
+ * work from a net's home strip and `./seed-field.ts` the one for a moulded field;
  * `./seed-area.ts` holds the geometry and the measured rules. This file is the
  * state in between and the one decision every placement shares.
  *
@@ -71,6 +72,7 @@ import {
 } from "./seed-area.ts"
 import {
   homeStripsFor,
+  leadsOf,
   refuse,
   type Ordering,
   type SeedLead,
@@ -227,9 +229,12 @@ function centreColumn(rect: Rect): number {
  * it - the secondary key, and zero when none is placed yet.
  */
 function clusterDistance(workspace: Workspace, part: SeedPart, rect: Rect): number {
-  const leads: readonly SeedLead[] = part.kind === "two-lead" ? part.leads : part.field
+  // `leadsOf` AND NOT A SECOND TERNARY ON `kind`: the one it replaces read
+  // `part.field` for everything that was not two-lead, which a third kind made
+  // wrong in a way nothing here would have reported. There is one derivation of
+  // "every terminal of a part" and it is in `./seed-model.ts`.
   const columns: number[] = []
-  for (const lead of leads) {
+  for (const lead of leadsOf(part)) {
     for (const column of workspace.nearNet.get(lead.net) ?? []) columns.push(column)
   }
   if (columns.length === 0) return 0

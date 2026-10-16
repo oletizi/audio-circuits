@@ -78,6 +78,7 @@
  */
 import fs from "node:fs"
 import path from "node:path"
+import { OFF_BOARD_TERMINAL } from "../../lib/stripboard/board.ts"
 import type { Candidate, Hole, Placement } from "../../lib/stripboard/board.ts"
 import {
   derivedCuts,
@@ -88,7 +89,6 @@ import {
   type StripRun,
 } from "../../lib/stripboard/cuts.ts"
 import type { SpawnVeroroute } from "./seed.ts"
-import { OFF_BOARD_TERMINAL } from "./vero-import.ts"
 
 /** Every refusal in this module, in one shape: the key, then what is wrong and why. */
 function refuse(key: string, detail: string): never {

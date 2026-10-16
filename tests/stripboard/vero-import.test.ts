@@ -48,6 +48,7 @@ import { expect, test } from "bun:test"
 import {
   geometryOf,
   holesOverlap,
+  OFF_BOARD_TERMINAL,
   type Candidate,
   type Hole,
   type Placement,
@@ -56,7 +57,7 @@ import { PIN_PATTERNS } from "../../lib/kicad/pin-pattern.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { spanHoles } from "../../tools/stripboard/constraints-model.ts"
 import { leadSpanFor } from "../../lib/kicad/lead-span.ts"
-import { candidateFromDump, OFF_BOARD_TERMINAL } from "../../tools/stripboard/vero-import.ts"
+import { candidateFromDump } from "../../tools/stripboard/vero-import.ts"
 import { padLines } from "../../tools/stripboard/pad-provenance.ts"
 import {
   COMMITTED_BOARDS,

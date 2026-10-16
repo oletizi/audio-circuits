@@ -2,10 +2,13 @@
  * What a constructive seed is BUILT FROM, and every refusal that fires before
  * one hole is chosen.
  *
- * `./seed.ts` does the placing. This file holds the inputs' types, the checks
- * that an input is self-consistent, and the net-to-strip layout an `Ordering`
- * states - split from it for the line ceiling, exactly as
- * `lib/kicad/lead-span-model.ts` and `lead-span.ts` split.
+ * `./seed.ts` does the placing. This file holds the inputs' types and the
+ * net-to-strip layout an `Ordering` states - split from it for the line ceiling,
+ * exactly as `lib/kicad/lead-span-model.ts` and `lead-span.ts` split. **The
+ * checks that an input is self-consistent were here and are now
+ * `./seed-validate.ts`**, split off on the same seam and for the same reason:
+ * they are the half that grows with every part kind, and this file went over the
+ * ceiling when the third one arrived.
  *
  * **WHY A PART'S PIN FIELD IS AN INPUT RATHER THAN A DERIVATION.** A two-lead
  * part has ONE free parameter - how far apart its leads are bent - and
@@ -35,6 +38,7 @@
  * something: the seed may choose placements, and it may not choose which seed is
  * good. `objectiveOf` and `violationsOf` answer that, from the owner's weights.
  */
+import { OFF_BOARD_TERMINAL } from "./board.ts"
 import type { Grid } from "./board.ts"
 import type { ReferenceNets } from "./cuts.ts"
 import type { BodyMargins } from "./seed-area.ts"
@@ -100,21 +104,92 @@ export interface FixedFieldPart extends SeedPartBase {
 }
 
 /**
- * A part to place, in the one of the two shapes its terminal count gives it.
+ * ONE TERMINAL OF A PANEL-MOUNTED CONTROL: a hole an off-board wire is soldered
+ * to, with no footprint, no orientation and no body.
  *
- * **THE TWO MEMBERS ARE NAMED TYPES** so that each placer takes the shape it
+ * **THE PREDICATE THAT PRODUCES ONE IS THE DECLARED RESIDENCY, NEVER A MISSING
+ * FOOTPRINT.** `onBoard` in `tools/stripboard/targets.ts` is the authority on
+ * which components sit on a board - a board-resident part carries
+ * `part.footprint`, an off-board landing carries only `part.symbol` - and
+ * `circuits/pultec/off-board.ts` is the Pultec's own declaration of the same
+ * fact, as data. `lib/stripboard/` may not import either, so the declaration
+ * arrives as an ARGUMENT to `seedPartsFrom` (`lib/stripboard/seed-parts.ts`),
+ * exactly as `rigid` and `body` arrive as fields derived there. **A ref the
+ * footprint map does not name and the declaration does not either keeps refusing
+ * by name**: a missing footprint means either "panel-mounted, represented by
+ * landing pads" or "the physicalization data is wrong or absent", and turning
+ * the second into apparently valid landing pads is the silent success this
+ * repository is built to prevent.
+ *
+ * **ONE TERMINAL IS ONE PART HERE, so a three-terminal pot is THREE entries
+ * sharing one ref** - and `validateNetlist` in `./seed-validate.ts` admits that
+ * one repetition for that one kind. It is what the importer already produces:
+ * *"an off-board part with three terminals becomes THREE placements that share
+ * one `ref`. That is
+ * faithful - the fork places each pad independently and a move must be able to
+ * move one without the others"* (`padPlacementOf` in
+ * `tools/stripboard/vero-import.ts`). A pad's identity in this model is its ref
+ * AND its pin name, in both paths.
+ */
+export interface OffBoardPart extends SeedPartBase {
+  readonly kind: "off-board"
+  /** The one terminal. There is no second hole and no span to choose. */
+  readonly lead: SeedLead
+}
+
+/**
+ * The one place a landing pad's three fixed facts are stated: its footprint
+ * sentinel, its absent body and its formability.
+ *
+ * **NONE OF THE THREE IS A CHOICE, which is why they are here and not at each
+ * call site.** The footprint is `OFF_BOARD_TERMINAL` because a pad has no
+ * `.kicad_mod` to read and because that is the string the IMPORT path records,
+ * so `tools/stripboard/vero-export.ts` round-trips a constructed pad and an
+ * imported one through the same branch. The body is zero on all four sides
+ * because the thing in the hole is the end of a wire: there is no package to
+ * reach past the pad, and the importer's own placement occupies exactly its one
+ * hole. And it is NOT `rigid` - rigidity means terminals that cannot be formed,
+ * and a wire is the most formable terminal on the board - which leaves the
+ * owner's two rules pointing the right way: nothing may be routed under a rigid
+ * part, so a pad whose hole falls inside one is still refused as a guest, while
+ * a formable part's body may pass over the pad's own hole, which a wire can be
+ * dressed around.
+ */
+export function offBoardPart(ref: string, lead: SeedLead): OffBoardPart {
+  return {
+    kind: "off-board",
+    ref,
+    footprint: OFF_BOARD_TERMINAL,
+    rigid: false,
+    body: { beforeAlong: 0, afterAlong: 0, beforeAcross: 0, afterAcross: 0 },
+    lead,
+  }
+}
+
+/**
+ * A part to place, in the one of the three shapes its terminals give it.
+ *
+ * **THE THREE MEMBERS ARE NAMED TYPES** so that each placer takes the shape it
  * handles rather than the union plus a guard. A guard after a `kind` check is a
  * refusal that cannot fire, and *"code after an unconditional refusal cannot be
  * tested and an untested unreachable derivation reads like a working one"* -
  * Task 1's finding, applied here.
+ *
+ * **EVERY DISCRIMINATION ON `kind` IS EXHAUSTIVE AND NONE HAS A `default`.** A
+ * `default` branch would have let `off-board` be added without a single call
+ * site noticing; written as a complete `switch` over the union instead, a fourth
+ * member makes every one of them a compile error. The two below (`leadsOf`,
+ * `placementOrder`), `seedFrom` in `./seed.ts` and `validateNetlist`'s per-kind
+ * checks in `./seed-validate.ts` are all of them in the core.
  */
-export type SeedPart = TwoLeadPart | FixedFieldPart
+export type SeedPart = TwoLeadPart | FixedFieldPart | OffBoardPart
 
 /**
  * The circuit a seed is built from: the nets it must realise, and the parts that
  * carry them.
  *
- * **THE TWO HALVES ARE CROSS-CHECKED RATHER THAN TRUSTED** (`validateNetlist`).
+ * **THE TWO HALVES ARE CROSS-CHECKED RATHER THAN TRUSTED** (`validateNetlist` in
+ * `./seed-validate.ts`).
  * `nets` is the authority - it is what `derivedCuts` and `violationsOf` are
  * handed - and `parts` is what gets placed, so a pin in one and not the other is
  * a seed built for a different circuit than the one it will be graded against.
@@ -147,19 +222,31 @@ export interface Ordering {
   readonly stride: number
 }
 
-const WHY_NOT_DEFAULTED =
+/**
+ * The sentence every refusal in this family ends with, exported so that
+ * `./seed-validate.ts` ends its refusals with the SAME one rather than a second
+ * phrasing of it.
+ */
+export const WHY_NOT_DEFAULTED =
   "Nothing is substituted: a seed built from an input this check would have rejected is a seed " +
   "the optimizer must repair, and a decision that should never have been accepted is worse " +
   "than a construction that stopped"
 
-/** A refusal under this family's key prefix, shared by both seed modules. */
+/** A refusal under this family's key prefix, shared by every seed module. */
 export function refuse(key: string, body: string): never {
   throw new Error(`stripboard-seed-${key}: ${body}`)
 }
 
 /** Every terminal of a part, whichever shape it has, in its own order. */
 export function leadsOf(part: SeedPart): readonly SeedLead[] {
-  return part.kind === "two-lead" ? part.leads : part.field
+  switch (part.kind) {
+    case "two-lead":
+      return part.leads
+    case "fixed-field":
+      return part.field
+    case "off-board":
+      return [part.lead]
+  }
 }
 
 /**
@@ -185,118 +272,6 @@ export function spanFor(footprint: string, spans: ReadonlyMap<string, LeadSpan>)
     )
   }
   return found
-}
-
-/**
- * Both halves of a netlist agree, every ref is distinct, and every moulded
- * field's steps are on the grid.
- *
- * The three checks are here rather than in the placer because all three are true
- * or false of the INPUT, before any ordering is applied, so a caller with four
- * orderings hears about a malformed netlist once. Whether two of a field's pins
- * sharing a strip is buildable is NOT one of these three: it depends on what
- * else lands on that strip once the field is placed, which `interleavingOn` in
- * `lib/stripboard/separable.ts` answers on the placed board.
- */
-export function validateNetlist(netlist: SeedNetlist): void {
-  const seen = new Set<string>()
-  for (const part of netlist.parts) {
-    if (seen.has(part.ref)) {
-      refuse(
-        "repeated-ref",
-        `two parts in the netlist are both called "${part.ref}", so which of them a reference ` +
-          `pin id names is not stated.\n${WHY_NOT_DEFAULTED}.\nNote that a pad's identity in ` +
-          "this model is its ref AND its pin name (lib/stripboard/board.ts), so an off-board " +
-          "part with three terminals is three PLACEMENTS sharing one ref - but it is still one " +
-          "entry here, with three leads.",
-      )
-    }
-    seen.add(part.ref)
-    checkBody(part.ref, part.body)
-    if (part.kind === "fixed-field") checkField(part.ref, part.field)
-  }
-  crossCheck(netlist)
-}
-
-function checkBody(ref: string, body: BodyMargins): void {
-  for (const [side, steps] of Object.entries(body)) {
-    if (Number.isInteger(steps) && steps >= 0) continue
-    refuse(
-      "body-margin-not-whole",
-      `"${ref}" declares a body margin of ${String(steps)} holes ${side}, and a margin is how ` +
-        `far the part's body reaches past its outermost pads - a whole number of holes, never ` +
-        `negative.\n${WHY_NOT_DEFAULTED}.\nA body that stops SHORT of a pad still has that ` +
-        "pad's hole in the part's area, because a lead is soldered there, so the floor is zero " +
-        "rather than a signed reach. lib/stripboard/seed-parts.ts derives these from the " +
-        "footprint's own .kicad_mod and clamps at zero for that reason.",
-    )
-  }
-}
-
-function checkField(ref: string, field: readonly SeedFieldPin[]): void {
-  for (const pin of field) {
-    if (!Number.isInteger(pin.alongSteps) || !Number.isInteger(pin.acrossSteps)) {
-      refuse(
-        "field-off-grid",
-        `"${ref}" pin "${pin.pin}" sits at ${pin.alongSteps} steps along its row and ` +
-          `${pin.acrossSteps} across, and a step count that is not a whole number is a lead ` +
-          `between two holes.\n${WHY_NOT_DEFAULTED}.\nA field in grid steps comes from a ` +
-          "footprint whose pads admitPattern accepts; one whose pads are off the grid is " +
-          "refused there, by name, before a placement exists.",
-      )
-    }
-  }
-}
-
-function crossCheck(netlist: SeedNetlist): void {
-  const declared = new Set<string>()
-  for (const part of netlist.parts) {
-    for (const lead of leadsOf(part)) declared.add(`${part.ref}.${lead.pin}`)
-  }
-  const referenced = new Set<string>()
-  for (const [net, pins] of netlist.nets) {
-    for (const pin of pins) {
-      referenced.add(pin)
-      if (declared.has(pin)) continue
-      refuse(
-        "reference-pin-not-a-part",
-        `reference net "${net}" holds "${pin}", and no part in the netlist declares that ` +
-          `terminal - so the seed would place nothing for it and the net would be judged ` +
-          `incomplete by a part that was never asked for.\n${WHY_NOT_DEFAULTED}.\nEither the ` +
-          "reference is of a different circuit than the part list, or a part is missing from " +
-          "it. The two are cross-checked here because derivedCuts and violationsOf are handed " +
-          "the reference and would both refuse further downstream, where the cause reads as a " +
-          "defect in the placement.",
-      )
-    }
-  }
-  for (const part of netlist.parts) {
-    for (const lead of leadsOf(part)) {
-      const id = `${part.ref}.${lead.pin}`
-      if (referenced.has(id)) continue
-      refuse(
-        "part-pin-not-in-reference",
-        `"${id}" is declared on net "${lead.net}" by the part list, and the reference nets put ` +
-          `it on no net at all.\n${WHY_NOT_DEFAULTED}.\nA KiCad export states even a ` +
-          "no-connect, as an `unconnected-(...)` net, so a pin missing from the reference " +
-          "altogether is a mismatch rather than a floating lead. significantContacts in " +
-          "lib/stripboard/cuts.ts refuses the same case under its own key once a placement " +
-          "exists; this is the same fact caught before one does.",
-      )
-    }
-    for (const lead of leadsOf(part)) {
-      const net = netlist.nets.get(lead.net)
-      const id = `${part.ref}.${lead.pin}`
-      if (net !== undefined && net.includes(id)) continue
-      refuse(
-        "lead-net-disagrees",
-        `the part list puts "${id}" on net "${lead.net}", and that reference net does not list ` +
-          `it.\n${WHY_NOT_DEFAULTED}.\nThe reference is the authority - it is what the cut ` +
-          "derivation and the invariants are graded against - so a lead naming a different net " +
-          "would be placed on the wrong strip and then judged against the right one.",
-      )
-    }
-  }
 }
 
 /**
@@ -373,10 +348,12 @@ export function homeStripsFor(
 /**
  * The parts in the order they claim strips and holes: **most constrained first.**
  *
- * A moulded field can be oriented two ways and must land on consecutive strips;
- * a two-lead part has a span lever and the whole board to put it on. So the
- * fields go first, and within each group the netlist's own order is kept, which
- * makes the result a function of the input rather than of a map's iteration.
+ * A moulded field can be oriented four ways and lands where its own steps put
+ * it; a two-lead part has a span lever and the whole board to put it on; a
+ * landing pad is one hole anywhere along the one strip its net is hosted on. So
+ * the fields go first, the pads last, and within each group the netlist's own
+ * order is kept, which makes the result a function of the input rather than of
+ * a map's iteration.
  *
  * **IT IS THIS MODULE'S ONE INTERNAL ORDERING, AND IT IS DECLARED RATHER THAN
  * TUNED.** The `orderings` parameter varies the net layout and does not vary
@@ -384,9 +361,34 @@ export function homeStripsFor(
  * that parameter, not in a preference here. Measured on the one circuit this was
  * run against: it is what lets a three-terminal part take the spare strip beside
  * its own nets before a two-lead part claims it.
+ *
+ * **WHERE THE PAD GOES IN THAT ORDER FOLLOWS THE RULE RATHER THAN RESTATING
+ * IT.** A pad has one terminal, one strip and no span to satisfy, so it is the
+ * least constrained part this model has and the declared rule puts the least
+ * constrained last. No new preference is introduced: the two committed
+ * benchmark boards carry no off-board part at all, so nothing about them can
+ * move whichever end pads were put at, and the alternative - pads first - would
+ * have had them taking comfortable columns from parts that cannot choose
+ * another strip.
+ *
+ * **IT IS A STABLE SORT ON A DECLARED RANK AND IT USED TO BE TWO FILTERS.** The
+ * filters silently DROPPED anything that was neither a field nor a two-lead
+ * part, which is exactly how a new union member becomes a part that is never
+ * placed and never refused; the rank below is a complete `switch`, so a fourth
+ * kind is a compile error here instead.
  */
 export function placementOrder(parts: readonly SeedPart[]): readonly SeedPart[] {
-  const fields = parts.filter((part) => part.kind === "fixed-field")
-  const leads = parts.filter((part) => part.kind === "two-lead")
-  return [...fields, ...leads]
+  return [...parts].sort((a, b) => constraintRank(a) - constraintRank(b))
+}
+
+/** Most constrained first, as `placementOrder` declares. */
+function constraintRank(part: SeedPart): number {
+  switch (part.kind) {
+    case "fixed-field":
+      return 0
+    case "two-lead":
+      return 1
+    case "off-board":
+      return 2
+  }
 }

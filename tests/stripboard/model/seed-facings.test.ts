@@ -21,7 +21,8 @@
  * | `PinHeader_1x05` | 5 | 1 | 5 |
  * | `DIP-16_W7.62mm` | 16 | 2 | 8 |
  *
- * `./seed-fit.ts`'s preference is for the MOST DISTINCT STRIPS, which is the
+ * `lib/stripboard/seed-field.ts`'s preference is for the MOST DISTINCT STRIPS,
+ * which is the
  * facing forcing the fewest cuts of the part's own making - so the third column
  * wins for the TO-92 and the fourth for the other two. The assertion in each
  * test is that count and nothing else.

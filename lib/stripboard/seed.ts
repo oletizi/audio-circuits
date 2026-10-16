@@ -115,11 +115,12 @@ import { routedUnderRigid } from "./seed-area.ts"
 import {
   placementOrder,
   refuse,
-  validateNetlist,
   type Ordering,
   type SeedNetlist,
 } from "./seed-model.ts"
-import { placeFixedField, placeTwoLead } from "./seed-fit.ts"
+import { validateNetlist } from "./seed-validate.ts"
+import { placeFixedField } from "./seed-field.ts"
+import { placeOffBoard, placeTwoLead } from "./seed-fit.ts"
 import { joinNets, workspaceFor } from "./seed-place.ts"
 import type { LeadSpan } from "../kicad/lead-span-model.ts"
 
@@ -131,9 +132,22 @@ function seedFrom(
   ordering: Ordering,
 ): Candidate {
   const workspace = workspaceFor(grid, ordering, spans, netlist)
+  // A COMPLETE SWITCH AND NEVER AN `if`/`else`, so that a fourth part kind is a
+  // compile error here rather than a part that is silently never placed. The
+  // `if`/`else` this replaces would have sent an off-board pad to the two-lead
+  // placer and refused inside it, naming the wrong thing.
   for (const part of placementOrder(netlist.parts)) {
-    if (part.kind === "fixed-field") placeFixedField(workspace, part)
-    else placeTwoLead(workspace, part)
+    switch (part.kind) {
+      case "fixed-field":
+        placeFixedField(workspace, part)
+        break
+      case "two-lead":
+        placeTwoLead(workspace, part)
+        break
+      case "off-board":
+        placeOffBoard(workspace, part)
+        break
+    }
   }
   joinNets(workspace, netlist)
   for (const area of workspace.areas) {

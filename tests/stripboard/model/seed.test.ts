@@ -34,8 +34,14 @@
  *   - **the refusal tests assert the leading key and the facts the message must
  *     carry, not its prose.** A message rewritten keeps passing, which is
  *     intended; a message that stops naming the part or a net does not;
- *   - **three of the nineteen refusal keys the two modules carry are NOT asserted,
- *     and they are named here rather than left for a reader to count**:
+ *   - **four of the twenty refusal keys the four modules behind `seedsFrom`
+ *     carry are NOT asserted here** (`seed.ts` 5, `seed-place.ts` 2,
+ *     `seed-model.ts` 6, `seed-validate.ts` 7, counted rather than remembered),
+ *     **and they are named rather than left for a reader to count.** One is
+ *     asserted elsewhere:
+ *     `stripboard-seed-repeated-pad` is a fact about the off-board kind and is
+ *     driven by `./seed-off-board.test.ts`, beside the positive case it is the
+ *     negative of. The other three are
  *     `stripboard-seed-net-has-no-home`, `stripboard-seed-holes-shared` and
  *     `stripboard-seed-unsound`. All three are internal-defect guards -
  *     reachable only if `homeStripsFor`'s own ordering check, or the placer's
@@ -50,7 +56,8 @@ import type { Candidate } from "../../../lib/stripboard/board.ts"
 import { derivedCuts } from "../../../lib/stripboard/cuts.ts"
 import { violationsOf } from "../../../lib/stripboard/invariants.ts"
 import { seedsFrom } from "../../../lib/stripboard/seed.ts"
-import { validateNetlist } from "../../../lib/stripboard/seed-model.ts"
+import { leadsOf } from "../../../lib/stripboard/seed-model.ts"
+import { validateNetlist } from "../../../lib/stripboard/seed-validate.ts"
 import type { SeedPart } from "../../../lib/stripboard/seed-model.ts"
 import {
   RECORDED_SPANS,
@@ -302,10 +309,7 @@ test("every seed for the owner's own feedback circuit realises its netlist", () 
   const { netlist, nets } = feedbackNetlist()
   expect(nets.size, "the circuit has 11 nets").toBe(11)
   expect(netlist.parts.length, "and 16 parts").toBe(16)
-  const leads = netlist.parts.reduce(
-    (total, part) => total + (part.kind === "two-lead" ? 2 : part.field.length),
-    0,
-  )
+  const leads = netlist.parts.reduce((total, part) => total + leadsOf(part).length, 0)
   // 37, counted: `grep -c '^PIN ' transistor-preamp-feedback.dump` is 37, and
   // the reference export's eleven nets hold 37 pin ids between them. **This
   // plan's ledger records Task 8 as matching "all 38 PIN holes" and that figure

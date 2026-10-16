@@ -37,6 +37,7 @@ import type { PinPattern } from "../kicad/pin-pattern-model.ts"
 import type { ReferenceNets } from "./cuts.ts"
 import type { BodyMargins } from "./seed-area.ts"
 import {
+  offBoardPart,
   refuse,
   type SeedFieldPin,
   type SeedLead,
@@ -79,7 +80,7 @@ const WHY_NOT_GUESSED =
  * footprint whose only row structure is one pad per strip - `PinHeader_1x05`
  * among them - is a shape this repository already places correctly by
  * deliberately rotating it so that degenerate axis runs ACROSS the strips
- * (`lib/stripboard/seed-fit.ts`, Task 4). Changing what axis such a footprint
+ * (`lib/stripboard/seed-field.ts`, Task 4). Changing what axis such a footprint
  * CLAIMS would ripple into that already-working, already-reviewed placement
  * logic and its tests for a correction this module does not need: reading the
  * pad holes here, instead, keeps the fix inside `lib/stripboard/seed-parts.ts`
@@ -206,19 +207,41 @@ function fieldFor(
 }
 
 /**
- * Every part of a circuit, built from its reference nets and its own
- * footprint map.
+ * Every part of a circuit, built from its reference nets, its own footprint map
+ * and the refs its caller declares panel-mounted.
  *
- * A part with exactly two terminals becomes a `two-lead` part, whose separation
- * is the seed's to choose inside `leadSpanFor`'s band; anything else becomes a
- * `fixed-field` part whose geometry is read and never chosen. **Terminals are
- * taken in pin-name order** so that two runs over one circuit build the same
- * parts, and refs in sorted order for the same reason.
+ * A ref in `offBoard` becomes one `off-board` landing pad PER TERMINAL, with no
+ * geometry read at all. Otherwise a part with exactly two terminals becomes a
+ * `two-lead` part, whose separation is the seed's to choose inside
+ * `leadSpanFor`'s band, and anything else becomes a `fixed-field` part whose
+ * geometry is read and never chosen. **Terminals are taken in pin-name order**
+ * so that two runs over one circuit build the same parts, and refs in sorted
+ * order for the same reason.
+ *
+ * **`offBoard` IS THE RESIDENCY DECLARATION, AND IT IS A PARAMETER BECAUSE THE
+ * AUTHORITY ON RESIDENCY IS BEHIND A BOUNDARY THIS MODULE MAY NOT CROSS.**
+ * `onBoard` in `tools/stripboard/targets.ts` reads a component's own marker - a
+ * board-resident part carries `part.footprint`, an off-board landing carries
+ * only `part.symbol` - and `circuits/pultec/off-board.ts` is the Pultec's
+ * declaration of the same fact as data, calling itself *"THE SINGLE DEFINITION
+ * OF RESIDENCY"*. `lib/stripboard/` imports neither `tools/` nor `circuits/`,
+ * so the declaration arrives here the way `rigid` and `body` arrive on a part:
+ * as data, derived by whoever has the authority to derive it.
+ *
+ * **THE DEFAULT IS THE EMPTY SET, WHICH IS THE STRICTEST ANSWER AND NOT A
+ * FALLBACK.** With it, every ref must be in the footprint map and a ref in
+ * neither refuses by name - *"an empty whitelist that refuses loudly beats a
+ * general rule that quietly accepts a guess"*. The predicate is never "this ref
+ * has no footprint": a missing footprint means either "panel-mounted,
+ * represented by landing pads" or "the physicalization data is wrong or
+ * absent", and a module that read the first from the second would turn missing
+ * data into apparently valid holes.
  */
 export function seedPartsFrom(
   nets: ReferenceNets,
   footprints: ReadonlyMap<string, string>,
   source: GeometrySource = { patterns: PIN_PATTERNS, spans: LEAD_SPANS },
+  offBoard: ReadonlySet<string> = new Set(),
 ): SeedNetlist {
   const byRef = new Map<string, SeedLead[]>()
   for (const [net, pins] of nets) {
@@ -241,6 +264,30 @@ export function seedPartsFrom(
   const parts: SeedPart[] = []
   for (const [ref, leads] of [...byRef.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     const footprint = footprints.get(ref)
+    const sorted = [...leads].sort((a, b) => a.pin.localeCompare(b.pin))
+    if (offBoard.has(ref)) {
+      if (footprint !== undefined) {
+        refuse(
+          "parts-residency-disagrees",
+          `"${ref}" is declared off-board and the footprint map fits it with "${footprint}", ` +
+            `which are two contradictory claims about where one component sits.\n` +
+            `${WHY_NOT_GUESSED}.\nNeither claim is preferred: a part that is panel-mounted has ` +
+            "no footprint to be fitted with, and a part with a footprint is laid out rather " +
+            "than landed on pads, so whichever of the two is stale has to be corrected at " +
+            "source. The residency declaration comes from onBoard in " +
+            "tools/stripboard/targets.ts, or from a circuit's own OFF_BOARD set; the footprint " +
+            "map comes from the board's KiCad export or its committed .footprints.json.",
+        )
+      }
+      // ONE PAD PER TERMINAL, and the shape of each is offBoardPart's - see
+      // lib/stripboard/seed-model.ts, which is the one place a pad's footprint
+      // sentinel, its absent body and its formability are stated. No geometry
+      // is read for a pad: there is no footprint to read it from, which is what
+      // being off the board MEANS, and that is also why neither bodyMarginsFor
+      // nor leadSpanFor is reached below for one.
+      for (const lead of sorted) parts.push(offBoardPart(ref, lead))
+      continue
+    }
     if (footprint === undefined) {
       refuse(
         "parts-no-footprint",
@@ -248,7 +295,13 @@ export function seedPartsFrom(
           `is - and therefore how much room it takes and whether it may be routed under - is ` +
           `unknown.\n${WHY_NOT_GUESSED}.\nThe map comes from the board's own KiCad export or ` +
           "from its committed .footprints.json; a ref missing from it means the two are of " +
-          "different circuits.",
+          "different circuits.\nIT IS NOT READ AS A PANEL-MOUNTED PART EITHER, and that is the " +
+          "point of this refusal: a ref reaches the board as off-board landing pads only when " +
+          "the caller DECLARES it off-board (seedPartsFrom's fourth argument, from onBoard in " +
+          "tools/stripboard/targets.ts or a circuit's own OFF_BOARD set), and this ref is in " +
+          `neither the footprint map nor that declaration. Inferring landing pads from a ` +
+          "missing footprint would turn absent physicalization data into holes somebody would " +
+          "solder a wire into.",
       )
     }
     const body = bodyMarginsFor(footprint, source)
@@ -262,7 +315,6 @@ export function seedPartsFrom(
     // second-guessed by a fallback. That is the seam spanFor states and
     // admitPattern lacks; the module comment above states it for the file.
     const rigid = leadSpanFor(footprint, source.spans).geometry.kind === "rigid"
-    const sorted = [...leads].sort((a, b) => a.pin.localeCompare(b.pin))
     const [first, second] = sorted
     if (sorted.length === 2 && first !== undefined && second !== undefined) {
       parts.push({ kind: "two-lead", ref, footprint, rigid, body, leads: [first, second] })

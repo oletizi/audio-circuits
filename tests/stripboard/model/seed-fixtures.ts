@@ -31,6 +31,7 @@ import { PIN_PATTERNS } from "../../../lib/kicad/pin-pattern.ts"
 import type { ReferenceNets } from "../../../lib/stripboard/cuts.ts"
 import type { BodyMargins } from "../../../lib/stripboard/seed-area.ts"
 import { seedPartsFrom } from "../../../lib/stripboard/seed-parts.ts"
+import { leadsOf, offBoardPart } from "../../../lib/stripboard/seed-model.ts"
 import type {
   Ordering,
   SeedFieldPin,
@@ -87,8 +88,7 @@ export function syntheticSpan(name: string, min: number, max: number): LeadSpan 
 export function netlistOf(parts: readonly SeedPart[]): SeedNetlist {
   const nets = new Map<string, string[]>()
   for (const part of parts) {
-    const leads: readonly SeedLead[] = part.kind === "two-lead" ? part.leads : part.field
-    for (const lead of leads) {
+    for (const lead of leadsOf(part)) {
       const id = `${part.ref}.${lead.pin}`
       const already = nets.get(lead.net)
       if (already === undefined) nets.set(lead.net, [id])
@@ -146,6 +146,22 @@ export function fixedField(
     body: shape.body ?? BARE,
     field,
   }
+}
+
+/**
+ * A panel-mounted control's one landing pad.
+ *
+ * **IT DOES NOT SPELL THE SHAPE OUT**, unlike `twoLead` and `fixedField` above:
+ * a pad's footprint sentinel, its absent body and its formability are fixed
+ * facts about what a landing pad IS, and `offBoardPart` in
+ * `lib/stripboard/seed-model.ts` is the one place they are stated. A fixture
+ * that re-spelled them could drift from what `seedPartsFrom` builds, and the
+ * whole point of the kind is that the constructed pad and the IMPORTED pad are
+ * the same object. This wrapper exists only so the three fixture makers read
+ * alike at the call site.
+ */
+export function offBoard(ref: string, lead: SeedLead): SeedPart {
+  return offBoardPart(ref, lead)
 }
 
 /** Margins that reach `holes` past the pads on every side. */
@@ -234,8 +250,7 @@ export function derivedOrderings(netlist: SeedNetlist, stride: number): readonly
   const degree = (net: string): number => (netlist.nets.get(net) ?? []).length
   const walk: string[] = []
   for (const part of netlist.parts) {
-    const leads: readonly SeedLead[] = part.kind === "two-lead" ? part.leads : part.field
-    for (const lead of leads) if (!walk.includes(lead.net)) walk.push(lead.net)
+    for (const lead of leadsOf(part)) if (!walk.includes(lead.net)) walk.push(lead.net)
   }
   return [
     ordering(`reference-order s${stride}`, names, stride),
