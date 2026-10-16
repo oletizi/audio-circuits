@@ -274,9 +274,16 @@ test("every sound low-boost candidate seats every part inside the stock", () => 
   const sound = soundOf(board, attemptsFor(board))
   expect(sound.length, "sound candidates were found to examine").toBeGreaterThan(0)
 
-  let examined = 0
+  // THE COUNTER IS OVER THE INNERMOST COLLECTION, which is the only one here
+  // that nothing else already counts. It used to increment once per entry of
+  // `sound` and be asserted equal to `sound.length`, which cannot fail - the
+  // exact "assertion that asserts nothing" this file's own header is about. The
+  // two outer collections are covered without it: `sound.length` is asserted
+  // non-zero above, and `placements.length` is asserted equal to the netlist's
+  // part count, which `seedsFrom` refuses to build a seed for when it is zero.
+  // What was uncounted is the hole loop, so that is what is counted.
+  let holesExamined = 0
   for (const entry of sound) {
-    examined += 1
     expect(
       entry.candidate.placements.length,
       `"${entry.name}" seats every part of the netlist`,
@@ -291,6 +298,7 @@ test("every sound low-boost candidate seats every part inside the stock", () => 
         leadsOf(partOf(board.netlist, placement.ref)).length,
       )
       for (const hole of placement.pins.values()) {
+        holesExamined += 1
         expect(hole.strip, `${placement.ref} is on a strip of the stock`).toBeGreaterThanOrEqual(0)
         expect(hole.strip, `${placement.ref} is on a strip of the stock`).toBeLessThan(
           board.stock.strips,
@@ -302,7 +310,7 @@ test("every sound low-boost candidate seats every part inside the stock", () => 
       }
     }
   }
-  expect(examined, "candidates were examined").toBe(sound.length)
+  expect(holesExamined, "holes were examined").toBeGreaterThan(0)
 })
 
 test("every sound low-boost candidate lays each five-pin field across five strips", () => {

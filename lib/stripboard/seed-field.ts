@@ -150,14 +150,24 @@ interface FieldWindow {
  * **THE FACING IS CHOSEN BY HOW MANY DISTINCT STRIPS THE FIELD LANDS ON, MOST
  * FIRST, AND THAT IS STRUCTURAL RATHER THAN A WEIGHTING.** Two pins of DIFFERENT
  * nets on one strip force a cut between them, so the facing that puts the pins on
- * the fewest strips is the facing that forces the most cuts of the part's own
- * making - a `PinHeader_1x05` laid at `S` is five nets on one conductor and four
- * cuts before anything else is placed, against five strips and none at `E`. No
- * number is weighed against another here: the count IS how many cuts the facing
- * forces, and a cut is the dearest term in the committed objective. **Nothing
- * this file ranks is a quantity `objectiveOf` prices** - it prices the board it
- * is handed, and `violationsOf` judges it; what this function decides is which
- * boards get offered at all.
+ * the fewest strips is the facing that can force the most cuts of the part's own
+ * making - a `PinHeader_1x05` laid at `E` has its pin row ALONG one strip, which
+ * is five nets on one conductor and four cuts before anything else is placed,
+ * against five strips and none at `S`.
+ *
+ * **THE COUNT IS A BOUND AND NOT THE CUT COUNT, and this comment said it WAS the
+ * cut count until 2026-10-16.** `distinctStrips` counts STRIPS. The cuts a facing
+ * forces are at MOST `pins - distinctStrips`, and fewer whenever two pins sharing
+ * a strip are on the same net - those need no cut between them - so the actual
+ * number depends on which of the field's nets land together and is not known from
+ * the count alone. What the count does say is that crowding the pins onto one
+ * fewer strip raises that ceiling by one, and a cut is the dearest term in the
+ * committed objective (1.0 against 0.25 for a wire or a bridge). So the key is
+ * the DIRECTION the owner's preference runs in, stated over a quantity this file
+ * can read before a column exists, and no number is weighed against another here.
+ * **Nothing this file ranks is a quantity `objectiveOf` prices** - it prices the
+ * board it is handed, and `violationsOf` judges it; what this function decides is
+ * which boards get offered at all.
  *
  * **THE REMAINING KEYS ARE THE ONES THAT WERE ALREADY HERE, IN THE ORDER THEY
  * WERE IN**: shared strips (a cut, 1.0) before joins (0.25), then by facing and

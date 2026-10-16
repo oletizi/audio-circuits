@@ -308,8 +308,34 @@ const PAD_FACING: Placement["direction"] = "E"
  * `chooseColumn` then picks the column by comfort exactly as it does for every
  * other placement - including rejecting a column whose hole is taken, whose
  * position would leave a net INTERLEAVED on that strip, or which would put the
- * pad's hole under a rigid part, which is the owner's rule applying to a
- * soldered wire end as it does to a lead.
+ * pad's hole under a rigid part.
+ *
+ * **A PAD'S HOLE IS REFUSED UNDER A RIGID PART; A JOINING WIRE'S END OR A
+ * BRIDGE'S HOLE IS ONLY RANKED LAST. BOTH ARE DELIBERATE AND THE TWO ARE SAID
+ * HERE TOGETHER, because nothing said them together until 2026-10-16.** This
+ * paragraph replaces a clause reading that the rejection "is the owner's rule
+ * applying to a soldered wire end as it does to a lead" - which a reader could
+ * fairly take to mean the model refuses every soldered joint under a rigid part.
+ * It does not. A pad is a PLACEMENT, so it goes through `chooseColumn` and the
+ * rejection is hard. The two ends of a joining wire and the holes of a solder
+ * bridge go through `joinColumnFor` in `./join-column.ts`, where `over-rigid` is
+ * the LAST tier of `ROUTE_ORDER` and not a rejection. The asymmetry is the
+ * SAMPLE SIZE and that file argues it: the lead rule is refused because 85 leads
+ * across the owner's two boards hold it, while eight wires is thin evidence for
+ * a hard constraint and one of those eight crosses a rigid trimmer on
+ * `buffered`. **So a board with nowhere clear left still gets joined, and a pad
+ * with nowhere clear left is refused.**
+ *
+ * **AND THE SOFTER RULE IS ALREADY BEING USED, which is why the distinction is
+ * worth writing down.** Measured over the eleven sound low-boost candidates: of
+ * 274 wire ends and bridge holes, NONE lands inside a rigid part's pin box - so
+ * no soldered joint on any of those boards is one the pad rule would have
+ * refused. But of 634 intermediate wire-span holes, FIVE are inside one: on
+ * `reference-order s1` a jumper in column 0 runs over all five pins of the rigid
+ * `junction_grounds` header. That is `over-rigid` being taken because
+ * `joinColumnFor` found nothing clearer, which is the tier working as designed
+ * and not a defect - and it is exactly the case a reader who took the pad rule
+ * to cover wires would expect to be impossible.
  *
  * **IT DOES NOT TRY A SECOND STRIP PLUS A JOIN, AND THAT LIMIT IS STATED RATHER
  * THAN HIDDEN.** A stray pad on another strip with a wire back to its net is
