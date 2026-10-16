@@ -127,6 +127,18 @@ test("every two-lead part materialises at the separation the document declares",
 
 **This task states the rule and tests it. It does not quietly pick one at a call site.** A rule that lives in one caller's argument is not a rule.
 
+**THE RULE, decided by the controller 2026-10-16 after the owner declined the question** (*"re materialize — I don't care"*), so it is a ruling and not his preference:
+
+> **A materialisation starts from a base built fresh by `--import` from the circuit. The committed `.vrt` is adoption's OUTPUT and never its input.**
+
+Three reasons, recorded so a later reader can overturn it on the evidence rather than on taste:
+
+1. It makes the materialised board a pure function of the circuit and the candidate — reproducible, and comparable by content, which is what this repository already demands of a derived artifact.
+2. **Starting from the committed file would make every materialisation inherit whatever incidental footprint state that file was last left in — which is the root of the span defect G12 records.** Fixing the span while keeping that file as the input leaves the same class of drift alive behind the fix.
+3. A step that writes the file it also reads is a loop in which yesterday's accident becomes today's input.
+
+**What this costs, stated rather than discovered:** anything in the committed `.vrt` that is not derivable from the circuit is lost at the first adoption. **The only known instance is net names** — the committed layout carries `NET_NAMES 14` with real names while `--import` writes every node as a bare dash — and Task 4 makes those come from the circuit, so this one is covered rather than dropped. **If an implementer finds a SECOND thing in that file that the circuit cannot produce, that is a finding for the controller and this ruling is reopened**, not a thing to carry across quietly.
+
 - [ ] **Step 1: Write the failing test** — that materialising names its base explicitly and refuses rather than defaulting.
 
 ```ts
