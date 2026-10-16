@@ -40,12 +40,14 @@ import { seedsFrom } from "../../../lib/stripboard/seed.ts"
 import {
   RECORDED_SPANS,
   STOCK,
+  fixedField,
   netlistOf,
   offBoard,
   ordering,
   refusalFrom,
   twoLead,
 } from "./seed-fixtures.ts"
+import type { BodyMargins } from "../../../lib/stripboard/seed-area.ts"
 
 /** The recorded tables, which is what a real circuit's parts are read out of. */
 const GEOMETRY = { patterns: PIN_PATTERNS, spans: LEAD_SPANS }
@@ -141,4 +143,82 @@ test("two entries for one ref are admitted only as DISTINCT pads", () => {
   expect(
     refusalFrom(() => seedsFrom(mixed, STOCK, RECORDED_SPANS, [ordering("wx", ["W", "X"], 1)])),
   ).toStartWith("stripboard-seed-repeated-ref")
+})
+
+/** A field footprint for the blanket fixture below; never fitted, never placed. */
+const BLANKET = "SYNTHETIC:Off_Board_Blanket_Field"
+
+/** One strip past the pin row, one column either side - see the test's comment. */
+const BLANKET_BODY: BodyMargins = {
+  beforeAlong: 0,
+  afterAlong: 1,
+  beforeAcross: 1,
+  afterAcross: 1,
+}
+
+/**
+ * The two-pin field whose rectangle is the whole of a 3x3 stock, in the one
+ * facing and column where that rectangle fits it.
+ *
+ * `rigid` is the only thing the two calls below differ in, which is what makes
+ * the pair a test of the owner's rigidity rule rather than of the geometry.
+ */
+function blanketField(rigid: boolean) {
+  return fixedField(
+    "U_BLANKET",
+    BLANKET,
+    [
+      { pin: "1", net: "P", alongSteps: 0, acrossSteps: 0 },
+      { pin: "2", net: "Q", alongSteps: 1, acrossSteps: 0 },
+    ],
+    { rigid, body: BLANKET_BODY },
+  )
+}
+
+/** Three strips, three columns: the field below covers it, so the pad has nowhere. */
+const TINY = { strips: 3, columns: 3 } as const
+
+/** `P`, `Q`, `W` on strips 0, 1, 2 - so the pad's net is hosted on strip 2. */
+const PQW = ordering("pqw", ["P", "Q", "W"], 1)
+
+test("a pad whose home strip is wholly inside a rigid part's area refuses by name", () => {
+  // WHY THIS DRIVES THE PAD RULE AND NOT THE HOLE RULE. `placementOrder` places
+  // pads LAST, so the field is already committed when `placeOffBoard` runs. The
+  // field's pins take strips 0 and 1 - their own nets' homes, at facing `S` and
+  // starting strip 0, which is the window with the most distinct strips and no
+  // join - and its body reaches one strip PAST the pin row and one column
+  // either side, so column 1 is the only column where its rectangle is on the
+  // stock and that rectangle is then the whole 3x3 board. Strip 2, which `PQW`
+  // hosts the pad's net on, therefore carries no pin of the field and is
+  // covered across every column all the same: each of the three holes the pad
+  // could take is free, on the board, and leaves nothing interleaved, and
+  // `routedUnderRigid` rejects all three. That is the clause the refusal argues
+  // hardest for - an off-board wire soldered beneath a part whose terminals
+  // cannot be formed.
+  const netlist = netlistOf([
+    blanketField(true),
+    offBoard("RV_LO_BOOST", { pin: "2", net: "W" }),
+  ])
+  const message = refusalFrom(() => seedsFrom(netlist, TINY, RECORDED_SPANS, [PQW]))
+  expect(message).toStartWith("stripboard-seed-pad-cannot-be-seated")
+  expect(message, "it names the terminal, not just the control").toContain(
+    '"RV_LO_BOOST" terminal "2"',
+  )
+  expect(message, "and the strip its net is hosted on").toContain("hosts on strip 2")
+  expect(message, "and the clause that closed every column").toContain("rigid part's area")
+
+  // THE CONTROL, AND IT IS THE POINT OF THE PAIR. The same field, the same
+  // body, the same stock, the same ordering - `rigid: false`. Nothing else
+  // rejected those columns, so the pad seats on strip 2 and the seed is built.
+  // Without this, the test above would pass just as well if the refusal had
+  // come from a taken hole or an edge.
+  const formable = netlistOf([
+    blanketField(false),
+    offBoard("RV_LO_BOOST", { pin: "2", net: "W" }),
+  ])
+  const seed = seedsFrom(formable, TINY, RECORDED_SPANS, [PQW])[0]
+  if (seed === undefined) throw new Error("no seed built for the formable control")
+  const pad = seed.placements.find((placement) => placement.ref === "RV_LO_BOOST")
+  if (pad === undefined) throw new Error("the pad was not placed in the formable control")
+  expect(onlyHole(pad).strip, "the pad lands on its net's home strip").toBe(2)
 })

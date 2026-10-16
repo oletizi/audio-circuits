@@ -38,25 +38,39 @@
  *     `stripboard-seed-ordering-net-has-no-home` - `./seed-homes.test.ts`,
  *     which owns the per-net map form of an ordering.
  *
- * **THE OTHER FOUR ARE ASSERTED NOWHERE, which is the honest word for them:**
- * `stripboard-seed-holes-shared`, `stripboard-seed-unsound`,
+ * **THE OTHER FOUR ARE UNREACHABLE BY INPUT, which is the accurate word and not
+ * "untested":** `stripboard-seed-holes-shared`, `stripboard-seed-unsound`,
  * `stripboard-seed-net-has-no-home` and `stripboard-seed-routed-under-rigid`.
  * All four are internal-defect guards - reachable only if the placer's hole set,
  * its interleaving rejection, `chooseColumn`'s rigid rejection or
  * `homeStripsFor`'s own completeness check has a bug - so no well-formed call
  * fires them, and a fixture that forced one would be testing a board this
  * construction cannot produce. They are the self-checks `seedsFrom` runs over
- * every seed it returns, so they EXECUTE on every seed any test builds; what is
- * untested is their refusal branch, not the check.
+ * every seed it returns, so they EXECUTE on every seed any test builds; what no
+ * input can reach is their refusal branch, not the check.
+ *
+ * **WHY `routed-under-rigid` IS UNREACHABLE AND NOT MERELY UNVISITED, since it
+ * is the one of the four whose argument is not already written at its own site.**
+ * `workspace.areas` is appended only in `commit`; every route to `commit` passes
+ * `chooseColumn`; `chooseColumn` already rejects any position where
+ * `routedUnderRigid` fires, checked in BOTH directions over the same rectangle
+ * and the same lead holes as the post-check; and `joinNets` adds no part and
+ * moves no lead. So the post-check's input is a set of areas each of which was
+ * cleared against all its predecessors, and no input can make it fire. It stays
+ * anyway, on the same footing as `holes-shared`, `unsound` and
+ * `net-has-no-home` - `seed.ts`'s own header makes exactly this argument for the
+ * other hard rule, `rigidOverlap`, and there concludes the opposite (no
+ * post-check at all), so the asymmetry is deliberate: that check predates the
+ * reasoning and removing it is not this plan's business.
  *
  * **`stripboard-seed-routed-under-rigid` WAS MISSING FROM THIS CENSUS
- * ALTOGETHER UNTIL 2026-10-16**, and it is one of two keys no test file so much
- * as mentions. Closing it is ruled to the whole-branch review rather than to
- * Task 7; it is named here so that it stops being invisible. **The count has
- * been wrong twice** - it read four, then five, and is ten - which is the
- * argument for keeping the census in one place with the assertions that make it
- * up, rather than as a paragraph in a file whose own line budget kept squeezing
- * it.
+ * ALTOGETHER UNTIL 2026-10-16**, and it was then one of two keys no test file so
+ * much as mentioned. The other, `stripboard-seed-pad-cannot-be-seated`, is now
+ * driven by `./seed-off-board.test.ts`; this one is not and will not be. **The
+ * count has been wrong twice** - it read four, then five, and is ten - which is
+ * the argument for keeping the census in one place with the assertions that make
+ * it up, rather than as a paragraph in a file whose own line budget kept
+ * squeezing it.
  *
  * **THE SCOPE IS FIVE MODULES, AND THE TWO IT LEAVES OUT ARE NAMED RATHER THAN
  * LEFT TO BE NOTICED.** `seed-fit.ts` and `seed-field.ts` carry three keys
@@ -64,11 +78,13 @@
  * `stripboard-seed-leads-cannot-reach` and
  * `stripboard-seed-field-cannot-be-seated` are driven by `./seed.test.ts` (the
  * first also by `./seed-room.test.ts` and `./seed-shared-strip.test.ts`), and
- * **`stripboard-seed-pad-cannot-be-seated` is driven by nothing** - found while
- * recounting on 2026-10-16, the second of the two keys no test mentions, and
- * ruled to the same later wave as `routed-under-rigid`. Widening the census to
- * all seven modules is that wave's to do; what it must not do is leave the
- * finding unwritten in the meantime.
+ * **`stripboard-seed-pad-cannot-be-seated` is driven by
+ * `./seed-off-board.test.ts`** - it was driven by nothing, found while
+ * recounting on 2026-10-16 as the second of the two keys no test mentioned, and
+ * closed in that same review's fix wave with a rigid field whose area blankets
+ * the pad's home strip across every column. Widening the census to all seven
+ * modules is still to do; what it must not do is leave the finding unwritten in
+ * the meantime.
  *
  * **ITS OWN FILE** rather than three sections of `./seed.test.ts`: that file
  * reached this repository's 500-line ceiling when the census was corrected, and
