@@ -51,6 +51,15 @@ Both representations now exist and nothing chooses between them.
 - **What would settle it** the owner says which label a pad's wire should carry
   in the guide: its terminal identity (`RV_LO_BOOST.1`), a functional label
   (`LO BOOST ccw`), or both.
+- **One thing already tilts the cost**, found by the Task 2 reviewer and worth
+  knowing before the decision is made: a PART's label comes from the caller
+  (`renderLayout` takes a `labels` map, and its module comment says so), but a
+  PAD's label is derived inside the renderer from `pad.identity`. So all three
+  packet images necessarily print the same pad text, and choosing the functional
+  label would mean editing the renderer rather than the caller - the opposite
+  side of the interface from where this module puts every other label. It does
+  not foreclose the choice: the pad path keeps `ref` and `pin` as separate
+  fields, so a functional label stays computable.
 
 ### G2 - pad labels crowd the row they sit in
 
@@ -90,6 +99,32 @@ this is a gap and not a trap.
   a ceramic.
 - **What would settle it** a `CAP_CERAMIC\d*` branch with a test, and a render
   of pt2399-core read by eye.
+
+### G10 - the printed checklist has no row for a pad, so its junction table is empty
+
+`buildChecklist` builds every part row from `dump.parts`, and a pad has no
+`PART` line. On a pad-based control the packet therefore shows ten rings with
+ten checkboxes in the LAYOUT IMAGE while the **"Wire-to-board junctions" table
+is empty** - two artifacts in one packet disagreeing about whether ten
+terminals exist.
+
+This is adjacent to G1 but not the same gap: G1 asks WHICH LABEL a pad carries,
+this is a MISSING ROW. Answering G1 either way leaves the table empty.
+
+- **Found** `2026-10-16-pultec-five-boards`, raised by the Task 2 reviewer for
+  the controller rather than as a defect in Task 2.
+- **Evidence** `tools/guide/checklist.ts:200-209` iterates `dump.parts` and
+  nothing else; `grep -n 'pad\|Pad' tools/guide/checklist.ts` finds only one
+  unrelated comment line.
+- **Verified** yes - the controller read the function rather than relaying the
+  reviewer's claim.
+- **Why it is open** Task 2's scope was a pad's shape and identity, and the
+  checklist was explicitly placed out of its bounds so the fix would not ride
+  along unreviewed.
+- **What would settle it** junction rows built from the pads as well as the
+  parts, with a test that counts rows against the board's pad count. **Note it
+  is not independent of G1**: a junction row has to say what the wire carries,
+  which is the label G1 decides.
 
 ### G4 - nothing refuses a board carrying both a header PART and pads for one control
 
