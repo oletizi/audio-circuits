@@ -41,7 +41,7 @@ const LABELS: ReadonlyMap<string, string> = new Map([
 ])
 
 function options(view: RenderOptions["view"]): RenderOptions {
-  return { view, title: "test board", edgeLabels: [{ ref: "R1", pin: "1", text: "IN" }] }
+  return { view, title: "test board", edgeLabels: [{ ref: "R1", pin: "1", text: "IN" }], pads: [] }
 }
 
 const COMPONENT = renderLayout(DUMP, LABELS, options("component"))
@@ -192,7 +192,7 @@ const VERTICAL = parseBoardDump(
 
 test("with vertical strips the copper view mirrors rows instead of columns, cuts included", () => {
   const labels = new Map([["R1", "R1"]])
-  const opts = (view: RenderOptions["view"]): RenderOptions => ({ view, title: "vertical", edgeLabels: [] })
+  const opts = (view: RenderOptions["view"]): RenderOptions => ({ view, title: "vertical", edgeLabels: [], pads: [] })
   const component = renderLayout(VERTICAL, labels, opts("component"))
   const copper = renderLayout(VERTICAL, labels, opts("copper"))
   const lastRow = holeName(VERTICAL.grid.rows - 1, 0)
@@ -227,6 +227,7 @@ test("an edge label's leader detours round another part's pin that stands betwee
     view: "component",
     title: "detour",
     edgeLabels: [{ ref: "C1", pin: "2", text: "OUT" }],
+    pads: [],
   })
   const f11 = holeCentre(svg, "F11")
   const leaders = elements(svg, "line", "edge-leader")
@@ -241,7 +242,11 @@ test("an edge label's leader detours round another part's pin that stands betwee
 test("the copper view's summary counts only what it shows", () => {
   expect(COPPER).toContain(">2 cuts, 1 solder bridges<")
   expect(COPPER).not.toContain("wire links")
-  expect(COMPONENT).toContain(">3 parts, 1 wire links, 2 cuts, 1 solder bridges<")
+  // THE PAD COUNT IS PRINTED EVEN AT ZERO, which this board is: a `PAD` line
+  // used to be skipped by keyword, so a figure that only appeared when it was
+  // non-zero could not be read as "this board has none". See `tests/guide/
+  // pad-identity.test.ts` for the same summary over a board that has ten.
+  expect(COMPONENT).toContain(">3 parts, 0 off-board pads, 1 wire links, 2 cuts, 1 solder bridges<")
 })
 
 test("the electrolytic's + is marked beside its pin 1 hole, however far that lead is stretched", () => {
@@ -309,6 +314,7 @@ test("text is XML-escaped", () => {
     view: "component",
     title: "x & y",
     edgeLabels: [{ ref: "R1", pin: "1", text: "<IN>" }],
+    pads: [],
   })
   expect(svg).toContain("a&lt;b&amp;c")
   expect(svg).toContain("x &amp; y")
@@ -359,7 +365,7 @@ const PULTEC_DUMP = [
 test("the Pultec part types draw, so a Pultec board can be looked at", () => {
   const dump = parseBoardDump(PULTEC_DUMP)
   const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
-  const svg = renderLayout(dump, labels, { view: "component", title: "pultec", edgeLabels: [] })
+  const svg = renderLayout(dump, labels, { view: "component", title: "pultec", edgeLabels: [], pads: [] })
   // ONE BODY PER PART, asserted by the parts' own refs rather than by a count:
   // a renderer that drew two of one and none of another would satisfy a count.
   for (const ref of ["C18", "C19", "board_terminals"]) {
@@ -376,6 +382,6 @@ test("a part type with no recorded shape still REFUSES by name rather than drawi
   const dump = parseBoardDump(unknown)
   const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
   expect(() =>
-    renderLayout(dump, labels, { view: "component", title: "pultec", edgeLabels: [] }),
+    renderLayout(dump, labels, { view: "component", title: "pultec", edgeLabels: [], pads: [] }),
   ).toThrow(/no drawing for VeroRoute part type "CAP_INVENTED_999"/)
 })

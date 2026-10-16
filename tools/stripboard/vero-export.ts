@@ -80,6 +80,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { OFF_BOARD_TERMINAL } from "../../lib/stripboard/board.ts"
 import type { Candidate, Hole, Placement } from "../../lib/stripboard/board.ts"
+import { pinId } from "../../lib/stripboard/pin-id.ts"
 import {
   derivedCuts,
   runsOf,
@@ -115,11 +116,6 @@ function holeField(hole: Hole): string {
  * it as a constant with this comment beside it is the honest spelling.
  */
 const STRIP_AXIS = "horizontal"
-
-/** `<ref>.<pin>` as the fork's own grammar spells it, for a placement's pin. */
-function pinRef(placement: Placement, pin: string): string {
-  return `${placement.ref}.${pin}`
-}
 
 /**
  * A pin name the fork will accept as a pin NUMBER, or a refusal naming it.
@@ -159,11 +155,20 @@ function onlyPin(placement: Placement): readonly [string, Hole] {
   return only
 }
 
-/** The `PART`/`PAD` statement for one placement, with its `PIN` statements after it. */
+/**
+ * The `PART`/`PAD` statement for one placement, with its `PIN` statements after
+ * it.
+ *
+ * **A PAD IS ADDRESSED BY ITS COMPONENT AND ITS TERMINAL**, never by the `ref`
+ * alone - three pads of one potentiometer share one (`./vero-import.ts` records
+ * why). The pair is formed by `lib/stripboard/pin-id.ts`, which is also what the
+ * importer takes it apart with, so the two sides are one string rather than two
+ * derivations that happen to agree.
+ */
 function placementStatements(placement: Placement): readonly string[] {
   if (placement.footprint === OFF_BOARD_TERMINAL) {
     const [pin, hole] = onlyPin(placement)
-    return [`PAD ${pinRef(placement, pinNumber(placement, pin))} AT ${holeField(hole)}`]
+    return [`PAD ${pinId(placement.ref, pinNumber(placement, pin))} AT ${holeField(hole)}`]
   }
   const pins = [...placement.pins]
     .map(([pin, hole]): readonly [number, string] => [
@@ -197,7 +202,7 @@ function anchorsByNet(candidate: Candidate, reference: ReferenceNets): ReadonlyM
   for (const [net, pins] of reference) for (const pin of pins) netOfPin.set(pin, net)
   for (const placement of candidate.placements) {
     for (const [pin] of placement.pins) {
-      const id = pinRef(placement, pin)
+      const id = pinId(placement.ref, pin)
       const net = netOfPin.get(id)
       if (net === undefined) continue
       const list = byNet.get(net)

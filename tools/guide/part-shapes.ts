@@ -213,6 +213,38 @@ function to92Body(part: Part, pins: readonly PlacedPin[]): Body {
   }
 }
 
+/**
+ * A LANDING PAD: a ring around the one hole an off-board wire is soldered to.
+ *
+ * **IT IS NOT DISPATCHED BY `bodyFor` AND THAT IS DELIBERATE.** A pad has no
+ * VeroRoute part type - it is a `PAD` line, not a `PART` line - so there is no
+ * type for `bodyFor` to branch on, and a branch for one would be a predicate
+ * nothing can reach. `./render-parts.ts` calls this directly, from the pads
+ * `./pads.ts` reads.
+ *
+ * **THE RING IS NOT A CLAIM ABOUT A BODY, because a pad has none.** The owner
+ * settled what one is: *"yeah - a single pad has no orientation. It's just a
+ * place to solder an off-board wire or a test point to."* So nothing is drawn
+ * over the hole - it stays visible, since the hole IS the feature - and the ring
+ * is a target around it, sized larger than the pin dot `./render-parts.ts` puts
+ * in it so the two read as one mark rather than two. It is round for the reason
+ * `standingResistorBody` is round: a square here could be read as a checkbox to
+ * tick.
+ */
+export function padBody(at: Point): Body {
+  const r = PITCH * 0.34
+  return {
+    outline: circle(at, r, { fill: "none", stroke: INK, width: 1.6, cls: "pad-body" }),
+    extent: boxAround([at], r),
+    centre: at,
+    // NOTHING FITS INSIDE ONE HOLE'S RING, so the tag goes beside it - which is
+    // what `labelArea: undefined` asks `./render-parts.ts` for.
+    labelArea: undefined,
+    marks: [],
+    polarity: undefined,
+  }
+}
+
 /** A trim-pot or pin header: a box around its pins, pin 1 marked. */
 function boxBody(part: Part, pins: readonly PlacedPin[]): Body {
   const p1 = pinNamed(part, pins, "1").at

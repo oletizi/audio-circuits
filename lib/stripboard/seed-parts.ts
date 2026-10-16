@@ -35,6 +35,7 @@ import type { LeadSpan } from "../kicad/lead-span-model.ts"
 import { PIN_PATTERNS } from "../kicad/pin-pattern.ts"
 import type { PinPattern } from "../kicad/pin-pattern-model.ts"
 import type { ReferenceNets } from "./cuts.ts"
+import { pinIdParts } from "./pin-id.ts"
 import type { BodyMargins } from "./seed-area.ts"
 import {
   offBoardPart,
@@ -246,8 +247,13 @@ export function seedPartsFrom(
   const byRef = new Map<string, SeedLead[]>()
   for (const [net, pins] of nets) {
     for (const id of pins) {
-      const dot = id.lastIndexOf(".")
-      if (dot < 1 || dot === id.length - 1) {
+      // SPLIT THROUGH `pinIdParts`, which is the same function the importer and
+      // the exporter use: a pad constructed here and a pad imported from a
+      // layout are then the same pair rather than two derivations of it. The
+      // refusal stays here because what a malformed id means depends on where it
+      // came from, and here it means this reference netlist.
+      const pinParts = pinIdParts(id)
+      if (pinParts === undefined) {
         refuse(
           "parts-pin-id-malformed",
           `reference net "${net}" holds "${id}", and a pin id is "<ref>.<pin>" - the last dot ` +
@@ -255,9 +261,9 @@ export function seedPartsFrom(
             "splitting on a dot that is not there would invent a ref or a pin name.",
         )
       }
-      const lead: SeedLead = { pin: id.slice(dot + 1), net }
-      const already = byRef.get(id.slice(0, dot))
-      if (already === undefined) byRef.set(id.slice(0, dot), [lead])
+      const lead: SeedLead = { pin: pinParts.pin, net }
+      const already = byRef.get(pinParts.ref)
+      if (already === undefined) byRef.set(pinParts.ref, [lead])
       else already.push(lead)
     }
   }

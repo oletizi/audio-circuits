@@ -8,8 +8,16 @@ import {
   drawWires,
   reserveCoordinates,
 } from "./render-board.ts"
+import type { PlacedPad } from "./pads.ts"
 import { drawEdgeLabels, validateEdgeLabels, type EdgeLabel } from "./render-edges.ts"
-import { drawPartBodies, drawPartLabels, placedParts } from "./render-parts.ts"
+import {
+  drawPadBodies,
+  drawPadLabels,
+  drawnPads,
+  drawPartBodies,
+  drawPartLabels,
+  placedParts,
+} from "./render-parts.ts"
 import {
   CHECKBOX_SIZE,
   INK,
@@ -50,6 +58,18 @@ export interface RenderOptions {
   readonly view: "component" | "copper"
   readonly title: string
   readonly edgeLabels: readonly EdgeLabel[]
+  /**
+   * The board's landing pads, from `./pads.ts`.
+   *
+   * **IT COMES FROM THE CALLER FOR THE REASON `edgeLabels` DOES**, which is this
+   * module's own stated architecture: a `BoardDump` carries no `PAD` lines, so
+   * the pads are read from the dump TEXT by whoever has it. **It is required and
+   * not optional**, because the fault it replaces was silence - a `PAD` line was
+   * skipped by keyword and ten panel terminals left a Pultec guide without a
+   * word. An optional field would let exactly that happen again by omission, and
+   * a board with no pads says so by passing an empty list.
+   */
+  readonly pads: readonly PlacedPad[]
 }
 
 const HEADER_GAP = 12
@@ -63,8 +83,14 @@ function drawHeader(canvas: Canvas, dump: BoardDump, options: RenderOptions, top
     `${dump.grid.rows} x ${dump.grid.cols} holes (rows A-${rowName(dump.grid.rows - 1)}, columns 1-${dump.grid.cols})`
   // Each view's summary counts only what that image shows.
   const marks = `${dump.cuts.length} cuts, ${dump.bridges.length} solder bridges`
+  // THE PAD COUNT IS ALWAYS PRINTED, INCLUDING ZERO, and that is the whole
+  // point: a `PAD` line used to be skipped by keyword, so ten panel terminals
+  // could leave a guide with nothing saying they had. A figure that appears only
+  // when it is non-zero cannot be read as "this board has none".
   const summary =
-    options.view === "component" ? `${placed} parts, ${dump.wires.length} wire links, ${marks}` : marks
+    options.view === "component"
+      ? `${placed} parts, ${options.pads.length} off-board pads, ${dump.wires.length} wire links, ${marks}`
+      : marks
   const lines = [summary, `${side}. ${size}`]
   let y = top - HEADER_GAP
   for (const content of lines) {
@@ -130,6 +156,14 @@ function legendItems(view: RenderOptions["view"], verticalStrips: boolean): read
         text({ x, y }, "+", { size: 10, anchor: "middle", bold: true }),
       text: "electrolytic + lead",
     },
+    {
+      // The ring and the dot together, which is what a pad is drawn as - see
+      // `padBody` in `./part-shapes.ts`.
+      symbol: (x, y) =>
+        `<circle cx="${fmt(x)}" cy="${fmt(y)}" r="${fmt(PITCH * 0.34)}" fill="none" stroke="${INK}" stroke-width="1.6"/>` +
+        `<circle cx="${fmt(x)}" cy="${fmt(y)}" r="2.4" fill="${INK}"/>`,
+      text: "off-board wire solders here (RV.1, SW.2 ...)",
+    },
   ]
 }
 
@@ -179,6 +213,9 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
   // Validated for both views, so the copper view refuses the same boards.
   const placedOrRefused = placedParts(frame, dump, labels)
   validateEdgeLabels(dump, options.edgeLabels)
+  // Built for both views, so the copper view refuses the same boards - the same
+  // reason `placedParts` is called above whichever view this is.
+  const padsOrRefused = drawnPads(frame, options.pads)
   // Placed in this order - fixed geometry first, then edge labels, cut
   // numbers, wire numbers and part tags each clear of everything placed
   // before - but
@@ -195,12 +232,19 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
   const occupied = createOccupied()
   const component = options.view === "component"
   const placed = component ? placedOrRefused : []
+  // THE COMPONENT SIDE ONLY, following this module's own division rather than a
+  // new one: the copper view shows "only strips, cuts and solder bridges". A pad
+  // is soldered on the copper side like every other joint, so if that division
+  // is wrong it is wrong for leads too - which is a question for whoever owns
+  // the images, not one to settle here by drawing pads on both.
+  const pads = component ? padsOrRefused : []
   drawBoard(board, frame)
   if (component) {
     drawWires(wires, frame, dump, occupied.marks)
   }
   drawBridges(marks, frame, dump, occupied.marks)
   drawPartBodies(parts, placed, occupied)
+  drawPadBodies(parts, pads, occupied)
   if (component) {
     drawEdgeLabels(edges, frame, dump, options.edgeLabels, occupied)
   }
@@ -210,6 +254,7 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
     drawWireNumbers(marks, frame, dump, occupied)
   }
   drawPartLabels(partLabels, placed, occupied)
+  drawPadLabels(partLabels, pads, occupied)
   drawCoordinates(coordinates, frame)
   const layers = [board, parts, wires, edges, marks, partLabels, coordinates]
   const drawn = boundsOf(layers)

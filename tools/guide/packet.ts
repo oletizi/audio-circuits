@@ -28,6 +28,7 @@ import { buildChecklist } from "./checklist.ts"
 import { assertLayoutMatchesCircuit, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
 import { buildGuideHtml } from "./guide.ts"
 import { offBoardLabels, valueLabel } from "./off-board.ts"
+import { placedPads } from "./pads.ts"
 import { buildableDump } from "./preflight.ts"
 import { renderLayout } from "./render.ts"
 
@@ -120,7 +121,13 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
         'board\'s schematic ("sch" with its "netlist") in perfboard.json.',
     )
   }
-  const dump = buildableDump(dumpBoard(declaration, deps), declaration.vrtPath)
+  const dumpText = dumpBoard(declaration, deps)
+  const dump = buildableDump(dumpText, declaration.vrtPath)
+  // READ FROM THE TEXT, because a `BoardDump` carries no `PAD` lines - see
+  // `./pads.ts`. A board with no off-board terminals gets an empty list; a
+  // Pultec section gets one entry per panel-control terminal, and the images
+  // then say so rather than leaving them off in silence.
+  const pads = placedPads(dumpText)
   const circuit = await (deps.loadCircuit ?? loadBoardCircuit)(declaration)
   assertLayoutMatchesCircuit(dump, circuit)
   const edgeLabels = offBoardLabels(circuit)
@@ -130,9 +137,14 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   const designators = new Map(dump.parts.map((part) => [part.ref, part.ref]))
   const values = new Map(dump.parts.map((part) => [part.ref, valueLabel(dump, part, circuit, "image")]))
   const images = {
-    designators: renderLayout(dump, designators, { view: "component", title: `${name} - designators`, edgeLabels }),
-    values: renderLayout(dump, values, { view: "component", title: `${name} - values`, edgeLabels }),
-    copper: renderLayout(dump, designators, { view: "copper", title: `${name} - copper side`, edgeLabels }),
+    designators: renderLayout(dump, designators, {
+      view: "component",
+      title: `${name} - designators`,
+      edgeLabels,
+      pads,
+    }),
+    values: renderLayout(dump, values, { view: "component", title: `${name} - values`, edgeLabels, pads }),
+    copper: renderLayout(dump, designators, { view: "copper", title: `${name} - copper side`, edgeLabels, pads }),
   }
   const repoRoot = deps.repoRoot ?? moduleRepoRoot()
   const html = buildGuideHtml({

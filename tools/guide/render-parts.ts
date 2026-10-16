@@ -1,5 +1,6 @@
 import { noPinLinesMessage, type BoardDump, type Part, type Pin } from "./dump.ts"
-import { bodyFor, type Body, type PlacedPin } from "./part-shapes.ts"
+import type { PlacedPad } from "./pads.ts"
+import { bodyFor, padBody, type Body, type PlacedPin } from "./part-shapes.ts"
 import { TAG_CLEARANCE, everything, leastCovered, type Occupied } from "./placement.ts"
 import {
   CHECKBOX_SIZE,
@@ -31,6 +32,13 @@ import {
  * Every lead runs from the body's centre to its hole and is drawn beneath
  * the white-filled body, so what shows is exactly the lead from the body's
  * edge to the hole - however far a stretched lead reaches.
+ *
+ * **LANDING PADS ARE DRAWN HERE TOO, AND THEY ARE NOT PARTS.** A pad is one hole
+ * an off-board wire is soldered to, with no `PART` line, no type and no body
+ * (`./pads.ts`), so it gets a ring and the identity of the terminal it brings off
+ * the board rather than an outline and a designator. It shares the tag placement,
+ * because a pad's checkbox and a part's checkbox must not be placed by two
+ * different sets of rules on one sheet.
  */
 
 const LABEL_SIZE = 8
@@ -135,12 +143,23 @@ function tagBox(at: Point, width: number, height: number): Box {
 
 
 /**
- * A part's tag - its checkbox with the label right after it, so the two are
- * never separated - on the body where the whole tag fits clear of pins and
- * marks, and otherwise beside the body wherever it covers least.
+ * A tag - a checkbox with the label right after it, so the two are never
+ * separated - on the body where the whole tag fits clear of `avoid` and of
+ * everything already drawn, and otherwise beside the body wherever it covers
+ * least.
+ *
+ * `forWhat` is the checkbox's own identity, and it is the CALLER's to supply
+ * because a part and a landing pad are identified differently: a part by its
+ * ref, a pad by its ref AND its terminal, since three pads of one potentiometer
+ * share a ref and three checkboxes carrying one id would be one checkbox as far
+ * as any reader of the sheet is concerned.
  */
-function drawLabel(canvas: Canvas, placed: PlacedPart, occupied: Occupied): void {
-  const { part, body, pins, label } = placed
+function drawTag(
+  canvas: Canvas,
+  tag: { readonly body: Body; readonly label: string; readonly forWhat: string; readonly avoid: readonly Point[] },
+  occupied: Occupied,
+): void {
+  const { body, label, forWhat, avoid } = tag
   const width = CHECKBOX_SIZE + TAG_GAP + textWidth(label, LABEL_SIZE)
   const height = CHECKBOX_SIZE
   const area = body.labelArea
@@ -149,7 +168,6 @@ function drawLabel(canvas: Canvas, placed: PlacedPart, occupied: Occupied): void
     // Centred on the body, else nudged up or down within it.
     const x = (area.minX + area.maxX) / 2 - width / 2
     const y = (area.minY + area.maxY) / 2
-    const avoid = pins.map((p) => p.at)
     spot = [y, y - height, y + height]
       .map((cy) => ({ x, y: cy }))
       .find((p) => {
@@ -160,7 +178,7 @@ function drawLabel(canvas: Canvas, placed: PlacedPart, occupied: Occupied): void
   if (spot === undefined) {
     spot = leastCovered(tagSpots(body, width, height), (p) => tagBox(p, width, height), everything(occupied))
   }
-  canvas.add(checkbox({ x: spot.x, y: spot.y - CHECKBOX_SIZE / 2 }, `part:${part.ref}`), tagBox(spot, CHECKBOX_SIZE, height))
+  canvas.add(checkbox({ x: spot.x, y: spot.y - CHECKBOX_SIZE / 2 }, forWhat), tagBox(spot, CHECKBOX_SIZE, height))
   addText(canvas, { x: spot.x + CHECKBOX_SIZE + TAG_GAP, y: spot.y }, label, LABEL_STYLE)
   occupied.marks.add(grow(tagBox(spot, width, height), TAG_CLEARANCE))
 }
@@ -222,7 +240,60 @@ function drawPolarity(canvas: Canvas, polarity: NonNullable<Body["polarity"]>, o
 
 /** Draws every placed part's tag (checkbox and label), clear of everything already recorded in `occupied`. */
 export function drawPartLabels(canvas: Canvas, placed: readonly PlacedPart[], occupied: Occupied): void {
-  for (const entry of placed) {
-    drawLabel(canvas, entry, occupied)
+  for (const { part, body, pins, label } of placed) {
+    drawTag(canvas, { body, label, forWhat: `part:${part.ref}`, avoid: pins.map((p) => p.at) }, occupied)
+  }
+}
+
+/** One landing pad as it is drawn: where its hole is, and the ring around it. */
+export interface DrawnPad {
+  readonly pad: PlacedPad
+  readonly at: Point
+  readonly body: Body
+}
+
+/**
+ * Every landing pad at its drawn hole.
+ *
+ * A pad's hole comes from its own `PAD` line (`./pads.ts`), which is the only
+ * place the dump states it - there is no `PART` line and the `PIN` line is
+ * printed under the board name the fork invented.
+ */
+export function drawnPads(frame: Frame, pads: readonly PlacedPad[]): readonly DrawnPad[] {
+  return pads.map((pad) => {
+    const at = frame.hole(pad.row, pad.col)
+    return { pad, at, body: padBody(at) }
+  })
+}
+
+/**
+ * Draws every landing pad: the ring around its hole and the dot in it, recorded
+ * in `occupied` so the numbers and tags placed afterwards keep clear.
+ *
+ * The dot is the same mark a part's lead gets, because the thing in the hole is
+ * the same thing - a soldered joint - and a pad drawn without one would read as
+ * an empty hole with a circle round it.
+ */
+export function drawPadBodies(canvas: Canvas, pads: readonly DrawnPad[], occupied: Occupied): void {
+  for (const { at, body } of pads) {
+    canvas.add(body.outline, body.extent)
+    occupied.bodies.add(body.extent)
+    canvas.add(circle(at, PIN_DOT_RADIUS, { fill: INK, cls: "pin" }), boxAround([at], PIN_DOT_RADIUS))
+    occupied.marks.add(boxAround([at], PIN_DOT_RADIUS))
+  }
+}
+
+/**
+ * Draws every landing pad's tag: its checkbox and the identity of the terminal
+ * that hole brings off the board.
+ *
+ * **THE LABEL IS THE IDENTITY, `<ref>.<pin>`, AND NOT THE REF.** It is what the
+ * builder has to match against the schematic to know which wire goes here, and
+ * the ref alone names all three terminals of a pot at once - which is the
+ * collapse `lib/stripboard/pin-id.ts` exists to prevent, arriving on paper.
+ */
+export function drawPadLabels(canvas: Canvas, pads: readonly DrawnPad[], occupied: Occupied): void {
+  for (const { pad, at, body } of pads) {
+    drawTag(canvas, { body, label: pad.identity, forWhat: `pad:${pad.identity}`, avoid: [at] }, occupied)
   }
 }
