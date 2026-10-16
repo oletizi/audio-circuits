@@ -54,16 +54,68 @@ improving one.
 
 ## Shape of the work
 
-**The first task is a real run, not a design.** Take the low-boost candidate that
-already exists, materialise it through the fork's `--materialize`, render it, and
-put it in front of the owner. Whatever that run breaks becomes the next tasks.
-The four gaps above are the expected first fixes; the honest expectation is that
-there will be more.
+**Revised 2026-10-16 after a third-party review**, which approved the direction
+and asked for a definite completion condition and a milestone that runs the
+WHOLE workflow rather than stopping at a render. Its words: *"The branch's goal
+isn't to produce attractive candidate renders. It's to produce verified
+stripboard layouts that can be committed to the repository and built."* The four
+milestones below are its recommended sequence, adopted.
 
-**Then the remaining four sections**, with the plan revised by what the first one
-taught. They are the same circuit family and the same scaffold — the five models
-are 61 to 66 lines each and share `parts.ts` — so a fix for one is likely a fix
-for all, but that is a prediction and not a plan.
+### Milestone 1 — low-boost, end to end
+
+A vertical slice through the entire workflow, not a design:
+
+1. generate the candidate (one already exists — do not discard a valid result
+   and restart the search because other parts of the pipeline are unfinished);
+2. materialise it and verify it independently;
+3. render it for the owner's review;
+4. incorporate whatever he asks for;
+5. **adopt the approved layout through the existing gate**;
+6. **confirm `make -C boards/pultec-low-boost check` passes.**
+
+Only the minimum adapters needed to get there are fixed first. **Note which of
+the four known gaps this does NOT require:** gaps 1 and 2 are in the move
+generator, and materialising an existing candidate does not search, so they are
+not Milestone 1's business.
+
+**This introduces no new quality criterion. It completes a workflow whose
+acceptance machinery already exists.**
+
+**A consequence to state rather than discover: adoption WRITES A LAYOUT INTO
+`boards/`, committed.** The previous piece touched no board file at all. This is
+intended — `CLAUDE.md` puts placement and routing with agents — but it is a
+change in kind, and it is named here so it is a decision rather than a side
+effect.
+
+### Milestone 2 — feasibility of the remaining four
+
+**After low-boost is adopted**, and before the next implementation sequence is
+chosen, run `low-cut`, `hi-cut`, `hi-boost` and `mid` against the constructor and
+**classify every failure** as one of:
+
+- unsupported software behaviour,
+- incompatible component geometry,
+- impossible placement under existing constraints,
+- search exhaustion.
+
+**The classification is the deliverable, because it names in advance the wrong
+move.** `mid`'s `B32529` capacitors may want a six-hole span against a four-hole
+recorded reach — that is a PHYSICAL constraint, qualitatively unlike the four
+software gaps, and the risk is an implementer treating it as another deficiency
+to engineer around. **A physical constraint must not be loosened to make the
+search succeed.** If a section cannot be built from the parts it specifies, that
+is a finding for the owner about the circuit.
+
+### Milestone 3 — the remaining four boards
+
+Produce and adopt each through the workflow Milestone 1 proved. **Record general
+pipeline fixes separately from board-specific results**, so a fix that helps all
+five is visible as such.
+
+### Milestone 4 — integration
+
+All five committed layouts pass verification, each has an owner-approved render,
+and each has its wiring documentation.
 
 **Building is the owner's, and produces its own findings.** He has said he expects
 them. They are not in this spec's scope and must not be pre-empted by inventing
@@ -86,10 +138,46 @@ already exist:
    already settled. A disagreement is reported, never adopted.
 4. **Whether a board is any good is the owner's call on a render**, as it has been
    for every board in this project. Not a figure, and not the producing agent's.
+   The abandoned `lab` board is why: valid connectivity and a low construction
+   cost did not make it worth building.
 
 **No cut count, wire count, board area or extent is a target.** The owner's
 standing preference is as few cuts as possible, which the committed objective
 already prices; his own boards carry five.
+
+### Completion — the five-board deliverable
+
+The criteria above judge ONE board. **This is what finishing means**, added after
+the third-party review observed that an evolving task list and an undefined
+completion condition are different things:
+
+> **All five Pultec section boards have materialised layouts, have passed their
+> existing independent verification and adoption gates, and have been rendered
+> for owner review and approved.**
+
+The task list may evolve freely. **The project may not declare completion having
+produced only low-boost.**
+
+### Two requirements the review added, with their reasons
+
+**Landing pads carry a stable identity derived from component AND terminal** —
+`RV_LO_BOOST.1` — preserving the original component reference. Three pads of one
+potentiometer belong to one logical component and correspond to three different
+electrical terminals, and the pipeline must hold that relationship through
+generation, search, materialisation, export and the wiring guide. **Do NOT solve
+the rendering problem by inventing unique component references for what are
+terminals of one component** — the fork invents `RV_LO_BOOST_1`-style names and
+the importer already rejects them in favour of the owner ref from the dump's
+`FROM <ref>.<pin>` line. A round trip with several pads sharing a ref is
+required.
+
+**The renderer is fixed to recognise what the importer emits — never the
+reverse.** The `CAP_FILM` / `CAP_FILM2` mismatch is an adapter problem, and
+changing the importer to emit what the renderer already draws would let a
+presentation bug become an electrical-model change. **The rendering layer
+consumes the physical model without modifying it.** A test renders a board
+carrying each supported capacitor type and verifies that rendering changes no
+exported component identity, pin mapping or connectivity.
 
 ## What is NOT changing
 
