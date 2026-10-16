@@ -70,11 +70,10 @@ import {
   type PartArea,
   type Rect,
 } from "./seed-area.ts"
+import { homeStripsFor, type Ordering } from "./seed-homes.ts"
 import {
-  homeStripsFor,
   leadsOf,
   refuse,
-  type Ordering,
   type SeedLead,
   type SeedNetlist,
   type SeedPart,
@@ -103,8 +102,18 @@ export interface Workspace {
    */
   readonly nets: ReferenceNets
   readonly home: ReadonlyMap<string, number>
-  /** Strip to the net that calls it home - the inverse of `home`. */
-  readonly hosted: ReadonlyMap<number, string>
+  /**
+   * Every strip some net starts on - `home`'s values, as a set.
+   *
+   * **IT WAS STRIP-TO-NET AND CALLED ITSELF "THE INVERSE OF `home`", WHICH A
+   * PER-NET ASSIGNMENT MAKES UNTRUE.** A `StatedOrdering` may start two nets on
+   * one strip (`./seed-homes.ts` says why that is admitted), so `home` need not
+   * be injective and an inverted map would silently keep whichever net happened
+   * to be second. Nothing ever read the net: `scratchFree` below is the only
+   * consumer and it asks `has`. So the field now holds what it is actually used
+   * for, and the untrue claim is gone rather than carried.
+   */
+  readonly hosted: ReadonlySet<number>
   /** Holes holding a lead, a wire end or a bridge. One lead per hole. */
   readonly taken: Set<string>
   /**
@@ -159,14 +168,19 @@ export function homeOf(workspace: Workspace, net: string): number {
   const strip = workspace.home.get(net)
   if (strip === undefined) {
     // Unreachable through seedsFrom: homeStripsFor refuses an ordering that
-    // leaves a net out, and validateNetlist refuses a lead whose net the
-    // reference does not carry. Stated rather than silently defaulted, because
-    // a 0 here would be every unhosted net shorted onto strip 0.
+    // leaves a net out - `ordering-missing-net` for the stride form and
+    // `net-has-no-home` for the stated map - and validateNetlist refuses a lead
+    // whose net the reference does not carry. Stated rather than silently
+    // defaulted, because a 0 here would be every unhosted net shorted onto strip
+    // 0. **IT SHARES THE MAP FORM'S KEY DELIBERATELY**, because it is the same
+    // condition named at a later layer, as `parts-row-axis` is already shared by
+    // two sites in `./seed-parts.ts`.
     refuse(
       "net-has-no-home",
       `net "${net}" has no home strip under ordering "${workspace.ordering}", and reaching ` +
         "this point means homeStripsFor accepted an ordering it should have refused. Fix " +
-        "lib/stripboard/seed-model.ts's ordering-missing-net check; nothing is substituted.",
+        "lib/stripboard/seed-homes.ts's ordering-missing-net and net-has-no-home checks; " +
+        "nothing is substituted.",
     )
   }
   return strip
@@ -438,7 +452,7 @@ export function workspaceFor(
     spans,
     nets: netlist.nets,
     home,
-    hosted: new Map([...home].map(([net, strip]) => [strip, net])),
+    hosted: new Set(home.values()),
     taken: new Set<string>(),
     claimed: new Map<number, string>(),
     landed: new Map<string, Set<number>>(),

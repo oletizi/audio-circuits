@@ -34,22 +34,30 @@
  *   - **the refusal tests assert the leading key and the facts the message must
  *     carry, not its prose.** A message rewritten keeps passing, which is
  *     intended; a message that stops naming the part or a net does not;
- *   - **four of the twenty refusal keys the four modules behind `seedsFrom`
- *     carry are NOT asserted here** (`seed.ts` 5, `seed-place.ts` 2,
- *     `seed-model.ts` 6, `seed-validate.ts` 7, counted rather than remembered),
- *     **and they are named rather than left for a reader to count.** One is
- *     asserted elsewhere:
+ *   - **five of the refusal keys the five modules behind `seedsFrom` carry are
+ *     NOT asserted here** (`seed.ts` 5, `seed-place.ts` 2, `seed-model.ts` 1,
+ *     `seed-homes.ts` 8, `seed-validate.ts` 7 - 23 refusal sites under 22
+ *     distinct keys, counted rather than remembered), **and they are named
+ *     rather than left for a reader to count.** Three are asserted elsewhere:
  *     `stripboard-seed-repeated-pad` is a fact about the off-board kind and is
  *     driven by `./seed-off-board.test.ts`, beside the positive case it is the
- *     negative of. The other three are
- *     `stripboard-seed-net-has-no-home`, `stripboard-seed-holes-shared` and
- *     `stripboard-seed-unsound`. All three are internal-defect guards -
- *     reachable only if `homeStripsFor`'s own ordering check, or the placer's
- *     hole set, or its interleaving rejection has a bug - so there is no well-formed
- *     call that fires them, and a fixture that forced one would be testing a
- *     board this module cannot construct. The last two are the self-check
- *     `seedsFrom` runs on every seed it returns, so they execute on every test
- *     below; what is untested is their refusal branch, not the check.
+ *     negative of, and `stripboard-seed-home-not-a-strip` and
+ *     `stripboard-seed-ordering-states-both-forms` are facts about the per-net
+ *     map form of an ordering and are driven by `./seed-homes.test.ts`. The
+ *     other two are `stripboard-seed-holes-shared` and
+ *     `stripboard-seed-unsound`: both are internal-defect guards - reachable
+ *     only if the placer's hole set or its interleaving rejection has a bug - so
+ *     there is no well-formed call that fires them, and a fixture that forced
+ *     one would be testing a board this module cannot construct. They are the
+ *     self-check `seedsFrom` runs on every seed it returns, so they execute on
+ *     every test below; what is untested is their refusal branch, not the check.
+ *
+ *     **`stripboard-seed-net-has-no-home` WAS IN THAT LAST GROUP AND IS NOT ANY
+ *     MORE**: it is raised at two sites under one key - `homeOf` in
+ *     `lib/stripboard/seed-place.ts`, still an internal-defect guard, and
+ *     `statedHomes` in `lib/stripboard/seed-homes.ts`, where a stated map
+ *     leaving a net out is an INPUT refusal. `./seed-homes.test.ts` drives it
+ *     and asserts a count the placer's guard does not carry.
  */
 import { expect, test } from "bun:test"
 import type { Candidate } from "../../../lib/stripboard/board.ts"

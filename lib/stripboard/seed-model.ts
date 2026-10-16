@@ -2,13 +2,16 @@
  * What a constructive seed is BUILT FROM, and every refusal that fires before
  * one hole is chosen.
  *
- * `./seed.ts` does the placing. This file holds the inputs' types and the
- * net-to-strip layout an `Ordering` states - split from it for the line ceiling,
- * exactly as `lib/kicad/lead-span-model.ts` and `lead-span.ts` split. **The
- * checks that an input is self-consistent were here and are now
- * `./seed-validate.ts`**, split off on the same seam and for the same reason:
- * they are the half that grows with every part kind, and this file went over the
- * ceiling when the third one arrived.
+ * `./seed.ts` does the placing. This file holds the inputs' types - split from
+ * it for the line ceiling, exactly as `lib/kicad/lead-span-model.ts` and
+ * `lead-span.ts` split. **Two halves that were here have since been split off
+ * the same way, each because it is a half that KEEPS GROWING while this one does
+ * not:** the checks that an input is self-consistent are `./seed-validate.ts`,
+ * which grows with every part kind, and the net-to-strip layout an `Ordering`
+ * states - `Ordering` itself and `homeStripsFor` - is `./seed-homes.ts`, which
+ * grew when a per-net assignment joined the uniform stride. `refuse` and
+ * `WHY_NOT_DEFAULTED` stay here and both files import them, so the whole family
+ * shares one key prefix and one closing sentence.
  *
  * **WHY A PART'S PIN FIELD IS AN INPUT RATHER THAN A DERIVATION.** A two-lead
  * part has ONE free parameter - how far apart its leads are bent - and
@@ -30,16 +33,12 @@
  * seed that imported either would give them a consumer again and re-open a
  * question that is closed. A placement is its pins; the pins come in as data.
  *
- * **AN ORDERING IS DATA AND NOT A HEURISTIC.** `seedsFrom` takes the orderings
- * it is given and returns one candidate per ordering, in the order handed to it,
- * with no ranking and no preference. That is the invariant this whole project
- * rests on - *"an agent may never author the acceptance criteria for the
- * artifact it is producing"* - applied to the one task where the agent decides
- * something: the seed may choose placements, and it may not choose which seed is
- * good. `objectiveOf` and `violationsOf` answer that, from the owner's weights.
+ * **AN ORDERING IS DATA AND NOT A HEURISTIC**, and that invariant is stated
+ * where the type and the behaviour live rather than a third time here:
+ * `./seed-homes.ts` for what an `Ordering` is, `./seed.ts` for `seedsFrom`
+ * returning one candidate per ordering with no ranking and no preference.
  */
 import { OFF_BOARD_TERMINAL } from "./board.ts"
-import type { Grid } from "./board.ts"
 import type { ReferenceNets } from "./cuts.ts"
 import type { BodyMargins } from "./seed-area.ts"
 import type { LeadSpan } from "../kicad/lead-span-model.ts"
@@ -200,32 +199,9 @@ export interface SeedNetlist {
 }
 
 /**
- * One way of laying the nets out across the strips.
- *
- * `nets` is every net, in the order they take strips; `stride` is how many
- * strips each one advances, so `stride: 2` leaves one spare strip between
- * consecutive nets. **Both are the caller's**, and `name` exists so a refusal
- * and a report can say which ordering produced what.
- *
- * **WHY THE STRIDE IS HERE AND NOT CHOSEN INSIDE.** It changes what is feasible,
- * not just what is cheap: a part whose span is fixed at two holes - a 2.54mm pin
- * header, `leadSpanFor`'s `[2, 2]` - needs its two nets on ADJACENT strips, which
- * `stride: 1` can give and `stride: 2` never can; while a three-terminal part
- * whose outer pins are two holes apart lands both of them on home strips only at
- * `stride: 2`. A module that picked one would be deciding which of those two
- * costs to pay, which is a decision about the artifact and not about the
- * mechanism.
- */
-export interface Ordering {
-  readonly name: string
-  readonly nets: readonly string[]
-  readonly stride: number
-}
-
-/**
  * The sentence every refusal in this family ends with, exported so that
- * `./seed-validate.ts` ends its refusals with the SAME one rather than a second
- * phrasing of it.
+ * `./seed-validate.ts` and `./seed-homes.ts` end their refusals with the SAME
+ * one rather than a second phrasing of it.
  */
 export const WHY_NOT_DEFAULTED =
   "Nothing is substituted: a seed built from an input this check would have rejected is a seed " +
@@ -272,77 +248,6 @@ export function spanFor(footprint: string, spans: ReadonlyMap<string, LeadSpan>)
     )
   }
   return found
-}
-
-/**
- * Net to the strip that hosts it, from one ordering.
- *
- * The nets take strips `0`, `stride`, `2*stride`, ... in the sequence given.
- * **A net's home strip is where its leads land by preference and is not a claim
- * that they all do**: a lead that cannot reach lands elsewhere and is joined,
- * which is `./seed.ts`'s business.
- */
-export function homeStripsFor(
-  netlist: SeedNetlist,
-  ordering: Ordering,
-  grid: Grid,
-): ReadonlyMap<string, number> {
-  if (!Number.isInteger(ordering.stride) || ordering.stride < 1) {
-    refuse(
-      "ordering-stride-not-positive",
-      `ordering "${ordering.name}" has a stride of ${ordering.stride}, and a stride is how many ` +
-        `strips each net in the sequence advances - so it must be a whole number of at least ` +
-        `1.\n${WHY_NOT_DEFAULTED}.\nA stride of 0 would put every net on strip 0, which is ` +
-        "every net shorted to every other; a fractional one names no strip at all.",
-    )
-  }
-  const home = new Map<string, number>()
-  for (const [index, net] of ordering.nets.entries()) {
-    if (!netlist.nets.has(net)) {
-      refuse(
-        "ordering-unknown-net",
-        `ordering "${ordering.name}" names net "${net}" at position ${index}, and the netlist ` +
-          `has no such net.\n${WHY_NOT_DEFAULTED}.\nThe nets this netlist carries are:\n` +
-          `${[...netlist.nets.keys()].sort().map((name) => `  ${name}`).join("\n")}`,
-      )
-    }
-    if (home.has(net)) {
-      refuse(
-        "ordering-repeated-net",
-        `ordering "${ordering.name}" names net "${net}" twice, at positions ` +
-          `${ordering.nets.indexOf(net)} and ${index}, so it would be given two home strips ` +
-          `and the second would silently win.\n${WHY_NOT_DEFAULTED}.\nA net that genuinely ` +
-          "wants two strips gets them by a lead landing off its home strip and a join, which " +
-          "is priced; a repeated ordering entry is not priced and is not a decision anybody " +
-          "made.",
-      )
-    }
-    const strip = index * ordering.stride
-    if (strip >= grid.strips) {
-      refuse(
-        "ordering-off-board",
-        `ordering "${ordering.name}" would put net "${net}" on strip ${strip}, and the stock ` +
-          `has ${grid.strips} strips - so the layout runs off the edge at position ${index} of ` +
-          `${ordering.nets.length} at a stride of ${ordering.stride}.\n${WHY_NOT_DEFAULTED}.\n` +
-          `A stride of 1 needs ${ordering.nets.length} strips for this circuit. The stock is ` +
-          "the owner's, declared in stripboard/rules.json as stockRows and stockCols, and it " +
-          "is the one input a layout cannot negotiate.",
-      )
-    }
-    home.set(net, strip)
-  }
-  for (const net of netlist.nets.keys()) {
-    if (home.has(net)) continue
-    refuse(
-      "ordering-missing-net",
-      `ordering "${ordering.name}" lists ${ordering.nets.length} of the netlist's ` +
-        `${netlist.nets.size} nets and does not name "${net}", so that net has no strip to ` +
-        `host it.\n${WHY_NOT_DEFAULTED}.\nAn ordering is every net in the order they take ` +
-        "strips. A partial one is not read as \"place the rest anywhere\": where a net lives is " +
-        "the decision this parameter exists to carry.",
-    )
-  }
-  return home
 }
 
 /**

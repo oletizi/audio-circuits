@@ -85,7 +85,8 @@ import { handBoard } from "./seed-room-fixtures.ts"
 import type { Grid } from "../../../lib/stripboard/board.ts"
 import type { LeadSpan } from "../../../lib/kicad/lead-span-model.ts"
 import type { PinPattern } from "../../../lib/kicad/pin-pattern-model.ts"
-import type { Ordering, SeedNetlist } from "../../../lib/stripboard/seed-model.ts"
+import type { Ordering } from "../../../lib/stripboard/seed-homes.ts"
+import type { SeedNetlist } from "../../../lib/stripboard/seed-model.ts"
 
 const SOURCE = { patterns: PIN_PATTERNS, spans: LEAD_SPANS }
 

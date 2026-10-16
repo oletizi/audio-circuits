@@ -75,7 +75,8 @@ import { violationsOf } from "../../../lib/stripboard/invariants.ts"
 import { partAreasOf } from "../../../lib/stripboard/moves.ts"
 import { objectiveOf } from "../../../lib/stripboard/score.ts"
 import { seedsFrom } from "../../../lib/stripboard/seed.ts"
-import type { Ordering, SeedNetlist } from "../../../lib/stripboard/seed-model.ts"
+import type { Ordering } from "../../../lib/stripboard/seed-homes.ts"
+import type { SeedNetlist } from "../../../lib/stripboard/seed-model.ts"
 import {
   search,
   type SearchResult,

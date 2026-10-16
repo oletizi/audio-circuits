@@ -32,8 +32,8 @@ import type { ReferenceNets } from "../../../lib/stripboard/cuts.ts"
 import type { BodyMargins } from "../../../lib/stripboard/seed-area.ts"
 import { seedPartsFrom } from "../../../lib/stripboard/seed-parts.ts"
 import { leadsOf, offBoardPart } from "../../../lib/stripboard/seed-model.ts"
+import type { StrideOrdering } from "../../../lib/stripboard/seed-homes.ts"
 import type {
-  Ordering,
   SeedFieldPin,
   SeedLead,
   SeedNetlist,
@@ -174,7 +174,7 @@ export function bodied(holes: number): BodyMargins {
   }
 }
 
-export function ordering(name: string, nets: readonly string[], stride: number): Ordering {
+export function ordering(name: string, nets: readonly string[], stride: number): StrideOrdering {
   return { name, nets, stride }
 }
 
@@ -238,6 +238,12 @@ export const RECORDED_SPANS: ReadonlyMap<string, LeadSpan> = LEAD_SPANS
  * Five orderings of a circuit's nets, each a one-line rule over the netlist and
  * none of them tuned.
  *
+ * **THEY ARE ALL IN THE STRIDE FORM, which is the form they have always been
+ * in.** The per-net map form (`StatedOrdering`) is exercised by
+ * `./seed-homes.test.ts`; it is deliberately not derived here, because these
+ * five rules are what every committed benchmark figure was measured from and a
+ * change of form here would move those figures.
+ *
  * **THEY ARE THE CALLER'S AND NOT THE SEED MODULE'S**, which is the whole point
  * of `seedsFrom`'s `orderings` parameter. Each rule says what it is: the
  * reference's own order, the two degree orders, a walk of the parts emitting
@@ -245,7 +251,10 @@ export const RECORDED_SPANS: ReadonlyMap<string, LeadSpan> = LEAD_SPANS
  * **No rule here was changed after seeing a score** - what the figures came out
  * as is reported in this task's report, including the orderings that refuse.
  */
-export function derivedOrderings(netlist: SeedNetlist, stride: number): readonly Ordering[] {
+export function derivedOrderings(
+  netlist: SeedNetlist,
+  stride: number,
+): readonly StrideOrdering[] {
   const names = [...netlist.nets.keys()]
   const degree = (net: string): number => (netlist.nets.get(net) ?? []).length
   const walk: string[] = []

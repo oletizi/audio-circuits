@@ -14,7 +14,9 @@
  * **THE STRUCTURE, STATED PLAINLY, BECAUSE IT HAS A CONSEQUENCE THE OBJECTIVE
  * REWARDS AND A PERSON MIGHT NOT.**
  *
- *   1. each net gets a HOME STRIP from the ordering, at `index * stride`;
+ *   1. each net gets a HOME STRIP from the ordering - at `index * stride` where
+ *      the ordering states one uniform stride, or straight from the map where it
+ *      states a strip per net (`./seed-homes.ts`);
  *   2. a part's leads land on their own nets' home strips wherever its recorded
  *      span reaches that far; failing that on a SCRATCH strip - a strip no net
  *      calls home, claimed by exactly one lead - and failing that on a strip
@@ -112,12 +114,8 @@ import { holesOverlap, type Candidate, type Grid } from "./board.ts"
 import { derivedCuts, type ReferenceNets } from "./cuts.ts"
 import { describeViolations, violationsOf } from "./invariants.ts"
 import { routedUnderRigid } from "./seed-area.ts"
-import {
-  placementOrder,
-  refuse,
-  type Ordering,
-  type SeedNetlist,
-} from "./seed-model.ts"
+import type { Ordering } from "./seed-homes.ts"
+import { placementOrder, refuse, type SeedNetlist } from "./seed-model.ts"
 import { validateNetlist } from "./seed-validate.ts"
 import { placeFixedField } from "./seed-field.ts"
 import { placeOffBoard, placeTwoLead } from "./seed-fit.ts"
@@ -245,8 +243,10 @@ export function seedsFrom(
       "no-orderings",
       "seedsFrom was given no orderings, so there is no net layout to build a seed from and " +
         "the answer would be an empty list that reads exactly like a circuit nothing could be " +
-        "built for.\nAn ordering is every net in the order they take strips, with the stride " +
-        "between them; it is a parameter precisely so that this module does not choose one. " +
+        "built for.\nAn ordering says which strip each net starts on - every net in the order " +
+        "they take strips with the stride between them, or a strip stated per net " +
+        "(lib/stripboard/seed-homes.ts); it is a parameter precisely so that this module does " +
+        "not choose one. " +
         "Nothing is substituted: a default ordering here would be this module deciding which " +
         "seed the search starts from, which is the decision the parameter exists to keep with " +
         "the caller.",
