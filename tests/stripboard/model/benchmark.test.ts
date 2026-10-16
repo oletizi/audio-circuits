@@ -146,10 +146,32 @@ test("the before state is recorded per start, so the search's gain is separable 
   for (const instance of INSTANCES) {
     for (const start of instance.seedStarts) {
       const before = figuresOf(start.candidate, instance.nets)
-      // Every seed this construction produces is sound and carries no cut -
-      // a STRUCTURAL property of lib/stripboard/seed.ts, and the owner's ruling
-      // of 2026-10-14 makes it a feature rather than the accident it was first
-      // reported as.
+      // SOUND IS A PROPERTY OF THE CONSTRUCTION; NO CUT IS A PROPERTY OF THESE
+      // THREE ORDERINGS, and the two are asserted together for different
+      // reasons. `seedsFrom` refuses a seed `violationsOf` rejects, so the first
+      // line holds for every seed it will ever return.
+      //
+      // **THE SECOND LINE USED TO CARRY A STRUCTURAL ARGUMENT AND IT IS STRUCK
+      // RATHER THAN QUIETLY DROPPED**: ~~"Every seed this construction produces
+      // is sound and carries no cut - a STRUCTURAL property of
+      // lib/stripboard/seed.ts, and the owner's ruling of 2026-10-14 makes it a
+      // feature rather than the accident it was first reported as."~~ That
+      // property was deleted on 2026-10-15, when a lead was allowed to land on a
+      // strip another net occupies - the owner: *"Zero cuts was never a
+      // requirement."* Re-measured the same day: 11 of the 12 distinct orderings
+      // `derivedOrderings` yields now build on `transistor-preamp-feedback`, with
+      // cut counts 0,0,0,0,0,0,0,2,3,3,4. So a cut-free seed is no longer
+      // guaranteed anywhere, and `seed.ts`'s own warning applies to the sentence
+      // above - *"a structural argument that has gone stale looks precisely like
+      // a sound one."*
+      //
+      // **THE ASSERTION STAYS**, because what it now says is still worth saying
+      // and is still checked: the three orderings this gate starts from come out
+      // at C 0 on both instances, which is why the figures below are the seed's
+      // wire and bridge counts alone and why the search's gain is separable from
+      // them. A change that made one of these three start carrying a cut would be
+      // a different baseline, and this line is what refuses to let that pass
+      // silently.
       expect(before.netsWhole).toBe(true)
       expect(before.cuts).toBe(0)
       measured += 1

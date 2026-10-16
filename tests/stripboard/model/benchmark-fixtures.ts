@@ -23,17 +23,44 @@
  * repository's own, not a rule invented here.**
  *
  * **WHY `rcm` IS IN THE START LIST AT ALL, stated plainly because it looks like
- * a choice made to suit a number and is not.** All fifteen of
- * `./seed-fixtures.ts`'s `derivedOrderings` - five rules at strides 1, 2 and 3 -
- * REFUSE on `transistor-preamp-buffered`: at stride 3 the thirteenth net lands
- * on strip 36 against 34 strips, at stride 2 `RV3`/`RV4`'s moulded field cannot
- * be seated, and at stride 1 `J1`'s two leads cannot reach. Measured, not
- * assumed. So without a sixth ordering that board has no constructed start and
- * the instance cannot be run. `rcm s2` was taken because it is the ordering this
- * repository already derives for exactly this purpose, and it was taken for
- * BOTH boards rather than for the one that needed it. Every ordering that
- * refuses is still listed below and its refusal is reported, which is the only
- * way the reader can tell a start that was unavailable from one nobody tried.
+ * a choice made to suit a number and is not.** When `rcm s2` was added, EVERY
+ * ordering `./seed-fixtures.ts`'s `derivedOrderings` yields refused on
+ * `transistor-preamp-buffered`, so without a sixth ordering that board had no
+ * constructed start at all and the instance could not be run. `rcm s2` was taken
+ * because it is the ordering this repository already derives for exactly this
+ * purpose, and it was taken for BOTH boards rather than for the one that needed
+ * it. Every ordering that refuses is still listed below and its refusal is
+ * reported, which is the only way the reader can tell a start that was
+ * unavailable from one nobody tried.
+ *
+ * **THAT MEASUREMENT HAS MOVED, AND THE OLD READING IS KEPT HERE RATHER THAN
+ * OVERWRITTEN**, because it is the whole justification for a sixth ordering. It
+ * read: *"All fifteen of `./seed-fixtures.ts`'s `derivedOrderings` - five rules
+ * at strides 1, 2 and 3 - REFUSE on `transistor-preamp-buffered`: at stride 3
+ * the thirteenth net lands on strip 36 against 34 strips, at stride 2
+ * `RV3`/`RV4`'s moulded field cannot be seated, and at stride 1 `J1`'s two leads
+ * cannot reach."* The 2026-10-15 relaxation that let a strip carry two nets
+ * (`lib/stripboard/seed-place.ts`) falsified two of those three clauses.
+ *
+ * **RE-MEASURED 2026-10-15 BY RUNNING `seedsFrom` OVER EVERY ONE OF THEM, at
+ * both commits, and counted over DISTINCT net sequences**: the fifteen are
+ * twelve, because `alphabetical sN` is the same sequence as `reference-order sN`
+ * at each stride - a fact about these two exports' net order, which is already
+ * sorted, and not about the rules. On `transistor-preamp-buffered`, 0 of those 12
+ * built before the relaxation and **6 build after it** - all four stride-2
+ * orderings (cut counts 1, 1, 2 and 1) and two of the four at stride 1 (4 and 3).
+ * **Only the stride-3 clause survives**: those four still refuse under
+ * `ordering-off-board`, which is the stock being too narrow for that stride and
+ * is untouched by the relaxation. The two stride-1 orderings that still refuse do
+ * so under `no-column-to-join` on `GND` rather than for `J1`'s reach.
+ *
+ * **`rcm s2` STAYS, AND NOT BECAUSE THE JUSTIFICATION STILL HOLDS AS WRITTEN.**
+ * It stays because the gate's start list is fixed data and is not re-chosen by
+ * whoever is trying to pass it: swapping the starts for whichever orderings a
+ * later change made feasible would move the threshold's own inputs. It also
+ * remains the only one of this file's three orderings that `buffered` can build
+ * at all - `part-walk s3` and `rcm s3` both run off the stock - so removing it
+ * would still leave that instance unrunnable.
  *
  * **THE IMPORTED HAND BOARD IS A STARTING POINT AND NOT ONLY A BENCHMARK** - the
  * owner's words, *"even a human starting point"*. `transistor-preamp-feedback`
