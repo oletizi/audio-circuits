@@ -355,3 +355,58 @@ export const NARRATION_MARKERS = [
   "approved by",
   "the operator",
 ] as const
+
+/**
+ * The character that separates a SELECTION's subject from the artifact it
+ * chose: `low-cut: part-walk-s1`.
+ *
+ * It is declared rather than written inline so the one shape this reading
+ * admits is stated in the model beside the two word lists, and so a reader who
+ * finds a refusal can see what form was being looked for.
+ */
+export const SELECTION_SEPARATOR = ":"
+
+/**
+ * The words that are NOT an artifact, however they are punctuated, so a bare
+ * affirmative cannot be dressed up as a selection by putting a subject in front
+ * of it.
+ *
+ * **THIS LIST IS THE WHOLE DIFFERENCE BETWEEN A SELECTION AND A FIELD BEING
+ * FILLED IN.** `low-cut: yes` names the subject and says nothing an agent did
+ * not already know; `low-cut: part-walk-s1` names one of four renders that were
+ * put in front of him, which is information only the person choosing has. The
+ * reading admits the second and must refuse the first, and these are the words
+ * that keep the two apart.
+ *
+ * It is a blacklist, which everywhere else in this pipeline is the weaker
+ * device - and it is the right one HERE because it is narrowing an admission
+ * rather than granting one: a word missing from it lets a vague selection
+ * through, where a word missing from `FIRST_OR_SECOND_PERSON` refuses a true
+ * record. A reader who finds a vague affirmative that got past this adds it in
+ * a deliberate edit with a test beside it, the same house rule.
+ */
+export const SELECTION_NON_ARTIFACTS = [
+  "yes",
+  "no",
+  "ok",
+  "okay",
+  "yep",
+  "yeah",
+  "sure",
+  "good",
+  "fine",
+  "great",
+  "done",
+  "go",
+  "agreed",
+  "approved",
+  "approve",
+  "accepted",
+  "lgtm",
+  "ship it",
+  "looks good",
+  "sounds good",
+  "fine by me",
+  "that one",
+  "this one",
+] as const

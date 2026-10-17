@@ -101,6 +101,69 @@ test("A FIELD-FILLING PHRASE IS REFUSED, because nobody is speaking in it", () =
   )
 })
 
+test("A SELECTION NAMING ONLY THE BOARD IS REFUSED, because nothing was chosen", () => {
+  // THE FIRST NEAR MISS A WELL-MEANING PERSON WRITES. It names the subject, it
+  // is in his own clipped register, and it carries nothing an agent did not
+  // already have: which board the entry is about is in the entry.
+  const message = onlyEntry({ board: "pultec-low-cut", ownerWords: ["low-cut:"] })
+  expect(message).toStartWith("approvals-words-not-spoken")
+  expect(message, "it says what a selection needs on the other side").toContain(
+    "the artifact chosen for it",
+  )
+  // AND THE SAME LINE WITH A BARE AFFIRMATIVE AFTER IT, which is the shape that
+  // looks most like a decision and is least like one.
+  for (const said of ["low-cut: yes", "low-cut: approved", "low-cut: looks good", "low-cut: ok."]) {
+    expect(
+      onlyEntry({ board: "pultec-low-cut", ownerWords: [said] }),
+      said,
+    ).toStartWith("approvals-words-not-spoken")
+  }
+})
+
+test("A SELECTION NAMING ONLY THE ARTIFACT IS REFUSED, because it would fit any board", () => {
+  // THE SECOND NEAR MISS, AND THE DANGEROUS ONE. An ordering name on its own is
+  // the half an agent producing the board already knows, and an utterance that
+  // named no board would be admissible against every entry in the file - which
+  // is exactly the travelling-quote hazard G31 is about.
+  for (const said of ["part-walk-s1", "part-walk-s1, please", "rcm-s20"]) {
+    expect(onlyEntry({ board: "pultec-low-cut", ownerWords: [said] }), said).toStartWith(
+      "approvals-words-not-spoken",
+    )
+  }
+})
+
+test("A BARE AFFIRMATIVE IS REFUSED UNDER BOTH READINGS, however it is punctuated", () => {
+  for (const said of ["yes", "Yes.", "approved", "LGTM", "ship it", "looks good"]) {
+    expect(onlyEntry({ board: "pultec-low-cut", ownerWords: [said] }), said).toStartWith(
+      "approvals-words-not-spoken",
+    )
+  }
+})
+
+test("A SELECTION IS ADMISSIBLE ONLY FOR THE BOARD IT NAMES, which the voice reading cannot do", () => {
+  // HIS ACTUAL REPLY, against each of the three boards it could be filed under.
+  // It is admitted for the two it names and refused for the third, so the shape
+  // does not travel - the one thing G31 says a true, in-voice quote does.
+  const said = "low-cut: part-walk-s1\nhi-cut: rcm-s20"
+  expect(onlyEntry({ board: "pultec-low-cut", ownerWords: [said] }), "low-cut").toBe("")
+  expect(onlyEntry({ board: "pultec-hi-cut", ownerWords: [said] }), "hi-cut").toBe("")
+  const elsewhere = onlyEntry({ board: "pultec-mid", ownerWords: [said] })
+  expect(elsewhere, "the same two lines against a board they do not name").toStartWith(
+    "approvals-words-not-spoken",
+  )
+  expect(elsewhere, "and the refusal says which board it was looking for").toContain("pultec-mid")
+  // AND THE ABBREVIATION IS THE SECTION NAME AND NOT ANY SUFFIX: "cut" alone
+  // reads the same against low-cut and hi-cut and must not qualify.
+  expect(
+    onlyEntry({ board: "pultec-low-cut", ownerWords: ["cut: part-walk-s1"] }),
+    "a suffix that does not identify the board",
+  ).toStartWith("approvals-words-not-spoken")
+  expect(
+    onlyEntry({ board: "pultec-low-cut", ownerWords: ["pultec-low-cut: part-walk-s1"] }),
+    "the full board name",
+  ).toBe("")
+})
+
 test("his real words pass both readings, which is what makes the two guards tests and not walls", () => {
   // THE CONTROL. A guard that refused everything would pass the three tests
   // above and be worthless, so the committed entry's own words are driven

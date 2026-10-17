@@ -74,7 +74,22 @@ const ENTRY_IDS = [
   ENTRY_ID,
   "owner-render-pultec-hi-boost-rcm-s4",
   "owner-render-pultec-mid-rcm-s0",
+  "owner-render-pultec-low-cut-part-walk-s1",
+  "owner-render-pultec-hi-cut-rcm-s20",
 ] as const
+
+/**
+ * The reply that is the authority for the fourth and fifth entries - two lines,
+ * one per board, carried verbatim in BOTH of them.
+ *
+ * **IT IS A SELECTION AND NOT A SENTENCE**, which is why the loader needed a
+ * second admissible quote shape to hold it (the controller's ruling of
+ * 2026-10-17, recorded in the registry's `notes.ownerWords` and in
+ * `docs/known-gaps.md` G35). What it buys over `TWO_BOARD_WORDS` below is that
+ * it NAMES the boards and the orderings, so the selection reading can refuse it
+ * for a board it does not name - which no in-voice sentence can do.
+ */
+const SELECTION_WORDS = "low-cut: part-walk-s1\nhi-cut: rcm-s20"
 
 /**
  * The one sentence that is the authority for the second and third entries, and
@@ -119,6 +134,34 @@ test("the committed registry loads, and approves exactly the renders he has look
   // THE SECOND AND THIRD WERE ONE LOOK ON ONE DAY, and the dates say so.
   expect(entryFor("pultec-hi-boost").grantedOn).toBe("2026-10-17")
   expect(entryFor("pultec-mid").grantedOn).toBe("2026-10-17")
+  expect(entryFor("pultec-low-cut").grantedOn).toBe("2026-10-17")
+  expect(entryFor("pultec-hi-cut").grantedOn).toBe("2026-10-17")
+})
+
+test("the two sections he chose by name carry his reply verbatim, and it is a SELECTION", () => {
+  // **THE SHAPE IS THE ASSERTION.** His reply carries no first- or second-person
+  // word at all, so these two entries load on the selection reading and on
+  // nothing else - which is exactly what the controller ruled on 2026-10-17 and
+  // what `docs/known-gaps.md` G35 records. A later agent that "tidies" either
+  // quote into a sentence, or splits the two lines one per entry, turns this
+  // red: the record of what he chose would then be an agent's reconstruction.
+  const lowCut = entryFor("pultec-low-cut")
+  const hiCut = entryFor("pultec-hi-cut")
+  for (const entry of [lowCut, hiCut]) {
+    expect(entry.ownerWords, entry.id).toEqual([SELECTION_WORDS])
+    // NOT IN ANYBODY'S VOICE, stated rather than left implicit - this is the
+    // property that made the voice reading refuse it.
+    expect(
+      /(^|[^\p{L}'])(i|me|my|we|us|our|you|your)($|[^\p{L}'])/iu.test(SELECTION_WORDS),
+      "his reply contains no first- or second-person word",
+    ).toBe(false)
+    // AND EACH ENTRY NAMES THE LINE THAT IS ITS OWN AUTHORITY, because the reply
+    // chooses for two boards and an entry is about one of them.
+    expect(entry.note, entry.id).toContain("AUTHORITY-BEARING LINE")
+  }
+  expect(lowCut.note).toContain("low-cut: part-walk-s1")
+  expect(hiCut.note).toContain("hi-cut: rcm-s20")
+  expect(lowCut.candidateSha256).not.toBe(hiCut.candidateSha256)
 })
 
 test("one utterance is the authority for two entries, quoted identically in both", () => {

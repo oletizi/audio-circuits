@@ -17,8 +17,10 @@
  *   - `approvals-no-words` - nothing quoted at all. **A record that merely
  *     asserts approval is refused**: his words are the evidence, and an entry
  *     without them records an agent's conclusion;
- *   - `approvals-words-not-spoken` - nothing in the quote is in anybody's voice
- *     (`FIRST_OR_SECOND_PERSON`);
+ *   - `approvals-words-not-spoken` - the quote is neither of the two admissible
+ *     shapes: nobody's voice (`FIRST_OR_SECOND_PERSON`) and not a selection
+ *     naming this entry's board and the artifact chosen for it
+ *     (`SELECTION_SEPARATOR`, `SELECTION_NON_ARTIFACTS`);
  *   - `approvals-words-narrated` - the quote talks ABOUT him
  *     (`NARRATION_MARKERS`), so it is a report and not a quotation.
  *
@@ -35,6 +37,12 @@ import fs from "node:fs"
 import path from "node:path"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import {
+  isSelectionFor,
+  isSpokenVoice,
+  narratedDetail,
+  neitherShapeDetail,
+} from "./approvals-words.ts"
+import {
   ADMITTED_TERMINATIONS,
   APPROVAL_EDGES_REQUIRED,
   APPROVAL_ENTRY_KEYS,
@@ -43,7 +51,6 @@ import {
   APPROVALS_FILE,
   APPROVALS_SCHEMA,
   APPROVAL_TOP_LEVEL_KEYS,
-  FIRST_OR_SECOND_PERSON,
   NARRATION_MARKERS,
   type AdmittedTermination,
   type ApprovalGrantor,
@@ -351,19 +358,31 @@ function readGrantedOn(value: string, id: string, file: string): string {
   return value
 }
 
-/** Whether `word` appears in `text` as a whole word - see `FIRST_OR_SECOND_PERSON`. */
-function saysWord(text: string, word: string): boolean {
-  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  return new RegExp(`(^|[^\\p{L}'])${escaped}($|[^\\p{L}'])`, "iu").test(text)
-}
-
 /**
- * HIS WORDS, and the three readings that refuse an agent's account of them.
+ * HIS WORDS, and the readings that refuse an agent's account of them.
  *
  * **THE LIST MUST BE NON-EMPTY**, because a record that merely asserts approval
- * without quoting him records a conclusion rather than evidence. Then the two
- * readings `./approvals-model.ts` describes: nobody may be SPOKEN ABOUT, and
- * somebody has to be SPEAKING.
+ * without quoting him records a conclusion rather than evidence. Then the
+ * readings `./approvals-model.ts` describes: nobody may be SPOKEN ABOUT, and the
+ * utterance has to be one of TWO admissible shapes.
+ *
+ * **THE TWO SHAPES, AND THE RULING THAT ADDED THE SECOND.** A VOICE - somebody
+ * speaking, `FIRST_OR_SECOND_PERSON` - or a SELECTION - a line naming this
+ * entry's board and the artifact chosen for it, `isSelectionFor` above. The
+ * second was added on 2026-10-17 by the controller's ruling, after the voice
+ * reading refused the owner's actual reply when he was shown four renders of the
+ * two remaining Pultec sections and wrote, in full, *"low-cut: part-walk-s1 /
+ * hi-cut: rcm-s20"*. The reasoning is recorded in the registry's
+ * `notes.ownerWords` and in this task's report so it can be overturned on the
+ * argument: **the voice reading was never proof either** - it is a proxy for
+ * *a human said this* - and a selection among options only the person being
+ * shown them had is the same kind of proxy, carrying MORE information than the
+ * approvals already on record rather than less, since it names the board and
+ * the artifact where *"the two boards you showed me look good."* names neither.
+ *
+ * **NEITHER SHAPE WAS WIDENED TO ADMIT THE OTHER.** `FIRST_OR_SECOND_PERSON` is
+ * untouched, nothing was special-cased to a board or a quote, and a bare
+ * affirmative still refuses under both readings.
  *
  * **THE NARRATION READING RUNS FIRST, AND THE ORDER IS A DIAGNOSIS RATHER THAN
  * A PREFERENCE** - driven, not reasoned: a paraphrase like *"The owner approved
@@ -380,6 +399,7 @@ function saysWord(text: string, word: string): boolean {
 function readOwnerWords(
   entry: Record<string, unknown>,
   id: string,
+  board: string,
   file: string,
 ): readonly string[] {
   const words = readList(entry, "ownerWords", id, file)
@@ -400,29 +420,17 @@ function readOwnerWords(
     if (joined.toLowerCase().includes(marker)) {
       refuse(
         "approvals-words-narrated",
-        `the approval ${id} quotes ${JSON.stringify(joined)}, which says "${marker}" - so it is ` +
-          "a report ABOUT him and not a quotation OF him. He does not call himself the owner and " +
-          "he does not narrate his own approval, and this field is for what he typed rather than " +
-          "for what an agent concluded from it. Put his own sentence here, or delete the entry: " +
-          "the reason belongs in \"why\" and the account of the decision in \"note\", both of " +
-          "which may be an agent's and are labelled so.",
+        narratedDetail(id, joined, marker),
         file,
       )
     }
   }
-  if (!FIRST_OR_SECOND_PERSON.some((word) => saysWord(joined, word))) {
+  const spoken = isSpokenVoice(joined)
+  const selected = isSelectionFor(words, board)
+  if (!spoken && !selected) {
     refuse(
       "approvals-words-not-spoken",
-      `the approval ${id} quotes ${JSON.stringify(joined)}, in which nothing is in the first or ` +
-        "second person - no " +
-        FIRST_OR_SECOND_PERSON.slice(0, 6).join(", ") +
-        " and none of the rest of FIRST_OR_SECOND_PERSON. A quote of somebody telling you a " +
-        "board is fine reads like somebody talking; a line like \"approved on the render\" reads " +
-        "like a field being filled in. Nothing is accepted on the grounds that it is probably a " +
-        "quote. If he genuinely said only a word with none of these in it, that is a case this " +
-        "guard did not anticipate: put it to him rather than widening " +
-        "FIRST_OR_SECOND_PERSON in tools/stripboard/approvals-model.ts to fit one record, and if " +
-        "the list really is too narrow, widen it in a deliberate edit with a test beside it.",
+      neitherShapeDetail(id, joined, board),
       file,
     )
   }
@@ -484,7 +492,7 @@ export function readEntry(value: unknown, index: number, file: string): RenderAp
     why: readText(value, "why", id, file),
     grantedBy,
     grantedOn: readGrantedOn(readText(value, "grantedOn", id, file), id, file),
-    ownerWords: readOwnerWords(value, id, file),
+    ownerWords: readOwnerWords(value, id, readText(value, "board", id, file), file),
     doesNotExcuse: readEdges(value, id, file),
     consultedBy: readConsumers(value, id, file),
     note: readText(value, "note", id, file),

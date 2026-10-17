@@ -29,91 +29,82 @@ Each entry carries:
 Open: an owner decision is what settles these
 ---------------------------------------------
 
-### G35 - the approvals loader cannot record an approval that is a CHOICE rather than a sentence, and two boards he chose are unadopted because of it
+### G35 - a SELECTION is easier for an agent to forge than a voice, because both halves are already in its hands
 
-On 2026-10-17 the owner was shown four renders of the two remaining Pultec
+**THIS ENTRY REPLACES THE ONE WRITTEN EARLIER ON 2026-10-17** - *"the approvals
+loader cannot record an approval that is a CHOICE rather than a sentence"* - which
+was settled the same day by the controller's ruling and is deleted rather than
+marked closed. What follows is the residual that ruling CREATED, which is
+narrower, real, and nobody else's to notice.
+
+**WHAT HAPPENED.** The owner was shown four renders of the two remaining Pultec
 sections, with their figures, and replied in full:
 
 > *"low-cut: part-walk-s1*
 > *hi-cut: rcm-s20"*
 
-**That is better evidence than either approval already in the registry.** It
-names the board AND the ordering, where
-`owner-render-pultec-low-boost-rcm-s0`'s quote names neither and the hi-boost /
-mid quote - *"the two boards you showed me look good."* - names neither either.
-It is, almost word for word, what `G31` below says would settle `G31`: *"him
-naming the two boards in a sentence."*
-
-**AND `stripboard/render-approvals.json` CANNOT HOLD IT.** The loader's third
-quote reading, `approvals-words-not-spoken`
-(`tools/stripboard/approvals-read.ts`'s `readOwnerWords`), requires at least one
-word of `FIRST_OR_SECOND_PERSON` across the joined `ownerWords`, and a two-line
-selection contains no pronoun at all. Driven, not reasoned about - the committed
-`readEntry` on a draft entry healthy in every other respect:
+The loader refused it, because a selection carries no first- or second-person
+word. The refusal, from the committed `readEntry` on a draft entry healthy in
+every other respect, kept here because it is the provenance of the ruling:
 
 ```
 approvals-words-not-spoken: the approval "probe" quotes "low-cut: part-walk-s1\nhi-cut: rcm-s20", in which nothing is in the first or second person - no i, i'm, i've, i'd, me, my and none of the rest of FIRST_OR_SECOND_PERSON. A quote of somebody telling you a board is fine reads like somebody talking; a line like "approved on the render" reads like a field being filled in. Nothing is accepted on the grounds that it is probably a quote. If he genuinely said only a word with none of these in it, that is a case this guard did not anticipate: put it to him rather than widening FIRST_OR_SECOND_PERSON in tools/stripboard/approvals-model.ts to fit one record, and if the list really is too narrow, widen it in a deliberate edit with a test beside it.
 ```
 
-**THE GUARD IS NOT WRONG ABOUT WHAT IT SEES.** Its own comment names the cost in
-advance: *"a genuine one-word approval - 'yes', 'ship it' - carries no marker, so
-this guard refuses a true record in that case."* A terse SELECTION is the same
-shape as the thing the guard exists to catch, which is an agent filling a field
-in. Nothing in the bytes distinguishes `low-cut: part-walk-s1` typed by him from
-`low-cut: part-walk-s1` written by an agent that wanted a board adopted. That is
-the real content of this entry, and it is `G27`'s residual in a sharper form:
-**the terser and more precise his decision is, the less this registry can tell it
-from a fabrication.**
+**THE RULING** (the controller, 2026-10-17; the producing agent stopped rather
+than making this call itself): add a SECOND admissible shape, a SELECTION,
+qualifying only when it names BOTH the subject and the chosen artifact; do not
+weaken, widen or special-case the voice test; do not reword him. Its reasoning:
+the voice test was never proof either, only a proxy for *a human said this*; a
+selection among options only the person being shown them had is the same kind of
+proxy; and what would be wrong is admitting a shape carrying LESS information
+than the one it joins, where this carries more. Implemented in
+`tools/stripboard/approvals-words.ts` with the near misses driven in
+`tests/stripboard/approvals-refusals.test.ts`; the full reasoning is in
+`stripboard/render-approvals.json`'s `notes.ownerWords`, where a reader meets it.
 
-**WHAT WAS NOT DONE, AND WHY NONE OF IT WAS AN AGENT'S TO DO.**
+**THE RESIDUAL, WHICH IS NOT THE SAME CLAIM AS `G27` AND IS SHARPER.** G27 says
+no reading proves he said it. This says something more specific about the new
+shape: **an agent producing a board already holds both halves of a selection.**
+It knows the board's name - it is in the entry - and it knows the ordering,
+because it chose which orderings to run. So `low-cut: part-walk-s1` is precisely
+the string a fabricating agent would write, and it is admitted, where a
+fabricating agent imitating a VOICE has to invent a sentence in somebody else's
+register. The new shape is therefore **cheaper to forge than the one it joins**,
+even though it carries more information when genuine.
 
-- **Widening `FIRST_OR_SECOND_PERSON`.** His reply has no pronoun to add, so this
-  would mean adding something that is not a first- or second-person word to a
-  list of first- and second-person words, to fit one record - which the guard's
-  own refusal says not to do.
-- **A second reading that admits a selection** - for instance, an utterance that
-  names a board and an ordering. That is an agent writing the rule for what
-  counts as the owner approving something, which is the acceptance channel
-  itself. `G31` records three candidate fixes to these same guards and says why
-  none was made: *"each being an agent authoring a rule about the owner's own
-  words."* This is the fourth.
-- **Padding `ownerWords` with another sentence of his** so the joined list
-  carries a pronoun. There is a true one available from the same exchange -
-  *"we don't need to revisit the three adopted boards. They're buildable
-  as-is."* - and putting it here would get the entry past the guard while making
-  the record say that an utterance about the OTHER three boards is part of the
-  authority for these two. Gaming the data is worse than changing the code,
-  because the problem would then be invisible.
-- **Paraphrasing.** Refused outright; `ownerWords` is for what he typed.
+That is not an argument against the ruling - the voice shape is forgeable too,
+the registry says so, and refusing his actual words had its own cost, which was
+two finished boards he had chosen sitting unadopted. It is the thing a later
+reader needs in order to overturn the ruling on the argument rather than on
+taste.
 
-**SO BOTH BOARDS ARE PRODUCED, CHECKED AND NOT ADOPTED.** Everything up to the
-approval is done and recorded: both run directories exist
-(`build/stripboard/pultec-{low,hi}-cut/final-adopt`), both grade `admissible`
-with `HC1`-`HC10` holding, the fork's own `--check --netlist` reports 14 of 14
-nets complete on each with no schematic delta, **eight of the nine drivable adopt
-checks pass on each**, and the one refusal is `failing-check` reporting
-`stripboard-unapproved` - the single thing an approval entry would admit. The
-render-to-candidate link is ESTABLISHED by content for both and is recorded in
-`.superpowers/sdd/final-two-adoption-report.md`.
+**WHAT NARROWS IT, AND IT IS WORTH STATING BECAUSE IT CUTS THE OTHER WAY.** A
+selection is admissible **only for the board it names**: `isSelectionFor` reads
+per entry, and his two lines pasted against a third board's hash are REFUSED by
+name. An in-voice sentence has no such property - *"the two boards you showed me
+look good."* loads cleanly against any entry, which is `G31`. So on the one
+dimension G31 is about, the selection shape is **stronger** than the voice shape,
+not weaker.
 
-- **Found** `2026-10-17`, in the change that wired an ordering plan into
-  `materializeRun` so that these two sections could be built at all.
-- **Evidence** the refusal above, produced by the committed `readEntry` on a
-  draft entry; `tools/stripboard/approvals-model.ts`'s `FIRST_OR_SECOND_PERSON`
-  and `tools/stripboard/approvals-read.ts`'s `readOwnerWords`; the two run
-  directories' `owner-approval.txt`, each carrying `stripboard-unapproved`.
-- **Verified** yes - run, not relayed, on his actual words.
-- **Why it is open** the fix is a rule about what his words must look like for
-  the registry to accept them, and the agent producing the boards may not author
-  it. The guard's own refusal says the first move is to put it to him.
-- **What would settle it** one of three, and the choice is his: he says the same
-  thing again in a sentence with a pronoun in it (*"I'd go with part-walk-s1 for
-  low-cut and rcm-s20 for hi-cut"* would pass every reading as it stands); or he
-  rules that a selection naming the board and the ordering is a form the registry
-  must accept, and a reviewing agent that is not the one producing these boards
-  makes the edit with a test beside it; or he rules that `ownerWords` may carry
-  the question he was answering alongside his reply, which would put the voice in
-  the record without touching the guard.
+- **Found** `2026-10-17`, in the change that adopted `pultec-low-cut` and
+  `pultec-hi-cut`; the earlier form of this entry was written in the same session
+  and is superseded.
+- **Evidence** the refusal above, produced by the committed `readEntry`;
+  `tools/stripboard/approvals-words.ts`'s `isSelectionFor` and
+  `subjectNamesFor`; the six perturbations of the two readings reported in
+  `.superpowers/sdd/final-two-adoption-report.md`, each going red by name.
+- **Verified** yes - run, not relayed, on his actual words and on the four near
+  misses.
+- **Why it is open** it is a property of what the registry can check at all, not
+  a defect in the code that implements the ruling, and the remedies are all
+  outside this loader.
+- **What would settle it** evidence of the utterance that is not a string an
+  agent could have written - his message where it was sent, a signature, or a
+  second channel - which is `G27`'s *what would settle it* and is the same
+  answer for both. Short of that: a reviewing agent, never the one producing the
+  board, deciding whether a selection may be the SOLE authority for an entry or
+  must sit beside something in his voice.
 
 ### G1 - the guide has two representations of a panel control and reconciles neither
 
@@ -779,6 +770,23 @@ what he meant, with the loader checking the agent's own answer).
   and, if so, what field records which. Until then: **an approval recorded from a
   multi-board sentence must name the renders it came from, and a reader who needs
   to know which boards he meant reads `renderedFrom`, not `ownerWords`.**
+
+**NARROWED ON 2026-10-17: IT NO LONGER COVERS EVERY ENTRY, AND THE REASON IS A
+SHAPE RATHER THAN A SENTENCE.** The fourth and fifth entries -
+`owner-render-pultec-low-cut-part-walk-s1` and
+`owner-render-pultec-hi-cut-rcm-s20` - are authorised by a SELECTION,
+*"low-cut: part-walk-s1 / hi-cut: rcm-s20"*, which NAMES both boards. The
+selection reading (`tools/stripboard/approvals-words.ts`'s `isSelectionFor`) is
+per entry, so those same two lines pasted against a third board's hash are
+**refused by name**, which is exactly the thing this entry says the loader cannot
+do for a sentence. `tests/stripboard/approvals-refusals.test.ts` drives it on all
+three Pultec sections those lines could be filed under.
+
+**What is NOT narrowed:** the hi-boost / mid pair above, whose authority is still
+an in-voice sentence naming no board, and which would still admit a third entry
+pasting it. The uniqueness rule is still on `candidateSha256` and not on the
+quote. So this entry now describes the VOICE shape's residual specifically, and
+`G35` describes the selection shape's, which is a different one.
 
 ### G27 - the owner-approval channel records his call but cannot prove it, and the link from the picture he saw to the bytes it admits is an agent's claim
 
