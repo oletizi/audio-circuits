@@ -596,6 +596,38 @@ the fixtures.
   and does not relieve either refusal - low-cut's widens from strips 5/6 to
   5/16, and hi-cut's names a selector net, before and after.
 
+### G43 - the typecheck gate used to be a function of files that are not in the repository
+
+`tsconfig.json` had `include: ["**/*.ts"]` and excluded only `node_modules`,
+`dist` and `.claude`. **`build/` is gitignored but was not excluded**, so
+`bun run typecheck` - which `make check` depends on - compiled every leftover
+scratch driver in `build/scratch/`.
+
+The consequence, observed rather than imagined: widening `RenderOptions` with a
+required field turned the ROOT `make check` red, on eighteen errors, in
+twenty-five one-shot drivers that are **not in the repository and never were**.
+A gate whose result depends on untracked files is not checking the repository,
+and the cause is invisible to review because the files are ignored.
+
+**FIXED in the same change that found it**: `build` is excluded. Typecheck is
+green, and the five Pultec boards' own checks pass. Root `make check` remains
+red on `pt2399-core` and the transistor-preamp boards for reasons predating all
+of this.
+
+- **Found** `2026-10-17`, Task 3 of the pad-label plan, which widened the
+  interface the drivers were written against.
+- **Evidence** `bun run typecheck` naming `build/scratch/*.ts` exclusively;
+  `git check-ignore` confirming `build/` is ignored; the root gate red and the
+  per-board gates green at the same moment.
+- **Verified** yes - run before and after.
+- **Entry kept rather than deleted** because the fix has a cost worth stating:
+  **the scratch drivers are no longer typechecked, and they are currently how a
+  board gets produced.** A broken driver now fails at run time instead of at
+  typecheck. That is the right trade - relying on a gate over gitignored debris
+  is relying on debris - but the real answer is G30: give the producer a
+  committed verb, and the driver becomes source that is typechecked because it
+  is part of the repository.
+
 ### G30 - `materializeRun` has no CLI verb, so the only producer of an adoptable run directory is a scratch file
 
 `tools/stripboard/materialize-run.ts` is the producer every Pultec board goes
