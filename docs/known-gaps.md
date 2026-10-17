@@ -223,6 +223,50 @@ arrangement toward a tighter cluster. **No gap is opened for it**; it is recorde
 here so that a reader who goes looking for the six-hole span finds the
 measurement instead of the prediction.
 
+### G33 - placement cannot be revisited when the join phase finds no room, and the owner expects this to bite future boards
+
+The seed constructor places every part once, left to right, first fit, and never
+reconsiders. The JOIN phase runs afterwards and can discover that no legal
+column remains for a net that spans two strips - not because holes are full but
+because the leads placed earlier closed every one of them to the interleave
+rule. At that point nothing can back up, and the board is refused.
+
+**This entry exists because the owner asked for it to**, 2026-10-17:
+
+> *"the structural problem of not being able to revisit placement when there
+> isn't enough room is likely to be a problem for future boards. We don't have
+> to address it now, if the remaining pultec boards can be built with our
+> current tooling. But, if we don't need to build the revisit logic now, we'll
+> still want to record it as a future enhancement"*
+
+**The design is already written**, so this entry is a pointer rather than a
+description: `docs/superpowers/specs/2026-10-17-a-join-site-survives-placement-design.md`
+carries the measurements, the approach chosen, the approach ruled out and why,
+and the invariant any implementation must hold - that every board which
+constructs today constructs to identical bytes, with the three adopted boards as
+the fixtures.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 7, as the cause behind
+  G29's two refusing sections; generalised by the owner to future boards.
+- **Evidence** `lib/stripboard/seed-place.ts:417`; the measured counterfactual
+  in G29, where shifting the failing net's run ONE column turns the usable-join
+  set from empty to non-empty on both sections, with no part changing strip and
+  no hole added.
+- **Verified** yes - run, not relayed.
+- **Why it is open** whether it must be built NOW depends on a measurement in
+  flight: whether any ordering the tooling already offers builds `low-cut` and
+  `hi-cut`. Only five of the available orderings have been tried on them, and
+  `low-boost` builds on 11 of 20. **If one does, this stays recorded and
+  unbuilt, which is the owner's stated preference. If none does, it is required
+  to finish the five Pultec sections.**
+- **What would settle it** the spec above, executed - or, if a later board is
+  refused for this cause, that board as the evidence that the enhancement has
+  become a blocker.
+- **What it is NOT.** Not the search (G22): that improves an existing board and
+  here no board exists. Not the junction ground row: removing it was measured
+  and does not relieve either refusal - low-cut's widens from strips 5/6 to
+  5/16, and hi-cut's names a selector net, before and after.
+
 ### G30 - `materializeRun` has no CLI verb, so the only producer of an adoptable run directory is a scratch file
 
 `tools/stripboard/materialize-run.ts` is the producer every Pultec board goes
