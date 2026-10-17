@@ -37,9 +37,10 @@ import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { runnerFor, type VerbRun } from "../perfboard/verbs.ts"
 import type { Env } from "../perfboard/check.ts"
 import { buildChecklist } from "./checklist.ts"
-import { assertLayoutMatchesCircuit, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
+import { assertLayoutMatchesCircuit, componentAt, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
 import { buildGuideHtml, type GuideSchematic } from "./guide.ts"
 import { offBoardLabels, valueLabel } from "./off-board.ts"
+import { padLabelOf } from "./pad-label.ts"
 import { padTerminals } from "./pads.ts"
 import { buildableDump } from "./preflight.ts"
 import { renderLayout } from "./render.ts"
@@ -155,15 +156,33 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   const name = boardName(declaration)
   const designators = new Map(dump.parts.map((part) => [part.ref, part.ref]))
   const values = new Map(dump.parts.map((part) => [part.ref, valueLabel(dump, part, circuit, "image")]))
+  // ONE PAD-LABEL MAP, SHARED BY ALL THREE IMAGES, built here rather than
+  // inside the renderer - the same division as `designators` and `values`
+  // above. `componentAt` is valid because `assertLayoutMatchesCircuit` has
+  // already run: every `pad.ref` it reads is a circuit component.
+  const padLabels = new Map(pads.map((pad) => [pad.identity, padLabelOf(componentAt(circuit, pad.ref), pad.pin)]))
   const images = {
     designators: renderLayout(dump, designators, {
       view: "component",
       title: `${name} - designators`,
       edgeLabels,
       pads,
+      padLabels,
     }),
-    values: renderLayout(dump, values, { view: "component", title: `${name} - values`, edgeLabels, pads }),
-    copper: renderLayout(dump, designators, { view: "copper", title: `${name} - copper side`, edgeLabels, pads }),
+    values: renderLayout(dump, values, {
+      view: "component",
+      title: `${name} - values`,
+      edgeLabels,
+      pads,
+      padLabels,
+    }),
+    copper: renderLayout(dump, designators, {
+      view: "copper",
+      title: `${name} - copper side`,
+      edgeLabels,
+      pads,
+      padLabels,
+    }),
   }
   const repoRoot = deps.repoRoot ?? moduleRepoRoot()
   const schematic: GuideSchematic =

@@ -35,10 +35,12 @@ import {
  *
  * **LANDING PADS ARE DRAWN HERE TOO, AND THEY ARE NOT PARTS.** A pad is one hole
  * an off-board wire is soldered to, with no `PART` line, no type and no body
- * (`./pads.ts`), so it gets a ring and the identity of the terminal it brings off
- * the board rather than an outline and a designator. It shares the tag placement,
- * because a pad's checkbox and a part's checkbox must not be placed by two
- * different sets of rules on one sheet.
+ * (`./pads.ts`), so it gets a ring rather than an outline and a designator. Its
+ * checkbox is keyed by the identity of the terminal it brings off the board,
+ * but what it PRINTS beside that checkbox is the caller's label, the same as a
+ * part's is - see `drawPadLabels`, below. It shares the tag placement, because
+ * a pad's checkbox and a part's checkbox must not be placed by two different
+ * sets of rules on one sheet.
  */
 
 const LABEL_SIZE = 8
@@ -337,20 +339,59 @@ export function drawPadBodies(canvas: Canvas, pads: readonly DrawnPad[], occupie
 }
 
 /**
- * Draws every landing pad's tag: its checkbox and the identity of the terminal
- * that hole brings off the board.
+ * A pad's printed label, from the caller's map - never derived from the pad
+ * itself.
  *
- * **THE LABEL IS THE IDENTITY, `<ref>.<pin>`, AND NOT THE REF.** It is what the
- * builder has to match against the schematic to know which wire goes here, and
- * the ref alone names all three terminals of a pot at once - which is the
- * collapse `lib/stripboard/pin-id.ts` exists to prevent, arriving on paper.
+ * **THIS USED TO BE `pad.identity`, DRAWN INSIDE THE RENDERER, AND THAT WAS THE
+ * WRONG SIDE OF THE INTERFACE.** `placedParts`' `labelOf` (above) takes a part's
+ * label from the caller's map because the renderer has no circuit knowledge; a
+ * pad's label needs exactly the same knowledge - which control it is, which
+ * terminal, what a switch throw selects - so it is the caller's to supply too.
+ * `tools/guide/pad-label.ts`'s `padLabelOf` is how a caller builds one entry.
+ *
+ * A pad missing from the map REFUSES. It does **not** fall back to
+ * `pad.identity`: `RV_LO_BOOST.1` is the exact spelling the owner rejected when
+ * he asked for the more descriptive names, and reinstating it here as a
+ * fallback would be worse than the silence `tools/guide/pads.ts` exists to end
+ * - it would look like a label while telling the builder nothing.
  */
-export function drawPadLabels(canvas: Canvas, pads: readonly DrawnPad[], occupied: Occupied): void {
+function labelOfPad(labels: ReadonlyMap<string, string>, pad: PadTerminal): string {
+  const label = labels.get(pad.identity)
+  if (label === undefined) {
+    throw new Error(
+      `no label given for pad "${pad.identity}" (terminal ${pad.pin} of ${pad.ref}); the ` +
+        "caller's pad-label map must name every drawn pad, the same as a part's label map " +
+        "must name every placed part. It is not derived from the pad's own identity: " +
+        `"${pad.identity}" is the <ref>.<pin> spelling the owner rejected when he asked for the ` +
+        "more descriptive names (tools/guide/pad-label.ts), so a fallback to it here would " +
+        "reinstate exactly that defect while this function's caller still looked satisfied.",
+    )
+  }
+  return label
+}
+
+/**
+ * Draws every landing pad's tag: its checkbox and the label the caller gives
+ * it, keyed by the pad's identity.
+ *
+ * The checkbox itself is still keyed by `pad.identity` (`forWhat`, below) and
+ * not by the printed label - three pads of one pot share a `ref` and would
+ * share one checkbox if it were keyed by ref, but two labels could coincide in
+ * text (two switches each with a "common" terminal) and must not then share a
+ * checkbox either, so the identity - never the label - is the checkbox's key.
+ */
+export function drawPadLabels(
+  canvas: Canvas,
+  pads: readonly DrawnPad[],
+  labels: ReadonlyMap<string, string>,
+  occupied: Occupied,
+): void {
   for (const { pad, body } of pads) {
+    const label = labelOfPad(labels, pad)
     // BESIDE THE RING, ALWAYS: a pad has no `labelArea`, so there is no on-body
     // placement to attempt and no list of points for one to dodge. The ring and
     // the dot are already in `occupied`, so `leastCovered` keeps the tag off
     // them without being told.
-    drawTagBeside(canvas, body, pad.identity, `pad:${pad.identity}`, occupied)
+    drawTagBeside(canvas, body, label, `pad:${pad.identity}`, occupied)
   }
 }

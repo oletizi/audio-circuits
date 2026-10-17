@@ -128,15 +128,24 @@ Both representations now exist and nothing chooses between them.
 - **What would settle it** the owner says which label a pad's wire should carry
   in the guide: its terminal identity (`RV_LO_BOOST.1`), a functional label
   (`LO BOOST ccw`), or both.
-- **One thing already tilts the cost**, found by the Task 2 reviewer and worth
-  knowing before the decision is made: a PART's label comes from the caller
-  (`renderLayout` takes a `labels` map, and its module comment says so), but a
-  PAD's label is derived inside the renderer from `pad.identity`. So all three
-  packet images necessarily print the same pad text, and choosing the functional
-  label would mean editing the renderer rather than the caller - the opposite
-  side of the interface from where this module puts every other label. It does
-  not foreclose the choice: the pad path keeps `ref` and `pin` as separate
-  fields, so a functional label stays computable.
+- **One thing already tilted the cost, found by the Task 2 reviewer, and now
+  RESOLVED (2026-10-17, this plan's Task 3).** The renderer's asymmetry this
+  bullet described - a PART's label coming from the caller while a PAD's label
+  was derived inside the renderer from `pad.identity` - is closed.
+  `RenderOptions` now carries a `padLabels` map keyed by `PadTerminal.identity`
+  (`tools/guide/render.ts`), built by the caller the same way `labels` is for
+  parts; `tools/guide/render-parts.ts`'s `drawPadLabels` no longer derives
+  anything from `pad.identity` and refuses a pad the map does not name. The
+  identity-versus-functional-label question this gap's "What would settle it"
+  asks about was decided in Task 2 (the owner: *"I like the more descriptive
+  names"*), and `tools/guide/packet.ts` now fills `padLabels` with
+  `padLabelOf`'s functional label for every pad on every one of the three
+  packet images. **This does not close G1.** The broader question the gap
+  opened - whether a panel pot should be represented as a header PART
+  (`tools/guide/off-board.ts`) or as pads (`tools/guide/pads.ts`) at all, and
+  reconciling edge labels, the checklist's junction rows and `valueLabel` with
+  whichever is chosen - is unchanged and still open; Task 3 only moved where a
+  pad's label comes from, not which representation a control uses.
 
 ### G2 - pad labels crowd the row they sit in
 
@@ -165,6 +174,17 @@ the cut crosses in the same row.
   `SW_LO_CUT.4` and `SW_LO_CUT.5` crowd the left board edge beside the
   `IN`/`HI_BOOST_OUT` edge labels. Usable at full page size, worse than on the
   bare render because the packet scales the whole board to one printed page.
+- **STILL TRUE WITH THE DESCRIPTIVE TEXT (2026-10-17, this plan's Task 3)**,
+  read off `boards/pultec-low-boost/guide/layout-designators.svg` (`make -C
+  boards/pultec-low-boost guide`) at `rsvg-convert -z 6` on a crop, now that
+  `padLabelOf`'s functional labels print instead of identities (see G1's
+  resolved bullet, above). All ten are individually legible. Two of the same
+  shapes of crowding persist under the new text: the pot's common-terminal
+  label (`LO BOOST common`) has another pad's ring crossing the tail of the
+  word, and the switch's `LO BOOST 30Hz` label sits on the row-M dark
+  every-fourth alignment strip. Usable, not comfortable - this gap is about
+  the renderer's placement geometry, which Task 3 did not touch, so the owner
+  call this gap asks for is unaffected by what the text now says.
 
 ### G19 - the printed checklist calls ground `0`, which is the circuit's name and not a builder's
 

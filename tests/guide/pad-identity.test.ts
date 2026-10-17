@@ -188,15 +188,22 @@ test("the guide reads each pad under the same identity, and keeps the hole the d
   expect(new Set(pads.map((pad) => pad.ref)).size, "ten terminals of two components").toBe(2)
 })
 
-test("the drawn board shows every pad, each under its own identity and its own checkbox", () => {
+test("the drawn board shows every pad, each under its own checkbox, labelled from the caller's map", () => {
   const dump = parseBoardDump(TEXT)
   const pads = padTerminals(TEXT)
   const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
+  // A STAND-IN LABEL, THE IDENTITY ITSELF, BUILT HERE BY THE CALLER - not by the
+  // renderer. This test is about identity plumbing (one ring, one checkbox per
+  // terminal, at the right hole) and not about what a label should SAY, which
+  // `tests/guide/pad-label.test.ts` and `padLabelOf` (`./pad-label.ts`) own; the
+  // renderer itself must not know or care what text it was handed.
+  const padLabels = new Map(pads.map((pad) => [pad.identity, pad.identity]))
   const svg = renderLayout(dump, labels, {
     view: "component",
     title: "pultec low boost - pads",
     edgeLabels: [],
     pads,
+    padLabels,
   })
   // ONE RING PER PAD, counted off the drawing rather than off the input.
   expect(elements(svg, "circle", "pad-body").length, "a ring over every pad's hole").toBe(10)
@@ -210,8 +217,10 @@ test("the drawn board shows every pad, each under its own identity and its own c
   expect([...new Set(boxes)].sort(), "each names its own terminal").toEqual(
     [...pads.map((pad) => `pad:${pad.identity}`)].sort(),
   )
-  // THE IDENTITY IS ON THE SHEET, because it is what a builder matches against
-  // the schematic to know which wire goes in which hole.
+  // THE SUPPLIED LABEL IS ON THE SHEET - here it happens to equal the identity
+  // because that is the stand-in label this test chose, not because the
+  // renderer derived it that way (it no longer can: see `./render-parts.ts`'s
+  // `labelOfPad`).
   for (const identity of ["RV_LO_BOOST.1", "RV_LO_BOOST.2", "RV_LO_BOOST.3"]) {
     expect(svg, `${identity} is printed`).toContain(`>${identity}<`)
   }
@@ -291,8 +300,17 @@ test("a pad whose hole is not on the board refuses rather than being drawn besid
   // The premise, asserted rather than assumed: the board really is that size, so
   // one row past it really is off it.
   expect(dump.grid.rows, "the frozen low-boost's own GRID").toBe(14)
+  // THE REFUSAL IS GEOMETRIC AND FIRES BEFORE ANY LABEL IS LOOKED UP, so an
+  // empty map is enough here - `padLabels` is required by the type but is
+  // never read on this path.
   const message = refusalFrom(() =>
-    renderLayout(dump, labels, { view: "component", title: "off the board", edgeLabels: [], pads: offBoard }),
+    renderLayout(dump, labels, {
+      view: "component",
+      title: "off the board",
+      edgeLabels: [],
+      pads: offBoard,
+      padLabels: new Map(),
+    }),
   )
   expect(message, "the renderer refuses it").toStartWith("guide-pad-off-board: ")
   expect(message, "naming the terminal, the hole and the grid").toContain('"RV_LO_BOOST.1" is at 14,28')
@@ -301,7 +319,13 @@ test("a pad whose hole is not on the board refuses rather than being drawn besid
   // does - which is what `drawnPads` being called outside the view test buys.
   expect(
     refusalFrom(() =>
-      renderLayout(dump, labels, { view: "copper", title: "off the board", edgeLabels: [], pads: offBoard }),
+      renderLayout(dump, labels, {
+        view: "copper",
+        title: "off the board",
+        edgeLabels: [],
+        pads: offBoard,
+        padLabels: new Map(),
+      }),
     ),
     "the copper view too",
   ).toStartWith("guide-pad-off-board: ")

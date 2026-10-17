@@ -41,7 +41,13 @@ const LABELS: ReadonlyMap<string, string> = new Map([
 ])
 
 function options(view: RenderOptions["view"]): RenderOptions {
-  return { view, title: "test board", edgeLabels: [{ ref: "R1", pin: "1", text: "IN" }], pads: [] }
+  return {
+    view,
+    title: "test board",
+    edgeLabels: [{ ref: "R1", pin: "1", text: "IN" }],
+    pads: [],
+    padLabels: new Map(),
+  }
 }
 
 const COMPONENT = renderLayout(DUMP, LABELS, options("component"))
@@ -192,7 +198,13 @@ const VERTICAL = parseBoardDump(
 
 test("with vertical strips the copper view mirrors rows instead of columns, cuts included", () => {
   const labels = new Map([["R1", "R1"]])
-  const opts = (view: RenderOptions["view"]): RenderOptions => ({ view, title: "vertical", edgeLabels: [], pads: [] })
+  const opts = (view: RenderOptions["view"]): RenderOptions => ({
+    view,
+    title: "vertical",
+    edgeLabels: [],
+    pads: [],
+    padLabels: new Map(),
+  })
   const component = renderLayout(VERTICAL, labels, opts("component"))
   const copper = renderLayout(VERTICAL, labels, opts("copper"))
   const lastRow = holeName(VERTICAL.grid.rows - 1, 0)
@@ -228,6 +240,7 @@ test("an edge label's leader detours round another part's pin that stands betwee
     title: "detour",
     edgeLabels: [{ ref: "C1", pin: "2", text: "OUT" }],
     pads: [],
+    padLabels: new Map(),
   })
   const f11 = holeCentre(svg, "F11")
   const leaders = elements(svg, "line", "edge-leader")
@@ -315,6 +328,7 @@ test("text is XML-escaped", () => {
     title: "x & y",
     edgeLabels: [{ ref: "R1", pin: "1", text: "<IN>" }],
     pads: [],
+    padLabels: new Map(),
   })
   expect(svg).toContain("a&lt;b&amp;c")
   expect(svg).toContain("x &amp; y")
@@ -365,7 +379,13 @@ const PULTEC_DUMP = [
 test("the Pultec part types draw, so a Pultec board can be looked at", () => {
   const dump = parseBoardDump(PULTEC_DUMP)
   const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
-  const svg = renderLayout(dump, labels, { view: "component", title: "pultec", edgeLabels: [], pads: [] })
+  const svg = renderLayout(dump, labels, {
+    view: "component",
+    title: "pultec",
+    edgeLabels: [],
+    pads: [],
+    padLabels: new Map(),
+  })
   // ONE BODY PER PART, asserted by the parts' own refs rather than by a count:
   // a renderer that drew two of one and none of another would satisfy a count.
   for (const ref of ["C18", "C19", "board_terminals"]) {
@@ -382,6 +402,12 @@ test("a part type with no recorded shape still REFUSES by name rather than drawi
   const dump = parseBoardDump(unknown)
   const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
   expect(() =>
-    renderLayout(dump, labels, { view: "component", title: "pultec", edgeLabels: [], pads: [] }),
+    renderLayout(dump, labels, {
+      view: "component",
+      title: "pultec",
+      edgeLabels: [],
+      pads: [],
+      padLabels: new Map(),
+    }),
   ).toThrow(/no drawing for VeroRoute part type "CAP_INVENTED_999"/)
 })

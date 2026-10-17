@@ -48,8 +48,8 @@ import { createOccupied } from "./placement.ts"
  * so the checklist and the images agree.
  *
  * The renderer knows nothing about circuits: what each part is called
- * (`labels`) and which pins leave the board (`edgeLabels`) come from the
- * caller.
+ * (`labels`), what each pad's wire is (`padLabels`) and which pins leave the
+ * board (`edgeLabels`) come from the caller.
  */
 
 export type { EdgeLabel } from "./render-edges.ts"
@@ -70,6 +70,24 @@ export interface RenderOptions {
    * a board with no pads says so by passing an empty list.
    */
   readonly pads: readonly PadTerminal[]
+  /**
+   * The text printed beside each pad's checkbox, keyed by `PadTerminal.identity`.
+   *
+   * **IT COMES FROM THE CALLER FOR THE SAME REASON `labels` DOES FOR PARTS.**
+   * This module's own comment states that architecture for parts; a pad's label
+   * used to be the one exception, derived inside the renderer from
+   * `pad.identity` because the renderer had nowhere else to get it from. That
+   * made every packet image print identical pad text and put a descriptive
+   * label out of reach without teaching the renderer circuit knowledge it has
+   * no business holding. `tools/guide/pad-label.ts`'s `padLabelOf` is how a
+   * caller builds one entry from a `Component` and a pin.
+   *
+   * **It is required, and a pad missing from it REFUSES rather than falling
+   * back to `pad.identity`.** `RV_LO_BOOST.1` is the spelling the owner
+   * rejected when he asked for the more descriptive names, so a fallback here
+   * would quietly reinstate it.
+   */
+  readonly padLabels: ReadonlyMap<string, string>
 }
 
 const HEADER_GAP = 12
@@ -256,7 +274,7 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
     drawWireNumbers(marks, frame, dump, occupied)
   }
   drawPartLabels(partLabels, placed, occupied)
-  drawPadLabels(partLabels, pads, occupied)
+  drawPadLabels(partLabels, pads, options.padLabels, occupied)
   drawCoordinates(coordinates, frame)
   const layers = [board, parts, wires, edges, marks, partLabels, coordinates]
   const drawn = boundsOf(layers)

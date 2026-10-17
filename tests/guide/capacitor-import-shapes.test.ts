@@ -64,7 +64,13 @@ const PULTEC_DUMP = [
 test("rendering a board does not change what it exports", () => {
   const dump = parseBoardDump(PULTEC_DUMP)
   const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
-  const options: RenderOptions = { view: "component", title: "capacitor import shapes", edgeLabels: [], pads: [] }
+  const options: RenderOptions = {
+    view: "component",
+    title: "capacitor import shapes",
+    edgeLabels: [],
+    pads: [],
+    padLabels: new Map(),
+  }
   const before = structuredClone(dump)
 
   renderLayout(dump, labels, options)
