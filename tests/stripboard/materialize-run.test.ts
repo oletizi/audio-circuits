@@ -60,7 +60,10 @@ import {
   PIN_PATTERN_ENTRY,
   SPAN_DATA_ENTRY,
 } from "../../tools/stripboard/geometry-inputs.ts"
-import type { MaterializeRun } from "../../tools/stripboard/materialize-run.ts"
+import {
+  orderingDirectory,
+  type MaterializeRun,
+} from "../../tools/stripboard/materialize-run.ts"
 import { readManifest } from "../../tools/stripboard/run-dir.ts"
 import {
   adoptInputFor,
@@ -83,7 +86,11 @@ beforeAll(async () => {
 
 test("the producer writes every file the chain's links are read from", () => {
   const held = fs.readdirSync(run.runDir).sort()
-  expect(held, "run.json, the netlist, the imported base and one directory per seed").toEqual([
+  // ONE DIRECTORY PER ORDERING, NAMED FOR IT. These five are
+  // `rcmOverSeeds(rules.seeds)`, which is the plan a caller passing none gets -
+  // so this list is also the assertion that the default is still the reviewed
+  // restart schedule and nothing wider.
+  expect(held, "run.json, the netlist, the imported base and one directory per ordering").toEqual([
     "imported.vrt",
     // WHAT THE BOARD WOULD BE ADMITTED ON, WRITTEN WHERE A READER OF THE RUN
     // DIRECTORY FINDS IT. A run that performed no search is adopted only on the
@@ -91,17 +98,33 @@ test("the producer writes every file the chain's links are read from", () => {
     // - or the complaint, when no record covers these bytes.
     "owner-approval.txt",
     "pultec-low-boost.net",
+    "rcm-s0",
+    "rcm-s1",
+    "rcm-s2",
+    "rcm-s3",
+    "rcm-s4",
     "run.json",
-    "seed-0",
-    "seed-1",
-    "seed-2",
-    "seed-3",
-    "seed-4",
   ])
   expect(
-    fs.readdirSync(path.join(run.runDir, `seed-${run.bestSeed}`)).sort(),
+    fs.readdirSync(path.join(run.runDir, orderingDirectory(run.bestOrdering))).sort(),
     "the document, the board the fork wrote from it, and the painted board it was graded on",
   ).toEqual(["candidate.vrt", "layout.txt", "materialized.vrt"])
+})
+
+test("run.json records WHICH ordering built the board, and records no seed beside it", () => {
+  const inputs = readManifest(run.runDir).canonical.inputs
+  // THE NAME AND NOT A NUMBER. A reader of this run directory can take
+  // `inputs.ordering` to `rcmOverSeeds` (or, for a stride rule, to
+  // `lib/stripboard/seed-orderings.ts`) and get the arrangement back; a seed
+  // index could only have named a position in a schedule this producer no
+  // longer necessarily walks.
+  expect(inputs.ordering, "the ordering that produced the recorded candidate").toBe(
+    run.bestOrdering,
+  )
+  expect(run.bestOrdering).toMatch(/^rcm s[0-4]$/)
+  // EXACTLY ONE OF THE TWO, which `canonicalHash` refuses a record for
+  // breaking. `readManifest` has already run that check on the file.
+  expect("seed" in inputs, "a materialisation run records its ordering, never a seed").toBe(false)
 })
 
 test("nothing the producer wrote is under boards/", () => {
@@ -109,7 +132,7 @@ test("nothing the producer wrote is under boards/", () => {
     path.resolve(run.runDir),
     "the run directory is under build/stripboard/<board>/, which is gitignored",
   ).toBe(path.join(REPO, "build", "stripboard", run.board, path.basename(run.runDir)))
-  for (const entry of run.perSeed) {
+  for (const entry of run.perOrdering) {
     expect(entry.materialized.includes(`${path.sep}boards${path.sep}`)).toBe(false)
     expect(entry.evaluation.candidate.includes(`${path.sep}boards${path.sep}`)).toBe(false)
   }

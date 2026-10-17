@@ -16,7 +16,14 @@
  */
 import { afterAll, test, expect } from "bun:test"
 import { canonicalHash } from "../../tools/stripboard/run-dir.ts"
-import { INPUTS, METRICS, mutate, writeAndRead } from "./run-dir-fixtures.ts"
+import {
+  INPUTS,
+  METRICS,
+  ORDERING_INPUTS,
+  mutate,
+  writeAndRead,
+} from "./run-dir-fixtures.ts"
+import type { CanonicalInputs } from "../../tools/stripboard/run-dir.ts"
 import { cleanUpFixtures } from "./run-scratch.ts"
 
 // EVERY RUN DIRECTORY THIS FILE MADE IS REMOVED. `./run-scratch.ts` carries why
@@ -28,7 +35,7 @@ afterAll(cleanUpFixtures)
 
 test("the same inputs and metrics hash the same, and a changed input changes the hash", () => {
   expect(canonicalHash(INPUTS, METRICS)).toBe(canonicalHash(INPUTS, METRICS))
-  expect(canonicalHash({ ...INPUTS, seed: INPUTS.seed + 1 }, METRICS))
+  expect(canonicalHash({ ...INPUTS, seed: 99 }, METRICS))
     .not.toBe(canonicalHash(INPUTS, METRICS))
   expect(canonicalHash(INPUTS, { ...METRICS, cuts: METRICS.cuts + 1 }))
     .not.toBe(canonicalHash(INPUTS, METRICS))
@@ -41,6 +48,38 @@ test("every canonical input is in the hash, one field at a time", () => {
     const changed = { ...INPUTS, [key]: mutate(INPUTS[key]) }
     expect(canonicalHash(changed, METRICS), key).not.toBe(canonicalHash(INPUTS, METRICS))
   }
+})
+
+test("every canonical input is in the hash on the ordering side of the either/or too", () => {
+  // `ordering` is absent from INPUTS - the two are an either/or - so the loop
+  // above cannot reach it. This one walks the fixture that carries it, which is
+  // also where `ordering` itself gets varied.
+  for (const key of Object.keys(ORDERING_INPUTS) as (keyof typeof ORDERING_INPUTS)[]) {
+    const changed = { ...ORDERING_INPUTS, [key]: mutate(ORDERING_INPUTS[key]) }
+    expect(canonicalHash(changed, METRICS), key)
+      .not.toBe(canonicalHash(ORDERING_INPUTS, METRICS))
+  }
+  // AND THE TWO SIDES ARE NOT THE SAME RECORD. A board built from
+  // `part-walk s1` and one built from `rcm s2` must not hash alike just
+  // because the field naming them changed shape.
+  expect(canonicalHash(ORDERING_INPUTS, METRICS)).not.toBe(canonicalHash(INPUTS, METRICS))
+})
+
+test("the restart is stated exactly once: both is refused and neither is refused", () => {
+  // THE GUARD THESE TWO DRIVE IS WHY A MATERIALISED BOARD IS REPRODUCIBLE AT
+  // ALL. `tools/stripboard/materialize-run.ts` varies orderings, not seeds, and
+  // one of the orderings a committed Pultec board is built from - `part-walk s1`
+  // - has no seed anywhere in it. A record admitting both fields could say
+  // `seed: 0` beside it, and `rcm s0` is an ordering that REFUSES on that same
+  // board, so the number would not merely be vague; it would name an
+  // arrangement that cannot have produced the candidate it sits next to.
+  const both = canonicalHashRefusal({ ...INPUTS, ordering: "part-walk s1" })
+  expect(both).toContain("restart-stated-twice")
+  expect(both).toContain("part-walk s1")
+  const { seed: _seed, ...neither } = INPUTS
+  const message = canonicalHashRefusal(neither)
+  expect(message).toContain("restart-not-stated")
+  expect(message, "it says why seed 0 is not a default").toContain("pultec-low-cut")
 })
 
 test("every canonical metric is in the hash, one field at a time", () => {
@@ -73,6 +112,16 @@ test("an unknown built commit is recorded as unknown and never as agreement", ()
   // build, which callers must treat as "not the pinned commit".
   expect(() => canonicalHash({ ...INPUTS, builtCommit: "" }, METRICS)).toThrow(/built/)
 })
+
+/** `canonicalHash`'s refusal message for one `CanonicalInputs`, or `""` if it did not refuse. */
+function canonicalHashRefusal(inputs: CanonicalInputs): string {
+  try {
+    canonicalHash(inputs, METRICS)
+    return ""
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+}
 
 /** `canonicalHash`'s refusal message for `{ ...INPUTS, [field]: value }`, or `""` if it did not refuse. */
 function blankFieldRefusal(field: string, value: string): string {

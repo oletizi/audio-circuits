@@ -77,6 +77,23 @@ export const INPUTS: CanonicalInputs = {
   pipelineCommit: "0".repeat(40),
 }
 
+/**
+ * The same inputs with the OTHER half of the restart either/or: an `ordering`
+ * name in place of the `seed`.
+ *
+ * **IT EXISTS BECAUSE THE PER-FIELD HASH LOOP WALKS `Object.keys(INPUTS)`**, and
+ * `ordering` is absent from that object, so without a second fixture the field
+ * would be in `CanonicalInputs` and in nothing the loop can reach - which is
+ * exactly the "a field nobody tests" shape `./run-dir-hash.test.ts` enumerates
+ * to prevent. `seed` is DELETED rather than left beside it: `canonicalHash`
+ * refuses a record stating both, so an object carrying the pair could not be
+ * hashed at all.
+ */
+export const ORDERING_INPUTS: CanonicalInputs = (() => {
+  const { seed: _seed, ...rest } = INPUTS
+  return { ...rest, ordering: "part-walk s1" }
+})()
+
 /** The same candidate's canonical metrics - one of every field type `CanonicalMetrics` carries. */
 export const METRICS: CanonicalMetrics = {
   cuts: 5,

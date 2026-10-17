@@ -51,14 +51,17 @@ import {
 import {
   assertRuleNotLoadBearing,
   materializeRun,
+  orderingDirectory,
   type MaterializeRun,
 } from "../../tools/stripboard/materialize-run.ts"
+import { assignStrips } from "../../tools/stripboard/seed-arrangement.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { readManifest } from "../../tools/stripboard/run-dir.ts"
 import { STOPPING_RULES } from "../../tools/stripboard/stop.ts"
 import { NO_SEARCH } from "../../tools/stripboard/termination.ts"
 import {
   adoptInputFor,
+  BOARD_DIR,
   chainBoard,
   cleanUpFixtures,
   forkSpawn,
@@ -459,4 +462,115 @@ test("the producer refuses a board whose committed layout runs its strips the ot
       forkSpawn(),
     ),
   ).rejects.toThrow(/^materialize-run-strips-disagree: /)
+})
+
+test("orderingDirectory is the ordering's own name and refuses one that names no directory", () => {
+  // THE DIRECTORY IS A RENAMING AND NOT AN IDENTIFIER, so these are the only
+  // transformations it makes: the characters a path may not safely carry become
+  // `-`, and nothing else moves.
+  expect(orderingDirectory("rcm s0")).toBe("rcm-s0")
+  expect(orderingDirectory("part-walk s1")).toBe("part-walk-s1")
+  expect(orderingDirectory("degree-descending s2")).toBe("degree-descending-s2")
+  // A SEPARATOR AND A PARENT REFERENCE BOTH BECOME PART OF THE NAME rather than
+  // reaching the filesystem: an ordering name is a caller's string, and
+  // `../../x` here would write outside the run directory.
+  expect(orderingDirectory("a/b")).toBe("a-b")
+  // `../escape` becomes `..-escape` by the first rule and then loses its
+  // leading dots by the second, so it cannot be a parent reference OR a hidden
+  // directory. The result is checked exactly rather than loosely, so a change to
+  // either rule's order shows up here.
+  expect(orderingDirectory("../escape")).toBe("-escape")
+  // AND A NAME WITH NOTHING LEFT IS REFUSED rather than becoming the run
+  // directory itself, which is where a candidate would overwrite `run.json`.
+  expect(() => orderingDirectory(" ")).toThrow(/^materialize-run-orderings-collide: /)
+  expect(() => orderingDirectory("...")).toThrow(/^materialize-run-orderings-collide: /)
+})
+
+test("the producer constructs the ordering it is told to and records that name", async () => {
+  // THE WIRING, DRIVEN END TO END ON A REAL BOARD. The plan names ONE ordering
+  // and the name is deliberately not of the `rcm s<n>` form the default
+  // produces, so nothing in the result could have come from the old hard-coded
+  // schedule: the directory, `bestOrdering` and `run.json`'s recorded ordering
+  // all have to carry the caller's own string.
+  const named = "owner picked s0"
+  const run = await materializeRun(
+    {
+      boardDir: BOARD_DIR,
+      rules: loadRules(),
+      stamp: scratchStamp(BOARD, "told-ordering"),
+      orderings: ({ targets }) => [{ name: named, homes: assignStrips(targets, 0) }],
+    },
+    forkSpawn(),
+  )
+  expect(
+    fs.readdirSync(run.runDir).sort(),
+    "ONE ordering directory, not the five the reviewed schedule would have made",
+  ).toEqual([
+    "imported.vrt",
+    "owner-approval.txt",
+    "owner-picked-s0",
+    `${BOARD}.net`,
+    "run.json",
+  ])
+  expect(run.perOrdering.length, "one construction per ordering handed over").toBe(1)
+  expect(run.bestOrdering).toBe(named)
+  const inputs = readManifest(run.runDir).canonical.inputs
+  expect(inputs.ordering, "a reader of the run directory can see which ordering built it").toBe(
+    named,
+  )
+  expect("seed" in inputs, "and no seed beside it - canonicalHash refuses both").toBe(false)
+})
+
+test("the producer refuses a plan that returns no ordering at all", async () => {
+  // AN EMPTY PLAN IS NOT READ AS "use the default". A caller that stated a plan
+  // and got `rcmOverSeeds(rules.seeds)` back would adopt a board from an
+  // arrangement it did not ask for, under a run.json recording that
+  // arrangement's name as though it had.
+  await expect(
+    materializeRun(
+      {
+        boardDir: BOARD_DIR,
+        rules: loadRules(),
+        stamp: scratchStamp(BOARD, "no-orderings"),
+        orderings: () => [],
+      },
+      forkSpawn(),
+    ),
+  ).rejects.toThrow(/^materialize-run-no-orderings: /)
+})
+
+test("the producer refuses two orderings that would share one name or one directory", async () => {
+  // TWO NAMES THAT ARE DIFFERENT AND SLUG THE SAME. The second would overwrite
+  // the first's candidate.vrt before it was graded, and the run would report -
+  // and could adopt - the second board under the first ordering's name.
+  await expect(
+    materializeRun(
+      {
+        boardDir: BOARD_DIR,
+        rules: loadRules(),
+        stamp: scratchStamp(BOARD, "collide-directory"),
+        orderings: ({ targets }) => [
+          { name: "rcm s0", homes: assignStrips(targets, 0) },
+          { name: "rcm/s0", homes: assignStrips(targets, 1) },
+        ],
+      },
+      forkSpawn(),
+    ),
+  ).rejects.toThrow(/both name the directory "rcm-s0"/)
+  // AND TWO ORDERINGS THAT ARE LITERALLY ONE NAME, which fails differently:
+  // `inputs.ordering` could not say which of the two arrangements the board is.
+  await expect(
+    materializeRun(
+      {
+        boardDir: BOARD_DIR,
+        rules: loadRules(),
+        stamp: scratchStamp(BOARD, "collide-name"),
+        orderings: ({ targets }) => [
+          { name: "rcm s0", homes: assignStrips(targets, 0) },
+          { name: "rcm s0", homes: assignStrips(targets, 1) },
+        ],
+      },
+      forkSpawn(),
+    ),
+  ).rejects.toThrow(/two orderings both named "rcm s0"/)
 })

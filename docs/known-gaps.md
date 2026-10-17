@@ -297,7 +297,68 @@ chain the gate verifies starts at a file nobody can review.
   may want shaped, since it decides what an operator types to produce a board.
 - **What would settle it** a `materialize` verb beside `place`, taking the board
   and the stamp the gate's `provenance-chain` check requires, with the scratch
-  drivers deleted in the same change.
+  drivers deleted in the same change. **Narrowed on 2026-10-17 only in what the
+  verb would have to take**: now that the producer takes an ordering plan, a verb
+  has to name the ordering too, and `lib/stripboard/seed-orderings.ts`'s
+  `strideOrderingNamed` is the lookup a `--ordering part-walk\ s1` flag would go
+  through. Nothing about the gap itself changed - there is still no verb, and
+  `pultec-low-cut` and `pultec-hi-cut` were adopted through a scratch driver like
+  every board before them.
+
+### G34 - one refusing ordering aborts the whole materialisation run, so four good orderings out of five yield no board
+
+`materializeRun` constructs, materialises and grades one candidate per ordering
+in the plan it was handed, inside one `for` loop with no `try` anywhere in it. So
+the FIRST ordering that refuses - at the seeder (`stripboard-seed-*`), at the
+fork's `--materialize`, or at the strip-axis guard - throws out of the whole run,
+and the orderings after it are never constructed. There is no `run.json`, no
+candidate and nothing for the gate to read, although the remaining orderings
+might each have produced an admissible board.
+
+**It is a real cost and it is measured, not predicted.**
+`.superpowers/sdd/ordering-sweep-report.md` swept 65 orderings per section with a
+driver that put each one in its own `try`: on `pultec-low-cut` three of the
+committed 25 produce a full pass and 22 refuse, and on `pultec-hi-cut` two of 25
+pass and 23 refuse. A plan handing all 25 to this producer would therefore abort
+on the first of them and return none of the three. The sweep could only report
+what it did because it was NOT this loop.
+
+**Why it is not what blocked the two sections, which is why it is still open.**
+A plan naming ONE ordering - which is how `pultec-low-cut` (`part-walk s1`) and
+`pultec-hi-cut` (`rcm s20`) were built - has nothing to abort past, so the fix
+was not needed to finish them and was deliberately not attempted. It becomes
+load-bearing the moment somebody hands this producer a plan with several
+orderings in it, which is the natural next use of the parameter.
+
+**What makes it more than a `try`/`catch`.** Three decisions belong to somebody
+other than the agent writing the loop: whether a run in which SOME orderings
+refused may be adopted at all, what the record says about the ones that did (a
+refusal is evidence and discarding it quietly is the failure this repository
+keeps catching), and what happens when every ordering refuses - which must stay a
+loud refusal naming each one rather than an empty run directory that reads as a
+clean result. The last of those is why it is not adjacent: a `catch` that
+continued would turn "no board exists" into "a run directory exists with nothing
+in it", and a skipped check that looks like a passing one is the failure mode the
+whole stripboard workflow exists to prevent.
+
+- **Found** `2026-10-17` while wiring the ordering plan into `materializeRun` for
+  the `low-cut`/`hi-cut` adoption; named in the ordering sweep report's §"One
+  qualification" before that, and entered here because a finding that lives only
+  in a gitignored report is one this file's preamble says does not exist.
+- **Evidence** `tools/stripboard/materialize-run.ts`'s construction loop - one
+  `for` over the plan's orderings, `constructedFor` → `materialize` → `measure`
+  → `assertStripsAgree`, no `try` in the function; the sweep report's two
+  per-ordering tables, which are 22 and 23 refusals deep.
+- **Verified** yes - the refusal counts were produced by a driver that caught per
+  ordering, which is the same measurement from the other side.
+- **Why it is open** out of scope: the two sections build from a single-ordering
+  plan, so fixing it was not needed, and what a partly-refusing run may be
+  adopted on is an acceptance question the agent producing the board may not
+  answer (`CLAUDE.md`).
+- **What would settle it** a decision on what a run records about the orderings
+  that refused and whether such a run is adoptable, then the change - per
+  ordering refusal captured and recorded, every-ordering-refused still a loud
+  throw naming each one - with a test that drives both.
 
 ### G28 - `--update` refuses the adopted low-boost on a wire it cannot put back, although the netlist has not moved
 

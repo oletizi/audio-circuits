@@ -84,7 +84,30 @@ export interface CanonicalInputs {
   readonly spanClosureSha256: string
   readonly pinPatternClosureSha256: string
   readonly seeds: readonly number[]
-  readonly seed: number
+  /**
+   * The restart-schedule seed that produced the recorded candidate, for a
+   * producer whose restarts ARE seeds - `./place.ts`, whose arms seed a PRNG
+   * and whose per-climb directories are named `seed-<n>`.
+   *
+   * **EXACTLY ONE OF `seed` AND `ordering` IS PRESENT, AND `canonicalHash`
+   * REFUSES BOTH AND NEITHER.** See `assertRestartStatedOnce` below for why
+   * this is an either/or rather than two fields a producer may fill in as it
+   * likes.
+   */
+  readonly seed?: number
+  /**
+   * The NAME of the net-to-strip ordering that produced the recorded candidate,
+   * for a producer whose restarts are orderings - `./materialize-run.ts`, which
+   * constructs one candidate per ordering it was handed.
+   *
+   * **IT IS WHAT MAKES A MATERIALISED BOARD REPRODUCIBLE, AND A SEED IS NOT.**
+   * `"rcm s20"` is `./seed-arrangement.ts`'s `assignStrips` at seed 20 and
+   * carries its own seed in the name; `"part-walk s1"` is one of
+   * `lib/stripboard/seed-orderings.ts`'s five derivation rules and has no seed
+   * at all. `pultec-low-cut`'s board is built from the second kind, so a record
+   * with only a number in it could not say what that board is.
+   */
+  readonly ordering?: string
   readonly seedArm: SeedArm
   readonly verorouteCommit: string
   readonly builtCommit: string
@@ -285,12 +308,59 @@ function blankInputFieldRefusal(field: StringInputField): string {
 }
 
 /**
+ * That the record says WHICH restart produced the candidate, exactly once.
+ *
+ * **A RUN HAS ONE SUCH FACT AND THE TWO FIELDS ARE TWO SPELLINGS OF IT**, so
+ * both present is two statements that can disagree - `seed: 4` beside
+ * `ordering: "part-walk s1"` names two different arrangements and nothing in
+ * the record says which one the board came from - and neither present is a
+ * record that cannot say what the board IS. Both are refused rather than
+ * resolved: preferring one would make the other a field nobody reads, which is
+ * the same hazard `homeStripsFor` refuses an ordering stating both forms for
+ * (`lib/stripboard/seed-homes.ts`).
+ *
+ * **IT IS NOT DEFAULTED TO A SEED OF 0.** A board materialised from
+ * `part-walk s1` recorded as seed 0 would read as `rcm s0`, which is an
+ * ordering the sweep measured and which REFUSES on both of the sections this
+ * either/or was added for - so the default would not merely be vague, it would
+ * name an arrangement that cannot build the board it is attached to.
+ */
+function assertRestartStatedOnce(inputs: CanonicalInputs): void {
+  const hasSeed = inputs.seed !== undefined
+  const hasOrdering = inputs.ordering !== undefined
+  if (hasSeed && hasOrdering) {
+    throw new Error(
+      "canonicalHash: restart-stated-twice - the record carries both a seed " +
+        `(${String(inputs.seed)}) and an ordering (${JSON.stringify(inputs.ordering)}), and ` +
+        "those are two spellings of one fact: which restart produced the recorded candidate. " +
+        "Neither is preferred and neither is dropped - they can name two different " +
+        "arrangements, and a reader would have no way to tell which board the run produced. " +
+        "A producer whose restarts are seeds (tools/stripboard/place.ts) records seed; a " +
+        "producer whose restarts are orderings (tools/stripboard/materialize-run.ts) records " +
+        "ordering. Drop whichever half is not the one this producer actually varied.",
+    )
+  }
+  if (!hasSeed && !hasOrdering) {
+    throw new Error(
+      "canonicalHash: restart-not-stated - the record carries neither a seed nor an ordering, " +
+        "so it does not say which restart produced the recorded candidate and the run is not " +
+        "reproducible from it. It is NOT defaulted to seed 0: on pultec-low-cut and " +
+        'pultec-hi-cut the ordering "rcm s0" refuses before a board exists, so a defaulted ' +
+        "seed would name an arrangement that cannot have produced the candidate it is recorded " +
+        "beside. Set inputs.seed for a seeded restart schedule, or inputs.ordering with the " +
+        "Ordering.name that built the candidate.",
+    )
+  }
+}
+
+/**
  * Hash exactly `{ inputs, metrics }`, keys sorted, nothing else admitted.
  *
  * Refuses any of `CanonicalInputs`' eight identifying string fields when it
  * is blank - empty, or nothing but whitespace - rather than hashing it. See
  * `REQUIRED_NONEMPTY_INPUT_FIELDS` above for why all eight, not just
- * `builtCommit`.
+ * `builtCommit`. Refuses a record that states the restart twice or not at all;
+ * see `assertRestartStatedOnce`.
  */
 export function canonicalHash(inputs: CanonicalInputs, metrics: CanonicalMetrics): string {
   for (const field of REQUIRED_NONEMPTY_INPUT_FIELDS) {
@@ -298,6 +368,7 @@ export function canonicalHash(inputs: CanonicalInputs, metrics: CanonicalMetrics
       throw new Error(blankInputFieldRefusal(field))
     }
   }
+  assertRestartStatedOnce(inputs)
   const payload = JSON.stringify(sortKeysDeep({ inputs, metrics }))
   return createHash("sha256").update(payload, "utf8").digest("hex")
 }
@@ -391,6 +462,37 @@ function requireBooleanRecord(
   return result
 }
 
+/**
+ * `{ [key]: <number> }` when the record holds that key, `{}` when it does not.
+ *
+ * **ABSENT AND PRESENT-BUT-WRONG ARE DIFFERENT, AND ONLY THE FIRST IS
+ * ADMITTED.** A missing key is a legitimate state of the either/or above, so it
+ * yields nothing to spread; a key that is there and is not a number is the same
+ * defect `requireNumber` exists for and refuses by name. Returning a spreadable
+ * object rather than `number | undefined` is what keeps `seed: undefined` out
+ * of the record: an explicit `undefined`-valued key is dropped by
+ * `JSON.stringify` but is PRESENT to `"seed" in inputs`, and the either/or
+ * guard reads presence.
+ */
+function optionalNumber(
+  record: Record<string, unknown>,
+  key: string,
+  file: string,
+): Record<string, number> {
+  if (!(key in record)) return {}
+  return { [key]: requireNumber(record[key], key, file) }
+}
+
+/** `{ [key]: <string> }` when the record holds that key, `{}` when it does not. */
+function optionalString(
+  record: Record<string, unknown>,
+  key: string,
+  file: string,
+): Record<string, string> {
+  if (!(key in record)) return {}
+  return { [key]: requireString(record[key], key, file) }
+}
+
 function requireSeedArm(value: unknown, key: string, file: string): SeedArm {
   const candidate = requireString(value, key, file)
   const found = SEED_ARMS.find((arm) => arm === candidate)
@@ -414,7 +516,12 @@ function toCanonicalInputs(value: unknown, file: string): CanonicalInputs {
     pinPatternClosureSha256: requireString(
       requireField(record, "pinPatternClosureSha256", file), "pinPatternClosureSha256", file),
     seeds: requireNumberArray(requireField(record, "seeds", file), "seeds", file),
-    seed: requireNumber(requireField(record, "seed", file), "seed", file),
+    // EITHER/OR AND NOT OPTIONAL-SO-SKIPPABLE: an absent key is read as absent
+    // here, and `canonicalHash` - which `readManifest` runs over the result -
+    // refuses a record carrying both or neither. A key that IS present is still
+    // type-checked by name, so a `seed` of `"4"` refuses rather than hashing.
+    ...optionalNumber(record, "seed", file),
+    ...optionalString(record, "ordering", file),
     seedArm: requireSeedArm(requireField(record, "seedArm", file), "seedArm", file),
     verorouteCommit: requireString(requireField(record, "verorouteCommit", file), "verorouteCommit", file),
     builtCommit: requireString(requireField(record, "builtCommit", file), "builtCommit", file),

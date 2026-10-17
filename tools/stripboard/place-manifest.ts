@@ -146,7 +146,21 @@ export interface ManifestFacts {
   readonly startedAt: Date
   /** Every fork invocation this run made, counted at the producer's one choke point. */
   readonly invocations: number
-  readonly seed: number
+  /**
+   * Which restart produced `best`, in whichever of the two spellings this
+   * producer's restarts actually have - **exactly one of the two, never both.**
+   *
+   * `./place.ts`'s restarts are seeds: it climbs once per seed of
+   * `rules.seeds` and `./search.ts` names each climb's directory `seed-<n>`.
+   * `./materialize-run.ts`'s restarts are ORDERINGS: it constructs one
+   * candidate per ordering it was handed, and one of those - `part-walk s1`,
+   * the ordering `pultec-low-cut`'s board is built from - is a stride rule with
+   * no seed anywhere in it. `canonicalHash` refuses a record stating both or
+   * neither, so a producer that fills in both halves is refused at the write
+   * rather than recording two arrangements for one board.
+   */
+  readonly seed?: number
+  readonly ordering?: string
   readonly verorouteCommit: string
   readonly builtCommit: string
   readonly pipelineCommit: string
@@ -166,11 +180,17 @@ export function manifestFor(facts: ManifestFacts): RunManifest {
     spanClosureSha256: spanClosureHash(),
     pinPatternClosureSha256: pinPatternClosureHash(),
     seeds: facts.rules.seeds,
-    // THE SEED THAT PRODUCED `best`, read off the candidate's own directory
-    // rather than guessed: both producers write each restart under `seed-<n>/`,
-    // so the winning board's path names its seed and a run whose best came from
-    // the third restart does not record the first.
-    seed: facts.seed,
+    // WHICH RESTART PRODUCED `best`, read off the candidate's own directory
+    // rather than guessed: the searching producer writes each climb under
+    // `seed-<n>/` and the materialising one writes each ordering under its own
+    // name, so the winning board's path names its restart and a run whose best
+    // came from the third restart does not record the first.
+    //
+    // THE SPREADS KEEP THE UNUSED HALF OUT OF THE RECORD ENTIRELY rather than
+    // writing it as `undefined`: `canonicalHash`'s either/or guard reads key
+    // PRESENCE, and `seed: undefined` is present.
+    ...(facts.seed === undefined ? {} : { seed: facts.seed }),
+    ...(facts.ordering === undefined ? {} : { ordering: facts.ordering }),
     seedArm: facts.arm,
     verorouteCommit: facts.verorouteCommit,
     builtCommit: facts.builtCommit,
