@@ -361,35 +361,6 @@ carries both for the same control is a contradiction no guard detects.
   of G1: if the owner rules one representation out, this guard enforces that
   ruling.
 
-### G5 - `assertLayoutMatchesCircuit` has never run against a Pultec board
-
-A pads-only control has no PART line, and this check has only ever been
-exercised on the transistor-preamp boards.
-
-**OBSERVED, 2026-10-16, Task 3.** It did not resolve itself. On the first
-materialised low-boost it refuses:
-
-> `the layout and the circuit do not hold the same parts, so a build packet`
-> `would be wrong:`
-> `  in the circuit but not on the board: RV_LO_BOOST, SW_LO_BOOST`
-> `Bring the .vrt in step with the circuit's netlist (`make update`), place any`
-> `new parts in VeroRoute (`make edit`), save, then run this again.`
-
-Both refs ARE on the board, as ten `PAD` lines; `onBoard` is built from
-`dump.parts` alone (`tools/guide/circuit.ts:61`). **The remedy the message
-gives is wrong for this cause** - nothing is missing, so `make update` and
-`make edit` will not help - and a refusal that names the wrong fix is worse
-than one that names none.
-
-- **Found** `2026-10-16-pultec-five-boards`, Task 2; observed in Task 3.
-- **Evidence** the refusal above, run against a materialised
-  `pultec-low-boost`; `tools/guide/circuit.ts:60-72`.
-- **Verified** yes - run in Task 3, no longer relayed.
-- **Why it is open** Task 3 was forbidden from fixing what it found.
-- **What would settle it** `onBoard` built from the `PAD` lines as well as the
-  `PART` lines, the remedy text corrected for this cause, and a perturbation
-  proving the check still fires on a genuinely absent part.
-
 ### G11 - a pad's hole is checked against the grid only when something draws it
 
 The guide refuses a pad whose hole is outside the dump's `GRID`

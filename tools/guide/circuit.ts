@@ -19,6 +19,7 @@ import { assertDesignators, assertPinNumbers } from "../perfboard/circuit-export
 import type { PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { circuitFromModule, importCircuitModule } from "../perfboard/load.ts"
 import type { BoardDump } from "./dump.ts"
+import type { PadTerminal } from "./pads.ts"
 import { declaredPowerUpChecks, type PowerUpChecks } from "./power-up.ts"
 
 export { isPanelPot }
@@ -56,9 +57,24 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
  * step with the circuit, and a packet built from it would leave a part out
  * or list one the circuit does not have. Every other guide step looks parts
  * up on the assumption that this has passed.
+ *
+ * **A PAD COUNTS AS ON THE BOARD, EVEN THOUGH IT HAS NO `PART` LINE.** `dump`
+ * carries no `PAD` lines at all (`./dump.ts`'s own module comment), so a
+ * pads-only control - an off-board panel pot or switch, expanded into one
+ * one-hole `PAD` per terminal - was invisible to this check and refused by
+ * name as missing, although every one of its terminals was on the board.
+ * `pads` is read from the dump TEXT by `./pads.ts` for exactly that reason,
+ * and its `PadTerminal.ref` is the circuit's own ref (read off each pad's
+ * `FROM <ref>.<pin>` field), not the fork's invented per-pad board name - so
+ * one pad-expanded control with N terminals still counts as present once,
+ * the same as a part with N pin lines would.
  */
-export function assertLayoutMatchesCircuit(dump: BoardDump, circuit: BoardCircuit): void {
-  const onBoard = new Set(dump.parts.map((part) => part.ref))
+export function assertLayoutMatchesCircuit(
+  dump: BoardDump,
+  circuit: BoardCircuit,
+  pads: readonly PadTerminal[],
+): void {
+  const onBoard = new Set([...dump.parts.map((part) => part.ref), ...pads.map((pad) => pad.ref)])
   const notOnBoard = [...circuit.byRef.keys()].filter((ref) => !onBoard.has(ref)).sort()
   const notInCircuit = [...onBoard].filter((ref) => !circuit.byRef.has(ref)).sort()
   if (notOnBoard.length === 0 && notInCircuit.length === 0) return
@@ -66,7 +82,9 @@ export function assertLayoutMatchesCircuit(dump: BoardDump, circuit: BoardCircui
     "the layout and the circuit do not hold the same parts, so a build packet would be wrong:",
     ...(notOnBoard.length > 0 ? [`  in the circuit but not on the board: ${notOnBoard.join(", ")}`] : []),
     ...(notInCircuit.length > 0 ? [`  on the board but not in the circuit: ${notInCircuit.join(", ")}`] : []),
-    "Bring the .vrt in step with the circuit's netlist (`make update`), place any new parts in " +
+    "A ref named above is genuinely absent from the other side - it has neither a PART line nor " +
+      "a PAD line naming it (both are checked). Bring the .vrt in step with the circuit's " +
+      "netlist (`make update`), place any missing part or off-board control's pads in " +
       "VeroRoute (`make edit`), save, then run this again.",
   ]
   throw new Error(lines.join("\n"))

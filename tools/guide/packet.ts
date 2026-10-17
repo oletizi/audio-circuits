@@ -129,7 +129,7 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   // then say so rather than leaving them off in silence.
   const pads = padTerminals(dumpText)
   const circuit = await (deps.loadCircuit ?? loadBoardCircuit)(declaration)
-  assertLayoutMatchesCircuit(dump, circuit)
+  assertLayoutMatchesCircuit(dump, circuit, pads)
   const edgeLabels = offBoardLabels(circuit)
   const checklist = buildChecklist(dump, circuit, edgeLabels)
 
