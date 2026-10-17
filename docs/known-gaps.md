@@ -29,6 +29,92 @@ Each entry carries:
 Open: an owner decision is what settles these
 ---------------------------------------------
 
+### G35 - the approvals loader cannot record an approval that is a CHOICE rather than a sentence, and two boards he chose are unadopted because of it
+
+On 2026-10-17 the owner was shown four renders of the two remaining Pultec
+sections, with their figures, and replied in full:
+
+> *"low-cut: part-walk-s1*
+> *hi-cut: rcm-s20"*
+
+**That is better evidence than either approval already in the registry.** It
+names the board AND the ordering, where
+`owner-render-pultec-low-boost-rcm-s0`'s quote names neither and the hi-boost /
+mid quote - *"the two boards you showed me look good."* - names neither either.
+It is, almost word for word, what `G31` below says would settle `G31`: *"him
+naming the two boards in a sentence."*
+
+**AND `stripboard/render-approvals.json` CANNOT HOLD IT.** The loader's third
+quote reading, `approvals-words-not-spoken`
+(`tools/stripboard/approvals-read.ts`'s `readOwnerWords`), requires at least one
+word of `FIRST_OR_SECOND_PERSON` across the joined `ownerWords`, and a two-line
+selection contains no pronoun at all. Driven, not reasoned about - the committed
+`readEntry` on a draft entry healthy in every other respect:
+
+```
+approvals-words-not-spoken: the approval "probe" quotes "low-cut: part-walk-s1\nhi-cut: rcm-s20", in which nothing is in the first or second person - no i, i'm, i've, i'd, me, my and none of the rest of FIRST_OR_SECOND_PERSON. A quote of somebody telling you a board is fine reads like somebody talking; a line like "approved on the render" reads like a field being filled in. Nothing is accepted on the grounds that it is probably a quote. If he genuinely said only a word with none of these in it, that is a case this guard did not anticipate: put it to him rather than widening FIRST_OR_SECOND_PERSON in tools/stripboard/approvals-model.ts to fit one record, and if the list really is too narrow, widen it in a deliberate edit with a test beside it.
+```
+
+**THE GUARD IS NOT WRONG ABOUT WHAT IT SEES.** Its own comment names the cost in
+advance: *"a genuine one-word approval - 'yes', 'ship it' - carries no marker, so
+this guard refuses a true record in that case."* A terse SELECTION is the same
+shape as the thing the guard exists to catch, which is an agent filling a field
+in. Nothing in the bytes distinguishes `low-cut: part-walk-s1` typed by him from
+`low-cut: part-walk-s1` written by an agent that wanted a board adopted. That is
+the real content of this entry, and it is `G27`'s residual in a sharper form:
+**the terser and more precise his decision is, the less this registry can tell it
+from a fabrication.**
+
+**WHAT WAS NOT DONE, AND WHY NONE OF IT WAS AN AGENT'S TO DO.**
+
+- **Widening `FIRST_OR_SECOND_PERSON`.** His reply has no pronoun to add, so this
+  would mean adding something that is not a first- or second-person word to a
+  list of first- and second-person words, to fit one record - which the guard's
+  own refusal says not to do.
+- **A second reading that admits a selection** - for instance, an utterance that
+  names a board and an ordering. That is an agent writing the rule for what
+  counts as the owner approving something, which is the acceptance channel
+  itself. `G31` records three candidate fixes to these same guards and says why
+  none was made: *"each being an agent authoring a rule about the owner's own
+  words."* This is the fourth.
+- **Padding `ownerWords` with another sentence of his** so the joined list
+  carries a pronoun. There is a true one available from the same exchange -
+  *"we don't need to revisit the three adopted boards. They're buildable
+  as-is."* - and putting it here would get the entry past the guard while making
+  the record say that an utterance about the OTHER three boards is part of the
+  authority for these two. Gaming the data is worse than changing the code,
+  because the problem would then be invisible.
+- **Paraphrasing.** Refused outright; `ownerWords` is for what he typed.
+
+**SO BOTH BOARDS ARE PRODUCED, CHECKED AND NOT ADOPTED.** Everything up to the
+approval is done and recorded: both run directories exist
+(`build/stripboard/pultec-{low,hi}-cut/final-adopt`), both grade `admissible`
+with `HC1`-`HC10` holding, the fork's own `--check --netlist` reports 14 of 14
+nets complete on each with no schematic delta, **eight of the nine drivable adopt
+checks pass on each**, and the one refusal is `failing-check` reporting
+`stripboard-unapproved` - the single thing an approval entry would admit. The
+render-to-candidate link is ESTABLISHED by content for both and is recorded in
+`.superpowers/sdd/final-two-adoption-report.md`.
+
+- **Found** `2026-10-17`, in the change that wired an ordering plan into
+  `materializeRun` so that these two sections could be built at all.
+- **Evidence** the refusal above, produced by the committed `readEntry` on a
+  draft entry; `tools/stripboard/approvals-model.ts`'s `FIRST_OR_SECOND_PERSON`
+  and `tools/stripboard/approvals-read.ts`'s `readOwnerWords`; the two run
+  directories' `owner-approval.txt`, each carrying `stripboard-unapproved`.
+- **Verified** yes - run, not relayed, on his actual words.
+- **Why it is open** the fix is a rule about what his words must look like for
+  the registry to accept them, and the agent producing the boards may not author
+  it. The guard's own refusal says the first move is to put it to him.
+- **What would settle it** one of three, and the choice is his: he says the same
+  thing again in a sentence with a pronoun in it (*"I'd go with part-walk-s1 for
+  low-cut and rcm-s20 for hi-cut"* would pass every reading as it stands); or he
+  rules that a selection naming the board and the ordering is a form the registry
+  must accept, and a reviewing agent that is not the one producing these boards
+  makes the edit with a test beside it; or he rules that `ownerWords` may carry
+  the question he was answering alongside his reply, which would put the voice in
+  the record without touching the guard.
+
 ### G1 - the guide has two representations of a panel control and reconciles neither
 
 `tools/guide/off-board.ts` represents a panel pot as a header PART with PIN
@@ -116,12 +202,33 @@ writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
 Open: a fix would settle these
 ------------------------------
 
-### G29 - the constructive seed cannot join a net whose run on a strip is boxed in, and two of the five Pultec boards never produce a candidate at all
+### G29 - the constructive seed cannot join a net whose run on a strip is boxed in, on every seed of the reviewed restart schedule
+
+**NARROWED ON 2026-10-17, AND WHAT IT LOST IS ITS SECOND HALF.** The title used
+to end *"and two of the five Pultec boards never produce a candidate at all"*.
+That is no longer true and the correction is a measurement:
+`.superpowers/sdd/ordering-sweep-report.md` swept every ordering the tooling
+derives over both sections, and **both build**. `pultec-low-cut` constructs,
+materialises and grades `admissible` on `part-walk s1` at 3 cuts / 8 wires / 5
+bridges over 24 x 19 holes with `HC1`-`HC10` all holding and every net complete;
+`pultec-hi-cut` does the same on `rcm s20` at 4 / 4 / 5 over 19 x 27. Both were
+reproduced through the committed producer on 2026-10-17 once `materializeRun`
+could be told which ordering to use.
+
+**WHAT REMAINS OPEN IS THE DEFECT ITSELF AND IT IS UNCHANGED.** Every seed of the
+reviewed restart schedule still refuses on both sections, for the reason below,
+and the constructor still cannot back up when the join phase finds no room
+(`G33`). What the sweep showed is that the defect is reachable-around on these
+two circuits, not that it is absent: `low-cut` refuses on 22 of the committed 25
+orderings and `hi-cut` on 23 of 25. **A section is one unlucky circuit away from
+having no ordering that works**, and nothing in the pipeline would then have a
+way forward.
 
 `pultec-low-cut` and `pultec-hi-cut` stop in `lib/stripboard/seed-place.ts`'s
 `joinNets` on **every seed of the reviewed restart schedule**, before any
-candidate exists, so there is no materialisation, no grade, no run directory and
-nothing for the adoption gate to read. The refusal, from `low-cut` at `rcm s0`:
+candidate exists, so on those orderings there is no materialisation, no grade, no
+run directory and nothing for the adoption gate to read. The refusal, from
+`low-cut` at `rcm s0`:
 
 ```
 stripboard-seed-no-column-to-join: net "0" has leads on strips 5 and 6 and there
@@ -253,12 +360,17 @@ the fixtures.
   set from empty to non-empty on both sections, with no part changing strip and
   no hole added.
 - **Verified** yes - run, not relayed.
-- **Why it is open** whether it must be built NOW depends on a measurement in
-  flight: whether any ordering the tooling already offers builds `low-cut` and
-  `hi-cut`. Only five of the available orderings have been tried on them, and
-  `low-boost` builds on 11 of 20. **If one does, this stays recorded and
-  unbuilt, which is the owner's stated preference. If none does, it is required
-  to finish the five Pultec sections.**
+- **Why it is open** the measurement that decided this has LANDED, and it came
+  out the way that leaves the enhancement unbuilt.
+  `.superpowers/sdd/ordering-sweep-report.md` tried all 25 committed orderings on
+  both sections: `low-cut` builds on `part-walk s1`, `degree-descending s2` and
+  `part-walk s2`, `hi-cut` on `degree-ascending s2` and `part-walk s2`, and both
+  produced an `admissible` board through the committed producer on 2026-10-17.
+  So **this stays recorded and unbuilt, which is the owner's stated preference**
+  - exactly the branch this entry named in advance. What the result does NOT say
+  is that the enhancement is unnecessary: it says these two circuits have an
+  ordering that happens to work, after 22 and 23 of 25 refused, and the next
+  section with none would be blocked on this with nothing else to try.
 - **What would settle it** the spec above, executed - or, if a later board is
   refused for this cause, that board as the evidence that the enhancement has
   become a blocker.
