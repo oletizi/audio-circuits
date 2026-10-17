@@ -436,6 +436,71 @@ field is still a plain `number`.
   side with `q3` refusing the `undefined` case, which is the shape
   `lib/stripboard/search-stop.ts` already has.
 
+### G32 - a run directory's `owner-approval.txt` is a snapshot of the registry at production time, and nothing refreshes it
+
+`tools/stripboard/materialize-approval.ts` writes `owner-approval.txt` beside
+`run.json` as the run is produced, consulting
+`stripboard/render-approvals.json` as it stands at that moment. The gate does
+**not** read that file - `tools/stripboard/adopt-verdict.ts` consults the
+registry itself - which is deliberate and is what makes a run directory claiming
+approval harmless. **The direction nobody had looked at is the other one.**
+
+**MEASURED, in the change that adopted `pultec-hi-boost` and `pultec-mid`.** A
+run directory was produced BEFORE the owner's approval was recorded, so its
+`owner-approval.txt` opens:
+
+```
+stripboard-unapproved: "pultec-hi-boost" recorded no-search for candidate a481fc4c…62af, and no recorded approval covers it: stripboard/render-approvals.json has no entry for this board.
+```
+
+The entry was then added. Driving every adopt check over that same directory
+afterwards gives **9 of 9 pass**, with `failing-check` returning
+`stripboard-owner-approved: … entry "owner-render-pultec-hi-boost-rcm-s4" admits
+it`. **So the run directory says the board is unapproved and the gate admits
+it, and both are reading the same registry at different moments.** The gate is
+right; the file is stale.
+
+**WHY IT MATTERS MORE THAN IT LOOKS.** `owner-approval.txt` is one of the three
+places the approval channel is visible (the committed registry, the run
+directory, the adoption's own output), and its stated job is that an admission on
+his judgement rather than on a search result reads as exactly that. A stale
+`unapproved` body inverts that: a reader auditing the run directory of an adopted
+board finds a file saying nobody approved it. **It is a derived artifact that is
+written once and compared by nothing**, which is the failure mode
+`CLAUDE.md`'s *derived artifacts are regenerated every run and compared by
+content* exists to prevent.
+
+**WHAT WAS DONE ABOUT IT HERE instead of fixing it:** the run directories were
+**re-produced** after the approval was committed, which is why the two adopted
+runs (`build/stripboard/<board>/task-8-adopt`) carry an `owner-approved` body
+that agrees with the registry. That is a procedure, not a guard, and it works
+only because an agent remembered to do it.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, in the change that adopted
+  `pultec-hi-boost` and `pultec-mid`. It could not have been found in Task 6:
+  low-boost's approval was recorded before its run was produced, so the two
+  agreed by accident of ordering.
+- **Evidence** `build/stripboard/pultec-hi-boost/task-8-adoption/owner-approval.txt`
+  (the stale `unapproved` body) beside the 9-of-9 check report driven over that
+  same directory after the registry entry landed; and
+  `tools/stripboard/materialize-approval.ts`'s `writeApprovalRecord`, which is
+  called once from `materializeRun` and from nowhere else.
+- **Verified** yes - both halves run in one session.
+- **Why it is open** the fix is not obviously a refresh. Rewriting the file at
+  adoption time would make the gate write into the run directory, which
+  `tools/stripboard/adopt.ts`'s own comment says it must not do (*"a gate that
+  also left artefacts behind would be a gate whose own output somebody has to
+  check"*); and refusing to adopt when the file disagrees would make a derived
+  artifact a gate input. Which of those is right is a decision about what the
+  run directory IS, and the agent that produced the run may not make it.
+- **What would settle it** either a verb that re-reads the registry and rewrites
+  the record for an existing run directory (so staleness is repairable without
+  re-materialising), or a stated rule that `owner-approval.txt` is a production-
+  time snapshot and the registry is the only live answer - written into that
+  module and into the file's own header, so a reader of a stale body knows what
+  they are looking at. **Until one of those lands, a run produced before its
+  approval must be re-produced after it**, which is what this change did.
+
 ### G31 - an approval's quote names no board, so one sentence authorises two entries and nothing in the loader notices
 
 On 2026-10-17 the owner was shown two renders - `pultec-hi-boost` and
