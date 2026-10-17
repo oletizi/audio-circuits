@@ -109,7 +109,30 @@ export interface CanonicalMetrics {
   readonly occupiedArea: number
   readonly constraints: Readonly<Record<string, boolean>>
   readonly ranking: readonly number[]
+  /**
+   * How the run ended, as `./termination.ts`'s `Termination` spells it: one of
+   * `Q1`-`Q6`, or `no-search`.
+   *
+   * **`no-search` IS NOT A SEVENTH RULE AND THE VALUE IS WRITTEN SO THAT CANNOT
+   * BE MISREAD.** A producer that swept no move set records it - today
+   * `./materialize-run.ts`, whose pipeline contains no search at all
+   * (`docs/known-gaps.md` G22) - and a run recording it has earned none of the
+   * claims `Q1`-`Q6` license. `./adopt-checks.ts` refuses such a run directory
+   * rather than admitting it: `CRITERIA G2.5` admits through
+   * `exitCodeFor(outcome, rule)` over the six, and no clause of CRITERIA says
+   * what a no-search run may be admitted on.
+   *
+   * It is typed `string` for the reason every field of this record is: this
+   * module reads `run.json` back from disk, where a field is whatever the file
+   * holds, and `./adopt-checks.ts` turns the string into a named state or
+   * refuses.
+   */
   readonly stoppingRule: string
+  /**
+   * What that termination licensed the run to claim: one of `REP1`'s five bound
+   * statuses, or `no-bound` beside a `no-search` stopping rule.
+   * `./adopt-checks.ts` re-derives it from `stoppingRule` and compares.
+   */
   readonly bound: string
   readonly outcome: string
   readonly restartBoundaries: readonly number[]

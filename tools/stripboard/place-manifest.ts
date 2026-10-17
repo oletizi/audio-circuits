@@ -32,7 +32,7 @@
 import { spawnSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import fs from "node:fs"
-import { boundFor } from "./report.ts"
+import { boundOf, type Termination } from "./termination.ts"
 import { pinPatternClosureHash, spanClosureHash } from "./geometry-inputs.ts"
 import { refuse } from "./place-model.ts"
 import { A_OCC_POSITION, RANKING_POSITIONS } from "./rank.ts"
@@ -46,7 +46,6 @@ import {
 import type { Evaluation } from "./climb.ts"
 import type { Outcome } from "./report-model.ts"
 import type { SeedArm } from "./seed.ts"
-import type { StoppingRule } from "./stop-model.ts"
 import type { StripboardRules } from "./rules.ts"
 
 function sha256OfFile(file: string): string {
@@ -129,7 +128,19 @@ export interface ManifestFacts {
   readonly netlistFile: string
   readonly rules: StripboardRules
   readonly arm: SeedArm
-  readonly rule: StoppingRule
+  /**
+   * How the run ended: one of `Q1`-`Q6`, or `NO_SEARCH` from a producer that
+   * swept no move set.
+   *
+   * **IT IS A `Termination` AND NOT A `StoppingRule`, WHICH IS A FACT ABOUT THE
+   * SECOND PRODUCER.** `./place.ts` searches and hands over the rule
+   * `evaluateStop` returned; `./materialize-run.ts` constructs and materialises
+   * and runs no search at all, so the field it had to fill was the one it could
+   * only fill falsely (`./termination.ts` carries the whole account). A record
+   * is where that falsehood would have been permanent, so the record's own type
+   * is where the honest state is spelled.
+   */
+  readonly termination: Termination
   readonly outcome: Outcome
   readonly stamp: string
   readonly startedAt: Date
@@ -179,8 +190,8 @@ export function manifestFor(facts: ManifestFacts): RunManifest {
       facts.best.results.map((entry) => [entry.id, entry.held] as const),
     ),
     ranking: facts.best.ranking,
-    stoppingRule: facts.rule,
-    bound: boundFor(facts.rule),
+    stoppingRule: facts.termination,
+    bound: boundOf(facts.termination),
     outcome: facts.outcome,
     restartBoundaries: facts.restartBoundaries,
   }

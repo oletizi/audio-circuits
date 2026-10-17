@@ -28,6 +28,7 @@ import { recordedHashFor } from "./adopt-provenance.ts"
 import { boundFor, exitCodeFor, OUTCOMES, OUTCOME_WORDING, type Outcome } from "./report-model.ts"
 import { runDirectory, type CanonicalInputs, type RunManifest } from "./run-dir.ts"
 import { STOPPING_RULES, type StoppingRule } from "./stop-model.ts"
+import { NO_SEARCH, NO_SEARCH_NOTE } from "./termination.ts"
 
 /**
  * `B1-frozen`'s four files, enumerated by name rather than discovered by
@@ -334,14 +335,33 @@ function outcomeFrom(text: string, file: string): Outcome {
   return found
 }
 
-/** One of `Q1`-`Q6`, from the string `run.json` recorded. */
+/**
+ * One of `Q1`-`Q6`, from the string `run.json` recorded.
+ *
+ * **`no-search` IS REFUSED BY ITS OWN STATEMENT AND NOT AS AN UNREADABLE
+ * STRING.** It is a state a producer records deliberately
+ * (`./termination.ts`), so reporting it under *not one of Q1-Q6* would read as
+ * a malformed record and send the next reader looking for a corruption. What is
+ * actually true is that `G2.5` admits through `exitCodeFor(outcome, rule)` over
+ * the six and CRITERIA has no clause for a run that searched not at all, so
+ * `NO_SEARCH_NOTE` is what this refusal carries. **Nothing about the gate is
+ * relaxed by this arm**: the string refused before and refuses now, by the same
+ * `failing-check` id.
+ */
 function ruleFrom(text: string, file: string): StoppingRule {
+  if (text === NO_SEARCH) {
+    refuse(
+      "failing-check",
+      `${file} records the stopping rule ${JSON.stringify(text)}, and ${NO_SEARCH_NOTE}`,
+    )
+  }
   const found = STOPPING_RULES.find((rule) => rule === text)
   if (found === undefined) {
     refuse(
       "failing-check",
       `${file} records the stopping rule ${JSON.stringify(text)}, which is not one of ` +
-        `${STOPPING_RULES.join(", ")}, so whether the RUN itself failed cannot be read`,
+        `${STOPPING_RULES.join(", ")} and is not ${NO_SEARCH} either, so whether the RUN ` +
+        "itself failed cannot be read",
     )
   }
   return found
@@ -356,6 +376,11 @@ function ruleFrom(text: string, file: string): StoppingRule {
  * CRITERIA says twice that a run stopping on `Q5` is reported as a failure
  * rather than as a result, and adopting the product of a run reported as a
  * failure would be reading it as a result.
+ *
+ * **A `no-search` RUN IS REFUSED IN `ruleFrom`, BEFORE EITHER THE PAIRING OR
+ * THE EXIT CODE IS REACHED**, so the bound it recorded is never compared and no
+ * `exitCodeFor` call is made with it. That ordering is deliberate: there is no
+ * pairing to check, because the run earned no bound.
  */
 export function assertVerdictAdmits(manifest: RunManifest, file: string): void {
   const outcome = outcomeFrom(manifest.canonical.metrics.outcome, file)

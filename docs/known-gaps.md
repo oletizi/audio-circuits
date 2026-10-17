@@ -146,6 +146,13 @@ constructed candidate per seed of the reviewed list and keeps the cheapest.
 That is a statement about what the recorded figures mean, not only about
 coverage.
 
+**THE RECORD NOW SAYS SO, WHICH IS NOT A FIX FOR THIS ENTRY.** A run produced
+by that pipeline records `tools/stripboard/termination.ts`'s `NO_SEARCH` rather
+than a stopping rule it did not earn, and `tools/stripboard/adopt-checks.ts`
+refuses to adopt from such a record. That makes the gap legible wherever it
+decides something; the gap itself - that no search in this repository can run
+on one of these boards - is unchanged.
+
 - **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
 - **Evidence** the refusal above, from `search(starts, setup)` over
   `seedsFrom`'s low-boost candidate with `LEAD_SPANS` and `PIN_PATTERNS`; and
@@ -161,13 +168,13 @@ coverage.
   asking whether it is one rather than by looking up its span, or a documented
   decision that a pad is immovable and `movesFrom` should say so by name.
 
-### G21 - `StopState` has no spelling for *there was no round*, so a run that constructs rather than climbs records `Q3` on a clause it did not earn
+### G21 - `StopState` still has no spelling for *there was no round*, although nothing records a stop through it without one any more
 
 `tools/stripboard/stop.ts`'s `q3` is `acceptedThisRound === 0 && seedsRemaining
 === 0`, and CRITERIA states the first clause as *a full sweep of the move set
 that produced no accepted move*. `StopState.acceptedThisRound` is a plain
-`number`, so a producer with no move-set round has no way to say so and writes
-`0` - which reads as a sweep that found nothing.
+`number`, so a producer with no move-set round has no way to say so and would
+write `0` - which reads as a sweep that found nothing.
 
 **`lib/stripboard/search-stop.ts` already draws this distinction and the tools
 side does not.** Its `RunCounters.acceptedThisRound` is `number | undefined`
@@ -175,34 +182,36 @@ with a comment calling the `undefined` *"LOAD BEARING AND NOT AN ABSENT
 COUNT"*, for exactly this case: *"`Q3` would then report a search exhausted
 that never ran"*.
 
-The live instance is `tools/stripboard/materialize-run.ts`, whose run is G22's
-no-search pipeline. It records `Q3`, and its `assertRuleNotLoadBearing` refuses
-outright rather than letting that rule carry an adoption.
-
-**THAT REFUSAL NOW DECIDES EVERYTHING, WHICH IT DID NOT WHEN THIS ENTRY WAS
-WRITTEN.** The sentence that stood here said *"the unearned clause decides
-nothing today"*, and it was true only because the materialised low-boost missed
-`A2` and graded *valid, below target*. The owner withdrew `kappa_bench` on
-2026-10-16, `A2` no longer fires, the board grades `admissible`, and
-`exitCodeFor("admissible", "Q3")` is zero - so the producer now refuses to write
-the run directory at all, and this unearned clause is the one thing standing
-between the owner's ruling and an adoptable board. See G25.
+**THE LIVE INSTANCE IS GONE, AND THE ASYMMETRY ABOVE IS WHAT IS LEFT.** The
+instance was `tools/stripboard/materialize-run.ts`, which built a `StopState`
+with `acceptedThisRound: 0` in it, handed that to `evaluateStop`, got `Q3` and
+then had to refuse to write its run directory at all. It no longer calls
+`evaluateStop`: `tools/stripboard/termination.ts`'s `NO_SEARCH` is a state
+outside `Q1`-`Q6`, the producer records it, and the fabricated counters were
+deleted with the claim. So the typing gap is now a trap for a FUTURE producer
+rather than a falsehood in a record anything writes - which is a smaller gap
+and a different one, and the entry is rewritten rather than closed because the
+field is still a plain `number`.
 
 - **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
+- **Updated** in the change that added `tools/stripboard/termination.ts`, which
+  removed the live instance.
 - **Evidence** `q3` in `tools/stripboard/stop.ts`, `StopState` in
   `tools/stripboard/stop-model.ts`, and `RunCounters` in
   `lib/stripboard/search-stop.ts` beside each other.
-- **Verified** yes, by reading all three and by driving
-  `materialize-run-rule-load-bearing` on a run whose outcome was made
-  `admissible`.
-- **Why it is open** widening `StopState` changes a type `tools/stripboard/place.ts`
-  and four test files build, and which rule a no-round run should report is a
-  criteria question rather than a typing one.
-- **What would settle it** either `acceptedThisRound: number | undefined` on
-  the tools side with `q3` refusing the `undefined` case, or a stated rule for
-  a run that does not search.
+- **Verified** yes, by reading all three; the removal of the instance is
+  verified by `tools/stripboard/materialize-run.ts` containing no
+  `evaluateStop` call and by the produced `run.json` recording
+  `"stoppingRule": "no-search"`.
+- **Why it is open** widening `StopState` changes a type
+  `tools/stripboard/place.ts` and four test files build, and no producer needs
+  the wider type today - `place.ts` always has a real round, and a producer
+  with none records `NO_SEARCH` instead of a rule.
+- **What would settle it** `acceptedThisRound: number | undefined` on the tools
+  side with `q3` refusing the `undefined` case, which is the shape
+  `lib/stripboard/search-stop.ts` already has.
 
-### G25 - the materialised low-boost now grades admissible, so the producer refuses to write its run at all
+### G25 - the low-boost run directory is produced and grades admissible, and the adoption gate has no clause that admits a run which performed no search
 
 **IT REPLACES THE ENTRY G23 WAS**, which recorded that this board was refused
 for clustering - `kappa = 0.25` against `kappa_bench = 0.05` - and named *the
@@ -210,58 +219,68 @@ owner's ruling on the bound* as one of the two things that would settle it. He
 ruled: *"i prefer the loose layout. It's much easier to build. I don't see the
 problem"* and *"if the layout is electrically correct, let's keep it. It looks
 fine to me"*. `kappa_bench` is now `null`, `A2` does not fire, `failing-check`
-no longer refuses this run, and that entry is DELETED rather than marked closed.
-The whole account of the withdrawal - his words, the four measured hand-laid
-figures `kappa` = 0.055 / 0.181 / 0.196 / 0.269 that all sat ABOVE the withdrawn
-bound, and the superseded value's entire reason verbatim - is in
-`stripboard/rules.json`'s `kappaBench` note, which is where the value lives.
+no longer refuses this run for clustering, and that entry is DELETED rather than
+marked closed. The whole account of the withdrawal - his words, the four
+measured hand-laid figures `kappa` = 0.055 / 0.181 / 0.196 / 0.269 that all sat
+ABOVE the withdrawn bound, and the superseded value's entire reason verbatim -
+is in `stripboard/rules.json`'s `kappaBench` note, which is where the value
+lives.
 
-**Nothing about clustering blocks this board any more. This is what blocks it
-instead.** With the bound withdrawn, `tools/stripboard/materialize-run.ts`'s run
-of `pultec-low-boost` reaches `outcome: "admissible"`, and
-`exitCodeFor("admissible", "Q3")` is **0**. `assertRuleNotLoadBearing` therefore
-fires and the run directory is never written:
+**WHAT THIS ENTRY SAID UNTIL THE `termination.ts` CHANGE, AND WHY IT NO LONGER
+DOES.** It said the producer refuses to write the run directory at all:
+`tools/stripboard/materialize-run.ts` recorded `Q3`, the board graded
+`admissible`, `exitCodeFor("admissible", "Q3")` is 0, and
+`assertRuleNotLoadBearing` fired. The repair was not to weaken that guard or to
+pick a different rule - its own message forbids both - but to stop the record
+carrying a claim no run earned: `tools/stripboard/termination.ts` gives a
+producer that swept no move set a way to say so, the materialisation path says
+it, and `evaluateStop` is not called on that path at all. **The run directory is
+produced now**, under the committed rules, recording
+`"stoppingRule": "no-search"` and `"bound": "no-bound"` beside
+`"outcome": "admissible"`.
 
-> `materialize-run-rule-load-bearing: this run of pultec-low-boost reports the
-> outcome "admissible" beside the stopping rule Q3, and exitCodeFor pairs those
-> two to a zero exit - so CRITERIA G2.5 would admit this candidate on a rule
-> earned over the restart schedule alone`
+**WHAT BLOCKS ADOPTION IS NOW A STATED GAP IN THE CRITERIA RATHER THAN A
+FALSEHOOD IN A RECORD.** Measured over a freshly produced run, eight of the nine
+drivable adopt checks pass - `candidate-hash`, `rules-hash`, `span-hash`,
+`pin-pattern-hash`, `frozen-fixture-hash`, `provenance-chain`,
+`veroroute-commit`/`built-commit` and `uncommitted-layout`. `failing-check`
+refuses:
 
-**THE GUARD IS DOING EXACTLY WHAT IT WAS WRITTEN TO DO.** This path sweeps no
-move set (G22), so the `Q3` it records is earned over the restart schedule alone
-(G21), and the guard exists to stop that unearned clause carrying a board into
-`boards/`. Its own refusal says it is *"NOT relaxed by weakening the gate"* and
-*"NOT by picking a different rule, which would be choosing a stopping reason to
-fit a verdict"*. Neither was done here.
+> `failing-check: .../run.json records the stopping rule "no-search", and a run
+> recording no-search swept no move set and bounded nothing ... CRITERIA G2.5
+> admits a run through exitCodeFor(outcome, rule) over Q1-Q6, and NO CLAUSE OF
+> CRITERIA SAYS WHAT A NO-SEARCH RUN MAY BE ADMITTED ON`
 
-**SO THE OWNER'S RULING DID NOT, BY ITSELF, MAKE THE BOARD ADOPTABLE.** It
-removed the clustering refusal and moved the blocker upstream of the gate: the
-run cannot be produced, let alone graded by `adoptLayout`.
+`G2.5` admits a run through `exitCodeFor(outcome, rule)` over the six rules, and
+**every one of the six describes how a search terminated**. An agent may not
+author the clause that would admit a run which performed none, so the gate
+reports this materialisation and does not adopt it. The tenth check, the
+post-copy `make -C boards/pultec-low-boost check` (`G4`), is not reachable
+without the copy and was not driven.
 
-The cost is visible in the test suite, which is where it should be:
-`tests/stripboard/materialize-run-fixtures.ts` now carries `GRADED_RULES` - the
-committed rules plus the withdrawn `0.05` - purely so a run directory exists for
-`materialize-run.test.ts` and `materialize-run-perturbed.test.ts` to drive the
-gate's ten checks over. **Those two files therefore no longer grade a run under
-the committed rules.** A side effect worth knowing: such a run's `run.json`
-records `rulesSha256` of the committed file while having been graded with a
-bound that file does not carry, because `place-manifest.ts` hashes the file and
-the rules object is passed in separately.
+**ONE COST THIS CHANGE REMOVED, RECORDED BECAUSE THE PREVIOUS VERSION OF THIS
+ENTRY RECORDED IT.** `tests/stripboard/materialize-run-fixtures.ts` carried
+`GRADED_RULES` - the committed rules plus the withdrawn `0.05` - purely so a run
+directory existed for `materialize-run.test.ts` and
+`materialize-run-perturbed.test.ts` to drive the gate over, which meant neither
+file graded a run under the reviewed parameters. That fixture is deleted and
+both files now run under `loadRules()`.
 
 - **Found** `2026-10-16-low-boost-to-adoption`, in the change that unset
   `kappaBench`.
-- **Evidence** `tests/stripboard/materialize-run-perturbed.test.ts`'s *"the
-  producer refuses to record a rule that would carry the adoption"*, which now
-  drives `loadRules()` directly and asserts both the refusal code and the
-  `"admissible"`/`Q3` pair it names.
+- **Updated** in the change that added `tools/stripboard/termination.ts`, which
+  moved the blocker from the producer to the gate and made the record true.
+- **Evidence** a produced run directory under the committed rules, every adopt
+  check driven over it one at a time; and
+  `tests/stripboard/materialize-run.test.ts`'s *"failing-check: the gate refuses
+  a run that performed no search"*.
 - **Verified** yes - measured, not argued.
-- **Why it is open** it is G21 and G22 wearing a new consequence. Which rule a
-  run that does not search should report is a criteria question, and an agent
-  may not author the answer; weakening the guard is the one repair its own
-  message forbids.
+- **Why it is open** whether a run that performed no search may be adopted is a
+  criteria question, and an agent may not author the answer. Weakening the gate
+  is the one repair its own message forbids.
 - **What would settle it** the owner's decision on what a no-search
-  materialisation may report - or G22's search, after which `Q3` would be
-  earned and the guard would never fire.
+  materialisation may be adopted on - or G22's search, after which a `Q`-rule
+  would be earned and `G2.5` would decide the question it already can.
 
 ### G26 - `docs/stripboard/pipeline-verification.md` still presents `kappa_bench = 0.05` as the live parameter
 
@@ -286,12 +305,21 @@ tense - that now misleads.
   withdrawn and pointing at `stripboard/rules.json`'s note, leaving every
   measured figure as it stands.
 
-### G24 - the adoption gate cannot re-derive `metrics.outcome`, so an edited outcome clears `failing-check`
+### G24 - the adoption gate cannot re-derive `metrics.outcome` or `metrics.stoppingRule`, so a coherent edited pair clears `failing-check`
 
-`assertVerdictAdmits` reads the outcome off `run.json` and has no candidate to
-grade it from, so a `run.json` whose `outcome` is changed to `admissible` **with
-the canonical hash recomputed** passes the check. Measured, not argued:
+`assertVerdictAdmits` reads the outcome and the stopping rule off `run.json` and
+has no candidate or run to re-derive either from, so a `run.json` whose
+`stoppingRule` and `bound` are changed to a pairing `REP4` licenses - `Q3`
+beside `search-exhausted` - **with the canonical hash recomputed** passes the
+check, as does an `outcome` changed to `admissible`. Measured, not argued:
 `tests/stripboard/materialize-run-perturbed.test.ts` asserts the pass.
+
+**THE RULE FIELD JOINED THE OUTCOME HERE WHEN `no-search` ARRIVED**, and the
+consequence is worth stating plainly: the only thing between a materialised
+board and an adoption on an unearned rule is the PRODUCER refusing to write one
+(`assertRuleNotLoadBearing`), because the gate reading a `Q`-rule cannot tell an
+earned one from an edited one. The bound check catches an INCOHERENT pair and
+not a coherent one.
 
 `adopt-checks.ts` closed the same hole for `metrics.bound` and says why in its
 own words - *"a tamperer recomputes the hash over the values it edited, and
@@ -306,12 +334,15 @@ not by itself put a bad board in `boards/`. It does put a board the pipeline
 reported as below target there.
 
 - **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
+- **Updated** in the change that added `tools/stripboard/termination.ts`, which
+  put the stopping rule in the same position as the outcome.
 - **Evidence** the passing assertion named above, and `assertVerdictAdmits` in
   `tools/stripboard/adopt-checks.ts`.
 - **Verified** yes.
 - **Why it is open** re-grading the candidate inside the gate means the gate
   re-running the scorer and the ten constraints on the `.vrt`, which is a
-  different gate from the one this milestone was told not to change.
+  different gate from the one this milestone was told not to change; and the
+  rule has no second source at all - a run's counters are not in `run.json`.
 - **What would settle it** either the gate re-deriving the outcome from the
   recorded constraint results and score the way `verdict.ts` does - the same
   shape as the `bound` fix, and reachable without a fork invocation - or a

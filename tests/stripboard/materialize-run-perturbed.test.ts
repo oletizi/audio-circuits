@@ -48,9 +48,15 @@ import {
   pinPatternClosureHash,
   spanClosureHash,
 } from "../../tools/stripboard/geometry-inputs.ts"
-import { materializeRun, type MaterializeRun } from "../../tools/stripboard/materialize-run.ts"
+import {
+  assertRuleNotLoadBearing,
+  materializeRun,
+  type MaterializeRun,
+} from "../../tools/stripboard/materialize-run.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { readManifest } from "../../tools/stripboard/run-dir.ts"
+import { STOPPING_RULES } from "../../tools/stripboard/stop.ts"
+import { NO_SEARCH } from "../../tools/stripboard/termination.ts"
 import {
   adoptInputFor,
   chainBoard,
@@ -94,8 +100,8 @@ test("candidate-hash: the hash left alone while a field moved is refused by name
   // failure as the `candidate-hash` refusal.
   const naive = fs
     .readFileSync(manifestPath(run), "utf8")
-    .replace('"outcome": "valid-below-target"', '"outcome": "admissible"')
-  expect(naive, "the edit landed in the text").toContain('"outcome": "admissible"')
+    .replace('"stoppingRule": "no-search"', '"stoppingRule": "Q3"')
+  expect(naive, "the edit landed in the text").toContain('"stoppingRule": "Q3"')
   withManifest(run, naive, () => {
     expect(() => readManifest(run.runDir)).toThrow(
       /the recorded canonical hash .* disagrees with .*, recomputed from this same file's own/,
@@ -301,12 +307,30 @@ test("built-commit: an absent build stamp is refused rather than taken as agreem
   ).toThrow(/^built-commit: the build stamp under .* is absent or empty/)
 })
 
-test("failing-check: a bound that does not pair with the recorded rule is refused", () => {
-  // THE REALISTIC WRONG VALUE: `Q3` is "the search is exhausted" in prose and
-  // "the budget ran out" in a tired reading of the same sentence, and REP4's
-  // table is the only thing that pairs the two. `assertVerdictAdmits` re-derives
-  // the bound from the rule rather than trusting the producer's pairing.
-  const edited = rewritten(run, { metrics: { bound: "budget-exhausted" } })
+test("failing-check: a stopping rule written over the recorded no-search is refused", () => {
+  // THE REALISTIC EDIT, AND IT IS WHY THE BOUND IS RE-DERIVED: somebody who
+  // reads `"stoppingRule": "no-search"` as a hole in the record and fills it
+  // with the rule the producer used to write. The bound is left as the run wrote
+  // it, so the record now disagrees with itself - `Q3` licenses
+  // `search-exhausted`, never `no-bound` - and the pairing check sees it before
+  // any exit code is computed.
+  const edited = rewritten(run, { metrics: { stoppingRule: "Q3" } })
+  withManifest(run, edited, () => {
+    expect(() => assertVerdictAdmits(readManifest(run.runDir), manifestPath(run))).toThrow(
+      /^failing-check: .* records the bound "no-bound" beside the stopping rule Q3/,
+    )
+  })
+})
+
+test("failing-check: a bound that does not pair with a recorded rule is refused", () => {
+  // THE OTHER HALF OF THE SAME PAIRING, on a record whose rule IS one of the
+  // six: `Q3` is "the search is exhausted" in prose and "the budget ran out" in
+  // a tired reading of the same sentence, and REP4's table is the only thing
+  // that pairs the two. `assertVerdictAdmits` re-derives the bound from the rule
+  // rather than trusting the producer's pairing.
+  const edited = rewritten(run, {
+    metrics: { stoppingRule: "Q3", bound: "budget-exhausted" },
+  })
   withManifest(run, edited, () => {
     expect(() => assertVerdictAdmits(readManifest(run.runDir), manifestPath(run))).toThrow(
       /^failing-check: .* records the bound "budget-exhausted" beside the stopping rule Q3/,
@@ -314,82 +338,86 @@ test("failing-check: a bound that does not pair with the recorded rule is refuse
   })
 })
 
-test("failing-check: a stopping rule the bound does not belong to is refused", () => {
-  // THE FIELD BEING PERTURBED IS THE RULE AND THE BOUND IS LEFT AS THE RUN WROTE
-  // IT, which is the other half of the same pairing: `Q4` licenses
-  // `budget-exhausted`, so a `search-exhausted` beside it is the record
-  // disagreeing with itself.
-  const edited = rewritten(run, { metrics: { stoppingRule: "Q4" } })
+test("failing-check: a stopping rule that is neither one of the six nor no-search is refused", () => {
+  // `Q7` IS THE SHAPE OF THE EDIT A PERSON MAKES AFTER READING THAT no-search IS
+  // NOT ONE OF THE SIX: a seventh rule, invented to hold the state. It is
+  // refused by a statement that names both vocabularies, so the reader learns
+  // there is no seventh slot to fill.
+  const edited = rewritten(run, { metrics: { stoppingRule: "Q7", bound: "no-bound" } })
   withManifest(run, edited, () => {
     expect(() => assertVerdictAdmits(readManifest(run.runDir), manifestPath(run))).toThrow(
-      /^failing-check: .* records the bound "search-exhausted" beside the stopping rule Q4/,
+      /^failing-check: .* records the stopping rule "Q7", which is not one of Q1, Q2, Q3, Q4, Q5, Q6 and is not no-search either/,
     )
   })
 })
 
 /**
- * **THE ONE FIELD THE GATE CANNOT SEE, MEASURED RATHER THAN ASSUMED.**
+ * **THE FIELDS THE GATE CANNOT SEE, MEASURED RATHER THAN ASSUMED.**
  *
- * `assertVerdictAdmits` reads `metrics.outcome` and has no candidate to re-grade
- * it from, so an `outcome` edited to `admissible` WITH the canonical hash
- * recomputed clears the check. `adopt-checks.ts` closed exactly this hole for
- * `metrics.bound` - *"a tamperer recomputes the hash over the values it edited"* -
- * by re-deriving the bound from the rule; the outcome itself has no second
- * source inside the gate.
+ * `assertVerdictAdmits` reads `metrics.outcome` and `metrics.stoppingRule` off
+ * `run.json` and has no candidate to re-derive either from, so a COHERENT pair
+ * written over them - `Q3` beside `search-exhausted`, which is a pairing `REP4`
+ * itself licenses - clears every check in the gate with the canonical hash
+ * recomputed. `adopt-checks.ts` closed the hole for `metrics.bound` alone -
+ * *"a tamperer recomputes the hash over the values it edited"* - by re-deriving
+ * the bound FROM the rule, which catches an incoherent pair and not a coherent
+ * one.
  *
- * It is asserted as a PASS on purpose. A test that left this undriven would
- * leave the suite consistent with a gate that re-grades the outcome, and the
- * next reader would believe it does. What stands behind it is `G4`: `adoptLayout`
- * runs `make check` on the board as adopted and reverts the copy on a non-zero
- * exit. Recorded as `docs/known-gaps.md` G24.
+ * It is asserted as a PASS on purpose, and it is the measurement that says what
+ * `assertRuleNotLoadBearing` is for: the producer refusing to WRITE a Q-rule it
+ * did not earn is the only thing standing between this record and an adoption,
+ * because the gate reading one cannot tell it from an earned one. A test that
+ * left this undriven would leave the suite consistent with a gate that re-grades
+ * the run. What stands behind it is `G4`: `adoptLayout` runs `make check` on the
+ * board as adopted and reverts the copy on a non-zero exit. Recorded as
+ * `docs/known-gaps.md` G24.
  */
-test("failing-check does NOT see an outcome edited to admissible with the hash recomputed", () => {
-  const edited = rewritten(run, { metrics: { outcome: "admissible" } })
+test("failing-check does NOT see a coherent Q-rule written over no-search", () => {
+  const edited = rewritten(run, {
+    metrics: { stoppingRule: "Q3", bound: "search-exhausted" },
+  })
   withManifest(run, edited, () => {
     const manifest = readManifest(run.runDir)
-    expect(manifest.canonical.metrics.outcome, "the edit read back, hash and all").toBe(
-      "admissible",
-    )
+    expect(manifest.canonical.metrics.stoppingRule, "the edit read back, hash and all").toBe("Q3")
+    expect(manifest.canonical.metrics.outcome, "which the run itself recorded").toBe("admissible")
     expect(() => assertVerdictAdmits(manifest, manifestPath(run))).not.toThrow()
   })
 })
 
-test("the producer refuses to record a rule that would carry the adoption", async () => {
-  // THE GUARD DRIVEN ON THE COMMITTED RULES, WHICH IS WHERE IT NOW LIVES. With
-  // `kappa_bench` unset on the owner's ruling of 2026-10-16, A2 does not fire,
-  // the materialised board's outcome is `admissible`, and
-  // exitCodeFor(admissible, Q3) is 0 - so CRITERIA G2.5 would admit the board
-  // on a rule this run earned over its restart schedule alone, and the producer
-  // refuses to write the record instead.
+test("the producer refuses to record a rule that would carry the adoption", () => {
+  // THE GUARD DRIVEN ON ITS ORIGINAL CASE, WHICH IS THE PAIR THAT USED TO BE
+  // LIVE HERE. With `kappa_bench` unset on the owner's ruling of 2026-10-16, A2
+  // does not fire and the materialised board's outcome is `admissible`;
+  // exitCodeFor(admissible, Q3) is 0, so CRITERIA G2.5 would admit the board on
+  // a rule a run that sweeps no move set earned over its restart schedule alone.
   //
-  // **THIS IS THE LIVE STATE AND NOT A CONSTRUCTED ONE**, which is the change:
-  // the guard used to need a fixture with kappa_bench at 0.3 to reach an
-  // admissible outcome at all, and today the committed file reaches it. So
-  // low-boost's materialisation cannot be written, let alone adopted, until G21
-  // or G22 is settled - `docs/known-gaps.md` G25.
+  // **IT IS CALLED DIRECTLY BECAUSE THE PRODUCER NO LONGER RECORDS A Q-RULE AT
+  // ALL**, which is the change: the branch below is unreachable through
+  // `materializeRun` while `TERMINATION` holds `NO_SEARCH`, and the guard is
+  // exported so that it can be shown to fire rather than asserted to. The same
+  // device as `assertOrderCoversTable` and `assertDistinct`. The branch is
+  // additionally driven THROUGH the real producer by editing that constant,
+  // which is recorded in this task's report rather than left as a claim.
   expect(loadRules().kappaBench, "the committed bound is unset").toBeNull()
-  await expect(
-    materializeRun(
-      {
-        boardDir: path.join("boards", BOARD),
-        rules: loadRules(),
-        stamp: scratchStamp(BOARD, "committed"),
-      },
-      forkSpawn(),
-    ),
-  ).rejects.toThrow(/^materialize-run-rule-load-bearing: /)
+  expect(run.outcome, "so the real run of this board grades admissible").toBe("admissible")
+  for (const rule of STOPPING_RULES) {
+    if (rule === "Q5") continue
+    expect(() => assertRuleNotLoadBearing("admissible", rule, BOARD), rule).toThrow(
+      /^materialize-run-rule-load-bearing: /,
+    )
+  }
   // The refusal names the outcome and the rule it pairs, so a reader learns
   // WHICH pair exits zero rather than only that one did.
-  await expect(
-    materializeRun(
-      {
-        boardDir: path.join("boards", BOARD),
-        rules: loadRules(),
-        stamp: scratchStamp(BOARD, "committed-detail"),
-      },
-      forkSpawn(),
-    ),
-  ).rejects.toThrow(/the outcome "admissible" beside the stopping rule Q3/)
+  expect(() => assertRuleNotLoadBearing("admissible", "Q3", BOARD)).toThrow(
+    /the outcome "admissible" beside the stopping rule Q3/,
+  )
+  // AND `Q5` IS THE ONE Q-RULE IT LETS THROUGH, which is not a weakness: CRITERIA
+  // demotes a Q5 run to a failure whatever the candidate earned, so
+  // exitCodeFor(admissible, Q5) is 1 and the gate refuses that record itself.
+  expect(() => assertRuleNotLoadBearing("admissible", "Q5", BOARD)).not.toThrow()
+  // AND THE STATE THE PRODUCER ACTUALLY RECORDS PASSES, because it claims
+  // nothing: the refusal is the gate's, not the producer's.
+  expect(() => assertRuleNotLoadBearing("admissible", NO_SEARCH, BOARD)).not.toThrow()
 })
 
 test("the producer refuses a board whose committed layout runs its strips the other way", async () => {

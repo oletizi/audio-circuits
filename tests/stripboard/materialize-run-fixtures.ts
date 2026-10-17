@@ -36,7 +36,7 @@ import type { ChainBoard } from "../../tools/stripboard/adopt-checks.ts"
 import { defaultAdoptDeps } from "../../tools/stripboard/adopt.ts"
 import type { AdoptDeps, AdoptInput } from "../../tools/stripboard/adopt-model.ts"
 import { materializeRun, type MaterializeRun } from "../../tools/stripboard/materialize-run.ts"
-import { loadRules, type StripboardRules } from "../../tools/stripboard/rules.ts"
+import { loadRules } from "../../tools/stripboard/rules.ts"
 import {
   canonicalHash,
   readManifest,
@@ -78,31 +78,28 @@ export function forkSpawn(): SpawnVeroroute {
 }
 
 /**
- * The committed rules with a `kappa_bench`, which is what makes a run directory
- * EXIST for these tests to hand the gate.
+ * One real materialisation run, with its stamp registered for removal.
  *
- * **IT IS NOT A DEFAULT, AND THE REASON IT IS HERE IS A FINDING RATHER THAN A
- * CONVENIENCE.** The owner unset the clustering bound on 2026-10-16 (*"if the
- * layout is electrically correct, let's keep it. It looks fine to me"*), so
- * under the committed rules the materialised low-boost grades **admissible** -
- * and `materializeRun`'s own `assertRuleNotLoadBearing` then REFUSES to write
- * the run at all, because `exitCodeFor("admissible", "Q3")` is zero and `Q3`
- * here is earned over the restart schedule alone (`docs/known-gaps.md` G21,
- * G25). That refusal is driven directly, under the committed rules, by
- * `./materialize-run-perturbed.test.ts`.
+ * **IT RUNS UNDER THE COMMITTED RULES, WHICH IS A CHANGE AND IS THE POINT OF
+ * IT.** The rules handed over here were `GRADED_RULES` - the committed file
+ * plus the `kappa_bench` of 0.05 the owner withdrew on 2026-10-16 - and that
+ * fixture existed purely so a run directory EXISTED at all for these two files
+ * to drive the gate's checks over. Under
+ * the committed rules the materialised low-boost grades `admissible`, and while
+ * the producer recorded `Q3`, `assertRuleNotLoadBearing` refused to write the
+ * run at all: `exitCodeFor("admissible", "Q3")` is zero, and `Q3` was earned
+ * over the restart schedule alone.
  *
- * These two files are about the GATE's ten checks over a produced run
- * directory, which needs a run directory to exist. So they supply the 0.05 that
- * was committed until the ruling - which grades this board *valid, below
- * target*, the state the gate's `failing-check` was measured against - and say
- * here that the figure is the fixture's and no longer the file's.
+ * The producer now records `tools/stripboard/termination.ts`'s `NO_SEARCH`
+ * instead of a rule it did not earn, so there is nothing to hold harmless and a
+ * run directory exists under the reviewed parameters. **The fixture's own
+ * withdrawn bound is deleted rather than kept beside the real one**, and these
+ * two files grade the board the pipeline actually grades. `docs/known-gaps.md`
+ * G25 records the cost that removes.
  */
-export const GRADED_RULES: StripboardRules = { ...loadRules(), kappaBench: 0.05 }
-
-/** One real materialisation run, with its stamp registered for removal. */
 export async function producedRun(label: string): Promise<MaterializeRun> {
   return materializeRun(
-    { boardDir: BOARD_DIR, rules: GRADED_RULES, stamp: scratchStamp(BOARD, label) },
+    { boardDir: BOARD_DIR, rules: loadRules(), stamp: scratchStamp(BOARD, label) },
     forkSpawn(),
   )
 }

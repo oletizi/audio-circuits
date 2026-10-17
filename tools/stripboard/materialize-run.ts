@@ -41,19 +41,34 @@
  * `./adopt-checks.ts` recomputes with, so producer and gate cannot disagree
  * about what was covered.
  *
- * **WHAT THE RECORDED STOPPING RULE DOES AND DOES NOT CLAIM. READ THIS BEFORE
- * TRUSTING `metrics.stoppingRule` FROM THIS PRODUCER.** A materialisation run's
- * only search dimension is the restart schedule: it constructs one candidate per
+ * **THIS RUN PERFORMS NO SEARCH AND THE RECORD NOW SAYS SO.** A materialisation
+ * run's only dimension is the restart schedule: it constructs one candidate per
  * seed of `rules.seeds`, grades each, and keeps the cheapest. **There is no
  * move-set round in it at all**, because nothing in this repository can propose
  * a move on a materialised board - `./seed-geometry.ts`'s `occupancyOf` refuses
  * a part facing `N` or `S`, which is most of a materialised board, and
  * `lib/stripboard/moves.ts` refuses a model candidate carrying an off-board pad
- * (`docs/known-gaps.md` G22). So `Q3`'s *"a round accepted nothing"* is read
- * here over the RESTART sweep and not over a sweep of the move set, and the
- * clause about the move set is NOT earned by this path. That reading is recorded
- * as G21 and is held harmless by `assertRuleNotLoadBearing` below, which refuses
- * outright rather than letting an unearned rule carry an admission.
+ * (`docs/known-gaps.md` G22).
+ *
+ * So it records `./termination.ts`'s `NO_SEARCH` where a search records its
+ * rule, and it calls `evaluateStop` NOT AT ALL. **What that replaced was a false
+ * claim, and naming it is the point of this paragraph.** Until 2026-10-16 this
+ * module built a `StopState` whose `acceptedThisRound` was `0` - *"a full sweep
+ * of the move set that produced no accepted move"*, about a move set nobody
+ * swept - handed it to `evaluateStop`, got `Q3`, and then had to refuse to write
+ * the run at all, because `exitCodeFor("admissible", "Q3")` is zero and `G2.5`
+ * would have admitted the board on that clause. The counters are gone with the
+ * claim: a producer with no round to report now says it has none instead of
+ * reporting an empty one.
+ *
+ * **WHAT RECORDING `NO_SEARCH` DOES NOT BUY.** It earns no bound and no
+ * admission: `./adopt-checks.ts` refuses a run directory carrying it, because
+ * `G2.5` admits through `exitCodeFor(outcome, rule)` over `Q1`-`Q6` and no
+ * clause of CRITERIA says what a no-search run may be admitted on. A
+ * materialisation is therefore REPORTED and NOT ADOPTED - the same place the old
+ * refusal left it, reached by a record that is true. `./termination.ts`'s
+ * `NO_SEARCH_NOTE` is the sentence, and `docs/known-gaps.md` G21 and G25 carry
+ * the state.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -74,7 +89,7 @@ import type { StripboardRules } from "./rules.ts"
 import { runDirectory, writeManifest, type RunManifest } from "./run-dir.ts"
 import { assignStrips } from "./seed-arrangement.ts"
 import type { SpawnVeroroute } from "./seed.ts"
-import { evaluateStop, type StoppingRule } from "./stop.ts"
+import { isStoppingRule, NO_SEARCH, type Termination } from "./termination.ts"
 import { admissible } from "./verdict.ts"
 import { materialize } from "./vero-export.ts"
 
@@ -82,7 +97,6 @@ import { materialize } from "./vero-export.ts"
 export type MaterializeRunRefusal =
   | "materialize-run-no-candidate"
   | "materialize-run-strips-disagree"
-  | "materialize-run-no-stop"
   | "materialize-run-rule-load-bearing"
 
 /** What is missing, where to fix it, and why nothing is substituted. */
@@ -112,29 +126,20 @@ export function notDefaultedBecause(refusal: MaterializeRunRefusal): string {
         "with a test beside it. Until then a vertical-strip board is one this producer refuses " +
         "rather than one it gets wrong."
       )
-    case "materialize-run-no-stop":
-      return (
-        "tools/stripboard/stop.ts is the one owner of Q1-Q6 and evaluateStop returns null " +
-        "while a run may continue. A materialisation run has spent its whole restart schedule " +
-        "by the time this is asked, so null here means the counters this run kept do not " +
-        "satisfy any rule - and a rule named anyway would be a stopping reason nothing " +
-        "measured, which is the third of the pipeline's CHECKPOINT 2 defects and the one that " +
-        "looks like success. It is NOT defaulted to Q3 or to Q5. Read the counters this run " +
-        "built, in materializeRun, against tools/stripboard/stop.ts."
-      )
     case "materialize-run-rule-load-bearing":
       return (
-        "Q3's clause is 'a full sweep of the move set that produced no accepted move, and the " +
-        "seed list spent'. THIS RUN SWEEPS NO MOVE SET - nothing can propose a move on a " +
-        "materialised board (docs/known-gaps.md G21, G22) - so the rule it records is earned " +
-        "over the restart schedule alone. That reading is tolerable only while it decides " +
-        "nothing: CRITERIA G2.5 admits a run through exitCodeFor(outcome, rule), and a zero " +
-        "exit code here would mean an unearned clause had carried a board into boards/. So the " +
-        "producer refuses to write a record it would be admitted on. It is NOT relaxed by " +
-        "weakening the gate, which is this task's own instruction, and NOT by picking a " +
-        "different rule, which would be choosing a stopping reason to fit a verdict. The " +
-        "remedy is a search this path can actually run - which is G22 - and until there is " +
-        "one, a materialisation is reported and not adopted."
+        "EVERY ONE OF Q1-Q6 DESCRIBES HOW A SEARCH TERMINATED, AND THIS RUN SWEEPS NO MOVE SET " +
+        "- nothing can propose a move on a materialised board (docs/known-gaps.md G22) - so a " +
+        "Q-rule recorded by this producer is earned over the restart schedule alone. CRITERIA " +
+        "G2.5 admits a run through exitCodeFor(outcome, rule), so a zero exit code here would " +
+        "mean an unearned clause had carried a board into boards/. The producer refuses to " +
+        "write a record it would be admitted on. It is NOT relaxed by weakening the gate and " +
+        "NOT by picking a different rule, which would be choosing a stopping reason to fit a " +
+        "verdict. What this path records instead is tools/stripboard/termination.ts's " +
+        "NO_SEARCH, which earns no bound and no admission; reaching this refusal means " +
+        "something handed the record a Q-rule again. Fix TERMINATION in " +
+        "tools/stripboard/materialize-run.ts, or run a search this path can actually run, " +
+        "which is G22."
       )
   }
 }
@@ -163,6 +168,26 @@ export function refuse(refusal: MaterializeRunRefusal, offending: string): never
  * rather than left for a reader of `run.json` to discover.
  */
 const MATERIALISED_ARM = "constructed" as const
+
+/**
+ * What this producer records about how its run ended, and it is a CONSTANT
+ * rather than a computation because there is nothing to compute.
+ *
+ * **A RUN THAT SWEEPS NO MOVE SET HAS NO COUNTERS TO ASK `evaluateStop` WITH**,
+ * and the shape of the defect this replaces was a producer building them
+ * anyway: `climbEvaluations` of one per seed, `signatures` empty, and
+ * `acceptedThisRound: 0` - the last of which is `Q3`'s *"a full sweep of the
+ * move set that produced no accepted move"* asserted about a move set nobody
+ * swept. `evaluateStop` is not called here at all now, so there is no `null`
+ * case to refuse either; `materialize-run-no-stop` went with the counters.
+ *
+ * **IT IS NOT A WEAKER STOPPING RULE.** `NO_SEARCH` is not in `STOPPING_RULES`
+ * and cannot be handed to `boundFor`, `runFailedOn`, `exitCodeFor` or
+ * `renderReport` - `./termination.ts` carries why that is the whole mechanism -
+ * so a record carrying it claims nothing, and `./adopt-checks.ts` refuses to
+ * adopt from it.
+ */
+const TERMINATION: Termination = NO_SEARCH
 
 /** One seed's construction: what was built, what the fork made of it, and its grade. */
 export interface SeedMaterialisation {
@@ -194,7 +219,8 @@ export interface MaterializeRun {
   /** The painted `.vrt` `inputs.candidateSha256` was taken from - what `adopt` would copy. */
   readonly candidate: string
   readonly manifest: RunManifest
-  readonly rule: StoppingRule
+  /** How this run ended, which for this producer is always `NO_SEARCH`. */
+  readonly termination: Termination
   readonly outcome: Outcome
   readonly best: Evaluation
   readonly bestSeed: number
@@ -263,57 +289,39 @@ function assertStripsAgree(produced: string, dumpText: string, prepared: Prepare
 }
 
 /**
- * The counters the six rules read, built from what THIS run kept.
+ * That what this run is about to record is not what admits the board.
  *
- * **`acceptedThisRound` IS ZERO BECAUSE THERE WAS NOTHING TO ACCEPT, AND THAT IS
- * NOT A SWEPT MOVE SET.** The module comment and
- * `materialize-run-rule-load-bearing` carry the whole of it; what matters at
- * this call site is that `StopState.acceptedThisRound` is a plain `number` and
- * has no spelling for *there was no round*, while
- * `lib/stripboard/search-stop.ts`'s own `RunCounters` deliberately types the
- * same field `number | undefined` for exactly this distinction. So the zero
- * below is the closest true thing this type can say, and the guard after
- * `evaluateStop` is what keeps it from deciding anything.
+ * **IT FIRES ON THE STATE THAT WOULD MAKE AN UNEARNED CLAIM DECIDE SOMETHING,
+ * NOT ON THE STATE THE PIPELINE HAPPENS TO BE IN**: a zero exit code from
+ * `exitCodeFor(outcome, rule)` is `G2.5` admitting the run, and no `Q`-rule is
+ * earned by a producer that sweeps no move set. A `NO_SEARCH` termination is
+ * therefore passed through here and refused nowhere - it claims nothing, so it
+ * can carry nothing - and `./adopt-checks.ts` is what declines to adopt from it.
  *
- * `signatures` IS EMPTY, so `Q6` cannot fire: `signatureOf` needs a dump per
- * evaluation and this run keeps one dump per seed inside `measure`, which does
- * not hand it back as a signature. Same limit `./place.ts` records.
+ * **SO IT IS QUIET ON EVERY PRODUCTION RUN TODAY, AND THAT IS SAID HERE RATHER
+ * THAN LEFT TO BE DISCOVERED.** `TERMINATION` above is a constant, so the
+ * `isStoppingRule` branch is unreachable while it holds `NO_SEARCH`. **IT IS
+ * EXPORTED SO IT CAN BE SHOWN TO FIRE** - the device
+ * `tools/stripboard/stop-model.ts`'s `assertOrderCoversTable` and
+ * `./termination.ts`'s `assertDistinct` use, and for the same reason: a guard
+ * reachable only by editing its own caller is a guard no test covers.
+ * `tests/stripboard/materialize-run-perturbed.test.ts` calls it with the pair
+ * that used to be live here - `admissible` beside `Q3` - and the branch is
+ * additionally driven through the real producer by editing `TERMINATION`, which
+ * is recorded in this task's report.
  */
-function stopStateOf(
-  perSeed: readonly SeedMaterialisation[],
-  rules: StripboardRules,
-  frozen: boolean | undefined,
-): Parameters<typeof evaluateStop>[0] {
-  return {
-    climbHistory: perSeed.map((entry) => entry.evaluation.score.objective),
-    climbEvaluations: perSeed.map(() => 1),
-    runEvaluations: perSeed.length,
-    seedsRemaining: rules.seeds.length - perSeed.length,
-    signatures: [],
-    acceptedThisRound: 0,
-    frozen,
-  }
-}
-
-/**
- * That the rule this run recorded is not what admits the board.
- *
- * **IT IS THE ONE GUARD THAT MAKES THE `Q3` READING ABOVE SAFE**, and it fires
- * on the state that would make it unsafe rather than on the state the pipeline
- * happens to be in: a zero exit code from `exitCodeFor(outcome, rule)` is `G2.5`
- * admitting the run, and this producer's rule is not earned over the move set.
- * Today low-boost reports `valid-below-target` (`kappa = 0.25` against
- * `kappa_bench = 0.05`), so the gate refuses it at `failing-check` and this
- * guard is quiet - which is why a test drives it with a `kappa_bench` of its own
- * rather than waiting for the pipeline to reach it.
- */
-function assertRuleNotLoadBearing(outcome: Outcome, rule: StoppingRule, board: string): void {
-  if (exitCodeFor(outcome, rule) === 0) {
+export function assertRuleNotLoadBearing(
+  outcome: Outcome,
+  termination: Termination,
+  board: string,
+): void {
+  if (!isStoppingRule(termination)) return
+  if (exitCodeFor(outcome, termination) === 0) {
     refuse(
       "materialize-run-rule-load-bearing",
-      `this run of ${board} reports the outcome "${outcome}" beside the stopping rule ${rule}, ` +
-        "and exitCodeFor pairs those two to a zero exit - so CRITERIA G2.5 would admit this " +
-        "candidate on a rule earned over the restart schedule alone",
+      `this run of ${board} reports the outcome "${outcome}" beside the stopping rule ` +
+        `${termination}, and exitCodeFor pairs those two to a zero exit - so CRITERIA G2.5 ` +
+        "would admit this candidate on a rule earned over the restart schedule alone",
     )
   }
 }
@@ -425,20 +433,10 @@ export async function materializeRun(
     binding: undefined,
   })
   const outcome = outcomeOf(verdict)
-  const rule = evaluateStop(
-    stopStateOf(perSeed, input.rules, prepared.frozen),
-    best.evaluation,
-    prepared.targets,
-    input.rules,
-  )
-  if (rule === null) {
-    refuse(
-      "materialize-run-no-stop",
-      `${prepared.board} constructed ${perSeed.length} candidate(s) of ` +
-        `${input.rules.seeds.length} seed(s) and no rule of Q1-Q6 fired`,
-    )
-  }
-  assertRuleNotLoadBearing(outcome, rule, prepared.board)
+  // NO `evaluateStop` CALL. This run swept no move set, so there is no stop to
+  // evaluate and no counters to evaluate it from; `TERMINATION` above says what
+  // that record is and why it is not one of the six.
+  assertRuleNotLoadBearing(outcome, TERMINATION, prepared.board)
 
   const stampedBuild = builtCommit(repoRoot)
   if (stampedBuild === undefined) {
@@ -459,7 +457,7 @@ export async function materializeRun(
     netlistFile,
     rules: input.rules,
     arm: MATERIALISED_ARM,
-    rule,
+    termination: TERMINATION,
     outcome,
     stamp,
     startedAt,
@@ -475,7 +473,7 @@ export async function materializeRun(
     board: prepared.board,
     candidate: best.evaluation.candidate,
     manifest,
-    rule,
+    termination: TERMINATION,
     outcome,
     best: best.evaluation,
     bestSeed: best.seed,

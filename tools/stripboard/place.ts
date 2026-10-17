@@ -271,7 +271,12 @@ export async function place(
     netlistFile: netlistPath,
     rules: input.rules,
     arm: input.arm,
-    rule,
+    // A `StoppingRule` IS A `Termination` AND THIS PRODUCER ALWAYS HAS ONE: it
+    // searched, and `refuse("place-no-stop", ...)` above has already refused a
+    // run `evaluateStop` returned `null` for. `./termination.ts`'s no-search
+    // member is the other producer's, and naming the field `termination` here
+    // is what makes which of the two this is legible in the record.
+    termination: rule,
     outcome,
     stamp,
     startedAt,

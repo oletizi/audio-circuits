@@ -10,22 +10,23 @@
  *
  * **WHAT THIS FILE MEASURED, STATED UP FRONT SO NOBODY READS THE PASSING CASES
  * AS AN ADOPTION.** Nine of the gate's checks pass on a run directory this
- * producer wrote. The tenth, `failing-check`, REFUSES - and that is the gate
- * working rather than the producer failing: the materialised low-boost board
- * holds all ten hard constraints and misses `A2`, the clustering bound
- * (`kappa = 0.25` against `kappa_bench = 0.05`), so its outcome is
- * *valid, below target*, which CRITERIA `G2.5` reports and does not adopt. The
- * assertions below pin that state.
+ * producer wrote, **under the committed rules**. The tenth, `failing-check`,
+ * REFUSES - and that is the gate working rather than the producer failing: the
+ * materialised low-boost board now grades `admissible` (the owner withdrew
+ * `kappa_bench` on 2026-10-16, so `A2` does not fire), and the run records
+ * `tools/stripboard/termination.ts`'s `no-search` because it swept no move set.
+ * `CRITERIA G2.5` admits a run through `exitCodeFor(outcome, rule)` over
+ * `Q1`-`Q6` and has no clause for a run that searched not at all, so the gate
+ * reports this candidate and does not adopt it. The assertions below pin that
+ * state.
  *
- * **THAT `0.05` IS NOW THE FIXTURE'S AND NOT THE COMMITTED FILE'S.** The owner
- * unset `kappa_bench` on 2026-10-16, so under the committed rules this board
- * grades **admissible** and `materializeRun` refuses to write a run at all -
- * `assertRuleNotLoadBearing`, because an admissible outcome beside `Q3` exits
- * zero and this path earns no `Q3`. `./materialize-run-fixtures.ts`'s
- * `GRADED_RULES` carries the withdrawn figure so the gate still has a run
- * directory to be driven over, `./materialize-run-perturbed.test.ts` drives the
- * refusal under the committed rules, and `docs/known-gaps.md` G25 records the
- * state it leaves adoption in.
+ * **WHAT CHANGED ON 2026-10-16, SINCE THE SHAPE OF THESE TESTS IS THE RECORD OF
+ * IT.** This file used to run under a fixture carrying the withdrawn `0.05`,
+ * because the producer recorded `Q3` and `assertRuleNotLoadBearing` then refused
+ * to write a run at all when the outcome came out `admissible`. The producer
+ * records `no-search` now, so the fixture is gone and these checks are driven
+ * over a run graded with the reviewed parameters. `docs/known-gaps.md` G25
+ * records where that leaves adoption.
  *
  * **`uncommitted-layout` IS NOT HERE AND THAT IS DELIBERATE** - it is the one
  * check about the DESTINATION rather than about the run, it lives in
@@ -161,32 +162,41 @@ test("veroroute-commit and built-commit: the pin, the record and the stamp on di
  * `failing-check` IS THE ONE THE RUN DIRECTORY DOES NOT CLEAR, and the
  * assertions below are about WHY rather than about the refusal alone.
  *
- * Reading the refusal without the figures would leave the next reader unable to
- * tell a board that does not conduct from one that conducts and is not clustered
- * tightly enough - which is the distinction `REP5`'s three outcomes exist to
- * make, in CRITERIA's own words.
+ * **THE CANDIDATE IS NOT WHAT THE GATE REFUSES.** It holds all ten hard
+ * constraints and, with `kappa_bench` withdrawn, meets every condition that
+ * fires - the outcome is `admissible`. What the gate refuses is the RUN: it
+ * swept no move set, so it records `no-search`, and `G2.5`'s admission is
+ * `exitCodeFor(outcome, rule)` over `Q1`-`Q6`. Reading the refusal without that
+ * distinction would leave the next reader believing the board is the problem.
  */
-test("failing-check: the gate refuses a candidate that is valid and below target", () => {
+test("failing-check: the gate refuses a run that performed no search", () => {
   const file = manifestPath(run)
   const manifest = readManifest(run.runDir)
-  expect(manifest.canonical.metrics.outcome, "every hard constraint holds and A2 does not").toBe(
-    "valid-below-target",
-  )
   expect(
     Object.values(manifest.canonical.metrics.constraints).every((held) => held),
     "HC1-HC10 all hold on the materialised board",
   ).toBe(true)
   expect(
-    manifest.canonical.metrics.clustering,
-    "kappa, against the 0.05 kappa_bench GRADED_RULES carries - the committed file's is unset",
-  ).toBeGreaterThan(0.05)
-  // AND KAPPA IS IN THE RECORD WHETHER A BOUND GRADES IT OR NOT: the figure is
-  // the measurement, the bound was the grading, and unsetting the bound took
-  // only the second. This is the number a later bound would be set from.
+    manifest.canonical.metrics.outcome,
+    "every hard constraint holds and no graded target is missed",
+  ).toBe("admissible")
+  // KAPPA IS IN THE RECORD WHETHER A BOUND GRADES IT OR NOT: the figure is the
+  // measurement, the bound was the grading, and unsetting the bound took only
+  // the second. This is the number a later bound would be set from.
   expect(manifest.canonical.metrics.clustering).toBeCloseTo(0.25, 10)
+  expect(
+    manifest.canonical.metrics.stoppingRule,
+    "the producer records what it did rather than the least-wrong Q-rule",
+  ).toBe("no-search")
+  expect(manifest.canonical.metrics.bound, "and therefore no bound at all").toBe("no-bound")
   expect(() => assertVerdictAdmits(manifest, file)).toThrow(/^failing-check: /)
   expect(() => assertVerdictAdmits(manifest, file)).toThrow(
-    /valid, below target|below target/,
+    /records the stopping rule "no-search", and a run recording no-search swept no move set/,
+  )
+  // AND THE REFUSAL SAYS WHOSE DECISION WOULD CHANGE IT, which is the half a
+  // refusal that only named the state would leave out.
+  expect(() => assertVerdictAdmits(manifest, file)).toThrow(
+    /NO CLAUSE OF CRITERIA SAYS WHAT A NO-SEARCH RUN MAY BE ADMITTED ON/,
   )
 })
 
@@ -196,6 +206,6 @@ test("the record carries the figures the model produced, not a second reading of
     [metrics.cuts, metrics.wires, metrics.solder],
     "the model's own 4 cuts / 4 wires / 5 bridges for low-boost",
   ).toEqual([run.best.score.cuts, run.best.score.wires, run.best.score.solder])
-  expect(metrics.stoppingRule, "the rule tools/stripboard/stop.ts returned").toBe(run.rule)
+  expect(metrics.stoppingRule, "the termination the producer recorded").toBe(run.termination)
   expect(metrics.outcome, "the outcome tools/stripboard/verdict.ts produced").toBe(run.outcome)
 })
