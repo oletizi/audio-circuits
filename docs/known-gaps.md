@@ -274,11 +274,47 @@ his to rule on. This entry is that record.
 - **Verified** yes - the controller read the counts and the labels.
 - **Why it is open** it is the owner's to confirm, and nothing else is blocked
   on it.
-- **What would settle it** the owner looks at a guide page carrying
-  `HI BOOST 100MH a` and says whether that is what he wants a coil tap to read.
-  **The weakest of them is `MID 0R45H b`** - RKM notation for 0.45H reads as a
-  BOM value rather than a panel word, and it is the one to put in front of him
-  first.
+- **SETTLED 2026-10-17: the owner was asked and declined.** Shown
+  `HI BOOST 100MH a` and told `MID 0R45H b` was the weakest of them - RKM
+  notation for 0.45H reading as a BOM value rather than a panel word - he said:
+
+  > *"i don't have a strong opinion about either"*
+
+  **So the agent's wording stands, and it stands differently than before.** The
+  invariant forbids an agent AUTHORING a criterion for its own artifact; it does
+  not forbid one standing when the owner has seen it and declined to rule. The
+  difference is the asking, and that is now on the record rather than in a
+  gitignored report.
+
+  **This entry is kept open rather than deleted**, because a declined question
+  is not a closed one: he may rule the first time he builds from one of these
+  pages and reads `MID 0R45H b` with an iron in his hand. **Nobody asks him
+  again unprompted.** If he rules later, that ruling supersedes this note and
+  the entry goes.
+
+### G42 - a rotary's detents are not in physical order on the strip, and the owner declined to constrain it
+
+On `pultec-low-boost`, `SW_LO_BOOST.6` (150Hz) sits at hole 3,26 while `.7`
+(200Hz) sits at 3,23 - the last two taps run backwards along the strip.
+Electrically irrelevant; the labels are right either way, because nothing in the
+label path reads a coordinate.
+
+It is recorded because it is the kind of thing that invites a crossed wire: a
+builder working along a six-position rotary meets one pair out of order.
+
+- **Found** `2026-10-17`, reading Task 2's ten labels against the frozen dump.
+- **Evidence** `tests/fixtures/stripboard/pultec-low-boost-frozen.dump:16-17`.
+- **Verified** yes.
+- **SETTLED 2026-10-17: the owner was asked and declined** - *"i don't have a
+  strong opinion about either"* - having been offered a placement constraint
+  that would keep a rotary's pads monotonic along its strip. **No constraint was
+  added**, which is the cheaper answer: a monotonic-pads rule would bind the
+  placer on every board to prevent a confusion nobody has yet reported making.
+- **What would settle it** a build that goes wrong here, which would be evidence
+  rather than anticipation. Until then this is a note for whoever reads a guide,
+  not a defect.
+
+### G39 - nothing checks that two poles of one gang declare the same positions, although every reader assumes they do
 
 ### G41 - a rotary's pole is recognised by the literal string `common`, and a second pole would be labelled with a frequency
 
