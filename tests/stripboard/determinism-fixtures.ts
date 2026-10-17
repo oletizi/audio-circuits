@@ -28,7 +28,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { CONSTRAINT_IDS } from "../../tools/stripboard/constraints-model.ts"
-import { A_OCC_POSITION, RANKING_POSITIONS } from "../../tools/stripboard/rank.ts"
+import { occupiedAreaOf } from "../../tools/stripboard/place-manifest.ts"
 import { boundFor, outcomeOf } from "../../tools/stripboard/report.ts"
 import type { StripboardRules } from "../../tools/stripboard/rules.ts"
 import {
@@ -321,46 +321,14 @@ export function stopStateOf(bundle: Bundle): StopState {
   }
 }
 
-/**
- * `A_occ` off the candidate's own ranking tuple, with the tuple's shape checked
- * rather than assumed.
- *
- * `Evaluation` carries no dump, so `occupiedArea(dump)` cannot be called here -
- * the figure reaches this file as the fourth position of the tuple
- * `tools/stripboard/rank.ts`'s `rankingTuple` built. The first three positions
- * ARE the score's three line counts, so holding them against the score proves
- * this tuple is that tuple: an index read off a reordered tuple would otherwise
- * put wirelength in the manifest under `A_occ`'s name and pass.
- *
- * **THE TWO CONSTANTS COME FROM `rank.ts` AND USED TO BE DECLARED HERE.**
- * `tools/stripboard/place.ts` reads the same position for the same reason, and
- * one index into one tuple with two owners is one owner too many - so the pair
- * moved to the module that builds the tuple and this file imports them.
- */
-function occupiedAreaOf(result: RunResult): number {
-  const best = result.best
-  const ranking = best.ranking
-  const expected = [best.score.cuts, best.score.wires, best.score.solder]
-  const leading = ranking.slice(0, expected.length)
-  if (ranking.length !== RANKING_POSITIONS || leading.join(",") !== expected.join(",")) {
-    throw new Error(
-      `occupiedAreaOf: this candidate's ranking tuple is [${ranking.join(", ")}], whose first ` +
-        `three positions are not this candidate's C, W and B (${expected.join(", ")}) or whose ` +
-        `length is not ${RANKING_POSITIONS}. A_occ is read from position ${A_OCC_POSITION} of ` +
-        "tools/stripboard/rank.ts's rankingTuple, and that index is only A_occ while the tuple " +
-        "is the declared one. It is NOT defaulted and the area is NOT recomputed from a dump: " +
-        "Evaluation carries none, and a figure this file derived for itself would be a second " +
-        "reading of OBJ3's term. Reorder RANKING deliberately and fix A_OCC_POSITION beside it.",
-    )
-  }
-  const area = ranking[A_OCC_POSITION]
-  if (area === undefined) {
-    throw new Error(
-      "occupiedAreaOf: the ranking tuple has no fourth position, after the length check above.",
-    )
-  }
-  return area
-}
+// `A_occ` IS READ THROUGH `tools/stripboard/place-manifest.ts`'s
+// `occupiedAreaOf` AND THIS FILE NO LONGER CARRIES ITS OWN COPY. There were
+// three of that function - here, in `place.ts`, and about to be a third in the
+// materialisation producer - all reading one index into one tuple, so it moved
+// to the module that assembles the record both producers write. Its refusal is
+// `place-ranking-shape`, which is stronger than the throw that was here: the
+// shape check is identical and the refusal now carries the id and the reason
+// `./place-model.ts` states for it.
 
 /** Every `HC1`-`HC10` verdict, keyed by id, with the ten checked for. */
 function constraintsOf(result: RunResult): Readonly<Record<string, boolean>> {
@@ -425,7 +393,7 @@ export function canonicalMetricsOf(bundle: Bundle): CanonicalMetrics {
     joins: best.score.joins,
     occupied: best.score.occupied,
     clustering: best.score.clustering,
-    occupiedArea: occupiedAreaOf(bundle.result),
+    occupiedArea: occupiedAreaOf(bundle.result.best),
     constraints: constraintsOf(bundle.result),
     ranking: best.ranking,
     stoppingRule: rule,

@@ -116,6 +116,148 @@ writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
 Open: a fix would settle these
 ------------------------------
 
+### G22 - the model search cannot run on a board that has off-board pads, so the materialisation pipeline has no search in it
+
+`lib/stripboard/search.ts` is a complete climb with its own `Q1`-`Q6`, and it
+refuses `pultec-low-boost` on its first round:
+
+```
+stripboard-moves-part-geometry-unreadable: movesFrom was handed a board carrying
+"off-board terminal", and the two things a move has to know about that part -
+whether its terminals can be formed, and how far its body reaches past its pads -
+could not be read.
+no lead span is recorded for footprint "off-board terminal" ...
+```
+
+A pads-only control is placed with `OFF_BOARD_TERMINAL` as its footprint
+(`lib/stripboard/seed-model.ts`), which is deliberately not in `LEAD_SPANS` -
+a pad is not a part with leads to bend - and `movesFrom` calls the span lookup
+for every part unconditionally. So every Pultec section, all of which declare
+`OFF_BOARD_IDS`, is a board the model search cannot climb.
+
+**The other side of the same hole:** the fork-gesture search cannot start from a
+materialised board either. `occupancyOf` (`tools/stripboard/seed-geometry.ts`)
+refuses a part facing `N` or `S`, which is most of a materialised board, so the
+`import` arm cannot read a start from one.
+
+So the pipeline that reaches a buildable Pultec board - construct a seed in the
+model, `--materialize`, grade - **contains no search at all**: it evaluates one
+constructed candidate per seed of the reviewed list and keeps the cheapest.
+That is a statement about what the recorded figures mean, not only about
+coverage.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
+- **Evidence** the refusal above, from `search(starts, setup)` over
+  `seedsFrom`'s low-boost candidate with `LEAD_SPANS` and `PIN_PATTERNS`; and
+  `occupancyOf`'s own refusal text for the facing.
+- **Verified** yes, by running the model search on low-boost. The
+  `occupancyOf` half is read off that function and off
+  `tools/stripboard/climb-model.ts`'s recorded measurement, not re-run.
+- **Why it is open** out of Task 6's scope, which was a run directory the
+  adoption gate accepts rather than a search. Inventing a span for
+  `OFF_BOARD_TERMINAL` would be the wrong fix twice over - a guessed geometry,
+  and one for a thing that has no leads.
+- **What would settle it** either a move set that skips a pad placement by
+  asking whether it is one rather than by looking up its span, or a documented
+  decision that a pad is immovable and `movesFrom` should say so by name.
+
+### G21 - `StopState` has no spelling for *there was no round*, so a run that constructs rather than climbs records `Q3` on a clause it did not earn
+
+`tools/stripboard/stop.ts`'s `q3` is `acceptedThisRound === 0 && seedsRemaining
+=== 0`, and CRITERIA states the first clause as *a full sweep of the move set
+that produced no accepted move*. `StopState.acceptedThisRound` is a plain
+`number`, so a producer with no move-set round has no way to say so and writes
+`0` - which reads as a sweep that found nothing.
+
+**`lib/stripboard/search-stop.ts` already draws this distinction and the tools
+side does not.** Its `RunCounters.acceptedThisRound` is `number | undefined`
+with a comment calling the `undefined` *"LOAD BEARING AND NOT AN ABSENT
+COUNT"*, for exactly this case: *"`Q3` would then report a search exhausted
+that never ran"*.
+
+The live instance is `tools/stripboard/materialize-run.ts`, whose run is G22's
+no-search pipeline. It records `Q3`, and its `assertRuleNotLoadBearing` refuses
+outright rather than letting that rule carry an adoption - so the unearned
+clause decides nothing today.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
+- **Evidence** `q3` in `tools/stripboard/stop.ts`, `StopState` in
+  `tools/stripboard/stop-model.ts`, and `RunCounters` in
+  `lib/stripboard/search-stop.ts` beside each other.
+- **Verified** yes, by reading all three and by driving
+  `materialize-run-rule-load-bearing` on a run whose outcome was made
+  `admissible`.
+- **Why it is open** widening `StopState` changes a type `tools/stripboard/place.ts`
+  and four test files build, and which rule a no-round run should report is a
+  criteria question rather than a typing one.
+- **What would settle it** either `acceptedThisRound: number | undefined` on
+  the tools side with `q3` refusing the `undefined` case, or a stated rule for
+  a run that does not search.
+
+### G23 - the materialised low-boost is valid and below target, so the adoption gate refuses it
+
+The board `tools/stripboard/materialize-run.ts` produces for
+`pultec-low-boost` holds **all ten hard constraints** - `HC1`-`HC10`, every net
+complete - at 4 cuts / 4 wires / 5 bridges, `F = 6.25`, extent 19 x 23 on 34 x
+27 stock. It misses `A2`: `kappa = 0.25` against the `kappa_bench = 0.05` in
+`stripboard/rules.json`. `outcomeOf` therefore reports `valid-below-target`,
+and CRITERIA `G2.5` reports that outcome and does not adopt it.
+
+**So `low-boost` cannot be adopted today, and the reason is clustering rather
+than anything in the workflow.** Nine of the gate's ten checks pass on the run
+directory; `failing-check` is the tenth.
+
+This is the state `stripboard/rules.json`'s own note predicts in those words:
+*"The first runs are expected to fail this bound and that is the intent, so a
+failure is reported as REP2 requires and must not read as a malfunction"* - and
+the note is equally clear about the adjacent wrong move: *"The obvious repair
+is to loosen the bound to admit them, and that is NOT the decision."*
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
+- **Evidence** `tests/stripboard/materialize-run.test.ts`, which produces a run
+  directory and hands it to the gate's own checks one at a time; the recorded
+  `run.json` carries `"outcome": "valid-below-target"` beside ten `true`
+  constraints.
+- **Verified** yes.
+- **Why it is open** `kappa_bench` moves only under `K3`'s ratchet, which
+  requires the binding constraint named FROM THE CONSTRAINT SIDE, and *"the
+  search did not get there"* is explicitly not an admissible cause. This run
+  names no binding constraint, so the ratchet may not move on it.
+- **What would settle it** a layout that clusters, which needs G22's search; or
+  the owner's ruling on the bound, with the constraint-side evidence `K3`
+  requires.
+
+### G24 - the adoption gate cannot re-derive `metrics.outcome`, so an edited outcome clears `failing-check`
+
+`assertVerdictAdmits` reads the outcome off `run.json` and has no candidate to
+grade it from, so a `run.json` whose `outcome` is changed to `admissible` **with
+the canonical hash recomputed** passes the check. Measured, not argued:
+`tests/stripboard/materialize-run-perturbed.test.ts` asserts the pass.
+
+`adopt-checks.ts` closed the same hole for `metrics.bound` and says why in its
+own words - *"a tamperer recomputes the hash over the values it edited, and
+`run.json` is the one artifact where the bound and the rule can disagree
+undetected"* - by re-deriving the bound from the rule. The outcome has no second
+source inside the gate: it is a function of the candidate's ten constraint
+results, its score and the targets, none of which the gate re-measures.
+
+**What stands behind it is `G4`.** `adoptLayout` runs `make check` on the board
+as adopted and reverts the copy on a non-zero exit, so a fabricated outcome does
+not by itself put a bad board in `boards/`. It does put a board the pipeline
+reported as below target there.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
+- **Evidence** the passing assertion named above, and `assertVerdictAdmits` in
+  `tools/stripboard/adopt-checks.ts`.
+- **Verified** yes.
+- **Why it is open** re-grading the candidate inside the gate means the gate
+  re-running the scorer and the ten constraints on the `.vrt`, which is a
+  different gate from the one this milestone was told not to change.
+- **What would settle it** either the gate re-deriving the outcome from the
+  recorded constraint results and score the way `verdict.ts` does - the same
+  shape as the `bound` fix, and reachable without a fork invocation - or a
+  stated decision that the producer is trusted for this one field.
+
 ### G18 - the fork's two stretch bounds disagree, so a 2-increment type can shrink below its minimum
 
 `FootPrint::CanStretch` (`Src/FootPrint.h:90-91`) permits a shrink whenever
