@@ -328,6 +328,49 @@ export function gangOf(component: Component): string | undefined {
 }
 
 /**
+ * Which switch position selects a given throw pin.
+ *
+ * The low selectors name their throws `t1`..`t6`, which says nothing at a
+ * bench. The frequency is in `contacts`, which maps a position to the contact
+ * pairs it closes, so the position that closes `common`-to-`t1` IS the label
+ * for that pad. Reading it from there rather than the pin name means the guide
+ * cannot disagree with the frequency tables the circuit is built from.
+ *
+ * **IT IS A PIN-KEYED READING OF `contacts` AND NOTHING MORE - NO ORDERING IS
+ * ASSUMED.** A detent that closes nothing simply contributes no pin, which is
+ * what makes `SW_MID_MODE`'s centre `off` correct rather than a count to
+ * reconcile: three positions, two throws, and the middle one names no pad.
+ *
+ * **A PIN IT DOES NOT NAME COMES BACK ABSENT, NOT GUESSED**, and so does every
+ * pin of a component with no `contacts` at all. Whether that absence is a dash
+ * in a table or a refusal belongs to the caller: `padTable` prints a dash
+ * because a pot has no positions to print, and `tools/guide/pad-label.ts`
+ * refuses because a wiring instruction with no word for the terminal is worse
+ * than no instruction.
+ *
+ * It lives here rather than in `./wiring.ts` because two callers read it now -
+ * that document and the guide's pad labels - and the position a pad selects must
+ * be one derivation, or a printed sheet and a printed table could disagree about
+ * which detent a wire is for.
+ */
+export function positionsByPin(component: Component): Readonly<Record<string, string>> {
+  const parameters: Record<string, unknown> = { ...component.parameters }
+  const contacts = parameters["contacts"]
+  if (!isRecord(contacts)) return {}
+  const byPin: Record<string, string> = {}
+  for (const [position, pairs] of Object.entries(contacts)) {
+    if (!Array.isArray(pairs)) continue
+    for (const pair of pairs) {
+      if (!Array.isArray(pair)) continue
+      for (const pin of pair) {
+        if (typeof pin === "string" && pin !== "common") byPin[pin] = position
+      }
+    }
+  }
+  return byPin
+}
+
+/**
  * The nets a part sits between, each labelled where a selector or coil gives it a
  * name a bench can use.
  *

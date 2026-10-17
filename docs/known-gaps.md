@@ -245,124 +245,58 @@ no builder's name to map to.
 Open: a fix would settle these
 ------------------------------
 
-### G37 - the control model names five pots and three selectors, and the five sections carry six pots, four selectors and nine inductors off the board
-
-`tools/guide/pad-label.ts` labels a pad by looking its ref up in `POTS` and
-`SELECTORS` (`circuits/pultec/electrical/controls.ts`) and REFUSES when neither
-names it, because a label falling back to the ref is the spelling the owner
-rejected. Those two lists name eight controls:
-
-| list | names |
-| --- | --- |
-| `POTS` | `RV_LO_CUT`, `RV_LO_BOOST`, `RV_HI_BOOST`, `RV_HI_Q`, `RV_HI_CUT` |
-| `SELECTORS` | `SW_LO_CUT`, `SW_LO_BOOST`, `SW_HI_CUT` |
-
-The off-board parts of the five physicalized sections, read through
-`ownComponents`, include **five more that neither list names** - `SW_HI_BOOST`
-(hi-boost), `RV_MID`, `SW_MID`, `SW_MID_MODE` (mid) - **and nine off-board
-inductors**, `L_HI_BOOST_100MH/200MH/300MH/600MH` and
-`L_MID_2H/1H/0R45H/0R22H/0R1H`. The inductors fail earlier and differently: an
-`L_` ref matches no prefix a function name can be read off, so `functionNameOf`
-refuses - an inductor is not a panel control and has no function name of that
-shape at all.
-
-**Nothing refuses today**, and that is the whole reason this is an entry rather
-than a bug: no committed `.vrt` carries an off-board pad (`grep` for `RV_`,
-`SW_` and `L_` across the five `boards/pultec-*` layout files returns nothing), so the only pads
-in the repository are `RV_LO_BOOST`'s three and `SW_LO_BOOST`'s seven on the
-low-boost fixture dumps, and all ten label. The refusal fires the day a layout
-for one of the other four sections carries its controls as pads - **see G22**,
-which is the other half of the same wall.
-
-For `SW_HI_BOOST` the frequency table already exists: `HI_BOOST_POSITIONS`
-(`controls.ts`) carries `3kHz`...`16kHz` with the Lboost column behind it. It is
-not in `SELECTORS` because that selector's throws are keyed by inductor tap, not
-by a one-per-position connector.
-
-- **Found** `2026-10-17-a-pads-wire-says-what-it-is`, Task 2.
-- **Evidence** `POTS` and `SELECTORS` as quoted; `ownComponents` for all five
-  owners printed and read; `padLabelOf`'s two refusals exercised on
-  `L_HI_BOOST_100MH` and on a ref no list names, in
-  `tests/guide/pad-label.test.ts`.
-- **Verified** yes - the implementer ran the enumeration and both refusals.
-- **Why it is open** the mid and hi-boost controls need entries transcribed from
-  a named document and page, which is a transcription job and not a widening of
-  a whitelist; and what a label for a non-control part should SAY - an off-board
-  inductor tap is not a control with a function - is an acceptance criterion
-  about the printed artifact, which the producing agent may not author.
-- **What would settle it** `POTS`/`SELECTORS` entries for the four missing
-  controls, each with its source; and an owner line on what an inductor-tap pad
-  should read.
-
-### G38 - the throw-to-position rule assumes every detent has a throw, and `SW_MID_MODE` is a real switch where one does not
-
-`padLabelOf` pairs the *i*-th throw of a selector's pad order with the *i*-th
-entry of its `positions`, and refuses when the counts differ. `SW_MID_MODE` on
-the mid section breaks that assumption without being wrong:
-
-```
-positions: ["boost", "off", "cut"]       pad order: ["common", "boost", "cut"]
-contacts:  { boost: [[common, boost]], off: [], cut: [[common, cut]] }
-```
-
-Three detents, two throws, and the middle one connects nothing - which is what
-a centre-off switch IS. So the day `SW_MID_MODE` is added to the control model
-for its pads to be labelled, the count check will refuse a correct board, and
-the refusal will be right about the counts and wrong about the board.
-
-A position's throw is already recorded per position in the component's
-`contacts` map, so the pairing could be read from there instead of by index -
-**but not as a second source today**: `buildSelectors`
-(`circuits/pultec/electrical/from-netlist.ts`) generates `contacts` and the
-throw pins `t1`...`tN` from `positions` in one loop, so for the three
-`SELECTORS` rotaries all three agree by construction rather than by agreement.
-Reading `contacts` would relocate the join, not corroborate it.
-
-- **Found** `2026-10-17-a-pads-wire-says-what-it-is`, Task 2.
-- **Evidence** `SW_MID_MODE`'s `parameters` printed from
-  `ownComponents("mid")`, quoted above; `buildSelectors` at
-  `circuits/pultec/electrical/from-netlist.ts:262-284`; `declaredOpens` in
-  `circuits/pultec/electrical/three-band.ts`, which handles the `off` mode as
-  a position with no contact.
-- **Verified** yes - read off the model, not inferred.
-- **Why it is open** `SW_MID_MODE` has no pads on any committed board (G37), so
-  nothing refuses yet, and the fix is a design choice about how a detent with no
-  throw is expressed - worth making once, with a test, rather than while
-  labelling one board.
-- **What would settle it** pairing a throw to its position through `contacts`
-  with a positions-that-connect-nothing case in the model, or a stated rule that
-  a selector's pads are labelled only where every detent has a throw.
-
 ### G39 - nothing checks that two poles of one gang declare the same positions, although every reader assumes they do
 
-`SelectorTerminals.gang` says poles sharing a gang *"must always be at the same
-position"*, and `checkGangs` (`lib/model/control-state.ts:244`) enforces exactly
-that: it compares the SELECTED position of each pole in a `ControlState`. **It
-never compares the position LISTS the two poles declare.** So
-`SW_LO_BOOST.positions` and `SW_LO_CUT.positions` are two independently
-transcribed six-entry lists that happen to be identical, and an edit to one of
-them would be caught by nothing - a selected position valid on one pole and
-absent from the other would be refused by `checkGangs` only when a simulation
-happened to select it.
+`SelectorTerminals.gang` (`circuits/pultec/electrical/controls.ts:42`) says poles
+sharing a gang *"must always be at the same position. The resolver enforces
+it."* Two checks in `lib/model/control-state.ts` stand behind that sentence and
+**neither compares the position LISTS the poles declare**:
 
-`tools/guide/pad-label.ts` is written not to care: it reads a label off the
-selector's own entry, by its own ref, and a test
-(`tests/guide/pad-label.test.ts`, *"a pole's label does not move when its gang
-partner's positions change"*) drives divergent poles to prove it. The gap is in
-the model, not the label.
+- `checkGangs` (`:244-256`) compares the SELECTED position of each pole in a
+  `ControlState` and refuses *"Ganged switches disagree"*;
+- `validateControlState` (`:206-240`) refuses *"Unknown switch position"*
+  (`:224`) when a selected position is not in that one switch's own `positions`.
+
+So `SW_LO_BOOST.positions` and `SW_LO_CUT.positions` are two independently
+transcribed six-entry lists - the Cboost and the Ccut column of
+`P3bandDoc.pdf` p4 - that happen to be identical, and an edit to one of them is
+caught only if a simulation happens to select a position the edited pole no
+longer declares.
+
+**Measured, by a check that could have failed.** `SW_LO_CUT`'s positions were
+rewritten in `THREE_BAND_REFERENCE` and the network resolved at a state the
+committed model is validated at (`loFrequency: "60Hz"`), three times:
+
+```
+baseline, both poles as committed: RESOLVED, no refusal
+A: SW_LO_CUT declares a DIFFERENT six-entry list that still contains the selected 60Hz: RESOLVED, no refusal
+B: SW_LO_CUT no longer declares the selected 60Hz at all: REFUSED - Unknown switch position: SW_LO_CUT=60Hz
+```
+
+**A is the gap**: one pole of the low gang reading `1Hz, 2Hz, 60Hz, 4Hz, 5Hz,
+6Hz` against the other's `20Hz ... 200Hz` resolves silently. B shows which guard
+does fire and that it is `validateControlState`'s per-switch check, not the gang
+one - and only for the one position being simulated.
 
 It is also not enumerable as it stands: `SW_HI_BOOST` carries
-`gang: HI_FREQUENCY_GANG` and is not in `SELECTORS` at all, so *"the members of
-the hi-frequency gang"* cannot be answered from `SELECTORS` alone.
+`gang: HI_FREQUENCY_GANG` (`buildHiBoostSelector`,
+`circuits/pultec/electrical/from-netlist.ts:237`) and has no `SELECTORS` entry,
+so *"the members of the hi-frequency gang"* cannot be answered from `SELECTORS`
+alone.
 
-- **Found** `2026-10-17-a-pads-wire-says-what-it-is`, Task 2 - the dispatch
-  asked whether a gang's poles always agree, so it was checked rather than
-  assumed.
-- **Evidence** `checkGangs` at `lib/model/control-state.ts:244-256`, which reads
-  `state.switchPositions[sw.id]` and nothing else; the `gang` field's own
-  comment at `circuits/pultec/electrical/controls.ts:42`; `buildHiBoostSelector`
-  giving `SW_HI_BOOST` a gang without a `SELECTORS` entry.
-- **Verified** yes - read both call sites.
+**The printed guide is immune by construction**, which is why this is a model
+entry and not a label one: `tools/guide/pad-label.ts` labels a pad from the
+component's own `contacts` through `positionsByPin`, so no derivation anywhere
+in the label path reads one pole while printing the other.
+
+- **Found** `2026-10-17-a-pads-wire-says-what-it-is`, Task 2 - the dispatch asked
+  whether a gang's poles always agree, so it was checked rather than assumed.
+- **Evidence** the three runs above, method stated: mutate one pole's
+  `positions` in `THREE_BAND_REFERENCE`, call `resolveNetwork` with
+  `controlState(1, 1, 1, { loFrequency: "60Hz", hiFrequency: "3kHz", mid:
+  "200Hz" })`, and report whether it refuses. Plus `checkGangs` and
+  `validateControlState` read at the lines cited.
+- **Verified** yes - run, not inferred.
 - **Why it is open** no artifact is wrong because of it today, and the fix is a
   check in the control model rather than in the guide, which is not this plan's
   file.

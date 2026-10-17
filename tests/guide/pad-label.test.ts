@@ -1,52 +1,40 @@
 /**
- * Task 2: the whole label a pad's wire carries - the control's function, and
- * what the terminal IS - joined from the two sources that state those things.
+ * Task 2: the whole label a pad's wire carries - which part it is, and what the
+ * terminal this pad lands IS.
  *
- * **THE JOIN UNDER TEST IS BY INDEX, WHICH IS WHY THIS FILE EXISTS.** The pad
- * order (`padOrderFor`, `circuits/pultec/physical/parts.ts`) names a rotary's
- * throws `t1`...`t6`; `SELECTORS` (`circuits/pultec/electrical/controls.ts`)
- * says what each selects. Matching them is only admissible while the counts
- * agree, and the disagreement test below is the one that matters: a frequency
- * against the wrong detent reads as an ordinary instruction and sends a wire to
- * the wrong lug.
- *
- * **WHY THE DISAGREEMENT IS DRIVEN THROUGH A HAND-BUILT MODEL AND COULD NOT BE
- * DRIVEN ANY OTHER WAY.** `buildSelectors`
- * (`circuits/pultec/electrical/from-netlist.ts`) generates a selector's throw
- * pins FROM its `positions` list, so a committed selector's pad order and its
- * positions cannot disagree, and no real component can make the count check
- * fire. A guard nobody can make fire is a guard nobody knows works, which is
- * why `padLabelOf` takes the model it consults.
+ * **THE LABEL IS DERIVED FROM THE COMPONENT, NOT FROM A LIST OF REFS.** The
+ * function name comes off the ref, the terminal off `padOrderFor`, and what a
+ * switch terminal selects off the component's own `contacts` through
+ * `positionsByPin` (`lib/board/part-text.ts`), which is the derivation the
+ * committed `boards/pultec-mid/wiring.md` has printed all along. There is no
+ * index join between a pad order and a positions list, so there is no count to
+ * check and no whitelist to be absent from - the first version of this file had
+ * all three and could not label `SW_MID_MODE`, whose centre `off` detent closes
+ * nothing. Those tests are deleted with the mechanism they guarded.
  *
  * **EVERY COMPONENT HERE IS A REAL ONE**, read off the physicalized sections
- * through `ownComponents`, so the pin counts and throw names the expectations
- * rest on are the ones `padOrderFor` itself sees - not a fixture shaped to
- * agree with this file's reading of the rule. The only hand-built things are
- * the DISAGREEING control models, which is the fault being driven, and
- * `SW_UNKNOWN`, which is a real rotary with its ref changed - exactly the case
- * under test and nothing else.
+ * through `ownComponents`, so the pin counts, throw names and contacts the
+ * expectations rest on are the ones the guide itself sees - not a fixture shaped
+ * to agree with this file's reading of the rule. The only hand-built thing is a
+ * real switch with its `contacts` emptied, which is the fault being driven.
  *
- * **EVERY EXPECTED FREQUENCY IS READ OUT OF `SELECTORS`, NOT TYPED IN**, except
- * the one in the headline test the plan states verbatim (`LO BOOST 60Hz`). A
- * test that typed its own frequency table would pass against an implementation
- * that had invented one.
+ * **THE FREQUENCIES ARE CHECKED AGAINST AN INDEPENDENT SOURCE.** The code reads
+ * `contacts`; the sweep below compares what it produces against `SELECTORS` and
+ * `HI_BOOST_POSITIONS` in `circuits/pultec/electrical/controls.ts`, the
+ * transcribed tables with the document and page behind them. Two derivations
+ * agreeing is evidence; a test reading the same map the code reads would be
+ * none.
  */
 import { test, expect } from "bun:test"
 import type { Component } from "../../lib/model/types.ts"
 import { ownComponents, padOrderFor } from "../../circuits/pultec/physical/parts.ts"
-import {
-  SELECTORS,
-  LO_FREQUENCY_GANG,
-  type SelectorTerminals,
-} from "../../circuits/pultec/electrical/controls.ts"
-import {
-  PULTEC_CONTROLS,
-  functionNameOf,
-  padLabelOf,
-  type ControlModel,
-} from "../../tools/guide/pad-label.ts"
+import { OFF_BOARD } from "../../circuits/pultec/off-board.ts"
+import { HI_BOOST_POSITIONS, SELECTORS } from "../../circuits/pultec/electrical/controls.ts"
+import { functionNameOf, padLabelOf } from "../../tools/guide/pad-label.ts"
 
 type Owner = "low-boost" | "low-cut" | "hi-boost" | "hi-cut" | "mid"
+
+const OWNERS: readonly Owner[] = ["low-boost", "low-cut", "hi-boost", "hi-cut", "mid"]
 
 function componentOf(owner: Owner, id: string): Component {
   const found = ownComponents(owner).find((component) => component.id === id)
@@ -56,48 +44,17 @@ function componentOf(owner: Owner, id: string): Component {
   return found
 }
 
-function potComponent(id: string): Component {
-  const component = componentOf("low-boost", id)
-  if (component.kind !== "potentiometer") {
-    throw new Error(`"${id}" is a "${component.kind}", not the potentiometer this test needs`)
+function kindOf(owner: Owner, id: string, kind: Component["kind"]): Component {
+  const component = componentOf(owner, id)
+  if (component.kind !== kind) {
+    throw new Error(`"${id}" is a "${component.kind}", not the "${kind}" this test needs`)
   }
   return component
 }
 
-function rotaryComponent(id: string): Component {
-  const component = componentOf("low-boost", id)
-  if (component.kind !== "switch") {
-    throw new Error(`"${id}" is a "${component.kind}", not the rotary switch this test needs`)
-  }
-  return component
-}
-
-/** The real low-boost rotary under a ref no control model names. */
-function unknownRotary(): Component {
-  return { ...rotaryComponent("SW_LO_BOOST"), id: "SW_UNKNOWN" }
-}
-
-function selectorEntry(ref: string): SelectorTerminals {
-  const found = SELECTORS.find((selector) => selector.ref === ref)
-  if (found === undefined) throw new Error(`SELECTORS does not name "${ref}"`)
-  return found
-}
-
-/** The committed model with one selector's positions replaced - the fault driven. */
-function withPositions(
-  controls: ControlModel,
-  ref: string,
-  positions: readonly string[],
-): ControlModel {
-  const named = controls.selectors.filter((selector) => selector.ref === ref)
-  if (named.length !== 1) {
-    throw new Error(`expected exactly one selector named "${ref}", found ${named.length}`)
-  }
-  return {
-    pots: controls.pots,
-    selectors: controls.selectors.map((selector) =>
-      selector.ref === ref ? { ...selector, positions } : selector),
-  }
+/** Every pad of one component, labelled, in pad order. */
+function labelsOf(component: Component): readonly string[] {
+  return padOrderFor(component).map((_, index) => padLabelOf(component, String(index + 1)))
 }
 
 function messageFrom(call: () => string): string {
@@ -110,139 +67,25 @@ function messageFrom(call: () => string): string {
 }
 
 test("a rotary throw is labelled with the frequency it selects", () => {
-  expect(padLabelOf(rotaryComponent("SW_LO_BOOST"), "4", PULTEC_CONTROLS)).toBe("LO BOOST 60Hz")
+  expect(padLabelOf(kindOf("low-boost", "SW_LO_BOOST", "switch"), "4")).toBe("LO BOOST 60Hz")
 })
 
 test("a pot lug is labelled with the control and the lug", () => {
-  expect(padLabelOf(potComponent("RV_LO_BOOST"), "2", PULTEC_CONTROLS)).toBe("LO BOOST wiper")
-  expect(padLabelOf(potComponent("RV_LO_BOOST"), "1", PULTEC_CONTROLS)).toBe("LO BOOST ccw")
-  expect(padLabelOf(potComponent("RV_LO_BOOST"), "3", PULTEC_CONTROLS)).toBe("LO BOOST cw")
+  const pot = kindOf("low-boost", "RV_LO_BOOST", "potentiometer")
+  expect(padLabelOf(pot, "2")).toBe("LO BOOST wiper")
+  expect(labelsOf(pot)).toEqual(["LO BOOST ccw", "LO BOOST wiper", "LO BOOST cw"])
 })
 
 test("a rotary's first pad is its pole, labelled the pole and not a frequency", () => {
-  expect(padLabelOf(rotaryComponent("SW_LO_BOOST"), "1", PULTEC_CONTROLS)).toBe("LO BOOST common")
+  expect(padLabelOf(kindOf("low-boost", "SW_LO_BOOST", "switch"), "1")).toBe("LO BOOST common")
 })
 
-/** The off-by-one in the JOIN, which the headline test alone would not catch:
- * pin 2 is the FIRST position and pin 7 the last, because pin 1 is the pole. */
-test("every throw takes the position SELECTORS puts at its own index", () => {
-  const rotary = rotaryComponent("SW_LO_BOOST")
-  const positions = selectorEntry("SW_LO_BOOST").positions
-  expect(padOrderFor(rotary).length, "the premise: a pole and six throws").toBe(positions.length + 1)
-  const labels = positions.map((_, index) => padLabelOf(rotary, String(index + 2), PULTEC_CONTROLS))
-  expect(labels).toEqual(positions.map((position) => `LO BOOST ${position}`))
-})
-
-test("a selector whose positions and throws disagree in count refuses", () => {
-  const short = withPositions(PULTEC_CONTROLS, "SW_LO_BOOST", ["20Hz", "30Hz"])
-  expect(() => padLabelOf(rotaryComponent("SW_LO_BOOST"), "4", short))
-    .toThrow(/six throws .* two positions/)
-})
-
-test("the count refusal names both counts, both sources, and what a wrong detent does", () => {
-  const long = withPositions(PULTEC_CONTROLS, "SW_LO_BOOST",
-    [...selectorEntry("SW_LO_BOOST").positions, "400Hz"])
-  const message = messageFrom(() => padLabelOf(rotaryComponent("SW_LO_BOOST"), "4", long))
-  expect(message, "names the selector").toContain("SW_LO_BOOST")
-  expect(message, "both counts, in words").toMatch(/six throws .* seven positions/)
-  expect(message, "names the pad order's source").toContain("rotaryPadOrder")
-  expect(message, "names the positions' source").toContain("controls.ts")
-  expect(message, "quotes the transcription's provenance")
-    .toContain(selectorEntry("SW_LO_BOOST").source)
-  expect(message, "refuses to truncate or pad").toContain("neither is padded")
-  expect(message, "says what a wrong detent costs").toContain("wrong lug")
-})
-
-/** The pole's pad refuses on the same disagreement. One pad that happened to
- * work would hide a selector whose two sources do not line up. */
-test("the pole's pad refuses too when the counts disagree", () => {
-  const short = withPositions(PULTEC_CONTROLS, "SW_LO_BOOST", ["20Hz", "30Hz"])
-  expect(() => padLabelOf(rotaryComponent("SW_LO_BOOST"), "1", short))
-    .toThrow(/pad-label-detent-count/)
-})
-
-test("a control the model does not name refuses rather than printing its ref", () => {
-  expect(() => padLabelOf(unknownRotary(), "1", PULTEC_CONTROLS)).toThrow(/SW_UNKNOWN/)
-})
-
-test("the unknown-control refusal names both lists and says why the ref is not used", () => {
-  const message = messageFrom(() => padLabelOf(unknownRotary(), "1", PULTEC_CONTROLS))
-  expect(message, "names the pads it cannot label").toContain("SW_UNKNOWN.1")
-  expect(message, "names what POTS holds").toContain("RV_LO_BOOST")
-  expect(message, "names what SELECTORS holds").toContain("SW_LO_CUT")
-  expect(message, "says the ref is not a fallback").toContain("NOT labelled with its ref")
-  expect(message, "says where to add the control").toContain("controls.ts")
-})
-
-/** A real off-board part with no control prefix: the hi-boost inductors. */
-test("a ref with no known prefix refuses rather than printing itself", () => {
-  const inductor = componentOf("hi-boost", "L_HI_BOOST_100MH")
-  expect(inductor.kind, "the premise: a real off-board inductor").toBe("inductor")
-  const message = messageFrom(() => padLabelOf(inductor, "1", PULTEC_CONTROLS))
-  expect(message, "names the ref").toContain("L_HI_BOOST_100MH")
-  expect(message, "names the prefixes a name can be read off").toContain("RV_, SW_")
-  expect(message, "says the ref is not printed raw").toContain("NOT printed raw")
-})
-
-test("a function name is the ref with its prefix dropped and underscores as spaces", () => {
-  expect(functionNameOf("RV_LO_BOOST")).toBe("LO BOOST")
-  expect(functionNameOf("SW_LO_BOOST")).toBe("LO BOOST")
-  expect(functionNameOf("RV_HI_Q")).toBe("HI Q")
-  expect(() => functionNameOf("RV_")).toThrow(/pad-label-unprefixed-ref/)
-})
-
-/** A pot listed as a selector: its pad order starts with a lug, not a pole.
- * `RV_MID` is a real pot that `POTS` does not name, so it reaches the selector
- * branch without tripping the in-both-lists refusal first. */
-test("a selector whose pad order does not start with the pole refuses", () => {
-  const pot = componentOf("mid", "RV_MID")
-  expect(pot.kind, "the premise: a real potentiometer").toBe("potentiometer")
-  expect(PULTEC_CONTROLS.pots.some((entry) => entry.ref === "RV_MID"),
-    "the premise: POTS does not name it").toBe(false)
-  const miscast: ControlModel = {
-    pots: PULTEC_CONTROLS.pots,
-    selectors: [...PULTEC_CONTROLS.selectors, { ...selectorEntry("SW_LO_BOOST"), ref: "RV_MID" }],
-  }
-  const message = messageFrom(() => padLabelOf(pot, "1", miscast))
-  expect(message, "names the refusal").toContain("pad-label-no-common")
-  expect(message, "names the pad order it found").toContain("ccw, wiper, cw")
-})
-
-test("a control named as both a pot and a selector refuses rather than picking one", () => {
-  const both: ControlModel = {
-    pots: PULTEC_CONTROLS.pots,
-    selectors: [...PULTEC_CONTROLS.selectors,
-      { ...selectorEntry("SW_LO_BOOST"), ref: "RV_LO_BOOST" }],
-  }
-  const message = messageFrom(() => padLabelOf(potComponent("RV_LO_BOOST"), "2", both))
-  expect(message, "names the refusal").toContain("pad-label-control-in-both-lists")
-  expect(message, "names the control").toContain("RV_LO_BOOST")
-})
-
-/** A label is read off the selector's OWN entry. Both poles of the low
- * frequency gang declare the same positions today and nothing in the model
- * requires it, so a label that reached for the gang partner's list would be
- * wrong on one of the five boards the day they diverge. */
-test("a pole's label does not move when its gang partner's positions change", () => {
-  const boost = selectorEntry("SW_LO_BOOST")
-  const cut = selectorEntry("SW_LO_CUT")
-  expect(boost.gang, "the premise: one shaft").toBe(LO_FREQUENCY_GANG)
-  expect(cut.gang, "the premise: the other pole of it").toBe(LO_FREQUENCY_GANG)
-  const divergent = withPositions(PULTEC_CONTROLS, "SW_LO_CUT",
-    ["1Hz", "2Hz", "3Hz", "4Hz", "5Hz", "6Hz"])
-  expect(padLabelOf(rotaryComponent("SW_LO_BOOST"), "4", divergent)).toBe("LO BOOST 60Hz")
-  expect(padLabelOf(componentOf("low-cut", "SW_LO_CUT"), "4", divergent)).toBe("LO CUT 3Hz")
-})
-
-/** The ten pads of `pultec-low-boost`, labelled - the board the plan's printed
- * packet is read off. The refs and pins are the ones its frozen dump carries on
- * its `PAD ... FROM <ref>.<pin>` lines. */
+/** The ten pads of `pultec-low-boost`, which is the board the printed packet is
+ * read off. Unchanged by the move from an index join to `contacts`. */
 test("the ten pads of the low-boost board each get a label a builder can act on", () => {
-  const pot = potComponent("RV_LO_BOOST")
-  const rotary = rotaryComponent("SW_LO_BOOST")
   const labels = [
-    ...["1", "2", "3"].map((pin) => padLabelOf(pot, pin, PULTEC_CONTROLS)),
-    ...["1", "2", "3", "4", "5", "6", "7"].map((pin) => padLabelOf(rotary, pin, PULTEC_CONTROLS)),
+    ...labelsOf(kindOf("low-boost", "RV_LO_BOOST", "potentiometer")),
+    ...labelsOf(kindOf("low-boost", "SW_LO_BOOST", "switch")),
   ]
   expect(labels).toEqual([
     "LO BOOST ccw", "LO BOOST wiper", "LO BOOST cw",
@@ -250,4 +93,139 @@ test("the ten pads of the low-boost board each get a label a builder can act on"
     "LO BOOST 20Hz", "LO BOOST 30Hz", "LO BOOST 60Hz",
     "LO BOOST 100Hz", "LO BOOST 150Hz", "LO BOOST 200Hz",
   ])
+})
+
+/** THE CASE THE INDEX JOIN COULD NOT DO. `SW_MID_MODE` declares three positions
+ * and carries two throws, because the centre `off` closes nothing - which is
+ * what a centre-off switch IS, not a disagreement to reconcile. The committed
+ * `boards/pultec-mid/wiring.md` prints exactly this: pad 1 common with a dash,
+ * pad 2 boost, pad 3 cut. */
+test("a centre-off switch labels its two throws and needs no entry for the detent that closes nothing", () => {
+  const mode = kindOf("mid", "SW_MID_MODE", "switch")
+  expect(mode.parameters, "the premise: three positions declared")
+    .toMatchObject({ positions: ["boost", "off", "cut"] })
+  expect(padOrderFor(mode).length, "the premise: a pole and two throws").toBe(3)
+  expect(labelsOf(mode)).toEqual(["MID MODE common", "MID MODE boost", "MID MODE cut"])
+})
+
+/** `SW_HI_BOOST`, `SW_MID` and `RV_MID` are in no `POTS`/`SELECTORS` entry, and
+ * the first version of this file refused all three. */
+test("a control no transcribed control list names is labelled from its own contacts", () => {
+  expect(SELECTORS.some((entry) => entry.ref === "SW_HI_BOOST"),
+    "the premise: SELECTORS does not name it").toBe(false)
+  expect(labelsOf(kindOf("hi-boost", "SW_HI_BOOST", "switch"))).toEqual([
+    "HI BOOST common",
+    ...HI_BOOST_POSITIONS.map((position) => `HI BOOST ${position.label}`),
+  ])
+  expect(labelsOf(kindOf("mid", "RV_MID", "potentiometer")))
+    .toEqual(["MID ccw", "MID wiper", "MID cw"])
+  const mid = labelsOf(kindOf("mid", "SW_MID", "switch"))
+  expect(mid.length, "a pole and eleven throws").toBe(12)
+  expect(mid[0]).toBe("MID common")
+  expect(mid[1]).toBe("MID 200Hz")
+  expect(mid[11]).toBe("MID 7kHz")
+})
+
+/** The committed hi-boost and mid layouts carry inductor pads - four coils and
+ * five, two pads each - so a guide that refused them would print no page for
+ * either board. */
+test("an off-board coil's pads are labelled with the coil and its end", () => {
+  expect(labelsOf(kindOf("hi-boost", "L_HI_BOOST_100MH", "inductor")))
+    .toEqual(["HI BOOST 100MH a", "HI BOOST 100MH b"])
+  expect(labelsOf(kindOf("mid", "L_MID_0R45H", "inductor")))
+    .toEqual(["MID 0R45H a", "MID 0R45H b"])
+})
+
+/**
+ * THE SWEEP, and it is the check that replaces a known-gaps entry whose
+ * "verified" rested on an ASCII grep of the binary `.vrt` files - a check
+ * structurally incapable of failing. This one can: every off-board pad of all
+ * five committed sections is labelled, and the frequencies are compared against
+ * the transcribed tables rather than against the map the code read. A ref the
+ * rule cannot name, a switch terminal `contacts` does not cover, or a frequency
+ * that disagrees with `SELECTORS` fails here.
+ */
+test("every off-board pad of all five sections labels, and the frequencies match the transcribed tables", () => {
+  const expectedPads: Readonly<Record<Owner, number>> = {
+    "low-boost": 10, "low-cut": 10, "hi-boost": 21, "hi-cut": 10, mid: 28,
+  }
+  const transcribed = new Map<string, readonly string[]>([
+    ...SELECTORS.map((entry): [string, readonly string[]] => [entry.ref, entry.positions]),
+    ["SW_HI_BOOST", HI_BOOST_POSITIONS.map((position) => position.label)],
+  ])
+  let pads = 0
+  for (const owner of OWNERS) {
+    const offBoard = ownComponents(owner).filter((component) => OFF_BOARD.has(component.id))
+    let ownPads = 0
+    for (const component of offBoard) {
+      const labels = labelsOf(component)
+      ownPads += labels.length
+      const functionName = functionNameOf(component.id)
+      for (const label of labels) {
+        expect(label.startsWith(`${functionName} `), `"${label}" names its part`).toBe(true)
+        expect(label.length, `"${label}" says more than the part`)
+          .toBeGreaterThan(functionName.length + 1)
+      }
+      const positions = transcribed.get(component.id)
+      if (positions === undefined) continue
+      expect(labels.slice(1), `${component.id}'s throws, against the transcribed table`)
+        .toEqual(positions.map((position) => `${functionName} ${position}`))
+    }
+    expect(ownPads, `${owner}'s off-board pad count`).toBe(expectedPads[owner])
+    pads += ownPads
+  }
+  expect(pads, "79 off-board pads across the five sections").toBe(79)
+})
+
+test("a switch terminal nothing in its contacts closes onto refuses", () => {
+  const rotary = kindOf("low-boost", "SW_LO_BOOST", "switch")
+  const uncontacted: Component = {
+    ...rotary,
+    parameters: { positions: ["20Hz"], contacts: { "20Hz": [["common", "t1"]] } },
+  }
+  expect(padLabelOf(uncontacted, "2"), "the throw its contacts DO name").toBe("LO BOOST 20Hz")
+  const message = messageFrom(() => padLabelOf(uncontacted, "4"))
+  expect(message, "names the refusal").toContain("pad-label-unselected-throw")
+  expect(message, "names the switch").toContain("SW_LO_BOOST")
+  expect(message, "names the terminal").toContain('"t3"')
+  expect(message, "names what the contacts do cover").toContain("t1")
+  expect(message, "says the pin name is not a label").toContain("NOT labelled with its pin name")
+  expect(message, "says where to fix it").toContain("from-netlist.ts")
+})
+
+/** The pole is named by the pad order, not by `contacts`, so it labels even on a
+ * switch whose contacts are empty - every position closes onto it, which is why
+ * no one position names it. */
+test("the pole labels without any contacts at all", () => {
+  const rotary = kindOf("low-boost", "SW_LO_BOOST", "switch")
+  const empty: Component = { ...rotary, parameters: { positions: [], contacts: {} } }
+  expect(padLabelOf(empty, "1")).toBe("LO BOOST common")
+  expect(() => padLabelOf(empty, "2")).toThrow(/no terminals at all/)
+})
+
+/** A real on-board part: a pad for one would carry a ref with no control
+ * prefix, and there is no function to print for it. */
+test("a ref with no known prefix refuses rather than printing itself", () => {
+  const capacitor = kindOf("low-boost", "C18", "capacitor")
+  const message = messageFrom(() => padLabelOf(capacitor, "1"))
+  expect(message, "names the ref").toContain("C18")
+  expect(message, "names the prefixes a name can be read off").toContain("RV_, SW_, L_")
+  expect(message, "says the ref is not printed raw").toContain("NOT printed raw")
+  expect(message, "says where a prefix is added").toContain("FUNCTION_PREFIXES")
+})
+
+test("a function name is the ref with its prefix dropped and underscores as spaces", () => {
+  expect(functionNameOf("RV_LO_BOOST")).toBe("LO BOOST")
+  expect(functionNameOf("SW_LO_BOOST")).toBe("LO BOOST")
+  expect(functionNameOf("RV_HI_Q")).toBe("HI Q")
+  expect(functionNameOf("L_MID_2H")).toBe("MID 2H")
+  expect(() => functionNameOf("RV_")).toThrow(/pad-label-unprefixed-ref/)
+  expect(() => functionNameOf("R_MID_SHUNT")).toThrow(/pad-label-unprefixed-ref/)
+})
+
+/** A pin outside the pad order is Task 1's refusal, reached through this one -
+ * the label path adds no second reading of a pin number. */
+test("a pin outside the component's pad order refuses through terminalNameOf", () => {
+  expect(() => padLabelOf(kindOf("low-boost", "RV_LO_BOOST", "potentiometer"), "4"))
+    .toThrow(/pad order/)
 })
