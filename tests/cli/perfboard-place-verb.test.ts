@@ -18,7 +18,7 @@ import { runCli } from "../../tools/cli/perfboard.ts"
 import type { PlaceRun, SeedSweep } from "../../tools/stripboard/place.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
 import { LOW_BOOST } from "../stripboard/stop-fixtures.ts"
-import { clusteredCandidate, runResult } from "../stripboard/report-fixtures.ts"
+import { BOUNDED_RULES, clusteredCandidate, runResult } from "../stripboard/report-fixtures.ts"
 
 /**
  * A `PlaceRun` built from the report fixtures' own run, so the verb is driven
@@ -152,6 +152,13 @@ test("place prints the report and takes its exit code from the verdict it printe
   // disagreement deliberately - `outcome` says valid-below-target and the
   // candidate is clustered, which grades to the same thing - and the assertions
   // hold the printed line and the code together.
+  //
+  // THE BOUND IS THE FIXTURE'S. The committed `kappa_bench` is unset on the
+  // owner's ruling of 2026-10-16, so A2 does not fire there and no candidate
+  // can reach `valid-below-target` through it - and this test is about where
+  // the exit code comes from, not about what the committed bound is. So the run
+  // and the verb's own `loadRules` both carry `BOUNDED_RULES`: a bound in only
+  // one of them would be the very disagreement the verb was fixed to prevent.
   const search = { ...runResult(), best: clusteredCandidate() }
   const lines: string[] = []
   const code = await runCli(["place", "--seed-arm", "import"], {
@@ -159,8 +166,9 @@ test("place prints the report and takes its exit code from the verdict it printe
     log: (line) => lines.push(line),
     error: () => {},
     placeDeps: {
-      place: async () => placeRun({ search, best: search.best, rule: "Q3" }),
-      loadRules,
+      place: async () =>
+        placeRun({ search, best: search.best, rule: "Q3", rules: BOUNDED_RULES }),
+      loadRules: () => BOUNDED_RULES,
     },
   })
   expect(code).toBe(1)

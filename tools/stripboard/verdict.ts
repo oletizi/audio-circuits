@@ -28,8 +28,8 @@
  * argued, because it is the case that produced it: `kappa = J/(P - N)` divides
  * by the splitting available and `A3`'s tolerance divides by `F_0 - F_floor`,
  * so the two scale independently. With `P - N = 10` a single unit of `J` is a
- * clustering of one tenth - TWICE the committed bound of one twentieth, so
- * `A2` FAILS - while with `F_0 - F_floor = 40` that same unit of `J` is a gap
+ * clustering of one tenth - TWICE a bound of one twentieth, so `A2` FAILS
+ * against one - while with `F_0 - F_floor = 40` that same unit of `J` is a gap
  * of one fortieth, INSIDE a tolerance of one twentieth, so `A3` HOLDS. `A1`
  * holds on it too. A `Q2` guarded by `A1` alone stops the run there, which is
  * exactly what CRITERIA forbids.
@@ -38,9 +38,12 @@
  *
  * - `A1` is `a1` from `./grade.ts`, the one implementation of the ten hard
  *   constraints, and it refuses a result set that is not exactly the ten ids.
- * - `A2`'s bound is `rules.kappaBench` and the measured `kappa` is
- *   `score.clustering`, which `./score.ts` computed through `./targets.ts`'s
- *   one implementation of `kappa`.
+ * - `A2`'s bound is `rules.kappaBench`, **which is `null` by the owner's ruling
+ *   (`K2`) and has no default**, and the measured `kappa` is `score.clustering`,
+ *   through `./targets.ts`'s one implementation of it. While the bound is
+ *   `null`, `A2` does not fire, exactly as `A3` does not while `tau` is: it
+ *   reports the measured `kappa` rather than grading it, no number is
+ *   substituted, and **the GRADING went, not the MEASUREMENT** (`conditionTwo`).
  * - `A3`'s tolerance is `rules.tau`, **which is `null` by the owner's decision
  *   (`K4`) and has no default.** While it is `null`, *"`Q2` and `A3` do not
  *   fire"*: `A3` reports the gap rather than grading it, and the verdict rests
@@ -119,7 +122,8 @@ export interface AdmissibilityInput {
 }
 
 /**
- * `A3`'s verdict, which is THREE-VALUED because the condition is.
+ * The verdict of a condition whose THRESHOLD MAY BE UNSET, which makes it
+ * three-valued. `A2` and `A3` are both such conditions.
  *
  * **A BOOLEAN ERASED THE DISTINCTION THAT MATTERS.** While `tau` is `null`,
  * `A3` *"does not fire"* (`K4`) - it neither holds nor fails, and it does not
@@ -127,13 +131,17 @@ export interface AdmissibilityInput {
  * were separable only by reading a string, and `REP5`'s *"valid, below target"*
  * taxonomy is exactly the place that distinction has to survive: a run must not
  * report a target met that it never graded. So the fact is carried in the type.
+ *
+ * **`A2` BECAME THREE-VALUED FOR THE SAME REASON** when the owner's ruling
+ * unset `kappa_bench`: left a `boolean`, it would have printed `A2 held` on
+ * every run under an unset bound - a target reported as met that nothing graded.
  */
 export type ConditionThree = "held" | "failed" | "not-evaluated"
 
 /** Each condition's verdict, and what it was read from. */
 export interface AdmissibilityResult {
   readonly a1: boolean
-  readonly a2: boolean
+  readonly a2: ConditionThree
   readonly a3: ConditionThree
   readonly a4: boolean
   readonly detail: Readonly<Record<"a1" | "a2" | "a3" | "a4", string>>
@@ -291,20 +299,39 @@ function bindingWording(binding: BindingConstraint | undefined): string {
 /**
  * `A2`: `kappa <= kappa_bench` (`K2`).
  *
- * IT CANNOT REFUSE A LAYOUT AT THE FLOOR, whatever `kappa_bench` is, because
- * `C = C_floor` requires `J = 0` and so `kappa = 0` - and `./rules.ts` refuses
- * a `kappaBench` of zero for exactly that reason. **That is what bounds the
- * damage an aggressive bound can do, and it is all it bounds**: the bound is
- * deliberately set past the best demonstrated hand result, so failing it is the
- * expected early outcome and a failure must name the binding constraint rather
- * than merely the gap.
+ * **WHILE `kappa_bench` IS `null` THIS REPORTS AND DOES NOT GRADE**, which is
+ * the owner's ruling and the same shape `A3` has had under an unset `tau`. He
+ * was shown the materialised low-boost board, refused at `kappa = 0.25` against
+ * a bound of `0.05`, and ruled: *"i prefer the loose layout. It's much easier
+ * to build. I don't see the problem"* and *"if the layout is electrically
+ * correct, let's keep it. It looks fine to me"*. The withdrawn bound was an
+ * agent's number and sat below all four boards he has actually built. The whole
+ * record is `kappaBench`'s note in `stripboard/rules.json`; no figure is
+ * substituted here, and the verdict rests on `A1`, `A3` and `A4`.
+ *
+ * **`kappa` IS STILL MEASURED AND STILL IN THE DETAIL** on the unset path: the
+ * bound was the grading, `kappa` is the measurement.
+ *
+ * With a bound set, IT CANNOT REFUSE A LAYOUT AT THE FLOOR, whatever
+ * `kappa_bench` is, because `C = C_floor` requires `J = 0` and so `kappa = 0` -
+ * and `./rules.ts` refuses a `kappaBench` of zero for that reason. A failure
+ * must name the binding constraint rather than merely the gap (`REP2`).
  */
-function conditionTwo(input: AdmissibilityInput): readonly [boolean, string] {
+function conditionTwo(input: AdmissibilityInput): readonly [ConditionThree, string] {
   const kappa = input.score.clustering
   const bound = input.rules.kappaBench
+  if (bound === null) {
+    return [
+      "not-evaluated",
+      `kappa_bench is UNSET (the owner's ruling, K2 - his words and the date are in that ` +
+        `parameter's note in stripboard/rules.json), so A2 DOES NOT FIRE and no clustering ` +
+        `target was met or missed here: kappa = ${kappa}, measured and reported rather than ` +
+        `graded. The verdict rests on A1, A3 and A4.`,
+    ]
+  }
   const measured = `kappa = ${kappa} against kappa_bench = ${bound} (the clustering bound, K2)`
-  if (kappa <= bound) return [true, `${measured}: inside the bound`]
-  return [false, `${measured}: outside it. ${bindingWording(input.binding)}.`]
+  if (kappa <= bound) return ["held", `${measured}: inside the bound`]
+  return ["failed", `${measured}: outside it. ${bindingWording(input.binding)}.`]
 }
 
 /** `(F - F_floor) / max(1, F_0 - F_floor)`: `K4`'s tolerance, and the one place it is computed. */
@@ -434,12 +461,12 @@ function conditionFour(
  */
 export function admissible(input: AdmissibilityInput): AdmissibilityResult {
   const [a1Held, a1Detail] = conditionOne(input)
-  const [a2Held, a2Detail] = conditionTwo(input)
+  const [a2, a2Detail] = conditionTwo(input)
   const [a3, a3Detail] = conditionThree(input)
   const [a4Held, a4Detail] = conditionFour(input, a1Held, a3, a3Detail)
   return {
     a1: a1Held,
-    a2: a2Held,
+    a2,
     a3,
     a4: a4Held,
     detail: { a1: a1Detail, a2: a2Detail, a3: a3Detail, a4: a4Detail },
@@ -447,8 +474,8 @@ export function admissible(input: AdmissibilityInput): AdmissibilityResult {
 }
 
 /**
- * Nothing refuses this layout: `A1`, `A2` and `A4` hold, and `A3` has not
- * FAILED.
+ * Nothing refuses this layout: `A1` and `A4` hold, and neither `A2` nor `A3`
+ * has FAILED.
  *
  * **`A3` IS SATISFIED BY `not-evaluated` AND THAT IS `K4` RATHER THAN
  * LENIENCE**: while `tau` is unset *"the admissibility verdict rests on `A1`,
@@ -456,11 +483,17 @@ export function admissible(input: AdmissibilityInput): AdmissibilityResult {
  * its own value rather than `true`, it also cannot be reported as a target met.
  * Nothing is blocked and nothing is ignorable.
  *
+ * **`A2` IS SATISFIED BY `not-evaluated` ON THE SAME GROUND**, the owner having
+ * unset `kappa_bench` (`K2`). With both thresholds unset today this is `A1 &&
+ * A4` in practice - his ruling made literal, not a gate that quietly stopped
+ * working. **Set either bound and its condition grades again**, with no other
+ * edit; `tests/stripboard/verdict.test.ts` drives it both ways.
+ *
  * **IT IS NOT `outcomeOf`.** Task 20's taxonomy has THREE outcomes - `invalid`,
  * `valid-below-target`, `admissible` - and the distinction between the last two
  * is the whole point of `REP5`. This is the plain conjunction `./stop.ts` needs
  * for `Q1` and `Q2`, which ask only *may a successful termination fire*.
  */
 export function fullyAdmissible(result: AdmissibilityResult): boolean {
-  return result.a1 && result.a2 && result.a3 !== "failed" && result.a4
+  return result.a1 && result.a2 !== "failed" && result.a3 !== "failed" && result.a4
 }

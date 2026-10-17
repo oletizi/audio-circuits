@@ -15,6 +15,11 @@
  * `tau` IS `null` IN THE COMMITTED RULES by the owner's decision (`K4`), so
  * `Q2` does not fire at all there - CRITERIA's own stated behaviour. The
  * `tau`-bearing fixture below is what reaches it.
+ *
+ * **`kappa_bench` IS `null` TOO, SINCE HIS RULING OF 2026-10-16**, so `A2` does
+ * not fire either and the worked case's whole argument needs BOTH bounds
+ * supplied by a fixture. `workedCaseRules` is that fixture, and the tests that
+ * use it are also what proves `A2` still grades when somebody sets a bound.
  */
 import { expect, test } from "bun:test"
 import path from "node:path"
@@ -60,6 +65,20 @@ const targets = TARGETS
  * still does not fire.
  */
 const toleranceRules: StripboardRules = { ...rules, tau: 0.05 }
+
+/**
+ * The committed rules with BOTH thresholds set, used ONLY to reach `Q2`'s
+ * worked case.
+ *
+ * **NEITHER FIGURE IS A DEFAULT AND NEITHER REACHES `stripboard/rules.json`.**
+ * `tau` is unset by the owner's decision (`K4`) and `kappa_bench` by his ruling
+ * of 2026-10-16 (*"i prefer the loose layout. It's much easier to build. I
+ * don't see the problem"*), which withdrew a bound an agent had set below all
+ * four boards he has built. CRITERIA section 5's worked case is an argument
+ * about two bounds being differently normalised, so reaching it needs both set
+ * - and the point of reaching it is that `Q2` still does not fire there.
+ */
+const workedCaseRules: StripboardRules = { ...toleranceRules, kappaBench: 0.05 }
 
 test("Q1 fires at the floor, admissibly, and B = 0 follows rather than being assumed", () => {
   // The fixture is at the floor by every clause CRITERIA Q1 states: C = 0 =
@@ -122,18 +141,21 @@ test("Q2's worked case: the tolerance holds, A2 fails, and Q2 does NOT fire", ()
   })
   expect(clustering(1, 20, 10)).toBeCloseTo(0.1, 10)
   expect(worked.score.clustering).toBeCloseTo(clustering(1, 20, 10), 10)
-  // A2 fails on it: kappa is above the committed bound.
-  expect(clustering(1, 20, 10)).toBeGreaterThan(rules.kappaBench)
+  // A2 fails on it against the 0.05 THIS TEST SETS. The committed file leaves
+  // kappa_bench unset on the owner's ruling of 2026-10-16, so the bound the
+  // worked case argues from is now the fixture's and not the file's.
+  expect(workedCaseRules.kappaBench).toBe(0.05)
+  expect(clustering(1, 20, 10)).toBeGreaterThan(0.05)
   // A1 holds on it, so A1 alone would have let Q2 stop the run here.
   expect(worked.admissibleA1).toBe(true)
   // Under the committed rules Q2 cannot fire at all: tau is unset (K4).
   expect(evaluateStop(state, worked, board, rules)).not.toBe("Q2")
   expect(evaluateStop(state, worked, board, rules)).toBeNull()
-  // AND WITH A TAU SET IT STILL DOES NOT FIRE, which is the whole point: A3
-  // holds on this candidate and A2 does not, so admissibility fails and the
+  // AND WITH BOTH BOUNDS SET IT STILL DOES NOT FIRE, which is the whole point:
+  // A3 holds on this candidate and A2 does not, so admissibility fails and the
   // search continues to the rules that report a weaker bound.
-  expect(evaluateStop(state, worked, board, toleranceRules)).not.toBe("Q2")
-  expect(evaluateStop(state, worked, board, toleranceRules)).toBeNull()
+  expect(evaluateStop(state, worked, board, workedCaseRules)).not.toBe("Q2")
+  expect(evaluateStop(state, worked, board, workedCaseRules)).toBeNull()
   // The same candidate with its clustering inside the bound DOES stop: the only
   // thing that changed is A2.
   const clustered = evaluation({
@@ -144,7 +166,14 @@ test("Q2's worked case: the tolerance holds, A2 fails, and Q2 does NOT fire", ()
     occupied: 10,
     clustering: 0.01,
   })
-  expect(evaluateStop(state, clustered, board, toleranceRules)).toBe("Q2")
+  expect(evaluateStop(state, clustered, board, workedCaseRules)).toBe("Q2")
+  // AND WITH THE COMMITTED (UNSET) BOUND, THE CANDIDATE A2 REFUSED NOW STOPS
+  // THE RUN ON Q2 ONCE A TAU IS SET - which is the owner's ruling made visible
+  // at the stopping rule rather than only at the verdict. The only thing that
+  // differs from the refusal three lines up is which rules object carries the
+  // bound.
+  expect(toleranceRules.kappaBench).toBeNull()
+  expect(evaluateStop(state, worked, board, toleranceRules)).toBe("Q2")
 })
 
 test("Q1 fires on a first-climb at-floor candidate with a tau set", () => {
@@ -433,10 +462,20 @@ test("every rule this module applies moves when its rules-file value moves", asy
       tau: toleranceRules.tau === null ? null : toleranceRules.tau / 10,
     }),
   ).toBeNull()
-  // And kappa_bench, through A2: the same admissible candidate stops under the
-  // committed bound and does not under a bound below its clustering.
+  // And kappa_bench, through A2. The committed value is NULL on the owner's
+  // ruling of 2026-10-16, so three readings of one candidate are driven here
+  // rather than two: unset, A2 does not fire and Q2 stops the run; set above
+  // the clustering, A2 holds and Q2 still stops; set below it, A2 fails and no
+  // rule fires. The third is what proves unsetting the bound deleted no check.
   const clustered = evaluation({ cuts: 1, joins: 1, occupied: 9, clustering: 0.02 })
+  expect(toleranceRules.kappaBench).toBeNull()
   expect(evaluateStop(withinToleranceState(), clustered, targets, toleranceRules)).toBe("Q2")
+  expect(
+    evaluateStop(withinToleranceState(), clustered, targets, {
+      ...toleranceRules,
+      kappaBench: 0.05,
+    }),
+  ).toBe("Q2")
   expect(
     evaluateStop(withinToleranceState(), clustered, targets, {
       ...toleranceRules,

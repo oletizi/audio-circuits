@@ -37,6 +37,20 @@ const MODULE = path.join(import.meta.dir, "..", "..", "tools", "stripboard", "ve
 /** A tau, used only to reach `A3`'s arithmetic. NOT a default - see `./stop.test.ts`. */
 const toleranceRules: StripboardRules = { ...rules, tau: 0.05 }
 
+/**
+ * A `kappa_bench`, used only to reach `A2`'s arithmetic.
+ *
+ * **IT IS NOT A DEFAULT AND NEVER REACHES `stripboard/rules.json`.** The owner
+ * unset the bound on 2026-10-16 - *"if the layout is electrically correct,
+ * let's keep it. It looks fine to me"* - and the `0.05` that was committed
+ * until then was an agent's number set below all four boards he has built. It
+ * is used here for one reason: **`A2` must still fire when somebody SETS a
+ * bound**, so unsetting the committed one cannot have quietly deleted the
+ * check. Every test below that drives `A2`'s arithmetic drives it through this
+ * object, and the committed rules are what the does-not-fire tests use.
+ */
+const boundedRules: StripboardRules = { ...rules, kappaBench: 0.05 }
+
 /** The score of a candidate one cut above a floor of zero, with the clustering stated. */
 function scoreWith(cuts: number, wires: number, clustering: number) {
   return evaluation({ cuts, wires, joins: 1, occupied: 9, clustering }).score
@@ -44,9 +58,13 @@ function scoreWith(cuts: number, wires: number, clustering: number) {
 
 test("all four hold on a healthy candidate, and fullyAdmissible is their conjunction", () => {
   const result = admissible(admissibilityInput())
-  expect([result.a1, result.a2, result.a4]).toEqual([true, true, true])
-  // `a3` is three-valued and the committed rules leave `tau` unset, so it is
-  // NEITHER held nor failed - which is the distinction a boolean erased.
+  expect([result.a1, result.a4]).toEqual([true, true])
+  // `a2` and `a3` are three-valued and the committed rules leave BOTH their
+  // thresholds unset - `kappa_bench` on the owner's ruling of 2026-10-16, `tau`
+  // on his decision of 2026-10-10 - so neither holds nor fails, which is the
+  // distinction a boolean erased. Under a set bound `a2` grades again; the
+  // test below this one drives that.
+  expect(result.a2).toBe("not-evaluated")
   expect(result.a3).toBe("not-evaluated")
   expect(fullyAdmissible(result)).toBe(true)
   for (const key of ["a1", "a2", "a3", "a4"] as const) {
@@ -57,24 +75,30 @@ test("all four hold on a healthy candidate, and fullyAdmissible is their conjunc
 test("each condition failing alone is reported individually, the other three still holding", () => {
   // A1: one hard constraint broken.
   const one = admissible(admissibilityInput({ results: failedResults() }))
-  expect([one.a1, one.a2, one.a3, one.a4]).toEqual([false, true, "not-evaluated", true])
+  expect([one.a1, one.a2, one.a3, one.a4]).toEqual([false, "not-evaluated", "not-evaluated", true])
   expect(one.detail.a1).toMatch(/HC4/)
 
-  // A2: clustering above the committed bound of 0.05.
-  const two = admissible(admissibilityInput({ score: scoreWith(1, 0, 0.2) }))
-  expect([two.a1, two.a2, two.a3, two.a4]).toEqual([true, false, "not-evaluated", true])
+  // A2: clustering above a bound of 0.05, which is a bound this test SETS -
+  // the committed file leaves it unset, so A2 cannot fail under it at all.
+  const two = admissible(admissibilityInput({ rules: boundedRules, score: scoreWith(1, 0, 0.2) }))
+  expect([two.a1, two.a2, two.a3, two.a4]).toEqual([true, "failed", "not-evaluated", true])
 
   // A3: a gap of 1/40 against a tolerance below it.
   const three = admissible(
     admissibilityInput({ rules: { ...rules, tau: 0.001 }, initialObjective: 40 }),
   )
-  expect([three.a1, three.a2, three.a3, three.a4]).toEqual([true, true, "failed", true])
+  expect([three.a1, three.a2, three.a3, three.a4]).toEqual([true, "not-evaluated", "failed", true])
 
   // A4: the frozen fixture one cut past B1-frozen's mark.
   const four = admissible(
     admissibilityInput({ targets: LOW_BOOST, frozen: true, score: scoreWith(6, 0, 0) }),
   )
-  expect([four.a1, four.a2, four.a3, four.a4]).toEqual([true, true, "not-evaluated", false])
+  expect([four.a1, four.a2, four.a3, four.a4]).toEqual([
+    true,
+    "not-evaluated",
+    "not-evaluated",
+    false,
+  ])
 
   for (const result of [one, two, three, four]) expect(fullyAdmissible(result)).toBe(false)
 })
@@ -88,6 +112,7 @@ test("A1 is the grader's, so a result set that is not the ten is refused rather 
 test("A2's detail names kappa, kappa_bench and what bound the clustering", () => {
   const result = admissible(
     admissibilityInput({
+      rules: boundedRules,
       score: scoreWith(1, 0, 0.2),
       binding: {
         kind: "span",
@@ -109,6 +134,7 @@ test("A2's detail may report the search having stopped, said plainly as that", (
   // a constraint - and K3 then refuses to move the bound on that evidence.
   const stopped = admissible(
     admissibilityInput({
+      rules: boundedRules,
       score: scoreWith(1, 0, 0.2),
       binding: { kind: "search-stopped", rule: "Q5" },
     }),
@@ -119,6 +145,7 @@ test("A2's detail may report the search having stopped, said plainly as that", (
   // A packing infeasibility IS a constraint and is worded as one.
   const packed = admissible(
     admissibilityInput({
+      rules: boundedRules,
       score: scoreWith(1, 0, 0.2),
       binding: { kind: "packing", board: "pultec-mid", detail: "no arrangement fits 23 nets" },
     }),
@@ -130,8 +157,10 @@ test("A2's detail may report the search having stopped, said plainly as that", (
 test("an A2 failure with no binding constraint stated says so, rather than refusing", () => {
   // A verdict that threw here could not report the failure, and REP2 requires
   // it reported. What it may not do is let K3 move the bound on it.
-  const result = admissible(admissibilityInput({ score: scoreWith(1, 0, 0.2), binding: undefined }))
-  expect(result.a2).toBe(false)
+  const result = admissible(
+    admissibilityInput({ rules: boundedRules, score: scoreWith(1, 0, 0.2), binding: undefined }),
+  )
+  expect(result.a2).toBe("failed")
   expect(result.detail.a2).toMatch(/No binding constraint was stated/)
   expect(result.detail.a2).toMatch(/K3/)
 })
@@ -144,8 +173,49 @@ test("A2 cannot refuse a layout at the floor, whatever kappa_bench is", () => {
     const atFloor = admissible(
       admissibilityInput({ rules: { ...rules, kappaBench }, score: scoreWith(0, 0, 0) }),
     )
-    expect(atFloor.a2, String(kappaBench)).toBe(true)
+    expect(atFloor.a2, String(kappaBench)).toBe("held")
   }
+})
+
+test("A2 does not fire while kappa_bench is unset, and still reports the measured kappa", () => {
+  // THE OWNER'S RULING OF 2026-10-16, which is this condition's authority:
+  // "i prefer the loose layout. It's much easier to build. I don't see the
+  // problem". The withdrawn bound of 0.05 sat below all four hand-laid boards
+  // in this repository (kappa = 0.055, 0.181, 0.196, 0.269).
+  expect(rules.kappaBench).toBeNull()
+  // A clustering of 0.25 - the materialised low-boost's own figure, the board
+  // he was shown and preferred - which the withdrawn bound refused.
+  const loose = admissible(admissibilityInput({ score: scoreWith(1, 0, 0.25) }))
+  expect(loose.a2).toBe("not-evaluated")
+  expect(loose.detail.a2).toMatch(/kappa_bench is UNSET/)
+  expect(loose.detail.a2).toMatch(/DOES NOT FIRE/)
+  expect(loose.detail.a2).toMatch(/measured and reported rather than graded/)
+  // UNSETTING THE BOUND REMOVED THE GRADING AND NOT THE MEASUREMENT: the
+  // number is still in the detail, and it is the evidence a later bound would
+  // have to be set from.
+  expect(loose.detail.a2).toMatch(/kappa = 0\.25/)
+  // It does not block admissibility, and it does not read as a target met.
+  expect(fullyAdmissible(loose)).toBe(true)
+  expect(loose.detail.a2).not.toMatch(/inside the bound/)
+})
+
+test("A2 still fires BOTH WAYS once a kappa_bench is set, so unsetting it deleted no check", () => {
+  // The half that matters: a bound nobody has set grades nothing, and a bound
+  // somebody HAS set grades exactly as it did before. Same candidate, same
+  // kappa, three readings.
+  const score = scoreWith(1, 0, 0.25)
+  expect(admissible(admissibilityInput({ score })).a2).toBe("not-evaluated")
+  const refused = admissible(admissibilityInput({ rules: boundedRules, score }))
+  expect(refused.a2).toBe("failed")
+  expect(refused.detail.a2).toMatch(/kappa = 0\.25 against kappa_bench = 0\.05/)
+  expect(refused.detail.a2).toMatch(/outside it/)
+  expect(fullyAdmissible(refused)).toBe(false)
+  const admitted = admissible(
+    admissibilityInput({ rules: { ...rules, kappaBench: 0.3 }, score }),
+  )
+  expect(admitted.a2).toBe("held")
+  expect(admitted.detail.a2).toMatch(/inside the bound/)
+  expect(fullyAdmissible(admitted)).toBe(true)
 })
 
 test("A3 does not fire while tau is unset, and claims no target met", () => {
@@ -350,7 +420,9 @@ test("fullyAdmissible is the conjunction and nothing more", () => {
   // It is NOT outcomeOf: Task 20's taxonomy has three outcomes, and the
   // distinction between the two non-admissible ones is REP5's whole point.
   const invalid = admissible(admissibilityInput({ results: failedResults() }))
-  const belowTarget = admissible(admissibilityInput({ score: scoreWith(1, 0, 0.2) }))
+  const belowTarget = admissible(
+    admissibilityInput({ rules: boundedRules, score: scoreWith(1, 0, 0.2) }),
+  )
   expect(fullyAdmissible(invalid)).toBe(false)
   expect(fullyAdmissible(belowTarget)).toBe(false)
   // Both are false here, and which one is which is read off the four fields.

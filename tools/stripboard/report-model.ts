@@ -97,6 +97,18 @@ export const OUTCOMES: readonly Outcome[] = ["invalid", "valid-below-target", "a
  * `OUTCOME_WORDING["admissible"]` says *"`A3` holds or did not fire"* rather
  * than claiming four targets met. A run that never graded `A3` says so in the
  * report, beside an outcome that does not pretend otherwise.
+ *
+ * **`A2` IS NOW IN EXACTLY THE SAME POSITION, AND THE PARAGRAPH ABOVE IS WHAT
+ * SETTLES IT.** On 2026-10-16 the owner unset `kappa_bench` - *"if the layout
+ * is electrically correct, let's keep it. It looks fine to me"* - so `A2` is
+ * three-valued too and `not-evaluated` there maps to `admissible` by `K4`'s
+ * reasoning read over `K2`: an unset target cannot be reported as unmet, and
+ * `K2`'s own statement is now that the verdict rests on `A1`, `A3` and `A4`.
+ * **What a reader must not conclude is that two targets were met**: with both
+ * thresholds unset the admissible outcome asserts `A1` and `A4` and nothing
+ * else, which is why `OUTCOME_WORDING["admissible"]` names the ungraded pair
+ * rather than saying four conditions hold, and why `kappa` and the gap are
+ * still printed as numbers on every report.
  */
 export function outcomeOf(result: AdmissibilityResult): Outcome {
   if (!result.a1) return "invalid"
@@ -425,9 +437,10 @@ export const OUTCOME_WORDING: Readonly<Record<Outcome, string>> = {
     "demonstrated hand result on purpose, so this is a reported result and not a fault; the " +
     "adoption gate G2.5 still refuses it.",
   admissible:
-    "admissible: valid AND meeting the targets this run graded - A1, A2 and A4 hold, and A3 " +
-    "holds or did not fire (K4, while tau is unset). Read the per-condition lines for which " +
-    "of those it was.",
+    "admissible: valid AND meeting the targets this run graded - A1 and A4 hold, and A2 and A3 " +
+    "each either hold or did not fire (K2, while kappa_bench is unset on the owner's ruling; " +
+    "K4, while tau is unset). Read the per-condition lines for which of those it was: this " +
+    "wording claims no target met that nobody graded.",
 }
 
 /**

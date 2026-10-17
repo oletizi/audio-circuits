@@ -18,7 +18,14 @@ import path from "node:path"
 import { renderReport } from "../../tools/stripboard/report.ts"
 import { bareLiteral } from "./bare-literal.ts"
 import { LOW_BOOST, TARGETS, evaluation } from "./stop-fixtures.ts"
-import { RULES, TOLERANCE_RULES, clusteredCandidate, reportInput, runResult } from "./report-fixtures.ts"
+import {
+  BOUNDED_RULES,
+  RULES,
+  TOLERANCE_RULES,
+  clusteredCandidate,
+  reportInput,
+  runResult,
+} from "./report-fixtures.ts"
 
 // THE THIRD FILE IS LISTED BECAUSE TASK 23 ADDED IT, and a module absent from
 // this list is a module neither the literal scan nor the ceiling check reaches
@@ -46,11 +53,13 @@ test("a within-tolerance bound with tau unset is refused as a rule that could no
 
 test("a search-stopped binding naming another rule is refused, and the agreeing one renders", () => {
   // REP4: the bound field and the named binding constraint must agree in ONE
-  // report, and this binding is also the evidence K3 requires before
-  // kappa_bench may move.
+  // report. The binding is what an A2 FAILURE has to name, so these fixtures
+  // supply a kappa_bench: the committed file leaves it unset on the owner's
+  // ruling, and an A2 that does not fire names no binding at all.
   const mismatched = reportInput({
     run: runResult({ best: clusteredCandidate() }),
     rule: "Q3",
+    rules: BOUNDED_RULES,
     binding: { kind: "search-stopped", rule: "Q5" },
   })
   expect(() => renderReport(mismatched)).toThrow(/report-binding-rule-disagrees/)
@@ -58,6 +67,7 @@ test("a search-stopped binding naming another rule is refused, and the agreeing 
   const agreeing = reportInput({
     run: runResult({ best: clusteredCandidate() }),
     rule: "Q5",
+    rules: BOUNDED_RULES,
     binding: { kind: "search-stopped", rule: "Q5" },
   })
   const joined = renderReport(agreeing).join("\n")
@@ -70,6 +80,9 @@ test("a constraint that DID bind reaches the report as one, with its board and n
   const joined = renderReport(
     reportInput({
       run: runResult({ best: clusteredCandidate() }),
+      // The bound is the fixture's, as above: only a FAILING A2 names a
+      // binding constraint, and the committed kappa_bench is unset.
+      rules: BOUNDED_RULES,
       binding: {
         kind: "span",
         board: "pultec-mid",

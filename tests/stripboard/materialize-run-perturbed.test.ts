@@ -120,16 +120,20 @@ test("candidate-hash: a candidate edited after the run no longer hashes to the r
   expect(sha256OfFile(run.candidate), "restored").toBe(recorded)
 })
 
-test("rules-hash: a kappa_bench loosened after the run is refused by name", () => {
-  // THE REALISTIC EDIT, named in `stripboard/rules.json`'s own note: "The
-  // obvious repair is to loosen the bound to admit them, and that is NOT the
-  // decision." A run graded at 0.05 and adopted under 0.06 is the exact shape
-  // `rules-hash` exists for.
-  const copy = path.join(freshRoot("loosened-rules"), "rules.json")
+test("rules-hash: a kappa_bench set after the run is refused by name", () => {
+  // THE REALISTIC EDIT, AND IT HAS CHANGED DIRECTION. The committed
+  // `kappa_bench` is now null - the owner withdrew the bound on 2026-10-16 -
+  // and that parameter's note says setting one again is "a deliberate edit
+  // carrying the evidence it rests on". A run graded with no bound and adopted
+  // under a bound somebody then wrote in is the exact shape `rules-hash` exists
+  // for, and it is the same check that caught the loosening it used to be
+  // driven with.
+  const copy = path.join(freshRoot("rebounded-rules"), "rules.json")
   const text = fs.readFileSync(realDeps().rulesPath, "utf8")
-  const loosened = text.replace('"kappaBench": 0.05', '"kappaBench": 0.06')
-  expect(loosened, "the edit landed").toContain('"kappaBench": 0.06')
-  fs.writeFileSync(copy, loosened)
+  expect(text, "the committed bound is unset").toContain('"kappaBench": null')
+  const rebounded = text.replace('"kappaBench": null', '"kappaBench": 0.06')
+  expect(rebounded, "the edit landed").toContain('"kappaBench": 0.06')
+  fs.writeFileSync(copy, rebounded)
   const recorded = readManifest(run.runDir).canonical.inputs.rulesSha256
   expect(() =>
     assertFileHash(copy, recorded, "rules-hash", "the reviewed rules file"),
@@ -351,20 +355,41 @@ test("failing-check does NOT see an outcome edited to admissible with the hash r
 })
 
 test("the producer refuses to record a rule that would carry the adoption", async () => {
-  // THE GUARD DRIVEN ON THE STATE THAT MAKES ITS READING OF Q3 UNSAFE. With
-  // kappa_bench at 0.3 the materialised board clears A2, the outcome becomes
-  // `admissible`, and exitCodeFor(admissible, Q3) is 0 - so CRITERIA G2.5 would
-  // admit the board on a rule this run earned over its restart schedule alone.
-  // The rules object is the TEST's, built from the committed one: nothing under
-  // stripboard/rules.json is touched, and the point is the producer's refusal
-  // rather than a verdict about 0.3.
-  const loosened = { ...loadRules(), kappaBench: 0.3 }
+  // THE GUARD DRIVEN ON THE COMMITTED RULES, WHICH IS WHERE IT NOW LIVES. With
+  // `kappa_bench` unset on the owner's ruling of 2026-10-16, A2 does not fire,
+  // the materialised board's outcome is `admissible`, and
+  // exitCodeFor(admissible, Q3) is 0 - so CRITERIA G2.5 would admit the board
+  // on a rule this run earned over its restart schedule alone, and the producer
+  // refuses to write the record instead.
+  //
+  // **THIS IS THE LIVE STATE AND NOT A CONSTRUCTED ONE**, which is the change:
+  // the guard used to need a fixture with kappa_bench at 0.3 to reach an
+  // admissible outcome at all, and today the committed file reaches it. So
+  // low-boost's materialisation cannot be written, let alone adopted, until G21
+  // or G22 is settled - `docs/known-gaps.md` G25.
+  expect(loadRules().kappaBench, "the committed bound is unset").toBeNull()
   await expect(
     materializeRun(
-      { boardDir: path.join("boards", BOARD), rules: loosened, stamp: scratchStamp(BOARD, "loose") },
+      {
+        boardDir: path.join("boards", BOARD),
+        rules: loadRules(),
+        stamp: scratchStamp(BOARD, "committed"),
+      },
       forkSpawn(),
     ),
   ).rejects.toThrow(/^materialize-run-rule-load-bearing: /)
+  // The refusal names the outcome and the rule it pairs, so a reader learns
+  // WHICH pair exits zero rather than only that one did.
+  await expect(
+    materializeRun(
+      {
+        boardDir: path.join("boards", BOARD),
+        rules: loadRules(),
+        stamp: scratchStamp(BOARD, "committed-detail"),
+      },
+      forkSpawn(),
+    ),
+  ).rejects.toThrow(/the outcome "admissible" beside the stopping rule Q3/)
 })
 
 test("the producer refuses a board whose committed layout runs its strips the other way", async () => {

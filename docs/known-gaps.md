@@ -177,8 +177,16 @@ that never ran"*.
 
 The live instance is `tools/stripboard/materialize-run.ts`, whose run is G22's
 no-search pipeline. It records `Q3`, and its `assertRuleNotLoadBearing` refuses
-outright rather than letting that rule carry an adoption - so the unearned
-clause decides nothing today.
+outright rather than letting that rule carry an adoption.
+
+**THAT REFUSAL NOW DECIDES EVERYTHING, WHICH IT DID NOT WHEN THIS ENTRY WAS
+WRITTEN.** The sentence that stood here said *"the unearned clause decides
+nothing today"*, and it was true only because the materialised low-boost missed
+`A2` and graded *valid, below target*. The owner withdrew `kappa_bench` on
+2026-10-16, `A2` no longer fires, the board grades `admissible`, and
+`exitCodeFor("admissible", "Q3")` is zero - so the producer now refuses to write
+the run directory at all, and this unearned clause is the one thing standing
+between the owner's ruling and an adoptable board. See G25.
 
 - **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
 - **Evidence** `q3` in `tools/stripboard/stop.ts`, `StopState` in
@@ -194,38 +202,89 @@ clause decides nothing today.
   the tools side with `q3` refusing the `undefined` case, or a stated rule for
   a run that does not search.
 
-### G23 - the materialised low-boost is valid and below target, so the adoption gate refuses it
+### G25 - the materialised low-boost now grades admissible, so the producer refuses to write its run at all
 
-The board `tools/stripboard/materialize-run.ts` produces for
-`pultec-low-boost` holds **all ten hard constraints** - `HC1`-`HC10`, every net
-complete - at 4 cuts / 4 wires / 5 bridges, `F = 6.25`, extent 19 x 23 on 34 x
-27 stock. It misses `A2`: `kappa = 0.25` against the `kappa_bench = 0.05` in
-`stripboard/rules.json`. `outcomeOf` therefore reports `valid-below-target`,
-and CRITERIA `G2.5` reports that outcome and does not adopt it.
+**IT REPLACES THE ENTRY G23 WAS**, which recorded that this board was refused
+for clustering - `kappa = 0.25` against `kappa_bench = 0.05` - and named *the
+owner's ruling on the bound* as one of the two things that would settle it. He
+ruled: *"i prefer the loose layout. It's much easier to build. I don't see the
+problem"* and *"if the layout is electrically correct, let's keep it. It looks
+fine to me"*. `kappa_bench` is now `null`, `A2` does not fire, `failing-check`
+no longer refuses this run, and that entry is DELETED rather than marked closed.
+The whole account of the withdrawal - his words, the four measured hand-laid
+figures `kappa` = 0.055 / 0.181 / 0.196 / 0.269 that all sat ABOVE the withdrawn
+bound, and the superseded value's entire reason verbatim - is in
+`stripboard/rules.json`'s `kappaBench` note, which is where the value lives.
 
-**So `low-boost` cannot be adopted today, and the reason is clustering rather
-than anything in the workflow.** Nine of the gate's ten checks pass on the run
-directory; `failing-check` is the tenth.
+**Nothing about clustering blocks this board any more. This is what blocks it
+instead.** With the bound withdrawn, `tools/stripboard/materialize-run.ts`'s run
+of `pultec-low-boost` reaches `outcome: "admissible"`, and
+`exitCodeFor("admissible", "Q3")` is **0**. `assertRuleNotLoadBearing` therefore
+fires and the run directory is never written:
 
-This is the state `stripboard/rules.json`'s own note predicts in those words:
-*"The first runs are expected to fail this bound and that is the intent, so a
-failure is reported as REP2 requires and must not read as a malfunction"* - and
-the note is equally clear about the adjacent wrong move: *"The obvious repair
-is to loosen the bound to admit them, and that is NOT the decision."*
+> `materialize-run-rule-load-bearing: this run of pultec-low-boost reports the
+> outcome "admissible" beside the stopping rule Q3, and exitCodeFor pairs those
+> two to a zero exit - so CRITERIA G2.5 would admit this candidate on a rule
+> earned over the restart schedule alone`
 
-- **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
-- **Evidence** `tests/stripboard/materialize-run.test.ts`, which produces a run
-  directory and hands it to the gate's own checks one at a time; the recorded
-  `run.json` carries `"outcome": "valid-below-target"` beside ten `true`
-  constraints.
-- **Verified** yes.
-- **Why it is open** `kappa_bench` moves only under `K3`'s ratchet, which
-  requires the binding constraint named FROM THE CONSTRAINT SIDE, and *"the
-  search did not get there"* is explicitly not an admissible cause. This run
-  names no binding constraint, so the ratchet may not move on it.
-- **What would settle it** a layout that clusters, which needs G22's search; or
-  the owner's ruling on the bound, with the constraint-side evidence `K3`
-  requires.
+**THE GUARD IS DOING EXACTLY WHAT IT WAS WRITTEN TO DO.** This path sweeps no
+move set (G22), so the `Q3` it records is earned over the restart schedule alone
+(G21), and the guard exists to stop that unearned clause carrying a board into
+`boards/`. Its own refusal says it is *"NOT relaxed by weakening the gate"* and
+*"NOT by picking a different rule, which would be choosing a stopping reason to
+fit a verdict"*. Neither was done here.
+
+**SO THE OWNER'S RULING DID NOT, BY ITSELF, MAKE THE BOARD ADOPTABLE.** It
+removed the clustering refusal and moved the blocker upstream of the gate: the
+run cannot be produced, let alone graded by `adoptLayout`.
+
+The cost is visible in the test suite, which is where it should be:
+`tests/stripboard/materialize-run-fixtures.ts` now carries `GRADED_RULES` - the
+committed rules plus the withdrawn `0.05` - purely so a run directory exists for
+`materialize-run.test.ts` and `materialize-run-perturbed.test.ts` to drive the
+gate's ten checks over. **Those two files therefore no longer grade a run under
+the committed rules.** A side effect worth knowing: such a run's `run.json`
+records `rulesSha256` of the committed file while having been graded with a
+bound that file does not carry, because `place-manifest.ts` hashes the file and
+the rules object is passed in separately.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, in the change that unset
+  `kappaBench`.
+- **Evidence** `tests/stripboard/materialize-run-perturbed.test.ts`'s *"the
+  producer refuses to record a rule that would carry the adoption"*, which now
+  drives `loadRules()` directly and asserts both the refusal code and the
+  `"admissible"`/`Q3` pair it names.
+- **Verified** yes - measured, not argued.
+- **Why it is open** it is G21 and G22 wearing a new consequence. Which rule a
+  run that does not search should report is a criteria question, and an agent
+  may not author the answer; weakening the guard is the one repair its own
+  message forbids.
+- **What would settle it** the owner's decision on what a no-search
+  materialisation may report - or G22's search, after which `Q3` would be
+  earned and the guard would never fire.
+
+### G26 - `docs/stripboard/pipeline-verification.md` still presents `kappa_bench = 0.05` as the live parameter
+
+That document's parameter table (section near line 2982) reads *"`kappa_bench =
+0.05` | The hard end of a ratchet"* and a later section concludes against
+*"`kappa_bench` 0.05"*. The bound was withdrawn on 2026-10-16 (see G25 and
+`stripboard/rules.json`'s `kappaBench` note), so the table states a current
+parameter that no longer exists.
+
+The MEASUREMENTS in that document are unaffected and are not wrong: they record
+what was measured against the bound in force at the time, which is what a
+verification log is for. It is the parameter table - written in the present
+tense - that now misleads.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, in the change that unset
+  `kappaBench`.
+- **Verified** yes - `grep -n "kappa_bench" docs/stripboard/pipeline-verification.md`.
+- **Why it is open** it was not this change's file to rewrite, and a verification
+  log needs its figures read in the context of the run that produced them rather
+  than retro-fitted to today's parameters.
+- **What would settle it** one edit to the parameter table saying the bound is
+  withdrawn and pointing at `stripboard/rules.json`'s note, leaving every
+  measured figure as it stands.
 
 ### G24 - the adoption gate cannot re-derive `metrics.outcome`, so an edited outcome clears `failing-check`
 

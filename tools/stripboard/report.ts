@@ -311,10 +311,13 @@ function worseAcceptanceLine(input: ReportInput): string {
 function conditionLines(verdict: AdmissibilityResult): readonly string[] {
   return [
     `A1 ${verdict.a1 ? "held" : "FAILED"}: ${verdict.detail.a1}`,
-    `A2 ${verdict.a2 ? "held" : "FAILED"}: ${verdict.detail.a2}`,
-    // A3 IS PRINTED BY ITS OWN THREE-VALUED NAME rather than as held or
-    // failed: "not-evaluated" is the state a boolean erased, and a report that
-    // spelled it "held" would report a target met that nobody graded.
+    // A2 AND A3 ARE PRINTED BY THEIR OWN THREE-VALUED NAMES rather than as
+    // held or failed: "not-evaluated" is the state a boolean erased, and a
+    // report that spelled it "held" would report a target met that nobody
+    // graded. A2 joined A3 here when the owner unset kappa_bench on
+    // 2026-10-16 - and A2's detail still carries the MEASURED kappa either
+    // way, which is the figure a later bound would have to be set from.
+    `A2 ${verdict.a2}: ${verdict.detail.a2}`,
     `A3 ${verdict.a3}: ${verdict.detail.a3}`,
     `A4 ${verdict.a4 ? "held" : "FAILED"}: ${verdict.detail.a4}`,
   ]

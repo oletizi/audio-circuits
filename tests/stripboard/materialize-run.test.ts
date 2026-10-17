@@ -15,7 +15,17 @@
  * holds all ten hard constraints and misses `A2`, the clustering bound
  * (`kappa = 0.25` against `kappa_bench = 0.05`), so its outcome is
  * *valid, below target*, which CRITERIA `G2.5` reports and does not adopt. The
- * assertions below pin that state; `docs/known-gaps.md` G23 records it.
+ * assertions below pin that state.
+ *
+ * **THAT `0.05` IS NOW THE FIXTURE'S AND NOT THE COMMITTED FILE'S.** The owner
+ * unset `kappa_bench` on 2026-10-16, so under the committed rules this board
+ * grades **admissible** and `materializeRun` refuses to write a run at all -
+ * `assertRuleNotLoadBearing`, because an admissible outcome beside `Q3` exits
+ * zero and this path earns no `Q3`. `./materialize-run-fixtures.ts`'s
+ * `GRADED_RULES` carries the withdrawn figure so the gate still has a run
+ * directory to be driven over, `./materialize-run-perturbed.test.ts` drives the
+ * refusal under the committed rules, and `docs/known-gaps.md` G25 records the
+ * state it leaves adoption in.
  *
  * **`uncommitted-layout` IS NOT HERE AND THAT IS DELIBERATE** - it is the one
  * check about the DESTINATION rather than about the run, it lives in
@@ -168,8 +178,12 @@ test("failing-check: the gate refuses a candidate that is valid and below target
   ).toBe(true)
   expect(
     manifest.canonical.metrics.clustering,
-    "kappa, against the 0.05 kappa_bench in stripboard/rules.json",
+    "kappa, against the 0.05 kappa_bench GRADED_RULES carries - the committed file's is unset",
   ).toBeGreaterThan(0.05)
+  // AND KAPPA IS IN THE RECORD WHETHER A BOUND GRADES IT OR NOT: the figure is
+  // the measurement, the bound was the grading, and unsetting the bound took
+  // only the second. This is the number a later bound would be set from.
+  expect(manifest.canonical.metrics.clustering).toBeCloseTo(0.25, 10)
   expect(() => assertVerdictAdmits(manifest, file)).toThrow(/^failing-check: /)
   expect(() => assertVerdictAdmits(manifest, file)).toThrow(
     /valid, below target|below target/,

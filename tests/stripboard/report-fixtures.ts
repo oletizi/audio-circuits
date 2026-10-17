@@ -45,6 +45,20 @@ export const RULES: StripboardRules = loadRules()
 export const TOLERANCE_RULES: StripboardRules = { ...RULES, tau: 0.05 }
 
 /**
+ * A `kappa_bench`, used only to reach `A2`'s arithmetic.
+ *
+ * **NOT A DEFAULT AND NOT A PROPOSAL.** The owner unset the clustering bound on
+ * 2026-10-16 - *"i prefer the loose layout. It's much easier to build. I don't
+ * see the problem"* - and the `0.05` committed until then was an agent's number
+ * sitting below all four boards he has built. `V12` and `REP2` are stated over
+ * a run that FAILS `A2`, which no run can do with the bound unset, so the
+ * fixtures for those criteria supply a bound and say here that it is the
+ * fixture's. Every other fixture uses the committed rules, which is where
+ * *"`A2` did not fire"* gets exercised.
+ */
+export const BOUNDED_RULES: StripboardRules = { ...RULES, kappaBench: 0.05 }
+
+/**
  * A `bestStart` naming a board nothing wrote and an EMPTY occupancy.
  *
  * **NOTHING IN THESE FIXTURES READS IT, AND THE EMPTY MAP SAYS SO.** The report
@@ -79,11 +93,13 @@ export function healthyCandidate(): Evaluation {
 }
 
 /**
- * The same candidate with `kappa` above the committed bound: `A2` FAILS and
+ * The same candidate with `kappa` above `BOUNDED_RULES`'s bound: `A2` FAILS and
  * `A1` holds.
  *
  * ONE CUT AND `kappa = 0.2`, so the only condition spoiled is `A2` - which is
- * what makes the run below *valid, below target* rather than invalid.
+ * what makes the run below *valid, below target* rather than invalid. **It
+ * spoils nothing under the COMMITTED rules**, which leave the bound unset, so
+ * every fixture built on it carries `BOUNDED_RULES`.
  */
 export function clusteredCandidate(): Evaluation {
   return evaluation({ cuts: 1, wires: 0, solder: 0, joins: 2, occupied: 9, clustering: 0.2 })
@@ -184,7 +200,14 @@ export function divergentCutsRun(): ReportInput {
  * bound is also the case `K2` predicts as the expected early outcome.
  */
 export function a2OnlyFailure(): ReportInput {
-  return reportInput({ run: runResult({ best: clusteredCandidate() }), rule: "Q3" })
+  return reportInput({
+    run: runResult({ best: clusteredCandidate() }),
+    rule: "Q3",
+    // THE BOUND IS THE FIXTURE'S, because the committed file has none: `V12` is
+    // a statement about how a run that FAILS A2 reads, and with kappa_bench
+    // unset there is no such run to make it about.
+    rules: BOUNDED_RULES,
+  })
 }
 
 /** `V12`: a run failing `A1`, which is invalid whatever the optimisation conditions say. */
@@ -267,20 +290,30 @@ function candidateFor(outcome: Outcome): Evaluation {
 /**
  * One report input per bound-and-outcome combination, for `REP3`'s loop.
  *
- * **`within-tolerance` TAKES `TOLERANCE_RULES` AND EVERY OTHER STATUS TAKES THE
- * COMMITTED ONES**, because `Q2` cannot fire with `tau` unset - `./report.ts`
- * refuses that pair as a bound naming a rule the search could not have
- * returned. So the fixture supplies the tolerance exactly where the criteria
- * require one and nowhere else.
+ * **EACH THRESHOLD IS SUPPLIED EXACTLY WHERE THE COMBINATION NEEDS IT AND
+ * NOWHERE ELSE**, both of them being unset in the committed file:
+ *
+ * - `within-tolerance` needs a `tau`, because `Q2` cannot fire without one -
+ *   `./report.ts` refuses that pair as a bound naming a rule the search could
+ *   not have returned.
+ * - `valid-below-target` needs a `kappa_bench`, because the candidate that
+ *   reaches that outcome reaches it by FAILING `A2`, and `A2` cannot fail
+ *   against a bound the owner unset.
+ *
+ * So the two can both be present on one combination, and a combination that
+ * needs neither takes the committed rules unchanged.
  */
 export function runWith(selection: {
   readonly bound: BoundStatus
   readonly outcome: Outcome
 }): ReportInput {
   const rule = RULE_FOR[selection.bound]
+  const tau = boundFor(rule) === "within-tolerance" ? TOLERANCE_RULES.tau : RULES.tau
+  const kappaBench =
+    selection.outcome === "valid-below-target" ? BOUNDED_RULES.kappaBench : RULES.kappaBench
   return reportInput({
     run: runResult({ best: candidateFor(selection.outcome) }),
     rule,
-    rules: boundFor(rule) === "within-tolerance" ? TOLERANCE_RULES : RULES,
+    rules: { ...RULES, tau, kappaBench },
   })
 }

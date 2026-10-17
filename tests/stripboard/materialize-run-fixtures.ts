@@ -36,7 +36,7 @@ import type { ChainBoard } from "../../tools/stripboard/adopt-checks.ts"
 import { defaultAdoptDeps } from "../../tools/stripboard/adopt.ts"
 import type { AdoptDeps, AdoptInput } from "../../tools/stripboard/adopt-model.ts"
 import { materializeRun, type MaterializeRun } from "../../tools/stripboard/materialize-run.ts"
-import { loadRules } from "../../tools/stripboard/rules.ts"
+import { loadRules, type StripboardRules } from "../../tools/stripboard/rules.ts"
 import {
   canonicalHash,
   readManifest,
@@ -77,10 +77,32 @@ export function forkSpawn(): SpawnVeroroute {
   }
 }
 
+/**
+ * The committed rules with a `kappa_bench`, which is what makes a run directory
+ * EXIST for these tests to hand the gate.
+ *
+ * **IT IS NOT A DEFAULT, AND THE REASON IT IS HERE IS A FINDING RATHER THAN A
+ * CONVENIENCE.** The owner unset the clustering bound on 2026-10-16 (*"if the
+ * layout is electrically correct, let's keep it. It looks fine to me"*), so
+ * under the committed rules the materialised low-boost grades **admissible** -
+ * and `materializeRun`'s own `assertRuleNotLoadBearing` then REFUSES to write
+ * the run at all, because `exitCodeFor("admissible", "Q3")` is zero and `Q3`
+ * here is earned over the restart schedule alone (`docs/known-gaps.md` G21,
+ * G25). That refusal is driven directly, under the committed rules, by
+ * `./materialize-run-perturbed.test.ts`.
+ *
+ * These two files are about the GATE's ten checks over a produced run
+ * directory, which needs a run directory to exist. So they supply the 0.05 that
+ * was committed until the ruling - which grades this board *valid, below
+ * target*, the state the gate's `failing-check` was measured against - and say
+ * here that the figure is the fixture's and no longer the file's.
+ */
+export const GRADED_RULES: StripboardRules = { ...loadRules(), kappaBench: 0.05 }
+
 /** One real materialisation run, with its stamp registered for removal. */
 export async function producedRun(label: string): Promise<MaterializeRun> {
   return materializeRun(
-    { boardDir: BOARD_DIR, rules: loadRules(), stamp: scratchStamp(BOARD, label) },
+    { boardDir: BOARD_DIR, rules: GRADED_RULES, stamp: scratchStamp(BOARD, label) },
     forkSpawn(),
   )
 }

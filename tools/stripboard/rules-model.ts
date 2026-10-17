@@ -1,6 +1,6 @@
 /**
  * WHAT THE REVIEWED RULES ARE: the one file's path, its schema version, the
- * eleven parameters, their declared ranges and what `null` means for the two
+ * eleven parameters, their declared ranges and what `null` means for the three
  * that may be it.
  *
  * **ITS OWN FILE FOR THE REASON `./stop-model.ts`, `./place-model.ts`,
@@ -23,12 +23,23 @@
  * the agent that runs it. CRITERIA PAR3 is the criterion; PAR4 is why there is
  * no per-board variant.
  *
- * NULL IS A VALUE AND NOT AN ABSENCE. `tau` (CRITERIA K4) and `worseAcceptance`
- * (PIPELINE E3) are deliberately unset, and both are written `null` with their
- * keys REQUIRED, so "unset on purpose, and here is why" is distinguishable from
- * "left out by accident". `NULLABLE` below is keyed by the union, so reading a
- * third parameter as nullable does not compile until this file says what the
- * pipeline does while that one is unset.
+ * NULL IS A VALUE AND NOT AN ABSENCE. `kappaBench` (CRITERIA K2),
+ * `tau` (CRITERIA K4) and `worseAcceptance` (PIPELINE E3) are deliberately
+ * unset, and all three are written `null` with their keys REQUIRED, so "unset
+ * on purpose, and here is why" is distinguishable from "left out by accident".
+ * `NULLABLE` below is keyed by the union, so reading a fourth parameter as
+ * nullable does not compile until this file says what the pipeline does while
+ * that one is unset.
+ *
+ * **`kappaBench` JOINED THAT LIST ON 2026-10-16, BY THE OWNER'S RULING**, and
+ * it is the clearest case in the file of the invariant restated below biting
+ * the file itself: the withdrawn bound of 0.05 was an acceptance criterion an
+ * agent authored for an artifact agents produce, set below every one of the
+ * four boards the owner has built (kappa = 0.055, 0.181, 0.196, 0.269), and
+ * ratcheted by the same agent's reasoning so it would be hard to move. He ruled
+ * on the board it refused: *"i prefer the loose layout. It's much easier to
+ * build. I don't see the problem"*. The whole account is in that parameter's
+ * note in `stripboard/rules.json`, and no number replaces it.
  */
 import path from "node:path"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
@@ -49,8 +60,14 @@ export interface StripboardRules {
   readonly rhoWire: number
   /** CRITERIA PAR1's `rho_s`: what one solder bridge costs. */
   readonly rhoSolder: number
-  /** CRITERIA K2's `kappa_bench`: the clustering bound A2 applies. */
-  readonly kappaBench: number
+  /**
+   * CRITERIA K2's `kappa_bench`, the clustering bound A2 applies - `null` while
+   * it is UNSET, which is the owner's ruling of 2026-10-16 and not an omission.
+   * While it is null, A2 does not fire; `kappa` is still computed and reported
+   * on every run, because unsetting the bound removes the GRADING and never the
+   * MEASUREMENT.
+   */
+  readonly kappaBench: number | null
   /**
    * CRITERIA K4's `tau`, the floor tolerance - `null` while it is UNSET, which
    * is the owner's decision and not an omission. While it is null, Q2 and A3
@@ -100,11 +117,11 @@ const TOP_LEVEL_KEYS: readonly string[] = ["schema", ...PARAMETERS, "notes"]
 type Parameter = (typeof PARAMETERS)[number]
 
 /**
- * The two parameters that may be null - a union rather than a runtime list, so
- * that reading a third as nullable does not compile until `NULLABLE` below
+ * The three parameters that may be null - a union rather than a runtime list,
+ * so that reading a fourth as nullable does not compile until `NULLABLE` below
  * says what the pipeline does while that one is unset.
  */
-type NullableParameter = "tau" | "worseAcceptance"
+type NullableParameter = "kappaBench" | "tau" | "worseAcceptance"
 
 /** Every parameter that is a single number - which is all of them but the seed list. */
 type NumericParameter = Exclude<Parameter, "seeds">
@@ -149,7 +166,9 @@ const NUMBERS: Readonly<Record<NumericParameter, NumberSpec>> = {
     why:
       "kappa = J/(P - N) lies in [0, 1] (CRITERIA K1), so a bound above 1 refuses " +
       "nothing; and a bound of 0 would refuse a layout AT THE FLOOR, which sits at " +
-      "kappa = 0 - K2 rests on A2 being unable to refuse a provably optimal layout",
+      "kappa = 0 - K2 rests on A2 being unable to refuse a provably optimal layout. " +
+      "This range applies to a bound SOMEBODY SETS: the committed value is null, and " +
+      "setting one is a deliberate edit carrying the evidence it rests on",
   },
   tau: {
     integer: false,
@@ -208,6 +227,10 @@ const NUMBERS: Readonly<Record<NumericParameter, NumberSpec>> = {
  * which is the opposite of what null records here.
  */
 const NULLABLE: Readonly<Record<NullableParameter, string>> = {
+  kappaBench:
+    "null means the clustering bound is UNSET (CRITERIA K2), so A2 does not fire and the " +
+    "admissibility verdict rests on A1, A3 and A4 - while kappa is still computed and " +
+    "reported on every run, the bound being the grading and not the measurement",
   tau: "null means the floor tolerance is UNSET (CRITERIA K4), so Q2 and A3 do not fire",
   worseAcceptance: "null means E3 does not run and the report says so (PIPELINE E3)",
 }

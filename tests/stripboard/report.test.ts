@@ -30,6 +30,7 @@ import { TARGETS, evaluation } from "./stop-fixtures.ts"
 import {
   a1Failure,
   a2OnlyFailure,
+  clusteredCandidate,
   divergentCutsRun,
   reportInput,
   runResult,
@@ -78,9 +79,33 @@ test("REP2: the report names the rule, the bound, the outcome and A1-A4 one by o
 
 test("REP2: which conditions FAILED is legible, not only that one did", () => {
   const joined = renderReport(a2OnlyFailure()).join("\n")
-  expect(joined).toMatch(/^A2 FAILED: /m)
+  // A2 PRINTS BY ITS OWN THREE-VALUED NAME, as A3 does, since the owner unset
+  // kappa_bench: "failed" rather than "FAILED", because the word has to come
+  // from the verdict's own value and "not-evaluated" has no shouty spelling.
+  // What REP2 asks is that the failing condition be named, and it is.
+  expect(joined).toMatch(/^A2 failed: /m)
+  expect(joined).not.toMatch(/^A2 held/m)
+  expect(joined).not.toMatch(/^A2 not-evaluated/m)
   expect(joined).toMatch(/^A1 held: /m)
   expect(joined).toMatch(/^A4 held: /m)
+})
+
+test("A2's third state reaches the report by its own name, and carries the measured kappa", () => {
+  // THE SAME GUARD A3 HAS, FOUND BY MUTATION. With the A2 line printed as a
+  // boolean - `verdict.a2 !== "failed" ? "held" : "FAILED"` - every run under
+  // the committed rules printed "A2 held" against a bound the owner unset, a
+  // clustering target reported as met that nothing graded, and only the FAILED
+  // case was asserted anywhere. The default fixture's kappa is 0 and this run's
+  // is 0.2, so the line also proves the measurement survives the withdrawal.
+  const joined = renderReport(reportInput({ run: runResult({ best: clusteredCandidate() }) }))
+    .join("\n")
+  expect(joined).toMatch(/^outcome: admissible$/m)
+  expect(joined).toMatch(/^A2 not-evaluated: /m)
+  expect(joined).not.toMatch(/^A2 held/m)
+  expect(joined).toMatch(/kappa_bench is UNSET/)
+  expect(joined).toMatch(/no clustering target was met or missed here/)
+  // UNSETTING THE BOUND TOOK THE GRADING AND NOT THE MEASUREMENT.
+  expect(joined).toMatch(/kappa = 0\.2, measured and reported rather than graded/)
 })
 
 test("A3's third state reaches the report by its own name, never as held", () => {
