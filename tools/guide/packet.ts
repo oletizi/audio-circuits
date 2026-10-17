@@ -9,9 +9,21 @@
  *
  * Everything is derived from the committed `.vrt`, schematic and circuit,
  * so `guide/` is regenerated whole each run and is git-ignored. It is
- * assembled in a staging directory beside it and swapped in only once all
- * five files exist, so a failed run leaves the previous packet as it was
- * rather than half replaced.
+ * assembled in a staging directory beside it and swapped in only once every
+ * file exists, so a failed run leaves the previous packet as it was rather
+ * than half replaced.
+ *
+ * **`schematic.pdf` IS THERE IFF THE BOARD DECLARES A SCHEMATIC, AND ITS
+ * ABSENCE IS PRINTED RATHER THAN SILENT.** A board whose `perfboard.json`
+ * declares no `"sch"` used to be refused outright, which put the packet step
+ * out of reach of the five Pultec sections: the only schematics in this
+ * repository are the whole-EQ ones, and pointing a section at one would pair
+ * a whole-EQ netlist against a section's board. So the packet is produced,
+ * and `guide.html` carries a bordered notice on page one saying there is no
+ * schematic, which declaration declares none, what the pages WERE checked
+ * against, and what would put a schematic page there (`./guide.ts`'s
+ * `GuideSchematic`). The thing being prevented is not the omission - it is a
+ * four-page packet that reads as a five-page one with a page missing.
  *
  * The veroroute binary, kicad-cli, the circuit module and the filesystem
  * are injected, as they are for the other verbs, so no test needs any of
@@ -26,7 +38,7 @@ import { runnerFor, type VerbRun } from "../perfboard/verbs.ts"
 import type { Env } from "../perfboard/check.ts"
 import { buildChecklist } from "./checklist.ts"
 import { assertLayoutMatchesCircuit, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
-import { buildGuideHtml } from "./guide.ts"
+import { buildGuideHtml, type GuideSchematic } from "./guide.ts"
 import { offBoardLabels, valueLabel } from "./off-board.ts"
 import { padTerminals } from "./pads.ts"
 import { buildableDump } from "./preflight.ts"
@@ -53,13 +65,26 @@ export interface GuideDeps {
   readonly repoRoot?: string
 }
 
-export const PACKET_FILES = [
-  "layout-designators.svg",
-  "layout-values.svg",
-  "copper-side.svg",
-  "schematic.pdf",
-  "guide.html",
-] as const
+export const SCHEMATIC_PDF = "schematic.pdf"
+
+/**
+ * The files one packet holds, in the order they are written.
+ *
+ * It takes `hasSchematic` rather than being a constant because the packet has
+ * two shapes and a caller must say which one it is checking: a list that
+ * always named `schematic.pdf` would make a board with no schematic look like
+ * a packet missing a file, which is the confusion this whole path exists to
+ * avoid.
+ */
+export function packetFiles(hasSchematic: boolean): readonly string[] {
+  return [
+    "layout-designators.svg",
+    "layout-values.svg",
+    "copper-side.svg",
+    ...(hasSchematic ? [SCHEMATIC_PDF] : []),
+    "guide.html",
+  ]
+}
 
 const REAL_FS: GuideFs = {
   makeDir: (dir) => fs.mkdirSync(dir, { recursive: true }),
@@ -110,17 +135,11 @@ function isoDate(date: Date): string {
 /**
  * Build the packet for one declared board and return a one-line-per-file
  * report of what was written. Throws, writing nothing, when the layout's
- * cuts are unresolved, a part is floating, the board declares no schematic,
- * or any step fails.
+ * cuts are unresolved, a part is floating, or any step fails. A board that
+ * declares no schematic is NOT an error: see this module's comment.
  */
 export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: GuideDeps): Promise<string> {
   const schPath = declaration.schPath
-  if (schPath === undefined) {
-    throw new Error(
-      `${declaration.file} declares no "sch", so the packet has no schematic to print. Declare the ` +
-        'board\'s schematic ("sch" with its "netlist") in perfboard.json.',
-    )
-  }
   const dumpText = dumpBoard(declaration, deps)
   const dump = buildableDump(dumpText, declaration.vrtPath)
   // READ FROM THE TEXT, because a `BoardDump` carries no `PAD` lines - see
@@ -147,11 +166,19 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
     copper: renderLayout(dump, designators, { view: "copper", title: `${name} - copper side`, edgeLabels, pads }),
   }
   const repoRoot = deps.repoRoot ?? moduleRepoRoot()
+  const schematic: GuideSchematic =
+    schPath === undefined
+      ? {
+          kind: "none",
+          declarationPath: path.relative(repoRoot, declaration.file),
+          circuitPath: path.relative(repoRoot, declaration.circuitPath),
+        }
+      : { kind: "printed", path: path.relative(repoRoot, schPath) }
   const html = buildGuideHtml({
     boardName: name,
     generated: isoDate((deps.now ?? (() => new Date()))()),
     layoutPath: path.relative(repoRoot, declaration.vrtPath),
-    schematicPath: path.relative(repoRoot, schPath),
+    schematic,
     images,
     checklist,
     powerUpChecks: circuit.powerUpChecks,
@@ -166,7 +193,13 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
     files.writeText(path.join(staging, "layout-designators.svg"), images.designators)
     files.writeText(path.join(staging, "layout-values.svg"), images.values)
     files.writeText(path.join(staging, "copper-side.svg"), images.copper)
-    ;(deps.exportSchematicPdf ?? defaultExportSchematicPdf)(deps.kicadCli, schPath, path.join(staging, "schematic.pdf"))
+    if (schPath !== undefined) {
+      ;(deps.exportSchematicPdf ?? defaultExportSchematicPdf)(
+        deps.kicadCli,
+        schPath,
+        path.join(staging, SCHEMATIC_PDF),
+      )
+    }
     files.writeText(path.join(staging, "guide.html"), html)
     files.removeDir(guideDir)
     files.rename(staging, guideDir)
@@ -174,5 +207,16 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
     files.removeDir(staging)
     throw caught
   }
-  return [`Wrote the build packet for ${name} to ${guideDir}:`, ...PACKET_FILES.map((file) => `  ${file}`)].join("\n")
+  return [
+    `Wrote the build packet for ${name} to ${guideDir}:`,
+    ...packetFiles(schPath !== undefined).map((file) => `  ${file}`),
+    // SAID IN THE CONSOLE AS WELL AS ON THE PAGE, and the page is the one that
+    // matters: someone builds from paper, and a console line scrolls away.
+    ...(schPath === undefined
+      ? [
+          `${name} declares no "sch", so this packet has no schematic page. guide.html says so on ` +
+            `page one, naming ${declaration.file} and the circuit model the pages were checked against.`,
+        ]
+      : []),
+  ].join("\n")
 }

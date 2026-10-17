@@ -2,21 +2,32 @@ import { test, expect } from "bun:test"
 import { net } from "../../lib/model/types.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { buildChecklist } from "../../tools/guide/checklist.ts"
-import { buildGuideHtml, type GuideInput } from "../../tools/guide/guide.ts"
+import { buildGuideHtml, type GuideInput, type GuideSchematic } from "../../tools/guide/guide.ts"
 import { offBoardLabels } from "../../tools/guide/off-board.ts"
 import type { PowerUpChecks } from "../../tools/guide/power-up.ts"
 import { COMPONENTS, DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
 
 const DUMP = parseBoardDump(DUMP_TEXT)
 
-function guideHtml(powerUpChecks: PowerUpChecks | undefined = undefined): string {
+const PRINTED_SCHEMATIC: GuideSchematic = { kind: "printed", path: "circuits/test.kicad_sch" }
+
+const NO_SCHEMATIC: GuideSchematic = {
+  kind: "none",
+  declarationPath: "boards/test-board/perfboard.json",
+  circuitPath: "circuits/test.ts",
+}
+
+function guideHtml(
+  powerUpChecks: PowerUpChecks | undefined = undefined,
+  schematic: GuideSchematic = PRINTED_SCHEMATIC,
+): string {
   const circuit = fixtureCircuit(powerUpChecks)
   const edges = offBoardLabels(circuit)
   const input: GuideInput = {
     boardName: "test-board",
     generated: "2026-09-29",
     layoutPath: "boards/test-board/test.vrt",
-    schematicPath: "circuits/test.kicad_sch",
+    schematic,
     images: { designators: "<svg>designators</svg>", values: "<svg>values</svg>", copper: "<svg>copper</svg>" },
     checklist: buildChecklist(DUMP, circuit, edges),
     powerUpChecks: circuit.powerUpChecks,
@@ -155,6 +166,35 @@ test("the header, then the three images, then the checklist", () => {
   expect(at("<svg>copper</svg>")).toBeLessThan(at("Build checklist"))
   expect(at("Build checklist")).toBeLessThan(at("Power-up checks"))
   expect(html).toContain("size: letter")
+})
+
+test("a packet with no schematic says so on page one, before the first image", () => {
+  // THE WHOLE POINT OF THE "none" SHAPE: a reader holding the paper must not be
+  // able to read a four-page packet as a five-page one with a page missing. So
+  // the statement is asserted to be IN THE PRINTED HTML and to come before any
+  // layout image - not merely present somewhere in the document.
+  const html = guideHtml(undefined, NO_SCHEMATIC)
+  const at = (needle: string): number => {
+    const index = html.indexOf(needle)
+    expect({ needle, found: index > -1 }).toEqual({ needle, found: true })
+    return index
+  }
+  expect(at("No schematic in this packet")).toBeLessThan(at("<svg>designators</svg>"))
+  expect(html).toContain("no schematic page has gone missing from it")
+  expect(html).toContain("there is no schematic for test-board to print")
+  expect(html).toContain("boards/test-board/perfboard.json")
+  expect(html).toContain("circuits/test.ts")
+  expect(html).toContain("make guide")
+  expect(html).toContain('<dt>Schematic</dt><dd>none - see &quot;No schematic in this packet&quot; below</dd>')
+})
+
+test("a packet that does print a schematic carries no no-schematic notice", () => {
+  // The other half of the guard: a false alarm on a complete packet would
+  // devalue the notice everywhere it IS true.
+  const html = guideHtml()
+  expect(html).not.toContain("No schematic in this packet")
+  expect(html).not.toContain('class="notice"')
+  expect(html).toContain("<dt>Schematic</dt><dd>circuits/test.kicad_sch</dd>")
 })
 
 test("a board that exports no power-up checks gets a section saying so", () => {

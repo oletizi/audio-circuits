@@ -156,6 +156,15 @@ the cut crosses in the same row.
 - **What would settle it** the owner looks at a low-boost render and says
   whether it needs shortening. **See also G17**, which is the same question
   asked of PART labels and reaches the renderer from the other side.
+- **STILL TRUE ON THE PRINTED PACKET (2026-10-17)**, read from the PDF of
+  `make -C boards/pultec-low-boost guide` and of `pultec-low-cut`'s, and at
+  `rsvg-convert -z 6` on a crop. Each pad identity is readable on its own.
+  `SW_LO_BOOST.1` (row E) is printed across a dark alignment strip AND across
+  the `junction_signals` part outline; on the values image `SW_LO_BOOST.3`
+  (row M) and `SW_LO_BOOST.7` (row I) sit on dark strips. On `pultec-low-cut`
+  `SW_LO_CUT.4` and `SW_LO_CUT.5` crowd the left board edge beside the
+  `IN`/`HI_BOOST_OUT` edge labels. Usable at full page size, worse than on the
+  bare render because the packet scales the whole board to one printed page.
 
 ### G19 - the printed checklist calls ground `0`, which is the circuit's name and not a builder's
 
@@ -187,6 +196,49 @@ writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
   unchanged. If it maps, the mapping belongs in the guide's labelling and never
   in the board or the netlist - the fork is told the names by the netlist, and
   renaming a net to suit a printout would make the model and the board disagree.
+
+### G36 - the Cuts table tells a builder which two ladder nets a cut separates, and those names mean nothing to anybody
+
+`buildChecklist`'s Cuts section prints a `Separates` column built from
+`dump.nodes`, so it prints the circuit's own net names. On the Pultec sections
+those names are the junction ladder's generated ones. Verbatim from the printed
+packets of 2026-10-17:
+
+| board | cut | Between | Separates |
+| --- | --- | --- | --- |
+| `pultec-low-boost` | 1 | C5 and C6 | `si_hi_boost_j20_p3 \| si_hi_cut_j12_p3` |
+| `pultec-low-boost` | 2 | K4 and K5 | `j10_p1 \| j10_p2` |
+| `pultec-low-cut` | 1 | D6 and D7 | `j5_p3 \| j5_p4` |
+
+A builder with a knife and a board has to cut between two named holes, which
+the `Between` column gives correctly. The `Separates` column is there to tell
+them what the cut is FOR, and `j10_p1 | j10_p2` tells them nothing - it is an
+internal index into a ladder, not a circuit node anybody can point at. It is
+not wrong; it is the right mechanism printing a vocabulary with no reader.
+
+**This is G19's cause showing up in a second column**, and it is listed
+separately because the remedy is not the same. G19 is one net (ground) with one
+obvious builder's name (`GND`); this is a whole family of generated names with
+no builder's name to map to.
+
+- **Found** `2026-10-17`, producing the printable packets for the two low
+  boards and reading them.
+- **Evidence** the table above, read off
+  `boards/pultec-low-boost/guide/guide.html` and
+  `boards/pultec-low-cut/guide/guide.html` printed to PDF; `netName` in
+  `tools/guide/checklist.ts`, which reads `dump.nodes` and refuses only when a
+  name is absent, never judging whether a name says anything.
+- **Verified** yes - read on the printed pages, both boards.
+- **Why it is open** what a build sheet should say a cut is for is an
+  acceptance criterion about the printed artifact, and the agent producing that
+  artifact may not author it. There is also a real choice underneath: the
+  column could name the nets (as now), name the PARTS the cut separates, or be
+  dropped - and dropping a column is not something to do while looking at one
+  board.
+- **What would settle it** the owner reads a Cuts table and says which of the
+  three the column should be. If it stays net names, the ladder nets need
+  names a person can use, which is a change in
+  `circuits/pultec/physical/board.ts` rather than in the guide.
 
 ---
 
@@ -1076,23 +1128,56 @@ free, and a destination outside the board's `GRID` (the `--import` board is
     exactly as recorded, and anything that reaches for them to change a span on
     a packed board will still hit this.
 
-### G16 - `boards/pultec-low-boost` declares no schematic, so `make guide` cannot run on it
+### G16 - no Pultec section has a schematic of its own, so no section's packet can be checked against one
 
-`writeGuidePacket` refuses a declaration with no `sch`
-(`tools/guide/packet.ts:117-123`): *"declares no \"sch\", so the packet has no
-schematic to print."* `boards/pultec-low-boost/perfboard.json` declares
-`circuit`, `export` and `vrt` and nothing else, so the packet step of the
-workflow is unreachable on this board however good the layout is.
+**THE HALF THAT BLOCKED `make guide` IS FIXED, AND THIS ENTRY IS WHAT REMAINS.**
+The title used to read *"`boards/pultec-low-boost` declares no schematic, so
+`make guide` cannot run on it"*, and the refusal it named
+(`tools/guide/packet.ts`, *"declares no \"sch\", so the packet has no schematic
+to print"*) is deleted. A packet is now produced without a schematic, and
+`guide.html` carries a bordered notice on page one - above the first layout
+image - saying there is no schematic, naming the board, naming the
+`perfboard.json` that declares none, naming the circuit model the pages WERE
+checked against, and saying what would put a schematic page there. Both
+`pultec-low-boost` and `pultec-low-cut` were packeted this way and the printed
+pages read (2026-10-17).
 
-- **Found** `2026-10-16-pultec-five-boards`, Task 3.
-- **Evidence** the declaration file and the throw in `packet.ts`.
-- **Verified** yes by READING both, NOT by running `writeGuidePacket` - that
-  function writes into `boards/<board>/guide/`, which Task 3 was forbidden to
-  do. The renders Task 3 produced came from calling `renderLayout` directly.
-- **Why it is open** out of a discovery run's scope, and all five Pultec
-  sections are likely in the same state.
-- **What would settle it** a schematic for the section and an `sch`/`netlist`
-  pair in the declaration - or a ruling that these boards do not get packets.
+What is left is the fact, not the refusal: **none of the five Pultec sections
+has a schematic of its own.** The only schematics in this repository are
+`circuits/pultec/pultec-three-band-eq.kicad_sch` and
+`circuits/pultec/pultec-mid-band.kicad_sch`, which are the whole EQ. Declaring
+one of those on a section would also declare its whole-EQ `netlist` against one
+section's board, which `netlist-agrees` would then compare and reject - half a
+section's parts are not in it. So for these boards nothing cross-checks the
+physical model against a drawn schematic: `make check` says so on every run
+(*"This run did NOT compare the circuit against any schematic"*) and now the
+printed packet does too.
+
+- **Found** `2026-10-16-pultec-five-boards`, Task 3; narrowed to this claim
+  2026-10-17 when the packet path was made to produce without a schematic.
+- **Evidence** the two declarations (`circuit`, `export`, `vrt` and nothing
+  else); `ls circuits/pultec/*.kicad_sch`; the `NOTICE` printed by
+  `make -C boards/pultec-low-boost guide`; the generated
+  `boards/pultec-low-boost/guide/guide.html`, read as a printed PDF.
+- **Verified** yes - run, and the pages read.
+- **Why it is open** a per-section schematic is a drawing somebody has to make,
+  and **whether these sections should have one at all is the owner's call**: the
+  partition in `circuits/pultec/physical/board.ts` is currently the only
+  statement of what a section contains, and promoting it to a drawn schematic is
+  a decision about where the authority for these boards lives, not a cleanup.
+- **What would settle it** the owner says whether each section gets its own
+  schematic (then: draw it, declare the `sch`/`netlist` pair, and the packet
+  prints it with no further change), or rules that the circuit model plus the
+  whole-EQ schematic is the authority these boards keep - in which case this
+  entry is deleted and the printed notice is the permanent, correct statement.
+- **ONE THING THE PRINTED NOTICE DOES NOT SAY**, and it is deliberate: it does
+  not name `pultec-three-band-eq.kicad_sch` as the upstream authority. The
+  packet writer serves every board, and a Pultec path written into it would be a
+  guess on every other board that declares no schematic. The notice names the
+  circuit module instead, which is the head of that chain and is true of any
+  board. If the owner wants the whole-EQ schematic named on the page, the
+  channel for it is the circuit module declaring it - the shape
+  `powerUpChecks()` already uses - not a constant in `tools/guide`.
 
 ### G17 - a part label longer than the board runs off the drawing
 
@@ -1117,6 +1202,18 @@ model rather than of the drawing.
 - **What would settle it** the owner looks at the render and says whether a
   label that leaves the board is acceptable, needs shortening, or needs the
   renderer to place it differently.
+- **MEASURED ON THE PRINTED PACKET (2026-10-17), AND THE COST IS NOT CLIPPING.**
+  No label is cut off: the SVG viewBox widens to hold them (checked by
+  comparing every `<text>` run's estimated extent against the viewBox on all
+  four layout images of the two low boards - zero outside). What it costs is
+  page width. `pultec-low-boost`'s designators viewBox starts at `x = -153.8`
+  against `-112.8` for the same board's values image, so the long stand-in
+  labels widen the drawing by about 41 units and the board itself is printed
+  smaller to fit. On the page, `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper` (row C)
+  overprints the row-C letter and the board outline, and on `pultec-low-cut`
+  the row-I labels `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper` and
+  `SI_LOW_BOOST_RV_LO_BOOST.ccw-wiper` overprint each other. Still the owner's
+  call, with one number now attached to it.
 
 ### G15 - the frozen low-boost fixture and the physical model hold different parts
 
@@ -1194,6 +1291,19 @@ this is a MISSING ROW. Answering G1 either way leaves the table empty.
   parts, with a test that counts rows against the board's pad count. **Note it
   is not independent of G1**: a junction row has to say what the wire carries,
   which is the label G1 decides.
+- **NOW SEEN IN A PRINTED PACKET, ON BOTH LOW BOARDS (2026-10-17).** The
+  measurement below was made on a checklist built in memory; it has now been
+  made on `boards/<board>/guide/guide.html` as `make guide` writes it, printed
+  to PDF and read page by page. `pultec-low-boost`: 10 `PAD` lines
+  (`RV_LO_BOOST.1-.3`, `SW_LO_BOOST.1-.7`), **"Wire-to-board junctions" has 2
+  rows** (`junction_grounds`, `junction_signals`). `pultec-low-cut`: 10 `PAD`
+  lines (`RV_LO_CUT.1-.3`, `SW_LO_CUT.1-.7`), **2 rows**. On both boards NO pad
+  identity appears anywhere in any of the seven checklist sections, while all
+  ten rings are drawn on both layout images with a legend entry telling the
+  builder they are where off-board wires solder. So a person building either
+  board from paper gets ten solder joints to make and no line to tick, and the
+  two artifacts in one packet contradict each other exactly as stated. **The
+  entry is accurate as written.**
 - **NO LONGER BLOCKED, AND NOW VERIFIED ON A REAL BOARD.** It was blocked
   behind G14 - `buildChecklist` refused a materialised board outright, before
   any junction row was built - and G14 is closed (`--import` now stores the

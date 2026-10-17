@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { unresolvedCutsMessage } from "../../tools/perfboard/cut-state.ts"
-import { writeGuidePacket, PACKET_FILES, type GuideDeps, type GuideFs } from "../../tools/guide/packet.ts"
+import { writeGuidePacket, packetFiles, type GuideDeps, type GuideFs } from "../../tools/guide/packet.ts"
 import { DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
 
 const DECLARATION: PerfboardDeclaration = {
@@ -72,7 +72,7 @@ const GUIDE = "/repo/boards/test-board/guide"
 test("the packet writer writes all five files into the board's guide directory", async () => {
   const h = harness(DUMP_TEXT)
   const report = await writeGuidePacket(DECLARATION, h.deps)
-  expect([...h.files.keys()].sort()).toEqual(PACKET_FILES.map((file) => `${GUIDE}/${file}`).sort())
+  expect([...h.files.keys()].sort()).toEqual(packetFiles(true).map((file) => `${GUIDE}/${file}`).sort())
   expect(h.veroroute).toEqual([["--dump-board", DECLARATION.vrtPath]])
   expect(h.kicad[0]?.[0]).toBe("/fake/kicad-cli")
   expect(h.kicad[0]?.[1]).toBe("/repo/circuits/test.kicad_sch")
@@ -144,10 +144,26 @@ test("a floating part is refused, naming it and the fix", async () => {
   expect(h.files.size).toBe(0)
 })
 
-test("a board that declares no schematic is refused", async () => {
+test("a board that declares no schematic gets a four-file packet that prints why", async () => {
+  // SUPERSEDES THE REFUSAL THAT USED TO BE ASSERTED HERE (known-gaps G16): a
+  // board with no "sch" is now packeted, and the omission is PRINTED. What is
+  // checked is all three halves of that: kicad-cli is never reached, the
+  // packet is exactly the four files, and the statement is in guide.html -
+  // the file a person prints - naming the board, the declaration, the circuit
+  // model the pages were checked against, and the fix.
   const { schPath: _sch, netlistPath: _net, ...withoutSchematic } = DECLARATION
   const h = harness(DUMP_TEXT)
-  await expect(writeGuidePacket(withoutSchematic, h.deps)).rejects.toThrow(/declares no "sch"/)
+  const report = await writeGuidePacket(withoutSchematic, h.deps)
+  expect([...h.files.keys()].sort()).toEqual(packetFiles(false).map((file) => `${GUIDE}/${file}`).sort())
+  expect(h.files.has(`${GUIDE}/schematic.pdf`)).toBe(false)
+  expect(h.kicad).toEqual([])
+  const html = h.files.get(`${GUIDE}/guide.html`) ?? ""
+  expect(html).toContain("No schematic in this packet")
+  expect(html).toContain("there is no schematic for test-board to print")
+  expect(html).toContain("boards/test-board/perfboard.json")
+  expect(html).toContain("circuits/test.ts")
+  expect(report).toContain('declares no "sch"')
+  expect(report).not.toContain("schematic.pdf")
 })
 
 test("a failed schematic export leaves the previous packet in place", async () => {
