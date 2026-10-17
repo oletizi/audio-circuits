@@ -106,6 +106,12 @@ test("a pin outside the pad order refuses rather than naming the wrong terminal"
 - Consumes: `terminalNameOf` from Task 1; `SELECTORS` and `POTS` from `circuits/pultec/electrical/controls.ts:118,65`.
 - Produces: `padLabelOf(component: Component, pin: string, controls: ControlModel): string` — e.g. `"LO BOOST wiper"`, `"LO BOOST 60Hz"`, `"LO BOOST common"`.
 
+> **SUPERSEDED IN FLIGHT, and the task text below is kept as the record of what was asked rather than what landed.** A review found that `positionsByPin` already derived pin → position from a component's own `contacts` map, with no index join, no ordering assumption and no whitelist — and that `boards/pultec-mid/wiring.md`, committed, already printed it correctly including the three-position centre-off switch this task's design would have REFUSED.
+>
+> The controller ruled the label reads `contacts`. **The signature is `padLabelOf(component, pin)` with no control model**, the detent-count guard and its test do not exist, and the whitelist is gone — so the labels work on all five committed boards and all 79 off-board pads rather than on two boards' worth. Landed at `3af2089`.
+>
+> **The brief was wrong, not the implementer.** It is left standing because a plan edited to match what happened stops being a thing an implementation can be judged against.
+
 **Where a throw's value comes from.** `SELECTORS` records `positions: ["20Hz", "30Hz", "60Hz", "100Hz", "150Hz", "200Hz"]` for `SW_LO_BOOST`, each entry sourced — `"P3bandDoc.pdf p4 Cboost column; LOSWB, the other pole of the low frequency selector"`. **That is transcribed evidence with provenance, which is what this repository means by not guessing.**
 
 **The alignment that must be CHECKED and never assumed.** The throw at index *i* of `rotaryPadOrder` corresponds to `positions[i - 1]` only if the two agree in count. **If they do not, refuse** — naming both counts, both sources, and that a frequency printed against the wrong detent is a build sheet that sends a wire to the wrong lug.

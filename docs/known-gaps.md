@@ -245,6 +245,64 @@ no builder's name to map to.
 Open: a fix would settle these
 ------------------------------
 
+### G40 - what a coil's pads should say on a build sheet was decided by an agent, and the entry recording it as unconfirmed was deleted with the gap it sat in
+
+A board's inductor pads now print `HI BOOST 100MH a` and `HI BOOST 100MH b` -
+the coil's function, its value, and which end. **Eighteen printed pads across
+two committed boards take their wording from that choice**: four coils on
+`pultec-hi-boost`, five on `pultec-mid`.
+
+**It was decided by an implementing agent, not by the owner.** The controller's
+ruling named the `RV_` and `SW_` prefixes; `L_` was added on the implementer's
+judgement, because the committed hi-boost and mid layouts carry those pads and
+the alternative was no guide page for two of the five boards. **That reasoning
+is sound and the call was flagged rather than hidden** - which is the sanctioned
+channel working.
+
+**What went wrong is bookkeeping with teeth.** The deleted G37 carried *"an
+owner line on what an inductor-tap pad should read"* among the things that would
+settle it. G37 was correctly deleted - its gap had dissolved - and that question
+went with it, surviving only in a gitignored task report. **The wording of
+eighteen pads on a printed build sheet is a criterion about the artifact, and
+the invariant says the producing agent may not author one.** The decision stands
+until the owner rules; what was missing is any durable record that it is still
+his to rule on. This entry is that record.
+
+- **Found** by the Task 2 re-reviewer, as a consequence of a correct deletion.
+- **Evidence** the sweep's own counts: hi-boost 21 off-board pads including 8
+  inductor pads, mid 28 including 10.
+- **Verified** yes - the controller read the counts and the labels.
+- **Why it is open** it is the owner's to confirm, and nothing else is blocked
+  on it.
+- **What would settle it** the owner looks at a guide page carrying
+  `HI BOOST 100MH a` and says whether that is what he wants a coil tap to read.
+  **The weakest of them is `MID 0R45H b`** - RKM notation for 0.45H reads as a
+  BOM value rather than a panel word, and it is the one to put in front of him
+  first.
+
+### G41 - a rotary's pole is recognised by the literal string `common`, and a second pole would be labelled with a frequency
+
+`tools/guide/pad-label.ts:95-100` treats a pad as the pole when its terminal
+name is exactly `common`. A multi-pole rotary whose second pole pin is named
+anything else falls through to `positionsByPin` and is labelled with whatever
+position closes onto it - **a frequency printed against a pole, which reads as
+an ordinary wiring instruction and is wrong in the quiet way.**
+
+Not hypothetical forever: `symbolFor` (`circuits/pultec/physical/parts.ts:281-294`)
+already contemplates *"one common per pole"*.
+
+- **Found** by the Task 2 re-reviewer.
+- **Evidence** the literal comparison at the line above; `padTable` in
+  `lib/board/wiring.ts` carries the same assumption.
+- **Verified** yes - the controller read both.
+- **Why it is open** it pre-dates this work in `padTable`, no committed board
+  has a multi-pole rotary landing as pads, and inventing a naming rule for a
+  pole that does not exist yet would be guessing at a part nobody has chosen.
+- **What would settle it** a rule for recognising a pole that does not rest on
+  one spelling, with a test driving a second pole - **or a refusal**, which is
+  the better answer while no such part exists: a pad whose terminal is neither
+  the pole nor a position should refuse rather than be labelled.
+
 ### G39 - nothing checks that two poles of one gang declare the same positions, although every reader assumes they do
 
 `SelectorTerminals.gang` (`circuits/pultec/electrical/controls.ts:42`) says poles
@@ -254,8 +312,9 @@ it."* Two checks in `lib/model/control-state.ts` stand behind that sentence and
 
 - `checkGangs` (`:244-256`) compares the SELECTED position of each pole in a
   `ControlState` and refuses *"Ganged switches disagree"*;
-- `validateControlState` (`:206-240`) refuses *"Unknown switch position"*
-  (`:224`) when a selected position is not in that one switch's own `positions`.
+- `validateControlState` (`:207-241`) refuses *"Unknown switch position"*
+  (the test at `:225`, the throw at `:226`) when a selected position is not in
+  that one switch's own `positions`.
 
 So `SW_LO_BOOST.positions` and `SW_LO_CUT.positions` are two independently
 transcribed six-entry lists - the Cboost and the Ccut column of
