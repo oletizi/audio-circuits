@@ -116,6 +116,145 @@ writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
 Open: a fix would settle these
 ------------------------------
 
+### G29 - the constructive seed cannot join a net whose run on a strip is boxed in, and two of the five Pultec boards never produce a candidate at all
+
+`pultec-low-cut` and `pultec-hi-cut` stop in `lib/stripboard/seed-place.ts`'s
+`joinNets` on **every seed of the reviewed restart schedule**, before any
+candidate exists, so there is no materialisation, no grade, no run directory and
+nothing for the adoption gate to read. The refusal, from `low-cut` at `rcm s0`:
+
+```
+stripboard-seed-no-column-to-join: net "0" has leads on strips 5 and 6 and there
+is no column where both strips still have a free hole this join may use, so
+neither a wire nor a bridge can be put between them.
+The stock is 34 strips of 27 holes and ordering "rcm s0" filled it. A hole is
+unusable to this join when it already holds a lead, a wire end or a bridge, and
+ALSO when putting this net's end there would leave a net interleaved on that
+strip - which is the case a strip carrying two nets adds (see this function's
+comment).
+This is not skipped and no hole is shared: a join is what makes a net whole
+across two strips, so a strip left unjoined is an OPEN that no cut list can close
+(lib/stripboard/invariants.ts), and a lead sharing a hole with a wire end is what
+the owner asked not to build - "I would prefer leads not share holes - it makes
+building easier".
+```
+
+`hi-cut` reaches the same refusal for net `j12_p2` between strips 8 and 12.
+
+**"THE ORDERING FILLED IT" IS THE REFUSAL'S OWN WORDING AND IT IS NOT WHAT
+HAPPENED**, which matters because a reader who believes the board is full will
+go looking for a bigger board. On `low-cut` at `rcm s0` the failing strip holds
+**nine contacts in twenty-seven holes**; on `hi-cut` at `rcm s0`, eleven. Every
+remaining hole is closed by the INTERLEAVE filter in
+`lib/stripboard/seed-contacts.ts`'s `joinSiteFor`, not by occupancy, and the two
+boards fail in two different shapes of the same way:
+
+- **`low-cut`: the net's run is flush against the board edge.** Net `0` holds
+  columns 0 and 1 of strip 5 - `junction_signals.5` and
+  `SI_LOW_BOOST_RV_LO_BOOST.ccw-wiper.1` - and `j5_p1` starts at column 2, so a
+  net-`0` join end anywhere above column 1 would straddle another net's run.
+  There is no column below 0.
+- **`hi-cut`: the net's run is interior to the capacitor bank.** Strip 8 carries
+  six nets - `j12_p1` at columns 2-3, `j12_p2` at 4-5, `j12_p3` at 6, `j12_p4` at
+  7-8, `j12_p5` at 9-10, `j12_p6` at 12 and 16 - so `j12_p2` is boxed in on both
+  sides and every one of its own holes already holds a lead.
+
+In both cases the OTHER strip of the join has plenty: 19 usable columns for
+`low-cut`, 26 for `hi-cut`. One strip with none refuses the board.
+
+**THE CONSTRAINTS ADMIT AN ARRANGEMENT AND THE CONSTRUCTOR DOES NOT REACH IT,
+WHICH IS THE WHOLE OF THIS ENTRY.** Driving `lib/stripboard/separable.ts`'s own
+`interleavingOn` over the actual contact list of the failing strip, and then over
+the same contacts with everything from the net's own run shifted ONE column along
+- no part moved to another strip, no hole added, the highest column still 17 of
+26 - the usable-join-column set goes from `[]` to `[4]` on `hi-cut` and from `[]`
+to `[0]` on `low-cut`. So a board satisfying every stated constraint exists one
+column away, and nothing in the pipeline can get to it: the constructor is
+one-shot and greedy, it reserves no hole for a join it has not made yet, and
+**there is no search to repair the result** (`G22`).
+
+**WHAT ELSE THE BOARDS DO, probed beyond the reviewed schedule and reported as
+the diagnostic it is.** Seeds 5-19 were run on both boards as a measurement and
+are not a parameter anybody reviewed: all twenty orderings refuse on `low-cut`,
+and eighteen of twenty on `hi-cut`, where seeds 17 and 18 instead reach a second
+refusal, `stripboard-seed-pad-cannot-be-seated` - *"`SW_HI_CUT` terminal `3` is a
+landing pad for net `j12_p2`, which ordering `rcm s17` hosts on strip 9, and not
+one of the 27 columns of that strip will take it."* Same net, one placement step
+earlier.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 7, which ran all four
+  remaining sections through the path `pultec-low-boost` took.
+- **Evidence** the refusals above, produced by the committed producer
+  `materializeRun` on `boards/pultec-low-cut` and `boards/pultec-hi-cut`; the
+  per-strip contact lists and usable-column sets read with `joinSiteFor` and
+  `freeHole`; the one-column counterfactual run through `interleavingOn`.
+- **Verified** yes - run, not relayed, on both boards and on every seed of the
+  reviewed schedule.
+- **Why it is open** Task 7 is a measurement and was told to fix nothing, and the
+  fix is not an agent's to choose anyway: which arrangement is ACCEPTABLE is an
+  acceptance criterion about the artifact, and the agent producing the artifact
+  may not author it (`CLAUDE.md`).
+- **What would settle it** a decision on where the repair belongs - a constructor
+  that keeps a join hole in each net's run, a placement order that leaves the
+  edge column free, or the search `G22` asks for, which would reach the same
+  arrangement by moving a lead - then the change with a test that drives
+  `low-cut` and `hi-cut` to a candidate.
+
+**A CLEAN RESULT THAT BELONGS BESIDE THIS ONE, because the same run produced it
+and the next reader will be looking for it.** `pultec-hi-boost` and `pultec-mid`
+do NOT fail: both construct, materialise and grade on all five seeds, with
+`HC1`-`HC10` all true, every net reported `complete` by the fork's own
+`--check --netlist`, and they reach the adoption gate, where the only refusal is
+the owner-approval channel (`G27`). **The predicted capacitor-reach failure did
+not happen on `mid`.** `docs/stripboard/lead-span.md` §5.3 records that the
+clustering the pipeline spec asked for *"is not reachable with untaped
+B32529s"*, and that remains a true statement about that ordering - but the board
+this pipeline actually produces never asks for it: of `mid`'s eighteen film
+capacitors, seventeen are materialised at `SPAN 1` - 2 holes, the recorded
+MINIMUM - and the one `CAP_FILM_WIDE` at `SPAN 3`, 4 holes, which is the recorded
+MAXIMUM and not past it. So `HC5` and `HC9` pass on every part, and the board
+leans on the bottom of the family's reach rather than on the top of it. Two
+reasons, both read off the
+repository rather than inferred: the owner's 2026-10-10 resolution recorded in
+`docs/pultec/capacitor-selection.md` is to keep the B32529 and reach the distant
+strip with a WIRE rather than with a splayed lead, and `stripboard/rules.json`
+holds `kappaBench: null`, so `A2` does not fire and nothing is pressing the
+arrangement toward a tighter cluster. **No gap is opened for it**; it is recorded
+here so that a reader who goes looking for the six-hole span finds the
+measurement instead of the prediction.
+
+### G30 - `materializeRun` has no CLI verb, so the only producer of an adoptable run directory is a scratch file
+
+`tools/stripboard/materialize-run.ts` is the producer every Pultec board goes
+through - the one that constructs a candidate in the model, materialises it and
+writes the `run.json` the adoption gate reads. **Nothing in `tools/cli/` and no
+target in `make/board.mk` calls it.** `make place` drives `./place.ts`, the
+fork-gesture search, which `G22` says cannot run on any of these boards.
+
+So every run directory any of the five Pultec boards has ever been adopted from
+or reported on was produced by a file under the gitignored `build/scratch/`,
+written fresh by the agent that needed it: `build/scratch/task-6-run.ts` for the
+low-boost adoption, `build/scratch/task-7-run.ts` for the four sections after it.
+The cost is specific rather than general: the run directory is an INPUT to a gate
+that checks provenance, and the thing that produced it is not in the repository,
+is not covered by `bun test`, and is destroyed by `git clean -fdx` - so the
+chain the gate verifies starts at a file nobody can review.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 6, which recorded it in its
+  report; Task 7 needed the same driver again and entered it in the register,
+  because a finding that lives only in a plan report is one this file's own
+  preamble says does not exist.
+- **Evidence** `grep -rn materializeRun lib tools tests` finds the module, two
+  test files and no CLI or make caller; `make/board.mk`'s `place` target runs
+  `bun "$(CLI)" place`.
+- **Verified** yes.
+- **Why it is open** out of the scope of both tasks that hit it - Task 6 adopted
+  one board and Task 7 measured four - and adding a verb is a surface the owner
+  may want shaped, since it decides what an operator types to produce a board.
+- **What would settle it** a `materialize` verb beside `place`, taking the board
+  and the stamp the gate's `provenance-chain` check requires, with the scratch
+  drivers deleted in the same change.
+
 ### G28 - `--update` refuses the adopted low-boost on a wire it cannot put back, although the netlist has not moved
 
 `boards/pultec-low-boost` is the first board in this repository to reach
