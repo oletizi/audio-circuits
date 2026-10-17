@@ -436,6 +436,68 @@ field is still a plain `number`.
   side with `q3` refusing the `undefined` case, which is the shape
   `lib/stripboard/search-stop.ts` already has.
 
+### G31 - an approval's quote names no board, so one sentence authorises two entries and nothing in the loader notices
+
+On 2026-10-17 the owner was shown two renders - `pultec-hi-boost` and
+`pultec-mid`, both `layout-designators.png` under
+`build/scratch/task-7-render/` - and said, in full:
+
+> *"the two boards you showed me look good."*
+
+That one sentence is the authority for **two** entries in
+`stripboard/render-approvals.json`, `owner-render-pultec-hi-boost-rcm-s4` and
+`owner-render-pultec-mid-rcm-s0`, which quote it identically.
+
+**THE GAP IS THAT THE SENTENCE IDENTIFIES NEITHER BOARD.** *"the two boards you
+showed me"* is a reference to an act outside the repository. Which two boards it
+means is fixed by what was put in front of him, and that is recorded in each
+entry's `renderedFrom` and `note` by the agent that recorded the approval - it is
+not in his words and no reader can recover it from them. For these two boards the
+PICTURE-to-BYTES half of that chain is now a measurement rather than an inference
+(see `G27` item 2 below), so what is left is narrow and specific: **which two
+pictures he was looking at.**
+
+**AND THE LOADER CANNOT SEE THE REUSE.** `tools/stripboard/approvals.ts`'s
+uniqueness rule is on `candidateSha256` and on `id`, deliberately - the same bytes
+approved twice is one decision written down twice - and there is no rule on
+`ownerWords`. So:
+
+- two entries quoting one sentence load cleanly, which is correct here and is the
+  reason the rule is where it is;
+- **a THIRD entry pasting the same sentence against a third board's hash would
+  also load cleanly**, and the three quote guards
+  (`approvals-no-words`, `approvals-words-narrated`,
+  `approvals-words-not-spoken`) would all pass on it, because the sentence is
+  genuinely his and genuinely in the second person.
+
+**WHAT WAS CONSIDERED AND NOT DONE, because each is an agent authoring a rule
+about the owner's own words.** Refusing a quote that is already in the file
+(which would have refused this correct pair); requiring the quote to contain the
+board name (he does not talk that way, and the low-boost quote does not contain
+*"low-boost"* either); a `coversBoards` list field (an agent's enumeration of
+what he meant, with the loader checking the agent's own answer).
+
+- **Found** `2026-10-16-low-boost-to-adoption`, in the change that adopted
+  `pultec-hi-boost` and `pultec-mid` on this sentence.
+- **Evidence** the sentence itself, quoted above and carried verbatim in both
+  entries; `tools/stripboard/approvals.ts`'s `readEntries`, whose two
+  duplicate refusals are `approvals-duplicate-id` and
+  `approvals-duplicate-candidate` and which has no clause about `ownerWords`;
+  and `tests/stripboard/approvals.test.ts`'s *one utterance is the authority for
+  two entries, quoted identically in both*, which asserts the reuse rather than
+  hiding it.
+- **Verified** yes - the pair was loaded, consulted and adopted on it.
+- **Why it is open** the fix is a rule about what the owner's words have to
+  contain, or about which boards an agent may say he meant, and the producing
+  agent may author neither. Recording the reuse loudly in three places - the
+  registry's `notes.ownerWords`, both entries' `doesNotExcuse`, and a test that
+  names it - is what an agent may do about it.
+- **What would settle it** him naming the two boards in a sentence, or a
+  reviewing agent deciding whether an approval may cover more than one artifact
+  and, if so, what field records which. Until then: **an approval recorded from a
+  multi-board sentence must name the renders it came from, and a reader who needs
+  to know which boards he meant reads `renderedFrom`, not `ownerWords`.**
+
 ### G27 - the owner-approval channel records his call but cannot prove it, and the link from the picture he saw to the bytes it admits is an agent's claim
 
 **IT REPLACES THE ENTRY G25 WAS**, which recorded that the low-boost run
@@ -476,6 +538,33 @@ two are one arrangement is an inference from the figures agreeing** - 27 parts,
 4 cuts, 4 wire links, 5 solder bridges, seed 0 - and not something he
 confirmed. The entry's `renderedFrom` says so in those terms rather than
 collapsing it into a path that would imply he inspected the bytes.
+
+**NARROWED ON 2026-10-17, AND THE MEASUREMENT IS RECORDED HERE RATHER THAN IN A
+NEW ENTRY, so a reader who comes looking for this question finds what was
+measured instead of only the prediction.** For the two sections adopted that day
+the picture-to-bytes link is **established by content and not inferred from the
+figures agreeing**:
+
+- `rsvg-convert -z 3` of each render's `layout-designators.svg` reproduces the
+  PNG he was shown **byte-for-byte** - hi-boost
+  `627a53945e6c2936b75816c31f9c66e2e6064061e8c8b7635b35a0e78a19000c`, mid
+  `8f84656ce8dbfefe361916cdfe48a6d02ff8d628d78cc278a62c5b94ecd0e0ba`;
+- re-rendering **each** of the run's five seed candidates through the same
+  renderer reproduces that SVG from exactly ONE seed and from no other - seed 4
+  for hi-boost (`1ef614f1…`), seed 0 for mid (`fca948a0…`) - so the match
+  discriminates between the five candidates rather than being an insensitivity of
+  the drawing;
+- the candidate those SVGs come from is the one `candidateFor` identifies in the
+  run directory the adoption was driven from, whose `run.json` records the same
+  hash the approval is scoped to.
+
+**WHAT THIS DOES NOT CLOSE.** He still looked at a picture rather than at the
+bytes, which is the sentence above and is unchanged; the render was still drawn by
+a scratch adapter rather than by a committed path, which is this entry's *what
+would settle it*; and the low-boost entry's own link remains the inference it was
+recorded as, because nobody re-measured it. What IS closed is the specific doubt
+that an agent picked a plausible seed: for these two boards it did not, and the
+method is reproducible from the run directories.
 
 **3. `CRITERIA` §9's own wording is not reconciled with the channel.** `G2.5`
 reads *"any failing check, including a non-admissible verdict"* and the

@@ -57,9 +57,38 @@ const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 /** This file, which an entry may NOT cite as the thing that consults it. */
 const SELF = "tests/stripboard/approvals.test.ts"
 
-/** The one approved render, and the board it is over. */
+/** The first approved render, and the board it is over. */
 const BOARD = "pultec-low-boost"
 const ENTRY_ID = "owner-render-pultec-low-boost-rcm-s0"
+
+/**
+ * EVERY approved render, in the order the committed file carries them.
+ *
+ * **IT IS AN EXACT LIST AND NOT A LOWER BOUND**, which is the whole of this
+ * assertion's teeth: a fourth entry appearing - whoever added it and for
+ * whatever board - turns this test red and has to be accounted for in the same
+ * change, because the one failure this channel exists to prevent is a board
+ * reaching `boards/` on an approval nobody looked at.
+ */
+const ENTRY_IDS = [
+  ENTRY_ID,
+  "owner-render-pultec-hi-boost-rcm-s4",
+  "owner-render-pultec-mid-rcm-s0",
+] as const
+
+/**
+ * The one sentence that is the authority for the second and third entries, and
+ * the reason they quote the SAME words.
+ *
+ * He was shown two renders on 2026-10-17 - `pultec-hi-boost` and `pultec-mid` -
+ * and said one thing about both. It was not split into two differently-worded
+ * quotes, because an agent's paraphrase of half a sentence would then be the
+ * record of that half; and the two entries were not merged, because the scope of
+ * an approval is one set of bytes. The registry's `notes.ownerWords` records the
+ * decision and `docs/known-gaps.md` `G31` records what the loader therefore does
+ * NOT check.
+ */
+const TWO_BOARD_WORDS = "the two boards you showed me look good."
 
 function entryFor(board: string): RenderApproval {
   const found = loadApprovals().approvals.find((entry) => entry.board === board)
@@ -71,19 +100,46 @@ function entryFor(board: string): RenderApproval {
 // The committed artifact
 // ---------------------------------------------------------------------------
 
-test("the committed registry loads, and approves exactly one render", () => {
+test("the committed registry loads, and approves exactly the renders he has looked at", () => {
   const registry = loadApprovals()
   expect(registry.schema).toBe(1)
-  expect(registry.approvals.map((entry) => entry.id)).toEqual([ENTRY_ID])
-  const entry = entryFor(BOARD)
-  expect(entry.grantedBy).toBe("owner")
-  expect(entry.grantedOn).toBe("2026-10-16")
-  expect([...entry.admits]).toEqual([...ADMITTED_TERMINATIONS])
-  // THE SCOPE IS BYTES, so the field is a real sha256 and not a board name
-  // wearing one. A truncated or uppercased paste refuses in the loader.
-  expect(entry.candidateSha256).toMatch(/^[0-9a-f]{64}$/)
-  expect(entry.why.length).toBeGreaterThan(80)
-  expect(entry.note.length).toBeGreaterThan(200)
+  // THE EXACT LIST, so a fourth entry is a failing test rather than a silent
+  // widening of what this file admits.
+  expect(registry.approvals.map((entry) => entry.id)).toEqual([...ENTRY_IDS])
+  for (const entry of registry.approvals) {
+    expect(entry.grantedBy, entry.id).toBe("owner")
+    expect([...entry.admits], entry.id).toEqual([...ADMITTED_TERMINATIONS])
+    // THE SCOPE IS BYTES, so the field is a real sha256 and not a board name
+    // wearing one. A truncated or uppercased paste refuses in the loader.
+    expect(entry.candidateSha256, entry.id).toMatch(/^[0-9a-f]{64}$/)
+    expect(entry.why.length, entry.id).toBeGreaterThan(80)
+    expect(entry.note.length, entry.id).toBeGreaterThan(200)
+  }
+  expect(entryFor(BOARD).grantedOn).toBe("2026-10-16")
+  // THE SECOND AND THIRD WERE ONE LOOK ON ONE DAY, and the dates say so.
+  expect(entryFor("pultec-hi-boost").grantedOn).toBe("2026-10-17")
+  expect(entryFor("pultec-mid").grantedOn).toBe("2026-10-17")
+})
+
+test("one utterance is the authority for two entries, quoted identically in both", () => {
+  // **IT IS NOT A DOUBLE-COUNTING AND IT IS NOT A PARAPHRASE EITHER.** He was
+  // shown two renders and said one thing about both. The hazard this test pins
+  // is the tidying an agent is tempted into: rewording the sentence per entry so
+  // each reads as being about its own board, which would make the record of each
+  // half an agent's reconstruction.
+  const hiBoost = entryFor("pultec-hi-boost")
+  const mid = entryFor("pultec-mid")
+  expect(hiBoost.ownerWords).toEqual([TWO_BOARD_WORDS])
+  expect(mid.ownerWords).toEqual([TWO_BOARD_WORDS])
+  // AND THE SCOPE IS STILL TWO DIFFERENT SETS OF BYTES, which is why there are
+  // two entries rather than one over a board pair.
+  expect(hiBoost.candidateSha256).not.toBe(mid.candidateSha256)
+  // THE QUOTE NAMES NO BOARD, so each entry has to say which two renders it was
+  // about - the loader cannot and does not check that, and G31 records it.
+  for (const entry of [hiBoost, mid]) {
+    expect(entry.doesNotExcuse.join(" "), entry.id).toContain("G31")
+    expect(entry.renderedFrom, entry.id).toContain("layout-designators.png")
+  }
 })
 
 test("his words are carried verbatim, as two utterances and not one agent's sentence", () => {
