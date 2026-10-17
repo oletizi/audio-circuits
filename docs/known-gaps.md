@@ -116,6 +116,88 @@ writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
 Open: a fix would settle these
 ------------------------------
 
+### G28 - `--update` refuses the adopted low-boost on a wire it cannot put back, although the netlist has not moved
+
+`boards/pultec-low-boost` is the first board in this repository to reach
+`boards/` through the pipeline, and `--update` cannot be run on it:
+
+```
+the layout's wire Wire4 (0,5 to 2,5, carrying net ids 13 and 11) cannot be put
+back after reconciliation: its two ends are no longer on one net. Move or delete
+it in the GUI, then run this again.
+```
+
+**Nothing about the circuit changed, which is what makes this a defect rather
+than the refusal working.** `--check BOARD --netlist NETLIST` on the same two
+files prints **no `Schematic delta` section at all** - `FormatReport`
+(`Reconcile_report.cpp:375-385`) emits that heading only when the plan carries
+delta lines - and reports all 14 nets complete. So the reconciliation plan is
+empty and the refusal comes out of the re-fill, not out of a change.
+
+**On the board itself the wire is sound.** `--dump-board` of the committed
+layout gives `WIRE Wire4 AT 0,5 ENDS 0,5,13,13 2,5,13,13` - both ends on node
+13, `si_hi_cut_j12_p3` - beside `CUT 2,4,11 2,5,13`, the cut that splits row 2
+between node 11's stretch and node 13's. The refusal reports those same two ends
+as `13 and 11` AFTER reconciliation, so one end came back on the other side of
+that boundary.
+
+**The mechanism, read off the fork and stated as the inference it is.**
+`ApplyNetReconciliation` (`Reconcile_apply_nets.cpp:185-315`) lifts every placed
+wire FIRST, retires and repaints the nets, calls `board.AutoFillVero()` - gated
+on `GetVeroTracks()`, which this strip-mode board has - and only then calls
+`ReplaceLiftedWires`. The comment on that ordering says the holes must be
+painted before `Board::PutDown` re-derives each wire's node id from them. What
+the figures above say is that the fill does NOT reproduce the cut position the
+materialisation chose: row 2 carries a pin on node 11 at `2,2` and a pin on node
+13 at `2,8`, the cut between `2,4` and `2,5` is where the pipeline put the
+boundary, and the fill puts it somewhere to the right of `2,5`. That last step -
+fill policy rather than wire handling - is an inference from the two reported
+node ids, not something read out of `AutoFillVero`.
+
+**What it costs.** `make update` is the documented way to apply a circuit change
+to an existing layout in place (`make/board.mk`), and on this board it is
+unavailable: the verb exits 1 and leaves the layout alone. The repair route for
+a pipeline board is to re-run the pipeline and adopt again, which is a different
+workflow and is not what the help text says.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 6's adoption step, while
+  looking for the span/bend bite that Task 2 predicted. **It is not that
+  bite** - see the note below.
+- **Evidence** the refusal above, from
+  `veroroute --update <copy of the adopted .vrt> --netlist
+  build/stripboard/pultec-low-boost/<run>/pultec-low-boost.net -o <scratch>`;
+  the empty `--check --netlist` report on the same pair; the `WIRE`/`CUT` lines
+  from `--dump-board`; and the three functions named above.
+- **Verified** yes - run against the board as committed, not relayed, and
+  reached **through the repository's own verb** as well as through the binary:
+  `make -C boards/pultec-low-boost update` prints `FAIL …`, *"veroroute --update
+  … exited 1; the layout is unchanged"* and then the same wire refusal. Nothing
+  under `boards/` was written in either run - `git status` is clean afterwards,
+  and the direct probe copied the layout to a scratch path first with `-o`
+  sending its output elsewhere.
+- **Why it is open** out of the adoption step's scope, which was a board under
+  `boards/` that `make check` passes - and it does. The fix is either an
+  ordering change or a fill policy inside the pinned fork, and **which cut
+  positions a re-fill must preserve is an acceptance criterion about the
+  artifact**, which the agent producing that artifact may not author.
+- **What would settle it** either the fill preserving an existing net boundary
+  where no net's membership changed - so an empty plan leaves the copper exactly
+  as it found it - or a stated decision that a pipeline-adopted board is not
+  `--update`-able in place, with the verb refusing by that name instead of
+  failing on whichever wire happens to straddle the moved boundary.
+- **THE SPAN/BEND QUESTION THIS STEP WENT LOOKING FOR CAME BACK CLEAN, and that
+  is recorded here because the next reader will look for it in the same place.**
+  `--materialize` leaves parts at spans the `--import` base never had and
+  deliberately does not call `AdoptCurrentSpanAsDeclared`
+  (`Headless_materialize_span.cpp:182-184`), so on the adopted board R2 is at 2
+  holes against a declared 5, `C18` at 4 against 3, and most of the other
+  fifteen parts likewise. **Neither `make check` nor `--check --netlist` says
+  anything about it, and that is the fork working as its own comments describe**:
+  `Reconcile.cpp`'s `BoardPartInfo` keeps the DECLARED span precisely so a bend
+  does not read as a schematic change, and `make check`'s `HC5`/`HC9` grade the
+  bent span against the part's datasheet reach, which is the question a bend
+  actually raises. No entry is opened for it.
+
 ### G22 - the model search cannot run on a board that has off-board pads, so the materialisation pipeline has no search in it
 
 `lib/stripboard/search.ts` is a complete climb with its own `Q1`-`Q6`, and it
