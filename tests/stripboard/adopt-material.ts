@@ -24,6 +24,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { freshStamp, registerCreated } from "./run-scratch.ts"
 import type { AdoptDeps } from "../../tools/stripboard/adopt-model.ts"
+import { APPROVALS_PATH } from "../../tools/stripboard/approvals.ts"
 import type { GitRunner } from "../../tools/perfboard/mutate.ts"
 import {
   pinPatternClosureHash,
@@ -189,6 +190,11 @@ export function depsFor(root: string): AdoptDeps {
     rulesPath: RULES_PATH,
     spanClosureHash,
     pinPatternClosureHash,
+    // THE REAL REGISTRY, because every fixture run here records a stopping rule
+    // and `assertVerdictAdmits` consults the approvals only for a run that
+    // performed no search. A test that needs the other path hands over its own
+    // path - `./approvals-fixtures.ts` writes one - rather than this default.
+    approvalsPath: APPROVALS_PATH,
     frozenFixtureDir: FROZEN_DIR,
     frozenProvenanceFile: FROZEN_PROVENANCE,
     // READ NEITHER FROM THE REAL PIN FILE NOR FROM THE REAL BUILD STAMP: both

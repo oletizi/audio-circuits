@@ -13,8 +13,9 @@
  * `./place-manifest.ts`; this writes the same record for the pipeline the Pultec
  * sections actually go through - the candidate CONSTRUCTED in the model, then
  * `--materialize`d onto a base built fresh by `--import`. Nothing here was added
- * to or taken out of the gate: `./adopt-checks.ts` is untouched, and the run
- * directory this writes is read by exactly the functions `adoptLayout` calls.
+ * to or taken out of the gate: the gate's checks are
+ * untouched, and the run directory this writes is read by exactly the functions
+ * `adoptLayout` calls.
  *
  * **WHAT IT WRITES, AND WHERE.** Only under `build/stripboard/<board>/<stamp>/`:
  *
@@ -27,7 +28,10 @@
  *   - `seed-<n>/layout.txt`, `seed-<n>/materialized.vrt`, `seed-<n>/candidate.vrt`
  *     per seed of the reviewed list - the declarative document, the board the
  *     fork wrote from it, and the painted board the grade was read off;
- *   - `run.json`.
+ *   - `run.json`;
+ *   - `owner-approval.txt` - what `stripboard/render-approvals.json` says about
+ *     this board at this candidate's hash, with his words quoted in full when it
+ *     says anything. See the paragraph on it below.
  *
  * **IT NEVER WRITES UNDER `boards/`.** `./adopt.ts` is still the only thing in
  * this pipeline that does. It reads the declaration, the circuit module and -
@@ -37,7 +41,7 @@
  * **EVERY HASH IS COMPUTED FROM THE FILE THE GATE WILL HASH, NEVER COPIED.**
  * `./place-manifest.ts` takes the netlist's path rather than its text and the
  * rules file's path rather than a figure, and the two closure hashes come from
- * `./geometry-inputs.ts`'s own functions - which are the SAME functions
+ * `./geometry-inputs.ts`'s own functions - the SAME functions
  * `./adopt-checks.ts` recomputes with, so producer and gate cannot disagree
  * about what was covered.
  *
@@ -62,13 +66,19 @@
  * reporting an empty one.
  *
  * **WHAT RECORDING `NO_SEARCH` DOES NOT BUY.** It earns no bound and no
- * admission: `./adopt-checks.ts` refuses a run directory carrying it, because
- * `G2.5` admits through `exitCodeFor(outcome, rule)` over `Q1`-`Q6` and no
- * clause of CRITERIA says what a no-search run may be admitted on. A
- * materialisation is therefore REPORTED and NOT ADOPTED - the same place the old
- * refusal left it, reached by a record that is true. `./termination.ts`'s
- * `NO_SEARCH_NOTE` is the sentence, and `docs/known-gaps.md` G21 and G25 carry
- * the state.
+ * admission of its own: `G2.5` admits through `exitCodeFor(outcome, rule)` over
+ * `Q1`-`Q6`, so a run carrying it is adopted only on the OWNER'S RECORDED CALL
+ * ON A RENDER of that board - acceptance channel 4 of
+ * `docs/superpowers/specs/2026-10-16-pultec-five-boards-design.md`, recorded per
+ * board and per candidate hash in `stripboard/render-approvals.json`. With no
+ * such record `./adopt-verdict.ts` refuses the run directory, which is where the
+ * old unconditional refusal left it. `./termination.ts`'s `NO_SEARCH_NOTE` is
+ * the sentence, and `docs/known-gaps.md` G21 and G27 carry the state.
+ *
+ * **SO THE RUN DIRECTORY SAYS WHAT THAT REGISTRY SAYS ABOUT THIS BOARD**, in
+ * `owner-approval.txt` - a record for a person and not a second gate.
+ * `./materialize-approval.ts` is the one write and carries why it decides
+ * nothing.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -81,6 +91,7 @@ import { builtCommit, readPin } from "../perfboard/acquire.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { measure, type Evaluation } from "./climb-evaluate.ts"
 import { boardGeometry } from "./copper.ts"
+import { writeApprovalRecord } from "./materialize-approval.ts"
 import { freshImportBase } from "./materialize-base.ts"
 import { prepare, type Prepared } from "./place-inputs.ts"
 import { manifestFor, pipelineCommit } from "./place-manifest.ts"
@@ -184,8 +195,8 @@ const MATERIALISED_ARM = "constructed" as const
  * **IT IS NOT A WEAKER STOPPING RULE.** `NO_SEARCH` is not in `STOPPING_RULES`
  * and cannot be handed to `boundFor`, `runFailedOn`, `exitCodeFor` or
  * `renderReport` - `./termination.ts` carries why that is the whole mechanism -
- * so a record carrying it claims nothing, and `./adopt-checks.ts` refuses to
- * adopt from it.
+ * so a record carrying it claims nothing on its own, and `./adopt-verdict.ts`
+ * adopts from it only on the owner's recorded call on a render of this board.
  */
 const TERMINATION: Termination = NO_SEARCH
 
@@ -468,6 +479,12 @@ export async function materializeRun(
     pipelineCommit: pipelineCommit(repoRoot),
   })
   writeManifest(runDir, manifest)
+  writeApprovalRecord(
+    runDir,
+    prepared.board,
+    manifest.canonical.inputs.candidateSha256,
+    TERMINATION,
+  )
   return {
     runDir,
     board: prepared.board,

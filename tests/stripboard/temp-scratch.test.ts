@@ -62,6 +62,7 @@ const TESTS_ROOT = path.resolve(import.meta.dir, "..")
 const REGISTERING: Readonly<Record<string, readonly string[]>> = {
   "rules-fixtures.ts": ["fixture"],
   "exemptions-fixtures.ts": ["fixture"],
+  "approvals-fixtures.ts": ["fixture"],
   "climb-fixtures.ts": ["freshRunDir"],
   "search-fixtures.ts": ["freshSearchDir"],
   "complete-fixtures.ts": ["freshPassDir"],

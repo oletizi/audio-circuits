@@ -8,25 +8,35 @@
  * checks individually also makes a failure name which refusal fired, where
  * `adoptLayout` would report whichever one it reached first.
  *
- * **WHAT THIS FILE MEASURED, STATED UP FRONT SO NOBODY READS THE PASSING CASES
- * AS AN ADOPTION.** Nine of the gate's checks pass on a run directory this
- * producer wrote, **under the committed rules**. The tenth, `failing-check`,
- * REFUSES - and that is the gate working rather than the producer failing: the
- * materialised low-boost board now grades `admissible` (the owner withdrew
- * `kappa_bench` on 2026-10-16, so `A2` does not fire), and the run records
- * `tools/stripboard/termination.ts`'s `no-search` because it swept no move set.
- * `CRITERIA G2.5` admits a run through `exitCodeFor(outcome, rule)` over
- * `Q1`-`Q6` and has no clause for a run that searched not at all, so the gate
- * reports this candidate and does not adopt it. The assertions below pin that
- * state.
+ * **WHAT THIS FILE MEASURED, STATED UP FRONT.** Every one of the nine drivable
+ * checks passes on a run directory this producer wrote, **under the committed
+ * rules**, and `failing-check` is the one that says why the ninth is not a
+ * figure: the materialised low-boost board grades `admissible` (the owner
+ * withdrew `kappa_bench` on 2026-10-16, so `A2` does not fire) and the run
+ * records `tools/stripboard/termination.ts`'s `no-search` because it swept no
+ * move set, so what admits it is **the owner's recorded call on a render** -
+ * acceptance channel 4 of
+ * `docs/superpowers/specs/2026-10-16-pultec-five-boards-design.md`, recorded in
+ * `stripboard/render-approvals.json` against this board and this candidate's
+ * sha256. The tenth check, the post-copy `make check` (`G4`), needs the copy and
+ * is not driven here.
+ *
+ * **THE APPROVAL IS SCOPED TO BYTES, SO ONE ASSERTION HERE IS LOAD-BEARING IN A
+ * WAY A READER SHOULD KNOW ABOUT.** If a pipeline change moves the produced
+ * candidate, its hash stops matching the recorded one and this file goes red on
+ * `failing-check` with a complaint saying the board changed. **That is the
+ * mechanism working**: he approved a board, not a section, and a different board
+ * needs a different look from him. Re-render, show him, record what he says -
+ * never edit the hash to match.
  *
  * **WHAT CHANGED ON 2026-10-16, SINCE THE SHAPE OF THESE TESTS IS THE RECORD OF
  * IT.** This file used to run under a fixture carrying the withdrawn `0.05`,
  * because the producer recorded `Q3` and `assertRuleNotLoadBearing` then refused
  * to write a run at all when the outcome came out `admissible`. The producer
  * records `no-search` now, so the fixture is gone and these checks are driven
- * over a run graded with the reviewed parameters. `docs/known-gaps.md` G25
- * records where that leaves adoption.
+ * over a run graded with the reviewed parameters; and `failing-check` refused
+ * every such run until the owner's approval had a file to be recorded in.
+ * `docs/known-gaps.md` G27 records what that mechanism can and cannot prove.
  *
  * **`uncommitted-layout` IS NOT HERE AND THAT IS DELIBERATE** - it is the one
  * check about the DESTINATION rather than about the run, it lives in
@@ -54,6 +64,7 @@ import type { MaterializeRun } from "../../tools/stripboard/materialize-run.ts"
 import { readManifest } from "../../tools/stripboard/run-dir.ts"
 import {
   adoptInputFor,
+  BOARD,
   chainBoard,
   cleanUpFixtures,
   manifestPath,
@@ -74,6 +85,11 @@ test("the producer writes every file the chain's links are read from", () => {
   const held = fs.readdirSync(run.runDir).sort()
   expect(held, "run.json, the netlist, the imported base and one directory per seed").toEqual([
     "imported.vrt",
+    // WHAT THE BOARD WOULD BE ADMITTED ON, WRITTEN WHERE A READER OF THE RUN
+    // DIRECTORY FINDS IT. A run that performed no search is adopted only on the
+    // owner's recorded call on a render, and this file carries his words in full
+    // - or the complaint, when no record covers these bytes.
+    "owner-approval.txt",
     "pultec-low-boost.net",
     "run.json",
     "seed-0",
@@ -159,17 +175,18 @@ test("veroroute-commit and built-commit: the pin, the record and the stamp on di
 })
 
 /**
- * `failing-check` IS THE ONE THE RUN DIRECTORY DOES NOT CLEAR, and the
- * assertions below are about WHY rather than about the refusal alone.
+ * `failing-check` ON THE RUN AS PRODUCED, and the assertions are about WHAT
+ * ADMITS IT rather than about a pass alone.
  *
- * **THE CANDIDATE IS NOT WHAT THE GATE REFUSES.** It holds all ten hard
- * constraints and, with `kappa_bench` withdrawn, meets every condition that
- * fires - the outcome is `admissible`. What the gate refuses is the RUN: it
- * swept no move set, so it records `no-search`, and `G2.5`'s admission is
- * `exitCodeFor(outcome, rule)` over `Q1`-`Q6`. Reading the refusal without that
- * distinction would leave the next reader believing the board is the problem.
+ * **THE CANDIDATE AND THE RUN ARE TWO FACTS AND BOTH ARE CHECKED.** The
+ * candidate holds all ten hard constraints and, with `kappa_bench` withdrawn,
+ * meets every condition that fires - the outcome is `admissible`, and
+ * `outcomeExitCode` grades it through the same table every other run's goes
+ * through. The RUN swept no move set, so it records `no-search` and has no rule
+ * for `exitCodeFor`; what admits THAT is the owner's recorded call on a render
+ * of this board, and the notice the gate hands back is how the adoption says so.
  */
-test("failing-check: the gate refuses a run that performed no search", () => {
+test("failing-check: a no-search run is admitted on the owner's recorded approval", () => {
   const file = manifestPath(run)
   const manifest = readManifest(run.runDir)
   expect(
@@ -189,15 +206,42 @@ test("failing-check: the gate refuses a run that performed no search", () => {
     "the producer records what it did rather than the least-wrong Q-rule",
   ).toBe("no-search")
   expect(manifest.canonical.metrics.bound, "and therefore no bound at all").toBe("no-bound")
-  expect(() => assertVerdictAdmits(manifest, file)).toThrow(/^failing-check: /)
-  expect(() => assertVerdictAdmits(manifest, file)).toThrow(
-    /records the stopping rule "no-search", and a run recording no-search swept no move set/,
+  const notices = assertVerdictAdmits(manifest, file, BOARD, realDeps())
+  // ONE LINE, AND IT NAMES WHAT THE BOARD WAS ADMITTED ON. An admission on his
+  // judgement rather than on a search result that nobody sees is the same hazard
+  // as a skipped check that looks like a passing one, so the gate hands the line
+  // back and `tools/cli/perfboard-stripboard-verbs.ts` prints it.
+  expect(notices, "the admission is audible").toHaveLength(1)
+  expect(notices[0]).toContain("stripboard-owner-approved")
+  expect(notices[0], "and says it was not a search result").toContain("NOT on a search result")
+  expect(notices[0], "naming the entry").toContain("owner-render-pultec-low-boost-rcm-s0")
+  expect(notices[0], "and the bytes it is scoped to").toContain(
+    manifest.canonical.inputs.candidateSha256,
   )
-  // AND THE REFUSAL SAYS WHOSE DECISION WOULD CHANGE IT, which is the half a
-  // refusal that only named the state would leave out.
-  expect(() => assertVerdictAdmits(manifest, file)).toThrow(
-    /NO CLAUSE OF CRITERIA SAYS WHAT A NO-SEARCH RUN MAY BE ADMITTED ON/,
+})
+
+/**
+ * **THE RUN DIRECTORY SAYS SO TOO, AND IT CARRIES HIS WORDS.** The requirement
+ * is not only that the gate can be satisfied: a reader standing in a run
+ * directory has to be able to see that this board would be admitted on the
+ * owner's judgement rather than on a search result, and read what he said - so
+ * `tools/stripboard/materialize-run.ts` writes `owner-approval.txt` beside
+ * `run.json`. It decides nothing; the gate consults the committed registry
+ * itself.
+ */
+test("the run directory carries the approval, with his words quoted in full", () => {
+  const text = fs.readFileSync(path.join(run.runDir, "owner-approval.txt"), "utf8")
+  expect(text).toContain("stripboard-owner-approved")
+  expect(text).toContain("owner-render-pultec-low-boost-rcm-s0")
+  expect(text).toContain("OWNER'S WORDS (verbatim, 2026-10-16)")
+  // VERBATIM, LOWER-CASE "i" AND ALL. A quote an agent tidies is a quote nobody
+  // can check against what was said.
+  expect(text).toContain("i prefer the loose layout. It's much easier to build.")
+  expect(text).toContain("if the layout is electrically correct, let's keep it. It looks fine to me")
+  expect(text, "and the edges, so the file cannot be read as a blanket").toContain(
+    "WHAT THIS DOES NOT EXCUSE:",
   )
+  expect(text).toContain("violationsOf")
 })
 
 test("the record carries the figures the model produced, not a second reading of them", () => {

@@ -1,9 +1,15 @@
 /**
  * What the adoption gate CHECKS: the recorded hashes against the files they
  * name, the frozen benchmark against its own provenance, the chain back to the
- * board, the two fork commits, and the verdict.
+ * board, and the two fork commits.
  *
- * THE AUTHORITY is CRITERIA `G2.1`-`G2.5`
+ * **THE VERDICT IS `./adopt-verdict.ts`**, split out at this module's line
+ * ceiling and re-exported below: these checks compare a recorded fact against a
+ * file on disk, and that one decides whether the RUN may be adopted at all -
+ * including the owner's recorded call on a render, which is the only thing that
+ * admits a run which performed no search.
+ *
+ * THE AUTHORITY is CRITERIA `G2.1`-`G2.4`
  * (`docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` §9).
  * Where this module and that document differ it wins and this comment is the
  * defect.
@@ -25,10 +31,14 @@ import fs from "node:fs"
 import path from "node:path"
 import { refuse, type AdoptDeps, type AdoptInput, type AdoptRefusal } from "./adopt-model.ts"
 import { recordedHashFor } from "./adopt-provenance.ts"
-import { boundFor, exitCodeFor, OUTCOMES, OUTCOME_WORDING, type Outcome } from "./report-model.ts"
 import { runDirectory, type CanonicalInputs, type RunManifest } from "./run-dir.ts"
-import { STOPPING_RULES, type StoppingRule } from "./stop-model.ts"
-import { NO_SEARCH, NO_SEARCH_NOTE } from "./termination.ts"
+
+// `G2.5` IS ITS OWN FILE AND IS RE-EXPORTED HERE, so no consumer's import path
+// changed when the verdict moved out at this module's line ceiling. The seam is
+// the one the gate already has: these functions compare recorded facts against
+// files on disk, and `./adopt-verdict.ts` decides whether the RUN may be
+// adopted at all.
+export { assertVerdictAdmits } from "./adopt-verdict.ts"
 
 /**
  * `B1-frozen`'s four files, enumerated by name rather than discovered by
@@ -318,94 +328,6 @@ export function assertForkCommits(inputs: CanonicalInputs, deps: AdoptDeps): voi
       "built-commit",
       `run.json records builtCommit ${inputs.builtCommit} and the stamp beside the binary says ` +
         stamped,
-    )
-  }
-}
-
-/** One of `REP5`'s three outcomes, from the string `run.json` recorded. */
-function outcomeFrom(text: string, file: string): Outcome {
-  const found = OUTCOMES.find((outcome) => outcome === text)
-  if (found === undefined) {
-    refuse(
-      "failing-check",
-      `${file} records the outcome ${JSON.stringify(text)}, which is not one of REP5's three ` +
-        `(${OUTCOMES.join(", ")}), so this run's verdict cannot be read`,
-    )
-  }
-  return found
-}
-
-/**
- * One of `Q1`-`Q6`, from the string `run.json` recorded.
- *
- * **`no-search` IS REFUSED BY ITS OWN STATEMENT AND NOT AS AN UNREADABLE
- * STRING.** It is a state a producer records deliberately
- * (`./termination.ts`), so reporting it under *not one of Q1-Q6* would read as
- * a malformed record and send the next reader looking for a corruption. What is
- * actually true is that `G2.5` admits through `exitCodeFor(outcome, rule)` over
- * the six and CRITERIA has no clause for a run that searched not at all, so
- * `NO_SEARCH_NOTE` is what this refusal carries. **Nothing about the gate is
- * relaxed by this arm**: the string refused before and refuses now, by the same
- * `failing-check` id.
- */
-function ruleFrom(text: string, file: string): StoppingRule {
-  if (text === NO_SEARCH) {
-    refuse(
-      "failing-check",
-      `${file} records the stopping rule ${JSON.stringify(text)}, and ${NO_SEARCH_NOTE}`,
-    )
-  }
-  const found = STOPPING_RULES.find((rule) => rule === text)
-  if (found === undefined) {
-    refuse(
-      "failing-check",
-      `${file} records the stopping rule ${JSON.stringify(text)}, which is not one of ` +
-        `${STOPPING_RULES.join(", ")} and is not ${NO_SEARCH} either, so whether the RUN ` +
-        "itself failed cannot be read",
-    )
-  }
-  return found
-}
-
-/**
- * `G2.5`: the verdict, read through `exitCodeFor` and not through a second
- * comparison with `"admissible"`.
- *
- * **IT TAKES THE RULE AS WELL AS THE OUTCOME BECAUSE `exitCodeFor` DOES**, and
- * that is what makes a `Q5` stop on an admissible candidate a refusal here:
- * CRITERIA says twice that a run stopping on `Q5` is reported as a failure
- * rather than as a result, and adopting the product of a run reported as a
- * failure would be reading it as a result.
- *
- * **A `no-search` RUN IS REFUSED IN `ruleFrom`, BEFORE EITHER THE PAIRING OR
- * THE EXIT CODE IS REACHED**, so the bound it recorded is never compared and no
- * `exitCodeFor` call is made with it. That ordering is deliberate: there is no
- * pairing to check, because the run earned no bound.
- */
-export function assertVerdictAdmits(manifest: RunManifest, file: string): void {
-  const outcome = outcomeFrom(manifest.canonical.metrics.outcome, file)
-  const rule = ruleFrom(manifest.canonical.metrics.stoppingRule, file)
-  // THE BOUND IS RE-DERIVED FROM THE RULE RATHER THAN TRUSTED AS RECORDED, and
-  // that closes a gap this check had from the start: `metrics.bound` was folded
-  // into the canonical hash and compared against nothing, so the gate trusted
-  // the PRODUCER's pairing of the two. A tamperer recomputes the hash over the
-  // values it edited, and `run.json` is the one artifact where the bound and the
-  // rule can disagree undetected - while REP4 requires that they agree in one
-  // report. `BOUNDS` is the one table that pairs them (`./report-model.ts`), so
-  // one side is now derived here and compared, which is a different act from
-  // reading both off the record.
-  const derived = boundFor(rule)
-  if (manifest.canonical.metrics.bound !== derived) {
-    refuse(
-      "failing-check",
-      `${file} records the bound ${JSON.stringify(manifest.canonical.metrics.bound)} beside the ` +
-        `stopping rule ${rule}, and REP4's own table pairs ${rule} with ${derived}`,
-    )
-  }
-  if (exitCodeFor(outcome, rule) !== 0) {
-    refuse(
-      "failing-check",
-      `${file} reports ${OUTCOME_WORDING[outcome]} - and the run stopped on ${rule}`,
     )
   }
 }

@@ -148,10 +148,14 @@ coverage.
 
 **THE RECORD NOW SAYS SO, WHICH IS NOT A FIX FOR THIS ENTRY.** A run produced
 by that pipeline records `tools/stripboard/termination.ts`'s `NO_SEARCH` rather
-than a stopping rule it did not earn, and `tools/stripboard/adopt-checks.ts`
-refuses to adopt from such a record. That makes the gap legible wherever it
-decides something; the gap itself - that no search in this repository can run
-on one of these boards - is unchanged.
+than a stopping rule it did not earn, and `tools/stripboard/adopt-verdict.ts`
+adopts from such a record only on the owner's recorded call on a render of that
+board (`stripboard/render-approvals.json`, and `G27`). That makes the gap legible
+wherever it decides something - a board that reaches `boards/` through this
+pipeline reaches it on his judgement rather than on a search result, and says so
+in the run directory. **The gap itself - that no search in this repository can
+run on one of these boards - is unchanged**, and closing it is what would let
+`G2.5` decide the question it already can.
 
 - **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
 - **Evidence** the refusal above, from `search(starts, setup)` over
@@ -211,82 +215,92 @@ field is still a plain `number`.
   side with `q3` refusing the `undefined` case, which is the shape
   `lib/stripboard/search-stop.ts` already has.
 
-### G25 - the low-boost run directory is produced and grades admissible, and the adoption gate has no clause that admits a run which performed no search
+### G27 - the owner-approval channel records his call but cannot prove it, and the link from the picture he saw to the bytes it admits is an agent's claim
 
-**IT REPLACES THE ENTRY G23 WAS**, which recorded that this board was refused
-for clustering - `kappa = 0.25` against `kappa_bench = 0.05` - and named *the
-owner's ruling on the bound* as one of the two things that would settle it. He
-ruled: *"i prefer the loose layout. It's much easier to build. I don't see the
-problem"* and *"if the layout is electrically correct, let's keep it. It looks
-fine to me"*. `kappa_bench` is now `null`, `A2` does not fire, `failing-check`
-no longer refuses this run for clustering, and that entry is DELETED rather than
-marked closed. The whole account of the withdrawal - his words, the four
-measured hand-laid figures `kappa` = 0.055 / 0.181 / 0.196 / 0.269 that all sat
-ABOVE the withdrawn bound, and the superseded value's entire reason verbatim -
-is in `stripboard/rules.json`'s `kappaBench` note, which is where the value
-lives.
+**IT REPLACES THE ENTRY G25 WAS**, which recorded that the low-boost run
+directory was produced, graded `admissible`, and was refused by the adoption
+gate because `CRITERIA G2.5` admits through `exitCodeFor(outcome, rule)` over
+`Q1`-`Q6` and *no clause of CRITERIA says what a no-search run may be admitted
+on*. **That entry is DELETED rather than marked closed, because the clause was
+not missing and did not need authoring.**
+`docs/superpowers/specs/2026-10-16-pultec-five-boards-design.md`, under
+*Acceptance*, makes channel 4 *"the owner's call on a render, as it has been for
+every board in this project. Not a figure, and not the producing agent's."* He
+exercised it on this board - *"i prefer the loose layout. It's much easier to
+build. I don't see the problem"* and *"if the layout is electrically correct,
+let's keep it. It looks fine to me"* - and the gate had no way to hear him.
+`stripboard/render-approvals.json` and `tools/stripboard/approvals.ts` are that
+way. All nine drivable adopt checks pass on a freshly produced run.
 
-**WHAT THIS ENTRY SAID UNTIL THE `termination.ts` CHANGE, AND WHY IT NO LONGER
-DOES.** It said the producer refuses to write the run directory at all:
-`tools/stripboard/materialize-run.ts` recorded `Q3`, the board graded
-`admissible`, `exitCodeFor("admissible", "Q3")` is 0, and
-`assertRuleNotLoadBearing` fired. The repair was not to weaken that guard or to
-pick a different rule - its own message forbids both - but to stop the record
-carrying a claim no run earned: `tools/stripboard/termination.ts` gives a
-producer that swept no move set a way to say so, the materialisation path says
-it, and `evaluateStop` is not called on that path at all. **The run directory is
-produced now**, under the committed rules, recording
-`"stoppingRule": "no-search"` and `"bound": "no-bound"` beside
-`"outcome": "admissible"`.
+**WHAT IS LEFT IS WHAT THE MECHANISM CANNOT DO, and it is three things.**
 
-**WHAT BLOCKS ADOPTION IS NOW A STATED GAP IN THE CRITERIA RATHER THAN A
-FALSEHOOD IN A RECORD.** Measured over a freshly produced run, eight of the nine
-drivable adopt checks pass - `candidate-hash`, `rules-hash`, `span-hash`,
-`pin-pattern-hash`, `frozen-fixture-hash`, `provenance-chain`,
-`veroroute-commit`/`built-commit` and `uncommitted-layout`. `failing-check`
-refuses:
+**1. No file can prove the owner said anything.** The loader refuses a record
+that quotes nothing (`approvals-no-words`), one whose quote talks about him in
+the third person (`approvals-words-narrated`) and one in which nobody is
+speaking at all (`approvals-words-not-spoken`) - the three shapes a well-meaning
+agent in a hurry actually writes, each driven. **A fabricated plausible sentence
+passes all three.** What the design buys instead is that a forgery must name one
+board and one 64-hex candidate hash, must live in a committed file with his name
+on it, is written into the run directory as `owner-approval.txt` with his words
+quoted in full, and is printed by `adopt` when it admits the board. Expensive
+and visible, not impossible.
 
-> `failing-check: .../run.json records the stopping rule "no-search", and a run
-> recording no-search swept no move set and bounded nothing ... CRITERIA G2.5
-> admits a run through exitCodeFor(outcome, rule) over Q1-Q6, and NO CLAUSE OF
-> CRITERIA SAYS WHAT A NO-SEARCH RUN MAY BE ADMITTED ON`
+**2. The picture he approved and the bytes the entry admits are linked by an
+agent's reasoning.** He was shown a PNG of the `rcm s0` construction, drawn by a
+scratch adapter in a session scratchpad
+(`.superpowers/sdd/2026-10-15-pultec-layout-capability/task-8-report.md`
+records that render). The entry is scoped to the sha256 of the painted candidate
+`.vrt` the materialisation path writes from the same construction. **That the
+two are one arrangement is an inference from the figures agreeing** - 27 parts,
+4 cuts, 4 wire links, 5 solder bridges, seed 0 - and not something he
+confirmed. The entry's `renderedFrom` says so in those terms rather than
+collapsing it into a path that would imply he inspected the bytes.
 
-`G2.5` admits a run through `exitCodeFor(outcome, rule)` over the six rules, and
-**every one of the six describes how a search terminated**. An agent may not
-author the clause that would admit a run which performed none, so the gate
-reports this materialisation and does not adopt it. The tenth check, the
-post-copy `make -C boards/pultec-low-boost check` (`G4`), is not reachable
-without the copy and was not driven.
+**3. `CRITERIA` §9's own wording is not reconciled with the channel.** `G2.5`
+reads *"any failing check, including a non-admissible verdict"* and the
+implementation admits through `exitCodeFor(outcome, rule)`; nothing in that
+document mentions a run with no rule, and the clause that admits one lives in a
+different spec. **No agent may edit §9 to say otherwise** - which is why this
+change did not - so a reader of CRITERIA alone still finds no answer and has to
+be sent to the five-boards spec by a comment.
 
-**ONE COST THIS CHANGE REMOVED, RECORDED BECAUSE THE PREVIOUS VERSION OF THIS
-ENTRY RECORDED IT.** `tests/stripboard/materialize-run-fixtures.ts` carried
-`GRADED_RULES` - the committed rules plus the withdrawn `0.05` - purely so a run
-directory existed for `materialize-run.test.ts` and
-`materialize-run-perturbed.test.ts` to drive the gate over, which meant neither
-file graded a run under the reviewed parameters. That fixture is deleted and
-both files now run under `loadRules()`.
+**ONE COST THAT IS NOT A DEFECT AND IS RECORDED SO IT IS NOT READ AS ONE.** The
+approval is scoped to bytes, so any pipeline change that moves the produced
+candidate invalidates it: `tests/stripboard/materialize-run.test.ts` then goes
+red on `failing-check` with a complaint saying the board changed. That is the
+mechanism working - he approved a board, not a section - and the remedy is to
+re-render, show him, and record what he says. **Editing the hash to match a new
+board would be an agent approving its own output**, and the test file's own
+comment says so where somebody debugging that failure will read it.
 
-- **Found** `2026-10-16-low-boost-to-adoption`, in the change that unset
-  `kappaBench`.
-- **Updated** in the change that added `tools/stripboard/termination.ts`, which
-  moved the blocker from the producer to the gate and made the record true.
-- **Evidence** a produced run directory under the committed rules, every adopt
-  check driven over it one at a time; and
-  `tests/stripboard/materialize-run.test.ts`'s *"failing-check: the gate refuses
-  a run that performed no search"*.
+- **Found** `2026-10-16-low-boost-to-adoption`, in the change that added
+  `tools/stripboard/approvals.ts`.
+- **Evidence** the four gut perturbations recorded in
+  `.superpowers/sdd/2026-10-16-low-boost-to-adoption/owner-approval-channel-report.md`
+  (each guard removed in turn, the test that notices named, restored); the six
+  input perturbations printed whole from the gate; and
+  `tests/stripboard/approvals-refusals.test.ts`'s own control case, which drives
+  his real words through the same loader so the two readings are tests rather
+  than walls.
 - **Verified** yes - measured, not argued.
-- **Why it is open** whether a run that performed no search may be adopted is a
-  criteria question, and an agent may not author the answer. Weakening the gate
-  is the one repair its own message forbids.
-- **What would settle it** the owner's decision on what a no-search
-  materialisation may be adopted on - or G22's search, after which a `Q`-rule
-  would be earned and `G2.5` would decide the question it already can.
+- **Why it is open** none of the three is fixable by an agent. (1) is a property
+  of recording a human decision in a file; (2) would need him to look at a
+  render generated by a committed path from the exact artifact, which the
+  renderer cannot do today (the two renderer gaps in that task-8 report are why
+  a scratch adapter drew it at all); (3) is an edit to an acceptance document,
+  which the producing agent may not make.
+- **What would settle it** for (2), a committed render path driven from the
+  adopted `.vrt` and a fresh look from him at its output - the strongest form
+  this channel can take. For (3), the owner or a reviewing agent reconciling
+  `CRITERIA` §9 with the five-boards spec's channel 4, in one sentence, in the
+  acceptance document. For (1), nothing: it is the residual, and it is why the
+  record is visible in three places rather than trusted in one.
 
 ### G26 - `docs/stripboard/pipeline-verification.md` still presents `kappa_bench = 0.05` as the live parameter
 
 That document's parameter table (section near line 2982) reads *"`kappa_bench =
 0.05` | The hard end of a ratchet"* and a later section concludes against
-*"`kappa_bench` 0.05"*. The bound was withdrawn on 2026-10-16 (see G25 and
+*"`kappa_bench` 0.05"*. The bound was withdrawn on 2026-10-16 (see G27 and
 `stripboard/rules.json`'s `kappaBench` note), so the table states a current
 parameter that no longer exists.
 
@@ -333,9 +347,23 @@ as adopted and reverts the copy on a non-zero exit, so a fabricated outcome does
 not by itself put a bad board in `boards/`. It does put a board the pipeline
 reported as below target there.
 
+**THE OWNER-APPROVAL CHANNEL DOES NOT WIDEN THIS AND DOES NOT NARROW IT, which
+is worth saying because the two are easy to run together.** A `no-search` run is
+now admitted on his recorded call on a render (`G27`), and its outcome is graded
+through the same unre-derived `metrics.outcome` this entry is about - so a
+fabricated `admissible` beside a genuine approval clears `failing-check` exactly
+as a fabricated `admissible` beside a coherent `Q`-rule does, and for the same
+reason. **What the approval cannot do is substitute for the outcome**: the gate
+grades the candidate BEFORE consulting the registry and refuses an `invalid` or
+`valid-below-target` record with the approval on file and unread, which is
+driven in `tests/stripboard/adopt-approval-gate.test.ts`. The hole is the
+outcome field, in both paths, and it is this entry.
+
 - **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
 - **Updated** in the change that added `tools/stripboard/termination.ts`, which
-  put the stopping rule in the same position as the outcome.
+  put the stopping rule in the same position as the outcome; and again in the
+  change that added `tools/stripboard/approvals.ts`, which made the outcome the
+  one field deciding a `no-search` adoption.
 - **Evidence** the passing assertion named above, and `assertVerdictAdmits` in
   `tools/stripboard/adopt-checks.ts`.
 - **Verified** yes.

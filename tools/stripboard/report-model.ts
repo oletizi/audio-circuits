@@ -135,42 +135,6 @@ export const BOUND_STATUSES: readonly BoundStatus[] = [
   "systematic-cause",
 ]
 
-/**
- * One seed's run, as the seed-set sweep records it, and the whole sweep.
- *
- * **IT IS A DIAGNOSTIC AND THE TYPE IS WHERE THAT IS ENFORCED.** Task 23's
- * criterion is ONE run - *"`B1-frozen` says the pipeline must reach `C <= 5`
- * with `W = 0`; that is the criterion and it is met or not by a run"* - and the
- * sweep answers the different question *"on how many of the reviewed seeds"*.
- * So `reportedOutcome` is carried here beside the per-seed rows and **is the
- * first seed's own verdict rather than anything computed from `reached`**:
- * `tools/stripboard/place.ts` sets it from that run and nothing else, and a
- * change that derived it from the rate would fail the test that holds
- * `reportedOutcome` against `singleRunVerdict` instead of passing quietly. No
- * number is attached to `reached` anywhere - *"a success rate with a bar on it"*
- * is exactly the acceptance criterion the producing agent may not author.
- *
- * It lives in this module rather than beside `place.ts`'s `SeedSweep` so that
- * `./report.ts` can render it without importing the module that runs the
- * search: `SeedSweep` satisfies this shape and adds the first run itself.
- */
-export interface SeedRunRecord {
-  readonly seed: number
-  readonly cuts: number
-  readonly wires: number
-  readonly bound: BoundStatus
-  readonly outcome: Outcome
-}
-
-export interface SeedSweepRecord {
-  /** One row per seed of `rules.seeds`, in that list's order. */
-  readonly perSeed: readonly SeedRunRecord[]
-  /** How many seeds met the `A4` clause of the board that was run. Nothing but the report reads it. */
-  readonly reached: number
-  /** What the report prints: the FIRST seed's verdict, never a function of `reached`. */
-  readonly reportedOutcome: Outcome
-}
-
 /** The refusals this module raises. One arm each in `notDefaultedBecause`. */
 export type ReportRefusal =
   | "report-tolerance-without-tau"
@@ -379,6 +343,29 @@ export function runFailedOn(rule: StoppingRule): boolean {
  */
 export function exitCodeFor(outcome: Outcome, rule: StoppingRule): 0 | 1 {
   if (runFailedOn(rule)) return 1
+  return outcomeExitCode(outcome)
+}
+
+/**
+ * `REP5`'s exit column for the CANDIDATE alone, with no rule read.
+ *
+ * **IT EXISTS FOR THE ONE CALLER THAT HAS NO RULE TO READ**, and it is the same
+ * table rather than a second one: `./adopt-checks.ts` grades a run that recorded
+ * `./termination.ts`'s `NO_SEARCH`, which is not a `StoppingRule` and cannot be
+ * handed to `exitCodeFor` at all. Without this the gate would have compared that
+ * run's outcome with `"admissible"` itself - *"a second comparison would be a
+ * second taxonomy"*, which is the thing `exitCodeFor`'s own comment forbids, and
+ * a fourth outcome would then acquire an exit code by falling through an else
+ * branch on the one path nobody looked at.
+ *
+ * **WHAT IT DELIBERATELY CANNOT SAY is *the run failed*.** `runFailedOn` is
+ * keyed by `StoppingRule` and a caller with no rule has no run-failure claim to
+ * make - which is exactly right for a producer that swept no move set: nothing
+ * it did can be `Q5`. Whether such a run may be adopted at all is a different
+ * question and not this table's: `stripboard/render-approvals.json` is where it
+ * is answered.
+ */
+export function outcomeExitCode(outcome: Outcome): 0 | 1 {
   return EXIT_CODES[outcome]
 }
 

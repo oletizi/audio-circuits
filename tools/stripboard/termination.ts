@@ -30,10 +30,15 @@
  * counters to ask it with - `./materialize-run.ts` used to build them, and the
  * `acceptedThisRound: 0` in them was the false claim - so it records `NO_SEARCH`
  * instead of asking. Nothing here decides whether such a run may be adopted:
- * **no clause of CRITERIA says what a no-search run may be admitted on**, an
- * agent may not author one, and `./adopt-checks.ts` therefore refuses a run
- * directory recording this state. See `NO_SEARCH_NOTE`, which is the sentence
- * that refusal carries, and `docs/known-gaps.md` G21 and G25.
+ * `CRITERIA G2.5` is read through `exitCodeFor(outcome, rule)` over the six, so
+ * it has no clause for a run that searched not at all, and **an agent may not
+ * author one.** What it is adopted on instead is the owner's call on a render -
+ * acceptance channel 4 of
+ * `docs/superpowers/specs/2026-10-16-pultec-five-boards-design.md`, recorded
+ * per board and per candidate hash in `stripboard/render-approvals.json` and
+ * consulted by `./adopt-checks.ts`. Absent such a record this state is still
+ * refused. See `NO_SEARCH_NOTE`, which is the sentence that refusal carries, and
+ * `docs/known-gaps.md` G21 and G27.
  *
  * **ITS OWN FILE, FOR THE REASON THE TWO TYPES ARE SEPARATE.** The vocabulary
  * could have gone in `./stop-model.ts` beside the six, or in `./report-model.ts`
@@ -86,11 +91,14 @@ export type TerminationBound = BoundStatus | NoBound
 
 /**
  * The sentence a refusal about this state carries, in one place because two
- * spellings of *why a no-search run is not adopted* would be two criteria.
+ * spellings of *what a no-search run is adopted on* would be two criteria.
  *
- * It states the gap rather than resolving it: **an agent may not author the
- * criterion that would admit this run**, and the owner's decision is what
- * `docs/known-gaps.md` G25 names as what would settle it.
+ * **IT NAMES THE ONE CHANNEL AND NOT A CRITERION OF ITS OWN.** An agent may not
+ * author the clause that admits this run; it did not have to, because
+ * `docs/superpowers/specs/2026-10-16-pultec-five-boards-design.md` already makes
+ * the owner's call on a render acceptance channel 4. So this sentence says where
+ * such a call is recorded and what it has to say - not whether this particular
+ * board deserves one.
  */
 export const NO_SEARCH_NOTE =
   "a run recording " +
@@ -98,12 +106,15 @@ export const NO_SEARCH_NOTE =
   " swept no move set and bounded nothing - tools/stripboard/materialize-run.ts constructs one " +
   "candidate per seed in the model, materialises it and grades it, and docs/known-gaps.md G22 " +
   "carries why no search in this repository can run on such a board. CRITERIA G2.5 admits a run " +
-  "through exitCodeFor(outcome, rule) over Q1-Q6, and NO CLAUSE OF CRITERIA SAYS WHAT A " +
-  "NO-SEARCH RUN MAY BE ADMITTED ON. It is not defaulted to the outcome alone, which would " +
-  "admit a board on a search nobody ran, and not to a stopping rule chosen to fit the verdict, " +
-  "which is choosing a stopping reason to fit a verdict. So a materialisation is REPORTED and " +
-  "NOT ADOPTED, and the owner's decision on what such a run may claim is what would change that " +
-  "(docs/known-gaps.md G21 and G25)"
+  "through exitCodeFor(outcome, rule) over Q1-Q6, so it has no clause for a run that searched " +
+  "not at all, and an agent may not author one. WHAT SUCH A RUN IS ADOPTED ON IS THE OWNER'S " +
+  "CALL ON A RENDER - acceptance channel 4 of " +
+  "docs/superpowers/specs/2026-10-16-pultec-five-boards-design.md, which is his channel and not " +
+  "the producing agent's - RECORDED IN stripboard/render-approvals.json against THIS board and " +
+  "THIS candidate's sha256, with his words verbatim. It is not defaulted to the outcome alone, " +
+  "which would admit a board on a search nobody ran, and not to a stopping rule chosen to fit " +
+  "the verdict. With no such record the run is REPORTED and NOT ADOPTED: show him the render and " +
+  "record what he says, or report the run (docs/known-gaps.md G21 and G27)"
 
 /** The refusals this module raises. One arm each in `notDefaultedBecause`. */
 export type TerminationRefusal = "termination-not-distinct"

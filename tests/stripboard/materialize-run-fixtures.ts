@@ -95,7 +95,7 @@ export function forkSpawn(): SpawnVeroroute {
  * run directory exists under the reviewed parameters. **The fixture's own
  * withdrawn bound is deleted rather than kept beside the real one**, and these
  * two files grade the board the pipeline actually grades. `docs/known-gaps.md`
- * G25 records the cost that removes.
+ * G27 records the cost that removes.
  */
 export async function producedRun(label: string): Promise<MaterializeRun> {
   return materializeRun(

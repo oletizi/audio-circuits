@@ -21,7 +21,52 @@
  * keeps `./report.ts` the only module that knows what a report is rendered
  * from - and keeps the import one-way, so the two files cannot grow a cycle.
  */
-import type { SeedSweepRecord } from "./report-model.ts"
+import type { BoundStatus, Outcome } from "./report-model.ts"
+
+/**
+ * One seed's run, as the seed-set sweep records it, and the whole sweep.
+ *
+ * **IT IS A DIAGNOSTIC AND THE TYPE IS WHERE THAT IS ENFORCED.** Task 23's
+ * criterion is ONE run - *"`B1-frozen` says the pipeline must reach `C <= 5`
+ * with `W = 0`; that is the criterion and it is met or not by a run"* - and the
+ * sweep answers the different question *"on how many of the reviewed seeds"*.
+ * So `reportedOutcome` is carried here beside the per-seed rows and **is the
+ * first seed's own verdict rather than anything computed from `reached`**:
+ * `tools/stripboard/place.ts` sets it from that run and nothing else, and a
+ * change that derived it from the rate would fail the test that holds
+ * `reportedOutcome` against `singleRunVerdict` instead of passing quietly. No
+ * number is attached to `reached` anywhere - *"a success rate with a bar on it"*
+ * is exactly the acceptance criterion the producing agent may not author.
+ *
+ * It lives in THIS module rather than beside `place.ts`'s `SeedSweep` so that
+ * `./report.ts` can render it without importing the module that runs the
+ * search: `SeedSweep` satisfies this shape and adds the first run itself.
+ *
+ * **IT MOVED HERE FROM `./report-model.ts` AND THE REASON IS THE CEILING, NOT A
+ * RETHINK.** That module reached 501 lines when `outcomeExitCode` arrived, and
+ * of everything in it these two types are the ones whose own module already
+ * existed: this file is the sweep's renderer and was importing them back out of
+ * the vocabulary module. The import is now one-way the other way round -
+ * `./report.ts` re-exports them from here, as it always did from there, so no
+ * consumer's import path changed - and nothing here imports a verdict, a stop
+ * or a search, which is the property the split is for.
+ */
+export interface SeedRunRecord {
+  readonly seed: number
+  readonly cuts: number
+  readonly wires: number
+  readonly bound: BoundStatus
+  readonly outcome: Outcome
+}
+
+export interface SeedSweepRecord {
+  /** One row per seed of `rules.seeds`, in that list's order. */
+  readonly perSeed: readonly SeedRunRecord[]
+  /** How many seeds met the `A4` clause of the board that was run. Nothing but the report reads it. */
+  readonly reached: number
+  /** What the report prints: the FIRST seed's verdict, never a function of `reached`. */
+  readonly reportedOutcome: Outcome
+}
 
 /**
  * Which `A4` clause the seeds were counted against, named by the board the run

@@ -316,7 +316,7 @@ test("failing-check: a stopping rule written over the recorded no-search is refu
   // any exit code is computed.
   const edited = rewritten(run, { metrics: { stoppingRule: "Q3" } })
   withManifest(run, edited, () => {
-    expect(() => assertVerdictAdmits(readManifest(run.runDir), manifestPath(run))).toThrow(
+    expect(() => assertVerdictAdmits(readManifest(run.runDir), manifestPath(run), BOARD, realDeps())).toThrow(
       /^failing-check: .* records the bound "no-bound" beside the stopping rule Q3/,
     )
   })
@@ -332,7 +332,7 @@ test("failing-check: a bound that does not pair with a recorded rule is refused"
     metrics: { stoppingRule: "Q3", bound: "budget-exhausted" },
   })
   withManifest(run, edited, () => {
-    expect(() => assertVerdictAdmits(readManifest(run.runDir), manifestPath(run))).toThrow(
+    expect(() => assertVerdictAdmits(readManifest(run.runDir), manifestPath(run), BOARD, realDeps())).toThrow(
       /^failing-check: .* records the bound "budget-exhausted" beside the stopping rule Q3/,
     )
   })
@@ -345,7 +345,7 @@ test("failing-check: a stopping rule that is neither one of the six nor no-searc
   // there is no seventh slot to fill.
   const edited = rewritten(run, { metrics: { stoppingRule: "Q7", bound: "no-bound" } })
   withManifest(run, edited, () => {
-    expect(() => assertVerdictAdmits(readManifest(run.runDir), manifestPath(run))).toThrow(
+    expect(() => assertVerdictAdmits(readManifest(run.runDir), manifestPath(run), BOARD, realDeps())).toThrow(
       /^failing-check: .* records the stopping rule "Q7", which is not one of Q1, Q2, Q3, Q4, Q5, Q6 and is not no-search either/,
     )
   })
@@ -380,7 +380,7 @@ test("failing-check does NOT see a coherent Q-rule written over no-search", () =
     const manifest = readManifest(run.runDir)
     expect(manifest.canonical.metrics.stoppingRule, "the edit read back, hash and all").toBe("Q3")
     expect(manifest.canonical.metrics.outcome, "which the run itself recorded").toBe("admissible")
-    expect(() => assertVerdictAdmits(manifest, manifestPath(run))).not.toThrow()
+    expect(() => assertVerdictAdmits(manifest, manifestPath(run), BOARD, realDeps())).not.toThrow()
   })
 })
 

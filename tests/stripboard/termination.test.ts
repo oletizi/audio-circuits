@@ -57,16 +57,29 @@ test("boundOf is boundFor on the six and no bound at all on the seventh state", 
   expect(BOUND_STATUSES.map(String)).not.toContain(boundOf(NO_SEARCH))
 })
 
-test("the note states the gap rather than resolving it", () => {
-  // THE SENTENCE IS THE ONE PLACE *why a no-search run is not adopted* IS
-  // WRITTEN, and what it must not do is answer the question: whether such a run
-  // may be adopted is a criteria decision, and an agent may not author one.
-  expect(NO_SEARCH_NOTE).toContain("NO CLAUSE OF CRITERIA SAYS WHAT A NO-SEARCH RUN MAY BE")
-  expect(NO_SEARCH_NOTE).toMatch(/REPORTED and NOT ADOPTED/)
-  expect(NO_SEARCH_NOTE, "the owner's decision is named as what would change it").toMatch(
-    /owner's decision/,
+test("the note names the one channel rather than a criterion of its own", () => {
+  // THE SENTENCE IS THE ONE PLACE *what a no-search run is adopted on* IS
+  // WRITTEN, and what it must not do is author the answer: an agent may not
+  // write the clause that admits such a run. It does not have to, which is what
+  // this test changed to assert - the clause exists, as acceptance channel 4 of
+  // the five-boards spec, and the sentence points at where his call is recorded.
+  expect(NO_SEARCH_NOTE).toContain("G2.5 admits a run through exitCodeFor(outcome, rule) over")
+  expect(NO_SEARCH_NOTE, "it says an agent may not author one").toContain(
+    "an agent may not author one",
   )
-  expect(NO_SEARCH_NOTE, "and the entries that carry the state").toMatch(/G21 and G25/)
+  expect(NO_SEARCH_NOTE, "and names the channel instead").toContain(
+    "THE OWNER'S CALL ON A RENDER",
+  )
+  expect(NO_SEARCH_NOTE, "with the file his call is recorded in").toContain(
+    "stripboard/render-approvals.json",
+  )
+  // AND IT IS SCOPED IN THE SENTENCE ITSELF, so a reader cannot take it for a
+  // standing licence over the board or the section.
+  expect(NO_SEARCH_NOTE).toContain("against THIS board and THIS candidate's sha256")
+  expect(NO_SEARCH_NOTE, "absent such a record, the run is reported").toMatch(
+    /REPORTED and NOT ADOPTED/,
+  )
+  expect(NO_SEARCH_NOTE, "and the entries that carry the state").toMatch(/G21 and G27/)
   // AND IT CLAIMS NOTHING ABOUT THE LAYOUT'S COST. `WORDING`'s five entries are
   // the only quality claims this pipeline makes and this is not one of them.
   expect(NO_SEARCH_NOTE).not.toMatch(/optimal|minimal|lowest possible|cannot be improved/i)

@@ -289,7 +289,7 @@ test("an UNRESOLVED board is refused rather than scored, where a line count woul
  * `V9`'s REGISTER: every literal the scan finds, by the file it sits in.
  *
  * Each entry's reason is in `docs/stripboard/pipeline-verification.md` §7.3,
- * which is where the judgement half of `V9` lives. **Fourteen of the sixteen are
+ * which is where the judgement half of `V9` lives. **All but two are
  * specification citations or quoted figures inside STRING literals** -
  * `COST 2.1`, `COST 6.4`, the filename
  * `2026-10-10-stripboard-acceptance-criteria.md`, and `GetMaxLength 255` quoted
@@ -300,11 +300,31 @@ test("an UNRESOLVED board is refused rather than scored, where a line count woul
  * `seed-arrangement.ts` are values the code uses**: the `2^32` normaliser and a
  * fixed epoch timestamp.
  *
+ * **THE COUNT IS NOT STATED AND THAT IS A CORRECTION.** This paragraph said
+ * *"fourteen of the sixteen"* while the register held eighteen hits, so the
+ * number had quietly gone stale and nothing checked it - a figure in a comment
+ * beside a table that is compared exactly. The table is the count.
+ *
  * IT IS COMPARED EXACTLY, in both directions: a literal appearing in a module
  * that is not here fails, and an entry here whose literal has gone fails too, so
  * the register cannot go stale while reading as a pass.
  */
 const ACCOUNTED: Readonly<Record<string, readonly string[]>> = {
+  // The spec filename `2026-10-16-pultec-five-boards-design.md`, cited inside the
+  // `failing-check` statement where it says what a run that performed no search
+  // is adopted on - that document's Acceptance section makes the owner's call on
+  // a render channel 4, and the refusal names the channel's authority rather
+  // than asserting one of its own. A citation, not a value.
+  "adopt-model.ts": ["2026"],
+  // The same filename, cited inside the refusal for a grantor who is not the
+  // owner (`2026-10-08-agent-authored-boards-design.md`), beside the same rule
+  // `exemptions-read.ts` cites it for: an agent may never author the acceptance
+  // criteria for the artifact it is producing.
+  "approvals-read.ts": ["2026"],
+  // The same five-boards filename, in `NO_SEARCH_NOTE` - the one place *what a
+  // no-search run is adopted on* is written, which names the channel and the
+  // file his call is recorded in rather than authoring a criterion.
+  "termination.ts": ["2026"],
   // The plan filename `2026-10-10-stripboard-pipeline.md`, cited in the module
   // comment and in the refusal's tail because that document is where the
   // departure that charged this count is recorded as made, measured inert and

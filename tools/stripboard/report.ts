@@ -60,7 +60,7 @@ import type { StripboardRules } from "./rules.ts"
 import type { BoardTargets } from "./targets.ts"
 import { admissible, type AdmissibilityResult, type BindingConstraint } from "./verdict.ts"
 import { describeCutCounts } from "./cut-necessity.ts"
-import { sweepLines } from "./report-sweep.ts"
+import { sweepLines, type SeedSweepRecord } from "./report-sweep.ts"
 import {
   OUTCOME_WORDING,
   QUALITY_PREFIX,
@@ -73,7 +73,6 @@ import {
   runFailedOn,
   type BoundStatus,
   type Outcome,
-  type SeedSweepRecord,
 } from "./report-model.ts"
 
 export {
@@ -86,14 +85,18 @@ export {
   assertEnumerated,
   boundFor,
   exitCodeFor,
+  outcomeExitCode,
   outcomeOf,
   runFailedOn,
   type BoundStatus,
   type Outcome,
   type ReportRefusal,
-  type SeedRunRecord,
-  type SeedSweepRecord,
 } from "./report-model.ts"
+
+// THE SWEEP'S OWN TYPES COME FROM THE SWEEP'S OWN MODULE and are re-exported
+// here, so no consumer's import path changed when they moved out of
+// `./report-model.ts` at its line ceiling.
+export { type SeedRunRecord, type SeedSweepRecord } from "./report-sweep.ts"
 
 /** What one report is rendered from. Nothing here is a verdict or a bound. */
 export interface ReportInput {
