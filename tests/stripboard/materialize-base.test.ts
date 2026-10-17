@@ -131,7 +131,20 @@ test("freshImportBase builds a base that --dump-board can read, from the circuit
   const partCount = dump.stdout.split("\n").filter((line) => line.startsWith("PART")).length
   const padCount = dump.stdout.split("\n").filter((line) => line.startsWith("PAD")).length
   expect(partCount + padCount, "the fresh base carries low-boost's full component set").toBe(27)
-  expect(dump.stdout, "net names are --import's own, not the circuit's").toContain("NET_NAMES 0")
+  // **THE NET NAMES ARE THE CIRCUIT'S, AND THIS LINE USED TO ASSERT THE
+  // OPPOSITE.** It read `NET_NAMES 0` under the label *"net names are
+  // --import's own, not the circuit's"*, which is what the fork did until the
+  // task that closed `G14`: `--import` stored no name for any net, so a base
+  // built here - and every board materialised from one - carried a bare dash
+  // on every `NODE` line and the printed build checklist refused outright. The
+  // fork now names each net as it mints that net's nodeId from the netlist, so
+  // the cost this module's doc comment used to state is paid rather than
+  // carried. `./materialize-net-names.test.ts` is where the names are checked
+  // one by one against the nets whose pins each node holds; what is asserted
+  // here is only that the BASE arrives named, because that is the file this
+  // function promises to have built.
+  expect(dump.stdout, "the fourteen nets low-boost exports, all named").toContain("NET_NAMES 14")
+  expect(dump.stdout, "no node is left a bare dash").not.toContain(" NAME -")
 })
 
 test("freshImportBase refuses by name when --import cannot read the netlist, and writes nothing", () => {

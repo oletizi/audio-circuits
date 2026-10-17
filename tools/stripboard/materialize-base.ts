@@ -23,10 +23,14 @@
  *
  * **WHAT THIS COSTS, stated rather than discovered.** Anything in the
  * committed `.vrt` that `--import` cannot produce from the circuit is lost at
- * the first adoption. The only known instance is net names -
- * `--import` writes every `NODE` as `NAME -` where the committed layout
- * carries the real ones - and a later task makes those come from the circuit
- * instead. **Finding a second thing reopens this ruling**; it is not a gap to
+ * the first adoption. The one known instance was net names, and it is now
+ * PAID rather than carried: `--import` wrote every `NODE` as `NAME -` where
+ * the committed layout carried the real ones, and the pinned fork now stores
+ * each net's name as it mints that net's nodeId from the netlist
+ * (`Board::BuildFromParsedNetlist`), so a base built here arrives named and a
+ * board materialised from it keeps those names. The names are the circuit's
+ * own, by the only route that could make them so - the netlist this function
+ * imports. **Finding a second thing reopens this ruling**; it is not a gap to
  * carry across quietly.
  *
  * **THIS MODULE DOES NOT CHOOSE THE BASE FOR A CALLER.** `freshImportBase`

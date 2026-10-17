@@ -135,10 +135,13 @@ const WIRE_TYPE = "WIRE"
  * exactly as the reference netlist keys them.
  *
  * **THE NET OF A HOLE COMES FROM THE REFERENCE NETLIST AND NEVER FROM THE
- * DUMP'S `NODE` NAMES**, because `--import` writes every `NODE` line `NAME -`:
- * on the board every arm starts from, the dump knows which pins share a node and
- * not what that node is called. `./moves-cluster.ts`'s `clusterRefs` and
- * `./seed-constructed.ts` reach the same wall and answer it the same way.
+ * DUMP'S `NODE` NAMES**, because the board's own node names are not this
+ * repository's authority on which net is which - `HC8`'s rule, stated in
+ * `./equivalence.ts` and `./copper.ts`. This used to say instead that
+ * `--import` writes every `NODE` line `NAME -`, which was true until the fork
+ * began naming what it imports and is not the reason anyway.
+ * `./moves-cluster.ts`'s `clusterRefs` and `./seed-constructed.ts` reach the
+ * same wall and answer it the same way.
  *
  * A hole the reference does not carry gets no entry, and that is not a default:
  * such a hole is not a net segment, so it cannot make an abutment and must not

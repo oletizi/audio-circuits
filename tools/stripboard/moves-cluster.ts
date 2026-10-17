@@ -75,10 +75,13 @@ const TRANSLATION_ONLY_ORDER = "turn-then-stretch" as const
  * The on-board parts with a pin on `net`, in the DUMP'S PART ORDER.
  *
  * **THE NET'S PINS COME FROM THE REFERENCE NETLIST AND NEVER FROM THE DUMP'S
- * `NODE` NAMES**, because `--import` writes every `NODE` line `NAME -`: on the
- * board every arm starts from, the dump knows which pins share a node and not
- * what that node is called. `./seed-constructed.ts` reaches the same wall and
- * answers it the same way, by joining the netlist's own nets.
+ * `NODE` NAMES**, because the board's own node names are not this repository's
+ * authority on which net is which - `HC8`'s rule, stated in
+ * `./equivalence.ts` and `./copper.ts`. This used to say instead that
+ * `--import` writes every `NODE` line `NAME -`, which was true until the fork
+ * began naming what it imports and is not the reason anyway.
+ * `./seed-constructed.ts` reaches the same wall and answers it the same way, by
+ * joining the netlist's own nets.
  *
  * **WHICH PART OWNS A PIN IS READ OFF THE DUMP'S `PIN` LINES, NOT BY SPLITTING
  * THE PIN NAME.** `pinHoles` keys a hole `${ref}.${pin}`, and a ref may contain

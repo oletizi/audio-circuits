@@ -255,9 +255,12 @@ export function junctionNets(
  * each other on a real board, so the claim that they agree is checked rather
  * than asserted.
  *
- * **WHAT IT IS FOR.** `--import` writes every board `NODE` line as
- * `NAME -`: the board carries net TOPOLOGY and no net NAMES. But each `NODE`
- * still carries its complete pin list, and a net's pin set is unique by
+ * **WHAT IT IS FOR.** A board's own `NODE` names are never this repository's
+ * authority on which net is which - `HC8`'s rule, and the reason this function
+ * exists at all. (It used to say instead that `--import` writes every `NODE`
+ * line as `NAME -` so the board carried net TOPOLOGY and no net NAMES; that
+ * was true until the fork began naming what it imports, and it was never the
+ * reason.) Each `NODE` carries its complete pin list, and a net's pin set is unique by
  * construction - two nets with identical pin sets would BE one net - so the
  * join from board node to model net is a bijection over pin sets. That is what
  * the constructed arm uses, and it is what `HC8` already does: both

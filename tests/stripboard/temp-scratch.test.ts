@@ -67,6 +67,7 @@ const REGISTERING: Readonly<Record<string, readonly string[]>> = {
   "complete-fixtures.ts": ["freshPassDir"],
   "grade-fixtures.ts": ["fixtureDeclaration"],
   "vero-export-fixtures.ts": ["roundTrip"],
+  "materialize-low-boost.ts": ["materialisedLowBoost"],
   "run-scratch.ts": ["freshRoot", "registerCreated", "scratchStamp", "registerStampPrefix"],
 }
 

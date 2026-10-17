@@ -45,121 +45,23 @@
  * that choice (a base built fresh by `--import` from the circuit, never the
  * committed file, which is adoption's OUTPUT), and this file's base was moved
  * onto it rather than left as the exception the rule forgot.
+ *
+ * **THE MATERIALISATION ITSELF NOW LIVES IN `./materialize-low-boost.ts`.**
+ * `./materialize-net-names.test.ts` reads the net names off the same board, and
+ * one more copy of the candidate assembly would have been a second place
+ * stating which seed, which base and which ordering this pipeline is measured
+ * at. Nothing in it changed in the move; the two-lead reading stayed here.
  */
 import { afterAll, expect, test } from "bun:test"
-import path from "node:path"
-import { spawnSync } from "node:child_process"
-import { sectionBoard } from "../../circuits/pultec/physical/board.ts"
-import { LEAD_SPANS } from "../../lib/kicad/lead-span.ts"
-import { PIN_PATTERNS } from "../../lib/kicad/pin-pattern.ts"
 import { OFF_BOARD_TERMINAL, type Candidate } from "../../lib/stripboard/board.ts"
 import { derivedCuts, type ReferenceNets } from "../../lib/stripboard/cuts.ts"
-import { seedPartsFrom } from "../../lib/stripboard/seed-parts.ts"
-import { seedsFrom } from "../../lib/stripboard/seed.ts"
-import { parseBoardDump, type BoardDump } from "../../tools/guide/dump.ts"
-import { exportNetlistFor, verorouteBinary } from "../../tools/perfboard/check.ts"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
-import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
+import type { BoardDump } from "../../tools/guide/dump.ts"
 import { fabricationExtent } from "../../tools/stripboard/extent.ts"
-import { freshImportBase } from "../../tools/stripboard/materialize-base.ts"
-import { loadRules } from "../../tools/stripboard/rules.ts"
-import { assignStrips, referenceNetsFor } from "../../tools/stripboard/seed-arrangement.ts"
-import { deriveTargets } from "../../tools/stripboard/targets.ts"
-import { materialize } from "../../tools/stripboard/vero-export.ts"
-import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
-
-const REPO = moduleRepoRoot()
-const SECTION = "low-boost"
-const BOARD = `pultec-${SECTION}`
-
-/**
- * The seed whose ordering this test materialises.
- *
- * `rcm s0` is the ordering the end-to-end run of this board used, and it is the
- * ordering the span disagreement was measured against, so the separations asserted
- * below are the ones that disagreement was recorded over. It is taken from
- * `stripboard/rules.json`'s own reviewed seed list through `loadRules`, not
- * written here, so there is one place that says which restarts the pipeline
- * takes.
- */
-const SEED = 0
+import { materialisedLowBoost } from "./materialize-low-boost.ts"
+import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 
 /** How many of low-boost's placements have exactly two leads. See the premise assertion. */
 const TWO_LEAD_PARTS = 15
-
-/**
- * The low-boost candidate and its reference nets, by the route the capability
- * test already uses (`tests/stripboard/model/pultec-capability.test.ts`).
- *
- * A test may import `tools/` and `lib/stripboard/` may not, which is why the
- * assembly is here: `deriveTargets` and `referenceNetsFor` read the circuit.
- * Residency is DECLARED through `sectionBoard`'s `offBoardIds` rather than
- * inferred from which refs have a footprint - `seedPartsFrom` refuses the
- * disagreement by name, and collapsing the two claims into one would remove
- * that refusal's reason to exist.
- */
-function lowBoostCandidate(): { readonly candidate: Candidate; readonly reference: ReferenceNets } {
-  const board = sectionBoard(SECTION)
-  const rules = loadRules()
-  if (!rules.seeds.includes(SEED)) {
-    throw new Error(
-      `stripboard/rules.json's seed list is [${rules.seeds.join(", ")}] and this test ` +
-        `materialises seed ${SEED}, which is not in it. The seed is not defaulted to the ` +
-        "first entry: which ordering these separations were measured against is the fact that " +
-        "makes them reproducible, and silently taking another one would assert one candidate's " +
-        "spans under another candidate's name. Either restore the seed to rules.json or " +
-        "re-measure against a seed that is in it.",
-    )
-  }
-  const targets = deriveTargets(board.network, rules.stockRows, BOARD)
-  const reference = referenceNetsFor(targets)
-  const footprints = new Map<string, string>()
-  const offBoard = new Set<string>()
-  for (const component of board.network.components) {
-    const ref = board.designators[component.id]
-    if (ref === undefined) continue
-    const footprint = component.part?.footprint
-    if (footprint !== undefined) footprints.set(ref, footprint)
-    if (board.offBoardIds.has(component.id)) offBoard.add(ref)
-  }
-  const netlist = seedPartsFrom(
-    reference,
-    footprints,
-    { patterns: PIN_PATTERNS, spans: LEAD_SPANS },
-    offBoard,
-  )
-  const ordering = { name: `rcm s${SEED}`, homes: assignStrips(targets, SEED) }
-  const candidate = seedsFrom(
-    netlist,
-    { strips: rules.stockRows, columns: rules.stockCols },
-    LEAD_SPANS,
-    [ordering],
-  )[0]
-  if (candidate === undefined) {
-    throw new Error(
-      `seedsFrom returned no candidate for ordering "${ordering.name}", so there is no ` +
-        "candidate to materialise and this test cannot establish anything about " +
-        "--materialize. Fix seedsFrom or the ordering; nothing is substituted, because a " +
-        "stand-in candidate would make the assertions below statements about the stand-in.",
-    )
-  }
-  return { candidate, reference }
-}
-
-/** Run the pinned fork, or throw naming the binary. Never skips. */
-function runFork(args: readonly string[]): { status: number; stdout: string; stderr: string } {
-  const binary = verorouteBinary(process.env, REPO)
-  const run = spawnSync(binary, [...args], { encoding: "utf8" })
-  if (run.error !== undefined) {
-    throw new Error(
-      `could not run ${binary} ${args.join(" ")}: ${run.error.message}. This test does not ` +
-        "skip when the fork is unavailable: a skipped check that looks like a passing one is " +
-        "the failure mode the whole stripboard workflow exists to prevent. " +
-        "tools/perfboard/acquire.ts names the rebuild and veroroute.pin names the commit.",
-    )
-  }
-  return { status: run.status ?? -1, stdout: run.stdout ?? "", stderr: run.stderr ?? "" }
-}
 
 /**
  * What a two-lead placement declares: the two holes, and how far apart they are.
@@ -198,15 +100,11 @@ function twoLeadOf(ref: string, holes: readonly { strip: number; column: number 
 }
 
 /**
- * Materialise low-boost onto a base built fresh by `--import` from the
- * circuit, then dump what was written.
+ * The materialised board, plus every two-lead placement the document declared.
  *
- * **NEVER THE COMMITTED `.vrt`** - `tools/stripboard/materialize-base.ts`
- * states the rule and the reasons for it. `--import` reads the SAME circuit
- * export (`boards/pultec-low-boost/perfboard.json`'s declared module) that
- * `lowBoostCandidate` above read through `sectionBoard`, so the two agree on
- * which components exist; building the base this way is what this test is
- * now itself a measurement of.
+ * The materialisation itself is `./materialize-low-boost.ts` - shared with
+ * `./materialize-net-names.test.ts`, which reads the same board for its net
+ * names. What stays here is the two-lead reading, which is this file's subject.
  *
  * The declared separations come from the candidate rather than from the document
  * text, because the candidate is what the document is generated from and
@@ -218,29 +116,9 @@ async function materializeLowBoost(): Promise<{
   readonly candidate: Candidate
   readonly reference: ReferenceNets
 }> {
-  const { candidate, reference } = lowBoostCandidate()
-  const scratch = freshTempScratch("stripboard-materialize-span-")
-  const outPath = path.join(scratch, "materialized.vrt")
-  const declaration = loadDeclaration(path.join(REPO, "boards", BOARD, "perfboard.json"))
-  const netlist = await exportNetlistFor(declaration)
-  const base = freshImportBase({ netlist, outPath: path.join(scratch, "fresh-base.vrt") }, runFork)
-  materialize(
-    {
-      candidate,
-      reference,
-      base,
-      layoutPath: path.join(scratch, "low-boost-layout.txt"),
-      outPath,
-    },
-    runFork,
+  const { dump, candidate, reference } = await materialisedLowBoost(
+    "stripboard-materialize-span-",
   )
-  const run = runFork(["--dump-board", outPath])
-  if (run.status !== 0) {
-    throw new Error(
-      `veroroute --dump-board ${outPath} exited ${run.status} on the board --materialize had ` +
-        `just written, so what went onto it cannot be read back.\n${run.stderr}${run.stdout}`,
-    )
-  }
   // **THE MAP REFUSES A COLLISION RATHER THAN COLLAPSING INTO ONE ENTRY.** The
   // premise below asserts a COUNT, and keying by ref without this check would let
   // two placements sharing a ref under-count it - a quieter failure than the one
@@ -262,7 +140,7 @@ async function materializeLowBoost(): Promise<{
     }
     declared.set(placement.ref, twoLeadOf(placement.ref, [...placement.pins.values()]))
   }
-  return { dump: parseBoardDump(run.stdout), declared, candidate, reference }
+  return { dump, declared, candidate, reference }
 }
 
 test("every two-lead part materialises at the separation the document declares", async () => {

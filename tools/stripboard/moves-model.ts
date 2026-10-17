@@ -91,8 +91,9 @@ export type Move =
        *
        * **THE MOVE CARRIES THEM RATHER THAN NAMING ONLY THE NET, AND THE REASON
        * IS THAT THE ORDER CANNOT BE RECOVERED AT APPLY TIME.** Which parts a net
-       * holds comes from the reference NETLIST, because `--import` writes every
-       * `NODE` line `NAME -`; and the order they must move in comes from the
+       * holds comes from the reference NETLIST, because a board's own `NODE`
+       * names are never this repository's authority on which net is which
+       * (`HC8`'s rule); and the order they must move in comes from the
        * CARRIED OCCUPANCY, which is the only description of a turned part's
        * footprint there is. `applyMove` is handed a board path and a spawn and
        * neither of those - so a cluster whose refs it had to derive would be a

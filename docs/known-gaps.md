@@ -80,6 +80,37 @@ the cut crosses in the same row.
   whether it needs shortening. **See also G17**, which is the same question
   asked of PART labels and reaches the renderer from the other side.
 
+### G19 - the printed checklist calls ground `0`, which is the circuit's name and not a builder's
+
+Now that a materialised board carries the circuit's net names, the names reach
+a person. On `pultec-low-boost`'s checklist the ground net prints as **`0`**:
+the junction row for `junction_grounds` reads *"O1 0, P1 0, Q1 0, R1 0, S1 0"*
+and `junction_signals`' last terminal reads *"H1 0"*. `0` is the SPICE
+convention for the ground node and it IS the name the circuit's own model
+writes, so nothing invented it - but a build sheet that labels five wires `0`
+is asking a builder to read a simulator's vocabulary.
+
+`tools/guide/off-board.ts` already states the expectation it does not meet: its
+module comment says a connector pin *"carries its net name as the circuit
+writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 4, reading the first
+  checklist that could be built from this pipeline.
+- **Evidence** the checklist's own junction rows, printed above; `NODE 13 NAME
+  0` in `--dump-board` of the committed `boards/pultec-low-boost/
+  pultec-low-boost.perfboard.vrt`; the module comment at
+  `tools/guide/off-board.ts:1-19`.
+- **Verified** yes - built the checklist and read it.
+- **Why it is open** it is **not new with Task 4 and not caused by it**: the
+  owner's hand-laid layout stores the same name, so its checklist has always
+  printed `0`. And what a printed artifact should call a net is an acceptance
+  criterion about that artifact, which the agent producing it may not author.
+- **What would settle it** the owner says whether the guide maps the circuit's
+  ground net to a builder's label (`GND`) or prints the circuit's name
+  unchanged. If it maps, the mapping belongs in the guide's labelling and never
+  in the board or the netlist - the fork is told the names by the netlist, and
+  renaming a net to suit a printout would make the model and the board disagree.
+
 ---
 
 Open: a fix would settle these
@@ -184,36 +215,6 @@ free, and a destination outside the board's `GRID` (the `--import` board is
   - **The entry stays open** because `--stretch` and `--move` still behave
     exactly as recorded, and anything that reaches for them to change a span on
     a packed board will still hit this.
-
-### G14 - a materialised board carries no net names, so the checklist cannot be built
-
-`buildChecklist` names which nets each cut separates, and refuses when it
-cannot:
-
-> `the cut at C5 is on node 11, which the dump stores no net name for, so the`
-> `checklist cannot say which nets that cut separates. Run `make update` so the`
-> `layout's nets carry the circuit's names.`
-
-The cause is upstream of the checklist: `--import` writes every `NODE` line as
-`NAME -` (`tools/stripboard/seed-nets.ts` states this), a materialised board
-inherits that, and it dumps `NET_NAMES 0`. The owner's hand-laid
-`pultec-low-boost.perfboard.vrt` carries `NET_NAMES 14` with real names, which
-is why the checklist has never hit this.
-
-**It is not G10 and it fires first.** G10 is a junction table with no rows;
-this stops the checklist being built at all, so **G10 cannot be verified on a
-real board until this is settled**.
-
-- **Found** `2026-10-16-pultec-five-boards`, Task 3, rendering the first
-  materialised Pultec board.
-- **Evidence** the refusal above; `NET_NAMES 0` and fourteen `NODE n NAME -`
-  lines in the materialised dump, against `NET_NAMES 14` in the committed one.
-- **Verified** yes - run.
-- **Why it is open** Task 3 could not fix what it found, and whether the names
-  should arrive through `--import`, through the layout document, or through an
-  `--update` afterwards is a design question.
-- **What would settle it** net names surviving onto a materialised board, with
-  a test that reads them back off a dump.
 
 ### G16 - `boards/pultec-low-boost` declares no schematic, so `make guide` cannot run on it
 
@@ -333,11 +334,18 @@ this is a MISSING ROW. Answering G1 either way leaves the table empty.
   parts, with a test that counts rows against the board's pad count. **Note it
   is not independent of G1**: a junction row has to say what the wire carries,
   which is the label G1 decides.
-- **BLOCKED behind G14, found 2026-10-16 in Task 3.** This was still unverified
-  on a real board at the end of Task 3, and not for want of trying:
-  `buildChecklist` refuses a materialised board outright, for a different
-  reason, before any junction row is built. G14 has to be settled before this
-  one can even be observed.
+- **NO LONGER BLOCKED, AND NOW VERIFIED ON A REAL BOARD.** It was blocked
+  behind G14 - `buildChecklist` refused a materialised board outright, before
+  any junction row was built - and G14 is closed (`--import` now stores the
+  circuit's net names, so the register's entry for it is deleted rather than
+  marked). Measured 2026-10-16, on the checklist of a materialised
+  `pultec-low-boost`: the board carries **ten pads** (`RV_LO_BOOST_1..3` and
+  `SW_LO_BOOST_1..7`, each one a `PAD` line in `--dump-board`) and the printed
+  checklist has **not one row for any of them** - no part row and no junction
+  row. Its "Wire-to-board junctions" table has exactly two rows, the two `SIP5`
+  headers (`junction_grounds`, `junction_signals`), which have `PART` lines. So
+  the gap is exactly as stated, the count to assert against is 10 on this
+  board, and the observation no longer rests on reading the function.
 
 ### G4 - nothing refuses a board carrying both a header PART and pads for one control
 
