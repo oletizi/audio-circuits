@@ -443,6 +443,31 @@ Against this repository's 300-500 line ceiling.
 - **What would settle it** a split by what each group of tests establishes, not
   by line count.
 
+### G20 - the pinned fork's `Src/Board_import.cpp` is over the line ceiling
+
+557 lines, against the 300-500 ceiling this plan has already applied to fork
+`.cpp` files (Ruling R7 split `Headless_materialize_place.cpp` for it).
+
+**IT WAS ALREADY OVER BEFORE THE CHANGE THAT NOTICED IT.** At the fork commit
+this plan's Task 2 pinned (`0ab5539`) the file was **515**. Task 4 added 61
+lines of comment to it, taking it to 576, then took 19 back out, leaving 557 -
+so of the overshoot, 15 lines are Task 4's and 15 are the ceiling's margin;
+everything above 500 was there first.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 4, after adding the
+  net-name store to `Board::BuildFromParsedNetlist`.
+- **Evidence** `wc -l Src/Board_import.cpp` → 557;
+  `git show 0ab5539:Src/Board_import.cpp | wc -l` → 515.
+- **Verified** yes - measured both.
+- **Why it is open** the file holds two netlist readers and one board builder,
+  and splitting it is a change with a real failure mode of its own (the two
+  readers share `BuildFromParsedNetlist` precisely so they cannot drift in what
+  they do to a board). Doing it inside a task about net names would bury it.
+- **What would settle it** a split by reader - the OrcadPCB2 parse, the Tango
+  parse, and the shared builder - with the fork's own suite and its mutation
+  catalogue run over the result, since several catalogue entries name exact
+  lines in this file.
+
 ---
 
 Open: comment and documentation defects, behaviour-free
