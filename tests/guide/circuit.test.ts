@@ -27,6 +27,28 @@ test("a layout part the circuit does not have is refused", () => {
   )
 })
 
+/**
+ * Fix round 1: the shared trailer this check used to print for BOTH
+ * directions claimed every listed ref "has neither a PART line nor a PAD
+ * line naming it" - true of a ref missing from the board, false of one that
+ * IS on the board (as a PART or a PAD) and merely undeclared by the circuit.
+ * R1 in this scenario has a PART line - that is the only reason it is listed
+ * as "on the board but not in the circuit" at all - so the message must not
+ * say it has neither.
+ */
+test("a layout part the circuit does not have: the message never claims R1 lacks a PART line", () => {
+  const circuit = fixtureCircuit(undefined, COMPONENTS.filter((component) => component.id !== "bias_resistor"))
+  let message = ""
+  try {
+    assertLayoutMatchesCircuit(parseBoardDump(DUMP_TEXT), circuit, [])
+    throw new Error("expected assertLayoutMatchesCircuit to throw")
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  expect(message).not.toMatch(/neither a PART line/)
+  expect(message).toMatch(/on the board but not in the circuit.*has a PART or PAD line/s)
+})
+
 test("powerUpChecks: absent is none; a non-function, missing conditions, an empty list or a bad row is refused", async () => {
   expect(await declaredPowerUpChecks({}, "m.ts")).toBeUndefined()
   await expect(declaredPowerUpChecks({ powerUpChecks: 3 }, "m.ts")).rejects.toThrow(/not a function/)

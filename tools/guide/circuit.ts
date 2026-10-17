@@ -82,10 +82,29 @@ export function assertLayoutMatchesCircuit(
     "the layout and the circuit do not hold the same parts, so a build packet would be wrong:",
     ...(notOnBoard.length > 0 ? [`  in the circuit but not on the board: ${notOnBoard.join(", ")}`] : []),
     ...(notInCircuit.length > 0 ? [`  on the board but not in the circuit: ${notInCircuit.join(", ")}`] : []),
-    "A ref named above is genuinely absent from the other side - it has neither a PART line nor " +
-      "a PAD line naming it (both are checked). Bring the .vrt in step with the circuit's " +
-      "netlist (`make update`), place any missing part or off-board control's pads in " +
-      "VeroRoute (`make edit`), save, then run this again.",
+    // THE TWO EXPLANATORY CLAUSES ARE SEPARATE AND EACH TRUE ONLY OF ITS OWN
+    // LIST. A ref named "not on the board" has neither a PART nor a PAD line;
+    // a ref named "on the board but not in the circuit" has one or the
+    // other - that is the only reason it is on the "on the board" side of the
+    // comparison - so a single shared sentence claiming "neither" would be
+    // false of every ref in the second list. One trailer sent readers to a
+    // remedy that could not work; a shared clause here would send them to an
+    // explanation that is false of their own board, which teaches worse than
+    // the vague one it replaced.
+    ...(notOnBoard.length > 0
+      ? [
+          "Each ref listed as not on the board is genuinely absent there - it has neither a PART " +
+            "line nor a PAD line naming it (both are checked).",
+        ]
+      : []),
+    ...(notInCircuit.length > 0
+      ? [
+          "Each ref listed as on the board but not in the circuit has a PART or PAD line - that is " +
+            "the only reason it is on the board - and the circuit declares no component at that ref.",
+        ]
+      : []),
+    "Bring the .vrt in step with the circuit's netlist (`make update`), place any missing part or " +
+      "off-board control's pads in VeroRoute (`make edit`), save, then run this again.",
   ]
   throw new Error(lines.join("\n"))
 }
