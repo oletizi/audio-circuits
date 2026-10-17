@@ -172,6 +172,20 @@ function spawnWithZeroFileSizeLimit(args: readonly string[]): {
     ["-c", 'ulimit -f 0; exec "$0" "$@"', binary, ...args],
     { encoding: "utf8" },
   )
+  // THE SAME LOUD FAILURE `runFork` ABOVE GIVES, for the same reason: a spawn
+  // that never ran would otherwise reach the caller as a non-zero status and
+  // read as the refusal this test is looking for. The size-zero assertion in
+  // the test does back that up, but a check that only works because a second
+  // one covers it is the shape this file refuses everywhere else.
+  if (run.error !== undefined) {
+    throw new Error(
+      `could not run ${binary} under a zero file-size limit: ${run.error.message}\n` +
+        "This test needs the real fork; it does not mock one, because what it establishes is " +
+        "how THIS build behaves when killed mid-write.",
+    )
+  }
+  // `ulimit -f 0` and SIGXFSZ are POSIX; this test does not run on Windows,
+  // which is already true of every fork-dependent test in this repository.
   return { status: run.status ?? -1, stdout: run.stdout ?? "", stderr: run.stderr ?? "" }
 }
 

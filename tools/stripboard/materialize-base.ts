@@ -96,6 +96,21 @@ export function freshImportBase(input: FreshBaseInput, spawn: SpawnVeroroute): s
           "names what it could not do; it is passed through rather than re-worded.",
       )
     }
+    // NO PATH THROUGH THE CURRENT FORK REACHES THIS, AND IT STAYS ANYWAY.
+    // `Headless::SaveBoard` (`Headless.cpp:158-174`) opens the output file,
+    // writes, and only then checks `GetOK()`; `RunImport`
+    // (`Headless_commands.cpp:160-225`) returns 0 only once `Close()` and that
+    // check have both passed. So "exited 0 and wrote nothing" has no route
+    // through this build, and no test fakes one - contorting a mock to reach an
+    // unreachable branch would prove nothing about the fork.
+    //
+    // It is kept because the claim it refuses is about the CONTRACT, not about
+    // this build: a verb reporting success and writing nothing is a silent
+    // false success, which is the failure this whole module exists to refuse.
+    // The guard above it is the one with teeth today - `--import` killed after
+    // it has already created the file, which `tests/stripboard/
+    // materialize-base.test.ts` reaches with a zero file-size limit, and which
+    // returns a garbage path with NO error at all when that guard is removed.
     if (!fs.existsSync(input.outPath)) {
       refuse(
         "vero-export-fresh-base-not-written",
