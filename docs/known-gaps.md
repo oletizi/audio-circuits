@@ -326,6 +326,118 @@ no builder's name to map to.
   j5_p5`, `j5_p5 | j5_p6` on `pultec-low-cut`. Left exactly as it is: the
   decision this entry asks for is the owner's and he has not made it.
 
+### G39 - `SW_HI_BOOST` carries a gang no check can see, so its agreement with its gang-mate is still unverified
+
+**NARROWED 2026-10-18 - ONE HALF IS NOW A FIX, DONE; THE OTHER HALF IS AN OWNER
+DECISION AND MOVES THIS ENTRY HERE.** The title used to be *"nothing checks
+that two poles of one gang declare the same positions, although every reader
+assumes they do."* That is no longer true for every gang `SELECTORS` can see
+into - it is still true for the one gang it cannot.
+
+**What is now checked.** `assertGangsDeclareSamePositions`
+(`circuits/pultec/electrical/controls.ts`, called on `SELECTORS` at module
+load, right after `SELECTORS` is declared) groups `SELECTORS` entries by
+`gang` and refuses when two members of one gang declare different `positions`
+lists - length or order, since position *N* on one pole and position *N* on
+the other land on the same detent of the one physical shaft. The refusal names
+the gang and both refs, each paired with its full list, e.g.:
+
+```
+Gang "test_gang" poles declare different positions: SW_FIXTURE_A=[20Hz, 30Hz, 60Hz] vs SW_FIXTURE_B=[20Hz, 99Hz, 60Hz]
+```
+
+`tests/pultec/gang-positions.test.ts` drives two fixture poles sharing a gang
+with different `positions` and asserts the refusal names the gang, both refs
+and both lists; a companion test asserts the check accepts the committed
+`SELECTORS` as-is (`SW_LO_CUT` and `SW_LO_BOOST` genuinely agree). Perturbing
+the comparison to a check that only compares list LENGTH - a mistake a
+well-meaning author could make, since the fixture's two divergent lists are
+both length 3 - turned the two refusal-driving tests red by name
+(`two poles of one gang declaring different positions are refused`,
+`the refusal names the gang, both refs and both lists`); restoring the
+content comparison turned them green again. `lib/model/control-state.ts`'s
+`checkGangs` and `validateControlState` are unchanged and still only compare
+the SELECTED position in one `ControlState`, as the rest of this entry below
+still describes.
+
+**What is still open, and why it stays open.** `SW_HI_BOOST` carries
+`gang: HI_FREQUENCY_GANG` (`buildHiBoostSelector`,
+`circuits/pultec/electrical/from-netlist.ts:237`) but has no `SELECTORS`
+entry - it is built separately, straight from `HI_BOOST_POSITIONS` - so
+`assertGangsDeclareSamePositions` **cannot see it** and cannot compare it
+against `SW_HI_CUT`, its declared gang-mate. The hi-frequency gang's two poles
+could disagree today and nothing checks it: this is the exact gap the old
+title described, just now narrowed to the one gang the new check cannot
+reach. Making it reachable means deciding whether `SW_HI_BOOST` joins
+`SELECTORS` - a change to what `SELECTORS` is for and how `buildHiBoostSelector`
+derives its contacts, not a check an agent can add unilaterally. That decision
+is the owner's, which is why this entry now lives in this section.
+
+**The printed guide is still immune by construction**, for the same reason as
+before: `tools/guide/pad-label.ts` labels a pad from the component's own
+`contacts` through `positionsByPin`, so no derivation anywhere in the label
+path reads one pole while printing the other.
+
+- **Found** `2026-10-17-a-pads-wire-says-what-it-is`, Task 2 - the dispatch
+  asked whether a gang's poles always agree, so it was checked rather than
+  assumed. Narrowed `2026-10-18-the-hygiene-batch`, Task 4.
+- **Evidence** `2026-10-17`: three `resolveNetwork` runs over a mutated
+  `THREE_BAND_REFERENCE`, method and transcript kept below this point in the
+  version history. `2026-10-18`: `bun test tests/pultec/gang-positions.test.ts`
+  green (5 pass) with `assertGangsDeclareSamePositions` in place; the two
+  refusal-driving tests red by name under the length-only perturbation
+  described above; `bun run typecheck` clean; `bun test` 2450 pass / 0 fail
+  across 226 files (was 2445/225); all five Pultec boards still pass
+  `make -C boards/<board> check`; the five boards' `.vrt` and `wiring.md`
+  files unchanged by `shasum` before and after.
+- **Verified** yes - run, not inferred, both dates.
+- **Why it is open** `SW_HI_BOOST` joining `SELECTORS` is a decision about what
+  `SELECTORS` enumerates and how `buildHiBoostSelector` would then derive its
+  contacts, and an agent producing the check may not also author the
+  criterion that would make the check complete.
+- **What would settle it** the owner decides whether `SW_HI_BOOST` joins
+  `SELECTORS` (and if so, how `buildHiBoostSelector`'s derivation of its
+  contacts from `HI_BOOST_POSITIONS` changes to match). Once it does, the gang
+  it already declares becomes enumerable and `assertGangsDeclareSamePositions`
+  covers it with no further change to the check itself.
+
+Below is the measurement that found the gap in the first place, kept for the
+method and the transcript rather than restated:
+
+`SelectorTerminals.gang` (`circuits/pultec/electrical/controls.ts:42`) says
+poles sharing a gang *"must always be at the same position. The resolver
+enforces it."* Two checks in `lib/model/control-state.ts` stood behind that
+sentence and **neither compared the position LISTS the poles declare**:
+
+- `checkGangs` (`:244-256`) compares the SELECTED position of each pole in a
+  `ControlState` and refuses *"Ganged switches disagree"*;
+- `validateControlState` (`:207-241`) refuses *"Unknown switch position"*
+  (the test at `:225`, the throw at `:226`) when a selected position is not in
+  that one switch's own `positions`.
+
+So `SW_LO_BOOST.positions` and `SW_LO_CUT.positions` were two independently
+transcribed six-entry lists - the Cboost and the Ccut column of
+`P3bandDoc.pdf` p4 - that happened to be identical, and an edit to one of them
+was caught only if a simulation happened to select a position the edited pole
+no longer declared. `assertGangsDeclareSamePositions` now closes this for
+every gang `SELECTORS` can see.
+
+**Measured, by a check that could have failed.** `SW_LO_CUT`'s positions were
+rewritten in `THREE_BAND_REFERENCE` and the network resolved at a state the
+committed model is validated at (`loFrequency: "60Hz"`), three times:
+
+```
+baseline, both poles as committed: RESOLVED, no refusal
+A: SW_LO_CUT declares a DIFFERENT six-entry list that still contains the selected 60Hz: RESOLVED, no refusal
+B: SW_LO_CUT no longer declares the selected 60Hz at all: REFUSED - Unknown switch position: SW_LO_CUT=60Hz
+```
+
+**A was the gap**: one pole of the low gang reading `1Hz, 2Hz, 60Hz, 4Hz, 5Hz,
+6Hz` against the other's `20Hz ... 200Hz` resolved silently. B shows which
+guard did fire and that it was `validateControlState`'s per-switch check, not
+the gang one - and only for the one position being simulated. `A` is now
+refused by `assertGangsDeclareSamePositions` before a simulation ever runs.
+
 ---
 
 Open: a fix would settle these
@@ -486,88 +598,90 @@ his to rule on. This entry is that record.
   again unprompted.** If he rules later, that ruling supersedes this note and
   the entry goes.
 
-### G41 - a rotary's pole is recognised by the literal string `common`, and a second pole would be labelled with a frequency
+### G49 - a DIP has no shape in the guide renderer, so pt2399-core still cannot be drawn
 
-`tools/guide/pad-label.ts:95-100` treats a pad as the pole when its terminal
-name is exactly `common`. A multi-pole rotary whose second pole pin is named
-anything else falls through to `positionsByPin` and is labelled with whatever
-position closes onto it - **a frequency printed against a pole, which reads as
-an ordinary wiring instruction and is wrong in the quiet way.**
+`bodyFor` (`tools/guide/part-shapes.ts`) has **no `DIP` branch at all** -
+`grep -n 'DIP' tools/guide/part-shapes.ts` returns nothing. `pt2399-core`'s U1
+is a `DIP16`, so rendering that board refuses with `no drawing for VeroRoute
+part type "DIP16"`.
 
-Not hypothetical forever: `symbolFor` (`circuits/pultec/physical/parts.ts:281-294`)
-already contemplates *"one common per pole"*.
+**This is the same gap G3 was**, one part type over: the renderer's vocabulary
+was written for the transistor-preamp boards and does not cover everything the
+repository's own fixtures carry. G3 closed the ceramic case and this is what
+was behind it.
 
-- **Found** by the Task 2 re-reviewer.
-- **Evidence** the literal comparison at the line above; `padTable` in
-  `lib/board/wiring.ts` carries the same assumption.
-- **Verified** yes - the controller read both.
-- **Why it is open** it pre-dates this work in `padTable`, no committed board
-  has a multi-pole rotary landing as pads, and inventing a naming rule for a
-  pole that does not exist yet would be guessing at a part nobody has chosen.
-- **What would settle it** a rule for recognising a pole that does not rest on
-  one spelling, with a test driving a second pole - **or a refusal**, which is
-  the better answer while no such part exists: a pad whose terminal is neither
-  the pole nor a position should refuse rather than be labelled.
+- **Found** `2026-10-18`, Task 2 of the hygiene batch, while rendering
+  `pt2399-core` to look at the ceramic capacitors it had just given a shape.
+  **The task flagged it and correctly did not fix it** - it was out of scope -
+  but recorded it only in its own gitignored report, which this file's preamble
+  says does not count. The controller recorded it here rather than spending a
+  round on it.
 
-### G39 - nothing checks that two poles of one gang declare the same positions, although every reader assumes they do
+  **CORRECTED, and the correction is the point.** This entry first said the
+  rule "was broken by the task immediately after that rule was made repo-wide".
+  **That was wrong and the Task 2 reviewer checked it rather than accepting
+  it:** the rule landed in `645f57f` at 19:20 the previous evening; the entry
+  carrying the overstatement was written at 05:45 the next morning, about ten
+  hours later. **`f3ffea4` sits between them and followed the rule correctly**,
+  deleting G7, G8, G26 and G46 as it settled them. **The first count written
+  here - "three intervening commits" - was itself imprecise**, as the Task 3
+  reviewer noted: the first-parent distance is five or six depending on whether
+  a merge and an unrelated commit count. One verified compliant commit is the
+  claim that matters and is the one stated.
+  The miss is real; the framing made it sound like the rule failed its first
+  test, which it did not. **An entry in this file is held to the same standard
+  as the evidence it cites, including when the author is the controller.**
+- **Evidence** the empty grep above; `DIP16` in
+  `tests/fixtures/stripboard/pt2399-core.dump`; the task rendered that fixture
+  only by stripping U1's `PART`/`PIN` lines, which is how it saw the ceramics
+  at all.
+- **Verified** yes - the controller ran both checks rather than relaying the
+  report.
+- **Why it is open** out of the task's scope, and `pt2399-core` fails `make
+  check` for unrelated recorded reasons anyway, so nothing is blocked on it
+  today.
+- **What would settle it** a `DIP\d*` branch with a test, following the shape
+  the ceramic and film branches already use - a box around the pins with pin 1
+  marked, and no claim about a body dimension nothing records. Then render
+  `pt2399-core` whole, without stripping a part, and look at it.
 
-`SelectorTerminals.gang` (`circuits/pultec/electrical/controls.ts:42`) says poles
-sharing a gang *"must always be at the same position. The resolver enforces
-it."* Two checks in `lib/model/control-state.ts` stand behind that sentence and
-**neither compares the position LISTS the poles declare**:
 
-- `checkGangs` (`:244-256`) compares the SELECTED position of each pole in a
-  `ControlState` and refuses *"Ganged switches disagree"*;
-- `validateControlState` (`:207-241`) refuses *"Unknown switch position"*
-  (the test at `:225`, the throw at `:226`) when a selected position is not in
-  that one switch's own `positions`.
+### G50 - `padTable` in `lib/board/wiring.ts` still trusts `positionsByPin`'s collapsed value, so a second pole would print a frequency in the generated `wiring.md` even though the guide's own pad label now refuses it
 
-So `SW_LO_BOOST.positions` and `SW_LO_CUT.positions` are two independently
-transcribed six-entry lists - the Cboost and the Ccut column of
-`P3bandDoc.pdf` p4 - that happen to be identical, and an edit to one of them is
-caught only if a simulation happens to select a position the edited pole no
-longer declares.
+G41 recorded that a multi-pole rotary's second pole, named anything other than
+the literal `common`, would be printed with a frequency rather than refused.
+Task 3 of the hygiene batch settled that for `tools/guide/pad-label.ts`: the
+pole is still recognised only by the one spelling, but a terminal is now
+labelled only when it closes at EXACTLY one position in `contacts`
+(`positionsClosingOnto`), and anything else - zero positions, or a second
+pole closing at a different position per detent - refuses by name.
 
-**Measured, by a check that could have failed.** `SW_LO_CUT`'s positions were
-rewritten in `THREE_BAND_REFERENCE` and the network resolved at a state the
-committed model is validated at (`loFrequency: "60Hz"`), three times:
+**That fix is local to `padLabelOf`.** `padTable` (`lib/board/wiring.ts:174-195`)
+builds the `Selects` column of every section's `wiring.md` from the same
+`positionsByPin` map directly - `selects[pin] ?? "—"` at line 192 - with no
+equivalent check. A second pole would not refuse there: it would print
+whichever position `positionsByPin`'s last-write-wins fold landed on, in the
+committed build sheet, with no error to catch it.
 
-```
-baseline, both poles as committed: RESOLVED, no refusal
-A: SW_LO_CUT declares a DIFFERENT six-entry list that still contains the selected 60Hz: RESOLVED, no refusal
-B: SW_LO_CUT no longer declares the selected 60Hz at all: REFUSED - Unknown switch position: SW_LO_CUT=60Hz
-```
-
-**A is the gap**: one pole of the low gang reading `1Hz, 2Hz, 60Hz, 4Hz, 5Hz,
-6Hz` against the other's `20Hz ... 200Hz` resolves silently. B shows which guard
-does fire and that it is `validateControlState`'s per-switch check, not the gang
-one - and only for the one position being simulated.
-
-It is also not enumerable as it stands: `SW_HI_BOOST` carries
-`gang: HI_FREQUENCY_GANG` (`buildHiBoostSelector`,
-`circuits/pultec/electrical/from-netlist.ts:237`) and has no `SELECTORS` entry,
-so *"the members of the hi-frequency gang"* cannot be answered from `SELECTORS`
-alone.
-
-**The printed guide is immune by construction**, which is why this is a model
-entry and not a label one: `tools/guide/pad-label.ts` labels a pad from the
-component's own `contacts` through `positionsByPin`, so no derivation anywhere
-in the label path reads one pole while printing the other.
-
-- **Found** `2026-10-17-a-pads-wire-says-what-it-is`, Task 2 - the dispatch asked
-  whether a gang's poles always agree, so it was checked rather than assumed.
-- **Evidence** the three runs above, method stated: mutate one pole's
-  `positions` in `THREE_BAND_REFERENCE`, call `resolveNetwork` with
-  `controlState(1, 1, 1, { loFrequency: "60Hz", hiFrequency: "3kHz", mid:
-  "200Hz" })`, and report whether it refuses. Plus `checkGangs` and
-  `validateControlState` read at the lines cited.
-- **Verified** yes - run, not inferred.
-- **Why it is open** no artifact is wrong because of it today, and the fix is a
-  check in the control model rather than in the guide, which is not this plan's
-  file.
-- **What would settle it** a check that every pole of a gang declares the same
-  `positions`, with a test driving two that do not - and a decision on whether
-  `SW_HI_BOOST` joins `SELECTORS` so a gang's membership is enumerable.
+- **Found** while deleting G41, checking what the deletion took with it -
+  G41's own "Evidence" named `padTable` as carrying the same assumption, and
+  Task 3 did not touch `lib/board/wiring.ts`.
+- **Evidence** `lib/board/wiring.ts:180` (`positionsByPin(component)`) and
+  `:192` (`selects[pin] ?? "—"`), unchanged by this task.
+- **Verified** yes - read directly; `wiring.ts` has no test driving a
+  multi-pole rotary, so this is a reading of the code rather than an observed
+  wrong table.
+- **Why it is open** out of Task 3's scope (`tools/guide/pad-label.ts` and its
+  test only), and no committed board has a multi-pole rotary landing as pads,
+  so no generated `wiring.md` is wrong today.
+- **What would settle it** the same question `padTable` already answers with
+  a dash for a pot (which has no positions at all): what a `Selects` cell
+  should say for a terminal `positionsByPin` cannot resolve to one position.
+  A dash reads as "nothing to select," which is true for a pot but would be
+  false and misleading for an unresolved rotary terminal - so this likely
+  wants `padTable` to refuse the way `padLabelOf` does now, not a dash,
+  with a test driving a second pole the way `tests/guide/pad-label-second-
+  pole.test.ts` does.
 
 ### G29 - the constructive seed cannot join a net whose run on a strip is boxed in, on every seed of the reviewed restart schedule
 
@@ -1368,29 +1482,6 @@ comment says so where somebody debugging that failure will read it.
   acceptance document. For (1), nothing: it is the residual, and it is why the
   record is visible in three places rather than trusted in one.
 
-### G26 - `docs/stripboard/pipeline-verification.md` still presents `kappa_bench = 0.05` as the live parameter
-
-That document's parameter table (section near line 2982) reads *"`kappa_bench =
-0.05` | The hard end of a ratchet"* and a later section concludes against
-*"`kappa_bench` 0.05"*. The bound was withdrawn on 2026-10-16 (see G27 and
-`stripboard/rules.json`'s `kappaBench` note), so the table states a current
-parameter that no longer exists.
-
-The MEASUREMENTS in that document are unaffected and are not wrong: they record
-what was measured against the bound in force at the time, which is what a
-verification log is for. It is the parameter table - written in the present
-tense - that now misleads.
-
-- **Found** `2026-10-16-low-boost-to-adoption`, in the change that unset
-  `kappaBench`.
-- **Verified** yes - `grep -n "kappa_bench" docs/stripboard/pipeline-verification.md`.
-- **Why it is open** it was not this change's file to rewrite, and a verification
-  log needs its figures read in the context of the run that produced them rather
-  than retro-fitted to today's parameters.
-- **What would settle it** one edit to the parameter table saying the bound is
-  withdrawn and pointing at `stripboard/rules.json`'s note, leaving every
-  measured figure as it stands.
-
 ### G24 - the adoption gate cannot re-derive `metrics.outcome` or `metrics.stoppingRule`, so a coherent edited pair clears `failing-check`
 
 `assertVerdictAdmits` reads the outcome and the stopping rule off `run.json` and
@@ -1448,42 +1539,194 @@ outcome field, in both paths, and it is this entry.
   shape as the `bound` fix, and reachable without a fork invocation - or a
   stated decision that the producer is trusted for this one field.
 
-### G18 - the fork's two stretch bounds disagree, so a 2-increment type can shrink below its minimum
+### G51 - a wire's out-of-range refusal would quote `2..2147483647`
 
-`FootPrint::CanStretch` (`Src/FootPrint.h:90-91`) permits a shrink whenever
-`GetCols() > CompTypes::GetMinLength(m_type)`. `Grid::StretchComplex`
-(`Src/Grid.h:241`) refuses one only when `GetCols() == GetMinLength(eType)` -
-**exact equality** - and otherwise allocates `GetCols() - GetStretchIncrement`.
+**THIS ENTRY IS THE SURVIVING HALF OF G18**, which the hygiene batch's Task 5
+settled and deleted. G18 carried it as *"a cosmetic relative, recorded here
+rather than as its own entry"*; the fix to the two stretch bounds did not touch
+it, so it is promoted to its own entry rather than deleted along with the entry
+it was lodged in. Deleting an entry does not settle what the entry merely
+happened to be carrying.
 
-For a type whose increment is 2 - `SWITCH_ST`, `SWITCH_DT`, `BLOCK_200` - a
-component sitting at `min + 1` therefore passes the permission test (`min + 1 >
-min`), misses the equality guard (`min + 1 != min`), and is allocated at
-**`min - 1`**, one hole below the minimum the type declares.
+`Headless_materialize_span.cpp:217-219`'s out-of-range refusal is on the wire
+path as well as the moulded-part path, and `CompTypes::GetMaxLength(COMP::WIRE)`
+is `INT_MAX`, so a wire refusal would read *"outside the 2..2147483647 holes
+this build allows a Wire to be"*.
 
-The same shape applies at the top end: `CanStretch` permits a grow at
-`max - 1`, and `StretchComplex`'s equality guard does not catch it.
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 2's re-reviewer, beside the
+  defect that was G18. Re-read by Task 5 of `2026-10-18-the-hygiene-batch`, which
+  confirmed the stretch-bound fix leaves it exactly as it was.
+- **Evidence** `.tools/veroroute-perfboard/Src/Headless_materialize_span.cpp:217-219`,
+  `CompTypes::GetMaxLength`'s `case COMP::WIRE: return INT_MAX;`,
+  `GetMinLength`'s `case COMP::WIRE: ... return 2;`, and
+  `GetMakeInstructions`'s `case COMP::WIRE: rows = 1; cols = 3;`.
+- **Verified** yes - all four read directly by Task 5, including the "a fresh
+  `WIRE` is 3 cols against a minimum of 2" claim G18 asserted without citing
+  where it came from.
+- **Why it is open** it is unreachable: `ParseWire` refuses a degenerate wire and
+  a fresh `WIRE` is 3 cols against a minimum of 2, so the refusal has no input
+  that fires it. It is a message path that did not exist before the materialise
+  loops were merged, and it is cosmetic - a number in a sentence nobody can make
+  the program print.
+- **What would settle it** either saying *"any length from 2 holes up"* when the
+  maximum is `INT_MAX`, with a test that reads the sentence, or a decision that
+  an unreachable sentence is not worth a branch.
 
-- **Found** `2026-10-16-low-boost-to-adoption`, Task 2's re-reviewer, while
-  checking that the new parity guard's arithmetic refused nothing legitimate.
-- **Evidence** the two files and lines above, read side by side.
-- **Verified** yes - the controller read both, rather than relaying the
-  reviewer's claim.
-- **Why it is open** it is **PRE-EXISTING in the fork's own stretch machinery**
-  and predates every change this program made. The parity guard added in Task 2
-  only refuses lengths that were already unreachable; it neither caused this nor
-  widened it. Nothing in this program is known to reach it: a moulded part
-  carrying nets cannot be stretched at all, which is what keeps the Pultec
-  boards clear of it.
-- **What would settle it** make the two agree - most likely by giving
-  `StretchComplex` the same `>`/`<` test `CanStretch` uses - with a test that
-  puts a 2-increment type at `min + 1` and asserts it does not go below `min`.
-- **A cosmetic relative, recorded here rather than as its own entry.**
-  `Headless_materialize_span.cpp:217-219`'s out-of-range refusal is now on the
-  wire path too, and `GetMaxLength(COMP::WIRE)` is `INT_MAX`, so a wire refusal
-  would read *"outside the 2..2147483647 holes this build allows a Wire to be"*.
-  Unreachable today - `ParseWire` refuses a degenerate wire and a fresh `WIRE`
-  is 3 cols against a minimum of 2 - but it is a message path that did not exist
-  before the two loops were merged.
+### G52 - at `min + 1` the fork's two stretch bounds agree on the range and not on the gesture, and `--stretch` reports success for a stretch that did nothing
+
+**THIS IS THE RESIDUAL OF THE G18 FIX, recorded by the agent that made it.**
+Task 5 of `2026-10-18-the-hygiene-batch` gave `Grid::StretchComplex` a guard that
+refuses a STEP that would leave `CompTypes::GetMinLength`..`GetMaxLength`. So a
+2-increment type at `min + 1` is no longer allocated at `min - 1` - it is not
+reallocated at all. `FootPrint::CanStretch`, which reads only
+`GetCols() > GetMinLength(m_type)`, still says yes.
+
+The two therefore agree about the RANGE and disagree about the GESTURE, and the
+consequence is a verb that reports success for nothing:
+`Headless_stretch.cpp`'s `RunStretch` asks `CanStretch`, runs the sequence, checks
+that nothing floated, saves and returns **0** - it never compares the column count
+before against the column count after. `--materialize` does not have this
+hole: `StretchToLength` (`Headless_materialize_span.cpp`) has carried a
+"`Component::Stretch` left it at N while reporting that it could change it"
+refusal since the parity guard landed, and that refusal is what would fire.
+
+**THE REFUSAL THAT FIRES NOW SAYS THE WRONG THING, and that is part of this
+entry rather than a separate one.** `StretchToLength`'s third refusal ends *"which
+is a defect in this build's stretch rather than anything about the document"*.
+Before the fix that sentence was true: a no-op there could only mean the
+allocator and the permission test had come apart by accident. After the fix, in
+the one case it now fires - a component at `min + 1` asked for `min - 1` - the
+no-op is a DELIBERATE refusal by the guard, so the message blames the build for
+doing the right thing. It still refuses rather than proceeding, which is why this
+is a wording defect and not a behavioural one.
+
+- **Found** Task 5 of `2026-10-18-the-hygiene-batch`, by the agent that wrote the
+  fix, while reasoning about what the fix leaves rather than after a failure.
+- **Evidence** `--verify-stretch-bounds --type BLOCK_200 --cols 4 --direction
+  shrink` against the rebuilt binary prints `CANSTRETCH YES` and `AFTER 4`
+  with `MIN 3` - permission granted, nothing done. `RunStretch`
+  (`.tools/veroroute-perfboard/Src/Headless_stretch.cpp`) has no before/after
+  column comparison; `StretchToLength`'s third refusal does.
+- **Verified** yes - run, not predicted.
+- **Why it is open** **no HEADLESS door puts a footprint at `min + 1` for those
+  three types**, and that is arithmetic rather than a property of the fixtures
+  that exist: `Component`'s constructor builds
+  `SWITCH_ST`/`SWITCH_DT`/`BLOCK_200` at `2 * poles - 1` or `1 + 2 * pins`,
+  `Component::Stretch` moves them by 2, `StretchToLength` refuses a length the
+  increment cannot reach, `--import`'s length option for these types is a pin
+  count rather than a column count, and a retype rebuilds the footprint from the
+  type's default. The alternative fix - making `CanStretch` increment-aware so it
+  refuses at `min + 1` - changes what the GUI greys out and would make
+  `StretchToLength` print *"outside the 3..511 holes this build allows"* about a
+  length of 4, which is inside 3..511. That is a worse sentence for a reachable
+  case in exchange for a better one for an unreachable case, and it is not the
+  trade this task was asked to make.
+- **THE QUALIFIER "HEADLESS" WAS ADDED AT FIX ROUND 1 AND IT MATTERS.** This entry
+  and the fork's own comments first said *nothing on a board can be at `min + 1`*,
+  without qualification. That is wrong, and the Task 5 reviewer found the door:
+  `CompDefiner::Build`
+  (`.tools/veroroute-perfboard/Src/CompDefiner.cpp:96-103`) sets a component to
+  `COMP::CUSTOM`, overwrites that with the real `COMP` when the import string cuts
+  to a reserved one AND `TemplateManager::CheckAllowOverWrite` finds a
+  user-defined library part with the same (Type, Value, Import) strings, and then
+  calls `comp.Allocate(1, m_grid.GetRows(), m_grid.GetCols())` with the component
+  editor's own grid - **which carries no parity, minimum or maximum constraint at
+  all**. `FootPrint::Load` (`FootPrint.h:317-325`) restores whatever dimensions a
+  `.vrt` carries without checking them, so a board built through that door loads
+  into every headless verb intact. Checked while recording this: the door is
+  GUI-only in both halves - `CompDefiner::Build` is reached only from
+  `Component`'s definer constructor, **whose only call site in the tree is
+  `Src/mainwindow.cpp:2314`** - unambiguously GUI, which is what the argument
+  needs; and `m_listUser`, which
+  `CheckAllowOverWrite` searches, is filled only by
+  `TemplateManager::Add(false, ...)` from the GUI library dialog, while every
+  headless verb builds a `TemplateManager` with `SetPathStr` plus `AddDefaults()`,
+  which populates `m_listGeneric` only. So `CheckAllowOverWrite` is
+  unconditionally false in a headless process and the type stays `COMP::CUSTOM`.
+  **The consequence for this entry is that the residual is reachable in principle,
+  not only on paper** - which strengthens the case for the cheap fix below rather
+  than weakening it.
+- **What would settle it** either a `RunStretch` that refuses when the gesture
+  changed no columns, in the shape `StretchToLength` already uses - cheap, and it
+  closes the silent-success path whether or not anything can reach it - or an
+  increment-aware `CanStretch`, with the message consequence above handled, with
+  a test beside whichever is chosen. The `StretchToLength` wording above wants
+  fixing alongside whichever is chosen; it is one clause.
+- **A note on how G18 was settled, because the register's own wording was part of
+  it.** G18 said the fix was *"most likely by giving `StretchComplex` the same
+  `>`/`<` test `CanStretch` uses"*. That mechanism does not meet G18's own stated
+  criterion: with `!bGrow && GetCols() > min` the step still runs at `min + 1`
+  and still lands on `min - 1`, because the step is 2 and the test only knows
+  about 1. The criterion - *"a test that puts a 2-increment type at `min + 1` and
+  asserts it does not go below `min`"* - was taken as the settlement and the
+  mechanism was not. The disagreement is recorded here rather than resolved
+  silently.
+
+### G53 - two unguarded `while (GetCols() != reqLength) Stretch(...)` loops in the fork hang if the allocator declines, and the G18 fix widened the window by one column
+
+`Component`'s constructor (`Component.h:121-139`, three copies of the pair - one
+per type group) and `TemplateManager::CheckPartOK` (`TemplateManager.h:405-408`)
+both size a fresh footprint with the same shape:
+
+```cpp
+while ( comp.GetCols() < nLength ) comp.Stretch(true);   // grow
+while ( comp.GetCols() > nLength ) comp.Stretch(false);  // shrink
+```
+
+Neither loop asks `CanStretch` and neither has a no-progress guard. **If
+`Component::Stretch` declines while the loop still wants more columns, the length
+never changes and the process spins forever.** There are two ways to get there and
+they behave differently, which is why the entry separates them:
+
+- **`CanStretch` says NO and `Stretch` is called anyway.** `FootPrint::Stretch`
+  opens with `assert(CanStretch(bGrow))`, so this build aborts rather than hangs -
+  the fork compiles with `-DQT_NO_DEBUG` and **no** `-DNDEBUG`, so plain `assert`
+  is live. A build that defined `NDEBUG` would hang here instead. Pre-existing and
+  untouched by Task 5.
+- **`CanStretch` says YES and `Grid::StretchComplex` declines.** The assert passes,
+  so this hangs in **any** build, asserts or not. This is the window Task 5's fix
+  widened, and it is the only one worth measuring.
+
+**Task 5's fix widened that second window by exactly one column**, and the entry
+says so rather than leaving it for someone to find.
+
+The old guard declined a grow only at `GetCols() == max`; the new one declines
+whenever `GetCols() > max - increment`, so for the three increment-2 types the
+hanging set is `{max - 1, max}` rather than `{max}`. Same at the bottom:
+`{min, min + 1}` rather than `{min}`.
+
+- **THE FORK'S OWN COMMENT CARRIES THE OLD MISCITATION, deliberately not
+  fixed yet.** `Src/Headless_stretch_bounds.h` states the same wrong caller
+  list. It is a comment, the conclusion it supports is unaffected, and
+  correcting it costs a fork commit, a pin bump and a full rebuild cycle -
+  which is not proportionate on its own. **Whoever next changes that file
+  fixes it in passing.** Recorded here rather than left as a discrepancy
+  between two documents that a reader would have to reconcile alone.
+- **Found** Task 5's reviewer, `2026-10-18-the-hygiene-batch`, fix round 1, while
+  checking what else reads the guard that changed.
+- **Evidence** the two loops at the lines above, read; `Grid.h`'s new guard, read;
+  `grep -o "DNDEBUG\|DQT_NO_DEBUG" .tools/veroroute-perfboard/build/Makefile`
+  returns `DQT_NO_DEBUG` only - a check that could have returned both.
+- **Verified** yes - the loops and the build flags were read directly rather than
+  relayed, and the widening was worked out from the guard's own arithmetic.
+- **Why it is open** **unreachable from a default-built footprint, which is the
+  only kind either loop ever sees.** Both loops run on a footprint just built by
+  `BuildDefault`, so it starts ON the type's lattice; `TemplateManager` has already
+  bounded `nLength` to `GetMinLength..GetMaxLength` before the loop
+  (`TemplateManager.h:391-396`); and for the three increment-2 types the import
+  suffix is a PIN COUNT, so `nLength` is 0 and that loop never runs for them at
+  all. The constructor's own `reqLength` is derived from a pin count already
+  bounded by `GetMinNumPins..GetMaxNumPins`, which maps onto the lattice by
+  construction. Reaching the hang needs a footprint already off-lattice, which is
+  the `CompDefiner::Build` door recorded in G52 - and that door builds the grid
+  directly instead of going through either loop.
+- **What would settle it** give both loops the guard `StretchToLength`
+  (`Headless_materialize_span.cpp`) already has and exists to provide: refuse
+  before the loop when the increment cannot reach the target, and refuse inside it
+  when a step changed nothing. That refusal was written for exactly this loop shape
+  - its own comment says *"PlaceDeclaredWire had this same loop shape before it was
+  folded into this function, and was immune only because WIRE's increment is 1"* -
+  and these two are the remaining copies it was never folded into.
 
 ### G13 - `--stretch` cannot change a part's span on a packed board
 
@@ -1722,26 +1965,6 @@ block would make the fixture importable without making the two agree.
   low-boost still benchmarks the circuit the model now describes. Until then
   nothing should read a `board_terminals` refusal as a missing pin pattern.
 
-### G3 - a ceramic disc capacitor has no shape, and pt2399-core carries one
-
-`bodyFor` in `tools/guide/part-shapes.ts` has no `CAP_CERAMIC` branch, so
-rendering a board carrying one refuses with `no drawing for VeroRoute part type
-"CAP_CERAMIC"`. The refusal is loud and names its own fix site, which is why
-this is a gap and not a trap.
-
-- **Found** `2026-10-16-pultec-five-boards`, while closing a review finding on
-  Task 1 - neither the implementer nor the reviewer went looking for it.
-- **Evidence** `bodyFor` enumerates `RESISTOR\d*`, `CAP_ELECTRO_(\d+)`,
-  `SIP(\d+)`, `BLOCK_(?:100|200)MIL(\d+)`, `TO92`, `TRIM_FLAT` and the film
-  types, and nothing else; `CAP_CERAMIC` appears bare in
-  `tests/fixtures/pt2399-core-board.dump` and
-  `tests/fixtures/stripboard/pt2399-core.dump`.
-- **Verified** yes.
-- **Why it is open** out of the Pultec program's scope - no Pultec dump carries
-  a ceramic.
-- **What would settle it** a `CAP_CERAMIC\d*` branch with a test, and a render
-  of pt2399-core read by eye.
-
 ### G11 - a pad's hole is checked against the grid only when something draws it
 
 The guide refuses a pad whose hole is outside the dump's `GRID`
@@ -1783,18 +2006,6 @@ the board is imported or exported.
   somewhere else, which is the case the entry is actually about, and it does
   not close the entry.
 
-### G6 - `tests/stripboard/model/seed-room.test.ts` is 760 lines
-
-Against this repository's 300-500 line ceiling.
-
-- **Found** `2026-10-14-stripboard-model-and-search`.
-- **Evidence** `wc -l`.
-- **Verified** yes.
-- **Why it is open** splitting a test file of this size is its own change with
-  its own review, and it was never the task in front of anyone.
-- **What would settle it** a split by what each group of tests establishes, not
-  by line count.
-
 ### G20 - the pinned fork's `Src/Board_import.cpp` is over the line ceiling
 
 557 lines, against the 300-500 ceiling this plan has already applied to fork
@@ -1819,73 +2030,6 @@ everything above 500 was there first.
   parse, and the shared builder - with the fork's own suite and its mutation
   catalogue run over the result, since several catalogue entries name exact
   lines in this file.
-
----
-
-Open: comment and documentation defects, behaviour-free
--------------------------------------------------------
-
-G7 and G8 were parked under a skill rule that allows one fix wave per plan.
-None of these changes behaviour; each misleads a reader.
-
-### G46 - three source comments point, in the present tense, at register entries that were deleted
-
-Closing an entry here means DELETING it, so a comment that says a check "is"
-some `G<n>` goes stale the moment that entry is settled. Three have:
-
-| file | says | entry |
-| --- | --- | --- |
-| `tests/guide/circuit-double-control.test.ts:2` | *"G4 (`docs/known-gaps.md`): a panel control legitimately reaches a board as..."* | G4, deleted by this plan |
-| `tools/guide/circuit.ts:62` | *"This is G4 (`docs/known-gaps.md`)"* | G4, deleted by this plan |
-| `tests/guide/circuit-pads.test.ts:5` | *"this file is G5's witness (`docs/known-gaps.md`)"* | G5, deleted earlier |
-
-This is the preamble's namespace bite from the other direction: there a live
-reference was misread as naming a deleted entry, and here three live references
-do name one. Two neighbours show the form that does not go stale -
-`tests/stripboard/materialize-span.test.ts:6` says *"carried as G12 until this
-change"*, and `tests/guide/packet.test.ts:148` names a gap that is still open.
-The plan and spec files that also say `G4` are history recording what they
-closed and are correct as written.
-
-- **Found** 2026-10-17, this plan's Task 6.
-- **Evidence** the three lines quoted above; no `### G4` or `### G5` heading in
-  `docs/known-gaps.md`.
-- **Verified** yes - read all three files and the register.
-- **Why it is open** Task 6 is a reading, and a repair mixed into a measurement
-  makes both less useful.
-- **What would settle it** each comment saying what the check IS, or naming the
-  entry in the past tense, rather than pointing at a register entry as if it
-  were still there. The check is permanent; the entry was not.
-
-### G7 - `lib/stripboard/seed-fit.ts` mislabels its own denominator
-
-The comment reads *"of 634 intermediate wire-span holes, FIVE are inside one"*.
-634 is ALL wire-span holes with endpoints included; the intermediate count is
-470 (634 - 2x82 wires). The two figures the paragraph presents as disjoint
-overlap by 164.
-
-**The FIVE is unaffected** - endpoints contribute zero, which the paragraph's own
-274/0 line independently establishes - so the conclusion stands.
-
-- **Found** `2026-10-15-pultec-layout-capability`.
-- **Verified** yes.
-- **What would settle it** correct the denominator to 470, or say "wire-span
-  holes" and drop "intermediate".
-
-### G8 - the pad test states its limit only partially
-
-`tests/stripboard/model/seed-off-board.test.ts` says `routedUnderRigid` rejects
-all three columns. True, and it does not claim the stronger thing - but it never
-says `rigidOverlap` closes them identically and that nothing outside
-`chooseColumn` can separate the two. That limit is written down in commit
-`b9fe02f` and a fix report, but not in the file a reader meets the test in.
-
-By this repository's own standard - two earlier fixes exist precisely to move a
-measured limit to where a reader meets it - one line belongs in the test.
-
-- **Found** `2026-10-15-pultec-layout-capability`.
-- **Verified** yes.
-- **What would settle it** one line in the test's comment.
 
 ---
 

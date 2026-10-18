@@ -2,10 +2,13 @@
  * THE OFF-BOARD LANDING PAD: the kind a panel-mounted control reaches the board
  * as, and the refusals that keep it from swallowing missing data.
  *
- * **IT IS A SEPARATE FILE BECAUSE `./seed-room.test.ts` IS ALREADY OVER THE LINE
- * CEILING** (759 lines), and because the predicate this file exercises is one
- * thing: a component's DECLARED residency. The positive and the negative below
- * are the two halves of that one predicate, which is why they sit together.
+ * **IT IS A SEPARATE FILE BECAUSE `./seed-room.test.ts` WAS ALREADY OVER THE LINE
+ * CEILING** (759 lines) when this file was carved out - it has since been split
+ * by what each group established into `./seed-room-hand-boards.test.ts` and five
+ * siblings (`docs/known-gaps.md` G6) - and because the predicate this file
+ * exercises is one thing: a component's DECLARED residency. The positive and the
+ * negative below are the two halves of that one predicate, which is why they sit
+ * together.
  *
  * **WHAT THESE ASSERTIONS ESTABLISH.** That a ref the caller declares off-board
  * becomes one one-hole placement per terminal, carrying the same footprint
@@ -192,9 +195,11 @@ test("a pad whose home strip is wholly inside a rigid part's area refuses by nam
   // hosts the pad's net on, therefore carries no pin of the field and is
   // covered across every column all the same: each of the three holes the pad
   // could take is free, on the board, and leaves nothing interleaved, and
-  // `routedUnderRigid` rejects all three. That is the clause the refusal argues
-  // hardest for - an off-board wire soldered beneath a part whose terminals
-  // cannot be formed.
+  // `routedUnderRigid` rejects all three. `rigidOverlap` closes the same three
+  // columns identically here, so nothing outside `chooseColumn` can separate
+  // the two - this test does not, and cannot, tell which of the two clauses did
+  // the rejecting. That is the clause the refusal argues hardest for - an
+  // off-board wire soldered beneath a part whose terminals cannot be formed.
   const netlist = netlistOf([
     blanketField(true),
     offBoard("RV_LO_BOOST", { pin: "2", net: "W" }),

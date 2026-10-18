@@ -39,7 +39,7 @@
  * form that cannot be wrong about a correct board. A ref with no known prefix
  * refuses too: there is no function to print, and the ref is not a substitute.
  */
-import type { Component } from "../../lib/model/types.ts"
+import type { Component, SwitchComponent } from "../../lib/model/types.ts"
 import { positionsByPin } from "../../lib/board/part-text.ts"
 import { terminalNameOf } from "./pad-terminal.ts"
 
@@ -62,6 +62,27 @@ const FUNCTION_PREFIXES: readonly string[] = ["RV_", "SW_", "L_"]
 
 /** The pad `rotaryPadOrder` puts first on every rotary: the pole, not a throw. */
 const COMMON_TERMINAL = "common"
+
+/** Narrows to `SwitchComponent` so `.parameters.contacts` reads without a cast. */
+function isSwitch(component: Component): component is SwitchComponent {
+  return component.kind === "switch"
+}
+
+/**
+ * Every position whose contacts close onto a given terminal, by name.
+ *
+ * A genuine throw closes at exactly one position - `from-netlist.ts` only ever
+ * writes one `[["common", throwPin]]` pair per position, so a real throw's
+ * name appears here once. A terminal that comes back with zero or more than
+ * one position is not a position-selecting throw, whatever it is instead.
+ */
+function positionsClosingOnto(component: SwitchComponent, terminal: string): readonly string[] {
+  const positions: string[] = []
+  for (const [position, pairs] of Object.entries(component.parameters.contacts)) {
+    if (pairs.some((pair) => pair.includes(terminal))) positions.push(position)
+  }
+  return positions
+}
 
 /**
  * The control's function, read off its ref: the prefix dropped, underscores as
@@ -94,29 +115,49 @@ export function functionNameOf(ref: string): string {
  * closes onto it, so no one position names it, and `positionsByPin` leaves it
  * out for that reason. `boards/pultec-mid/wiring.md` prints the same thing: a
  * dash in the Selects column of pad 1.
+ *
+ * **A SECOND POLE REFUSES RATHER THAN GUESSES (G41).** The pole is recognised
+ * by the one spelling `rotaryPadOrder` puts first, `common` - that rule is
+ * not generalised here, because inventing a second spelling for a pole on a
+ * part nobody has chosen would itself be a guess. What IS checked is that a
+ * non-pole terminal closes at exactly one position: `positionsClosingOnto`
+ * counts them directly from `contacts` rather than trusting the single value
+ * `positionsByPin` resolves, because a second pole's pin closes at a
+ * different position for every detent, the same shape a real throw has
+ * except multiplied - `positionsByPin` folds that down to whichever position
+ * was written last and would print it as a frequency. A terminal naming zero
+ * or more than one position is neither the pole nor a position, and refuses.
  */
-function switchLabel(component: Component, terminal: string, functionName: string): string {
+function switchLabel(component: SwitchComponent, terminal: string, functionName: string): string {
   if (terminal === COMMON_TERMINAL) return `${functionName} ${terminal}`
-  const selects = positionsByPin(component)
-  const position = selects[terminal]
-  if (position === undefined) {
-    const named = Object.keys(selects)
-    throw new Error(
-      `pad-label-unselected-throw: nothing in the contacts of the switch "${component.id}" ` +
-        `closes onto its terminal "${terminal}", so no position can be printed for this pad. ` +
-        `Its contacts name [${named.length === 0 ? "no terminals at all" : named.join(", ")}].` +
-        "\nThe contacts map is the authority for what a throw selects - it pairs a position to " +
-        "the contacts that position closes, which is why a detent closing nothing (a " +
-        "centre-off) needs no entry and a THROW with no position is a real gap. It is built " +
-        "from the circuit's own frequency tables in " +
-        "circuits/pultec/electrical/from-netlist.ts.\nThe pad is NOT labelled with its pin name " +
-        `and NOT labelled with the ref: "${component.id}.${terminal}" and "${terminal}" each ` +
-        "name the terminal exactly and tell a builder nothing, which is the defect this module " +
-        "exists to fix.\nFix it where the switch is declared - give the terminal the position " +
-        "that closes onto it, or take the pad off the board - rather than here.",
-    )
+  const matches = positionsClosingOnto(component, terminal)
+  if (matches.length === 1) {
+    const [position] = matches
+    return `${functionName} ${position}`
   }
-  return `${functionName} ${position}`
+  const named = Object.keys(positionsByPin(component))
+  const whyNotOnePosition =
+    matches.length === 0
+      ? `nothing in the contacts of the switch "${component.id}" closes onto its terminal ` +
+        `"${terminal}" at all`
+      : `the contacts of the switch "${component.id}" close onto its terminal "${terminal}" at ` +
+        `${matches.length} different positions - [${matches.join(", ")}] - not one, which is ` +
+        'what a second pole not spelled "common" would look like, not a throw'
+  throw new Error(
+    `pad-label-unselected-throw: ${whyNotOnePosition}, so no position can be printed for this ` +
+      `pad. Its terminal "${terminal}" is neither its pole - the one pin spelled literally ` +
+      `"${COMMON_TERMINAL}" - nor a single position. Its contacts name ` +
+      `[${named.length === 0 ? "no terminals at all" : named.join(", ")}].` +
+      "\nThe contacts map is the authority for what a throw selects - it pairs a position to " +
+      "the contacts that position closes, which is why a detent closing nothing (a " +
+      "centre-off) needs no entry and a THROW with no position is a real gap. It is built " +
+      "from the circuit's own frequency tables in " +
+      "circuits/pultec/electrical/from-netlist.ts.\nThe pad is NOT labelled with its pin name " +
+      `and NOT labelled with the ref: "${component.id}.${terminal}" and "${terminal}" each ` +
+      "name the terminal exactly and tell a builder nothing, which is the defect this module " +
+      "exists to fix.\nFix it where the switch is declared - give the terminal the position " +
+      "that closes onto it, or take the pad off the board - rather than here.",
+  )
 }
 
 /**
@@ -135,6 +176,6 @@ function switchLabel(component: Component, terminal: string, functionName: strin
 export function padLabelOf(component: Component, pin: string): string {
   const functionName = functionNameOf(component.id)
   const terminal = terminalNameOf(component, pin)
-  if (component.kind === "switch") return switchLabel(component, terminal, functionName)
+  if (isSwitch(component)) return switchLabel(component, terminal, functionName)
   return `${functionName} ${terminal}`
 }

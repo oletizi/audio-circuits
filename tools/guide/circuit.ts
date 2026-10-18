@@ -51,7 +51,7 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
 }
 
 /**
- * **G4: A CONTROL MAY NOT REACH THE BOARD BOTH WAYS.** A panel control
+ * **A CONTROL MAY NOT REACH THE BOARD BOTH WAYS.** A panel control
  * legitimately reaches a board as a header `PART` with `PIN` lines
  * (`./off-board.ts`) or as landing `PAD` lines (`./pads.ts`) - the module
  * comment on `assertLayoutMatchesCircuit` below states both are counted as
@@ -59,9 +59,9 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
  * third representation; it is the same control wired, or counted, twice,
  * and nothing downstream expects it - `offBoardLabels` would emit edge
  * labels for the header's pins while the pad renderer drew the same ref's
- * terminals again. This is G4 (`docs/known-gaps.md`); it is checked ahead of
- * the membership comparison below because a doubled ref is "on the board" by
- * both counts and would otherwise pass that comparison silently.
+ * terminals again. This check runs ahead of the membership comparison below
+ * because a doubled ref is "on the board" by both counts and would otherwise
+ * pass that comparison silently.
  */
 function assertNoControlReachesTwice(dump: BoardDump, pads: readonly PadTerminal[]): void {
   const partRefs = new Set(dump.parts.map((part) => part.ref))
@@ -104,7 +104,7 @@ function assertNoControlReachesTwice(dump: BoardDump, pads: readonly PadTerminal
  * **A REF ON BOTH LISTS IS A SEPARATE FAILURE, CHECKED FIRST.**
  * `assertNoControlReachesTwice` above refuses it before this comparison runs,
  * because it would otherwise be "on the board" by both counts and pass here
- * silently - see G4.
+ * silently.
  */
 export function assertLayoutMatchesCircuit(
   dump: BoardDump,

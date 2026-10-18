@@ -40,8 +40,9 @@
  * repository's own named failure - three footprints shipped that did not exist -
  * in a new place, and it would also make the table above unfalsifiable.
  *
- * **ITS OWN FILE** rather than another section of `./seed-room.test.ts`, which
- * is past the 500-line ceiling already and is about clearance and comfort, or of
+ * **ITS OWN FILE** rather than another section of `./seed-room-hand-boards.test.ts`
+ * or `./seed-placement-comfort.test.ts` - the files `./seed-room.test.ts` split
+ * into (`docs/known-gaps.md` G6) that are about clearance and comfort - or of
  * `./seed-shared-strip.test.ts`, which is about which strip a lead may land on.
  * This one is about which way round a part is turned.
  */

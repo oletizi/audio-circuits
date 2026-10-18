@@ -31,8 +31,8 @@
  *     placement refusals it belongs with;
  *   - `stripboard-seed-repeated-pad` - `./seed-off-board.test.ts`, beside the
  *     positive case it is the negative of;
- *   - `stripboard-seed-body-margin-not-whole` - `./seed-room.test.ts`, which
- *     owns the clearance rules;
+ *   - `stripboard-seed-body-margin-not-whole` - `./seed-parts-body-margins.test.ts`,
+ *     which owns body-margin derivation;
  *   - `stripboard-seed-home-not-a-strip`,
  *     `stripboard-seed-ordering-states-both-forms` and
  *     `stripboard-seed-ordering-net-has-no-home` - `./seed-homes.test.ts`,
@@ -77,7 +77,7 @@
  * between them, which are facts about PLACEMENT rather than about an input:
  * `stripboard-seed-leads-cannot-reach` and
  * `stripboard-seed-field-cannot-be-seated` are driven by `./seed.test.ts` (the
- * first also by `./seed-room.test.ts` and `./seed-shared-strip.test.ts`), and
+ * first also by `./seed-area-rigid-overlap.test.ts` and `./seed-shared-strip.test.ts`), and
  * **`stripboard-seed-pad-cannot-be-seated` is driven by
  * `./seed-off-board.test.ts`** - it was driven by nothing, found while
  * recounting on 2026-10-16 as the second of the two keys no test mentioned, and
