@@ -1539,42 +1539,93 @@ outcome field, in both paths, and it is this entry.
   shape as the `bound` fix, and reachable without a fork invocation - or a
   stated decision that the producer is trusted for this one field.
 
-### G18 - the fork's two stretch bounds disagree, so a 2-increment type can shrink below its minimum
+### G51 - a wire's out-of-range refusal would quote `2..2147483647`
 
-`FootPrint::CanStretch` (`Src/FootPrint.h:90-91`) permits a shrink whenever
-`GetCols() > CompTypes::GetMinLength(m_type)`. `Grid::StretchComplex`
-(`Src/Grid.h:241`) refuses one only when `GetCols() == GetMinLength(eType)` -
-**exact equality** - and otherwise allocates `GetCols() - GetStretchIncrement`.
+**THIS ENTRY IS THE SURVIVING HALF OF G18**, which the hygiene batch's Task 5
+settled and deleted. G18 carried it as *"a cosmetic relative, recorded here
+rather than as its own entry"*; the fix to the two stretch bounds did not touch
+it, so it is promoted to its own entry rather than deleted along with the entry
+it was lodged in. Deleting an entry does not settle what the entry merely
+happened to be carrying.
 
-For a type whose increment is 2 - `SWITCH_ST`, `SWITCH_DT`, `BLOCK_200` - a
-component sitting at `min + 1` therefore passes the permission test (`min + 1 >
-min`), misses the equality guard (`min + 1 != min`), and is allocated at
-**`min - 1`**, one hole below the minimum the type declares.
+`Headless_materialize_span.cpp:217-219`'s out-of-range refusal is on the wire
+path as well as the moulded-part path, and `CompTypes::GetMaxLength(COMP::WIRE)`
+is `INT_MAX`, so a wire refusal would read *"outside the 2..2147483647 holes
+this build allows a Wire to be"*.
 
-The same shape applies at the top end: `CanStretch` permits a grow at
-`max - 1`, and `StretchComplex`'s equality guard does not catch it.
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 2's re-reviewer, beside the
+  defect that was G18. Re-read by Task 5 of `2026-10-18-the-hygiene-batch`, which
+  confirmed the stretch-bound fix leaves it exactly as it was.
+- **Evidence** `.tools/veroroute-perfboard/Src/Headless_materialize_span.cpp:217-219`,
+  `CompTypes::GetMaxLength`'s `case COMP::WIRE: return INT_MAX;`,
+  `GetMinLength`'s `case COMP::WIRE: ... return 2;`, and
+  `GetMakeInstructions`'s `case COMP::WIRE: rows = 1; cols = 3;`.
+- **Verified** yes - all four read directly by Task 5, including the "a fresh
+  `WIRE` is 3 cols against a minimum of 2" claim G18 asserted without citing
+  where it came from.
+- **Why it is open** it is unreachable: `ParseWire` refuses a degenerate wire and
+  a fresh `WIRE` is 3 cols against a minimum of 2, so the refusal has no input
+  that fires it. It is a message path that did not exist before the materialise
+  loops were merged, and it is cosmetic - a number in a sentence nobody can make
+  the program print.
+- **What would settle it** either saying *"any length from 2 holes up"* when the
+  maximum is `INT_MAX`, with a test that reads the sentence, or a decision that
+  an unreachable sentence is not worth a branch.
 
-- **Found** `2026-10-16-low-boost-to-adoption`, Task 2's re-reviewer, while
-  checking that the new parity guard's arithmetic refused nothing legitimate.
-- **Evidence** the two files and lines above, read side by side.
-- **Verified** yes - the controller read both, rather than relaying the
-  reviewer's claim.
-- **Why it is open** it is **PRE-EXISTING in the fork's own stretch machinery**
-  and predates every change this program made. The parity guard added in Task 2
-  only refuses lengths that were already unreachable; it neither caused this nor
-  widened it. Nothing in this program is known to reach it: a moulded part
-  carrying nets cannot be stretched at all, which is what keeps the Pultec
-  boards clear of it.
-- **What would settle it** make the two agree - most likely by giving
-  `StretchComplex` the same `>`/`<` test `CanStretch` uses - with a test that
-  puts a 2-increment type at `min + 1` and asserts it does not go below `min`.
-- **A cosmetic relative, recorded here rather than as its own entry.**
-  `Headless_materialize_span.cpp:217-219`'s out-of-range refusal is now on the
-  wire path too, and `GetMaxLength(COMP::WIRE)` is `INT_MAX`, so a wire refusal
-  would read *"outside the 2..2147483647 holes this build allows a Wire to be"*.
-  Unreachable today - `ParseWire` refuses a degenerate wire and a fresh `WIRE`
-  is 3 cols against a minimum of 2 - but it is a message path that did not exist
-  before the two loops were merged.
+### G52 - at `min + 1` the fork's two stretch bounds agree on the range and not on the gesture, and `--stretch` reports success for a stretch that did nothing
+
+**THIS IS THE RESIDUAL OF THE G18 FIX, recorded by the agent that made it.**
+Task 5 of `2026-10-18-the-hygiene-batch` gave `Grid::StretchComplex` a guard that
+refuses a STEP that would leave `CompTypes::GetMinLength`..`GetMaxLength`. So a
+2-increment type at `min + 1` is no longer allocated at `min - 1` - it is not
+reallocated at all. `FootPrint::CanStretch`, which reads only
+`GetCols() > GetMinLength(m_type)`, still says yes.
+
+The two therefore agree about the RANGE and disagree about the GESTURE, and the
+consequence is a verb that reports success for nothing:
+`Headless_stretch.cpp`'s `RunStretch` asks `CanStretch`, runs the sequence, checks
+that nothing floated, saves and returns **0** - it never compares the column count
+before against the column count after. `--materialize` does not have this
+hole: `StretchToLength` (`Headless_materialize_span.cpp`) has carried a
+"`Component::Stretch` left it at N while reporting that it could change it"
+refusal since the parity guard landed, and that refusal is what would fire.
+
+- **Found** Task 5 of `2026-10-18-the-hygiene-batch`, by the agent that wrote the
+  fix, while reasoning about what the fix leaves rather than after a failure.
+- **Evidence** `--verify-stretch-bounds --type BLOCK_200 --cols 4 --direction
+  shrink` against the rebuilt binary prints `CANSTRETCH YES` and `AFTER 4`
+  with `MIN 3` - permission granted, nothing done. `RunStretch`
+  (`.tools/veroroute-perfboard/Src/Headless_stretch.cpp`) has no before/after
+  column comparison; `StretchToLength`'s third refusal does.
+- **Verified** yes - run, not predicted.
+- **Why it is open** **nothing on a board can be at `min + 1` for those three
+  types**, which is the same fact that kept G18 off every board, and it is
+  arithmetic rather than a property of the fixtures that exist: `Component`'s
+  constructor builds `SWITCH_ST`/`SWITCH_DT`/`BLOCK_200` at `2 * poles - 1` or
+  `1 + 2 * pins`, `Component::Stretch` moves them by 2, `StretchToLength` refuses
+  a length the increment cannot reach, `--import`'s length option for these types
+  is a pin count rather than a column count, and a retype rebuilds the footprint
+  from the type's default. `min + 1` is off that lattice through every door. The
+  alternative fix - making `CanStretch` increment-aware so it refuses at
+  `min + 1` - changes what the GUI greys out and would make
+  `StretchToLength` print *"outside the 3..511 holes this build allows"* about a
+  length of 4, which is inside 3..511. That is a worse sentence for a reachable
+  case in exchange for a better one for an unreachable case, and it is not the
+  trade this task was asked to make.
+- **What would settle it** either a `RunStretch` that refuses when the gesture
+  changed no columns, in the shape `StretchToLength` already uses - cheap, and it
+  closes the silent-success path whether or not anything can reach it - or an
+  increment-aware `CanStretch`, with the message consequence above handled, with
+  a test beside whichever is chosen.
+- **A note on how G18 was settled, because the register's own wording was part of
+  it.** G18 said the fix was *"most likely by giving `StretchComplex` the same
+  `>`/`<` test `CanStretch` uses"*. That mechanism does not meet G18's own stated
+  criterion: with `!bGrow && GetCols() > min` the step still runs at `min + 1`
+  and still lands on `min - 1`, because the step is 2 and the test only knows
+  about 1. The criterion - *"a test that puts a 2-increment type at `min + 1` and
+  asserts it does not go below `min`"* - was taken as the settlement and the
+  mechanism was not. The disagreement is recorded here rather than resolved
+  silently.
 
 ### G13 - `--stretch` cannot change a part's span on a packed board
 
