@@ -1590,6 +1590,16 @@ hole: `StretchToLength` (`Headless_materialize_span.cpp`) has carried a
 "`Component::Stretch` left it at N while reporting that it could change it"
 refusal since the parity guard landed, and that refusal is what would fire.
 
+**THE REFUSAL THAT FIRES NOW SAYS THE WRONG THING, and that is part of this
+entry rather than a separate one.** `StretchToLength`'s third refusal ends *"which
+is a defect in this build's stretch rather than anything about the document"*.
+Before the fix that sentence was true: a no-op there could only mean the
+allocator and the permission test had come apart by accident. After the fix, in
+the one case it now fires - a component at `min + 1` asked for `min - 1` - the
+no-op is a DELIBERATE refusal by the guard, so the message blames the build for
+doing the right thing. It still refuses rather than proceeding, which is why this
+is a wording defect and not a behavioural one.
+
 - **Found** Task 5 of `2026-10-18-the-hygiene-batch`, by the agent that wrote the
   fix, while reasoning about what the fix leaves rather than after a failure.
 - **Evidence** `--verify-stretch-bounds --type BLOCK_200 --cols 4 --direction
@@ -1598,25 +1608,49 @@ refusal since the parity guard landed, and that refusal is what would fire.
   (`.tools/veroroute-perfboard/Src/Headless_stretch.cpp`) has no before/after
   column comparison; `StretchToLength`'s third refusal does.
 - **Verified** yes - run, not predicted.
-- **Why it is open** **nothing on a board can be at `min + 1` for those three
-  types**, which is the same fact that kept G18 off every board, and it is
-  arithmetic rather than a property of the fixtures that exist: `Component`'s
-  constructor builds `SWITCH_ST`/`SWITCH_DT`/`BLOCK_200` at `2 * poles - 1` or
-  `1 + 2 * pins`, `Component::Stretch` moves them by 2, `StretchToLength` refuses
-  a length the increment cannot reach, `--import`'s length option for these types
-  is a pin count rather than a column count, and a retype rebuilds the footprint
-  from the type's default. `min + 1` is off that lattice through every door. The
-  alternative fix - making `CanStretch` increment-aware so it refuses at
-  `min + 1` - changes what the GUI greys out and would make
+- **Why it is open** **no HEADLESS door puts a footprint at `min + 1` for those
+  three types**, and that is arithmetic rather than a property of the fixtures
+  that exist: `Component`'s constructor builds
+  `SWITCH_ST`/`SWITCH_DT`/`BLOCK_200` at `2 * poles - 1` or `1 + 2 * pins`,
+  `Component::Stretch` moves them by 2, `StretchToLength` refuses a length the
+  increment cannot reach, `--import`'s length option for these types is a pin
+  count rather than a column count, and a retype rebuilds the footprint from the
+  type's default. The alternative fix - making `CanStretch` increment-aware so it
+  refuses at `min + 1` - changes what the GUI greys out and would make
   `StretchToLength` print *"outside the 3..511 holes this build allows"* about a
   length of 4, which is inside 3..511. That is a worse sentence for a reachable
   case in exchange for a better one for an unreachable case, and it is not the
   trade this task was asked to make.
+- **THE QUALIFIER "HEADLESS" WAS ADDED AT FIX ROUND 1 AND IT MATTERS.** This entry
+  and the fork's own comments first said *nothing on a board can be at `min + 1`*,
+  without qualification. That is wrong, and the Task 5 reviewer found the door:
+  `CompDefiner::Build`
+  (`.tools/veroroute-perfboard/Src/CompDefiner.cpp:96-103`) sets a component to
+  `COMP::CUSTOM`, overwrites that with the real `COMP` when the import string cuts
+  to a reserved one AND `TemplateManager::CheckAllowOverWrite` finds a
+  user-defined library part with the same (Type, Value, Import) strings, and then
+  calls `comp.Allocate(1, m_grid.GetRows(), m_grid.GetCols())` with the component
+  editor's own grid - **which carries no parity, minimum or maximum constraint at
+  all**. `FootPrint::Load` (`FootPrint.h:317-325`) restores whatever dimensions a
+  `.vrt` carries without checking them, so a board built through that door loads
+  into every headless verb intact. Checked while recording this: the door is
+  GUI-only in both halves - `CompDefiner::Build` is reached only from
+  `Component`'s definer constructor, whose callers are `mainwindow_events.cpp`,
+  `compdialog.cpp` and `pindialog.cpp`; and `m_listUser`, which
+  `CheckAllowOverWrite` searches, is filled only by
+  `TemplateManager::Add(false, ...)` from the GUI library dialog, while every
+  headless verb builds a `TemplateManager` with `SetPathStr` plus `AddDefaults()`,
+  which populates `m_listGeneric` only. So `CheckAllowOverWrite` is
+  unconditionally false in a headless process and the type stays `COMP::CUSTOM`.
+  **The consequence for this entry is that the residual is reachable in principle,
+  not only on paper** - which strengthens the case for the cheap fix below rather
+  than weakening it.
 - **What would settle it** either a `RunStretch` that refuses when the gesture
   changed no columns, in the shape `StretchToLength` already uses - cheap, and it
   closes the silent-success path whether or not anything can reach it - or an
   increment-aware `CanStretch`, with the message consequence above handled, with
-  a test beside whichever is chosen.
+  a test beside whichever is chosen. The `StretchToLength` wording above wants
+  fixing alongside whichever is chosen; it is one clause.
 - **A note on how G18 was settled, because the register's own wording was part of
   it.** G18 said the fix was *"most likely by giving `StretchComplex` the same
   `>`/`<` test `CanStretch` uses"*. That mechanism does not meet G18's own stated
@@ -1626,6 +1660,65 @@ refusal since the parity guard landed, and that refusal is what would fire.
   asserts it does not go below `min`"* - was taken as the settlement and the
   mechanism was not. The disagreement is recorded here rather than resolved
   silently.
+
+### G53 - two unguarded `while (GetCols() != reqLength) Stretch(...)` loops in the fork hang if the allocator declines, and the G18 fix widened the window by one column
+
+`Component`'s constructor (`Component.h:121-139`, three copies of the pair - one
+per type group) and `TemplateManager::CheckPartOK` (`TemplateManager.h:405-408`)
+both size a fresh footprint with the same shape:
+
+```cpp
+while ( comp.GetCols() < nLength ) comp.Stretch(true);   // grow
+while ( comp.GetCols() > nLength ) comp.Stretch(false);  // shrink
+```
+
+Neither loop asks `CanStretch` and neither has a no-progress guard. **If
+`Component::Stretch` declines while the loop still wants more columns, the length
+never changes and the process spins forever.** There are two ways to get there and
+they behave differently, which is why the entry separates them:
+
+- **`CanStretch` says NO and `Stretch` is called anyway.** `FootPrint::Stretch`
+  opens with `assert(CanStretch(bGrow))`, so this build aborts rather than hangs -
+  the fork compiles with `-DQT_NO_DEBUG` and **no** `-DNDEBUG`, so plain `assert`
+  is live. A build that defined `NDEBUG` would hang here instead. Pre-existing and
+  untouched by Task 5.
+- **`CanStretch` says YES and `Grid::StretchComplex` declines.** The assert passes,
+  so this hangs in **any** build, asserts or not. This is the window Task 5's fix
+  widened, and it is the only one worth measuring.
+
+**Task 5's fix widened that second window by exactly one column**, and the entry
+says so rather than leaving it for someone to find.
+
+The old guard declined a grow only at `GetCols() == max`; the new one declines
+whenever `GetCols() > max - increment`, so for the three increment-2 types the
+hanging set is `{max - 1, max}` rather than `{max}`. Same at the bottom:
+`{min, min + 1}` rather than `{min}`.
+
+- **Found** Task 5's reviewer, `2026-10-18-the-hygiene-batch`, fix round 1, while
+  checking what else reads the guard that changed.
+- **Evidence** the two loops at the lines above, read; `Grid.h`'s new guard, read;
+  `grep -o "DNDEBUG\|DQT_NO_DEBUG" .tools/veroroute-perfboard/build/Makefile`
+  returns `DQT_NO_DEBUG` only - a check that could have returned both.
+- **Verified** yes - the loops and the build flags were read directly rather than
+  relayed, and the widening was worked out from the guard's own arithmetic.
+- **Why it is open** **unreachable from a default-built footprint, which is the
+  only kind either loop ever sees.** Both loops run on a footprint just built by
+  `BuildDefault`, so it starts ON the type's lattice; `TemplateManager` has already
+  bounded `nLength` to `GetMinLength..GetMaxLength` before the loop
+  (`TemplateManager.h:391-396`); and for the three increment-2 types the import
+  suffix is a PIN COUNT, so `nLength` is 0 and that loop never runs for them at
+  all. The constructor's own `reqLength` is derived from a pin count already
+  bounded by `GetMinNumPins..GetMaxNumPins`, which maps onto the lattice by
+  construction. Reaching the hang needs a footprint already off-lattice, which is
+  the `CompDefiner::Build` door recorded in G52 - and that door builds the grid
+  directly instead of going through either loop.
+- **What would settle it** give both loops the guard `StretchToLength`
+  (`Headless_materialize_span.cpp`) already has and exists to provide: refuse
+  before the loop when the increment cannot reach the target, and refuse inside it
+  when a step changed nothing. That refusal was written for exactly this loop shape
+  - its own comment says *"PlaceDeclaredWire had this same loop shape before it was
+  folded into this function, and was immune only because WIRE's increment is 1"* -
+  and these two are the remaining copies it was never folded into.
 
 ### G13 - `--stretch` cannot change a part's span on a packed board
 
