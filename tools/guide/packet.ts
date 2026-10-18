@@ -6,6 +6,14 @@
  *   copper-side.svg         mirrored copper side: strips, cuts, bridges
  *   schematic.pdf           kicad-cli sch export pdf --black-and-white
  *   guide.html              the build guide, embedding the three images
+ *   guide.pdf               that page printed, by a headless browser
+ *
+ * **`guide.pdf` IS WRITTEN BESIDE `guide.html`, NOT INSTEAD OF IT.** The HTML
+ * is what the PDF is rendered from - the page's own `@page`/`@media print`
+ * rules are the pagination - and `guide/` is regenerated whole and git-ignored,
+ * so keeping both costs nothing and leaves the source of the printed pages
+ * sitting next to them. The converter is resolved the way `kicad-cli` is and
+ * REFUSES BY NAME when it is missing; see `./print-pdf.ts`.
  *
  * Everything is derived from the committed `.vrt`, schematic and circuit,
  * so `guide/` is regenerated whole each run and is git-ignored. It is
@@ -43,6 +51,7 @@ import { offBoardLabels, valueLabel } from "./off-board.ts"
 import { padLabelOf } from "./pad-label.ts"
 import { padTerminals } from "./pads.ts"
 import { buildableDump } from "./preflight.ts"
+import { defaultPrintGuidePdf } from "./print-pdf.ts"
 import { renderLayout } from "./render.ts"
 
 /** The few filesystem operations the packet writer needs. */
@@ -57,8 +66,15 @@ export interface GuideFs {
 export interface GuideDeps {
   /** The kicad-cli executable; required, never defaulted (make passes its own KICAD_CLI). */
   readonly kicadCli: string
+  /**
+   * The headless browser that prints `guide.html` to `guide.pdf`; required,
+   * never defaulted here, exactly as `kicadCli` is - make/board.mk resolves
+   * HTML_TO_PDF with its own default and passes it down.
+   */
+  readonly htmlToPdf: string
   readonly runVeroroute?: (args: readonly string[]) => VerbRun
   readonly exportSchematicPdf?: (kicadCli: string, schPath: string, pdfPath: string) => void
+  readonly printGuidePdf?: (htmlToPdf: string, htmlPath: string, pdfPath: string) => void
   readonly loadCircuit?: (declaration: PerfboardDeclaration) => Promise<BoardCircuit>
   readonly fs?: GuideFs
   readonly now?: () => Date
@@ -67,6 +83,8 @@ export interface GuideDeps {
 }
 
 export const SCHEMATIC_PDF = "schematic.pdf"
+export const GUIDE_HTML = "guide.html"
+export const GUIDE_PDF = "guide.pdf"
 
 /**
  * The files one packet holds, in the order they are written.
@@ -83,7 +101,8 @@ export function packetFiles(hasSchematic: boolean): readonly string[] {
     "layout-values.svg",
     "copper-side.svg",
     ...(hasSchematic ? [SCHEMATIC_PDF] : []),
-    "guide.html",
+    GUIDE_HTML,
+    GUIDE_PDF,
   ]
 }
 
@@ -222,7 +241,14 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
         path.join(staging, SCHEMATIC_PDF),
       )
     }
-    files.writeText(path.join(staging, "guide.html"), html)
+    // THE PRINT IS INSIDE THE STAGING GUARANTEE, not after the swap: a
+    // converter that is missing or prints nothing must leave the previous
+    // packet exactly as it was, the same as a failed kicad-cli does. Printing
+    // after the rename would instead publish a packet whose PDF is absent or,
+    // worse, left over from the last run.
+    const htmlPath = path.join(staging, GUIDE_HTML)
+    files.writeText(htmlPath, html)
+    ;(deps.printGuidePdf ?? defaultPrintGuidePdf)(deps.htmlToPdf, htmlPath, path.join(staging, GUIDE_PDF))
     files.removeDir(guideDir)
     files.rename(staging, guideDir)
   } catch (caught) {

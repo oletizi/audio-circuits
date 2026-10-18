@@ -109,6 +109,19 @@ audio-circuits/
   `kicad-cli` out. The default assumes a standard macOS install
   (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`); override
   `KICAD_CLI` if yours lives elsewhere.
+- **[Google Chrome](https://www.google.com/chrome/)** (or another
+  Chromium-family browser), for printing a build guide. Required by `make
+  guide`, which renders `guide.html` to `guide.pdf` with it - printing is part
+  of this build system rather than a manual step afterwards, so a missing
+  converter **refuses by name** instead of writing a packet with no PDF. It is
+  also required for `bun test`: exactly one test, "the real converter prints a
+  multi-page PDF from a page with the guide's print CSS" in
+  `tests/guide/print-pdf.test.ts`, invokes it and **fails** (never skips) when
+  it cannot find it, because Chrome's headless flags have changed across
+  versions and it is the only proof that the flags this repository passes
+  still produce a PDF. The default assumes a standard macOS install
+  (`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`); override
+  `HTML_TO_PDF` if yours lives elsewhere.
 - **Homebrew's `qt@5`** (`brew install qt@5`), needed to build the VeroRoute
   fork the perfboard tooling drives. It is keg-only, which is why the tooling
   locates it via `brew --prefix qt@5` rather than expecting `qmake` on `PATH` -
@@ -117,8 +130,8 @@ audio-circuits/
 
 Nothing else needs setting up: the perfboard tooling builds and locates the
 VeroRoute fork itself, and none of this requires an environment variable. If
-you want to point at your own builds instead, `VEROROUTE`, `QMAKE` and
-`KICAD_CLI` are overrides, not required setup.
+you want to point at your own builds instead, `VEROROUTE`, `QMAKE`,
+`KICAD_CLI` and `HTML_TO_PDF` are overrides, not required setup.
 
 ## Usage
 
@@ -138,14 +151,21 @@ board, is that workflow's front door - see `make help` for the rest of it.
 `boards/transistor-preamp-staged`), writes that board's printable build
 packet into `<board>/guide/`: two component-side layout SVGs (by designator
 and by value), a mirrored copper-side SVG of cuts and solder bridges, the
-schematic as a black-and-white PDF, and a `guide.html` that embeds all three
-images with a build checklist (in build order: ICs and transistors,
-resistors and trim-pots, capacitors, wire links, wire-to-board junctions,
-solder bridges, cuts) and, where the circuit module declares them, a
-power-up table of expected DC voltages. `guide/` is regenerated whole on
-every run, is git-ignored, and is never hand-edited; the command refuses to
-write a packet when the layout has unresolved cuts, an unplaced part, or
-disagrees with the circuit it claims to be.
+schematic as a black-and-white PDF (when the board declares one), and a
+`guide.html` that embeds all three images with a build checklist (in build
+order: ICs and transistors, resistors and trim-pots, capacitors, wire links,
+wire-to-board junctions, solder bridges, cuts) and, where the circuit module
+declares them, a power-up table of expected DC voltages - **plus that page
+printed as `guide.pdf`, which is the file you take to the bench.** Printing
+is part of this build system, not a step done by hand in a browser
+afterwards: the converter is a Chromium-family browser resolved through the
+`HTML_TO_PDF` make variable exactly as `kicad-cli` is through `KICAD_CLI`
+(see `make help`), and a converter that is missing, that fails, or that exits
+0 having printed nothing refuses by name rather than leaving a packet whose
+PDF is quietly absent. `guide/` is regenerated whole on every run, is
+git-ignored, and is never hand-edited; the command refuses to write a packet
+when the layout has unresolved cuts, an unplaced part, or disagrees with the
+circuit it claims to be.
 
 `make bom`, run from a declared board's directory, keeps that board's parts
 list. It reads the board's circuit module (including its `bomConditions()`

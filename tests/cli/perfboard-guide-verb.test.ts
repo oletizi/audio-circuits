@@ -29,22 +29,30 @@ function boardTree(schematic: "declared" | "none" = "declared"): string {
 }
 
 const kicadCalls: string[][] = []
-const DEPS: Omit<GuideDeps, "kicadCli"> = {
+const printCalls: string[][] = []
+const DEPS: Omit<GuideDeps, "kicadCli" | "htmlToPdf"> = {
   runVeroroute: () => ({ status: 0, output: DUMP_TEXT }),
   exportSchematicPdf: (cli, sch, pdf) => {
     kicadCalls.push([cli, sch, pdf])
     fs.writeFileSync(pdf, "%PDF-fake")
   },
+  printGuidePdf: (tool, html, pdf) => {
+    printCalls.push([tool, html, pdf])
+    fs.writeFileSync(pdf, "%PDF-fake")
+  },
   loadCircuit: async () => fixtureCircuit(),
 }
 
-test("guide writes the five-file packet into the board's guide/ directory", async () => {
+/** The two tool paths `make guide` passes, in the order it passes them. */
+const TOOLS = ["--kicad-cli", "/fake/kicad-cli", "--html-to-pdf", "/fake/html-to-pdf"] as const
+
+test("guide writes the six-file packet into the board's guide/ directory", async () => {
   const root = boardTree()
   try {
     const dir = path.join(root, "boards", "demo")
     const lines: string[] = []
     const errors: string[] = []
-    const code = await runCli(["guide", "--kicad-cli", "/fake/kicad-cli"], {
+    const code = await runCli(["guide", ...TOOLS], {
       cwd: dir, log: (line) => lines.push(line), error: (line) => errors.push(line), guideDeps: DEPS, repoRoot: root,
     })
     expect(errors).toEqual([])
@@ -53,13 +61,15 @@ test("guide writes the five-file packet into the board's guide/ directory", asyn
     expect(fs.readdirSync(dir).sort()).toEqual(["guide", "perfboard.json"])
     expect(fs.readdirSync(dir).filter((name) => name.startsWith(".guide-staging"))).toEqual([])
     expect(kicadCalls.at(-1)?.[0]).toBe("/fake/kicad-cli")
+    expect(printCalls.at(-1)?.[0]).toBe("/fake/html-to-pdf")
+    expect(fs.readFileSync(path.join(dir, "guide", "guide.pdf"), "utf8")).toBe("%PDF-fake")
     expect(fs.readFileSync(path.join(dir, "guide", "guide.html"), "utf8")).toContain("boards/demo/demo.vrt")
   } finally {
     fs.rmSync(root, { recursive: true, force: true })
   }
 })
 
-test("guide writes a four-file packet for a board with no schematic, through the real filesystem", async () => {
+test("guide writes a five-file packet for a board with no schematic, through the real filesystem", async () => {
   // The same case packet.test.ts covers in memory, driven through the verb and
   // a real staging-and-swap, because that is the path `make guide` takes on the
   // Pultec sections - none of which declares a schematic.
@@ -68,7 +78,7 @@ test("guide writes a four-file packet for a board with no schematic, through the
     const dir = path.join(root, "boards", "demo")
     const lines: string[] = []
     const errors: string[] = []
-    const code = await runCli(["guide", "--kicad-cli", "/fake/kicad-cli"], {
+    const code = await runCli(["guide", ...TOOLS], {
       cwd: dir, log: (line) => lines.push(line), error: (line) => errors.push(line), guideDeps: DEPS, repoRoot: root,
     })
     expect(errors).toEqual([])
@@ -83,15 +93,66 @@ test("guide writes a four-file packet for a board with no schematic, through the
   }
 })
 
-test("guide refuses without --kicad-cli, writing nothing", async () => {
+test("guide refuses with neither tool path, naming both, writing nothing", async () => {
   const root = boardTree()
   try {
     const dir = path.join(root, "boards", "demo")
     const errors: string[] = []
     const code = await runCli(["guide"], { cwd: dir, log: () => {}, error: (line) => errors.push(line), guideDeps: DEPS })
     expect(code).toBe(1)
-    expect(errors.join("\n")).toContain("--kicad-cli")
+    expect(errors.join("\n")).toContain("--kicad-cli and --html-to-pdf")
     expect(fs.existsSync(path.join(dir, "guide"))).toBe(false)
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("guide refuses with --kicad-cli alone, naming the converter flag it is missing", async () => {
+  // The flag this change added is NOT optional: a run without it would be a
+  // packet with no PDF, which is the silence the whole guide path refuses.
+  const root = boardTree()
+  try {
+    const dir = path.join(root, "boards", "demo")
+    const errors: string[] = []
+    const code = await runCli(["guide", "--kicad-cli", "/fake/kicad-cli"], {
+      cwd: dir, log: () => {}, error: (line) => errors.push(line), guideDeps: DEPS,
+    })
+    expect(code).toBe(1)
+    expect(errors.join("\n")).toContain("guide is missing --html-to-pdf")
+    expect(fs.existsSync(path.join(dir, "guide"))).toBe(false)
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("guide refuses a tool flag given with no path, rather than eating the next flag", async () => {
+  const root = boardTree()
+  try {
+    const dir = path.join(root, "boards", "demo")
+    const errors: string[] = []
+    const code = await runCli(["guide", "--kicad-cli", "--html-to-pdf", "/fake/html-to-pdf"], {
+      cwd: dir, log: () => {}, error: (line) => errors.push(line), guideDeps: DEPS,
+    })
+    expect(code).toBe(1)
+    expect(errors.join("\n")).toContain("--kicad-cli needs a path")
+    expect(fs.existsSync(path.join(dir, "guide"))).toBe(false)
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("guide takes the two tool flags in either order", async () => {
+  const root = boardTree()
+  try {
+    const dir = path.join(root, "boards", "demo")
+    const errors: string[] = []
+    const code = await runCli(
+      ["guide", "--html-to-pdf", "/fake/html-to-pdf", "--kicad-cli", "/fake/kicad-cli"],
+      { cwd: dir, log: () => {}, error: (line) => errors.push(line), guideDeps: DEPS, repoRoot: root },
+    )
+    expect(errors).toEqual([])
+    expect(code).toBe(0)
+    expect(fs.readdirSync(path.join(dir, "guide")).sort()).toEqual([...packetFiles(true)].sort())
   } finally {
     fs.rmSync(root, { recursive: true, force: true })
   }
@@ -101,7 +162,7 @@ test("guide refuses from a directory that declares no board", async () => {
   const root = boardTree()
   try {
     const errors: string[] = []
-    const code = await runCli(["guide", "--kicad-cli", "/fake/kicad-cli"], {
+    const code = await runCli(["guide", ...TOOLS], {
       cwd: root, log: () => {}, error: (line) => errors.push(line), guideDeps: DEPS,
     })
     expect(code).toBe(1)

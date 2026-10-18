@@ -24,12 +24,18 @@ Designs: `docs/superpowers/specs/2026-09-23-transistor-preamp-lab-design.md`,
 
 Every board here with a declared layout whose cuts resolve (feedback,
 buffered, loop, staged) has a printable build packet:
-`make -C boards/<board> guide` writes layout SVGs, the schematic PDF and a
-`guide.html` checklist - with a power-up table of expected DC voltages for the
-staged board - into that board's git-ignored `guide/` directory. The lab
-board also declares a layout, but its cuts are unresolved, so `make guide`
-refuses it with the same explanation `make cuts` gives. See the design:
-`docs/superpowers/specs/2026-09-29-build-guide-design.md`.
+`make -C boards/<board> guide` writes the three layout SVGs, the schematic PDF
+and the guide itself - as `guide.html` and as `guide.pdf` printed from it, with
+a power-up table of expected DC voltages for the staged board - into that
+board's git-ignored `guide/` directory. **`guide.pdf` is the thing you take to
+the bench**, and `guide.html` sits beside it as what the PDF was rendered from;
+printing is part of the build system rather than something done by hand in a
+browser afterwards, so `make guide` resolves a converter through `HTML_TO_PDF`
+(a Chromium-family browser, defaulted the way `KICAD_CLI` is) and refuses by
+name when it is missing rather than writing a packet whose PDF is quietly
+absent. The lab board also declares a layout, but its cuts are unresolved, so
+`make guide` refuses it with the same explanation `make cuts` gives. See the
+design: `docs/superpowers/specs/2026-09-29-build-guide-design.md`.
 
 The staged board has a parts list: `make -C boards/transistor-preamp-staged bom`
 derives what the board needs from `staged-board.ts` (resistor ratings from its

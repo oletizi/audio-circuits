@@ -154,33 +154,86 @@ export async function dispatchStripboard(
   }
 }
 
+const GUIDE_TOOL_FLAGS = ["--kicad-cli", "--html-to-pdf"] as const
+
+const GUIDE_USAGE =
+  "guide takes exactly --kicad-cli <path> --html-to-pdf <path>, in either order: the kicad-cli " +
+  "that exports the schematic PDF, and the headless browser that prints guide.html to guide.pdf " +
+  "(`make guide` passes its KICAD_CLI and HTML_TO_PDF). Neither is defaulted here, so that a " +
+  "path lives in one place."
+
+/**
+ * The two tool paths `guide` needs, or `null` having said what was wrong.
+ *
+ * BOTH ARE REQUIRED AND NEITHER HAS A DEFAULT HERE, for the reason
+ * `--kicad-cli` never had one: make/board.mk resolves each with its own
+ * contingent default and passes it down, and a second default in TypeScript
+ * would be a second place for one path to be wrong.
+ */
+function guideToolPaths(
+  args: readonly string[],
+  error: (line: string) => void,
+): { kicadCli: string; htmlToPdf: string } | null {
+  const seen = new Map<string, string>()
+  for (let i = 0; i < args.length; i += 2) {
+    const flag = args[i]
+    const value = args[i + 1]
+    if (flag === undefined || !GUIDE_TOOL_FLAGS.some((known) => known === flag)) {
+      error(`unknown or misplaced argument "${String(flag)}" for guide. ${GUIDE_USAGE}`)
+      return null
+    }
+    // A MISSING VALUE AND A NEXT FLAG ARE DISTINGUISHED, as parseFlags does
+    // for --strips: "--kicad-cli --html-to-pdf x" must not silently take
+    // "--html-to-pdf" as a kicad-cli path.
+    if (value === undefined || value.startsWith("--")) {
+      error(`${flag} needs a path. ${GUIDE_USAGE}`)
+      return null
+    }
+    if (seen.has(flag)) {
+      error(`${flag} was given twice. ${GUIDE_USAGE}`)
+      return null
+    }
+    seen.set(flag, value)
+  }
+  const kicadCli = seen.get("--kicad-cli")
+  const htmlToPdf = seen.get("--html-to-pdf")
+  if (kicadCli === undefined || htmlToPdf === undefined) {
+    const missing = GUIDE_TOOL_FLAGS.filter((flag) => !seen.has(flag))
+    error(`guide is missing ${missing.join(" and ")}. ${GUIDE_USAGE}`)
+    return null
+  }
+  return { kicadCli, htmlToPdf }
+}
+
 /**
  * `guide`: write this board's printable build packet into its `guide/`.
  *
- * Takes `--kicad-cli <path>`, as `netlist-sync` does: make/board.mk resolves
- * KICAD_CLI with its own default and passes it, so this verb never holds a
- * second default of its own.
+ * Takes `--kicad-cli <path>` and `--html-to-pdf <path>`, as `netlist-sync`
+ * takes `--kicad-cli`: make/board.mk resolves KICAD_CLI and HTML_TO_PDF with
+ * its own defaults and passes them, so this verb never holds a second default
+ * of its own.
  */
 export async function dispatchGuide(
   cwd: string,
   args: readonly string[],
-  guideDeps: Omit<GuideDeps, "kicadCli"> | undefined,
+  guideDeps: Omit<GuideDeps, "kicadCli" | "htmlToPdf"> | undefined,
   repoRoot: string | undefined,
   log: (line: string) => void,
   error: (line: string) => void,
 ): Promise<number> {
-  const [flag, kicadCli, ...rest] = args
-  if (flag !== "--kicad-cli" || kicadCli === undefined || kicadCli.startsWith("--") || rest.length > 0) {
-    error(
-      "guide takes exactly --kicad-cli <path>: the kicad-cli that exports the schematic PDF " +
-        "(`make guide` passes its KICAD_CLI).",
-    )
-    return 1
-  }
+  const tools = guideToolPaths(args, error)
+  if (tools === null) return 1
   const declaration = boardHere(cwd, "guide", error)
   if (declaration === null) return 1
   try {
-    log(await writeGuidePacket(declaration, { ...guideDeps, repoRoot: guideDeps?.repoRoot ?? repoRoot, kicadCli }))
+    log(
+      await writeGuidePacket(declaration, {
+        ...guideDeps,
+        repoRoot: guideDeps?.repoRoot ?? repoRoot,
+        kicadCli: tools.kicadCli,
+        htmlToPdf: tools.htmlToPdf,
+      }),
+    )
     return 0
   } catch (caught) {
     error(`FAIL ${declaration.vrtPath}`)

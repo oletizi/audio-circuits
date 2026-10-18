@@ -44,6 +44,20 @@ NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 export KICAD_CLI
 
+# HTML_TO_PDF follows THE SAME SHAPE, and for the same reason: printing the
+# build guide is part of this build system, not something an operator does by
+# hand in a browser afterwards, so the converter is a resolved, overridable
+# variable here rather than a path buried in TypeScript.
+#
+# It must be a Chromium-family browser binary - `guide` invokes it with
+# --headless --no-pdf-header-footer --print-to-pdf and a throwaway
+# --user-data-dir, and the guide page's own @page/@media print rules do the
+# pagination. There is no fallback: a missing converter refuses by name
+# (tools/guide/print-pdf.ts) rather than writing a packet whose PDF is
+# quietly absent.
+HTML_TO_PDF ?= /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+export HTML_TO_PDF
+
 .PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring place adopt
 
 ifneq ($(strip $(SCH)),)
@@ -200,10 +214,14 @@ perfboard-help:
 	@echo "  make edit            open this layout in the forked VeroRoute"
 	@echo ""
 	@echo "Build it on the bench"
-	@echo "  make guide           write the printable build packet into guide/ (layout"
-	@echo "                       images, black-and-white schematic PDF, checklist in"
-	@echo "                       guide.html) - replaces guide/, never the layout;"
-	@echo "                       refuses while cuts are unresolved or a part is unplaced"
+	@echo "  make guide           write the printable build packet into guide/: the three"
+	@echo "                       layout images, a black-and-white schematic PDF (only if"
+	@echo "                       this board declares \"sch\"), the guide itself as"
+	@echo "                       guide.html AND as guide.pdf printed from it - the PDF is"
+	@echo "                       the thing you take to the bench. Replaces guide/, never"
+	@echo "                       the layout; refuses while cuts are unresolved, a part is"
+	@echo "                       unplaced, or the HTML_TO_PDF converter is missing, and"
+	@echo "                       leaves the previous packet intact when it does"
 	@echo ""
 	@echo "Buy the parts"
 	@echo "  make bom             compare what the circuit needs with bom.json and the"
@@ -230,6 +248,11 @@ perfboard-help:
 	@echo "  KICAD_CLI            override: point at your OWN kicad-cli - consulted on"
 	@echo "                       every run that declares \"sch\"/\"netlist\", since every"
 	@echo "                       such run now re-exports the schematic to check it"
+	@echo "  HTML_TO_PDF          override: point at your OWN Chromium-family browser - it"
+	@echo "                       is what prints guide.pdf from guide.html on every"
+	@echo "                       \`make guide\`, invoked with --headless --print-to-pdf. A"
+	@echo "                       converter that is not there refuses by name; a packet"
+	@echo "                       without its PDF is never written"
 	@echo "  ALLOW_DIRTY=1        let update/stripboard/adopt write over uncommitted changes"
 
 # `wiring` is a prerequisite of `check` for the same reason `netlist-agrees` is:
@@ -282,7 +305,7 @@ edit: veroroute
 # The build packet is generated, never committed: guide/ is git-ignored and
 # rebuilt whole from the .vrt, the schematic and the circuit on every run.
 guide: veroroute netlist-agrees
-	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)"
+	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)" --html-to-pdf "$(HTML_TO_PDF)"
 
 # The stripboard pipeline, on THIS board. It writes only under
 # build/stripboard/<board>/<stamp>/ - never the layout - so it needs no
