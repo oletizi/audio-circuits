@@ -519,6 +519,84 @@ evidence any future decision rests on:**
 Open: a fix would settle these
 ------------------------------
 
+### G55 - the printed guide tells a builder to stand a ZERO-OHM resistor on end, where the wiring sheet for the same board says to fit a wire
+
+**The two generated sheets for one board give contradictory instructions about
+the same part**, and the printed one - the document headed "build guide" - gives
+the wrong one.
+
+`boards/pultec-low-boost/wiring.md:126-129`, verbatim:
+
+> **A part listed as `0R` is a wire link.** A level pot sitting at its end stop
+> [...] fit a wire or a solder bridge.
+
+`boards/pultec-low-boost/guide/guide.html`, the **Resistors and trim-pots**
+table, verbatim:
+
+| Part | Value | Leads | Mounting |
+| --- | --- | --- | --- |
+| `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper` | `0R` | D3, C3 | **STAND ON END** |
+| `SI_HI_CUT_RV_HI_CUT.ccw-wiper` | `0R` | E11, B11 | **STAND ON END** |
+| `SI_LOW_CUT_RV_LO_CUT.ccw-wiper` | `0R` | E19, G19 | **STAND ON END** |
+
+So the packet lists a short circuit as a resistor to fit, in the resistor
+section, and then instructs a mounting for the body of a part that has no body.
+**Both columns are wrong for these three rows**, and the `Mounting` column is
+wrong twice over: `STAND ON END` is derived correctly from a one-hole span by
+`lib/kicad/lead-span-mounting.ts`, which is right for a resistor and
+meaningless for a wire link.
+
+**Why a 0R part exists at all, since it looks like a mistake and is not.** A
+pot resolves into two resistor sections, `ccw-wiper` and `wiper-cw`
+(`lib/model/control-state.ts:299-314`). A pot at the end of its travel puts the
+whole track in one section and 0 Ω in the other - visible on the board as the
+pairs `.ccw-wiper` 0R with `.wiper-cw` 47K, and 0R with 4.7K. The zero section
+is emitted rather than dropped **on purpose**, and
+`lib/model/control-state.ts:293-297` states the reason: *"A zero-ohm section is
+legal and is still emitted, so component counts stay stable across a sweep."*
+That is a SIMULATION rationale - a stable component count makes a SPICE
+parameter sweep comparable - and it is a good one.
+
+**The defect is that a simulation convenience reached a bench sheet as a
+purchase and a mounting instruction.** That is the same shape as G44: a fact
+correct for one artifact printed as an instruction for another. The difference
+is that this one is already solved elsewhere in the tree -
+`lib/board/scaffold/wiring.ts:35-36` carries the rule as a named constant,
+*"How `describePart` renders a zero-ohm part: a wire link, not a resistor to
+buy"* - so the printed guide is the one consumer that does not know it.
+
+**This is NOT G45**, which is adjacent and was checked before this entry was
+written. G45 is that the packet carries none of the wiring sheet's
+CONDITIONALITY - which stand-in group to populate in which build - and it names
+these same parts as undistinguished from the board's own. This entry is a
+different failure about the same rows: not an omission a builder could notice,
+but a positive instruction that is wrong and that the other sheet contradicts.
+A builder following the packet alone would try to source three 0-ohm resistors.
+
+- **Found** 2026-10-18, by the owner asking *"why are there 0R resistors on the
+  low boost layout?"* - so it was found by him, not by a check.
+- **Evidence** the two passages above, read off the committed
+  `boards/pultec-low-boost/wiring.md` and the generated
+  `boards/pultec-low-boost/guide/guide.html` for the SAME board;
+  `lib/model/control-state.ts:293-314`; `lib/board/scaffold/wiring.ts:35-36`
+  and `:234-240`, which is the rule the packet does not apply.
+- **Verified** yes - both artifacts read directly, and the `.ccw-wiper`/
+  `.wiper-cw` value pairs confirmed against `--dump-board` of the committed
+  `.vrt`.
+- **Why it is open** found while answering a question, in a change that is
+  about something else; recorded rather than fixed in passing.
+- **What would settle it** **the CRITERION: the two generated sheets for one
+  board must not give contradictory instructions for the same part**, which is
+  the consistency requirement this repository already enforces for pad labels
+  by building one map and handing it to both consumers. **A plausible
+  MECHANISM, which is advice and not the settlement** - the guide's `valueLabel`
+  and `mountingCell` could apply `describePart`'s existing zero-ohm rule rather
+  than re-deriving a value and a mounting from the dump, which would also put
+  these rows somewhere other than under "Resistors". Whether a wire link gets
+  its own checklist section, or joins the **Wire links** section the guide
+  already has, is a question about the printed artifact and **not one the agent
+  producing that artifact may answer**.
+
 ### G54 - one `Separates` cell is 108 characters wide, because a stand-in part's ref carries the whole path it stands in for
 
 The 2026-10-18 change that made the Cuts table name what a cut separates
