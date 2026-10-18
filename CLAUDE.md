@@ -147,6 +147,18 @@ rule** - go and write it down.
 Every entry says what is wrong or what was measured, where, what evidence
 establishes it, **whether the writer confirmed it or is relaying another agent's
 report**, and what would settle it - a fix, a measurement, or an owner decision.
+
+**A "what would settle it" often carries TWO things, and only one of them
+binds.** The CRITERION is what was measured: *"a 2-increment type at `min + 1`
+does not go below `min`"*. The MECHANISM is the writer's guess at how:
+*"most likely by giving `StretchComplex` the same `>`/`<` test `CanStretch`
+uses"*. **The criterion is the settlement; the mechanism is advice from someone
+who had not yet tried it.** G18's suggested mechanism would not have fixed the
+defect G18 described - at `min + 1` with a step of 2, `> min` still passes and
+still lands at `min - 1` - and an implementer who followed the mechanism would
+have shipped a fix that did not fix, with the entry deleted behind it. Take the
+criterion, test against it, and **record the deviation when the mechanism turns
+out to be wrong** rather than silently doing something else.
 Evidence must be a check that could have failed: an entry once rested on a grep
 of binary files that could not have matched whatever they contained.
 
