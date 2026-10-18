@@ -1699,26 +1699,6 @@ block would make the fixture importable without making the two agree.
   low-boost still benchmarks the circuit the model now describes. Until then
   nothing should read a `board_terminals` refusal as a missing pin pattern.
 
-### G3 - a ceramic disc capacitor has no shape, and pt2399-core carries one
-
-`bodyFor` in `tools/guide/part-shapes.ts` has no `CAP_CERAMIC` branch, so
-rendering a board carrying one refuses with `no drawing for VeroRoute part type
-"CAP_CERAMIC"`. The refusal is loud and names its own fix site, which is why
-this is a gap and not a trap.
-
-- **Found** `2026-10-16-pultec-five-boards`, while closing a review finding on
-  Task 1 - neither the implementer nor the reviewer went looking for it.
-- **Evidence** `bodyFor` enumerates `RESISTOR\d*`, `CAP_ELECTRO_(\d+)`,
-  `SIP(\d+)`, `BLOCK_(?:100|200)MIL(\d+)`, `TO92`, `TRIM_FLAT` and the film
-  types, and nothing else; `CAP_CERAMIC` appears bare in
-  `tests/fixtures/pt2399-core-board.dump` and
-  `tests/fixtures/stripboard/pt2399-core.dump`.
-- **Verified** yes.
-- **Why it is open** out of the Pultec program's scope - no Pultec dump carries
-  a ceramic.
-- **What would settle it** a `CAP_CERAMIC\d*` branch with a test, and a render
-  of pt2399-core read by eye.
-
 ### G11 - a pad's hole is checked against the grid only when something draws it
 
 The guide refuses a pad whose hole is outside the dump's `GRID`

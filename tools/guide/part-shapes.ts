@@ -14,6 +14,18 @@ const PIN1_MARK = 7
 const ELECTROLYTIC_TYPE = /^CAP_ELECTRO_(\d+)$/
 
 /**
+ * A ceramic disc capacitor's VeroRoute type, with or without the lead-span
+ * digit a fresh import carries: `--dump-board` prints the bare `CAP_CERAMIC`
+ * (see `tests/fixtures/pt2399-core-board.dump` and
+ * `tests/fixtures/stripboard/pt2399-core.dump`), while
+ * `lib/kicad/import-string.ts:247` emits `CAP_CERAMIC${gridSteps(...)}` -
+ * e.g. `CAP_CERAMIC1` - the same `<name><span>` convention as `RESISTOR<n>`.
+ * Both spellings draw, for the same reason `FILM_CAPACITOR_TYPE` below covers
+ * two spellings of its own.
+ */
+const CERAMIC_CAPACITOR_TYPE = /^CAP_CERAMIC\d*$/
+
+/**
  * A film capacitor's VeroRoute type, with or without the lead-span digit a
  * fresh import carries: `--dump-board` prints the bare `CAP_FILM` /
  * `CAP_FILM_WIDE` the fork's `CompTypes.h` aliases (see
@@ -283,6 +295,20 @@ export function bodyFor(part: Part, pins: readonly PlacedPin[]): Body {
   }
   if (part.type === "TRIM_FLAT") {
     expectPinCount(part, pins, 3)
+    return boxBody(part, pins)
+  }
+  // A CERAMIC DISC CAPACITOR: a box around its pins, same shape and same
+  // reasoning as the film branch below. **A BOX AROUND THE PINS IS NOT A
+  // CLAIM ABOUT THE BODY'S DIMENSIONS.** A disc's real body is round, not
+  // boxy, but no body dimension for the part actually fitted is recorded
+  // anywhere in this repository: `lib/kicad/lead-span.ts`'s `UNSOURCED` entry
+  // for `Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm` - the footprint
+  // pt2399-core's ceramics use - refuses to guess a lead length for the same
+  // part, for the same reason. Drawing a disc from memory here would be the
+  // same guess in a different file. The box says where the part's holes are
+  // and that something non-polarised sits over them; nothing more.
+  if (CERAMIC_CAPACITOR_TYPE.test(part.type)) {
+    expectPinCount(part, pins, 2)
     return boxBody(part, pins)
   }
   // THE PULTEC TYPES, AND THIS RENDERER HAD NEVER DRAWN A PULTEC BOARD. Its
