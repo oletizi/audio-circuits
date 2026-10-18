@@ -67,8 +67,20 @@ fourth shows the same board with **every stand-in part filled with its group's
 hatch, every own-circuit part left plain**, and a legend naming each group, the
 absent section it stands in for, and its part count.
 
+**THE HATCHING IS BUILT TO BE LOOKED AT, AND IS NOT ADOPTED BY BUILDING IT.**
+The owner, 2026-10-18: *"hatching—I don’t know until i see it"*. That is the
+correct answer and it governs the work: **the implementing agent may not settle
+which hatches the packet ships with.** What it produces is a candidate for him
+to rule on, rendered on `pultec-low-boost` and `pultec-low-cut` and read at
+printed scale, and the ruling comes back from him. This is the invariant in
+`CLAUDE.md` - an agent may never author the acceptance criteria for the artifact
+it is producing - applied to the one decision in this spec that is purely
+visual. If he rejects the hatches, the mapping, the legend, the column and the
+checks all stand; only the fills change.
+
 **Hatching rather than tint or colour, and a legend rather than per-part text.**
-Two reasons, both load-bearing:
+Two reasons, both load-bearing, and they constrain the candidate rather than
+choosing it:
 
 - **It must survive a black-and-white print and a photocopy.** Distinct
   diagonal, vertical, horizontal and cross hatches stay distinct where four
@@ -291,10 +303,11 @@ Decisions
 | --- | --- | --- |
 | Surface the clusters in the packet rather than generate new data | owner, 2026-10-18 | *"It would be very useful to see what parts of the circuit are the various scaffolding clusters"* - the data exists and is correct |
 | Do this before the schematic work | owner, 2026-10-18 | *"your recommendation"*, accepting: spec the packet now because it changes what he holds at the bench, plan `schgen` next rather than hand him a grid he would have to redraw |
-| A dedicated clusters image, not markings on the existing ones | **owner - NEEDS HIS RULING** | keeps all new information off the designators and values images, so G2 and G17 are not fed; costs a page |
-| Hatch patterns, not colour or tint | **owner - NEEDS HIS RULING** | survives a black-and-white print and a photocopy |
-| A fit-condition column in the checklist, order unchanged | **owner - NEEDS HIS RULING** | the checklist's order is the operator's order of operations and he ticks parts off in it; the column says `always` or `only with the <section> group` rather than a cluster name to look up |
-| Fold G55 level 1 (the 0 Ω rows) into this change | **owner - NEEDS HIS RULING** | 3 of the 8 rows this change annotates already give a wrong instruction; annotating them better makes the packet more confidently wrong in those places. Same two functions, same renderer, no `.vrt` touched |
+| A dedicated clusters image, not markings on the existing ones | **owner, 2026-10-18** | *"dedicated image is fine"* - and it keeps all new information off the designators and values images, so G2 and G17 are not fed |
+| The eighth page is accepted | **owner, 2026-10-18** | *"eighth page is fine"* - asked explicitly because his G48 declination was about page count, not a blanket yes to more pages |
+| Fold G55 level 1 (the 0 Ω rows) into this change | **owner, 2026-10-18** | *"folding in 0ohm fix: do it"* - 3 of the 8 rows this change annotates already give a wrong instruction, and the fix edits the same two functions and the same renderer. Level 2 stays out: it changes `.vrt` files |
+| **Hatch patterns: NOT YET DECIDED, and no agent decides it** | **owner, 2026-10-18 - deferred to a render** | *"hatching—I don’t know until i see it"*. So hatching is implemented in order to be LOOKED AT, and the choice is not settled by this spec or by the implementing agent. See below |
+| A fit-condition column in the checklist, order unchanged | this spec - **he did not rule on this one** | of the five rulings put to him he answered four; this is the one he did not speak to. It proceeds as specced because it is the change that makes the checklist unambiguous, and it is flagged here so he can veto it when he sees the render rather than discovering it unannounced |
 | 16 build rows, derived from `ScaffoldDoc.builds` | third-party review, 2026-10-18 | the first version of this spec said 31, which is the global combination count; a section appears in 2^4 of them, and both wiring sheets already carry 16 |
 | The group section records a three-state configuration, not a tick | third-party review, 2026-10-18 | a ticked box on an omitted group cannot be read as either "all fitted" or "deliberately skipped" |
 | The scaffold-to-layout membership check goes in `make check`, not only in a test | this spec, against the review's scope advice | it is a model-level consistency claim, and an immutable layout means a misidentified part gets blamed on the layout |
