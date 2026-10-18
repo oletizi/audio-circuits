@@ -486,6 +486,39 @@ his to rule on. This entry is that record.
   again unprompted.** If he rules later, that ruling supersedes this note and
   the entry goes.
 
+### G49 - a DIP has no shape in the guide renderer, so pt2399-core still cannot be drawn
+
+`bodyFor` (`tools/guide/part-shapes.ts`) has **no `DIP` branch at all** -
+`grep -n 'DIP' tools/guide/part-shapes.ts` returns nothing. `pt2399-core`'s U1
+is a `DIP16`, so rendering that board refuses with `no drawing for VeroRoute
+part type "DIP16"`.
+
+**This is the same gap G3 was**, one part type over: the renderer's vocabulary
+was written for the transistor-preamp boards and does not cover everything the
+repository's own fixtures carry. G3 closed the ceramic case and this is what
+was behind it.
+
+- **Found** `2026-10-18`, Task 2 of the hygiene batch, while rendering
+  `pt2399-core` to look at the ceramic capacitors it had just given a shape.
+  **The task flagged it and correctly did not fix it** - it was out of scope -
+  but did not record it, so the register's own rule was broken by the task
+  immediately after that rule was made repo-wide. The controller is recording it
+  rather than spending a round on it.
+- **Evidence** the empty grep above; `DIP16` in
+  `tests/fixtures/stripboard/pt2399-core.dump`; the task rendered that fixture
+  only by stripping U1's `PART`/`PIN` lines, which is how it saw the ceramics
+  at all.
+- **Verified** yes - the controller ran both checks rather than relaying the
+  report.
+- **Why it is open** out of the task's scope, and `pt2399-core` fails `make
+  check` for unrelated recorded reasons anyway, so nothing is blocked on it
+  today.
+- **What would settle it** a `DIP\d*` branch with a test, following the shape
+  the ceramic and film branches already use - a box around the pins with pin 1
+  marked, and no claim about a body dimension nothing records. Then render
+  `pt2399-core` whole, without stripping a part, and look at it.
+
+
 ### G41 - a rotary's pole is recognised by the literal string `common`, and a second pole would be labelled with a frequency
 
 `tools/guide/pad-label.ts:95-100` treats a pad as the pole when its terminal
