@@ -620,9 +620,14 @@ was behind it.
   **CORRECTED, and the correction is the point.** This entry first said the
   rule "was broken by the task immediately after that rule was made repo-wide".
   **That was wrong and the Task 2 reviewer checked it rather than accepting
-  it:** the rule landed in `645f57f` the previous evening, and three intervening
-  commits followed it correctly - including Task 1, which deleted four entries
-  as it settled them. The rule had already survived several compliant changes.
+  it:** the rule landed in `645f57f` at 19:20 the previous evening; the entry
+  carrying the overstatement was written at 05:45 the next morning, about ten
+  hours later. **`f3ffea4` sits between them and followed the rule correctly**,
+  deleting G7, G8, G26 and G46 as it settled them. **The first count written
+  here - "three intervening commits" - was itself imprecise**, as the Task 3
+  reviewer noted: the first-parent distance is five or six depending on whether
+  a merge and an unrelated commit count. One verified compliant commit is the
+  claim that matters and is the one stated.
   The miss is real; the framing made it sound like the rule failed its first
   test, which it did not. **An entry in this file is held to the same standard
   as the evidence it cites, including when the author is the controller.**
