@@ -14,6 +14,13 @@ was established, and what would settle it. It does not promise a milestone. An
 entry leaves when it is fixed or when the owner rules it is not a defect, and in
 either case it is DELETED rather than marked closed - supersede means delete.
 
+**`G<n>` IN THIS FILE MEANS AN ENTRY IN THIS FILE, AND NOTHING ELSE.** `CRITERIA`
+numbers its own clauses with the same letter - `G2.5`, `G4` - and the two
+namespaces collided here: a reference reading plain `G4` was a CRITERIA clause
+while this register also had an entry G4, and deleting that entry turned the
+reference into an apparent pointer at nothing. **Every CRITERIA reference is
+written `CRITERIA G<n>` in full.** A bare `G<n>` is this file's.
+
 Each entry carries:
 
 - **Found** - the plan or change that surfaced it;
@@ -825,7 +832,7 @@ wherever it decides something - a board that reaches `boards/` through this
 pipeline reaches it on his judgement rather than on a search result, and says so
 in the run directory. **The gap itself - that no search in this repository can
 run on one of these boards - is unchanged**, and closing it is what would let
-`G2.5` decide the question it already can.
+`CRITERIA G2.5` decide the question it already can.
 
 - **Found** `2026-10-16-low-boost-to-adoption`, Task 6.
 - **Evidence** the refusal above, from `search(starts, setup)` over
@@ -1097,7 +1104,7 @@ recorded as, because nobody re-measured it. What IS closed is the specific doubt
 that an agent picked a plausible seed: for these two boards it did not, and the
 method is reproducible from the run directories.
 
-**3. `CRITERIA` §9's own wording is not reconciled with the channel.** `G2.5`
+**3. `CRITERIA` §9's own wording is not reconciled with the channel.** `CRITERIA G2.5`
 reads *"any failing check, including a non-admissible verdict"* and the
 implementation admits through `exitCodeFor(outcome, rule)`; nothing in that
 document mentions a run with no rule, and the clause that admits one lives in a
@@ -1183,7 +1190,7 @@ undetected"* - by re-deriving the bound from the rule. The outcome has no second
 source inside the gate: it is a function of the candidate's ten constraint
 results, its score and the targets, none of which the gate re-measures.
 
-**What stands behind it is `G4`.** `adoptLayout` runs `make check` on the board
+**What stands behind it is `CRITERIA G4`** (not this register's G4, which is deleted - see the note at the top of this file)**.** `adoptLayout` runs `make check` on the board
 as adopted and reverts the copy on a non-zero exit, so a fabricated outcome does
 not by itself put a bad board in `boards/`. It does put a board the pipeline
 reported as below target there.
