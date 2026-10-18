@@ -361,10 +361,16 @@ Declined: the owner has ruled, and nobody asks again unprompted
 ---------------------------------------------------------------
 
 An entry here is neither an open gap nor a deleted one. The owner has ruled on
-it, but what it describes is still true of the printed artifact - ground still
-prints `0`, two pages are still nearly empty - so the record stays, with his
-words, rather than being deleted: it exists so a later agent neither re-opens
-the question nor asks him again unprompted.
+it, but what it describes is still true - ground still prints `0`, two pages are
+still nearly empty, removing the junction ground row still opens net `0` on
+every adopted board - so the record stays, with his words, rather than being
+deleted: it exists so a later agent neither re-opens the question nor asks him
+again unprompted.
+
+**A ruling here is not a licence to stop believing the measurement underneath
+it.** G47 is the worked example: he declined the re-derivation, and the
+electrical fact that made it risky is unaffected by his declining it. Read each
+entry for which half was ruled on.
 
 ### G19 - the printed checklist calls ground `0`, which is the circuit's name and not a builder's
 
@@ -431,6 +437,82 @@ blank space is its cost, not a bug in it.
   nearly empty**, because every layout figure takes a full page so no image is
   ever split across a break. If you don't care: I'd leave it. Paper is cheap
   and an image split across a page break at the bench is genuinely annoying."*
+
+### G47 - removing the junction ground row OPENS GROUND on every adopted board, and the owner's instruction invites someone to remove it
+
+The owner, 2026-10-17, on the junction's ground row - five pins all on net `0`,
+interleaved beside the signal row so a ribbon cable's return path is guided:
+
+> *"on the perfboard, we aren't using ribbon cables, so we don't need to place
+> that row of ground conductors"*
+
+**That is right about the ribbon and it must not be acted on as a layout edit,
+because the committed boards depend on those pins for continuity.** Measured by
+removing the row and re-checking: `--check <committed vrt> --netlist <no-ground-
+row netlist>` **exits 1 on every adopted board and reports `0 incomplete`** -
+net `0`, ground, goes OPEN on each. The committed layouts make ground whole
+THROUGH those five pins and the bridges tying them together; the signal row's
+own `0` pin is not the path that carries it.
+
+So the row is redundant on the SCHEMATIC and load-bearing in the LAYOUT. An
+agent reading his instruction and deleting the component would break five
+committed, owner-approved boards electrically, and `make check` on each would
+not be what catches it first.
+
+**Two further measurements from the same probe, recorded because they are the
+evidence any future decision rests on:**
+
+- **It does not fix the sections that could not be built.** `low-cut` still
+  refuses `stripboard-seed-no-column-to-join` on net `0`, across strips 5 and 16
+  rather than 5 and 6 - a WIDER span - and `hi-cut`'s refusal names a selector
+  net and is unchanged. The row was never what blocked them. (Both were later
+  built by other orderings; see G33's settlement.)
+- **It would make two boards strictly cheaper.** Without the row, `hi-boost`
+  comes out at **0 cuts / 0 wires / 0 bridges**, kappa 0, extent 340 against
+  425; `mid` at 1 cut / 1 wire / 0 bridges against 1/2/4. That is a real gain
+  and a real reason someone will want to do this.
+- **And one unexplained refusal.** Under the no-ground arm, `low-boost`'s seed 3
+  refused inside `--materialize` where it passes today, with a fork
+  copper-conflict refusal. Not diagnosed; recorded so a future attempt is not
+  surprised by it.
+
+- **Found** `2026-10-17`, by a probe the controller ran specifically to test the
+  owner's instruction before acting on it.
+- **Evidence** the probe's own arms, run against all five sections, with the
+  working tree verified clean afterwards.
+- **Verified** yes - run, not relayed. **The controller then failed to record
+  any of it**, reporting the results in conversation only, until asked directly
+  whether the findings were in this file. That is the failure this file exists
+  to prevent, committed by the file's own author.
+- **DECLINED 2026-10-18, and only one half of this entry is declined.** The
+  owner was asked the narrow question this entry was holding open - whether a
+  zero-cut `hi-boost` is worth re-approving two boards he has already signed
+  off - and ruled, verbatim: *"Leave the approved boards alone for bow"*
+  (*"bow"* is evidently *"now"*; the word is quoted as typed because this
+  file's standard is his words and not a tidied reading of them). So the
+  re-derivation is not to be attempted, and **nobody raises it with him again
+  unprompted.**
+- **WHAT IS DECLINED IS THE RE-DERIVATION. THE MEASUREMENT IS NOT A PREFERENCE
+  AND DOES NOT EXPIRE WITH IT.** Removing the ground row opens net `0` on every
+  adopted board; that is an electrical fact about those layouts, it was
+  established by running `--check`, and it binds whoever revisits this whether
+  or not the owner's ruling is still current. An agent that reads the
+  declination as "this entry is settled, the row is optional" has inverted it.
+  **The row stays on all five boards, and the reason it stays is continuity,
+  not his instruction.**
+- **Why this entry is kept rather than deleted** what it records is still true
+  of the boards, and the register's own rule is that a declination moves here
+  with his words rather than leaving - *"a question he declined is not a closed
+  question, but nobody asks him again unprompted"* (`CLAUDE.md`). The two
+  further measurements above - that the row never blocked the two hard
+  sections, and the undiagnosed `low-boost` seed-3 refusal under the no-ground
+  arm - are the evidence any future attempt starts from, and they would have
+  gone with a deletion.
+- **What remains open elsewhere, and it is not this** the ground row's
+  appearance on a BENCH SHEET is G44's: the sheet should not explain a ribbon
+  cable's return path to somebody soldering wires. **That is a wording and
+  vocabulary question, now fully separated from the layout question this entry
+  closes** - the row's presence is settled, what a sheet says about it is not.
 
 ---
 
@@ -545,7 +627,47 @@ already proposed one of them. Neither is right:
   boards it is for, so PCB purchase guidance reaches the PCB packet and the
   bench sheet says what to solder into the field instead. **The ground-row
   question belongs with it**, since it is the same distinction wearing different
-  clothes.
+  clothes - but only the SHEET half of it now: see below.
+- **NARROWED 2026-10-18 by the owner's ruling on the ground row.** He was asked
+  whether a zero-cut `hi-boost` was worth re-approving two adopted boards and
+  answered *"Leave the approved boards alone for bow"* (*"now"*), which is
+  recorded in G47. **That removes the layout half of this entry from play
+  entirely.** Nothing here is about re-laying out a board any more: the ground
+  row stays on all five, for continuity reasons G47 establishes independently
+  of his preference, and what is left is the original question - that a
+  generated sheet cannot say which artifact it describes, so it explains a
+  ribbon cable's return path to somebody soldering wires and tells them to fit
+  a header nobody fits.
+- **THREE CANDIDATE DESIGNS WERE PUT TO HIM AND HE HAS PICKED NONE**, so this
+  stays open and **no agent picks one**. Recorded so the options are not
+  re-derived from scratch, and recorded as OPTIONS rather than as a
+  recommendation reaching the artifact through the producing agent:
+  1. **The field declares both fittings.** `JUNCTION_FIELD` keeps
+     `mating: "stacking"`, true of the PCB, and gains how the field is fitted
+     at the bench (soldered leads, no part); each sheet prints the one for its
+     audience. The dispatch table at `lib/board/part-text.ts:219` is already
+     keyed by `mating`, so this is one new word and one new entry. **Note the
+     tension with this entry's own WRONG FIX 1**: that rejected REPLACING the
+     stacking word, which would delete a true PCB fact; adding a second,
+     co-existing fitting does not, but the two are close enough that the
+     distinction must be argued rather than assumed.
+  2. **The sheet declares its audience.** A target on the board declaration,
+     with generators filtering PCB-only guidance on it. More general, and it
+     prepares for the PCB packet - but **today it would be a flag with one
+     possible value**, since every board under `boards/` is a stripboard and
+     the declaration file is named `perfboard.json`, so the other branch would
+     never be exercised.
+  3. **Fix the generator only.** Stop printing purchase guidance for a pin
+     field at all. Cheapest, and it throws the guidance away for when the
+     PCBWay board does arrive.
+- **A correction to this entry's own framing, worth keeping.** It says the fix
+  "needs a notion the tooling does not have: which artifact a sheet describes".
+  Measured: `lib/model/types.ts:113-114` admits exactly ONE value,
+  `readonly mating: "stacking"`, and every board that exists is a stripboard.
+  So there is no ambiguity for a target flag to resolve - **the model can only
+  say the PCB thing, and it says it onto a sheet that is always a bench
+  sheet.** That is a wrong default rather than a missing distinction, and it is
+  why option 2 is weaker than it looks.
 
 ### G45 - the printable packet carries none of the conditionality the wiring sheet carries, and never mentions the wiring sheet
 
@@ -850,63 +972,6 @@ holds `kappaBench: null`, so `A2` does not fire and nothing is pressing the
 arrangement toward a tighter cluster. **No gap is opened for it**; it is recorded
 here so that a reader who goes looking for the six-hole span finds the
 measurement instead of the prediction.
-
-### G47 - removing the junction ground row OPENS GROUND on every adopted board, and the owner's instruction invites someone to remove it
-
-The owner, 2026-10-17, on the junction's ground row - five pins all on net `0`,
-interleaved beside the signal row so a ribbon cable's return path is guided:
-
-> *"on the perfboard, we aren't using ribbon cables, so we don't need to place
-> that row of ground conductors"*
-
-**That is right about the ribbon and it must not be acted on as a layout edit,
-because the committed boards depend on those pins for continuity.** Measured by
-removing the row and re-checking: `--check <committed vrt> --netlist <no-ground-
-row netlist>` **exits 1 on every adopted board and reports `0 incomplete`** -
-net `0`, ground, goes OPEN on each. The committed layouts make ground whole
-THROUGH those five pins and the bridges tying them together; the signal row's
-own `0` pin is not the path that carries it.
-
-So the row is redundant on the SCHEMATIC and load-bearing in the LAYOUT. An
-agent reading his instruction and deleting the component would break five
-committed, owner-approved boards electrically, and `make check` on each would
-not be what catches it first.
-
-**Two further measurements from the same probe, recorded because they are the
-evidence any future decision rests on:**
-
-- **It does not fix the sections that could not be built.** `low-cut` still
-  refuses `stripboard-seed-no-column-to-join` on net `0`, across strips 5 and 16
-  rather than 5 and 6 - a WIDER span - and `hi-cut`'s refusal names a selector
-  net and is unchanged. The row was never what blocked them. (Both were later
-  built by other orderings; see G33's settlement.)
-- **It would make two boards strictly cheaper.** Without the row, `hi-boost`
-  comes out at **0 cuts / 0 wires / 0 bridges**, kappa 0, extent 340 against
-  425; `mid` at 1 cut / 1 wire / 0 bridges against 1/2/4. That is a real gain
-  and a real reason someone will want to do this.
-- **And one unexplained refusal.** Under the no-ground arm, `low-boost`'s seed 3
-  refused inside `--materialize` where it passes today, with a fork
-  copper-conflict refusal. Not diagnosed; recorded so a future attempt is not
-  surprised by it.
-
-- **Found** `2026-10-17`, by a probe the controller ran specifically to test the
-  owner's instruction before acting on it.
-- **Evidence** the probe's own arms, run against all five sections, with the
-  working tree verified clean afterwards.
-- **Verified** yes - run, not relayed. **The controller then failed to record
-  any of it**, reporting the results in conversation only, until asked directly
-  whether the findings were in this file. That is the failure this file exists
-  to prevent, committed by the file's own author.
-- **Why it is open** it is **not a defect** - it is a measured constraint on a
-  change the owner has indicated he wants. Doing it safely means re-deriving and
-  re-adopting the affected boards, which needs his approval on fresh renders,
-  and he has separately ruled that the adopted boards are not to be revisited:
-  *"we don't need to revisit the three adopted boards. They're buildable as-is."*
-- **What would settle it** the owner deciding whether the gain above is worth
-  re-approving boards he has already approved. **It also belongs with G44**:
-  the ground row is PCB-correct and bench-irrelevant, which is the same
-  distinction that entry records.
-
 
 ### G33 - placement cannot be revisited when the join phase finds no room, and the owner expects this to bite future boards
 
