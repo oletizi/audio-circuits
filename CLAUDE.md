@@ -148,19 +148,27 @@ Every entry says what is wrong or what was measured, where, what evidence
 establishes it, **whether the writer confirmed it or is relaying another agent's
 report**, and what would settle it - a fix, a measurement, or an owner decision.
 
-**A "what would settle it" often carries TWO things, and only one of them
-binds.** The CRITERION is what was measured: *"a 2-increment type at `min + 1`
-does not go below `min`"*. The MECHANISM is the writer's guess at how:
-*"most likely by giving `StretchComplex` the same `>`/`<` test `CanStretch`
-uses"*. **The criterion is the settlement; the mechanism is advice from someone
-who had not yet tried it.** G18's suggested mechanism would not have fixed the
-defect G18 described - at `min + 1` with a step of 2, `> min` still passes and
-still lands at `min - 1` - and an implementer who followed the mechanism would
-have shipped a fix that did not fix, with the entry deleted behind it. Take the
-criterion, test against it, and **record the deviation when the mechanism turns
-out to be wrong** rather than silently doing something else.
 Evidence must be a check that could have failed: an entry once rested on a grep
 of binary files that could not have matched whatever they contained.
+
+**A "what would settle it" often carries TWO things, and only one of them
+binds.** The CRITERION is what was measured. The MECHANISM is the writer's
+guess at how to meet it. **The criterion is the settlement; the mechanism is
+advice from someone who had not yet tried it**, so take the criterion, test
+against it, and **record the deviation when the mechanism turns out to be
+wrong** rather than silently doing something else.
+
+**The worked example, which is why this rule exists.** An entry recorded that
+two bounds in the pinned fork disagreed, so a part whose length steps by 2
+could shrink one hole below its own minimum. Its criterion was measurable - *a
+2-increment type at `min + 1` does not go below `min`*. Its suggested mechanism
+was to give the inner guard the same `>` test the outer one uses. **That
+mechanism does not meet that criterion**: at `min + 1` the `>` test still
+passes and the step still lands on `min - 1`, because the test knows about a
+step of 1 and the type steps by 2. An implementer who followed it would have
+shipped a non-fix and deleted the entry behind it. The deviation and its
+reasoning are recorded in **G52**, and in the fork's own `Grid.h` comment where
+the guard lives.
 
 An entry is DELETED when it is resolved or ruled not a defect, never marked
 closed - and **check what the deletion takes with it**: one deletion removed an
