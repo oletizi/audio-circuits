@@ -51,6 +51,38 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
 }
 
 /**
+ * **G4: A CONTROL MAY NOT REACH THE BOARD BOTH WAYS.** A panel control
+ * legitimately reaches a board as a header `PART` with `PIN` lines
+ * (`./off-board.ts`) or as landing `PAD` lines (`./pads.ts`) - the module
+ * comment on `assertLayoutMatchesCircuit` below states both are counted as
+ * present for exactly that reason. A ref carrying BOTH is not a legitimate
+ * third representation; it is the same control wired, or counted, twice,
+ * and nothing downstream expects it - `offBoardLabels` would emit edge
+ * labels for the header's pins while the pad renderer drew the same ref's
+ * terminals again. This is G4 (`docs/known-gaps.md`); it is checked ahead of
+ * the membership comparison below because a doubled ref is "on the board" by
+ * both counts and would otherwise pass that comparison silently.
+ */
+function assertNoControlReachesTwice(dump: BoardDump, pads: readonly PadTerminal[]): void {
+  const partRefs = new Set(dump.parts.map((part) => part.ref))
+  const padRefs = new Set(pads.map((pad) => pad.ref))
+  const doubled = [...partRefs].filter((ref) => padRefs.has(ref)).sort()
+  if (doubled.length === 0) return
+  const plural = doubled.length > 1
+  throw new Error(
+    [
+      `${doubled.join(", ")} ${plural ? "reach" : "reaches"} the board twice: ` +
+        `${plural ? "each has" : "it has"} both a PART line (a header, read by tools/guide/off-board.ts) ` +
+        "and PAD lines (landing pads, read by tools/guide/pads.ts) naming it, so one control is wired - " +
+        "or counted - twice.",
+      "A panel control reaches the board as a header PART or as landing PADs, never both. Remove " +
+        "whichever representation is wrong from the .vrt in VeroRoute (`make edit`), save, then run " +
+        "this again.",
+    ].join("\n"),
+  )
+}
+
+/**
  * The one check that the layout and the circuit hold the same parts, in
  * both directions: every circuit component is on the board, and every
  * board part is a circuit component. Either gap means the `.vrt` is out of
@@ -68,12 +100,18 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
  * `FROM <ref>.<pin>` field), not the fork's invented per-pad board name - so
  * one pad-expanded control with N terminals still counts as present once,
  * the same as a part with N pin lines would.
+ *
+ * **A REF ON BOTH LISTS IS A SEPARATE FAILURE, CHECKED FIRST.**
+ * `assertNoControlReachesTwice` above refuses it before this comparison runs,
+ * because it would otherwise be "on the board" by both counts and pass here
+ * silently - see G4.
  */
 export function assertLayoutMatchesCircuit(
   dump: BoardDump,
   circuit: BoardCircuit,
   pads: readonly PadTerminal[],
 ): void {
+  assertNoControlReachesTwice(dump, pads)
   const onBoard = new Set([...dump.parts.map((part) => part.ref), ...pads.map((pad) => pad.ref)])
   const notOnBoard = [...circuit.byRef.keys()].filter((ref) => !onBoard.has(ref)).sort()
   const notInCircuit = [...onBoard].filter((ref) => !circuit.byRef.has(ref)).sort()

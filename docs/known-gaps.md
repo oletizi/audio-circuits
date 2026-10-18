@@ -1455,20 +1455,6 @@ this is a gap and not a trap.
 - **What would settle it** a `CAP_CERAMIC\d*` branch with a test, and a render
   of pt2399-core read by eye.
 
-### G4 - nothing refuses a board carrying both a header PART and pads for one control
-
-With two valid representations of a panel control in play (see G1), a board that
-carries both for the same control is a contradiction no guard detects.
-
-- **Found** `2026-10-16-pultec-five-boards`, Task 2.
-- **Evidence** the Task 2 implementer reports no such guard exists.
-- **Verified** NO - relayed, not independently confirmed.
-- **Why it is open** Task 2's scope was a pad's shape and identity.
-- **What would settle it** a refusal naming the control and both
-  representations, with a perturbation proving it fires. Note it is downstream
-  of G1: if the owner rules one representation out, this guard enforces that
-  ruling.
-
 ### G11 - a pad's hole is checked against the grid only when something draws it
 
 The guide refuses a pad whose hole is outside the dump's `GRID`
