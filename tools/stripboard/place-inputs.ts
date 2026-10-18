@@ -29,7 +29,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { recordedHashFor } from "./adopt-provenance.ts"
 import { boardCircuitFrom } from "../perfboard/board-circuit.ts"
-import { exportNetlistFor } from "../perfboard/check.ts"
+import { assertOffBoardIds, exportNetlistFor } from "../perfboard/check.ts"
 import { assertDesignators, assertPinNumbers } from "../perfboard/circuit-exports.ts"
 import { boardName, loadDeclaration } from "../perfboard/declaration.ts"
 import { circuitFromModule, importCircuitModule } from "../perfboard/load.ts"
@@ -55,6 +55,22 @@ export interface Prepared {
   readonly stock: Stock
   /** Which way the strips run, as the board in hand states it - `--import` has no default. */
   readonly strips: "horizontal" | "vertical"
+  /**
+   * The refs the circuit DECLARES off-board, from its own `OFF_BOARD_IDS`.
+   *
+   * **IT IS A DECLARATION AND NEVER AN INFERENCE FROM WHICH REFS HAVE A
+   * FOOTPRINT.** `lib/stripboard/seed-parts.ts` refuses a disagreement between
+   * the two claims by name, and collapsing them into one would remove that
+   * refusal's reason to exist - so this set comes from the circuit module beside
+   * `DESIGNATORS` and `PIN_NUMBERS` rather than from the footprint map above.
+   *
+   * `./place.ts` does not read it: the fork-gesture search starts from
+   * `--import`'s board, which already holds whatever the importer made of a
+   * pads-only control. `./materialize-run.ts` does, because it CONSTRUCTS the
+   * candidate in the model and `seedPartsFrom` needs to be told which refs are
+   * pads.
+   */
+  readonly offBoard: ReadonlySet<string>
 }
 
 /** `--import`'s direction flag, from a dump's own `VERTICAL_STRIPS` line. */
@@ -193,6 +209,15 @@ function prepareFrozen(
     targets: targetsFromReference(reference, footprints, stripsAcross(dumpText), board),
     stock: stockFor(path.join(repoRoot, "boards", board, "perfboard.json"), rules),
     strips: stripsOf(dumpText),
+    // EMPTY BECAUSE THE FIXTURE DECLARES NONE, which is a reading of its own
+    // files rather than a default. A frozen run's model is the committed
+    // EESchema export plus the `.footprints.json` beside it; neither grammar
+    // has an off-board field, and the fixture's own parts are all FITTED - it
+    // carries `board_terminals`, a 3-way terminal block, where today's model
+    // carries two headers (G15). So there is no pads-only control on it for a
+    // set to name. A frozen fixture that ever grew one would need the
+    // declaration to come with it, not an inference here.
+    offBoard: new Set(),
   }
 }
 
@@ -234,6 +259,11 @@ async function prepareBoard(
     targets: deriveTargets(network, stock.rows, board),
     stock,
     strips: stripsOf(dumpOf(declaration.vrtPath, spawn)),
+    // THE CIRCUIT'S OWN DECLARATION, from the module already imported above -
+    // `assertOffBoardIds` is the one reader of that export and refuses anything
+    // that is not a list of strings, so an absent `OFF_BOARD_IDS` means "this
+    // circuit declares none" rather than "nobody looked".
+    offBoard: assertOffBoardIds(module["OFF_BOARD_IDS"], declaration),
   }
 }
 

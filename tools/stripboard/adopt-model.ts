@@ -222,7 +222,14 @@ export function notDefaultedBecause(refusal: AdoptRefusal): string {
         "./report-model.ts's exitCodeFor(outcome, rule) rather than comparing the outcome with " +
         "\"admissible\" itself - a second comparison would be a second taxonomy, and this one " +
         "also catches a Q5 stop on a healthy candidate, which CRITERIA twice calls a run " +
-        "reported as a failure rather than as a result. After the copy, `make check` in the " +
+        "reported as a failure rather than as a result. A RUN THAT PERFORMED NO SEARCH HAS NO " +
+        "RULE TO READ, and exitCodeFor is keyed by one: its candidate is graded through the same " +
+        "EXIT_CODES table and then the gate consults stripboard/render-approvals.json for the " +
+        "owner's recorded call on a render of THIS board at THIS candidate's sha256 - acceptance " +
+        "channel 4 of docs/superpowers/specs/2026-10-16-pultec-five-boards-design.md, which is " +
+        "his channel and not the producing agent's. That approval admits ONE thing, whether such " +
+        "a run may be adopted, and no other check is relaxed by it; with no such record the run " +
+        "is reported and not adopted. After the copy, `make check` in the " +
         "board's own directory is the repository's verdict (G4) and a non-zero exit is a FAILED " +
         "adoption: the copy is reverted rather than left behind for somebody to find. Nothing " +
         "is defaulted and no outcome is admitted on the grounds that it is close - valid, below " +
@@ -315,6 +322,18 @@ export interface AdoptDeps {
   readonly spanClosureHash: () => string
   /** The same, for the pin-pattern table's import closure. */
   readonly pinPatternClosureHash: () => string
+  /**
+   * `stripboard/render-approvals.json` - `APPROVALS_PATH` in production.
+   *
+   * **IT IS A DEPENDENCY FOR THE REASON EVERY OTHER PATH HERE IS**: the gate
+   * refuses a run that performed no search unless this file records the owner's
+   * call on a render of that board, and a test has to be able to hand it an
+   * absent, a malformed and a differently-scoped one to prove that refusal
+   * fires. A path resolved inside the gate would leave the one channel that can
+   * admit such a run undrivable, and a refusal that cannot be driven is a
+   * refusal nobody has seen work.
+   */
+  readonly approvalsPath: string
   /** `tests/fixtures/stripboard/`, holding B1-frozen's four files. */
   readonly frozenFixtureDir: string
   /** The `provenance.txt` beside them, which records their hashes. */

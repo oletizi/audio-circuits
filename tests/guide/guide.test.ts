@@ -2,23 +2,34 @@ import { test, expect } from "bun:test"
 import { net } from "../../lib/model/types.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { buildChecklist } from "../../tools/guide/checklist.ts"
-import { buildGuideHtml, type GuideInput } from "../../tools/guide/guide.ts"
+import { buildGuideHtml, type GuideInput, type GuideSchematic } from "../../tools/guide/guide.ts"
 import { offBoardLabels } from "../../tools/guide/off-board.ts"
 import type { PowerUpChecks } from "../../tools/guide/power-up.ts"
 import { COMPONENTS, DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
 
 const DUMP = parseBoardDump(DUMP_TEXT)
 
-function guideHtml(powerUpChecks: PowerUpChecks | undefined = undefined): string {
+const PRINTED_SCHEMATIC: GuideSchematic = { kind: "printed", path: "circuits/test.kicad_sch" }
+
+const NO_SCHEMATIC: GuideSchematic = {
+  kind: "none",
+  declarationPath: "boards/test-board/perfboard.json",
+  circuitPath: "circuits/test.ts",
+}
+
+function guideHtml(
+  powerUpChecks: PowerUpChecks | undefined = undefined,
+  schematic: GuideSchematic = PRINTED_SCHEMATIC,
+): string {
   const circuit = fixtureCircuit(powerUpChecks)
   const edges = offBoardLabels(circuit)
   const input: GuideInput = {
     boardName: "test-board",
     generated: "2026-09-29",
     layoutPath: "boards/test-board/test.vrt",
-    schematicPath: "circuits/test.kicad_sch",
+    schematic,
     images: { designators: "<svg>designators</svg>", values: "<svg>values</svg>", copper: "<svg>copper</svg>" },
-    checklist: buildChecklist(DUMP, circuit, edges),
+    checklist: buildChecklist(DUMP, circuit, edges, [], new Map()),
     powerUpChecks: circuit.powerUpChecks,
   }
   return buildGuideHtml(input)
@@ -103,7 +114,7 @@ test("a resistor compressed below its flat floor is told to STAND ON END", () =>
   // is one lead position.
   const dump = parseBoardDump(DUMP_TEXT.replace("PIN R1 2 AT 6,3", "PIN R1 2 AT 4,3"))
   const circuit = fixtureCircuit()
-  const resistors = buildChecklist(dump, circuit, offBoardLabels(circuit)).find(
+  const resistors = buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map()).find(
     (section) => section.title === "Resistors and trim-pots",
   )
   expect(resistors?.columns).toEqual(["Part", "Value", "Leads", "Mounting"])
@@ -127,7 +138,7 @@ test("a footprint with no recorded span says so in the cell rather than leaving 
       units: [{ name: "MAIN", pins: { a: net("BASE"), b: net("GND") } }],
     },
   ])
-  const resistors = buildChecklist(DUMP, circuit, offBoardLabels(circuit)).find(
+  const resistors = buildChecklist(DUMP, circuit, offBoardLabels(circuit), [], new Map()).find(
     (section) => section.title === "Resistors and trim-pots",
   )
   expect(resistors?.rows.find((row) => row[0] === "R1")?.[3])
@@ -138,7 +149,7 @@ test("a header's Value names what goes in its holes, its pin count read from the
   // Three PIN lines for J1 where its type still says SIP2: the count comes from PIN, not the type.
   const dump = parseBoardDump(DUMP_TEXT.replace("PIN J1 2 AT 1,1", "PIN J1 2 AT 1,1\nPIN J1 3 AT 2,1"))
   const circuit = fixtureCircuit()
-  const junctions = buildChecklist(dump, circuit, offBoardLabels(circuit)).find((s) => s.title === "Wire-to-board junctions")
+  const junctions = buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map()).find((s) => s.title === "Wire-to-board junctions")
   expect(junctions?.rows.map((row) => row[1])).toEqual(["3-pin header", "3-pin header (25K pot, off-board)"])
 })
 
@@ -155,6 +166,35 @@ test("the header, then the three images, then the checklist", () => {
   expect(at("<svg>copper</svg>")).toBeLessThan(at("Build checklist"))
   expect(at("Build checklist")).toBeLessThan(at("Power-up checks"))
   expect(html).toContain("size: letter")
+})
+
+test("a packet with no schematic says so on page one, before the first image", () => {
+  // THE WHOLE POINT OF THE "none" SHAPE: a reader holding the paper must not be
+  // able to read a four-page packet as a five-page one with a page missing. So
+  // the statement is asserted to be IN THE PRINTED HTML and to come before any
+  // layout image - not merely present somewhere in the document.
+  const html = guideHtml(undefined, NO_SCHEMATIC)
+  const at = (needle: string): number => {
+    const index = html.indexOf(needle)
+    expect({ needle, found: index > -1 }).toEqual({ needle, found: true })
+    return index
+  }
+  expect(at("No schematic in this packet")).toBeLessThan(at("<svg>designators</svg>"))
+  expect(html).toContain("no schematic page has gone missing from it")
+  expect(html).toContain("there is no schematic for test-board to print")
+  expect(html).toContain("boards/test-board/perfboard.json")
+  expect(html).toContain("circuits/test.ts")
+  expect(html).toContain("make guide")
+  expect(html).toContain('<dt>Schematic</dt><dd>none - see &quot;No schematic in this packet&quot; below</dd>')
+})
+
+test("a packet that does print a schematic carries no no-schematic notice", () => {
+  // The other half of the guard: a false alarm on a complete packet would
+  // devalue the notice everywhere it IS true.
+  const html = guideHtml()
+  expect(html).not.toContain("No schematic in this packet")
+  expect(html).not.toContain('class="notice"')
+  expect(html).toContain("<dt>Schematic</dt><dd>circuits/test.kicad_sch</dd>")
 })
 
 test("a board that exports no power-up checks gets a section saying so", () => {
@@ -182,18 +222,18 @@ test("a part that fits no checklist step is refused, naming it", () => {
       : component,
   )
   const circuit = fixtureCircuit(undefined, withDiode)
-  expect(() => buildChecklist(DUMP, circuit, offBoardLabels(circuit))).toThrow(/part Q1 .*kind diode/)
+  expect(() => buildChecklist(DUMP, circuit, offBoardLabels(circuit), [], new Map())).toThrow(/part Q1 .*kind diode/)
 })
 
 test("a cut on a node with no stored net name is refused rather than printed", () => {
   const dump = parseBoardDump(DUMP_TEXT.replace("NODE 2 NAME GND", "NODE 2 NAME -"))
   const circuit = fixtureCircuit()
-  expect(() => buildChecklist(dump, circuit, offBoardLabels(circuit))).toThrow(/stores no net name/)
+  expect(() => buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map())).toThrow(/stores no net name/)
 })
 
 test("a transistor or pot whose pin has no PIN_NUMBERS name is refused, not printed bare", () => {
   const circuit = { ...fixtureCircuit(), pinNumbers: { resistor: { a: "1", b: "2" } } }
-  expect(() => buildChecklist(DUMP, circuit, [])).toThrow(
+  expect(() => buildChecklist(DUMP, circuit, [], [], new Map())).toThrow(
     /PIN_NUMBERS has no bjt entry naming pin 1/,
   )
 })

@@ -9,8 +9,8 @@
  * here, and there is no default anywhere in this module.
  *
  * **WHAT THE RULES ARE IS IN `./rules-model.ts`** - the path, the schema
- * version, the eleven parameters, their ranges and what `null` means for the two
- * that may be it. That file was split out at the what-it-is / what-reading-it-
+ * version, the eleven parameters, their ranges and what `null` means for the
+ * three that may be it. That file was split out at the what-it-is / what-reading-it-
  * does seam this area already draws four times (`stop-model`, `place-model`,
  * `climb-model`, `adopt-model`), and because this file had passed the 500-line
  * ceiling by two. The three declarations consumers use are re-exported below, so
@@ -78,7 +78,7 @@ function refuse(code: string, detail: string, file: string): never {
 const NOT_DEFAULTED =
   "It is NOT defaulted: a number this loader filled in would be a criterion the " +
   "pipeline grades itself against without review, which is the invariant " +
-  "stripboard/rules.json exists to keep. Supply it, or - for tau and " +
+  "stripboard/rules.json exists to keep. Supply it, or - for kappaBench, tau and " +
   "worseAcceptance - write null to record it as deliberately unset."
 
 /** Read one required raw value, refusing absence rather than defaulting it. */
@@ -317,7 +317,11 @@ export function loadRules(file: string = RULES_PATH): StripboardRules {
     schema,
     rhoWire: readNumber(parsed, "rhoWire", abs),
     rhoSolder: readNumber(parsed, "rhoSolder", abs),
-    kappaBench: readNumber(parsed, "kappaBench", abs),
+    // NULLABLE SINCE 2026-10-16, on the owner's ruling. The key is still
+    // REQUIRED - an absent `kappaBench` refuses by name through `present` -
+    // because that is what makes "unset" a recorded decision a reviewer can see
+    // rather than a line somebody forgot. `tau`'s pattern exactly.
+    kappaBench: readNullableNumber(parsed, "kappaBench", abs),
     tau: readNullableNumber(parsed, "tau", abs),
     yieldFloor: readNumber(parsed, "yieldFloor", abs),
     evaluationCap: readNumber(parsed, "evaluationCap", abs),

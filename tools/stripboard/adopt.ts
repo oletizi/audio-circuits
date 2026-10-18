@@ -70,6 +70,7 @@ import {
   assertVerdictAdmits,
   sha256OfFile,
 } from "./adopt-checks.ts"
+import { APPROVALS_PATH } from "./approvals.ts"
 import {
   PIN_PATTERN_ENTRY,
   SPAN_DATA_ENTRY,
@@ -101,6 +102,9 @@ export function defaultAdoptDeps(repoRoot: string = moduleRepoRoot()): AdoptDeps
     // ./geometry-inputs.ts carries why a one-file hash was measurably too narrow.
     spanClosureHash,
     pinPatternClosureHash,
+    // APPROVALS_PATH RATHER THAN A SECOND JOIN: `./approvals-model.ts` is the one
+    // place the owner's recorded calls on a render are named.
+    approvalsPath: APPROVALS_PATH,
     frozenFixtureDir: path.join(repoRoot, "tests", "fixtures", "stripboard"),
     frozenProvenanceFile: path.join(repoRoot, "tests", "fixtures", "stripboard", "provenance.txt"),
     readPin: defaultReadPin,
@@ -230,6 +234,16 @@ function revert(placed: Placed): void {
  * board's declared path. It writes nothing else - no report, no sidecar, no
  * record of itself.**
  *
+ * **WHAT IT RETURNS is what the adoption must SAY**: the notices
+ * `assertVerdictAdmits` produced, which is one line naming the owner's recorded
+ * approval when a run that performed no search was admitted on it, and nothing
+ * at all for a run decided by its stopping rule. It is returned rather than
+ * printed here because this module writes and decides and does not own the
+ * console - `tools/cli/perfboard-stripboard-verbs.ts` prints it - and returned
+ * rather than dropped because an admission on his judgement rather than on a
+ * search result that nobody sees is the same hazard as a skipped check that
+ * looks like a passing one.
+ *
  * **WHAT THE RUN AS A WHOLE MAY WRITE IS ONE FILE MORE, and the earlier wording
  * here - "nothing else has been written anywhere" - was false in production.**
  * `deps.makeCheck` is `make -C <boardDir> check`, whose first line is
@@ -250,7 +264,7 @@ function revert(placed: Placed): void {
  * moment that should not be exempt from it. What was wrong was the claim, not
  * the write.
  */
-export function adoptLayout(input: AdoptInput, deps: AdoptDeps): void {
+export function adoptLayout(input: AdoptInput, deps: AdoptDeps): readonly string[] {
   const declarationFile = path.join(input.boardDir, "perfboard.json")
   const declaration = loadDeclaration(declarationFile)
   const board = {
@@ -297,7 +311,12 @@ export function adoptLayout(input: AdoptInput, deps: AdoptDeps): void {
   assertFrozenFixtureUnchanged(deps)
   assertProvenanceChain(input, manifest, board, deps)
   assertForkCommits(inputs, deps)
-  assertVerdictAdmits(manifest, manifestFile)
+  // THE NOTICES ARE CARRIED OUT RATHER THAN DISCARDED. A run that performed no
+  // search is adopted on the owner's recorded call on a render
+  // (`stripboard/render-approvals.json`), and an admission on his judgement
+  // rather than on a search result has to READ as that: the verb prints what
+  // comes back. A Q-rule run returns nothing, so nothing is printed.
+  const notices = assertVerdictAdmits(manifest, manifestFile, board.name, deps)
 
   // G2.6, LAST OF THE CHECKS THAT PRECEDE THE WRITE, because it is the only one
   // about the destination rather than about the run. `assertLayoutRecoverable`
@@ -322,4 +341,5 @@ export function adoptLayout(input: AdoptInput, deps: AdoptDeps): void {
         `${declaration.vrtPath}, which has been reverted: ${checked.output.trim()}`,
     )
   }
+  return notices
 }

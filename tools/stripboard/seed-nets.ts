@@ -2,22 +2,29 @@
  * Which net each of a board's leads is on, recovered from the board's `NODE` pin
  * lists by joining them to the model's nets BY PIN SET.
  *
- * **WHY A JOIN AND NOT A READ.** `--import` writes every `NODE` line as
- * `NODE <id> NAME - <pins>`: the board carries net TOPOLOGY and no net NAMES.
- * Measured on an `--import --strips horizontal` low-boost board - fourteen NODE
- * lines, fourteen bare dashes, fourteen complete pin lists. Nothing is actually
- * lost, because a net's pin set is unique by construction: two nets with
- * identical pin sets would BE the same net. So the correspondence from board
- * node to model net is a bijection over pin sets, and that is what this module
- * computes.
+ * **WHY A JOIN AND NOT A READ.** The reason that is still true is the older and
+ * better one: `tools/stripboard/equivalence.ts` and `tools/stripboard/copper.ts`
+ * both state outright that they never read a `NODE` name or a node id, because
+ * the point of checking a board is not to take the board's word for which net is
+ * which. `HC8` has worked this way since Task 12. The constructed arm was the
+ * one component that depended on those names, and it is not any more.
  *
- * **IT IS ALSO THE RIGHT THING EVEN WHEN THE NAMES ARE THERE**, which is the
- * older and better reason: `tools/stripboard/equivalence.ts` and
- * `tools/stripboard/copper.ts` both state outright that they never read a `NODE`
- * name or a node id, because the point of checking a board is not to take the
- * board's word for which net is which. `HC8` has worked this way since Task 12.
- * The constructed arm was the one component that depended on those names, and it
- * is not any more.
+ * It is safe to do at all because a net's pin set is unique by construction: two
+ * nets with identical pin sets would BE the same net. So the correspondence from
+ * board node to model net is a bijection over pin sets, and that is what this
+ * module computes.
+ *
+ * **WHAT THIS FILE USED TO SAY FIRST, AND WHY IT NO LONGER DOES.** It opened
+ * with the observation that `--import` writes every `NODE` line as
+ * `NODE <id> NAME - <pins>` - the board carrying net TOPOLOGY and no net NAMES,
+ * measured on an `--import --strips horizontal` low-boost board as fourteen NODE
+ * lines, fourteen bare dashes and fourteen complete pin lists. That was true and
+ * is not any more: the pinned fork now stores each net's name as it mints that
+ * net's nodeId from the netlist (`Board::BuildFromParsedNetlist`), because the
+ * printed build checklist has to name the nets a cut separates and refused
+ * outright on a board that stored none. The dash was never this module's reason
+ * for joining, though - it was the reason the join was UNAVOIDABLE, and the
+ * paragraph above is why it is still RIGHT.
  *
  * The split from `./seed-arms.ts` is at that seam: this file answers *which net
  * is this lead on*, and that file decides *where to put the part*. One file
@@ -35,14 +42,14 @@ function pinSetKey(pins: readonly string[]): string {
  * Each board `NODE`'s pin list, by node id - the whole of what a board carries
  * about its nets, and enough.
  *
- * **IT DOES NOT READ `NAME`, DELIBERATELY.** `--import` writes `NAME -` on every
- * line, so on an imported board the field says nothing; but the reason this
- * function ignores it even when it is set is `HC8`'s reason, which is older and
- * better: `tools/stripboard/equivalence.ts` and `tools/stripboard/copper.ts`
- * both state that they never read a `NODE` name or a node id, because the whole
- * point of checking a board is not to take the board's word for which net is
- * which. The constructed arm must not be the one component that depends on
- * those names.
+ * **IT DOES NOT READ `NAME`, DELIBERATELY.** It used to say that `--import`
+ * writes `NAME -` on every line, so the field said nothing on an imported board;
+ * the fork now fills it in from the netlist, and this function still ignores it,
+ * for `HC8`'s reason, which was always the better one:
+ * `tools/stripboard/equivalence.ts` and `tools/stripboard/copper.ts` both state
+ * that they never read a `NODE` name or a node id, because the whole point of
+ * checking a board is not to take the board's word for which net is which. The
+ * constructed arm must not be the one component that depends on those names.
  */
 function nodePinsOf(text: string): ReadonlyMap<string, readonly string[]> {
   const byNode = new Map<string, readonly string[]>()
@@ -69,8 +76,10 @@ function nodePinsOf(text: string): ReadonlyMap<string, readonly string[]> {
  * pin set matches no reference net, or a reference net with no matching node, is
  * a genuine disagreement about which board is being graded - the board and the
  * model are not the same circuit - and that is worth stopping for. A bare `NAME
- * -` is NOT such a condition: it is expected and routine on every imported
- * board, and refusing on it was this arm's own defect.
+ * -` is NOT such a condition - it was expected and routine on every imported
+ * board until the fork began naming what it imports, and refusing on it was
+ * this arm's own defect. It is still not a condition this module judges, because
+ * this module does not read the field at all.
  */
 function nodeNetNames(
   text: string,
@@ -100,8 +109,9 @@ function nodeNetNames(
       throw new Error(
         `seedCandidate: board node ${id} carries pins ${[...pins].sort().join(" ") || "(none)"}, ` +
           `which is not the pin set of any net ${board}'s model exports. The board's own NODE ` +
-          "names are not used - --import writes every one of them as a bare dash, and HC8's own " +
-          "modules never trust them either - so a node is identified by its pin set, and a pin " +
+          "names are not used - HC8's own modules never trust a NODE name, because the point of " +
+          "checking a board is not to take the board's word for which net is which - so a node " +
+          "is identified by its pin set, and a pin " +
           "set that matches nothing means the board and the model are not the same circuit. It " +
           "is not matched by node id or by node order: an id is whatever order --import " +
           "allocated in, and a wrong correspondence would place every part on a plausible strip " +

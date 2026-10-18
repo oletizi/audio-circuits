@@ -19,6 +19,7 @@ import { assertDesignators, assertPinNumbers } from "../perfboard/circuit-export
 import type { PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { circuitFromModule, importCircuitModule } from "../perfboard/load.ts"
 import type { BoardDump } from "./dump.ts"
+import type { PadTerminal } from "./pads.ts"
 import { declaredPowerUpChecks, type PowerUpChecks } from "./power-up.ts"
 
 export { isPanelPot }
@@ -50,15 +51,68 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
 }
 
 /**
+ * **G4: A CONTROL MAY NOT REACH THE BOARD BOTH WAYS.** A panel control
+ * legitimately reaches a board as a header `PART` with `PIN` lines
+ * (`./off-board.ts`) or as landing `PAD` lines (`./pads.ts`) - the module
+ * comment on `assertLayoutMatchesCircuit` below states both are counted as
+ * present for exactly that reason. A ref carrying BOTH is not a legitimate
+ * third representation; it is the same control wired, or counted, twice,
+ * and nothing downstream expects it - `offBoardLabels` would emit edge
+ * labels for the header's pins while the pad renderer drew the same ref's
+ * terminals again. This is G4 (`docs/known-gaps.md`); it is checked ahead of
+ * the membership comparison below because a doubled ref is "on the board" by
+ * both counts and would otherwise pass that comparison silently.
+ */
+function assertNoControlReachesTwice(dump: BoardDump, pads: readonly PadTerminal[]): void {
+  const partRefs = new Set(dump.parts.map((part) => part.ref))
+  const padRefs = new Set(pads.map((pad) => pad.ref))
+  const doubled = [...partRefs].filter((ref) => padRefs.has(ref)).sort()
+  if (doubled.length === 0) return
+  const plural = doubled.length > 1
+  throw new Error(
+    [
+      `${doubled.join(", ")} ${plural ? "reach" : "reaches"} the board twice: ` +
+        `${plural ? "each has" : "it has"} both a PART line (a header, read by tools/guide/off-board.ts) ` +
+        "and PAD lines (landing pads, read by tools/guide/pads.ts) naming it, so one control is wired - " +
+        "or counted - twice.",
+      "A panel control reaches the board as a header PART or as landing PADs, never both. Remove " +
+        "whichever representation is wrong from the .vrt in VeroRoute (`make edit`), save, then run " +
+        "this again.",
+    ].join("\n"),
+  )
+}
+
+/**
  * The one check that the layout and the circuit hold the same parts, in
  * both directions: every circuit component is on the board, and every
  * board part is a circuit component. Either gap means the `.vrt` is out of
  * step with the circuit, and a packet built from it would leave a part out
  * or list one the circuit does not have. Every other guide step looks parts
  * up on the assumption that this has passed.
+ *
+ * **A PAD COUNTS AS ON THE BOARD, EVEN THOUGH IT HAS NO `PART` LINE.** `dump`
+ * carries no `PAD` lines at all (`./dump.ts`'s own module comment), so a
+ * pads-only control - an off-board panel pot or switch, expanded into one
+ * one-hole `PAD` per terminal - was invisible to this check and refused by
+ * name as missing, although every one of its terminals was on the board.
+ * `pads` is read from the dump TEXT by `./pads.ts` for exactly that reason,
+ * and its `PadTerminal.ref` is the circuit's own ref (read off each pad's
+ * `FROM <ref>.<pin>` field), not the fork's invented per-pad board name - so
+ * one pad-expanded control with N terminals still counts as present once,
+ * the same as a part with N pin lines would.
+ *
+ * **A REF ON BOTH LISTS IS A SEPARATE FAILURE, CHECKED FIRST.**
+ * `assertNoControlReachesTwice` above refuses it before this comparison runs,
+ * because it would otherwise be "on the board" by both counts and pass here
+ * silently - see G4.
  */
-export function assertLayoutMatchesCircuit(dump: BoardDump, circuit: BoardCircuit): void {
-  const onBoard = new Set(dump.parts.map((part) => part.ref))
+export function assertLayoutMatchesCircuit(
+  dump: BoardDump,
+  circuit: BoardCircuit,
+  pads: readonly PadTerminal[],
+): void {
+  assertNoControlReachesTwice(dump, pads)
+  const onBoard = new Set([...dump.parts.map((part) => part.ref), ...pads.map((pad) => pad.ref)])
   const notOnBoard = [...circuit.byRef.keys()].filter((ref) => !onBoard.has(ref)).sort()
   const notInCircuit = [...onBoard].filter((ref) => !circuit.byRef.has(ref)).sort()
   if (notOnBoard.length === 0 && notInCircuit.length === 0) return
@@ -66,8 +120,29 @@ export function assertLayoutMatchesCircuit(dump: BoardDump, circuit: BoardCircui
     "the layout and the circuit do not hold the same parts, so a build packet would be wrong:",
     ...(notOnBoard.length > 0 ? [`  in the circuit but not on the board: ${notOnBoard.join(", ")}`] : []),
     ...(notInCircuit.length > 0 ? [`  on the board but not in the circuit: ${notInCircuit.join(", ")}`] : []),
-    "Bring the .vrt in step with the circuit's netlist (`make update`), place any new parts in " +
-      "VeroRoute (`make edit`), save, then run this again.",
+    // THE TWO EXPLANATORY CLAUSES ARE SEPARATE AND EACH TRUE ONLY OF ITS OWN
+    // LIST. A ref named "not on the board" has neither a PART nor a PAD line;
+    // a ref named "on the board but not in the circuit" has one or the
+    // other - that is the only reason it is on the "on the board" side of the
+    // comparison - so a single shared sentence claiming "neither" would be
+    // false of every ref in the second list. One trailer sent readers to a
+    // remedy that could not work; a shared clause here would send them to an
+    // explanation that is false of their own board, which teaches worse than
+    // the vague one it replaced.
+    ...(notOnBoard.length > 0
+      ? [
+          "Each ref listed as not on the board is genuinely absent there - it has neither a PART " +
+            "line nor a PAD line naming it (both are checked).",
+        ]
+      : []),
+    ...(notInCircuit.length > 0
+      ? [
+          "Each ref listed as on the board but not in the circuit has a PART or PAD line - that is " +
+            "the only reason it is on the board - and the circuit declares no component at that ref.",
+        ]
+      : []),
+    "Bring the .vrt in step with the circuit's netlist (`make update`), place any missing part or " +
+      "off-board control's pads in VeroRoute (`make edit`), save, then run this again.",
   ]
   throw new Error(lines.join("\n"))
 }

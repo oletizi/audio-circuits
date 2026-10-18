@@ -85,6 +85,7 @@
  * consumer here.
  */
 import type { Candidate, Hole } from "./board.ts"
+import { pinId } from "./pin-id.ts"
 
 /**
  * One cut: the strip it severs, and the gap it falls in.
@@ -181,7 +182,9 @@ export function significantContacts(
   const contacts: Contact[] = []
   for (const placement of candidate.placements) {
     for (const [pin, hole] of placement.pins) {
-      const id = `${placement.ref}.${pin}`
+      // `./pin-id.ts` FORMS THE PAIR, and a pad is why: three pads of one pot
+      // share a `ref`, so a contact is identified by the ref AND the pin.
+      const id = pinId(placement.ref, pin)
       const net = nets.get(id)
       if (net === undefined) {
         refuse(

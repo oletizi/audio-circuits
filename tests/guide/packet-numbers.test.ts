@@ -45,8 +45,10 @@ async function writtenPacket(): Promise<ReadonlyMap<string, string>> {
   }
   await writeGuidePacket(DECLARATION, {
     kicadCli: "/fake/kicad-cli",
+    htmlToPdf: "/fake/html-to-pdf",
     runVeroroute: () => ({ status: 0, output: DUMP_TEXT }),
     exportSchematicPdf: (_cli, _sch, pdf) => fs.writeText(pdf, "%PDF-fake"),
+    printGuidePdf: (_tool, _html, pdf) => fs.writeText(pdf, "%PDF-fake"),
     loadCircuit: async () => fixtureCircuit(),
     fs,
     now: () => new Date("2026-09-29T12:00:00Z"),

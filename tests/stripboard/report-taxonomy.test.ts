@@ -31,7 +31,7 @@ import {
   type ConditionThree,
 } from "../../tools/stripboard/verdict.ts"
 import { LOW_BOOST, admissibilityInput, evaluation, failedResults } from "./stop-fixtures.ts"
-import { RULES, TOLERANCE_RULES, ruleFor } from "./report-fixtures.ts"
+import { BOUNDED_RULES, RULES, TOLERANCE_RULES, ruleFor } from "./report-fixtures.ts"
 
 /** The four conditions, so a loop over them cannot lose one silently. */
 const CONDITIONS = ["a1", "a2", "a3", "a4"] as const
@@ -47,18 +47,26 @@ function healthy() {
   return admissible(admissibilityInput())
 }
 
-/** One input per condition, spoiling that condition and leaving the other three held. */
+/**
+ * One input per condition, spoiling that condition and leaving the other three
+ * held.
+ *
+ * **`a2` AND `a3` EACH SUPPLY THEIR OWN THRESHOLD**, because both are unset in
+ * the committed file - `kappa_bench` on the owner's ruling, `tau` on his
+ * decision - and a condition with no bound cannot be spoiled at all. The
+ * bounds are the fixtures' and are named as such in `./report-fixtures.ts`.
+ */
 const SPOILED: Readonly<Record<Condition, AdmissibilityInput>> = {
   a1: admissibilityInput({ results: failedResults() }),
-  a2: admissibilityInput({ score: scoreWith(1, 0.2) }),
+  a2: admissibilityInput({ rules: BOUNDED_RULES, score: scoreWith(1, 0.2) }),
   a3: admissibilityInput({ rules: TOLERANCE_RULES, initialObjective: 2 }),
   a4: admissibilityInput({ targets: LOW_BOOST, frozen: true, score: scoreWith(6, 0) }),
 }
 
-/** What a spoiled condition reads as. `A3` is three-valued, so its failure is a word. */
+/** What a spoiled condition reads as. `A2` and `A3` are three-valued, so their failure is a word. */
 const FAILED: Readonly<Record<Condition, boolean | ConditionThree>> = {
   a1: false,
-  a2: false,
+  a2: "failed",
   a3: "failed",
   a4: false,
 }
@@ -75,9 +83,9 @@ test("all four held is admissible, and each condition spoiled alone is not", () 
 
 test("A1 failing is invalid; A2, A3 or A4 failing alone is valid-below-target", () => {
   expect(outcomeOf(admissible(admissibilityInput({ results: failedResults() })))).toBe("invalid")
-  expect(outcomeOf(admissible(admissibilityInput({ score: scoreWith(1, 0.2) })))).toBe(
-    "valid-below-target",
-  )
+  expect(
+    outcomeOf(admissible(admissibilityInput({ rules: BOUNDED_RULES, score: scoreWith(1, 0.2) }))),
+  ).toBe("valid-below-target")
   expect(
     outcomeOf(admissible(admissibilityInput({ rules: TOLERANCE_RULES, initialObjective: 2 }))),
   ).toBe("valid-below-target")
@@ -94,9 +102,37 @@ test("A1 decides alone: a candidate failing A1 AND A2 is invalid, not below targ
   // A conjunction tested only through one spoiled condition at a time would
   // pass with the two cases ordered the other way round, and the owner's
   // question is whether he can build it.
-  const both = admissible(admissibilityInput({ results: failedResults(), score: scoreWith(1, 0.2) }))
-  expect([both.a1, both.a2]).toEqual([false, false])
+  const both = admissible(
+    admissibilityInput({
+      rules: BOUNDED_RULES,
+      results: failedResults(),
+      score: scoreWith(1, 0.2),
+    }),
+  )
+  expect([both.a1, both.a2]).toEqual([false, "failed"])
   expect(outcomeOf(both)).toBe("invalid")
+})
+
+test("an A2 that never fired is admissible on the same reading, and is not collapsed", () => {
+  // THE OWNER'S RULING OF 2026-10-16 MADE THIS THE LIVE PATH FOR A2 TOO. He
+  // unset kappa_bench - "if the layout is electrically correct, let's keep it.
+  // It looks fine to me" - so A2 neither holds nor fails on any run under the
+  // committed rules, and K4's two clauses, read over K2, settle what that maps
+  // to: an unset target cannot be reported as unmet, so the middle outcome is
+  // ruled out, and the verdict rests on the conditions that still grade.
+  expect(RULES.kappaBench).toBeNull()
+  // The materialised low-boost's own clustering, which the withdrawn bound of
+  // 0.05 refused and which he looked at and preferred.
+  const loose = admissible(admissibilityInput({ score: scoreWith(1, 0.25) }))
+  expect(loose.a2).toBe("not-evaluated")
+  expect(outcomeOf(loose)).toBe("admissible")
+  // AND THE THIRD STATE SURVIVES THE MAPPING, which is what stops an ungraded
+  // condition reading as a target met: with a bound set, the same candidate is
+  // below target, and the two verdicts differ without reading a string.
+  const graded = admissible(admissibilityInput({ rules: BOUNDED_RULES, score: scoreWith(1, 0.25) }))
+  expect(graded.a2).toBe("failed")
+  expect(outcomeOf(graded)).toBe("valid-below-target")
+  expect(loose.a2).not.toBe(graded.a2)
 })
 
 test("an A3 that never fired is admissible, on K4's two clauses, and is not collapsed", () => {
@@ -190,8 +226,16 @@ test("the two non-admissible wordings are not interchangeable, and all three dif
 
 test("the admissible wording does not claim a target that may never have been graded", () => {
   // The one sentence that could erase the third state: "A1-A4 all hold" read
-  // off a run where A3 never fired. It says which conditions instead.
-  expect(OUTCOME_WORDING["admissible"]).toMatch(/A3 holds or did not fire/)
+  // off a run where neither A2 nor A3 ever fired - which is EVERY run under the
+  // committed rules, both thresholds being unset. It names the ungraded pair
+  // instead, and names which conditions the outcome does assert.
+  expect(OUTCOME_WORDING["admissible"]).toMatch(/A2 and A3 each either hold or did not fire/)
+  expect(OUTCOME_WORDING["admissible"]).toMatch(/A1 and A4 hold/)
+  expect(OUTCOME_WORDING["admissible"]).toMatch(/kappa_bench is unset/)
+  expect(OUTCOME_WORDING["admissible"]).toMatch(/while tau is unset/)
+  // And it does not assert four conditions held, which is the sentence the
+  // three-valued pair exists to prevent.
+  expect(OUTCOME_WORDING["admissible"]).not.toMatch(/A1-A4|all four/)
 })
 
 test("the two unions are enumerated exhaustively, so nothing escapes REP3's loop", () => {

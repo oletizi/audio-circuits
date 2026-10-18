@@ -69,6 +69,8 @@
  * (`tools/stripboard/vero-import.ts` records why), so the pin map below is keyed
  * `${ref}.${pin}` and never by `ref` alone - which would collapse the three to one
  * entry, and a lookup for a reference pin would then find the wrong hole or none.
+ * The pair is formed by `./pin-id.ts`, the one place in this model it is spelled,
+ * so the key here and the `PAD` statement the exporter writes cannot drift apart.
  * **Measured, not reasoned to:** that mutation is one of the eleven
  * `tests/stripboard/model/invariants.test.ts` records running, and it failed 27
  * assertions across the two test files.
@@ -76,6 +78,7 @@
 import type { Candidate, Hole } from "./board.ts"
 import { componentsOf } from "./connectivity.ts"
 import { holeKey, type Cut, type ReferenceNets } from "./cuts.ts"
+import { pinId } from "./pin-id.ts"
 
 /**
  * One reference net whose terminals fell into two or more components - an OPEN.
@@ -142,7 +145,7 @@ function holesByPin(candidate: Candidate): ReadonlyMap<string, Hole> {
   const holes = new Map<string, Hole>()
   for (const placement of candidate.placements) {
     for (const [pin, hole] of placement.pins) {
-      const id = `${placement.ref}.${pin}`
+      const id = pinId(placement.ref, pin)
       const already = holes.get(id)
       if (already !== undefined) {
         const [first, second] = [holeKey(already), holeKey(hole)].sort()

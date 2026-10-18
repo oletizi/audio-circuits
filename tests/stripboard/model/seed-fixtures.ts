@@ -250,30 +250,14 @@ export const RECORDED_SPANS: ReadonlyMap<string, LeadSpan> = LEAD_SPANS
  * each one's nets in pin order, and alphabetical as a stable arbitrary control.
  * **No rule here was changed after seeing a score** - what the figures came out
  * as is reported in this task's report, including the orderings that refuse.
+ *
+ * **THE RULES THEMSELVES LEFT THIS FILE ON 2026-10-17 AND THIS IS A RE-EXPORT.**
+ * `pultec-low-cut`'s committed board is built from `part-walk s1`, so the rule
+ * that produces it is no longer only a benchmark and may not live under
+ * `tests/`: it is `lib/stripboard/seed-orderings.ts`, which `tools/` can import
+ * and a reader of a board's provenance can be sent to. The re-export is kept
+ * rather than every call site being repointed because this module is the one
+ * every seed test already names, and a second import path is a second thing to
+ * keep in step - there is still exactly ONE definition of the five.
  */
-export function derivedOrderings(
-  netlist: SeedNetlist,
-  stride: number,
-): readonly StrideOrdering[] {
-  const names = [...netlist.nets.keys()]
-  const degree = (net: string): number => (netlist.nets.get(net) ?? []).length
-  const walk: string[] = []
-  for (const part of netlist.parts) {
-    for (const lead of leadsOf(part)) if (!walk.includes(lead.net)) walk.push(lead.net)
-  }
-  return [
-    ordering(`reference-order s${stride}`, names, stride),
-    ordering(
-      `degree-descending s${stride}`,
-      [...names].sort((a, b) => degree(b) - degree(a) || a.localeCompare(b)),
-      stride,
-    ),
-    ordering(
-      `degree-ascending s${stride}`,
-      [...names].sort((a, b) => degree(a) - degree(b) || a.localeCompare(b)),
-      stride,
-    ),
-    ordering(`part-walk s${stride}`, walk, stride),
-    ordering(`alphabetical s${stride}`, [...names].sort(), stride),
-  ]
-}
+export { derivedOrderings } from "../../../lib/stripboard/seed-orderings.ts"

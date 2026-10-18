@@ -79,6 +79,7 @@ import { parseBoardDump, type BoardDump, type Part } from "../guide/dump.ts"
 import type { ReferenceNets } from "./equivalence.ts"
 import { OFF_BOARD_TERMINAL } from "../../lib/stripboard/board.ts"
 import type { Candidate, PinPatterns, Placement } from "../../lib/stripboard/board.ts"
+import { pinIdParts } from "../../lib/stripboard/pin-id.ts"
 import { facingOf, type PinHole } from "./vero-import-facing.ts"
 import { padLines, type PadLine } from "./pad-provenance.ts"
 import {
@@ -263,7 +264,10 @@ function placementOf(
  * share one `ref`. That is faithful - the fork places each pad independently and
  * a move must be able to move one without the others - but `ref` is then not
  * unique among placements, and a later task keying a map by `ref` alone would
- * collapse them. The identity of a pad placement is `ref` AND its one pin name.
+ * collapse them. The identity of a pad placement is `ref` AND its one pin name,
+ * and `lib/stripboard/pin-id.ts` is where that pair is formed and taken apart -
+ * once, so that this importer and `./vero-export.ts` cannot derive it
+ * differently.
  */
 function padPlacementOf(
   pad: PadLine,
@@ -281,10 +285,15 @@ function padPlacementOf(
     )
   }
   const source = pad.source
-  const dot = source === undefined ? -1 : source.lastIndexOf(".")
-  const owner = source === undefined ? "" : source.slice(0, dot)
-  const pin = source === undefined ? "" : source.slice(dot + 1)
-  if (source === undefined || owner === "" || pin === "") {
+  // SPLIT THROUGH `pinIdParts` AND NOT HERE. The pair is a pad's identity, and
+  // `lib/stripboard/pin-id.ts` is the one place it is formed and taken apart -
+  // so the ref and pin this importer reads out of a `FROM` field are the same
+  // two halves `tools/stripboard/vero-export.ts` puts back together and
+  // `lib/stripboard/seed-parts.ts` constructs a pad from. The refusal stays
+  // here, under this importer's own key: what a malformed id MEANS depends on
+  // where it came from, and from a dump it means this `PAD` line.
+  const parts = source === undefined ? undefined : pinIdParts(source)
+  if (source === undefined || parts === undefined) {
     refuse(
       "vero-import-pad-unprovenanced",
       `the dump prints the pad "${pad.ref}" with no readable FROM <ref>.<pin> field: ` +
@@ -328,13 +337,13 @@ function padPlacementOf(
     )
   }
   return {
-    ref: owner,
+    ref: parts.ref,
     footprint: OFF_BOARD_TERMINAL,
     origin: only.hole,
     // ARBITRARY, AND THE COMMENT ABOVE SAYS SO: a single pad has no orientation.
     direction: "E",
     holes: [only.hole],
-    pins: new Map([[pin, only.hole]]),
+    pins: new Map([[parts.pin, only.hole]]),
   }
 }
 

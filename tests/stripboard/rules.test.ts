@@ -101,7 +101,8 @@ test("the owner's settled values are the ones the committed file carries", () =>
   // as he wrote it, so this line failing against a 1 means the deviation was
   // reverted and not that the file drifted.
   expect(rules.rhoSolder).toBe(0.25)
-  expect(rules.kappaBench).toBe(0.05)
+  // kappaBench is NOT asserted here: it is null, which is a decision rather
+  // than a number, and the test below is where that decision is read.
   expect(rules.stockRows).toBe(34)
   expect(rules.stockCols).toBe(27)
   // One cut costs as much as four wires, which is the claim rho_w encodes. It
@@ -174,22 +175,65 @@ test("rhoWire's note quotes the owner's instruction verbatim and keeps the corre
   expect(text).toContain("rho_w = 3")
 })
 
-test("kappaBench's note carries all three passing hand-laid values and the ratchet", () => {
-  // K3's third condition: the previous value and its reason are KEPT rather
-  // than overwritten - the union is the record. At schema 1 there is one
-  // value, and the note carries the three measured values it was NOT fitted
-  // to. ALL THREE are asserted, not an alternation of them: 0.181, 0.196 and
-  // 0.269 are three boards that pass `make check`, and a note carrying one of
-  // them would let the next reader loosen the bound without seeing the other
-  // two - which is the whole reason K2 says to carry them.
+test("kappaBench is null in the committed file - withdrawn on the owner's ruling, with no number standing in", () => {
+  // CRITERIA K2, as the owner left it on 2026-10-16. The bound of 0.05 was an
+  // acceptance criterion an agent authored for an artifact agents produce,
+  // which CLAUDE.md forbids outright, and it sat below every one of the four
+  // boards he has built. null is the recorded decision; the key being required
+  // is what makes it one.
+  const rules = loadRules()
+  expect(rules.kappaBench).toBeNull()
+  const text = note(rules, "kappaBench")
+  expect(text).toContain("DELIBERATELY UNSET")
+  // HIS TWO SENTENCES, VERBATIM AND MARKED AS HIS. They are the authority for
+  // this value, so they are asserted exactly rather than paraphrased - a note
+  // that only described his ruling would be an agent's characterisation again,
+  // which is the defect this change corrects.
+  expect(text).toContain("OWNER'S WORDS (verbatim, 2026-10-16")
+  expect(text).toContain(
+    '"i prefer the loose layout. It\'s much easier to build. I don\'t see the problem"',
+  )
+  expect(text).toContain(
+    '"if the layout is electrically correct, let\'s keep it. It looks fine to me"',
+  )
+  // THE DECISIVE EVIDENCE: all four measured hand-laid boards, and that the
+  // withdrawn bound sat below every one of them. All four are asserted and not
+  // an alternation - a note carrying three would let the next reader re-derive
+  // the same bound without seeing the fourth, which is the one it sat nearest.
+  for (const measured of ["0.055", "0.181", "0.196", "0.269"]) {
+    expect(text, measured).toContain(measured)
+  }
+  expect(text).toContain("THE WITHDRAWN BOUND OF 0.05 SAT BELOW ALL FOUR OF THEM")
+  // The honest reason it went, which is NOT that it was too tight.
+  expect(text).toContain("IT WAS AN ACCEPTANCE CRITERION AN AGENT AUTHORED FOR AN ARTIFACT")
+  expect(text).toContain("NO NUMBER REPLACES IT")
+  // What null means: A2 does not fire, kappa is still measured, and setting a
+  // value is a deliberate edit carrying its evidence.
+  expect(text).toContain("A2 DOES NOT FIRE")
+  expect(text).toContain("KAPPA IS STILL COMPUTED AND REPORTED ON EVERY RUN")
+  expect(text).toContain("SETTING ONE IS A DELIBERATE EDIT")
+  // The ratchet went with the bound, and the note says why rather than leaving
+  // a reader to find a withdrawn procedure and obey it.
+  expect(text).toContain("K3'S RATCHET IS WITHDRAWN WITH THE BOUND")
+})
+
+test("kappaBench's note keeps the superseded value's whole reason rather than overwriting it", () => {
+  // K3's third condition, which is the one clause of the ratchet that survives
+  // it: the previous value and its reason are KEPT, and the union of old and
+  // new is the record. So the withdrawn note is carried VERBATIM - its
+  // argument, the three figures it chose to carry, the ratchet wording, and
+  // its own admission that no words of the owner's were ever recorded for it.
+  // A reader can therefore argue with the superseded reasoning instead of
+  // taking the withdrawal on trust.
   const text = note(loadRules(), "kappaBench")
-  expect(text).toContain("0.181")
-  expect(text).toContain("0.196")
-  expect(text).toContain("0.269")
+  expect(text).toContain("PREVIOUS VALUES: 0.05")
+  expect(text).toContain("VERBATIM AND UNEDITED")
   expect(text).toContain("THE HARD END OF A RATCHET")
   expect(text).toContain("PREVIOUS VALUES: none.")
-  // And the inadmissible reason for moving it, named so it cannot be used.
   expect(text).toContain('"the search did not get there" is NOT an admissible cause')
+  // And the sentence that gave the whole thing away, kept where it was found.
+  expect(text).toContain("OWNER'S WORDS: none recorded")
+  expect(text).toContain("including the ratchet wording, are an agent's")
 })
 
 test("worseAcceptance is null in the committed file, and the note says E3 does not run", () => {
@@ -353,6 +397,38 @@ test("worseAcceptance accepts a number and null, and refuses every other spellin
   )
   expect(refusalFrom(() => loadRules(fixture({ worseAcceptance: "off" })))).toStartWith(
     'rules-type: "worseAcceptance" must be a number or null, got a string.',
+  )
+})
+
+test("kappaBench accepts a number when one is set, and absence is still an error rather than unset", () => {
+  // THE HALF THAT MATTERS AFTER THE WITHDRAWAL: unsetting the committed bound
+  // must not have deleted the loader's ability to carry one. Setting it is a
+  // deliberate edit, so a number loads, and every way of getting it wrong is
+  // still refused by name.
+  expect(loadRules(fixture({ kappaBench: 0.05 })).kappaBench).toBe(0.05)
+  expect(loadRules(fixture({ kappaBench: 1 })).kappaBench).toBe(1)
+  expect(refusalFrom(() => loadRules(fixture({ kappaBench: 0 })))).toStartWith(
+    'rules-range: "kappaBench" must be greater than 0, got 0.',
+  )
+  expect(refusalFrom(() => loadRules(fixture({ kappaBench: 1.5 })))).toStartWith(
+    'rules-range: "kappaBench" must be at most 1, got 1.5.',
+  )
+  expect(refusalFrom(() => loadRules(fixture({ kappaBench: "loose" })))).toStartWith(
+    'rules-type: "kappaBench" must be a number or null, got a string.',
+  )
+  // AND NULL IS A VALUE WHILE ABSENCE IS AN ERROR, which is the whole reason
+  // tau's pattern was followed rather than deleting the key: a bound somebody
+  // forgot to write and a bound somebody deliberately declined to set are
+  // different facts, and only the second is a decision a reviewer can see.
+  const missing = refusalFrom(() => loadRules(fixture({ omit: "kappaBench" })))
+  expect(missing).toStartWith('rules-missing-key: "kappaBench" is absent.')
+  expect(missing).toContain("It is NOT defaulted")
+  expect(missing).toContain("write null to record it as deliberately unset")
+  // The wrong-type refusal carries what null MEANS, so a reader who wrote
+  // "off" or 0 learns what the unset state does rather than only that it was
+  // refused.
+  expect(refusalFrom(() => loadRules(fixture({ kappaBench: "off" })))).toContain(
+    "null means the clustering bound is UNSET (CRITERIA K2), so A2 does not fire",
   )
 })
 

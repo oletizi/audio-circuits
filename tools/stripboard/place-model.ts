@@ -19,7 +19,8 @@
  * error `V3` exists to prevent.
  */
 import type { Evaluation } from "./climb.ts"
-import type { Outcome, SeedSweepRecord } from "./report-model.ts"
+import type { Outcome } from "./report-model.ts"
+import type { SeedSweepRecord } from "./report-sweep.ts"
 import type { RunManifest } from "./run-dir.ts"
 import type { RunResult } from "./search.ts"
 import type { SeedArm } from "./seed.ts"

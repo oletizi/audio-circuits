@@ -14,6 +14,19 @@ const PIN1_MARK = 7
 const ELECTROLYTIC_TYPE = /^CAP_ELECTRO_(\d+)$/
 
 /**
+ * A film capacitor's VeroRoute type, with or without the lead-span digit a
+ * fresh import carries: `--dump-board` prints the bare `CAP_FILM` /
+ * `CAP_FILM_WIDE` the fork's `CompTypes.h` aliases (see
+ * `tests/fixtures/stripboard/pultec-low-boost-frozen.dump`), while
+ * `lib/kicad/import-string.ts`'s `FILM_CAPACITOR_IMPORT_STRINGS` emits the
+ * same two names suffixed with the span the import carried in, e.g.
+ * `CAP_FILM2` and `CAP_FILM_WIDE2` - the same `<name><span>` convention as
+ * `RESISTOR<n>` and `CAP_CERAMIC<n>` above. Both spellings get the same
+ * drawing (see the comment at their use below), so one pattern covers both.
+ */
+const FILM_CAPACITOR_TYPE = /^CAP_FILM(_WIDE)?\d*$/
+
+/**
  * The electrolytic polarity rule, in one place for the images and the
  * checklist: a CAP_ELECTRO_<n> part's pin 1 is its + lead.
  */
@@ -200,6 +213,38 @@ function to92Body(part: Part, pins: readonly PlacedPin[]): Body {
   }
 }
 
+/**
+ * A LANDING PAD: a ring around the one hole an off-board wire is soldered to.
+ *
+ * **IT IS NOT DISPATCHED BY `bodyFor` AND THAT IS DELIBERATE.** A pad has no
+ * VeroRoute part type - it is a `PAD` line, not a `PART` line - so there is no
+ * type for `bodyFor` to branch on, and a branch for one would be a predicate
+ * nothing can reach. `./render-parts.ts` calls this directly, from the pads
+ * `./pads.ts` reads.
+ *
+ * **THE RING IS NOT A CLAIM ABOUT A BODY, because a pad has none.** The owner
+ * settled what one is: *"yeah - a single pad has no orientation. It's just a
+ * place to solder an off-board wire or a test point to."* So nothing is drawn
+ * over the hole - it stays visible, since the hole IS the feature - and the ring
+ * is a target around it, sized larger than the pin dot `./render-parts.ts` puts
+ * in it so the two read as one mark rather than two. It is round for the reason
+ * `standingResistorBody` is round: a square here could be read as a checkbox to
+ * tick.
+ */
+export function padBody(at: Point): Body {
+  const r = PITCH * 0.34
+  return {
+    outline: circle(at, r, { fill: "none", stroke: INK, width: 1.6, cls: "pad-body" }),
+    extent: boxAround([at], r),
+    centre: at,
+    // NOTHING FITS INSIDE ONE HOLE'S RING, so the tag goes beside it - which is
+    // what `labelArea: undefined` asks `./render-parts.ts` for.
+    labelArea: undefined,
+    marks: [],
+    polarity: undefined,
+  }
+}
+
 /** A trim-pot or pin header: a box around its pins, pin 1 marked. */
 function boxBody(part: Part, pins: readonly PlacedPin[]): Body {
   const p1 = pinNamed(part, pins, "1").at
@@ -256,7 +301,19 @@ export function bodyFor(part: Part, pins: readonly PlacedPin[]): Body {
   // the same parts. The box is the honest drawing: it says where the part's
   // holes are and that something non-polarised sits over them. If a body
   // dimension is ever sourced, this is where it belongs.
-  if (part.type === "CAP_FILM" || part.type === "CAP_FILM_WIDE") {
+  //
+  // THE MATCH IS WIDER THAN THE BARE NAME FOR THE SAME REASON RESISTOR<n> IS A
+  // PATTERN AND NOT A LIST: `lib/kicad/import-string.ts` maps the Pultec rect
+  // capacitors to `CAP_FILM2` and `CAP_FILM_WIDE2` (its span-suffixed import
+  // string, not the `--dump-board` spelling), and a renderer that only knew the
+  // bare names refused those with "no drawing for VeroRoute part type
+  // CAP_FILM2" - the rendering layer failing to read a shape the physical model
+  // already names, rather than the physical model being wrong. Fixing that here
+  // is the point: `importStringFor` in `lib/kicad/import-string.ts` is
+  // untouched, because the import string IS part of the physical model and
+  // changing it to suit the drawing would turn a presentation bug into an
+  // electrical-model change.
+  if (FILM_CAPACITOR_TYPE.test(part.type)) {
     expectPinCount(part, pins, 2)
     return boxBody(part, pins)
   }

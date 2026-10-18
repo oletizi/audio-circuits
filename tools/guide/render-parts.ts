@@ -1,5 +1,6 @@
 import { noPinLinesMessage, type BoardDump, type Part, type Pin } from "./dump.ts"
-import { bodyFor, type Body, type PlacedPin } from "./part-shapes.ts"
+import type { PadTerminal } from "./pads.ts"
+import { bodyFor, padBody, type Body, type PlacedPin } from "./part-shapes.ts"
 import { TAG_CLEARANCE, everything, leastCovered, type Occupied } from "./placement.ts"
 import {
   CHECKBOX_SIZE,
@@ -31,6 +32,15 @@ import {
  * Every lead runs from the body's centre to its hole and is drawn beneath
  * the white-filled body, so what shows is exactly the lead from the body's
  * edge to the hole - however far a stretched lead reaches.
+ *
+ * **LANDING PADS ARE DRAWN HERE TOO, AND THEY ARE NOT PARTS.** A pad is one hole
+ * an off-board wire is soldered to, with no `PART` line, no type and no body
+ * (`./pads.ts`), so it gets a ring rather than an outline and a designator. Its
+ * checkbox is keyed by the identity of the terminal it brings off the board,
+ * but what it PRINTS beside that checkbox is the caller's label, the same as a
+ * part's is - see `drawPadLabels`, below. It shares the tag placement, because
+ * a pad's checkbox and a part's checkbox must not be placed by two different
+ * sets of rules on one sheet.
  */
 
 const LABEL_SIZE = 8
@@ -134,35 +144,75 @@ function tagBox(at: Point, width: number, height: number): Box {
 }
 
 
+/** How wide a tag is: its checkbox, the gap, and the label after it. */
+function tagWidth(label: string): number {
+  return CHECKBOX_SIZE + TAG_GAP + textWidth(label, LABEL_SIZE)
+}
+
 /**
- * A part's tag - its checkbox with the label right after it, so the two are
- * never separated - on the body where the whole tag fits clear of pins and
- * marks, and otherwise beside the body wherever it covers least.
+ * Draws a tag - a checkbox with the label right after it, so the two are never
+ * separated - at `spot`, and records the ground it took.
+ *
+ * `forWhat` is the checkbox's own identity, and it is the CALLER's to supply
+ * because a part and a landing pad are identified differently: a part by its
+ * ref, a pad by its ref AND its terminal, since three pads of one potentiometer
+ * share a ref and three checkboxes carrying one id would be one checkbox as far
+ * as any reader of the sheet is concerned.
  */
-function drawLabel(canvas: Canvas, placed: PlacedPart, occupied: Occupied): void {
-  const { part, body, pins, label } = placed
-  const width = CHECKBOX_SIZE + TAG_GAP + textWidth(label, LABEL_SIZE)
+function placeTag(canvas: Canvas, spot: Point, label: string, forWhat: string, occupied: Occupied): void {
+  const width = tagWidth(label)
   const height = CHECKBOX_SIZE
-  const area = body.labelArea
-  let spot: Point | undefined
-  if (area !== undefined) {
-    // Centred on the body, else nudged up or down within it.
-    const x = (area.minX + area.maxX) / 2 - width / 2
-    const y = (area.minY + area.maxY) / 2
-    const avoid = pins.map((p) => p.at)
-    spot = [y, y - height, y + height]
-      .map((cy) => ({ x, y: cy }))
-      .find((p) => {
-        const box = tagBox(p, width, height)
-        return inside(box, area) && clearOf(box, avoid, PIN_DOT_RADIUS + 1) && occupied.marks.overlap(box) === 0
-      })
-  }
-  if (spot === undefined) {
-    spot = leastCovered(tagSpots(body, width, height), (p) => tagBox(p, width, height), everything(occupied))
-  }
-  canvas.add(checkbox({ x: spot.x, y: spot.y - CHECKBOX_SIZE / 2 }, `part:${part.ref}`), tagBox(spot, CHECKBOX_SIZE, height))
+  canvas.add(checkbox({ x: spot.x, y: spot.y - CHECKBOX_SIZE / 2 }, forWhat), tagBox(spot, CHECKBOX_SIZE, height))
   addText(canvas, { x: spot.x + CHECKBOX_SIZE + TAG_GAP, y: spot.y }, label, LABEL_STYLE)
   occupied.marks.add(grow(tagBox(spot, width, height), TAG_CLEARANCE))
+}
+
+/**
+ * A tag beside the body, wherever it covers least of what is already drawn.
+ *
+ * **IT TAKES NO `avoid` LIST, AND THAT IS THE DIFFERENCE FROM `drawPartLabels`'s
+ * path.** The points a tag must dodge only matter when it is placed ON a body,
+ * inside its `labelArea`; out here `leastCovered` weighs every occupancy
+ * instead. A pad has no `labelArea` at all (`padBody` says so: nothing fits
+ * inside one hole's ring), so it comes straight here, and handing this function
+ * a list of points to avoid would be an argument nothing could consult.
+ */
+function drawTagBeside(canvas: Canvas, body: Body, label: string, forWhat: string, occupied: Occupied): void {
+  const width = tagWidth(label)
+  const height = CHECKBOX_SIZE
+  const spot = leastCovered(tagSpots(body, width, height), (p) => tagBox(p, width, height), everything(occupied))
+  placeTag(canvas, spot, label, forWhat, occupied)
+}
+
+/**
+ * A part's tag: on its body where the whole tag fits clear of its own pins and
+ * of everything already drawn, and otherwise beside the body.
+ */
+function drawPartTag(canvas: Canvas, placed: PlacedPart, occupied: Occupied): void {
+  const { part, body, pins, label } = placed
+  const forWhat = `part:${part.ref}`
+  const width = tagWidth(label)
+  const height = CHECKBOX_SIZE
+  const area = body.labelArea
+  if (area === undefined) {
+    drawTagBeside(canvas, body, label, forWhat, occupied)
+    return
+  }
+  // Centred on the body, else nudged up or down within it.
+  const x = (area.minX + area.maxX) / 2 - width / 2
+  const y = (area.minY + area.maxY) / 2
+  const avoid = pins.map((p) => p.at)
+  const spot = [y, y - height, y + height]
+    .map((cy) => ({ x, y: cy }))
+    .find((p) => {
+      const box = tagBox(p, width, height)
+      return inside(box, area) && clearOf(box, avoid, PIN_DOT_RADIUS + 1) && occupied.marks.overlap(box) === 0
+    })
+  if (spot === undefined) {
+    drawTagBeside(canvas, body, label, forWhat, occupied)
+    return
+  }
+  placeTag(canvas, spot, label, forWhat, occupied)
 }
 
 /**
@@ -223,6 +273,125 @@ function drawPolarity(canvas: Canvas, polarity: NonNullable<Body["polarity"]>, o
 /** Draws every placed part's tag (checkbox and label), clear of everything already recorded in `occupied`. */
 export function drawPartLabels(canvas: Canvas, placed: readonly PlacedPart[], occupied: Occupied): void {
   for (const entry of placed) {
-    drawLabel(canvas, entry, occupied)
+    drawPartTag(canvas, entry, occupied)
+  }
+}
+
+/** One landing pad as it is drawn: where its hole is, and the ring around it. */
+export interface DrawnPad {
+  readonly pad: PadTerminal
+  readonly at: Point
+  readonly body: Body
+}
+
+/**
+ * Every landing pad at its drawn hole, refusing one whose hole is not on the
+ * board.
+ *
+ * A pad's hole comes from its own `PAD` line (`./pads.ts`), which is the only
+ * place the dump states it - there is no `PART` line and the `PIN` line is
+ * printed under the board name the fork invented.
+ *
+ * **THE GRID CHECK IS HERE BECAUSE NOTHING ELSE IN THE PAD PATH MAKES ONE.**
+ * `Frame.hole` is pure arithmetic with no bounds test, so a pad at row 40 of a
+ * 14-row board is drawn forty pitches down, outside the board outline, in an
+ * image that otherwise looks finished. `placedParts` refuses the analogous
+ * faults for a part and this function is called for both views for the same
+ * reason it is; a pad path that could not refuse anything would make that
+ * symmetry a claim rather than a fact.
+ */
+export function drawnPads(frame: Frame, pads: readonly PadTerminal[]): readonly DrawnPad[] {
+  return pads.map((pad) => {
+    const { rows, cols } = frame.grid
+    if (pad.row < 0 || pad.col < 0 || pad.row >= rows || pad.col >= cols) {
+      throw new Error(
+        `guide-pad-off-board: the pad "${pad.identity}" is at ${pad.row},${pad.col} and this ` +
+          `board's GRID line says ${rows} x ${cols} holes, so that hole is not on the board and ` +
+          "there is nowhere on the drawing to put it.\nFix it in the layout - move the pad onto " +
+          "the board, or grow the stock - rather than here; the dump's GRID and PAD lines are " +
+          "both written from the same board, so a pad outside it is a layout fault and not a " +
+          "reading to normalise.\nIt is not clamped to the edge and it is not left out: a clamped " +
+          "pad names a hole the builder would solder the wrong wire into, and an omitted one is a " +
+          "terminal the guide says nothing about - which is the silence tools/guide/pads.ts " +
+          "exists to end.",
+      )
+    }
+    const at = frame.hole(pad.row, pad.col)
+    return { pad, at, body: padBody(at) }
+  })
+}
+
+/**
+ * Draws every landing pad: the ring around its hole and the dot in it, recorded
+ * in `occupied` so the numbers and tags placed afterwards keep clear.
+ *
+ * The dot is the same mark a part's lead gets, because the thing in the hole is
+ * the same thing - a soldered joint - and a pad drawn without one would read as
+ * an empty hole with a circle round it.
+ */
+export function drawPadBodies(canvas: Canvas, pads: readonly DrawnPad[], occupied: Occupied): void {
+  for (const { at, body } of pads) {
+    canvas.add(body.outline, body.extent)
+    occupied.bodies.add(body.extent)
+    canvas.add(circle(at, PIN_DOT_RADIUS, { fill: INK, cls: "pin" }), boxAround([at], PIN_DOT_RADIUS))
+    occupied.marks.add(boxAround([at], PIN_DOT_RADIUS))
+  }
+}
+
+/**
+ * A pad's printed label, from the caller's map - never derived from the pad
+ * itself.
+ *
+ * **THIS USED TO BE `pad.identity`, DRAWN INSIDE THE RENDERER, AND THAT WAS THE
+ * WRONG SIDE OF THE INTERFACE.** `placedParts`' `labelOf` (above) takes a part's
+ * label from the caller's map because the renderer has no circuit knowledge; a
+ * pad's label needs exactly the same knowledge - which control it is, which
+ * terminal, what a switch throw selects - so it is the caller's to supply too.
+ * `tools/guide/pad-label.ts`'s `padLabelOf` is how a caller builds one entry.
+ *
+ * A pad missing from the map REFUSES. It does **not** fall back to
+ * `pad.identity`: `RV_LO_BOOST.1` is the exact spelling the owner rejected when
+ * he asked for the more descriptive names, and reinstating it here as a
+ * fallback would be worse than the silence `tools/guide/pads.ts` exists to end
+ * - it would look like a label while telling the builder nothing.
+ */
+function labelOfPad(labels: ReadonlyMap<string, string>, pad: PadTerminal): string {
+  const label = labels.get(pad.identity)
+  if (label === undefined) {
+    throw new Error(
+      `no label given for pad "${pad.identity}" (terminal ${pad.pin} of ${pad.ref}); the ` +
+        "caller's pad-label map must name every drawn pad, the same as a part's label map " +
+        "must name every placed part. It is not derived from the pad's own identity: " +
+        `"${pad.identity}" is the <ref>.<pin> spelling the owner rejected when he asked for the ` +
+        "more descriptive names (tools/guide/pad-label.ts), so a fallback to it here would " +
+        "reinstate exactly that defect while this function's caller still looked satisfied.",
+    )
+  }
+  return label
+}
+
+/**
+ * Draws every landing pad's tag: its checkbox and the label the caller gives
+ * it, keyed by the pad's identity.
+ *
+ * The checkbox itself is still keyed by `pad.identity` (`forWhat`, below) and
+ * not by the printed label - three pads of one pot share a `ref` and would
+ * share one checkbox if it were keyed by ref, but two labels could coincide in
+ * text (two switches each with a "common" terminal) and must not then share a
+ * checkbox either, so the identity - never the label - is the checkbox's key.
+ */
+export function drawPadLabels(
+  canvas: Canvas,
+  pads: readonly DrawnPad[],
+  labels: ReadonlyMap<string, string>,
+  occupied: Occupied,
+): void {
+  for (const { pad, body } of pads) {
+    const label = labelOfPad(labels, pad)
+    // BESIDE THE RING, ALWAYS: a pad has no `labelArea`, so there is no on-body
+    // placement to attempt and no list of points for one to dodge. The ring and
+    // the dot are already in `occupied`, so `leastCovered` keeps the tag off
+    // them without being told.
+    drawTagBeside(canvas, body, label, `pad:${pad.identity}`, occupied)
   }
 }

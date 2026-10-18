@@ -110,6 +110,52 @@ twice shipped a footprint that does not exist.
 say so loudly. Silence that resembles success is the failure mode the whole
 workflow exists to prevent.
 
+**Anything a later reader would need and cannot re-derive goes in
+`docs/known-gaps.md`, committed, in the change that found it.** This is a
+repo-wide requirement, not a per-plan convention, and it binds every agent on
+every task.
+
+**It is NOT only defects**, which is how it has been read and how it has failed.
+It covers:
+
+- a defect you are not fixing;
+- **a measurement** - including one that found nothing wrong. *"Removing the
+  junction ground row opens net `0` on every adopted board"* is not a defect;
+  it is a constraint on a change the owner wants, and the next agent to try it
+  needs it;
+- **a result that makes someone want to act** - *"without that row hi-boost is
+  zero cuts, zero wires, zero bridges"* is bait, and bait belongs beside the
+  trap;
+- **an owner decision, and an owner DECLINATION**, with his words verbatim. A
+  question he declined is not a closed question, but nobody asks him again
+  unprompted;
+- **an observation you could not diagnose.** Record it undiagnosed rather than
+  omit it.
+
+**Telling the owner in conversation is not recording it**, and neither is a plan
+ledger: `.superpowers/` is gitignored, so an entry there is invisible to review,
+absent from the history, and destroyed by `git clean -fdx`.
+
+**This rule has been broken twice by the agent that wrote it**, both times the
+same way: measuring something, reporting it in the session, and moving on. The
+owner, 2026-10-16: *"Telling me is not the same as recording them durably and
+instituting a remediation plan."* The second breach was found only because he
+asked directly whether a finding was in the file. **If you have said something
+interesting to the owner and not written it down, you have already broken this
+rule** - go and write it down.
+
+Every entry says what is wrong or what was measured, where, what evidence
+establishes it, **whether the writer confirmed it or is relaying another agent's
+report**, and what would settle it - a fix, a measurement, or an owner decision.
+Evidence must be a check that could have failed: an entry once rested on a grep
+of binary files that could not have matched whatever they contained.
+
+An entry is DELETED when it is resolved or ruled not a defect, never marked
+closed - and **check what the deletion takes with it**: one deletion removed an
+open owner question that only survived in a gitignored report. A bare `G<n>` in
+that file means an entry in that file; `CRITERIA` numbers its own clauses with
+the same letter, so those are written `CRITERIA G<n>` in full.
+
 **Derived artifacts are regenerated every run and compared by content**, never
 by timestamp - git does not preserve mtimes, and every mtime accident makes
 stale look current. Where a generated netlist is committed, it is committed

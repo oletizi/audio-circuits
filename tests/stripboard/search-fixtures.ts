@@ -274,8 +274,11 @@ export function recordingSearchSpawn(
  * **WHY THE TWO PHASES OF THIS FIXTURE DESCRIBE DIFFERENT BOARDS, STATED
  * OUTRIGHT.** The `random` and `constructed` arms only work against the real
  * capture: the construction recovers net identity by JOINING each `NODE` line's
- * pin set against the model's own fourteen nets (`--import` writes every `NODE`
- * line `NAME -`), so a reduced board cannot be joined at all. The CLIMB that
+ * pin set against the model's own fourteen nets (the capture below was taken
+ * when `--import` wrote every `NODE` line `NAME -`, and still reads that way;
+ * the fork now stores the netlist's names, but the join is by pin set either
+ * way, because a NAME is description and never identity), so a reduced board
+ * cannot be joined at all. The CLIMB that
  * follows, on the other hand, sweeps the move set of whatever board its dumps
  * describe - and the real one has seventeen parts, which is a hundred-odd
  * candidates per round per climb and five climbs per arm. So the arm reads the

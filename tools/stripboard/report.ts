@@ -60,7 +60,7 @@ import type { StripboardRules } from "./rules.ts"
 import type { BoardTargets } from "./targets.ts"
 import { admissible, type AdmissibilityResult, type BindingConstraint } from "./verdict.ts"
 import { describeCutCounts } from "./cut-necessity.ts"
-import { sweepLines } from "./report-sweep.ts"
+import { sweepLines, type SeedSweepRecord } from "./report-sweep.ts"
 import {
   OUTCOME_WORDING,
   QUALITY_PREFIX,
@@ -73,7 +73,6 @@ import {
   runFailedOn,
   type BoundStatus,
   type Outcome,
-  type SeedSweepRecord,
 } from "./report-model.ts"
 
 export {
@@ -86,14 +85,18 @@ export {
   assertEnumerated,
   boundFor,
   exitCodeFor,
+  outcomeExitCode,
   outcomeOf,
   runFailedOn,
   type BoundStatus,
   type Outcome,
   type ReportRefusal,
-  type SeedRunRecord,
-  type SeedSweepRecord,
 } from "./report-model.ts"
+
+// THE SWEEP'S OWN TYPES COME FROM THE SWEEP'S OWN MODULE and are re-exported
+// here, so no consumer's import path changed when they moved out of
+// `./report-model.ts` at its line ceiling.
+export { type SeedRunRecord, type SeedSweepRecord } from "./report-sweep.ts"
 
 /** What one report is rendered from. Nothing here is a verdict or a bound. */
 export interface ReportInput {
@@ -311,10 +314,13 @@ function worseAcceptanceLine(input: ReportInput): string {
 function conditionLines(verdict: AdmissibilityResult): readonly string[] {
   return [
     `A1 ${verdict.a1 ? "held" : "FAILED"}: ${verdict.detail.a1}`,
-    `A2 ${verdict.a2 ? "held" : "FAILED"}: ${verdict.detail.a2}`,
-    // A3 IS PRINTED BY ITS OWN THREE-VALUED NAME rather than as held or
-    // failed: "not-evaluated" is the state a boolean erased, and a report that
-    // spelled it "held" would report a target met that nobody graded.
+    // A2 AND A3 ARE PRINTED BY THEIR OWN THREE-VALUED NAMES rather than as
+    // held or failed: "not-evaluated" is the state a boolean erased, and a
+    // report that spelled it "held" would report a target met that nobody
+    // graded. A2 joined A3 here when the owner unset kappa_bench on
+    // 2026-10-16 - and A2's detail still carries the MEASURED kappa either
+    // way, which is the figure a later bound would have to be set from.
+    `A2 ${verdict.a2}: ${verdict.detail.a2}`,
     `A3 ${verdict.a3}: ${verdict.detail.a3}`,
     `A4 ${verdict.a4 ? "held" : "FAILED"}: ${verdict.detail.a4}`,
   ]

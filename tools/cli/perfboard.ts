@@ -129,12 +129,17 @@ const USAGE = [
   "                           every discovered board (e.g. `make -C <dir>`).",
   "  --force                  veroroute: rebuild even if a binary already exists",
   "                           at the resolved path.",
-  "  --kicad-cli <path>       guide: the kicad-cli that exports the schematic PDF",
-  "                           (required; `make guide` passes its KICAD_CLI). The",
-  "                           packet is guide/layout-designators.svg,",
+  "  --kicad-cli <path> --html-to-pdf <path>",
+  "                           guide: the kicad-cli that exports the schematic PDF,",
+  "                           and the headless browser that prints guide.html to",
+  "                           guide.pdf. BOTH required, neither defaulted here;",
+  "                           `make guide` passes its KICAD_CLI and HTML_TO_PDF.",
+  "                           The packet is guide/layout-designators.svg,",
   "                           layout-values.svg, copper-side.svg, schematic.pdf",
-  "                           and guide.html. Refuses while the cuts are",
-  "                           unresolved or any part is unplaced.",
+  "                           (iff the board declares \"sch\"), guide.html and",
+  "                           guide.pdf. Refuses while the cuts are unresolved,",
+  "                           any part is unplaced, or either tool is missing -",
+  "                           a packet without its PDF is never written.",
   "  --sch, --netlist, --kicad-cli <path>",
   "                           netlist-sync: the resolved schematic, netlist fixture and kicad-cli",
   "                           paths. make/board.mk passes all three - this verb never re-derives",
@@ -227,8 +232,11 @@ export interface RunCliOptions {
   readonly acquire?: (pin: Pin, opts: AcquireOptions) => string
   /** Injected so no test spawns the real kicad-cli for `netlist-sync`. */
   readonly netlistSyncDeps?: NetlistSyncDeps
-  /** Injected so `guide` needs no real binary, kicad-cli, circuit module or filesystem in tests. */
-  readonly guideDeps?: Omit<GuideDeps, "kicadCli">
+  /**
+   * Injected so `guide` needs no real binary, kicad-cli, headless browser,
+   * circuit module or filesystem in tests.
+   */
+  readonly guideDeps?: Omit<GuideDeps, "kicadCli" | "htmlToPdf">
   /** Injected so `bom` needs no real circuit module, simulator, catalog or filesystem in tests. */
   readonly bomDeps?: BomDeps
   /** Injected so `place` needs no fork, circuit module or search in tests. */

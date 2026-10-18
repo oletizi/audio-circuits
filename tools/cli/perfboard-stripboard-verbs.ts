@@ -322,7 +322,7 @@ export async function dispatchAdopt(
   if (flags === null) return 1
   try {
     const candidate = flags.candidate ?? candidateFor(flags.run)
-    adoptLayout(
+    const notices = adoptLayout(
       {
         runDir: flags.run,
         candidate,
@@ -333,6 +333,13 @@ export async function dispatchAdopt(
     )
     context.log(`adopted ${candidate}`)
     context.log(`  into ${path.resolve(context.cwd)}, and make check exited 0 on it.`)
+    // WHAT THE BOARD WAS ADMITTED ON, WHEN IT WAS NOT A SEARCH RESULT. A run
+    // that performed no search is adopted only on the owner's recorded call on a
+    // render (`stripboard/render-approvals.json`), and that has to be audible
+    // here rather than discoverable in a file: an admission nobody sees is the
+    // same hazard as a skipped check that looks like a passing one. A run
+    // decided by its stopping rule returns no notice and prints none.
+    for (const notice of notices) context.log(`  ${notice}`)
   } catch (caught) {
     // A REFUSAL IS PRINTED WHOLE AND EXITS 1, exactly as `place` prints one:
     // every throw in this pipeline names what is missing, where to fix it and

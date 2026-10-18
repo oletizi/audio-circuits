@@ -66,8 +66,7 @@ import {
   type SeedSweep,
 } from "./place-model.ts"
 import { prepare } from "./place-inputs.ts"
-import { manifestFor } from "./place-manifest.ts"
-import { A_OCC_POSITION, RANKING_POSITIONS } from "./rank.ts"
+import { manifestFor, pipelineCommit } from "./place-manifest.ts"
 import { boundFor, outcomeOf, verdictOf, type ReportInput } from "./report.ts"
 import { runDirectory, writeManifest } from "./run-dir.ts"
 import { search, type RunResult } from "./search.ts"
@@ -109,40 +108,6 @@ export function verorouteSpawn(): SpawnVeroroute {
       stderr: typeof run.stderr === "string" ? run.stderr : "",
     }
   }
-}
-
-/** This repository's own commit, for `run.json`'s canonical inputs. */
-function pipelineCommit(repoRoot: string): string {
-  const run = spawnSync("git", ["-C", repoRoot, "rev-parse", "HEAD"], { encoding: "utf8" })
-  const text = typeof run.stdout === "string" ? run.stdout.trim() : ""
-  if (run.status !== 0 || text === "") {
-    throw new Error(
-      `place: git rev-parse HEAD in ${repoRoot} exited ${String(run.status)}, so this run ` +
-        "cannot record which pipeline commit produced it. run-dir.ts refuses a blank " +
-        "pipelineCommit for the reason it refuses a blank builtCommit: a provenance claim that " +
-        "says nothing. It is not defaulted.",
-    )
-  }
-  return text
-}
-
-/** `A_occ` off the candidate's own tuple, with the tuple's shape checked rather than assumed. */
-function occupiedAreaOf(result: RunResult): number {
-  const best = result.best
-  const expected = [best.score.cuts, best.score.wires, best.score.solder]
-  const leading = best.ranking.slice(0, expected.length)
-  if (best.ranking.length !== RANKING_POSITIONS || leading.join(",") !== expected.join(",")) {
-    refuse(
-      "place-ranking-shape",
-      `this candidate's ranking tuple is [${best.ranking.join(", ")}] against a score of ` +
-        `C = ${best.score.cuts}, W = ${best.score.wires}, S = ${best.score.solder}`,
-    )
-  }
-  const area = best.ranking[A_OCC_POSITION]
-  if (area === undefined) {
-    refuse("place-ranking-shape", `position ${A_OCC_POSITION} of the ranking tuple is absent`)
-  }
-  return area
 }
 
 /**
@@ -300,13 +265,19 @@ export async function place(
   // figure below is already settled by the time it is handed over. The seam is
   // running versus recording.
   const manifest = manifestFor({
-    result,
-    prepared,
+    best: result.best,
+    restartBoundaries: result.restartBoundaries,
+    evaluations: result.climbs.reduce((total, climb) => total + climb.evaluations, 0),
+    netlistFile: netlistPath,
     rules: input.rules,
     arm: input.arm,
-    rule,
+    // A `StoppingRule` IS A `Termination` AND THIS PRODUCER ALWAYS HAS ONE: it
+    // searched, and `refuse("place-no-stop", ...)` above has already refused a
+    // run `evaluateStop` returned `null` for. `./termination.ts`'s no-search
+    // member is the other producer's, and naming the field `termination` here
+    // is what makes which of the two this is legible in the record.
+    termination: rule,
     outcome,
-    occupiedArea: occupiedAreaOf(result),
     stamp,
     startedAt,
     invocations,
