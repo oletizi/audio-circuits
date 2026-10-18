@@ -145,6 +145,52 @@ export const SELECTORS: readonly SelectorTerminals[] = [
   },
 ]
 
+/** Refuses if two `SELECTORS` entries share a `gang` but declare different
+ * `positions` lists. This is the check `SelectorTerminals.gang`'s doc comment
+ * claims exists - "poles sharing a gang... must always be at the same
+ * position. The resolver enforces it" - and until now nothing did: the two
+ * checks behind that sentence (`checkGangs` and `validateControlState` in
+ * `lib/model/control-state.ts`) only ever look at the SELECTED position in one
+ * `ControlState`, never at the declared position LISTS, so one pole's list
+ * can be edited into disagreement with its gang-mate's and nothing notices
+ * until a simulation happens to select a position the edited pole dropped.
+ *
+ * Order matters, not just membership: position N in one pole's list and
+ * position N in the other's land on the same detent of the one physical
+ * shaft (throw pin N on each pole's `throwsConnector`), so two lists holding
+ * the same six names in a different order are still a transcription error,
+ * not a harmless reordering.
+ *
+ * Deliberately narrow: it can only see gang membership through `SELECTORS`
+ * itself. `SW_HI_BOOST` carries `gang: HI_FREQUENCY_GANG`
+ * (`from-netlist.ts`'s `buildHiBoostSelector`) but has no `SELECTORS` entry,
+ * so this check cannot compare it against `SW_HI_CUT` - see G39 in
+ * `docs/known-gaps.md`, which this check narrows but does not settle.
+ */
+export function assertGangsDeclareSamePositions(selectors: readonly SelectorTerminals[]): void {
+  const firstOfGang = new Map<string, SelectorTerminals>()
+  for (const selector of selectors) {
+    const gang = selector.gang
+    if (gang === undefined) continue
+    const first = firstOfGang.get(gang)
+    if (first === undefined) {
+      firstOfGang.set(gang, selector)
+      continue
+    }
+    const same = first.positions.length === selector.positions.length
+      && first.positions.every((position, index) => position === selector.positions[index])
+    if (!same) {
+      throw new Error(
+        `Gang "${gang}" poles declare different positions: `
+          + `${first.ref}=[${first.positions.join(", ")}] vs `
+          + `${selector.ref}=[${selector.positions.join(", ")}]`,
+      )
+    }
+  }
+}
+
+assertGangsDeclareSamePositions(SELECTORS)
+
 /** The hi boost rotary is a TWO-POLE switch on one shaft, confirmed by the
  * builder. Both poles move together, so a capacitor and its matching inductor
  * tap are always selected as a pair:

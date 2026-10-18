@@ -326,6 +326,118 @@ no builder's name to map to.
   j5_p5`, `j5_p5 | j5_p6` on `pultec-low-cut`. Left exactly as it is: the
   decision this entry asks for is the owner's and he has not made it.
 
+### G39 - `SW_HI_BOOST` carries a gang no check can see, so its agreement with its gang-mate is still unverified
+
+**NARROWED 2026-10-18 - ONE HALF IS NOW A FIX, DONE; THE OTHER HALF IS AN OWNER
+DECISION AND MOVES THIS ENTRY HERE.** The title used to be *"nothing checks
+that two poles of one gang declare the same positions, although every reader
+assumes they do."* That is no longer true for every gang `SELECTORS` can see
+into - it is still true for the one gang it cannot.
+
+**What is now checked.** `assertGangsDeclareSamePositions`
+(`circuits/pultec/electrical/controls.ts`, called on `SELECTORS` at module
+load, right after `SELECTORS` is declared) groups `SELECTORS` entries by
+`gang` and refuses when two members of one gang declare different `positions`
+lists - length or order, since position *N* on one pole and position *N* on
+the other land on the same detent of the one physical shaft. The refusal names
+the gang and both refs, each paired with its full list, e.g.:
+
+```
+Gang "test_gang" poles declare different positions: SW_FIXTURE_A=[20Hz, 30Hz, 60Hz] vs SW_FIXTURE_B=[20Hz, 99Hz, 60Hz]
+```
+
+`tests/pultec/gang-positions.test.ts` drives two fixture poles sharing a gang
+with different `positions` and asserts the refusal names the gang, both refs
+and both lists; a companion test asserts the check accepts the committed
+`SELECTORS` as-is (`SW_LO_CUT` and `SW_LO_BOOST` genuinely agree). Perturbing
+the comparison to a check that only compares list LENGTH - a mistake a
+well-meaning author could make, since the fixture's two divergent lists are
+both length 3 - turned the two refusal-driving tests red by name
+(`two poles of one gang declaring different positions are refused`,
+`the refusal names the gang, both refs and both lists`); restoring the
+content comparison turned them green again. `lib/model/control-state.ts`'s
+`checkGangs` and `validateControlState` are unchanged and still only compare
+the SELECTED position in one `ControlState`, as the rest of this entry below
+still describes.
+
+**What is still open, and why it stays open.** `SW_HI_BOOST` carries
+`gang: HI_FREQUENCY_GANG` (`buildHiBoostSelector`,
+`circuits/pultec/electrical/from-netlist.ts:237`) but has no `SELECTORS`
+entry - it is built separately, straight from `HI_BOOST_POSITIONS` - so
+`assertGangsDeclareSamePositions` **cannot see it** and cannot compare it
+against `SW_HI_CUT`, its declared gang-mate. The hi-frequency gang's two poles
+could disagree today and nothing checks it: this is the exact gap the old
+title described, just now narrowed to the one gang the new check cannot
+reach. Making it reachable means deciding whether `SW_HI_BOOST` joins
+`SELECTORS` - a change to what `SELECTORS` is for and how `buildHiBoostSelector`
+derives its contacts, not a check an agent can add unilaterally. That decision
+is the owner's, which is why this entry now lives in this section.
+
+**The printed guide is still immune by construction**, for the same reason as
+before: `tools/guide/pad-label.ts` labels a pad from the component's own
+`contacts` through `positionsByPin`, so no derivation anywhere in the label
+path reads one pole while printing the other.
+
+- **Found** `2026-10-17-a-pads-wire-says-what-it-is`, Task 2 - the dispatch
+  asked whether a gang's poles always agree, so it was checked rather than
+  assumed. Narrowed `2026-10-18-the-hygiene-batch`, Task 4.
+- **Evidence** `2026-10-17`: three `resolveNetwork` runs over a mutated
+  `THREE_BAND_REFERENCE`, method and transcript kept below this point in the
+  version history. `2026-10-18`: `bun test tests/pultec/gang-positions.test.ts`
+  green (5 pass) with `assertGangsDeclareSamePositions` in place; the two
+  refusal-driving tests red by name under the length-only perturbation
+  described above; `bun run typecheck` clean; `bun test` 2450 pass / 0 fail
+  across 226 files (was 2445/225); all five Pultec boards still pass
+  `make -C boards/<board> check`; the five boards' `.vrt` and `wiring.md`
+  files unchanged by `shasum` before and after.
+- **Verified** yes - run, not inferred, both dates.
+- **Why it is open** `SW_HI_BOOST` joining `SELECTORS` is a decision about what
+  `SELECTORS` enumerates and how `buildHiBoostSelector` would then derive its
+  contacts, and an agent producing the check may not also author the
+  criterion that would make the check complete.
+- **What would settle it** the owner decides whether `SW_HI_BOOST` joins
+  `SELECTORS` (and if so, how `buildHiBoostSelector`'s derivation of its
+  contacts from `HI_BOOST_POSITIONS` changes to match). Once it does, the gang
+  it already declares becomes enumerable and `assertGangsDeclareSamePositions`
+  covers it with no further change to the check itself.
+
+Below is the measurement that found the gap in the first place, kept for the
+method and the transcript rather than restated:
+
+`SelectorTerminals.gang` (`circuits/pultec/electrical/controls.ts:42`) says
+poles sharing a gang *"must always be at the same position. The resolver
+enforces it."* Two checks in `lib/model/control-state.ts` stood behind that
+sentence and **neither compared the position LISTS the poles declare**:
+
+- `checkGangs` (`:244-256`) compares the SELECTED position of each pole in a
+  `ControlState` and refuses *"Ganged switches disagree"*;
+- `validateControlState` (`:207-241`) refuses *"Unknown switch position"*
+  (the test at `:225`, the throw at `:226`) when a selected position is not in
+  that one switch's own `positions`.
+
+So `SW_LO_BOOST.positions` and `SW_LO_CUT.positions` were two independently
+transcribed six-entry lists - the Cboost and the Ccut column of
+`P3bandDoc.pdf` p4 - that happened to be identical, and an edit to one of them
+was caught only if a simulation happened to select a position the edited pole
+no longer declared. `assertGangsDeclareSamePositions` now closes this for
+every gang `SELECTORS` can see.
+
+**Measured, by a check that could have failed.** `SW_LO_CUT`'s positions were
+rewritten in `THREE_BAND_REFERENCE` and the network resolved at a state the
+committed model is validated at (`loFrequency: "60Hz"`), three times:
+
+```
+baseline, both poles as committed: RESOLVED, no refusal
+A: SW_LO_CUT declares a DIFFERENT six-entry list that still contains the selected 60Hz: RESOLVED, no refusal
+B: SW_LO_CUT no longer declares the selected 60Hz at all: REFUSED - Unknown switch position: SW_LO_CUT=60Hz
+```
+
+**A was the gap**: one pole of the low gang reading `1Hz, 2Hz, 60Hz, 4Hz, 5Hz,
+6Hz` against the other's `20Hz ... 200Hz` resolved silently. B shows which
+guard did fire and that it was `validateControlState`'s per-switch check, not
+the gang one - and only for the one position being simulated. `A` is now
+refused by `assertGangsDeclareSamePositions` before a simulation ever runs.
+
 ---
 
 Open: a fix would settle these
@@ -565,66 +677,6 @@ committed build sheet, with no error to catch it.
   wants `padTable` to refuse the way `padLabelOf` does now, not a dash,
   with a test driving a second pole the way `tests/guide/pad-label-second-
   pole.test.ts` does.
-
-### G39 - nothing checks that two poles of one gang declare the same positions, although every reader assumes they do
-
-`SelectorTerminals.gang` (`circuits/pultec/electrical/controls.ts:42`) says poles
-sharing a gang *"must always be at the same position. The resolver enforces
-it."* Two checks in `lib/model/control-state.ts` stand behind that sentence and
-**neither compares the position LISTS the poles declare**:
-
-- `checkGangs` (`:244-256`) compares the SELECTED position of each pole in a
-  `ControlState` and refuses *"Ganged switches disagree"*;
-- `validateControlState` (`:207-241`) refuses *"Unknown switch position"*
-  (the test at `:225`, the throw at `:226`) when a selected position is not in
-  that one switch's own `positions`.
-
-So `SW_LO_BOOST.positions` and `SW_LO_CUT.positions` are two independently
-transcribed six-entry lists - the Cboost and the Ccut column of
-`P3bandDoc.pdf` p4 - that happen to be identical, and an edit to one of them is
-caught only if a simulation happens to select a position the edited pole no
-longer declares.
-
-**Measured, by a check that could have failed.** `SW_LO_CUT`'s positions were
-rewritten in `THREE_BAND_REFERENCE` and the network resolved at a state the
-committed model is validated at (`loFrequency: "60Hz"`), three times:
-
-```
-baseline, both poles as committed: RESOLVED, no refusal
-A: SW_LO_CUT declares a DIFFERENT six-entry list that still contains the selected 60Hz: RESOLVED, no refusal
-B: SW_LO_CUT no longer declares the selected 60Hz at all: REFUSED - Unknown switch position: SW_LO_CUT=60Hz
-```
-
-**A is the gap**: one pole of the low gang reading `1Hz, 2Hz, 60Hz, 4Hz, 5Hz,
-6Hz` against the other's `20Hz ... 200Hz` resolves silently. B shows which guard
-does fire and that it is `validateControlState`'s per-switch check, not the gang
-one - and only for the one position being simulated.
-
-It is also not enumerable as it stands: `SW_HI_BOOST` carries
-`gang: HI_FREQUENCY_GANG` (`buildHiBoostSelector`,
-`circuits/pultec/electrical/from-netlist.ts:237`) and has no `SELECTORS` entry,
-so *"the members of the hi-frequency gang"* cannot be answered from `SELECTORS`
-alone.
-
-**The printed guide is immune by construction**, which is why this is a model
-entry and not a label one: `tools/guide/pad-label.ts` labels a pad from the
-component's own `contacts` through `positionsByPin`, so no derivation anywhere
-in the label path reads one pole while printing the other.
-
-- **Found** `2026-10-17-a-pads-wire-says-what-it-is`, Task 2 - the dispatch asked
-  whether a gang's poles always agree, so it was checked rather than assumed.
-- **Evidence** the three runs above, method stated: mutate one pole's
-  `positions` in `THREE_BAND_REFERENCE`, call `resolveNetwork` with
-  `controlState(1, 1, 1, { loFrequency: "60Hz", hiFrequency: "3kHz", mid:
-  "200Hz" })`, and report whether it refuses. Plus `checkGangs` and
-  `validateControlState` read at the lines cited.
-- **Verified** yes - run, not inferred.
-- **Why it is open** no artifact is wrong because of it today, and the fix is a
-  check in the control model rather than in the guide, which is not this plan's
-  file.
-- **What would settle it** a check that every pole of a gang declares the same
-  `positions`, with a test driving two that do not - and a decision on whether
-  `SW_HI_BOOST` joins `SELECTORS` so a gang's membership is enumerable.
 
 ### G29 - the constructive seed cannot join a net whose run on a strip is boxed in, on every seed of the reviewed restart schedule
 
