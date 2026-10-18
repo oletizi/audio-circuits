@@ -501,9 +501,19 @@ was behind it.
 - **Found** `2026-10-18`, Task 2 of the hygiene batch, while rendering
   `pt2399-core` to look at the ceramic capacitors it had just given a shape.
   **The task flagged it and correctly did not fix it** - it was out of scope -
-  but did not record it, so the register's own rule was broken by the task
-  immediately after that rule was made repo-wide. The controller is recording it
-  rather than spending a round on it.
+  but recorded it only in its own gitignored report, which this file's preamble
+  says does not count. The controller recorded it here rather than spending a
+  round on it.
+
+  **CORRECTED, and the correction is the point.** This entry first said the
+  rule "was broken by the task immediately after that rule was made repo-wide".
+  **That was wrong and the Task 2 reviewer checked it rather than accepting
+  it:** the rule landed in `645f57f` the previous evening, and three intervening
+  commits followed it correctly - including Task 1, which deleted four entries
+  as it settled them. The rule had already survived several compliant changes.
+  The miss is real; the framing made it sound like the rule failed its first
+  test, which it did not. **An entry in this file is held to the same standard
+  as the evidence it cites, including when the author is the controller.**
 - **Evidence** the empty grep above; `DIP16` in
   `tests/fixtures/stripboard/pt2399-core.dump`; the task rendered that fixture
   only by stripping U1's `PART`/`PIN` lines, which is how it saw the ceramics
