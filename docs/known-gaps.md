@@ -312,30 +312,6 @@ his to rule on. This entry is that record.
   again unprompted.** If he rules later, that ruling supersedes this note and
   the entry goes.
 
-### G42 - a rotary's detents are not in physical order on the strip, and the owner declined to constrain it
-
-On `pultec-low-boost`, `SW_LO_BOOST.6` (150Hz) sits at hole 3,26 while `.7`
-(200Hz) sits at 3,23 - the last two taps run backwards along the strip.
-Electrically irrelevant; the labels are right either way, because nothing in the
-label path reads a coordinate.
-
-It is recorded because it is the kind of thing that invites a crossed wire: a
-builder working along a six-position rotary meets one pair out of order.
-
-- **Found** `2026-10-17`, reading Task 2's ten labels against the frozen dump.
-- **Evidence** `tests/fixtures/stripboard/pultec-low-boost-frozen.dump:16-17`.
-- **Verified** yes.
-- **SETTLED 2026-10-17: the owner was asked and declined** - *"i don't have a
-  strong opinion about either"* - having been offered a placement constraint
-  that would keep a rotary's pads monotonic along its strip. **No constraint was
-  added**, which is the cheaper answer: a monotonic-pads rule would bind the
-  placer on every board to prevent a confusion nobody has yet reported making.
-- **What would settle it** a build that goes wrong here, which would be evidence
-  rather than anticipation. Until then this is a note for whoever reads a guide,
-  not a defect.
-
-### G39 - nothing checks that two poles of one gang declare the same positions, although every reader assumes they do
-
 ### G41 - a rotary's pole is recognised by the literal string `common`, and a second pole would be labelled with a frequency
 
 `tools/guide/pad-label.ts:95-100` treats a pad as the pole when its terminal
@@ -627,6 +603,13 @@ of this.
   is relying on debris - but the real answer is G30: give the producer a
   committed verb, and the driver becomes source that is typechecked because it
   is part of the repository.
+- **AND THE COST IS OPEN-ENDED, NOT THE TWENTY-FIVE FILES FOUND TODAY.** The
+  Task 3 reviewer caught this entry reading as though the problem were a fixed
+  set of drivers. It is not: **every future file placed under `build/` also
+  loses the net**, silently, because it is excluded by rule rather than by name.
+  Same shape as the fault that triggered this, smaller blast radius only because
+  it is now deliberate. Anyone adding a durable script under `build/` is adding
+  it outside the gate, and the answer is to put it in the repository instead.
 
 ### G30 - `materializeRun` has no CLI verb, so the only producer of an adoptable run directory is a scratch file
 
