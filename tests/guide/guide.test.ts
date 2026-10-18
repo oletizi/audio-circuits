@@ -3,11 +3,14 @@ import { net } from "../../lib/model/types.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { buildChecklist } from "../../tools/guide/checklist.ts"
 import { buildGuideHtml, type GuideInput, type GuideSchematic } from "../../tools/guide/guide.ts"
+import { nodeMembers } from "../../tools/guide/node-members.ts"
 import { offBoardLabels } from "../../tools/guide/off-board.ts"
 import type { PowerUpChecks } from "../../tools/guide/power-up.ts"
 import { COMPONENTS, DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
 
 const DUMP = parseBoardDump(DUMP_TEXT)
+/** The fixture's NODE members, read off its own text, as `packet.ts` reads them. */
+const NODE_MEMBERS = nodeMembers(DUMP_TEXT)
 
 const PRINTED_SCHEMATIC: GuideSchematic = { kind: "printed", path: "circuits/test.kicad_sch" }
 
@@ -29,7 +32,7 @@ function guideHtml(
     layoutPath: "boards/test-board/test.vrt",
     schematic,
     images: { designators: "<svg>designators</svg>", values: "<svg>values</svg>", copper: "<svg>copper</svg>" },
-    checklist: buildChecklist(DUMP, circuit, edges, [], new Map()),
+    checklist: buildChecklist(DUMP, circuit, edges, [], new Map(), NODE_MEMBERS),
     powerUpChecks: circuit.powerUpChecks,
   }
   return buildGuideHtml(input)
@@ -90,8 +93,8 @@ test("parts give value and leads; wires, bridges and cuts give their holes; cuts
     "H2 DRIVE ccw, I2 DRIVE wiper, J2 DRIVE cw", "one mounting",
   ])
   expect(rows[8]).toEqual(["B1", "D9 to E9"])
-  expect(rows[9]).toEqual(["1", "C5 and C6", "BASE | GND"])
-  expect(rows[10]).toEqual(["2", "F8 and F9", "BASE | GND"])
+  expect(rows[9]).toEqual(["1", "C5 and C6", "C1.1, Q1.2, R1.1 | J1.2, R1.2, RV2.1"])
+  expect(rows[10]).toEqual(["2", "F8 and F9", "C1.1, Q1.2, R1.1 | J1.2, R1.2, RV2.1"])
 })
 
 test("a resistor at a span its body fits between is not told to stand on end", () => {
@@ -114,7 +117,7 @@ test("a resistor compressed below its flat floor is told to STAND ON END", () =>
   // is one lead position.
   const dump = parseBoardDump(DUMP_TEXT.replace("PIN R1 2 AT 6,3", "PIN R1 2 AT 4,3"))
   const circuit = fixtureCircuit()
-  const resistors = buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map()).find(
+  const resistors = buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map(), NODE_MEMBERS).find(
     (section) => section.title === "Resistors and trim-pots",
   )
   expect(resistors?.columns).toEqual(["Part", "Value", "Leads", "Mounting"])
@@ -138,7 +141,7 @@ test("a footprint with no recorded span says so in the cell rather than leaving 
       units: [{ name: "MAIN", pins: { a: net("BASE"), b: net("GND") } }],
     },
   ])
-  const resistors = buildChecklist(DUMP, circuit, offBoardLabels(circuit), [], new Map()).find(
+  const resistors = buildChecklist(DUMP, circuit, offBoardLabels(circuit), [], new Map(), NODE_MEMBERS).find(
     (section) => section.title === "Resistors and trim-pots",
   )
   expect(resistors?.rows.find((row) => row[0] === "R1")?.[3])
@@ -149,7 +152,7 @@ test("a header's Value names what goes in its holes, its pin count read from the
   // Three PIN lines for J1 where its type still says SIP2: the count comes from PIN, not the type.
   const dump = parseBoardDump(DUMP_TEXT.replace("PIN J1 2 AT 1,1", "PIN J1 2 AT 1,1\nPIN J1 3 AT 2,1"))
   const circuit = fixtureCircuit()
-  const junctions = buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map()).find((s) => s.title === "Wire-to-board junctions")
+  const junctions = buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map(), NODE_MEMBERS).find((s) => s.title === "Wire-to-board junctions")
   expect(junctions?.rows.map((row) => row[1])).toEqual(["3-pin header", "3-pin header (25K pot, off-board)"])
 })
 
@@ -222,18 +225,30 @@ test("a part that fits no checklist step is refused, naming it", () => {
       : component,
   )
   const circuit = fixtureCircuit(undefined, withDiode)
-  expect(() => buildChecklist(DUMP, circuit, offBoardLabels(circuit), [], new Map())).toThrow(/part Q1 .*kind diode/)
+  expect(() => buildChecklist(DUMP, circuit, offBoardLabels(circuit), [], new Map(), NODE_MEMBERS)).toThrow(
+    /part Q1 .*kind diode/,
+  )
 })
 
-test("a cut on a node with no stored net name is refused rather than printed", () => {
-  const dump = parseBoardDump(DUMP_TEXT.replace("NODE 2 NAME GND", "NODE 2 NAME -"))
+test("a cut whose node has no NODE line is refused rather than printed", () => {
+  // THE "stores no net name" REFUSAL THIS TEST USED TO ASSERT IS REMOVED ON
+  // PURPOSE, not a lost guard: the Separates column no longer reads a NODE
+  // line's NAME field at all (it names what a cut separates, not the net's
+  // internal name), so a node named "-" with real members is now perfectly
+  // printable. What still must refuse is a cut whose node has NO NODE LINE -
+  // so this test removes the line entirely, rather than only renaming it.
+  const dumpText = DUMP_TEXT.replace("NODE 2 NAME GND J1.2 R1.2 RV2.1\n", "")
+  const dump = parseBoardDump(dumpText)
   const circuit = fixtureCircuit()
-  expect(() => buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map())).toThrow(/stores no net name/)
+  const members = nodeMembers(dumpText)
+  expect(() => buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map(), members)).toThrow(
+    /node 2/,
+  )
 })
 
 test("a transistor or pot whose pin has no PIN_NUMBERS name is refused, not printed bare", () => {
   const circuit = { ...fixtureCircuit(), pinNumbers: { resistor: { a: "1", b: "2" } } }
-  expect(() => buildChecklist(DUMP, circuit, [], [], new Map())).toThrow(
+  expect(() => buildChecklist(DUMP, circuit, [], [], new Map(), NODE_MEMBERS)).toThrow(
     /PIN_NUMBERS has no bjt entry naming pin 1/,
   )
 })
