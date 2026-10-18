@@ -23,6 +23,7 @@ const NO_SCHEMATIC: GuideSchematic = {
 function guideHtml(
   powerUpChecks: PowerUpChecks | undefined = undefined,
   schematic: GuideSchematic = PRINTED_SCHEMATIC,
+  wiringPath: string | undefined = undefined,
 ): string {
   const circuit = fixtureCircuit(powerUpChecks)
   const edges = offBoardLabels(circuit)
@@ -34,6 +35,7 @@ function guideHtml(
     images: { designators: "<svg>designators</svg>", values: "<svg>values</svg>", copper: "<svg>copper</svg>" },
     checklist: buildChecklist(DUMP, circuit, edges, [], new Map(), NODE_MEMBERS),
     powerUpChecks: circuit.powerUpChecks,
+    wiringPath,
   }
   return buildGuideHtml(input)
 }
@@ -198,6 +200,18 @@ test("a packet that does print a schematic carries no no-schematic notice", () =
   expect(html).not.toContain("No schematic in this packet")
   expect(html).not.toContain('class="notice"')
   expect(html).toContain("<dt>Schematic</dt><dd>circuits/test.kicad_sch</dd>")
+})
+
+test("a board with a wiring.md names it on page one, saying this packet does not replace it", () => {
+  const html = guideHtml(undefined, PRINTED_SCHEMATIC, "boards/test-board/wiring.md")
+  expect(html).toContain("<dt>Wiring guide</dt>")
+  expect(html).toContain("boards/test-board/wiring.md")
+  expect(html).toContain("this packet does not replace it")
+})
+
+test("a board with no wiring.md gets no Wiring guide row at all", () => {
+  const html = guideHtml()
+  expect(html).not.toContain("<dt>Wiring guide</dt>")
 })
 
 test("a board that exports no power-up checks gets a section saying so", () => {

@@ -43,6 +43,7 @@ import path from "node:path"
 import { boardName, type PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { runnerFor, type VerbRun } from "../perfboard/verbs.ts"
+import { wiringPath as boardWiringPath } from "../perfboard/wiring-sync.ts"
 import type { Env } from "../perfboard/check.ts"
 import { buildChecklist } from "./checklist.ts"
 import { assertLayoutMatchesCircuit, componentAt, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
@@ -221,6 +222,14 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
           circuitPath: path.relative(repoRoot, declaration.circuitPath),
         }
       : { kind: "printed", path: path.relative(repoRoot, schPath) }
+  // DETERMINED BY LOOKING, NOT BY `circuit.scaffold`: a board can carry a
+  // `wiring.md` for reasons other than stand-in groups (off-board terminals,
+  // a terminal block), and the two have in fact tracked each other only by
+  // coincidence of what exists today - see `tools/perfboard/wiring-sync.ts`'s
+  // own "no panel parts, no guide" rule. A board with none on disk gets no
+  // row rather than a dangling name.
+  const wiringFile = boardWiringPath(declaration)
+  const wiringPath = fs.existsSync(wiringFile) ? path.relative(repoRoot, wiringFile) : undefined
   const html = buildGuideHtml({
     boardName: name,
     generated: isoDate((deps.now ?? (() => new Date()))()),
@@ -229,6 +238,7 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
     images,
     checklist,
     powerUpChecks: circuit.powerUpChecks,
+    wiringPath,
   })
 
   const files = deps.fs ?? REAL_FS

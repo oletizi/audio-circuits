@@ -33,7 +33,7 @@ const DESIGNATORS: Readonly<Record<string, string>> = { pad_only_pot: "RV_PAD_ON
 const PIN_NUMBERS = { potentiometer: { ccw: "1", wiper: "2", cw: "3" } }
 
 function padOnlyCircuit() {
-  return boardCircuitFrom({ components: [PAD_ONLY_POT], ports: {} }, DESIGNATORS, PIN_NUMBERS, undefined)
+  return boardCircuitFrom({ components: [PAD_ONLY_POT], ports: {} }, DESIGNATORS, PIN_NUMBERS, undefined, undefined)
 }
 
 /** The three `PadTerminal`s a real `PAD ... FROM RV_PAD_ONLY.<pin>` set reads as, for `ref`. */
@@ -76,7 +76,7 @@ test("the corrected remedy names both line kinds it checked, and drops the wrong
 
 test("a PAD naming a ref the circuit does not have is refused as on the board but not in the circuit", () => {
   const dump = parseBoardDump(EMPTY_DUMP_TEXT)
-  const circuit = boardCircuitFrom({ components: [], ports: {} }, {}, {}, undefined)
+  const circuit = boardCircuitFrom({ components: [], ports: {} }, {}, {}, undefined, undefined)
   expect(() => assertLayoutMatchesCircuit(dump, circuit, padTerminalsFor("RV_PAD_ONLY"))).toThrow(
     /on the board but not in the circuit: RV_PAD_ONLY/,
   )

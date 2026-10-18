@@ -4,12 +4,15 @@
  *
  * The generic indexing (`byRef`, `ports`, `pinNumbers`) lives in
  * `tools/perfboard/board-circuit.ts`, which knows nothing about power-up
- * checks. The guide is the one consumer that cares about them, so it augments
- * the generic `BoardCircuit` with its own `powerUpChecks`, obtained here by
- * reading the module's `declaredPowerUpChecks()` itself.
+ * checks or stand-in groups. The guide is the one consumer that cares about
+ * them, so it augments the generic `BoardCircuit` with its own
+ * `powerUpChecks` and `scaffold`, each obtained here by reading the module's
+ * own export directly - `declaredPowerUpChecks()` for the former,
+ * `declaredScaffold()` (below) for the latter, following the same shape.
  */
 import type { Component, Network } from "../../lib/model/types.ts"
 import type { PinNumbers } from "../../lib/kicad/from-network.ts"
+import { asScaffoldDoc, type ScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 import {
   boardCircuitFrom as perfboardBoardCircuitFrom,
   isPanelPot,
@@ -27,16 +30,41 @@ export { isPanelPot }
 export interface BoardCircuit extends PerfboardBoardCircuit {
   /** The module's power-up table; `undefined` when it declares none. */
   readonly powerUpChecks: PowerUpChecks | undefined
+  /**
+   * The module's stand-in groups; `undefined` when it declares none.
+   *
+   * NOT defaulted to an empty `ScaffoldDoc`. An empty doc (`groups: []`)
+   * asserts "this board has no groups to populate"; `undefined` says "this
+   * board declares no SCAFFOLD at all" - true of `pt2399-core` and the
+   * transistor-preamp boards, which are not Pultec sections and have no
+   * absent neighbours to stand in for. Those are different claims, so the
+   * second is never collapsed into the first.
+   */
+  readonly scaffold: ScaffoldDoc | undefined
 }
 
-/** Index a network's components by designator, pairing it with its power-up checks. */
+/** Index a network's components by designator, pairing it with its power-up checks and scaffold doc. */
 export function boardCircuitFrom(
   network: Network,
   designators: Readonly<Record<string, string>>,
   pinNumbers: PinNumbers,
   powerUpChecks: PowerUpChecks | undefined,
+  scaffold: ScaffoldDoc | undefined,
 ): BoardCircuit {
-  return { ...perfboardBoardCircuitFrom(network, designators, pinNumbers), powerUpChecks }
+  return { ...perfboardBoardCircuitFrom(network, designators, pinNumbers), powerUpChecks, scaffold }
+}
+
+/**
+ * The board's stand-in groups, read directly off the module's `SCAFFOLD`
+ * export. `undefined` when it exports none; see the field comment on
+ * `BoardCircuit.scaffold` for why that is not defaulted to an empty doc.
+ * A malformed export is refused here, at load, naming `where` (the
+ * module's circuit path) - never silently reaching render.
+ */
+function declaredScaffold(module: Readonly<Record<string, unknown>>, where: string): ScaffoldDoc | undefined {
+  const exported = module["SCAFFOLD"]
+  if (exported === undefined) return undefined
+  return asScaffoldDoc(exported, where)
 }
 
 /** Load the declared circuit module (imported once) and read everything the guide needs from it. */
@@ -47,7 +75,11 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
     assertDesignators(module["DESIGNATORS"], declaration),
     assertPinNumbers(module["PIN_NUMBERS"], declaration),
   )
-  return { ...circuit, powerUpChecks: await declaredPowerUpChecks(module, declaration.circuitPath) }
+  return {
+    ...circuit,
+    powerUpChecks: await declaredPowerUpChecks(module, declaration.circuitPath),
+    scaffold: declaredScaffold(module, declaration.circuitPath),
+  }
 }
 
 /**

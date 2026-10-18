@@ -60,6 +60,13 @@ export interface GuideInput {
   readonly checklist: readonly ChecklistSection[]
   /** `undefined` when the circuit module declares no power-up checks. */
   readonly powerUpChecks: PowerUpChecks | undefined
+  /**
+   * The board's `wiring.md`, repository-relative - `undefined` when the
+   * board has no such file on disk. This packet does not replace that
+   * document; it only names it, on page one, so a reader holding this
+   * packet knows there is more to read before they wire anything.
+   */
+  readonly wiringPath: string | undefined
 }
 
 const STYLE = `
@@ -106,6 +113,20 @@ function schematicRow(schematic: GuideSchematic): string {
   return `<dt>Schematic</dt><dd>${escapeXml(text)}</dd>`
 }
 
+/**
+ * The one-line Wiring guide entry: only present when the board has a
+ * `wiring.md` on disk. It names the file and says plainly that this packet
+ * does not replace it, because the checklist and images here cover the
+ * board itself - not the off-board terminals, stand-in groups and builds
+ * `wiring.md` describes.
+ */
+function wiringRow(wiringPath: string): string {
+  return (
+    `<dt>Wiring guide</dt><dd>${escapeXml(wiringPath)} - this packet does not replace it, ` +
+    "read it alongside this one</dd>"
+  )
+}
+
 function header(input: GuideInput): string {
   return [
     `<h1>${escapeXml(input.boardName)} - build guide</h1>`,
@@ -113,6 +134,7 @@ function header(input: GuideInput): string {
     `<dt>Generated</dt><dd>${escapeXml(input.generated)}</dd>`,
     `<dt>Layout</dt><dd>${escapeXml(input.layoutPath)}</dd>`,
     schematicRow(input.schematic),
+    ...(input.wiringPath === undefined ? [] : [wiringRow(input.wiringPath)]),
     "</dl>",
   ].join("\n")
 }

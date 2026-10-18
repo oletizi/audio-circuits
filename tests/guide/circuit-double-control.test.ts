@@ -41,6 +41,7 @@ function bothCircuit() {
     { both_pot: "RV_BOTH" },
     { potentiometer: { ccw: "1", wiper: "2", cw: "3" } },
     undefined,
+    undefined,
   )
 }
 
