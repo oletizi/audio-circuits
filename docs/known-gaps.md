@@ -331,54 +331,50 @@ no builder's name to map to.
 Open: a fix would settle these
 ------------------------------
 
-### G44 - the packet calls the stacking junction a "5-pin header" twice, and on both low boards the field's two rows are nowhere near each other
+### G44 - the model has exactly one word for how a pin field is mated, so a field that takes bare wires is declared a purchase the owner has ruled out
 
-`circuits/pultec/physical/parts.ts` declares the junction as ONE pin field
-split across two `PinHeader_1x05_P2.54mm_Vertical` rows (`pinField:
-JUNCTION_FIELD`, `mating: "stacking"`), and the generated `wiring.md` says what
-that forces in the hand: *"The junction rows are ONE 2x05 pin field - fit a
-single stacking header, not 2 plain ones"*, and *"2 plain vertical 1x05 headers
-fit the same holes and leave nothing to stack onto, so they are the one thing
-not to order."*
+`PinField.mating` (`lib/model/types.ts:114`) is a union with **exactly one
+member**, `"stacking"`, and its own comment says it is *"exactly the matings
+this repository has words for."* So `JUNCTION_FIELD`
+(`circuits/pultec/physical/parts.ts:127`) declares `mating: "stacking"` because
+that is the only thing it can say, not because anyone decided the junction
+stacks.
 
-The printable packet says neither thing, and the layout could not hold a 2x05
-part anyway. In the **Wire-to-board junctions** table of both low boards each
-row prints with the value `5-pin header` - the part `wiring.md` names as the
-one not to order - and the word "stacking" does not occur anywhere in either
-`guide.html`. The holes the two rows occupy are not two rows of one field:
+`stackingWords` (`lib/board/part-text.ts:189`) then generates, into every
+board's `wiring.md`, *"fit a single stacking header, not 2 plain ones"* and
+*"2 plain vertical 1x05 headers ... are the one thing not to order"* - telling a
+builder to buy a part the owner does not use.
 
-| board | `junction_signals` | `junction_grounds` |
-| --- | --- | --- |
-| `pultec-low-boost` | D1, E1, F1, G1, H1 | O1, P1, Q1, R1, S1 |
-| `pultec-low-cut` | T3, U3, V3, W3, X3 | O1, P1, Q1, R1, S1 |
+**The owner, 2026-10-17, on being shown that claim:**
 
-On low-boost both rows sit in column 1 with six empty holes between them; on
-low-cut they are in different columns AND different rows. No 2x05 part,
-stacking or otherwise, fits either pair.
+> *"How did the 2x10 header sneak back into the conversation? We're not doing
+> headers here on veroboard. This is a LONG SETTLED ISSUE"*
 
-- **Found** 2026-10-17, this plan's Task 6, reading the printed packets.
-- **Evidence** the junction rows above, read off the regenerated
-  `boards/pultec-low-boost/guide/guide.html` and
-  `boards/pultec-low-cut/guide/guide.html`, and confirmed on the layout images;
-  `grep -c stacking` over both files returns 0; `boards/pultec-low-boost/
-  wiring.md` **Board terminals**; `JUNCTION_FIELD` at
-  `circuits/pultec/physical/parts.ts:338` and `:374`.
-- **Verified** yes - read on both printed packets and in both sources.
-- **Why it is open** it is two defects with one cause and neither was this
-  plan's subject: the packet does not print what `pinFieldNotes`
-  (`lib/board/part-text.ts:230`) already composes for `wiring.md`, and nothing
-  checks a declared field's rows against where a layout put them.
-  `lib/model/types.ts:86-96` says in as many words that the MODEL cannot see
-  the geometry - *"two 1x05 headers cannot be seen to be adjacent rows of one
-  2x05 field"* - but the LAYOUT can, and no gate reads it.
-- **What would settle it** a check that refuses a layout whose `pinField` rows
-  are not adjacent rows of one field, and the packet carrying `pinFieldNotes`'
-  paragraph beside the junction rows instead of `5-pin header`. The two adopted
-  low boards failing such a check is the reason to write it, not a reason to
-  widen it to admit them: **a stated directive outranks what the as-built
-  boards contain** (`CLAUDE.md`), and the directive here is the spec's *"The
-  junction is a stacking 2x05 bus"*.
+**WHAT THIS ENTRY REPLACES, and the mistake is worth keeping.** It first read
+*"the packet calls the stacking junction a 5-pin header, and on both low boards
+the field's two rows are nowhere near each other"* - escalating to a claim that
+a 2x05 part cannot be fitted to any of the five adopted boards and that they
+would need re-laying out. **That was wrong, and wrong in a specific way: an
+agent took generated prose as authority over a settled owner decision, then
+measured the boards against it.** The rows being far apart is not a defect,
+because nothing is meant to span them. The boards are fine.
 
+- **Found** `2026-10-17`, Task 6 of the pad-label plan, reading the printed
+  pages; **corrected the same day by the owner.**
+- **Evidence** the one-member union at `lib/model/types.ts:114`; the declaration
+  at `parts.ts:127`; the generated text at `part-text.ts:189-200`; four
+  occurrences of `5-pin header` and zero of `2x05` or `stacking` in
+  `boards/pultec-low-boost/guide/guide.html`.
+- **Verified** yes - the controller read the type, the declaration and the
+  generated output.
+- **Why it is open** the fix is a model change, and which way it goes is a
+  design decision: either `mating` gains a word for a field that takes bare
+  soldered leads, or the junction stops declaring a field at all. **No agent
+  picks between those**, and the guide text follows whichever is chosen.
+- **What would settle it** the owner says which, or rules that the junction
+  simply has no mating to declare. Until then the generated sheets carry an
+  instruction he has ruled against, which is a reason to fix it soon rather
+  than a reason for an agent to guess.
 ### G45 - the printable packet carries none of the conditionality the wiring sheet carries, and never mentions the wiring sheet
 
 A Pultec section board is not populated the same way twice: most of its parts
