@@ -519,28 +519,42 @@ was behind it.
   `pt2399-core` whole, without stripping a part, and look at it.
 
 
-### G41 - a rotary's pole is recognised by the literal string `common`, and a second pole would be labelled with a frequency
+### G50 - `padTable` in `lib/board/wiring.ts` still trusts `positionsByPin`'s collapsed value, so a second pole would print a frequency in the generated `wiring.md` even though the guide's own pad label now refuses it
 
-`tools/guide/pad-label.ts:95-100` treats a pad as the pole when its terminal
-name is exactly `common`. A multi-pole rotary whose second pole pin is named
-anything else falls through to `positionsByPin` and is labelled with whatever
-position closes onto it - **a frequency printed against a pole, which reads as
-an ordinary wiring instruction and is wrong in the quiet way.**
+G41 recorded that a multi-pole rotary's second pole, named anything other than
+the literal `common`, would be printed with a frequency rather than refused.
+Task 3 of the hygiene batch settled that for `tools/guide/pad-label.ts`: the
+pole is still recognised only by the one spelling, but a terminal is now
+labelled only when it closes at EXACTLY one position in `contacts`
+(`positionsClosingOnto`), and anything else - zero positions, or a second
+pole closing at a different position per detent - refuses by name.
 
-Not hypothetical forever: `symbolFor` (`circuits/pultec/physical/parts.ts:281-294`)
-already contemplates *"one common per pole"*.
+**That fix is local to `padLabelOf`.** `padTable` (`lib/board/wiring.ts:174-195`)
+builds the `Selects` column of every section's `wiring.md` from the same
+`positionsByPin` map directly - `selects[pin] ?? "—"` at line 192 - with no
+equivalent check. A second pole would not refuse there: it would print
+whichever position `positionsByPin`'s last-write-wins fold landed on, in the
+committed build sheet, with no error to catch it.
 
-- **Found** by the Task 2 re-reviewer.
-- **Evidence** the literal comparison at the line above; `padTable` in
-  `lib/board/wiring.ts` carries the same assumption.
-- **Verified** yes - the controller read both.
-- **Why it is open** it pre-dates this work in `padTable`, no committed board
-  has a multi-pole rotary landing as pads, and inventing a naming rule for a
-  pole that does not exist yet would be guessing at a part nobody has chosen.
-- **What would settle it** a rule for recognising a pole that does not rest on
-  one spelling, with a test driving a second pole - **or a refusal**, which is
-  the better answer while no such part exists: a pad whose terminal is neither
-  the pole nor a position should refuse rather than be labelled.
+- **Found** while deleting G41, checking what the deletion took with it -
+  G41's own "Evidence" named `padTable` as carrying the same assumption, and
+  Task 3 did not touch `lib/board/wiring.ts`.
+- **Evidence** `lib/board/wiring.ts:180` (`positionsByPin(component)`) and
+  `:192` (`selects[pin] ?? "—"`), unchanged by this task.
+- **Verified** yes - read directly; `wiring.ts` has no test driving a
+  multi-pole rotary, so this is a reading of the code rather than an observed
+  wrong table.
+- **Why it is open** out of Task 3's scope (`tools/guide/pad-label.ts` and its
+  test only), and no committed board has a multi-pole rotary landing as pads,
+  so no generated `wiring.md` is wrong today.
+- **What would settle it** the same question `padTable` already answers with
+  a dash for a pot (which has no positions at all): what a `Selects` cell
+  should say for a terminal `positionsByPin` cannot resolve to one position.
+  A dash reads as "nothing to select," which is true for a pot but would be
+  false and misleading for an unresolved rotary terminal - so this likely
+  wants `padTable` to refuse the way `padLabelOf` does now, not a dash,
+  with a test driving a second pole the way `tests/guide/pad-label-second-
+  pole.test.ts` does.
 
 ### G39 - nothing checks that two poles of one gang declare the same positions, although every reader assumes they do
 
