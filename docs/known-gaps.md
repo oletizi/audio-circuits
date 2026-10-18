@@ -10,9 +10,14 @@ file exists because that happened - findings accumulated in scratch across two
 plans and were reported to the owner in conversation and nowhere else.
 
 **This is a register, not a plan.** An entry states what is wrong, where, how it
-was established, and what would settle it. It does not promise a milestone. An
-entry leaves when it is fixed or when the owner rules it is not a defect, and in
-either case it is DELETED rather than marked closed - supersede means delete.
+was established, and what would settle it. It does not promise a milestone. A
+FIXED entry is DELETED rather than marked closed - supersede means delete. A
+DECLINED entry is NOT the same thing and does not leave the same way: the owner
+has ruled on it, but what it describes is still true of the artifact, so it
+moves to the "Declined" section below, with his words, rather than being
+deleted - `CLAUDE.md`: *"A question he declined is not a closed question, but
+nobody asks him again unprompted."* A reader of only this paragraph must not
+conclude that a declination is deleted too.
 
 **`G<n>` IN THIS FILE MEANS AN ENTRY IN THIS FILE, AND NOTHING ELSE.** `CRITERIA`
 numbers its own clauses with the same letter - `G2.5`, `G4` - and the two
@@ -238,94 +243,6 @@ the cut crosses in the same row.
   Whether the placement is acceptable is the owner's call and this reading does
   not make it.
 
-### G19 - the printed checklist calls ground `0`, which is the circuit's name and not a builder's
-
-Now that a materialised board carries the circuit's net names, the names reach
-a person. On `pultec-low-boost`'s checklist the ground net prints as **`0`**:
-the junction row for `junction_grounds` reads *"O1 0, P1 0, Q1 0, R1 0, S1 0"*
-and `junction_signals`' last terminal reads *"H1 0"*. `0` is the SPICE
-convention for the ground node and it IS the name the circuit's own model
-writes, so nothing invented it - but a build sheet that labels five wires `0`
-is asking a builder to read a simulator's vocabulary.
-
-`tools/guide/off-board.ts` already states the expectation it does not meet: its
-module comment says a connector pin *"carries its net name as the circuit
-writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
-
-- **Found** `2026-10-16-low-boost-to-adoption`, Task 4, reading the first
-  checklist that could be built from this pipeline.
-- **Evidence** the checklist's own junction rows, printed above; `NODE 13 NAME
-  0` in `--dump-board` of the committed `boards/pultec-low-boost/
-  pultec-low-boost.perfboard.vrt`; the module comment at
-  `tools/guide/off-board.ts:1-19`.
-- **Verified** yes - built the checklist and read it.
-- **Why it is open** it is **not new with Task 4 and not caused by it**: the
-  owner's hand-laid layout stores the same name, so its checklist has always
-  printed `0`. And what a printed artifact should call a net is an acceptance
-  criterion about that artifact, which the agent producing it may not author.
-- **What would settle it** the owner says whether the guide maps the circuit's
-  ground net to a builder's label (`GND`) or prints the circuit's name
-  unchanged. If it maps, the mapping belongs in the guide's labelling and never
-  in the board or the netlist - the fork is told the names by the netlist, and
-  renaming a net to suit a printout would make the model and the board disagree.
-- **STILL ON THE PAGE (2026-10-17, this plan's Task 6).** Verbatim from the
-  regenerated packets: low-boost's junction rows read *"junction_grounds |
-  5-pin header | O1 0, P1 0, Q1 0, R1 0, S1 0"* and *"junction_signals | 5-pin
-  header | D1 IN, E1 HI_BOOST_OUT, F1 LO_BOOST_IN, G1 OUT, H1 0"*, and the
-  layout images print `0` beside six of the board's left-hand edge pins.
-  `pultec-low-cut` prints the same. Left exactly as it is: the decision this
-  entry asks for is the owner's and he has not made it.
-
-### G36 - the Cuts table tells a builder which two ladder nets a cut separates, and those names mean nothing to anybody
-
-`buildChecklist`'s Cuts section prints a `Separates` column built from
-`dump.nodes`, so it prints the circuit's own net names. On the Pultec sections
-those names are the junction ladder's generated ones. Verbatim from the printed
-packets of 2026-10-17:
-
-| board | cut | Between | Separates |
-| --- | --- | --- | --- |
-| `pultec-low-boost` | 1 | C5 and C6 | `si_hi_boost_j20_p3 \| si_hi_cut_j12_p3` |
-| `pultec-low-boost` | 2 | K4 and K5 | `j10_p1 \| j10_p2` |
-| `pultec-low-cut` | 1 | D6 and D7 | `j5_p3 \| j5_p4` |
-
-A builder with a knife and a board has to cut between two named holes, which
-the `Between` column gives correctly. The `Separates` column is there to tell
-them what the cut is FOR, and `j10_p1 | j10_p2` tells them nothing - it is an
-internal index into a ladder, not a circuit node anybody can point at. It is
-not wrong; it is the right mechanism printing a vocabulary with no reader.
-
-**This is G19's cause showing up in a second column**, and it is listed
-separately because the remedy is not the same. G19 is one net (ground) with one
-obvious builder's name (`GND`); this is a whole family of generated names with
-no builder's name to map to.
-
-- **Found** `2026-10-17`, producing the printable packets for the two low
-  boards and reading them.
-- **Evidence** the table above, read off
-  `boards/pultec-low-boost/guide/guide.html` and
-  `boards/pultec-low-cut/guide/guide.html` printed to PDF; `netName` in
-  `tools/guide/checklist.ts`, which reads `dump.nodes` and refuses only when a
-  name is absent, never judging whether a name says anything.
-- **Verified** yes - read on the printed pages, both boards.
-- **Why it is open** what a build sheet should say a cut is for is an
-  acceptance criterion about the printed artifact, and the agent producing that
-  artifact may not author it. There is also a real choice underneath: the
-  column could name the nets (as now), name the PARTS the cut separates, or be
-  dropped - and dropping a column is not something to do while looking at one
-  board.
-- **What would settle it** the owner reads a Cuts table and says which of the
-  three the column should be. If it stays net names, the ladder nets need
-  names a person can use, which is a change in
-  `circuits/pultec/physical/board.ts` rather than in the guide.
-- **STILL ON THE PAGE (2026-10-17, this plan's Task 6).** Verbatim from the
-  regenerated packets - low-boost's Cuts table is four rows and low-cut's is
-  three, and every `Separates` cell is still a generated ladder name:
-  `si_hi_boost_j20_p3 | si_hi_cut_j12_p3`, `j10_p1 | j10_p2`, `j10_p2 |
-  j10_p3`, `j10_p3 | j10_p4` on `pultec-low-boost`; `j5_p3 | j5_p4`, `j5_p4 |
-  j5_p5`, `j5_p5 | j5_p6` on `pultec-low-cut`. Left exactly as it is: the
-  decision this entry asks for is the owner's and he has not made it.
-
 ### G39 - `SW_HI_BOOST` carries a gang no check can see, so its agreement with its gang-mate is still unverified
 
 **NARROWED 2026-10-18 - ONE HALF IS NOW A FIX, DONE; THE OTHER HALF IS AN OWNER
@@ -437,6 +354,83 @@ B: SW_LO_CUT no longer declares the selected 60Hz at all: REFUSED - Unknown swit
 guard did fire and that it was `validateControlState`'s per-switch check, not
 the gang one - and only for the one position being simulated. `A` is now
 refused by `assertGangsDeclareSamePositions` before a simulation ever runs.
+
+---
+
+Declined: the owner has ruled, and nobody asks again unprompted
+---------------------------------------------------------------
+
+An entry here is neither an open gap nor a deleted one. The owner has ruled on
+it, but what it describes is still true of the printed artifact - ground still
+prints `0`, two pages are still nearly empty - so the record stays, with his
+words, rather than being deleted: it exists so a later agent neither re-opens
+the question nor asks him again unprompted.
+
+### G19 - the printed checklist calls ground `0`, which is the circuit's name and not a builder's
+
+Now that a materialised board carries the circuit's net names, the names reach
+a person. On `pultec-low-boost`'s checklist the ground net prints as **`0`**:
+the junction row for `junction_grounds` reads *"O1 0, P1 0, Q1 0, R1 0, S1 0"*
+and `junction_signals`' last terminal reads *"H1 0"*. `0` is the SPICE
+convention for the ground node and it IS the name the circuit's own model
+writes, so nothing invented it - but a build sheet that labels five wires `0`
+is asking a builder to read a simulator's vocabulary.
+
+`tools/guide/off-board.ts` already states the expectation it does not meet: its
+module comment says a connector pin *"carries its net name as the circuit
+writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
+
+- **Found** `2026-10-16-low-boost-to-adoption`, Task 4, reading the first
+  checklist that could be built from this pipeline.
+- **Evidence** the checklist's own junction rows, printed above; `NODE 13 NAME
+  0` in `--dump-board` of the committed `boards/pultec-low-boost/
+  pultec-low-boost.perfboard.vrt`; the module comment at
+  `tools/guide/off-board.ts:1-19`.
+- **Verified** yes - built the checklist and read it.
+- **STILL ON THE PAGE (2026-10-17).** Verbatim from the regenerated packets:
+  low-boost's junction rows read *"junction_grounds | 5-pin header | O1 0, P1
+  0, Q1 0, R1 0, S1 0"* and *"junction_signals | 5-pin header | D1 IN, E1
+  HI_BOOST_OUT, F1 LO_BOOST_IN, G1 OUT, H1 0"*, and the layout images print `0`
+  beside six of the board's left-hand edge pins. `pultec-low-cut` prints the
+  same.
+- **Declined** - 2026-10-18. The owner was put four recommendations about the
+  printed build guide at once and accepted all four without commenting on
+  ground specifically, replying verbatim: *"your recommendations. I don't care
+  about the sparse pdfs. leave that alone."* The recommendation he was
+  accepting, verbatim: *"**2. The junction row prints ground as `0`.** It reads
+  `junction_grounds | 5-pin header | O1 0, P1 0, Q1 0, R1 0, S1 0`. `0` is the
+  SPICE convention and genuinely what the circuit model calls it; your hand
+  layout prints the same. If you don't care: I'd leave it. It's correct, it's
+  consistent with everything else, and "GND" would be the guide inventing a
+  vocabulary the model doesn't use."* The decision is by acceptance of that
+  recommendation, not by any sentence of his naming ground.
+
+### G48 - two of the printed guide's seven pages are nearly empty, because every image takes a page whether or not it fills one
+
+`boards/pultec-low-boost/guide/guide.pdf` is seven US Letter pages. Page 1
+carries the header and the no-schematic notice and is then blank for roughly
+its lower half. Page 7 carries one checklist row (`Cut 4`) and the one-line
+"this board declares no power-up checks" statement, and is otherwise blank.
+`pultec-low-cut` prints the same seven-page shape. So an operator prints seven
+sheets to get about five sheets of content.
+
+The cause is in `tools/guide/guide.ts`'s print CSS, not in the conversion: each
+layout figure is `page-break-inside: avoid` inside a `.page` that is
+`page-break-before: always`, and the checklist simply flows. That is a
+deliberate rule - an image split across a fold is unusable on a bench - and the
+blank space is its cost, not a bug in it.
+
+- **Found** the change that made `guide.pdf` part of the build system
+  (2026-10-17).
+- **Evidence** both PDFs generated by `make -C boards/<board> guide` and read
+  page by page; seven `/Type /Page` objects each, all `MediaBox [0 0 612 792]`.
+- **Verified** yes - read directly from the generated PDFs, not from the HTML.
+- **Declined** - 2026-10-18, in his own words - a direct instruction about this
+  item, verbatim: *"I don't care about the sparse pdfs. leave that alone."*
+  The recommendation he was accepting, verbatim: *"**4. Two of seven pages are
+  nearly empty**, because every layout figure takes a full page so no image is
+  ever split across a break. If you don't care: I'd leave it. Paper is cheap
+  and an image split across a page break at the bench is genuinely annoying."*
 
 ---
 
@@ -1904,35 +1898,6 @@ model rather than of the drawing.
   above survives the print at US Letter, unchanged. Nothing about the
   conversion caused it and nothing about the conversion would fix it - the
   measurements above are still the ones that matter.
-
-### G48 - two of the printed guide's seven pages are nearly empty, because every image takes a page whether or not it fills one
-
-`boards/pultec-low-boost/guide/guide.pdf` is seven US Letter pages. Page 1
-carries the header and the no-schematic notice and is then blank for roughly
-its lower half. Page 7 carries one checklist row (`Cut 4`) and the one-line
-"this board declares no power-up checks" statement, and is otherwise blank.
-`pultec-low-cut` prints the same seven-page shape. So an operator prints seven
-sheets to get about five sheets of content.
-
-The cause is in `tools/guide/guide.ts`'s print CSS, not in the conversion: each
-layout figure is `page-break-inside: avoid` inside a `.page` that is
-`page-break-before: always`, and the checklist simply flows. That is a
-deliberate rule - an image split across a fold is unusable on a bench - and the
-blank space is its cost, not a bug in it.
-
-- **Found** the change that made `guide.pdf` part of the build system
-  (2026-10-17).
-- **Evidence** both PDFs generated by `make -C boards/<board> guide` and read
-  page by page; seven `/Type /Page` objects each, all `MediaBox [0 0 612 792]`.
-- **Verified** yes - read directly from the generated PDFs, not from the HTML.
-- **Why it is open** whether a packet should spend a sheet on a half-empty
-  first page is a judgement about a printed document, and by this repository's
-  own rule the agent that produced the document does not get to author the
-  criterion it is judged by.
-- **What would settle it** the owner looks at a printed packet and says whether
-  the page count is worth the guarantee that no image is split - or names what
-  he wants instead (the notice sharing page one with the first image, the
-  checklist starting on the page the last image ends on, a smaller paper size).
 
 ### G15 - the frozen low-boost fixture and the physical model hold different parts
 
