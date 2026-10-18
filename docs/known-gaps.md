@@ -153,6 +153,19 @@ Both representations now exist and nothing chooses between them.
   reconciling edge labels, the checklist's junction rows and `valueLabel` with
   whichever is chosen - is unchanged and still open; Task 3 only moved where a
   pad's label comes from, not which representation a control uses.
+- **BOTH REPRESENTATIONS ARE STILL ON THE PRINTED PAGES (2026-10-17, this
+  plan's Task 6).** Read off the regenerated
+  `boards/pultec-low-boost/guide/guide.html` beside the board's committed
+  `boards/pultec-low-boost/wiring.md`. The packet's **Wire-to-board junctions**
+  table gives a pad-path control one row per landing pad, keyed by hole and
+  terminal name - `RV_LO_BOOST | landing pad | F7 LO BOOST wiper` - while
+  `wiring.md`'s **Panel parts** section gives the same pot a pad-ordinal table
+  keyed by net - `| 2 | wiper | - | lo_boost_in |`. A builder holding the two
+  documents is holding two vocabularies for one control, and neither document
+  points at the other. Task 5 made it an ERROR for one ref to carry both a
+  header PART and PAD lines, so a layout can no longer carry the two
+  representations at once; it does not say which one a panel control should BE,
+  which is what this gap asks.
 
 ### G2 - pad labels crowd the row they sit in
 
@@ -192,6 +205,38 @@ the cut crosses in the same row.
   every-fourth alignment strip. Usable, not comfortable - this gap is about
   the renderer's placement geometry, which Task 3 did not touch, so the owner
   call this gap asks for is unaffected by what the text now says.
+- **RE-JUDGED AGAINST THE NEW PRINTED TEXT RATHER THAN THE OLD (2026-10-17,
+  this plan's Task 6)**, by regenerating both packets (`make -C
+  boards/pultec-low-boost guide`, `make -C boards/pultec-low-cut guide`) and
+  reading the layout images at `rsvg-convert -z 3`, with crops at 2x on the
+  label-dense rows. **The labels got longer and length is not what crowds.**
+  Measured from the `<text>` runs of `layout-designators.svg` (font-size 8,
+  start-anchored, white halo, hole pitch 20): the ten pad labels span 2.1 to
+  3.5 hole pitches of their own row - `LO BOOST common` longest at ~3.5, `LO
+  CUT cw` shortest at ~2.1. The 13-character identity form they replaced
+  (`SW_LO_BOOST.1`) spans ~3.0, so the worst case grew by about half a hole.
+  PART labels on the same pages already span up to 7.9 hole pitches
+  (`SI_LOW_BOOST_RV_LO_BOOST.ccw-wiper`), so a pad label is not the longest
+  text on the drawing and was not before.
+- **What crowds is where a label is put, and that is unchanged.** On
+  `pultec-low-boost` row F carries three landing pads - F3 `common`, F7
+  `wiper`, F15 `cw` - and `LO BOOST common` starts at F4 and runs to F7, so it
+  prints across the F7 pad's ring, while `LO BOOST wiper`, which belongs to F7,
+  is drawn a row lower starting below F3. From the image alone the two labels
+  can be read off the wrong rings. On `pultec-low-cut`, `LO CUT 60Hz` (pad D3)
+  is drawn outside the left board outline two rows below its pad, and `LO CUT
+  100Hz`, `150Hz` and `200Hz` are drawn to the LEFT of their pads while the
+  other six are drawn to the right, so the reading convention reverses within
+  one drawing. A landing pad's label has no leader line; the junction header's
+  edge labels on the same page do (`class="edge-leader"`).
+- **What the pages have to recommend them, recorded so this entry is not read
+  as a verdict:** all ten labels are individually legible at full page size on
+  both boards, the white halo keeps text readable where it crosses a dark
+  every-fourth-row alignment strip, and the packet's **Wire-to-board
+  junctions** table names the hole for every terminal, so every ambiguity the
+  image leaves is resolvable on the facing page without opening a board file.
+  Whether the placement is acceptable is the owner's call and this reading does
+  not make it.
 
 ### G19 - the printed checklist calls ground `0`, which is the circuit's name and not a builder's
 
@@ -223,6 +268,13 @@ writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
   unchanged. If it maps, the mapping belongs in the guide's labelling and never
   in the board or the netlist - the fork is told the names by the netlist, and
   renaming a net to suit a printout would make the model and the board disagree.
+- **STILL ON THE PAGE (2026-10-17, this plan's Task 6).** Verbatim from the
+  regenerated packets: low-boost's junction rows read *"junction_grounds |
+  5-pin header | O1 0, P1 0, Q1 0, R1 0, S1 0"* and *"junction_signals | 5-pin
+  header | D1 IN, E1 HI_BOOST_OUT, F1 LO_BOOST_IN, G1 OUT, H1 0"*, and the
+  layout images print `0` beside six of the board's left-hand edge pins.
+  `pultec-low-cut` prints the same. Left exactly as it is: the decision this
+  entry asks for is the owner's and he has not made it.
 
 ### G36 - the Cuts table tells a builder which two ladder nets a cut separates, and those names mean nothing to anybody
 
@@ -266,11 +318,110 @@ no builder's name to map to.
   three the column should be. If it stays net names, the ladder nets need
   names a person can use, which is a change in
   `circuits/pultec/physical/board.ts` rather than in the guide.
+- **STILL ON THE PAGE (2026-10-17, this plan's Task 6).** Verbatim from the
+  regenerated packets - low-boost's Cuts table is four rows and low-cut's is
+  three, and every `Separates` cell is still a generated ladder name:
+  `si_hi_boost_j20_p3 | si_hi_cut_j12_p3`, `j10_p1 | j10_p2`, `j10_p2 |
+  j10_p3`, `j10_p3 | j10_p4` on `pultec-low-boost`; `j5_p3 | j5_p4`, `j5_p4 |
+  j5_p5`, `j5_p5 | j5_p6` on `pultec-low-cut`. Left exactly as it is: the
+  decision this entry asks for is the owner's and he has not made it.
 
 ---
 
 Open: a fix would settle these
 ------------------------------
+
+### G44 - the packet calls the stacking junction a "5-pin header" twice, and on both low boards the field's two rows are nowhere near each other
+
+`circuits/pultec/physical/parts.ts` declares the junction as ONE pin field
+split across two `PinHeader_1x05_P2.54mm_Vertical` rows (`pinField:
+JUNCTION_FIELD`, `mating: "stacking"`), and the generated `wiring.md` says what
+that forces in the hand: *"The junction rows are ONE 2x05 pin field - fit a
+single stacking header, not 2 plain ones"*, and *"2 plain vertical 1x05 headers
+fit the same holes and leave nothing to stack onto, so they are the one thing
+not to order."*
+
+The printable packet says neither thing, and the layout could not hold a 2x05
+part anyway. In the **Wire-to-board junctions** table of both low boards each
+row prints with the value `5-pin header` - the part `wiring.md` names as the
+one not to order - and the word "stacking" does not occur anywhere in either
+`guide.html`. The holes the two rows occupy are not two rows of one field:
+
+| board | `junction_signals` | `junction_grounds` |
+| --- | --- | --- |
+| `pultec-low-boost` | D1, E1, F1, G1, H1 | O1, P1, Q1, R1, S1 |
+| `pultec-low-cut` | T3, U3, V3, W3, X3 | O1, P1, Q1, R1, S1 |
+
+On low-boost both rows sit in column 1 with six empty holes between them; on
+low-cut they are in different columns AND different rows. No 2x05 part,
+stacking or otherwise, fits either pair.
+
+- **Found** 2026-10-17, this plan's Task 6, reading the printed packets.
+- **Evidence** the junction rows above, read off the regenerated
+  `boards/pultec-low-boost/guide/guide.html` and
+  `boards/pultec-low-cut/guide/guide.html`, and confirmed on the layout images;
+  `grep -c stacking` over both files returns 0; `boards/pultec-low-boost/
+  wiring.md` **Board terminals**; `JUNCTION_FIELD` at
+  `circuits/pultec/physical/parts.ts:338` and `:374`.
+- **Verified** yes - read on both printed packets and in both sources.
+- **Why it is open** it is two defects with one cause and neither was this
+  plan's subject: the packet does not print what `pinFieldNotes`
+  (`lib/board/part-text.ts:230`) already composes for `wiring.md`, and nothing
+  checks a declared field's rows against where a layout put them.
+  `lib/model/types.ts:86-96` says in as many words that the MODEL cannot see
+  the geometry - *"two 1x05 headers cannot be seen to be adjacent rows of one
+  2x05 field"* - but the LAYOUT can, and no gate reads it.
+- **What would settle it** a check that refuses a layout whose `pinField` rows
+  are not adjacent rows of one field, and the packet carrying `pinFieldNotes`'
+  paragraph beside the junction rows instead of `5-pin header`. The two adopted
+  low boards failing such a check is the reason to write it, not a reason to
+  widen it to admit them: **a stated directive outranks what the as-built
+  boards contain** (`CLAUDE.md`), and the directive here is the spec's *"The
+  junction is a stacking 2x05 bus"*.
+
+### G45 - the printable packet carries none of the conditionality the wiring sheet carries, and never mentions the wiring sheet
+
+A Pultec section board is not populated the same way twice: most of its parts
+belong to stand-in groups for the sections that are absent, and `wiring.md`
+spends several screens on which group to populate in which build, on
+populating a group whole or not at all, and on the switch that is one pole of a
+gang shared with another board. `make guide` is the target `make help`
+describes under *"Build it on the bench"*, and its packet says none of it.
+
+Read off the regenerated `boards/pultec-low-boost/guide/guide.html`: the
+checklist's **Resistors and trim-pots** and **Capacitors** sections list
+`SI_HI_BOOST_RV_HI_BOOST.ccw-wiper`, `SI_HI_CUT_C26`,
+`SI_LOW_CUT_RV_LO_CUT.ccw-wiper`, `SI_MID_R_MID_SHUNT` and the rest beside the
+board's own parts with nothing distinguishing them. The **Wire-to-board
+junctions** table gives each panel terminal a hole and a functional name but
+gives the control itself the value `landing pad`, so the pages never say the
+pot is 47k LOG or that the switch has six positions. Page one names
+`perfboard.json` and the circuit module as what the packet was built from and
+does not mention `wiring.md` at all.
+
+Building from the printed checklist alone therefore populates every stand-in
+group in every build - which `wiring.md` says puts two copies of a section in
+parallel and halves a value, *"at the bench a plausible wrong measurement, not
+an obvious fault"* - and fits a separate six-position switch per board where
+one shaft is meant to turn two.
+
+- **Found** 2026-10-17, this plan's Task 6, reading the printed packets.
+- **Evidence** the checklist sections and the junction table above, read off
+  both regenerated `guide.html` files; `grep -c` over each of them returns 0
+  for `stand-in`, `Populate`, `ganged`, `potentiometer`, `LOG`, `6-position`
+  and `stacking`; `boards/pultec-low-boost/wiring.md` **Panel parts** and
+  **Stand-in groups**; `make/board.mk:203` for what `guide` is advertised as.
+- **Verified** yes - read on both printed packets, against the committed
+  `wiring.md` of the same board.
+- **Why it is open** the packet and the wiring sheet were built by different
+  plans for different questions, and nothing has yet said whether the packet is
+  the whole bench document or one page of a set. That is the choice underneath:
+  print the conditionality into the packet, or have page one name `wiring.md`
+  as a page you must have in your hand.
+- **What would settle it** either fix, done deliberately. What is not
+  acceptable either way is the present state, where the one document headed
+  "build guide" is silently incomplete in a direction that builds the wrong
+  circuit.
 
 ### G40 - what a coil's pads should say on a build sheet was decided by an agent, and the entry recording it as unconfirmed was deleted with the gap it sat in
 
@@ -1410,6 +1561,24 @@ model rather than of the drawing.
   the row-I labels `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper` and
   `SI_LOW_BOOST_RV_LO_BOOST.ccw-wiper` overprint each other. Still the owner's
   call, with one number now attached to it.
+- **RE-MEASURED WITH THE DESCRIPTIVE PAD TEXT ON THE PAGE (2026-10-17, this
+  plan's Task 6), AND THE NUMBER IS NOW A SHARE OF THE PAGE.** The new pad
+  labels do not reach this gap: the longest spans ~3.5 hole pitches and none of
+  them sets a viewBox bound on either low board, checked by computing every
+  `<text>` run's extent against the board rect on all four layout images of the
+  two boards. The bound is still a stand-in PART label. From the regenerated
+  packets: `pultec-low-boost`'s designators image is `viewBox="-153.8 -83.5
+  709.6 840.5"` against a board rect of `x=-10 width=540`, so 143.8 units - more
+  than a quarter of the board's own width - are left margin holding
+  `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper`, and the board occupies **76.1%** of the
+  printed width. The same board's values image, whose longest left-hand text is
+  the `HI_BOOST_OUT` edge label, is 668.6 wide and gives the board **80.8%**.
+  `pultec-low-cut`'s designators image is 706.8 wide, **76.4%**. So the two
+  component-side images of one board print it at two different scales, the
+  designators page being the smaller, and one label is the whole difference. On
+  the page `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper` still overprints the row letter
+  it passes (row C on low-boost, row I on low-cut), and on `pultec-low-cut`
+  `SI_HI_CUT_C26` prints entirely outside the board outline.
 
 ### G15 - the frozen low-boost fixture and the physical model hold different parts
 
@@ -1545,8 +1714,37 @@ everything above 500 was there first.
 Open: comment and documentation defects, behaviour-free
 -------------------------------------------------------
 
-Both of these were parked under a skill rule that allows one fix wave per plan.
-Neither changes behaviour; both mislead a reader.
+G7 and G8 were parked under a skill rule that allows one fix wave per plan.
+None of these changes behaviour; each misleads a reader.
+
+### G46 - three source comments point, in the present tense, at register entries that were deleted
+
+Closing an entry here means DELETING it, so a comment that says a check "is"
+some `G<n>` goes stale the moment that entry is settled. Three have:
+
+| file | says | entry |
+| --- | --- | --- |
+| `tests/guide/circuit-double-control.test.ts:2` | *"G4 (`docs/known-gaps.md`): a panel control legitimately reaches a board as..."* | G4, deleted by this plan |
+| `tools/guide/circuit.ts:62` | *"This is G4 (`docs/known-gaps.md`)"* | G4, deleted by this plan |
+| `tests/guide/circuit-pads.test.ts:5` | *"this file is G5's witness (`docs/known-gaps.md`)"* | G5, deleted earlier |
+
+This is the preamble's namespace bite from the other direction: there a live
+reference was misread as naming a deleted entry, and here three live references
+do name one. Two neighbours show the form that does not go stale -
+`tests/stripboard/materialize-span.test.ts:6` says *"carried as G12 until this
+change"*, and `tests/guide/packet.test.ts:148` names a gap that is still open.
+The plan and spec files that also say `G4` are history recording what they
+closed and are correct as written.
+
+- **Found** 2026-10-17, this plan's Task 6.
+- **Evidence** the three lines quoted above; no `### G4` or `### G5` heading in
+  `docs/known-gaps.md`.
+- **Verified** yes - read all three files and the register.
+- **Why it is open** Task 6 is a reading, and a repair mixed into a measurement
+  makes both less useful.
+- **What would settle it** each comment saying what the check IS, or naming the
+  entry in the past tense, rather than pointing at a register entry as if it
+  were still there. The check is permanent; the entry was not.
 
 ### G7 - `lib/stripboard/seed-fit.ts` mislabels its own denominator
 
