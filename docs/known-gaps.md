@@ -395,8 +395,8 @@ writes it (`"GND"`, `"VCC"`)"*. On every Pultec section the circuit writes `0`.
   same.
 - **Declined** - 2026-10-18. The owner was put four recommendations about the
   printed build guide at once and accepted all four without commenting on
-  ground specifically, replying verbatim: *"your recommendations. I don't care
-  about the sparse pdfs. leave that alone."* The recommendation he was
+  ground specifically, replying verbatim: *"your recommendations. I don’t care
+  about the sparse pdfs. leave that alone"*. The recommendation he was
   accepting, verbatim: *"**2. The junction row prints ground as `0`.** It reads
   `junction_grounds | 5-pin header | O1 0, P1 0, Q1 0, R1 0, S1 0`. `0` is the
   SPICE convention and genuinely what the circuit model calls it; your hand
@@ -426,7 +426,7 @@ blank space is its cost, not a bug in it.
   page by page; seven `/Type /Page` objects each, all `MediaBox [0 0 612 792]`.
 - **Verified** yes - read directly from the generated PDFs, not from the HTML.
 - **Declined** - 2026-10-18, in his own words - a direct instruction about this
-  item, verbatim: *"I don't care about the sparse pdfs. leave that alone."*
+  item, verbatim: *"I don’t care about the sparse pdfs. leave that alone"*.
   The recommendation he was accepting, verbatim: *"**4. Two of seven pages are
   nearly empty**, because every layout figure takes a full page so no image is
   ever split across a break. If you don't care: I'd leave it. Paper is cheap
@@ -436,6 +436,51 @@ blank space is its cost, not a bug in it.
 
 Open: a fix would settle these
 ------------------------------
+
+### G54 - one `Separates` cell is 108 characters wide, because a stand-in part's ref carries the whole path it stands in for
+
+The 2026-10-18 change that made the Cuts table name what a cut separates
+(deleting G36) left one cell on `pultec-low-boost` far denser than the rest.
+Verbatim from the regenerated `boards/pultec-low-boost/guide/guide.html`:
+
+| cut | Between | Separates |
+| --- | --- | --- |
+| 1 | C5 and C6 | `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper.2, SI_HI_BOOST_RV_HI_BOOST.wiper-cw.1 \| SI_HI_CUT_C26.2, SI_HI_CUT_R1.2` |
+| 2 | K4 and K5 | `C18.2, LO BOOST 20Hz \| C19.2, LO BOOST 30Hz` |
+
+**The content is right and the width is the defect.** Cut 1 separates two
+STAND-IN parts - the resistors that stand in for the hi-boost and hi-cut
+sections' loading on this board - and a stand-in's ref names the section, the
+control and the half of the pot it represents, so naming two of them in one
+cell costs 108 characters against cut 2's 43. It is a real improvement on what
+that cell said before (`si_hi_boost_j20_p3 | si_hi_cut_j12_p3`, which named
+nothing a builder could find on the board), so this is a residual of that fix
+rather than a reason to undo it: a builder CAN locate
+`SI_HI_BOOST_RV_HI_BOOST.ccw-wiper` in the designators image, which was not
+true of the ladder name.
+
+- **Found** `2026-10-18`, by the controller reading the regenerated guide after
+  the cuts-table change, not by the agent that made it.
+- **Evidence** the table above, extracted from the generated
+  `boards/pultec-low-boost/guide/guide.html` by parsing the Cuts table out of
+  the HTML rather than by reading the source that produced it.
+- **Verified** yes - read off the generated artifact.
+- **Why it is open** every shortening available to the producing agent is a
+  judgement about how a printed sheet should read, which that agent may not
+  author; and the obvious mechanical fixes are each worse than the width.
+  **Three that were considered and rejected**, recorded so they are not
+  re-proposed: abbreviating a stand-in's ref would break the join to the
+  designators image, where the full ref is what is printed; dropping the pin
+  suffix would merge `.ccw-wiper.2` and `.wiper-cw.1` into one illegible name;
+  and truncating the cell would hide half of what the cut separates, which is
+  the thing the column exists to say.
+- **What would settle it** the owner looks at a Cuts table carrying this row
+  and says whether it is acceptable as it stands. The CRITERION is only that:
+  his reading of that row. **A plausible MECHANISM, which is advice and not a
+  settlement** - stand-in parts could print the section they stand in for
+  instead of their full path, which would need the guide to know a part is a
+  stand-in, a notion it does not currently have and which overlaps G44's
+  PCB-versus-bench distinction.
 
 ### G44 - a stripboard build sheet inherits a PCB purchase instruction, because nothing in the guide knows which of the two it is describing
 
@@ -501,6 +546,7 @@ already proposed one of them. Neither is right:
   bench sheet says what to solder into the field instead. **The ground-row
   question belongs with it**, since it is the same distinction wearing different
   clothes.
+
 ### G45 - the printable packet carries none of the conditionality the wiring sheet carries, and never mentions the wiring sheet
 
 A Pultec section board is not populated the same way twice: most of its parts
