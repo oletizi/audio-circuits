@@ -1635,8 +1635,9 @@ is a wording defect and not a behavioural one.
   `.vrt` carries without checking them, so a board built through that door loads
   into every headless verb intact. Checked while recording this: the door is
   GUI-only in both halves - `CompDefiner::Build` is reached only from
-  `Component`'s definer constructor, whose callers are `mainwindow_events.cpp`,
-  `compdialog.cpp` and `pindialog.cpp`; and `m_listUser`, which
+  `Component`'s definer constructor, **whose only call site in the tree is
+  `Src/mainwindow.cpp:2314`** - unambiguously GUI, which is what the argument
+  needs; and `m_listUser`, which
   `CheckAllowOverWrite` searches, is filled only by
   `TemplateManager::Add(false, ...)` from the GUI library dialog, while every
   headless verb builds a `TemplateManager` with `SetPathStr` plus `AddDefaults()`,
@@ -1694,6 +1695,13 @@ whenever `GetCols() > max - increment`, so for the three increment-2 types the
 hanging set is `{max - 1, max}` rather than `{max}`. Same at the bottom:
 `{min, min + 1}` rather than `{min}`.
 
+- **THE FORK'S OWN COMMENT CARRIES THE OLD MISCITATION, deliberately not
+  fixed yet.** `Src/Headless_stretch_bounds.h` states the same wrong caller
+  list. It is a comment, the conclusion it supports is unaffected, and
+  correcting it costs a fork commit, a pin bump and a full rebuild cycle -
+  which is not proportionate on its own. **Whoever next changes that file
+  fixes it in passing.** Recorded here rather than left as a discrepancy
+  between two documents that a reader would have to reconcile alone.
 - **Found** Task 5's reviewer, `2026-10-18-the-hygiene-batch`, fix round 1, while
   checking what else reads the guard that changed.
 - **Evidence** the two loops at the lines above, read; `Grid.h`'s new guard, read;
