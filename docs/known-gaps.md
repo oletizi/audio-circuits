@@ -571,7 +571,39 @@ CONDITIONALITY - which stand-in group to populate in which build - and it names
 these same parts as undistinguished from the board's own. This entry is a
 different failure about the same rows: not an omission a builder could notice,
 but a positive instruction that is wrong and that the other sheet contradicts.
-A builder following the packet alone would try to source three 0-ohm resistors.
+
+**THE OWNER CORRECTED THIS ENTRY'S STATEMENT OF THE COST, 2026-10-18, and the
+correction matters more than the entry it corrects.** This entry was first
+written claiming *"A builder following the packet alone would try to source
+three 0-ohm resistors."* **That is wrong, and his words are the authority:**
+
+> *"I'm not likely to go looking for a 0 ohm resistor. But, I am likely to
+> question the validity of a perfboard layout that specifies 0 ohm resistors.
+> There are manufacturing reasons to use a 0 ohm resistor and they are
+> electrically equivalent to wires, but in a perfboard context, they raise
+> eyebrows."*
+
+**So the cost is CREDIBILITY, not a wasted purchase**, and the wrong version is
+kept because the wrong cost would have steered the fix. A purchase problem is
+fixed by better purchase wording on the sheet. **A credibility problem is not**:
+it is the layout specifying a part that nobody would put on a perfboard, and
+better wording about that part does not remove the eyebrow.
+
+**Two things follow, and the second is the one an agent would miss.**
+
+1. **A 0 Ω resistor is legitimate and must not be banned from the model.** He
+   states the reason - *"There are manufacturing reasons to use a 0 ohm resistor
+   and they are electrically equivalent to wires"* - and `control-state.ts` has
+   its own separate reason for emitting the zero section. Neither is to be
+   undone. The 0 Ω part is right in the MODEL and right on a FABRICATED board;
+   it is only the perfboard context that makes it odd.
+2. **Fixing the printed table does not fix what he described.** The
+   `Separates`-style sheet fix - render a `0R` part as a wire link in the
+   checklist - leaves the layout IMAGES drawing a resistor body in those two
+   holes with `0R` beside it, because the renderer draws a shape per VeroRoute
+   part type and the type is `RESISTOR`. **The eyebrow is raised by the picture
+   as much as by the table.** An agent that fixes the checklist row and reports
+   this entry settled will have fixed the half that was easy to find.
 
 - **Found** 2026-10-18, by the owner asking *"why are there 0R resistors on the
   low boost layout?"* - so it was found by him, not by a check.
@@ -584,18 +616,46 @@ A builder following the packet alone would try to source three 0-ohm resistors.
   `.wiper-cw` value pairs confirmed against `--dump-board` of the committed
   `.vrt`.
 - **Why it is open** found while answering a question, in a change that is
-  about something else; recorded rather than fixed in passing.
-- **What would settle it** **the CRITERION: the two generated sheets for one
-  board must not give contradictory instructions for the same part**, which is
-  the consistency requirement this repository already enforces for pad labels
-  by building one map and handing it to both consumers. **A plausible
-  MECHANISM, which is advice and not the settlement** - the guide's `valueLabel`
-  and `mountingCell` could apply `describePart`'s existing zero-ohm rule rather
-  than re-deriving a value and a mounting from the dump, which would also put
-  these rows somewhere other than under "Resistors". Whether a wire link gets
-  its own checklist section, or joins the **Wire links** section the guide
-  already has, is a question about the printed artifact and **not one the agent
-  producing that artifact may answer**.
+  about something else; recorded rather than fixed in passing. **And the fix
+  that would fully settle it is currently forbidden** - see the two levels
+  below.
+- **What would settle it, AT TWO LEVELS, and only one of them is available.**
+
+  **THE CRITERION, from his own words:** a perfboard layout does not specify a
+  part that raises an eyebrow on a perfboard. Secondarily, and established
+  independently of him, two generated sheets for one board do not give
+  contradictory instructions for the same part - the consistency requirement
+  this repository already enforces for pad labels by building one map and
+  handing it to both consumers.
+
+  **LEVEL 1, the sheets, available now and insufficient on its own.** The
+  guide's `valueLabel` and `mountingCell` apply `describePart`'s existing
+  zero-ohm rule rather than re-deriving a value and a mounting from the dump,
+  and the layout images stop drawing a resistor body for a zero-ohm part. That
+  ends the contradiction and most of the eyebrow. Whether a wire link gets its
+  own checklist section or joins the **Wire links** section the guide already
+  has is a question about the printed artifact and **not one the agent
+  producing that artifact may answer**. This level changes no `.vrt`.
+
+  **LEVEL 2, the layout, and it is BLOCKED BY HIS OWN RULING.** The thing he
+  actually objects to is that the LAYOUT specifies these parts: a 0 Ω stand-in
+  section is placed as a resistor occupying two holes with a span and a
+  mounting, where a perfboard would carry a wire or a solder bridge - both of
+  which this layout model already has as first-class objects. Realising a zero
+  section as a wire instead of a part changes placement, therefore changes the
+  five adopted `.vrt` files, and he has ruled: *"Leave the approved boards alone
+  for bow"* (G47). **So level 2 is not to be done to the adopted boards.** It
+  could apply to boards generated from now on, which would leave the five
+  adopted boards as the only ones specifying 0 Ω parts - a divergence to put to
+  him rather than to introduce quietly.
+
+  **A MECHANISM for level 2, which is advice and not the settlement** - nothing
+  has been tried: the zero-ohm test already exists as
+  `lib/board/scaffold/shorts.ts:74` (`ohms === 0`), so the question is whether
+  the physicaliser can be told to realise such a component as a bridge, and
+  whether the seed constructor's objective (which counts bridges at 0.25) then
+  prefers or resists it. **Unmeasured.** Both of those would have to be
+  established before anyone claims this is cheap.
 
 ### G54 - one `Separates` cell is 108 characters wide, because a stand-in part's ref carries the whole path it stands in for
 
