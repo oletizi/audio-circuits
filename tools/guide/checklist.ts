@@ -33,6 +33,21 @@
  * words `padLabelOf` gives the layout images. `padLabels` is the one map
  * `tools/guide/packet.ts` builds and hands to both the renderer and this
  * module, so the two can never print two different answers for the same pad.
+ *
+ * **THE CUTS SECTION'S `Separates` COLUMN NAMES WHAT A CUT SEPARATES, NOT
+ * THE NET'S INTERNAL NAME.** It used to print the ladder net name a `NODE`
+ * line carries - `j10_p1 | j10_p2`, `si_hi_boost_j20_p3 | si_hi_cut_j12_p3` -
+ * and that name means nothing at a bench: it tells a builder neither which
+ * cut they are making nor why (`docs/known-gaps.md`'s now-deleted G36). So
+ * the column instead names what is ON each side of the cut: the two nodes'
+ * members, each rendered as the part it is (`C18.2`) or, when the member is
+ * a pad terminal, by the SAME label the junction rows and the layout images
+ * already give it (`padLabels`). `nodeMembers` (`./node-members.ts`) is a
+ * map built once in `packet.ts`, the same way `padLabels` is, and handed
+ * down rather than re-derived - one packet must not be able to print two
+ * different answers for one cut. There is deliberately no path that prints
+ * a blank or an invented name for a node this map cannot resolve: `separates`
+ * refuses instead, naming the node id and what to fix.
  */
 import { LEAD_SPANS } from "../../lib/kicad/lead-span.ts"
 import { MOUNTING_LABEL, mountingForSpan } from "../../lib/kicad/lead-span-mounting.ts"
@@ -134,17 +149,68 @@ function leads(
     .join(", ")
 }
 
-function netName(dump: BoardDump, at: NodedHole): string {
-  const name = dump.nodes[at.nodeId]
-  if (name === undefined || name === "-") {
+/**
+ * One side of a cut, named by what it separates: the node's members, each
+ * rendered as its `padLabels` entry when the member is a pad terminal, or as
+ * the member id itself (`C18.2`) otherwise.
+ *
+ * **WHICH MEMBERS ARE PADS IS DECIDED BY MEMBERSHIP OF `padIdentities`, NOT
+ * BY WHETHER `padLabels.get` MISSED.** `tools/guide/pads.ts`'s module
+ * comment on `PadTerminal.identity` and this file's own comment on
+ * `./node-members.ts` establish that a `NODE` member id and a pad's identity
+ * are the SAME string by construction - both are `<ref>.<pin>` in the
+ * reference netlist's vocabulary - so a member that IS a pad is known from
+ * the set of `pad.identity` values built from `pads`, exactly the way a map
+ * miss is never read as "not a pad". A member that is a pad but missing from
+ * `padLabels` is `padJunctionRow`'s own fault (`:227-238` above): the two
+ * maps must be the one `packet.ts` builds, so a miss there is a construction
+ * error in that map, never a reason to fall back to the raw identity.
+ *
+ * Members are sorted with `compareRefs`, which reads only the letters and
+ * digits before a member's `.` (its regex never reaches the dot), so
+ * `C1.2, C2.2, C12.2` sorts correctly without stripping the pin suffix
+ * first.
+ */
+function separates(
+  at: NodedHole,
+  members: ReadonlyMap<string, readonly string[]>,
+  padIdentities: ReadonlySet<string>,
+  padLabels: ReadonlyMap<string, string>,
+): string {
+  const nodeMembers = members.get(at.nodeId)
+  if (nodeMembers === undefined) {
     throw new Error(
-      `the cut at ${hole(at)} is on node ${at.nodeId}, which the dump ` +
-        `${name === undefined ? "never declares" : "stores no net name for"}, so the checklist ` +
-        "cannot say which nets that cut separates. Run `make update` so the layout's nets carry " +
-        "the circuit's names.",
+      `the cut at ${hole(at)} is on node ${at.nodeId}, which the dump declares no NODE line for ` +
+        `(node 0 is the fork's "no node here", which a board whose nets were never computed ` +
+        "carries), so the checklist cannot say what that cut separates. Recompute this board's " +
+        "nets (\`make update\`) so the layout carries a NODE line for it, rather than printing " +
+        "nothing for a cut this table cannot name.",
     )
   }
-  return name
+  if (nodeMembers.length === 0) {
+    throw new Error(
+      `the cut at ${hole(at)} is on node ${at.nodeId}, whose NODE line names no members, so that ` +
+        "cut separates nothing this table can name. Fix it in the layout - a node with no " +
+        "members is not a net anything is on - rather than printing a blank cell for it.",
+    )
+  }
+  return [...nodeMembers]
+    .sort(compareRefs)
+    .map((member) => {
+      if (!padIdentities.has(member)) return member
+      const label = padLabels.get(member)
+      if (label === undefined) {
+        throw new Error(
+          `pad ${member} is a member of node ${at.nodeId} (the cut at ${hole(at)}) and has no ` +
+            "entry in the checklist's pad-label map, so the Separates column cannot say what its " +
+            "wire is. Fix it in tools/guide/packet.ts, where padLabels is built from padLabelOf " +
+            "for every pad passed to renderLayout - the checklist and the images must be handed " +
+            "the same map so they cannot disagree about what a pad's wire is.",
+        )
+      }
+      return label
+    })
+    .join(", ")
 }
 
 const PART_COLUMNS = ["Part", "Value", "Leads", "Mounting"]
@@ -244,6 +310,7 @@ export function buildChecklist(
   edges: readonly EdgeLabel[],
   pads: readonly PadTerminal[],
   padLabels: ReadonlyMap<string, string>,
+  nodeMembers: ReadonlyMap<string, readonly string[]>,
 ): readonly ChecklistSection[] {
   const groups: Record<PartGroup, (readonly string[])[]> = {
     semiconductors: [], resistors: [], capacitors: [], junctions: [],
@@ -266,6 +333,7 @@ export function buildChecklist(
   // both name.
   for (const pad of pads) groups.junctions.push(padJunctionRow(pad, padLabels))
   const wires = numberedWires(dump).map(({ number, from, to }) => [`W${number}`, hole(from), hole(to)])
+  const padIdentities = new Set(pads.map((pad) => pad.identity))
   return [
     { title: "ICs and transistors", columns: PART_COLUMNS, rows: groups.semiconductors },
     { title: "Resistors and trim-pots", columns: PART_COLUMNS, rows: groups.resistors },
@@ -287,7 +355,8 @@ export function buildChecklist(
       rows: numberedCuts(dump).map(({ number, cut }) => [
         String(number),
         `${hole(cut.a)} and ${hole(cut.b)}`,
-        `${netName(dump, cut.a)} | ${netName(dump, cut.b)}`,
+        `${separates(cut.a, nodeMembers, padIdentities, padLabels)} | ` +
+          `${separates(cut.b, nodeMembers, padIdentities, padLabels)}`,
       ]),
     },
   ]

@@ -21,6 +21,7 @@ import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { runnerFor } from "../../tools/perfboard/verbs.ts"
 import { buildChecklist } from "../../tools/guide/checklist.ts"
 import { assertLayoutMatchesCircuit, componentAt, loadBoardCircuit } from "../../tools/guide/circuit.ts"
+import { nodeMembers } from "../../tools/guide/node-members.ts"
 import { offBoardLabels } from "../../tools/guide/off-board.ts"
 import { padLabelOf } from "../../tools/guide/pad-label.ts"
 import { padTerminals } from "../../tools/guide/pads.ts"
@@ -46,13 +47,14 @@ test("every off-board terminal on pultec-low-boost gets a junction row naming it
   assertLayoutMatchesCircuit(dump, circuit, pads)
   const edges = offBoardLabels(circuit)
   const padLabels = new Map(pads.map((pad) => [pad.identity, padLabelOf(componentAt(circuit, pad.ref), pad.pin)]))
+  const members = nodeMembers(dumpText)
 
   // THE PREMISE, asserted before the count that depends on it: a board that
   // silently lost its pads (an empty `pads` list) must not be able to pass
   // the row-count assertion below by having zero of each.
   expect(pads.length, "the premise: low-boost has ten off-board terminals").toBe(10)
 
-  const junctions = buildChecklist(dump, circuit, edges, pads, padLabels).find(
+  const junctions = buildChecklist(dump, circuit, edges, pads, padLabels, members).find(
     (section) => section.title === "Wire-to-board junctions",
   )
   if (junctions === undefined) throw new Error("buildChecklist produced no Wire-to-board junctions section")

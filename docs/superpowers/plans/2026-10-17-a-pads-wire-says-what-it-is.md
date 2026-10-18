@@ -41,12 +41,12 @@ So: terminal name from the model, throw value from `controls.ts`, and `potFuncti
 - Baseline: `bun test` → **2407 pass / 0 fail**; typecheck clean. The count may only go up.
 - Use `bun`, never ts-node. Never `sed` for writes. Never put a `#` inside a bash heredoc or multi-line quoted bash argument — use the Write tool and `git commit -F <file>`.
 - No Claude/AI attribution in commit messages. No git hooks. Supersede means delete.
-- **A finding you are not fixing goes in `docs/known-gaps.md`, committed in the same change.** The register runs through G36.
+- **A finding you are not fixing goes in `docs/known-gaps.md`, committed in the same change.** The register runs through G36 (G36 is since deleted - resolved by the 2026-10-18 "cuts table says what it separates" change, which named the parts a cut separates instead).
 
 ## Out of scope, with reasons
 
 - **G19** — ground prints as `0` on the junction rows. An owner decision he has not made, and it predates this work: his own hand layout prints the same.
-- **G36** — the cuts table's `Separates` column prints ladder net names. Same shape, same reason.
+- **G36** — the cuts table's `Separates` column prints ladder net names. Same shape, same reason. (Resolved by the 2026-10-18 "cuts table says what it separates" change; the entry is deleted from `docs/known-gaps.md`.)
 - **G2, G17** — label crowding and part labels leaving the outline. Judged on a render; this plan changes what labels SAY, not how they are placed, and the owner should see the new text before anyone moves it.
 
 ---

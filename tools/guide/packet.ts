@@ -47,6 +47,7 @@ import type { Env } from "../perfboard/check.ts"
 import { buildChecklist } from "./checklist.ts"
 import { assertLayoutMatchesCircuit, componentAt, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
 import { buildGuideHtml, type GuideSchematic } from "./guide.ts"
+import { nodeMembers } from "./node-members.ts"
 import { offBoardLabels, valueLabel } from "./off-board.ts"
 import { padLabelOf } from "./pad-label.ts"
 import { padTerminals } from "./pads.ts"
@@ -178,7 +179,12 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   // it, so the junction table's pad rows and the images' pad labels can
   // never print two different answers for one pad.
   const padLabels = new Map(pads.map((pad) => [pad.identity, padLabelOf(componentAt(circuit, pad.ref), pad.pin)]))
-  const checklist = buildChecklist(dump, circuit, edgeLabels, pads, padLabels)
+  // ONE NODE-MEMBERS MAP, same reason and same place as padLabels just
+  // above: the Cuts section's Separates column reads a NODE line's members
+  // from the dump TEXT (`./node-members.ts`), and building it here, once,
+  // keeps the checklist from being the second place that text gets read.
+  const members = nodeMembers(dumpText)
+  const checklist = buildChecklist(dump, circuit, edgeLabels, pads, padLabels, members)
 
   const name = boardName(declaration)
   const designators = new Map(dump.parts.map((part) => [part.ref, part.ref]))
