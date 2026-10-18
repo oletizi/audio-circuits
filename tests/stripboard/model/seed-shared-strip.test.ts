@@ -26,9 +26,10 @@
  * The refusal test asserts its leading key and the facts the message must carry,
  * never its prose.
  *
- * **ITS OWN FILE** rather than another section of `./seed-room.test.ts`, which
- * is past this repository's 500-line ceiling already and is about clearance and
- * comfort - a different subject from which strip a lead may land on.
+ * **ITS OWN FILE** rather than another section of `./seed-room-hand-boards.test.ts`
+ * or `./seed-placement-comfort.test.ts` - the files `./seed-room.test.ts` split
+ * into (`docs/known-gaps.md` G6) that are about clearance and comfort - a
+ * different subject from which strip a lead may land on.
  */
 import { expect, test } from "bun:test"
 import { derivedCuts } from "../../../lib/stripboard/cuts.ts"

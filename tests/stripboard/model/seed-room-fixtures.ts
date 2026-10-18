@@ -8,7 +8,7 @@
  * nearest-neighbour clearance distribution, the overlapping pairs on
  * `buffered`, and seven of eight wires crossing nothing. *"Check any claim you
  * put in a comment against something you ran"* is this plan's most reliable
- * lesson, so `./seed-room.test.ts` re-derives all four from the dumps and the
+ * lesson, so `./seed-room-hand-boards.test.ts` re-derives all four from the dumps and the
  * KiCad files every run.
  *
  * **THE MEASUREMENT GOES THROUGH `partAreasOf`, WHICH IS THE PLACER'S AND THE
@@ -29,7 +29,7 @@
  * and nowhere else. The rectangle that came back was the mirror image of where
  * the part is: measured, all eight trimmers across the two boards - RV1-RV4 on
  * `feedback` and RV1-RV4 on `buffered` - had rectangles that did not contain
- * their own lead holes. `./seed-room.test.ts` now asserts that premise directly,
+ * their own lead holes. `./seed-room-hand-boards.test.ts` now asserts that premise directly,
  * because a rectangle that excludes its own leads is wrong whatever else is
  * true, and these figures are the evidence `seed-area.ts` cites for the one hard
  * geometric rule in the system.

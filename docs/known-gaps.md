@@ -1905,18 +1905,6 @@ the board is imported or exported.
   somewhere else, which is the case the entry is actually about, and it does
   not close the entry.
 
-### G6 - `tests/stripboard/model/seed-room.test.ts` is 760 lines
-
-Against this repository's 300-500 line ceiling.
-
-- **Found** `2026-10-14-stripboard-model-and-search`.
-- **Evidence** `wc -l`.
-- **Verified** yes.
-- **Why it is open** splitting a test file of this size is its own change with
-  its own review, and it was never the task in front of anyone.
-- **What would settle it** a split by what each group of tests establishes, not
-  by line count.
-
 ### G20 - the pinned fork's `Src/Board_import.cpp` is over the line ceiling
 
 557 lines, against the 300-500 ceiling this plan has already applied to fork

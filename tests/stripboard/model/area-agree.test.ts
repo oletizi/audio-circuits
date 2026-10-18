@@ -9,7 +9,7 @@
  * through/under"* - from opposite sides: the seed rejects a column with
  * `areaRect`, and the move generator rejects a relocation with `areaFor` via
  * `partAreasOf`. Until this file there was no test in which both ran over one
- * placement. `./moves.test.ts` uses `partAreasOf`, `./seed-room.test.ts`
+ * placement. `./moves.test.ts` uses `partAreasOf`, `./seed-area-regression.test.ts`
  * rebuilds with `areaRect`, and the two never met - so a drift between them
  * would have shown up as the seed and the move generator silently disagreeing
  * about how big a part is, with every test still green.

@@ -319,8 +319,8 @@ test("THE STANDING CHECK: every exemption is reached by a real measurement", () 
   // 2026-10-15: feedback breaks `rigidOverlap` twice (Q1/RV3, R4/RV4) and
   // `routedUnderRigid` once (R4 under RV4), buffered breaks `rigidOverlap`
   // twice (C1/RV4, C3/Q1) and `routedUnderRigid` not at all. The counts
-  // themselves are pinned by `./model/seed-room.test.ts`, which is their one
-  // owner; what is asserted here is that each one SURFACED.
+  // themselves are pinned by `./model/seed-room-hand-boards.test.ts`, which is
+  // their one owner; what is asserted here is that each one SURFACED.
   expect(reported).toHaveLength(3)
   expect(unconsulted(registry), "every entry was reached").toEqual([])
   expect([...consultedIds()], "and by id").toEqual(

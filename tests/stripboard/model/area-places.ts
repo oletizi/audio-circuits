@@ -3,7 +3,7 @@
  * a notice can name.
  *
  * **ITS OWN MODULE BECAUSE THREE FILES WERE ABOUT TO ASK THE SAME QUESTION.**
- * `./seed-room.test.ts` measures the owner's as-built boards,
+ * `./seed-room-hand-boards.test.ts` measures the owner's as-built boards,
  * `./benchmark-fixtures.ts` has to say what an imported hand board carries into
  * the search, and `../exemptions.test.ts` consults the registry about both. Each
  * had its own loop over the same pairs, and a second spelling of "where does
