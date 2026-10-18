@@ -151,16 +151,19 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   const circuit = await (deps.loadCircuit ?? loadBoardCircuit)(declaration)
   assertLayoutMatchesCircuit(dump, circuit, pads)
   const edgeLabels = offBoardLabels(circuit)
-  const checklist = buildChecklist(dump, circuit, edgeLabels)
+  // ONE PAD-LABEL MAP, SHARED BY THE CHECKLIST AND ALL THREE IMAGES, built
+  // here rather than inside the renderer or the checklist - the same
+  // division as `designators` and `values` below. `componentAt` is valid
+  // because `assertLayoutMatchesCircuit` has already run: every `pad.ref` it
+  // reads is a circuit component. Built BEFORE the checklist, and handed to
+  // it, so the junction table's pad rows and the images' pad labels can
+  // never print two different answers for one pad.
+  const padLabels = new Map(pads.map((pad) => [pad.identity, padLabelOf(componentAt(circuit, pad.ref), pad.pin)]))
+  const checklist = buildChecklist(dump, circuit, edgeLabels, pads, padLabels)
 
   const name = boardName(declaration)
   const designators = new Map(dump.parts.map((part) => [part.ref, part.ref]))
   const values = new Map(dump.parts.map((part) => [part.ref, valueLabel(dump, part, circuit, "image")]))
-  // ONE PAD-LABEL MAP, SHARED BY ALL THREE IMAGES, built here rather than
-  // inside the renderer - the same division as `designators` and `values`
-  // above. `componentAt` is valid because `assertLayoutMatchesCircuit` has
-  // already run: every `pad.ref` it reads is a circuit component.
-  const padLabels = new Map(pads.map((pad) => [pad.identity, padLabelOf(componentAt(circuit, pad.ref), pad.pin)]))
   const images = {
     designators: renderLayout(dump, designators, {
       view: "component",

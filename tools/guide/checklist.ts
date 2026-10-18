@@ -23,6 +23,16 @@
  * instruction at all. The condition is DERIVED, by
  * `lib/kicad/lead-span-mounting.ts`, from the flat floor the span model
  * already records; nothing here is a judgement about a part.
+ *
+ * **EVERY LANDING PAD GETS ITS OWN JUNCTION ROW TOO, ALONGSIDE THE HEADER
+ * PARTS.** A pad carries no `PART` line - it is a bare wire soldered into a
+ * hole, not a mounted component - so the loop over `dump.parts` alone leaves
+ * it out, and a board with ten panel-control terminals printed a two-row
+ * table. `buildChecklist`'s `pads` and `padLabels` close that: one row per
+ * `PadTerminal`, naming the hole and what the wire there IS, in the same
+ * words `padLabelOf` gives the layout images. `padLabels` is the one map
+ * `tools/guide/packet.ts` builds and hands to both the renderer and this
+ * module, so the two can never print two different answers for the same pad.
  */
 import { LEAD_SPANS } from "../../lib/kicad/lead-span.ts"
 import { MOUNTING_LABEL, mountingForSpan } from "../../lib/kicad/lead-span-mounting.ts"
@@ -32,6 +42,7 @@ import { holeName, noPinLinesMessage, type BoardDump, type HolePosition, type No
 import { numberedBridges, numberedCuts, numberedWires } from "./numbering.ts"
 import { valueLabel } from "./off-board.ts"
 import { ELECTROLYTIC_PLUS_PIN, isElectrolytic } from "./part-shapes.ts"
+import type { PadTerminal } from "./pads.ts"
 import type { EdgeLabel } from "./render-edges.ts"
 import { componentAt, isPanelPot, type BoardCircuit } from "./circuit.ts"
 
@@ -159,6 +170,16 @@ const NO_FOOTPRINT = "unknown: the circuit records no footprint for this part"
 const NO_SPAN = "unknown: no lead span recorded (lib/kicad/lead-span.ts)"
 
 /**
+ * The Mounting cell for a landing pad - a wire soldered straight into a hole,
+ * with no body and no footprint to decide a mounting FOR. `NO_FOOTPRINT` would
+ * be the wrong message here: that cell names a GAP (a part waiting on
+ * footprint data this project has not recorded yet), and a pad is not waiting
+ * on anything - there is categorically no part to mount. Saying so in its own
+ * words keeps the real gaps legible as gaps.
+ */
+const PAD_NO_MOUNTING = "n/a: a landing pad has no body to mount"
+
+/**
  * Which mounting this part's span requires, as the builder reads it.
  *
  * **IT READS THE SPAN OFF THE HOLES AND NOTHING OFF A `PART` LINE's `SPAN`.**
@@ -188,11 +209,41 @@ function mountingCell(component: Component, pins: readonly Pin[]): string {
   return MOUNTING_LABEL[mountingForSpan(span, holes)]
 }
 
+/**
+ * One landing pad's junction row: which part it is, that it is a bare
+ * landing pad rather than a mounted part, the hole and what the wire there
+ * IS (`PadTerminal.identity` looked up in `padLabels`, the same map
+ * `tools/guide/packet.ts` builds once from `padLabelOf` and hands to the
+ * images), and that there is no mounting question to answer.
+ *
+ * `padLabels` is REUSED rather than re-derived: `packet.ts` builds it once
+ * from `padLabelOf` for the renderer, and a checklist that called
+ * `padLabelOf` again itself would be a second place a pad's label could
+ * drift from the one printed beside its ring in the image - exactly the
+ * "one packet, two artifacts disagreeing" defect this row exists to end.
+ * A pad missing from the map is refused by name: silently leaving the row
+ * out would reproduce that same defect in a new place.
+ */
+function padJunctionRow(pad: PadTerminal, padLabels: ReadonlyMap<string, string>): readonly string[] {
+  const label = padLabels.get(pad.identity)
+  if (label === undefined) {
+    throw new Error(
+      `pad ${pad.identity} has no entry in the checklist's pad-label map, so the junction table ` +
+        "cannot say what its wire is. Fix it in tools/guide/packet.ts, where padLabels is built " +
+        "from padLabelOf for every pad passed to renderLayout - the checklist and the images must " +
+        "be handed the same map so they cannot disagree about what a pad's wire is.",
+    )
+  }
+  return [pad.ref, "landing pad", `${holeName(pad.row, pad.col)} ${label}`, PAD_NO_MOUNTING]
+}
+
 /** The whole checklist. The layout and circuit must already agree (`assertLayoutMatchesCircuit`). */
 export function buildChecklist(
   dump: BoardDump,
   circuit: BoardCircuit,
   edges: readonly EdgeLabel[],
+  pads: readonly PadTerminal[],
+  padLabels: ReadonlyMap<string, string>,
 ): readonly ChecklistSection[] {
   const groups: Record<PartGroup, (readonly string[])[]> = {
     semiconductors: [], resistors: [], capacitors: [], junctions: [],
@@ -207,6 +258,13 @@ export function buildChecklist(
       mountingCell(component, dump.pins[part.ref] ?? []),
     ])
   }
+  // EVERY OFF-BOARD TERMINAL GETS ITS OWN JUNCTION ROW, alongside whatever
+  // header-type PART rows the loop above already found. A pad has no PART
+  // line (`./pads.ts`'s module comment), so without this it is a terminal
+  // the layout image draws a solder ring for and the checklist says nothing
+  // about - the defect `docs/known-gaps.md` and this module's own comment
+  // both name.
+  for (const pad of pads) groups.junctions.push(padJunctionRow(pad, padLabels))
   const wires = numberedWires(dump).map(({ number, from, to }) => [`W${number}`, hole(from), hole(to)])
   return [
     { title: "ICs and transistors", columns: PART_COLUMNS, rows: groups.semiconductors },

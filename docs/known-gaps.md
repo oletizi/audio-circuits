@@ -1472,57 +1472,6 @@ this is a gap and not a trap.
 - **What would settle it** a `CAP_CERAMIC\d*` branch with a test, and a render
   of pt2399-core read by eye.
 
-### G10 - the printed checklist has no row for a pad, so its junction table is empty
-
-`buildChecklist` builds every part row from `dump.parts`, and a pad has no
-`PART` line. On a pad-based control the packet therefore shows ten rings with
-ten checkboxes in the LAYOUT IMAGE while the **"Wire-to-board junctions" table
-is empty** - two artifacts in one packet disagreeing about whether ten
-terminals exist.
-
-This is adjacent to G1 but not the same gap: G1 asks WHICH LABEL a pad carries,
-this is a MISSING ROW. Answering G1 either way leaves the table empty.
-
-- **Found** `2026-10-16-pultec-five-boards`, raised by the Task 2 reviewer for
-  the controller rather than as a defect in Task 2.
-- **Evidence** `tools/guide/checklist.ts:200-209` iterates `dump.parts` and
-  nothing else; `grep -n 'pad\|Pad' tools/guide/checklist.ts` finds only one
-  unrelated comment line.
-- **Verified** yes - the controller read the function rather than relaying the
-  reviewer's claim.
-- **Why it is open** Task 2's scope was a pad's shape and identity, and the
-  checklist was explicitly placed out of its bounds so the fix would not ride
-  along unreviewed.
-- **What would settle it** junction rows built from the pads as well as the
-  parts, with a test that counts rows against the board's pad count. **Note it
-  is not independent of G1**: a junction row has to say what the wire carries,
-  which is the label G1 decides.
-- **NOW SEEN IN A PRINTED PACKET, ON BOTH LOW BOARDS (2026-10-17).** The
-  measurement below was made on a checklist built in memory; it has now been
-  made on `boards/<board>/guide/guide.html` as `make guide` writes it, printed
-  to PDF and read page by page. `pultec-low-boost`: 10 `PAD` lines
-  (`RV_LO_BOOST.1-.3`, `SW_LO_BOOST.1-.7`), **"Wire-to-board junctions" has 2
-  rows** (`junction_grounds`, `junction_signals`). `pultec-low-cut`: 10 `PAD`
-  lines (`RV_LO_CUT.1-.3`, `SW_LO_CUT.1-.7`), **2 rows**. On both boards NO pad
-  identity appears anywhere in any of the seven checklist sections, while all
-  ten rings are drawn on both layout images with a legend entry telling the
-  builder they are where off-board wires solder. So a person building either
-  board from paper gets ten solder joints to make and no line to tick, and the
-  two artifacts in one packet contradict each other exactly as stated. **The
-  entry is accurate as written.**
-- **NO LONGER BLOCKED, AND NOW VERIFIED ON A REAL BOARD.** It was blocked
-  behind G14 - `buildChecklist` refused a materialised board outright, before
-  any junction row was built - and G14 is closed (`--import` now stores the
-  circuit's net names, so the register's entry for it is deleted rather than
-  marked). Measured 2026-10-16, on the checklist of a materialised
-  `pultec-low-boost`: the board carries **ten pads** (`RV_LO_BOOST_1..3` and
-  `SW_LO_BOOST_1..7`, each one a `PAD` line in `--dump-board`) and the printed
-  checklist has **not one row for any of them** - no part row and no junction
-  row. Its "Wire-to-board junctions" table has exactly two rows, the two `SIP5`
-  headers (`junction_grounds`, `junction_signals`), which have `PART` lines. So
-  the gap is exactly as stated, the count to assert against is 10 on this
-  board, and the observation no longer rests on reading the function.
-
 ### G4 - nothing refuses a board carrying both a header PART and pads for one control
 
 With two valid representations of a panel control in play (see G1), a board that
