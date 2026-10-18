@@ -2,7 +2,7 @@
  * `assertLayoutMatchesCircuit` counting a `PAD`-only control as present.
  *
  * `./circuit.test.ts` covers the two directions over `PART`-represented
- * parts; this file is G5's witness (`docs/known-gaps.md`) - the half that
+ * parts; this file is the witness for the other half - the half that
  * needs a control which has NO `PART` line at all, only the `PAD` lines
  * VeroRoute expands an off-board `PADSn` component into. `parseBoardDump`
  * never reads `PAD` lines (`tools/guide/dump.ts`'s own module comment), so

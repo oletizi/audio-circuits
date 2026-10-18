@@ -1,6 +1,6 @@
 /**
- * G4 (`docs/known-gaps.md`): a panel control legitimately reaches a board as
- * a header `PART` (`tools/guide/off-board.ts`) or as landing `PAD` lines
+ * A panel control legitimately reaches a board as a header `PART`
+ * (`tools/guide/off-board.ts`) or as landing `PAD` lines
  * (`tools/guide/pads.ts`) - `./circuit.test.ts` covers the PART-only case and
  * `./circuit-pads.test.ts` covers the PAD-only one. This file is the third
  * case neither of those covers: a ref carrying BOTH at once, which is not a

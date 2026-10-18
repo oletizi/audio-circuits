@@ -192,9 +192,11 @@ test("a pad whose home strip is wholly inside a rigid part's area refuses by nam
   // hosts the pad's net on, therefore carries no pin of the field and is
   // covered across every column all the same: each of the three holes the pad
   // could take is free, on the board, and leaves nothing interleaved, and
-  // `routedUnderRigid` rejects all three. That is the clause the refusal argues
-  // hardest for - an off-board wire soldered beneath a part whose terminals
-  // cannot be formed.
+  // `routedUnderRigid` rejects all three. `rigidOverlap` closes the same three
+  // columns identically here, so nothing outside `chooseColumn` can separate
+  // the two - this test does not, and cannot, tell which of the two clauses did
+  // the rejecting. That is the clause the refusal argues hardest for - an
+  // off-board wire soldered beneath a part whose terminals cannot be formed.
   const netlist = netlistOf([
     blanketField(true),
     offBoard("RV_LO_BOOST", { pin: "2", net: "W" }),

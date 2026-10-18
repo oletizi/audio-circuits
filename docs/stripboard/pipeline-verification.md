@@ -2979,7 +2979,7 @@ would be the failure this very section is about.
 | `J ≥ 0` as an `UNRESOLVED` detector | Catches an unresolved board only when the absent cut list happens to drive `J` below zero — it does on `transistor-preamp-lab` and does not on a small fixture. The `CUT_STATE` read is the check that holds; `score.ts` records the measurement |
 | `Q4`'s stopping rule | A labelled hypothesis, not a calibrated rule: `g` is optimistic and `r` is bursty, and neither has been measured on a real run. `stripboard/rules.json`'s `yieldFloor` note |
 | `Q6`'s signature run of three | Inherited from a sibling repository solving a different problem. `stripboard/rules.json`'s `signatureRun` note names both ways it could be wrong |
-| `kappa_bench = 0.05` | The hard end of a ratchet, set just under the best demonstrated hand result. **Not the measured value of any artifact**, and the first runs are expected to fail it. `stripboard/rules.json`'s `kappaBench` note |
+| `kappa_bench` | **Withdrawn 2026-10-16.** The owner's clustering bound is unset, the way `tau` is - no number replaces it, and `A2` does not fire. `kappa` is still computed and reported on every run; what was removed is the grading, not the measurement. `stripboard/rules.json`'s `kappaBench` note |
 | `evaluationCap = 20000` | A backstop sized from measured timings, with an order-of-magnitude margin that is a choice. Nobody has measured what a healthy run of this pipeline spends. Its own note |
 | `HC6`'s stock bound | Relative to today's stock, so a width refusal may be a purchasing fact rather than a layout defect. `stripboard/rules.json`'s `stockCols` note |
 | §6.2's import-closure scan | A closure scan over imports; §6.2 states what it found and what a pass of it covers |

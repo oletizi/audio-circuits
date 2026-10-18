@@ -330,7 +330,7 @@ const PAD_FACING: Placement["direction"] = "E"
  * worth writing down.** Measured over the eleven sound low-boost candidates: of
  * 274 wire ends and bridge holes, NONE lands inside a rigid part's pin box - so
  * no soldered joint on any of those boards is one the pad rule would have
- * refused. But of 634 intermediate wire-span holes, FIVE are inside one: on
+ * refused. But of 634 wire-span holes, FIVE are inside one: on
  * `reference-order s1` a jumper in column 0 runs over all five pins of the rigid
  * `junction_grounds` header. That is `over-rigid` being taken because
  * `joinColumnFor` found nothing clearer, which is the tier working as designed

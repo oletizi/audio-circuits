@@ -1368,29 +1368,6 @@ comment says so where somebody debugging that failure will read it.
   acceptance document. For (1), nothing: it is the residual, and it is why the
   record is visible in three places rather than trusted in one.
 
-### G26 - `docs/stripboard/pipeline-verification.md` still presents `kappa_bench = 0.05` as the live parameter
-
-That document's parameter table (section near line 2982) reads *"`kappa_bench =
-0.05` | The hard end of a ratchet"* and a later section concludes against
-*"`kappa_bench` 0.05"*. The bound was withdrawn on 2026-10-16 (see G27 and
-`stripboard/rules.json`'s `kappaBench` note), so the table states a current
-parameter that no longer exists.
-
-The MEASUREMENTS in that document are unaffected and are not wrong: they record
-what was measured against the bound in force at the time, which is what a
-verification log is for. It is the parameter table - written in the present
-tense - that now misleads.
-
-- **Found** `2026-10-16-low-boost-to-adoption`, in the change that unset
-  `kappaBench`.
-- **Verified** yes - `grep -n "kappa_bench" docs/stripboard/pipeline-verification.md`.
-- **Why it is open** it was not this change's file to rewrite, and a verification
-  log needs its figures read in the context of the run that produced them rather
-  than retro-fitted to today's parameters.
-- **What would settle it** one edit to the parameter table saying the bound is
-  withdrawn and pointing at `stripboard/rules.json`'s note, leaving every
-  measured figure as it stands.
-
 ### G24 - the adoption gate cannot re-derive `metrics.outcome` or `metrics.stoppingRule`, so a coherent edited pair clears `failing-check`
 
 `assertVerdictAdmits` reads the outcome and the stopping rule off `run.json` and
@@ -1819,73 +1796,6 @@ everything above 500 was there first.
   parse, and the shared builder - with the fork's own suite and its mutation
   catalogue run over the result, since several catalogue entries name exact
   lines in this file.
-
----
-
-Open: comment and documentation defects, behaviour-free
--------------------------------------------------------
-
-G7 and G8 were parked under a skill rule that allows one fix wave per plan.
-None of these changes behaviour; each misleads a reader.
-
-### G46 - three source comments point, in the present tense, at register entries that were deleted
-
-Closing an entry here means DELETING it, so a comment that says a check "is"
-some `G<n>` goes stale the moment that entry is settled. Three have:
-
-| file | says | entry |
-| --- | --- | --- |
-| `tests/guide/circuit-double-control.test.ts:2` | *"G4 (`docs/known-gaps.md`): a panel control legitimately reaches a board as..."* | G4, deleted by this plan |
-| `tools/guide/circuit.ts:62` | *"This is G4 (`docs/known-gaps.md`)"* | G4, deleted by this plan |
-| `tests/guide/circuit-pads.test.ts:5` | *"this file is G5's witness (`docs/known-gaps.md`)"* | G5, deleted earlier |
-
-This is the preamble's namespace bite from the other direction: there a live
-reference was misread as naming a deleted entry, and here three live references
-do name one. Two neighbours show the form that does not go stale -
-`tests/stripboard/materialize-span.test.ts:6` says *"carried as G12 until this
-change"*, and `tests/guide/packet.test.ts:148` names a gap that is still open.
-The plan and spec files that also say `G4` are history recording what they
-closed and are correct as written.
-
-- **Found** 2026-10-17, this plan's Task 6.
-- **Evidence** the three lines quoted above; no `### G4` or `### G5` heading in
-  `docs/known-gaps.md`.
-- **Verified** yes - read all three files and the register.
-- **Why it is open** Task 6 is a reading, and a repair mixed into a measurement
-  makes both less useful.
-- **What would settle it** each comment saying what the check IS, or naming the
-  entry in the past tense, rather than pointing at a register entry as if it
-  were still there. The check is permanent; the entry was not.
-
-### G7 - `lib/stripboard/seed-fit.ts` mislabels its own denominator
-
-The comment reads *"of 634 intermediate wire-span holes, FIVE are inside one"*.
-634 is ALL wire-span holes with endpoints included; the intermediate count is
-470 (634 - 2x82 wires). The two figures the paragraph presents as disjoint
-overlap by 164.
-
-**The FIVE is unaffected** - endpoints contribute zero, which the paragraph's own
-274/0 line independently establishes - so the conclusion stands.
-
-- **Found** `2026-10-15-pultec-layout-capability`.
-- **Verified** yes.
-- **What would settle it** correct the denominator to 470, or say "wire-span
-  holes" and drop "intermediate".
-
-### G8 - the pad test states its limit only partially
-
-`tests/stripboard/model/seed-off-board.test.ts` says `routedUnderRigid` rejects
-all three columns. True, and it does not claim the stronger thing - but it never
-says `rigidOverlap` closes them identically and that nothing outside
-`chooseColumn` can separate the two. That limit is written down in commit
-`b9fe02f` and a fix report, but not in the file a reader meets the test in.
-
-By this repository's own standard - two earlier fixes exist precisely to move a
-measured limit to where a reader meets it - one line belongs in the test.
-
-- **Found** `2026-10-15-pultec-layout-capability`.
-- **Verified** yes.
-- **What would settle it** one line in the test's comment.
 
 ---
 

@@ -59,9 +59,9 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
  * third representation; it is the same control wired, or counted, twice,
  * and nothing downstream expects it - `offBoardLabels` would emit edge
  * labels for the header's pins while the pad renderer drew the same ref's
- * terminals again. This is G4 (`docs/known-gaps.md`); it is checked ahead of
- * the membership comparison below because a doubled ref is "on the board" by
- * both counts and would otherwise pass that comparison silently.
+ * terminals again. This check runs ahead of the membership comparison below
+ * because a doubled ref is "on the board" by both counts and would otherwise
+ * pass that comparison silently.
  */
 function assertNoControlReachesTwice(dump: BoardDump, pads: readonly PadTerminal[]): void {
   const partRefs = new Set(dump.parts.map((part) => part.ref))
