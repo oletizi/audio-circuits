@@ -18,6 +18,23 @@ crossed.
 
 KiCad is a required tool, not an optional one.
 
+## The gaps register is maintained, by everyone, always
+
+**`docs/known-gaps.md` is a repo-wide requirement.** Anything a later reader
+would need and cannot re-derive goes in it, committed in the change that found
+it: a defect you are not fixing, a measurement, a result that would make someone
+want to act, an owner decision or declination in his own words, an observation
+you could not diagnose.
+
+**Saying it to the owner is not recording it.** Neither is a plan ledger -
+`.superpowers/` is gitignored, so an entry there is invisible to review and one
+`git clean -fdx` from gone. **If you have told him something interesting and not
+written it down, you have already broken this rule.**
+
+`CLAUDE.md`'s Practices section states it in full, including what each entry
+must carry and why an entry is deleted rather than marked closed when it is
+settled. Read it there before you write one.
+
 ## Commit and push cadence
 
 Commit and push early and often. Make small, coherent commits as useful work is
