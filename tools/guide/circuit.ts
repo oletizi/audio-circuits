@@ -51,7 +51,7 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
 }
 
 /**
- * **G4: A CONTROL MAY NOT REACH THE BOARD BOTH WAYS.** A panel control
+ * **A CONTROL MAY NOT REACH THE BOARD BOTH WAYS.** A panel control
  * legitimately reaches a board as a header `PART` with `PIN` lines
  * (`./off-board.ts`) or as landing `PAD` lines (`./pads.ts`) - the module
  * comment on `assertLayoutMatchesCircuit` below states both are counted as
@@ -104,7 +104,7 @@ function assertNoControlReachesTwice(dump: BoardDump, pads: readonly PadTerminal
  * **A REF ON BOTH LISTS IS A SEPARATE FAILURE, CHECKED FIRST.**
  * `assertNoControlReachesTwice` above refuses it before this comparison runs,
  * because it would otherwise be "on the board" by both counts and pass here
- * silently - see G4.
+ * silently.
  */
 export function assertLayoutMatchesCircuit(
   dump: BoardDump,
