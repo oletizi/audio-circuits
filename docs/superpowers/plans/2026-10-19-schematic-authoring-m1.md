@@ -1387,7 +1387,30 @@ test("the report has four numbers and no composite", () => {
 
 ---
 
-### Task 17: The re-measurement with templates in the loop, and the block-size decision
+### Task 17: The re-measurement with templates in the loop AND WITHOUT `netlistsvg`, and the block-size decision
+
+> **The task's remit is wider than its original title said, and the reason is a
+> finding this plan itself surfaced.** Both spikes drove ELK through
+> `netlistsvg`; Task 12's backend does not. So **two separate contaminations are
+> being cleared here, not one**:
+>
+> 1. **No template was in the loop** (spec §5.6) - the gap this task was written
+>    for;
+> 2. **A front end this generator will not use was in the loop** - port glyphs
+>    were `netlistsvg`'s `inputExt` cells, the congruence formula
+>    `6*len(id) + 5` was its font metrics, and `direction=DOWN` was its analog
+>    skin's setting, none of them ELK's.
+>
+> **What this does NOT invalidate, and the distinction decides how much work
+> this task is:** the crash (G94) was verified by running the pre-layout graph
+> directly through two elkjs builds with `netlistsvg` out of the loop, and the
+> paired control (G100) is a RATIO taken under identical conditions on both
+> sides, so a skin that inflates crossings inflates both. **The comparisons
+> survive; the absolute numbers do not.**
+>
+> So this task re-measures absolutes and re-derives the two bounds of spec §1.8
+> - and **the floor must be treated as unmeasured rather than as 4**, because a
+> backend that emits no port glyph may have no floor of that kind at all.
 
 **Files:**
 - Create: `docs/schematic/m1-remeasurement.md`

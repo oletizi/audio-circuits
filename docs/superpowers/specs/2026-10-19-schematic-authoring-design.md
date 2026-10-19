@@ -598,6 +598,33 @@ smaller is better, and the measurements say it stops being true twice.**
 `[RAN]` `docs/schematic/elk-block-spike.md` §9 and §7, over 18 declared blocks
 of 1 to 28 parts. Registered as `docs/known-gaps.md` **G101**, with its caveats.
 
+> **BOTH BOUNDS WERE MEASURED THROUGH A FRONT END THIS GENERATOR WILL NOT USE,
+> and that is a sharper caveat than §5.6's.** Both spikes drove ELK through
+> `netlistsvg`; the plan's ELK backend does not. So the two numbers below are
+> contaminated in different degrees:
+>
+> - **The ceiling (~9 parts) is derived from inter-net crossing counts**, which
+>   depend on node sizes and on the port constraints the skin declares. The
+>   *shape* of the finding - crossings are zero up to some size, then grow, and
+>   below that size the count stops moving when the source file is reordered -
+>   rests on comparisons taken under identical conditions and survives. **The
+>   number nine does not.**
+> - **The floor (~4 parts) is ENTIRELY the skin's.** A port becomes a drawn cell
+>   only because `netlistsvg` emits an `inputExt` glyph for it. A backend that
+>   does not emit port glyphs has a different floor, or none. **Treat the floor
+>   as unmeasured for this design**, not as a measured 4.
+>
+> **What survives is that a floor EXISTS** - a block small enough is mostly
+> boundary however the boundary is drawn - **and that the two bounds are close
+> enough to collide.** That is what this section is for, and it does not depend
+> on either number.
+>
+> The plan's Task 17 re-measures both without `netlistsvg`, which is why this
+> section states bounds and refuses to pick a value: **the value would have been
+> picked from the contaminated measurement.** The plan's block-cutting decision -
+> blocks come from committed declarations and the generator never subdivides one
+> - deliberately does not rest on either number.
+
 **THE CEILING - near 9 parts, from two independent measures that agree.**
 
 - **inter-net crossings are ZERO on every block of 8 parts or fewer**, then 4, 5,
