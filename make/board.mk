@@ -58,7 +58,7 @@ export KICAD_CLI
 HTML_TO_PDF ?= /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 export HTML_TO_PDF
 
-.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring place adopt
+.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring scaffold-membership place adopt
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -148,7 +148,16 @@ perfboard-help:
 	@echo "                       HC8 (the copper partitions the pins exactly as the"
 	@echo "                       netlist does) and HC10 (no pin pattern the strips cannot"
 	@echo "                       take). A footprint with no span or pattern recorded is"
-	@echo "                       REFUSED by name rather than guessed at"
+	@echo "                       REFUSED by name rather than guessed at. It also checks"
+	@echo "                       this board's scaffold doc against the parts the layout"
+	@echo "                       holds (see scaffold-membership below)"
+	@echo "  make scaffold-membership"
+	@echo "                       every stand-in group in this board's SCAFFOLD claims"
+	@echo "                       parts the layout actually holds, and no part is claimed"
+	@echo "                       by two groups - the comparison the hatched stand-in"
+	@echo "                       diagram in the build packet rests on. A board that"
+	@echo "                       declares no SCAFFOLD prints a NOTICE saying so rather"
+	@echo "                       than passing silently. check runs this"
 	@echo "  make cuts            print the cut list and solder bridges"
 	@echo "  make board-info      what this directory declares"
 	@echo ""
@@ -278,11 +287,30 @@ perfboard-help:
 # footprint whose span nobody has read off a datasheet now FAILS here, naming
 # the footprint. That is the gate working, not a gate to loosen: see
 # docs/stripboard/lead-span.md for how to add an entry with its evidence.
-check: veroroute netlist-agrees wiring
+#
+# `scaffold-membership` IS A PREREQUISITE FOR THE REASON `wiring` IS, pointed at
+# a different artifact. Three comparisons exist around a Pultec section board and
+# until this one they did not close the triangle: `check` below and
+# `assertLayoutMatchesCircuit` compare the LAYOUT against the CIRCUIT, and
+# `groupsFor` (circuits/pultec/physical/scaffold-doc.ts) compares the stand-in
+# GROUPS against the MODEL - but nothing compared the GROUPS against the LAYOUT.
+# A group claiming a part the board holds no position for, or claiming one part
+# twice, would surface first as a confidently-hatched stand-in diagram in a
+# printed packet, where the five .vrt files are owner-approved and immutable and
+# so a builder has no reason to suspect the diagram rather than the board.
+#
+# IT PRINTS ON EVERY RUN, pass included, and a board that declares no SCAFFOLD
+# prints a NOTICE saying so - `check` reports `ok <path>` in identical words
+# whether a guard ran or not, which is the failure shape this whole workflow
+# exists to prevent.
+check: veroroute netlist-agrees wiring scaffold-membership
 	@bun "$(CLI)" check -C "$(CURDIR)"
 
 wiring:
 	@bun "$(CLI)" wiring -C "$(CURDIR)"
+
+scaffold-membership:
+	@bun "$(CLI)" scaffold-membership -C "$(CURDIR)"
 
 cuts: veroroute netlist-agrees
 	@bun "$(CLI)" cuts -C "$(CURDIR)"

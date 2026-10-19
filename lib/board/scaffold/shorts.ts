@@ -15,6 +15,7 @@
  * its distinct nets. Merging is a reasoning step, not a rewrite.
  */
 import type { ResolvedComponent } from "../../model/control-state.ts"
+import { isZeroOhmResistor } from "../../model/zero-ohm.ts"
 
 /** Every net this component's pins name, package pins included. */
 export function nodesOf(component: ResolvedComponent): readonly string[] {
@@ -68,10 +69,18 @@ export function connectedGroups(
  * must be added here deliberately, with a test, rather than inferred from its value
  * being zero - guessing in either direction changes which components survive the
  * reduction and what the boundary admittance comes out as.
+ *
+ * THE TEST ITSELF IS NOT WRITTEN HERE ANY MORE. `lib/model/zero-ohm.ts`'s
+ * `isZeroOhmResistor` is the one place that decides what zero ohms means, because the
+ * build packet and the wiring sheet ask the same question for a physical reason - what
+ * do you fit in those two holes - and two places deciding it is how one board's
+ * generated sheets came to contradict each other about one part
+ * (`docs/known-gaps.md`'s G55). This function keeps its own name and this comment
+ * because the ELECTRICAL consequence is specific to this module: the nets of such a
+ * component are one electrical node.
  */
 export function isIdealShort(component: ResolvedComponent): boolean {
-  const parameters = component.parameters
-  return component.kind === "resistor" && "ohms" in parameters && parameters.ohms === 0
+  return isZeroOhmResistor(component)
 }
 
 /**

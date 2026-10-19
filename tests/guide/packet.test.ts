@@ -3,9 +3,10 @@ import path from "node:path"
 import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { unresolvedCutsMessage } from "../../tools/perfboard/cut-state.ts"
 import {
-  writeGuidePacket, packetFiles, GUIDE_HTML, GUIDE_PDF, type GuideDeps, type GuideFs,
+  writeGuidePacket, packetFiles, GUIDE_HTML, GUIDE_PDF, type GuideDeps,
 } from "../../tools/guide/packet.ts"
 import { DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
+import { memoryFs } from "./memory-fs.ts"
 
 const DECLARATION: PerfboardDeclaration = {
   file: "/repo/boards/test-board/perfboard.json",
@@ -15,30 +16,6 @@ const DECLARATION: PerfboardDeclaration = {
   vrtPath: "/repo/boards/test-board/test.vrt",
   schPath: "/repo/circuits/test.kicad_sch",
   netlistPath: "/repo/tests/fixtures/test.net",
-}
-
-/** An in-memory filesystem: file path -> contents. */
-function memoryFs(initial: Record<string, string> = {}): { fs: GuideFs; files: Map<string, string> } {
-  const files = new Map(Object.entries(initial))
-  const under = (dir: string): string[] => [...files.keys()].filter((file) => file.startsWith(`${dir}/`))
-  return {
-    files,
-    fs: {
-      makeDir: () => {},
-      removeDir: (dir) => {
-        for (const file of under(dir)) files.delete(file)
-      },
-      writeText: (file, text) => {
-        files.set(file, text)
-      },
-      rename: (from, to) => {
-        for (const file of under(from)) {
-          files.set(`${to}${file.slice(from.length)}`, files.get(file) ?? "")
-          files.delete(file)
-        }
-      },
-    },
-  }
 }
 
 interface Harness {
@@ -83,7 +60,11 @@ const GUIDE = "/repo/boards/test-board/guide"
 test("the packet writer writes all six files into the board's guide directory", async () => {
   const h = harness(DUMP_TEXT)
   const report = await writeGuidePacket(DECLARATION, h.deps)
-  expect([...h.files.keys()].sort()).toEqual(packetFiles(true).map((file) => `${GUIDE}/${file}`).sort())
+  // `false`: the fixture circuit declares no SCAFFOLD, so there are no
+  // stand-in groups to hatch and the packet carries no fourth layout image.
+  // What that image holds on a board that HAS groups is
+  // tests/guide/clusters-view.test.ts's subject.
+  expect([...h.files.keys()].sort()).toEqual(packetFiles(true, false).map((file) => `${GUIDE}/${file}`).sort())
   expect(h.veroroute).toEqual([["--dump-board", DECLARATION.vrtPath]])
   expect(h.kicad[0]?.[0]).toBe("/fake/kicad-cli")
   expect(h.kicad[0]?.[1]).toBe("/repo/circuits/test.kicad_sch")
@@ -198,7 +179,7 @@ test("a board that declares no schematic gets a five-file packet that prints why
   const { schPath: _sch, netlistPath: _net, ...withoutSchematic } = DECLARATION
   const h = harness(DUMP_TEXT)
   const report = await writeGuidePacket(withoutSchematic, h.deps)
-  expect([...h.files.keys()].sort()).toEqual(packetFiles(false).map((file) => `${GUIDE}/${file}`).sort())
+  expect([...h.files.keys()].sort()).toEqual(packetFiles(false, false).map((file) => `${GUIDE}/${file}`).sort())
   expect(h.files.has(`${GUIDE}/schematic.pdf`)).toBe(false)
   expect(h.kicad).toEqual([])
   const html = h.files.get(`${GUIDE}/guide.html`) ?? ""

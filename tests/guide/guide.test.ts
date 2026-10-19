@@ -23,6 +23,7 @@ const NO_SCHEMATIC: GuideSchematic = {
 function guideHtml(
   powerUpChecks: PowerUpChecks | undefined = undefined,
   schematic: GuideSchematic = PRINTED_SCHEMATIC,
+  wiringPath: string | undefined = undefined,
 ): string {
   const circuit = fixtureCircuit(powerUpChecks)
   const edges = offBoardLabels(circuit)
@@ -31,9 +32,14 @@ function guideHtml(
     generated: "2026-09-29",
     layoutPath: "boards/test-board/test.vrt",
     schematic,
-    images: { designators: "<svg>designators</svg>", values: "<svg>values</svg>", copper: "<svg>copper</svg>" },
+    images: { designators: "<svg>designators</svg>", values: "<svg>values</svg>", copper: "<svg>copper</svg>", clusters: undefined },
     checklist: buildChecklist(DUMP, circuit, edges, [], new Map(), NODE_MEMBERS),
     powerUpChecks: circuit.powerUpChecks,
+    wiringPath,
+    // THE FIXTURE BOARD DECLARES NO SCAFFOLD, so the packet prints the
+    // one-sentence stand-in section. What that section does on a board that
+    // HAS groups is tests/guide/stand-in-section.test.ts's subject.
+    scaffold: undefined,
   }
   return buildGuideHtml(input)
 }
@@ -82,15 +88,15 @@ test("parts give value and leads; wires, bridges and cuts give their holes; cuts
   // own test after them.
   expect(rows[0]).toEqual([
     "Q1", "2N3904", "emitter E7, base D7, collector C7",
-    "unknown: the circuit records no footprint for this part",
+    "unknown: the circuit records no footprint for this part", "always",
   ])
-  expect(rows[3]).toEqual(["C1", "10uF", "+ F6, - F10", "one mounting"])
-  expect(rows[4]).toEqual(["W1", "I3", "I10"])
-  expect(rows[5]).toEqual(["W2", "J5", "J7"])
-  expect(rows[6]).toEqual(["J1", "2-pin header", "A2 INPUT, B2 GND", "one mounting"])
+  expect(rows[3]).toEqual(["C1", "10uF", "+ F6, - F10", "one mounting", "always"])
+  expect(rows[4]).toEqual(["W1", "I3", "I10", "always"])
+  expect(rows[5]).toEqual(["W2", "J5", "J7", "always"])
+  expect(rows[6]).toEqual(["J1", "2-pin header", "A2 INPUT, B2 GND", "one mounting", "always"])
   expect(rows[7]).toEqual([
     "RV2", "3-pin header (25K pot, off-board)",
-    "H2 DRIVE ccw, I2 DRIVE wiper, J2 DRIVE cw", "one mounting",
+    "H2 DRIVE ccw, I2 DRIVE wiper, J2 DRIVE cw", "one mounting", "always",
   ])
   expect(rows[8]).toEqual(["B1", "D9 to E9"])
   expect(rows[9]).toEqual(["1", "C5 and C6", "C1.1, Q1.2, R1.1 | J1.2, R1.2, RV2.1"])
@@ -104,7 +110,7 @@ test("a resistor at a span its body fits between is not told to stand on end", (
   // (`lib/kicad/grid.ts`). At the floor the body fits, so nothing is required of
   // the builder, and the cell says that rather than shouting.
   const rows = itemRows(guideHtml())
-  expect(rows[1]).toEqual(["R1", "10K", "C4, G4", "flat ok"])
+  expect(rows[1]).toEqual(["R1", "10K", "C4, G4", "flat ok", "always"])
 })
 
 test("a resistor compressed below its flat floor is told to STAND ON END", () => {
@@ -120,9 +126,9 @@ test("a resistor compressed below its flat floor is told to STAND ON END", () =>
   const resistors = buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map(), NODE_MEMBERS).find(
     (section) => section.title === "Resistors and trim-pots",
   )
-  expect(resistors?.columns).toEqual(["Part", "Value", "Leads", "Mounting"])
+  expect(resistors?.columns).toEqual(["Part", "Value", "Leads", "Mounting", "Fit"])
   expect(resistors?.rows.find((row) => row[0] === "R1")).toEqual([
-    "R1", "10K", "C4, E4", "STAND ON END",
+    "R1", "10K", "C4, E4", "STAND ON END", "always",
   ])
 })
 
@@ -156,7 +162,12 @@ test("a header's Value names what goes in its holes, its pin count read from the
   expect(junctions?.rows.map((row) => row[1])).toEqual(["3-pin header", "3-pin header (25K pot, off-board)"])
 })
 
-test("the header, then the three images, then the checklist", () => {
+// THREE images because this fixture declares no stand-in groups, not because a
+// packet has three: a board WITH a `ScaffoldDoc` carries a fourth, the clusters
+// view, and `tests/guide/clusters-view.test.ts` plus the packet delivery test
+// cover that one. The title said "the three images" while four existed, which
+// reads as a claim about every packet rather than about this fixture.
+test("the header, then the three images of a board with no stand-in groups, then the checklist", () => {
   const html = guideHtml()
   const at = (needle: string): number => {
     const index = html.indexOf(needle)
@@ -198,6 +209,18 @@ test("a packet that does print a schematic carries no no-schematic notice", () =
   expect(html).not.toContain("No schematic in this packet")
   expect(html).not.toContain('class="notice"')
   expect(html).toContain("<dt>Schematic</dt><dd>circuits/test.kicad_sch</dd>")
+})
+
+test("a board with a wiring.md names it on page one, saying this packet does not replace it", () => {
+  const html = guideHtml(undefined, PRINTED_SCHEMATIC, "boards/test-board/wiring.md")
+  expect(html).toContain("<dt>Wiring guide</dt>")
+  expect(html).toContain("boards/test-board/wiring.md")
+  expect(html).toContain("this packet does not replace it")
+})
+
+test("a board with no wiring.md gets no Wiring guide row at all", () => {
+  const html = guideHtml()
+  expect(html).not.toContain("<dt>Wiring guide</dt>")
 })
 
 test("a board that exports no power-up checks gets a section saying so", () => {

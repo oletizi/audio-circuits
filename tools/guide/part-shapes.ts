@@ -1,5 +1,5 @@
 import { REBUILD_PINNED_FORK, type Part, type Pin } from "./dump.ts"
-import { INK, PAPER, PITCH, boxAround, circle, fmt, polygon, type Box, type Point } from "./svg.ts"
+import { INK, PAPER, PITCH, WIRE_WIDTH, boxAround, circle, fmt, line, polygon, type Box, type Point } from "./svg.ts"
 
 /**
  * Part outlines by VeroRoute part type, each at the centroid of the part's
@@ -251,6 +251,46 @@ export function padBody(at: Point): Body {
     centre: at,
     // NOTHING FITS INSIDE ONE HOLE'S RING, so the tag goes beside it - which is
     // what `labelArea: undefined` asks `./render-parts.ts` for.
+    labelArea: undefined,
+    marks: [],
+    polarity: undefined,
+  }
+}
+
+/**
+ * A PART THAT IS A WIRE LINK: the line a builder actually solders between its
+ * two holes, drawn exactly as `render-board.ts`'s `drawWires` draws a
+ * W-numbered wire.
+ *
+ * **IT IS NOT DISPATCHED BY `bodyFor`, FOR `padBody`'s REASON.** Which parts
+ * are wire links is a fact about the CIRCUIT - a pot section resolved to 0 Ω -
+ * and `bodyFor` branches on the VeroRoute part type, which is `RESISTOR` here
+ * and says nothing about the value. `./render-parts.ts` calls this directly for
+ * the refs its caller names (`./wire-links.ts`), the same division as a pad's.
+ *
+ * **WHY THE RESISTOR OUTLINE HAD TO GO, in the owner's words (2026-10-18):**
+ * *"I am likely to question the validity of a perfboard layout that specifies 0
+ * ohm resistors ... in a perfboard context, they raise eyebrows."* A rectangle
+ * with `0R` printed beside it is that layout specifying one, so fixing the
+ * checklist row and leaving this picture alone would have fixed the half that
+ * was easy to find (`docs/known-gaps.md`'s G55).
+ *
+ * **NO `labelArea`:** nothing may be printed ON this line, both because there is
+ * no body to print it on and because a tag over the wire would hide the one mark
+ * that says it is a wire. `render-parts.ts` puts the tag beside it, as it does
+ * for a standing resistor and a pad.
+ */
+export function wireLinkBody(part: Part, pins: readonly PlacedPin[]): Body {
+  expectPinCount(part, pins, 2)
+  const a = pinNamed(part, pins, "1").at
+  const b = pinNamed(part, pins, "2").at
+  // Refuses two pins in one hole, exactly as `resistorBody` does through the
+  // same helper: a zero-length wire cannot be drawn and would not be solderable.
+  unit(a, b, part)
+  return {
+    outline: line(a, b, { width: WIRE_WIDTH, cls: "wire", data: { ref: part.ref } }),
+    extent: boxAround([a, b], WIRE_WIDTH),
+    centre: centroid([a, b]),
     labelArea: undefined,
     marks: [],
     polarity: undefined,

@@ -4,6 +4,8 @@
  *   layout-designators.svg  component side, parts labelled by designator
  *   layout-values.svg       component side, parts labelled by value
  *   copper-side.svg         mirrored copper side: strips, cuts, bridges
+ *   layout-clusters.svg     component side, each stand-in group hatched
+ *                           (only on a board that declares stand-in groups)
  *   schematic.pdf           kicad-cli sch export pdf --black-and-white
  *   guide.html              the build guide, embedding the three images
  *   guide.pdf               that page printed, by a headless browser
@@ -43,10 +45,12 @@ import path from "node:path"
 import { boardName, type PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { runnerFor, type VerbRun } from "../perfboard/verbs.ts"
+import { wiringPath as boardWiringPath } from "../perfboard/wiring-sync.ts"
 import type { Env } from "../perfboard/check.ts"
 import { buildChecklist } from "./checklist.ts"
 import { assertLayoutMatchesCircuit, componentAt, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
-import { buildGuideHtml, type GuideSchematic } from "./guide.ts"
+import { clusterMarking } from "./clusters.ts"
+import { buildGuideHtml, type GuideImages, type GuideSchematic } from "./guide.ts"
 import { nodeMembers } from "./node-members.ts"
 import { offBoardLabels, valueLabel } from "./off-board.ts"
 import { padLabelOf } from "./pad-label.ts"
@@ -54,6 +58,7 @@ import { padTerminals } from "./pads.ts"
 import { buildableDump } from "./preflight.ts"
 import { defaultPrintGuidePdf } from "./print-pdf.ts"
 import { renderLayout } from "./render.ts"
+import { wireLinkRefs } from "./wire-links.ts"
 
 /** The few filesystem operations the packet writer needs. */
 export interface GuideFs {
@@ -84,6 +89,7 @@ export interface GuideDeps {
 }
 
 export const SCHEMATIC_PDF = "schematic.pdf"
+export const CLUSTERS_SVG = "layout-clusters.svg"
 export const GUIDE_HTML = "guide.html"
 export const GUIDE_PDF = "guide.pdf"
 
@@ -95,12 +101,18 @@ export const GUIDE_PDF = "guide.pdf"
  * always named `schematic.pdf` would make a board with no schematic look like
  * a packet missing a file, which is the confusion this whole path exists to
  * avoid.
+ *
+ * `hasClusters` is the same argument for the stand-in-groups image: a board
+ * that is not one section of a shared ladder has no groups to hatch
+ * (`./clusters.ts`), and naming `layout-clusters.svg` unconditionally would
+ * make such a board's packet read as one with an image missing.
  */
-export function packetFiles(hasSchematic: boolean): readonly string[] {
+export function packetFiles(hasSchematic: boolean, hasClusters: boolean): readonly string[] {
   return [
     "layout-designators.svg",
     "layout-values.svg",
     "copper-side.svg",
+    ...(hasClusters ? [CLUSTERS_SVG] : []),
     ...(hasSchematic ? [SCHEMATIC_PDF] : []),
     GUIDE_HTML,
     GUIDE_PDF,
@@ -189,13 +201,33 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   const name = boardName(declaration)
   const designators = new Map(dump.parts.map((part) => [part.ref, part.ref]))
   const values = new Map(dump.parts.map((part) => [part.ref, valueLabel(dump, part, circuit, "image")]))
-  const images = {
+  // ONE WIRE-LINK SET, SHARED BY ALL THREE IMAGES, built here for the reason
+  // `padLabels` above is: the renderer holds no circuit knowledge, and a part
+  // that resolves to 0 Ω must not be drawn as a resistor in one image and a
+  // wire in another. The checklist asks the same question of the same circuit
+  // through the same predicate (`lib/model/zero-ohm.ts`), which is what keeps
+  // the printed table and these pictures from disagreeing about one part.
+  const wireLinks = wireLinkRefs(dump, circuit)
+  // ONE MARKING, BUILT HERE for the reason `padLabels` and `wireLinks` are:
+  // which parts stand in for an absent section is a fact about the board's
+  // `ScaffoldDoc` and the renderer holds no circuit knowledge. `undefined` on
+  // a board with no stand-in groups, which is how the packet comes to have no
+  // fourth image rather than an unhatched copy of the first.
+  // THROUGH `circuit.designators`, NOT AGAINST THE DUMP'S REFS: a group's
+  // partIds are component ids and this dump is keyed by designator, and
+  // DESIGNATORS is the only place those two vocabularies meet (`./clusters.ts`,
+  // and `tools/perfboard/scaffold-membership.ts` for the same rule on the
+  // `make check` side of the same question).
+  const clusters = clusterMarking(circuit.scaffold, circuit.designators, dump)
+  const images: GuideImages = {
     designators: renderLayout(dump, designators, {
       view: "component",
       title: `${name} - designators`,
       edgeLabels,
       pads,
       padLabels,
+      wireLinks,
+      clusters: undefined,
     }),
     values: renderLayout(dump, values, {
       view: "component",
@@ -203,6 +235,8 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
       edgeLabels,
       pads,
       padLabels,
+      wireLinks,
+      clusters: undefined,
     }),
     copper: renderLayout(dump, designators, {
       view: "copper",
@@ -210,7 +244,25 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
       edgeLabels,
       pads,
       padLabels,
+      wireLinks,
+      clusters: undefined,
     }),
+    // LABELLED BY DESIGNATOR, like the first image: the hatch says which group
+    // a part is in and the designator is what the checklist's rows are keyed
+    // by, so the two pages cross-reference without a third per-part string
+    // inside the board outline (docs/known-gaps.md's G2 and G17).
+    clusters:
+      clusters === undefined
+        ? undefined
+        : renderLayout(dump, designators, {
+            view: "component",
+            title: `${name} - stand-in groups`,
+            edgeLabels,
+            pads,
+            padLabels,
+            wireLinks,
+            clusters,
+          }),
   }
   const repoRoot = deps.repoRoot ?? moduleRepoRoot()
   const schematic: GuideSchematic =
@@ -221,6 +273,14 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
           circuitPath: path.relative(repoRoot, declaration.circuitPath),
         }
       : { kind: "printed", path: path.relative(repoRoot, schPath) }
+  // DETERMINED BY LOOKING, NOT BY `circuit.scaffold`: a board can carry a
+  // `wiring.md` for reasons other than stand-in groups (off-board terminals,
+  // a terminal block), and the two have in fact tracked each other only by
+  // coincidence of what exists today - see `tools/perfboard/wiring-sync.ts`'s
+  // own "no panel parts, no guide" rule. A board with none on disk gets no
+  // row rather than a dangling name.
+  const wiringFile = boardWiringPath(declaration)
+  const wiringPath = fs.existsSync(wiringFile) ? path.relative(repoRoot, wiringFile) : undefined
   const html = buildGuideHtml({
     boardName: name,
     generated: isoDate((deps.now ?? (() => new Date()))()),
@@ -229,6 +289,13 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
     images,
     checklist,
     powerUpChecks: circuit.powerUpChecks,
+    wiringPath,
+    // STRAIGHT OFF THE CIRCUIT, undefined and all: a board that declares no
+    // SCAFFOLD prints the sentence `tools/guide/stand-in-section.ts` holds
+    // for that case, and collapsing undefined into an empty doc here would
+    // make "this board is not a Pultec section" print as "this section has
+    // no groups" - two different claims (`./circuit.ts`'s field comment).
+    scaffold: circuit.scaffold,
   })
 
   const files = deps.fs ?? REAL_FS
@@ -240,6 +307,9 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
     files.writeText(path.join(staging, "layout-designators.svg"), images.designators)
     files.writeText(path.join(staging, "layout-values.svg"), images.values)
     files.writeText(path.join(staging, "copper-side.svg"), images.copper)
+    if (images.clusters !== undefined) {
+      files.writeText(path.join(staging, CLUSTERS_SVG), images.clusters)
+    }
     if (schPath !== undefined) {
       ;(deps.exportSchematicPdf ?? defaultExportSchematicPdf)(
         deps.kicadCli,
@@ -263,7 +333,7 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   }
   return [
     `Wrote the build packet for ${name} to ${guideDir}:`,
-    ...packetFiles(schPath !== undefined).map((file) => `  ${file}`),
+    ...packetFiles(schPath !== undefined, images.clusters !== undefined).map((file) => `  ${file}`),
     // SAID IN THE CONSOLE AS WELL AS ON THE PAGE, and the page is the one that
     // matters: someone builds from paper, and a console line scrolls away.
     ...(schPath === undefined

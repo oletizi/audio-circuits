@@ -113,5 +113,11 @@ export function fixtureCircuit(
   powerUpChecks: PowerUpChecks | undefined = undefined,
   components: readonly Component[] = COMPONENTS,
 ): BoardCircuit {
-  return boardCircuitFrom({ components, ports: { input: "IN_EXT" } }, DESIGNATORS, PIN_NUMBERS, powerUpChecks)
+  return boardCircuitFrom(
+    { components, ports: { input: "IN_EXT" } },
+    DESIGNATORS,
+    PIN_NUMBERS,
+    powerUpChecks,
+    undefined,
+  )
 }
