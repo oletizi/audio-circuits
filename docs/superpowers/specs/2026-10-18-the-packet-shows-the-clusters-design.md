@@ -16,8 +16,9 @@ What this is NOT
 **It is not a request to work out which parts belong to which cluster. That is
 already done and already correct.** `boards/pultec-low-boost/wiring.md` carries
 a table per group with every part, its fitted value and the two nets it sits
-between, and a **What to populate, by build** table covering all 31
-combinations with a **Carried elsewhere** column. His own example is two rows
+between, and a **What to populate, by build** table covering every build this
+board can be part of - 16 of them, not 31; see change 4 below and the Decisions
+table - with a **Carried elsewhere** column. His own example is two rows
 of it, and **the two boards' sheets were cross-checked against each other for
 that pair and agree in both directions** - low-boost says hi-boost, hi-cut and
 mid are carried on low-cut; low-cut says it carries them; the three crossing
@@ -311,6 +312,6 @@ Decisions
 | 16 build rows, derived from `ScaffoldDoc.builds` | third-party review, 2026-10-18 | the first version of this spec said 31, which is the global combination count; a section appears in 2^4 of them, and both wiring sheets already carry 16 |
 | The group section records a three-state configuration, not a tick | third-party review, 2026-10-18 | a ticked box on an omitted group cannot be read as either "all fitted" or "deliberately skipped" |
 | The scaffold-to-layout membership check goes in `make check`, not only in a test | this spec, against the review's scope advice | it is a model-level consistency claim, and an immutable layout means a misidentified part gets blamed on the layout |
-| The packet carries all 31 build rows, not one | this spec | a single-build row becomes wrong, not merely incomplete, the moment the bench changes |
+| The packet carries EVERY build row, not one - 16 of them, per the row above | this spec | a single-build row becomes wrong, not merely incomplete, the moment the bench changes. **This row said "all 31 build rows" until 2026-10-19**, which contradicted the row above it, the body (changes 4 and 5) and what shipped: 31 is the global count of non-empty combinations of five sections, and a given section appears in 16 of them. The decision this row records is all-builds-versus-one, which is unchanged; only the number was wrong |
 | `scaffold` is optional and never defaulted to empty | `CLAUDE.md` | an empty doc asserts "no groups to populate", which is a different claim from "this board declares none" |
 | The packet names `wiring.md` rather than absorbing it | this spec, for review | G45 names both options - print the conditionality, or have page one name the sheet you must hold. This does both, since the conditionality is small and the sheet carries much more |
