@@ -28,11 +28,39 @@ How much each can be trusted
 
 Strongest first. This ordering is the point of the table.
 
+**There are two different kinds of strength here and a single ranking would blur
+them**, so the table groups by METHOD. A pass that ran code and a pass that read
+primary sources are both strong, in different ways and against different failure
+modes: running catches a tool that does not do what its README says, reading
+catches a claim nobody checked. **The one genuinely weak pass is the one that did
+neither.**
+
+**Measured by running it.** These executed the thing and looked at what came out.
+
 | Document | Evidentiary standing | What that means concretely |
 | --- | --- | --- |
-| [`schgen-development-history.md`](schgen-development-history.md) | **Strongest of the three - primary sources, read directly** | Its author read a repository's own git history, its spec at named revisions, its committed verification record, and the session transcripts, streamed and quoted. Every claim is marked **CONFIRMED** (source read and cited) or **INFERRED**, and agent narration is labelled as agent narration. |
+| [`generation-prior-art-circuit-families.md`](generation-prior-art-circuit-families.md) | **Strongest methodology of any pass - it ran a CONTROL** | Ran two tools against the four non-Pultec circuit families. Its central claim - that net degree and not circuit family or part count defeats a router - is established with a control that separates the variables: 15 parts in a series chain routed 15/15 while 15 parts on one degree-15 net routed 1/5. It also reports its own harness's bugs separately from the tools' failures, and proves one of its guards by mutating it. |
+| [`generation-prior-art-second-pass.md`](generation-prior-art-second-pass.md) | **Measured, no controls** | Cloned five repositories, ran four, rendered schematics and looked at them. Marks every finding `[RAN]`, `[CODE]` or `[RELAYED]`. Its scope was **the Pultec alone**, which is the circuit those tools are worst at - the error the circuit-families pass above corrects. Read the two together or the first will mislead you. |
+| [`generation-prior-art-third-pass.md`](generation-prior-art-third-pass.md) | **Mixed - ran one tool, read one key source, surveyed the rest** | Ran `netlistsvg`/ELK against the probes that defeated other tools (10/10, byte-identical across 30 runs) and read the AEM formula directly from an open-access preprint. Its forty-year literature survey is citation work, not measurement, and should be read as such. |
+
+**Primary sources, read directly.** These read the thing itself rather than a summary of it.
+
+| Document | Evidentiary standing | What that means concretely |
+| --- | --- | --- |
+| [`schgen-development-history.md`](schgen-development-history.md) | **Primary sources, read directly** | Its author read a repository's own git history, its spec at named revisions, its committed verification record, and the session transcripts, streamed and quoted. Every claim is marked **CONFIRMED** (source read and cited) or **INFERRED**, and agent narration is labelled as agent narration. |
 | [`readability-research.md`](readability-research.md) | **Mixed, and the mix is clause-by-clause** | ANSI/ASME Y14.15-1966 and IEEE 315 were read directly and are quoted at clause level. The three **in-force** standards that hold the layout requirements - IPC-2612, IEC 61082-1, ASME Y14.2 - were obtained as **clause and figure titles only**. About a dozen candidate-criteria rows are therefore flagged *title only*, and **no requirement is paraphrased from a title.** |
-| [`generation-prior-art.md`](generation-prior-art.md) | **Weakest of the three - nothing verified by running** | No repository cloned, no generator executed, no generated schematic rendered and looked at. Every page was read through a summarising fetch tool, so `[REPO]` means *"the README says"*. Its own statement: *"a map of where to look, not a measurement."* Star counts, commit counts and last-activity dates are **its least reliable facts.** |
+**Surveyed only.** This one verified nothing.
+
+| Document | Evidentiary standing | What that means concretely |
+| --- | --- | --- |
+| [`generation-prior-art.md`](generation-prior-art.md) | **Weakest of all six - nothing verified by running or by reading a primary source** | No repository cloned, no generator executed, no generated schematic rendered and looked at. Every page was read through a summarising fetch tool, so `[REPO]` means *"the README says"*. Its own statement: *"a map of where to look, not a measurement."* Star counts, commit counts and last-activity dates are **its least reliable facts** - though the second pass re-checked several against the GitHub API and found them exactly right, so what deserved distrust was everything it INFERRED about behaviour, not the counts. |
+
+**Three of its characterisations have since been measured false**, which is the
+clearest argument for the grouping above: it called `netlistsvg` effectively
+unmaintained (the default branch has commits through January 2024), digital-only
+(it ships a first-class analog skin with 25 symbol types), and left-to-right
+(the analog skin sets ELK direction `DOWN`). **Do not build on this document
+without checking the pass that measured the same thing.**
 
 Two things that follow, and both have bitten already:
 
