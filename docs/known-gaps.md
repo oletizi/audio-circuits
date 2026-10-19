@@ -485,8 +485,9 @@ entry is that flag, in the file that outlives the spec.
 
 ### G71 - no published source states an acceptable number of wire crossings, bends or wire length, so a threshold in a readability rubric would be this project's invention wearing a citation
 
-Measured by the standards research pass (`docs/schematic-readability-research.md`
-§2.2, §4.2, §7.3, committed `51f8362`): **every source it could read says
+Measured by the standards research pass (`docs/schematic/readability-research.md`
+§2.2, §4.2, §7.3, committed `51f8362`; moved under `docs/schematic/` and indexed
+by `docs/schematic/README.md` on 2026-10-19): **every source it could read says
 *minimise* and none says how few is few enough.**
 
 - ANSI/ASME Y14.15-1966 **15-7.2**: connecting lines *"should be drawn with as
@@ -547,7 +548,7 @@ inform the decision; it is not the decision.
 ### G72 - "power at the top" could not be sourced to any electronics standard, and the clause that states it is about transmission buses
 
 The convention whose authority the standards research most expected to find and
-least did (`docs/schematic-readability-research.md` §2.5, §7.2).
+least did (`docs/schematic/readability-research.md` §2.5, §7.2).
 
 **What says it, and why it is not what it looks like.** Y14.15 **15-6.3.6
 Voltage Arrangement**: *"The arrangement of the diagram should preferably show
@@ -3442,8 +3443,8 @@ record the disagreement so its cost is visible"*.
 
 **TWO RESEARCH PASSES HAVE SINCE LANDED ON CLAUSE 7'S RUBRIC QUESTION,
 2026-10-19, AND THEY NARROW IT RATHER THAN ANSWERING IT.**
-`docs/schematic-readability-research.md` (`51f8362`) and
-`docs/schematic-generation-prior-art.md` (`ba6dba1`). What a planner holding
+`docs/schematic/readability-research.md` (`51f8362`) and
+`docs/schematic/generation-prior-art.md` (`ba6dba1`). What a planner holding
 clause 7 now has: **there is no published threshold to put in gate 14's rubric**
 for crossings, bends or wire length (**G71**); the in-force standards that would
 supply layout requirements are unread (**G70**) and the readable ones are
