@@ -153,6 +153,75 @@ For an agent-designed circuit (the optical compressor, the transistor preamp) th
 direction reverses: the `Network` is authoritative and the schematic is derived from it.
 The pipeline below is the same either way; only the top box changes.
 
+### A per-board Pultec schematic is DERIVED from the canonical schematic, and that is a requirement
+
+**Added 2026-10-18. The owner, in his own words:**
+
+> *"The per-board schematics need to be derived from the canonical schematic - that's a
+> crucial part of modularizing. It's not a blocker, it's a REQUIREMENT"*
+
+So the authority row above is **not** in question and no second authority is wanted. The
+canonical `circuits/pultec/pultec-three-band-eq.kicad_sch` stays authoritative for all
+five section boards, and `CLAUDE.md` already states the direction - *"For an existing
+design being brought in - the Pultec - the schematic is authoritative and the model is
+derived from a netlist export."* A per-board schematic is a further derivation along that
+same chain, and **that it derives is the crucial part of modularizing**:
+
+```text
+  pultec-three-band-eq.kicad_sch        the canonical schematic, authoritative
+            │  netlist export
+            ▼
+  circuits/pultec/electrical/*.ts       the model derived from it
+            │  partition.ts
+            ▼
+  a section's own components            which section owns which component
+            │  physicalization - stand-in groups, junction headers
+            ▼
+  physicalBoard(section)                the section network
+            │  schematic generation
+            ▼
+  <section>.kicad_sch                    the per-board schematic
+```
+
+The stand-in groups and the two `physicalOnly` junction headers enter at the
+physicalization step. **They are products of modularization, not foreign matter**: they
+are what modularizing ADDS, and they are themselves derived - a stand-in is
+`resolveSectionFlat` applied to an absent section's own components, and the junction is
+the harness that makes the ladder whole across boards.
+
+**THE DEFECT, AND IT IS NARROW. FOUND 2026-10-18 BY A DRIFT CHECK, BEFORE PLANNING.**
+Gate 4 names a comparison of the generated schematic against *"the netlist export for the
+Pultec"* - that is, a **direct** whole-EQ-to-section comparison, with every derivation
+step above collapsed into it. That comparison rejects on a section board, and the
+rejection is measured, not argued: `docs/known-gaps.md` G16 records that declaring the
+whole-EQ `netlist` against one section's board makes `netlist-agrees` compare and reject,
+because half a section's parts are not in it - and the section additionally carries
+stand-ins and junction headers the whole EQ does not have at all.
+
+**So the comparison is being made at the wrong point in the chain, and the authority is
+fine.** Each STEP of the derivation has to be checkable; one end-to-end comparison that
+skips the steps cannot be, and a gate that cannot hold is worse than no gate by
+`CLAUDE.md`'s *"a skipped check must never look like a passing one"* - as written, gate 4
+could go green on four agent-designed circuits and the whole-EQ Pultec and say nothing at
+all about the five section boards while reading as though it had covered both authority
+directions.
+
+**Naming where the chain is unchecked is the whole of this fix. Designing the per-step
+checks is the T2 plan's job and is not done here** - an agent that specified them now
+would be authoring the acceptance criteria for the artifact it is about to produce, which
+is the invariant in `CLAUDE.md`.
+
+**And a pattern worth more than either fix, because it happened three times in one
+sitting.** Twice on 2026-10-18 a requirement of the owner's was relayed to him as a
+blocker or as a defect in this document - first the absence of vendored KiCad symbols,
+then this authority row - and he corrected it both times (*"not having access to symbols
+is not a valid blocker. There are MANY symbols freely available in kicad."*, and the quote
+above). **A hard requirement the current tooling cannot yet meet is a requirement, not a
+blocker.** Calling it a blocker invites the next reader to route around it, which on both
+of those would have meant inventing a second authority or a Pultec-local symbol table -
+the shortcuts the owner's directive rules out. Write what is missing and what it would
+take; do not promote it to an obstacle.
+
 ## Architecture
 
 ```text
@@ -262,9 +331,29 @@ verification material, not a future benefit.
 | `potNetwork` | a potentiometer as rheostat (wiper tied to one end) or as divider | **new** |
 | `tappedReturn` | four or five discrete inductors from their taps to a common coil return | **new** |
 | `modeSwitch` | the mid section's two-throw boost/cut switch, selecting which resistor the coil returns through - no capacitors on its throws | **new** |
+| the **stand-in group** | every Pultec section board - 6 to 9 conditionally populated components per board (measured: low-boost 8, low-cut 9, hi-boost 8, hi-cut 6, mid 9), carrying a group identity (`standInGroup`, `circuits/pultec/physical/board.ts:236`), a population rule (*"Populate a group whole, or leave it empty"*, *"One group, one board"*) and a per-build supplier assignment (`lib/board/scaffold/supplier.ts`) | **GAP - no template, and no IR concept of a conditionally populated part. To be designed in the T2 plan** |
+| the **junction bus** | every Pultec section board - two fixed-pinout `physicalOnly` 1x05 stacking headers carrying the five ladder nets with interleaved grounds (`circuits/pultec/physical/parts.ts:348, 383`) | **GAP, with its coverage UNDETERMINED - `fanoutKit`'s row claims "the Pultec's terminal blocks and header landings", and whether `fanoutKit` as ported realises a fixed-pinout bus rather than a per-net edge landing was NOT established. Determine it from the port source; do not assume either answer** |
+| the **ganged pole** | `lo_freq` (`SW_LO_CUT` + `SW_LO_BOOST`) and `hi_freq` (`SW_HI_CUT` + `SW_HI_BOOST`) - one gang joining two poles of one shaft **across two different boards** (`circuits/pultec/electrical/controls.ts`) | **GAP - no template and no gate carries it. To be designed in the T2 plan** |
 
 So the port writes five new templates, not four, and the ported ones are proven against the
 existing circuits rather than taken on trust.
+
+**THE LAST THREE ROWS ARE A DEFECT IN THIS DOCUMENT, FOUND 2026-10-18 BY A DRIFT CHECK,
+BEFORE PLANNING.** This section's table named five new templates and stopped there, and
+the obligation two sections up - *"If the template set this document names turns out not
+to cover a Pultec construct, that is a defect in this document to be found and fixed
+before the port is planned"* - is what makes that an error rather than a detail. The three
+constructs above are present on all five Pultec section boards today and no row covered
+any of them, so T2 as previously specced would have reached its last milestone and found
+the five section schematics ungenerable.
+
+**Naming them is the whole of this fix. Designing them is the T2 plan's job and is not
+done here**, deliberately: a specification written now would be written from the five
+boards that happen to exist, which is the special-casing the owner's directive rules out.
+What the plan may not do is treat any of the three as covered by an existing row -
+`passiveChain` would silently absorb a stand-in group as ordinary series and shunt
+resistors and lose both the group identity and the population condition, which is the
+defect `docs/known-gaps.md` G58 already records on the printed checklist.
 
 **`gates/oscar/` ports too, and this repository supplies its own reference material.**
 Pedals compares its generated schematic against the OSCAR reference design at a pinned
@@ -571,6 +660,13 @@ for a human, never a verdict.
 4. **Canonical graph equivalence** against the authoritative source - the netlist export
    for the Pultec, the `Network` for an agent-designed circuit - comparing values and
    pin-level adjacency independent of names.
+
+   **This gate as written cannot grade a Pultec SECTION schematic, and that is a defect
+   in this document found 2026-10-18 before planning.** It names a direct whole-EQ-to-
+   section comparison, which rejects on a section board - see **A per-board Pultec
+   schematic is DERIVED from the canonical schematic** under **Authority hierarchy** for
+   the measured reason, for the derivation chain whose steps need checking instead, and
+   for why the authority itself is not in question.
 5. **Pin identity.** Pin numbers and names agree across the symbol, the IR's expected
    identity (compared exactly, after declared aliases only - no case folding, no fuzzy
    matching) and the footprint's pads. Pad-count parity alone would not catch a swapped
