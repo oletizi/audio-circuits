@@ -110,6 +110,36 @@ leave capacitor banks out of frequency order, and produce 4.7:1 and 6.6:1
 ribbons.** The second spike's own summary is the honest form of this:
 ***"block scale removes the catastrophe and leaves the complaint."***
 
+Revision 3, 2026-10-19: three changes that landed after Revision 2 was written
+---------------------------------------------------------------------------------
+
+**This section exists because the two above went stale within hours, which is
+the same failure the research index at
+[`../../schematic/README.md`](../../schematic/README.md) had on the same day:
+a record of what changed, not recording the last things that changed.** A
+reviewer reading only Revisions 1 and 2 would have had an incomplete account of
+what moved and why.
+
+| # | What moved | Where | Why |
+| --- | --- | --- | --- |
+| 12 | **§5.3 is ANSWERED, not open.** `schgen`'s templates are not coupled to a geometry layer - a `Template` returns `BlockLayout` as plain data, so an ELK backend implements the same interface and **seam A is a dispatch, not a refactor** | §5.3 | Read in the pedals tree. **And it found the harder half:** `RealiseResult` is **two-valued** with **30 `mismatch(...)` call sites**, so §1.3's three-valued selector is **an interface widening**, not spec text - and G94's crash is a fifth state that type cannot express at all |
+| 13 | **§1.8's two bounds are scoped by contamination.** The ceiling's SHAPE survives and **the number nine does not**; the floor is **entirely the skin's** and is marked **unmeasured**, not 4 | §1.8 | Both spikes drove ELK through `netlistsvg`; the plan's backend does not. A port becomes a drawn cell only because that skin emits a glyph for it. **What survives is that a floor exists and that the bounds are close enough to collide** - which is what the section is for, and depends on neither number |
+| 14 | **Gate 8 is restored to the derivation table as deferred, not absent** | §2 | An earlier revision of that table omitted it and called the round trip *"the only new check"*, **silently dropping a strictly stronger check.** The round trip proves a schematic matches the netlist it came from; gate 8 proves it matches **a drawing a human trusts** |
+
+**The one thing a reviewer should weigh in this revision** is item 14's
+deferral. The gate needs a declared-delta list, and **that list cannot be
+written before the generator exists** - enumerating how a generated schematic is
+supposed to differ from a hand-drawn one, before seeing what the generator
+produces, is guessing. **That makes it a sequencing fact rather than a scope
+cut**, and `docs/known-gaps.md` **G104** holds it so the deferral cannot drift
+back into an omission.
+
+**What has NOT changed across all three revisions**, said once so a reviewer
+does not have to reconstruct it: every owner decision in "The decisions already
+made" stands untouched, and no revision has altered the architecture - the port
+plus two ELK seams, link-by-link checking, and the refusal to invent a numeric
+readability threshold.
+
 What this builds, and what says it is done
 -------------------------------------------
 
