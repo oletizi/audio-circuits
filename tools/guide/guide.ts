@@ -296,19 +296,30 @@ function groupBlock(block: StandInGroupBlock, markOne: string): string {
 }
 
 /**
- * The stand-in groups section, on its own page AHEAD OF THE CHECKLIST.
+ * The stand-in groups section: on its own page AHEAD OF THE CHECKLIST when the
+ * board HAS groups, and inline when it has none.
  *
  * The order is the builder's order, not the document's: the Fit column on a
  * part row names a group, and a reader who meets that cell before this page
  * has met a condition with nothing to resolve it against. So the decision is
  * taken here - which build, and which state each group is in - and the part
  * sections are then read with the answers in hand.
+ *
+ * **THE EMPTY ARM TAKES NO SHEET, AND THAT IS NOT A STYLE CHOICE.** The reason
+ * above is about the groups arm only: a board that declares no `SCAFFOLD` has
+ * no cells naming a group and no condition to resolve, so nothing on it needs
+ * a page of its own. What the spec asked for on that board is **one sentence**,
+ * citing the `NO_FOOTPRINT` / `NO_SPAN` precedent - a cell or a line, not a
+ * sheet - and the shared `page` wrapper was quietly spending one on each of the
+ * six boards that declare none. So the `"none"` arm is inline, the way the
+ * "declares no power-up checks" notice below it is, and the page measurement is
+ * in `docs/known-gaps.md`'s G62.
  */
 function standIn(scaffold: ScaffoldDoc | undefined): readonly string[] {
   const section: StandInSection = standInSection(scaffold)
   if (section.kind === "none") {
     return [
-      '<section class="page stand-in">',
+      '<section class="stand-in">',
       "<h2>Stand-in groups</h2>",
       `<p>${escapeXml(section.sentence)}</p>`,
       "</section>",

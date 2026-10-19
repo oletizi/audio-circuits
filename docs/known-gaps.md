@@ -744,6 +744,57 @@ tables without costing a page. `pultec-mid`'s twelfth page is its own and is
 not this change: its checklist runs to four pages because the board has 72
 table rows against low-boost's 46.
 
+**CORRECTED 2026-10-19: THE MEASUREMENT ABOVE COVERS FIVE OF THE ELEVEN
+BOARDS, AND THE OTHER SIX ALSO PAID.** The six boards that declare no
+`SCAFFOLD` - `pt2399-core` and the five transistor-preamp boards - each gained
+the **Stand-in groups** heading and its one sentence (*"This board holds no
+stand-in groups: ... Fit everything the checklist lists."*), and
+`tools/guide/guide.ts` wrapped that sentence in the same `class="page"` the
+groups arm uses, so it opened a sheet of its own. This entry said nothing about
+those boards, so the register understated the change's paper cost by up to six
+pages while reading as the whole measurement.
+
+**THE WRAPPER IS NOW CONDITIONAL AND THE SENTENCE IS INLINE** - the spec asked
+for one sentence on the `NO_FOOTPRINT` precedent, which is a line rather than a
+sheet, and a sheet is a decision about the artifact that no rule file, spec or
+reviewer took. **Nor has anyone ruled on the inline rendering**, which is the
+spec's own shape rather than an owner decision - the same unratified standing as
+G58's mark shape, G60's wire-links placement and G61's `Fit` column, and
+recorded here for the same reason. Measured by regenerating the packets with
+`make guide` and counting `pdfinfo` pages, before and after that one change:
+
+| board | with the wrapper | inline (now) |
+| --- | --- | --- |
+| `transistor-preamp-buffered` | 6 | **5** |
+| `transistor-preamp-feedback` | 7 | **6** |
+| `transistor-preamp-loop` | 8 | **8** |
+| `transistor-preamp-staged` | 7 | **6** |
+| `pt2399-core` | no packet (G49) | no packet (G49) |
+| `transistor-preamp-lab` | no packet | no packet |
+
+**Three of the four got the sheet back; `transistor-preamp-loop` did not, and
+the reason is worth having.** On that board the sentence does not fit under the
+copper-side image, so its last word - *"lists."* - spills onto a page of its
+own, and page 4 of its packet now carries that word and nothing else. The
+sentence is inline in the markup and still costs a sheet there, so for loop
+this change is page-neutral rather than a saving. That is G48's shape (*"every
+image takes a page whether or not it fills one"*), not a new cause.
+
+**WHAT THESE FOUR PRINTED BEFORE THIS BRANCH IS NOT MEASURED HERE.** The
+`Fit` column also widened their checklist tables, so the pre-branch figure is
+not recoverable by reasoning from the two columns above, and nobody regenerated
+a pre-branch tree. The numbers above are this branch with and without the one
+wrapper.
+
+**WHY TWO BOARDS HAVE NO FIGURE.** `pt2399-core` cannot be rendered at all -
+`no drawing for VeroRoute part type "DIP16"`, which is G49 and predates this
+plan. `boards/transistor-preamp-lab` refuses earlier still: its committed
+layout has 19 strips joining two different nets across unpainted holes, so
+`make guide` stops at the buildability check rather than printing. Both are
+pre-existing and neither is this change; they are named so a later reader
+counting pages across the repository does not read two missing rows as an
+omission in this measurement.
+
 **WHAT HE WAS ASKED, AND IT UNDERSTATED THE CHANGE BY THREE PAGES.** He was
 asked about the image's page only, and answered *"eighth page is fine"* - asked
 explicitly because his G48 declination was about page COUNT rather than a
@@ -767,6 +818,15 @@ raised.
 - **Verified** yes - counted and extracted by the writer, in a clean tree, on
   regenerated artifacts. The seven-page figure is G48's measurement rather than
   this writer's.
+- **The 2026-10-19 correction** found by the final whole-branch review, which
+  read the shared `class="page"` wrapper in `tools/guide/guide.ts` and said
+  plainly that the page consequence was an inference from that CSS and not a
+  measurement. **The figures in the table above are the measurement that was
+  missing**, run by the writer of the correction: `make guide` in each of the
+  six boards' directories, `pdfinfo` for the page count and per-page
+  `pdftotext` for where the sentence lands, with the wrapper and without it.
+  Two of the six refuse to print and are recorded as such rather than left
+  blank.
 - **DECLINED - 2026-10-18, in his own words.** Told that the packet is eleven
   pages rather than the eight he approved, and that the controller had failed to
   cost the extra pages when asking him, he replied verbatim: *"I dont care about
@@ -781,7 +841,10 @@ raised.
   again is a new fact rather than this one.
 - **The measurement does not expire with the declination** (this section's
   preamble). The packet is eleven pages, four more than before this plan, three
-  of them never put to him.
+  of them never put to him - and, per the 2026-10-19 correction above, the six
+  boards that are not Pultec sections were never costed to him at all. **He is
+  not asked again**: the correction is to this entry's measurement, not a reason
+  to re-open a question he has put down.
 - **What would settle it, if he returns to it** nothing is required of anyone
   now. The trimmable page is the 16-row *What to populate, by build* table on
   page 8, which the spec argues for carrying whole - *"He may change what is on
