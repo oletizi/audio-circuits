@@ -68,3 +68,14 @@ nobody raises them again unprompted.**
 The one qualifier he has given on merging: *"i dont want to merge the branch
 until the feature is complete."* Completeness is the condition, not his
 re-confirmation.
+
+**And merging is HIS to initiate, which is narrower than it sounds and was
+stated after the rule above was written.** On 2026-10-19, having been asked
+about merging once too often, he ruled: *"stop worrying about merging. I'll tell
+you when to do that."* So: **commit and push early and often** - that cadence is
+unchanged and is required - but **do not propose a merge, do not ask whether to
+merge, and do not offer it as a next step.** He raises it.
+
+**The two rules are the same discipline pointed at one thing.** Asking again is
+the fault; "shall I merge?" at the end of a report is asking again in a costume,
+and it was asked at the end of four consecutive reports before he stopped it.
