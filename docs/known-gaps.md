@@ -295,6 +295,26 @@ reach. Making it reachable means deciding whether `SW_HI_BOOST` joins
 derives its contacts, not a check an agent can add unilaterally. That decision
 is the owner's, which is why this entry now lives in this section.
 
+**WHAT A GENERATED SECTION SCHEMATIC ADDS, 2026-10-18.** The owner has required
+a schematic per Pultec section board (G16 carries his words), and a gang is the
+one thing in these circuits that **spans two boards**: `LO_FREQUENCY_GANG` joins
+`SW_LO_CUT` on low-cut to `SW_LO_BOOST` on low-boost, `HI_FREQUENCY_GANG` joins
+`SW_HI_CUT` to `SW_HI_BOOST`, and each pair is one shaft. A per-board drawing
+therefore either says "one pole of two, shaft shared with the other board" or it
+reproduces on a schematic the live build defect **G45** already records on the
+printed packet (*"a builder fits a separate six-position switch per board where
+one shaft is meant to turn two"*). A drift check of
+`docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`, run before
+T2 was planned, found that the spec's `selectorBank` template is specified as
+*"a rotary switch fanning out to a capacitor bank"* with **no gang, no pole and
+nothing cross-board**, and that none of its gates carries the relationship
+either; the ganged pole has since been added to that spec's template table as a
+gap to be designed. **That does not settle this entry** - it makes its open half
+load-bearing in a third artifact, and whether `SW_HI_BOOST` joins `SELECTORS`
+also decides whether the hi-frequency gang's two poles are ever checked against
+each other at all. **Relayed from the drift check**, except the spec text, which
+this writer read at `1dd5814`.
+
 **The printed guide is still immune by construction**, for the same reason as
 before: `tools/guide/pad-label.ts` labels a pad from the component's own
 `contacts` through `positionsByPin`, so no derivation anywhere in the label
@@ -1128,6 +1148,23 @@ The four other adopted boards carry the same shape for their own stand-ins. The
 printed packet no longer SAYS resistor, but the layout the packet is generated
 from still places one, and the `.vrt` is what a later tool, a later guide, or a
 person opening VeroRoute reads.
+
+**AND A THIRD ARTIFACT IS COMING THAT WILL HAVE TO DECIDE THE SAME THING,
+2026-10-18.** The owner has required a generated schematic per Pultec section
+board (G16). Every one of those boards carries stand-in groups, and a stand-in
+is a product of `resolveSectionFlat` containing ideal-short arms -
+`lib/board/scaffold/index.ts:28-31`: *"hi-boost's stand-in ... is two
+components, `RV_HI_BOOST`'s 0R arm from `in` in series with its full 47k to
+`hi_boost_out`, because 'ideal shorts are components, never node merges'."* So a
+section schematic will contain 0 Ω resistors, and **what a schematic should draw
+for one is unanswered**: a resistor symbol valued `0R`, a wire, or something
+else. This is not the same question as this entry's level 2 (the layout) or
+G60's (which checklist section the row lands in), and it is not blocked by
+*"Leave the approved boards alone for bow"* - a drawing is not a layout. It is
+named here rather than in a new entry because `lib/model/zero-ohm.ts` is still
+the one decision point all three artifacts would read. **Relayed from a drift
+check of the T2 spec**; this writer confirmed only that the stand-ins are on all
+five boards, not the `index.ts` quote.
 
 **Why a 0R part exists at all, since it looks like a mistake and is not.** A
 pot resolves into two resistor sections, `ccw-wiper` and `wiper-cw`
@@ -2678,6 +2715,69 @@ checked against, and saying what would put a schematic page there. Both
 `pultec-low-boost` and `pultec-low-cut` were packeted this way and the printed
 pages read (2026-10-17).
 
+**THE OWNER HAS NOW ANSWERED THE QUESTION THIS ENTRY CALLED HIS, 2026-10-18,
+AND ITS OWN SUGGESTED MECHANISM DOES NOT MEET ITS CRITERION.** Read this before
+the rest of the entry, which was written when the drawing question was open.
+
+His words, relayed by the controller on 2026-10-18 and **not heard directly by
+this writer**:
+
+> *"The per-board schematics need to be derived from the canonical schematic -
+> that's a crucial part of modularizing. It's not a blocker, it's a
+> REQUIREMENT"*
+
+So each section does get a schematic, the canonical
+`circuits/pultec/pultec-three-band-eq.kicad_sch` **stays** the authority for all
+five, and the per-board schematic is a further derivation along the chain
+`CLAUDE.md` already states for an imported design. The work is sub-project T2 of
+`docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`, which now
+carries the chain and the requirement verbatim under **Authority hierarchy**.
+This entry stays open because the schematics do not exist yet; what is settled is
+whether they should.
+
+**WHAT DOES NOT FOLLOW, AND IT IS THIS ENTRY'S OWN MECHANISM.** "What would
+settle it" below says *"draw it, declare the `sch`/`netlist` pair, and the packet
+prints it with no further change"*. That is a MECHANISM, written by somebody who
+had not tried it, and per `CLAUDE.md` the criterion is the settlement. Three
+things measured 2026-10-18 say the mechanism as written does not reach it:
+
+- **The comparison gate it leans on is aimed at the wrong point in the chain.**
+  `netlist-agrees` would compare the declared `netlist` against the declared
+  `sch`; this entry's own body measures that a whole-EQ netlist declared on a
+  section board rejects. The spec's gate 4 names exactly that direct whole-EQ-to-
+  section comparison and has been marked a defect in the spec for it. The
+  authority is not in question - only where the comparison is made, and each step
+  of the derivation needs to be checkable rather than one end-to-end comparison
+  that skips the steps.
+- **A section board carries parts the whole EQ does not have**: 6 to 9 stand-in
+  components and two `physicalOnly` 1x05 junction headers per board (measured:
+  low-boost 19 components total, low-cut 20, hi-boost 27, hi-cut 21, mid 39).
+  These are products of modularization and are themselves derived - not foreign
+  matter - but they enter below the netlist export, so nothing above that step
+  predicts them.
+- **If the declared pair becomes a GENERATED schematic plus its own generated
+  netlist fixture, `netlist-agrees` compares a generated artifact against a
+  generated artifact** and the freshness guard stops guarding anything a human
+  did. That is a real possibility the mechanism does not consider, and it is not
+  resolved here.
+
+**AND A SECOND QUESTION THE MECHANISM HIDES: which configuration does a section
+schematic depict?** `physicalBoard(s) = boardNetwork(s, {s})`
+(`circuits/pultec/physical/board.ts:332`) is the standalone build - one of 31 -
+and the other 30 omit some stand-in groups, with which board supplies which group
+moving as boards are added (`lib/board/scaffold/supplier.ts`: *"the assignment is
+stable only while boards are added LATER in `LADDER_ORDER`"*). The maximal network
+with a per-part fit condition, one sheet per build, and the section's own parts
+only are three different drawings. **Unanswered, and deliberately not answered
+here.**
+
+**A THIRD REPRESENTATION BECOMES A FOURTH.** Each board already has three
+generated descriptions of itself - `wiring.md`, the printed packet, and the
+`.vrt` layout - and **G1** and **G45** record that two of them already disagree
+about a panel control, measured and surviving. A generated schematic is a fourth
+vocabulary for the same board, and neither this spec nor any gate in it checks
+cross-artifact agreement.
+
 What is left is the fact, not the refusal: **none of the five Pultec sections
 has a schematic of its own.** The only schematics in this repository are
 `circuits/pultec/pultec-three-band-eq.kicad_sch` and
@@ -2690,22 +2790,52 @@ physical model against a drawn schematic: `make check` says so on every run
 printed packet does too.
 
 - **Found** `2026-10-16-pultec-five-boards`, Task 3; narrowed to this claim
-  2026-10-17 when the packet path was made to produce without a schematic.
+  2026-10-17 when the packet path was made to produce without a schematic;
+  **extended 2026-10-18** by a drift check of
+  `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md` run before
+  T2 was planned, plus the owner's answer above. The drift-check file itself is
+  `.superpowers/sdd/schgen-drift-check.md`, which is gitignored, so this entry
+  and the spec are the only durable records of it.
 - **Evidence** the two declarations (`circuit`, `export`, `vrt` and nothing
   else); `ls circuits/pultec/*.kicad_sch`; the `NOTICE` printed by
   `make -C boards/pultec-low-boost guide`; the generated
-  `boards/pultec-low-boost/guide/guide.html`, read as a printed PDF.
-- **Verified** yes - run, and the pages read.
+  `boards/pultec-low-boost/guide/guide.html`, read as a printed PDF. **For the
+  2026-10-18 extension:** the per-board component counts were produced by this
+  writer, running `physicalBoard(section)` for all five sections and counting
+  components and those carrying no `part.symbol` - a check that could have
+  failed, and which disagreed with nothing (19/20/27/21/39 total, matching the
+  drift check's own figures); the owner's quote as relayed; `gate 4` and the
+  authority rows read in the spec at `1dd5814`.
+- **Verified** yes - run, and the pages read. **For the 2026-10-18 extension:**
+  the component counts are this writer's own measurement; the owner's words are
+  a **relay** from the controller, not heard directly; the claim that
+  `netlist-agrees` rejects a whole-EQ netlist on a section board is the original
+  entry's measurement and is NOT re-run here.
 - **Why it is open** a per-section schematic is a drawing somebody has to make,
   and **whether these sections should have one at all is the owner's call**: the
   partition in `circuits/pultec/physical/board.ts` is currently the only
   statement of what a section contains, and promoting it to a drawn schematic is
   a decision about where the authority for these boards lives, not a cleanup.
-- **What would settle it** the owner says whether each section gets its own
+- **What would settle it** **SUPERSEDED IN PART BY THE OWNER'S ANSWER ABOVE, and
+  kept because the mechanism it names is the one a later reader would otherwise
+  follow.** It used to read: *"the owner says whether each section gets its own
   schematic (then: draw it, declare the `sch`/`netlist` pair, and the packet
   prints it with no further change), or rules that the circuit model plus the
   whole-EQ schematic is the authority these boards keep - in which case this
-  entry is deleted and the printed notice is the permanent, correct statement.
+  entry is deleted and the printed notice is the permanent, correct statement."*
+  He has taken the first branch and the second is dead - the printed notice is
+  **not** the permanent correct statement.
+
+  **CRITERION, unchanged in substance:** each of the five sections has a
+  schematic of its own, derived from the canonical schematic, and the packet
+  prints it instead of the no-schematic notice.
+
+  **THE MECHANISM IN THE OLD TEXT IS WRONG and must not be followed as written**
+  - declaring a `sch`/`netlist` pair on a section board is precisely what this
+  entry measured as rejecting, and the three bullets at the top of this entry say
+  why. What the derivation's steps are checked by is a T2-plan design question,
+  not a mechanism this register may pick: an agent that chose it would be
+  authoring the acceptance criteria for the artifact it is about to produce.
 - **ONE THING THE PRINTED NOTICE DOES NOT SAY**, and it is deliberate: it does
   not name `pultec-three-band-eq.kicad_sch` as the upstream authority. The
   packet writer serves every board, and a Pultec path written into it would be a
@@ -2874,6 +3004,359 @@ everything above 500 was there first.
   parse, and the shared builder - with the fork's own suite and its mutation
   catalogue run over the result, since several catalogue entries name exact
   lines in this file.
+
+### G65 - the vendored symbol set is eight symbols and covers almost nothing a Pultec schematic needs; this was relayed to the owner as a blocker and he rejected the framing
+
+**HIS RULING FIRST, because the whole point of this entry is that nobody
+re-derives "blocker" from the same eight-symbol observation.** A drift check of
+sub-project T2 of
+`docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md` measured the
+vendored symbol set, and the controller relayed it to him on 2026-10-18 as a
+day-one blocker on generating Pultec section schematics. He rejected that,
+verbatim, **relayed to this writer by the controller and not heard directly**:
+
+> *"not having access to symbols is not a valid blocker. There are MANY symbols
+> freely available in kicad."*
+
+**He is right and it is measured, by this writer.** `/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols`
+holds **223** `.kicad_sym` libraries, and every symbol the Pultec was said to
+lack is in one of them: `Device:C` 1, `Device:L` 1, `Switch:SW_Rotary_1x12` 1,
+`Connector_Generic:Conn_01x05` 1, each counted by its own definition line in its
+own library file. The same grep for `Device:NOT_A_REAL_SYMBOL_XYZ` returns 0, so
+the check distinguishes a present symbol from an absent one rather than matching
+anything. `CLAUDE.md` already says what this means - *"A KiCad footprint name is
+checkable - the libraries are on disk. Do not write one from memory"* - and the
+symbol axis has had its own disk-backed guard since a non-resolving symbol
+shipped here (`tests/kicad/symbol-names.test.ts`).
+
+**So what is left is a list and a mechanical copy, with a known source.**
+`VENDORED_SYMBOLS` (`lib/kicad/symbol-library.ts:19-28`) holds exactly eight -
+`Device:R`, `Device:C_Polarized`, `Device:R_Potentiometer`,
+`Device:R_Potentiometer_Trim`, `Transistor_BJT:2N3904`,
+`Connector_Generic:Conn_01x02`, `Connector:TestPoint`, `Jumper:Jumper_2_Open` -
+and `vendoredSymbolText` throws for anything else, naming the constant and the
+regeneration tool in the refusal. `tools/kicad/vendor-symbols.ts` is *"the only
+thing that should write this directory"* and `lib/kicad/symbols/PROVENANCE.md`
+records the KiCad version, the flattening of `extends`, and the licence position.
+**Declared by circuits in this repository and NOT vendored** (relayed from the
+drift check, not re-grepped here, except the four above): `Device:C`, `Device:L`,
+`Switch:SW_SPDT`, `Switch:SW_Rotary_1x3_MP`..`1x9_MP`, `Switch:SW_Rotary_1x12`,
+`Connector_Generic:Conn_01x05`, `Audio:PT2399`,
+`Amplifier_Operational:TL072` - so both of `pt2399-core`'s declared symbols are
+unvendored.
+
+**THE LARGER NUMBER IS NOT THE LIBRARY, IT IS THE COMPONENTS THAT DECLARE NO
+SYMBOL AT ALL**, and that part is this writer's own measurement -
+`physicalBoard(section)` run for all five sections, counting components with no
+`part.symbol`:
+
+| board | components | with no `part.symbol` | first |
+| --- | --- | --- | --- |
+| low-boost | 19 | 15 | `C18` |
+| low-cut | 20 | 16 | `C1` |
+| hi-boost | 27 | 18 | `C14` |
+| hi-cut | 21 | 17 | `C24` |
+| mid | 39 | 29 | `C_MID_200Hz_A` |
+
+`symbolFor` (`circuits/pultec/physical/parts.ts:274-299`) answers only for
+`potentiometer`, `inductor` and `switch` - the off-board kinds - and its last
+line throws *"no symbol is defined for off-board component"*. **There is no
+symbol source for an on-board Pultec resistor or capacitor, nor for any stand-in
+part.** The same is true one circuit over: `grep -c 'symbol:'` returns 0 in all
+five modules of `circuits/optical-compressor/`, which the spec names as T2
+verification material.
+
+**THE ONE GENUINE DESIGN QUESTION UNDER ALL OF THIS, WHICH IS THE T2 PLAN'S TO
+SETTLE AND EXPLICITLY NOT THIS WRITER'S.** A passive's symbol could be declared
+**per part** (`part.symbol`, as today) or **derived from its kind**, the way
+`UNIT_PINS` in `lib/model/kinds.ts` already derives a pin vocabulary by kind. Two
+things bear on it and neither decides it: `CLAUDE.md` says a kind declares the
+vocabulary while *"which KiCad pin number or footprint pad a pin maps to is a
+property of a concrete symbol or package, and lives there"*, which cuts against
+kind-derivation; and a capacitor's KIND cannot distinguish `Device:C` from
+`Device:C_Polarized`, which is the one capacitor symbol already vendored, so
+polarity is a part fact that a by-kind rule would have to override anyway. Both
+recorded so a plan weighs them.
+
+**AND THE SHORTCUT THAT WOULD CLOSE THIS WRONGLY**, named because it is one
+function in one file and will look cheap: extending `symbolFor` in
+`circuits/pultec/physical/parts.ts` with a kind-to-symbol map makes symbol
+resolution a Pultec module's job, so no other circuit gets it and the next
+circuit repeats it - a Pultec-specific shortcut of exactly the kind the owner's
+two-part directive rules out (G66 carries that directive and where it lives
+verbatim). The general place is beside `lib/kicad/symbol-library.ts`.
+
+**One symbol question the library genuinely cannot answer, and it is already
+answered by an owner part choice**: there is no 1x10 or 1x11 rotary symbol, so
+the eleven-position `SW_MID` is realised as `Switch:SW_Rotary_1x12`
+(`ELEVEN_THROW_SYMBOL`, `circuits/pultec/physical/parts.ts:201`), chosen by the
+owner on 2026-10-13, while a ten-position selector refuses outright rather than
+rounding up. A template meeting a twelve-throw symbol for an eleven-position
+bank must not quietly drop the twelfth throw.
+
+- **Found** 2026-10-18, by a drift check of the T2 spec run before T2 was
+  planned (`.superpowers/sdd/schgen-drift-check.md`, U6/U7/U8/Q4 - **gitignored**,
+  so this entry is the durable record), and by the owner's ruling on how it was
+  relayed to him.
+- **Evidence** the 223-library count and the four symbol lookups with their
+  negative control, run by this writer against the installed KiCad; the five
+  `physicalBoard(section)` runs and their no-symbol counts in the table above;
+  `grep -c 'symbol:'` returning 0 for every optical-compressor module;
+  `lib/kicad/symbol-library.ts:19-28` and `:203-208` read; `tools/kicad/vendor-symbols.ts`
+  and `lib/kicad/symbols/PROVENANCE.md` read; `ls -R lib/kicad/symbols` showing
+  eight `.sexpr` files.
+- **Verified** yes for everything this writer ran - the library count, the four
+  lookups, the five per-board counts, the optical-compressor grep, and the four
+  files read. **Relayed, not confirmed:** the full unvendored list above and the
+  claim that `writeSchematicStub` refuses at `C18` naming it (the 15-of-19 count
+  that refusal rests on WAS confirmed independently).
+- **Why it is open** the copying is mechanical but the question above it is not,
+  and doing the copy first would answer it by accident: whichever place the new
+  symbols are named from becomes the place symbols live. An agent producing the
+  generator may not author that criterion.
+- **What would settle it** **CRITERION:** every component of every circuit T2
+  names resolves to a symbol that exists in the vendored set with its provenance
+  recorded, and a component with no symbol refuses by name rather than being
+  drawn as something plausible. **MECHANISM, untried:** add the names to
+  `VENDORED_SYMBOLS` and run `bun tools/kicad/vendor-symbols.ts /Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols`,
+  updating `PROVENANCE.md`'s version line. That covers the library side and does
+  **not** answer where a passive's symbol is declared, which is the design
+  question above and belongs in the T2 plan.
+
+### G66 - six of the T2 template table's claims were written against one circuit, and three of them name the Pultec in the specification
+
+**The directive that makes these defects rather than style notes**, and the
+place it lives verbatim: `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`,
+section *"What the Pultec is to this work, and it is two things at once"*, added
+2026-10-18 and committed at `1dd5814`. The owner, **relayed by the controller and
+not heard directly by this writer**:
+
+> *"I'm using the Pultec boards as a forcing function to drive building general
+> purpose schematic authoring discipline and tooling. No shortcuts just to get
+> to Pultec-specific schematics"*
+
+> *"But, Pultec schematics ARE a requirement. If the tooling can't build them,
+> it's not fit for purpose"*
+
+Both halves bind: a generator that cannot do the Pultec is unfit, and one that
+does the Pultec by special-casing is the shortcut he ruled out.
+
+**A THIRD REQUIREMENT FROM THE SAME SITTING, recorded because it is a
+requirement and not a task, and nothing should schedule it.** The owner,
+2026-10-18, again **relayed and not heard directly**:
+
+> *"We ALSO need to build support for ex nihilo schematics, but that's not our
+> current situation."*
+
+So both authority directions are required: schematic-first (the Pultec, where
+the canonical schematic is the authority and per-board schematics derive from it
+- G16) and **model-first / ex nihilo**, where an agent-designed circuit has no
+reference drawing at all. `CLAUDE.md` already says both directions exist; what is
+new is that the second is a stated requirement rather than an implication.
+**It is explicitly NOT today's work and its absence is not a defect** - his
+words settle that, so nobody sequences it unprompted. Two things are worth having
+written down about it:
+
+- **It needs no new material to be tested against.** Counted by this writer,
+  2026-10-18: `circuits/optical-compressor/` holds **zero** `.kicad_sch` files
+  and `circuits/opamp-buffer.ts` has neither a directory nor a schematic, while
+  `circuits/pt2399-core/` has 1, `circuits/pultec/` 2 and
+  `circuits/transistor-preamp/` 5. **Both schematic-less circuits are already in
+  T2's verification set**, so T2 exercises both directions by construction.
+- **The ex nihilo direction is the harder one, and the reason is the invariant
+  this register exists under.** Schematic-first has a reference drawing to grade
+  a generated schematic against; ex nihilo has none, so grading must come from
+  the model plus a rule library reviewed before the artifact existed. **An agent
+  with no reference is the agent most tempted to grade its own output.** How that
+  grading works is an open question and is not answered here or in the spec.
+
+**Measured
+against that, six claims in the spec's template table are asserted rather than
+earned**, and the three worst name the Pultec inside the specification of a
+template that is supposed to be general:
+
+1. **`tappedReturn` is specified as a count of its only two instances** - *"four
+   or five discrete inductors from their taps to a common coil return"*. Four is
+   hi-boost, five is mid, and "Needed by" names nothing else. Nothing in that
+   sentence is a general tapped-inductor abstraction: not the tap-selection
+   mechanism, not what makes a return common, not what a tap is.
+2. **`modeSwitch` is one circuit's one switch** - *"the mid section's two-throw
+   boost/cut switch"*, whose only consumer is `SW_MID_MODE`. A general
+   two-throw-selects-a-branch template is `selectorBank` with a degenerate bank
+   and resistive rather than capacitive throws. If it must be separate, the spec
+   does not say why.
+3. **`selectorBank`'s acceptance criterion is a Pultec idiom stated as a property
+   of selectors.** The `passive-ladder-eq` library holds *"selector-bank
+   ordering: a bank's capacitors sit in switch-position order"* and gate 14's
+   degraded fixtures include *"a selector whose throws are unordered"* - so
+   unordered throws are DEFINED as a defect. That is right for a frequency
+   selector, which is all five Pultec banks, and wrong for a voicing or mode
+   rotary whose positions have no natural order: such a selector would fail gate
+   14 for being correct.
+4. **`passiveChain`'s "Needed by: everywhere" is the broadest claim in the table
+   and the least earned on this circuit.** Per-board own passive content is thin:
+   low-cut has no resistor of its own, low-boost one (`R2`), hi-cut one (`R1`).
+   On the Pultec `passiveChain` is exercised almost entirely by **stand-in**
+   resistors - which is the missing stand-in-group template wearing
+   `passiveChain`'s clothes, and is exactly where a special case would hide.
+5. **The decoupling-bank row's two figures are TOTAL capacitor counts, not
+   decoupling counts.** The row is headed "decoupling bank" and reads
+   `opamp-buffer` (4 capacitors), `pt2399-core` (14). Measured by this writer:
+   `grep -c '\.capacitor('` is 4 and 14, and of those the ones touching `GND`
+   are **2** and **8**. The spec's numbers are right about what they count; a
+   planner sizing a decoupling-bank template from them is wrong by a factor of
+   two on `opamp-buffer`.
+6. **`potNetwork`'s demand is undercounted: hi-boost needs two.** `RV_HI_Q`,
+   10 kΩ LIN, from *"P3bandDoc.pdf p5, marked 10K LIN (Qmax)"*
+   (`circuits/pultec/electrical/controls.ts:90-96`), sits on hi-boost beside
+   `RV_HI_BOOST` 47k LIN - six pots in `THREE_BAND_REFERENCE`, and the spec never
+   mentions `RV_HI_Q`.
+
+**What is NOT in this entry, so it is not recorded twice.** The gate half of the
+same problem - that gate 4's *"both authority directions"* claim covers the whole
+EQ and says nothing about a section board - is in **G16** and is now stated as a
+defect in the spec itself. The three Pultec constructs with no template at all
+are also now rows in that table marked GAP; this entry is about the rows that
+exist and overclaim.
+
+- **Found** 2026-10-18, by the drift check of the T2 spec described in G65
+  (§5c, P1-P5 and U14; §1.3's caveat), run before T2 was planned.
+  `.superpowers/sdd/schgen-drift-check.md` is gitignored, so this entry is the
+  durable record.
+- **Evidence** the template table and the gate-14 text read in the spec at
+  `1dd5814`; the four capacitor counts run by this writer
+  (`grep -c '\.capacitor('` and the same piped through `grep -c GND` on
+  `circuits/opamp-buffer.ts` and `circuits/pt2399-core/pt2399-core.ts`) - a check
+  that could have failed and did disagree with the reading the row invites;
+  `circuits/pultec/electrical/controls.ts:90-96` for `RV_HI_Q`. For the ex nihilo
+  clause: `find circuits/<dir> -name '*.kicad_sch' | wc -l` per circuit
+  directory, run by this writer, returning 0 / 1 / 2 / 5 - a check that could
+  have failed, since three of the five directories return non-zero.
+- **Verified** the spec text, the capacitor counts and the per-circuit schematic
+  counts yes, by this writer; all three owner quotes are **relays** from the
+  controller, not heard directly. The
+  per-board own-passive content (clause 4), the `passive-ladder-eq` ordering
+  quote (clause 3) and `RV_HI_Q`'s citation line are **relayed from the drift
+  check** and not independently re-measured here.
+- **Why it is open** rewriting a template's specification to be general is
+  design work with a consequence for the port's shape, and it is the T2 plan's,
+  not a register edit's. Four of the six clauses could be "fixed" by rewording
+  the spec, which would be the wrong kind of fix: what is wanted is a
+  specification somebody has thought about generally, not a sentence with the
+  circuit's name removed.
+- **What would settle it** **CRITERION:** no template's specification names the
+  circuit that motivates it, and no template's acceptance criterion is a property
+  of one circuit's idiom stated as a property of the construct. A second circuit
+  exercising it is the proof; the spec has none for `tappedReturn` or
+  `modeSwitch`. **MECHANISM, untried:** the T2 plan specifies each of the six
+  against a construct rather than an instance, and states for each what a
+  correct non-Pultec instance would look like - which is a claim that would have
+  to survive review, not a wording change.
+
+### G67 - the T2 spec's load-bearing facts have drifted from the tree in four places, and it assigns its schematic gates to a CI that does not exist
+
+One entry for the drift a T2 planner would otherwise budget against. **Every
+clause is a disagreement between a committed design document and the tree, and
+none of them is fixed** - the change that recorded them fixed only the template
+table and gate 4 (see G16 and the spec's own 2026-10-18 notes). Recorded with
+their cost visible, per `CLAUDE.md`'s *"Where a directive and a board disagree,
+record the disagreement so its cost is visible"*.
+
+1. **"The stand-ins live on one separate scaffold board rather than distributed
+   across the section boards"** (spec, S0) - **false, and the separate board was
+   deliberately deleted.** `make/pultec.mk:36-38` says so: *"no separate scaffold
+   board exists any more either (deleted: "Task 4, Delete the separate scaffold
+   board" - the scaffolding is now build-time part population on each section
+   board)"*, and the child spec
+   `2026-10-09-pultec-section-scaffold-design.md:170-185` records the reversal.
+   The sentence the spec draws from it - *"the physicalization problem mostly
+   dissolves"* - is the premise T2 would inherit, and it is the opposite of true:
+   every section schematic must draw 6 to 9 stand-ins plus two junction headers.
+2. **"the transistor preamp" is five boards and six netlist-guarded schematics,
+   not one.** T2's deliverable row names four circuits and gate 4's reference
+   material names two schematics (`pt2399-core` and `lab-board`). There are six
+   hand-arranged, `netlist`-declared, test-guarded schematics: `pt2399-core` and
+   the preamp's `lab-board`, `feedback-board`, `buffered-board`, `loop-board`
+   and `staged-board`. Four of the five preamp boards predate the spec, so this
+   is an omission rather than drift - and it moves T2's size in both directions:
+   more reference material for gate 4, four more deliverables than the row names.
+3. **The spec assigns its schematic gates to a CI that does not exist.**
+   Verification says *"CI acquires the engine's Python side and runs the schematic
+   gates and `check-intent`"*. There is **no `.github/`** and no workflow YAML
+   anywhere outside `node_modules` and the vendored `.tools/` fork; the root
+   `Makefile:12-13` states it outright (*"there is no CI, bun test does not
+   typecheck"*). So gates 1-6 have nowhere to run but `make check` and the
+   per-board walk, and **G63** records that `boards/` has no `Makefile`, so even
+   the aggregate walk is root-only. Gate 1 also requires *"the KiCad version and
+   loaded symbol library versions match a committed lock"* and **there is no lock
+   file** - the nearest thing is the hand-maintained "KiCad 10.0.5" line in
+   `lib/kicad/symbols/PROVENANCE.md`.
+4. **An authority-table path does not exist.** The table rows
+   `circuits/pultec/physical/<target>/*.ts`; the directory is flat,
+   `circuits/pultec/physical/*.ts`. The spec's own Directory-layout section
+   explains why the `physical/perfboard/` move has not happened, so the intent is
+   intact and only the path is wrong - noted so nobody writes the `<target>` path
+   into a tool.
+5. **`pt2399-core` is given two mutually exclusive roles and the spec never says
+   which wins**: a T2 **deliverable** (generate its schematic) and gate 4
+   **reference material** (grade a generated schematic against its schematic).
+   For the six boards that declare `sch`, the committed `.kicad_sch` **is** the
+   netlist authority and `netlist-agrees` plus `tests/circuits/<board>.test.ts`
+   is the guard, while `tools/cli/schematic-stub.ts` refuses to overwrite at all
+   (*"The stub is written once; after that the schematic is yours"*). Gate 1's
+   "regenerates byte-identically" and that posture are not obviously compatible.
+6. **Two of the four circuits the spec names as T2's verification material cannot
+   even be stubbed today.** `tools/cli/schematic-stub.ts` requires the module to
+   export `DESIGNATORS`, `PIN_NUMBERS` and `schematicNotes()`. Measured:
+   `circuits/opamp-buffer.ts` exports none of the three,
+   `circuits/optical-compressor/` none of the three and no symbol for any
+   component, `pt2399-core` two of three, the five preamp boards all three, the
+   five Pultec sections two of three. So the spec's *"those four circuits are
+   therefore T2's verification material, not a future benefit"* is right and
+   costs more than it sounds.
+7. **Two things the spec could not have known, because it predates them by days,
+   and a planner needs both.** `docs/known-gaps.md` became a **repo-wide
+   requirement** on every agent on every task (commit `645f57f`, repeated in
+   `AGENTS.md`); the spec lists 15 gates and no register obligation. And the
+   repository has since built the channel the spec's agent gates want: criteria
+   in a reviewed, circuit-independent file with provenance per parameter
+   (`stripboard/rules.json`, `exemptions.json`, `render-approvals.json`, and
+   `2026-10-10-stripboard-acceptance-criteria.md` **PAR4**: *"The criteria are
+   circuit-independent, reviewed once, and there is no per-board criteria file
+   ... because a per-board criteria file is a file a producing agent could
+   draft"*). Gate 14's readability rubric has no such file. Routing it through
+   that channel is the point; **writing the rubric from the Pultec schematics
+   just produced would be this spec's own founding failure, one level up.**
+
+- **Found** 2026-10-18, by the drift check of the T2 spec described in G65 (F1,
+  F2, F3, F5, Q3, Q6, U1, U8, U11), run before T2 was planned and against
+  `main` at `c6f4ed1`. `.superpowers/sdd/schgen-drift-check.md` is gitignored, so
+  this entry is the durable record.
+- **Evidence** clause 3 confirmed by this writer: `ls .github` reports no such
+  file, and `find . -name '*.yml' -o -name '*.yaml'` filtered of `node_modules`
+  and `.tools/` returns nothing - a check that could have failed, since the same
+  find unfiltered returns many. Clause 6 confirmed by this writer for the
+  optical compressor (`grep -c 'symbol:'` = 0 in all five modules) and for the
+  stub's three requirements, read at `tools/cli/schematic-stub.ts:6-7, 72-79`.
+  Clause 4 confirmed by `ls circuits/pultec/physical/`. The spec text of every
+  clause read at `1dd5814`.
+- **Verified** clauses 3, 4 and 6 yes, by this writer. Clauses 1, 2, 5 and 7 are
+  **relayed from the drift check** - the quotes in them are the drift check's
+  transcriptions, and the `perfboard.json` survey behind clause 2 was not re-run
+  here.
+- **Why it is open** these are corrections to a committed design document, and
+  the change that found them was scoped to the two defects that would have
+  mis-shaped the port (G16 and the template table). Correcting the rest inside
+  that change would have mixed a planning fix with seven unrelated edits to a
+  900-line spec.
+- **What would settle it** the T2 plan's first task corrects them in the spec,
+  with the tree re-read rather than the drift check trusted. **CRITERION:** no
+  factual claim in the spec's T2-bearing sections is false against the tree at
+  the commit the plan is written from, and no gate names a place to run that does
+  not exist. **MECHANISM, untried:** clauses 1, 2, 4 and 5 are text edits;
+  clause 3 is not - where gates 1-6 run is a real decision (a CI that does not
+  exist, or `make check` plus a named per-board target), and clause 7's rubric
+  channel is a design choice the plan must make deliberately.
 
 ---
 
