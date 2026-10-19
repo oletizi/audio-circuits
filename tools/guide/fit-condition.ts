@@ -1,9 +1,12 @@
 /**
  * The build checklist's `Fit` column: whether to fit a part row in the build
  * being built, on the four part sections (ICs and transistors; Resistors and
- * trim-pots; Capacitors; Wire-to-board junctions). `./checklist.ts` appends
- * this cell to every row in those four sections and no others - Wire links,
- * Solder bridges and Cuts are not parts, so they have no group to belong to.
+ * trim-pots; Capacitors; Wire-to-board junctions) and on **Wire links**,
+ * because a zero-ohm stand-in part is routed into that section
+ * (`./checklist.ts`'s module comment) and is exactly as conditional there as
+ * it would be in its own part section. `./checklist.ts` appends this cell to
+ * every row in those five sections. Solder bridges and Cuts get no column:
+ * nothing has moved into them, and they have no group to belong to.
  *
  * **THE CELL IS A CONDITION, NOT A CLUSTER NAME.** A stand-in group's parts
  * sit on a board beside its own circuit, standing in for a section that is
@@ -32,8 +35,13 @@
  */
 import type { ScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 
-/** The Fit cell for a part in the board's own circuit - not in any stand-in group. */
-const ALWAYS = "always"
+/**
+ * The Fit cell for a part in the board's own circuit - not in any stand-in
+ * group. Exported for `./checklist.ts`'s `W`-numbered wire rows, which are
+ * never conditional and so never go through `fitCondition` at all - a wire
+ * has no component id to look up.
+ */
+export const ALWAYS = "always"
 
 /**
  * The part id -> absent section map, derived once from the board's

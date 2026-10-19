@@ -87,8 +87,8 @@ test("parts give value and leads; wires, bridges and cuts give their holes; cuts
     "unknown: the circuit records no footprint for this part", "always",
   ])
   expect(rows[3]).toEqual(["C1", "10uF", "+ F6, - F10", "one mounting", "always"])
-  expect(rows[4]).toEqual(["W1", "I3", "I10"])
-  expect(rows[5]).toEqual(["W2", "J5", "J7"])
+  expect(rows[4]).toEqual(["W1", "I3", "I10", "always"])
+  expect(rows[5]).toEqual(["W2", "J5", "J7", "always"])
   expect(rows[6]).toEqual(["J1", "2-pin header", "A2 INPUT, B2 GND", "one mounting", "always"])
   expect(rows[7]).toEqual([
     "RV2", "3-pin header (25K pot, off-board)",

@@ -63,12 +63,19 @@
  * a blank or an invented name for a node this map cannot resolve: `separates`
  * refuses instead, naming the node id and what to fix.
  *
- * **THE FOUR PART SECTIONS CARRY A `Fit` COLUMN**, computed by
- * `./fit-condition.ts` and appended to each row built here - see that
+ * **THE FOUR PART SECTIONS, AND WIRE LINKS, CARRY A `Fit` COLUMN**, computed
+ * by `./fit-condition.ts` and appended to each row built here - see that
  * module's comment for why the cell is a condition the builder can act on
  * rather than a cluster name, and for the one-table-shape rule for a board
- * with no `ScaffoldDoc`. Wire links, Solder bridges and Cuts do not get it:
- * they are not parts, so they have no group to belong to.
+ * with no `ScaffoldDoc`. **Wire links gets the column because a task after
+ * this one's first landing routed zero-ohm stand-in parts INTO that section**
+ * (the paragraph above): a `W`-numbered wire is unconditional and reads
+ * `always`, but a zero-ohm stand-in is exactly as conditional there as it
+ * would have been in its own part section, and the column - not a prose
+ * caveat - is what says so. The fit condition for such a row is the SAME
+ * derivation `fitCondition` gives the part sections, never a second one:
+ * see `wireLinkRow` below. Solder bridges and Cuts still get no column -
+ * nothing has moved into them, and they have no group to belong to.
  */
 import { LEAD_SPANS } from "../../lib/kicad/lead-span.ts"
 import { MOUNTING_LABEL, mountingForSpan } from "../../lib/kicad/lead-span-mounting.ts"
@@ -76,7 +83,7 @@ import type { Component } from "../../lib/model/types.ts"
 import { isZeroOhmResistor } from "../../lib/model/zero-ohm.ts"
 import { spanHoles } from "../stripboard/constraints-model.ts"
 import { holeName, noPinLinesMessage, type BoardDump, type HolePosition, type NodedHole, type Part, type Pin } from "./dump.ts"
-import { fitCondition, groupMembership } from "./fit-condition.ts"
+import { ALWAYS, fitCondition, groupMembership } from "./fit-condition.ts"
 import { inReadingOrder, numberedBridges, numberedCuts, numberedWires } from "./numbering.ts"
 import { valueLabel } from "./off-board.ts"
 import { ELECTROLYTIC_PLUS_PIN, isElectrolytic } from "./part-shapes.ts"
@@ -370,8 +377,13 @@ function padJunctionRow(pad: PadTerminal, padLabels: ReadonlyMap<string, string>
  * Refused rather than shortened when the part has other than two leads: a wire
  * link is a wire between two holes, and a three-lead part printed with two of
  * them would be an instruction to leave a lead unsoldered.
+ *
+ * `fit` is this row's Fit cell, computed by the caller with `fitCondition`
+ * against the part's own component id - the same function and the same
+ * `membership` map the part sections use, never a second derivation for this
+ * section's version of the same question.
  */
-function wireLinkRow(dump: BoardDump, part: Part): readonly string[] {
+function wireLinkRow(dump: BoardDump, part: Part, fit: string): readonly string[] {
   const pins = dump.pins[part.ref]
   if (pins === undefined || pins.length === 0) throw new Error(noPinLinesMessage(part))
   const [first, second, ...rest] = pins
@@ -386,7 +398,7 @@ function wireLinkRow(dump: BoardDump, part: Part): readonly string[] {
     )
   }
   const [from, to] = inReadingOrder(first, second)
-  return [part.ref, hole(from), hole(to)]
+  return [part.ref, hole(from), hole(to), fit]
 }
 
 /** The whole checklist. The layout and circuit must already agree (`assertLayoutMatchesCircuit`). */
@@ -412,7 +424,7 @@ export function buildChecklist(
     // body, and this part has none. See `./wire-links.ts` for the rule and what
     // it costs when a packet gets it wrong.
     if (isZeroOhmResistor(component)) {
-      partLinks.push(wireLinkRow(dump, part))
+      partLinks.push(wireLinkRow(dump, part, fitCondition(component.id, membership)))
       continue
     }
     groups[groupOf(part, component)].push([
@@ -432,8 +444,12 @@ export function buildChecklist(
   for (const pad of pads) {
     groups.junctions.push(padJunctionRow(pad, padLabels, fitCondition(componentAt(circuit, pad.ref).id, membership)))
   }
+  // A VEROROUTE WIRE IS NEVER CONDITIONAL - it is this board's own layout,
+  // not a stand-in for an absent section - so it reads ALWAYS unconditionally
+  // rather than through `fitCondition`, which has no component id to look a
+  // W-numbered wire up by in the first place.
   const wires = [
-    ...numberedWires(dump).map(({ number, from, to }) => [`W${number}`, hole(from), hole(to)]),
+    ...numberedWires(dump).map(({ number, from, to }) => [`W${number}`, hole(from), hole(to), ALWAYS]),
     ...partLinks,
   ]
   const padIdentities = new Set(pads.map((pad) => pad.identity))
@@ -443,7 +459,7 @@ export function buildChecklist(
     { title: "Capacitors", columns: PART_COLUMNS, rows: groups.capacitors },
     {
       title: "Wire links",
-      columns: ["Wire", "From", "To"],
+      columns: ["Wire", "From", "To", "Fit"],
       rows: wires,
       // ONLY WHEN THIS BOARD HAS ONE. A board whose links are all W-numbered
       // wires would otherwise print a paragraph about parts it does not carry.
