@@ -42,3 +42,29 @@ completed, including design and documentation updates, and push the working
 branch after each commit. Do not wait for the entire feature to be finished.
 Run checks appropriate to each change before committing. Clearly identify
 provisional or incomplete work in its documentation and commit description.
+
+## Do not re-ask a question the owner has already answered
+
+**An instruction stands for the work it was given about.** If he has said to
+open a pull request and merge it, do that when the work is complete - do not
+ask again for the same piece of work.
+
+**This is narrower than a standing order, and the distinction is his.** He put
+it as: *"You don't have to open and merge automatically, but don't ask me again
+if I've already told you to open one and merge it."* So an instruction is not a
+blanket policy for every future branch, and neither is it good for one use
+only. Ask when the work is genuinely a new thing he has not ruled on; do not
+ask when you are re-confirming something he settled an hour ago.
+
+**The failure this exists to stop, measured.** In one session he was asked to
+confirm the same thing nine separate times - *"open a pull request and merge"*,
+*"merge the pr when ready"*, *"open a pr and merge it"*, *"merge it"* - and
+answered the same way every time. His attention is the scarcest thing in this
+loop, and spending it on a question he has already answered is a cost with no
+return. The same applies to every settled decision, not only pull requests:
+**his declinations are recorded in `docs/known-gaps.md` precisely so that
+nobody raises them again unprompted.**
+
+The one qualifier he has given on merging: *"i dont want to merge the branch
+until the feature is complete."* Completeness is the condition, not his
+re-confirmation.
