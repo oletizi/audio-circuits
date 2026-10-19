@@ -483,6 +483,118 @@ entry is that flag, in the file that outlives the spec.
   a group to its parts, since a group's parts are spread across three sections,
   so removing the column requires answering that too.
 
+### G71 - no published source states an acceptable number of wire crossings, bends or wire length, so a threshold in a readability rubric would be this project's invention wearing a citation
+
+Measured by the standards research pass (`docs/schematic-readability-research.md`
+§2.2, §4.2, §7.3, committed `51f8362`): **every source it could read says
+*minimise* and none says how few is few enough.**
+
+- ANSI/ASME Y14.15-1966 **15-7.2**: connecting lines *"should be drawn with as
+  few bends and crossovers as possible"*; **15-6.3.5**: *"a minimum of line
+  crossings"*. A **withdrawn** standard - G68.
+- IEC 61082-1:2014 **Figure 36** is *titled* "Example for avoiding bends and
+  cross-overs" and its clause text was not obtained (G70). A title is not a
+  requirement (G69).
+- **The research literature is weaker here than the standards, not stronger.**
+  Hsu & Lin (MLCAD 2022) and the corresponding patent US 12,475,291 report only
+  **relative** reduction - the patent *"contains no minimum/maximum numeric
+  specifications for acceptable metric values"*. Weave states it *"does not yet
+  report the crossing, bend, or visual-similarity metrics"*. EEschematic scores
+  aesthetics **subjectively, 5/10 to 9/10, by a human**, and names that as a
+  limitation of its own work.
+
+**The consequence that binds.** Inventing a crossing or bend threshold would put
+this project **ahead of every published source while appearing to cite one** -
+which is G67 clause 7's rubric failure one level down, and the exact shape the
+governing invariant exists to prevent.
+
+**The threshold-free form that is available, recorded as a CANDIDATE MECHANISM
+and not as a decision.** The field measures these quantities relatively: compute
+them for a netlist, record them, and require them not to get worse for that
+netlist. `CLAUDE.md` already endorses the economics (*"Minimising a measurable
+cost is not a taste judgement"*). **Nobody has decided this is the form**, and
+an agent adopting it because it is the only form available would be choosing its
+own grading.
+
+**The trap beside the bait.** If absolute thresholds are wanted anyway they are
+an owner decision, informed by measuring this repository's existing hand-drawn
+Pultec schematics - and `CLAUDE.md` names the trap in that sentence: measuring
+them and then treating them as the ceiling makes the as-built artifact the
+criterion. **That measurement has not been performed.** The measurement would
+inform the decision; it is not the decision.
+
+- **Found** 2026-10-19, by the standards research pass committed at `51f8362`,
+  read in full by this writer.
+- **Evidence** §2.2, §4.2 and §7.3 of that document, with the Y14.15 clause
+  quotations, the patent's own statement about numeric specifications, Weave's
+  own sentence declining the metrics, and EEschematic's 5-10 subjective scale.
+- **Verified** **no - RELAYED.** The document's text was read by this writer at
+  `51f8362`; everything in it was gathered by web fetch through a summarising
+  tool, with nothing cloned, executed or rendered, and the document says so about
+  itself. **A fetched web page is not a check that could have failed.**
+- **Why it is open** a threshold is an acceptance criterion for an artifact this
+  repository's agents produce, so no producing agent may author one; and the
+  honest alternative - that there is no threshold - is itself a decision about
+  what gate 14 can contain.
+- **What would settle it** **CRITERION:** no criterion in a schematic readability
+  rubric carries a numeric crossing, bend or wire-length threshold unless a named
+  source states it with a clause, or the owner states it as his own decision and
+  it is recorded as his. **MECHANISM, untried:** adopt the relative form above -
+  measure per netlist and require no regression - which needs no threshold and is
+  what the field does; or put the absolute question to him with the as-built-
+  ceiling trap stated. Nobody has been asked.
+
+### G72 - "power at the top" could not be sourced to any electronics standard, and the clause that states it is about transmission buses
+
+The convention whose authority the standards research most expected to find and
+least did (`docs/schematic-readability-research.md` §2.5, §7.2).
+
+**What says it, and why it is not what it looks like.** Y14.15 **15-6.3.6
+Voltage Arrangement**: *"The arrangement of the diagram should preferably show
+the higher voltages at top or left of the drawing and successively lower voltages
+towards the bottom or right."* That clause sits inside **15-6 "Single-Line
+Diagrams (Power Switchgear and Industrial Control)"** - "higher voltage" means a
+transmission bus. Carrying it into an audio schematic as "+15 V at the top" is an
+analogy, not a citation; it reaches the same arrangement, which is why it is
+tempting.
+
+**What does not say it.** There is no power-at-top / ground-at-bottom rule in
+IEEE 315, and none in Y14.15's **electronics** clause 15-8 - not in 15-8.1
+Layout, and not in 15-8.3 Circuit Return and Connection Symbols, which rules only
+on *which* return symbol to use.
+
+**The only source that definitely states it for electronics is a private company
+document**, John Martin, *Clear Schematics*, Rev 04, 2017-02-08 - and it states
+it about **symbol design** (*"power supplies on top pointing up, the grounds on
+the bottom pointing down"*, i.e. where a part's power pins sit on its symbol),
+which is a different claim from where a rail net sits on the sheet, and in KiCad
+is a property of the library symbol rather than of anything an emitter controls.
+
+Note also the coordinate direction, because getting this backwards is easy: in
+`.kicad_sch`, **lower Y is TOP** (G80).
+
+- **Found** 2026-10-19, by the standards research pass committed at `51f8362`,
+  read in full by this writer.
+- **Evidence** §2.5 and §7.2 of that document: the 15-6.3.6 quotation with its
+  enclosing clause title, the absence across 15-8.1 and 15-8.3, and the Martin
+  quotation with its date and publisher. The negative claim rests on a document
+  whose full text the researcher read, not on a search.
+- **Verified** **no - RELAYED**, on the same caveat as G71: the document was read
+  by this writer at `51f8362`, and nothing in it was established by running
+  anything.
+- **Why it is open** a generator will otherwise implement this as though it were
+  cited - and an agent that decided for itself that power goes at the top and
+  then checked its own output against that decision would be authoring the
+  criterion for the artifact it produced.
+- **What would settle it** **CRITERION:** a clause from an in-force or withdrawn
+  standard, in a section whose scope is electronics or general schematic diagrams,
+  stating a vertical arrangement rule for supply rails and returns - or the owner
+  stating it as a project convention, recorded as his decision and labelled as
+  not a standard. **MECHANISM, untried and the researcher's guess:** read
+  IPC-2612 **§6.5 Power and Ground** with Figure 6-2, and IEC 61082-1 **§7.4.5**
+  with Figures 76-77. Both are unread and paywalled (G70), so the mechanism is
+  blocked and the criterion is not.
+
 ---
 
 Declined: the owner has ruled, and nobody asks again unprompted
@@ -3328,6 +3440,22 @@ record the disagreement so its cost is visible"*.
    that channel is the point; **writing the rubric from the Pultec schematics
    just produced would be this spec's own founding failure, one level up.**
 
+**TWO RESEARCH PASSES HAVE SINCE LANDED ON CLAUSE 7'S RUBRIC QUESTION,
+2026-10-19, AND THEY NARROW IT RATHER THAN ANSWERING IT.**
+`docs/schematic-readability-research.md` (`51f8362`) and
+`docs/schematic-generation-prior-art.md` (`ba6dba1`). What a planner holding
+clause 7 now has: **there is no published threshold to put in gate 14's rubric**
+for crossings, bends or wire length (**G71**); the in-force standards that would
+supply layout requirements are unread (**G70**) and the readable ones are
+withdrawn or inactive and must be cited as such (**G68**); of 57 candidate
+criteria **35 are mechanically checkable with no number at all**, three of them
+checkable here only because the model names the functional blocks (**G75**); and
+**no tool either pass surveyed grades schematic semantics at all** (**G78**).
+**Clause 7's warning stands unchanged** - writing the rubric from the Pultec
+schematics just produced would still be this spec's founding failure - and
+nothing in either pass is a decision. Both passes are prose somebody has to find;
+the register entries are what an agent consults before acting.
+
 - **Found** 2026-10-18, by the drift check of the T2 spec described in G65 (F1,
   F2, F3, F5, Q3, Q6, U1, U8, U11), run before T2 was planned and against
   `main` at `c6f4ed1`. `.superpowers/sdd/schgen-drift-check.md` is gitignored, so
@@ -3358,6 +3486,513 @@ record the disagreement so its cost is visible"*.
   exist, or `make check` plus a named per-board target), and clause 7's rubric
   channel is a design choice the plan must make deliberately.
 
+### G68 - the North American standards chain for schematic arrangement is broken at both ends, and the richest written source for it is WITHDRAWN
+
+The symbol standards govern symbols only, and say so in their own scope text:
+IEEE 315-1975 **A1.1** - *"This standard provides a list of graphic symbols and
+class designation letters for use on electrical and electronics diagrams"* - and
+its clause **A3.3** hands arrangement to another document by name:
+
+> *"For application of these symbols on electrical diagrams, see American
+> National Standard Drafting Practices; Electrical and Electronics Diagrams,
+> Y14.15-1966 (R1973)."*
+
+**Both ends of that link are dead:**
+
+| document | status |
+| --- | --- |
+| **ANSI/ASME Y14.15-1966 (R1973, R1988)**, *Electrical and Electronics Diagrams* - the layout standard | **withdrawn, no replacement** |
+| **IEEE 315-1975 / 315A-1986** (= ANSI Y32.2-1975) - the symbol standard that points at it | **Inactive-Reserved**, inactivated 2019-11-07 |
+| **IEEE 991-1986 (R1994)**, logic diagrams | **Inactive**, inactivated 2019-11-07 |
+
+Y14.15 is nonetheless **the best available written source for US schematic
+arrangement**: it is the only source the research found that states arrangement
+rules as numbered clauses mixing `shall` and `should`, which is the shape a
+criteria document needs, and its full text is publicly posted and was read in
+substantial part. Its withdrawal is administrative, not a repudiation - no
+successor contradicts it.
+
+**THE CONSEQUENCE THAT BINDS ANYTHING WRITTEN HERE: Y14.15 must be cited as a
+withdrawn standard every time it is cited, and IEEE 315 as inactive.** A criteria
+document that cites either as in-force has overclaimed, which is the failure this
+repository has been burned by - and the overclaim is attractive precisely because
+Y14.15's clauses are the only readable ones (G70).
+
+**And do not mistake what IEC 61082-1 being in force buys.** By its own scope
+clause: *"The contents of this horizontal standard will not apply unless
+specifically referred to or included in the relevant publications."* It applies
+here only if a criteria document invokes it clause by clause - which is the
+mechanism the standard expects, so this is good news rather than bad, but it is
+not automatic authority.
+
+- **Found** 2026-10-19, by the standards research pass committed at `51f8362`
+  (§1.1-§1.5), read in full by this writer.
+- **Evidence** the A3.3 and A1.1 quotations and the three status lines in §1.1 of
+  that document, each with a link to the issuing body's own status page; the
+  IEC 61082-1 scope quotation in §1.4.
+- **Verified** **no - RELAYED.** The document was read by this writer at
+  `51f8362`; every status and quotation in it came from a web fetch through a
+  summarising tool, and nothing in it was established by running anything. A
+  fetched page is not a check that could have failed.
+- **Why it is open** nothing in this repository cites these standards yet, so
+  there is nothing to correct - the entry exists so that the first document which
+  does cite them cites them with their status, and so that a later reader does not
+  re-derive "Y14.15 says so" as though it were in force.
+- **What would settle it** **CRITERION:** every citation of Y14.15, IEEE 315 or
+  IEEE 991 anywhere in this repository carries its status at the point of
+  citation, and no criterion claims in-force authority from one of them.
+  **MECHANISM, untried:** a status column in the criteria document's source table,
+  plus a check that could fail - a grep over committed documents for those
+  designations requiring a status word nearby. No such check exists and nobody has
+  written one.
+
+### G69 - a signal-flow rule was attributed to IPC-2612 by a web search and traces to a private company's practice document
+
+**An unsourced-confidence failure caught in the act**, which is why it is here
+rather than only in the research prose.
+
+A search result attributed to **IPC-2612** the sentence *"The signal flow should
+be from left to right and then circuit sections in order going down the page."*
+The researcher traced it: it is from **John Martin, *Clear Schematics*, Martin
+Company, Rev 04, 2017-02-08** - found by grepping that document's text, line 90 -
+a private company practice document, **not a standard.** IPC-2612 **§6.6** *is*
+titled "Signal Paths" and may well say something very like it; until somebody
+reads §6.6, nobody may write that IPC says it.
+
+Two things a later reader needs and cannot re-derive:
+
+1. **That specific sentence is contaminated.** If it turns up in a criteria
+   document attributed to IPC-2612, it came from a search result and not from the
+   standard. An agent writing criteria from search results would have cited a
+   standard that may not contain the rule.
+2. **The general rule it forces: no requirement may be paraphrased from a clause
+   or figure title.** About a dozen candidate criteria in the readability research
+   are marked *title only* - an active standard has a clause on exactly that topic
+   and the clause text was not obtained (G70). **A title establishes THAT a
+   standard rules on a topic; it never establishes WHAT it requires.** The
+   research deliberately paraphrased none of them, and that restraint has to
+   survive into whatever is written next.
+
+- **Found** 2026-10-19, by the standards research pass committed at `51f8362`
+  (§1.6, and the *title only* firmness grade defined in §2).
+- **Evidence** §1.6 of that document, which names the misattributing search
+  result, the true source, its revision and date, and the line of the grep that
+  found it - a trace that could have failed to land anywhere and did land on a
+  named document.
+- **Verified** **no - RELAYED**, on the same caveat as G68: the trace was
+  performed by the research agent through a summarising fetch tool and was not
+  re-run here; this writer read the document at `51f8362`.
+- **Why it is open** there is nothing in the tree to fix. The hazard is in the
+  next document somebody writes, and the only durable defence is this entry.
+- **What would settle it** **CRITERION:** every criterion in a criteria document
+  names a clause whose text its author read, and a criterion whose only source is
+  a clause title is recorded as unsourced rather than paraphrased into a
+  requirement. **MECHANISM, untried:** reading IPC-2612 §6.6 settles this
+  particular sentence either way; it is paywalled and unread (G70).
+
+### G73 - the only standard-stated numbers available are conditioned on a reproduction size nothing here declares, and the one number derivable from them makes adjacent 50-mil grid lines non-compliant
+
+**Three numbers, all from documents the researcher read**, and they are the only
+quantitative requirements either research pass found:
+
+- Y14.15 **15-7.2.1**: spacing between parallel lines, *after reduction to
+  ultimate use size*, **shall be a minimum of 0.06 inch** - a `shall`, from a
+  withdrawn standard (G68).
+- Y14.15 **15-3.6**: for diagrams intended for ultimate use reduced up to
+  **2.5:1**, symbols should be drawn approximately **1.5x** the Y32.2 size.
+- IEEE 315 **A4.4**: *"It is recommended that only two sizes be used on any one
+  diagram."*
+
+**THE DERIVED ONE, AND THE LABEL "DERIVED" MUST SURVIVE EVERY RESTATEMENT,
+because a derivation is checkable and a guess is not.** 0.06 in > 0.05 in, so on
+a 50 mil grid printed 1:1, **adjacent grid lines are non-compliant and the
+minimum compliant parallel pitch is two grid units - 100 mil.** This is
+arithmetic on the standard's number, not a chosen value. It **materially tightens
+routing density on any sheet this repository generates**, and it is recorded
+because somebody will otherwise build a router around 50 mil spacing and meet
+this afterwards.
+
+**THE BLOCKER UNDER ALL THREE.** Every one is conditioned on the intended
+reproduction size: 0.06 in is specified at ultimate use size, the 1.5x is
+conditional on a reduction of at most 2.5:1, and text legibility is the same
+shape. **Nothing in this repository declares an intended print size or
+reduction**, so the only standard-stated numbers available **cannot be evaluated
+at all.** That lines up exactly with `CLAUDE.md`'s *"Look at the output, not only
+the tests... Render it, print it, read it"*: the standards consistently constrain
+the **printed** artifact, not the file.
+
+- **Found** 2026-10-19, by the standards research pass committed at `51f8362`
+  (§2.2, §2.14, §5 rows R8-R11 and R35, §6.1, §7.5).
+- **Evidence** the three clause quotations in that document, each with its clause
+  number; the derivation is one inequality over two numbers, both quoted - the
+  0.06 in from Y14.15 and the 50 mil grid from KiCad's own Schematic Editor
+  documentation - and it is checkable by inspection rather than by trust.
+- **Verified** the **arithmetic** yes - 0.06 in exceeds 0.05 in, so adjacent 50
+  mil lines cannot meet that clause at 1:1, and this writer checked that step.
+  The **clause quotations** and the **absence of a declared reproduction size**
+  are **RELAYED** on the caveat in G68; this writer did not grep the tree for a
+  declared print size, so that absence is the research pass's claim.
+- **Why it is open** declaring a reproduction size is an acceptance criterion for
+  an artifact this repository's agents produce, and the 100 mil consequence bears
+  on the emitter's design rather than on a register edit.
+- **What would settle it** **CRITERION:** an intended output format and reduction
+  are declared in a reviewed file outside the generator, and the three
+  standard-stated numbers above are evaluated against the rendered artifact at
+  that size rather than against the file. **MECHANISM, untried:** the T2 plan
+  declares it alongside the rubric channel G67 clause 7 names. Note that two
+  escapes exist and choosing between them is **not** this register's: enforce the
+  100 mil pitch, or declare an enlargement under which 50 mil spacing meets
+  0.06 in at use size.
+
+### G74 - a naive left-to-right flow criterion fails on every op-amp in this repository, and no standard says how a feedback path is drawn
+
+Y14.15 **15-8.1** gives left-to-right reading as a `should`, upper-left-to-
+lower-right layering for complex diagrams as a `should`, and *"a circuit layout
+which follows the signal or transmission path from input to output, or in the
+order of functional sequence"* as a **`shall`** - the strong clause, and usefully
+weaker than "left to right", because it permits any arrangement in which the
+functional order is legible.
+
+**No standard the research could read states how a feedback path should be
+drawn.** Y14.15 grants one related exception and only to orthogonality (15-7.2
+exempts *"multi-vibrators"* and *"bridges"*). A feedback path runs against the
+signal flow by definition, so **a backward-edge count that does not exempt
+feedback fails on every op-amp in this repository.**
+
+**How a feedback edge is IDENTIFIED was left open deliberately**, and the three
+candidates are recorded because the next agent will otherwise invent one: an edge
+that closes a cycle in the model's directed graph; an edge declared as feedback in
+the model; an edge between a declared output port and a declared input port of the
+same block. The first is computable from the model with no agent judgement, which
+is why the researcher named it most consistent with the governing invariant -
+**and it was not tested against any circuit here**, so it is a mechanism, not the
+criterion.
+
+- **Found** 2026-10-19, by the standards research pass committed at `51f8362`
+  (§2.1, §5 row R36, §7.4).
+- **Evidence** the 15-8.1 and 15-7.2 quotations in that document, and its
+  statement that it searched for and found no feedback-drawing rule in any
+  standard it read.
+- **Verified** **no - RELAYED** on the caveat in G68. The claim that a
+  backward-edge count would fail on this repository's op-amps is an inference
+  from topology, not a measurement anyone ran over `circuits/`.
+- **Why it is open** an agent choosing the feedback classifier and then grading
+  its own layout's backward-edge count against that choice is the invariant's
+  exact failure mode, so the classifier cannot come from the producing agent.
+- **What would settle it** **CRITERION:** a backward-edge measure whose feedback
+  classification is stated in a reviewed file outside the generator, and which
+  classifies this repository's op-amp and EQ circuits' feedback edges correctly -
+  demonstrated on them, not asserted. **MECHANISM, untried:** cycle-closing edges
+  in the model's directed graph, untested against `circuits/optical-compressor/`
+  or the Pultec sections.
+
+### G75 - this repository's model makes three normally-subjective readability criteria mechanically checkable, which is an ASSET, recorded because nobody re-derives it
+
+**Not a defect.** `CLAUDE.md`'s register rule covers *"a measurement - including
+one that found nothing wrong"*, and this is one.
+
+Functional grouping, repeated-circuit congruence and rail presentation are
+judgement calls in a general schematic tool, because a netlist does not say what
+the functional blocks are, which subcircuits repeat, or which nets are rails.
+**This model states all three**, so each becomes a boolean over data the agent was
+*given* rather than data it chose:
+
+| candidate criterion | why it is mechanical HERE | source for the rule itself |
+| --- | --- | --- |
+| each declared functional block occupies a region disjoint from every other block's | `include(prefix, network, portMap)` names every block and prefixes every net inside it | Y14.15 15-3.8.1 (withdrawn), which treats spatial separation and a drawn boundary as **interchangeable** ways to show a group; IEC 61082-1 7.1.5 + Figs. 21, 65 (*title only*) |
+| repeated sub-networks are placed congruently, up to translation or reflection | a repeated block is literally the same function applied twice, so their symbols' relative coordinate sets are comparable | Y14.15 15-7.1 (withdrawn): *"Draw similar basic circuits in a similar form"* |
+| rails and returns are reached by power/return symbols, not by wires drawn across the sheet | a rail must be a **declared port** - there are no implicit global nets | Y14.15 15-8.3 + 15-7.1 (withdrawn); IEC 61082-1 7.4.5 (*title only*) |
+
+**The agent is not choosing the blocks - the model it was given states them.**
+That is the difference between a criterion and the failure mode `CLAUDE.md`
+describes, and it is why these three are mechanical here and judgement calls
+elsewhere.
+
+**The shape of the whole candidate set, so nobody sizes it from a guess.** The
+research offers **57 candidate criteria: 35 mechanically checkable, 15 measurable
+with the threshold unset, 7 human judgement only.** Cite those numbers and not
+others - **the document's own hand tally of the same tables gave 29/18/10 and was
+wrong**, and the 35/15/7 figures were produced by extracting the bucket column
+programmatically. Four of the 35 rest on a number a standard states (G73); the
+other 31 need no number at all, which is why they are the ones worth implementing
+first.
+
+**One tension flagged by the research and NOT resolved by it.** KiCad power
+symbols and global labels are exactly an implicit-global-net mechanism, and
+`CLAUDE.md` says *"There are no implicit or global nets."* These are not in
+conflict - the model forbids *undeclared* globals, and a rail that is a declared
+port may be emitted as a power symbol - but **the mapping from "declared port" to
+"global power symbol" is a decision a criteria document should make explicitly
+rather than leave to the emitter.**
+
+- **Found** 2026-10-19, by the standards research pass committed at `51f8362`
+  (§2.6, §2.10, §5 rows R41, R45, R46, §6.2, and §5's bucket totals).
+- **Evidence** §6.2 of that document for the three-criteria argument, the
+  corresponding R-rows for each check's statement, and §5's note that the bucket
+  counts were extracted programmatically after a hand tally of the same tables
+  disagreed with the extraction.
+- **Verified** **no - RELAYED** on the caveat in G68. In particular, **none of
+  these three checks has been run against any schematic here** - the claim is
+  that they are computable from data the model already carries, not that anything
+  passes them.
+- **Why it is open** they are candidates in a research document, not criteria in
+  a reviewed one, and adopting them is the rubric-channel decision G67 clause 7
+  names. An entry recording an asset stays until the asset is taken up.
+- **What would settle it** **CRITERION:** the three above are stated in a
+  reviewed, circuit-independent criteria file with their sources and each source's
+  status, and implemented as checks that fail rather than warn - then this entry
+  is deleted. **MECHANISM, untried:** route them through the channel
+  `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` **PAR4**
+  established for stripboard criteria, which is the shape G67 clause 7 says gate
+  14's rubric lacks.
+
+### G76 - the open generator this repository would most plausibly port randomises its placement, so its output cannot be regenerated and compared by content
+
+**`devbisme/schematizer`** - split out of SKiDL 3.0.0 on **2026-10-16**, MIT, a
+JSON netlist to `.kicad_sch`/SVG drawer for KiCad 6-10, engine vendored, one
+runtime dependency - says this in its own README:
+
+> *"Placement starts parts at random positions and the router breaks ties
+> randomly, so the same netlist produces a different - equally valid - drawing on
+> every run."*
+
+This repository's rule for derived artifacts is the opposite: **regenerated every
+run and compared by content**, never by timestamp (`CLAUDE.md`). **A
+nondeterministic routed emitter is structurally incompatible with that gate** -
+the comparison would fail every run for no reason, or would have to be switched
+off, which is the *"skipped check that must never look like a passing one"* the
+same document forbids. Its **labels-only mode is deterministic; the routed mode
+is not.**
+
+**No source either research pass found treats reproducible output as a
+requirement at all.** So determinism is a gap in the prior art rather than in
+this repository.
+
+**Three further properties of the same body of work bear on the same port
+decision**, recorded so nobody re-derives them:
+
+- **The author's own verdict on roughly 18 months of work** (SKiDL's
+  force-directed placement plus global and switchbox orthogonal routing, August
+  2021 to July 2023): the schematics are *"better than what we had (which was
+  nothing), but the quality of the schematics still needs improvement"* -
+  imperfect wiring aesthetics, occasional bad placements needing manual `symtx`
+  hints. The companion line from one of the two prior-art reviews: **"you can't
+  route your way out of a bad placement."** The SKiDL discussion
+  (`devbisme/skidl` #125, 2021-2025) records a contributor abandoning wire
+  routing for hierarchical and global **labels** because routed output was *"ok
+  but not quite pretty enough to use"* - **the same destination tscircuit was
+  rejected here for reaching silently**
+  (`docs/decisions/2026-09-21-why-not-tscircuit.md`), except chosen openly and
+  said out loud. Nothing in either pass revisits that decision and nothing found
+  contradicts it.
+- **An unresolved contradiction about elkjs, recorded undiagnosed.** One source
+  asserts ELK has no orthogonal algorithm for schematics and that
+  `elk.edgeRouting = ORTHOGONAL` has no visible effect in some integration,
+  because the caller keeps only child positions and discards the returned edge
+  routes; Weave reports using elkjs orthogonal routing successfully. That reads
+  like one integration's bug rather than a property of ELK, and **neither reading
+  was tested.** If ELK is considered, settle it directly.
+- **Scale ceilings, and every published result is small**: EEschematic at 3-5
+  transistors, Schemato degrading above 5 components, RL schematic placement not
+  past roughly 40 components, netlistsvg reportedly poor at 80+ parts,
+  `kicad-sch-api` slowing near 1,000. The five Pultec sections are **19, 20, 27,
+  21 and 39 components** (measured in G16 and G65), which sits above most of the
+  literature's demonstrated range and below the slow end.
+
+- **Found** 2026-10-19, by the prior-art research pass committed at `ba6dba1`
+  (§3 SKiDL/schematizer, §4 engines, §6), read in full by this writer.
+- **Evidence** the README quotation, the author's own write-up quotation, the
+  issue #125 summary and the ELK contradiction as recorded in that document with
+  its per-item evidence marks; the component counts are this repository's own,
+  carried from G16.
+- **Verified** **no - RELAYED, and weakly for the maturity signals.** The
+  prior-art pass states about itself that no repository was cloned, no generator
+  executed and no schematic rendered, and that **star and commit counts are its
+  least reliable facts** - it reports 3 stars and 13 commits for `schematizer`,
+  so project maturity here is a weak signal rather than a measurement. The
+  nondeterminism claim is a README quotation, not an observed run.
+- **Why it is open** whether to port anything is the T2 plan's decision, and both
+  research passes explicitly make no recommendation. Recording the property is not
+  ruling on the port.
+- **What would settle it** **CRITERION:** any adopted generator produces
+  byte-identical output from an unchanged model across repeated runs, so that
+  `make check`'s content comparison can only fail for a real reason.
+  **MECHANISM, untried and each with a cost:** schematizer's deterministic
+  labels-only mode, which buys determinism by emitting stubs instead of wires -
+  the very trade tscircuit was rejected for; a deterministic placement of our own;
+  or a seeded run, which makes the seed part of the artifact's identity. Picking
+  one is not this register's.
+
+### G77 - a correctness gate for a generated schematic exists, is published with pass rates, and is a CANDIDATE here rather than a decision
+
+**Weave** (*Verified Netlist-to-Schematic Conversion via Layered Graph Layout*,
+arXiv 2607.03835; deterministic, no model, no training) certifies **every**
+schematic it emits: it re-parses the **emitted file** back into a netlist - by
+unioning wire endpoints, flags and symbol pins that share coordinates into nets -
+and compares it net for net against the input. The outcome is **binary, MATCH or
+partial**, not a similarity score: *"A result is accepted only when the two
+connectivity partitions are identical."*
+
+Reported results: **100% compilation and 100% verified MATCH on 117 circuits**
+(Circuits-LTSpice) and **88.4% verified MATCH on 3,460 Analog Devices LTspice
+demo circuits** (mean 14.4 elements, max 138), with 8.2% partial and 3.3%
+errors. A "safe-mode ladder" progressively disables placement patterns and keeps
+the first result that verifies.
+
+**Why it bears on this repository specifically.** It grades the artifact rather
+than the generator's intention, it is a check that can fail, and **it would catch
+the exact failure that disqualified tscircuit** - a drawing that looks connected
+and is not. It is independent of readability, and Weave says so about itself: it
+*"does not yet report the crossing, bend, or visual-similarity metrics"* (G78).
+Named failure classes, from the paper: dense multi-pin power modules with many
+repeated nets; deep cascades stretched into long chains by layered layout
+(*"correct but not compact"*); symbols absent from its 5,093-symbol table.
+
+**This is a candidate and not a decision.** SchGen's *Netlist Accuracy* (Jaccard,
+precision and recall over symbol-pin nodes) is the graded version of the same
+idea, and Weave argues the binary version is the right one; that disagreement is
+unresolved and is not resolved here.
+
+- **Found** 2026-10-19, by the prior-art research pass committed at `ba6dba1`
+  (§2 Weave, §4 "Correctness of a generated schematic").
+- **Evidence** that document's `[PAPER-FULL]` reading of Weave, with the
+  verification method, the two pass rates and the named failure classes quoted
+  from the paper.
+- **Verified** **no - RELAYED.** Weave was not run, its repository was not
+  cloned, and none of its output was looked at; the pass rates are the paper's
+  own claims, read through a summarising fetch tool.
+- **Why it is open** adopting a correctness gate is a design decision for the T2
+  plan, and **where in the derivation chain the comparison sits is itself open** -
+  G16 records that a whole-EQ netlist compared against a section board rejects, so
+  "compare the emitted schematic against the model" is not one comparison but
+  several.
+- **What would settle it** **CRITERION:** a generated schematic is accepted only
+  when a netlist re-derived **from the emitted file** is partition-identical to
+  the model's netlist, and the gate fails rather than warns. **MECHANISM,
+  untried:** Weave's geometric re-parse, or `kicad-cli`'s own netlist export of
+  the generated file compared against the model - **these are not the same thing**
+  (one trusts coordinates, the other trusts KiCad's connectivity engine), and
+  neither has been tried here against a generated sheet.
+
+### G78 - schematic SEMANTICS is ungraded by every tool two independent prior-art reviews surveyed, which is the thing this project needs most
+
+Two reviews run independently in the two months before the pass converge on the
+same structural conclusion: **the layout ENGINES exist** - Sugiyama layered,
+Tamassia orthogonal bend minimisation, ELK/elkjs with port and hyperedge support,
+grandalf as a pure-Python Sugiyama - and **"schematic semantics (GND down,
+passive chains, symmetry) remains unsolved across all tools."** Ground down,
+power up, flow left to right, aligned passive chains, mirrored differential
+pairs, recognisable feedback, idioms preserved: nothing surveyed grades any of
+it. The only two attempts found are Hsu & Lin's *"building block compliance
+rate"* and Weave's named *"placement patterns (feedback, divider legs, shunts)"*,
+and **neither publishes a usable definition.**
+
+**The candidate measures, with what is unknown about each** - the part a later
+reader cannot re-derive without repeating the pass:
+
+| candidate | what it is | what is unknown about it |
+| --- | --- | --- |
+| **SchGen Spatial Violation** (Microsoft Research; MIT repository) | normalised overlaps among symbols, labels and wires - code-computable and published | **it measures overlap ONLY** - nothing about crossings, bends, flow or idiom. And **whether the implementation is in `github.com/microsoft/SchGen` is unestablished**; the README does not document evaluation code. Settled by cloning and looking |
+| **AEM** (Yang et al., IEEE TCAD, *Circuit Schematic Generation in PCB Reverse Engineering...*) | an Aesthetic Evaluation Metric for PCB schematics, RL-trained to align with designers' subjective judgement; described as weighing *"component placement specifications, neatness, routing complexity, and line length"* | **PAYWALLED - the formula is UNREAD.** It is the closest thing found to a published schematic readability metric, and nobody can say whether its components are computable from a `.kicad_sch`. **The highest-value unresolved lead in either document** |
+| **Purchase, "Metrics for Graph Drawing Aesthetics"** (JVLC 13(5), 2002) | formal metrics for **seven** aesthetic criteria - crossings, bends, edge length, drawing area among them - deliberately size-independent, explicitly intended as cost functions | **the seven formulas were not retrieved, and they are the point.** `rpgove/greadability` is a runnable JavaScript implementation of four normalised global metrics (crossings, two angular-resolution measures, crossing angle), reportedly the only implementation of three of them - and it **knows nothing about circuits** |
+| **FITEE 2025 survey** (DOI 10.1631/FITEE.2400612) | a review of automatic schematic generation techniques, citation span 1966-2024 | **the evaluation-metrics section is paywalled.** Named as the likeliest single shortcut to the whole metric question |
+| **Schemato's GED / MSSIM** | graph edit distance and mean structural similarity against a reference drawing | **unusable here by construction** - they need a known-good drawing of the same circuit, which an ex nihilo schematic (G66) does not have |
+
+**AND THE FINDING THAT COMPLICATES BORROWING ANY OF THEM, RECORDED
+UNDIAGNOSED.** An empirical study relayed in search results found participants
+**slower and less accurate** finding cliques in an **orthogonal** layout than in
+a force-directed one **despite the orthogonal layout having fewer crossings.**
+The study **could not be identified**, so this is a flag and not a fact - but the
+direction of the flag matters here more than in most places: **minimising
+crossings is not the same as being readable, and a schematic is orthogonal by
+convention** (Y14.15 15-7.2). The graph-drawing literature says something
+compatible from another direction - Mooney et al. (GD 2024): layout quality is
+inherently multi-objective and no single metric captures it across graphs and
+tasks, with stress and crossings in conflict.
+
+**One more thing nothing found solves: grading a schematic for which no reference
+drawing exists.** The published metrics split into correctness (needs the input
+netlist - available, G77) and resemblance (needs a known-good drawing - not
+available for a novel circuit). **Nothing found grades a novel schematic's
+readability by code**, which is exactly what the ex nihilo direction G66 records
+as a stated requirement would need.
+
+- **Found** 2026-10-19, by the prior-art research pass committed at `ba6dba1`
+  (§2 "Two independent prior-art reviews", §4 "Layout quality" and "Graph-drawing
+  literature", §6 "Genuinely unsolved"), with §4.2 of the standards pass
+  (`51f8362`) reaching the same conclusion from the standards side.
+- **Evidence** that document's evidence marks per item - `[PAPER-FULL]` for
+  Weave, `[PAPER-ABS]` for Hsu & Lin and Purchase, `[PAYWALLED]` for AEM and
+  FITEE, `[THIRD-PARTY]` for both reviews and for `greadability` - and its
+  quotation of the two reviews' shared conclusion.
+- **Verified** **no - RELAYED, and some items are weaker than others.** Nothing
+  was cloned, run or rendered. AEM and the FITEE metrics section were not read at
+  all; Purchase's formulas were not retrieved; the orthogonal-reads-worse study
+  could not be identified and is recorded undiagnosed on purpose.
+- **Why it is open** this is the gap itself rather than a defect - **nobody has
+  what this project needs most.** An agent that filled it from its own judgement
+  would be authoring the criteria for the artifact it produces.
+- **What would settle it** **CRITERION:** a readability measure that is published
+  or reviewed **outside the agent producing the schematic**, computable from a
+  `.kicad_sch`, and able to fail. **MECHANISM, untried, in descending value:**
+  obtain AEM and establish whether its components are computable from a
+  `.kicad_sch`; read the FITEE survey's evaluation-metrics section; retrieve
+  Purchase's seven formulas and evaluate `greadability` over a schematic's net
+  graph; clone SchGen and find out whether Spatial Violation is implemented
+  there. The first two are paywalled - the same procurement problem G70 records
+  on the standards side.
+
+### G80 - an externally-authored placement rule file for agent schematic placement already exists, and one of its facts is load-bearing for any emitter
+
+`kicad-sch-api` **issue #135** collects placement rules derived from *"extensive
+iterative testing with AI agents"* across six versions of one LED-indicator
+circuit, with concrete numbers: **1.27 mm grid alignment**; **lower Y is TOP,
+higher Y is BOTTOM**; `rotation=270` for a vertical LED so the cathode points
+right; *"calculate center first, work backwards"*; text Y must be less than the
+enclosing rectangle's bottom Y; power symbols carry voltage values rather than
+references; **derive every wire coordinate from `list_component_pins()` rather
+than by arithmetic**; 40-60 mm branch spacing; and a pre-render verification
+checklist.
+
+Two reasons this is in the register and not only in the research prose:
+
+1. **It is a candidate criteria channel of exactly the shape this repository
+   requires** - a rule file written by somebody who is not the agent producing
+   our artifact (`CLAUDE.md`'s invariant; the shape it would take here is the one
+   `docs/superpowers/specs/2026-10-10-stripboard-acceptance-criteria.md` **PAR4**
+   established).
+2. **The Y-orientation fact is load-bearing.** In `.kicad_sch` coordinates
+   **lower Y is top.** Anything implementing "power at the top" (G72) as a
+   *larger* `y` has it backwards, and this is the cheapest available place to
+   learn that.
+
+**Its provenance is also its limit**, and both halves have to travel together: it
+is one project's empirical findings on one small circuit, **not a standard**;
+`kicad-sch-api` is a library this repository does not use; and its numbers -
+40-60 mm branch spacing in particular - are that circuit's, with no stated
+derivation. Adopting one without a derivation or a test over the range it claims
+would be the silent widening `CLAUDE.md` forbids.
+
+- **Found** 2026-10-19, by the prior-art research pass committed at `ba6dba1`
+  (§3 `kicad-sch-api`, and item 7 of its own list of entries owed to this file).
+- **Evidence** that document's `[REPO]`-marked reading of the library and its
+  summary of issue #135 with the rules named above.
+- **Verified** **no - RELAYED.** The issue was read through a summarising fetch
+  tool, not raw, and no rule in it was tested against a `.kicad_sch` produced
+  here. **The "lower Y is TOP" claim in particular should be confirmed against a
+  file on disk before anything depends on it** - this repository has schematics
+  committed, so that check is available locally and it was not run.
+- **Why it is open** it is a candidate source, and whether this repository adopts
+  a rule from it is a criteria decision the producing agent may not make.
+- **What would settle it** **CRITERION:** wherever a placement rule here matches
+  one of #135's, the rule cites it as a named external source **with its status**
+  (one project's empirical findings, not a standard), and no number is adopted
+  from it without a stated derivation or a test over the range it claims.
+  **MECHANISM, untried:** read the issue directly rather than through a
+  summariser, confirm the Y orientation against a committed `.kicad_sch`, and
+  reconcile the rest against the standards-sourced candidates in G75 and the
+  spacing arithmetic in G73 before adopting anything.
+
 ---
 
 Open: blocked on something else
@@ -3378,3 +4013,93 @@ by design.
   the span unrecorded and let the refusal stand.
 - **What would settle it** an owner decision on extending the catalog schema,
   then `part-researcher` on the nine lines.
+
+### G70 - three IN-FORCE standards hold the layout requirements this project needs, and none of their normative text was obtained
+
+| document | what is in hand | what reading it would settle |
+| --- | --- | --- |
+| **IPC-2612-2010** §6 Layout, §7 Net Naming, Table 3-2 Font Size Examples | cover, full contents, scope, purpose, classification and applicable-documents clauses, verbatim | §6.1 Connecting Lines, §6.2 Junctions, §6.5 Power and Ground, §6.6 Signal Paths, §7.3 Reserved Characters - the **in-force, electronics-specific** rules for the conventions this project most needs. It blocks any net-naming criterion outright (the reserved-character set is in §7.3), would settle **G72**, and would settle the contaminated sentence in **G69** |
+| **IEC 61082-1:2014** clauses 5, 7, 11, 12 | cover, foreword, introduction, full contents, scope, normative references, verbatim | 7.1.1 flow of energy and signal, 7.1.3 connecting lines, 7.4.2 Layout, 7.4.5 supply circuits, 5.2 text orientation, 11 structured documentation, 12 **CAx conformance requirements** - this is the in-force layout standard and **only its clause and figure titles are in hand** |
+| **ASME Y14.2-2014 (R2020)** | the scope statement only | the minimum lettering height |
+
+**ONE DISTINCTION IN THAT TABLE MUST NOT BLUR.** Y14.2's number - and
+IPC-2612 Table 3-2's - is **UNREAD, not unset.** It exists, it is citable, and it
+is behind a paywall. That is a different thing from **G71**, where no source
+anywhere states a number. **An unread threshold must be read; an unset one is a
+decision.** Conflating them is how a chosen number passes as a cited one.
+
+**Two smaller sources also unread, named so nobody assumes they were consulted:**
+
+- **`klc.kicad.org` returned HTTP 403**, so the KiCad Library Convention rule
+  numbers and its exact values for pin length, field placement and text sizes are
+  absent from the research. The 50 mil grid and the 50 mil field text size came
+  from KiCad's Schematic Editor documentation instead.
+- **IPC-2611**, which IPC-2612's own classification clause makes normative
+  (*"Classification of Schematic and logic diagrams shall meet the requirements of
+  IPC-2611"*), is **unexamined**. It governs grades and completeness modes and may
+  carry further presentation requirements.
+
+About a dozen candidate criteria in the readability research are marked *title
+only* because of this entry, and **G69**'s rule binds every one of them: a title
+establishes that a standard rules on a topic, never what it requires.
+
+- **Found** 2026-10-19, by the standards research pass committed at `51f8362`
+  (§1.4, §1.6, §7.1, §7.6), read in full by this writer.
+- **Evidence** §7.1's table of what was and was not obtained, each row naming the
+  free preview or front-matter PDF it came from; the HTTP 403 recorded in §7.6.
+- **Verified** **no - RELAYED.** What is in hand and what is not is the research
+  agent's own account of its fetches; this writer did not attempt any of them.
+  The documents themselves are not in this repository.
+- **Why it is open** procurement, not research. These are paid standards and KLC
+  is a fetch that was refused; no amount of further searching substitutes for
+  buying or borrowing them.
+- **What would settle it** **CRITERION:** for every criterion sourced to
+  IPC-2612, IEC 61082-1 or ASME Y14.2, the clause text was read by whoever wrote
+  the criterion - and until then the criterion is recorded as *title only* rather
+  than stated. **MECHANISM, untried:** obtain the three standards, IPC-2612 §6
+  first because it is the in-force electronics-specific one and settles the most;
+  and fetch KLC by a route that is not refused. Whether this repository spends on
+  standards is an owner decision and **nobody has put it to him.**
+
+### G79 - KiCad's official API cannot touch the schematic editor, so every tool that writes a schematic writes `.kicad_sch` s-expressions directly
+
+The **IPC API** (public beta in KiCad 9, protobuf over NNG, official `kicad-python`
+bindings on PyPI, Python 3.9-3.12) **does not support the schematic editor or the
+library editors.** It also requires a *running* KiCad with a document open - every
+accessor is an RPC to the live editor, with no offline file-reading path - and it
+provides no plotting or export, for which KiCad directs callers to `kicad-cli`.
+The older SWIG `pcbnew` API is board-only. And **KiCad has no
+netlist-to-schematic path at all**: importing a netlist into pcbnew *"merely
+stacks footprints at origin with nothing usable"*, and nothing goes the other way
+into eeschema.
+
+**Therefore every tool the prior-art pass surveyed that writes a schematic
+programmatically writes the s-expressions directly** - `kicad-sch-api`,
+`schematizer`, `circuit-synth`, `kiutils`, `kicad-skip` and
+`rjwalters/kicad-tools`. There is no sanctioned alternative, which is why
+byte-exact round-trip formatting is a capability worth naming at all.
+
+**What it constrains here, concretely.** `lib/kicad/schematic.ts` emits the file
+itself and will go on doing so, so the emitter's correctness is this repository's
+problem and not KiCad's; and the only supported checks on the result are
+`kicad-cli` ERC and export, which `make check` already runs on every board on
+every run. That puts this repository ahead of most of the surveyed field on the
+*"look at the output"* axis - and it is not a choice anybody made here, it is the
+only road.
+
+- **Found** 2026-10-19, by the prior-art research pass committed at `ba6dba1`
+  (§5 "KiCad-specific automation"), read in full by this writer.
+- **Evidence** that document's §5, marked `[THIRD-PARTY]` plus official
+  mailing-list and documentation extracts, with the list of six tools that write
+  s-expressions directly.
+- **Verified** **no - RELAYED.** The API's limits were read on documentation and
+  third-party pages through a summarising fetch tool; **nobody here called the
+  IPC API to confirm the schematic editor is absent from it.**
+- **Why it is open** it is upstream. Nothing in this repository fixes it, and the
+  entry exists so that no design here budgets for a schematic API that does not
+  exist.
+- **What would settle it** **CRITERION:** a sanctioned KiCad API that reads and
+  writes schematics offline - at which point this entry is deleted.
+  **MECHANISM:** none available. Until then this is a constraint to design
+  against rather than a defect to fix, and the cheap confirmation nobody has run
+  is to look for schematic services in the installed `kicad-python` bindings.
