@@ -524,15 +524,57 @@ them and then treating them as the ceiling makes the as-built artifact the
 criterion. **That measurement has not been performed.** The measurement would
 inform the decision; it is not the decision.
 
+**EXTENSION, 2026-10-19: the one project that shipped agent-generated schematics
+never attempted a readability number either, and it is worth knowing that before
+anyone goes looking for one.** This is a measurement that found nothing wrong,
+recorded for that reason. The pedals schematic generator was searched three ways,
+each of which could have turned up an attempt: all 278 session transcripts
+(743 MB, streamed) for `readability score`, `legibility score`, `aesthetic
+score`, `crossing count`, `count crossings`, `wire crossings`,
+`minimise/minimize crossings`, `readability metric`, `score the layout`, `grade
+the readability` - **two substantive hits, neither a scoring attempt**; a
+non-test grep of the generator, where every occurrence of "crossing" is strictly
+about electrical correctness (a label at the crossing of two wire interiors joins
+both nets, so it is refused) and **never about counting crossings for looks**;
+and all three revisions of its spec plus both third-party design reviews, none of
+which proposes a metric. **Nobody tried to score readability and failed. It was
+never attempted** - the reviewer who blocked the labels design proposed templates
+plus a no-fallback rule plus an independent reading gate *instead of* a metric,
+and that is what was built.
+
+Read with the rest of this entry, that makes the threshold-free form above the
+**only** form anybody has shipped, which strengthens it as a candidate and does
+not turn it into a decision. The reading the history research offers - INFERRED
+there, and recorded here as its reading rather than as a finding - is that
+readability in that generator is a **criterion/mechanism split** of exactly the
+kind `CLAUDE.md` insists on: the criterion is *"an independent reader can follow
+this block from the drawing alone"*, which is a judgement and never a number, and
+the mechanisms are templates and clearance refusals, which are machine-checkable
+**because** they are not the criterion. A port that goes looking for the number
+that means "legible" would be building something that project deliberately did
+not build.
+
 - **Found** 2026-10-19, by the standards research pass committed at `51f8362`,
-  read in full by this writer.
+  read in full by this writer. **The extension** was added the same day from §4
+  and §10 (candidate 2) of `docs/schematic/schgen-development-history.md`
+  (`8a4d8f7`), which is a different document by a different author - its evidence
+  and verification status are stated separately below.
 - **Evidence** §2.2, §4.2 and §7.3 of that document, with the Y14.15 clause
   quotations, the patent's own statement about numeric specifications, Weave's
   own sentence declining the metrics, and EEschematic's 5-10 subjective scale.
-- **Verified** **no - RELAYED.** The document's text was read by this writer at
-  `51f8362`; everything in it was gathered by web fetch through a summarising
-  tool, with nothing cloned, executed or rendered, and the document says so about
-  itself. **A fetched web page is not a check that could have failed.**
+  **For the extension:** the three searches named above - the transcript keyword
+  scan, the non-test grep of `tools/schgen`, and the three spec revisions plus
+  both design reviews. **Unlike the rest of this entry, those ARE checks that
+  could have failed**, and one of them nearly did: the scan returned two
+  substantive hits and both had to be read and dismissed.
+- **Verified** **no - RELAYED, by two separate hands.** The standards document's
+  text was read by this writer at `51f8362`; everything in it was gathered by web
+  fetch through a summarising tool, with nothing cloned, executed or rendered, and
+  the document says so about itself. **A fetched web page is not a check that
+  could have failed.** The extension is relayed one step further: the history
+  research marks its three searches CONFIRMED and names them, but **this writer
+  re-ran none of them**, and they are over another repository's tree and
+  transcripts.
 - **Why it is open** a threshold is an acceptance criterion for an artifact this
   repository's agents produce, so no producing agent may author one; and the
   honest alternative - that there is no threshold - is itself a decision about
@@ -595,6 +637,63 @@ Note also the coordinate direction, because getting this backwards is easy: in
   IPC-2612 **§6.5 Power and Ground** with Figure 6-2, and IEC 61082-1 **§7.4.5**
   with Figures 76-77. Both are unread and paywalled (G70), so the mechanism is
   blocked and the criterion is not.
+
+### G82 - nobody with domain expertise ever looked at the drawings this program is about to inherit its templates from, and "acceptable" meant an agent reading PNG renders
+
+**This is the provenance of the artifact, not a complaint about it.** The
+schematic generator this program proposes to port produced drawings that were
+accepted. The question a later reader cannot re-derive is **by whom**, and the
+answer is: by another agent.
+
+| what decided it | what that was |
+| --- | --- |
+| The gate | A subagent, denied the circuit description, the code, the IR and the design notes, given only the PDF and one section of a render report, instructed to convert every page to PNG at 300 dpi (900 dpi for spot checks) and crop region by region. *"A block that cannot be followed is a defect even if every machine check passes."* |
+| The verdict | 103 blocks checked, 101 followable. **20 numbered defects, exactly 1 blocking.** Two passes, three fix rounds, by the same reviewer. |
+| What shipped | **16 of the 19 first-pass cosmetic defects were knowingly not fixed**, each listed under *"Known cosmetic items, left as they are by the controller's ruling"* with its cost stated. Half-empty sheets, two different VSSA glyphs on one page, abutting power symbols, sideways supply arrows. |
+| Who else looked | **No human.** Confirmed absent from the owner's 123 messages in the session; the spec itself recommends *"a paid human review … before first fab"* and the research found no evidence one happened. |
+
+So **"acceptable" meant one blocking defect fixed and nineteen cosmetic ones
+adjudicated by the producing side** - not "clean", and not "a person with
+domain expertise read it". The one blocking defect is the reason the gate was
+worth having at all: KiCad's do-not-populate cross ran along a Zener's sloping
+sides and through its cathode bar, so *"even at 900 dpi the zener's orientation
+(anode/cathode) cannot be read"* - on a page whose own note told the builder to
+fit that part. A correct netlist, a passing ERC and eight green gates, and the
+drawing still could not be built from.
+
+**Why this is his to rule on and not an agent's.** `CLAUDE.md` forbids the
+producing agent from authoring the acceptance criteria for its artifact, and an
+agent reading renders is a legitimate criteria channel only while somebody other
+than the producing side has said it is sufficient. **Nobody has said that here.**
+A port that adopts the templates adopts this provenance with them, and the
+question of whether a human legibility review is required before this repository
+accepts a generated schematic - and if so, at what point, and whose - has never
+been put to him.
+
+- **Found** 2026-10-19, by this task, reading §5, §9 and §10 (candidate 3) of
+  `docs/schematic/schgen-development-history.md`.
+- **Evidence** that document's §5, sourced to the pedals repository's committed
+  `h7-platform/boards/v1/VERIFICATION.md` (1295 lines, readability review from
+  line 945) and to the reviewer's dispatch prompt recovered from
+  `subagents/agent-a5ece5e34462a1b75.jsonl` line 1; the absence of human review
+  is its §9, established against the owner's 123 messages in that session.
+- **Verified** **no - RELAYED.** The history research read those primary sources
+  and marks these claims CONFIRMED; **this writer read the research document, not
+  the transcripts or `VERIFICATION.md`.** Both are in another repository
+  (`/Users/orion/work/pedals-work/digital-pedal-platform`) and the transcripts
+  are 743 MB.
+- **Why it is open** it is a criteria decision, and the only person who may make
+  it has not been asked. **Nobody asks him unprompted** - this entry exists so
+  the question survives until it is naturally in front of him, which is when the
+  program's acceptance gates are specified.
+- **What would settle it** **CRITERION:** an owner ruling on whether an agent
+  reading rendered pages is a sufficient legibility gate for a schematic this
+  repository generates, or whether a human must read one, and at what point.
+  Until he rules, no document here may describe the ported templates as
+  human-validated - because they are not. **MECHANISM, untried:** put it to him
+  alongside the related unestablished fact (§9: whether the pedals third-party
+  design reviewer was a human or a model - *"Only the owner can settle it"*), so
+  one question covers both channels rather than two separate asks.
 
 ---
 
@@ -3993,6 +4092,334 @@ would be the silent widening `CLAUDE.md` forbids.
   summariser, confirm the Y orientation against a committed `.kicad_sch`, and
   reconcile the rest against the standards-sourced candidates in G75 and the
   spacing arithmetic in G73 before adopting anything.
+
+### G81 - `lib/kicad/schematic.ts` emits the exact pathology another project was blocked from shipping, and the review that blocked it cites THIS repository as where the pathology was first seen
+
+**This is a defect sitting in this repository right now, not a risk in the
+port.** The emitter's own doc comment, read by this writer at `9eb6394`:
+
+> A KiCad schematic STUB, written once from a canonical Network. … every pin is
+> carried by a short wire to a net label, so **connectivity is carried entirely
+> by labels.** That is a starting point, not a drawing
+
+The pedals schematic generator's spec rev 1 made the same choice - *"**Labels,
+not wires.** Every pin connects through a net label placed exactly on its pin
+end. This is a standard KiCad style, ERC-valid, and diff-friendly"* - and a
+third-party design review blocked it within an hour, before any code existed:
+
+> **1. Blocking: don't adopt "labels, not wires" as the schematic
+> representation**
+>
+> This optimizes for the generator rather than for the artifact the generator is
+> supposed to produce.
+>
+> You already discovered essentially this pathology in **the audio-circuits
+> schematic-generation work**: when almost every connection becomes a label, the
+> schematic stops communicating circuit topology.
+
+and on why it mattered: *"The PDF **is** wiring in its human-readable
+representation. If the owner can't visually follow a signal path … then an
+important independent verification channel has disappeared."* The requirement
+that replaced it, one minute later in rev 2: *"Generated schematics SHALL show
+local circuit topology using wires. Net labels SHALL primarily identify rails,
+interfaces, and connections crossing functional-block or sheet boundaries."*
+
+**Two things make this worth an entry rather than a line in a plan.** First, the
+honest framing of the port is *stop emitting the labels stub* - it is importing
+the fix to a failure already here, not a solution to a new problem. Second, the
+same doc comment carries a **second, separate defect**: *"the operator arranges
+it in KiCad and owns it from then on … positions, wires, labels and text are the
+operator's"* is the division of labour `CLAUDE.md` reversed on 2026-10-10. The
+file asserts a rule the project no longer holds, and a reader who trusts the
+comment over `CLAUDE.md` will hand schematic work back.
+
+- **Found** 2026-10-19, by this task, from §3 and §10 (candidate 1) of
+  `docs/schematic/schgen-development-history.md`.
+- **Evidence** `lib/kicad/schematic.ts` lines 2-9, read directly by this writer;
+  the blocking review and both spec revisions quoted in that document's §3,
+  sourced to `git show d9f5753` in the pedals repository and to the session
+  transcript the owner pasted the review into.
+- **Verified** **split, and the halves differ.** The defect in this repository is
+  **CONFIRMED** - this writer read the comment. The pedals review that names it,
+  and the rev 1 / rev 2 texts, are **RELAYED** from the history research; this
+  writer read neither the transcript nor the other repository's spec.
+- **Why it is open** it is the thing the schematic-generation program exists to
+  replace, so fixing it piecemeal now would duplicate work the program will do.
+  **What was missing is that nothing recorded it as a defect** - `CLAUDE.md`
+  describes the emitter as a stub, which is honest about what it is and silent
+  about it being a known failure mode with an outside review against it.
+- **What would settle it** **CRITERION:** the emitter shows local circuit
+  topology with wires and uses labels only for rails, interfaces and connections
+  crossing block or sheet boundaries; **and** the labels stub is **deleted** when
+  its replacement lands, rather than left beside it (`CLAUDE.md`: supersede means
+  delete). The stale division-of-labour sentence in the doc comment is a separate
+  one-line fix that need not wait for the port. **MECHANISM:** the port described
+  in `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`.
+
+### G83 - the readability gate this program would copy handed its reviewer a LIST of defects to look for, and five of twenty findings map onto that list one-to-one
+
+The gate is otherwise the strongest part of the record (G82): a reviewer denied
+the circuit description, the code, the IR and the design notes, reading rendered
+pages only. **Its one structural weakness is in the dispatch prompt**, which
+pre-named the categories:
+
+> text overlapping or too close; labels or notes naming parts by ids that are not
+> on the drawing; … wasted space that forces a large paper size; a "do not
+> populate" cross that hides pin numbers; unclear supply arrows; wide bus legends.
+
+Set against the 20 defects reported, that list anticipates **defects 5, 6, 7, 8
+and 11 almost one-to-one.** So the reviewer was independent of the **source** but
+not of the **controller's expectations** - and the controller was the agent that
+had just built the thing. That is a softer form of the failure `CLAUDE.md`
+describes: the producing side choosing what the checks are.
+
+**The hints did not fully determine the outcome**, and the entry would be
+dishonest without this: the reviewer found the blocking Zener defect, challenged
+a `labels`-rendered block's stated reason (`U_POGO` - the reason claimed the
+label names the probed net; true of only 4 of 9 pads), and caught a double VSSA
+glyph, none of which are on the list. The weakness is a contamination of the
+channel, not a demonstration that the channel failed.
+
+- **Found** 2026-10-19, by this task, from §5 (*"One honest weakness in the
+  gate"*) and §10 (candidate 3) of
+  `docs/schematic/schgen-development-history.md`.
+- **Evidence** that document's comparison of the dispatch prompt in
+  `subagents/agent-a5ece5e34462a1b75.jsonl` line 1 against the 20 defects in
+  `h7-platform/boards/v1/VERIFICATION.md`.
+- **Verified** **no - RELAYED.** The history research quotes the prompt and marks
+  the comparison CONFIRMED; this writer read the document, not the transcript.
+- **Why it is open** this repository has no reading gate yet, so there is nothing
+  to fix - the entry exists so the gate is not specified by copying the prompt.
+  **A prompt is the easiest part of a gate to clone and the easiest place to
+  smuggle the producing side's expectations in.**
+- **What would settle it** **CRITERION:** this repository's own reading gate
+  hands its reviewer the **criterion** - can you follow this block from the
+  drawing alone? - and **not a list of defect categories**, and the dispatch
+  prompt is committed so the question can be checked after the fact.
+  **MECHANISM, untried:** if coverage of known failure classes is wanted anyway,
+  it belongs in the machine refusals (G85) where it is checkable, not in the
+  human-judgement channel where it biases the only independent reader.
+
+### G84 - a labels fallback for a block no template fits degrades the GATE, not merely the drawing, and the fix for it has to land before any template does
+
+The pedals spec rev 2 had the obvious mitigation: *"A block whose topology fits
+no template falls back to labels inside that block only, and is listed in the
+render report so a template can be added."* A second design review killed it:
+
+> Why generate a knowingly inferior schematic and rely on an agent later noticing
+> it? … You already know the desired invariant. Make the tooling enforce it. …
+> That's much safer than silently degrading.
+>
+> **This also makes the readability gate a genuine independent check rather than
+> part of the normal rendering workflow.**
+
+**That last sentence is the finding.** A fallback does not only degrade the
+output - it degrades the reading gate, because the independent reviewer ends up
+auditing damage the pipeline chose to do rather than reading a drawing the
+pipeline stands behind. Rev 3 replaced it with hard failure, and the
+consequences are ordering constraints a port inherits whether or not it notices
+them:
+
+- **An unrealisable block fails generation**, so the template set must cover
+  every block on the board before the schematic can exist at all. A port
+  therefore **cannot build the generator and then point it at a circuit; it must
+  enumerate the circuit's blocks first and build to that list.**
+- The usual resolution of *"no template fits"* was **decomposing the block across
+  existing templates**, not writing a new one - seven templates drew all 103
+  blocks of that board. Budget decomposition as the primary tool.
+
+This is the same rule `CLAUDE.md` already states in two other voices - *"Refuse
+rather than guess"*, and *"An empty whitelist that refuses loudly beats a general
+rule that quietly accepts a guess"* - and the user-level rule against fallbacks
+outside test code. **It is recorded here because the reasoning is new: the cost
+is paid by the gate, which is the part nobody is watching.**
+
+- **Found** 2026-10-19, by this task, from §8 (dead end 2) and §7 of
+  `docs/schematic/schgen-development-history.md`.
+- **Evidence** that document's verbatim quotation of the second design review and
+  of spec rev 2's fallback clause, with the rev 3 replacement; the ordering
+  constraints are its §7, sourced to the spec's own risk list.
+- **Verified** **no - RELAYED.** CONFIRMED in the history research against the
+  pedals spec revisions and transcript; this writer read the document only.
+- **Why it is open** nothing here can fall back yet because nothing here renders
+  blocks. The entry is a constraint on a design that has not been written, which
+  is the only time it is cheap.
+- **What would settle it** **CRITERION:** no path in a schematic emitter here
+  produces a knowingly inferior drawing - a block no template realises **fails
+  generation with a refusal naming the block and the missing template**, and the
+  reading gate never sees deliberately degraded output. **MECHANISM, untried:**
+  enumerate the blocks of the circuits in the program's verification set before
+  the first template is written, so the template set is built to a known list
+  rather than discovered to be short.
+
+### G85 - the ~160 clearance refusals that make a generated schematic readable accreted ONE PAIR AT A TIME over eleven steps, and each new one exposed the previous ones' blind spot
+
+**The shape of the ladder is the finding, because it is a property of how
+clearance checking gets built rather than of that particular board.** Eleven
+steps in one day, each named in a commit message with the drawing that caused it:
+a labelled stub ending on a capacitor's pin (*"KiCad would not join these, but a
+reader would"*); text promoted to geometry; a symbol's own pin text overlapping
+itself; a capacitor body drawn over a neighbouring pin's GND glyph that
+**two existing checks both passed** (*"body clearance saw only the anchor point,
+and the text check saw glyphs only as obstacles for text, never against
+bodies"*); two power glyphs meeting corner to corner; a stock symbol drawing GND
+0.13 mm under three pin names, which a strict-overlap test missed and a
+**0.254 mm minimum gap** caught; a reference landing on the X of a **hidden**
+no-connect pin.
+
+Every step had the same shape: **category A had been modelled as an obstacle for
+category B but not for category C.** Body-vs-anchor but not body-vs-glyph.
+Glyph-vs-text but not glyph-vs-body. Glyph-vs-body but not glyph-vs-glyph.
+Text-vs-everything but not text-vs-no-connect-marker. A symbol against its
+neighbours but not against itself. Current counts in that generator: **170
+`throw new` in `render/`, 56 in `gates/`, 45 in `h7/`, 0 in `model/`.**
+
+**The evidence standard those refusals were held to is worth copying
+independently of the ladder:** each new check was run against the historical
+commit that contained the real defect and the exact refusal message recorded -
+*"refuses P_LDO with 'body of C_NR#1 overlaps the glyph of power symbol GND 2 at
+(0, 15.24)'"* - with the commit noting *"No template geometry changed"*, proving
+the check was a detector and not cover for a layout change. That is a check that
+could have failed.
+
+- **Found** 2026-10-19, by this task, from §6 and §10 (candidate 4) of
+  `docs/schematic/schgen-development-history.md`.
+- **Evidence** that document's eleven-row table, each row sourced to a named
+  commit in `tools/schgen` (`8217d4f`, `dfa1b6a`, `60cf1ed`, `986a518`,
+  `253664a`, `54d7d3f`, `ffc4cd5`, `c2aba75`, `77b6cf7`, `e501b84`, `997078a`,
+  `9c5fb36`), plus the `throw new` counts.
+- **Verified** **no - RELAYED.** The history research read that git history and
+  marks the chain CONFIRMED; this writer read the document, not the commits.
+  **The `throw new` counts in particular are one grep in another repository and
+  were not re-run here.**
+- **Why it is open** there is no clearance checking in this repository to fix.
+  The entry is the shortcut, recorded before the work starts rather than after it
+  has walked the same ladder.
+- **What would settle it** **CRITERION:** the clearance system here is specified
+  as a **matrix of obstacle-category pairs enumerated up front**, and a new
+  refusal is a cell being filled rather than a category being discovered - with
+  each cell's test run against output that every other check accepts. The
+  categories the pedals history names, as a starting list to be extended and not
+  as the list: bodies, pin lines, pin numbers, pin names, interior graphics,
+  wires, junctions, power and `PWR_FLAG` glyphs, label outlines, field text,
+  frame borders, no-connect markers **including at hidden pins**, and KiCad's DNP
+  cross. **MECHANISM, GUESSED and labelled as such by its author** - *"INFERRED,
+  and I would bet on it"* - that enumerating the matrix up front short-circuits
+  the ladder. **It is untested: the pedals project did not do it, so nobody knows
+  whether the categories can in fact be enumerated before the drawings exist.**
+  The criterion is the settlement; if the matrix turns out not to be
+  enumerable in advance, record the deviation here rather than quietly going back
+  to the ladder.
+
+### G86 - text was retrofitted as first-class geometry and invalidated 4 of the 7 templates an hour after they were written, which that project's own author calls the clearest avoidable cost in its history
+
+Sequence, in one day: the first template at 01:36; **text promoted to
+first-class geometry at 03:01** (per-unit body boxes, fields placed by KiCad's
+own autoplace convention, text sized at one grid step per character - *"nothing
+had modelled text before this"*); the block-level text check switched on at
+03:15, which **broke most of the template set**, met by a `TEXT_CHECK_PENDING`
+set that *"exempts exactly opamp-stage, regulator, crystal and
+connector-fanout"* - **4 of 7**; the exemptions retired one by one and gone by
+04:16, with `253664a`'s subject line stating the end state, *"no template exempt
+from the text check."* An explicit ruling split one plan task into three
+sub-tasks to absorb it: **three extra review cycles.**
+
+**Two separable lessons, and the second one is the one with teeth here.**
+
+1. The scaffold was handled correctly: when a new refusal broke existing output,
+   the specific known cases were exempted **by name** with a visible marker and
+   retired within the hour, rather than the rule being widened. `CLAUDE.md` says
+   the same thing about empty whitelists.
+2. **The cost was in the ordering, not the handling.** Template geometry designed
+   without text extents is template geometry that will be redrawn. And the four
+   that failed are not an unlucky sample for this repository: **`opampStage` is
+   one of them**, and `opampStage`, `passiveChain` and `divider` are the three a
+   Pultec-style circuit leans on hardest (G87).
+
+- **Found** 2026-10-19, by this task, from §6, §7 (*"Text must be first-class
+  geometry before templates are finalised, not after"*) and §8 (dead end 3) of
+  `docs/schematic/schgen-development-history.md`.
+- **Evidence** that document's commit-by-commit timeline with the
+  `TEXT_CHECK_PENDING` commit and `253664a`, and its confirmation by grep that
+  the marker is absent from the current tree.
+- **Verified** **no - RELAYED.** CONFIRMED there against the pedals git history
+  and plan rulings; this writer read the document only.
+- **Why it is open** it is advice about an ordering decision this repository has
+  not made yet, and it stops being useful the moment the first template is
+  written.
+- **What would settle it** **CRITERION:** the first template authored here is
+  checked by a text-clearance check that already exists - i.e. text extents are
+  part of template geometry from template one, and no template is written against
+  a geometry model that does not include its own text. **MECHANISM, untried
+  here:** model per-unit body boxes, field placement and glyph extents before
+  authoring templates, and if a later refusal does break existing templates,
+  exempt them **by name with a visible marker** and retire the marker rather than
+  weakening the rule.
+
+### G87 - the templates this program plans to port were sized by a dense digital mainboard, and there is NO evidence about how they behave on a discrete audio circuit
+
+**The program spec said otherwise for eleven days.** Its Purpose sentence, from
+2026-10-08 until the correction committed by this task, read: *"The
+`oletizi/pedals` repository demonstrates, **on a real four-stage fuzz board**,
+that an agent can place and route a PCB and generate a legible multi-sheet
+schematic."* That conflates two proofs on two different boards. The
+place-and-route proof is the fuzz board; **the schematic generator never drew
+it.** Its target was an STM32H743 mainboard - **7 pages, 103 circuit blocks, a
+176-pin MCU, SDRAM, a PCM3060 codec, buck + LDO, 6 pots, USB-C** - and the
+generator is hardcoded to it throughout (`pdfSource.ts` sets
+`PDF = "h7-platform.pdf"`; `designatorMap.ts` checks
+`h7-platform/boards/v1/REFMAP.md`). The correction is recorded in place in
+`docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`.
+
+**The consequence is the part that matters, and it is a live question rather than
+a settled one.** Seven templates drew all 103 blocks of a dense digital
+mainboard. **Nothing is known about their pass rate on a circuit that is mostly
+passive chains, dividers and op-amp stages** - the history research says so
+plainly: *"Everything here is evidence about a digital mainboard. `opampStage`,
+`passiveChain` and `divider` are the three that a Pultec-style circuit would
+lean on hardest, and I have no evidence about how they behave on a board that is
+mostly those."*
+
+**This is the mirror image of G66's risk, and holding only one of the two is how
+the program goes wrong.** G66 records the owner's forcing-function directive
+against **Pultec-shaped** assumptions - no shortcuts that special-case a Pultec
+idiom. This entry records the opposite contamination: **mainboard-shaped**
+assumptions arriving through the ported templates, unexamined, because the board
+they were sized by is not mentioned anywhere in the program's own statement of
+what it is porting. A template set that fits 103 digital blocks is not thereby
+general, and *"it worked on the H7"* is not evidence about the Pultec in either
+direction.
+
+**This entry does not resolve it.** Whether the templates transfer, need
+different proportions, or need different templates entirely is unknown, and
+choosing is not this writer's to do.
+
+- **Found** 2026-10-19, by this task, from §0 (*"Correction: schgen did not draw
+  a fuzz pedal"*) and §9 (last bullet) of
+  `docs/schematic/schgen-development-history.md`, together with the controller's
+  own reading of the pedals tree (`tools/schgen/h7/pdfSource.ts`,
+  `tools/schgen/h7/designatorMap.ts`).
+- **Evidence** the board's parameters and the hardcoded `h7` paths as stated
+  there; that the only `schgen.lock.json` in the pedals repository is under
+  `h7-platform/boards/v1/`; and the spec's uncorrected Purpose sentence, which
+  this writer read at `9eb6394` before editing it.
+- **Verified** **split.** That the spec said *"four-stage fuzz board"* is
+  **CONFIRMED** - this writer read it. That the generator's target was the H7
+  mainboard and that no evidence exists about discrete audio circuits is
+  **RELAYED**, from the history research and from the controller's report of
+  reading those two source files; this writer opened neither.
+- **Why it is open** it is a measurement nobody has taken, and it cannot be taken
+  until templates exist here. The entry exists because **the question disappears
+  if it is not written down**: the spec sentence that hid it has been corrected,
+  and a corrected sentence is not a tracked question.
+- **What would settle it** **CRITERION:** the ported template set is measured
+  against the circuits already in this repository - which blocks it realises,
+  which it refuses, and what had to change - **before** any claim that the
+  tooling is general, and the result is recorded whichever way it comes out.
+  `circuits/pultec/`, `circuits/transistor-preamp/`, `circuits/pt2399-core/` and
+  `circuits/optical-compressor/` are the set the program already names.
+  **MECHANISM:** the program's own ported-template-parity milestone is where this
+  lands; it is not a separate piece of work.
 
 ---
 

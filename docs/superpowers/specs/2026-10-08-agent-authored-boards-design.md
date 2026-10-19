@@ -14,11 +14,46 @@ arranges a KiCad schematic, places every part, and routes every track. The gover
 documents state that as a principle - "agents are good at software and bad at hardware
 design" - and the division of labour follows from it.
 
-That principle is now partly false. The `oletizi/pedals` repository demonstrates, on a
-real four-stage fuzz board, that an agent can place and route a PCB and generate a
-legible multi-sheet schematic, **when the result is graded by code rather than by the
-agent's own judgement.** This design brings that capability here, extends it to cover
-the one step pedals leaves to its operator.
+That principle is now partly false. The `oletizi/pedals` repository demonstrates both
+halves of it - **but on two different boards, and each claim has to name its own.** An
+agent placed and routed a PCB: that is the **four-stage fuzz board** (`fuzz/`), and it
+is the source of the place-and-route tooling. An agent generated a legible multi-sheet
+schematic: that is the **STM32H743 digital mainboard** (`h7-platform/`) - 7 pages, 103
+circuit blocks, a 176-pin MCU, SDRAM and a PCM3060 codec. Both held **when the result
+was graded by code and by a reader denied the source, rather than by the agent's own
+judgement.** This design brings that capability here, and extends it to cover the one
+step pedals leaves to its operator.
+
+> **Correction, 2026-10-19.** From 2026-10-08 until this edit, the paragraph above read
+> *"demonstrates, on a real four-stage fuzz board, that an agent can place and route a
+> PCB **and** generate a legible multi-sheet schematic."* **That was wrong, and it was
+> this program's foundational sentence for eleven days.** It attached both proofs to one
+> board. The schematic generator never drew the fuzz pedal: `tools/schgen/h7/` is
+> hardcoded to the mainboard throughout - `pdfSource.ts` sets
+> `PDF = "h7-platform.pdf"`, `designatorMap.ts` checks
+> `h7-platform/boards/v1/REFMAP.md`, and the only `schgen.lock.json` in that repository
+> is under `h7-platform/boards/v1/`. The error is recorded here rather than silently
+> edited away, because a wrong claim that shaped decisions is shown as corrected.
+> Sources: `docs/schematic/schgen-development-history.md` §0, and a direct reading of
+> the pedals tree.
+>
+> **The consequence, which is the part that matters for planning, and it is NOT
+> settled.** The seven templates this program proposes to port were **sized by a dense
+> digital mainboard**, not by a discrete audio circuit. They drew all 103 of that
+> board's blocks; **nothing is known about their pass rate on a circuit that is mostly
+> passive chains, dividers and op-amp stages**, which is what the Pultec is. That is the
+> **mirror image** of the risk the owner's forcing-function directive names below: not
+> Pultec-shaped assumptions, but **mainboard-shaped** ones, arriving unexamined through
+> the ported templates. *"It worked on the H7"* is not evidence about the Pultec in
+> either direction. This note **names** the question and does not resolve it - whether
+> the templates transfer, need different proportions, or need different templates
+> entirely is unknown, and `docs/known-gaps.md` **G87** carries it, with the measurement
+> that would settle it.
+
+**The research this design rests on is indexed at
+[`../../schematic/README.md`](../../schematic/README.md)**, which records how far each of
+the three passes can be trusted - they differ sharply, and the weakest of them verified
+nothing by running it.
 
 The owner's instruction is explicit: take the operator out of schematic and PCB
 creation as far as possible. This document's central problem is how to do that without
