@@ -3993,7 +3993,7 @@ reader cannot re-derive without repeating the pass:
 | candidate | what it is | what is unknown about it |
 | --- | --- | --- |
 | **SchGen Spatial Violation** (Microsoft Research; MIT repository) | normalised overlaps among symbols, labels and wires - code-computable and published | **it measures overlap ONLY** - nothing about crossings, bends, flow or idiom. And **whether the implementation is in `github.com/microsoft/SchGen` is unestablished**; the README does not document evaluation code. Settled by cloning and looking |
-| **AEM** (Yang et al., IEEE TCAD, *Circuit Schematic Generation in PCB Reverse Engineering...*) | an Aesthetic Evaluation Metric for PCB schematics, RL-trained to align with designers' subjective judgement; described as weighing *"component placement specifications, neatness, routing complexity, and line length"* | **PAYWALLED - the formula is UNREAD.** It is the closest thing found to a published schematic readability metric, and nobody can say whether its components are computable from a `.kicad_sch`. **The highest-value unresolved lead in either document** |
+| **AEM** (Yang et al., IEEE TCAD, *Circuit Schematic Generation in PCB Reverse Engineering...*) | an Aesthetic Evaluation Metric for PCB schematics, RL-trained to align with designers' subjective judgement; described as weighing *"component placement specifications, neatness, routing complexity, and line length"* | **PARTLY SETTLED 2026-10-19 - see the EXTENSION below.** As written this cell said *"PAYWALLED - the formula is UNREAD"* and called AEM the highest-value unresolved lead in either document. **The formula's SHAPE has since been read**, from an open-access restatement, and its benchmark and published scores obtained. **Four of its five sub-terms are still unread**, so it is still not implementable |
 | **Purchase, "Metrics for Graph Drawing Aesthetics"** (JVLC 13(5), 2002) | formal metrics for **seven** aesthetic criteria - crossings, bends, edge length, drawing area among them - deliberately size-independent, explicitly intended as cost functions | **the seven formulas were not retrieved, and they are the point.** `rpgove/greadability` is a runnable JavaScript implementation of four normalised global metrics (crossings, two angular-resolution measures, crossing angle), reportedly the only implementation of three of them - and it **knows nothing about circuits** |
 | **FITEE 2025 survey** (DOI 10.1631/FITEE.2400612) | a review of automatic schematic generation techniques, citation span 1966-2024 | **the evaluation-metrics section is paywalled.** Named as the likeliest single shortcut to the whole metric question |
 | **Schemato's GED / MSSIM** | graph edit distance and mean structural similarity against a reference drawing | **unusable here by construction** - they need a known-good drawing of the same circuit, which an ex nihilo schematic (G66) does not have |
@@ -4017,6 +4017,87 @@ available for a novel circuit). **Nothing found grades a novel schematic's
 readability by code**, which is exactly what the ex nihilo direction G66 records
 as a stated requirement would need.
 
+**EXTENSION, 2026-10-19: AEM'S FORMULA IS NOW READ, ITS BENCHMARK IS PUBLIC, AND
+FOUR OF ITS FIVE TERMS ARE STILL MISSING.** This replaces the AEM row's
+"formula is UNREAD" above; it does not replace the entry, because what the entry
+claims - that schematic SEMANTICS is ungraded - is unchanged by it.
+
+**How it was obtained, which is the part a later reader cannot re-derive:** the
+IEEE TCAD paper is still paywalled and still unread. What was read is a
+**follow-up by the same group** - Yang, Qiao, Chen, Shi, Chen, Yan (PLA
+Information Engineering University, Zhengzhou), *"An Efficient and High-Quality
+Circuit Schematic Generation Method based on Action Mask and Graph Neural
+Network"*, *Discover Artificial Intelligence*, DOI `10.1007/s44163-025-00726-7`
+- **via the author-accepted preprint on Research Square (`rs-7168754`, posted 13
+August 2025), which is freely downloadable while Springer's own page and content
+PDF both refused.** That route is the finding: **a paywalled formula had an
+open-access restatement by the same authors, and two passes recorded it as
+unobtainable without looking for one.**
+
+**The shape, quoted from the extracted text:**
+
+```
+max AEM = ( sum_{i=1..m} RL_i * D_WB_i * D_NC_i ) / m        (1)
+RL_i = R_b_i / alpha + ( (alpha - 1)(R_b_i - P_i) ) / alpha  (2)
+```
+
+with `m` the number of routings, `D_WB` and `D_NC` discount factors on the
+**number of routing bends** and the **number of net crossings**, `R_b` a baseline
+fraction **affected by component alignment**, `P` a **penalty constraining a
+routing's length to a stated band**, and `alpha` a robustness factor **taken as 2
+in the experiments** (so `RL` is the mean of the raw and penalised baselines).
+**Reusable as a shape:** a per-net score, averaged over net count so circuits of
+different size compare, built as multiplicative bend and crossing discounts on an
+alignment-derived baseline, less an additive length penalty.
+
+**What is still NOT available, and it is the implementable part: the definitions
+of `D_WB`, `D_NC`, `R_b` and `P`.** They are given by role, not by formula, and
+live in the paywalled TCAD paper (43(5), 1608-1612, DOI
+`10.1109/TCAD.2023.3340869`). **A reimplementation from the preprint alone would
+be inventing four of the five terms. Say so if anyone proposes it.**
+
+**Its published numbers and its benchmark, both new here.** Table 4 gives maximum
+AEM per circuit, baseline network versus the action-mask/GNN network, over twelve
+circuits: baselines **44.14-77.94**, action-mask results **51.26-88.41**, mean
+reward gain **11.67%**. So a published schematic-quality measure **lands roughly
+in the 44-88 band on real boards and a state-of-the-art method moves it by about
+10%** - the first published numeric answer to "how good is a generated
+schematic" any pass has obtained. It is not an acceptable-crossing-count.
+
+**And the benchmark transfers, which is why this matters here rather than merely
+being interesting.** Table 1's twelve circuits are **real discrete-analog
+boards** of 9-27 components and 6-18 nets, including an **AN7112 audio amplifier**
+and a **TDA2030 power amplifier**. The dataset is **public and was cloned**:
+`MrBade/PCBNetlistS`, **BSD-2-Clause**, twelve plain-text netlists with a
+documented format. `amplifier3.txt` (the TDA2030A) has 27 parts and **`GND` at 11
+pins, `+VCC` at 10, `-VCC` at 10** - the same high-degree-net shape G90 records
+as what defeats a general router here. **The most mature published
+schematic-quality metric in the field was developed and validated on exactly this
+kind of circuit at exactly this scale**, so "it was built for digital, it will not
+transfer" is not available as an objection.
+
+- **Found (extension)** 2026-10-19, by the third prior-art pass,
+  `docs/schematic/generation-prior-art-third-pass.md` §6.1, §6.2, §6.3.
+- **Evidence (extension)** that document's `[READ]` marks on the preprint text it
+  extracted and quotes verbatim, its verbatim Table 1 and Table 4, and `[RAN]`
+  for the clone and reading of `MrBade/PCBNetlistS`.
+- **Verified (extension)** **no - RELAYED.** This writer did not download the
+  preprint, clone the dataset or re-read the tables. Nothing in the extension was
+  re-established here.
+- **DEVIATION FROM THIS ENTRY'S OWN MECHANISM, recorded because the mechanism was
+  wrong and the criterion was not.** The MECHANISM below says *"obtain AEM"*, by
+  which it meant the TCAD paper. That paper was not obtained and is still
+  paywalled; what was obtained is a same-group open-access restatement. **The
+  criterion - a measure published outside the producing agent, computable from a
+  `.kicad_sch`, able to fail - is still unmet**, because four sub-terms are
+  missing, so this is a step toward the criterion rather than a satisfaction of
+  it. **What the deviation teaches, and it generalises past AEM:** before
+  recording a paper as unobtainable, search for a preprint or a follow-up by the
+  same authors. Two passes did not, and the second of them called it the
+  highest-value unresolved lead in the document while an open-access restatement
+  was a search away. The remaining paywall is the same procurement problem G70
+  records on the standards side.
+
 - **Found** 2026-10-19, by the prior-art research pass committed at `ba6dba1`
   (§2 "Two independent prior-art reviews", §4 "Layout quality" and "Graph-drawing
   literature", §6 "Genuinely unsolved"), with §4.2 of the standards pass
@@ -4034,13 +4115,19 @@ as a stated requirement would need.
   would be authoring the criteria for the artifact it produces.
 - **What would settle it** **CRITERION:** a readability measure that is published
   or reviewed **outside the agent producing the schematic**, computable from a
-  `.kicad_sch`, and able to fail. **MECHANISM, untried, in descending value:**
-  obtain AEM and establish whether its components are computable from a
-  `.kicad_sch`; read the FITEE survey's evaluation-metrics section; retrieve
-  Purchase's seven formulas and evaluate `greadability` over a schematic's net
-  graph; clone SchGen and find out whether Spatial Violation is implemented
-  there. The first two are paywalled - the same procurement problem G70 records
-  on the standards side.
+  `.kicad_sch`, and able to fail. **MECHANISM, in descending value, and the first
+  item is now PART-TRIED - see the EXTENSION above for what it returned and how
+  it deviated:** obtain AEM and establish whether its components are computable
+  from a `.kicad_sch` (**shape obtained, four sub-terms outstanding; the TCAD
+  paper holding them is still paywalled**); read the FITEE survey's
+  evaluation-metrics section; retrieve Purchase's seven formulas and evaluate
+  `greadability` over a schematic's net graph; clone SchGen and find out whether
+  Spatial Violation is implemented there. **A fifth, added by the extension and
+  cheaper than any of them: score something against the public BSD-licensed
+  `MrBade/PCBNetlistS` benchmark**, whose twelve boards carry published AEM
+  values, so a candidate measure can be compared against a number somebody else
+  produced. The paywalled items are the same procurement problem G70 records on
+  the standards side.
 
 ### G80 - an externally-authored placement rule file for agent schematic placement already exists, and one of its facts is load-bearing for any emitter
 
@@ -4092,6 +4179,207 @@ would be the silent widening `CLAUDE.md` forbids.
   summariser, confirm the Y orientation against a committed `.kicad_sch`, and
   reconcile the rest against the standards-sourced candidates in G75 and the
   spacing arithmetic in G73 before adopting anything.
+
+### G88 - `resolveNetwork` refuses `circuits/pt2399-core` outright, because the ground port's key is a repository-wide literal and that circuit spells it differently
+
+**This is a defect sitting in this repository right now.** `resolveNetwork` is the
+gate every downstream analysis passes through - control resolution, SPICE
+emission, net-degree measurement - and **one of the five circuits here cannot get
+through it at all.**
+
+**What is wrong, precisely.** `GROUND_PORT_KEY` in `lib/model/net-preference.ts`
+is the literal `"ground"`:
+
+```ts
+export const GROUND_PORT_KEY = "ground"
+```
+
+`lib/model/control-state.ts:268` passes it to `netPreference(network.ports,
+GROUND_PORT_KEY)`. `circuits/pt2399-core/pt2399-core.ts:186` declares its
+reference port as `.port("gnd", "GND")`. **The two spellings never meet**, so
+`resolveNetwork(pt2399Core(), NO_CONTROLS)` throws `Missing ground port: ground`.
+
+**It is a naming-contract defect, not a typo in one circuit, and that is why it
+is here rather than fixed in passing.** Nothing states anywhere a circuit author
+reads that the reference port must be keyed `ground` rather than `gnd`, `GND` or
+`agnd`. **There is no test that would have caught it**: no test in `tests/`
+calls `resolveNetwork` on `pt2399-core`, confirmed by grep over
+`tests/circuits/pt2399-core.test.ts`, which mentions neither `resolveNetwork` nor
+any SPICE emission. So the circuit has been un-resolvable for as long as it has
+existed and nothing said so.
+
+**Which end is wrong is a judgement this writer is not making.** Renaming the
+circuit's port to `ground` is one line and fixes one circuit. Accepting a
+declared set of reference-port spellings changes a repository-wide contract and
+needs a test over the set it claims, which **refuse rather than guess** requires.
+A third reading is that the circuit is right and the literal should be the
+circuit's business, declared per-network. Choosing among those is a contract
+decision.
+
+- **Found** 2026-10-19, relayed by the circuit-families prior-art pass
+  (`docs/schematic/generation-prior-art-circuit-families.md` §0(b)) and then
+  re-run here.
+- **Evidence** `resolveNetwork(pt2399Core(), { potPositions: {}, switchPositions:
+  {} })` executed under `bun` at `e619029`, output `THREW: Missing ground port:
+  ground`. **The check could have failed**: the same script prints `NO THROW -
+  claim 1 does NOT reproduce` on the other branch, and a control in the same
+  session added a `ground` key to the port map and got a successfully resolved
+  24-component network, so the throw is attributable to the key and not to
+  something else in the circuit.
+- **Verified** **yes - CONFIRMED by this writer, re-run rather than relayed.**
+- **Why it is open** which end of the mismatch is wrong is a contract decision,
+  and the cheap fix (rename the circuit's port) would silently settle the
+  repository-wide question by precedent.
+- **What would settle it** **CRITERION:** `resolveNetwork` succeeds on every
+  circuit in `circuits/`, and a test asserts it per circuit so a sixth circuit
+  cannot be added un-resolvable. **MECHANISM, untried, and the choice between the
+  two is the decision above:** either rename `pt2399-core`'s port to `ground`, or
+  let a `Network` declare which of its ports is the reference and make
+  `GROUND_PORT_KEY` the default rather than the law - with a test over whatever
+  set of spellings is accepted, never a widening to fit one circuit.
+
+### G89 - `circuits/pt2399-core` cannot emit a SPICE deck for two FURTHER independent reasons, and fixing any one of the three changes nothing
+
+**Three independent refusals stand between `circuits/pt2399-core` and a SPICE
+deck, and they are at two different layers.** G88 is the first. These are the
+other two, and the reason they share an entry is the reason they are worth
+recording at all: **each one alone is a one-line finding; together they mean the
+circuit is not one fix away from being simulable, and an agent that fixes one and
+reports progress will have reported something false.**
+
+**(a) `kind: "ic"` has no emission rule.** `emitUnit` in `lib/sim/device-lines.ts`
+dispatches on value kinds, model kinds and `connector`, then throws by design:
+
+```
+component "delay_ic" unit "MAIN": kind "ic" has no SPICE emission rule in this
+emitter, so it cannot be emitted
+```
+
+That throw is deliberate and its comment says so - *"Required, not defensive.
+Without it a kind added later stops being emitted with no signal at all, leaving
+a complete, well-formed, entirely wrong netlist."* **The refusal is correct
+behaviour; the gap is that no rule exists for the kind.**
+
+**(b) `power_signal_header` does not declare `PartSpec.electricallyInert`.** It is
+`kind: "connector"` with `part: {"symbol": "Connector_Generic:Conn_01x05",
+"footprint": "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"}` and
+**no `electricallyInert` field at all** - `undefined`, which `emitConnector`
+refuses with its own message. A 5-pin header is inert, so this is a missing
+declaration rather than a design question.
+
+**This is NOT the optical compressor's case, and conflating them is the trap.**
+`circuits/optical-compressor` also refuses to emit - the 1N5817 and the vactrol
+LED carry no SPICE model - but **that refusal is pinned as intended** by
+`tests/circuits/optical-compressor.test.ts`, which asserts both throws by name
+(`/power_reverse_polarity_diode.*declares no SPICE model/s` and
+`/vactrol_led.*declares no SPICE model/s`). **`pt2399-core`'s three refusals are
+pinned by nothing.** One circuit's unemittability is a documented decision; the
+other's is an unnoticed state.
+
+- **Found** 2026-10-19, relayed by the circuit-families prior-art pass
+  (`docs/schematic/generation-prior-art-circuit-families.md` §0(b)) and then
+  re-run here.
+- **Evidence** a script at `e619029` that added a `ground` port key to get past
+  G88, resolved the network (24 components), then called `emitUnit` on every unit
+  of every component and collected the throws. **It reported exactly 2 refusals**,
+  quoted above, naming `delay_ic` and `power_signal_header` - **so it could have
+  reported 0, 1 or 3**, and the count is the evidence that fixing G88 alone leaves
+  the circuit unemittable. The component's `part` object was printed and carries
+  no `electricallyInert` key. `grep` over `tests/circuits/pt2399-core.test.ts` for
+  `resolveNetwork|toSpice|emit` returns nothing; the same grep over
+  `optical-compressor.test.ts` returns the two pinned throws.
+- **Verified** **yes - CONFIRMED by this writer, re-run rather than relayed**,
+  including the "fixing either alone does not help" claim, which is what the
+  refusal count establishes.
+- **Why it is open** (b) is a one-line declaration and would be fixed in passing,
+  but fixing it alone produces no deck and no test would notice either way.
+  (a) is the real work: a SPICE rule for `kind: "ic"` needs a macromodel or
+  subcircuit per part, and **this repository has no PT2399 model** - inventing one
+  is exactly what `lib/sim/models/`' provenance requirement forbids.
+- **What would settle it** **CRITERION:** either `pt2399-core` emits a deck that
+  a simulator accepts, **or** its unemittability is pinned by a test that asserts
+  each refusal by name, the way the optical compressor's is - **so that the state
+  is a decision somebody made rather than a thing nobody noticed.** The second is
+  the cheaper and probably the right one while no PT2399 model exists. **MECHANISM,
+  untried:** declare `electricallyInert: true` on the header; then, for the IC,
+  either register a sourced PT2399 model with its provenance stated per
+  `lib/sim/models/`' own rule, or add the pinning test and record here that the
+  circuit is deliberately deck-less. **Do not add a generic `ic` emission rule**:
+  a kind whose pins are whatever the part has cannot have one argument order, and
+  `spicePinOrder` already refuses subcircuit-backed kinds for that reason.
+
+### G90 - what defeats a general schematic router is NET DEGREE, not circuit family, not part count and not the decade - and every circuit here exceeds the threshold
+
+**This is a measurement, not a defect, and it is the load-bearing fact under the
+schematic-generation program's architecture.** It is recorded because the wrong
+version of it was in a spec for a week, and because its replacement is the kind of
+thing a later agent would otherwise re-measure from scratch.
+
+**What was measured, on `devbisme/schematizer` 0.2.0.**
+
+- **`--mode normal` failed on all four non-Pultec circuits: 0 successes in 12
+  attempts**, across a passive EQ, an op-amp circuit, a discrete transistor board
+  and a delay IC.
+- **`circuits/opamp-buffer.ts` fails.** Nine parts, one op-amp, four capacitors -
+  the simplest circuit here and the shape the tool is built for - **failing in 2.9
+  to 3.8 seconds.** This is the result that kills "passive EQ" and "old circuit"
+  as the explanation.
+- **The degree sweep, on an ACTIVE circuit** - one TL072 follower plus N rail
+  capacitors, N the only variable: **max net degree <= 4 routes 12/12; max net
+  degree >= 5 routes 17/44.**
+- **The control separating degree from part count:** the same follower with
+  capacitors in a **series chain**, every net at degree <= 3, routed **15/15 at 15
+  parts**; 15 parts with one degree-15 net routed **1/5**.
+- **`pt2399-core` failed 0/3, identically to the passive Pultec.**
+- **Every circuit in `circuits/` exceeds degree 4 on at least one net**, and every
+  one has a **ground net of degree 6 or more**: `opamp-buffer` 6, `preamp-lab` 12,
+  `pt2399-core` 12, `optical-compressor` 17.
+
+**AND THE HALF THAT MAKES THIS A CONSTRAINT RATHER THAN A WALL: a mature engine
+does not fail at it.** ELK, through `netlistsvg`'s analog skin, drew **14
+capacitors in parallel in 0.17 s, byte-identical across 30 runs, with zero
+crossings between different nets** - the exact probe `schematizer` never once
+drew, and ten such probes succeeded 10/10. **Read the degree threshold as a
+property of one router, not of the problem.** An entry that recorded only the
+failures would be bait: it would read as "high-degree nets are unsolved" and send
+someone to build what already exists.
+
+**What this corrected, which is the reason it is in the register.** The
+agent-authored-boards spec's two-track section said the axis was *probably*
+topological with a measurement in flight, and carried the owner's framing -
+*"modern circuit topologies"* versus *"20th-century designs"* - as the axis. **The
+chronological framing is dead**: a delay IC and a nine-part op-amp buffer fail
+exactly as a 1950s passive EQ does. The spec was corrected at `e619029` and keeps
+his framing visible as superseded, because **the architecture he proposed is right
+and only the axis he named it by was wrong.**
+
+**One thing this does NOT establish, recorded undiagnosed.** **Where** in
+`schematizer.engine.route` the degree threshold bites was not traced, and the
+sweep is **non-monotonic** - N=8 routed 5/8 while N=5 routed 2/5. So "degree 5"
+is a characterised threshold, not an explained one, and nothing here licenses
+treating 4 as a hard boundary in a rule file.
+
+- **Found** 2026-10-19, by the circuit-families prior-art pass,
+  `docs/schematic/generation-prior-art-circuit-families.md` §1, §2, §3; the ELK
+  half from `docs/schematic/generation-prior-art-third-pass.md` §3.4, §3.5.
+- **Evidence** both documents' `[RAN]` marks, with per-run success counts and
+  seconds-to-fail given per circuit and per sweep point, and the series-chain
+  control as the check that **could have failed and did not** - had part count
+  been the variable, 15 parts in a chain would not have routed 15/15.
+- **Verified** **no - RELAYED.** This writer ran neither `schematizer` nor
+  `netlistsvg`, and re-derived none of the counts. **What this writer did
+  confirm** is the two repository-side facts in G88 and G89, which are from the
+  same document and did reproduce - that raises confidence in the document, and
+  it is not the same as having checked these numbers.
+- **Why it is open** it is the measurement, not a defect; it stays because the
+  spec now rests on it and because the superseded framing must remain legible to
+  anyone reading the owner's words in it.
+- **What would settle it** nothing settles a measurement; **what would CHANGE it**
+  is tracing where the threshold bites, or re-running the sweep against a router
+  that is not `schematizer`. **The claim that would be falsified** by a later
+  measurement: that a general layout engine's success is a function of max net
+  degree rather than of part count or circuit family. Test it the way this pass
+  did - vary one and hold the other.
 
 ### G81 - `lib/kicad/schematic.ts` emits the exact pathology another project was blocked from shipping, and the review that blocked it cites THIS repository as where the pathology was first seen
 
