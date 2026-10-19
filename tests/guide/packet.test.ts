@@ -3,9 +3,10 @@ import path from "node:path"
 import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { unresolvedCutsMessage } from "../../tools/perfboard/cut-state.ts"
 import {
-  writeGuidePacket, packetFiles, GUIDE_HTML, GUIDE_PDF, type GuideDeps, type GuideFs,
+  writeGuidePacket, packetFiles, GUIDE_HTML, GUIDE_PDF, type GuideDeps,
 } from "../../tools/guide/packet.ts"
 import { DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
+import { memoryFs } from "./memory-fs.ts"
 
 const DECLARATION: PerfboardDeclaration = {
   file: "/repo/boards/test-board/perfboard.json",
@@ -15,30 +16,6 @@ const DECLARATION: PerfboardDeclaration = {
   vrtPath: "/repo/boards/test-board/test.vrt",
   schPath: "/repo/circuits/test.kicad_sch",
   netlistPath: "/repo/tests/fixtures/test.net",
-}
-
-/** An in-memory filesystem: file path -> contents. */
-function memoryFs(initial: Record<string, string> = {}): { fs: GuideFs; files: Map<string, string> } {
-  const files = new Map(Object.entries(initial))
-  const under = (dir: string): string[] => [...files.keys()].filter((file) => file.startsWith(`${dir}/`))
-  return {
-    files,
-    fs: {
-      makeDir: () => {},
-      removeDir: (dir) => {
-        for (const file of under(dir)) files.delete(file)
-      },
-      writeText: (file, text) => {
-        files.set(file, text)
-      },
-      rename: (from, to) => {
-        for (const file of under(from)) {
-          files.set(`${to}${file.slice(from.length)}`, files.get(file) ?? "")
-          files.delete(file)
-        }
-      },
-    },
-  }
 }
 
 interface Harness {
