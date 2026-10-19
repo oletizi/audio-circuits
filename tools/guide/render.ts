@@ -48,8 +48,9 @@ import { createOccupied } from "./placement.ts"
  * so the checklist and the images agree.
  *
  * The renderer knows nothing about circuits: what each part is called
- * (`labels`), what each pad's wire is (`padLabels`) and which pins leave the
- * board (`edgeLabels`) come from the caller.
+ * (`labels`), what each pad's wire is (`padLabels`), which pins leave the
+ * board (`edgeLabels`) and which parts are wire links rather than parts with
+ * bodies (`wireLinks`) all come from the caller.
  */
 
 export type { EdgeLabel } from "./render-edges.ts"
@@ -88,6 +89,23 @@ export interface RenderOptions {
    * would quietly reinstate it.
    */
   readonly padLabels: ReadonlyMap<string, string>
+  /**
+   * The refs this board carries that are WIRE LINKS rather than parts with
+   * bodies - a component that resolves to 0 Ω, from `./wire-links.ts`.
+   *
+   * **IT COMES FROM THE CALLER FOR THE REASON `labels` AND `padLabels` DO.**
+   * Whether a part is a wire link is a fact about the circuit (a pot section at
+   * its end stop), and its VeroRoute type is `RESISTOR` either way, so the
+   * renderer cannot derive it without circuit knowledge it has no business
+   * holding.
+   *
+   * **It is required and not optional, exactly as `pads` is**, and for the same
+   * kind of failure: a caller that omitted it would draw a resistor body with
+   * `0R` beside it on a stripboard - the picture half of
+   * `docs/known-gaps.md`'s G55, and the half an earlier fix would have left
+   * behind. A board with none says so by passing an empty set.
+   */
+  readonly wireLinks: ReadonlySet<string>
 }
 
 const HEADER_GAP = 12
@@ -229,7 +247,7 @@ function boundsOf(layers: readonly Canvas[]): Box {
 export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string>, options: RenderOptions): string {
   const frame = createFrame(dump.grid, dump.verticalStrips, options.view === "copper")
   // Validated for both views, so the copper view refuses the same boards.
-  const placedOrRefused = placedParts(frame, dump, labels)
+  const placedOrRefused = placedParts(frame, dump, labels, options.wireLinks)
   validateEdgeLabels(dump, options.edgeLabels)
   // Built for both views, so the copper view refuses the same boards - the same
   // reason `placedParts` is called above whichever view this is. `drawnPads`

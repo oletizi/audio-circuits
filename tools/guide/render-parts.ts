@@ -1,6 +1,6 @@
 import { noPinLinesMessage, type BoardDump, type Part, type Pin } from "./dump.ts"
 import type { PadTerminal } from "./pads.ts"
-import { bodyFor, padBody, type Body, type PlacedPin } from "./part-shapes.ts"
+import { bodyFor, padBody, wireLinkBody, type Body, type PlacedPin } from "./part-shapes.ts"
 import { TAG_CLEARANCE, everything, leastCovered, type Occupied } from "./placement.ts"
 import {
   CHECKBOX_SIZE,
@@ -32,6 +32,13 @@ import {
  * Every lead runs from the body's centre to its hole and is drawn beneath
  * the white-filled body, so what shows is exactly the lead from the body's
  * edge to the hole - however far a stretched lead reaches.
+ *
+ * **A PART THAT RESOLVES TO 0 Ω IS DRAWN AS THE WIRE IT IS**, not as a resistor
+ * with `0R` beside it: `wireLinkBody` (`./part-shapes.ts`) gives it the same
+ * line a `WIRE` line gets, and its two leads - drawn from the body's centre as
+ * every part's are - run along that line and so vanish under it. Which refs
+ * those are comes from the caller (`placedParts`' `wireLinks`), because it is a
+ * fact about the circuit and this module holds none.
  *
  * **LANDING PADS ARE DRAWN HERE TOO, AND THEY ARE NOT PARTS.** A pad is one hole
  * an off-board wire is soldered to, with no `PART` line, no type and no body
@@ -82,13 +89,25 @@ function labelOf(labels: ReadonlyMap<string, string>, part: Part): string {
  * copper view (which draws no parts) refuses the same boards the component
  * view does.
  */
-export function placedParts(frame: Frame, dump: BoardDump, labels: ReadonlyMap<string, string>): readonly PlacedPart[] {
+export function placedParts(
+  frame: Frame,
+  dump: BoardDump,
+  labels: ReadonlyMap<string, string>,
+  wireLinks: ReadonlySet<string>,
+): readonly PlacedPart[] {
   return dump.parts
     .filter((part) => part.placement !== "floating")
     .map((part) => {
       const label = labelOf(labels, part)
       const pins = pinsOf(dump, part).map((pin) => ({ pin, at: frame.hole(pin.row, pin.col) }))
-      return { part, label, pins, body: bodyFor(part, pins) }
+      // WHICH SHAPE IS THE CALLER'S TO DECIDE, THE WAY THE LABEL IS. A part
+      // that resolves to 0 Ω is a wire a builder solders between two holes and
+      // not a part with a body, but its VeroRoute type is `RESISTOR` and says
+      // nothing about its value, so `bodyFor` cannot tell - the question is
+      // about the circuit, which this module holds none of. `./wire-links.ts`
+      // is how a caller builds the set.
+      const body = wireLinks.has(part.ref) ? wireLinkBody(part, pins) : bodyFor(part, pins)
+      return { part, label, pins, body }
     })
 }
 

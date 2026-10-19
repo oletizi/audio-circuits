@@ -55,6 +55,7 @@ import { padTerminals } from "./pads.ts"
 import { buildableDump } from "./preflight.ts"
 import { defaultPrintGuidePdf } from "./print-pdf.ts"
 import { renderLayout } from "./render.ts"
+import { wireLinkRefs } from "./wire-links.ts"
 
 /** The few filesystem operations the packet writer needs. */
 export interface GuideFs {
@@ -190,6 +191,13 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   const name = boardName(declaration)
   const designators = new Map(dump.parts.map((part) => [part.ref, part.ref]))
   const values = new Map(dump.parts.map((part) => [part.ref, valueLabel(dump, part, circuit, "image")]))
+  // ONE WIRE-LINK SET, SHARED BY ALL THREE IMAGES, built here for the reason
+  // `padLabels` above is: the renderer holds no circuit knowledge, and a part
+  // that resolves to 0 Ω must not be drawn as a resistor in one image and a
+  // wire in another. The checklist asks the same question of the same circuit
+  // through the same predicate (`lib/model/zero-ohm.ts`), which is what keeps
+  // the printed table and these pictures from disagreeing about one part.
+  const wireLinks = wireLinkRefs(dump, circuit)
   const images = {
     designators: renderLayout(dump, designators, {
       view: "component",
@@ -197,6 +205,7 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
       edgeLabels,
       pads,
       padLabels,
+      wireLinks,
     }),
     values: renderLayout(dump, values, {
       view: "component",
@@ -204,6 +213,7 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
       edgeLabels,
       pads,
       padLabels,
+      wireLinks,
     }),
     copper: renderLayout(dump, designators, {
       view: "copper",
@@ -211,6 +221,7 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
       edgeLabels,
       pads,
       padLabels,
+      wireLinks,
     }),
   }
   const repoRoot = deps.repoRoot ?? moduleRepoRoot()

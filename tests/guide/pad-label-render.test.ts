@@ -31,6 +31,7 @@ function options(padLabels: ReadonlyMap<string, string>) {
     edgeLabels: [],
     pads: [PAD],
     padLabels,
+    wireLinks: new Set<string>(),
   }
 }
 

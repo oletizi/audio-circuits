@@ -93,6 +93,7 @@ td.tick { width: 0.3in; text-align: center; }
 .box { display: inline-block; width: 11pt; height: 11pt; border: 1.25pt solid #000; vertical-align: middle; }
 td.blank { width: 1.3in; }
 .none { font-style: italic; }
+p.note { margin: 0 0 5pt; }
 .conditions { font-style: italic; }
 .notice { border: 2pt solid #000; padding: 7pt 9pt; margin: 12pt 0 0; page-break-inside: avoid; break-inside: avoid; }
 .notice h2 { margin: 0 0 5pt; border-bottom: 0.75pt solid #000; }
@@ -188,12 +189,25 @@ function table(columns: readonly string[], rows: readonly (readonly string[])[],
   )
 }
 
+/**
+ * One checklist step: its heading, the sentence the section carries when it has
+ * one, then the table.
+ *
+ * **THE NOTE IS PRINTED BEFORE THE TABLE AND ONLY WHEN THE SECTION SET ONE.**
+ * `./checklist.ts` sets it only for rows that need it - today, that a row named
+ * by a designator among the W-numbered wires is a part with no resistance, so
+ * what goes in its holes is a wire or a solder bridge. It is printed above the
+ * rows because a reader who meets the row first has already decided the sheet
+ * is wrong, which is the cost the note exists to avoid. A section with no rows
+ * prints no note either: there would be nothing for it to be about.
+ */
 function checklistSection(section: ChecklistSection, index: number): string {
   const heading = `<h3>${index + 1}. ${escapeXml(section.title)}</h3>`
   if (section.rows.length === 0) {
     return `${heading}\n<p class="none">None on this board.</p>`
   }
-  return `${heading}\n${table(section.columns, section.rows, "item")}`
+  const note = section.note === undefined ? [] : [`<p class="note">${escapeXml(section.note)}</p>`]
+  return [heading, ...note, table(section.columns, section.rows, "item")].join("\n")
 }
 
 function powerUp(powerUpChecks: PowerUpChecks | undefined): string {

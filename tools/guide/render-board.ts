@@ -8,6 +8,7 @@ import {
   PITCH,
   MARKED_STRIP_GREY,
   STRIP_GREY,
+  WIRE_WIDTH,
   isMarkedStrip,
   addText,
   boxAround,
@@ -269,7 +270,7 @@ export function drawWires(canvas: Canvas, frame: Frame, dump: BoardDump, marks: 
   for (const { number, from, to } of numberedWires(dump)) {
     const a = frame.hole(from.row, from.col)
     const b = frame.hole(to.row, to.col)
-    canvas.add(line(a, b, { width: 2, cls: "wire", data: { wire: String(number) } }), boxAround([a, b], 3))
+    canvas.add(line(a, b, { width: WIRE_WIDTH, cls: "wire", data: { wire: String(number) } }), boxAround([a, b], 3))
     marks.add(boxAround([a, b], 2))
     for (const p of [a, b]) {
       canvas.add(circle(p, 3.2, { fill: INK }), boxAround([p], 3.2))

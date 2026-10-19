@@ -24,6 +24,20 @@
  * `lib/kicad/lead-span-mounting.ts`, from the flat floor the span model
  * already records; nothing here is a judgement about a part.
  *
+ * **A PART THAT RESOLVES TO 0 Ω IS LISTED AMONG THE WIRE LINKS, NOT AMONG THE
+ * RESISTORS.** A level pot at its end stop puts its whole track in one half and
+ * nothing in the other, and the zero half is emitted as a `resistor` with
+ * `ohms: 0` on purpose (`lib/model/control-state.ts:293-297`). On a stripboard
+ * what goes in those two holes is a wire or a solder bridge, which is what the
+ * board's own `wiring.md` has always said - while this sheet listed `0R` with
+ * mounting `STAND ON END`, two generated documents contradicting each other
+ * about one part. `./wire-links.ts` holds the rule's words and the owner's
+ * statement of what the contradiction cost; `lib/model/zero-ohm.ts` is the one
+ * place that decides what zero ohms means. **Which SECTION such a row belongs
+ * in is a question about the printed artifact**, so it is the existing **Wire
+ * links** section - the smallest claim available - and not a new section
+ * invented here.
+ *
  * **EVERY LANDING PAD GETS ITS OWN JUNCTION ROW TOO, ALONGSIDE THE HEADER
  * PARTS.** A pad carries no `PART` line - it is a bare wire soldered into a
  * hole, not a mounted component - so the loop over `dump.parts` alone leaves
@@ -52,20 +66,33 @@
 import { LEAD_SPANS } from "../../lib/kicad/lead-span.ts"
 import { MOUNTING_LABEL, mountingForSpan } from "../../lib/kicad/lead-span-mounting.ts"
 import type { Component } from "../../lib/model/types.ts"
+import { isZeroOhmResistor } from "../../lib/model/zero-ohm.ts"
 import { spanHoles } from "../stripboard/constraints-model.ts"
 import { holeName, noPinLinesMessage, type BoardDump, type HolePosition, type NodedHole, type Part, type Pin } from "./dump.ts"
-import { numberedBridges, numberedCuts, numberedWires } from "./numbering.ts"
+import { inReadingOrder, numberedBridges, numberedCuts, numberedWires } from "./numbering.ts"
 import { valueLabel } from "./off-board.ts"
 import { ELECTROLYTIC_PLUS_PIN, isElectrolytic } from "./part-shapes.ts"
 import type { PadTerminal } from "./pads.ts"
 import type { EdgeLabel } from "./render-edges.ts"
 import { componentAt, isPanelPot, type BoardCircuit } from "./circuit.ts"
+import { WIRE_LINK_NOTE } from "./wire-links.ts"
 
 /** One checklist step: a heading, its column headings, and one row per item to tick. */
 export interface ChecklistSection {
   readonly title: string
   readonly columns: readonly string[]
   readonly rows: readonly (readonly string[])[]
+  /**
+   * One sentence printed under the heading, before the table - `undefined` when
+   * the table needs none.
+   *
+   * IT IS ONLY EVER SET WHEN THE ROWS REQUIRE IT. A note that appeared on every
+   * board would be prose nobody checked, which is how a generated document
+   * stops being read; the one note that exists (`WIRE_LINK_NOTE`,
+   * `./wire-links.ts`) is pushed only when a board actually has a row it is
+   * about. `tools/guide/guide.ts` renders it.
+   */
+  readonly note?: string
 }
 
 type PartGroup = "semiconductors" | "resistors" | "capacitors" | "junctions"
@@ -265,6 +292,19 @@ const PAD_NO_MOUNTING = "n/a: a landing pad has no body to mount"
  * two accessors agree wherever a span IS recorded, because `leadSpanFor`'s
  * first act is this same lookup.
  */
+/**
+ * NO ZERO-OHM BRANCH HERE, AND THAT IS DELIBERATE. A part that resolves to 0 Ω
+ * has no body to mount, so `NO_FOOTPRINT`, `NO_SPAN` and a `MOUNTING_LABEL` are
+ * all wrong for it - but it never reaches this function, because
+ * `buildChecklist` below routes it into the **Wire links** section before a
+ * part row is built for it. A branch here would be unreachable code no test
+ * could reach, which is the same reason `pinFieldNotes` in
+ * `lib/board/part-text.ts` carries no rows-disagree-about-mating check. If a
+ * wire link is ever moved back into a part-shaped section, the branch belongs
+ * here and it needs its own sentence - a `PAD_NO_MOUNTING`-style "there is
+ * categorically nothing to mount", never one of the two gap messages, which
+ * name footprint data this project has not recorded.
+ */
 function mountingCell(component: Component, pins: readonly Pin[]): string {
   const footprint = component.part?.footprint
   if (footprint === undefined) return NO_FOOTPRINT
@@ -303,6 +343,39 @@ function padJunctionRow(pad: PadTerminal, padLabels: ReadonlyMap<string, string>
   return [pad.ref, "landing pad", `${holeName(pad.row, pad.col)} ${label}`, PAD_NO_MOUNTING]
 }
 
+/**
+ * A zero-ohm part's row in the **Wire links** section: its designator, and its
+ * two holes in the same reading order a W-numbered wire's are given in.
+ *
+ * **IT IS NAMED BY ITS DESIGNATOR, NOT GIVEN A W NUMBER.** `numbering.ts` owns
+ * the one numbering of this board's cuts, bridges and wires, shared with the
+ * images; a `W4` invented here for a part the images do not number that way
+ * would be the two-artifacts-disagreeing defect this file's own comments keep
+ * naming. `WIRE_LINK_NOTE` is what tells the reader why a designator is sitting
+ * among the W rows.
+ *
+ * Refused rather than shortened when the part has other than two leads: a wire
+ * link is a wire between two holes, and a three-lead part printed with two of
+ * them would be an instruction to leave a lead unsoldered.
+ */
+function wireLinkRow(dump: BoardDump, part: Part): readonly string[] {
+  const pins = dump.pins[part.ref]
+  if (pins === undefined || pins.length === 0) throw new Error(noPinLinesMessage(part))
+  const [first, second, ...rest] = pins
+  if (first === undefined || second === undefined || rest.length > 0) {
+    throw new Error(
+      `part ${part.ref} resolves to 0 ohms, so the checklist lists it as a wire link, but the dump ` +
+        `places ${pins.length} pins for it and a wire link runs between exactly two holes. A ` +
+        "zero-ohm component is a pot section (lib/model/control-state.ts) and has two leads; a part " +
+        "with more of them reaching here means something else now resolves to zero ohms. Decide what " +
+        "a builder fits for it and give it its own row in tools/guide/checklist.ts, rather than " +
+        "printing two of its holes and leaving the rest unsoldered.",
+    )
+  }
+  const [from, to] = inReadingOrder(first, second)
+  return [part.ref, hole(from), hole(to)]
+}
+
 /** The whole checklist. The layout and circuit must already agree (`assertLayoutMatchesCircuit`). */
 export function buildChecklist(
   dump: BoardDump,
@@ -316,8 +389,18 @@ export function buildChecklist(
     semiconductors: [], resistors: [], capacitors: [], junctions: [],
   }
   const parts = [...dump.parts].sort((a, b) => compareRefs(a.ref, b.ref))
+  const partLinks: (readonly string[])[] = []
   for (const part of parts) {
     const component = componentAt(circuit, part.ref)
+    // A ZERO-OHM PART IS A WIRE LINK AND GETS A WIRE LINK'S ROW. It is routed
+    // here, before a part row exists for it, rather than having its Value and
+    // Mounting cells reworded: both of those columns answer questions about a
+    // body, and this part has none. See `./wire-links.ts` for the rule and what
+    // it costs when a packet gets it wrong.
+    if (isZeroOhmResistor(component)) {
+      partLinks.push(wireLinkRow(dump, part))
+      continue
+    }
     groups[groupOf(part, component)].push([
       part.ref,
       valueLabel(dump, part, circuit, "checklist"),
@@ -332,13 +415,23 @@ export function buildChecklist(
   // about - the defect `docs/known-gaps.md` and this module's own comment
   // both name.
   for (const pad of pads) groups.junctions.push(padJunctionRow(pad, padLabels))
-  const wires = numberedWires(dump).map(({ number, from, to }) => [`W${number}`, hole(from), hole(to)])
+  const wires = [
+    ...numberedWires(dump).map(({ number, from, to }) => [`W${number}`, hole(from), hole(to)]),
+    ...partLinks,
+  ]
   const padIdentities = new Set(pads.map((pad) => pad.identity))
   return [
     { title: "ICs and transistors", columns: PART_COLUMNS, rows: groups.semiconductors },
     { title: "Resistors and trim-pots", columns: PART_COLUMNS, rows: groups.resistors },
     { title: "Capacitors", columns: PART_COLUMNS, rows: groups.capacitors },
-    { title: "Wire links", columns: ["Wire", "From", "To"], rows: wires },
+    {
+      title: "Wire links",
+      columns: ["Wire", "From", "To"],
+      rows: wires,
+      // ONLY WHEN THIS BOARD HAS ONE. A board whose links are all W-numbered
+      // wires would otherwise print a paragraph about parts it does not carry.
+      ...(partLinks.length > 0 ? { note: WIRE_LINK_NOTE } : {}),
+    },
     {
       title: "Wire-to-board junctions",
       columns: ["Part", "Value", "Connections", "Mounting"],

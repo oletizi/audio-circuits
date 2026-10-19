@@ -70,6 +70,7 @@ test("rendering a board does not change what it exports", () => {
     edgeLabels: [],
     pads: [],
     padLabels: new Map(),
+    wireLinks: new Set(),
   }
   const before = structuredClone(dump)
 

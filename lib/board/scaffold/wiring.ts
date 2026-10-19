@@ -28,11 +28,25 @@
  * THE PART IDS ARE RESOLVED AGAINST THE BOARD NETWORK and refuse when they miss, so
  * this section cannot describe a part the board does not carry.
  */
-import { PART_TABLE_HEADER, describePart, gangOf, partRow } from "../part-text.ts"
+import { PART_TABLE_HEADER, gangOf, partRow } from "../part-text.ts"
 import type { Component, Network } from "../../model/types.ts"
+import { isZeroOhmResistor } from "../../model/zero-ohm.ts"
 import type { BuildDoc, ScaffoldDoc, StandInGroupDoc } from "./doc.ts"
 
-/** How `describePart` renders a zero-ohm part: a wire link, not a resistor to buy. */
+/**
+ * How `describePart` renders a zero-ohm part, for the paragraph that tells a reader what
+ * a row saying this is: a wire link, not a resistor to buy.
+ *
+ * **IT IS THE RENDERED TEXT, NOT THE TEST.** Whether a part IS zero ohms is
+ * `lib/model/zero-ohm.ts`'s `isZeroOhmResistor` to decide, and this paragraph's
+ * condition reads it rather than comparing `describePart`'s output against this string -
+ * a string comparison made this file a second place deciding what zero ohms means, which
+ * is how this document and the printed build packet came to contradict each other about
+ * the same three parts (`docs/known-gaps.md`'s G55). This sheet still PRINTS `0R` in its
+ * tables, because `describePart` is shared with the tables that price parts and its
+ * rendering is not this document's to change; the paragraph below is what makes that
+ * printed `0R` actionable here.
+ */
 const ZERO_OHM = "0R"
 
 /** Every part id the doc lists, so the always-populated table can keep them out. */
@@ -231,7 +245,7 @@ export function standInGroupsSection(
   // document starts being read as prose nobody checked.
   const linkParts = doc.groups
     .flatMap((group) => group.partIds)
-    .filter((id) => describePart(componentFor(id, byId, doc)) === ZERO_OHM)
+    .filter((id) => isZeroOhmResistor(componentFor(id, byId, doc)))
   if (linkParts.length > 0) {
     lines.push(
       `**A part listed as \`${ZERO_OHM}\` is a wire link.** A level pot sitting at its end stop`,
