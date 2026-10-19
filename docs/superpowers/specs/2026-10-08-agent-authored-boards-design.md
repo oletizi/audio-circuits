@@ -24,6 +24,52 @@ The owner's instruction is explicit: take the operator out of schematic and PCB
 creation as far as possible. This document's central problem is how to do that without
 reintroducing the failure that motivated pedals' design in the first place.
 
+### What the Pultec is to this work, and it is two things at once
+
+**Added 2026-10-18, in the owner's words, because the single most likely way to get this
+program wrong is to hold only one half of it.**
+
+> *"I'm using the Pultec boards as a forcing function to drive building general purpose
+> schematic authoring discipline and tooling. No shortcuts just to get to Pultec-specific
+> schematics"*
+
+> *"But, Pultec schematics ARE a requirement. If the tooling can't build them, it's not
+> fit for purpose"*
+
+**So the Pultec is the FORCING FUNCTION and the ACCEPTANCE TEST, and neither half
+survives without the other.**
+
+- **It is not the deliverable.** The thing being built is general-purpose schematic
+  authoring discipline and tooling. Reaching a Pultec schematic sooner by special-casing
+  a Pultec idiom - hand-shaping `selectorBank` to the five banks that happen to be on
+  these boards, grading only against a Pultec topology, writing an abstraction whose only
+  consumer is a Pultec construct - **defeats the entire point**, however good the
+  resulting sheet looks.
+- **And it is not optional.** If the general tooling cannot generate the five Pultec
+  section schematics, **the tooling has failed.** "It is general" is not a defence for
+  not getting there. That is his bar and it is stated in his own words above.
+
+**The two together are what makes this testable: the evidence that the tooling is
+genuinely general is precisely that it does the Pultec WITHOUT special-casing.** A
+general-purpose generator that cannot do the Pultec is unfit; a generator that does the
+Pultec by special-casing is the shortcut he has ruled out. Either one alone is a failure
+with a plausible-sounding excuse attached, which is why both sentences are recorded here
+rather than one.
+
+**What this settles about T2's ordering.** The milestone order - infrastructure parity,
+then ported-template parity against the four circuits already here, then the new
+templates, then cross-circuit validation - **is the discipline rather than an obstacle to
+it**, and the fact that the first two milestones produce no Pultec schematic is not a cost
+to be minimised. This document already argues the same thing on its own terms under
+**Schematic generation**: shipping template code with nothing in the repository
+exercising it is *"exactly what look at the output, not only the tests forbids."* A plan
+that reorders T2 to reach a Pultec sheet earlier is reintroducing the shortcut.
+
+**What it puts a live obligation on.** T2 must END with the five Pultec sections
+generable from general templates. If the template set this document names turns out not
+to cover a Pultec construct, **that is a defect in this document** to be found and fixed
+before the port is planned - not a surprise to meet at the end of a 20,000-line port.
+
 ## What is not decided, and must not be assumed
 
 **The form factor is unknown.** The Pultec will be packaged several ways and nobody knows
