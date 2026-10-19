@@ -52,8 +52,16 @@ async function lowBoostScaffold(): Promise<ScaffoldDoc> {
   return scaffold
 }
 
+/**
+ * The board's `wiring.md` as page one names it. The section's prose is handed
+ * the same value page one is, so the two cannot disagree about whether there is
+ * a sheet - see `tools/guide/stand-in-section.ts`'s `wiringSentence`, and the
+ * last test in this file for the board that has none.
+ */
+const WIRING = "boards/test-board/wiring.md"
+
 /** The whole packet, with everything but the stand-in section stubbed out. */
-function guideHtml(scaffold: ScaffoldDoc | undefined): string {
+function guideHtml(scaffold: ScaffoldDoc | undefined, wiringPath: string | undefined): string {
   const input: GuideInput = {
     boardName: "test-board",
     generated: "2026-10-18",
@@ -62,15 +70,23 @@ function guideHtml(scaffold: ScaffoldDoc | undefined): string {
     images: { designators: "<svg>d</svg>", values: "<svg>v</svg>", copper: "<svg>c</svg>", clusters: undefined },
     checklist: [],
     powerUpChecks: undefined,
-    wiringPath: "boards/test-board/wiring.md",
+    wiringPath,
     scaffold,
   }
   return buildGuideHtml(input)
 }
 
-/** The stand-in section's own markup, so no assertion here can be satisfied by another section. */
-function standInHtml(scaffold: ScaffoldDoc | undefined): string {
-  const html = guideHtml(scaffold)
+/**
+ * The stand-in section's own markup, so no assertion here can be satisfied by
+ * another section.
+ *
+ * `wiringPath` is REQUIRED rather than defaulted, and that is not a style
+ * choice: a default parameter is applied when the argument is `undefined`, so a
+ * defaulted one would quietly turn "this board has no wiring sheet" - the case
+ * the last test in this file exists for - into the sheet's path.
+ */
+function standInHtml(scaffold: ScaffoldDoc | undefined, wiringPath: string | undefined): string {
+  const html = guideHtml(scaffold, wiringPath)
   const section = /<section class="[^"]*stand-in[^"]*">([\s\S]*?)<\/section>/.exec(html)
   if (section === null) throw new Error(`the packet has no stand-in section:\n${html}`)
   return section[1] ?? ""
@@ -78,7 +94,7 @@ function standInHtml(scaffold: ScaffoldDoc | undefined): string {
 
 test("every build this board can be part of gets a row, and every row names this board", async () => {
   const scaffold = await lowBoostScaffold()
-  const section = standInSection(scaffold)
+  const section = standInSection(scaffold, WIRING)
   if (section.kind !== "groups") throw new Error("low-boost declares a SCAFFOLD, so its section holds groups")
 
   // DERIVED, NEVER A LITERAL - see the module comment.
@@ -100,7 +116,7 @@ test("every build this board can be part of gets a row, and every row names this
 
 test("each group is a three-state configuration record, and carries no checkbox", async () => {
   const scaffold = await lowBoostScaffold()
-  const section = standInSection(scaffold)
+  const section = standInSection(scaffold, WIRING)
   if (section.kind !== "groups") throw new Error("low-boost declares a SCAFFOLD, so its section holds groups")
 
   expect(section.groups.length, "one block per group in the doc").toBe(scaffold.groups.length)
@@ -127,12 +143,12 @@ test("each group is a three-state configuration record, and carries no checkbox"
   // ticked box on an omitted group cannot be read as either "all fitted" or
   // "deliberately skipped", which is the whole reason this section records a
   // state instead.
-  expect(standInHtml(scaffold), "no printed checkbox anywhere in this section").not.toContain('class="box"')
+  expect(standInHtml(scaffold, WIRING), "no printed checkbox anywhere in this section").not.toContain('class="box"')
 })
 
 test("a group block names the same Fit cell the checklist prints for its parts", async () => {
   const scaffold = await lowBoostScaffold()
-  const section = standInSection(scaffold)
+  const section = standInSection(scaffold, WIRING)
   if (section.kind !== "groups") throw new Error("low-boost declares a SCAFFOLD, so its section holds groups")
   const membership = groupMembership(scaffold)
 
@@ -165,7 +181,7 @@ test("the section and the checklist's Fit column tell one story about every stan
   const { circuit, checklist } = await loadBoard("pultec-low-boost")
   const scaffold = circuit.scaffold
   if (scaffold === undefined) throw new Error("low-boost declares SCAFFOLD; the guide did not load it")
-  const section = standInSection(scaffold)
+  const section = standInSection(scaffold, WIRING)
   if (section.kind !== "groups") throw new Error("low-boost declares a SCAFFOLD, so its section holds groups")
 
   /** Every Fit-bearing row, by the Part cell the builder reads: ref -> [section title, Fit cell]. */
@@ -213,11 +229,11 @@ test("the section and the checklist's Fit column tell one story about every stan
 
 test("the section opens with a blank for the build, ahead of every group decision", async () => {
   const scaffold = await lowBoostScaffold()
-  const section = standInSection(scaffold)
+  const section = standInSection(scaffold, WIRING)
   if (section.kind !== "groups") throw new Error("low-boost declares a SCAFFOLD, so its section holds groups")
   expect(section.buildPrompt.length > 0, "the build is recorded by hand, on a line of its own").toBe(true)
 
-  const html = standInHtml(scaffold)
+  const html = standInHtml(scaffold, WIRING)
   const promptAt = html.indexOf(section.buildPrompt)
   const firstGroup = section.groups[0]
   if (firstGroup === undefined) throw new Error("test: low-boost has at least one group")
@@ -227,30 +243,58 @@ test("the section opens with a blank for the build, ahead of every group decisio
   expect(html, "a rule to write the build on, not a checkbox").toContain("write-in")
 })
 
+test("the section points at the wiring sheet only when page one names one", async () => {
+  // THE TWO FACTS ARE DELIBERATELY SEPARATE. `tools/guide/packet.ts` chooses the
+  // page-one Wiring guide row by looking at disk, not from the scaffold, and
+  // `tools/perfboard/wiring-sync.ts` writes no sheet for a board with no
+  // off-board or physical-only parts - so a board with a SCAFFOLD and no
+  // wiring.md is reachable, and prose that said "named on page one" regardless
+  // would send a builder to a row that is not there.
+  const scaffold = await lowBoostScaffold()
+
+  const withSheet = standInSection(scaffold, WIRING)
+  if (withSheet.kind !== "groups") throw new Error("low-boost declares a SCAFFOLD, so its section holds groups")
+  expect(withSheet.intro.join(" "), "the sheet is named on page one, so the prose may say so").toContain(
+    "named on page one",
+  )
+  expect(withSheet.buildIntro.join(" ")).toContain("wiring sheet lists the pads")
+
+  const withoutSheet = standInSection(scaffold, undefined)
+  if (withoutSheet.kind !== "groups") throw new Error("the scaffold is the same; only the sheet is gone")
+  const prose = `${withoutSheet.intro.join(" ")} ${withoutSheet.buildIntro.join(" ")}`
+  expect(prose, "no sheet, so nothing sends a reader to page one for one").not.toContain("named on page one")
+  expect(prose, "and the absence is stated rather than left silent").toContain("no wiring sheet")
+  // ON THE PRINTED PAGE, not only in the section data: the markup is what a
+  // builder holds.
+  const html = standInHtml(scaffold, undefined)
+  expect(html).not.toContain("named on page one")
+  expect(html, "the packet says the pads are listed nowhere in it").toContain("does not list those pads")
+})
+
 test("a board with no ScaffoldDoc gets one sentence, never a blank", async () => {
   expect(await scaffoldOf("pt2399-core"), "pt2399-core is not a Pultec section and declares no SCAFFOLD").toBeUndefined()
 
-  const section = standInSection(undefined)
+  const section = standInSection(undefined, WIRING)
   if (section.kind !== "none") throw new Error("a board with no SCAFFOLD has no groups to print")
   expect(section.sentence).toBe(NO_STAND_IN_GROUPS)
   expect(section.sentence, "it says what the gap IS").toContain("no stand-in groups")
   expect(section.sentence, "and that nothing here varies with the build").toContain("every build")
 
-  const html = standInHtml(undefined)
+  const html = standInHtml(undefined, WIRING)
   expect(html).toContain(escapeXml(NO_STAND_IN_GROUPS))
   expect(html, "no build table on a board with no builds").not.toContain("Boards on the bench")
 })
 
 test("a scaffold that declares no groups says so rather than printing an empty space", () => {
   const scaffold = scaffoldWithNoGroups()
-  const section = standInSection(scaffold)
+  const section = standInSection(scaffold, WIRING)
   if (section.kind !== "groups") throw new Error("a declared SCAFFOLD prints its build table")
   expect(section.groups.length).toBe(0)
   expect(section.noGroups, "the empty list says which gap it is").toBe(NO_GROUPS_DECLARED)
   // ESCAPED, because the page is XML-escaped HTML and this sentence carries an
   // apostrophe: comparing the raw string would fail on the escaping rather
   // than on the sentence being absent.
-  expect(standInHtml(scaffold)).toContain(escapeXml(NO_GROUPS_DECLARED))
+  expect(standInHtml(scaffold, WIRING)).toContain(escapeXml(NO_GROUPS_DECLARED))
 })
 
 /**

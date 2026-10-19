@@ -315,8 +315,13 @@ function groupBlock(block: StandInGroupBlock, markOne: string): string {
  * "declares no power-up checks" notice below it is, and the page measurement is
  * in `docs/known-gaps.md`'s G62.
  */
-function standIn(scaffold: ScaffoldDoc | undefined): readonly string[] {
-  const section: StandInSection = standInSection(scaffold)
+function standIn(scaffold: ScaffoldDoc | undefined, wiringPath: string | undefined): readonly string[] {
+  // THE SAME `wiringPath` THE HEADER'S Wiring guide ROW USES, so the section's
+  // prose and page one cannot disagree about whether this board has a sheet.
+  // `tools/guide/packet.ts` decides that by looking at disk rather than from the
+  // scaffold, deliberately, and this threads the answer rather than re-deriving
+  // it (`./stand-in-section.ts`'s `wiringSentence`).
+  const section: StandInSection = standInSection(scaffold, wiringPath)
   if (section.kind === "none") {
     return [
       '<section class="stand-in">',
@@ -387,7 +392,7 @@ export function buildGuideHtml(input: GuideInput): string {
     ...(input.images.clusters === undefined
       ? []
       : [image("Component side - stand-in groups (hatched)", input.images.clusters, true)]),
-    ...standIn(input.scaffold),
+    ...standIn(input.scaffold, input.wiringPath),
     '<section class="page">',
     "<h2>Build checklist</h2>",
     "<p>In build order, top to bottom. Tick each item as it is done.</p>",

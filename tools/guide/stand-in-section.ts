@@ -186,6 +186,57 @@ function blockFor(group: StandInGroupDoc, membership: ReadonlyMap<string, string
 }
 
 /**
+ * What the section says about the board's `wiring.md`, and it is told whether
+ * there IS one rather than assuming it.
+ *
+ * **THE TWO FACTS ARE DELIBERATELY SEPARATE AND THIS IS WHERE THEY MEET.**
+ * `tools/guide/packet.ts` decides the page-one `Wiring guide` row BY LOOKING AT
+ * DISK, not from `circuit.scaffold`, and says in a comment why: a board can
+ * carry a `wiring.md` for reasons other than stand-in groups, and
+ * `tools/perfboard/wiring-sync.ts` writes none at all for a board with no
+ * off-board or physical-only parts. So a board with a `SCAFFOLD` and no sheet
+ * is possible - no Pultec section is one today, all five having panel controls -
+ * and prose that said "named on page one" unconditionally would send a builder
+ * to a row that is not there, on paper, which is G45's class of defect.
+ *
+ * The fix is NOT to re-couple the two: this takes the same `wiringPath` page one
+ * takes, so the sentence and the row are the one fact. `undefined` says there is
+ * no sheet, and the section says that instead of pointing at one.
+ */
+function wiringSentence(wiringPath: string | undefined): string {
+  if (wiringPath === undefined) {
+    return (
+      "This board has no wiring sheet in the repository - page one names one when there is one - so " +
+      "these pages are the whole printed account of its stand-in groups, and the wires between " +
+      "boards and the junction pads are not described anywhere in this packet."
+    )
+  }
+  return (
+    "The board's wiring sheet, named on page one, is the fuller account - the wires between " +
+    "boards, the panel terminals, the junction pads. This section is the part of it you decide " +
+    "before you solder."
+  )
+}
+
+/**
+ * The junction-pins paragraph of the build table's introduction, whose last
+ * clause names the wiring sheet - and only when there is one, for
+ * `wiringSentence`'s reason just above.
+ */
+function junctionParagraph(wiringPath: string | undefined): string {
+  const pads =
+    wiringPath === undefined
+      ? " This packet does not list those pads; the board has no wiring sheet to list them."
+      : " The board's wiring sheet lists the pads themselves."
+  return (
+    "Populate here is what you solder onto THIS board; every other group above is left empty. " +
+    "Carried elsewhere says which board carries those instead, so a group you leave empty here " +
+    "is one you can see is covered. Junction pins to wire are the pins of this board's junction " +
+    `that carry a net to another board in that build.${pads}`
+  )
+}
+
+/**
  * The emulated setting, read off `doc.flat` and never transcribed: the
  * stand-ins' values are derived at that setting and at no other, and up to
  * 3.71 dB rides on it (a worst case measured at an earlier reference setting -
@@ -203,10 +254,19 @@ function flatSentence(scaffold: ScaffoldDoc): string {
 }
 
 /**
- * The section for one board. `undefined` - a board declaring no `SCAFFOLD` -
- * is the one-sentence shape; everything else is derived from the doc.
+ * The section for one board. `undefined` scaffold - a board declaring no
+ * `SCAFFOLD` - is the one-sentence shape; everything else is derived from the
+ * doc.
+ *
+ * `wiringPath` is the board's `wiring.md`, repository-relative, exactly as page
+ * one has it - `undefined` when there is none on disk. It is a PARAMETER and
+ * not read off the scaffold: see `wiringSentence` above for why those are two
+ * facts and what printing one as the other would cost a builder.
  */
-export function standInSection(scaffold: ScaffoldDoc | undefined): StandInSection {
+export function standInSection(
+  scaffold: ScaffoldDoc | undefined,
+  wiringPath: string | undefined,
+): StandInSection {
   if (scaffold === undefined) return { kind: "none", sentence: NO_STAND_IN_GROUPS }
   const membership = groupMembership(scaffold)
   const groups = scaffold.groups.map((group) => blockFor(group, membership))
@@ -227,9 +287,7 @@ export function standInSection(scaffold: ScaffoldDoc | undefined): StandInSectio
         "from a part you forgot, and a ticked one cannot be told from a group you decided against. " +
         "The parts themselves still each have their own box in the checklist.",
       flatSentence(scaffold),
-      "The board's wiring sheet, named on page one, is the fuller account - the wires between " +
-        "boards, the panel terminals, the junction pads. This section is the part of it you decide " +
-        "before you solder.",
+      wiringSentence(wiringPath),
     ],
     rules: [
       `${POPULATE_WHOLE} A group with a part left out is not a cheaper version of itself - it is a ` +
@@ -245,11 +303,7 @@ export function standInSection(scaffold: ScaffoldDoc | undefined): StandInSectio
     buildIntro: [
       "Find the row for the boards you are building - the first column names every board in the " +
         "build, this one included - and write it on the build line above.",
-      "Populate here is what you solder onto THIS board; every other group above is left empty. " +
-        "Carried elsewhere says which board carries those instead, so a group you leave empty here " +
-        "is one you can see is covered. Junction pins to wire are the pins of this board's junction " +
-        "that carry a net to another board in that build; the board's wiring sheet lists the pads " +
-        "themselves.",
+      junctionParagraph(wiringPath),
     ],
     buildColumns: BUILD_COLUMNS,
     buildRows: scaffold.builds.map(buildCells),
