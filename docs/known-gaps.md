@@ -519,6 +519,74 @@ evidence any future decision rests on:**
 Open: a fix would settle these
 ------------------------------
 
+### G58 - a stand-in group's parts are spread across the checklist's sections, and nothing on the printed page says what mark records a group's state
+
+Two findings from the same change - the one that put the **Stand-in groups**
+section in the printed packet (`tools/guide/stand-in-section.ts`). The first is
+a MEASUREMENT with nothing wrong in it; the second is a presentation question
+the producing agent may not answer.
+
+**Measured on the regenerated `pultec-low-boost` packet, 2026-10-18.** A group
+is populated whole, and its parts are nevertheless listed in three different
+sections of the one checklist, because the section a row lands in is decided by
+what the part IS and not by which group it belongs to:
+
+- **Wire links** - `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper`,
+  `SI_HI_CUT_RV_HI_CUT.ccw-wiper`, `SI_LOW_CUT_RV_LO_CUT.ccw-wiper` (each
+  resolves to 0 Ω, so `tools/guide/checklist.ts` routes it there);
+- **Resistors and trim-pots** - `SI_HI_BOOST_RV_HI_BOOST.wiper-cw`,
+  `SI_HI_CUT_R1`, `SI_HI_CUT_RV_HI_CUT.wiper-cw`, `SI_MID_R_MID_SHUNT`;
+- **Capacitors** - `SI_HI_CUT_C26`.
+
+So the two-part `hi-boost` group has one row among the wire links and one among
+the resistors, and the one-part `low-cut` group's only row is a wire link. **A
+group block therefore cannot send a reader to a section of the checklist**, and
+the one printed on the page does not: it names the `Fit` cell instead - *"Every
+row in the build checklist whose Fit column reads `only with the hi-boost
+group` is one of these, in whichever section that part's row sits."* That cell
+is the one thing every row of a group carries wherever it landed. **This is
+recorded because the next agent to make a group block point at a section would
+be making a change that is wrong on this board and looks right in the code.**
+
+**What is NOT settled: what mark a builder makes, and where the section sits.**
+Each group prints three named states (populated here / not needed, that section
+is present / carried on \_\_\_\_) under the line `Mark the one that applies:`,
+and the page draws no mark shape at all - no box, deliberately (a box on a
+group is unreadable either way round, which is this section's whole premise and
+is stated in the module comment). Whether a circle, a cross, a ruled cell per
+state or something else is what the sheet should offer is a decision about the
+printed artifact. So is the section's POSITION: it is currently its own page
+between the copper-side image and the build checklist, on the reasoning that
+the checklist's `Fit` cells are conditions a reader cannot resolve until the
+build and the group states are recorded.
+
+- **Found** 2026-10-18, implementing Task 5 of
+  `docs/superpowers/plans/2026-10-18-the-packet-shows-the-clusters.md`, by
+  reading the regenerated `boards/pultec-low-boost/guide/guide.html` rather
+  than by a check.
+- **Evidence** the section-by-section membership above, read off the
+  regenerated packet, and now asserted as a check that could fail: *"the
+  section and the checklist's Fit column tell one story about every stand-in"*
+  in `tests/guide/stand-in-section.test.ts` matches every group block's parts
+  against the real board's Fit-bearing rows in both directions, and its own
+  premise fails if a board's stand-ins ever land in one section. Making
+  `fitLabel` a constant `"always"` fails that test and one other, so it has
+  teeth.
+- **Verified** yes, both halves read directly by the agent that made the
+  change; the mutation above was run.
+- **Why it is open** the measurement needs no fix - the page is correct as it
+  stands - and the marking and placement questions are presentation decisions
+  about an artifact, which **the agent producing it may not settle**
+  (`CLAUDE.md`). The code records no guess: there is no mark shape in the
+  markup to be mistaken for a ruling.
+- **What would settle it** an owner (or reviewer) ruling on the mark and on the
+  section's position, then one change to `groupBlock` and the `standIn`
+  placement in `tools/guide/guide.ts`. **The criteria are two**: a reader must
+  not be able to read one group's recorded state two ways, and a reader holding
+  only the packet must be able to find every part of a group from its block.
+  The current page meets the second through the `Fit` cell; the first is met
+  today only because nothing is printed to mark.
+
 ### G57 - the layout image's own summary and legend still count a wire-link part as a part, so the picture and the checklist disagree about how many wire links the board has
 
 **Measured on the regenerated `pultec-low-boost` packet, 2026-10-18**, in the
