@@ -19,10 +19,12 @@ halves of it - **but on two different boards, and each claim has to name its own
 agent placed and routed a PCB: that is the **four-stage fuzz board** (`fuzz/`), and it
 is the source of the place-and-route tooling. An agent generated a legible multi-sheet
 schematic: that is the **STM32H743 digital mainboard** (`h7-platform/`) - 7 pages, 103
-circuit blocks, a 176-pin MCU, SDRAM and a PCM3060 codec. Both held **when the result
-was graded by code and by a reader denied the source, rather than by the agent's own
-judgement.** This design brings that capability here, and extends it to cover the one
-step pedals leaves to its operator.
+circuit blocks, a 176-pin MCU, SDRAM and a PCM3060 codec. Both held **because the
+result was graded by something other than the producing agent's own judgement** - code
+in both cases, and for the schematic also an independent reader **denied the source**.
+`docs/known-gaps.md` **G82** records who that reader was, and who it was not. This
+design brings that capability here, and extends it to cover the one step pedals leaves
+to its operator.
 
 > **Correction, 2026-10-19.** From 2026-10-08 until this edit, the paragraph above read
 > *"demonstrates, on a real four-stage fuzz board, that an agent can place and route a
