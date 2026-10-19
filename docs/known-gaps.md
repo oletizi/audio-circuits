@@ -5842,3 +5842,120 @@ only road.
   **MECHANISM:** none available. Until then this is a constraint to design
   against rather than a defect to fix, and the cheap confirmation nobody has run
   is to look for schematic services in the installed `kicad-python` bindings.
+
+### G107 - the `schgen` port keeps the pedals source's non-null assertions unchanged, by decision D7, not by oversight
+
+`docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md` decision **D7**
+decides this for the whole port, before any of it landed: pedals compiles
+under `noUncheckedIndexedAccess`, so its non-null assertions (`!`) are load-
+bearing there; this repository's `tsconfig.json` does not set that flag, so
+under this compiler the same assertions are redundant no-ops rather than
+something unsafe. **Rewriting them is deliberately out of scope** -
+unreviewable churn across the whole port that would bury the port diff -
+and this repository's own `lib/` already carries 19 of its own. **New code
+this plan writes by hand (never through `tools/schgen/port.ts`) carries
+none**: `lib/schgen/strict.ts`, `tools/schgen/port.ts` and
+`tests/schgen/*.test.ts` have zero.
+
+- **Found** 2026-10-19, recording D7 into this file as Task 1 Step 9
+  requires, against the 18 files Task 1 actually ported (of the ~93-file
+  corpus the whole port will eventually cover).
+- **Evidence** D7's own text names "194 non-null assertions across 13 non-
+  test files" for the full port. A grep for the pattern
+  `[A-Za-z0-9_)\]]![^=]` (identifier/`)`/`]` immediately followed by `!`,
+  excluding `!=`/`!==`) over pedals' `tools/schgen/` (excluding `h7/`,
+  `__fixtures__/`, `integration/` and `*.test.ts`) finds the assertion in
+  **exactly 13 files** - matching D7's file count - but **70 occurrences**,
+  not 194; a crude line-based grep plausibly undercounts (it does not
+  special-case optional chaining, multi-assertion expressions on one line,
+  or assertions inside multi-line expressions). **The 18 files Task 1 itself
+  ported contain zero** - the assertion-bearing files (`render/emit.ts`,
+  `ir/build.ts` and others) are not among them; see the scope note in
+  `lib/schgen/README.md`.
+- **Verified** **no - RELAYED for the 194/13 figure** (it is D7's own
+  measurement, not re-derived here with a method precise enough to confirm
+  the exact count). **CONFIRMED** for "zero assertions in the files Task 1
+  ported" - this writer ran the grep above directly against
+  `lib/schgen/**/*.ts` as it stands after Task 1 and it matched nothing.
+- **Why it is open** it is a standing decision, not a defect: it stays open
+  only in the sense that the exact occurrence count (194 vs. this entry's
+  70) has never been reconciled with one authoritative method.
+- **What would settle it** **CRITERION:** a single counting method (an AST
+  walk for TypeScript's `NonNullExpression`, not a regex) run once over the
+  complete ported corpus once every file in D7's 13 has landed, with its
+  result recorded here in place of both figures. **MECHANISM, untried:** a
+  small script using the TypeScript compiler API's `forEachChild`, run after
+  the task that ports the last of those 13 files.
+
+### G108 - `lib/kicad/sexpr.ts`'s `parseSexpr` is now a derivation of `parse`, not an independent reader, and the two have never disagreed because they share one tokeniser
+
+Before Task 1, `parseSexpr` was the only reader in `lib/kicad/sexpr.ts`: a
+hand-written tokeniser that decoded every `\x` escape to `x` unconditionally
+and threw away whether each atom was quoted. Task 1 replaces it in place
+with `parse` (ported from `digital-pedal-platform`'s `tools/kicad/sexpr.ts`),
+which keeps that information (`SAtom.quoted`, `SAtom.lossyEscape`), and
+`parseSexpr` is reimplemented as `toSNode(parse(text))` - a projection that
+discards the new information to reproduce the old shape exactly. There is
+now one tokeniser in this file, not two.
+
+- **Found** 2026-10-19, during Task 1 (the port's home and the `sexpr.ts`
+  replacement), recorded as Step 9 of the task requires.
+- **Evidence** `lib/kicad/sexpr.ts` itself: `parseSexpr` has no tokenising
+  logic of its own, only `toSNode`. `tests/kicad/sexpr.test.ts`'s pre-
+  existing cases (quoted atoms with spaces/parens, backslash-escape
+  unescaping, unbalanced/trailing-content refusals, a quoted form name) all
+  pass unchanged against the new implementation, and four new cases added in
+  this task exercise `parse` and `quoteString` directly (`quoted` surviving,
+  `lossyEscape` being `"\\n"` for KiCad's multi-line escape and `null` for
+  `\"`/`\\`, and a `quoteString`-through-`parse` round trip).
+- **Verified** CONFIRMED - this writer ran `bun test tests/kicad/` and
+  `tests/schgen/` directly; all pass, including the netlist/footprint-
+  extent/symbol-library consumer tests, unchanged.
+- **Why it is open** it is not a defect; it is recorded because a later
+  reader of `lib/kicad/sexpr.ts` needs to know `parseSexpr` is a derived
+  shim before "simplifying" it back into an independent parser, which would
+  reintroduce two answers to one question - the exact failure mode Task 1's
+  brief names as the reason the old reader was replaced rather than kept
+  beside the new one.
+- **What would settle it** **CRITERION:** none needed - this is the settled
+  state Task 1 was asked to reach. This entry is deleted if `parseSexpr` is
+  ever removed outright (its three consumers migrated to `parse` directly),
+  since at that point there is nothing left to warn about.
+
+### G109 - `lib/kicad/symbol-library.ts`'s raw-text workaround for `parseSexpr`'s lossy decode is now unnecessary, but it has not been removed
+
+`lib/kicad/symbol-library.ts`'s module comment says `parseSexpr` "is used to
+read names and pin geometry, but never to re-serialise: it drops whether an
+atom was quoted, and KiCad distinguishes `yes` from `\"yes\"`" - which is why
+that file treats vendored symbols as raw text rather than re-emitting them
+through the parser. `parse` (Task 1) now carries exactly the information
+`parseSexpr` dropped: `SAtom.quoted` and `SAtom.lossyEscape`. The workaround
+is no longer the only way to avoid that loss - a re-serialiser could call
+`parse` directly, check `lossyEscape` on every atom, and refuse rather than
+emit if any atom carries one.
+
+- **Found** 2026-10-19, during Task 1, as a direct consequence of replacing
+  `lib/kicad/sexpr.ts`'s reader - recorded because Task 1's own brief names
+  this file's workaround as the evidence for why the old reader had to be
+  replaced rather than extended, and a later reader needs to know that
+  evidence is now stale.
+- **Evidence** `lib/kicad/symbol-library.ts`'s module comment (quoted above,
+  read directly) against `lib/kicad/sexpr.ts`'s current `SAtom` interface,
+  which now exposes `quoted` and `lossyEscape`.
+- **Verified** CONFIRMED the information now exists in `parse`'s output -
+  this writer read both files directly. **NOT verified**: whether
+  `symbol-library.ts` can actually be switched to re-serialising through
+  `parse` without a behavioural change for its callers; nobody has tried.
+- **Why it is open** Task 1's scope is the reader, not this file: switching
+  `symbol-library.ts` off its raw-text workaround is a separate, deliberate
+  edit with its own test, not a side effect of a reader replacement, per
+  this repository's own "never guess, never silently widen" convention.
+- **What would settle it** **CRITERION: symbol geometry is read through one
+  reader** - either `symbol-library.ts` keeps its raw-text handling for a
+  stated reason beyond "the old reader couldn't do better," or it is
+  migrated to read through `parse` and the module comment is corrected to
+  stop citing a limitation that no longer exists. **MECHANISM, untried:**
+  switch `symbol-library.ts`'s raw-text handling to `parse`, add a test that
+  a vendored symbol containing a quoted empty string or a `lossyEscape`-
+  bearing atom is rejected or handled explicitly rather than silently
+  mis-serialised, and delete this entry when that test exists and passes.

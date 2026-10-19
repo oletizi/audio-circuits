@@ -1,0 +1,28 @@
+{
+  "sourceEnvVar": "SCHGEN_SOURCE",
+  "externals": {
+    "@/kicad/sexpr": "lib/kicad/sexpr.ts",
+    "@/placement/strict": "lib/schgen/strict.ts",
+    "@/repo": "tools/perfboard/repo-root.ts"
+  },
+  "files": [
+    { "from": "ir/types.ts", "to": "lib/schgen/ir/types.ts" },
+    { "from": "ir/author.ts", "to": "lib/schgen/ir/author.ts" },
+    { "from": "ir/classify.ts", "to": "lib/schgen/ir/classify.ts" },
+    { "from": "ir/order.ts", "to": "lib/schgen/ir/order.ts" },
+    { "from": "lock/annotate.ts", "to": "lib/schgen/lock/annotate.ts" },
+    { "from": "lock/refmap.ts", "to": "lib/schgen/lock/refmap.ts" },
+    { "from": "lock/versionLock.ts", "to": "lib/schgen/lock/version-lock.ts" },
+    { "from": "render/connectivity.ts", "to": "lib/schgen/render/connectivity.ts" },
+    { "from": "render/drawnText.ts", "to": "lib/schgen/render/drawn-text.ts" },
+    { "from": "render/geometry.ts", "to": "lib/schgen/render/geometry.ts" },
+    { "from": "render/libGraphics.ts", "to": "lib/schgen/render/lib-graphics.ts" },
+    { "from": "render/libPins.ts", "to": "lib/schgen/render/lib-pins.ts" },
+    { "from": "render/pack.ts", "to": "lib/schgen/render/pack.ts" },
+    { "from": "render/sexprWrite.ts", "to": "lib/schgen/render/sexpr-write.ts" },
+    { "from": "render/textBoxes.ts", "to": "lib/schgen/render/text-boxes.ts" },
+    { "from": "render/uuid.ts", "to": "lib/schgen/render/uuid.ts" },
+    { "from": "render/wireSafety.ts", "to": "lib/schgen/render/wire-safety.ts" },
+    { "from": "gates/pintable.ts", "to": "lib/schgen/gates/pin-table.ts" }
+  ]
+}

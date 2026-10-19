@@ -1,0 +1,230 @@
+/**
+ * Ported from digital-pedal-platform's `tools/schgen/ir/types.ts`, mechanically
+ * rewritten by `tools/schgen/port.ts` (imports only, per
+ * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
+ * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ */
+
+/**
+ * Authoring form and normalised IR for the schematic generator.
+ *
+ * Authoring is part-centric (one module per sheet). Nothing downstream of
+ * buildCircuit() reads the authoring form: validation, rendering and the
+ * expected-connectivity export all read Circuit.
+ */
+
+export type NetName = string;
+export type PinNumber = string;
+export type PartLabel = string;
+export type PinIdentity = string;
+export type BlockId = string;
+export type SheetId = string;
+
+export const TEMPLATE_IDS = [
+  "rail-row",
+  "decoupling-bank",
+  "divider",
+  "passive-chain",
+  "crystal",
+  "regulator",
+  "opamp-stage",
+  "connector-fanout",
+] as const;
+export type TemplateId = (typeof TEMPLATE_IDS)[number];
+
+/** UPPER_SNAKE, may start with a digit (3V3_D), never contains "/". */
+export const NET_NAME = /^[A-Z0-9][A-Z0-9_]*$/;
+
+/** A pin is on a named net, or explicitly not connected. "NC" is a type, never a net name. */
+export type PinConnection =
+  | { readonly net: NetName; readonly identity: PinIdentity }
+  | { readonly nc: true; readonly identity: PinIdentity };
+
+export function connectedNet(c: PinConnection): NetName | null {
+  return "net" in c ? c.net : null;
+}
+
+export interface BomFields {
+  readonly Manufacturer: string;
+  readonly MPN: string;
+  readonly Supplier: string;
+  readonly SupplierPart: string;
+  /** Supply absolute maximum in volts, as text; required by bom-check for active VIN_PROT parts. */
+  readonly AbsMaxV: string | null;
+}
+
+export type MechanicalConnection = { readonly net: NetName } | { readonly nc: true };
+
+/**
+ * A footprint pad with no symbol pin: shield, exposed pad, mounting pad. The validator refuses a
+ * `{ net }` connection (the schematic cannot carry it); a pad that needs a net must be a symbol pin.
+ */
+export interface MechanicalPad {
+  readonly pad: string;
+  readonly connection: MechanicalConnection;
+}
+
+export interface PartSpec {
+  /** Functional label, unique across the design, e.g. "R_DIV1_L". Never a reference. */
+  readonly label: PartLabel;
+  readonly refPrefix: string;
+  readonly libId: string;
+  /** Units to place, e.g. [1] or [1, 2, 3] for a dual op-amp with its power unit. */
+  readonly units: readonly number[];
+  readonly value: string;
+  readonly footprint: string;
+  readonly bom: BomFields;
+  readonly dnp: boolean;
+  readonly checklist: readonly string[];
+  /** Provenance: the design note section or datasheet the part and its values come from. */
+  readonly source: string;
+  /** Key of h7-platform/pintables/<key>.json when this part needs a datasheet pin table. */
+  readonly pinTable: string | null;
+  readonly pins: Readonly<Record<PinNumber, PinConnection>>;
+  readonly mechanicalPads: readonly MechanicalPad[];
+  /**
+   * Explicit opt-in: every symbol pin not declared in `pins` (and not assigned by the pin map)
+   * is a no-connect. Used only for the MCU's unused GPIOs (CORE-27). The reason is required.
+   */
+  readonly ncUnlisted: { readonly reason: string } | null;
+}
+
+export type BlockMember = PartLabel | { readonly part: PartLabel; readonly unit: number };
+
+export interface BusGroup {
+  readonly name: string;
+  /** Exact net names, never patterns. */
+  readonly nets: readonly NetName[];
+}
+
+/** The part a template is organised around, with its pins' roles given by pin number. */
+export interface TemplateAnchor {
+  readonly part: PartLabel;
+  readonly unit: number;
+  readonly roles: Readonly<Record<string, PinNumber>>;
+}
+
+export type Rendering =
+  | { readonly kind: "wired"; readonly template: TemplateId; readonly anchor: TemplateAnchor | null }
+  | { readonly kind: "bus"; readonly groups: readonly BusGroup[] }
+  | { readonly kind: "labels"; readonly reason: string };
+
+export interface BlockSpec {
+  readonly id: BlockId;
+  readonly sheet: SheetId;
+  readonly title: string;
+  readonly members: readonly BlockMember[];
+  readonly checklist: readonly string[];
+  readonly rendering: Rendering;
+}
+
+/** Text placed on a sheet, e.g. a layout note. Each line becomes one text item. */
+export interface SheetNote {
+  readonly lines: readonly string[];
+  readonly checklist: readonly string[];
+}
+
+export type Paper = "A4" | "A3" | "A2" | "A1";
+
+export interface SheetSpec {
+  readonly id: SheetId;
+  readonly title: string;
+  /** File name relative to the output directory, e.g. "core.kicad_sch". */
+  readonly file: string;
+  readonly paper: Paper;
+  readonly notes: readonly SheetNote[];
+}
+
+export interface RailSpec {
+  readonly net: NetName;
+  /** Power symbol cloned for this rail, e.g. "power:GND" or "power:+3V3"; its Value becomes `net`. */
+  readonly symbol: string;
+  /** Ground rails are drawn at the bottom of blocks with downward symbols; supplies at the top. */
+  readonly kind: "ground" | "supply";
+  /** Rails driven only by passive pins need one PWR_FLAG, placed on this sheet. */
+  readonly pwrFlag: { readonly sheet: SheetId } | null;
+}
+
+export interface CircuitSpec {
+  readonly parts: readonly PartSpec[];
+  readonly blocks: readonly BlockSpec[];
+  readonly sheets: readonly SheetSpec[];
+  readonly rails: readonly RailSpec[];
+  /** The part whose pins the pin map assigns. Null when the design has no pin map. */
+  readonly mcu: { readonly label: PartLabel } | null;
+}
+
+export interface PinRef {
+  readonly part: PartLabel;
+  readonly pin: PinNumber;
+}
+
+export type PinOrigin = "circuit" | "pinmap" | "nc-unlisted";
+
+export interface IrPin {
+  readonly part: PartLabel;
+  readonly pin: PinNumber;
+  /** Symbol unit carrying the pin; 0 for pins common to all units. */
+  readonly unit: number;
+  readonly identity: PinIdentity;
+  /** Null means explicitly not connected. */
+  readonly net: NetName | null;
+  readonly origin: PinOrigin;
+}
+
+export interface IrUnitRef {
+  readonly part: PartLabel;
+  readonly unit: number;
+}
+
+export interface IrPart {
+  readonly label: PartLabel;
+  readonly refPrefix: string;
+  readonly libId: string;
+  readonly units: readonly number[];
+  readonly value: string;
+  readonly footprint: string;
+  readonly bom: BomFields;
+  readonly dnp: boolean;
+  readonly checklist: readonly string[];
+  readonly source: string;
+  readonly pinTable: string | null;
+  readonly mechanicalPads: readonly MechanicalPad[];
+  readonly ncUnlistedReason: string | null;
+  /** Position in the authoring order; used for deterministic iteration. */
+  readonly order: number;
+}
+
+export interface IrBlock {
+  readonly id: BlockId;
+  readonly sheet: SheetId;
+  readonly title: string;
+  readonly members: readonly IrUnitRef[];
+  readonly checklist: readonly string[];
+  readonly rendering: Rendering;
+  readonly order: number;
+}
+
+export interface Circuit {
+  readonly parts: ReadonlyMap<PartLabel, IrPart>;
+  /** Every pin of every part, sorted by part order then pin number. */
+  readonly pins: readonly IrPin[];
+  /** Net name -> its pins in part order then pin order; nets sorted by name. */
+  readonly nets: ReadonlyMap<NetName, readonly PinRef[]>;
+  readonly blocks: ReadonlyMap<BlockId, IrBlock>;
+  readonly sheets: readonly SheetSpec[];
+  readonly rails: ReadonlyMap<NetName, RailSpec>;
+  readonly mcu: PartLabel | null;
+  /** unitKey(part, unit) -> the block that places it. */
+  readonly unitBlock: ReadonlyMap<string, BlockId>;
+  /**
+   * Nets whose other pins are on sheets outside this circuit, so they are labelled like any
+   * cross-sheet net. Only a sheet subset (the A2 sheet harness) has any; buildCircuit, which
+   * always builds a whole design, leaves it empty.
+   */
+  readonly offSheet: ReadonlySet<NetName>;
+}
+
+export function unitKey(part: PartLabel, unit: number): string {
+  return `${part}#${unit}`;
+}
