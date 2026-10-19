@@ -250,6 +250,41 @@ How that grading works is not proposed here.
 requirement. It is not scheduled, not sequenced, and its absence today is not a defect.
 The work in hand is the schematic-first derivation for the Pultec.
 
+### A schematic is not always a derived artifact, and must never be treated as one by default
+
+**Added 2026-10-18.** The owner, on the framing above:
+
+> *"Sometimes the schematic is the source, not a derivation"*
+
+**This is a hazard and not a nuance, because of a rule this repository already enforces.**
+`CLAUDE.md`: *"Derived artifacts are regenerated every run and compared by content."* A
+tool that classifies every `.kicad_sch` as derived output therefore does not merely
+mislabel a hand-drawn schematic - **it regenerates over it, and the next `make` destroys
+work nobody can recover from the model, because the model was derived FROM that file.**
+The Pultec's canonical `pultec-three-band-eq.kicad_sch` is exactly such a file.
+
+So the generator's contract has a second half, and it is as load-bearing as what it emits:
+
+- **Every schematic file carries a known provenance - AUTHORED or GENERATED - and the
+  generator writes only to GENERATED paths.** An unclassified `.kicad_sch` is refused, not
+  assumed to be either. `CLAUDE.md`'s *"refuse rather than guess"* applies with unusual
+  force here, since the cost of guessing wrong in one direction is destroyed source.
+- **An authored schematic is an input and an authority. It is never an output.** No code
+  path overwrites one, and nothing compares one by content against a regenerated copy,
+  because there is no regenerated copy to compare it to.
+- **A human's edit to an authored schematic must be able to propagate**, which this
+  repository already provides for: *"Where a generated netlist is committed, it is
+  committed deliberately: it is the form in which a human's schematic edit becomes legible
+  to an agent in a diff."* That mechanism is the schematic-first direction working, and
+  the generator must not break it.
+
+**Where this cuts against a natural reading of this document.** "Agent-authored boards"
+and "take the operator out of schematic creation" can be read as *every schematic becomes
+generated*. They do not mean that. A design brought in from outside - the Pultec - has a
+drawn schematic that is its authority, and **that file stays authored however good the
+generator gets.** What is generated for such a circuit is the per-board schematics derived
+FROM it, which is the requirement recorded above.
+
 ### A requirement the tooling cannot yet meet is a requirement, not a blocker
 
 **A pattern worth more than either fix above, because it kept happening in one sitting.**
