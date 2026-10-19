@@ -167,7 +167,12 @@ Both representations now exist and nothing chooses between them.
   `wiring.md`'s **Panel parts** section gives the same pot a pad-ordinal table
   keyed by net - `| 2 | wiper | - | lo_boost_in |`. A builder holding the two
   documents is holding two vocabularies for one control, and neither document
-  points at the other. Task 5 made it an ERROR for one ref to carry both a
+  points at the other. **ONE HALF OF THAT LAST CLAUSE EXPIRED 2026-10-18**: the
+  packet's page one now names the board's `wiring.md` as a document it does not
+  replace (the `G45` change), so the packet points at the sheet while the sheet
+  still does not point back - and **the two vocabularies are unaffected**,
+  which is what this entry is about. Task 5 made it an ERROR for one ref to
+  carry both a
   header PART and PAD lines, so a layout can no longer carry the two
   representations at once; it does not say which one a panel control should BE,
   which is what this gap asks.
@@ -355,6 +360,109 @@ guard did fire and that it was `validateControlState`'s per-switch check, not
 the gang one - and only for the one position being simulated. `A` is now
 refused by `assertGangsDeclareSamePositions` before a simulation ever runs.
 
+### G60 - which checklist section a 0 Ω part's row lands in was chosen by an agent as the smallest claim available, and the owner has never ruled on it
+
+**WHAT SHIPPED.** Three of `pultec-low-boost`'s eight stand-in parts resolve to
+0 Ω, and their rows are printed in the build checklist's **4. Wire links**
+section rather than in a part section. Verbatim from the regenerated
+`boards/pultec-low-boost/guide/guide.html`:
+
+    | Wire | From | To | Fit |
+    | SI_HI_BOOST_RV_HI_BOOST.ccw-wiper | C3 | D3 | only with the hi-boost group |
+    | SI_HI_CUT_RV_HI_CUT.ccw-wiper | B11 | E11 | only with the hi-cut group |
+    | SI_LOW_CUT_RV_LO_CUT.ccw-wiper | E19 | G19 | only with the low-cut group |
+
+The other four adopted boards carry the same shape for their own zero-ohm
+stand-ins. The section's own opening paragraph already explains why a
+designator sits among the `W` numbers: *"Some of these are listed by designator
+rather than as W1, W2 ...: they are parts of the circuit that carry no
+resistance."*
+
+**WHY IT IS PROVISIONAL.** The implementer that moved those rows was told to
+put them in **Wire links** because it was **the smallest claim available** - a
+0 Ω part is a wire to solder, and that section is where a wire to solder is
+listed - and was told explicitly not to settle the question. Which section of a
+printed checklist a part belongs in is a decision about the artifact, and the
+agent producing the artifact may not make one (`CLAUDE.md`).
+
+**THIS ENTRY WAS MOVED OUT OF G55 RATHER THAN DUPLICATING IT, 2026-10-18.** It
+sat there as a clause inside an entry whose subject is the LAYOUT - that the
+five adopted `.vrt` files still place a 0 Ω part as a resistor, which is
+blocked by his *"Leave the approved boards alone for bow"*. This question is
+about the printed page, it is answerable without touching a layout, and as a
+sub-clause of a blocked entry it was invisible. G55 now points here instead.
+
+- **Found** 2026-10-18, in the change that fixed G55's level 1 (the sheets),
+  recorded there as a clause; promoted to its own entry by Task 7 of
+  `docs/superpowers/plans/2026-10-18-the-packet-shows-the-clusters.md`.
+- **Evidence** the three rows above and the section paragraph, read off the
+  regenerated `guide.html`; `tools/guide/checklist.ts`'s routing branch and
+  `isZeroOhmResistor` in `lib/model/zero-ohm.ts`, which is the single test that
+  decides it.
+- **Verified** yes - read off the regenerated packet by the writer of this
+  entry, not relayed.
+- **Why it is open** nobody has put it to him. G55's level 1 shipped on the
+  reasoning that a wrong instruction (`0R` / `STAND ON END`) is worse than an
+  unratified placement. That reasoning is sound and it is not a ruling.
+- **What would settle it** he looks at section 4 of the printed packet and says
+  whether a zero-ohm part belongs there, among the resistors with a note, or in
+  a section of its own. **THE CRITERION IS HIS TO APPLY**, and the thing to
+  apply it to is whether a builder reading the row fits a wire without looking
+  for a part to buy. **MECHANISM, which is a guess from someone who has not
+  tried it:** the routing is one branch in `tools/guide/checklist.ts` keyed by
+  `isZeroOhmResistor`, so moving the rows is a one-site change - but the
+  **Wire links** heading, its explanatory paragraph and the `Wire | From | To`
+  column shape would all have to move with them, and G58's cross-reference
+  sentence names the `Fit` cell rather than a section precisely because a
+  group's parts are already spread across three.
+
+### G61 - the checklist's `Fit` column is the one ruling of five the owner never answered, and it shipped as specced
+
+**WHAT SHIPPED.** Every row of every part section in the printed checklist now
+carries a **Fit** cell: `always` for a part in this board's own circuit, and
+`only with the <section> group` for a stand-in. On `pultec-low-boost` eight
+cells read the conditional form - four in **Resistors and trim-pots**, one in
+**Capacitors**, three in **Wire links** - and the four group blocks in the
+**Stand-in groups** section quote the same strings back, twelve occurrences in
+the page altogether; `pultec-low-cut` carries thirteen.
+
+**WHY IT IS PROVISIONAL.** Of five decisions put to him on 2026-10-18 about
+this change he answered four - the dedicated image (*"dedicated image is
+fine"*), the eighth page (*"eighth page is fine"*), folding in the 0 Ω fix
+(*"folding in 0ohm fix: do it"*) and the hatching (deferred to a render, then
+ratified; G59) - **and this is the one he never spoke to.** Its authority in
+the spec's own Decisions table is *"this spec - he did not rule on this one"*,
+with the reason it proceeded anyway: *"it proceeds as specced because it is the
+change that makes the checklist unambiguous, and it is flagged here so he can
+veto it when he sees the render rather than discovering it unannounced"*. This
+entry is that flag, in the file that outlives the spec.
+
+- **Found** 2026-10-18, Task 7 of
+  `docs/superpowers/plans/2026-10-18-the-packet-shows-the-clusters.md`, reading
+  the spec's Decisions table against the register.
+- **Evidence** the `Fit` column present in sections 2, 3, 4 and 5 of the
+  regenerated `boards/pultec-low-boost/guide/guide.html`, with the eight
+  conditional cells above; `grep -o "only with the"` returns 12 on low-boost
+  and 13 on low-cut; the Decisions table row in
+  `docs/superpowers/specs/2026-10-18-the-packet-shows-the-clusters-design.md`.
+- **Verified** yes - the column read off the regenerated packet and the
+  unanswered ruling read off the spec, both by the writer.
+- **Why it is open** it is a column on a document he builds from, and the one
+  decision in this change that has no owner behind it. Nothing is wrong with it
+  that this writer can see, which is exactly why it needs recording rather than
+  assuming: an unopposed agent decision about a printed artifact is the shape
+  `CLAUDE.md` forbids, and it does not stop being that shape by being a good
+  idea.
+- **What would settle it** he sees the render and leaves it or vetoes it.
+  **CRITERION, from the spec's own reasoning:** a builder meeting an empty
+  checkbox can tell from the row whether the box is empty because the part is
+  not wanted in this build. **MECHANISM if he vetoes it:** the column is
+  `fitLabel` in `tools/guide/checklist.ts`, but it does not come out alone -
+  G58's group-block sentence (*"Every row in the build checklist whose Fit
+  column reads ... is one of these"*) is the only thing that leads a reader from
+  a group to its parts, since a group's parts are spread across three sections,
+  so removing the column requires answering that too.
+
 ---
 
 Declined: the owner has ruled, and nobody asks again unprompted
@@ -514,35 +622,37 @@ evidence any future decision rests on:**
   vocabulary question, now fully separated from the layout question this entry
   closes** - the row's presence is settled, what a sheet says about it is not.
 
----
+### G59 - the stand-in-groups image's four hatch fills are RATIFIED, and the two diagonals were measured as separating on a deliberate look rather than at a glance
 
-Open: a fix would settle these
-------------------------------
+**RULED 2026-10-18.** He read page 5 of
+`boards/pultec-low-boost/guide/guide.pdf` and said, verbatim:
 
-### G59 - the stand-in-groups image ships with four UNRATIFIED hatch fills, and two of the four were measured as the hard pair at printed scale
+> *"the hatching looks good."*
 
-The packet's fourth layout image hatches every part that stands in for an
-absent section, one geometry per group (`tools/guide/hatch.ts`,
-`tools/guide/clusters.ts`, `tools/guide/render-clusters.ts`). **The four
-geometries are a candidate for the owner to look at, not a settled choice.** He
-was asked to approve a styling before it existed and answered, 2026-10-18:
-*"hatching - I don't know until i see it"*. Nothing in the spec, the plan or
-the tests states which fills the packet ships with, and
-`tests/guide/clusters-view.test.ts` deliberately asserts only that the
-assignment is a bijection onto whatever `HATCH_STYLES` holds - never what an
-entry draws - so a ruling changes one array and no test.
+**He was told the weakness before he ruled, and that disclosure is why this
+entry stays rather than being deleted.** What was put to him: that the two
+diagonals **do not separate at a glance at printed size** - `/` is the first
+group's fill and `\` the second's, hi-boost and hi-cut on both low boards, and
+both read as striped grey from arm's length, so which way the lines lean is
+legible on a deliberate look and not before; that **the worst case is a part
+standing on end**, whose white body covers the middle of its patch and leaves
+only a margin of hatch carrying two or three lines; and that the lattice and
+the stipple had to be coarsened to their present spacings after a first attempt
+at which both merged. **He accepted the fills with all of that known.** So the
+four geometries are settled, nobody asks him again unprompted, and the
+measurement below is still true of the artifact he approved.
 
-**What is hatched, which is settled and is not what is open.** A group's
-members come from the board's own `ScaffoldDoc`; the mark is per part, never a
-region drawn around a cluster, because a group's parts are not guaranteed
-contiguous and an own-circuit part can sit between two of them. The legend
-names each group and states what an UNHATCHED part is. None of that depends on
-the fills.
+**What is hatched, which was never the open half.** A group's members come from
+the board's own `ScaffoldDoc`; the mark is per part, never a region drawn around
+a cluster, because a group's parts are not guaranteed contiguous and an
+own-circuit part can sit between two of them. The legend names each group and
+states what an UNHATCHED part is. None of that depends on the fills.
 
-**Measured at printed scale, 2026-10-18**, by rendering
+**MEASURED AT PRINTED SCALE, 2026-10-18**, by rendering
 `boards/pultec-low-boost/guide/guide.pdf` and `boards/pultec-low-cut/guide/guide.pdf`
 page 5 at 150 dpi and reading the page at 1:1, plus a photocopy simulation
-(greyscale, thresholded to bilevel, resampled to ~100 dpi):
+(greyscale, thresholded to bilevel, resampled to ~100 dpi). **This is what he
+ruled on:**
 
 - **The lattice and the stipple were the hard pair, not the two diagonals.** At
   the first spacings tried (crosshatch at 7 units, stipple at 6) both read as
@@ -569,31 +679,202 @@ page 5 at 150 dpi and reading the page at 1:1, plus a photocopy simulation
   Pultec boards**, at the patch size shipped (`HATCH_PAD`, half a hole pitch
   plus a twentieth). That is enforced rather than observed: `drawClusters`
   refuses a patch overlapping another part's body or a landing pad's ring, so
-  all five `make guide` runs passing is the measurement. **Two patches of
-  DIFFERENT groups may still overlap each other** - nothing guards that, and on
-  both low boards the lattice and stipple groups' patches abut - because an
-  overlap of two hatches misidentifies no part, which is what the guard is for.
+  all five `make guide` runs passing is the measurement.
+- **TWO PATCHES OF DIFFERENT GROUPS MAY STILL OVERLAP EACH OTHER - NOTHING
+  GUARDS THAT**, and on both low boards the lattice and stipple groups' patches
+  abut. The guard above does not cover it because an overlap of two hatches
+  misidentifies no part, which is what the guard exists for. **Nobody has ruled
+  on whether two abutting group patches are acceptable on the page**; he was
+  shown the page that contains them and ruled the hatching good, which is the
+  nearest thing to an answer and is not the question.
 
 - **Found** 2026-10-18, implementing Task 6 of
   `docs/superpowers/plans/2026-10-18-the-packet-shows-the-clusters.md`, by
   reading the printed PDF page rather than the SVG.
 - **Evidence** the regenerated pages above, read at 1:1 and in the bilevel
   simulation by the agent that made the change; and, for the mapping the fills
-  carry, `tests/guide/clusters-view.test.ts`, which is a check that can fail -
+  carry, `tests/guide/clusters-view.test.ts`, which is a check that could fail -
   it matches every patch against the board's `ScaffoldDoc` and against the
   checklist's `Fit` column in both directions on two real boards.
-- **Verified** yes, read directly; the legibility findings are this agent's own
-  observation of the rendered page and are not relayed.
-- **Why it is open** the fills are a visual decision about an artifact, and
-  **the agent producing it may not settle one** (`CLAUDE.md`). The code records
-  no claim that they are right: `tools/guide/hatch.ts` says in its first
-  sentence that they are unratified.
-- **What would settle it** an owner ruling after looking at the printed page.
-  **The criterion is his**, and the measurements above are what he rules on,
-  not a recommendation. **The mechanism, if he rejects them**, is to replace or
-  reorder the entries in `HATCH_STYLES` in `tools/guide/hatch.ts`; everything
-  else - the mapping, the legend, the checks, the refusals - is independent of
-  what an entry draws, which is what makes that a one-file change.
+- **Verified** the measurements, yes, by the agent that made the change, read
+  directly and not relayed. **The ruling** was relayed to the writer of this
+  revision by the controller, in the words quoted above.
+- **DECLINED - OR RATHER RATIFIED - 2026-10-18, and only one half of this entry
+  is settled by it.** The CHOICE of fills is his and is now made.
+  **The measurement is not a preference and does not expire with it.** The two
+  diagonals still separate only on a deliberate look, and a later reader who
+  notices that, assumes nobody checked at printed size, and either re-opens the
+  question with him or quietly "fixes" it has overturned a decision made with
+  the evidence in hand. `tools/guide/hatch.ts` carries the same disclosure in
+  its module comment, which is where somebody would be standing when they
+  reached for the change.
+- **Why this entry is kept rather than deleted** the register's own rule is that
+  a settled question leaves and a ruling whose subject is still true of the
+  artifact stays here with his words (G47 is the worked example). What is still
+  true of the artifact is the weak diagonal pair, the two greys competing, and
+  the unguarded cross-group overlap - none of which a deletion would have taken
+  anywhere, since nothing else in a committed file records the photocopy result
+  or the grey competition.
+- **What would re-open it** only him. A change to `HATCH_STYLES` - its entries,
+  their order, or their spacings and widths - is a change to the artifact he
+  approved and needs a fresh ruling, not an agent's judgement. Everything else
+  about the image is independent of what an entry draws, which is what makes
+  that a one-file change if he ever asks for one.
+
+### G62 - the packet grew from seven printed pages to eleven, and the controller costed only one of the four when it asked him
+
+**MEASURED 2026-10-18, by counting the pages of the regenerated PDFs**:
+`pultec-low-boost`, `pultec-low-cut`, `pultec-hi-boost` and `pultec-hi-cut`
+print **11 pages** each and `pultec-mid` prints **12**, against the **seven**
+G48 above measures for the two low boards before this plan.
+
+**Where the four pages went, read page by page off
+`boards/pultec-low-boost/guide/guide.pdf`:**
+
+| page | what is on it |
+| --- | --- |
+| 1 | title, provenance, the no-schematic notice |
+| 2-5 | the four layout images - designators, values, copper side, **stand-in groups (new)** |
+| 6-8 | the **Stand-in groups** section (new): its prose and group blocks on 6-7, the 16-row *What to populate, by build* table on 8 |
+| 9-11 | the build checklist and the power-up-checks notice |
+
+So **one page is the fourth image and three are the stand-in groups section**,
+and the checklist still occupies three pages - the `Fit` column widened its
+tables without costing a page. `pultec-mid`'s twelfth page is its own and is
+not this change: its checklist runs to four pages because the board has 72
+table rows against low-boost's 46.
+
+**WHAT HE WAS ASKED, AND IT UNDERSTATED THE CHANGE BY THREE PAGES.** He was
+asked about the image's page only, and answered *"eighth page is fine"* - asked
+explicitly because his G48 declination was about page COUNT rather than a
+blanket yes to more pages. The spec names the image's page as the cost
+(*"the packet goes from seven pages to eight"*) and says nothing about the cost
+of the **Stand-in groups** section, **although the same spec specifies that
+section, its group blocks and its 16 build rows.** **That is a controller
+error, not a surprise in the implementation**: the pages were specified and not
+costed, and he answered the question he was put rather than the one the change
+raised.
+
+- **Found** 2026-10-18, Task 7 of
+  `docs/superpowers/plans/2026-10-18-the-packet-shows-the-clusters.md`, by
+  counting the pages rather than taking the number from a report.
+- **Evidence** `/Type /Page` objects and `MediaBox` entries in each regenerated
+  `guide.pdf` - 11, 11, 11, 11, 12 - agreeing with each page tree's own
+  `/Count`; the per-page `pdftotext` extraction the table above is read from;
+  G48 for the seven-page measurement that precedes this plan; the spec's
+  "Cost, stated because it interacts with a ruling he has already made"
+  paragraph for what was asked.
+- **Verified** yes - counted and extracted by the writer, in a clean tree, on
+  regenerated artifacts. The seven-page figure is G48's measurement rather than
+  this writer's.
+- **DECLINED - 2026-10-18, in his own words.** Told that the packet is eleven
+  pages rather than the eight he approved, and that the controller had failed to
+  cost the extra pages when asking him, he replied verbatim: *"I dont care about
+  the number of pages in the pdf right now"* - quoted as typed: *"dont"* is his,
+  and he typed no full stop. **Nobody raises the page count with him again
+  unprompted.**
+- **THE QUALIFIER *"right now"* IS LOAD-BEARING.** This is a provisional setting
+  aside, the same shape as *"Leave the approved boards alone for bow"* on G47 -
+  he has put the question down, not answered it. An agent that reads this as
+  "page count is settled, the packet may grow freely" has inverted it: what he
+  declined to care about is **eleven pages today**, and a packet that grows
+  again is a new fact rather than this one.
+- **The measurement does not expire with the declination** (this section's
+  preamble). The packet is eleven pages, four more than before this plan, three
+  of them never put to him.
+- **What would settle it, if he returns to it** nothing is required of anyone
+  now. The trimmable page is the 16-row *What to populate, by build* table on
+  page 8, which the spec argues for carrying whole - *"He may change what is on
+  the bench while building, and a packet carrying one build's row would be wrong
+  rather than incomplete the moment he does"* - so trimming it is a decision
+  with a reason already standing against it. Moving the whole **Stand-in groups** section back
+  to the board's `wiring.md`, which already carries the same table, is the other
+  option and **would re-create G45** - which is why it is named here as an
+  option rather than offered as a remedy.
+
+---
+
+Open: a fix would settle these
+------------------------------
+
+### G63 - `boards/` has no `Makefile`, so the aggregate check walk is reachable only from the repository root, although `make/aggregate.mk` says every intermediate directory gets it
+
+`make/aggregate.mk` opens with the claim: *"The repository root and every
+intermediate directory land here, and they get the same two things: `check`,
+which walks down and checks every declared board beneath $(CURDIR), and
+`boards`, which lists them."* `boards/` is such a directory, it holds eleven
+declared boards, and it has no `Makefile`, so it gets neither:
+
+```
+$ make -C boards check
+make: *** No rule to make target `check'.  Stop.
+```
+
+**Nothing is going unchecked.** The repository root IS an aggregate and its
+`make check` walks all eleven boards, plus `typecheck` and the two
+repository-wide guards, so the root sweep is a superset of the one that is
+missing. What is missing is the narrower sweep the comment promises - "check the
+boards and not the rest" - and what an operator or an agent who reaches for it
+gets is `No rule to make target` rather than a walk or a refusal that explains
+itself.
+
+- **Found** 2026-10-18, during Task 7 of
+  `docs/superpowers/plans/2026-10-18-the-packet-shows-the-clusters.md`.
+  **Relayed first by an implementer of an earlier task of the same plan**, then
+  run by the writer.
+- **Evidence** the command and its refusal above, run in a clean tree;
+  `ls boards/Makefile` reports no such file; `find . -name Makefile` outside
+  `.tools/` lists eleven board Makefiles and the repository root's and no
+  `boards/` one; `make/aggregate.mk:1-8` for the claim.
+- **Verified** yes - run by the writer, not relayed, although the observation
+  reached the writer as a relay.
+- **Why it is open** whether `boards/` SHOULD be a sweep point is a small design
+  question nobody has decided, and the two honest fixes mean different things:
+  add the one-line `Makefile` and the directory becomes one, or correct the
+  comment and the root stays the only one. Choosing either silently settles the
+  question by accident, which is the thing this register exists to stop.
+- **What would settle it** either fix, done deliberately. **CRITERION:** no
+  directory that `make/aggregate.mk`'s comment claims gets `check` fails to have
+  it. **MECHANISM, untried:** give `boards/` the same one line every board
+  directory carries - the `include` of `make/perfboard.mk` - which routes to
+  `aggregate.mk` rather than `board.mk` because `boards/` declares no
+  `perfboard.json` of its own. Unmeasured: whether the recursive walk behaves
+  the same from one level down as from the root.
+
+### G64 - three bare `G4` references in `docs/stripboard/pipeline-verification.md` are CRITERIA clauses, which is exactly the collision this file's preamble forbids
+
+This file's own preamble: *"Every CRITERIA reference is written `CRITERIA G<n>`
+in full. A bare `G<n>` is this file's."* In
+`docs/stripboard/pipeline-verification.md` three references are bare - the
+section heading at `:3448` (*"Task 25 - admitting `HC5`, `HC8`, `HC9` and `HC10`
+to `make check` (`G4`)"*), and `:3452` and `:3531` - while a fourth at `:667` is
+written correctly as `CRITERIA G4`, which is what establishes that the bare ones
+mean the same clause rather than a register entry.
+
+**This register has no G4**: it had one, and it was deleted when it was settled,
+per this file's own rule. So a reader following a bare `G4` by the preamble's
+instruction looks in this file and finds nothing - which is the precise failure
+the preamble describes having already happened once.
+
+- **Found** 2026-10-18, Task 7 of
+  `docs/superpowers/plans/2026-10-18-the-packet-shows-the-clusters.md`, by the
+  grep for dangling register references that task was asked to run.
+- **Evidence** `git grep -n -E '\bG[0-9]+\b'` over the tree with this file
+  excluded, every hit checked against the headings present here. A check that
+  could have failed: the same grep reports `tools/guide/hatch.ts`, `render.ts`,
+  `packet.ts` and `tests/guide/clusters-view.test.ts` citing `G2` and `G17`,
+  both of which ARE present, so the scan distinguishes live references from
+  dangling ones rather than flagging everything.
+- **Verified** yes - grepped by the writer.
+- **Why it is open** it is a correction inside a 3,500-line verification
+  document that Task 7's file scope did not cover, and a correction there should
+  be made by somebody reading that document rather than by a grep reaching into
+  it. No other dangling reference was found outside the historical plan files,
+  which record what was true when they were written and several of which say so
+  explicitly.
+- **What would settle it** writing `CRITERIA G4` in full at those three sites.
+  **CRITERION:** every `G<n>` in a committed file either names a heading in this
+  file or carries the word `CRITERIA`.
 
 ### G58 - a stand-in group's parts are spread across the checklist's sections, and nothing on the printed page says what mark records a group's state
 
@@ -866,11 +1147,12 @@ better wording about that part does not remove the eyebrow.
   re-does it: `tools/guide/wire-links.ts` holds the packet's words,
   `lib/model/zero-ohm.ts` the one test, `wireLinkBody` in
   `tools/guide/part-shapes.ts` the drawn line, and a zero-ohm part's row lands
-  in the **Wire links** section. **That last placement is UNRATIFIED** - which
-  checklist section a wire link belongs in is a question about the printed
-  artifact, and the agent producing it may not answer it; the **Wire links**
-  section was chosen as the smallest claim available and is waiting on the
-  owner seeing a render. Level 1 changed no `.vrt` and no `wiring.md`
+  in the **Wire links** section. **That last placement is UNRATIFIED AND IS NOW
+  `G60`**, which is this clause promoted to an entry of its own on 2026-10-18 -
+  which checklist section a wire link belongs in is a question about the printed
+  page, it is answerable without touching a layout, and as a sub-clause of an
+  entry blocked by his *"Leave the approved boards alone for bow"* it was
+  invisible. **Ask G60, not here.** Level 1 changed no `.vrt` and no `wiring.md`
   (confirmed byte-identical by `shasum`).
 
   **LEVEL 2, the layout, and it is BLOCKED BY HIS OWN RULING.** The thing he
@@ -1043,49 +1325,98 @@ already proposed one of them. Neither is right:
   sheet.** That is a wrong default rather than a missing distinction, and it is
   why option 2 is weaker than it looks.
 
-### G45 - the printable packet carries none of the conditionality the wiring sheet carries, and never mentions the wiring sheet
+### G45 - the packet gives a panel control the value `landing pad`, so the pages never state the pot's value and taper, nor that one switch is a single pole of a gang shared with another board
 
-A Pultec section board is not populated the same way twice: most of its parts
-belong to stand-in groups for the sections that are absent, and `wiring.md`
-spends several screens on which group to populate in which build, on
-populating a group whole or not at all, and on the switch that is one pole of a
-gang shared with another board. `make guide` is the target `make help`
-describes under *"Build it on the bench"*, and its packet says none of it.
+**NARROWED 2026-10-18 TO THE HALF THAT SURVIVED THE CHANGE SPECCED TO SETTLE
+IT.** This entry read *"the printable packet carries none of the conditionality
+the wiring sheet carries, and never mentions the wiring sheet"*, and it named
+two acceptable fixes - print the conditionality into the packet, or have page
+one name `wiring.md` as a page you must have in your hand.
+`docs/superpowers/plans/2026-10-18-the-packet-shows-the-clusters.md` did
+**both**. Every claim the old entry made was re-read against the regenerated
+`boards/pultec-low-boost/guide/guide.html` and
+`boards/pultec-low-cut/guide/guide.html`, one at a time, before this rewrite:
 
-Read off the regenerated `boards/pultec-low-boost/guide/guide.html`: the
-checklist's **Resistors and trim-pots** and **Capacitors** sections list
-`SI_HI_BOOST_RV_HI_BOOST.ccw-wiper`, `SI_HI_CUT_C26`,
-`SI_LOW_CUT_RV_LO_CUT.ccw-wiper`, `SI_MID_R_MID_SHUNT` and the rest beside the
-board's own parts with nothing distinguishing them. The **Wire-to-board
-junctions** table gives each panel terminal a hole and a functional name but
-gives the control itself the value `landing pad`, so the pages never say the
-pot is 47k LOG or that the switch has six positions. Page one names
-`perfboard.json` and the circuit module as what the packet was built from and
-does not mention `wiring.md` at all.
+| the old claim | what the pages say now |
+| --- | --- |
+| the packet carries none of the sheet's conditionality | **FALSE.** Every part row carries a `Fit` cell (`always` / `only with the <section> group`); a **Stand-in groups** section prints a block per group with the sheet's own rules verbatim - *"Populate a group whole, or leave it empty"*, *"One group, one board"*; the 16-row *What to populate, by build* table is printed whole |
+| the packet never mentions the wiring sheet | **FALSE.** Page one's provenance block reads *"Wiring guide \| boards/pultec-low-boost/wiring.md - this packet does not replace it, read it alongside this one"*, and the stand-in section points at it twice more |
+| `SI_` parts are listed beside the board's own parts with nothing distinguishing them | **FALSE.** Eight rows on low-boost read `only with the <section> group` in the `Fit` column, across three sections |
+| building from the checklist alone populates every stand-in group in every build | **FALSE**, for that reason, and the section's first line is a blank for the build being built, so no group decision below it can even be read until it is filled in |
+| the junction table gives the control itself the value `landing pad`, so the pages never say the pot is 47k LOG or that the switch has six positions | **STILL TRUE - and it is now the whole of this entry** |
+| a builder fits a separate six-position switch per board where one shaft is meant to turn two | **STILL TRUE** |
 
-Building from the printed checklist alone therefore populates every stand-in
-group in every build - which `wiring.md` says puts two copies of a section in
-parallel and halves a value, *"at the bench a plausible wrong measurement, not
-an obvious fault"* - and fits a separate six-position switch per board where
-one shaft is meant to turn two.
+**THE RESIDUAL, measured on both regenerated packets.** `wiring.md` heads its
+panel sections *"RV_LO_BOOST - 47k LOG potentiometer"* and *"SW_LO_BOOST -
+6-position switch"*, and carries a paragraph the packet has no counterpart for:
 
-- **Found** 2026-10-17, this plan's Task 6, reading the printed packets.
-- **Evidence** the checklist sections and the junction table above, read off
-  both regenerated `guide.html` files; `grep -c` over each of them returns 0
-  for `stand-in`, `Populate`, `ganged`, `potentiometer`, `LOG`, `6-position`
-  and `stacking`; `boards/pultec-low-boost/wiring.md` **Panel parts** and
-  **Stand-in groups**; `make/board.mk:203` for what `guide` is advertised as.
-- **Verified** yes - read on both printed packets, against the committed
-  `wiring.md` of the same board.
-- **Why it is open** the packet and the wiring sheet were built by different
-  plans for different questions, and nothing has yet said whether the packet is
-  the whole bench document or one page of a set. That is the choice underneath:
-  print the conditionality into the packet, or have page one name `wiring.md`
-  as a page you must have in your hand.
-- **What would settle it** either fix, done deliberately. What is not
-  acceptable either way is the present state, where the one document headed
-  "build guide" is silently incomplete in a direction that builds the wrong
-  circuit.
+> *"**Ganged (`lo_freq`).** This is one pole of a two-pole switch shared with
+> another board - not a switch of its own. Both poles turn together on one
+> shaft, and fitting two separate switches makes two controls out of what should
+> be one."*
+
+The packet gives both controls the Value cell `landing pad`, twenty rows of it
+in the **Wire-to-board junctions** table on each low board. That cell is not
+wrong about the BOARD - a landing pad is what the board has, and the Mounting
+cell says *"n/a: a landing pad has no body to mount"* - but it is the board's
+fact standing in the column where the control's own specification would go, and
+`LOG`, `potentiometer`, `6-position`, `gang` and `stacking` appear nowhere in
+either packet. The switch's six positions do reach the page as six named pads
+(`LO BOOST 20Hz` ... `LO BOOST 200Hz`), so a reader can count them; nothing
+says they are one switch's positions, and nothing says the switch is half of
+another board's.
+
+So a builder holding only the packet can wire every panel terminal into the
+right hole and still not know which part to buy for the panel, or that one of
+this board's two selectors is a pole of somebody else's switch.
+
+**WHY NAMING THE SHEET DOES NOT CLOSE THIS, although the old entry's "what
+would settle it" could be read as saying it does.** Page one now names
+`wiring.md`, so the information is one document away rather than nowhere, and
+that improvement is why the rest of this entry is gone. It does not cover the
+gang: fitting two six-position switches is a wrong build that the packet gives a
+reader no cue to question, and the apparatus this plan added exists precisely to
+stop that class of error for the stand-in groups - it stops it by putting the
+condition on the row, and this one is left to a cross-reference.
+
+**NOT G1, which is adjacent and was checked before this rewrite.** G1 is that
+two representations of a panel control exist - a header PART and a pad path -
+and nothing chooses between them; its own last bullet records the two
+vocabularies, `RV_LO_BOOST | landing pad | F7 LO BOOST wiper` against
+`wiring.md`'s pad-ordinal table. This entry is about information in NEITHER
+representation: the part's specification and the gang. Settling G1 would not
+print `47k LOG`.
+
+- **Found** 2026-10-17, the previous plan's Task 6, reading the printed packets;
+  **narrowed to this residual 2026-10-18**, Task 7 of the packet plan, by
+  re-reading both regenerated packets claim by claim rather than by assuming the
+  change that cited this entry had settled it.
+- **Evidence** the table above, read off both regenerated `guide.html` files;
+  `grep -o` over each returns 20 for `landing pad` and 0 for each of `LOG`,
+  `potentiometer`, `6-position`, `ganged`, `gang` and `stacking`, while
+  `boards/pultec-low-boost/wiring.md:35`, `:45` and `:57` carry all of it. A
+  check that could have failed: the same greps return 9 for `stand-in`, 5 for
+  `populate`, 12 for `only with the` and 1 for `wiring.md`, which is how the
+  four dead claims above were established as dead.
+- **Verified** yes - both packets regenerated by the writer
+  (`make -C boards/<board> guide`) and read. The regeneration reproduced
+  `guide.html` and all four SVGs byte-for-byte against what was already on
+  disk, so what was read is what the generator produces.
+- **Why it is open** what a board document should say about a part that is not
+  on the board is a question about the artifact AND about its scope - the packet
+  is a board sheet and the panel is not the board - and whether the packet
+  absorbs the panel specification or keeps pointing at the sheet is the owner's,
+  who wrote the sheet this would duplicate. It is also G44's shape: a fact
+  correct for one artifact (`landing pad`, true of the board) printed in a
+  column where a different artifact's fact belongs.
+- **What would settle it** either the packet prints the panel part's
+  specification and the gang warning beside its terminals, or page one's naming
+  of `wiring.md` is ruled sufficient for panel parts and that ruling is recorded
+  here. **CRITERION: a builder working from the packet does not fit two
+  six-position switches where one shaft is meant to turn two.** A pointer at
+  another document CAN meet that criterion, since it is met by a reader who
+  follows the pointer - which is why this wants a ruling rather than a fix an
+  agent picks.
 
 ### G40 - what a coil's pads should say on a build sheet was decided by an agent, and the entry recording it as unconfirmed was deleted with the gap it sat in
 
