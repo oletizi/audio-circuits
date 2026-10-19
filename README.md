@@ -301,4 +301,11 @@ tidied away. The two that matter most to anyone building this:
   electrical content still stands.
 - `docs/decisions/` — recorded architecture decisions, including why tscircuit
   was dropped
+- `docs/schematic/` — the research the schematic-generation program rests on:
+  what the published standards say about readable schematics, what already
+  exists in agent and programmatic schematic generation, and how one working
+  generator actually arrived at drawings somebody accepted.
+  **`docs/schematic/README.md` is the index, and it records how far each of the
+  three can be trusted** — they differ sharply, and the weakest verified nothing
+  by running it.
 - `docs/superpowers/specs/` — design documents for individual changes
