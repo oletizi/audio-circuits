@@ -162,7 +162,12 @@ test("a header's Value names what goes in its holes, its pin count read from the
   expect(junctions?.rows.map((row) => row[1])).toEqual(["3-pin header", "3-pin header (25K pot, off-board)"])
 })
 
-test("the header, then the three images, then the checklist", () => {
+// THREE images because this fixture declares no stand-in groups, not because a
+// packet has three: a board WITH a `ScaffoldDoc` carries a fourth, the clusters
+// view, and `tests/guide/clusters-view.test.ts` plus the packet delivery test
+// cover that one. The title said "the three images" while four existed, which
+// reads as a claim about every packet rather than about this fixture.
+test("the header, then the three images of a board with no stand-in groups, then the checklist", () => {
   const html = guideHtml()
   const at = (needle: string): number => {
     const index = html.indexOf(needle)
