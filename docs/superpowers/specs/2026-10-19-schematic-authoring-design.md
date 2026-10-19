@@ -2,7 +2,7 @@
 title: Schematic authoring - the generator, its two seams, and what grades it
 date: 2026-10-19
 status: draft-for-owner-review
-revision: revised 2026-10-19 against an independent third-party review
+revision: revision 1, 2026-10-19, against an independent third-party review; revision 2, 2026-10-19, against two measurement spikes
 parent: ./2026-10-08-agent-authored-boards-design.md
 ---
 
@@ -70,6 +70,45 @@ is evidence and not an authority:
 **And one place the review strengthened a finding the reviewer had half of** -
 the re-validation requirement in §1.4. That is the controller's addition, marked
 as such there.
+
+Revision 2, 2026-10-19: two measurement spikes, and what they moved
+---------------------------------------------------------------------
+
+**§6's spike ran. Then a second spike ran against the question the first one
+left open about itself.** This section records what they moved, for the same
+reason Revision 1 has one: this repository shows a corrected claim as corrected.
+
+- [`../../schematic/elk-spike.md`](../../schematic/elk-spike.md) - **five real
+  repository circuits, laid out WHOLE and flat**, through this repository's own
+  IR rather than probes reconstructed in a tool's input format;
+- [`../../schematic/elk-block-spike.md`](../../schematic/elk-block-spike.md) -
+  **eighteen DECLARED blocks** from the same repository, 1 to 28 parts, taken
+  from `include()`, `OWNERSHIP`/`partitionReference()`, `LEGS` and
+  `allStandIns()` and from nothing an agent chose, **plus both parents as a
+  paired control.**
+
+**Neither spike recommends an architecture, and neither is treated here as
+approval of one.** Both say so in terms. Their findings are registered as
+`docs/known-gaps.md` **G94-G103**, and that register is where the measurements
+and their caveats live; this section records only what they changed in this
+document.
+
+| # | What was measured | How revision 2 resolves it | Where |
+| --- | --- | --- | --- |
+| 1 | **The block seam has direct evidence for the first time.** The same 37-part circuit, whole against its three declared blocks, and the 76-part reference going from REFUSED to five drawings | §1.1 carries the paired control **and its mechanism**, which is what makes it an argument rather than a lucky number | §1.1 |
+| 2 | **G94.** A block that reaches the backend and makes it THROW is a state the source's result type cannot express, and §5.3 (answered the same day) shows that type is two-valued with 30 call sites funnelling into it | §1.3's fourth value is restated as **a code change, not a wording change**: what the widened result must distinguish, and that every template reporting a mismatch has to say which kind | §1.3 |
+| 3 | **G95.** A drawing is a function of cell ORDER - and that instability is **absent below ~9 cells** and present from 13 up | The manifest and the baseline hash **the serialized layout input**, not the section `Network`'s content, **with the block-scale refinement stated** | §2.1, §3.3 |
+| 4 | **G101.** Block size has a **ceiling near 9 parts** and a **floor near 4**, and the two bounds are close together | **NEW §1.8.** Block size is a design parameter with two stated bounds. **This spec does not pick a number** | §1.8 |
+| 5 | **G97.** Congruence of repeated sub-circuits **FLIPPED** between the two scales: flat it spanned -912 to +564, at block scale it is congruent to the pixel | §3.4's congruence criterion is **supported at block scale and was not at flat scale**, with the qualification that broke it | §3.4 |
+| 6 | **Neither spike had a template in the loop, and neither measured a block in CONTEXT** | **NEW §5.6**, stated as the largest open assumption in the evidence - and as **a reason M1 exists**, not a defect in the plan | §5.6 |
+
+**What the spikes did NOT change.** §1.1's withdrawal stands and is now
+over-determined: on whole circuits **not one of fourteen runs beat the
+representative probe on bends per edge** (G96). At block scale 6 of 18 blocks
+beat it - **and the same block drawings still put interface ports mid-sheet,
+leave capacitor banks out of frequency order, and produce 4.7:1 and 6.6:1
+ribbons.** The second spike's own summary is the honest form of this:
+***"block scale removes the catastrophe and leaves the complaint."***
 
 What this builds, and what says it is done
 -------------------------------------------
@@ -182,6 +221,49 @@ cause.** Terminal placement and topology matter too, and nothing measured so far
 separates them. **The spike that would is §6's next step, and it is not a
 precondition already met.**
 
+#### Weakened again in revision 2 - and the better news is the paired control
+
+**The spike ran, and on real circuits the picture is worse than this section
+assumed even after the withdrawal above.** `[RAN]`, `docs/schematic/elk-spike.md`
+§2, registered as `docs/known-gaps.md` **G96**: across fourteen successful
+whole-circuit runs, inter-net crossings reach **195 on a 24-part circuit**
+against the probe's 15, aspect reaches **5.19:1**, and **not one of the fourteen
+beats the probe's 1.72 bends per edge.** **The representative probe was the best
+case, not a typical one.**
+
+**AND THEN THE PAIRED CONTROL, WHICH IS THE STRONGEST EVIDENCE FOR THIS
+ARCHITECTURE THAT EXISTS.** `[RAN]`, `docs/schematic/elk-block-spike.md` §4,
+registered as **G100**. Same circuit, same converter, same policy, same skin;
+the only difference is whether ELK saw it whole or one declared block at a time:
+
+| `optical-compressor`, `v-bare` | parts | inter-net crossings | bends/edge | worst aspect | wire length |
+| --- | --- | --- | --- | --- | --- |
+| **drawn whole** | 37 | **293** | **3.18** | **4.05:1** | **159 967** |
+| **drawn as its three declared blocks** | 37 | **48** | **2.70** | **3.11:1** | **35 070** |
+
+**6.1x fewer crossings, 4.6x less wire, and the worst block's aspect is better
+than the whole's.** `v-rails` gives the same shape. **And the 76-part
+`THREE_BAND_REFERENCE` goes from REFUSED under both vertical policies to five
+drawings that all complete** (G94).
+
+**THE MECHANISM, STATED, BECAUSE IT IS WHY THIS IS NOT A LUCKY RESULT.** **The
+three blocks carry FEWER EDGES THAN THE WHOLE - 96 against 139.** The parent's
+maximum net degree is 19 and no block's exceeds 7, so **a ground fanning to
+nineteen pins across one sheet becomes four smaller fans, and the edges that
+disappear are the ones that were crossing everything.** Decomposition is not ELK
+routing the same graph better; it is ELK handed a smaller graph - which is the
+same variable §1.1 opens with, net degree, acting through the seam rather than
+against it.
+
+**Three limits on that result, so the seam is not oversold.** It is **not
+uniformly a win per block** - under `h-rails` the 28-part `pultec-mid` scores
+worse than its own parent, and the gain is in the totals and in whether the
+drawing completes at all. Each block was drawn **on its own canvas**, so the
+totals add crossings across three sheets and **seam B would add its own**
+(untested, §5.2). And a block is still not a good drawing: see revision 2's
+closing paragraph above, and §1.8 for the size at which the measurements stop
+being about the block at all.
+
 ### 1.2 What we take from `netlistsvg` and what we do not
 
 `netlistsvg` (MIT) is the proof that ELK can be driven to schematic-shaped
@@ -243,6 +325,53 @@ there is no defect to hide; it applies with full force to `generation-failed`.
 not: `blocks.ts` asks whether a template realises the IR subgraph, which is a
 property of the subgraph and the template. **Selection is decided before
 anything is drawn. It is never degradation after something failed.**
+
+#### Revision 2: the fourth value is a CODE change, not a wording change
+
+**Revision 1 made selection three-valued in this document. Two measurements
+since then make it an interface widening in the ported source.**
+
+**§5.3, answered 2026-10-19, read the source `[CODE]`:** a template is
+`realise(g: BlockSubgraph): RealiseResult`, and **`RealiseResult` is
+two-valued** - `{ ok: true, layout }` or `{ ok: false, reason: string }`. `[RAN]`
+**30 `mismatch(...)` call sites across the seven templates funnel into that one
+`ok: false` channel**, and the caller cannot tell *"no template applies to this
+subgraph"* from *"a template applied and failed"*.
+
+**And `docs/known-gaps.md` G94 is a state that type cannot express at all: a
+`realise` that RAISES.** ELK throws `IllegalStateException` on an op-amp
+self-loop with horizontal passives on its net - reproduced on `opamp-buffer`
+flat and on the 12-part declared block `oc-audio`, and on the 76-part Pultec
+reference under **both** vertical policies, where all five of its declared
+sections lay out. **This is reachable from house style**, not from an exotic
+input: the four self-loop cells on that reference are strapped pot wipers that
+`circuits/pultec/electrical/three-band.ts` and
+`circuits/transistor-preamp/parts.ts` both declare deliberately.
+
+**CRITERION: the widened result distinguishes five outcomes, and a caller can
+act differently on each:**
+
+| outcome | what the caller does |
+| --- | --- |
+| realised a layout | emit it; the clearance and wire-safety checks grade it |
+| **no template applies** to this subgraph | route the block through ELK (§1.3's `not-applicable`) |
+| a template applied and produced **invalid electrical geometry** | refuse; report a template defect, naming the template and the IR connection |
+| a template applied and **violated a clearance constraint** | refuse; report the violated constraint, the obstacle pair and the block |
+| **the backend did not return a result at all** - it raised, or failed to terminate | refuse, and say which backend and on what input. **This is the one the type has no room for** |
+
+**AND EVERY TEMPLATE REPORTING A MISMATCH HAS TO SAY WHICH KIND IT IS.** A
+widened type with 30 call sites still reporting an undifferentiated `reason`
+string buys nothing: the whole point of §1.3 is that the caller behaves
+differently on *not-applicable* than on *generation-failed*, and today the
+caller cannot tell. **That is 30 edits in ported code, and it belongs in M1
+beside the adapter**, which is where §5.3 puts it.
+
+**What this does NOT settle:** whether §1.5's orientation rule library can be
+required never to emit the crashing shape. **G94's own suggested mechanism -
+constraining laterals on a self-loop net to vertical - is measured wrong**: on
+`oc-audio` it leaves 32 of 128 assignments still failing. **A defined outcome
+when the backend throws is required either way**, and it is required because a
+rule that prevented the shape would also have to refuse a strapped wiper.
 
 #### Does this contradict the parent? No - and saying why matters, because the parent wins
 
@@ -460,6 +589,57 @@ the middle of the sheet.
 **What decides a block's path must not be an agent's judgement.** §1.3 is the
 rule, and it is mechanical.
 
+### 1.8 Block size is a design parameter, and it has a floor as well as a ceiling
+
+**New in revision 2, and the spec previously had nowhere for it.** §1.1's paired
+control says a block draws better than its parent. **It does not follow that
+smaller is better, and the measurements say it stops being true twice.**
+
+`[RAN]` `docs/schematic/elk-block-spike.md` §9 and §7, over 18 declared blocks
+of 1 to 28 parts. Registered as `docs/known-gaps.md` **G101**, with its caveats.
+
+**THE CEILING - near 9 parts, from two independent measures that agree.**
+
+- **inter-net crossings are ZERO on every block of 8 parts or fewer**, then 4, 5,
+  14, 16, 20, 28, 37;
+- **crossing count is invariant under declaration-order shuffling at 9 cells and
+  moves 22-29 at 13** (G95, and §2.1 and §3.3 below).
+
+**Below it, a block's measured quality is a property of the BLOCK. Above it, the
+measure is partly a property of the order somebody typed the components in.**
+It is **not** the size at which a drawing becomes good - a 3-part block drew with
+zero crossings, a congruent layout and three legibility defects a reader trips
+on.
+
+**THE FLOOR - near 4 parts, because a boundary is not free.** `[CODE]` A declared
+port becomes a **cell**: `netlistsvg` emits a 30x20 `inputExt` glyph and ELK lays
+it out like any other node. `[RAN]` **Port glyphs are 10-67 % of a block's
+cells**, a **1-part block's drawing is two-thirds boundary**, and **port edges
+carry more bends per edge than internal edges on every one of the 8 blocks of 8
+parts or more** - up to 1.5x. Cutting finer **trades crossings for boundary**,
+and label-past-the-canvas-edge defects rise with it (26 of 53 block drawings
+against 5 of 14 whole-circuit drawings), because the canvas shrinks and the
+component ids do not.
+
+**THE TWO BOUNDS ARE CLOSE TOGETHER, AND THAT IS THE POINT OF THIS SECTION.**
+The size at which a block draws predictably is near the size at which the
+drawing is mostly boundary. **A plan that picks a block size is choosing inside a
+narrow window, and it should know that before it starts rather than discover it.**
+
+**CRITERION: a block-size decision names both bounds and says which cost it is
+paying.** Above the ceiling the measured quality is not a property of the
+circuit, so §3.3's baseline is measuring something else; below the floor most of
+the drawing is interface glyphs, and §1.6's cross-sheet mechanism inherits the
+cost.
+
+**THIS SPEC DOES NOT PICK A NUMBER, and that is deliberate.** The window comes
+from **18 blocks out of two parents, both unusual** - a 76-part passive EQ and a
+37-part compressor with two dual op-amps - **the repository declares no block
+above 28 parts**, and **neither spike had a template in the loop** (§5.6), so
+nothing measured says where the bounds sit once templates draw a block's
+neighbours. **Choosing within the window is a decision the plan needs and this
+document does not make.**
+
 2. The derivation chain, and where each link is checked
 ---------------------------------------------------------
 
@@ -541,6 +721,8 @@ of:**
 - the canonical schematic's **netlist export** (the authority for a
   schematic-first circuit);
 - the **section network** the generator consumed;
+- **the SERIALIZED LAYOUT INPUT handed to the layout backend, per block**
+  - added in revision 2, see below;
 - the **template library** version and the **rule library** version that graded
   it;
 - the **generated schematic** itself.
@@ -548,6 +730,32 @@ of:**
 **CRITERION: a gate that reports a pass names the manifest it passed against,
 and a manifest whose input hashes do not match the files on disk fails rather
 than regenerating silently.**
+
+#### Revision 2: it must hash the SERIALIZED LAYOUT INPUT, not the network's content
+
+**Measured, `docs/known-gaps.md` G95.** `[RAN]` Three shuffles of the same
+netlist - **same components, same nets, same partition** - produce **three
+distinct drawings out of three on 4 of 4 circuits**, none matching declaration
+order, and move inter-net crossings by up to **2.1x** at block scale and **3x**
+flat. **Reordering the `.capacitor(...)` calls in a circuit file would change
+every generated schematic.**
+
+**So a hash over the section `Network`'s CONTENT would not detect the change
+that moved the drawing.** A manifest built that way would certify two different
+drawings under one input hash, which is exactly the failure the manifest exists
+to prevent. **CRITERION: the manifest hashes the exact bytes handed to the
+layout backend for each block, in addition to the network they were derived
+from.** Determinism for a fixed input holds - 14 of 14 inputs gave one distinct
+output over three runs - so that hash is a stable key; the network's content is
+not.
+
+**THE BLOCK-SCALE REFINEMENT, and it is why §1.8 exists.** `[RAN]` That
+instability is **absent below about 9 cells** - crossing counts are invariant
+over four orders at 3, 4, 8 and 9 cells - and **present from 13 cells up**,
+moving 22-29. **A sufficiently small block has a measured quality that is a
+property of the block; a large one does not.** The drawing itself still changes
+at every size, so **this refines nothing about the hash and everything about
+what the numbers mean** (§3.3).
 
 This is not a new discipline here, which is the argument for it: the parent's
 `run.json` records hashes of the source board, the intent, the rules, the policy
@@ -695,6 +903,24 @@ the argument for extending it rather than building a parallel registry:
 generator, scoped to the artifact's bytes, and a gate cites the entry it passed
 against.**
 
+**REVISION 2 ADDS WHICH BYTES, AND IT IS NOT THE NETWORK'S.** `docs/known-gaps.md`
+**G95**: the same components, nets and partition in a different cell order give
+three distinct drawings out of three and move crossings by up to **2.1x**. **So a
+baseline scoped to the section `Network`'s content would compare numbers that are
+not properties of the circuit** - a later run could regress every measure with no
+change to anything the baseline names. **CRITERION: a baseline entry is scoped to
+the same SERIALIZED LAYOUT INPUT the manifest hashes (§2.1), and an entry whose
+serialization hash has moved is stale rather than passed.**
+
+**And the block-scale refinement, which decides whether a baseline is worth
+holding at all for a given block.** `[RAN]` That order-instability is **absent
+below about 9 cells and present from 13 up** (§1.8). **A baseline over blocks
+small enough that the measure does not move under reordering is a baseline about
+the circuit. Over large blocks it is a baseline about a serialization**, which is
+legitimate and much weaker, and a gate citing one must not be read as the
+former. **This is a second, independent reason block size is a design parameter
+and not an implementation detail.**
+
 **MECHANISM, and it is this spec's and not a measurement: extend
 `stripboard/render-approvals.json`'s shape to schematic renders.** Whether that
 is a new registry with the same twelve-field shape, a `subjectKind` discriminator
@@ -718,6 +944,46 @@ A real asset and the reason the general-purpose claim is testable here:
 
 **Elsewhere these are judgement calls. Here they are properties of the model.**
 Registered as an asset at `docs/known-gaps.md` **G75**.
+
+#### Revision 2: congruence FLIPPED between the two scales, and that supports this section
+
+**Both the first two criteria were measured, and the second one changed its
+answer.** `docs/known-gaps.md` **G97**.
+
+**Flat, it answered no.** `[RAN]` Four structurally identical declared bias legs
+inside one 32-part drawing gave `jumper -> trim` offsets spanning **-912 to
++564**, with one leg running the opposite direction from the other three.
+
+**At block scale, laid out alone, the same four legs draw CONGRUENTLY.** `[RAN]`
+Identical vertical offsets, identical internal `floor -> trim` vector, identical
+starting corner - and the **one** x difference is predicted exactly by
+**`6 * len(component id) + 5`**, giving 107 / 125 / 119 / 119 for ids of length
+17 / 20 / 19 / 19, **4 of 4 to the pixel** (6 px per character is the skin's
+0.6 em at 10 px monospace). **The blocks are congruent and the drawn width of
+the component's NAME is what separates them.**
+
+**So this section's claim that congruence can be made objective here is
+SUPPORTED at block scale and was NOT at flat scale.** That is a result about the
+architecture, not only about the criterion: **the scale at which the generator
+hands work to the backend is the scale at which one of §3.4's three criteria
+becomes measurable.**
+
+**AND THE QUALIFICATION, WHICH A TEMPLATE DESIGNER NEEDS MORE THAN THE RESULT.**
+`[RAN]` Under the rail policy the congruence **breaks**: one leg runs from `VCC`
+and gets a `vcc` glyph, its twin runs from `COLLECTOR` and gets none, and they
+land at (91, 42) on a 364x210 canvas against (81, 22) on 390x190, with the
+internal vector splitting +54 / +44. **Adding a rail symbol to one of two
+otherwise identical blocks stops them drawing alike.** **CRITERION: congruence is
+measured with the rail glyphs the two instances would actually get** - what broke
+it here was the glyph, not the topology, and a check run without them would pass
+and mean nothing.
+
+**The disjointness criterion does not get an answer this way - it gets
+dissolved.** Inside a single block, disjointness is trivially satisfied, so a
+block-scale measurement can neither pass nor fail it. **It stands measured only
+at flat scale, where it answers no** (67 % of canvas, 11 non-members inside the
+group's box), and whatever mechanism composes blocks onto a sheet - seam B,
+§5.2 - is what it will have to be measured against.
 
 ### 3.5 And one gate this project must build better than its source
 
@@ -901,6 +1167,47 @@ shunt resistors and lose both the group identity and the population
 condition"* - the same failure one level up. A uniform template list is not a
 goal.
 
+### 5.6 NO TEMPLATE WAS IN THE LOOP IN EITHER SPIKE - the largest assumption in the evidence
+
+**New in revision 2, and it is stated here rather than buried in a caveat
+because every number in §1.1, §1.8, §3.3 and §3.4 carries it.**
+
+**Seam A sends ELK the subgraph that is left over AFTER templates have drawn its
+neighbours.** Both spikes measured **a block in isolation**: its own canvas, no
+neighbourhood, no template-produced geometry anywhere on the sheet, every port a
+free cell ELK could place where it liked. **Those are different problems, and
+nothing measured so far says by how much.**
+
+What that leaves uncertain, concretely:
+
+- **a block's ports are fixed in seam A and were free in both spikes.** §7 of the
+  block spike measured ELK putting interface ports in the interior of the sheet -
+  `input` at 0.02 and `hi_boost_out` at 0.06 of canvas width, adjacent at the far
+  left. **In seam A a neighbouring template has already decided where that net
+  arrives**, so both the measured defect and the measured boundary cost may move;
+- **§1.8's two bounds are bounds on an isolated block.** The ceiling is about
+  crossings and order-sensitivity within the subgraph; the floor is about port
+  glyphs that a real neighbourhood may not emit at all;
+- **§3.4's congruence result held for two blocks drawn alone and broke when one
+  of them gained a rail glyph.** A template in the loop is a much larger
+  perturbation than a rail glyph.
+
+**THIS GAP CANNOT BE CLOSED BEFORE M1, AND THAT IS A REASON M1 EXISTS RATHER
+THAN A DEFECT IN THE PLAN.** Measuring a block in context requires templates that
+draw its neighbours in the same coordinate system - which is **M1's deliverable**
+(`schgen` ported, ELK integrated at both seams, the §1.4 adapter written) and
+**M1's acceptance** (existing-template parity, the seven ported templates drawing
+this repository's circuits). **The spikes measured what could be measured without
+the port, and the thing they could not measure is the port.** A plan that tries to
+settle it first is asking for the milestone in the wrong order; a plan that
+forgets it is asking M1 to inherit numbers that were never about M1's pipeline.
+
+**CRITERION: the measurements in §1.1, §1.8, §3.3 and §3.4 are RE-TAKEN at M1
+with templates in the loop, and each is reported as either reproduced or moved.**
+They are the before-measurement and nothing else. **MECHANISM, untested:** the
+same 18 declared blocks, which exist and are enumerated in the block spike's §1,
+re-run through the ported pipeline.
+
 6. Milestones, and the spike that comes first
 -----------------------------------------------
 
@@ -913,6 +1220,15 @@ own four-milestone sequence for T2 did not separate them either.
 representativeness spike.** The owner has scheduled it **after** this revision,
 so it is recorded here as the next piece of work rather than as evidence this
 spec rests on.
+
+> **RUN, 2026-10-19 - and then run a second time at a different scale.**
+> `docs/schematic/elk-spike.md` covers all three structures named below, on real
+> repository circuits, and records electrical correctness, routing success,
+> crossings, bends, page extent and determinism as asked.
+> `docs/schematic/elk-block-spike.md` then re-ran the question at **declared
+> block** scale, which is what seam A actually hands ELK. **Revision 2 above
+> records what the two moved. Neither recommends an architecture, and §5.6
+> states the assumption both of them left standing.**
 
 **What it tests: at least three representative structures**, using **real
 repository circuit fragments** rather than probes reconstructed in a tool's own
@@ -967,4 +1283,10 @@ Decisions
 | T2 splits into M1 (port, ELK, contracts, existing-template parity) and M2 (idioms, then five Pultec sections) | this spec, revision 1 | "templates out of scope" and "five Pultec schematics" cannot both be one milestone's acceptance |
 | The stand-in group and the junction bus may be sheet-level composition constructs, and a cross-board gang a cross-sheet documentation requirement | reviewer, revision 1 | *"Don't force all three through the same abstraction merely to make the template list uniform."* |
 | Designing the five new templates is NOT in this spec | this spec | they are design decisions; a plan argues from a spec and does not invent one |
+| The block seam's argument is the paired control **plus its mechanism**: the blocks carry fewer edges than the whole, 96 against 139 | this spec, revision 2, from measurement | a 6.1x crossing reduction with no stated mechanism is a number somebody will later explain away; a ground of degree 19 becoming four fans of at most 7 is a reason |
+| §1.3's fourth value is an **interface widening in ported code**, and all 30 `mismatch(...)` sites must say which kind of mismatch they are | this spec, revision 2 | §5.3 read the source: `RealiseResult` is two-valued, and G94's raise is a state it cannot express at all |
+| The manifest and the readability baseline hash the **serialized layout input**, not the section `Network`'s content | this spec, revision 2, from measurement | G95: same components, nets and partition in a different order give three distinct drawings out of three and move crossings up to 2.1x |
+| **Block size is a design parameter with a stated ceiling (~9 parts) and floor (~4 parts), and this spec does not pick a number** | this spec, revision 2 | both bounds are measured, they are close together, and choosing inside the window is a plan decision; the figures come from 18 blocks out of two unusual parents with no template in the loop |
+| §3.4's congruence criterion is supported at **block** scale and was not at **flat** scale, and congruence is measured with the rail glyphs the instances would actually get | this spec, revision 2, from measurement | G97 flipped between the two scales, and what broke it at block scale was a rail glyph on one of two identical blocks, not the topology |
+| **Neither spike had a template in the loop**; the measurements are re-taken at M1 and reported as reproduced or moved | this spec, revision 2 | seam A hands ELK a block in CONTEXT and both spikes measured one in isolation; closing that needs the templates M1 ports, so it is a reason M1 exists rather than a defect in the plan |
 </content>
