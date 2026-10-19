@@ -54,7 +54,8 @@ import { createOccupied } from "./placement.ts"
  * which is what the packet's fourth image is: the same drawing with a patch of
  * one of four hatches under each part that stands in for an absent section, and
  * a legend naming the groups. See `./render-clusters.ts` for how a patch is
- * made and `./hatch.ts` for the fills, which are an UNRATIFIED candidate.
+ * made and `./hatch.ts` for the fills, which the owner ratified on 2026-10-18
+ * with a weakness he was told about first.
  *
  * The renderer knows nothing about circuits: what each part is called
  * (`labels`), what each pad's wire is (`padLabels`), which pins leave the

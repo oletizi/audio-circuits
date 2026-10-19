@@ -13,11 +13,14 @@
  * the checklist's own `Fit` column.
  *
  * **THE HATCH GEOMETRIES THEMSELVES ARE NOT ASSERTED AND MUST NOT BE.** Which
- * hatch a group gets is `tools/guide/hatch.ts`'s candidate, unratified by the
- * owner (*"hatching - I don't know until i see it"*, 2026-10-18), and a test
- * that spelled out "45 degree lines at 5 units" would make this file the
- * acceptance criteria for an artifact an agent produced - the one thing
- * `CLAUDE.md` forbids outright. What is asserted is that the assignment is a
+ * hatch a group gets is `tools/guide/hatch.ts`'s, and a test that spelled out
+ * "45 degree lines at 5 units" would make this file the acceptance criteria for
+ * an artifact an agent produced - the one thing `CLAUDE.md` forbids outright.
+ * **That the owner has since ratified those fills (2026-10-18, *"the hatching
+ * looks good."*) does not license asserting them here**, and the reason is the
+ * same one: his ruling is the criterion, this file is not, and a test pinned to
+ * a geometry would silently become the thing a later change is measured
+ * against. What is asserted is that the assignment is a
  * BIJECTION onto whatever styles that file holds, and that the legend names
  * the same hatch the parts carry. Change the fills there and this file still
  * passes; mis-map one part and it fails.

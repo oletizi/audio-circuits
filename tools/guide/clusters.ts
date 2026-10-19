@@ -27,9 +27,10 @@
  * marking naming one would promise a hatch that no sheet has - which is a gap
  * that looks like a part in the board's own circuit.
  *
- * THE HATCHES THEMSELVES ARE `./hatch.ts`'s, and they are UNRATIFIED - see that
- * file's comment. Nothing here depends on what one looks like: a group takes
- * the style at its own index, and that is the whole assignment rule.
+ * THE HATCHES THEMSELVES ARE `./hatch.ts`'s, ratified by the owner on
+ * 2026-10-18 with a disclosed weakness - read that file's comment before
+ * changing one. Nothing here depends on what one looks like: a group takes the
+ * style at its own index, and that is the whole assignment rule.
  */
 import type { ScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 import type { BoardDump } from "./dump.ts"

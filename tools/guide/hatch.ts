@@ -1,31 +1,56 @@
 /**
- * THE HATCH FILLS THE STAND-IN-GROUPS IMAGE USES - **AND THEY ARE UNRATIFIED.**
+ * THE HATCH FILLS THE STAND-IN-GROUPS IMAGE USES - **RATIFIED BY THE OWNER,
+ * 2026-10-18, AND RATIFIED WITH A KNOWN WEAKNESS HE WAS TOLD ABOUT FIRST.**
  *
- * The owner, asked to approve a hatch styling before it existed (2026-10-18):
- * *"hatching - I don't know until i see it"*. That is the correct answer and it
- * governs this file: what is here is a CANDIDATE for him to look at on paper,
- * not a settled choice, and nothing in this repository - no spec, no plan, no
- * test - states which geometries the packet ships with. `CLAUDE.md`'s invariant
- * is that an agent may never author the acceptance criteria for the artifact it
- * produces, and the fills are the one purely visual decision in this image, so
- * they are his.
+ * He was asked to approve a hatch styling before it existed and rightly
+ * declined to: *"hatching - I don't know until i see it"*. So the fills were
+ * built as a candidate, rendered, and put in front of him; he read page 5 of
+ * `boards/pultec-low-boost/guide/guide.pdf` and ruled, verbatim: **_"the
+ * hatching looks good."_** `CLAUDE.md`'s invariant is that an agent may never
+ * author the acceptance criteria for the artifact it produces, and the fills
+ * are the one purely visual decision in this image, so they were his to settle
+ * and are now settled.
  *
- * **THIS FILE IS THE ONE PLACE TO EDIT WHEN HE RULES.** Everything else about
- * the image - which part belongs to which group, the legend, the checks that
- * the two agree - is independent of what these patterns look like:
+ * **THE DISCLOSURE TRAVELS WITH THE RULING, because the ruling is not legible
+ * without it.** Before he ruled he was told plainly, and in these terms, that
+ * the two diagonals **do not separate at a glance at printed size**: `/` is the
+ * first group's fill and `\` the second's - hi-boost and hi-cut on both low
+ * boards - and both read as striped grey from arm's length, so which way the
+ * lines lean is legible on a deliberate look and not before. **The worst case
+ * is a part standing on end**, whose white body covers the middle of its patch
+ * and leaves only a margin of hatch showing, and that margin carries two or
+ * three lines. He was also told that the lattice and the stipple had to be
+ * COARSENED to the spacings below after a first attempt at which both read as
+ * one uniform fine grey and the two adjacent groups merged into a single
+ * textured area. **He accepted the fills with all of that known.**
+ *
+ * **SO A CHANGE TO THESE GEOMETRIES NEEDS A FRESH RULING FROM HIM, NOT AN
+ * AGENT'S JUDGEMENT.** The weak diagonal pair is a measured property of a
+ * ratified artifact, not an open defect, and the reason to say so here is the
+ * specific failure it prevents: a later reader notices the pair, assumes nobody
+ * checked at printed size, and either re-opens a settled question with him or -
+ * worse - quietly "fixes" it, overturning a decision that was made with the
+ * evidence in hand. `docs/known-gaps.md`'s G59 carries the whole printed-scale
+ * measurement, including what survives a photocopy and what nothing guards.
+ *
+ * **THIS FILE REMAINS THE ONE PLACE TO EDIT IF HE RULES AGAIN.** Everything
+ * else about the image - which part belongs to which group, the legend, the
+ * checks that the two agree - is independent of what these patterns look like:
  * `tools/guide/clusters.ts` assigns `HATCH_STYLES[i]` to the i-th group and
  * `tests/guide/clusters-view.test.ts` asserts the assignment is a bijection
  * onto whatever this array holds, never what any entry draws. Replace the
  * entries, reorder them, or change their spacings and widths, and the mapping
- * and its tests still hold.
+ * and its tests still hold - which is also why no test had to change when he
+ * ratified them, and why none would have to change if he rejected them later.
  *
- * **WHY HATCHING RATHER THAN GREY TINTS OR COLOUR, which IS settled and is a
- * reason rather than a taste.** The packet is printed on a black-and-white
- * laser printer and photocopied at the bench (`./svg.ts`: "the only colours
- * anywhere are black ink, white paper and one light grey"). Four grey tints
- * stop being distinguishable after one generation of photocopying, and colour
- * is not available at all; four distinct hatch GEOMETRIES survive both, because
- * what tells them apart is direction and shape rather than density.
+ * **WHY HATCHING RATHER THAN GREY TINTS OR COLOUR - a reason rather than a
+ * taste, and settled before and independently of his ruling.** The packet is
+ * printed on a black-and-white laser printer and photocopied at the bench
+ * (`./svg.ts`: "the only colours anywhere are black ink, white paper and one
+ * light grey"). Four grey tints stop being distinguishable after one generation
+ * of photocopying, and colour is not available at all; four distinct hatch
+ * GEOMETRIES survive both, because what tells them apart is direction and shape
+ * rather than density.
  *
  * **WHY THERE IS NO PER-PART TEXT TO GO WITH THEM.** A group is named in the
  * legend and nowhere inside the board outline: `docs/known-gaps.md`'s G2
@@ -90,9 +115,17 @@ function stippled(id: string, spacing: number, radius: number): HatchStyle {
 }
 
 /**
- * THE CANDIDATE, in the order groups take it. Four geometries that differ in
- * KIND rather than in density - two opposite slopes, a lattice, a stipple - so
- * that telling them apart does not depend on how heavily the sheet printed.
+ * THE RATIFIED FOUR, in the order groups take it (the owner, 2026-10-18: *"the
+ * hatching looks good."* - read the module comment above for what he was told
+ * before he said it). Four geometries that differ in KIND rather than in
+ * density - two opposite slopes, a lattice, a stipple - so that telling them
+ * apart does not depend on how heavily the sheet printed.
+ *
+ * The spacings and widths are part of what he ratified, not free parameters:
+ * the lattice at 9 and the stipple at 8 are the COARSENED values, after 7 and 6
+ * merged into one grey at printed size, and the diagonals were taken to 6 units
+ * at 1.3 wide so that their lean reads at all. Changing a number here is
+ * changing the artifact he approved.
  *
  * There are four because the five-section Pultec ladder puts four absent
  * sections on every board. A fifth group refuses in `./clusters.ts` rather than
