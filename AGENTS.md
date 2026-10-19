@@ -79,3 +79,27 @@ merge, and do not offer it as a next step.** He raises it.
 **The two rules are the same discipline pointed at one thing.** Asking again is
 the fault; "shall I merge?" at the end of a report is asking again in a costume,
 and it was asked at the end of four consecutive reports before he stopped it.
+
+## Do the next thing in the same turn you name it
+
+**Announcing an action and then ending the turn is a handoff, not a commitment.**
+It makes the owner the scheduler for work that was already yours, and he has to
+spend a message - usually *"progress?"* - to get it started.
+
+He counted it before it was noticed: *"is there a reason you halt after
+announcing your next action? you've done it many many times."* In the session
+that produced this rule he sent *"progress?"* eight times, and in most of those
+the next action had been named in the previous message and not begun.
+
+**The test is whether the named action needs an answer from him.**
+
+- It does not - writing a register entry the governing documents already require,
+  running a check, committing finished work: **do it in the same turn and report
+  it as done.** "Writing those now" at the end of a message is the fault.
+- It does - a decision only he can make, an irreversible step, something outside
+  the working tree: **ask for the decision and stop.** That is not a halt, it is
+  the gate.
+
+**This is the same failure as the two rules above, in a third costume.** "Shall I
+merge?" hands him a settled question; "doing that next" hands him a settled task.
+Both convert his attention into a scheduler for work that did not need one.
