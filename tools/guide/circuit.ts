@@ -28,6 +28,18 @@ import { declaredPowerUpChecks, type PowerUpChecks } from "./power-up.ts"
 export { isPanelPot }
 
 export interface BoardCircuit extends PerfboardBoardCircuit {
+  /**
+   * The module's own `DESIGNATORS`: component id -> reference designator.
+   *
+   * **CARRIED WHOLE, ALONGSIDE `byRef`, BECAUSE ONE CONSUMER NEEDS THE OTHER
+   * DIRECTION.** `byRef` answers "what is the part the layout calls R4"; a
+   * stand-in group asks the reverse - its `partIds` are component ids
+   * (`lib/board/scaffold/doc.ts`) and the hatching has to find each one's
+   * position on a dump keyed by designator (`./clusters.ts`). This map is the
+   * only place the two vocabularies meet (`CLAUDE.md`), so it travels rather
+   * than being re-derived or, as it was until 2026-10-19, assumed away.
+   */
+  readonly designators: Readonly<Record<string, string>>
   /** The module's power-up table; `undefined` when it declares none. */
   readonly powerUpChecks: PowerUpChecks | undefined
   /**
@@ -51,7 +63,12 @@ export function boardCircuitFrom(
   powerUpChecks: PowerUpChecks | undefined,
   scaffold: ScaffoldDoc | undefined,
 ): BoardCircuit {
-  return { ...perfboardBoardCircuitFrom(network, designators, pinNumbers), powerUpChecks, scaffold }
+  return {
+    ...perfboardBoardCircuitFrom(network, designators, pinNumbers),
+    designators,
+    powerUpChecks,
+    scaffold,
+  }
 }
 
 /**
@@ -70,13 +87,15 @@ function declaredScaffold(module: Readonly<Record<string, unknown>>, where: stri
 /** Load the declared circuit module (imported once) and read everything the guide needs from it. */
 export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promise<BoardCircuit> {
   const module = await importCircuitModule(declaration)
+  const designators = assertDesignators(module["DESIGNATORS"], declaration)
   const circuit = perfboardBoardCircuitFrom(
     circuitFromModule(module, declaration),
-    assertDesignators(module["DESIGNATORS"], declaration),
+    designators,
     assertPinNumbers(module["PIN_NUMBERS"], declaration),
   )
   return {
     ...circuit,
+    designators,
     powerUpChecks: await declaredPowerUpChecks(module, declaration.circuitPath),
     scaffold: declaredScaffold(module, declaration.circuitPath),
   }

@@ -213,7 +213,12 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
   // `ScaffoldDoc` and the renderer holds no circuit knowledge. `undefined` on
   // a board with no stand-in groups, which is how the packet comes to have no
   // fourth image rather than an unhatched copy of the first.
-  const clusters = clusterMarking(circuit.scaffold, dump)
+  // THROUGH `circuit.designators`, NOT AGAINST THE DUMP'S REFS: a group's
+  // partIds are component ids and this dump is keyed by designator, and
+  // DESIGNATORS is the only place those two vocabularies meet (`./clusters.ts`,
+  // and `tools/perfboard/scaffold-membership.ts` for the same rule on the
+  // `make check` side of the same question).
+  const clusters = clusterMarking(circuit.scaffold, circuit.designators, dump)
   const images: GuideImages = {
     designators: renderLayout(dump, designators, {
       view: "component",

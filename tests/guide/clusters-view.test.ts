@@ -48,7 +48,16 @@ import { attr, num } from "./svg-query.ts"
 interface View {
   readonly scaffold: ScaffoldDoc
   readonly circuit: BoardCircuit
-  /** Every stand-in part id, with the absent section it stands in for - from the doc. */
+  /**
+   * Every stand-in part, with the absent section it stands in for - from the
+   * doc, keyed by the part's REFERENCE DESIGNATOR.
+   *
+   * The doc names its parts by component id, so the ids are translated here
+   * through the board's own `DESIGNATORS` - explicitly, rather than by passing
+   * an id where the drawing expects a ref and relying on
+   * `designatorsFor` happening to be the identity map on these boards. That
+   * reliance is what `./clusters-designators.test.ts` is about.
+   */
   readonly sectionOf: ReadonlyMap<string, string>
   readonly marking: ClusterMarking
   /** The stand-in-groups image. */
@@ -65,11 +74,15 @@ async function view(boardName: string): Promise<View> {
   const { dump, pads, circuit, checklist } = await loadBoard(boardName)
   const scaffold = circuit.scaffold
   if (scaffold === undefined) throw new Error(`test: ${boardName} declares SCAFFOLD; the guide did not load it`)
-  const marking = clusterMarking(scaffold, dump)
+  const marking = clusterMarking(scaffold, circuit.designators, dump)
   if (marking === undefined) throw new Error(`test: ${boardName} declares groups; clusterMarking produced none`)
   const sectionOf = new Map<string, string>()
   for (const group of scaffold.groups) {
-    for (const partId of group.partIds) sectionOf.set(partId, group.section)
+    for (const partId of group.partIds) {
+      const designator = circuit.designators[partId]
+      if (designator === undefined) throw new Error(`test: ${partId} has no DESIGNATORS entry on ${boardName}`)
+      sectionOf.set(designator, group.section)
+    }
   }
   const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
   const padLabels = new Map(pads.map((pad) => [pad.identity, padLabelOf(componentAt(circuit, pad.ref), pad.pin)]))
@@ -162,7 +175,7 @@ test("the premise: low-boost's four groups hold eight stand-in parts, all of the
 
 test("the marking maps each stand-in part to its own declared group, and names no other part", async () => {
   const { sectionOf, marking } = await view("pultec-low-boost")
-  // ON THE COMPONENT IDENTITIES, BEFORE ANYTHING IS DRAWN: the mapping is
+  // ON THE DOC'S OWN MEMBERSHIP, BEFORE ANYTHING IS DRAWN: the mapping is
   // wrong or right here, and the SVG clauses below only check that the
   // drawing carries this answer faithfully.
   expect([...marking.groupOf.entries()].sort(), "part -> its declared absent section").toEqual(
@@ -301,7 +314,10 @@ test("the mapping holds on a second real board, whose groups are a different set
 test("a board that declares no stand-in groups gets no marking at all", async () => {
   const { dump, circuit } = await loadBoard("pt2399-core")
   expect(circuit.scaffold, "pt2399-core is not a Pultec section").toBeUndefined()
-  expect(clusterMarking(circuit.scaffold, dump), "no scaffold, no groups image").toBeUndefined()
+  expect(
+    clusterMarking(circuit.scaffold, circuit.designators, dump),
+    "no scaffold, no groups image",
+  ).toBeUndefined()
 })
 
 test("the copper view refuses a marking rather than printing an unhatched sheet", async () => {
@@ -309,7 +325,7 @@ test("the copper view refuses a marking rather than printing an unhatched sheet"
   // mark. It refuses, because an unhatched copper sheet is indistinguishable
   // from a board with no groups - the silence this image exists to end.
   const { dump, pads, circuit } = await loadBoard("pultec-low-boost")
-  const marking = clusterMarking(circuit.scaffold, dump)
+  const marking = clusterMarking(circuit.scaffold, circuit.designators, dump)
   if (marking === undefined) throw new Error("test: low-boost declares groups")
   expect(() =>
     renderLayout(dump, new Map(dump.parts.map((part) => [part.ref, part.ref])), {

@@ -20,6 +20,21 @@
  * board disagreeing has no reason to suspect the picture. So every part is
  * marked on its own, from the doc's own ids.
  *
+ * **IT RUNS THROUGH THE SAME TWO VOCABULARIES THE REST OF THE TOOLING DOES.**
+ * A group's `partIds` are COMPONENT IDS (`lib/board/scaffold/doc.ts`: *"PART
+ * IDS, NOT COMPONENTS"*). A dump's `PART` refs are REFERENCE DESIGNATORS. The
+ * board module's `DESIGNATORS` map is the only place the two meet (`CLAUDE.md`,
+ * *"Ids are semantic; designators belong to KiCad"*), so every lookup here goes
+ * through it and an id with no designator refuses by name rather than being
+ * compared against the dump as though it were one. This is the rule
+ * `tools/perfboard/scaffold-membership.ts` states and obeys for the same two
+ * vocabularies, and the reason it is spelled out twice is that this module read
+ * ids against refs until 2026-10-19 and got away with it only because
+ * `circuits/pultec/physical/parts.ts`'s `designatorsFor` happens to be the
+ * identity map. Under `CLAUDE.md`'s stated norm - semantic ids, KiCad
+ * designators - that made `make check` pass and `make guide` refuse on the same
+ * board, naming a cause that was not the cause.
+ *
  * **IT REFUSES A GROUP PART THE BOARD DOES NOT CARRY, OR CARRIES UNPLACED.**
  * `lib/board/scaffold/doc.ts` states the reason ids rather than components
  * cross that boundary: "it makes the guide unable to describe a part the board
@@ -42,7 +57,17 @@ export interface ClusterMarking {
    * its index here, so this order is also the legend's order.
    */
   readonly groups: readonly string[]
-  /** Every marked part's ref -> the absent section it stands in for. */
+  /**
+   * Every marked part's REFERENCE DESIGNATOR -> the absent section it stands in
+   * for.
+   *
+   * **KEYED BY DESIGNATOR AND NOT BY COMPONENT ID**, because the drawing is:
+   * `./render-clusters.ts` reads this map by `part.part.ref`, which is what a
+   * dump's `PART` line carries. The group's own ids are resolved through
+   * `DESIGNATORS` in `clusterMarking` below - the one place the two
+   * vocabularies meet - so nothing downstream has to know which of the two it
+   * is holding.
+   */
   readonly groupOf: ReadonlyMap<string, string>
 }
 
@@ -79,7 +104,11 @@ function refuse(lines: readonly string[]): never {
  * returned instead: it would produce a hatch-free copy of the designators image
  * whose legend announces groups the board has none of.
  */
-export function clusterMarking(scaffold: ScaffoldDoc | undefined, dump: BoardDump): ClusterMarking | undefined {
+export function clusterMarking(
+  scaffold: ScaffoldDoc | undefined,
+  designators: Readonly<Record<string, string>>,
+  dump: BoardDump,
+): ClusterMarking | undefined {
   if (scaffold === undefined || scaffold.groups.length === 0) return undefined
   if (scaffold.groups.length > HATCH_STYLES.length) {
     refuse([
@@ -92,41 +121,72 @@ export function clusterMarking(scaffold: ScaffoldDoc | undefined, dump: BoardDum
     ])
   }
   const placed = new Map(dump.parts.map((part) => [part.ref, part.placement]))
-  const groupOf = new Map<string, string>()
+  /** Designator -> the group part that claimed it, so a collision names both ids. */
+  const claimed = new Map<string, { readonly partId: string; readonly section: string }>()
   for (const group of scaffold.groups) {
     for (const partId of group.partIds) {
-      const already = groupOf.get(partId)
-      if (already !== undefined) {
+      const designator = designators[partId]
+      if (designator === undefined) {
         refuse([
-          `${partId} is listed in the ${already} group and in the ${group.section} group, so the ` +
-            "image cannot say which hatch it carries.",
-          "A part belongs to exactly one group: fix the group derivation in " +
-            "circuits/pultec/physical/scaffold-doc.ts rather than marking it twice.",
+          `the ${group.section} stand-in group names ${partId}, which is in no DESIGNATORS entry ` +
+            "for this board, so there is no reference designator to look for on the layout at all.",
+          "A group's parts are COMPONENT IDS and a layout's parts are REFERENCE DESIGNATORS, and " +
+            "DESIGNATORS is the only place the two meet - nothing is guessed from the id. Add it to " +
+            "the DESIGNATORS export of this board's circuit module, or fix the group derivation in " +
+            "circuits/pultec/physical/scaffold-doc.ts if the id is not a part this board carries.",
         ])
       }
-      const placement = placed.get(partId)
+      const already = claimed.get(designator)
+      if (already !== undefined) {
+        if (already.partId === partId) {
+          refuse([
+            `${partId} is listed in the ${already.section} group and in the ${group.section} group, ` +
+              "so the image cannot say which hatch it carries.",
+            "A part belongs to exactly one group: fix the group derivation in " +
+              "circuits/pultec/physical/scaffold-doc.ts rather than marking it twice.",
+          ])
+        }
+        refuse([
+          `${already.partId} and ${partId} both resolve to the designator ${designator}, so one ` +
+            `position on the board would have to carry both the ${already.section} group's hatch ` +
+            `and the ${group.section} group's.`,
+          "Two component ids sharing one designator is a defect in this board's DESIGNATORS export, " +
+            "not in the layout: a designator names one part. Fix DESIGNATORS in the board's circuit " +
+            "module.",
+        ])
+      }
+      const placement = placed.get(designator)
       if (placement === undefined) {
         refuse([
-          `the ${group.section} stand-in group names ${partId}, and this board's layout holds no ` +
-            "part with that ref, so there is nowhere on the drawing to hatch it.",
+          `the ${group.section} stand-in group names ${partId} (${designator}), and this board's ` +
+            "layout holds no PART line for that designator, so there is nowhere on the drawing to " +
+            "hatch it.",
           "A group crosses into the guide as part IDS (lib/board/scaffold/doc.ts) precisely so this " +
             "refuses rather than drawing a board that is missing one of the positions the group " +
-            "needs. Bring the .vrt in step with the circuit (`make update`), or fix the group in " +
-            "circuits/pultec/physical/scaffold-doc.ts.",
+            "needs. This is NOT a reason to edit the layout: the five Pultec layouts are " +
+            "owner-approved and immutable, and `make check`'s scaffold-membership guard " +
+            "(tools/perfboard/scaffold-membership.ts) refuses the same disagreement. Either the " +
+            "group derivation in circuits/pultec/physical/scaffold-doc.ts has drifted from the " +
+            "board, or the part is panel-mount - in which case it belongs in OFF_BOARD_IDS and in " +
+            "no group, since an off-board part is expanded into bare pads and carries no designator " +
+            "of its own on the board.",
         ])
       }
       if (placement === "floating") {
         refuse([
-          `the ${group.section} stand-in group names ${partId}, and the layout leaves it FLOATING - ` +
-            "off the board - so no image draws it and no hatch could mark it.",
+          `the ${group.section} stand-in group names ${partId} (${designator}), and the layout ` +
+            "leaves it FLOATING - off the board - so no image draws it and no hatch could mark it.",
           "An unhatched position is read as one of this board's own parts, which is the opposite of " +
             "what this group is. Place it in VeroRoute (`make edit`), save, then run this again.",
         ])
       }
-      groupOf.set(partId, group.section)
+      claimed.set(designator, { partId, section: group.section })
     }
   }
-  return { groups: scaffold.groups.map((group) => group.section), groupOf }
+  return {
+    groups: scaffold.groups.map((group) => group.section),
+    groupOf: new Map([...claimed].map(([designator, by]) => [designator, by.section])),
+  }
 }
 
 /**
