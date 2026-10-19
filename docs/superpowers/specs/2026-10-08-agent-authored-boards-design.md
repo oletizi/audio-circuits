@@ -337,6 +337,63 @@ of those would have meant inventing a second authority or a Pultec-local symbol 
 the shortcuts the owner's directive rules out. Write what is missing and what it would
 take; do not promote it to an obstacle.
 
+### Two tracks: a general engine where the field has solved it, templates for the idioms it handles badly
+
+**Added 2026-10-19.** The owner, after reading the second prior-art pass, proposed the
+architecture and approved it when the refinement below was put to him (*"good. that sounds
+like a sane approach"*):
+
+> *"if there's sufficient prior art for more modern circuit topologies, we can optimize for
+> that and treat 20th-century designs on a case by case basis, perhaps using the
+> ever-growing idiom template library approach"*
+
+**The shape is settled; where the line falls is not.** Two paths to a drawn block: a
+general layout engine for topologies the field has already solved, and a **growing library
+of hand-designed idiom templates** for the shapes that engine draws badly. The template
+library grows when a circuit needs an idiom it does not have - it is not enumerated up
+front.
+
+**Why this fits the evidence rather than merely sounding tidy.**
+`docs/schematic/generation-prior-art-second-pass.md` measured that a general
+router (`schematizer`) draws correct but unreadable output and **cannot route parallel
+element banks at all** - four capacitors in plain parallel route 1 time in 3, ten route 0
+in 3 - while hand-designed templates produced legible 7-page output elsewhere. A single
+approach that covers both is not in evidence; two are.
+
+**And it serves the forcing-function directive exactly:** the general engine IS the
+general-purpose tooling, and the Pultec exercises the template path. Neither is a
+special case of the other.
+
+**THE AXIS IS PROBABLY TOPOLOGICAL AND NOT CHRONOLOGICAL, AND THIS IS THE OPEN QUESTION.**
+"Modern versus 20th-century" is the owner's framing and it may not survive measurement.
+The Pultec's hard parts - high-degree nets, multi-position selectors, tapped inductors -
+are not old: a switched-capacitor filter bank has the same shape. More decisively,
+**`pt2399-core` carries a 14-capacitor decoupling bank**, a high-degree net on a modern IC
+circuit, and **decoupling banks are in every modern design.** If a general router chokes
+there too, the split is **low-degree versus high-degree nets** and the template path is
+load-bearing far more often than the chronological framing suggests. A measurement was in
+flight when this was written; it settles which framing the design is built on, and nothing
+here should be implemented before it lands.
+
+**Two things to get right whichever way the axis falls.**
+
+- **What decides a block's path must not be an agent's judgement.** It is declared in the
+  model or decided by a measurable property of the subgraph. This is the governing
+  invariant applied to a routing decision, and it is easy to lose: "the engine tries and an
+  agent notices when it looks wrong" is the failure, not the fallback.
+- **The two paths share ONE visual language.** A sheet with template-drawn blocks beside
+  engine-drawn blocks reads as two drawings stapled together unless grid, flow direction,
+  label placement and line conventions are common to both.
+
+**Selection, not degradation** - a distinction that matters because the pedals project
+killed a superficially similar mechanism. It rejected an automatic fallback to a
+label-rendered block when no template matched: *"Why generate a knowingly inferior
+schematic and rely on an agent later noticing it?"* That fallback degraded TOWARD something
+worse and, as that review noted, it also degraded the GATE - a reviewer ends up auditing
+damage the pipeline chose to do. Choosing a template over the general engine is not that:
+both paths are meant to produce a drawing the pipeline stands behind, and the choice is
+made before anything is drawn rather than after something failed.
+
 ## Architecture
 
 ```text
