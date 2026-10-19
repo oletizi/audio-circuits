@@ -157,7 +157,7 @@ The pipeline below is the same either way; only the top box changes.
 
 **Added 2026-10-18. The owner, in his own words:**
 
-> *"The per-board schematics need to be derived from the canonical schematic - that's a
+> *"The per-board schematics need to be derived from the canonical schematic—that's a
 > crucial part of modularizing. It's not a blocker, it's a REQUIREMENT"*
 
 So the authority row above is **not** in question and no second authority is wanted. The
