@@ -699,6 +699,42 @@ not have. **Those are products of modularization, not foreign matter.**
 | electrical -> section network | existing: `assertLayoutMatchesCircuit`, the composition gate over all 31 subsets | **exists** |
 | section network -> generated schematic | **the round trip**: export a netlist from the generated `.kicad_sch` with `kicad-cli` and compare it against the section network on the full contract below | **to build** |
 | scaffold doc vs layout | `make check`'s scaffold-membership guard | **exists**, added 2026-10-18 |
+| generated schematic vs **a drawing a human made and trusts** | `schgen`'s **gate 8** - graph isomorphism against a reference, with every intended difference declared in advance | **EXISTS IN THE SOURCE, DEFERRED TO M2.** See below |
+
+> **GATE 8 IS DEFERRED, NOT DISMISSED, AND THIS TABLE PREVIOUSLY LOST IT
+> SILENTLY.** The parent spec says `gates/oscar/` ports; an earlier revision of
+> this table omitted it and called the round trip *"the only new check"*. **That
+> dropped a strictly stronger check without saying so**, which is the failure
+> this repository keeps a rule about.
+>
+> **What it does.** `gates/oscar/compare.ts`: *"a carried-over subcircuit equals
+> OSCAR's once the declared CORE-BRIEF deltas are applied to OSCAR's graph. **An
+> undeclared difference fails by construction.**"* Every intended difference
+> between the generated circuit and the reference is written down in advance,
+> with a reason, in a `CORE-BRIEF.md`; the comparison applies those edits and
+> anything left over is a defect. **You cannot accidentally change a circuit and
+> pass, because passing requires having said beforehand what you meant to
+> change.**
+>
+> **What the round trip cannot catch and this can.** The round trip proves a
+> generated schematic matches **the netlist it was generated from** - it is a
+> self-consistency check. Gate 8 proves it matches **a drawing a human made and
+> trusts.** A generator that mangles a circuit the same way at both ends passes
+> the round trip happily. These catch different failures and neither substitutes
+> for the other.
+>
+> **Why M2 and not M1, and the reason is better than "extra work".** The gate
+> needs a reference and a declared-delta list. The reference exists -
+> `circuits/pt2399-core/pt2399-core.kicad_sch` and
+> `circuits/transistor-preamp/lab-board.kicad_sch` are hand-arranged and known
+> good, and the parent names them for exactly this. **The delta list does not,
+> and it CANNOT be written before the generator exists**: enumerating how a
+> generated schematic is supposed to differ from a hand-drawn one, before seeing
+> what the generator produces, is guessing. **The list is genuinely downstream of
+> M1**, which is why the deferral is a sequencing fact rather than a scope cut.
+>
+> Recorded in `docs/known-gaps.md` so the deferral cannot quietly become an
+> omission.
 
 **The round trip is the only new check, and the pattern is proven - and its
 contract is wider than this spec first said.** Finding 10 was a correction and it

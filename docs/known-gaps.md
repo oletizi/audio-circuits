@@ -1092,6 +1092,61 @@ raised.
 Open: a fix would settle these
 ------------------------------
 
+### G104 - gate 8 compares a generated schematic against a drawing a human trusts, the round trip cannot, and a spec table dropped it without saying so
+
+**The parent spec says `gates/oscar/` ports.** An earlier revision of the child
+spec's derivation-chain table omitted it and called the round trip *"the only new
+check"*. **That lost a strictly stronger check silently**, and the M1 plan then
+deferred the gate to M2 on grounds that were true but weaker than the real ones.
+Both documents are now corrected; this entry is so the deferral cannot drift back
+into an omission.
+
+**What the gate is**, from `tools/schgen/gates/oscar/compare.ts` in the pedals
+tree, read directly:
+
+> *"Gate 8: a carried-over subcircuit equals OSCAR's once the declared CORE-BRIEF
+> deltas are applied to OSCAR's graph. **An undeclared difference fails by
+> construction.**"*
+
+Every intended difference between the generated circuit and a reference design is
+written down in advance, with a reason, in a `CORE-BRIEF.md`. The comparison
+applies those declared edits to the reference and **anything left over is a
+defect.** `boundary.ts` carries the per-subcircuit map of which reference parts
+each side covers.
+
+**Why that is worth more than it looks.** You cannot accidentally change a
+circuit and pass, **because passing requires having stated beforehand what you
+meant to change.** It is the acceptance-criteria invariant applied to a netlist:
+the criterion is authored before the artifact and by someone describing intent,
+not by the thing being graded.
+
+**What the round trip cannot catch and this can.** The round trip proves a
+generated schematic matches **the netlist it was generated from** - self
+consistency. Gate 8 proves it matches **a drawing a human made and trusts.** **A
+generator that mangles a circuit the same way at both ends passes the round trip
+happily.** Different failures; neither substitutes for the other.
+
+- **Found** 2026-10-19, when the M1 plan deferred the gate and the controller
+  checked why. The omission from the child spec's table predates that by hours.
+- **Evidence** `gates/oscar/compare.ts` and `boundary.ts` headers, read directly
+  in the pedals tree; the child spec's own table, which listed four links and
+  called the round trip the only new check.
+- **Verified** CONFIRMED - the controller read both gate modules and both spec
+  passages.
+- **Why it is open** the gate needs a reference and a declared-delta list. The
+  reference exists - `circuits/pt2399-core/pt2399-core.kicad_sch` and
+  `circuits/transistor-preamp/lab-board.kicad_sch` are hand-arranged, known good,
+  and the parent names them for this. **The delta list does not, and it cannot be
+  written before the generator exists**: enumerating how a generated schematic is
+  supposed to differ from a hand-drawn one, before seeing what the generator
+  produces, is guessing. **The deferral is a sequencing fact, not a scope cut.**
+- **What would settle it** **CRITERION: a generated schematic for at least one
+  circuit with a hand-arranged reference is compared against that reference by
+  graph isomorphism, with every difference declared in advance and an undeclared
+  difference failing.** **MECHANISM, untested:** port `gates/oscar/` in M2 and
+  author the delta list from M1's parity census, which is the first artifact that
+  shows what the differences actually are.
+
 ### G94 - ELK throws on a unity-gain op-amp self-loop with horizontally drawn passives on its net - and the "lateral" half of the first narrowing is contradicted at block scale
 
 `[RAN]` elkjs **0.7.1 and 0.9.3** both raise
