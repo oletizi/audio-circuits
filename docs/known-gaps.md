@@ -519,6 +519,45 @@ evidence any future decision rests on:**
 Open: a fix would settle these
 ------------------------------
 
+### G57 - the layout image's own summary and legend still count a wire-link part as a part, so the picture and the checklist disagree about how many wire links the board has
+
+**Measured on the regenerated `pultec-low-boost` packet, 2026-10-18**, in the
+change that made a 0 Ω part render as a wire link (G55, level 1). Both figures
+below are printed on the SAME sheet:
+
+- `boards/pultec-low-boost/guide/layout-values.svg`, the summary line under the
+  title, verbatim: `17 parts, 10 off-board pads, 4 wire links, 4 cuts, 5 solder
+  bridges`. The three zero-ohm parts are inside the 17 and outside the 4.
+- `boards/pultec-low-boost/guide/guide.html`, section **4. Wire links**: seven
+  rows - `W1`..`W4` and the three parts.
+
+The legend on the same image reads `wire link (W1, W2 ...)`, which is now the
+naming of four of the seven marks it describes: the other three are tagged with
+their designator (designators image) or with `wire link` (values image).
+
+**Nothing on the sheet is FALSE** - a zero-ohm part really is a `PART` line and
+really is not one of VeroRoute's `WIRE` marks - which is why this is recorded
+rather than fixed in passing: a reader counting wire links in the picture and in
+the table gets two answers, and that is the kind of small inconsistency this
+repository's own practice says makes a generated document stop being trusted.
+
+- **Found** 2026-10-18, by looking at the regenerated packet after the G55
+  level-1 fix, not by a check.
+- **Evidence** the two passages above, read off the two regenerated artifacts
+  for the same board; `drawHeader` and `legendItems` in `tools/guide/render.ts`
+  are where both strings are built.
+- **Verified** yes, read directly by the agent that made the change.
+- **Why it is open** how a printed sheet should count and name its marks is a
+  question about the artifact, and **the agent producing the artifact may not
+  answer it** (`CLAUDE.md`). There are at least three answers - count them among
+  the wire links, say `3 wire-link parts` separately, or leave the counts as
+  layout facts and reword the legend - and choosing one is a presentation
+  decision, not a derivation.
+- **What would settle it** an owner (or reviewer) ruling on which of those the
+  sheet should say, then one change to `drawHeader` and `legendItems` making the
+  summary, the legend and the checklist agree. **The criterion is agreement**:
+  a reader must not be able to count wire links twice and get two numbers.
+
 ### G56 - the new scaffold-membership guard checks groups-against-layout in one direction only; a PLACED stand-in part that no group claims is caught only transitively
 
 `tools/perfboard/scaffold-membership.ts` (new, `make check` prerequisite
@@ -573,32 +612,34 @@ doc would bypass it and this guard would not catch the orphan.
 
 ---
 
-### G55 - the printed guide tells a builder to stand a ZERO-OHM resistor on end, where the wiring sheet for the same board says to fit a wire
+### G55 - the five adopted layouts PLACE a 0 Ω part as a resistor, which is what the owner objected to; only the printed sheets have been fixed
 
-**The two generated sheets for one board give contradictory instructions about
-the same part**, and the printed one - the document headed "build guide" - gives
-the wrong one.
+**THIS ENTRY HAS BEEN REWRITTEN DOWN TO THE HALF THAT IS STILL TRUE.** It began
+as *"the printed guide tells a builder to stand a ZERO-OHM resistor on end,
+where the wiring sheet for the same board says to fit a wire"*, and that half -
+"level 1", the sheets - was fixed on 2026-10-18: the packet's checklist lists
+such a part among the **Wire links** with its two holes, the layout images draw
+the line a builder solders rather than a resistor body, and `0R` appears nowhere
+in either. `lib/model/zero-ohm.ts` is now the one place that decides what zero
+ohms means, read by the electrical consumer
+(`lib/board/scaffold/shorts.ts`'s `isIdealShort`), the wiring sheet and the
+packet alike. **What remains is the LAYOUT, and it is blocked by his own
+ruling** - see "What would settle it" below.
 
-`boards/pultec-low-boost/wiring.md:126-129`, verbatim:
+**What the layout still does.** On `pultec-low-boost`,
+`SI_HI_BOOST_RV_HI_BOOST.ccw-wiper`, `SI_HI_CUT_RV_HI_CUT.ccw-wiper` and
+`SI_LOW_CUT_RV_LO_CUT.ccw-wiper` are each placed as a `RESISTOR` part occupying
+two holes with a span and a direction - verbatim from `--dump-board` of the
+committed `.vrt`:
 
-> **A part listed as `0R` is a wire link.** A level pot sitting at its end stop
-> [...] fit a wire or a solder bridge.
+    PART SI_HI_BOOST_RV_HI_BOOST.ccw-wiper RESISTOR 0R AT 2,2 SPAN 1 DIRECTION S
+    PART SI_HI_CUT_RV_HI_CUT.ccw-wiper RESISTOR 0R AT 1,10 SPAN 1 DIRECTION S
+    PART SI_LOW_CUT_RV_LO_CUT.ccw-wiper RESISTOR 0R AT 4,18 SPAN 1 DIRECTION N
 
-`boards/pultec-low-boost/guide/guide.html`, the **Resistors and trim-pots**
-table, verbatim:
-
-| Part | Value | Leads | Mounting |
-| --- | --- | --- | --- |
-| `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper` | `0R` | D3, C3 | **STAND ON END** |
-| `SI_HI_CUT_RV_HI_CUT.ccw-wiper` | `0R` | E11, B11 | **STAND ON END** |
-| `SI_LOW_CUT_RV_LO_CUT.ccw-wiper` | `0R` | E19, G19 | **STAND ON END** |
-
-So the packet lists a short circuit as a resistor to fit, in the resistor
-section, and then instructs a mounting for the body of a part that has no body.
-**Both columns are wrong for these three rows**, and the `Mounting` column is
-wrong twice over: `STAND ON END` is derived correctly from a one-hole span by
-`lib/kicad/lead-span-mounting.ts`, which is right for a resistor and
-meaningless for a wire link.
+The four other adopted boards carry the same shape for their own stand-ins. The
+printed packet no longer SAYS resistor, but the layout the packet is generated
+from still places one, and the `.vrt` is what a later tool, a later guide, or a
+person opening VeroRoute reads.
 
 **Why a 0R part exists at all, since it looks like a mistake and is not.** A
 pot resolves into two resistor sections, `ccw-wiper` and `wiper-cw`
@@ -611,20 +652,17 @@ legal and is still emitted, so component counts stay stable across a sweep."*
 That is a SIMULATION rationale - a stable component count makes a SPICE
 parameter sweep comparable - and it is a good one.
 
-**The defect is that a simulation convenience reached a bench sheet as a
-purchase and a mounting instruction.** That is the same shape as G44: a fact
-correct for one artifact printed as an instruction for another. The difference
-is that this one is already solved elsewhere in the tree -
-`lib/board/scaffold/wiring.ts:35-36` carries the rule as a named constant,
-*"How `describePart` renders a zero-ohm part: a wire link, not a resistor to
-buy"* - so the printed guide is the one consumer that does not know it.
+**The residual defect is that a simulation convenience reached a PHYSICAL
+LAYOUT as a part with a body.** That is the same shape as G44: a fact correct
+for one artifact carried into another where it is not. The sheets generated
+from that layout now translate it (`tools/guide/wire-links.ts`); the layout
+itself has not been touched, and it is the layout the owner was looking at when
+he asked.
 
 **This is NOT G45**, which is adjacent and was checked before this entry was
 written. G45 is that the packet carries none of the wiring sheet's
 CONDITIONALITY - which stand-in group to populate in which build - and it names
-these same parts as undistinguished from the board's own. This entry is a
-different failure about the same rows: not an omission a builder could notice,
-but a positive instruction that is wrong and that the other sheet contradicts.
+these same parts as undistinguished from the board's own.
 
 **THE OWNER CORRECTED THIS ENTRY'S STATEMENT OF THE COST, 2026-10-18, and the
 correction matters more than the entry it corrects.** This entry was first
@@ -651,45 +689,45 @@ better wording about that part does not remove the eyebrow.
    its own separate reason for emitting the zero section. Neither is to be
    undone. The 0 Ω part is right in the MODEL and right on a FABRICATED board;
    it is only the perfboard context that makes it odd.
-2. **Fixing the printed table does not fix what he described.** The
-   `Separates`-style sheet fix - render a `0R` part as a wire link in the
-   checklist - leaves the layout IMAGES drawing a resistor body in those two
-   holes with `0R` beside it, because the renderer draws a shape per VeroRoute
-   part type and the type is `RESISTOR`. **The eyebrow is raised by the picture
-   as much as by the table.** An agent that fixes the checklist row and reports
-   this entry settled will have fixed the half that was easy to find.
+2. **Fixing the printed sheets does not fix what he described**, and the
+   2026-10-18 change did only that. It was written with this clause in front of
+   it, so the layout images were fixed alongside the checklist - the eyebrow is
+   raised by the picture as much as by the table - but **both are documents
+   generated FROM the layout**, and what he was looking at when he asked was the
+   layout. An agent that reports this entry settled on the strength of the
+   printed packet will have deleted a live defect.
 
 - **Found** 2026-10-18, by the owner asking *"why are there 0R resistors on the
   low boost layout?"* - so it was found by him, not by a check.
-- **Evidence** the two passages above, read off the committed
-  `boards/pultec-low-boost/wiring.md` and the generated
-  `boards/pultec-low-boost/guide/guide.html` for the SAME board;
-  `lib/model/control-state.ts:293-314`; `lib/board/scaffold/wiring.ts:35-36`
-  and `:234-240`, which is the rule the packet does not apply.
-- **Verified** yes - both artifacts read directly, and the `.ccw-wiper`/
-  `.wiper-cw` value pairs confirmed against `--dump-board` of the committed
-  `.vrt`.
-- **Why it is open** found while answering a question, in a change that is
-  about something else; recorded rather than fixed in passing. **And the fix
-  that would fully settle it is currently forbidden** - see the two levels
-  below.
-- **What would settle it, AT TWO LEVELS, and only one of them is available.**
+- **Evidence** the `PART` lines above, read off `--dump-board` of the committed
+  `boards/pultec-low-boost/pultec-low-boost.perfboard.vrt`;
+  `lib/model/control-state.ts:293-314`. The original evidence for the
+  sheets - the **Resistors and trim-pots** table reading `0R` / `STAND ON END`
+  against `wiring.md`'s "fit a wire or a solder bridge" - is superseded by the
+  fix and is in this file's history at `d4ff6bd`.
+- **Verified** yes, by the agent that fixed level 1 - the `.vrt`'s `PART` lines
+  read directly, and the regenerated packet confirmed to carry no `0R` and no
+  mounting for those three parts.
+- **Why it is open** the remaining fix is forbidden: it changes the five
+  adopted `.vrt` files, and the owner has ruled those closed (G47).
+- **What would settle it.**
 
   **THE CRITERION, from his own words:** a perfboard layout does not specify a
-  part that raises an eyebrow on a perfboard. Secondarily, and established
-  independently of him, two generated sheets for one board do not give
-  contradictory instructions for the same part - the consistency requirement
-  this repository already enforces for pad labels by building one map and
-  handing it to both consumers.
+  part that raises an eyebrow on a perfboard. **It is the LAYOUT the criterion
+  names, not the sheets** - the sheets were the reachable half, and fixing them
+  removed the contradiction between two generated documents (established
+  independently of him) without meeting this.
 
-  **LEVEL 1, the sheets, available now and insufficient on its own.** The
-  guide's `valueLabel` and `mountingCell` apply `describePart`'s existing
-  zero-ohm rule rather than re-deriving a value and a mounting from the dump,
-  and the layout images stop drawing a resistor body for a zero-ohm part. That
-  ends the contradiction and most of the eyebrow. Whether a wire link gets its
-  own checklist section or joins the **Wire links** section the guide already
-  has is a question about the printed artifact and **not one the agent
-  producing that artifact may answer**. This level changes no `.vrt`.
+  **LEVEL 1, the sheets, DONE 2026-10-18** and recorded here so that nobody
+  re-does it: `tools/guide/wire-links.ts` holds the packet's words,
+  `lib/model/zero-ohm.ts` the one test, `wireLinkBody` in
+  `tools/guide/part-shapes.ts` the drawn line, and a zero-ohm part's row lands
+  in the **Wire links** section. **That last placement is UNRATIFIED** - which
+  checklist section a wire link belongs in is a question about the printed
+  artifact, and the agent producing it may not answer it; the **Wire links**
+  section was chosen as the smallest claim available and is waiting on the
+  owner seeing a render. Level 1 changed no `.vrt` and no `wiring.md`
+  (confirmed byte-identical by `shasum`).
 
   **LEVEL 2, the layout, and it is BLOCKED BY HIS OWN RULING.** The thing he
   actually objects to is that the LAYOUT specifies these parts: a 0 Ω stand-in
@@ -704,8 +742,8 @@ better wording about that part does not remove the eyebrow.
   him rather than to introduce quietly.
 
   **A MECHANISM for level 2, which is advice and not the settlement** - nothing
-  has been tried: the zero-ohm test already exists as
-  `lib/board/scaffold/shorts.ts:74` (`ohms === 0`), so the question is whether
+  has been tried: the zero-ohm test now exists in one place, as
+  `isZeroOhmResistor` in `lib/model/zero-ohm.ts`, so the question is whether
   the physicaliser can be told to realise such a component as a bridge, and
   whether the seed constructor's objective (which counts bridges at 0.25) then
   prefers or resists it. **Unmeasured.** Both of those would have to be
