@@ -4,11 +4,11 @@
 
 **Goal:** M1 of sub-project T2, as `docs/superpowers/specs/2026-10-19-schematic-authoring-design.md` §6 defines it — **`schgen` ported, ELK integrated at both seams, the geometry and verification contracts of §1.3, §1.4, §1.5, §1.6, §2 and §2.1 established, and existing-template parity demonstrated.** M1 produces **no Pultec section schematic**, and the spec says why in terms: *"a plan that reorders T2 to reach a Pultec sheet earlier is reintroducing the shortcut."*
 
-**Architecture:** Eighteen tasks in four arcs. **Tasks 1–7** port `tools/schgen/` from the pedals repository — 94 non-test TypeScript files, ~8,900 source lines in the parts that port, under `lib/schgen/` (pure) and `tools/schgen/` (fs, `kicad-cli`, the CLI verb). **Task 8** widens `RealiseResult`, which every later task's backend implements. **Tasks 9–11** give the model what a backend needs, take parity's first reading, and build the four gates and the round trip. **Tasks 12–18** add ELK at both seams, the manifest, the baseline, the re-measurement and the block-size decision, and delete the superseded stub.
+**Architecture:** Nineteen tasks in four arcs. **Tasks 1–7** port `tools/schgen/` from the pedals repository — 94 non-test TypeScript files, ~8,900 source lines in the parts that port, under `lib/schgen/` (pure) and `tools/schgen/` (fs, `kicad-cli`, the CLI verb). **Task 8** widens `RealiseResult`, which every later task's backend implements. **Tasks 9–11** give the model what a backend needs, take parity's first reading, and build the four gates and the round trip. **Tasks 12–17** add ELK at both seams, the manifest, the baseline, the re-measurement and the block-size decision. **Task 18** is gate 8's empty-delta half, added in the spec's revision 4. **Task 19** deletes the superseded stub.
 
 **Tech Stack:** TypeScript on Bun. `elkjs` (new dependency, pinned). `kicad-cli` from the installed KiCad, which `make check` already requires. No `fast-xml-parser`: gate 3 reads this repository's own s-expression netlist importer instead (Task 11).
 
-**Spec:** `docs/superpowers/specs/2026-10-19-schematic-authoring-design.md`, revision 2. **Parent:** `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`. Where this plan and the child spec disagree, the spec wins; where the spec and the parent disagree, the parent wins. The measurements the plan argues from are `docs/known-gaps.md` **G81, G84, G85, G90, G94–G103** and `docs/schematic/elk-spike.md` / `elk-block-spike.md`.
+**Spec:** `docs/superpowers/specs/2026-10-19-schematic-authoring-design.md`, **revision 4**. **Parent:** `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`. Where this plan and the child spec disagree, the spec wins; where the spec and the parent disagree, the parent wins. The measurements the plan argues from are `docs/known-gaps.md` **G81, G84, G85, G90, G94–G103** and `docs/schematic/elk-spike.md` / `elk-block-spike.md`.
 
 **Port source, read before this plan was written:** `/Users/orion/work/pedals-work/digital-pedal-platform/tools/schgen`. Every signature quoted below was read there, not recalled.
 
@@ -19,7 +19,15 @@
 - **M2 in its entirety** — the five new analog idioms (`selectorBank`, `potNetwork`, `tappedReturn`, `modeSwitch`, `bjtStage`), the three uncovered constructs (the stand-in group, the junction bus, the cross-board gang) and **all five Pultec section schematics.** Spec §6's M2 column, and §5.5: *"Designing them is spec work, not plan work."*
 - **`tools/schgen/h7/`** — 9 source files, 1,195 lines. Pedals' own board: its STM32H7 sheet harness, its designator map, its owner-items list, its datasheet-PDF provenance. Nothing here has an H7.
 - **`tools/schgen/oscar/acquire.test.ts`** — the acquisition of a foreign reference design at a pinned commit. We have no OSCAR.
-- **`tools/schgen/gates/oscar/`** — 5 source files, 916 lines, **deferred to M2 with the parent's instruction recorded against it.** The parent says *"`gates/oscar/` ports too, and this repository supplies its own reference material"* — `pt2399-core.kicad_sch` and `lab-board.kicad_sch`. Two things stop it being M1 work: its comparison is gated on `deltaIdsFromBrief(markdown)` reading a `CORE-BRIEF.md` of declared deltas, a document this repository does not have and whose analogue is a design decision; and `graphFromNetlist` is written against pedals' `connectivityFromXml`/`componentsFromXml` XML readers, which Task 11 replaces for gate 3 and would have to replace again here. **This is a deviation from a parent instruction, so Task 11 records it in `docs/known-gaps.md`** with the criterion that settles it: *a generated schematic is compared against a hand-arranged one by value and pin-level adjacency, independent of references and net names.* The round trip (Task 11) is not that check and must not be reported as it.
+- **The PULTEC-SPECIFIC half of gate 8** — the transformation manifest of declared electrical deltas, and the comparison of a generated Pultec section against a reference. **The gate itself is no longer deferred: spec revision 4, finding 17, overturned that and Task 18 ports it.**
+
+  > **REWRITTEN AGAINST SPEC REVISION 4. The withdrawn bullet is shown rather than edited away**, because the plan deferred the whole gate on reasoning the spec has since overturned, and a later reader needs to see which argument died.
+  >
+  > **It read:** *"**`tools/schgen/gates/oscar/`** — 5 source files, 916 lines, **deferred to M2 with the parent's instruction recorded against it.** The parent says *'`gates/oscar/` ports too, and this repository supplies its own reference material'* — `pt2399-core.kicad_sch` and `lab-board.kicad_sch`. Two things stop it being M1 work: its comparison is gated on `deltaIdsFromBrief(markdown)` reading a `CORE-BRIEF.md` of declared deltas, a document this repository does not have and whose analogue is a design decision; and `graphFromNetlist` is written against pedals' `connectivityFromXml`/`componentsFromXml` XML readers, which Task 11 replaces for gate 3 and would have to replace again here."*
+  >
+  > **Of those two reasons, the first is overturned and the second survives as work rather than as a deferral.** The delta-list reason was the spec's *"cannot be written before the generator exists"* argument in another form, and the review named its consequence: *"waiting until generated schematics exist to enumerate their differences creates precisely the provenance risk gate 8 is supposed to prevent."* **An EMPTY delta list needs no `CORE-BRIEF.md` and no generator**, so the M1 half was available all along. The XML-reader reason was never a reason to defer — it is the same `ImportedNetlist` adaptation Task 11 already does once, and **Task 18 does it for `graphFromNetlist`.**
+
+  **What stays out of M1**, and it is not the same claim: **the Pultec transformation manifest**, because M1 produces no Pultec section schematic at all (spec §6), so a manifest of the deltas `circuits/pultec/partition.ts` introduces would be written against an artifact no milestone emits. **It is derived from the partition when M2 emits those sections — never read off a generated drawing** (spec §2, revision 4).
 - **The MCU pin map** — `ir/build.ts`'s `PinmapInput`, `@/pinmap/load`, `@/pinmap/stPinData`, and `pintables/fromSt.ts`. There is no MCU here. Task 2 removes the branch rather than porting a dead one: *supersede means delete.*
 - **A geometry repair pass after snapping.** Spec §1.4 obligation 5 decides refusal; §4 puts a repair pass out of scope.
 - **A composite readability score.** Spec §3.3: the four measures are reported separately.
@@ -38,10 +46,11 @@ Each is argued, not asserted. A later reader who disagrees should argue with the
 
 1. **A generator that chooses its own block cut chooses the unit its own measurements are taken over.** Spec §3.3 and §3.4 measure *per block*; §1.8 says a block above the ceiling has a measured quality that is *"partly a property of the order somebody typed the components in"*. An agent picking the cut would therefore be picking what the numbers mean — `CLAUDE.md`'s invariant wearing a measurement's clothes, which that file warns about by name.
 2. **The declarations already exist and the spikes measured exactly them.** G100/G101 took 18 blocks *"from `include()`, `OWNERSHIP`/`partitionReference()`, `LEGS` and `allStandIns()` and from nothing an agent chose."* `includeNetwork` prefixes every component id with `${prefix}_`, so a declared block is recoverable — but recovering it by string-prefix matching would put the cut back in the generator's hands. The authoring file lists ids; Task 9 adds a check that the declared blocks **agree with** the `include()` prefixes wherever a prefix exists. Declared *and* checked against the model's own composition.
-3. **The repository's own declarations fall outside G101's window on both sides** — `standin-mid` at 1 part and `pultec-mid` at 28, against a floor near 4 and a ceiling near 9. A numeric rule adopted now would immediately refuse the owner's declared structure, which is deriving a rule from measurement and then aiming it at a declaration.
-4. **Both bounds were measured with no template in the loop** (§5.6, G101's own caveat). Choosing a number before Task 17's re-measurement would be inheriting figures that were never about M1's pipeline.
+3. **The repository's own declarations fall outside G101's window on both sides** — `standin-mid` at 1 part and `pultec-mid` at 28, against a ceiling near 9 and an interface cost that dominated the smallest blocks. A numeric rule adopted now would immediately refuse the owner's declared structure, which is deriving a rule from measurement and then aiming it at a declaration.
+4. **Both bounds were measured with no template in the loop and no sheet composition** (§5.6, §1.8, G101's own caveats). Choosing a number before Task 17's re-measurement would be inheriting figures that were never about M1's pipeline.
+5. **Spec revision 4 strengthens this, and the strengthening is a correction to how points 3 and 4 were written.** §1.8 is rewritten around the portable finding — **block granularity trades internal routing complexity against interface complexity** — and it **withdraws the floor as a measured number**: a port became a drawn cell only because `netlistsvg` emitted an `inputExt` glyph, and Task 12's driver emits no such glyph. **So "a floor near 4" is unmeasured for this backend, not a bound, and the ceiling's number nine is the tested frontend's while its SHAPE survives.** Any sentence in this plan that reads the floor as 4 is reading a withdrawn claim.
 
-**What M1 does instead of choosing:** Task 16's report prints, per block, its part count, its port-glyph share of cells, and **which of G101's two bounds it is outside** — above the ceiling, below the floor, or inside the window — with the cost named. It is a report line, never a refusal. **Task 17 then makes the numeric decision against the criterion the spec states: *"a block-size decision names both bounds and says which cost it is paying."*** If Task 17's re-measurement moves a bound, the deviation is recorded.
+**What M1 does instead of choosing:** Task 16's report prints, per block, its part count, its port-glyph share of cells, and **where it sits against the ceiling's shape and against the interface cost** — with the cost named, and **with the floor reported as unmeasured rather than as a bound the block is inside or outside.** It is a report line, never a refusal. **Task 17 then makes the numeric decision against the criterion the spec states: *"a block-granularity decision names both bounds and says which cost it is paying"*** — which under revision 4 means the ceiling as re-derived, the interface cost as a relationship, and the floor as unmeasured. If Task 17's re-measurement moves a bound, the deviation is recorded.
 
 ### D2. The ELK backend is asynchronous and `Template.realise` is not, so ELK runs in a pre-pass
 
@@ -51,13 +60,15 @@ Each is argued, not asserted. A later reader who disagrees should argue with the
 
 ### D3. The `labels` rendering is deleted from the port, not ported
 
-`Rendering` has three variants in the source: `wired`, `bus`, `labels`. **`labels` is deleted.** The parent's *"There is no implicit fallback to label-rendering"*, the pedals review it quotes (*"Why generate a knowingly inferior schematic and rely on an agent later noticing it?"*), and `docs/known-gaps.md` **G81** — which records that `lib/kicad/schematic.ts` emits *"the exact pathology another project was blocked from shipping"* — all point the same way, and Task 18 deletes the only thing in this repository that draws that way. Porting a second labels-everywhere renderer in the change that deletes the first would be absurd. **`bus` ports** (pt2399-core's 16-pin PT2399 needs it). **A new variant `{ kind: "auto" }` is added** by Task 8: try every template in the registry's order; the first `ok` wins; **all** `not-applicable` selects ELK; **any** `invalid-geometry`, `clearance` or `backend-raised` refuses. This is a deliberate departure from *port whole* and Task 8 records it.
+`Rendering` has three variants in the source: `wired`, `bus`, `labels`. **`labels` is deleted.** The parent's *"There is no implicit fallback to label-rendering"*, the pedals review it quotes (*"Why generate a knowingly inferior schematic and rely on an agent later noticing it?"*), and `docs/known-gaps.md` **G81** — which records that `lib/kicad/schematic.ts` emits *"the exact pathology another project was blocked from shipping"* — all point the same way, and Task 19 deletes the only thing in this repository that draws that way. Porting a second labels-everywhere renderer in the change that deletes the first would be absurd. **`bus` ports** (pt2399-core's 16-pin PT2399 needs it). **A new variant `{ kind: "auto" }` is added** by Task 8: try every template in the registry's order; the first `ok` wins; **all** `not-applicable` selects ELK; **any** `invalid-geometry`, `clearance` or `backend-raised` refuses. This is a deliberate departure from *port whole* and Task 8 records it.
 
 ### D4. Flow direction is left-to-right, pinned here (spec §1.7, §5.2)
 
 Spec §1.7: *"One must be pinned and the others made to match."* `netlistsvg`'s analog skin sets `direction=DOWN`; `schgen`'s `opampStage` puts `+` above `−` on the left and the output on the right, and its chains leave rightward. **The templates are the reviewed human arrangement (§3.1) and ELK is the thing being made to match**, so `elk.direction = "RIGHT"` and sheet-level flow is left-to-right. **The cost is stated: both spikes' numbers were taken under `DOWN`**, so every figure in §1.1, §1.8, §3.3 and §3.4 may move — which is §5.6's criterion, and Task 17 is where it is answered.
 
-### D5. One cross-sheet mechanism per net, decided by a declared property (spec §1.6)
+### D5. One cross-sheet mechanism per CLASS of connection, decided by a declared property (spec §1.6)
+
+> **Spec revision 4, finding 16, makes this decision's OWNERSHIP explicit and sharpens its rule.** §5.2 no longer leaves the cross-sheet mechanism open: **it names Task 15 as the owner**, so what follows is the decision rather than a reading taken ahead of one. And the rule it is made under is the review's, quoted: ***each CLASS of connection has one authoritative mechanism, with no ambiguous or duplicate representation*** — **not artificial uniformity.** Power symbols, global labels and hierarchical ports have different KiCad semantics and may legitimately serve different classes; **what is refused is a net represented two ways, or a class with no stated mechanism.** The reading below was already per-class — a rail is one class and every other net is another — and revision 4 is why that is the right shape rather than a liberty taken with *"exactly one mechanism"*.
 
 The port already emits exactly two: `anchorsToSymbols` turns a rail anchor into a `PowerSymbol` and every other anchor into a `GlobalLabel`, and `emit.ts` writes `global_label`. Hierarchical ports are not emitted at all. **Decided: a rail crosses a sheet boundary through its power symbol, every other net through a global label, and no net uses both.** Spec §1.6 asks that *"exactly one mechanism carries cross-sheet connectivity"*; the reading adopted here is **one mechanism per net, selected by whether the net is a declared rail** — a declared property of the model, not a choice at drawing time — and a net carrying two is the refusal. That reading is recorded in Task 15 so a later reader can dispute it.
 
@@ -76,6 +87,29 @@ The port carries 194 non-null assertions across 13 non-test files. They are ther
 ### D8. File names are rewritten to this repository's kebab-case convention
 
 Every file in `lib/kicad/` is kebab-case (`from-network.ts`, `lead-span-model.ts`, `symbol-library.ts`); the port is camelCase (`blockTypes.ts`, `sexprWrite.ts`). The port is renamed on the way in. Task 1 carries the map and the mechanical rewrite; the *content* of a ported file is byte-identical modulo imports and the file header, and Task 1 proves it.
+
+### D9. A block's interface is declared beside its members, and seam B is the only thing that reads it (spec §1.9)
+
+**New with spec revision 4, finding 15.** §1.9 requires a block to expose named electrical interface ports, acceptable attachment sides, and which attachment positions are fixed versus negotiable. **It deliberately does not say where that lives.**
+
+**Decided: the interface is declared in the same committed authoring file as the block's members (Task 9's `BlockDeclaration`), and seam B (Task 15) is the only consumer.** Three reasons:
+
+1. **The members are already declared there and an interface derived from them would put the cut back in the generator's hands** — **D1**'s argument, one field along. An interface inferred from *"which nets happen to leave the member set"* is exactly the inference §1.9 forbids.
+2. **`portDirections` and `RailSpec` are already in that file** (Task 9), declared per net, for the same reason: G99 measured a port direction invented at the call site and named what it cost. An interface port is the same kind of claim.
+3. **The consumer is single.** Seam A never sees it — spec §1.9's contract is about composing blocks, and a block's own realization is §1.3's. One writer, one reader, no second answer.
+
+**What this decision does NOT make:** how many interface ports a block should have, which sides are acceptable for which kind of port, or how seam B chooses among negotiable positions. §1.9 leaves those open as design work and so does this plan — Task 15 states the mechanism it implements and records it for dispute.
+
+### D10. Gate 8's empty-delta half sits at Task 18, after the pipeline is complete and before the deletion
+
+**New with spec revision 4, finding 17**, which overturned the deferral of the whole gate. **Decided: the M1 half is Task 18, immediately before the deletion task.** Four constraints fix it there, and none of them is the one the withdrawn deferral gave:
+
+- **It needs a generated schematic from the COMPLETE pipeline.** A circuit's blocks are drawn by templates (Task 7), by ELK (Tasks 12–14), and composed onto sheets (Task 15). A reference-graph check run before seam B exists would be checking a partial drawing and would report its own incompleteness as a delta.
+- **It needs the graph comparison adapted to `ImportedNetlist`** — the same adaptation Task 11 makes for gate 3, so Task 11 must precede it. **This is the one surviving reason from the withdrawn deferral, and it is work rather than a deferral.**
+- **It needs the manifest (Task 16), because a gate that reports a pass names the manifest it passed against** (spec §2.1).
+- **It must precede Task 19**, which moves the five real `kicad-cli` transistor-preamp tests onto the generator and prints a generated `lab-board` beside the committed hand-arranged one. **The reference-graph check is the mechanical form of that comparison**, and establishing it first is what keeps Task 19 Step 8 an observation rather than the only check.
+
+**What does NOT constrain its position, stated because the withdrawn argument claimed it did: the permitted-delta list.** It is **empty** for every circuit this task runs on, so there is nothing to wait for. **An empty list was available on day one of the port** and the only reason to run the check later is that the drawing it checks is not complete until Task 16.
 
 ---
 
@@ -325,7 +359,7 @@ test("the build context carries symbols and nothing else", () => {
   export function graphicsBox(graphics: UnitGraphics): Box | null
   ```
 
-**Why this layer is a task of its own.** It is what makes the output byte-stable, and byte stability is what the manifest (Task 16), the baseline (Task 16) and the *"regenerate every run, compare by content"* discipline all rest on. `um()` refuses a millimetre value that is not a whole micrometre; `fmtMm` is exact rather than rounded; `uuidV5` is SHA-1 over a fixed namespace plus a stable key, so there is no clock and no randomness anywhere in the emitter. **Contrast `lib/kicad/schematic.ts`, which takes `newUuid: () => string` and is handed `randomUUID`** — that is why its output cannot be compared by content, and Task 18 deletes it.
+**Why this layer is a task of its own.** It is what makes the output byte-stable, and byte stability is what the manifest (Task 16), the baseline (Task 16) and the *"regenerate every run, compare by content"* discipline all rest on. `um()` refuses a millimetre value that is not a whole micrometre; `fmtMm` is exact rather than rounded; `uuidV5` is SHA-1 over a fixed namespace plus a stable key, so there is no clock and no randomness anywhere in the emitter. **Contrast `lib/kicad/schematic.ts`, which takes `newUuid: () => string` and is handed `randomUUID`** — that is why its output cannot be compared by content, and Task 19 deletes it.
 
 - [ ] **Step 1: Run the rewriter** over the five files and three test files.
 - [ ] **Step 2: Run `tests/schgen/render/`.** The three tests above must pass with no edit beyond imports. **If one fails, the rewrite is wrong** — these modules depend on nothing this repository has yet.
@@ -597,7 +631,9 @@ test("generate writes nothing", () => {
 
 - [ ] **Step 1: Run the rewriter** over the fifteen files and nine test files.
 - [ ] **Step 2: Check the line ceiling.** `regulator.ts` is 217, `passive-chain.ts` 201, `opamp-classify.ts` 179, `chain-kit.ts` 274, `fanout-kit.ts` 258 — all inside. Report every count.
-- [ ] **Step 3: Run the nine template tests.** They must pass with imports rewritten and nothing else. **Report the count.** A failure here is a port defect; stop and diagnose with superpowers:systematic-debugging rather than editing the test.
+- [ ] **Step 3: Run the nine template tests. THIS STEP IS PORT PARITY, and spec revision 4 is why it is named as such.** They must pass with imports rewritten and nothing else. **Report the count.** A failure here is a port defect; stop and diagnose with superpowers:systematic-debugging rather than editing the test.
+
+  > **Spec §5.1, revision 4, finding 20: port parity is a REGRESSION requirement tested against THE SOURCE PROJECT'S OWN FIXTURES — these nine files — and it is not the same measurement as Task 10's census.** *"Requiring all seven templates to match our circuits in order to prove faithful porting confuses a regression test with a measurement."* A template that is simply inapplicable to discrete audio would read as a port defect under the wrong test, and a port defect in a template that happens to be inapplicable here would read as a pass. **So this step either holds or the port is broken, and it says nothing about applicability.** Task 10 measures applicability, Tasks 12–14 measure ELK coverage, and Tasks 11 and 18 grade the artifact. **Report which of the four this step is**, in the task report, so the four numbers are never quoted as one.
 - [ ] **Step 4: Count the mismatch sites and pin the count** at `tests/schgen/render/templates/mismatch-census.test.ts`:
 ```ts
 test("every mismatch site is in the census Task 8 widens", () => {
@@ -747,6 +783,16 @@ test("a template that realised its subgraph is used", () => {
     readonly members: readonly string[]
     readonly rendering: Rendering
     readonly anchor: TemplateAnchor | null
+    /** Spec §1.9's contract. Declared here per D9; read only by seam B (Task 15). */
+    readonly interface: readonly InterfacePort[]
+  }
+
+  /** Spec §1.9: a named electrical interface port, its acceptable sides, and whether its position is negotiable. */
+  export interface InterfacePort {
+    readonly net: NetName
+    readonly sides: readonly PinSide[]          // acceptable attachment sides; empty is refused, not "any"
+    readonly position: "fixed" | "negotiable"   // fixed by the block's own internal geometry, or seam B's to choose
+    readonly why: string                        // never blank for "fixed": a fixed position is a claim
   }
   export interface SchematicAuthoring {
     readonly project: string
@@ -786,6 +832,15 @@ test("a template that realised its subgraph is used", () => {
 
 **Blocks are declared, and checked against `include()`** (**D1**). `includeNetwork` prefixes component ids with `${prefix}_`, so a block declared as `{ id: "oc-audio", members: ["audio_…", …] }` can be checked: every member sharing an `include()` prefix must be in one block, and no block may hold members from two prefixes unless the authoring file says why. `buildCircuit` already refuses a unit in two blocks and a unit in none.
 
+**And the block's INTERFACE is declared beside its members** (**D9**, spec §1.9, added by spec revision 4). The review that found this gap found it by asking where 43 of the paired control's 139 edges went: *"they became block-interface connections — legitimate, but they must be represented when blocks are composed."* **`InterfacePort` is that representation, and it is DECLARED rather than inferred.** The check that makes it mean something is mechanical and belongs here, beside the block-prefix check:
+
+- **every declared interface port's net must actually leave the member set** — a declared port no member touches is a refusal naming the block and the net;
+- **every net that leaves the member set must be a declared interface port** — this is the half that stops the interface being read off the drawing later. *"Never inferred from which nets happen to leave"* cuts both ways: the model is the authority, so an undeclared crossing net refuses, naming the block, the net and the members on each side;
+- **an empty `sides` list is a refusal, not "any side."** `CLAUDE.md`: an empty whitelist that refuses loudly beats a general rule that quietly accepts a guess;
+- **`position: "fixed"` carries a non-blank `why`**, like every other override in this file.
+
+**Seam B (Task 15) is the only consumer**, per **D9**. Nothing in Task 12's or Task 13's seam-A path reads `interface` — a block's own realization is spec §1.3's business, and a second reader of this field would be a second answer to one question.
+
 - [ ] **Step 1: Write the failing completeness test** at `tests/schgen/authoring-complete.test.ts`, over all four circuits:
 ```ts
 for (const c of PARITY_CIRCUITS) {
@@ -803,20 +858,24 @@ for (const c of PARITY_CIRCUITS) {
   test(`${c.name}: every component is in exactly one block`, () => {
     expect(unblockedComponents(c.network, c.authoring)).toEqual([])
   })
+  test(`${c.name}: a block's declared interface is exactly the nets that leave it`, () => {
+    expect(interfaceDisagreements(c.network, c.authoring)).toEqual([])
+  })
 }
 ```
+  **The fourth test is spec §1.9 made into a check that could fail**, and it fails in both directions: a declared port no member touches, and a net leaving the member set that nothing declared. **Report the count of declared interface ports per block in Step 6** — it is the first measurement of what the 43 edges cost.
 - [ ] **Step 2: Run it.** Expected: fails on all four, `circuitSpecFrom` does not exist. **Record the starting counts** — components with no symbol, pins with no side — per circuit, as the measurement Task 17 compares against.
 - [ ] **Step 3: Write the three rule modules.** `symbolForKind` is a **whitelist that refuses loudly** rather than a general rule that accepts a guess (`CLAUDE.md`: *"An empty whitelist that refuses loudly beats a general rule that quietly accepts a guess"*). Every lib id in it is **verified against the libraries on disk** before it is written. `pinSidesFor` reads `LibPin.angle` through `pinSide(0, pin)` and maps `"up"/"down"` to `"top"/"bottom"`; a symbol whose pins give fewer than two distinct sides refuses, naming the symbol and that an override must say which pins leave where.
 - [ ] **Step 4: Write `from-network.ts`.** A `Component` becomes a `PartSpec`: `label` from `designators` (UPPER_SNAKE, refused otherwise), `refPrefix` from the designator's letters, `libId` from the override or `symbolForKind`, `pins` from the unit and package connections through `symbolPins` or the symbol's own numbering, `value` from `lib/kicad/value-notation.ts`'s `valueFor`, `footprint` from `part.footprint`. **`BomFields` has no source in this model**: `BOM_EXEMPT_PREFIXES` covers `TP`/`H`/`FID` and nothing else, so either the authoring file declares them or `bomFields` refuses — **do not default them to empty strings and do not widen the exemption list silently.** Decide, implement, and record which.
 - [ ] **Step 5: Write the four authoring files.** Each override carries a non-blank `why`. **Blocks come from what the circuit already declares** — `include()` prefixes, `OWNERSHIP`/`partitionReference()`, `LEGS`, `allStandIns()` — and from nothing chosen here.
-- [ ] **Step 6: Run the completeness test.** Report, per circuit: components resolved by rule, components needing an override, pins whose side came from the symbol, pins needing one.
-- [ ] **Step 7: Perturb** — add a component kind to a fixture with no entry in `symbolForKind`; the refusal names the kind, the component and that no symbol is guessed. Then narrow `pinSidesFor` to return one side for a two-pin passive; the completeness test goes red naming the pin. Restore both, report.
+- [ ] **Step 6: Run the completeness test.** Report, per circuit: components resolved by rule, components needing an override, pins whose side came from the symbol, pins needing one, **and per block its declared interface-port count, how many are `fixed`, and how many are `negotiable`.**
+- [ ] **Step 7: Perturb** — add a component kind to a fixture with no entry in `symbolForKind`; the refusal names the kind, the component and that no symbol is guessed. Then narrow `pinSidesFor` to return one side for a two-pin passive; the completeness test goes red naming the pin. **Then delete one declared `InterfacePort` whose net still leaves its block; the interface test goes red naming the block and the net.** Restore all three, report.
 - [ ] **Step 8: Rewrite G99** to record what is now declared, what is derived by rule, and what still has no home — **port direction for a net with no declared port, and the IC pin-side case where the symbol itself is ambiguous** — carrying G99's criterion forward and G102's warning that the spike's mutation arm had a blind spot, so its list of inventions is a lower bound.
 - [ ] **Step 9: `shasum`, `bun run check`, commit, push.**
 
 ---
 
-### Task 10: The existing-template parity census — M1's acceptance, first reading
+### Task 10: The template-applicability census — one of M1's four measurements, first reading
 
 **Files:**
 - Create: `tools/schgen/parity.ts`, `tools/cli/schgen-parity.ts`
@@ -847,11 +906,22 @@ for (const c of PARITY_CIRCUITS) {
   export function renderCensus(c: ParityCensus): string
   ```
 
-**This is M1's acceptance** (spec §6: *"existing-template parity — the seven ported templates draw the circuits already in this repository, graded by the ported gates and the new contracts"*) and §5.1's measurement: *"They were sized by a 103-block digital mainboard. Nothing is known about their pass rate on circuits that are mostly passive chains, dividers and op-amp stages. The measurement: run them and count."*
+**This is TEMPLATE APPLICABILITY, one of the four measurements spec revision 4 separates** — and it was called *"M1's acceptance"* until that revision, quoting §6's since-rewritten acceptance cell (*"existing-template parity — the seven ported templates draw the circuits already in this repository, graded by the ported gates and the new contracts"*). It is §5.1's measurement: *"They were sized by a 103-block digital mainboard. Nothing is known about their pass rate on circuits that are mostly passive chains, dividers and op-amp stages. The measurement: run them and count."*
 
 **The parent's own table is the prediction this census tests**, and it is a prediction rather than a result: `opampStage` for `opamp-buffer` and the compressor's audio path and sidechain amplifier; the decoupling bank for `opamp-buffer`'s 4 capacitors, `pt2399-core`'s 14 and the compressor's power section; `divider` for the compressor's VBIAS divider; `fanoutKit` for `lab-board`'s 10 connectors; `bus` for the PT2399; `passiveChain` *"everywhere"*; `regulator` and `crystal` **unexercised and flagged**. **The census either reproduces that table or it does not, and either answer is the deliverable.**
 
-**It is a report, not a gate, at this point.** A refused block is a finding about a template, and §5.1 is a measurement. **Task 17 is where the census becomes a threshold**, once the measures exist to say what parity means.
+**It is a report, not a gate, at this point.** A refused block is a finding about a template, and §5.1 is a measurement.
+
+> **RETITLED IN MEANING BY SPEC REVISION 4, finding 20, and the sentence it replaces mattered.** This task's heading calls the census *"M1's acceptance"* and the plan previously said **Task 17 is where the census becomes a threshold**. **The spec no longer has one acceptance for M1 to become a threshold against: it has four separate measurements**, and this census is exactly one of them.
+>
+> | measurement | where it is taken | what it is |
+> | --- | --- | --- |
+> | **port parity** | **Task 7 Step 3**, against the SOURCE project's nine template fixtures | a **REGRESSION** requirement: it holds or the port is broken |
+> | **template applicability** | **this task**, against this repository's declared blocks | a **MEASUREMENT with no target.** §5.1: *"Nothing is known about their pass rate on circuits that are mostly passive chains, dividers and op-amp stages"* |
+> | **ELK coverage** | **Tasks 12–14**, over the blocks this census records as `elk` | a test of the **NEW capability** |
+> | **integrated correctness** | **Tasks 11 and 18** — the gates, the round trip, and the empty-delta reference-graph check | the **ARTIFACT**, and the only verdict of the four |
+>
+> **So this census never becomes a threshold, and Task 17's re-run of it is a second reading of a measurement rather than a gate.** Requiring all seven templates to match our circuits would be *"confusing a regression test with a measurement"* — the thing finding 20 names. **Say which of the four each number is, every time one is reported.**
 
 - [ ] **Step 1: Write the failing census test** at `tests/schgen/parity.test.ts`:
 ```ts
@@ -958,9 +1028,9 @@ test("a component with no declared part is reported, not passed", () => {
 - [ ] **Step 4: Adapt `compareConnectivity` to `ImportedNetlist`** and write the gate-3 test over a generated fixture through real `kicad-cli`.
 - [ ] **Step 5: Write `footprint-pads.ts` and wire gate 6's `PadLookup`.**
 - [ ] **Step 6: Write `roundTrip`** and run the contract tests.
-- [ ] **Step 7: Run `runGates` over the four parity circuits.** Report, per circuit, each gate's name and problem count, and **which gates did not run and why** — gate 7 has no checklist, gate 8 is deferred.
+- [ ] **Step 7: Run `runGates` over the four parity circuits.** Report, per circuit, each gate's name and problem count, and **which gates did not run and why** — gate 7 has no checklist, and **gate 8 is not yet registered because Task 18 is where it lands** (spec revision 4 moved its empty-delta half into M1; it is not deferred).
 - [ ] **Step 8: Perturb each of the five contract rows** — one mutation each, red by name, restore, report all five outputs. Then perturb gate 3's `"Net-("` convention and watch the internal-net comparison go red.
-- [ ] **Step 9: Record in `docs/known-gaps.md`**: that **gate 8 (`gates/oscar/`) is deferred to M2 against a parent instruction that says it ports**, with the two reasons from **What is NOT in this plan** and the criterion *a generated schematic is compared against `pt2399-core.kicad_sch` and `lab-board.kicad_sch` by value and pin-level adjacency, independent of references and net names*; that **gate 7 ports and is unexercised**; and that **gate 3 now reads the s-expression netlist rather than `kicadxml`**, with the criterion *one netlist reader*.
+- [ ] **Step 9: Record in `docs/known-gaps.md`**: that **gate 7 ports and is unexercised**; and that **gate 3 now reads the s-expression netlist rather than `kicadxml`**, with the criterion *one netlist reader*. **Gate 8 is NOT recorded as deferred here — spec revision 4 overturned that, Task 18 ports it, and G104 is rewritten there.** If this step is reached while G104 still reads as a deferral, that is the drift the entry exists to prevent: fix the entry rather than restating it.
 - [ ] **Step 10: `shasum`, `bun run check`, commit, push.**
 
 ---
@@ -1053,10 +1123,29 @@ test("a net of degree n becomes n-1 edges", () => {
     | { readonly ok: false; readonly collapsed: readonly string[] }
   export function snapToGrid(l: BlockLayout): SnapResult
 
+  /** Spec §1.4, revision 4: the canonical topology every later measure and every junction decision reads. */
+  export type CanonicalTopology =
+    | { readonly ok: true
+        readonly wires: readonly Wire[]            // coincident duplicates collapsed, zero-length dropped
+        readonly branches: readonly Branch[]       // each net's branch points, explicit
+        readonly collapsed: number                 // how many duplicates were collapsed: REPORTED, never silent
+      }
+    /** An overlap that is neither a duplicate nor a clean T: named segments, and a refusal. */
+    | { readonly ok: false; readonly ambiguous: readonly string[] }
+  export interface Branch {
+    readonly net: NetName
+    readonly at: Point
+    /** A branch at a pin end is a different object from one in free space. */
+    readonly kind: "t-junction" | "at-pin-end"
+  }
+  export function canonicalTopology(l: BlockLayout, pins: readonly PlacedPin[]): CanonicalTopology
+
   /** Every branch point of every net, which KiCad connects only with a junction object. */
-  export function branchJunctions(l: BlockLayout, pins: readonly PlacedPin[]): readonly Point[]
-  export function junctionProblems(l: BlockLayout, pins: readonly PlacedPin[],
+  export function branchJunctions(t: CanonicalTopology, pins: readonly PlacedPin[]): readonly Point[]
+  export function junctionProblems(t: CanonicalTopology, pins: readonly PlacedPin[],
     emitted: readonly Point[]): readonly string[]
+  /** Two segments of DIFFERENT nets meeting at a point: never a junction. */
+  export function crossings(t: CanonicalTopology): readonly Point[]
   ```
 
 **The claim an implementer starts from** (spec §1.4): **a geometrically valid ELK drawing is not necessarily a valid KiCad schematic.** ELK knows nodes, ports and orthogonal edges. KiCad knows a 1.27 mm electrical grid, pin ends as the only places a wire connects, junction objects that make a crossing a connection, and symbol transforms that move pins. **Every one of those is a way a correct ELK drawing becomes a wrong schematic.** And the electrical round trip cannot stand in for the geometric checks, *"because a schematic can export a correct netlist while visually suggesting wrong connections."*
@@ -1067,6 +1156,12 @@ The five obligations, each a function and a test:
 
 1. **Grid snapping must not merge previously distinct wires.** *"The contract is that snapping is checked for identity collapse, not assumed to preserve it: after snapping, the set of distinct wire geometries and the set of net memberships must both be unchanged from before snapping, and a collapse refuses."* `snapToGrid` computes both sets before and after and returns `{ok:false, collapsed}` naming each merged pair.
 2. **ELK edge junctions become KiCad wire junctions explicitly, including multi-terminal nets.** *"Every branch point of every net carries an emitted junction, and every emitted junction sits on exactly one net. A crossing between different nets carries no junction, and a net's branch point carrying none is a refusal rather than a cosmetic miss."* Note `layoutSheet` currently sets `junctions: junctionPoints(sheetItems(scene))` and the port's comment calls them *"cosmetic only"* — **for ELK geometry they are not cosmetic**, so `junctionProblems` compares `branchJunctions` against what was emitted and refuses on a difference.
+
+   > **AND OBLIGATION 2 NOW RUNS OVER A CANONICAL TOPOLOGY, not over ELK's segment list** — spec §1.4, revision 4, finding 21. The obligation as first written assumed three things it did not define: that a **wire crossing** is distinguished from a **T-junction**, whether a branch point may coincide with a **pin endpoint**, and how **coincident branches are normalised before counting.** `CanonicalTopology` is where all three are settled, and `canonicalTopology` runs **before** anything is serialized, measured or emitted.
+   >
+   > **THIS IS NOT PRECAUTIONARY, and the evidence is already in hand.** `[RAN]` `docs/schematic/elk-spike.md` §7: ***"Duplicate wire segments: 30-187 per drawing. Any measure that does not collapse them double-counts crossings."*** `docs/schematic/elk-block-spike.md` §10: **0-80 per block drawing**, plus zero-length segments (1-8 flat, 0-5 per block). **Duplicate junction objects and overlapping segments are not a risk this adapter might introduce — they are already present in the geometry it adapts FROM.** An adapter that passes ELK's sections through emits them into the `.kicad_sch`, and **every one of Task 16's four measures taken over an uncanonicalised topology is inflated by an unknown amount.**
+   >
+   > **CRITERION, spec §1.4: a canonical wire topology is established before serialization, and it (a) deduplicates coincident segments, (b) represents each net's branches explicitly, (c) preserves pin-end identity, and (d) REJECTS an ambiguous overlap rather than choosing one reading of it.** Clause (d) is obligation 5's discipline: a partial overlap that is neither a duplicate nor a clean T is a refusal naming both segments, **never a repair.** And `collapsed` is reported rather than silent — a drawing whose canonicalisation collapsed 80 segments is a finding about the backend even when the result is valid.
 3. **Port positions survive rotation and mirroring by being recomputed, never carried.** *"The transform is applied once, to the library pin geometry, and the result is what both ELK and the emitter see — so there is one transformed geometry and no second copy to drift."* The adapter therefore recomputes every pin end from `pinEnd(placement.at, placement.rot, libPin)` and **never reads an ELK port's returned coordinate as a wire attachment point.**
 4. **Routes are kept off unrelated pins, labels and symbol bodies by the same obstacle matrix that grades template output**, not a second set of rules — Task 5's `PAIR_COVERAGE`, re-validated against this geometry source, which is why Task 5 built the matrix up front.
 5. **When snapping makes a previously valid route invalid, the generator REFUSES.** *"Decided here, and it is deliberately the unambitious answer. A repair pass is a second layout engine with no gate of its own, written at the point in the pipeline where the agent has the least information and the most incentive to make the sheet pass."* **CRITERION: no generated schematic is emitted whose geometry was altered after its last clearance check.** So `adaptElkLayout` runs `checkLayout` **after** snapping and never again touches the geometry.
@@ -1089,19 +1184,37 @@ test("snapping that changes a net's membership REFUSES", () => {
   expect(snapToGrid(twoNetsOneGridStepApart()).ok).toBe(false)
 })
 ```
-- [ ] **Step 2: Write the failing junction test:**
+- [ ] **Step 2: Write the failing canonical-topology and junction tests.** The canonicalisation cases come first, because every assertion below them is taken over its output:
 ```ts
+test("coincident duplicate segments collapse to one, and the count is reported", () => {
+  const t = canonicalTopology(withDuplicateSegments(3), pins)
+  expect(t.ok).toBe(true)
+  if (t.ok) { expect(t.collapsed).toBe(3); expect(t.wires.length).toBe(expectedDistinct) }
+})
+test("a branch at a pin end is a different object from a branch in free space", () => {
+  const t = canonicalTopology(branchOnPinEnd(), pins)
+  if (t.ok) expect(t.branches.map((b) => b.kind)).toEqual(["at-pin-end"])
+})
+test("an overlap that is neither a duplicate nor a clean T REFUSES, naming both segments", () => {
+  const t = canonicalTopology(partiallyOverlappingSegments(), pins)
+  expect(t.ok).toBe(false)
+  if (!t.ok) expect(t.ambiguous.join(" ")).toContain("wire 0")
+})
 test("a net of degree 4 drawn as a tree needs a junction at every branch point", () => {
-  const l = fourWayFan()
-  expect(branchJunctions(l, pinsOf(l)).length).toBe(2)
+  const t = canonicalTopology(fourWayFan(), pinsOf(fourWayFan()))
+  expect(branchJunctions(t, pinsOf(fourWayFan())).length).toBe(2)
 })
 test("a branch point with no emitted junction REFUSES", () => {
-  expect(junctionProblems(fourWayFan(), pinsOf(fourWayFan()), []).length).toBe(2)
+  const t = canonicalTopology(fourWayFan(), pinsOf(fourWayFan()))
+  expect(junctionProblems(t, pinsOf(fourWayFan()), []).length).toBe(2)
 })
-test("a crossing between different nets carries no junction", () => {
-  expect(branchJunctions(twoNetsCrossing(), [])).toEqual([])
+test("two different nets meeting at a point are a crossing, and carry no junction", () => {
+  const t = canonicalTopology(twoNetsCrossing(), [])
+  expect(crossings(t).length).toBe(1)
+  expect(branchJunctions(t, [])).toEqual([])
 })
 ```
+  **The last test is the crossing-versus-T-junction distinction made into a check that could fail**, and it is the one the obligation previously left to an implementer's reading.
 - [ ] **Step 3: Write the failing four-link test** at `tests/schgen/elk/adapt.test.ts`:
 ```ts
 test("a mirrored symbol keeps its pin identity: the transform moves geometry, never assignment", () => {
@@ -1115,11 +1228,11 @@ test("no wire attaches to an ELK port coordinate that disagrees with the recompu
 })
 ```
 - [ ] **Step 4: Run all three groups.** Expected: fail.
-- [ ] **Step 5: Write `snap.ts`, `junctions.ts`, `adapt.ts`** in that order. `adaptElkLayout` converts nodes to `Placement[]` (`rot` from `preferredOrientation`, never from ELK's graph direction — §1.5: *"it may not invent symbol semantics through graph direction alone"*), edge sections to `Wire[]` by splitting each section at its bend points, and boundary-port nodes to `Anchor[]`. Then snap, then `junctionProblems`, then `checkLayout`. **Each failure returns the right `Mismatch` kind**: a snap collapse is `invalid-geometry`, a clearance failure is `clearance` naming the constraint and the obstacle pair.
+- [ ] **Step 5: Write `snap.ts`, `junctions.ts`, `adapt.ts`** in that order. `adaptElkLayout` converts nodes to `Placement[]` (`rot` from `preferredOrientation`, never from ELK's graph direction — §1.5: *"it may not invent symbol semantics through graph direction alone"*), edge sections to `Wire[]` by splitting each section at its bend points, and boundary-port nodes to `Anchor[]`. **Then `canonicalTopology`**, then snap, then `junctionProblems`, then `checkLayout`. **Each failure returns the right `Mismatch` kind**: an ambiguous overlap and a snap collapse are both `invalid-geometry` — naming which, because they are different defects — and a clearance failure is `clearance` naming the constraint and the obstacle pair. **Report the `collapsed` count per block**: it is the first measurement of the duplicate-segment defect on a driver that is not `netlistsvg`'s.
 - [ ] **Step 6: Run the obstacle matrix against ELK geometry.** Draw every ELK-routed block of the four parity circuits and **report every `PAIR_COVERAGE` pair that fires on ELK geometry and never fired on template geometry.** That set is the fresh blind spot §1.4 predicted; an empty set is a result worth recording too.
 - [ ] **Step 7: Emit an ELK-routed block and LOOK AT IT.** PDF, convert, **read with the Read tool.** Say whether the junctions are where the branch points are, whether the ports are on the boundary, and whether it reads as the same drawing as the template-drawn block beside it (§1.7's one visual language).
-- [ ] **Step 8: Perturb all five obligations.** (1) make `snapToGrid` always return `ok: true`; (2) emit no junctions; (3) read a wire's attachment from the ELK port coordinate; (4) skip `checkLayout` after snapping; (5) add a one-grid-step nudge after the last clearance check. **Each goes red by name. Restore each. Report all five outputs.**
-- [ ] **Step 9: Record in `docs/known-gaps.md`** the obstacle-pair result from Step 6 — including an empty one — and any deviation from the up-front-matrix mechanism, carrying G85's criterion.
+- [ ] **Step 8: Perturb all five obligations, and the canonicalisation.** (1) make `snapToGrid` always return `ok: true`; (2) emit no junctions; (3) read a wire's attachment from the ELK port coordinate; (4) skip `checkLayout` after snapping; (5) add a one-grid-step nudge after the last clearance check; **(6) pass ELK's segment list through without canonicalising — the duplicate-collapse test goes red, and report what the four measures said with duplicates counted twice, because that number is the size of the defect.** **Each goes red by name. Restore each. Report all six outputs.**
+- [ ] **Step 9: Record in `docs/known-gaps.md`** the obstacle-pair result from Step 6 — including an empty one — and any deviation from the up-front-matrix mechanism, carrying G85's criterion. **And the duplicate-segment count per block on this driver**, as a measurement, beside the spikes' 30-187 flat and 0-80 per block, with the criterion *every measure is taken over a canonical topology*.
 - [ ] **Step 10: `shasum`, `bun run check`, commit, push.**
 
 ---
@@ -1217,9 +1330,28 @@ test("the diagnosis names the self-loop, which is the arm that cleared a whole s
   export async function packFramesWithElk(contents: readonly FrameContent[], paper: Size): Promise<SheetPacking>
 
   export type CrossSheetMechanism = "power-symbol" | "global-label"
+  export type ConnectionClass = "declared-rail" | "inter-block-signal"
+  export function classOf(net: NetName, c: Circuit): ConnectionClass
   export function mechanismFor(net: NetName, c: Circuit): CrossSheetMechanism
   /** A net carrying more than one mechanism, or crossing a boundary by neither. */
   export function crossSheetProblems(c: Circuit, drawings: readonly SheetDrawing[]): readonly string[]
+
+  /** Spec §1.9: composing blocks without touching their interiors, or refusing. */
+  export type Composition =
+    | { readonly ok: true; readonly at: readonly Point[]; readonly by: "shelf" | "elk"
+        readonly attached: readonly AttachedPort[] }
+    /** Interfaces that could not be connected without violating shared clearance. */
+    | { readonly ok: false; readonly unsatisfiable: readonly string[] }
+  export interface AttachedPort {
+    readonly block: BlockId; readonly net: NetName
+    readonly side: PinSide; readonly at: Point
+    readonly was: "fixed" | "negotiable"
+  }
+  export function composeBlocks(c: Circuit, contents: readonly FrameContent[],
+    paper: Size): Promise<Composition>
+  /** Any block whose internal geometry differs from what it passed its own clearance check with. */
+  export function interiorDrift(before: readonly BlockLayout[],
+    after: readonly BlockLayout[]): readonly string[]
   ```
 
 **Seam B is the second place a layered orthogonal engine has something to offer** (spec §1.6, parent). Today `packFrames` shelf-packs: left to right inside `MARGIN`, a new shelf when a frame does not fit, the bottom `TITLE_BLOCK` strip kept free, and *"the packer never picks a larger paper; it reports the size it would have needed."* It knows nothing about which blocks are connected, which is why *"it is the one that produced a 1:1.97 unusable ribbon when a competing tool did it badly."*
@@ -1228,7 +1360,25 @@ test("the diagnosis names the self-loop, which is the arm that cleared a whole s
 
 **And §3.4's disjointness criterion is measured here, because it is dissolved at block scale.** Revision 2: *"Inside a single block, disjointness is trivially satisfied, so a block-scale measurement can neither pass nor fail it. It stands measured only at flat scale, where it answers no (67% of canvas, 11 non-members inside the group's box), and whatever mechanism composes blocks onto a sheet — seam B — is what it will have to be measured against."* **So Task 16's measures include frame-box overlap and non-member containment, computed over this task's packing.**
 
-**The cross-sheet mechanism, per D5.** `mechanismFor` returns `"power-symbol"` for a declared rail and `"global-label"` otherwise — a declared property of the model, decided upstream. `crossSheetProblems` refuses a net drawn with both, and a net whose pins are on two sheets with neither.
+**THIS TASK OWNS SPEC §5.2's CROSS-SHEET DECISION, and spec revision 4 says so by name.** §5.2 previously left the mechanism open while M1 promised sheet-level layout and verification; finding 16 called that a contradiction for M1 and the spec now names *"the M1 plan's Task 15"* as the owner. **The rule the decision is made under is the review's, quoted: *each CLASS of connection has one authoritative mechanism, with no ambiguous or duplicate representation.*** Not artificial uniformity: *"power symbols, global labels and hierarchical ports have different KiCad semantics and may legitimately serve different classes"*, and **the round trip is what establishes whether the combination behaves.**
+
+**The cross-sheet mechanism, per D5.** `classOf` names the class — `"declared-rail"` or `"inter-block-signal"` — from a declared property of the model, decided upstream; `mechanismFor` maps the class to its one mechanism, `"power-symbol"` for a rail and `"global-label"` otherwise. **Two classes, two mechanisms, one each.** `crossSheetProblems` refuses **a net drawn with both**, **a net whose pins are on two sheets with neither**, and **a class with no stated mechanism** — the third is what stops a later class being added silently and drawn however the emitter happens to.
+
+**Hierarchical ports are emitted by nothing here, and that is a decision rather than an omission.** The port emits exactly two mechanisms (`anchorsToSymbols`, `emit.ts`); a third class needing a third mechanism is a change to this task's decision, with its own reasoning and its own round-trip case.
+
+**And §1.9's BLOCK-INTERFACE CONTRACT is enforced here, because seam B is its only consumer** (**D9**, spec §1.9, both new in spec revision 4). The review found this gap by asking where 43 of the paired control's 139 edges went: **they became block-interface connections, and this is the task that draws them.**
+
+**THE CONTRACT, VERBATIM FROM THE SPEC: *seam B must preserve a block's internal geometry and connect its interfaces; if it cannot do so without violating shared clearance, it REFUSES rather than silently redrawing a validated block.*** So `composeBlocks`:
+
+- reads each block's declared `InterfacePort` list (Task 9) and **honours `sides` and `position`** — a `"fixed"` position is not seam B's to move, and a `"negotiable"` one is chosen among the declared acceptable sides and nowhere else;
+- **never moves a part inside a block, never re-routes a wire inside one, and never redraws a block under a different arrangement to make the sheet fit.** `interiorDrift` is the check: every block's post-composition layout is compared against the layout it passed its own clearance check with, and **any difference is a refusal, not a diff to accept**;
+- **refuses with `unsatisfiable`** when an interface cannot be connected without violating shared clearance, naming the block, the interface port and the clearance.
+
+**CRITERION, spec §1.9: no block's internal geometry is altered after that block passed its own clearance check.**
+
+**Why the refusal and not a retry.** It is §1.3's discipline one level up, and §1.4 obligation 5's: *"a seam B that quietly redrew a block would hide a composition defect exactly as a fallback hides a template defect — the sheet comes out looking fine, the gate passes, and the thing that could not be composed is never reported."* **That is G84's lesson, which this plan already deletes a renderer over (D3).**
+
+**What this task DECIDES and what it leaves open.** It decides that `sides` and `position` are honoured as declared and that drift refuses. **It does not decide how many interface ports a block should have, which sides suit which kind of port, or how a negotiable position is chosen among the acceptable ones** — spec §1.9 leaves those as design work and so does **D9**. **The choice rule this task implements is recorded in Step 8 so a later reader can dispute it**, the way D5's reading is.
 
 **The test is the reviewer's, adopted as written** (spec §1.6): *"generate the same network as one sheet and as multiple sheets, export both through `kicad-cli`, and verify identical net membership."* Its three required cases, each with the reason the spec gives:
 
@@ -1250,14 +1400,33 @@ for (const f of [sharedRail(), signalAcrossThreeSheets(), twoInstancesOfOneBlock
 test("a net drawn with both a power symbol and a global label REFUSES", () => {
   expect(crossSheetProblems(railAlsoLabelled(), drawings).length).toBeGreaterThan(0)
 })
+test("a class of connection with no stated mechanism REFUSES", () => {
+  expect(crossSheetProblems(circuitWithUnclassedCrossingNet(), drawings).length).toBeGreaterThan(0)
+})
 ```
 - [ ] **Step 2: Run it.** Expected: the three partition cases fail or cannot run; `crossSheetProblems` does not exist.
-- [ ] **Step 3: Write `cross-sheet.ts`** and wire `crossSheetProblems` into `layoutSheet`'s existing `assertSheetSafe` neighbourhood. Run the fourth test.
+- [ ] **Step 3: Write `cross-sheet.ts`** and wire `crossSheetProblems` into `layoutSheet`'s existing `assertSheetSafe` neighbourhood. Run the fourth and fifth tests.
 - [ ] **Step 4: Build the three fixtures and run the three partition cases.** **Report each partition side by side.** A disagreement is a defect in the mechanism, diagnosed with superpowers:systematic-debugging, not a test to relax.
-- [ ] **Step 5: Write `sheetGraphOf` and `packFramesWithElk`**, with the frame-box-overlap and non-member-containment measures §3.4 needs.
+- [ ] **Step 4a: Write the failing interface-contract tests** at `tests/schgen/render/compose.test.ts`, which are spec §1.9 made checkable:
+```ts
+test("a fixed interface position is honoured, not relocated", () => {
+  const c = await composeBlocks(circuit, contents, A3)
+  if (c.ok) for (const p of c.attached) if (p.was === "fixed") expect(p.at).toEqual(declaredPositionOf(p))
+})
+test("composition never alters a block's interior", () => {
+  expect(interiorDrift(beforeLayouts, afterLayouts(await composeBlocks(circuit, contents, A3)))).toEqual([])
+})
+test("an interface that cannot be connected within shared clearance REFUSES, and does not redraw the block", () => {
+  const c = await composeBlocks(circuit, tightContents, A5)
+  expect(c.ok).toBe(false)
+  if (!c.ok) expect(c.unsatisfiable.join(" ")).toContain("interface")
+})
+```
+- [ ] **Step 5: Write `sheetGraphOf`, `packFramesWithElk` and `composeBlocks`**, with the frame-box-overlap and non-member-containment measures §3.4 needs. **`composeBlocks` reads the declared interface and nothing else** — it never consults a block's internal geometry to decide where a net should arrive, which is the inference §1.9 forbids. Run Step 4a's three tests.
+- [ ] **Step 5a: Measure what the interface costs, which is the first half of §1.1's upper-bound question.** Per circuit: **how many inter-block connections seam B drew, how many crossings and how much wire length they added, and how many of the composed sheet's crossings are between blocks rather than inside one.** The paired control's 43 edges (139 whole against 96 in blocks) are the quantity this measures; **Task 17 Step 4 is where it is compared against the flat baseline.** Report it here as a measurement with no verdict.
 - [ ] **Step 6: Pack one multi-block sheet both ways and LOOK AT BOTH.** Two PDFs, converted, **read with the Read tool.** Report each packing's occupied area, aspect and inter-frame wire length, and **say which you would rather read.** That sentence is an observation for the record, not an acceptance: §3.3 gives the measures no threshold.
-- [ ] **Step 7: Perturb** — give `mechanismFor` a third mechanism for one net; the refusal fires by name. Then make `packFramesWithElk` ignore the paper bound; a frame lands outside the margin and `assertTextClear` goes red. Restore both, report.
-- [ ] **Step 8: Record in `docs/known-gaps.md`**: D5's reading of §1.6's *"exactly one mechanism"* as one-per-net, so a later reader can dispute it; the two packings' measures as a measurement; and that **seam B's own crossings were untested in both spikes** (§1.1's third limit — each block was drawn on its own canvas, *"so the totals add crossings across three sheets and seam B would add its own"*), now measured for the first time, with the figure.
+- [ ] **Step 7: Perturb** — give `mechanismFor` a third mechanism for one net; the refusal fires by name. Then make `packFramesWithElk` ignore the paper bound; a frame lands outside the margin and `assertTextClear` goes red. **Then let `composeBlocks` nudge one part inside a block to make a tight sheet fit; `interiorDrift` goes red naming the block and the part — and report that output in full, because it is the check that stops a validated block being silently redrawn.** Restore all three, report.
+- [ ] **Step 8: Record in `docs/known-gaps.md`**: D5's reading of §1.6's *"exactly one mechanism"* as **one per CLASS**, with spec revision 4's quoted rule, so a later reader can dispute it; **the interface-port choice rule `composeBlocks` implements for a negotiable position**, which §1.9 and **D9** both leave open; the two packings' measures as a measurement; **Step 5a's inter-block connection cost**; and that **seam B's own crossings were untested in both spikes** (§1.1's third limit — each block was drawn on its own canvas, *"so the totals add crossings across three sheets and seam B would add its own"*), now measured for the first time, with the figure. **Carry §1.1's revision-4 framing with it: 6.1x was a measured UPPER BOUND, so this figure is how much of it is being spent.**
 - [ ] **Step 9: `shasum`, `bun run check`, commit, push.**
 
 ---
@@ -1299,7 +1468,8 @@ test("a net drawn with both a power symbol and a global label REFUSES", () => {
     readonly wireLength: number       // total, in grid steps
     readonly occupiedArea: number     // sheet extent actually used, in square grid steps
   }
-  export function measuresOf(l: BlockLayout, pins: readonly PlacedPin[]): SchematicMeasures
+  /** Spec §1.4 rev 4: measures are taken over a CANONICAL topology, never over a raw segment list. */
+  export function measuresOf(t: CanonicalTopology, pins: readonly PlacedPin[]): SchematicMeasures
   export function sheetMeasuresOf(d: SheetDrawing): SchematicMeasures
   export function renderMeasures(m: SchematicMeasures): string      // four numbers side by side; NO composite
 
@@ -1318,13 +1488,26 @@ test("a net drawn with both a power symbol and a global label REFUSES", () => {
     readonly consultedBy: readonly string[]
     readonly note: string
   }
+  /**
+   * Spec §3.3 rev 4: REPRODUCIBILITY identity (the exact bytes) and COMPARISON identity (the
+   * fixture) are different things. A moved serialization hash is FLAGGED, never a refusal to compare.
+   */
   export type BaselineLookup =
     | { readonly kind: "found"; readonly entry: ReadabilityBaseline }
-    | { readonly kind: "stale"; readonly entry: ReadabilityBaseline; readonly was: string }
+    | { readonly kind: "comparable-hash-moved"; readonly entry: ReadabilityBaseline; readonly was: string }
     | { readonly kind: "absent" }
+  export interface MeasureComparison {
+    /** All four measures, always, both sides, whatever the hash did. DESCRIPTIVE, not a verdict. */
+    readonly rows: readonly { readonly measure: string; readonly baseline: number; readonly now: number }[]
+    /** True when the serialization moved: provenance is broken, comparison is not. */
+    readonly serializationMoved: boolean
+    /** Never a pass or a fail: spec §3.3 rev 4 states there is no dominance rule. */
+    readonly verdict: "descriptive"
+  }
   export function parseBaselines(json: string, file: string): readonly ReadabilityBaseline[]
   export function baselineFor(bs: readonly ReadabilityBaseline[], block: BlockId, hash: string): BaselineLookup
-  export function compareMeasures(b: ReadabilityBaseline, m: SchematicMeasures): readonly string[]
+  export function compareMeasures(b: ReadabilityBaseline, m: SchematicMeasures,
+    hash: string): MeasureComparison
 
   export type FindingSeverity = "blocking" | "suggestion"
   export type FindingClass = "electrical-error" | "readability-problem"
@@ -1352,7 +1535,18 @@ Acceptance, per §3.3's table: **a known fixture** compares each measure against
 
 **The mechanism is this spec's and the plan answers the implementation question.** §3.3 leaves open whether to add a `subjectKind` discriminator, build a new registry, or share a loader. **Decided: a new registry at `schematic/readability-baselines.json`, with a shared loader.** The twelve-field shape carries over with **one departure the spec predicted**: *"an approval admits one termination, whereas a baseline carries four measured numbers"*, so `admits` is replaced by `measures`. `schematic/readability-baselines.json` ships with **`"baselines": []`** and an `ownerWords`-shaped schema — **an empty registry that refuses loudly beats a general rule that quietly accepts a guess**, and **no agent may add an entry**: `grantedBy` is `"owner"` and the loader refuses anything else.
 
-**And the block-scale refinement, which decides whether a baseline is worth holding at all.** `[RAN]` G95: order-instability is **absent below about 9 cells and present from 13 up**. *"A baseline over blocks small enough that the measure does not move under reordering is a baseline about the circuit. Over large blocks it is a baseline about a serialization"* — legitimate and much weaker — *"and a gate citing one must not be read as the former."* So `compareMeasures` reports which of the two it is, and **D1**'s per-block window report prints beside it.
+**And the block-scale refinement, which decides whether a baseline is worth holding at all.** `[RAN]` G95: order-instability is **absent below about 9 cells and present from 13 up**. *"A baseline over blocks small enough that the measure does not move under reordering is a baseline about the circuit. Over large blocks it is a baseline about a serialization"* — legitimate and much weaker — *"and a gate citing one must not be read as the former."* So `compareMeasures` reports which of the two it is, and **D1**'s per-block report prints beside it.
+
+> **SPEC REVISION 4, FINDING 18, CHANGES WHAT A MOVED HASH MEANS, and the change is a correction to this task as first written.** Scoping the baseline to the exact serialized layout input made a changed serialization **stale rather than comparable** — so after any change to how a block is serialized, *"the system can tell the output changed but not whether it improved."* **The two identities are separated:**
+>
+> | identity | what it names | what it is for |
+> | --- | --- | --- |
+> | **reproducibility identity** | the exact serialized layout input, the engine version, the template and rule libraries, the output artifact | **provenance.** This is `GenerationManifest`, unchanged, and `staleManifestInputs` still fails rather than regenerating |
+> | **comparison identity** | the circuit or block FIXTURE, with its declared electrical and semantic structure | **comparing implementations of the same drawing problem** |
+>
+> **CRITERION: for a comparison fixture, all four measures are reported against the reviewed baseline EVEN WHEN THE SERIALIZATION CHANGES, with the changed hash FLAGGED rather than treated as proof comparison is impossible.** Hence `BaselineLookup`'s `"stale"` becomes **`"comparable-hash-moved"`** — the rename is the point, because `"stale"` is what made an implementer stop reporting numbers — and `MeasureComparison` carries `serializationMoved` beside the four rows rather than instead of them.
+>
+> **AND THE THING THAT MUST BE STATED RATHER THAN IMPLIED: absent a dominance rule, a four-measure comparison is DESCRIPTIVE, NOT PASS/FAIL.** §3.3 refuses a composite score, and the consequence is that four numbers moving in different directions **cannot be resolved into a verdict by anything in the spec.** So the four measures are **diagnostics**, and M1's acceptance rests on the two mechanisms that do produce verdicts: **the hard geometric checks (Task 5's matrix, Task 13's obligations, Task 11's gates, Task 18's empty-delta check) and independent render approval (the baseline registry, and §3.5's reviewer).** `MeasureComparison.verdict` is the literal type `"descriptive"` so that **no caller can read a pass out of it**, and a gate that reports a measure comparison as an acceptance result is a defect in the gate.
 
 **The readability finding contract** (§3.5): **a reviewing agent is handed the CRITERION and never the list.** Measured: the source project's reviewer had its defect categories pre-named and **five of twenty findings map onto the hint list one-to-one** (G83). The **form** of a finding is specified while its **content** is not — which is the distinction that keeps this from reintroducing the hint list. `ReadabilityFinding`'s five fields are exactly §3.5's five rows, and `misreading` is stated *as* the misreading: not *"this is unclear"* but *"a reader would take this wire as joining C3 to the coil return."* **AND THE REVIEWER MAY NOT SILENTLY MODIFY THE ACCEPTANCE CRITERIA**: a recurring new failure mode is a **proposed addition** to the standing rule library, subject to independent review, never automatically accepted. `parseFindings` refuses a finding carrying a criterion of its own.
 
@@ -1376,13 +1570,23 @@ test("the report has four numbers and no composite", () => {
   expect(renderMeasures(m).toLowerCase()).not.toContain("score")
 })
 ```
-- [ ] **Step 3: Write the failing baseline test** — an entry whose `layoutInputSha256` has moved is **`"stale"`, not a pass**; an entry with `grantedBy` other than `"owner"` is refused; an entry with no `ownerWords` is refused; a quote in the narrator's voice is refused. **Reuse `tools/stripboard/approvals-read.ts`'s three refusals rather than writing a fourth reader of the same shape**, and if they cannot be reused, say why in the report.
+- [ ] **Step 3: Write the failing baseline test** — an entry whose `layoutInputSha256` has moved is **`"comparable-hash-moved"`, not a pass and not a refusal to compare**; an entry with `grantedBy` other than `"owner"` is refused; an entry with no `ownerWords` is refused; a quote in the narrator's voice is refused. **Reuse `tools/stripboard/approvals-read.ts`'s three refusals rather than writing a fourth reader of the same shape**, and if they cannot be reused, say why in the report. Two of these are spec revision 4's:
+```ts
+test("a moved serialization hash still reports all four measures, with the hash flagged", () => {
+  const c = compareMeasures(baseline, measuresAfterSerializerChange, movedHash)
+  expect(c.rows.length).toBe(4)
+  expect(c.serializationMoved).toBe(true)
+})
+test("no comparison carries a verdict", () => {
+  expect(compareMeasures(baseline, measures, sameHash).verdict).toBe("descriptive")
+})
+```
 - [ ] **Step 4: Run all three groups.** Expected: fail.
 - [ ] **Step 5: Write the three modules and the empty registry.** `generatedFiles` adds `MANIFEST.json`; `verify.ts`'s every `GateResult` names the manifest it passed against; a gate that cannot find a live manifest reports that **loudly** and does not pass.
 - [ ] **Step 6: Write `finding.ts`.** Its module comment says, in terms, that **nothing here says what the findings should be, how many there should be, or what categories they fall into** — the fields are the contract.
-- [ ] **Step 7: Generate the four parity circuits and report the four measures per block**, with **D1**'s window line beside each: parts, port-glyph share of cells, and whether the block is above G101's ceiling, below its floor, or inside the window, with the cost named. **No verdict** — every one of these is a first generation.
-- [ ] **Step 8: Perturb** — hash the network instead of the layout input; the first manifest test goes red. Add a fifth composite number to `renderMeasures`; the no-composite test goes red. Accept a baseline whose hash moved; the stale test goes red. Restore all three, report.
-- [ ] **Step 9: Record in `docs/known-gaps.md`** the four measures per block as a measurement, the empty baseline registry and why no agent may populate it, and **the departure from the twelve-field shape (`admits` → `measures`)** that §3.3 predicted, with its criterion.
+- [ ] **Step 7: Generate the four parity circuits and report the four measures per block**, **taken over Task 13's canonical topology**, with **D1**'s line beside each: parts, port-glyph share of cells, where the block sits against the ceiling's shape and the interface cost, **and the floor reported as unmeasured rather than as a bound** (spec §1.8, revision 4). **No verdict** — every one of these is a first generation, and **spec revision 4 adds that a measure comparison would not be a verdict even on a known fixture.**
+- [ ] **Step 8: Perturb** — hash the network instead of the layout input; the first manifest test goes red. Add a fifth composite number to `renderMeasures`; the no-composite test goes red. **Make `compareMeasures` return no rows when the hash has moved; the four-rows test goes red** — that is the behaviour spec revision 4 corrected, so report its output as the evidence the correction is live. **Then take `measuresOf` over a raw segment list instead of the canonical topology, and report how far each measure moves** — the duplicate-segment inflation, measured. Restore all four, report.
+- [ ] **Step 9: Record in `docs/known-gaps.md`** the four measures per block as a measurement, the empty baseline registry and why no agent may populate it, **the departure from the twelve-field shape (`admits` → `measures`)** that §3.3 predicted, with its criterion, and **Step 8's measured difference between canonicalised and raw measures**, which is the size of the defect spec §1.4's revision 4 names.
 - [ ] **Step 10: `shasum`, `bun run check`, commit, push.**
 
 ---
@@ -1436,7 +1640,8 @@ test("the report has four numbers and no composite", () => {
   export function remeasure(circuits: readonly ParityCircuit[]): Promise<readonly Remeasurement[]>
   export interface BlockSizeDecision {
     readonly ceiling: number
-    readonly floor: number
+    /** Spec §1.8 rev 4: the floor was the tested frontend's. "unmeasured" is a legitimate value. */
+    readonly floor: number | "unmeasured"
     readonly costPaid: string
     readonly evidence: string
   }
@@ -1460,18 +1665,121 @@ Three things that leaves uncertain, concretely:
 - [ ] **Step 1: Re-run the parity census (Task 10) with the ELK backend live.** Report the difference from Task 10's reading: blocks that moved from `elk` to `realised`, blocks that moved to `refused`, and the mismatch kind of each new refusal.
 - [ ] **Step 2: Write `remeasure.ts` and its test** — a block with a spike figure reports `reproduced` or `moved`; a block with none reports `null` and is **not** silently compared against a nearby block.
 - [ ] **Step 3: Re-take §1.1's figures.** Per block: inter-net crossings, bends per edge, worst aspect, wire length. **Compare against the block spike's §3 table block by block** and say, per row, reproduced or moved. The paired control especially: `optical-compressor` whole gave 293 crossings / 3.18 bends per edge / 4.05:1 / 159,967 wire length, and as its three declared blocks gave 48 / 2.70 / 3.11:1 / 35,070. **Report the mechanism too** — the blocks carried 96 edges against the whole's 139, and *"a 6.1x crossing reduction with no stated mechanism is a number somebody will later explain away."*
-- [ ] **Step 4: Re-take §1.8's two bounds.** Crossings against part count, and order-invariance under four declaration orders at 3, 4, 8, 9, 13, 17 and 28 cells. **And measure the port-glyph share with no `netlistsvg` skin**, which is the floor's whole basis.
-- [ ] **Step 5: Re-take §3.4's congruence**, on the four structurally identical bias legs, **with the rail glyphs the two instances would actually get** — spec §3.4's criterion, because *"what broke it here was the glyph, not the topology, and a check run without them would pass and mean nothing."* Report whether `6 * len(id) + 5` still predicts the x difference; it was the skin's 10px monospace and should not.
-- [ ] **Step 6: Re-take §3.3's disjointness at sheet level**, over Task 15's packing: frame-box overlap and non-member containment. Flat scale answered no (67% of canvas, 11 non-members inside the group's box).
-- [ ] **Step 7: Write `docs/schematic/m1-remeasurement.md`** with every figure side by side — spike, M1, verdict — and a section stating what could not be compared and why.
-- [ ] **Step 8: Write `BLOCK_SIZE`** with both bounds as measured here, the cost named, and the caveat. **If the re-measurement moved a bound, the deviation from D1's premise is recorded with its reasoning**, per `CLAUDE.md`'s criterion-versus-mechanism rule.
-- [ ] **Step 9: Perturb** — make `remeasure` compare a block against the wrong spike row; the test goes red naming both blocks. Restore, report.
-- [ ] **Step 10: Rewrite G95, G96, G97, G100 and G101** against the M1 figures, each entry saying plainly whether the writer **confirmed** the number or is **relaying** the spike's. **Delete G99 only if Task 9 settled every part of it** — and *"check what the deletion takes with it"*: G99 carries an open question about port direction, which must survive somewhere if it is still open.
-- [ ] **Step 11: `shasum`, `bun run check`, commit, push.**
+- [ ] **Step 4: THE INTEGRATED EXPERIMENT — how much of the 6.1x UPPER BOUND survives composition.** This is spec §1.1's revision-4 criterion and the review's requested experiment, **and it is the one step in this task that measures the architecture rather than re-measuring a spike.**
+
+  **What it is: one complete circuit, drawn through the whole M1 pipeline — some blocks by template, some by ELK — composed onto sheets by Task 15's seam B, and compared against the FLAT whole-circuit baseline on the same four measures.** The fixture is the paired control's own circuit, `optical-compressor` at the equivalent of `v-bare`, because **both ends of the comparison already exist**: whole gave 293 crossings / 3.18 bends per edge / 4.05:1 / 159,967, and the three declared blocks gave 48 / 2.70 / 3.11:1 / 35,070.
+
+  **Report, side by side:** the flat baseline, the sum over blocks drawn in isolation (the spike's figure), and **the composed sheet** — total crossings including seam B's own, inter-block crossings separately from intra-block, total wire length including inter-block wire, occupied area and worst aspect.
+
+  **Then state the one number this experiment exists for: what fraction of the 6.1x survived.** The block spike's §11 is why the framing is a bound: *"the totals in §4 add up crossings across three sheets; a mechanism that put them on one sheet would add its own."* **Composition can only spend the bound down**, and the 43 edges the blocks shed (139 whole against 96 in blocks) are what seam B now draws. **A result below 1x is a legitimate outcome and is reported as one** — it would say the decomposition's gain does not survive this composition, which is a finding about seam B and not a failure of the measurement.
+
+  **This step has NO threshold and is not an acceptance.** §3.3 gives the four measures none, and spec revision 4 adds that absent a dominance rule they are descriptive. **It is the measurement M1 exists to make possible.**
+- [ ] **Step 5: Re-take §1.8's bounds, as revision 4 restates them.** Crossings against part count, and order-invariance under four declaration orders at 3, 4, 8, 9, 13, 17 and 28 cells — **that is the ceiling's SHAPE, and it is what the re-derivation is of.** **And measure the port-glyph share with no `netlistsvg` skin**, which was the floor's whole basis. **The floor is reported as unmeasured-for-this-backend unless this measurement finds one**, per spec §1.8: the earlier *"a floor EXISTS however the boundary is drawn"* was an argument, not a measurement, and revision 4 demoted it. **If no floor appears, say so — a bound that turns out not to exist is a result.**
+- [ ] **Step 6: Re-take §3.4's congruence**, on the four structurally identical bias legs, **with the rail glyphs the two instances would actually get** — spec §3.4's criterion, because *"what broke it here was the glyph, not the topology, and a check run without them would pass and mean nothing."* Report whether `6 * len(id) + 5` still predicts the x difference; it was the skin's 10px monospace and should not.
+- [ ] **Step 7: Re-take §3.3's disjointness at sheet level**, over Task 15's packing: frame-box overlap and non-member containment. Flat scale answered no (67% of canvas, 11 non-members inside the group's box).
+- [ ] **Step 8: Write `docs/schematic/m1-remeasurement.md`** with every figure side by side — spike, M1, verdict — and a section stating what could not be compared and why.
+- [ ] **Step 9: Write `BLOCK_SIZE`** with both bounds as measured here, the cost named, and the caveat. **`floor` is `"unmeasured"` unless Step 5 actually found one** — spec §1.8, revision 4: the earlier floor was entirely the tested frontend's, and restating 4 would be carrying a withdrawn number into code. **If the re-measurement moved a bound, the deviation from D1's premise is recorded with its reasoning**, per `CLAUDE.md`'s criterion-versus-mechanism rule.
+- [ ] **Step 10: Perturb** — make `remeasure` compare a block against the wrong spike row; the test goes red naming both blocks. Restore, report.
+- [ ] **Step 11: Rewrite G95, G96, G97, G100 and G101** against the M1 figures, each entry saying plainly whether the writer **confirmed** the number or is **relaying** the spike's. **Delete G99 only if Task 9 settled every part of it** — and *"check what the deletion takes with it"*: G99 carries an open question about port direction, which must survive somewhere if it is still open.
+- [ ] **Step 12: `shasum`, `bun run check`, commit, push.**
 
 ---
 
-### Task 18: Supersede means delete
+### Task 18: Gate 8's M1 half — reference-graph verification where the permitted delta is EMPTY
+
+> **This task exists because spec revision 4, finding 17, OVERTURNED the deferral of gate 8** that **What is NOT in this plan** recorded a day earlier. **D10** says why it sits here. The reasoning that was overturned is left visible in that section; this task implements the corrected position.
+
+**Files:**
+- Create (ported, adapted): `lib/schgen/gates/reference-graph.ts` (`gates/oscar/compare.ts`'s comparison and `graphFromNetlist`, adapted to `ImportedNetlist`)
+- Create: `lib/schgen/gates/declared-delta.ts`
+- Create: `docs/schematic/reference-graph-checks.md`
+- Modify: `tools/schgen/verify.ts` (register the gate), `lib/schgen/report.ts`
+- Test: `tests/schgen/gates/reference-graph.kicad.test.ts`, `tests/schgen/gates/declared-delta.test.ts`
+- Modify: `docs/known-gaps.md`
+
+**Interfaces**
+- Consumes: Task 11's `ImportedNetlist` adaptation and `exportNetlist`, Task 16's `GenerationManifest`, Tasks 12–15's completed pipeline.
+- Produces:
+  ```ts
+  /** A netlist as a graph: components by value and kind, adjacency by pin, independent of references and net names. */
+  export interface ReferenceGraph {
+    readonly nodes: readonly { readonly key: string; readonly value: string; readonly libId: string }[]
+    readonly adjacency: readonly { readonly a: string; readonly b: string }[]
+  }
+  export function graphFromNetlist(n: ImportedNetlist): ReferenceGraph
+
+  /**
+   * Spec §2 rev 4: a delta is derived from a declared TRANSFORMATION, never from an output.
+   * `from` names the transformation that produces it. There is no constructor that omits it.
+   */
+  export interface DeclaredDelta {
+    readonly id: string
+    readonly from: string        // the transformation: e.g. "partition: removes other sections"
+    readonly why: string
+    readonly edit: GraphEdit
+  }
+  export type PermittedDelta =
+    | { readonly kind: "empty" }                                        // M1: no electrical change at all
+    | { readonly kind: "declared"; readonly deltas: readonly DeclaredDelta[] }   // M2
+  export function parseDeclaredDeltas(json: string, file: string): PermittedDelta
+
+  export interface ReferenceGraphResult {
+    readonly reference: string
+    readonly manifest: string            // §2.1: a gate reporting a pass names the manifest
+    readonly permitted: PermittedDelta
+    /** Every difference left after the permitted deltas are applied. Non-empty is a FAILURE. */
+    readonly undeclared: readonly string[]
+  }
+  export function checkReferenceGraph(generated: ImportedNetlist, reference: ImportedNetlist,
+    permitted: PermittedDelta, manifest: string): ReferenceGraphResult
+  ```
+
+**What the gate is**, from `gates/oscar/compare.ts` read in the pedals tree: *"a carried-over subcircuit equals OSCAR's once the declared CORE-BRIEF deltas are applied to OSCAR's graph. **An undeclared difference fails by construction.**"* **You cannot accidentally change a circuit and pass, because passing requires having stated beforehand what you meant to change.** It is the acceptance-criteria invariant applied to a netlist.
+
+**What the round trip cannot catch and this can** (spec §2). The round trip proves a generated schematic matches **the netlist it was generated from** — self-consistency. **A generator that mangles a circuit the same way at both ends passes the round trip happily.** This proves it matches **a drawing a human made and trusts.** Different failures; neither substitutes for the other, and Task 11's module comment already says the round trip must never be reported as this check.
+
+**M1'S HALF IS THE EMPTY DELTA, AND THAT IS WHY IT IS CHECKABLE AT ALL.** Spec §2, revision 4:
+
+> **M1 ports and exercises reference-graph verification on circuits that require NO electrical change, where the permitted delta is EMPTY. A circuit rendered from its own model should have an empty delta, which is checkable on day one.**
+
+**The references exist and the parent names them for exactly this:** `circuits/pt2399-core/pt2399-core.kicad_sch` and `circuits/transistor-preamp/lab-board.kicad_sch` are hand-arranged and known good. **Neither is partitioned, neither carries a stand-in, and neither gets a junction header** — so a schematic generated from the same model has nothing it is supposed to differ by, and **`{ kind: "empty" }` is the whole delta list.** No `CORE-BRIEF.md`, no enumeration, nothing written from output.
+
+**THE RULE THIS TASK ENFORCES IN CODE, not only in prose: a list of permitted electrical changes is NEVER inferred from a generated schematic.** `DeclaredDelta.from` names the transformation that produces the delta and **has no default**, so a delta cannot be added without naming a transformation; `parseDeclaredDeltas` refuses an entry whose `from` is blank, and refuses a file that is not committed. **A difference found by looking at output is a defect report until some declared transformation accounts for it** — never a new list entry. The review's sentence is the reason, and it goes in `declared-delta.ts`'s module comment verbatim: *"waiting until generated schematics exist to enumerate their differences creates precisely the provenance risk gate 8 is supposed to prevent: a generator defect could be retrospectively classified as an intended change."*
+
+**The adaptation, and it is the one surviving reason the gate was not M1 work before.** `graphFromNetlist` is written against pedals' `connectivityFromXml`/`componentsFromXml` XML readers. **Task 11 already replaced that path with `importNetlist` for gate 3, and this task does the same for the graph builder** — one netlist reader, which is Task 11's own criterion. **No `fast-xml-parser`.**
+
+**What makes the comparison independent of what it is comparing.** The graph keys components by value and library id and the adjacency by pin, **not by designator and not by net name** — which is the criterion `docs/known-gaps.md` recorded for this gate before it had a task: *a generated schematic is compared against a hand-arranged one by value and pin-level adjacency, independent of references and net names.* The reference lock (Task 6) assigns designators and must not be able to launder a difference through them.
+
+- [ ] **Step 1: Write the failing empty-delta test** at `tests/schgen/gates/reference-graph.kicad.test.ts`, over both references, through real `kicad-cli`, **failing rather than skipping when it is absent**:
+```ts
+for (const r of [pt2399Core(), labBoard()]) {
+  test(`${r.name}: generated from its own model, the permitted delta is empty and nothing is left over`, async () => {
+    const result = checkReferenceGraph(await exportOf(await generate(r.design)),
+      await exportOf(r.committedSchematic), { kind: "empty" }, r.manifest)
+    expect(result.undeclared).toEqual([])
+  })
+}
+test("a delta with no declared transformation is REFUSED, not admitted", () => {
+  expect(() => parseDeclaredDeltas(deltaWithBlankFrom, "f.json")).toThrow(/transformation/)
+})
+test("an undeclared difference fails by construction", () => {
+  const r = checkReferenceGraph(withOneResistorValueChanged(gen), ref, { kind: "empty" }, m)
+  expect(r.undeclared.length).toBeGreaterThan(0)
+})
+```
+- [ ] **Step 2: Run them.** Expected: fail — `checkReferenceGraph` does not exist.
+- [ ] **Step 3: Run the rewriter** over `gates/oscar/compare.ts` and `boundary.ts`, keeping only the comparison and the graph builder. **Report what was left behind and why** — the OSCAR acquisition, the `CORE-BRIEF` reader and pedals' own boundary map are not ported, and `tools/schgen/oscar/acquire.test.ts` stays out (**What is NOT in this plan**).
+- [ ] **Step 4: Adapt `graphFromNetlist` to `ImportedNetlist`** and write `declared-delta.ts`. **`parseDeclaredDeltas` has no code path that produces a `DeclaredDelta` from a `ReferenceGraph`** — state that in the module comment and prove it in Step 7's perturbation.
+- [ ] **Step 5: Run the two empty-delta checks and report BOTH FULL OUTPUTS**, pass or fail. **If either reference does not come back empty, that is the most interesting result in M1 and it is not a test to relax**: diagnose with superpowers:systematic-debugging, and if the difference turns out to be legitimate, **it is admitted only by naming the transformation that produces it** — which, for a circuit nothing transforms, means there is a generator defect.
+- [ ] **Step 6: Register the gate in `verify.ts`** so `runGates` reports it by name, with the manifest it passed against (spec §2.1). **A reference it cannot find reports LOUDLY and does not pass** — a skipped check must never look like a passing one, and this is the gate whose absence a table already lost once.
+- [ ] **Step 7: Perturb, three ways.** (1) Change one resistor's value in the generated design; the undeclared-difference assertion goes red naming the component. (2) Add a delta with a blank `from`; the refusal fires naming the transformation requirement. **(3) Write the forbidden thing deliberately — a helper that builds a `DeclaredDelta` list by diffing the generated graph against the reference — and confirm it cannot be reached from `checkReferenceGraph`'s inputs**, then delete it and report what you tried. That is the provenance risk made concrete rather than asserted.
+- [ ] **Step 8: Write `docs/schematic/reference-graph-checks.md`** — per reference: the graph sizes on both sides, the permitted delta (empty), the undeclared differences (expected: none), and **what the check does NOT cover**: it is netlist-level and says nothing about readability (§3.3, §3.5), and it has no Pultec section to run on because M1 produces none.
+- [ ] **Step 9: Rewrite `docs/known-gaps.md` G104** against what this task actually ran: the overturn as implemented, which references came back empty, and **what is genuinely left for M2** — the Pultec transformation manifest, derived from `circuits/pultec/partition.ts`'s declared transformations and **never from a generated drawing.** Carry the criterion forward.
+- [ ] **Step 10: `shasum`, `bun run check`, commit, push.**
+
+---
+
+### Task 19: Supersede means delete
 
 **Files:**
 - Delete: `lib/kicad/schematic.ts`, `tools/cli/schematic-stub.ts`, `tests/kicad/schematic.test.ts`
@@ -1481,7 +1789,7 @@ Three things that leaves uncertain, concretely:
 - Modify: `docs/known-gaps.md` — delete G81
 
 **Interfaces**
-- Consumes: Tasks 11 and 16 — the round trip and the manifest, which are what the five transistor-preamp tests move onto.
+- Consumes: Tasks 11, 16 and 18 — the round trip, the manifest and the reference-graph check, which are what the five transistor-preamp tests move onto.
 - Produces: nothing new. **This task removes.**
 
 **The instruction, verbatim.** Parent, under **Schematic generation**: *"This supersedes `lib/kicad/schematic.ts` (203 lines) and absorbs `lib/kicad/sexpr.ts` (96 lines). Per **supersede means delete**, the stub writer is removed in the same change that replaces it, and `README.md`'s `schematic-stub` instructions go with it."* `CLAUDE.md`: *"A pattern replaced by a better one is removed in the same change, not left as a stub for somebody to find and trust."*
@@ -1497,7 +1805,7 @@ Three things that leaves uncertain, concretely:
 - [ ] **Step 5: Delete `lib/kicad/schematic.ts`, `tools/cli/schematic-stub.ts` and `tests/kicad/schematic.test.ts`.** Drop the `schematic-stub` script. Typecheck: every remaining reference must be gone.
 - [ ] **Step 6: Fix the prose.** `README.md:29` (*"`lib/kicad/schematic.ts` writes a `.kicad_sch` from a model, though today only as a stub"*) and `README.md:210` (the `schematic-stub` instructions) — rewrite both to describe `bun run schgen`. `CLAUDE.md:72` (*"`lib/kicad/schematic.ts` still emits a stub — a correct netlist with a useless arrangement"*) — **it also says *"expect it to stop being true as the schematic-generation port lands"*, so this is the change that makes it false.** `lib/kicad/symbol-library.ts`'s comments cite the deleted writer at lines 5, 149 and 174.
 - [ ] **Step 7: Run the whole suite and `bun run typecheck`.** Report the count against Task 1's baseline. Run `make -C boards/<board> check` for all five Pultec boards.
-- [ ] **Step 8: Generate a transistor-preamp board through `schgen` and LOOK AT IT.** PDF, convert, **read with the Read tool**, and compare it against the committed hand-arranged `lab-board.kicad_sch` printed the same way. Say which is more readable and where the generator is worse. **That comparison is the honest closing measurement of M1** and it is an observation, not an acceptance: §3.3 gives no threshold and §3.5's reviewer gets the criterion, never the list.
+- [ ] **Step 8: Generate a transistor-preamp board through `schgen` and LOOK AT IT.** PDF, convert, **read with the Read tool**, and compare it against the committed hand-arranged `lab-board.kicad_sch` printed the same way. Say which is more readable and where the generator is worse. **That comparison is the honest closing measurement of M1** and it is an observation, not an acceptance: §3.3 gives no threshold and §3.5's reviewer gets the criterion, never the list. **Task 18 has already compared the same two artifacts MECHANICALLY, with an empty permitted delta** — so report both: whether the graphs agreed, and what the two drawings look like. **The first is the verdict and the second is the observation**, and conflating them is the thing spec §3.3's revision 4 warns about.
 - [ ] **Step 9: Delete G81** — and **check what the deletion takes with it.** One earlier deletion in this register removed an open owner question that survived only in a gitignored report; read G81 in full before deleting and carry anything still open into a new entry.
 - [ ] **Step 10: `shasum` the ten files, commit, push.**
 
@@ -1519,7 +1827,7 @@ Three things that leaves uncertain, concretely:
 | §1 | Port the seven templates | 7 |
 | §1 | Port the ~160 clearance refusals | 5 |
 | §1 | Port the gates | 11 |
-| §1 | Delete `lib/kicad/schematic.ts`; absorb `lib/kicad/sexpr.ts` | 18; 1 |
+| §1 | Delete `lib/kicad/schematic.ts`; absorb `lib/kicad/sexpr.ts` | 19; 1 |
 | §1.2 | Every symbol declares which side each pin leaves from; ports FIXED | 9; 12 |
 | §1.3 | A three-valued selection; only `not-applicable` selects ELK | 8 |
 | §1.3 rev 2 | Five outcomes; all 30 `mismatch(…)` sites say which kind | 8 |
@@ -1531,13 +1839,21 @@ Three things that leaves uncertain, concretely:
 | §1.4 | Clearance checks RE-VALIDATED via an up-front obstacle-category matrix | 5; 13 Step 6 |
 | §1.5 | Orientation authority: template, then rule, then backend | 9; 13 |
 | §1.5 | The four-link mapping verified end to end | 13 |
+| §1.4 rev 4 | A canonical wire topology before serialization; crossing vs T-junction; pin-end identity; ambiguous overlap refuses | 13; 16 |
 | §1.6 | Blocks, sheets and section boards distinguished | 9; 15 |
 | §1.6 | Exactly one cross-sheet mechanism; a net using two refuses | 15 (**D5**) |
+| §1.6 rev 4 | One authoritative mechanism per CLASS; a class with none refuses | 15 (**D5**) |
 | §1.6 | One-sheet vs multi-sheet net membership, three cases | 15 |
 | §1.7 | One visual language; the flow direction pinned | **D4**; 12; 15 |
-| §1.8 | A block-size decision naming both bounds and the cost paid | **D1**; 16 Step 7; 17 |
+| §1.8 | A block-granularity decision naming both bounds and the cost paid | **D1**; 16 Step 7; 17 |
+| §1.8 rev 4 | The floor is unmeasured for this backend, not 4; the ceiling's shape is re-derived | **D1**; 17 Steps 5, 9 |
+| §1.9 rev 4 | A block declares named interface ports, acceptable sides, fixed vs negotiable positions | 9 (**D9**) |
+| §1.9 rev 4 | Seam B preserves a block's interior and connects its interfaces, or REFUSES | 15 |
+| §1.1 rev 4 | 6.1x is an upper bound; the integrated experiment measures how much survives composition | 15 Step 5a; 17 Step 4 |
 | §2 | The round trip's complete five-part contract | 11 |
 | §2 | The round trip is not a readability gate and is not reported as one | 11 |
+| §2 rev 4 | Gate 8's EMPTY-delta half ported and exercised on circuits needing no electrical change | 18 (**D10**) |
+| §2 rev 4 | A permitted-change list is never inferred from a generated schematic | 18 Steps 4, 7 |
 | §2.1 | A generation manifest tying the link checks to one derivation | 16 |
 | §2.1 rev 2 | The manifest hashes the serialized layout input | 12; 16 |
 | §3.1 | Readable by construction — templates | 7 |
@@ -1545,22 +1861,29 @@ Three things that leaves uncertain, concretely:
 | §3.3 | Four measures, reported independently, no composite | 16 |
 | §3.3 | A baseline held outside the generator, scoped to the input's bytes | 16 |
 | §3.3 | A first generation reports measures with no verdict | 16 Step 7 |
+| §3.3 rev 4 | Reproducibility identity vs comparison identity; a moved hash is flagged, not a refusal to compare | 16 |
+| §3.3 rev 4 | The four-measure comparison is descriptive, not pass/fail | 16 (`MeasureComparison.verdict`) |
 | §3.4 | Congruence measured with the rail glyphs the instances get | 17 Step 5 |
 | §3.4 | Disjointness measured against whatever composes blocks onto a sheet | 15; 17 Step 6 |
 | §3.5 | A readability finding's required form; content unprescribed | 16 |
 | §3.5 | A reviewer may not silently modify the criteria | 16 Step 6 |
 | §5.1 | Existing-template parity: run them and count | 10; 17 Step 1 |
+| §5.1 rev 4 | Port parity (a REGRESSION) tested against the source project's own fixtures | 7 Step 3 |
+| §5.1 rev 4 | Applicability, ELK coverage and integrated correctness kept separate from port parity | 10; 12–14; 11 and 18 |
+| §5.2 rev 4 | The cross-sheet decision has a named owner rather than staying open | 15 (**D5**) |
 | §5.4 | Is a passive's symbol per part or per kind | 9 (per kind, with a reasoned override) |
 | §5.6 | §1.1, §1.8, §3.3, §3.4 re-taken with templates in the loop | 17 |
 | G94 | A defined outcome when the backend raises | 14 |
 | G99 | No backend input invented at the call site | 9 |
 | G85 | An up-front obstacle-category matrix | 5 |
 
-**Spec obligations deliberately not covered, each with its reason stated in the plan:** gate 8 / `gates/oscar/` (**What is NOT in this plan**, recorded in `docs/known-gaps.md` by Task 11 Step 9 against a parent instruction that says it ports); §5.2's flow direction and cross-sheet mechanism, which the spec leaves open and **D4**/**D5** close with their reasoning recorded for dispute; §5.5's five new templates and three constructs, which are M2.
+**Spec obligations deliberately not covered, each with its reason stated in the plan:** **the PULTEC-SPECIFIC half of gate 8** — the transformation manifest — because M1 emits no Pultec section for it to describe (**What is NOT in this plan**, rewritten against spec revision 4; **the gate itself is Task 18 and is no longer deferred**); §5.2's flow direction, which **D4** closes with its reasoning recorded for dispute; §5.5's five new templates and three constructs, which are M2; and §1.9's open design questions — how many interface ports a block should have, which sides suit which port, how a negotiable position is chosen — which the spec leaves open and **D9**/Task 15 record rather than settle.
+
+**And one obligation that moved INTO the plan after it was written**, recorded here because the self-review is where a reader checks the plan against the spec: **spec revision 4 added §1.9, rewrote §1.8, split gate 8, separated the two baseline identities, split template parity into four measurements, and required a canonical wire topology.** Tasks 7, 9, 10, 13, 15, 16 and 17 were amended and **Task 18 is new**; the old Task 18 became Task 19. **Nothing was renumbered except that one task**, so a reference to a task number in an earlier document is still valid up to 17.
 
 ### Placeholder scan
 
-Searched the document for `TBD`, `TODO`, `appropriate`, `similar to Task`, `as needed`, `etc.`, `and so on`, `handle errors`, `like above`. **No occurrence.** Every signature in an **Interfaces** block was read in `/Users/orion/work/pedals-work/digital-pedal-platform/tools/schgen` or is defined in full in the task that produces it. Every numeric claim — 30 mismatch sites, 14 obstacle categories, 105 pairs, 9 of 32 and 45 of 256 orientation failures, 293→48 crossings, 96 against 139 edges, five approvals with twelve fields and six utterances, the ceiling near 9 and floor near 4 — was read in the spec, the register or the spike documents and is attributed where it appears.
+Searched the document for `TBD`, `TODO`, `appropriate`, `similar to Task`, `as needed`, `etc.`, `and so on`, `handle errors`, `like above`. **No occurrence.** Every signature in an **Interfaces** block was read in `/Users/orion/work/pedals-work/digital-pedal-platform/tools/schgen` or is defined in full in the task that produces it. Every numeric claim — 30 mismatch sites, 14 obstacle categories, 105 pairs, 9 of 32 and 45 of 256 orientation failures, 293→48 crossings, 96 against 139 edges, five approvals with twelve fields and six utterances, **30-187 duplicate wire segments flat and 0-80 per block**, the ceiling near 9 — was read in the spec, the register or the spike documents and is attributed where it appears. **The floor near 4 is deliberately NOT carried as a figure** (spec §1.8, revision 4): it is the tested frontend's and is unmeasured for this backend, so `BlockSizeDecision.floor` admits `"unmeasured"` and **D1** point 5 says why any sentence reading it as 4 is reading a withdrawn claim.
 
 ### Type consistency across tasks
 
@@ -1569,6 +1892,9 @@ Searched the document for `TBD`, `TODO`, `appropriate`, `similar to Task`, `as n
 - `BlockLayout` is unchanged by every task: `{ placements, wires, anchors }` as the port defines it. Task 13's adapter produces exactly it, which is spec §5.3's point — *"every template-shaped consumer downstream takes `BlockLayout` and does not care which produced it."*
 - The `serialized` string is produced once, by `serializeElkInput` (Task 12), and consumed by `ElkOutcome`, `RaiseDiagnosis.inputKey`, `GenerationManifest.layoutInputSha256` and `ReadabilityBaseline.layoutInputSha256`. **One set of bytes, four consumers, no second serialization** — which is what makes the manifest and the baseline name the same thing.
 - `SchematicMeasures` is defined once (Task 16) and consumed by `ReadabilityBaseline` and `Remeasurement`.
+- `CanonicalTopology` is produced once, by `canonicalTopology` (Task 13), and is what `branchJunctions`, `crossings` and `measuresOf` (Task 16) all read. **No measure and no junction decision takes a raw `BlockLayout.wires` list**, which is spec §1.4's revision-4 criterion expressed as a type dependency.
+- `InterfacePort` is declared in Task 9's `BlockDeclaration` and read **only** by Task 15's `composeBlocks` (**D9**). One writer, one reader.
+- `PermittedDelta` is defined in Task 18 and is `{ kind: "empty" }` everywhere in M1. **`DeclaredDelta` has no constructor that omits `from`**, so the M2 shape cannot be populated without naming a transformation.
 - `SymbolResolver` is forward-declared as a type in Task 2 and implemented in Task 4 at the same path; nothing in between calls `resolve`.
 - `generate` is synchronous through Task 11 and `async` from Task 12. Task 12 Step 7 names every caller it updates.
 - `Rendering` loses `labels` and gains `auto` in Task 8, and Tasks 9, 10 and 15 are written against the post-Task-8 shape.
