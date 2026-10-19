@@ -1092,7 +1092,7 @@ raised.
 Open: a fix would settle these
 ------------------------------
 
-### G94 - ELK throws on a unity-gain op-amp with a horizontally drawn lateral on its feedback net
+### G94 - ELK throws on a unity-gain op-amp self-loop with horizontally drawn passives on its net - and the "lateral" half of the first narrowing is contradicted at block scale
 
 `[RAN]` elkjs **0.7.1 and 0.9.3** both raise
 
@@ -1113,6 +1113,59 @@ out cleanly.
 
 **A unity-gain buffer is among the most common analog idioms there is.**
 
+**AMENDED 2026-10-19 by the second spike, and the amendment contradicts half of
+the paragraph above.** `[RAN]` `docs/schematic/elk-block-spike.md` §5 reproduced
+the identical exception on `oc-audio`, a **12-part declared `include()` block**
+of `circuits/optical-compressor/` whose `circuits/optical-compressor/parts/audio-path.ts`
+declares this entry's exact recipe, and swept all **2^8 = 256** orientation
+assignments of its eight passives: **45 fail**, smallest failing set **two
+components**.
+
+| arm, on `oc-audio` | result |
+| --- | --- |
+| break the op-amp self-loop, leave everything else | **0 of 256 fail** |
+| remove the lateral off the self-loop net, keep the loop | **32 of 128 STILL FAIL** |
+| remove the lateral AND break the rheostat strap on `gain_terminal` | **31 of 128 still fail** |
+
+**So the self-loop is necessary and the lateral is NOT.** *"Removing either lays
+out cleanly"* above holds for the self-loop half and fails for the lateral half:
+delete `attenuator_series_resistor` and a different horizontal passive takes its
+place.
+
+**WHAT IS NOT SETTLED, AND THIS ENTRY DOES NOT RESOLVE IT.** The first
+narrowing was done on `opamp-buffer`; this one on `oc-audio`. **Whether the
+block-scale result CORRECTS this entry or is a SECOND SUFFICIENT CONDITION in a
+different circuit cannot be decided from either measurement**, and the spike
+says so in terms. What both agree on: **breaking the self-loop lays out
+cleanly** - a single test on `opamp-buffer`, and **all 256 assignments on
+`oc-audio`**, which is the stronger of the two arms.
+
+**AND THE PARENTS ARE WORSE THAN THEIR BLOCKS.** `[RAN]`
+
+| | h-rails | v-bare | v-rails | self-loop cells |
+| --- | --- | --- | --- | --- |
+| `WHOLE-optical-compressor`, 37 parts | **REFUSED** | ok | ok | 3 |
+| its three declared blocks | 1 of 3 refused | 3 of 3 ok | 3 of 3 ok | |
+| `WHOLE-pultec-three-band`, 76 parts | ok | **REFUSED** | **REFUSED** | 4 |
+| its five declared sections | 5 of 5 ok | 5 of 5 ok | 5 of 5 ok | |
+
+**`THREE_BAND_REFERENCE` refuses under BOTH vertical policies, including the
+default, while every one of its five declared sections lays out.** Its four
+self-loop cells are the strapped wipers of `RV_LO_CUT`, `RV_LO_BOOST`,
+`RV_HI_Q` and `RV_MID`. **That strap is deliberate and declared, which is why
+this shape is not rare here**: `[CODE]` `circuits/pultec/electrical/three-band.ts`
+declares it at each pot - *"the wiper is tied to the cw end, so only the
+ccw-wiper section carries current and the pot reads as a variable resistor"* -
+and `circuits/transistor-preamp/parts.ts` states the same strap as a convention
+across both preamp boards with its reason: *"every leg fails to its MAXIMUM
+resistance - never open, never zero."* **A rule that refuses an op-amp or pot
+self-loop refuses house style.** `pultec-mid` carries one of the four on its own
+and lays out.
+
+`[RAN]` **A single-flip sweep over all 18 blocks - 108 flips, one passive each -
+produced ZERO failures**, which is the block-scale analogue of the 69-flip
+result below. **The crash needs at least two horizontal passives.**
+
 **It is ELK and not a wrapper artifact.** The pre-layout graph was extracted and
 run through each build directly, with layout options read out of the skin rather
 than retyped; both versions produce the identical exception, and both lay out the
@@ -1122,20 +1175,37 @@ working graph to identical geometry.
 produced zero failures.** Specific, not common, and reachable from an ordinary
 idiom.
 
-- **Found** `docs/schematic/elk-spike.md` §4, 2026-10-19.
+- **Found** `docs/schematic/elk-spike.md` §4, 2026-10-19. **Amended from**
+  `docs/schematic/elk-block-spike.md` §5, the
+  same day.
 - **Evidence** the 32-subset sweep, the two-condition test, and the direct
   two-version run. A check that could have failed: 23 of 32 assignments succeed.
-- **Verified** RELAYED - the controller read the spike's measurements and did not
-  re-execute them.
+  For the amendment: the 256-subset sweep and the three-arm narrowing on
+  `oc-audio`, the 2x3x3 parent runs, and the 108-flip sweep - each with a
+  passing arm (0 of 256 after breaking the self-loop; 5 of 5 sections laying
+  out) that could have come back the other way.
+- **Verified** RELAYED, both halves - the writer read both spikes' measurements
+  and re-executed neither. **One exception, CONFIRMED by the writer:** the two
+  strap declarations quoted above were read in `circuits/pultec/electrical/three-band.ts`
+  and `circuits/transistor-preamp/parts.ts` directly.
 - **Why it is open** it is a defect in a dependency the design proposes to adopt,
   and **the design has no value for the outcome it produces.**
 - **What would settle it** **CRITERION: a generator must have a defined outcome
   when its layout backend throws.** The spec's §1.3 selector is three-valued -
   `not-applicable`, `applicable`, `generation-failed` - and **a block that reaches
-  ELK and makes ELK throw is a fourth outcome it does not name.** Separately,
-  whether §1.5's orientation rule library can be required never to emit this
-  shape. **MECHANISM, untested:** constraining laterals on a self-loop net to
-  vertical.
+  ELK and makes ELK throw is a further outcome it does not name.** Spec §5.3
+  sharpens where that lands: `RealiseResult` is **two-valued** in the source,
+  with 30 `mismatch(...)` call sites funnelling into one `ok: false`, so a
+  `realise` that RAISES is outside that type entirely. Separately, whether
+  §1.5's orientation rule library can be required never to emit this shape.
+- **MECHANISM, and the first one is now MEASURED WRONG.** This entry suggested
+  *"constraining laterals on a self-loop net to vertical"*. **On `oc-audio` that
+  leaves 32 of 128 assignments still failing**, so a rule library built to it
+  would ship a non-fix. The criterion above is what binds. **Untested
+  replacement:** constrain the self-loop itself, which is the only arm that
+  cleared a whole sweep - and it is untested as a RULE, because a strapped pot
+  wiper is a deliberate convention here and a rule that refuses it refuses house
+  style.
 
 ### G95 - ELK's output is a function of input cell ORDER, so a drawing is not a stable property of a circuit
 
@@ -1159,16 +1229,44 @@ output over three runs, and an earlier session's probe regenerated byte-identica
 The two facts are compatible and must not be confused: **the serialization is
 deterministic; the circuit is not.**
 
+**REFINED 2026-10-19 at block scale, and the refinement is the actionable part.**
+`[RAN]` `docs/schematic/elk-block-spike.md`
+§2.1 re-ran the same shuffle on declared blocks:
+
+| | cells | inter-net crossings over four orders | distinct drawings |
+| --- | --- | --- | --- |
+| `leg-upper` | 3 | 0, 0, 0, 0 | 3 |
+| `standin-hi-cut` | 4 | 0, 0, 0, 0 | 3 |
+| `oc-power` | 8 | 0, 0, 0, 0 | 4 |
+| `pultec-low-boost` | 9 | 5, 5, 5, 5 | 4 |
+| `oc-audio` | 13 | 28, 26, 22, 29 | 4 |
+| `pultec-hi-boost` | 17 | 14, 29, 21, 14 | 4 |
+| `pultec-mid` | 28 | 37, 20, 20, 25 | 4 |
+| `WHOLE-optical-compressor` | 39 | 293, 204, 308, 337 | 4 |
+
+**The DRAWING still changes with every reordering at every size** - the hash
+criterion below is untouched by this and still binds. **What changes is whether
+the MEASURE moves with it:** invariant at and below 9 cells, moving by up to
+2.1x from 13 cells up. **Below about 9 parts a block's measured quality is a
+property of the block; above it, it is partly a property of the order somebody
+typed the components in.** G101 is the design consequence.
+
 - **Found** `docs/schematic/elk-spike.md` §1.1. New - in no earlier pass.
-- **Evidence** md5 comparison plus re-measurement of each shuffle.
-- **Verified** RELAYED.
+  **Refined from** `docs/schematic/elk-block-spike.md` §2.1.
+- **Evidence** md5 comparison plus re-measurement of each shuffle. At block
+  scale, the same comparison over 18 blocks - a check that could have failed in
+  either direction and reported invariance on 4 of 9 rows.
+- **Verified** RELAYED, both halves.
 - **Why it is open** it falsifies an assumption two settled design elements rest
   on, and neither has been adjusted.
 - **What would settle it** **CRITERION: the generation manifest hashes the exact
   serialized input handed to the layout engine, not the section `Network`'s
   content** - a content hash would not detect the change that moved the drawing.
   And **a readability baseline must be scoped to that same serialization**, or it
-  compares numbers that are not properties of the circuit. **MECHANISM,
+  compares numbers that are not properties of the circuit. **Block scale adds a
+  second, independent criterion rather than replacing that one: a baseline over
+  blocks small enough that the measure does not move under reordering is a
+  baseline about the circuit; over large blocks it is not.** **MECHANISM,
   untested:** a stated canonical ordering upstream of serialization.
 
 ### G96 - ELK on five real repository circuits is worse than the representative probe on every axis
@@ -1199,17 +1297,52 @@ on all five circuits. A `gnd` glyph is added and the ground net is still routed 
 a long bus, so the symbol costs edges and saves none. §1.6's "power symbols"
 candidate gets nothing from this front end for free.
 
-- **Found** `docs/schematic/elk-spike.md` §2.
+**AMENDED 2026-10-19: "on every axis" is true of WHOLE circuits and false of
+declared BLOCKS.** `[RAN]`
+`docs/schematic/elk-block-spike.md` §3 ran 18
+declared blocks of 1 to 28 parts through the same converter and skin:
+
+| on the best policy (`v-bare`) | 14 whole-circuit runs | 18 declared blocks | the probe |
+| --- | --- | --- | --- |
+| bends per edge | 2.19 - 3.27, **0 of 14 beat the probe** | **0.67 - 2.89, 6 of 18 beat it**, 12 of 18 at or below 2.00 | 1.72 |
+| inter-net crossings | 16 - 195 | **0 on every block of 8 parts or fewer**, then 4, 5, 14, 16, 20, 28, 37 | 15 |
+| aspect | 1.37 - 5.19 | 0.87 - **6.63** | 2.55 |
+
+**So the axis that sharpened is bends per edge, and the axis that got worse is
+aspect**: `pultec-mid` scores a good 1.77 on a **2716 x 410, 6.63:1** sheet and
+`pultec-hi-boost` 1.66 on 4.70:1, where the parent spec calls a 1:1.97 ribbon
+unusable. **Bends per edge and aspect disagree about those two blocks, and only
+one of them is what a reader meets.**
+
+**Size is a WEAK predictor of bends per edge, and the apparent effect is a
+property of the POLICY.** `[RAN]` Spearman rho over the 18 blocks is **+0.57**,
+falling to **+0.15** once port edges are excluded; under `h-rails` it is
+**+0.92** and **+0.87**. A 28-part block (1.77) beats a 3-part block (2.00).
+**Crossings grow faster than linearly in parts; bends per edge does not grow at
+all.**
+
+**The policy result holds and sharpens:** `h-rails` is worse on bends per edge
+for **17 of 17** blocks that laid out, and it is the policy that makes
+`oc-audio` crash (G94).
+
+- **Found** `docs/schematic/elk-spike.md` §2. **Amended from**
+  `docs/schematic/elk-block-spike.md` §3.
 - **Evidence** the full fifteen-row table there, with the spike's measurement code
   validated against §3.5's published numbers and its SVG regenerated
-  byte-identical.
-- **Verified** RELAYED.
+  byte-identical. At block scale, the same measurement code reached through a
+  machine-extracted copy of the same converter, with **15 of 15 whole-circuit
+  inputs regenerated byte-identical** as the control that the extraction changed
+  no behaviour.
+- **Verified** RELAYED, both halves.
 - **Why it is open** it is a measurement, not a defect. **It is recorded so the
   next agent does not re-derive it**, and because it is the before-measurement for
   any template that claims to improve on it.
-- **What would settle it** nothing. **A caution instead: these are ELK with NO
-  template at all**, which is what seam A asks of it, and they are not a
-  prediction about seam A plus a template library.
+- **What would settle it** nothing. **A caution instead, and it is now true of
+  TWO spikes: these are ELK with NO template at all**, which is what seam A asks
+  of it, and they are not a prediction about seam A plus a template library.
+  **Neither spike had a template in the loop and neither measured a block in
+  CONTEXT** - seam A hands ELK the subgraph left over after templates have drawn
+  its neighbours, and both spikes measured a block in isolation.
 
 ### G97 - a declared functional group does not draw disjointly, and a repeated sub-circuit does not draw congruently
 
@@ -1234,12 +1367,55 @@ measurements of a DRAWING.** The model does declare the group and the repetition
 What is established here is that **a general engine given no template honours
 neither**, which is precisely what makes those two criteria worth having.
 
-- **Found** `docs/schematic/elk-spike.md` §6.
-- **Evidence** bounding boxes and offsets computed from the drawn geometry.
-- **Verified** RELAYED.
-- **Why it is open** these are the two criteria a template is load-bearing for.
+**AMENDED 2026-10-19: CONGRUENCE FLIPS AT BLOCK SCALE.** `[RAN]`
+`docs/schematic/elk-block-spike.md` §6 laid the
+same four declared bias legs out ALONE, `v-bare`:
+
+| leg | canvas | jumper -> floor | floor -> trim | jumper top-left |
+| --- | --- | --- | --- | --- |
+| `leg-upper` | 354x190 | (+107, +28) | (+54, +65) | (81, 22) |
+| `leg-feedback` | 390x190 | (+125, +28) | (+54, +65) | (81, 22) |
+| `leg-lowerA` | 378x190 | (+119, +28) | (+54, +65) | (81, 22) |
+| `leg-lowerB` | 378x190 | (+119, +28) | (+54, +65) | (81, 22) |
+
+**Every vertical offset identical, the internal vector identical, the starting
+corner identical.** The single x difference is **predicted exactly** by
+`6 * len(component id) + 5` - 107 / 125 / 119 / 119 for ids of length
+17 / 20 / 19 / 19, **4 of 4 to the pixel** - which is the 0.6 em at 10 px
+monospace the skin uses. **The blocks draw congruently and the drawn width of
+the component's NAME is what separates them.**
+
+**So the flat measurement above is not the general answer: at block scale an
+untemplated engine DOES honour the repetition, and §3.4's claim that this
+repository can make congruence objective is supported there and was not at flat
+scale.**
+
+**Two qualifications, and the first one is the one a template designer needs.**
+`[RAN]` Under `v-rails` the congruence BREAKS: `leg-upper` runs from `VCC` and
+gets a `vcc` glyph, `leg-feedback` runs from `COLLECTOR` and gets none, and the
+two land at (91, 42) on 364x210 against (81, 22) on 390x190, with the internal
+vector splitting +54 / +44. **Adding a rail symbol to one of two otherwise
+identical blocks stops them drawing alike.** Under `h-rails` the four stay
+congruent in shape while the canvas widths diverge further, 480 to 536.
+
+**And the DISJOINTNESS half does not get an answer this way - it gets dissolved.**
+Inside a single block disjointness is trivially satisfied, so a block-scale
+measurement cannot pass or fail it. It remains measured only at flat scale,
+where it answers no.
+
+- **Found** `docs/schematic/elk-spike.md` §6. **Amended from**
+  `docs/schematic/elk-block-spike.md` §6.
+- **Evidence** bounding boxes and offsets computed from the drawn geometry. At
+  block scale, offsets between cell top-left corners on four separately
+  generated drawings, plus the id-width prediction, which could have missed on
+  any of the four and missed on none.
+- **Verified** RELAYED, both halves.
+- **Why it is open** these are the two criteria a template is load-bearing for,
+  and the congruence half now has two opposite measurements at two scales.
 - **What would settle it** **CRITERION: the same two measurements, taken again
-  once a template is in the loop.** These numbers are the before.
+  once a template is in the loop.** These numbers are the before. **Added by the
+  amendment: congruence must be measured with the rail glyphs the two instances
+  would actually get**, because that is what broke it here, not the topology.
 
 ### G98 - "wire through a symbol body" has two definitions and one manufactures 36 false defects
 
@@ -1281,22 +1457,268 @@ load-bearing:
 | a **pin-side partition** for an IC | **no basis in the model at all** - `pt2399-core`'s 16-pin PT2399 was split "first half in, second half out" because nothing said otherwise |
 | a **rail convention** | the IR has no power symbol; `GND`/`VCC`/`0` are ordinary nets. Measurable - adding rail glyphs made every circuit worse (G96) |
 
+**A FIFTH, ADDED 2026-10-19 and visible only once blocks had declared ports.**
+`[CODE]` `docs/schematic/elk-block-spike.md`
+§0 H5 and §7: **the IR carries no port DIRECTION**, so every declared port was
+emitted as `direction: "input"`. netlistsvg therefore draws entry and exit ports
+alike as an inbound `inputExt` arrow and ELK is told every one of them is a
+source. **On `leg-upper` the exit port `to` draws as an arrow pointing INTO the
+trim-pot.** The first spike could not see this: it laid out whole circuits,
+where a port is an interface terminal rather than a block boundary.
+
+**The same section measures what ELK does with a port it is not told is a
+boundary: it puts it in the interior.** As a fraction of canvas width,
+`pultec-mid` puts `ground` at 0.91 and `input` at 0.72; `pultec-hi-boost` puts
+`input` at 0.02 and `hi_boost_out` at 0.06 - **the two interface ports adjacent
+in the left twentieth of a 1361-wide sheet.** A `Network`'s `.port(...)` set
+says a net crosses the boundary and nothing downstream says which way or where.
+
 **The spec's §1.5 answers who DECIDES an orientation - template, then
 circuit-context rule, then the engine. It does not answer where a symbol, a pin
-side or a rail convention is DECLARED.** Those are different questions and only
-the first is settled.
+side or a rail convention is DECLARED**, and it does not answer port direction
+either. Those are different questions and only the first is settled.
 
 - **Found** `docs/schematic/elk-spike.md` §0, as the cost of the conversion.
+  **Extended from** `docs/schematic/elk-block-spike.md` §0 H5 and §7.
 - **Evidence** the conversion itself, with a partition check passing 15 of 15 that
   caught two of the harness's own bugs and a deliberate mutation - so the
-  inventions are the residue after the checkable part was checked.
-- **Verified** RELAYED.
-- **Why it is open** three of the four have no home in the model and the design
+  inventions are the residue after the checkable part was checked. **Read G102
+  before leaning on that check: its mutation arm has a blind spot**, and the
+  inventions it leaves as residue are therefore a lower bound rather than a
+  complete list. The fifth invention was read out of the converter `[CODE]` and
+  is visible in the drawings.
+- **Verified** RELAYED, both halves.
+- **Why it is open** four of the five have no home in the model and the design
   does not name one.
 - **What would settle it** **CRITERION: every input a layout backend needs is
   either declared in the model or derived by a reviewed rule - none invented at
   the call site.** The IC pin-side partition is the sharpest case: it has no
   source, and a wrong one is invisible in a drawing that is electrically correct.
+  **Port direction is the second: at block scale every boundary net gets an
+  arrow, and half of them point the wrong way.**
+
+### G100 - drawing a circuit as its declared blocks beats drawing it whole on every axis measured, and the mechanism is that the blocks have FEWER EDGES
+
+`[RAN]` `docs/schematic/elk-block-spike.md` §4
+is the paired control neither earlier pass could make: the same circuit, the same
+converter, the same policy and the same skin, with the ONLY difference being
+whether ELK saw it whole or one declared block at a time.
+
+| `optical-compressor`, `v-bare` | parts | aspect | inter-net crossings | edges | bends/edge | wire length |
+| --- | --- | --- | --- | --- | --- | --- |
+| **whole** | 37 | 4.05 | **293** | 139 | **3.18** | **159 967** |
+| `oc-power` | 8 | 3.11 | 0 | 20 | 2.70 | |
+| `oc-audio` | 12 | 1.48 | 28 | 37 | 2.89 | |
+| `oc-sidechain` | 17 | 1.81 | 20 | 39 | 2.51 | |
+| **its three declared blocks** | 37 | worst **3.11** | **48 total** | 96 | **2.70** | **35 070** |
+
+**6.1x fewer inter-net crossings, 4.6x less wire, and the worst block's aspect is
+better than the whole's.** `v-rails` gives the same shape: 267 -> 47, 3.27 ->
+2.68, 5.04 -> 3.14. **And the 76-part `THREE_BAND_REFERENCE` goes from REFUSED
+under both vertical policies to five drawings that all complete** (G94).
+
+**THE MECHANISM, which is why this is not a lucky result.** `[RAN]` **The three
+blocks carry FEWER EDGES THAN THE WHOLE - 96 against 139.** The parent's maximum
+net degree is 19 and no block's exceeds 7, so a ground fanning to nineteen pins
+across one sheet becomes four smaller fans, **and the edges that disappear are
+the ones that were crossing everything.** Decomposition does not route the same
+graph better; it hands ELK a smaller graph.
+
+**AND IT IS NOT UNIFORMLY A WIN PER BLOCK.** Under `h-rails`, where the 76-part
+whole does lay out, the whole scores 373 crossings / 3.56 bends per edge /
+8.37:1 and the five sections total 239 / 3.37 / worst 4.05 - a real but much
+smaller gain, **and the 28-part `pultec-mid` at 3.73 is WORSE than its own
+parent.** The win is in the totals and in whether the thing completes at all.
+
+**What does NOT improve is everything the flat spike's readability complaint was
+about:** a 12-part block still has 28 crossings, two 17-part blocks are 4.5:1 and
+4.7:1 ribbons, the capacitor banks are still out of frequency order, and the
+interface ports still land mid-sheet (G99). **Block scale removes the
+catastrophe and leaves the complaint.**
+
+- **Found** `docs/schematic/elk-block-spike.md` §4, 2026-10-19.
+- **Evidence** both parents emitted through the same machine-extracted converter
+  as the blocks, with **15 of 15** of the first spike's whole-circuit inputs
+  regenerated **byte-identical** through that extraction as the control that it
+  changed no behaviour, and a partition check passing 54 of 54 and failing 54 of
+  54 under mutation. A check that could have failed: the parent could have scored
+  better than its blocks, and under one policy one block does score worse than
+  its parent.
+- **Verified** RELAYED.
+- **Why it is open** it is a measurement, not a defect. **It is the strongest
+  evidence in the repository for the architecture's block seam**, and it is
+  recorded so nobody re-derives it and so the next agent knows the gain has a
+  stated mechanism rather than being a hope.
+- **What would settle it** nothing. **A caution instead, twice over.** These are
+  blocks in ISOLATION, each on its own canvas; **the totals add crossings across
+  three sheets, and a mechanism that put them on one sheet would add its own**
+  (spec seam B, untested). And no template was in the loop in either spike.
+
+### G101 - block size has a CEILING near 9 parts and a FLOOR near 4, and the two bounds are close together
+
+`[RAN]` `docs/schematic/elk-block-spike.md` §9
+and §7, over 18 declared blocks of 1 to 28 parts.
+
+**THE CEILING, from two independent measures that agree.**
+
+- **Inter-net crossings are ZERO on every block of 8 parts or fewer**, then 4, 5,
+  14, 16, 20, 28, 37 - and 293 on the 37-part parent.
+- **Crossing count is invariant under declaration-order shuffling at 9 cells and
+  moves 22-29 at 13** (G95).
+
+**So below about nine parts a block's measured quality is a property of the
+BLOCK, and above it the measure is partly a property of the order somebody typed
+the components in.** It is **not** the size at which drawings become good:
+`leg-upper` at three parts has zero crossings, a congruent layout and three
+legibility defects a reader trips on.
+
+**THE FLOOR, and it is the price of a fine cut.** A declared port is not free
+annotation - `[CODE]` netlistsvg emits it as a 30x20 `inputExt` CELL and ELK
+lays it out like any other node.
+
+| block | parts | port glyphs as share of cells | bends/edge, port edges | bends/edge, internal |
+| --- | --- | --- | --- | --- |
+| `standin-mid` | 1 | **0.67** | 1.00 | - |
+| `standin-low-boost` | 2 | **0.60** | 1.50 | - |
+| `oc-power` | 8 | 0.33 | 2.71 | 2.67 |
+| `pultec-low-cut` | 9 | 0.18 | **3.12** | 2.12 |
+| `pultec-hi-cut` | 13 | 0.13 | **2.91** | 2.27 |
+| `pultec-mid` | 28 | 0.10 | 2.00 | 1.75 |
+
+**Port glyphs are 10-67 % of a block's cells, a 1-part block's drawing is
+two-thirds boundary, and the boundary is the bendy part**: port edges carry more
+bends per edge than internal edges on **every one of the 8 blocks of 8 parts or
+more** and on the parent, by up to 1.5x. Of the seven smaller blocks with both
+kinds of edge, five are equal and one is lower.
+
+**THE TWO BOUNDS ARE CLOSE TOGETHER, and that is the finding.** The size at
+which a block draws predictably is near the size at which the drawing is mostly
+boundary. **Cutting finer trades crossings for boundary**, and a third cost
+comes with it: `[RAN]` labels running past the right-hand canvas edge affect **26
+of 53 block drawings against 5 of 14 whole-circuit drawings** (worst overflow
+13 px), because the canvas shrinks with the block and the component ids do not.
+
+**One check that could have failed and did not:** across the 18 blocks there are
+20 single-pin nets and **every one is a declared port, zero undeclared**. A block
+cut by `include()`, by `OWNERSHIP` or by a stand-in's `boundary` does not leave a
+net hanging that its declaration does not name.
+
+- **Found** `docs/schematic/elk-block-spike.md` §9, §7 and §2.1, 2026-10-19.
+- **Evidence** the 18-block table, the shuffle comparison, and the port-edge
+  split computed from each input's own `ports` declaration. Checks that could
+  have failed: crossings were 0 on 11 blocks and nonzero on 7; the dangling-net
+  scan could have found an undeclared one and found none.
+- **Verified** RELAYED.
+- **Why it is open** it is a measurement that constrains a decision nobody has
+  made. **The spec has no section for block size and this entry is the input to
+  one.**
+- **What would settle it** **CRITERION: a block-size decision names both bounds
+  and says which cost it is paying** - above the ceiling the measured quality is
+  not a property of the circuit, below the floor most of the drawing is boundary.
+  **Nothing here picks a number and this entry does not propose one.**
+  **CAVEAT THAT MUST TRAVEL WITH THE FIGURE: the ~9 comes from 18 blocks out of
+  TWO parents, both unusual** - a 76-part passive EQ and a 37-part compressor
+  with two dual op-amps - and the repository declares no block above 28 parts, so
+  nothing above that was tested at all. **MECHANISM, untested:** whether a
+  template in the loop moves either bound. It was in neither spike.
+
+### G102 - three harness checks in the ELK spikes could not have failed on the fixtures they were built against, and one of them had never drawn the part it was wrong about
+
+`[RAN]` `docs/schematic/elk-block-spike.md` §0
+reports three defects in spike harnesses, and **the general form is what earns
+an entry: a check or a converter that cannot be exercised by its own fixtures
+looks exactly like a correct one.** All three were found by widening the
+fixtures or by reading the code, never by a failing run.
+
+**1. A converter bug that had never fired.** The first spike's converter maps a
+diode's pins to the skin ids `A`/`B`. A scan of netlistsvg's own
+`lib/analog.svg` skin - in that checkout, not in this repository - prints
+`diode_v | alias: d_v | pids: +,-`; **`A`/`B` belong to the resistor, capacitor,
+inductor and crystal templates.** **None of the first spike's five circuits
+contains a diode**, so the bug was invisible and nothing that spike measured
+could have caught it. Two blocks in the second spike do, and ELK refuses the
+input outright: `JsonImportException: Referenced shape does not exist:
+reverse_polarity_diode.A`. **Until the second spike, this repository's ELK
+evidence had never drawn a diode.**
+
+**2. A mutation arm too weak to prove the check it guards, in BOTH spikes.** The
+partition check compares net CONTENTS ignoring net NAMES. Its mutation moved one
+pin to a FRESH net - and on a small block that leaves the multiset of groups
+unchanged, so **27 of 54 mutated rows still reported SAME**. Merging the pin onto
+an EXISTING net instead gives **54 of 54 DIFFERENT**. **A pin moved to a
+brand-new net is invisible to this check in both spikes**, and that check is the
+evidence G99 rests on.
+
+**3. A measurement column that reports 0 because it cannot report anything
+else.** `[CODE]` `measure.py`'s `labels_past_right_edge` compares a `<text>`'s
+LOCAL `x` against the absolute canvas width and reports **0 on all 56 drawings**.
+`[RAN]` No recorded figure rests on it - the first spike's "5 of 15" came from
+`labels.py`, which accumulates the transform, and a re-implementation reproduces
+**5 of 14** on that spike's own outputs. **A dead column beside live ones reads
+as a clean result**, which is the failure mode `CLAUDE.md` names: a skipped check
+must never look like a passing one.
+
+**Why this is not scratch-harness trivia.** Both harnesses are throwaway and
+uncommitted and a bug in one is not evidence about ELK - but **the measurements
+they produced are now in this register** (G94 through G101), and the three
+defects say what those measurements' blind spots are. **The pattern is also the
+G85 pattern arriving a layer earlier**: a check grown against one fixture set has
+the shape of that set, so a new input class is the condition that exposes it.
+
+- **Found** `docs/schematic/elk-block-spike.md` §0, H1, H2 and H4, 2026-10-19.
+- **Evidence** the skin scan printing the diode's real pids, ELK's own refusal
+  message on an unpatched diode block, the 27-of-54 against 54-of-54 mutation
+  comparison, and the `overflow.py` re-implementation reproducing the first
+  spike's recorded 5. **A check that could have failed: the patched converter
+  regenerates all 15 of the first spike's inputs byte-identical**, which is what
+  establishes the diode patch is inert on everything measured before it.
+- **Verified** RELAYED.
+- **Why it is open** the harnesses are uncommitted scratch, so there is nothing
+  here to fix. **It is recorded because the next agent to build a converter or a
+  measurement harness for this work will reach for the same fixtures**, and
+  because G99's evidence has a stated blind spot now.
+- **What would settle it** **CRITERION: a harness check is exercised by a
+  fixture that makes it fail, and a fixture set that cannot exercise a code path
+  is reported as not exercising it rather than as passing.** For a converter:
+  **every component kind it can emit is drawn by at least one fixture** - the
+  diode bug needed only that. **MECHANISM, untested:** a per-kind coverage count
+  printed beside the partition check's result.
+
+### G103 - ELK emitted one non-axis-aligned wire segment, where two earlier passes recorded zero on every drawing
+
+`[RAN]` `docs/schematic/elk-block-spike.md` §2.
+The first spike measured **0 non-axis-aligned segments on every one of 14
+drawings**, and the second measured 0 on every one of **53 block drawings**. On
+the parent `WHOLE-optical-compressor__v-bare` there is **one**: a segment from
+(1770, 472) to (2290, 682) on `net_22`, carrying exactly
+`sidechain_led_sense_resistor.B` and `sidechain_vactrol_led.-`.
+
+**Why this matters at all: a schematic is orthogonal by convention**, so a
+diagonal is not a cosmetic defect in a KiCad emitter - it is geometry the
+realization contract has no rule for. **67 of 67 drawings were clean and one was
+not, which is the difference between an invariant and a tendency.**
+
+**THE ATTRIBUTION IS WEAKER THAN IT LOOKS, and the spike says so.** That net
+ends on a **diode**, and the diode symbol mapping is exactly the converter patch
+G102 records - so the segment may be an artifact of a one-line harness patch
+rather than ELK behaviour. Against that: `oc-power` and `oc-sidechain` both draw
+diodes with zero diagonals.
+
+- **Found** `docs/schematic/elk-block-spike.md` §2, 2026-10-19.
+- **Evidence** a segment-angle classifier run over 67 drawings, after the first
+  spike's version of it was corrected for counting zero-length segments as
+  diagonals; it returns 0 on 66 and names the coordinates and the net on the
+  one.
+- **Verified** RELAYED.
+- **Why it is open** undiagnosed. **It is recorded undiagnosed rather than
+  omitted**, because an invariant that holds 66 times and fails once is the kind
+  of thing a later reader must not re-establish from scratch.
+- **What would settle it** **CRITERION: whether ELK can emit a non-axis-aligned
+  segment at all is answered, not assumed** - the realization contract (spec
+  §1.4) needs a rule either way, and "it never happens" is currently a 66-of-67
+  claim. **MECHANISM, untested:** re-run that one parent with the diode mapped to
+  its correct pids and with the diode removed, which would separate ELK from the
+  patch.
 
 ### G91 - ELK ROUTES a Pultec-shaped network and does not DRAW it well, and a controller conflated those two results
 
