@@ -36,6 +36,10 @@ function guideHtml(
     checklist: buildChecklist(DUMP, circuit, edges, [], new Map(), NODE_MEMBERS),
     powerUpChecks: circuit.powerUpChecks,
     wiringPath,
+    // THE FIXTURE BOARD DECLARES NO SCAFFOLD, so the packet prints the
+    // one-sentence stand-in section. What that section does on a board that
+    // HAS groups is tests/guide/stand-in-section.test.ts's subject.
+    scaffold: undefined,
   }
   return buildGuideHtml(input)
 }

@@ -250,6 +250,12 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
     checklist,
     powerUpChecks: circuit.powerUpChecks,
     wiringPath,
+    // STRAIGHT OFF THE CIRCUIT, undefined and all: a board that declares no
+    // SCAFFOLD prints the sentence `tools/guide/stand-in-section.ts` holds
+    // for that case, and collapsing undefined into an empty doc here would
+    // make "this board is not a Pultec section" print as "this section has
+    // no groups" - two different claims (`./circuit.ts`'s field comment).
+    scaffold: circuit.scaffold,
   })
 
   const files = deps.fs ?? REAL_FS

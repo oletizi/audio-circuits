@@ -3,7 +3,9 @@
  *
  * In order: the header (board, date, the layout and schematic it came
  * from); the no-schematic notice, when there is one; the three layout
- * images, inline, one to a page; the build checklist in the operator's order
+ * images, inline, one to a page; the stand-in groups section (see
+ * `stand-in-section.ts`), which is the configuration decision the checklist's
+ * Fit column then refers to; the build checklist in the operator's order
  * (see `checklist.ts`), every row with a printed checkbox; then the power-up
  * checks, with a blank for each reading. Print CSS targets US Letter, draws
  * nothing on a background and breaks the page between the images and the
@@ -20,8 +22,10 @@
  * reader holding four pages and concluding the fifth fell out of the
  * stapler - a skipped step that looks like a passing one.
  */
+import type { ScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 import type { ChecklistSection } from "./checklist.ts"
 import type { PowerUpChecks } from "./power-up.ts"
+import { standInSection, type StandInGroupBlock, type StandInSection } from "./stand-in-section.ts"
 import { escapeXml } from "./svg.ts"
 
 export interface GuideImages {
@@ -67,6 +71,16 @@ export interface GuideInput {
    * packet knows there is more to read before they wire anything.
    */
   readonly wiringPath: string | undefined
+  /**
+   * The board's stand-in groups, straight off `BoardCircuit.scaffold` -
+   * `undefined` when the board declares no `SCAFFOLD`, which prints the one
+   * sentence `./stand-in-section.ts` holds for that case rather than nothing.
+   *
+   * Passed raw, the way `powerUpChecks` is, rather than pre-rendered by the
+   * caller: `standInSection` below turns it into the section's content and
+   * this file decides where that content sits on the page.
+   */
+  readonly scaffold: ScaffoldDoc | undefined
 }
 
 const STYLE = `
@@ -100,6 +114,15 @@ p.note { margin: 0 0 5pt; }
 .notice p { margin: 0 0 5pt; }
 .notice p:last-child { margin-bottom: 0; }
 .notice code { font-family: Menlo, Consolas, monospace; font-size: 9.5pt; }
+p.build-line { font-size: 12pt; font-weight: bold; margin: 10pt 0 2pt; }
+p.build-line .write-in { font-weight: normal; }
+.write-in { display: inline-block; min-width: 2in; border-bottom: 1pt solid #000; }
+.write-in.wide { min-width: 4in; }
+ul.states { margin: 0 0 6pt; padding-left: 22pt; }
+ul.states li { margin-bottom: 3pt; }
+p.mark-one { font-style: italic; margin: 0 0 4pt; }
+p.parts { margin: 0 0 5pt; }
+.group { page-break-inside: avoid; break-inside: avoid; margin-bottom: 10pt; }
 @media print { body { padding: 0; max-width: none; } }
 `
 
@@ -210,6 +233,90 @@ function checklistSection(section: ChecklistSection, index: number): string {
   return [heading, ...note, table(section.columns, section.rows, "item")].join("\n")
 }
 
+/** A table with no leading checkbox column: nothing in it is an item to tick. */
+function plainTable(columns: readonly string[], rows: readonly (readonly string[])[], cls: string): string {
+  const head = `<thead><tr>${columns.map((column) => `<th>${escapeXml(column)}</th>`).join("")}</tr></thead>`
+  const body = rows.map(
+    (row) => `<tr class="${cls}">${row.map((cell) => `<td>${escapeXml(cell)}</td>`).join("")}</tr>`,
+  )
+  return ["<table>", head, "<tbody>", ...body, "</tbody>", "</table>"].join("\n")
+}
+
+/**
+ * One stand-in group: what it stands in for, its parts, the Fit cell they
+ * carry in the checklist, and the three states it can be in.
+ *
+ * **THE THREE STATES ARE A LIST TO MARK ONE OF, NOT THREE CHECKBOXES AND NOT
+ * ONE.** `./stand-in-section.ts`'s module comment has the reasoning: a box on
+ * a group is unreadable either way round, so the group records which named
+ * state it is in. The "carried on" state ends in a ruled blank, because that
+ * state is not complete until the board carrying the group is written on it.
+ */
+function groupBlock(block: StandInGroupBlock, markOne: string): string {
+  const parts = block.partCount === 1 ? "1 part" : `${block.partCount} parts`
+  const states = block.states.map(
+    (state) =>
+      `<li>${escapeXml(state.text)}${state.writeIn ? ' <span class="write-in"></span>' : ""}</li>`,
+  )
+  return [
+    '<div class="group">',
+    `<h3>${escapeXml(block.section)} - ${parts}, standing in for the absent ${escapeXml(block.section)} section</h3>`,
+    `<p class="parts">Parts: ${escapeXml(block.partIds.join(", "))}</p>`,
+    // NAMED BY THE FIT CELL, NOT BY A SECTION OF THE CHECKLIST. A group's
+    // parts do not sit together there: a stand-in that resolves to 0 Ω is a
+    // row in **Wire links** while the rest of its group is among the
+    // resistors or capacitors (`./checklist.ts`'s module comment), so a block
+    // that sent a builder to one section would send them looking for a row
+    // that is somewhere else. The cell is the one thing every row of this
+    // group carries, wherever it landed.
+    `<p class="parts">Every row in the build checklist whose Fit column reads ` +
+      `<em>${escapeXml(block.fitLabel)}</em> is one of these, in whichever section that part's ` +
+      "row sits.</p>",
+    `<p class="mark-one">${escapeXml(markOne)}</p>`,
+    '<ul class="states">',
+    ...states,
+    "</ul>",
+    "</div>",
+  ].join("\n")
+}
+
+/**
+ * The stand-in groups section, on its own page AHEAD OF THE CHECKLIST.
+ *
+ * The order is the builder's order, not the document's: the Fit column on a
+ * part row names a group, and a reader who meets that cell before this page
+ * has met a condition with nothing to resolve it against. So the decision is
+ * taken here - which build, and which state each group is in - and the part
+ * sections are then read with the answers in hand.
+ */
+function standIn(scaffold: ScaffoldDoc | undefined): readonly string[] {
+  const section: StandInSection = standInSection(scaffold)
+  if (section.kind === "none") {
+    return [
+      '<section class="page stand-in">',
+      "<h2>Stand-in groups</h2>",
+      `<p>${escapeXml(section.sentence)}</p>`,
+      "</section>",
+    ]
+  }
+  return [
+    '<section class="page stand-in">',
+    "<h2>Stand-in groups</h2>",
+    `<p class="build-line">${escapeXml(section.buildPrompt)} <span class="write-in wide"></span></p>`,
+    "<p>Write the build you are on before anything below: this packet carries every build this " +
+      "board can be part of, and no group decision below means anything until that line is filled " +
+      "in. The table at the end of this section is where that line comes from.</p>",
+    ...section.intro.map((paragraph) => `<p>${escapeXml(paragraph)}</p>`),
+    ...section.rules.map((rule) => `<p><strong>${escapeXml(rule)}</strong></p>`),
+    ...(section.noGroups === undefined ? [] : [`<p>${escapeXml(section.noGroups)}</p>`]),
+    ...section.groups.map((block) => groupBlock(block, section.markOne)),
+    "<h3>What to populate, by build</h3>",
+    ...section.buildIntro.map((paragraph) => `<p>${escapeXml(paragraph)}</p>`),
+    plainTable(section.buildColumns, section.buildRows, "build"),
+    "</section>",
+  ]
+}
+
 function powerUp(powerUpChecks: PowerUpChecks | undefined): string {
   const heading = "<h2>Power-up checks</h2>"
   if (powerUpChecks === undefined) {
@@ -246,6 +353,7 @@ export function buildGuideHtml(input: GuideInput): string {
     image("Component side - designators", input.images.designators, false),
     image("Component side - values", input.images.values, true),
     image("Copper side (mirrored) - cuts and solder bridges", input.images.copper, true),
+    ...standIn(input.scaffold),
     '<section class="page">',
     "<h2>Build checklist</h2>",
     "<p>In build order, top to bottom. Tick each item as it is done.</p>",

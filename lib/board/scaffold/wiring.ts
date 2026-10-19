@@ -49,6 +49,28 @@ import type { BuildDoc, ScaffoldDoc, StandInGroupDoc } from "./doc.ts"
  */
 const ZERO_OHM = "0R"
 
+/**
+ * The two rules that travel with a stand-in group wherever it is printed, and
+ * the four headings of the by-build table.
+ *
+ * **EXPORTED BECAUSE A SECOND DOCUMENT PRINTS THEM.**
+ * `tools/guide/stand-in-section.ts` carries the same group decisions into the
+ * printed build packet, and these words are the decision: a copy of them there
+ * would be a second place for the rules to be reworded and for the table to be
+ * headed differently from the sheet it is meant to agree with. That is the
+ * defect `docs/known-gaps.md`'s G55 was - two generated documents disagreeing
+ * about the same parts - arriving by a different route. The markdown emphasis
+ * stays here, where markdown is the output; the phrases themselves carry none.
+ */
+export const POPULATE_WHOLE = "Populate a group whole, or leave it empty."
+export const ONE_GROUP_ONE_BOARD = "One group, one board."
+export const BUILD_COLUMNS: readonly string[] = [
+  "Boards on the bench",
+  "Populate here",
+  "Carried elsewhere",
+  "Junction pins to wire",
+]
+
 /** Every part id the doc lists, so the always-populated table can keep them out. */
 export function standInPartIds(doc: ScaffoldDoc): ReadonlySet<string> {
   const ids = new Set<string>()
@@ -180,7 +202,14 @@ function benchText(build: BuildDoc): string {
     : build.present.join(" + ")
 }
 
-function buildRow(build: BuildDoc): string {
+/**
+ * One build's four cells, in `BUILD_COLUMNS` order - the cells themselves, not
+ * a rendered row, because the printed build packet prints the same four facts
+ * in HTML (`tools/guide/stand-in-section.ts`). Deriving them in one place is
+ * what keeps a build's row on the bench sheet and its row in the packet from
+ * saying different things about the same bench.
+ */
+export function buildCells(build: BuildDoc): readonly string[] {
   const populate = build.populate.length > 0 ? build.populate.join(", ") : "nothing"
   const elsewhere = build.elsewhere.length > 0
     ? build.elsewhere.map((carried) => `${carried.section} → ${carried.board}`).join("; ")
@@ -190,7 +219,11 @@ function buildRow(build: BuildDoc): string {
       .map((wire) => `${wire.pad} (${wire.net}) → ${wire.reaches.join(", ")}`)
       .join("; ")
     : "nothing crosses"
-  return `| ${benchText(build)} | ${populate} | ${elsewhere} | ${junction} |`
+  return [benchText(build), populate, elsewhere, junction]
+}
+
+function buildRow(build: BuildDoc): string {
+  return `| ${buildCells(build).join(" | ")} |`
 }
 
 /**
@@ -219,12 +252,12 @@ export function standInGroupsSection(
     "solder depends on which other boards are on the bench. The layout holds every position in",
     "every build; what configures a build is what you leave out.",
     "",
-    "**Populate a group whole, or leave it empty.** Every part of a group is listed below under",
+    `**${POPULATE_WHOLE}** Every part of a group is listed below under`,
     "that group's name, so a group with a part missing reads as unfinished rather than as a",
     "choice. It is not a cheaper version of itself — it is a different circuit, and nothing on",
     "the board will tell you.",
     "",
-    "**One group, one board.** Every board's junction carries all five ladder nets, so any board",
+    `**${ONE_GROUP_ONE_BOARD}** Every board's junction carries all five ladder nets, so any board`,
     "on the bench could host any absent section's group. Exactly one must. Two boards each",
     "populating the same absent section's group put the two copies in parallel across the same",
     "nets and halve a value — at the bench that is a plausible wrong measurement, not an obvious",
@@ -283,8 +316,8 @@ export function standInGroupsSection(
     "that build — the pads are the same five on every board, listed under **Board terminals**",
     "above, and this says which of them are doing something.",
     "",
-    "| Boards on the bench | Populate here | Carried elsewhere | Junction pins to wire |",
-    "| --- | --- | --- | --- |",
+    `| ${BUILD_COLUMNS.join(" | ")} |`,
+    `| ${BUILD_COLUMNS.map(() => "---").join(" | ")} |`,
     ...doc.builds.map(buildRow),
     "",
   )

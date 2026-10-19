@@ -29,75 +29,14 @@
  * pass by coincidence.
  */
 import { test, expect } from "bun:test"
-import path from "node:path"
 import { isZeroOhmResistor } from "../../lib/model/zero-ohm.ts"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
-import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
-import { runnerFor } from "../../tools/perfboard/verbs.ts"
-import { buildChecklist, type ChecklistSection } from "../../tools/guide/checklist.ts"
-import { assertLayoutMatchesCircuit, componentAt, loadBoardCircuit, type BoardCircuit } from "../../tools/guide/circuit.ts"
-import { type BoardDump } from "../../tools/guide/dump.ts"
+import { componentAt } from "../../tools/guide/circuit.ts"
 import { ALWAYS } from "../../tools/guide/fit-condition.ts"
-import { nodeMembers } from "../../tools/guide/node-members.ts"
-import { offBoardLabels } from "../../tools/guide/off-board.ts"
-import { padLabelOf } from "../../tools/guide/pad-label.ts"
-import { padTerminals, type PadTerminal } from "../../tools/guide/pads.ts"
-import { buildableDump } from "../../tools/guide/preflight.ts"
-
-const REPO_ROOT = moduleRepoRoot()
-
-/** The four part sections the Fit column belongs on. */
-const PART_SECTION_TITLES = ["ICs and transistors", "Resistors and trim-pots", "Capacitors", "Wire-to-board junctions"]
-
-/**
- * Every section that carries a `Fit` column: the four part sections, plus
- * Wire links (it carries zero-ohm stand-in parts - see the module comment).
- * Solder bridges and Cuts are deliberately excluded: nothing has moved into
- * them, and they have no group to belong to.
- */
-const FIT_SECTION_TITLES = [...PART_SECTION_TITLES, "Wire links"]
-
-/** Dump a board's real, committed `.vrt` through the real, pinned veroroute binary. */
-function dumpBoard(vrtPath: string): string {
-  const run = runnerFor({})(["--dump-board", vrtPath])
-  if (run.status !== 0) {
-    throw new Error(`veroroute --dump-board ${vrtPath} exited ${run.status}:\n${run.output}`)
-  }
-  return run.output
-}
-
-interface Loaded {
-  readonly dump: BoardDump
-  readonly pads: readonly PadTerminal[]
-  readonly circuit: BoardCircuit
-  readonly checklist: readonly ChecklistSection[]
-}
-
-/** Load a board's real layout and circuit, and build its checklist - the pipeline `make guide` runs. */
-async function loadBoard(boardName: string): Promise<Loaded> {
-  const declaration = loadDeclaration(path.join(REPO_ROOT, "boards", boardName, "perfboard.json"))
-  const dumpText = dumpBoard(declaration.vrtPath)
-  const dump = buildableDump(dumpText, declaration.vrtPath)
-  const pads = padTerminals(dumpText)
-  const circuit = await loadBoardCircuit(declaration)
-  assertLayoutMatchesCircuit(dump, circuit, pads)
-  const edges = offBoardLabels(circuit)
-  const padLabels = new Map(pads.map((pad) => [pad.identity, padLabelOf(componentAt(circuit, pad.ref), pad.pin)]))
-  const members = nodeMembers(dumpText)
-  const checklist = buildChecklist(dump, circuit, edges, pads, padLabels, members)
-  return { dump, pads, circuit, checklist }
-}
-
-/** The named sections, in order, refusing if any is missing - never a silent partial list. */
-function sectionsNamed(checklist: readonly ChecklistSection[], titles: readonly string[]): readonly ChecklistSection[] {
-  const sections = checklist.filter((section) => titles.includes(section.title))
-  if (sections.length !== titles.length) {
-    throw new Error(
-      `test: expected sections (${titles.join(", ")}), got (${sections.map((section) => section.title).join(", ")})`,
-    )
-  }
-  return sections
-}
+// THE LOADER AND THE SECTION TITLES ARE SHARED, not local to this file:
+// `tests/guide/stand-in-section.test.ts` asks the same question of the same
+// boards, and two copies of this pipeline could load a board two ways and
+// disagree about what the packet says. See `./board-pipeline.ts`.
+import { FIT_SECTION_TITLES, PART_SECTION_TITLES, loadBoard, sectionsNamed } from "./board-pipeline.ts"
 
 test("every stand-in part on pultec-low-boost names its own group, in its own section AND in Wire links; every other row reads always", async () => {
   const { circuit, checklist } = await loadBoard("pultec-low-boost")
