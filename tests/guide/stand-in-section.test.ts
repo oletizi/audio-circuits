@@ -59,7 +59,7 @@ function guideHtml(scaffold: ScaffoldDoc | undefined): string {
     generated: "2026-10-18",
     layoutPath: "boards/test-board/test.vrt",
     schematic: { kind: "printed", path: "circuits/test.kicad_sch" },
-    images: { designators: "<svg>d</svg>", values: "<svg>v</svg>", copper: "<svg>c</svg>" },
+    images: { designators: "<svg>d</svg>", values: "<svg>v</svg>", copper: "<svg>c</svg>", clusters: undefined },
     checklist: [],
     powerUpChecks: undefined,
     wiringPath: "boards/test-board/wiring.md",

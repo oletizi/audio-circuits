@@ -48,6 +48,7 @@ function options(view: RenderOptions["view"]): RenderOptions {
     pads: [],
     padLabels: new Map(),
     wireLinks: new Set(),
+    clusters: undefined,
   }
 }
 
@@ -206,6 +207,7 @@ test("with vertical strips the copper view mirrors rows instead of columns, cuts
     pads: [],
     padLabels: new Map(),
     wireLinks: new Set(),
+    clusters: undefined,
   })
   const component = renderLayout(VERTICAL, labels, opts("component"))
   const copper = renderLayout(VERTICAL, labels, opts("copper"))
@@ -244,6 +246,7 @@ test("an edge label's leader detours round another part's pin that stands betwee
     pads: [],
     padLabels: new Map(),
     wireLinks: new Set(),
+    clusters: undefined,
   })
   const f11 = holeCentre(svg, "F11")
   const leaders = elements(svg, "line", "edge-leader")
@@ -333,6 +336,7 @@ test("text is XML-escaped", () => {
     pads: [],
     padLabels: new Map(),
     wireLinks: new Set(),
+    clusters: undefined,
   })
   expect(svg).toContain("a&lt;b&amp;c")
   expect(svg).toContain("x &amp; y")
@@ -390,6 +394,7 @@ test("the Pultec part types draw, so a Pultec board can be looked at", () => {
     pads: [],
     padLabels: new Map(),
     wireLinks: new Set(),
+    clusters: undefined,
   })
   // ONE BODY PER PART, asserted by the parts' own refs rather than by a count:
   // a renderer that drew two of one and none of another would satisfy a count.
@@ -414,6 +419,7 @@ test("a part type with no recorded shape still REFUSES by name rather than drawi
       pads: [],
       padLabels: new Map(),
       wireLinks: new Set(),
+      clusters: undefined,
     }),
   ).toThrow(/no drawing for VeroRoute part type "CAP_INVENTED_999"/)
 })

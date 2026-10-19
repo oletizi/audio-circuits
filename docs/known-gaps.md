@@ -519,6 +519,82 @@ evidence any future decision rests on:**
 Open: a fix would settle these
 ------------------------------
 
+### G59 - the stand-in-groups image ships with four UNRATIFIED hatch fills, and two of the four were measured as the hard pair at printed scale
+
+The packet's fourth layout image hatches every part that stands in for an
+absent section, one geometry per group (`tools/guide/hatch.ts`,
+`tools/guide/clusters.ts`, `tools/guide/render-clusters.ts`). **The four
+geometries are a candidate for the owner to look at, not a settled choice.** He
+was asked to approve a styling before it existed and answered, 2026-10-18:
+*"hatching - I don't know until i see it"*. Nothing in the spec, the plan or
+the tests states which fills the packet ships with, and
+`tests/guide/clusters-view.test.ts` deliberately asserts only that the
+assignment is a bijection onto whatever `HATCH_STYLES` holds - never what an
+entry draws - so a ruling changes one array and no test.
+
+**What is hatched, which is settled and is not what is open.** A group's
+members come from the board's own `ScaffoldDoc`; the mark is per part, never a
+region drawn around a cluster, because a group's parts are not guaranteed
+contiguous and an own-circuit part can sit between two of them. The legend
+names each group and states what an UNHATCHED part is. None of that depends on
+the fills.
+
+**Measured at printed scale, 2026-10-18**, by rendering
+`boards/pultec-low-boost/guide/guide.pdf` and `boards/pultec-low-cut/guide/guide.pdf`
+page 5 at 150 dpi and reading the page at 1:1, plus a photocopy simulation
+(greyscale, thresholded to bilevel, resampled to ~100 dpi):
+
+- **The lattice and the stipple were the hard pair, not the two diagonals.** At
+  the first spacings tried (crosshatch at 7 units, stipple at 6) both read as
+  one uniform fine grey at print size, and on BOTH low boards those two groups
+  sit adjacent - `low-cut` beside `mid` on low-boost, `low-boost` beside `mid`
+  on low-cut - so the two clusters merged into a single textured area. They
+  were coarsened (crosshatch 9 units / 1.2 wide, stipple 8 units / 1.8 radius)
+  and separate clearly at 1:1 after that.
+- **The two diagonals separate on a deliberate look, not at a glance.** `/` and
+  `\` both read as "striped" from arm's length; which way they lean is legible
+  when looked at, and more legible after the lines were coarsened to 6 units at
+  1.3 wide. **The thin case is the worst case**: a standing resistor's body
+  covers the middle of its patch, so only a margin of hatch shows, and that
+  margin carries two or three lines.
+- **All four survive the photocopy simulation** as geometry - diagonals as
+  diagonals, lattice as a lattice, dots as dots - which is the constraint that
+  ruled out four grey tints in the first place.
+- **The legend's swatches are distinguishable from each other** at print size,
+  including the empty one.
+- **A hatch patch reads as a mid-grey area, and the layout already uses grey**
+  for every fourth strip. On a dense board the two greys compete; nothing was
+  changed for it.
+- **No patch reached over a part it does not belong to, on any of the five
+  Pultec boards**, at the patch size shipped (`HATCH_PAD`, half a hole pitch
+  plus a twentieth). That is enforced rather than observed: `drawClusters`
+  refuses a patch overlapping another part's body or a landing pad's ring, so
+  all five `make guide` runs passing is the measurement. **Two patches of
+  DIFFERENT groups may still overlap each other** - nothing guards that, and on
+  both low boards the lattice and stipple groups' patches abut - because an
+  overlap of two hatches misidentifies no part, which is what the guard is for.
+
+- **Found** 2026-10-18, implementing Task 6 of
+  `docs/superpowers/plans/2026-10-18-the-packet-shows-the-clusters.md`, by
+  reading the printed PDF page rather than the SVG.
+- **Evidence** the regenerated pages above, read at 1:1 and in the bilevel
+  simulation by the agent that made the change; and, for the mapping the fills
+  carry, `tests/guide/clusters-view.test.ts`, which is a check that can fail -
+  it matches every patch against the board's `ScaffoldDoc` and against the
+  checklist's `Fit` column in both directions on two real boards.
+- **Verified** yes, read directly; the legibility findings are this agent's own
+  observation of the rendered page and are not relayed.
+- **Why it is open** the fills are a visual decision about an artifact, and
+  **the agent producing it may not settle one** (`CLAUDE.md`). The code records
+  no claim that they are right: `tools/guide/hatch.ts` says in its first
+  sentence that they are unratified.
+- **What would settle it** an owner ruling after looking at the printed page.
+  **The criterion is his**, and the measurements above are what he rules on,
+  not a recommendation. **The mechanism, if he rejects them**, is to replace or
+  reorder the entries in `HATCH_STYLES` in `tools/guide/hatch.ts`; everything
+  else - the mapping, the legend, the checks, the refusals - is independent of
+  what an entry draws, which is what makes that a one-file change.
+
 ### G58 - a stand-in group's parts are spread across the checklist's sections, and nothing on the printed page says what mark records a group's state
 
 Two findings from the same change - the one that put the **Stand-in groups**

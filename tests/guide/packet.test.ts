@@ -83,7 +83,11 @@ const GUIDE = "/repo/boards/test-board/guide"
 test("the packet writer writes all six files into the board's guide directory", async () => {
   const h = harness(DUMP_TEXT)
   const report = await writeGuidePacket(DECLARATION, h.deps)
-  expect([...h.files.keys()].sort()).toEqual(packetFiles(true).map((file) => `${GUIDE}/${file}`).sort())
+  // `false`: the fixture circuit declares no SCAFFOLD, so there are no
+  // stand-in groups to hatch and the packet carries no fourth layout image.
+  // What that image holds on a board that HAS groups is
+  // tests/guide/clusters-view.test.ts's subject.
+  expect([...h.files.keys()].sort()).toEqual(packetFiles(true, false).map((file) => `${GUIDE}/${file}`).sort())
   expect(h.veroroute).toEqual([["--dump-board", DECLARATION.vrtPath]])
   expect(h.kicad[0]?.[0]).toBe("/fake/kicad-cli")
   expect(h.kicad[0]?.[1]).toBe("/repo/circuits/test.kicad_sch")
@@ -198,7 +202,7 @@ test("a board that declares no schematic gets a five-file packet that prints why
   const { schPath: _sch, netlistPath: _net, ...withoutSchematic } = DECLARATION
   const h = harness(DUMP_TEXT)
   const report = await writeGuidePacket(withoutSchematic, h.deps)
-  expect([...h.files.keys()].sort()).toEqual(packetFiles(false).map((file) => `${GUIDE}/${file}`).sort())
+  expect([...h.files.keys()].sort()).toEqual(packetFiles(false, false).map((file) => `${GUIDE}/${file}`).sort())
   expect(h.files.has(`${GUIDE}/schematic.pdf`)).toBe(false)
   expect(h.kicad).toEqual([])
   const html = h.files.get(`${GUIDE}/guide.html`) ?? ""

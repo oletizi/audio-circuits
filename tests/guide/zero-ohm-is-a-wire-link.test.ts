@@ -166,6 +166,7 @@ test("neither layout image draws a body for a zero-ohm part; each is drawn as a 
     pads,
     padLabels,
     wireLinks,
+    clusters: undefined,
   }
   const designators = renderLayout(
     dump,

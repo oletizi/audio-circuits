@@ -57,7 +57,7 @@ test("guide writes the six-file packet into the board's guide/ directory", async
     })
     expect(errors).toEqual([])
     expect(code).toBe(0)
-    expect(fs.readdirSync(path.join(dir, "guide")).sort()).toEqual([...packetFiles(true)].sort())
+    expect(fs.readdirSync(path.join(dir, "guide")).sort()).toEqual([...packetFiles(true, false)].sort())
     expect(fs.readdirSync(dir).sort()).toEqual(["guide", "perfboard.json"])
     expect(fs.readdirSync(dir).filter((name) => name.startsWith(".guide-staging"))).toEqual([])
     expect(kicadCalls.at(-1)?.[0]).toBe("/fake/kicad-cli")
@@ -83,7 +83,7 @@ test("guide writes a five-file packet for a board with no schematic, through the
     })
     expect(errors).toEqual([])
     expect(code).toBe(0)
-    expect(fs.readdirSync(path.join(dir, "guide")).sort()).toEqual([...packetFiles(false)].sort())
+    expect(fs.readdirSync(path.join(dir, "guide")).sort()).toEqual([...packetFiles(false, false)].sort())
     expect(lines.join("\n")).toContain('declares no "sch"')
     const html = fs.readFileSync(path.join(dir, "guide", "guide.html"), "utf8")
     expect(html).toContain("No schematic in this packet")
@@ -152,7 +152,7 @@ test("guide takes the two tool flags in either order", async () => {
     )
     expect(errors).toEqual([])
     expect(code).toBe(0)
-    expect(fs.readdirSync(path.join(dir, "guide")).sort()).toEqual([...packetFiles(true)].sort())
+    expect(fs.readdirSync(path.join(dir, "guide")).sort()).toEqual([...packetFiles(true, false)].sort())
   } finally {
     fs.rmSync(root, { recursive: true, force: true })
   }

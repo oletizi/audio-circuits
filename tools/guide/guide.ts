@@ -2,8 +2,9 @@
  * The build guide page: one self-contained HTML file, printed from a browser.
  *
  * In order: the header (board, date, the layout and schematic it came
- * from); the no-schematic notice, when there is one; the three layout
- * images, inline, one to a page; the stand-in groups section (see
+ * from); the no-schematic notice, when there is one; the layout images,
+ * inline, one to a page - the three every board has, then the hatched
+ * stand-in-groups image on a board that has groups; the stand-in groups section (see
  * `stand-in-section.ts`), which is the configuration decision the checklist's
  * Fit column then refers to; the build checklist in the operator's order
  * (see `checklist.ts`), every row with a printed checkbox; then the power-up
@@ -32,6 +33,20 @@ export interface GuideImages {
   readonly designators: string
   readonly values: string
   readonly copper: string
+  /**
+   * The stand-in-groups image: the component side with each group hatched, and
+   * a legend naming the groups and saying what an unhatched part is.
+   *
+   * `undefined` on a board with no stand-in groups to show - it is not a
+   * Pultec section, or its scaffold declares none (`./clusters.ts`). The page
+   * is then absent and the **Stand-in groups** section below says in words
+   * which of those two it is, rather than a hatch-free copy of the first image
+   * whose legend announces groups the board does not have.
+   *
+   * Required and explicitly `undefined`, as `powerUpChecks` is: a caller
+   * states which shape its packet has rather than omitting the field.
+   */
+  readonly clusters: string | undefined
 }
 
 /**
@@ -353,6 +368,14 @@ export function buildGuideHtml(input: GuideInput): string {
     image("Component side - designators", input.images.designators, false),
     image("Component side - values", input.images.values, true),
     image("Copper side (mirrored) - cuts and solder bridges", input.images.copper, true),
+    // IMMEDIATELY BEFORE THE STAND-IN GROUPS SECTION, which is the decision it
+    // informs: the picture shows where each group sits on the board, and the
+    // page after it is where the builder records which groups this build
+    // populates. Putting it among the first three images would separate the two
+    // by the whole copper side.
+    ...(input.images.clusters === undefined
+      ? []
+      : [image("Component side - stand-in groups (hatched)", input.images.clusters, true)]),
     ...standIn(input.scaffold),
     '<section class="page">',
     "<h2>Build checklist</h2>",

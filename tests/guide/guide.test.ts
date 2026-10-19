@@ -32,7 +32,7 @@ function guideHtml(
     generated: "2026-09-29",
     layoutPath: "boards/test-board/test.vrt",
     schematic,
-    images: { designators: "<svg>designators</svg>", values: "<svg>values</svg>", copper: "<svg>copper</svg>" },
+    images: { designators: "<svg>designators</svg>", values: "<svg>values</svg>", copper: "<svg>copper</svg>", clusters: undefined },
     checklist: buildChecklist(DUMP, circuit, edges, [], new Map(), NODE_MEMBERS),
     powerUpChecks: circuit.powerUpChecks,
     wiringPath,

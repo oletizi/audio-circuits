@@ -205,6 +205,7 @@ test("the drawn board shows every pad, each under its own checkbox, labelled fro
     pads,
     padLabels,
     wireLinks: new Set(),
+    clusters: undefined,
   })
   // ONE RING PER PAD, counted off the drawing rather than off the input.
   expect(elements(svg, "circle", "pad-body").length, "a ring over every pad's hole").toBe(10)
@@ -312,6 +313,7 @@ test("a pad whose hole is not on the board refuses rather than being drawn besid
       pads: offBoard,
       padLabels: new Map(),
       wireLinks: new Set(),
+      clusters: undefined,
     }),
   )
   expect(message, "the renderer refuses it").toStartWith("guide-pad-off-board: ")
@@ -328,6 +330,7 @@ test("a pad whose hole is not on the board refuses rather than being drawn besid
         pads: offBoard,
         padLabels: new Map(),
         wireLinks: new Set(),
+        clusters: undefined,
       }),
     ),
     "the copper view too",

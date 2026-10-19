@@ -1,4 +1,7 @@
+import { groupLegendText, hatchFor, UNHATCHED_MEANS, type ClusterMarking } from "./clusters.ts"
 import { rowName, type BoardDump } from "./dump.ts"
+import { hatchSwatch, plainSwatch } from "./hatch.ts"
+import { clusterDefs, drawClusters } from "./render-clusters.ts"
 import {
   drawBoard,
   drawBridges,
@@ -47,10 +50,17 @@ import { createOccupied } from "./placement.ts"
  * `numbering.ts` in both views, and wire links (component side only) theirs,
  * so the checklist and the images agree.
  *
+ * The component side can also carry the STAND-IN GROUP HATCHING (`clusters`),
+ * which is what the packet's fourth image is: the same drawing with a patch of
+ * one of four hatches under each part that stands in for an absent section, and
+ * a legend naming the groups. See `./render-clusters.ts` for how a patch is
+ * made and `./hatch.ts` for the fills, which are an UNRATIFIED candidate.
+ *
  * The renderer knows nothing about circuits: what each part is called
  * (`labels`), what each pad's wire is (`padLabels`), which pins leave the
- * board (`edgeLabels`) and which parts are wire links rather than parts with
- * bodies (`wireLinks`) all come from the caller.
+ * board (`edgeLabels`), which parts are wire links rather than parts with
+ * bodies (`wireLinks`) and which parts belong to which stand-in group
+ * (`clusters`) all come from the caller.
  */
 
 export type { EdgeLabel } from "./render-edges.ts"
@@ -106,6 +116,23 @@ export interface RenderOptions {
    * behind. A board with none says so by passing an empty set.
    */
   readonly wireLinks: ReadonlySet<string>
+  /**
+   * Which parts belong to which stand-in group, from `./clusters.ts` -
+   * `undefined` on an image that does not mark the groups.
+   *
+   * **IT COMES FROM THE CALLER FOR THE REASON `wireLinks` DOES**: which parts
+   * stand in for an absent section is a fact about the board's `ScaffoldDoc`,
+   * and this module holds no circuit knowledge.
+   *
+   * **IT IS A REQUIRED FIELD WHOSE VALUE MAY BE `undefined`, which is not the
+   * same as an optional field.** Three of the four images in a packet mark no
+   * groups although their board HAS them, and the fourth exists only to mark
+   * them; `undefined` says "this image does not show the groups", which every
+   * caller then has to state rather than omit. An empty marking would be a
+   * third claim - "this board has no groups" - and `./clusters.ts` returns
+   * `undefined` rather than one for exactly that reason.
+   */
+  readonly clusters: ClusterMarking | undefined
 }
 
 const HEADER_GAP = 12
@@ -157,6 +184,32 @@ function markedStripItem(verticalStrips: boolean): LegendItem {
   }
 }
 
+/**
+ * The stand-in groups' key: one swatch per group, in the marking's order, then
+ * what an UNHATCHED part means.
+ *
+ * **THE UNHATCHED ITEM IS NOT OPTIONAL AND IS NOT A COURTESY.** Four named
+ * hatches leave the absence of a hatch meaning nothing in particular, which is
+ * exactly the reading a builder needs when a hatch comes out faint on a bad
+ * photocopy: the sentence says a part with no hatch is this board's own circuit
+ * and is fitted in every build, so the faint case resolves to a question about
+ * the print rather than about the board.
+ *
+ * **THE GROUP IS NAMED HERE AND NOWHERE ELSE ON THE DRAWING.** `docs/known-gaps.md`'s
+ * G2 and G17 are what a third per-part string inside the board outline would
+ * feed; see `./hatch.ts`.
+ */
+function clusterLegend(clusters: ClusterMarking | undefined): readonly LegendItem[] {
+  if (clusters === undefined) return []
+  return [
+    ...clusters.groups.map((group) => ({
+      symbol: (x: number, y: number): string => hatchSwatch({ x, y }, hatchFor(clusters, group), group),
+      text: groupLegendText(group),
+    })),
+    { symbol: (x: number, y: number): string => plainSwatch({ x, y }), text: UNHATCHED_MEANS },
+  ]
+}
+
 function legendItems(view: RenderOptions["view"], verticalStrips: boolean): readonly LegendItem[] {
   const common: LegendItem[] = [
     markedStripItem(verticalStrips),
@@ -203,11 +256,21 @@ function legendItems(view: RenderOptions["view"], verticalStrips: boolean): read
   ]
 }
 
-function drawLegend(canvas: Canvas, frame: Frame, view: RenderOptions["view"], top: number, left: number, width: number): void {
+function drawLegend(
+  canvas: Canvas,
+  frame: Frame,
+  options: RenderOptions,
+  top: number,
+  left: number,
+  width: number,
+): void {
   const size = 8.5
   let x = left
   let y = top + LEGEND_GAP
-  for (const item of legendItems(view, frame.verticalStrips)) {
+  // THE GROUP KEY COMES LAST, after the marks every component-side image
+  // carries: it is what this image adds, and a reader who knows the other
+  // legend by heart finds the new items in one place.
+  for (const item of [...legendItems(options.view, frame.verticalStrips), ...clusterLegend(options.clusters)]) {
     const itemWidth = 22 + textWidth(item.text, size) + 14
     if (x > left && x + itemWidth > left + width) {
       x = left
@@ -219,7 +282,7 @@ function drawLegend(canvas: Canvas, frame: Frame, view: RenderOptions["view"], t
   }
 }
 
-function svgDocument(layers: readonly Canvas[]): string {
+function svgDocument(layers: readonly Canvas[], defs: readonly string[]): string {
   const b: Box = boundsOf(layers)
   const minX = b.minX - MARGIN
   const minY = b.minY - MARGIN
@@ -228,6 +291,9 @@ function svgDocument(layers: readonly Canvas[]): string {
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${fmt(minX)} ${fmt(minY)} ${fmt(width)} ${fmt(height)}" ` +
       `width="${fmt(width)}" height="${fmt(height)}">`,
+    // Emitted only when something points at one, so a drawing never carries a
+    // definition nothing uses.
+    ...(defs.length === 0 ? [] : ["<defs>", ...defs, "</defs>"]),
     `<rect x="${fmt(minX)}" y="${fmt(minY)}" width="${fmt(width)}" height="${fmt(height)}" fill="${PAPER}"/>`,
     ...layers.flatMap((layer) => layer.elements),
     "</svg>",
@@ -260,6 +326,7 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
   // stacked bottom to top as listed in `layers`, so cuts and labels are
   // never hidden under a body.
   const board = createCanvas()
+  const clusters = createCanvas()
   const parts = createCanvas()
   const wires = createCanvas()
   const edges = createCanvas()
@@ -276,7 +343,27 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
   // is wrong it is wrong for leads too - which is a question for whoever owns
   // the images, not one to settle here by drawing pads on both.
   const pads = component ? padsOrRefused : []
+  const marking = options.clusters
+  // THE COPPER VIEW REFUSES A MARKING RATHER THAN IGNORING ONE. It draws no
+  // parts at all (see `placed` above), so there is nothing there to hatch, and
+  // a copper sheet printed with the groups asked for and none drawn is
+  // indistinguishable from a board that has no groups - the silence this image
+  // exists to end.
+  if (marking !== undefined && !component) {
+    throw new Error(
+      "renderLayout was given a stand-in-group marking for the copper view, which draws no parts " +
+        "and so has nothing to hatch. Mark the groups on a component-side image (see " +
+        "tools/guide/packet.ts), and pass clusters: undefined for the copper side.",
+    )
+  }
   drawBoard(board, frame)
+  // UNDER THE PARTS, so every body, lead and wire stays exactly as the other
+  // images draw it and the hatch reads as the ground a part stands on. It is
+  // recorded in no `occupied`, so nothing placed afterwards moves because of
+  // it: this image is the designators image with hatching added.
+  if (marking !== undefined) {
+    drawClusters(clusters, frame, placed, pads, marking)
+  }
   if (component) {
     drawWires(wires, frame, dump, occupied.marks)
   }
@@ -294,9 +381,9 @@ export function renderLayout(dump: BoardDump, labels: ReadonlyMap<string, string
   drawPartLabels(partLabels, placed, occupied)
   drawPadLabels(partLabels, pads, options.padLabels, occupied)
   drawCoordinates(coordinates, frame)
-  const layers = [board, parts, wires, edges, marks, partLabels, coordinates]
+  const layers = [board, clusters, parts, wires, edges, marks, partLabels, coordinates]
   const drawn = boundsOf(layers)
   drawHeader(page, dump, options, drawn.minY, drawn.minX)
-  drawLegend(page, frame, options.view, drawn.maxY, drawn.minX, drawn.maxX - drawn.minX)
-  return svgDocument([...layers, page])
+  drawLegend(page, frame, options, drawn.maxY, drawn.minX, drawn.maxX - drawn.minX)
+  return svgDocument([...layers, page], marking === undefined ? [] : clusterDefs(frame, marking))
 }
