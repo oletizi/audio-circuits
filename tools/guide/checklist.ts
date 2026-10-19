@@ -62,6 +62,13 @@
  * different answers for one cut. There is deliberately no path that prints
  * a blank or an invented name for a node this map cannot resolve: `separates`
  * refuses instead, naming the node id and what to fix.
+ *
+ * **THE FOUR PART SECTIONS CARRY A `Fit` COLUMN**, computed by
+ * `./fit-condition.ts` and appended to each row built here - see that
+ * module's comment for why the cell is a condition the builder can act on
+ * rather than a cluster name, and for the one-table-shape rule for a board
+ * with no `ScaffoldDoc`. Wire links, Solder bridges and Cuts do not get it:
+ * they are not parts, so they have no group to belong to.
  */
 import { LEAD_SPANS } from "../../lib/kicad/lead-span.ts"
 import { MOUNTING_LABEL, mountingForSpan } from "../../lib/kicad/lead-span-mounting.ts"
@@ -69,6 +76,7 @@ import type { Component } from "../../lib/model/types.ts"
 import { isZeroOhmResistor } from "../../lib/model/zero-ohm.ts"
 import { spanHoles } from "../stripboard/constraints-model.ts"
 import { holeName, noPinLinesMessage, type BoardDump, type HolePosition, type NodedHole, type Part, type Pin } from "./dump.ts"
+import { fitCondition, groupMembership } from "./fit-condition.ts"
 import { inReadingOrder, numberedBridges, numberedCuts, numberedWires } from "./numbering.ts"
 import { valueLabel } from "./off-board.ts"
 import { ELECTROLYTIC_PLUS_PIN, isElectrolytic } from "./part-shapes.ts"
@@ -240,7 +248,7 @@ function separates(
     .join(", ")
 }
 
-const PART_COLUMNS = ["Part", "Value", "Leads", "Mounting"]
+const PART_COLUMNS = ["Part", "Value", "Leads", "Mounting", "Fit"]
 
 /**
  * What the Mounting cell says when the mounting cannot be DERIVED, and why each
@@ -329,8 +337,13 @@ function mountingCell(component: Component, pins: readonly Pin[]): string {
  * "one packet, two artifacts disagreeing" defect this row exists to end.
  * A pad missing from the map is refused by name: silently leaving the row
  * out would reproduce that same defect in a new place.
+ *
+ * `fit` is the row's Fit cell, computed by the caller (`fitCondition` against
+ * the pad's own component id) rather than here: this function already takes
+ * a label map built once upstream for the same reason, and a second map
+ * threaded through for one more cell would be the odd one out.
  */
-function padJunctionRow(pad: PadTerminal, padLabels: ReadonlyMap<string, string>): readonly string[] {
+function padJunctionRow(pad: PadTerminal, padLabels: ReadonlyMap<string, string>, fit: string): readonly string[] {
   const label = padLabels.get(pad.identity)
   if (label === undefined) {
     throw new Error(
@@ -340,7 +353,7 @@ function padJunctionRow(pad: PadTerminal, padLabels: ReadonlyMap<string, string>
         "be handed the same map so they cannot disagree about what a pad's wire is.",
     )
   }
-  return [pad.ref, "landing pad", `${holeName(pad.row, pad.col)} ${label}`, PAD_NO_MOUNTING]
+  return [pad.ref, "landing pad", `${holeName(pad.row, pad.col)} ${label}`, PAD_NO_MOUNTING, fit]
 }
 
 /**
@@ -390,6 +403,7 @@ export function buildChecklist(
   }
   const parts = [...dump.parts].sort((a, b) => compareRefs(a.ref, b.ref))
   const partLinks: (readonly string[])[] = []
+  const membership = groupMembership(circuit.scaffold)
   for (const part of parts) {
     const component = componentAt(circuit, part.ref)
     // A ZERO-OHM PART IS A WIRE LINK AND GETS A WIRE LINK'S ROW. It is routed
@@ -406,6 +420,7 @@ export function buildChecklist(
       valueLabel(dump, part, circuit, "checklist"),
       leads(dump, part, component, circuit, edges),
       mountingCell(component, dump.pins[part.ref] ?? []),
+      fitCondition(component.id, membership),
     ])
   }
   // EVERY OFF-BOARD TERMINAL GETS ITS OWN JUNCTION ROW, alongside whatever
@@ -414,7 +429,9 @@ export function buildChecklist(
   // the layout image draws a solder ring for and the checklist says nothing
   // about - the defect `docs/known-gaps.md` and this module's own comment
   // both name.
-  for (const pad of pads) groups.junctions.push(padJunctionRow(pad, padLabels))
+  for (const pad of pads) {
+    groups.junctions.push(padJunctionRow(pad, padLabels, fitCondition(componentAt(circuit, pad.ref).id, membership)))
+  }
   const wires = [
     ...numberedWires(dump).map(({ number, from, to }) => [`W${number}`, hole(from), hole(to)]),
     ...partLinks,
@@ -434,7 +451,7 @@ export function buildChecklist(
     },
     {
       title: "Wire-to-board junctions",
-      columns: ["Part", "Value", "Connections", "Mounting"],
+      columns: ["Part", "Value", "Connections", "Mounting", "Fit"],
       rows: groups.junctions,
     },
     {

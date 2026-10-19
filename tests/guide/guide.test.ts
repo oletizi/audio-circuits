@@ -84,15 +84,15 @@ test("parts give value and leads; wires, bridges and cuts give their holes; cuts
   // own test after them.
   expect(rows[0]).toEqual([
     "Q1", "2N3904", "emitter E7, base D7, collector C7",
-    "unknown: the circuit records no footprint for this part",
+    "unknown: the circuit records no footprint for this part", "always",
   ])
-  expect(rows[3]).toEqual(["C1", "10uF", "+ F6, - F10", "one mounting"])
+  expect(rows[3]).toEqual(["C1", "10uF", "+ F6, - F10", "one mounting", "always"])
   expect(rows[4]).toEqual(["W1", "I3", "I10"])
   expect(rows[5]).toEqual(["W2", "J5", "J7"])
-  expect(rows[6]).toEqual(["J1", "2-pin header", "A2 INPUT, B2 GND", "one mounting"])
+  expect(rows[6]).toEqual(["J1", "2-pin header", "A2 INPUT, B2 GND", "one mounting", "always"])
   expect(rows[7]).toEqual([
     "RV2", "3-pin header (25K pot, off-board)",
-    "H2 DRIVE ccw, I2 DRIVE wiper, J2 DRIVE cw", "one mounting",
+    "H2 DRIVE ccw, I2 DRIVE wiper, J2 DRIVE cw", "one mounting", "always",
   ])
   expect(rows[8]).toEqual(["B1", "D9 to E9"])
   expect(rows[9]).toEqual(["1", "C5 and C6", "C1.1, Q1.2, R1.1 | J1.2, R1.2, RV2.1"])
@@ -106,7 +106,7 @@ test("a resistor at a span its body fits between is not told to stand on end", (
   // (`lib/kicad/grid.ts`). At the floor the body fits, so nothing is required of
   // the builder, and the cell says that rather than shouting.
   const rows = itemRows(guideHtml())
-  expect(rows[1]).toEqual(["R1", "10K", "C4, G4", "flat ok"])
+  expect(rows[1]).toEqual(["R1", "10K", "C4, G4", "flat ok", "always"])
 })
 
 test("a resistor compressed below its flat floor is told to STAND ON END", () => {
@@ -122,9 +122,9 @@ test("a resistor compressed below its flat floor is told to STAND ON END", () =>
   const resistors = buildChecklist(dump, circuit, offBoardLabels(circuit), [], new Map(), NODE_MEMBERS).find(
     (section) => section.title === "Resistors and trim-pots",
   )
-  expect(resistors?.columns).toEqual(["Part", "Value", "Leads", "Mounting"])
+  expect(resistors?.columns).toEqual(["Part", "Value", "Leads", "Mounting", "Fit"])
   expect(resistors?.rows.find((row) => row[0] === "R1")).toEqual([
-    "R1", "10K", "C4, E4", "STAND ON END",
+    "R1", "10K", "C4, E4", "STAND ON END", "always",
   ])
 })
 
