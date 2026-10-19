@@ -1092,14 +1092,74 @@ raised.
 Open: a fix would settle these
 ------------------------------
 
-### G104 - gate 8 compares a generated schematic against a drawing a human trusts, the round trip cannot, and a spec table dropped it without saying so
+### G104 - gate 8's deferral was argued from the output it was supposed to grade, and THIS ENTRY MADE THAT ARGUMENT. The gate's empty-delta half is M1 work and always was
 
-**The parent spec says `gates/oscar/` ports.** An earlier revision of the child
-spec's derivation-chain table omitted it and called the round trip *"the only new
-check"*. **That lost a strictly stronger check silently**, and the M1 plan then
-deferred the gate to M2 on grounds that were true but weaker than the real ones.
-Both documents are now corrected; this entry is so the deferral cannot drift back
-into an omission.
+> **REWRITTEN 2026-10-19, THE DAY AFTER IT WAS WRITTEN, BECAUSE A SECOND
+> INDEPENDENT REVIEW OVERTURNED IT.** The entry is rewritten rather than deleted:
+> it is not resolved, and **what it recorded was wrong in a way a later reader
+> needs to see**, because the wrong form is persuasive.
+>
+> **WHAT THIS ENTRY SAID, verbatim from its own "Why it is open":** *"the gate
+> needs a reference and a declared-delta list. The reference exists ... **The
+> delta list does not, and it cannot be written before the generator exists**:
+> enumerating how a generated schematic is supposed to differ from a hand-drawn
+> one, before seeing what the generator produces, is guessing. **The deferral is
+> a sequencing fact, not a scope cut.**"* Its suggested mechanism went further:
+> *"author the delta list from M1's parity census, **which is the first artifact
+> that shows what the differences actually are**."*
+>
+> **WHY THAT WAS WRONG.** The review:
+>
+> > *"Waiting until generated schematics exist to enumerate their differences
+> > creates precisely the provenance risk gate 8 is supposed to prevent: a
+> > generator defect could be retrospectively classified as an intended
+> > change."*
+>
+> **THE INVARIANT IT BREACHED is `CLAUDE.md`'s, and it is this register's own
+> subject matter: an agent authoring the acceptance criteria for the artifact it
+> produces.** A delta list written from the parity census is a list of
+> differences chosen by the thing being graded. Every undeclared difference
+> would have been declarable after the fact, and the gate whose whole value is
+> that *"an undeclared difference fails by construction"* would have had nothing
+> left to fail on. **The entry's mechanism named the breach out loud** - *"the
+> first artifact that shows what the differences actually are"* - and the
+> sequencing argument around it made that sound like diligence.
+>
+> **This is the second time a sequencing argument has hidden a criteria breach in
+> this program**, which is why the wording is kept: `CLAUDE.md` warns that the
+> failure arrives *"wearing a measurement's clothes"*, and this one wore a
+> schedule's.
+
+**THE CORRECTED POSITION: an electrical delta is derived from the
+TRANSFORMATION, not discovered from the output.** For the Pultec the deltas are
+already defined upstream of any drawing - `circuits/pultec/partition.ts` removes
+the other sections, inserts stand-ins and introduces the junction connections -
+and **those are logical transformations, expressible independently of how
+anything is drawn.** The delta list is a statement about the partition.
+
+**So the gate splits, and the M1 half needs no list at all:**
+
+| | M1 | M2 |
+| --- | --- | --- |
+| what runs | the comparison, on circuits that require **no electrical change** | the same comparison on a generated Pultec section |
+| the permitted delta | **EMPTY** - a circuit rendered from its own model should differ from its own reference in nothing | the manifest, **derived mechanically from the partition** |
+| why it is available then | **an empty list needs no generator to write it** | the partition exists already |
+
+`circuits/pt2399-core/pt2399-core.kicad_sch` and
+`circuits/transistor-preamp/lab-board.kicad_sch` are hand-arranged, known good,
+and **neither is partitioned, carries a stand-in, or gets a junction header** -
+so the empty delta is correct for them rather than convenient.
+
+**AND THE RULE THAT REPLACES THE WITHDRAWN ARGUMENT: a list of permitted
+electrical changes is NEVER inferred from a generated schematic.** A delta is
+admitted because a declared transformation produces it, named with that
+transformation. **A difference found by looking at output is a defect report
+until some declared transformation accounts for it** - never a new list entry.
+
+**The parent spec says `gates/oscar/` ports**, and the first version of this
+entry existed because an earlier revision of the child spec's derivation-chain
+table omitted the gate and called the round trip *"the only new check"*,
+**silently dropping a strictly stronger check.** That part stands.
 
 **What the gate is**, from `tools/schgen/gates/oscar/compare.ts` in the pedals
 tree, read directly:
@@ -1128,24 +1188,40 @@ happily.** Different failures; neither substitutes for the other.
 
 - **Found** 2026-10-19, when the M1 plan deferred the gate and the controller
   checked why. The omission from the child spec's table predates that by hours.
+  **The deferral's reasoning was overturned the next day by a second independent
+  third-party review of the child spec**, recorded as that document's
+  Revision 4, finding 17.
 - **Evidence** `gates/oscar/compare.ts` and `boundary.ts` headers, read directly
   in the pedals tree; the child spec's own table, which listed four links and
-  called the round trip the only new check.
+  called the round trip the only new check. **For the overturn:** this entry's own
+  previous text, quoted above, against `CLAUDE.md`'s invariant and the review's
+  sentence - **a check that could have failed and did: the mechanism this entry
+  proposed names the parity census as the source of the delta list, which is the
+  producing pipeline's own output.**
 - **Verified** CONFIRMED - the controller read both gate modules and both spec
-  passages.
-- **Why it is open** the gate needs a reference and a declared-delta list. The
-  reference exists - `circuits/pt2399-core/pt2399-core.kicad_sch` and
-  `circuits/transistor-preamp/lab-board.kicad_sch` are hand-arranged, known good,
-  and the parent names them for this. **The delta list does not, and it cannot be
-  written before the generator exists**: enumerating how a generated schematic is
-  supposed to differ from a hand-drawn one, before seeing what the generator
-  produces, is guessing. **The deferral is a sequencing fact, not a scope cut.**
+  passages, and **confirmed the overturn by reading this entry's own withdrawn
+  wording** rather than relaying the review's characterisation of it.
+- **Why it is open** the gate is **not yet ported.** What was blocking it is now
+  one thing rather than two: **`graphFromNetlist` is written against pedals'
+  `connectivityFromXml`/`componentsFromXml` XML readers**, which the M1 plan's
+  Task 11 replaces with `importNetlist` for gate 3 and Task 18 must replace again
+  here. **That was never a reason to defer the gate - it is work.** The
+  Pultec-specific manifest remains M2 for a reason that is not a sequencing
+  argument: **M1 emits no Pultec section schematic at all**, so a manifest
+  describing that artifact's deltas would be written against nothing.
 - **What would settle it** **CRITERION: a generated schematic for at least one
   circuit with a hand-arranged reference is compared against that reference by
-  graph isomorphism, with every difference declared in advance and an undeclared
-  difference failing.** **MECHANISM, untested:** port `gates/oscar/` in M2 and
-  author the delta list from M1's parity census, which is the first artifact that
-  shows what the differences actually are.
+  graph isomorphism - by value and pin-level adjacency, independent of references
+  and net names - with every permitted difference declared in advance and an
+  undeclared difference failing.** **AND A SECOND CRITERION THE FIRST ONE DID NOT
+  PROTECT: no permitted difference is admitted that was not derived from a
+  declared transformation.** **MECHANISM, and the previous one is recorded as
+  measured-wrong rather than replaced quietly:** the withdrawn mechanism was
+  *"author the delta list from M1's parity census"*, which breaches the second
+  criterion by construction. The M1 plan's Task 18 instead ports the comparison
+  and runs it with an **empty** permitted delta on the two references above, and
+  gives `DeclaredDelta` a mandatory `from` field naming the transformation, so
+  the M2 shape cannot be populated without one.
 
 ### G94 - ELK throws on a unity-gain op-amp self-loop with horizontally drawn passives on its net - and the "lateral" half of the first narrowing is contradicted at block scale
 
@@ -1609,7 +1685,39 @@ catastrophe and leaves the complaint.**
   three sheets, and a mechanism that put them on one sheet would add its own**
   (spec seam B, untested). And no template was in the loop in either spike.
 
-### G101 - block size has a CEILING near 9 parts and a FLOOR near 4, and the two bounds are close together
+### G101 - block size has a CEILING near 9 parts and, under the tested frontend, an interface cost that dominates a very small block
+
+> **CAVEAT ADDED 2026-10-19, AND THE REASON IT WAS MISSING IS ITSELF THE
+> FINDING. BOTH FIGURES BELOW WERE MEASURED THROUGH A FRONT END THE GENERATOR
+> WILL NOT USE.** Both spikes drove ELK through `netlistsvg` at `d3518f1` with
+> its pinned elkjs 0.7.1; the M1 plan's backend replaces that code path
+> entirely. So:
+>
+> - **the ceiling's SHAPE survives and the number nine does not.** The shape -
+>   crossings are zero up to some size then grow, and below that size the count
+>   stops moving when the source file is reordered - rests on comparisons taken
+>   under identical conditions on both sides, so a skin that inflates crossings
+>   inflates both. The number is read off crossing counts that depend on node
+>   sizes and on the port constraints the skin declared;
+> - **the floor is ENTIRELY the skin's and is UNMEASURED for the new backend,
+>   not 4.** `[CODE]` A port became a drawn cell only because `netlistsvg`
+>   emits a 30x20 `inputExt` glyph for it. A backend that emits no port glyph
+>   has a different floor, or none. The earlier reading that *"a floor exists
+>   however the boundary is drawn"* is an argument, not a measurement.
+>
+> **HOW THIS CAVEAT CAME TO BE MISSING, recorded because it is a register
+> failure and not only a measurement caveat.** The contamination was found on
+> 2026-10-19 and scoped in the child spec and the M1 plan **in a change that
+> touched neither this file nor this entry** (`1dad94b`, *"The skin
+> contamination is scoped rather than re-measured"*, two files). **So for a day
+> the spec said the floor was unmeasured while this register still presented it
+> as a measured 4** - and the child spec's revision 4 then asserted that this
+> entry *"holds them with their caveats"*, which was checked and was not true.
+> **A caveat recorded in a design document and not in the register is not
+> recorded**, which is this file's own opening rule pointed at itself. What
+> survives unchanged is the finding's portable half: **block granularity trades
+> internal routing complexity against interface complexity**, which depends on
+> neither number.
 
 `[RAN]` `docs/schematic/elk-block-spike.md` §9
 and §7, over 18 declared blocks of 1 to 28 parts.
@@ -1674,8 +1782,15 @@ net hanging that its declaration does not name.
   **CAVEAT THAT MUST TRAVEL WITH THE FIGURE: the ~9 comes from 18 blocks out of
   TWO parents, both unusual** - a 76-part passive EQ and a 37-part compressor
   with two dual op-amps - and the repository declares no block above 28 parts, so
-  nothing above that was tested at all. **MECHANISM, untested:** whether a
-  template in the loop moves either bound. It was in neither spike.
+  nothing above that was tested at all. **AND THE SECOND CAVEAT, added with the
+  block at the top of this entry: both figures were taken through `netlistsvg`,
+  which the generator will not use - the ceiling's shape survives, the number
+  nine does not, and the floor is unmeasured for the new backend rather than 4.**
+  **MECHANISM, untested:** whether a template in the loop, or sheet composition,
+  moves either bound. Neither was in either spike. **The M1 plan's Task 17 is
+  where both contaminations are cleared, and its `BlockSizeDecision.floor`
+  admits the literal `"unmeasured"` so that a withdrawn number cannot be carried
+  into code.**
 
 ### G102 - three harness checks in the ELK spikes could not have failed on the fixtures they were built against, and one of them had never drawn the part it was wrong about
 
@@ -1774,6 +1889,114 @@ diodes with zero diagonals.
   claim. **MECHANISM, untested:** re-run that one parent with the diode mapped to
   its correct pids and with the diode removed, which would separate ELK from the
   patch.
+
+### G105 - the 6.1x block-decomposition gain is an UPPER BOUND, because 43 of the 139 edges became block-interface connections that nothing has drawn yet
+
+**The number this program's schematic architecture rests on hardest is
+`docs/schematic/elk-block-spike.md` §4's paired control, registered as G100:**
+the same 37-part `optical-compressor` at `v-bare` gives **293 inter-net crossings
+drawn whole and 48 drawn as its three declared blocks** - 6.1x - with wire length
+159 967 against 35 070.
+
+**THE MECHANISM G100 STATES IS WHERE THE PROBLEM IS, NOT A SEPARATE CLAIM.** The
+gain is explained by the blocks carrying **fewer edges than the whole: 96 against
+139.** A second independent review of the child spec asked the obvious question
+nobody had: **where did the other 43 edges go?**
+
+**They did not stop existing. They became connections BETWEEN blocks** - which is
+what decomposition does, and is legitimate - **and nothing in the measurement or
+in the spec represented them.** Each block was drawn on **its own canvas**, so the
+43 edges were drawn nowhere at all and counted as removed.
+
+**The spike said so itself, before the review asked**, `docs/schematic/elk-block-spike.md`
+§11, verbatim:
+
+> *"Seam B, and how block drawings would be composed onto one sheet. Each block
+> was drawn on its own canvas. The totals in §4 add up crossings across three
+> sheets; **a mechanism that put them on one sheet would add its own.**"*
+
+**So 6.1x BOUNDS the improvement from above. Composition can only spend it
+down**, and a reader quoting 6.1x without that sentence is quoting a bound as a
+result. **A result below 1x after composition is possible** and would be a
+finding about seam B rather than a failure of the measurement.
+
+- **Found** 2026-10-19, in a second third-party review of
+  `docs/superpowers/specs/2026-10-19-schematic-authoring-design.md`, recorded as
+  that document's Revision 4, finding 15. **The supporting quotation was already
+  in the spike** and had not been joined to the headline figure anywhere.
+- **Evidence** G100's own edge counts (96 against 139) and the block spike's §11,
+  both read directly. **A check that could have failed:** the 43-edge difference
+  was computed from the two edge counts the spike reports rather than asserted -
+  if the blocks had carried the same edge count as the whole, the review's
+  question would have had no subject and the 6.1x would have been a routing
+  result rather than a decomposition one.
+- **Verified** CONFIRMED - the controller read §4's table and §11's limitation
+  list in the spike, and quoted §11 rather than paraphrasing it.
+- **Why it is open** nothing has drawn a composed sheet yet. Seam B does not
+  exist, so the cost of the 43 edges is unmeasured in every direction: crossings
+  added, wire length added, and whether the blocks still fit a page once their
+  interfaces are connected.
+- **What would settle it** **CRITERION: an integrated measurement draws one
+  complete circuit with both template-drawn and ELK-drawn blocks, composes it
+  onto sheets, and reports the four measures against the FLAT whole-circuit
+  baseline - so what survives of the bound is a number rather than an
+  assumption.** **MECHANISM, untested:** the M1 plan's Task 17 Step 4, on
+  `optical-compressor` itself, because both ends of the comparison already exist.
+  Spec §1.9's block-interface contract is what has to be in place first, since
+  the 43 edges cannot be drawn until a block's interface is declared.
+
+### G106 - the ELK drawings already contain 30-187 DUPLICATE wire segments each, so every crossing and length measure taken over them is inflated, and the adapter would inherit them
+
+`[RAN]` `docs/schematic/elk-spike.md` §7, on 15 whole-circuit drawings:
+
+> *"**Duplicate wire segments: 30-187 per drawing.** Any measure that does not
+> collapse them double-counts crossings."*
+
+`[RAN]` `docs/schematic/elk-block-spike.md` §10, on 53 block drawings and 14
+parents: **0-80 duplicate segments per block drawing.** Zero-length segments too:
+**1-8 per whole-circuit drawing, 0-5 per block** (10 on one parent).
+
+**WHY THIS IS A CONSTRAINT ON THE DESIGN AND NOT A HARNESS CURIOSITY.** The M1
+plan's ELK-to-KiCad adapter consumes ELK's edge sections and turns them into
+`Wire[]`. **The duplicates are in that input.** An adapter that passes the
+sections through emits duplicate wires and duplicate junction objects into the
+`.kicad_sch`, and **every one of the four measures the spec requires - bends,
+bends per edge, crossings, wire length - is then inflated by an unknown amount.**
+It is not a defect the adapter might introduce; **it is already present in the
+geometry the adapter adapts from.**
+
+**And it is why spec §1.4's junction obligation needed refining.** *"Every branch
+point of every net carries an emitted junction"* assumes a branch point can be
+identified, which requires knowing a **wire crossing** from a **T-junction**,
+whether a branch may sit on a **pin endpoint**, and how **coincident branches are
+normalised before counting.** Over a segment list containing up to 187 duplicates
+none of those is well defined.
+
+- **Found** 2026-10-19, while checking a second review's finding 21 - which asked
+  for the junction geometry to be canonicalised on general grounds and **did not
+  have these figures.** The measurements predate the review by a day and had not
+  been connected to it.
+- **Evidence** the two spike sections quoted above, read directly. **A check that
+  could have failed:** the block-scale range starts at **0**, so not every
+  drawing has duplicates - the defect is real and not universal, which is why a
+  canonicaliser must report how many it collapsed rather than assume a count.
+- **Verified** CONFIRMED - the controller read both spike sections and quoted
+  them.
+- **Why it is open** no canonicaliser exists. Both spikes' published crossing
+  figures - including G96's 195 on a 24-part circuit, G100's 293-against-48
+  paired control and G101's zero-crossings-below-9-parts ceiling - **were taken
+  over uncanonicalised geometry**, so each is an upper bound of unknown
+  tightness. **The ratios are less affected than the absolutes**, since both
+  sides of a paired comparison carry the same defect, but nothing establishes
+  that the inflation is proportional.
+- **What would settle it** **CRITERION: a canonical wire topology is established
+  before serialization, and it deduplicates coincident segments, represents each
+  net's branches explicitly, preserves pin-end identity, and REJECTS an ambiguous
+  overlap rather than choosing one reading of it - with the collapsed count
+  reported rather than silent.** **MECHANISM, untested:** the M1 plan's Task 13's
+  `canonicalTopology`, with Task 16 taking every measure over its output and
+  Task 13 Step 8 reporting how far each measure moves when it does not. **That
+  difference is the size of this defect and nobody has measured it yet.**
 
 ### G91 - ELK ROUTES a Pultec-shaped network and does not DRAW it well, and a controller conflated those two results
 

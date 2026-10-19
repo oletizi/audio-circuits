@@ -375,6 +375,9 @@ represents them and seam B is what draws them, and until both exist the 43 edges
 are a cost that has been moved rather than removed. **A reader who quotes 6.1x
 without that sentence is quoting a bound as a result.**
 
+**Registered as `docs/known-gaps.md` G105**, with the edge counts and the
+spike's own limitation beside each other.
+
 **CRITERION: the integrated experiment measures how much of the bound SURVIVES
 composition** - a complete circuit drawn with both template-drawn and ELK-drawn
 blocks, composed onto sheets through seam B, and compared against the flat
@@ -600,7 +603,9 @@ drawing, 0-5 per block. **Duplicate junction objects and overlapping segments
 are not a risk the adapter might introduce. They are already in the geometry it
 would adapt FROM**, so an adapter that passes ELK's segment list through emits
 them into the schematic, and **every one of §3.3's four measures taken over an
-uncanonicalised topology is inflated by an unknown amount.**
+uncanonicalised topology is inflated by an unknown amount.** **Registered as
+`docs/known-gaps.md` G106**, which also records that every published crossing
+figure in §1.1 and §1.8 was taken over uncanonicalised geometry.
 
 **CRITERION: a canonical wire topology is established before serialization, and
 it (a) deduplicates coincident segments, (b) represents each net's branches
