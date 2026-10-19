@@ -211,13 +211,56 @@ checks is the T2 plan's job and is not done here** - an agent that specified the
 would be authoring the acceptance criteria for the artifact it is about to produce, which
 is the invariant in `CLAUDE.md`.
 
-**And a pattern worth more than either fix, because it happened three times in one
-sitting.** Twice on 2026-10-18 a requirement of the owner's was relayed to him as a
-blocker or as a defect in this document - first the absence of vendored KiCad symbols,
-then this authority row - and he corrected it both times (*"not having access to symbols
-is not a valid blocker. There are MANY symbols freely available in kicad."*, and the quote
-above). **A hard requirement the current tooling cannot yet meet is a requirement, not a
-blocker.** Calling it a blocker invites the next reader to route around it, which on both
+### Both authority directions are requirements, and only one of them is today's work
+
+**Added 2026-10-18. This makes an already half-stated thing explicit and names it a
+requirement; it introduces nothing.** `CLAUDE.md` already says *"Authority runs in both
+directions, depending on where a circuit came from"*, and **Schematic generation** below
+already says the canonical-graph gate *"exercises both authority directions:
+model-to-schematic for the agent-designed circuits, schematic-to-model for the Pultec."*
+The owner, asked about the derivation requirement above:
+
+> *"We ALSO need to build support for ex nihilo schematics, but that's not our current
+> situation."*
+
+So:
+
+| direction | authority | what grades a generated schematic | status |
+| --- | --- | --- | --- |
+| **schematic-first** - an imported design | the canonical `.kicad_sch`; the model derives from its netlist export; a per-board schematic derives from the canonical one | the reference drawing, at the right step of the derivation | **the current situation** - the Pultec, and the work in hand |
+| **model-first / ex nihilo** - a circuit the agent designs | the `Network`; there is no reference drawing, because none was ever made | **nothing to compare against** - grading has to come from the model plus the standing rule library | **also required**, and NOT today's work |
+
+**Ex nihilo is not hypothetical here.** Counted 2026-10-18:
+`circuits/optical-compressor/` holds **zero** `.kicad_sch` files and
+`circuits/opamp-buffer.ts` has neither a directory nor a schematic, while
+`circuits/pt2399-core/` has one, `circuits/pultec/` two and
+`circuits/transistor-preamp/` five. **Both of the schematic-less circuits are already in
+T2's verification set**, so T2 exercises both directions by construction rather than by
+intention, and the ex nihilo requirement needs no new material to be tested against.
+
+**Why the ex nihilo direction is the harder one, recorded as the open question it is
+rather than as a task.** In the schematic-first direction a reference drawing exists and
+a generated schematic can be graded against it. In the ex nihilo direction there is none,
+so grading must come from the model plus a rule library that was reviewed before the
+artifact existed - which is where this document's governing invariant bites hardest,
+because **an agent with no reference is the agent most tempted to grade its own output.**
+How that grading works is not proposed here.
+
+**Scope, explicitly:** *"that's not our current situation."* Ex nihilo is recorded as a
+requirement. It is not scheduled, not sequenced, and its absence today is not a defect.
+The work in hand is the schematic-first derivation for the Pultec.
+
+### A requirement the tooling cannot yet meet is a requirement, not a blocker
+
+**A pattern worth more than either fix above, because it kept happening in one sitting.**
+On 2026-10-18 a requirement of the owner's was relayed to him as a blocker or as a defect
+in this document twice over - first the absence of vendored KiCad symbols, then the
+authority row - and the controller counted the second as the third such framing in that
+one sitting. He corrected it each time: *"not having access to symbols
+is not a valid blocker. There are MANY symbols freely available in kicad."*, and *"It's
+not a blocker, it's a REQUIREMENT"* about the derivation above. **A hard requirement the
+current tooling cannot yet meet is a requirement, not a blocker.** Calling it a blocker
+invites the next reader to route around it, which on both
 of those would have meant inventing a second authority or a Pultec-local symbol table -
 the shortcuts the owner's directive rules out. Write what is missing and what it would
 take; do not promote it to an obstacle.
