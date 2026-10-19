@@ -804,10 +804,71 @@ See §1.7 and §1.6. **Two conventions must be pinned**, and §1.1's measurement
 says the first one is not self-evident: on the 25-part probe, signal flow ran
 neither left-to-right nor top-down consistently.
 
-### 5.3 Are `schgen`'s templates separable from its geometry layer?
+### 5.3 ~~Are `schgen`'s templates separable from its geometry layer?~~ ANSWERED 2026-10-19: yes, and they are already behind the interface an ELK backend would implement
 
-If they are coupled, seam A costs more than it looks. **A code-reading question,
-an hour, and it should be answered before the plan is written.**
+**Read in the pedals tree, `[CODE]`.** A template is:
+
+```ts
+export interface Template {
+  readonly id: TemplateId;
+  realise(g: BlockSubgraph): RealiseResult;
+}
+
+export type RealiseResult =
+  | { readonly ok: true; readonly layout: BlockLayout }
+  | { readonly ok: false; readonly reason: string };
+
+export interface BlockLayout {
+  readonly placements: readonly Placement[];   // part, unit, at: Point, rot
+  readonly wires: readonly Wire[];             // a: Point, b: Point, net
+  readonly anchors: readonly Anchor[];         // net, at: Point, side
+}
+```
+
+**A template is a pure function from a subgraph to coordinates.** It does not
+call into a shared geometry layer - **it RETURNS geometry as plain data.** There
+is nothing to separate, because they were never joined.
+
+**So seam A is a dispatch, not a refactor.** An ELK backend implements the same
+`realise(g: BlockSubgraph): RealiseResult`: hand it a subgraph, get back
+placements, wires and anchors, or a reason. Every template-shaped consumer
+downstream - `checkLayout`, the clearance refusals, the emitter - takes
+`BlockLayout` and does not care which produced it.
+
+**The cost is not separation. It is the adapter**, and the spec already names it:
+turning ELK's nodes, ports, edges and bend points into `Placement[]`, `Wire[]`
+and `Anchor[]` in one coordinate system **IS §1.4's realization contract.** The
+grid snapping, junction emission and route-invalidation questions all live in
+that adapter and nowhere else, which is a smaller and better-bounded problem than
+"port a geometry layer".
+
+**AND THE CATCH, WHICH IS §1.3's CONTRADICTION SITTING IN THE SOURCE.**
+`RealiseResult` is **two-valued** where the design needs three. Its single
+`ok: false` channel carries both *"no template applies to this subgraph"* and
+*"a template applied and failed"*, and the caller cannot tell them apart:
+
+```ts
+// render/blocks.ts:63-66
+const result = attributed(() => template.realise(g));
+if (!result.ok) {
+  throw new Error(`block ${id} ... cannot realise its subgraph: ${result.reason}`);
+}
+```
+
+`[RAN]` **30 `mismatch(...)` call sites across the seven templates funnel into
+that one channel.** So §1.3's three-valued selector is not only a specification
+change - **it is a widening of this interface**, and every template that reports
+a mismatch has to say which kind it is.
+
+**And `docs/known-gaps.md` G94 adds a fourth value this interface has no room
+for at all**: ELK throwing. A `realise` that can raise is outside
+`RealiseResult`'s type entirely.
+
+- **Evidence** `render/blockTypes.ts:27-63` and `render/blocks.ts:63-69`, read
+  directly; the `mismatch(` count measured across `render/templates/*.ts`.
+- **What this closes and what it opens** the separability question is closed. The
+  interface widening is **new work this answer created**, and it belongs in M1
+  alongside the adapter.
 
 ### 5.4 Is a passive's symbol declared per part or derived from its kind?
 
