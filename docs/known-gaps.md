@@ -519,6 +519,60 @@ evidence any future decision rests on:**
 Open: a fix would settle these
 ------------------------------
 
+### G56 - the new scaffold-membership guard checks groups-against-layout in one direction only; a PLACED stand-in part that no group claims is caught only transitively
+
+`tools/perfboard/scaffold-membership.ts` (new, `make check` prerequisite
+`scaffold-membership` in `make/board.mk`) asserts two things about a board's
+`SCAFFOLD`: every group's every `partIds` entry resolves through `DESIGNATORS`
+to a `PART` ref the layout holds, and no part id is claimed by two groups. It
+does **not** assert the reverse - that every stand-in part PLACED on the layout
+is claimed by some group.
+
+**Why not, and it is a boundary rather than a deferral.** Telling a stand-in
+part from the board's own part needs `component.provenance?.source ===
+STAND_IN_SOURCE`, and `STAND_IN_SOURCE` is declared in
+`circuits/pultec/physical/board.ts:79` - one design's constant. A generic
+`tools/perfboard/` guard that imported it would make every board's `make check`
+depend on the Pultec physicalization, which is the coupling
+`lib/board/scaffold/doc.ts`'s own comment refuses for the same reason. A prefix
+test on `SI_` would be a guess about a naming convention nothing enforces.
+
+**What covers it today, measured rather than assumed.** The orphan case is
+covered by composition, in two hops that already existed:
+`groupsFor` in `circuits/pultec/physical/scaffold-doc.ts:195-220` refuses when
+the parts the maximal network marks as scaffolding and the parts the groups list
+differ in either direction, and veroroute's `--check` plus
+`assertLayoutMatchesCircuit` refuse when the network and the layout differ. So
+an orphan would have to survive both to reach a diagram. What is NOT covered is
+a future board whose `SCAFFOLD` is authored by hand rather than derived by
+`scaffoldDoc()`: `groupsFor`'s guard is inside the derivation, so a hand-written
+doc would bypass it and this guard would not catch the orphan.
+
+- **Found** `2026-10-18-the-packet-shows-the-clusters`, Task 2, while
+  implementing the guard.
+- **Evidence** `grep -rn "export const STAND_IN_SOURCE" lib tools circuits`
+  returns exactly one line, `circuits/pultec/physical/board.ts:79` - the
+  constant is DEFINED only under `circuits/`, so the direction cannot be checked
+  where the guard lives without crossing that boundary. A check that could have
+  failed: it would have listed a `lib/` or `tools/` definition had one existed.
+  (A bare `grep -rn STAND_IN_SOURCE` now hits `tools/` too, because the new
+  guard's own doc comment names the constant it declines to import; the
+  definition-site grep is the one that establishes the claim.)
+- **Verified** yes, by the writer, who implemented the guard. Not relayed.
+- **Why it is open** the honest fix is a vocabulary question, not a code
+  question: something has to say "this designator is scaffolding" in a place a
+  generic tool may read. That is a design decision with a blast radius beyond
+  this task.
+- **What would settle it** CRITERION: a board whose layout holds a stand-in part
+  that its `SCAFFOLD` claims in no group is refused by `make check`, by name,
+  without the guard importing anything from `circuits/`. MECHANISM, which is a
+  guess from someone who has not tried it: have the board module export the
+  stand-in designator set beside `DESIGNATORS`, validated at the same boundary
+  `assertDesignators` sits on. Record the deviation if that mechanism turns out
+  not to meet the criterion.
+
+---
+
 ### G55 - the printed guide tells a builder to stand a ZERO-OHM resistor on end, where the wiring sheet for the same board says to fit a wire
 
 **The two generated sheets for one board give contradictory instructions about

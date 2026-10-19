@@ -52,6 +52,7 @@ import {
 import type { GuideDeps } from "../guide/packet.ts"
 import { dispatchNetlistSync } from "./perfboard-netlist-verb.ts"
 import { dispatchWiring } from "./perfboard-wiring-verb.ts"
+import { dispatchScaffoldMembership } from "./perfboard-scaffold-verb.ts"
 import type { NetlistSyncDeps } from "../perfboard/netlist-sync.ts"
 import { schematicNoticeLines } from "../perfboard/schematic-notice.ts"
 import { dispatchBom } from "./perfboard-bom-verb.ts"
@@ -76,6 +77,7 @@ const VERBS = [
   ["wiring", "regenerate this board's panel wiring guide from its circuit"],
   ["netlist-sync", "regenerate a netlist export and reconcile it with its fixture (used by make)"],
   ["schematic-notice", "print the no-schematic-declared notice (used by make)"],
+  ["scaffold-membership", "check this board's scaffold doc against the parts its layout holds"],
 ] as const
 
 const USAGE = [
@@ -407,6 +409,10 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (verb === "bom") return dispatchBom(cwd, args.slice(1), opts.bomDeps, opts.repoRoot, log, error)
 
   if (verb === "wiring") return dispatchWiring(cwd, log, error)
+
+  if (verb === "scaffold-membership") {
+    return dispatchScaffoldMembership(cwd, opts.repoRoot, log, error)
+  }
 
   if (verb === "place") {
     return dispatchPlace({ cwd, args: args.slice(1), log, error }, opts.placeDeps)
