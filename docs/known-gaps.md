@@ -1092,6 +1092,123 @@ raised.
 Open: a fix would settle these
 ------------------------------
 
+### G91 - ELK ROUTES a Pultec-shaped network and does not DRAW it well, and a controller conflated those two results
+
+**The two claims were merged in a report to the owner and they are different.**
+`docs/schematic/generation-prior-art-third-pass.md` §3.4 measured a layered
+orthogonal engine (ELK, via `netlistsvg`) completing **10 probes out of 10,
+byte-identical across 30 runs, never slower than 0.19 s** - including 14
+capacitors in parallel at **zero crossings**, the exact shape that defeats
+`schematizer` 0/3. That is a real result about **routing success and
+determinism.**
+
+**§3.5 of the same document measures the representative case and it is not
+good.** On the 25-part Pultec-shaped passive EQ the same engine produced, `[RAN]`
+in that document's own marks:
+
+| measure | value |
+| --- | --- |
+| crossings between different nets | **15** |
+| crossings within one net | 2 |
+| ELK edges / total bend points | 43 / 74 |
+| **bends per edge** | **1.72** |
+
+with selector throws crossing the **entire 1232-unit width** to reach their
+capacitors, capacitors ordered by a crossing-minimising permutation rather than
+numerically, and **signal flow in neither direction**. The document's own verdict:
+***"not a good audio schematic"***.
+
+**So the honest statement is narrower than the one that was made.** ELK solves
+the routing-FAILURE problem - it completes deterministically where another router
+refuses - and **it does not by itself produce a readable audio schematic.**
+Completing and drawing well are separate claims.
+
+**This cuts in two directions and both belong here.** It weakens any reading of
+"ELK is the general engine, problem solved". It **strengthens the two-track
+architecture**, because it is direct evidence that a general engine alone is
+insufficient and the idiom templates are doing real work rather than covering a
+gap that could be engineered away.
+
+- **Found** 2026-10-19, by the independent reviewer of
+  `docs/superpowers/specs/2026-10-19-schematic-authoring-design.md`, which
+  observed the spec quoting the most regular probe; the controller then read
+  §3.5 directly and confirmed it.
+- **Evidence** the table above, read from §3.5 of the third pass; §3.4's ten
+  probes for the contrasting result. A check that could have failed: the
+  document could have reported the Pultec-shaped probe as good, and does not.
+- **Verified** the §3.5 figures CONFIRMED by the controller reading them; the
+  underlying runs RELAYED - nobody re-executed the probe.
+- **Why it is open** it is **not a defect** - it is a measurement that corrects
+  an overclaim and re-aims work. The spec's §1.1 has been withdrawn and replaced.
+- **What would settle it** **CRITERION: a general engine's output on a real
+  repository circuit, measured on the same axes, read by someone who is not the
+  producing agent.** The third pass's probe was a hand-built Pultec SHAPE, not a
+  circuit from `circuits/` through this repository's own IR. **MECHANISM,
+  untried:** the spike recorded in that spec's §6, which the owner scheduled for
+  after the revision.
+
+### G92 - `stripboard/render-approvals.json` holds five approvals, not seventeen, and a `grep -c` was reported as an entry count
+
+**A controller counted `grep -c "candidateSha256"` and reported the result as
+"17 entries" in a dispatch brief.** Measured: the file's top level is
+`{schema, approvals, notes}` and **it holds five approvals**, one per Pultec
+section board, with **six** `ownerWords` utterances across them and twelve
+declared fields each. The sibling `stripboard/exemptions.json` holds two. **No
+count of 17 exists in any stripboard registry**; the string simply occurs 17
+times.
+
+**Every other property claimed of that channel holds** and was re-checked: it is
+scoped to `board` plus `candidateSha256`, it carries the owner's words verbatim,
+it is held outside any generation run, and its loader refuses a narrator-voice
+quote. **The mechanism was right and the number was wrong**, so the channel is
+adopted by that spec's §3.3 with the figure corrected rather than repeated.
+
+- **Found** 2026-10-19, by the agent revising the schematic-authoring spec, which
+  declined to repeat a figure it could not reproduce.
+- **Evidence** the file's parsed shape and entry count, measured; the raw
+  `grep -c` of 17 reproduced, which is what shows how the error was made.
+- **Verified** CONFIRMED by the controller, who re-ran both and got
+  `{schema,approvals,notes}` with five approvals against a raw grep of 17.
+- **Why it is open** the wrong figure reached a dispatch brief and would have
+  reached a spec. The general fault is not corrected by fixing this instance.
+- **What would settle it** **CRITERION: a count of records in a structured file
+  is obtained by parsing it, never by `grep -c` of a field name.** A field that
+  appears in a schema block, in notes, or more than once per record inflates the
+  count silently and in the direction that makes a claim look stronger.
+
+### G93 - the parent spec states the ELK selection rule loosely, and the child spec that depends on it says the parent wins
+
+`docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md` says ELK
+*"becomes what that refusal falls through to"*. Its own **"Selection, not
+degradation"** paragraph states the correct three-valued rule - the choice is
+made before anything is drawn, not after something failed - so the document
+contains both the right rule and a loose sentence that reads as a fallback.
+
+**This matters because of a dependency.** The child spec
+`2026-10-19-schematic-authoring-design.md` opens by stating that where the two
+disagree **the parent wins**. So an implementer who reads the parent's loose
+sentence and the child's precise §1.3 is entitled to prefer the parent's. The
+child added a sub-section showing the parent's own paragraph already carries the
+three-valued rule, which closes the gap for a careful reader and does not fix the
+sentence.
+
+**The failure this would cause is the one both documents exist to prevent:** ELK
+rescuing a template that should have worked, so defects in the preferred
+rendering path go dark - *"a fallback degrades the gate, not just the drawing"*.
+
+- **Found** 2026-10-19, by the agent revising the child spec against an
+  independent review, which found it could not make the child precise without the
+  parent contradicting it.
+- **Evidence** the parent's two sentences and its "Selection, not degradation"
+  paragraph, both read.
+- **Verified** CONFIRMED - the controller read both passages.
+- **Why it is open** the child's scope was two files and the parent's wording was
+  not among the changes briefed. Editing a parent spec to match a child is a
+  change that wants its own review.
+- **What would settle it** the parent's sentence is tightened to the three-valued
+  rule it already argues for, in a change that does not also alter its meaning
+  elsewhere.
+
 ### G63 - `boards/` has no `Makefile`, so the aggregate check walk is reachable only from the repository root, although `make/aggregate.mk` says every intermediate directory gets it
 
 `make/aggregate.mk` opens with the claim: *"The repository root and every
