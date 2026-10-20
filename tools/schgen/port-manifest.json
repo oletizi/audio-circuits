@@ -8,7 +8,7 @@
     "@/kicad/netlist": "lib/kicad/netlist.ts",
     "@/kicad/sexpr": "lib/kicad/sexpr.ts",
     "@/placement/strict": "lib/schgen/strict.ts",
-    "@/repo": "tools/perfboard/repo-root.ts",
+    "@/repo": "tools/repo.ts",
     "@/schgen/gates/oscar/boundary": "lib/schgen/gates/oscar/boundary.ts"
   },
   "moduleRenames": {
@@ -116,9 +116,45 @@
     { "from": "render/sheetCheck.ts", "to": "lib/schgen/render/sheet-check.ts" },
     { "from": "render/sheets.ts", "to": "lib/schgen/render/sheets.ts" },
     { "from": "render/glyphClearance.test.ts", "to": "tests/schgen/render/glyph-clearance.test.ts" },
-    { "from": "render/glyphGlyphClearance.test.ts", "to": "tests/schgen/render/glyph-glyph-clearance.test.ts" }
+    { "from": "render/glyphGlyphClearance.test.ts", "to": "tests/schgen/render/glyph-glyph-clearance.test.ts" },
+    { "from": "repo.ts", "to": "tools/repo.ts", "root": "pedals-tools" },
+    {
+      "from": "design.ts",
+      "to": "lib/schgen/design.ts",
+      "cuts": [
+        { "text": "  /** Relative to the design dir. */\n  readonly pinmap: string | null;\n", "occurrences": 1 },
+        { "text": "    isObjectOrNull(c[\"mcu\"]) &&\n", "occurrences": 1 },
+        { "text": "    isStringOrNull(v[\"pinmap\"]) &&\n", "occurrences": 1 }
+      ]
+    },
+    { "from": "generateFiles.ts", "to": "tools/schgen/generated-files.ts" },
+    { "from": "kicadConfig.ts", "to": "tools/schgen/kicad-config.ts" },
+    { "from": "kicadRun.ts", "to": "tools/schgen/kicad-run.ts" },
+    {
+      "from": "generate.ts",
+      "to": "tools/schgen/generate.ts",
+      "cuts": [
+        { "text": "import { loadPinMap } from \"@/pinmap/load\";\n", "occurrences": 1 },
+        { "text": "import { loadStMcu } from \"@/pinmap/stPinData\";\n", "occurrences": 1 },
+        { "text": ", type PinmapInput", "occurrences": 1 },
+        {
+          "text": "/**\n * The design's MCU pin map and the ST pin data it names (paths relative to the pin map file),\n * as buildCircuit takes them; null when the design has no pin map. Exported for harnesses that\n * build part of a design's circuit themselves.\n */\nexport function pinmapInputFor(d: LoadedDesign): PinmapInput | null {\n  if (d.spec.pinmap === null) return null;\n  const file = path.resolve(d.dir, d.spec.pinmap);\n  const map = loadPinMap(file);\n  const dir = path.dirname(file);\n  return { map, mcu: loadStMcu(path.resolve(dir, map.pinData), path.resolve(dir, map.gpioModes)) };\n}\n\n",
+          "occurrences": 1
+        },
+        { "text": "  const pinmap = pinmapInputFor(d);\n", "occurrences": 1 },
+        { "text": "  if (circuit.mcu !== null && pinmap !== null) pinned.set(circuit.mcu, pinmap.map.schematicRef);\n", "occurrences": 1 },
+        { "text": ", pinmap", "occurrences": 1 }
+      ]
+    }
   ],
   "diverged": [
+    {
+      "from": "__fixtures__/designs/mini/index.ts",
+      "to": "tests/schgen/__fixtures__/designs/mini/index.ts",
+      "sourceSha": "ff79760c45034b1b4a2250e3f182e5ad11e8729130f2df74d25aec43e14ceb47",
+      "task": "Task 6b",
+      "why": "The pedals project's own two-sheet design fixture, ported so that the first schematic this repository emits through its own pipeline is one IT did not arrange - the governing invariant is that an agent never authors the acceptance criteria for what it produces, and that extends to the arrangement being looked at. D3: its AMP_SPARE and AMP_PWR blocks declared `{ kind: \"labels\", reason: ... }`, now `{ kind: \"bus\", groups: [] }`; both hold one unit, so `realiseBus` draws them. G112: `mcu: null` is gone from the CircuitSpec and `pinmap: null` from the DesignSpec, the latter because design.ts's `cuts` remove the field. Its `pinTables` path still names the pedals pintables directory, which is not ported and which nothing in `generate` reads."
+    },
     {
       "from": "render/emit.test.ts",
       "to": "tests/schgen/render/emit.test.ts",
@@ -374,6 +410,8 @@
   ],
   "handWritten": [
     "lib/schgen/strict.ts",
+    "tests/schgen/__fixtures__/designs/mini/run.ts",
+    "tests/schgen/emit-byte-stable.test.ts",
     "lib/schgen/gates/oscar/boundary.ts",
     "lib/schgen/render/stock-symbols.ts",
     "lib/schgen/render/problem-obstacles.ts",

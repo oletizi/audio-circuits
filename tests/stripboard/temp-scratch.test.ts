@@ -68,6 +68,9 @@ const REGISTERING: Readonly<Record<string, readonly string[]>> = {
   "complete-fixtures.ts": ["freshPassDir"],
   "grade-fixtures.ts": ["fixtureDeclaration"],
   "vero-export-fixtures.ts": ["roundTrip"],
+  // Task 6b: the schgen mini design fixture's scratch outDir, so a generation never writes into
+  // the repository and never into a directory a later run reuses.
+  "run.ts": ["miniInScratch"],
   "materialize-low-boost.ts": ["materialisedLowBoost"],
   "run-scratch.ts": ["freshRoot", "registerCreated", "scratchStamp", "registerStampPrefix"],
 }
@@ -108,9 +111,17 @@ const CALLER_REMOVES: Readonly<Record<string, readonly string[]>> = {
  * `digital-pedal-platform`'s `tools/schgen/render/library.test.ts` modulo
  * imports and a header, so it cannot be rewritten to call `freshTempScratch`
  * without the port-fidelity test failing. See `lib/schgen/README.md`.
+ *
+ * `tests/cli/schgen.test.ts` is here for a different reason, and not because it writes under
+ * `TMPDIR` at all: its directory goes under the gitignored `build/`, because the schematic
+ * generator puts the design's path relative to its own repository root in the title block and
+ * `repoRoot` throws rather than guessing when there is no `.git` ancestor - so a design module in
+ * a temp directory cannot be generated. The sweep above counts every site in the tree whatever
+ * directory it names, which is right, and this is the shape of removal it cannot see.
  */
 const REMOVES_VIA_OWN_LIST: Readonly<Record<string, { readonly site: string; readonly list: string }>> = {
   "schgen/render/library.test.ts": { site: "dir", list: "tempDirs" },
+  "cli/schgen.test.ts": { site: "dir", list: "MODULE_DIRS" },
 }
 
 /**
