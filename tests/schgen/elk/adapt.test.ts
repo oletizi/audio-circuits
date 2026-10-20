@@ -20,12 +20,20 @@ import { elkInputOf } from "../../../lib/schgen/elk/graph.ts"
 import { layoutBlocks } from "../../../tools/schgen/elk/layout.ts"
 import { placedPins } from "../../../lib/schgen/render/layout-check.ts"
 import { onGrid } from "../../../lib/schgen/render/geometry.ts"
-import { dividerSubgraph, regulatorBlock } from "./fixtures.ts"
+import { checkLayout } from "../../../lib/schgen/render/layout-check.ts"
+import { snapCoordinate } from "../../../lib/schgen/elk/snap.ts"
+import { ORIGIN, unitBoxOf, unitNodeId } from "../../../lib/schgen/elk/graph.ts"
+import { placeBox } from "../../../lib/schgen/render/geometry.ts"
+import { branchJunctions, canonicalTopology, junctionProblems } from "../../../lib/schgen/elk/junctions.ts"
+import { junctionPoints } from "../../../lib/schgen/render/connectivity.ts"
+import { layoutItems } from "../../../lib/schgen/render/layout-check.ts"
+import { dividerSubgraph, groundOfDegreeSix, regulatorBlock } from "./fixtures.ts"
 import type { BlockSubgraph } from "../../../lib/schgen/render/block-types.ts"
 import type { PlacedPin } from "../../../lib/schgen/render/unit-pins.ts"
 import type { ElkOutcome } from "../../../lib/schgen/elk/graph.ts"
 import type { NetName } from "../../../lib/schgen/ir/types.ts"
 import type { Point } from "../../../lib/schgen/render/geometry.ts"
+import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api.js"
 
 /** One block through the real worker. A raise is returned as the outcome it is, never swallowed. */
 async function laidOut(g: BlockSubgraph): Promise<ElkOutcome> {
@@ -136,29 +144,203 @@ test("the canonicalisation count is reported, and it agrees with the wire lists 
 }, 120_000)
 
 /**
- * **OBLIGATION 5's CRITERION, AS FAR AS A TEST CAN REACH IT**: *"no generated schematic is emitted
- * whose geometry was altered after its last clearance check."*
+ * THE REAL ELK OUTPUT WITH EVERY COORDINATE PRE-SNAPPED ONTO THE GRID.
  *
- * What is checkable from outside is the observable consequence: a layout this adapter returns `ok`
- * for is on the grid, because `checkLayout`'s own grid assertion ran over exactly the geometry
- * returned and nothing moved after it. A nudge added after that check would leave a point off the
- * grid with `checkLayout` still reporting clean - which is perturbation (5) in Step 8.
+ * **IT EXISTS BECAUSE THE SNAP GATE HIDES THE THREE GATES BEHIND IT, AND THAT WAS MEASURED RATHER
+ * THAN SUSPECTED.** With the options this backend ships, `[RAN]` every fixture block and all twelve
+ * declared blocks of the four parity circuits refuse at or before the snap gate - so
+ * `adaptElkLayout`'s junction comparison (obligation 2), its clearance call (obligation 4) and the
+ * no-touching-after-it rule (obligation 5) were reached by **nothing in the suite**. Three gates
+ * whose perturbation nothing would notice is exactly `CLAUDE.md`'s *"a skipped check must never look
+ * like a passing one"*.
+ *
+ * This is not a hand-written graph standing in for ELK's: it is ELK's own output for the same
+ * subgraph, with each coordinate put on the grid, so snapping inside the adapter is a no-op and the
+ * gates behind it run on real routing. `tests/schgen/elk/snap.test.ts` is what holds the snap gate
+ * itself.
  */
-test("a layout this adapter returns is wholly on the 1.27 mm grid", async () => {
-  const g = dividerSubgraph()
-  const r = adaptElkLayout(g, await laidOut(g))
-  if (!r.ok) {
-    // A refusal is a legitimate outcome for ELK geometry and is what Step 6 measures; it is not a
-    // test failure, but it must be a CLASSIFIED refusal rather than a crash.
-    expect(["invalid-geometry", "clearance"]).toContain(r.mismatch.kind)
-    return
+async function gridAlignedOutcome(g: BlockSubgraph): Promise<Extract<ElkOutcome, { ok: true }>> {
+  const outcome = await laidOut(g)
+  if (!outcome.ok) throw new Error(`elkjs refused to lay out block ${g.block.id}`)
+  const pt = (p: { x: number; y: number }): { x: number; y: number } => ({ x: snapCoordinate(Math.round(p.x)), y: snapCoordinate(Math.round(p.y)) })
+  /**
+   * **A NODE's OWN CORNER IS THE WRONG THING TO ALIGN, AND IT WAS MEASURED WRONG BEFORE IT WAS
+   * MEASURED RIGHT.** ELK returns a node's `x`/`y` as its placed BOX's minimum corner, and
+   * `read-graph.ts` recovers the placement origin as `node.x - placeBox(ORIGIN, rot, box).minX`.
+   * `Fix:R`'s box starts at **-1.016 mm**, which is not a grid multiple - so snapping the corner put
+   * every placement origin at 1.016 mm and every pin end off the grid, and the first attempt at this
+   * fixture produced a geometry that refused at clause (d) for a reason that was the fixture's own
+   * doing. What has to land on the grid is the PLACEMENT, so the box offset is taken off before
+   * snapping and put back after.
+   */
+  const alignNode = (c: ElkNode): ElkNode => {
+    const u = g.units.find((unit) => unitNodeId(unit) === c.id)
+    if (u === undefined) return { ...c, x: pt({ x: c.x ?? 0, y: c.y ?? 0 }).x, y: pt({ x: c.x ?? 0, y: c.y ?? 0 }).y }
+    const base = placeBox(ORIGIN, u.rot, unitBoxOf(u))
+    return {
+      ...c,
+      x: snapCoordinate(Math.round(c.x ?? 0) - base.minX) + base.minX,
+      y: snapCoordinate(Math.round(c.y ?? 0) - base.minY) + base.minY,
+    }
   }
+  const graph: ElkNode = {
+    ...outcome.graph,
+    children: (outcome.graph.children ?? []).map(alignNode),
+    edges: (outcome.graph.edges ?? []).map((e) => {
+      const ee = e as ElkExtendedEdge
+      return {
+        ...ee,
+        sections: (ee.sections ?? []).map((sec) => ({
+          ...sec,
+          startPoint: pt(sec.startPoint),
+          endPoint: pt(sec.endPoint),
+          ...(sec.bendPoints === undefined ? {} : { bendPoints: sec.bendPoints.map(pt) }),
+        })),
+      }
+    }),
+  }
+  return { ok: true, blockId: outcome.blockId, serialized: outcome.serialized, graph }
+}
+
+/**
+ * **OBLIGATION 2, REACHED: the junctions the sheet emitter would place are compared against the
+ * branch points the canonical topology requires, and the comparison is not a tautology.**
+ *
+ * `emitted` comes from `junctionPoints(layoutItems(...))` - the ported rule, whose own comment calls
+ * junction dots *"cosmetic"* - and `required` comes from `branchJunctions` over the canonical
+ * topology. Two independent computations, so a difference is a finding. This asserts the adapter
+ * does the comparison at all: handed the same geometry with NO junctions emitted, it must refuse,
+ * and handed it with the required ones it must get past that gate.
+ */
+test("the adapter compares emitted junctions against the topology's branch points", async () => {
+  // `groundOfDegreeSix` and NOT the divider: a divider's nets are all two-terminal, so it has no
+  // branch point at all and the comparison below would be two empty sets - measured, 0 and 0.
+  const g = groundOfDegreeSix()
+  const outcome = await gridAlignedOutcome(g)
+  const read = readElkGraph(g, outcome.graph)
+  const pins = placedPins(g, read.placements)
+  const t = canonicalTopology({ placements: read.placements, wires: read.wires, anchors: read.anchors }, pins)
+  expect(t.ok, "the pre-snapped geometry must canonicalise, or this test is about nothing").toBe(true)
+  if (!t.ok) return
+  const required = branchJunctions(t, pins)
+  const emitted = junctionPoints(layoutItems(g, { placements: read.placements, wires: t.wires, anchors: read.anchors }))
+  // The two rules must have something to say, or the comparison below compares two empty sets.
+  expect(required.length + emitted.length, "this block must have at least one junction-worthy point").toBeGreaterThan(0)
+  // Nothing emitted: every branch point is a problem. This is the arm perturbation (2) drives.
+  expect(junctionProblems(t, pins, []).length).toBe(required.length)
+  // The required set: no problem from the junction rule.
+  expect(junctionProblems(t, pins, required)).toEqual([])
+})
+
+/**
+ * **OBLIGATIONS 3, 4, 5 AND THE CANONICALISATION, ALL REACHED, WITH AN EXACT ASSERTION - AND THE
+ * EXACTNESS IS THE WHOLE POINT.**
+ *
+ * Step 8's perturbations were run against a tolerant version of this test first - one that accepted
+ * either a layout or a classified refusal - and **five of the six perturbations went undetected.** A
+ * test that accepts both outcomes cannot see a change that moves the result from one to the other,
+ * which is `CLAUDE.md`'s *"a skipped check must never look like a passing one"* wearing an
+ * `if (!ok) return` for a costume. So the outcome for this block is pinned:
+ *
+ * - **`ok` is `true`.** Perturbation 3 (read the attachment from the ELK port coordinate instead of
+ *   recomputing it) leaves every wire ending a fraction of a grid step away from its pin, so the
+ *   ends dangle and this refuses. Perturbation 6 (pass ELK's segment list through without
+ *   canonicalising) hands four zero-length segments to the snap gate, which refuses them.
+ * - **`checkLayout` over the RETURNED layout is empty.** That is obligation 5's criterion made into
+ *   an assertion - *"no generated schematic is emitted whose geometry was altered after its last
+ *   clearance check"* - and perturbation 5's one-grid-step nudge after the check breaks it. A nudge
+ *   of exactly one grid step leaves every point ON the grid, so an on-grid assertion alone does not
+ *   see it; re-running the grader does.
+ */
+test("pre-snapped ELK geometry realises, and the returned layout passes the check that graded it", async () => {
+  const g = dividerSubgraph()
+  const report = adaptElkLayoutReported(g, await gridAlignedOutcome(g))
+  expect(report.counts).not.toBeNull()
+  expect(report.result.ok, report.result.ok ? "" : report.result.mismatch.reason).toBe(true)
+  if (!report.result.ok) return
+  expect(report.problems).toEqual([])
+  // Obligation 5: the geometry returned IS the geometry that was graded.
+  expect(checkLayout(g, report.result.layout)).toEqual([])
   const points: Point[] = [
-    ...r.layout.placements.map((p) => p.at),
-    ...r.layout.wires.flatMap((w) => [w.a, w.b]),
-    ...r.layout.anchors.map((a) => a.at),
-    ...placedPins(g, r.layout.placements).map((p) => p.at),
+    ...report.result.layout.placements.map((p) => p.at),
+    ...report.result.layout.wires.flatMap((w) => [w.a, w.b]),
+    ...report.result.layout.anchors.map((a) => a.at),
+    ...placedPins(g, report.result.layout.placements).map((p) => p.at),
   ]
   expect(points.length).toBeGreaterThan(0)
   for (const p of points) expect(onGrid(p), `${p.x},${p.y}`).toBe(true)
+}, 120_000)
+
+/**
+ * **OBLIGATIONS 2 AND 4, REACHED THROUGH THE PIPELINE: a block that gets as far as the clearance
+ * checks is graded BY them and not by a gate in front of them.**
+ *
+ * `groundOfDegreeSix` pre-snapped reaches `checkLayout` and is refused by it, which makes it the
+ * fixture that can tell the gates apart. Perturbation 2 (emit no junctions) makes it refuse at the
+ * junction gate instead, so `problems` empties and the reason changes; perturbation 4 (skip
+ * `checkLayout`) makes it return `ok` with nothing graded at all.
+ */
+test("a block reaching the clearance checks is graded by them, not by the gates in front of them", async () => {
+  const g = groundOfDegreeSix()
+  const report = adaptElkLayoutReported(g, await gridAlignedOutcome(g))
+  expect(report.result.ok).toBe(false)
+  if (report.result.ok) return
+  // `checkLayout` ran and had something to say: perturbation 4 empties this.
+  expect(report.problems.length).toBeGreaterThan(0)
+  // And the refusal is the CLEARANCE one, so the junction gate in front of it passed: perturbation
+  // 2 turns this into the junction message.
+  expect(report.result.mismatch.reason).toContain("clearance checks that grade template output")
+  expect(report.result.mismatch.kind === "clearance" || report.result.mismatch.kind === "invalid-geometry").toBe(true)
+}, 120_000)
+
+/**
+ * **OBLIGATION 3's SUBSTITUTION, MADE OBSERVABLE - and it is NOT observable any other way, which is
+ * a finding in its own right.**
+ *
+ * The obligation says the adapter *"recomputes every pin end from `pinEnd(placement.at,
+ * placement.rot, libPin)` and never reads an ELK port's returned coordinate as a wire attachment
+ * point."* `[RAN]` Step 8's perturbation 3 - delete the substitution and use ELK's own section
+ * endpoints - **changed no outcome in any test**, because `elk.portConstraints = FIXED_POS` IS
+ * honoured on this geometry: ELK returns each port exactly where it was put, so the two values agree
+ * and reading either gives the same wire. A substitution that is invisible while the two agree is
+ * invisible precisely when nothing is wrong, which is no comfort at all - the obligation exists for
+ * the case where they DISAGREE, and `oc-sidechain` is a real block where they do
+ * (`docs/known-gaps.md`: ELK projects a FIXED_POS port onto its declared `elk.port.side` when the
+ * node's box is wider than its pin span).
+ *
+ * So this test manufactures the disagreement in the FIXTURE - one section's start displaced by a
+ * whole grid step - and asserts the wire still attaches where the library geometry says. Under
+ * perturbation 3 the wire starts at the displaced point instead.
+ */
+test("a displaced ELK section endpoint is ignored: the wire attaches at the recomputed pin end", async () => {
+  const g = dividerSubgraph()
+  const outcome = await gridAlignedOutcome(g)
+  const edges = (outcome.graph.edges ?? []) as readonly ElkExtendedEdge[]
+  const first = edges[0]
+  expect(first, "the fixture must have an edge to displace").toBeDefined()
+  if (first === undefined) return
+  const section = (first.sections ?? [])[0]
+  expect(section, "the edge must have one section").toBeDefined()
+  if (section === undefined) return
+
+  const honest = readElkGraph(g, outcome.graph)
+  const before = honest.wires.find((w) => w.net === first.id.split(":")[0])
+  expect(before, `no wire was built for edge ${first.id}`).toBeDefined()
+  if (before === undefined) return
+
+  const displaced: ElkNode = {
+    ...outcome.graph,
+    edges: edges.map((e) =>
+      e.id !== first.id
+        ? e
+        : { ...e, sections: (e.sections ?? []).map((sec, i) => (i === 0 ? { ...sec, startPoint: { x: sec.startPoint.x + 1270, y: sec.startPoint.y } } : sec)) },
+    ),
+  }
+  const read = readElkGraph(g, displaced)
+  const after = read.wires.find((w) => w.net === first.id.split(":")[0])
+  expect(after).toBeDefined()
+  if (after === undefined) return
+  // The displaced coordinate must NOT have reached the wire: the attachment is recomputed.
+  expect(after.a).toEqual(before.a)
+  expect(after.a.x).not.toBe(section.startPoint.x + 1270)
 }, 120_000)
