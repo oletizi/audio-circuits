@@ -7429,6 +7429,13 @@ figure is thirteen newly ported modules, twelve of them unexercised.
 ### G125 - the obstacle-category matrix is enumerated and filled, and **95 of its 105 cells rest on reading the source rather than on a test that could have failed**
 
 
+**ROUND 4 AMENDMENT: TWO CELLS NOW HAVE EVIDENCE, AND NEITHER IS A BLIND SPOT.** Under the probe
+arm of **G198**, 10 of 12 ELK blocks reach `checkLayout` and exactly two pairs fire - `wire`/`wire`
+and `body`/`label-outline` - **both of them cells this matrix already marks `checked`.** No
+uncovered cell and no reason-only cell fired. That is **2 of 105 cells with first evidence**, and
+the 95 figure below becomes **93**; it is NOT the re-validation §1.4 asks for, because 12 of the 14
+categories never appeared at all. **G191** has the detail and the caveat that it is a probe arm.
+
 **TASK 13 AMENDMENT, 2026-10-20: THE RE-VALIDATION SPEC §1.4 ASKS FOR HAS NOT HAPPENED, AND THE 95
 CELLS HAVE EXACTLY AS MUCH EVIDENCE AS THEY HAD BEFORE.** Task 13 built the instrument
 (`tools/schgen/elk/obstacle-census.ts`) and ran it over every declared block of the four parity
@@ -13920,6 +13927,41 @@ overlaps | value of power symbol GND 1 at (34.29, 17.78) | label OUT at (39.37, 
   `problem-obstacles.ts` correctly reports as naming **no pair at all** - a field-placement refusal
   is not a clearance pair, and the census reports it separately rather than inventing one.
 
+**ROUND 4: TWO PAIRS FIRE. THIS IS THE FIRST EVIDENCE ANY OF G125's 95 UNEVIDENCED CELLS HAS EVER
+HAD, AND IT IS MEASURED UNDER A PROBE ARM RATHER THAN A SHIPPED CONFIGURATION** (**G198**: ruling
+R32's mechanism (2), which is NOT landed). With the emitter's junctions sourced from
+`branchJunctions`, **10 of 12 blocks reach `checkLayout`** - from 0 - and:
+
+| pair | matrix says | constraint | blocks |
+| --- | --- | --- | --- |
+| **`wire` / `wire`** | **checked** | *wire end mid-wire* | **10** |
+| **`body` / `label-outline`** | **checked** | *overlaps* | 1 (`tp-stage`) |
+
+```
+wire|wire            e.g. wire 3 of ob-buffer || wire 4 of ob-buffer at (41.91, 29.21)
+body|label-outline   e.g. body of Q1#1 || label BYPASS_CAP at (11.43, 11.43)
+```
+
+**BOTH CELLS WERE ALREADY MARKED `checked` IN THE MATRIX, AND THAT IS THE RESULT RATHER THAN A
+DISAPPOINTMENT.** §1.4's re-validation clause predicts *"a fresh blind spot"* from pointing a
+pairwise-accreted check set at a new geometry source; **on this geometry no uncovered or
+reason-only cell fired at all.** What fired is two cells the matrix already claims, so the
+prediction is **not** borne out here - which is a finding about the matrix's accreted set holding
+up on a second source, and it is the first time that claim has had any evidence either way.
+
+**12 of the 14 categories still never appear**, so this is evidence for 2 cells of 105 and nothing
+more: `pin-line`, `pin-number`, `pin-name`, `interior-graphic`, `junction`, `power-glyph`,
+`pwr-flag-glyph`, `field-text`, `frame-border`, `no-connect-marker` and `dnp-cross` are untouched.
+
+**AND 14 PROBLEMS NAMED NO PAIR AT ALL**, which the census reports separately rather than inventing
+one for: split nets, pieces of a labelled net with no label or power symbol, and four
+*"no place for its Reference and Value"* field-placement refusals. Those are **G199**'s business if
+anyone acts on them; they are not clearance pairs and must not be counted as matrix evidence.
+
+**The `wire`/`wire` firing is not independent of the rest of this task**: `[RAN]` **all 25 of its
+findings are at the 25 containment-collapse branch points**, 0 elsewhere (**G198**). So the pair
+that fired on 10 blocks is one defect seen through the matrix, not ten.
+
 **ROUND 2: R31 LANDED AND THE RESULT IS STILL EMPTY, WHICH IS THE USEFUL PART.** The containment
 collapse clears clause (d) on all eleven blocks that refused there - and **0 of 12 still reach
 `checkLayout`**, because the next gate catches them: the snap gate (**G188**) takes eleven, and with
@@ -14076,6 +14118,16 @@ obligation 2 is what refuses the drawing when one is not.** On this corpus that 
 fires, which means the collapse is **not yet** connectivity-preserving in practice - it has moved
 the problem from clause (d) to obligation 2, where it is a more specific and more actionable
 refusal.
+
+**ROUND 4 SETTLES WHICH MECHANISM, AND IT IS NOT THE ONE THE RULING TOOK.** Controller ruling
+**R32** chose mechanism (2) - emit at every branch point the topology requires. `[RAN]` Under a
+probe arm it works exactly as intended: obligation 2 passes and **10 of 12 blocks reach
+`checkLayout`**, from 0. **And all ten are then refused by `checkWireSafety` at the same 25 points,
+0 elsewhere** - because that rule says *"split the wire there"* and `connectivity.ts`'s own module
+comment states the standing policy: *"the generator never relies on the junction-dependent cases …
+junction dots are cosmetic."* **Mechanism (2) satisfies obligation 2 and is refused by the very next
+gate, by the same count, at the same coordinates.** **G198** has it in full, and R32 asks to be
+reopened rather than worked around in exactly this case.
 
 **ROUND 3 ANSWERS THE QUESTION THIS ENTRY LEFT OPEN, AND THE ANSWER IS UNAMBIGUOUS: YES, ALL OF
 THEM.** With **G188**'s options set, 10 of the 12 blocks refuse at obligation 2. Measured over
@@ -14242,3 +14294,126 @@ obligation 1 has to be built on.
   obligations 2 to 5**. **MECHANISM, untried:** have `snapToGrid` report which arms it evaluated
   rather than only what they found, so the census can print arm coverage beside its results - which
   makes an unreachable arm visible without anybody thinking to look for one.
+
+### G197 - R32's gate FIRED: the crystal template's junction set changes, and the cause is that the two rules count a coincident PIN differently
+
+Ruling **R32** gates mechanism (2) - sourcing the emitter's junctions from `branchJunctions` rather
+than `junctionPoints` - on a measurement: *"compute both junction sets for every template-drawn
+block and every ELK block, and report the difference… If any template sheet changes, STOP and
+report it."*
+
+`[RAN]` **Nine template-drawn blocks examined** - the `mini` design's seven wired blocks, covering
+`regulator`, `decoupling-bank`, `divider`, `connector-fanout` (twice), `opamp-stage` and `crystal`,
+plus `rail-row` and `passive-chain` fixtures for the two the design does not use. **Eight agree
+exactly. One differs**, and it is `mini/XTAL`, the `crystal` template, at a single point:
+
+```
+TEMPLATE(crystal) mini/XTAL: junctionPoints=3 branchJunctions=2
+                             onlyPoints=[(0, 5.08)]  onlyBranch=[]
+```
+
+**THE CAUSE, DIAGNOSED RATHER THAN RECONCILED.** At `(0, 5.08)` there are **three items: one `GND`
+wire end, and TWO pins of `Y1` - pins 2 and 4, both on `GND`, both at that point.**
+
+- **`junctionPoints` counts pin ends individually**: 1 + 2 = 3, which meets its *"3 or more wire
+  ends and pin ends coincide"* rule, so it emits a dot;
+- **`branchJunctions` counts "a pin is here" as a BOOLEAN**: `atPin ? 1 : 0`, so 1 + 1 = 2, which is
+  below its branch threshold and it emits nothing.
+
+**NEITHER RULE IS ELECTRICALLY WRONG, AND THAT IS THE FINDING.** In KiCad a wire end coincident with
+pins connects to them natively; a junction there is **neither required nor harmful**. So the
+difference is **one cosmetic dot on one template sheet**, not a connection gained or lost. Sheet
+level corroborates the per-block measurement: the `signal` sheet goes from **5 junctions to 4** (the
+XTAL dot) and the `power` sheet is **unchanged at 7**.
+
+**IT IS RECORDED AND NOT FIXED.** R32 says *"do not reconcile it by adjusting either rule until the
+difference has been read"*, and reading it is what this entry is. **It is also now moot for the
+decision it was gating** - see **G198**: mechanism (2) cannot make anything draw, so the question of
+whether to accept one lost dot on the crystal sheet does not arise until that is settled.
+
+- **Found** 2026-10-20, Task 13 round 4, running R32's gate before landing anything.
+- **Evidence** the nine-block comparison above; the item dump at `(0, 5.08)` naming `Y1.2` and
+  `Y1.4`; `branchesOf`'s `atPin ? 1 : 0` read directly in `lib/schgen/elk/junctions.ts`;
+  `junctionPoints`' *"3 or more wire ends and pin ends"* read in `render/connectivity.ts`; and the
+  sheet-level counts for both `mini` sheets. A check that could have failed: eight of the nine
+  template blocks agreed exactly, so the comparison is not reporting a difference everywhere.
+- **Verified** CONFIRMED - this writer ran every measurement.
+- **Why it is open** nothing is changed. If a later ruling takes mechanism (2), this must be settled
+  first; if it takes mechanism (1), `branchJunctions` never becomes the emitter's source and the
+  difference stays a curiosity about two rules that are each right for their own job.
+- **What would settle it** **CRITERION: the two rules agree on every template-drawn block, or the
+  one that is wrong for its stated purpose is identified and fixed.** **MECHANISM, untried and NOT
+  taken:** make `branchJunctions` count coincident pins rather than testing for any - `ends + 2 *
+  through + pinCount`. That is a one-line change and it would make the sets agree on `XTAL`, but
+  **it is a change to what counts as a branch**, and whether two coincident pins of one part on one
+  net constitute a current division is a question nobody here has answered. It is not taken on the
+  authority of making two numbers match.
+
+### G198 - R32's mechanism (2) satisfies obligation 2 and then fails `checkWireSafety` at the SAME 25 points, so it cannot make anything draw
+
+**MEASURED UNDER A PROBE ARM, NOT LANDED.** With the emitter's junctions sourced from
+`branchJunctions` - ruling **R32**'s mechanism (2) - obligation 2 passes by construction and the
+blocks advance:
+
+| | shipped | R32 probe arm |
+| --- | --- | --- |
+| reach `checkLayout` | **0 of 12** | **10 of 12** |
+| **drawn** | 0 | **0** |
+| refused at snap (**G196**) | 1 (`oc-audio`) | 1 (`oc-audio`) |
+| refused at obligation 3 (**G190**) | 1 (`oc-sidechain`) | 1 (`oc-sidechain`) |
+
+**AND ALL TEN ARE REFUSED BY `checkWireSafety`, AT EXACTLY THE POINTS OBLIGATION 2 JUST PUT
+JUNCTIONS ON.** `[RAN]`:
+
+```
+checkWireSafety "mid-wire" findings: 25
+   AT a containment-collapse branch point: 25
+   elsewhere: 0
+other wire-safety findings: 0
+```
+
+**25 of 25, 0 elsewhere** - the same identity **G194** measured for the missing junctions, from the
+other side. One collapsed containment, one branch point, one junction emitted, one `checkWireSafety`
+refusal.
+
+**THE TWO RULES EMBODY OPPOSITE POLICIES AND `connectivity.ts` STATES WHICH ONE THIS REPOSITORY
+HOLDS**, in its own module comment:
+
+> *"The generator never relies on the junction-dependent cases: `checkWireSafety` refuses a pin end
+> or wire end inside a wire (**split the wire there instead**) and a label at a crossing. … Junction
+> dots (`junctionPoints`) are **cosmetic**."*
+
+So obligation 2 says *emit a junction at the branch point* and `checkWireSafety` says *split the
+wire there and do not rely on a junction*. **R32's mechanism (2) implements the first and is then
+refused by the second, at the same count and the same coordinates.**
+
+**THIS SENDS R32's DECISION THE OTHER WAY, AND THE RULING ASKS TO BE TOLD SO RATHER THAN WORKED
+AROUND.** Mechanism (1) - splitting the container at the contained segment's interior endpoint - is
+**what `checkWireSafety` itself prescribes**, in the words of its own refusal. R32 rejected it as
+*"a workaround wearing a repair's clothes… a rule written for a different case happens to catch this
+one"*; the measurement says the rule was not written for a different case at all - *split the wire
+there* is the standing policy of the whole generator, stated in the module every geometric check
+goes through.
+
+**WHAT MECHANISM (2) DID BUY, AND IT IS NOT NOTHING.** It is what let 10 blocks reach the clearance
+checks for the first time, which is how the obstacle-matrix pairs in **G191** were measured at all.
+Whatever ruling follows, that measurement is now in hand.
+
+- **Found** 2026-10-20, Task 13 round 4, probing R32 before landing it.
+- **Evidence** the census under the probe arm (10 reaching `checkLayout`, 0 drawn); the 25/25
+  classification above, computed by matching each `checkWireSafety` *"mid-wire"* coordinate against
+  the branch points whose shape is an end on another same-net segment's interior;
+  `connectivity.ts`'s module comment read directly. A check that could have failed: the classifier
+  reports `elsewhere` separately and it is 0, so "all of them" is measured rather than assumed.
+- **Verified** CONFIRMED - this writer ran the probe and the classification, and restored the
+  probe arm afterwards.
+- **Why it is open** **it is a ruling to reopen, not a defect to fix.** Nothing is landed.
+- **What would settle it** **CRITERION: a block whose only remaining defect is the containment
+  collapse's fragmentation passes BOTH obligation 2 and `checkWireSafety`.** Mechanism (2) satisfies
+  the first and fails the second on all 25 points; **mechanism (1) satisfies both by construction**,
+  because a split converts the mid-wire end into a coincident-end meeting that `checkWireSafety`
+  accepts and `junctionPoints` already emits for. **MECHANISM, untried and not this task's to
+  choose:** split the container, which is R32's rejected (1) and `checkWireSafety`'s own
+  instruction. The obligation-5 question R32 raises against it is real and is the thing to rule on:
+  is a collinear split of a segment the router drew a *repair*, or is it the canonicalisation
+  clause (a) already performs one dimension up?
