@@ -6388,19 +6388,33 @@ different entry point for `transistor-preamp` (it has five boards;
 `transistorPreampLab()` is the one `circuits/transistor-preamp/index.ts`
 re-exports) and an earlier revision of the other two, but that is a guess.
 **Task 10's census is the task that will quote these numbers**, which is why
-the disagreement is recorded rather than left for it to rediscover.
+the disagreement is recorded rather than left for it to rediscover - and why
+the thing that produced them is committed as `tools/schgen/symbol-census.ts`
+rather than described. **Re-measuring is `bun tools/schgen/symbol-census.ts`**,
+whose output names the entry point it read for each circuit, which is the one
+piece of information needed to test the entry-point hypothesis.
 
 - **Found** 2026-10-19, Task 4, Step 5 as directed by the brief.
-- **Evidence** a script that imports `opampBuffer()`, `opticalCompressor()`,
-  `pt2399Core()` and `transistorPreampLab()`, counts `components` and
-  `component.part?.symbol`, then resolves every distinct lib id through
-  `createResolver(symbolLibraries(nicknames))` and prints per id either the
-  pin and unit count or the refusal message. A check that could have failed
-  in two ways and did not: a lib id that refused would have printed its
-  message, and a nickname in neither source would have refused at
-  `symbolLibraries`. The vendored/not-vendored split is `VENDORED_SYMBOLS`
-  (`lib/kicad/symbol-library.ts`) differenced against the ten, both
-  directions printed. The plan's figures were read directly from line 831.
+- **Evidence** **`bun tools/schgen/symbol-census.ts`**, which is the thing
+  that produced every figure above and is COMMITTED so a successor re-runs it
+  rather than rebuilding it from this recipe (Task 4 review, round 1). It
+  builds each of the four circuits, counts `components` and
+  `component.part?.symbol` - the derived arm, so a symbol reaching a part
+  through a shared constructor is counted - then resolves every distinct lib
+  id through `createResolver(symbolLibraries(nicknames))` and prints per id
+  either the pin and unit count or the refusal verbatim. It probes each
+  nickname separately, because `symbolLibraries` refuses a whole batch
+  containing one unresolvable nickname and the census's job is to report WHICH
+  ids fail. The vendored/not-vendored split is `VENDORED_SYMBOLS`
+  (`lib/kicad/symbol-library.ts`) differenced against the ten, both directions
+  printed. **A check that could have failed and did not:** a lib id that
+  refused would have printed its message.
+  `tests/schgen/symbol-census.test.ts` exercises the tool so it cannot rot,
+  and asserts this entry's criterion (every declared id resolves) **without
+  pinning any of the counts**, which are a measurement rather than an
+  invariant. Driven: with `KICAD_SYMBOL_DIR` pointed at a directory holding
+  only `Device.kicad_sym`, that test fails listing seven lib ids and their
+  refusals. The plan's figures were read directly from line 831.
 - **Verified** CONFIRMED - this writer wrote and ran the script and read its
   full output, and read the plan line.
 - **Why it is open** it is a measurement, not a defect in Task 4's work, and
@@ -6478,6 +6492,49 @@ symbols over the stock library's would restore them, at the cost of generating
 a library file at resolve time from a module `lib/schgen/README.md` declares
 pure.
 
+**TWO FACTS ABOUT THAT ALTERNATIVE THAT THE FIRST VERSION OF THIS ENTRY LEFT
+OUT, and without them the open question below is not decidable from the entry.**
+Both were established in the Task 4 review, round 1.
+
+**(a) "Read the vendored bytes for `Device:R` and the installed library for
+`Device:C`" cannot be expressed at all.** `createResolver`'s map is keyed by
+NICKNAME, not by lib id, so one nickname gets exactly one file and every symbol
+under it comes from that file. There is no per-symbol assignment to choose
+between. **Generating a merged library is therefore not a stylistic preference
+for one mechanism over another - it is the only form the "vendored bytes are
+what is read" answer can take.** That makes the purity objection the WHOLE
+objection to it, and the purity objection is relocatable: a merged library
+could be written by `tools/kicad/vendor-symbols.ts`, which already writes
+`lib/kicad/symbols/` and is the only thing that should, leaving
+`lib/schgen/render/stock-symbols.ts` reading committed files and still pure.
+What that costs instead is that the merge is then fixed at vendoring time
+against one KiCad, so the committed artifact carries that machine's other
+symbols too.
+
+**(b) Under the generated-library design the drift refusal LEAVES THE DRAW
+PATH, and that is an advantage of the shipped mechanism, not an incidental
+difference.** If the vendored bytes are what gets read, nothing compares them
+to anything while drawing - there is no second reading to disagree with - so
+the check can only live in a test. A drawing made on a machine with a
+differently-versioned KiCad would then take its vendored symbols from the
+committed copies and every OTHER symbol under the same nickname from that
+machine's library, and **would not refuse when it was drawn**: a mixed-vintage
+schematic, half pinned and half not, produced silently. The shipped mechanism
+refuses in that situation, because the comparison is on the path that draws.
+So the two answers differ in what they buy, not only in purity: bytes-are-read
+buys drawing without KiCad and loses the refusal at draw time; check-on-read
+buys the refusal at draw time and makes KiCad a hard dependency.
+
+**WHAT NOTHING BINDS, AND IT IS THE ONE WAY THE CRITERION CAN BE SILENTLY
+LOST.** The vendored-agreement refusal lives in `symbolLibraries`, **not in
+`createResolver`**. Nothing requires a caller to use `symbolLibraries` at all:
+a later task that builds its own nickname-to-path map - one
+`path.join(stockSymbolDir(), \`${nick}.kicad_sym\`)` is enough, and the pedals
+source does exactly that in several of its own `*.kicad.test.ts` files - gets a
+working resolver with **no vendored check and no complaint**. R8's criterion
+then holds for nothing that resolver draws, and nothing says so. Task 10 is the
+first task likely to build such a map.
+
 - **Found** 2026-10-19, Task 4, Step 4, while writing `stock-symbols.ts`
   against the brief.
 - **Evidence** `createResolver`'s signature and its `fs.readFileSync(file)` of
@@ -6501,15 +6558,36 @@ pure.
   mechanism, not a defect, and the plan still says the other thing. It also
   carries an unresolved question (below) that is not this task's to settle.
 - **What would settle it** **CRITERION:** nothing further for the deviation
-  itself; this entry IS the record the ruling asked for. **The open question
-  it leaves**, for whoever owns the decision: should a vendored symbol's BYTES
-  be what a drawing reads, so that a machine without KiCad can still draw a
-  wholly-vendored circuit? Answering yes requires the generated-library
-  mechanism above and a decision about what happens to the stock library's
-  other symbols under the same nickname. Answering no makes KiCad a hard
-  dependency of drawing, which is what is implemented. **Nobody should ask the
-  owner this unprompted** - it is recorded here so the next task that trips
-  over it finds the reasoning rather than redoing it.
+  itself; this entry IS the record the ruling asked for. **Two things it
+  leaves, and they settle differently.**
+
+  **THE OPEN QUESTION**, for whoever owns the decision: should a vendored
+  symbol's BYTES be what a drawing reads, so that a machine without KiCad can
+  still draw a wholly-vendored circuit? **The trade is now stated in full
+  above**, and it is not purity against convenience. Answering **yes** means a
+  merged generated library - which is the only expressible form of it, by (a) -
+  written by `tools/kicad/vendor-symbols.ts` so that nothing in `lib/schgen/`
+  writes files; it buys drawing without KiCad, fixes the merge against one
+  KiCad at vendoring time, and **moves the drift refusal off the draw path**,
+  so a differently-versioned machine produces a mixed-vintage schematic
+  silently (b). Answering **no** is what is implemented: KiCad becomes a hard
+  dependency of drawing, and a disagreement refuses at the moment it would
+  matter. **Nobody should ask the owner this unprompted** - it is recorded here
+  so the next task that trips over it finds the reasoning rather than redoing
+  it.
+
+  **THE UNBOUND SEAM**, which is a measurable criterion rather than a decision:
+  **every `SymbolResolver` that draws a circuit in this repository is built
+  over a map `symbolLibraries` produced**, so the vendored-agreement refusal
+  cannot be bypassed by a caller that assembles its own. **MECHANISM**,
+  untried, and advice from someone who has not written it: a test asserting
+  that `createResolver` is called in no file outside
+  `lib/schgen/render/library.ts` and `tests/schgen/`, or a guard in
+  `symbolLibraries` that stamps the map it returns and a `createResolver`
+  wrapper that requires the stamp. The second changes a ported file's
+  signature, so it is not free. **This round deliberately did not add either**:
+  the controller scoped it to being recorded, so that Task 10 reads it before
+  it builds a map.
 
 ### G120 - measured: removing the `extends` recursion does NOT fail on an empty pin list, as the brief predicts - a guard two modules away fires first, and the silence the test guards is real only for a different shape of symbol
 
@@ -6574,9 +6652,27 @@ file, not the resolver.
   document, and the prediction is still in the document. A later reader
   following Step 6 literally and expecting an empty-pin-list assertion
   failure would conclude the test was wrong.
-- **What would settle it** nothing further - this entry records the
-  measurement, and the test it describes is in the tree. The brief's sentence
-  is the plan's to correct (see **G117**).
+- **What would settle it** nothing further for the measurement - this entry
+  records it, and the test it describes is in the tree. The brief's sentence is
+  the plan's to correct (see **G117**).
+
+  **ONE THING NO TEST SHOWS, AND THIS ENTRY IS THE WHOLE OF THE RECORD.** The
+  shape the silence is real for - a child that declares its OWN graphics
+  sub-symbol and inherits only its parent's pins - exists in no fixture, so
+  nothing in the tree demonstrates it. It is NOT available to demonstrate
+  either: the fixture libraries are byte-pinned against the pedals source by
+  `tests/schgen/port-fidelity.test.ts`'s copied-fixture check, so adding such a
+  symbol to `Fix.kicad_sym` would fail that check, and a third hand-written
+  fixture library would be a second source of truth for what a fixture symbol
+  is. **So "recorded, not demonstrated" is the deliberate answer, not an
+  omission** - which is why this clause says so rather than leaving the
+  demonstration looking available to the next reader. The criterion, if anyone
+  ever does want it: an `(extends …)` symbol with its own `(symbol
+  "<child>_1_1" (rectangle …))` and no pins of its own resolves, unflattened,
+  to a symbol with geometry and zero pins and no refusal. **MECHANISM**,
+  untried: a `tempLib(...)`-style one-symbol library written inside a test,
+  the way the ported `render/library.test.ts` already builds its own
+  throwaway libraries, which needs no fixture-file edit at all.
 
 ### G121 - `@/kicad/netlist` now resolves in the port manifest, for `KICAD_CLI` only, which removes the port-time refusal that was protecting Task 11
 

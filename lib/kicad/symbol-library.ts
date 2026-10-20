@@ -7,9 +7,21 @@
  * atom was quoted, and KiCad distinguishes `yes` from `"yes"`.
  *
  * The symbols live in `./symbols/<Library>/<Name>.sexpr`, copied from an
- * installed KiCad by `tools/kicad/vendor-symbols.ts`, so a generated schematic
- * never depends on whichever KiCad happens to be installed. See
- * `./symbols/PROVENANCE.md`.
+ * installed KiCad by `tools/kicad/vendor-symbols.ts`. For the consumer this
+ * module was written for - `lib/kicad/schematic.ts`, which reads
+ * `vendoredSymbolText` and embeds the result - that means a generated
+ * schematic never depends on whichever KiCad happens to be installed, and
+ * needs none installed.
+ *
+ * **THERE IS A SECOND CONSUMER SINCE TASK 4 OF THE M1 SCHEMATIC PLAN, AND IT
+ * USES THESE FILES THE OTHER WAY ROUND.** `lib/schgen/render/stock-symbols.ts`
+ * resolves a library nickname to the INSTALLED KiCad's `.kicad_sym` and reads
+ * the files here only to CHECK it, refusing when a vendored symbol and the
+ * installed library's flattened text for the same name disagree. It cannot do
+ * otherwise: `createResolver`'s map is keyed by nickname, so a single-symbol
+ * `.sexpr` is not something it can be handed. So vendoring buys that consumer
+ * a refusal rather than independence, and KiCad is a hard dependency of it.
+ * See `./symbols/PROVENANCE.md` and `docs/known-gaps.md` **G119**.
  */
 import fs from "node:fs"
 import path from "node:path"
