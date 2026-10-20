@@ -144,6 +144,21 @@ test("a potentiometer is valued by its resistance, not its taper", () => {
   expect(valueFor(pot)).toBe("47K")
 })
 
+test("a photoresistor is valued by its resistance, as the one in the repository is declared", () => {
+  // Added by Task 9 of the M1 schematic-authoring plan, with the formatter branch it proves.
+  // The value is `circuits/optical-compressor/parts/audio-path.ts`'s own number for its vactrol
+  // LDR, which that file annotates as spec section 6.2's DARK endpoint; see G157 for why a
+  // resistance is what the field gets and what is wrong with that.
+  const ldr: Component = {
+    id: "attenuator_photocell",
+    kind: "photoresistor",
+    parameters: { ohms: 1e6 },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a: net("GR"), b: net("VBIAS") } }],
+  }
+  expect(valueFor(ldr)).toBe("1M")
+})
+
 test("a switch is valued by its part identity, because it has no quantity", () => {
   const sw: Component = {
     id: "SW1",

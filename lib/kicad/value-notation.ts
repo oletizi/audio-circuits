@@ -167,7 +167,18 @@ export function valueFor(component: Component): string {
     }
     return capacitanceText(farads, component.id)
   }
-  if (component.kind === "resistor" || component.kind === "potentiometer") {
+  // `photoresistor` was added by Task 9 of the M1 schematic-authoring plan, which is the first
+  // consumer to ask: `circuits/optical-compressor/` holds the one photoresistor in the repository
+  // and `circuitSpecFrom` needs a value field for it. This is the deliberate one-line extension
+  // with a test beside it that the refusal below asks for, and it is NOT a silent widening.
+  //
+  // **WHAT THE NUMBER MEANS IS NARROWER THAN "THE PART'S VALUE", AND THAT LIMIT IS REAL.**
+  // `parameters.ohms` on that part is annotated *"1 MOhm is the section 6.2 DARK endpoint"* - one
+  // operating point of a part whose whole function is that its resistance moves - so the field
+  // will read "1M" where a hand-drawn sheet would more likely carry the vactrol's part number.
+  // The model has no mpn for it (spec section 9 names no part), so there is nothing truer to put
+  // there; `docs/known-gaps.md` **G157** records the gap and its criterion.
+  if (component.kind === "resistor" || component.kind === "potentiometer" || component.kind === "photoresistor") {
     const ohms: unknown = Reflect.get(component.parameters, "ohms")
     if (typeof ohms !== "number") {
       throw new Error(`${component.kind} "${component.id}" has no numeric ohms parameter`)
