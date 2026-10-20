@@ -69,7 +69,7 @@ export function blockCircuit(parts: PartSpec[], rendering: Rendering, opts: Bloc
           ? [{ id: "SPLIT", sheet: "s", title: "Split", members: splitMembers, checklist: [], rendering: { kind: "bus" as const, groups: [] } }]
           : []),
         ...(peers.length > 0
-          ? [{ id: "PEER", sheet: "s", title: "Peer", members: peers.map((p) => p.label), checklist: [], rendering: { kind: "bus" as const, groups: [] } }]
+          ? [{ id: "PEER", sheet: "s", title: "Peer", members: peers.map((p) => p.label), checklist: [], rendering: { kind: "auto" as const } }]
           : []),
       ],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A3", notes: [] }],

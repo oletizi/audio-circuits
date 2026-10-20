@@ -22,7 +22,7 @@ import { miniInScratch } from "./__fixtures__/designs/mini/run.ts"
 import type { LoadedDesign } from "../../lib/schgen/design.ts"
 import { stockSymbolDir } from "../../lib/schgen/render/library.ts"
 import { generate, staleFiles, writeGeneration, type GenerateEnv, type Generation } from "../../tools/schgen/generate.ts"
-import { kicadVersion } from "../../tools/schgen/kicad-run.ts"
+import { kicadVersion, runErc } from "../../tools/schgen/kicad-run.ts"
 
 afterAll(cleanUpTempScratch)
 
@@ -105,6 +105,26 @@ describe("writeGeneration is the only writer", () => {
     const stale = staleFiles(d, g)
     expect(stale.length, "exactly the one file whose content changed").toBe(1)
     expect(stale[0] ?? "").toContain(victim)
+  })
+
+  /**
+   * **KiCad IS A COMPILER HERE, SO THIS RUNS IT AND DOES NOT SKIP** - the precedent is
+   * `tests/kicad/symbol-names.test.ts`, which fails rather than skipping when KiCad is absent.
+   *
+   * It is also the only thing in the suite that reaches `tools/schgen/kicad-config.ts`:
+   * `runErc` -> `runKicadCli` -> `hermeticConfig` seeds a fresh `KICAD_CONFIG_HOME` from the
+   * install's own template tables and `usedConfig` then **throws** unless KiCad wrote its settings
+   * there. Without this the module was loaded (`kicad-run.ts` imports it) and no function in it
+   * ran - 0.0% - so a hermetic configuration that silently stopped being hermetic would have
+   * failed nothing. `docs/known-gaps.md` **G124**.
+   */
+  it("runs ERC on a generated sheet through the hermetic KiCad configuration", () => {
+    const d = miniInScratch()
+    const g = generate(d, env())
+    writeGeneration(d, g)
+    const erc = runErc(path.join(d.outDir, "mini.kicad_sch"), "error")
+    expect(erc.errors, `ERC errors on the generated project:\n${erc.report}`).toBe(0)
+    expect(erc.report, "a report with no totals line means parseErcCounts guessed").toContain("ERC messages:")
   })
 
   it("refuses a generated name that would escape outDir, and writes nothing when it does", () => {

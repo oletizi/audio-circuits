@@ -21,7 +21,8 @@
 
 import fs from "node:fs"
 import path from "node:path"
-import { loadManifest, rewrite, sourcePathFor, type ManifestFileEntry } from "./port.ts"
+import { rewrite } from "./port.ts"
+import { loadManifest, sourcePathFor, type ManifestFileEntry } from "./port-manifest.ts"
 
 /** The destination a probe pretends the file would land at: it only affects relative import paths. */
 function provisionalTo(from: string): string {

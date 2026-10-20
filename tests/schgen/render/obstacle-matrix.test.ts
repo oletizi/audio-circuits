@@ -19,7 +19,7 @@ import path from "node:path"
 import {
   OBSTACLE_CATEGORIES, PAIR_COVERAGE, partiallyCoveredPairs, uncoveredPairs,
 } from "../../../lib/schgen/render/obstacle-matrix.ts"
-import { loadManifest } from "../../../tools/schgen/port.ts"
+import { loadManifest } from "../../../tools/schgen/port-manifest.ts"
 
 const RENDER_DIR = path.resolve(import.meta.dir, "../../../lib/schgen/render")
 

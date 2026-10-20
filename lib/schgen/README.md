@@ -25,13 +25,22 @@ over `files[]`, the disjointness of the three categories, and the
 bidirectional completeness of their union against a listing of the directory.
 A ported file is produced by reading
 `tools/schgen/port-manifest.json`, copying the named file from
-`$SCHGEN_SOURCE/tools/schgen/<from>`, and rewriting exactly three things, in
-order: this entry's declared `cuts` (if any — see below), its
-`@/schgen/<path>` and resolved-external imports (into this repository's
-explicit relative paths), and its handful of bare `moduleRenames` (e.g.
-`"vitest"` to `"bun:test"` for a ported test file). A prepended provenance
-header follows. Nothing else changes — see `rewrite()` in
+`$SCHGEN_SOURCE/<from>` — **that variable IS the pedals `tools/schgen/`
+directory, so the path is not prefixed with it again**; an entry that declares
+a `root` resolves against a declared sibling instead, and `sourcePathFor` in
+`tools/schgen/port.ts` is the only thing that computes either — and rewriting
+exactly three things, in order: this entry's declared `cuts` (if any — see
+below), its `@/schgen/<path>` and resolved-external imports (into this
+repository's explicit relative paths), and its handful of bare `moduleRenames`
+(e.g. `"vitest"` to `"bun:test"` for a ported test file). A prepended
+provenance header follows. Nothing else changes — see `rewrite()` in
 `tools/schgen/port.ts`.
+
+(This paragraph carried the doubled prefix until Task 6b round 2, which is the
+same mistake the porter's own `header()` made — it printed
+`tools/schgen/kicad/libtable.ts` for a file whose source is
+`tools/kicad/libtable.ts`. Both are fixed; `docs/known-gaps.md` **G161** has
+the header one, and that nothing could have caught it.)
 
 **A ported file's content may differ from its pedals source only through a
 declared `cuts` entry, never through a hand edit.** A manifest file entry
@@ -389,9 +398,22 @@ ported or named in `externals`. `tools/schgen/port.ts`'s `resolveSpecifier`
 checks `externals` *before* the `@/schgen/<path>` lookup, so a task can
 point an import at a hand-written forward declaration without that file
 needing to be a `files[]` entry itself — that is how `render/library.ts`
-resolved before Task 4 ported it, and the mechanism remains available;
-otherwise it throws, naming the file and the unresolved import, rather than
-silently leaving an unported import in place.
+resolved before Task 4 ported it, and how `gates/oscar/boundary` resolves
+today; otherwise it throws, naming the file and the unresolved import, rather
+than silently leaving an unported import in place.
+
+**There are now TWO resolution rules in that function and they do not compete.**
+`externals` first, as above; then the `@/schgen/<path>` lookup, which matches
+**only entries on the DEFAULT source root**. An entry with a declared `root`
+names a file outside the pedals `tools/schgen/` tree, so it can never satisfy a
+`@/schgen/<path>` import — without that restriction `kicad/libtable.ts` would
+answer for a `@/schgen/kicad/libtable` that exists nowhere.
+
+**`tools/schgen/port-probe.ts` is how you ask the question** without editing the
+manifest: it adds one provisional entry at a time to an in-memory copy and calls
+`rewrite()`, printing `OK` or the porter's own refusal per file, and writes
+nothing. `OK` means the imports resolve — not that the file type-checks or that
+its assertions pass.
 
 ## Conventions carried over from the plan
 

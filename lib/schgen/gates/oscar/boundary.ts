@@ -72,8 +72,8 @@ export interface SideSpec {
   readonly anchors: Readonly<Record<string, string>>
   /**
    * Net name -> canonical rail name. Validated per netlist: every net named here must exist in
-   * this netlist, so a rails map cannot be shared between netlists with different rail nets.
-   * Canonical names may not contain + or |.
+   * this netlist, so a rails map cannot be shared between netlists with different rail nets
+   * (e.g. OSCAR_PROC_01 and OSCAR_AUDIO_01). Canonical names may not contain + or |.
    */
   readonly rails: Readonly<Record<string, string>>
 }

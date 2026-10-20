@@ -2,7 +2,8 @@ import { test, expect } from "bun:test"
 import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
-import { loadManifest, rewrite, sourcePathFor } from "../../tools/schgen/port.ts"
+import { rewrite } from "../../tools/schgen/port.ts"
+import { loadManifest, sourcePathFor } from "../../tools/schgen/port-manifest.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
 /**
@@ -111,25 +112,28 @@ test("every copied (non-.ts) fixture is byte-identical to its pedals source", ()
  * because it filters such entries out of both arms, and the comment that
  * claimed `bun test` would catch it was simply wrong - a missing test file is
  * one the glob never discovers, so the suite reports fewer tests and stays
- * green. **Scope:** the field is narrowed to `lib/schgen/`. It previously
- * carried two `tests/schgen/` entries "for visibility" while three other
- * hand-written files under `tests/schgen/` were not listed, which was neither
- * a complete inventory nor no inventory at all; `bun test` discovers test
- * files by glob, so a declaration list it does not read bought nothing.
+ * green. **Scope:** the field names the directories the completeness check
+ * below enumerates, and no others - `lib/schgen/`, `tests/schgen/` and, since
+ * Task 6b round 2, `tools/schgen/`, which four ported files now land in. It
+ * once carried two `tests/schgen/` entries "for visibility" while three other
+ * hand-written files there were not listed, which was neither a complete
+ * inventory nor no inventory at all; the rule since R6 is that a root is
+ * either enumerated completely or not at all.
  */
-test("every handWritten entry is under lib/schgen/ or tests/schgen/ and is on disk", () => {
+test("every handWritten entry is under a declared root and is on disk", () => {
   const manifest = loadManifest()
   const repoRoot = moduleRepoRoot()
   expect(manifest.handWritten.length, "an empty handWritten list is a check that cannot fail")
     .toBeGreaterThan(0)
-  const DECLARED_ROOTS = ["lib/schgen/", "tests/schgen/"]
+  const DECLARED_ROOTS = ["lib/schgen/", "tests/schgen/", "tools/schgen/"]
   const outsideScope = manifest.handWritten.filter((p) => !DECLARED_ROOTS.some((r) => p.startsWith(r))).sort()
   const missing = manifest.handWritten.filter((p) => !fs.existsSync(path.join(repoRoot, p))).sort()
   expect(
     outsideScope,
-    "handWritten declares hand-written files under lib/schgen/ and tests/schgen/ and nothing " +
-      "else. Remove these, or change the rule in PortManifest.handWritten, here, and in the " +
-      "completeness check below - all three state the same scope.",
+    `handWritten declares hand-written files under ${DECLARED_ROOTS.join(", ")} and nothing ` +
+      "else. Remove these, or change the rule in PortManifest.handWritten, here, and in " +
+      "DECLARED_DIRS below - all three state the same scope, and Task 6b widened it to " +
+      "tools/schgen/ because four ported files now land there.",
   ).toEqual([])
   expect(
     missing,
@@ -335,12 +339,73 @@ function listTsFiles(repoRoot: string, dir: string): string[] {
  * comment's claim that a non-`lib/schgen/` entry was covered "by `bun test`
  * simply failing to find the file" was false in both directions and is gone.
  */
-const DECLARED_DIRS = ["lib/schgen", "tests/schgen"] as const
+const DECLARED_DIRS = ["lib/schgen", "tests/schgen", "tools/schgen"] as const
 
-test("every .ts file under lib/schgen/ and tests/schgen/ is ported, diverged, or declared hand-written", () => {
+/**
+ * **THE PORTED FILES THAT LAND IN A DIRECTORY NOBODY ENUMERATES, pinned** (Task 6b round 2).
+ *
+ * The completeness check below makes a declaration undeletable for a directory it lists: delete a
+ * `files[]` entry and the file becomes unaccounted-for on disk. **For a destination outside every
+ * listed directory that property is lost** - the byte-check iterates the manifest, the directory
+ * listing never sees the file, and `handWritten` may not name it either - so deleting the entry
+ * would quietly stop the file being checked at all. That is precisely the hole Task 8's review
+ * closed for `tests/schgen/`, and Task 6b reopened it in two new places.
+ *
+ * `tools/schgen` is now a DECLARED_DIR, which covers four of the six. These two are the
+ * remainder: one file each in a directory whose other contents have nothing to do with the port
+ * (`lib/kicad/` holds sixteen hand-written modules) so enumerating the directory would mean
+ * declaring all of them. Pinning the two names here is the same mechanism in miniature, with
+ * teeth in both directions: an entry deleted from the manifest fails, and a new outside
+ * destination fails until it is listed. `docs/known-gaps.md` **G161**.
+ */
+const PORTED_OUTSIDE_DECLARED_DIRS: readonly string[] = ["lib/kicad/libtable.ts", "tools/repo.ts"]
+
+test("every ported destination outside the declared directories is pinned here", () => {
   const manifest = loadManifest()
   const repoRoot = moduleRepoRoot()
-  expect(DECLARED_DIRS.length, "a directory list nothing iterates is a check that cannot fail").toBe(2)
+  const outside = [...manifest.files, ...manifest.diverged]
+    .map((e) => e.to)
+    .filter((to) => !DECLARED_DIRS.some((d) => to.startsWith(`${d}/`)))
+    .sort()
+  expect(
+    outside,
+    "a ported file in a directory the completeness check does not list is one whose manifest entry " +
+      "can be deleted without any test failing. Add the directory to DECLARED_DIRS (and declare its " +
+      "hand-written files), or pin the destination in PORTED_OUTSIDE_DECLARED_DIRS with a reason.",
+  ).toEqual([...PORTED_OUTSIDE_DECLARED_DIRS].sort())
+  const missing = PORTED_OUTSIDE_DECLARED_DIRS.filter((p) => !fs.existsSync(path.join(repoRoot, p))).sort()
+  expect(missing, "pinned here and not on disk").toEqual([])
+})
+
+/**
+ * **A manifest entry may not read outside its own source root** (Task 6b round 2).
+ *
+ * `assertDeclaredRoots` bounds a declared ROOT and says so in its refusal; until this was added
+ * nothing bounded `from`, so an entry with no `root` at all could name
+ * `../../../../../../etc/hosts` and `loadManifest` accepted it. The guard's message claimed a
+ * bound on the whole path that only held for half of it. `docs/known-gaps.md` **G161**.
+ */
+test("a from that escapes its source root is refused, whether or not it declares one", () => {
+  const sourceRoot = requireSourceRoot()
+  const manifest = loadManifest()
+  const escape = "../../../../../../etc/hosts"
+  expect(() => sourcePathFor(sourceRoot, { from: escape }, manifest)).toThrow(/outside its source root/)
+  expect(() => sourcePathFor(sourceRoot, { from: escape, root: "pedals-tools" }, manifest)).toThrow(
+    /outside its source root/,
+  )
+  // And the two shapes that must still resolve, so the guard is not simply refusing everything.
+  expect(sourcePathFor(sourceRoot, { from: "render/emit.ts" }, manifest)).toBe(
+    path.join(sourceRoot, "render/emit.ts"),
+  )
+  expect(sourcePathFor(sourceRoot, { from: "kicad/libtable.ts", root: "pedals-tools" }, manifest)).toBe(
+    path.resolve(sourceRoot, "..", "kicad/libtable.ts"),
+  )
+})
+
+test("every .ts file under lib/schgen/, tests/schgen/ and tools/schgen/ is ported, diverged, or declared hand-written", () => {
+  const manifest = loadManifest()
+  const repoRoot = moduleRepoRoot()
+  expect(DECLARED_DIRS.length, "a directory list nothing iterates is a check that cannot fail").toBe(3)
   for (const dir of DECLARED_DIRS) {
     const onDisk = new Set(listTsFiles(repoRoot, path.join(repoRoot, dir)))
     expect(onDisk.size, `no .ts files found under ${dir}/, so this iteration proves nothing`).toBeGreaterThan(0)

@@ -117,6 +117,13 @@
     { "from": "render/sheets.ts", "to": "lib/schgen/render/sheets.ts" },
     { "from": "render/glyphClearance.test.ts", "to": "tests/schgen/render/glyph-clearance.test.ts" },
     { "from": "render/glyphGlyphClearance.test.ts", "to": "tests/schgen/render/glyph-glyph-clearance.test.ts" },
+    {
+      "from": "report.test.ts",
+      "to": "tests/schgen/report.test.ts",
+      "cuts": [
+        { "text": "    expect(md).toContain(\"- B (s): fixture\");\n", "occurrences": 1 }
+      ]
+    },
     { "from": "repo.ts", "to": "tools/repo.ts", "root": "pedals-tools" },
     {
       "from": "design.ts",
@@ -148,6 +155,27 @@
     }
   ],
   "diverged": [
+    {
+      "from": "render/pinMarks.test.ts",
+      "to": "tests/schgen/render/pin-marks.test.ts",
+      "sourceSha": "d81d28b08812fd4e7a7f1a23450c8a74c48854d3070370745615f739097976d9",
+      "task": "Task 6b round 2",
+      "why": "D3, and the review found it recoverable after round 1 declared it dead. The LABELS constant and `realiseLabelled` are pure SCAFFOLDING here - the file's subject is `pinMarks`, `pinMarkBox` and `dnpCross`, and the labels block only supplies it a second `BlockLayout`. `{ kind: \"bus\", groups: [] }` and `realiseBus(...).layout` serve that identically for a one-unit block, and every assertion - including `dnpCross`'s exact box - is unchanged. It is the ONLY test in this repository that executes `pinMarks`' mark construction or `dnpCross` at all: no fixture and no circuit here declares `dnp: true`, so without it both are dead code and G130's measured entry rests on nothing. See docs/known-gaps.md G168."
+    },
+    {
+      "from": "render/stockFields.kicad.test.ts",
+      "to": "tests/schgen/render/stock-fields.kicad.test.ts",
+      "sourceSha": "b03ae960ace44a024e8c1010353cd6e7c3421841b4685ac5b7df2300b4765fe8",
+      "task": "Task 6b round 2",
+      "why": "D3. The inert PEER block's `{ kind: \"labels\" }` is `{ kind: \"bus\", groups: [] }` (it sits on sheet \"p\" and is never laid out), and the whole `labels` MODE is DELETED - the `Mode` union member, `stockCircuit`'s ternary branch, the `realiseLabelled` import and the one `it.each` that drove it. That test put every unit of a multi-unit stock symbol in ONE block, which only the labels renderer could draw: `realiseBus` refuses a multi-unit block by design and `{ kind: \"auto\" }` reaches `realiseBlock`'s ELK refusal (Task 12's). Supersede means delete, as Task 8 did for ir/validate.test.ts's V6 label-reason test. The `bare` and `bus` modes - 2 of the 3 it.each rows - are untouched and still run over every H7 stock symbol. MCU removals (G112) applied."
+    },
+    {
+      "from": "render/bus.test.ts",
+      "to": "tests/schgen/render/bus.test.ts",
+      "sourceSha": "9ad18163137cc11acd8dc0f82894230124de7736188bac7b1351a401a17e678a",
+      "task": "Task 6b round 2",
+      "why": "D3, and round 1 was wrong to call this file dead: 9 of its 25 tests drive the LIVE `realiseBus` and 3 more drive `blockFields`. SEVEN PURE DELETIONS remove what the labels renderer owned - the `realiseLabelled` import, its whole `describe` (6 tests), `renderBlock`'s \"dispatches a labels block\" test, the `labels` row of the attribution `it.each`, and `fieldsOf`'s dead labels arm (a type member, a ternary condition and its else branch). Those seven would have been `cuts` and kept the byte-check. What makes it a divergence is ONE SUBSTITUTION: \"refuses a block that is not rendered as a bus\" hands `realiseBus` a `{ kind: \"labels\" }` block and asserts the message quotes it, so the rendering becomes `{ kind: \"auto\" }` and the asserted text becomes `block B is rendered \"auto\"`. That is ruling R4's one permitted edit to a ported test's assertion, declared here rather than smuggled in: the SUBJECT - realiseBus refusing a block rendered as something else - is unchanged, and only the name of the other kind moves, because the kind it named is deleted."
+    },
     {
       "from": "__fixtures__/designs/mini/index.ts",
       "to": "tests/schgen/__fixtures__/designs/mini/index.ts",
@@ -349,7 +377,7 @@
       "to": "tests/schgen/__fixtures__/circuits.ts",
       "sourceSha": "f66bcd173e9ab9ca54db3fe2db9500284a9b6dd02d92c2317516757b35cfa765",
       "task": "Task 8",
-      "why": "D3: the SPLIT and PEER blocks and `labelsCircuit`'s block B declared `{ kind: \"labels\" }`. They are `{ kind: \"bus\", groups: [] }` here, which `labelledNets` and `valuesAlong` treat identically (every net labelled, values along their glyphs), so every fixture-backed assertion measures what it did. Its MCU `cuts` (G112) were applied before divergence."
+      "why": "D3: the SPLIT and PEER blocks and `labelsCircuit`'s block B declared `{ kind: \"labels\" }`. SPLIT and block B are `{ kind: \"bus\", groups: [] }` here, which `labelledNets` and `valuesAlong` treat identically (every net labelled, values along their glyphs), so every fixture-backed assertion measures what it did. Its MCU `cuts` (G112) were applied before divergence. **TASK 6b ROUND 2: PEER IS `{ kind: \"auto\" }` INSTEAD, because Task 8's substitution was latently wrong and nothing could see it until `layoutSheet` landed.** PEER holds one peer resistor per declared external, so with two externals it is a MULTI-UNIT bus block, and `realiseBus` refuses more than one unit by design - a refusal nothing reached while no test laid a `blockCircuit` sheet out. `auto` is the declaration that no arrangement is declared, and `selectRenderer` then picks `rail-row` mechanically; no test in this repository chose it. No currently-green assertion moved."
     },
     {
       "from": "ir/build.test.ts",
@@ -410,6 +438,14 @@
   ],
   "handWritten": [
     "lib/schgen/strict.ts",
+    "tools/schgen/anchor-sweep.ts",
+    "tools/schgen/authoring-census.ts",
+    "tools/schgen/parity-render.ts",
+    "tools/schgen/parity.ts",
+    "tools/schgen/port-manifest.ts",
+    "tools/schgen/port-probe.ts",
+    "tools/schgen/port.ts",
+    "tools/schgen/symbol-census.ts",
     "tests/schgen/__fixtures__/designs/mini/run.ts",
     "tests/schgen/emit-byte-stable.test.ts",
     "lib/schgen/gates/oscar/boundary.ts",

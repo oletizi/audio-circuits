@@ -7231,17 +7231,33 @@ figure is thirteen newly ported modules, twelve of them unexercised.
   - **Task 6b's own newly landed modules are all exercised**: `render/frames.ts`,
     `sheet-check.ts` and `sheets.ts` at **100%** of functions, `bus.ts` at
     **95.0%**, `lib/schgen/design.ts` at 85.7%, `tools/repo.ts` at 100%.
-  - **BUT IT ADDED THREE UNDER `tools/schgen/` AND `lib/kicad/`, WHICH THIS
-    ENTRY'S CURRENCY HAS NEVER COUNTED.** `tools/schgen/kicad-config.ts` is at
-    **0.0%** - loaded, because `kicad-run.ts` imports it, and no function run,
-    because no test drives `runKicadCli`; `kicad-run.ts` is at **45.4%**, the
-    part `kicadVersion()` reaches; and **`lib/kicad/libtable.ts` never loads at
-    all**, because the only thing that imports it does so for a type. That
-    module is R25's port and **Task 11's gate 6 is what will run it** - until
-    then this repository holds 279 ported lines nothing executes.
-  - **Verified** CONFIRMED - this writer ported the two returning tests, read
-    the typecheck errors that keep `textIndependence.test.ts` out, and ran the
-    coverage measurement at this commit (3093 pass / 0 fail across 305 files).
+  - **IT ALSO ADDED THREE UNDER `tools/schgen/` AND `lib/kicad/`, WHICH THIS
+    ENTRY'S CURRENCY HAS NEVER COUNTED**, and round 2 closed two of them.
+    `tools/schgen/kicad-config.ts` was at **0.0%** - loaded, because
+    `kicad-run.ts` imports it, and no function run, because no test drove
+    `runKicadCli`. One line in `tests/schgen/emit-byte-stable.test.ts` -
+    `runErc` over a generated sheet, which goes `runKicadCli` ->
+    `hermeticConfig` -> `usedConfig` - takes it to **91.67% of functions** and
+    `kicad-run.ts` from 45.4% to **75.00%**. It runs KiCad and does not skip,
+    on `tests/kicad/symbol-names.test.ts`'s precedent.
+    **`lib/kicad/libtable.ts` still never loads at all**, because the only
+    thing that imports it does so for a type. That module is R25's port and
+    **Task 11's gate 6 is what will run it** - until then this repository holds
+    279 ported lines nothing executes.
+  - **ROUND 2 CORRECTION: THIS LIST OMITTED `render/pin-marks.ts`, WHICH WAS
+    THE WORST NUMBER ON THE PAGE.** It was at **50.00% of functions and 55% of
+    lines** - `dnpCross` and `pinMarks`' mark construction executed by nothing,
+    because no fixture here declares `dnp: true`. Landing the ported
+    `pinMarks.test.ts` (**G163**) takes it to **100.00% / 100.00%**. **G168**
+    records what rested on that zero, including **G130**.
+  - **The other round-2 arrivals**: `report.ts` 78.9% -> **94.74%**,
+    `field-placement.ts` 96.8% -> **100.00%**. The never-loaded set under
+    `lib/schgen/` is unchanged at two, `gates/pin-table.ts` and
+    `gates/oscar/boundary.ts`.
+  - **Verified** CONFIRMED - this writer ported the returning tests, read the
+    typecheck errors and the 20 assertion failures that keep
+    `sheetCheck.test.ts` out, and ran the coverage measurement at both rounds
+    (round 2: 3159 pass / 0 fail across 309 files).
 
 ### G125 - the obstacle-category matrix is enumerated and filled, and **95 of its 105 cells rest on reading the source rather than on a test that could have failed**
 
@@ -7869,17 +7885,30 @@ not `ox`). The comment's *"become … then …"* is what says so. Anyone
 > landed or been decided, and **G163** carries what is left.
 >
 > **WHY IT IS STILL HERE, stated so that nobody reads its survival as an open
-> question.** `CLAUDE.md` says an entry is DELETED when it is resolved, never
-> marked closed - and it says in the same breath to **check what the deletion
-> takes with it**. This one is cited **fourteen times**, including from two
-> source files (`lib/schgen/render/blocks.ts`, which is a DIVERGED port, and
-> `tools/schgen/parity.ts`) and one test
-> (`tests/schgen/render/selection.test.ts`), plus `lib/schgen/README.md` and
-> the M1 plan. Deleting it strands all fourteen, and re-pointing a citation
-> inside a diverged ported file is a content change to that file for a reason
-> unrelated to why it diverged. **The deletion is therefore a controller's call
-> and not an implementer's**, and it is named here as the next step rather than
-> done quietly. The text below this blockquote is history from here on.
+> question - AND THE REASON ROUND 1 GAVE DOES NOT HOLD.** `CLAUDE.md` says an
+> entry is DELETED when it is resolved, never marked closed, and says in the
+> same breath to **check what the deletion takes with it**. Round 1 counted
+> fourteen citations and treated the count as the reason; **nine of the
+> fourteen are cross-references inside this file**, which a deletion can fix in
+> the same edit. It also named `lib/schgen/README.md`, which **does not cite
+> this entry at all** (it cites **G136**), and missed
+> `tools/schgen/port-probe.ts`, which Task 6b itself added.
+>
+> **Outside the register there are FIVE**, measured with
+> `grep -rn "G131" tools/ tests/ lib/ docs/superpowers/`:
+> `tools/schgen/parity.ts:261`, `tools/schgen/port-probe.ts:8`,
+> `tests/schgen/render/selection.test.ts:134`,
+> `lib/schgen/render/blocks.ts:102` and the M1 plan at line 556. That is
+> comparable to ruling R10's four and fewer than **G155**'s seven, so the COUNT
+> is not the reason.
+>
+> **The narrower reason that does hold:** one of those five is inside
+> `lib/schgen/render/blocks.ts`, a **DIVERGED** ported file. Re-pointing a
+> citation there is a content edit to a diverged file for a reason unrelated to
+> why it diverged, which widens that file's divergence and is a cost **G139**
+> measures. **The deletion is therefore a controller's call and not an
+> implementer's**, on that ground alone. The text below this blockquote is
+> history from here on.
 
 Task 6's **Interfaces** block says *"Consumes: Tasks 2-5."* Task 7's says
 *"Consumes: Tasks 2-6."* The second is true; the first is not. Four of Task 6's
@@ -10634,9 +10663,10 @@ to a picture.
   through it, exported and read - the first *(template x this repository's
   block)* drawings anybody has seen, which is the gap **G136**'s caveat (b)
   names. **The anchors were not chosen**: `RV3`#1 and `RV4`#1 (no roles) were
-  read verbatim out of this entry's own *"the anchors that drew something,
-  verbatim"* table, and every other block of `transistor-preamp` kept Task 9's
-  declaration. **G165** describes what they look like, including the two things
+  read verbatim out of **`docs/schematic/template-parity-anchors.md` lines
+  54-55**, the committed document this entry's sweep writes - not out of this
+  entry, which is where round 1 of this update said they were - and every other
+  block of `transistor-preamp` kept Task 9's declaration. **G165** describes what they look like, including the two things
   a reviewer notices first: the two `GND` symbols per leg are the same net,
   which is this entry's rheostat finding showing up in a drawing, and the
   `BASE` label with its page ref is rotated 90 degrees.
@@ -10701,14 +10731,34 @@ the other 64, so R25's criterion is met rather than approximated.
    root-aware `sourceLabel()` now derives it. **Nothing would have caught it:**
    the byte-check compares the rewritten source against disk and the header is
    part of what it rewrites, so a wrong-but-consistent header passes.
-4. **It lands the first ported file outside `lib/schgen/` and `tests/schgen/`.**
-   `lib/kicad/libtable.ts` sits beside this repository's hand-written
-   `sexpr.ts` and `netlist.ts`. The byte-check covers it (it iterates `files[]`,
-   not a directory listing), but the **completeness** check - every `.ts` under
-   a directory is ported, diverged or declared hand-written - covers only
-   `lib/schgen/` and `tests/schgen/`. So `lib/kicad/` now holds one ported file
-   among sixteen hand-written ones with nothing asserting which is which, and
-   the same is true of the four this task puts under `tools/schgen/`.
+4. **It lands ported files outside `lib/schgen/` and `tests/schgen/`, and the
+   consequence is sharper than "nothing asserts which is which": FOR THOSE
+   FILES THE MANIFEST ENTRY IS DELETABLE WITHOUT A RED TEST.** The byte-check
+   iterates `files[]`, so deleting an entry removes the file from the check; the
+   completeness check would have caught that, but it enumerates directories and
+   these are outside every one it lists; and `handWritten` may not name them
+   either. **That is exactly the hole Task 8's review closed for
+   `tests/schgen/`**, reopened in two new directories. Six files were in it:
+   `lib/kicad/libtable.ts`, `tools/repo.ts` and the four under `tools/schgen/`.
+   **Round 2 closed it both ways**: `tools/schgen` is now a `DECLARED_DIR` (with
+   its seven hand-written files declared, and the `handWritten` scope guard
+   widened to match), and the two single-file destinations are pinned in
+   `PORTED_OUTSIDE_DECLARED_DIRS` in `port-fidelity.test.ts`, asserted equal to
+   the set the manifest produces - so deleting either entry now fails, and a new
+   outside destination fails until it is listed.
+5. **AND THE BOUND THE GUARD'S OWN MESSAGE CLAIMED DID NOT EXIST.**
+   `assertDeclaredRoots` bounds a declared ROOT and refuses one that leaves
+   `$SCHGEN_SOURCE` by more than a directory - *"a declared root reaches a
+   SIBLING of the pedals tools/schgen/ directory and no further"*. Nothing
+   bounded `from`. Called directly, `sourcePathFor(root, { from:
+   "../../../../../../etc/hosts" }, m)` returned `/Users/etc/hosts`, and with
+   `root: "pedals-tools"` `/Users/orion/etc/hosts`; `loadManifest` accepted an
+   entry like that. **The default root always had the hole** - this is not a
+   regression - but the message described a bound on the whole path that held
+   for half of it, and an implementer reading it would have believed otherwise.
+   Round 2 adds `assertInside`, so every entry's resolved path must be within
+   its own root, and `port-fidelity.test.ts` drives both escapes and both
+   legitimate shapes.
 
 - **Found** 2026-10-20, Task 6b, Step 1, implementing R25.
 - **Evidence** checks that could have failed, and did when driven:
@@ -10833,7 +10883,7 @@ to-expire exemption outlives its task.
   entry the task that retires it and fail when that task's files are in the
   tree.
 
-### G163 - the sheet port unblocks TWENTY ported tests by import and only ELEVEN can land, and the eight that cannot are blocked by the `labels` DELETION rather than by anything Task 6b did
+### G163 - the sheet port unblocks twenty ported tests by import; **ROUND 1 LANDED ELEVEN AND CALLED THE OTHER NINE DEAD, AND FOUR OF THOSE NINE WERE RECOVERABLE** - fifteen are in, two are genuinely dead, three are blocked by something other than the `labels` deletion
 
 Task 6b ported `render/frames.ts`, `bus.ts`, `sheet-check.ts` and `sheets.ts`,
 which is the gate **G124** and **G135** both name. `tools/schgen/port-probe.ts`
@@ -10937,6 +10987,98 @@ now checked by nothing.** This is the one deletion in this task that takes a
 real check with it, and the Task 8 precedent it follows (`ir/validate.test.ts`'s
 V6 label-reason test) did not: there, the rule under test was deleted too.
 
+- **ROUND 2 REWRITES THE VERDICT COLUMN, AND THE CORRECTION IS THE POINT.** Round
+  1's *"What would settle it"* told the next agent that seven of the nine
+  *"should not be re-added: their subject is deleted"*. **That was wrong for four
+  of them, and the review proved it by running two.** The error was a category
+  one: it counted `realiseLabelled` references and treated any file with one as
+  a file ABOUT the labels renderer. In four of them the labels block is
+  **scaffolding** - it supplies a second `BlockLayout` and nothing else - and
+  the file's subject is something live.
+  - **`report.test.ts` never mentioned the labels renderer at all.** One
+    assertion, `expect(md).toContain("- B (s): fixture")`, read the per-block
+    labels REASON list that Task 8 deleted from `report.ts`. Removing one line
+    is a **pure deletion**, which is exactly what a `cuts` entry expresses - and
+    round 1 had already written that `emitRefusals.test.ts` *"would have been a
+    `cuts` entry"* for the same class and not joined the two thoughts. It is now
+    a **`files[]` entry with one cut**, byte-checked: **4 pass / 0 fail**.
+  - **`pinMarks.test.ts` is DIVERGED and passing: 6 pass / 0 fail.** Two
+    substitutions, both ones this task had already used elsewhere -
+    `{ kind: "labels" }` to `{ kind: "bus", groups: [] }` and `realiseLabelled`
+    to `realiseBus(...).layout`. Every assertion is unchanged, including
+    `dnpCross`'s exact box. **G168** records what landing it recovered, and it
+    is not small.
+  - **`stockFields.kicad.test.ts` is DIVERGED and passing.** Its inert PEER
+    block takes the `bus` substitution; its `labels` MODE is deleted outright -
+    the `Mode` union member, `stockCircuit`'s ternary branch and the one
+    `it.each` that drove it - because that test put every unit of a multi-unit
+    stock symbol in ONE block, which only the labels renderer could draw. Two of
+    its three `it.each` rows (`bare` and `bus`) are untouched and still run over
+    every H7 stock symbol.
+  - **`bus.test.ts` is DIVERGED and passing: 15 pass / 0 fail**, and round 1's
+    *"the labels renderer IS most of its subject"* was false - 9 of its tests
+    drive the live `realiseBus` and 3 more drive `blockFields`. **Seven pure
+    deletions** remove what the labels renderer owned; **one substitution** makes
+    it a divergence rather than a cuts entry, and it is ruling R4's one
+    permitted edit to an assertion, declared in the manifest: *"refuses a block
+    that is not rendered as a bus"* hands `realiseBus` a `{ kind: "labels" }`
+    block and asserts the message quotes it, so the rendering becomes
+    `{ kind: "auto" }` and the asserted text follows. The subject is unchanged;
+    only the name of the other kind moves, because the kind it named is deleted.
+    **Landing it also returns the three `IC field placement (search)` tests**,
+    which matters below.
+- **AND A FIXTURE DEFECT TASK 8 LEFT LATENT HAD TO BE FIXED FIRST, which is why
+  this was not simply a matter of re-running the porter.**
+  `tests/schgen/__fixtures__/circuits.ts`'s PEER block is one resistor per
+  declared external, and Task 8's D3 substitution made it
+  `{ kind: "bus", groups: [] }` - a **multi-unit bus block**, which `realiseBus`
+  refuses by design (*"bus block PEER must hold exactly one unit (holds 2)"*).
+  Nothing could see it while no test laid a `blockCircuit` sheet out; the moment
+  `layoutSheet` landed and `pinMarks.test.ts` called it, it fired. PEER is now
+  `{ kind: "auto" }` - the declaration that no arrangement is declared - and
+  `selectRenderer` picks `rail-row` mechanically. **No test in this repository
+  chose that template and no currently-green assertion moved.**
+- **THE RULE THIS ROUND USED, stated so the next task does not re-derive it.** A
+  `{ kind: "labels" }` block that is REALISED and holds **one** unit becomes
+  `{ kind: "bus", groups: [] }` (Task 8's substitution; `realiseBus` draws it and
+  `labelledNets` treats it as `labels` was treated). One that is realised and
+  holds **more than one** becomes `{ kind: "auto" }`, because `realiseBus`
+  refuses multi-unit blocks by design. An **inert** one - never realised - takes
+  the `bus` form, for consistency with Task 8's ten.
+
+**THE FIVE THAT ARE STILL OUT, re-derived per file.** The JSON above is
+unchanged. What changes is the reason column, because round 1's *"nobody's: the
+renderer is deleted"* was true of exactly two of them:
+
+| test | what stops it | whose task |
+|---|---|---|
+| `render/sheetCheck.test.ts` | **genuinely dead, and measured rather than assumed.** Its LOAD fixture puts TWO units in one block, so `realiseBus` refuses it; under `{ kind: "auto" }` `rail-row` draws a different layout and **20 of its 23 tests fail**, starting at `loadLayout.anchors.find((a) => a.net === "TAP")` returning undefined. Making them pass means rewriting what the file measures. | nobody's |
+| `render/textIndependence.test.ts` | genuinely dead twice over: `realiseLabelled` AND `vi.hoisted` + `vi.mock(path, (importOriginal) => …)` | nobody's |
+| `render/sheetTextCheck.test.ts` | **`vi.mock`, and NOTHING ELSE** - it has **zero** `realiseLabelled` references and **zero** labels renderings. Round 1 filed it under the labels deletion and that was simply wrong. | whoever gives `bun:test` an `importOriginal` equivalent, or hand-writes it under **G123**'s precedent |
+| `render/emit.kicad.test.ts` | `@/kicad/netlist` has no `exportConnectivity` | **Task 11** |
+| `render/emitPdf.kicad.test.ts` | the temp-scratch sweep counts its bare-assignment `mkdtemp` site as unnamed, and `__fixtures__/pdfColours.ts` is not ported | a guard widening nobody has done |
+
+**THE COVERAGE LOSS ROUND 1 RECORDED IS SMALLER THAN IT SAID, and round 2 says
+so rather than leaving the alarm up.** Round 1 wrote that
+`render/sheets.test.ts`'s deleted `field placement during layout` test left its
+subject *"checked by nothing"*. **It did not.** `bus.test.ts`'s
+`IC field placement (search)` describe - three tests, now in the tree - drives
+`blockFields`'s slot search directly, and `field-placement.ts` measures
+**100.00% of functions** at this commit. What the deleted test added over those
+three was the `layoutSheet` WRAPPER, not the placer.
+
+**AND THE REPLACEMENT ROUND 1 PROPOSED CANNOT BE WRITTEN AS PROPOSED, which is
+a measurement worth more than the proposal.** Its mechanism was a two-unit
+`wired` block with a test-declared template. Built with `rail-row` and driven:
+the long value's placement is **identical at every value length from 2 to 80
+characters** (`justify: "left"`, `at: {x: 20066, y: 22860}`), with two units and
+with three, because `rail-row` always leaves the outermost unit's outer side
+free. **A template that never crowds a field cannot exercise the branch that
+moves one**, so the test would have been one that cannot fail - and finding a
+template/fixture pair that does crowd is searching for an arrangement that makes
+a check fire, which is the thing the invariant forbids. The attempt was deleted
+rather than landed.
+
 - **Found** 2026-10-20, Task 6b, Steps 1 and 4.
 - **Evidence** `bun run typecheck` with each file in the tree, read line by
   line, plus greps over the pedals source that could have come back zero:
@@ -10969,9 +11111,17 @@ V6 label-reason test) did not: there, the rule under test was deleted too.
   over `layoutSheet` with two crowded units in a `wired` block whose template is
   declared by the test's own fixture - note that this is the one place where
   choosing a template is legitimate, because a fixture is not one of this
-  repository's circuits. **The seven labels-blocked files are NOT on this list
-  and should not be re-added**: their subject is deleted, and `CLAUDE.md`'s
-  "supersede means delete" applies to a test as much as to a pattern.
+  repository's circuits. **ROUND 1 ENDED HERE WITH "the seven labels-blocked
+  files are NOT on this list and should not be re-added", AND THAT SENTENCE IS
+  DELETED.** Four of the seven are now in the tree and passing; of the three
+  that are not, `sheetTextCheck.test.ts` is not labels-blocked at all. **Only
+  `sheetCheck.test.ts` and `textIndependence.test.ts` have a subject that is
+  deleted**, and for those two *"supersede means delete"* does apply.
+  **Clause (c) is WITHDRAWN**: the subject it named is covered by
+  `bus.test.ts`'s three `IC field placement (search)` tests, which round 2
+  landed, `field-placement.ts` is at 100% of functions, and the replacement this
+  mechanism proposed is measured above as unwritable - `rail-row` never crowds a
+  field at any value length, so the test could not have failed.
 
 ### G164 - the obstacle matrix's `FRAME_DERIVED` reason named the wrong function for four tasks, and the arrival alarm is what found it: there are TWO `drawnBoxes` and nothing sizes a frame from the one eleven cells cited
 
@@ -11163,7 +11313,11 @@ landscape A4, each titled in blue inside its own top-left corner.
 - **Op-amp supply** - U2C, the package's power unit, as a vertical line with `3V3` above and
   `GND` below. **The frame is 21.6 mm wide and 43.2 mm tall and every text in it is rotated 90°**
   (`V+`, `V−`, `U2C`, `OPA1678` and both rail names read bottom-to-top). It is legible and it is
-  the least attractive thing on either sheet: one two-pin unit in the tallest frame on the page.
+  the least attractive thing on either sheet: one two-pin unit in a frame taller than every
+  other one that holds a single part. (**Round 1 called it "the tallest frame on the page"
+  and it is not**: at 21.59 x 43.18 mm it is beaten by the SPI flash frame on the same
+  sheet, 54.61 x 55.88 mm, which holds an eight-pin IC and earns its size. The observation
+  stands; the superlative was not measured.)
 - **Crystal** - Y1 `12MHz` in the middle, `XI` and `XO` labels standing up on either side, C7 and
   C8 `12p` beneath each clock net down to their own grounds, and Y1's shield pins down to a third.
   Symmetric and clean.
@@ -11396,3 +11550,67 @@ rather than `tools/schgen/`, so a fix touches two ported files and not one.
   source and re-run the porter, which keeps the byte-check and needs access to that repository;
   (b) diverge `generated-files.ts`, which costs what **G139** records. **Do not take (b) for this
   alone** - if a later task diverges that file for another reason, the word goes with it.
+
+### G168 - measured: nothing in this repository has ever drawn a pin mark or a DNP cross, **G130** rests on code no test executed, and one ported test is the only thing that changes that
+
+**G130** is a measured entry whose entire subject is `dnpCross`'s asymmetric
+margin arithmetic - *"the margins are mutating variables that start as the
+overhangs, and the asymmetry between them is real"* - and `CROSS_BOUND`, the
+obstacle matrix's reason for five cells, is the same arithmetic restated. Both
+describe `lib/schgen/render/pin-marks.ts`. **Until Task 6b round 2 no test and
+no fixture in this repository executed either `dnpCross` or `pinMarks`' mark
+construction.**
+
+**The measurement.** `bun test tests/ --coverage` before round 2:
+`lib/schgen/render/pin-marks.ts` at **50.00% of functions and 55% of lines** -
+the exported `pinMarkBox` ran, and `pinMarks`' body past its first guard and
+the whole of `dnpCross` did not. **The reason is a fixture fact, not a gap in
+the pipeline**: `polarIdentities` returns `null` for any part with
+`dnp === false`, and the ported `mini` design declares
+`dnp: false` on every part (`grep -c "dnp: true"` over it -> **0**). Both sheets
+of the first generated schematic report **0 pin marks**, which is correct and is
+why a reader of **G165**'s counts should not take them as coverage.
+
+**AND ROUND 1 OF TASK 6b's REPORT SAID THE OPPOSITE BY IMPLICATION.** Its
+concern 3 listed `pin-marks.ts` among the modules whose ported test was out and
+read as though `layoutSheet` covered it. `layoutSheet` covers `bus.ts` (95.0%),
+`sheet-check.ts`, `frames.ts` and `sheets.ts` (100%) - it does not cover this
+one, because it draws no DNP part. **G124**'s Task 6b amendment listed coverage
+for nine modules and omitted this one.
+
+**WHAT CHANGED IT.** `render/pinMarks.test.ts`, which round 1 classified as
+*"nobody's: the renderer is deleted"* on a `realiseLabelled` reference that was
+pure scaffolding (**G163**). Diverged with two substitutions this task had
+already used elsewhere, every assertion unchanged, it is **6 pass / 0 fail** and
+takes `pin-marks.ts` to **100.00% of functions and 100.00% of lines**. One of
+its tests asserts `dnpCross`'s exact box -
+`{ minX: at.x - 2794, minY: at.y - 1727, maxX: at.x + 2794, maxY: at.y + 1727 }`
+for `Fix:D` - which is **G130**'s arithmetic as a check that can fail, and the
+only one there has ever been here.
+
+- **Found** 2026-10-20, Task 6b round 2, from the review's C2.
+- **Evidence** two coverage runs over the whole suite at two commits, and a grep
+  that could have come back non-zero: `grep -c "dnp: true"` over
+  `tests/schgen/__fixtures__/designs/mini/index.ts` -> **0**, and over
+  `circuits/`, `lib/` and `tools/` -> **0** (the one `tools/` hit is this
+  entry's own reason quoted inside `port-manifest.json`). The generated sheets'
+  own counts, printed by `layoutSheet`, are `0 pin marks` on both.
+- **Verified** CONFIRMED - this writer ran both coverage measurements, read the
+  per-file rows, ran the grep, and landed the test.
+- **Why it is open** the module is covered by a FIXTURE-level DNP part and by
+  nothing else. **No circuit in this repository declares `dnp: true`**, so the
+  moment that one ported test leaves the tree again - for a vitest-mocking
+  reason, a further D3 edit, anything - `dnpCross` is dead code again and
+  **G130** and `CROSS_BOUND` go back to resting on a reading. Nothing records
+  that dependency except this entry.
+- **What would settle it** **CRITERION:** a DNP part reaches the drawing through
+  something other than one ported test file - so that removing any single test
+  cannot return `pin-marks.ts` to zero. **MECHANISMS**, untried and they are not
+  equivalent: (a) a circuit in `circuits/` declares `dnp: true` on a part it
+  genuinely does not fit, which is a **design** fact and not an implementer's to
+  invent; (b) the ported `mini` fixture gains one, which is a further divergence
+  of a file whose whole point is that this repository did not arrange it
+  (**G165**) - and would change the first generated schematic's bytes; (c) a
+  hand-written sibling test, which costs **G123**'s byte-check. **(a) is the
+  only one that makes the coverage mean anything about this repository's own
+  circuits, and it is the one an agent may not do.**
