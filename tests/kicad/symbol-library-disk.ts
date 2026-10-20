@@ -26,12 +26,17 @@
  */
 import fs from "node:fs"
 import path from "node:path"
+import { defaultSymbolDir } from "../../lib/kicad/install.ts"
+import { KICAD_CLI } from "../../lib/kicad/netlist.ts"
 import { librarySymbols, splitLibId } from "../../lib/kicad/symbol-library.ts"
 
-/** Overridable the way `KICAD_FOOTPRINTS` is, and defaulted to the same install root. */
-export const SYMBOL_LIBRARY_ROOT =
-  process.env["KICAD_SYMBOLS"] ??
-  "/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols"
+/**
+ * Overridable the way `KICAD_FOOTPRINTS` is, and DERIVED from the same
+ * resolved `kicad-cli` rather than a separate hand-written literal
+ * (`docs/known-gaps.md` **G169**, clause a) - a per-platform candidate list,
+ * not a macOS-only default (clause b).
+ */
+export const SYMBOL_LIBRARY_ROOT = process.env["KICAD_SYMBOLS"] ?? defaultSymbolDir(KICAD_CLI)
 
 /** `<Library>:<Name>` as a part spec spells it, to `<root>/<Library>.kicad_sym`. */
 export function symbolLibraryFile(libId: string): string {

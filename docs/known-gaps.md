@@ -6894,20 +6894,31 @@ hand with it. Four copies of one path is a smell, not a design.
   failed: `grep -c "connectivityFromXml" lib/kicad/netlist.ts` returns 0, so
   the shape difference this entry describes is real and not assumed.
 - **Verified** CONFIRMED - this writer read every file named and ran the greps.
-- **Why it is open** the layering it creates is not a defect in Task 4's work
-  and consolidating four copies of a binary path touches three unrelated
-  production files; the brief's scope is the symbol loader.
+- **Why it is open** clause (a) is unresolved; see below. (Clause (b) is
+  CLOSED, below - this entry stays open for (a) alone, not re-opened for it.)
 - **What would settle it** **CRITERION, two separable clauses.** (a) A ported
   file that imports something `lib/kicad/netlist.ts` does not export fails
   with a message that names the file, the specifier and the missing export -
-  not merely a `tsc` error at a line in a generated file. (b) The kicad-cli
-  default path is written once in TypeScript. **MECHANISM** for (a), untried:
-  have `tools/schgen/port.ts` check that each `externals` target actually
-  exports every name the importing file destructures from that specifier,
-  which would restore a port-time refusal. For (b): a single
-  `lib/kicad/kicad-cli.ts` that the other two TypeScript sites import, leaving
-  `make/board.mk`'s `?=` as the one unavoidable duplicate. **Neither is
-  Task 11's job unless Task 11 chooses it** - (a) would be most useful BEFORE
+  not merely a `tsc` error at a line in a generated file. (b) ~~The kicad-cli
+  default path is written once in TypeScript.~~ **SETTLED 2026-10-20, Task
+  10b (`docs/known-gaps.md` **G169**).** `lib/kicad/netlist.ts`'s `KICAD_CLI`
+  is now the one TypeScript source of truth - its own default is computed by
+  `lib/kicad/install.ts`'s `defaultKicadCli()` (a per-platform candidate
+  list, not the bare macOS literal this entry measured) - and
+  `tests/circuits/kicad-round-trip.ts` and `tools/pultec/schematic-sync.ts`
+  both now import that constant instead of each carrying their own copy.
+  Evidence: `grep -rn "Applications/KiCad.*kicad-cli\"" lib tools tests` now
+  returns exactly two hits, `lib/kicad/install.ts`'s own candidate-list entry
+  and a `tests/kicad/install.test.ts` assertion pinning it - down from the
+  four this entry originally counted. **`make/board.mk`'s `?=` is the one
+  unavoidable duplicate left**, exactly as this entry's own mechanism
+  predicted, because Make cannot import TypeScript; `tests/kicad/install.test.ts`
+  now checks the Makefile's literal agrees with `defaultKicadCli("darwin")`
+  rather than letting the two drift apart silently. **MECHANISM** for (a),
+  still untried: have `tools/schgen/port.ts` check that each `externals`
+  target actually exports every name the importing file destructures from
+  that specifier, which would restore a port-time refusal. **Still not
+  Task 11's job unless Task 11 chooses it** - it would be most useful BEFORE
   Task 11 ports gate 3.
 
 ### G122 - a ported test that makes temp directories cannot satisfy this repository's static temp-scratch guard, and the exemption that lets it through is per-file
@@ -11679,7 +11690,9 @@ and not something to engineer around"*), now confirmed by the owner directly
 against a specific trade rather than inferred from a general sentence. **The
 second half is new and is a requirement, not a confirmation.**
 
-**What the second half binds, measured before the task that fixes it:**
+**What the second half binds, measured before the task that fixes it.** This
+table is CORRECTED below (see "What Task 10b found that this table missed") -
+it undercounted, and its row 7 misattributes a function to the wrong file:
 
 | site | state |
 | --- | --- |
@@ -11720,20 +11733,154 @@ actually uses.
   **deliberately before Task 11**, because Task 11 adds further `kicad-cli`
   call sites (`exportNetlist`, and gate 6's footprint resolution through
   `lib/kicad/libtable.ts`) and would otherwise widen the duplication this
-  entry exists to remove. It also discharges **G121**, which recorded the
-  `kicad-cli` default path reaching four TypeScript sites plus `make/board.mk`.
-- **What would settle it** **CRITERION, three clauses.** (a) One resolver owns
-  the KiCad install root; the symbol and footprint roots are **derived** from
-  it rather than written out, so they cannot disagree with the `kicad-cli` in
-  use. (b) Every default is a **candidate list covering macOS, Linux and
-  Windows**, not one platform's literal, and a failure to resolve **refuses
-  loudly naming the variable to set** - `stockSymbolDir()` already does exactly
-  this and is the model. (c) **No absolute path unique to one machine survives
-  outside documentation and this register** - checkable by the grep above, which
-  must return only prose. **MECHANISM**, untried: a `lib/kicad/install.ts`
-  resolving `KICAD_CLI` then a per-platform candidate list, with
-  `stockSymbolDir()` reduced to a caller of it, and `make/board.mk` keeping its
-  `?=`/`export` shape so an explicitly set variable still wins. The Makefile
-  cannot import TypeScript, so its default and the resolver's must be checked
-  against each other by a test rather than shared - **that check is the part a
-  reader will forget**, and it is where clause (a) is actually at risk.
+  entry exists to remove. It also discharges **G121**'s point (b) - see below;
+  **G121 itself is NOT deleted**, because this file's Task 4 record of
+  `render/emit.kicad.test.ts` cites it by name for the `tsc`-error prediction
+  it verified, and G117's own R10 ruling separately lists G121 among the
+  entries that cite G117 - deleting it would leave both dangling. (a), its
+  port-time-refusal clause, is still open and is Task 11's to pick up or not.
+
+**WHAT TASK 10b (2026-10-20) FOUND THAT THIS TABLE MISSED, measured by
+re-running the SAME grep this entry's "Evidence" line specifies.** It returns
+**fourteen** hits outside `node_modules`, `.superpowers` and this file, not
+"six code sites plus prose": the six in the table above, plus `make/board.mk:58`
+(`HTML_TO_PDF ?= ...`, the same shape as `KICAD_CLI`'s line, four rows up in
+the same file, simply not given its own row); plus FIVE lines of genuine prose
+(`tools/guide/print-pdf.ts:57`'s advisory-message example,
+`tools/kicad/vendor-symbols.ts:7`'s doc comment,
+`circuits/pultec/physical/parts.ts:83,86`'s verification-command comment - two
+lines - and `lib/kicad/lead-span-sources.ts:96`'s `DatasheetRef.documentId`, a
+dated citation never compared to a resolved path by any test); plus TWO sites
+this table does not mention AT ALL:
+
+1. **`lib/kicad/netlist.ts:33`'s own `KICAD_CLI` definition** - the literal
+   row 7 actually derives from. Row 7 names `lib/schgen/render/stock-symbols.ts`
+   as "already correct," but `stockSymbolDir()` is defined in
+   `lib/schgen/render/library.ts` (confirmed:
+   `grep -n "stockSymbolDir" lib/schgen/render/*.ts` - four hits, one the
+   `export function stockSymbolDir()` definition in `library.ts`, the other
+   three a comment, an import and a call site, all in `stock-symbols.ts`,
+   none a second definition), and it derives its
+   first candidate from `KICAD_CLI`, imported from `lib/kicad/netlist.ts`. THAT
+   file's own default - `process.env["KICAD_CLI"] ?? "/Applications/KiCad/..."`
+   - is a bare macOS literal, not "already correct," and is the sixth of the
+   "five sites" item (1) above counts for this one literal (`make/board.mk`,
+   `schematic-sync.ts`, `kicad-round-trip.ts`, `netlist.ts`, plus
+   `stockSymbolDir()`'s own derived-from-it candidate make five derivations of
+   one fact, by this writer's recount - G121's "four TypeScript sites" already
+   said as much and this entry's table simply left `netlist.ts` out of its row
+   count).
+2. **`lib/kicad/pin-pattern-sources.ts:23`'s `LIBRARY_ROOT`** - absent from
+   this table entirely, and NOT prose: it is a live, hand-written macOS literal
+   (`process.env["KICAD_FOOTPRINTS"] ?? "/Applications/..."`, independent of
+   `tests/kicad/footprint-library.ts`'s own copy of the same expression) that
+   feeds `PinPattern.source.file` for all thirteen recorded footprints, and
+   `tests/kicad/pin-pattern.test.ts` asserts that field equal to
+   `readFootprintPads()`'s own file path, built from the OTHER copy. The two
+   copies happened to be textually identical, which is the only reason that
+   assertion has ever passed - a resolver that fixed `footprint-library.ts`'s
+   copy without this one would have made that test fail on any machine where
+   the two literals stopped agreeing, which a platform-aware resolver is
+   exactly the kind of change that would do.
+
+**WHAT TASK 10b DID.** `lib/kicad/install.ts` is the one resolver clause (a)
+asks for: `defaultKicadCli(platform)` is a per-platform candidate list (darwin:
+the existing literal; linux: `/usr/bin/kicad-cli`, justified because
+`stockSymbolDir()`'s own `/usr/share/kicad/symbols` fallback only makes sense if
+`kicad-cli` is under `/usr` too; win32: `C:\Program Files\KiCad\10.0\bin\kicad-cli.exe`,
+pinned to the major.minor `lib/kicad/symbols/PROVENANCE.md` vendors against,
+**UNVERIFIED - no Windows machine exercised it**), and `defaultSymbolDir`/
+`defaultFootprintDir` DERIVE the two library roots from a resolved cli path
+rather than naming them separately. `tools/guide/browser-install.ts` is the same
+pattern for `HTML_TO_PDF`'s Chrome literal, which `tests/guide/print-pdf.test.ts`
+also carried outside any override. Six call sites now read through these
+resolvers instead of carrying their own literal: `lib/kicad/netlist.ts`
+(`KICAD_CLI` itself), `tests/circuits/kicad-round-trip.ts`,
+`tools/pultec/schematic-sync.ts`, `tests/kicad/footprint-library.ts`,
+`tests/kicad/symbol-library-disk.ts`, `lib/kicad/pin-pattern-sources.ts`, and
+`tests/guide/print-pdf.test.ts`.
+
+**`lib/schgen/render/library.ts`'s `stockSymbolDir()` is NOT edited** - it is a
+ported file (`tools/schgen/port-manifest.json`'s `files`) and is not declared in
+`diverged[]`, so R18 forbids touching it. It keeps its own two literal
+candidates verbatim. This is clause (a)'s one remaining gap: on Linux,
+`stockSymbolDir()` is now correct anyway, because its own second candidate,
+`/usr/share/kicad/symbols`, equals `lib/kicad/install.ts`'s Linux default too -
+but on Windows neither of its two candidates matches a Windows install, and it
+cannot gain a third without declaring the ported file diverged, which is out of
+this task's scope. `tests/kicad/install.test.ts`'s
+`"library.ts's stockSymbolDir() agrees with lib/kicad/install.ts's resolver on
+this machine"` is the test the brief asked for in clause (a)'s place - it
+compares the two implementations' OUTPUT on whatever machine runs it (CONFIRMED
+passing on this one; the perturbation below shows it failing loudly, not
+silently, when `KICAD_CLI` is pointed somewhere the agreement cannot hold) -
+and it is not, and cannot be, a Windows proof, because `stockSymbolDir()` would
+simply throw there with no Windows candidate to disagree about.
+
+**TWO PERTURBATIONS, both run, both restored.**
+
+Clause (b): `KICAD_SYMBOL_DIR=/nonexistent-perturbation-dir bun -e '...stockSymbolDir()...'`
+threw `KICAD_SYMBOL_DIR=/nonexistent-perturbation-dir does not exist` - names the
+variable, as required.
+
+Clause (a): with `KICAD_CLI=/tmp/fake-kicad-install/bin/kicad-cli`,
+`defaultSymbolDir(KICAD_CLI)` returned `/tmp/fake-kicad-install/SharedSupport/symbols`
+(a path that does not exist, returned WITHOUT complaint, by design - see this
+file's module comment on why it never throws) while `stockSymbolDir()` for the
+same `KICAD_CLI` threw `KiCad stock symbol directory not found; set
+KICAD_SYMBOL_DIR. Tried: /tmp/fake-kicad-install/SharedSupport/symbols,
+/usr/share/kicad/symbols` - the two implementations diverge in BEHAVIOUR (one
+returns silently, one refuses) under a `KICAD_CLI` that cannot resolve either
+candidate, and `tests/kicad/install.test.ts`'s cross-check test fails (loudly,
+via `stockSymbolDir()`'s own throw) under exactly this perturbation, which is
+what makes it a check that could fail rather than a tautology. Both environment
+variables were process-local to each command; `git status --porcelain` was
+clean before and after.
+
+**THE CLAUSE-(c) GREP, RE-RUN AFTER THE FIX**, same pattern as "Found" above:
+ten hits, not zero. Two are `lib/kicad/install.ts:94` and
+`tools/guide/browser-install.ts:38` - the resolvers' OWN darwin candidates,
+which is where clause (a) says a literal is now allowed to live: ONE place,
+justified, not several unexplained ones. Two are `make/board.mk:44,58` - the
+sanctioned Make-cannot-import-TypeScript carve-out this entry's own mechanism
+named, now held to the resolver by `tests/kicad/install.test.ts`. One is
+`tests/kicad/install.test.ts:57` - a test assertion pinning the darwin
+candidate, which is verification, not duplication. The remaining five are the
+prose this entry already expected (`print-pdf.ts`'s advisory text,
+`vendor-symbols.ts`'s and `parts.ts`'s doc comments,
+`lib/kicad/lead-span-sources.ts:96`'s `DatasheetRef.documentId` - a dated
+citation of what was read FROM, like `PROVENANCE.md`, never compared to a
+resolved path by any test: `grep -n documentId lib/kicad/lead-span.ts
+tests/kicad/*.test.ts` shows it used only in error-message interpolation and a
+`.not.toBe("")` length check). **So clause (c) does not come back LITERALLY
+prose-only** - the resolvers and the Makefile are code, not documentation - but
+every surviving code hit is now one of exactly three sanctioned, explained
+kinds (the resolver's own single candidate, the Makefile's tested carve-out, or
+a test pinning one of the two), down from fourteen unexplained-duplicate hits.
+That is this entry's own three clauses refining what "prose-only" has to mean
+once a resolver exists at all - a resolver cannot have zero literals in it - and
+is recorded here as the deviation CLAUDE.md asks for rather than a silent
+redefinition.
+
+- **What would settle it** **CRITERION, three clauses - STATUS as of Task 10b.**
+  (a) **MET for every site except `lib/schgen/render/library.ts`'s
+  `stockSymbolDir()` on Windows**, which cannot be fixed without declaring that
+  ported file diverged (out of scope here); checked by
+  `tests/kicad/install.test.ts`, which fails loudly rather than silently when
+  it does not hold (demonstrated above). (b) **MET**: `lib/kicad/install.ts`
+  and `tools/guide/browser-install.ts` are candidate lists covering macOS,
+  Linux and Windows (the linux candidates are justified from this repository's
+  own prior fallback literal; the win32 candidates are UNVERIFIED - no Windows
+  machine exercised them, recorded here rather than silently assumed), and a
+  failure to resolve an unrecognised platform refuses naming the variable
+  (`tests/kicad/install.test.ts`'s two "refuses an unrecognised platform" tests).
+  (c) **MET IN SUBSTANCE, refined in wording** - see the grep breakdown above.
+  **MECHANISM, as implemented**: `lib/kicad/install.ts` and
+  `tools/guide/browser-install.ts`, per-platform candidate lists, non-throwing
+  at import time (several production modules - `lib/stripboard/board.ts` among
+  them - reach `lib/kicad/pin-pattern-sources.ts` unconditionally, so a resolver
+  used at module scope must not throw merely because KiCad is absent; the
+  existing point-of-use refusals, unchanged, are what still throw and name the
+  variable). `make/board.mk` keeps its `?=`/`export` shape exactly as this
+  entry's mechanism said, checked against the resolver by
+  `tests/kicad/install.test.ts` rather than shared.

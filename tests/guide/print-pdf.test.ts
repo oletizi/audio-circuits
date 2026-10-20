@@ -18,16 +18,19 @@ import { test, expect } from "bun:test"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { defaultHtmlToPdf } from "../../tools/guide/browser-install.ts"
 import { defaultPrintGuidePdf } from "../../tools/guide/print-pdf.ts"
 
 /**
- * Duplicates the default `HTML_TO_PDF ?= ...` line in make/board.mk, as
- * tests/circuits/kicad-round-trip.ts duplicates KICAD_CLI's: a constant
- * shared between make and TypeScript is not possible, so keep the two in sync
- * by hand. The `HTML_TO_PDF` env var overrides both.
+ * Still duplicates the default `HTML_TO_PDF ?= ...` line in make/board.mk,
+ * as tests/circuits/kicad-round-trip.ts duplicates KICAD_CLI's: a constant
+ * shared between make and TypeScript is not possible, so keep the two in
+ * sync by hand - `tests/kicad/install.test.ts` checks they agree. What
+ * changed (`docs/known-gaps.md` **G169**) is that the default itself is now
+ * a per-platform candidate list (`./browser-install.ts`), not a bare macOS
+ * literal. The `HTML_TO_PDF` env var overrides both.
  */
-const HTML_TO_PDF =
-  process.env["HTML_TO_PDF"] ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+const HTML_TO_PDF = process.env["HTML_TO_PDF"] ?? defaultHtmlToPdf()
 
 const PAGE = [
   "<html><head><style>@page { size: letter; margin: 0.5in; }</style></head>",

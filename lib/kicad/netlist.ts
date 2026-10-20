@@ -7,6 +7,7 @@
  * caller supplies.
  */
 import { attr, child, children, parseSexpr } from "./sexpr.ts"
+import { defaultKicadCli } from "./install.ts"
 
 /**
  * THE PATH TO `kicad-cli`, NOT A SPAWNER. Nothing here runs it; this is the
@@ -23,14 +24,19 @@ import { attr, child, children, parseSexpr } from "./sexpr.ts"
  * ported file that needs it before then fails `bun run typecheck` naming the
  * missing export.
  *
- * **It duplicates the `KICAD_CLI ?=` default in `make/board.mk`**, exactly as
- * `tests/circuits/kicad-round-trip.ts` and `tools/pultec/schematic-sync.ts`
- * already each do, and for the same reason: Make cannot import TypeScript. An
- * explicitly set `KICAD_CLI` always wins. Four copies of one path is a smell
- * recorded in `docs/known-gaps.md`, not a design.
+ * **THE DEFAULT IS NOW ONE TypeScript SOURCE OF TRUTH**
+ * (`docs/known-gaps.md` **G169**, discharging **G121**'s point (b)):
+ * `./install.ts`'s `defaultKicadCli()` is a per-platform candidate list, not
+ * a bare macOS literal, and `tests/circuits/kicad-round-trip.ts` and
+ * `tools/pultec/schematic-sync.ts` both now import THIS constant instead of
+ * carrying their own copy. **It still duplicates the `KICAD_CLI ?=` default
+ * in `make/board.mk`**, because Make cannot import TypeScript - that one
+ * remaining duplicate is deliberate (the Makefile's own comment explains why)
+ * and `tests/kicad/install.test.ts` checks the two literals agree rather than
+ * letting them drift silently. An explicitly set `KICAD_CLI` always wins,
+ * here and there.
  */
-export const KICAD_CLI: string =
-  process.env["KICAD_CLI"] ?? "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
+export const KICAD_CLI: string = process.env["KICAD_CLI"] ?? defaultKicadCli()
 
 export interface ImportedComponent {
   readonly designator: string
