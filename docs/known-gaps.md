@@ -14687,3 +14687,541 @@ assertion would pass without exercising anything.
   run, not one they expect.** **MECHANISM, untried:** state the measurement in the comment, as the
   two above now do - a comment that quotes its own `[RAN]` output cannot drift from the code without
   the output being wrong too.
+
+### G203 - spec §5.2's cross-sheet mechanism is DECIDED: one per CLASS, two classes, two mechanisms - with the reading it rests on, so a later reader can dispute it
+
+Spec revision 4 names *"the M1 plan's Task 15"* as this question's owner and contributes the rule
+and the test but not the choice. The choice is below, and the reading it rests on is stated first
+because the reading is the disputable part.
+
+**THE READING.** §1.6's original sentence is *"exactly one mechanism carries cross-sheet
+connectivity"*, which reads as a demand for uniformity. Revision 4's finding 16 replaces it with
+the review's rule, **adopted and quoted**: ***"each CLASS of connection has one authoritative
+mechanism, with no ambiguous or duplicate representation."*** Power symbols, global labels and
+hierarchical ports *"have different KiCad semantics and may legitimately serve different classes"*.
+**So "exactly one" is read as one per class, not one per sheet**, and that is the whole of what
+plan decision D5 means here.
+
+**THE DECISION**, in `lib/schgen/render/cross-sheet.ts`:
+
+| class | what states it | mechanism | why that one |
+| --- | --- | --- | --- |
+| `declared-rail` | `Circuit.rails`, a `RailSpec` in the authoring file | `power-symbol` | spec §3.4's third objective criterion - *"rails must be declared ports, so a rail drawn as an ordinary net is detectable"* |
+| `inter-block-signal` | everything else that crosses a boundary | `global-label` | the one remaining mechanism the emitter has, and the only one carrying KiCad's intersheet page references |
+
+**HIERARCHICAL PORTS ARE EMITTED BY NOTHING, AND THAT IS A DECISION.** `anchorsToSymbols` in
+`lib/schgen/render/power-text.ts` emits exactly two things for a block's boundary anchors, and
+`emit.ts` writes exactly those. A third class needing a third mechanism is a change to this
+decision with its own reasoning and its own round-trip case.
+
+**`crossSheetProblems` HAS FIVE CLAUSES AND THE TASK 15 BRIEF NAMES THREE.** The brief's three are
+a net drawn with both mechanisms, a net crossing a boundary with neither, and a class with no
+stated mechanism. The two added:
+
+- **a class stated to use a mechanism the emitter cannot draw** (`unemittableMechanisms`). This is
+  what Step 7's first perturbation drives, and it is separate from the unmapped-class clause
+  because the two failures are different sentences;
+- **a net drawn with a mechanism other than the one its class states.** Without it `classOf` and
+  `mechanismFor` are read by nobody: **a rail drawn only as a global label passes all three of the
+  brief's clauses**, and spec §3.4's third criterion is exactly that case.
+
+- **Found** 2026-10-20, Task 15, Steps 1-3.
+- **Evidence** `tests/schgen/render/cross-sheet.kicad.test.ts`, which drives each clause over real
+  generated drawings. Checks that could have failed: a rail's power symbols replaced by global
+  labels reports *"net GND is a \"declared-rail\" connection, whose one authoritative mechanism is
+  \"power-symbol\", and it is drawn with \"global-label\""*; the unperturbed drawings report
+  nothing. `unmappedClasses` is driven with a table missing an entry and with the shipped table,
+  and only the first reports.
+- **Verified** CONFIRMED - this writer wrote the module and the tests and ran them.
+- **Why it is open** it is a DECISION recorded so it can be disputed, not a defect. The reading
+  above is the arguable part: a reader who thinks §1.6 meant one mechanism per SHEET would refuse
+  this design, and the spec's revision-4 note is the evidence that it does not.
+- **What would settle it** nothing - it is settled unless the owner reverses it. **A caution:** the
+  round trip (below) establishes that the COMBINATION behaves; it does not establish that either
+  mechanism is the best one for its class, and no measurement here compares them.
+
+### G204 - spec §1.6's one-sheet-against-many net-membership test, RUN: three cases, three agreements, and one fixture rewritten because the first version could not have failed
+
+The test is the spec reviewer's, adopted as written: *"generate the same network as one sheet and
+as multiple sheets, export both through `kicad-cli`, and verify identical net membership."*
+
+**THE THREE PARTITIONS, SIDE BY SIDE.** `[RAN]` Each fixture in
+`tests/schgen/__fixtures__/designs/crosssheet.ts` is generated twice - every block on one A1 sheet,
+and the declared assignment across A3 sheets - written, and exported with
+`kicad-cli sch export netlist --format kicadsexpr`.
+
+| case | sheets | one sheet | many sheets |
+| --- | --- | --- | --- |
+| **shared rail** | 2 | `GND:[R1.2,R2.2,R3.2,R4.2] V3:[R1.1,R2.1,R3.1,R4.1]` | identical |
+| **signal across three sheets** | 3 | `GND:[R1.2..R6.2] SIG:[R1.1..R6.1]` | identical |
+| **repeated block** | 2 | `A_TAP:[R1.2,R2.1] B_TAP:[R3.2,R4.1] GND:[R2.2,R4.2] V3:[R1.1,R3.1]` | identical |
+
+**THE REPEATED-BLOCK FIXTURE WAS REWRITTEN, AND THAT IS THE PART WORTH A LATER READER'S TIME.** Its
+first version put each instance's two resistors in ONE block, which made each tap INTERNAL to its
+block. An internal net is not labelled (`labelledNets`, `ir/classify.ts`), so neither tap crossed
+anything, KiCad named them `Net-(R1-Pad2)` and `Net-(R3-Pad2)` in both exports, and **the case
+could not have detected a cross-sheet name collision at all** - the thing the spec says it is for.
+Splitting each instance across two blocks on two sheets makes both taps labelled crossing nets, and
+they survive as `A_TAP` and `B_TAP` with two members each.
+
+**AND THE COMPARISON IS OF PARTITIONS, NOT OF NAMES.** KiCad names an unlabelled net after a pad it
+touches, so a name is a fact about designators. `partitionOf` discards the names and compares the
+set of member sets, which is the claim §1.6 makes.
+
+- **Found** 2026-10-20, Task 15, Steps 1-4.
+- **Evidence** the table above, printed from the two `importNetlist` results per case. A check that
+  could have failed: the comparison also asserts the partition has more than one net, so an export
+  with nothing in it cannot pass by being trivially equal; and the first fixture version failed the
+  named-tap assertion, which is how the defect above was found rather than argued.
+- **Verified** CONFIRMED - this writer wrote the fixtures, ran the exports and read the netlists.
+- **Why it is open** it is a measurement. It stays because it is the only evidence anyone has that
+  the cross-sheet mechanism behaves, and because the rewritten fixture records a way to write this
+  test that proves nothing.
+- **What would settle it** nothing. **A caution:** all three fixtures are `rail-row` blocks of
+  two-terminal passives, chosen so they reach KiCad without the ELK backend. The test says nothing
+  about a circuit whose blocks ELK draws.
+
+### G205 - SEAM B's CHOICE RULE FOR A NEGOTIABLE POSITION, and the consequence that `fixed` and `negotiable` differ today in exactly one thing: what `AttachedPort.was` reports
+
+Spec §1.9 and plan decision **D9** both leave open *"how seam B chooses among negotiable
+positions"*. Task 15 owns that choice. What `composeBlocks` implements:
+
+> **An interface port attaches at the block's own `Anchor` for that net, translated by the offset
+> the packing gave its frame, and nowhere else. A declared side the drawn anchor does not sit on is
+> a refusal, not an instruction to move it.**
+
+**THE REASON IS §1.9's OWN CONTRACT AND NOT A SHORTAGE OF IMAGINATION.** An `Anchor` is where a
+block's layout brings a net to its boundary, and the wire that reaches it is inside the block.
+Attaching the net anywhere else means re-routing that wire - which §1.9 forbids by name, *"it does
+not re-route a wire inside one"* - or adding a second wire, which would be a connection the IR does
+not have.
+
+**SO THE FREEDOM `negotiable` GRANTS IS REAL AND THIS IMPLEMENTATION DECLINES TO USE IT.** `[RAN]`
+Over the five blocks the ELK backend draws, composing with the shelf packing and with the ELK
+packing puts every one of the ten interface ports at a different absolute position and at **the
+same offset from its own frame's origin**, with the same side and the same net - so the set of
+`(block, net, side, was)` is identical under the two packings. **A port's position is a function of
+its block and of nothing on the page.**
+
+- **Found** 2026-10-20, Task 15, Step 5.
+- **Evidence** `tests/schgen/render/compose.test.ts`'s *"the same ports come back at the same places
+  whichever packer placed the frames"*, which first asserts the two packings' frame positions
+  DIFFER - so the agreement below is not two runs of one packing - and then compares the attached
+  sets. And *"a fixed interface position is honoured, not relocated"*, which recomputes each
+  expected point from the block's own anchor and the frame offset independently of what
+  `composeBlocks` returned.
+- **Verified** CONFIRMED - this writer wrote the rule, the module and the tests and ran them.
+- **Why it is open** it is a decision recorded so it can be disputed, and **it has a consequence an
+  implementer would otherwise get wrong**: reading `negotiable` as *"seam B will place this for
+  you"* is false of this generator. The two values differ only in what `was` reports and in whether
+  the declaration is a true claim (**G206**).
+- **What would settle it** **CRITERION: seam B either exercises the freedom `negotiable` grants, or
+  the declaration stops claiming it.** **MECHANISMS, both untried:** (1) let a block declare more
+  than one acceptable anchor per net and have seam B pick among them, which needs a renderer that
+  produces alternatives and none does; (2) drop `negotiable` from `InterfacePort` and make every
+  port of a drawn block `fixed`, which is `CLAUDE.md`'s *supersede means delete* applied to a field
+  nothing varies - and which would be wrong for a block that has not been drawn yet.
+
+### G206 - RE-MEASURED: the declared split is still 0 fixed / 51 negotiable, and for the 10 ports of the 5 blocks that now DRAW, `negotiable` is a false claim in the other direction
+
+**G153** measured 51 interface ports, 0 fixed and 51 negotiable, and judged the zero sound on an
+explicit ground: *"a block with no geometry has none to fix a port against"*, every block being
+`{ kind: "auto" }` with no template. **Five blocks now have geometry** (**G200**), so that premise
+no longer holds for them and the figure was re-taken rather than inherited.
+
+**THE DECLARED SPLIT IS UNCHANGED.** `[RAN]` `bun tools/schgen/authoring-census.ts`: 12 declared
+blocks, **51 interface ports, 0 fixed, 51 negotiable** - identical to G153's table, because no
+authoring file was edited and `negotiablePort` is still what every one of them calls.
+
+**THE MEASURED ANSWER IS DIFFERENT FOR FIVE BLOCKS, AND THEY ARE ALL `transistor-preamp`'s.**
+
+| block | interface ports | draws | anchors drawn for those ports | positions seam B could choose among |
+| --- | --- | --- | --- | --- |
+| `tp-leg-upper` | 2 | yes | `VCC` up, `BASE` right | 1 each |
+| `tp-leg-feedback` | 2 | yes | `COLLECTOR` right, `BASE` right | 1 each |
+| `tp-leg-lower-a` | 2 | yes | `BASE` right, `GND` down | 1 each |
+| `tp-leg-lower-b` | 2 | yes | `BASE` right, `GND` down | 1 each |
+| `tp-leg-collector` | 2 | yes | `VCC` up, `COLLECTOR` right | 1 each |
+| the other seven | 41 | no | none | - |
+
+**Each of those ten nets has exactly ONE anchor, at one position, put there by the block's own
+layout.** §1.9 defines `fixed` as *"a position fixed by the block's own internal geometry"*, and
+under **G205**'s choice rule seam B cannot move one without re-routing a wire inside the block. **So
+all ten are genuinely fixed and all ten are declared negotiable.** The remaining 41 belong to
+blocks with no geometry, where `negotiable` is still the only true claim.
+
+**AND THE DECLARATION OVERSTATES THE FREEDOM VISIBLY IN SIX OF THE TEN.** `BASE` and `COLLECTOR` are
+declared `sides: [left, right]` - two acceptable edges - and the geometry permits exactly one.
+
+**G153 NAMES THE THUMB ON THE SCALE AND IT IS STILL THERE**: `negotiablePort` is a one-call helper
+and there is no `fixedPort` beside it, so declaring a fixed port means writing the `InterfacePort`
+literal by hand. That asymmetry did not cause this - no authoring file was revisited at all - but it
+is what a later writer will meet when acting on this entry.
+
+- **Found** 2026-10-20, Task 15, Step 5a.
+- **Evidence** the census output for the declared half; for the measured half, `blockContent` run
+  over all twelve blocks with the real ELK backend, printing each drawn layout's anchors (the table
+  above is that output). A check that could have failed: `tests/schgen/render/compose.test.ts`'s
+  *"a fixed interface position is honoured"* re-declares all ten ports `fixed` and composes, and
+  every attached point equals the block's own anchor translated - so "fixed" is reachable and
+  behaves, and the 0 in the census is a property of the declarations.
+- **Verified** CONFIRMED - this writer ran the census, the per-block layout dump and the tests.
+- **Why it is open** the declarations now carry a claim the geometry contradicts for five blocks,
+  and nothing refuses it.
+- **What would settle it** **CRITERION: a block that has been drawn declares `fixed` for every
+  interface port its layout gives exactly one anchor.** **MECHANISM, untried:** a check comparing
+  each declared `position` against the number of anchors the block's realised layout draws for that
+  net, refusing `negotiable` where there is exactly one - note that it can only run on a block that
+  draws, so it would report nothing for the other seven, and a check that is silent for 7 of 12
+  needs to say so.
+
+### G207 - BOTH PACKINGS MEASURED, SIDE BY SIDE, WITH NO PREFERENCE EXPRESSED - and the first thing the numbers say is that no packing changes how much ink is on the page
+
+**G165**'s criterion (b) - *"a sheet whose frames use a small fraction of the declared paper is
+either reported or packed better"* - **deliberately refuses to let an implementer decide what
+"better packing" means**, because *"better" there is an acceptance criterion for an artifact an
+agent produces*. That refusal binds Task 15. So: a second packer exists, both are measured, and
+**the comparison stands undecided.**
+
+`[RAN]` `packFramesWithElk` against `packFrames`, over the two sheets of the ported `mini` design
+and over a probe of the five `transistor-preamp` blocks that draw:
+
+| sheet | packer | extent (mm) | aspect | usable aspect | page use | extent fill | inter-frame span |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `mini/power` A4, 4 frames | shelf | 185.42 x 38.10 | 4.87 | 1.85 | 17.8 % | 78.4 % | - (0 edges) |
+| | elk | 109.22 x 71.12 | 1.54 | 1.85 | 19.5 % | 71.3 % | - (0 edges) |
+| `mini/signal` A3, 7 frames | shelf | 358.14 x 55.88 | 6.41 | 1.69 | 21.7 % | 56.4 % | 820.42 mm / 8 edges |
+| | elk | 245.11 x 127.00 | 1.93 | 1.69 | 33.8 % | 36.3 % | 656.59 mm / 8 edges |
+| tp probe A3, 5 frames | shelf | 248.92 x 40.64 | 6.13 | 1.69 | 11.0 % | 91.4 % | 305.44 mm / 4 edges |
+| | elk | 203.20 x 81.28 | 2.50 | 1.69 | 17.9 % | 56.0 % | 248.28 mm / 4 edges |
+
+**THE INK IS IDENTICAL AND NO PACKING CAN CHANGE IT.** Frame area over usable area is 13.9 %,
+12.3 % and 10.0 % on the three, **the same for both packers**, because `frameSize` is a property of
+the blocks. **So G165's complaint that *"the page is mostly empty"* is only partly a packing
+question**: the content occupies a tenth to a seventh of the usable area whatever is done with it,
+and what a packer moves is the SHAPE of the region it occupies, the fraction of the page that
+region spans, and the distance between connected frames.
+
+**WHAT THE ELK PACKER IS PACKING TO.** The aspect ratio it is given is the paper's own usable area
+(`elk.aspectRatio`), the spacings and the padding are `pack.ts`'s own `GAP`, `MARGIN` and
+`TITLE_BLOCK`, and `elk.layered.wrapping.strategy = MULTI_EDGE` is what makes `layered` honour an
+aspect ratio at all. **Why the unconstrained wrapping strategy is this writer's stated rule and not
+a reviewed one**: a wrapped edge normally costs a long connector, and here an inter-frame edge is
+**drawn as nothing** (**G208**), so a cut costs no ink and `SINGLE_EDGE`'s restriction would
+constrain the wrap for a cost this drawing does not pay. A later reader may dispute it.
+
+**THE TWO PAGES WERE LOOKED AT, and this paragraph is an OBSERVATION FOR THE RECORD and NOT AN
+ACCEPTANCE** - §3.3 gives these measures no threshold and G165's criterion (b) is the owner's. Both
+`mini` signal pages were exported with `kicad-cli` at 150 dpi and read. The shelf page is one row of
+seven frames across the top fifth of an A3, read strictly left to right, input connector first and
+output connector last, with four-fifths of the page blank. The ELK page is three bands cascading
+down and right: the two frames with no inter-frame edge at all (the spare op-amp channel and the
+op-amp supply) are pushed into the leftmost layer, **ahead of the input connector**, and the
+crystal sits above the output connector rather than beside it. **This writer would rather read the
+shelf page**, for a reason that is about reading order rather than area: a schematic sheet read as a
+single left-to-right row needs no decision about where to look next, and the ELK page's first
+column is two blocks that connect to nothing. **That is a preference, it is recorded as one, and it
+is the owner's to accept or reject** - the brief for this task says in terms that a preference found
+here *is the finding*.
+
+- **Found** 2026-10-20, Task 15, Step 6.
+- **Evidence** the table, computed by `packingMeasures` over both packings of each content list; two
+  PDFs exported through `kicad-cli sch export pdf --theme schgen`, converted with
+  `pdftoppm -r 150 -png` and read with the Read tool. A check that could have failed:
+  `tests/schgen/elk/sheet-graph.test.ts`'s *"BOTH packings are measured and NEITHER is preferred
+  here"* asserts the two extents DIFFER and the two ink figures AGREE, so a packer that silently
+  returned the other's positions would fail it.
+- **Verified** CONFIRMED - this writer ran both packers, exported, converted and read both pages.
+- **Why it is open** G165's criterion (b) is unanswered and this entry does not answer it. It adds
+  the numbers the decision needs and one reader's preference, both of which were missing.
+- **What would settle it** **an OWNER DECISION**, which is what G165 says. The numbers above are
+  what there is to decide on.
+
+### G208 - MEASURED: seam B draws NO wire and adds NO crossing, so §1.1's 6.1x upper bound is not spent on seam B's own geometry at all - what composition costs is glyphs and page area
+
+Spec §1.1's third limit, carried into Task 15's brief: both spikes drew each block *"on its own
+canvas, so the totals add crossings across three sheets and seam B would add its own"*. **Seam B's
+own crossings had never been measured.** They have now, and the answer is zero, for a structural
+reason rather than a lucky one.
+
+**EVERY WIRE ON A COMPOSED SHEET BELONGS TO EXACTLY ONE BLOCK.** `layoutSheet` builds its wire list
+as `a.blocks.flatMap((b) => b.layout.wires)` and adds none of its own, and every inter-block
+connection is represented by a power symbol or a global label (**G203**) drawn at the block's own
+anchor, which was already inside that block's extent before composition. `[RAN]` On the composed
+`mini` signal sheet, **every one of the 39 wires lies inside exactly one frame's box, and no two
+frame boxes overlap.**
+
+**WHAT COMPOSITION DOES COST, measured on the two subjects:**
+
+| subject | blocks | interface ports attached | inter-frame edges | inter-frame span | wire length seam B added | crossings seam B added |
+| --- | --- | --- | --- | --- | --- | --- |
+| `mini/signal` | 7 frames | 25 declared, 6 of them REFUSED so the composition does not complete (**G210**) | 8 over 8 nets | 656.59 mm (elk) / 820.42 mm (shelf) | **0** | **0** |
+| tp 5-block probe | 5 | 10 of 10 | 4 over 2 nets (`BASE` spans 4 frames, `COLLECTOR` 2) | 248.28 mm (elk) / 305.44 mm (shelf) | **0** | **0** |
+
+**"Inter-frame span" is a Manhattan centre-to-centre distance and NOT a wire length**, deliberately:
+no line joins two frames, so what it measures is how far a reader's eye travels between the two ends
+of one global label. It is the quantity a connectivity-aware packer can shorten, and the only one.
+
+**WHAT THIS SAYS ABOUT §1.1, carried with revision 4's framing.** 6.1x is a measured **upper bound**
+on the improvement, not an estimate of it, and this figure is how much of it seam B spends: **none
+of it in crossings.** The decomposition's 43 missing edges (139 whole against 96 in three blocks,
+**G100**) do not come back as sheet-level crossings in this generator; they come back as **declared
+interface ports drawn as glyphs inside their own blocks**, which were counted in the block's own
+drawing already. **The cost that remains is page area and eye-travel, not ink.**
+
+- **Found** 2026-10-20, Task 15, Step 5a.
+- **Evidence** the table; `tests/schgen/render/compose.test.ts`'s *"spec §3.4 on a composed sheet"*,
+  which asserts every wire falls inside exactly one frame box and that the drawing has wires at all,
+  so the zero is not an empty-set pass. For the frame disjointness, `frameBoxOverlaps` over both
+  packings of all three content lists, with a driven case that reports an overlap and a driven case
+  of two frames that merely touch and reports none.
+- **Verified** CONFIRMED - this writer ran every figure.
+- **Why it is open** it is a measurement Task 17 needs. **It is also bait, and the trap is named
+  here**: "seam B adds no crossings" is true of THIS generator because this generator joins blocks
+  with labels rather than with wires. A later change that drew an inter-block wire would make every
+  number above wrong, and it would not be a defect in anything this entry measured.
+- **What would settle it** nothing - it is a measurement. **A caution for Task 17 Step 4:** the
+  comparison against the flat baseline must compare like with like, and the flat drawing has no
+  frames and no interface glyphs at all.
+
+### G209 - composition leaves G200's two numbers EXACTLY unchanged, and the staircase measure is vacuous at sheet scale - so it must keep being taken per block
+
+**G200** measures, over the five blocks that draw, **14 placements with 14 distinct x-coordinates
+(0 parts sharing an x)** and **9 of 19 nets reversing direction on an axis (47 %)**, and records
+them as *"the baseline any attempt is measured against"*. Task 15's brief asks what composition does
+to them.
+
+**IT DOES NOTHING TO EITHER, AND THE REASON IS A THEOREM RATHER THAN LUCK.** `[RAN]` Over the same
+five blocks, composed onto one A3 by the shelf packer and by the ELK packer: **14 placements, 14
+distinct x, 19 wired nets, 9 reversing, 67 segments, 284.48 mm of wire - under both packers, and
+identical to G200's table.** Composition translates each block by one rigid grid-multiple offset
+(`translateLayout`), `interiorDrift` is empty, and **every quantity G200 measures is invariant under
+translation**: a shared x stays shared, a reversal stays a reversal, a segment keeps its length.
+
+**AND THE MEASURE MUST NOT BE RE-TAKEN AT SHEET SCALE, which is the part a later reader needs.**
+Taken over a whole composed sheet it is vacuous: the frames sit at different x, so parts in
+different blocks never share one whatever the renderer did. `[RAN]` The `mini` signal sheet - **every
+block of which is drawn by a reviewed TEMPLATE** - gives **11 symbols and 11 distinct x**, which is
+the same "staircase" verdict G200 reports for ELK and means nothing about either. **The number is a
+property of a block's interior and only of that.**
+
+- **Found** 2026-10-20, Task 15, Steps 5 and 6.
+- **Evidence** the per-block tally above, computed over the composed layouts under both packings,
+  beside G200's own table; and the sheet-scale tally over `mini/signal`. A check that could have
+  failed: `tests/schgen/render/compose.test.ts`'s *"composition never alters a block's interior,
+  under either packer"* asserts `interiorDrift` is empty over five blocks under both packings, and
+  the Step 7 perturbation that nudges one part by one grid step turns it red naming every block and
+  part - so the invariance is checked, not asserted.
+- **Verified** CONFIRMED - this writer ran all of it.
+- **Why it is open** it is a measurement, and it corrects a thing a later task would plausibly do:
+  re-take G200's baseline on a composed sheet and read an unchanged number as progress or a
+  maximal one as regression.
+- **What would settle it** nothing. **A caution:** the per-block figures agreeing with G200's to the
+  micrometre is also the strongest evidence available that the seam-B path did not disturb the
+  block path, and a later divergence between the two tables is worth investigating before it is
+  explained.
+
+### G210 - `composeBlocks` REFUSES 8 of the ported `mini` design's 33 declared interface ports, and the disagreement is between Task 9's sides rule and the ported templates' anchors - an OWNER QUESTION
+
+Spec §1.9 requires seam B to honour a port's declared `sides`: *"a negotiable one is chosen among
+the declared acceptable sides and nowhere else"*. `composeBlocks` does, and refuses otherwise.
+`[RAN]` Over the only multi-block sheets in the repository that compose:
+
+| sheet | declared ports | refused | the disagreement |
+| --- | --- | --- | --- |
+| `mini/power` | 8 | **2** | `REG`: `3V3` and `VIN` are declared `sides: [top]`, and the `regulator` template brings them out **right** and **left** |
+| `mini/signal` | 25 | **6** | `J_IN`: `VIN` declared `[top]`, `GND` declared `[bottom]`, both brought out **left** by `connector-fanout`; `XTAL`: `XI` and `XO` declared `[left, right]`, both brought out **up** by `crystal`; `FLASH`: `3V3` declared `[top]`, brought out **left**, twice |
+
+**NEITHER SIDE IS OBVIOUSLY WRONG, WHICH IS WHY THIS IS NOT FIXED HERE.** `negotiablePort`'s rule
+(**G153**) says a supply rail attaches at the top because `RailSpec`'s own doc comment says a
+supply's glyph goes there, and a non-rail port attaches left or right because decision **D4** pins
+flow left-to-right. The `regulator` template brings `VIN` in on the left and `3V3` out on the right,
+which is how a person draws a regulator; `crystal` stands its two clock labels up on either side.
+**A regulator's input rail entering from the left is better schematic practice than one dropping in
+from the top**, and the declaration forbids it.
+
+**THE THREE WAYS OUT, none of them this task's to choose:** (a) the templates' anchor sides are
+authoritative and `negotiablePort`'s sides rule is wrong; (b) the rule is right and the templates
+violate it; (c) `sides` means something weaker than *"and nowhere else"* and §1.9 should say so.
+
+**THE CONSEQUENCE, STATED PLAINLY: `composeBlocks` IS NOT WIRED INTO `generate`.** It is reached by
+its tests and by measurement, and nothing in the generation path calls it, because on today's
+declarations it would refuse the only design in the repository that generates. **That is a check
+this repository has and does not run**, and it is recorded here rather than hidden behind a relaxed
+criterion - relaxing it would be this agent choosing the acceptance criterion for its own artifact.
+`crossSheetProblems` IS wired in (`assertCrossSheet` in `tools/schgen/generate.ts`) and passes.
+
+**IT IS G193's SHAPE ONE LEVEL UP.** That entry records *"an anchor's SIDE is taken from the
+reviewed rule and not from ELK's route, and the two disagree on 18 of the 38 boundary anchors"*.
+Here the reviewed rule and a reviewed TEMPLATE disagree, on 8 of 33.
+
+- **Found** 2026-10-20, Task 15, Step 5.
+- **Evidence** the table, printed by `composeBlocks` over both `mini` sheets; the eight refusal lines
+  name the block, the port, the declared sides and the drawn side.
+  `tests/schgen/render/compose.test.ts`'s *"mini's sheets REFUSE, and the refusal is a
+  declaration-against-template disagreement"* pins the count at 6 for the signal sheet and 25 for
+  its declared total, so neither can move silently. A check that could have failed in the other
+  direction: the same function composes the five ELK-drawn blocks with **0** refusals, so it is not
+  refusing everything.
+- **Verified** CONFIRMED - this writer ran it and read every line.
+- **Why it is open** it needs a decision nobody has made, and until it is made seam B's interface
+  check cannot be a gate.
+- **What would settle it** **an OWNER (or controller) DECISION among (a), (b) and (c) above.**
+  **MECHANISMS, untried, one per branch:** (a) derive a declaration's `sides` from the template's
+  anchor where a block declares a template - note this would make the declaration a derivation and
+  §1.9 forbids exactly that; (b) change the four templates' anchor sides, which changes ported files
+  and every pinned geometry test with them; (c) a spec amendment, which is not an implementer's.
+
+### G211 - NOT ONE of the four parity circuits has a sheet that can be composed, so seam B's whole measured record rests on a ported fixture and a five-block probe
+
+Task 15's brief says *"your material is five blocks of one circuit family"*. It is narrower than
+that, and the reason is worth stating once.
+
+`[RAN]` Each of `opamp-buffer`, `optical-compressor`, `pt2399-core` and `transistor-preamp` declares
+**exactly one sheet**, and every one of those sheets holds at least one block that does not draw:
+
+| circuit | sheets | blocks | blocks that draw | the sheet |
+| --- | --- | --- | --- | --- |
+| `opamp-buffer` | 1 | 1 | **0** | refuses at `ob-buffer` |
+| `optical-compressor` | 1 | 3 | **0** | refuses at `oc-power` |
+| `pt2399-core` | 1 | 1 | **0** | refuses at `pt-core` |
+| `transistor-preamp` | 1 | 7 | **5** | refuses at `tp-leg-emitter-bypass` |
+
+`sheetContents` realises every block of a sheet, so one refusing block refuses the sheet. **So seam
+B has never run on a declared sheet of a circuit this repository owns**, and everything measured in
+**G205** to **G210** comes from one of two subjects: the ported `digital-pedal-platform` `mini`
+fixture (ten template-drawn blocks on two sheets) and a **probe** that puts `transistor-preamp`'s
+five drawing blocks on one A3. **The probe is not that circuit's schematic**, for the same reason
+G165 says its two-leg probe was not: the other two blocks exist and are on the same declared sheet.
+
+**ONE CONSEQUENCE THAT IS NOT OBVIOUS:** a single-sheet circuit has no cross-sheet connection at
+all, so **the four parity circuits could not exercise spec §1.6's mechanism even if every block
+drew**. The three cross-sheet fixtures (**G204**) are the only multi-sheet designs in the tree
+besides `mini`.
+
+- **Found** 2026-10-20, Task 15, Step 5.
+- **Evidence** the table, from `blockContent` run over all twelve declared blocks with the real ELK
+  backend and `sheetContents` run over all four sheets; each sheet's refusal carries the id of the
+  first block that refused. A check that could have failed:
+  `tests/schgen/render/compose.test.ts` asserts the probe holds exactly 5 contents and that the two
+  refusing block ids are `tp-leg-emitter-bypass` and `tp-stage`, so a change in either count fails
+  rather than quietly shrinking the subject.
+- **Verified** CONFIRMED - this writer ran it.
+- **Why it is open** it is the scope caveat on every seam-B figure in this register, and it will
+  stop being true the moment the other seven blocks draw.
+- **What would settle it** **CRITERION: seam B is measured on a declared sheet of a circuit this
+  repository owns.** That needs the blocks to draw (**G200**'s criterion), not anything seam B can
+  do. **MECHANISM, untried:** nothing here - it is downstream of the ELK backend's clearance
+  refusals.
+
+### G212 - PERTURBED: a frame placed OUTSIDE the page margin is refused by NOTHING downstream - `assertTextClear` accepts it, and the brief predicted otherwise
+
+Task 15's brief, Step 7: *"make `packFramesWithElk` ignore the paper bound; a frame lands outside
+the margin and `assertTextClear` goes red."* **It does not.**
+
+**THE PERTURBATION.** `elk.padding` set to zero on all four sides and `readSheetPacking`'s own
+in-bounds check deleted. `[RAN]` The ELK packer then returns
+
+```
+[{"x":53340,"y":6350},{"x":102870,"y":0},{"x":0,"y":0},{"x":31750,"y":0},
+ {"x":146050,"y":33020},{"x":140970,"y":71120},{"x":198120,"y":69850}]
+```
+
+- three frames at `y = 0` and one at `x = 0`, against a `MARGIN` of 12 700 um - and **`layoutSheet`
+ACCEPTED all seven.** `assertSheetSafe` and `assertTextClear` both passed, `generate` wrote the
+files, `kicad-cli` exported the PDF, and the rendered page shows the top three frames sitting on and
+across the sheet border, the leftmost one clipped by the page edge and its title overlapping the
+border ruler.
+
+**WHY, and it is G165's blind spot from a third direction.** `textProblems`' frame clause refuses a
+text that STRADDLES a frame's border and says nothing about a text outside one; **nothing anywhere
+in the pipeline compares any geometry against the paper's drawable area.** The only thing standing
+between an out-of-margin frame and an emitted sheet is the bound check inside `readSheetPacking` -
+written for this task, and now the sole guard of a property three other checks look like they
+cover.
+
+**The perturbation was restored**, and `git status --porcelain` is clean in this worktree and in
+`digital-pedal-platform`.
+
+- **Found** 2026-10-20, Task 15, Step 7.
+- **Evidence** the position list above, printed from the perturbed `packFramesWithElk`; `layoutSheet`
+  returning a `SheetDrawing` rather than throwing; the exported PDF converted at 110 dpi and read
+  with the Read tool. A check that could have failed: the same perturbation with
+  `readSheetPacking`'s bound check left in place returns `{ ok: false }` with a `needed` size, which
+  is how the guard was confirmed to be the one doing the work.
+- **Verified** CONFIRMED - this writer perturbed, ran, rendered, read and restored.
+- **Why it is open** it is a real gap and it is not fixed. It is narrow today - the packers both
+  keep inside the margin - and it is exactly the shape **G165** warns about: a property several
+  checks appear to cover and none does.
+- **What would settle it** **CRITERION: a frame, a symbol, a label or a text outside the paper's
+  drawable area fails a check.** **MECHANISM, untried:** give `assertTextClear`'s scene the paper
+  size and refuse anything outside `MARGIN`-inset bounds; note this changes a ported module
+  (`text-scene.ts`) and would need a divergence, which is the same cost G165's own mechanism (a)
+  carries.
+
+### G213 - Task 15's deviations from its own brief, each with what it cost - including the one that AVOIDED a divergence
+
+Recorded together because a reader comparing the brief against the tree will find all of them, and
+because one of them is a saving rather than a cost.
+
+**(1) `lib/schgen/render/pack.ts` IS NOT MODIFIED, although the brief lists it.** The brief's
+`SheetPacking` adds a `by` field to `PackResult`. `pack.ts` is a byte-checked PORT (`files[]` in
+`tools/schgen/port-manifest.json`), so editing it would have made it the fiftieth `diverged` entry.
+Instead `shelfPacking` in `lib/schgen/elk/sheet-graph.ts` reports `packFrames`'s own result in the
+shared shape, and `tests/schgen/elk/sheet-graph.test.ts` asserts the two agree position for
+position. **The brief's instruction was followed in substance and the divergence was avoided.**
+
+**(2) `lib/schgen/render/sheets.ts` gains a second parameter and one extraction.** It was already
+diverged (Task 12). `layoutSheet` now takes `packing: SheetPacking | null = null`, and the
+frame-content construction is extracted into an exported `sheetContents` so the sheet-packing
+pre-pass packs the same list that gets placed. `null` means *"no pre-pass ran"*, which is true of
+every ported caller; a pre-pass that chose the shelf packer passes a packing whose `by` is
+`"shelf"`, so the two are distinguishable rather than conflated. The manifest entry says so.
+
+**(3) `composeBlocks` takes a fourth parameter, `{ interfaces, pack }`.** The brief's signature is
+`composeBlocks(c: Circuit, contents, paper)`. It cannot read the declared interface from a
+`Circuit`: `InterfacePort` lives on `BlockDeclaration` in `lib/schgen/authoring.ts` and **not on the
+IR**. Ruling **R29** carried two fields into the IR because a layout backend could not otherwise
+reach them at all; that is not this case, seam B's caller holds the `SchematicAuthoring` already,
+and putting `interface` on `BlockSpec` would add a required field to the twenty-odd fixtures that
+build one as a literal. `pack` is required for the same structural reason the ELK `Backend` is:
+`lib/schgen/` spawns nothing, and defaulting it would put the packer-selection rule in a second
+place.
+
+**(4) `interiorDrift` takes `ComposedBlock[]` and not `BlockLayout[]`.** Spec §1.9 requires the
+refusal to name the block, and a `BlockLayout` carries part labels and no block id.
+
+**(5) `crossSheetProblems` is wired into `generate` and not into `layoutSheet`**, which Step 3
+names. A cross-sheet check cannot run per sheet: deciding whether a crossing net is represented at
+all needs every sheet's drawing, and inside `layoutSheet` the other sheets do not exist - a
+per-sheet version would report every crossing net of the first sheet as unrepresented. It sits
+beside `assertRefsMatchDrawings`, the other whole-drawing-set check.
+
+**(6) Step 1's fifth test is driven through `unmappedClasses` and not through a circuit.** The brief
+writes `crossSheetProblems(circuitWithUnclassedCrossingNet(), drawings)`. **No such circuit can
+exist**: `ConnectionClass` is a two-value union, `classOf` is total over it, and
+`MECHANISM_OF_CLASS` covers both - so a test built that way would assert something unreachable,
+which is the shape Task 13 spent three attempts on. The clause is driven with a real
+`ConnectionClass` list and a table missing an entry, with no cast.
+
+**(7) `tools/schgen/elk/sheet-layout.ts` carries a SECOND copy of `elkFactory`.** The reason the
+documented node entry point cannot be used under Bun is **G183** and is stated in full in
+`tools/schgen/elk/layout.ts`. The two drivers have different lifetimes - one worker per circuit
+against one per sheet - so a shared instance would have to be threaded through both call paths.
+**What the duplication costs is a second place to change if `elkjs`'s construction path ever does**,
+and it is named here rather than left to be noticed.
+
+- **Found** 2026-10-20, Task 15, Steps 1-9.
+- **Evidence** each item is a diff against the brief at
+  `.superpowers/sdd/2026-10-19-schematic-authoring-m1/task-15-brief.md`, read directly; (1) is
+  checked by `tests/schgen/elk/sheet-graph.test.ts`'s *"shelfPacking is packFrames, reported in the
+  other shape"*, which compares the two position lists and would fail if they diverged; (2) by the
+  manifest's `diverged` entry, which `tests/schgen/port-fidelity.test.ts` requires to exist.
+- **Verified** CONFIRMED - this writer made every one of them.
+- **Why it is open** it is recorded rather than open. It stays because a reviewer reading the brief
+  against the tree will otherwise find seven unexplained differences, and because (7) is a real
+  maintenance cost nothing else records.
+- **What would settle it** nothing for (1) to (6). For (7): **CRITERION: there is one place that
+  knows how to construct an `ELK` under Bun.** **MECHANISM, untried:** export `elkFactory` from
+  `tools/schgen/elk/layout.ts` and have the sheet driver call it - which couples the two drivers'
+  module graphs for a four-line function, and is offered as a trade rather than a fix.
