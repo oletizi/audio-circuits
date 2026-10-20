@@ -6317,10 +6317,22 @@ failure mode this workflow exists to prevent. The test's own comment
 asserts the opposite ("checked by `bun test` simply failing to find the
 file"), so a committed comment is also wrong here.
 
-Two entries sit in that unchecked category today
-(`tests/schgen/ir/single-pin-net-guard.test.ts` and
-`tests/schgen/ir/no-pin-map.test.ts`); both exist, so the gap is live but
-currently inert.
+Two entries sit in that unchecked category today -
+`tests/schgen/ir/single-pin-net-guard.test.ts` (Task 2) and
+`tests/schgen/render/uuid-stable.test.ts` (Task 3) - and both exist, so the
+gap is live but currently inert.
+
+**This entry's first version named `tests/schgen/ir/no-pin-map.test.ts` as
+the second one, and that was wrong**, which turns out to say something
+sharper about the mechanism than the original claim did. `grep -c no-pin-map
+tools/schgen/port-manifest.json` returns **0**: that file is hand-written and
+declared **nowhere**, and so are `tests/schgen/port-fidelity.test.ts` and
+`tests/schgen/strict.test.ts`. Nothing requires a hand-written file outside
+`lib/schgen/` to be declared at all - the completeness test's own comment
+calls such an entry one listed *"for visibility"*. So the category is
+**documentary, optional, applied inconsistently (two listed, three not), and
+unchecked**, which widens what needs settling: a reader cannot use
+`handWritten` as an inventory of hand-written files, because it is not one.
 
 - **Found** 2026-10-19, Task 2 round-2 re-review, by the reviewing agent
   reasoning from the code rather than from the implementer's report, while
@@ -6334,22 +6346,39 @@ currently inert.
   `unaccountedOnDisk` nor `accountedButMissing`. A check that could have
   failed: adding a deliberately misspelled `handWritten` entry under
   `tests/` and running `bun test` - the suite stays green.
-- **Verified** RELAYED - this writer (the controller) has read the filter
-  and the grep result as reported and accepts the reasoning, but did not
-  run the misspelling perturbation.
+  The inconsistency was found 2026-10-19 by Task 3's implementer, which
+  noticed this entry naming `no-pin-map.test.ts` as a `handWritten` entry
+  when it is not one. Evidence: `grep -c "no-pin-map"
+  tools/schgen/port-manifest.json` returns 0 - a check that could have
+  returned 1 - and reading the manifest's `handWritten` array directly
+  confirms its four entries.
+- **Verified** MIXED. The filter's behaviour is RELAYED - this writer (the
+  controller) has read the filter and the grep result as reported and
+  accepts the reasoning, but did not run the misspelling perturbation. The
+  declaration inconsistency is CONFIRMED - this writer ran the grep and read
+  both `port-manifest.json` and `port-fidelity.test.ts` directly.
 - **Why it is open** it is not a defect in what Task 2 was asked to do, and
   the controller ruled against widening Task 2's fix loop for a latent
   gap. **Controller ruling R6: the existence check is a Task 4
   requirement**, because Task 4 is the next task to edit this manifest and
   will add further `tests/schgen/` entries beside the symbol exemption
   G113 requires of it.
-- **What would settle it** **CRITERION:** a `handWritten` entry naming a
-  path that does not exist fails a test, wherever that path lives, and the
-  test's committed comment describes what actually checks it.
+- **What would settle it** **CRITERION, two clauses.** (a) A `handWritten`
+  entry naming a path that does not exist fails a test, wherever that path
+  lives, and the test's committed comment describes what actually checks it.
+  (b) What `handWritten` means outside `lib/schgen/` is stated once and
+  holds: either every hand-written file under `tests/schgen/` is listed, or
+  none is and the field refuses a non-`lib/schgen/` path. The present
+  two-listed-three-not state meets neither reading.
   **MECHANISM:** in `port-fidelity.test.ts`, assert every `handWritten`
   entry resolves to an existing file before the prefix filter narrows the
   set - a separate assertion from the `lib/schgen/` completeness one, since
-  the two answer different questions.
+  the two answer different questions - and settle (b) by narrowing the
+  field to `lib/schgen/` only, since `bun test` discovers test files by
+  glob and a declaration list it does not read buys nothing. **That second
+  half is the mechanism, not the criterion**: an implementer who finds a
+  reason the list should cover `tests/` instead should meet clause (b) that
+  way and record the deviation.
 
 ### G115 - `render/geometry.test.ts` is a fourth file R4 applies to, not ported this task either - same `fixtureResolver()`-at-module-scope shape as the three `ir/` tests G113 names
 
