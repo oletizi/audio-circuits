@@ -8527,18 +8527,39 @@ assert.
 TASK MAY WANT IT.** A `replacements` list on a `files[]` entry -
 `{ text, with, occurrences }`, validated exactly as `cuts` is and applied the
 same way - would be a generalisation of `cuts` that covers a *mechanical,
-local* substitution. Every one of the nine diverged test files needs only
-`{ kind: "labels", reason: X }` to become `{ kind: "bus", groups: [] }`, which
-is 17 sites of pure substitution, so all nine would have stayed in `files[]`
-and stayed byte-checked. It was rejected for Task 8 on two grounds, both
-arguable: **(1)** it puts new program text inside a JSON manifest, reviewable
-for a one-liner and unreviewable at any scale, and the line between the two
-is a judgement every future agent would redraw; **(2)** for these particular
-files the byte-check was going to be worth less than it looks, because the
-pedals source keeps `labels` permanently, so the two copies are *intended* to
-differ and a rewrite rule would have to encode that intent anyway. Ground (2)
-does not hold for the type widening, where the pedals source may well widen
-the same way later.
+local* substitution, keeping a file in `files[]` and byte-checked.
+
+**ROUND 1 REJECTED IT ON A LOAD-BEARING SENTENCE THAT IS FALSE, AND THE ENTRY
+WRITTEN IN THE SAME COMMIT DISPROVES IT.** It said *"every one of the nine
+diverged test files needs only `{ kind: "labels", reason: X }` to become
+`{ kind: "bus", groups: [] }`, which is 17 sites of pure substitution"*. **It
+is not one substitution and the nine were never mechanically divergeable**:
+
+- **G140**, written in the same commit, records that **16 sites go to
+  `{kind: "bus", groups: []}` and one to `{kind: "auto"}`**, and that the split
+  was *measured* - with `bus` in `ir/validate.test.ts` the `renderings` rule
+  adds *"net X is in no bus group"* to every assertion in the file. A
+  text-substitution rule cannot make that choice; a person had to.
+- The `reason:` strings differ site by site (`"test"`, `"t"`, `"fixture"`,
+  `"fixture peer"`, `"fixture: unused op-amp units"`), so the 17 sites are not
+  17 instances of one rule either.
+- `ir/classify.test.ts` needed a test RENAMED (*"labels every net of a
+  labels-rendered block"* → *"bus-rendered"*), which is not a substitution of
+  the construction at all.
+- `render/text-clearance.test.ts` needed an **unrelated** change in the same
+  file - `FieldScene.scope` → `block` - which belongs to the widening, not to
+  D3, and which no `labels` rule would have covered.
+
+So the honest ground for rejecting `replacements` is the first one only, and it
+stands on its own: **it puts new program text inside a JSON manifest**,
+reviewable for a one-liner and unreviewable at any scale, with a line between
+the two that every future agent would redraw. The second ground round 1 gave -
+that the pedals source keeps `labels` permanently, so the copies are *intended*
+to differ - is true and is why a rewrite rule would have had to encode the
+intent anyway; it does not hold for the type widening, where the pedals source
+may well widen the same way later. **That is exactly why `sourceSha` was taken
+up instead** (below): it is the one mechanism that covers all 26 files,
+including the thirteen `lib/` files the second ground does not reach.
 
 - **Found** 2026-10-19, Task 8, Step 4, as the obstruction ruling R18
   anticipated.
@@ -8561,17 +8582,58 @@ the same way later.
 - **Verified** CONFIRMED - this writer added the category, ran the porter,
   read `git status`, and ran `bun test tests/schgen/` (337 pass / 0 fail)
   before and after.
-- **Why it is open** the loss above is permanent for every file in the list
-  and grows with every later task that diverges one. The register entry is
-  the only place it is counted.
+**THE CRITERION WAS UNENFORCED FOR NINE OF THE 26 ENTRIES, WHICH ROUND 1
+CLAIMED IT WAS NOT.** The Task 8 report said *"deleting a declaration turns
+this test red… the bidirectional check is intact"*. **That was true for 16 of
+26 and false for nine** - the ported TEST files, which are the nine this entry
+flags as costliest. The completeness check filtered every non-`lib/schgen/`
+path out of **both** arms; nothing imports a test file, so the typecheck is
+silent; `bun test` finds it by glob and runs it; and `handWritten` was
+`lib/schgen/`-only, so nothing could hold it. **Deleting any of those nine
+declarations failed no check at all.** There was a second silent path as well:
+**relabelling** a `files[]` or `diverged[]` entry as `handWritten`, since
+nothing in that list reads `$SCHGEN_SOURCE`.
+
+**Three checks were added in review, under the reviewer's extension of R18**
+(it is his criterion, not this writer grading his own work), each perturbed:
+
+1. **Completeness over `tests/schgen/` as well as `lib/schgen/`**, both arms
+   unioning all three categories. `[RAN]` Deleting the `diverged` entry for
+   `render/drawnText.test.ts` now fails with *"on disk under tests/schgen/ but
+   in none of files[], diverged[] or handWritten"*. `handWritten` is widened to
+   both directories to make this possible - **which does not repeal ruling R6**:
+   R6 narrowed that field because it was neither a complete inventory nor no
+   inventory, and its rationale is about EXISTENCE (`bun test` finds files by
+   glob, so a declaration adds nothing to finding them). **Provenance is a
+   different question, and it is the one `diverged[]` created.** The list is now
+   complete over both directories, which is what R6 objected to its not being.
+2. **No `handWritten` path may shadow a pedals source file.** `[RAN]`
+   Relabelling `render/powerText.ts` as hand-written fails naming it
+   (*"lib/schgen/render/power-text.ts shadows render/powerText.ts"*), and the
+   byte-check fails too. One declared exception, in the test with its reason:
+   `tests/schgen/render/symbol-self-text.test.ts`, which is **G123**'s
+   hand-written transcription of a test that cannot be ported.
+3. **`sourceSha` per `diverged` entry** - SHA-256 of the pedals file as it stood
+   when the divergence was declared - failing when the source MOVES. `[RAN]`
+   Tampering with one hash fails naming the file and printing both hashes. It is
+   not a byte-check and must not be read as one: it watches the far end of the
+   line, and when it fires a human has to read the upstream diff and either
+   re-reconcile or re-stamp with a reason.
+
+- **Why it is open** the loss is reduced, not closed. `sourceSha` detects that
+  the source moved and can say nothing about whether this repository's copy
+  should take the change; and the 26 copies here still drift freely, checked by
+  nothing.
 - **What would settle it** **CRITERION:** a drift between a diverged file and
   its pedals source is detectable by a check in this repository, rather than
-  only by a person reading both. **MECHANISM, untried:** the `replacements`
-  list above, which returns a mechanically-diverged file to `files[]` and to
-  the byte-check; a weaker alternative is to record each diverged file's
-  source SHA in its entry and fail when the source moves, which detects
-  upstream change without reconciling it. Neither has been tried, and the
-  criterion does not require either.
+  only by a person reading both. **MECHANISM, half done:** `sourceSha` is the
+  half that detects upstream movement, and it covers all 26 files. The other
+  half - reconciling a moved source automatically - is what `replacements`
+  would have given for the mechanically-diverged files only, and it is rejected
+  above on the one ground that stands. **There is no mechanism for the thirteen
+  `lib/` files Task 8 rewrote, and there may not be one**: a file that was
+  deliberately rewritten cannot be re-derived from its source by any rule short
+  of writing the rewrite into the manifest.
 
 ### G140 - the `labels` rendering is DELETED from the port, which is a deliberate deviation from *port whole*, and it took a validation rule and a ported test with it
 
@@ -8638,8 +8700,11 @@ and one is `{ kind: "auto" }`, and the split is forced:
 
 - **Found** 2026-10-19, Task 8, Step 8.
 - **Evidence** `bun run typecheck` clean and `bun test tests/schgen/` at
-  **337 pass / 0 fail** with `labels` absent from `Rendering` - a check that
-  could have failed at 17 sites and at every `switch` over the union, and
+  **337 pass / 0 fail at commit `e5dd445`** with `labels` absent from
+  `Rendering` (the count is that commit's and is not reproducible later - the
+  same command is 362 across 45 files by the end of Task 8, since the task
+  adds test files; stamping the commit is what makes it checkable) - a check
+  that could have failed at 17 sites and at every `switch` over the union, and
   the `switch` in `report.ts` is exhaustive with no `default`, so an unhandled
   `auto` is a compile error rather than a silent `undefined`. The `bus`/`auto`
   split above was derived by reading `valuesAlong` (`render/power-text.ts`)
@@ -8749,14 +8814,27 @@ drifting it is the choice**, and this entry is the record.
 
 - **Found** 2026-10-19, Task 8, Step 8, while enumerating what the `labels`
   deletion touches.
-- **Evidence** `grep -rn 'labels renderer\|kind !== "wired"'
-  lib/schgen/render/power-text.ts` prints the comment at line 24 and the body
-  at line 30; `grep -rn 'valuesAlong' lib/ tests/` shows its three callers
-  (`field-placement.ts`, `drawn-extent.ts`, `layout-check.ts`), none of which
-  passes an `auto` rendering today, because nothing can yet render one - which
-  is why this is open rather than wrong.
+- **Evidence** `grep -n 'labels renderer\|kind !== "wired"'
+  lib/schgen/render/power-text.ts` prints the comment at line **24** and the
+  body at line **29**. `grep -rn 'valuesAlong' lib/ tests/ | grep -v
+  'power-text.ts'` shows **four** caller modules, at five call sites:
+  `fanout-rows.ts:44`, `drawn-extent.ts:40`, `layout-check.ts:171` and `:177`,
+  and `field-placement.ts:198`. None passes an `auto` rendering today, because
+  nothing can yet render one - which is why this is open rather than wrong.
+- **ROUND 1 OF THIS ENTRY MISSTATED ITS OWN GREP TWICE, AND THE OMISSION IS
+  THE SAME ONE G134 MADE.** It said line 30 for the body, and it said three
+  callers, omitting **`fanout-rows.ts:44`** - which is the exact site **G134**
+  found missing from `NO_FLAG_PRODUCER`'s enumeration, in the same file, on the
+  same line, discovered the same way. *"A shared reason's enumeration"* is
+  G134's phrase for this failure class, and this entry committed it while
+  recording a stale enumeration. The conclusion is unchanged and `fanout-rows`
+  is in fact the caller where it matters least - its `PowerSymbol` is measured
+  and discarded, never drawn - but **a recorded result that does not match the
+  command sends the next reader hunting a change that never happened**, which
+  is what this file's preamble says and what G134 says of itself.
 - **Verified** CONFIRMED - this writer read the function, its comment and
-  every caller.
+  every caller; the round-2 correction was RELAYED by the Task 8 reviewer and
+  both greps were re-run verbatim here before being written down.
 - **Why it is open** the first item needs an edit nobody has yet paid the
   divergence for; the second needs a decision that cannot be made before the
   ELK backend exists (Task 12).
@@ -8766,6 +8844,7 @@ drifting it is the choice**, and this entry is the record.
   does not have. **MECHANISM, untried:** Task 12 decides it with a real ELK
   layout in front of it, and diverges `power-text.ts` then, in one change
   with a reason - rather than this task diverging it to fix a sentence.
+
 ### G143 - measured: all thirty template refusal sites classified, and the split is **18 / 2 / 1 / 0 with nine forwards** - one kind has no site at all and one has exactly one
 
 Task 8's substance was reading each of the 30 `mismatch(reason)` sites and
@@ -8913,12 +8992,39 @@ pair would be a classification nobody can check, in the field a reader would
 trust most. `selectRenderer` turns that throw into a `backend-raised` mismatch,
 so the block is still refused - loudly, and never silently drawn.
 
+**AND ROUND 1 OF THIS MODULE RETURNED A PLAUSIBLE-AND-WRONG PAIR FOR A
+PRODUCER IT LISTED BY NAME, WHICH IS THE FAILURE THE PARAGRAPH ABOVE CLAIMS IT
+PREVENTS.** Found in review. `componentProblems` (`layout-check.ts:128`) writes
+`` `not-connected pin ${nc.what} touches ${whats(others)}` ``, and `whats`
+joins **every** other item in the component with `", "`. The `" touches "`
+relation had it, so with two or more others `obstacles[1]` came out as
+`"wire 3 of B, wire 4 of B"` - **a list in a field documented as one obstacle**,
+which Task 12 onward reads - and a **connectivity** defect (a pin declared not
+connected is touching something) was filed as a `clearance` violation with
+`constraint: "touches"`. Reachable: `connector-fanout` passes rotation 0's
+FIRST problem whatever it is. **The relation's own citation named
+`componentProblems` as one of its writers while the code mishandled it**, so
+the module documented the gap it had. Fixed by a declared `NOT_A_PAIR` list,
+checked before the relations, with its own citation and its own tests -
+matching a relation is necessary and **not sufficient**.
+
 **WHAT IT COSTS.** The pair is recovered by matching text, so a producer that
 rewords its message stops being recognised, and nothing fails until a layout
 actually collides that way: **the failure mode is a `backend-raised` refusal
-where a `clearance` one was meant**, which is loud but misclassified. The
-mitigation is the citation list - every phrase names its writer, so the claim
-is checkable by grep - not a test that holds the producers to their wording.
+where a `clearance` one was meant**, which is loud but misclassified.
+
+**The mitigation is now a check rather than a convention.** Round 1 said the
+mitigation was *"the citation list - every phrase names its writer, so the
+claim is checkable by grep"*, which is a thing a person could do and nothing
+did. Seven of the fifteen phrases have no asserted example (every example is a
+transcription, and transcribing fifteen is fifteen chances to transcribe
+wrongly), so **the test now asserts that each phrase OCCURS in the module its
+citation names**. `[RAN]` Repointing `" lies under "`'s citation at
+`wire-safety.ts` fails with *"`" lies under "` occurs in none of the modules
+its citation names (wire-safety.ts)"*; restored. **The residual is narrower and
+real**: occurrence does not establish that the phrase is written in the message
+sense rather than appearing in a comment, and a producer that rewords its
+message AND keeps the old wording in a comment would still pass.
 
 - **Found** 2026-10-19, Task 8, Step 6.
 - **Evidence** `tests/schgen/render/problem-obstacles.test.ts`, seven tests
@@ -8999,7 +9105,7 @@ in this repository yet, so today that is a latent cost rather than a live one.
   a weaker alternative is a lint that forbids a three-argument call outside
   `tests/`.
 
-### G147 - **the brief's selection rule is right for an `auto` block and wrong for a `wired` one**, and written as stated it turned 43 tests red by replacing declared templates with ELK
+### G147 - **the plan contradicts itself about the selection rule: decision D3 scopes it to `auto` and Step 7 restates it unscoped**, and the unscoped reading turned 43 tests red by replacing declared templates with ELK
 
 The Task 8 brief's Step 7: *"`wired` runs its declared template; `auto` tries
 `TEMPLATES` in registered order; **all `not-applicable` → `{kind:"elk"}`; any
@@ -9032,28 +9138,91 @@ template declined it is precisely the silent degradation G84 exists to
 prevent**, and it would have been undeclared as well: the render report would
 have said `wired` while ELK drew it.
 
+**AND THIS IS A FAITHFUL READING OF THE GOVERNING DOCUMENTS RATHER THAN AN
+IMPLEMENTER'S REFINEMENT OF THEM, WHICH ROUND 1 OF THIS ENTRY FAILED TO SAY.**
+Round 1 rested the whole case on the 43 red tests - which is evidence that the
+unscoped rule is wrong, and not an argument about what the rule IS. Three
+licenses, and the third is the one that settles it:
+
+1. **§1.3's ELK row quantifies over the LIBRARY, not over one template**: *"no
+   template **in the library** supports this topology → route the block through
+   ELK."* A `wired` block consults exactly one template, so a single
+   `not-applicable` **never establishes §1.3's precondition for the ELK
+   route**. The unscoped reading is the one that departs from §1.3.
+2. **§1.3 has no row at all for "a declared template does not apply."** Its
+   refusing row is *a template **supports** this topology and did not realise
+   it acceptably*. Wired-not-applicable is a fourth state, which exists only
+   because `Rendering.wired` names a template - and §1.3 never models rendering
+   variants. **There was nothing in §1.3 to replace.**
+3. **PLAN DECISION D3 ALREADY STATES THE RULE THIS WAY, inside the paragraph
+   defining `auto`**, and this writer implemented it without noticing: *"A new
+   variant `{ kind: "auto" }` is added by Task 8: try every template in the
+   registry's order; the first `ok` wins; **all** `not-applicable` selects ELK;
+   any `invalid-geometry`, `clearance` or `backend-raised` refuses."* Step 7 of
+   the plan then restates it with the `auto` scope dropped. **So the plan
+   contradicts itself, and what is implemented is the half D3 holds** - there
+   is no question here for the owner to overrule, only a document to make
+   self-consistent.
+
 So `selectRenderer` reaches `{kind:"elk"}` only for an `auto` block, and a
-wired block's last `not-applicable` becomes a `refused`. Spec §1.3's three
-rules are unchanged; what is added is the condition under which the first of
-them applies.
+wired block's last `not-applicable` becomes a `refused`. Spec §1.3's rules are
+unchanged and need no amending; what is written down is the scope D3 already
+gave them.
 
 - **Found** 2026-10-19, Task 8, Step 7, as a red suite on the first
   implementation of the rule as the brief states it.
-- **Evidence** the 43 failures above, which could not have happened if the
-  distinction did not matter, and which are the ported template tests'
-  assertions - not this task's. The corrected rule is held by
+- **Evidence** the plan's own two sentences, quoted above and checkable in
+  `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`: **D3's heading
+  is line 61 and its `auto` sentence is line 63** (scoped), against its Task 8
+  Step 7 at line 809 (unscoped). And the 43 failures, which are
+  the **ported** template tests' assertions rather than this task's, so they
+  could not have been written to suit the conclusion.
+- **AND ROUND 1 CITED A TEST THAT DOES NOT HOLD THE DISTINCTION, WHICH IS ITS
+  OWN FINDING.** It said *"the corrected rule is held by
   `tests/schgen/render/selection.test.ts`, whose `auto` fixture selects ELK and
-  whose `wired` fixture refuses; both arms were perturbed in Step 10 and each
-  went red by name.
-- **Verified** CONFIRMED - this writer wrote the rule both ways and ran the
-  suite each time.
-- **Why it is open** the brief, and the plan's Task 8 section it is drawn from,
-  still state the rule without the condition, and Tasks 9, 10, 12 and 15 are
-  written against that text. An implementer may not rewrite another task's
-  criteria.
-- **What would settle it** **CRITERION:** the plan's statement of the
-  selection rule distinguishes a declared template's refusal from an
-  undeclared block's, so that an implementer reading only the plan writes the
-  rule the ported tests already require. **MECHANISM, untried:** amend the
-  plan's Task 8 Step 7 and its `Produces` prose to say *all `not-applicable`
-  on an `auto` block selects ELK; on a `wired` block any mismatch refuses*.
+  whose `wired` fixture refuses"*. The wired fixture refused with
+  `invalid-geometry`, **which refuses under the unscoped rule too** - so
+  deleting the `rendering.kind === "auto"` condition left all four selection
+  tests green and only the ported template tests red. Measured in review. A
+  fourth case now holds it: *"a declared template that does not apply
+  REFUSES; only an auto block falls to ELK"*, a `wired` divider block given the
+  T network of `divider.test.ts`, asserting `refused` **and**
+  `mismatch.kind === "not-applicable"`. `[RAN]` With the condition deleted it
+  fails alone:
+
+  ```
+  (fail) selectRenderer > a declared template that does not apply REFUSES; only an auto block falls to ELK
+  Expected: "refused"
+  Received: "elk"
+  ```
+
+  Restored; 5 pass / 0 fail. Step 10's two perturbations removed the whole
+  `return { kind: "elk" }` line or rerouted `invalid-geometry`, which are
+  different edits testing different things and neither of which discriminates
+  this rule.
+- **Verified** CONFIRMED - this writer wrote the rule both ways, ran the suite
+  each time, and ran the condition-deletion perturbation against the new fourth
+  test. The three licenses above were RELAYED by the Task 8 reviewer; the D3
+  quotation was re-read in the plan before being written down here.
+- **THE PLAN'S HALF IS ALREADY CLOSED, BY SOMEONE ELSE.** `[CODE]` Step 7 at
+  line 808 now opens *"CORRECTED 2026-10-20 by controller ruling R19 - this
+  step contradicted D3 and D3 is right"*, carries D3's scope in both
+  directions, and cites this entry. Verified by reading it. **The Task 8 brief
+  under `.superpowers/` still states the rule unscoped once**, and that file is
+  gitignored, so nothing in the committed tree disagrees with itself any more.
+- **Why it is open** not for the plan's sake. It stays because its content is
+  what a later task needs and cannot re-derive: **the three licenses** (so
+  nobody re-opens the question by reading §1.3 alone and finding no row for
+  this state), and **the 43-test measurement** (so nobody re-tries the unscoped
+  rule to see what happens). Tasks 9, 10, 12 and 15 are written against this
+  rule, and the one place it is stated in code is `selectRenderer`'s comment,
+  which is prose beside an implementation - the shape **G132** item 1 objects
+  to, since nothing checks that the two still agree.
+- **What would settle it** **CRITERION:** the asymmetry is enforced by a check
+  rather than described, so a future edit that routes a declared template's
+  `not-applicable` to ELK fails by name rather than by 43 tests that are about
+  something else. **MECHANISM, done:**
+  `tests/schgen/render/selection.test.ts`'s fourth case is that check, and
+  deleting the condition fails it alone (above). What remains unchecked, and is
+  the residual, is that `selectRenderer`'s canonical comment still matches what
+  the function does - no check compares them.

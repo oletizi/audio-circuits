@@ -119,8 +119,10 @@ export interface TemplateAnchor {
  * generation error, not a degraded drawing.
  *
  * `auto` is the opposite claim: the block has no declared template and the renderer chooses one,
- * falling to the ELK backend only when EVERY template reports `not-applicable` (see
- * `render/blocks.ts`'s `selectRenderer`). It carries no payload, and it carries no anchor - which
+ * falling to the ELK backend only when EVERY template reports `not-applicable`. **The rule is
+ * stated once, on `selectRenderer` in `render/blocks.ts`** - the sentence here is scoped to this
+ * variant and is correct in place, but the canonical version is there and says what a `wired`
+ * block does differently. It carries no payload, and it carries no anchor - which
  * is why the four anchor-driven templates can never apply to an `auto` block; see
  * `docs/known-gaps.md` **G141**.
  */

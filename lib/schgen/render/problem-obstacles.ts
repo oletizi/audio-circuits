@@ -20,11 +20,16 @@
  * the strings already have, declared here as data, and `docs/known-gaps.md` **G145** records the
  * deviation.
  *
- * **IT REFUSES RATHER THAN GUESSING.** Many `checkLayout` problems name ONE subject - *"unit R1#1
- * is not placed"*, *"net N is split into 2 pieces"* - and some name three. `obstaclesOf` returns
- * `null` for every string whose relation is not in `RELATIONS`, and the caller throws naming the
- * problem and this file. An invented obstacle pair would be worse than a refusal: it is a
- * classification nobody can check, in the field a reader would trust most.
+ * **IT REFUSES RATHER THAN GUESSING, IN TWO WAYS.** Many `checkLayout` problems name ONE subject -
+ * *"unit R1#1 is not placed"*, *"net N is split into 2 pieces"* - and some name three.
+ * `obstaclesOf` returns `null` for every string whose relation is not in `RELATIONS`, **and for
+ * the forms in `NOT_A_PAIR`, which contain a relation phrase and still do not name a pair.** The
+ * caller then throws naming the problem and this file. An invented obstacle pair would be worse
+ * than a refusal: it is a classification nobody can check, in the field a reader would trust most.
+ *
+ * **The second kind of refusal exists because the first was not enough, found in review.** A
+ * problem can hold `" touches "` and mean something else entirely - see `NOT_A_PAIR` - so matching
+ * a relation is necessary and not sufficient.
  */
 /**
  * Where the two obstacles of a problem sit in its text, keyed by the relation phrase that joins
@@ -45,7 +50,7 @@ const RELATIONS: readonly Relation[] = [
   { infix: " overlaps ", constraint: "overlaps", writtenBy: "textProblems (text-scene.ts); bodyGlyphProblems and glyphGlyphProblems (glyph-clearance.ts)" },
   { infix: " lies under ", constraint: "lies under", writtenBy: "textProblems (text-scene.ts), the DNP-cross loop" },
   { infix: " crosses the border of ", constraint: "crosses frame border", writtenBy: "textProblems (text-scene.ts), the frame loop" },
-  { infix: " touches ", constraint: "touches", writtenBy: "glyphPair (glyph-clearance.ts); componentProblems (layout-check.ts), the not-connected pin loop" },
+  { infix: " touches ", constraint: "touches", writtenBy: "glyphPair (glyph-clearance.ts)" },
   { infix: " lies on the line of pin ", constraint: "on pin line", writtenBy: "onPinLine (body-clearance.ts)" },
   { infix: " passes through the body of ", constraint: "through body", writtenBy: "clearanceProblems (body-clearance.ts), the wire loop" },
   { infix: " lies inside the body of ", constraint: "inside body", writtenBy: "clearanceProblems (body-clearance.ts), the anchor loop" },
@@ -61,6 +66,30 @@ const RELATIONS: readonly Relation[] = [
 
 /** `bodies of <a> and <b> overlap` - the one producer that puts both obstacles in front. */
 const BODIES = /^bodies of (.+) and (.+) overlap$/;
+
+/**
+ * **Problem forms that LOOK like a pair and are not one.** Checked before `RELATIONS`, so
+ * `obstaclesOf` returns nothing for them and the caller refuses loudly.
+ *
+ * `componentProblems` (`layout-check.ts`) writes
+ * `` `not-connected pin ${nc.what} touches ${whats(others)}` ``, and `whats` joins **every** other
+ * item in the component with `", "`. Two things are wrong with letting the `" touches "` relation
+ * have it, and the second is worse than the first:
+ *
+ * 1. with two or more others, the second obstacle would be a LIST - `"wire 3 of B, wire 4 of B"` -
+ *    in a field documented as one obstacle, which Task 12 onward reads;
+ * 2. it is a **connectivity** defect - a pin declared not connected is touching something - and
+ *    filing it as a `clearance` violation with `constraint: "touches"` would classify it as a
+ *    drawing collision. A plausible-and-wrong classification is worse than a refusal, which is
+ *    the whole reason this module returns `null` rather than guessing.
+ *
+ * This was a live defect, not a precaution: the relation's citation named `componentProblems` as
+ * one of its writers while the code mishandled it, and `connector-fanout` passes rotation 0's
+ * FIRST problem whatever it is, so it was reachable.
+ */
+const NOT_A_PAIR: readonly { readonly form: RegExp; readonly writtenBy: string }[] = [
+  { form: /^not-connected pin /, writtenBy: "componentProblems (layout-check.ts), the not-connected pin loop" },
+];
 
 /**
  * A qualifier a producer appends after the second obstacle, which is prose about the PROBLEM
@@ -96,6 +125,8 @@ export interface ProblemObstacles {
  * holds that ordering with the real problem strings of both.
  */
 export function obstaclesOf(problem: string): ProblemObstacles | null {
+  // Before anything else: a form that looks like a pair and is not one (see NOT_A_PAIR).
+  if (NOT_A_PAIR.some((n) => n.form.test(problem))) return null;
   const bodies = BODIES.exec(problem);
   if (bodies !== null) {
     const a = bodies[1];
@@ -118,3 +149,6 @@ export const RELATION_INFIXES: readonly string[] = RELATIONS.map((r) => r.infix)
 
 /** Who writes each relation, by infix - cited so a reader can check the claim rather than take it. */
 export const RELATION_WRITERS: ReadonlyMap<string, string> = new Map(RELATIONS.map((r) => [r.infix, r.writtenBy]));
+
+/** The forms refused by name (see `NOT_A_PAIR`), each with the function that writes it. */
+export const REFUSED_FORMS: readonly { readonly form: RegExp; readonly writtenBy: string }[] = NOT_A_PAIR;

@@ -163,9 +163,13 @@ export function describeMismatch(m: Mismatch): string {
 
 /**
  * What a renderer was chosen for one block: a template that realised it, the ELK backend, or
- * nothing at all. `selectRenderer` (`render/blocks.ts`) is what decides, and §1.3's rule is that
- * **`elk` is reachable only when every template reported `not-applicable`** - any other mismatch
- * is `refused`, and ELK does not get a turn.
+ * nothing at all.
+ *
+ * **`selectRenderer` (`render/blocks.ts`) is where the rule is stated, and it is stated there
+ * ONCE.** Do not restate it here or anywhere else: the first version of this comment said *"`elk`
+ * is reachable only when every template reported `not-applicable`"*, which is true of an `auto`
+ * block and false of a `wired` one, and a Task 9-15 implementer reading it would have written the
+ * wrong rule. `docs/known-gaps.md` **G147** records why the two differ.
  */
 export type Selection =
   | { readonly kind: "template"; readonly template: TemplateId; readonly layout: BlockLayout }

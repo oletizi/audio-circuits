@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { loadManifest, rewrite } from "../../tools/schgen/port.ts"
@@ -83,24 +84,24 @@ test("every copied (non-.ts) fixture is byte-identical to its pedals source", ()
  * a complete inventory nor no inventory at all; `bun test` discovers test
  * files by glob, so a declaration list it does not read bought nothing.
  */
-test("every handWritten entry is under lib/schgen/ and is on disk", () => {
+test("every handWritten entry is under lib/schgen/ or tests/schgen/ and is on disk", () => {
   const manifest = loadManifest()
   const repoRoot = moduleRepoRoot()
   expect(manifest.handWritten.length, "an empty handWritten list is a check that cannot fail")
     .toBeGreaterThan(0)
-  const outsideLibSchgen = manifest.handWritten.filter((p) => !p.startsWith("lib/schgen/")).sort()
+  const DECLARED_ROOTS = ["lib/schgen/", "tests/schgen/"]
+  const outsideScope = manifest.handWritten.filter((p) => !DECLARED_ROOTS.some((r) => p.startsWith(r))).sort()
   const missing = manifest.handWritten.filter((p) => !fs.existsSync(path.join(repoRoot, p))).sort()
   expect(
-    outsideLibSchgen,
-    "handWritten declares hand-written files under lib/schgen/ and nothing else - a " +
-      "hand-written test under tests/schgen/ is discovered by bun test's glob and needs no " +
-      "declaration. Remove these, or change the rule in PortManifest.handWritten and here.",
+    outsideScope,
+    "handWritten declares hand-written files under lib/schgen/ and tests/schgen/ and nothing " +
+      "else. Remove these, or change the rule in PortManifest.handWritten, here, and in the " +
+      "completeness check below - all three state the same scope.",
   ).toEqual([])
   expect(
     missing,
-    "these handWritten paths are not on disk. A typo here is otherwise invisible: the " +
-      "completeness check below filters a non-lib/schgen/ entry out of both arms, and bun " +
-      "test never discovers a file it cannot find.",
+    "these handWritten paths are not on disk. A typo here is otherwise invisible: bun test never " +
+      "discovers a file it cannot find, so the suite stays green with fewer tests.",
   ).toEqual([])
 })
 
@@ -131,6 +132,7 @@ test("every diverged entry names a real pedals source, a file on disk, and its r
   const manifest = loadManifest()
   const repoRoot = moduleRepoRoot()
   expect(manifest.diverged.length, "an empty diverged list is a check that cannot fail").toBeGreaterThan(0)
+  expect(new Set(manifest.diverged.map((d) => d.from)).size, "two entries claiming one source").toBe(manifest.diverged.length)
   const missingSource = manifest.diverged.filter((d) => !fs.existsSync(path.join(sourceRoot, d.from))).map((d) => d.from).sort()
   const missingFile = manifest.diverged.filter((d) => !fs.existsSync(path.join(repoRoot, d.to))).map((d) => d.to).sort()
   const unexplained = manifest.diverged.filter((d) => d.task.trim() === "" || d.why.trim() === "").map((d) => d.to).sort()
@@ -141,6 +143,88 @@ test("every diverged entry names a real pedals source, a file on disk, and its r
   ).toEqual([])
   expect(missingFile, "these diverged paths are not on disk").toEqual([])
   expect(unexplained, "a diverged file must say which task diverged it and why").toEqual([])
+})
+
+/**
+ * **AND THE SOURCE HAS NOT MOVED SINCE IT DIVERGED.**
+ *
+ * This is the only check a diverged file gets beyond existing, and it recovers the half of
+ * **G139**'s loss that is otherwise total: nothing compares a diverged file against its source
+ * again, so an upstream fix or refactor in `digital-pedal-platform` is invisible here. A
+ * `sourceSha` is SHA-256 of the pedals file as it stood when the divergence was declared, so when
+ * the source MOVES this fails naming the file. It cannot say whether the move matters - only that
+ * a human has to look and either re-reconcile the divergence or re-stamp the hash with a reason.
+ *
+ * **It is NOT a byte-check and must not be read as one.** It says nothing about this repository's
+ * copy, which may drift freely; it watches the other end of the line. Added in Task 8's review as
+ * **G139**'s own weaker mechanism, because the stronger one (`replacements`) does not apply to the
+ * thirteen `lib/` files Task 8 genuinely rewrote.
+ */
+test("every diverged file's pedals source is unchanged since it diverged", () => {
+  const sourceRoot = requireSourceRoot()
+  const manifest = loadManifest()
+  expect(manifest.diverged.length, "an empty diverged list is a check that cannot fail").toBeGreaterThan(0)
+  const moved: string[] = []
+  for (const d of manifest.diverged) {
+    const sha = crypto.createHash("sha256").update(fs.readFileSync(path.join(sourceRoot, d.from))).digest("hex")
+    if (sha !== d.sourceSha) moved.push(`${d.from}: declared ${d.sourceSha}, source is now ${sha}`)
+  }
+  expect(
+    moved,
+    "the pedals source of these diverged files has changed since they diverged. Nothing here can " +
+      "tell whether the change matters: read the upstream diff, decide whether this repository's " +
+      "copy should take it, and then re-stamp sourceSha in the same change with the reason.",
+  ).toEqual([])
+})
+
+/**
+ * **A HAND-WRITTEN FILE MAY NOT SHADOW A PEDALS SOURCE FILE**, which closes the second silent
+ * path out of the manifest: relabelling a `files[]` or `diverged[]` entry as `handWritten`.
+ * Nothing in `handWritten` reads `$SCHGEN_SOURCE`, so a relabelled entry would lose its `from`,
+ * its reason and (for a divergence) its `sourceSha`, and no check would notice.
+ *
+ * The candidate pedals path is derived mechanically - drop the `lib/schgen/` or `tests/schgen/`
+ * prefix, and try both the kebab-case name and its camelCase form, which is the only rename the
+ * port performs. That is an over-approximation of the port's own mapping and deliberately so: it
+ * is cheap and it errs toward refusing.
+ *
+ * **ONE DECLARED EXCEPTION, and it is a recorded one.**
+ * `tests/schgen/render/symbol-self-text.test.ts` does shadow
+ * `render/symbolSelfText.test.ts`: that test is import-clean and still cannot be ported, because
+ * its fixture leaks a `mkdtemp` directory that the repository's temp-scratch guard refuses and a
+ * `cuts` entry cannot add cleanup. `docs/known-gaps.md` **G123** carries the evidence, the
+ * mechanisms ruled out, and the residual - that this hand-written transcription is byte-checked
+ * against nothing. The exception is listed here rather than in the manifest so that adding one
+ * means editing a test and saying why.
+ */
+const SHADOWS_A_PEDALS_FILE_BY_DECISION: Readonly<Record<string, string>> = {
+  "tests/schgen/render/symbol-self-text.test.ts":
+    "G123: render/symbolSelfText.test.ts is import-clean but its fixture leaks a mkdtemp directory, " +
+    "which tests/stripboard/temp-scratch.test.ts refuses and a cuts entry cannot fix. This is a " +
+    "hand-written transcription of it, and G123 records that nothing byte-checks it.",
+}
+
+test("no hand-written file shadows a pedals source file", () => {
+  const sourceRoot = requireSourceRoot()
+  const manifest = loadManifest()
+  const camel = (s: string): string => s.replace(/-([a-z])/g, (_m, c: string) => c.toUpperCase())
+  const shadowing: string[] = []
+  for (const p of manifest.handWritten) {
+    const rel = p.replace(/^lib\/schgen\//, "").replace(/^tests\/schgen\//, "")
+    const candidates = [...new Set([rel, camel(rel), path.posix.join(path.posix.dirname(rel), camel(path.posix.basename(rel)))])]
+    const hits = candidates.filter((c) => fs.existsSync(path.join(sourceRoot, c)))
+    if (hits.length > 0 && SHADOWS_A_PEDALS_FILE_BY_DECISION[p] === undefined) shadowing.push(`${p} shadows ${hits.join(", ")}`)
+  }
+  expect(
+    shadowing,
+    "these are declared hand-written and the pedals source has a counterpart. Either they are " +
+      "ports and belong in files[] or diverged[] with their provenance, or the shadowing is " +
+      "deliberate and belongs in SHADOWS_A_PEDALS_FILE_BY_DECISION with a register entry.",
+  ).toEqual([])
+  // The exemption list is held to being live: an entry for a file that no longer shadows anything
+  // is an exemption nobody can see expire.
+  const stale = Object.keys(SHADOWS_A_PEDALS_FILE_BY_DECISION).filter((p) => !manifest.handWritten.includes(p))
+  expect(stale, "these are exempted from shadowing but are not declared hand-written any more").toEqual([])
 })
 
 /**
@@ -186,41 +270,45 @@ function listTsFiles(repoRoot: string, dir: string): string[] {
  * (which only iterates `manifest.files`), so "every ported file is its
  * source" stays green while a file under `lib/schgen/` silently is not.
  *
- * A `files[].to` destination outside `lib/schgen/` - a ported test under
- * `tests/schgen/`, since Task 2 - is a different kind of claim, that *this*
- * destination is on disk holding exactly the rewritten source, and the first
- * test above is what checks it. Such an entry is excluded here rather than
- * compared against a `lib/schgen/` directory listing it never claimed to be
- * complete over.
+ * **SINCE TASK 8's REVIEW IT COVERS `tests/schgen/` TOO, and that is the half
+ * that was missing rather than a flourish.** The check used to filter every
+ * non-`lib/schgen/` path out of **both** arms, on the reasoning that a ported
+ * test's `files[].to` is a different claim (that *this* destination holds
+ * exactly the rewritten source) which the first test in this file checks. True
+ * - but it left a hole that `diverged[]` opened: **deleting the `diverged`
+ * declaration of a ported TEST file failed no check at all.** Nothing imports
+ * a test file, so the typecheck is silent; `bun test` finds it by glob and
+ * runs it; it was filtered out of both arms here; and `handWritten` could not
+ * hold it. Nine of Task 8's 26 divergences are ported test files, and
+ * `docs/known-gaps.md` **G139** flags those nine as the costliest - so the one
+ * clause of ruling R18 that is enforced over the directory rather than over
+ * the manifest did not reach them.
  *
- * **`handWritten` has no entry outside `lib/schgen/` to exclude**, and the
- * test above is what holds it to that. The earlier version of this comment
- * said a non-`lib/schgen/` entry was covered "by `bun test` simply failing to
- * find the file", which was false in both directions: `bun test` discovers
- * test files by glob, so a misspelt entry names a file nothing looks for and
- * the suite stays green with fewer tests.
- *
- * **Since Task 8 the accounting has three arms, not two**, and the third is
- * why this check stays whole rather than shrinking: a diverged file is still
- * ACCOUNTED FOR here, so deleting its declaration does not quietly remove it
- * from the bidirectional comparison - it turns this test red naming the file
- * as unaccounted. That is ruling R18's "nothing can diverge without being
- * declared", in the one place it can be enforced over the directory rather
- * than over the manifest.
+ * Both directories are now listed, both arms union all three categories, and a
+ * deleted declaration in either turns this red naming the file. The earlier
+ * comment's claim that a non-`lib/schgen/` entry was covered "by `bun test`
+ * simply failing to find the file" was false in both directions and is gone.
  */
-test("every .ts file under lib/schgen/ is ported, diverged, or declared hand-written", () => {
+const DECLARED_DIRS = ["lib/schgen", "tests/schgen"] as const
+
+test("every .ts file under lib/schgen/ and tests/schgen/ is ported, diverged, or declared hand-written", () => {
   const manifest = loadManifest()
   const repoRoot = moduleRepoRoot()
-  const onDisk = new Set(listTsFiles(repoRoot, path.join(repoRoot, "lib/schgen")))
-  const underLibSchgen = (p: string): boolean => p.startsWith("lib/schgen/")
-  const portedUnderLibSchgen = manifest.files.map((f) => f.to).filter(underLibSchgen)
-  const divergedUnderLibSchgen = manifest.diverged.map((d) => d.to).filter(underLibSchgen)
-  const handWrittenUnderLibSchgen = manifest.handWritten.filter(underLibSchgen)
-  const accountedFor = new Set([...portedUnderLibSchgen, ...divergedUnderLibSchgen, ...handWrittenUnderLibSchgen])
+  expect(DECLARED_DIRS.length, "a directory list nothing iterates is a check that cannot fail").toBe(2)
+  for (const dir of DECLARED_DIRS) {
+    const onDisk = new Set(listTsFiles(repoRoot, path.join(repoRoot, dir)))
+    expect(onDisk.size, `no .ts files found under ${dir}/, so this iteration proves nothing`).toBeGreaterThan(0)
+    const under = (p: string): boolean => p.startsWith(`${dir}/`)
+    const accountedFor = new Set([
+      ...manifest.files.map((f) => f.to).filter(under),
+      ...manifest.diverged.map((d) => d.to).filter(under),
+      ...manifest.handWritten.filter(under),
+    ])
 
-  const unaccountedOnDisk = [...onDisk].filter((f) => !accountedFor.has(f)).sort()
-  const accountedButMissing = [...accountedFor].filter((f) => !onDisk.has(f)).sort()
+    const unaccountedOnDisk = [...onDisk].filter((f) => !accountedFor.has(f)).sort()
+    const accountedButMissing = [...accountedFor].filter((f) => !onDisk.has(f)).sort()
 
-  expect(unaccountedOnDisk, "on disk under lib/schgen/ but in none of files[], diverged[] or handWritten").toEqual([])
-  expect(accountedButMissing, "in files[], diverged[] or handWritten but not on disk under lib/schgen/").toEqual([])
+    expect(unaccountedOnDisk, `on disk under ${dir}/ but in none of files[], diverged[] or handWritten`).toEqual([])
+    expect(accountedButMissing, `in files[], diverged[] or handWritten but not on disk under ${dir}/`).toEqual([])
+  }
 })

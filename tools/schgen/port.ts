@@ -125,6 +125,21 @@ export interface DivergedEntry {
   readonly task: string
   /** Why it diverged: what changed and what rule or decision required it. */
   readonly why: string
+  /**
+   * SHA-256 of `from`'s content **as it stood when this file diverged**, lower-case hex.
+   *
+   * **This is the only check a diverged file gets beyond existing**, and it recovers the half of
+   * the loss that matters most: a diverged file is never compared against its source again, so an
+   * upstream fix or refactor in `digital-pedal-platform` is invisible here. With this,
+   * `port-fidelity.test.ts` fails when the source MOVES - it cannot say whether the move matters,
+   * only that a human now has to look at it and either re-reconcile the divergence or re-stamp
+   * the hash with a reason.
+   *
+   * It is `docs/known-gaps.md` **G139**'s own weaker mechanism, taken up in review because the
+   * stronger one (`replacements`, which would have returned mechanically-diverged files to the
+   * byte-check) does not apply to the thirteen `lib/` files this task genuinely rewrote.
+   */
+  readonly sourceSha: string
 }
 
 export interface PortManifest {
@@ -145,22 +160,35 @@ export interface PortManifest {
    */
   readonly diverged: readonly DivergedEntry[]
   /**
-   * Every hand-written (never ported) `.ts` file **under `lib/schgen/`**,
-   * repo-relative. `tests/schgen/port-fidelity.test.ts` asserts this list
-   * plus `files[].to` is the *complete* set of `.ts` files under that
-   * directory, so a new hand-written file there must be added here
-   * deliberately, or the test fails naming it, rather than silently passing
-   * as if it were ported.
+   * Every hand-written (never ported) `.ts` file under `lib/schgen/` **and under
+   * `tests/schgen/`**, repo-relative. `tests/schgen/port-fidelity.test.ts` asserts
+   * this list plus `files[].to` plus `diverged[].to` is the *complete* set of
+   * `.ts` files under BOTH directories, so a new hand-written file in either
+   * must be added here deliberately, or the test fails naming it, rather than
+   * silently passing as if it were ported.
    *
-   * **A PATH OUTSIDE `lib/schgen/` DOES NOT BELONG HERE**, and
-   * `port-fidelity.test.ts` fails on one. The field carried two
-   * `tests/schgen/` entries "for visibility" (Tasks 2 and 3) while three
-   * other hand-written files under `tests/schgen/` were not listed, so it was
-   * neither a complete inventory of hand-written files nor no inventory at
-   * all - a reader could not use it as either. `bun test` discovers test
-   * files by glob and reads nothing here, so the declaration bought nothing
-   * while the inconsistency misled. Narrowed in Task 4 under Controller
-   * ruling R6.
+   * **IT COVERED `lib/schgen/` ONLY UNTIL TASK 8 ROUND 2, AND WIDENING IT DOES NOT
+   * REPEAL RULING R6 - IT ANSWERS A QUESTION R6 DID NOT ASK.** R6 narrowed this
+   * field in Task 4 because it carried two `tests/schgen/` entries "for
+   * visibility" while three other hand-written files there were not listed: it
+   * was neither a complete inventory nor no inventory, and a reader could not use
+   * it as either. **That rationale is about EXISTENCE** - `bun test` discovers
+   * test files by glob, so a declaration list adds nothing to finding them - and
+   * existence is still not why these entries are here. They are here for
+   * **PROVENANCE**, which R6's reasoning does not cover: with `diverged[]` (Task
+   * 8) a file can leave `files[]` legitimately, so "is this file a port, a
+   * divergence, or hand-written?" became a question the manifest must answer for
+   * every file - and for the nine ported TEST files Task 8 diverged, nothing
+   * answered it. Deleting one of their declarations failed no check. The list is
+   * now COMPLETE over both directories, which is what R6 actually objected to its
+   * not being.
+   *
+   * **AND NO ENTRY HERE MAY SHADOW A PEDALS SOURCE FILE.** A second
+   * `port-fidelity.test.ts` assertion derives each entry's candidate pedals path
+   * and fails if it exists, because relabelling a `files[]` or `diverged[]` entry
+   * as hand-written would otherwise erase its provenance silently - nothing here
+   * reads `$SCHGEN_SOURCE`. There is exactly one declared exception and it is in
+   * that test, citing `docs/known-gaps.md` **G123**.
    */
   readonly handWritten: readonly string[]
 }
@@ -212,12 +240,21 @@ function readFileEntry(value: unknown, where: string): ManifestFileEntry {
 
 function readDivergedEntry(value: unknown, where: string): DivergedEntry {
   if (!isRecord(value)) throw new Error(`${where}: each diverged[] entry must be an object`)
-  rejectUnknown(value, ["from", "to", "task", "why"], where)
+  rejectUnknown(value, ["from", "to", "task", "why", "sourceSha"], where)
+  const sourceSha = readString(value, "sourceSha", where)
+  if (!/^[0-9a-f]{64}$/.test(sourceSha)) {
+    throw new Error(
+      `${where}: "sourceSha" must be 64 lower-case hex digits (SHA-256 of the pedals source as it ` +
+        `stood when this file diverged); got "${sourceSha}". Compute it with ` +
+        "`shasum -a 256 \"$SCHGEN_SOURCE/<from>\"` rather than guessing.",
+    )
+  }
   return {
     from: readString(value, "from", where),
     to: readString(value, "to", where),
     task: readString(value, "task", where),
     why: readString(value, "why", where),
+    sourceSha,
   }
 }
 

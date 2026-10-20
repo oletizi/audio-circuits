@@ -7,13 +7,20 @@
  * file is *"if ELK rescues a template that should have worked, defects in the preferred rendering
  * path go dark."* So the rule is asymmetric on purpose:
  *
- * - **every** mismatch `not-applicable` - no template claims the topology, nothing was drawn,
- *   nothing is hidden - selects the ELK backend;
+ * - **every** mismatch `not-applicable`, **on an `auto` block** - no template claims the topology,
+ *   nothing was drawn, nothing is hidden - selects the ELK backend;
  * - **any** other mismatch - a template applied, drew something, and disagreed with the IR or
- *   violated a clearance - REFUSES, and ELK does not get a turn.
+ *   violated a clearance - REFUSES, and ELK does not get a turn;
+ * - and a **`wired`** block's `not-applicable` REFUSES too, because the author declared that
+ *   template and §1.3's ELK row quantifies over the library (*"no template in the library supports
+ *   this topology"*), which one template declining can never establish. Plan decision **D3** says
+ *   it the same way, inside the paragraph defining `auto`. `docs/known-gaps.md` **G147**.
  *
- * Both directions are perturbation-tested in the Task 8 report: routing `invalid-geometry` to ELK
- * turns the second test red by name, and refusing `not-applicable` turns the first red.
+ * **THE FOURTH TEST IS THE ONE THAT HOLDS THAT LAST RULE, AND IT WAS MISSING IN ROUND 1.** The
+ * refusing fixture below is a `wired` regulator returning `invalid-geometry`, which refuses under
+ * the unqualified rule too - so deleting the `rendering.kind === "auto"` condition in
+ * `selectRenderer` left all of these green and only the ported template tests red. All four
+ * perturbations are in the Task 8 report; the one that discriminates is the fourth.
  *
  * **THE FIXTURES ARE REAL TEMPLATES ON REAL SUBGRAPHS**, not stubs. The refusing one is the
  * regulator fixture `tests/schgen/render/templates/regulator.test.ts` already uses for its
@@ -68,6 +75,15 @@ const subgraphWhoseGeometryFails = (): BlockSubgraph =>
 const dividerSubgraph = (): BlockSubgraph =>
   graphOf([res("R_TOP", "3V3", "TAP"), res("R_BOT", "TAP", "GND"), cap("C_TAP", "TAP", "GND")], DIVIDER, ["TAP"])
 
+/**
+ * A block that DECLARES the divider template and is not a divider: the T network of
+ * `templates/divider.test.ts`, whose shunt hangs from a node above the last one, so `divider.ts`
+ * reports *"parts to GND start from different nodes (B, A)"* - a `not-applicable`, the only kind
+ * whose handling depends on the rendering variant.
+ */
+const subgraphDeclaringATemplateThatDoesNotApply = (): BlockSubgraph =>
+  graphOf([res("R1", "3V3", "A"), res("R2", "A", "B"), res("R3", "B", "GND"), cap("C1", "A", "GND")], DIVIDER, [])
+
 describe("selectRenderer", () => {
   test("only not-applicable selects ELK", () => {
     expect(selectRenderer(subgraphNoTemplateFits(), TEMPLATES).kind).toBe("elk")
@@ -88,6 +104,27 @@ describe("selectRenderer", () => {
     if (s.kind === "template") {
       expect(s.template).toBe("divider")
       expect(s.layout.placements.map((p) => p.part).sort()).toEqual(["C_TAP", "R_BOT", "R_TOP"])
+    }
+  })
+
+  /**
+   * **A DECLARED TEMPLATE'S `not-applicable` REFUSES, AND THIS IS THE ONLY TEST HERE THAT SAYS
+   * SO.** The other three pass under the unqualified rule *"all not-applicable selects ELK"*; this
+   * one is what makes `selectRenderer` disagree with it. Deleting the
+   * `rendering.kind === "auto"` condition turns exactly this test red, which is the perturbation
+   * worth having, and the ported template tests red with it.
+   *
+   * The reason the rule is asymmetric is in the header: `{kind:"wired", template:"divider"}` is an
+   * author asserting *this block is drawn by the divider template*, so the template declining it
+   * makes the assertion false - a generation error naming the block and the template, not an
+   * invitation to a general router that nothing declared.
+   */
+  test("a declared template that does not apply REFUSES; only an auto block falls to ELK", () => {
+    const s = selectRenderer(subgraphDeclaringATemplateThatDoesNotApply(), TEMPLATES)
+    expect(s.kind).toBe("refused")
+    if (s.kind === "refused") {
+      expect(s.mismatch.kind).toBe("not-applicable")
+      expect(s.mismatch.reason).toContain("parts to GND start from different nodes")
     }
   })
 

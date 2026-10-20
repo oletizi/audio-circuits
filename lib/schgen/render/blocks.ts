@@ -69,6 +69,15 @@ export function subgraphOf(c: Circuit, id: BlockId, symbols: SymbolResolver): Bl
  * drawn. **A throw is NEVER `not-applicable`**, so it can never select ELK: a template that
  * crashed has told us nothing about whether its idiom fits, and treating a crash as "does not
  * apply" is exactly how a defect in the preferred rendering path goes dark (**G84**).
+ *
+ * **THIS IS THE TASK 8 BRIEF'S `attributed(…)`, UNDER A NEW NAME.** The brief says *"`attributed(…)`
+ * returns `backendRaised("template", …)` instead of rethrowing"*. The ported `attributed` wrapped
+ * two different things - the template call and the layout check - and only the first should become
+ * a value: a `checkLayout` that throws is this generator failing to check, not a block that cannot
+ * be drawn, and turning it into a mismatch would report it as the block's fault. So the template
+ * half is this function and the layout-check half keeps the name `attributed` and keeps rethrowing
+ * (bottom of this file). A reader coming from the brief should look here for the behaviour it
+ * describes.
  */
 function runTemplate(t: Template, g: BlockSubgraph): RealiseResult {
   try {
@@ -97,6 +106,11 @@ function candidatesFor(r: Rendering, id: BlockId, templates: ReadonlyMap<Templat
 /**
  * **Which renderer draws this block, and spec §1.3's rules in one function.**
  *
+ * **THIS COMMENT IS THE CANONICAL STATEMENT OF THE SELECTION RULE.** `block-types.ts`'s
+ * `Selection` and `ir/types.ts`'s `auto` variant point here rather than paraphrasing it, because
+ * three paraphrases is three chances to drop the qualifier below - which is what happened in round
+ * 1 and is recorded as `docs/known-gaps.md` **G147**.
+ *
  * A `wired` block offers its declared template; an `auto` block offers every template in the
  * registry's order. Then, for either:
  *
@@ -112,10 +126,25 @@ function candidatesFor(r: Rendering, id: BlockId, templates: ReadonlyMap<Templat
  * ELK backend: nothing was drawn by anyone and nothing is hidden. For a `wired` block the
  * author has DECLARED that this template draws this block, so `not-applicable` means the
  * declaration is false, and that is a generation error naming the block and the template - not an
- * invitation to ELK. Written the other way, 43 tests went red in one run, every one of them a
- * refusal that a declared template was expected to produce and that had silently become *"this
- * block needs the ELK backend"*. **A declared template quietly replaced by a general router is
- * the exact silent degradation G84 exists to prevent**, and an undeclared one at that.
+ * invitation to ELK.
+ *
+ * **THAT IS A FAITHFUL READING OF §1.3 AND NOT A LIBERTY TAKEN WITH IT**, which matters because an
+ * implementer may not author the criteria for what they produce. §1.3's ELK row quantifies over
+ * the LIBRARY - *"no template in the library supports this topology"* - and a `wired` block
+ * consults exactly one template, so one `not-applicable` can never establish that precondition.
+ * §1.3 has no row at all for *a declared template that does not apply*; its refusing row is a
+ * template that **supports** the topology and did not realise it acceptably. And **plan decision
+ * D3 already states the rule this way**, inside the paragraph defining `auto`: *"A new variant
+ * `{kind: "auto"}` is added by Task 8: try every template in the registry's order; the first `ok`
+ * wins; all `not-applicable` selects ELK; any `invalid-geometry`, `clearance` or `backend-raised`
+ * refuses."* The plan's Task 8 Step 7 then restates it without the `auto` scope, which is the
+ * sentence that is wrong. `docs/known-gaps.md` **G147**.
+ *
+ * Written the other way, 43 tests went red in one run, every one of them a refusal that a declared
+ * template was expected to produce and that had silently become *"this block needs the ELK
+ * backend"*. **A declared template quietly replaced by a general router is the exact silent
+ * degradation G84 exists to prevent**, and an undeclared one at that - the render report would
+ * still have said `wired`.
  *
  * Note what is NOT here: no fallback, and no rescue. `{kind:"elk"}` is a selection, not a
  * forgiveness, and `{kind:"refused"}` is final.
@@ -153,11 +182,16 @@ function refusalText(id: BlockId, r: Rendering, m: Mismatch): string {
  * IR before it is returned.
  *
  * **`elk` defaults to null, which is a DEVIATION from the task brief's signature and is recorded**
- * in `docs/known-gaps.md` **G146**. Ten ported test files call this with three arguments, and
- * making the parameter required would have diverged all ten - nine of them the port-parity tests
- * Task 7 landed - to add the word `null`. A `wired` block never needs a backend; an `auto` block
- * that reaches ELK without one **throws**, naming the block and saying what is missing. That is a
- * refusal, not a fallback: nothing is drawn by a second-choice renderer and nothing is skipped.
+ * in `docs/known-gaps.md` **G146**. **Nine** ported test files call this with three arguments (49
+ * call sites), and making the parameter required would have diverged all nine to add the word
+ * `null` - **seven** of them otherwise untouched by this task, so seven is the marginal cost. A
+ * `wired` block never needs a backend; an `auto` block that reaches ELK without one **throws**,
+ * naming the block and saying what is missing. That is a refusal, not a fallback: nothing is drawn
+ * by a second-choice renderer and nothing is skipped.
+ *
+ * (Round 1 of this comment said ten files and nine marginal. Both were wrong - the tenth file
+ * only names `realiseBlock` in a comment - and **G146** had the measured numbers all along, which
+ * is the point: a count in a doc comment is a claim, and this file is the first one Task 12 reads.)
  */
 export function realiseBlock(c: Circuit, id: BlockId, symbols: SymbolResolver, elk: Backend | null = null): BlockLayout {
   const block = c.blocks.get(id);

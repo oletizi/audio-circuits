@@ -111,156 +111,182 @@
     {
       "from": "render/blockTypes.ts",
       "to": "lib/schgen/render/block-types.ts",
+      "sourceSha": "9bfbf391136d21a5966491e99298fe97d57615656d6da49adc527da9db4a6f96",
       "task": "Task 8",
       "why": "`RealiseResult`'s false arm carried `reason: string` and now carries a classified `Mismatch` of four kinds; `mismatch(reason)` is deleted so no site can stay unclassified, and `Selection`, `Backend`, the four constructors and `describeMismatch` are new. Spec 1.3 and docs/known-gaps.md G84/G94."
     },
     {
       "from": "render/blocks.ts",
       "to": "lib/schgen/render/blocks.ts",
+      "sourceSha": "a27fa28db128f1ac46a9b195475e4252f7206c2017c6de3ff6fa23211a252eb4",
       "task": "Task 8",
       "why": "`selectRenderer` is new (spec 1.3's rules: a template that applied and failed refuses, and only an auto block whose every template reported not-applicable reaches ELK); `realiseBlock` is rewired around it, takes an ELK backend, checks the layout whoever drew it, and turns a template's thrown error into a `backend-raised` mismatch instead of rethrowing."
     },
     {
       "from": "render/fanoutKit.ts",
       "to": "lib/schgen/render/fanout-kit.ts",
+      "sourceSha": "52024e8fdc79bdda7c81aaa2cab05f0f0b739949d48013afbd2225777e820244",
       "task": "Task 8",
       "why": "`TraceResult`'s false arm carries a `Mismatch`; all eight of its refusals are shape tests over the subgraph and are `not-applicable`."
     },
     {
       "from": "render/drawnExtent.ts",
       "to": "lib/schgen/render/drawn-extent.ts",
+      "sourceSha": "79303aaf2838e456c20f3aed141ebb9b52bf79f746f1c234f3f86421c2094a5e",
       "task": "Task 8",
       "why": "`Measured`'s false arm carries a `Mismatch`, forwarded from `tryPlaceFields` rather than rebuilt from its string, so the `clearance` classification survives the two templates that measure their own drawing."
     },
     {
       "from": "render/fieldPlacement.ts",
       "to": "lib/schgen/render/field-placement.ts",
+      "sourceSha": "3bd672dd0e41fe07782da55a8c6459791f64402c20bde5beb053e36e7f45dca5",
       "task": "Task 8",
       "why": "`FieldsResult`'s false arm carries a `clearance` Mismatch, which needs two things the ported code did not keep: the obstacle that blocks the preferred slot (`clear` became `blockerOf`) and the block's id (`FieldScene.scope` became `FieldScene.block`, with the prose derived from it so every message is unchanged). `blockFieldsResult` is new, for the caller that forwards the mismatch."
     },
     {
       "from": "render/templates/railRow.ts",
       "to": "lib/schgen/render/templates/rail-row.ts",
+      "sourceSha": "64c56787d0da8c23e3384c8c4560f4e0b4ff421063bda1f1be2c8b2cacbc4c27",
       "task": "Task 8",
       "why": "Five refusal sites classified, all `not-applicable`, and `CommonRailLadder` carries a `Mismatch`."
     },
     {
       "from": "render/templates/divider.ts",
       "to": "lib/schgen/render/templates/divider.ts",
+      "sourceSha": "6098174de5939f8c4e8189d84ed92aa13e6be312361d2d721f341317d925c852",
       "task": "Task 8",
       "why": "Six refusal sites classified, all `not-applicable`."
     },
     {
       "from": "render/templates/passiveChain.ts",
       "to": "lib/schgen/render/templates/passive-chain.ts",
+      "sourceSha": "c96a4cfd9a08570d803118f29d2a317139742c42ef3e1917900dc1169600191b",
       "task": "Task 8",
       "why": "One refusal site, a forward; `Classified` carries a `Mismatch` and every `classifyChain` refusal is `not-applicable`."
     },
     {
       "from": "render/templates/crystal.ts",
       "to": "lib/schgen/render/templates/crystal.ts",
+      "sourceSha": "9873acd1577dad4040e3c307d156e3264ccaaced704aa842b05319e6a64ef481",
       "task": "Task 8",
       "why": "Six refusal sites classified: five `not-applicable` shape tests and one forward of the field-placement `clearance` measurement."
     },
     {
       "from": "render/templates/regulator.ts",
       "to": "lib/schgen/render/templates/regulator.ts",
+      "sourceSha": "f3519760c1fee221d6d6395be41edbc39ab150d11d4cd33f4fb8e82014be59a0",
       "task": "Task 8",
       "why": "Eight refusal sites classified, and the only two `invalid-geometry` sites in the template set are here: a bus-net pin on the wrong side of the symbol, and a tied pin whose end is not in the bus column. Each names the IR connection it failed to realise. `Banks` and `reachOf`'s result carry a `Mismatch`."
     },
     {
       "from": "render/templates/opampClassify.ts",
       "to": "lib/schgen/render/templates/opamp-classify.ts",
+      "sourceSha": "b69b9954246cbe302469302fe784ffc6c6f5d50d432263360b2d8099be0f5e81",
       "task": "Task 8",
       "why": "`Planned` and the local `Core` carry a `Mismatch`; every `planStage` refusal is `not-applicable`, and the one reason it rephrases keeps the kind by spreading the mismatch rather than rebuilding it."
     },
     {
       "from": "render/templates/opampStage.ts",
       "to": "lib/schgen/render/templates/opamp-stage.ts",
+      "sourceSha": "8256e61a84466628ba58f6ec61fba53318ca18b7fc1ca0bd933e3c971581fd91",
       "task": "Task 8",
       "why": "One refusal site, a forward of `planStage`'s mismatch."
     },
     {
       "from": "render/templates/connectorFanout.ts",
       "to": "lib/schgen/render/templates/connector-fanout.ts",
+      "sourceSha": "17cafcb0269f6476bc9b46122c633737dbae2eea0bcddd6adbccb14c29f43b50",
       "task": "Task 8",
       "why": "Three refusal sites classified, and the third is the only `clearance` site in the template set: it has drawn all four rotations and `checkLayout` refused every one, so it names the constraint and the obstacle pair of rotation 0's first problem (render/problem-obstacles.ts) and refuses rather than guessing a pair it cannot recover."
     },
     {
       "from": "render/templates/passiveChain.test.ts",
       "to": "tests/schgen/render/templates/passive-chain.test.ts",
+      "sourceSha": "861d0952b3cd33254f434ddc1694eeee94d1a5c0d0bbde35c4ca423219762756",
       "task": "Task 8",
       "why": "Twelve assertions compared a `classifyChain` refusal against `{ ok: false, reason }`. They now assert the KIND as well, which is stronger, not weaker - a site that silently became `invalid-geometry` would fail. This is ruling R4's one permitted edit to a ported test's assertions: the widening requires it, and it is declared here rather than smuggled in."
     },
     {
       "from": "ir/types.ts",
       "to": "lib/schgen/ir/types.ts",
+      "sourceSha": "ceaffd378c80b54202a65f2c635a23599ea9c5d21b7bc5a9ee78d9cb8e9aad04",
       "task": "Task 8",
       "why": "Plan decision D3: `Rendering` loses `{ kind: \"labels\"; reason }` and gains `{ kind: \"auto\" }`. The pedals source has `labels` and keeps it, so no rewrite rule reconciles the two. The MCU `cuts` this entry carried in files[] (G112: PinmapInput, CircuitSpec.mcu, Circuit.mcu, the \"pinmap\" pin origin) were applied before it diverged and the file on disk is that cut form; they are no longer declared anywhere but the git history of this manifest."
     },
     {
       "from": "ir/classify.ts",
       "to": "lib/schgen/ir/classify.ts",
+      "sourceSha": "8a1ff6d08c409ed507fe3b25699d004149960842e4d0cd438e540187dbae4b39",
       "task": "Task 8",
       "why": "D3: `labelledNets` tested `rendering.kind !== \"wired\"`, which with `auto` added would label every net of an ELK-rendered block. It now means not `wired` and not `auto`, i.e. `bus` - a modification, which a cut cannot express."
     },
     {
       "from": "report.ts",
       "to": "lib/schgen/report.ts",
+      "sourceSha": "6d4f403c179febe08ddab38203d4afca000e0f19b6bef25d02cc706e7f724e2c",
       "task": "Task 8",
       "why": "D3: `BlockReport.rendering` was \"wired\" | \"bus\" | \"labels\" and the switch over `Rendering` had a `case \"labels\"` returning its reason. With `labels` deleted and `auto` added, the case is uninhabited and the switch is no longer exhaustive."
     },
     {
       "from": "__fixtures__/circuits.ts",
       "to": "tests/schgen/__fixtures__/circuits.ts",
+      "sourceSha": "f66bcd173e9ab9ca54db3fe2db9500284a9b6dd02d92c2317516757b35cfa765",
       "task": "Task 8",
       "why": "D3: the SPLIT and PEER blocks and `labelsCircuit`'s block B declared `{ kind: \"labels\" }`. They are `{ kind: \"bus\", groups: [] }` here, which `labelledNets` and `valuesAlong` treat identically (every net labelled, values along their glyphs), so every fixture-backed assertion measures what it did. Its MCU `cuts` (G112) were applied before divergence."
     },
     {
       "from": "ir/build.test.ts",
       "to": "tests/schgen/ir/build.test.ts",
+      "sourceSha": "277c51f7bb1125e304820b4c7196bb27d63cb4736ae04900c0b40ac38a15d1c5",
       "task": "Task 8",
       "why": "D3: three block specs declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`. Its nine MCU `cuts` (G112) were applied before divergence and are no longer declared anywhere but this manifest's history."
     },
     {
       "from": "ir/classify.test.ts",
       "to": "tests/schgen/ir/classify.test.ts",
+      "sourceSha": "1dc9c5972d7ca8f9cdfe954c6103bbf3f54133b56769f36fc715ece3ed84f72e",
       "task": "Task 8",
       "why": "D3: two block specs declared `{ kind: \"labels\" }` and one test was named for it. They are `{ kind: \"bus\", groups: [] }` and the test is renamed; the ASSERTION is unchanged, because `bus` is the non-wired kind whose nets are all labelled now that `auto`'s are not. Its MCU `cuts` (G112) were applied before divergence."
     },
     {
       "from": "ir/validate.test.ts",
       "to": "tests/schgen/ir/validate.test.ts",
+      "sourceSha": "1c2db45219f2b76be3d8fbda0de06310bfd262d0e5cd3d7d536f9faa563b9e3a",
       "task": "Task 8",
       "why": "D3: the shared `LABELS` rendering is `{ kind: \"bus\", groups: [] }`, and the V6 test \"requires a reason for label rendering\" is DELETED with the rule it tested (supersede means delete; the cut that removes that rule from ir/validate.ts is declared in files[]). Its MCU `cuts` (G112) were applied before divergence."
     },
     {
       "from": "render/drawnText.test.ts",
       "to": "tests/schgen/render/drawn-text.test.ts",
+      "sourceSha": "18a1a4a69002cb30c5b7028e21a11c6ae6c0cd106904cefbfd7e30b55f6bb4fe",
       "task": "Task 8",
       "why": "D3: one block spec declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
     },
     {
       "from": "render/unitText.test.ts",
       "to": "tests/schgen/render/unit-text.test.ts",
+      "sourceSha": "f759e73feffb79121a284f22d1a4cc22eb53a0b83b54bfe8aad909a45c3b8cca",
       "task": "Task 8",
       "why": "D3: one `blockCircuit` rendering argument declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
     },
     {
       "from": "render/textClearance.test.ts",
       "to": "tests/schgen/render/text-clearance.test.ts",
+      "sourceSha": "8ebb481e069b6333f26891f93d197e706cc9f3186b0bf81d964df67c91e21929",
       "task": "Task 8",
-      "why": "D3: two `blockCircuit` rendering arguments declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
+      "why": "Two unrelated changes, and the file header points here for both. (1) D3: two `blockCircuit` rendering arguments declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }` - the kind `valuesAlong` still treats as `labels` was treated, so the power values this file measures run the same way. (2) The type widening: the `FieldScene` literal in \"placeFields refusal\" names `block: \"B\"` where it named `scope: \"block B\"`, because `tryPlaceFields` needs the block's id to build the `clearance` mismatch its widened result carries and carrying the id and the prose would be one fact in two places. The asserted message is unchanged."
     },
     {
       "from": "render/noConnectEnds.test.ts",
       "to": "tests/schgen/render/no-connect-ends.test.ts",
+      "sourceSha": "c15dd2d23c0236d97a51813e502ff69131a23c01ef45a465a7f1ba2a9ae1e69f",
       "task": "Task 8",
       "why": "D3: two `blockCircuit` rendering arguments declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
     },
     {
       "from": "render/templates/opampStock.kicad.test.ts",
       "to": "tests/schgen/render/templates/opamp-stock.kicad.test.ts",
+      "sourceSha": "d494c245aa168fd164b3ff7727382ec11e25035bf1b6c400d2f16d4806ef8963",
       "task": "Task 8",
       "why": "D3: the SPLIT and PEER blocks declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`. Its MCU `cuts` (G112) were applied before divergence."
     }
@@ -275,6 +301,21 @@
     "lib/schgen/render/obstacle-pairs-pin-text.ts",
     "lib/schgen/render/obstacle-pairs-graphic-wire.ts",
     "lib/schgen/render/obstacle-pairs-glyph.ts",
-    "lib/schgen/render/obstacle-pairs-text-frame.ts"
+    "lib/schgen/render/obstacle-pairs-text-frame.ts",
+    "tests/schgen/ir/auto-not-labelled.test.ts",
+    "tests/schgen/ir/no-pin-map.test.ts",
+    "tests/schgen/ir/single-pin-net-guard.test.ts",
+    "tests/schgen/port-fidelity.test.ts",
+    "tests/schgen/render/extends-flattening.test.ts",
+    "tests/schgen/render/obstacle-matrix.test.ts",
+    "tests/schgen/render/problem-obstacles.test.ts",
+    "tests/schgen/render/realise-result.test.ts",
+    "tests/schgen/render/selection.test.ts",
+    "tests/schgen/render/stock-symbols.test.ts",
+    "tests/schgen/render/symbol-self-text.test.ts",
+    "tests/schgen/render/templates/mismatch-census.test.ts",
+    "tests/schgen/render/uuid-stable.test.ts",
+    "tests/schgen/strict.test.ts",
+    "tests/schgen/symbol-census.test.ts"
   ]
 }
