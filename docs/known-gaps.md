@@ -7196,6 +7196,53 @@ figure is thirteen newly ported modules, twelve of them unexercised.
     "before" in a throwaway `git worktree` at `23442e3`, since removed - see
     the clause above).
 
+- **TASK 6b UPDATE: THE TABLE'S LAST THREE BLOCKED ROWS ARE DECIDED - TWO RUN
+  AND ONE NEVER WILL - AND THE UNEXERCISED FIGURE IS 5 -> 2 IN THE SAME
+  CURRENCY.**
+  - **Returned and passing, as pure ports with no cuts**:
+    `glyphClearance.test.ts` -> `tests/schgen/render/glyph-clearance.test.ts`
+    and `glyphGlyphClearance.test.ts` ->
+    `tests/schgen/render/glyph-glyph-clearance.test.ts`. They were waiting on
+    `render/sheetCheck.ts` and nothing else, exactly as this entry's mechanism
+    said.
+  - **`textIndependence.test.ts` IS OUT FOR GOOD**, and this entry's mechanism
+    was wrong about it in the same way **G135**'s was: `render/bus.ts` was never
+    its only blocker. It calls `realiseLabelled`, which plan decision D3 deleted
+    with the labels renderer, and it is built on `vi.hoisted` plus
+    `vi.mock(path, (importOriginal) => …)`, which `bun:test` has no equivalent
+    for. **No task in this plan brings it back.** So this entry's table has
+    **one row that will never run**, and a reader must not take "still waiting"
+    for it as "still coming". **G163** carries it with eight other ported tests
+    the sheet port unblocked by import and could not land.
+  - `symbolSelfText.test.ts` is unchanged: still **G123**'s.
+  - **THE UNEXERCISED COUNT, measured the same way (`bun test tests/
+    --coverage` at this commit): the five survivors are now TWO.**
+    `render/emit.ts` (97.0% of functions), `emit-items.ts` (96.1%),
+    `erc-exclusions.ts` (100%) and `report.ts` (78.9%) are all exercised -
+    by the eleven ported tests **G163** lists and by the hand-written
+    `tests/schgen/emit-byte-stable.test.ts`, which drives `generate` over a real
+    design and therefore reaches `generatedFiles`, `buildReport` and
+    `renderReport`. `gates/pin-table.ts` is the one survivor from the old list,
+    and **the one addition is `gates/oscar/boundary.ts`**, Task 6b's hand-written
+    forward declaration: its only function throws and nothing calls it
+    (**G162**). The two type-only artefacts this entry already excludes,
+    `ir/validate-rule.ts` and `render/sheet-types.ts`, are still absent from the
+    table for the same reason.
+  - **Task 6b's own newly landed modules are all exercised**: `render/frames.ts`,
+    `sheet-check.ts` and `sheets.ts` at **100%** of functions, `bus.ts` at
+    **95.0%**, `lib/schgen/design.ts` at 85.7%, `tools/repo.ts` at 100%.
+  - **BUT IT ADDED THREE UNDER `tools/schgen/` AND `lib/kicad/`, WHICH THIS
+    ENTRY'S CURRENCY HAS NEVER COUNTED.** `tools/schgen/kicad-config.ts` is at
+    **0.0%** - loaded, because `kicad-run.ts` imports it, and no function run,
+    because no test drives `runKicadCli`; `kicad-run.ts` is at **45.4%**, the
+    part `kicadVersion()` reaches; and **`lib/kicad/libtable.ts` never loads at
+    all**, because the only thing that imports it does so for a type. That
+    module is R25's port and **Task 11's gate 6 is what will run it** - until
+    then this repository holds 279 ported lines nothing executes.
+  - **Verified** CONFIRMED - this writer ported the two returning tests, read
+    the typecheck errors that keep `textIndependence.test.ts` out, and ran the
+    coverage measurement at this commit (3093 pass / 0 fail across 305 files).
+
 ### G125 - the obstacle-category matrix is enumerated and filled, and **95 of its 105 cells rest on reading the source rather than on a test that could have failed**
 
 This is **G85**'s criterion met in form and only partly in substance, recorded
@@ -7811,12 +7858,28 @@ not `ox`). The comment's *"become … then …"* is what says so. Anyone
 > `kicadRun.ts`) still need Task 18's `gates/oscar/boundary` or an
 > `@/kicad/libtable` this repository does not have, exactly as stated below.
 >
-> **This entry stays open**, because its criterion has two clauses and the
-> second is not met: **nothing in this repository has yet emitted a generated
-> schematic through its own pipeline.** Task 7 looked at all eight templates'
-> output by assembling a one-block sheet in a scratch harness and handing it
-> to the ported `emitSheet` - see **G136** for what that does and does not
-> establish - which is not the same thing.
+> **TASK 6b UPDATE: BOTH CLAUSES ARE NOW MET, AND THIS ENTRY WAS NOT DELETED -
+> READ THE NEXT PARAGRAPH BEFORE TREATING IT AS OPEN.** Clause (b) -
+> *"nothing in this repository has yet emitted a generated schematic through
+> its own pipeline"* - is **false as of Task 6b**: `generate` built the ported
+> `mini` design, `writeGeneration` wrote it, `exportPdf` drove `kicad-cli`
+> 10.0.5, and all three pages were read. **G165** is that look. Clause (a) was
+> settled for the tasks this entry is about by Controller ruling R14's split,
+> quoted at the top of this entry; all nine rows of the table below have since
+> landed or been decided, and **G163** carries what is left.
+>
+> **WHY IT IS STILL HERE, stated so that nobody reads its survival as an open
+> question.** `CLAUDE.md` says an entry is DELETED when it is resolved, never
+> marked closed - and it says in the same breath to **check what the deletion
+> takes with it**. This one is cited **fourteen times**, including from two
+> source files (`lib/schgen/render/blocks.ts`, which is a DIVERGED port, and
+> `tools/schgen/parity.ts`) and one test
+> (`tests/schgen/render/selection.test.ts`), plus `lib/schgen/README.md` and
+> the M1 plan. Deleting it strands all fourteen, and re-pointing a citation
+> inside a diverged ported file is a content change to that file for a reason
+> unrelated to why it diverged. **The deletion is therefore a controller's call
+> and not an implementer's**, and it is named here as the next step rather than
+> done quietly. The text below this blockquote is history from here on.
 
 Task 6's **Interfaces** block says *"Consumes: Tasks 2-5."* Task 7's says
 *"Consumes: Tasks 2-6."* The second is true; the first is not. Four of Task 6's
@@ -8487,6 +8550,38 @@ layout, clean on all eight.
   single-block designs are worth rebuilding through it so the pictures above
   can be compared against what the real sheet assembler produces.
 
+- **TASK 6b UPDATE: THE CRITERION IS MET, THREE OF THE FOUR CAVEATS ARE
+  SETTLED, AND THIS ENTRY SURVIVES ONLY TO CARRY THE EIGHT DESCRIPTIONS.**
+  `generate` -> `writeGeneration` -> `exportPdf` ran on the ported `mini`
+  design and all three pages were read: **G165**. What that settles here:
+  - **(a) IS NOW AN OBSERVATION RATHER THAN AN ARGUMENT FROM SOURCE.** The
+    frame-title collision this entry attributes to the harness **does not occur
+    on any of the eleven frames** `layoutSheet` produced. Every title sits
+    inside its own frame's top-left with clear space under it, and the one
+    frame carrying a legend line grew its band to hold both.
+  - **(c) IS SETTLED, AND THE TWO CHECKS ARE PROVEN LIVE RATHER THAN SILENT.**
+    `assertSheetSafe` and `assertTextClear` over a frame-bearing scene both ran
+    for the first time and both accepted both sheets; two perturbations drove
+    each of them red. **A third perturbation found a blind spot**: a frame
+    shrunk to 60% is ACCEPTED, because `textProblems`' frame clause refuses
+    only a text that STRADDLES a border. **G165** has it.
+  - **(b) IS FILLED FOR THE TWO BLOCKS IT NAMES.** `tp-leg-lower-a` and
+    `tp-leg-lower-b` were drawn through `layoutSheet` with the anchors
+    `docs/schematic/template-parity-anchors.md` already records verbatim, and
+    the picture is described in **G165**. **It is NOT filled for the other ten**,
+    which need the ELK backend, and it is not a schematic of
+    `transistor-preamp` - two of its eight blocks on a sheet of their own.
+  - **(d) IS UNCHANGED AND IS WHY THIS ENTRY IS NOT DELETED.** The eight
+    per-template descriptions above are still the only record of what each
+    registered template draws, and nothing in this repository reproduces them:
+    they came from a harness that was deliberately not committed. **Deleting
+    this entry would delete them.** It should be deleted by whoever replaces
+    them - with eight *(template x this repository's block)* pictures once the
+    ELK backend lands, or with a committed per-template look through
+    `layoutSheet` - and not before.
+  - **Verified** CONFIRMED - this writer ran the generation, read all three
+    pages and the tp-leg pages, and drove the three perturbations.
+
 ### G137 - **the round-1 premise of this entry was FALSE and is the finding**: a ported test's six-test skip is real but the suite-level backstop already exists, so the narrower gap is a reader of one file, and the `CI` fix was rejected for reasons worth recording
 
 **ROUND 1 SAID THE BACKSTOP DOES NOT EXIST. IT DOES, AND THAT SENTENCE IS THE
@@ -8793,6 +8888,37 @@ nothing in that list reads `$SCHGEN_SOURCE`.
   `lib/` files Task 8 rewrote, and there may not be one**: a file that was
   deliberately rewritten cannot be re-derived from its source by any rule short
   of writing the rewrite into the manifest.
+
+- **TASK 6b UPDATE: THE THREE LISTS ARE NOW 76 PORTED, 37 DIVERGED AND 41
+  HAND-WRITTEN, AND THE DIVERGED FIGURE IS WORSE IN THE WAY THIS ENTRY WARNS
+  ABOUT - TWENTY OF THE 37 ARE PORTED TESTS.** Task 8's figures were 64 / 26 /
+  10 with nine diverged tests; Task 9's and Task 10's work moved `handWritten`;
+  Task 6b added **eleven** divergences, of which **ten are test files or test
+  fixtures** - `render/frames.test.ts`, `sheets.test.ts`, `bus.kicad.test.ts`,
+  `templates/templateStock.kicad.test.ts`, `emit.test.ts`,
+  `emitPowerRefs.test.ts`, `emitRefusals.test.ts`, `ercExclusions.test.ts`,
+  `pageRefs.test.ts` and `__fixtures__/designs/mini/index.ts` - and the
+  eleventh is `render/bus.ts` itself. **Nine of those ten diverged for exactly
+  the reason Task 8's nine did**: `{ kind: "labels" }` fixtures became
+  `{ kind: "bus", groups: [] }`, which is decision D3 reaching the ported tests
+  one task later than it reached the modules.
+- **AND ONE OF THE ELEVEN DID NOT NEED TO DIVERGE, WHICH IS THE PART WORTH
+  SEEING.** `render/emitRefusals.test.ts` carries **no** labels rendering: its
+  only change is **G112**'s two MCU deletions (`mcu: null`, `, pinmap: null`),
+  which are pure deletions and therefore expressible as `cuts`, which would have
+  kept it byte-checked. It was diverged instead so that one mechanism covers all
+  nine of this round's test files rather than two. **That is a deliberate trade
+  of one file's byte-check for readability**, it is recorded here rather than
+  left for somebody to find, and **a later task may reverse it cheaply**: move
+  the entry back to `files[]` with two `cuts`, re-run the porter, and the
+  byte-check returns for free.
+- **Six ported files now live outside `lib/schgen/` and `tests/schgen/`** -
+  `lib/kicad/libtable.ts`, `tools/repo.ts`, `tools/schgen/generate.ts`,
+  `generated-files.ts`, `kicad-config.ts`, `kicad-run.ts` - which the byte-check
+  covers (it iterates `files[]`) and the bidirectional completeness check does
+  **not** (it lists two directories). **G161** records that widening.
+- **Verified** CONFIRMED - counts read off `tools/schgen/port-manifest.json` at
+  this commit by `json.load` rather than by eye.
 
 ### G140 - the `labels` rendering is DELETED from the port, which is a deliberate deviation from *port whole*, and it took a validation rule and a ported test with it
 
@@ -10502,6 +10628,25 @@ to a picture.
   criterion is what binds; these are advice from someone who has not tried
   them.**
 
+- **TASK 6b UPDATE: THE SECOND COLUMN'S TWO BLOCKS NOW HAVE A PICTURE, taken
+  through the real sheet assembler, and nothing about this census moved.**
+  `layoutSheet` landed, and `tp-leg-lower-a` and `tp-leg-lower-b` were drawn
+  through it, exported and read - the first *(template x this repository's
+  block)* drawings anybody has seen, which is the gap **G136**'s caveat (b)
+  names. **The anchors were not chosen**: `RV3`#1 and `RV4`#1 (no roles) were
+  read verbatim out of this entry's own *"the anchors that drew something,
+  verbatim"* table, and every other block of `transistor-preamp` kept Task 9's
+  declaration. **G165** describes what they look like, including the two things
+  a reviewer notices first: the two `GND` symbols per leg are the same net,
+  which is this entry's rheostat finding showing up in a drawing, and the
+  `BASE` label with its page ref is rotated 90 degrees.
+- **The numbers in this entry are unchanged and were not re-measured**: still 0
+  of 12 as declared and 2 of 12 under a probed anchor. **Nothing was tuned, and
+  this update must not be read as raising the census** - it is a look at two
+  verdicts this entry already recorded, not a new measurement.
+- **Verified** CONFIRMED - this writer ran the two blocks through
+  `layoutSheet`, exported, and read the page.
+
 ### G161 - the port manifest can now read a pedals file OUTSIDE `$SCHGEN_SOURCE`, through a declared second source root, and every later port task inherits the widening
 
 `tools/schgen/kicad-config.ts` imports `GlobalTable` from `@/kicad/libtable`.
@@ -10961,3 +11106,293 @@ check unable to fire.
   at least `2 * GRID` on all four sides - note that `render/frames.test.ts` is a
   ported file and this would be a hand-written sibling, so **G123**'s cost
   (nothing byte-checks a hand-written test) applies to it.
+
+### G165 - the first schematic this repository has emitted through its own pipeline, looked at: the frame-title collision is gone, both whole-sheet guards ran clean on a frame-bearing scene, and one of them has a blind spot the perturbation found
+
+**G131** and **G136** both end on the same sentence - *"nothing in this repository has yet
+emitted a generated schematic through its own pipeline"*. It has now. `generate` built the ported
+`mini` fixture, `writeGeneration` wrote it, `exportPdf` drove `kicad-cli` 10.0.5, and the three
+pages were converted at 170 dpi and read.
+
+**WHY THE DESIGN IS A PORT AND NOT ONE WRITTEN HERE.** The fixture is
+`digital-pedal-platform`'s own `__fixtures__/designs/mini/index.ts`, ported and declared diverged.
+An agent may never author the acceptance criteria for the artifact it produces, and *"look at it
+and say whether it is any good"* is such a criterion - so the arrangement being judged is one this
+repository did not choose. Every position in the pictures below comes from `layoutSheet` and the
+templates; nothing was nudged.
+
+**WHAT CAME OUT, measured by `layoutSheet` itself:**
+
+| sheet | paper | symbols | wires | power symbols | labels | junctions | no-connects | frames |
+|---|---|---|---|---|---|---|---|---|
+| `power` | A4 | 8 | 17 | 13 | 1 | 7 | 0 | 4 |
+| `signal` | A3 | 11 | 39 | 12 | 17 | 5 | 3 | 7 |
+
+**WHAT THE POWER SHEET LOOKS LIKE.** Four dashed blue frames in one row across the top of a
+landscape A4, each titled in blue inside its own top-left corner.
+
+- **3V3 regulator** - U1 `AMS1117-3.3` as a filled rectangle in the middle, pin 3 `VI` entering
+  left, pin 2 `VO` leaving right, pin 1 `GND` dropping out of the bottom with the word GND set
+  vertically inside the body. C1 `10u` hangs off the input node down to a ground arrow, C2 `22u`
+  off the output node down to another, and U1's own ground pin to a third. The input rail runs
+  left into a `VIN` arrow and the output right into a `3V3` arrow, both lying on their sides
+  because the anchor is horizontal. Textbook, and exactly what a person would draw.
+- **3V3 decoupling** - C3 and C4, both `100n`, side by side between a short top bar carrying a
+  `3V3` arrow and a short bottom bar carrying a `GND` arrow. The arrow sits over the LEFT cap
+  rather than between them, which looks slightly lopsided and is the row's first tap.
+- **VIN sense divider** - R1 `10k` down from a `VIN` arrow to the tap, R2 `10k` from the tap down
+  to `GND`, C5 `100n` shunting the tap to the same bottom node, and the tap carried right into a
+  `SENSE` global label with `[2,3]` printed beside it - the intersheet page reference, correct:
+  SENSE appears on sheets 2 and 3. Junction dots at the tap and at the bottom node.
+- **Power flags** - two columns, each a rail symbol and a `PWR_FLAG` pointing the opposite way at
+  the same point: `PWR_FLAG` over `GND`, and `VIN` over `PWR_FLAG`. This is `flagsContent`, and
+  it is the producer **G164** records as having falsified `NO_FLAG_PRODUCER`.
+
+**WHAT THE SIGNAL SHEET LOOKS LIKE.** Seven frames in one row across a landscape A3.
+
+- **Input connector** - J1 `Conn_01x04` on the RIGHT, four pins fanning LEFT into `VIN`, `SENSE`,
+  `SIG_IN`, `GND` labels with their page refs outside them. The connector sits on the right and
+  the signals leave to the left, which is the reverse of the usual reading direction; it is what
+  `connector-fanout` does with this anchor and it is not wrong, only unexpected.
+- **Input buffer** - `SIG_IN` in from the left, R3 `1k`, a node with C6 `1n` shunting to `GND`,
+  into U2A `OPA1678` pin 3 (the + input, drawn above the −), the triangle, and pin 1 out to an
+  `AMP_OUT` label. The feedback runs from the output down and back to pin 2 as a rectangle under
+  the amplifier: a unity-gain buffer, drawn the way one is drawn.
+- **Spare op-amp channel** - U2B's triangle alone, all three pins ending in a small ✗. Three
+  no-connect markers, which is the sheet's no-connect count exactly.
+- **Op-amp supply** - U2C, the package's power unit, as a vertical line with `3V3` above and
+  `GND` below. **The frame is 21.6 mm wide and 43.2 mm tall and every text in it is rotated 90°**
+  (`V+`, `V−`, `U2C`, `OPA1678` and both rail names read bottom-to-top). It is legible and it is
+  the least attractive thing on either sheet: one two-pin unit in the tallest frame on the page.
+- **Crystal** - Y1 `12MHz` in the middle, `XI` and `XO` labels standing up on either side, C7 and
+  C8 `12p` beneath each clock net down to their own grounds, and Y1's shield pins down to a third.
+  Symmetric and clean.
+- **SPI flash** - U3 `W25X40CLSS`, pins fanning LEFT into `FL_CS`, `FL_CLK`, `FL_DI`, `FL_DO` and
+  two `3V3` arrows for `~{WP}` and `~{HOLD}`, VCC up and GND down. **Under the frame title there
+  is a second line reading `SPI: FL_CS, FL_DO, FL_DI, FL_CLK`** - the bus renderer's legend,
+  printed in the title band. That is the only place in either sheet where a frame carries more
+  than its title, and the band grew to fit it.
+- **Output connector** - J2 `Conn_01x07`, seven pins fanning left into the four flash nets, `XI`,
+  `XO` and `AMP_OUT`.
+
+**The root sheet** is two empty hierarchical boxes titled Power and Signal with their file names
+under them. Correct and dull, which is what it should be.
+
+**THE TITLE BLOCK CARRIES THE PROVENANCE, and it is worth seeing in a picture**:
+*"KiCad 10.0.5; stock libraries 895cc96749279fdc"* and *"Generated by schgen from
+tests/schgen/__fixtures__/designs/mini/index.ts; do not edit"*, on every sheet.
+
+**THE FRAME-TITLE COLLISION IS GONE, WHICH SETTLES G136's ATTRIBUTION (a).** That entry records
+the title colliding with the topmost power symbol's text on four of eight scratch-harness
+drawings, and argues from the source that the collision belongs to the harness because
+`frameSize` reserves a title band and `contentOffset` puts content below it. **Through
+`layoutSheet` it does not occur on any of the eleven frames**: every title sits inside its own
+frame's top-left with clear space under it, and the one frame with a legend line grew its band to
+hold both. The argument from source is now an observation.
+
+**BOTH WHOLE-SHEET GUARDS RAN, FOR THE FIRST TIME, OVER A FRAME-BEARING SCENE - AND THEY ARE
+PROVEN LIVE RATHER THAN MERELY SILENT.** `layoutSheet` calls `assertSheetSafe(scene)` and
+`assertTextClear(textScene(…, { blocks, powers, labels, texts, frames }))`; **G136**'s caveat (c)
+says neither had ever run here. Both accepted both sheets. Driven:
+
+- two blocks of the `power` sheet placed at one origin ->
+  `sheet power: wire safety:` / `wire 0 of REG (net GND) ends at (0, 12.7) touching nothing; end
+  it on a pin, a label, a power symbol or another wire end`
+- a frame slid 20 mm left ->
+  `sheet power: text clearance:` / `title of frame "3V3 decoupling" crosses the border of frame
+  "3V3 regulator"`
+
+**AND THE PERTURBATION FOUND A BLIND SPOT, which is the part of this entry that is not a
+description.** A third probe **shrank a frame to 60% of its width and height and
+`assertTextClear` ACCEPTED it.** The reason is in `textProblems`: its frame clause is
+`if (boxesOverlap(t.box, f.box) && !strictlyWithin(t.box, f.box))`, so it refuses a text that
+STRADDLES a border and says nothing about a text that is entirely OUTSIDE one. A frame too small
+for its content does not straddle anything - its content simply sits beside it - and no refusal
+fires. **So nothing in the pipeline checks that a frame contains what it was sized from**, which
+is the same gap **G164** records from the other direction: the eleven `FRAME_DERIVED` cells rest
+on a 2.54 mm margin that no check defends.
+
+**ERC, `runErc(root, "all")`: 0 errors, 2 warnings.** With `"error"`: 0 and 0. Both warnings are
+the same `[pin_to_pin]` class - *"Pins of type Bidirectional and Power output are connected"* -
+for U3's pin 3 `~{WP}` and pin 7 `~{HOLD}`, strapped to 3V3, which U1 pin 2 drives as a power
+output. Strapping a flash's write-protect and hold pins high is correct practice and KiCad warns
+about it regardless; **it is a fact about the fixture circuit, not about the generator.**
+
+**AND THE TWO PICTURES G136's GAP (b) NAMES AS MISSING NOW EXIST.** That gap says the eight
+template descriptions are *(template × pedals fixture)* and that nobody has seen *(template × this
+repository's circuit)*. **G160**'s second column measures that `connector-fanout` draws
+`tp-leg-lower-a` and `tp-leg-lower-b` under a probed anchor. Both were put through `layoutSheet`
+and exported. **The anchors were not chosen here**: they are read verbatim from
+`docs/schematic/template-parity-anchors.md`'s *"the anchors that drew something, verbatim"* table
+(`RV3`#1 and `RV4`#1, no roles), which Task 10's brute-force sweep found. Every other block of
+`transistor-preamp` keeps Task 9's declaration; the two blocks were put on a sheet of their own
+because the other six are `auto` and need the ELK backend, so **this is two blocks of that
+circuit and NOT its schematic.** Nothing was written into the repository.
+
+**What they look like.** Two narrow frames side by side, *Lower bias leg A* and *Lower bias leg
+B*, each a vertical chain read top to bottom: a `BASE` global label at the top (with its `[2]`
+page ref), a `Jumper_2_Open` JP1/JP2, a resistor (`4.7K` / `47K`), and the trimmer (`10K` /
+`200K`) with its wiper taken out to the right into a `GND` arrow and its lower end taken down into
+a second `GND` arrow. **Six symbols, eight wires, four power symbols, two labels, zero junctions
+across the two.** It is a correct and readable bias leg, and two things about it are worth saying
+plainly: **the two ground symbols per leg are the same net** (the trimmer is wired as a rheostat -
+**G160**'s finding - so its wiper and its end are strapped), where a person would draw one; and
+**the `BASE` label and its page ref are rotated 90°**, reading bottom-to-top, because the chain
+leaves upward. Neither is wrong. Both are what a reviewer would mention first.
+
+**THE ONE THING BOTH SHEETS DO BADLY, and it is the same on all three drawings: the page is
+mostly empty.** `packFrames` shelf-packs left to right and starts a new shelf only when the
+current one is full, so eleven small frames sit in a single row across the top and the lower
+three-quarters of every page is blank. On the A3 signal sheet the content occupies roughly the top
+20% of the height and the full width; on the tp-leg probe, two frames occupy about 3% of an A3.
+Nothing is wrong with the drawing - it is just not laid out for the paper it is on.
+
+- **Found** 2026-10-20, Task 6b, Step 6.
+- **Evidence** a run, not a reading. `kicadVersion()` -> `10.0.5`; `generate` produced the ten
+  files; `exportPdf` drove `kicad-cli sch export pdf --theme schgen`, which refuses a malformed
+  `.kicad_sch` rather than drawing it; `pdftoppm -r 170 -png` produced three pages and all three
+  were read with the Read tool. The counts above are printed by `layoutSheet`'s own result. The
+  ERC figures are `runErc(root, "all")` and `runErc(root, "error")`, and the report's own totals
+  line reads ` ** ERC messages: 2  Errors 0  Warnings 2`. The three perturbations each produced
+  the output quoted above and were discarded; `git status --porcelain` is clean in this worktree
+  and in `digital-pedal-platform`.
+- **Verified** CONFIRMED - this writer generated, exported, converted and read every page, ran
+  the three perturbations, and read the ERC report.
+- **Why it is open** the blind spot above is real and unfixed, and the packing observation is a
+  result somebody may want to act on.
+- **What would settle it** **CRITERION, two clauses.** (a) A frame that does not contain the
+  content it was sized from fails a check. (b) A sheet whose frames use a small fraction of the
+  declared paper is either reported or packed better - **and WHICH of those is right is not an
+  implementer's call**, because "better" here is an acceptance criterion for an artifact an agent
+  produces. **MECHANISMS, untried.** For (a): give `textProblems`' frame clause the owning frame
+  of each text (the `Frame.blockId` is already there) and refuse a text outside its own frame;
+  note that this changes a ported module and would need a divergence. For (b): nothing - it needs
+  a decision first.
+
+### G166 - perturbed and restored: making `staleFiles` compare mtimes turns two tests red, and the one the brief names reports a hand-edited file with a FRESH mtime as current
+
+`CLAUDE.md`: *"Derived artifacts are regenerated every run and compared by content, never by
+timestamp - git does not preserve mtimes, and every mtime accident makes stale look current."*
+`staleFiles` in `tools/schgen/generated-files.ts` implements that by reading each generated file
+and comparing the text. The Task 6b brief asks for the claim to be driven rather than asserted.
+
+**THE PERTURBATION.** The content comparison
+
+```ts
+const onDisk = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
+if (onDisk !== g.files.get(name)) out.push(`${name} is stale; ...`);
+```
+
+was replaced by a timestamp comparison - stale if the file is missing or older than the design
+module:
+
+```ts
+const stale = !fs.existsSync(file) || fs.statSync(file).mtimeMs < fs.statSync(d.file).mtimeMs;
+if (stale) out.push(`${name} is stale; ...`);
+```
+
+**TWO TESTS WENT RED, AND THE FIRST IS EXACTLY THE BRIEF'S CASE - a file with a fresh mtime and
+stale content, reported as current:**
+
+```
+tests/cli/schgen.test.ts:
+180 |     const r = await run(["check", file])
+181 |     expect(r.code).toBe(1)
+                         ^
+error: expect(received).toBe(expected)
+
+Expected: 1
+Received: 0
+
+(fail) check against the ported mini design > reports a hand-edited generated file stale by CONTENT, with its mtime newer than the rest
+```
+
+That test writes `(kicad_sch (version 20250114))` over a generated `power.kicad_sch` and then sets
+its mtime **sixty seconds into the future**, so it is the newest file in the directory. Under the
+content comparison `check` exits 1 and names it; under the timestamp comparison `check` exits 0
+and the schematic on disk - which is no longer the schematic the model produces - passes.
+
+The second:
+
+```
+tests/schgen/emit-byte-stable.test.ts:
+105 |     const stale = staleFiles(d, g)
+106 |     expect(stale.length, "exactly the one file whose content changed").toBe(1)
+                                                                             ^
+error: exactly the one file whose content changed
+
+Expected: 1
+Received: 0
+
+(fail) writeGeneration is the only writer > reports a file stale when its CONTENT differs, not when its mtime does
+```
+
+**AND A THIRD CHECK FIRED THAT WAS NOT THE TARGET**, which is worth recording because it is the
+port mechanism catching exactly what it exists to catch: `generated-files.ts` is a PORTED file, so
+`tests/schgen/port-fidelity.test.ts`'s byte-check went red naming it -
+`error: tools/schgen/generated-files.ts` on *"every ported file is its source, rewritten only by
+the manifest"*. **A hand edit to a ported file cannot be made quietly even for a moment.**
+
+**RESTORED by re-running the porter** (`SCHGEN_SOURCE=... bun run tools/schgen/port.ts`), not by
+editing the file back - which is the mechanism `lib/schgen/README.md` prescribes and which proves
+the restoration is the source rather than this writer's memory of it.
+`git status --porcelain tools/schgen/generated-files.ts` is **empty**, the five lines read back
+character for character as quoted above, and the three affected files are **27 pass / 0 fail**.
+
+- **Found** 2026-10-20, Task 6b, Step 7.
+- **Evidence** the red output quoted verbatim above, and the restoration verified three ways: the
+  porter re-ran, `git status --porcelain` on the file is empty, and the suite is green.
+- **Verified** CONFIRMED - this writer made the edit, ran the tests, read the failures, re-ran the
+  porter and re-ran the tests.
+- **Why it is open** it is not a defect; it is a property that now has a demonstration behind it,
+  recorded so the next person to touch `staleFiles` knows the demonstration exists and what it
+  costs to repeat.
+- **What would settle it** nothing: this entry is a measurement with no open question. **It is
+  deleted by whoever next finds it unhelpful**, and what the deletion takes with it is the
+  evidence that the two tests above can actually fail - which is their whole value.
+
+### G167 - the ported refusals tell the reader to run `pnpm`, and this repository uses `bun run`
+
+`initHint` in `tools/schgen/generated-files.ts` returns
+`run pnpm schgen generate --init <design> to create it`, and that sentence is what a person sees
+the first time they run `bun run schgen check` on a design with no reference lock:
+
+```
+/…/out/refs.lock.json not found; run pnpm schgen generate --init tests/schgen/__fixtures__/designs/mini/index.ts to create it
+```
+
+**There is no `pnpm` in this repository.** `package.json`'s scripts are run with `bun run`, and
+Task 6b added `"schgen": "bun run tools/cli/schgen.ts"` beside the others. So the refusal names a
+command that does not work here - and `CLAUDE.md`'s rule is that *"every `throw` names what is
+missing, where to fix it, and why it is not defaulted"*, which this one does except for the
+package manager.
+
+**It is a ported defect carried on purpose, not an oversight.** `lib/schgen/README.md`: *"a defect
+in a ported file is a defect in the source, carried here on purpose, fixed in a task that has a
+stated reason to diverge."* Diverging `generated-files.ts` over one word would take the file out
+of the byte-check for the rest of the plan, which is the cost **G139** sizes; that trade is not
+obviously worth making for a hint string, and it is not an implementer's call to make silently.
+
+**IT IS THREE SITES, NOT ONE, AND THE FIRST COUNT WAS WRONG.** This writer wrote *"the only such
+string"* and then ran the grep, which is the order that catches it:
+`grep -rn "pnpm" lib/schgen tools/schgen tools/cli` returns **five lines**, of which **three are
+messages a user can see** - `generated-files.ts:37` (`initHint`, above),
+`generated-files.ts:104` (*"`<file>` is stale; run pnpm schgen generate `<design>`"*, which is
+what `check` prints on every stale file and therefore the one seen most often) and
+`lib/schgen/lock/version-lock.ts:103` (*"accept it deliberately with pnpm schgen generate
+--accept-toolchain"*). The other two are not: `design.ts:76` is a doc comment mentioning
+`pnpm typecheck`, and the fifth is inside a `cuts` string in `port-manifest.json`, i.e. text that
+is DELETED from the tree. **Two files, three messages**, and one of them is in `lib/schgen/`
+rather than `tools/schgen/`, so a fix touches two ported files and not one.
+
+- **Found** 2026-10-20, Task 6b, Step 5, by running the CLI against the fixture design.
+- **Evidence** the refusal above, printed by `bun run schgen check
+  tests/schgen/__fixtures__/designs/mini/index.ts`, and the grep.
+- **Verified** CONFIRMED - this writer ran the command and read the output.
+- **Why it is open** a user-facing message names a tool this repository does not have, and the
+  cheapest fix costs a byte-check.
+- **What would settle it** **CRITERION:** no message a user of this repository can see names
+  `pnpm`. **MECHANISMS**, both untried and they differ in what they cost: (a) change the pedals
+  source and re-run the porter, which keeps the byte-check and needs access to that repository;
+  (b) diverge `generated-files.ts`, which costs what **G139** records. **Do not take (b) for this
+  alone** - if a later task diverges that file for another reason, the word goes with it.

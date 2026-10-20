@@ -263,14 +263,17 @@ is resolved rather than hand-porting around the gap:
   both measurements and why the earlier "no test imports it by name" currency
   was the wrong one.
 
-  **Three clearance tests are still out**, and so is the ninth template test:
-  `glyphClearance.test.ts` and `glyphGlyphClearance.test.ts` want
-  `render/sheetCheck.ts`, `textIndependence.test.ts` wants `render/bus.ts`,
-  and `render/templates/templateStock.kicad.test.ts` wants
-  `render/sheets.ts` — all three modules are **Task 6b**'s. Both
-  `sheetCheck.ts` and `bus.ts` are import-clean today, so these are blocked on
-  a task boundary rather than on a dependency. **G135** carries the porter's
-  refusal for each and the exact manifest JSON to re-add them.
+  **Task 6b decided the last three, and one of them is out for good.**
+  `glyphClearance.test.ts` and `glyphGlyphClearance.test.ts` landed as pure
+  ports; `render/templates/templateStock.kicad.test.ts` landed diverged (its
+  PEER block declared `{ kind: "labels" }`), which makes the Task 7 brief's
+  count of nine template tests nine again. **`textIndependence.test.ts` cannot
+  land at all**: it calls `realiseLabelled`, deleted with the labels renderer
+  (**G140**), and it is built on `vi.hoisted` and
+  `vi.mock(path, (importOriginal) => …)`, which `bun:test` has no equivalent
+  for. **G163** carries it with eight other ported tests the sheet port
+  unblocked by import and could not land, each with the exact manifest JSON and
+  what stops it; **G135** and **G124** are amended.
 - **`@/schgen/gates/oscar/*`.** Five files, deferred to Task 18 by the plan
   (the Pultec reference-graph comparison needs the complete pipeline first).
   `gates/oscar/graph.ts` also needs `@/kicad/components`, which is unresolved.
@@ -289,11 +292,21 @@ is resolved rather than hand-porting around the gap:
   `tests/schgen/port-fidelity.test.ts`. `docs/known-gaps.md` **G162** records
   what it carries, what it does not, and that `SideSpec` is transcribed here
   although it belongs upstream to `gates/oscar/graph.ts`.
-- **`@/schgen/design`, `@/schgen/generate`, `@/schgen/generateFiles`,
-  `@/schgen/verify`, `@/schgen/kicadRun`, `@/schgen/kicadConfig`, and the
-  `connectivity`/`traceability`/`pinIdentity` gates.** Each imports at least
-  one of the above, directly or transitively, so each waits on the same task
-  that resolves what it needs.
+- **`@/schgen/verify` and the `connectivity`/`traceability`/`pinIdentity`
+  gates.** Each imports at least one of the above, directly or transitively, so
+  each waits on the same task that resolves what it needs - Task 11's, mostly.
+- **`@/schgen/design`, `generate`, `generateFiles`, `kicadRun` and
+  `kicadConfig` ARE PORTED** (Task 6b). `design.ts` is at
+  `lib/schgen/design.ts`, with `cuts` removing `CircuitSpec.mcu`'s shape guard
+  and `DesignSpec.pinmap` outright - there is no MCU here, so a design module
+  declaring a pin map is a type error rather than a field nothing reads. The
+  other four are at `tools/schgen/generate.ts`, `generated-files.ts`,
+  `kicad-run.ts` and `kicad-config.ts`, under `tools/` because `kicad-run.ts`
+  spawns `kicad-cli` and this file's opening paragraph says that never happens
+  under `lib/`. `generate.ts` carries seven `cuts`, all of them the MCU pin-map
+  branch (**G112**): `pinmapInputFor` and its two `@/pinmap/*` imports are
+  gone, and `pinned` stays as an empty map, because `annotate` takes one and a
+  design may still pin a reference.
 - **The TEMPLATES and the block layout engine are PORTED** (Task 7):
   `render/blocks.ts`, `layout-kit.ts`, `chain-kit.ts`, `fanout-kit.ts`,
   `fanout-rows.ts` and `render/templates/` — eight registered template ids in
@@ -325,28 +338,34 @@ is resolved rather than hand-porting around the gap:
   for the `labels` deletion - which is what the `diverged` list above is for
   and what **G139** counts.
 
-- **The EMITTER is ported and the SHEET is not** (Task 6a), and the split is not
-  where the plan put it. `render/emit.ts`, `emit-items.ts`, `page-refs.ts`,
-  `erc-exclusions.ts`, `project.ts` and `report.ts` are here; the four modules
-  that would feed them a drawing - `render/frames.ts`, `bus.ts`,
-  `sheet-check.ts` and `sheets.ts` - are **not**. They imported
-  `@/schgen/render/blocks`, which Task 7 has now landed, so
-  **`sheet-check.ts` and `bus.ts` are import-clean today** and `frames.ts`
-  waits only on `bus.ts`; all four are **Task 6b**'s to port.
-  `generate.ts` needs `layoutSheet` from
-  `render/sheets.ts`, and `design.ts`/`generateFiles.ts` need Task 18's
-  `gates/oscar/boundary`, so **nothing here can yet emit a schematic file
-  through its own pipeline**: there is a correct emitter with no sheet to hand
-  it. `docs/known-gaps.md` **G131** has the per-file table and the port's own
-  refusal for each, and **G136** records how Task 7 looked at all eight
-  templates' output anyway, and what that does not establish.
+- **The EMITTER AND THE SHEET ARE BOTH PORTED** - the emitter by Task 6a
+  (`render/emit.ts`, `emit-items.ts`, `page-refs.ts`, `erc-exclusions.ts`,
+  `project.ts`, `report.ts`) and the four modules that feed it a drawing by
+  **Task 6b**: `render/frames.ts`, `sheet-check.ts` and `sheets.ts` as ports,
+  and `render/bus.ts` **diverged**. Bus diverged because the labels renderer
+  goes with the rendering (decision D3, **G140**) - that much is pure deletion -
+  while `renderBlock`'s switch has to cover Task 8's new `auto` kind, and
+  covering it is new code, which `cuts` cannot express. `auto` goes to
+  `realiseBlock` with no ELK backend, so an `auto` block no template draws
+  throws naming the block (**G146**); threading a `Backend` through
+  `renderBlock`, `blockContent` and `layoutSheet` is Task 12's.
 
-  The consequence for coverage is the same one **G124** records for Task 5:
-  **five of Task 6's six newly ported modules are exercised by no test** -
-  `render/emit.ts`, `emit-items.ts`, `page-refs.ts`, `erc-exclusions.ts` and
-  `report.ts` typecheck and nothing runs them, because every ported test that
-  would exercise them imports `render/sheets.ts`. The sixth,
-  `render/project.ts`, IS exercised, by the ported `render/project.test.ts`.
+  **SO THIS REPOSITORY NOW EMITS A SCHEMATIC THROUGH ITS OWN PIPELINE, and
+  somebody has looked at one.** `bun run schgen generate <design>` builds,
+  validates, locks, lays out, emits and writes; `tools/schgen/kicad-run.ts`
+  exports the PDF and runs ERC. `docs/known-gaps.md` **G165** is the first look -
+  what the two sheets of the ported `mini` fixture look like, that the
+  frame-title collision **G136** saw is gone, that `assertSheetSafe` and
+  `assertTextClear` ran clean over a frame-bearing scene and were driven red to
+  prove it, one blind spot that drive found, and `runErc(…, "all")` at 0 errors
+  and 2 warnings.
+
+  The consequence for coverage reverses **G124**'s Task 6 entry: the five
+  modules nothing ran - `render/emit.ts`, `emit-items.ts`, `erc-exclusions.ts`,
+  `report.ts` and `gates/pin-table.ts` - are now **two**, and the two are
+  `gates/pin-table.ts` and the new `gates/oscar/boundary.ts`. What runs them is
+  the eleven ported tests Task 6b landed plus the hand-written
+  `tests/schgen/emit-byte-stable.test.ts`.
 
   **What Task 6 did unblock is `__fixtures__/circuits.ts`** (ported to
   `tests/schgen/__fixtures__/circuits.ts` with the same MCU `cuts` Task 2

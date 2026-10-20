@@ -156,6 +156,23 @@ bun test           # the full suite, including the SPICE simulations, one
 bun run typecheck
 ```
 
+`bun run schgen` is the schematic generator's front door, and it has two verbs:
+
+```bash
+bun run schgen check <design-module>       # build, validate, report staleness; writes nothing
+bun run schgen generate <design-module>    # the same, then write the KiCad project
+                                           #   --init             create the lock files
+                                           #   --accept-toolchain record a new KiCad baseline
+```
+
+A design module is TypeScript exporting `design` (a `DesignSpec`); the only one
+in this repository today is the ported fixture at
+`tests/schgen/__fixtures__/designs/mini/index.ts`. `check` is read-only, which
+is structural rather than careful - the only writer is injected into the CLI -
+and it compares what is on disk to what the model produces **by content, never
+by timestamp**. `lib/schgen/README.md` explains the generator; `docs/known-gaps.md`
+**G165** is a look at what it draws.
+
 Circuits are checked against real, physically-built layouts through the
 perfboard workflow. `make check`, run from a board's directory (e.g.
 `boards/pt2399-core`) or from the repository root to check every declared
