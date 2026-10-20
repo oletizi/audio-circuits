@@ -6307,15 +6307,32 @@ stock directory second"* cannot be followed literally.
   wrapper.
 - **Verified** CONFIRMED - this writer ran every command above and read the
   output directly.
-- **Why it is open** it is a defect in a PLAN DOCUMENT, and the plan still
-  contains the sentence. `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`
-  line 414 still says the vendored set *"has six symbols"* and the Task 4
-  brief still argues the point from `R_Small`, `C_Small` and `Conn_01x05`.
-  **The code half is settled** - Controller rulings R8 and R9, carried in
-  Task 4's dispatch, and Task 4 implemented both (see below) - so what is
-  left open is the document, which this writer is not the author of. This
-  entry stays so the next reader of the brief is not misled, and so the
-  substituted symbol is not mistaken for an implementer's convenience.
+- **Why it is open** **it is no longer open as a defect; it stays as a
+  measurement.** Both halves are settled: the code half by Controller
+  rulings R8 and R9 and Task 4's implementation of both (see below), the
+  document half by commit `3dc2695`, which corrected all four wrong claims
+  in the plan in place - the `extends` examples, the vendored count, the
+  test subject and the perturbation's predicted red - each marked rather
+  than silently rewritten. The Task 4 implementer declined to make that
+  edit and was right to: editing the brief it was given would have made it
+  the author of its own acceptance criteria, which is the invariant
+  `CLAUDE.md` puts above everything else here. The correction is therefore
+  the controller's, and it is.
+
+  **Controller ruling R10: this entry is NOT deleted, although the register's
+  rule is that a resolved entry is deleted rather than marked closed.** Two
+  reasons, and the first is the one the rule itself asks for - *check what
+  the deletion takes with it*. (1) **Four committed sites cite G117 as the
+  home of this measurement**, two of them source comments:
+  `tests/schgen/render/extends-flattening.test.ts`,
+  `lib/schgen/render/stock-symbols.ts`, and **G119** and **G121** in this
+  file. Deleting it would leave four dangling references to a measurement
+  nothing else in the register records. (2) It is a **measurement**, not a
+  defect report, which is what its own title says and what G116, G118 and
+  G120 are too - and this register's settled shape for a measurement is an
+  entry that records the number and is not waiting on anything, closing
+  with *"nothing further"* rather than being deleted. A deletion rule meant
+  for fixed defects should not quietly discard measurements.
 - **What Task 4 did, which closes the code half.**
   `tests/schgen/render/extends-flattening.test.ts` proves R9's criterion on
   `Fix:OPAMP2X`: the flattened symbol carries its parent's eight pins (1-8,
@@ -6325,12 +6342,15 @@ stock directory second"* cannot be followed literally.
   4 copied into this repository, so neither depends on an installed KiCad.
   `lib/schgen/render/stock-symbols.ts` records R8's shape reconciliation and
   the deviation from the brief's mechanism (see **G119**).
-- **What would settle the rest** **CRITERION:** the plan document no longer
-  asserts that `R_Small`, `C_Small` or `Conn_01x05` is an `(extends …)`
-  symbol, nor that the vendored set has six members. **MECHANISM:** an edit
-  to the plan by whoever owns it - a Task 4 implementer editing the brief it
-  was given would be authoring its own acceptance criteria, which `CLAUDE.md`
-  forbids.
+- **What would settle it** **nothing further.** The criterion this entry
+  carried - *the plan document no longer asserts that `R_Small`, `C_Small`
+  or `Conn_01x05` is an `(extends …)` symbol, nor that the vendored set has
+  six members* - is met as of `3dc2695`, checkable by
+  `grep -n "R_Small\|six symbols" docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`,
+  which now returns only the marked corrections and the quoted original.
+  What remains here is the measurement itself, kept for the four sites that
+  cite it and for the next reader who needs to know how many of KiCad
+  10.0.5's `Device` symbols actually extend.
 
 ### G118 - measured: all ten lib ids the four parity circuits declare resolve, but three of them resolve ONLY through the installed KiCad, and the plan's own starting-point counts do not match what the circuits build
 
