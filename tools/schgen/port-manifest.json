@@ -117,7 +117,22 @@
         { "text": ", false", "occurrences": 4 },
         { "text": ", pinmap: null", "occurrences": 4 }
       ]
-    }
+    },
+    { "from": "render/blockTypes.ts", "to": "lib/schgen/render/block-types.ts" },
+    { "from": "render/powerText.ts", "to": "lib/schgen/render/power-text.ts" },
+    { "from": "render/unitPins.ts", "to": "lib/schgen/render/unit-pins.ts" },
+    { "from": "render/bodyClearance.ts", "to": "lib/schgen/render/body-clearance.ts" },
+    { "from": "render/unitText.ts", "to": "lib/schgen/render/unit-text.ts" },
+    { "from": "render/pinMarks.ts", "to": "lib/schgen/render/pin-marks.ts" },
+    { "from": "render/sheetTypes.ts", "to": "lib/schgen/render/sheet-types.ts" },
+    { "from": "render/fieldPlacement.ts", "to": "lib/schgen/render/field-placement.ts" },
+    { "from": "render/glyphClearance.ts", "to": "lib/schgen/render/glyph-clearance.ts" },
+    { "from": "render/textScene.ts", "to": "lib/schgen/render/text-scene.ts" },
+    { "from": "render/drawnExtent.ts", "to": "lib/schgen/render/drawn-extent.ts" },
+    { "from": "render/symbolSelfText.ts", "to": "lib/schgen/render/symbol-self-text.ts" },
+    { "from": "render/layoutCheck.ts", "to": "lib/schgen/render/layout-check.ts" },
+    { "from": "render/connectivity.test.ts", "to": "tests/schgen/render/connectivity.test.ts" },
+    { "from": "render/wireSafety.test.ts", "to": "tests/schgen/render/wire-safety.test.ts" }
   ],
   "handWritten": [
     "lib/schgen/strict.ts",
