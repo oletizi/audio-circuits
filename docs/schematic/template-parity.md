@@ -86,10 +86,11 @@ prescription** - it says what the blocks hold, not what they should hold.
 
 **The two columns differ, and the difference is a PIN-COUNT CONVENTION rather than a topology
 fact.** `twoPinNets` requires `pins.length === 2`; a part wired as a rheostat, with two of its
-pins strapped to one net, has two terminals and three pins. **6 of 12 blocks hold NO unit
-that is genuinely more than two-terminal** - `tp-leg-upper`, `tp-leg-feedback`, `tp-leg-lower-a`, `tp-leg-lower-b`, `tp-leg-collector`, `tp-leg-emitter-bypass` - so for those blocks the only obstacle to `rail-row`,
-`divider` and `passive-chain` is that convention. Recorded, not changed: `twoPinNets` is a
-ported, reviewed decision (`docs/known-gaps.md` **G160**).
+pins strapped to one net, has two terminals and three pins. **7 of 12 blocks hold no unit
+that is genuinely more than two-terminal**, and **6 of those are refused by `twoPinNets`
+anyway** - `tp-leg-upper`, `tp-leg-feedback`, `tp-leg-lower-a`, `tp-leg-lower-b`, `tp-leg-collector`, `tp-leg-emitter-bypass` - so for those the convention is the ONLY obstacle to
+`rail-row`, `divider` and `passive-chain`. Recorded, not changed: `twoPinNets` is a ported,
+reviewed decision (`docs/known-gaps.md` **G160**).
 
 **11 of 12 blocks hold at least one unit that is not two-terminal with both pins connected**, which is where the three subgraph-only templates stop. The one that does not - `oc-power` - gets past that predicate and is declined on TOPOLOGY instead; the verdict rows below say how.
 

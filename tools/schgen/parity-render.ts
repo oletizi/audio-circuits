@@ -110,13 +110,17 @@ export function renderCensus(c: ParityCensus): string {
   out.push("")
   const artefact = c.blocks.filter((b) => b.notTwoTerminal > 0 && b.notTwoTerminalGenuine === 0)
   if (artefact.length > 0) {
+    const noGenuine = c.blocks.filter((b) => b.notTwoTerminalGenuine === 0)
     out.push(
-      `**The two columns differ, and the difference is a PIN-COUNT CONVENTION rather than a topology\n` +
-        `fact.** \`twoPinNets\` requires \`pins.length === 2\`; a part wired as a rheostat, with two of its\n` +
-        `pins strapped to one net, has two terminals and three pins. **${artefact.length} of ${c.blocks.length} blocks hold NO unit\n` +
-        `that is genuinely more than two-terminal** - ${artefact
+      "**The two columns differ, and the difference is a PIN-COUNT CONVENTION rather than a topology\n" +
+        "fact.** `twoPinNets` requires `pins.length === 2`; a part wired as a rheostat, with two of its\n" +
+        `pins strapped to one net, has two terminals and three pins. **${noGenuine.length} of ${c.blocks.length} blocks hold no unit\n` +
+        `that is genuinely more than two-terminal**, and **${artefact.length} of those are refused by \`twoPinNets\`\n` +
+        `anyway** - ${artefact
           .map((b) => `\`${b.block}\``)
-          .join(", ")} - so for those blocks the only obstacle to \`rail-row\`,\n\`divider\` and \`passive-chain\` is that convention. Recorded, not changed: \`twoPinNets\` is a\nported, reviewed decision (\`docs/known-gaps.md\` **G160**).`,
+          .join(
+            ", ",
+          )} - so for those the convention is the ONLY obstacle to\n\`rail-row\`, \`divider\` and \`passive-chain\`. Recorded, not changed: \`twoPinNets\` is a ported,\nreviewed decision (\`docs/known-gaps.md\` **G160**).`,
     )
     out.push("")
   }
