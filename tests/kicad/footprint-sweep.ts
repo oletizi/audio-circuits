@@ -114,6 +114,67 @@ export const NOT_A_KICAD_FOOTPRINT: ReadonlyMap<string, string> = new Map([
     "a one-letter placeholder footprint in the ported schgen ir/ test fixtures (res(), big(), " +
       "the PartSpec literals), where only the field's presence is read",
   ],
+  [
+    " ",
+    "a single space, which is the INPUT to gate 6's \"part X has no footprint\" refusal: " +
+      "footprintProblem tests part.footprint.trim() === \"\", so only a blank-but-not-empty " +
+      "value drives that arm. Task 11's ported tests/schgen/gates/pin-identity.test.ts declares " +
+      "it for exactly that, and it is a claim about no library at all",
+  ],
+])
+
+/**
+ * **A FOOTPRINT WHOSE LIBRARY NICKNAME IS A FIXTURE'S OWN, so the name is never resolved on
+ * disk** - each with what supplies its pads instead.
+ *
+ * This is the footprint-side counterpart of `./symbol-names.test.ts`'s `NOT_A_KICAD_SYMBOL`,
+ * added by Task 11 of the M1 schematic-authoring plan and carrying the same two teeth:
+ * `./footprint-names.test.ts` requires each entry to STILL fail at the LIBRARY (not at the
+ * footprint, and not to resolve), and requires every swept site to be under `tests/schgen/`.
+ * Neither `NOT_A_KICAD_FOOTPRINT` nor `CONSTRUCTED_FOR_A_REFUSAL` can hold these: the first is
+ * for values that are not lib ids, and the second's teeth assert `no-such-footprint`, which an
+ * invented LIBRARY half can never be.
+ *
+ * **IT IS THE FIFTH REPO-WIDE STATIC GUARD THE PORT HAS NEEDED AN EXEMPTION FROM**, after the
+ * temp-scratch check (**G122** and **G123**) and the symbol sweep (**G133**). `docs/known-gaps.md`
+ * records the recurrence, which matters more than any one entry: a ported test fixture collides
+ * with this repository's standing guards as reliably as a ported test does.
+ *
+ * **WHY THE NAMES ARE NOT RELABELLED `SYNTHETIC:` INSTEAD**, which is this file's own preferred
+ * mechanism for a fictional name: they are in a PORTED file
+ * (`tools/schgen/port-manifest.json`'s `files`), whose content is byte-identical to its pedals
+ * source modulo imports, and a `cuts` entry is deletion-only. Renaming them would be a hand edit
+ * the port-fidelity test refuses.
+ */
+export const FIXTURE_FOOTPRINT_LIBRARY: ReadonlyMap<string, string> = new Map([
+  [
+    "Pkg:SOIC8",
+    "the nickname \"Pkg\" is a fixture's own, not a library: gate 6 takes its pad numbers from an " +
+      "INJECTED PadLookup, and tests/schgen/gates/pin-identity.test.ts's PADS returns the eight " +
+      "SOIC-8 pads for this exact string. A real library's footprint could not serve, because " +
+      "the pad set is the variable under test and several cases need it to disagree with the " +
+      "symbol on purpose.",
+  ],
+  [
+    "Pkg:MISSING",
+    "the same fixture nickname, declared PRECISELY so that resolution fails: the test's " +
+      "PadLookup throws for this string, driving gate 6's \"footprint ... cannot be resolved\" " +
+      "arm and asserting the thrown message reaches the problem list. A name that resolved " +
+      "anywhere would make that case unreachable.",
+  ],
+  [
+    "Pkg:TWO",
+    "the same fixture nickname, with a two-pad lookup, so gate 6 reports an eight-pin symbol's " +
+      "pads as MISSING from the footprint rather than extra. It is the opposite direction of the " +
+      "same comparison Pkg:SOIC8 drives, and the pad count is again the variable under test.",
+  ],
+  [
+    "Pkg:SOIC8EP",
+    "the same fixture nickname, with a ninth pad, for the MECHANICAL-PAD half of gate 6: a pad " +
+      "the footprint has and the symbol does not is a problem unless the part declares it as a " +
+      "mechanical pad. No installed footprint can serve, because the test asserts both outcomes " +
+      "over the same footprint with the declaration changed.",
+  ],
 ])
 
 /**

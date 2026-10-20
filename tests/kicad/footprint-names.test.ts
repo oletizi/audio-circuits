@@ -62,6 +62,7 @@ import {
 } from "./footprint-library.ts"
 import {
   CONSTRUCTED_FOR_A_REFUSAL,
+  FIXTURE_FOOTPRINT_LIBRARY,
   NOT_A_KICAD_FOOTPRINT,
   SYNTHETIC_PREFIX,
   isLibId,
@@ -98,6 +99,8 @@ test("every footprint name swept out of the repository resolves in an installed 
   for (const name of SWEPT.keys()) {
     if (name.startsWith(SYNTHETIC_PREFIX)) continue
     if (CONSTRUCTED_FOR_A_REFUSAL.has(name)) continue
+    // A fixture's own library nickname, held to its own teeth below rather than dropped.
+    if (FIXTURE_FOOTPRINT_LIBRARY.has(name)) continue
     // A BARE NAME IS CHECKED BY THE NEXT TEST, NOT DROPPED. Dropping it is how a
     // declaration this check cannot verify becomes one it pretends to have
     // verified.
@@ -145,6 +148,44 @@ test("every constructed-for-a-refusal name is still swept, still fictional, and 
   for (const [name, reason] of CONSTRUCTED_FOR_A_REFUSAL) {
     expect(resolveFootprintOnDisk(name), name).toBe("no-such-footprint")
     expect(reason.length, name).toBeGreaterThan(60)
+  }
+})
+
+/** Where a fixture-library footprint id may appear at all - the schgen port's own tests. */
+const FIXTURE_SITE_PREFIX = "tests/schgen/"
+
+test("every fixture-library footprint is still swept, still fails at the library, and still only in tests/schgen/", () => {
+  // THE TEETH ON FIXTURE_FOOTPRINT_LIBRARY, the same two the symbol side's NOT_A_KICAD_SYMBOL
+  // carries. An exemption with no teeth is a hole exactly the size of whatever anybody listed:
+  // without the first check a real footprint could hide behind the list, and without the second
+  // a production circuit naming one would pass this sweep silently.
+  const exempt = [...FIXTURE_FOOTPRINT_LIBRARY.keys()].sort()
+  expect(exempt.length, "an exemption list nothing iterates is a check that cannot fail")
+    .toBeGreaterThan(0)
+  expect(
+    [...SWEPT.keys()].filter((name) => FIXTURE_FOOTPRINT_LIBRARY.has(name)).sort(),
+    "an exemption the sweep no longer finds is stale; delete it rather than leaving it",
+  ).toEqual(exempt)
+  for (const [name, reason] of FIXTURE_FOOTPRINT_LIBRARY) {
+    expect(
+      resolveFootprintOnDisk(name),
+      `${name} now resolves, or fails at the FOOTPRINT rather than at the library - the whole ` +
+        "claim this list makes is that the library half is a fixture's own nickname",
+    ).toBe("no-such-library")
+    expect(reason.length, name).toBeGreaterThan(60)
+    const where = SWEPT.get(name) ?? []
+    expect(where.length, name).toBeGreaterThan(0)
+    expect(
+      where.filter((site) => !site.startsWith(FIXTURE_SITE_PREFIX)).sort(),
+      `${name} is declared outside ${FIXTURE_SITE_PREFIX} in these files. The exemption covers ` +
+        "the schgen port's own gate fixtures and nothing else.",
+    ).toEqual([])
+  }
+  // If KiCad ever ships a footprint library by one of these nicknames, the exemption stops
+  // being safe and this says so before anything silently resolves.
+  const nicknames = new Set(exempt.map((name) => name.slice(0, name.indexOf(":"))))
+  for (const nickname of nicknames) {
+    expect(installedFootprintLibraries().has(nickname), nickname).toBe(false)
   }
 })
 

@@ -87,6 +87,11 @@ test("every declared source root is a directory on disk and is used by an entry"
 const COPIED_FIXTURES: readonly { readonly from: string; readonly to: string }[] = [
   { from: "__fixtures__/symbols/Fix.kicad_sym", to: "tests/schgen/__fixtures__/symbols/Fix.kicad_sym" },
   { from: "__fixtures__/symbols/Pwr.kicad_sym", to: "tests/schgen/__fixtures__/symbols/Pwr.kicad_sym" },
+  // Task 11: the THIRD fixture library, which Task 4 did not copy because nothing then needed it.
+  // `generate`'s `designResolver` always adds the `power` nickname (`FLAG_NICK`, for
+  // `power:PWR_FLAG`) to the stock set, so ANY test that calls `generate` with `stockDir` pointed
+  // at this directory refuses without it - `tests/schgen/verify.test.ts` is the first that does.
+  { from: "__fixtures__/symbols/power.kicad_sym", to: "tests/schgen/__fixtures__/symbols/power.kicad_sym" },
   // Task 11: the datasheet pin table gate 6 compares the `mini` fixture's MPN-overridden op-amp
   // against. The ported `mini/index.ts` names it (`pinTables: "../../pintables"`) and
   // `tests/schgen/gates/pin-table.test.ts` asserts its contents, so a drifted copy changes what

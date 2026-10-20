@@ -122,6 +122,12 @@ const CALLER_REMOVES: Readonly<Record<string, readonly string[]>> = {
 const REMOVES_VIA_OWN_LIST: Readonly<Record<string, { readonly site: string; readonly list: string }>> = {
   "schgen/render/library.test.ts": { site: "dir", list: "tempDirs" },
   "cli/schgen.test.ts": { site: "dir", list: "MODULE_DIRS" },
+  // Task 11: a DIVERGED port of `digital-pedal-platform`'s `tools/schgen/verify.test.ts`
+  // (`tools/schgen/port-manifest.json`). Its scratch directories go on the file's own `dirs`
+  // list, drained in an `afterEach`, which is the shape this table exists for. The divergence
+  // is in the fixture `DesignSpec`, not in the temp-directory handling, so rewriting that
+  // handling would be a second, undeclared deviation from the source.
+  "schgen/verify.test.ts": { site: "dir", list: "dirs" },
 }
 
 /**

@@ -205,6 +205,43 @@ const NOT_A_KICAD_SYMBOL: ReadonlyMap<
         "fails, exactly as for Fix:R.",
     },
   ],
+  [
+    "Fix:OPAMP2",
+    {
+      failure: "no-such-library" as const,
+      reason:
+        "the same hand-written fixture library as Fix:R above, reached by a fifth ported file. " +
+        "Task 11's tests/schgen/gates/pin-identity.test.ts draws its three-unit op-amp with this " +
+        "fixture symbol, because gate 6 compares a datasheet pin table against the SYMBOL'S own " +
+        "pin names and numbers and the fixture is the only symbol whose pins the test controls. " +
+        "No KICAD_SYMBOLS root holds a Fix.kicad_sym, so the library half is what fails.",
+    },
+  ],
+  [
+    "Fix:OPAMP2X",
+    {
+      failure: "no-such-library" as const,
+      reason:
+        "the same hand-written fixture library again, and the `extends` child of Fix:OPAMP2 in " +
+        "it. The ported pin-identity test names it in ONE pin table to drive gate 6's refusal " +
+        "\"pin table OPA1688 is for symbol Fix:OPAMP2X, not Fix:OPAMP2\" - so it is declared " +
+        "here precisely because it is the WRONG symbol for that part, and no installed name " +
+        "could serve. The library half is what fails, exactly as for Fix:R.",
+    },
+  ],
+  [
+    "H7:TPS7A4901",
+    {
+      failure: "no-such-library" as const,
+      reason:
+        "the nickname \"H7\" is digital-pedal-platform's own PROJECT symbol library, which this " +
+        "repository does not have and never will: Task 11's ported " +
+        "tests/schgen/gates/pin-table.test.ts uses that project's TPS7A4901 pin table verbatim " +
+        "as its well-formed fixture, and a pin table names the lib id it is for. The name is a " +
+        "statement about the fixture's provenance, not about any library here. No KICAD_SYMBOLS " +
+        "root holds an H7.kicad_sym, so the library half is what fails.",
+    },
+  ],
 ])
 
 /** Where an exempt fixture lib id may appear at all. */

@@ -175,6 +175,41 @@
   ],
   "diverged": [
     {
+      "from": "gates/connectivity.ts",
+      "to": "lib/schgen/gates/connectivity.ts",
+      "sourceSha": "54d2cfc339d0be49b5aa8f92a041f625f87cef4491de52b54e760183697ad10e",
+      "task": "Task 11",
+      "why": "ONE NETLIST READER. `compareConnectivity` took pedals' `Connectivity { nets: Map<string,string[]>; references: string[] }`, which `connectivityFromXml` builds from a `kicadxml` export with `fast-xml-parser`. It now takes this repository's `ImportedNetlist`, which `lib/kicad/netlist.ts`'s `importNetlist` builds from the s-expression `.net` export that every other netlist consumer here already reads - so the adaptation REMOVES a dependency rather than adding one, and no XML parser enters the tree. Exactly two reads change (`actual.references` -> `components[].designator`, `actual.nets` -> `Object.entries(actual.nets)`), both marked in the file; `expectedConnectivity`, the three KiCad name conventions (`unconnected-(`, `Net-(`, leaf-matched labelled nets) and every problem string are unchanged. A `cuts` entry cannot express a substitution."
+    },
+    {
+      "from": "gates/connectivity.test.ts",
+      "to": "tests/schgen/gates/connectivity.test.ts",
+      "sourceSha": "f7ac517de551ce3859cef08926aea1229143421eefa7d02b58d6df1ea71ea5a8",
+      "task": "Task 11",
+      "why": "The fixture half of the divergence above: the `actual` helper builds an `ImportedNetlist` (a record of nets, and a `components` list the references come from) instead of pedals' `Connectivity`. NOT ONE ASSERTION CHANGES - every expected problem string is verbatim, which is what ruling R4 requires, and all fourteen tests pass. The record's key order is the fixture array's and `compareConnectivity` reads `Object.entries`, so the three cases that assert an exact problem ORDER still measure what they measured."
+    },
+    {
+      "from": "verify.ts",
+      "to": "tools/schgen/verify.ts",
+      "sourceSha": "d44870078770a4a3e06dd2ba165ecd6b414cddb7b5215434952093b9ea59bf90",
+      "task": "Task 11",
+      "why": "Two divergences, both forced. (1) ONE NETLIST READER, as for gates/connectivity.ts: gate 3 reads the s-expression export with `importNetlist`. The ported `kicad-run.ts`'s `exportNetlist` asks kicad-cli for `kicadxml` and is a `files[]` entry this task may not hand-edit, so `exportSexprNetlist` - the one new function in the file - asks the same hermetic `runKicadCli` for `kicadsexpr`. (2) GATE 8's GRAPH COMPARISON IS NOT PORTED: `gates/oscar/compare.ts` and `graph.ts` are Task 18's (`graph.ts` needs `@/kicad/components`, unresolved). Gate 8 is NOT deferred (spec revision 4; docs/known-gaps.md G104), so `runGates` still registers its row for a design declaring `oscar` and that row carries `OSCAR_NOT_PORTED` - a gate omitted from the census reads exactly like a gate that passed. `oscarGate` and `oscarBoardGraph` are reduced to that refusal plus `symmetricSymbolsProblems`; `annotationProblems` and `symmetricSymbolsProblems` are kept verbatim and tested, because deleting them would make Task 18 re-transcribe them from a source this file no longer re-derives from."
+    },
+    {
+      "from": "verify.test.ts",
+      "to": "tests/schgen/verify.test.ts",
+      "sourceSha": "eb4e33e326cb9bcf3fbd8dc184366f9a232a90fd903110f4b8a3041181695b28",
+      "task": "Task 11",
+      "why": "G112: the fixture `DesignSpec` drops `mcu: null` and `pinmap: null`. D3/G140: its DEC block declared `{ kind: \"labels\", reason: \"t\" }`, and `{ kind: \"bus\", groups: [] }` - the substitute nine other diverged files use - CANNOT serve here, because `realiseBus` refuses a block holding more than one unit and this block holds two capacitors. It becomes `{ kind: \"wired\", template: \"decoupling-bank\", anchor: null }`, which is what the block is and is the template the ported `mini` design gives its own DEC block. The `oscarBoardGraph` describe is deleted with the function (Task 18's `graphFromNetlist`); the `symmetricSymbolsProblems`, `runGate` and `annotationProblems` describes are verbatim. ONE TEST IS ADDED, and it is the claim verify.ts's divergence 2 exists to make: with a generation that succeeds, gate 8 reports `OSCAR_NOT_PORTED` rather than an empty problem list."
+    },
+    {
+      "from": "integration/gates.test.ts",
+      "to": "tests/schgen/gates/gates.kicad.test.ts",
+      "sourceSha": "76f97e89d3c4e5694e76428481d405cc5a3e6994778f5919e24c83b3f4581a4f",
+      "task": "Task 11",
+      "why": "Gates 3 and 6 on a real generated schematic through the real kicad-cli - the only place either gate meets an artifact rather than a fixture. Three substitutions, no deletions, no changed assertion: the generation harness is `miniInScratch()` plus generate/writeGeneration here rather than pedals' `generateMiniInTmp` (not ported - it makes its temp directory inside an object literal, which this repository's static temp-scratch guard counts as an unnamed site), gate 3 reads the s-expression export with `importNetlist`, and the pin-table directory comes off the design's own `pinTables` field instead of being written out a second time. Renamed to `.kicad.test.ts`, this repository's convention for a test that requires the real tool."
+    },
+    {
       "from": "render/pinMarks.test.ts",
       "to": "tests/schgen/render/pin-marks.test.ts",
       "sourceSha": "d81d28b08812fd4e7a7f1a23450c8a74c48854d3070370745615f739097976d9",
@@ -504,6 +539,9 @@
     "tests/schgen/from-network.test.ts",
     "tests/schgen/rules/symbols.test.ts",
     "tests/schgen/rules/pin-sides.test.ts",
-    "tests/schgen/rules/orientation.test.ts"
+    "tests/schgen/rules/orientation.test.ts",
+    "lib/schgen/gates/round-trip.ts",
+    "tests/schgen/gates/round-trip.kicad.test.ts",
+    "tools/schgen/gate-census.ts"
   ]
 }
