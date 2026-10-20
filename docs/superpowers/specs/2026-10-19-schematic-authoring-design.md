@@ -656,9 +656,27 @@ incomplete route, and neither is an orthogonal router. A star model, untried by
 anyone until the review measured it, is legal and **worse**: 113 ambiguous
 pairs against 30. **The edge model is not the lever in either direction.**
 
+**AMENDED 2026-10-20, same day, by the task implementing it — and the
+amendment corrects this ruling's own justification.** The paragraph above says
+dropping the contained segment *"changes neither the drawn picture nor the
+connectivity, because its endpoints stay covered by the survivor."* **That is
+true only WITH a junction at the branch point.** The implementer wrote the
+connectivity guard this justification implies, measured it, and found **it
+fires**: on `tp-leg-upper` the collapse takes a 4-piece partition to 5. It then
+deleted the guard for a better reason than it failed — `connectedComponents`
+**cannot see junctions by construction**, so the guard answered the question
+with a model that excludes the answer. **Obligation 2 is the gate that does see
+it**, and with this ruling live `oc-power` and `tp-stage` refuse there by name.
+See `docs/known-gaps.md` **G194**. So: the collapse is sound, the connectivity
+claim holds **only with the junction**, and **the collapse moved the problem
+rather than removing it** — which is what the register must say and what this
+clause now says.
+
 **What this ruling does NOT do.** It does not weaken obligation 5, which still
 refuses a repair it cannot justify. It does not touch any serialized byte, so
-no manifest key moves. And it does not claim the corpus will stay this way: the
+no manifest key moves. **And it did not make anything draw**: clause (d)'s
+refusals went 11 to 0 with 30 containments collapsed, and the same eleven
+blocks then refuse one gate later, at snapping (**G188**). The barrier moved. And it does not claim the corpus will stay this way: the
 30/30 containment measurement is a property of **these twelve blocks under this
 backend at this version**, and the refusing arms exist for the day that changes.
 
