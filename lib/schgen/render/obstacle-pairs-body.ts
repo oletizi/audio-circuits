@@ -17,7 +17,7 @@
  */
 import type { PairCoverage } from "./obstacle-matrix.ts"
 import {
-  CLEARANCE_BOX, CROSS_BOUND, FRAME_DERIVED, JUNCTION_DERIVED, NUMBER_BOX_RESOLUTION,
+  CLEARANCE_BOX, CROSS_BOUND, FRAME_DERIVED, JUNCTION_DERIVED, NO_FLAG_PRODUCER, NUMBER_BOX_RESOLUTION,
 } from "./obstacle-pairs-reasons.ts"
 
 export const BODY_PAIRS: readonly PairCoverage[] = [
@@ -113,11 +113,7 @@ export const BODY_PAIRS: readonly PairCoverage[] = [
       "entry whatever its `flag`, so a PWR_FLAG's glyph is a glyph for this check and is named " +
       "\"the glyph of PWR_FLAG <net> <i>\".",
     meaninglessBecause: null,
-    asymmetric:
-      "The `graphicsBox` and own-connection limits of the body/power-glyph cell apply. **NOTHING IN THIS " +
-      "TREE PRODUCES A `flag: true` PowerSymbol**: `anchorsToSymbols` (power-text.ts) hard-codes " +
-      "`flag: false`, and the only producer is `render/frames.ts`'s flag content, which is not ported " +
-      "(Task 8). So this cell is a claim about the check's shape, exercised by nothing here yet.",
+    asymmetric: `The \`graphicsBox\` and own-connection limits of the body/power-glyph cell apply. ${NO_FLAG_PRODUCER}.`,
   },
   {
     a: "body",
@@ -241,7 +237,12 @@ export const PIN_LINE_PAIRS: readonly PairCoverage[] = [
     asymmetric:
       "The point-level blind spot of the pin-line/power-glyph cell applies in full. **AND NOTHING IN THIS " +
       "TREE PRODUCES A FLAG WITH AN ANCHOR**: `anchorsToSymbols` hard-codes `flag: false` and the flag " +
-      "producer (`render/frames.ts`) is not ported, so no flag reaches a `ClearanceScene` here yet.",
+      "producer (`render/frames.ts`, Task 6b) is not ported, so no flag reaches a `ClearanceScene` here " +
+      "yet. **DELIBERATELY NARROWER THAN `NO_FLAG_PRODUCER`, AND NOT A STALE COPY OF IT**: this cell is " +
+      "about a flag that reaches a scene through an ANCHOR, so `anchorsToSymbols` is the only site that " +
+      "could produce one. `anchorExtent` (fanout-rows.ts) builds a `PowerSymbol` too, which is why the " +
+      "shared constant names two sites, but that one is measured and discarded and never becomes an " +
+      "anchor. Re-read at Task 7; see docs/known-gaps.md.",
   },
   {
     a: "pin-line",

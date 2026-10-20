@@ -21,7 +21,18 @@ export const CLEARANCE_BOX =
   "`LibSymbol.boxes` for every placement and refuses `boxesOverlap(p.box, q.box)` for every pair of them. " +
   "`boxes` is `lib-pins.ts`'s `unitBoxes`: graphics plus BOTH pin ends, so it spans to the pin tips"
 
-/** Why no cell naming `frame-border` against a non-text category names a function. */
+/**
+ * Why no cell naming `frame-border` against a non-text category names a function.
+ *
+ * **THE TASK NUMBER IS 6b, NOT 8, AND IT WAS WRONG IN FOUR PLACES AT ONCE.**
+ * Controller ruling R14 split Task 6 around Task 7, and `render/frames.ts`
+ * belongs to **Task 6b** - see `docs/known-gaps.md` **G131** and **G135**.
+ * This constant, the `body`/`pwr-flag-glyph` cell, `NO_FLAG_PRODUCER` and
+ * `NOT_IN_THIS_TREE["frames.ts"]` all said Task 8; correcting one of them at
+ * Task 7 turned inherited staleness into a contradiction inside the one
+ * module whose whole purpose is that its citations are checkable. All four
+ * now say Task 6b.
+ */
 export const FRAME_DERIVED =
   "A frame's box is not placed against what is inside it; it is DERIVED from it. `drawnBoxes` " +
   "(lib/schgen/render/drawn-extent.ts) returns every box a block layout draws — `scene.texts`, " +
@@ -29,7 +40,7 @@ export const FRAME_DERIVED =
   "them, and that union is what a frame is sized from. An enclosed item is inside its border by " +
   "construction rather than by a refusal, which is why `textProblems`'s frame clause tests only `texts`: " +
   "a field is re-placed by the field placer after the extent was measured and is the one thing that can " +
-  "move outward. **THIS REASON RESTS ON `render/frames.ts`, WHICH IS NOT IN THIS TREE** (Task 8); it is " +
+  "move outward. **THIS REASON RESTS ON `render/frames.ts`, WHICH IS NOT IN THIS TREE** (Task 6b); it is " +
   "verified here only as far as `drawn-extent.ts` goes. See docs/known-gaps.md"
 
 /** Why a DNP cross needs no cell against a foreign category — arithmetic, not a test. */

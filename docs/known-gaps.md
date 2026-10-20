@@ -7074,10 +7074,19 @@ figure is thirteen newly ported modules, twelve of them unexercised.
     It added **nothing** to that set. What remains is Task 6a's emitter pair,
     `report.ts`, `gates/pin-table.ts` and `erc-exclusions.ts`, all of which
     wait on `render/sheets.ts` or on a gate nobody has wired yet.
+  - **THE "BEFORE" HALF OF 17 -> 5 IS NOT REPRODUCIBLE, and that is stated
+    rather than left for someone to discover.** It was taken in a throwaway
+    `git worktree` at `23442e3` which was removed afterwards, so re-deriving
+    it means creating one again. The "after" half IS reproducible from the
+    tree - `bun test tests/ --coverage` on `9461bea` or later - and the five
+    survivors can be checked independently against the import graph. A reader
+    who needs the before-figure should re-make the worktree rather than trust
+    the arithmetic here.
   - **Verified** CONFIRMED - this writer ported and ran the four returning
     tests, ran the probe that produced the three refusals and the two
     `OK` lines, and ran the coverage measurement at both revisions (the
-    "before" in a throwaway `git worktree` at `23442e3`).
+    "before" in a throwaway `git worktree` at `23442e3`, since removed - see
+    the clause above).
 
 ### G125 - the obstacle-category matrix is enumerated and filled, and **95 of its 105 cells rest on reading the source rather than on a test that could have failed**
 
@@ -7990,6 +7999,36 @@ tree, and the cell's claim holds; but a reader checking *"the only producer"*
 against the one file the reason named would have found a site it did not
 mention. The reason now names both.
 
+**ROUND 1 OF THIS ENTRY SAID "THE REASON NOW NAMES BOTH" AND THAT WAS FALSE OF
+ONE CELL, WHICH IS A LIVE INSTANCE OF THIS ENTRY'S OWN CRITERION (a).**
+`NO_FLAG_PRODUCER` is a shared constant used by **twelve** cells -
+`obstacle-pairs-glyph.ts` x7, `obstacle-pairs-graphic-wire.ts` x3,
+`obstacle-pairs-pin-text.ts` x2 - and round 1 edited the constant and nothing
+else. **`obstacle-pairs-body.ts` imports it nowhere.** Its
+`body`/`pwr-flag-glyph` cell carried a word-for-word DUPLICATE of the old
+constant, still reading *"the only producer is `render/frames.ts`'s flag
+content, which is not ported (Task 8)"* - the exact wording corrected
+elsewhere in the same commit. So for one of the thirteen cells the claim was
+not widened at all, and `git diff --stat` showed one prose file changed where
+a reader would have assumed all of them were. **Round 2: the duplicate is
+deleted and replaced by the constant** - supersede means delete - so there is
+now one copy.
+
+**Round 1's cell count was also wrong, and in the report as well as here**: it
+said three cells shared the constant. Twelve do, and
+`body`/`pwr-flag-glyph` - the one it listed - was not among them, being the
+own-words copy above.
+
+**A SECOND OWN-WORDS RESTATEMENT EXISTS, AND IT IS CORRECT.**
+`obstacle-pairs-body.ts`'s `pin-line`/`pwr-flag-glyph` cell says *"NOTHING IN
+THIS TREE PRODUCES A FLAG WITH AN ANCHOR"* and names `anchorsToSymbols` alone.
+Re-read at round 2: **that is right and complete for its scope**, because this
+cell is about a flag reaching a `ClearanceScene` through an ANCHOR, and
+`anchorExtent`'s symbol is measured and discarded and never becomes one. It
+was not folded into the shared constant, which would have widened it
+incorrectly; instead the cell now says in its own prose why it is deliberately
+narrower, so the next reader does not "fix" it.
+
 **ONE CITATION BECAME CHECKABLE AND WAS NOT CHECKED.**
 `obstacle-pairs-body.ts`'s `pin-line`/`wire` cell says `onPinLine` is *"the
 'KiCad would not join these, but a reader would' refusal the pedals regulator
@@ -8023,14 +8062,47 @@ where the 6a/6b split puts it.
   `Expected: 20 / Received: 21` on cited `.ts` names and `Expected: 89 /
   Received: 90` on cited identifiers - which is the pins doing exactly the job
   their comments claim. Both were updated with the reason recorded beside
-  them. That no cell names the arrived modules is
-  `grep -rn "blocks\.ts\|templates/\|template\b" lib/schgen/render/obstacle-*.ts`,
-  which returns two lines, both quoted above. That no `flag: true` producer
-  landed is `grep -rn "flag:" lib/schgen/` - every site reads `flag: false`
-  except the two type declarations.
+  them.
+- **ROUND 1'S TWO EVIDENCE GREPS DID NOT RETURN WHAT ROUND 1 SAID THEY
+  RETURNED, AND THAT IS ITS OWN FINDING.** The conclusions are unchanged and
+  in fact stronger, but a recorded result that does not match the command
+  sends the next reader hunting a change that never happened - the same
+  failure this file's preamble names for the grep over binary files. Re-run
+  verbatim at round 2:
+  - `grep -rn "blocks\.ts\|templates/\|template\b" lib/schgen/render/obstacle-*.ts`
+    returns **one** line, not two: `obstacle-pairs-body.ts:211`, the pedals
+    regulator-template attribution below. Round 1 quoted a second line
+    (`obstacle-pairs-body.ts:32`, the `render/sheetCheck.ts` caveat) that this
+    pattern does not match - it came from a different search. **One line is
+    the stronger result**, since the claim is that no cell names the arrived
+    modules.
+  - `grep -rn "flag:" lib/schgen/` returns **17** lines, of which 9 are in
+    `obstacle-*.ts` prose. Of the 8 in code, **exactly two construct a
+    `PowerSymbol` with `flag: false`** - `power-text.ts:59` and
+    `fanout-rows.ts:44` - and the other six are not producers at all: four
+    `flag: boolean` declarations (`sheet-types.ts:34`,
+    `glyph-clearance.ts:70`, `emit.ts:37`, `emit.ts:51`), one pass-through
+    (`glyph-clearance.ts:79`, `flag: p.flag`) and one doc comment
+    (`sheet-types.ts:28`). Round 1 said *"every site reads `flag: false`
+    except the two type declarations"*, which undercounts the exceptions by
+    four. **No `flag: true` is constructed anywhere**, which is the claim, and
+    it survives the recount.
 - **Verified** CONFIRMED - this writer ran all four perturbations, restored
   each, and read every `obstacle-pairs-*.ts` cell whose prose contains absence
-  language.
+  language. The round-2 corrections above were RELAYED by the Task 7 reviewer
+  and each was reproduced here before being written down: the twelve uses are
+  `grep -rn '\${NO_FLAG_PRODUCER}' lib/schgen/render/obstacle-pairs-*.ts | wc -l`
+  -> `12`, and the two greps were re-run verbatim.
+**AND A FOURTH SITE SAID THE WRONG TASK, WHICH ROUND 1 TURNED INTO A
+CONTRADICTION.** `render/frames.ts` is **Task 6b**'s under ruling R14
+(**G131**, **G135**), and four places said Task 8: `FRAME_DERIVED` (the reason
+**eleven** cells rest on), the `body`/`pwr-flag-glyph` duplicate,
+`NO_FLAG_PRODUCER`, and `NOT_IN_THIS_TREE["frames.ts"].why`. All four went
+stale at `23442e3`; round 1 corrected only the third, so the commit left the
+one module whose purpose is that its citations are checkable disagreeing with
+itself. **Round 2 makes all four say Task 6b** (the second by deletion, above)
+and records why in `obstacle-pairs-reasons.ts`'s own comment.
+
 - **Why it is open** two residuals. The `SETTLED_ARRIVALS` finding is prose
   beside a test, exactly the shape **G132** item 1 objects to for `portedAs`:
   nothing checks that the finding is still TRUE of the module, only that the
@@ -8171,7 +8243,54 @@ somebody to find and trust. Anyone wanting to repeat the look should use
   pair R6 over C7 drawn below the amplifier from - back to the output, and the
   output chain R10 to an `NS` label with C11 shunting to `GND`.
 
-**Two caveats a later reader needs.** The frame TITLE collides with the
+**ROUND 2 CORRECTS THREE THINGS IN THE PARAGRAPHS ABOVE, AND THEY MATTER
+BECAUSE THESE EIGHT DESCRIPTIONS ARE THE FIRST LOOK ANYONE HAS HAD.**
+
+**(a) "The harness decides nothing but the offset and the frame box" was a bad
+way to put it, and it undercut a claim that is provable.** Those are not
+nothing: they are precisely the two decisions whose real implementations exist
+to prevent the collision described below. `render/frames.ts` exports
+`frameSize`, whose comment reads *"Content box grown by two grid steps, title
+band on top, wide enough for the band's text"* and which takes
+`Math.max(content, text)` over a `bandHeight` of `(1 + legend.length) * LINE`,
+and `contentOffset`, *"Grid-multiple offset putting the content inside a frame
+at `at`, below the title band"*. The harness reserved **no band and no title
+width**; it put the content at a flat margin and drew a box one grid step
+around the extent with the title at the corner. **So the frame-title collision
+is attributable to the harness, and that attribution is now evidence rather
+than assertion.** What remains true is the thing that matters: the harness
+chooses no symbol position, rotation or wire - the template does all of that.
+
+**(b) THE HARNESS ALSO CHOSE WHICH FIXTURE EACH TEMPLATE DREW, AND ROUND 1 DID
+NOT SAY SO.** The eight circuits are lifted from the ported template tests,
+which are the pedals project's own fixtures for a dense digital mainboard -
+**G87** records that the templates were sized by exactly that and that there
+is NO evidence about how they behave on a discrete audio circuit. **So the
+descriptions above are pictures of (template x pedals fixture), not of
+templates drawing this repository's circuits.** *"The most convincing of the
+eight"* and *"textbook"* are judgements about a fixture as much as about a
+template, and **a reader must not take them as evidence of applicability** -
+that is Task 10's census, a different measurement, and nothing here bears on
+it.
+
+**(c) "`checkLayout` clean on all eight" is BLOCK-LEVEL ONLY, and weaker than
+what the real pipeline runs.** `checkLayout` sees one block's placements,
+wires and anchors. `layoutSheet` additionally runs `assertSheetSafe(scene)`
+and `assertTextClear(textScene(…, { blocks, powers, labels, texts, frames }))`
+over the whole sheet INCLUDING the frames
+(`$SCHGEN_SOURCE/render/sheets.ts:126-127`). **Neither ran here**, because
+both live in `render/sheetCheck.ts` and `render/textScene.ts`'s sheet entry
+point, which is Task 6b's. The frame-title collision is exactly the class of
+defect `assertTextClear` over a frame-bearing scene is there to catch, which
+is the second half of why (a)'s attribution holds.
+
+**(d) The per-template counts are not reproducible until `layoutSheet` lands.**
+`opamp-stage: 11 symbols, 21 wires, 7 junctions` and its seven siblings came
+from a harness that is not in the tree, so nobody can re-derive them without
+writing one again. That is a known cost of not committing a second sheet
+assembler, and the MECHANISM below is the fix.
+
+**The two original caveats, unchanged.** The frame TITLE collides with the
 topmost power symbol's text on four of the eight (`rail-row`,
 `decoupling-bank`, `divider`, `crystal`): that is the harness putting the
 title at the frame's top-left corner, **not a template defect** -
@@ -8188,8 +8307,17 @@ layout, clean on all eight.
   reported `[]` for all eight after the translation. The harness's own
   per-template line, printed before the export, is e.g.
   `opamp-stage: 11 symbols, 21 wires, 1 power symbols, 5 labels, 7 junctions, checkLayout clean`.
+  Round 2's (a) and (c) are reads of the pedals source that could have gone
+  the other way: `grep -n "frameSize\|contentOffset" $SCHGEN_SOURCE/render/frames.ts`
+  -> lines 115 and 122, and
+  `grep -n "assertSheetSafe\|assertTextClear" $SCHGEN_SOURCE/render/sheets.ts`
+  -> the two call sites at 126 and 127. Had `layoutSheet` not run a text check
+  over a frame-bearing scene, (a)'s attribution would have been weaker, not
+  stronger.
 - **Verified** CONFIRMED - this writer wrote the harness, ran the export, and
-  read all eight images.
+  read all eight images. Round 2's three corrections were RELAYED by the Task
+  7 reviewer and each was reproduced against the pedals source before being
+  written down.
 - **Why it is open** the brief's step is met in substance and not by the route
   the plan assigns, and **nothing in the repository has still emitted a
   schematic through its own pipeline** - which is **G131**'s point, now true
@@ -8200,50 +8328,101 @@ layout, clean on all eight.
   single-block designs are worth rebuilding through it so the pictures above
   can be compared against what the real sheet assembler produces.
 
-### G137 - a ported test SKIPS six tests when KiCad's stock op-amp library is missing, and the `CI` backstop it relies on to turn that into a failure does not exist in this repository
+### G137 - **the round-1 premise of this entry was FALSE and is the finding**: a ported test's six-test skip is real but the suite-level backstop already exists, so the narrower gap is a reader of one file, and the `CI` fix was rejected for reasons worth recording
 
-`tests/schgen/render/templates/opamp-stock.kicad.test.ts` guards its whole
-`describe` with `describe.skipIf(skipWithout(ready, "the KiCad stock symbol
-library Amplifier_Operational"))`. `skipWithout`
-(`tests/schgen/__fixtures__/require-tool.ts`, ported in Task 7) returns `true`
-- skip - when the tool is missing and `CI` is unset, and throws when `CI` is
-set, on the stated reasoning that *"a test that skips when its tool is missing
-cannot be told apart from one that passed, so in CI the job that provides the
-tool is the proof that the test ran."*
+**ROUND 1 SAID THE BACKSTOP DOES NOT EXIST. IT DOES, AND THAT SENTENCE IS THE
+ONE A LATER AGENT WOULD HAVE ACTED ON.** The original entry concluded *"six
+tests disappear quietly and nothing fails"*. The second half is false.
+`tests/schgen/render/stock-symbols.test.ts` is hand-written, calls
+`stockSymbolDir()` directly, and its own doc comment says **"THESE DO NOT SKIP
+WHEN KiCad IS ABSENT."** On a machine without KiCad's stock symbol libraries
+**this repository's suite is already red**, so the cardinal sin - a skipped
+check that looks like a passing one - is NOT live at suite level, and round
+1's CRITERION was already met when it was written.
 
-**That reasoning depends on a CI this repository does not have.** `CLAUDE.md`
-says KiCad is *"required, and not something to engineer around"*, that
-`make check` invokes `kicad-cli` on every run and that one test *"invokes it
-directly and fails rather than skips"*; **G67** separately records that this
-program's schematic gates were assigned to a CI that does not exist. So on a
-developer machine without the stock libraries, six tests disappear quietly and
-nothing fails.
+**What IS real, and it is narrower.**
+`tests/schgen/render/templates/opamp-stock.kicad.test.ts` is ported and guards
+its whole `describe` with `describe.skipIf(skipWithout(ready, "the KiCad stock
+symbol library Amplifier_Operational"))`, where `ready` is
+`fs.existsSync(path.join(stockSymbolDir(), "Amplifier_Operational.kicad_sym"))`.
+**A reader running that one file on a machine without the library sees
+`0 pass / 6 skip / 0 fail` and no explanation.** The suite as a whole would
+still be red, from a different file, which that reader is not looking at.
 
-It is not fixed because a ported file may not be hand-edited and a `cuts`
-entry can only delete - the `describe.skipIf` wrapper cannot be replaced with
-a hard refusal through the manifest.
+**SETTLED, in a hand-written file, by asserting the ported file's own
+predicate.** `tests/schgen/render/stock-symbols.test.ts` gained one test -
+*"the stock op-amp library a ported test skips on is present, so that test did
+not skip"* - which asserts exactly that `existsSync` and, when it fails, names
+the ported file, says it SKIPPED its six tests, and says what to install. No
+`cuts`, no edit to a ported file, no environment lie, and it binds for bare
+`bun test` as well as for `make check`. House precedent: the same file's
+existing tests already refuse rather than skip, for the reason
+`tests/kicad/symbol-library-disk.ts` gives.
 
-- **Found** 2026-10-19, Task 7, Step 3, while checking that the ported kicad
-  test had not skipped.
-- **Evidence** driven both ways, which is a check that could have failed.
-  With the stock libraries present the file is **6 pass / 0 fail**. With
-  `KICAD_CLI=/nonexistent/bin/kicad-cli` it is **0 pass / 6 skip / 0 fail** -
-  a run that prints no failure. With `KICAD_CLI=/nonexistent/bin/kicad-cli
-  CI=true` it is **0 pass / 1 fail / 1 error**, the module-scope throw. So the
-  mechanism behaves exactly as its doc comment says; what is missing is the
-  `CI` that makes the local skip safe.
-- **Verified** CONFIRMED - this writer ran all three.
-- **Why it is open** it is a defect inherited from the port, in a file this
-  repository may not edit, and the alternative - a hand-written equivalent, as
-  **G123** did for `symbolSelfText.test.ts` - costs the byte-check that is the
-  whole point of porting it.
-- **What would settle it** **CRITERION:** on a machine without KiCad's stock
-  symbol libraries, this repository's suite fails rather than passing with six
-  fewer tests. **MECHANISM**, untried, two alternatives: set `CI` in whatever
-  invokes the suite here (`make check`), which makes `skipWithout` throw and
-  needs no edit to a ported file; or change the pedals source so the guard
-  refuses unconditionally and re-run the port. The first is cheaper and does
-  not diverge the two trees.
+**THE `CI` MECHANISM ROUND 1 PROPOSED WAS REJECTED, AND WHY MATTERS MORE THAN
+THAT IT WAS.** `skipWithout` throws when `CI` is set and the tool is missing,
+so *"set `CI` in whatever invokes the suite"* looks like a free fix. Three
+reasons not to, in order of weight:
+
+1. **It cannot be seen to work on the machine that would adopt it.** With the
+   library present, `skipWithout` returns `false` before it ever reads `CI`,
+   so `bun test .../opamp-stock.kicad.test.ts` is **6 pass / 0 fail with and
+   without `CI=true`** here. A fix whose effect is invisible wherever it is
+   installed is a fix nobody can verify.
+2. **It protects one entry point.** `package.json`'s script is a bare
+   `"test": "bun test"`, which is what every task report in this plan actually
+   runs; setting `CI` in `make check` would leave that path unguarded.
+3. **It is an environment lie.** Asserting `CI` on a developer machine to buy
+   one refusal is a false statement about the environment, bought for one call
+   site: `process.env["CI"]` is read in exactly **one** place in the whole
+   repository (`tests/schgen/__fixtures__/require-tool.ts:17`), so it has no
+   other side effects today - but that is an argument that it is cheap, not
+   that it is right, and the next thing to read `CI` would inherit the lie.
+
+- **Found** 2026-10-19, Task 7, Step 3. **Round-1 premise corrected
+  2026-10-19 at Task 7 review**, which checked the claim rather than
+  believing it.
+- **Evidence**, all driven, each a check that could have failed:
+  - **The backstop fires.**
+    `KICAD_CLI=/nonexistent/bin/kicad-cli bun test tests/schgen/render/stock-symbols.test.ts`
+    -> **2 pass / 5 fail**. And the narrower case fires too: with
+    `KICAD_SYMBOL_DIR` pointed at a temp directory holding only
+    `Device.kicad_sym`, `symbolLibraries(["Amplifier_Operational"])` throws
+    *"no symbol library for nickname(s) Amplifier_Operational. Looked in the
+    installed stock directory …"*.
+  - **The skip is real.** With the libraries present the ported file is
+    **6 pass / 0 fail**; with `KICAD_CLI=/nonexistent/bin/kicad-cli` it is
+    **0 pass / 6 skip / 0 fail**; with that plus `CI=true` it is
+    **0 pass / 1 fail / 1 error**, the module-scope throw.
+  - **`CI` is invisible here.** `CI=true bun test .../opamp-stock.kicad.test.ts`
+    with the library present is **6 pass / 0 fail**, identical to the run
+    without it.
+  - **`CI` has one reader.** `grep -rn 'env\["CI"\]' lib tools tests` returns
+    exactly one line, `tests/schgen/__fixtures__/require-tool.ts:17`.
+  - **The new assertion has teeth.** With `KICAD_SYMBOL_DIR` pointed at the
+    one-library temp directory, `stock-symbols.test.ts` is **4 pass / 4 fail**
+    and the new test fails by name:
+    *"…/Amplifier_Operational.kicad_sym is missing, so
+    tests/schgen/render/templates/opamp-stock.kicad.test.ts SKIPPED its six
+    tests rather than running them…"*. Restored, it is **8 pass / 0 fail**.
+- **Verified** CONFIRMED - this writer ran every command above, wrote the new
+  test and drove it both ways. The correction to round 1 was RELAYED by the
+  Task 7 reviewer and then reproduced here in full before being written down.
+- **Why it is open** the ported file still skips, and that is not fixable from
+  this repository: a ported file may not be hand-edited and a `cuts` entry can
+  only delete, so the `describe.skipIf` wrapper stays. What the new assertion
+  buys is that the skip can no longer happen without something adjacent saying
+  so by name. The residual is that the two live in different files and nothing
+  ties them together but prose.
+- **What would settle it** **CRITERION:** a skipped `opamp-stock.kicad.test.ts`
+  cannot occur without a check failing and naming it. That is met today.
+  **The remaining, narrower CRITERION:** the tie between the ported file's
+  `ready` expression and the hand-written assertion of it survives a change to
+  either. **MECHANISM**, untried: have the ported file's predicate exported
+  from somewhere both can import - which needs a change in the pedals source,
+  not here - or assert the ported file's own source text contains the
+  expression, which is a grep and weaker than it looks. **NOT the mechanism:
+  setting `CI`**, for the three reasons above.
 
 ### G138 - three signatures in the Task 7 brief's `Produces` block do not match the source it says they are unchanged from, and one names a type that does not exist
 

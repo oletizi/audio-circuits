@@ -117,7 +117,11 @@ const NOT_A_RENDER_DECLARATION: Readonly<Record<string, string>> = {
 const NOT_IN_THIS_TREE: Readonly<Record<string, { readonly portedAs: string; readonly why: string }>> = {
   "frames.ts": {
     portedAs: "frames.ts",
-    why: "Task 8 - sizes a frame from the block extent; 11 cells' FRAME_DERIVED reason assumes it is absent",
+    // Task 6b, not Task 8: controller ruling R14 split Task 6 around Task 7
+    // and `frames.ts` landed in the second half. Four sites said Task 8 and
+    // this was one of them - see `obstacle-pairs-reasons.ts`'s FRAME_DERIVED
+    // comment and `docs/known-gaps.md` G131/G135.
+    why: "Task 6b - sizes a frame from the block extent; 11 cells' FRAME_DERIVED reason assumes it is absent",
   },
   "sheetCheck.ts": {
     portedAs: "sheet-check.ts",
@@ -280,10 +284,12 @@ describe("the obstacle-category matrix", () => {
   test("every identifier the matrix cites exists under lib/schgen/render, or is classified", () => {
     const sources = renderSources()
     const cited = [...citedIdentifiers()].sort()
-    // 90 cited today (89 until Task 7 added `anchorExtent` with
-    // NO_FLAG_PRODUCER's second hard-coded site). Pinned so that narrowing the
-    // extraction fails here.
-    expect(cited.length, `cited identifiers: ${cited.join(" ")}`).toBe(90)
+    // 91 cited today. 89 until Task 7 added `anchorExtent` with
+    // NO_FLAG_PRODUCER's second hard-coded site, then 90 -> 91 at round 2 when
+    // the `pin-line`/`pwr-flag-glyph` cell said why it is deliberately
+    // narrower than that constant and cited `PowerSymbol` by name. Pinned so
+    // that narrowing the extraction fails here.
+    expect(cited.length, `cited identifiers: ${cited.join(" ")}`).toBe(91)
     const unaccounted = cited.filter((id) => !declaredIn(sources, id) && NOT_A_RENDER_DECLARATION[id] === undefined)
     expect(
       unaccounted,

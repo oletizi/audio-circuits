@@ -73,6 +73,36 @@ test("a non-vendored nickname resolves too, which is the stock directory as a de
   expect(librarySymbols(fs.readFileSync(file, "utf8")).size).toBeGreaterThan(0)
 })
 
+/**
+ * **THE PREDICATE A PORTED TEST SKIPS ON, ASSERTED HERE WHERE IT CAN FAIL.**
+ *
+ * `tests/schgen/render/templates/opamp-stock.kicad.test.ts` is ported, so it
+ * may not be edited, and it guards its whole `describe` with
+ * `describe.skipIf(skipWithout(ready, …))` where `ready` is exactly the
+ * expression below. On a machine without that library it prints
+ * `0 pass / 6 skip / 0 fail` and explains nothing - a reader of that one file
+ * cannot tell a skipped check from a passing one, which is the failure this
+ * repository's rules exist to prevent.
+ *
+ * At SUITE level the cardinal sin is not live: the tests above already fail
+ * hard when the stock directory is missing or incomplete, which is the
+ * backstop `docs/known-gaps.md` **G137** round 1 wrongly said did not exist.
+ * This assertion closes the narrower gap, in a HAND-WRITTEN file, naming the
+ * ported file it speaks for - no `cuts`, no edit to a ported file, and no
+ * asserting `CI` to buy a refusal (**G137** records why that mechanism was
+ * rejected).
+ */
+test("the stock op-amp library a ported test skips on is present, so that test did not skip", () => {
+  const amplifiers = path.join(stockSymbolDir(), "Amplifier_Operational.kicad_sym")
+  expect(
+    fs.existsSync(amplifiers),
+    `${amplifiers} is missing, so tests/schgen/render/templates/opamp-stock.kicad.test.ts SKIPPED its ` +
+      "six tests rather than running them. That file is ported and cannot be edited; install KiCad's " +
+      "stock symbol libraries, or point KICAD_SYMBOL_DIR at a directory that has them. See " +
+      "docs/known-gaps.md G137.",
+  ).toBe(true)
+})
+
 test("the map holds exactly what was asked for, so a version lock cannot fingerprint the machine", () => {
   const libs = symbolLibraries(["Device", "Device", "Connector"])
   expect([...libs.keys()]).toEqual(["Device", "Connector"])
