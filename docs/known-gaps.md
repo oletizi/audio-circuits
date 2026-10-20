@@ -6926,11 +6926,15 @@ hand with it. Four copies of one path is a smell, not a design.
   *"**G121 itself is NOT deleted**, because this file's Task 4 record of
   `render/emit.kicad.test.ts` cites it by name for the `tsc`-error prediction
   it verified, and G117's own R10 ruling separately lists G121 among the
-  entries that cite G117 - deleting it would leave both dangling."* Four files
-  in the tree cite it too (`tools/schgen/port.ts`,
-  `tests/schgen/port-fidelity.test.ts`, `tests/circuits/kicad-round-trip.ts`,
-  `tests/kicad/install.test.ts`, `lib/kicad/netlist.ts`,
-  `lib/schgen/README.md`). **Nothing it describes is still true of the
+  entries that cite G117 - deleting it would leave both dangling."* **FIVE**
+  files in the tree cite it too - counted, not recalled, because an earlier
+  version of this sentence said "four" above a list of six:
+  `grep -rln "G121" --include="*.ts" --include="*.md" .` outside
+  `node_modules`, `.superpowers` and this file returns `lib/kicad/netlist.ts`,
+  `lib/schgen/README.md`, `tests/circuits/kicad-round-trip.ts`,
+  `tests/schgen/port-fidelity.test.ts` and `tools/schgen/port.ts`.
+  (`tests/kicad/install.test.ts` cited it until Task 10b round 2 and no longer
+  does, which is why a remembered count was wrong.) **Nothing it describes is still true of the
   artifact**; it stands as the record of a prediction that was made and then
   verified, which is the one thing a deletion would take with it.
 - **What would settle it** **CRITERION, two separable clauses.** (a) ~~A ported
@@ -8292,10 +8296,13 @@ module with no assertions in it tripped a guard just the same.
 
   **AMENDED 2026-10-20, Task 11: THEY HAVE NOW BEEN COUNTED, and this entry's
   closing sentence - *"Nobody has counted them"* - is what prompted it.** The
-  answer is **five**, and the fifth was the footprint sweep, hit by Task 11's
+  answer is **five exemption tables across FOUR guard files** - the review
+  caught a looser "five guards" in the first wording, and the difference matters
+  for this entry's own criterion, which is about guards a porter will trip. The
+  newest is the footprint sweep, hit by Task 11's
   ported gate-6 test fixtures (`Pkg:SOIC8` and three siblings, a lib id whose
   LIBRARY half is a fixture's own nickname - a shape none of that sweep's three
-  existing exemption categories could hold). The per-guard table, the new
+  existing exemption categories could hold). The per-table listing, the new
   `FIXTURE_FOOTPRINT_LIBRARY` exemption and its two teeth are in **G176**,
   along with why a blanket `tests/schgen/` skip is the wrong mechanism. **The
   criterion above is still unmet**: the count exists in a register entry, not
@@ -12210,13 +12217,31 @@ the README explicitly permits.
   `stderrProblems` out of `kicad-run.ts` are both changes to a ported file's shape that no brief
   asks for, and `stderrProblems` is a pure text function that only lives beside the spawner
   because pedals put it there.
-- **What would settle it** **CRITERION: no module under `lib/schgen/` reaches `spawnSync`, by any
-  import path, and a check that could fail says so.** **MECHANISM, untried:** a test that walks
-  the import graph from every `lib/schgen/**/*.ts` and refuses on `node:child_process`; the fix it
-  would then demand is to move `stderrProblems`/`BENIGN_STDERR` into a module beside
-  `lib/kicad/netlist.ts` (a pure text module, no spawner) and declare `kicad-run.ts` diverged to
-  import them from there. **The criterion is the settlement; that mechanism is untried and would
-  diverge a file four other tasks depend on**, so an implementer should price it before taking it.
+- **What would settle it** **CRITERION, REPLACED 2026-10-20 BY THE TASK 11 REVIEW WITH A CHEAPER
+  AND MORE CHECKABLE ONE, and the replacement is recorded rather than swapped in quietly.**
+
+  **The criterion that now binds: NO FILE UNDER `lib/` IMPORTS FROM `tools/`, and a check that
+  could fail says which.** `grep -rn 'from "../../../tools/' lib/` returns **exactly one hit** -
+  `lib/schgen/gates/connectivity.ts:28`, this entry's subject - and nothing in the repository
+  guards that direction. Measured, so the "one" is a count and not an impression:
+  `grep -rln 'from "\(\.\./\)\{1,4\}tools/' lib/ | wc -l` is **1**.
+
+  **THE WITHDRAWN CRITERION was *"no module under `lib/schgen/` reaches `spawnSync`, by any import
+  path"*, and it was worse in two ways.** It is harder to check (it needs an import-graph walk
+  rather than a grep), and **it is not actually the thing that is wrong**: the review priced the
+  spawner reachability and it costs nothing - nothing spawns at import time, and
+  `KICAD_CLI=/nonexistent/kicad-cli bun test tests/schgen/gates/connectivity.test.ts` gives
+  **14 pass / 0 fail**, so the import is reachable on a machine with no KiCad at all and breaks
+  nothing. What is wrong is the DEPENDENCY DIRECTION, which is a statement about layering that a
+  one-line grep decides, and the layering is what `lib/schgen/README.md`'s rule is about.
+
+  **MECHANISM, untried:** a test asserting that grep returns nothing, with
+  `lib/schgen/gates/connectivity.ts` as a declared exemption until it is fixed - the same
+  exemption-with-teeth shape the five guards of **G176** use. The fix it would then demand is
+  unchanged: move `stderrProblems`/`BENIGN_STDERR` into a pure text module beside
+  `lib/kicad/netlist.ts` and declare `kicad-run.ts` diverged to import them from there.
+  **That mechanism would diverge a file four other tasks depend on**, so an implementer should
+  price it before taking it; the grep itself costs nothing and can land first.
 
 ### G173 - the Task 11 brief decided to hand-transcribe `padNumbers`, and the premise was false: the whole pedals file is 26 lines with one resolvable import, so it is a byte-checked PORT instead
 
@@ -12250,8 +12275,31 @@ nothing - the exact residual **G123** records for
 repository from the pedals tree without a byte-check or a declared `sourceSha`"*, and a hand
 transcription meets neither.
 
+**AMENDED 2026-10-20 by the Task 11 review, which added the two facts that make this an entry
+about a BRIEF rather than about a file.**
+
+**1. THE BRIEF'S PREMISE WAS NOT MERELY UNNECESSARY - IT WAS FALSE, AND CHECKABLE BEFORE ANY WORK
+STARTED.** The brief said to hand-transcribe *because* `@/kicad/footprint` could not resolve here.
+That is a claim with a one-command test: the file is 26 lines and imports `node:fs` and
+`@/kicad/sexpr`, and `port-manifest.json`'s `externals` already resolved the second. **The reason
+given for the mechanism was wrong, not just the mechanism**, and `tools/schgen/port-probe.ts`
+exists precisely so that this question is asked without editing the manifest. The lesson a later
+reader needs is the ORDER: probe a brief's stated premise before following the mechanism built on
+it, because a brief is written by someone who had not yet tried it.
+
+**2. A `files[]` ENTRY IS BYTE-COMPARED EVERY RUN, WHICH IS STRICTLY STRONGER THAN A
+`sourceSha`** - and that is the whole reason the deviation is an improvement rather than a
+sideways move. A `sourceSha` notices only that the pedals source MOVED; the byte-check re-derives
+the ported file from the source and the manifest's own rewrite rule and compares it. The review
+drove all three claims rather than reading them: `lib/kicad/footprint.ts` is a `files[]` entry
+with `root: "pedals-tools"`; perturbing one line of it turned `port-fidelity.test.ts` red naming
+the file with the exact diff; and `lib/schgen/gates/pin-identity.ts` differs from its source by
+**only** the 7-line provenance header and six import rewrites, with no `cuts` concealing a
+substitution.
+
 - **Found** 2026-10-20, Task 11, Step 1, probing whether the brief's premise held before following
-  its mechanism.
+  its mechanism. **Amended the same day by the Task 11 review**, which drove the three byte-check
+  claims independently.
 - **Evidence** `wc -l /Users/orion/work/pedals-work/digital-pedal-platform/tools/kicad/footprint.ts`
   is 26; `grep -n "^import\|^export" ` on it gives exactly `node:fs`, `@/kicad/sexpr` and
   `export function padNumbers`. A check that could have failed:
@@ -12465,13 +12513,20 @@ therefore `designFootprintPads` and the three stock-library MPN cases.
   who is not the one landing the two files, and the detector change should be driven red first by
   deleting one of the two `rmSync` calls.
 
-### G176 - the schematic port has now needed a declared exemption from FIVE repo-wide static guards, and the footprint sweep is the fifth - **G133**'s recurrence, counted
+### G176 - the schematic port now holds declared exemptions in FIVE exemption tables across FOUR guard files, and the footprint sweep is the newest - **G133**'s recurrence, counted
 
 **G133** recorded that a ported test FIXTURE collides with this repository's standing guards as
 reliably as a ported test does, and that the symbol sweep was *"the second repo-wide static guard
 the port has had to be exempted from, after the temp-scratch check of G122/G123"*, adding that
-*"the recurrence matters more than either entry"*. Task 11 is the fourth task to hit it. **The
-count, read off the exemption tables rather than remembered:**
+*"the recurrence matters more than either entry"*. Task 11 is the fourth task to hit it.
+
+**THE COUNT, read off the exemption tables rather than remembered - AND IT IS FIVE TABLES ACROSS
+FOUR FILES, NOT FIVE GUARDS.** An earlier version of this entry's heading said "five guards",
+which its own table contradicts: two of the five rows are the same file
+(`tests/stripboard/temp-scratch.test.ts`, whose static sweep and whose registering-module table
+are separate exemption mechanisms in one guard file). **G133**'s criterion is about GUARDS a
+porter will trip, so the distinction matters for answering it: a porter needs to know about four
+files and five places to declare something.
 
 | guard | exemption mechanism | entries the port holds |
 | --- | --- | --- |
@@ -12509,7 +12564,8 @@ library at all.
   `every footprint name swept out of the repository resolves in an installed KiCad library` and
   `every swept value that is not a KiCad lib id is one this repository has accounted for` -
   quoted from the run. Each named its offenders. After the exemptions: 3294 pass / 0 fail. The
-  counts in the table above were read off the five tables in the tree, not recalled.
+  counts in the table above were read off the five tables in the tree, not recalled - and the
+  table is what caught this entry's own heading saying "five guards" where two rows name one file.
 - **Verified** CONFIRMED - this writer ran the suite before and after, read each guard's exemption
   mechanism, and established that none of the three existing footprint categories could hold a
   `Pkg:*` name by reading their teeth.
@@ -12518,8 +12574,8 @@ library at all.
   pattern should be generalised before it happens a sixth time.
 - **What would settle it** **CRITERION: a task that lands a ported test fixture can find out, in
   one place, which repo-wide static guards it will trip and what each one's exemption mechanism
-  is - without running the suite and reading five test files.** **MECHANISM, untried:** a short
-  section in `lib/schgen/README.md` listing the five guards, their exemption tables and their
+  is - without running the suite and reading four guard files.** **MECHANISM, untried:** a short
+  section in `lib/schgen/README.md` listing the four guard files, their five exemption tables and their
   teeth, held to being complete by a test that asserts the named tables exist and are non-empty.
   The competing mechanism - teach the guards to skip `tests/schgen/` wholesale - is **rejected
   here and the reason belongs with the criterion**: every one of these guards exists because this
@@ -12558,7 +12614,62 @@ MODEL against an authored schematic is the committed-netlist comparison, not thi
 can export a correct netlist while visually suggesting wrong connections, so **the round trip is
 not a readability gate and must never be reported as one.**
 
-- **Found** 2026-10-20, Task 11, Steps 6 and 8.
+**AMENDED 2026-10-20 BY THE TASK 11 REVIEW, WITH THE THING THIS TABLE SAID IT COULD NOT SEE AND
+DID NOT NAME: THE BRIEF'S OWN EXAMPLE.** Spec 2's component-identity row is justified by
+*"two components swapped consistently produce the same partition"*, and the brief's Step 2 gave a
+literal test for it - `netMembership` empty, `componentIdentity` non-empty. **This implementation
+compares designator SETS, which cannot report a consistent swap at all.** The review measured it;
+this writer then re-drove it over the real generated `mini` design rather than a synthetic circuit,
+in three arms:
+
+| arm | swap | `roundTrip`'s answer |
+| --- | --- | --- |
+| **A** `C3`/`C4` - the two 100n decoupling caps, both `3V3`-to-`GND` | consistent, in `components[]` AND in every net | **ALL SIX LISTS EMPTY** |
+| **B** `C1`/`C2` - 10u on `VIN` against 22u on `3V3` | the same transformation | `netMembership` 4 problems, `values` 2 - **`componentIdentity` empty** |
+| **C** what distinguishes arm A's pair in the netlist at all | - | **nothing.** Their component records are identical apart from the designator, and their net sets are equal |
+
+**ARM C IS THE ANSWER, AND IT MAKES THE SPEC'S EXAMPLE UNACHIEVABLE RATHER THAN MERELY UNMET.**
+A consistent swap preserves the partition **only when the two components are indistinguishable in
+the netlist** - same value, same footprint, same `libsource`, same net set. That is exactly the
+case in which the netlist carries no information telling them apart, so **no function of
+`ImportedNetlist` can report it**: not `componentIdentity` widened, not anything. And in that case
+the swap is electrically a no-op, because the parts are interchangeable. The moment they differ at
+all, the swap is caught - by `values`, `footprints`, `pinIdentity` or `netMembership`, as arm B
+shows. **So the five rows TOGETHER catch every consistent swap of distinguishable components, and
+the one case none of them catches is the one that is not a defect.**
+
+**THIS WRITER'S POSITION, stated because the review asked for it and because the decision is not
+the producing agent's to make: the row should NOT be widened, and the SPEC'S EXAMPLE IS WRONG** -
+specifically its inference, not its premise. The premise (*a consistent swap preserves the
+partition*) is true. The inference (*therefore a separate component-identity comparison is what
+catches it*) does not follow, because the indistinguishability that blinds the partition blinds
+every other netlist-derived comparison too. `componentIdentity` should keep the designator-set
+claim, which has teeth of its own and its own perturbation.
+
+**AND THE REAL GUARD AGAINST A MIS-ASSIGNED DESIGNATOR IS GATE 1, NOT THIS - which is the part a
+later reader cannot re-derive.** `roundTrip` takes `refs` from the generation itself
+(`g.annotation.refs`), so a generator that bound part labels to designators differently would
+change both sides of the comparison and stay invisible here. What pins that binding is the
+COMMITTED reference lock: `lib/schgen/lock/annotate.ts`'s `annotate` takes every already-locked
+part's designator straight from `refs.lock.json` (lines 89-92, read directly), and gate 1's
+`staleFiles` fails when the regenerated lock differs from the committed one by content. **A
+designator swap is a gate-1 finding.**
+
+**A SECOND THING THE REVIEW FOUND, and it is the same residual class as G174 and G171:
+`roundTrip` HAS NO CONSUMER OUTSIDE ITS OWN TEST.** `runGates` registers gates 1, 3, 6, 7 and 8 -
+not the round trip - so this task's headline deliverable executes only on the ported `mini`
+fixture, never through `make check` over a design, and never on a circuit in `circuits/`.
+Measured on the IMPORT rather than on the identifier, because the identifier is ambiguous:
+`grep -rln "gates/round-trip.ts" lib tools tests --include="*.ts"` returns **exactly one file**,
+`tests/schgen/gates/round-trip.kicad.test.ts`. (A grep for the bare name `roundTrip` would NOT
+have settled it - `tests/stripboard/vero-export-fixtures.ts` exports an unrelated `roundTrip` for
+VeroRoute documents, with three more call sites in `vero-export.test.ts`. The first version of
+this sentence cited that grep, and it would have been wrong.) The brief did not ask for it to be
+registered, so this is not a compliance miss - but **Tasks 18 and 19 both rest on it**, and
+leaning on a check that has never run inside the pipeline is the thing worth knowing first.
+
+- **Found** 2026-10-20, Task 11, Steps 6 and 8. **Amended the same day by the Task 11 review**,
+  which drove the consistent-swap case and the no-consumer grep.
 - **Evidence** the six perturbations, each turning exactly one named test red:
   deleting `componentIdentity`'s schematic-side push fails *"a component the schematic has and the
   model does not is caught by component identity alone"* (6 pass / 1 fail); the symbol comparison
@@ -12569,20 +12680,51 @@ not a readability gate and must never be reported as one.**
   is caught by footprints alone"*; and `footprintsUndeclared.push` fails *"a component with no
   declared footprint is reported, not passed"*. Each restore was verified by SHA-256 and the final
   `git status --porcelain` was empty. For the residual, a check that could have failed:
-  `grep -c "pinfunction" lib/kicad/netlist.ts` returns **0**.
+  `grep -c "pinfunction" lib/kicad/netlist.ts` returns **0**. **For the consistent-swap arms
+  above:** arm A exchanges `C3` and `C4` in `components[]` and in every net member of the real
+  generated `mini` export and `roundTrip` returns six empty lists; arm B does the identical
+  transformation to `C1`/`C2` and returns
+  `values: ["C1: the schematic says \"22u\" and the model says \"10u\"", "C2: the schematic says
+  \"10u\" and the model says \"22u\""]` plus four `netMembership` problems and an empty
+  `componentIdentity`; arm C prints `identical apart from the designator: true` and
+  `same net set: true` for arm A's pair. A check that could have failed and did: arm A was run
+  first expecting `componentIdentity` to fire.
 - **Verified** CONFIRMED - this writer wrote and ran the perturbation harness and read its output.
 - **Why it is open** the `pinfunction` residual needs `importNetlist` to read a field it does not
   read, which is a change to a hand-written module four other consumers share, and no brief asks
-  for it. The interpretation is open in the weaker sense that a reviewer may read the brief's row
-  differently.
+  for it. The consistent-swap row is open as a QUESTION FOR THE SPEC'S AUTHOR rather than as work:
+  this writer's position is above, and an agent producing the artifact may not settle its own
+  acceptance criteria. The no-consumer residual is open because registering the round trip in
+  `runGates` is a scope decision, and the gate it would join cannot run on any circuit here
+  anyway (**G178**).
 - **What would settle it** **CRITERION: a generated schematic whose symbol has two pin NAMES
   exchanged, with its lib id, pin numbers, values, footprints and every net membership unchanged,
   is reported by something - and the test that proves it could have failed.** **MECHANISM,
-  untried:** have `importNetlist` carry each node's `pinfunction` (KiCad emits it for a symbol
-  whose pins are named) and have `roundTrip` compare it against `IrPin.identity`. **The criterion
-  is the settlement and gate 6 may already discharge it** - `checkPinIdentity` compares the
-  symbol's pin names against a datasheet table, which catches the same edit by a different route;
-  an implementer should check whether gate 6 covers it before widening `importNetlist`.
+  untried:** have `importNetlist` carry each node's `pinfunction` and have `roundTrip` compare it
+  against `IrPin.identity`.
+
+  **THE MECHANISM IS CHEAPER THAN THIS ENTRY FIRST IMPLIED, AND IT IS ALSO NOT A PLAIN EQUALITY -
+  both measured 2026-10-20, and the second correction is the one that would have made an
+  implementer ship a non-fix.** Cheap: KiCad DOES emit the field, so widening `importNetlist` is
+  additive parsing and not a format change - **32** `pinfunction` atoms in a fresh s-expression
+  export of the generated `mini` design, and **21** in the committed hand-drawn
+  `tests/fixtures/pt2399-core.net` (44 in `transistor-preamp-lab.net`). The expensive part is only
+  that four consumers share the module.
+
+  **Not a plain equality:** every one of those atoms is `<symbol pin name>_<pin number>`, never
+  the bare name. Counted over the generated export, **32 of 32 end in `_<pin>` and 0 do not**;
+  `J2.7 -> "Pin_7_7"` is the giveaway, and the hand-drawn stub agrees at **21 of 21**
+  (`U1.1 -> "VCC_1"`, `U1.3 -> "AGND_3"`). So a comparison against `IrPin.identity` - which holds
+  `"VCC"`, `"+"`, `"GND"` - **would fail on every pin** unless the `_<pin>` suffix is stripped
+  first. And the field is **absent** for a pin the symbol does not name: 24 of 56 nodes in the
+  generated export, 44 of 65 in the stub, so the comparison covers only the named-pin subset and
+  must say so rather than treating an absent field as agreement.
+
+  **AND A SUB-QUESTION THAT SHOULD BE ANSWERED BEFORE TASK 18 OR 19 LEANS ON THE ROUND TRIP:**
+  whether gate 6 already discharges this criterion depends on whether the IR's `identity` derives
+  from the same symbol file the drawing places. If it does, gate 6's datasheet-table comparison
+  catches the pin-name edit by a different route and no widening is needed; if it does not, the
+  two checks are measuring different things and the gap is real. **Nobody has established which.**
 
 ### G178 - measured: gate 1 refuses on all FOUR parity circuits and gates 3 and 6 therefore run on none of them - and the refusal counts agree exactly with the ones already pinned, plus one
 
@@ -12655,3 +12797,90 @@ only circuit either gate has ever run on is the ported `mini` fixture, which car
   net-name rule (**G150**) and the two pin questions (**G151**, **G159**) have to be answered too.
   **`transistor-preamp` is the one circuit for which BOM fields are the ONLY blocker**, which
   makes it the cheapest route to a first real gate-3 and gate-6 run.
+
+### G179 - commit `84e00f1` left the full suite RED, and a SCOPED GREEN RUN in its message is what made that invisible - the shape, not the one commit, is the finding
+
+**THE INSTANCE.** Task 11's first commit, `84e00f1`, added
+`tests/schgen/gates/pin-identity.test.ts` and `pin-table.test.ts`. Their fixtures declare literals
+that three repo-wide static sweeps reject - `Pkg:SOIC8`, `Pkg:MISSING`, `Pkg:TWO`,
+`Pkg:SOIC8EP`, a bare `" "`, and the lib ids `Fix:OPAMP2`, `Fix:OPAMP2X`, `H7:TPS7A4901` - and
+**every exemption those literals need landed one commit later, in `debf443`.** So `bun test` was
+red at `84e00f1`, which breaks the standing constraint that **`bun test` is green at every
+commit** and the posture behind ruling R4 (never land red). It was fixed in the next commit.
+
+**MEASURED, not inferred.** With the three guard files reverted to the content `84e00f1` left them
+at and everything else at `HEAD` - the sweeps are static over file text, so this reproduces that
+commit's guard outcome - `bun test tests/kicad/footprint-names.test.ts tests/kicad/symbol-names.test.ts`
+gives **12 pass / 3 fail**:
+
+```
+(fail) every symbol name swept out of the source resolves in an installed KiCad library
+(fail) every footprint name swept out of the repository resolves in an installed KiCad library
+(fail) every swept value that is not a KiCad lib id is one this repository has accounted for
+  error: symbol library for "H7:TPS7A4901" is not at .../SharedSupport/symbols/H7.kicad_sym
+  +   "Pkg:SOIC8 (tests/schgen/gates/pin-identity.test.ts)",
+  +   "Pkg:MISSING (tests/schgen/gates/pin-identity.test.ts)",
+  +   "Pkg:TWO (tests/schgen/gates/pin-identity.test.ts)",
+  +   "Pkg:SOIC8EP (tests/schgen/gates/pin-identity.test.ts)",
+  +   " ",
+```
+
+Each failure names the file that landed in `84e00f1`. The commit boundary is checkable too:
+`git log --diff-filter=A -- tests/schgen/gates/pin-identity.test.ts` gives `84e00f1`, and
+`git log 84e00f1..debf443 -- tests/kicad/footprint-sweep.ts tests/kicad/footprint-names.test.ts tests/kicad/symbol-names.test.ts`
+gives `debf443` for all three, with `84e00f1` touching none of them.
+
+**THE SHAPE, WHICH IS WHY THIS IS AN ENTRY AND NOT A NOTE ON ONE COMMIT.** `84e00f1`'s message
+reports what was actually run:
+
+> *"90 ported gate tests pass; `bun run typecheck` clean; 726 tests across tests/schgen/ pass."*
+
+**Every one of those numbers is true, and none of them is the suite.** The implementer ran
+`bun test tests/schgen/gates/`, then `bun test tests/schgen/port-fidelity.test.ts`, then
+`bun test tests/schgen/` - three scoped runs over the directory being worked in - and committed.
+The three sweeps that broke live in `tests/kicad/`, which no scoped run touched. **A scoped green
+run reported in a commit message where a full run would have been red is indistinguishable, to a
+reader of the history, from a commit that was green** - and it is more convincing than silence,
+because it carries numbers.
+
+**AND IT IS THE PREDICTABLE FAILURE MODE OF THIS PARTICULAR PORT**, which is what makes it worth
+anticipating rather than merely regretting: **G176** records that the port now holds exemptions in
+five tables across four guard files, all of them under `tests/kicad/` and
+`tests/stripboard/` - that is, all of them OUTSIDE the directory a schgen task works in and runs
+its scoped tests over. **G133** said the recurrence matters more than any one exemption; this is
+the recurrence biting the commit cadence rather than the code.
+
+- **Found** 2026-10-20 by the Task 11 review, which read the commit sequence. The implementer had
+  observed the three failures during the task (they are quoted in **G176**'s evidence as
+  *"3290 pass / 3 fail the moment the ported gate tests entered the tree"*) and fixed them, but
+  observed them at a LATER, uncommitted tree state and never established that `84e00f1` itself was
+  red - so the constraint breach went unrecorded while the symptom was recorded twice.
+- **Evidence** the reverted-guard measurement above, the two `git log` queries, and `84e00f1`'s own
+  message quoted verbatim. A check that could have failed: the revert harness restored all three
+  files and verified each by SHA-256, and `git status --porcelain` afterwards showed only the
+  register edit in flight.
+- **Verified** CONFIRMED - this writer ran the revert measurement and both `git log` queries.
+  **RELAYED for the discovery itself**, which was the review's.
+- **Why it is open** the red commit is history and cannot be made green without rewriting it,
+  which is not worth it on a pushed branch; the branch is green at its head and at every commit
+  after `84e00f1`. What is open is the SHAPE: nothing stops the next task doing the same thing, and
+  the scoped-run habit is otherwise good practice (it is fast, and it is what makes
+  commit-early-often workable).
+- **What would settle it** **CRITERION: a commit that leaves `bun test` red cannot be pushed
+  without someone knowing it is red.** Note what this deliberately does NOT say: it does not
+  require a full suite run before every commit, because that would fight the commit cadence
+  `AGENTS.md` requires, and it does not forbid reporting a scoped run.
+  **MECHANISMS, both untried, and NOT a git hook** - `CLAUDE.md` forbids those outright
+  (*"No git hooks, ever"*), so the obvious answer is ruled out before it is proposed.
+  (1) **A CLI verb**, which is where `CLAUDE.md` says enforcement belongs: a `make check-full` or
+  `bun run check` invocation that a task runs once before PUSHING rather than before each commit -
+  cheap, because a push is less frequent than a commit, and it bounds the red window to one
+  unpushed stretch rather than eliminating it.
+  (2) **State the scope in the message**, so a scoped run cannot read as a full one: a commit
+  reporting test numbers names the command that produced them. This commit's message did name
+  them (*"726 tests across tests/schgen/"*), which is why the review could tell - so the mechanism
+  is partly already in force by habit, and making it a rule costs nothing.
+  **A THIRD, for the specific recurrence rather than the general shape:** have a schgen task's
+  scoped run include `tests/kicad/` and `tests/stripboard/temp-scratch.test.ts` by default, since
+  **G176** establishes that those are precisely the files a ported fixture breaks. That is the
+  narrowest fix and the one that would have caught this instance.
