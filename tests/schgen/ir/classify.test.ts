@@ -1,9 +1,19 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/ir/classify.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
- * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * rewritten by `tools/schgen/port.ts` (imports only, plus the MCU pin-map cuts of
+ * `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 8 of the M1 schematic-authoring
+ * plan: decision D3 deletes the `labels` rendering, so the two block specs here declare
+ * `{ kind: "bus", groups: [] }` and one test is renamed for it.
+ *
+ * **The renamed test's ASSERTION is unchanged, and that is the point.** It asserts that every net
+ * of an unwired block is labelled. `bus` is now the kind that is unwired in that sense, because
+ * `auto` - the variant D3 adds - is drawn with real wires and its internal nets are NOT labelled.
+ * `lib/schgen/ir/classify.ts`'s `isUnwired` is where that distinction lives.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 import { describe, expect, it } from "bun:test";
@@ -55,10 +65,10 @@ describe("labelledNets", () => {
     expect([...labelledNets({ ...whole, offSheet: new Set(["MUTE"]) })].sort()).toEqual(["GND", "MUTE"]);
   });
 
-  it("labels every net of a labels-rendered block", () => {
+  it("labels every net of a bus-rendered block", () => {
     const spec: CircuitSpec = {
       parts: [res("R1", "P", "Q"), res("R2", "P", "Q")],
-      blocks: [{ id: "A", sheet: "s", title: "A", members: ["R1", "R2"], checklist: [], rendering: { kind: "labels", reason: "t" } }],
+      blocks: [{ id: "A", sheet: "s", title: "A", members: ["R1", "R2"], checklist: [], rendering: { kind: "bus", groups: [] } }],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
       rails: [],
     };
@@ -74,7 +84,7 @@ describe("pinsOfUnit", () => {
     };
     const spec: CircuitSpec = {
       parts: [flag, res("R1", "GND", "Z"), res("R2", "Z", "GND")],
-      blocks: [{ id: "A", sheet: "s", title: "A", members: ["FLG", "R1", "R2"], checklist: [], rendering: { kind: "labels", reason: "t" } }],
+      blocks: [{ id: "A", sheet: "s", title: "A", members: ["FLG", "R1", "R2"], checklist: [], rendering: { kind: "bus", groups: [] } }],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
       rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
     };

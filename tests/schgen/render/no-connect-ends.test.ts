@@ -1,8 +1,14 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/render/noConnectEnds.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * rewritten by `tools/schgen/port.ts` (imports only), and DIVERGED from it by Task 8 of the M1
+ * schematic-authoring plan: decision D3 deletes the `labels` rendering this file passed to
+ * `blockCircuit` twice, and it is `{ kind: "bus", groups: [] }` - the kind `labelledNets` and
+ * `valuesAlong` still treat as `labels` was treated, so nothing this file measures moves.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 import { describe, expect, it } from "bun:test";
@@ -26,7 +32,7 @@ const AMP: PartSpec = {
 };
 
 function ampBlock(): BlockSubgraph {
-  return subgraphOf(blockCircuit([AMP, res("R_P", "P", "GND")], { kind: "labels", reason: "fixture" }, { external: [] }), "B", symbols);
+  return subgraphOf(blockCircuit([AMP, res("R_P", "P", "GND")], { kind: "bus", groups: [] }, { external: [] }), "B", symbols);
 }
 
 function unitOf(g: BlockSubgraph, part: string, unit: number): BlockUnit {
@@ -82,7 +88,7 @@ describe("no X for a hidden no_connect-typed pin (Task 14 review minor 3: J_SWD'
     const p2 = r.pins["2"];
     if (p2 === undefined) throw new Error("fixture resistor has no pin 2");
     const part: PartSpec = { ...r, pins: { ...r.pins, "2": { nc: true, identity: p2.identity } } };
-    const g = subgraphOf(blockCircuit([part], { kind: "labels", reason: "fixture" }, { external: [] }), "B", symbols);
+    const g = subgraphOf(blockCircuit([part], { kind: "bus", groups: [] }, { external: [] }), "B", symbols);
     return {
       ...g,
       units: g.units.map((u) =>

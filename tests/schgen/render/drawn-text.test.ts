@@ -1,8 +1,14 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/render/drawnText.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * rewritten by `tools/schgen/port.ts` (imports only), and DIVERGED from it by Task 8 of the M1
+ * schematic-authoring plan: decision D3 deletes the `labels` rendering one block spec here
+ * declared, and it is `{ kind: "bus", groups: [] }` - the kind `labelledNets` and `valuesAlong`
+ * still treat as `labels` was treated, so nothing this file measures moves.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 import { describe, expect, it } from "bun:test";
@@ -15,7 +21,7 @@ function circuit(title: string, note: string): Circuit {
     rails: RAILS,
     notes: [{ lines: [note], checklist: ["X-1"] }],
     checklist: [],
-    others: [{ id: "T", sheet: "s", title, members: ["C_TAP"], checklist: [], rendering: { kind: "labels", reason: "fixture" } }],
+    others: [{ id: "T", sheet: "s", title, members: ["C_TAP"], checklist: [], rendering: { kind: "bus", groups: [] } }],
   });
 }
 

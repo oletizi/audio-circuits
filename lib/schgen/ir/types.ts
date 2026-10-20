@@ -1,9 +1,13 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/ir/types.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
- * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/ir/types.ts` (with the MCU pin-map cuts of
+ * `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 8 of the M1 schematic-authoring
+ * plan: `Rendering` loses `labels` and gains `auto` (decision D3, below).
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it, and an upstream fix will
+ * not arrive here by porting: **edit this file**. Its `diverged` entry in
+ * `tools/schgen/port-manifest.json` carries the reason; see `lib/schgen/README.md` and
+ * `docs/known-gaps.md` **G139**.
  */
 
 /**
@@ -105,10 +109,25 @@ export interface TemplateAnchor {
   readonly roles: Readonly<Record<string, PinNumber>>;
 }
 
+/**
+ * **`{ kind: "labels" }` IS DELETED AND `{ kind: "auto" }` REPLACES NOTHING** (Task 8, plan
+ * decision D3). The pedals source has a third variant, `labels`, which draws a block's
+ * connectivity entirely in net labels. It is not ported: `docs/known-gaps.md` **G84** records the
+ * design review that killed it there (*"Why generate a knowingly inferior schematic and rely on an
+ * agent later noticing it?"*) and **G81** records that this repository's own
+ * `lib/kicad/schematic.ts` emits that exact pathology. A block no template realises is a
+ * generation error, not a degraded drawing.
+ *
+ * `auto` is the opposite claim: the block has no declared template and the renderer chooses one,
+ * falling to the ELK backend only when EVERY template reports `not-applicable` (see
+ * `render/blocks.ts`'s `selectRenderer`). It carries no payload, and it carries no anchor - which
+ * is why the four anchor-driven templates can never apply to an `auto` block; see
+ * `docs/known-gaps.md` **G141**.
+ */
 export type Rendering =
   | { readonly kind: "wired"; readonly template: TemplateId; readonly anchor: TemplateAnchor | null }
   | { readonly kind: "bus"; readonly groups: readonly BusGroup[] }
-  | { readonly kind: "labels"; readonly reason: string };
+  | { readonly kind: "auto" };
 
 export interface BlockSpec {
   readonly id: BlockId;

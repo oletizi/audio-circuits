@@ -1,9 +1,15 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/ir/build.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
- * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * rewritten by `tools/schgen/port.ts` (imports only, plus the MCU pin-map cuts of
+ * `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 8 of the M1 schematic-authoring
+ * plan: decision D3 deletes the `labels` rendering three block specs here declared, and they are
+ * `{ kind: "bus", groups: [] }` - the kind `labelledNets` and `valuesAlong` still treat as
+ * `labels` was treated, so nothing this file measures moves.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 import { describe, expect, it } from "bun:test";
@@ -18,7 +24,7 @@ const res = (label: string, a: string, b: string): PartSpec =>
 
 const spec = (parts: PartSpec[]): CircuitSpec => ({
   parts,
-  blocks: [{ id: "B", sheet: "s", title: "B", members: parts.map((p) => p.label), checklist: [], rendering: { kind: "labels", reason: "test" } }],
+  blocks: [{ id: "B", sheet: "s", title: "B", members: parts.map((p) => p.label), checklist: [], rendering: { kind: "bus", groups: [] } }],
   sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
   rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
 });
@@ -45,8 +51,8 @@ describe("buildCircuit", () => {
     const twice: CircuitSpec = {
       ...spec([amp]),
       blocks: [
-        { id: "B1", sheet: "s", title: "B1", members: ["U_A"], checklist: [], rendering: { kind: "labels", reason: "t" } },
-        { id: "B2", sheet: "s", title: "B2", members: [{ part: "U_A", unit: 2 }], checklist: [], rendering: { kind: "labels", reason: "t" } },
+        { id: "B1", sheet: "s", title: "B1", members: ["U_A"], checklist: [], rendering: { kind: "bus", groups: [] } },
+        { id: "B2", sheet: "s", title: "B2", members: [{ part: "U_A", unit: 2 }], checklist: [], rendering: { kind: "bus", groups: [] } },
       ],
     };
     expect(() => buildCircuit(twice, { symbols })).toThrow(/unit U_A#2 is placed by blocks B1 and B2/);

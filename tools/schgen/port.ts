@@ -16,6 +16,16 @@
  * file on disk equals `rewrite(source, entry, manifest)` applied to the
  * pedals source file.
  *
+ * **A THIRD CATEGORY, since Task 8: `diverged`.** A file that was ported and
+ * has since deliberately changed its content for a stated reason is declared
+ * there - see `DivergedEntry`. The porter never writes one (it lists them
+ * instead, so a run is not mistaken for a refresh), `resolveSpecifier`
+ * resolves imports that point at one, and `port-fidelity.test.ts` holds the
+ * three categories to being disjoint and complete. Nothing re-derives a
+ * diverged file, which is the cost, and `docs/known-gaps.md` **G139** sizes
+ * it. A change that is PURELY a deletion is a `cuts` entry, not a
+ * divergence.
+ *
  * **Scope of this manifest.** It covers only files with no import this
  * repository cannot yet resolve: no `@/kicad/footprint`, `@/kicad/libtable`
  * or `@/kicad/components`, and nothing reachable only through
@@ -72,6 +82,50 @@ export interface ManifestFileEntry {
   readonly cuts?: readonly CutEntry[]
 }
 
+/**
+ * A file that has **deliberately stopped being a port** - it was ported once,
+ * a later task changed its CONTENT for a stated reason, and it no longer
+ * re-derives from the pedals source by `rewrite()` alone.
+ *
+ * This exists because `cuts` cannot express it. A cut is deletion-only, and
+ * the changes that earn an entry here are modifications: Task 8 widens
+ * `RealiseResult` from two outcomes to five across `render/block-types.ts`,
+ * the seven templates and five helper modules, and deletes the `labels`
+ * rendering the pedals source has (plan decision **D3**) - which the pedals
+ * source will always have, so no rewrite rule can reconcile the two.
+ *
+ * **What it buys.** `tests/schgen/port-fidelity.test.ts` byte-checks every
+ * `files[]` entry and nothing else, so without a declaration a diverged file
+ * would have to leave the manifest, taking its provenance with it, and
+ * nothing afterwards would record that it ever was a port or what it was a
+ * port OF. An entry here keeps `from` (checked to exist in the pedals source),
+ * says which task diverged it and why, and keeps the bidirectional
+ * `lib/schgen/` completeness check whole: a file under `lib/schgen/` is
+ * ported, hand-written **or** diverged, exactly one of the three, and an
+ * undeclared hand edit to a still-ported file still fails the byte-check.
+ *
+ * **What it COSTS, and it is not small.** Nothing compares a diverged file
+ * against its source again. A fix made upstream in `digital-pedal-platform`
+ * will not arrive here by re-running the porter, and a drift between the two
+ * is invisible to every check in this repository. `docs/known-gaps.md`
+ * **G139** records the measured size of that loss.
+ *
+ * **A PURE DELETION IS NOT A DIVERGENCE.** If the only content change a file
+ * needs is removing text that is in the source, declare a `cuts` entry and
+ * leave it in `files[]` - it stays byte-checked and re-derivable. Task 8 does
+ * exactly that for `ir/validate.ts`'s one-line `labels` clause. This list is
+ * for a change a cut cannot express.
+ */
+export interface DivergedEntry {
+  /** The pedals source file this was ported from, relative to `$SCHGEN_SOURCE`. */
+  readonly from: string
+  readonly to: string
+  /** The task that diverged it, e.g. "Task 8". */
+  readonly task: string
+  /** Why it diverged: what changed and what rule or decision required it. */
+  readonly why: string
+}
+
 export interface PortManifest {
   readonly sourceEnvVar: string
   readonly externals: Readonly<Record<string, string>>
@@ -83,6 +137,12 @@ export interface PortManifest {
    */
   readonly moduleRenames: Readonly<Record<string, string>>
   readonly files: readonly ManifestFileEntry[]
+  /**
+   * Every file that was ported and has since deliberately diverged - see
+   * `DivergedEntry`. The porter never writes these; `runPort()` lists them so
+   * a run cannot be mistaken for having refreshed them.
+   */
+  readonly diverged: readonly DivergedEntry[]
   /**
    * Every hand-written (never ported) `.ts` file **under `lib/schgen/`**,
    * repo-relative. `tests/schgen/port-fidelity.test.ts` asserts this list
@@ -149,6 +209,17 @@ function readFileEntry(value: unknown, where: string): ManifestFileEntry {
   }
 }
 
+function readDivergedEntry(value: unknown, where: string): DivergedEntry {
+  if (!isRecord(value)) throw new Error(`${where}: each diverged[] entry must be an object`)
+  rejectUnknown(value, ["from", "to", "task", "why"], where)
+  return {
+    from: readString(value, "from", where),
+    to: readString(value, "to", where),
+    task: readString(value, "task", where),
+    why: readString(value, "why", where),
+  }
+}
+
 function readStringArray(obj: Record<string, unknown>, key: string, where: string): string[] {
   const value = obj[key]
   if (!Array.isArray(value)) throw new Error(`${where}: "${key}" must be an array`)
@@ -161,14 +232,17 @@ function readStringArray(obj: Record<string, unknown>, key: string, where: strin
 export function loadManifest(): PortManifest {
   const parsed: unknown = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"))
   if (!isRecord(parsed)) throw new Error(`${MANIFEST_PATH}: expected a JSON object at the top level`)
-  rejectUnknown(parsed, ["sourceEnvVar", "externals", "moduleRenames", "files", "handWritten"], MANIFEST_PATH)
+  rejectUnknown(parsed, ["sourceEnvVar", "externals", "moduleRenames", "files", "diverged", "handWritten"], MANIFEST_PATH)
   const filesValue = parsed["files"]
   if (!Array.isArray(filesValue)) throw new Error(`${MANIFEST_PATH}: "files" must be an array`)
+  const divergedValue = parsed["diverged"]
+  if (!Array.isArray(divergedValue)) throw new Error(`${MANIFEST_PATH}: "diverged" must be an array`)
   return {
     sourceEnvVar: readString(parsed, "sourceEnvVar", MANIFEST_PATH),
     externals: readStringRecord(parsed, "externals", MANIFEST_PATH),
     moduleRenames: readStringRecord(parsed, "moduleRenames", MANIFEST_PATH),
     files: filesValue.map((entry, i) => readFileEntry(entry, `${MANIFEST_PATH}.files[${i}]`)),
+    diverged: divergedValue.map((entry, i) => readDivergedEntry(entry, `${MANIFEST_PATH}.diverged[${i}]`)),
     handWritten: readStringArray(parsed, "handWritten", MANIFEST_PATH),
   }
 }
@@ -194,11 +268,15 @@ function resolveSpecifier(spec: string, entry: ManifestFileEntry, manifest: Port
   }
   if (spec.startsWith("@/schgen/")) {
     const sourceRel = `${spec.slice("@/schgen/".length)}.ts`
-    const target = manifest.files.find((f) => f.from === sourceRel)
+    // `diverged` is searched beside `files`: a file that has stopped being a port still OCCUPIES
+    // its destination, so a still-ported file importing it resolves to the same place it always
+    // did. Leaving it out would make every re-run of the porter refuse on an import that is in
+    // fact satisfied - see `DivergedEntry`.
+    const target = manifest.files.find((f) => f.from === sourceRel) ?? manifest.diverged.find((d) => d.from === sourceRel)
     if (target === undefined) {
       throw new Error(
         `${entry.from}: imports "${spec}", but tools/schgen/port-manifest.json has no entry for ` +
-          `"${sourceRel}". Port that file first (add it to the manifest) before porting ${entry.from}.`,
+          `"${sourceRel}" in "files" or "diverged". Port that file first (add it to the manifest) before porting ${entry.from}.`,
       )
     }
     return relativeImport(entry.to, target.to)
@@ -309,6 +387,11 @@ function runPort(): void {
     fs.mkdirSync(path.dirname(destPath), { recursive: true })
     fs.writeFileSync(destPath, ported)
     console.log(`ported ${entry.from} -> ${entry.to}`)
+  }
+  // Said out loud, every run: a diverged file keeps its destination and its provenance but is
+  // NOT rewritten, so a run that printed only the ported files would read as a full refresh.
+  for (const d of manifest.diverged) {
+    console.log(`DIVERGED, not rewritten: ${d.to} (was ${d.from}; diverged by ${d.task}: ${d.why})`)
   }
 }
 

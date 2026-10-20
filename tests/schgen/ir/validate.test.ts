@@ -1,9 +1,20 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/ir/validate.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
- * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/ir/validate.test.ts` (with the MCU pin-map
+ * cuts of `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 8 of the M1
+ * schematic-authoring plan: decision D3 deletes the `labels` rendering, and with it the V6 rule
+ * "labels rendering needs a reason" that one test here exercised.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
+ *
+ * **WHY THE SHARED RENDERING IS `auto` HERE AND `bus` IN `__fixtures__/circuits.ts`.** Every spec
+ * in this file must validate CLEAN except for the one rule under test, and `bus` does not: the
+ * `renderings` rule requires every non-rail net of a bus block to be in exactly one group, so
+ * `{ kind: "bus", groups: [] }` would add "net X is in no bus group" to every assertion in the
+ * file. `{ kind: "auto" }` has no rule of its own, which is what this block needs - it is here to
+ * hold the parts, not to be rendered.
  */
 
 import { describe, expect, it } from "bun:test";
@@ -16,10 +27,10 @@ import { validateCircuit } from "../../../lib/schgen/ir/validate.ts";
 const symbols = fixtureResolver();
 const res = (label: string, a: string, b: string): PartSpec =>
   twoPin({ label, refPrefix: "R", libId: "Fix:R", value: "1k", footprint: "F", bom: TEST_BOM, nets: [a, b], identities: UNNAMED, checklist: [], source: "t", dnp: false });
-const LABELS: Rendering = { kind: "labels", reason: "test" };
+const NO_TEMPLATE: Rendering = { kind: "auto" };
 const base = (parts: PartSpec[], over: Partial<CircuitSpec> = {}): CircuitSpec => ({
   parts,
-  blocks: [{ id: "B", sheet: "s", title: "B", members: parts.map((p) => p.label), checklist: [], rendering: LABELS }],
+  blocks: [{ id: "B", sheet: "s", title: "B", members: parts.map((p) => p.label), checklist: [], rendering: NO_TEMPLATE }],
   sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
   rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
   ...over,
@@ -53,11 +64,10 @@ describe("validateCircuit", () => {
     expect(problems(unplaced)).toContain("part R_B: unit 1 is placed by no block");
   });
 
-  it("V6: requires a reason for label rendering", () => {
-    const spec = base([res("R_A", "X", "GND"), res("R_B", "X", "GND")]);
-    const noReason = { ...spec, blocks: [{ ...spec.blocks[0]!, rendering: { kind: "labels" as const, reason: "  " } }] };
-    expect(problems(noReason)).toContain("block B: labels rendering needs a reason");
-  });
+  // The V6 test "requires a reason for label rendering" was here. Its rule is DELETED with the
+  // `labels` rendering (D3) - `ir/validate.ts`'s one-line clause is removed by a declared `cuts`
+  // entry in the port manifest - so the test is deleted with it rather than left as a stub
+  // asserting a message nothing can produce. `docs/known-gaps.md` **G140** records the deletion.
 
   it("V6: every non-rail bus net is in exactly one group", () => {
     const spec = base([res("R_A", "X", "GND"), res("R_B", "X", "Y"), res("R_C", "Y", "GND")]);

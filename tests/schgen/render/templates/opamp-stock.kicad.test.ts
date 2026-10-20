@@ -1,9 +1,15 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/render/templates/opampStock.kicad.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
- * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * rewritten by `tools/schgen/port.ts` (imports only, plus the MCU pin-map cuts of
+ * `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 8 of the M1 schematic-authoring
+ * plan: decision D3 deletes the `labels` rendering the SPLIT and PEER blocks declared, and they
+ * are `{ kind: "bus", groups: [] }` - the kind `labelledNets` and `valuesAlong` still treat as
+ * `labels` was treated, so the drawing this file exports is unmoved.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 import fs from "node:fs";
@@ -78,8 +84,8 @@ function circuit(s: Stage, symbols: SymbolResolver): Circuit {
       parts: [...s.parts, ...peers],
       blocks: [
         { id: "B", sheet: "s", title: "Block", members, checklist: [], rendering: s.rendering },
-        ...(split.length > 0 ? [{ id: "SPLIT", sheet: "s", title: "Split", members: split, checklist: [], rendering: { kind: "labels" as const, reason: "t" } }] : []),
-        ...(peers.length > 0 ? [{ id: "PEER", sheet: "s", title: "Peer", members: peers.map((p) => p.label), checklist: [], rendering: { kind: "labels" as const, reason: "t" } }] : []),
+        ...(split.length > 0 ? [{ id: "SPLIT", sheet: "s", title: "Split", members: split, checklist: [], rendering: { kind: "bus" as const, groups: [] } }] : []),
+        ...(peers.length > 0 ? [{ id: "PEER", sheet: "s", title: "Peer", members: peers.map((p) => p.label), checklist: [], rendering: { kind: "bus" as const, groups: [] } }] : []),
       ],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A3", notes: [] }],
       rails: s.rails ?? RAILS,

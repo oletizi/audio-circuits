@@ -1,6 +1,7 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/ir/validate.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
+ * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
+ * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
  * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
  * port rather than hand-editing this file - see `lib/schgen/README.md`.
  */
@@ -74,7 +75,6 @@ const renderings: Rule = (c) => {
   const out: string[] = [];
   for (const b of c.blocks.values()) {
     const r = b.rendering;
-    if (r.kind === "labels" && r.reason.trim() === "") out.push(`block ${b.id}: labels rendering needs a reason`);
     if (r.kind === "wired") {
       if (!TEMPLATE_IDS.includes(r.template)) out.push(`block ${b.id}: unknown template ${r.template}`);
       const a = r.anchor;

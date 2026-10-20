@@ -8472,3 +8472,183 @@ exactly, and the eight registered ids are the eight the brief names.
   `tests/schgen/render/templates/mismatch-census.test.ts` already pins the
   five types under their real names, so an implementer who reads the test
   rather than the brief gets it right either way.
+
+### G139 - the port manifest has a third category, `diverged`, and **25 of its ~95 files now re-derive from nothing** - nine of them the port-parity tests Task 7 landed
+
+**What was done.** `tools/schgen/port-manifest.json` gained a `diverged` list
+beside `files` and `handWritten`. An entry is
+`{ from, to, task, why }`: the pedals source it was ported from, where it
+lives, which task diverged it, and why.
+`tests/schgen/port-fidelity.test.ts` holds three new claims, each of which can
+fail - `from` exists under `$SCHGEN_SOURCE`, `to` exists on disk, `task` and
+`why` are non-empty - plus disjointness of the three categories, and the
+bidirectional `lib/schgen/` completeness check now unions all three rather
+than two. `tools/schgen/port.ts` prints one `DIVERGED, not rewritten:` line
+per entry on every run, and `resolveSpecifier` resolves `@/schgen/<path>`
+imports through `diverged` as well as `files`, because a diverged file still
+occupies its destination and the files importing it are still ports.
+
+**Why a third category rather than deleting the entries.** Task 8 widens
+`RealiseResult` from two outcomes to five across `render/block-types.ts`, the
+seven templates and five helper modules, and deletes the `labels` rendering
+(plan decision **D3**, **G140**) that the pedals source has and will keep.
+**`cuts` cannot express either**: a cut is deletion-only and both are
+modifications. Dropping the manifest entries would have destroyed each file's
+provenance and left nothing recording that it ever was a port or what of -
+which is the shape of failure this plan has rejected twice. Controller ruling
+**R18** states the criterion met here: a file may diverge, and it may not
+diverge silently.
+
+**THE COST, WHICH IS NOT SMALL AND IS THE REASON THIS ENTRY EXISTS.** Nothing
+compares a diverged file against its source again. An upstream fix in
+`digital-pedal-platform` will not arrive by re-running the porter; a drift
+between the two is invisible to every check in this repository; and the `cuts`
+a file carried while it was ported stop being declared anywhere but this
+manifest's git history. **Nine of the twelve files Task 8's `labels` deletion
+diverges are ported TESTS**, including the four MCU-cut carriers
+(`ir/build.test.ts` with nine cut entries, `ir/classify.test.ts`,
+`ir/validate.test.ts`, `render/templates/opampStock.kicad.test.ts`) and the
+ported fixture `__fixtures__/circuits.ts`. Those are **G124**'s port-parity
+rows: the pedals project's own fixtures run against the ported code. They
+still RUN and their assertions are unchanged - what is gone is the byte-check
+that would have caught a drift in what they assert.
+
+**THE ALTERNATIVE MECHANISM, CONSIDERED AND NOT TAKEN, BECAUSE A LATER PORT
+TASK MAY WANT IT.** A `replacements` list on a `files[]` entry -
+`{ text, with, occurrences }`, validated exactly as `cuts` is and applied the
+same way - would be a generalisation of `cuts` that covers a *mechanical,
+local* substitution. Every one of the nine diverged test files needs only
+`{ kind: "labels", reason: X }` to become `{ kind: "bus", groups: [] }`, which
+is 17 sites of pure substitution, so all nine would have stayed in `files[]`
+and stayed byte-checked. It was rejected for Task 8 on two grounds, both
+arguable: **(1)** it puts new program text inside a JSON manifest, reviewable
+for a one-liner and unreviewable at any scale, and the line between the two
+is a judgement every future agent would redraw; **(2)** for these particular
+files the byte-check was going to be worth less than it looks, because the
+pedals source keeps `labels` permanently, so the two copies are *intended* to
+differ and a rewrite rule would have to encode that intent anyway. Ground (2)
+does not hold for the type widening, where the pedals source may well widen
+the same way later.
+
+- **Found** 2026-10-19, Task 8, Step 4, as the obstruction ruling R18
+  anticipated.
+- **Evidence** checks that could have failed, and two that did:
+  - `SCHGEN_SOURCE=... bun run tools/schgen/port.ts` re-derived every
+    remaining `files[]` entry and `git status --porcelain` afterwards listed
+    **only** the files this task hand-edited - no ported file moved. That is
+    what proves `resolveSpecifier`'s `diverged` lookup works: without it the
+    porter refuses on the first still-ported file importing
+    `@/schgen/ir/types`, which is most of the tree.
+  - The same run proves the `ir/validate.ts` **cut** reproduces the hand edit
+    byte-for-byte: the one-line `labels` clause is removed by a declared
+    `cuts` entry, and the regenerated file equalled what was on disk.
+  - `expect(manifest.diverged.length).toBeGreaterThan(0)` - the new fidelity
+    test refuses an empty list, so this cannot become a check that iterates
+    nothing.
+  - **A WRONG `from` FAILS.** The provenance assertion is not decorative:
+    pointing an entry's `from` at a path the pedals project does not have
+    turns `every diverged entry names a real pedals source...` red naming it.
+- **Verified** CONFIRMED - this writer added the category, ran the porter,
+  read `git status`, and ran `bun test tests/schgen/` (337 pass / 0 fail)
+  before and after.
+- **Why it is open** the loss above is permanent for every file in the list
+  and grows with every later task that diverges one. The register entry is
+  the only place it is counted.
+- **What would settle it** **CRITERION:** a drift between a diverged file and
+  its pedals source is detectable by a check in this repository, rather than
+  only by a person reading both. **MECHANISM, untried:** the `replacements`
+  list above, which returns a mechanically-diverged file to `files[]` and to
+  the byte-check; a weaker alternative is to record each diverged file's
+  source SHA in its entry and fail when the source moves, which detects
+  upstream change without reconciling it. Neither has been tried, and the
+  criterion does not require either.
+
+### G140 - the `labels` rendering is DELETED from the port, which is a deliberate deviation from *port whole*, and it took a validation rule and a ported test with it
+
+`Rendering` in the pedals source has three variants: `wired`, `bus` and
+`{ kind: "labels"; reason: string }`, the last of which draws a block's
+connectivity entirely in net labels. **Task 8 deletes it and adds
+`{ kind: "auto" }`**, per plan decision **D3**. This is recorded here because
+the plan's governing posture is to port whole and fix in a later task with a
+stated reason, and this is that stated reason.
+
+**The reasons, which are three entries in this file pointing the same way.**
+**G84** records the pedals design review that killed the labels fallback
+there - *"Why generate a knowingly inferior schematic and rely on an agent
+later noticing it? … You already know the desired invariant. Make the tooling
+enforce it"* - and its finding that the cost of a fallback is paid by the
+**gate**, not merely by the drawing. **G81** records that this repository's
+own `lib/kicad/schematic.ts` *"emits the exact pathology another project was
+blocked from shipping"*: every pin on a short wire to a net label,
+connectivity entirely in labels. Task 19 deletes that emitter. Porting a
+second labels-everywhere renderer in the programme that deletes the first
+would be absurd.
+
+**WHAT WENT WITH IT, AND THE SECOND ITEM IS THE ONE A LATER READER WOULD
+MISS.**
+
+1. `ir/validate.ts`'s `renderings` rule loses its one-line clause
+   *"block `<id>`: labels rendering needs a reason"*. That is a pure
+   deletion, so it is a declared `cuts` entry in the port manifest, and
+   `ir/validate.ts` stays in `files[]` and stays byte-checked.
+2. **The ported test that exercised that rule is DELETED** -
+   `tests/schgen/ir/validate.test.ts`'s *"V6: requires a reason for label
+   rendering"*. It asserted a message nothing can now produce. Supersede
+   means delete, so it is gone rather than skipped or stubbed, and a comment
+   stands where it was naming this entry. **It is NOT an R4 deferral**: there
+   is no later task that re-adds it, because the rule it tested does not
+   exist in this repository any more.
+3. `report.ts`'s "Label-rendered blocks" section is now "Automatically
+   rendered blocks", listing the `auto` blocks - the ones whose drawing
+   nobody declared - and there is no reason string to print, because
+   `{ kind: "auto" }` carries no payload.
+4. **Twelve ported files diverge for this** and are listed in `diverged`;
+   **G139** has the count and the cost.
+
+**AND THE SUBSTITUTION IN THE FIXTURES IS A DECISION, NOT A FIND-AND-REPLACE.**
+Seventeen sites in nine ported test files and the ported fixture declared
+`{ kind: "labels", reason: X }`. Sixteen are now `{ kind: "bus", groups: [] }`
+and one is `{ kind: "auto" }`, and the split is forced:
+
+- `bus` is the behavioural equal of `labels` for everything those fixtures
+  measure. `labelledNets` labels every net of a `bus` block (and
+  `tests/schgen/ir/single-pin-net-guard.test.ts` already used
+  `{ kind: "bus", groups: [] }` for exactly that), and
+  `valuesAlong(rendering)` returns `true` for `bus` as it did for `labels`,
+  which decides whether a power symbol's value runs along its glyph - so a
+  careless `auto` here would have silently moved the text that
+  `render/text-clearance.test.ts`, `unit-text.test.ts`,
+  `no-connect-ends.test.ts` and `drawn-text.test.ts` exist to measure.
+- `tests/schgen/ir/validate.test.ts` is the exception and had to be `auto`:
+  every spec in that file must validate CLEAN apart from the rule under test,
+  and the `renderings` rule requires every non-rail net of a `bus` block to be
+  in exactly one group - so `{ kind: "bus", groups: [] }` would have added
+  *"net X is in no bus group"* to **every** assertion in the file, including
+  two `toEqual` ones. `auto` has no rule of its own.
+
+- **Found** 2026-10-19, Task 8, Step 8.
+- **Evidence** `bun run typecheck` clean and `bun test tests/schgen/` at
+  **337 pass / 0 fail** with `labels` absent from `Rendering` - a check that
+  could have failed at 17 sites and at every `switch` over the union, and
+  the `switch` in `report.ts` is exhaustive with no `default`, so an unhandled
+  `auto` is a compile error rather than a silent `undefined`. The `bus`/`auto`
+  split above was derived by reading `valuesAlong` (`render/power-text.ts`)
+  and the `renderings` rule (`ir/validate.ts`), and the `auto` choice for
+  `validate.test.ts` was **measured, not reasoned**: with `bus` there, the
+  file fails.
+- **Verified** CONFIRMED - this writer made the deletion, ran both, and read
+  the two rules the substitution turns on.
+- **Why it is open** it is a permanent, deliberate divergence from the pedals
+  source that a later porter needs to know about before touching
+  `Rendering` or any fixture that declares one. It is not a defect.
+- **What would settle it** nothing settles the deviation; what it is held to
+  is a standing **CRITERION: no generated schematic from this repository
+  carries a block's connectivity only in labels, and no path produces a
+  knowingly inferior drawing** - a block no template realises fails
+  generation naming the block (**G84**'s criterion, which this implements).
+  **MECHANISM, in two halves, neither finished at this commit:** Step 7 of
+  this same task writes `selectRenderer` to refuse on any mismatch that is not
+  `not-applicable` and to fall to ELK only when every template reports one;
+  the other half is Task 19's deletion of `lib/kicad/schematic.ts`, which is
+  the thing in this repository that actually draws that way today.
+

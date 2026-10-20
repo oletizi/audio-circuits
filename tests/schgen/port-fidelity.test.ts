@@ -104,6 +104,65 @@ test("every handWritten entry is under lib/schgen/ and is on disk", () => {
   ).toEqual([])
 })
 
+/**
+ * **A DIVERGED FILE IS DECLARED, AND THE DECLARATION IS CHECKED** (Task 8,
+ * Controller ruling R18).
+ *
+ * `diverged[]` holds the files that were ported and have since deliberately
+ * changed content - Task 8's five-outcome `RealiseResult` across
+ * `render/block-types.ts`, the seven templates and five helper modules, and
+ * the `labels` rendering plan decision D3 deletes although the pedals source
+ * has it. `rewrite()` cannot reconcile those, and `cuts` cannot either: a cut
+ * is deletion-only and these are modifications.
+ *
+ * Three claims, each of which can fail. **The source is real:** `from` must
+ * exist under `$SCHGEN_SOURCE`, so the provenance an entry claims is checked
+ * rather than asserted - a typo or an entry for a file the pedals project
+ * never had fails here. **The file is real:** `to` must be on disk.
+ * **The reason is given:** `task` and `why` are non-empty, so no file
+ * diverges without saying which task did it and why.
+ *
+ * What this does NOT buy is the byte-check. A diverged file is compared
+ * against nothing, ever again; `docs/known-gaps.md` **G139** records how much
+ * of the tree that is.
+ */
+test("every diverged entry names a real pedals source, a file on disk, and its reason", () => {
+  const sourceRoot = requireSourceRoot()
+  const manifest = loadManifest()
+  const repoRoot = moduleRepoRoot()
+  expect(manifest.diverged.length, "an empty diverged list is a check that cannot fail").toBeGreaterThan(0)
+  const missingSource = manifest.diverged.filter((d) => !fs.existsSync(path.join(sourceRoot, d.from))).map((d) => d.from).sort()
+  const missingFile = manifest.diverged.filter((d) => !fs.existsSync(path.join(repoRoot, d.to))).map((d) => d.to).sort()
+  const unexplained = manifest.diverged.filter((d) => d.task.trim() === "" || d.why.trim() === "").map((d) => d.to).sort()
+  expect(
+    missingSource,
+    "these diverged entries name a pedals source file that is not under $SCHGEN_SOURCE. An entry " +
+      "whose `from` is wrong records provenance nobody can follow back.",
+  ).toEqual([])
+  expect(missingFile, "these diverged paths are not on disk").toEqual([])
+  expect(unexplained, "a diverged file must say which task diverged it and why").toEqual([])
+})
+
+/**
+ * **EXACTLY ONE CATEGORY EACH.** A file that is in two of `files[]`,
+ * `diverged[]` and `handWritten` is a file whose status cannot be read off
+ * the manifest: the byte-check would iterate it while the divergence record
+ * says it is not a port any more, and whichever a reader consulted first
+ * would be the answer they got.
+ */
+test("no file is in two of files[], diverged[] and handWritten", () => {
+  const manifest = loadManifest()
+  const ported = new Set(manifest.files.map((f) => f.to))
+  const diverged = new Set(manifest.diverged.map((d) => d.to))
+  const hand = new Set(manifest.handWritten)
+  const bothPortedAndDiverged = [...diverged].filter((p) => ported.has(p)).sort()
+  const bothDivergedAndHand = [...diverged].filter((p) => hand.has(p)).sort()
+  const bothPortedAndHand = [...hand].filter((p) => ported.has(p)).sort()
+  expect(bothPortedAndDiverged, "in files[] and diverged[]: it cannot both re-derive and not").toEqual([])
+  expect(bothDivergedAndHand, "in diverged[] and handWritten: it was either ported once or never").toEqual([])
+  expect(bothPortedAndHand, "in files[] and handWritten").toEqual([])
+})
+
 /** Every `.ts` file under `dir`, repo-relative, posix-separated. */
 function listTsFiles(repoRoot: string, dir: string): string[] {
   const out: string[] = []
@@ -140,19 +199,28 @@ function listTsFiles(repoRoot: string, dir: string): string[] {
  * find the file", which was false in both directions: `bun test` discovers
  * test files by glob, so a misspelt entry names a file nothing looks for and
  * the suite stays green with fewer tests.
+ *
+ * **Since Task 8 the accounting has three arms, not two**, and the third is
+ * why this check stays whole rather than shrinking: a diverged file is still
+ * ACCOUNTED FOR here, so deleting its declaration does not quietly remove it
+ * from the bidirectional comparison - it turns this test red naming the file
+ * as unaccounted. That is ruling R18's "nothing can diverge without being
+ * declared", in the one place it can be enforced over the directory rather
+ * than over the manifest.
  */
-test("every .ts file under lib/schgen/ is either ported (in the manifest) or declared hand-written", () => {
+test("every .ts file under lib/schgen/ is ported, diverged, or declared hand-written", () => {
   const manifest = loadManifest()
   const repoRoot = moduleRepoRoot()
   const onDisk = new Set(listTsFiles(repoRoot, path.join(repoRoot, "lib/schgen")))
   const underLibSchgen = (p: string): boolean => p.startsWith("lib/schgen/")
   const portedUnderLibSchgen = manifest.files.map((f) => f.to).filter(underLibSchgen)
+  const divergedUnderLibSchgen = manifest.diverged.map((d) => d.to).filter(underLibSchgen)
   const handWrittenUnderLibSchgen = manifest.handWritten.filter(underLibSchgen)
-  const accountedFor = new Set([...portedUnderLibSchgen, ...handWrittenUnderLibSchgen])
+  const accountedFor = new Set([...portedUnderLibSchgen, ...divergedUnderLibSchgen, ...handWrittenUnderLibSchgen])
 
   const unaccountedOnDisk = [...onDisk].filter((f) => !accountedFor.has(f)).sort()
   const accountedButMissing = [...accountedFor].filter((f) => !onDisk.has(f)).sort()
 
-  expect(unaccountedOnDisk, "on disk under lib/schgen/ but in neither files[] nor handWritten").toEqual([])
-  expect(accountedButMissing, "in files[] or handWritten but not on disk under lib/schgen/").toEqual([])
+  expect(unaccountedOnDisk, "on disk under lib/schgen/ but in none of files[], diverged[] or handWritten").toEqual([])
+  expect(accountedButMissing, "in files[], diverged[] or handWritten but not on disk under lib/schgen/").toEqual([])
 })

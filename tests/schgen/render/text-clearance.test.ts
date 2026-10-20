@@ -1,8 +1,14 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/render/textClearance.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * rewritten by `tools/schgen/port.ts` (imports only), and DIVERGED from it by Task 8 of the M1
+ * schematic-authoring plan: decision D3 deletes the `labels` rendering this file passed to
+ * `blockCircuit` twice, and it is `{ kind: "bus", groups: [] }` - the kind `valuesAlong` still
+ * treats as `labels` was treated, so the power values this file measures run the same way.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 import { describe, expect, it } from "bun:test";
@@ -120,7 +126,7 @@ describe("textProblems", () => {
 
 describe("block-level text clearance (checkLayout)", () => {
   const two = () => {
-    const c = blockCircuit([res("R1", "N1", "N2"), res("R2", "N1", "N2")], { kind: "labels", reason: "fixture" }, { external: [] });
+    const c = blockCircuit([res("R1", "N1", "N2"), res("R2", "N1", "N2")], { kind: "bus", groups: [] }, { external: [] });
     return subgraphOf(c, "B", symbols);
   };
 
@@ -167,7 +173,7 @@ describe("segmentHitsBox", () => {
 
 describe("placeFields refusal", () => {
   it("refuses a unit whose every candidate slot is crossed by wiring, naming it", () => {
-    const c = blockCircuit([res("R1", "N1", "N2")], { kind: "labels", reason: "fixture" }, { external: [] });
+    const c = blockCircuit([res("R1", "N1", "N2")], { kind: "bus", groups: [] }, { external: [] });
     const g = subgraphOf(c, "B", symbols);
     // Horizontal wires every 1.27 mm across the whole neighbourhood: no text box can avoid them.
     const wires = Array.from({ length: 41 }, (_, i) => ({ a: { x: -40_000, y: (i - 20) * 1270 }, b: { x: 40_000, y: (i - 20) * 1270 }, net: "N1" }));

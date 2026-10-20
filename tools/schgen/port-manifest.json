@@ -10,20 +10,7 @@
     "vitest": "bun:test"
   },
   "files": [
-    {
-      "from": "ir/types.ts",
-      "to": "lib/schgen/ir/types.ts",
-      "cuts": [
-        {
-          "text": "  /** The part whose pins the pin map assigns. Null when the design has no pin map. */\n  readonly mcu: { readonly label: PartLabel } | null;\n",
-          "occurrences": 1
-        },
-        { "text": "pinmap\" | \"", "occurrences": 1 },
-        { "text": "  readonly mcu: PartLabel | null;\n", "occurrences": 1 }
-      ]
-    },
     { "from": "ir/author.ts", "to": "lib/schgen/ir/author.ts" },
-    { "from": "ir/classify.ts", "to": "lib/schgen/ir/classify.ts" },
     { "from": "ir/order.ts", "to": "lib/schgen/ir/order.ts" },
     { "from": "lock/annotate.ts", "to": "lib/schgen/lock/annotate.ts" },
     { "from": "lock/refmap.ts", "to": "lib/schgen/lock/refmap.ts" },
@@ -63,7 +50,16 @@
         { "text": "mcu: mcuLabel, ", "occurrences": 1 }
       ]
     },
-    { "from": "ir/validate.ts", "to": "lib/schgen/ir/validate.ts" },
+    {
+      "from": "ir/validate.ts",
+      "to": "lib/schgen/ir/validate.ts",
+      "cuts": [
+        {
+          "text": "    if (r.kind === \"labels\" && r.reason.trim() === \"\") out.push(`block ${b.id}: labels rendering needs a reason`);\n",
+          "occurrences": 1
+        }
+      ]
+    },
     { "from": "ir/validateNets.ts", "to": "lib/schgen/ir/validate-nets.ts" },
     { "from": "ir/validateParts.ts", "to": "lib/schgen/ir/validate-parts.ts" },
     { "from": "ir/validateRule.ts", "to": "lib/schgen/ir/validate-rule.ts" },
@@ -75,49 +71,6 @@
     { "from": "render/library.ts", "to": "lib/schgen/render/library.ts" },
     { "from": "render/library.test.ts", "to": "tests/schgen/render/library.test.ts" },
     { "from": "render/geometry.test.ts", "to": "tests/schgen/render/geometry.test.ts" },
-    {
-      "from": "ir/classify.test.ts",
-      "to": "tests/schgen/ir/classify.test.ts",
-      "cuts": [
-        { "text": "      mcu: null,\n", "occurrences": 5 },
-        { "text": ", pinmap: null", "occurrences": 5 }
-      ]
-    },
-    {
-      "from": "ir/validate.test.ts",
-      "to": "tests/schgen/ir/validate.test.ts",
-      "cuts": [
-        { "text": "  mcu: null,\n", "occurrences": 1 },
-        { "text": ", pinmap: null", "occurrences": 2 }
-      ]
-    },
-    {
-      "from": "ir/build.test.ts",
-      "to": "tests/schgen/ir/build.test.ts",
-      "cuts": [
-        {
-          "text": "const big = (pins: PartSpec[\"pins\"], ncAll: boolean): PartSpec => ({\n  label: \"U_MCU\", refPrefix: \"U\", libId: \"Fix:BIG8\", units: [1], value: \"BIG8\", footprint: \"F\", bom: TEST_BOM,\n  dnp: false, checklist: [], source: \"t\", pinTable: null, pins, mechanicalPads: [],\n  ncUnlisted: ncAll ? { reason: \"CORE-27\" } : null,\n});\n\n",
-          "occurrences": 1
-        },
-        { "text": "  mcu: mcu ? { label: \"U_MCU\" } : null,\n", "occurrences": 1 },
-        {
-          "text": "const PINMAP: PinmapInput = {\n  map: { mcu: \"BIG8\", pinData: \"x\", gpioModes: \"y\", schematicRef: \"U1\", assignments: [{ pin: \"PA0\", signal: \"GPIO\", net: \"SIG\", purpose: \"p\" }] },\n  mcu: { refName: \"BIG8\", pins: new Map([[\"PA0\", { port: \"PA0\", position: \"1\", signals: new Set<string>(), af: new Map<string, number>() }]]) },\n};\n\n",
-          "occurrences": 1
-        },
-        {
-          "text": "  it(\"merges pin-map assignments onto the MCU by package position, with the port as identity\", () => {\n    const c = buildCircuit(spec([big({}, true), res(\"R_1\", \"SIG\", \"GND\")], true), { symbols, pinmap: PINMAP });\n    const p1 = c.pins.find((p) => p.part === \"U_MCU\" && p.pin === \"1\");\n    expect(p1).toEqual({ part: \"U_MCU\", pin: \"1\", unit: 1, identity: \"PA0\", net: \"SIG\", origin: \"pinmap\" });\n  });\n\n  it(\"refuses an MCU pin declared in the circuit and assigned by the pin map\", () => {\n    const declared = big({ \"1\": { net: \"OTHER\", identity: \"D0\" } }, true);\n    expect(() => buildCircuit(spec([declared, res(\"R_1\", \"SIG\", \"GND\")], true), { symbols, pinmap: PINMAP })).toThrow(\n      /U_MCU pin 1 \\(PA0\\) is declared in the circuit on net OTHER and assigned by the pin map to SIG; pinmap.json is authoritative/,\n    );\n  });\n\n  it(\"expands ncUnlisted to every remaining symbol pin, identity from the symbol\", () => {\n    const c = buildCircuit(spec([big({}, true), res(\"R_1\", \"SIG\", \"GND\")], true), { symbols, pinmap: PINMAP });\n    const nc = c.pins.filter((p) => p.part === \"U_MCU\" && p.origin === \"nc-unlisted\");\n    expect(nc.map((p) => [p.pin, p.identity, p.net])).toEqual([\n      [\"2\", \"D1\", null], [\"3\", \"CLK\", null], [\"4\", \"GND\", null], [\"5\", \"CS\", null], [\"6\", \"D2\", null], [\"7\", \"NC\", null], [\"8\", \"VCC\", null],\n    ]);\n  });\n\n",
-          "occurrences": 1
-        },
-        {
-          "text": "  it(\"refuses a pin map without an MCU and an MCU without a pin map\", () => {\n    expect(() => buildCircuit(spec([big({}, true)], false), { symbols, pinmap: PINMAP })).toThrow(/pin map was given but the circuit names no MCU/);\n    expect(() => buildCircuit(spec([big({}, true)], true), { symbols, pinmap: null })).toThrow(/circuit names MCU U_MCU but no pin map was given/);\n  });\n\n",
-          "occurrences": 1
-        },
-        { "text": ", type PinmapInput", "occurrences": 1 },
-        { "text": ", mcu: boolean", "occurrences": 1 },
-        { "text": ", false", "occurrences": 4 },
-        { "text": ", pinmap: null", "occurrences": 4 }
-      ]
-    },
     { "from": "render/blockTypes.ts", "to": "lib/schgen/render/block-types.ts" },
     { "from": "render/powerText.ts", "to": "lib/schgen/render/power-text.ts" },
     { "from": "render/unitPins.ts", "to": "lib/schgen/render/unit-pins.ts" },
@@ -138,18 +91,8 @@
     { "from": "render/emit.ts", "to": "lib/schgen/render/emit.ts" },
     { "from": "render/ercExclusions.ts", "to": "lib/schgen/render/erc-exclusions.ts" },
     { "from": "render/project.ts", "to": "lib/schgen/render/project.ts" },
-    { "from": "report.ts", "to": "lib/schgen/report.ts" },
-    {
-      "from": "__fixtures__/circuits.ts",
-      "to": "tests/schgen/__fixtures__/circuits.ts",
-      "cuts": [
-        { "text": "      mcu: null,\n", "occurrences": 2 },
-        { "text": ", pinmap: null", "occurrences": 2 }
-      ]
-    },
     { "from": "render/pack.test.ts", "to": "tests/schgen/render/pack.test.ts" },
     { "from": "render/project.test.ts", "to": "tests/schgen/render/project.test.ts" },
-    { "from": "render/drawnText.test.ts", "to": "tests/schgen/render/drawn-text.test.ts" },
     { "from": "lock/annotate.test.ts", "to": "tests/schgen/lock/annotate.test.ts" },
     { "from": "lock/refmap.test.ts", "to": "tests/schgen/lock/refmap.test.ts" },
     { "from": "lock/versionLock.test.ts", "to": "tests/schgen/lock/version-lock.test.ts" },
@@ -176,18 +119,81 @@
     { "from": "render/templates/regulator.test.ts", "to": "tests/schgen/render/templates/regulator.test.ts" },
     { "from": "render/templates/opampStage.test.ts", "to": "tests/schgen/render/templates/opamp-stage.test.ts" },
     { "from": "render/templates/connectorFanout.test.ts", "to": "tests/schgen/render/templates/connector-fanout.test.ts" },
+    { "from": "render/bodyClearance.test.ts", "to": "tests/schgen/render/body-clearance.test.ts" }
+  ],
+  "diverged": [
+    {
+      "from": "ir/types.ts",
+      "to": "lib/schgen/ir/types.ts",
+      "task": "Task 8",
+      "why": "Plan decision D3: `Rendering` loses `{ kind: \"labels\"; reason }` and gains `{ kind: \"auto\" }`. The pedals source has `labels` and keeps it, so no rewrite rule reconciles the two. The MCU `cuts` this entry carried in files[] (G112: PinmapInput, CircuitSpec.mcu, Circuit.mcu, the \"pinmap\" pin origin) were applied before it diverged and the file on disk is that cut form; they are no longer declared anywhere but the git history of this manifest."
+    },
+    {
+      "from": "ir/classify.ts",
+      "to": "lib/schgen/ir/classify.ts",
+      "task": "Task 8",
+      "why": "D3: `labelledNets` tested `rendering.kind !== \"wired\"`, which with `auto` added would label every net of an ELK-rendered block. It now means not `wired` and not `auto`, i.e. `bus` - a modification, which a cut cannot express."
+    },
+    {
+      "from": "report.ts",
+      "to": "lib/schgen/report.ts",
+      "task": "Task 8",
+      "why": "D3: `BlockReport.rendering` was \"wired\" | \"bus\" | \"labels\" and the switch over `Rendering` had a `case \"labels\"` returning its reason. With `labels` deleted and `auto` added, the case is uninhabited and the switch is no longer exhaustive."
+    },
+    {
+      "from": "__fixtures__/circuits.ts",
+      "to": "tests/schgen/__fixtures__/circuits.ts",
+      "task": "Task 8",
+      "why": "D3: the SPLIT and PEER blocks and `labelsCircuit`'s block B declared `{ kind: \"labels\" }`. They are `{ kind: \"bus\", groups: [] }` here, which `labelledNets` and `valuesAlong` treat identically (every net labelled, values along their glyphs), so every fixture-backed assertion measures what it did. Its MCU `cuts` (G112) were applied before divergence."
+    },
+    {
+      "from": "ir/build.test.ts",
+      "to": "tests/schgen/ir/build.test.ts",
+      "task": "Task 8",
+      "why": "D3: three block specs declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`. Its nine MCU `cuts` (G112) were applied before divergence and are no longer declared anywhere but this manifest's history."
+    },
+    {
+      "from": "ir/classify.test.ts",
+      "to": "tests/schgen/ir/classify.test.ts",
+      "task": "Task 8",
+      "why": "D3: two block specs declared `{ kind: \"labels\" }` and one test was named for it. They are `{ kind: \"bus\", groups: [] }` and the test is renamed; the ASSERTION is unchanged, because `bus` is the non-wired kind whose nets are all labelled now that `auto`'s are not. Its MCU `cuts` (G112) were applied before divergence."
+    },
+    {
+      "from": "ir/validate.test.ts",
+      "to": "tests/schgen/ir/validate.test.ts",
+      "task": "Task 8",
+      "why": "D3: the shared `LABELS` rendering is `{ kind: \"bus\", groups: [] }`, and the V6 test \"requires a reason for label rendering\" is DELETED with the rule it tested (supersede means delete; the cut that removes that rule from ir/validate.ts is declared in files[]). Its MCU `cuts` (G112) were applied before divergence."
+    },
+    {
+      "from": "render/drawnText.test.ts",
+      "to": "tests/schgen/render/drawn-text.test.ts",
+      "task": "Task 8",
+      "why": "D3: one block spec declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
+    },
+    {
+      "from": "render/unitText.test.ts",
+      "to": "tests/schgen/render/unit-text.test.ts",
+      "task": "Task 8",
+      "why": "D3: one `blockCircuit` rendering argument declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
+    },
+    {
+      "from": "render/textClearance.test.ts",
+      "to": "tests/schgen/render/text-clearance.test.ts",
+      "task": "Task 8",
+      "why": "D3: two `blockCircuit` rendering arguments declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
+    },
+    {
+      "from": "render/noConnectEnds.test.ts",
+      "to": "tests/schgen/render/no-connect-ends.test.ts",
+      "task": "Task 8",
+      "why": "D3: two `blockCircuit` rendering arguments declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
+    },
     {
       "from": "render/templates/opampStock.kicad.test.ts",
       "to": "tests/schgen/render/templates/opamp-stock.kicad.test.ts",
-      "cuts": [
-        { "text": "      mcu: null,\n", "occurrences": 1 },
-        { "text": ", pinmap: null", "occurrences": 1 }
-      ]
-    },
-    { "from": "render/bodyClearance.test.ts", "to": "tests/schgen/render/body-clearance.test.ts" },
-    { "from": "render/textClearance.test.ts", "to": "tests/schgen/render/text-clearance.test.ts" },
-    { "from": "render/unitText.test.ts", "to": "tests/schgen/render/unit-text.test.ts" },
-    { "from": "render/noConnectEnds.test.ts", "to": "tests/schgen/render/no-connect-ends.test.ts" }
+      "task": "Task 8",
+      "why": "D3: the SPLIT and PEER blocks declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`. Its MCU `cuts` (G112) were applied before divergence."
+    }
   ],
   "handWritten": [
     "lib/schgen/strict.ts",

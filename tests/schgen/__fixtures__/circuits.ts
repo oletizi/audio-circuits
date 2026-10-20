@@ -1,9 +1,19 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/__fixtures__/circuits.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
- * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/__fixtures__/circuits.ts` (with the MCU
+ * pin-map cuts of `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 8 of the M1
+ * schematic-authoring plan: decision D3 deletes the `labels` rendering these fixtures declared.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
+ *
+ * **WHY `bus` AND NOT `auto` IS THE SUBSTITUTE.** Every `{ kind: "labels" }` here existed to make
+ * a block whose nets are all labelled - a peer block that forces a net across a boundary, or a
+ * block holding the units a template does not draw. `labelledNets` labels every net of a `bus`
+ * block and NONE of an `auto` block's internal ones, so `bus` is what these fixtures meant;
+ * `valuesAlong` likewise treats `bus` as it treated `labels`. The fixture-backed assertions
+ * therefore measure what they measured before.
  */
 
 import { fixtureResolver, TEST_BOM } from "./fixture-lib.ts";
@@ -34,7 +44,7 @@ export const VSSA: RailSpec = { net: "VSSA", symbol: "Pwr:GND", kind: "ground", 
 export interface BlockCircuitOptions {
   /** Nets that must leave the block: a peer block "PEER" gets one resistor from each to GND. */
   readonly external: readonly string[];
-  /** Units of multi-unit parts moved out of "B" into a labels block "SPLIT" (e.g. unused op-amp units). */
+  /** Units of multi-unit parts moved out of "B" into a bus-rendered block "SPLIT" (e.g. unused op-amp units). */
   readonly splitUnits?: readonly { readonly part: string; readonly units: readonly number[] }[];
   /** Rails beyond RAILS (e.g. a second ground drawn with the GND glyph). */
   readonly moreRails?: readonly RailSpec[];
@@ -56,10 +66,10 @@ export function blockCircuit(parts: PartSpec[], rendering: Rendering, opts: Bloc
       blocks: [
         { id: "B", sheet: "s", title: "Block", members, checklist: [], rendering },
         ...(splitMembers.length > 0
-          ? [{ id: "SPLIT", sheet: "s", title: "Split", members: splitMembers, checklist: [], rendering: { kind: "labels" as const, reason: "fixture: unused op-amp units" } }]
+          ? [{ id: "SPLIT", sheet: "s", title: "Split", members: splitMembers, checklist: [], rendering: { kind: "bus" as const, groups: [] } }]
           : []),
         ...(peers.length > 0
-          ? [{ id: "PEER", sheet: "s", title: "Peer", members: peers.map((p) => p.label), checklist: [], rendering: { kind: "labels" as const, reason: "fixture peer" } }]
+          ? [{ id: "PEER", sheet: "s", title: "Peer", members: peers.map((p) => p.label), checklist: [], rendering: { kind: "bus" as const, groups: [] } }]
           : []),
       ],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A3", notes: [] }],
@@ -80,7 +90,12 @@ export interface LabelsCircuitOptions {
   readonly others: readonly BlockSpec[];
 }
 
-/** One A4 sheet "s" whose block "B" (labels rendering, reason "fixture") holds every part no block in `others` lists. */
+/**
+ * One A4 sheet "s" whose block "B" holds every part no block in `others` lists, rendered so that
+ * EVERY net of it is labelled - which is what the name means and is why it is still `labelsCircuit`
+ * after D3 deleted the `labels` rendering. The rendering that does that is now `bus` with no
+ * groups.
+ */
 export function labelsCircuit(parts: PartSpec[], opts: LabelsCircuitOptions): Circuit {
   const taken = new Set(opts.others.flatMap((b) => b.members.map((m) => (typeof m === "string" ? m : m.part))));
   return buildCircuit(
@@ -88,7 +103,7 @@ export function labelsCircuit(parts: PartSpec[], opts: LabelsCircuitOptions): Ci
       parts,
       blocks: [
         {
-          id: "B", sheet: "s", title: "B", checklist: opts.checklist, rendering: { kind: "labels", reason: "fixture" },
+          id: "B", sheet: "s", title: "B", checklist: opts.checklist, rendering: { kind: "bus", groups: [] },
           members: parts.filter((p) => !taken.has(p.label)).map((p) => p.label),
         },
         ...opts.others,

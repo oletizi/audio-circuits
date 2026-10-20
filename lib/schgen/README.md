@@ -17,9 +17,13 @@ that buys and what it costs.
 
 ## How a file gets here
 
-Every file under `lib/schgen/` is either produced by `tools/schgen/port.ts`
-or named in `port-manifest.json`'s `handWritten` list — never both, and
-never neither. A ported file is produced by reading
+Every file under `lib/schgen/` is produced by `tools/schgen/port.ts`, named in
+`port-manifest.json`'s `handWritten` list, or named in its `diverged` list —
+**exactly one of the three**, never two and never none.
+`tests/schgen/port-fidelity.test.ts` holds all three claims: the byte-check
+over `files[]`, the disjointness of the three categories, and the
+bidirectional completeness of their union against a listing of the directory.
+A ported file is produced by reading
 `tools/schgen/port-manifest.json`, copying the named file from
 `$SCHGEN_SOURCE/tools/schgen/<from>`, and rewriting exactly three things, in
 order: this entry's declared `cuts` (if any — see below), its
@@ -61,9 +65,48 @@ a misspelt entry names a file nothing looks for.)
 **A ported file is never hand-edited**, and a hand-written file never slips
 in unlisted: a new hand-written file must be added to `handWritten`
 deliberately, or the second check fails naming it. If a ported file needs a
-content change beyond a declared cut, the pedals source changes (or the
-file is edited in a later task that has a stated reason to diverge,
-recording the deviation), and `port.ts` runs again.
+content change beyond a declared cut, the pedals source changes and `port.ts`
+runs again — or the file **diverges**, below.
+
+## `diverged`: a file that has stopped being a port
+
+Since **Task 8** the manifest has a third list. A `diverged` entry says that
+a file was ported, that a named task deliberately changed its CONTENT, and
+why: `{ from, to, task, why }`. `from` is still the pedals source path, and
+`port-fidelity.test.ts` checks it exists under `$SCHGEN_SOURCE`, so the
+provenance is a claim that can fail rather than a comment.
+
+**Why it had to exist.** Task 8 widens `RealiseResult` from two outcomes to
+five classified ones across `render/block-types.ts`, the seven templates and
+five helper modules, and it deletes the `labels` rendering (plan decision
+**D3**) that the pedals source has and will keep. Neither is expressible as a
+`cuts` entry — cuts are deletion-only and both of those are modifications —
+and the alternative, dropping the entries, would have taken each file's
+provenance with it and left nothing recording that it ever was a port.
+**Ruling R18 is the rule this implements: a file may diverge, and it may not
+diverge silently.**
+
+**The line between a cut and a divergence.** If the only content change is
+removing text that is in the source, it is a `cuts` entry and the file stays
+in `files[]`, byte-checked and re-derived on every run. Task 8 does exactly
+that for `ir/validate.ts`'s one-line `labels` clause. Anything else — a
+rename, a substitution, new code — is a divergence.
+
+**What a divergence costs, plainly.** Nothing compares a diverged file
+against its source again. The byte-check iterates `files[]` only, so an
+upstream fix in `digital-pedal-platform` will not arrive here by re-running
+the porter, a drift between the two is invisible to every check here, and the
+`cuts` a file carried while it was ported stop being declared anywhere but
+this manifest's git history. `docs/known-gaps.md` **G139** sizes that loss
+(it is 25 files after Task 8, nine of them the port-parity tests Task 7
+landed) and records the mechanism that was considered instead and why it was
+not taken.
+
+Running the porter prints one `DIVERGED, not rewritten:` line per entry, so a
+run cannot be read as having refreshed them. `resolveSpecifier` resolves
+`@/schgen/<path>` imports through `diverged` as well as `files[]`, because a
+diverged file still occupies its destination and the files that import it are
+still ports.
 
 **`SCHGEN_SOURCE` has no default** — see the root `README.md`'s
 Prerequisites section and `docs/known-gaps.md` **G110** for why, and for the
