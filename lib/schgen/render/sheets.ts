@@ -1,7 +1,9 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/render/sheets.ts`, and DIVERGED from it by
  * Task 12 of the M1 schematic-authoring plan: `layoutSheet` takes the ELK `Backend` and hands it
- * to `blockContent`. That one parameter is the whole divergence.
+ * to `blockContent`. **Diverged further by Task 15**: it takes a second optional parameter, the
+ * `SheetPacking` a sheet-packing pre-pass produced, and uses the shelf packer when there is none.
+ * Two parameters are now the whole divergence.
  *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
@@ -15,7 +17,7 @@
  * labels (everything else), NC pins marked, then a sheet-wide wire-safety and body-clearance
  * backstop. Junction dots are cosmetic: exactly the junctionPoints() of the sheet's items.
  */
-import type { Circuit, Paper, SheetId } from "../ir/types.ts";
+import type { Circuit, Paper, SheetId, SheetSpec } from "../ir/types.ts";
 import type { Backend, BlockLayout, BlockSubgraph, Placement, Wire } from "./block-types.ts";
 import { pinMarks, type PinMark } from "./pin-marks.ts";
 import { placedNoConnects } from "./blocks.ts";
@@ -26,7 +28,7 @@ import {
 } from "./frames.ts";
 import { fmtMm, placeBox, pointKey, type Point, type Um } from "./geometry.ts";
 import type { SymbolResolver } from "./library.ts";
-import { packFrames } from "./pack.ts";
+import { shelfPacking, type SheetPacking } from "../elk/sheet-graph.ts";
 import { assertSheetSafe, sheetItems, type SheetBlock } from "./sheet-check.ts";
 import { blockFields } from "./field-placement.ts";
 import { anchorsToSymbols, valuesAlong } from "./power-text.ts";
@@ -113,20 +115,50 @@ function noConnects(blocks: readonly SheetBlock[]): Point[] {
  * synchronous realise dispatch (plan decision **D2**). It defaults to `null` for **G146**'s
  * reason: an `auto` block that reaches ELK with no backend REFUSES, naming the block, and the
  * default is what keeps every ported caller of this function unchanged.
+ *
+ * **`packing` IS TASK 15's ADDITION, AND IT DEFAULTS TO `null` FOR THE SAME REASON.** `elkjs` has
+ * no synchronous layout entry point (decision **D2**), so a connectivity-aware sheet packing must
+ * be computed before this function is called, exactly as a block's ELK layout is - see
+ * `sheetPackPrePass` in `tools/schgen/elk/sheet-layout.ts`, which is also where the
+ * shelf-versus-ELK selection rule is stated once. **`null` is not a fallback: it is the state
+ * "no sheet-packing pre-pass ran"**, which is true of every ported caller of this function and of
+ * every test that calls it directly, and in that state the packer is the shelf packer this file has
+ * always used. A pre-pass that ran and chose the shelf packer passes a `SheetPacking` whose `by` is
+ * `"shelf"`, so the two cases are distinguishable in a report rather than conflated.
  */
-export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolver, flagLibId: string, elk: Backend | null = null): SheetDrawing {
+export function sheetOf(c: Circuit, sheetId: SheetId): SheetSpec {
   const sheet = c.sheets.find((s) => s.id === sheetId);
   if (sheet === undefined) throw new Error(`unknown sheet ${sheetId}`);
-  const paper = PAPER[sheet.paper];
+  return sheet;
+}
+
+/**
+ * ONE SHEET's FRAME CONTENTS, IN THE ORDER THEY ARE PACKED - **extracted from `layoutSheet` by
+ * Task 15 and called by both it and the sheet-packing pre-pass.**
+ *
+ * It is extracted rather than duplicated because a pre-pass that packed a different content list
+ * from the one that gets placed would hand `layoutSheet` positions for frames it does not have -
+ * and the order is load-bearing: `arrange` reads the packer's positions by index, so blocks in
+ * declaration order, then the notes frame, then the power-flag frame, is the contract between the
+ * packer and the arranger.
+ */
+export function sheetContents(c: Circuit, sheetId: SheetId, symbols: SymbolResolver, flagLibId: string, elk: Backend | null): FrameContent[] {
+  const sheet = sheetOf(c, sheetId);
   const blocks = [...c.blocks.values()].filter((b) => b.sheet === sheetId).sort((a, b) => a.order - b.order);
   const flags = flagsContent([...c.rails.values()], sheetId, flagLibId, symbols);
   const notes = notesContent(sheet);
-  const contents: FrameContent[] = [
+  return [
     ...blocks.map((b) => blockContent(c, b.id, symbols, elk)),
     ...(notes === null ? [] : [notes]),
     ...(flags === null ? [] : [flags]),
   ];
-  const packed = packFrames(contents.map(frameSize), paper);
+}
+
+export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolver, flagLibId: string, elk: Backend | null = null, packing: SheetPacking | null = null): SheetDrawing {
+  const sheet = sheetOf(c, sheetId);
+  const paper = PAPER[sheet.paper];
+  const contents = sheetContents(c, sheetId, symbols, flagLibId, elk);
+  const packed = packing ?? shelfPacking(contents, paper);
   if (!packed.ok) {
     throw new Error(
       `sheet ${sheetId}: blocks do not fit on ${sheet.paper}; give the sheet a larger paper in its SheetSpec ` +

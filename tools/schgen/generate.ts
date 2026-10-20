@@ -39,8 +39,10 @@ import { compareVersionLock, fingerprintLibraries, parseVersionLock, serializeVe
 import { createResolver, splitLibId, type SymbolResolver } from "../../lib/schgen/render/library.ts";
 import { withReferences } from "../../lib/schgen/render/drawn-text.ts";
 import { assertRefsMatchDrawings } from "../../lib/schgen/render/page-refs.ts";
+import { assertCrossSheet } from "../../lib/schgen/render/cross-sheet.ts";
 import { layoutSheet } from "../../lib/schgen/render/sheets.ts";
 import { elkBackendFrom, elkPrePass, type ElkOutcome } from "./elk/layout.ts";
+import { sheetPackPrePass } from "./elk/sheet-layout.ts";
 import type { BlockId } from "../../lib/schgen/ir/types.ts";
 import type { SheetDrawing } from "../../lib/schgen/render/sheet-types.ts";
 import { placedSymbolTextOverlaps } from "../../lib/schgen/render/symbol-self-text.ts";
@@ -157,8 +159,26 @@ export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Gener
   // Every block selectRenderer sends to ELK, laid out once, before the synchronous dispatch runs.
   const elk = await elkPrePass(drawn, symbols);
   const backend = elkBackendFrom(elk);
-  const drawings = drawn.sheets.map((s) => layoutSheet(drawn, s.id, symbols, FLAG_LIB_ID, backend));
+  // Every sheet's frames packed once, before the synchronous arrangement runs - decision D2's
+  // shape at sheet scale. `tools/schgen/elk/sheet-layout.ts` states the shelf-versus-ELK selection
+  // rule; `layoutSheet` turns a refusal into the message naming the paper to enlarge.
+  const packings = await sheetPackPrePass(drawn, symbols, FLAG_LIB_ID, backend);
+  const packingOf = (id: string) => {
+    const p = packings.get(id);
+    if (p === undefined) throw new Error(`the sheet-packing pre-pass holds no packing for sheet ${id}`);
+    return p;
+  };
+  const drawings = drawn.sheets.map((s) => layoutSheet(drawn, s.id, symbols, FLAG_LIB_ID, backend, packingOf(s.id)));
   assertRefsMatchDrawings(drawn, drawings);
+  // Spec §1.6's rule, Task 15's decision: one authoritative mechanism per CLASS of connection.
+  // **IT RUNS HERE AND NOT INSIDE `layoutSheet`, WHICH IS A DEVIATION FROM THE TASK 15 BRIEF'S
+  // STEP 3** (*"wire crossSheetProblems into layoutSheet's existing assertSheetSafe
+  // neighbourhood"*). A cross-sheet check cannot run per sheet: deciding whether a net crossing a
+  // boundary is represented at all needs every sheet's drawing, and inside `layoutSheet` the other
+  // sheets do not exist yet - a per-sheet version would report every crossing net of the first
+  // sheet as unrepresented. It sits beside `assertRefsMatchDrawings`, which is the other
+  // whole-drawing-set check, for the same reason. `docs/known-gaps.md` records the deviation.
+  assertCrossSheet(drawn, drawings);
   const files = generatedFiles({ design: d, circuit, symbols, annotation, versions, versionLockText, drawings });
   return { files, circuit, annotation, versions, drawings, symbols, elk };
 }

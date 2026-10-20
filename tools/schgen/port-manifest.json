@@ -707,8 +707,8 @@
       "from": "render/sheets.ts",
       "to": "lib/schgen/render/sheets.ts",
       "sourceSha": "920d2bb1ba9dc597eed0438f837049623fd5684e608f9066e0f4c50223e731a6",
-      "task": "Task 12",
-      "why": "`layoutSheet` takes the ELK `Backend` and hands it to `blockContent`. One parameter is the whole divergence, and it defaults to null for G146's reason - an auto block that reaches ELK with no backend refuses, naming the block. docs/known-gaps.md G186."
+      "task": "Task 12; diverged further by Task 15",
+      "why": "`layoutSheet` takes the ELK `Backend` and hands it to `blockContent`. One parameter is the whole divergence, and it defaults to null for G146's reason - an auto block that reaches ELK with no backend refuses, naming the block. docs/known-gaps.md G186. **TASK 15 ADDS A SECOND PARAMETER AND ONE EXTRACTION.** `layoutSheet` takes the `SheetPacking` a sheet-packing pre-pass produced (null = no pre-pass ran, which is every ported caller, and the shelf packer this file always used), and the frame-content construction is extracted into an exported `sheetContents` so the pre-pass packs the same list that gets placed. `packFrames` is reached through `shelfPacking` in lib/schgen/elk/sheet-graph.ts rather than directly, which is what keeps render/pack.ts a byte-checked PORT instead of a second divergence. docs/known-gaps.md G203."
     },
     {
       "from": "generate.ts",
@@ -800,6 +800,15 @@
     "lib/schgen/elk/self-loop.ts",
     "tools/schgen/elk/diagnose.ts",
     "tests/schgen/elk/self-loop.test.ts",
-    "tests/schgen/elk/raised.elk.test.ts"
+    "tests/schgen/elk/raised.elk.test.ts",
+    "lib/schgen/elk/sheet-graph.ts",
+    "lib/schgen/render/cross-sheet.ts",
+    "lib/schgen/render/compose.ts",
+    "tools/schgen/elk/sheet-layout.ts",
+    "tests/schgen/__fixtures__/designs/crosssheet.ts",
+    "tests/schgen/render/cross-sheet.kicad.test.ts",
+    "tests/schgen/elk/sheet-graph.test.ts",
+    "tests/schgen/render/compose.test.ts",
+    "tests/schgen/__fixtures__/composed.ts"
   ]
 }
