@@ -4,6 +4,7 @@
     "pedals-tools": ".."
   },
   "externals": {
+    "@/kicad/footprint": "lib/kicad/footprint.ts",
     "@/kicad/libtable": "lib/kicad/libtable.ts",
     "@/kicad/netlist": "lib/kicad/netlist.ts",
     "@/kicad/sexpr": "lib/kicad/sexpr.ts",
@@ -152,6 +153,24 @@
         { "text": "  if (circuit.mcu !== null && pinmap !== null) pinned.set(circuit.mcu, pinmap.map.schematicRef);\n", "occurrences": 1 },
         { "text": ", pinmap", "occurrences": 1 }
       ]
+    },
+    { "from": "kicad/footprint.ts", "to": "lib/kicad/footprint.ts", "root": "pedals-tools" },
+    { "from": "gates/pinIdentity.ts", "to": "lib/schgen/gates/pin-identity.ts" },
+    { "from": "gates/traceability.ts", "to": "lib/schgen/gates/traceability.ts" },
+    { "from": "gates/pintable.test.ts", "to": "tests/schgen/gates/pin-table.test.ts" },
+    { "from": "gates/pinIdentity.test.ts", "to": "tests/schgen/gates/pin-identity.test.ts" },
+    {
+      "from": "gates/traceability.test.ts",
+      "to": "tests/schgen/gates/traceability.test.ts",
+      "cuts": [
+        { "text": "import fs from \"node:fs\";\n", "occurrences": 1 },
+        { "text": "import path from \"node:path\";\n", "occurrences": 1 },
+        { "text": "import { repoRoot } from \"@/repo\";\n", "occurrences": 1 },
+        {
+          "text": "\n  it(\"matches the item counts the real checklist states\", () => {\n    const md = fs.readFileSync(path.join(repoRoot(), \"h7-platform\", \"SCHEMATIC-CHECKLIST.md\"), \"utf8\");\n    const stated = /\\*\\*Item count\\*\\*[^:]*:([^\\n]*\\n[^\\n]*)/.exec(md)?.[1];\n    if (stated === undefined) throw new Error(\"SCHEMATIC-CHECKLIST.md has no Item count line\");\n    const perPrefix = new Map([...stated.matchAll(/\\b([A-Z]+) (\\d+)\\b/g)].map((m) => [m[1]!, Number(m[2])]));\n    const ids = checklistIds(md);\n    const actual = new Map<string, number>();\n    for (const id of ids) actual.set(id.split(\"-\")[0]!, (actual.get(id.split(\"-\")[0]!) ?? 0) + 1);\n    expect(actual).toEqual(perPrefix);\n    const schematic = [\"CORE\", \"CODEC\", \"PWR\", \"AIO\", \"CTL\", \"USB\", \"ALL\"];\n    expect(ids.filter((id) => schematic.includes(id.split(\"-\")[0]!))).toHaveLength(Number(/(\\d+) schematic items/.exec(stated)?.[1]));\n    expect(perPrefix.get(\"OWN\")).toBeGreaterThan(0);\n    expect(perPrefix.get(\"BU\")).toBeGreaterThan(0);\n  });\n",
+          "occurrences": 1
+        }
+      ]
     }
   ],
   "diverged": [
@@ -181,7 +200,7 @@
       "to": "tests/schgen/__fixtures__/designs/mini/index.ts",
       "sourceSha": "ff79760c45034b1b4a2250e3f182e5ad11e8729130f2df74d25aec43e14ceb47",
       "task": "Task 6b",
-      "why": "The pedals project's own two-sheet design fixture, ported so that the first schematic this repository emits through its own pipeline is one IT did not arrange - the governing invariant is that an agent never authors the acceptance criteria for what it produces, and that extends to the arrangement being looked at. D3: its AMP_SPARE and AMP_PWR blocks declared `{ kind: \"labels\", reason: ... }`, now `{ kind: \"bus\", groups: [] }`; both hold one unit, so `realiseBus` draws them. G112: `mcu: null` is gone from the CircuitSpec and `pinmap: null` from the DesignSpec, the latter because design.ts's `cuts` remove the field. Its `pinTables` path still names the pedals pintables directory, which is not ported and which nothing in `generate` reads."
+      "why": "The pedals project's own two-sheet design fixture, ported so that the first schematic this repository emits through its own pipeline is one IT did not arrange - the governing invariant is that an agent never authors the acceptance criteria for what it produces, and that extends to the arrangement being looked at. D3: its AMP_SPARE and AMP_PWR blocks declared `{ kind: \"labels\", reason: ... }`, now `{ kind: \"bus\", groups: [] }`; both hold one unit, so `realiseBus` draws them. G112: `mcu: null` is gone from the CircuitSpec and `pinmap: null` from the DesignSpec, the latter because design.ts's `cuts` remove the field. Its `pinTables` path is unchanged (`../../pintables`); nothing in `generate` reads it, and Task 11 copied the one table it names to tests/schgen/__fixtures__/pintables/OPA1688.json (byte-checked by COPIED_FIXTURES in port-fidelity.test.ts) so that gate 6 can run on this design."
     },
     {
       "from": "render/emit.test.ts",

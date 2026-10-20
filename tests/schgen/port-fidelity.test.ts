@@ -87,6 +87,12 @@ test("every declared source root is a directory on disk and is used by an entry"
 const COPIED_FIXTURES: readonly { readonly from: string; readonly to: string }[] = [
   { from: "__fixtures__/symbols/Fix.kicad_sym", to: "tests/schgen/__fixtures__/symbols/Fix.kicad_sym" },
   { from: "__fixtures__/symbols/Pwr.kicad_sym", to: "tests/schgen/__fixtures__/symbols/Pwr.kicad_sym" },
+  // Task 11: the datasheet pin table gate 6 compares the `mini` fixture's MPN-overridden op-amp
+  // against. The ported `mini/index.ts` names it (`pinTables: "../../pintables"`) and
+  // `tests/schgen/gates/pin-table.test.ts` asserts its contents, so a drifted copy changes what
+  // both measure. It is `.json`, so `port.ts` never rewrites it and the byte-check above cannot
+  // see it either.
+  { from: "__fixtures__/pintables/OPA1688.json", to: "tests/schgen/__fixtures__/pintables/OPA1688.json" },
 ]
 
 test("every copied (non-.ts) fixture is byte-identical to its pedals source", () => {
@@ -358,7 +364,11 @@ const DECLARED_DIRS = ["lib/schgen", "tests/schgen", "tools/schgen"] as const
  * teeth in both directions: an entry deleted from the manifest fails, and a new outside
  * destination fails until it is listed. `docs/known-gaps.md` **G161**.
  */
-const PORTED_OUTSIDE_DECLARED_DIRS: readonly string[] = ["lib/kicad/libtable.ts", "tools/repo.ts"]
+const PORTED_OUTSIDE_DECLARED_DIRS: readonly string[] = [
+  "lib/kicad/footprint.ts",
+  "lib/kicad/libtable.ts",
+  "tools/repo.ts",
+]
 
 test("every ported destination outside the declared directories is pinned here", () => {
   const manifest = loadManifest()
