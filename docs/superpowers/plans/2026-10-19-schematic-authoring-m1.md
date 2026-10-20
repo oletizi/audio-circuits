@@ -524,6 +524,37 @@ test("the matrix covers each pair exactly once", () => {
 
 ### Task 6: The emitter, sheet arrangement, and the reference lock
 
+> **SPLIT 2026-10-19 by controller ruling R14 — Task 6 runs in two parts, with
+> Task 7 between them.** Task 6's implementer found that nine of this task's
+> twenty-one files cannot port at this position, and reported it as a mutual
+> dependency between Tasks 6 and 7. **It is not a cycle.** Checked against the
+> source: `render/blocks.ts` imports only `ir/classify`, `ir/types`,
+> `blockTypes`, `layoutCheck`, `library`, `templates/index` and **`pageRefs`**,
+> and `templates/index.ts` imports only `ir/types`, `blockTypes` and its own
+> seven template files. `pageRefs` is the single thing Task 7 needs from Task 6,
+> and it **landed in `103a14f`**, so Task 7 is unblocked and the true order is
+> linear:
+>
+> Tasks 2–5 → `page-refs.ts` → **Task 7** (`blocks.ts` + `templates/`) →
+> `frames.ts`, `bus.ts`, `sheet-check.ts`, `sheets.ts` → `generate.ts`.
+>
+> **Task 6a, DONE** (`103a14f`, `970ca10`): `emit.ts`, `emit-items.ts`,
+> `page-refs.ts`, `erc-exclusions.ts`, `project.ts`, `report.ts`, and the six
+> ported tests that returned with `__fixtures__/circuits.ts`.
+>
+> **Task 6b, AFTER TASK 7:** `frames.ts`, `bus.ts`, `sheet-check.ts`,
+> `sheets.ts`, `design.ts`, `generate.ts`, `generated-files.ts`, `kicad-run.ts`,
+> `kicad-config.ts`, `tools/cli/schgen.ts` and its `package.json` script, the
+> byte-stability test, the `staleFiles` mtime perturbation, **and the first look
+> at a generated schematic** — none of which this task reached, and all of which
+> are still owed. Task 7 does not clear two of them on its own:
+> `kicad-config.ts` needs an `@/kicad/libtable` this repository does not have,
+> and `design.ts` needs Task 18's `gates/oscar/boundary`. Both are settled in
+> Task 6b's dispatch, not here, and Task 6's implementer was **right to refuse
+> to author `cuts`** for `OscarConfig.subcircuits` or `stockFootprintTable`:
+> each would have ported a file by deleting what Tasks 18 and 11 need, and this
+> plan declares no such cut. See `docs/known-gaps.md` **G131**.
+
 **Files:**
 - Create (ported): `lib/schgen/render/emit.ts`, `emit-items.ts`, `frames.ts`, `pack.ts`, `sheets.ts`, `sheet-types.ts`, `sheet-check.ts`, `page-refs.ts`, `pin-marks.ts`, `drawn-text.ts`, `project.ts`, `erc-exclusions.ts`, `bus.ts`
 - Create (ported): `lib/schgen/lock/annotate.ts`, `refmap.ts`, `version-lock.ts`
@@ -596,7 +627,14 @@ test("generate writes nothing", () => {
 - Test: the port's nine template test files
 
 **Interfaces**
-- Consumes: Tasks 2–6.
+- Consumes: Tasks 2–5, **plus `page-refs.ts` and nothing else from Task 6** —
+  corrected 2026-10-19 by controller ruling R14. "Tasks 2–6" read as a
+  dependency on all of Task 6 and was the half of the apparent 6↔7 cycle that
+  was wrong. `render/blocks.ts` imports `ir/classify`, `ir/types`,
+  `blockTypes`, `layoutCheck`, `library`, `templates/index` and `pageRefs`;
+  `templates/index.ts` imports `ir/types`, `blockTypes` and its seven template
+  files. `page-refs.ts` landed in `103a14f`, so **this task runs before Task
+  6b**. See the note at Task 6.
 - Produces, **unchanged from the source — Task 8 is what widens it:**
   ```ts
   export interface Template { readonly id: TemplateId; realise(g: BlockSubgraph): RealiseResult }
