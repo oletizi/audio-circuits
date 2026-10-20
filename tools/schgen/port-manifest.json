@@ -152,7 +152,21 @@
     { "from": "render/drawnText.test.ts", "to": "tests/schgen/render/drawn-text.test.ts" },
     { "from": "lock/annotate.test.ts", "to": "tests/schgen/lock/annotate.test.ts" },
     { "from": "lock/refmap.test.ts", "to": "tests/schgen/lock/refmap.test.ts" },
-    { "from": "lock/versionLock.test.ts", "to": "tests/schgen/lock/version-lock.test.ts" }
+    { "from": "lock/versionLock.test.ts", "to": "tests/schgen/lock/version-lock.test.ts" },
+    { "from": "render/layoutKit.ts", "to": "lib/schgen/render/layout-kit.ts" },
+    { "from": "render/chainKit.ts", "to": "lib/schgen/render/chain-kit.ts" },
+    { "from": "render/fanoutRows.ts", "to": "lib/schgen/render/fanout-rows.ts" },
+    { "from": "render/fanoutKit.ts", "to": "lib/schgen/render/fanout-kit.ts" },
+    { "from": "render/templates/railRow.ts", "to": "lib/schgen/render/templates/rail-row.ts" },
+    { "from": "render/templates/divider.ts", "to": "lib/schgen/render/templates/divider.ts" },
+    { "from": "render/templates/passiveChain.ts", "to": "lib/schgen/render/templates/passive-chain.ts" },
+    { "from": "render/templates/crystal.ts", "to": "lib/schgen/render/templates/crystal.ts" },
+    { "from": "render/templates/regulator.ts", "to": "lib/schgen/render/templates/regulator.ts" },
+    { "from": "render/templates/opampClassify.ts", "to": "lib/schgen/render/templates/opamp-classify.ts" },
+    { "from": "render/templates/opampStage.ts", "to": "lib/schgen/render/templates/opamp-stage.ts" },
+    { "from": "render/templates/connectorFanout.ts", "to": "lib/schgen/render/templates/connector-fanout.ts" },
+    { "from": "render/templates/index.ts", "to": "lib/schgen/render/templates/index.ts" },
+    { "from": "render/blocks.ts", "to": "lib/schgen/render/blocks.ts" }
   ],
   "handWritten": [
     "lib/schgen/strict.ts",

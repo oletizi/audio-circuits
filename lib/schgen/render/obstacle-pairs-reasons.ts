@@ -74,8 +74,20 @@ export const SELF_TEXT_ONLY =
   "`texts` and never for `pinTexts`, and `overlapProblems` keeps the two units' clearance boxes apart, " +
   "which does not keep their 3.81 mm-wide number boxes apart"
 
-/** Why nothing in this tree exercises a `pwr-flag-glyph` cell yet. */
+/**
+ * Why nothing in this tree exercises a `pwr-flag-glyph` cell yet.
+ *
+ * **BOTH SITES ARE NAMED BECAUSE TASK 7 FALSIFIED THE ENUMERATION AND NOT THE
+ * CONCLUSION.** Round 1 named `anchorsToSymbols` as the one site hard-coding
+ * `flag: false`; `fanout-rows.ts`'s `anchorExtent` builds a second
+ * `PowerSymbol` the same way, to measure a row's far anchor rather than to
+ * draw it. That makes the conclusion stronger, not weaker - there is still no
+ * `flag: true` producer - but a reader checking the claim against one file
+ * would have found a site the reason did not mention. See
+ * `docs/known-gaps.md` **G134**.
+ */
 export const NO_FLAG_PRODUCER =
   "**NOTHING IN THIS TREE PRODUCES A `flag: true` PowerSymbol**: `anchorsToSymbols` (power-text.ts) " +
-  "hard-codes `flag: false`, and the only producer is `render/frames.ts`'s flag content, which is not " +
-  "ported (Task 8). So this cell is a claim about the named check's shape, exercised by nothing here yet"
+  "hard-codes `flag: false`, and so does the measurement-only symbol `anchorExtent` builds in " +
+  "fanout-rows.ts; the only producer is `render/frames.ts`'s flag content, which is not " +
+  "ported (Task 6b). So this cell is a claim about the named check's shape, exercised by nothing here yet"

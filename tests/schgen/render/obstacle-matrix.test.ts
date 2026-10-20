@@ -121,8 +121,37 @@ const NOT_IN_THIS_TREE: Readonly<Record<string, { readonly portedAs: string; rea
   },
   "sheetCheck.ts": {
     portedAs: "sheet-check.ts",
-    why: "Task 7+ - runs the clearance checks over a whole sheet; the within-one-block caveats assume it is absent",
+    why: "Task 6b - runs the clearance checks over a whole sheet; the within-one-block caveats assume it is absent",
   },
+}
+
+/**
+ * The modules whose ARRIVAL this alarm was armed for and which have since
+ * landed, each with what the forced re-read actually found. **This is not a
+ * silencing list and it is not a NOT_IN_THIS_TREE row that was deleted.**
+ * `blocks.ts` and `templates` were appended to the arrival filter by Task 5
+ * as bare names, with no `NOT_IN_THIS_TREE` entry and no `why` - an alarm
+ * aimed at Task 7 with no cell family recorded behind it. Task 7 landed both,
+ * the alarm rang, the re-read was done, and these are its findings. The test
+ * below asserts each one is PRESENT, so the entry still has teeth in the
+ * other direction: a module disappearing from the tree fails here instead of
+ * leaving a settled re-read resting on code that is gone.
+ *
+ * `docs/known-gaps.md` **G134** carries the re-read cell family by cell
+ * family, including the one reason whose enumeration it did falsify.
+ */
+const SETTLED_ARRIVALS: Readonly<Record<string, string>> = {
+  "blocks.ts": [
+    "Task 7. NO cell's reason rests on its absence: every cell citing `checkLayout` cites it at",
+    "`lib/schgen/render/layout-check.ts`, which Task 5 ported, and `blocks.ts` only re-exports it.",
+  ].join(" "),
+  templates: [
+    "Task 7 (the directory, eight registered ids in seven modules). No cell's reason rests on its",
+    "absence either. It falsified ONE reason's ENUMERATION and not its conclusion:",
+    "`NO_FLAG_PRODUCER` named `anchorsToSymbols` as the one site hard-coding `flag: false`, and",
+    "`fanout-rows.ts` is a second such site - still no `flag: true` producer anywhere, so the",
+    "conclusion holds and the enumeration was widened to name both.",
+  ].join(" "),
 }
 
 describe("the obstacle-category matrix", () => {
@@ -160,10 +189,13 @@ describe("the obstacle-category matrix", () => {
    */
   test("every .ts file the matrix names is either under lib/schgen/render or declared absent", () => {
     const paths = [...citedPaths()].sort()
-    // 20 cited today. Pinned so that a cell losing its file citation, or the
-    // extraction regex narrowing, fails here instead of quietly shrinking the
-    // guard's reach - which is the defect this test had in round 1.
-    expect(paths.length, `cited .ts names: ${paths.join(" ")}`).toBe(20)
+    // 21 cited today (20 until Task 7, which added `fanout-rows.ts` to
+    // NO_FLAG_PRODUCER's enumeration - see SETTLED_ARRIVALS and G134). Pinned
+    // so that a cell losing its file citation, or the extraction regex
+    // narrowing, fails here instead of quietly shrinking the guard's reach -
+    // which is the defect this test had in round 1. Both pins DID fire on the
+    // Task 7 edit, which is the evidence that they still bite.
+    expect(paths.length, `cited .ts names: ${paths.join(" ")}`).toBe(21)
     const unaccounted = paths.filter(
       (f) => !fs.existsSync(path.join(RENDER_DIR, f)) && NOT_IN_THIS_TREE[f] === undefined,
     )
@@ -198,13 +230,35 @@ describe("the obstacle-category matrix", () => {
       "every declared absence must be looked for under both the name the cells cite and the name " +
         "the port writes it under, or the kebab-case rename hides the arrival",
     ).toContain("sheet-check.ts")
-    const arrived = [...declared, "blocks.ts", "templates"].filter((f) => fs.existsSync(path.join(RENDER_DIR, f)))
+    const arrived = declared.filter((f) => fs.existsSync(path.join(RENDER_DIR, f)))
     expect(
       arrived,
       "these have ported, so every cell whose reason names them (the FRAME_DERIVED and " +
         "within-one-block cells of obstacle-pairs-*.ts) must be re-read against the real code and " +
         "NOT_IN_THIS_TREE updated in the same change",
     ).toEqual([])
+  })
+
+  /**
+   * **THE SAME ALARM, AFTER IT RANG.** Task 5 armed the arrival filter for
+   * `blocks.ts` and `templates` as bare names appended to it; Task 7 landed
+   * both and the test above went red naming them. The re-read is recorded in
+   * `SETTLED_ARRIVALS` and in `docs/known-gaps.md` **G134**, and what is left
+   * to check is that the code those findings were read off is still here.
+   * Deleting an entry fails the pinned count; a module vanishing fails the
+   * existence check.
+   */
+  test("the arrivals this alarm already rang for are still in the tree, with their re-read recorded", () => {
+    const entries = Object.entries(SETTLED_ARRIVALS)
+    expect(entries.length, "a settled-arrival list nothing iterates is a check that cannot fail").toBe(2)
+    const missing = entries.filter(([f]) => !fs.existsSync(path.join(RENDER_DIR, f))).map(([f]) => f)
+    expect(
+      missing,
+      "a settled re-read rests on code that is no longer under lib/schgen/render/ - either the " +
+        "module moved, in which case this entry's finding must be re-derived, or it was removed, in " +
+        "which case the cells it settled go back to NOT_IN_THIS_TREE",
+    ).toEqual([])
+    for (const [f, finding] of entries) expect(finding.trim().length, f).toBeGreaterThan(80)
   })
 
   /**
@@ -226,8 +280,10 @@ describe("the obstacle-category matrix", () => {
   test("every identifier the matrix cites exists under lib/schgen/render, or is classified", () => {
     const sources = renderSources()
     const cited = [...citedIdentifiers()].sort()
-    // 89 cited today. Pinned so that narrowing the extraction fails here.
-    expect(cited.length, `cited identifiers: ${cited.join(" ")}`).toBe(89)
+    // 90 cited today (89 until Task 7 added `anchorExtent` with
+    // NO_FLAG_PRODUCER's second hard-coded site). Pinned so that narrowing the
+    // extraction fails here.
+    expect(cited.length, `cited identifiers: ${cited.join(" ")}`).toBe(90)
     const unaccounted = cited.filter((id) => !declaredIn(sources, id) && NOT_A_RENDER_DECLARATION[id] === undefined)
     expect(
       unaccounted,
