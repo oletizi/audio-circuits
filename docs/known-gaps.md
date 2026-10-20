@@ -6291,3 +6291,62 @@ wholesale (never extends it) and restores those fields along with a working
   to under `tests/schgen/` (so the exemption cannot silently cover a
   production circuit or a vendored library that happens to share the bare
   name).
+
+### G114 - a `handWritten` entry outside `lib/schgen/` is named in `port-manifest.json` and checked by nothing
+
+`tests/schgen/port-fidelity.test.ts`'s completeness check asserts set
+equality between the `.ts` files that exist under `lib/schgen/` and
+`manifest.files[].to` union `manifest.handWritten`, so a ported file that
+nobody declared, and a declared file that does not exist, each fail the
+test. Task 2 round 2 added `tests/schgen/ir/single-pin-net-guard.test.ts`
+to `handWritten` - the first entry outside `lib/schgen/` - which required
+applying the same `lib/schgen/`-prefix filter to `handWritten` that
+`files[].to` already carried.
+
+**That filter does not weaken the check it was added to** - `onDisk` is
+built by walking `lib/schgen/` alone, so the filter removes only entries
+that could never have matched anything in `onDisk`, and both directions
+still hold at full strength for that tree. **What it does create is a
+category of manifest entry that nothing verifies at all:** a `handWritten`
+path outside `lib/schgen/` is filtered out of both arms of the comparison,
+and `grep -rn handWritten tests/ tools/` finds this test as its only
+consumer anywhere. A typo in such an entry is not a `bun test` failure; it
+is a file `bun test`'s glob never discovers, so the suite reports fewer
+tests and stays green - **silence that resembles success**, which is the
+failure mode this workflow exists to prevent. The test's own comment
+asserts the opposite ("checked by `bun test` simply failing to find the
+file"), so a committed comment is also wrong here.
+
+Two entries sit in that unchecked category today
+(`tests/schgen/ir/single-pin-net-guard.test.ts` and
+`tests/schgen/ir/no-pin-map.test.ts`); both exist, so the gap is live but
+currently inert.
+
+- **Found** 2026-10-19, Task 2 round-2 re-review, by the reviewing agent
+  reasoning from the code rather than from the implementer's report, while
+  checking whether the new prefix filter reopened the hole Task 1's review
+  had closed. It did not; this is a different and narrower gap the same
+  change introduced.
+- **Evidence** `grep -rn "handWritten" tests/ tools/` returns
+  `tests/schgen/port-fidelity.test.ts` and `tools/schgen/port.ts` only -
+  no other reader - and the test's `accountedFor` is built from two
+  prefix-filtered lists, so a non-`lib/schgen/` entry reaches neither
+  `unaccountedOnDisk` nor `accountedButMissing`. A check that could have
+  failed: adding a deliberately misspelled `handWritten` entry under
+  `tests/` and running `bun test` - the suite stays green.
+- **Verified** RELAYED - this writer (the controller) has read the filter
+  and the grep result as reported and accepts the reasoning, but did not
+  run the misspelling perturbation.
+- **Why it is open** it is not a defect in what Task 2 was asked to do, and
+  the controller ruled against widening Task 2's fix loop for a latent
+  gap. **Controller ruling R6: the existence check is a Task 4
+  requirement**, because Task 4 is the next task to edit this manifest and
+  will add further `tests/schgen/` entries beside the symbol exemption
+  G113 requires of it.
+- **What would settle it** **CRITERION:** a `handWritten` entry naming a
+  path that does not exist fails a test, wherever that path lives, and the
+  test's committed comment describes what actually checks it.
+  **MECHANISM:** in `port-fidelity.test.ts`, assert every `handWritten`
+  entry resolves to an existing file before the prefix filter narrows the
+  set - a separate assertion from the `lib/schgen/` completeness one, since
+  the two answer different questions.
