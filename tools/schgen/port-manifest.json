@@ -323,6 +323,7 @@
     "lib/schgen/rules/symbols.ts",
     "lib/schgen/rules/pin-sides.ts",
     "lib/schgen/rules/orientation.ts",
+    "tests/schgen/authoring-complete.test.ts",
     "tests/schgen/from-network.test.ts",
     "tests/schgen/rules/symbols.test.ts",
     "tests/schgen/rules/pin-sides.test.ts",
