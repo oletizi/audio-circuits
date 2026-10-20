@@ -1,10 +1,15 @@
 {
   "sourceEnvVar": "SCHGEN_SOURCE",
+  "sourceRoots": {
+    "pedals-tools": ".."
+  },
   "externals": {
+    "@/kicad/libtable": "lib/kicad/libtable.ts",
     "@/kicad/netlist": "lib/kicad/netlist.ts",
     "@/kicad/sexpr": "lib/kicad/sexpr.ts",
     "@/placement/strict": "lib/schgen/strict.ts",
-    "@/repo": "tools/perfboard/repo-root.ts"
+    "@/repo": "tools/perfboard/repo-root.ts",
+    "@/schgen/gates/oscar/boundary": "lib/schgen/gates/oscar/boundary.ts"
   },
   "moduleRenames": {
     "vitest": "bun:test"
@@ -105,7 +110,8 @@
     { "from": "render/templates/regulator.test.ts", "to": "tests/schgen/render/templates/regulator.test.ts" },
     { "from": "render/templates/opampStage.test.ts", "to": "tests/schgen/render/templates/opamp-stage.test.ts" },
     { "from": "render/templates/connectorFanout.test.ts", "to": "tests/schgen/render/templates/connector-fanout.test.ts" },
-    { "from": "render/bodyClearance.test.ts", "to": "tests/schgen/render/body-clearance.test.ts" }
+    { "from": "render/bodyClearance.test.ts", "to": "tests/schgen/render/body-clearance.test.ts" },
+    { "from": "kicad/libtable.ts", "to": "lib/kicad/libtable.ts", "root": "pedals-tools" }
   ],
   "diverged": [
     {
@@ -293,6 +299,7 @@
   ],
   "handWritten": [
     "lib/schgen/strict.ts",
+    "lib/schgen/gates/oscar/boundary.ts",
     "lib/schgen/render/stock-symbols.ts",
     "lib/schgen/render/problem-obstacles.ts",
     "lib/schgen/render/obstacle-matrix.ts",

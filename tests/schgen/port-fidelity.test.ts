@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
-import { loadManifest, rewrite } from "../../tools/schgen/port.ts"
+import { loadManifest, rewrite, sourcePathFor } from "../../tools/schgen/port.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
 /**
@@ -35,10 +35,43 @@ test("every ported file is its source, rewritten only by the manifest", () => {
   expect(manifest.files.length).toBeGreaterThan(0)
 
   for (const entry of manifest.files) {
-    const source = fs.readFileSync(path.join(sourceRoot, entry.from), "utf8")
+    const source = fs.readFileSync(sourcePathFor(sourceRoot, entry, manifest), "utf8")
     const ported = fs.readFileSync(path.join(repoRoot, entry.to), "utf8")
     expect(rewrite(source, entry, manifest), entry.to).toBe(ported)
   }
+})
+
+/**
+ * **A DECLARED SOURCE ROOT IS A REAL DIRECTORY, AND IT IS USED** (Task 6b, ruling R25).
+ *
+ * `sourceRoots` is how a `files[]` entry reaches a pedals file outside `$SCHGEN_SOURCE` -
+ * `tools/kicad/libtable.ts`, which `kicadConfig.ts` needs for `GlobalTable`. Two claims, both of
+ * which can fail. **The root resolves:** each declared root is a directory on disk, so a typo in
+ * one fails here naming the root rather than surfacing as "no such file" from whichever entry
+ * happened to use it first. **No root is decorative:** a declared root that no entry names is an
+ * unused widening of what this manifest may read, and widening it is the thing R25 bounded, so it
+ * fails rather than sitting there.
+ */
+test("every declared source root is a directory on disk and is used by an entry", () => {
+  const sourceRoot = requireSourceRoot()
+  const manifest = loadManifest()
+  const declared = Object.entries(manifest.sourceRoots)
+  expect(declared.length, "an empty sourceRoots is a check that cannot fail").toBeGreaterThan(0)
+  const notADirectory = declared
+    .filter(([, rel]) => !fs.existsSync(path.join(sourceRoot, rel)) || !fs.statSync(path.join(sourceRoot, rel)).isDirectory())
+    .map(([name, rel]) => `${name} -> ${rel}`)
+    .sort()
+  expect(
+    notADirectory,
+    "these declared source roots do not resolve to a directory under $SCHGEN_SOURCE",
+  ).toEqual([])
+  const used = new Set([...manifest.files, ...manifest.diverged].flatMap((e) => (e.root === undefined ? [] : [e.root])))
+  const unused = declared.map(([name]) => name).filter((name) => !used.has(name)).sort()
+  expect(
+    unused,
+    "these source roots are declared and no entry names them. A root widens what this manifest " +
+      "may read outside the port's own source tree, so an unused one is a widening nobody needs.",
+  ).toEqual([])
 })
 
 /**
@@ -133,7 +166,7 @@ test("every diverged entry names a real pedals source, a file on disk, and its r
   const repoRoot = moduleRepoRoot()
   expect(manifest.diverged.length, "an empty diverged list is a check that cannot fail").toBeGreaterThan(0)
   expect(new Set(manifest.diverged.map((d) => d.from)).size, "two entries claiming one source").toBe(manifest.diverged.length)
-  const missingSource = manifest.diverged.filter((d) => !fs.existsSync(path.join(sourceRoot, d.from))).map((d) => d.from).sort()
+  const missingSource = manifest.diverged.filter((d) => !fs.existsSync(sourcePathFor(sourceRoot, d, manifest))).map((d) => d.from).sort()
   const missingFile = manifest.diverged.filter((d) => !fs.existsSync(path.join(repoRoot, d.to))).map((d) => d.to).sort()
   const unexplained = manifest.diverged.filter((d) => d.task.trim() === "" || d.why.trim() === "").map((d) => d.to).sort()
   expect(
@@ -166,7 +199,7 @@ test("every diverged file's pedals source is unchanged since it diverged", () =>
   expect(manifest.diverged.length, "an empty diverged list is a check that cannot fail").toBeGreaterThan(0)
   const moved: string[] = []
   for (const d of manifest.diverged) {
-    const sha = crypto.createHash("sha256").update(fs.readFileSync(path.join(sourceRoot, d.from))).digest("hex")
+    const sha = crypto.createHash("sha256").update(fs.readFileSync(sourcePathFor(sourceRoot, d, manifest))).digest("hex")
     if (sha !== d.sourceSha) moved.push(`${d.from}: declared ${d.sourceSha}, source is now ${sha}`)
   }
   expect(
@@ -202,6 +235,19 @@ const SHADOWS_A_PEDALS_FILE_BY_DECISION: Readonly<Record<string, string>> = {
     "G123: render/symbolSelfText.test.ts is import-clean but its fixture leaks a mkdtemp directory, " +
     "which tests/stripboard/temp-scratch.test.ts refuses and a cuts entry cannot fix. This is a " +
     "hand-written transcription of it, and G123 records that nothing byte-checks it.",
+  // A FORWARD DECLARATION ALWAYS SHADOWS ITS OWN FUTURE PORT, which is a shape this guard was
+  // written after the last one had already been replaced and so had never met. Task 6b, ruling
+  // R26: `lib/schgen/design.ts` imports `Subcircuit` as a type from
+  // `@/schgen/gates/oscar/boundary`, whose real module needs `gates/oscar/graph.ts` and through it
+  // `@/kicad/components` - Task 18's. The hand-written file carries the types `design.ts` needs
+  // plus an `oscarParts` that throws naming Task 18, and Task 18 replaces it wholesale. The
+  // shadowing is the POINT of the pattern rather than a lost provenance, and it expires when that
+  // port lands and this entry is deleted with it.
+  "lib/schgen/gates/oscar/boundary.ts":
+    "R26 (Task 6b): a hand-written forward declaration for Task 18's gates/oscar/boundary.ts, " +
+    "which cannot port until @/kicad/components resolves. It carries NetRef, DeltaEdit, SideSpec " +
+    "and Subcircuit's five fields, and an oscarParts that throws naming Task 18. Task 18 replaces " +
+    "the file wholesale and deletes this exemption. See docs/known-gaps.md.",
 }
 
 test("no hand-written file shadows a pedals source file", () => {

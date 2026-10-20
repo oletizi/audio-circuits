@@ -120,8 +120,43 @@ the files that import nothing this repository cannot yet resolve. Several
 things are missing on purpose, and later tasks add to the manifest as each
 is resolved rather than hand-porting around the gap:
 
-- **`@/kicad/footprint`, `@/kicad/libtable`, `@/kicad/components`.** Not
-  resolved, and nothing here imports them yet.
+- **`@/kicad/footprint` and `@/kicad/components`.** Not resolved, and nothing
+  here imports them yet.
+- **`@/kicad/libtable` IS resolved, and it is a PORT reached through a SECOND
+  DECLARED SOURCE ROOT** (Task 6b, Controller ruling R25).
+  `tools/schgen/kicad-config.ts` needs `GlobalTable` from pedals'
+  **`tools/kicad/libtable.ts`** - 279 lines of generic KiCad plumbing that
+  reads the install's own global library tables, not pedals-specific
+  configuration - and that file is **outside `$SCHGEN_SOURCE`**, which names
+  `<pedals>/tools/schgen/`. The manifest therefore has a `sourceRoots` map
+  (root name -> a path relative to `$SCHGEN_SOURCE`) and a `files[]` entry may
+  carry `root`; `lib/kicad/libtable.ts` is
+  `{ "from": "kicad/libtable.ts", "root": "pedals-tools" }`. It is **byte-checked
+  like every other ported file**, which is R25's criterion: nothing enters this
+  repository from the pedals tree without a byte-check or a declared `sourceSha`.
+
+  **What the mechanism costs, and every later port task inherits it.**
+  `$SCHGEN_SOURCE` used to be a leaf the manifest could only read downward
+  from, and is now also a waypoint a declared root reaches `..` out of, so the
+  env var's documented meaning (*"the port's source tree"*) is narrower than
+  what the manifest can read. `assertDeclaredRoots` in `tools/schgen/port.ts`
+  bounds the escape to one directory and refuses an absolute path, and
+  `port-fidelity.test.ts` requires every declared root to resolve to a real
+  directory **and to be used by an entry**, so an unused widening fails rather
+  than sitting there. `sourcePathFor` is the single resolver both the porter
+  and that test go through, and the provenance header prints the real source
+  path (`tools/kicad/libtable.ts`, not `tools/schgen/kicad/libtable.ts`).
+  `docs/known-gaps.md` **G161** records it.
+
+  **It also lands the first ported file outside `lib/schgen/` and
+  `tests/schgen/`,** at `lib/kicad/libtable.ts`, beside this repository's
+  hand-written `sexpr.ts` and `netlist.ts`. The byte-check covers it (it
+  iterates `files[]`, not a directory), but the *completeness* check - which
+  asserts that every `.ts` under a directory is ported, diverged or declared -
+  covers only `lib/schgen/` and `tests/schgen/`, so a new hand-written file in
+  `lib/kicad/` is still invisible to the manifest. The four ported files Task 6b
+  puts under `tools/schgen/` - `generate.ts`, `generated-files.ts`,
+  `kicad-run.ts` and `kicad-config.ts` - are outside it for the same reason.
 - **`@/kicad/netlist` resolves, but only for `KICAD_CLI`** (Task 4).
   `render/library.ts`'s `stockSymbolDir()` derives
   `dirname(KICAD_CLI)/../SharedSupport/symbols`, so `lib/kicad/netlist.ts`
@@ -239,6 +274,21 @@ is resolved rather than hand-porting around the gap:
 - **`@/schgen/gates/oscar/*`.** Five files, deferred to Task 18 by the plan
   (the Pultec reference-graph comparison needs the complete pipeline first).
   `gates/oscar/graph.ts` also needs `@/kicad/components`, which is unresolved.
+
+  **`gates/oscar/boundary.ts` is a HAND-WRITTEN FORWARD DECLARATION** (Task 6b,
+  Controller ruling R26), on exactly the pattern Task 2 used for
+  `render/library.ts`: the types `design.ts` needs as types (`NetRef`,
+  `DeltaEdit`, `SideSpec`, `Subcircuit`'s five fields) plus an `oscarParts`
+  that **throws, naming Task 18**. A `cuts` entry deleting
+  `OscarConfig.subcircuits` was refused instead, because it would port
+  `design.ts` by deleting what Task 18 needs and the plan declares no such cut.
+  **Task 18 replaces the file wholesale** and removes its `handWritten` entry
+  for a `files[]` one. It is also the first forward declaration to meet Task 8's
+  no-shadowing guard, which it necessarily trips - a forward declaration always
+  shadows its own future port - so it carries a declared exemption in
+  `tests/schgen/port-fidelity.test.ts`. `docs/known-gaps.md` **G162** records
+  what it carries, what it does not, and that `SideSpec` is transcribed here
+  although it belongs upstream to `gates/oscar/graph.ts`.
 - **`@/schgen/design`, `@/schgen/generate`, `@/schgen/generateFiles`,
   `@/schgen/verify`, `@/schgen/kicadRun`, `@/schgen/kicadConfig`, and the
   `connectivity`/`traceability`/`pinIdentity` gates.** Each imports at least

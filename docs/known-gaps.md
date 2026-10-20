@@ -10473,3 +10473,189 @@ to a picture.
   which is Tasks 12-14 and is the only one of the four already planned. **The
   criterion is what binds; these are advice from someone who has not tried
   them.**
+
+### G161 - the port manifest can now read a pedals file OUTSIDE `$SCHGEN_SOURCE`, through a declared second source root, and every later port task inherits the widening
+
+`tools/schgen/kicad-config.ts` imports `GlobalTable` from `@/kicad/libtable`.
+That module is `digital-pedal-platform`'s **`tools/kicad/libtable.ts`** - 279
+lines exporting `GLOBAL_LIB_TABLE`, `LibEntry`, `readLibTable`, `expandUri`,
+`GlobalTable`, `resolveFootprint`, `resolveFootprintIn` and
+`resolveFootprintInGlobal`, all of it generic KiCad plumbing that reads the
+install's own global library tables rather than anything pedals-specific.
+**`SCHGEN_SOURCE` points at `<pedals>/tools/schgen/`**, so no `files[]` entry
+could name it: `from` is joined onto that directory.
+
+**Controller ruling R25 states the criterion and left the mechanism open:**
+*"no file enters this repository from the pedals tree without being
+byte-checked against its source or declared diverged with a `sourceSha`."*
+Hand-transcribing 279 lines would have met neither half - it loses the
+byte-check and the provenance the whole port mechanism rests on, and
+`CLAUDE.md`'s *"transcription is evidence, not memory"* cuts against it.
+
+**THE MECHANISM TAKEN, which is the one the ruling guessed at.**
+`PortManifest.sourceRoots` maps a root NAME to a path relative to
+`$SCHGEN_SOURCE`, and a `files[]` or `diverged[]` entry may carry `root` naming
+one. The single entry is `"pedals-tools": ".."`, and
+`{ "from": "kicad/libtable.ts", "to": "lib/kicad/libtable.ts", "root": "pedals-tools" }`
+is the only user. **The file is a PORT**, byte-checked by the same assertion as
+the other 64, so R25's criterion is met rather than approximated.
+
+**WHAT IT COSTS, stated because every later port task inherits it.**
+
+1. **`$SCHGEN_SOURCE` has stopped being a leaf.** It was a directory the
+   manifest could only read downward from; it is now also a waypoint a declared
+   root reaches `..` out of. The env var's documented meaning in the root
+   `README.md` - *"the source tree the `lib/schgen/` port is ported from"* - is
+   now narrower than what the manifest may read, and that document was not
+   changed, because the variable still points where it always did.
+2. **Four things bound it, and each is a check that can fail.**
+   `assertDeclaredRoots` refuses an absolute root and refuses one that leaves
+   `$SCHGEN_SOURCE` by more than one directory (a sibling of `tools/schgen/` and
+   no further), and refuses an entry naming an undeclared root.
+   `port-fidelity.test.ts` requires every declared root to resolve to a real
+   directory **and to be named by some entry**, so an unused widening fails
+   instead of sitting there. `resolveSpecifier` matches an `@/schgen/<path>`
+   import only against DEFAULT-root entries, so `kicad/libtable.ts` cannot
+   answer for a `@/schgen/kicad/libtable` that does not exist. And
+   `sourcePathFor` is the one resolver the porter and the fidelity test both go
+   through, so they cannot disagree about where a root points.
+3. **THE PROVENANCE HEADER WAS WRONG ON THE FIRST RUN, and this is the part a
+   later reader cannot re-derive.** `header()` hard-coded
+   `tools/schgen/${entry.from}`, so the ported file opened with *"Ported from
+   digital-pedal-platform's `tools/schgen/kicad/libtable.ts`"* - a path that
+   does not exist in either repository. The header is the only provenance a
+   reader of the file itself has (the manifest is a second hop away), so a
+   root-aware `sourceLabel()` now derives it. **Nothing would have caught it:**
+   the byte-check compares the rewritten source against disk and the header is
+   part of what it rewrites, so a wrong-but-consistent header passes.
+4. **It lands the first ported file outside `lib/schgen/` and `tests/schgen/`.**
+   `lib/kicad/libtable.ts` sits beside this repository's hand-written
+   `sexpr.ts` and `netlist.ts`. The byte-check covers it (it iterates `files[]`,
+   not a directory listing), but the **completeness** check - every `.ts` under
+   a directory is ported, diverged or declared hand-written - covers only
+   `lib/schgen/` and `tests/schgen/`. So `lib/kicad/` now holds one ported file
+   among sixteen hand-written ones with nothing asserting which is which, and
+   the same is true of the four this task puts under `tools/schgen/`.
+
+- **Found** 2026-10-20, Task 6b, Step 1, implementing R25.
+- **Evidence** checks that could have failed, and did when driven:
+  - The porter's refusal with the root widened one step too far. With
+    `"pedals-tools": "../.."` in the manifest,
+    `SCHGEN_SOURCE=... bun run tools/schgen/port.ts` printed
+    `error: .../port-manifest.json.sourceRoots.pedals-tools: "../.." leaves $SCHGEN_SOURCE by more than one directory. A declared root reaches a SIBLING of the pedals tools/schgen/ directory and no further; anything deeper is a different claim about what this manifest may read and needs its own decision.`
+    and wrote nothing. Restored to `".."`; `git status --porcelain` clean of it.
+  - The byte-check passing over the new entry:
+    `bun test tests/schgen/port-fidelity.test.ts` with `SCHGEN_SOURCE` set.
+    `shasum -a 256 "$SCHGEN_SOURCE/../kicad/libtable.ts"` ->
+    `9ce07ca6fcd58e9142bb69b49f51499f4d00391e93d66d91c22e6869dc8962c6`.
+  - The header defect was seen by reading the ported file's first six lines
+    after the first successful run, not inferred.
+- **Verified** CONFIRMED - this writer wrote the mechanism, drove the refusal,
+  restored it, read the ported file's header before and after the fix, and ran
+  the suite.
+- **Why it is open** item 1 is a documented meaning that has widened and item 4
+  is a completeness check that does not reach two directories which now hold
+  ported files. Neither is a defect in this task's work; both are things the
+  next port task will meet.
+- **What would settle it** **CRITERION, two clauses.** (a) A reader of the root
+  `README.md`'s `SCHGEN_SOURCE` paragraph learns that the manifest may also
+  read a declared sibling of that directory. (b) Every `.ts` file in a directory
+  that holds a ported file is ported, diverged or declared hand-written, so no
+  directory holds a mix nothing accounts for. **MECHANISMS, both untried:** for
+  (a) a sentence in that paragraph pointing at `sourceRoots`; for (b) adding
+  `lib/kicad` and `tools/schgen` to `DECLARED_DIRS` in
+  `port-fidelity.test.ts`, which would require declaring every hand-written
+  file in both - 16 in `lib/kicad/` and 7 in `tools/schgen/` at the time of
+  writing - and is a much larger change than it looks, since `handWritten`'s
+  own guard currently refuses any path outside `lib/schgen/` and
+  `tests/schgen/`.
+
+### G162 - `gates/oscar/boundary.ts` is a hand-written forward declaration for Task 18, and it is the first one to trip the no-shadowing guard that a forward declaration necessarily trips
+
+`lib/schgen/design.ts` is a port and imports `Subcircuit` **as a type** from
+`@/schgen/gates/oscar/boundary` for `OscarConfig.subcircuits`. The real module
+needs `gates/oscar/canonical.ts` and `gates/oscar/graph.ts`, and `graph.ts`
+needs `@/kicad/components`, which this repository does not have - so the whole
+`gates/oscar/` group is Task 18's, as the plan says.
+
+**Controller ruling R26 refused the alternative explicitly.** A `cuts` entry
+deleting `OscarConfig.subcircuits` would port `design.ts` by deleting what Task
+18 needs, and the plan declares no such cut; Task 6's implementer refused
+exactly that and was right. So `lib/schgen/gates/oscar/boundary.ts` is
+hand-written, on **G113**'s pattern (Task 2's `render/library.ts`, which Task 4
+then replaced wholesale and whose register entry was deleted with it - the
+pattern survives only in `lib/schgen/README.md` and in this entry).
+
+**WHAT IT CARRIES**, transcribed from `$SCHGEN_SOURCE/gates/oscar/boundary.ts`
+lines 13-48 and `$SCHGEN_SOURCE/gates/oscar/graph.ts` lines 97-110:
+`NetRef`; `DeltaEdit` with all five kinds (`setValue`, `removePart`, `addPart`,
+`mergeNets`, `movePin`) and the `delta`/`why` base they share; `SideSpec`
+(`parts`, `anchors`, `rails`); and `Subcircuit`'s five fields (`id`, `board`,
+`oscar`, `ours`, `deltas`). One function, `oscarParts(sc)`, which **throws
+naming Task 18**.
+
+**WHAT IT DOES NOT CARRY**, said plainly: `deltaIdsFromBrief`, `deltaTarget`,
+`applyDeltas`, `applyDeltasTraced`, `AppliedDeltas` and every private helper -
+nothing here calls them. **Task 18 replaces the file wholesale**, never extends
+it.
+
+**A DEVIATION FROM THE MINIMUM G113 MEASURED, and it is in the opposite
+direction.** G113's `LibSymbol` carried exactly the three fields `ir/` READ,
+measured by grep. **`design.ts` reads NO field of `Subcircuit`** - it only
+names the type - so the measured minimum here is an interface with no members,
+which in TypeScript is `{}` and accepts anything. All five fields are carried
+instead, so a design module that authors an `OscarConfig` is type-checked
+against the real shape rather than against a hole. That is a judgement, not a
+measurement, and it is recorded as one.
+
+**AND `SideSpec` IS DECLARED IN A FILE IT DOES NOT BELONG TO.** Upstream it is
+`gates/oscar/graph.ts`'s and `boundary.ts` imports it. It is transcribed into
+the forward declaration because `graph.ts` is unportable today and because a
+second hand-written file for one interface would be a second thing for Task 18
+to remember to delete. **When Task 18 lands, `SideSpec` must go back to
+`graph.ts`** and this copy must go with the file.
+
+**THE FINDING THAT IS NOT BOOKKEEPING: A FORWARD DECLARATION ALWAYS SHADOWS ITS
+OWN FUTURE PORT, and the guard that forbids shadowing was written after the
+last forward declaration had already been replaced.**
+`port-fidelity.test.ts`'s *"no hand-written file shadows a pedals source file"*
+(Task 8, ruling R18) derives a candidate pedals path from each `handWritten`
+entry and fails if it exists upstream - *"either they are ports and belong in
+`files[]` or `diverged[]` with their provenance, or the shadowing is
+deliberate"*. `lib/schgen/gates/oscar/boundary.ts` maps to
+`gates/oscar/boundary.ts`, which exists, so the guard refuses it. It is now the
+**second** entry in `SHADOWS_A_PEDALS_FILE_BY_DECISION`, after **G123**'s. The
+two are different in kind and the list does not distinguish them: G123's
+exemption is **permanent** (a hand-written transcription that will never be a
+port), this one is **due to expire** when Task 18 lands. Nothing fails when a
+to-expire exemption outlives its task.
+
+- **Found** 2026-10-20, Task 6b, implementing R26.
+- **Evidence** a check that could have failed and did: with the file declared in
+  `handWritten` and no exemption,
+  `bun test tests/schgen/port-fidelity.test.ts` fails on *"no hand-written file
+  shadows a pedals source file"* with
+  `+ "lib/schgen/gates/oscar/boundary.ts shadows gates/oscar/boundary.ts"`
+  against an expected `[]`. With the exemption it is green. The carried field
+  lists were read off the two pedals files directly; `grep -n "Subcircuit"
+  $SCHGEN_SOURCE/design.ts` returns the import and the one
+  `readonly subcircuits: readonly Subcircuit[]` line and nothing else, which is
+  what establishes that `design.ts` reads no field.
+- **Verified** CONFIRMED - this writer drove the shadowing failure, read both
+  pedals files, and ran the grep.
+- **Why it is open** the exemption is live and nothing makes it expire, and
+  `SideSpec` sits in the wrong module by a decision this entry records rather
+  than fixes.
+- **What would settle it** **CRITERION:** Task 18 ports
+  `gates/oscar/boundary.ts` (with `canonical.ts`, `graph.ts` and
+  `@/kicad/components`), after which `lib/schgen/gates/oscar/boundary.ts` has no
+  `handWritten` entry, no exemption in
+  `SHADOWS_A_PEDALS_FILE_BY_DECISION`, and `SideSpec` is imported from
+  `gates/oscar/graph.ts` by the ported file rather than declared locally.
+  **MECHANISM**, untried: that task deletes the hand-written file, adds a
+  `files[]` entry, and deletes this register entry - and **checks what the
+  deletion takes with it**, since the G113 pattern this entry re-records
+  survived G113's own deletion only in `lib/schgen/README.md`. A separate,
+  smaller mechanism for the exemption list's two kinds, also untried: give each
+  entry the task that retires it and fail when that task's files are in the
+  tree.
