@@ -1160,6 +1160,65 @@ test("a net of degree n becomes n-1 edges", () => {
 
 ### Task 13: The ELK→`BlockLayout` adapter and the five realization obligations
 
+> **RULING R29, 2026-10-20 — where the rotation comes from, decided before this
+> task is dispatched.** Task 12 found that **`preferredOrientation` never runs**:
+> it and `pinSidesFor` both key on `ComponentKind`, which `IrPart` does not
+> carry, so neither is reachable from a `BlockSubgraph`. Its review confirmed
+> the claim, established that **nothing could have supplied the kind** (deriving
+> one from `libId` or `refPrefix` would be the invention G99 forbids), and read
+> §1.4 obligation 3 as the implementer did: the operative clause is not only
+> *applied once* but *"the result is what **both** ELK and the emitter see"*.
+> Ports fixed at rotation 0 with a placement emitted at rotation R gives the two
+> consumers different geometries — **the second copy to drift, by name.** So
+> **this task may NOT take `rot` from `preferredOrientation` over ports fixed at
+> 0.** See `docs/known-gaps.md` **G182**.
+>
+> **What is actually at stake, measured over all four parity circuits (102
+> components, 12 blocks):** the rule answers `null` for **73** parts, rotation
+> **0** for **28**, and rotation **180** for **one** — `pt2399-core/C8`. **One
+> capacitor in one block is the whole of today's divergence** between the rule
+> and the library frame.
+>
+> **Decided: Option 2 — compute the orientation where the `Network` already is,
+> and carry it as derived data.** `from-network.ts` already runs
+> `preferredOrientationsOf`; carry its `ReadonlyMap<PartLabel, Rotation | null>`
+> on `CircuitSpec`/`Circuit`, surface it on `BlockUnit`, and have `graph.ts` fix
+> the ports at that rotation instead of at the `GRAPH_ROTATION` constant. The
+> reviewer established this is cheap: **`graph.ts` applies `pinEnd`, `placeBox`
+> and `sideOfPin` through one value**, so fixing ports at a rotated position is
+> a one-parameter change — the whole question was ever only *where the rotation
+> comes from*.
+>
+> **Why this and not the other two.** Option 1 (carry `ComponentKind` on
+> `PartSpec`/`IrPart`) makes all three Task 9 rules reachable permanently, which
+> is the better end state — but the kind is **model** vocabulary and the IR is
+> deliberately schematic-facing, so it re-couples two layers this repository
+> separated on purpose. That is a boundary decision and it is the owner's, not a
+> task's. Option 3 (everything stays at rotation 0) satisfies obligation 3
+> cleanly and costs, measured, exactly one capacitor — drawn with its grounded
+> end up, so the bottom-edge ground glyph reaches a pin at the top of the part
+> and **the wire runs back past the body: the shape §3.2's own clearance checks
+> grade badly and a reader reads as wrong.** Shipping a drawing our own graders
+> would flag is the wrong trade for a one-part saving. Option 2 satisfies **both**
+> §1.5 step 2 and obligation 3, is strictly additive on today's data (101 of 102
+> parts draw exactly as they do now), and puts no model vocabulary in the IR.
+>
+> **One wrinkle this task must handle rather than discover:** the map is
+> per-**part** and ELK nodes are per-**unit**. That is harmless today because the
+> rule only fires on single-unit passives — but **it must refuse rather than
+> guess** if a multi-unit package ever carries a preference.
+>
+> **And it closes a second finding with the same change.** Task 12's review
+> established that `GenerateEnv.authoring` exists to supply two things, and that
+> **the rails half was already available** — `BlockSubgraph` carries
+> `railSpecs`, built in `subgraphOf` from `Circuit.rails`, keyed by exactly the
+> set `boundaryNets` asks about. **The only input genuinely missing from the IR
+> is `portDirections`**, which belongs in the IR beside `rails` — on `Circuit`,
+> or on `IrBlock`'s interface where a block-boundary direction semantically
+> lives — carried onto `BlockSubgraph` the way `railSpecs` already is. Same
+> shape as the orientation map; do both in one change.
+
+
 **Files:**
 - Create: `lib/schgen/elk/adapt.ts`, `lib/schgen/elk/snap.ts`, `lib/schgen/elk/junctions.ts`
 - Test: `tests/schgen/elk/adapt.test.ts`, `snap.test.ts`, `junctions.test.ts`
@@ -1295,6 +1354,45 @@ test("no wire attaches to an ELK port coordinate that disagrees with the recompu
 ---
 
 ### Task 14: When the backend raises (G94)
+
+> **RULING R30, 2026-10-20 — this task's reproduction step is not available, and
+> the task is RE-SCOPED rather than deleted.** Task 12's review went looking for
+> G94's crash and could not reach it: beyond the production run of 12 blocks, it
+> turned **every vertical two-port node horizontal** across all twelve (6, 6, 9,
+> 13, 22, 1, 1, 1, 1, 1, 0, 5 turned) and **flattened each circuit to a single
+> graph** (14/46/26/39 nodes) at both rotations. **Twenty further arms, zero
+> raises.**
+>
+> The reason is principled rather than lucky. G94's `Invalid hitboxes for
+> scanline constraint calculation` is a hitbox computation, and **this driver
+> changed every input to it**: boundary nodes are **zero-size** where
+> `netlistsvg` drew 30×20 `inputExt` cells, node sizes are the library's
+> micrometres rather than skin extents, and the direction is `RIGHT` rather than
+> the skin's `DOWN`. That is G180's caveat biting in the useful direction.
+>
+> **So: the crash is not reachable through the production path, nor through any
+> graph derived from this repository's own data.** It remains reachable only by
+> hand-building an `ElkNode` — which `tests/schgen/elk/layout.elk.test.ts`
+> already does, and note that it raises a **`JsonImportException`**, an
+> input-validity error, **not G94's `IllegalStateException`**. **The raise
+> HANDLING is therefore genuinely exercised; the raise G94 measured is not, by
+> anything.**
+>
+> **What this task does instead.** (1) **Do not hand-build a graph to manufacture
+> the crash** — that tests `elkjs`, not this pipeline, and a test that proves
+> only itself is what this repository calls a check of nothing. (2) The handling
+> is already correct and stays: a throw becomes `backendRaised` and **never**
+> `not-applicable`, which is G84's rule and the reason `selectRenderer` cannot
+> route a crash back to ELK. (3) **The diagnosis half is the real remaining
+> work** — the serialized input carried in the refusal, which `layout.ts`
+> already holds, so a raise names the exact bytes that produced it. (4) **Record
+> the unreachability with its twenty arms**, because a later reader who finds
+> G94 and not this will go hunting a crash that this pipeline cannot produce.
+>
+> **What this ruling does NOT say:** that G94 was wrong, or that ELK cannot
+> crash. It says this driver does not feed it the inputs that crashed the
+> spikes' driver, measured over the circuits we have.
+
 
 **Files:**
 - Modify: `tools/schgen/elk/layout.ts`, `lib/schgen/render/blocks.ts`
