@@ -317,6 +317,7 @@
     "tests/schgen/render/uuid-stable.test.ts",
     "tests/schgen/strict.test.ts",
     "tests/schgen/symbol-census.test.ts",
+    "tests/schgen/parity.test.ts",
     "lib/schgen/authoring.ts",
     "lib/schgen/authoring-checks.ts",
     "lib/schgen/from-network.ts",

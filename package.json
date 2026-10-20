@@ -13,6 +13,7 @@
     "check": "bun run typecheck && bun test",
     "perfboard": "bun run tools/cli/perfboard.ts",
     "schematic-stub": "bun run tools/cli/schematic-stub.ts",
+    "schgen-parity": "bun run tools/cli/schgen-parity.ts",
     "parts": "bun run tools/cli/parts.ts"
   },
   "devDependencies": {
