@@ -94,10 +94,35 @@ const NOT_A_RENDER_DECLARATION: Readonly<Record<string, string>> = {
  * test below fails on the commit that ports any of them, naming it, so the
  * cells whose reasons assume their absence are re-read against real code
  * rather than left standing.
+ *
+ * **EACH ENTRY CARRIES TWO NAMES, AND THAT IS A FIX, NOT A FLOURISH.** The key
+ * is the name the CELLS cite - the pedals spelling, because a cell quotes the
+ * module it read (`render/sheetCheck.ts` at `obstacle-pairs-body.ts:32`), and
+ * `citedPaths()` above extracts exactly that. `portedAs` is the name
+ * `tools/schgen/port-manifest.json` writes it under here, because
+ * `lib/schgen/README.md`'s rename convention is kebab-case while the pedals
+ * source is camelCase.
+ *
+ * **Round 1 of this list had only the cited name, and for `sheetCheck.ts` that
+ * made the alarm unable to ring.** The arrival test is an `fs.existsSync`
+ * under `lib/schgen/render/`, so it was looking for a file name the port never
+ * writes: porting the module lands `sheet-check.ts`, the lookup for
+ * `sheetCheck.ts` keeps failing, the entry keeps "covering" it, and the guard
+ * written to force a re-read of the within-one-block cells silently does not
+ * fire. `frames.ts` was never exposed to this - kebab-case leaves a
+ * single-word name alone - so the defect sat behind a name that happened to
+ * survive the convention. Both spellings are now checked, so whichever one
+ * lands rings the bell. Settled in Task 6; `docs/known-gaps.md` **G131**.
  */
-const NOT_IN_THIS_TREE: Readonly<Record<string, string>> = {
-  "frames.ts": "Task 8 - sizes a frame from the block extent; 11 cells' FRAME_DERIVED reason assumes it is absent",
-  "sheetCheck.ts": "Task 7+ - runs the clearance checks over a whole sheet; the within-one-block caveats assume it is absent",
+const NOT_IN_THIS_TREE: Readonly<Record<string, { readonly portedAs: string; readonly why: string }>> = {
+  "frames.ts": {
+    portedAs: "frames.ts",
+    why: "Task 8 - sizes a frame from the block extent; 11 cells' FRAME_DERIVED reason assumes it is absent",
+  },
+  "sheetCheck.ts": {
+    portedAs: "sheet-check.ts",
+    why: "Task 7+ - runs the clearance checks over a whole sheet; the within-one-block caveats assume it is absent",
+  },
 }
 
 describe("the obstacle-category matrix", () => {
@@ -160,8 +185,19 @@ describe("the obstacle-category matrix", () => {
    * pass as a verified one.
    */
   test("the modules whose absence several cells rest on are still absent", () => {
-    const declared = Object.keys(NOT_IN_THIS_TREE)
+    // BOTH SPELLINGS, deliberately: the cited (pedals, camelCase) name and the
+    // name the port writes here (kebab-case). Checking only the cited one is
+    // what made this guard unable to fire for `sheetCheck.ts` - see
+    // NOT_IN_THIS_TREE's own comment and `docs/known-gaps.md` G131.
+    const declared = Object.entries(NOT_IN_THIS_TREE).flatMap(([cited, { portedAs }]) =>
+      cited === portedAs ? [cited] : [cited, portedAs],
+    )
     expect(declared.length, "an absence list nothing iterates is a check that cannot fail").toBeGreaterThan(0)
+    expect(
+      declared,
+      "every declared absence must be looked for under both the name the cells cite and the name " +
+        "the port writes it under, or the kebab-case rename hides the arrival",
+    ).toContain("sheet-check.ts")
     const arrived = [...declared, "blocks.ts", "templates"].filter((f) => fs.existsSync(path.join(RENDER_DIR, f)))
     expect(
       arrived,

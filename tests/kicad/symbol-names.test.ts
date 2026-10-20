@@ -180,6 +180,18 @@ const NOT_A_KICAD_SYMBOL: ReadonlyMap<
         "a Pwr.kicad_sym, so this fails at the library, not at the symbol.",
     },
   ],
+  [
+    "Pwr:+3V3",
+    {
+      failure: "no-such-library" as const,
+      reason:
+        "the same fixture power library as Pwr:GND above, reached by a second rail. Task 6's " +
+        "ported tests/schgen/__fixtures__/circuits.ts declares a supply rail and a second " +
+        "analogue supply with this symbol, so the sweep now finds the +3V3 member of " +
+        "Pwr.kicad_sym as well as GND. KiCad's own equivalent is power:+3V3, a different " +
+        "nickname; the library half is what fails, exactly as for Pwr:GND.",
+    },
+  ],
 ])
 
 /** Where an exempt fixture lib id may appear at all. */

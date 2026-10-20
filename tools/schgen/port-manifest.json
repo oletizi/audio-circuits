@@ -132,7 +132,27 @@
     { "from": "render/symbolSelfText.ts", "to": "lib/schgen/render/symbol-self-text.ts" },
     { "from": "render/layoutCheck.ts", "to": "lib/schgen/render/layout-check.ts" },
     { "from": "render/connectivity.test.ts", "to": "tests/schgen/render/connectivity.test.ts" },
-    { "from": "render/wireSafety.test.ts", "to": "tests/schgen/render/wire-safety.test.ts" }
+    { "from": "render/wireSafety.test.ts", "to": "tests/schgen/render/wire-safety.test.ts" },
+    { "from": "render/emitItems.ts", "to": "lib/schgen/render/emit-items.ts" },
+    { "from": "render/pageRefs.ts", "to": "lib/schgen/render/page-refs.ts" },
+    { "from": "render/emit.ts", "to": "lib/schgen/render/emit.ts" },
+    { "from": "render/ercExclusions.ts", "to": "lib/schgen/render/erc-exclusions.ts" },
+    { "from": "render/project.ts", "to": "lib/schgen/render/project.ts" },
+    { "from": "report.ts", "to": "lib/schgen/report.ts" },
+    {
+      "from": "__fixtures__/circuits.ts",
+      "to": "tests/schgen/__fixtures__/circuits.ts",
+      "cuts": [
+        { "text": "      mcu: null,\n", "occurrences": 2 },
+        { "text": ", pinmap: null", "occurrences": 2 }
+      ]
+    },
+    { "from": "render/pack.test.ts", "to": "tests/schgen/render/pack.test.ts" },
+    { "from": "render/project.test.ts", "to": "tests/schgen/render/project.test.ts" },
+    { "from": "render/drawnText.test.ts", "to": "tests/schgen/render/drawn-text.test.ts" },
+    { "from": "lock/annotate.test.ts", "to": "tests/schgen/lock/annotate.test.ts" },
+    { "from": "lock/refmap.test.ts", "to": "tests/schgen/lock/refmap.test.ts" },
+    { "from": "lock/versionLock.test.ts", "to": "tests/schgen/lock/version-lock.test.ts" }
   ],
   "handWritten": [
     "lib/schgen/strict.ts",
