@@ -8,13 +8,14 @@
  * data"* (`parts/inert-terminal.ts`). `symbolForKind` answers for 26 of the 37; these eleven are
  * the residue, and every one of them carries the reason it is a residue.
  *
- * **FOUR OF THE ELEVEN ARE DISCRETE PART IDENTITIES THE MODEL HAS NO SLOT FOR, AND THAT IS ITSELF
- * THE FINDING.** `symbolForKind` answers `diode` with `Device:D` and that is correct for what the
- * model says - `kind: "diode"` and nothing more. The spec says more: a 1N5817 Schottky, a 1N4148
- * switching diode, a vactrol LED, a 2N3904. Those are PART facts, the model has nowhere to put
- * them (`PartSpec.mpn` is set on none of these four), and so they reach the drawing through an
- * override here. `docs/known-gaps.md` **G156** records that the authoring file is therefore
- * carrying part identity that belongs upstream in the model.
+ * **FOUR OF THE ELEVEN NAME A DISCRETE PART, AND THREE OF THOSE FOUR ARE NAMED BY THE MODEL
+ * ALREADY - WHICH IS THE FINDING.** `symbolForKind(kind, parameters)` takes the kind and the
+ * parameters and NOT the part, so it answers `diode` with `Device:D` and cannot see that this
+ * circuit declares `part.mpn: "1N5817"` on one of them, `"1N4148"` on another and `"2N3904"` on
+ * the transistor - and that the installed library holds `Diode:1N5817`, `Diode:1N4148` and
+ * `Transistor_BJT:2N3904` under those exact names. The mpn is in the model; the rule's signature
+ * cannot reach it. `docs/known-gaps.md` **G156** records that, and records the vactrol LED as the
+ * one of the four the model genuinely does not name.
  *
  * Every lib id below was resolved against the installed libraries before it was written, and
  * `tests/schgen/authoring-complete.test.ts` resolves all of them on every run.
@@ -71,13 +72,14 @@ export const OPTICAL_COMPRESSOR_OVERRIDES: Readonly<Record<string, ComponentOver
   power_reverse_polarity_diode: {
     symbol: "Diode:1N5817",
     why:
-      "spec section 8.1's series reverse-polarity protection is a 1N5817, and Diode:1N5817 is in " +
-      "the installed library. symbolForKind would answer Device:D, which is correct for what the " +
-      "MODEL says (kind \"diode\" and no mpn) and loses the part: a reader of the sheet should " +
+      "spec section 8.1's series reverse-polarity protection is a 1N5817, the model declares " +
+      "part.mpn \"1N5817\" for it, and Diode:1N5817 is in the installed library under that exact " +
+      "name. symbolForKind takes (kind, parameters) and so cannot see the mpn; it would answer " +
+      "Device:D, which is correct for the kind and loses the part - a reader of the sheet should " +
       "see a Schottky where the design specifies one. The pin numbering needs no entry - the " +
       "symbol names its pins K and A and PIN_NAME_ALIASES maps cathode/anode onto them - and the " +
-      "sides come from the symbol (pin 1 left, pin 2 right). That this part identity lives in an " +
-      "authoring file rather than in the model is recorded in G156.",
+      "sides come from the symbol (pin 1 left, pin 2 right). G156 records that an mpn the model " +
+      "already carries reaches the drawing through an authoring file.",
   },
   audio_input_terminal: {
     symbol: "Connector_Generic:Conn_01x02",
@@ -131,24 +133,28 @@ export const OPTICAL_COMPRESSOR_OVERRIDES: Readonly<Record<string, ComponentOver
   sidechain_detector_rectifier_diode: {
     symbol: "Diode:1N4148",
     why:
-      "spec section 8.6's half-wave rectifier is a 1N4148, and Diode:1N4148 is in the installed " +
-      "library. Same reasoning as power_reverse_polarity_diode: Device:D is correct for what the " +
-      "model says and loses the part the design names (G156).",
+      "spec section 8.6's half-wave rectifier is a 1N4148, the model declares part.mpn " +
+      "\"1N4148\" for it, and Diode:1N4148 is in the installed library under that name. Same " +
+      "reasoning as power_reverse_polarity_diode: Device:D is correct for the kind and loses the " +
+      "part the model already names (G156).",
   },
   sidechain_led_driver_transistor: {
     symbol: "Transistor_BJT:2N3904",
     why:
-      "spec section 8.7's low-side LED driver is a 2N3904. symbolForKind refuses `bjt` because " +
-      "NPN and PNP are drawn with different symbols and Component has no slot that tells them " +
-      "apart. Transistor_BJT:2N3904 is the symbol circuits/transistor-preamp/parts.ts already " +
-      "uses for the same device; its pins are named E, B and C, so PIN_NAME_ALIASES maps " +
-      "emitter/base/collector onto 1/2/3 and no pin map is needed here (G156).",
+      "spec section 8.7's low-side LED driver is a 2N3904 and the model declares part.mpn " +
+      "\"2N3904\" for it. symbolForKind refuses `bjt` because NPN and PNP are drawn with " +
+      "different symbols and the KIND cannot tell them apart - and its signature cannot reach " +
+      "the mpn that can. Transistor_BJT:2N3904 is the symbol " +
+      "circuits/transistor-preamp/parts.ts already uses for the same device; its pins are named " +
+      "E, B and C, so PIN_NAME_ALIASES maps emitter/base/collector onto 1/2/3 and no pin map is " +
+      "needed here (G156).",
   },
   sidechain_vactrol_led: {
     symbol: "Device:LED",
     why:
-      "spec sections 8.7 and 9: this is the vactrol's LED, and there is no part number for it - " +
-      "parts/sidechain.ts records that no SPICE model exists for it either. symbolForKind would " +
+      "spec sections 8.7 and 9: this is the vactrol's LED, and it is the ONE discrete part in " +
+      "this circuit the model does not name - no part.mpn, and parts/sidechain.ts records that " +
+      "no SPICE model exists for it either. symbolForKind would " +
       "answer Device:D, which would draw an LED as a plain diode in a sheet a person has to read " +
       "and believe. Device:LED has the same K/A pin names, so no pin map is needed (G156).",
   },

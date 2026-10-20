@@ -251,8 +251,10 @@ export const OPTICAL_COMPRESSOR_SCHEMATIC: SchematicAuthoring = {
         "no component of this circuit has purchasing data anywhere in this repository, and the " +
         "model carries none to derive it from: parts/inert-terminal.ts and parts/audio-path.ts " +
         "both state that the spec says nothing about packaging and that inventing it would be " +
-        "fabricated data, which is why 0 of 37 components declare a footprint and only two " +
-        "declare an mpn at all. There is no board for this circuit, so there is no " +
+        "fabricated data, which is why 0 of 37 components declare a footprint and only five " +
+        "declare an mpn at all (two TL072H op-amps, a 1N5817, a 1N4148 and a 2N3904 - no " +
+        "manufacturer and no supplier part for any of them). There is no board for this " +
+        "circuit, so there is no " +
         "boards/<board>/bom.json to join to parts/*.json even by board line. The four keys are " +
         "empty BY DECLARATION; the IR's own bomFields rule refuses every non-exempt part by name " +
         "the moment this circuit is validated.",

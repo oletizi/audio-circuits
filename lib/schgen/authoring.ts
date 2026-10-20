@@ -77,7 +77,8 @@ export interface InterfacePort {
  * `include("audio", …)` rather than being called that. D1 forbids recovering it by string-prefix
  * matching, and every derivation this writer tried produced a measured false positive: taking a
  * block's members' longest common `_`-segment prefix flags `collector_test_point` as a member of
- * the `collector` leg of `circuits/transistor-preamp/lab-board.ts`, which it is not.
+ * the `collector` leg of `circuits/transistor-preamp/lab-board.ts`, and `emitter_bypass_cap` as a
+ * member of the `emitterBypass` leg, and neither is. See `docs/known-gaps.md` **G148**.
  *
  * So the prefix is DECLARED, beside the members, and checked against the component ids.
  */

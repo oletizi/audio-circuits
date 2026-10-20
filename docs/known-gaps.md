@@ -695,6 +695,50 @@ been put to him.
   design reviewer was a human or a model - *"Only the owner can settle it"*), so
   one question covers both channels rather than two separate asks.
 
+### G154 - OWNER QUESTION: should `circuits/opamp-buffer` become a directory like the other four circuits? Task 9 added a SECOND top-level file under the existing exception
+
+`CLAUDE.md` is explicit: *"Every circuit owns a directory under `circuits/`"*,
+and *"**No KiCad file sits at the top level of `circuits/`.** It gets a
+directory even when the circuit is one schematic and one module."*
+`circuits/opamp-buffer.ts` is the standing exception and predates this task;
+every other circuit - `pultec`, `pt2399-core`, `transistor-preamp`,
+`optical-compressor` - has one.
+
+**Task 9 added `circuits/opamp-buffer.schematic.ts` beside it, at the top level,
+because its brief names that path** - and that is a second file under an
+exception rather than an extension of the rule or a fix to it. Controller ruling
+**R20** decided to follow the brief and record the tension rather than
+restructure: moving `opamp-buffer.ts` into a directory changes the import depth
+of every module that reads it, which `CLAUDE.md` warns *"shows up as a confusing
+type error at an untouched line … not as 'module not found'"*, and it is not
+Task 9's work.
+
+- **Found** 2026-10-20, Task 9, Step 5, under controller ruling R20.
+- **Evidence** `ls circuits/` lists `opamp-buffer.ts` and
+  `opamp-buffer.schematic.ts` as the only two files at that level, beside four
+  directories; `grep -rn "circuits/opamp-buffer.ts" --include='*.ts' .`
+  outside `node_modules` returns **17 lines**, of which **three are actual
+  `import … from` statements** whose relative depth a move would change -
+  `tools/schgen/symbol-census.ts`, `tests/circuits/opamp-buffer.test.ts` and
+  `tests/kicad/footprint-names.test.ts`. The other fourteen split as
+  **twelve prose references in doc comments** and **two lines in
+  `tests/cli/schematic-stub.test.ts`**, which passes the path as a STRING
+  (`["circuits/opamp-buffer.ts", "opampBuffer", OUT]`) and would break
+  differently - a string a typecheck cannot see. A check
+  that could have failed: the file could have had no importers, in which case
+  the move would have been cheap.
+- **Verified** CONFIRMED - this writer created the second file and read the
+  CLAUDE.md sentences it sits against.
+- **Why it is open** **it is the owner's to decide and nobody asks him again
+  unprompted.** It is recorded, not raised.
+- **What would settle it** **an owner decision**, one of three: give
+  `opamp-buffer` a directory like the other four and fix the import depths;
+  state that the exception is permanent and that files may be added under it; or
+  state that the rule's intent is about KiCad files only, in which case two
+  `.ts` files at the top level are not an exception at all and `CLAUDE.md`'s
+  sentence about a directory *"even when the circuit is one schematic and one
+  module"* needs the narrower wording.
+
 ---
 
 Declined: the owner has ruled, and nobody asks again unprompted
@@ -1575,58 +1619,109 @@ wrong one is the one a reader would reach for first.
   geometry, and states what it does with a glyph whose own pins sit inside its
   bounding box** - a transistor, in this repository, does.
 
-### G99 - the IR carries no symbol, orientation, pin side or rail convention, and a layout backend needs all four
+### G99 - four of the five inputs a layout backend needs are now declared or derived by a reviewed rule; the residue is port direction below the circuit boundary, an ambiguous IC symbol, and net names
 
-`[RAN]` Converting five real `Network`s to a layout engine's input required the
-harness to **invent four things the model does not carry**, two of them
-load-bearing:
+**REWRITTEN 2026-10-20 BY TASK 9 OF THE M1 SCHEMATIC-AUTHORING PLAN.** The entry
+this replaces recorded five inventions an ELK spike harness had to make -
+*"four of them have no home in the model and the design does not name one"* -
+and set the criterion below. **Four of the five now have a home and the entry is
+rewritten rather than deleted, because the criterion is not met: the residue is
+real, it is measured, and G102 says the list of five was a lower bound.**
 
-| invented | consequence |
-| --- | --- |
-| a **symbol** per kind | low - a fixed per-kind map sufficed. Recorded already as an open question in the spec's §5.4 |
-| a **drawn orientation** | **decides whether ELK crashes (G94)**, and moves crossings from 16 to 139 on one circuit |
-| a **pin-side partition** for an IC | **no basis in the model at all** - `pt2399-core`'s 16-pin PT2399 was split "first half in, second half out" because nothing said otherwise |
-| a **rail convention** | the IR has no power symbol; `GND`/`VCC`/`0` are ordinary nets. Measurable - adding rail glyphs made every circuit worse (G96) |
+**THE CRITERION, CARRIED FORWARD UNCHANGED, because Task 9 did not author it and
+nothing since has:**
 
-**A FIFTH, ADDED 2026-10-19 and visible only once blocks had declared ports.**
-`[CODE]` `docs/schematic/elk-block-spike.md`
-§0 H5 and §7: **the IR carries no port DIRECTION**, so every declared port was
-emitted as `direction: "input"`. netlistsvg therefore draws entry and exit ports
-alike as an inbound `inputExt` arrow and ELK is told every one of them is a
-source. **On `leg-upper` the exit port `to` draws as an arrow pointing INTO the
-trim-pot.** The first spike could not see this: it laid out whole circuits,
-where a port is an interface terminal rather than a block boundary.
+> **CRITERION: every input a layout backend needs is either declared in the
+> model or derived by a reviewed rule - none invented at the call site.**
 
-**The same section measures what ELK does with a port it is not told is a
-boundary: it puts it in the interior.** As a fraction of canvas width,
-`pultec-mid` puts `ground` at 0.91 and `input` at 0.72; `pultec-hi-boost` puts
-`input` at 0.02 and `hi_boost_out` at 0.06 - **the two interface ports adjacent
-in the left twentieth of a 1361-wide sheet.** A `Network`'s `.port(...)` set
-says a net crosses the boundary and nothing downstream says which way or where.
+**WHERE THE FIVE LANDED**
 
-**The spec's §1.5 answers who DECIDES an orientation - template, then
-circuit-context rule, then the engine. It does not answer where a symbol, a pin
-side or a rail convention is DECLARED**, and it does not answer port direction
-either. Those are different questions and only the first is settled.
+| the spike invented | where it is now | state |
+| --- | --- | --- |
+| a **symbol** per kind | `lib/schgen/rules/symbols.ts`'s `symbolForKind` - a whitelist of four kinds that refuses loudly for the other seven, each with the reason the kind cannot answer - plus `part.symbol` in the model and a `ComponentOverride.symbol` in the authoring file for the residue | **settled** |
+| a **pin-side partition** for an IC | `lib/schgen/rules/pin-sides.ts`'s `pinSidesFor`, which reads every pin's side off the symbol's own `(at x y angle)` through the port's existing `pinSide()` | **settled for a symbol that answers**; see below |
+| a **drawn orientation** | `lib/schgen/rules/orientation.ts`, spec §1.5 step 2, holding one entry and returning `null` - which means step 3, not rotation 0 - everywhere else | **settled** |
+| a **rail convention** | `SchematicAuthoring.rails`, declared per net with its power symbol and `"ground" \| "supply"` | **settled** |
+| a **port DIRECTION** | `SchematicAuthoring.portDirections`, declared per net | **settled at the circuit boundary, OPEN below it** |
 
-- **Found** `docs/schematic/elk-spike.md` §0, as the cost of the conversion.
-  **Extended from** `docs/schematic/elk-block-spike.md` §0 H5 and §7.
-- **Evidence** the conversion itself, with a partition check passing 15 of 15 that
-  caught two of the harness's own bugs and a deliberate mutation - so the
-  inventions are the residue after the checkable part was checked. **Read G102
-  before leaning on that check: its mutation arm has a blind spot**, and the
-  inventions it leaves as residue are therefore a lower bound rather than a
-  complete list. The fifth invention was read out of the converter `[CODE]` and
-  is visible in the drawings.
-- **Verified** RELAYED, both halves.
-- **Why it is open** four of the five have no home in the model and the design
-  does not name one.
-- **What would settle it** **CRITERION: every input a layout backend needs is
-  either declared in the model or derived by a reviewed rule - none invented at
-  the call site.** The IC pin-side partition is the sharpest case: it has no
-  source, and a wrong one is invisible in a drawing that is electrically correct.
-  **Port direction is the second: at block scale every boundary net gets an
-  arrow, and half of them point the wrong way.**
+**THE IC PARTITION IS THE ONE THIS ENTRY WAS SHARPEST ABOUT, AND THE RESULT IS
+WORTH READING TWICE.** The spike split `pt2399-core`'s 16-pin PT2399 *"first half
+in, second half out"* with *"no basis in the model at all"*. `Audio:PT2399` as
+installed puts pins 1-8 at angle 0 and pins 9-16 at angle 180, so the library's
+own answer is **eight left and eight right - the same split the spike guessed**.
+That is not a vindication of the guess. It is the clearest possible statement of
+why a guess that happens to agree is not evidence that it was derived: nothing
+in the spike consulted the symbol, and the next IC would not have been so kind.
+
+**WHAT IS STILL RESIDUE, measured.**
+
+1. **PORT DIRECTION FOR A CROSSING NET THAT IS NOT A DECLARED PORT.**
+   `portDirections` is required for every net `Network.ports` binds - a missing
+   one refuses by name - and a net that leaves a BLOCK without leaving the
+   CIRCUIT has no direction anywhere. `transistor-preamp` has two:
+   `BYPASS_JUMPED` and `BYPASS_CAP`, which cross between the emitter-bypass leg
+   and the stage block because `emitter_bypass_cap` is declared outside `LEGS`.
+   `optical-compressor` has one, `VBIAS_RAW`, which crosses from the power block
+   to the sidechain block because U2's two sections serve two blocks. Three nets
+   of 51 declared interface ports, and nothing says which way they point.
+2. **AN IC WHOSE SYMBOL IS AMBIGUOUS.** `pinSidesFor` refuses a symbol giving
+   fewer than two distinct sides, and that refusal is exactly right for a
+   one-sided IC glyph - but **no IC in the parity set is in that class**, so the
+   case the original entry was most worried about is untested on a real part.
+   What IS in that class, on nineteen components carrying 37 of the four
+   circuits' 243 symbol pins, is a single-row connector or a test point, where one-sidedness is correct rather than ambiguous; **G155**
+   records that cost and the question it raises.
+3. **NET NAMES**, which is a SIXTH invention this entry did not have. See
+   **G150**: the IR requires UPPER_SNAKE and 31 nets across two of the four
+   parity circuits are not, so something between a model and a KiCad label has
+   to rename them and no reviewed rule does.
+
+- **Found** `docs/schematic/elk-spike.md` §0 and `docs/schematic/elk-block-spike.md`
+  §0 H5 / §7, 2026-10-19. **Rewritten** 2026-10-20, Task 9.
+- **Evidence** `bun tools/schgen/authoring-census.ts`, which is COMMITTED so a
+  successor re-runs it rather than rebuilding it from this recipe, and which
+  builds each of the four parity circuits, resolves every component's symbol
+  through the declaration and the rules, and prints per circuit where each
+  symbol came from, how many pins were sided by the symbol's geometry against a
+  declared override, how many parts the orientation library preferred a rotation
+  for, and per block its interface-port count split fixed/negotiable. Its output
+  on 2026-10-20: **102 components, symbol from the model 35, from an override
+  14, from the by-kind rule 53; 12 declared blocks carrying 51 interface ports,
+  0 fixed and 51 negotiable** (**G153** says why none is fixed).
+  `tests/schgen/authoring-complete.test.ts` is the check that could fail and is
+  what makes this entry's claim hold on every run: over all four circuits it
+  asserts that every component resolves a non-empty `libId`, that every pin of
+  every resolved symbol has a side, that the declared blocks agree with the
+  `include()` prefixes, that every component is in exactly one block, and that a
+  block's declared interface is exactly the nets that leave it. **Driven:**
+  narrowing `pinSidesFor` to drop a two-pin passive's second pin turns it red
+  naming `C1.2`, `D1.2` and `C1.2` on three of the four circuits; deleting
+  `oc-power`'s `VBIAS_RAW` interface port turns it red naming the block, the
+  net, the member it reaches outside and the four members inside; adding a
+  `switch` to a fixture refuses naming the component, the kind, the parameters
+  and that nothing is guessed.
+- **Verified** CONFIRMED for everything added by Task 9 - this writer wrote the
+  rules, the declarations and the checks, ran the census and read its full
+  output, and ran all three perturbations and read their refusals. **RELAYED**
+  for the spike's own five inventions and for every figure attributed to
+  `elk-spike.md` or `elk-block-spike.md`.
+- **Why it is open** three inputs still have no home, and **G102's warning
+  travels with this entry unchanged**: the partition check the spike's evidence
+  rested on had a mutation arm with a blind spot - *"a pin moved to a brand-new
+  net is invisible to this check in both spikes"* - so **five was a lower bound
+  and Task 9 found a sixth** (net names, **G150**). A reader must not treat the
+  table above as a complete inventory of what a backend needs.
+- **What would settle it** **CRITERION as above, unchanged.** The three residues
+  settle separately, and only the first two have a criterion this writer can
+  state without authoring one: **a net that crosses a block boundary carries a
+  direction from somewhere, or the thing that draws an arrow for it refuses**;
+  and **an IC whose symbol gives fewer than two distinct sides is drawn from a
+  declared partition, with a real such IC exercising the path**. For net names,
+  **G150** holds the criterion. **MECHANISMS, all untried:** for direction,
+  either widen `portDirections` to require an entry per declared interface port
+  (which makes the authoring file state three more things) or have the drawing
+  omit an arrow where nothing says - and those two disagree, so the criterion is
+  what binds.
 
 ### G100 - drawing a circuit as its declared blocks beats drawing it whole on every axis measured, and the mechanism is that the blocks have FEWER EDGES
 
@@ -9226,3 +9321,592 @@ gave them.
   deleting the condition fails it alone (above). What remains unchecked, and is
   the residual, is that `selectRenderer`'s canonical comment still matches what
   the function does - no check compares them.
+
+### G148 - `BlockDeclaration.prefixes` is not in Task 9's brief, and the reason is a measured false positive: a composed `Network` does not retain its `include()` prefixes
+
+Plan decision **D1** requires that *"the declared blocks AGREE WITH the
+`include()` prefixes wherever a prefix exists"* and forbids the obvious
+shortcut in the same breath: *"recovering it by string-prefix matching would put
+the cut back in the generator's hands."* Task 9's brief then gives
+`BlockDeclaration` six fields, none of which says which prefix a block is.
+
+**`includeNetwork` prefixes a component id with `${prefix}_` and the prefix is
+then GONE.** A composed `Network` is a flat list of components whose ids are
+plain strings; nothing in it distinguishes `audio_input_coupling_cap`, which
+arrived through `include("audio", …)`, from a component somebody simply called
+that. So the check D1 asks for is **impossible from the `Network` alone**, and
+`BlockDeclaration` gains a seventh field, `prefixes: BlockPrefixes`, holding the
+prefixes a block's members come from plus the `why` D1 requires when a block
+holds more than one.
+
+**THE DERIVATION THAT LOOKS LIKE IT WOULD WORK, AND THE BOARD IT FAILS ON.**
+Taking the longest common `_`-separated prefix of each block's declared members
+and then checking that no non-member carries it needs no new field and gets
+`optical-compressor` right (`power`, `audio`, `sidechain`) and FOUR of
+`transistor-preamp`'s six legs right. **It fails on two of them**, and both
+failures are the same shape - a component outside the leg whose id happens to
+start with the leg's longest common segment prefix:
+
+| leg | its members | longest common segment prefix | the non-member that breaks it |
+| --- | --- | --- | --- |
+| `collector` | `collector_floor`, `collector_trim` | `collector` | `collector_test_point`, a member of the stage block |
+| `emitterBypass` | `emitter_bypass_jumper`, `emitter_bypass_trim` | `emitter_bypass` | `emitter_bypass_cap`, which `Leg` has no slot for and which is declared outside `LEGS`, so it is a member of the stage block |
+
+The derivation therefore reports two D1 violations on a declaration that has
+none.
+
+- **Found** 2026-10-20, Task 9, while implementing `blockPrefixDisagreements`.
+- **Evidence** `grep -n 'collector_' circuits/transistor-preamp/lab-board.ts`
+  returns **five** lines, verbatim:
+
+  ```
+  73:    floor: { id: "collector_floor", value: "1k" },
+  74:    trimId: "collector_trim", trim: "2k",
+  128:    .connector("collector_test_point", { "1": COLLECTOR }, TEST_POINT)
+  149:  collector_floor: "R5", collector_trim: "RV5",
+  156:  collector_test_point: "TP4", ground_test_point: "TP5", input_test_point: "TP6",
+  ```
+
+  Lines 73-74 are the `collector` entry of `LEGS` and line 128 is the test
+  point, which is a member of the stage block. The second failure is the same
+  grep for `emitter_bypass`: `circuits/transistor-preamp/lab-board.ts` declares
+  `emitter_bypass_jumper` and `emitter_bypass_trim` inside `LEGS` and
+  `emitter_bypass_cap` outside it, because `Leg` has slots for a jumper, a floor
+  resistor and a trim-pot and none for a capacitor. A check that could have
+  failed: the legs and these two components could have shared no segment, and
+  then the derivation would have been sound - which is what happens for the
+  other four legs. `tests/schgen/from-network.test.ts`'s block-prefix cases exercise
+  the field in both directions - a component carrying a declared prefix and not
+  a member, and a block declaring no prefix holding a component another block's
+  prefix claims.
+- **Verified** CONFIRMED - this writer tried the derivation, found the false
+  positive on `collector_test_point`, and wrote the field instead.
+- **Why it is open** it is a deviation from a stated interface, recorded so the
+  reviewer sees it was a choice rather than drift, and so a later task does not
+  delete the field believing the brief's six are the contract.
+- **What would settle it** **CRITERION: the check D1 asks for runs, and it
+  cannot report a violation on a declaration that has none.** It is met. What
+  would make the field unnecessary is **a `Network` that retains its composition
+  provenance** - an `include()` that records the prefix on each component it
+  moves - which is a change to `lib/model/include.ts` and well outside Task 9.
+  **MECHANISM for that, untried:** a `provenance.prefix` on the composed
+  component, which `Component.provenance` already has a shape for and which
+  `assertSameTopology` already ignores.
+
+### G149 - `SchematicAuthoring.declared` is not in Task 9's brief either: `PartSpec.source` has no source in this model, and `BomFields` has no source for three of its four keys
+
+Two `PartSpec` fields the IR requires have nowhere in the circuit model to come
+from, and the brief names neither a field for them nor a rule.
+
+**`source`.** `ir/validate.ts`'s `partShapes` refuses a blank one - *"name the
+design-note section or datasheet the part comes from"* - and
+`Component.provenance` is set on **0 of the 102 components across the four
+parity circuits**. Each circuit's module comment names its own authority in
+prose; `declared.source` is that sentence in a field, one per circuit.
+
+**`BomFields`, and this is the decision Task 9's brief asked for by name**
+(*"either the authoring file declares them or `bomFields` refuses - do not
+default them to empty strings and do not widen the exemption list silently.
+Decide, implement, and record which"*). The field wants Manufacturer, MPN,
+Supplier and SupplierPart. **The model has a slot for exactly one of the four**,
+`PartSpec.mpn`, set on 14 of the 102 components. The repository's purchasing data
+is real and is keyed the other way round: `parts/*.json` holds a catalog entry
+per orderable part with supplier evidence per spec, and `boards/<board>/bom.json`
+joins a BOARD's lines to it by a `"<kind> <value> <footprint>"` string. **Two of
+the eleven boards have a `bom.json` at all**, and nothing joins a board line to
+a circuit model's component.
+
+**THE DECISION, IMPLEMENTED:** `declared.bom` is a `BomSource`, either
+`{ kind: "declared", fields }` - per component id, and a component with no entry
+refuses by name - or `{ kind: "unsourced", why }`, an explicit declaration
+carrying its reason that this circuit has no purchasing data. All four parity
+circuits declare `unsourced`. `bomFieldsFor` then returns the four keys empty,
+and **the IR's own `bomFields` validation rule refuses every non-exempt part by
+name the moment anyone validates the circuit** - which is the brief's *"or
+`bomFields` refuses"*. `BOM_EXEMPT_PREFIXES` is untouched and still covers `TP`,
+`H` and `FID` and nothing else; `transistor-preamp`'s seven test points are
+exempt through it, as they already were.
+
+The three alternatives and why each is worse: blanking the fields with no
+declaration is the silent default the brief forbids by name; widening
+`BOM_EXEMPT_PREFIXES` makes a live check unable to fail; and writing plausible
+manufacturers and supplier part numbers into four authoring files is fabricated
+purchasing data, which is worse than none because it looks orderable.
+
+- **Found** 2026-10-20, Task 9, Step 4.
+- **Evidence** `bun tools/schgen/authoring-census.ts` builds all four circuits
+  and would have reported a `provenance` or `mpn` to read if there were one;
+  `find boards -name bom.json` returns two paths
+  (`boards/pt2399-core/bom.json`, `boards/transistor-preamp-staged/bom.json`)
+  against eleven directories under `boards/`, and
+  `boards/pt2399-core/bom.json`'s `lines` object holds one entry, keyed
+  `"capacitor .1uF C_Disc_D5.0mm_W2.5mm_P2.50mm"`. `tests/schgen/from-network.test.ts`
+  drives the `declared` arm too, which the four circuits do not: a component
+  missing from `declared.bom.fields` refuses by name, and one present carries
+  its Manufacturer and MPN through to the `PartSpec`.
+- **Verified** CONFIRMED - this writer read both `bom.json` files, counted the
+  `boards/` directories and the provenance/mpn coverage, and implemented and
+  tested both arms.
+- **Why it is open** it is a deviation from a stated interface plus an owner-
+  relevant decision about where purchasing data lives, and the join it names
+  does not exist.
+- **What would settle it** **CRITERION: a generated schematic's BOM fields are
+  either read from this repository's own catalog or absent by a declaration that
+  says why - never blank by default.** The first half is unmet and is the
+  interesting one. **MECHANISM, untried and this writer has not tried to judge
+  it: a join from a circuit model's component to a `parts/*.json` catalog id**,
+  which `boards/<board>/bom.json` today spells as a `"<kind> <value>
+  <footprint>"` string and which would have to survive a component with no
+  footprint (`optical-compressor` has 37 of those - **G152**).
+
+### G150 - measured: 31 nets across two of the four parity circuits are not UPPER_SNAKE, so nothing can turn them into KiCad labels without a rule nobody has written - a SIXTH invention beyond G99's five
+
+`NET_NAME` in `lib/schgen/ir/types.ts` is `/^[A-Z0-9][A-Z0-9_]*$/` and
+`ir/validate.ts`'s `netNames` rule refuses anything else. The circuit models do
+not meet it:
+
+| circuit | nets | not UPPER_SNAKE | examples |
+| --- | --- | --- | --- |
+| `opamp-buffer` | 7 | **0** | |
+| `optical-compressor` | 22 | **14** | `+9V_RAW`, `+9V_PROTECTED` (leading `+`); `audio_BUF_OUT`, `sidechain_Q_COLLECTOR` (the `include()` prefix is lower case) |
+| `pt2399-core` | 21 | **17** | `+5V`; `Net-(U1-LPF1-IN)` and ten more like it; `unconnected-(U1-CLK_O-Pad5)` |
+| `transistor-preamp` | 18 | **0** | |
+
+**NEITHER CAUSE IS AN ACCIDENT AND BOTH ARE LOAD-BEARING WHERE THEY ARE.**
+`includeNetwork` writes `${prefix}_${net}` and the prefixes are the lower-case
+block names `circuits/optical-compressor/index.ts` composes with; renaming them
+would change what `include()` means. `pt2399-core`'s names are transcribed
+verbatim from the netlist of a unit that was built and works, and that file says
+so: *"Net names are copied verbatim from the netlist, including KiCad's
+auto-generated 'Net-(...)' names"*, because the transcription is the authority
+for the board.
+
+**WHY IT IS AN INVENTION AND NOT ONLY A VALIDATION FAILURE.** A generated
+schematic carries net names as global labels and power-symbol values. Something
+between a `Network` and a `.kicad_sch` therefore has to decide what
+`Net-(U1-LPF1-IN)` is called on the sheet - and a renaming is not cosmetic,
+because the round-trip check spec §2 names (*"export a netlist from the
+generated `.kicad_sch` with `kicad-cli` and compare it against the section
+network"*) compares net names. **Task 9 invents nothing: `circuitSpecFrom`
+passes every net name through verbatim**, which is why this is recorded rather
+than fixed.
+
+- **Found** 2026-10-20, Task 9, while measuring the four circuits.
+- **Evidence** `netsNotUpperSnake` in `lib/schgen/authoring.ts`, which tests
+  every net of a `Network` against the IR's own `NET_NAME` and is printed per
+  circuit by `bun tools/schgen/authoring-census.ts` (the figures above are that
+  output on 2026-10-20). A check that could have failed: two of the four
+  circuits report 0, so the function is not simply reporting everything.
+- **Verified** CONFIRMED - this writer wrote the measurement, ran it, and read
+  the full list of 31 names.
+- **Why it is open** it is a real gap in the chain and it is nobody's in the
+  current plan: Task 9 declares what a backend needs and net naming is not in
+  its brief; the task that writes a `.kicad_sch` is the one that cannot avoid
+  it. **G102 is why this entry matters beyond its own content**: it warned that
+  G99's list of five inventions was a lower bound because the check behind it
+  had a blind spot, and this is the sixth.
+- **What would settle it** **CRITERION: every net of a circuit that reaches a
+  generated sheet carries a name the IR accepts, and the mapping from the
+  model's name to that name is stated once and is reversible** - reversible
+  because spec §2's round trip compares the exported netlist against the model.
+  **MECHANISMS, untried, and they disagree:** normalise in the generator
+  (cheap, and breaks the round trip unless the comparison normalises too);
+  declare a per-circuit rename map in the authoring file (explicit, and 31 more
+  lines to keep correct); or relax `NET_NAME` (which would admit a name KiCad
+  itself quotes differently, and nobody has checked what KiCad does with
+  `Net-(U1-REF)` as a global label). The criterion is what binds.
+
+### G151 - a symbol pin the model says nothing about reaches a `CircuitSpec` neither on a net nor declared not-connected, and `ncUnlisted` needs a reason the model cannot hold
+
+`circuits/opamp-buffer.ts` wires one section of a TL072 and says so in its own
+header: *"One unit is declared here, for the section that is used. … Note that
+section B is simply UNDECLARED - no pin here is an explicit no-connect, and this
+circuit authors no `NC`."*
+
+`Amplifier_Operational:TL072` has eight pins across three units. `circuitSpecFrom`
+emits `units: [1, 2, 3]` - every unit of the resolved symbol, because
+`ir/validate.ts`'s `unitsPlaced` requires every unit to be placed - and declares
+pins 1, 2, 3, 4 and 8 from the model's connections. **Pins 5, 6 and 7 are
+declared nowhere.** The IR's `pinsDeclared` rule then refuses them by name:
+*"pin 5 (+) is neither on a net nor declared not connected"*.
+
+**`ncUnlisted` IS THE FIELD FOR EXACTLY THIS AND IT CANNOT BE SET HERE.** Its
+shape is `{ reason: string }` - *"Explicit opt-in … The reason is required"* -
+and the circuit model has nowhere to put a reason. `from-network.ts` therefore
+emits `null` and invents no no-connect, which is the right refusal and leaves
+the circuit un-validatable until something declares the intent.
+
+- **Found** 2026-10-20, Task 9, Step 4, from `opamp-buffer.ts`'s own header.
+- **Evidence** the TL072's unit and pin counts read through
+  `createResolver(symbolLibraries(["Amplifier_Operational"])).resolve("Amplifier_Operational:TL072")`
+  - 8 pins, 3 units, pins 5 (`+`, unit 2), 6 (`-`, unit 2) and 7 (output, unit
+  2) - against `opamp-buffer.ts`, which declares one unit named "A" with three
+  pins plus the two package pins. A check that could have failed and does not
+  yet exist: Task 9's completeness test asserts every symbol pin has a SIDE, not
+  that every symbol pin has a connection, so **this gap is invisible to the
+  suite as it stands** and will surface in the first task that validates a
+  `CircuitSpec` built from these declarations.
+- **Verified** CONFIRMED - this writer resolved the symbol, read its pins, and
+  read the circuit's declaration and its header sentence.
+- **Why it is open** it needs either a model change (somewhere to say "this
+  section is unused, and why") or an authoring-file field, and neither is in
+  Task 9's brief. It is also NOT only `opamp-buffer`'s: any circuit that wires
+  one section of a multi-section package has it.
+- **What would settle it** **CRITERION: a symbol pin that no part of the model
+  connects is either declared not-connected with a stated reason, or the
+  generator refuses naming the pin - and the suite exercises one of the two.**
+  **MECHANISM, untried:** a `ncUnlisted` entry in `ComponentOverride`, which
+  keeps the reason beside the other claims the authoring file makes; the
+  competing one is to let the model declare an unused unit, which is the better
+  home and the larger change.
+
+### G152 - measured: `optical-compressor` declares a footprint on 0 of its 37 components, and an empty footprint field is not checked by anything
+
+`PartSpec.footprint` in the IR is a required `string`. `PartSpec.footprint` in
+the circuit model is optional, and `circuits/optical-compressor/` sets it on
+**none** of its 37 components, deliberately: `parts/inert-terminal.ts` states
+*"No footprint and no mpn: the spec names the connectors and their pins and says
+nothing about packaging, and inventing either would be fabricated data."*
+
+`from-network.ts` carries that absence across as `""`, which is the faithful
+transcription of a stated absence and an ordinary legal state in a KiCad
+schematic. **What is worth recording is that nothing downstream objects.**
+`ir/validate.ts`'s rule set checks a part's label, refPrefix, source, units,
+pins, BOM fields and mechanical pads; **there is no footprint rule at all**, so
+an empty footprint passes validation in silence. The other three circuits
+declare a footprint on every component, so the condition exists on exactly one
+of the four and only there.
+
+- **Found** 2026-10-20, Task 9, Step 4.
+- **Evidence** `bun tools/schgen/authoring-census.ts` builds each circuit and a
+  companion sweep over `component.part?.footprint` reports 0 of 37 for
+  `optical-compressor` and full coverage for the other three (9 of 9, 24 of 24,
+  32 of 32). `grep -n 'footprint' lib/schgen/ir/validate.ts
+  lib/schgen/ir/validate-parts.ts lib/schgen/ir/validate-nets.ts` returns
+  **exactly one line**, and it is a COMMENT:
+
+  ```
+  lib/schgen/ir/validate-parts.ts:50:      // No schematic construct carries a net on a footprint pad that has no symbol pin.
+  ```
+
+  No rule reads `IrPart.footprint` at all. That one line is the check that
+  could have failed - a real footprint rule would have matched the same grep -
+  and reading it as a rule is the mistake this entry exists to prevent.
+- **Verified** CONFIRMED - this writer ran both the sweep and the grep and read
+  their output.
+- **Why it is open** it is a measurement plus a silent-pass, not a defect in
+  Task 9's work. An empty footprint is correct for a schematic and wrong for
+  anything that lays out a board, and the thing that will care is whichever task
+  takes a generated schematic toward a PCB or a BOM.
+- **What would settle it** **CRITERION: a part reaching an artifact that needs a
+  footprint either has one or is refused by name; a part reaching a drawing that
+  does not need one is not refused for lacking it.** Those are two different
+  consumers and one rule in `validateCircuit` cannot serve both, which is why
+  this is recorded rather than fixed by adding a rule. **MECHANISM, untried:** a
+  rule outside `validateCircuit`, run by the consumers that need footprints.
+
+### G153 - measured: all 51 interface ports the four circuits declare are `negotiable` and none is `fixed`, because no block declares a template - so seam B has maximum freedom and nothing to honour
+
+Spec §1.9 asks a block to declare *"which attachment positions are FIXED and
+which are NEGOTIABLE"*, where fixed means *"a position fixed by the block's own
+internal geometry"*, and §1.9 deliberately leaves to the seam B task *"how a
+fixed position is distinguished from a negotiable one in a particular block"*.
+
+**Task 9's four declarations contain no fixed position at all, and the reason is
+structural rather than a shortcut.** Every one of the twelve declared blocks is
+`{ kind: "auto" }`: no circuit declares a reviewed template on any block,
+because declaring one is choosing an arrangement and Task 9 has no criterion for
+that choice. A block with no template has no internal geometry yet, so there is
+nothing for a position to be fixed BY.
+
+| circuit | blocks | interface ports | fixed | negotiable |
+| --- | --- | --- | --- | --- |
+| `opamp-buffer` | 1 | 5 | 0 | 5 |
+| `optical-compressor` | 3 | 17 (4 + 7 + 6) | 0 | 17 |
+| `pt2399-core` | 1 | 6 | 0 | 6 |
+| `transistor-preamp` | 7 | 23 (2+2+2+2+2+4+9) | 0 | 23 |
+| **total** | **12** | **51** | **0** | **51** |
+
+**THIS IS THE FIRST MEASUREMENT OF WHAT G100's MISSING 43 EDGES COST.** G100
+measured `optical-compressor` at 139 edges drawn whole against 96 in its three
+blocks, and the spec review found §1.9 by asking where the other 43 went:
+*"they became block-interface connections - legitimate, but they must be
+represented when blocks are composed."* The representation now exists and that
+circuit's three blocks declare **17** interface ports for it. 17 ports is not 43
+edges and the two numbers are not comparable without care: an edge in G100's
+count is a net-to-pin incidence in an ELK graph and a port here is a NET, so one
+port stands for as many edges as it has pins on either side of the cut.
+
+**AND THE SIDES ARE A DECLARATION THIS TASK MADE, recorded so it can be
+disputed.** §1.9 also leaves *"which sides are acceptable for which kind of
+port"* open. `negotiablePort` in `lib/schgen/authoring.ts` is the sentence the
+four files declare by calling it, built from two things already in the tree: a
+rail attaches where `RailSpec`'s own doc comment says its glyph goes (*"ground
+rails are drawn at the bottom of blocks with downward symbols; supplies at the
+top"*), and everything else attaches left for `in`, right for `out` and either
+for `bidirectional` or for a crossing net with no declared direction, because
+plan decision **D4** pins flow left-to-right. It is a helper the authoring files
+call, never a rule the generator applies - an interface §1.9 says is declared
+cannot be derived by the thing that reads it.
+
+- **Found** 2026-10-20, Task 9, Step 6.
+- **Evidence** `bun tools/schgen/authoring-census.ts`, whose per-block line
+  prints members, interface ports and the fixed/negotiable split; the table
+  above is that output on 2026-10-20. A check that could have failed:
+  `tests/schgen/from-network.test.ts` drives a `fixed` port with a non-blank
+  `why` through `authoringProblems` and finds no problem, and the same port with
+  a blank `why` refuses - so "0 fixed" is a property of the four declarations
+  and not of a `fixed` arm that does not work.
+- **Verified** CONFIRMED - this writer wrote the declarations, the census and
+  the tests, and read the output.
+- **Why it is open** it is a measurement Task 15 needs and cannot re-derive once
+  blocks start declaring templates, and it is **bait**: a seam B implementer
+  reading "0 fixed, 51 negotiable" may conclude that fixed positions are rare,
+  when what the number says is that no block has been drawn yet.
+- **What would settle it** nothing - it is a measurement. **A caution instead:**
+  the figure moves the moment any block declares a reviewed template, and the
+  sides rule above is Task 9's declaration rather than a settled design, so
+  Task 15 should state its own and say where it disagrees.
+
+### G155 - the two-distinct-sides rule forces a `pinSides` override on 19 components whose symbol is one-sided and CORRECT, and 37 of 243 symbol pins are therefore declared rather than derived
+
+`pinSidesFor` refuses a symbol whose pins give fewer than two distinct sides.
+That rule comes from Task 9's brief - *"a symbol whose pins give fewer than two
+distinct sides refuses, naming the symbol and that an override must say which
+pins leave where"* - and the failure it exists to prevent is G99's: a 16-pin IC
+split in half because nothing said otherwise.
+
+**NO IC IN THE PARITY SET IS IN THAT CLASS.** `Audio:PT2399` gives two sides and
+`Amplifier_Operational:TL072` gives four. What IS in that class is every
+single-row connector and every test point:
+
+| symbol | pins | sides it gives | components |
+| --- | --- | --- | --- |
+| `Connector_Generic:Conn_01x02` | 2, both at angle 0 | left only | 8 |
+| `Connector_Generic:Conn_01x03` | 3, all at angle 0 | left only | 3 |
+| `Connector_Generic:Conn_01x05` | 5, all at angle 0 | left only | 1 |
+| `Connector:TestPoint` | 1, at angle 90 | bottom only | 7 |
+| | | | **19 components, 37 pins** |
+
+**AND IN ALL NINETEEN THE SYMBOL IS NOT AMBIGUOUS - IT IS ONE-SIDED AND RIGHT.**
+A 1xN header's pins really do all leave the left edge of its glyph, and a test
+point has one pin and nothing to partition. So nineteen overrides exist whose
+content is the symbol's own geometry copied out, each carrying a `why` that says
+so. That is 19 of the four circuits' 25 component overrides, and the cost is paid
+in a place the rule was not aimed at.
+
+- **Found** 2026-10-20, Task 9, Step 5, while writing the four declarations.
+- **Evidence** every symbol above resolved through
+  `createResolver(symbolLibraries(...))` and its pins' angles read:
+  `Conn_01x02` is `1:Pin_1@0 2:Pin_2@0`, `Conn_01x05` is `1..5` all at angle 0,
+  `TestPoint` is `1:1@90`. `tests/schgen/rules/pin-sides.test.ts` asserts the
+  refusal verbatim for `Conn_01x05` (*"puts all 5 of its pins on one side
+  (\"left\")"*) and for `TestPoint` (*"puts all 1 of its pins on one side
+  (\"bottom\")"*), and asserts that `Audio:PT2399`, `Device:R`, `Device:D`,
+  `Transistor_BJT:2N3904` and `Amplifier_Operational:TL072` do NOT refuse - the
+  arm that could have failed, and the one that shows the rule is not refusing
+  everything. The 19/37/243 counts are `bun tools/schgen/authoring-census.ts`'s
+  per-circuit "sided by a declared override" figures (7 + 12 + 5 + 13) over its
+  pin totals (25 + 89 + 65 + 64).
+- **Verified** CONFIRMED - this writer resolved every symbol, read the angles,
+  wrote the nineteen overrides and ran the census.
+- **Why it is open** the rule is Task 9's acceptance criterion and was followed
+  rather than argued with (`CLAUDE.md`: an agent may not author the criteria for
+  what it produces). The cost is recorded so the next reader sees it was
+  measured rather than overlooked, and so nobody reads nineteen identical-looking
+  overrides as sloppiness.
+- **What would settle it** **CRITERION: a symbol whose geometry cannot say which
+  of its pins are an interface in and which out requires a declaration; a symbol
+  that has only one edge to put pins on does not.** Those are different
+  conditions and the current rule cannot tell them apart. **MECHANISM, untried,
+  and this writer is not confident in it:** exempt a symbol whose pins are all
+  on one side AND whose pin count is 1, which covers the seven test points and
+  not the twelve headers - which is why the criterion above is the thing to test
+  against rather than this.
+
+### G156 - `symbolForKind(kind, parameters)` cannot see `part.mpn`, which is the one thing in the model that names the part - so three symbols the library holds under the model's own part numbers reach the drawing through an authoring override
+
+Task 9's brief fixes the rule's signature as `symbolForKind(kind: ComponentKind,
+parameters: Parameters)`. **`Parameters` is an electrical quantity and `kind` is
+a vocabulary; neither is the part.** `PartSpec.mpn` IS the part, it is in the
+model, and it is set on **14 of the 102 components** across the four parity
+circuits - and the installed KiCad library holds a symbol under the exact mpn
+string for three of them in `optical-compressor` alone:
+
+| component | `part.mpn` in the model | library symbol under that name | reaches the drawing via |
+| --- | --- | --- | --- |
+| `power_reverse_polarity_diode` | `1N5817` | `Diode:1N5817` | an override |
+| `sidechain_detector_rectifier_diode` | `1N4148` | `Diode:1N4148` | an override |
+| `sidechain_led_driver_transistor` | `2N3904` | `Transistor_BJT:2N3904` | an override |
+| `audio_signal_opamp`, `sidechain_control_opamp` | `TL072H` | **none** - see below | an override naming `Amplifier_Operational:TL072` |
+| `sidechain_vactrol_led` | *(none)* | - | an override naming `Device:LED` |
+
+**WHAT THE RULE DOES INSTEAD.** `symbolForKind` answers `diode` with `Device:D`,
+which is correct for what the kind says and loses the part: without the
+overrides, a 1N5817 Schottky, a 1N4148 and the vactrol's LED would all draw as
+the same plain diode glyph, and `bjt` refuses outright. So the authoring file
+states five part identities, and **three of those five are facts the model
+already carries in a field the rule's signature cannot reach.** The vactrol LED
+is the one of the five the model genuinely does not name - spec §9 names no part
+for it - and that one is a legitimate authoring-file claim.
+
+**AND ONE CLAIM IS UNVERIFIED, STATED AS SUCH.**
+`Amplifier_Operational:TL072H` **does not exist** in the installed library -
+checked - and `TL071`, `TL072` and `TL074` are its only TL07x symbols. Both
+op-amps are therefore drawn with `Amplifier_Operational:TL072`, whose own
+`Description` property reads *"Dual Low-Noise JFET-Input Operational Amplifiers,
+DIP-8/SOIC-8"*. That is the claim the override makes and the whole of it: a dual
+op-amp glyph in the standard eight-pin dual pinout. **Nobody here has read a
+TL072H datasheet to check that pinout.** `part.mpn` stays `TL072H` and reaches
+the drawing's value field, so the sheet will read `TL072H` beside a symbol named
+`TL072` - ordinary in KiCad, and still two names for one part in one drawing.
+
+- **Found** 2026-10-20, Task 9, Step 5, and SHARPENED during Step 8 when the mpn
+  coverage was actually counted: an earlier draft of this entry said the model
+  had no slot for these part identities, which was wrong - it has one and the
+  rule cannot see it.
+- **Evidence** a sweep over `component.part?.mpn` across the four circuits
+  prints **14 of 102**, per circuit `opamp-buffer` 1 of 9, `optical-compressor`
+  **5 of 37** (`1N5817`, two `TL072H`, `1N4148`, `2N3904`), `pt2399-core` 1 of 24
+  and `transistor-preamp` 7 of 32 (six `RM-065` trimmers and a `2N3904`). Each
+  candidate symbol was resolved before being written: `Diode:1N5817` and
+  `Diode:1N4148` resolve with pins `1:K@0 2:A@180`, `Device:LED` the same,
+  `Transistor_BJT:2N3904` with `1:E@90 2:B@0 3:C@270`.
+  `grep -o '(symbol "TL07[^"]*"' <KiCad>/symbols/Amplifier_Operational.kicad_sym
+  | sort -u` returns exactly three lines - `(symbol "TL071"`, `(symbol "TL072"`,
+  `(symbol "TL074"` - and resolving `Amplifier_Operational:TL072H` refuses with
+  *"no symbol \"TL072H\""*. **A check that could have failed and did:**
+  `TL072H` was tried first and refused, which is why the override names TL072
+  and says what it claims. **AND ONE THAT LIMITS THE MECHANISM BELOW:** the mpn
+  is not generally a symbol name - `RM-065` is a trimmer whose symbol is
+  `Device:R_Potentiometer_Trim`, and `TL072H` has no symbol at all - so an
+  mpn-to-symbol rule would be a whitelist with misses, not a lookup.
+- **Verified** CONFIRMED for the mpn counts, the symbol existence, the pin
+  readings and the Description property - this writer ran the sweep, the greps,
+  the resolver and the probe. **NOT VERIFIED, and stated as such:** that a
+  TL072H shares the TL072's pinout. No datasheet was read.
+- **Why it is open** two things, and only the second is a defect. The first is
+  that the rule's signature excludes the model's own part identity, which is a
+  change to an interface Task 9's brief fixed and therefore not Task 9's to
+  make. The second is the unverified pinout, which is small, checkable, and
+  would be invisible if wrong: an eight-pin dual op-amp drawn with the wrong
+  section's pins is electrically wrong in a sheet that looks right.
+- **What would settle it** for the pinout, **a reading of the TL072H datasheet,
+  recorded here or in the circuit** - it is one page and it either agrees or it
+  does not. For the signature, **CRITERION: a symbol rule can read every field
+  of the model that names the part it is choosing a symbol for, or the rule
+  refuses rather than answering from a narrower view.** **MECHANISM, untried,
+  and the evidence above already limits it:** widen the rule to
+  `symbolForKind(component)` and add a reviewed mpn-to-lib-id whitelist beside
+  the by-kind one - which must be a whitelist, because two of the five mpns here
+  have no symbol of that name and a general "look it up" rule would guess.
+
+### G157 - `valueFor` now spells a photoresistor's value as a resistance, and the one photoresistor in the repository carries an OPERATING POINT rather than a part value
+
+`lib/kicad/value-notation.ts` refused `kind: "photoresistor"` until Task 9,
+through its `hasNumericQuantity` guard: *"Add a formatter for this kind, proven
+with a test, before lowering it to a netlist."* Task 9 is the first consumer to
+ask - `circuitSpecFrom` needs a value field for every part - so the branch was
+added with the test the refusal asks for, and `photoresistor` is now spelled by
+`resistanceText` exactly as `resistor` and `potentiometer` are.
+
+**WHAT THE NUMBER MEANS IS NARROWER THAN "THE PART'S VALUE".**
+`circuits/optical-compressor/parts/audio-path.ts` is the only photoresistor in
+the repository and its parameter is annotated in place: *"1 MOhm is the section
+6.2 DARK endpoint - see the header for why that operating point and no other."*
+So the drawing's value field will read `1M` for a part whose entire function is
+that its resistance moves, where a hand-drawn sheet would more likely carry the
+vactrol's part number. The model has no mpn for it (spec §9 names no part), so
+there is nothing truer available to put there.
+
+- **Found** 2026-10-20, Task 9, Step 4, from the formatter's own refusal.
+- **Evidence** the refusal itself, raised by
+  `bun test tests/schgen/authoring-complete.test.ts` before the branch existed:
+  *"component \"audio_attenuator_photocell\" (kind \"photoresistor\") carries a
+  numeric electrical parameter this formatter does not handle"*, on three of the
+  four circuit's tests. `tests/kicad/value-notation.test.ts` now asserts
+  `valueFor` of that part is `"1M"`, and the annotation quoted above is in
+  `parts/audio-path.ts` beside `parameters: { ohms: 1e6 }`. A check that could
+  have failed: the value is 1e6 and `resistanceText`'s proven range is 1R to 10M
+  exclusive, so a part an order of magnitude larger would have refused instead.
+- **Verified** CONFIRMED - this writer read the refusal, read the parameter's
+  annotation, added the branch and its test, and ran both.
+- **Why it is open** the formatter is right for what the model holds and the
+  model holds the wrong kind of number for a value field. Fixing it means
+  deciding what a vactrol's value field should say, which is a part-selection
+  question for a part the spec deliberately does not name.
+- **What would settle it** **CRITERION: a part whose electrical parameter is an
+  operating point rather than a nominal value does not have that parameter
+  printed as its value.** **MECHANISM, untried:** give the vactrol an `mpn`,
+  which `valueFor` already prefers over a symbol name - and that is a part
+  choice, so it needs the bench or the owner rather than an agent.
+
+### G158 - measured: Task 9's four declarations use 22 lib ids and 15 of them are pinned by nothing, which widens G118's "three" by a factor of five
+
+**G118 measured** that the four parity circuits declared ten lib ids, all ten
+resolved, and *"three are pinned by nothing"* - `Amplifier_Operational:TL072`,
+`Audio:PT2399` and `Connector_Generic:Conn_01x05` - so *"a drawing that uses
+them is a function of whichever KiCad is installed rather than of anything in
+this repository."* Task 9's declarations add the symbols the model never
+declared, and the figure moves hard:
+
+| | count |
+| --- | --- |
+| distinct lib ids the four declarations need (parts and rails) | **22** |
+| in `VENDORED_SYMBOLS`, so pinned by the equality check in `render/stock-symbols.ts` | **7** |
+| **pinned by nothing** | **15** |
+
+The fifteen: `Amplifier_Operational:TL072`, `Audio:PT2399`,
+`Connector_Generic:Conn_01x03`, `Connector_Generic:Conn_01x05`, `Device:C`,
+`Device:LED`, `Device:R_Photo`, `Diode:1N4148`, `Diode:1N5817`, `power:+15V`,
+`power:+5V`, `power:+9V`, `power:-15V`, `power:GND`, `power:VCC`.
+
+**THREE SOURCES OF THE WIDENING, and they are different in kind.**
+
+1. **`symbolForKind`'s whitelist.** Three of its four entries are not vendored -
+   `Device:C`, `Device:R_Photo`, `Device:D` - so **the by-kind rule, which
+   covers 53 of the 102 components, resolves most of them through the installed
+   KiCad.** Only `Device:R` is pinned. (`Device:D` is in the whitelist and in no
+   declaration: all three diodes in the parity set carry an override naming a
+   specific part - **G156**.)
+2. **The rails.** Six `power:` glyphs are needed and none is vendored. Nothing
+   vendored today is a power symbol at all.
+3. **The overrides.** `Diode:1N5817`, `Diode:1N4148`, `Device:LED` and
+   `Connector_Generic:Conn_01x03` are new with Task 9's declarations.
+
+`Device:R_Potentiometer` remains vendored and declared by nothing, as G118
+recorded.
+
+- **Found** 2026-10-20, Task 9, Step 9.
+- **Evidence** `libIdsOf` in `lib/schgen/from-network.ts` collected across the
+  four `PARITY_CASES` of `tools/schgen/authoring-census.ts` and differenced
+  against `VENDORED_SYMBOLS` in `lib/kicad/symbol-library.ts`, both directions
+  printed. The ids are the ones a drawing would actually embed, because
+  `libIdsOf` resolves each component's symbol through the model, the override
+  and the rule in that order - the same path `circuitSpecFrom` takes - and adds
+  every `RailSpec.symbol`. A check that could have failed: seven ARE vendored,
+  so the difference is not simply "nothing is pinned", and
+  `tests/schgen/render/stock-symbols.test.ts` already fails when a vendored
+  symbol and the installed library disagree.
+- **Verified** CONFIRMED - this writer wrote and ran the measurement and read
+  the full list.
+- **Why it is open** it is a measurement, and it is the kind G118 says makes
+  someone want to act: **vendoring is the repository's own mechanism for not
+  depending on the installed KiCad, and after Task 9 two thirds of the symbols a
+  drawing needs sit outside it.** The reason it was not acted on here is scope:
+  `tools/kicad/vendor-symbols.ts` writes files from an installed KiCad and
+  `lib/kicad/symbols/PROVENANCE.md` records which one, so vendoring fifteen
+  symbols is a deliberate change with its own provenance trail and does not
+  belong inside Task 9's commit.
+- **What would settle it** **CRITERION: no generated drawing's appearance
+  depends on which KiCad is installed, or the generator refuses** - which is the
+  criterion `render/stock-symbols.ts` already implements for the vendored set
+  and which currently reaches 7 of 22 ids. **MECHANISM, untried:** add the
+  fifteen to `VENDORED_SYMBOLS` and run `tools/kicad/vendor-symbols.ts`,
+  updating `PROVENANCE.md`. Note the two things that mechanism has not been
+  tested against: a `power:` symbol has `isPower` true and a unit-0-only body
+  (`power:-15V` and `power:PWR_FLAG` both draw in unit 0), and
+  **`Diode:1N5817` extends `SB120` and `Diode:1N4148` extends `1N4001`** - read
+  out of `Diode.kicad_sym` - so both need the `extends` flattening G117 records,
+  which `createResolver` does and `tools/kicad/vendor-symbols.ts` must also do
+  for the vendored copy to compare equal.
