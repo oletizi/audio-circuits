@@ -1267,6 +1267,25 @@ happily.** Different failures; neither substitutes for the other.
   gives `DeclaredDelta` a mandatory `from` field naming the transformation, so
   the M2 shape cannot be populated without one.
 
+  **AMENDED 2026-10-20, Task 11, and this is the half of the corrected position
+  that was still missing: the gate now has a ROW, and the row carries a
+  refusal.** Task 11's brief required this entry to be checked for drift back
+  into a deferral; it had not drifted, and the check found the opposite gap -
+  **`runGates` registered gate 8 only when a design declared `oscar`, and
+  registered it with nothing to report.** An unported gate whose row is simply
+  absent from the census is indistinguishable from a gate that passed, which is
+  the failure `CLAUDE.md` names and which this entry's own subject matter is
+  about. `tools/schgen/verify.ts` now reports `OSCAR_NOT_PORTED` for such a
+  design - naming the two unported modules, the task that lands them and this
+  entry - alongside `symmetricSymbolsProblems`, which needs no graph and is
+  kept. `tests/schgen/verify.test.ts` drives both halves: `NOT_RUN` after a
+  gate-1 refusal, and the refusal itself after a generation that succeeds.
+  **No design in this repository declares `oscar` today**, so the row is
+  reachable only from that test - which is why the test exists rather than
+  being left to the census. `tools/schgen/gate-census.ts`'s `GATE_ORDER` table
+  states gate 8's absence and its reason for all four parity circuits
+  (**G178**).
+
 ### G94 - ELK throws on a unity-gain op-amp self-loop with horizontally drawn passives on its net - and the "lateral" half of the first narrowing is contradicted at block scale
 
 `[RAN]` elkjs **0.7.1 and 0.9.3** both raise
@@ -6894,12 +6913,43 @@ hand with it. Four copies of one path is a smell, not a design.
   failed: `grep -c "connectivityFromXml" lib/kicad/netlist.ts` returns 0, so
   the shape difference this entry describes is real and not assumed.
 - **Verified** CONFIRMED - this writer read every file named and ran the greps.
-- **Why it is open** clause (a) is unresolved; see below. (Clause (b) is
-  CLOSED, below - this entry stays open for (a) alone, not re-opened for it.)
-- **What would settle it** **CRITERION, two separable clauses.** (a) A ported
+- **Why it is open** **BOTH CLAUSES ARE NOW SETTLED and the entry is RETAINED
+  ANYWAY, which is a ruling and not an oversight.** **G169** made it:
+  *"**G121 itself is NOT deleted**, because this file's Task 4 record of
+  `render/emit.kicad.test.ts` cites it by name for the `tsc`-error prediction
+  it verified, and G117's own R10 ruling separately lists G121 among the
+  entries that cite G117 - deleting it would leave both dangling."* Four files
+  in the tree cite it too (`tools/schgen/port.ts`,
+  `tests/schgen/port-fidelity.test.ts`, `tests/circuits/kicad-round-trip.ts`,
+  `tests/kicad/install.test.ts`, `lib/kicad/netlist.ts`,
+  `lib/schgen/README.md`). **Nothing it describes is still true of the
+  artifact**; it stands as the record of a prediction that was made and then
+  verified, which is the one thing a deletion would take with it.
+- **What would settle it** **CRITERION, two separable clauses.** (a) ~~A ported
   file that imports something `lib/kicad/netlist.ts` does not export fails
   with a message that names the file, the specifier and the missing export -
-  not merely a `tsc` error at a line in a generated file. (b) ~~The kicad-cli
+  not merely a `tsc` error at a line in a generated file.~~ **SETTLED
+  2026-10-20, Task 11**, with this entry's own suggested mechanism and
+  generalised past `@/kicad/netlist` to **every** `externals` target - which
+  it had to be, because Task 11 added a third one (`@/kicad/footprint`,
+  `docs/known-gaps.md` **G173**). `assertExternalExports` in
+  `tools/schgen/port.ts` reads each target's exports and refuses - changing
+  nothing - naming the file, the specifier and the missing export. It covers
+  `externals` only, deliberately: an `@/schgen/<path>` import resolves to
+  another ported file whose text is byte-checked against the pedals source, so
+  a missing name there is a defect in the source, while the `externals` targets
+  are the ones this repository WROTE. A target with an `export * from`
+  re-export makes it refuse rather than guess. **Evidence, and it is a check
+  that could have failed on a REAL file rather than a constructed one:**
+  `tests/schgen/port-fidelity.test.ts`'s *"a ported file importing a name an
+  externals target does not export is refused, naming both"* takes the actual
+  pedals `gates/connectivity.ts` - the one file this entry's prediction was
+  about, which imports `type { Connectivity } from "@/kicad/netlist"` - and
+  asserts the refusal names both the import and
+  `lib/kicad/netlist.ts`; its second half asserts `gates/pinIdentity.ts` is
+  still rewritten rather than refused, so the guard cannot pass by refusing
+  everything. All 83 `files[]` entries re-port with no refusal, so no false
+  positive was introduced. (b) ~~The kicad-cli
   default path is written once in TypeScript.~~ **SETTLED 2026-10-20, Task
   10b (`docs/known-gaps.md` **G169**).** `lib/kicad/netlist.ts`'s `KICAD_CLI`
   is now the one TypeScript source of truth - its own default is computed by
@@ -6914,12 +6964,19 @@ hand with it. Four copies of one path is a smell, not a design.
   unavoidable duplicate left**, exactly as this entry's own mechanism
   predicted, because Make cannot import TypeScript; `tests/kicad/install.test.ts`
   now checks the Makefile's literal agrees with `defaultKicadCli("darwin")`
-  rather than letting the two drift apart silently. **MECHANISM** for (a),
-  still untried: have `tools/schgen/port.ts` check that each `externals`
-  target actually exports every name the importing file destructures from
-  that specifier, which would restore a port-time refusal. **Still not
-  Task 11's job unless Task 11 chooses it** - it would be most useful BEFORE
-  Task 11 ports gate 3.
+  rather than letting the two drift apart silently. **THE MECHANISM THIS ENTRY
+  SUGGESTED FOR (a) IS THE ONE THAT WAS TAKEN, AND IT WAS RIGHT**, which is
+  worth recording because this register's worked example is a mechanism that
+  turned out wrong: *"have `tools/schgen/port.ts` check that each `externals`
+  target actually exports every name the importing file destructures from that
+  specifier, which would restore a port-time refusal."* It was implemented
+  verbatim. **Its one piece of timing advice was NOT followed and the entry
+  should say so:** it read *"it would be most useful BEFORE Task 11 ports gate
+  3"*, and Task 11 ported gate 3 first - as a divergence - and added the guard
+  afterwards. The cost of that order was zero, because the divergence meant
+  nothing ever imported `connectivityFromXml`, so the refusal the guard would
+  have produced was never needed. **Had gate 3 been ported rather than
+  diverged, the advice would have been right.**
 
 ### G122 - a ported test that makes temp directories cannot satisfy this repository's static temp-scratch guard, and the exemption that lets it through is per-file
 
@@ -8223,7 +8280,18 @@ module with no assertions in it tripped a guard just the same.
   check, the symbol sweep, the footprint sweep, whatever else
   `tests/` holds) and name them in `lib/schgen/README.md`'s "How a file gets
   here" section, so the exemption is anticipated rather than discovered by a
-  red suite. Nobody has counted them.
+  red suite.
+
+  **AMENDED 2026-10-20, Task 11: THEY HAVE NOW BEEN COUNTED, and this entry's
+  closing sentence - *"Nobody has counted them"* - is what prompted it.** The
+  answer is **five**, and the fifth was the footprint sweep, hit by Task 11's
+  ported gate-6 test fixtures (`Pkg:SOIC8` and three siblings, a lib id whose
+  LIBRARY half is a fixture's own nickname - a shape none of that sweep's three
+  existing exemption categories could hold). The per-guard table, the new
+  `FIXTURE_FOOTPRINT_LIBRARY` exemption and its two teeth are in **G176**,
+  along with why a blanket `tests/schgen/` skip is the wrong mechanism. **The
+  criterion above is still unmet**: the count exists in a register entry, not
+  in `lib/schgen/README.md` where a porter would look before porting.
 
 ### G134 - settled, and the settlement is the finding: the obstacle matrix's arrival alarm rang for `blocks.ts` and `templates`, and NO cell's reason rested on their absence - what it did falsify was one shared reason's ENUMERATION
 
@@ -11955,3 +12023,511 @@ cannot tell the subprocess which of the two it is.
   which GNU Make can test, so an unset variable reaches the resolver untouched.
   **(2) preserves both contracts and is the one to try first**; (1) is simpler
   and loses something real.
+
+### G171 - gate 7 PORTS WHOLE and runs on NOTHING: no design in this repository has a checklist, so twenty ported tests pass over fixtures and the gate has never seen a circuit
+
+`lib/schgen/gates/traceability.ts` is a pure port (`tools/schgen/port-manifest.json`'s `files`,
+no cuts in the module itself). `tools/schgen/verify.ts`'s `runGates` registers gate 7 **only when
+`d.spec.checklist !== null`**, and `DesignSpec.checklist` is `null` for every design this
+repository has: the ported `mini` fixture, and the four parity circuits as
+`tools/schgen/gate-census.ts` assembles them. **So gate 7 is registered zero times on a real
+circuit**, and its row is absent from the census rather than carrying a problem.
+
+**WHY THAT IS NOT THE SAME SHAPE AS GATE 8.** Task 11 made gate 8 report
+`OSCAR_NOT_PORTED` for a design that declares `oscar`, because its unavailability is a fact about
+the PORT. Gate 7 is available and complete; what is missing is the INPUT. A design with no
+checklist has nothing to trace to, and inventing a `SCHEMATIC-CHECKLIST.md` so the gate has
+something to run on is precisely the invention `CLAUDE.md`'s acceptance-criteria invariant and
+**G151**'s criterion forbid - the checklist is a statement of design intent, and an agent
+authoring one for the artifact it is producing is the failure this whole workflow exists to
+prevent.
+
+**WHAT DOES RUN.** `tests/schgen/gates/traceability.test.ts` - the port, with four declared
+`cuts` - is 20 tests over fixture circuits and fixture markdown, and they pass. They exercise
+`checklistIds`' nine malformed-line refusals, its repeated-id refusal, and all nine of
+`checkTraceability`'s problem kinds. **That is a unit-level regression check and not evidence that
+gate 7 works on a design**, which is the distinction `tools/schgen/parity.ts`'s header draws
+between port parity and the artifact.
+
+**THE ONE CUT WORTH NAMING**, because it removes the only test that read a real checklist: the
+pedals test's *"matches the item counts the real checklist states"* reads
+`h7-platform/SCHEMATIC-CHECKLIST.md` and compares `checklistIds`' per-prefix counts against the
+item-count line that file states about itself. That file does not exist here and cannot be
+transcribed - it is another project's design intent - so the test is cut (a pure deletion, with
+the three imports only it used). **Nothing in this repository now checks `checklistIds` against a
+document that was not written for it.**
+
+- **Found** 2026-10-20, Task 11, Step 7, running `tools/schgen/gate-census.ts` over the four
+  parity circuits.
+- **Evidence** `bun run tools/schgen/gate-census.ts` prints, for each of the four circuits,
+  `DID NOT RUN 7 checklist traceability     the design's \`checklist\` is null, so there is no
+  checklist to trace to`. A check that could have failed: `grep -rn "checklist:" ` over
+  `tests/schgen/__fixtures__/designs/mini/index.ts` gives `checklist: null`, and
+  `tools/schgen/gate-census.ts` sets the same; `grep -rln "SCHEMATIC-CHECKLIST" --include="*.md" .`
+  outside `node_modules` returns **nothing**, so there is no checklist document here to point a
+  design at. `bun test tests/schgen/gates/traceability.test.ts` is 20 pass / 0 fail.
+- **Verified** CONFIRMED - this writer ran the census, ran the ported test, and read `runGates`'
+  registration condition.
+- **Why it is open** it needs a `SCHEMATIC-CHECKLIST.md` for some circuit here, and that document
+  is DESIGN INTENT: which items a schematic must demonstrate. The producing agent may not author
+  it. Nothing in Task 11's brief assigns it, and nothing should until the owner or a spec says
+  what this repository's checklist items are.
+- **What would settle it** **CRITERION: gate 7 is registered and reports zero problems for at
+  least one design in this repository whose checklist was authored by something other than the
+  generator - and the census records it as having RUN rather than as absent.** A second,
+  independent criterion the first does not protect: **until then, gate 7's absence is reported,
+  not omitted** - which `tools/schgen/gate-census.ts`'s `DID NOT RUN` line and its `GATE_ORDER`
+  table already satisfy, and which is the half of this that is done.
+  **MECHANISM, untried:** give one circuit - `transistor-preamp`'s lab board is the smallest
+  candidate - a `docs/<circuit>/SCHEMATIC-CHECKLIST.md` written by the owner or derived from an
+  existing spec, and a `ChecklistConfig` naming it. The competing mechanism, **and it is not
+  equivalent**, is to make a null `checklist` a gate-7 PROBLEM the way a declared `oscar` is now a
+  gate-8 problem; that would make the gap loud on every run but would also make `make check` red
+  for every design forever, so it is a decision rather than a fix.
+
+### G172 - gate 3 now reads the s-expression netlist and no XML parser entered the tree - and the cost is that a `lib/schgen/` module transitively imports the module that spawns `kicad-cli`
+
+**WHAT CHANGED AND WHY IT IS A SUBTRACTION.** Pedals' `tools/schgen/gates/connectivity.ts` takes
+a `Connectivity { nets: Map<string, string[]>; references: string[] }` built by
+`connectivityFromXml`, which parses a `kicadxml` export with `fast-xml-parser`. This repository
+already reads the s-expression `.net` export with `lib/kicad/netlist.ts`'s `importNetlist`, and
+that result carries everything `compareConnectivity` reads: the references are
+`components[].designator`, and each net's members are already the sorted `"designator.pin"`
+strings. Task 11 therefore declared `lib/schgen/gates/connectivity.ts` **diverged** and changed
+exactly two reads. **ONE NETLIST READER, and one fewer dependency than the port would have
+brought.**
+
+**THE THREE KiCad NAME CONVENTIONS ARE UNCHANGED**, because they are KiCad's and not pedals':
+`unconnected-(` is the IR's not-connected set, `Net-(` are the unlabelled block-internal nets
+matched one-for-one by pin set, and everything else matches a labelled net by its leaf name.
+Perturbed to prove it: changing `name.startsWith("Net-(")` to `"Net~("` turns **10 of the 14**
+ported gate-3 tests red, and the internal-net comparison is among them by name -
+`"internal net MID [R1.2, R2.1] has no matching unlabelled net in the schematic"` appears where
+the test expects `[]`. Restored; `git status --porcelain` clean.
+
+**THE COST, which is the reason this is recorded rather than only reported.**
+`lib/schgen/gates/connectivity.ts` imports `stderrProblems` from
+`tools/schgen/kicad-run.ts`, exactly as the pedals source does - and in pedals both files live
+under `tools/`. Here the gate landed under `lib/schgen/`, whose own README says in terms:
+*"`kicad-cli` lives behind `tools/schgen/kicad-run.ts` once that file ports, never here — what
+`render/library.ts` and `render/stock-symbols.ts` use is the *path* to it … never an
+invocation."* **A module under `lib/schgen/` now transitively imports the module that calls
+`spawnSync`.** Measured: nothing is spawned at import time (`kicad-run.ts`'s module scope is
+imports, two `const`s and function declarations), so this is a dependency-direction breach and not
+a behaviour change. `lib/schgen/gates/pin-identity.ts` has the milder version of the same thing -
+it imports `lib/kicad/libtable.ts`, which imports `KICAD_CLI`, a path and not a spawner, which
+the README explicitly permits.
+
+- **Found** 2026-10-20, Task 11, Step 4, writing the divergence.
+- **Evidence** the two reads are marked in `lib/schgen/gates/connectivity.ts` and its manifest
+  `diverged` entry states them. A check that could have failed:
+  `grep -c "fast-xml-parser" package.json bun.lock` returns 0 in both, so no XML parser is in the
+  dependency tree. For the breach: `grep -n "kicad-run" lib/schgen/gates/connectivity.ts` gives
+  the one import, and `grep -n "spawnSync" tools/schgen/kicad-run.ts` gives its two uses, both
+  inside functions. For the convention: the perturbation above, which is a check that could have
+  failed and did.
+- **Verified** CONFIRMED - this writer wrote the divergence, ran the greps and ran the
+  perturbation.
+- **Why it is open** the import is what the pedals source does, and the gate's location under
+  `lib/schgen/gates/` is the Task 11 brief's. Moving the gate to `tools/schgen/` or moving
+  `stderrProblems` out of `kicad-run.ts` are both changes to a ported file's shape that no brief
+  asks for, and `stderrProblems` is a pure text function that only lives beside the spawner
+  because pedals put it there.
+- **What would settle it** **CRITERION: no module under `lib/schgen/` reaches `spawnSync`, by any
+  import path, and a check that could fail says so.** **MECHANISM, untried:** a test that walks
+  the import graph from every `lib/schgen/**/*.ts` and refuses on `node:child_process`; the fix it
+  would then demand is to move `stderrProblems`/`BENIGN_STDERR` into a module beside
+  `lib/kicad/netlist.ts` (a pure text module, no spawner) and declare `kicad-run.ts` diverged to
+  import them from there. **The criterion is the settlement; that mechanism is untried and would
+  diverge a file four other tasks depend on**, so an implementer should price it before taking it.
+
+### G173 - the Task 11 brief decided to hand-transcribe `padNumbers`, and the premise was false: the whole pedals file is 26 lines with one resolvable import, so it is a byte-checked PORT instead
+
+**THE BRIEF'S DECISION, verbatim:** *"Gate 6 ports `padNumbers`' body — 13 lines over `parse`,
+reading `(pad "<n>" …)` atoms and skipping the empty number — into
+`lib/schgen/gates/footprint-pads.ts`, resolving a footprint through the `fp-lib-table` that
+`generatedFiles` already writes plus the KiCad install's own table."* Its premise was that
+`@/kicad/footprint` cannot resolve here - `lib/schgen/README.md` said so: *"`@/kicad/footprint`
+and `@/kicad/components`. Not resolved, and nothing here imports them yet."*
+
+**MEASURED, AND THE PREMISE DOES NOT HOLD.** `digital-pedal-platform`'s `tools/kicad/footprint.ts`
+is **26 lines**, its exports are `padNumbers` and nothing else, and its only imports are
+`node:fs` and `@/kicad/sexpr` - which `port-manifest.json`'s `externals` already resolves to
+`lib/kicad/sexpr.ts`, and which exports both names it needs (`parse`, and `SList` is not used).
+So it ports through the same `pedals-tools` source root `lib/kicad/libtable.ts` uses (ruling R25),
+lands at `lib/kicad/footprint.ts`, and is **byte-checked like every other `files[]` entry**.
+
+**WHAT THAT CHANGED DOWNSTREAM, which is why it is worth more than one file.** With
+`@/kicad/footprint` resolved, `gates/pinIdentity.ts` ports **whole** - `footprintPads`,
+`designFootprintPads`, `GENERIC_SYMBOL_LIBRARIES` and all - so gate 6's footprint resolution is
+not hand-written at all. **`lib/schgen/gates/footprint-pads.ts` was therefore not created.** The
+brief named a FILE and a MECHANISM; its criterion was *"a footprint that does not resolve is a
+gate-6 problem naming the footprint and where it was looked for"*, and the ported
+`footprintProblem` satisfies it verbatim (`part X: footprint Y cannot be resolved: …`, with
+`libtable.ts`'s own message naming every path tried).
+
+**WHY THE DEVIATION IS STRICTLY BETTER AND NOT MERELY DIFFERENT.** A hand transcription of
+`padNumbers` would have been a 10th hand-written file under `lib/schgen/`, byte-checked against
+nothing - the exact residual **G123** records for
+`tests/schgen/render/symbol-self-text.test.ts`. R25's criterion is that *"nothing enters this
+repository from the pedals tree without a byte-check or a declared `sourceSha`"*, and a hand
+transcription meets neither.
+
+- **Found** 2026-10-20, Task 11, Step 1, probing whether the brief's premise held before following
+  its mechanism.
+- **Evidence** `wc -l /Users/orion/work/pedals-work/digital-pedal-platform/tools/kicad/footprint.ts`
+  is 26; `grep -n "^import\|^export" ` on it gives exactly `node:fs`, `@/kicad/sexpr` and
+  `export function padNumbers`. A check that could have failed:
+  `bun run tools/schgen/port.ts` ports it and 82 other files with no refusal, and
+  `bun test tests/schgen/port-fidelity.test.ts` byte-checks all 83 - so the claim "it ports" is
+  held by a test rather than asserted. `grep -rn "footprint-pads" lib tools tests` returns nothing,
+  which is the deviation stated as an absence.
+- **Verified** CONFIRMED - this writer read the pedals file, added the manifest entry, ran the
+  porter and ran the byte-check.
+- **Why it is open** it is not a defect; it is a DEVIATION from a brief's stated mechanism,
+  recorded because `CLAUDE.md` requires the deviation to be written down rather than silently
+  taken: *"the criterion is the settlement; the mechanism is advice from someone who had not yet
+  tried it … record the deviation when the mechanism turns out to be wrong."* It also leaves one
+  real residual, below.
+- **What would settle it** nothing about `padNumbers`. **The residual that a later reader needs:**
+  resolving `@/kicad/footprint` widens what a ported file may import, exactly as resolving
+  `@/kicad/netlist` did in **G121**, and the same cost applies - a later ported file importing a
+  name `lib/kicad/footprint.ts` does not have would once have refused at port time on the
+  SPECIFIER. **Task 11 closed that hole for every external, including this one**
+  (`assertExternalExports` in `tools/schgen/port.ts`; see G121's amended clause (a)), so the
+  widening arrives with its guard rather than ahead of it. `@/kicad/components` remains
+  unresolved, and `gates/oscar/graph.ts` still needs it - Task 18's.
+
+### G174 - measured: `lib/kicad/libtable.ts` had been ported and executed by NOTHING; gate 6 is its first consumer and it worked unchanged - but only 3 of its 6 exported functions are reached
+
+**THE MEASUREMENT.** Task 6b ported `digital-pedal-platform`'s `tools/kicad/libtable.ts` to
+`lib/kicad/libtable.ts` - 279 lines, byte-checked, imported by `tools/schgen/kicad-config.ts` for
+the `GlobalTable` TYPE only. Until Task 11 **no code path called any function in it**. Gate 6 is
+the first: `footprintPads(d.outDir, stockFootprintTable(KICAD_CLI, kicadVersion()))` calls
+`resolveFootprintIn`, which calls `resolveThrough` -> `resolveInTables` -> `searchTable` ->
+`readLibTable`, with `expandHermetic` expanding the one `${KICAD10_FOOTPRINT_DIR}`-style variable
+`stockFootprintTable` declares.
+
+**IT WORKED ON FIRST USE, with no edit.** `tests/schgen/gates/gates.kicad.test.ts` resolves all
+seventeen of the `mini` design's footprints - six distinct stock libraries, through the
+`fp-lib-table` the generator wrote into the scratch `outDir` and then the install's own template
+table - and gate 6 reports **zero problems**. That is the first time this repository has resolved
+a footprint through a KiCad library table rather than through `tests/kicad/footprint-library.ts`'s
+own directory walk.
+
+**WHAT IS STILL UNEXECUTED, which is the half of this a later reader needs.** Of the file's six
+exported functions, gate 6 reaches **three**: `readLibTable`, `resolveFootprintIn` and (as a
+type) `GlobalTable`. Unreached by anything in this repository:
+
+| export | what reaches it in pedals, and what does not here |
+| --- | --- |
+| `resolveFootprint` | the non-hermetic entry point, which consults `GLOBAL_LIB_TABLE` - the USER's `~/Library/Preferences/kicad/.../fp-lib-table`. Nothing here calls it, and nothing should: this repository's own rule is that results never depend on the user's KiCad profile. |
+| `resolveFootprintInGlobal` | `designFootprintPads`, which gate 6 can use for a design checked BEFORE generation. `tools/schgen/verify.ts` uses `footprintPads` (post-generation) only, so this arm is dead here. The ported test that drives it, `gates/designPads.test.ts`, could not land - see **G175**. |
+| `expandUri` | only `resolveFootprint`'s path, plus `BUILTIN_CANDIDATES`' three-candidate probe for `KICAD10_FOOTPRINT_DIR`. The hermetic path uses `expandHermetic` instead. |
+
+**AND `GLOBAL_LIB_TABLE`'s DEFAULT IS A MACHINE-SPECIFIC PATH THAT G169's RESOLVER DOES NOT
+COVER.** It is `process.env["KICAD_FP_LIB_TABLE"] ?? path.join(os.homedir(), "Library/Preferences/kicad/10.0/fp-lib-table")` -
+a macOS-only literal, in a PORTED file, which `lib/kicad/install.ts` knows nothing about. Nothing
+here evaluates it at run time today (only `resolveFootprint` and `kicadCommonVars` read it, and
+nothing calls either), so it is latent rather than broken; the module-level `const` itself is
+evaluated on every import of the file, but computing a path is not using one.
+
+- **Found** 2026-10-20, Task 11, Step 5, which was the first code to call into the file.
+- **Evidence** `bun test tests/schgen/gates/gates.kicad.test.ts` is 3 pass / 0 fail, and its gate-6
+  case asserts `checkPinIdentity(...)` equals `[]` over the generated `mini` design with
+  `footprintPads` resolving real `.kicad_mod` files - a check that could have failed, and did fail
+  for a different reason before the pin-table fixture was copied (`part U_AMP names pin table
+  OPA1688, which does not exist`). For the unexecuted half: `grep -rn "resolveFootprint\b\|resolveFootprintInGlobal\|expandUri" lib tools tests`
+  outside `lib/kicad/libtable.ts` itself returns **no call site**. For the path:
+  `grep -n "GLOBAL_LIB_TABLE" lib/kicad/libtable.ts` gives its definition and its two readers,
+  both inside functions nothing calls.
+- **Verified** CONFIRMED - this writer wrote the first consumer, ran it, and ran the greps.
+- **Why it is open** the unexecuted exports are not defects and three of them are deliberately
+  unreachable here. What is open is the macOS literal, which **G169**'s directive covers in
+  principle (*"no hardcoded paths unique to this machine"*) and which Task 10b's resolver did not
+  reach because it is inside a ported file that may not be hand-edited.
+- **What would settle it** **CRITERION: no path unique to one machine is computed anywhere in this
+  repository without going through `lib/kicad/install.ts`, including inside a ported file - and a
+  check that could fail says which.** `tests/kicad/install.test.ts` already pins the two surviving
+  macOS literals it knows about; `GLOBAL_LIB_TABLE`'s is a third it does not count.
+  **MECHANISM, untried:** extend that test's grep to `lib/kicad/libtable.ts` and declare the hit,
+  then either set `KICAD_FP_LIB_TABLE` from `install.ts` at every entry point (which leaves the
+  literal in place but unreachable) or declare `libtable.ts` diverged to compute its default from
+  `defaultKicadCli()`. **The second costs the byte-check on a 279-line file for a one-line
+  change**, which is a bad trade unless something starts calling `resolveFootprint`.
+
+### G175 - two of the four ported gate-6 test files CANNOT LAND, and what stops both is a measured BLIND SPOT in the temp-scratch guard: it refuses a correct removal written as an assignment rather than a declaration
+
+**THE TWO FILES**, both out of the tree under ruling R4 (never land red), with their exact
+manifest JSON so re-adding them is an edit and not a rediscovery:
+
+```json
+{ "from": "gates/designPads.test.ts", "to": "tests/schgen/gates/design-pads.test.ts" }
+```
+```json
+{
+  "from": "gates/pinIdentity.kicad.test.ts",
+  "to": "tests/schgen/gates/pin-identity.kicad.test.ts",
+  "sourceSha": "7a554ed39cd07d2b13ee984f947895401d1db4dd51a0cf94e9854ff6388e2cea",
+  "task": "<the task that lands it>",
+  "why": "G112 (mcu/pinmap) and D3: its build() declares `{ kind: \"labels\", reason: \"fixture\" }`, which must become a rendering that still exists. It also needs the temp-scratch exemption this entry is about."
+}
+```
+
+(`designPads.test.ts`'s SHA, for a `diverged` entry if one is ever needed, is
+`42a7d1faa9fa7e504f9b9c9a2020445cd820031b6277f84a83ff398de69a9d29`. It needs no divergence
+otherwise: it is import-clean once `@/kicad/footprint` resolves, which Task 11 did, and declares
+no `labels` rendering and no MCU.)
+
+**WHAT STOPS THEM, AND IT IS THE SAME THING TWICE.** `tests/stripboard/temp-scratch.test.ts`'s
+static sweep requires every `mkdtempSync` site under `tests/` to either name its directory and
+remove it, or register it. Its "named" detector is
+`/(?:const|let|var)\s+(\w+)\s*=\s*fs\.mkdtempSync\(/`, so it counts only a site whose DECLARATION
+and ASSIGNMENT are one statement. Both files write
+
+```ts
+let dir = "";
+…
+dir = fs.mkdtempSync(path.join(os.tmpdir(), "…"));
+```
+
+which is a bare assignment to a variable declared earlier - so `sites !== named.length` and the
+file is reported as having an *"unnamed site"*. **Both files then remove that directory
+correctly**: `designPads.test.ts` with `afterEach(() => fs.rmSync(dir, …))` and
+`pinIdentity.kicad.test.ts` with `afterAll(() => { fs.rmSync(dir, …) })`.
+
+**SO THE GUARD REFUSES A SHAPE THAT SATISFIES ITS OWN STATED RULE**, which is its own words:
+*"every `mkdtemp` site under `tests/` must either name its directory and remove it, or register
+it here."* These sites name their directory and remove it. The blind spot is in the detector, not
+in the rule, and it errs toward refusing - which is the right direction and is why this is a
+finding rather than an alarm.
+
+**WHY TASK 11 DID NOT WIDEN THE DETECTOR.** Relaxing a standing guard in order to land the agent's
+own files is the acceptance-criteria breach `CLAUDE.md` names: the producing agent would be
+choosing what the check is. The two files stay out, R4-style, and the decision is recorded here
+for someone who is not landing them.
+
+**WHAT IS LOST, measured rather than estimated.** `designPads.test.ts` is 5 tests and **the only
+thing in either tree that drives `designFootprintPads`** - the pre-generation arm of gate 6's
+footprint resolution, and with it `resolveFootprintInGlobal` (**G173**'s table).
+`pinIdentity.kicad.test.ts` is 5 tests: 2 driving `footprintPads` against real stock footprints,
+and 3 driving `GENERIC_SYMBOL_LIBRARIES` and the MPN-override rule against real installed
+symbols. **Of those five, the MPN-override rule is covered elsewhere** - the ported
+`gates/pin-identity.test.ts` has its own fixture cases - and `footprintPads` against real
+footprints is covered by `tests/schgen/gates/gates.kicad.test.ts`. The uncovered residual is
+therefore `designFootprintPads` and the three stock-library MPN cases.
+
+- **Found** 2026-10-20, Task 11, Step 1, probing every gate-6 test file for portability.
+- **Evidence** `grep -n "mkdtempSync\|rmSync" ` on both pedals files shows the assignment form and
+  the removal. A check that could have failed: adding the `designPads.test.ts` entry and running
+  `bun test tests/stripboard/temp-scratch.test.ts` fails the *"every mkdtemp site under tests/
+  either removes its own directory or registers it"* test naming
+  `schgen/gates/design-pads.test.ts: 1 unnamed site(s)` - and `bun test` is green with both entries
+  out. For the coverage claim:
+  `grep -rn "designFootprintPads" lib tools tests` returns only its definition in
+  `lib/schgen/gates/pin-identity.ts`.
+- **Verified** CONFIRMED - this writer read both pedals files, read the guard's regex, added and
+  removed the manifest entries, and ran the guard both ways.
+- **Why it is open** landing either needs a change to a guard this task's own implementer must not
+  author. The `pinIdentity.kicad.test.ts` half needs a `labels` substitution as well, which is
+  ordinary divergence work.
+- **What would settle it** **CRITERION: `designFootprintPads` is executed by something, and the
+  temp-scratch guard reports a file that writes `let dir` then `dir = fs.mkdtempSync(…)` then
+  `fs.rmSync(dir, …)` as COMPLIANT rather than as an unnamed site - with a case that could have
+  failed either way.** **MECHANISM, untried and NOT the criterion:** extend the guard's `named`
+  detector to also match a bare `(\w+)\s*=\s*fs\.mkdtempSync\(` and keep the existing
+  `rmSync(<name>)` requirement on it, so the relaxation is only about where the variable is
+  declared and the removal is still proven. That is a change to a guard, so it wants a reviewer
+  who is not the one landing the two files, and the detector change should be driven red first by
+  deleting one of the two `rmSync` calls.
+
+### G176 - the schematic port has now needed a declared exemption from FIVE repo-wide static guards, and the footprint sweep is the fifth - **G133**'s recurrence, counted
+
+**G133** recorded that a ported test FIXTURE collides with this repository's standing guards as
+reliably as a ported test does, and that the symbol sweep was *"the second repo-wide static guard
+the port has had to be exempted from, after the temp-scratch check of G122/G123"*, adding that
+*"the recurrence matters more than either entry"*. Task 11 is the fourth task to hit it. **The
+count, read off the exemption tables rather than remembered:**
+
+| guard | exemption mechanism | entries the port holds |
+| --- | --- | --- |
+| `tests/stripboard/temp-scratch.test.ts`, static sweep | `REMOVES_VIA_OWN_LIST` | 2 of 3 (`schgen/render/library.test.ts`, and Task 11's `schgen/verify.test.ts`) |
+| the same file, registering-module table | `REGISTERING` | 1 of 12 (`run.ts`) |
+| `tests/kicad/symbol-names.test.ts` | `NOT_A_KICAD_SYMBOL` | **all 7**, 3 of them Task 11's (`Fix:OPAMP2`, `Fix:OPAMP2X`, `H7:TPS7A4901`) |
+| `tests/schgen/port-fidelity.test.ts`, no-shadowing | `SHADOWS_A_PEDALS_FILE_BY_DECISION` | both 2 |
+| `tests/kicad/footprint-names.test.ts` | **`FIXTURE_FOOTPRINT_LIBRARY`, new in Task 11** | all 4 (`Pkg:SOIC8`, `Pkg:MISSING`, `Pkg:TWO`, `Pkg:SOIC8EP`), plus 1 entry in the pre-existing `NOT_A_KICAD_FOOTPRINT` (`" "`) |
+
+**WHY A NEW TABLE RATHER THAN AN EXISTING ONE**, which is the part a later reader cannot
+re-derive. `tests/kicad/footprint-sweep.ts` already had three exemption categories and **none of
+them can hold a `Pkg:*` name**: `NOT_A_KICAD_FOOTPRINT` is for values that are not lib ids at all
+(it is pinned against exactly the non-lib-id swept set, in both directions);
+`CONSTRUCTED_FOR_A_REFUSAL`'s teeth assert `resolveFootprintOnDisk(name) === "no-such-footprint"`,
+which a name whose LIBRARY half is invented can never be; and `SYNTHETIC_PREFIX` would require
+renaming the literals, which is a hand edit to a PORTED file that `port-fidelity.test.ts` refuses
+and that a `cuts` entry cannot make (cuts are deletion-only).
+
+**THE NEW TABLE CARRIES THE SAME TWO TEETH THE SYMBOL SIDE HAS**, deliberately copied rather than
+invented: every entry must still fail at the **library** (not at the footprint, and not resolve),
+and every swept site must be under `tests/schgen/`. Plus the bidirectional pin, a reason over 60
+characters, and a check that none of the nicknames is an installed footprint library - so if KiCad
+ever ships a `Pkg.pretty` the exemption stops being safe loudly.
+
+**AND ONE THING THE SWEEP FOUND THAT IS NOT AN EXEMPTION.** `tests/schgen/gates/pin-identity.test.ts`
+declares `footprint: " "` - a single space - because gate 6's refusal tests
+`part.footprint.trim() === ""`, so only a blank-but-not-empty value reaches that arm. It is
+recorded in `NOT_A_KICAD_FOOTPRINT` as what it is: the INPUT to a refusal, and a claim about no
+library at all.
+
+- **Found** 2026-10-20, Task 11, running the full suite after the gate ports landed.
+- **Evidence** `bun test` went from 3168 pass / 0 fail to 3290 pass / **3 fail** the moment the
+  ported gate tests entered the tree, and the three failures were
+  `every symbol name swept out of the source resolves in an installed KiCad library`,
+  `every footprint name swept out of the repository resolves in an installed KiCad library` and
+  `every swept value that is not a KiCad lib id is one this repository has accounted for` -
+  quoted from the run. Each named its offenders. After the exemptions: 3294 pass / 0 fail. The
+  counts in the table above were read off the five tables in the tree, not recalled.
+- **Verified** CONFIRMED - this writer ran the suite before and after, read each guard's exemption
+  mechanism, and established that none of the three existing footprint categories could hold a
+  `Pkg:*` name by reading their teeth.
+- **Why it is open** it is not a defect in any one guard or any one entry; it is a cost of the port
+  that recurs per task and that **G133** asked to have counted. What is open is whether the
+  pattern should be generalised before it happens a sixth time.
+- **What would settle it** **CRITERION: a task that lands a ported test fixture can find out, in
+  one place, which repo-wide static guards it will trip and what each one's exemption mechanism
+  is - without running the suite and reading five test files.** **MECHANISM, untried:** a short
+  section in `lib/schgen/README.md` listing the five guards, their exemption tables and their
+  teeth, held to being complete by a test that asserts the named tables exist and are non-empty.
+  The competing mechanism - teach the guards to skip `tests/schgen/` wholesale - is **rejected
+  here and the reason belongs with the criterion**: every one of these guards exists because this
+  repository shipped a wrong KiCad name or filled a disk, and a blanket directory exemption would
+  reopen exactly that for the one directory with the most fixture literals in it.
+
+### G177 - the round trip's five comparisons, with what each one cannot see - and the row-to-check mapping is this writer's INTERPRETATION of the brief's table, not a transcription
+
+`lib/schgen/gates/round-trip.ts` reports spec §2's contract as five lists plus a sixth that is
+explicitly not a pass. **Each is driven red on its own**, by deleting its reporting line and
+watching exactly one named test fail (Task 11, Step 8; all six restored, `git status --porcelain`
+clean). **What a green result does NOT mean, per comparison:**
+
+| comparison | what it compares | what it cannot see |
+| --- | --- | --- |
+| `componentIdentity` | the designator SET, both directions, plus an unannotated `R?` | nothing about what any component IS |
+| `pinIdentity` | the SYMBOL each designator is drawn with (`libId`'s entry name against the netlist's `libsource` part), and the exact set of pin numbers the export puts on a net | **a pin FUNCTION.** `importNetlist` does not read a node's `pinfunction`, so a symbol that keeps its lib id and has its pin NAMES edited is invisible here. Gate 6 is what compares a symbol's pin names against a datasheet table. |
+| `netMembership` | the partition of sorted `designator.pin` sets as a MULTISET, with each not-connected pin a one-member set | **net NAMES, by design.** An interface net renamed with its topology intact passes. Gate 3 is what compares names, and is strictly stronger. |
+| `values` | designator -> value, for every part in the model | |
+| `footprints` | designator -> footprint, **for every part that declares one** | a part that declares none, which is the next row |
+| `footprintsUndeclared` | the labels of parts with an empty `footprint` | it compares NOTHING; it is the list of things not compared |
+
+**THE INTERPRETATION, stated because a later reader would otherwise take it for the brief's.** The
+brief's table justifies the pin-identity row with *"pad-count parity cannot catch a swapped
+IN/OUT"*. Given only an `ImportedNetlist`, the netlist's only record of which pins a designator
+has and what they mean is its `libsource`, so this implementation reads the row as **the symbol
+identity plus the pin-number set**. A swapped IN/OUT achieved by crossing two WIRES is caught by
+`netMembership` instead; a swapped IN/OUT achieved by placing a different symbol with the same
+numbering is caught by `pinIdentity`; **a swapped IN/OUT achieved by editing pin names inside one
+symbol file is caught by NEITHER.** That third case is the residual.
+
+**AND THE TWO WARNINGS ARE IN THE MODULE COMMENT, where an implementer reads them**, not only
+here: a certificate verifies what it was given, not what you meant - everything here is
+self-consistency between a drawing and the model it was drawn from, and the link that checks the
+MODEL against an authored schematic is the committed-netlist comparison, not this; and a schematic
+can export a correct netlist while visually suggesting wrong connections, so **the round trip is
+not a readability gate and must never be reported as one.**
+
+- **Found** 2026-10-20, Task 11, Steps 6 and 8.
+- **Evidence** the six perturbations, each turning exactly one named test red:
+  deleting `componentIdentity`'s schematic-side push fails *"a component the schematic has and the
+  model does not is caught by component identity alone"* (6 pass / 1 fail); the symbol comparison
+  fails *"the wrong symbol under the right designator is caught by pin identity, not by the
+  partition"*; the partition's two pushes fail *"a pin moved between two nets is caught by net
+  membership alone"*; the value comparison fails *"a wrong capacitor on a correct topology is
+  caught by values alone"*; the footprint comparison fails *"a wrong footprint on a correct symbol
+  is caught by footprints alone"*; and `footprintsUndeclared.push` fails *"a component with no
+  declared footprint is reported, not passed"*. Each restore was verified by SHA-256 and the final
+  `git status --porcelain` was empty. For the residual, a check that could have failed:
+  `grep -c "pinfunction" lib/kicad/netlist.ts` returns **0**.
+- **Verified** CONFIRMED - this writer wrote and ran the perturbation harness and read its output.
+- **Why it is open** the `pinfunction` residual needs `importNetlist` to read a field it does not
+  read, which is a change to a hand-written module four other consumers share, and no brief asks
+  for it. The interpretation is open in the weaker sense that a reviewer may read the brief's row
+  differently.
+- **What would settle it** **CRITERION: a generated schematic whose symbol has two pin NAMES
+  exchanged, with its lib id, pin numbers, values, footprints and every net membership unchanged,
+  is reported by something - and the test that proves it could have failed.** **MECHANISM,
+  untried:** have `importNetlist` carry each node's `pinfunction` (KiCad emits it for a symbol
+  whose pins are named) and have `roundTrip` compare it against `IrPin.identity`. **The criterion
+  is the settlement and gate 6 may already discharge it** - `checkPinIdentity` compares the
+  symbol's pin names against a datasheet table, which catches the same edit by a different route;
+  an implementer should check whether gate 6 covers it before widening `importNetlist`.
+
+### G178 - measured: gate 1 refuses on all FOUR parity circuits and gates 3 and 6 therefore run on none of them - and the refusal counts agree exactly with the ones already pinned, plus one
+
+`tools/schgen/gate-census.ts` assembles a `LoadedDesign` per parity circuit from its authoring
+declaration and runs the real `runGates`. **The result, for every one of the four: gate 1 refuses,
+gates 3 and 6 report `not run: generation was refused`, and gates 7 and 8 are not registered at
+all.**
+
+| circuit | gate 1 | gate 3 | gate 6 | gate 7 | gate 8 |
+| --- | --- | --- | --- | --- | --- |
+| `opamp-buffer` | 40 | 1 (cascaded) | 1 (cascaded) | not registered | not registered |
+| `optical-compressor` | 163 | 1 (cascaded) | 1 (cascaded) | not registered | not registered |
+| `pt2399-core` | 115 | 1 (cascaded) | 1 (cascaded) | not registered | not registered |
+| `transistor-preamp` | 101 | 1 (cascaded) | 1 (cascaded) | not registered | not registered |
+
+**WHY THAT IS THE CORRECT RESULT AND NOT A DEFECT.** `generate` calls `validateCircuit` and
+throws, and **G151** already measured that `circuitSpecFrom`'s output does not pass it: passing
+would need an invented net rename (**G150**), an invented no-connect reason (**G151**) and
+invented BOM fields (**G149**), and *"no backend invents an input"*. The census calls
+`validateCircuit` through `generate` exactly as `make check` would, relaxes no rule, and supplies
+no value the model does not hold.
+
+**THE CROSS-CHECK, which is this entry's own evidence that the numbers are not made up.**
+`tests/schgen/authoring-complete.test.ts` already pins the per-circuit `validateCircuit` totals as
+**39 / 162 / 114 / 100**. The census reports **40 / 163 / 115 / 101** - exactly one more each, and
+the one is `generate`'s `"circuit is invalid:"` header line, which the census classifies as
+`header` and counts. Two independently-written measurements of the same thing agree, and the
+difference is explained rather than waved at.
+
+**PER-CLASS, with the four rule classes transcribed from that test's own `RULE_CLASSES` rather
+than re-worded:**
+
+| circuit | header | netNames (G150) | pinsDeclared (G151) | singlePinNets (G159) | bomFields (G149) |
+| --- | --- | --- | --- | --- | --- |
+| `opamp-buffer` | 1 | 0 | 3 | 0 | 36 |
+| `optical-compressor` | 1 | 14 | 0 | 0 | 148 |
+| `pt2399-core` | 1 | 17 | 0 | 1 | 96 |
+| `transistor-preamp` | 1 | 0 | 0 | 0 | 100 |
+
+**BOM FIELDS ARE 380 OF THE 419 REFUSALS - 91%.** That is one finding, not four hundred: the
+circuit model has no BOM, so `from-network.ts` emits empty `Manufacturer`, `MPN`, `Supplier` and
+`SupplierPart` for every part, and `validateCircuit` refuses each field of each part separately.
+**G149** is the entry; what this measurement adds is the scale, and that **gate 3 and gate 6
+cannot be exercised on a single one of this repository's own circuits until it is resolved.** The
+only circuit either gate has ever run on is the ported `mini` fixture, which carries a test BOM.
+
+- **Found** 2026-10-20, Task 11, Step 7.
+- **Evidence** `bun run tools/schgen/gate-census.ts`, whose output is quoted above and whose
+  classifier prints any unmatched refusal in full under `other:` - so the fifth class
+  **G151**'s test refuses is visible rather than absorbed into a total. It found one on
+  `pt2399-core` before the `singlePinNets` class was added, printed verbatim:
+  `other: - net unconnected-(U1-CLK_O-Pad5) has only one pin (U1.5); connect it or declare the pin not connected`,
+  which is **G159**'s net by name. A check that could have failed: the totals against
+  `tests/schgen/authoring-complete.test.ts`'s `EXPECTED_REFUSALS`, which is a committed assertion
+  written by a different task - they agree on all four, off by the one header line.
+- **Verified** CONFIRMED - this writer wrote the census, ran it, and compared its output against
+  the committed expectations line by line.
+- **Why it is open** the three inventions are forbidden and the model has nowhere to put the three
+  things. Each has its own entry and its own mechanism; this entry exists for the CONSEQUENCE,
+  which none of them states: **the two gates Task 11 built have no circuit of this repository's own
+  to run on.**
+- **What would settle it** **CRITERION: gates 3 and 6 run - registered, and reporting a problem
+  count rather than `not run` - on at least one circuit in `circuits/`, not only on the ported
+  `mini` fixture.** **MECHANISM, untried, and it is the smallest of the three:** `bomFields` is
+  91% of the refusals and the only one of the four that is a missing FIELD rather than a missing
+  decision, so a `bom` entry in `ComponentOverride` (or a per-circuit BOM beside the authoring
+  declaration) would drop the remaining refusals to **3 / 14 / 18 / 0** (counted from the
+  per-class table above, header excluded) and leave three real design questions.
+  **That would NOT by itself satisfy the criterion** - `generate` throws on any problem - so the
+  net-name rule (**G150**) and the two pin questions (**G151**, **G159**) have to be answered too.
+  **`transistor-preamp` is the one circuit for which BOM fields are the ONLY blocker**, which
+  makes it the cheapest route to a first real gate-3 and gate-6 run.

@@ -47,10 +47,12 @@
  * specifier at the module it names rather than at a stand-in. **This repository's
  * `lib/kicad/netlist.ts` still has a different shape from pedals' for everything
  * else** (`importNetlist`/`ImportedNetlist` here versus `connectivityFromXml`
- * there) and adapting gate 3 to it is still Task 11's job. The consequence of
- * resolving the specifier is that a later file importing `connectivityFromXml`
- * no longer refuses at port time; it fails `bun run typecheck` naming the
- * missing export instead. Recorded in `docs/known-gaps.md`.
+ * there); **Task 11 adapted gate 3 to it by declaring
+ * `lib/schgen/gates/connectivity.ts` DIVERGED.** The consequence of resolving the
+ * specifier was that a later file importing `connectivityFromXml` no longer
+ * refused at port time and failed `bun run typecheck` instead; **Task 11 restored
+ * the port-time refusal** with `assertExternalExports` below, which is
+ * `docs/known-gaps.md` **G121** clause (a) and that entry's own mechanism.
  *
  * `@/pinmap/*` is NOT in
  * this category any more: there is no MCU here, so Task 2 ported
@@ -72,6 +74,94 @@ import {
 
 /** Every `@/<spec>` import specifier found in `from "..."` or `from '...'`. */
 const IMPORT_SPEC = /from\s+(["'])(@\/[^"']+)\1/g
+
+/**
+ * A NAMED import of an `@/<spec>` module, with its brace clause - `import { a, type B } from
+ * "@/x"` and `import type { C } from "@/x"` both. The clause is group 2 and the specifier
+ * group 3. A default or namespace import has no clause and is deliberately not matched: nothing
+ * in the pedals `tools/schgen/` tree imports an `@/` module either way.
+ */
+const NAMED_EXTERNAL_IMPORT = /import\s+(type\s+)?\{([^}]*)\}\s*from\s+["'](@\/[^"']+)["']/g
+
+/** `export function x`, `export const x`, `export { a, b }` and the type-only forms. */
+const DECLARED_EXPORT = /export\s+(?:declare\s+)?(?:async\s+)?(?:function|const|let|var|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/g
+const EXPORT_CLAUSE = /export\s+(?:type\s+)?\{([^}]*)\}/g
+
+/** The names a module exports, read from its text. A `export * from` makes this refuse. */
+function exportedNames(file: string, text: string): ReadonlySet<string> {
+  if (/export\s+\*\s+from/.test(text)) {
+    throw new Error(
+      `${file} has an \`export * from\` re-export, which this reader cannot resolve. Name the ` +
+        "exports explicitly there, or widen exportedNames in tools/schgen/port.ts - it must not " +
+        "guess, because a guess here turns a missing export into a silent one.",
+    )
+  }
+  const names = new Set<string>()
+  for (const m of text.matchAll(DECLARED_EXPORT)) if (m[1] !== undefined) names.add(m[1])
+  for (const m of text.matchAll(EXPORT_CLAUSE)) {
+    for (const part of (m[1] ?? "").split(",")) {
+      // `a as b` exports `b`; `export { a } from "./x"` is covered by the same clause.
+      const pieces = part.trim().split(/\s+as\s+/)
+      const name = (pieces[pieces.length - 1] ?? "").replace(/^type\s+/, "").trim()
+      if (name !== "") names.add(name)
+    }
+  }
+  return names
+}
+
+/**
+ * **EVERY NAME A PORTED FILE TAKES FROM AN `externals` TARGET MUST ACTUALLY BE EXPORTED BY IT**,
+ * checked at PORT TIME, naming the file, the specifier and the missing export.
+ *
+ * This is `docs/known-gaps.md` **G121**'s clause (a), and that entry's own suggested mechanism.
+ * The gap it closes: `resolveSpecifier` checks `externals` first, so once a specifier is mapped,
+ * a ported file importing a name the target does not have no longer gets a refusal here - it
+ * gets a `tsc` error at a line in a generated file instead. G121 measured that for
+ * `@/kicad/netlist`, whose pedals counterpart exports `connectivityFromXml` and whose target here
+ * does not. The entry called the mechanism "most useful BEFORE Task 11 ports gate 3"; Task 11
+ * landed it with three more `externals` consumers, including the new `@/kicad/footprint`.
+ *
+ * It is deliberately NOT applied to `@/schgen/<path>` imports: those resolve to another ported
+ * file whose content is the pedals source, so a name missing there is a defect in the source and
+ * `tsc` reports it against a file whose text is checked byte-for-byte anyway. The `externals`
+ * targets are the ones whose content this repository WROTE, and are therefore the ones that can
+ * silently fail to carry an export the source assumed.
+ */
+function assertExternalExports(source: string, entry: ManifestFileEntry, manifest: PortManifest): void {
+  const repoRoot = moduleRepoRoot()
+  const cache = new Map<string, ReadonlySet<string>>()
+  for (const m of source.matchAll(NAMED_EXTERNAL_IMPORT)) {
+    const spec = m[3]
+    if (spec === undefined) continue
+    const target = manifest.externals[spec]
+    if (target === undefined) continue
+    let exports = cache.get(target)
+    if (exports === undefined) {
+      const file = path.join(repoRoot, target)
+      if (!fs.existsSync(file)) {
+        throw new Error(
+          `${entry.from}: imports "${spec}", which tools/schgen/port-manifest.json resolves to ` +
+            `${target} - and that file does not exist. Create it, or point the external somewhere real.`,
+        )
+      }
+      exports = exportedNames(target, fs.readFileSync(file, "utf8"))
+      cache.set(target, exports)
+    }
+    const wanted = (m[2] ?? "")
+      .split(",")
+      .map((part) => (part.trim().split(/\s+as\s+/)[0] ?? "").replace(/^type\s+/, "").trim())
+      .filter((name) => name !== "")
+    const missing = wanted.filter((name) => !exports.has(name)).sort()
+    if (missing.length > 0) {
+      throw new Error(
+        `${entry.from}: imports ${missing.map((n) => `"${n}"`).join(", ")} from "${spec}", which ` +
+          `tools/schgen/port-manifest.json resolves to ${target} - and ${target} exports no such ` +
+          `name. Add it there (with a test), or the two modules have different shapes and this ` +
+          `file cannot be ported as it stands: see docs/known-gaps.md G121.`,
+      )
+    }
+  }
+}
 
 function relativeImport(fromFileRepoPath: string, toFileRepoPath: string): string {
   const fromDir = path.posix.dirname(fromFileRepoPath)
@@ -198,13 +288,18 @@ function header(entry: ManifestFileEntry, manifest: PortManifest): string {
  * The only things this function may change are: this entry's declared
  * `cuts` (a deliberate, auditable content deletion - see `CutEntry`), import
  * specifiers matched by `IMPORT_SPEC` or `BARE_IMPORT_SPEC`, and the
- * prepended header. Everything else in `source` passes through unchanged,
+ * prepended header. It also REFUSES - changing nothing - when an `externals`
+ * target does not export a name this file takes from it; see
+ * `assertExternalExports`. Everything else in `source` passes through unchanged,
  * including the pedals project's semicolons and non-null assertions (see
  * `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md` decisions D7
  * and D8).
  */
 export function rewrite(source: string, entry: ManifestFileEntry, manifest: PortManifest): string {
   const cut = applyCuts(source, entry)
+  // Before any rewriting: an `externals` target that does not export what this file takes from
+  // it is a refusal here rather than a `tsc` error later (G121 clause (a)).
+  assertExternalExports(cut, entry, manifest)
   const importsResolved = cut.replace(IMPORT_SPEC, (full: string, _quote: string, spec: string) => {
     const resolved = resolveSpecifier(spec, entry, manifest)
     return full.replace(spec, resolved)

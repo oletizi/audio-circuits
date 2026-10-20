@@ -400,6 +400,41 @@ test("every ported destination outside the declared directories is pinned here",
  * `../../../../../../etc/hosts` and `loadManifest` accepted it. The guard's message claimed a
  * bound on the whole path that only held for half of it. `docs/known-gaps.md` **G161**.
  */
+/**
+ * **AN `externals` TARGET THAT DOES NOT EXPORT WHAT A PORTED FILE TAKES FROM IT REFUSES AT PORT
+ * TIME** - `docs/known-gaps.md` **G121** clause (a), closed by Task 11 with that entry's own
+ * suggested mechanism.
+ *
+ * The gap: `resolveSpecifier` checks `externals` before the `@/schgen/` lookup, so once a
+ * specifier is mapped, a file importing a name the target does not have stops getting a refusal
+ * from the porter and gets a `tsc` error at a line in a generated file instead. G121 measured
+ * exactly that for `@/kicad/netlist`, whose pedals counterpart exports `connectivityFromXml` and
+ * whose target here does not.
+ *
+ * **THE CASE BELOW IS A REAL PEDALS FILE, NOT A CONSTRUCTED ONE.** `gates/connectivity.ts` in the
+ * pedals tree imports `type { Connectivity } from "@/kicad/netlist"`; that is why Task 11 declared
+ * this repository's copy DIVERGED instead of porting it, and it is the one file G121's prediction
+ * was about. The second case is the positive direction, so the check cannot pass by refusing
+ * everything.
+ */
+test("a ported file importing a name an externals target does not export is refused, naming both", () => {
+  const sourceRoot = requireSourceRoot()
+  const manifest = loadManifest()
+  const entry = { from: "gates/connectivity.ts", to: "lib/schgen/gates/connectivity.ts" }
+  const source = fs.readFileSync(sourcePathFor(sourceRoot, entry, manifest), "utf8")
+  expect(source, "the pedals source no longer imports the name this case is about").toContain(
+    'from "@/kicad/netlist"',
+  )
+  expect(() => rewrite(source, entry, manifest)).toThrow(
+    /imports "Connectivity" from "@\/kicad\/netlist".*lib\/kicad\/netlist\.ts exports no such name/s,
+  )
+  // The positive direction: a file whose externals imports all resolve is rewritten, not refused.
+  const ok = { from: "gates/pinIdentity.ts", to: "lib/schgen/gates/pin-identity.ts" }
+  const okSource = fs.readFileSync(sourcePathFor(sourceRoot, ok, manifest), "utf8")
+  expect(okSource).toContain('from "@/kicad/footprint"')
+  expect(rewrite(okSource, ok, manifest)).toContain("padNumbers")
+})
+
 test("a from that escapes its source root is refused, whether or not it declares one", () => {
   const sourceRoot = requireSourceRoot()
   const manifest = loadManifest()

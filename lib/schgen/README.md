@@ -172,9 +172,21 @@ is resolved rather than hand-porting around the gap:
   gained that path constant and `externals` points the specifier at the module
   it names. **Everything else about the two modules still differs** —
   `importNetlist` / `ImportedNetlist` here, versus `connectivityFromXml` there
-  — and adapting gate 3 to it is Task 11's job. A later ported file importing
-  `connectivityFromXml` therefore fails `bun run typecheck` naming the missing
-  export rather than refusing at port time.
+  — and **Task 11 adapted gate 3 to it**: `lib/schgen/gates/connectivity.ts` is
+  DIVERGED, its `compareConnectivity` takes `ImportedNetlist`, and no XML parser
+  entered the tree.
+
+  **A FILE IMPORTING A NAME AN `externals` TARGET DOES NOT HAVE NOW REFUSES AT
+  PORT TIME AGAIN** (Task 11, closing `docs/known-gaps.md` **G121** clause (a)
+  with that entry's own mechanism). `assertExternalExports` in
+  `tools/schgen/port.ts` reads each `externals` target's exports and refuses -
+  changing nothing - naming the file, the specifier and the missing export. It
+  covers `externals` only, deliberately: an `@/schgen/<path>` import resolves to
+  another ported file whose text is byte-checked against the pedals source, so a
+  name missing there is a defect in the source; the `externals` targets are the
+  ones this repository WROTE and so the ones that can silently fail to carry an
+  export the source assumed. A target with an `export * from` re-export makes it
+  refuse rather than guess.
 - **`@/pinmap/*` is gone, not deferred.** There is no MCU in this repository.
   Task 2 ports `ir/build.ts` and `ir/types.ts` *with a cut* that removes the
   `PinmapInput` branch, `BuildContext.pinmap`, `CircuitSpec.mcu` and
