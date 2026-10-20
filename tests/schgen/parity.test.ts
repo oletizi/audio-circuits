@@ -6,14 +6,9 @@ import { buildCircuit } from "../../lib/schgen/ir/build.ts"
 import { subgraphOf, selectRenderer } from "../../lib/schgen/render/blocks.ts"
 import { TEMPLATES } from "../../lib/schgen/render/templates/index.ts"
 import { PARITY_CASES, parityResolver } from "../../tools/schgen/authoring-census.ts"
-import {
-  blockParityOf,
-  CENSUS_DOC,
-  censusOf,
-  declaredBlockCount,
-  renderCensus,
-  VERDICT_KINDS,
-} from "../../tools/schgen/parity.ts"
+import { withAnchor } from "../../tools/schgen/anchor-sweep.ts"
+import { blockParityOf, CENSUS_DOC, censusOf, declaredBlockCount, VERDICT_KINDS } from "../../tools/schgen/parity.ts"
+import { renderCensus } from "../../tools/schgen/parity-render.ts"
 import { blockCircuit, cap, diode, res, symbols as fixtureSymbols } from "./__fixtures__/circuits.ts"
 
 /**
@@ -176,6 +171,58 @@ test("the census reports `refused` when a wired block's declared template does n
     expect(row.outcome.mismatch.reason).toBe("decoupling-bank holds only capacitors; R_S1 is R")
   }
   expect(row.notCapacitors).toBe(1)
+})
+
+/**
+ * **THE REGISTRY-PARAMETER TESTS, which are the Task 10 review's M1 and M2.** Round 1's
+ * `unexercised` assertion recomputed the same `filter(realised === 0)` expression `censusOf` uses,
+ * so with every tally zero a buggy *"unexercised = every template"* would have passed too; and
+ * `renderCensus`'s `realised` branch and its *"Every registered template drew at least one block"*
+ * branch were rendered by no test at all.
+ *
+ * **The case driven here is this repository's own circuit, not a fixture.** `tools/schgen/anchor-sweep.ts`
+ * measures that `connector-fanout` draws `tp-leg-lower-a` when an anchor is supplied, so `withAnchor`
+ * - the sweep's own probe builder, imported rather than restated - gives a `ParityCase` with one
+ * block declared `wired`/`connector-fanout`. **It is a PROBE and not a proposal**: nothing is
+ * written to any authoring file and no arrangement is chosen here.
+ */
+const TP = PARITY_CASES.find((c) => c.name === "transistor-preamp")
+if (TP === undefined) throw new Error("the parity set no longer holds transistor-preamp; this test reads it by name")
+const FANOUT = TEMPLATES.get("connector-fanout")
+if (FANOUT === undefined) throw new Error("connector-fanout is no longer a registered template")
+
+const PROBED: typeof TP = {
+  ...TP,
+  authoring: withAnchor(TP.authoring, "tp-leg-lower-a", "connector-fanout", {
+    part: "RV3",
+    unit: 1,
+    roles: {},
+  }),
+}
+
+test("censusOf reports `realised` and an empty `unexercised` when a template does draw a block", () => {
+  const one = censusOf([PROBED], parityResolver(), new Map([["connector-fanout", FANOUT]]))
+  const drawn = one.blocks.filter((b) => b.outcome.kind === "realised")
+  expect(drawn.length, "the anchor sweep measures this block as drawable; if it is not, that moved").toBe(1)
+  expect(drawn[0]?.block).toBe("tp-leg-lower-a")
+  expect(one.byTemplate.get("connector-fanout")?.realised).toBe(1)
+  // The point of M1: with a nonzero tally, `unexercised` must now EXCLUDE that template, which a
+  // "always every template" implementation would fail.
+  expect([...one.unexercised]).toEqual([])
+  const text = renderCensus(one)
+  expect(text).toContain("realised by `connector-fanout`")
+  expect(text).toContain("Every registered template drew at least one block.")
+})
+
+test("censusOf's registry parameter is how Step 7's perturbation is performed, with no ported file edited", () => {
+  // Round 1 had to delete a line from lib/schgen/render/templates/index.ts to do this.
+  const dropped = new Map([...TEMPLATES].filter(([id]) => id !== "passive-chain"))
+  const fewer = censusOf(PARITY_CASES, parityResolver(), dropped)
+  expect(fewer.byTemplate.size).toBe(TEMPLATES.size - 1)
+  expect([...fewer.byTemplate.keys()]).not.toContain("passive-chain")
+  // And the finding G160 records: the list SHRINKS, because the dropped template drew nothing.
+  expect(fewer.unexercised.length).toBe(CENSUS.unexercised.length - 1)
+  for (const b of fewer.blocks) expect(b.outcome.kind, b.block).toBe("elk")
 })
 
 test("the rendered census says which of the four measurements its numbers are", () => {

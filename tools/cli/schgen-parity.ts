@@ -17,7 +17,8 @@
 import fs from "node:fs"
 import path from "node:path"
 import { PARITY_CASES, parityResolver } from "../schgen/authoring-census.ts"
-import { CENSUS_DOC, censusOf, renderCensus } from "../schgen/parity.ts"
+import { CENSUS_DOC, censusOf } from "../schgen/parity.ts"
+import { renderCensus } from "../schgen/parity-render.ts"
 import { isMain } from "./entrypoint.ts"
 
 export interface SchgenParityDeps {

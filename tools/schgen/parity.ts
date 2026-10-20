@@ -46,12 +46,12 @@
 import { crossingNets } from "../../lib/schgen/authoring-checks.ts"
 import { circuitSpecFrom } from "../../lib/schgen/from-network.ts"
 import { buildCircuit } from "../../lib/schgen/ir/build.ts"
-import { selectRenderer, subgraphOf } from "../../lib/schgen/render/blocks.ts"
+import { runTemplate, selectRenderer, subgraphOf } from "../../lib/schgen/render/blocks.ts"
 import { twoPinNets } from "../../lib/schgen/render/layout-kit.ts"
 import { TEMPLATES } from "../../lib/schgen/render/templates/index.ts"
 import { PARITY_CASES, parityResolver, type ParityCase } from "./authoring-census.ts"
 import type { BlockId, Circuit, Rendering, TemplateId } from "../../lib/schgen/ir/types.ts"
-import type { BlockSubgraph, Mismatch, MismatchKind, Template } from "../../lib/schgen/render/block-types.ts"
+import type { BlockSubgraph, BlockUnit, Mismatch, MismatchKind, Template } from "../../lib/schgen/render/block-types.ts"
 import type { SymbolResolver } from "../../lib/schgen/render/library.ts"
 
 /** The committed document this census writes, relative to the repository root. */
@@ -121,6 +121,13 @@ export interface BlockParity {
    * block on the first of these.
    */
   readonly notTwoTerminal: number
+  /**
+   * Units that are not ELECTRICALLY two-terminal either - more than two distinct connected nets,
+   * or a pin connected to nothing. **Where `notTwoTerminal` exceeds this, the difference is a
+   * pin-count convention rather than a topology fact**: see `electricallyTwoTerminal` and
+   * `docs/known-gaps.md` **G160**.
+   */
+  readonly notTwoTerminalGenuine: number
   /** Parts whose `refPrefix` is not `C`, which is `decoupling-bank`'s own predicate. */
   readonly notCapacitors: number
   readonly declared: Rendering
@@ -148,35 +155,46 @@ export function declaredBlockCount(cases: readonly ParityCase[]): number {
 }
 
 /**
- * One template's verdict on one subgraph.
- *
- * **A THROW BECOMES `backend-raised`, NEVER `not-applicable`**, for the reason
- * `render/blocks.ts`'s `runTemplate` gives: *"a template that crashed has told us nothing about
- * whether its idiom fits, and treating a crash as 'does not apply' is exactly how a defect in the
- * preferred rendering path goes dark"*. That wrapper is not exported, so this is the same
- * wrapping stated a second time; if it is ever exported, delete this and call it.
+ * One template's verdict on one subgraph, through `render/blocks.ts`'s own `runTemplate`, so the
+ * rule that **a throw becomes `backend-raised` and NEVER `not-applicable`** (**G84**) is stated in
+ * one place. Round 1 of this file restated that wrapping here; the Task 10 review had it exported
+ * instead and the copy deleted.
  */
-function verdictOf(t: Template, g: BlockSubgraph): TemplateVerdict {
-  try {
-    const r = t.realise(g)
-    return r.ok
-      ? { template: t.id, kind: "ok", reason: "" }
-      : { template: t.id, kind: r.mismatch.kind, reason: r.mismatch.reason }
-  } catch (e) {
-    return {
-      template: t.id,
-      kind: "backend-raised",
-      reason: `template ${t.id} failed: ${e instanceof Error ? e.message : String(e)}`,
-    }
-  }
+export function verdictOf(t: Template, g: BlockSubgraph): TemplateVerdict {
+  const r = runTemplate(t, g)
+  return r.ok
+    ? { template: t.id, kind: "ok", reason: "" }
+    : { template: t.id, kind: r.mismatch.kind, reason: r.mismatch.reason }
 }
 
 /** The selector's answer for one block, in the census's own vocabulary. */
-function outcomeOf(circuit: Circuit, id: BlockId, symbols: SymbolResolver): BlockOutcome {
-  const selection = selectRenderer(subgraphOf(circuit, id, symbols), TEMPLATES)
+function outcomeOf(
+  circuit: Circuit,
+  id: BlockId,
+  symbols: SymbolResolver,
+  templates: ReadonlyMap<TemplateId, Template>,
+): BlockOutcome {
+  const selection = selectRenderer(subgraphOf(circuit, id, symbols), templates)
   if (selection.kind === "template") return { kind: "realised", template: selection.template }
   if (selection.kind === "refused") return { kind: "refused", mismatch: selection.mismatch }
   return { kind: "elk" }
+}
+
+/**
+ * **Whether a unit is ELECTRICALLY two-terminal: exactly two distinct connected nets, with no pin
+ * left unconnected** - which is NOT what `twoPinNets` asks. `twoPinNets` requires
+ * `pins.length === 2`, so a part wired as a rheostat, with two of its pins strapped to one net,
+ * counts as not-two-terminal although it has two terminals.
+ *
+ * **This distinction is the whole of `docs/known-gaps.md` G160's `notTwoTerminal` versus
+ * `notTwoTerminalGenuine` split**, and it exists because round 1 of this census reported *"the
+ * trimmer has three pins"* as though it were a topology fact when it is a pin-count convention.
+ * **Nothing here changes `twoPinNets`**: it is a ported, reviewed decision, and the measurement's
+ * job is to say how much of the refusal it accounts for.
+ */
+function electricallyTwoTerminal(u: BlockUnit): boolean {
+  if (u.pins.some((p) => p.net === null)) return false
+  return new Set(u.pins.flatMap((p) => (p.net === null ? [] : [p.net]))).size === 2
 }
 
 /**
@@ -226,6 +244,7 @@ export function blockParityOf(
   id: BlockId,
   crossings: number,
   symbols: SymbolResolver,
+  templates: ReadonlyMap<TemplateId, Template> = TEMPLATES,
 ): BlockParity {
   const irBlock = circuit.blocks.get(id)
   if (irBlock === undefined) {
@@ -253,18 +272,33 @@ export function blockParityOf(
     units: irBlock.members.length,
     crossings,
     notTwoTerminal: g.units.filter((u) => twoPinNets(u) === null).length,
+    notTwoTerminalGenuine: g.units.filter((u) => !electricallyTwoTerminal(u)).length,
     notCapacitors: g.units.filter((u) => u.part.refPrefix !== "C").length,
     declared: irBlock.rendering,
-    outcome: outcomeOf(circuit, id, symbols),
-    verdicts: [...TEMPLATES.values()].map((t) => verdictOf(t, g)),
+    outcome: outcomeOf(circuit, id, symbols, templates),
+    verdicts: [...templates.values()].map((t) => verdictOf(t, g)),
   }
   assertAgreement(row)
   return row
 }
 
-/** Every declared block of every parity circuit, measured. */
-export function censusOf(cases: readonly ParityCase[], symbols: SymbolResolver): ParityCensus {
-  const templates = [...TEMPLATES.values()]
+/**
+ * Every declared block of every parity circuit, measured.
+ *
+ * **`registry` IS A PARAMETER, and that is the Task 10 review's M1/M2.** It defaults to the real
+ * `TEMPLATES`, so the brief's two-argument call shape still reads. Passing a different map lets a
+ * test drive the `realised` and *"every registered template drew at least one block"* paths, which
+ * no test reached while all twelve rows were `elk`, and **lets Step 7's perturbation be performed
+ * by passing a smaller map rather than by editing a ported file** - which is how round 1 had to do
+ * it. It is not a fallback: the default is the canonical registry, and there is no second-choice
+ * behaviour behind it.
+ */
+export function censusOf(
+  cases: readonly ParityCase[],
+  symbols: SymbolResolver,
+  registry: ReadonlyMap<TemplateId, Template> = TEMPLATES,
+): ParityCensus {
+  const templates = [...registry.values()]
   const blocks: BlockParity[] = []
   for (const c of cases) {
     const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
@@ -276,6 +310,7 @@ export function censusOf(cases: readonly ParityCase[], symbols: SymbolResolver):
           declaration.id,
           crossingNets(c.network, c.authoring, declaration.id).size,
           symbols,
+          registry,
         ),
       )
     }
@@ -293,133 +328,7 @@ export function censusOf(cases: readonly ParityCase[], symbols: SymbolResolver):
   return { blocks, byTemplate, unexercised }
 }
 
-function describeDeclared(r: Rendering): string {
-  if (r.kind === "wired") return `wired/${r.template}`
-  return r.kind
-}
-
-function describeOutcome(o: BlockOutcome): string {
-  if (o.kind === "realised") return `realised by \`${o.template}\``
-  if (o.kind === "elk") return "**elk** - every template not-applicable"
-  return `**refused** (${o.mismatch.kind})`
-}
-
-const HEADER = `# Template applicability: do the ported templates draw this repository's blocks?
-
-**GENERATED - do not hand-edit.** \`bun run schgen-parity\` rewrites this file from
-\`tools/schgen/parity.ts\`, and \`tests/schgen/parity.test.ts\` compares the committed copy against a
-fresh run **by content**, never by timestamp. There is deliberately no date in this file: a
-timestamp would make every run a diff and make stale look current.
-
-## WHICH OF M1's FOUR MEASUREMENTS THIS IS
-
-**Every number below is TEMPLATE APPLICABILITY: a MEASUREMENT WITH NO TARGET.** Spec §5.1,
-revision 4, finding 20 separates four things that had been read as one, and names the failure of
-confusing them:
-
-| measurement | where it is taken | what it is |
-| --- | --- | --- |
-| port parity | Task 7, against the SOURCE project's own nine template fixtures | a **regression** requirement: it holds or the port is broken |
-| **template applicability** | **this file**, against this repository's declared blocks | **a MEASUREMENT WITH NO TARGET** |
-| ELK coverage | Tasks 12-14, over the blocks recorded here as \`elk\` | a test of the **new capability** |
-| integrated correctness | Tasks 11 and 18 | the **artifact**, and the only verdict of the four |
-
-§5.1: the templates *"were sized by a 103-block digital mainboard. Nothing is known about their
-pass rate on circuits that are mostly passive chains, dividers and op-amp stages. The measurement:
-run them and count."*
-
-**So a low count here is a RESULT, not a problem.** A block no template draws is a finding about a
-template. Nothing in the circuits, the declarations or the templates may be tuned to raise it, and
-this census never becomes a threshold - Task 17 re-runs it as a second reading of the same
-measurement.
-
-## Two readings, and they answer different questions
-
-- **Outcome** is what \`selectRenderer\` would actually do with the block under spec §1.3. For a
-  \`wired\` block that consults only the declared template.
-- **Verdicts** is an applicability probe: every registered template's own verdict on the block's
-  subgraph, which is §5.1's question. \`Selection\`'s \`{kind:"elk"}\` carries no mismatch, so the
-  reason each template declined is otherwise lost - recording it is \`docs/known-gaps.md\`
-  **G141**'s third suggested mechanism. The census refuses if the two readings disagree.
-`
-
-/** The census as the committed markdown document. */
-export function renderCensus(c: ParityCensus): string {
-  const out: string[] = [HEADER]
-  out.push("## Per block\n")
-  out.push("| circuit | block | parts | units | crossing nets | declared | outcome |")
-  out.push("| --- | --- | --- | --- | --- | --- | --- |")
-  for (const b of c.blocks) {
-    out.push(
-      `| ${b.circuit} | \`${b.block}\` | ${b.parts} | ${b.units} | ${b.crossings} | ` +
-        `${describeDeclared(b.declared)} | ${describeOutcome(b.outcome)} |`,
-    )
-  }
-  const realised = c.blocks.filter((b) => b.outcome.kind === "realised").length
-  const elk = c.blocks.filter((b) => b.outcome.kind === "elk").length
-  const refused = c.blocks.filter((b) => b.outcome.kind === "refused").length
-  out.push("")
-  out.push(
-    `**${c.blocks.length} declared blocks: ${realised} drawn by a template, ${elk} to the ELK backend, ` +
-      `${refused} refused.**`,
-  )
-  out.push("")
-  out.push("## The two predicates that do the refusing, measured per block\n")
-  out.push(
-    "Counted with the templates' own predicates rather than restatements of them: `twoPinNets`\n" +
-      "from `render/layout-kit.ts`, which `rail-row`, `divider` and `passive-chain` each refuse a\n" +
-      "block on, and `refPrefix !== \"C\"`, which is `decoupling-bank`'s. **This is description, not\n" +
-      "prescription** - it says what the blocks hold, not what they should hold.\n",
-  )
-  out.push("| circuit | block | units | units not two-terminal with both pins connected | parts that are not capacitors |")
-  out.push("| --- | --- | --- | --- | --- |")
-  for (const b of c.blocks) {
-    out.push(`| ${b.circuit} | \`${b.block}\` | ${b.units} | ${b.notTwoTerminal} | ${b.notCapacitors} |`)
-  }
-  out.push("")
-  const allTwoPin = c.blocks.filter((b) => b.notTwoTerminal === 0)
-  out.push(
-    `**${c.blocks.length - allTwoPin.length} of ${c.blocks.length} blocks hold at least one unit that is not ` +
-      "two-terminal with both pins connected**, which is where the three subgraph-only templates stop" +
-      (allTwoPin.length === 0
-        ? "."
-        : `. The ${allTwoPin.length === 1 ? "one that does" : `${allTwoPin.length} that do`} not - ${allTwoPin
-            .map((b) => `\`${b.block}\``)
-            .join(", ")} - ${allTwoPin.length === 1 ? "gets" : "get"} past that predicate and ${
-            allTwoPin.length === 1 ? "is" : "are"
-          } declined on TOPOLOGY instead; the verdict rows below say how.`),
-  )
-  out.push("")
-  out.push("## Per template\n")
-  out.push("Over all " + String(c.blocks.length) + " blocks, each template's own verdict:\n")
-  out.push("| template | realised | not-applicable | refused |")
-  out.push("| --- | --- | --- | --- |")
-  for (const [id, t] of c.byTemplate) {
-    out.push(`| \`${id}\` | ${t.realised} | ${t.notApplicable} | ${t.refused} |`)
-  }
-  out.push("")
-  out.push(
-    c.unexercised.length === 0
-      ? "**Every registered template drew at least one block.**"
-      : `**Unexercised - drew no block of this repository's circuits: ${c.unexercised
-          .map((id) => `\`${id}\``)
-          .join(", ")}** (${c.unexercised.length} of ${c.byTemplate.size}).`,
-  )
-  out.push("")
-  out.push("## Every verdict, with its reason verbatim\n")
-  out.push("The sentence each template gave, unedited. This is the diagnosis the counts above cannot carry.\n")
-  for (const b of c.blocks) {
-    out.push(`### ${b.circuit} / \`${b.block}\` - ${b.parts} parts, ${b.units} units, ${describeOutcome(b.outcome)}\n`)
-    out.push("| template | verdict | reason |")
-    out.push("| --- | --- | --- |")
-    for (const v of b.verdicts) {
-      out.push(`| \`${v.template}\` | ${v.kind} | ${v.kind === "ok" ? "-" : v.reason} |`)
-    }
-    out.push("")
-  }
-  return out.join("\n")
-}
-
 if (import.meta.main) {
+  const { renderCensus } = await import("./parity-render.ts")
   console.log(renderCensus(censusOf(PARITY_CASES, parityResolver())))
 }

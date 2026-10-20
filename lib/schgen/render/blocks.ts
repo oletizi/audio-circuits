@@ -78,8 +78,15 @@ export function subgraphOf(c: Circuit, id: BlockId, symbols: SymbolResolver): Bl
  * half is this function and the layout-check half keeps the name `attributed` and keeps rethrowing
  * (bottom of this file). A reader coming from the brief should look here for the behaviour it
  * describes.
+ *
+ * **IT IS EXPORTED, and only for a measurement to reuse rather than restate.** The rule above -
+ * *a throw is NEVER `not-applicable`* (**G84**) - is one this project cares about getting right,
+ * and `tools/schgen/parity.ts`'s applicability probe and `tools/schgen/anchor-sweep.ts` both need
+ * a template's own verdict. They had a second copy of this wrapping; it is deleted, because
+ * *supersede means delete* applies to a pattern and not only to a stub, and two copies of a rule
+ * is two chances to classify a crash as "does not apply". Nothing about `selectRenderer` changes.
  */
-function runTemplate(t: Template, g: BlockSubgraph): RealiseResult {
+export function runTemplate(t: Template, g: BlockSubgraph): RealiseResult {
   try {
     return t.realise(g);
   } catch (e) {

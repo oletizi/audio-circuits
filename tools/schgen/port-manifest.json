@@ -120,7 +120,7 @@
       "to": "lib/schgen/render/blocks.ts",
       "sourceSha": "a27fa28db128f1ac46a9b195475e4252f7206c2017c6de3ff6fa23211a252eb4",
       "task": "Task 8",
-      "why": "`selectRenderer` is new (spec 1.3's rules: a template that applied and failed refuses, and only an auto block whose every template reported not-applicable reaches ELK); `realiseBlock` is rewired around it, takes an ELK backend, checks the layout whoever drew it, and turns a template's thrown error into a `backend-raised` mismatch instead of rethrowing."
+      "why": "`selectRenderer` is new (spec 1.3's rules: a template that applied and failed refuses, and only an auto block whose every template reported not-applicable reaches ELK); `realiseBlock` is rewired around it, takes an ELK backend, checks the layout whoever drew it, and turns a template's thrown error into a `backend-raised` mismatch instead of rethrowing. Task 10's review additionally EXPORTS `runTemplate` so the two measurement tools (`tools/schgen/parity.ts`, `tools/schgen/anchor-sweep.ts`) read a template's own verdict through this wrapping rather than keeping a second copy of the rule that a throw is never not-applicable (G84); the export adds no behaviour and `selectRenderer` is unchanged."
     },
     {
       "from": "render/fanoutKit.ts",
@@ -318,6 +318,7 @@
     "tests/schgen/strict.test.ts",
     "tests/schgen/symbol-census.test.ts",
     "tests/schgen/parity.test.ts",
+    "tests/schgen/anchor-sweep.test.ts",
     "lib/schgen/authoring.ts",
     "lib/schgen/authoring-checks.ts",
     "lib/schgen/from-network.ts",

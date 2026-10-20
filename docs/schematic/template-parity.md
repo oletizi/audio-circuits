@@ -5,6 +5,13 @@
 fresh run **by content**, never by timestamp. There is deliberately no date in this file: a
 timestamp would make every run a diff and make stale look current.
 
+**SOME OF THESE NUMBERS COME FROM THE INSTALLED KiCad, AND THAT IS A KNOWN DEPENDENCY.** A refusal
+reason like *"U1#1 has 16 pins"* is a pin count read from the symbol library on the machine that
+ran this, and `docs/known-gaps.md` **G158** measures that **15 of the 22 lib ids a drawing needs
+are pinned by nothing** - not vendored, so resolved through whatever KiCad is installed. A diff in
+this file can therefore mean a circuit changed, a declaration changed, a template changed, **or
+only that the libraries did**.
+
 ## WHICH OF M1's FOUR MEASUREMENTS THIS IS
 
 **Every number below is TEMPLATE APPLICABILITY: a MEASUREMENT WITH NO TARGET.** Spec §5.1,
@@ -62,20 +69,27 @@ from `render/layout-kit.ts`, which `rail-row`, `divider` and `passive-chain` eac
 block on, and `refPrefix !== "C"`, which is `decoupling-bank`'s. **This is description, not
 prescription** - it says what the blocks hold, not what they should hold.
 
-| circuit | block | units | units not two-terminal with both pins connected | parts that are not capacitors |
-| --- | --- | --- | --- | --- |
-| opamp-buffer | `ob-buffer` | 11 | 3 | 7 |
-| optical-compressor | `oc-power` | 8 | 0 | 4 |
-| optical-compressor | `oc-audio` | 14 | 3 | 11 |
-| optical-compressor | `oc-sidechain` | 19 | 4 | 16 |
-| pt2399-core | `pt-core` | 24 | 2 | 10 |
-| transistor-preamp | `tp-leg-upper` | 3 | 1 | 3 |
-| transistor-preamp | `tp-leg-feedback` | 3 | 1 | 3 |
-| transistor-preamp | `tp-leg-lower-a` | 3 | 1 | 3 |
-| transistor-preamp | `tp-leg-lower-b` | 3 | 1 | 3 |
-| transistor-preamp | `tp-leg-collector` | 2 | 1 | 2 |
-| transistor-preamp | `tp-leg-emitter-bypass` | 2 | 1 | 2 |
-| transistor-preamp | `tp-stage` | 16 | 8 | 12 |
+| circuit | block | units | `twoPinNets` says not two-terminal | genuinely more than two-terminal | parts that are not capacitors |
+| --- | --- | --- | --- | --- | --- |
+| opamp-buffer | `ob-buffer` | 11 | 3 | 2 | 7 |
+| optical-compressor | `oc-power` | 8 | 0 | 0 | 4 |
+| optical-compressor | `oc-audio` | 14 | 3 | 1 | 11 |
+| optical-compressor | `oc-sidechain` | 19 | 4 | 3 | 16 |
+| pt2399-core | `pt-core` | 24 | 2 | 2 | 10 |
+| transistor-preamp | `tp-leg-upper` | 3 | 1 | 0 | 3 |
+| transistor-preamp | `tp-leg-feedback` | 3 | 1 | 0 | 3 |
+| transistor-preamp | `tp-leg-lower-a` | 3 | 1 | 0 | 3 |
+| transistor-preamp | `tp-leg-lower-b` | 3 | 1 | 0 | 3 |
+| transistor-preamp | `tp-leg-collector` | 2 | 1 | 0 | 2 |
+| transistor-preamp | `tp-leg-emitter-bypass` | 2 | 1 | 0 | 2 |
+| transistor-preamp | `tp-stage` | 16 | 8 | 8 | 12 |
+
+**The two columns differ, and the difference is a PIN-COUNT CONVENTION rather than a topology
+fact.** `twoPinNets` requires `pins.length === 2`; a part wired as a rheostat, with two of its
+pins strapped to one net, has two terminals and three pins. **6 of 12 blocks hold NO unit
+that is genuinely more than two-terminal** - `tp-leg-upper`, `tp-leg-feedback`, `tp-leg-lower-a`, `tp-leg-lower-b`, `tp-leg-collector`, `tp-leg-emitter-bypass` - so for those blocks the only obstacle to `rail-row`,
+`divider` and `passive-chain` is that convention. Recorded, not changed: `twoPinNets` is a
+ported, reviewed decision (`docs/known-gaps.md` **G160**).
 
 **11 of 12 blocks hold at least one unit that is not two-terminal with both pins connected**, which is where the three subgraph-only templates stop. The one that does not - `oc-power` - gets past that predicate and is declined on TOPOLOGY instead; the verdict rows below say how.
 
@@ -95,6 +109,15 @@ Over all 12 blocks, each template's own verdict:
 | `opamp-stage` | 0 | 12 | 0 |
 
 **Unexercised - drew no block of this repository's circuits: `rail-row`, `decoupling-bank`, `divider`, `passive-chain`, `crystal`, `connector-fanout`, `regulator`, `opamp-stage`** (8 of 8).
+
+**WHAT `unexercised` DOES AND DOES NOT MEAN.** It means *as these circuits are declared today*,
+no block reaches that template and is drawn by it. **It does NOT mean the template cannot draw
+one of these blocks.** Every block here is declared `{kind:"auto"}` with no anchor, and the four
+anchor-driven templates (`connector-fanout`, `crystal`, `regulator`, `opamp-stage`) can never be
+offered one - `docs/known-gaps.md` **G141**. `bun run schgen-anchors` is the second column: it
+brute-forces an anchor over each block's own member units and reports which templates draw
+something then. **Read the two together, or this table will be read as a verdict on the
+templates when half of it is a consequence of the declaration.**
 
 ## Every verdict, with its reason verbatim
 
