@@ -614,6 +614,59 @@ overlap rather than choosing one reading of it.** The last clause is the
 §1.4-obligation-5 discipline again: a partial overlap that is neither a
 duplicate nor a clean T is a refusal naming the two segments, not a repair.
 
+**REVISION 5, 2026-10-20 — controller ruling R31 refines what clause (d) means
+by *ambiguous*, and the refinement is narrow.** Task 13 found that **0 of 12
+blocks reach the clearance checks**: eleven refuse at clause (d). Its review
+then measured what the refusals actually are, and the characterisation
+everything rested on was wrong.
+
+**Measured, over all twelve blocks, pre-snap:** 30 ambiguous pairs. **30 of 30
+are same-net, between two CONSECUTIVE edges of the routed chain. 30 of 30 are
+CONTAINMENTS — one segment's span wholly inside the other's, on the same line.
+Zero are partial. Zero are cross-net.** The same arm with padding and the five
+remaining spacings at whole grid steps gives the identical 30/30/0.
+
+**A same-net collinear containment is not ambiguous. It has exactly one
+reading.** The interval union *is* the longer segment; dropping the contained
+one changes neither the drawn picture nor the connectivity, because its
+endpoints stay covered by the survivor and `touches`/`onSegment` still join
+whatever attached there. That is **deduplication one dimension up** — clause
+(a)'s own job, applied to a containment rather than to an exact coincidence.
+
+**So clause (d) is refined, not relaxed:**
+
+- **a same-net collinear CONTAINMENT is collapsed to the containing segment,
+  and COUNTED** — reported the way `collapsed` is, **never silent**;
+- **a cross-net collinear overlap still REFUSES**, naming both segments;
+- **a same-net NON-containment overlap — a genuine partial — still REFUSES**,
+  naming both segments. The measured population for the permissive arm is
+  0 of 30, so this clause is currently a guard against a shape this corpus does
+  not produce, and it must stay armed for the first one that does.
+
+**Why the ruling went this way rather than changing the edge model.** Task 13
+proposed one `ElkExtendedEdge` per net — a hyperedge routed once as a tree
+instead of as *n*−1 chained edges. **Its review probed that before anyone acted
+on it, and it does not run**: `elkjs@0.9.3` with `layered` raises
+`java.lang.IllegalArgumentException: Passed edge is not 'simple'.` for any edge
+carrying more than one source or target — on all twelve blocks and on a
+three-node minimal graph. `stress` and `force` raise
+`UnsupportedGraphException: Graph must not contain hyperedges.`; `mrtree` and
+`radial` accept one and return **a single section for an n-target edge**, an
+incomplete route, and neither is an orthogonal router. A star model, untried by
+anyone until the review measured it, is legal and **worse**: 113 ambiguous
+pairs against 30. **The edge model is not the lever in either direction.**
+
+**What this ruling does NOT do.** It does not weaken obligation 5, which still
+refuses a repair it cannot justify. It does not touch any serialized byte, so
+no manifest key moves. And it does not claim the corpus will stay this way: the
+30/30 containment measurement is a property of **these twelve blocks under this
+backend at this version**, and the refusing arms exist for the day that changes.
+
+**Had the ruling gone the other way**, "nothing draws" would have been the
+correct outcome and Tasks 15–18 would be blocked on a routing property the
+pinned backend cannot produce. That is a plan-level fact and it would have
+belonged in the plan rather than in a gap entry.
+
 #### The clearance checks must be RE-VALIDATED against ELK geometry, not merely reused
 
 **This is the controller's addition. The reviewer recommended reusing `schgen`'s
