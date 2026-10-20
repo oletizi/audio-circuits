@@ -1,8 +1,13 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/drawnExtent.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/drawnExtent.ts`, and DIVERGED from it
+ * by Task 8 of the M1 schematic-authoring plan: `Measured`'s false arm carried a bare
+ * `reason: string` and now carries the classified `Mismatch` that `tryPlaceFields` built, so the
+ * `clearance` classification survives the two templates that forward it.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 /**
@@ -10,20 +15,28 @@
  * lines, pin text, fields where the placer puts them, labels, power glyphs and values, wires. A
  * template measures what it has drawn so far before placing more beyond it.
  */
-import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
-import { blockFieldProblems } from "./field-placement.ts";
+import type { BlockLayout, BlockSubgraph, Mismatch } from "./block-types.ts";
+import { blockFieldsResult } from "./field-placement.ts";
 import { unionBox } from "./geometry.ts";
 import type { Box } from "./lib-pins.ts";
 import { anchorsToSymbols, blockPowerLibs, valuesAlong } from "./power-text.ts";
 import { textScene } from "./text-scene.ts";
 
-export type Measured = { readonly ok: true; readonly boxes: readonly Box[] } | { readonly ok: false; readonly reason: string };
+export type Measured = { readonly ok: true; readonly boxes: readonly Box[] } | { readonly ok: false; readonly mismatch: Mismatch };
 
-/** Every box `layout` draws, or why a unit of it has no room for its fields. */
+/**
+ * Every box `layout` draws, or why a unit of it has no room for its fields.
+ *
+ * **The one way this can fail is a field with nowhere to go**, which `tryPlaceFields` has already
+ * classified as a `clearance` mismatch naming the text and what blocks it. The ported code joined
+ * `blockFieldProblems`' strings with `"; "`, which was a list of one that could not have been more
+ * than one (the placer returns on the first unplaceable unit); forwarding the mismatch keeps the
+ * same text and adds the classification.
+ */
 export function drawnBoxes(g: BlockSubgraph, layout: BlockLayout): Measured {
   const libs = blockPowerLibs(g);
-  const unplaced = blockFieldProblems(g, layout, libs);
-  if (unplaced.length > 0) return { ok: false, reason: unplaced.join("; ") };
+  const fields = blockFieldsResult(g, layout, libs);
+  if (!fields.ok) return { ok: false, mismatch: fields.mismatch };
   const { powers, labels } = anchorsToSymbols(g,layout.anchors, valuesAlong(g.block.rendering));
   const scene = textScene(`block ${g.block.id}`, libs, { blocks: [{ g, layout }], powers, labels, texts: [], frames: [] });
   const segments = scene.segments.map((s) => ({ minX: Math.min(s.a.x, s.b.x), minY: Math.min(s.a.y, s.b.y), maxX: Math.max(s.a.x, s.b.x), maxY: Math.max(s.a.y, s.b.y) }));

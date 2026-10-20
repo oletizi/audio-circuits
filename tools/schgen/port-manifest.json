@@ -71,17 +71,14 @@
     { "from": "render/library.ts", "to": "lib/schgen/render/library.ts" },
     { "from": "render/library.test.ts", "to": "tests/schgen/render/library.test.ts" },
     { "from": "render/geometry.test.ts", "to": "tests/schgen/render/geometry.test.ts" },
-    { "from": "render/blockTypes.ts", "to": "lib/schgen/render/block-types.ts" },
     { "from": "render/powerText.ts", "to": "lib/schgen/render/power-text.ts" },
     { "from": "render/unitPins.ts", "to": "lib/schgen/render/unit-pins.ts" },
     { "from": "render/bodyClearance.ts", "to": "lib/schgen/render/body-clearance.ts" },
     { "from": "render/unitText.ts", "to": "lib/schgen/render/unit-text.ts" },
     { "from": "render/pinMarks.ts", "to": "lib/schgen/render/pin-marks.ts" },
     { "from": "render/sheetTypes.ts", "to": "lib/schgen/render/sheet-types.ts" },
-    { "from": "render/fieldPlacement.ts", "to": "lib/schgen/render/field-placement.ts" },
     { "from": "render/glyphClearance.ts", "to": "lib/schgen/render/glyph-clearance.ts" },
     { "from": "render/textScene.ts", "to": "lib/schgen/render/text-scene.ts" },
-    { "from": "render/drawnExtent.ts", "to": "lib/schgen/render/drawn-extent.ts" },
     { "from": "render/symbolSelfText.ts", "to": "lib/schgen/render/symbol-self-text.ts" },
     { "from": "render/layoutCheck.ts", "to": "lib/schgen/render/layout-check.ts" },
     { "from": "render/connectivity.test.ts", "to": "tests/schgen/render/connectivity.test.ts" },
@@ -99,22 +96,11 @@
     { "from": "render/layoutKit.ts", "to": "lib/schgen/render/layout-kit.ts" },
     { "from": "render/chainKit.ts", "to": "lib/schgen/render/chain-kit.ts" },
     { "from": "render/fanoutRows.ts", "to": "lib/schgen/render/fanout-rows.ts" },
-    { "from": "render/fanoutKit.ts", "to": "lib/schgen/render/fanout-kit.ts" },
-    { "from": "render/templates/railRow.ts", "to": "lib/schgen/render/templates/rail-row.ts" },
-    { "from": "render/templates/divider.ts", "to": "lib/schgen/render/templates/divider.ts" },
-    { "from": "render/templates/passiveChain.ts", "to": "lib/schgen/render/templates/passive-chain.ts" },
-    { "from": "render/templates/crystal.ts", "to": "lib/schgen/render/templates/crystal.ts" },
-    { "from": "render/templates/regulator.ts", "to": "lib/schgen/render/templates/regulator.ts" },
-    { "from": "render/templates/opampClassify.ts", "to": "lib/schgen/render/templates/opamp-classify.ts" },
-    { "from": "render/templates/opampStage.ts", "to": "lib/schgen/render/templates/opamp-stage.ts" },
-    { "from": "render/templates/connectorFanout.ts", "to": "lib/schgen/render/templates/connector-fanout.ts" },
     { "from": "render/templates/index.ts", "to": "lib/schgen/render/templates/index.ts" },
-    { "from": "render/blocks.ts", "to": "lib/schgen/render/blocks.ts" },
     { "from": "__fixtures__/layoutChecks.ts", "to": "tests/schgen/__fixtures__/layout-checks.ts" },
     { "from": "__fixtures__/requireTool.ts", "to": "tests/schgen/__fixtures__/require-tool.ts" },
     { "from": "render/templates/railRow.test.ts", "to": "tests/schgen/render/templates/rail-row.test.ts" },
     { "from": "render/templates/divider.test.ts", "to": "tests/schgen/render/templates/divider.test.ts" },
-    { "from": "render/templates/passiveChain.test.ts", "to": "tests/schgen/render/templates/passive-chain.test.ts" },
     { "from": "render/templates/crystal.test.ts", "to": "tests/schgen/render/templates/crystal.test.ts" },
     { "from": "render/templates/regulator.test.ts", "to": "tests/schgen/render/templates/regulator.test.ts" },
     { "from": "render/templates/opampStage.test.ts", "to": "tests/schgen/render/templates/opamp-stage.test.ts" },
@@ -122,6 +108,90 @@
     { "from": "render/bodyClearance.test.ts", "to": "tests/schgen/render/body-clearance.test.ts" }
   ],
   "diverged": [
+    {
+      "from": "render/blockTypes.ts",
+      "to": "lib/schgen/render/block-types.ts",
+      "task": "Task 8",
+      "why": "`RealiseResult`'s false arm carried `reason: string` and now carries a classified `Mismatch` of four kinds; `mismatch(reason)` is deleted so no site can stay unclassified, and `Selection`, `Backend`, the four constructors and `describeMismatch` are new. Spec 1.3 and docs/known-gaps.md G84/G94."
+    },
+    {
+      "from": "render/blocks.ts",
+      "to": "lib/schgen/render/blocks.ts",
+      "task": "Task 8",
+      "why": "`selectRenderer` is new (spec 1.3's rules: a template that applied and failed refuses, and only an auto block whose every template reported not-applicable reaches ELK); `realiseBlock` is rewired around it, takes an ELK backend, checks the layout whoever drew it, and turns a template's thrown error into a `backend-raised` mismatch instead of rethrowing."
+    },
+    {
+      "from": "render/fanoutKit.ts",
+      "to": "lib/schgen/render/fanout-kit.ts",
+      "task": "Task 8",
+      "why": "`TraceResult`'s false arm carries a `Mismatch`; all eight of its refusals are shape tests over the subgraph and are `not-applicable`."
+    },
+    {
+      "from": "render/drawnExtent.ts",
+      "to": "lib/schgen/render/drawn-extent.ts",
+      "task": "Task 8",
+      "why": "`Measured`'s false arm carries a `Mismatch`, forwarded from `tryPlaceFields` rather than rebuilt from its string, so the `clearance` classification survives the two templates that measure their own drawing."
+    },
+    {
+      "from": "render/fieldPlacement.ts",
+      "to": "lib/schgen/render/field-placement.ts",
+      "task": "Task 8",
+      "why": "`FieldsResult`'s false arm carries a `clearance` Mismatch, which needs two things the ported code did not keep: the obstacle that blocks the preferred slot (`clear` became `blockerOf`) and the block's id (`FieldScene.scope` became `FieldScene.block`, with the prose derived from it so every message is unchanged). `blockFieldsResult` is new, for the caller that forwards the mismatch."
+    },
+    {
+      "from": "render/templates/railRow.ts",
+      "to": "lib/schgen/render/templates/rail-row.ts",
+      "task": "Task 8",
+      "why": "Five refusal sites classified, all `not-applicable`, and `CommonRailLadder` carries a `Mismatch`."
+    },
+    {
+      "from": "render/templates/divider.ts",
+      "to": "lib/schgen/render/templates/divider.ts",
+      "task": "Task 8",
+      "why": "Six refusal sites classified, all `not-applicable`."
+    },
+    {
+      "from": "render/templates/passiveChain.ts",
+      "to": "lib/schgen/render/templates/passive-chain.ts",
+      "task": "Task 8",
+      "why": "One refusal site, a forward; `Classified` carries a `Mismatch` and every `classifyChain` refusal is `not-applicable`."
+    },
+    {
+      "from": "render/templates/crystal.ts",
+      "to": "lib/schgen/render/templates/crystal.ts",
+      "task": "Task 8",
+      "why": "Six refusal sites classified: five `not-applicable` shape tests and one forward of the field-placement `clearance` measurement."
+    },
+    {
+      "from": "render/templates/regulator.ts",
+      "to": "lib/schgen/render/templates/regulator.ts",
+      "task": "Task 8",
+      "why": "Eight refusal sites classified, and the only two `invalid-geometry` sites in the template set are here: a bus-net pin on the wrong side of the symbol, and a tied pin whose end is not in the bus column. Each names the IR connection it failed to realise. `Banks` and `reachOf`'s result carry a `Mismatch`."
+    },
+    {
+      "from": "render/templates/opampClassify.ts",
+      "to": "lib/schgen/render/templates/opamp-classify.ts",
+      "task": "Task 8",
+      "why": "`Planned` and the local `Core` carry a `Mismatch`; every `planStage` refusal is `not-applicable`, and the one reason it rephrases keeps the kind by spreading the mismatch rather than rebuilding it."
+    },
+    {
+      "from": "render/templates/opampStage.ts",
+      "to": "lib/schgen/render/templates/opamp-stage.ts",
+      "task": "Task 8",
+      "why": "One refusal site, a forward of `planStage`'s mismatch."
+    },
+    {
+      "from": "render/templates/connectorFanout.ts",
+      "to": "lib/schgen/render/templates/connector-fanout.ts",
+      "task": "Task 8",
+      "why": "Three refusal sites classified, and the third is the only `clearance` site in the template set: it has drawn all four rotations and `checkLayout` refused every one, so it names the constraint and the obstacle pair of rotation 0's first problem (render/problem-obstacles.ts) and refuses rather than guessing a pair it cannot recover."
+    },
+    {
+      "from": "render/templates/passiveChain.test.ts",
+      "to": "tests/schgen/render/templates/passive-chain.test.ts",
+      "task": "Task 8",
+      "why": "Twelve assertions compared a `classifyChain` refusal against `{ ok: false, reason }`. They now assert the KIND as well, which is stronger, not weaker - a site that silently became `invalid-geometry` would fail. This is ruling R4's one permitted edit to a ported test's assertions: the widening requires it, and it is declared here rather than smuggled in."
+    },
     {
       "from": "ir/types.ts",
       "to": "lib/schgen/ir/types.ts",
@@ -198,6 +268,7 @@
   "handWritten": [
     "lib/schgen/strict.ts",
     "lib/schgen/render/stock-symbols.ts",
+    "lib/schgen/render/problem-obstacles.ts",
     "lib/schgen/render/obstacle-matrix.ts",
     "lib/schgen/render/obstacle-pairs-reasons.ts",
     "lib/schgen/render/obstacle-pairs-body.ts",

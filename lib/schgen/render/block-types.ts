@@ -1,11 +1,15 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/blockTypes.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/blockTypes.ts`, and DIVERGED from it
+ * by Task 8 of the M1 schematic-authoring plan: `RealiseResult`'s false arm carried a bare
+ * `reason: string` and now carries a classified `Mismatch`, and `Selection` and `Backend` are new.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
-import type { IrBlock, IrPart, IrPin, NetName, PartLabel, RailSpec, TemplateId } from "../ir/types.ts";
+import type { BlockId, IrBlock, IrPart, IrPin, NetName, PartLabel, RailSpec, TemplateId } from "../ir/types.ts";
 import type { Point, Rotation, Side } from "./geometry.ts";
 import type { LibSymbol } from "./library.ts";
 
@@ -57,7 +61,42 @@ export interface BlockLayout {
   readonly anchors: readonly Anchor[];
 }
 
-export type RealiseResult = { readonly ok: true; readonly layout: BlockLayout } | { readonly ok: false; readonly reason: string };
+/**
+ * **WHY FOUR KINDS AND NOT ONE STRING** (Task 8; spec §1.3, `docs/known-gaps.md` **G84** and
+ * **G94**). The ported type was `{ ok: false; reason: string }`, and 30 call sites across seven
+ * templates funnelled into it, so *"the caller cannot tell 'no template applies to this subgraph'
+ * from 'a template applied and failed'"*. The caller behaves differently on the two: the first
+ * selects another renderer, the second is a generation error that nothing may rescue - because a
+ * rescue would hide a defect in the preferred rendering path, which is **G84**'s finding.
+ *
+ * **Every site states which it is, and that is the work rather than the type.** *"A widened type
+ * with 30 sites still reporting an undifferentiated string buys nothing"* - spec §1.3, verbatim.
+ * `tests/schgen/render/templates/mismatch-census.test.ts` counts the classified sites per module
+ * so a site cannot quietly go back to being unclassified, and there is no constructor that takes
+ * a reason alone.
+ *
+ * **`reason` is still carried by every kind, and is still a sentence a person reads.** The
+ * structured fields are what a caller branches on; the reason is what it prints. The two are not
+ * alternatives, and `describeMismatch` puts them in that order.
+ */
+export type MismatchKind = "not-applicable" | "invalid-geometry" | "clearance" | "backend-raised";
+
+export type Mismatch =
+  /** No template supports this topology: nothing was drawn and there is no defect to hide. */
+  | { readonly kind: "not-applicable"; readonly reason: string }
+  /** A template applied and produced geometry disagreeing with the IR. */
+  | { readonly kind: "invalid-geometry"; readonly reason: string;
+      readonly template: TemplateId; readonly connection: string }
+  /** A template applied and violated a clearance constraint. */
+  | { readonly kind: "clearance"; readonly reason: string;
+      readonly constraint: string; readonly obstacles: readonly [string, string]; readonly block: BlockId }
+  /** The backend did not return a result at all: it raised, or did not terminate. */
+  | { readonly kind: "backend-raised"; readonly reason: string;
+      readonly backend: string; readonly inputKey: string };
+
+export type RealiseResult =
+  | { readonly ok: true; readonly layout: BlockLayout }
+  | { readonly ok: false; readonly mismatch: Mismatch };
 
 /** A template only positions parts and routes the IR's own connections; it never adds one. */
 export interface Template {
@@ -65,6 +104,80 @@ export interface Template {
   realise(g: BlockSubgraph): RealiseResult;
 }
 
-export function mismatch(reason: string): RealiseResult {
-  return { ok: false, reason };
+/**
+ * **The site is a SHAPE test over the subgraph**: this template's idiom is not what the block
+ * holds, nothing has been drawn, and another renderer may still draw it. These are the only
+ * mismatches that select ELK.
+ */
+export function notApplicable(reason: string): RealiseResult {
+  return { ok: false, mismatch: { kind: "not-applicable", reason } };
+}
+
+/**
+ * **A template applied and produced geometry the IR contradicts.** `connection` names the IR
+ * connection it failed to realise, because "the geometry is wrong" without saying which
+ * connection is a refusal nobody can act on.
+ */
+export function invalidGeometry(template: TemplateId, connection: string, reason: string): RealiseResult {
+  return { ok: false, mismatch: { kind: "invalid-geometry", reason, template, connection } };
+}
+
+/**
+ * **A template applied and collided.** `obstacles` is the pair the constraint is about and is
+ * passed in explicitly rather than parsed out of the reason: see
+ * `render/problem-obstacles.ts` for how `checkLayout`'s problem text is turned into one, and why
+ * it refuses rather than guessing when it cannot.
+ */
+export function clearanceViolation(block: BlockId, constraint: string,
+  obstacles: readonly [string, string], reason: string): RealiseResult {
+  return { ok: false, mismatch: { kind: "clearance", reason, constraint, obstacles, block } };
+}
+
+/**
+ * **The backend returned no result at all**: it threw, or did not terminate. No template site
+ * produces this - it exists for the ELK backend (**G94**: elkjs raises
+ * `java.lang.IllegalStateException` on an op-amp self-loop, a state the two-valued type could not
+ * express at all) and for the wrapper that attributes a template helper's thrown error to the
+ * block and template it came from. `inputKey` identifies the input that did it, so the same crash
+ * twice is recognisable as the same crash.
+ */
+export function backendRaised(backend: string, inputKey: string, reason: string): RealiseResult {
+  return { ok: false, mismatch: { kind: "backend-raised", reason, backend, inputKey } };
+}
+
+/**
+ * The mismatch as one line for a person: **the reason verbatim and first**, then its structured
+ * fields in brackets. The order is load-bearing - the ported template tests match the reason text
+ * as a substring of the thrown message, so a kind tag in front of it would break nine of them -
+ * and the fields are there because a refusal that prints only prose throws away the classification
+ * this type exists for. The `switch` has no `default`: a fifth kind fails to typecheck here.
+ */
+export function describeMismatch(m: Mismatch): string {
+  switch (m.kind) {
+    case "not-applicable": return `${m.reason} [not-applicable]`;
+    case "invalid-geometry": return `${m.reason} [invalid-geometry: template ${m.template} cannot realise ${m.connection}]`;
+    case "clearance": return `${m.reason} [clearance: ${m.constraint} between ${m.obstacles[0]} and ${m.obstacles[1]} in block ${m.block}]`;
+    case "backend-raised": return `${m.reason} [backend-raised: ${m.backend} raised on ${m.inputKey}]`;
+  }
+}
+
+/**
+ * What a renderer was chosen for one block: a template that realised it, the ELK backend, or
+ * nothing at all. `selectRenderer` (`render/blocks.ts`) is what decides, and §1.3's rule is that
+ * **`elk` is reachable only when every template reported `not-applicable`** - any other mismatch
+ * is `refused`, and ELK does not get a turn.
+ */
+export type Selection =
+  | { readonly kind: "template"; readonly template: TemplateId; readonly layout: BlockLayout }
+  | { readonly kind: "elk" }
+  | { readonly kind: "refused"; readonly mismatch: Mismatch };
+
+/**
+ * A renderer that is not a template: the ELK backend of Task 12 onward. It returns a
+ * `RealiseResult` like a template does, so a backend that crashes reports `backendRaised` rather
+ * than propagating a Java stack trace to the caller - which is the state **G94** measured and the
+ * ported type could not hold.
+ */
+export interface Backend {
+  realise(g: BlockSubgraph): RealiseResult;
 }

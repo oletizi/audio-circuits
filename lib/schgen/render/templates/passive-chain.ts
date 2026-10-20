@@ -1,8 +1,12 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/templates/passiveChain.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/templates/passiveChain.ts`, and
+ * DIVERGED from it by Task 8 of the M1 schematic-authoring plan: its one `mismatch(...)` site and
+ * the `Classified` result type now carry a classified `Mismatch`.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 /**
@@ -12,12 +16,12 @@
  * connections, and refuses any shape the chain primitive cannot draw.
  */
 import type { NetName } from "../../ir/types.ts";
-import { mismatch, type BlockSubgraph, type BlockUnit, type RealiseResult, type Template } from "../block-types.ts";
+import type { BlockSubgraph, BlockUnit, Mismatch, RealiseResult, Template } from "../block-types.ts";
 import { chain, type ChainShunt, type ChainSpec, type ChainStep } from "../chain-kit.ts";
 import { twoPinNets } from "../layout-kit.ts";
 
 export type ChainCore = Omit<ChainSpec, "parallelSide" | "midAnchorSide" | "first" | "last">;
-export type Classified = { readonly ok: true; readonly spec: ChainCore } | { readonly ok: false; readonly reason: string };
+export type Classified = { readonly ok: true; readonly spec: ChainCore } | { readonly ok: false; readonly mismatch: Mismatch };
 
 type Pair = readonly [NetName, NetName];
 
@@ -26,7 +30,16 @@ interface Built {
   steps: BlockUnit[][];
 }
 
-const refuse = (reason: string): Classified => ({ ok: false, reason });
+/**
+ * **Every refusal in `classifyChain` is `not-applicable`**, and the module's own doc comment says
+ * why: it *"only reads the IR's own connections, and refuses any shape the chain primitive cannot
+ * draw"*. No part is placed and no wire is routed until `chain()` runs, which is after this
+ * returns `ok`. A block with no parts, a part that is not two-terminal, both pins on rails, a node
+ * with three series neighbours, a loop, two separate chains, a shunt hanging off the chain, a
+ * chain that cannot be oriented as asked - each says *this is not a passive chain*, which is a
+ * statement another renderer may still disagree with by drawing it.
+ */
+const refuse = (reason: string): Classified => ({ ok: false, mismatch: { kind: "not-applicable", reason } });
 
 /** The core's steps (unordered net pairs, member order) as a simple path, or why they are not one. */
 function corePath(core: readonly BlockUnit[], pairOf: (u: BlockUnit) => Pair): Built | string {
@@ -202,7 +215,8 @@ export const passiveChain: Template = {
   id: "passive-chain",
   realise(g: BlockSubgraph): RealiseResult {
     const r = classifyChain(g.units, g, null, null);
-    if (!r.ok) return mismatch(r.reason);
+    // Site 1 of 1 in this file: a FORWARD of the classifier's mismatch, kind and all.
+    if (!r.ok) return { ok: false, mismatch: r.mismatch };
     return { ok: true, layout: chain({ ...r.spec, parallelSide: "up", midAnchorSide: "up", first: "anchor", last: "anchor" }, g) };
   },
 };

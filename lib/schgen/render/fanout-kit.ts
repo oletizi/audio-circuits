@@ -1,8 +1,13 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/fanoutKit.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/fanoutKit.ts`, and DIVERGED from it by
+ * Task 8 of the M1 schematic-authoring plan: `TraceResult`'s false arm carried a bare
+ * `reason: string` and now carries a classified `Mismatch`, so a refusal forwarded into a
+ * template's `RealiseResult` keeps its kind.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 /**
@@ -13,7 +18,7 @@
  * reads them and refuses any shape `fanout` cannot draw; `fanout` only positions.
  */
 import type { NetName, PinNumber } from "../ir/types.ts";
-import type { Anchor, BlockLayout, BlockSubgraph, BlockUnit, Placement, Wire } from "./block-types.ts";
+import type { Anchor, BlockLayout, BlockSubgraph, BlockUnit, Mismatch, Placement, Wire } from "./block-types.ts";
 import { jogSlots, rowExtent, spreadRows } from "./fanout-rows.ts";
 import { GRID, pinEnd, pinSide, type Point, type Rotation, type Side, type Um } from "./geometry.ts";
 import { orientTwoPin, otherNet, STUB, twoPinNets } from "./layout-kit.ts";
@@ -26,9 +31,19 @@ export interface OutwardPath {
   readonly nets: readonly NetName[];
 }
 
-export type TraceResult = { readonly ok: true; readonly paths: OutwardPath[] } | { readonly ok: false; readonly reason: string };
+export type TraceResult = { readonly ok: true; readonly paths: OutwardPath[] } | { readonly ok: false; readonly mismatch: Mismatch };
 
-const refuse = (reason: string): TraceResult => ({ ok: false, reason });
+/**
+ * **Every refusal in this module is `not-applicable`, and each one is a SHAPE test over the
+ * subgraph.** `tracePaths` reads the IR and decides whether the fan-out idiom describes what the
+ * block holds: stacked pins on two nets, a net branching where one series path is supported, a
+ * part on two pins' paths, a part that is not two-terminal, a labelled net whose path continues, a
+ * path that leads nowhere unlabelled, a part on no path at all. **Nothing has been drawn when any
+ * of these fires** - `fanout` has not been called - so there is no geometry to be wrong and no
+ * defect to hide: another renderer may still draw the block. That is exactly the `not-applicable`
+ * contract in `block-types.ts`.
+ */
+const refuse = (reason: string): TraceResult => ({ ok: false, mismatch: { kind: "not-applicable", reason } });
 
 export function libPinOf(u: BlockUnit, pin: PinNumber): LibPin {
   const lp = u.symbol.pins.find((p) => p.number === pin);

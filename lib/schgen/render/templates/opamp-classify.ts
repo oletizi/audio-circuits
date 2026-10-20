@@ -1,8 +1,12 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/templates/opampClassify.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/templates/opampClassify.ts`, and
+ * DIVERGED from it by Task 8 of the M1 schematic-authoring plan: `Planned` and the local `Core`
+ * carried a bare `reason: string` and now carry a classified `Mismatch`.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 /**
@@ -11,7 +15,7 @@
  * chain. It only reads the IR's own connections and refuses any shape the layout cannot draw.
  */
 import type { NetName, PinNumber } from "../../ir/types.ts";
-import type { BlockSubgraph, BlockUnit } from "../block-types.ts";
+import type { BlockSubgraph, BlockUnit, Mismatch } from "../block-types.ts";
 import type { ChainShunt } from "../chain-kit.ts";
 import { libPinOf } from "../fanout-kit.ts";
 import { pinEnd, pinSide, ROTATIONS, type Rotation } from "../geometry.ts";
@@ -41,9 +45,21 @@ export interface StagePlan {
   readonly supplies: readonly SupplyPin[];
 }
 
-export type Planned = { readonly ok: true; readonly plan: StagePlan } | { readonly ok: false; readonly reason: string };
+export type Planned = { readonly ok: true; readonly plan: StagePlan } | { readonly ok: false; readonly mismatch: Mismatch };
 
-const refuse = (reason: string): Planned => ({ ok: false, reason });
+/**
+ * **Every refusal in this module is `not-applicable`.** `planStage` runs before `opamp-stage`
+ * draws anything: it reads the IR for the roles, the rotation, the feedback units and a chain
+ * toward each terminal, and refuses when the block is not an op-amp stage of the shape the layout
+ * can draw - a missing anchor role, a part that is not two-terminal, a net reaching no terminal, a
+ * chain that cannot run the right way, a symbol whose inputs no rotation puts left with + above -.
+ * **Each is a statement about the subgraph, not about geometry that was produced**, so another
+ * renderer may still draw the block. The one site that might read as geometric - *"expects the
+ * non-inverting input above the inverting input with the output on the right"* - is about the
+ * SYMBOL's pin positions, which no amount of drawing changes, and nothing has been drawn when it
+ * fires.
+ */
+const refuse = (reason: string): Planned => ({ ok: false, mismatch: { kind: "not-applicable", reason } });
 
 const labelled = (g: BlockSubgraph, net: NetName): boolean => g.rails.has(net) || g.external.has(net);
 
@@ -75,13 +91,19 @@ function reachOf(units: readonly BlockUnit[], pairOf: (u: BlockUnit) => Pair, te
   return reach;
 }
 
-type Core = { readonly ok: true; readonly core: ChainCore | null } | { readonly ok: false; readonly reason: string };
+type Core = { readonly ok: true; readonly core: ChainCore | null } | { readonly ok: false; readonly mismatch: Mismatch };
 
 /** The chain toward input `t` from the units that reach only `t`; `externalSide` sides dead-end external shunts. */
 function inputCore(t: NetName, units: readonly BlockUnit[], all: readonly BlockUnit[], g: BlockSubgraph, externalSide: "up" | "down"): Core {
   if (units.length === 0) return { ok: true, core: null };
   if (g.external.has(t)) {
-    return { ok: false, reason: `opamp-stage: input net ${t} leaves the block and has parts here, so its open chain end cannot label it` };
+    return {
+      ok: false,
+      mismatch: {
+        kind: "not-applicable",
+        reason: `opamp-stage: input net ${t} leaves the block and has parts here, so its open chain end cannot label it`,
+      },
+    };
   }
   const touches = (u: BlockUnit, net: NetName): boolean => u.pins.some((pin) => pin.net === net);
   const deadEnd = (far: NetName): boolean => g.rails.has(far) || (g.external.has(far) && all.filter((u) => touches(u, far)).every((u) => touches(u, t)));
@@ -102,7 +124,13 @@ function inputCore(t: NetName, units: readonly BlockUnit[], all: readonly BlockU
     return { ok: true, core: { nodes: [t], steps: [], shunts: terminal.map(shuntOf) } };
   }
   const r = classifyChain(rest, g, null, t);
-  if (!r.ok) return { ok: false, reason: r.reason === `${t} is not an end of the chain` ? `chain toward ${t} must end at ${t}` : r.reason };
+  if (!r.ok) {
+    // One of `classifyChain`'s reasons is rephrased for this caller, as it was before; the KIND is
+    // carried through by the spread rather than re-chosen here, so rewording a refusal can never
+    // silently reclassify it.
+    const reworded = r.mismatch.reason === `${t} is not an end of the chain` ? `chain toward ${t} must end at ${t}` : r.mismatch.reason;
+    return { ok: false, mismatch: { ...r.mismatch, reason: reworded } };
+  }
   return { ok: true, core: { ...r.spec, shunts: [...r.spec.shunts, ...terminal.map(shuntOf)] } };
 }
 
@@ -162,9 +190,9 @@ export function planStage(g: BlockSubgraph): Planned {
   const unitsFor = (t: NetName): BlockUnit[] => rest.filter((u) => reach.get(u)!.has(t));
   const nUnits = follower ? [] : unitsFor(n);
   const invCore = inputCore(n, nUnits, others, g, "down");
-  if (!invCore.ok) return refuse(invCore.reason);
+  if (!invCore.ok) return { ok: false, mismatch: invCore.mismatch };
   const nonCore = inputCore(p, unitsFor(p), others, g, "up");
-  if (!nonCore.ok) return refuse(nonCore.reason);
+  if (!nonCore.ok) return { ok: false, mismatch: nonCore.mismatch };
   const up = invCore.core?.shunts.find((s) => s.side === "up");
   if (up !== undefined) return refuse(`inverting-input chain cannot hang ${up.units[0]!.part.label} above the line`);
   const down = nonCore.core?.shunts.find((s) => s.side === "down");
@@ -176,7 +204,7 @@ export function planStage(g: BlockSubgraph): Planned {
   let output: ChainCore | null = null;
   if (oUnits.length > 0) {
     const oc = classifyChain(oUnits, g, o, null);
-    if (!oc.ok) return refuse(oc.reason);
+    if (!oc.ok) return { ok: false, mismatch: oc.mismatch };
     output = oc.spec;
   }
   return {

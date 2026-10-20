@@ -1,9 +1,16 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/render/textClearance.test.ts`, mechanically
  * rewritten by `tools/schgen/port.ts` (imports only), and DIVERGED from it by Task 8 of the M1
- * schematic-authoring plan: decision D3 deletes the `labels` rendering this file passed to
- * `blockCircuit` twice, and it is `{ kind: "bus", groups: [] }` - the kind `valuesAlong` still
- * treats as `labels` was treated, so the power values this file measures run the same way.
+ * schematic-authoring plan, twice over.
+ *
+ * **One:** decision D3 deletes the `labels` rendering this file passed to `blockCircuit` twice,
+ * and it is `{ kind: "bus", groups: [] }` - the kind `valuesAlong` still treats as `labels` was
+ * treated, so the power values this file measures run the same way.
+ *
+ * **Two:** the `FieldScene` literal in "placeFields refusal" names `block: "B"` where it named
+ * `scope: "block B"`. `tryPlaceFields` needs the block's ID to build the `clearance` mismatch its
+ * widened result carries, and carrying the id and the prose would be one fact in two places, so
+ * the prose is derived from the id. The message this test asserts is unchanged.
  *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
@@ -178,7 +185,7 @@ describe("placeFields refusal", () => {
     // Horizontal wires every 1.27 mm across the whole neighbourhood: no text box can avoid them.
     const wires = Array.from({ length: 41 }, (_, i) => ({ a: { x: -40_000, y: (i - 20) * 1270 }, b: { x: 40_000, y: (i - 20) * 1270 }, net: "N1" }));
     expect(() =>
-      placeFields({ scope: "block B", units: g.units, placements: [{ part: "R1", unit: 1, at: { x: 0, y: 0 }, rot: 0 }], wires, powers: [], labels: [], libs: symbols }),
+      placeFields({ block: "B", units: g.units, placements: [{ part: "R1", unit: 1, at: { x: 0, y: 0 }, rot: 0 }], wires, powers: [], labels: [], libs: symbols }),
     ).toThrow(/block B: R1#1 \(Fix:R\): no place for its Reference and Value/);
   });
 });

@@ -1,17 +1,34 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/templates/passiveChain.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/templates/passiveChain.test.ts`, and
+ * DIVERGED from it by Task 8 of the M1 schematic-authoring plan: twelve assertions compared a
+ * `classifyChain` refusal against `{ ok: false, reason }`, and its false arm now carries a
+ * classified `Mismatch`.
+ *
+ * **The assertions got STRONGER rather than being relaxed to pass.** Each now states the KIND as
+ * well as the reason, so a site that silently became `invalid-geometry` or `clearance` - which
+ * would send a block to a refusal instead of to another renderer - fails here. That is the one
+ * edit ruling R4 allows to a ported test's assertions: the widening this task performs requires
+ * it, and it is part of the declared divergence rather than a fix smuggled in to make a test green.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 import { describe, expect, it } from "bun:test";
 import { blockCircuit, cap, diode, res, symbols } from "../../__fixtures__/circuits.ts";
 import { unattachedWireEnds } from "../../__fixtures__/layout-checks.ts";
 import { checkLayout, realiseBlock, subgraphOf } from "../../../../lib/schgen/render/blocks.ts";
-import { classifyChain } from "../../../../lib/schgen/render/templates/passive-chain.ts";
+import { classifyChain, type Classified } from "../../../../lib/schgen/render/templates/passive-chain.ts";
 
 const CHAIN = { kind: "wired" as const, template: "passive-chain" as const, anchor: null };
+
+/**
+ * The refusal every site in `classifyChain` produces: a shape test over the subgraph, with nothing
+ * drawn. Written once here so each assertion below reads as it did and still pins the kind.
+ */
+const notApplicable = (reason: string): Classified => ({ ok: false, mismatch: { kind: "not-applicable", reason } });
 
 describe("passive-chain", () => {
   it("draws an input chain: series parts in line, a parallel pair, shunts to ground, ends labelled", () => {
@@ -137,17 +154,17 @@ describe("classifyChain direction hints", () => {
   });
 
   it("refuses a hint that is not an end, and contradictory hints", () => {
-    expect(classifyChain(g.units, g, null, "MID")).toEqual({ ok: false, reason: "MID is not an end of the chain" });
-    expect(classifyChain(g.units, g, "IN", "IN")).toEqual({ ok: false, reason: "chain cannot run from IN to IN" });
+    expect(classifyChain(g.units, g, null, "MID")).toEqual(notApplicable("MID is not an end of the chain"));
+    expect(classifyChain(g.units, g, "IN", "IN")).toEqual(notApplicable("chain cannot run from IN to IN"));
   });
 
   it("honours firstHint, refuses a firstHint that is not an end, and accepts consistent hints", () => {
     const fromOut = classifyChain(g.units, g, "OUT", null);
     expect(fromOut.ok && fromOut.spec.nodes).toEqual(["OUT", "MID", "IN"]);
-    expect(classifyChain(g.units, g, "MID", null)).toEqual({ ok: false, reason: "MID is not an end of the chain" });
+    expect(classifyChain(g.units, g, "MID", null)).toEqual(notApplicable("MID is not an end of the chain"));
     const both = classifyChain(g.units, g, "OUT", "IN");
     expect(both.ok && both.spec.nodes).toEqual(["OUT", "MID", "IN"]);
-    expect(classifyChain(g.units, g, "MID", "OUT")).toEqual({ ok: false, reason: "chain cannot run from MID to OUT" });
+    expect(classifyChain(g.units, g, "MID", "OUT")).toEqual(notApplicable("chain cannot run from MID to OUT"));
   });
 
   it("lets either hint name the lone node of a zero-step chain", () => {
@@ -169,53 +186,48 @@ describe("classifyChain refusals", () => {
     const g = subgraphOf(blockCircuit([res("R1", "A", "B")], CHAIN, { external: ["A", "B"] }), "B", symbols);
     const u = g.units[0]!;
     const broken = { ...u, pins: [u.pins[0]!, { ...u.pins[1]!, net: null }] };
-    expect(classifyChain([broken], g, null, null)).toEqual({
-      ok: false,
-      reason: "passive-chain needs two-terminal parts with both pins connected; R1#1 pin 2 is not connected",
-    });
+    expect(classifyChain([broken], g, null, null)).toEqual(
+      notApplicable("passive-chain needs two-terminal parts with both pins connected; R1#1 pin 2 is not connected"),
+    );
   });
 
   it("refuses an empty block", () => {
     const g = subgraphOf(blockCircuit([res("R1", "A", "B")], CHAIN, { external: ["A", "B"] }), "B", symbols);
-    expect(classifyChain([], g, null, null)).toEqual({ ok: false, reason: "passive-chain block has no parts" });
+    expect(classifyChain([], g, null, null)).toEqual(notApplicable("passive-chain block has no parts"));
   });
 
   it("refuses rail-to-rail parts that do not all join the same two supply rails", () => {
     const base = subgraphOf(blockCircuit([res("R1", "3V3", "VDDA"), res("R2", "VDDA", "SUP_X")], CHAIN, { external: [] }), "B", symbols);
     const g = { ...base, rails: new Set([...base.rails, "SUP_X"]) };
-    expect(classifyChain(g.units, g, null, null)).toEqual({ ok: false, reason: "passive-chain needs at least one non-rail node" });
+    expect(classifyChain(g.units, g, null, null)).toEqual(notApplicable("passive-chain needs at least one non-rail node"));
   });
 
   it("refuses a rail-to-ground part even with no non-rail net", () => {
-    expect(classify([cap("C1", "3V3", "GND")], [])).toEqual({ ok: false, reason: "C1 has both pins on rails (3V3, GND)" });
+    expect(classify([cap("C1", "3V3", "GND")], [])).toEqual(notApplicable("C1 has both pins on rails (3V3, GND)"));
   });
 
   it("refuses series parts that form separate chains", () => {
-    expect(classify([res("R1", "A", "B"), res("R2", "C", "D")], ["A", "B", "C", "D"])).toEqual({
-      ok: false,
-      reason: "series parts form 2 separate chains",
-    });
+    expect(classify([res("R1", "A", "B"), res("R2", "C", "D")], ["A", "B", "C", "D"])).toEqual(
+      notApplicable("series parts form 2 separate chains"),
+    );
   });
 
   it("refuses series parts that form a loop", () => {
-    expect(classify([res("R1", "A", "B"), res("R2", "B", "C"), res("R3", "C", "A")], ["A"])).toEqual({
-      ok: false,
-      reason: "series parts form a loop through A",
-    });
+    expect(classify([res("R1", "A", "B"), res("R2", "B", "C"), res("R3", "C", "A")], ["A"])).toEqual(
+      notApplicable("series parts form a loop through A"),
+    );
   });
 
   it("refuses shunt-only parts on several non-rail nets", () => {
-    expect(classify([cap("C1", "A", "GND"), cap("C2", "B", "GND")], ["A", "B"])).toEqual({
-      ok: false,
-      reason: "series parts form 2 separate chains",
-    });
+    expect(classify([cap("C1", "A", "GND"), cap("C2", "B", "GND")], ["A", "B"])).toEqual(
+      notApplicable("series parts form 2 separate chains"),
+    );
   });
 
   it("refuses a shunt that hangs from a net off the chain", () => {
-    expect(classify([res("R1", "A", "B"), cap("C1", "X", "GND")], ["A", "B", "X"])).toEqual({
-      ok: false,
-      reason: "C1 hangs from X, which is not on the chain",
-    });
+    expect(classify([res("R1", "A", "B"), cap("C1", "X", "GND")], ["A", "B", "X"])).toEqual(
+      notApplicable("C1 hangs from X, which is not on the chain"),
+    );
   });
 
   it("reports a classifier refusal as the template's generation error", () => {

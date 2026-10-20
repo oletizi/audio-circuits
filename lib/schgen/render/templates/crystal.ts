@@ -1,8 +1,12 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/templates/crystal.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/templates/crystal.ts`, and DIVERGED
+ * from it by Task 8 of the M1 schematic-authoring plan: its six refusal sites are classified -
+ * five shape tests and one forward of the field-placement measurement.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 /**
@@ -11,9 +15,22 @@
  * symmetrically beyond everything the crystal draws (its fields, pin text, case grounds and their
  * values, measured on the real drawing) and their own bodies and fields. The classifier only reads the
  * IR's own connections; a crystal block that is not exactly this shape is refused.
+ *
+ * **FIVE OF THE SIX REFUSALS ARE `not-applicable`** - no anchor with roles a and b, the two pins
+ * not on two different non-rail nets, a case pin not on a ground rail, not exactly one load
+ * capacitor from each pin to ground, and no rotation putting a and b on one horizontal line. The
+ * last of those is about the SYMBOL's pin geometry rather than the block's topology, and it is
+ * still `not-applicable` for the reason the kind is defined by: nothing has been drawn when it
+ * fires, so there is no geometry disagreeing with the IR and no defect being hidden.
+ *
+ * **THE SIXTH IS A FORWARD**, of `drawnBoxes`' measurement - a `clearance` mismatch built by
+ * `tryPlaceFields` naming the field that has nowhere to go and what blocks it. That one happens
+ * AFTER this template has drawn the crystal, its case stubs and its pin lines, which is why it
+ * must not arrive as `not-applicable`: a block whose fields do not fit is a defect to report, not
+ * an idiom that does not apply.
  */
 import type { NetName } from "../../ir/types.ts";
-import { mismatch, type Anchor, type BlockSubgraph, type BlockUnit, type Placement, type RealiseResult, type Template, type Wire } from "../block-types.ts";
+import { notApplicable, type Anchor, type BlockSubgraph, type BlockUnit, type Placement, type RealiseResult, type Template, type Wire } from "../block-types.ts";
 import { shuntExtent } from "../chain-kit.ts";
 import { boundsOf, drawnBoxes } from "../drawn-extent.ts";
 import { GRID, gridCeil, pinEnd, pinSide, pointKey, ROTATIONS, type Point, type Rotation, type Side } from "../geometry.ts";
@@ -50,24 +67,24 @@ function realise(g: BlockSubgraph): RealiseResult {
   const anchor = r.kind === "wired" ? r.anchor : null;
   const pinA = anchor?.roles["a"];
   const pinB = anchor?.roles["b"];
-  if (anchor === null || pinA === undefined || pinB === undefined) return mismatch("crystal needs an anchor with roles a and b");
+  if (anchor === null || pinA === undefined || pinB === undefined) return notApplicable("crystal needs an anchor with roles a and b");
   const xtal = g.units.find((u) => u.part.label === anchor.part && u.unit === anchor.unit);
   if (xtal === undefined) throw new Error(`unreachable: validated anchor ${anchor.part}#${anchor.unit} is a member of block ${g.block.id}`);
   const netOf = (pin: string): NetName | null => xtal.pins.find((p) => p.pin === pin)?.net ?? null;
   const A = netOf(pinA);
   const B = netOf(pinB);
   if (A === null || B === null || A === B || g.rails.has(A) || g.rails.has(B)) {
-    return mismatch(`crystal pins a and b must be on two different non-rail nets (a: ${A ?? "none"}, b: ${B ?? "none"})`);
+    return notApplicable(`crystal pins a and b must be on two different non-rail nets (a: ${A ?? "none"}, b: ${B ?? "none"})`);
   }
   const casePins = xtal.pins.filter((p) => p.pin !== pinA && p.pin !== pinB);
   for (const p of casePins) {
-    if (p.net === null || !g.groundRails.has(p.net)) return mismatch(`case pin ${p.pin} is on ${p.net ?? "no net"}, not a ground rail`);
+    if (p.net === null || !g.groundRails.has(p.net)) return notApplicable(`case pin ${p.pin} is on ${p.net ?? "no net"}, not a ground rail`);
   }
   const others = g.units.filter((u) => u !== xtal);
   const capA = loadCapFor(others, A, g);
   const capB = loadCapFor(others, B, g);
   if (capA === null || capB === null || others.length !== 2 || capA.unit === capB.unit) {
-    return mismatch(`crystal needs one load capacitor from each crystal pin to ground (found: ${others.map((u) => u.part.label).join(", ") || "none"})`);
+    return notApplicable(`crystal needs one load capacitor from each crystal pin to ground (found: ${others.map((u) => u.part.label).join(", ") || "none"})`);
   }
   const libPin = (n: string) => {
     const lp = xtal.symbol.pins.find((p) => p.number === n);
@@ -82,7 +99,7 @@ function realise(g: BlockSubgraph): RealiseResult {
     const eb = pinEnd(origin, t, lb);
     return ea.y === eb.y && ea.x < eb.x;
   });
-  if (rot === undefined) return mismatch("crystal pins a and b cannot be put on one horizontal line");
+  if (rot === undefined) return notApplicable("crystal pins a and b cannot be put on one horizontal line");
   const aEnd = pinEnd(origin, rot, la);
   const bEnd = pinEnd(origin, rot, lb);
   const yC = aEnd.y;
@@ -108,7 +125,8 @@ function realise(g: BlockSubgraph): RealiseResult {
   // grounds and their values), measured with a stub on each pin's line, so its fields keep off it.
   const lines: Wire[] = [{ a: aEnd, b: { x: aEnd.x - STUB, y: yC }, net: A }, { a: bEnd, b: { x: bEnd.x + STUB, y: yC }, net: B }];
   const drawn = drawnBoxes({ ...g, units: [xtal] }, { placements, wires: [...wires, ...lines], anchors });
-  if (!drawn.ok) return mismatch(drawn.reason);
+  // A FORWARD of the field-placement measurement: a `clearance` mismatch, after this template drew.
+  if (!drawn.ok) return { ok: false, mismatch: drawn.mismatch };
   const reach = boundsOf(drawn.boxes);
   const extA = shuntExtent({ units: [capA.unit], node: A, far: capA.ground, side: "down" });
   const extB = shuntExtent({ units: [capB.unit], node: B, far: capB.ground, side: "down" });

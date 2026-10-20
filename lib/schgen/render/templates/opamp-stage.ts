@@ -1,8 +1,12 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/templates/opampStage.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/templates/opampStage.ts`, and DIVERGED
+ * from it by Task 8 of the M1 schematic-authoring plan: its one refusal site forwards
+ * `planStage`'s classified `Mismatch` instead of its bare reason.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 /**
@@ -14,9 +18,7 @@
  * connections; `planStage` refuses any shape this layout cannot draw.
  */
 import type { NetName } from "../../ir/types.ts";
-import {
-  mismatch, type Anchor, type BlockSubgraph, type Placement, type RealiseResult, type Template, type Wire,
-} from "../block-types.ts";
+import type { Anchor, BlockSubgraph, Placement, RealiseResult, Template, Wire } from "../block-types.ts";
 import { chain, rowPitch, unitWidth, type ChainLayout, type ChainSpec } from "../chain-kit.ts";
 import { libPinOf } from "../fanout-kit.ts";
 import { GRID, gridCeil, pinEnd, pinSide, placeBox, type Point, type Side, type Um } from "../geometry.ts";
@@ -106,7 +108,11 @@ function drawFeedback(plan: StagePlan, A: Point, outPoint: Point, yf0: Um, pitch
 
 function realise(g: BlockSubgraph): RealiseResult {
   const planned = planStage(g);
-  if (!planned.ok) return mismatch(planned.reason);
+  // Site 1 of 1 in this file: a FORWARD of `planStage`'s mismatch, which is always
+  // `not-applicable` - see `opamp-classify.ts`'s `refuse`. Nothing below this line can refuse:
+  // once the stage is planned, every remaining failure in this template THROWS (a missing body
+  // box, a symbol without a pin), and `selectRenderer` turns such a throw into `backend-raised`.
+  if (!planned.ok) return { ok: false, mismatch: planned.mismatch };
   const plan = planned.plan;
   const { amp, rot, o, n, p } = plan;
   const origin: Point = { x: 0, y: 0 };
