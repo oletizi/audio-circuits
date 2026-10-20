@@ -11661,3 +11661,79 @@ only one there has ever been here.
   hand-written sibling test, which costs **G123**'s byte-check. **(a) is the
   only one that makes the coverage mean anything about this repository's own
   circuits, and it is the one an agent may not do.**
+
+### G169 - OWNER DECISION, 2026-10-20: KiCad is a dependency, and no path may be unique to one machine
+
+The owner, asked nothing and volunteering it:
+
+> *"treat kicad as a dependency. But make sure there are no hardcoded paths
+> unique to this machine. Paths should be configurable with sensible defaults"*
+
+**This closes G119's open question**, which asked whether a vendored symbol's
+bytes should be what a drawing reads so that a machine without KiCad could still
+draw a wholly-vendored circuit. The answer is no: KiCad is a dependency, so the
+consequence G119 recorded and flagged - *"a machine with no KiCad cannot draw at
+all"* - is accepted rather than a cost to be engineered away. It is also what
+`CLAUDE.md` already said (*"Treat KiCad the way you would a compiler: required,
+and not something to engineer around"*), now confirmed by the owner directly
+against a specific trade rather than inferred from a general sentence. **The
+second half is new and is a requirement, not a confirmation.**
+
+**What the second half binds, measured before the task that fixes it:**
+
+| site | state |
+| --- | --- |
+| `make/board.mk:44` | `KICAD_CLI ?= /Applications/...`, exported - overridable, macOS-only default |
+| `tools/pultec/schematic-sync.ts:92` | `DEFAULT_KICAD_CLI` behind `deps.kicadCli ?? …` - overridable, macOS-only default |
+| `tests/circuits/kicad-round-trip.ts:31` | `process.env["KICAD_CLI"] ?? /Applications/...` |
+| `tests/kicad/footprint-library.ts:28` | `process.env["KICAD_FOOTPRINTS"] ?? /Applications/...` |
+| `tests/kicad/symbol-library-disk.ts:33` | `process.env["KICAD_SYMBOLS"] ?? /Applications/...` |
+| `tests/guide/print-pdf.test.ts:30` | `process.env["HTML_TO_PDF"] ?? /Applications/Google Chrome...` |
+| `lib/schgen/render/stock-symbols.ts` | **already correct**: `KICAD_SYMBOL_DIR`, then `dirname(KICAD_CLI)/../SharedSupport/symbols`, then `/usr/share/kicad/symbols` |
+
+**So the defect is NOT that paths are unoverridable - every site but one takes
+an override already.** It is three narrower things. (1) **The same macOS literal
+is duplicated across five sites**, each with its own environment variable, so a
+KiCad installed anywhere else needs several variables set and nothing tells a
+reader which. (2) **Every default is macOS-only** except `stockSymbolDir()`,
+which is the single place that already walks a candidate chain including a Linux
+path - it is the pattern to generalise rather than a special case. (3) **The
+symbol and footprint roots are written out by hand** instead of being derived
+from one resolved install root, so they can disagree with the `kicad-cli` a run
+actually uses.
+
+- **Found** 2026-10-20. The owner's directive is verbatim above. The seven-site
+  table is the controller's own measurement, by
+  `grep -rn "/Applications/\|/Users/orion\|/opt/homebrew" --include="*.ts"
+  --include="*.mk"` over the tree excluding `node_modules`, `.superpowers` and
+  this file, then reading each hit's surrounding lines for an override.
+- **Evidence** a check that could have failed: the grep returns **six** code
+  sites plus prose, and reading each one shows five with an override and
+  `tools/kicad/vendor-symbols.ts` carrying the path only in a doc comment
+  (it takes the directory as an argument). Had any site hard-coded a path with
+  no override, the table would say so.
+- **Verified** CONFIRMED for the table and the counts, which this writer ran and
+  read directly. The owner's words are quoted from the message that carried
+  them.
+- **Why it is open** the directive is recorded; the work it requires is not
+  done. It is assigned to the task inserted after Task 10 and before Task 11,
+  **deliberately before Task 11**, because Task 11 adds further `kicad-cli`
+  call sites (`exportNetlist`, and gate 6's footprint resolution through
+  `lib/kicad/libtable.ts`) and would otherwise widen the duplication this
+  entry exists to remove. It also discharges **G121**, which recorded the
+  `kicad-cli` default path reaching four TypeScript sites plus `make/board.mk`.
+- **What would settle it** **CRITERION, three clauses.** (a) One resolver owns
+  the KiCad install root; the symbol and footprint roots are **derived** from
+  it rather than written out, so they cannot disagree with the `kicad-cli` in
+  use. (b) Every default is a **candidate list covering macOS, Linux and
+  Windows**, not one platform's literal, and a failure to resolve **refuses
+  loudly naming the variable to set** - `stockSymbolDir()` already does exactly
+  this and is the model. (c) **No absolute path unique to one machine survives
+  outside documentation and this register** - checkable by the grep above, which
+  must return only prose. **MECHANISM**, untried: a `lib/kicad/install.ts`
+  resolving `KICAD_CLI` then a per-platform candidate list, with
+  `stockSymbolDir()` reduced to a caller of it, and `make/board.mk` keeping its
+  `?=`/`export` shape so an explicitly set variable still wins. The Makefile
+  cannot import TypeScript, so its default and the resolver's must be checked
+  against each other by a test rather than shared - **that check is the part a
+  reader will forget**, and it is where clause (a) is actually at risk.
