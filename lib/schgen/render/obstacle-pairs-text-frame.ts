@@ -106,7 +106,7 @@ export const FRAME_BORDER_PAIRS: readonly PairCoverage[] = [
       "afterwards. There is no refusal for a `Frame.box` some other producer set directly, and nothing " +
       "in this tree checks that a sheet's frames are in fact the ones `packFrames` returned.",
   },
-  { a: "frame-border", b: "no-connect-marker", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. \`drawnBoxes\` includes \`scene.pinTexts\`, which is where a no-connect marker's box is.`, asymmetric: null },
+  { a: "frame-border", b: "no-connect-marker", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. A marker's box rides in \`scene.pinTexts\`, which \`blockContent\`'s \`drawnBoxes\` does not union — so, as for pin numbers, this cell's old sentence named the wrong function. The margin covers it with room to spare: \`unitText\` boxes a marker as \`at ± GRID / 2\`, 0.635 mm around a pin end that \`LibSymbol.boxes\` already reaches, against 2.54 mm of frame.`, asymmetric: null },
   {
     a: "frame-border",
     b: "dnp-cross",
@@ -114,15 +114,17 @@ export const FRAME_BORDER_PAIRS: readonly PairCoverage[] = [
     meaninglessBecause:
       `${FRAME_DERIVED}. And the cross is derived from its own part's body, so it is inside that ` +
       `part's extent: ${CROSS_BOUND}. ` +
-      "**THE TWO REASONS' ESCAPE CLAUSES MEET IN EXACTLY THE UNCOVERED CASE, AND THAT IS WHY THIS " +
-      "CELL IS THE THINNEST OF THE FRAME ROW.** `drawnBoxes` unions `scene.texts`, `scene.bodies`, " +
-      "`scene.pinTexts` and the segment bounding boxes - it does NOT union `scene.crosses`, so a " +
-      "frame-derived extent never sees a cross at all. The one case where a cross exceeds its " +
-      "part's own extent is the pin-free axis, where it reaches 0.3 of a pin length (0.762 mm) " +
-      "beyond the box the frame WAS derived from. So the single geometry each reason waves through " +
-      "is the same geometry, and neither reason covers it. Recorded in docs/known-gaps.md; the " +
-      "cost is bounded because the matrix test fails when `render/frames.ts` ports, forcing this " +
-      "cell to be re-read against real code.",
+      "**THIS WAS THE THINNEST CELL OF THE FRAME ROW AND THE TASK 6b RE-READ SETTLED IT, which is " +
+      "the one place where the arrival of `render/frames.ts` made a cell STRONGER rather than " +
+      "merely re-worded.** Round 1 said the two reasons' escape clauses met in exactly the " +
+      "uncovered case: no `drawnBoxes` unions `scene.crosses`, so a frame-derived extent never " +
+      "sees a cross, and a cross on a pin-free axis reaches 0.3 of a pin length (0.762 mm) beyond " +
+      "the box the frame WAS derived from - neither reason covering that overhang. **The first " +
+      "half is still true and the conclusion is not.** `frameSize` grows the extent by `4 * GRID` " +
+      "and `contentOffset` insets the content by `2 * GRID`, so the frame is clear by 2.54 mm on " +
+      "every side and the 0.762 mm overhang sits well inside it. The cell is covered by " +
+      "arithmetic over two landed functions rather than by an extent union, and the gap round 1 " +
+      "recorded is closed. Recorded in docs/known-gaps.md.",
     asymmetric: null,
   },
 ]

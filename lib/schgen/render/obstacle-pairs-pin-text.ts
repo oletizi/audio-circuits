@@ -115,7 +115,7 @@ export const PIN_NUMBER_PAIRS: readonly PairCoverage[] = [
     meaninglessBecause: null,
     asymmetric: null,
   },
-  { a: "pin-number", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. \`drawnBoxes\` includes \`scene.pinTexts\`, which is where pin numbers are.`, asymmetric: null },
+  { a: "pin-number", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. **THIS CELL'S OWN SENTENCE WAS FALSE AND THE TASK 6b RE-READ IS WHAT FOUND IT**: it said \`drawnBoxes\` includes \`scene.pinTexts\`, which is true of \`drawn-extent.ts\`'s and NOT of the one \`blockContent\` uses, so a pin number is in NO extent a frame is sized from. It is inside the border by the margin instead: ${NUMBER_BOX_RESOLUTION} — 1.905 mm either side of a pin line whose tip is in \`LibSymbol.boxes\`, against a 2.54 mm margin.`, asymmetric: null },
   {
     a: "pin-number",
     b: "no-connect-marker",
@@ -208,7 +208,7 @@ export const PIN_NAME_PAIRS: readonly PairCoverage[] = [
     meaninglessBecause: null,
     asymmetric: null,
   },
-  { a: "pin-name", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. \`drawnBoxes\` includes \`scene.pinTexts\`, which carries \`interiorBoxes\`.`, asymmetric: null },
+  { a: "pin-name", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. The same correction as the pin-number/frame-border cell: \`interiorBoxes\` rides in \`scene.pinTexts\`, which \`blockContent\`'s \`drawnBoxes\` does NOT union. What puts a pin name inside the border is that \`unitText\` starts its box at \`inner\` (the body-side pin end, offset inward by \`namesOffset\`) and runs it \`textWidth(p.name)\` further inward, so it lies in the part's own graphics region — and that region IS unioned, as the placed \`LibSymbol.boxes\`.`, asymmetric: null },
   {
     a: "pin-name",
     b: "no-connect-marker",

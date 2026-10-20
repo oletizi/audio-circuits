@@ -28,8 +28,12 @@ export const BODY_PAIRS: readonly PairCoverage[] = [
     meaninglessBecause: null,
     asymmetric:
       "Within ONE block only. `checkLayout` runs per block, so two bodies in different blocks of one " +
-      "sheet are kept apart by frame packing (`packFrames`, pack.ts) rather than by this check; the " +
-      "sheet-level caller that would compare them (`render/sheetCheck.ts`) is not in this tree.",
+      "sheet are kept apart by frame packing (`packFrames`, pack.ts) rather than by this check. " +
+      "**THE SHEET-LEVEL CALLER IS NOW IN THIS TREE AND IT DOES COMPARE THEM**: Task 6b ported " +
+      "`render/sheet-check.ts`, whose `bodyOverlaps` places every block's `LibSymbol.boxes` in sheet " +
+      "coordinates and runs `boxesOverlap` over all pairs ACROSS blocks, and `assertSheetSafe` throws " +
+      "`sheet <id>: body clearance:` on one. So this caveat is now about which check catches it, not " +
+      "about a gap: the cross-block case is covered, by a different function, over the same geometry.",
   },
   {
     a: "body",
@@ -138,7 +142,7 @@ export const BODY_PAIRS: readonly PairCoverage[] = [
       "`within(b, p.body)` and clear that unit's own `interiorBoxes` and `strokes`, and the block is " +
       "refused when no candidate fits.",
   },
-  { a: "body", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}.`, asymmetric: null },
+  { a: "body", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. The placed \`LibSymbol.boxes\` are the FIRST thing \`blockContent\` unions, so a body is the one category whose containment needs neither the margin nor an indirection. Re-read at Task 6b against the landed \`frames.ts\`; unchanged.`, asymmetric: null },
   {
     a: "body",
     b: "no-connect-marker",
@@ -235,14 +239,17 @@ export const PIN_LINE_PAIRS: readonly PairCoverage[] = [
       "check does not read `flag`.",
     meaninglessBecause: null,
     asymmetric:
-      "The point-level blind spot of the pin-line/power-glyph cell applies in full. **AND NOTHING IN THIS " +
-      "TREE PRODUCES A FLAG WITH AN ANCHOR**: `anchorsToSymbols` hard-codes `flag: false` and the flag " +
-      "producer (`render/frames.ts`, Task 6b) is not ported, so no flag reaches a `ClearanceScene` here " +
-      "yet. **DELIBERATELY NARROWER THAN `NO_FLAG_PRODUCER`, AND NOT A STALE COPY OF IT**: this cell is " +
-      "about a flag that reaches a scene through an ANCHOR, so `anchorsToSymbols` is the only site that " +
-      "could produce one. `anchorExtent` (fanout-rows.ts) builds a `PowerSymbol` too, which is why the " +
-      "shared constant names two sites, but that one is measured and discarded and never becomes an " +
-      "anchor. Re-read at Task 7; see docs/known-gaps.md.",
+      "The point-level blind spot of the pin-line/power-glyph cell applies in full. **THE SECOND HALF OF " +
+      "THIS CELL WAS FALSIFIED BY TASK 6b AND IS REWRITTEN RATHER THAN SOFTENED.** It said no flag " +
+      "reaches a `ClearanceScene` here, because the producer (`render/frames.ts`) was not ported. It is " +
+      "ported, and a flag DOES reach one: `flagsContent` emits `flag: true` power symbols, `layoutSheet` " +
+      "carries them into the sheet's `powers`, and `sheet-check.ts`'s `clearance` passes " +
+      "`[...scene.powers, ...scene.labels]` as `ClearanceScene.anchors` - a `PowerSymbol` satisfies " +
+      "`AnchorPoint` structurally, and `sceneClearanceProblems` never reads `flag`. **What is still " +
+      "narrower than `NO_FLAG_PRODUCER`, and is this cell's own point, holds**: no BLOCK anchor becomes " +
+      "a flag, because `anchorsToSymbols` hard-codes `flag: false`. So the check runs over a flag that " +
+      "lives alone in the flags frame, with no placement beside it, and the refusal has never fired. " +
+      "Re-read at Task 7 and again at Task 6b; see docs/known-gaps.md.",
   },
   {
     a: "pin-line",
@@ -267,7 +274,7 @@ export const PIN_LINE_PAIRS: readonly PairCoverage[] = [
     meaninglessBecause: null,
     asymmetric: null,
   },
-  { a: "pin-line", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. \`drawnBoxes\` includes the bounding boxes of \`scene.segments\`, which is where pin lines are.`, asymmetric: null },
+  { a: "pin-line", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. The old sentence named \`scene.segments\`, which is \`drawn-extent.ts\`'s route and not the one that sizes a frame. A pin line runs from its body-side end to its tip, and \`LibSymbol.boxes\` — which \`blockContent\` DOES union — is \`unitBoxes\`: graphics plus BOTH pin ends, so it spans to the tip. Same conclusion, different line of code.`, asymmetric: null },
   {
     a: "pin-line",
     b: "no-connect-marker",

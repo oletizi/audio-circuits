@@ -19,6 +19,7 @@ import path from "node:path"
 import {
   OBSTACLE_CATEGORIES, PAIR_COVERAGE, partiallyCoveredPairs, uncoveredPairs,
 } from "../../../lib/schgen/render/obstacle-matrix.ts"
+import { loadManifest } from "../../../tools/schgen/port.ts"
 
 const RENDER_DIR = path.resolve(import.meta.dir, "../../../lib/schgen/render")
 
@@ -86,6 +87,7 @@ const NOT_A_RENDER_DECLARATION: Readonly<Record<string, string>> = {
   interiorBoxes: "a field of the `UnitText` interface (unit-text.ts), not a declaration of its own",
   decoration: "English prose - the singular of `unitText`'s `decorations` list, used as a noun",
   null: "a TypeScript keyword, cited when a cell talks about a null net",
+  namesOffset: "a field of the `PinTextStyle` interface (lib-graphics.ts:29), not a declaration of its own",
 }
 
 /**
@@ -115,18 +117,18 @@ const NOT_A_RENDER_DECLARATION: Readonly<Record<string, string>> = {
  * lands rings the bell. Settled in Task 6; `docs/known-gaps.md` **G132**.
  */
 const NOT_IN_THIS_TREE: Readonly<Record<string, { readonly portedAs: string; readonly why: string }>> = {
-  "frames.ts": {
-    portedAs: "frames.ts",
-    // Task 6b, not Task 8: controller ruling R14 split Task 6 around Task 7
-    // and `frames.ts` landed in the second half. Four sites said Task 8 and
-    // this was one of them - see `obstacle-pairs-reasons.ts`'s FRAME_DERIVED
-    // comment and `docs/known-gaps.md` G131/G135.
-    why: "Task 6b - sizes a frame from the block extent; 11 cells' FRAME_DERIVED reason assumes it is absent",
-  },
-  "sheetCheck.ts": {
-    portedAs: "sheet-check.ts",
-    why: "Task 6b - runs the clearance checks over a whole sheet; the within-one-block caveats assume it is absent",
-  },
+  // **BOTH ROWS ARE GONE, AND NEITHER WAS DELETED TO MAKE A TEST PASS.** Task 6b ported
+  // `render/frames.ts` and `render/sheetCheck.ts`, this list's alarm rang naming
+  // `["frames.ts", "sheet-check.ts"]` (both spellings worked, which is G132's fix firing for the
+  // first time on a real arrival), the re-read was done, and the findings are in
+  // `SETTLED_ARRIVALS` below, which asserts each module is PRESENT. So the claim moved from
+  // "absent" to "arrived, re-read, and still here" rather than being dropped.
+  //
+  // It is deliberately left EMPTY rather than removed: the `citedPaths()` test consults it for
+  // any `.ts` name a cell cites that is not under `lib/schgen/render/`, and a later task that
+  // writes a cell about a module it has not ported needs the row to put it in. The test below
+  // asserts the list is empty and says what to do when it is not, so an empty list is not a
+  // check that cannot fail - it is one assertion in place of the other.
 }
 
 /**
@@ -145,6 +147,29 @@ const NOT_IN_THIS_TREE: Readonly<Record<string, { readonly portedAs: string; rea
  * family, including the one reason whose enumeration it did falsify.
  */
 const SETTLED_ARRIVALS: Readonly<Record<string, string>> = {
+  "frames.ts": [
+    "Task 6b. The alarm rang and the re-read CHANGED eleven cells' shared reason rather than",
+    "confirming it. FRAME_DERIVED said a frame is sized from `drawn-extent.ts`'s `drawnBoxes`;",
+    "nothing sizes a frame from that function. `frames.ts` has a second, private `drawnBoxes`",
+    "unioning `scene.texts` and `scene.bodies` ONLY, and `blockContent` unions that with the placed",
+    "`LibSymbol.boxes` and every wire end. So `pinTexts`, `strokes` and `crosses` are in no extent a",
+    "frame is sized from, and what puts them inside the border is the margin: `frameSize` grows the",
+    "extent by `4 * GRID` and `contentOffset` insets by `2 * GRID`, leaving 2.54 mm clear on every",
+    "side against a 1.905 mm pin-number box, a 0.635 mm no-connect marker and a 0.762 mm DNP cross",
+    "overhang. That SETTLES the frame-border/dnp-cross cell, which round 1 recorded as uncovered by",
+    "either of its two reasons. NO_FLAG_PRODUCER also lost its conclusion, not just its enumeration:",
+    "`flagsContent` is the `flag: true` producer it said did not exist here.",
+  ].join(" "),
+  "sheet-check.ts": [
+    "Task 6b, and it is the kebab-case spelling G132's `portedAs` fix exists for - the first real",
+    "arrival that fix has caught. The within-one-block caveat it was armed for is now about which",
+    "check catches the cross-block case rather than about a gap: `bodyOverlaps` places every block's",
+    "`LibSymbol.boxes` in sheet coordinates and runs `boxesOverlap` over all pairs across blocks, and",
+    "`assertSheetSafe` throws on one. It also falsified the pin-line/pwr-flag-glyph cell's second",
+    "half: `clearance` passes the sheet's powers as `ClearanceScene.anchors`, so a `flag: true`",
+    "symbol does now reach `sceneClearanceProblems` - what survives is that no BLOCK anchor becomes",
+    "a flag.",
+  ].join(" "),
   "blocks.ts": [
     "Task 7. NO cell's reason rests on its absence: every cell citing `checkLayout` cites it at",
     "`lib/schgen/render/layout-check.ts`, which Task 5 ported, and `blocks.ts` only re-exports it.",
@@ -211,35 +236,62 @@ describe("the obstacle-category matrix", () => {
   })
 
   /**
-   * **THE OTHER HALF OF THE SAME RULE.** Several cells rest on a module this
-   * tree does not contain - `render/frames.ts`, which sizes a frame from the
-   * block extent, and `render/sheetCheck.ts`, which runs the clearance checks
-   * over a whole sheet - and say so in the cell text. The moment either one
-   * ports, those cells' reasons must be re-read against the real code rather
-   * than left standing. This test is what makes that happen: it fails on the
-   * commit that ports them, naming them, instead of letting a stale reason
-   * pass as a verified one.
+   * **THE OTHER HALF OF THE SAME RULE, AND IT HAS NOW RUNG TWICE AND EMPTIED
+   * ITSELF.** Several cells used to rest on a module this tree did not contain
+   * - `render/frames.ts`, which sizes a frame from the block extent, and
+   * `render/sheetCheck.ts`, which runs the clearance checks over a whole sheet.
+   * Task 6b ported both; the alarm fired naming
+   * `["frames.ts", "sheet-check.ts"]`, the re-read was done, and the findings
+   * are in `SETTLED_ARRIVALS`. `NOT_IN_THIS_TREE` is now empty.
+   *
+   * **The assertion is inverted rather than deleted.** An empty list cannot
+   * ring, so this test holds the list to BEING empty: a later task that writes
+   * a cell resting on a module it has not ported must add a row, and that fails
+   * here until the row carries both spellings and the arrival check above is
+   * re-armed for it. The arrival teeth now live in the settled-arrivals test
+   * below, which asserts each module is PRESENT.
    */
-  test("the modules whose absence several cells rest on are still absent", () => {
-    // BOTH SPELLINGS, deliberately: the cited (pedals, camelCase) name and the
-    // name the port writes here (kebab-case). Checking only the cited one is
-    // what made this guard unable to fire for `sheetCheck.ts` - see
-    // NOT_IN_THIS_TREE's own comment and `docs/known-gaps.md` G132.
-    const declared = Object.entries(NOT_IN_THIS_TREE).flatMap(([cited, { portedAs }]) =>
-      cited === portedAs ? [cited] : [cited, portedAs],
+  test("no cell's reason rests on a module this tree does not contain", () => {
+    const declared = Object.entries(NOT_IN_THIS_TREE)
+    expect(
+      declared.map(([cited]) => cited),
+      "NOT_IN_THIS_TREE is empty since Task 6b, so adding a row is adding a cell reason that rests " +
+        "on an absence. That is allowed - but the row must carry `portedAs` (the kebab-case name the " +
+        "port writes, see G132), and the arrival filter must be re-armed to look for BOTH spellings, " +
+        "or the rename hides the arrival the way it did for sheetCheck.ts.",
+    ).toEqual([])
+  })
+
+  /**
+   * **G132's FIRST OPEN ITEM, CLOSED FOR THE NAMES THAT REMAIN.** That entry
+   * records that nothing checked an absence row's two names against
+   * `port-manifest.json`, which is the authority for what the port writes - a
+   * typo in `portedAs` restored the original defect silently. The rows are gone,
+   * but the same hazard applies to `SETTLED_ARRIVALS`: its keys are the names
+   * `fs.existsSync` looks for, and a key spelt the pedals way would make the
+   * presence check below unable to fail. So each `.ts` key is required to be a
+   * name the manifest actually writes under `lib/schgen/render/`.
+   */
+  test("every settled arrival is spelt the way the port manifest writes it", () => {
+    const manifest = loadManifest()
+    const written = new Set(
+      [...manifest.files, ...manifest.diverged]
+        .map((e) => e.to)
+        .filter((to) => to.startsWith("lib/schgen/render/"))
+        .map((to) => path.posix.basename(to)),
     )
-    expect(declared.length, "an absence list nothing iterates is a check that cannot fail").toBeGreaterThan(0)
+    expect(written.size, "no render modules in the manifest, so this check proves nothing").toBeGreaterThan(10)
+    const keys = Object.keys(SETTLED_ARRIVALS)
+    // `templates` is a DIRECTORY, not a module, so no manifest entry's basename equals it. Pinned
+    // at one so a second non-module key cannot be waved through with it.
+    const notModules = keys.filter((k) => !k.endsWith(".ts"))
+    expect(notModules, "non-module settled arrivals, which the manifest cannot name").toEqual(["templates"])
+    const misspelt = keys.filter((k) => k.endsWith(".ts") && !written.has(k))
     expect(
-      declared,
-      "every declared absence must be looked for under both the name the cells cite and the name " +
-        "the port writes it under, or the kebab-case rename hides the arrival",
-    ).toContain("sheet-check.ts")
-    const arrived = declared.filter((f) => fs.existsSync(path.join(RENDER_DIR, f)))
-    expect(
-      arrived,
-      "these have ported, so every cell whose reason names them (the FRAME_DERIVED and " +
-        "within-one-block cells of obstacle-pairs-*.ts) must be re-read against the real code and " +
-        "NOT_IN_THIS_TREE updated in the same change",
+      misspelt,
+      "these settled-arrival keys are not names tools/schgen/port-manifest.json writes under " +
+        "lib/schgen/render/, so the presence check below is looking for a file the port never " +
+        "creates and could not fail - which is exactly the defect G132 records for the absence list",
     ).toEqual([])
   })
 
@@ -254,7 +306,7 @@ describe("the obstacle-category matrix", () => {
    */
   test("the arrivals this alarm already rang for are still in the tree, with their re-read recorded", () => {
     const entries = Object.entries(SETTLED_ARRIVALS)
-    expect(entries.length, "a settled-arrival list nothing iterates is a check that cannot fail").toBe(2)
+    expect(entries.length, "a settled-arrival list nothing iterates is a check that cannot fail").toBe(4)
     const missing = entries.filter(([f]) => !fs.existsSync(path.join(RENDER_DIR, f))).map(([f]) => f)
     expect(
       missing,
@@ -284,12 +336,19 @@ describe("the obstacle-category matrix", () => {
   test("every identifier the matrix cites exists under lib/schgen/render, or is classified", () => {
     const sources = renderSources()
     const cited = [...citedIdentifiers()].sort()
-    // 91 cited today. 89 until Task 7 added `anchorExtent` with
+    // 102 cited today. 89 until Task 7 added `anchorExtent` with
     // NO_FLAG_PRODUCER's second hard-coded site, then 90 -> 91 at round 2 when
     // the `pin-line`/`pwr-flag-glyph` cell said why it is deliberately
-    // narrower than that constant and cited `PowerSymbol` by name. Pinned so
-    // that narrowing the extraction fails here.
-    expect(cited.length, `cited identifiers: ${cited.join(" ")}`).toBe(91)
+    // narrower than that constant and cited `PowerSymbol` by name. **91 -> 102
+    // at Task 6b**, when `render/frames.ts` and `render/sheet-check.ts` landed
+    // and the eleven FRAME_DERIVED cells plus three others were re-read against
+    // them: the new names are the ones that actually decide those pairs -
+    // `blockContent`, `frameSize`, `contentOffset`, `flagsContent`,
+    // `drawnBoxes`'s second definition, `assertSheetSafe`, `bodyOverlaps`,
+    // `clearance`, `layoutSheet`, `sceneClearanceProblems`'s `ClearanceScene`
+    // and `AnchorPoint`, and `inner`. Pinned so that narrowing the extraction
+    // fails here.
+    expect(cited.length, `cited identifiers: ${cited.join(" ")}`).toBe(102)
     const unaccounted = cited.filter((id) => !declaredIn(sources, id) && NOT_A_RENDER_DECLARATION[id] === undefined)
     expect(
       unaccounted,

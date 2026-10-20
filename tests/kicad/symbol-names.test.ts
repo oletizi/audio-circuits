@@ -192,6 +192,19 @@ const NOT_A_KICAD_SYMBOL: ReadonlyMap<
         "nickname; the library half is what fails, exactly as for Pwr:GND.",
     },
   ],
+  [
+    "Fix:C",
+    {
+      failure: "no-such-library" as const,
+      reason:
+        "the same fixture library as Fix:R above, reached by a third ported file. Task 6b's " +
+        "tests/schgen/render/sheets.test.ts rewrites the GND rail's symbol to this one to prove " +
+        "layoutSheet refuses a rail whose symbol is not a one-pin power symbol - so the name is " +
+        "declared here PRECISELY because it is wrong, which is the fourth repo-wide guard the " +
+        "port has needed an exemption from (docs/known-gaps.md G133). The library half is what " +
+        "fails, exactly as for Fix:R.",
+    },
+  ],
 ])
 
 /** Where an exempt fixture lib id may appear at all. */

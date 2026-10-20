@@ -24,24 +24,34 @@ export const CLEARANCE_BOX =
 /**
  * Why no cell naming `frame-border` against a non-text category names a function.
  *
- * **THE TASK NUMBER IS 6b, NOT 8, AND IT WAS WRONG IN FOUR PLACES AT ONCE.**
- * Controller ruling R14 split Task 6 around Task 7, and `render/frames.ts`
- * belongs to **Task 6b** - see `docs/known-gaps.md` **G131** and **G135**.
- * This constant, the `body`/`pwr-flag-glyph` cell, `NO_FLAG_PRODUCER` and
- * `NOT_IN_THIS_TREE["frames.ts"]` all said Task 8; correcting one of them at
- * Task 7 turned inherited staleness into a contradiction inside the one
- * module whose whole purpose is that its citations are checkable. All four
- * now say Task 6b.
+ * **RE-READ AT TASK 6b AGAINST THE LANDED `render/frames.ts`, AND THE RE-READ CHANGED THE REASON
+ * RATHER THAN CONFIRMING IT.** This constant used to rest on the module's absence and to name
+ * `drawn-extent.ts`'s `drawnBoxes` as what sizes a frame. **Nothing sizes a frame from that
+ * function.** `frames.ts` has a SECOND, private `drawnBoxes(symbols, parts)` of its own, and the
+ * two do not return the same thing: `drawn-extent.ts`'s unions `scene.texts`, `scene.bodies`,
+ * `scene.pinTexts` and the segment boxes (it is what a template measures its own drawing with, for
+ * field placement), while `frames.ts`'s unions `scene.texts` and `scene.bodies` **only**. So the
+ * old reason's conclusion was right and its mechanism named the wrong function - which is the
+ * shape `docs/known-gaps.md` **G134** records for `NO_FLAG_PRODUCER` at Task 7.
+ *
+ * The task number was also wrong in four places at once before Task 7 (`Task 8` for what ruling
+ * R14 had made Task 6b); that is settled and the module has now landed.
  */
 export const FRAME_DERIVED =
-  "A frame's box is not placed against what is inside it; it is DERIVED from it. `drawnBoxes` " +
-  "(lib/schgen/render/drawn-extent.ts) returns every box a block layout draws — `scene.texts`, " +
-  "`scene.bodies`, `scene.pinTexts` and the bounding boxes of `scene.segments` — and `boundsOf` unions " +
-  "them, and that union is what a frame is sized from. An enclosed item is inside its border by " +
-  "construction rather than by a refusal, which is why `textProblems`'s frame clause tests only `texts`: " +
-  "a field is re-placed by the field placer after the extent was measured and is the one thing that can " +
-  "move outward. **THIS REASON RESTS ON `render/frames.ts`, WHICH IS NOT IN THIS TREE** (Task 6b); it is " +
-  "verified here only as far as `drawn-extent.ts` goes. See docs/known-gaps.md"
+  "A frame's box is not placed against what is inside it; it is DERIVED from it, and the derivation " +
+  "leaves a 2.54 mm margin. `blockContent` (lib/schgen/render/frames.ts) unions the placed " +
+  "`LibSymbol.boxes` of every placement, every wire END as a degenerate box, and its OWN private " +
+  "`drawnBoxes`, which is `scene.texts` plus `scene.bodies` of a one-block `textScene` and NOTHING " +
+  "else — not `pinTexts`, not `strokes`, not `crosses`. `frameSize` then grows that extent by " +
+  "`4 * GRID` and `contentOffset` places the content `2 * GRID` inside the frame's corner, so there " +
+  "is at least `2 * GRID` = 2.54 mm of clear frame on every side (more at the top, by the title " +
+  "band). **THAT MARGIN, NOT THE EXTENT UNION, IS WHY THE THREE UNUNIONED CATEGORIES ARE INSIDE " +
+  "THEIR BORDER**: a pin-number box reaches 1.905 mm off the pin line, a no-connect marker 0.635 mm " +
+  "past the pin end, a DNP cross at most 0.762 mm past its own body on a pin-free axis — each less " +
+  "than 2.54 mm, and each measured from geometry the union does cover. An enclosed item is therefore " +
+  "inside its border by construction rather than by a refusal, which is why `textProblems`'s frame " +
+  "clause tests only `texts`: a field is re-placed by the field placer after the extent was measured " +
+  "and is the one thing that can move outward. See docs/known-gaps.md"
 
 /** Why a DNP cross needs no cell against a foreign category — arithmetic, not a test. */
 export const CROSS_BOUND =
@@ -86,19 +96,22 @@ export const SELF_TEXT_ONLY =
   "which does not keep their 3.81 mm-wide number boxes apart"
 
 /**
- * Why nothing in this tree exercises a `pwr-flag-glyph` cell yet.
+ * Which producer puts a `flag: true` PowerSymbol in a scene, and what still never does.
  *
- * **BOTH SITES ARE NAMED BECAUSE TASK 7 FALSIFIED THE ENUMERATION AND NOT THE
- * CONCLUSION.** Round 1 named `anchorsToSymbols` as the one site hard-coding
- * `flag: false`; `fanout-rows.ts`'s `anchorExtent` builds a second
- * `PowerSymbol` the same way, to measure a row's far anchor rather than to
- * draw it. That makes the conclusion stronger, not weaker - there is still no
- * `flag: true` producer - but a reader checking the claim against one file
- * would have found a site the reason did not mention. See
- * `docs/known-gaps.md` **G134**.
+ * **TASK 6b FALSIFIED THE CONCLUSION, not only the enumeration, and that is the reverse of what
+ * Task 7 did to this same constant.** It used to open *"NOTHING IN THIS TREE PRODUCES A
+ * `flag: true` PowerSymbol"*, with `render/frames.ts` named as the absent producer. That module
+ * has landed and `flagsContent` is exactly that producer, so the sentence is deleted rather than
+ * softened. What survives is the narrower, still-load-bearing half: **no BLOCK anchor ever
+ * becomes a flag**, because `anchorsToSymbols` hard-codes `flag: false` and so does the
+ * measurement-only symbol `anchorExtent` builds in `fanout-rows.ts` (the two sites Task 7 found -
+ * `docs/known-gaps.md` **G134**).
  */
 export const NO_FLAG_PRODUCER =
-  "**NOTHING IN THIS TREE PRODUCES A `flag: true` PowerSymbol**: `anchorsToSymbols` (power-text.ts) " +
+  "**A `flag: true` PowerSymbol HAS EXACTLY ONE PRODUCER, AND IT IS NOT A BLOCK**: `flagsContent` " +
+  "(lib/schgen/render/frames.ts) emits, per flagged rail, the rail's own symbol and a PWR_FLAG at " +
+  "the SAME point, and `layoutSheet` carries both into the sheet's `powers`, so this cell's check " +
+  "is reachable at sheet level. No block ever produces one: `anchorsToSymbols` (power-text.ts) " +
   "hard-codes `flag: false`, and so does the measurement-only symbol `anchorExtent` builds in " +
-  "fanout-rows.ts; the only producer is `render/frames.ts`'s flag content, which is not " +
-  "ported (Task 6b). So this cell is a claim about the named check's shape, exercised by nothing here yet"
+  "fanout-rows.ts. So a flag only ever appears in its own frame, with no placement and no unit " +
+  "beside it, which is why no cell here names a refusal that has fired"

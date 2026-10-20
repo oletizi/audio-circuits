@@ -100,7 +100,7 @@ export const INTERIOR_GRAPHIC_PAIRS: readonly PairCoverage[] = [
     meaninglessBecause: null,
     asymmetric: null,
   },
-  { a: "interior-graphic", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}.`, asymmetric: null },
+  { a: "interior-graphic", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. An interior graphic is in \`scene.strokes\`, which \`blockContent\`'s \`drawnBoxes\` does not union — but \`LibSymbol.boxes\`, which it does, is \`unitBoxes\`: the symbol's GRAPHICS plus both pin ends. A stroke is one of those graphics, so it is inside the extent already. Re-read at Task 6b.`, asymmetric: null },
   {
     a: "interior-graphic",
     b: "no-connect-marker",
@@ -182,7 +182,7 @@ export const WIRE_PAIRS: readonly PairCoverage[] = [
     meaninglessBecause: null,
     asymmetric: null,
   },
-  { a: "wire", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. \`drawnBoxes\` turns \`scene.segments\` into boxes, which is where wires are.`, asymmetric: null },
+  { a: "wire", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. The old sentence named \`scene.segments\`, which is \`drawn-extent.ts\`'s route; \`blockContent\` takes the wires directly instead, unioning \`pointBox(w.a)\` and \`pointBox(w.b)\` for every wire of the layout. For an axis-aligned wire those two degenerate boxes union to exactly its segment box, so the conclusion is unchanged and the mechanism is a different line of code.`, asymmetric: null },
   {
     a: "wire",
     b: "no-connect-marker",
@@ -241,7 +241,7 @@ export const JUNCTION_PAIRS: readonly PairCoverage[] = [
     meaninglessBecause: `${JUNCTION_DERIVED}. A text whose box reached a junction would already be refused by \`textProblems\` for reaching the wire or pin line that makes it.`,
     asymmetric: null,
   },
-  { a: "junction", b: "frame-border", checkedBy: null, meaninglessBecause: `${JUNCTION_DERIVED}. ${FRAME_DERIVED}.`, asymmetric: null },
+  { a: "junction", b: "frame-border", checkedBy: null, meaninglessBecause: `${JUNCTION_DERIVED}. ${FRAME_DERIVED}. The two compose exactly: a junction is only ever at a point where three or more wire ends and pin ends coincide, and \`blockContent\` unions every wire end and every pin tip (through \`LibSymbol.boxes\`), so a dot is never outside the extent the frame was sized from. Re-read at Task 6b.`, asymmetric: null },
   {
     a: "junction",
     b: "no-connect-marker",

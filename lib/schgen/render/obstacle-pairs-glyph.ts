@@ -79,7 +79,7 @@ export const POWER_GLYPH_PAIRS: readonly PairCoverage[] = [
       "construction rather than by a refusal; `valuesAlong` exists to keep the values of anchors one pin " +
       "pitch apart from overprinting each other.",
   },
-  { a: "power-glyph", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. \`drawnBoxes\` includes \`scene.bodies\`, which is where a glyph is.`, asymmetric: null },
+  { a: "power-glyph", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. A glyph is in \`scene.bodies\`, which \`blockContent\`'s own \`drawnBoxes\` DOES union, so this pair needs no margin argument: the glyph is in the extent the frame was sized from. Re-read at Task 6b against the landed \`frames.ts\`; unchanged.`, asymmetric: null },
   { a: "power-glyph", b: "no-connect-marker", checkedBy: null, meaninglessBecause: `${GLYPH_NC}.`, asymmetric: null },
   {
     a: "power-glyph",
@@ -117,7 +117,7 @@ export const PWR_FLAG_GLYPH_PAIRS: readonly PairCoverage[] = [
     meaninglessBecause: null,
     asymmetric: `${NO_FLAG_PRODUCER}.`,
   },
-  { a: "pwr-flag-glyph", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. ${NO_FLAG_PRODUCER}, and \`render/frames.ts\` is the module that would place both.`, asymmetric: null },
+  { a: "pwr-flag-glyph", b: "frame-border", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. ${NO_FLAG_PRODUCER} — and \`render/frames.ts\`, which this cell said WOULD place both, now does: \`flagsContent\` sizes the flags frame from \`drawnBoxes\` over its own power symbols, so both the rail glyph and the PWR_FLAG are in the union that frame was sized from.`, asymmetric: null },
   { a: "pwr-flag-glyph", b: "no-connect-marker", checkedBy: null, meaninglessBecause: `${GLYPH_NC}. ${NO_FLAG_PRODUCER}.`, asymmetric: null },
   { a: "pwr-flag-glyph", b: "dnp-cross", checkedBy: null, meaninglessBecause: `${CROSS_BOUND}. ${NO_FLAG_PRODUCER}.`, asymmetric: null },
 ]

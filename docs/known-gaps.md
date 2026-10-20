@@ -8292,6 +8292,34 @@ Task 6b because the plan assigns those modules there, and because landing
   `render/frames.ts` and `render/sheets.ts`, after which the four JSON entries
   above are added with no cuts.
 
+- **TASK 6b UPDATE: THREE OF THE FOUR ARE IN AND PASSING, AND THE FOURTH IS NOT
+  COMING BACK - THIS ENTRY'S "BLOCKED BY A TASK BOUNDARY, NOT BY ANYTHING
+  TECHNICAL" WAS TRUE OF THREE AND FALSE OF ONE.** Task 6b ported all four
+  modules.
+  - **`render/glyphClearance.test.ts` and `render/glyphGlyphClearance.test.ts`
+    landed as PURE PORTS with no cuts**, exactly as the mechanism above says -
+    their JSON went in verbatim.
+  - **`render/templates/templateStock.kicad.test.ts` landed DIVERGED, not as a
+    pure port.** Its conditional PEER block declares
+    `{ kind: "labels" as const, reason: "t" }`, which plan decision D3 deleted
+    (**G140**), so it carries the same `{ kind: "bus", groups: [] }`
+    substitution Task 8 made in ten files plus **G112**'s MCU removals. The
+    phrase *"with no cuts"* was right that it needs none and wrong that a
+    manifest `files[]` entry would do: a substitution is a divergence. It is
+    the ninth template test this entry counts, so the Task 7 brief's nine is
+    nine again.
+  - **`render/textIndependence.test.ts` CANNOT LAND AND NO TASK BRINGS IT
+    BACK.** `render/bus.ts` was never its only blocker: it calls
+    `realiseLabelled` (deleted with the labels renderer) and it is built on
+    `vi.hoisted` plus `vi.mock(path, (importOriginal) => …)`, a vitest mocking
+    signature `bun:test` has no equivalent for. Both are independent of this
+    plan's sequencing. **G163** carries it with eight other ported tests the
+    sheet port unblocked by import and could not land, and the reason is the
+    same for seven of the nine.
+  - **Verified** CONFIRMED - this writer ported all four, read the typecheck
+    output for each, and ran the three that landed (part of
+    `bun test tests/schgen/` -> 563 pass / 0 fail across 62 files).
+
 ### G136 - the Task 7 brief's "emit it and look at it" step cannot use the mechanism it names, and the eight drawings it produced instead were made by a SCRATCH harness that is not in the tree
 
 The brief's Step 6 is *"Draw a block with each of the eight registered
@@ -10659,3 +10687,277 @@ to-expire exemption outlives its task.
   smaller mechanism for the exemption list's two kinds, also untried: give each
   entry the task that retires it and fail when that task's files are in the
   tree.
+
+### G163 - the sheet port unblocks TWENTY ported tests by import and only ELEVEN can land, and the eight that cannot are blocked by the `labels` DELETION rather than by anything Task 6b did
+
+Task 6b ported `render/frames.ts`, `bus.ts`, `sheet-check.ts` and `sheets.ts`,
+which is the gate **G124** and **G135** both name. `tools/schgen/port-probe.ts`
+(new, committed - see below) says **19 of 20** candidate pedals test files are
+import-clean against the manifest afterwards. **Eleven landed. Nine did not**,
+and the reason is not the one either entry predicted: it is plan decision **D3**,
+the `labels` rendering deletion (**G140**), reaching the ported tests one task
+later than Task 8's nine.
+
+**WHAT LANDED** - 563 pass / 0 fail across 62 files under `tests/schgen/`, up
+from 471 across 51:
+
+| test | how | note |
+|---|---|---|
+| `render/glyphClearance.test.ts` | **pure port**, no cuts | **G135** row 2 |
+| `render/glyphGlyphClearance.test.ts` | **pure port**, no cuts | **G135** row 3 |
+| `render/frames.test.ts` | diverged (D3 + MCU) | one single-unit labels block |
+| `render/sheets.test.ts` | diverged (D3 + MCU + one `describe` deleted) | see below |
+| `render/bus.kicad.test.ts` | diverged (D3 + MCU) | inert PEER block |
+| `render/templates/templateStock.kicad.test.ts` | diverged (D3 + MCU) | **G135** row 1, the ninth template test |
+| `render/emit.test.ts` | diverged (D3 + MCU) | Task 6a's emitter, now exercised |
+| `render/emitPowerRefs.test.ts` | diverged (D3 + MCU) | |
+| `render/emitRefusals.test.ts` | diverged (**MCU ONLY**) | would have been a `cuts` entry |
+| `render/ercExclusions.test.ts` | diverged (D3 + MCU) | |
+| `render/pageRefs.test.ts` | diverged (D3 + MCU) | |
+
+**THE NINE THAT DID NOT, with the exact manifest JSON to re-add.** Ruling R4:
+out of the tree rather than red, and never edited to pass.
+
+```json
+{ "from": "render/bus.test.ts", "to": "tests/schgen/render/bus.test.ts" },
+{ "from": "render/sheetCheck.test.ts", "to": "tests/schgen/render/sheet-check.test.ts" },
+{ "from": "render/sheetTextCheck.test.ts", "to": "tests/schgen/render/sheet-text-check.test.ts" },
+{ "from": "render/textIndependence.test.ts", "to": "tests/schgen/render/text-independence.test.ts" },
+{ "from": "render/pinMarks.test.ts", "to": "tests/schgen/render/pin-marks.test.ts" },
+{ "from": "render/stockFields.kicad.test.ts", "to": "tests/schgen/render/stock-fields.kicad.test.ts" },
+{ "from": "report.test.ts", "to": "tests/schgen/report.test.ts" },
+{ "from": "render/emit.kicad.test.ts", "to": "tests/schgen/render/emit.kicad.test.ts" },
+{ "from": "__fixtures__/pdfColours.ts", "to": "tests/schgen/__fixtures__/pdf-colours.ts" },
+{ "from": "render/emitPdf.kicad.test.ts", "to": "tests/schgen/render/emitPdf.kicad.test.ts" }
+```
+
+| test | what stops it | whose task |
+|---|---|---|
+| `render/bus.test.ts` | **nine** `realiseLabelled` references - the labels renderer IS most of its subject | nobody's: the renderer is deleted |
+| `render/sheetCheck.test.ts` | two `realiseLabelled` references, and its LOAD fixture puts TWO units in one labels block | nobody's |
+| `render/pinMarks.test.ts` | two `realiseLabelled` references | nobody's |
+| `render/stockFields.kicad.test.ts` | two `realiseLabelled` references, and its `labels` case puts every unit of a stock symbol in one block | nobody's |
+| `render/sheetTextCheck.test.ts` | one `vi.mock(path, (importOriginal) => …)`, a vitest signature `bun:test` has no equivalent for | nobody's |
+| `render/textIndependence.test.ts` | `vi.hoisted` AND `vi.mock(…, importOriginal)` AND two `realiseLabelled` references | nobody's - **and this is G135's row 4** |
+| `report.test.ts` | asserts `- B (s): fixture`, the per-block labels REASON list that Task 8 deleted from `report.ts` | nobody's |
+| `render/emit.kicad.test.ts` | `@/kicad/netlist` has no `exportConnectivity` | **Task 11** |
+| `render/emitPdf.kicad.test.ts` | its `mkdtempSync` site is a bare assignment, which this repository's static temp-scratch guard counts as an UNNAMED site although the file does remove it | see below |
+
+**THE THREE FINDINGS INSIDE THAT TABLE.**
+
+1. **`render/textIndependence.test.ts` is G135's fourth row and G135's
+   prediction about it was wrong.** That entry says all four are *"blocked by
+   the same task rather than by anything technical"* and that the mechanism is
+   *"Task 6b ports … after which the four JSON entries above are added with no
+   cuts."* Three of the four did exactly that. The fourth cannot be added with
+   no cuts and cannot be added at all: `render/bus.ts` was never its only
+   blocker. **Nothing in the plan brings it back**, because the renderer it
+   drives is deleted by decision and `vi.hoisted`/`vi.mock` have no `bun:test`
+   translation. A reader of G135 would otherwise wait for a task that is not
+   coming.
+2. **`render/emitPdf.kicad.test.ts` is blocked by a repo-wide guard being
+   NARROWER than its own claim, not by the port.** The static sweep in
+   `tests/stripboard/temp-scratch.test.ts` extracts a site's identifier with
+   `(?:const|let|var)\s+(\w+)\s*=\s*fs\.mkdtempSync\(`, so a module-level
+   `let dir = ""` assigned later as `dir = fs.mkdtempSync(…)` contributes a
+   site and no name, and the `sites !== named.length` arm reports *"1 unnamed
+   site(s)"* - although the file removes the directory in `afterAll` and
+   `rmSync(dir` is right there in the text. **That is a false positive in a
+   guard, which is the opposite failure from the ones this repository usually
+   records, and widening the regex makes the guard STRONGER** (more sites get
+   named, and every newly named site then goes through the removal check). Not
+   done here, deliberately: it would widen a repo-wide guard inside a task
+   whose subject is the schematic port, and the file also needs
+   `__fixtures__/pdfColours.ts` ported beside it.
+3. **`render/emit.kicad.test.ts` confirms a prediction `lib/schgen/README.md`
+   wrote down and nobody had tested.** That file says resolving
+   `@/kicad/netlist` for `KICAD_CLI` alone means *"a later ported file importing
+   `connectivityFromXml` therefore fails `bun run typecheck` naming the missing
+   export rather than refusing at port time"* (**G121**). It is the first such
+   file, it imports `exportConnectivity` rather than `connectivityFromXml`, and
+   the failure is exactly as predicted:
+   `tests/schgen/render/emit.kicad.test.ts(12,10): error TS2305: Module
+   '"../../../lib/kicad/netlist.ts"' has no exported member 'exportConnectivity'.`
+
+**AND ONE COVERAGE LOSS INSIDE WHAT DID LAND, which is not bookkeeping.**
+`render/sheets.test.ts`'s whole `field placement during layout` describe is
+**deleted** in its divergence. Its one test - *"moves a too-long Value to the
+next free side instead of overprinting the neighbour"* - puts two units in one
+labels block and its comment says why: *"The labels renderer spaces parts 4
+pitches apart; a 30-character Value does not fit right of R_LONG."*
+`realiseBus` refuses a two-unit block, and picking a template for it instead
+would be choosing an arrangement so that a test passes. **Its SUBJECT - field
+placement moving a too-long value during a whole-sheet layout - is live and is
+now checked by nothing.** This is the one deletion in this task that takes a
+real check with it, and the Task 8 precedent it follows (`ir/validate.test.ts`'s
+V6 label-reason test) did not: there, the rule under test was deleted too.
+
+- **Found** 2026-10-20, Task 6b, Steps 1 and 4.
+- **Evidence** `bun run typecheck` with each file in the tree, read line by
+  line, plus greps over the pedals source that could have come back zero:
+  `grep -c realiseLabelled $SCHGEN_SOURCE/render/{bus,sheetCheck,pinMarks,stockFields.kicad,textIndependence}.test.ts`
+  -> **9, 2, 2, 2, 2**; `grep -c "vi.mock\|vi.hoisted"` over
+  `sheetTextCheck.test.ts` and `textIndependence.test.ts` -> **1** and **2**.
+  `report.test.ts`'s failure is a run, not a read:
+  `expect(md).toContain("- B (s): fixture")` against a report whose Blocks table
+  reads `| B | s | bus | groups:  |` and whose *Automatically rendered blocks*
+  section says `None.` The suite after the eleven landed:
+  `SCHGEN_SOURCE=... bun test tests/schgen/` -> **563 pass / 0 fail / 2542
+  expect() calls across 62 files**; the whole suite **3075 pass / 0 fail across
+  303 files**.
+- **Verified** CONFIRMED - this writer ported all twenty, read every typecheck
+  error, ran the failing `report.test.ts` and read its output, and removed the
+  nine.
+- **Why it is open** seven of the nine are blocked by nothing anybody plans to
+  do, one waits on Task 11, one waits on a guard nobody has widened, and the
+  `sheets.test.ts` deletion leaves a live subject unchecked.
+- **What would settle it** **CRITERION, three clauses, and they are separable.**
+  (a) `render/emit.kicad.test.ts` exists in the tree and runs to completion.
+  (b) `render/emitPdf.kicad.test.ts` does too. (c) A test in this repository
+  fails when whole-sheet field placement stops moving a too-long value off a
+  crowded side. **MECHANISMS, all untried.** For (a): Task 11 gives
+  `lib/kicad/netlist.ts` an `exportConnectivity` of the shape pedals has, or
+  the file diverges to call this repository's reader - the second is a
+  divergence of a `.kicad.` test and would need its own decision. For (b): widen
+  the temp-scratch sweep's identifier regex to `(?:(?:const|let|var)\s+)?(\w+)\s*=\s*fs\.mkdtempSync\(`
+  and port `__fixtures__/pdfColours.ts` beside it. For (c): a hand-written test
+  over `layoutSheet` with two crowded units in a `wired` block whose template is
+  declared by the test's own fixture - note that this is the one place where
+  choosing a template is legitimate, because a fixture is not one of this
+  repository's circuits. **The seven labels-blocked files are NOT on this list
+  and should not be re-added**: their subject is deleted, and `CLAUDE.md`'s
+  "supersede means delete" applies to a test as much as to a pattern.
+
+### G164 - the obstacle matrix's `FRAME_DERIVED` reason named the wrong function for four tasks, and the arrival alarm is what found it: there are TWO `drawnBoxes` and nothing sizes a frame from the one eleven cells cited
+
+`tests/schgen/render/obstacle-matrix.test.ts`'s absence alarm fired on the
+commit that ported `render/frames.ts` and `render/sheet-check.ts`, naming both:
+
+```
+error: these have ported, so every cell whose reason names them (the FRAME_DERIVED and within-one-block cells of obstacle-pairs-*.ts) must be re-read against the real code and NOT_IN_THIS_TREE updated in the same change
+- []
++ [
++   "frames.ts",
++   "sheet-check.ts",
++ ]
+```
+
+**Both rows rang, which is the first time G132's `portedAs` fix has caught a
+real arrival** - `sheet-check.ts` is the kebab-case spelling the old guard could
+not see.
+
+**THE RE-READ CHANGED THE REASON RATHER THAN CONFIRMING IT.** `FRAME_DERIVED`
+said: *"`drawnBoxes` (lib/schgen/render/drawn-extent.ts) returns every box a
+block layout draws — `scene.texts`, `scene.bodies`, `scene.pinTexts` and the
+bounding boxes of `scene.segments` — and `boundsOf` unions them, and that union
+is what a frame is sized from."* **Nothing sizes a frame from that function.**
+`render/frames.ts` declares a SECOND, private `drawnBoxes(symbols, parts)`, and
+the two do not return the same thing:
+
+| function | unions |
+|---|---|
+| `drawn-extent.ts`'s `drawnBoxes(g, layout)` | `scene.texts`, `scene.bodies`, `scene.pinTexts`, and segment bounding boxes |
+| **`frames.ts`'s private `drawnBoxes(symbols, parts)`** | **`scene.texts` and `scene.bodies` only** |
+
+What a frame is actually sized from is `blockContent`'s own union: the placed
+`LibSymbol.boxes` of every placement, every wire END as a degenerate box, and
+that second `drawnBoxes`. So **`pinTexts`, `strokes` and `crosses` are in no
+extent any frame is sized from** - and three cells said in so many words that
+they were (`pin-number`/`frame-border` and `pin-name`/`frame-border` cited
+`scene.pinTexts`; `frame-border`/`no-connect-marker` cited it as *"where a
+no-connect marker's box is"*). Two more (`wire`/`frame-border`,
+`pin-line`/`frame-border`) cited `scene.segments`, which is the other function's
+route.
+
+**THE CONCLUSION SURVIVES, BY A DIFFERENT AND STRONGER ARGUMENT.** `frameSize`
+grows the content extent by `4 * GRID` and `contentOffset` insets the content by
+`2 * GRID`, so every frame is clear by **at least 2.54 mm on all four sides**
+(more at the top, by the title band). Measured against that margin, each
+un-unioned category is bounded by geometry the union DOES cover:
+
+| category | how far it reaches past something unioned | against 2.54 mm |
+|---|---|---|
+| pin number / offset-0 pin name | 1.905 mm either side of the pin line (`unitText`'s `along(tip, dx, dy, p.length, (3 * GRID) / 2)`) | inside |
+| no-connect marker | 0.635 mm around a pin end (`at ± GRID / 2`) | inside |
+| DNP cross | at most 0.762 mm past its own body, on a pin-free axis (`CROSS_BOUND`) | inside |
+| interior graphic (`strokes`) | nothing - `LibSymbol.boxes` is `unitBoxes`, graphics plus both pin ends | inside |
+
+**THIS SETTLES THE CELL ROUND 1 RECORDED AS UNCOVERED.**
+`frame-border`/`dnp-cross` said *"the two reasons' escape clauses meet in
+exactly the uncovered case, and that is why this cell is the thinnest of the
+frame row"* - no `drawnBoxes` unions `scene.crosses`, and a cross overhangs by
+0.762 mm. The first half is still true; the conclusion is not, because 0.762 mm
+is inside a 2.54 mm margin. **That is the one place where the arrival made a
+cell stronger rather than merely re-worded**, and it is the kind of result the
+alarm exists to produce.
+
+**TWO MORE REASONS WERE FALSIFIED BY `sheet-check.ts`, AND ONE OF THEM AT ITS
+CONCLUSION.**
+
+1. `NO_FLAG_PRODUCER` opened *"NOTHING IN THIS TREE PRODUCES A `flag: true`
+   PowerSymbol"*, naming `render/frames.ts` as the absent producer. That module
+   has landed and `flagsContent` is that producer: per flagged rail it emits the
+   rail's own symbol and a PWR_FLAG **at the same point**, and `layoutSheet`
+   carries both into the sheet's `powers`. The sentence is **deleted**, not
+   softened. What survives is narrower and still load-bearing: **no BLOCK anchor
+   ever becomes a flag**, because `anchorsToSymbols` hard-codes `flag: false`
+   and so does `anchorExtent`'s measurement-only symbol. Task 7 falsified this
+   constant's ENUMERATION (**G134**); Task 6b falsified its CONCLUSION, which is
+   the reverse.
+2. The `pin-line`/`pwr-flag-glyph` cell said *"no flag reaches a
+   `ClearanceScene` here yet."* One does now: `sheet-check.ts`'s `clearance`
+   passes `[...scene.powers, ...scene.labels]` as `ClearanceScene.anchors`, a
+   `PowerSymbol` satisfies `AnchorPoint` structurally, and
+   `sceneClearanceProblems` never reads `flag`. The check is live; it has never
+   fired, because a flag lives alone in the flags frame with no placement beside
+   it.
+3. The `body`/`body` cell's *"the sheet-level caller that would compare them
+   (`render/sheetCheck.ts`) is not in this tree"* is now about WHICH check
+   catches the cross-block case rather than about a gap: `bodyOverlaps` places
+   every block's `LibSymbol.boxes` in sheet coordinates and runs `boxesOverlap`
+   over all pairs across blocks.
+
+**WHAT WAS DONE WITH THE TWO ROWS, and it is not a deletion to make a test
+pass.** Both moved into `SETTLED_ARRIVALS`, which asserts each module is
+**PRESENT** - the same move Task 7 made for `blocks.ts` and `templates`
+(**G134**). `NOT_IN_THIS_TREE` is now empty, and the test that iterated it is
+**inverted rather than removed**: it asserts the list IS empty and says that a
+later row must carry `portedAs` and re-arm the arrival filter. A new test
+closes **G132**'s first open item for the names that remain: every
+`SETTLED_ARRIVALS` key ending in `.ts` must be a basename
+`tools/schgen/port-manifest.json` actually writes under `lib/schgen/render/`, so
+a key spelt the pedals way makes that test fail instead of making the presence
+check unable to fire.
+
+- **Found** 2026-10-20, Task 6b, Step 2, by the alarm firing and then reading
+  `$SCHGEN_SOURCE/render/frames.ts` against the cells.
+- **Evidence** the alarm's own red output, quoted above, which is a check that
+  could have failed and did. The two-`drawnBoxes` finding is a read that could
+  have gone the other way:
+  `grep -n "drawnBoxes" lib/schgen/render/frames.ts lib/schgen/render/drawn-extent.ts`
+  -> a private `function drawnBoxes(symbols: SymbolResolver, parts: SceneParts)`
+  in the first returning `[...scene.texts, ...scene.bodies].map((n) => n.box)`,
+  and an exported `drawnBoxes(g, layout)` in the second returning
+  `[...scene.texts, ...scene.bodies, ...scene.pinTexts].map(...).concat(segments)`.
+  Had `blockContent` called the exported one, eleven cells would have needed no
+  change. The margin arithmetic is over `frameSize` and `contentOffset` as
+  landed: content `minX` maps to `at.x + 2 * GRID + (minX - gridFloor(minX))`
+  and frame `maxX` to `at.x + gridCeil(maxX) - gridFloor(minX) + 4 * GRID`, so
+  both horizontal clearances are `>= 2 * GRID`; vertically the top adds
+  `bandHeight` as well. The matrix test is **10 pass / 0 fail / 71 expect()
+  calls** after the re-read, with the cited-identifier pin moved 91 -> 102 and
+  `namesOffset` classified as a `PinTextStyle` field.
+- **Verified** CONFIRMED - this writer drove the alarm red, read both
+  `drawnBoxes` definitions and `frameSize`/`contentOffset` directly, and ran the
+  re-read matrix test.
+- **Why it is open** the margin argument is arithmetic over source, not a test:
+  it is the same standing of evidence **G125** records for 95 of the 105 cells,
+  and nothing in the tree fails if `frameSize` stops adding `4 * GRID`.
+- **What would settle it** **CRITERION:** a check fails when a frame stops
+  leaving `2 * GRID` of clearance around its content, so the eleven cells'
+  reason rests on something that can break rather than on a reading.
+  **MECHANISM**, untried: a test over `frameSize`/`contentOffset`/`frameAt`
+  asserting that for a given `FrameContent` the placed content box is inset by
+  at least `2 * GRID` on all four sides - note that `render/frames.test.ts` is a
+  ported file and this would be a hand-written sibling, so **G123**'s cost
+  (nothing byte-checks a hand-written test) applies to it.
