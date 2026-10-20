@@ -6914,7 +6914,15 @@ hand with it. Four copies of one path is a smell, not a design.
   the shape difference this entry describes is real and not assumed.
 - **Verified** CONFIRMED - this writer read every file named and ran the greps.
 - **Why it is open** **BOTH CLAUSES ARE NOW SETTLED and the entry is RETAINED
-  ANYWAY, which is a ruling and not an oversight.** **G169** made it:
+  ANYWAY, which follows precedent and is not an oversight.** The precedent is
+  **Controller rulings R10 and R27, and the G155 retention** - check what a
+  deletion takes with it before deleting, which is this register's own rule
+  for *why* an entry stays. **G169 is not itself a ruling and did not create
+  this precedent**; it is the owner's KiCad directive, and the sentence
+  Task 10b wrote into its "Why it is open" bullet was this writer's own
+  application of R10/R27's existing pattern to G121, not a new ruling G169
+  issued. That sentence, quoted from G169 (correcting an earlier version of
+  this entry that mislabeled it as G169 "ruling"):
   *"**G121 itself is NOT deleted**, because this file's Task 4 record of
   `render/emit.kicad.test.ts` cites it by name for the `tsc`-error prediction
   it verified, and G117's own R10 ruling separately lists G121 among the
@@ -12024,6 +12032,75 @@ cannot tell the subprocess which of the two it is.
   **(2) preserves both contracts and is the one to try first**; (1) is simpler
   and loses something real.
 
+**WHAT TASK 10b's FIX ROUND DID (2026-10-20), AND A THIRD CHANNEL NEITHER
+MECHANISM ABOVE WOULD HAVE FIXED.** Re-reading `make/board.mk` before changing
+it found that `netlist-agrees` and `guide` do not only rely on the export -
+`netlist-agrees` (which `check` depends on, for every board declaring
+`sch`/`netlist`) runs `bun "$(CLI)" netlist-sync ... --kicad-cli "$(KICAD_CLI)"`,
+and `guide` passes `--kicad-cli "$(KICAD_CLI)" --html-to-pdf "$(HTML_TO_PDF)"`
+the same way - an EXPLICIT command-line flag, built from the Make VARIABLE's
+text, which neither mechanism above touches: mechanism (1) (stop exporting)
+only affects what is in a child process's environment, and mechanism (2)
+(conditional export) only affects whether the SAME value also reaches the
+environment. Both leave `$(KICAD_CLI)` itself computed from the static `?=`
+literal when unset, so BOTH would have left `make check`'s actual
+`netlist-sync` invocation handing a non-macOS machine the macOS path via this
+flag, regardless of either fix. `grep -c "^export \|?="` is the wrong check
+for this - `grep -n '\-\-kicad-cli "\$(KICAD_CLI)"\|\-\-html-to-pdf
+"\$(HTML_TO_PDF)"' make/board.mk` is, and it returns the two lines above.
+
+**MECHANISM AS IMPLEMENTED, a third option neither (1) nor (2) is**: make the
+Make VARIABLE's own value platform-aware, rather than choosing what to do
+with a value that is always the macOS literal. `tools/cli/resolved-default.ts`
+is a thin bridge - `bun tools/cli/resolved-default.ts kicad-cli` /
+`... html-to-pdf` prints `defaultKicadCli()` / `defaultHtmlToPdf()` - the same
+role `tools/cli/perfboard.ts board-info --field sch` already plays for
+`$(SCH)` four lines above `KICAD_CLI` in this same file. `make/board.mk` now
+reads:
+
+```
+ifeq ($(origin KICAD_CLI),undefined)
+KICAD_CLI := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" kicad-cli)
+endif
+export KICAD_CLI
+```
+
+(and the same shape for `HTML_TO_PDF`). `$(origin)` distinguishes "nothing
+set this" from "the user set this" - `?=` was dropped rather than kept,
+because `?=` creates a recursively-expanded variable and `$(shell ...)` on its
+right-hand side would re-run on every reference to `$(KICAD_CLI)` (export,
+`netlist-agrees`, `guide`, the help text), not once; `:=` inside the `ifeq`
+guard runs the shell-out at most once and only when needed. This fixes BOTH
+channels at once - the export (now exporting a correctly-resolved value
+rather than a literal) and the explicit `--kicad-cli`/`--html-to-pdf` flags
+(now built from that same resolved value) - without touching
+`tools/cli/perfboard-netlist-verb.ts` or `tools/cli/perfboard-binary-verbs.ts`,
+whose own "no fallback of its own; make/board.mk resolves it" contract is
+unchanged.
+
+A `print-%: ; @echo '$($*)'` debug target (the standard GNU Make idiom) was
+added so `tests/kicad/install.test.ts` could check the property this entry's
+own Evidence line says the old test could not: that an UNSET variable
+actually reaches the resolver, by running real `make` rather than parsing
+this file's text. **Perturbation, confirming the new tests have teeth**: with
+`make/board.mk` temporarily reverted to its pre-fix shape (`git stash`, this
+worktree only, restored and dropped immediately after), the two new
+reachability tests failed with `make: *** No rule to make target
+'print-HTML_TO_PDF'` rather than passing - they cannot pass against the
+defect this entry describes. With the fix applied again: `KICAD_CLI` unset ->
+`make print-KICAD_CLI` prints `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`
+(this machine's real, existing path, found by `defaultKicadCli()`'s own
+candidate search - not the literal, though the two happen to agree on
+darwin); `KICAD_CLI=/tmp/...-sentinel` -> prints the sentinel back unchanged.
+Also confirmed directly: with `KICAD_CLI` unset, `make -n netlist-agrees`'s
+printed recipe now shows `--kicad-cli` carrying the resolver's value, not the
+literal.
+
+**STILL UNVERIFIED ON A NON-DARWIN MACHINE**, same as G169's own candidates -
+nobody here has a Linux or Windows machine to run `make check` on, so this is
+confirmed by reasoning about `$(origin)` and by the darwin-machine
+perturbation above, not by observing the Linux or Windows arm run for real.
+
 ### G171 - gate 7 PORTS WHOLE and runs on NOTHING: no design in this repository has a checklist, so twenty ported tests pass over fixtures and the gate has never seen a circuit
 
 `lib/schgen/gates/traceability.ts` is a pure port (`tools/schgen/port-manifest.json`'s `files`,
@@ -12237,11 +12314,27 @@ evaluated on every import of the file, but computing a path is not using one.
   case asserts `checkPinIdentity(...)` equals `[]` over the generated `mini` design with
   `footprintPads` resolving real `.kicad_mod` files - a check that could have failed, and did fail
   for a different reason before the pin-table fixture was copied (`part U_AMP names pin table
-  OPA1688, which does not exist`). For the unexecuted half: `grep -rn "resolveFootprint\b\|resolveFootprintInGlobal\|expandUri" lib tools tests`
-  outside `lib/kicad/libtable.ts` itself returns **no call site**. For the path:
+  OPA1688, which does not exist`). For the path:
   `grep -n "GLOBAL_LIB_TABLE" lib/kicad/libtable.ts` gives its definition and its two readers,
-  both inside functions nothing calls.
-- **Verified** CONFIRMED - this writer wrote the first consumer, ran it, and ran the greps.
+  both inside functions nothing calls. **"No call site" CORRECTED 2026-10-20, Task 10b round 2:**
+  that original phrasing overstated what the grep actually shows. Re-running it verbatim -
+  `grep -rn "resolveFootprint\b\|resolveFootprintInGlobal\|expandUri" lib tools tests` outside
+  `lib/kicad/libtable.ts` itself - returns **two hits, not zero**:
+  `lib/schgen/gates/pin-identity.ts:11` (the import) and `:60` (`resolveFootprintInGlobal(fp,
+  global)` inside `designFootprintPads`). The table two paragraphs up already says as much -
+  `resolveFootprintInGlobal`'s row names `designFootprintPads` as its caller - so the SUBSTANCE
+  was recorded correctly; only the Evidence bullet's one-line summary was wrong to call it "no
+  call site" rather than "one call site, on a function (`designFootprintPads`) nothing here calls
+  in turn." **This does not change GLOBAL_LIB_TABLE's reachability**, which is the narrower and
+  correct claim: `resolveFootprintInGlobal` takes `global: GlobalTable` as a caller-supplied
+  PARAMETER and never reads `GLOBAL_LIB_TABLE` itself (confirmed:
+  `grep -n "GLOBAL_LIB_TABLE" lib/kicad/libtable.ts` shows it read only inside `resolveFootprint`
+  and `kicadCommonVars`, neither of which appears in the two-hit grep above or anywhere else
+  outside `lib/kicad/libtable.ts`) - so the literal itself is still read by nothing reachable in
+  this repository, on any platform, by any path.
+- **Verified** CONFIRMED - this writer wrote the first consumer, ran it, and ran the greps; the
+  correction above is CONFIRMED by this writer re-running the exact quoted command and reading its
+  output, not relayed.
 - **Why it is open** the unexecuted exports are not defects and three of them are deliberately
   unreachable here. What is open is the macOS literal, which **G169**'s directive covers in
   principle (*"no hardcoded paths unique to this machine"*) and which Task 10b's resolver did not
@@ -12255,6 +12348,37 @@ evaluated on every import of the file, but computing a path is not using one.
   literal in place but unreachable) or declare `libtable.ts` diverged to compute its default from
   `defaultKicadCli()`. **The second costs the byte-check on a 279-line file for a one-line
   change**, which is a bad trade unless something starts calling `resolveFootprint`.
+
+**TASK 10b ROUND 2 (2026-10-20): DEFERRED, NOT FIXED, WITH AN OWNER.** The
+honest options, as this entry's directive-compliance review named them, were
+(a) an upstream edit plus a re-port, declaring `lib/kicad/libtable.ts`
+diverged with a `sourceSha` and paying the byte-check, or (b) routing its
+*consumers* through `lib/kicad/install.ts` and leaving the constant
+unreferenced. **(b) does not apply**: the evidence correction above confirms
+there are zero consumers to route - `resolveFootprint` and `kicadCommonVars`,
+the only two functions that read `GLOBAL_LIB_TABLE`, have no call site
+anywhere in this repository, on any platform. **(a) is this entry's own
+"bad trade" case**: declaring a 279-line ported file diverged, and paying its
+byte-check on every future upstream diff, to fix a literal nothing can reach
+is not a defensible trade for this fix round - the same conclusion this entry
+already reached, now confirmed rather than merely argued. **This is therefore
+a third instance of the owner's "no hardcoded paths unique to this machine"
+directive left unaddressed, stated plainly rather than left with no owner.**
+The owner of closing it: whichever task first calls `resolveFootprint` or
+`kicadCommonVars`, OR makes gate 6's design-time path live by resolving
+**G175**'s temp-scratch blind spot and landing `gates/designPads.test.ts` -
+at that point `designFootprintPads`/`resolveFootprintInGlobal` becomes
+reachable too, even though it still would not itself read
+`GLOBAL_LIB_TABLE`, and the literal's dormancy argument for THIS literal
+specifically ends the day `resolveFootprint` or `kicadCommonVars` gets a
+first caller. **The mechanism to use then** is this entry's own: declare
+`lib/kicad/libtable.ts` diverged with a `sourceSha`, and change
+`GLOBAL_LIB_TABLE`'s default to read through `lib/kicad/install.ts` (a
+sibling resolver function if the fp-lib-table path convention differs
+enough from the symbol/footprint roots to need one - KiCad's own fp-lib-table
+search path is a user-profile location, not an install-root one, so it may
+not be `defaultSymbolDir`/`defaultFootprintDir`'s shape at all), paying the
+byte-check once, at the point it is first worth paying.
 
 ### G175 - two of the four ported gate-6 test files CANNOT LAND, and what stops both is a measured BLIND SPOT in the temp-scratch guard: it refuses a correct removal written as an assignment rather than a declaration
 

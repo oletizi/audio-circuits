@@ -1,10 +1,21 @@
 /**
  * Checks for `lib/kicad/install.ts` and `tools/guide/browser-install.ts`
  * (`docs/known-gaps.md` **G169**): the resolver is one place that owns the
- * KiCad install root, every default is a per-platform candidate list, and
- * `make/board.mk`'s literal - which cannot import TypeScript and so cannot
- * share a constant with it - is checked against it rather than left to
- * drift silently.
+ * KiCad install root and every default is a per-platform candidate list.
+ *
+ * **`docs/known-gaps.md` G170, and why the Makefile checks below run `make`
+ * for real rather than pattern-matching this file's text.** `make/board.mk`
+ * used to carry `KICAD_CLI ?= <macOS literal>`, `export`ed unconditionally -
+ * and an earlier version of this test only checked that literal AGREED WITH
+ * the resolver's own darwin candidate, which passed and proved nothing about
+ * whether an unset `KICAD_CLI` actually REACHED the resolver anywhere else.
+ * It did not: Make exported the literal regardless of platform, which
+ * defeated the resolver underneath it on every non-macOS `make check`. The
+ * checks below run the real `make print-%` debug target (see
+ * `make/board.mk`) with `KICAD_CLI`/`HTML_TO_PDF` genuinely unset, and assert
+ * the OUTPUT against the resolver - a check that would have failed against
+ * the Makefile this replaces, and a check an explicit override still passes
+ * untouched.
  *
  * TWO ARMS OF THIS CANNOT RUN ON THIS MACHINE. `defaultKicadCli("linux")`
  * and `defaultKicadCli("win32")` are exercised below as pure path
@@ -15,7 +26,7 @@
  * two; this file does not claim coverage it does not have.
  */
 import { expect, test } from "bun:test"
-import fs from "node:fs"
+import { execFileSync } from "node:child_process"
 import path from "node:path"
 import { defaultFootprintDir, defaultKicadCli, defaultSymbolDir } from "../../lib/kicad/install.ts"
 import { KICAD_CLI } from "../../lib/kicad/netlist.ts"
@@ -24,33 +35,50 @@ import { stockSymbolDir } from "../../lib/schgen/render/library.ts"
 import { defaultHtmlToPdf } from "../../tools/guide/browser-install.ts"
 import { FOOTPRINT_LIBRARY_ROOT } from "./footprint-library.ts"
 
-const BOARD_MK = fs.readFileSync(path.join(import.meta.dir, "..", "..", "make", "board.mk"), "utf8")
+const REPO_ROOT = path.join(import.meta.dir, "..", "..")
 
-/** The literal on one `<VARIABLE> ?= <value>` line in make/board.mk. */
-function makefileDefault(variable: string): string {
-  const pattern = new RegExp(`^${variable} \\?= (.+)$`, "m")
-  const match = pattern.exec(BOARD_MK)
-  if (match === null) {
-    throw new Error(
-      `make/board.mk declares no "${variable} ?= ..." line to check against. This test caught ` +
-        "the Makefile's own default moving or being renamed - update the pattern above if that " +
-        "was deliberate.",
-    )
+/**
+ * Any directory holding a `perfboard.json` gets `make/board.mk`'s targets,
+ * including `print-%`; this one is picked only because it exists and is not
+ * otherwise mutated by anything here - `make print-%` writes nothing.
+ */
+const PROBE_BOARD = path.join(REPO_ROOT, "boards", "pt2399-core")
+
+/**
+ * Runs `make print-<variable>` in `PROBE_BOARD` with `override` applied on
+ * top of this process's own environment - `override[key] === undefined`
+ * UNSETS that key rather than passing through whatever this process
+ * happened to have, so a test can assert "genuinely unset" rather than
+ * "whatever was in the shell that ran the suite."
+ */
+function makePrint(variable: string, override: Readonly<Record<string, string | undefined>>): string {
+  const env: Record<string, string> = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined) env[key] = value
   }
-  return match[1]
+  for (const [key, value] of Object.entries(override)) {
+    if (value === undefined) delete env[key]
+    else env[key] = value
+  }
+  return execFileSync("make", [`print-${variable}`], { cwd: PROBE_BOARD, env, encoding: "utf8" }).trim()
 }
 
-test("make/board.mk's KICAD_CLI default agrees with the resolver's macOS candidate", () => {
-  // Make cannot import TypeScript (docs/known-gaps.md G121, G169), so the
-  // Makefile's own macOS literal and lib/kicad/install.ts's macOS candidate
-  // are two hand-written copies of the same fact. This is the check G169
-  // says a reader will forget to write: without it, either copy can change
-  // without the other, silently.
-  expect(makefileDefault("KICAD_CLI")).toBe(defaultKicadCli("darwin"))
+test("make print-KICAD_CLI, with KICAD_CLI unset, reaches lib/kicad/install.ts's resolver", () => {
+  expect(makePrint("KICAD_CLI", { KICAD_CLI: undefined })).toBe(defaultKicadCli())
 })
 
-test("make/board.mk's HTML_TO_PDF default agrees with the resolver's macOS candidate", () => {
-  expect(makefileDefault("HTML_TO_PDF")).toBe(defaultHtmlToPdf("darwin"))
+test("make print-KICAD_CLI honours an explicit override, untouched by the resolver", () => {
+  const sentinel = "/tmp/task-10b-round2-kicad-cli-sentinel"
+  expect(makePrint("KICAD_CLI", { KICAD_CLI: sentinel })).toBe(sentinel)
+})
+
+test("make print-HTML_TO_PDF, with HTML_TO_PDF unset, reaches tools/guide/browser-install.ts's resolver", () => {
+  expect(makePrint("HTML_TO_PDF", { HTML_TO_PDF: undefined })).toBe(defaultHtmlToPdf())
+})
+
+test("make print-HTML_TO_PDF honours an explicit override, untouched by the resolver", () => {
+  const sentinel = "/tmp/task-10b-round2-html-to-pdf-sentinel"
+  expect(makePrint("HTML_TO_PDF", { HTML_TO_PDF: sentinel })).toBe(sentinel)
 })
 
 test("defaultKicadCli covers darwin, linux and win32 as distinct, justified candidates", () => {

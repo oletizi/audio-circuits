@@ -38,16 +38,30 @@
 SCH     := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field sch)
 NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 
-# KICAD_CLI follows the exact VEROROUTE/QMAKE shape from veroroute.mk: this
-# repository's own contingent default, exported so it reaches any recipe
-# that needs it, with an explicitly set KICAD_CLI always winning.
-KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
+# KICAD_CLI follows the VEROROUTE/QMAKE shape from veroroute.mk in spirit -
+# an explicitly set KICAD_CLI (environment, or `make KICAD_CLI=...`) always
+# wins outright, and the result is exported so it reaches any recipe that
+# needs it - but NOT in the letter any more, and docs/known-gaps.md **G170**
+# is why: a plain `KICAD_CLI ?= <macOS literal>` here, once Task 10b gave
+# every TypeScript call site a per-platform resolver (lib/kicad/install.ts),
+# became the one thing that still handed a Linux or Windows `make check` the
+# macOS path regardless of platform - on 21 bun invocations that inherit the
+# export, AND on netlist-agrees/guide below, which pass $(KICAD_CLI) as an
+# explicit --kicad-cli flag that no environment change can touch. $(origin)
+# distinguishes "the user set this" from "nothing set this yet": only the
+# second case shells out to tools/cli/resolved-default.ts, which is the one
+# place Make, unable to import TypeScript itself, calls into the resolver -
+# the same bridge $(SCH)/$(NETLIST) above already use for board-info.
+ifeq ($(origin KICAD_CLI),undefined)
+KICAD_CLI := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" kicad-cli)
+endif
 export KICAD_CLI
 
-# HTML_TO_PDF follows THE SAME SHAPE, and for the same reason: printing the
-# build guide is part of this build system, not something an operator does by
-# hand in a browser afterwards, so the converter is a resolved, overridable
-# variable here rather than a path buried in TypeScript.
+# HTML_TO_PDF follows THE SAME SHAPE and the same G170 fix, and for the same
+# reason: printing the build guide is part of this build system, not
+# something an operator does by hand in a browser afterwards, so the
+# converter is a resolved, overridable variable here rather than a path
+# buried in TypeScript - and, as of G170, not a bare macOS literal either.
 #
 # It must be a Chromium-family browser binary - `guide` invokes it with
 # --headless --no-pdf-header-footer --print-to-pdf and a throwaway
@@ -55,10 +69,22 @@ export KICAD_CLI
 # pagination. There is no fallback: a missing converter refuses by name
 # (tools/guide/print-pdf.ts) rather than writing a packet whose PDF is
 # quietly absent.
-HTML_TO_PDF ?= /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+ifeq ($(origin HTML_TO_PDF),undefined)
+HTML_TO_PDF := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" html-to-pdf)
+endif
 export HTML_TO_PDF
 
-.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring scaffold-membership place adopt
+.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring scaffold-membership place adopt print-%
+
+# print-%: prints any Make variable's final, resolved value - `make
+# print-KICAD_CLI` - the GNU Make idiom for inspecting what a variable
+# actually became. It is how tests/kicad/install.test.ts proves KICAD_CLI
+# and HTML_TO_PDF reach lib/kicad/install.ts's resolver when unset, and leave
+# an explicit override untouched, without the test having to re-parse this
+# file's own ifeq/shell logic to predict what Make would do with it
+# (docs/known-gaps.md G170).
+print-%:
+	@echo '$($*)'
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
