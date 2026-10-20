@@ -6139,9 +6139,29 @@ history for Task 4 to reuse rather than re-derive from scratch.
   `Circuit.mcu` anywhere); `tests/schgen/port-fidelity.test.ts`'s bidirectional
   check passing with the `cuts` entries in place - re-deriving each ported
   file from the pedals source plus the manifest's declared cuts reproduces
-  it byte-for-byte. (Step 6's guard perturbation - `singlePinNets` returning
-  `[]` and back - is a separate measurement, about a validation rule rather
-  than this cut; its command and output are in the Task 2 report, not here.)
+  it byte-for-byte.
+
+  **Step 6's guard perturbation - a separate measurement, about a
+  validation rule rather than this cut - is committed, not cited from
+  somewhere gitignored.** Round 1 pointed at a "Task 2 report," which lives
+  under `.superpowers/` - gitignored, destroyed by `git clean -fdx`, and not
+  something a later reader can re-derive (review round 2, Important finding
+  2). `tests/schgen/ir/single-pin-net-guard.test.ts` is the fix: a
+  hand-written, committed, re-runnable test (listed in `handWritten`, not
+  ported) asserting `validateCircuit` names a hand-built circuit's two
+  single-pin nets. `bun test tests/schgen/ir/single-pin-net-guard.test.ts`
+  passes against the real `singlePinNets`
+  (`lib/schgen/ir/validate-nets.ts`); perturbing it to `return [];` and
+  re-running fails that same named test with:
+  ```
+  Expected to contain: "net LONELY has only one pin (R_A.1); connect it or declare the pin not connected"
+  Received: [
+    "block B: net GND is in no bus group", "block B: net LONELY is in no bus group"
+  ]
+  ```
+  restoring the file returns it to green (checked against
+  `tests/schgen/port-fidelity.test.ts`, which re-verifies the restore is
+  byte-identical to the mechanical port, not just visually similar).
 - **Verified** CONFIRMED - this writer ran `grep`, `bun run typecheck` and
   the fidelity test directly.
 - **Why it is open** it is not a defect; it is a standing, deliberate
@@ -6243,7 +6263,31 @@ wholesale (never extends it) and restores those fields along with a working
   files `tests/schgen/__fixtures__/fixture-lib.ts` references by path
   (`symbols/Fix.kicad_sym`, `symbols/Pwr.kicad_sym`, under `__fixtures__/`
   in the pedals source) but which Task 2 did not, since the stub
-  `createResolver` never reads them. Task 4 also restores the
-  `NOT_A_KICAD_SYMBOL` entries for `"Pwr:GND"` and `"Fix:R"` in
-  `tests/kicad/symbol-names.test.ts`, emptied in Task 2 round 2 because
-  nothing in the tree swept them once the three files moved out.
+  `createResolver` never reads them.
+
+  **Task 4 also re-adds a symbol exemption in `tests/kicad/symbol-names.test.ts`
+  for "Pwr:GND" and "Fix:R" - deleted outright (review round 2, Important
+  finding 1 / Controller ruling R5), not merely left empty.** Task 2's
+  original port added a `NOT_A_KICAD_SYMBOL` map alongside the three test
+  files that used those two names; Controller ruling R4 moved the three
+  files to Task 4 and, as a bookkeeping consequence, emptied the map rather
+  than deleting it (both names had stopped appearing anywhere). The review
+  found the map had no teeth even before it was emptied - it exempted any
+  well-formed lib id with no check that the exempted name actually *fails*
+  to resolve, and its `continue` ran ahead of the malformed-value arm,
+  silencing that report too - so a later task re-adding `"Fix:R"`, followed
+  by a real circuit or vendored library later also writing
+  `symbol: "Fix:R"`, would pass this guard silently: the exact defect the
+  file's own header says it exists to catch. Combined with the emptying,
+  the map and its own "every entry is still swept" test iterated zero
+  entries - a check that cannot fail, which this repository forbids on the
+  same page as the symbol-names sweep's own `SWEPT.size >= 12` floor.
+  Ruling: delete rather than add teeth to nothing. **Task 4 re-adds the
+  exemption beside the fixtures that justify it, with the two properties
+  this version lacked: each entry must still be checked to *fail to
+  resolve* (the footprint side's `CONSTRUCTED_FOR_A_REFUSAL` is the model
+  that already has this - "each must still fail to resolve, so a real name
+  cannot hide behind the list"), and every swept *site* must be restricted
+  to under `tests/schgen/` (so the exemption cannot silently cover a
+  production circuit or a vendored library that happens to share the bare
+  name).

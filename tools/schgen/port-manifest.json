@@ -71,5 +71,9 @@
     { "from": "ir/author.test.ts", "to": "tests/schgen/ir/author.test.ts" },
     { "from": "ir/order.test.ts", "to": "tests/schgen/ir/order.test.ts" }
   ],
-  "handWritten": ["lib/schgen/strict.ts", "lib/schgen/render/library.ts"]
+  "handWritten": [
+    "lib/schgen/strict.ts",
+    "lib/schgen/render/library.ts",
+    "tests/schgen/ir/single-pin-net-guard.test.ts"
+  ]
 }

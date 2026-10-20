@@ -72,11 +72,16 @@ export interface PortManifest {
   readonly moduleRenames: Readonly<Record<string, string>>
   readonly files: readonly ManifestFileEntry[]
   /**
-   * Every hand-written (never ported) `.ts` file under `lib/schgen/`, repo-
-   * relative. `tests/schgen/port-fidelity.test.ts` asserts this list plus
-   * `files[].to` is the *complete* set of `.ts` files under `lib/schgen/` -
-   * so a new hand-written file must be added here deliberately, or the test
-   * fails naming it, rather than silently passing as if it were ported.
+   * Every hand-written (never ported) `.ts` file this port's manifest
+   * tracks, repo-relative - primarily under `lib/schgen/`, where
+   * `tests/schgen/port-fidelity.test.ts` asserts this list plus `files[].to`
+   * is the *complete* set of `.ts` files under that directory, so a new
+   * hand-written file there must be added here deliberately, or the test
+   * fails naming it, rather than silently passing as if it were ported. A
+   * hand-written file outside `lib/schgen/` (e.g. a `tests/schgen/` test
+   * written to give a `docs/known-gaps.md` entry a durable, re-runnable
+   * home - not a port) may also be listed here for visibility, though the
+   * completeness check does not scope to it.
    */
   readonly handWritten: readonly string[]
 }
