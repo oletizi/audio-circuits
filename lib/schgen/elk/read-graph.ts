@@ -17,6 +17,8 @@
 import { pinEnd, placeBox, samePoint, type Point, type Side } from "../render/geometry.ts"
 import { fmtPoint } from "../render/connectivity.ts"
 import { ORIGIN, boundaryNodeId, pinPortId, unitBoxOf, unitNodeId } from "./graph.ts"
+import { negotiablePort } from "../authoring.ts"
+import type { PinSide } from "../rules/pin-sides.ts"
 import type { Anchor, BlockSubgraph, BlockUnit, Placement, Wire } from "../render/block-types.ts"
 import type { LibPin } from "../render/lib-pins.ts"
 import type { NetName } from "../ir/types.ts"
@@ -217,24 +219,43 @@ function routeOfEdge(edge: ElkExtendedEdge, source: Terminal, target: Terminal):
 }
 
 /**
- * The side an anchor faces, taken from the direction the route arrives from.
+ * The side an anchor faces: **the reviewed rule's answer where it gives exactly one, and the
+ * route's own direction only where the rule leaves the side open.**
  *
- * **IT IS DERIVED FROM ELK's OWN ROUTE AND NOT FROM `negotiablePort`'s DECLARED SIDES, AND THE
- * REASON IS THAT THE DECLARATION ANSWERS A DIFFERENT QUESTION.** `negotiablePort` says which EDGE
- * of the block a net may be reached from, and `graph.ts` already spent that answer: it is what pins
- * the boundary node to the first or last layer (`layerConstraintFor`). `Anchor.side` is read by
- * `anchorsToSymbols`, which turns it into a glyph ROTATION through `powerRotation` - so it decides
- * which way a power symbol points, and a glyph pointing one way with its wire arriving from another
- * is the shape §3.2's clearance checks grade badly and a reader reads as wrong.
+ * **THE FIRST VERSION TOOK IT FROM THE ROUTE ALWAYS, AND LOOKING AT THE DRAWING IS WHAT SETTLED
+ * IT** (Task 13 Step 7; `docs/known-gaps.md`). `Anchor.side` is read by `anchorsToSymbols`, which
+ * turns it into a glyph ROTATION through `powerRotation` - so it decides which way a power symbol
+ * points. Under `elk.direction = RIGHT` a boundary node is placed in a LAYER, so a route reaches it
+ * horizontally or from above, and the route-derived side put the `+3V3` supply arrow **pointing
+ * downwards, below the parts it supplies**. `RailSpec` in `lib/schgen/ir/types.ts` states the
+ * convention in the tree and in its own words - *"Ground rails are drawn at the bottom of blocks
+ * with downward symbols; supplies at the top"* - and `negotiablePort` is the reviewed rule that
+ * applies it. A derivation invented here may not overrule a stated convention; `CLAUDE.md`'s
+ * *"a stated directive outranks"* is the same discipline pointed at a rule file instead of a board.
  *
- * Under `elk.direction = RIGHT` (decision **D4**) a boundary node is placed in a layer, so a rail
- * declared `bottom` is reached by a route that arrives horizontally - and `powerRotation` has an
- * answer for all four sides of both rail kinds, so taking the route's direction costs nothing and
- * lines the glyph up with its own wire. **The disagreement between a rail's declared edge and the
- * direction its route arrives from is recorded in `docs/known-gaps.md`**; it is a fact about
- * `direction = RIGHT`, not something this function decides.
+ * **The route is still what answers when the rule genuinely does not.** `negotiablePort` returns
+ * `["left", "right"]` for a `bidirectional` port and for a net it has no declared direction for
+ * (**G99**'s open residue below the circuit boundary), and choosing between left and right by taste
+ * is the thing this layer must not do - so the direction the route actually arrives from decides,
+ * which is ELK's geometry rather than anyone's preference.
  */
-function anchorSide(at: Point, route: readonly Point[]): Side {
+const SIDE_OF_PIN_SIDE: Readonly<Record<PinSide, Side>> = { left: "left", right: "right", top: "up", bottom: "down" }
+
+function anchorSide(net: NetName, g: BlockSubgraph, at: Point, route: readonly Point[]): Side {
+  const declared = negotiablePort(net, { portDirections: g.portDirections, rails: [...g.railSpecs.values()] })
+  const only = declared.sides.length === 1 ? declared.sides[0] : undefined
+  if (only !== undefined) {
+    const side = SIDE_OF_PIN_SIDE[only]
+    if (side === undefined) {
+      throw new Error(
+        `negotiablePort gave net ${net} the side "${only}", which SIDE_OF_PIN_SIDE in ` +
+          "lib/schgen/elk/read-graph.ts does not name. Every PinSide must map to a geometry Side; " +
+          "it is not defaulted, because an anchor facing a side nobody chose becomes a power " +
+          "symbol pointing a way nobody chose.",
+      )
+    }
+    return side
+  }
   for (let i = route.length - 2; i >= 0; i -= 1) {
     const p = route[i]
     if (p === undefined || samePoint(p, at)) continue
@@ -242,11 +263,11 @@ function anchorSide(at: Point, route: readonly Point[]): Side {
     return at.y > p.y ? "down" : "up"
   }
   throw new Error(
-    `the anchor at ${fmtPoint(at)} is reached by a route with no segment of any extent, so there is ` +
-      "no direction to read its side from. Anchor.side becomes a power symbol's rotation " +
-      "(powerRotation, render/text-boxes.ts) and a glyph pointing nowhere is not a default this " +
-      "layer may pick: it means elkjs routed an edge to a boundary node that is on top of its own " +
-      "neighbour.",
+    `the anchor for net ${net} at ${fmtPoint(at)} is reached by a route with no segment of any ` +
+      "extent, and the reviewed rule leaves its side open, so there is nothing to read a direction " +
+      "from. Anchor.side becomes a label's or a power symbol's orientation and is not a default " +
+      "this layer may pick: it means elkjs routed an edge to a boundary node that is on top of its " +
+      "own neighbour.",
   )
 }
 
@@ -298,7 +319,7 @@ export function readElkGraph(g: BlockSubgraph, graph: ElkNode): Adapted {
           "net, which the IR's own `singlePinNets` rule refuses before this point.",
       )
     }
-    anchors.push({ net, at: terminal.at, side: anchorSide(terminal.at, route) })
+    anchors.push({ net, at: terminal.at, side: anchorSide(net, g, terminal.at, route) })
   }
 
   return { placements, wires, anchors, terminals, elkPositions }

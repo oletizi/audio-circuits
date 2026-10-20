@@ -2098,6 +2098,18 @@ finding about seam B rather than a failure of the measurement.
 
 ### G106 - the ELK drawings already contain 30-187 DUPLICATE wire segments each, so every crossing and length measure taken over them is inflated, and the adapter would inherit them
 
+
+**TASK 13 AMENDMENT, 2026-10-20: THE FIGURE ON THIS DRIVER IS MEASURED, AND IT IS NOT THE SPIKES'.**
+The adapter this entry anticipated now exists and counts both defects separately per block
+(`lib/schgen/elk/adapt.ts`, `lib/schgen/elk/junctions.ts`). Over all twelve declared blocks of the
+four parity circuits: **0 to 24 exact duplicate segments per block** against the spikes' 0-80, and
+**ZERO zero-length segments** against the spikes' 0-5. So the duplicate half of this entry is real
+here and milder, and the zero-length half does not appear on this driver at all. **What appears
+instead is worse**: 10 µm near-zero jogs from ELK's unset spacing defaults (**G188**) and PARTIAL
+collinear overlaps from routing a net as a spanning chain (**G189**) - and a partial overlap is
+strictly worse than a duplicate, because a duplicate is deduplicated and counted while a partial
+overlap can only be refused. The per-block table is in **G189**.
+
 `[RAN]` `docs/schematic/elk-spike.md` §7, on 15 whole-circuit drawings:
 
 > *"**Duplicate wire segments: 30-187 per drawing.** Any measure that does not
@@ -7411,6 +7423,17 @@ figure is thirteen newly ported modules, twelve of them unexercised.
     (round 2: 3159 pass / 0 fail across 309 files).
 
 ### G125 - the obstacle-category matrix is enumerated and filled, and **95 of its 105 cells rest on reading the source rather than on a test that could have failed**
+
+
+**TASK 13 AMENDMENT, 2026-10-20: THE RE-VALIDATION SPEC §1.4 ASKS FOR HAS NOT HAPPENED, AND THE 95
+CELLS HAVE EXACTLY AS MUCH EVIDENCE AS THEY HAD BEFORE.** Task 13 built the instrument
+(`tools/schgen/elk/obstacle-census.ts`) and ran it over every declared block of the four parity
+circuits. **No `PAIR_COVERAGE` pair fired, because 0 of the 12 blocks reach `checkLayout` at all** -
+eleven refuse at the canonical topology and one at obligation 3, and the figures are unchanged with
+ELK's remaining spacings at whole grid steps. **Do not read that empty result as the matrix holding
+up against a second geometry source**; that is precisely the substitution this entry exists to
+refuse. **G191** has the result, the one pair that fired on fixture geometry under a probe arm, and
+what is now needed, which is geometry rather than a design.
 
 This is **G85**'s criterion met in form and only partly in substance, recorded
 plainly because the gap between those two is the whole risk.
@@ -13572,3 +13595,329 @@ legal or not.
   beside the input hash, so a changed option is visible in a diff even though it is not refused -
   **which detects rather than prevents, and is a weaker reading of the criterion**, so it is
   offered as a mitigation and not as a settlement.
+
+### G188 - ELK's UNSET spacing and padding defaults are absolute numbers in whatever unit the geometry is in, and this backend's unit is the MICROMETRE, so they are 0.8% of a grid step
+
+`[RAN]` `tools/schgen/elk/graph.ts` hands `elkjs` two spacings, both whole grid steps
+(`NODE_SEPARATION = STUB = 2 * GRID`, `LAYER_SEPARATION = PITCH = 4 * GRID`). **It hands it nothing
+else, and every option it does not hand it keeps an ELK default that is a bare number** - padding
+12, `spacing.edgeEdge` 10, `spacing.edgeNode` 10, `portPort` 10. The geometry in this backend is in
+**micrometres**, so those defaults are 10-12 µm: **0.8 to 0.9 per cent of the 1.27 mm electrical
+grid.**
+
+**WHAT IT PRODUCES, measured on `dividerSubgraph` through the pinned `elkjs@0.9.3`:**
+
+```
+nodes   R_TOP:1 x 12 y 22    R_BOT:1 x 7124 y 7662    port:3V3 x 7124 y 12
+edges   3V3:0  start (1028,22)  bend (1028,12)  end (7124,12)
+```
+
+The whole drawing sits at `(12, 22)` - ELK's default padding - and **every edge leaves its port with
+a 10 µm jog** from the port's y to the padding line. Snapping a 10 µm segment onto a 1.27 mm grid
+makes it zero length, which `snapToGrid` refuses as the identity collapse it is, so **every fixture
+block refuses at spec §1.4 obligation 1.**
+
+**THE DIAGNOSIS IS CONFIRMED BY A PROBE, NOT INFERRED.** The same five fixture blocks laid out twice
+- once as shipped, once with `elk.padding` and the five remaining spacings at `GRID`:
+
+| | shipped | spacings at whole grid steps |
+| --- | --- | --- |
+| blocks refusing at the snap gate | **5 of 5** | **0 of 5** |
+| blocks drawing clean | 0 | 2 |
+| blocks refusing at the clearance checks | 0 | 3 |
+
+**THE OPTION VALUES ARE NOT CHANGED HERE AND THAT IS DELIBERATE.**
+`lib/schgen/elk/options.ts`'s own header says *"nothing in this file was chosen because a drawing
+looked better with it. Each value cites the decision, the specification clause or the ported
+constant it comes from"*, and the Task 13 brief forbids tuning ELK options by name. The two spacings
+that ARE set cite `STUB` and `PITCH`; **this writer has no reviewed source for a value for the other
+six**, and picking one grid step because it makes the drawings appear is exactly the failure
+`CLAUDE.md`'s governing invariant is about.
+
+**AND IT IS WHY `graph.test.ts`'s SPACING ASSERTION IS NARROWER THAN IT READS.** That test says
+*"both spacings are whole grid steps, which is what the plan asks both spacings to be"* - and its
+reach is **the two options this backend sends**, while the sentence a reader takes from it is about
+the spacings ELK USES. That is **G125**'s shape again: a guard whose reach is a fraction of its
+claimed reach.
+
+- **Found** 2026-10-20, Task 13, while diagnosing why every block refused at the snap gate.
+- **Evidence** the node and edge dump above, printed from a real `layoutBlocks` run; the two-arm
+  probe table, both arms run here; and `knownLayoutOptions()` confirming `spacing.edgeEdge`,
+  `spacing.edgeNode`, `layered.spacing.edgeEdgeBetweenLayers` and
+  `layered.spacing.edgeNodeBetweenLayers` are DOUBLE options targeting PARENTS that this backend
+  never sets. **A check that could have failed and now stands:**
+  `tests/schgen/elk/options.elk.test.ts`'s last test enumerates `knownLayoutOptions()`'s spacing
+  vocabulary, asserts the sent set is exactly the two, and asserts those four are still unsent - so
+  acting on this entry turns it red rather than passing quietly, and an `elkjs` that changes its
+  spacing vocabulary turns it red too.
+- **Verified** CONFIRMED - this writer ran every measurement above.
+- **Why it is open** choosing a value for each option is choosing a layout option, which needs a
+  reviewed source this task does not have. It is also **not the blocker for the real circuits** -
+  see **G189**, where all twelve declared blocks refuse EARLIER, at the canonical topology, under
+  both arms.
+- **What would settle it** **CRITERION: every spacing and padding `elkjs` uses is a whole number of
+  1.27 mm grid steps, not only the ones this backend happens to send.** It is the plan's own
+  requirement - `wholeGridSteps` exists to assert it - and it is currently met for 2 options and
+  violated for at least 5 plus the padding. **MECHANISM, untried and NOT taken here:** set each of
+  them, with the value per option coming from a reviewed source the way `NODE_SEPARATION` and
+  `LAYER_SEPARATION` cite `STUB` and `PITCH`. Which ported constant belongs to which option is the
+  part nobody has decided, and it is the same correspondence question **G180** already records as
+  this writer's reading rather than a stated rule.
+
+### G189 - routing a net as a spanning CHAIN of two-terminal edges makes ELK retrace its own route, and 11 of the 12 declared blocks refuse on the overlap it produces
+
+`[RAN]` `lib/schgen/elk/graph.ts`'s `edgesForNet` turns a net of degree n into **n-1 two-terminal
+edges**, chained - which is a tree, and is what KiCad draws. **ELK routes each of those edges
+independently**, so an edge's route can run along a stretch an earlier edge of the SAME net already
+occupies. Spec §1.4 revision 4 clause (d) refuses exactly that: an overlap that is neither an exact
+duplicate nor a clean T has more than one reading and none of them may be chosen.
+
+**The measurement, over every declared block of the four parity circuits:**
+
+| | blocks |
+| --- | --- |
+| refused at the canonical topology, clause (d) | **11 of 12** |
+| refused at obligation 3 (see **G190**) | 1 of 12 |
+| reached the clearance checks | **0 of 12** |
+| drawn | **0 of 12** |
+
+Two of the overlaps, verbatim, and both are backtracks rather than duplicates:
+
+```
+ob-buffer  wire 17 (GND, (55.952, 31.873)-(55.952, 11.472))
+           wire 19 (GND, (55.952, 11.472)-(55.952, 22.932))   overlap 11.472-22.932
+ob-buffer  wire 20 (GND, (55.952, 22.932)-(72.442, 22.932))
+           wire 21 (GND, (72.442, 22.932)-(67.372, 22.932))   overlap 67.372-72.442
+```
+
+The route reaches a point, carries on past it, and the next edge of the chain comes back.
+
+**THIS IS NOT THE SPACING DEFECT OF G188.** Re-run with ELK's remaining spacings and the padding at
+whole grid steps, the figures are **unchanged**: 11 of 12 at clause (d), 1 at obligation 3, 0
+drawn. The two findings are independent and this one is the blocker for the real circuits.
+
+**AND IT REFINES G106's NUMBER RATHER THAN CONFIRMING IT.** The spikes measured *"duplicate wire
+segments: 30-187 per drawing"* and *"0-80 per block"* through `netlistsvg`. On this driver, with
+exact duplicates counted separately from partial overlaps:
+
+| block | exact duplicates collapsed | zero-length dropped | wires before -> after |
+| --- | --- | --- | --- |
+| `opamp-buffer/ob-buffer` | 8 | 0 | 65 -> 57 |
+| `optical-compressor/oc-power` | 11 | 0 | 42 -> 31 |
+| `optical-compressor/oc-audio` | 12 | 0 | 82 -> 70 |
+| `pt2399-core/pt-core` | **24** | 0 | 179 -> 155 |
+| `transistor-preamp/tp-leg-upper` | 0 | 0 | 14 -> 14 |
+| `transistor-preamp/tp-leg-feedback` | 0 | 0 | 14 -> 14 |
+| `transistor-preamp/tp-leg-lower-a` | 0 | 0 | 14 -> 14 |
+| `transistor-preamp/tp-leg-lower-b` | 0 | 0 | 14 -> 14 |
+| `transistor-preamp/tp-leg-collector` | 0 | 0 | 11 -> 11 |
+| `transistor-preamp/tp-leg-emitter-bypass` | 0 | 0 | 12 -> 12 |
+| `transistor-preamp/tp-stage` | 11 | 0 | 75 -> 64 |
+
+**0 to 24 exact duplicates per block against the spikes' 0-80, and ZERO zero-length segments against
+the spikes' 0-5** - so the duplicate half of G106 is real here and milder, and the zero-length half
+does not appear on this driver at all. What appears instead is **G188**'s 10 µm near-zero segments
+and this entry's partial overlaps, and a partial overlap is strictly worse than a duplicate: a
+duplicate is deduplicated and counted, and a partial overlap can only be refused.
+(`optical-compressor/oc-sidechain` has no row: it refuses at obligation 3 before the topology runs.)
+
+- **Found** 2026-10-20, Task 13, Step 6, running the obstacle census over the twelve blocks.
+- **Evidence** the census output above (`tools/schgen/elk/obstacle-census.ts`, run over
+  `PARITY_CASES`); the two verbatim overlaps; and the second arm re-run with the G188 spacings. A
+  check that could have failed: `tests/schgen/elk/junctions.test.ts`'s *"an overlap that is neither
+  a duplicate nor a clean T REFUSES, naming both segments"* and its three companions, which pass on
+  a clean T, on an end-to-end join and on a non-collinear crossing - so clause (d) is not simply
+  refusing everything.
+- **Verified** CONFIRMED - this writer ran the census, both arms, and read the overlaps.
+- **Why it is open** it is a property of how the graph represents a net, which is
+  `lib/schgen/elk/graph.ts`'s decision and not the adapter's, and changing it changes every
+  serialized input the generation manifest keys a drawing by. **Nothing is broken by leaving it:**
+  the adapter refuses, loudly and by name, which is spec §1.4 obligation 5's unambitious answer.
+- **What would settle it** **CRITERION: a net's route holds no overlap that clause (d) must refuse -
+  that is, every pair of same-net segments either shares at most a point or is an exact duplicate.**
+  **MECHANISMS, two, both untried and they are not equivalent.** (1) Give ELK the net as ONE
+  `ElkExtendedEdge` with n sources and targets, so it routes the net once as a tree instead of n-1
+  times independently; the cost is that a multi-section edge's section-to-terminal mapping then
+  comes from `incomingShape`/`outgoingShape`, which `read-graph.ts` currently refuses by name
+  because reading it wrongly would attach a wire to the wrong terminal. (2) Keep the chain and merge
+  collinear same-net overlaps in the adapter - **which clause (d) forbids in the same breath that
+  creates this entry**, because choosing which reading of the shared stretch to keep is the repair
+  obligation 5 refuses. **Mechanism 2 is recorded so that the next reader knows it was considered
+  and why it is not available.**
+
+### G190 - `elk.portConstraints = FIXED_POS` does NOT hold a port whose position is off its declared `elk.port.side`, and one real block is caught by it
+
+`[RAN]` `optical-compressor/oc-sidechain`, pin 1 of `D3` (`Device:LED`):
+
+```
+node 8382 x 3556     port sent at (762, 1270)     port returned at (0, 1270)
+```
+
+The port was sent 762 µm from the node's left edge and came back **on** it. It is not a clamp - the
+sent position is inside the node's bounds - it is ELK projecting the port onto the side
+`elk.port.side` declares for it, **in spite of `FIXED_POS`**.
+
+**WHY THE PIN IS NOT ON THE EDGE IN THE FIRST PLACE.** A node's size is `u.symbol.boxes.get(u.unit)`
+placed, and a symbol's unit box covers its drawn graphics as well as its pins. `Device:LED`'s arrows
+extend 762 µm further left than its leftmost pin end, so the pin end sits 762 µm inside the box and
+the port is not on the boundary. **Of the 42 ports in that block this is the only one it happens
+to**, and across the other eleven blocks it happens to none.
+
+**IT IS CAUGHT, WHICH IS THE POINT.** Spec §1.4 obligation 3 says the transform is applied once
+*"and the result is what both ELK and the emitter see"*. `portCoordinateDisagreements` compares the
+two and `adaptElkLayout` refuses on a difference, so the block does not draw with a wire attached
+762 µm from its pin. **This is the first time that check has had anything to catch**, and it caught
+it on real data rather than on a fixture.
+
+**A SECOND FINDING INSIDE THIS ONE: obligation 3's SUBSTITUTION is unobservable whenever FIXED_POS
+IS honoured.** `[RAN]` Step 8's perturbation 3 - delete the substitution in `read-graph.ts` and use
+ELK's returned section endpoints - **changed no test outcome at all** before a test was written for
+it, because the two values agree everywhere the constraint holds. A guard that is invisible exactly
+when nothing is wrong is no guard; `tests/schgen/elk/adapt.test.ts` now manufactures the
+disagreement in the fixture (one section's start displaced by a grid step) and asserts the wire
+still attaches at the recomputed pin end.
+
+- **Found** 2026-10-20, Task 13, Step 6.
+- **Evidence** the port dump above, printed from a real `layoutBlocks` run over
+  `oc-sidechain`, together with the sweep that found 0 of 42 port offsets outside their node's
+  bounds - which is what rules out clamping. For the second half: perturbation 3 run before and
+  after the new test, green then red.
+- **Verified** CONFIRMED - this writer ran both.
+- **Why it is open** it is a property of `elkjs`'s port handling at the pinned version, and the fix
+  is not the adapter's: the adapter's job is to refuse, and it does.
+- **What would settle it** **CRITERION: every port `elkjs` returns is at the position it was sent
+  to, or the block refuses.** The second half is met. For the first, **MECHANISMS, both untried:**
+  (1) size a node by the span of its PINS rather than by its symbol box, so every port is on a
+  boundary - which changes every node's size and therefore every serialized input, and makes a
+  node smaller than the graphics it contains, so bodies could overlap where ELK thinks they do not;
+  (2) stop sending `elk.port.side` for a port that is not on a boundary, which gives ELK nothing to
+  project onto - and gives up the one mechanism spec §1.2 says transfers from `netlistsvg` for that
+  port. Neither is this task's to choose.
+
+### G191 - Step 6's obstacle-pair result is EMPTY, and the reason is that nothing reaches the clearance checks
+
+Spec §1.4 requires the clearance checks to be **re-validated** against ELK geometry, because the
+~160 refusals *"were grown against template-produced geometry"* one pair at a time and *"pointing a
+pairwise-accreted check set at a new geometry source is exactly the condition that creates a fresh
+blind spot."* **G125** records that **95 of the matrix's 105 cells rest on reading the ported source
+rather than on a test that could have failed.**
+
+**THE RESULT, AND IT IS A MEASUREMENT RATHER THAN AN OMISSION: no `PAIR_COVERAGE` pair fires on ELK
+geometry, because 0 of the 12 declared blocks reach `checkLayout` at all.** Eleven refuse at the
+canonical topology (**G189**) and one at obligation 3 (**G190**), and the figures are the same with
+ELK's remaining spacings at whole grid steps (**G188**). **So the 95 cells have exactly as much
+evidence as they had before this task: none.** The re-validation §1.4 asks for has NOT been done, and
+reading this entry as "the matrix held up against a second geometry source" would be the
+substitution G125 exists to refuse.
+
+**What DID fire, on fixture geometry under the G188 probe arm**, is recorded because it is the only
+pair evidence this task produced and because it is a warning about the cells it touches:
+
+```
+overlaps | value of power symbol GND 1 at (34.29, 17.78) | label OUT at (39.37, 19.05)
+```
+
+- the pair is **`field-text` / `label-outline`**, a cell the matrix records as CHECKED;
+- two further blocks produced `"no place for its Reference and Value"`, which
+  `problem-obstacles.ts` correctly reports as naming **no pair at all** - a field-placement refusal
+  is not a clearance pair, and the census reports it separately rather than inventing one.
+
+- **Found** 2026-10-20, Task 13, Step 6.
+- **Evidence** `tools/schgen/elk/obstacle-census.ts` over `PARITY_CASES`: 12 blocks, 0 drawn, 0
+  reaching the clearance checks, 0 pairs fired, 0 obstacle names it could not classify. A check
+  that could have failed: the census REFUSES to drop an obstacle name no transcribed rule reads,
+  and reports it by name - so "no pairs" cannot be a classifier silently returning nothing. The
+  fixture-arm pair above was produced by the same classifier on the same run.
+- **Verified** CONFIRMED - this writer wrote the census and ran both arms.
+- **Why it is open** the re-validation cannot be performed until a block draws, and what stops one
+  drawing is **G189**.
+- **What would settle it** **CRITERION, carried from G85 and unchanged: the full matrix of pairs is
+  checked against a second geometry source, rather than the eleven-step ladder being re-run against
+  it.** The instrument now exists and is committed; what it needs is geometry.
+  **MECHANISM, untried:** re-run `obstacleCensus()` once **G189** is settled. It is a command, not
+  a design, which is the one good thing about this result.
+
+### G192 - Step 7 could not be done: no block that SELECTS the ELK backend can currently be drawn, and the first attempt rendered a TEMPLATE while believing it was ELK
+
+Task 13's Step 7 is *"emit an ELK-routed block and LOOK AT IT"*. It was attempted and it cannot be
+completed, for a reason worth more than the picture would have been.
+
+`[RAN]` Of the fixtures in `tests/schgen/elk/fixtures.ts`, `selectRenderer` sends **only**
+`regulatorBlock` to ELK; `dividerSubgraph`, `groundOfDegreeSix` and `inboundAndOutboundBlock` are
+all claimed by the **`rail-row` template**. And the one that does select ELK refuses. So:
+
+| | result |
+| --- | --- |
+| declared blocks of the four parity circuits that select ELK | 12 of 12 |
+| of those, drawn | **0** (**G189**, **G190**) |
+| ELK-selecting fixtures | 1 of 4 |
+| of those, drawn | **0** |
+
+**THE TRAP, AND IT CAUGHT THIS WRITER.** A sheet was emitted for `dividerSubgraph` through
+`layoutSheet` with an ELK backend supplied, rendered to PDF, converted and read - and the drawing
+was `rail-row`'s, because `realiseBlock` asks `selectRenderer` first and never consulted the
+backend. **The two resistors were drawn side by side rather than in series and the conclusion drawn
+from the picture was about ELK.** `layoutSheet` taking a backend does not mean the backend drew
+anything. **Assert `selectRenderer(g, TEMPLATES).kind === "elk"` before believing a drawing is
+ELK's.**
+
+- **Found** 2026-10-20, Task 13, Step 7.
+- **Evidence** `selectRenderer` run over the four fixtures, printing `rail-row` for three of them;
+  the emitted `.kicad_sch`, read directly, whose geometry is the template's; and the census's 0-of-12
+  figure.
+- **Verified** CONFIRMED - this writer rendered the sheet, read the PDF and then found the
+  selection.
+- **Why it is open** it is blocked on **G189**, and the fixtures that would exercise the ELK path
+  are claimed by a template, which is `selectRenderer` working correctly rather than a defect.
+- **What would settle it** **CRITERION: an ELK-routed block is rendered, read by a person or an
+  agent, and judged against spec §1.7's one visual language beside the same circuit drawn by a
+  template.** **MECHANISM, untried:** settle **G189**, then render a parity block, which selects ELK
+  on all twelve by construction (**G141**, **G160**) and needs no fixture built for it.
+
+### G193 - an anchor's SIDE is taken from the reviewed rule and not from ELK's route, and the two disagree on 18 of the 38 boundary anchors
+
+`Anchor.side` is read by `anchorsToSymbols`, which turns it into a power symbol's ROTATION through
+`powerRotation` - so it decides which way a `GND` or `+9V` glyph points.
+
+The first version of `lib/schgen/elk/read-graph.ts` derived it from the direction ELK's route
+arrives from, on the reasoning that a glyph should line up with its own wire. **That overrules a
+convention stated in the tree**: `RailSpec` in `lib/schgen/ir/types.ts` says *"Ground rails are
+drawn at the bottom of blocks with downward symbols; supplies at the top"*, and
+`lib/schgen/authoring.ts`'s `negotiablePort` is the reviewed rule that applies it. A derivation
+invented in an adapter may not displace a stated rule - `CLAUDE.md`'s *"a stated directive
+outranks"*, pointed at a rule file rather than at a board.
+
+**IT IS NOT A COSMETIC DIFFERENCE. Measured over all twelve ELK-selecting blocks, 38 boundary
+anchors:**
+
+| | anchors |
+| --- | --- |
+| the reviewed rule gives ONE side and it AGREES with the route | 4 |
+| the reviewed rule gives ONE side and it DISAGREES | **18** |
+| the reviewed rule leaves the side open (`bidirectional`, or no declared direction) | 16 |
+
+Every one of the 18 is a rail whose declaration says `up` or `down` and whose route arrives
+horizontally - `ob-buffer`'s `GND` (declared down, route right), its `VCC` and `VEE` (declared up,
+route right), and so on. Under `elk.direction = RIGHT` a boundary node is placed in a LAYER, so a
+rail is almost always reached sideways, and the route-derived rule would have rotated 18 of 22
+decided glyphs 90 degrees off the convention.
+
+**The route still decides the 16 the rule leaves open**, because choosing between left and right by
+taste is what this layer must not do, and the direction the wire actually arrives from is ELK's
+geometry rather than anyone's preference. That residue is **G99**'s *"settled at the circuit
+boundary, OPEN below it"* reaching the drawing.
+
+- **Found** 2026-10-20, Task 13, Step 7. **The evidence that prompted the change was WRONG and the
+  reasoning that settled it was not**, which is worth recording: the drawing that showed a `+3V3`
+  arrow pointing downwards was `rail-row`'s and not ELK's (**G192**). The change stands on the
+  stated convention and on the 18/38 measurement, both of which are independent of that picture.
+- **Evidence** the 38-anchor sweep above, run over every ELK-selecting block of the four parity
+  circuits, comparing `negotiablePort`'s answer against the route-derived one per anchor.
+- **Verified** CONFIRMED - this writer ran the sweep and made the change.
+- **Why it is open** the 16 anchors the rule leaves open are decided by geometry, and nothing has
+  reviewed whether that is the right answer for them; it is recorded rather than defended.
+- **What would settle it** **CRITERION: an anchor's side comes from a reviewed rule wherever one
+  has an answer, and from stated geometry where none does - never from a preference expressed in the
+  adapter.** Met as far as `negotiablePort` reaches. **MECHANISM for the residue, untried:** declare
+  a direction for the nets that cross a BLOCK boundary without being a port of the network, which is
+  G99's open fifth input and is a declaration question rather than a geometry one.
