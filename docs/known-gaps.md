@@ -5951,7 +5951,54 @@ only road.
   against rather than a defect to fix, and the cheap confirmation nobody has run
   is to look for schematic services in the installed `kicad-python` bindings.
 
-### G107 - the `schgen` port keeps the pedals source's non-null assertions unchanged, by decision D7, not by oversight
+### G107 - the `schgen` port keeps the pedals source's non-null assertions unchanged, by decision D7, not by oversight - and, measured 2026-10-20, exactly one `as unknown as` cast, which D7 does NOT cover
+
+**AMENDED 2026-10-20 (Task 6b round-2 re-review, controller ruling R27).** D7's
+scope is **non-null assertions and nothing else**, so a second kind of typing
+escape rode in with the port and was covered by no decision: `tests/schgen/render/bus.test.ts:196`
+carries `as unknown as typeof BUS`. It is **byte-identical to
+`$SCHGEN_SOURCE/render/bus.test.ts`** - a carried defect, not something an agent
+in this plan wrote - and the file is a `files[]` entry, so the rewriter would
+refuse to produce it any other way and a hand edit would fail the byte-check.
+
+**Measured, because one example is an anecdote and a count is a finding:**
+`grep -rn " as unknown as \| as typeof " lib/schgen tests/schgen lib/kicad/libtable.ts tools/schgen/generate.ts`
+returns **exactly one line**, in that one file. So the port's cast exposure is a
+single site, not a class - which is why this is an amendment to G107 rather
+than an entry of its own.
+
+**It still violates a rule this project states without exception**, in the
+owner's own global instructions: *"Never bypass typing - no `any`, no
+`as Type`, no `@ts-ignore`."* The same reasoning that justifies D7 applies -
+rewriting ported content is unreviewable churn, and a hand edit to a `files[]`
+file is refused by the fidelity check - but the reasoning was never *stated*
+for casts, and an unstated exemption is how a rule quietly stops meaning
+anything. **It is stated now.**
+
+- **Found** 2026-10-20 by the Task 6b round-1 scoped re-reviewer, which checked
+  the cast against the pedals source before reporting it rather than assuming an
+  implementer had written it, and surfaced it as an FYI rather than a finding -
+  correctly, since the file landed in that round but the cast did not originate
+  there.
+- **Evidence** the grep above, run by the controller: one line, which is a check
+  that could have returned many or none. `grep -c "render/bus.test.ts"
+  tools/schgen/port-manifest.json` returns 2 (the `from` and `to` of its
+  `files[]` entry), establishing that it is ported rather than hand-written.
+- **Verified** CONFIRMED for the count and the manifest entry, which the
+  controller ran; RELAYED for the byte-identity against the pedals source,
+  which the re-reviewer diffed.
+- **Why it is open** it is a defect this plan is deliberately not fixing, which
+  is a category `CLAUDE.md` names explicitly. Recording it keeps the exemption
+  visible instead of implicit; the same applies to **G167**'s three `pnpm`
+  strings, which are carried ported content for the same reason.
+- **What would settle it** **CRITERION:** no file in this repository bypasses
+  typing, ported or not. **MECHANISMS**, both untried and both outside this
+  plan: an upstream edit in the pedals repository followed by a re-port, which
+  is the only route that preserves the byte-check; or a `cuts` entry, which
+  cannot work here because `cuts` are **deletion-only** and this needs a
+  replacement rather than a removal. **Do not hand-edit the file** - it would
+  fail `port-fidelity.test.ts` and, if forced through `diverged[]`, would trade
+  a one-site cast for the loss of byte-checking on a 1100-line test file.
 
 `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md` decision **D7**
 decides this for the whole port, before any of it landed: pedals compiles
