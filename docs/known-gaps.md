@@ -11884,3 +11884,74 @@ redefinition.
   variable). `make/board.mk` keeps its `?=`/`export` shape exactly as this
   entry's mechanism said, checked against the resolver by
   `tests/kicad/install.test.ts` rather than shared.
+
+### G170 - the Makefile's sanctioned single literal is EXPORTED, so Task 10b's cross-platform resolver is unreachable through this repository's own primary workflow
+
+Task 10b put every KiCad and browser path behind one resolver with a
+per-platform candidate list (**G169**). `make/board.mk` keeps a single macOS
+literal as a deliberate, tested carve-out, because Make cannot import
+TypeScript - that part is sound and a test holds the two to each other.
+
+**What the carve-out does that nothing recorded: it is `export`ed.**
+
+```
+make/board.mk:44   KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
+make/board.mk:45   export KICAD_CLI
+make/board.mk:58   HTML_TO_PDF ?= /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+make/board.mk:59   export HTML_TO_PDF
+```
+
+`make/board.mk` spawns **21** `bun` invocations, every one of which inherits
+those variables; and `lib/kicad/netlist.ts` reads
+`process.env["KICAD_CLI"] ?? defaultKicadCli()`, checking the environment
+**first**. So for anyone who reaches this tooling through `make` rather than by
+invoking `bun` directly, **the macOS literal wins unconditionally, on every
+platform, and the candidate list never runs.** A Linux or Windows user running
+`make check` still gets the macOS path and still has to discover and override
+it by hand - **which is precisely the burden G169 exists to remove**, in the
+workflow `CLAUDE.md` names as primary: *"`make check` invokes `kicad-cli` on
+every board on every run."*
+
+**It is new, and that is why nobody caught it.** Before Task 10b every
+TypeScript default WAS the same macOS literal, so the export was a no-op and
+the duplication was the only defect. Task 10b put a working cross-platform
+resolver underneath an export that silently defeats it.
+
+**The distinction the current contract misses.** `lib/kicad/netlist.ts`'s own
+comment says *"an explicitly set `KICAD_CLI` always wins"*, which is the right
+contract for a **user's** explicit override. The Makefile's `?=` default is not
+that: it is a default **wearing an explicit override's clothes**, because Make
+cannot tell the subprocess which of the two it is.
+
+- **Found** 2026-10-20 by the Task 10b reviewer, which reasoned it out from the
+  export and the env-first read rather than observing it on another platform -
+  nobody here has a Linux or Windows machine to run it on. Confirmed
+  independently by the controller: `grep -n "^export \|?=" make/board.mk`
+  returns the four lines above, and `grep -c "bun" make/board.mk` returns 21.
+- **Evidence** a check that could have failed, and did not fail the way it
+  should: `tests/kicad/install.test.ts`'s Makefile check asserts only that the
+  Makefile's literal **agrees with** `defaultKicadCli("darwin")`. It passes, and
+  it cannot detect this - it says nothing about whether the resolver is
+  **reachable** on a non-darwin `make` invocation. A test that agrees with the
+  thing it is meant to guard against is the shape this register exists to catch.
+- **Verified** CONFIRMED for the mechanism, the line numbers and the counts,
+  which the controller ran and read. **NOT verified on a non-darwin machine** -
+  nobody here has one, which is also why G169's Linux and Windows candidates are
+  recorded as unverified.
+- **Why it is open** Task 11 was in flight when this was found and touches
+  `lib/kicad/netlist.ts`, so dispatching a fix round concurrently would have put
+  two implementers in the same files. It is queued for Task 10b's fix round, to
+  run once Task 11 lands.
+- **What would settle it** **CRITERION:** on a machine that is not macOS,
+  `make check` resolves `kicad-cli` and the HTML-to-PDF browser through the
+  per-platform candidate list, and a user who has set neither variable is not
+  handed a macOS path. **MECHANISMS**, both untried and the choice is open.
+  (1) Stop exporting, and let each `bun` entry point resolve for itself - which
+  costs the Makefile the ability to pass a user's explicit `make KICAD_CLI=...`
+  down, unless that case is passed on the command line instead of through the
+  environment. (2) Keep the export but make the Makefile's DEFAULT distinguish
+  itself from a user's override - for example by exporting only when the
+  variable came from the user (`origin` is `command line` or `environment`),
+  which GNU Make can test, so an unset variable reaches the resolver untouched.
+  **(2) preserves both contracts and is the one to try first**; (1) is simpler
+  and loses something real.
