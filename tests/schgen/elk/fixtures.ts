@@ -14,6 +14,7 @@
  */
 
 import { blockCircuit, res, symbols } from "../__fixtures__/circuits.ts"
+import { TEST_BOM } from "../__fixtures__/fixture-lib.ts"
 import { subgraphOf } from "../../../lib/schgen/render/blocks.ts"
 import type { BlockSubgraph } from "../../../lib/schgen/render/block-types.ts"
 import type { PartLabel, PartSpec } from "../../../lib/schgen/ir/types.ts"
@@ -78,6 +79,48 @@ export function autoBlock(
  */
 export function groundedPinOneBlock(): BlockSubgraph {
   return autoBlock([res("R_FLIP", "GND", "3V3")], [], new Map<PartLabel, Rotation | null>([["R_FLIP", 180]]))
+}
+
+/**
+ * A FIVE-PIN PART WITH PINS ON ALL FOUR SIDES, at a rotation the fixture states.
+ *
+ * **IT STANDS IN FOR THE BRIEF's `bjtSubgraph()`, AND THE SUBSTITUTION IS A BETTER SUBJECT.** The
+ * brief asks for a BJT because the pedals fixture library has one; `tests/schgen/__fixtures__/
+ * symbols/Fix.kicad_sym` does not, and inventing a symbol for a test would be a second symbol
+ * library. `Fix:REG3` has pins at angles 0, 0, 90, 270 and 180 - **IN, EN, GND, NR and OUT, on all
+ * four edges** - so a rotation moves every one of them and a transform that swapped a pin's identity
+ * for its neighbour's is visible rather than hidden by symmetry. A two-pin passive could not show
+ * that at all: swapping a resistor's two pins is indistinguishable from turning it 180.
+ *
+ * The brief's test is *"a mirrored symbol keeps its pin identity: the transform moves geometry,
+ * never assignment"* (spec §1.5), and this is the part that can fail it.
+ */
+export function regulatorBlock(rot: Rotation | null): BlockSubgraph {
+  const part: PartSpec = {
+    label: "U_REG",
+    refPrefix: "U",
+    libId: "Fix:REG3",
+    units: [1],
+    value: "REG3",
+    footprint: "F",
+    bom: TEST_BOM,
+    dnp: false,
+    checklist: [],
+    source: "fixture",
+    pinTable: null,
+    pins: {
+      "1": { net: "3V3", identity: "IN" },
+      "2": { net: "IN", identity: "EN" },
+      "3": { net: "GND", identity: "GND" },
+      "4": { net: "MID", identity: "NR" },
+      "5": { net: "OUT", identity: "OUT" },
+    },
+    mechanicalPads: [],
+    ncUnlisted: null,
+  }
+  // `MID` needs a second pin or the IR's own `singlePinNets` rule refuses the circuit.
+  const load = res("R_LOAD", "MID", "GND")
+  return autoBlock([part, load], ["IN", "OUT"], new Map<PartLabel, Rotation | null>([["U_REG", rot], ["R_LOAD", null]]))
 }
 
 /** Two resistors in series from `3V3` to `GND`: the smallest block a divider template is about. */

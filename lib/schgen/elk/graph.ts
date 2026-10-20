@@ -46,13 +46,20 @@ import { sideOfPin } from "../rules/pin-sides.ts"
 import { negotiablePort } from "../authoring.ts"
 import { BLOCK_OPTIONS, ELK_SIDE, LAYER_CONSTRAINT_KEY, NODE_OPTIONS, PORT_SIDE_KEY, layerConstraintFor } from "./options.ts"
 import { serializeElkInput } from "./serialize.ts"
-import type { BlockSubgraph, BlockUnit } from "../render/block-types.ts"
+import type { BlockSubgraph, BlockUnit, Mismatch } from "../render/block-types.ts"
 import type { BlockId, NetName } from "../ir/types.ts"
-import type { LibPin } from "../render/library.ts"
+import type { Box, LibPin } from "../render/lib-pins.ts"
 import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs/lib/elk-api.js"
 
-/** The library frame's origin: every node's geometry is built relative to it and placed by ELK. */
-const ORIGIN: Point = { x: 0, y: 0 }
+/**
+ * The library frame's origin: every node's geometry is built relative to it and placed by ELK.
+ *
+ * **Exported because `adapt.ts` must undo exactly this translation.** A node's `x`/`y` come back
+ * from ELK as its placed box's minimum corner, and recovering the `Placement.at` that produced it
+ * means subtracting `placeBox(ORIGIN, u.rot, box)`'s own minimum. Two constants for one origin is
+ * the second copy spec 1.4 obligation 3 forbids.
+ */
+export const ORIGIN: Point = { x: 0, y: 0 }
 
 export interface ElkBlockInput {
   readonly blockId: BlockId
@@ -60,6 +67,21 @@ export interface ElkBlockInput {
   readonly serialized: string
   readonly graph: ElkNode
 }
+
+/**
+ * What the layout pre-pass got back for one block: a laid-out graph, or the mismatch its backend
+ * raised.
+ *
+ * **IT IS DECLARED HERE RATHER THAN BESIDE THE DRIVER, AND THE MOVE IS TASK 13's.** It was in
+ * `tools/schgen/elk/layout.ts`, which drives `elkjs` and therefore spawns a worker; the plan's
+ * global constraints say `lib/schgen/` *"spawns nothing"*, so `lib/schgen/elk/adapt.ts` cannot
+ * import from there - a type-only import would be erased, but the dependency would still be written
+ * down the wrong way round, `lib` on `tools`. It sits beside `ElkBlockInput` because the two are one
+ * layer's input and output, and the driver re-exports it so nothing that imported it has moved.
+ */
+export type ElkOutcome =
+  | { readonly ok: true; readonly blockId: BlockId; readonly serialized: string; readonly graph: ElkNode }
+  | { readonly ok: false; readonly blockId: BlockId; readonly serialized: string; readonly mismatch: Mismatch }
 
 /** A placed unit's node id. `:` separates the part label from the unit; neither may contain one. */
 export function unitNodeId(u: BlockUnit): string {
@@ -91,6 +113,26 @@ function libPinOf(u: BlockUnit, number: string): LibPin {
   return pin
 }
 
+/**
+ * The symbol's own box for `u`'s unit, or a refusal naming the symbol and the unit.
+ *
+ * **One refusal, two readers.** `adapt.ts` needs the same box to recover a placement from an ELK
+ * node position, and a second copy of this message would be a second place to keep correct.
+ */
+export function unitBoxOf(u: BlockUnit): Box {
+  const box = u.symbol.boxes.get(u.unit)
+  if (box === undefined) {
+    throw new Error(
+      `${u.symbol.libId} has no unit box for unit ${u.unit}, so ${u.part.label} has no size for ` +
+        "the ELK graph. `LibSymbol.boxes` is built per unit by `unitBoxes` in " +
+        "lib/schgen/render/lib-pins.ts; a missing entry means the symbol declares no geometry for " +
+        "that unit. It is not defaulted, because a node sized by a guess is a drawing laid out " +
+        "against geometry the schematic does not have.",
+    )
+  }
+  return box
+}
+
 interface UnitNode {
   readonly node: ElkNode
   /** Net -> the port ids of this unit on it, in pin order. */
@@ -107,16 +149,7 @@ interface UnitNode {
  * ELK must route nothing to is a constraint with no connection behind it.
  */
 function unitNodeOf(u: BlockUnit): UnitNode {
-  const box = u.symbol.boxes.get(u.unit)
-  if (box === undefined) {
-    throw new Error(
-      `${u.symbol.libId} has no unit box for unit ${u.unit}, so ${u.part.label} has no size for ` +
-        "the ELK graph. `LibSymbol.boxes` is built per unit by `unitBoxes` in " +
-        "lib/schgen/render/lib-pins.ts; a missing entry means the symbol declares no geometry for " +
-        "that unit. It is not defaulted, because a node sized by a guess is a drawing laid out " +
-        "against geometry the schematic does not have.",
-    )
-  }
+  const box = unitBoxOf(u)
   const placed = placeBox(ORIGIN, u.rot, box)
   const nodeId = unitNodeId(u)
   const ports: ElkPort[] = []

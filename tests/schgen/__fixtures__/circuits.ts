@@ -99,7 +99,14 @@ export function blockCircuit(parts: PartSpec[], rendering: Rendering, opts: Bloc
       ],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A3", notes: [] }],
       rails: [...RAILS, ...(opts.moreRails ?? [])],
-      orientations: opts.orientations ?? noOrientationPreferences([...parts, ...peers]),
+      // A declared map covers the caller's OWN parts; the PEER and SPLIT members this function
+      // adds are its business, so their entries are added here rather than demanded of the caller.
+      // `buildCircuit` refuses a hole in the map, and it caught this: a fixture that declared a
+      // rotation for one part left `R_PEER0` and `R_PEER1` unentered and the build refused by name.
+      orientations: new Map([
+        ...noOrientationPreferences([...parts, ...peers]),
+        ...(opts.orientations ?? new Map<PartLabel, Rotation | null>()),
+      ]),
       portDirections: opts.portDirections ?? NO_PORT_DIRECTIONS,
     },
     { symbols },

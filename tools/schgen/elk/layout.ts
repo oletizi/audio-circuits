@@ -33,7 +33,7 @@ import ELK from "elkjs/lib/elk-api.js"
 import { backendRaised, describeMismatch } from "../../../lib/schgen/render/block-types.ts"
 import { selectRenderer, subgraphOf } from "../../../lib/schgen/render/blocks.ts"
 import { TEMPLATES } from "../../../lib/schgen/render/templates/index.ts"
-import { elkInputOf, type ElkBlockInput } from "../../../lib/schgen/elk/graph.ts"
+import { elkInputOf, type ElkBlockInput, type ElkOutcome } from "../../../lib/schgen/elk/graph.ts"
 import type { ELK as ElkApi, ElkNode } from "elkjs/lib/elk-api.js"
 import type { Backend, Mismatch, RealiseResult, BlockSubgraph } from "../../../lib/schgen/render/block-types.ts"
 import type { BlockId, Circuit } from "../../../lib/schgen/ir/types.ts"
@@ -49,9 +49,12 @@ import type { SymbolResolver } from "../../../lib/schgen/render/library.ts"
  */
 export const ELK_BACKEND = "elkjs@0.9.3"
 
-export type ElkOutcome =
-  | { readonly ok: true; readonly blockId: BlockId; readonly serialized: string; readonly graph: ElkNode }
-  | { readonly ok: false; readonly blockId: BlockId; readonly serialized: string; readonly mismatch: Mismatch }
+/**
+ * Re-exported, not declared: the type moved to `lib/schgen/elk/graph.ts` beside `ElkBlockInput` in
+ * Task 13, so that `lib/schgen/elk/adapt.ts` can name it without `lib` depending on `tools`. One
+ * declaration, and every importer of this module is unaffected.
+ */
+export type { ElkOutcome } from "../../../lib/schgen/elk/graph.ts"
 
 /** The rejection's own sentence, whatever `elkjs` rejected with. */
 function messageOf(e: unknown): string {

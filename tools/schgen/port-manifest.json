@@ -787,6 +787,14 @@
     "tests/schgen/elk/serialize.test.ts",
     "tests/schgen/elk/layout.elk.test.ts",
     "tests/schgen/elk/options.elk.test.ts",
-    "tests/schgen/__fixtures__/orientations.ts"
+    "tests/schgen/__fixtures__/orientations.ts",
+    "lib/schgen/elk/adapt.ts",
+    "lib/schgen/elk/read-graph.ts",
+    "lib/schgen/elk/snap.ts",
+    "lib/schgen/elk/junctions.ts",
+    "tools/schgen/elk/obstacle-census.ts",
+    "tests/schgen/elk/adapt.test.ts",
+    "tests/schgen/elk/snap.test.ts",
+    "tests/schgen/elk/junctions.test.ts"
   ]
 }

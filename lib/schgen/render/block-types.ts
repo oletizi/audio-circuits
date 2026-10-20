@@ -117,12 +117,30 @@ export interface BlockLayout {
  */
 export type MismatchKind = "not-applicable" | "invalid-geometry" | "clearance" | "backend-raised";
 
+/**
+ * What produced a layout: one of the reviewed templates, or the ELK backend.
+ *
+ * **WIDENED BY TASK 13, AND THE WIDENING IS THE POINT.** `invalid-geometry`'s `template` field was
+ * a `TemplateId`, so **the ELK backend could not report the kind at all** - and spec §1.4 gives it
+ * two `invalid-geometry` defects of its own, an ambiguous wire overlap and a snap collapse, which
+ * are exactly *"a renderer applied and produced geometry disagreeing with the IR"*. The alternative
+ * was to file them as `backend-raised`, which `docs/known-gaps.md` **G84** forbids by name: that
+ * kind means the backend *"did not return a result at all"*, and a geometry defect reported as a
+ * crash is the misclassification that type exists to prevent.
+ *
+ * The field keeps its name so the 30 template sites and the nine tests that read it are untouched.
+ */
+export type Renderer = TemplateId | "elk";
+
+/** The `Renderer` the ELK backend reports as. One string, named, rather than a literal at each site. */
+export const ELK_RENDERER: Renderer = "elk";
+
 export type Mismatch =
   /** No template supports this topology: nothing was drawn and there is no defect to hide. */
   | { readonly kind: "not-applicable"; readonly reason: string }
-  /** A template applied and produced geometry disagreeing with the IR. */
+  /** A renderer applied and produced geometry disagreeing with the IR. */
   | { readonly kind: "invalid-geometry"; readonly reason: string;
-      readonly template: TemplateId; readonly connection: string }
+      readonly template: Renderer; readonly connection: string }
   /** A template applied and violated a clearance constraint. */
   | { readonly kind: "clearance"; readonly reason: string;
       readonly constraint: string; readonly obstacles: readonly [string, string]; readonly block: BlockId }
@@ -154,7 +172,7 @@ export function notApplicable(reason: string): RealiseResult {
  * connection it failed to realise, because "the geometry is wrong" without saying which
  * connection is a refusal nobody can act on.
  */
-export function invalidGeometry(template: TemplateId, connection: string, reason: string): RealiseResult {
+export function invalidGeometry(template: Renderer, connection: string, reason: string): RealiseResult {
   return { ok: false, mismatch: { kind: "invalid-geometry", reason, template, connection } };
 }
 
