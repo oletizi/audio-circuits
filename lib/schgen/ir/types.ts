@@ -1,6 +1,7 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/ir/types.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
+ * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
+ * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
  * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
  * port rather than hand-editing this file - see `lib/schgen/README.md`.
  */
@@ -150,8 +151,6 @@ export interface CircuitSpec {
   readonly blocks: readonly BlockSpec[];
   readonly sheets: readonly SheetSpec[];
   readonly rails: readonly RailSpec[];
-  /** The part whose pins the pin map assigns. Null when the design has no pin map. */
-  readonly mcu: { readonly label: PartLabel } | null;
 }
 
 export interface PinRef {
@@ -159,7 +158,7 @@ export interface PinRef {
   readonly pin: PinNumber;
 }
 
-export type PinOrigin = "circuit" | "pinmap" | "nc-unlisted";
+export type PinOrigin = "circuit" | "nc-unlisted";
 
 export interface IrPin {
   readonly part: PartLabel;
@@ -214,7 +213,6 @@ export interface Circuit {
   readonly blocks: ReadonlyMap<BlockId, IrBlock>;
   readonly sheets: readonly SheetSpec[];
   readonly rails: ReadonlyMap<NetName, RailSpec>;
-  readonly mcu: PartLabel | null;
   /** unitKey(part, unit) -> the block that places it. */
   readonly unitBlock: ReadonlyMap<string, BlockId>;
   /**

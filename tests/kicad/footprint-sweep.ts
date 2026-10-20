@@ -102,6 +102,18 @@ export const NOT_A_KICAD_FOOTPRINT: ReadonlyMap<string, string> = new Map([
     "C_Disc_D3.0mm",
     "a bare family name in the same targets fixture, read only for the field's presence",
   ],
+  // Ported verbatim from digital-pedal-platform's schematic-generator ir/ test
+  // suite (lib/schgen/ir/, tests/schgen/ir/ - see docs/superpowers/plans/
+  // 2026-10-19-schematic-authoring-m1.md Task 2). Its PartSpec fixtures use a
+  // one-letter placeholder footprint because the IR validator never resolves
+  // one - only KiCad symbol/footprint lookups downstream of it would, and
+  // those tests build a BuildContext against a stub or fixture resolver, not
+  // a real footprint library.
+  [
+    "F",
+    "a one-letter placeholder footprint in the ported schgen ir/ test fixtures (res(), big(), " +
+      "the PartSpec literals), where only the field's presence is read",
+  ],
 ])
 
 /**

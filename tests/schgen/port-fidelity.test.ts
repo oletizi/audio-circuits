@@ -51,19 +51,28 @@ function listTsFiles(repoRoot: string, dir: string): string[] {
 }
 
 /**
- * The manifest's `files[].to` entries, plus its declared `handWritten`
- * allowlist, must be the *complete* set of `.ts` files under `lib/schgen/` -
- * not just a subset the manifest happens to mention. Without this, a file
- * that is hand-written or hand-patched without a manifest or allowlist entry
- * is invisible to the test above (which only iterates `manifest.files`), so
- * "every ported file is its source" stays green while a file under
- * `lib/schgen/` silently is not.
+ * The manifest's `files[].to` entries that land under `lib/schgen/`, plus its
+ * declared `handWritten` allowlist (itself always under `lib/schgen/` - see
+ * `PortManifest.handWritten`), must be the *complete* set of `.ts` files
+ * under `lib/schgen/` - not just a subset the manifest happens to mention.
+ * Without this, a file that is hand-written or hand-patched without a
+ * manifest or allowlist entry is invisible to the test above (which only
+ * iterates `manifest.files`), so "every ported file is its source" stays
+ * green while a file under `lib/schgen/` silently is not.
+ *
+ * `files[].to` entries outside `lib/schgen/` - a ported test under
+ * `tests/schgen/`, since Task 2 - are a different kind of claim (that *this*
+ * destination is on disk, checked by the first test above and by `bun test`
+ * simply failing to find the file) and are deliberately excluded here rather
+ * than compared against a directory listing they were never claiming to be
+ * complete over.
  */
 test("every .ts file under lib/schgen/ is either ported (in the manifest) or declared hand-written", () => {
   const manifest = loadManifest()
   const repoRoot = moduleRepoRoot()
   const onDisk = new Set(listTsFiles(repoRoot, path.join(repoRoot, "lib/schgen")))
-  const accountedFor = new Set([...manifest.files.map((f) => f.to), ...manifest.handWritten])
+  const portedUnderLibSchgen = manifest.files.map((f) => f.to).filter((to) => to.startsWith("lib/schgen/"))
+  const accountedFor = new Set([...portedUnderLibSchgen, ...manifest.handWritten])
 
   const unaccountedOnDisk = [...onDisk].filter((f) => !accountedFor.has(f)).sort()
   const accountedButMissing = [...accountedFor].filter((f) => !onDisk.has(f)).sort()

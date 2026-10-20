@@ -1,0 +1,84 @@
+/**
+ * Ported from digital-pedal-platform's `tools/schgen/ir/classify.test.ts`, mechanically
+ * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
+ * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
+ * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
+ * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ */
+
+import { describe, expect, it } from "bun:test";
+import { fixtureResolver, TEST_BOM } from "../__fixtures__/fixture-lib.ts";
+import { twoPin, UNNAMED } from "../../../lib/schgen/ir/author.ts";
+import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
+import { labelledNets, pinsOfUnit } from "../../../lib/schgen/ir/classify.ts";
+import type { CircuitSpec, PartSpec, Rendering } from "../../../lib/schgen/ir/types.ts";
+
+const symbols = fixtureResolver();
+const res = (label: string, a: string, b: string): PartSpec =>
+  twoPin({ label, refPrefix: "R", libId: "Fix:R", value: "1k", footprint: "F", bom: TEST_BOM, nets: [a, b], identities: UNNAMED, checklist: [], source: "t", dnp: false });
+const wired: Rendering = { kind: "wired", template: "passive-chain", anchor: null };
+
+describe("labelledNets", () => {
+  it("labels rails and nets that cross blocks; leaves block-internal nets unlabelled", () => {
+    const spec: CircuitSpec = {
+      parts: [res("R1", "IN", "MID"), res("R2", "MID", "GND"), res("R3", "IN", "GND")],
+      blocks: [
+        { id: "A", sheet: "s", title: "A", members: ["R1", "R2"], checklist: [], rendering: wired },
+        { id: "B", sheet: "s", title: "B", members: ["R3"], checklist: [], rendering: wired },
+      ],
+      sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
+      rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
+    };
+    const c = buildCircuit(spec, { symbols });
+    expect([...labelledNets(c)].sort()).toEqual(["GND", "IN"]);
+  });
+
+  it("a whole design has no off-sheet nets", () => {
+    const spec: CircuitSpec = {
+      parts: [res("R1", "P", "Q")],
+      blocks: [{ id: "A", sheet: "s", title: "A", members: ["R1"], checklist: [], rendering: wired }],
+      sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
+      rails: [],
+    };
+    expect([...buildCircuit(spec, { symbols }).offSheet]).toEqual([]);
+  });
+
+  it("labels an off-sheet net even when one block holds all its pins here (A2 Task 12: a sheet subset)", () => {
+    const spec: CircuitSpec = {
+      parts: [res("R1", "MUTE", "MUTE_G"), res("R2", "MUTE_G", "GND")],
+      blocks: [{ id: "A", sheet: "s", title: "A", members: ["R1", "R2"], checklist: [], rendering: wired }],
+      sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
+      rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
+    };
+    const whole = buildCircuit(spec, { symbols });
+    expect([...labelledNets(whole)].sort()).toEqual(["GND"]);
+    expect([...labelledNets({ ...whole, offSheet: new Set(["MUTE"]) })].sort()).toEqual(["GND", "MUTE"]);
+  });
+
+  it("labels every net of a labels-rendered block", () => {
+    const spec: CircuitSpec = {
+      parts: [res("R1", "P", "Q"), res("R2", "P", "Q")],
+      blocks: [{ id: "A", sheet: "s", title: "A", members: ["R1", "R2"], checklist: [], rendering: { kind: "labels", reason: "t" } }],
+      sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
+      rails: [],
+    };
+    expect([...labelledNets(buildCircuit(spec, { symbols }))].sort()).toEqual(["P", "Q"]);
+  });
+});
+
+describe("pinsOfUnit", () => {
+  it("gives unit-0 pins to the lowest listed unit only", () => {
+    const flag: PartSpec = {
+      label: "FLG", refPrefix: "X", libId: "Pwr:PWR_FLAG", units: [1], value: "PWR_FLAG", footprint: "", bom: TEST_BOM,
+      dnp: false, checklist: [], source: "t", pinTable: null, pins: { "1": { net: "GND", identity: "" } }, mechanicalPads: [], ncUnlisted: null,
+    };
+    const spec: CircuitSpec = {
+      parts: [flag, res("R1", "GND", "Z"), res("R2", "Z", "GND")],
+      blocks: [{ id: "A", sheet: "s", title: "A", members: ["FLG", "R1", "R2"], checklist: [], rendering: { kind: "labels", reason: "t" } }],
+      sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
+      rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
+    };
+    const c = buildCircuit(spec, { symbols });
+    expect(pinsOfUnit(c, "FLG", 1).map((p) => p.pin)).toEqual(["1"]);
+  });
+});

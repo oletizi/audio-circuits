@@ -97,6 +97,33 @@ function sweptSymbols(): ReadonlyMap<string, readonly string[]> {
 
 const SWEPT = sweptSymbols()
 
+/**
+ * Strings that legitimately sit in a `symbol` field WITHOUT being a claim
+ * about an installed KiCad library - the symbol-side mirror of
+ * `./footprint-sweep.ts`'s `NOT_A_KICAD_FOOTPRINT`, needed for the first time
+ * by the `lib/schgen/`/`tests/schgen/` port (see
+ * `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md` Task 2):
+ * digital-pedal-platform's `ir/` test suite resolves symbols through its own
+ * hand-written fixture libraries (`__fixtures__/symbols/Fix.kicad_sym`,
+ * `Pwr.kicad_sym`, nicknamed "Fix" and "Pwr"), never through an installed
+ * KiCad library, so "Pwr:GND" and "Fix:R" here are not real-library claims
+ * ported verbatim. **Pinned in both directions**, same as the footprint
+ * side: a new bare-but-fixture-only name fails until accounted for here, and
+ * a recorded one that stops appearing fails too.
+ */
+const NOT_A_KICAD_SYMBOL: ReadonlyMap<string, string> = new Map([
+  [
+    "Pwr:GND",
+    "a ground symbol from digital-pedal-platform's test-only __fixtures__/symbols/Pwr.kicad_sym, " +
+      "nicknamed \"Pwr\" only by the ported ir/ tests' fixture resolver - not an installed library",
+  ],
+  [
+    "Fix:R",
+    "a resistor symbol from the same ported test-only __fixtures__/symbols/Fix.kicad_sym, used in " +
+      "tests/schgen/ir/validate.test.ts to assert a rail must be a power symbol",
+  ],
+])
+
 test("the sweep finds the symbol declarations it is supposed to, so it cannot pass over nothing", () => {
   // The floor is the count at the time of writing less a little slack, and the
   // three named ids are one per declaration shape the patterns cover: a part
@@ -114,6 +141,7 @@ test("every symbol name swept out of the source resolves in an installed KiCad l
   const missing: string[] = []
   const malformed: string[] = []
   for (const [libId, sites] of SWEPT) {
+    if (NOT_A_KICAD_SYMBOL.has(libId)) continue
     // A SWEPT VALUE THAT IS NOT A LIB ID IS REPORTED, NOT DROPPED. Dropping it
     // is how a declaration this check cannot verify becomes a declaration this
     // check pretends to have verified.
@@ -129,6 +157,18 @@ test("every symbol name swept out of the source resolves in an installed KiCad l
     missing,
     `these symbol names are in no installed library under ${SYMBOL_LIBRARY_ROOT}`,
   ).toEqual([])
+})
+
+test("every NOT_A_KICAD_SYMBOL entry is still swept, still fixture-only, and still reasoned", () => {
+  // PINNED IN BOTH DIRECTIONS, same discipline as the footprint side: a name
+  // this file stops sweeping means the entry is stale (the port it was
+  // written for changed or is gone) and should be deleted, not left here.
+  for (const name of NOT_A_KICAD_SYMBOL.keys()) {
+    expect(SWEPT.has(name), `${name} is pinned as fixture-only but the sweep no longer finds it`).toBe(true)
+  }
+  for (const [name, reason] of NOT_A_KICAD_SYMBOL) {
+    expect(reason.length, name).toBeGreaterThan(20)
+  }
 })
 
 test("every declared symbol table resolves too, including the rotary table and the vendored set", () => {

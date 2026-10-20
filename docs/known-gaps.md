@@ -6087,3 +6087,134 @@ narrower, more easily-overlooked change.
   substitution changes nothing observable. **MECHANISM, untried:** a small
   follow-up pass over the twelve named sites; not attempted here because it
   is out of scope for a schematic-port task.
+
+### G112 - the IR has no MCU pin map, deliberately, and the branch needs restoring from the port source rather than reinventing
+
+Task 2 ports `ir/build.ts` and `ir/types.ts` with a cut, not a straight
+mechanical port: `BuildContext.pinmap`, `PinmapInput`, `partPins`'s `isMcu`
+flag, `checkMcuConfig`, `CircuitSpec.mcu` and `Circuit.mcu` are all removed,
+and `PinOrigin` drops `"pinmap"` down to `"circuit" | "nc-unlisted"`. This is
+the plan's own instruction (`docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`
+Task 2: *"porting the branch would ship a dead parameter whose only caller is
+`generate.ts`'s MCU block, which Task 6 is not porting either"*) and
+`CLAUDE.md`'s *"supersede means delete"* - there is no MCU anywhere in this
+repository, so a pin-map branch here would be dead code with nobody to call
+it or test it honestly.
+
+**The cut is mechanical and declared, not a hand edit.** `tools/schgen/port-manifest.json`
+gained a `cuts` field per file entry - an ordered list of `{ text, occurrences }`
+deletions `tools/schgen/port.ts`'s `rewrite()` applies before the import
+rewrite, each verified to occur exactly its declared number of times in the
+pedals source before anything is removed. `ir/types.ts` carries 3 cuts (the
+`CircuitSpec.mcu` field, `Circuit.mcu` field, and the `"pinmap"` arm of
+`PinOrigin`); `ir/build.ts` carries 9 (the `@/pinmap/types` import, the
+`PinmapInput` interface, the `pinmap` field, `checkMcuConfig` whole, the
+`isMcu` parameter, the pin-map-assignment loop, the `checkMcuConfig` call
+site, the `isMcu` argument at its call site, and the `mcu: mcuLabel` field of
+`buildCircuit`'s return). The same mechanism carries the corresponding test
+cuts in `ir/build.test.ts` (9, including the now-dead `big`/`PINMAP`
+fixtures and the three tests that exercised pin-map behaviour specifically),
+`ir/classify.test.ts` (2, merged - `mcu: null,` and `, pinmap: null` each
+appear 5 times) and `ir/validate.test.ts` (2, merged - 1 and 2 occurrences).
+This keeps the repository's invariant that a ported file is never
+hand-edited intact for a cut as much as for a plain import rewrite: the cut
+is data, in the manifest, reviewed and re-derivable, not a diff silently
+smuggled into the file on disk.
+
+- **Found** 2026-10-19, Task 2, confirmed directly: `grep -n "pinmap\|mcu\b"`
+  over every file `tools/schgen/ir/` ports (`types.ts`, `build.ts`,
+  `validate.ts`, `validate-nets.ts`, `validate-parts.ts`, `validate-rule.ts`,
+  `classify.ts`, `order.ts`, `author.ts`) against the pedals source, read
+  directly - only `types.ts` and `build.ts` matched, which is why only those
+  two carry a `cuts` entry.
+- **Evidence** `bun run typecheck` clean after the cut (no leftover
+  reference to `PinmapInput`, `checkMcuConfig`, `CircuitSpec.mcu` or
+  `Circuit.mcu` anywhere); `tests/schgen/port-fidelity.test.ts`'s bidirectional
+  check passing with the `cuts` entries in place - re-deriving each ported
+  file from the pedals source plus the manifest's declared cuts reproduces
+  it byte-for-byte. (Step 6's guard perturbation - `singlePinNets` returning
+  `[]` and back - is a separate measurement, about a validation rule rather
+  than this cut; its command and output are in the Task 2 report, not here.)
+- **Verified** CONFIRMED - this writer ran `grep`, `bun run typecheck` and
+  the fidelity test directly.
+- **Why it is open** it is not a defect; it is a standing, deliberate
+  absence recorded so a later task does not read "no MCU support" as an
+  oversight and try to reinvent a pin-map branch in `lib/schgen/ir/` from
+  scratch, guessing at a shape the pedals source already has, correctly,
+  sitting in `digital-pedal-platform`'s `tools/schgen/ir/build.ts` and
+  `types.ts`.
+- **What would settle it** **CRITERION:** a circuit with an MCU pin map
+  needs the branch restored from the port source (re-run `tools/schgen/port.ts`
+  against a manifest entry with the `cuts` removed, or a fresh one added
+  back deliberately), not reinvented from memory of what a pin-map branch
+  usually looks like. **MECHANISM:** none proposed here, because this
+  repository has no MCU and no pin map to restore it for - the criterion is
+  for whichever future task is the first to need one.
+
+### G113 - three of the five ported `ir/` test files cannot run yet - `createResolver` is a forward-declared throwing stub until Task 4 - and `render/library.ts`'s `LibSymbol` carries only the three fields `ir/` reads
+
+`lib/schgen/ir/build.ts`, `validate.ts`, `validate-nets.ts` and
+`validate-rule.ts` import `SymbolResolver` (and `validate-nets.ts` also
+`LibPin`) as a type from `@/schgen/render/library`, which Task 4 is the task
+that ports for real (`digital-pedal-platform`'s `render/library.ts`, which
+reads KiCad `.kicad_sym` files via `lib-pins.ts`/`lib-graphics.ts`). Task 2
+needs that import to resolve today, so it hand-writes `lib/schgen/render/library.ts`
+as a forward declaration: the `SymbolResolver`/`LibSymbol` interfaces, plus a
+`createResolver` function that **throws, naming Task 4**, rather than
+implementing anything - `CLAUDE.md`'s rule for functionality that does not
+exist yet is a named throw, not a fallback or mock.
+
+**Three ported test files call `createResolver` indirectly and so cannot run
+at all, not merely fail an assertion.** `tests/schgen/ir/build.test.ts`,
+`classify.test.ts` and `validate.test.ts` each do
+`const symbols = fixtureResolver();` at module scope (`fixtureResolver()`,
+ported to `tests/schgen/__fixtures__/fixture-lib.ts`, calls `createResolver`
+directly), so the throw happens at module load, before any `it(...)`
+registers - `bun test` reports each as an unhandled error between tests, not
+as one or more failing assertions, and every test in the file is equally
+unreachable. **This is the correct, expected shape of "fails until Task 4"**
+(the plan's own Task 2 Step 5 wording): a thrown, named error is maximally
+loud, the opposite of a skipped check that looks like a passing one.
+`tests/schgen/ir/author.test.ts` and `order.test.ts` need no resolver and
+pass in full; `no-pin-map.test.ts` (hand-written, Task 2's own new test for
+G112's cut) uses a local `stubResolver()` that never calls `createResolver`,
+and also passes.
+
+**`LibSymbol`'s field set is a measured minimum, not a guess at the real
+shape.** It carries exactly `pins`, `unitCount` and `isPower` - checked
+directly against every place `lib/schgen/ir/` reads a `LibSymbol`:
+`partPins` in `build.ts` (`sym.pins`), `partShapes` and `unitsPlaced` in
+`validate.ts` (`symbols.resolve(...).unitCount`), `pinsDeclared` in
+`validate.ts` and `mechanicalPads` in `validate-parts.ts` (`.pins`), and
+`rails` in `validate-nets.ts` (`symbols.resolve(r.symbol).isPower`). Pedals'
+real `LibSymbol` additionally carries `libId`, `name`, `node`, `boxes`,
+`bodies`, `graphics` and `pinText` - none of which anything in `ir/` reads -
+so Task 4's port of the real `render/library.ts` replaces this file
+wholesale (never extends it) and restores those fields along with a working
+`createResolver`.
+
+- **Found** 2026-10-19, Task 2, confirmed directly: `bun test` run with
+  `SCHGEN_SOURCE` set, full output read - exactly 3 "errors" and 3 "fail"
+  (bun counts a module-load throw as both), all three naming
+  `createResolver`'s thrown message and all three in the files listed above;
+  `grep -n "symbols\.resolve\|\.pins\b\|\.unitCount\|\.isPower"` over
+  `lib/schgen/ir/*.ts`, read directly, to derive the three-field list.
+- **Evidence** the `bun test` output itself (2527 pass / 3 fail / 3 errors
+  across 249 files, pass count up from Task 1's 2514/0/243 baseline, zero
+  regressions); `bun run typecheck` clean with the stub in place; the three
+  named files' stack traces all bottoming out at
+  `lib/schgen/render/library.ts:46` (`createResolver`'s throw).
+- **Verified** CONFIRMED - this writer ran the full suite and read the
+  output and the grep directly.
+- **Why it is open** it is not a defect in Task 2's own work; it is the
+  stated, correct consequence of forward-declaring one task's dependency
+  inside another, left open until the task that resolves it lands.
+- **What would settle it** **CRITERION:** `tests/schgen/ir/build.test.ts`,
+  `classify.test.ts` and `validate.test.ts` run to completion (pass or fail
+  on their own assertions, never erroring at module load) once a real
+  `createResolver` exists. **MECHANISM:** Task 4 ports
+  `digital-pedal-platform`'s `render/library.ts` in full, including the two
+  fixture `.kicad_sym` files `tests/schgen/__fixtures__/fixture-lib.ts`
+  references by path (`symbols/Fix.kicad_sym`, `symbols/Pwr.kicad_sym`,
+  under `__fixtures__/` in the pedals source) but which Task 2 did not copy,
+  since the stub `createResolver` never reads them.

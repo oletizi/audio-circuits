@@ -3,10 +3,25 @@
   "externals": {
     "@/kicad/sexpr": "lib/kicad/sexpr.ts",
     "@/placement/strict": "lib/schgen/strict.ts",
-    "@/repo": "tools/perfboard/repo-root.ts"
+    "@/repo": "tools/perfboard/repo-root.ts",
+    "@/schgen/render/library": "lib/schgen/render/library.ts"
+  },
+  "moduleRenames": {
+    "vitest": "bun:test"
   },
   "files": [
-    { "from": "ir/types.ts", "to": "lib/schgen/ir/types.ts" },
+    {
+      "from": "ir/types.ts",
+      "to": "lib/schgen/ir/types.ts",
+      "cuts": [
+        {
+          "text": "  /** The part whose pins the pin map assigns. Null when the design has no pin map. */\n  readonly mcu: { readonly label: PartLabel } | null;\n",
+          "occurrences": 1
+        },
+        { "text": "pinmap\" | \"", "occurrences": 1 },
+        { "text": "  readonly mcu: PartLabel | null;\n", "occurrences": 1 }
+      ]
+    },
     { "from": "ir/author.ts", "to": "lib/schgen/ir/author.ts" },
     { "from": "ir/classify.ts", "to": "lib/schgen/ir/classify.ts" },
     { "from": "ir/order.ts", "to": "lib/schgen/ir/order.ts" },
@@ -23,7 +38,81 @@
     { "from": "render/textBoxes.ts", "to": "lib/schgen/render/text-boxes.ts" },
     { "from": "render/uuid.ts", "to": "lib/schgen/render/uuid.ts" },
     { "from": "render/wireSafety.ts", "to": "lib/schgen/render/wire-safety.ts" },
-    { "from": "gates/pintable.ts", "to": "lib/schgen/gates/pin-table.ts" }
+    { "from": "gates/pintable.ts", "to": "lib/schgen/gates/pin-table.ts" },
+    {
+      "from": "ir/build.ts",
+      "to": "lib/schgen/ir/build.ts",
+      "cuts": [
+        { "text": "import type { PinMap, StMcu } from \"@/pinmap/types\";\n", "occurrences": 1 },
+        {
+          "text": "export interface PinmapInput {\n  readonly map: PinMap;\n  readonly mcu: StMcu;\n}\n\n",
+          "occurrences": 1
+        },
+        { "text": "  readonly pinmap: PinmapInput | null;\n", "occurrences": 1 },
+        {
+          "text": "function checkMcuConfig(spec: CircuitSpec, ctx: BuildContext): PartLabel | null {\n  if (spec.mcu === null && ctx.pinmap !== null) throw new Error(\"a pin map was given but the circuit names no MCU\");\n  if (spec.mcu === null) return null;\n  if (ctx.pinmap === null) throw new Error(`circuit names MCU ${spec.mcu.label} but no pin map was given`);\n  const label = spec.mcu.label;\n  if (!spec.parts.some((p) => p.label === label)) throw new Error(`circuit names MCU ${label}, which is not a part`);\n  return label;\n}\n\n",
+          "occurrences": 1
+        },
+        { "text": ", isMcu: boolean", "occurrences": 1 },
+        {
+          "text": "  if (isMcu && ctx.pinmap !== null) {\n    const { map, mcu } = ctx.pinmap;\n    for (const a of map.assignments) {\n      const st = mcu.pins.get(a.pin);\n      if (st === undefined) throw new Error(`pin map assigns ${a.pin}, which ${mcu.refName} does not have; run pnpm pinmap validate`);\n      const prior = declared.get(st.position);\n      if (prior !== undefined) {\n        const where = prior.net === null ? \"as not connected\" : `on net ${prior.net}`;\n        throw new Error(\n          `${p.label} pin ${st.position} (${a.pin}) is declared in the circuit ${where} and assigned by the pin map to ${a.net}; ` +\n            \"pinmap.json is authoritative for MCU pins — remove it from the circuit\",\n        );\n      }\n      declared.set(st.position, { part: p.label, pin: st.position, unit: unitFor(st.position), identity: a.pin, net: a.net, origin: \"pinmap\" });\n    }\n  }\n",
+          "occurrences": 1
+        },
+        { "text": "  const mcuLabel = checkMcuConfig(spec, ctx);\n", "occurrences": 1 },
+        { "text": ", p.label === mcuLabel", "occurrences": 1 },
+        { "text": "mcu: mcuLabel, ", "occurrences": 1 }
+      ]
+    },
+    { "from": "ir/validate.ts", "to": "lib/schgen/ir/validate.ts" },
+    { "from": "ir/validateNets.ts", "to": "lib/schgen/ir/validate-nets.ts" },
+    { "from": "ir/validateParts.ts", "to": "lib/schgen/ir/validate-parts.ts" },
+    { "from": "ir/validateRule.ts", "to": "lib/schgen/ir/validate-rule.ts" },
+    { "from": "__fixtures__/fixtureLib.ts", "to": "tests/schgen/__fixtures__/fixture-lib.ts" },
+    { "from": "ir/author.test.ts", "to": "tests/schgen/ir/author.test.ts" },
+    { "from": "ir/order.test.ts", "to": "tests/schgen/ir/order.test.ts" },
+    {
+      "from": "ir/classify.test.ts",
+      "to": "tests/schgen/ir/classify.test.ts",
+      "cuts": [
+        { "text": "      mcu: null,\n", "occurrences": 5 },
+        { "text": ", pinmap: null", "occurrences": 5 }
+      ]
+    },
+    {
+      "from": "ir/validate.test.ts",
+      "to": "tests/schgen/ir/validate.test.ts",
+      "cuts": [
+        { "text": "  mcu: null,\n", "occurrences": 1 },
+        { "text": ", pinmap: null", "occurrences": 2 }
+      ]
+    },
+    {
+      "from": "ir/build.test.ts",
+      "to": "tests/schgen/ir/build.test.ts",
+      "cuts": [
+        {
+          "text": "const big = (pins: PartSpec[\"pins\"], ncAll: boolean): PartSpec => ({\n  label: \"U_MCU\", refPrefix: \"U\", libId: \"Fix:BIG8\", units: [1], value: \"BIG8\", footprint: \"F\", bom: TEST_BOM,\n  dnp: false, checklist: [], source: \"t\", pinTable: null, pins, mechanicalPads: [],\n  ncUnlisted: ncAll ? { reason: \"CORE-27\" } : null,\n});\n\n",
+          "occurrences": 1
+        },
+        { "text": "  mcu: mcu ? { label: \"U_MCU\" } : null,\n", "occurrences": 1 },
+        {
+          "text": "const PINMAP: PinmapInput = {\n  map: { mcu: \"BIG8\", pinData: \"x\", gpioModes: \"y\", schematicRef: \"U1\", assignments: [{ pin: \"PA0\", signal: \"GPIO\", net: \"SIG\", purpose: \"p\" }] },\n  mcu: { refName: \"BIG8\", pins: new Map([[\"PA0\", { port: \"PA0\", position: \"1\", signals: new Set<string>(), af: new Map<string, number>() }]]) },\n};\n\n",
+          "occurrences": 1
+        },
+        {
+          "text": "  it(\"merges pin-map assignments onto the MCU by package position, with the port as identity\", () => {\n    const c = buildCircuit(spec([big({}, true), res(\"R_1\", \"SIG\", \"GND\")], true), { symbols, pinmap: PINMAP });\n    const p1 = c.pins.find((p) => p.part === \"U_MCU\" && p.pin === \"1\");\n    expect(p1).toEqual({ part: \"U_MCU\", pin: \"1\", unit: 1, identity: \"PA0\", net: \"SIG\", origin: \"pinmap\" });\n  });\n\n  it(\"refuses an MCU pin declared in the circuit and assigned by the pin map\", () => {\n    const declared = big({ \"1\": { net: \"OTHER\", identity: \"D0\" } }, true);\n    expect(() => buildCircuit(spec([declared, res(\"R_1\", \"SIG\", \"GND\")], true), { symbols, pinmap: PINMAP })).toThrow(\n      /U_MCU pin 1 \\(PA0\\) is declared in the circuit on net OTHER and assigned by the pin map to SIG; pinmap.json is authoritative/,\n    );\n  });\n\n  it(\"expands ncUnlisted to every remaining symbol pin, identity from the symbol\", () => {\n    const c = buildCircuit(spec([big({}, true), res(\"R_1\", \"SIG\", \"GND\")], true), { symbols, pinmap: PINMAP });\n    const nc = c.pins.filter((p) => p.part === \"U_MCU\" && p.origin === \"nc-unlisted\");\n    expect(nc.map((p) => [p.pin, p.identity, p.net])).toEqual([\n      [\"2\", \"D1\", null], [\"3\", \"CLK\", null], [\"4\", \"GND\", null], [\"5\", \"CS\", null], [\"6\", \"D2\", null], [\"7\", \"NC\", null], [\"8\", \"VCC\", null],\n    ]);\n  });\n\n",
+          "occurrences": 1
+        },
+        {
+          "text": "  it(\"refuses a pin map without an MCU and an MCU without a pin map\", () => {\n    expect(() => buildCircuit(spec([big({}, true)], false), { symbols, pinmap: PINMAP })).toThrow(/pin map was given but the circuit names no MCU/);\n    expect(() => buildCircuit(spec([big({}, true)], true), { symbols, pinmap: null })).toThrow(/circuit names MCU U_MCU but no pin map was given/);\n  });\n\n",
+          "occurrences": 1
+        },
+        { "text": ", type PinmapInput", "occurrences": 1 },
+        { "text": ", mcu: boolean", "occurrences": 1 },
+        { "text": ", false", "occurrences": 4 },
+        { "text": ", pinmap: null", "occurrences": 4 }
+      ]
+    }
   ],
-  "handWritten": ["lib/schgen/strict.ts"]
+  "handWritten": ["lib/schgen/strict.ts", "lib/schgen/render/library.ts"]
 }
