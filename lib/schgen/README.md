@@ -160,19 +160,28 @@ is resolved rather than hand-porting around the gap:
   evidence, both mechanisms, the three that were ruled out and why, and the
   residual; **G122** is the same cost in the shape the existing exemption table
   does cover.
-- **The clearance checks are PORTED and almost none of them is exercised**
-  (Task 5). Thirteen newly ported modules, **twelve** of them run by no test:
-  `render/bodyClearance.ts`, `glyphClearance.ts`, `textScene.ts`,
-  `powerText.ts`, `unitPins.ts`, `unitText.ts`, `pinMarks.ts`,
-  `fieldPlacement.ts`, `drawnExtent.ts`, `layoutCheck.ts`, `blockTypes.ts` and
-  `sheetTypes.ts` typecheck and nothing runs them. The thirteenth,
-  `symbolSelfText.ts`, is covered by a hand-written test (**G123**).
-  `connectivity.ts` and `wire-safety.ts` ARE exercised, by the two ported tests
-  Task 5 landed — but **Task 3** ported those modules, not Task 5. Every
-  clearance test but `connectivity.test.ts` and `wireSafety.test.ts` imports
-  `@/schgen/render/blocks`, which imports `@/schgen/render/templates/index`:
-  **Task 7**. `docs/known-gaps.md` **G124** has the per-test table and the
-  port's own refusals as evidence.
+- **The clearance checks are PORTED, and since Task 7 most of them ARE
+  exercised.** Task 5 landed thirteen modules of which twelve were run by no
+  test, because every clearance test but `connectivity.test.ts` and
+  `wireSafety.test.ts` imports `@/schgen/render/blocks`, which imports
+  `@/schgen/render/templates/index`. **Task 7 ported both**, and with them
+  four of the waiting tests: `render/bodyClearance.test.ts`,
+  `textClearance.test.ts`, `unitText.test.ts` and `noConnectEnds.test.ts`.
+  Measured by `bun test tests/ --coverage`, the set of modules under
+  `lib/schgen/` that nothing runs went from **17 to 5**: what is left is
+  `render/emit.ts`, `emit-items.ts`, `erc-exclusions.ts`, `report.ts` and
+  `gates/pin-table.ts`. `docs/known-gaps.md` **G124** has the per-test table,
+  both measurements and why the earlier "no test imports it by name" currency
+  was the wrong one.
+
+  **Three clearance tests are still out**, and so is the ninth template test:
+  `glyphClearance.test.ts` and `glyphGlyphClearance.test.ts` want
+  `render/sheetCheck.ts`, `textIndependence.test.ts` wants `render/bus.ts`,
+  and `render/templates/templateStock.kicad.test.ts` wants
+  `render/sheets.ts` — all three modules are **Task 6b**'s. Both
+  `sheetCheck.ts` and `bus.ts` are import-clean today, so these are blocked on
+  a task boundary rather than on a dependency. **G135** carries the porter's
+  refusal for each and the exact manifest JSON to re-add them.
 - **`@/schgen/gates/oscar/*`.** Five files, deferred to Task 18 by the plan
   (the Pultec reference-graph comparison needs the complete pipeline first).
   `gates/oscar/graph.ts` also needs `@/kicad/components`, which is unresolved.
@@ -181,17 +190,34 @@ is resolved rather than hand-porting around the gap:
   `connectivity`/`traceability`/`pinIdentity` gates.** Each imports at least
   one of the above, directly or transitively, so each waits on the same task
   that resolves what it needs.
-- **The EMITTER is ported and the SHEET is not** (Task 6), and the split is not
+- **The TEMPLATES and the block layout engine are PORTED** (Task 7):
+  `render/blocks.ts`, `layout-kit.ts`, `chain-kit.ts`, `fanout-kit.ts`,
+  `fanout-rows.ts` and `render/templates/` — eight registered template ids in
+  seven modules plus `opamp-classify.ts` and the registry. Eight of the nine
+  ported template test files run (97 pass / 0 fail), which is **port parity**:
+  the pedals project's own fixtures against the ported templates with imports
+  rewritten and nothing else. That is a regression measurement and says
+  nothing about whether a template fits a discrete audio circuit — a different
+  number, measured by Task 10.
+  `tests/schgen/render/templates/mismatch-census.test.ts` pins the 30
+  `mismatch(...)` sites Task 8 must widen, per module, with the five helper
+  result types beside them.
+
+- **The EMITTER is ported and the SHEET is not** (Task 6a), and the split is not
   where the plan put it. `render/emit.ts`, `emit-items.ts`, `page-refs.ts`,
   `erc-exclusions.ts`, `project.ts` and `report.ts` are here; the four modules
   that would feed them a drawing - `render/frames.ts`, `bus.ts`,
-  `sheet-check.ts` and `sheets.ts` - are **not**, because all four import
-  `@/schgen/render/blocks`, which is **Task 7**'s and which itself needs
-  `render/templates/index`. `generate.ts` needs `layoutSheet` from
+  `sheet-check.ts` and `sheets.ts` - are **not**. They imported
+  `@/schgen/render/blocks`, which Task 7 has now landed, so
+  **`sheet-check.ts` and `bus.ts` are import-clean today** and `frames.ts`
+  waits only on `bus.ts`; all four are **Task 6b**'s to port.
+  `generate.ts` needs `layoutSheet` from
   `render/sheets.ts`, and `design.ts`/`generateFiles.ts` need Task 18's
-  `gates/oscar/boundary`, so **nothing here can yet emit a schematic file**:
-  there is a correct emitter with no sheet to hand it. `docs/known-gaps.md`
-  **G131** has the per-file table and the port's own refusal for each.
+  `gates/oscar/boundary`, so **nothing here can yet emit a schematic file
+  through its own pipeline**: there is a correct emitter with no sheet to hand
+  it. `docs/known-gaps.md` **G131** has the per-file table and the port's own
+  refusal for each, and **G136** records how Task 7 looked at all eight
+  templates' output anyway, and what that does not establish.
 
   The consequence for coverage is the same one **G124** records for Task 5:
   **five of Task 6's six newly ported modules are exercised by no test** -
