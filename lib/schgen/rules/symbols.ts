@@ -93,20 +93,37 @@ const NO_RULE_BECAUSE: Readonly<Record<string, string>> = {
 export function symbolForKind(kind: ComponentKind, parameters: Parameters): string {
   const symbol = SYMBOL_BY_KIND[kind]
   if (symbol !== undefined) return symbol
+  throw new Error(noSymbolRefusal(kind, parameters, null))
+}
+
+/**
+ * The refusal text for a kind with no rule, with `what` naming the component when the caller
+ * knows it.
+ *
+ * **WHY A SEPARATE FUNCTION RATHER THAN A `catch` THAT ADDS THE NAME.** A perturbation found this:
+ * adding a `switch` to a fixture produced a refusal that named the kind, the parameters and the
+ * reason, and NOT the component - so a reader of a 37-part circuit was told that "a switch" had no
+ * symbol and had to go and find which one. `symbolForKind`'s signature is fixed by Task 9's brief
+ * and takes no name, so the text is built here and both callers use it: `symbolForKind` with no
+ * name, and `symbolChoiceFor` in `../from-network.ts` with the component's id. Enriching a caught
+ * message instead would make a refusal's wording part of a control path.
+ */
+export function noSymbolRefusal(kind: ComponentKind, parameters: Parameters, what: string | null): string {
   const because = NO_RULE_BECAUSE[kind]
   if (because === undefined) {
-    throw new Error(
+    return (
       `no symbol rule for kind "${kind}", and no reason is recorded for its absence either. ` +
-        "Every kind outside SYMBOL_BY_KIND needs an entry in NO_RULE_BECAUSE in " +
-        "lib/schgen/rules/symbols.ts saying what the kind cannot answer; " +
-        "tests/schgen/rules/symbols.test.ts sweeps ALL_KINDS and requires one or the other.",
+      "Every kind outside SYMBOL_BY_KIND needs an entry in NO_RULE_BECAUSE in " +
+      "lib/schgen/rules/symbols.ts saying what the kind cannot answer; " +
+      "tests/schgen/rules/symbols.test.ts sweeps ALL_KINDS and requires one or the other."
     )
   }
-  throw new Error(
-    `no symbol is derived for kind "${kind}" (parameters: ${JSON.stringify(parameters)}): ` +
-      `${because} Nothing is guessed: declare \`part.symbol\` on the component, or declare a ` +
-      "`symbol` override with a non-blank `why` in this circuit's schematic authoring file. " +
-      `Kinds with a rule: ${Object.keys(SYMBOL_BY_KIND).join(", ")}.`,
+  const subject = what === null ? `kind "${kind}"` : `${what} (kind "${kind}")`
+  return (
+    `no symbol is derived for ${subject} (parameters: ${JSON.stringify(parameters)}): ` +
+    `${because} Nothing is guessed: declare \`part.symbol\` on the component, or declare a ` +
+    "`symbol` override with a non-blank `why` in this circuit's schematic authoring file. " +
+    `Kinds with a rule: ${Object.keys(SYMBOL_BY_KIND).join(", ")}.`
   )
 }
 

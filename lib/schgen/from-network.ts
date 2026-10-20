@@ -46,7 +46,7 @@
  */
 
 import { assertAuthoring, type SchematicAuthoring, type ComponentOverride } from "./authoring.ts"
-import { canonicalPinNumbers, symbolForKind } from "./rules/symbols.ts"
+import { canonicalPinNumbers, kindStatesItsSymbol, noSymbolRefusal, symbolForKind } from "./rules/symbols.ts"
 import { pinSidesFor, type PinSide } from "./rules/pin-sides.ts"
 import { preferredOrientation } from "./rules/orientation.ts"
 import { valueFor } from "../kicad/value-notation.ts"
@@ -116,6 +116,12 @@ export function symbolChoiceFor(component: Component, override: ComponentOverrid
   }
   if (declared !== undefined) return { libId: declared, origin: "model" }
   if (overridden !== undefined) return { libId: overridden, origin: "override" }
+  // The refusal names the COMPONENT and not only its kind: a perturbation that added a `switch`
+  // to a fixture produced a message saying "a switch" had no symbol, which leaves a reader of a
+  // 37-part circuit to go and find which one. See `noSymbolRefusal` for why it is composed there.
+  if (!kindStatesItsSymbol(component.kind)) {
+    throw new Error(noSymbolRefusal(component.kind, component.parameters, `component "${component.id}"`))
+  }
   return { libId: symbolForKind(component.kind, component.parameters), origin: "rule" }
 }
 

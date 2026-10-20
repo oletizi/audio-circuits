@@ -10,7 +10,7 @@
 
 import { test, expect } from "bun:test"
 import { ALL_KINDS } from "../../../lib/model/kinds.ts"
-import { canonicalPinNumbers, kindStatesItsSymbol, symbolForKind, symbolRefPrefix } from "../../../lib/schgen/rules/symbols.ts"
+import { canonicalPinNumbers, kindStatesItsSymbol, noSymbolRefusal, symbolForKind, symbolRefPrefix } from "../../../lib/schgen/rules/symbols.ts"
 import { createResolver } from "../../../lib/schgen/render/library.ts"
 import { symbolLibraries } from "../../../lib/schgen/render/stock-symbols.ts"
 
@@ -51,6 +51,11 @@ test("the whitelist is exactly four kinds, and every lib id in it resolves on di
 
 test("a kind with no rule names the kind, the parameters and what to do instead", () => {
   expect(() => symbolForKind("opamp", {})).toThrow(/no symbol is derived for kind "opamp"/)
+  // And when the caller knows which component it is, the refusal says so - the gap a Step 7
+  // perturbation found, since "a switch has no symbol" leaves a reader of a 37-part circuit to go
+  // and find which switch.
+  expect(noSymbolRefusal("switch", {}, 'component "a_bypass_jumper"'))
+    .toContain('no symbol is derived for component "a_bypass_jumper" (kind "switch")')
   expect(() => symbolForKind("opamp", {})).toThrow(/an op-amp symbol is a PACKAGE/)
   expect(() => symbolForKind("potentiometer", { ohms: 10000, taper: { type: "linear" } }))
     .toThrow(/"ohms":10000/)
