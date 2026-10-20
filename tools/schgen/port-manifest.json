@@ -120,6 +120,7 @@
     }
   ],
   "handWritten": [
-    "lib/schgen/strict.ts"
+    "lib/schgen/strict.ts",
+    "lib/schgen/render/stock-symbols.ts"
   ]
 }

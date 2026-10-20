@@ -197,10 +197,20 @@ export function symbolPins(block: string): readonly SymbolPin[] {
   return pins
 }
 
+/**
+ * Where the vendored block for `libId` lives, whether or not it is there.
+ * Exported so a caller can NAME the file in its own refusal without
+ * re-deriving the path shape - `lib/schgen/render/stock-symbols.ts` reports
+ * both sides of a vendored-versus-installed disagreement by path.
+ */
+export function vendoredSymbolFile(libId: string): string {
+  const { library, name } = splitLibId(libId)
+  return path.join(VENDORED_DIR, library, `${name}.sexpr`)
+}
+
 /** The vendored, already-flattened block for `libId`. */
 export function vendoredSymbolText(libId: string): string {
-  const { library, name } = splitLibId(libId)
-  const file = path.join(VENDORED_DIR, library, `${name}.sexpr`)
+  const file = vendoredSymbolFile(libId)
   if (!fs.existsSync(file)) {
     throw new Error(
       `no vendored KiCad symbol for "${libId}" (looked for ${file}). Vendored: ` +
