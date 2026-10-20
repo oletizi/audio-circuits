@@ -97,10 +97,10 @@ against its source again. The byte-check iterates `files[]` only, so an
 upstream fix in `digital-pedal-platform` will not arrive here by re-running
 the porter, a drift between the two is invisible to every check here, and the
 `cuts` a file carried while it was ported stop being declared anywhere but
-this manifest's git history. `docs/known-gaps.md` **G139** sizes that loss
-(it is 25 files after Task 8, nine of them the port-parity tests Task 7
-landed) and records the mechanism that was considered instead and why it was
-not taken.
+this manifest's git history. `docs/known-gaps.md` **G139** sizes that loss -
+after Task 8 the three lists are **64 ported, 26 diverged, 10 hand-written**,
+and nine of the diverged are ported tests - and records the mechanism that was
+considered instead and why it was not taken.
 
 Running the porter prints one `DIVERGED, not rewritten:` line per entry, so a
 run cannot be read as having refreshed them. `resolveSpecifier` resolves
@@ -142,8 +142,19 @@ is resolved rather than hand-porting around the gap:
   Task 4 — until that task replaced it wholesale with the pedals source and
   removed its `handWritten` entry in favour of a `files[]` one. The
   hand-written files under `lib/schgen/` are now `strict.ts`,
-  `render/stock-symbols.ts` and the seven `render/obstacle-*.ts` modules
-  (Task 5).
+  `render/stock-symbols.ts`, `render/problem-obstacles.ts` (Task 8) and the
+  seven `render/obstacle-*.ts` modules (Task 5).
+
+  **`render/problem-obstacles.ts` is hand-written and has no pedals source.**
+  It turns one of `checkLayout`'s problem strings into the relation and the
+  obstacle PAIR that Task 8's `clearance` mismatch must name, from a declared
+  list of relation phrases each transcribed from the function that writes it.
+  It exists because restructuring `checkLayout` to carry that pair as data
+  would have diverged eight more ported modules and rewritten the assertions
+  of the clearance tests that hold their text; `docs/known-gaps.md` **G145**
+  records the deviation, what it costs, and the two mechanisms that would
+  settle it. It refuses - returns nothing - for a problem naming no pair, and
+  `connector-fanout` then throws rather than inventing one.
 
   **`render/obstacle-matrix.ts` and its six `render/obstacle-pairs-*.ts`
   siblings are hand-written and have no pedals source**, because the pedals
@@ -242,9 +253,27 @@ is resolved rather than hand-porting around the gap:
   rewritten and nothing else. That is a regression measurement and says
   nothing about whether a template fits a discrete audio circuit — a different
   number, measured by Task 10.
-  `tests/schgen/render/templates/mismatch-census.test.ts` pins the 30
-  `mismatch(...)` sites Task 8 must widen, per module, with the five helper
+  `tests/schgen/render/templates/mismatch-census.test.ts` pinned the 30
+  `mismatch(...)` sites Task 8 had to widen, per module, with the five helper
   result types beside them.
+
+- **TASK 8 HAS WIDENED THEM, AND IT IS THE FIRST TASK THAT DELIBERATELY
+  CHANGED PORTED CODE RATHER THAN PORTING IT.** `RealiseResult`'s false arm
+  carries a classified `Mismatch` of four kinds, `mismatch(reason)` is
+  deleted, and all 30 sites are classified: 18 `not-applicable`, 2
+  `invalid-geometry`, 1 `clearance` and 9 forwards of an already-classified
+  mismatch (`docs/known-gaps.md` **G143** has the per-module table and what
+  the lopsidedness means). `selectRenderer` is new and implements spec §1.3:
+  an `auto` block whose every template reports `not-applicable` goes to the
+  ELK backend, and anything else refuses - **G147** records why a `wired`
+  block's `not-applicable` must refuse too, and the 43 red tests that
+  established it. The `labels` rendering is gone (**G140**), and the census
+  now counts sites per module AND per kind, over source text with comments
+  and literals blanked out.
+
+  **Twenty-six files diverged for it** - fourteen for the widening and twelve
+  for the `labels` deletion - which is what the `diverged` list above is for
+  and what **G139** counts.
 
 - **The EMITTER is ported and the SHEET is not** (Task 6a), and the split is not
   where the plan put it. `render/emit.ts`, `emit-items.ts`, `page-refs.ts`,

@@ -108,7 +108,8 @@ export interface ManifestFileEntry {
  * against its source again. A fix made upstream in `digital-pedal-platform`
  * will not arrive here by re-running the porter, and a drift between the two
  * is invisible to every check in this repository. `docs/known-gaps.md`
- * **G139** records the measured size of that loss.
+ * **G139** records the measured size of that loss: after Task 8 the three
+ * lists are 64 ported, 26 diverged and 10 hand-written.
  *
  * **A PURE DELETION IS NOT A DIVERGENCE.** If the only content change a file
  * needs is removing text that is in the source, declare a `cuts` entry and

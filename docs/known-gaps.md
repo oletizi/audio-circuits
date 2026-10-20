@@ -8473,7 +8473,7 @@ exactly, and the eight registered ids are the eight the brief names.
   five types under their real names, so an implementer who reads the test
   rather than the brief gets it right either way.
 
-### G139 - the port manifest has a third category, `diverged`, and **25 of its ~95 files now re-derive from nothing** - nine of them the port-parity tests Task 7 landed
+### G139 - the port manifest has a third category, `diverged`, and **26 of its 90 files now re-derive from nothing** - nine of them ported TESTS, and a tenth the fixture they share
 
 **What was done.** `tools/schgen/port-manifest.json` gained a `diverged` list
 beside `files` and `handWritten`. An entry is
@@ -8504,14 +8504,24 @@ compares a diverged file against its source again. An upstream fix in
 `digital-pedal-platform` will not arrive by re-running the porter; a drift
 between the two is invisible to every check in this repository; and the `cuts`
 a file carried while it was ported stop being declared anywhere but this
-manifest's git history. **Nine of the twelve files Task 8's `labels` deletion
-diverges are ported TESTS**, including the four MCU-cut carriers
+manifest's git history. **Measured after Task 8: `files[]` holds 64 entries,
+`diverged` 26 and `handWritten` 10**, so a little over a quarter of what was
+ported is no longer checked against anything. **Nine of the twenty-six are
+ported TESTS** - eight of them from the `labels` deletion, plus
+`render/templates/passiveChain.test.ts` from the type widening - including the
+four MCU-cut carriers
 (`ir/build.test.ts` with nine cut entries, `ir/classify.test.ts`,
 `ir/validate.test.ts`, `render/templates/opampStock.kicad.test.ts`) and the
-ported fixture `__fixtures__/circuits.ts`. Those are **G124**'s port-parity
-rows: the pedals project's own fixtures run against the ported code. They
-still RUN and their assertions are unchanged - what is gone is the byte-check
-that would have caught a drift in what they assert.
+ported fixture `__fixtures__/circuits.ts`. **Five of the nine are rows of
+**G124**'s table** - the port-parity work Task 7 landed or unblocked
+(`render/templates/passiveChain.test.ts`,
+`render/templates/opampStock.kicad.test.ts`, `render/textClearance.test.ts`,
+`render/unitText.test.ts`, `render/noConnectEnds.test.ts`); the other four
+came in with Tasks 2, 4 and 6. All nine still RUN, and their assertions are
+unchanged except the twelve in `passiveChain.test.ts` that this task's
+widening required and that got STRONGER (they now pin the mismatch kind).
+What is gone is the byte-check that would have caught a drift in what they
+assert.
 
 **THE ALTERNATIVE MECHANISM, CONSIDERED AND NOT TAKEN, BECAUSE A LATER PORT
 TASK MAY WANT IT.** A `replacements` list on a `files[]` entry -
@@ -8652,3 +8662,398 @@ and one is `{ kind: "auto" }`, and the split is forced:
   the other half is Task 19's deletion of `lib/kicad/schematic.ts`, which is
   the thing in this repository that actually draws that way today.
 
+### G141 - measured: **four of the eight templates can never apply to an `auto` block**, because the anchor they need lives on the `wired` variant
+
+`{ kind: "auto" }` carries no payload, by decision **D3**. Four templates read
+their anchor as `const anchor = r.kind === "wired" ? r.anchor : null` -
+`connector-fanout`, `crystal`, `regulator` and `opamp-stage` (the last through
+`planStage`) - and each refuses immediately when it is null:
+*"connector-fanout needs an anchor"*, *"crystal needs an anchor with roles a
+and b"*, *"regulator needs an anchor with roles in and out"*, *"opamp-stage
+needs an anchor with roles out, inv and noninv"*. All four of those refusals
+are `not-applicable`.
+
+**So an `auto` block is in practice offered four templates, not eight**:
+`rail-row`, `decoupling-bank`, `divider` and `passive-chain`, the four that
+read only the subgraph. An op-amp stage, a regulator, a crystal or a connector
+fan-out declared `auto` therefore reaches **ELK** - every template reports
+`not-applicable`, which is exactly the condition that selects it - rather than
+the template that was written for its idiom.
+
+**This is not a defect in Task 8's selection rule**, which does what §1.3
+says; and it is not obviously wrong, since those four templates genuinely
+cannot be driven without knowing which pin is which. **What it means is that
+`auto` cannot be used to say "work out which idiom this is"** for half the
+template set, and a later task that expects it to will find the block going to
+ELK silently - `{kind:"elk"}` is a selection, not a refusal, so nothing says
+so out loud.
+
+- **Found** 2026-10-19, Task 8, Step 7, while building the selection test's
+  "no template fits" fixture.
+- **Evidence** `grep -n 'r.kind === "wired" ? r.anchor : null'
+  lib/schgen/render/templates/*.ts` returns **four** lines, one per template:
+
+  ```
+  lib/schgen/render/templates/connector-fanout.ts:34
+  lib/schgen/render/templates/opamp-classify.ts:139
+  lib/schgen/render/templates/crystal.ts:67
+  lib/schgen/render/templates/regulator.ts:186
+  ```
+
+  The `opamp-classify.ts` one is inside `planStage`, which `opamp-stage.ts`
+  calls as its first statement, so it is `opamp-stage`'s anchor read rather
+  than a fifth template's. The consequence is exercised: the selection test's
+  `auto` fixture is a five-pin regulator part with its NR capacitor, and
+  `selectRenderer` returns `{kind:"elk"}` for it - a check that would fail if
+  any anchor-driven template had applied.
+- **Verified** CONFIRMED - this writer ran the grep, read the four sites, and
+  wrote the test that depends on the conclusion.
+- **Why it is open** it is a limit of the new `auto` variant that nothing in
+  the tree states, and Tasks 9, 10 and 15 are written against the
+  post-Task-8 shape of `Rendering`.
+- **What would settle it** **CRITERION:** a block that an idiom template
+  would have drawn is not sent to ELK merely because its rendering declared
+  no anchor - either the anchor is derivable from the subgraph, or the block
+  is told so. **MECHANISM, untried, and two of them disagree:** either move
+  the anchor off `wired` so `auto` can carry one, or have each anchor-driven
+  template infer its roles from the subgraph (which is a classifier, not a
+  template, and is the shape **G90** says gets expensive). A third, cheapest
+  option is neither: have the render report say which blocks reached ELK and
+  which templates declined them, so the silence is at least recorded.
+
+### G142 - `valuesAlong` now returns `true` for `auto`, and its doc comment still says "the bus and labels renderers" - a stale sentence in a file that is deliberately NOT diverged
+
+`render/power-text.ts`'s `valuesAlong(rendering)` is
+`return rendering.kind !== "wired"`, documented as *"true for the bus and
+labels renderers, whose anchors are pin stubs one pin pitch apart (horizontal
+values of adjacent up/down symbols would overprint each other); wired
+templates space their anchors for horizontal values."*
+
+Task 8 deletes `labels` and adds `auto` (**G140**), so that function now
+returns `true` for `auto` **and the comment names a renderer that no longer
+exists**. Two separate things are wrong with that, and only one of them is
+cosmetic:
+
+1. The sentence is stale prose in a ported file.
+2. **Whether an `auto` block's power values should run along their glyphs is
+   undecided.** The reason the comment gives is about anchor SPACING - stubs
+   one pitch apart overprint - and an ELK-laid block's anchor spacing is
+   whatever ELK produced, which is neither the bus renderer's pitch nor a
+   template's deliberate spacing. `true` is therefore a guess that happens to
+   be the conservative one (along-values overprint less), not a decision.
+
+**`power-text.ts` was deliberately left PORTED.** It is not in the Task 8
+brief's file list, it still compiles and behaves, and diverging it would cost
+its byte-check (**G139**) to fix a comment. **Recording it rather than
+drifting it is the choice**, and this entry is the record.
+
+- **Found** 2026-10-19, Task 8, Step 8, while enumerating what the `labels`
+  deletion touches.
+- **Evidence** `grep -rn 'labels renderer\|kind !== "wired"'
+  lib/schgen/render/power-text.ts` prints the comment at line 24 and the body
+  at line 30; `grep -rn 'valuesAlong' lib/ tests/` shows its three callers
+  (`field-placement.ts`, `drawn-extent.ts`, `layout-check.ts`), none of which
+  passes an `auto` rendering today, because nothing can yet render one - which
+  is why this is open rather than wrong.
+- **Verified** CONFIRMED - this writer read the function, its comment and
+  every caller.
+- **Why it is open** the first item needs an edit nobody has yet paid the
+  divergence for; the second needs a decision that cannot be made before the
+  ELK backend exists (Task 12).
+- **What would settle it** **CRITERION:** every `Rendering` kind's
+  along-values behaviour is stated by whoever can see the anchors it
+  produces, and no comment in `lib/schgen/` names a rendering this repository
+  does not have. **MECHANISM, untried:** Task 12 decides it with a real ELK
+  layout in front of it, and diverges `power-text.ts` then, in one change
+  with a reason - rather than this task diverging it to fix a sentence.
+### G143 - measured: all thirty template refusal sites classified, and the split is **18 / 2 / 1 / 0 with nine forwards** - one kind has no site at all and one has exactly one
+
+Task 8's substance was reading each of the 30 `mismatch(reason)` sites and
+saying which of four kinds it is. The result, per module, as the census now
+pins it:
+
+| module | not-applicable | invalid-geometry | clearance | backend-raised | forward | total |
+|---|---|---|---|---|---|---|
+| `connector-fanout.ts` | 1 | 0 | **1** | 0 | 1 | 3 |
+| `crystal.ts` | 5 | 0 | 0 | 0 | 1 | 6 |
+| `divider.ts` | 6 | 0 | 0 | 0 | 0 | 6 |
+| `opamp-stage.ts` | 0 | 0 | 0 | 0 | 1 | 1 |
+| `passive-chain.ts` | 0 | 0 | 0 | 0 | 1 | 1 |
+| `rail-row.ts` | 3 | 0 | 0 | 0 | 2 | 5 |
+| `regulator.ts` | 3 | **2** | 0 | 0 | 3 | 8 |
+| **total** | **18** | **2** | **1** | **0** | **9** | **30** |
+
+**THE DISTRIBUTION IS THE FINDING, AND IT IS LOPSIDED ENOUGH TO BE WORTH
+RECORDING.** Twenty-seven of the thirty are, directly or through a forward,
+*"this block is not that idiom"*. **Exactly three sites in the whole template
+set report a defect in something a template DREW**: `regulator.ts`'s two tie
+checks and `connector-fanout.ts`'s rotation search. Every other refusal fires
+before a part is placed.
+
+**What that means for the selection rule.** §1.3's asymmetry - `not-applicable`
+may select another renderer, anything else refuses - is doing its work on three
+sites out of thirty. It is still the right rule (**G84**), but a reader should
+not imagine the two arms are of comparable size: **the refusing arm is three
+sites, and if any one of them were misclassified as `not-applicable` the whole
+protection would be a third gone.** That is why the census pins the per-kind
+counts and not only the total.
+
+**`backend-raised` has no site, by design.** No template raises on its own
+behalf. `render/blocks.ts` builds that kind when a template THROWS - which is
+how the ~12 `throw new Error("unreachable: ...")` and symbol-lookup failures in
+the template set now arrive - and the ELK backend will build it for the elkjs
+crash **G94** measured.
+
+**AND THE HELPER TYPES CARRY FAR MORE REFUSALS THAN THE CENSUS COUNTS**, which
+is a scope statement rather than a defect: `classifyChain` alone has nine,
+`tracePaths` eight, `planStage` about fourteen, and all of them are
+`not-applicable`. They reach a caller through the nine forwards. So the honest
+summary is: **the template set refuses in roughly sixty places and three of
+them are about geometry.**
+
+- **Found** 2026-10-19, Task 8, Step 6, by reading all thirty sites.
+- **Evidence** two independent counts that agree, which is the only reason to
+  believe either. (1) The per-site table above, written by reading each site
+  and its surrounding control flow - recorded in full in the Task 8 report with
+  the reason for each. (2) `tests/schgen/render/templates/mismatch-census.test.ts`,
+  rewritten to extract the sites from the source text per module AND per kind,
+  which reports exactly these numbers. A check that could have failed, and did:
+  the first run of the extractor returned 23 `not-applicable` and 12 forwards,
+  because its patterns also matched the HELPER result constructors
+  (`notLadder`, `notBanked`, `refuse`) and `opamp-classify.ts`'s forwards into
+  `Planned` - which are refusals but not `RealiseResult` ones. Narrowing it to
+  the four exported constructors, with the forward pattern gated on a module
+  that declares a `Template`, gave the table above.
+- **Verified** CONFIRMED - this writer classified each site, wrote the
+  extractor, and reconciled the two counts.
+- **Why it is open** it is a measurement a later task needs and cannot
+  re-derive cheaply: Task 12's backend and Task 14's error handling are both
+  written against how often each kind actually occurs.
+- **What would settle it** nothing - it is a measurement, not a defect. What
+  keeps it TRUE is the census, which fails on a site changing kind as well as
+  on one appearing or disappearing.
+
+### G144 - the Task 8 brief says **ten** forwarding sites and there are **nine**; the tenth is a forward that never called `mismatch`
+
+The brief's Step 5 reads: *"The ten forwarding sites (`return mismatch(plan.reason)`)
+become `return { ok: false, mismatch: plan.mismatch }`."* Counted in the source
+before the rewrite, **nine** of the thirty `mismatch(...)` sites forwarded
+another result's reason: `rail-row.ts:75` and `:95`, `connector-fanout.ts:26`,
+`opamp-stage.ts:109`, `regulator.ts:180`, `:207` and `:216`, `crystal.ts:111`,
+and `passive-chain.ts:205`. The other twenty-one built their own reason.
+
+**The tenth is most likely `regulator.ts`'s `reachOf`**, which ends
+`return drawn.ok ? { ok: true, bounds: boundsOf(drawn.boxes) } : drawn;` - a
+forward of a `Measured` into a local result type, which needed widening for
+exactly the same reason as the nine and is invisible to a count of
+`mismatch(`. Two other forwards of that shape exist and are also not
+`mismatch(` calls: `opamp-classify.ts`'s `inputCore` (which rephrases one
+reason on the way through) and `drawn-extent.ts`'s `drawnBoxes` (which joined
+`blockFieldProblems`' strings). **On that reading the brief undercounts rather
+than overcounts**, and either way the number in it is not the number of sites
+an implementer finds.
+
+**Why this is worth a register entry rather than a shrug.** It is the third
+count in this plan's own documents that does not match the source - after
+**G138**'s three wrong signatures and the Task 7 brief's nine template tests
+that are eight here - and all three were found by an implementer checking
+rather than by the document being reviewed. An implementer who worked from the
+brief's ten would have gone looking for a site that does not exist, or counted
+`reachOf` as one of the thirty and then disagreed with the census.
+
+- **Found** 2026-10-19, Task 8, Step 5.
+- **Evidence** `git grep -n 'mismatch(' 6d37dbc -- lib/schgen/ | wc -l` prints
+  **32** at the parent commit: the 30 call sites, the one
+  `export function mismatch` in `block-types.ts`, and one prose mention in
+  `lib/schgen/README.md` (`| grep -c README` prints 1). Nine of the 30 pass
+  another result's `.reason` and twenty-one build a string - a check that could
+  have failed, and the nine are enumerated above with file and line.
+  `tests/schgen/render/templates/mismatch-census.test.ts` now independently
+  reports **9** forwards (**G143**'s table), from the rewritten sites.
+- **Verified** CONFIRMED - this writer ran the grep at the parent commit, read
+  all 30 sites, and re-counted after the rewrite.
+- **Why it is open** it is a defect in a plan document still being executed,
+  and an implementer may not rewrite another task's criteria.
+- **What would settle it** **CRITERION:** the brief's count of forwarding
+  sites matches the number of sites in `lib/schgen/` that forward a refusal,
+  under a stated definition of "site". **MECHANISM, untried:** correct Step 5
+  to say nine `mismatch(...)` forwards plus three result-type forwards that
+  never called it; the census test is the thing to trust either way.
+
+### G145 - the clearance mismatch's obstacle pair is recovered from `checkLayout`'s problem TEXT, not from a restructured `checkLayout`, and this is a deviation from the brief's stated mechanism
+
+The Task 8 brief, on the one `clearance` site: *"It must name the constraint
+and the obstacle pair, which means `checkLayout`'s problem strings need enough
+structure for the pair to be recovered."* The obvious reading is to restructure
+`checkLayout` so a problem is an object carrying its two obstacles. **That was
+not done, and the reason is a count.**
+
+`checkLayout` composes eleven sub-checks across **eight** ported modules -
+`body-clearance.ts`, `text-scene.ts`, `glyph-clearance.ts`, `wire-safety.ts`,
+`connectivity.ts`, `field-placement.ts`, `unit-pins.ts` and `layout-check.ts`
+itself - every one of which returns `string[]`, and the clearance tests under
+`tests/schgen/render/` assert that text verbatim. Restructuring it would have
+diverged eight more ported files (**G139**) and rewritten the assertions of the
+tests that hold them, which ruling **R4** forbids.
+
+**What was done instead.** A new hand-written
+`lib/schgen/render/problem-obstacles.ts` declares the structure the strings
+already have: fifteen infix relation phrases plus one prefix form
+(`bodies of A and B overlap`), **each transcribed from the function that writes
+it and citing it**, and `obstaclesOf(problem)` splits a problem into its
+relation and its two obstacles. `connector-fanout` passes that pair to
+`clearanceViolation`, using the relation as the `constraint`.
+
+**IT REFUSES RATHER THAN GUESSING, AND THAT IS THE PART THAT MATTERS.** Most
+`checkLayout` problems name ONE subject - *"unit R1#1 is not placed"*, *"net N
+is split into 2 pieces"* - and a few name three. `obstaclesOf` returns `null`
+for anything whose relation it does not hold, and `connector-fanout` then
+**throws**, naming the problem and the file to add the phrase to. An invented
+pair would be a classification nobody can check, in the field a reader would
+trust most. `selectRenderer` turns that throw into a `backend-raised` mismatch,
+so the block is still refused - loudly, and never silently drawn.
+
+**WHAT IT COSTS.** The pair is recovered by matching text, so a producer that
+rewords its message stops being recognised, and nothing fails until a layout
+actually collides that way: **the failure mode is a `backend-raised` refusal
+where a `clearance` one was meant**, which is loud but misclassified. The
+mitigation is the citation list - every phrase names its writer, so the claim
+is checkable by grep - not a test that holds the producers to their wording.
+
+- **Found** 2026-10-19, Task 8, Step 6.
+- **Evidence** `tests/schgen/render/problem-obstacles.test.ts`, seven tests
+  over problem strings transcribed from the producers, including the two
+  ordering cases that could silently be wrong (`" lies on "` is a substring of
+  `" lies on pin end "`, `" ends on "` of `" ends mid-wire on "`) and eight
+  real one-subject problems that must return `null`. One of its strings -
+  `"label A at (31.75, -5.08) overlaps body of J_USB#1"` - is the shape the
+  ported `connector-fanout.test.ts` asserts through the real pipeline, so at
+  least one example is held to the pipeline by a second test. **A check that
+  could have failed and did:** two of its expectations were wrong on the first
+  run, both about where a producer prints the coordinate, and the rule that cut
+  a trailing ` at (x, y)` was removed because `body-clearance.ts` prints it on
+  the LEFT of the relation and `wire-safety.ts` on the right - so cutting it
+  from the second obstacle only would have stripped half the pairs.
+- **Verified** CONFIRMED - this writer wrote the module and its test, read
+  every producer's message format, and ran the suite.
+- **Why it is open** the deviation is permanent unless `checkLayout` is
+  restructured, and the misclassification risk above is real and unguarded.
+- **What would settle it** **CRITERION:** a clearance refusal's obstacle pair
+  is derived from the data the check had, not from the sentence it wrote - or,
+  failing that, a reworded producer message fails a check in this repository
+  rather than silently becoming unrecognisable. **MECHANISMS, both untried:**
+  give `checkLayout` a structured sibling that returns
+  `{ text, obstacles }` and let the string form be derived from it, which is a
+  task of its own because eight modules produce those strings; or assert each
+  declared relation against a problem produced by the real check rather than
+  against a transcription, which is cheaper and catches a rewording.
+
+### G146 - `realiseBlock`'s ELK backend parameter DEFAULTS to null, which is a deviation from the brief's signature, taken to keep nine ported test files byte-checked
+
+The brief's `Produces` block states
+`realiseBlock(c: Circuit, id: BlockId, symbols: SymbolResolver, elk: Backend | null)`.
+As written, the fourth parameter is required. **Nine ported test files call
+`realiseBlock(c, "B", symbols)` with three arguments** - the eight template
+tests (`connector-fanout`, `crystal`, `divider`, `opamp-stage`,
+`opamp-stock.kicad`, `passive-chain`, `rail-row`, `regulator`) and
+`render/body-clearance.test.ts` - so a required parameter would have diverged
+all nine (**G139**) to add the word `null`. Two of them diverge for other
+reasons in this task anyway, so the marginal cost would have been **seven**
+port-parity test files Task 7 landed.
+
+`elk` therefore defaults to `null`. The type is what the brief says; what
+deviates is that a caller may omit it.
+
+**THIS IS NOT A FALLBACK, AND THE DISTINCTION IS WORTH STATING PRECISELY.** A
+`wired` block never consults the backend - its template draws it or the block
+is refused. An `auto` block whose every template reported `not-applicable`
+reaches `elkLayout`, and with a null backend that **throws**, naming the block,
+saying the backend is Task 12's fourth argument, and saying why it is not
+defaulted: *"the alternative to a backend here is a knowingly inferior drawing,
+which this generator does not produce - see docs/known-gaps.md G84."* Nothing
+is skipped and nothing second-best is drawn.
+
+**What the default does cost** is that a future caller can forget the argument
+and not find out until it renders an `auto` block. There are no `auto` blocks
+in this repository yet, so today that is a latent cost rather than a live one.
+
+- **Found** 2026-10-19, Task 8, Step 7.
+- **Evidence** `grep -rln 'realiseBlock' tests/` prints **ten** files, nine of
+  which call it (the tenth, `render/realise-result.test.ts`, only names it in a
+  comment), and `grep -rn 'realiseBlock(' tests/ | grep -c 'symbols)'` prints
+  **49** - every one a three-argument call. With the parameter required,
+  `bun run typecheck` fails once per call site. The
+  refusal path is real rather than asserted: during Task 8 a mis-stated
+  selection rule sent 43 of those very tests down it, and every one reported
+  *"block B: every template reported \"not-applicable\", so this block needs
+  the ELK backend, and realiseBlock was called without one"* - the throw doing
+  exactly what it claims, on real circuits.
+- **Verified** CONFIRMED - this writer wrote both, and read the 43 failures
+  that proved the throw fires.
+- **Why it is open** it is a deviation from a stated interface that Task 12
+  and everything after it implements against.
+- **What would settle it** **CRITERION:** no caller of `realiseBlock` can
+  reach the ELK path without having decided what backend to use. **MECHANISM,
+  untried:** make the parameter required in the task that lands the backend,
+  by which time the ten test files are being touched for other reasons anyway;
+  a weaker alternative is a lint that forbids a three-argument call outside
+  `tests/`.
+
+### G147 - **the brief's selection rule is right for an `auto` block and wrong for a `wired` one**, and written as stated it turned 43 tests red by replacing declared templates with ELK
+
+The Task 8 brief's Step 7: *"`wired` runs its declared template; `auto` tries
+`TEMPLATES` in registered order; **all `not-applicable` → `{kind:"elk"}`; any
+other mismatch → `{kind:"refused"}`**."* Implemented exactly that way,
+`selectRenderer` sends a **wired** block whose declared template reports
+`not-applicable` to the ELK backend.
+
+`[RAN]` **43 tests went red in one run**, every one of them a refusal a
+declared template was expected to produce. Each reported the same thing
+instead:
+
+```
+block B: every template reported "not-applicable", so this block needs the ELK
+backend, and realiseBlock was called without one.
+```
+
+where the ported test expected, for instance,
+`template divider cannot realise its subgraph: parts to GND start from
+different nodes (B, A)`.
+
+**THE RULE IS ASYMMETRIC BECAUSE THE TWO RENDERINGS MAKE DIFFERENT CLAIMS.**
+`{ kind: "wired", template: "divider" }` is an author asserting *this block is
+drawn by the divider template*. The template answering *"this is not a
+divider"* means the assertion is false, and that is a generation error naming
+the block and the template - which is **G84**'s criterion in terms. `auto`
+asserts nothing about which idiom fits, so every template declining it is
+information rather than contradiction, and ELK is the next renderer rather than
+a rescue. **Sending a wired block to a general router because its declared
+template declined it is precisely the silent degradation G84 exists to
+prevent**, and it would have been undeclared as well: the render report would
+have said `wired` while ELK drew it.
+
+So `selectRenderer` reaches `{kind:"elk"}` only for an `auto` block, and a
+wired block's last `not-applicable` becomes a `refused`. Spec §1.3's three
+rules are unchanged; what is added is the condition under which the first of
+them applies.
+
+- **Found** 2026-10-19, Task 8, Step 7, as a red suite on the first
+  implementation of the rule as the brief states it.
+- **Evidence** the 43 failures above, which could not have happened if the
+  distinction did not matter, and which are the ported template tests'
+  assertions - not this task's. The corrected rule is held by
+  `tests/schgen/render/selection.test.ts`, whose `auto` fixture selects ELK and
+  whose `wired` fixture refuses; both arms were perturbed in Step 10 and each
+  went red by name.
+- **Verified** CONFIRMED - this writer wrote the rule both ways and ran the
+  suite each time.
+- **Why it is open** the brief, and the plan's Task 8 section it is drawn from,
+  still state the rule without the condition, and Tasks 9, 10, 12 and 15 are
+  written against that text. An implementer may not rewrite another task's
+  criteria.
+- **What would settle it** **CRITERION:** the plan's statement of the
+  selection rule distinguishes a declared template's refusal from an
+  undeclared block's, so that an implementer reading only the plan writes the
+  rule the ported tests already require. **MECHANISM, untried:** amend the
+  plan's Task 8 Step 7 and its `Produces` prose to say *all `not-applicable`
+  on an `auto` block selects ELK; on a `wired` block any mismatch refuses*.
