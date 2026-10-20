@@ -8381,6 +8381,18 @@ template, and **a reader must not take them as evidence of applicability** -
 that is Task 10's census, a different measurement, and nothing here bears on
 it.
 
+**AND TASK 10 CANNOT FILL THE GAP (b) NAMES, which is worth saying here so
+nobody comes looking.** **G160** measures it: **no template draws any of this
+repository's twelve declared blocks**, so there is no *(template x this
+repository's block)* drawing to describe. `realiseBlock` drew 0 and refused 12
+of 12, every one needing the ELK backend. **So the MECHANISM below is not
+sufficient for this repository's circuits**: `layoutSheet` plus `kicad-run.ts`
+would let the eight PEDALS fixtures be rebuilt through the real assembler, which
+is what the mechanism says and is still worth doing, but a picture of a template
+drawing one of OUR blocks additionally needs whatever makes a template apply -
+see **G160**'s four disagreeing mechanisms - or Task 12's backend, after which
+the picture is ELK's rather than a template's.
+
 **(c) "`checkLayout` clean on all eight" is BLOCK-LEVEL ONLY, and weaker than
 what the real pipeline runs.** `checkLayout` sees one block's placements,
 wires and anchors. `layoutSheet` additionally runs `assertSheetSafe(scene)`
@@ -8860,6 +8872,21 @@ cannot be driven without knowing which pin is which. **What it means is that
 template set, and a later task that expects it to will find the block going to
 ELK silently - `{kind:"elk"}` is a selection, not a refusal, so nothing says
 so out loud.
+
+**MEASURED ON THIS REPOSITORY'S OWN BLOCKS, 2026-10-20, BY TASK 10's CENSUS.**
+The consequence above was inferred from a five-pin regulator fixture; **G160**
+now measures it where it matters. All **12** declared blocks of the four parity
+circuits are `{kind:"auto"}` with `anchor: null`, and **48 of the census's 96
+(block x template) verdicts are these four refusals** - one per anchor-driven
+template per block, verbatim. The prediction in the paragraph above is confirmed
+on named blocks: `ob-buffer`, `oc-audio` and `oc-sidechain` are op-amp stages
+that reach ELK, and `opamp-stage` declines each with *"needs an anchor with roles
+out, inv and noninv"*. **The third mechanism below is now PARTLY DONE**: the
+census records which blocks reached ELK and which templates declined them, with
+each sentence verbatim, in `docs/schematic/template-parity.md` - but as a
+measurement tool, **not** in the render report a generated schematic carries, so
+the silence this entry describes is still silent inside the pipeline. **The
+criterion is not met**: no anchor is derivable from a subgraph today.
 
 - **Found** 2026-10-19, Task 8, Step 7, while building the selection test's
   "no template fits" fixture.
@@ -10071,3 +10098,203 @@ or not at all.
   or leave it refusing and treat this circuit as not-emittable, which is the
   status quo and which nobody has decided. **The criterion is what binds, not
   these.**
+
+### G160 - measured: the ported templates draw **0 of this repository's 12 declared blocks**, 96 of 96 verdicts are `not-applicable`, and all eight registered templates are unexercised - the parent's predicted table does not reproduce
+
+**THIS IS TEMPLATE APPLICABILITY: ONE OF M1's FOUR MEASUREMENTS, AND THE ONE WITH
+NO TARGET.** Spec §5.1 revision 4, finding 20, separates four things that had
+been read as one acceptance, and names the failure of confusing them. Every
+number in this entry belongs to the second row:
+
+| measurement | where it is taken | what it is |
+| --- | --- | --- |
+| port parity | Task 7, against the SOURCE project's own template fixtures | a **regression** requirement: it holds or the port is broken |
+| **template applicability** | **Task 10, this entry**, against this repository's declared blocks | **a MEASUREMENT WITH NO TARGET** |
+| ELK coverage | Tasks 12-14, over the blocks recorded here as `elk` | a test of the **new capability** |
+| integrated correctness | Tasks 11 and 18 | the **artifact**, and the only verdict of the four |
+
+**So a zero here is a RESULT, not a defect, and nothing was tuned to move it** -
+not a declaration, not a block boundary, not a template. §5.1: the templates
+*"were sized by a 103-block digital mainboard. Nothing is known about their pass
+rate on circuits that are mostly passive chains, dividers and op-amp stages. The
+measurement: run them and count."*
+
+**THE MEASUREMENT**
+
+| | count |
+| --- | --- |
+| declared blocks across the four parity circuits | **12** |
+| drawn by a template | **0** |
+| selected the ELK backend (every template `not-applicable`) | **12** |
+| refused (a template applied and failed) | **0** |
+| (block x template) verdicts probed | **96** |
+| verdicts that are `not-applicable` | **96** |
+| verdicts of any other kind | **0** |
+| registered templates that drew at least one block | **0 of 8** |
+
+**THE 96 REFUSALS FALL INTO FOUR CLASSES, and the split is the diagnosis:**
+
+| verdicts | the templates' own words |
+| --- | --- |
+| **48** | *"&lt;template&gt; needs an anchor…"* - `connector-fanout`, `crystal`, `regulator`, `opamp-stage`, on all 12 blocks |
+| **33** | *"…needs two-terminal parts with both pins connected; &lt;part&gt;#&lt;unit&gt; has N pins"* - `rail-row`, `divider`, `passive-chain`, on 11 of the 12 |
+| **12** | *"decoupling-bank holds only capacitors; &lt;part&gt; is &lt;refPrefix&gt;"* - on all 12 |
+| **3** | `oc-power` only, and these are TOPOLOGY rather than part shape: *"no net is common to every part"*, *"parts to GND start from different nodes (+9V_RAW, +9V_PROTECTED, VBIAS_RAW)"*, *"C1 has both pins on rails (+9V_PROTECTED, GND)"* |
+
+**The 48 are G141, now measured on this repository's own blocks rather than
+inferred from a fixture.** Every one of the 12 declared blocks is
+`{kind:"auto"}` with `anchor: null`, each for a reason its own authoring file
+states - *"declaring one would be choosing an arrangement and this task has no
+criterion for that choice"* - so the four anchor-driven templates can never be
+driven. That is a reviewed declaration decision, not an oversight.
+
+**The 33 are the sharper finding, because the smallest block fails them too.**
+It is NOT that this repository's blocks are too big. `tp-leg-collector` holds
+**two** parts, a trimmer and a resistor, and `rail-row`, `divider` and
+`passive-chain` all stop at the trimmer: `Device:R_Potentiometer_Trim` has three
+pins, and all three templates require every unit in the block to be
+two-terminal with both pins connected. A three-pin trimmer, a transistor, an
+op-amp unit, a 16-pin IC or a three-pin connector each ends the block for all
+three. **A trimpot is an ordinary part in a bench audio circuit and an unusual
+one on a digital mainboard, which is `G87`'s point arriving as a number.**
+
+**And `oc-power` is the one block that gets past the part-shape predicate**, so
+it is the only place where a subgraph-only template engaged with the topology at
+all. Its eight units are all two-terminal with both pins connected; it is
+declined because it holds a protection diode chain, a divider and a decoupling
+bank at once, so no net is common to every part and the parts to ground start
+from three different nodes.
+
+**THE PARENT'S PREDICTED TABLE BESIDE THE MEASURED ONE.** The M1 plan line 966
+is a prediction, and this census is what tests it.
+
+| the parent predicted | measured | reproduced? |
+| --- | --- | --- |
+| `opampStage` draws `opamp-buffer`, the compressor's audio path and its sidechain amplifier | 0 of 3; *"opamp-stage needs an anchor with roles out, inv and noninv"* on all 12 | **no** |
+| the decoupling bank draws `opamp-buffer`'s 4 capacitors, `pt2399-core`'s 14 and the compressor's power section | 0 of 3; every block holds a non-capacitor, named one at a time (`R1`, `J1`, `J2`, `J5`, `JP1`-`JP5`, `R5`, `R6`) | **no** |
+| `divider` draws the compressor's VBIAS divider | 0; the divider is inside `oc-power`, which also holds the protection chain, so *"parts to GND start from different nodes"* | **no** |
+| `fanoutKit` draws `lab-board`'s 10 connectors | 0, and **the premise is also wrong**: `transistor-preamp` declares no connector block at all - its three headers and seven test points are members of `tp-stage` alongside the transistor - and `connector-fanout` needs an anchor | **no** |
+| `bus` draws the PT2399 | **not reachable by this census at all.** `bus` is not a template: it is not in `TEMPLATES`, `candidatesFor` throws for a `bus` rendering, and `pt2399-core` declares `auto` rather than `bus` for the reason its authoring file gives (declaring `bus` means authoring bus GROUPS for nineteen non-rail nets, *"choosing a grouping this task has no criterion for"*) | **n/a - a prediction about a renderer, not a template** |
+| `passiveChain` *"everywhere"* | 0 of 12 | **no** |
+| `regulator` and `crystal` **unexercised and flagged** | unexercised, and flagged | **YES - the only two rows that reproduce** |
+
+**So the two rows the parent predicted would find nothing are the two that
+reproduced, and every row it predicted would be exercised was not.** One
+template, **`rail-row`, appears in neither column of the parent's table** - it is
+predicted neither exercised nor unexercised - and it drew nothing either.
+
+**WHAT THIS ENTRY DOES NOT CLAIM, and the distinction is the whole point.** It
+does not say the port is broken: **port parity is a different measurement and it
+is green.** The eight templates draw their own ported fixtures in this tree -
+`bun test tests/schgen/render/templates/` is **103 pass, 0 fail** - and the
+census's own `realised` and `refused` arms fire when driven with those fixtures.
+Nor does it say the templates are wrong, or that the declarations are: it says
+the idioms the pedals templates encode and the idioms these four circuits are
+built from do not overlap, which is the question §5.1 asked.
+
+**STEP 6's "EMIT EVERY REALISED BLOCK AND LOOK AT IT" HAS AN EMPTY INPUT SET,
+AND THAT IS THE SECOND FINDING.** **G136**'s round-2 caveat (b) records that its
+eight descriptions are pictures of *(template x pedals fixture)* and *"not of
+templates drawing this repository's circuits"*, and says that gap is Task 10's.
+**Task 10 cannot fill it: there is no (template x this repository's block)
+drawing to look at, because no template draws one.** `realiseBlock` **drew 0 and
+refused 12 of 12**, each with *"every template reported 'not-applicable', so this
+block needs the ELK backend, and realiseBlock was called without one"*. Filling
+G136(b)'s gap therefore needs Task 12's ELK backend as well as Task 6b's
+`layoutSheet` - **G136**'s stated mechanism names only the latter and is not
+sufficient. **Nothing was drawn by a harness instead**: a harness that placed
+symbols a template declined to place would be the agent authoring the
+arrangement and then judging it, which `CLAUDE.md` forbids by name.
+
+**FOUR SMALLER THINGS A LATER READER NEEDS AND CANNOT RE-DERIVE.**
+
+1. **"The seven ported templates" undercounts the registry by one, consistently,
+   across the spec, the plan and the brief.** There are **seven template
+   MODULES** under `lib/schgen/render/templates/` and **eight registered
+   `TemplateId`s**, because `rail-row.ts` exports both `railRow` and
+   `decouplingBank`. Every *"all seven"* statement is about seven files. This
+   census reports eight.
+2. **The brief's Step 1 second test is VACUOUS on this repository.** It says
+   *"for every block, if the outcome is refused, expect its mismatch kind to be
+   one of the four"*; no block refuses, so the loop body never runs and the test
+   passes by checking nothing. `tests/schgen/parity.test.ts` runs the
+   classification sweep over all 96 verdicts instead, which cannot go empty, and
+   keeps the refused arm for whatever refusals exist. **Task 17 re-runs this
+   census and will meet the same trap.**
+3. **The brief's Step 7 perturbation does not do what it predicts, for the same
+   reason.** It says *"drop one template from `TEMPLATES`; the census's
+   `unexercised` list GROWS and the blocks it drew become `elk`"*. Dropping
+   `passive-chain` made the list **shrink from 8 of 8 to 7 of 7** - the template
+   was already drawing nothing, so there was nothing to take away - and **no
+   block's outcome changed**, all 12 being `elk` before and after. What did
+   report the change: the committed document's content test, naming the twelve
+   missing `passive-chain` rows; the census's own discrimination test, with
+   `candidatesFor`'s real refusal *"no template registered for passive-chain"*;
+   the thirteen ported `passive-chain` tests; and port-fidelity's *"every ported
+   file is its source"*, because `templates/index.ts` is a ported file.
+4. **The brief's `Produces` block names a type that does not exist** -
+   `ParityCircuit` - which is the same class of defect **G138** records three of
+   in Task 7's brief. The committed equivalent is `ParityCase` in
+   `tools/schgen/authoring-census.ts`, and `censusOf` takes that.
+
+- **Found** 2026-10-20, Task 10, Steps 4 to 7.
+- **Evidence** `bun run schgen-parity`, which is COMMITTED
+  (`tools/schgen/parity.ts`, `tools/cli/schgen-parity.ts`) so a successor
+  re-runs it rather than rebuilding it from this recipe, and whose output is
+  `docs/schematic/template-parity.md` - also committed, with every one of the 96
+  verdicts and its sentence verbatim. **Checks that could have failed, and
+  several did when driven:**
+  - `tests/schgen/parity.test.ts` asserts the census's row count against
+    `declaredBlockCount`, which is counted from the authoring declarations
+    rather than from the IR, so a block lost on either path moves one side only;
+  - it asserts the census agrees with `selectRenderer` for every block, with the
+    circuits rebuilt independently, and `censusOf` itself **throws** if the
+    applicability probe and the selector disagree;
+  - it compares the committed document against a fresh run **by content**. That
+    check was driven: appending one line to the file produced
+    *"docs/schematic/template-parity.md is stale"* and a failing test;
+  - the `realised` and `refused` arms are driven through `blockParityOf` with
+    the ported template tests' own fixtures, so the zeros above come from
+    branches that demonstrably fire. **Without that, "0 realised" would be a
+    reading off code no test had ever run;**
+  - `bun test tests/schgen/render/templates/` is 103 pass, 0 fail, which is what
+    makes the zero a statement about our blocks rather than about the port;
+  - the four refusal classes were counted programmatically over all 96 verdicts,
+    not read off the page: 48 + 33 + 12 + 3 = 96, and every verdict's kind is
+    `not-applicable` with no second kind present;
+  - **the perturbation**: `passive-chain` removed from `TEMPLATES`, census
+    re-run, suite re-run (**15 failures with `SCHGEN_SOURCE` set**), restored,
+    and `git status --porcelain` clean in this worktree and in the pinned fork.
+- **Verified** CONFIRMED - this writer wrote the census, ran every command
+  quoted, drove each check to failure where that was possible, read the 96
+  verdicts, and performed and reverted the perturbation. **One thing is RELAYED
+  and not reproduced here:** the parent's predicted table is quoted from the M1
+  plan line 966 as the Task 10 brief paraphrases it; no earlier document
+  containing that table in tabular form was found in this repository.
+- **Why it is open** it is a measurement, and it is the kind `CLAUDE.md` says
+  makes someone want to act: **every block of every circuit in this repository
+  now depends on the ELK backend, which does not exist yet.** The templates are
+  spec §3.1's channel 2 - *"a standing rule library, circuit-independent,
+  reviewed once, applied without further sign-off"* - and after this census that
+  channel carries none of this repository's work. **It is also the entry that
+  must not be acted on by raising the number**: tuning a declaration, a block
+  boundary or a template to make a template apply would make the census's own
+  subject its criterion.
+- **What would settle it** **CRITERION, and it is the Task 10 brief's, not this
+  writer's: every template the parent's table claims is exercised draws at least
+  one block of this repository's circuits.** It currently reaches **0 of the
+  five** templates that table claims are exercised - `opamp-stage`,
+  `decoupling-bank`, `divider`, `connector-fanout` and `passive-chain` - the
+  sixth claim, `bus`, not being a template at all.
+  **MECHANISMS, all untried, and they disagree about where the work belongs:**
+  (a) derive an anchor from the subgraph so the four anchor-driven templates can
+  see an `auto` block - **G141** calls this a classifier rather than a template
+  and **G90** says it gets expensive; (b) declare blocks at idiom granularity,
+  which is what the pedals project does and which **requires a criterion for the
+  partition that no document in this repository states** - and an agent inventing
+  one to raise this census would be authoring the criteria for what it produces;
+  (c) widen the three subgraph-only templates past strictly-two-terminal parts,
+  which is a change to a ported reviewed arrangement and needs the owner or a
+  spec revision; (d) accept the result and let ELK draw all 12, which is Tasks
+  12-14 and is the only one of the four that is already planned. **The criterion
+  is what binds; these are advice from someone who has not tried them.**
