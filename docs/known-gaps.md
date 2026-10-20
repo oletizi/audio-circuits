@@ -7452,3 +7452,58 @@ on two refusals rather than on an argument.
   deliberately does not, so the reason it does not is the first thing to find
   out; 4 arrives with `render/frames.ts` in Task 8; 5 is one `grep` over the
   symbol libraries plus `tools/schgen/symbol-census.ts`.
+
+### G130 - measured, and NOT a defect: `pin-marks.ts`'s `dnpCross` doc comment is correct, although two independent readers reported it wrong - the margins are mutating variables that start as the overhangs, and the asymmetry between them is real
+
+Two agents, independently, reported that `lib/schgen/render/pin-marks.ts`'s
+`dnpCross` doc comment misstates its own arithmetic: the comment says the
+margin becomes `mx = max(0.6·mx, 0.3·my)` while the code computes
+`Math.max(ox * 0.6, oy * 0.3)` from `ox`/`oy`, the pins' overhang beyond the
+body. The obstacle matrix's `CROSS_BOUND` reason states it the second way, so
+the matrix looked more accurate than the source it cites, and that was reported
+to the controller twice as a defect worth carrying upstream.
+
+**It is not a defect. The comment is right, read in full**, and this entry
+exists because the misreading is the easy one and the next reader will make it
+too. The comment's own first clause says the margins *"start as the pins'
+overhang beyond the body"* - so at the moment `mx = max(0.6·mx, 0.3·my)` is
+evaluated, `mx` and `my` ARE `ox` and `oy`. The comment describes two mutating
+variables in sequence; the code spells the first step's inputs out as `ox`/`oy`
+and reuses `mx` for the second. Both say the same thing.
+
+**What the comment captures that a careless rewrite would destroy** is a real
+asymmetry: `mx` is computed from the ORIGINAL `my`, while `my` is computed from
+the ALREADY-UPDATED `mx` (`lib/schgen/render/pin-marks.ts:90-91` - `const my =
+Math.round(Math.max(oy * 0.6, mx * 0.3))` uses the `mx` from the line above,
+not `ox`). The comment's *"become … then …"* is what says so. Anyone
+"correcting" the comment to the symmetric `max(0.6·ox, 0.3·oy)` /
+`max(0.6·oy, 0.3·ox)` form would make it genuinely wrong in the second term.
+
+- **Found** 2026-10-19. A Task 5 reviewer reported the comment as misstating
+  the arithmetic; the Task 5 implementer agreed, declined to register it on the
+  grounds that nothing in the register would act on an upstream-only defect,
+  and raised it to the controller instead. **Controller ruling R13: registered,
+  but as a measurement that found nothing wrong rather than as the defect it
+  was reported to be** - and the implementer's stated reason for omitting it is
+  the wrong test. This register is a register, not a work queue; *"a defect you
+  are not fixing"* is one of the categories `CLAUDE.md` names explicitly, so
+  "nothing would act on it" is not a ground for leaving something out. Had the
+  finding been real it belonged here regardless of who could fix it.
+- **Evidence** `grep -n "0.6\|0\.3\|overhang" lib/schgen/render/pin-marks.ts`
+  read directly: line 78 is the comment, lines 88-91 are `ox`, `oy`, `mx`, `my`
+  in that order, and line 91's second term is `mx * 0.3`, not `ox * 0.3`. A
+  check that could have failed: had line 91 read `ox * 0.3`, the comment's
+  *"then"* would have been wrong and the original report correct.
+- **Verified** CONFIRMED - this writer (the controller) ran the grep and read
+  the comment and all four lines directly, rather than relaying either agent's
+  reading. **Both agents' reports are superseded by this entry**, and no
+  upstream edit is owed for it.
+- **Why it is open** it is not open as a defect. It is kept because two
+  careful readers misread the same four lines the same way, which makes the
+  comment's phrasing a hazard even though its content is correct, and because
+  the asymmetry it documents is the kind a well-meaning cleanup would delete.
+- **What would settle it** nothing further. If anyone does rewrite that comment
+  for clarity, the thing to preserve is that `my` depends on the updated `mx`
+  while `mx` depends on the original `my` - and `lib/schgen/render/pin-marks.ts`
+  is a PORTED file, so the rewrite is an upstream edit in the pedals
+  repository, not a local one.
