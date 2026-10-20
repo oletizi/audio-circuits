@@ -91,6 +91,12 @@ const COPIED_FIXTURES: readonly { readonly from: string; readonly to: string }[]
   // `generate`'s `designResolver` always adds the `power` nickname (`FLAG_NICK`, for
   // `power:PWR_FLAG`) to the stock set, so ANY test that calls `generate` with `stockDir` pointed
   // at this directory refuses without it - `tests/schgen/verify.test.ts` is the first that does.
+  //
+  // IT IS BYTE-IDENTICAL TO Pwr.kicad_sym, in the pedals source and therefore here: both hold the
+  // same GND / +3V3 / PWR_FLAG set, under two filenames. That is not redundancy to tidy away -
+  // `designResolver` resolves a nickname by looking for `<nickname>.kicad_sym` in `stockDir`, so
+  // the same content has to exist under both names for `Pwr:GND` (what the ported fixtures
+  // declare) and `power:PWR_FLAG` (what `generate` always adds) to resolve in one directory.
   { from: "__fixtures__/symbols/power.kicad_sym", to: "tests/schgen/__fixtures__/symbols/power.kicad_sym" },
   // Task 11: the datasheet pin table gate 6 compares the `mini` fixture's MPN-overridden op-amp
   // against. The ported `mini/index.ts` names it (`pinTables: "../../pintables"`) and
