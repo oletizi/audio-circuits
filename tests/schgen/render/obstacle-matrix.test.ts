@@ -112,7 +112,7 @@ const NOT_A_RENDER_DECLARATION: Readonly<Record<string, string>> = {
  * fire. `frames.ts` was never exposed to this - kebab-case leaves a
  * single-word name alone - so the defect sat behind a name that happened to
  * survive the convention. Both spellings are now checked, so whichever one
- * lands rings the bell. Settled in Task 6; `docs/known-gaps.md` **G131**.
+ * lands rings the bell. Settled in Task 6; `docs/known-gaps.md` **G132**.
  */
 const NOT_IN_THIS_TREE: Readonly<Record<string, { readonly portedAs: string; readonly why: string }>> = {
   "frames.ts": {
@@ -188,7 +188,7 @@ describe("the obstacle-category matrix", () => {
     // BOTH SPELLINGS, deliberately: the cited (pedals, camelCase) name and the
     // name the port writes here (kebab-case). Checking only the cited one is
     // what made this guard unable to fire for `sheetCheck.ts` - see
-    // NOT_IN_THIS_TREE's own comment and `docs/known-gaps.md` G131.
+    // NOT_IN_THIS_TREE's own comment and `docs/known-gaps.md` G132.
     const declared = Object.entries(NOT_IN_THIS_TREE).flatMap(([cited, { portedAs }]) =>
       cited === portedAs ? [cited] : [cited, portedAs],
     )

@@ -175,11 +175,46 @@ is resolved rather than hand-porting around the gap:
   port's own refusals as evidence.
 - **`@/schgen/gates/oscar/*`.** Five files, deferred to Task 18 by the plan
   (the Pultec reference-graph comparison needs the complete pipeline first).
+  `gates/oscar/graph.ts` also needs `@/kicad/components`, which is unresolved.
 - **`@/schgen/design`, `@/schgen/generate`, `@/schgen/generateFiles`,
   `@/schgen/verify`, `@/schgen/kicadRun`, `@/schgen/kicadConfig`, and the
   `connectivity`/`traceability`/`pinIdentity` gates.** Each imports at least
   one of the above, directly or transitively, so each waits on the same task
   that resolves what it needs.
+- **The EMITTER is ported and the SHEET is not** (Task 6), and the split is not
+  where the plan put it. `render/emit.ts`, `emit-items.ts`, `page-refs.ts`,
+  `erc-exclusions.ts`, `project.ts` and `report.ts` are here; the four modules
+  that would feed them a drawing - `render/frames.ts`, `bus.ts`,
+  `sheet-check.ts` and `sheets.ts` - are **not**, because all four import
+  `@/schgen/render/blocks`, which is **Task 7**'s and which itself needs
+  `render/templates/index`. `generate.ts` needs `layoutSheet` from
+  `render/sheets.ts`, and `design.ts`/`generateFiles.ts` need Task 18's
+  `gates/oscar/boundary`, so **nothing here can yet emit a schematic file**:
+  there is a correct emitter with no sheet to hand it. `docs/known-gaps.md`
+  **G131** has the per-file table and the port's own refusal for each.
+
+  The consequence for coverage is the same one **G124** records for Task 5:
+  **five of Task 6's six newly ported modules are exercised by no test** -
+  `render/emit.ts`, `emit-items.ts`, `page-refs.ts`, `erc-exclusions.ts` and
+  `report.ts` typecheck and nothing runs them, because every ported test that
+  would exercise them imports `render/sheets.ts`. The sixth,
+  `render/project.ts`, IS exercised, by the ported `render/project.test.ts`.
+
+  **What Task 6 did unblock is `__fixtures__/circuits.ts`** (ported to
+  `tests/schgen/__fixtures__/circuits.ts` with the same MCU `cuts` Task 2
+  derived), and with it five ported tests that were waiting on nothing else:
+  `render/pack.test.ts`, `drawnText.test.ts`, and the three `lock/` tests. The
+  three `lock/` modules and `render/pack.ts` and `drawn-text.ts` are no longer
+  unexercised.
+
+  **A ported FIXTURE trips this repository's standing guards just as a ported
+  test does.** `__fixtures__/circuits.ts` declares `symbol: "Pwr:+3V3"`, which
+  `tests/kicad/symbol-names.test.ts` sweeps and requires to resolve in an
+  installed KiCad library; it needed a `NOT_A_KICAD_SYMBOL` entry beside the
+  `Fix:R` and `Pwr:GND` ones Task 2 added. That is now the **second** repo-wide
+  static guard the port has had to be exempted from, after the temp-scratch
+  check of **G122**/**G123** - see **G133**, which says why the recurrence
+  matters more than either entry.
 
 A file is safe to add to the manifest once every import it has — direct or
 through another `@/schgen/<path>` import — resolves to something already

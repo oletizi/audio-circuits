@@ -6990,6 +6990,44 @@ figure is thirteen newly ported modules, twelve of them unexercised.
   `render/sheetCheck.ts` for the two glyph tests, and `render/bus.ts` and
   `render/layoutKit.ts` for `textIndependence.test.ts`.
 
+- **TASK 6 UPDATE: THREE OF THAT MECHANISM'S SIX NAMED DEPENDENCIES ARE NOW
+  SETTLED, AND NOT ONE ROW OF THE TABLE MOVED.** This is recorded here because
+  the mechanism above reads like a shopping list, and ticking three items off it
+  changes nothing about the criterion.
+  - **`__fixtures__/circuits.ts` IS PORTED**, at
+    `tests/schgen/__fixtures__/circuits.ts`, with the same MCU cuts Task 2
+    derived (`mcu: null` x2, `, pinmap: null` x2). Round 1's claim that it was
+    *"portable today"* was correct.
+  - **`render/pageRefs.ts` IS PORTED**, at `lib/schgen/render/page-refs.ts`.
+  - **`render/layoutKit.ts` was never part of the knot.** Measured: its imports
+    are `ir/types`, `render/libPins`, `render/blockTypes`, `render/geometry` and
+    `render/textBoxes`, all five already ported, so it is import-clean TODAY
+    and needs nothing from Task 7 although the plan files it there. It was NOT
+    ported, because no test in the tree would exercise it.
+  - **`render/sheetCheck.ts` and `render/bus.ts` are still blocked, and so is
+    every row of the table**, because `render/blocks.ts` remains the single
+    gate and `render/blocks.ts` refuses on
+    `@/schgen/render/templates/index`. **The brief's claim that the glyph- and
+    text-clearance tests wait on `render/blocks.ts` -> `render/templates/index`
+    was re-checked at Task 6 and still holds** - that is Task 7, not Task 6.
+  - **What DID return are six ported tests this entry's table never listed**,
+    because they are not clearance tests: `render/pack.test.ts`,
+    `render/project.test.ts`, `render/drawnText.test.ts`,
+    `lock/annotate.test.ts`, `lock/refmap.test.ts` and
+    `lock/versionLock.test.ts` - 46 pass / 0 fail across the six. They were
+    waiting on `__fixtures__/circuits.ts` and on a manifest entry, nothing
+    more. Their arrival moves `lock/annotate.ts`, `lock/refmap.ts` and
+    `lock/version-lock.ts` out of the unexercised set, and
+    `render/pack.ts` and `render/drawn-text.ts` with them.
+  - **The twelve-unexercised figure in this entry's headline is now worse, not
+    better.** Task 6 added six more modules that nothing runs -
+    `render/emit.ts`, `emit-items.ts`, `page-refs.ts`, `erc-exclusions.ts`,
+    `report.ts` (five; `render/project.ts` IS exercised, by
+    `project.test.ts`) - for the same reason: every ported test that would
+    exercise them imports `render/sheets.ts`. **G131** is why.
+  - **Verified** CONFIRMED - this writer ported each file named, ran the six
+    test files, and ran the refusal for `render/blocks.ts`.
+
 ### G125 - the obstacle-category matrix is enumerated and filled, and **95 of its 105 cells rest on reading the source rather than on a test that could have failed**
 
 This is **G85**'s criterion met in form and only partly in substance, recorded
@@ -7036,6 +7074,23 @@ backticked elsewhere in the matrix (`obstacle-pairs-body.ts` and
 The consequence: **a future function cited ONLY in that bare-lowercase-`and`
 form, and nowhere else backticked, would still pass unverified.** The guard is
 total in practice today and not structurally total.
+
+**TASK 6 AMENDMENT: A THIRD GUARD IN THIS SAME TEST FILE WAS WEAKER THAN ITS
+CLAIM, IN A DIFFERENT WAY, AND IT HAS BEEN FIXED - `docs/known-gaps.md`
+**G132** carries it in full.** The `NOT_IN_THIS_TREE` staleness alarm, whose
+stated job is to fail on the commit that ports `frames.ts` or `sheetCheck.ts`,
+looked for each module under the name the CELLS cite - the pedals camelCase
+spelling - while the port writes `sheet-check.ts`. So one of its two entries
+could never have fired. It now checks both spellings, driven red with a stub
+and restored.
+
+**AND THE ELEVEN `FRAME_DERIVED` CELLS ARE NOT YET DUE FOR RE-READING.** Task 6
+was dispatched on the expectation that it would port `render/frames.ts` and
+therefore falsify those eleven reasons. **It did not port it** - `frames.ts`
+imports `@/schgen/render/blocks`, which is Task 7's (**G131**) - so the
+`frames.ts` half of the alarm is still armed, still correct, and the re-read
+falls to whichever task lands that module. Recorded because the expectation
+reached a dispatch once and could reach another.
 
 - **Found** 2026-10-19 by the Task 5 round-1 scoped re-reviewer, which
   reproduced the extraction in a standalone script rather than reading the
@@ -7541,3 +7596,249 @@ not `ox`). The comment's *"become … then …"* is what says so. Anyone
   while `mx` depends on the original `my` - and `lib/schgen/render/pin-marks.ts`
   is a PORTED file, so the rewrite is an upstream edit in the pedals
   repository, not a local one.
+
+### G131 - Tasks 6 and 7 of the M1 schematic plan depend on each other, so NINE of Task 6's twenty-one ported files cannot land until Task 7 does, and the plan states no such edge
+
+Task 6's **Interfaces** block says *"Consumes: Tasks 2-5."* Task 7's says
+*"Consumes: Tasks 2-6."* The second is true; the first is not. Four of Task 6's
+own files import `@/schgen/render/blocks`, which is Task 7's first file, and
+`render/blocks.ts` in turn imports `@/schgen/render/templates/index` - the whole
+eight-template registry, plus `layoutKit`, `chainKit`, `fanoutKit` and
+`fanoutRows`. Two more of Task 6's files reach Task 18's
+`gates/oscar/*`, and two reach `@/kicad/libtable`, which this repository does
+not have.
+
+**The nine, and what each waits on:**
+
+| Task 6 file | blocked on | whose task |
+|---|---|---|
+| `render/frames.ts` | `render/blocks.ts` | Task 7 |
+| `render/bus.ts` | `render/blocks.ts` (+ `render/layoutKit.ts`) | Task 7 |
+| `render/sheetCheck.ts` | `render/blocks.ts` | Task 7 |
+| `render/sheets.ts` | `render/blocks.ts`, `render/frames.ts`, `render/sheetCheck.ts` | Task 7 |
+| `generate.ts` | `render/sheets.ts` (`layoutSheet`), and `design.ts` | Tasks 7, 18 |
+| `design.ts` | `gates/oscar/boundary.ts` (`Subcircuit`) | Task 18 |
+| `generateFiles.ts` | `design.ts` | Task 18 |
+| `kicadConfig.ts` | `@/kicad/libtable` (`GlobalTable`) | nobody's yet |
+| `kicadRun.ts` | `kicadConfig.ts` | nobody's yet |
+
+**What this costs, and it is the reason this entry is not merely bookkeeping.**
+Task 6 is the task the plan calls *the one that first produces a schematic
+file*, and **it cannot produce one.** `layoutSheet` is in `render/sheets.ts`;
+`generate` is what assembles a `Generation`; `exportPdf` and `runErc` are in
+`kicadRun.ts`. So the brief's Step 3 (byte-stability over `generate`), Step 5
+(the `tools/cli/schgen.ts` verbs, which call `generate`/`writeGeneration`),
+Step 6 (*"Emit the fixture design and LOOK AT IT"*, plus the ERC counts) and
+Step 7 (the `staleFiles` mtime perturbation, since `staleFiles` lives in
+`generateFiles.ts`) are all unreachable at Task 6's position in the order.
+**Nothing in this repository has yet emitted a generated schematic**, and the
+first honest look at one moves to whichever task lands after `render/blocks.ts`.
+
+**Six of the twenty-one DID port**, and are in the tree:
+`render/emitItems.ts`, `render/pageRefs.ts`, `render/emit.ts`,
+`render/ercExclusions.ts`, `render/project.ts` and `report.ts`. Seven more were
+already ported by Tasks 2, 3 and 5 (`render/pack.ts`, `sheet-types.ts`,
+`pin-marks.ts`, `drawn-text.ts`, `lock/annotate.ts`, `refmap.ts`,
+`version-lock.ts`) - the brief lists them as *"Create (ported)"* and they did
+not need creating; each re-derives byte-identically from its pedals source,
+verified by digest (see **Evidence**).
+
+- **Found** 2026-10-19, Task 6, Step 1, by computing the transitive
+  `@/schgen/` import closure of the brief's twenty-one files against the
+  manifest before porting anything.
+- **Evidence** `tools/schgen/port.ts`'s own refusal, which is a check that
+  could have failed and did, once per file. Each was produced by appending a
+  provisional `files[]` entry, running the porter, and restoring the manifest
+  (`git status` clean afterwards):
+
+  ```
+  error: render/frames.ts: imports "@/schgen/render/blocks", but tools/schgen/port-manifest.json has no entry for "render/blocks.ts". Port that file first (add it to the manifest) before porting render/frames.ts.
+  error: render/bus.ts: imports "@/schgen/render/blocks", but ... no entry for "render/blocks.ts" ...
+  error: render/sheetCheck.ts: imports "@/schgen/render/blocks", but ... no entry for "render/blocks.ts" ...
+  error: render/sheets.ts: imports "@/schgen/render/blocks", but ... no entry for "render/blocks.ts" ...
+  error: design.ts: imports "@/schgen/gates/oscar/boundary", but ... no entry for "gates/oscar/boundary.ts" ...
+  error: generateFiles.ts: imports "@/schgen/design", but ... no entry for "design.ts" ...
+  error: generate.ts: imports "@/pinmap/load", which tools/schgen/port-manifest.json does not resolve (not an @/schgen/ path and not in "externals") ...
+  error: kicadConfig.ts: imports "@/kicad/libtable", which tools/schgen/port-manifest.json does not resolve ...
+  error: kicadRun.ts: imports "@/schgen/kicadConfig", but ... no entry for "kicadConfig.ts" ...
+  ```
+
+  And the second link of the chain, the same way:
+
+  ```
+  error: render/blocks.ts: imports "@/schgen/render/templates/index", but tools/schgen/port-manifest.json has no entry for "render/templates/index.ts". Port that file first (add it to the manifest) before porting render/blocks.ts.
+  ```
+
+  `generate.ts`'s refusal names `@/pinmap/load` first because the MCU cut had
+  not been applied; its `render/sheets.ts` dependency is independent of that
+  cut and is `grep -n 'render/sheets' $SCHGEN_SOURCE/generate.ts` ->
+  `20:import { layoutSheet } from "@/schgen/render/sheets";`.
+  `ls lib/kicad/libtable.ts` -> no such file, which is why `kicadConfig.ts`'s
+  type-only import does not resolve; `lib/schgen/README.md` already says
+  `@/kicad/libtable` is unresolved and that *"nothing here imports them yet"*.
+  The seven already-ported files were re-derived with `rewrite()` from the
+  pedals source and compared by SHA-256 against disk: all seven MATCH (digests
+  in the Task 6 report).
+- **Verified** CONFIRMED - this writer computed the closure, ran all ten
+  refusals, restored the manifest each time, and ran the digest comparison.
+- **Why it is open** it is a defect in a plan document that is still being
+  executed, and the next three task briefs are written against the order it
+  states. **Nobody has decided how to resolve it**, and the choice is not an
+  implementer's: either Tasks 6 and 7 swap (which puts the templates before
+  the emitter they draw into), or Task 7's `render/blocks.ts` + templates +
+  three kits move into Task 6 (which doubles Task 6 and moves Task 7's port
+  parity, mismatch census and per-template visual review with them), or Task 6
+  splits into the part that ports now and the part that ports after Task 7.
+  **An agent may not author the acceptance criteria for the artifact it
+  produces**, and picking which of those happens re-writes two task briefs.
+- **What would settle it** **CRITERION, two clauses.** (a) Every file the M1
+  plan assigns to a task has, at that task's position in the order, a resolvable
+  import closure - so no brief lists a file its task cannot port. (b) The step
+  that first emits a generated schematic and looks at it is assigned to a task
+  that can reach `generate`. **MECHANISM**, untried and an implementer's
+  advice only: the three options above, and one measurement worth making
+  before choosing - `render/layoutKit.ts` is import-clean TODAY
+  (`ir/types`, `render/libPins`, `render/blockTypes`, `render/geometry`,
+  `render/textBoxes`, all ported), so it is not part of the knot even though
+  the plan files it under Task 7. A cheaper fourth option nobody has costed:
+  resolve `@/kicad/libtable` and `gates/oscar/boundary` and let `design.ts`,
+  `generateFiles.ts`, `kicadConfig.ts` and `kicadRun.ts` land at Task 6,
+  leaving only the four `render/blocks.ts` dependants and `generate.ts` behind
+  Task 7. **A `cuts` entry is NOT on that list on purpose:** cutting
+  `OscarConfig.subcircuits` or `stockFootprintTable` would make those two files
+  port by deleting functionality Tasks 18 and 11 need, and the plan declares no
+  such cut - Task 2's is declared in the plan text, which is what makes it a
+  cut rather than a diff smuggled in.
+
+### G132 - settled, and the settlement is the finding: the obstacle matrix's absence alarm for `sheetCheck.ts` could never have rung, because it looked for the pedals file name and the port writes the kebab-case one
+
+`tests/schgen/render/obstacle-matrix.test.ts` carries a `NOT_IN_THIS_TREE`
+table whose stated purpose is to *"fail on the commit that ports any of them,
+naming it, so the cells whose reasons assume their absence are re-read against
+real code rather than left standing."* It declared two modules, keyed by the
+name the CELLS cite - `"frames.ts"` and `"sheetCheck.ts"` - and the arrival
+check is `fs.existsSync(path.join(RENDER_DIR, f))`.
+
+**`lib/schgen/README.md`'s rename convention makes the ported file
+`sheet-check.ts`.** So the lookup for `sheetCheck.ts` would have kept returning
+false after the module landed, `NOT_IN_THIS_TREE` would have kept "covering" a
+module that was sitting in the directory, and the guard written specifically to
+force a re-read of the within-one-block cells would have gone on passing. A
+guard that cannot fire is the shape this repository's own rule calls *a skipped
+check that looks like a passing one*.
+
+**`frames.ts` was never exposed to it**, because kebab-case leaves a
+single-word name alone - which is exactly why the defect was invisible: one of
+the two entries worked, and the one that did not was the one whose name changed
+under a convention written in a different file.
+
+**Settled in the same change.** Each `NOT_IN_THIS_TREE` entry now carries two
+names: the key is still what the cells cite (and is what `citedPaths()`
+extracts, so the other test is unaffected), and `portedAs` is the name
+`tools/schgen/port-manifest.json` writes it under here. The arrival check looks
+for both, so whichever spelling lands rings the bell. **The dispatching brief
+offered three mechanisms - align the cited name with the ported one, check both
+spellings, or anything defensible - and this is the second;** the first was
+declined because the cells' prose quotes the pedals module it was read from and
+rewriting the quotation to a path that does not exist upstream would make the
+citation un-traceable.
+
+**TWO THINGS THE SETTLEMENT DOES NOT REACH, which is why this entry is open.**
+
+1. **Nothing checks that an entry's two names correspond.** `portedAs` is
+   hand-written beside the key. A typo in it restores the original defect
+   silently, and the manifest - which is the authority for what the port writes
+   - is not consulted.
+2. **The cells' prose will be wrong-by-convention the moment the module lands.**
+   `lib/schgen/render/obstacle-pairs-body.ts:32` reads *"the sheet-level caller
+   that would compare them (`render/sheetCheck.ts`) is not in this tree"*, and
+   after the port there will be no such path here. Those files are
+   hand-written, so the citation CAN be updated - by whoever lands
+   `sheet-check.ts`, in the same change as the cell re-read.
+
+**AND A CORRECTION TO WHAT THE RE-READ WAS GOING TO BE.** The dispatching brief
+said the eleven `FRAME_DERIVED` cells' reason *"is now due"* for re-settlement
+against a real `render/frames.ts`. **It is not due: `frames.ts` did not land**
+(see **G131**), so those eleven reasons still rest on a genuine absence and the
+`frames.ts` half of the alarm is still armed and still correct. The re-read
+falls to whichever task ports `frames.ts`.
+
+- **Found** 2026-10-19, Task 6, while settling the hazard the dispatching brief
+  flagged.
+- **Evidence** the hazard was proved live, not inferred: with a one-line stub at
+  `lib/schgen/render/sheet-check.ts` in the tree,
+  `fs.existsSync("lib/schgen/render/sheetCheck.ts")` is **false** while
+  `fs.existsSync("lib/schgen/render/sheet-check.ts")` is **true** - so the old
+  guard's lookup missed a module that was present. The fix was then driven: with
+  the same stub in place the test fails,
+  `+ [ "sheet-check.ts" ]` against an expected `[]`, on *"the modules whose
+  absence several cells rest on are still absent"*; with the stub removed the
+  file is **8 pass / 0 fail / 64 expect() calls**. The stub was deleted and
+  `git status` is clean of it.
+- **Verified** CONFIRMED - this writer ran both existence checks, the red run
+  and the restore.
+- **Why it is open** item 1 is an unchecked hand-written duplication of data the
+  manifest already holds, and item 2 is a prose edit that belongs to a change
+  nobody has made yet.
+- **What would settle it** **CRITERION, two clauses.** (a) An entry whose two
+  names disagree with what `port-manifest.json` writes fails a check rather than
+  being believed. (b) When the module lands, no cell's prose cites a path that
+  does not exist in this repository. **MECHANISM** for (a), untried: read
+  `port-manifest.json` in the test and assert that for each entry either no
+  `files[]` entry has `from` ending in the cited name, or its `to` basename is
+  `portedAs`. For (b): the cell re-read that the alarm now actually forces.
+
+### G133 - measured: a ported test FIXTURE collides with this repository's standing guards as reliably as a ported test does, and the symbol sweep is now the second guard needing a per-file exemption for the port
+
+**G122** records that a ported test which makes temp directories needs a
+per-file exemption in `tests/stripboard/temp-scratch.test.ts`, and that the cost
+repeats for every such file. Task 6 found the same shape in a second, unrelated
+guard, which makes it a pattern rather than an incident.
+
+Porting `__fixtures__/circuits.ts` (needed by every emit, lock and report test
+in the pedals tree) turned the full suite red on
+`tests/kicad/symbol-names.test.ts` - *"every symbol name swept out of the source
+resolves in an installed KiCad library"* - naming `Pwr:+3V3`. That sweep reads
+every `.ts` in the repository for a part spec's quoted `symbol` field, and the
+ported fixture declares two supply rails with `symbol: "Pwr:+3V3"`. `Pwr` is
+`tests/schgen/__fixtures__/symbols/Pwr.kicad_sym`, a hand-written fixture
+library; KiCad's own equivalent nickname is `power`. A `NOT_A_KICAD_SYMBOL`
+entry was added, which is the mechanism Task 2 already established for
+`Fix:R` and `Pwr:GND` and which has teeth: a second test asserts every entry is
+still swept, still unresolvable **in the recorded way**, and still declared only
+under `tests/schgen/`.
+
+**WHY A LATER READER NEEDS THIS, and it is not the one entry.** The collision is
+structural: a ported file may not be hand-edited
+(`tests/schgen/port-fidelity.test.ts` asserts it byte-for-byte), and this
+repository's guards are deliberately static sweeps over file bytes, so **every
+repo-wide static guard is a potential per-file exemption cost for every ported
+file.** Two have now been hit - temp directories and symbol names - from
+different directions, by different files, two tasks apart. **The one that found
+it was a FIXTURE, not a test**, which is the new information: the Task 5 report
+and G122/G123 both frame the cost as a property of ported *tests*, and a fixture
+module with no assertions in it tripped a guard just the same.
+
+- **Found** 2026-10-19, Task 6, Step 1, as a full-suite failure after adding the
+  fixture to the manifest.
+- **Evidence** the failure, read directly, before the exemption existed:
+  `error: symbol library for "Pwr:+3V3" is not at /Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/Pwr.kicad_sym. Install KiCad or set KICAD_SYMBOLS. This test does not skip: ...`
+  from `installedSymbolNames` at `tests/kicad/symbol-library-disk.ts:63`,
+  reached from `symbol-names.test.ts:202`. Full suite at that point: **2714
+  pass / 1 fail across 268 files**; with the exemption, **2715 pass / 0 fail**.
+  That the exemption could not have hidden a real name is the existing teeth
+  test, which asserts `resolutionOnDisk("Pwr:+3V3") === "no-such-library"` -
+  it would fail if a `Pwr.kicad_sym` ever appeared in an installed library.
+- **Verified** CONFIRMED - this writer saw the red suite, wrote the entry and
+  saw the green one.
+- **Why it is open** it is not a defect in any of the three files involved; it
+  is a cost that recurs, and the recurrence is what a later reader cannot
+  re-derive from any one of the exemptions.
+- **What would settle it** **CRITERION:** the per-file cost is either removed,
+  or it is bounded and known - a later porter can say, before porting, which
+  standing guards a new file will trip. **MECHANISM**, untried: enumerate this
+  repository's repo-wide static source sweeps once (the temp-scratch site
+  check, the symbol sweep, the footprint sweep, whatever else
+  `tests/` holds) and name them in `lib/schgen/README.md`'s "How a file gets
+  here" section, so the exemption is anticipated rather than discovered by a
+  red suite. Nobody has counted them.
