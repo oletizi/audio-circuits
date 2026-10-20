@@ -6,7 +6,15 @@ import { buildCircuit } from "../../lib/schgen/ir/build.ts"
 import { subgraphOf, selectRenderer } from "../../lib/schgen/render/blocks.ts"
 import { TEMPLATES } from "../../lib/schgen/render/templates/index.ts"
 import { PARITY_CASES, parityResolver } from "../../tools/schgen/authoring-census.ts"
-import { CENSUS_DOC, censusOf, declaredBlockCount, renderCensus, VERDICT_KINDS } from "../../tools/schgen/parity.ts"
+import {
+  blockParityOf,
+  CENSUS_DOC,
+  censusOf,
+  declaredBlockCount,
+  renderCensus,
+  VERDICT_KINDS,
+} from "../../tools/schgen/parity.ts"
+import { blockCircuit, cap, diode, res, symbols as fixtureSymbols } from "./__fixtures__/circuits.ts"
 
 /**
  * **THE TEMPLATE-APPLICABILITY CENSUS, which is ONE OF M1's FOUR MEASUREMENTS and the one with
@@ -116,6 +124,58 @@ test("the census agrees with selectRenderer about what would draw each block", (
     }
   }
   expect(checked).toBe(CENSUS.blocks.length)
+})
+
+/**
+ * **THE DISCRIMINATION CHECKS, and they are the reason "0 realised, 0 refused" is a measurement
+ * rather than an untested code path.** Every one of this repository's twelve blocks comes out
+ * `elk`, so the census's `realised` and `refused` arms are never reached by the four parity
+ * circuits - and a census that reports zero from a branch that has never fired is exactly the
+ * shape `CLAUDE.md` calls a skipped check that looks like a passing one. These two drive both arms
+ * through `blockParityOf` with the ported template tests' own block fixtures, which are the pedals
+ * project's fixtures (**G87**, **G136**(b)) and therefore say nothing at all about applicability
+ * here. They say that the census can SEE a realised block and a refused one.
+ */
+test("the census reports `realised` when a declared template does draw the block", () => {
+  const parts = [
+    res("R_RF", "TIP", "N_RF"),
+    cap("C_RF", "N_RF", "GND"),
+    diode("D_ESD", "N_RF", "GND"),
+    cap("C_IN", "N_RF", "N_DIV"),
+    res("R_DIV1", "N_DIV", "T"),
+    cap("C_COMP", "N_DIV", "T"),
+    cap("C_T", "T", "GND"),
+    res("R_DIV2", "T", "VMID"),
+  ]
+  const circuit = blockCircuit(parts, { kind: "wired", template: "passive-chain", anchor: null }, {
+    external: ["TIP", "T", "VMID"],
+  })
+  // crossings is a property of the Network and its declaration, which a fixture Circuit has not
+  // got; it is reported, never branched on, so 0 here is a stated absence rather than a guess.
+  const row = blockParityOf("fixture", circuit, "B", 0, fixtureSymbols)
+  expect(row.outcome.kind).toBe("realised")
+  if (row.outcome.kind === "realised") expect(row.outcome.template).toBe("passive-chain")
+  expect(row.verdicts.find((v) => v.template === "passive-chain")?.kind).toBe("ok")
+  expect(row.parts).toBe(8)
+  expect(row.notTwoTerminal).toBe(0)
+})
+
+test("the census reports `refused` when a wired block's declared template does not apply", () => {
+  const circuit = blockCircuit(
+    [res("R_S1", "IN", "MID"), cap("C_PD", "MID", "GND")],
+    { kind: "wired", template: "decoupling-bank", anchor: null },
+    { external: ["IN"] },
+  )
+  const row = blockParityOf("fixture", circuit, "B", 0, fixtureSymbols)
+  expect(row.outcome.kind).toBe("refused")
+  if (row.outcome.kind === "refused") {
+    // For a WIRED block the author declared that this template draws it, so not-applicable means
+    // the declaration is false and nothing may rescue it - G147, and it is why a `refused` row can
+    // carry a not-applicable mismatch while an `auto` row carrying one would be `elk`.
+    expect(row.outcome.mismatch.kind).toBe("not-applicable")
+    expect(row.outcome.mismatch.reason).toBe("decoupling-bank holds only capacitors; R_S1 is R")
+  }
+  expect(row.notCapacitors).toBe(1)
 })
 
 test("the rendered census says which of the four measurements its numbers are", () => {

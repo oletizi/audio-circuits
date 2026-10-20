@@ -209,6 +209,59 @@ function assertAgreement(row: BlockParity): void {
   }
 }
 
+/**
+ * One block of one circuit, measured.
+ *
+ * **IT TAKES A BUILT `Circuit` RATHER THAN A `ParityCase` SO ITS THREE OUTCOME ARMS CAN BE
+ * EXERCISED.** On this repository's four circuits every row comes out `elk`, so `realised` and
+ * `refused` would be code no test ever ran - and *"0 realised, 0 refused"* read off a census whose
+ * positive arm has never fired is a skipped check that looks like a passing one.
+ * `tests/schgen/parity.test.ts` drives both arms through this entry point with the ported
+ * template tests' own block fixtures. `crossings` is passed in because it is a property of the
+ * `Network` and its authoring declaration, which a fixture `Circuit` does not have.
+ */
+export function blockParityOf(
+  circuitName: string,
+  circuit: Circuit,
+  id: BlockId,
+  crossings: number,
+  symbols: SymbolResolver,
+): BlockParity {
+  const irBlock = circuit.blocks.get(id)
+  if (irBlock === undefined) {
+    throw new Error(
+      `${circuitName} declares block ${id} and the IR built from it has no such block. The census ` +
+        "counts declared blocks and measures IR blocks, so a block missing on one side is a defect " +
+        "in lib/schgen/from-network.ts or lib/schgen/ir/build.ts - it is not skipped, because a " +
+        "parity row that quietly vanishes is a check that stopped running.",
+    )
+  }
+  if (irBlock.rendering.kind === "bus") {
+    throw new Error(
+      `${circuitName}/${id} is rendered "bus", and this census has no row shape for it: a bus block ` +
+        "is drawn by the bus renderer (render/bus.ts, Task 6b - docs/known-gaps.md G131), is never " +
+        "offered to the template set, and therefore has no template-applicability answer at all. " +
+        "Reporting it as `elk` would be false and reporting it as not-applicable would credit eight " +
+        "templates with declining a block they were never shown.",
+    )
+  }
+  const g = subgraphOf(circuit, id, symbols)
+  const row: BlockParity = {
+    circuit: circuitName,
+    block: id,
+    parts: new Set(irBlock.members.map((m) => m.part)).size,
+    units: irBlock.members.length,
+    crossings,
+    notTwoTerminal: g.units.filter((u) => twoPinNets(u) === null).length,
+    notCapacitors: g.units.filter((u) => u.part.refPrefix !== "C").length,
+    declared: irBlock.rendering,
+    outcome: outcomeOf(circuit, id, symbols),
+    verdicts: [...TEMPLATES.values()].map((t) => verdictOf(t, g)),
+  }
+  assertAgreement(row)
+  return row
+}
+
 /** Every declared block of every parity circuit, measured. */
 export function censusOf(cases: readonly ParityCase[], symbols: SymbolResolver): ParityCensus {
   const templates = [...TEMPLATES.values()]
@@ -216,39 +269,15 @@ export function censusOf(cases: readonly ParityCase[], symbols: SymbolResolver):
   for (const c of cases) {
     const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
     for (const declaration of c.authoring.blocks) {
-      const irBlock = circuit.blocks.get(declaration.id)
-      if (irBlock === undefined) {
-        throw new Error(
-          `${c.name} declares block ${declaration.id} and the IR built from it has no such block. ` +
-            "The census counts declared blocks and measures IR blocks, so a block missing on one " +
-            "side is a defect in lib/schgen/from-network.ts or lib/schgen/ir/build.ts - it is not " +
-            "skipped, because a parity row that quietly vanishes is a check that stopped running.",
-        )
-      }
-      if (irBlock.rendering.kind === "bus") {
-        throw new Error(
-          `${c.name}/${declaration.id} is rendered "bus", and this census has no row shape for it: a bus ` +
-            "block is drawn by the bus renderer (render/bus.ts, Task 6b - docs/known-gaps.md G131), is " +
-            "never offered to the template set, and therefore has no template-applicability answer at " +
-            "all. Reporting it as `elk` would be false and reporting it as not-applicable would credit " +
-            "eight templates with declining a block they were never shown.",
-        )
-      }
-      const g = subgraphOf(circuit, declaration.id, symbols)
-      const row: BlockParity = {
-        circuit: c.name,
-        block: declaration.id,
-        parts: new Set(irBlock.members.map((m) => m.part)).size,
-        units: irBlock.members.length,
-        crossings: crossingNets(c.network, c.authoring, declaration.id).size,
-        notTwoTerminal: g.units.filter((u) => twoPinNets(u) === null).length,
-        notCapacitors: g.units.filter((u) => u.part.refPrefix !== "C").length,
-        declared: irBlock.rendering,
-        outcome: outcomeOf(circuit, declaration.id, symbols),
-        verdicts: templates.map((t) => verdictOf(t, g)),
-      }
-      assertAgreement(row)
-      blocks.push(row)
+      blocks.push(
+        blockParityOf(
+          c.name,
+          circuit,
+          declaration.id,
+          crossingNets(c.network, c.authoring, declaration.id).size,
+          symbols,
+        ),
+      )
     }
   }
   const byTemplate = new Map<TemplateId, TemplateTally>()
