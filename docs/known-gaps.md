@@ -1369,19 +1369,15 @@ working graph to identical geometry.
 produced zero failures.** Specific, not common, and reachable from an ordinary
 idiom.
 
-- **Found** `docs/schematic/elk-spike.md` §4, 2026-10-19. **Amended from**
-  `docs/schematic/elk-block-spike.md` §5, the
-  same day.
-- **Evidence** the 32-subset sweep, the two-condition test, and the direct
-  two-version run. A check that could have failed: 23 of 32 assignments succeed.
-  For the amendment: the 256-subset sweep and the three-arm narrowing on
-  `oc-audio`, the 2x3x3 parent runs, and the 108-flip sweep - each with a
-  passing arm (0 of 256 after breaking the self-loop; 5 of 5 sections laying
-  out) that could have come back the other way.
-- **Verified** RELAYED, both halves - the writer read both spikes' measurements
-  and re-executed neither. **One exception, CONFIRMED by the writer:** the two
-  strap declarations quoted above were read in `circuits/pultec/electrical/three-band.ts`
-  and `circuits/transistor-preamp/parts.ts` directly.
+> **A STALE COPY OF THIS ENTRY'S BULLETS STOOD HERE AND WAS REMOVED
+> 2026-10-20.** Task 14's amendment **extended** the Found / Evidence /
+> Verified block rather than replacing it, so the entry carried the
+> pre-amendment copy here and the complete one below - and a reader met the
+> stale set first, which carries no *why it is open* and no *what would settle
+> it*. The task **caught it and disclosed it in its report**, which
+> `.superpowers/` being gitignored makes **not a record**: a defect found in the
+> register is fixed in the register. The surviving block below is the complete,
+> amended one.
 
 **AMENDED 2026-10-20 BY TASK 14, UNDER CONTROLLER RULING R30: THE GENERATOR
 REFUSES WITH A DIAGNOSIS, AND THE CRASH ITSELF IS NOT REACHABLE THROUGH THIS
