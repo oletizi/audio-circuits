@@ -85,11 +85,16 @@ is resolved rather than hand-porting around the gap:
   carries besides `strict.ts`. See `docs/known-gaps.md` **G113**.
 - **`@/schgen/__fixtures__/fixtureLib` ports** (to
   `tests/schgen/__fixtures__/fixture-lib.ts`) because its own imports now
-  resolve, but calling what it returns still reaches the throwing
-  `createResolver` above — so three of the five ported `ir/` test files
-  (`build.test.ts`, `classify.test.ts`, `validate.test.ts`) cannot run until
-  Task 4 lands either (G113 again). `author.test.ts` and `order.test.ts`
-  need no resolver and run today.
+  resolve, even though calling what it returns still reaches the throwing
+  `createResolver` above — nothing in this directory calls it yet, but it is
+  already correct and Task 4 needs it too. **Three of the five pedals `ir/`
+  test files are not ported at all yet**: `build.test.ts`, `classify.test.ts`
+  and `validate.test.ts` all call `fixtureResolver()` at module scope, so
+  porting them before `createResolver` is real would have landed three
+  module-load errors on `HEAD` - Controller ruling R4 (Task 2 round 1) moved
+  them to Task 4 instead, arriving together with the real `render/library.ts`.
+  See `docs/known-gaps.md` **G113**. `author.test.ts` and `order.test.ts`
+  need no resolver, are ported, and run today.
 - **`@/schgen/gates/oscar/*`.** Five files, deferred to Task 18 by the plan
   (the Pultec reference-graph comparison needs the complete pipeline first).
 - **`@/schgen/design`, `@/schgen/generate`, `@/schgen/generateFiles`,

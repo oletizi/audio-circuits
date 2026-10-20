@@ -6111,15 +6111,22 @@ pedals source before anything is removed. `ir/types.ts` carries 3 cuts (the
 `PinmapInput` interface, the `pinmap` field, `checkMcuConfig` whole, the
 `isMcu` parameter, the pin-map-assignment loop, the `checkMcuConfig` call
 site, the `isMcu` argument at its call site, and the `mcu: mcuLabel` field of
-`buildCircuit`'s return). The same mechanism carries the corresponding test
-cuts in `ir/build.test.ts` (9, including the now-dead `big`/`PINMAP`
-fixtures and the three tests that exercised pin-map behaviour specifically),
-`ir/classify.test.ts` (2, merged - `mcu: null,` and `, pinmap: null` each
-appear 5 times) and `ir/validate.test.ts` (2, merged - 1 and 2 occurrences).
-This keeps the repository's invariant that a ported file is never
-hand-edited intact for a cut as much as for a plain import rewrite: the cut
-is data, in the manifest, reviewed and re-derivable, not a diff silently
-smuggled into the file on disk.
+`buildCircuit`'s return). This keeps the repository's invariant that a
+ported file is never hand-edited intact for a cut as much as for a plain
+import rewrite: the cut is data, in the manifest, reviewed and
+re-derivable, not a diff silently smuggled into the file on disk.
+
+**The same mechanism carried the corresponding test cuts for
+`ir/build.test.ts`, `ir/classify.test.ts` and `ir/validate.test.ts`
+(9, 2 and 2 respectively, including the now-dead `big`/`PINMAP` fixtures and
+the three tests that exercised pin-map behaviour specifically) in Task 2's
+first round.** That round is superseded, not this entry's concern directly -
+see **G113**: Controller ruling R4 moved all three files, cuts included, to
+Task 4, because they also needed a real `createResolver` to run and porting
+them anyway would have put three module-load errors on `HEAD`. Only
+`ir/types.ts` and `ir/build.ts`'s cuts (above) are live in the manifest
+today; the three test files' cuts are recorded here and in this task's git
+history for Task 4 to reuse rather than re-derive from scratch.
 
 - **Found** 2026-10-19, Task 2, confirmed directly: `grep -n "pinmap\|mcu\b"`
   over every file `tools/schgen/ir/` ports (`types.ts`, `build.ts`,
@@ -6151,7 +6158,7 @@ smuggled into the file on disk.
   repository has no MCU and no pin map to restore it for - the criterion is
   for whichever future task is the first to need one.
 
-### G113 - three of the five ported `ir/` test files cannot run yet - `createResolver` is a forward-declared throwing stub until Task 4 - and `render/library.ts`'s `LibSymbol` carries only the three fields `ir/` reads
+### G113 - three of the five ported `ir/` test files move to Task 4, not Task 2 - `createResolver` is a forward-declared throwing stub until then - and `render/library.ts`'s `LibSymbol` carries only the three fields `ir/` reads
 
 `lib/schgen/ir/build.ts`, `validate.ts`, `validate-nets.ts` and
 `validate-rule.ts` import `SymbolResolver` (and `validate-nets.ts` also
@@ -6164,21 +6171,31 @@ as a forward declaration: the `SymbolResolver`/`LibSymbol` interfaces, plus a
 implementing anything - `CLAUDE.md`'s rule for functionality that does not
 exist yet is a named throw, not a fallback or mock.
 
-**Three ported test files call `createResolver` indirectly and so cannot run
-at all, not merely fail an assertion.** `tests/schgen/ir/build.test.ts`,
-`classify.test.ts` and `validate.test.ts` each do
-`const symbols = fixtureResolver();` at module scope (`fixtureResolver()`,
-ported to `tests/schgen/__fixtures__/fixture-lib.ts`, calls `createResolver`
-directly), so the throw happens at module load, before any `it(...)`
-registers - `bun test` reports each as an unhandled error between tests, not
-as one or more failing assertions, and every test in the file is equally
-unreachable. **This is the correct, expected shape of "fails until Task 4"**
-(the plan's own Task 2 Step 5 wording): a thrown, named error is maximally
-loud, the opposite of a skipped check that looks like a passing one.
-`tests/schgen/ir/author.test.ts` and `order.test.ts` need no resolver and
-pass in full; `no-pin-map.test.ts` (hand-written, Task 2's own new test for
-G112's cut) uses a local `stubResolver()` that never calls `createResolver`,
-and also passes.
+**Three of the five pedals `ir/` test files need that real `createResolver`
+to run at all, not merely to pass an assertion** - each does
+`const symbols = fixtureResolver();` at module scope
+(`fixtureResolver()`, ported to `tests/schgen/__fixtures__/fixture-lib.ts`,
+calls `createResolver` directly), so the throw would happen at module load,
+before any `it(...)` registers. **Controller ruling R4 (Task 2 round 1)
+decided this stays out of the tree rather than landing red**: Task 2's
+first pass ported `build.test.ts`, `classify.test.ts` and `validate.test.ts`
+anyway and reported the resulting module-load errors by name, reasoning
+that a loud, attributed failure satisfies *"a skipped check must never look
+like a passing one."* The ruling held that against this plan's Global
+Constraint that `bun test` is clean before every commit, a known-red HEAD is
+the same hazard with the sign flipped - **"every later implementer runs the
+suite, sees three failures, and has to know they are expected, which is
+exactly the condition in which a fourth failure hides."** So those three
+files were removed from `port-manifest.json` and from the tree in the same
+round; they are not skipped and not deleted-as-abandoned, they are **not
+ported yet**, and they arrive in Task 4 together with the
+`render/library.ts` port they depend on. `tests/schgen/ir/author.test.ts`
+and `order.test.ts` need no resolver and are ported and passing now;
+`no-pin-map.test.ts` (hand-written, Task 2's own new test for G112's cut)
+uses a local `stubResolver()` that never calls `createResolver`, and also
+passes. `tests/schgen/__fixtures__/fixture-lib.ts` (the fixture library the
+three pending tests need) stays ported, unused today, because it is already
+correct and Task 4 needs it too.
 
 **`LibSymbol`'s field set is a measured minimum, not a guess at the real
 shape.** It carries exactly `pins`, `unitCount` and `isPower` - checked
@@ -6193,28 +6210,40 @@ so Task 4's port of the real `render/library.ts` replaces this file
 wholesale (never extends it) and restores those fields along with a working
 `createResolver`.
 
-- **Found** 2026-10-19, Task 2, confirmed directly: `bun test` run with
-  `SCHGEN_SOURCE` set, full output read - exactly 3 "errors" and 3 "fail"
-  (bun counts a module-load throw as both), all three naming
-  `createResolver`'s thrown message and all three in the files listed above;
+- **Found** 2026-10-19, Task 2: the forward-declaration necessity and the
+  three dependent files' module-load throw, confirmed directly by running
+  `bun test` with `SCHGEN_SOURCE` set and reading the full output (round 1:
+  exactly 3 "errors" and 3 "fail", bun counting a module-load throw as
+  both, all naming `createResolver` and all in the three files above);
   `grep -n "symbols\.resolve\|\.pins\b\|\.unitCount\|\.isPower"` over
   `lib/schgen/ir/*.ts`, read directly, to derive the three-field list.
-- **Evidence** the `bun test` output itself (2527 pass / 3 fail / 3 errors
-  across 249 files, pass count up from Task 1's 2514/0/243 baseline, zero
-  regressions); `bun run typecheck` clean with the stub in place; the three
-  named files' stack traces all bottoming out at
-  `lib/schgen/render/library.ts:46` (`createResolver`'s throw).
+  Controller ruling R4, same day, decided the three files move to Task 4
+  rather than landing red - round 2 removed their `port-manifest.json`
+  entries and deleted them from `tests/schgen/ir/`.
+- **Evidence** `bun test` with `SCHGEN_SOURCE` set, round 2: **2527 pass / 0
+  fail across 246 files** (`bun run check` exits 0); `bun run typecheck`
+  clean with the stub in place. Round 1's evidence (2527 pass / 3 fail / 3
+  errors across 249 files, each of the three stack traces bottoming out at
+  `lib/schgen/render/library.ts:46`) is superseded by this entry's own
+  rewrite, per the rule that a mechanism's prior report is not duplicated
+  once the state it described no longer holds.
 - **Verified** CONFIRMED - this writer ran the full suite and read the
-  output and the grep directly.
+  output and the grep directly, both rounds.
 - **Why it is open** it is not a defect in Task 2's own work; it is the
-  stated, correct consequence of forward-declaring one task's dependency
-  inside another, left open until the task that resolves it lands.
+  stated, correct consequence of one task's dependency belonging to
+  another, left open until the task that resolves it lands.
 - **What would settle it** **CRITERION:** `tests/schgen/ir/build.test.ts`,
-  `classify.test.ts` and `validate.test.ts` run to completion (pass or fail
-  on their own assertions, never erroring at module load) once a real
-  `createResolver` exists. **MECHANISM:** Task 4 ports
-  `digital-pedal-platform`'s `render/library.ts` in full, including the two
-  fixture `.kicad_sym` files `tests/schgen/__fixtures__/fixture-lib.ts`
-  references by path (`symbols/Fix.kicad_sym`, `symbols/Pwr.kicad_sym`,
-  under `__fixtures__/` in the pedals source) but which Task 2 did not copy,
-  since the stub `createResolver` never reads them.
+  `classify.test.ts` and `validate.test.ts` exist in the tree, are ported
+  (not hand-written), and run to completion - pass or fail on their own
+  assertions, never erroring at module load. **MECHANISM:** Task 4 ports
+  `digital-pedal-platform`'s `render/library.ts` in full, adds the three
+  files' `port-manifest.json` entries back (their cuts are recorded in this
+  task's git history, not repeated here, so Task 4 re-derives or reuses them
+  rather than retyping from memory), and copies the two fixture `.kicad_sym`
+  files `tests/schgen/__fixtures__/fixture-lib.ts` references by path
+  (`symbols/Fix.kicad_sym`, `symbols/Pwr.kicad_sym`, under `__fixtures__/`
+  in the pedals source) but which Task 2 did not, since the stub
+  `createResolver` never reads them. Task 4 also restores the
+  `NOT_A_KICAD_SYMBOL` entries for `"Pwr:GND"` and `"Fix:R"` in
+  `tests/kicad/symbol-names.test.ts`, emptied in Task 2 round 2 because
+  nothing in the tree swept them once the three files moved out.
