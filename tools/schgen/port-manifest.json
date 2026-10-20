@@ -73,7 +73,51 @@
     { "from": "render/uuid.test.ts", "to": "tests/schgen/render/uuid.test.ts" },
     { "from": "render/sexprWrite.test.ts", "to": "tests/schgen/render/sexpr-write.test.ts" },
     { "from": "render/library.ts", "to": "lib/schgen/render/library.ts" },
-    { "from": "render/library.test.ts", "to": "tests/schgen/render/library.test.ts" }
+    { "from": "render/library.test.ts", "to": "tests/schgen/render/library.test.ts" },
+    { "from": "render/geometry.test.ts", "to": "tests/schgen/render/geometry.test.ts" },
+    {
+      "from": "ir/classify.test.ts",
+      "to": "tests/schgen/ir/classify.test.ts",
+      "cuts": [
+        { "text": "      mcu: null,\n", "occurrences": 5 },
+        { "text": ", pinmap: null", "occurrences": 5 }
+      ]
+    },
+    {
+      "from": "ir/validate.test.ts",
+      "to": "tests/schgen/ir/validate.test.ts",
+      "cuts": [
+        { "text": "  mcu: null,\n", "occurrences": 1 },
+        { "text": ", pinmap: null", "occurrences": 2 }
+      ]
+    },
+    {
+      "from": "ir/build.test.ts",
+      "to": "tests/schgen/ir/build.test.ts",
+      "cuts": [
+        {
+          "text": "const big = (pins: PartSpec[\"pins\"], ncAll: boolean): PartSpec => ({\n  label: \"U_MCU\", refPrefix: \"U\", libId: \"Fix:BIG8\", units: [1], value: \"BIG8\", footprint: \"F\", bom: TEST_BOM,\n  dnp: false, checklist: [], source: \"t\", pinTable: null, pins, mechanicalPads: [],\n  ncUnlisted: ncAll ? { reason: \"CORE-27\" } : null,\n});\n\n",
+          "occurrences": 1
+        },
+        { "text": "  mcu: mcu ? { label: \"U_MCU\" } : null,\n", "occurrences": 1 },
+        {
+          "text": "const PINMAP: PinmapInput = {\n  map: { mcu: \"BIG8\", pinData: \"x\", gpioModes: \"y\", schematicRef: \"U1\", assignments: [{ pin: \"PA0\", signal: \"GPIO\", net: \"SIG\", purpose: \"p\" }] },\n  mcu: { refName: \"BIG8\", pins: new Map([[\"PA0\", { port: \"PA0\", position: \"1\", signals: new Set<string>(), af: new Map<string, number>() }]]) },\n};\n\n",
+          "occurrences": 1
+        },
+        {
+          "text": "  it(\"merges pin-map assignments onto the MCU by package position, with the port as identity\", () => {\n    const c = buildCircuit(spec([big({}, true), res(\"R_1\", \"SIG\", \"GND\")], true), { symbols, pinmap: PINMAP });\n    const p1 = c.pins.find((p) => p.part === \"U_MCU\" && p.pin === \"1\");\n    expect(p1).toEqual({ part: \"U_MCU\", pin: \"1\", unit: 1, identity: \"PA0\", net: \"SIG\", origin: \"pinmap\" });\n  });\n\n  it(\"refuses an MCU pin declared in the circuit and assigned by the pin map\", () => {\n    const declared = big({ \"1\": { net: \"OTHER\", identity: \"D0\" } }, true);\n    expect(() => buildCircuit(spec([declared, res(\"R_1\", \"SIG\", \"GND\")], true), { symbols, pinmap: PINMAP })).toThrow(\n      /U_MCU pin 1 \\(PA0\\) is declared in the circuit on net OTHER and assigned by the pin map to SIG; pinmap.json is authoritative/,\n    );\n  });\n\n  it(\"expands ncUnlisted to every remaining symbol pin, identity from the symbol\", () => {\n    const c = buildCircuit(spec([big({}, true), res(\"R_1\", \"SIG\", \"GND\")], true), { symbols, pinmap: PINMAP });\n    const nc = c.pins.filter((p) => p.part === \"U_MCU\" && p.origin === \"nc-unlisted\");\n    expect(nc.map((p) => [p.pin, p.identity, p.net])).toEqual([\n      [\"2\", \"D1\", null], [\"3\", \"CLK\", null], [\"4\", \"GND\", null], [\"5\", \"CS\", null], [\"6\", \"D2\", null], [\"7\", \"NC\", null], [\"8\", \"VCC\", null],\n    ]);\n  });\n\n",
+          "occurrences": 1
+        },
+        {
+          "text": "  it(\"refuses a pin map without an MCU and an MCU without a pin map\", () => {\n    expect(() => buildCircuit(spec([big({}, true)], false), { symbols, pinmap: PINMAP })).toThrow(/pin map was given but the circuit names no MCU/);\n    expect(() => buildCircuit(spec([big({}, true)], true), { symbols, pinmap: null })).toThrow(/circuit names MCU U_MCU but no pin map was given/);\n  });\n\n",
+          "occurrences": 1
+        },
+        { "text": ", type PinmapInput", "occurrences": 1 },
+        { "text": ", mcu: boolean", "occurrences": 1 },
+        { "text": ", false", "occurrences": 4 },
+        { "text": ", pinmap: null", "occurrences": 4 }
+      ]
+    }
   ],
   "handWritten": [
     "lib/schgen/strict.ts"

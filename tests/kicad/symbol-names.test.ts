@@ -110,6 +110,81 @@ test("the sweep finds the symbol declarations it is supposed to, so it cannot pa
 /** `<Library>:<Name>` in the spelling every KiCad library and netlist in this repository uses. */
 const LIB_ID = /^[A-Za-z0-9_+-]+:[A-Za-z0-9_.,+-]+$/
 
+/**
+ * How a lib id fails, or does not fail, to resolve - the three-valued answer
+ * an exemption is held to below. Split rather than boolean because
+ * `symbolExistsOnDisk` THROWS on an uninstalled library (deliberately: see
+ * `./symbol-library-disk.ts`), and an exemption that caught that throw to
+ * call it "unresolvable" would also catch a genuinely broken KiCad install.
+ */
+function resolutionOnDisk(libId: string): "resolves" | "no-such-library" | "no-such-symbol" {
+  if (!fs.existsSync(symbolLibraryFile(libId))) return "no-such-library"
+  return symbolExistsOnDisk(libId) ? "resolves" : "no-such-symbol"
+}
+
+/**
+ * Lib ids naming a HAND-WRITTEN TEST FIXTURE LIBRARY rather than a KiCad one,
+ * with how each fails to resolve and why no real name can serve.
+ *
+ * `tests/schgen/__fixtures__/symbols/Fix.kicad_sym` and `Pwr.kicad_sym` are
+ * copied verbatim from `digital-pedal-platform` by the schgen port
+ * (`lib/schgen/README.md`), and the ported tests that read them name their
+ * symbols in a part spec's `symbol` field, which is exactly what the sweep
+ * above looks for. Substituting an installed KiCad name would mean editing a
+ * ported file, which `tests/schgen/port-fidelity.test.ts` refuses.
+ *
+ * **THIS LIST HAS THREE PROPERTIES ITS DELETED PREDECESSOR LACKED**, and
+ * Controller ruling R5 (via `docs/known-gaps.md` G113) is why. The earlier
+ * `NOT_A_KICAD_SYMBOL` exempted any well-formed lib id with no check that the
+ * exempted name actually fails to resolve, and its `continue` ran ahead of the
+ * malformed-value arm, silencing that report too. So:
+ *
+ * 1. **Each entry must still fail to resolve, in the recorded way** - a real
+ *    KiCad name cannot hide behind the list. This is the footprint side's
+ *    `CONSTRUCTED_FOR_A_REFUSAL` discipline (`tests/kicad/footprint-sweep.ts`).
+ * 2. **Every swept SITE must be under `tests/schgen/`.** Without this the
+ *    exemption is a hole the size of the name: a production circuit or a
+ *    vendored library later declaring one of these as its own part spec's
+ *    symbol would pass the sweep silently, which is the defect this file's
+ *    header says it exists to catch. (The declaration form is deliberately
+ *    not spelled out here, for the reason the header gives: a comment quoting
+ *    it becomes a site of its own, and this exemption would then exempt the
+ *    file doing the looking.)
+ * 3. **It is pinned in both directions** - an entry nothing sweeps any more
+ *    fails rather than rotting, and the exemption arm in the sweep test sits
+ *    AFTER the malformed-value arm so it cannot silence that report.
+ */
+const NOT_A_KICAD_SYMBOL: ReadonlyMap<
+  string,
+  { readonly failure: "no-such-library" | "no-such-symbol"; readonly reason: string }
+> = new Map([
+  [
+    "Fix:R",
+    {
+      failure: "no-such-library" as const,
+      reason:
+        "the nickname \"Fix\" is tests/schgen/__fixtures__/symbols/Fix.kicad_sym, a hand-written " +
+        "fixture library holding deliberately degenerate symbols (OFFGRID, HIDPWR, a De Morgan " +
+        "body style, an extends child) that no installed KiCad library has. No KICAD_SYMBOLS " +
+        "root holds a Fix.kicad_sym, so the whole library half fails to resolve, not just R.",
+    },
+  ],
+  [
+    "Pwr:GND",
+    {
+      failure: "no-such-library" as const,
+      reason:
+        "the nickname \"Pwr\" is tests/schgen/__fixtures__/symbols/Pwr.kicad_sym, the fixture " +
+        "power library (GND, +3V3, PWR_FLAG) the ported ir/ tests declare as a rail symbol. " +
+        "KiCad's own equivalent is power:GND, a different nickname; no KICAD_SYMBOLS root holds " +
+        "a Pwr.kicad_sym, so this fails at the library, not at the symbol.",
+    },
+  ],
+])
+
+/** Where an exempt fixture lib id may appear at all. */
+const EXEMPT_SITE_PREFIX = "tests/schgen/"
+
 test("every symbol name swept out of the source resolves in an installed KiCad library", () => {
   const missing: string[] = []
   const malformed: string[] = []
@@ -121,6 +196,9 @@ test("every symbol name swept out of the source resolves in an installed KiCad l
       malformed.push(`${libId} (${sites.join(", ")})`)
       continue
     }
+    // AFTER the malformed arm, deliberately: the deleted predecessor skipped
+    // first and silenced that report for an exempted malformed value.
+    if (NOT_A_KICAD_SYMBOL.has(libId)) continue
     if (!symbolExistsOnDisk(libId)) missing.push(`${libId} (${sites.join(", ")})`)
   }
   expect(malformed, "these swept values are not <Library>:<Name>, so nothing could look them up")
@@ -129,6 +207,35 @@ test("every symbol name swept out of the source resolves in an installed KiCad l
     missing,
     `these symbol names are in no installed library under ${SYMBOL_LIBRARY_ROOT}`,
   ).toEqual([])
+})
+
+test("every exempted fixture lib id is still swept, still unresolvable, and still only in tests/schgen/", () => {
+  // THE TEETH ON NOT_A_KICAD_SYMBOL - see its own comment for why the deleted
+  // predecessor had none. Four things must hold per entry, each a check that
+  // could fail, plus the bidirectional pin.
+  const exempt = [...NOT_A_KICAD_SYMBOL.keys()].sort()
+  expect(exempt.length, "an exemption list nothing iterates is a check that cannot fail")
+    .toBeGreaterThan(0)
+  expect(
+    [...SWEPT.keys()].filter((libId) => NOT_A_KICAD_SYMBOL.has(libId)).sort(),
+    "an exemption the sweep no longer finds is stale; delete it rather than leaving it",
+  ).toEqual(exempt)
+  for (const [libId, { failure, reason }] of NOT_A_KICAD_SYMBOL) {
+    expect(
+      resolutionOnDisk(libId),
+      `${libId} now resolves, or fails differently than recorded - a real KiCad name must not ` +
+        "hide behind this list",
+    ).toBe(failure)
+    expect(reason.length, libId).toBeGreaterThan(60)
+    const sites = SWEPT.get(libId) ?? []
+    expect(sites.length, libId).toBeGreaterThan(0)
+    expect(
+      sites.filter((site) => !site.startsWith(EXEMPT_SITE_PREFIX)).sort(),
+      `${libId} is declared outside ${EXEMPT_SITE_PREFIX} in these files. The exemption covers ` +
+        "the schgen port's hand-written fixture libraries and nothing else: a production circuit " +
+        "or a vendored library naming it would otherwise pass this sweep silently.",
+    ).toEqual([])
+  }
 })
 
 test("every declared symbol table resolves too, including the rotary table and the vendored set", () => {

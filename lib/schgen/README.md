@@ -92,6 +92,15 @@ is resolved rather than hand-porting around the gap:
   `tests/schgen/port-fidelity.test.ts` compares them byte-for-byte against
   `$SCHGEN_SOURCE` so a hand-edited or drifted copy fails rather than
   quietly changing what every fixture-backed test measures.
+
+  **The four test files Controller ruling R4 deferred arrive with it** —
+  `tests/schgen/ir/build.test.ts`, `classify.test.ts`, `validate.test.ts`
+  (`docs/known-gaps.md` **G113**) and `tests/schgen/render/geometry.test.ts`
+  (**G115**). All four call `fixtureResolver()` at module scope, so each
+  would have thrown at module load against the stub; they were removed from
+  the manifest rather than landed red, and Task 4 re-added their entries
+  (`build.test.ts`, `classify.test.ts` and `validate.test.ts` with the same
+  pin-map `cuts` Task 2 derived) and landed them passing.
 - **`@/schgen/gates/oscar/*`.** Five files, deferred to Task 18 by the plan
   (the Pultec reference-graph comparison needs the complete pipeline first).
 - **`@/schgen/design`, `@/schgen/generate`, `@/schgen/generateFiles`,
@@ -104,10 +113,11 @@ A file is safe to add to the manifest once every import it has — direct or
 through another `@/schgen/<path>` import — resolves to something already
 ported or named in `externals`. `tools/schgen/port.ts`'s `resolveSpecifier`
 checks `externals` *before* the `@/schgen/<path>` lookup, so a task can
-point an import at a hand-written forward declaration (like
-`render/library.ts` above) without that file needing to be a `files[]`
-entry itself; otherwise it throws, naming the file and the unresolved
-import, rather than silently leaving an unported import in place.
+point an import at a hand-written forward declaration without that file
+needing to be a `files[]` entry itself — that is how `render/library.ts`
+resolved before Task 4 ported it, and the mechanism remains available;
+otherwise it throws, naming the file and the unresolved import, rather than
+silently leaving an unported import in place.
 
 ## Conventions carried over from the plan
 
