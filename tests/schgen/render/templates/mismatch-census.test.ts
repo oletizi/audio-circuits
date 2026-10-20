@@ -77,10 +77,18 @@ const TOTAL = 30
  * **THIS IS THE FIX FOR A KNOWN WEAKNESS, AND IT IS NOT HYPOTHETICAL ANY MORE.** Task 7's version
  * matched `\bmismatch\(` over raw text, which counts a mention inside a comment or a string as a
  * call site. No false positive existed then. One does now: Task 8 wrote a header comment in
- * `divider.ts` saying *"its six `notApplicable(...)` sites are classified"*, and the raw-text
- * matcher counted seven sites in a file that has six. Blanking comments and literals first is
- * what makes the census a count of CODE; the test below proves the blanking has teeth by asserting
- * that the prose which mentions a constructor is not counted.
+ * `divider.ts` saying its six `mismatch(...)` sites are classified, so the raw text of that file
+ * contains one `mismatch(` and its code contains none.
+ *
+ * **WHAT THE BLANKING IS MEASURED TO CATCH, WHICH IS LESS THAN IT FIRST LOOKS.** Replacing
+ * `code()` with the identity function was tried: **two tests go red** - *"no template constructs
+ * an unclassified refusal"* and *"a constructor named in a comment is prose"*, both on that one
+ * `divider.ts` mention - and the per-file breakdown does **not** move, because today's only prose
+ * false positive is on `mismatch(`, which the site patterns no longer match. Disabling only the
+ * block-comment rule and leaving the rest changes nothing at all, because the mention is inside
+ * backticks and the template-literal rule blanks it anyway. So the blanking's teeth today are
+ * narrower than "the census counts only code": it is insurance against a prose mention of a
+ * CONSTRUCTOR, which has not happened yet and which the per-file counts would otherwise swallow.
  */
 function code(text: string): string {
   const keepNewlines = (s: string): string => s.replace(/[^\n]/g, " ")
@@ -202,11 +210,11 @@ describe("the template mismatch census", () => {
   })
 
   /**
-   * **THE BLANKING HAS TEETH**, which is the check that makes the three counts above a count of
-   * code. `divider.ts`'s header comment mentions a constructor by name; the raw text therefore has
-   * one more occurrence than the code does, and this asserts exactly that difference. If `code()`
-   * were weakened to a no-op, the per-file breakdown goes red on `divider.ts` and this test goes
-   * red naming the prose.
+   * **THE BLANKING HAS TEETH, MEASURED RATHER THAN ASSERTED.** `divider.ts`'s header comment says
+   * how many `mismatch(...)` sites the file had, so its raw text holds one occurrence and its code
+   * holds none. With `code()` replaced by the identity function this test goes red (`Expected: 0 /
+   * Received: 1`) and so does *"no template constructs an unclassified refusal"*; the per-file
+   * breakdown does not move, for the reason the header above gives.
    */
   test("a constructor named in a comment is prose, not a site", () => {
     const raw = fs.readFileSync(path.join(TEMPLATE_DIR, "divider.ts"), "utf8")

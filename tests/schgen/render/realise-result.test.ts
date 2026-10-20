@@ -13,8 +13,11 @@
  * **THE `switch` WITH NO `default` IS THE REAL CHECK HERE, AND IT IS A COMPILE-TIME ONE.**
  * `describe` below returns `string`, so if a fifth `Mismatch` kind is added and not handled, the
  * function falls through to `undefined` and `bun run typecheck` fails on this file. A `default`
- * clause would make that silent, so there is none - and deleting one `case` is enough to turn the
- * typecheck red, which is the perturbation that proves it.
+ * clause would make that silent, so there is none. **Measured, on the same shape of switch in
+ * `block-types.ts`'s `describeMismatch`:** deleting its `case "backend-raised"` line gives
+ * `error TS2366: Function lacks ending return statement and return type does not include
+ * 'undefined'`, which is the perturbation that proves the exhaustiveness is enforced and not
+ * merely intended.
  */
 import { describe as suite, expect, test } from "bun:test"
 import {
