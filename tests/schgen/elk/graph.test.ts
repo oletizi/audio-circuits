@@ -169,9 +169,17 @@ test("both spacings are whole grid steps, which is what the plan asks of them", 
  */
 test("a part with no preferred orientation is built at the library frame", () => {
   const g = dividerSubgraph()
+  expect(g.units.length, "a zero-unit block would pass the loop below and say nothing").toBe(2)
   for (const u of g.units) expect(u.rot, `${u.part.label}`).toBe(LIBRARY_FRAME)
-  const node = (elkInputOf(g).graph.children ?? []).find((c) => c.id === unitNodeId(g.units[0] ?? g.units[0]!))
-  expect(node).toBeDefined()
+  // Every unit has a node, and the node's size is the symbol's box at THAT rotation - which is
+  // what makes "built at the library frame" an observable rather than a restatement of `u.rot`.
+  const children = elkInputOf(g).graph.children ?? []
+  for (const u of g.units) {
+    const node = children.find((c) => c.id === unitNodeId(u))
+    const placed = placeBox({ x: 0, y: 0 }, LIBRARY_FRAME, u.symbol.boxes.get(u.unit) ?? { minX: 0, minY: 0, maxX: 0, maxY: 0 })
+    expect(node?.width, `${u.part.label} width`).toBe(placed.maxX - placed.minX)
+    expect(node?.height, `${u.part.label} height`).toBe(placed.maxY - placed.minY)
+  }
 })
 
 test("a part the orientation rule turns is built at THAT rotation, sides and positions together", () => {

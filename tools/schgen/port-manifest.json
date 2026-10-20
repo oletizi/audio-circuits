@@ -795,6 +795,7 @@
     "tools/schgen/elk/obstacle-census.ts",
     "tests/schgen/elk/adapt.test.ts",
     "tests/schgen/elk/snap.test.ts",
-    "tests/schgen/elk/junctions.test.ts"
+    "tests/schgen/elk/junctions.test.ts",
+    "tests/schgen/elk/obstacle-census.test.ts"
   ]
 }

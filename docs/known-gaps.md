@@ -2106,9 +2106,13 @@ four parity circuits: **0 to 24 exact duplicate segments per block** against the
 **ZERO zero-length segments** against the spikes' 0-5. So the duplicate half of this entry is real
 here and milder, and the zero-length half does not appear on this driver at all. **What appears
 instead is worse**: 10 µm near-zero jogs from ELK's unset spacing defaults (**G188**) and PARTIAL
-collinear overlaps from routing a net as a spanning chain (**G189**) - and a partial overlap is
-strictly worse than a duplicate, because a duplicate is deduplicated and counted while a partial
-overlap can only be refused. The per-block table is in **G189**.
+collinear **CONTAINMENTS** from routing a net as a spanning chain (**G189**). **Round 1 of this
+amendment called those containments PARTIAL overlaps and that was wrong** - the review measured the
+interval relation of all thirty and **30 of 30 are containments, 0 partial, 0 cross-net**. The
+distinction decided a ruling: a partial has two readings and can only be refused, while a
+containment's interval union IS the longer segment, so it has one reading and **collapses**.
+Controller ruling **R31** and spec §1.4 revision 5 do exactly that, and the containment count is now
+reported beside the duplicate count. The per-block table, with all three counts, is in **G189**.
 
 `[RAN]` `docs/schematic/elk-spike.md` §7, on 15 whole-circuit drawings:
 
@@ -13640,6 +13644,28 @@ reach is **the two options this backend sends**, while the sentence a reader tak
 the spacings ELK USES. That is **G125**'s shape again: a guard whose reach is a fraction of its
 claimed reach.
 
+**ROUND 2 AMENDMENT: THIS ENTRY's CRITERION WOULD NOT FIX WHAT IT BLAMES, AND SOMEONE WOULD HAVE
+ACTED ON IT AS IF IT WOULD.** `[RAN]` With `elk.padding` and all five remaining spacings at one grid
+step, over all twelve declared blocks, counting canonical segments shorter than a grid step:
+
+| arm | canonical segments | **shorter than one grid step** | blocks carrying one |
+| --- | --- | --- | --- |
+| shipped | 502 | **147** | **12 of 12** |
+| padding + five spacings at `GRID` | 501 | **9** | **8 of 12** |
+
+**138 of 147 go away and nine do not**, and those nine are enough to keep **9 of 12 blocks refusing
+at the snap gate** with R31 live. Every survivor is still exactly 10 µm - for example
+`opamp-buffer/ob-buffer` `FB` at `(57.18, 26.67)-(57.19, 26.67)`. **So the sub-grid jogs are not
+only the six unset spacing options**, and the criterion below - *"every spacing and padding `elkjs`
+uses is a whole number of grid steps"* - is **necessary and NOT sufficient**. Something else in
+`layered` emits a 10 µm offset that no spacing option this writer has found controls.
+
+**AND ONE LINE BELOW IS LOOSELY WORDED.** The evidence calls four options *"DOUBLE options targeting
+PARENTS that this backend never sets"*. The *"never sets"* half is right and is the finding; the
+rest reads as though targeting PARENTS made them inert on the root graph, and **setting them on the
+root demonstrably changes the layout** - that is how the probe arm above was measured. They are
+unset, not unusable.
+
 - **Found** 2026-10-20, Task 13, while diagnosing why every block refused at the snap gate.
 - **Evidence** the node and edge dump above, printed from a real `layoutBlocks` run; the two-arm
   probe table, both arms run here; and `knownLayoutOptions()` confirming `spacing.edgeEdge`,
@@ -13664,86 +13690,104 @@ claimed reach.
   part nobody has decided, and it is the same correspondence question **G180** already records as
   this writer's reading rather than a stated rule.
 
-### G189 - routing a net as a spanning CHAIN of two-terminal edges makes ELK retrace its own route, and 11 of the 12 declared blocks refuse on the overlap it produces
+### G189 - routing a net as a spanning CHAIN of two-terminal edges makes ELK retrace its own route, and every one of the 30 overlaps is a CONTAINMENT
+
+**REWRITTEN 2026-10-20 AT ROUND 2. ROUND 1 CALLED THESE OVERLAPS *PARTIAL* AND THEY ARE NOT, AND
+THAT ONE WORD IS WHAT MADE THE PERMISSIVE READING LOOK FORBIDDEN.** The round-1 review rebuilt wire
+provenance from ELK's raw sections and measured the interval relation of every pair: **30 of 30 are
+CONTAINMENTS** - one span wholly inside the other, same net, same line, between two **consecutive**
+edges of the routed chain (`X:k` and `X:k+1`, meeting at their shared terminal, the second
+retracing the first and running on). **0 are partial. 0 are cross-net.** Identical with padding and
+the remaining spacings at whole grid steps. Controller ruling **R31** and spec §1.4 revision 5
+settle what follows from that; this entry records the defect itself.
 
 `[RAN]` `lib/schgen/elk/graph.ts`'s `edgesForNet` turns a net of degree n into **n-1 two-terminal
-edges**, chained - which is a tree, and is what KiCad draws. **ELK routes each of those edges
-independently**, so an edge's route can run along a stretch an earlier edge of the SAME net already
-occupies. Spec §1.4 revision 4 clause (d) refuses exactly that: an overlap that is neither an exact
-duplicate nor a clean T has more than one reading and none of them may be chosen.
+edges**, chained - a tree, which is what KiCad draws. **ELK routes each of those edges
+independently**, so an edge's route runs back along a stretch an earlier edge of the same net
+already occupies. The retrace is the defect; the containment is its measured shape.
 
-**The measurement, over every declared block of the four parity circuits:**
+**WHAT R31 CHANGED, MEASURED BOTH WAYS.** A same-net collinear containment has exactly one reading -
+the interval union *is* the container - so it is collapsed and counted rather than refused. Over all
+twelve declared blocks:
 
-| | blocks |
-| --- | --- |
-| refused at the canonical topology, clause (d) | **11 of 12** |
-| refused at obligation 3 (see **G190**) | 1 of 12 |
-| reached the clearance checks | **0 of 12** |
-| drawn | **0 of 12** |
+| | before R31 | after R31 |
+| --- | --- | --- |
+| refused at the canonical topology | **11 of 12** | **0 of 12** |
+| containments collapsed | n/a (refused) | **30**, 1-6 per block |
+| refused at the SNAP gate (**G188**) | 0 | **11 of 12** |
+| refused at obligation 3 (**G190**) | 1 | 1 |
+| reach the clearance checks | **0** | **0** |
 
-Two of the overlaps, verbatim, and both are backtracks rather than duplicates:
+**So R31 removed this entry's barrier entirely and the next one is G188's.** With the G188 probe
+spacings as well, the stops are **snap 9, junctions (obligation 2) 2, obligation 3 1** - and those
+two junction refusals are this defect's last consequence, recorded in **G194**.
 
-```
-ob-buffer  wire 17 (GND, (55.952, 31.873)-(55.952, 11.472))
-           wire 19 (GND, (55.952, 11.472)-(55.952, 22.932))   overlap 11.472-22.932
-ob-buffer  wire 20 (GND, (55.952, 22.932)-(72.442, 22.932))
-           wire 21 (GND, (72.442, 22.932)-(67.372, 22.932))   overlap 67.372-72.442
-```
+**The per-block canonicalisation, which is G106's figure on this driver:**
 
-The route reaches a point, carries on past it, and the next edge of the chain comes back.
+| block | duplicates | zero-length | **containments** | wires before -> after |
+| --- | --- | --- | --- | --- |
+| `opamp-buffer/ob-buffer` | 8 | 0 | 5 | 65 -> 52 |
+| `optical-compressor/oc-power` | 11 | 0 | 1 | 42 -> 30 |
+| `optical-compressor/oc-audio` | 12 | 0 | 5 | 82 -> 65 |
+| `optical-compressor/oc-sidechain` | 15 | 0 | 3 | 91 -> 73 |
+| `pt2399-core/pt-core` | **24** | 0 | 4 | 179 -> 151 |
+| `transistor-preamp/tp-leg-upper` | 0 | 0 | 1 | 14 -> 13 |
+| `transistor-preamp/tp-leg-feedback` | 0 | 0 | 1 | 14 -> 13 |
+| `transistor-preamp/tp-leg-lower-a` | 0 | 0 | 1 | 14 -> 13 |
+| `transistor-preamp/tp-leg-lower-b` | 0 | 0 | 1 | 14 -> 13 |
+| `transistor-preamp/tp-leg-collector` | 0 | 0 | 1 | 11 -> 10 |
+| `transistor-preamp/tp-leg-emitter-bypass` | 0 | 0 | 1 | 12 -> 11 |
+| `transistor-preamp/tp-stage` | 11 | 0 | 6 | 75 -> 58 |
 
-**THIS IS NOT THE SPACING DEFECT OF G188.** Re-run with ELK's remaining spacings and the padding at
-whole grid steps, the figures are **unchanged**: 11 of 12 at clause (d), 1 at obligation 3, 0
-drawn. The two findings are independent and this one is the blocker for the real circuits.
+**`oc-sidechain`'s row is new at round 2**: round 1 returned no counts on the obligation-3 arm, so
+the one block that takes it was missing from the measurement entirely, along with its 15 duplicates.
 
-**AND IT REFINES G106's NUMBER RATHER THAN CONFIRMING IT.** The spikes measured *"duplicate wire
-segments: 30-187 per drawing"* and *"0-80 per block"* through `netlistsvg`. On this driver, with
-exact duplicates counted separately from partial overlaps:
+- **Found** 2026-10-20, Task 13, Step 6. **Characterised correctly at round 2 by the review**, which
+  measured the interval relation this writer had asserted without measuring.
+- **Evidence** the census (`tools/schgen/elk/obstacle-census.ts`, run over `PARITY_CASES`) before
+  and after R31; the two-arm re-run with the G188 spacings. A check that could have failed:
+  `tests/schgen/elk/junctions.test.ts` drives a containment (collapses, counted), a genuine partial
+  (refuses, naming *"NEITHER span contains the other"*), a cross-net containment (refuses) and an
+  exact duplicate (counted separately) - so the three arms are distinguished by tests rather than by
+  this prose, and the partial arm is driven although the corpus never produces one.
+- **Verified** CONFIRMED for every figure in the tables - this writer ran them. **RELAYED for the
+  30/30/0 interval characterisation**, which is the review's measurement; this writer confirmed its
+  consequence independently (all 11 clause-(d) refusals clear under R31's containment collapse, and
+  the containment count is exactly 30).
+- **Why it is open** the retrace is still there. R31 makes it harmless to the topology and
+  **countable**, which is better than refused, but `contained` is now the measure of a backend
+  defect rather than a defect that stops the generator.
+- **What would settle it** **CRITERION: a net's route holds no same-net collinear overlap at all -
+  every pair of its segments shares at most a point.** That is strictly stronger than what R31 needs
+  and is the state a tree-routed net would be in.
 
-| block | exact duplicates collapsed | zero-length dropped | wires before -> after |
-| --- | --- | --- | --- |
-| `opamp-buffer/ob-buffer` | 8 | 0 | 65 -> 57 |
-| `optical-compressor/oc-power` | 11 | 0 | 42 -> 31 |
-| `optical-compressor/oc-audio` | 12 | 0 | 82 -> 70 |
-| `pt2399-core/pt-core` | **24** | 0 | 179 -> 155 |
-| `transistor-preamp/tp-leg-upper` | 0 | 0 | 14 -> 14 |
-| `transistor-preamp/tp-leg-feedback` | 0 | 0 | 14 -> 14 |
-| `transistor-preamp/tp-leg-lower-a` | 0 | 0 | 14 -> 14 |
-| `transistor-preamp/tp-leg-lower-b` | 0 | 0 | 14 -> 14 |
-| `transistor-preamp/tp-leg-collector` | 0 | 0 | 11 -> 11 |
-| `transistor-preamp/tp-leg-emitter-bypass` | 0 | 0 | 12 -> 12 |
-| `transistor-preamp/tp-stage` | 11 | 0 | 75 -> 64 |
+  **MECHANISM 1 - one `ElkExtendedEdge` per net - DOES NOT RUN, AND NOBODY MAY FOLLOW IT.** Round 1
+  of this entry recommended it as the preferred fix. The review probed it before anyone acted, and
+  at the pinned version with the algorithm spec §1.1 requires it raises:
 
-**0 to 24 exact duplicates per block against the spikes' 0-80, and ZERO zero-length segments against
-the spikes' 0-5** - so the duplicate half of G106 is real here and milder, and the zero-length half
-does not appear on this driver at all. What appears instead is **G188**'s 10 µm near-zero segments
-and this entry's partial overlaps, and a partial overlap is strictly worse than a duplicate: a
-duplicate is deduplicated and counted, and a partial overlap can only be refused.
-(`optical-compressor/oc-sidechain` has no row: it refuses at obligation 3 before the topology runs.)
+  ```
+  java.lang.IllegalArgumentException: Passed edge is not 'simple'.
+  ```
 
-- **Found** 2026-10-20, Task 13, Step 6, running the obstacle census over the twelve blocks.
-- **Evidence** the census output above (`tools/schgen/elk/obstacle-census.ts`, run over
-  `PARITY_CASES`); the two verbatim overlaps; and the second arm re-run with the G188 spacings. A
-  check that could have failed: `tests/schgen/elk/junctions.test.ts`'s *"an overlap that is neither
-  a duplicate nor a clean T REFUSES, naming both segments"* and its three companions, which pass on
-  a clean T, on an end-to-end join and on a non-collinear crossing - so clause (d) is not simply
-  refusing everything.
-- **Verified** CONFIRMED - this writer ran the census, both arms, and read the overlaps.
-- **Why it is open** it is a property of how the graph represents a net, which is
-  `lib/schgen/elk/graph.ts`'s decision and not the adapter's, and changing it changes every
-  serialized input the generation manifest keys a drawing by. **Nothing is broken by leaving it:**
-  the adapter refuses, loudly and by name, which is spec §1.4 obligation 5's unambitious answer.
-- **What would settle it** **CRITERION: a net's route holds no overlap that clause (d) must refuse -
-  that is, every pair of same-net segments either shares at most a point or is an exact duplicate.**
-  **MECHANISMS, two, both untried and they are not equivalent.** (1) Give ELK the net as ONE
-  `ElkExtendedEdge` with n sources and targets, so it routes the net once as a tree instead of n-1
-  times independently; the cost is that a multi-section edge's section-to-terminal mapping then
-  comes from `incomingShape`/`outgoingShape`, which `read-graph.ts` currently refuses by name
-  because reading it wrongly would attach a wire to the wrong terminal. (2) Keep the chain and merge
-  collinear same-net overlaps in the adapter - **which clause (d) forbids in the same breath that
-  creates this entry**, because choosing which reading of the shared stretch to keep is the repair
-  obligation 5 refuses. **Mechanism 2 is recorded so that the next reader knows it was considered
-  and why it is not available.**
+  for **any** edge carrying more than one source or target - on all twelve blocks **and** on a
+  three-node minimal graph. Per algorithm:
+
+  | algorithm | a multi-terminal edge |
+  | --- | --- |
+  | `layered` (spec §1.1's, and **D4**'s) | **raises** `IllegalArgumentException: Passed edge is not 'simple'.` |
+  | `stress`, `force` | **raise** `UnsupportedGraphException: Graph must not contain hyperedges.` |
+  | `mrtree`, `radial` | accept it and return **a single section for an n-target edge** - an incomplete route - and neither is an orthogonal router |
+
+  A **star** model (one edge per terminal from a hub) is legal and **worse**: **113 ambiguous pairs
+  against 30**. **The edge model is not the lever in either direction.**
+
+  **This is `CLAUDE.md`'s worked example happening again, and the deviation is recorded as the rule
+  requires**: round 1's criterion is kept because it was measured; round 1's **mechanism** was
+  *"advice from someone who had not yet tried it"* and is withdrawn. **MECHANISM 2**, keeping the
+  chain and merging same-net overlaps in the adapter, is what **R31 now does for the containment
+  case only** - it was listed at round 1 as forbidden by clause (d), and the ruling is precisely
+  that clause (d) never should have covered a containment. **No mechanism is currently offered for
+  the residue**, and inventing one here would repeat the fault this paragraph exists to record.
 
 ### G190 - `elk.portConstraints = FIXED_POS` does NOT hold a port whose position is off its declared `elk.port.side`, and one real block is caught by it
 
@@ -13821,6 +13865,26 @@ overlaps | value of power symbol GND 1 at (34.29, 17.78) | label OUT at (39.37, 
 - two further blocks produced `"no place for its Reference and Value"`, which
   `problem-obstacles.ts` correctly reports as naming **no pair at all** - a field-placement refusal
   is not a clearance pair, and the census reports it separately rather than inventing one.
+
+**ROUND 2: R31 LANDED AND THE RESULT IS STILL EMPTY, WHICH IS THE USEFUL PART.** The containment
+collapse clears clause (d) on all eleven blocks that refused there - and **0 of 12 still reach
+`checkLayout`**, because the next gate catches them: the snap gate (**G188**) takes eleven, and with
+the G188 probe spacings as well the stops are **snap 9, junctions 2, obligation 3 1**. **No
+`PAIR_COVERAGE` pair fires under any arm measured so far.** The matrix's 95 unevidenced cells are
+unchanged, and so is the instruction not to read that as the matrix holding up.
+
+**AND THE INSTRUMENT IS NOW HELD IN PLACE.** Round 1 left `tools/schgen/elk/obstacle-census.ts`
+with **no test and no caller** - nothing in `tests/` imported it and no `Makefile` or
+`package.json` target ran it - so this entry's measured zero AND this entry's own settling mechanism
+both rested on a module that could rot unnoticed. `tests/schgen/elk/obstacle-census.test.ts` now
+drives every classification rule against a name its cited producer really writes, asserts an
+unrecognised name is reported rather than dropped, and runs the census end to end over a real parity
+circuit through the real `elkjs`.
+
+**One category is unreachable by any rule and is recorded rather than left as a hole:**
+`pwr-flag-glyph`. `glyphPair` writes *"glyph of power symbol …"* for a `PWR_FLAG` too and nothing in
+the name says `flag: true`, so the census would file a flag glyph as a plain power glyph. The test
+pins that as the single exception, so it cannot quietly become two.
 
 - **Found** 2026-10-20, Task 13, Step 6.
 - **Evidence** `tools/schgen/elk/obstacle-census.ts` over `PARITY_CASES`: 12 blocks, 0 drawn, 0
@@ -13921,3 +13985,106 @@ boundary, OPEN below it"* reaching the drawing.
   adapter.** Met as far as `negotiablePort` reaches. **MECHANISM for the residue, untried:** declare
   a direction for the nets that cross a BLOCK boundary without being a port of the network, which is
   G99's open fifth input and is a declaration question rather than a geometry one.
+
+### G194 - R31's justification says the containment collapse preserves connectivity, and that is true only WITH a junction; a guard that checked it was written, measured, and deleted
+
+Ruling **R31** collapses a same-net collinear containment because *"the contained span's endpoints
+stay covered by the container"*, so dropping it *"changes neither the drawn picture nor the
+connectivity"*. **The first half is true geometrically. The second needs a junction, and the ruling
+does not say so.**
+
+`connectedComponents` joins a wire to another wire or to a pin **only at coincident ENDS** - its own
+module comment says why: *"a pin end or wire end on a wire's INTERIOR connects ONLY with a junction
+there"*, which is KiCad's rule. The containments here are between consecutive chain edges `X:k` and
+`X:k+1` sharing a terminal, so the contained segment's **far** endpoint carries the join to the rest
+of edge `X:k`. After the collapse that endpoint sits in the container's **interior**.
+
+**A PARTITION GUARD WAS WRITTEN AND IT FIRES.** `[RAN]` On `transistor-preamp/tp-leg-upper`,
+collapsing the one containment takes a **4-piece partition to 5**, and with the guard in place
+**R31 could not take effect on a single block** - every one refused on it instead of on clause (d).
+So the concern is real rather than theoretical, and reading R31's justification as self-evidently
+true would be wrong.
+
+**IT WAS DELETED ANYWAY, AND THE REASON IS THAT IT ANSWERED THE QUESTION WITH THE WRONG MODEL.**
+`connectedComponents` cannot see junctions by construction, so a partition comparison through it can
+only ever report the junction-free reading. **The gate that does see it is spec §1.4 obligation 2**,
+and it was already built: the collapse makes that endpoint a **degree-3 branch point**,
+`branchJunctions` requires a junction there, `junctionPoints` does not emit one at a pass-through
+(it counts coincident ENDS), and `junctionProblems` refuses by name. `[RAN]` With R31 live and the
+**G188** probe spacings, `optical-compressor/oc-power` and `transistor-preamp/tp-stage` refuse at
+exactly that gate - *"net GND branches at (20.32, 21.59) (t-junction) and no junction is emitted
+there"* and six more on `tp-stage`. **Two checks for one question is what `CLAUDE.md` forbids**, and
+of the two the obligation-2 one is strictly more precise.
+
+**WHAT A LATER READER MUST NOT CONCLUDE.** Not *"the collapse is safe"*. The correct statement is:
+**the collapse is safe when a junction is emitted at the contained segment's interior endpoint, and
+obligation 2 is what refuses the drawing when one is not.** On this corpus that refusal currently
+fires, which means the collapse is **not yet** connectivity-preserving in practice - it has moved
+the problem from clause (d) to obligation 2, where it is a more specific and more actionable
+refusal.
+
+- **Found** 2026-10-20, Task 13 round 2, while implementing R31.
+- **Evidence** the 4-to-5 partition measurement on `tp-leg-upper`, printed by the guard before it
+  was removed; the two obligation-2 refusals with their named points; and the stop census under R31
+  (snap 9, junctions 2, obligation 3 1 with the G188 spacings). A check that could have failed and
+  still can: `junctionProblems` compares `branchJunctions` against `junctionPoints`, two
+  independently computed sets, and `tests/schgen/elk/adapt.test.ts` drives the comparison.
+- **Verified** CONFIRMED - this writer wrote the guard, measured it, read the obligation-2 refusals
+  and removed it.
+- **Why it is open** the drawing still does not pass obligation 2 on two blocks, and whether the
+  right answer is to emit a junction at such a point or to split the container there is a decision
+  about what the canonical topology IS, not a defect in these modules. `junctionPoints` is the
+  ported *cosmetic* rule; making it emit at pass-throughs would change template output too.
+- **What would settle it** **CRITERION: after the containment collapse, every point that carries a
+  join in the pre-collapse topology still carries one in the emitted schematic - by coincidence of
+  ends, or by a junction that is actually emitted.** **MECHANISMS, both untried and they are
+  different decisions, not two routes to one place:** (1) **split the container** at the contained
+  segment's interior endpoint, so the join is by coincident ends and no junction is needed - which
+  keeps `junctionPoints` untouched but adds a segment the router did not draw, and is therefore a
+  repair obligation 5 would have to be read against; (2) **emit a junction at every branch point the
+  canonical topology requires**, making `junctionPoints`' cosmetic rule the wrong source for an ELK
+  sheet and giving the emitter `branchJunctions` instead - which is the larger change and touches
+  what a template sheet emits.
+
+### G195 - spec §1.4 obligation 3 says "rotation AND mirroring", and mirroring is unrepresentable anywhere in this generator
+
+`[CODE]` `Rotation` in `lib/schgen/render/geometry.ts` is `0 | 90 | 180 | 270` and **nothing else**.
+`grep -rn "mirror" --include="*.ts" lib/` returns **8 lines and not one is geometric**: a netlist
+writer's *"the mirror of importLegacyNetlist"*, a validator *"mirroring"* another module's shape,
+and six SPICE-model provenance notes about download mirrors. There is no mirror axis on `Placement`,
+no mirror in `pinEnd`, `placeBox` or `rotate`, and no KiCad `(mirror x)` in the emitter.
+
+**So obligation 3's second verb cannot be checked, and until now nothing said so.** The obligation
+reads *"Port positions survive rotation **and mirroring** by being recomputed, never carried"*, and
+§1.5 states the semantic half it protects: *"the same NPN mirrored for readability keeps its pin
+identity - mirroring moves geometry, never pin assignment. A transform that changes which terminal a
+pad or wire reaches is a defect, not a style."* **Half of that sentence is about an operation this
+generator cannot perform.**
+
+**IT IS NOT A HOLE IN THE CHECK, IT IS A HOLE IN THE VOCABULARY**, and the distinction matters for
+whoever closes it. Task 13's four-link test exercises the obligation as far as the model reaches: a
+five-pin `Fix:REG3` at rotation 0 and at 180, every pin keeping its net while the geometry moves on
+both axes. **A rotation by 180 is not a mirror** - it preserves handedness, and a reflection does
+not - so no test in this repository has ever exercised a transform that could swap a pin's identity
+by reflection, because no such transform exists to exercise.
+
+- **Found** 2026-10-20 by the Task 13 round-1 review, recorded at round 2.
+- **Evidence** the `Rotation` declaration read directly; the `grep` above with all 8 hits
+  classified; and `tests/schgen/elk/adapt.test.ts`'s rotation test, which covers rotation only. A
+  check that could have failed: KiCad's symbol instances carry a `(mirror x|y)` token and the
+  emitter writes none, so a round-trip of a mirrored symbol would not survive - nothing exercises
+  that because nothing produces one.
+- **Verified** CONFIRMED - this writer ran the grep and read the type. **RELAYED for the finding
+  itself**, which is the review's.
+- **Why it is open** adding a mirror is a change to `Placement`, to `pinEnd`/`placeBox`, to the
+  emitter and to every clearance check that reads a placed box - and **nothing in the tree wants one
+  yet**, because §1.5's authority order gives orientations to templates and to a rule library that
+  returns rotations. It is recorded so that nobody reads obligation 3 as fully discharged.
+- **What would settle it** **CRITERION: either a mirrored placement is representable and the
+  four-link test covers one, or spec §1.4 obligation 3 is amended to say that mirroring is out of
+  scope at this milestone.** **The second is a controller decision and is probably the right one for
+  M1**; it is named first because it is cheaper and because an obligation nothing can satisfy is
+  worse than an obligation deliberately narrowed. **MECHANISM for the first, untried:** add a
+  `mirror: "none" | "x" | "y"` to `Placement`, thread it through `rotate`/`pinEnd`/`placeBox`, and
+  emit KiCad's `(mirror …)`. The cost is every consumer of a placed box, which is most of
+  `lib/schgen/render/`.

@@ -43,12 +43,12 @@ import { ELK_RENDERER, clearanceViolation, invalidGeometry } from "../render/blo
 import { junctionPoints, fmtPoint } from "../render/connectivity.ts"
 import { samePoint, type Point } from "../render/geometry.ts"
 import { readElkGraph, type Adapted } from "./read-graph.ts"
-import { canonicalTopology, junctionProblems } from "./junctions.ts"
+import { canonicalTopology, junctionProblems, type CanonicalTopology } from "./junctions.ts"
 import { snapToGrid } from "./snap.ts"
 import { layoutItems, placedPins, checkLayout } from "../render/layout-check.ts"
 import { obstaclesOf, type ProblemObstacles } from "../render/problem-obstacles.ts"
 import type { ElkOutcome } from "./graph.ts"
-import type { BlockLayout, BlockSubgraph, RealiseResult } from "../render/block-types.ts"
+import type { BlockLayout, BlockSubgraph, RealiseResult, Wire } from "../render/block-types.ts"
 
 
 /**
@@ -104,8 +104,21 @@ function emittedJunctions(g: BlockSubgraph, layout: BlockLayout): readonly Point
 export interface CanonicalisationCounts {
   readonly collapsed: number
   readonly zeroLength: number
+  /** Same-net collinear containments collapsed onto their container - ruling **R31**. */
+  readonly contained: number
   readonly wiresBefore: number
   readonly wiresAfter: number
+}
+
+/** `t`'s three removal counts against the wire list it was built from. One shape, three callers. */
+function countsOf(before: readonly Wire[], t: CanonicalTopology): CanonicalisationCounts {
+  return {
+    collapsed: t.collapsed,
+    zeroLength: t.zeroLength,
+    contained: t.contained,
+    wiresBefore: before.length,
+    wiresAfter: before.length - t.collapsed - t.zeroLength - t.contained,
+  }
 }
 
 export interface AdaptReport {
@@ -146,7 +159,16 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
           "out and the drawing the emitter would produce are not the same geometry (spec 1.4 " +
           `obligation 3). ${disagreements.join("; ")}`,
       ),
-      counts: null,
+      // **The counts ARE computable here and round 1 returned null, which omitted a whole block
+      // from the G106 measurement** - `oc-sidechain`, the one block that takes this arm, and its
+      // 15 collapsed duplicates. The geometry this refusal is about is a PORT position; the wire
+      // topology is independent of it and canonicalising it measures the backend exactly as it
+      // does on every other block. The argument that earned `zeroLength` its place - do not throw
+      // away a measurement you have already made - applies unchanged.
+      counts: countsOf(
+        built.wires,
+        canonicalTopology({ placements: built.placements, wires: built.wires, anchors: built.anchors }, placedPins(g, built.placements)),
+      ),
       pairs: [],
       problems: [],
     }
@@ -163,24 +185,15 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
           "neither an exact duplicate nor a clean T, so the wire topology has more than one reading " +
           `and none of them is chosen (spec 1.4 revision 4, clause d). ${pre.ambiguous.join("; ")}`,
       ),
-      // The counts are known even here - deduplication runs before the ambiguity check - and the
-      // brief's Step 5 requires them per block, so a refusal reports what it measured.
-      counts: {
-        collapsed: pre.collapsed,
-        zeroLength: pre.zeroLength,
-        wiresBefore: built.wires.length,
-        wiresAfter: built.wires.length - pre.collapsed - pre.zeroLength,
-      },
+      // The counts are known even here - deduplication and the containment collapse both run
+      // before the ambiguity check - and the brief's Step 5 requires them per block, so a refusal
+      // reports what it measured.
+      counts: countsOf(built.wires, pre),
       pairs: [],
       problems: [],
     }
   }
-  const counts: CanonicalisationCounts = {
-    collapsed: pre.collapsed,
-    zeroLength: pre.zeroLength,
-    wiresBefore: built.wires.length,
-    wiresAfter: pre.wires.length,
-  }
+  const counts = countsOf(built.wires, pre)
 
   const snapped = snapToGrid({ placements: built.placements, wires: pre.wires, anchors: built.anchors })
   if (!snapped.ok) {
@@ -224,6 +237,9 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
         "be drawn.",
     )
   }
+  // `post.contained` is NOT asserted zero: snapping can bring two same-net segments onto one line
+  // where they were parallel before, and a containment appearing there has the same single reading
+  // ruling R31 gives any other. It is reported in the counts rather than refused.
 
   const layout: BlockLayout = { placements: snapped.placements, wires: post.wires, anchors: snapped.anchors }
 

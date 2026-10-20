@@ -68,6 +68,14 @@ export type CanonicalTopology =
        * the figures it is meant to be compared against.
        */
       readonly zeroLength: number
+      /**
+       * How many same-net collinear CONTAINMENTS were collapsed onto their container - ruling
+       * **R31**, spec §1.4 revision 5. **Reported, never silent**, for the same reason `collapsed`
+       * is: a drawing whose canonicalisation removed thirty segments is a finding about the backend
+       * even when the result is valid, and this count IS the measure of **G189**'s chain-routing
+       * defect once the refusal stops hiding it.
+       */
+      readonly contained: number
     }
   /**
    * An overlap that is neither a duplicate nor a clean T: named segments, and a refusal.
@@ -81,7 +89,14 @@ export type CanonicalTopology =
    * BEFORE the ambiguity check (see `canonicalTopology`), so both numbers are already known when
    * this arm is taken; dropping them would be throwing away a measurement, not declining to make one.
    */
-  | { readonly ok: false; readonly ambiguous: readonly string[]; readonly collapsed: number; readonly zeroLength: number }
+  | {
+      readonly ok: false
+      readonly ambiguous: readonly string[]
+      readonly collapsed: number
+      readonly zeroLength: number
+      /** Zero on this arm unless the containments were collapsed before the refusal was reached. */
+      readonly contained: number
+    }
 
 /** A segment's geometry, independent of which end was called `a`. */
 function geometryKey(w: Wire): string {
@@ -117,45 +132,129 @@ function collinearOverlap(w1: Wire, w2: Wire): readonly [Point, Point] | null {
   return [at(lo), at(hi)]
 }
 
-const describe = (w: Wire, i: number): string => `wire ${i} (net ${w.net}, ${fmtPoint(w.a)}-${fmtPoint(w.b)})`
+/**
+ * One wire named for a refusal, **by its index in the list `canonicalTopology` was HANDED**.
+ *
+ * **IT IS NOT THE INDEX IN THE POST-DEDUPLICATION LIST, AND THE DIFFERENCE COST A REVIEWER A WRONG
+ * INTERMEDIATE CONCLUSION.** Round 1 numbered the survivors, so a message saying *"wire 17"* named
+ * nothing a reader could find in the geometry they had in front of them - zero-length drops and
+ * duplicate collapses had already shifted every index. `Tracked` carries the original position
+ * through both, so the number in a message indexes `l.wires` as the caller built it.
+ */
+interface Tracked {
+  readonly wire: Wire
+  /** Position in the `BlockLayout.wires` list handed to `canonicalTopology`. */
+  readonly index: number
+}
+
+const describe = (t: Tracked): string =>
+  `wire ${t.index} (net ${t.wire.net}, ${fmtPoint(t.wire.a)}-${fmtPoint(t.wire.b)})`
 
 /**
- * Every ambiguous overlap in `wires`, named - clause (d).
+ * The span of a collinear segment along its own axis, as `[lo, hi]`.
  *
- * Two cases, and the second is the one that would otherwise be read as a duplicate:
- *
- * - **same net, collinear, overlapping over a positive length, not an exact duplicate.** Which
- *   segment the shared stretch belongs to has two readings and nothing here can choose. KiCad draws
- *   both and a reader sees one line;
- * - **DIFFERENT nets, collinear, overlapping over a positive length - including when the two
- *   geometries are exactly equal.** An exact geometric match of two different nets is not a
- *   duplicate at all: it is a short drawn as one line, and deduplicating it would delete one of two
- *   nets' wires and leave the drawing asserting a connection nobody declared.
+ * Only meaningful against another segment on the SAME line, which `collinearOverlap` establishes.
  */
-function ambiguousOverlaps(wires: readonly Wire[]): readonly string[] {
+function spanOf(w: Wire): readonly [number, number] {
+  const along = (p: Point): number => (isHorizontal(w) ? p.x : p.y)
+  const a = along(w.a)
+  const b = along(w.b)
+  return a <= b ? [a, b] : [b, a]
+}
+
+/** True when `inner`'s span lies wholly within `outer`'s. Equal spans are deduplicated earlier. */
+function contains(outer: Wire, inner: Wire): boolean {
+  const [ol, oh] = spanOf(outer)
+  const [il, ih] = spanOf(inner)
+  return ol <= il && ih <= oh
+}
+
+/**
+ * Every ambiguous overlap in `wires`, named - clause (d) as **spec §1.4 revision 5** refines it.
+ *
+ * **CONTAINMENTS ARE NOT HERE ANY MORE, AND THE REFINEMENT IS NARROW.** Round 1 of this function
+ * refused every same-net collinear overlap that was not an exact duplicate, and called them all
+ * *partial*. **That word was wrong where it decided the ruling.** The Task 13 review rebuilt wire
+ * provenance from ELK's raw sections and measured the interval relation of every pair over all
+ * twelve blocks: **30 of 30 are CONTAINMENTS** - one span wholly inside the other, same net, same
+ * line, between two CONSECUTIVE edges of the routed chain (`X:k` and `X:k+1`) - **0 partial, 0
+ * cross-net**, and identically so with padding and the remaining spacings at whole grid steps.
+ *
+ * A same-net collinear containment has exactly one reading: **the interval union IS the longer
+ * segment.** Dropping the contained one changes neither the drawn picture nor the connectivity, so
+ * it is deduplication one dimension up - clause (a)'s own job applied to a containment rather than
+ * to an exact coincidence. Controller ruling **R31** settles it, and `collapseContainments` does it,
+ * counted and never silent.
+ *
+ * **WHAT STILL REFUSES, and both arms stay armed:**
+ *
+ * - **a CROSS-NET collinear overlap, including two exactly equal geometries.** That is not a
+ *   duplicate at all: it is a short drawn as one line, and deduplicating it would delete one of two
+ *   nets' wires and leave the drawing asserting a connection nobody declared;
+ * - **a same-net NON-containment overlap - a genuine partial.** Neither span covers the other, so
+ *   the shared stretch belongs to both readings and nothing here may choose one. **The measured
+ *   population is 0 of 30**, so this is currently a guard against a shape this corpus does not
+ *   produce, and R31 says in as many words that it stays armed for the first one that does.
+ */
+function ambiguousOverlaps(wires: readonly Tracked[]): readonly string[] {
   const out: string[] = []
   for (let i = 0; i < wires.length; i += 1) {
     for (let j = i + 1; j < wires.length; j += 1) {
       const a = wires[i]
       const b = wires[j]
       if (a === undefined || b === undefined) continue
-      const overlap = collinearOverlap(a, b)
+      const overlap = collinearOverlap(a.wire, b.wire)
       if (overlap === null) continue
-      const identical = geometryKey(a) === geometryKey(b)
-      if (identical && a.net === b.net) continue
+      if (a.wire.net === b.wire.net) {
+        // A containment has one reading and was collapsed before this ran; an exact duplicate was
+        // collapsed before that. What is left on one net is a genuine partial.
+        if (contains(a.wire, b.wire) || contains(b.wire, a.wire)) {
+          throw new Error(
+            `${describe(a)} and ${describe(b)} are a same-net containment and reached the ` +
+              "ambiguity check, which collapseContainments should have removed before it. This is " +
+              "a defect in lib/schgen/elk/junctions.ts, not a layout that cannot be drawn.",
+          )
+        }
+        out.push(
+          `${describe(a)} and ${describe(b)} overlap along ${fmtPoint(overlap[0])}-${fmtPoint(overlap[1])} ` +
+            "and NEITHER span contains the other, so this is a genuine partial: the shared stretch " +
+            "belongs to both readings and nothing here may choose one. A containment would have " +
+            "been collapsed (spec 1.4 revision 5, ruling R31); this is not repaired (obligation 5), " +
+            "so split or reroute the segment upstream.",
+        )
+        continue
+      }
       out.push(
-        `${describe(a, i)} and ${describe(b, j)} overlap along ${fmtPoint(overlap[0])}-${fmtPoint(overlap[1])}, ` +
-          (a.net === b.net
-            ? "which is neither an exact duplicate nor a clean T: the shared stretch belongs to " +
-              "both readings and nothing here may choose one. It is not repaired (spec 1.4 " +
-              "obligation 5); split or reroute the segment upstream."
-            : `and they are on different nets (${a.net} and ${b.net}), so this is a short drawn as ` +
-              "one line. It is not deduplicated: deleting either wire would leave the drawing " +
-              "asserting a connection nobody declared."),
+        `${describe(a)} and ${describe(b)} overlap along ${fmtPoint(overlap[0])}-${fmtPoint(overlap[1])}, ` +
+          `and they are on different nets (${a.wire.net} and ${b.wire.net}), so this is a short ` +
+          "drawn as one line. It is not deduplicated: deleting either wire would leave the drawing " +
+          "asserting a connection nobody declared.",
       )
     }
   }
   return out
+}
+
+/**
+ * Same-net collinear containments collapsed onto the containing segment - **ruling R31**.
+ *
+ * A single pass suffices and the reason is worth stating: a segment is dropped only when another
+ * segment of its net strictly contains it, and containment is transitive, so if the container is
+ * itself dropped its own container covers the inner one too. Equal spans never reach here - they
+ * are exact duplicates and `collapsed` has already taken them.
+ */
+function collapseContainments(wires: readonly Tracked[]): { readonly kept: readonly Tracked[]; readonly contained: number } {
+  const kept = wires.filter((t, i) =>
+    !wires.some((other, j) => {
+      if (i === j || other.wire.net !== t.wire.net) return false
+      if (collinearOverlap(t.wire, other.wire) === null) return false
+      const [tl, th] = spanOf(t.wire)
+      const [ol, oh] = spanOf(other.wire)
+      // Strictly longer, so of two equal spans neither removes the other (and duplicates are gone).
+      return ol <= tl && th <= oh && oh - ol > th - tl
+    }),
+  )
+  return { kept, contained: wires.length - kept.length }
 }
 
 /** The nets whose segments touch `p`, and how many segment-ends and pass-throughs are there. */
@@ -240,33 +339,70 @@ function branchesOf(wires: readonly Wire[], pins: readonly PlacedPin[]): readonl
 /**
  * The canonical topology of `l`, or a refusal naming every ambiguous overlap.
  *
- * Order matters and is stated: **zero-length segments are dropped first**, then exact duplicates of
- * one net are collapsed, then the ambiguity check runs over what is left. Running the ambiguity
- * check first would report every duplicate pair as an ambiguous overlap, which is the failure this
- * module exists to avoid - a duplicate is a known, countable backend artefact, and the ambiguous
- * arm is for the shape nobody has a reading for.
+ * **The order is load-bearing and is stated once, here:**
+ *
+ * 1. **zero-length segments are dropped**, counted as `zeroLength`;
+ * 2. **exact same-net duplicates are collapsed**, counted as `collapsed` - clause (a);
+ * 3. **same-net collinear CONTAINMENTS are collapsed onto the container**, counted as `contained` -
+ *    clause (a) one dimension up, ruling **R31**;
+ * 4. **the ambiguity check runs over what is left** - cross-net overlaps and genuine partials.
+ *
+ * Running the ambiguity check earlier would report every duplicate and every containment as
+ * ambiguous, which is the failure this module exists to avoid: those are known, countable backend
+ * artefacts, and the ambiguous arm is for the shape nobody has a reading for.
+ *
+ * **R31's JUSTIFICATION SAYS THE COLLAPSE PRESERVES CONNECTIVITY, AND THAT IS TRUE ONLY WITH A
+ * JUNCTION - WHICH OBLIGATION 2 IS WHAT ENFORCES.** The ruling's reason is that the contained
+ * span's endpoints *"stay covered by the survivor"*. They do, geometrically. But
+ * `connectedComponents` joins a wire to a wire or a pin **only at coincident ENDS** - its own
+ * module comment says so, because *"a pin end or wire end on a wire's INTERIOR connects ONLY with a
+ * junction there"* - so after the collapse, whatever ended at the contained segment's far endpoint
+ * sits in the container's INTERIOR and is joined only if a junction is emitted at that point.
+ *
+ * **A partition comparison here was written, measured and then DELETED, and both halves are worth
+ * knowing** (`docs/known-gaps.md` **G194**). `[RAN]` It fires: on `tp-leg-upper` the collapse takes
+ * a 4-piece partition to 5, so the concern is real rather than theoretical, and with the guard in
+ * place **R31 could not take effect on any block**. But `connectedComponents` cannot see junctions
+ * by construction, so the guard was answering a question with a model that excludes the answer.
+ * **The gate that does see it is obligation 2**: the collapse makes that endpoint a degree-3 branch
+ * point, `branchJunctions` requires a junction there, `junctionPoints` does not emit one at a
+ * pass-through, and `junctionProblems` refuses by name. `[RAN]` With R31 live, `oc-power` and
+ * `tp-stage` refuse at exactly that gate naming exactly those points. The check exists and is more
+ * precise than the guard was, and two checks for one question is what `CLAUDE.md` forbids.
  */
 export function canonicalTopology(l: BlockLayout, pins: readonly PlacedPin[]): CanonicalTopology {
-  const extent = l.wires.filter((w) => !samePoint(w.a, w.b))
+  const extent: Tracked[] = []
+  l.wires.forEach((wire, index) => {
+    if (!samePoint(wire.a, wire.b)) extent.push({ wire, index })
+  })
   const zeroLength = l.wires.length - extent.length
 
-  const kept: Wire[] = []
+  const deduped: Tracked[] = []
   const seen = new Set<string>()
   let collapsed = 0
-  for (const w of extent) {
-    const key = `${w.net} ${geometryKey(w)}`
+  for (const t of extent) {
+    const key = `${t.wire.net}\u0000${geometryKey(t.wire)}`
     if (seen.has(key)) {
       collapsed += 1
       continue
     }
     seen.add(key)
-    kept.push(w)
+    deduped.push(t)
   }
 
-  const ambiguous = ambiguousOverlaps(kept)
-  if (ambiguous.length > 0) return { ok: false, ambiguous, collapsed, zeroLength }
+  const { kept, contained } = collapseContainments(deduped)
 
-  return { ok: true, wires: kept, branches: branchesOf(kept, pins), collapsed, zeroLength }
+  const ambiguous = ambiguousOverlaps(kept)
+  if (ambiguous.length > 0) return { ok: false, ambiguous, collapsed, zeroLength, contained }
+
+  return {
+    ok: true,
+    wires: kept.map((t) => t.wire),
+    branches: branchesOf(kept.map((t) => t.wire), pins),
+    collapsed,
+    zeroLength,
+    contained,
+  }
 }
 
 /**
@@ -344,10 +480,20 @@ export function junctionProblems(
     )
   }
   for (const p of emitted) {
-    if (crossingKeys.has(pointKey(p)) && !requiredKeys.has(pointKey(p))) {
+    // **The cross-net arm is tested FIRST and unconditionally** - round 1 guarded it with
+    // `&& !requiredKeys.has(...)`, so a point that is simultaneously one net's branch AND another
+    // net's contact was accepted. The obligation is *"every emitted junction sits on exactly one
+    // net"*, which that reading made non-total: a junction there shorts the second net however
+    // legitimately the first one branches. Benign on today's corpus and not a reason to leave a
+    // partial check.
+    if (crossingKeys.has(pointKey(p))) {
       out.push(
         `a junction is emitted at ${fmtPoint(p)}, where segments of DIFFERENT nets meet. A crossing ` +
-          "carries no junction: one there shorts the two nets in the exported netlist",
+          "carries no junction: one there shorts the two nets in the exported netlist" +
+          (requiredKeys.has(pointKey(p))
+            ? ". It is ALSO a branch point of one net, which does not excuse it: a junction sits on " +
+              "exactly one net, and this point carries two"
+            : ""),
       )
       continue
     }

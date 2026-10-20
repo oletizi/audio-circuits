@@ -33,7 +33,36 @@ import type { PlacedPin } from "../../../lib/schgen/render/unit-pins.ts"
 import type { ElkOutcome } from "../../../lib/schgen/elk/graph.ts"
 import type { NetName } from "../../../lib/schgen/ir/types.ts"
 import type { Point } from "../../../lib/schgen/render/geometry.ts"
-import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api.js"
+import type { ElkEdge, ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api.js"
+
+/**
+ * `e` as the extended edge this graph only ever builds - **narrowed, not asserted.**
+ *
+ * `elkjs` types a graph's `edges` as `ElkEdge`, a union whose other arm is the primitive
+ * `source`/`target` form. `elkInputOf` emits only `ElkExtendedEdge` (it sets `sources`/`targets`),
+ * so the narrowing always succeeds - and `isExtended` is a user-defined type predicate backed by a
+ * runtime test that says so, where `e as ElkExtendedEdge` was a claim with nothing behind it. The
+ * fields are read with `Reflect.get`, as `tools/schgen/elk/layout.ts`'s `messageOf` already does,
+ * so nothing is asserted anywhere along the path. A primitive edge reaching here is a
+ * change in the graph builder, and it stops the test by name rather than reading `undefined`
+ * sections off an object that never had any.
+ */
+function isExtended(e: ElkEdge): e is ElkExtendedEdge {
+  const sources: unknown = Reflect.get(e, "sources")
+  const targets: unknown = Reflect.get(e, "targets")
+  return Array.isArray(sources) && Array.isArray(targets)
+}
+
+function extended(e: ElkEdge): ElkExtendedEdge {
+  if (!isExtended(e)) {
+    throw new Error(
+      `edge ${e.id} is a primitive ElkEdge, not an ElkExtendedEdge. elkInputOf builds every edge ` +
+        "with `sources` and `targets` (lib/schgen/elk/graph.ts, edgesForNet), so this fixture and " +
+        "the graph builder disagree.",
+    )
+  }
+  return e
+}
 
 /** One block through the real worker. A raise is returned as the outcome it is, never swallowed. */
 async function laidOut(g: BlockSubgraph): Promise<ElkOutcome> {
@@ -187,7 +216,7 @@ async function gridAlignedOutcome(g: BlockSubgraph): Promise<Extract<ElkOutcome,
     ...outcome.graph,
     children: (outcome.graph.children ?? []).map(alignNode),
     edges: (outcome.graph.edges ?? []).map((e) => {
-      const ee = e as ElkExtendedEdge
+      const ee = extended(e)
       return {
         ...ee,
         sections: (ee.sections ?? []).map((sec) => ({
@@ -315,7 +344,7 @@ test("a block reaching the clearance checks is graded by them, not by the gates 
 test("a displaced ELK section endpoint is ignored: the wire attaches at the recomputed pin end", async () => {
   const g = dividerSubgraph()
   const outcome = await gridAlignedOutcome(g)
-  const edges = (outcome.graph.edges ?? []) as readonly ElkExtendedEdge[]
+  const edges = (outcome.graph.edges ?? []).map(extended)
   const first = edges[0]
   expect(first, "the fixture must have an edge to displace").toBeDefined()
   if (first === undefined) return

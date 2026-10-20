@@ -10,6 +10,8 @@
 
 import { expect, test } from "bun:test"
 import { branchJunctions, canonicalTopology, crossings, junctionProblems } from "../../../lib/schgen/elk/junctions.ts"
+import { checkWireSafety } from "../../../lib/schgen/render/wire-safety.ts"
+import type { ConnItem } from "../../../lib/schgen/render/connectivity.ts"
 import { GRID } from "../../../lib/schgen/render/geometry.ts"
 import type { BlockLayout, Wire } from "../../../lib/schgen/render/block-types.ts"
 import type { PlacedPin } from "../../../lib/schgen/render/unit-pins.ts"
@@ -47,11 +49,31 @@ function branchOnPinEnd(): { readonly l: BlockLayout; readonly pins: readonly Pl
   }
 }
 
-/** Two collinear segments of one net sharing a stretch: neither a duplicate nor a clean T. */
+/**
+ * Two collinear segments of one net where **NEITHER span contains the other** - a genuine partial.
+ *
+ * `0..4` and `2..6`: they share `2..4` and each runs past the other, so the shared stretch has two
+ * readings and clause (d) refuses. This is the shape ruling **R31** leaves refusing, and the shape
+ * the twelve parity blocks do **not** produce (measured: 0 of 30).
+ */
 function partiallyOverlappingSegments(): BlockLayout {
   return layout([
     { a: { x: 0, y: 0 }, b: { x: G(4), y: 0 }, net: "A" },
     { a: { x: G(2), y: 0 }, b: { x: G(6), y: 0 }, net: "A" },
+  ])
+}
+
+/**
+ * Two collinear segments of one net where one span lies **wholly inside** the other - a containment.
+ *
+ * `0..6` contains `0..4`, sharing the `0` endpoint, which is the exact shape the routed chain
+ * produces: two CONSECUTIVE edges meeting at a terminal, the second retracing the first and running
+ * on. **30 of the 30 overlaps across all twelve blocks are this**, and ruling **R31** collapses it.
+ */
+function containedSegment(): BlockLayout {
+  return layout([
+    { a: { x: 0, y: 0 }, b: { x: G(6), y: 0 }, net: "A" },
+    { a: { x: 0, y: 0 }, b: { x: G(4), y: 0 }, net: "A" },
   ])
 }
 
@@ -118,13 +140,13 @@ test("a branch at a pin end is a different object from one in free space", () =>
   if (bare.ok) expect(bare.branches.map((b) => b.kind)).toEqual(["t-junction"])
 })
 
-test("an overlap that is neither a duplicate nor a clean T REFUSES, naming both segments", () => {
+test("an overlap that is neither a duplicate nor a containment REFUSES, naming both segments", () => {
   const t = canonicalTopology(partiallyOverlappingSegments(), NO_PINS)
   expect(t.ok).toBe(false)
   if (!t.ok) {
     expect(t.ambiguous.join(" ")).toContain("wire 0")
     expect(t.ambiguous.join(" ")).toContain("wire 1")
-    expect(t.ambiguous.join(" ")).toContain("neither an exact duplicate nor a clean T")
+    expect(t.ambiguous.join(" ")).toContain("NEITHER span contains the other")
   }
 })
 
@@ -207,40 +229,142 @@ test("a refused topology answers nothing rather than answering emptily", () => {
 })
 
 /**
- * **THE DUPLICATED RULE, ASSERTED EQUAL.** `junctions.ts`'s `collinearOverlap` is a re-derivation of
- * `wire-safety.ts`'s, which is module-private there. The criterion is that a collinear overlap is
- * decided by ONE rule; the mechanism available without diverging a tenth ported file is two copies,
- * so this is what holds them in step - the same four shapes `tests/schgen/render/wire-safety.test.ts`
- * uses for its collinear case, each asserted to reach the same verdict here.
+ * **RULING R31, DRIVEN: a same-net collinear containment is deduplication one dimension up.**
+ *
+ * The interval union IS the container, so there is exactly one reading, and the count is reported
+ * the way `collapsed` is. Before R31 this shape refused, and **that refusal was what stopped all
+ * twelve parity blocks** - so this test is the difference between the generator refusing everything
+ * and the generator getting as far as the next gate.
+ */
+test("a same-net containment COLLAPSES onto its container, and the count is reported", () => {
+  const t = canonicalTopology(containedSegment(), NO_PINS)
+  expect(t.ok).toBe(true)
+  if (!t.ok) return
+  expect(t.contained).toBe(1)
+  expect(t.collapsed).toBe(0)
+  expect(t.zeroLength).toBe(0)
+  // The CONTAINER survives, not the contained one: the union is the longer span.
+  expect(t.wires.length).toBe(1)
+  expect(t.wires[0]?.b).toEqual({ x: G(6), y: 0 })
+})
+
+test("a containment is counted apart from an exact duplicate, which is a different defect", () => {
+  const t = canonicalTopology(
+    layout([
+      { a: { x: 0, y: 0 }, b: { x: G(6), y: 0 }, net: "A" },
+      { a: { x: 0, y: 0 }, b: { x: G(6), y: 0 }, net: "A" },
+      { a: { x: 0, y: 0 }, b: { x: G(4), y: 0 }, net: "A" },
+    ]),
+    NO_PINS,
+  )
+  expect(t.ok).toBe(true)
+  if (!t.ok) return
+  expect(t.collapsed).toBe(1)
+  expect(t.contained).toBe(1)
+  expect(t.wires.length).toBe(1)
+})
+
+/**
+ * **THE PARTIAL ARM STAYS ARMED, and R31 says so in as many words.** Its measured population on
+ * this corpus is 0 of 30, so nothing would notice if it were quietly dropped along with the
+ * containments - which is exactly why it is driven here.
+ */
+test("a same-net GENUINE PARTIAL still REFUSES, and says that neither span contains the other", () => {
+  const t = canonicalTopology(partiallyOverlappingSegments(), NO_PINS)
+  expect(t.ok).toBe(false)
+  if (!t.ok) {
+    expect(t.ambiguous.length).toBe(1)
+    expect(t.ambiguous.join(" ")).toContain("NEITHER span contains the other")
+    expect(t.ambiguous.join(" ")).toContain("genuine partial")
+  }
+})
+
+test("a containment of DIFFERENT nets still REFUSES: R31 is about one net", () => {
+  const t = canonicalTopology(
+    layout([
+      { a: { x: 0, y: 0 }, b: { x: G(6), y: 0 }, net: "A" },
+      { a: { x: 0, y: 0 }, b: { x: G(4), y: 0 }, net: "B" },
+    ]),
+    NO_PINS,
+  )
+  expect(t.ok).toBe(false)
+  if (!t.ok) expect(t.ambiguous.join(" ")).toContain("different nets")
+})
+
+/**
+ * **A REFUSAL NAMES A WIRE BY ITS INDEX IN THE LIST `canonicalTopology` WAS HANDED**, not by its
+ * position among the survivors.
+ *
+ * Round 1 numbered the survivors, so *"wire 17"* named nothing a reader could find in the geometry
+ * in front of them - zero-length drops and duplicate collapses had already shifted every index, and
+ * it cost a reviewer a wrong intermediate conclusion. Here wires 0 and 1 are dropped before the
+ * ambiguity check, so the surviving partial pair is at input indices **2 and 3** and at survivor
+ * indices 0 and 1; the message must say 2 and 3.
+ */
+test("a refusal names a wire by its index in the INPUT list, not among the survivors", () => {
+  const t = canonicalTopology(
+    layout([
+      { a: { x: 0, y: G(9) }, b: { x: 0, y: G(9) }, net: "Z" },
+      { a: { x: G(8), y: G(9) }, b: { x: G(9), y: G(9) }, net: "Z" },
+      { a: { x: 0, y: 0 }, b: { x: G(4), y: 0 }, net: "A" },
+      { a: { x: G(2), y: 0 }, b: { x: G(6), y: 0 }, net: "A" },
+    ]),
+    NO_PINS,
+  )
+  expect(t.ok).toBe(false)
+  if (!t.ok) {
+    expect(t.zeroLength).toBe(1)
+    expect(t.ambiguous.join(" ")).toContain("wire 2")
+    expect(t.ambiguous.join(" ")).toContain("wire 3")
+    expect(t.ambiguous.join(" ")).not.toContain("wire 0")
+  }
+})
+
+/**
+ * **DEVIATION 7's HOLDING MECHANISM, WHICH ROUND 1 CLAIMED AND DID NOT BUILD.**
+ *
+ * `junctions.ts`'s `collinearOverlap` re-derives `wire-safety.ts`'s, which is module-private there.
+ * Round 1's comment said this test *"holds them in step over four shapes"* - and the test never
+ * imported `wire-safety.ts` and never evaluated `checkWireSafety`, so it asserted the coupling in
+ * prose and a change to the ported copy turned nothing red. `checkWireSafety` IS exported, so the
+ * mechanism was available and simply unused.
+ *
+ * The biconditional below is the coupling: **`checkWireSafety` reports a collinear overlap for a
+ * shape exactly when `canonicalTopology` finds one** - as a duplicate (`collapsed`), as a
+ * containment (`contained`) or as a refusal. The two functions disagreeing turns this red.
  */
 test("the collinear-overlap rule agrees with wire-safety's, shape for shape", () => {
-  const overlapping = canonicalTopology(partiallyOverlappingSegments(), NO_PINS)
-  expect(overlapping.ok).toBe(false)
-  // Touching at a point is NOT an overlap: two segments meeting end to end are a corner.
-  const endToEnd = canonicalTopology(
-    layout([
+  const shapes: readonly { readonly name: string; readonly l: BlockLayout }[] = [
+    { name: "genuine partial", l: partiallyOverlappingSegments() },
+    { name: "containment", l: containedSegment() },
+    { name: "exact duplicate", l: layout([
+      { a: { x: 0, y: 0 }, b: { x: G(4), y: 0 }, net: "A" },
+      { a: { x: 0, y: 0 }, b: { x: G(4), y: 0 }, net: "A" },
+    ]) },
+    { name: "end to end", l: layout([
       { a: { x: 0, y: 0 }, b: { x: G(2), y: 0 }, net: "A" },
       { a: { x: G(2), y: 0 }, b: { x: G(4), y: 0 }, net: "A" },
-    ]),
-    NO_PINS,
-  )
-  expect(endToEnd.ok).toBe(true)
-  // Parallel but not collinear is not an overlap either.
-  const parallel = canonicalTopology(
-    layout([
+    ]) },
+    { name: "parallel, not collinear", l: layout([
       { a: { x: 0, y: 0 }, b: { x: G(4), y: 0 }, net: "A" },
       { a: { x: 0, y: G(1) }, b: { x: G(4), y: G(1) }, net: "A" },
-    ]),
-    NO_PINS,
-  )
-  expect(parallel.ok).toBe(true)
-  // Perpendicular crossing is not an overlap: it is a point contact, handled as a branch.
-  const perpendicular = canonicalTopology(
-    layout([
+    ]) },
+    { name: "perpendicular crossing", l: layout([
       { a: { x: 0, y: 0 }, b: { x: G(4), y: 0 }, net: "A" },
       { a: { x: G(2), y: -G(1) }, b: { x: G(2), y: G(1) }, net: "A" },
-    ]),
-    NO_PINS,
-  )
-  expect(perpendicular.ok).toBe(true)
+    ]) },
+  ]
+  // A run over zero shapes, or over shapes that all agree trivially, would say nothing - so both
+  // verdicts must actually occur across the table.
+  let overlapping = 0
+  for (const { name, l } of shapes) {
+    const items: ConnItem[] = l.wires.map((w, i) => ({ kind: "wire", a: w.a, b: w.b, net: w.net, what: `wire ${i}` }))
+    const portedSaysOverlap = checkWireSafety(items).some((p) => p.startsWith("collinear "))
+    const t = canonicalTopology(l, NO_PINS)
+    const hereSaysOverlap = t.ok ? t.collapsed + t.contained > 0 : true
+    expect(hereSaysOverlap, `${name}: wire-safety says ${portedSaysOverlap}`).toBe(portedSaysOverlap)
+    if (portedSaysOverlap) overlapping += 1
+  }
+  expect(overlapping).toBe(3)
+  expect(shapes.length - overlapping).toBe(3)
 })
