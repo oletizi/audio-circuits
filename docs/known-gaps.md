@@ -7022,6 +7022,40 @@ shape**, which is the one failure this file exists to prevent. Fixed at round 2
 by making the extraction total over backticked identifiers rather than by
 narrowing the claim.
 
+**That totality is total over the present corpus and INCIDENTAL for one
+citation shape, which is worth knowing before anyone relies on it.** The round-2
+extraction takes a backticked identifier anywhere, plus a bare identifier at the
+start of a clause, after `AND ` or after `→ `. One cell cites two functions in
+neither form: `obstacle-pairs-pin-text.ts:27`, inside the shared
+`SELF_TEXT_CHECK` constant, reads
+`"symbolTextOverlaps and placedSymbolTextOverlaps (lib/schgen/render/symbol-self-text.ts), through "`
+- no backticks, and a lowercase `and`, which is the exact shape the round-1
+regex missed. **Both names are nonetheless verified**, because each also appears
+backticked elsewhere in the matrix (`obstacle-pairs-body.ts` and
+`obstacle-pairs-reasons.ts`), so the extraction reaches them by another route.
+The consequence: **a future function cited ONLY in that bare-lowercase-`and`
+form, and nowhere else backticked, would still pass unverified.** The guard is
+total in practice today and not structurally total.
+
+- **Found** 2026-10-19 by the Task 5 round-1 scoped re-reviewer, which
+  reproduced the extraction in a standalone script rather than reading the
+  regex, and confirmed by the controller directly:
+  `grep -rn "symbolTextOverlaps and placedSymbolTextOverlaps"
+  lib/schgen/render/` returns that one line, and
+  ``grep -rln '`symbolTextOverlaps`\|`placedSymbolTextOverlaps`'
+  lib/schgen/render/`` returns the two other files. A check that could have
+  failed: had neither name been backticked anywhere, the identifier count would
+  have come up short of 89 and the pinned count would have failed.
+- **Verified** CONFIRMED for the two greps, which this writer ran; RELAYED for
+  the script's reproduction of the count.
+- **What would settle it** **CRITERION:** every function an
+  `obstacle-pairs-*.ts` cell cites is verified to exist, whatever prose shape
+  the citation takes, with no cell relying on the same name appearing in a
+  friendlier form elsewhere. **MECHANISM**, untried: carry each cell's deciding
+  function names as data beside its prose, which is the route round 2 declined
+  in favour of total extraction - the two are alternatives, and this residual is
+  the cost of the one chosen.
+
 **The figures.** 105 cells: **58** name a function this tree contains, **47**
 carry a reason and no check, **44** record in `asymmetric` what their check does
 not reach, **0** are uncovered and **0** carry both a check and a reason.
