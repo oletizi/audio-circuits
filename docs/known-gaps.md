@@ -6510,3 +6510,78 @@ one that fails, would be looking in the wrong file.
   in a session report.
 - **What would settle it** nothing further - this entry records the
   measurement itself and is not waiting on a fix.
+
+### G117 - measured: the Task 4 brief's `extends` examples are wrong for KiCad 10.0.5, and the vendored set is eight symbols in a shape `createResolver` cannot consume - flattening is still required, for different symbols
+
+The M1 plan's Task 4 brief argues that `extends` flattening is non-optional
+because *"KiCad's `R_Small`, `C_Small`, `Conn_01x05` and most of `Device` are
+`(extends …)` symbols whose pins live in the parent."* **Every example in
+that sentence is wrong for the KiCad version this repository vendors
+from, and so is the prevalence claim.** In
+`/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols` (KiCad
+10.0.5, the version `lib/kicad/symbols/PROVENANCE.md` names),
+`Device.kicad_sym` holds **536** top-level symbols of which exactly **5**
+carry `(extends …)`: `Filter_EMI_C`, `Filter_EMI_CommonMode`,
+`Microphone_Ultrasound`, `Q_Photo_NPN_CE` and `Speaker_Ultrasound`.
+`R_Small` and `C_Small` are present and are **not** among them;
+`Conn_01x05` is present in `Connector_Generic.kicad_sym` and is not an
+`extends` symbol either.
+
+**The brief's conclusion survives its examples.** Flattening is still
+required - an unflattened `extends` symbol does silently drop every pin,
+and the repository's own vendoring tool already flattens the one vendored
+symbol that needs it (`PROVENANCE.md`: *"`Transistor_BJT:2N3904` is defined
+in its library as `(extends "Q_NPN_EBC")` … the vendored copy is FLATTENED
+… The other seven are verbatim"*). What changes is **which symbol a test
+can prove it on**: the brief's `Device:R_Small` assertions cannot pass,
+because `R_Small` is neither vendored nor an `extends` symbol, so a literal
+implementation would either fail or be quietly rewritten to assert
+something else.
+
+**Two further shape facts the brief does not reflect.** (1) The vendored set
+is **eight** `.sexpr` files, not six - `PROVENANCE.md`'s own "the other
+seven" plus `2N3904` agrees, so the brief's number was stale when written.
+(2) Each vendored file is **one `(symbol …)` definition in raw library
+text** under `lib/kicad/symbols/<nickname>/<Name>.sexpr`, whereas
+`createResolver(libs: ReadonlyMap<string, string>)` takes
+nickname-to-`.kicad_sym`-**library**-file, each holding many symbols. The
+two sources therefore do not have one shape, and the brief's Step 4
+instruction to *"build that map from the vendored directory first and the
+stock directory second"* cannot be followed literally.
+
+- **Found** 2026-10-19 by the SDD controller while composing Task 4's
+  dispatch, checking the brief's symbol names against the libraries before
+  an implementer could write one from memory - `CLAUDE.md`: *"A KiCad
+  footprint name is checkable - the libraries are on disk. Do not write one
+  from memory; this repository has twice shipped a footprint that does not
+  exist."* The same rule applies to symbol names, and this is the first
+  time it was applied to a plan's own text rather than to code.
+- **Evidence** against the on-disk libraries, each a check that could have
+  returned a different number: `grep -c '^\t(symbol "' Device.kicad_sym`
+  gives 536; `grep -c extends Device.kicad_sym` gives 5, and
+  `grep -n -B 8 extends` names all five; `grep -c '^\t(symbol "R_Small"'`
+  and the same for `C_Small` each give 1, so both exist and neither is in
+  the extends set; `grep -c '^\t(symbol "Conn_01x05"'
+  Connector_Generic.kicad_sym` gives 1. `find lib/kicad/symbols -name
+  "*.sexpr" | wc -l` gives 8; `head` of `lib/kicad/symbols/Device/R.sexpr`
+  shows a bare `(symbol "R" …)` rather than a `(kicad_symbol_lib …)`
+  wrapper.
+- **Verified** CONFIRMED - this writer ran every command above and read the
+  output directly.
+- **Why it is open** it is a defect in a plan document, not in code, and
+  the code it misdirects is not written yet. **Controller rulings R8 and
+  R9** (recorded in this plan's ledger and carried in Task 4's dispatch)
+  settle what Task 4 does instead; this entry exists so the next reader of
+  the brief is not misled by a sentence the plan still contains, and so the
+  substituted symbol is not mistaken for an implementer's convenience.
+- **What would settle it** **CRITERION:** a live `(extends …)` symbol
+  flattens and yields its parent's pins, and the same symbol read
+  unflattened yields an **empty** pin list - the brief's own two-assertion
+  pair, which is what makes the failure mode's silence visible - proven
+  against a symbol verified to exist on disk. **MECHANISM:** R9 selects
+  `Fix:OPAMP2X`, which is `(extends "OPAMP2")` in
+  `__fixtures__/symbols/Fix.kicad_sym` - the fixture library G113 already
+  requires Task 4 to copy, so the test stays machine-independent, and a
+  two-unit op-amp exercises unit handling at the same time. An implementer
+  who finds a better subject should meet the criterion with it and record
+  the deviation.
