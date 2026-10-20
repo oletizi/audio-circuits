@@ -166,7 +166,28 @@
     { "from": "render/templates/opampStage.ts", "to": "lib/schgen/render/templates/opamp-stage.ts" },
     { "from": "render/templates/connectorFanout.ts", "to": "lib/schgen/render/templates/connector-fanout.ts" },
     { "from": "render/templates/index.ts", "to": "lib/schgen/render/templates/index.ts" },
-    { "from": "render/blocks.ts", "to": "lib/schgen/render/blocks.ts" }
+    { "from": "render/blocks.ts", "to": "lib/schgen/render/blocks.ts" },
+    { "from": "__fixtures__/layoutChecks.ts", "to": "tests/schgen/__fixtures__/layout-checks.ts" },
+    { "from": "__fixtures__/requireTool.ts", "to": "tests/schgen/__fixtures__/require-tool.ts" },
+    { "from": "render/templates/railRow.test.ts", "to": "tests/schgen/render/templates/rail-row.test.ts" },
+    { "from": "render/templates/divider.test.ts", "to": "tests/schgen/render/templates/divider.test.ts" },
+    { "from": "render/templates/passiveChain.test.ts", "to": "tests/schgen/render/templates/passive-chain.test.ts" },
+    { "from": "render/templates/crystal.test.ts", "to": "tests/schgen/render/templates/crystal.test.ts" },
+    { "from": "render/templates/regulator.test.ts", "to": "tests/schgen/render/templates/regulator.test.ts" },
+    { "from": "render/templates/opampStage.test.ts", "to": "tests/schgen/render/templates/opamp-stage.test.ts" },
+    { "from": "render/templates/connectorFanout.test.ts", "to": "tests/schgen/render/templates/connector-fanout.test.ts" },
+    {
+      "from": "render/templates/opampStock.kicad.test.ts",
+      "to": "tests/schgen/render/templates/opamp-stock.kicad.test.ts",
+      "cuts": [
+        { "text": "      mcu: null,\n", "occurrences": 1 },
+        { "text": ", pinmap: null", "occurrences": 1 }
+      ]
+    },
+    { "from": "render/bodyClearance.test.ts", "to": "tests/schgen/render/body-clearance.test.ts" },
+    { "from": "render/textClearance.test.ts", "to": "tests/schgen/render/text-clearance.test.ts" },
+    { "from": "render/unitText.test.ts", "to": "tests/schgen/render/unit-text.test.ts" },
+    { "from": "render/noConnectEnds.test.ts", "to": "tests/schgen/render/no-connect-ends.test.ts" }
   ],
   "handWritten": [
     "lib/schgen/strict.ts",
