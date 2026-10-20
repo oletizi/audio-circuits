@@ -136,6 +136,13 @@
   ],
   "handWritten": [
     "lib/schgen/strict.ts",
-    "lib/schgen/render/stock-symbols.ts"
+    "lib/schgen/render/stock-symbols.ts",
+    "lib/schgen/render/obstacle-matrix.ts",
+    "lib/schgen/render/obstacle-pairs-reasons.ts",
+    "lib/schgen/render/obstacle-pairs-body.ts",
+    "lib/schgen/render/obstacle-pairs-pin-text.ts",
+    "lib/schgen/render/obstacle-pairs-graphic-wire.ts",
+    "lib/schgen/render/obstacle-pairs-glyph.ts",
+    "lib/schgen/render/obstacle-pairs-text-frame.ts"
   ]
 }
