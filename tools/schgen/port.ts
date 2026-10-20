@@ -98,8 +98,8 @@ export interface PortManifest {
    * neither a complete inventory of hand-written files nor no inventory at
    * all - a reader could not use it as either. `bun test` discovers test
    * files by glob and reads nothing here, so the declaration bought nothing
-   * while the inconsistency misled. Narrowed in Task 4; `docs/known-gaps.md`
-   * G114 and Controller ruling R6 record why.
+   * while the inconsistency misled. Narrowed in Task 4 under Controller
+   * ruling R6.
    */
   readonly handWritten: readonly string[]
 }

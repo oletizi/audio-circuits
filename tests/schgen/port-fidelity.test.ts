@@ -69,7 +69,7 @@ test("every copied (non-.ts) fixture is byte-identical to its pedals source", ()
 
 /**
  * `handWritten` MEANS `lib/schgen/`, and this is where that is enforced
- * (`docs/known-gaps.md` G114, Controller ruling R6).
+ * (Controller ruling R6, Task 4).
  *
  * Two claims, both of which can fail. **Existence:** an entry naming a path
  * that is not on disk fails here, whatever directory it names. The
@@ -139,7 +139,7 @@ function listTsFiles(repoRoot: string, dir: string): string[] {
  * said a non-`lib/schgen/` entry was covered "by `bun test` simply failing to
  * find the file", which was false in both directions: `bun test` discovers
  * test files by glob, so a misspelt entry names a file nothing looks for and
- * the suite stays green with fewer tests - `docs/known-gaps.md` G114.
+ * the suite stays green with fewer tests.
  */
 test("every .ts file under lib/schgen/ is either ported (in the manifest) or declared hand-written", () => {
   const manifest = loadManifest()

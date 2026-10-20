@@ -134,7 +134,7 @@ function resolutionOnDisk(libId: string): "resolves" | "no-such-library" | "no-s
  * ported file, which `tests/schgen/port-fidelity.test.ts` refuses.
  *
  * **THIS LIST HAS THREE PROPERTIES ITS DELETED PREDECESSOR LACKED**, and
- * Controller ruling R5 (via `docs/known-gaps.md` G113) is why. The earlier
+ * Controller ruling R5 (Task 2 review, round 2) is why. The earlier
  * `NOT_A_KICAD_SYMBOL` exempted any well-formed lib id with no check that the
  * exempted name actually fails to resolve, and its `continue` ran ahead of the
  * malformed-value arm, silencing that report too. So:

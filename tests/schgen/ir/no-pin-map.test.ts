@@ -12,7 +12,7 @@ import { fixtureResolver } from "../__fixtures__/fixture-lib.ts"
  *
  * **It used a hand-built three-field `LibSymbol` stub until Task 4**, because
  * `createResolver` threw until the real `render/library.ts` was ported
- * (`docs/known-gaps.md` G113). The real `LibSymbol` carries ten fields, so the
+ * (Controller ruling R4). The real `LibSymbol` carries ten fields, so the
  * stub stopped typechecking the moment the port landed; the real
  * `fixtureResolver()` is now both available and strictly less fake than
  * hand-building one, so the stub is deleted rather than widened.

@@ -6120,13 +6120,13 @@ re-derivable, not a diff silently smuggled into the file on disk.
 `ir/build.test.ts`, `ir/classify.test.ts` and `ir/validate.test.ts`
 (9, 2 and 2 respectively, including the now-dead `big`/`PINMAP` fixtures and
 the three tests that exercised pin-map behaviour specifically) in Task 2's
-first round.** That round is superseded, not this entry's concern directly -
-see **G113**: Controller ruling R4 moved all three files, cuts included, to
-Task 4, because they also needed a real `createResolver` to run and porting
-them anyway would have put three module-load errors on `HEAD`. Only
-`ir/types.ts` and `ir/build.ts`'s cuts (above) are live in the manifest
-today; the three test files' cuts are recorded here and in this task's git
-history for Task 4 to reuse rather than re-derive from scratch.
+first round.** Controller ruling R4 then moved all three files, cuts
+included, to Task 4, because they also needed a real `createResolver` to run
+and porting them anyway would have put three module-load errors on `HEAD`.
+**Task 4 re-added all three entries with those same cuts and landed them
+passing** (commit "Land the four R4-deferred test files passing"), so every
+cut this entry describes is live in `tools/schgen/port-manifest.json` today
+and `applyCuts` re-verifies each occurrence count on every port run.
 
 - **Found** 2026-10-19, Task 2, confirmed directly: `grep -n "pinmap\|mcu\b"`
   over every file `tools/schgen/ir/` ports (`types.ts`, `build.ts`,
@@ -6178,268 +6178,6 @@ history for Task 4 to reuse rather than re-derive from scratch.
   repository has no MCU and no pin map to restore it for - the criterion is
   for whichever future task is the first to need one.
 
-### G113 - three of the five ported `ir/` test files move to Task 4, not Task 2 - `createResolver` is a forward-declared throwing stub until then - and `render/library.ts`'s `LibSymbol` carries only the three fields `ir/` reads
-
-`lib/schgen/ir/build.ts`, `validate.ts`, `validate-nets.ts` and
-`validate-rule.ts` import `SymbolResolver` (and `validate-nets.ts` also
-`LibPin`) as a type from `@/schgen/render/library`, which Task 4 is the task
-that ports for real (`digital-pedal-platform`'s `render/library.ts`, which
-reads KiCad `.kicad_sym` files via `lib-pins.ts`/`lib-graphics.ts`). Task 2
-needs that import to resolve today, so it hand-writes `lib/schgen/render/library.ts`
-as a forward declaration: the `SymbolResolver`/`LibSymbol` interfaces, plus a
-`createResolver` function that **throws, naming Task 4**, rather than
-implementing anything - `CLAUDE.md`'s rule for functionality that does not
-exist yet is a named throw, not a fallback or mock.
-
-**Three of the five pedals `ir/` test files need that real `createResolver`
-to run at all, not merely to pass an assertion** - each does
-`const symbols = fixtureResolver();` at module scope
-(`fixtureResolver()`, ported to `tests/schgen/__fixtures__/fixture-lib.ts`,
-calls `createResolver` directly), so the throw would happen at module load,
-before any `it(...)` registers. **Controller ruling R4 (Task 2 round 1)
-decided this stays out of the tree rather than landing red**: Task 2's
-first pass ported `build.test.ts`, `classify.test.ts` and `validate.test.ts`
-anyway and reported the resulting module-load errors by name, reasoning
-that a loud, attributed failure satisfies *"a skipped check must never look
-like a passing one."* The ruling held that against this plan's Global
-Constraint that `bun test` is clean before every commit, a known-red HEAD is
-the same hazard with the sign flipped - **"every later implementer runs the
-suite, sees three failures, and has to know they are expected, which is
-exactly the condition in which a fourth failure hides."** So those three
-files were removed from `port-manifest.json` and from the tree in the same
-round; they are not skipped and not deleted-as-abandoned, they are **not
-ported yet**, and they arrive in Task 4 together with the
-`render/library.ts` port they depend on. `tests/schgen/ir/author.test.ts`
-and `order.test.ts` need no resolver and are ported and passing now;
-`no-pin-map.test.ts` (hand-written, Task 2's own new test for G112's cut)
-uses a local `stubResolver()` that never calls `createResolver`, and also
-passes. `tests/schgen/__fixtures__/fixture-lib.ts` (the fixture library the
-three pending tests need) stays ported, unused today, because it is already
-correct and Task 4 needs it too.
-
-**`LibSymbol`'s field set is a measured minimum, not a guess at the real
-shape.** It carries exactly `pins`, `unitCount` and `isPower` - checked
-directly against every place `lib/schgen/ir/` reads a `LibSymbol`:
-`partPins` in `build.ts` (`sym.pins`), `partShapes` and `unitsPlaced` in
-`validate.ts` (`symbols.resolve(...).unitCount`), `pinsDeclared` in
-`validate.ts` and `mechanicalPads` in `validate-parts.ts` (`.pins`), and
-`rails` in `validate-nets.ts` (`symbols.resolve(r.symbol).isPower`). Pedals'
-real `LibSymbol` additionally carries `libId`, `name`, `node`, `boxes`,
-`bodies`, `graphics` and `pinText` - none of which anything in `ir/` reads -
-so Task 4's port of the real `render/library.ts` replaces this file
-wholesale (never extends it) and restores those fields along with a working
-`createResolver`.
-
-- **Found** 2026-10-19, Task 2: the forward-declaration necessity and the
-  three dependent files' module-load throw, confirmed directly by running
-  `bun test` with `SCHGEN_SOURCE` set and reading the full output (round 1:
-  exactly 3 "errors" and 3 "fail", bun counting a module-load throw as
-  both, all naming `createResolver` and all in the three files above);
-  `grep -n "symbols\.resolve\|\.pins\b\|\.unitCount\|\.isPower"` over
-  `lib/schgen/ir/*.ts`, read directly, to derive the three-field list.
-  Controller ruling R4, same day, decided the three files move to Task 4
-  rather than landing red - round 2 removed their `port-manifest.json`
-  entries and deleted them from `tests/schgen/ir/`.
-- **Evidence** `bun test` with `SCHGEN_SOURCE` set, round 2: **2527 pass / 0
-  fail across 246 files** (`bun run check` exits 0); `bun run typecheck`
-  clean with the stub in place. Round 1's evidence (2527 pass / 3 fail / 3
-  errors across 249 files, each of the three stack traces bottoming out at
-  `lib/schgen/render/library.ts:46`) is superseded by this entry's own
-  rewrite, per the rule that a mechanism's prior report is not duplicated
-  once the state it described no longer holds.
-- **Verified** CONFIRMED - this writer ran the full suite and read the
-  output and the grep directly, both rounds.
-- **Why it is open** it is not a defect in Task 2's own work; it is the
-  stated, correct consequence of one task's dependency belonging to
-  another, left open until the task that resolves it lands.
-- **What would settle it** **CRITERION:** `tests/schgen/ir/build.test.ts`,
-  `classify.test.ts` and `validate.test.ts` exist in the tree, are ported
-  (not hand-written), and run to completion - pass or fail on their own
-  assertions, never erroring at module load. **MECHANISM:** Task 4 ports
-  `digital-pedal-platform`'s `render/library.ts` in full, adds the three
-  files' `port-manifest.json` entries back (their cuts are recorded in this
-  task's git history, not repeated here, so Task 4 re-derives or reuses them
-  rather than retyping from memory), and copies the two fixture `.kicad_sym`
-  files `tests/schgen/__fixtures__/fixture-lib.ts` references by path
-  (`symbols/Fix.kicad_sym`, `symbols/Pwr.kicad_sym`, under `__fixtures__/`
-  in the pedals source) but which Task 2 did not, since the stub
-  `createResolver` never reads them.
-
-  **Task 4 also re-adds a symbol exemption in `tests/kicad/symbol-names.test.ts`
-  for "Pwr:GND" and "Fix:R" - deleted outright (review round 2, Important
-  finding 1 / Controller ruling R5), not merely left empty.** Task 2's
-  original port added a `NOT_A_KICAD_SYMBOL` map alongside the three test
-  files that used those two names; Controller ruling R4 moved the three
-  files to Task 4 and, as a bookkeeping consequence, emptied the map rather
-  than deleting it (both names had stopped appearing anywhere). The review
-  found the map had no teeth even before it was emptied - it exempted any
-  well-formed lib id with no check that the exempted name actually *fails*
-  to resolve, and its `continue` ran ahead of the malformed-value arm,
-  silencing that report too - so a later task re-adding `"Fix:R"`, followed
-  by a real circuit or vendored library later also writing
-  `symbol: "Fix:R"`, would pass this guard silently: the exact defect the
-  file's own header says it exists to catch. Combined with the emptying,
-  the map and its own "every entry is still swept" test iterated zero
-  entries - a check that cannot fail, which this repository forbids on the
-  same page as the symbol-names sweep's own `SWEPT.size >= 12` floor.
-  Ruling: delete rather than add teeth to nothing. **Task 4 re-adds the
-  exemption beside the fixtures that justify it, with the two properties
-  this version lacked: each entry must still be checked to *fail to
-  resolve* (the footprint side's `CONSTRUCTED_FOR_A_REFUSAL` is the model
-  that already has this - "each must still fail to resolve, so a real name
-  cannot hide behind the list"), and every swept *site* must be restricted
-  to under `tests/schgen/` (so the exemption cannot silently cover a
-  production circuit or a vendored library that happens to share the bare
-  name).
-
-### G114 - a `handWritten` entry outside `lib/schgen/` is named in `port-manifest.json` and checked by nothing
-
-`tests/schgen/port-fidelity.test.ts`'s completeness check asserts set
-equality between the `.ts` files that exist under `lib/schgen/` and
-`manifest.files[].to` union `manifest.handWritten`, so a ported file that
-nobody declared, and a declared file that does not exist, each fail the
-test. Task 2 round 2 added `tests/schgen/ir/single-pin-net-guard.test.ts`
-to `handWritten` - the first entry outside `lib/schgen/` - which required
-applying the same `lib/schgen/`-prefix filter to `handWritten` that
-`files[].to` already carried.
-
-**That filter does not weaken the check it was added to** - `onDisk` is
-built by walking `lib/schgen/` alone, so the filter removes only entries
-that could never have matched anything in `onDisk`, and both directions
-still hold at full strength for that tree. **What it does create is a
-category of manifest entry that nothing verifies at all:** a `handWritten`
-path outside `lib/schgen/` is filtered out of both arms of the comparison,
-and `grep -rn handWritten tests/ tools/` finds this test as its only
-consumer anywhere. A typo in such an entry is not a `bun test` failure; it
-is a file `bun test`'s glob never discovers, so the suite reports fewer
-tests and stays green - **silence that resembles success**, which is the
-failure mode this workflow exists to prevent. The test's own comment
-asserts the opposite ("checked by `bun test` simply failing to find the
-file"), so a committed comment is also wrong here.
-
-Two entries sit in that unchecked category today -
-`tests/schgen/ir/single-pin-net-guard.test.ts` (Task 2) and
-`tests/schgen/render/uuid-stable.test.ts` (Task 3) - and both exist, so the
-gap is live but currently inert.
-
-**This entry's first version named `tests/schgen/ir/no-pin-map.test.ts` as
-the second one, and that was wrong**, which turns out to say something
-sharper about the mechanism than the original claim did. `grep -c no-pin-map
-tools/schgen/port-manifest.json` returns **0**: that file is hand-written and
-declared **nowhere**, and so are `tests/schgen/port-fidelity.test.ts` and
-`tests/schgen/strict.test.ts`. Nothing requires a hand-written file outside
-`lib/schgen/` to be declared at all - the completeness test's own comment
-calls such an entry one listed *"for visibility"*. So the category is
-**documentary, optional, applied inconsistently (two listed, three not), and
-unchecked**, which widens what needs settling: a reader cannot use
-`handWritten` as an inventory of hand-written files, because it is not one.
-
-- **Found** 2026-10-19, Task 2 round-2 re-review, by the reviewing agent
-  reasoning from the code rather than from the implementer's report, while
-  checking whether the new prefix filter reopened the hole Task 1's review
-  had closed. It did not; this is a different and narrower gap the same
-  change introduced.
-- **Evidence** `grep -rn "handWritten" tests/ tools/` returns
-  `tests/schgen/port-fidelity.test.ts` and `tools/schgen/port.ts` only -
-  no other reader - and the test's `accountedFor` is built from two
-  prefix-filtered lists, so a non-`lib/schgen/` entry reaches neither
-  `unaccountedOnDisk` nor `accountedButMissing`. A check that could have
-  failed: adding a deliberately misspelled `handWritten` entry under
-  `tests/` and running `bun test` - the suite stays green.
-  The inconsistency was found 2026-10-19 by Task 3's implementer, which
-  noticed this entry naming `no-pin-map.test.ts` as a `handWritten` entry
-  when it is not one. Evidence: `grep -c "no-pin-map"
-  tools/schgen/port-manifest.json` returns 0 - a check that could have
-  returned 1 - and reading the manifest's `handWritten` array directly
-  confirms its four entries.
-- **Verified** MIXED. The filter's behaviour is RELAYED - this writer (the
-  controller) has read the filter and the grep result as reported and
-  accepts the reasoning, but did not run the misspelling perturbation. The
-  declaration inconsistency is CONFIRMED - this writer ran the grep and read
-  both `port-manifest.json` and `port-fidelity.test.ts` directly.
-- **Why it is open** it is not a defect in what Task 2 was asked to do, and
-  the controller ruled against widening Task 2's fix loop for a latent
-  gap. **Controller ruling R6: the existence check is a Task 4
-  requirement**, because Task 4 is the next task to edit this manifest and
-  will add further `tests/schgen/` entries beside the symbol exemption
-  G113 requires of it.
-- **What would settle it** **CRITERION, two clauses.** (a) A `handWritten`
-  entry naming a path that does not exist fails a test, wherever that path
-  lives, and the test's committed comment describes what actually checks it.
-  (b) What `handWritten` means outside `lib/schgen/` is stated once and
-  holds: either every hand-written file under `tests/schgen/` is listed, or
-  none is and the field refuses a non-`lib/schgen/` path. The present
-  two-listed-three-not state meets neither reading.
-  **MECHANISM:** in `port-fidelity.test.ts`, assert every `handWritten`
-  entry resolves to an existing file before the prefix filter narrows the
-  set - a separate assertion from the `lib/schgen/` completeness one, since
-  the two answer different questions - and settle (b) by narrowing the
-  field to `lib/schgen/` only, since `bun test` discovers test files by
-  glob and a declaration list it does not read buys nothing. **That second
-  half is the mechanism, not the criterion**: an implementer who finds a
-  reason the list should cover `tests/` instead should meet clause (b) that
-  way and record the deviation.
-
-### G115 - `render/geometry.test.ts` is a fourth file R4 applies to, not ported this task either - same `fixtureResolver()`-at-module-scope shape as the three `ir/` tests G113 names
-
-Task 3's brief lists `tests/schgen/render/geometry.test.ts` as one of three
-test files to port and run unedited. It does `const lib = fixtureResolver();`
-at module scope (line 7 of the pedals source), exactly the shape **G113**
-and **Controller ruling R4** already named as disqualifying: `fixtureResolver()`
-(ported to `tests/schgen/__fixtures__/fixture-lib.ts`) calls `createResolver`
-directly, and `lib/schgen/render/library.ts`'s `createResolver` is the Task-4
-forward-declaration stub that throws, naming Task 4, rather than implementing
-anything. The throw happens at module load, before any `it(...)` registers -
-the identical mechanism R4 moved `build.test.ts`, `classify.test.ts` and
-`validate.test.ts` for in Task 2, not a new kind of failure.
-
-**This is not "the rewrite is wrong"** - the brief's Step 2 says that failure
-mode means the rewrite is wrong, because render/geometry.test.ts's own
-assertions (rotate, pinEnd, pinSide, grid, boxes) depend on nothing this
-repository lacks. They do not: the module-scope `fixtureResolver()` call is
-what fails, and it fails for the same reason, and with the same stack trace
-shape, as the three files R4 already deferred. The brief was written before
-Task 2 (and R4) existed, so it could not have anticipated this.
-
-Following R4's own reasoning exactly - *"every later implementer runs the
-suite, sees [a] failure, and has to know [it is] expected, which is exactly
-the condition in which a[nother] failure hides"* - this task removed
-`render/geometry.test.ts`'s `port-manifest.json` entry and deleted it from
-the tree in the same change that added it, rather than landing it red or
-silently editing its assertions to route around `fixtureResolver()`. It is
-not ported yet, not skipped, and not abandoned.
-
-- **Found** 2026-10-19, Task 3, while executing the brief's Step 1-2
-  verbatim.
-- **Evidence** `SCHGEN_SOURCE=... bun test tests/schgen/render/` with the
-  file provisionally in the tree: **17 pass / 1 fail / 1 error**, the error
-  a thrown `Error` at `lib/schgen/render/library.ts:46` (`createResolver`),
-  stack trace bottoming out at `tests/schgen/render/geometry.test.ts:14:13`
-  (the module-scope `fixtureResolver()` call) - read directly, not relayed.
-  After removing the file and its manifest entry: `SCHGEN_SOURCE=... bun
-  test tests/schgen/render/` gives **17 pass / 0 fail**, and the full suite
-  gives **2544 pass / 0 fail across 249 files**. Those 17 belong entirely
-  to its siblings, not to any of its own assertions: running the rewritten
-  `render/geometry.test.ts` in isolation (`SCHGEN_SOURCE=... bun test
-  tests/schgen/render/geometry.test.ts`) gives **0 pass / 1 fail / 1
-  error** - `fixtureResolver()` sits ahead of every `describe`/`it` in the
-  pedals source, so none of its ten `it(...)` blocks ever register, and the
-  deletion loses zero working assertions.
-- **Verified** CONFIRMED - this writer ran both commands and read the full
-  output.
-- **Why it is open** it is not a defect in this task's work; it is the
-  stated, correct consequence of a dependency on Task 4's
-  `render/library.ts` that the plan's Task 3 brief did not anticipate when
-  it was written (before Task 2 and R4 existed).
-- **What would settle it** **CRITERION:** `tests/schgen/render/geometry.test.ts`
-  exists in the tree, is ported (not hand-written), and runs to completion -
-  pass or fail on its own assertions, never erroring at module load.
-  **MECHANISM:** Task 4 ports `digital-pedal-platform`'s real
-  `render/library.ts` (the same work G113 already requires for the three
-  `ir/` tests) and adds this file's `port-manifest.json` entry
-  (`{ "from": "render/geometry.test.ts", "to": "tests/schgen/render/geometry.test.ts" }`,
-  no `cuts`) back alongside them.
-
 ### G116 - measured: `um()`'s refusal is the only thing standing between a fractional micrometre and a silently-wrong schematic, and the ported test catches its removal
 
 Task 3's brief Step 5 asks for `um()` to be perturbed from refusing a
@@ -6470,8 +6208,9 @@ the suite was re-run to confirm green again.
 not `geometry.test.ts` - `um` is defined in `geometry.ts` but the pedals
 source tests it from `sexprWrite.test.ts` (which imports `um` from
 `@/schgen/render/geometry`), and `geometry.test.ts` itself never calls `um`
-(it is also the file G115 defers to Task 4, so it could not have caught
-this regardless). A reader following the brief's "the geometry test goes
+(and at the time of the measurement it was not in the tree at all - Task 3
+deferred it to Task 4 under Controller ruling R4, which ported it - so it
+could not have caught this regardless). A reader following the brief's "the geometry test goes
 red" literally, expecting `tests/schgen/render/geometry.test.ts` to be the
 one that fails, would be looking in the wrong file.
 
@@ -6568,20 +6307,387 @@ stock directory second"* cannot be followed literally.
   wrapper.
 - **Verified** CONFIRMED - this writer ran every command above and read the
   output directly.
-- **Why it is open** it is a defect in a plan document, not in code, and
-  the code it misdirects is not written yet. **Controller rulings R8 and
-  R9** (recorded in this plan's ledger and carried in Task 4's dispatch)
-  settle what Task 4 does instead; this entry exists so the next reader of
-  the brief is not misled by a sentence the plan still contains, and so the
+- **Why it is open** it is a defect in a PLAN DOCUMENT, and the plan still
+  contains the sentence. `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`
+  line 414 still says the vendored set *"has six symbols"* and the Task 4
+  brief still argues the point from `R_Small`, `C_Small` and `Conn_01x05`.
+  **The code half is settled** - Controller rulings R8 and R9, carried in
+  Task 4's dispatch, and Task 4 implemented both (see below) - so what is
+  left open is the document, which this writer is not the author of. This
+  entry stays so the next reader of the brief is not misled, and so the
   substituted symbol is not mistaken for an implementer's convenience.
-- **What would settle it** **CRITERION:** a live `(extends …)` symbol
-  flattens and yields its parent's pins, and the same symbol read
-  unflattened yields an **empty** pin list - the brief's own two-assertion
-  pair, which is what makes the failure mode's silence visible - proven
-  against a symbol verified to exist on disk. **MECHANISM:** R9 selects
-  `Fix:OPAMP2X`, which is `(extends "OPAMP2")` in
-  `__fixtures__/symbols/Fix.kicad_sym` - the fixture library G113 already
-  requires Task 4 to copy, so the test stays machine-independent, and a
-  two-unit op-amp exercises unit handling at the same time. An implementer
-  who finds a better subject should meet the criterion with it and record
-  the deviation.
+- **What Task 4 did, which closes the code half.**
+  `tests/schgen/render/extends-flattening.test.ts` proves R9's criterion on
+  `Fix:OPAMP2X`: the flattened symbol carries its parent's eight pins (1-8,
+  `unitCount` 3) and is asserted EQUAL to `Fix:OPAMP2`'s pin list, not merely
+  the same length; the same symbol read unflattened yields `[]`. Both numbers
+  were read off `tests/schgen/__fixtures__/symbols/Fix.kicad_sym`, which Task
+  4 copied into this repository, so neither depends on an installed KiCad.
+  `lib/schgen/render/stock-symbols.ts` records R8's shape reconciliation and
+  the deviation from the brief's mechanism (see **G119**).
+- **What would settle the rest** **CRITERION:** the plan document no longer
+  asserts that `R_Small`, `C_Small` or `Conn_01x05` is an `(extends …)`
+  symbol, nor that the vendored set has six members. **MECHANISM:** an edit
+  to the plan by whoever owns it - a Task 4 implementer editing the brief it
+  was given would be authoring its own acceptance criteria, which `CLAUDE.md`
+  forbids.
+
+### G118 - measured: all ten lib ids the four parity circuits declare resolve, but three of them resolve ONLY through the installed KiCad, and the plan's own starting-point counts do not match what the circuits build
+
+Task 4's brief Step 5 asks how many of the four parity circuits' declared
+symbols resolve and how many do not, by lib id, and warns that *"the vendored
+set is smaller than those circuits need and the shortfall is a finding, not a
+licence to guess a name."* **The shortfall is real but it is not a resolution
+failure.** Measured by building each circuit and reading
+`component.part?.symbol` off every component - the derived arm, not a grep, so
+a symbol reaching a part through a shared constructor is counted:
+
+| circuit | components declaring a symbol |
+| --- | --- |
+| `opamp-buffer` | 1 of 9 |
+| `optical-compressor` | 0 of 37 |
+| `pt2399-core` | 2 of 24 |
+| `transistor-preamp` (lab board) | 32 of 32 |
+
+**Ten distinct lib ids, and all ten resolve** through
+`createResolver(symbolLibraries(nicknames))` - pin and unit counts as read:
+
+| lib id | circuit | pins | units | vendored? |
+| --- | --- | --- | --- | --- |
+| `Amplifier_Operational:TL072` | opamp-buffer | 8 | 3 | **no** |
+| `Audio:PT2399` | pt2399-core | 16 | 1 | **no** |
+| `Connector:TestPoint` | transistor-preamp | 1 | 1 | yes |
+| `Connector_Generic:Conn_01x02` | transistor-preamp | 2 | 1 | yes |
+| `Connector_Generic:Conn_01x05` | pt2399-core | 5 | 1 | **no** |
+| `Device:C_Polarized` | transistor-preamp | 2 | 1 | yes |
+| `Device:R` | transistor-preamp | 2 | 1 | yes |
+| `Device:R_Potentiometer_Trim` | transistor-preamp | 3 | 1 | yes |
+| `Jumper:Jumper_2_Open` | transistor-preamp | 2 | 1 | yes |
+| `Transistor_BJT:2N3904` | transistor-preamp | 3 | 1 | yes |
+
+**Do not resolve: none. Resolve only through the machine's KiCad: three** -
+`Amplifier_Operational:TL072`, `Audio:PT2399` and
+`Connector_Generic:Conn_01x05`. That is the shortfall the brief predicted,
+wearing a different shape: the stock symbol directory is a declared extension
+(**G119**), so these resolve, but a drawing that uses them is a function of
+whichever KiCad is installed rather than of anything in this repository. The
+eight vendored symbols are pinned by the equality check in
+`lib/schgen/render/stock-symbols.ts`; these three are not pinned by anything.
+**`Device:R_Potentiometer` is vendored and declared by none of the four**, so
+the vendored set is not a subset of what they need either.
+
+**A SEPARATE AND SMALLER FINDING: the plan's own figures disagree with what
+the circuits build.** `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`
+line 831 states the *"measured starting point"* as *"`optical-compressor`
+declares a symbol on none of its 30 components; `pt2399-core` on 2 of 24;
+`opamp-buffer` on 1 of 8; `transistor-preamp` on 8 of 43"*. Three of the four
+pairs differ from the table above (37 not 30; 9 not 8; 32 of 32 not 8 of 43).
+`pt2399-core` matches exactly. This writer did not diagnose the difference and
+records it undiagnosed: the most likely reading is that the plan counted a
+different entry point for `transistor-preamp` (it has five boards;
+`transistorPreampLab()` is the one `circuits/transistor-preamp/index.ts`
+re-exports) and an earlier revision of the other two, but that is a guess.
+**Task 10's census is the task that will quote these numbers**, which is why
+the disagreement is recorded rather than left for it to rediscover.
+
+- **Found** 2026-10-19, Task 4, Step 5 as directed by the brief.
+- **Evidence** a script that imports `opampBuffer()`, `opticalCompressor()`,
+  `pt2399Core()` and `transistorPreampLab()`, counts `components` and
+  `component.part?.symbol`, then resolves every distinct lib id through
+  `createResolver(symbolLibraries(nicknames))` and prints per id either the
+  pin and unit count or the refusal message. A check that could have failed
+  in two ways and did not: a lib id that refused would have printed its
+  message, and a nickname in neither source would have refused at
+  `symbolLibraries`. The vendored/not-vendored split is `VENDORED_SYMBOLS`
+  (`lib/kicad/symbol-library.ts`) differenced against the ten, both
+  directions printed. The plan's figures were read directly from line 831.
+- **Verified** CONFIRMED - this writer wrote and ran the script and read its
+  full output, and read the plan line.
+- **Why it is open** it is a measurement, not a defect in Task 4's work, and
+  the part of it that would make someone want to act - three unpinned lib ids
+  - is a decision about what to vendor, not a fix. `CLAUDE.md` requires a
+  measurement here whether or not it found something wrong.
+- **What would settle it** **CRITERION, as the brief set it:** every symbol a
+  parity circuit names resolves through one reader. **That criterion is MET
+  today** - one reader (`lib/schgen/render/library.ts`), ten of ten resolving.
+  The residue is a second criterion this measurement produced: **no drawing of
+  a parity circuit depends on which KiCad is installed**, which is NOT met for
+  the three lib ids above. **MECHANISM** for the residue, and it is advice
+  from someone who has not tried it: add those three to `VENDORED_SYMBOLS` and
+  run `tools/kicad/vendor-symbols.ts`, after which the equality check in
+  `stock-symbols.ts` pins them. Unverified risk: `Amplifier_Operational:TL072`
+  is a multi-unit symbol and `lib/kicad/symbol-library.ts`'s `symbolPins`
+  REFUSES a unit number above 1 (its own comment says the stub writer would
+  silently merge units), so vendoring it may surface that refusal in a
+  different consumer. Whether the three should be vendored at all is an owner
+  decision about machine independence versus vendoring every symbol a design
+  ever names.
+
+### G119 - the vendored-versus-stock symbol decision is implemented at SYMBOL granularity, not at the nickname-SHA granularity the plan specifies, because the two sources have different shapes
+
+The M1 plan's Task 4 decision reads: *"both, with the vendored set
+authoritative and the stock directory a declared extension. `createResolver`
+takes nickname→file as it already does; `lib/schgen/render/stock-symbols.ts`
+builds that map from the vendored directory first and the stock directory
+second, and refuses when a nickname resolves in both to files with different
+SHA-256 rather than preferring one silently."*
+
+**The mechanism in that sentence cannot be implemented, and the reason is
+`docs/known-gaps.md` G117's second shape fact.** `createResolver(libs)` takes
+nickname-to-`.kicad_sym`-LIBRARY-file. The vendored set is eight single-symbol
+`.sexpr` files at `lib/kicad/symbols/<Nickname>/<Name>.sexpr`, so the vendored
+side has no library file to put in the map at all. Worse for the refusal
+clause: the five nicknames the vendored set touches (`Device`,
+`Transistor_BJT`, `Connector_Generic`, `Connector`, `Jumper`) are **every one
+of them** also present in the stock directory, and a five-symbol set can never
+hash equal to a 223-library directory's 536-symbol `Device.kicad_sym`. A
+literal implementation refuses on every run, for every circuit.
+
+**WHAT WAS IMPLEMENTED INSTEAD** (Controller ruling R8 left the mechanism to
+the implementer and required the deviation be recorded; this is that record).
+`symbolLibraries(nicknames)` resolves each nickname to the installed library
+file, and for a nickname the vendored set touches it first requires **every
+vendored symbol under that nickname to be byte-identical to the installed
+library's own flattened text for the same name**, or it refuses - naming both
+files, both SHA-256 hashes, and that nothing is preferred because preferring
+either would be wrong in a different way. Both sides are flattened by
+`lib/kicad/symbol-library.ts`'s `flattenedSymbol`, which is the function
+`tools/kicad/vendor-symbols.ts` used to write the vendored copies, so the
+comparison is exact rather than approximate.
+
+**HOW THAT MEETS THE RULING'S CRITERION, AND WHERE IT DIFFERS FROM THE
+WORDS.** The criterion was *no drawing depends on the machine when a symbol is
+vendored*. It is met by the equality, not by which file is opened: either the
+installed bytes ARE the vendored bytes - in which case the drawing is
+identical on every machine - or this refuses and there is no drawing. What
+differs from the plan's words is the sense of "authoritative": the vendored
+copy is the reference the installed library is measured against, not the bytes
+that get read. **A consequence worth stating plainly: a machine with no KiCad
+cannot draw at all**, even a circuit using only vendored symbols. That follows
+from `CLAUDE.md`'s *"KiCad and VeroRoute are primary tools here, not optional
+extras"*, but it is a narrowing of what `lib/kicad/symbol-library.ts`'s
+`vendoredSymbolText` path can do today, and it is new.
+
+**THE ALTERNATIVE THAT WAS CONSIDERED AND REJECTED**, recorded so it is not
+re-proposed as if unexamined: have `tools/kicad/vendor-symbols.ts` also emit a
+per-nickname `.kicad_sym` wrapper library and point the map at that. It reads
+vendored bytes directly, which is the plan's words exactly - but a nickname
+then resolves to a library holding ONLY the vendored symbols, so `Device:C`
+and every other stock `Device` symbol stops resolving. Merging the vendored
+symbols over the stock library's would restore them, at the cost of generating
+a library file at resolve time from a module `lib/schgen/README.md` declares
+pure.
+
+- **Found** 2026-10-19, Task 4, Step 4, while writing `stock-symbols.ts`
+  against the brief.
+- **Evidence** `createResolver`'s signature and its `fs.readFileSync(file)` of
+  one library per nickname, read directly in
+  `lib/schgen/render/library.ts`; `find lib/kicad/symbols -name "*.sexpr"`
+  gives 8 files under 5 nickname directories, each a bare `(symbol …)`;
+  `fs.readdirSync(stockSymbolDir()).filter(endsWith(".kicad_sym")).length`
+  gives **223**, and all five vendored nicknames are among them (asserted in
+  `tests/schgen/render/stock-symbols.test.ts`, which would fail if one were
+  not). The equality holds today for all eight: a script comparing each
+  vendored `.sexpr` against `flattenedSymbol(installed, name)` printed
+  IDENTICAL eight times, and the first test in
+  `tests/schgen/render/stock-symbols.test.ts` is that comparison, so it fails
+  if either side drifts. The three refusals are driven by tests that inject a
+  stock directory through `KICAD_SYMBOL_DIR`: a doctored `Device:R` (both
+  hashes in the message), a `Jumper.kicad_sym` without `Jumper_2_Open`, and an
+  empty directory.
+- **Verified** CONFIRMED - this writer wrote the module and the tests, ran
+  them, and read the refusal messages.
+- **Why it is open** it is a recorded deviation from a plan's stated
+  mechanism, not a defect, and the plan still says the other thing. It also
+  carries an unresolved question (below) that is not this task's to settle.
+- **What would settle it** **CRITERION:** nothing further for the deviation
+  itself; this entry IS the record the ruling asked for. **The open question
+  it leaves**, for whoever owns the decision: should a vendored symbol's BYTES
+  be what a drawing reads, so that a machine without KiCad can still draw a
+  wholly-vendored circuit? Answering yes requires the generated-library
+  mechanism above and a decision about what happens to the stock library's
+  other symbols under the same nickname. Answering no makes KiCad a hard
+  dependency of drawing, which is what is implemented. **Nobody should ask the
+  owner this unprompted** - it is recorded here so the next task that trips
+  over it finds the reasoning rather than redoing it.
+
+### G120 - measured: removing the `extends` recursion does NOT fail on an empty pin list, as the brief predicts - a guard two modules away fires first, and the silence the test guards is real only for a different shape of symbol
+
+Task 4's brief Step 6 says to remove the `extends` recursion and that *"the
+flattening test goes red naming `R_Small` with an empty pin list."* It goes
+red, and it names the symbol, but **not with an empty pin list**: it throws
+`Fix:OPAMP2X: unit 1 has no geometry` from `boxesOf` in
+`lib/schgen/render/lib-pins.ts`, reached through `unitBoxes` inside
+`createResolver`'s `resolve`, before any assertion about pins runs.
+
+**Why, and why it matters.** `Fix:OPAMP2X` declares three properties and no
+sub-symbol of its own. Unflattened it therefore has neither pins NOR graphics,
+and `boxesOf` refuses a unit with no geometry at all. So for THIS symbol the
+pin loss is not silent - it is caught loudly, two modules away from the thing
+being tested, by a guard that exists for another purpose.
+
+**The brief's "silent" claim is still true, for a shape this fixture does not
+have:** a child that declares its own graphics sub-symbol and inherits only
+its parent's pins would have geometry, would pass `boxesOf`, and would resolve
+to a symbol with no connectable pins and no complaint. **That is why the
+second assertion of the pair is written against `extractPins` on the raw
+unflattened node rather than against the resolver** - it demonstrates the pin
+loss directly and does not depend on which guard happens to fire first. That
+assertion PASSED throughout the perturbation, correctly: it reads the fixture
+file, not the resolver.
+
+- **Found** 2026-10-19, Task 4, Step 6 as directed by the brief.
+- **Evidence** the red run, read directly and in full:
+
+  ```
+  tests/schgen/render/extends-flattening.test.ts:
+  259 |   for (const u of units) {
+  260 |     const pts: RawPoint[] = [];
+  261 |     for (const s of subs) if (s.unit === u || s.unit === 0) pts.push(...graphicPoints(s.node, libId));
+  262 |     for (const p of pins) if (p.unit === u || p.unit === 0) pts.push(...pinPoints(p));
+  263 |     const first = pts[0];
+  264 |     if (first === undefined) throw new Error(`${libId}: unit ${u} has no geometry`);
+                                                                                          ^
+  error: Fix:OPAMP2X: unit 1 has no geometry
+        at boxesOf (/Users/orion/work/audio-circuits-work/pultec-modularize/lib/schgen/render/lib-pins.ts:264:83)
+        at resolve (/Users/orion/work/audio-circuits-work/pultec-modularize/lib/schgen/render/library.ts:158:16)
+        at <anonymous> (/Users/orion/work/audio-circuits-work/pultec-modularize/tests/schgen/render/extends-flattening.test.ts:59:26)
+  (fail) an extends symbol resolves with its parent's pins [1.87ms]
+
+   1 pass
+   1 fail
+   2 expect() calls
+  Ran 2 tests across 1 file. [18.00ms]
+  ```
+
+  The perturbation replaced `flattenNamed`'s
+  `if (parentName === null) return child;` with an unconditional
+  `return child;`, and refused to apply unless that line appeared exactly
+  once. **RESTORED** by re-running `tools/schgen/port.ts`:
+  `shasum -a 256 lib/schgen/render/library.ts` gives
+  `aef7a7d947a85c49bd7731fc063c14207d88a02340437927cf0e603004f5422f` both
+  before the perturbation and after the restore, `git diff --stat` on that
+  file is empty, and the test file is 2 pass / 0 fail again.
+- **Verified** CONFIRMED - this writer ran the perturbation, the test, the
+  restore and the shasum comparison directly.
+- **Why it is open** it is a measurement that corrects a prediction in a plan
+  document, and the prediction is still in the document. A later reader
+  following Step 6 literally and expecting an empty-pin-list assertion
+  failure would conclude the test was wrong.
+- **What would settle it** nothing further - this entry records the
+  measurement, and the test it describes is in the tree. The brief's sentence
+  is the plan's to correct (see **G117**).
+
+### G121 - `@/kicad/netlist` now resolves in the port manifest, for `KICAD_CLI` only, which removes the port-time refusal that was protecting Task 11
+
+`lib/schgen/render/library.ts`'s `stockSymbolDir()` derives
+`dirname(KICAD_CLI)/../SharedSupport/symbols`, and imports `KICAD_CLI` from
+`@/kicad/netlist`. Until Task 4 the manifest resolved no such specifier, and
+`tools/schgen/port.ts`'s module doc said so in terms: *"no `@/kicad/netlist`
+… this repository's `lib/kicad/netlist.ts` has a different shape from pedals'
+— adapting it is Task 11's job, not this one's."*
+
+**Task 4 resolved it**, because the alternative was a `cuts` entry deleting
+the import and the macOS candidate, which would have left `stockSymbolDir()`
+unable to find KiCad on the owner's own machine unless `KICAD_SYMBOL_DIR` were
+set - a functional loss in an interface the brief states, taken to avoid a
+one-line addition. `lib/kicad/netlist.ts` gained `KICAD_CLI` (a path, never a
+spawn) and `externals` maps `@/kicad/netlist` to it, so the specifier points
+at the module it names rather than at a stand-in.
+
+**THE COST, which is the reason this is recorded.** `resolveSpecifier` checks
+`externals` first, so a later ported file importing `connectivityFromXml` from
+`@/kicad/netlist` no longer gets `port.ts`'s refusal naming the file and the
+unresolved import. It gets a `bun run typecheck` error naming the missing
+export instead. That is still loud and still fails `bun run check`, but it is
+a different and later failure than the one the manifest's scope paragraph was
+relying on, and **Task 11 is the task that will hit it.**
+
+**A SECOND, SMALLER THING THIS CREATES.** The default kicad-cli path
+`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` is now written in
+**four** places: `make/board.mk` (the `?=` default, which Make cannot import
+from TypeScript), `tests/circuits/kicad-round-trip.ts`,
+`tools/pultec/schematic-sync.ts` and now `lib/kicad/netlist.ts`. Each of the
+first two documents that it duplicates the Make line and must be changed by
+hand with it. Four copies of one path is a smell, not a design.
+
+- **Found** 2026-10-19, Task 4, Step 1, when the ported `library.ts` would not
+  resolve its own imports.
+- **Evidence** `import { KICAD_CLI } from "@/kicad/netlist";` is line 3 of
+  `digital-pedal-platform`'s `tools/schgen/render/library.ts`, and
+  `grep -n "KICAD_CLI" tools/kicad/netlist.ts` there gives its definition at
+  line 7 and two `execFileSync` uses; `stockSymbolDir()` is its only consumer
+  in the ported file. `grep -rn "KICAD_CLI" lib tools tests` here, read
+  directly, gives the four sites above (and `make/board.mk` lines 44-45 for
+  the fifth, the Make default that exports it). A check that could have
+  failed: `grep -c "connectivityFromXml" lib/kicad/netlist.ts` returns 0, so
+  the shape difference this entry describes is real and not assumed.
+- **Verified** CONFIRMED - this writer read every file named and ran the greps.
+- **Why it is open** the layering it creates is not a defect in Task 4's work
+  and consolidating four copies of a binary path touches three unrelated
+  production files; the brief's scope is the symbol loader.
+- **What would settle it** **CRITERION, two separable clauses.** (a) A ported
+  file that imports something `lib/kicad/netlist.ts` does not export fails
+  with a message that names the file, the specifier and the missing export -
+  not merely a `tsc` error at a line in a generated file. (b) The kicad-cli
+  default path is written once in TypeScript. **MECHANISM** for (a), untried:
+  have `tools/schgen/port.ts` check that each `externals` target actually
+  exports every name the importing file destructures from that specifier,
+  which would restore a port-time refusal. For (b): a single
+  `lib/kicad/kicad-cli.ts` that the other two TypeScript sites import, leaving
+  `make/board.mk`'s `?=` as the one unavoidable duplicate. **Neither is
+  Task 11's job unless Task 11 chooses it** - (a) would be most useful BEFORE
+  Task 11 ports gate 3.
+
+### G122 - a ported test that makes temp directories cannot satisfy this repository's static temp-scratch guard, and the exemption that lets it through is per-file
+
+`tests/stripboard/temp-scratch.test.ts`'s static arm requires every
+`mkdtempSync` site under `tests/` to be either registered with
+`freshTempScratch` or removed by a `rmSync(<the same identifier>)` the regex
+can see. The ported `tests/schgen/render/library.test.ts` does neither
+*textually*: it pushes `dir` onto its own `tempDirs` array and drains that
+array in an `afterEach`. It removes every directory it makes - the guard's
+regex just cannot see it.
+
+**A ported file cannot be rewritten to pass**, because
+`tests/schgen/port-fidelity.test.ts` asserts it is byte-identical to the
+pedals source modulo imports and a header. So Task 4 added a declared
+exemption, `REMOVES_VIA_OWN_LIST`, keyed by the file's path under `tests/`,
+and gave it teeth: a second test asserts the site, the `push` and the
+`splice(0)`-into-`rmSync` drain all still exist, and a declared path that is
+not on disk fails. Driven: deleting the `push` from the ported file fails that
+test and only that test.
+
+**WHY A LATER READER NEEDS THIS.** The exemption is per-file and the pedals
+test suite has more files of this shape waiting to be ported - every ported
+test that writes a temp library will arrive the same way. The next one adds an
+entry; it does not widen the regex, and it does not edit the ported file.
+`grep -c "mkdtempSync" $SCHGEN_SOURCE/render/*.test.ts` and the equivalent over
+the rest of that tree is how to find out how many are coming, which this
+writer did not run.
+
+- **Found** 2026-10-19, Task 4, Step 1, as a full-suite failure after porting
+  `render/library.test.ts`.
+- **Evidence** the failure, read directly:
+  `[ "schgen/render/library.test.ts: \"dir\" is never removed" ]` against an
+  expected `[]`, from
+  `tests/stripboard/temp-scratch.test.ts`'s *"every mkdtemp site under tests/
+  either removes its own directory or registers it"*. The ported file's
+  `afterEach` draining `tempDirs` into `fs.rmSync` is at the bottom of
+  `tests/schgen/render/library.test.ts`, read directly. The teeth were driven
+  by deleting the `tempDirs.push(dir);` line, running the file (fails: *"dir"
+  never reaches tempDirs*), and restoring by re-running
+  `tools/schgen/port.ts` - `diff` against a pre-perturbation copy is empty.
+- **Verified** CONFIRMED - this writer saw the original failure, wrote the
+  exemption, drove it and restored the file.
+- **Why it is open** it is not a defect; it is a structural consequence of
+  porting test files into a repository with its own standing guards, and the
+  per-file cost repeats for every such file to come.
+- **What would settle it** **CRITERION:** a ported test that removes every
+  temp directory it makes passes the static guard without a per-file entry,
+  OR the per-file entries are cheap and self-checking enough that the cost is
+  accepted deliberately. The second half is what holds today. **MECHANISM**,
+  untried and offered as advice only: teach the site check to follow an
+  identifier into an array that is drained into `rmSync` in the same file,
+  which would cover this shape generically - at the price of a static
+  analysis that is harder to read than the exemption it replaces.

@@ -2,10 +2,18 @@
 
 A port of `digital-pedal-platform`'s `tools/schgen/` — a schematic generator
 that turns a circuit model into KiCad s-expressions. It lives under `lib/`
-because, like `lib/kicad/`, it is pure: it reads its own vendored symbol
-libraries (see `lib/kicad/symbol-library.ts` for the precedent) and spawns
-nothing. `kicad-cli` lives behind `tools/schgen/kicad-run.ts` once that file
-ports, never here.
+because, like `lib/kicad/`, it is pure in the sense that matters: it reads
+symbol libraries off disk (see `lib/kicad/symbol-library.ts` for the
+precedent) and spawns nothing. `kicad-cli` lives behind
+`tools/schgen/kicad-run.ts` once that file ports, never here — what
+`render/library.ts` and `render/stock-symbols.ts` use is the *path* to it,
+to derive the installed symbol directory, never an invocation.
+
+Since Task 4 it reads two sources, not one: this repository's vendored
+symbols and the installed KiCad's stock symbol directory, with the vendored
+set as the authority the installed one is checked against. See
+`render/stock-symbols.ts` and `docs/known-gaps.md` **G118**/**G119** for what
+that buys and what it costs.
 
 ## How a file gets here
 
@@ -41,9 +49,15 @@ result is byte-identical to what is on disk; separately, it lists every
 exactly the subset of `files[].to` that lands under `lib/schgen/` plus
 `handWritten` — not a subset of either alone. (A `files[].to` destination
 outside `lib/schgen/` — a ported test under `tests/schgen/`, since Task 2 —
-is a different claim, checked by the first part of this same test and by
-`bun test` simply failing to find the file; it is not compared against a
-`lib/schgen/` directory listing it never claimed to be complete over.)
+is a different claim, that *this* destination holds exactly the rewritten
+source, and the first part of this same test is what checks it; it is not
+compared against a `lib/schgen/` directory listing it never claimed to be
+complete over. **`handWritten` may not name a path outside `lib/schgen/`
+at all** — a third assertion in that file fails on one, and fails on any
+entry naming a path that is not on disk. An earlier version of this
+paragraph said such an entry was covered by `bun test` failing to find the
+file; that was false, because `bun test` discovers test files by glob and
+a misspelt entry names a file nothing looks for.)
 **A ported file is never hand-edited**, and a hand-written file never slips
 in unlisted: a new hand-written file must be added to `handWritten`
 deliberately, or the second check fails naming it. If a ported file needs a
@@ -83,8 +97,17 @@ is resolved rather than hand-porting around the gap:
 - **`render/library.ts` is PORTED** (Task 4). It was a hand-written forward
   declaration — the interfaces plus a `createResolver` that threw, naming
   Task 4 — until that task replaced it wholesale with the pedals source and
-  removed its `handWritten` entry in favour of a `files[]` one. `strict.ts`
-  is now the only hand-written file under `lib/schgen/`.
+  removed its `handWritten` entry in favour of a `files[]` one. The
+  hand-written files under `lib/schgen/` are now `strict.ts` and
+  `render/stock-symbols.ts`.
+
+  **`render/stock-symbols.ts` is hand-written and has no pedals source.**
+  It builds the nickname-to-library-file map `createResolver` is handed,
+  from this repository's vendored symbols and the installed KiCad's stock
+  symbol directory, and it refuses when a vendored symbol disagrees with the
+  installed library. The pedals project has no vendored set, so there is
+  nothing to port; `docs/known-gaps.md` **G119** records the decision, the
+  deviation from the plan's stated mechanism, and the alternative rejected.
 
   Its fixture libraries are NOT `.ts` and so are not ported by this
   manifest: `tests/schgen/__fixtures__/symbols/Fix.kicad_sym` and
@@ -95,8 +118,8 @@ is resolved rather than hand-porting around the gap:
 
   **The four test files Controller ruling R4 deferred arrive with it** —
   `tests/schgen/ir/build.test.ts`, `classify.test.ts`, `validate.test.ts`
-  (`docs/known-gaps.md` **G113**) and `tests/schgen/render/geometry.test.ts`
-  (**G115**). All four call `fixtureResolver()` at module scope, so each
+  and `tests/schgen/render/geometry.test.ts`. All four call
+  `fixtureResolver()` at module scope, so each
   would have thrown at module load against the stub; they were removed from
   the manifest rather than landed red, and Task 4 re-added their entries
   (`build.test.ts`, `classify.test.ts` and `validate.test.ts` with the same
