@@ -1023,9 +1023,46 @@ footprints."*
 
 | compared | why it is not covered by the one before it |
 | --- | --- |
-| **component identity** | a net partition is over `designator.pin` strings; two components swapped consistently produce the same partition |
+| **component identity** | a net partition is over `designator.pin` strings, so it cannot see a component that is present, absent or duplicated. **The justification this cell originally gave — *"two components swapped consistently produce the same partition"* — is WITHDRAWN 2026-10-20 by controller ruling R28**, because its premise is true and its inference does not follow. See `docs/known-gaps.md` **G177**. |
 | **pin identity** | pad-count parity cannot catch a swapped IN/OUT (parent, gate 5) |
 | **net membership**, as a partition ignoring net names | catches wrong connectivity and a renamed interface net with equivalent topology |
+
+**Ruling R28, 2026-10-20 — why the component-identity justification was
+withdrawn, and why the row stays.** Task 11's implementer measured a consistent
+swap three ways over a real generated export, and its reviewer reproduced the
+first arm independently on a synthetic circuit. Arm A, the two 100n decoupling
+capacitors (both 3V3 to GND), swapped in `components[]` and in every net member:
+**all six problem lists came back empty.** Arm B, a 10u on VIN against a 22u on
+3V3, identical transformation: 4 `netMembership` problems and 2 `values`
+problems. Arm C is the one that settles it - arm A's pair is *identical apart
+from the designator* and has the *same net set*.
+
+So the premise holds and the inference does not. **A consistent swap preserves
+the partition ONLY when the two components are netlist-indistinguishable, and
+in exactly that case the netlist carries no information that tells them apart** -
+so no function of `ImportedNetlist` can report it, a widened `componentIdentity`
+included. That case is also electrically a no-op, because the parts are
+interchangeable. The moment they differ at all, arm B shows the swap is caught
+by `values`, `footprints`, `pinIdentity` or `netMembership`. **The five rows
+together catch every consistent swap of distinguishable components; the single
+case none catches is the one that is not a defect.**
+
+**The row stays**, on the justification above: a partition over `designator.pin`
+strings cannot see a component that is present, absent or duplicated, and the
+shipped mutation that drives it - an extra `components[]` entry on no net -
+turns exactly its own test red.
+
+**And the real guard against a mis-assigned designator is gate 1, not this
+row.** `roundTrip` takes `refs` from the generation itself, while `annotate`
+takes every locked part's designator straight from the committed
+`refs.lock.json`, so a designator swap surfaces as a gate-1 `staleFiles`
+finding. The round trip was never the link that checks it.
+
+**Recorded here rather than acted on by the task that found it.** The
+implementer stated the position and deliberately did not amend this spec,
+because amending the acceptance criteria for the artifact it is producing is
+the one thing this project forbids above all others. The amendment is the
+controller's, on two independent measurements that agree.
 | **values** | a correct topology with a wrong capacitor is a correct netlist |
 | **footprints where declared** | *where declared* is deliberate: the existing test compares against `component.part?.footprint`, so a component with no declared part has nothing to compare and that must not read as a pass |
 
