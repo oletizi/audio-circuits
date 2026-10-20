@@ -14520,9 +14520,20 @@ and the census's self-consistency assertion would still have passed**, since it 
 arithmetic against itself. That is exactly the silent count ruling **R33** says must not exist.
 
 **Fixed**: `countsOf` sums both passes, `wiresAfter` is the measured length of the final wire list,
-and `adaptElkLayout` **throws** if it disagrees with the layout it is about to return - a check
-nothing in the tree previously performed. Today the two passes agree on all five drawn blocks
-(14/14/14/14/11), so this was latent.
+and `adaptElkLayout` **throws** when the counts' own arithmetic disagrees with the wire list it is
+about to return - a check nothing in the tree previously performed. Today the two passes agree on
+all five drawn blocks (14/14/14/14/11), so this was latent.
+
+**AND THE FIRST VERSION OF THAT CHECK COULD NOT FAIL, WHICH IS THE SAME FAULT ONE LEVEL DOWN.** It
+compared `bothPasses.wiresAfter` against `layout.wires.length` - and `wiresAfter` **is**
+`layout.wires.length`, passed in two lines above, so it was `x !== x`. **Perturbation 14 deleted the
+entire block and nothing went red**, which is how it was caught; the sweep found a tautology that
+had been written to guard against a silent count. It now compares the arithmetic - `before` less the
+three merges plus the splits - against the returned list, and perturbation 14 turns
+`tests/schgen/elk/adapt.test.ts`'s *"the canonicalisation counts add up to the layout that is
+returned"* red. That test uses `regulatorBlock` and not the divider for a measured reason: the
+grid-aligned divider's four counts are all **zero**, so its arithmetic is `7 - 0 + 0 = 7` and the
+assertion would pass without exercising anything.
 
 - **Found** 2026-10-20 by the Task 13 round-5 review; both reproduced and fixed at round 6.
 - **Evidence** the two-arm `checkWireSafety` output above, run here; the `counts` construction read

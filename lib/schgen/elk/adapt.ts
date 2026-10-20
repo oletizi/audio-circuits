@@ -271,15 +271,21 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
 
   const layout: BlockLayout = { placements: snapped.placements, wires: post.wires, anchors: snapped.anchors }
   const bothPasses = countsOf(built.wires, [pre, post], layout.wires.length)
-  // **The count describes the geometry that is returned, and this is what says so.** Nothing else
-  // in the tree compares the two: the census asserts the counts' own arithmetic against itself,
-  // which a count derived from the wrong pass would satisfy.
-  if (bothPasses.wiresAfter !== layout.wires.length) {
+  // **THE ARITHMETIC IS CHECKED AGAINST THE MEASURED GEOMETRY, and the first version of this check
+  // could not fail.** It compared `bothPasses.wiresAfter` with `layout.wires.length` - and
+  // `wiresAfter` IS `layout.wires.length`, passed in two lines above, so it was `x !== x`.
+  // Perturbation 14 removed the whole block and nothing went red, which is how it was caught. What
+  // has teeth is comparing the COUNTS' own arithmetic - what each pass says it removed and added -
+  // against the wire list that is actually returned. A miscount in either pass fails here.
+  const expected = built.wires.length - bothPasses.collapsed - bothPasses.zeroLength - bothPasses.contained + bothPasses.split
+  if (expected !== layout.wires.length) {
     throw new Error(
-      `block ${g.block.id}: the canonicalisation count reports ${bothPasses.wiresAfter} wires and ` +
-        `the layout being returned holds ${layout.wires.length}. The count must describe the ` +
-        "geometry that is drawn, not a derivation of it; this is a defect in countsOf or in the " +
-        "two canonicalisation passes, not a layout that cannot be drawn.",
+      `block ${g.block.id}: the canonicalisation counts say ${built.wires.length} wires less ` +
+        `${bothPasses.collapsed} duplicate(s), ${bothPasses.zeroLength} zero-length and ` +
+        `${bothPasses.contained} containment(s) plus ${bothPasses.split} split(s) = ${expected}, ` +
+        `and the layout being returned holds ${layout.wires.length}. The counts must describe the ` +
+        "geometry that is drawn; this is a defect in countsOf or in one of the two canonicalisation " +
+        "passes, not a layout that cannot be drawn.",
     )
   }
 

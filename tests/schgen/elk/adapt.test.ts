@@ -413,3 +413,32 @@ test("an obligation-3 refusal still reports what it canonicalised", async () => 
     report.counts.wiresBefore - report.counts.collapsed - report.counts.zeroLength - report.counts.contained,
   )
 }, 120_000)
+
+/**
+ * **THE CANONICALISATION COUNTS DESCRIBE THE GEOMETRY THAT IS RETURNED, AND THIS IS WHAT HOLDS IT.**
+ *
+ * Round 6's first attempt at this check compared `counts.wiresAfter` with `layout.wires.length` -
+ * and `wiresAfter` **is** `layout.wires.length`, so it was `x !== x`. Perturbation 14 deleted the
+ * whole block and **nothing went red**, which is how it was caught. What has teeth is the counts'
+ * own arithmetic: `before` less the three merges plus the splits must equal the wire list that
+ * comes back. A miscount in either canonicalisation pass fails it.
+ */
+test("the canonicalisation counts add up to the layout that is returned", async () => {
+  // **`regulatorBlock` and not the divider**: measured, the grid-aligned divider's four counts are
+  // all ZERO, so its arithmetic is `7 - 0 + 0 = 7` and the test would pass without exercising
+  // anything. This block collapses a duplicate, so the sum has work to do.
+  const g = regulatorBlock(null)
+  const input = elkInputOf(g)
+  const outcome = (await layoutBlocks([input])).get(input.blockId)
+  if (outcome === undefined) throw new Error("layoutBlocks returned no outcome")
+  const report = adaptElkLayoutReported(g, outcome)
+  expect(report.counts).not.toBeNull()
+  expect(report.result.ok, "this fixture must DRAW, or there is no returned layout to add up to").toBe(true)
+  if (report.counts === null || !report.result.ok) return
+  const c = report.counts
+  expect(c.wiresBefore - c.collapsed - c.zeroLength - c.contained + c.split).toBe(report.result.layout.wires.length)
+  expect(c.wiresAfter).toBe(report.result.layout.wires.length)
+  // Anti-vacuity: this block really does exercise the arithmetic rather than passing with all zeros.
+  expect(c.wiresBefore).toBeGreaterThan(0)
+  expect(c.zeroLength + c.collapsed + c.contained + c.split).toBeGreaterThan(0)
+}, 120_000)
