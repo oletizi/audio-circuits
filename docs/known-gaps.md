@@ -6418,7 +6418,13 @@ not ported yet, not skipped, and not abandoned.
   (the module-scope `fixtureResolver()` call) - read directly, not relayed.
   After removing the file and its manifest entry: `SCHGEN_SOURCE=... bun
   test tests/schgen/render/` gives **17 pass / 0 fail**, and the full suite
-  gives **2544 pass / 0 fail across 249 files**.
+  gives **2544 pass / 0 fail across 249 files**. Those 17 belong entirely
+  to its siblings, not to any of its own assertions: running the rewritten
+  `render/geometry.test.ts` in isolation (`SCHGEN_SOURCE=... bun test
+  tests/schgen/render/geometry.test.ts`) gives **0 pass / 1 fail / 1
+  error** - `fixtureResolver()` sits ahead of every `describe`/`it` in the
+  pedals source, so none of its ten `it(...)` blocks ever register, and the
+  deletion loses zero working assertions.
 - **Verified** CONFIRMED - this writer ran both commands and read the full
   output.
 - **Why it is open** it is not a defect in this task's work; it is the
