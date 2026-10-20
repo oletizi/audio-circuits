@@ -40,16 +40,36 @@
  * `docs/known-gaps.md`, because an implementer who reads `negotiable` as "seam B will place this
  * for you" would be wrong about this generator.
  *
- * **AND THE SIDE VOCABULARIES ARE TWO AND MEET HERE.** `Anchor.side` is a `Side`
- * (`left`/`right`/`up`/`down`, pointing away from the circuit) and `InterfacePort.sides` is a
- * `PinSide` (`left`/`right`/`top`/`bottom`, naming the edge). `pinSideOfAnchor` below is the one
- * place they are mapped, for `options.ts`'s reason: a second mapping would be a second thing to
- * keep in step.
+ * ---
+ *
+ * **AND THE TWO SIDE VOCABULARIES ARE TWO QUANTITIES, NOT TWO SPELLINGS - ROUND 1 CONFLATED THEM
+ * AND SIX OF ITS EIGHT REFUSALS WERE THAT CONFLATION.**
+ *
+ * `Anchor.side` is a `Side` and `block-types.ts` says what it is: *"`side` points away from the
+ * circuit"* - a **DIRECTION**, consumed by `anchorsToSymbols` -> `powerRotation` to rotate a glyph.
+ * `InterfacePort.sides` is a `PinSide` and spec §1.9 says what it is: *"which sides of the block's
+ * drawn extent a given interface port may be reached from"* - an **EDGE**.
+ * `lib/schgen/rules/pin-sides.ts` already states the distinction in its own words: *"that module
+ * says up/down because it is describing a DIRECTION in the library frame; a block interface is
+ * described by the EDGE a pin sits on"*.
+ *
+ * **Round 1 renamed one into the other** (`pinSideOfAnchor`, a second copy of that module's
+ * `SIDE_NAMES`) and compared a direction against an edge. On the ported `mini` design that produced
+ * eight refusals, and **six of them were ports sitting on an edge their own declaration names** - a
+ * regulator's `VIN` glyph points left and the anchor is on the block's TOP edge, a crystal's `XI`
+ * glyph points up and the anchor is on the LEFT edge. The deleted mapping is not replaced; the
+ * comparison is edge against edge, and the edge is derived from the block's own drawn extent by
+ * `edgesOfAnchor` below.
+ *
+ * **AND `docs/known-gaps.md` G208 SETTLES WHAT `sides` IS FOR, which is why the extent is the right
+ * reference.** Seam B draws no wire and nothing ever routes to an interface port, so `sides` is not
+ * a routing constraint: it is a **legibility claim about where on the block's boundary a reader
+ * finds the net**. The quantity that answers it is the anchor's position within the extent.
  */
 
 import type { Anchor, BlockLayout } from "./block-types.ts"
 import { contentOffset, frameAt, frameSize, type FrameContent } from "./frames.ts"
-import { fmtMm, type Point, type Side } from "./geometry.ts"
+import { fmtMm, type Point, type Um } from "./geometry.ts"
 import type { BlockId, Circuit, NetName } from "../ir/types.ts"
 import type { InterfacePort, PinSide, SchematicAuthoring } from "../authoring.ts"
 import type { Box } from "./lib-pins.ts"
@@ -109,14 +129,63 @@ export function interfacesOf(authoring: SchematicAuthoring): ReadonlyMap<BlockId
   return new Map(authoring.blocks.map((b) => [b.id, b.interface]))
 }
 
-/** The one mapping between `Anchor.side` and `InterfacePort.sides`. */
-export function pinSideOfAnchor(side: Side): PinSide {
-  switch (side) {
-    case "left": return "left"
-    case "right": return "right"
-    case "up": return "top"
-    case "down": return "bottom"
+/**
+ * THE EDGE OR EDGES OF `box` THAT `at` SITS ON: the nearest one, and every one tied with it.
+ *
+ * **A CORNER LIES ON TWO EDGES AND SATISFIES EITHER.** An anchor exactly in a box's top-left
+ * corner is equally on the top and on the left, and a declaration naming either is met; collapsing
+ * it to one would refuse a correct declaration for an arbitrary reason.
+ *
+ * **IT INFERS NOTHING ABOUT THE INTERIOR.** Spec §1.9 forbids seam B inferring a block's INTERFACE
+ * from its geometry - which nets leave, and whether a port exists at all. This does not do that:
+ * the port is declared, and this reads the declared port's position against the extent of the
+ * geometry the caller already handed it, which is what a reader does with their eye.
+ *
+ * **THE REFERENCE IS `anchorExtent` AND NOT `FrameContent.box`, AND THE DIFFERENCE IS NOT
+ * COSMETIC - IT WAS MEASURED.** `FrameContent.box` is the union of the block's bodies, wire ends
+ * **and its drawn boundary glyphs**, and a glyph extends OUTWARD from its own anchor. So the box's
+ * edge in a glyph's direction is pushed past that anchor by the glyph's own length, and asking
+ * which edge the anchor is nearest then compares the anchor against a box the anchor itself
+ * inflated. `[RAN]` on `mini`: against the full box, `J_OUT`'s seven anchors - all of them in one
+ * column on the connector's left, declared `[left, right]` - come out as `top`, `top`, `top`,
+ * `top/bottom`, `bottom`, `bottom`, `bottom`, because the label outlines put the box's left edge
+ * 15.88 mm beyond them while its top edge is 1.27 mm away. **Seven false refusals, from the
+ * same family of mistake as reading an allowed offset off the data under test.** Against
+ * `anchorExtent` every one of them reads `left`.
+ *
+ * **A DEGENERATE EXTENT TIES ALL FOUR EDGES**, which satisfies any declaration. That is the right
+ * answer rather than a hole: a block whose parts, wires and anchors occupy a single point has no
+ * edge to distinguish, and refusing would be asserting one.
+ */
+export function anchorExtent(layout: BlockLayout): Box {
+  const points: Point[] = [
+    ...layout.placements.map((p) => p.at),
+    ...layout.wires.flatMap((w) => [w.a, w.b]),
+    ...layout.anchors.map((a) => a.at),
+  ]
+  const [first, ...rest] = points
+  if (first === undefined) {
+    throw new Error(
+      "a block layout with no placement, no wire and no anchor has no extent for an interface " +
+        "port to sit on an edge of. It is not defaulted to the origin, because every port of such " +
+        "a block would then satisfy every declaration.",
+    )
   }
+  return rest.reduce(
+    (b, p) => ({ minX: Math.min(b.minX, p.x), minY: Math.min(b.minY, p.y), maxX: Math.max(b.maxX, p.x), maxY: Math.max(b.maxY, p.y) }),
+    { minX: first.x, minY: first.y, maxX: first.x, maxY: first.y },
+  )
+}
+
+export function edgesOfAnchor(at: Point, box: Box): readonly PinSide[] {
+  const distance: ReadonlyArray<readonly [PinSide, number]> = [
+    ["left", at.x - box.minX],
+    ["right", box.maxX - at.x],
+    ["top", at.y - box.minY],
+    ["bottom", box.maxY - at.y],
+  ]
+  const nearest = Math.min(...distance.map(([, d]) => d))
+  return distance.filter(([, d]) => d === nearest).map(([side]) => side)
 }
 
 const shift = (p: Point, d: Point): Point => ({ x: p.x + d.x, y: p.y + d.y })
@@ -150,6 +219,7 @@ function attachmentProblems(
           "belongs to. Inferring it would make this check unable to disagree with the drawing.",
       )
     }
+    const extent = anchorExtent(content.block.layout)
     const anchorsByNet = new Map<NetName, Anchor[]>()
     for (const a of content.block.layout.anchors) {
       anchorsByNet.set(a.net, [...(anchorsByNet.get(a.net) ?? []), a])
@@ -165,13 +235,14 @@ function attachmentProblems(
         continue
       }
       for (const anchor of anchors) {
-        const side = pinSideOfAnchor(anchor.side)
-        if (!port.sides.includes(side)) {
+        const edges = edgesOfAnchor(anchor.at, extent)
+        const side = edges.find((e) => port.sides.includes(e))
+        if (side === undefined) {
           problems.push(
             `block ${id}: interface port ${port.net} (${port.position}) declares sides ` +
-              `${port.sides.join(", ")} and the block draws its anchor on the ${side}. Seam B does ` +
-              "not move it: the wire that reaches that anchor is inside the block, and spec §1.9 " +
-              "forbids re-routing one to make a sheet fit.",
+              `${port.sides.join(", ")} and the block's own drawn extent puts its anchor on the ` +
+              `${edges.join(" and ")} edge. Seam B does not move it: the wire that reaches that ` +
+              "anchor is inside the block, and spec §1.9 forbids re-routing one to make a sheet fit.",
           )
           continue
         }
@@ -296,10 +367,21 @@ export async function composeBlocks(
  * SIGNATURE, RECORDED IN `docs/known-gaps.md`.** Spec §1.9 requires the refusal to name the block,
  * and a `BlockLayout` carries part labels but no block id; naming it by its position in an array
  * would be a refusal a reader could not act on.
+ *
+ * **AND THE OFFSET IS GIVEN, NOT READ OFF `placements[0]` - WHICH IS ROUND 2's FIX FOR A MEASURED
+ * BLIND SPOT.** Round 1 inferred the allowed translation from the first placement's own
+ * displacement, so **a block with ONE placement, no wires and no anchors had its whole displacement
+ * absorbed as the allowed one**: `[RAN]` `mini`'s `AMP_SPARE` slid 50.8 mm reported no drift at all.
+ * That is the family of defect `docs/known-gaps.md` **G202** names - a check comparing a value
+ * against the value it has just been handed - and it is exactly the silent nudge Step 7 exists to
+ * prevent. The caller computed the offset (`contentOffset`), so it passes it, and every block is
+ * fully compared however few parts it holds. A block with no offset entry refuses rather than being
+ * skipped.
  */
 export function interiorDrift(
   before: readonly ComposedBlock[],
   after: readonly ComposedBlock[],
+  offsets: ReadonlyMap<BlockId, Point>,
 ): readonly string[] {
   const out: string[] = []
   const afterById = new Map(after.map((b) => [b.blockId, b.layout]))
@@ -309,7 +391,17 @@ export function interiorDrift(
       out.push(`block ${blockId} passed its clearance check and is absent from the composed sheet`)
       continue
     }
-    out.push(...driftOfOne(blockId, layout, now))
+    const d = offsets.get(blockId)
+    if (d === undefined) {
+      throw new Error(
+        `interiorDrift was given no composition offset for block ${blockId}, so there is nothing ` +
+          "to compare its placed geometry against. The offset is the caller's - it is contentOffset(" +
+          "frame, position) - and it is NOT inferred from the layouts here: inferring it from the " +
+          "first placement made a one-part block's whole displacement look like the allowed " +
+          "translation, which is the blind spot docs/known-gaps.md G214 records.",
+      )
+    }
+    out.push(...driftOfOne(blockId, layout, now, d))
   }
   for (const { blockId } of after) {
     if (!before.some((b) => b.blockId === blockId)) {
@@ -319,15 +411,7 @@ export function interiorDrift(
   return out
 }
 
-/** The one offset `before` and `after` may differ by, taken from the first placement. */
-function offsetOf(before: BlockLayout, after: BlockLayout): Point | null {
-  const a = before.placements[0]
-  const b = after.placements[0]
-  if (a === undefined || b === undefined) return null
-  return { x: b.at.x - a.at.x, y: b.at.y - a.at.y }
-}
-
-function driftOfOne(blockId: BlockId, before: BlockLayout, after: BlockLayout): readonly string[] {
+function driftOfOne(blockId: BlockId, before: BlockLayout, after: BlockLayout, d: Point): readonly string[] {
   const out: string[] = []
   if (before.placements.length !== after.placements.length) {
     out.push(`block ${blockId}: ${before.placements.length} part placement(s) became ${after.placements.length}`)
@@ -339,11 +423,6 @@ function driftOfOne(blockId: BlockId, before: BlockLayout, after: BlockLayout): 
     out.push(`block ${blockId}: ${before.anchors.length} anchor(s) became ${after.anchors.length}`)
   }
   if (out.length > 0) return out
-  const d = offsetOf(before, after)
-  if (d === null) {
-    // A block with no placement has no offset to read, and comparing nothing would pass.
-    return [`block ${blockId}: the layout places no part, so there is no interior to compare`]
-  }
   const moved = (from: Point, to: Point): boolean => to.x - from.x !== d.x || to.y - from.y !== d.y
   before.placements.forEach((p, i) => {
     const q = after.placements[i]
@@ -355,8 +434,8 @@ function driftOfOne(blockId: BlockId, before: BlockLayout, after: BlockLayout): 
     if (p.rot !== q.rot) out.push(`block ${blockId}: ${p.part}#${p.unit} was drawn at ${p.rot} deg and is now at ${q.rot} deg`)
     if (moved(p.at, q.at)) {
       out.push(
-        `block ${blockId}: part ${p.part}#${p.unit} moved inside the block - every other part of ` +
-          `this block shifted by (${fmtMm(d.x)}, ${fmtMm(d.y)}) mm and this one by ` +
+        `block ${blockId}: part ${p.part}#${p.unit} moved inside the block - the composition ` +
+          `offset for this block is (${fmtMm(d.x)}, ${fmtMm(d.y)}) mm and this part moved by ` +
           `(${fmtMm(q.at.x - p.at.x)}, ${fmtMm(q.at.y - p.at.y)}) mm. The block passed its own ` +
           "clearance check at the first geometry, and spec §1.9 forbids altering it afterwards.",
       )
@@ -411,7 +490,77 @@ export function nonMemberContainments(c: Circuit, drawing: SheetDrawing): readon
   return out
 }
 
+/**
+ * `docs/known-gaps.md` **G200**'s two measures, TAKEN PER BLOCK, over a set of composed layouts.
+ *
+ * **IT EXISTS BECAUSE G209's FIGURES WERE OTHERWISE IN NO COMMITTED FILE.** That entry records that
+ * composition leaves G200's numbers unchanged; a later reader could not re-run the measurement,
+ * which is the one thing a register entry must not leave undone.
+ *
+ * **PER BLOCK AND NEVER PER SHEET.** At sheet scale the staircase measure is vacuous: frames sit at
+ * different x, so parts in different blocks never share one whatever the renderer did. `[RAN]`
+ * `mini`'s signal sheet - every block drawn by a reviewed TEMPLATE - gives 11 placements and 11
+ * distinct x, the same verdict G200 reports for ELK. The number is a property of a block's interior.
+ */
+export interface ShapeMeasures {
+  readonly placements: number
+  /** Summed over blocks: distinct x-coordinates within each block. */
+  readonly distinctX: number
+  readonly wiredNets: number
+  /** Nets whose route reverses direction on an axis. */
+  readonly reversing: number
+  readonly segments: number
+  /** Total Manhattan wire length. */
+  readonly wire: Um
+}
+
+export function shapeMeasures(layouts: readonly BlockLayout[]): ShapeMeasures {
+  let placements = 0
+  let distinctX = 0
+  let wiredNets = 0
+  let reversing = 0
+  let segments = 0
+  let wire = 0
+  for (const l of layouts) {
+    placements += l.placements.length
+    distinctX += new Set(l.placements.map((p) => p.at.x)).size
+    const axes = new Map<NetName, { x: Set<number>; y: Set<number> }>()
+    for (const w of l.wires) {
+      const e = axes.get(w.net) ?? { x: new Set<number>(), y: new Set<number>() }
+      if (w.a.x !== w.b.x) e.x.add(Math.sign(w.b.x - w.a.x))
+      if (w.a.y !== w.b.y) e.y.add(Math.sign(w.b.y - w.a.y))
+      axes.set(w.net, e)
+      segments += 1
+      wire += Math.abs(w.b.x - w.a.x) + Math.abs(w.b.y - w.a.y)
+    }
+    wiredNets += axes.size
+    for (const [, e] of axes) if (e.x.size > 1 || e.y.size > 1) reversing += 1
+  }
+  return { placements, distinctX, wiredNets, reversing, segments, wire }
+}
+
 /** The frames' own sizes, for a report that prints them beside a packing's positions. */
 export function frameSizes(contents: readonly FrameContent[]): readonly Size[] {
   return contents.map(frameSize)
+}
+
+/**
+ * The grid-multiple offset composition applies to each block, by block id - `interiorDrift`'s third
+ * argument, built from the same `contentOffset` call `arrange` uses.
+ *
+ * It exists so that the offset `interiorDrift` compares against is **computed from the packing**
+ * rather than read out of the geometry under test. One function, one source.
+ */
+export function compositionOffsets(
+  contents: readonly FrameContent[],
+  at: readonly Point[],
+): ReadonlyMap<BlockId, Point> {
+  const out = new Map<BlockId, Point>()
+  contents.forEach((f, i) => {
+    if (f.blockId === null) return
+    const pos = at[i]
+    if (pos === undefined) throw new Error(`the packer placed ${at.length} of ${contents.length} frames`)
+    out.set(f.blockId, contentOffset(f, pos))
+  })
+  return out
 }

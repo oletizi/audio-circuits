@@ -163,20 +163,26 @@ describe("the cross-sheet mechanism refuses in both directions", () => {
     expect(problems.join(" ")).toContain(`net ${rail} is drawn with global-label and power-symbol`)
   })
 
-  test("a net whose pins are on two sheets and is drawn with NEITHER mechanism REFUSES", () => {
+  test("a net left unrepresented on ONE of its three sheets REFUSES, naming that sheet", () => {
     const { many } = sides("three")
-    // SIG has pins in three blocks on three sheets. Strip every representation of it and the
-    // three pieces are no longer joined by anything in the schematic.
-    const stripped = many.drawings.map((d): SheetDrawing => ({
-      ...d,
-      labels: d.labels.filter((l) => l.net !== "SIG"),
-      powers: d.powers.filter((p) => p.net !== "SIG"),
-    }))
-    const problems = crossSheetProblems(many.circuit, stripped)
-    expect(problems.length).toBeGreaterThan(0)
-    expect(problems.join(" ")).toContain("net SIG has pins on sheets s1, s2, s3 and is drawn with neither")
-    // And the unstripped drawings do not report it, so the clause is not firing on everything.
-    expect(crossSheetProblems(many.circuit, many.drawings).join(" ")).not.toContain("net SIG has pins")
+    // ROUND 2's CORRECTION. The clause used to union every drawing's representation of a net and
+    // ask whether it was drawn ANYWHERE, so the likely instance - one sheet's piece orphaned while
+    // the other two carry the net - reported nothing. Driven here one sheet at a time.
+    const stripOn = (ids: readonly string[]): readonly SheetDrawing[] =>
+      many.drawings.map((d) => (ids.includes(d.sheet.id)
+        ? { ...d, labels: d.labels.filter((l) => l.net !== "SIG"), powers: d.powers.filter((p) => p.net !== "SIG") }
+        : d))
+    const one = crossSheetProblems(many.circuit, stripOn(["s3"]))
+    expect(one.length).toBe(1)
+    expect(one[0]).toContain("net SIG has pins on sheets s1, s2, s3 and sheet s3 draws it with neither")
+    const two = crossSheetProblems(many.circuit, stripOn(["s2", "s3"]))
+    expect(two.length).toBe(2)
+    expect(two.join(" ")).toContain("sheet s2 draws it with neither")
+    expect(two.join(" ")).toContain("sheet s3 draws it with neither")
+    const all = crossSheetProblems(many.circuit, stripOn(["s1", "s2", "s3"]))
+    expect(all.length).toBe(3)
+    // And the unstripped drawings report nothing, so the clause is not firing on everything.
+    expect(crossSheetProblems(many.circuit, many.drawings).join(" ")).not.toContain("draws it with neither")
   })
 
   test("a rail drawn as an ordinary net REFUSES: the mechanism must be its class's", () => {

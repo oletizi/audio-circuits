@@ -157,28 +157,38 @@ export function sheetsOf(c: Circuit): ReadonlyMap<NetName, ReadonlySet<SheetId>>
   return out
 }
 
-/** Which mechanisms a net is actually drawn with, across every sheet of the drawing set. */
+/** Which mechanisms a net is drawn with on ONE sheet. */
+function drawnOn(net: NetName, d: SheetDrawing): ReadonlySet<CrossSheetMechanism> {
+  const out = new Set<CrossSheetMechanism>()
+  // A PWR_FLAG carries no net name of its own in the drawing (`PowerSymbol.flag`), so it is not a
+  // representation of the connection: it is the ERC marker that the rail has a driver.
+  if (d.powers.some((p) => !p.flag && p.net === net)) out.add("power-symbol")
+  if (d.labels.some((l) => l.net === net)) out.add("global-label")
+  return out
+}
+
+/** Which mechanisms a net is drawn with, across every sheet of the drawing set. */
 function drawnWith(net: NetName, drawings: readonly SheetDrawing[]): ReadonlySet<CrossSheetMechanism> {
   const out = new Set<CrossSheetMechanism>()
-  for (const d of drawings) {
-    // A PWR_FLAG carries no net name of its own in the drawing (`PowerSymbol.flag`), so it is not
-    // a representation of the connection: it is the ERC marker that the rail has a driver.
-    if (d.powers.some((p) => !p.flag && p.net === net)) out.add("power-symbol")
-    if (d.labels.some((l) => l.net === net)) out.add("global-label")
-  }
+  for (const d of drawings) for (const m of drawnOn(net, d)) out.add(m)
   return out
 }
 
 /**
  * EVERY WAY A SET OF SHEET DRAWINGS BREAKS SPEC §1.6's RULE, one line each, in a fixed order.
  *
- * **FOUR CLAUSES, AND THE FOURTH IS NOT IN TASK 15's BRIEF.** The brief names three - a net drawn
- * with both mechanisms, a net crossing a boundary with neither, and a class with no stated
- * mechanism. The fourth is **a net drawn with a mechanism other than the one its class states**,
- * and without it `classOf` and `mechanismFor` would be read by nobody: a rail drawn only as a
- * global label passes all three of the brief's clauses, and spec §3.4's third criterion -
- * *"rails must be declared ports, so a rail drawn as an ordinary net is detectable"* - is exactly
- * that case. It is recorded as a deviation in `docs/known-gaps.md`.
+ * **FIVE CLAUSES, AND TASK 15's BRIEF NAMES THREE.** The brief's three are a net drawn with both
+ * mechanisms, a net crossing a boundary with neither, and a class with no stated mechanism. The
+ * two added:
+ *
+ * - **a class stated to use a mechanism this emitter cannot draw** (`unemittableMechanisms`),
+ *   separate from the unmapped-class clause because the two failures are different sentences;
+ * - **a net drawn with a mechanism other than the one its class states.** Without it `classOf` and
+ *   `mechanismFor` would be read by nobody: a rail drawn only as a global label passes all three of
+ *   the brief's clauses, and spec §3.4's third criterion - *"rails must be declared ports, so a
+ *   rail drawn as an ordinary net is detectable"* - is exactly that case.
+ *
+ * Both are recorded as deviations in `docs/known-gaps.md` **G203**.
  *
  * **IT IS A `string[]` AND NOT A THROW**, like `authoringProblems` and `staleFiles`: one call
  * reports everything wrong rather than the first thing, and `assertCrossSheet` below is the
@@ -203,12 +213,28 @@ export function crossSheetProblems(c: Circuit, drawings: readonly SheetDrawing[]
           `"${want ?? "none stated"}" (spec §1.6).`,
       )
     }
-    if (on.size > 1 && used.size === 0) {
-      out.push(
-        `net ${net} has pins on sheets ${[...on].sort().join(", ")} and is drawn with neither a ` +
-          "power symbol nor a global label, so the two sheets' pieces are not connected in the " +
-          "schematic at all.",
-      )
+    if (on.size > 1) {
+      // PER SHEET, AND NOT ACROSS THE SET - ROUND 2's CORRECTION. A union over every drawing
+      // answers "is this net represented ANYWHERE", so the likely instance - one sheet's piece
+      // left unrepresented and electrically orphaned while the others carry the net - was
+      // invisible. `[RAN]` on the three-sheet SIG fixture: stripping s3's label alone reported
+      // nothing, s2 and s3 together reported nothing, and only stripping all three fired.
+      for (const sheet of [...on].sort()) {
+        const drawing = drawings.find((d) => d.sheet.id === sheet)
+        if (drawing === undefined) {
+          out.push(
+            `net ${net} has a pin on sheet ${sheet} and no drawing for that sheet was given, so ` +
+              "nothing could say how the net is represented there",
+          )
+          continue
+        }
+        if (drawnOn(net, drawing).size > 0) continue
+        out.push(
+          `net ${net} has pins on sheets ${[...on].sort().join(", ")} and sheet ${sheet} draws it ` +
+            "with neither a power symbol nor a global label, so that sheet's piece of the net is " +
+            "joined to the others by nothing.",
+        )
+      }
     }
     for (const mechanism of [...used].sort()) {
       if (want !== undefined && mechanism !== want) {

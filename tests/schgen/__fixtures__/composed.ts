@@ -63,13 +63,45 @@ function miniLoaded(): LoadedDesign {
   return { file: path.join(dir, "index.ts"), dir, spec: miniDesign, outDir: path.join(dir, "out") }
 }
 
+/**
+ * THE ONE PORT THIS FIXTURE DECLARES BY HAND, AND WHY THE TEMPLATE WINS.
+ *
+ * `negotiablePort`'s rule puts a supply rail at the top of a block, citing `RailSpec`'s own doc
+ * comment. `mini`'s `FLASH` block is drawn by the **bus renderer**, which fans the flash's pins out
+ * to the LEFT - including both `3V3` straps on `~{WP}` and `~{HOLD}` - and brings the `VCC` pin's
+ * `3V3` out at the top. So two of its three `3V3` anchors are on the left edge and the helper's
+ * rule refuses them.
+ *
+ * **The reviewed arrangement wins, and that is the spec's own order rather than a preference.**
+ * Spec §3.1 makes the reviewed human arrangement the thing a backend is measured against, §1.5
+ * step 1 is *"an explicit orientation in a reviewed template wins"*, and **`negotiablePort`'s own
+ * `why` scopes its rule to a block *"that declares no template"*** - which this block is not. So
+ * the declaration names the sides the symbol's own pin geometry puts the net on. **No template is
+ * edited, no pinned geometry test moves, and no spec amendment is needed.**
+ *
+ * It is a LITERAL and not a second rule: `negotiablePort`'s doc comment says *"any file is free to
+ * write an `InterfacePort` literally instead, and a port with something particular to say should"*.
+ */
+const FLASH_3V3: InterfacePort = {
+  net: "3V3",
+  sides: ["left", "top"],
+  position: "negotiable",
+  why:
+    "FLASH is drawn by the bus renderer, which fans Memory_Flash:W25X40CLSS's pins out on the " +
+    "side the symbol's own (at x y angle) puts them: ~{WP} (pin 3) and ~{HOLD} (pin 7) are " +
+    "left-hand pins and VCC (pin 8) is a top pin, so this rail reaches the block's boundary on " +
+    "both edges. RailSpec's \"supplies at the top\" is negotiablePort's rule for a block that " +
+    "declares no template, and this block's arrangement is a reviewed one (spec §3.1, §1.5 step 1).",
+}
+
 /** Every block's interface, declared by calling `negotiablePort` - see this module's header. */
 function declaredByHelper(circuit: Circuit, symbols: SymbolResolver): ReadonlyMap<BlockId, readonly InterfacePort[]> {
   const out = new Map<BlockId, readonly InterfacePort[]>()
   for (const block of circuit.blocks.values()) {
     const g = subgraphOf(circuit, block.id, symbols)
     const context = { portDirections: circuit.portDirections, rails: [...g.railSpecs.values()] }
-    out.set(block.id, [...g.rails, ...g.external].map((net) => negotiablePort(net, context)))
+    out.set(block.id, [...g.rails, ...g.external].map((net) =>
+      block.id === "FLASH" && net === "3V3" ? FLASH_3V3 : negotiablePort(net, context)))
   }
   return out
 }
