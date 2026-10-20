@@ -22,19 +22,17 @@
 import { expect, test } from "bun:test"
 import { elkInputOf } from "../../../lib/schgen/elk/graph.ts"
 import { serializeElkInput } from "../../../lib/schgen/elk/serialize.ts"
-import { autoBlock, dividerSubgraph, fixtureAuthoring } from "./fixtures.ts"
+import { autoBlock, dividerSubgraph } from "./fixtures.ts"
 import { res } from "../__fixtures__/circuits.ts"
 import type { ElkNode } from "elkjs/lib/elk-api.js"
 
-const authoring = fixtureAuthoring()
-
 test("two serializations of one input are byte-identical", () => {
-  const { graph } = elkInputOf(dividerSubgraph(), authoring)
+  const { graph } = elkInputOf(dividerSubgraph())
   expect(serializeElkInput(graph)).toBe(serializeElkInput(graph))
 })
 
 test("elkInputOf's own `serialized` is that same string", () => {
-  const input = elkInputOf(dividerSubgraph(), authoring)
+  const input = elkInputOf(dividerSubgraph())
   expect(input.serialized).toBe(serializeElkInput(input.graph))
 })
 
@@ -60,7 +58,7 @@ const ONE_RESISTOR =
   '{"id":"GND:0","sources":["R_A:1#2"],"targets":["port:GND"]}]}'
 
 test("the declared key order is pinned to the byte", () => {
-  expect(elkInputOf(autoBlock([res("R_A", "3V3", "GND")]), authoring).serialized).toBe(ONE_RESISTOR)
+  expect(elkInputOf(autoBlock([res("R_A", "3V3", "GND")])).serialized).toBe(ONE_RESISTOR)
 })
 
 /**
@@ -70,8 +68,8 @@ test("the declared key order is pinned to the byte", () => {
 test("two declaration orders of one circuit serialize differently", () => {
   const a = res("R_A", "3V3", "MID")
   const b = res("R_B", "MID", "GND")
-  const forward = elkInputOf(autoBlock([a, b]), authoring).serialized
-  const reversed = elkInputOf(autoBlock([b, a]), authoring).serialized
+  const forward = elkInputOf(autoBlock([a, b])).serialized
+  const reversed = elkInputOf(autoBlock([b, a])).serialized
   expect(forward).not.toBe(reversed)
   // Same components, same nets, same partition: it is the ORDER that moved, and nothing else.
   expect([...forward].sort().join("")).toBe([...reversed].sort().join(""))

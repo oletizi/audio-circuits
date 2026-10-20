@@ -2,6 +2,9 @@
  * Ported from digital-pedal-platform's `tools/schgen/render/blockTypes.ts`, and DIVERGED from it
  * by Task 8 of the M1 schematic-authoring plan: `RealiseResult`'s false arm carried a bare
  * `reason: string` and now carries a classified `Mismatch`, and `Selection` and `Backend` are new.
+ * **Diverged further by Task 13 under ruling R29**: `BlockUnit` carries the rotation its unit is
+ * drawn at and `BlockSubgraph` carries the circuit's `portDirections`, so the ELK backend reaches
+ * spec §1.5's step-2 answer and §1.9's declared directions from its own declared input.
  *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
@@ -9,7 +12,7 @@
  * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
-import type { BlockId, IrBlock, IrPart, IrPin, NetName, PartLabel, RailSpec, TemplateId } from "../ir/types.ts";
+import type { BlockId, IrBlock, IrPart, IrPin, NetName, PartLabel, PortDirection, RailSpec, TemplateId } from "../ir/types.ts";
 import type { Point, Rotation, Side } from "./geometry.ts";
 import type { LibSymbol } from "./library.ts";
 
@@ -18,6 +21,22 @@ export interface BlockUnit {
   readonly unit: number;
   readonly symbol: LibSymbol;
   readonly pins: readonly IrPin[];
+  /**
+   * **THE ROTATION THIS UNIT IS DRAWN AT, RESOLVED ONCE** - ruling **R29**, spec §1.4 obligation 3.
+   *
+   * It is `drawnRotation(c.orientations.get(part.label))` - spec §1.5 step 2's answer where the
+   * rule gave one, and the symbol's own library frame where it declined. `subgraphOf` computes it;
+   * `lib/schgen/elk/graph.ts` fixes the ELK ports at it and `lib/schgen/elk/adapt.ts` recomputes
+   * every pin end at it, **so ELK and the emitter see one transformed geometry and there is no
+   * second copy to drift** - which is the obligation's operative clause verbatim.
+   *
+   * **A TEMPLATE DOES NOT READ IT, AND THAT IS §1.5's AUTHORITY ORDER AND NOT AN OVERSIGHT.** Step
+   * 1 is *"an explicit orientation in a reviewed template wins"*: the seven ported templates each
+   * choose their own rotation (`orientTwoPin`, `connector-fanout`'s four-rotation search), and a
+   * rule-library preference may not override a human arrangement that was reviewed. This field is
+   * step 2's answer, and only the step-3 backend consumes it.
+   */
+  readonly rot: Rotation;
 }
 
 export interface BlockSubgraph {
@@ -29,6 +48,23 @@ export interface BlockSubgraph {
   readonly external: ReadonlySet<NetName>;
   /** The specs of `rails`, for drawing their anchors as power symbols. */
   readonly railSpecs: ReadonlyMap<NetName, RailSpec>;
+  /**
+   * The circuit's declared port directions - **carried the way `railSpecs` already is**, by ruling
+   * **R29**, which closes **G186**.
+   *
+   * `negotiablePort` reads two things to place a boundary net: a rail's `kind` and a net's
+   * direction. The first was always here, in `railSpecs`; the second was the *"only input genuinely
+   * missing from the IR"*, and `elkInputOf` therefore took a whole `SchematicAuthoring` for it. It
+   * does not any more: a `BlockSubgraph` now answers both, so nothing beside a design has to be
+   * handed to `generate` for a block to reach ELK.
+   *
+   * **It is the WHOLE circuit's map and not this block's subset, deliberately.** A net crossing
+   * THIS block's boundary may be internal to the circuit and have no entry at all (**G99**'s open
+   * residue), so a subset keyed to the block would be a map whose absences mean two different
+   * things. `negotiablePort` handles an absent entry with a stated reason; a narrowed map would not
+   * let it.
+   */
+  readonly portDirections: Readonly<Record<NetName, PortDirection>>;
   /** The power symbols of `rails`, by lib id. */
   readonly powerLibs: ReadonlyMap<string, LibSymbol>;
   /** The intersheet references of each net in `external`, as its labels print them (pageRefs.ts). */

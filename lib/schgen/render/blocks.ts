@@ -2,6 +2,8 @@
  * Ported from digital-pedal-platform's `tools/schgen/render/blocks.ts`, and DIVERGED from it by
  * Task 8 of the M1 schematic-authoring plan: `selectRenderer` is new, `realiseBlock` is rewired
  * around it and takes an ELK backend, and the thrown refusals carry a classified `Mismatch`.
+ * **Diverged further by Task 13 under ruling R29**: `subgraphOf` resolves each unit's drawn
+ * rotation once (`rotationOf`) and carries the circuit's `portDirections` onto the subgraph.
  *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
@@ -15,7 +17,9 @@
  * subgraph, or that produces a layout whose geometry disagrees with the IR, is a generation error.
  */
 import { labelledNets, pinsOfUnit } from "../ir/classify.ts";
-import type { BlockId, Circuit, NetName, RailSpec, Rendering, TemplateId } from "../ir/types.ts";
+import { drawnRotation } from "../rules/orientation.ts";
+import type { Rotation } from "./geometry.ts";
+import type { BlockId, Circuit, IrPart, NetName, RailSpec, Rendering, TemplateId } from "../ir/types.ts";
 import {
   backendRaised, describeMismatch,
   type Backend, type BlockLayout, type BlockSubgraph, type BlockUnit, type Mismatch, type RealiseResult,
@@ -28,13 +32,58 @@ import { TEMPLATES } from "./templates/index.ts";
 
 export { checkLayout, layoutItems, placedNoConnects, placedPins, type PlacedPin } from "./layout-check.ts";
 
+/**
+ * The rotation one unit of `part` is drawn at: spec §1.5 step 2's answer where the rule gave one,
+ * the symbol's own library frame where it declined (`drawnRotation`). Ruling **R29**.
+ *
+ * **THE MAP IS PER-PART AND A UNIT IS NOT A PART, SO A MULTI-UNIT PACKAGE CARRYING A PREFERENCE
+ * REFUSES RATHER THAN GUESSING.** R29 names this as the wrinkle to handle rather than discover.
+ * `rules/orientation.ts`'s one entry applies only to `RAIL_END_KINDS` - resistor, capacitor,
+ * inductor, photoresistor - which are single-unit passives, so the refusal below cannot fire on
+ * anything in this repository today. It is here because the rule library is meant to grow, and
+ * the guess it refuses is a specific and plausible one: applying one part-level rotation to every
+ * section of a dual op-amp would rotate the section the rule was never asked about. Which unit a
+ * part-level preference means is a question only whoever extends the rule can answer.
+ *
+ * A `null` for a multi-unit part is NOT a refusal: the rule declined, every unit draws in the
+ * library frame, and there is nothing to distribute.
+ */
+function rotationOf(c: Circuit, id: BlockId, part: IrPart, symbol: LibSymbol): Rotation {
+  const preferred = c.orientations.get(part.label);
+  if (preferred === undefined) {
+    throw new Error(
+      `block ${id}: Circuit.orientations has no entry for part ${part.label}. The map is total ` +
+        "over the circuit's parts by construction (buildCircuit refuses a hole in it), so an " +
+        "absence here means this Circuit was assembled by something other than buildCircuit. It " +
+        "is not read as null, because null is spec 1.5's rule library declining and would draw " +
+        "the part in the library frame - indistinguishable from a part nobody asked about.",
+    );
+  }
+  if (preferred !== null && symbol.unitCount > 1) {
+    throw new Error(
+      `block ${id}: part ${part.label} is drawn with ${symbol.libId}, which has ` +
+        `${symbol.unitCount} units, and spec 1.5's orientation rule prefers rotation ${preferred} ` +
+        "for it. Circuit.orientations is keyed per PART and an ELK node is per UNIT, so there is " +
+        "no stated answer for which unit that rotation is about. It refuses rather than applying " +
+        "it to every unit: a section the rule was never asked about would be turned with the one " +
+        "it was. Extend lib/schgen/rules/orientation.ts to answer per unit, or leave the part " +
+        "null and let the backend place it in the library frame (ruling R29).",
+    );
+  }
+  return drawnRotation(preferred);
+}
+
 export function subgraphOf(c: Circuit, id: BlockId, symbols: SymbolResolver): BlockSubgraph {
   const block = c.blocks.get(id);
   if (block === undefined) throw new Error(`unknown block ${id}`);
   const units: BlockUnit[] = block.members.map((m) => {
     const part = c.parts.get(m.part);
     if (part === undefined) throw new Error(`block ${id}: unknown part ${m.part}`);
-    return { part, unit: m.unit, symbol: symbols.resolve(part.libId), pins: pinsOfUnit(c, m.part, m.unit) };
+    const symbol = symbols.resolve(part.libId);
+    return {
+      part, unit: m.unit, symbol, pins: pinsOfUnit(c, m.part, m.unit),
+      rot: rotationOf(c, id, part, symbol),
+    };
   });
   const touched = new Set(units.flatMap((u) => u.pins.flatMap((p) => (p.net === null ? [] : [p.net]))));
   const rails = new Set([...touched].filter((n) => c.rails.has(n)));
@@ -56,7 +105,7 @@ export function subgraphOf(c: Circuit, id: BlockId, symbols: SymbolResolver): Bl
     if (refs === undefined) throw new Error(`block ${id}: labelled net ${n} has no intersheet references`);
     labelRefs.set(n, refs);
   }
-  return { block, units, rails, groundRails, external, railSpecs, powerLibs, labelRefs };
+  return { block, units, rails, groundRails, external, railSpecs, powerLibs, labelRefs, portDirections: c.portDirections };
 }
 
 /**

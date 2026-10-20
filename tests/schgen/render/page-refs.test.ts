@@ -11,9 +11,11 @@ import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
 import type { CircuitSpec } from "../../../lib/schgen/ir/types.ts";
 import { assertRefsMatchDrawings, intersheetRefs, sheetPage } from "../../../lib/schgen/render/page-refs.ts";
 import { layoutSheet } from "../../../lib/schgen/render/sheets.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
+const PARTS = [cap("C1", "3V3", "GND"), res("R_T", "3V3", "TAP"), res("R_B", "TAP", "GND"), res("R_L", "TAP", "MID"), res("R_M", "MID", "GND")];
 const spec: CircuitSpec = {
-  parts: [cap("C1", "3V3", "GND"), res("R_T", "3V3", "TAP"), res("R_B", "TAP", "GND"), res("R_L", "TAP", "MID"), res("R_M", "MID", "GND")],
+  parts: PARTS,
   blocks: [
     { id: "DEC", sheet: "pwr", title: "Decoupling", members: ["C1"], checklist: [], rendering: { kind: "wired", template: "decoupling-bank", anchor: null } },
     { id: "DIV", sheet: "pwr", title: "Divider", members: ["R_T", "R_B"], checklist: [], rendering: { kind: "wired", template: "divider", anchor: null } },
@@ -25,6 +27,8 @@ const spec: CircuitSpec = {
     { id: "io", title: "IO", file: "io.kicad_sch", paper: "A4", notes: [] },
   ],
   rails: RAILS,
+  orientations: noOrientationPreferences(PARTS),
+  portDirections: NO_PORT_DIRECTIONS,
 };
 const c = buildCircuit(spec, { symbols });
 

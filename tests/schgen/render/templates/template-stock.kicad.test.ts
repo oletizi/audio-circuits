@@ -18,6 +18,7 @@ import type { Circuit, PartSpec, PinConnection, Rendering } from "../../../../li
 import { checkLayout, realiseBlock, subgraphOf } from "../../../../lib/schgen/render/blocks.ts";
 import { createResolver, stockSymbolDir, type SymbolResolver } from "../../../../lib/schgen/render/library.ts";
 import { layoutSheet } from "../../../../lib/schgen/render/sheets.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../../__fixtures__/orientations.ts";
 
 /**
  * regulator, crystal and connector-fanout on the H7 stock bodies with stock passives: each block
@@ -73,7 +74,9 @@ function circuit(s: Case, symbols: SymbolResolver): Circuit {
       ],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A3", notes: [] }, { id: "p", title: "P", file: "p.kicad_sch", paper: "A3", notes: [] }],
       rails: RAILS,
-      },
+      orientations: noOrientationPreferences([...s.parts, ...peers]),
+      portDirections: NO_PORT_DIRECTIONS,
+    },
     { symbols },
   );
 }

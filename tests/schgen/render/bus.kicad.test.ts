@@ -16,6 +16,7 @@ import { checkLayout, subgraphOf } from "../../../lib/schgen/render/blocks.ts";
 import { realiseBus } from "../../../lib/schgen/render/bus.ts";
 import { blockFields } from "../../../lib/schgen/render/field-placement.ts";
 import { createResolver, stockSymbolDir } from "../../../lib/schgen/render/library.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 // Needs the stock KiCad symbol libraries; fails (never skips) when they are missing.
 describe("realiseBus on the stock STM32H743IITx symbol", () => {
@@ -51,7 +52,9 @@ describe("realiseBus on the stock STM32H743IITx symbol", () => {
         ],
         sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A3", notes: [] }],
         rails: RAILS,
-          },
+        orientations: noOrientationPreferences([mcu, ...peers]),
+        portDirections: NO_PORT_DIRECTIONS,
+      },
       { symbols: resolver },
     );
     const g = subgraphOf(c, "B", resolver);

@@ -15,12 +15,16 @@ import { emitContext, emitRoot, emitSheet } from "../../../lib/schgen/render/emi
 import { fmtMm } from "../../../lib/schgen/render/geometry.ts";
 import { layoutSheet } from "../../../lib/schgen/render/sheets.ts";
 import { refsSpot } from "../../../lib/schgen/render/text-boxes.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
+const PARTS = [cap("C1", "3V3", "GND"), { ...cap("C2", "3V3", "GND"), dnp: true }];
 const spec: CircuitSpec = {
-  parts: [cap("C1", "3V3", "GND"), { ...cap("C2", "3V3", "GND"), dnp: true }],
+  parts: PARTS,
   blocks: [{ id: "DEC", sheet: "pwr", title: "Decoupling", members: ["C1", "C2"], checklist: [], rendering: { kind: "wired", template: "decoupling-bank", anchor: null } }],
   sheets: [{ id: "pwr", title: "Power", file: "power.kicad_sch", paper: "A4", notes: [] }],
   rails: RAILS,
+  orientations: noOrientationPreferences(PARTS),
+  portDirections: NO_PORT_DIRECTIONS,
 };
 const c = buildCircuit(spec, { symbols });
 const refs = annotate(c, EMPTY_LOCK, new Map()).refs;
@@ -89,8 +93,9 @@ describe("emitRoot", () => {
 });
 
 describe("global labels", () => {
+  const twoParts = [res("R_T", "3V3", "TAP"), res("R_B", "TAP", "GND"), res("R_L", "TAP", "GND")];
   const twoSheets: CircuitSpec = {
-    parts: [res("R_T", "3V3", "TAP"), res("R_B", "TAP", "GND"), res("R_L", "TAP", "GND")],
+    parts: twoParts,
     blocks: [
       { id: "DIV", sheet: "pwr", title: "Divider", members: ["R_T", "R_B"], checklist: [], rendering: { kind: "wired", template: "divider", anchor: null } },
       { id: "LOAD", sheet: "io", title: "Load", members: ["R_L"], checklist: [], rendering: { kind: "bus", groups: [] } },
@@ -100,6 +105,8 @@ describe("global labels", () => {
       { id: "io", title: "IO", file: "io.kicad_sch", paper: "A4", notes: [] },
     ],
     rails: RAILS,
+    orientations: noOrientationPreferences(twoParts),
+    portDirections: NO_PORT_DIRECTIONS,
   };
   const c2 = buildCircuit(twoSheets, { symbols });
   const ctx2 = emitContext("mini", c2, symbols, annotate(c2, EMPTY_LOCK, new Map()).refs, ["generated"]);

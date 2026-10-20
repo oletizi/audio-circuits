@@ -59,6 +59,10 @@ const circuit: Circuit = {
   ]),
   sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
   rails: new Map(),
+  // Ruling R29: the IR carries spec 1.5 step 2's answer per part and the circuit's declared
+  // port directions. This fixture has one part and no boundary, so: no preference, none declared.
+  orientations: new Map([["R_A", null]]),
+  portDirections: {},
   unitBlock: new Map([["R_A#1", "B"]]),
   offSheet: new Set(),
 }

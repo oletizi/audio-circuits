@@ -17,6 +17,7 @@ import { fixtureResolver, TEST_BOM } from "../__fixtures__/fixture-lib.ts";
 import { twoPin, UNNAMED } from "../../../lib/schgen/ir/author.ts";
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
 import type { CircuitSpec, PartSpec } from "../../../lib/schgen/ir/types.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 const symbols = fixtureResolver();
 const res = (label: string, a: string, b: string): PartSpec =>
@@ -27,6 +28,8 @@ const spec = (parts: PartSpec[]): CircuitSpec => ({
   blocks: [{ id: "B", sheet: "s", title: "B", members: parts.map((p) => p.label), checklist: [], rendering: { kind: "bus", groups: [] } }],
   sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
   rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
+  orientations: noOrientationPreferences(parts),
+  portDirections: NO_PORT_DIRECTIONS,
 });
 
 describe("buildCircuit", () => {

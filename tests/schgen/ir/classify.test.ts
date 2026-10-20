@@ -22,6 +22,7 @@ import { twoPin, UNNAMED } from "../../../lib/schgen/ir/author.ts";
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
 import { labelledNets, pinsOfUnit } from "../../../lib/schgen/ir/classify.ts";
 import type { CircuitSpec, PartSpec, Rendering } from "../../../lib/schgen/ir/types.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 const symbols = fixtureResolver();
 const res = (label: string, a: string, b: string): PartSpec =>
@@ -30,35 +31,44 @@ const wired: Rendering = { kind: "wired", template: "passive-chain", anchor: nul
 
 describe("labelledNets", () => {
   it("labels rails and nets that cross blocks; leaves block-internal nets unlabelled", () => {
+    const parts = [res("R1", "IN", "MID"), res("R2", "MID", "GND"), res("R3", "IN", "GND")];
     const spec: CircuitSpec = {
-      parts: [res("R1", "IN", "MID"), res("R2", "MID", "GND"), res("R3", "IN", "GND")],
+      parts,
       blocks: [
         { id: "A", sheet: "s", title: "A", members: ["R1", "R2"], checklist: [], rendering: wired },
         { id: "B", sheet: "s", title: "B", members: ["R3"], checklist: [], rendering: wired },
       ],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
       rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
+      orientations: noOrientationPreferences(parts),
+      portDirections: NO_PORT_DIRECTIONS,
     };
     const c = buildCircuit(spec, { symbols });
     expect([...labelledNets(c)].sort()).toEqual(["GND", "IN"]);
   });
 
   it("a whole design has no off-sheet nets", () => {
+    const parts = [res("R1", "P", "Q")];
     const spec: CircuitSpec = {
-      parts: [res("R1", "P", "Q")],
+      parts,
       blocks: [{ id: "A", sheet: "s", title: "A", members: ["R1"], checklist: [], rendering: wired }],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
       rails: [],
+      orientations: noOrientationPreferences(parts),
+      portDirections: NO_PORT_DIRECTIONS,
     };
     expect([...buildCircuit(spec, { symbols }).offSheet]).toEqual([]);
   });
 
   it("labels an off-sheet net even when one block holds all its pins here (A2 Task 12: a sheet subset)", () => {
+    const parts = [res("R1", "MUTE", "MUTE_G"), res("R2", "MUTE_G", "GND")];
     const spec: CircuitSpec = {
-      parts: [res("R1", "MUTE", "MUTE_G"), res("R2", "MUTE_G", "GND")],
+      parts,
       blocks: [{ id: "A", sheet: "s", title: "A", members: ["R1", "R2"], checklist: [], rendering: wired }],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
       rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
+      orientations: noOrientationPreferences(parts),
+      portDirections: NO_PORT_DIRECTIONS,
     };
     const whole = buildCircuit(spec, { symbols });
     expect([...labelledNets(whole)].sort()).toEqual(["GND"]);
@@ -66,11 +76,14 @@ describe("labelledNets", () => {
   });
 
   it("labels every net of a bus-rendered block", () => {
+    const parts = [res("R1", "P", "Q"), res("R2", "P", "Q")];
     const spec: CircuitSpec = {
-      parts: [res("R1", "P", "Q"), res("R2", "P", "Q")],
+      parts,
       blocks: [{ id: "A", sheet: "s", title: "A", members: ["R1", "R2"], checklist: [], rendering: { kind: "bus", groups: [] } }],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
       rails: [],
+      orientations: noOrientationPreferences(parts),
+      portDirections: NO_PORT_DIRECTIONS,
     };
     expect([...labelledNets(buildCircuit(spec, { symbols }))].sort()).toEqual(["P", "Q"]);
   });
@@ -82,11 +95,14 @@ describe("pinsOfUnit", () => {
       label: "FLG", refPrefix: "X", libId: "Pwr:PWR_FLAG", units: [1], value: "PWR_FLAG", footprint: "", bom: TEST_BOM,
       dnp: false, checklist: [], source: "t", pinTable: null, pins: { "1": { net: "GND", identity: "" } }, mechanicalPads: [], ncUnlisted: null,
     };
+    const parts = [flag, res("R1", "GND", "Z"), res("R2", "Z", "GND")];
     const spec: CircuitSpec = {
-      parts: [flag, res("R1", "GND", "Z"), res("R2", "Z", "GND")],
+      parts,
       blocks: [{ id: "A", sheet: "s", title: "A", members: ["FLG", "R1", "R2"], checklist: [], rendering: { kind: "bus", groups: [] } }],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
       rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
+      orientations: noOrientationPreferences(parts),
+      portDirections: NO_PORT_DIRECTIONS,
     };
     const c = buildCircuit(spec, { symbols });
     expect(pinsOfUnit(c, "FLG", 1).map((p) => p.pin)).toEqual(["1"]);

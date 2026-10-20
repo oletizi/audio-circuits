@@ -24,6 +24,7 @@ import { buildCircuit } from "../../../../lib/schgen/ir/build.ts";
 import type { BlockMember, Circuit, PartSpec, RailSpec, Rendering } from "../../../../lib/schgen/ir/types.ts";
 import { checkLayout, realiseBlock, subgraphOf } from "../../../../lib/schgen/render/blocks.ts";
 import { createResolver, stockSymbolDir, type SymbolResolver } from "../../../../lib/schgen/render/library.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../../__fixtures__/orientations.ts";
 
 /** The H7 op-amp stages (h7-platform/ANALOG.md) on the stock OPA1678 / MCP6001-OT bodies and stock passives. */
 
@@ -89,6 +90,8 @@ function circuit(s: Stage, symbols: SymbolResolver): Circuit {
       ],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A3", notes: [] }],
       rails: s.rails ?? RAILS,
+      orientations: noOrientationPreferences([...s.parts, ...peers]),
+      portDirections: NO_PORT_DIRECTIONS,
     },
     { symbols },
   );

@@ -403,7 +403,21 @@ export function circuitSpecFrom(
         : block.rendering
     return { id: block.id, sheet: block.sheet, title: block.title, members, checklist: [], rendering }
   })
-  return { parts: parts.map((p) => p.spec), blocks, sheets: authoring.sheets, rails: authoring.rails }
+  return {
+    parts: parts.map((p) => p.spec),
+    blocks,
+    sheets: authoring.sheets,
+    rails: authoring.rails,
+    // Ruling R29: spec 1.5 step 2's answer per part, derived HERE because this is where the
+    // `Network` is - `rules/orientation.ts` keys on `ComponentKind` and nothing downstream of the
+    // IR carries one (docs/known-gaps.md G182). `buildCircuit` refuses a hole in it.
+    orientations: orientationsOfParts(parts, authoring.rails),
+    // Ruling R29, closing G186: the one input a layout backend needs that the IR had no slot for.
+    // It is the declaration verbatim, not a distillation: `assertAuthoring` has already checked
+    // that every net the model declares a port of has an entry, and G99 records that a net
+    // crossing a BLOCK boundary below the circuit's own has none by design.
+    portDirections: authoring.portDirections,
+  }
 }
 
 /** Part label -> every symbol pin's side. The completeness check's second half reads this. */
@@ -427,15 +441,33 @@ export function preferredOrientationsOf(
   authoring: SchematicAuthoring,
   symbols: SymbolResolver,
 ): ReadonlyMap<PartLabel, Rotation | null> {
-  const rails = new Map<NetName, RailSpec>(authoring.rails.map((r) => [r.net, r]))
+  return orientationsOfParts(schematicParts(network, authoring, symbols), authoring.rails)
+}
+
+/**
+ * The same map, over parts already built - which is what `circuitSpecFrom` has in hand.
+ *
+ * **IT IS FACTORED OUT RATHER THAN CALLED TWICE** (ruling **R29**). `circuitSpecFrom` now carries
+ * this map on the `CircuitSpec`, and calling `preferredOrientationsOf` from inside it would run
+ * `schematicParts` a second time over the same network - which is not merely wasted work: it is
+ * two derivations of one answer, and `CLAUDE.md`'s *supersede means delete* and spec §1.4
+ * obligation 3's *"no second copy to drift"* both say one. The exported wrapper above stays
+ * because `tools/schgen/authoring-census.ts` and the Task 9 tests measure the rule per circuit
+ * from a `Network`, which is a different entry point to the same function.
+ */
+export function orientationsOfParts(
+  parts: readonly SchematicPart[],
+  rails: readonly RailSpec[],
+): ReadonlyMap<PartLabel, Rotation | null> {
+  const byNet = new Map<NetName, RailSpec>(rails.map((r) => [r.net, r]))
   const out = new Map<PartLabel, Rotation | null>()
-  for (const part of schematicParts(network, authoring, symbols)) {
+  for (const part of parts) {
     const pinNets = new Map<string, NetName | null>()
     for (const pin of part.symbol.pins) {
       const connection = part.spec.pins[pin.number]
       pinNets.set(pin.number, connection === undefined || !("net" in connection) ? null : connection.net)
     }
-    out.set(part.spec.label, preferredOrientation(part.component.kind, { symbol: part.symbol, pinNets, rails }))
+    out.set(part.spec.label, preferredOrientation(part.component.kind, { symbol: part.symbol, pinNets, rails: byNet }))
   }
   return out
 }

@@ -11,6 +11,7 @@ import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
 import type { BlockSpec, CircuitSpec, Paper } from "../../../lib/schgen/ir/types.ts";
 import { boxesOverlap, onGrid, type Side } from "../../../lib/schgen/render/geometry.ts";
 import { layoutSheet, powerRotation } from "../../../lib/schgen/render/sheets.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 const DEC = { kind: "wired" as const, template: "decoupling-bank" as const, anchor: null };
 const DIV = { kind: "wired" as const, template: "divider" as const, anchor: null };
@@ -30,6 +31,8 @@ function spec(paper: Paper, extraBlocks = 0): CircuitSpec {
     parts, blocks,
     sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper, notes: [{ lines: ["Layout note line 1", "line 2"], checklist: ["CORE-22"] }] }],
     rails: RAILS.map((r) => (r.net === "3V3" ? { ...r, pwrFlag: { sheet: "s" } } : r)),
+    orientations: noOrientationPreferences(parts),
+    portDirections: NO_PORT_DIRECTIONS,
   };
 }
 
@@ -138,6 +141,10 @@ describe("layoutSheet details and refusals", () => {
         ...base,
         parts: [...base.parts, nc],
         blocks: [...base.blocks, { id: "NCB", sheet: "s", title: "NC", members: ["R_NC"], checklist: [], rendering: { kind: "bus", groups: [] } }],
+        // The spread carries `base`'s orientation map, which does not cover the part added here.
+        // `buildCircuit` refuses a hole in it by name (ruling R29) - and it DID, on this call site,
+        // which is the clearest evidence that refusal is not decorative.
+        orientations: noOrientationPreferences([...base.parts, nc]),
       },
       { symbols },
     );

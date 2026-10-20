@@ -40,8 +40,6 @@ const env = (): GenerateEnv => ({
   stockDir: stockSymbolDir(),
   initLock: true,
   acceptToolchain: false,
-  // Task 12: the mini design's blocks are `wired` or `bus`, so the ELK pre-pass has nothing to do.
-  authoring: null,
 })
 
 function requireKicadCli(): void {

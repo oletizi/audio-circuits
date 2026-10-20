@@ -1,7 +1,11 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/ir/types.ts` (with the MCU pin-map cuts of
  * `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 8 of the M1 schematic-authoring
- * plan: `Rendering` loses `labels` and gains `auto` (decision D3, below).
+ * plan: `Rendering` loses `labels` and gains `auto` (decision D3, below). **Diverged further by
+ * Task 13 under ruling R29**: `CircuitSpec` and `Circuit` carry two derived/declared maps the
+ * layout backend could not otherwise reach - `orientations` (spec §1.5 step 2's answer per part,
+ * **G182**) and `portDirections` (**G186**'s *"only input genuinely missing from the IR"*) - and
+ * `PortDirection` is declared here rather than in `../authoring.ts`.
  *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it, and an upstream fix will
@@ -17,6 +21,16 @@
  * buildCircuit() reads the authoring form: validation, rendering and the
  * expected-connectivity export all read Circuit.
  */
+
+/**
+ * **The one import this module has, and it is a type.** `Rotation` is `render/geometry.ts`'s
+ * `0 | 90 | 180 | 270`, and `CircuitSpec.orientations` carries it. It is imported rather than
+ * re-declared: a second four-value union would be a second thing to keep in step, and
+ * `rules/orientation.ts`, `graph.ts` and every placement already speak this one.
+ * `render/geometry.ts` imports only `./lib-pins.ts`, which imports `../ir/order.ts` (which imports
+ * nothing) and `./sexpr-write.ts`, so nothing here is circular.
+ */
+import type { Rotation } from "../render/geometry.ts";
 
 export type NetName = string;
 export type PinNumber = string;
@@ -167,11 +181,54 @@ export interface RailSpec {
   readonly pwrFlag: { readonly sheet: SheetId } | null;
 }
 
+/**
+ * Which way a net crosses a boundary.
+ *
+ * **IT MOVED HERE FROM `../authoring.ts` BY RULING R29, AND `authoring.ts` RE-EXPORTS IT** rather
+ * than declaring a second copy. The type is now part of the IR's own vocabulary because
+ * `CircuitSpec.portDirections` carries it: `docs/known-gaps.md` **G186** measured that
+ * `portDirections` is *"the only input genuinely missing from the IR"* of the two
+ * `GenerateEnv.authoring` was added for, and R29 settles that it *"belongs in the IR beside
+ * `rails`"*. One declaration, re-exported where it used to live - `CLAUDE.md`'s *supersede means
+ * delete* applied to a type.
+ */
+export type PortDirection = "in" | "out" | "bidirectional";
+
+export const PORT_DIRECTIONS: readonly PortDirection[] = ["in", "out", "bidirectional"];
+
 export interface CircuitSpec {
   readonly parts: readonly PartSpec[];
   readonly blocks: readonly BlockSpec[];
   readonly sheets: readonly SheetSpec[];
   readonly rails: readonly RailSpec[];
+  /**
+   * Per part, the rotation spec §1.5's step-2 rule library prefers, or `null` where it leaves the
+   * choice open. **DERIVED DATA, carried rather than recomputed** - ruling **R29**.
+   *
+   * **WHY IT IS HERE AND NOT COMPUTED WHERE IT IS USED.** `rules/orientation.ts` keys on
+   * `ComponentKind`, which lives in `lib/model/types.ts` and reaches `lib/schgen/` only through
+   * `from-network.ts`'s `Network`. `IrPart` has no kind, so **no consumer downstream of the IR can
+   * call the rule** (`docs/known-gaps.md` **G182**), and until R29 every ELK node was built at a
+   * `GRAPH_ROTATION` constant with §1.5 step 2 never running at all. The map is computed where the
+   * `Network` already is - `preferredOrientationsOf` in `from-network.ts` - and carried, which
+   * keeps model vocabulary out of the IR while making the rule's answer reachable.
+   *
+   * **IT IS TOTAL OVER `parts`, AND `buildCircuit` REFUSES A HOLE.** A missing entry is not read as
+   * "no preference": `null` already means that, and the two must not collapse, because a part the
+   * deriving step skipped would then draw in the library frame and look exactly like a part the
+   * rule declined. A `null` is the rule's answer; an absence is a defect in whoever built the spec.
+   */
+  readonly orientations: ReadonlyMap<PartLabel, Rotation | null>;
+  /**
+   * Per net, the direction it crosses a boundary in, as the authoring file declares it.
+   *
+   * **DECLARED AT THE CIRCUIT BOUNDARY AND OPEN BELOW IT**, which is `docs/known-gaps.md` **G99**'s
+   * measured residue and not a gap this field introduces: a net that leaves a BLOCK without being a
+   * declared port of the network has no entry, and `negotiablePort` states that case in its own
+   * `why` rather than inventing a side for it. So an absent entry is a stated open case here, where
+   * an absent `orientations` entry is a defect - the two fields differ on purpose.
+   */
+  readonly portDirections: Readonly<Record<NetName, PortDirection>>;
 }
 
 export interface PinRef {
@@ -234,6 +291,10 @@ export interface Circuit {
   readonly blocks: ReadonlyMap<BlockId, IrBlock>;
   readonly sheets: readonly SheetSpec[];
   readonly rails: ReadonlyMap<NetName, RailSpec>;
+  /** `CircuitSpec.orientations`, carried through `buildCircuit`, which refuses a hole in it. */
+  readonly orientations: ReadonlyMap<PartLabel, Rotation | null>;
+  /** `CircuitSpec.portDirections`, carried through `buildCircuit`. */
+  readonly portDirections: Readonly<Record<NetName, PortDirection>>;
   /** unitKey(part, unit) -> the block that places it. */
   readonly unitBlock: ReadonlyMap<string, BlockId>;
   /**

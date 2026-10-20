@@ -25,17 +25,21 @@ import { labelledNets } from "../../../lib/schgen/ir/classify.ts"
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts"
 import type { CircuitSpec, Rendering } from "../../../lib/schgen/ir/types.ts"
 import { res, symbols } from "../__fixtures__/circuits.ts"
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts"
 
 /** One `auto` block "A" of two series resistors, plus a peer block that pulls `IN` and `OUT` across. */
 function circuitWith(rendering: Rendering): CircuitSpec {
+  const parts = [res("R1", "IN", "MID"), res("R2", "MID", "OUT"), res("R_PEER1", "IN", "GND"), res("R_PEER2", "OUT", "GND")]
   return {
-    parts: [res("R1", "IN", "MID"), res("R2", "MID", "OUT"), res("R_PEER1", "IN", "GND"), res("R_PEER2", "OUT", "GND")],
+    parts,
     blocks: [
       { id: "A", sheet: "s", title: "A", members: ["R1", "R2"], checklist: [], rendering },
       { id: "P", sheet: "s", title: "P", members: ["R_PEER1", "R_PEER2"], checklist: [], rendering: { kind: "bus", groups: [] } },
     ],
     sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],
     rails: [{ net: "GND", symbol: "Pwr:GND", kind: "ground", pwrFlag: null }],
+    orientations: noOrientationPreferences(parts),
+    portDirections: NO_PORT_DIRECTIONS,
   }
 }
 

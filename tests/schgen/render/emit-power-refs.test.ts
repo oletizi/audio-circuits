@@ -13,6 +13,7 @@ import type { BlockSpec, CircuitSpec } from "../../../lib/schgen/ir/types.ts";
 import { annotate, EMPTY_LOCK } from "../../../lib/schgen/lock/annotate.ts";
 import { emitContext, emitSheet, powerRefs } from "../../../lib/schgen/render/emit.ts";
 import { layoutSheet } from "../../../lib/schgen/render/sheets.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 describe("powerRefs", () => {
   it("numbers #PWR and #FLG independently inside the sheet's block of 1000", () => {
@@ -39,14 +40,17 @@ function twoSheets(extra: boolean): CircuitSpec {
     { id: "DA", sheet: "a", title: "A", members: ["C1", "C2"], checklist: [], rendering: { kind: "wired", template: "decoupling-bank", anchor: null } },
     { id: "DB", sheet: "b", title: "B", members: ["C3", "C4"], checklist: [], rendering: { kind: "wired", template: "decoupling-bank", anchor: null } },
   ];
+  const parts = [cap("C1", "3V3", "GND"), cap("C2", "3V3", "GND"), cap("C3", "3V3", "GND"), cap("C4", "3V3", "GND"), ...(extra ? [res("R9", "3V3", "GND")] : [])];
   return {
-    parts: [cap("C1", "3V3", "GND"), cap("C2", "3V3", "GND"), cap("C3", "3V3", "GND"), cap("C4", "3V3", "GND"), ...(extra ? [res("R9", "3V3", "GND")] : [])],
+    parts,
     blocks: extra ? [...blocks, { id: "LA", sheet: "a", title: "L", members: ["R9"], checklist: [], rendering: { kind: "bus", groups: [] } }] : blocks,
     sheets: [
       { id: "a", title: "A", file: "a.kicad_sch", paper: "A4", notes: [] },
       { id: "b", title: "B", file: "b.kicad_sch", paper: "A4", notes: [] },
     ],
     rails: RAILS,
+    orientations: noOrientationPreferences(parts),
+    portDirections: NO_PORT_DIRECTIONS,
   };
 }
 

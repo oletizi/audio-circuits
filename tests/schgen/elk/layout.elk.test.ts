@@ -32,11 +32,10 @@ import { selectRenderer, subgraphOf } from "../../../lib/schgen/render/blocks.ts
 import { TEMPLATES } from "../../../lib/schgen/render/templates/index.ts"
 import { PARITY_CASES, parityResolver } from "../../../tools/schgen/authoring-census.ts"
 import { declaredBlockCount } from "../../../tools/schgen/parity.ts"
-import { dividerSubgraph, fixtureAuthoring } from "./fixtures.ts"
+import { LAYER_CONSTRAINT_KEY } from "../../../lib/schgen/elk/options.ts"
+import { dividerSubgraph } from "./fixtures.ts"
 import type { ElkBlockInput } from "../../../lib/schgen/elk/graph.ts"
 import type { BlockId } from "../../../lib/schgen/ir/types.ts"
-
-const authoring = fixtureAuthoring()
 
 test("ELK_BACKEND names the version actually installed", () => {
   const file = fileURLToPath(import.meta.resolve("elkjs/package.json"))
@@ -48,7 +47,7 @@ test("ELK_BACKEND names the version actually installed", () => {
 })
 
 test("the same input three times gives one distinct output", async () => {
-  const input = elkInputOf(dividerSubgraph(), authoring)
+  const input = elkInputOf(dividerSubgraph())
   const seen = new Set<string>()
   for (let run = 0; run < 3; run += 1) {
     const outcomes = await layoutBlocks([input])
@@ -64,7 +63,7 @@ test("the same input three times gives one distinct output", async () => {
 })
 
 test("the serialized output carries no GWT internals, which is why it is the comparison", async () => {
-  const input = elkInputOf(dividerSubgraph(), authoring)
+  const input = elkInputOf(dividerSubgraph())
   const outcome = (await layoutBlocks([input])).get(input.blockId)
   expect(outcome?.ok).toBe(true)
   if (outcome === undefined || !outcome.ok) return
@@ -84,7 +83,7 @@ test("the serialized output carries no GWT internals, which is why it is the com
  * therefore report two identical drawings as different, depending on what preceded them.
  */
 test("two identical graphs on one worker serialize alike and raw-stringify differently", async () => {
-  const base = elkInputOf(dividerSubgraph(), authoring)
+  const base = elkInputOf(dividerSubgraph())
   const first: ElkBlockInput = { ...base, blockId: "FIRST", graph: { ...base.graph, id: "FIRST" } }
   const second: ElkBlockInput = { ...base, blockId: "SECOND", graph: { ...base.graph, id: "SECOND" } }
   const outcomes = await layoutBlocks([first, second])
@@ -138,7 +137,7 @@ test("the backend forwards a raise to the caller and refuses a missing block by 
 })
 
 test("a block the pre-pass DID lay out refuses, naming Task 13's adapter", async () => {
-  const input = elkInputOf(dividerSubgraph(), authoring)
+  const input = elkInputOf(dividerSubgraph())
   const backend = elkBackendFrom(await layoutBlocks([input]))
   expect(() => backend.realise(dividerSubgraph())).toThrow(/adaptElkLayout/)
 })
@@ -164,7 +163,7 @@ test("all twelve declared blocks produce an ElkOutcome", async () => {
     for (const declaration of parityCase.authoring.blocks) {
       const g = subgraphOf(circuit, declaration.id, symbols)
       expect(selectRenderer(g, TEMPLATES).kind, `${parityCase.name}/${declaration.id}`).toBe("elk")
-      inputs.push(elkInputOf(g, parityCase.authoring))
+      inputs.push(elkInputOf(g))
       expectedBlocks.push(declaration.id)
     }
   }
@@ -180,11 +179,51 @@ test("all twelve declared blocks produce an ElkOutcome", async () => {
   }
 }, 120_000)
 
-test("the pre-pass refuses an ELK-bound block when no authoring declaration is given", async () => {
+/**
+ * **THIS TEST REPLACES ONE RULING R29 DELETED, AND THE REPLACEMENT IS THE OPPOSITE ASSERTION.**
+ *
+ * What stood here was *"the pre-pass refuses an ELK-bound block when no authoring declaration is
+ * given"*, matching `/GenerateEnv.authoring/`. That refusal existed because the ELK graph needed
+ * two declared things the IR had no slot for; R29 put the missing one in the IR
+ * (`CircuitSpec.portDirections`), `GenerateEnv.authoring` is deleted and `elkPrePass` takes the
+ * circuit and its symbols. **There is no state left for that refusal to name**, so the test is
+ * replaced rather than adapted: keeping it against a nullable parameter nobody passes would be a
+ * check that cannot fail.
+ *
+ * What is asserted instead is `docs/known-gaps.md` **G186**'s criterion directly - *"nothing beside
+ * a design has to be handed to `generate` for a block to reach ELK"* - over a real parity circuit,
+ * whose blocks all reach ELK (**G141**, **G160**). It fails if the pre-pass ever needs another
+ * argument, and it fails if a boundary net's direction stops arriving: `3V3_SENSE` and its peers
+ * are declared in the authoring file, `circuitSpecFrom` carries the declaration onto the spec, and
+ * a graph built without it would have no `FIRST_SEPARATE`/`LAST_SEPARATE` constraint at all.
+ */
+test("the pre-pass needs nothing beside the circuit and its symbols (G186's criterion)", async () => {
   const symbols = parityResolver()
   const parityCase = PARITY_CASES[0]
   expect(parityCase).toBeDefined()
   if (parityCase === undefined) return
-  const circuit = buildCircuit(circuitSpecFrom(parityCase.network, parityCase.authoring, symbols), { symbols })
-  await expect(elkPrePass(circuit, symbols, null)).rejects.toThrow(/GenerateEnv.authoring/)
+  const spec = circuitSpecFrom(parityCase.network, parityCase.authoring, symbols)
+  // The declaration reached the spec: this is the input G186 says the IR was missing.
+  expect(Object.keys(spec.portDirections).length, "the parity case declares port directions").toBeGreaterThan(0)
+  const circuit = buildCircuit(spec, { symbols })
+  expect(circuit.portDirections).toEqual(spec.portDirections)
+  const outcomes = await elkPrePass(circuit, symbols)
+  // Every declared block of this case selects ELK, so the pre-pass must have laid out all of them.
+  expect(outcomes.size).toBe(parityCase.authoring.blocks.length)
+  expect(outcomes.size).toBeGreaterThan(0)
+
+  // **And the declared directions are what shaped the boundary nodes - measured over ALL FOUR
+  // cases, which is where the constrained nodes are.** Scoping this to PARITY_CASES[0] was tried
+  // and it measured ZERO: the Task 12 review's figure is 38 boundary nodes across all twelve
+  // declared blocks, 34 unconstrained, 4 `LAST_SEPARATE` and 0 `FIRST_SEPARATE`, and none of the
+  // four fall in the first case. An assertion over one case would have been an assertion about
+  // nothing, which is why it is written over the population the figure was taken over.
+  const constrained = PARITY_CASES.flatMap((c) => {
+    const built = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+    return c.authoring.blocks.flatMap((declaration) => {
+      const graph = elkInputOf(subgraphOf(built, declaration.id, symbols)).graph
+      return (graph.children ?? []).filter((n) => n.layoutOptions?.[LAYER_CONSTRAINT_KEY] !== undefined)
+    })
+  })
+  expect(constrained.length, "a declared direction must constrain at least one boundary node").toBeGreaterThan(0)
 }, 120_000)

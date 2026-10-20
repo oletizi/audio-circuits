@@ -53,8 +53,8 @@ interface MiniRun {
 async function generateMiniInScratch(): Promise<MiniRun> {
   const d = miniInScratch()
   // Task 12: `generate` is async (plan decision D2) and the mini design's blocks are `wired` or
-  // `bus`, so the ELK pre-pass has nothing to lay out and needs no authoring declaration.
-  const g = await generate(d, { kicadVersion: kicadVersion(), stockDir: stockSymbolDir(), initLock: true, acceptToolchain: false, authoring: null })
+  // `bus`, so the ELK pre-pass has nothing to lay out.
+  const g = await generate(d, { kicadVersion: kicadVersion(), stockDir: stockSymbolDir(), initLock: true, acceptToolchain: false })
   writeGeneration(d, g)
   return { d, g }
 }

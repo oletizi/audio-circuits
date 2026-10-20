@@ -19,21 +19,29 @@
  * re-measurement that says which ones survive. `docs/known-gaps.md` **G180** records the caveat
  * against each.
  *
- * **TWO OF TASK 9's THREE RULES CANNOT BE REACHED FROM HERE, AND IT IS STRUCTURAL.**
+ * **NEITHER OF TASK 9's TWO GEOMETRY RULES IS CALLED BY NAME HERE, AND BOTH ARE NONETHELESS THE
+ * RULE** - `docs/known-gaps.md` **G182**, closed for the rotation half by ruling **R29**.
  * `pinSidesFor(kind, symbol)` and `preferredOrientation(kind, context)` both key on
  * `ComponentKind`, which lives in `lib/model/types.ts` and reaches `lib/schgen/` only through
- * `from-network.ts`'s `Network`. A `BlockSubgraph` is made of `IrPart`s, and **`IrPart` has no
- * kind** - so neither rule is callable from `elkInputOf`'s declared inputs. What this module does
- * instead, and what it costs, is `docs/known-gaps.md` **G182**:
+ * `from-network.ts`'s `Network`; a `BlockSubgraph` is made of `IrPart`s and **`IrPart` has no
+ * kind**. So:
  *
  * - **the side** comes from `sideOfPin(rot, pin)`, which is the same rule: `pinSidesFor` is
  *   defined as `sideOfPin(0, pin)` per pin and its own doc comment says so. `kind` is read by its
  *   no-pin refusal alone, and the equivalent refusal is here;
- * - **the rotation** is `GRAPH_ROTATION` - see its comment. The orientation rule is unreachable,
- *   so this is the symbol's own library frame rather than a stand-in for the rule's answer.
+ * - **the rotation is `u.rot`, which IS `preferredOrientation`'s answer.** It is computed in
+ *   `from-network.ts` (where the `Network` is), carried on `CircuitSpec`/`Circuit` as
+ *   `orientations`, and resolved onto `BlockUnit.rot` by `subgraphOf` through
+ *   `drawnRotation`. **Task 12 built every node at a `GRAPH_ROTATION = 0` constant and spec §1.5's
+ *   step-2 rule library therefore never ran at all**; it runs now, and it moves exactly one part
+ *   of the 102 in the four parity circuits (`pt2399-core/C8`, rotation 180 - the measurement R29
+ *   decided on). The whole question was ever only where the rotation came from: `pinEnd`,
+ *   `placeBox` and `sideOfPin` are applied through ONE value either way, which is spec §1.4
+ *   obligation 3's *"the transform is applied once ... and the result is what both ELK and the
+ *   emitter see"*, and `lib/schgen/elk/adapt.ts` reads the same `u.rot`.
  */
 
-import { pinEnd, placeBox, type Point, type Rotation } from "../render/geometry.ts"
+import { pinEnd, placeBox, type Point } from "../render/geometry.ts"
 import { sideOfPin } from "../rules/pin-sides.ts"
 import { negotiablePort } from "../authoring.ts"
 import { BLOCK_OPTIONS, ELK_SIDE, LAYER_CONSTRAINT_KEY, NODE_OPTIONS, PORT_SIDE_KEY, layerConstraintFor } from "./options.ts"
@@ -41,34 +49,10 @@ import { serializeElkInput } from "./serialize.ts"
 import type { BlockSubgraph, BlockUnit } from "../render/block-types.ts"
 import type { BlockId, NetName } from "../ir/types.ts"
 import type { LibPin } from "../render/library.ts"
-import type { SchematicAuthoring } from "../authoring.ts"
 import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs/lib/elk-api.js"
 
 /** The library frame's origin: every node's geometry is built relative to it and placed by ELK. */
 const ORIGIN: Point = { x: 0, y: 0 }
-
-/**
- * The rotation every unit's geometry is transformed through, and **it is the library frame rather
- * than a default standing in for spec §1.5's orientation rule.**
- *
- * §1.5's authority order is: a reviewed template's explicit orientation, else a circuit-context
- * rule, else *"ELK then places, subject to fixed port geometry, and may choose among orientations
- * the rules leave open"*. `rules/orientation.ts` holds exactly one entry and returns `null` for
- * everything else, and `null` means step 3 - **not** rotation 0.
- *
- * **It is not consulted here because it cannot be.** It keys on `ComponentKind` and a
- * `BlockSubgraph` carries none (see the module comment and **G182**). And step 3's freedom is not
- * available either: ELK is handed FIXED_POS ports, so a rotation has to be fixed before the graph
- * exists. Rotation 0 is the orientation the symbol library itself draws the part in, which is a
- * stated frame rather than a guess, and `pinEnd`, `placeBox` and `sideOfPin` are all applied
- * through this one value - so the side and the position agree, which is spec §1.4 obligation 3's
- * *"the transform is applied once ... and the result is what both ELK and the emitter see."*
- *
- * **The deviation this leaves open is Task 13's**: its brief takes `rot` from
- * `preferredOrientation`, and a placement rotated after the ports were fixed at 0 would be the
- * second transform obligation 3 forbids. **G182** carries the criterion.
- */
-export const GRAPH_ROTATION: Rotation = 0
 
 export interface ElkBlockInput {
   readonly blockId: BlockId
@@ -115,7 +99,9 @@ interface UnitNode {
 
 /**
  * One unit as an ELK node: its size is the symbol's own placed box and every CONNECTED pin is a
- * fixed-position port on the side the symbol's own `(at x y angle)` puts it.
+ * fixed-position port on the side the symbol's own `(at x y angle)` puts it, **both taken at
+ * `u.rot`** - the one rotation `subgraphOf` resolved for this unit and the one `adapt.ts` will
+ * recompute the pin ends at.
  *
  * A pin explicitly not connected (`net === null`) gets no port: it carries no edge, and a port
  * ELK must route nothing to is a constraint with no connection behind it.
@@ -131,14 +117,14 @@ function unitNodeOf(u: BlockUnit): UnitNode {
         "against geometry the schematic does not have.",
     )
   }
-  const placed = placeBox(ORIGIN, GRAPH_ROTATION, box)
+  const placed = placeBox(ORIGIN, u.rot, box)
   const nodeId = unitNodeId(u)
   const ports: ElkPort[] = []
   const terminals = new Map<NetName, string[]>()
   for (const pin of u.pins) {
     if (pin.net === null) continue
     const libPin = libPinOf(u, pin.pin)
-    const end = pinEnd(ORIGIN, GRAPH_ROTATION, libPin)
+    const end = pinEnd(ORIGIN, u.rot, libPin)
     const id = pinPortId(nodeId, pin.pin)
     ports.push({
       id,
@@ -146,7 +132,7 @@ function unitNodeOf(u: BlockUnit): UnitNode {
       y: end.y - placed.minY,
       width: 0,
       height: 0,
-      layoutOptions: { [PORT_SIDE_KEY]: ELK_SIDE[sideOfPin(GRAPH_ROTATION, libPin)] },
+      layoutOptions: { [PORT_SIDE_KEY]: ELK_SIDE[sideOfPin(u.rot, libPin)] },
     })
     const on = terminals.get(pin.net) ?? []
     on.push(id)
@@ -186,10 +172,11 @@ function boundaryNets(g: BlockSubgraph): readonly NetName[] {
  * drawn (seam B, **D9**), not here.
  *
  * The side comes from `negotiablePort`, which is the reviewed rule already in the tree; this only
- * turns it into D4's flow through `layerConstraintFor`.
+ * turns it into D4's flow through `layerConstraintFor`. **Both of its inputs are the subgraph's
+ * own** since ruling R29: `g.portDirections` and `g.railSpecs`.
  */
-function boundaryNodeOf(net: NetName, authoring: SchematicAuthoring): ElkNode {
-  const port = negotiablePort(net, { portDirections: authoring.portDirections, rails: authoring.rails })
+function boundaryNodeOf(net: NetName, g: BlockSubgraph): ElkNode {
+  const port = negotiablePort(net, { portDirections: g.portDirections, rails: [...g.railSpecs.values()] })
   const constraint = layerConstraintFor(port.sides)
   return {
     id: boundaryNodeId(net),
@@ -226,36 +213,27 @@ function edgesForNet(net: NetName, terminals: readonly string[]): ElkExtendedEdg
 /**
  * The block's ELK graph, and the exact bytes that identify it.
  *
- * `authoring` is read for two things and nothing else: `portDirections` and `rails`, both through
- * `negotiablePort`. Every other input is the subgraph's own.
+ * **IT TAKES THE SUBGRAPH AND NOTHING ELSE SINCE RULING R29, AND THAT IS `docs/known-gaps.md`
+ * G186's CRITERION MET.** It used to take a whole `SchematicAuthoring` for the two things
+ * `negotiablePort` reads. G186 measured that *"the rails half was already available"* -
+ * `g.railSpecs` holds a `RailSpec` for exactly the nets in `g.rails`, built by `subgraphOf` from
+ * `Circuit.rails` - and that *"`portDirections` is the only input genuinely missing from the IR"*.
+ * R29 put it there, so both now arrive on the subgraph and `GenerateEnv.authoring` is deleted.
  *
- * **AND ONE OF THOSE TWO IS IN THE SUBGRAPH TOO, which matters for where a port direction should
- * eventually live** (review round 2, Important 5). `g.railSpecs` holds a `RailSpec` for exactly
- * the nets in `g.rails`, built by `subgraphOf` from `Circuit.rails`, and it carries everything
- * `negotiablePort` reads - so the rail half could be served from the subgraph alone.
- * **`portDirections` is the only input the IR has no slot for.** What taking the rails from the
- * declaration buys is the cross-check below: it refuses when the IR calls a net a rail and this
- * declaration does not, which is a caller holding the wrong circuit's authoring file.
- * `docs/known-gaps.md` **G186**.
+ * **WHAT WENT WITH THE PARAMETER: a cross-check that can no longer fail, removed rather than
+ * left.** The old refusal fired when the IR called a net a rail and the authoring file passed
+ * alongside did not - a caller holding the wrong circuit's declaration. With the rails read from
+ * the subgraph there is only one source, so the two cannot disagree and the check could never
+ * fire. `CLAUDE.md`: *"a skipped check must never look like a passing one"* - a guard that cannot
+ * fail is that shape, so it is deleted rather than kept for the comfort of having a guard.
+ * `subgraphOf`'s own *"rail `n` has no spec"* throw is what now holds `railSpecs` complete.
  */
-export function elkInputOf(g: BlockSubgraph, authoring: SchematicAuthoring): ElkBlockInput {
+export function elkInputOf(g: BlockSubgraph): ElkBlockInput {
   if (g.units.length === 0) {
     throw new Error(
       `block ${g.block.id} holds no units, so there is nothing to lay out. A block with no members ` +
         "cannot be drawn and is not laid out as an empty graph, because an empty drawing that " +
         "succeeds looks exactly like a block that was drawn.",
-    )
-  }
-  const declaredRails = new Set(authoring.rails.map((r) => r.net))
-  const undeclared = [...g.rails].filter((n) => !declaredRails.has(n))
-  if (undeclared.length > 0) {
-    throw new Error(
-      `block ${g.block.id}: the IR says ${undeclared.join(", ")} ${undeclared.length === 1 ? "is a rail" : "are rails"} ` +
-        "and the authoring declaration passed here does not declare them. `negotiablePort` reads " +
-        "the declaration to decide where a rail attaches (ground at the bottom, supply at the " +
-        "top), so it would place them as ordinary signal nets. Pass the authoring file this " +
-        "circuit was built from; it is not guessed from the IR, because a rail drawn on the wrong " +
-        "edge is a drawing nobody chose.",
     )
   }
 
@@ -287,7 +265,7 @@ export function elkInputOf(g: BlockSubgraph, authoring: SchematicAuthoring): Elk
 
   // Boundary nodes after the units, so a unit's own ports are numbered before any boundary.
   for (const net of boundaryNets(g)) {
-    const node = boundaryNodeOf(net, authoring)
+    const node = boundaryNodeOf(net, g)
     claim(node.id, `the boundary of net ${net}`)
     children.push(node)
     const first = node.layoutOptions?.[LAYER_CONSTRAINT_KEY] === "FIRST_SEPARATE"

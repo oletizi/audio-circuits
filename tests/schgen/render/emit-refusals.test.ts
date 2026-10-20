@@ -18,12 +18,16 @@ import { fmtMm } from "../../../lib/schgen/render/geometry.ts";
 import { layoutSheet } from "../../../lib/schgen/render/sheets.ts";
 import { uuidV5 } from "../../../lib/schgen/render/uuid.ts";
 import type { SheetDrawing } from "../../../lib/schgen/render/sheet-types.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
+const PARTS = [cap("C1", "3V3", "GND"), cap("C2", "3V3", "GND")];
 const spec: CircuitSpec = {
-  parts: [cap("C1", "3V3", "GND"), cap("C2", "3V3", "GND")],
+  parts: PARTS,
   blocks: [{ id: "DEC", sheet: "pwr", title: "Decoupling", members: ["C1", "C2"], checklist: [], rendering: { kind: "wired", template: "decoupling-bank", anchor: null } }],
   sheets: [{ id: "pwr", title: "Power", file: "power.kicad_sch", paper: "A4", notes: [] }],
   rails: RAILS,
+  orientations: noOrientationPreferences(PARTS),
+  portDirections: NO_PORT_DIRECTIONS,
 };
 const c = buildCircuit(spec, { symbols });
 const refs = annotate(c, EMPTY_LOCK, new Map()).refs;

@@ -104,7 +104,7 @@ export async function gateCensus(repoRoot: string): Promise<readonly CircuitGate
       // refuses on all four before the pre-pass runs (docs/known-gaps.md G151, G178), so this
       // changes no row today - it is passed because it is the circuit's own declaration and
       // passing `null` would be a claim that the circuit has none.
-      const env: GenerateEnv = { kicadVersion: kicad, stockDir, initLock: false, acceptToolchain: false, authoring: c.authoring }
+      const env: GenerateEnv = { kicadVersion: kicad, stockDir, initLock: false, acceptToolchain: false }
       const results = await runGates(parityDesign(c, symbols, repoRoot, scratch), env)
       const registered = new Set(results.map((r) => r.gate))
       out.push({

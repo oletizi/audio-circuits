@@ -13,6 +13,7 @@ import type { DesignSpec } from "../../../../../lib/schgen/design.ts";
 import { TEST_BOM } from "../../fixture-lib.ts";
 import { twoPin, UNNAMED } from "../../../../../lib/schgen/ir/author.ts";
 import type { BlockSpec, BomFields, PartSpec, PinConnection, RailSpec, SheetSpec } from "../../../../../lib/schgen/ir/types.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../../orientations.ts";
 
 const FP_R = "Resistor_SMD:R_0603_1608Metric";
 const FP_C = "Capacitor_SMD:C_0603_1608Metric";
@@ -146,7 +147,13 @@ const rails: RailSpec[] = [
 export const design: DesignSpec = {
   project: "mini",
   outDir: "out",
-  circuit: { parts, blocks, sheets, rails },
+  circuit: {
+    parts, blocks, sheets, rails,
+    // Ruling R29: see ../../orientations.ts for what these two values mean and why a
+    // hand-built fixture spec has no orientation rule to consult.
+    orientations: noOrientationPreferences(parts),
+    portDirections: NO_PORT_DIRECTIONS,
+  },
   symbolLibs: {},
   footprintLibs: {},
   pinTables: "../../pintables",

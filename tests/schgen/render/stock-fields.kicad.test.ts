@@ -19,6 +19,7 @@ import { blockFields } from "../../../lib/schgen/render/field-placement.ts";
 import { createResolver, stockSymbolDir, type SymbolResolver } from "../../../lib/schgen/render/library.ts";
 import { layoutSheet } from "../../../lib/schgen/render/sheets.ts";
 import { textProblems, textScene } from "../../../lib/schgen/render/text-scene.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 /** The H7 platform's stock symbols: every unit gets clear fields alone, in a labels block and bus-rendered. */
 const STOCK: ReadonlyArray<readonly [string, string]> = [
@@ -88,6 +89,8 @@ function stockCircuit(resolver: SymbolResolver, libId: string, value: string, mo
       blocks: [...blocks, { id: "PEER", sheet: "p", title: "Peer", members: peers.map((x) => x.label), checklist: [], rendering: { kind: "bus", groups: [] } }],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A1", notes: [] }, { id: "p", title: "P", file: "p.kicad_sch", paper: "A1", notes: [] }],
       rails: RAILS,
+      orientations: noOrientationPreferences([part, ...peers]),
+      portDirections: NO_PORT_DIRECTIONS,
     },
     { symbols: resolver },
   );

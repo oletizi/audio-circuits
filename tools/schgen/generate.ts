@@ -1,8 +1,11 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/generate.ts` (with the MCU pin-map `cuts` of
  * `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 12 of the M1 schematic-authoring
- * plan: `generate` is **async** and runs the ELK pre-pass, `GenerateEnv` carries the circuit's
- * `SchematicAuthoring`, and `layoutSheet` is handed the backend the pre-pass produced.
+ * plan: `generate` is **async** and runs the ELK pre-pass, and `layoutSheet` is handed the backend
+ * the pre-pass produced. **Task 13, ruling R29, took one field back off `GenerateEnv`**: the
+ * circuit's `SchematicAuthoring` was carried here for the ELK graph's two declared inputs, and both
+ * now reach it through the IR, so the field is deleted rather than left unread
+ * (`docs/known-gaps.md` **G186**, criterion met).
  *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
@@ -38,7 +41,6 @@ import { withReferences } from "../../lib/schgen/render/drawn-text.ts";
 import { assertRefsMatchDrawings } from "../../lib/schgen/render/page-refs.ts";
 import { layoutSheet } from "../../lib/schgen/render/sheets.ts";
 import { elkBackendFrom, elkPrePass, type ElkOutcome } from "./elk/layout.ts";
-import type { SchematicAuthoring } from "../../lib/schgen/authoring.ts";
 import type { BlockId } from "../../lib/schgen/ir/types.ts";
 import type { SheetDrawing } from "../../lib/schgen/render/sheet-types.ts";
 import { placedSymbolTextOverlaps } from "../../lib/schgen/render/symbol-self-text.ts";
@@ -53,25 +55,6 @@ export interface GenerateEnv {
   readonly initLock: boolean;
   /** --accept-toolchain: accept a new toolchain/library baseline. */
   readonly acceptToolchain: boolean;
-  /**
-   * The circuit's schematic authoring declaration, for the ELK pre-pass - **Task 12's addition**.
-   *
-   * **WHY IT IS HERE AND NOT ON `DesignSpec`.** `circuitSpecFrom` has already distilled the
-   * authoring file into a `CircuitSpec` by the time this function holds a `Circuit`, and the IR
-   * has **no slot for a port DIRECTION at all** - so `elkInputOf`'s one genuinely missing input
-   * cannot be recovered from `d`. (Its other input, the rails, **is** in the IR, as
-   * `BlockSubgraph.railSpecs`; review round 2, Important 5, and `docs/known-gaps.md` **G186**.)
-   * Putting the field on `DesignSpec` would diverge `lib/schgen/design.ts` and every design
-   * fixture as well; this diverges one file. **G186** records the choice and its cost, and that
-   * the right long-term home for a port direction is the IR beside `rails` rather than either of
-   * these - which is what ruling **R29** has Task 13 doing for the orientation map.
-   *
-   * **`null` IS NOT A FALLBACK.** No design module in this repository declares an authoring file
-   * yet, and every design ported from `digital-pedal-platform` renders its blocks `wired` or
-   * `bus`, so the pre-pass has nothing to do for them. A block that DOES select ELK with `null`
-   * here refuses, naming the block and this field (`elkPrePass`, `tools/schgen/elk/layout.ts`).
-   */
-  readonly authoring: SchematicAuthoring | null;
 }
 
 export interface Generation {
@@ -172,7 +155,7 @@ export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Gener
   // The drawing prints reference designators where titles and notes name parts by design label.
   const drawn = withReferences(circuit, annotation.refs);
   // Every block selectRenderer sends to ELK, laid out once, before the synchronous dispatch runs.
-  const elk = await elkPrePass(drawn, symbols, env.authoring);
+  const elk = await elkPrePass(drawn, symbols);
   const backend = elkBackendFrom(elk);
   const drawings = drawn.sheets.map((s) => layoutSheet(drawn, s.id, symbols, FLAG_LIB_ID, backend));
   assertRefsMatchDrawings(drawn, drawings);

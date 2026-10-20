@@ -16,45 +16,69 @@
     "vitest": "bun:test"
   },
   "files": [
-    { "from": "ir/author.ts", "to": "lib/schgen/ir/author.ts" },
-    { "from": "ir/order.ts", "to": "lib/schgen/ir/order.ts" },
-    { "from": "lock/annotate.ts", "to": "lib/schgen/lock/annotate.ts" },
-    { "from": "lock/refmap.ts", "to": "lib/schgen/lock/refmap.ts" },
-    { "from": "lock/versionLock.ts", "to": "lib/schgen/lock/version-lock.ts" },
-    { "from": "render/connectivity.ts", "to": "lib/schgen/render/connectivity.ts" },
-    { "from": "render/drawnText.ts", "to": "lib/schgen/render/drawn-text.ts" },
-    { "from": "render/geometry.ts", "to": "lib/schgen/render/geometry.ts" },
-    { "from": "render/libGraphics.ts", "to": "lib/schgen/render/lib-graphics.ts" },
-    { "from": "render/libPins.ts", "to": "lib/schgen/render/lib-pins.ts" },
-    { "from": "render/pack.ts", "to": "lib/schgen/render/pack.ts" },
-    { "from": "render/sexprWrite.ts", "to": "lib/schgen/render/sexpr-write.ts" },
-    { "from": "render/textBoxes.ts", "to": "lib/schgen/render/text-boxes.ts" },
-    { "from": "render/uuid.ts", "to": "lib/schgen/render/uuid.ts" },
-    { "from": "render/wireSafety.ts", "to": "lib/schgen/render/wire-safety.ts" },
-    { "from": "gates/pintable.ts", "to": "lib/schgen/gates/pin-table.ts" },
     {
-      "from": "ir/build.ts",
-      "to": "lib/schgen/ir/build.ts",
-      "cuts": [
-        { "text": "import type { PinMap, StMcu } from \"@/pinmap/types\";\n", "occurrences": 1 },
-        {
-          "text": "export interface PinmapInput {\n  readonly map: PinMap;\n  readonly mcu: StMcu;\n}\n\n",
-          "occurrences": 1
-        },
-        { "text": "  readonly pinmap: PinmapInput | null;\n", "occurrences": 1 },
-        {
-          "text": "function checkMcuConfig(spec: CircuitSpec, ctx: BuildContext): PartLabel | null {\n  if (spec.mcu === null && ctx.pinmap !== null) throw new Error(\"a pin map was given but the circuit names no MCU\");\n  if (spec.mcu === null) return null;\n  if (ctx.pinmap === null) throw new Error(`circuit names MCU ${spec.mcu.label} but no pin map was given`);\n  const label = spec.mcu.label;\n  if (!spec.parts.some((p) => p.label === label)) throw new Error(`circuit names MCU ${label}, which is not a part`);\n  return label;\n}\n\n",
-          "occurrences": 1
-        },
-        { "text": ", isMcu: boolean", "occurrences": 1 },
-        {
-          "text": "  if (isMcu && ctx.pinmap !== null) {\n    const { map, mcu } = ctx.pinmap;\n    for (const a of map.assignments) {\n      const st = mcu.pins.get(a.pin);\n      if (st === undefined) throw new Error(`pin map assigns ${a.pin}, which ${mcu.refName} does not have; run pnpm pinmap validate`);\n      const prior = declared.get(st.position);\n      if (prior !== undefined) {\n        const where = prior.net === null ? \"as not connected\" : `on net ${prior.net}`;\n        throw new Error(\n          `${p.label} pin ${st.position} (${a.pin}) is declared in the circuit ${where} and assigned by the pin map to ${a.net}; ` +\n            \"pinmap.json is authoritative for MCU pins — remove it from the circuit\",\n        );\n      }\n      declared.set(st.position, { part: p.label, pin: st.position, unit: unitFor(st.position), identity: a.pin, net: a.net, origin: \"pinmap\" });\n    }\n  }\n",
-          "occurrences": 1
-        },
-        { "text": "  const mcuLabel = checkMcuConfig(spec, ctx);\n", "occurrences": 1 },
-        { "text": ", p.label === mcuLabel", "occurrences": 1 },
-        { "text": "mcu: mcuLabel, ", "occurrences": 1 }
-      ]
+      "from": "ir/author.ts",
+      "to": "lib/schgen/ir/author.ts"
+    },
+    {
+      "from": "ir/order.ts",
+      "to": "lib/schgen/ir/order.ts"
+    },
+    {
+      "from": "lock/annotate.ts",
+      "to": "lib/schgen/lock/annotate.ts"
+    },
+    {
+      "from": "lock/refmap.ts",
+      "to": "lib/schgen/lock/refmap.ts"
+    },
+    {
+      "from": "lock/versionLock.ts",
+      "to": "lib/schgen/lock/version-lock.ts"
+    },
+    {
+      "from": "render/connectivity.ts",
+      "to": "lib/schgen/render/connectivity.ts"
+    },
+    {
+      "from": "render/drawnText.ts",
+      "to": "lib/schgen/render/drawn-text.ts"
+    },
+    {
+      "from": "render/geometry.ts",
+      "to": "lib/schgen/render/geometry.ts"
+    },
+    {
+      "from": "render/libGraphics.ts",
+      "to": "lib/schgen/render/lib-graphics.ts"
+    },
+    {
+      "from": "render/libPins.ts",
+      "to": "lib/schgen/render/lib-pins.ts"
+    },
+    {
+      "from": "render/pack.ts",
+      "to": "lib/schgen/render/pack.ts"
+    },
+    {
+      "from": "render/sexprWrite.ts",
+      "to": "lib/schgen/render/sexpr-write.ts"
+    },
+    {
+      "from": "render/textBoxes.ts",
+      "to": "lib/schgen/render/text-boxes.ts"
+    },
+    {
+      "from": "render/uuid.ts",
+      "to": "lib/schgen/render/uuid.ts"
+    },
+    {
+      "from": "render/wireSafety.ts",
+      "to": "lib/schgen/render/wire-safety.ts"
+    },
+    {
+      "from": "gates/pintable.ts",
+      "to": "lib/schgen/gates/pin-table.ts"
     },
     {
       "from": "ir/validate.ts",
@@ -66,88 +90,289 @@
         }
       ]
     },
-    { "from": "ir/validateNets.ts", "to": "lib/schgen/ir/validate-nets.ts" },
-    { "from": "ir/validateParts.ts", "to": "lib/schgen/ir/validate-parts.ts" },
-    { "from": "ir/validateRule.ts", "to": "lib/schgen/ir/validate-rule.ts" },
-    { "from": "__fixtures__/fixtureLib.ts", "to": "tests/schgen/__fixtures__/fixture-lib.ts" },
-    { "from": "ir/author.test.ts", "to": "tests/schgen/ir/author.test.ts" },
-    { "from": "ir/order.test.ts", "to": "tests/schgen/ir/order.test.ts" },
-    { "from": "render/uuid.test.ts", "to": "tests/schgen/render/uuid.test.ts" },
-    { "from": "render/sexprWrite.test.ts", "to": "tests/schgen/render/sexpr-write.test.ts" },
-    { "from": "render/library.ts", "to": "lib/schgen/render/library.ts" },
-    { "from": "render/library.test.ts", "to": "tests/schgen/render/library.test.ts" },
-    { "from": "render/geometry.test.ts", "to": "tests/schgen/render/geometry.test.ts" },
-    { "from": "render/powerText.ts", "to": "lib/schgen/render/power-text.ts" },
-    { "from": "render/unitPins.ts", "to": "lib/schgen/render/unit-pins.ts" },
-    { "from": "render/bodyClearance.ts", "to": "lib/schgen/render/body-clearance.ts" },
-    { "from": "render/unitText.ts", "to": "lib/schgen/render/unit-text.ts" },
-    { "from": "render/pinMarks.ts", "to": "lib/schgen/render/pin-marks.ts" },
-    { "from": "render/sheetTypes.ts", "to": "lib/schgen/render/sheet-types.ts" },
-    { "from": "render/glyphClearance.ts", "to": "lib/schgen/render/glyph-clearance.ts" },
-    { "from": "render/textScene.ts", "to": "lib/schgen/render/text-scene.ts" },
-    { "from": "render/symbolSelfText.ts", "to": "lib/schgen/render/symbol-self-text.ts" },
-    { "from": "render/layoutCheck.ts", "to": "lib/schgen/render/layout-check.ts" },
-    { "from": "render/connectivity.test.ts", "to": "tests/schgen/render/connectivity.test.ts" },
-    { "from": "render/wireSafety.test.ts", "to": "tests/schgen/render/wire-safety.test.ts" },
-    { "from": "render/emitItems.ts", "to": "lib/schgen/render/emit-items.ts" },
-    { "from": "render/pageRefs.ts", "to": "lib/schgen/render/page-refs.ts" },
-    { "from": "render/emit.ts", "to": "lib/schgen/render/emit.ts" },
-    { "from": "render/ercExclusions.ts", "to": "lib/schgen/render/erc-exclusions.ts" },
-    { "from": "render/project.ts", "to": "lib/schgen/render/project.ts" },
-    { "from": "render/pack.test.ts", "to": "tests/schgen/render/pack.test.ts" },
-    { "from": "render/project.test.ts", "to": "tests/schgen/render/project.test.ts" },
-    { "from": "lock/annotate.test.ts", "to": "tests/schgen/lock/annotate.test.ts" },
-    { "from": "lock/refmap.test.ts", "to": "tests/schgen/lock/refmap.test.ts" },
-    { "from": "lock/versionLock.test.ts", "to": "tests/schgen/lock/version-lock.test.ts" },
-    { "from": "render/layoutKit.ts", "to": "lib/schgen/render/layout-kit.ts" },
-    { "from": "render/chainKit.ts", "to": "lib/schgen/render/chain-kit.ts" },
-    { "from": "render/fanoutRows.ts", "to": "lib/schgen/render/fanout-rows.ts" },
-    { "from": "render/templates/index.ts", "to": "lib/schgen/render/templates/index.ts" },
-    { "from": "__fixtures__/layoutChecks.ts", "to": "tests/schgen/__fixtures__/layout-checks.ts" },
-    { "from": "__fixtures__/requireTool.ts", "to": "tests/schgen/__fixtures__/require-tool.ts" },
-    { "from": "render/templates/railRow.test.ts", "to": "tests/schgen/render/templates/rail-row.test.ts" },
-    { "from": "render/templates/divider.test.ts", "to": "tests/schgen/render/templates/divider.test.ts" },
-    { "from": "render/templates/crystal.test.ts", "to": "tests/schgen/render/templates/crystal.test.ts" },
-    { "from": "render/templates/regulator.test.ts", "to": "tests/schgen/render/templates/regulator.test.ts" },
-    { "from": "render/templates/opampStage.test.ts", "to": "tests/schgen/render/templates/opamp-stage.test.ts" },
-    { "from": "render/templates/connectorFanout.test.ts", "to": "tests/schgen/render/templates/connector-fanout.test.ts" },
-    { "from": "render/bodyClearance.test.ts", "to": "tests/schgen/render/body-clearance.test.ts" },
-    { "from": "kicad/libtable.ts", "to": "lib/kicad/libtable.ts", "root": "pedals-tools" },
-    { "from": "render/sheetCheck.ts", "to": "lib/schgen/render/sheet-check.ts" },
-    { "from": "render/glyphClearance.test.ts", "to": "tests/schgen/render/glyph-clearance.test.ts" },
-    { "from": "render/glyphGlyphClearance.test.ts", "to": "tests/schgen/render/glyph-glyph-clearance.test.ts" },
+    {
+      "from": "ir/validateNets.ts",
+      "to": "lib/schgen/ir/validate-nets.ts"
+    },
+    {
+      "from": "ir/validateParts.ts",
+      "to": "lib/schgen/ir/validate-parts.ts"
+    },
+    {
+      "from": "ir/validateRule.ts",
+      "to": "lib/schgen/ir/validate-rule.ts"
+    },
+    {
+      "from": "__fixtures__/fixtureLib.ts",
+      "to": "tests/schgen/__fixtures__/fixture-lib.ts"
+    },
+    {
+      "from": "ir/author.test.ts",
+      "to": "tests/schgen/ir/author.test.ts"
+    },
+    {
+      "from": "ir/order.test.ts",
+      "to": "tests/schgen/ir/order.test.ts"
+    },
+    {
+      "from": "render/uuid.test.ts",
+      "to": "tests/schgen/render/uuid.test.ts"
+    },
+    {
+      "from": "render/sexprWrite.test.ts",
+      "to": "tests/schgen/render/sexpr-write.test.ts"
+    },
+    {
+      "from": "render/library.ts",
+      "to": "lib/schgen/render/library.ts"
+    },
+    {
+      "from": "render/library.test.ts",
+      "to": "tests/schgen/render/library.test.ts"
+    },
+    {
+      "from": "render/geometry.test.ts",
+      "to": "tests/schgen/render/geometry.test.ts"
+    },
+    {
+      "from": "render/powerText.ts",
+      "to": "lib/schgen/render/power-text.ts"
+    },
+    {
+      "from": "render/unitPins.ts",
+      "to": "lib/schgen/render/unit-pins.ts"
+    },
+    {
+      "from": "render/bodyClearance.ts",
+      "to": "lib/schgen/render/body-clearance.ts"
+    },
+    {
+      "from": "render/unitText.ts",
+      "to": "lib/schgen/render/unit-text.ts"
+    },
+    {
+      "from": "render/pinMarks.ts",
+      "to": "lib/schgen/render/pin-marks.ts"
+    },
+    {
+      "from": "render/sheetTypes.ts",
+      "to": "lib/schgen/render/sheet-types.ts"
+    },
+    {
+      "from": "render/glyphClearance.ts",
+      "to": "lib/schgen/render/glyph-clearance.ts"
+    },
+    {
+      "from": "render/textScene.ts",
+      "to": "lib/schgen/render/text-scene.ts"
+    },
+    {
+      "from": "render/symbolSelfText.ts",
+      "to": "lib/schgen/render/symbol-self-text.ts"
+    },
+    {
+      "from": "render/layoutCheck.ts",
+      "to": "lib/schgen/render/layout-check.ts"
+    },
+    {
+      "from": "render/connectivity.test.ts",
+      "to": "tests/schgen/render/connectivity.test.ts"
+    },
+    {
+      "from": "render/wireSafety.test.ts",
+      "to": "tests/schgen/render/wire-safety.test.ts"
+    },
+    {
+      "from": "render/emitItems.ts",
+      "to": "lib/schgen/render/emit-items.ts"
+    },
+    {
+      "from": "render/pageRefs.ts",
+      "to": "lib/schgen/render/page-refs.ts"
+    },
+    {
+      "from": "render/emit.ts",
+      "to": "lib/schgen/render/emit.ts"
+    },
+    {
+      "from": "render/ercExclusions.ts",
+      "to": "lib/schgen/render/erc-exclusions.ts"
+    },
+    {
+      "from": "render/project.ts",
+      "to": "lib/schgen/render/project.ts"
+    },
+    {
+      "from": "render/pack.test.ts",
+      "to": "tests/schgen/render/pack.test.ts"
+    },
+    {
+      "from": "render/project.test.ts",
+      "to": "tests/schgen/render/project.test.ts"
+    },
+    {
+      "from": "lock/annotate.test.ts",
+      "to": "tests/schgen/lock/annotate.test.ts"
+    },
+    {
+      "from": "lock/refmap.test.ts",
+      "to": "tests/schgen/lock/refmap.test.ts"
+    },
+    {
+      "from": "lock/versionLock.test.ts",
+      "to": "tests/schgen/lock/version-lock.test.ts"
+    },
+    {
+      "from": "render/layoutKit.ts",
+      "to": "lib/schgen/render/layout-kit.ts"
+    },
+    {
+      "from": "render/chainKit.ts",
+      "to": "lib/schgen/render/chain-kit.ts"
+    },
+    {
+      "from": "render/fanoutRows.ts",
+      "to": "lib/schgen/render/fanout-rows.ts"
+    },
+    {
+      "from": "render/templates/index.ts",
+      "to": "lib/schgen/render/templates/index.ts"
+    },
+    {
+      "from": "__fixtures__/layoutChecks.ts",
+      "to": "tests/schgen/__fixtures__/layout-checks.ts"
+    },
+    {
+      "from": "__fixtures__/requireTool.ts",
+      "to": "tests/schgen/__fixtures__/require-tool.ts"
+    },
+    {
+      "from": "render/templates/railRow.test.ts",
+      "to": "tests/schgen/render/templates/rail-row.test.ts"
+    },
+    {
+      "from": "render/templates/divider.test.ts",
+      "to": "tests/schgen/render/templates/divider.test.ts"
+    },
+    {
+      "from": "render/templates/crystal.test.ts",
+      "to": "tests/schgen/render/templates/crystal.test.ts"
+    },
+    {
+      "from": "render/templates/regulator.test.ts",
+      "to": "tests/schgen/render/templates/regulator.test.ts"
+    },
+    {
+      "from": "render/templates/opampStage.test.ts",
+      "to": "tests/schgen/render/templates/opamp-stage.test.ts"
+    },
+    {
+      "from": "render/templates/connectorFanout.test.ts",
+      "to": "tests/schgen/render/templates/connector-fanout.test.ts"
+    },
+    {
+      "from": "render/bodyClearance.test.ts",
+      "to": "tests/schgen/render/body-clearance.test.ts"
+    },
+    {
+      "from": "kicad/libtable.ts",
+      "to": "lib/kicad/libtable.ts",
+      "root": "pedals-tools"
+    },
+    {
+      "from": "render/sheetCheck.ts",
+      "to": "lib/schgen/render/sheet-check.ts"
+    },
+    {
+      "from": "render/glyphClearance.test.ts",
+      "to": "tests/schgen/render/glyph-clearance.test.ts"
+    },
+    {
+      "from": "render/glyphGlyphClearance.test.ts",
+      "to": "tests/schgen/render/glyph-glyph-clearance.test.ts"
+    },
     {
       "from": "report.test.ts",
       "to": "tests/schgen/report.test.ts",
       "cuts": [
-        { "text": "    expect(md).toContain(\"- B (s): fixture\");\n", "occurrences": 1 }
+        {
+          "text": "    expect(md).toContain(\"- B (s): fixture\");\n",
+          "occurrences": 1
+        }
       ]
     },
-    { "from": "repo.ts", "to": "tools/repo.ts", "root": "pedals-tools" },
+    {
+      "from": "repo.ts",
+      "to": "tools/repo.ts",
+      "root": "pedals-tools"
+    },
     {
       "from": "design.ts",
       "to": "lib/schgen/design.ts",
       "cuts": [
-        { "text": "  /** Relative to the design dir. */\n  readonly pinmap: string | null;\n", "occurrences": 1 },
-        { "text": "    isObjectOrNull(c[\"mcu\"]) &&\n", "occurrences": 1 },
-        { "text": "    isStringOrNull(v[\"pinmap\"]) &&\n", "occurrences": 1 }
+        {
+          "text": "  /** Relative to the design dir. */\n  readonly pinmap: string | null;\n",
+          "occurrences": 1
+        },
+        {
+          "text": "    isObjectOrNull(c[\"mcu\"]) &&\n",
+          "occurrences": 1
+        },
+        {
+          "text": "    isStringOrNull(v[\"pinmap\"]) &&\n",
+          "occurrences": 1
+        }
       ]
     },
-    { "from": "generateFiles.ts", "to": "tools/schgen/generated-files.ts" },
-    { "from": "kicadConfig.ts", "to": "tools/schgen/kicad-config.ts" },
-    { "from": "kicadRun.ts", "to": "tools/schgen/kicad-run.ts" },
-    { "from": "kicad/footprint.ts", "to": "lib/kicad/footprint.ts", "root": "pedals-tools" },
-    { "from": "gates/pinIdentity.ts", "to": "lib/schgen/gates/pin-identity.ts" },
-    { "from": "gates/traceability.ts", "to": "lib/schgen/gates/traceability.ts" },
-    { "from": "gates/pintable.test.ts", "to": "tests/schgen/gates/pin-table.test.ts" },
-    { "from": "gates/pinIdentity.test.ts", "to": "tests/schgen/gates/pin-identity.test.ts" },
+    {
+      "from": "generateFiles.ts",
+      "to": "tools/schgen/generated-files.ts"
+    },
+    {
+      "from": "kicadConfig.ts",
+      "to": "tools/schgen/kicad-config.ts"
+    },
+    {
+      "from": "kicadRun.ts",
+      "to": "tools/schgen/kicad-run.ts"
+    },
+    {
+      "from": "kicad/footprint.ts",
+      "to": "lib/kicad/footprint.ts",
+      "root": "pedals-tools"
+    },
+    {
+      "from": "gates/pinIdentity.ts",
+      "to": "lib/schgen/gates/pin-identity.ts"
+    },
+    {
+      "from": "gates/traceability.ts",
+      "to": "lib/schgen/gates/traceability.ts"
+    },
+    {
+      "from": "gates/pintable.test.ts",
+      "to": "tests/schgen/gates/pin-table.test.ts"
+    },
+    {
+      "from": "gates/pinIdentity.test.ts",
+      "to": "tests/schgen/gates/pin-identity.test.ts"
+    },
     {
       "from": "gates/traceability.test.ts",
       "to": "tests/schgen/gates/traceability.test.ts",
       "cuts": [
-        { "text": "import fs from \"node:fs\";\n", "occurrences": 1 },
-        { "text": "import path from \"node:path\";\n", "occurrences": 1 },
-        { "text": "import { repoRoot } from \"@/repo\";\n", "occurrences": 1 },
+        {
+          "text": "import fs from \"node:fs\";\n",
+          "occurrences": 1
+        },
+        {
+          "text": "import path from \"node:path\";\n",
+          "occurrences": 1
+        },
+        {
+          "text": "import { repoRoot } from \"@/repo\";\n",
+          "occurrences": 1
+        },
         {
           "text": "\n  it(\"matches the item counts the real checklist states\", () => {\n    const md = fs.readFileSync(path.join(repoRoot(), \"h7-platform\", \"SCHEMATIC-CHECKLIST.md\"), \"utf8\");\n    const stated = /\\*\\*Item count\\*\\*[^:]*:([^\\n]*\\n[^\\n]*)/.exec(md)?.[1];\n    if (stated === undefined) throw new Error(\"SCHEMATIC-CHECKLIST.md has no Item count line\");\n    const perPrefix = new Map([...stated.matchAll(/\\b([A-Z]+) (\\d+)\\b/g)].map((m) => [m[1]!, Number(m[2])]));\n    const ids = checklistIds(md);\n    const actual = new Map<string, number>();\n    for (const id of ids) actual.set(id.split(\"-\")[0]!, (actual.get(id.split(\"-\")[0]!) ?? 0) + 1);\n    expect(actual).toEqual(perPrefix);\n    const schematic = [\"CORE\", \"CODEC\", \"PWR\", \"AIO\", \"CTL\", \"USB\", \"ALL\"];\n    expect(ids.filter((id) => schematic.includes(id.split(\"-\")[0]!))).toHaveLength(Number(/(\\d+) schematic items/.exec(stated)?.[1]));\n    expect(perPrefix.get(\"OWN\")).toBeGreaterThan(0);\n    expect(perPrefix.get(\"BU\")).toBeGreaterThan(0);\n  });\n",
           "occurrences": 1
@@ -491,6 +716,13 @@
       "sourceSha": "c3c514694ee854cf81b1750b10ed0fe27e3cc3dd5d3f301022199add8da5caf0",
       "task": "Task 12",
       "why": "The ELK pre-pass is threaded through the function that owns the pipeline: `generate` is `async` (decision D2 - elkjs has no synchronous layout entry point, premise verified at Task 12 Step 1), `GenerateEnv` gains `authoring: SchematicAuthoring | null` because `elkInputOf` needs portDirections and rails and the IR has no slot for a port direction, `Generation` gains `elk`, and `layoutSheet` is handed `elkBackendFrom(...)`. The pedals source has no ELK backend and never will, so no rewrite rule reconciles the two. Its MCU pin-map `cuts` (G112) were applied before divergence - they are no longer carried as data and the deletions now live in the file. docs/known-gaps.md G186."
+    },
+    {
+      "from": "ir/build.ts",
+      "to": "lib/schgen/ir/build.ts",
+      "sourceSha": "b53b1c7671a3caaf88a0bc13ba50162febf33da02a35aa00704deb8a48238a19",
+      "task": "Task 13",
+      "why": "Ruling R29 (plan, Task 13). `buildCircuit` carries `CircuitSpec`'s two new maps onto the `Circuit` - `orientations` (spec 1.5 step 2's answer per part, derived in `from-network.ts` where the `Network` is; docs/known-gaps.md G182) and `portDirections` (G186's \"only input genuinely missing from the IR\") - and adds `orientationsOf`, which refuses an orientation map that is not TOTAL over the spec's parts in both directions. The totality refusal is the content of the divergence: a missing entry must not read as `null`, because `null` means the rule declined and both states would draw the part in the library frame, so an absence would be invisible in the output. The pedals source has neither field and no layout backend to need them."
     }
   ],
   "handWritten": [
@@ -554,6 +786,7 @@
     "tests/schgen/elk/graph.test.ts",
     "tests/schgen/elk/serialize.test.ts",
     "tests/schgen/elk/layout.elk.test.ts",
-    "tests/schgen/elk/options.elk.test.ts"
+    "tests/schgen/elk/options.elk.test.ts",
+    "tests/schgen/__fixtures__/orientations.ts"
   ]
 }

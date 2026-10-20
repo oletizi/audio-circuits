@@ -29,11 +29,13 @@ import { cap, RAILS } from "./__fixtures__/circuits.ts";
 import type { DesignSpec, LoadedDesign } from "../../lib/schgen/design.ts";
 import { generate, writeGeneration } from "../../tools/schgen/generate.ts";
 import { annotationProblems, OSCAR_NOT_PORTED, runGate, runGates, symmetricSymbolsProblems } from "../../tools/schgen/verify.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "./__fixtures__/orientations.ts";
 
 const FIX = path.join(path.dirname(fileURLToPath(import.meta.url)), "__fixtures__", "symbols");
-// Task 12: `authoring` is the ELK pre-pass's input. This fixture design's one block declares
+// Task 13, ruling R29: the ELK pre-pass's two declared inputs now reach it through the IR, so
+// `GenerateEnv` carries no authoring declaration at all. This fixture design's one block declares
 // the `decoupling-bank` template, so no block selects ELK and the pre-pass has nothing to do.
-const ENV = { kicadVersion: "10.0.5", stockDir: FIX, initLock: false, acceptToolchain: false, authoring: null };
+const ENV = { kicadVersion: "10.0.5", stockDir: FIX, initLock: false, acceptToolchain: false };
 const NOT_RUN = ["not run: generation was refused"];
 
 /**
@@ -45,15 +47,19 @@ const NOT_RUN = ["not run: generation was refused"];
  */
 const DECOUPLING = { kind: "wired", template: "decoupling-bank", anchor: null } as const;
 
+const VERIFY_PARTS = [cap("C1", "3V3", "GND"), cap("C2", "3V3", "GND")];
+
 function spec(overrides: Partial<DesignSpec> = {}): DesignSpec {
   return {
     project: "mini",
     outDir: ".",
     circuit: {
-      parts: [cap("C1", "3V3", "GND"), cap("C2", "3V3", "GND")],
+      parts: VERIFY_PARTS,
       blocks: [{ id: "DEC", sheet: "pwr", title: "D", members: ["C1", "C2"], checklist: [], rendering: DECOUPLING }],
       sheets: [{ id: "pwr", title: "Power", file: "power.kicad_sch", paper: "A4", notes: [] }],
       rails: RAILS.filter((r) => r.net !== "VDDA"),
+      orientations: noOrientationPreferences(VERIFY_PARTS),
+      portDirections: NO_PORT_DIRECTIONS,
     },
     symbolLibs: { Fix: path.join(FIX, "Fix.kicad_sym"), Pwr: path.join(FIX, "Pwr.kicad_sym") },
     footprintLibs: {},

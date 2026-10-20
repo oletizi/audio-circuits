@@ -108,10 +108,6 @@ export async function runSchgen(
       stockDir: deps.stockDir(),
       initLock: parsed.env.initLock,
       acceptToolchain: parsed.env.acceptToolchain,
-      // Task 12: the ELK pre-pass's input. A `DesignSpec` carries no authoring declaration (the
-      // reason is on `GenerateEnv.authoring` and in docs/known-gaps.md G186), so a design whose
-      // blocks reach ELK refuses here naming the block - it is not laid out without one.
-      authoring: null,
     }
     const g = await generate(d, env)
     if (parsed.verb === "check") {

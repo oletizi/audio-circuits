@@ -5,13 +5,20 @@
  * ported block fixtures in `tests/schgen/__fixtures__/circuits.ts` - `blockCircuit`, `res`, `cap`
  * and the `Fix:`/`Pwr:` symbol libraries - so the ELK graph is measured over the same subgraphs
  * the ported template tests measure over, rather than over a graph written to suit it.
+ *
+ * **`fixtureAuthoring` IS DELETED, by ruling R29.** It built a `SchematicAuthoring` carrying the
+ * two things `elkInputOf` used to read from one. Both now reach the backend through the IR, so
+ * `elkInputOf` takes a `BlockSubgraph` alone and nothing here needs an authoring declaration.
+ * `CLAUDE.md`'s *supersede means delete*: it is removed rather than left for someone to find and
+ * assume is the way to build an ELK input.
  */
 
-import { blockCircuit, RAILS, res, symbols } from "../__fixtures__/circuits.ts"
+import { blockCircuit, res, symbols } from "../__fixtures__/circuits.ts"
 import { subgraphOf } from "../../../lib/schgen/render/blocks.ts"
 import type { BlockSubgraph } from "../../../lib/schgen/render/block-types.ts"
-import type { PartSpec, RailSpec } from "../../../lib/schgen/ir/types.ts"
-import type { PortDirection, SchematicAuthoring } from "../../../lib/schgen/authoring.ts"
+import type { PartLabel, PartSpec } from "../../../lib/schgen/ir/types.ts"
+import type { Rotation } from "../../../lib/schgen/render/geometry.ts"
+import type { PortDirection } from "../../../lib/schgen/ir/types.ts"
 
 /**
  * The three rails `RAILS` declares, with a direction each.
@@ -30,32 +37,47 @@ export const FIXTURE_DIRECTIONS: Readonly<Record<string, PortDirection>> = {
 }
 
 /**
- * A `SchematicAuthoring` carrying nothing but what `elkInputOf` reads - `portDirections` and
- * `rails` - with every other field at its empty value.
+ * The subgraph of block `B` of a circuit holding exactly `parts`, rendered `auto`.
  *
- * It is a test fixture and says so: the real declarations are the four in `circuits/`, and
- * `tests/schgen/authoring-complete.test.ts` is what holds those to G99's criterion. Nothing here
- * is a default the production path could reach.
+ * **`FIXTURE_DIRECTIONS` reaches it through the CIRCUIT now, not through a `SchematicAuthoring`**
+ * - ruling **R29**. `elkInputOf` takes only a `BlockSubgraph`, and a subgraph's `portDirections`
+ * come from `Circuit.portDirections`, so a fixture that wants `IN` to be inbound declares it on
+ * the circuit the way the four real ones do.
  */
-export function fixtureAuthoring(
-  portDirections: Readonly<Record<string, PortDirection>> = FIXTURE_DIRECTIONS,
-  rails: readonly RailSpec[] = RAILS,
-): SchematicAuthoring {
-  return {
-    project: "elk-fixture",
-    designators: {},
-    blocks: [],
-    sheets: [],
-    rails,
-    portDirections,
-    overrides: {},
-    declared: { source: "tests/schgen/elk/fixtures.ts", bom: { kind: "unsourced", why: "a fixture" } },
-  }
+export function autoBlock(
+  parts: PartSpec[],
+  external: readonly string[] = [],
+  orientations?: ReadonlyMap<PartLabel, Rotation | null>,
+): BlockSubgraph {
+  const circuit = blockCircuit(parts, { kind: "auto" }, {
+    external: [...external],
+    portDirections: FIXTURE_DIRECTIONS,
+    ...(orientations === undefined ? {} : { orientations }),
+  })
+  return subgraphOf(circuit, "B", symbols)
 }
 
-/** The subgraph of block `B` of a circuit holding exactly `parts`, rendered `auto`. */
-export function autoBlock(parts: PartSpec[], external: readonly string[] = []): BlockSubgraph {
-  return subgraphOf(blockCircuit(parts, { kind: "auto" }, { external: [...external] }), "B", symbols)
+/**
+ * One resistor whose GROUNDED end is pin 1, with the orientation map spec §1.5's rule produces for
+ * exactly that shape: **rotation 180**.
+ *
+ * **IT IS `pt2399-core/C8`'s CASE, WHICH IS THE WHOLE OF WHAT RULING R29 MOVES ON REAL DATA.** Of
+ * the 102 components in the four parity circuits the rule answers `null` for 73, rotation 0 for 28
+ * and **180 for exactly one** - so without this fixture nothing in the suite would ever build an
+ * ELK node at a non-zero rotation, and R29's change would be invisible to every check.
+ *
+ * **WHY THE MAP IS STATED AND NOT DERIVED HERE.** `rules/orientation.ts` keys on `ComponentKind`
+ * and these fixtures have no `Network` to carry one (`docs/known-gaps.md` **G182**), so the rule
+ * cannot run over them at all. What is asserted here is that the BACKEND honours the map; that the
+ * RULE produces 180 for a resistor with pin 1 on a ground rail is a separate claim, held by
+ * `tests/schgen/rules/orientation.test.ts` over the real symbols. Neither test stands in for the
+ * other, and pretending one did is how a fixture comes to assert its own premise.
+ *
+ * `Fix:R` puts pin 1 at angle 270 (side `top` at rotation 0) and pin 2 at angle 90 (`bottom`), so
+ * 180 swaps them - which is a difference a check can see.
+ */
+export function groundedPinOneBlock(): BlockSubgraph {
+  return autoBlock([res("R_FLIP", "GND", "3V3")], [], new Map<PartLabel, Rotation | null>([["R_FLIP", 180]]))
 }
 
 /** Two resistors in series from `3V3` to `GND`: the smallest block a divider template is about. */

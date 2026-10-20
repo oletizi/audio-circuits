@@ -11,6 +11,7 @@ import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
 import type { SheetSpec } from "../../../lib/schgen/ir/types.ts";
 import { blockContent, flagsContent, frameSize, notesContent, titleOf } from "../../../lib/schgen/render/frames.ts";
 import { GRID } from "../../../lib/schgen/render/geometry.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 const sheet = (notes: SheetSpec["notes"]): SheetSpec => ({ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes });
 
@@ -51,6 +52,8 @@ describe("frame contents", () => {
         parts: [cap("C1", "3V3", "GND")],
         blocks: [{ id: "B", sheet: "s", title: "B", members: ["C1"], checklist: [], rendering: { kind: "bus", groups: [] } }],
         sheets: [sheet([])], rails: RAILS,
+        orientations: noOrientationPreferences([cap("C1", "3V3", "GND")]),
+        portDirections: NO_PORT_DIRECTIONS,
       },
       { symbols },
     );

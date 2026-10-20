@@ -33,8 +33,8 @@
  * `docs/known-gaps.md` **G148** and **G149**; the short forms are on the fields themselves.
  */
 
-import { NET_NAME, type BlockId, type BomFields, type NetName, type RailSpec, type SheetSpec } from "./ir/types.ts"
-import type { Rendering, TemplateAnchor } from "./ir/types.ts"
+import { NET_NAME, PORT_DIRECTIONS, type BlockId, type BomFields, type NetName, type RailSpec, type SheetSpec } from "./ir/types.ts"
+import type { PortDirection, Rendering, TemplateAnchor } from "./ir/types.ts"
 import { isPinSide } from "./rules/pin-sides.ts"
 import type { PinSide } from "./rules/pin-sides.ts"
 import type { Network } from "../model/types.ts"
@@ -47,10 +47,16 @@ export type { PinSide } from "./rules/pin-sides.ts"
  * G99's fifth invention: the spike emitted every declared port as `direction: "input"`, so
  * *"on `leg-upper` the exit port `to` draws as an arrow pointing INTO the trim-pot"*. The model
  * says a net crosses - `Network.ports` - and says nothing about which way, so this is declared.
+ *
+ * **IT IS DECLARED IN `./ir/types.ts` NOW AND RE-EXPORTED HERE** - ruling **R29**, closing
+ * **G186**. `CircuitSpec.portDirections` carries the declaration into the IR so a layout backend
+ * reaches it from a `BlockSubgraph` instead of from a `GenerateEnv` field, and the type went with
+ * it. It is re-exported rather than re-declared so that the four `circuits/*` authoring files and
+ * the two test fixtures that import it from here keep one source of truth.
  */
-export type PortDirection = "in" | "out" | "bidirectional"
+export type { PortDirection }
 
-export const PORT_DIRECTIONS: readonly PortDirection[] = ["in", "out", "bidirectional"]
+export { PORT_DIRECTIONS }
 
 /**
  * Spec §1.9: a named electrical interface port, its acceptable sides, and whether its position is

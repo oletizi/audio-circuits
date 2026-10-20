@@ -16,12 +16,14 @@ import { projectFile } from "../../../lib/schgen/render/project.ts";
 import { layoutSheet } from "../../../lib/schgen/render/sheets.ts";
 import type { SheetDrawing } from "../../../lib/schgen/render/sheet-types.ts";
 import { uuidV5 } from "../../../lib/schgen/render/uuid.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 /** The A1 fixture circuit shape: a divider on sheet "s" and a load on sheet "t", on the fixture library. */
 function fixture(): { c: Circuit; drawings: SheetDrawing[] } {
+  const parts = [res("R_T", "3V3", "TAP"), res("R_B", "TAP", "GND"), res("R_L", "TAP", "GND")];
   const c = buildCircuit(
     {
-      parts: [res("R_T", "3V3", "TAP"), res("R_B", "TAP", "GND"), res("R_L", "TAP", "GND")],
+      parts,
       blocks: [
         { id: "DIV", sheet: "s", title: "Strap", members: ["R_T", "R_B"], checklist: [], rendering: { kind: "wired", template: "divider", anchor: null } },
         { id: "LOAD", sheet: "t", title: "Load", members: ["R_L"], checklist: [], rendering: { kind: "bus", groups: [] } },
@@ -31,7 +33,9 @@ function fixture(): { c: Circuit; drawings: SheetDrawing[] } {
         { id: "t", title: "T", file: "t.kicad_sch", paper: "A4", notes: [] },
       ],
       rails: RAILS,
-      },
+      orientations: noOrientationPreferences(parts),
+      portDirections: NO_PORT_DIRECTIONS,
+    },
     { symbols },
   );
   return { c, drawings: c.sheets.map((s) => layoutSheet(c, s.id, symbols, "Pwr:PWR_FLAG")) };

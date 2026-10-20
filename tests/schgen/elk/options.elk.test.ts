@@ -29,7 +29,7 @@ import { beforeAll, expect, test } from "bun:test"
 import ELK from "elkjs/lib/elk-api.js"
 import { elkInputOf } from "../../../lib/schgen/elk/graph.ts"
 import { BLOCK_OPTIONS } from "../../../lib/schgen/elk/options.ts"
-import { dividerSubgraph, fixtureAuthoring, inboundAndOutboundBlock } from "./fixtures.ts"
+import { dividerSubgraph, inboundAndOutboundBlock } from "./fixtures.ts"
 import type { ElkLayoutAlgorithmDescription, ElkLayoutOptionDescription, ElkNode } from "elkjs/lib/elk-api.js"
 
 /**
@@ -80,12 +80,11 @@ beforeAll(async () => {
   } finally {
     elk.terminateWorker()
   }
-  const authoring = fixtureAuthoring()
   // Two blocks, because the inbound layer constraint appears on neither of them alone: a divider
   // has only rail boundaries, and `inboundAndOutboundBlock` is the only fixture with a non-rail one.
   emitted = [
-    ...emittedOptions(elkInputOf(dividerSubgraph(), authoring).graph),
-    ...emittedOptions(elkInputOf(inboundAndOutboundBlock(), authoring).graph),
+    ...emittedOptions(elkInputOf(dividerSubgraph()).graph),
+    ...emittedOptions(elkInputOf(inboundAndOutboundBlock()).graph),
   ]
 }, 120_000)
 

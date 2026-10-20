@@ -2,6 +2,9 @@
  * Ported from digital-pedal-platform's `tools/schgen/__fixtures__/circuits.ts` (with the MCU
  * pin-map cuts of `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 8 of the M1
  * schematic-authoring plan: decision D3 deletes the `labels` rendering these fixtures declared.
+ * **Diverged further by Task 13 under ruling R29**: both circuit builders supply `CircuitSpec`'s
+ * two new maps, and `BlockCircuitOptions` can declare port directions - see `./orientations.ts`
+ * for what the values mean and why.
  *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
@@ -17,9 +20,11 @@
  */
 
 import { fixtureResolver, TEST_BOM } from "./fixture-lib.ts";
+import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "./orientations.ts";
 import { twoPin, UNNAMED } from "../../../lib/schgen/ir/author.ts";
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
-import type { BlockMember, BlockSpec, Circuit, PartSpec, RailSpec, Rendering, SheetNote } from "../../../lib/schgen/ir/types.ts";
+import type { BlockMember, BlockSpec, Circuit, PartLabel, PartSpec, PortDirection, RailSpec, Rendering, SheetNote } from "../../../lib/schgen/ir/types.ts";
+import type { Rotation } from "../../../lib/schgen/render/geometry.ts";
 
 export const symbols = fixtureResolver();
 
@@ -48,6 +53,26 @@ export interface BlockCircuitOptions {
   readonly splitUnits?: readonly { readonly part: string; readonly units: readonly number[] }[];
   /** Rails beyond RAILS (e.g. a second ground drawn with the GND glyph). */
   readonly moreRails?: readonly RailSpec[];
+  /**
+   * The circuit's declared port directions, which reach a `BlockSubgraph` since ruling **R29**.
+   *
+   * **Absent means `NO_PORT_DIRECTIONS`, and that is a declared state rather than a default** - see
+   * that constant: a net with no entry is **G99**'s open residue and `negotiablePort` states what
+   * it does with one. Only a fixture whose test is about a direction passes this
+   * (`tests/schgen/elk/fixtures.ts`), which is why it is optional like `splitUnits` and `moreRails`
+   * rather than required across the nineteen call sites that are about something else.
+   */
+  readonly portDirections?: Readonly<Record<string, PortDirection>>;
+  /**
+   * The circuit's per-part orientation map, for a fixture whose test is ABOUT a rotation.
+   *
+   * **Absent means `noOrientationPreferences`, and see that function for why that is the honest
+   * value here rather than a blank**: these fixtures have no `Network`, so spec §1.5's rule library
+   * cannot be consulted at all. A fixture that wants a rotation states the map the rule WOULD
+   * produce for that shape, and `tests/schgen/rules/orientation.test.ts` is what holds the rule
+   * itself to its inputs - the two are separate claims and neither stands in for the other.
+   */
+  readonly orientations?: ReadonlyMap<PartLabel, Rotation | null>;
 }
 
 /** One wired block "B" holding `parts`, plus a PEER block making `external` nets cross blocks. */
@@ -74,6 +99,8 @@ export function blockCircuit(parts: PartSpec[], rendering: Rendering, opts: Bloc
       ],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A3", notes: [] }],
       rails: [...RAILS, ...(opts.moreRails ?? [])],
+      orientations: opts.orientations ?? noOrientationPreferences([...parts, ...peers]),
+      portDirections: opts.portDirections ?? NO_PORT_DIRECTIONS,
     },
     { symbols },
   );
@@ -110,6 +137,8 @@ export function labelsCircuit(parts: PartSpec[], opts: LabelsCircuitOptions): Ci
       ],
       sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: opts.notes }],
       rails: opts.rails,
+      orientations: noOrientationPreferences(parts),
+      portDirections: NO_PORT_DIRECTIONS,
     },
     { symbols },
   );

@@ -32,9 +32,6 @@ const env = (): GenerateEnv => ({
   stockDir: stockSymbolDir(),
   initLock: true,
   acceptToolchain: false,
-  // The mini design renders every block `wired` or `bus`, so the Task 12 ELK pre-pass has nothing
-  // to lay out and needs no authoring declaration. A block that DID select ELK would refuse here.
-  authoring: null,
 })
 
 describe("generate over the ported mini design", () => {

@@ -97,3 +97,35 @@ export function preferredOrientation(kind: ComponentKind, context: OrientationCo
   const only = satisfying.length === 1 ? satisfying[0] : undefined
   return only ?? null
 }
+
+/**
+ * THE LIBRARY FRAME, AND THE ONE PLACE §1.5's `null` BECOMES A NUMBER.
+ *
+ * Spec §1.5 step 3 is *"ELK then places, subject to fixed port geometry, and may choose among
+ * orientations the rules leave open"* - and **that freedom is not available to this backend**, for
+ * a reason that is a property of the constraint rather than of this code: ELK is handed
+ * `elk.portConstraints = FIXED_POS` (the one mechanism spec §1.2 says transfers from
+ * `netlistsvg`), so a port's position must be computed before the graph exists, which means a
+ * rotation must be chosen before ELK runs. There is no point at which ELK could choose one.
+ *
+ * So a `null` resolves to **0: the orientation the symbol library itself draws the part in.** That
+ * is a stated frame, not a default standing in for an answer - the rule declined, and the drawing
+ * falls back to the library's own geometry rather than to a number this writer liked.
+ *
+ * **IT IS A FUNCTION, AND NOT `?? 0` AT THE CALL SITES, BECAUSE THERE ARE TWO CALL SITES AND SPEC
+ * §1.4 OBLIGATION 3 IS ABOUT EXACTLY THAT.** The obligation's operative clause is *"the transform
+ * is applied once, to the library pin geometry, and the result is what **both** ELK and the emitter
+ * see - so there is one transformed geometry and no second copy to drift"*. `subgraphOf` resolves
+ * each unit's rotation through this function ONCE and puts it on `BlockUnit.rot`; `graph.ts` fixes
+ * the ELK ports at `u.rot` and `adapt.ts` recomputes every pin end at `u.rot`. One value, two
+ * readers. `docs/known-gaps.md` **G182** and ruling **R29**.
+ */
+export function drawnRotation(preferred: Rotation | null): Rotation {
+  return preferred ?? LIBRARY_FRAME
+}
+
+/**
+ * The rotation a symbol's own library geometry is declared in. Named rather than written as a bare
+ * `0` so that `drawnRotation`'s answer says WHY it is that number at the one place it is produced.
+ */
+export const LIBRARY_FRAME: Rotation = 0
