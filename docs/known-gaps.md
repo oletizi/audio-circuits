@@ -6808,7 +6808,7 @@ writer did not run.
   which would cover this shape generically - at the price of a static
   analysis that is harder to read than the exemption it replaces.
 
-### G123 - `render/symbolSelfText.test.ts` is import-clean and still cannot land: its fixture leaks a mkdtemp directory outright, and **G122**'s per-file exemption does not fit that shape
+### G123 - `render/symbolSelfText.test.ts` is import-clean and still cannot be PORTED: its fixture leaks a mkdtemp directory outright, and **G122**'s per-file exemption does not fit that shape. A hand-written equivalent now covers the module; what is open is the byte-check the port would have given
 
 Task 5 ported `render/symbolSelfText.ts` and added its test to the manifest. The
 test is import-clean - `node:fs`/`os`/`path`, `createResolver` from the ported
@@ -6844,34 +6844,79 @@ rather than landing a known-red HEAD.
   gives **155 pass / 0 fail across 20 files**.
   `grep -n "mkdtempSync" $SCHGEN_SOURCE/render/symbolSelfText.test.ts` shows the
   one site and `grep -c "rmSync" ` that file shows none.
-- **Verified** CONFIRMED - this writer ran both commands and read the full
-  output.
-- **Why it is open** it is not a defect in Task 5's work; it is G122's cost
-  arriving in a shape G122's remedy does not cover, and it costs this
-  repository a check it would otherwise have: `symbolTextOverlaps` and
-  `placedSymbolTextOverlaps` are ported and exercised by NOTHING, so the
-  `pin-number`/`pin-number`, `pin-number`/`pin-name` and `pin-name`/`pin-name`
-  cells of the obstacle matrix (`lib/schgen/render/obstacle-pairs-pin-text.ts`)
-  name a function no test runs.
-- **What would settle it** **CRITERION:** `tests/schgen/render/symbol-self-text.test.ts`
-  exists in the tree, is ported (not hand-written), runs to completion, and
-  leaves `TMPDIR` as it found it, with `tests/stripboard/temp-scratch.test.ts`
-  green and no new exemption entry. The exact manifest JSON to re-add, which is
-  all that is needed once the criterion can be met:
-  `{ "from": "render/symbolSelfText.test.ts", "to": "tests/schgen/render/symbol-self-text.test.ts" }`,
-  no `cuts`. **MECHANISM, untried, and it leaves this repository:** change
+
+  **For the round-2 discharge:**
+  `bun test tests/schgen tests/stripboard/temp-scratch.test.ts` gives **172
+  pass / 0 fail across 22 files** with the hand-written test in the tree, and
+  the hand-written file alone gives **9 pass / 0 fail**. That `TMPDIR` is left
+  as found was measured rather than assumed: counting `schgen-symtext-`
+  entries under `TMPDIR` before the run gives 0, and after the run gives 0.
+- **Verified** CONFIRMED - this writer ran every command above and read the
+  full output, including the before-and-after `TMPDIR` count.
+- **Why it is open** **the COST is discharged and the PORT is not.** What this
+  entry was really about is that `symbolTextOverlaps` and
+  `placedSymbolTextOverlaps` were ported and exercised by nothing, so three
+  cells of the obstacle matrix
+  (`pin-number`/`pin-number`, `pin-number`/`pin-name`,
+  `pin-name`/`pin-name`, in `lib/schgen/render/obstacle-pairs-pin-text.ts`)
+  named a function no test ran. **At round 2 a hand-written
+  `tests/schgen/render/symbol-self-text.test.ts` closed that**, transcribing
+  every fixture and expectation from the pedals test and taking its temp
+  directory from `freshTempScratch` with `afterAll(cleanUpTempScratch)`: 9
+  tests, `TMPDIR` left as found, the static guard green, no upstream edit, no
+  guard change and no ported byte touched. What remains open is narrower and
+  real: **that file is hand-written, so `tests/schgen/port-fidelity.test.ts`
+  does not byte-check it**, and if the pedals source's expectations change
+  nothing here notices. That is the residual, and it is the price of the
+  mechanism taken.
+- **ROUND 2 CORRECTION: THIS ENTRY'S CRITERION WROTE ITS OWN MECHANISM INTO
+  ITSELF, AND THAT IS THE G52 SHAPE.** Round 1's criterion read *"exists in the
+  tree, **is ported (not hand-written)**, runs to completion…"*. The "is
+  ported" clause is not what anybody needs from this code; it made an upstream
+  edit the only admissible route **by construction rather than by necessity**,
+  and it is why round 1 concluded the fix had to leave this repository and
+  therefore needed an owner decision. It did not. The criterion below is the
+  split one.
+- **What would settle it** **CRITERION:** `symbolTextOverlaps` and
+  `placedSymbolTextOverlaps` are exercised by a test that runs to completion,
+  and `TMPDIR` is left as it was found, with
+  `tests/stripboard/temp-scratch.test.ts` green and no new exemption entry.
+  **MET at round 2 by mechanism (b).** The remaining criterion, which keeps
+  this entry open: the test that exercises them is byte-checked against the
+  pedals source, so a drift in its expectations fails here rather than passing
+  silently.
+
+  **MECHANISM (a), untried, and it leaves this repository:** change
   `digital-pedal-platform`'s `tools/schgen/render/symbolSelfText.test.ts` to
   remove its directory (an `afterAll`, or the `tempDirs` shape
   `render/library.test.ts` already uses and G122 already exempts) and re-run
-  `tools/schgen/port.ts`. `lib/schgen/README.md` sanctions exactly that - *"the
-  pedals source changes … and `port.ts` runs again"* - but it is an edit to
-  another repository and **nobody has asked the owner whether that is wanted**,
-  so it is a decision rather than a task. The alternative mechanisms are worse
-  and are recorded so nobody re-derives them: a new exemption category for a
-  genuine leak weakens the guard that followed a full disk, and hand-editing
-  the ported file breaks `port-fidelity.test.ts`.
+  `tools/schgen/port.ts`, then re-add
+  `{ "from": "render/symbolSelfText.test.ts", "to": "tests/schgen/render/symbol-self-text.test.ts" }`
+  with no `cuts` - **deleting the hand-written file in the same change**, since
+  two files cannot hold that path. `lib/schgen/README.md` sanctions the route -
+  *"the pedals source changes … and `port.ts` runs again"* - but it is an edit
+  to another repository and **nobody has asked the owner whether that is
+  wanted**, so it stays a decision. It is the only mechanism that meets the
+  remaining half of the criterion.
 
-### G124 - measured: the Task 5 brief's four "pure" clearance tests are two, and every other one waits on Task 7 through `render/blocks.ts`, not through anything about clearance
+  **MECHANISM (b), TAKEN at round 2: a hand-written equivalent test.**
+  `tests/schgen/port-fidelity.test.ts` blesses the shape - a hand-written test
+  under `tests/schgen/` is discovered by `bun test`'s glob and needs no
+  `handWritten` declaration - and `tests/schgen/render/obstacle-matrix.test.ts`
+  and `stock-symbols.test.ts` are both already that shape. Its file header
+  names the pedals source as the authority for every assertion, because an
+  agent writing a test may not decide what its subject should do.
+
+  **THE MECHANISMS RULED OUT, recorded so nobody re-derives them.** A new
+  exemption category in `tests/stripboard/temp-scratch.test.ts` for a genuine
+  leak weakens the guard that followed a full disk. Hand-editing the ported
+  file breaks `port-fidelity.test.ts`. A wrapper module, a sidecar `afterAll`
+  in another file, and a `bunfig` preload all fail for one reason: **the guard
+  is a static scan of each file's OWN bytes** for a `mkdtempSync` site whose
+  identifier is not passed to `rmSync`, so nothing outside the offending file
+  can satisfy it.
+
+### G124 - measured: the Task 5 brief's four "pure" clearance tests are two, every other one waits on Task 7 through `render/blocks.ts` rather than through anything about clearance, and **twelve of the thirteen modules Task 5 newly ported are exercised by no test**
 
 The brief's Step 1 says *"The pure ones - `wire-safety`, `connectivity`,
 `glyph-clearance`, `text-clearance` - run now."* Two of the four do.
@@ -6901,13 +6946,21 @@ import lines:
 **`__fixtures__/circuits.ts` is itself portable today** - its imports
 (`__fixtures__/fixtureLib`, `ir/author`, `ir/build`, `ir/types`) all resolve -
 so it is `render/blocks.ts` that is the gate, and `render/blocks.ts` is Task 7's.
-The consequence for Task 5 is that **not one of the sixteen modules it ported is
-exercised by a test in this repository**: `body-clearance.ts`,
+The consequence for Task 5 is that **of the thirteen modules it newly ported,
+twelve are exercised by no test in this repository**: `body-clearance.ts`,
 `glyph-clearance.ts`, `text-scene.ts`, `power-text.ts`, `unit-pins.ts`,
 `unit-text.ts`, `pin-marks.ts`, `field-placement.ts`, `drawn-extent.ts`,
-`symbol-self-text.ts`, `layout-check.ts`, `block-types.ts` and `sheet-types.ts`
-typecheck and nothing runs them. The two tests Task 5 DID land exercise
-`connectivity.ts` and `wire-safety.ts`, which **Task 3** ported.
+`layout-check.ts`, `block-types.ts` and `sheet-types.ts` typecheck and nothing
+runs them. The thirteenth, `symbol-self-text.ts`, IS exercised, by the
+hand-written test **G123** records. The two PORTED tests Task 5 landed exercise
+`connectivity.ts` and `wire-safety.ts`, which **Task 3** ported, not Task 5.
+
+**Round 1 of this entry said "not one of the sixteen modules it ported", and
+that was wrong twice over**, which matters because the headline is what a later
+reader takes away. Task 5 newly ported **13 modules and 2 tests**; the 16 folded
+in three that Tasks 3-4 had already ported, two of which - `connectivity.ts` and
+`wire-safety.ts` - are exercised, by the very tests Task 5 landed. The honest
+figure is thirteen newly ported modules, twelve of them unexercised.
 
 - **Found** 2026-10-19, Task 5, Step 1, while executing the brief verbatim.
 - **Evidence** the port refuses by name rather than guessing, which is a check
@@ -6937,7 +6990,7 @@ typecheck and nothing runs them. The two tests Task 5 DID land exercise
   `render/sheetCheck.ts` for the two glyph tests, and `render/bus.ts` and
   `render/layoutKit.ts` for `textIndependence.test.ts`.
 
-### G125 - the obstacle-category matrix is enumerated and filled, and **98 of its 105 cells rest on reading the source rather than on a test that could have failed**
+### G125 - the obstacle-category matrix is enumerated and filled, and **95 of its 105 cells rest on reading the source rather than on a test that could have failed**
 
 This is **G85**'s criterion met in form and only partly in substance, recorded
 plainly because the gap between those two is the whole risk.
@@ -6945,9 +6998,29 @@ plainly because the gap between those two is the whole risk.
 14 obstacle categories and all 105 unordered pairs including self-pairs;
 `tests/schgen/render/obstacle-matrix.test.ts` asserts there is no uncovered
 cell, no duplicate cell, exactly 105 of them, a non-blank reason wherever there
-is no check, and - added under this repository's "verify names against the thing
-itself" rule rather than as a criterion for this work - that every
-`lib/schgen/render/` path and every function name a `checkedBy` cites exists.
+is no check, that the partially-covered set is exactly 44 and that a recorded
+gap never stands without a check beside it (Controller ruling R11), and - added
+under this repository's "verify names against the thing itself" rule rather
+than as a criterion for this work - that **all 89** identifiers and **all 20**
+`.ts` names the cells cite either exist under `lib/schgen/render/` or carry an
+explicit classification.
+
+**ROUND 1 OF THIS ENTRY OVERSTATED THAT LAST CLAIM AND THE OVERSTATEMENT IS
+THE INTERESTING PART.** It said *"every function name a `checkedBy` cites
+exists"*. The guard's regex took an identifier only at the start of a clause,
+after `AND ` or after `→ `, so it checked **8** of the 89 names the cells cite
+and said nothing about roughly thirty others - `anchorChecks`, `onPinLine`,
+`segmentThroughBox`, `wireOverPins`, `unitOverlaps`, `glyphsClash`,
+`junctionPoints` among them. The sharpest miss: the
+`pin-number`/`pin-number` cell opens *"symbolTextOverlaps and
+placedSymbolTextOverlaps (…)"* and contributed **zero** names, because "and"
+is lowercase. The data was clean - an independent sweep over all 119
+identifiers the cells cite across all three fields found zero fabricated names
+- so this was guard strength, not fabrication. But **a guard whose reach is a
+fraction of its claimed reach is the look-like-it-passes-while-hiding-gaps
+shape**, which is the one failure this file exists to prevent. Fixed at round 2
+by making the extraction total over backticked identifiers rather than by
+narrowing the claim.
 
 **The figures.** 105 cells: **58** name a function this tree contains, **47**
 carry a reason and no check, **44** record in `asymmetric` what their check does
@@ -6986,9 +7059,18 @@ traced to lines of code, not to a running test. Only two clearance tests run in
 this repository (**G124**), and between them they exercise `checkWireSafety`,
 `connectedComponents` and `junctionPoints`. So:
 
-- **1 cell is tested as that pair**: `wire`/`wire`, by
+- **4 cells are tested as that pair.** `wire`/`wire`, by
   `tests/schgen/render/wire-safety.test.ts`'s collinear-overlap, foreign-T,
-  same-net-T and crossing-interiors cases.
+  same-net-T and crossing-interiors cases; and - **added at round 2** -
+  `pin-number`/`pin-number`, `pin-number`/`pin-name` and
+  `pin-name`/`pin-name`, by the hand-written
+  `tests/schgen/render/symbol-self-text.test.ts` that **G123**'s mechanism (b)
+  produced. Those three are genuinely tested as those pairs: the `NUMBERS`
+  fixture puts two pin numbers at a corner, `CORNER` runs a bottom pin's name
+  into a side pin's, and `W25` reproduces the stock `W25Q128JVS` drawing GND
+  0.13 mm under HOLD/RESET/IO3 - each against a symbol every other check
+  accepts, with the exact refusal string asserted, which **is** the pedals
+  evidence standard.
 - **4 cells have a running test over part of the pair**: `pin-line`/`wire` (pin
   END on wire, not the line), `wire`/`label-outline`, `wire`/`no-connect-marker`
   (the NC pin end, not the marker box), and `wire`/`junction` (whose reason is
@@ -6997,12 +7079,16 @@ this repository (**G124**), and between them they exercise `checkWireSafety`,
   `wire`/`pwr-flag-glyph`. `checkWireSafety` sees an `anchor` `ConnItem` and
   never learns whether it becomes a power symbol, a `PWR_FLAG` or a label, so
   *"refuses a label anchor on a foreign wire"* is the only test behind both.
-- **98 cells rest on reading alone.** No test in this repository places those two
-  categories as geometry and could have failed on them.
-- **0 cells are backed by a test that places the pair's two categories as real
-  geometry.** Not one. The pedals evidence standard §6 records - a new check run
-  against the historical commit that contained the real defect, with the exact
-  refusal message recorded - is met by nothing here.
+- **95 cells rest on reading alone.** No test in this repository places those two
+  categories as geometry and could have failed on them. **Round 1 of this entry
+  said 98, correctly for the tree as it then stood**; the three
+  `symbol-self-text` cells moved out of that set at round 2.
+- **3 cells are backed by a test that places the pair's two categories as real
+  geometry and asserts the exact refusal** - the three named above, and they
+  arrived at round 2. **Round 1 said zero, and that was true then.** The pedals
+  evidence standard §6 records - a new check run against output every other
+  check accepts, with the exact refusal message recorded - is met by those
+  three and by nothing else. 102 of 105 cells still fall short of it.
 
 - **Found** 2026-10-19, Task 5, Steps 5-6, by reading every ported check line by
   line to fill the cells.
@@ -7022,7 +7108,7 @@ this repository (**G124**), and between them they exercise `checkWireSafety`,
   deleted. Its criterion has two halves - *"the clearance system here is
   specified as a matrix of obstacle-category pairs enumerated up front"*, which
   is now done, and *"with each cell's test run against output that every other
-  check accepts"*, which is done for one cell out of 105. The matrix is a ledger
+  check accepts"*, which is done for three cells out of 105. The matrix is a ledger
   that makes the blind spots visible and arguable; it is not coverage, and
   describing it as coverage would be the exact failure
   `CLAUDE.md`'s **G52** worked example names.
@@ -7037,7 +7123,7 @@ this repository (**G124**), and between them they exercise `checkWireSafety`,
   the gap between "the ported tests" and "58 cells" is the measurement nobody
   has made. **Do not read the matrix passing as that measurement.**
 
-### G126 - **a power or PWR_FLAG glyph's BOX is an obstacle for nothing in this tree, while a label outline's box is an obstacle for five categories** - the same geometry, two rules
+### G126 - **a power or PWR_FLAG glyph's BOX is an obstacle only for TEXT, and is never a SUBJECT, while a label outline's box is both and is checked against five categories** - the same geometry, two rules
 
 Found by filling the obstacle matrix, and it is the kind of thing **G85** says
 the matrix exists to find: *category A had been modelled as an obstacle for
@@ -7052,11 +7138,17 @@ names, interior text, no-connect markers), `strokes` (interior graphics), and
 frame borders. Plus `bodyGlyphProblems`, because `glyphs()` mixes labels in.
 
 **What a GLYPH's box is tested against:** unit graphics, by
-`bodyGlyphProblems`; and other power glyphs, by `glyphGlyphProblems`. That is
-all. `textScene` puts the glyph in `bodies`, and `textProblems` iterates
-`texts` and crosses them with `bodies` - so a glyph is an obstacle FOR a text
-and a text is never an obstacle for a glyph's other neighbours. Wires and pin
-lines live in `segments`, and `bodies` is never crossed with `segments`.
+`bodyGlyphProblems`; other power glyphs, by `glyphGlyphProblems`; and **every
+drawn TEXT, by `textProblems`' `texts × bodies` loop**, because `textScene`
+pushes the glyph into `bodies`. That is all three, and the third is the one
+round 1 of this entry's HEADING wrongly denied - it said a glyph's box was *"an
+obstacle for nothing"*, which this entry's own `power-glyph`/`label-outline`
+and `power-glyph`/`field-text` cells refute by naming `textProblems`. **The
+accurate statement is that a glyph's box is an obstacle only for text, and is
+never a SUBJECT**: `textProblems` iterates `scene.texts` and crosses each text
+with the other five lists, so nothing ever asks what a glyph overlaps. Wires
+and pin lines live in `segments`, and `bodies` is never crossed with
+`segments`.
 
 **The consequences, each read off the source:**
 
@@ -7104,14 +7196,32 @@ lines live in `segments`, and `bodies` is never crossed with `segments`.
   against `segments` (wires and pin lines) and `pinTexts` by a named check, and
   a glyph against a label is decided by the same TOUCHING rule as a glyph
   against a glyph - each with a test that builds geometry every other check
-  accepts and asserts the exact refusal, per the pedals standard. **MECHANISM**,
-  untried and offered as advice only: the smallest change is in `textScene`,
-  adding each power glyph to `texts` as well as to `bodies` so the existing six
-  loops reach it; the risk is that a glyph then becomes an obstacle for itself
-  through the `texts × bodies` loop unless it carries an `owner`, and that its
-  own value text - which `powerValueSpot` deliberately places just beyond the
-  glyph - starts failing. The `glyphs()`-versus-`powerGlyphs` half is a
-  one-line change in `glyphGlyphProblems`' subject and is the easier half.
+  accepts and asserts the exact refusal, per the pedals standard. **The
+  criterion says nothing about WHERE that check lives, deliberately**, and
+  round 1's prose overstepped it by saying the fix "belongs in the pedals
+  source": that is one mechanism, not the criterion.
+
+  **MECHANISM (a), untried and the cheaper one: a HAND-WRITTEN module in this
+  repository.** Every input such a check needs is already a public export -
+  `TextScene` and `textScene()` (text-scene.ts), `GlyphScene`,
+  `glyphGlyphProblems` and `glyphsClash` (glyph-clearance.ts), `powerText(...)
+  .glyph` (power-text.ts), `labelBox` (text-boxes.ts), `boxesOverlap` and
+  `segmentHitsBox` (geometry.ts). Only `powerGlyphs` (three lines) and
+  `touching` (one line) are private, and both are trivially re-derivable.
+  `lib/schgen/render/stock-symbols.ts` is the standing precedent for a
+  hand-written module importing ported code, and it is legal under
+  `tools/schgen/port-manifest.json` with a `handWritten` entry. **Wiring such a
+  module into the pipeline's refusal path is a seam at Tasks 7-8**, which is
+  why Task 5 recorded this rather than building it.
+
+  **MECHANISM (b), untried: change the pedals source.** The smallest edit is in
+  `textScene`, adding each power glyph to `texts` as well as to `bodies` so the
+  existing six loops reach it; the risk is that a glyph then becomes an
+  obstacle for itself through the `texts × bodies` loop unless it carries an
+  `owner`, and that its own value text - which `powerValueSpot` deliberately
+  places just beyond the glyph - starts failing. The
+  `glyphs()`-versus-`powerGlyphs` half is a one-line change in
+  `glyphGlyphProblems`' subject and is the easier half of either mechanism.
 
 ### G127 - **`textProblems` never crosses `pinTexts` with `segments`, `bodies` or `strokes`**, so a wire, a body or a glyph over a pin number or an offset-0 pin name is refused by nothing - and the reason is the model's own text resolution
 
@@ -7134,8 +7244,11 @@ against itself**, and every adjacent-pin fanout the generator draws. That is why
 and it is the reason **4** cells of the matrix carry
 `obstacle-pairs-reasons.ts`'s `NUMBER_BOX_RESOLUTION` verbatim
 (`body`/`pin-number`, `pin-line`/`pin-number`, `pin-number`/`wire`,
-`pin-number`/`power-glyph`) with five more writing the same argument out
-longhand. `pin-number` ends up with **4 of its 14 cells** carrying a check, the
+`pin-number`/`power-glyph`) with **2** more writing the same argument out
+longhand (`pin-number`/`interior-graphic`,
+`pin-number`/`no-connect-marker`) - **6** in all, counted over the committed
+module rather than estimated, which round 1 of this entry did not do.
+`pin-number` ends up with **4 of its 14 cells** carrying a check, the
 third-thinnest row in the matrix (see **G125**'s table).
 
 **The residual, stated so it is not lost inside the reason:** a wire genuinely
@@ -7203,8 +7316,15 @@ differences are decisions.
    information for want of a fourth field. Documented on the field itself.
 2. **`meaninglessBecause` carries "no check is expressible at this model's
    resolution" as well as "the geometry makes it impossible or harmless".** The
-   brief asks the second; 15 cells can only honestly give the first (see
-   **G127**). The field name overstates those cells, and the alternative -
+   brief asks the second; **6** cells can only honestly give the first (see
+   **G127**) - `body`/`pin-number`, `pin-line`/`pin-number`,
+   `pin-number`/`wire` and `pin-number`/`power-glyph` carrying
+   `NUMBER_BOX_RESOLUTION` verbatim, plus `pin-number`/`interior-graphic` and
+   `pin-number`/`no-connect-marker` making the same argument longhand.
+   **Round 1 of this entry said 15 and the Task 5 report said 9, and both were
+   estimates rather than counts** - corrected at round 2 by filtering the
+   committed module, which is the measurement that should have been made the
+   first time. The field name overstates those 6 cells, and the alternative -
    inventing a fourth `openBecause` field - would have made `uncoveredPairs()`
    return them and the brief's first test fail, which is not a change an
    implementer may make to its own acceptance criteria.

@@ -107,7 +107,24 @@ export const FRAME_BORDER_PAIRS: readonly PairCoverage[] = [
       "in this tree checks that a sheet's frames are in fact the ones `packFrames` returned.",
   },
   { a: "frame-border", b: "no-connect-marker", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. \`drawnBoxes\` includes \`scene.pinTexts\`, which is where a no-connect marker's box is.`, asymmetric: null },
-  { a: "frame-border", b: "dnp-cross", checkedBy: null, meaninglessBecause: `${FRAME_DERIVED}. And the cross is derived from its own part's body, so it is inside that part's extent: ${CROSS_BOUND}.`, asymmetric: null },
+  {
+    a: "frame-border",
+    b: "dnp-cross",
+    checkedBy: null,
+    meaninglessBecause:
+      `${FRAME_DERIVED}. And the cross is derived from its own part's body, so it is inside that ` +
+      `part's extent: ${CROSS_BOUND}. ` +
+      "**THE TWO REASONS' ESCAPE CLAUSES MEET IN EXACTLY THE UNCOVERED CASE, AND THAT IS WHY THIS " +
+      "CELL IS THE THINNEST OF THE FRAME ROW.** `drawnBoxes` unions `scene.texts`, `scene.bodies`, " +
+      "`scene.pinTexts` and the segment bounding boxes - it does NOT union `scene.crosses`, so a " +
+      "frame-derived extent never sees a cross at all. The one case where a cross exceeds its " +
+      "part's own extent is the pin-free axis, where it reaches 0.3 of a pin length (0.762 mm) " +
+      "beyond the box the frame WAS derived from. So the single geometry each reason waves through " +
+      "is the same geometry, and neither reason covers it. Recorded in docs/known-gaps.md; the " +
+      "cost is bounded because the matrix test fails when `render/frames.ts` ports, forcing this " +
+      "cell to be re-read against real code.",
+    asymmetric: null,
+  },
 ]
 
 export const NO_CONNECT_MARKER_PAIRS: readonly PairCoverage[] = [

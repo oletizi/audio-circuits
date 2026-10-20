@@ -179,3 +179,29 @@ export function uncoveredPairs(): readonly string[] {
     return p.checkedBy === null && p.meaninglessBecause === null
   })
 }
+
+/**
+ * The pairs that have a check AND a recorded gap in it - a check that decides
+ * the pair for a POINT rather than a box, for a FOREIGN unit but not the same
+ * one, or for one SUBSET of a category.
+ *
+ * **THIS ACCESSOR EXISTS BECAUSE `uncoveredPairs()` ALONE MADE A SILENT DIFF
+ * POSSIBLE** (Controller ruling R11). Without it, `uncoveredPairs()` returns
+ * `[]` and every test passes while 44 of the 105 cells carry a recorded gap,
+ * so a later editor could re-grade that set - clearing an `asymmetric`, or
+ * adding one to a cell that had none - and nothing would notice. The count is
+ * pinned to a literal in `tests/schgen/render/obstacle-matrix.test.ts`, so a
+ * re-grading is a test failure naming the new number rather than a diff
+ * nobody reads.
+ *
+ * A pair here is NOT uncovered: `asymmetric` is only ever set beside a
+ * non-null `checkedBy`, and that implication is pinned by the same test so
+ * that this field cannot quietly become the fourth field the matrix
+ * deliberately does not have (see `PairCoverage.asymmetric` and
+ * `docs/known-gaps.md` **G128**).
+ */
+export function partiallyCoveredPairs(): readonly string[] {
+  return PAIR_COVERAGE.filter((p) => p.asymmetric !== null)
+    .map((p) => [p.a, p.b].sort().join("|"))
+    .sort()
+}

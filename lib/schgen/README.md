@@ -110,7 +110,7 @@ is resolved rather than hand-porting around the gap:
   the reason it needs none. They are a LEDGER, not a check — nothing in the
   pipeline imports them, and `tests/schgen/render/obstacle-matrix.test.ts` is
   the only reader. **Do not read the matrix passing as clearance coverage**:
-  98 of its 105 cells rest on reading the ported source rather than on a test
+  95 of its 105 cells rest on reading the ported source rather than on a test
   that could have failed, and **G125** says which. **G126** and **G127** are
   the two blind spots that filling it found; **G128** records where it
   deviates from the Task 5 brief's stated shape.
@@ -150,17 +150,26 @@ is resolved rather than hand-porting around the gap:
   fixture makes a `mkdtemp` directory and removes nothing, so
   `tests/stripboard/temp-scratch.test.ts` refuses the whole suite. Cleanup is
   content a `cuts` entry cannot add and a ported file may not be hand-edited,
-  so the entry came back out. `docs/known-gaps.md` **G123** carries the
-  evidence, the exact manifest JSON to re-add, and the reason the mechanism
-  touches the pedals repository rather than this one; **G122** is the
-  same cost in the shape the existing exemption table does cover.
-- **The clearance checks are PORTED and exercised by nothing** (Task 5).
-  Sixteen modules — `render/bodyClearance.ts`, `glyphClearance.ts`,
-  `textScene.ts`, `powerText.ts`, `unitPins.ts`, `unitText.ts`, `pinMarks.ts`,
-  `fieldPlacement.ts`, `drawnExtent.ts`, `symbolSelfText.ts`,
-  `layoutCheck.ts`, `blockTypes.ts`, `sheetTypes.ts` and the three already
-  here — typecheck and no test runs them. Every clearance test but
-  `connectivity.test.ts` and `wireSafety.test.ts` imports
+  so the entry came back out. **The module it tests is covered anyway, by a
+  HAND-WRITTEN `tests/schgen/render/symbol-self-text.test.ts`** that
+  transcribes every fixture and expectation from the pedals test and takes its
+  temp directory from `freshTempScratch`. What that costs is the one thing the
+  port would have given: `tests/schgen/port-fidelity.test.ts` does not
+  byte-check a hand-written file, so a drift in the pedals source's
+  expectations goes unnoticed. `docs/known-gaps.md` **G123** carries the
+  evidence, both mechanisms, the three that were ruled out and why, and the
+  residual; **G122** is the same cost in the shape the existing exemption table
+  does cover.
+- **The clearance checks are PORTED and almost none of them is exercised**
+  (Task 5). Thirteen newly ported modules, **twelve** of them run by no test:
+  `render/bodyClearance.ts`, `glyphClearance.ts`, `textScene.ts`,
+  `powerText.ts`, `unitPins.ts`, `unitText.ts`, `pinMarks.ts`,
+  `fieldPlacement.ts`, `drawnExtent.ts`, `layoutCheck.ts`, `blockTypes.ts` and
+  `sheetTypes.ts` typecheck and nothing runs them. The thirteenth,
+  `symbolSelfText.ts`, is covered by a hand-written test (**G123**).
+  `connectivity.ts` and `wire-safety.ts` ARE exercised, by the two ported tests
+  Task 5 landed — but **Task 3** ported those modules, not Task 5. Every
+  clearance test but `connectivity.test.ts` and `wireSafety.test.ts` imports
   `@/schgen/render/blocks`, which imports `@/schgen/render/templates/index`:
   **Task 7**. `docs/known-gaps.md` **G124** has the per-test table and the
   port's own refusals as evidence.
