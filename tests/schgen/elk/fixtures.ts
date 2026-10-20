@@ -54,8 +54,8 @@ export function fixtureAuthoring(
 }
 
 /** The subgraph of block `B` of a circuit holding exactly `parts`, rendered `auto`. */
-export function autoBlock(parts: PartSpec[]): BlockSubgraph {
-  return subgraphOf(blockCircuit(parts, { kind: "auto" }, { external: [] }), "B", symbols)
+export function autoBlock(parts: PartSpec[], external: readonly string[] = []): BlockSubgraph {
+  return subgraphOf(blockCircuit(parts, { kind: "auto" }, { external: [...external] }), "B", symbols)
 }
 
 /** Two resistors in series from `3V3` to `GND`: the smallest block a divider template is about. */
@@ -73,4 +73,22 @@ export function dividerSubgraph(): BlockSubgraph {
  */
 export function groundOfDegreeSix(): BlockSubgraph {
   return autoBlock([0, 1, 2, 3, 4].map((i) => res(`R_${i}`, "3V3", "GND")))
+}
+
+/**
+ * A block with a NON-RAIL boundary net at each end: `IN` declared `in` and `OUT` declared `out`.
+ *
+ * **IT EXISTS BECAUSE NOTHING ELSE REACHED THE INBOUND PATH.** Review round 2, Important 4: across
+ * all twelve declared blocks of the four parity circuits there are **38 boundary nodes, 34 of them
+ * unconstrained and 4 `LAST_SEPARATE`, and ZERO `FIRST_SEPARATE`** - and every other fixture here
+ * passes `external: []`, so no fixture produced a non-rail boundary node at all. Both
+ * `boundaryNodeOf`'s `FIRST_SEPARATE` arm and `edgesForNet`'s *"the boundary terminal goes FIRST"*
+ * branch - the one that decides whether an inbound net's edges run with the flow - had never
+ * executed anywhere.
+ *
+ * `blockCircuit`'s `external` option gives each named net a resistor in a PEER block, so the net
+ * leaves block `B` and `labelledNets` labels it, which is what puts it in `g.external`.
+ */
+export function inboundAndOutboundBlock(): BlockSubgraph {
+  return autoBlock([res("R_IN", "IN", "MID"), res("R_OUT", "MID", "OUT")], ["IN", "OUT"])
 }

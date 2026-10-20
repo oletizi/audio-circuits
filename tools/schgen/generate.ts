@@ -56,13 +56,15 @@ export interface GenerateEnv {
   /**
    * The circuit's schematic authoring declaration, for the ELK pre-pass - **Task 12's addition**.
    *
-   * **WHY IT IS HERE AND NOT ON `DesignSpec`.** `elkInputOf` needs two declared things to place a
-   * block's boundary nets: `portDirections` and `rails`, both read through
-   * `lib/schgen/authoring.ts`'s `negotiablePort`. `circuitSpecFrom` has already distilled the
+   * **WHY IT IS HERE AND NOT ON `DesignSpec`.** `circuitSpecFrom` has already distilled the
    * authoring file into a `CircuitSpec` by the time this function holds a `Circuit`, and the IR
-   * has **no slot for a port direction at all** - so it cannot be recovered from `d`. Putting it
-   * on `DesignSpec` would diverge `lib/schgen/design.ts` and every design fixture as well; this
-   * diverges one file. `docs/known-gaps.md` **G186** records the choice and its cost.
+   * has **no slot for a port DIRECTION at all** - so `elkInputOf`'s one genuinely missing input
+   * cannot be recovered from `d`. (Its other input, the rails, **is** in the IR, as
+   * `BlockSubgraph.railSpecs`; review round 2, Important 5, and `docs/known-gaps.md` **G186**.)
+   * Putting the field on `DesignSpec` would diverge `lib/schgen/design.ts` and every design
+   * fixture as well; this diverges one file. **G186** records the choice and its cost, and that
+   * the right long-term home for a port direction is the IR beside `rails` rather than either of
+   * these - which is what ruling **R29** has Task 13 doing for the orientation map.
    *
    * **`null` IS NOT A FALLBACK.** No design module in this repository declares an authoring file
    * yet, and every design ported from `digital-pedal-platform` renders its blocks `wired` or

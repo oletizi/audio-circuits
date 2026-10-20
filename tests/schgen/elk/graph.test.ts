@@ -13,7 +13,7 @@ import { elkInputOf, boundaryNodeId, pinPortId, unitNodeId, GRAPH_ROTATION } fro
 import { ELK_SIDE, ELK_SIDES, LAYER_CONSTRAINT_KEY, NODE_SEPARATION, LAYER_SEPARATION, PORT_SIDE_KEY, layerConstraintFor, wholeGridSteps } from "../../../lib/schgen/elk/options.ts"
 import { sideOfPin } from "../../../lib/schgen/rules/pin-sides.ts"
 import { placeBox } from "../../../lib/schgen/render/geometry.ts"
-import { autoBlock, dividerSubgraph, fixtureAuthoring, groundOfDegreeSix } from "./fixtures.ts"
+import { autoBlock, dividerSubgraph, fixtureAuthoring, groundOfDegreeSix, inboundAndOutboundBlock } from "./fixtures.ts"
 import { cap, res } from "../__fixtures__/circuits.ts"
 
 const authoring = fixtureAuthoring()
@@ -106,6 +106,41 @@ test("a non-rail inbound net is pinned to the first layer and an outbound one to
   expect(layerConstraintFor(["left", "right"])).toBeNull()
   expect(layerConstraintFor(["top"])).toBeNull()
   expect(layerConstraintFor(["bottom"])).toBeNull()
+})
+
+/**
+ * **THE INBOUND PATH, WHICH NOTHING REACHED UNTIL REVIEW ROUND 2** (Important 4). All twelve
+ * declared blocks produce 38 boundary nodes: 34 unconstrained, 4 `LAST_SEPARATE`, **0
+ * `FIRST_SEPARATE`** - and every other fixture passes `external: []`, so neither
+ * `boundaryNodeOf`'s `FIRST_SEPARATE` arm nor `edgesForNet`'s boundary-terminal-first branch had
+ * ever executed. These two tests drive the constraint and the edge ORDERING together, because the
+ * ordering is what makes an inbound net's edges run with the flow and it is decided by the
+ * constraint.
+ */
+test("an inbound net's boundary node is pinned to the first layer, an outbound one's to the last", () => {
+  const { graph } = elkInputOf(inboundAndOutboundBlock(), authoring)
+  const children = graph.children ?? []
+  const inbound = children.find((c) => c.id === boundaryNodeId("IN"))
+  const outbound = children.find((c) => c.id === boundaryNodeId("OUT"))
+  expect(inbound, "the fixture must produce a non-rail inbound boundary node").toBeDefined()
+  expect(outbound).toBeDefined()
+  expect(inbound?.layoutOptions?.[LAYER_CONSTRAINT_KEY]).toBe("FIRST_SEPARATE")
+  expect(outbound?.layoutOptions?.[LAYER_CONSTRAINT_KEY]).toBe("LAST_SEPARATE")
+})
+
+test("an inbound net's edges run FROM its boundary, an outbound net's run TO it", () => {
+  const { graph } = elkInputOf(inboundAndOutboundBlock(), authoring)
+  const edges = graph.edges ?? []
+  const inbound = edges.filter((e) => e.id.startsWith("IN:"))
+  const outbound = edges.filter((e) => e.id.startsWith("OUT:"))
+  expect(inbound.length).toBeGreaterThan(0)
+  expect(outbound.length).toBeGreaterThan(0)
+  // FIRST_SEPARATE: the boundary terminal is first in the chain, so edge 0 leaves it.
+  expect(inbound[0]?.sources).toEqual([boundaryNodeId("IN")])
+  expect(inbound.flatMap((e) => e.targets)).not.toContain(boundaryNodeId("IN"))
+  // Everything else: the boundary terminal is last, so the final edge arrives at it.
+  expect(outbound[outbound.length - 1]?.targets).toEqual([boundaryNodeId("OUT")])
+  expect(outbound.flatMap((e) => e.sources)).not.toContain(boundaryNodeId("OUT"))
 })
 
 test("both spacings are whole grid steps, which is what the plan asks of them", () => {

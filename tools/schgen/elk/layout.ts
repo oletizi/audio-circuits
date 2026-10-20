@@ -193,10 +193,18 @@ export function elkBackendFrom(outcomes: ReadonlyMap<BlockId, ElkOutcome>): Back
  *
  * **`authoring` is `null` for every design in this repository today**, and that is why the
  * parameter is nullable rather than because anything falls back. A design whose blocks are all
- * `wired` or `bus` needs none, and `elkInputOf` needs `portDirections` and `rails`, which the IR
- * has no slot for - `circuitSpecFrom` has already distilled the authoring file away by the time
- * `generate` holds a `Circuit`. A block that DOES select ELK with no declaration refuses, naming
- * the block and what to pass.
+ * `wired` or `bus` needs none.
+ *
+ * **WHAT `elkInputOf` ACTUALLY NEEDS FROM IT IS ONE THING, not two** - review round 2, Important 5.
+ * `negotiablePort` reads `portDirections` **and** `rails`, and **the rails half is already in the
+ * IR**: `BlockSubgraph.railSpecs` is built in `subgraphOf` from `Circuit.rails`, keyed by exactly
+ * the `g.rails` set the boundary nodes are taken from, and a `RailSpec` carries everything
+ * `negotiablePort` reads of it. **`portDirections` is the only input genuinely absent from the IR**
+ * - `circuitSpecFrom` distils it away and nothing in `ir/types.ts` has a slot for it. What passing
+ * `authoring.rails` buys instead is the cross-check: `elkInputOf` refuses when the IR calls a net a
+ * rail and the declaration handed to it does not, which catches a caller passing the wrong
+ * circuit's authoring file. A block that selects ELK with no declaration refuses, naming the block
+ * and what to pass.
  */
 export async function elkPrePass(
   c: Circuit,
@@ -212,12 +220,12 @@ export async function elkPrePass(
       throw new Error(
         `block ${block.id} has rendering="${block.rendering.kind}", every template reported ` +
           '"not-applicable", so it needs the ELK backend - and no schematic authoring declaration ' +
-          "was given to generate(). The ELK graph positions a boundary net from " +
-          "portDirections and rails (lib/schgen/authoring.ts's negotiablePort), and the IR has no " +
-          "slot for either. Pass the circuit's SchematicAuthoring as GenerateEnv.authoring. It is " +
-          "not defaulted, because a boundary net placed without a declared direction is G99's " +
-          "fifth measured invention - every port drew an inbound arrow and half of them pointed " +
-          "the wrong way.",
+          "was given to generate(). The ELK graph places a boundary net from its declared " +
+          "DIRECTION (lib/schgen/authoring.ts's negotiablePort), and the IR has no slot for one: " +
+          "circuitSpecFrom distils portDirections away and nothing in ir/types.ts carries it. " +
+          "Pass the circuit's SchematicAuthoring as GenerateEnv.authoring. It is not defaulted, " +
+          "because a boundary net placed without a declared direction is G99's fifth measured " +
+          "invention - every port drew an inbound arrow and half of them pointed the wrong way.",
       )
     }
     inputs.push(elkInputOf(g, authoring))

@@ -228,6 +228,15 @@ function edgesForNet(net: NetName, terminals: readonly string[]): ElkExtendedEdg
  *
  * `authoring` is read for two things and nothing else: `portDirections` and `rails`, both through
  * `negotiablePort`. Every other input is the subgraph's own.
+ *
+ * **AND ONE OF THOSE TWO IS IN THE SUBGRAPH TOO, which matters for where a port direction should
+ * eventually live** (review round 2, Important 5). `g.railSpecs` holds a `RailSpec` for exactly
+ * the nets in `g.rails`, built by `subgraphOf` from `Circuit.rails`, and it carries everything
+ * `negotiablePort` reads - so the rail half could be served from the subgraph alone.
+ * **`portDirections` is the only input the IR has no slot for.** What taking the rails from the
+ * declaration buys is the cross-check below: it refuses when the IR calls a net a rail and this
+ * declaration does not, which is a caller holding the wrong circuit's authoring file.
+ * `docs/known-gaps.md` **G186**.
  */
 export function elkInputOf(g: BlockSubgraph, authoring: SchematicAuthoring): ElkBlockInput {
   if (g.units.length === 0) {

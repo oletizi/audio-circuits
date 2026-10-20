@@ -553,6 +553,7 @@
     "tests/schgen/elk/fixtures.ts",
     "tests/schgen/elk/graph.test.ts",
     "tests/schgen/elk/serialize.test.ts",
-    "tests/schgen/elk/layout.elk.test.ts"
+    "tests/schgen/elk/layout.elk.test.ts",
+    "tests/schgen/elk/options.elk.test.ts"
   ]
 }
