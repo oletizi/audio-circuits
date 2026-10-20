@@ -6807,3 +6807,528 @@ writer did not run.
   identifier into an array that is drained into `rmSync` in the same file,
   which would cover this shape generically - at the price of a static
   analysis that is harder to read than the exemption it replaces.
+
+### G123 - `render/symbolSelfText.test.ts` is import-clean and still cannot land: its fixture leaks a mkdtemp directory outright, and **G122**'s per-file exemption does not fit that shape
+
+Task 5 ported `render/symbolSelfText.ts` and added its test to the manifest. The
+test is import-clean - `node:fs`/`os`/`path`, `createResolver` from the ported
+`render/library.ts`, and the module under test - and it builds its own symbol
+library in a temp directory rather than needing a fixture circuit, so unlike
+every other clearance test it does not wait on Task 7. It ran, and the FULL
+suite then failed on `tests/stripboard/temp-scratch.test.ts`.
+
+**It is a different and worse case than G122.** `render/library.test.ts` does
+remove its directories, through a `tempDirs` array the static regex cannot
+follow, which is why `REMOVES_VIA_OWN_LIST` could exempt it from ONE regex while
+the `still removes` test kept the teeth. `symbolSelfText.test.ts` removes
+nothing at all: `lib()` does `fs.mkdtempSync(path.join(os.tmpdir(),
+"symtext-"))` and returns the file path, and it is called twice (once per
+`describe`), so a run leaks two directories. There is no exemption shape that
+fits without weakening the guard, and the guard exists because on 2026-10-13
+`TMPDIR` held over 60,000 directories and the owner's disk filled.
+
+**Adding cleanup is content a `cuts` entry cannot supply** - `cuts` are
+deletion-only - so under Controller ruling R4 the entry was removed from the
+manifest and the file deleted from the tree in the same change that added it,
+rather than landing a known-red HEAD.
+
+- **Found** 2026-10-19, Task 5, Step 1, as a full-suite failure after porting
+  the test.
+- **Evidence** `SCHGEN_SOURCE=... bun test` with the file in the tree: **2660
+  pass / 1 fail across 261 files**, the failure being
+  `tests/stripboard/temp-scratch.test.ts`'s *"every mkdtemp site under tests/
+  either removes its own directory or registers it"* with
+  `[ "schgen/render/symbol-self-text.test.ts: \"dir\" is never removed" ]`
+  against an expected `[]`. Read directly, not relayed. After removing the
+  manifest entry and the file: `bun test tests/schgen tests/stripboard/temp-scratch.test.ts`
+  gives **155 pass / 0 fail across 20 files**.
+  `grep -n "mkdtempSync" $SCHGEN_SOURCE/render/symbolSelfText.test.ts` shows the
+  one site and `grep -c "rmSync" ` that file shows none.
+- **Verified** CONFIRMED - this writer ran both commands and read the full
+  output.
+- **Why it is open** it is not a defect in Task 5's work; it is G122's cost
+  arriving in a shape G122's remedy does not cover, and it costs this
+  repository a check it would otherwise have: `symbolTextOverlaps` and
+  `placedSymbolTextOverlaps` are ported and exercised by NOTHING, so the
+  `pin-number`/`pin-number`, `pin-number`/`pin-name` and `pin-name`/`pin-name`
+  cells of the obstacle matrix (`lib/schgen/render/obstacle-pairs-pin-text.ts`)
+  name a function no test runs.
+- **What would settle it** **CRITERION:** `tests/schgen/render/symbol-self-text.test.ts`
+  exists in the tree, is ported (not hand-written), runs to completion, and
+  leaves `TMPDIR` as it found it, with `tests/stripboard/temp-scratch.test.ts`
+  green and no new exemption entry. The exact manifest JSON to re-add, which is
+  all that is needed once the criterion can be met:
+  `{ "from": "render/symbolSelfText.test.ts", "to": "tests/schgen/render/symbol-self-text.test.ts" }`,
+  no `cuts`. **MECHANISM, untried, and it leaves this repository:** change
+  `digital-pedal-platform`'s `tools/schgen/render/symbolSelfText.test.ts` to
+  remove its directory (an `afterAll`, or the `tempDirs` shape
+  `render/library.test.ts` already uses and G122 already exempts) and re-run
+  `tools/schgen/port.ts`. `lib/schgen/README.md` sanctions exactly that - *"the
+  pedals source changes … and `port.ts` runs again"* - but it is an edit to
+  another repository and **nobody has asked the owner whether that is wanted**,
+  so it is a decision rather than a task. The alternative mechanisms are worse
+  and are recorded so nobody re-derives them: a new exemption category for a
+  genuine leak weakens the guard that followed a full disk, and hand-editing
+  the ported file breaks `port-fidelity.test.ts`.
+
+### G124 - measured: the Task 5 brief's four "pure" clearance tests are two, and every other one waits on Task 7 through `render/blocks.ts`, not through anything about clearance
+
+The brief's Step 1 says *"The pure ones - `wire-safety`, `connectivity`,
+`glyph-clearance`, `text-clearance` - run now."* Two of the four do.
+`glyphClearance.test.ts` and `textClearance.test.ts` do not, and neither does
+any other clearance test in that tree, because they all import
+`@/schgen/render/blocks` for `checkLayout`/`subgraphOf`/`realiseBlock` and
+`@/schgen/__fixtures__/circuits` for a fixture circuit. `render/blocks.ts`
+imports `@/schgen/render/templates/index` - the template set, Task 7 - and
+`@/schgen/render/pageRefs`.
+
+The full list of pedals clearance tests and what each waits on, read from their
+import lines:
+
+| test | runs now? | what it needs |
+|---|---|---|
+| `connectivity.test.ts` | **yes**, ported and green | `render/connectivity` only |
+| `wireSafety.test.ts` | **yes**, ported and green | `render/connectivity`, `render/wireSafety` |
+| `symbolSelfText.test.ts` | import-clean, blocked for another reason | see **G123** |
+| `bodyClearance.test.ts` | no | `render/blocks`, `__fixtures__/circuits` |
+| `glyphClearance.test.ts` | no | `render/blocks`, `render/sheetCheck`, `__fixtures__/circuits` |
+| `glyphGlyphClearance.test.ts` | no | the same three |
+| `textClearance.test.ts` | no | `render/blocks`, `__fixtures__/circuits` |
+| `unitText.test.ts` | no | `render/blocks`, `__fixtures__/circuits` |
+| `noConnectEnds.test.ts` | no | `render/blocks`, `__fixtures__/circuits` |
+| `textIndependence.test.ts` | no | `render/blocks`, `render/bus`, `__fixtures__/circuits` |
+
+**`__fixtures__/circuits.ts` is itself portable today** - its imports
+(`__fixtures__/fixtureLib`, `ir/author`, `ir/build`, `ir/types`) all resolve -
+so it is `render/blocks.ts` that is the gate, and `render/blocks.ts` is Task 7's.
+The consequence for Task 5 is that **not one of the sixteen modules it ported is
+exercised by a test in this repository**: `body-clearance.ts`,
+`glyph-clearance.ts`, `text-scene.ts`, `power-text.ts`, `unit-pins.ts`,
+`unit-text.ts`, `pin-marks.ts`, `field-placement.ts`, `drawn-extent.ts`,
+`symbol-self-text.ts`, `layout-check.ts`, `block-types.ts` and `sheet-types.ts`
+typecheck and nothing runs them. The two tests Task 5 DID land exercise
+`connectivity.ts` and `wire-safety.ts`, which **Task 3** ported.
+
+- **Found** 2026-10-19, Task 5, Step 1, while executing the brief verbatim.
+- **Evidence** the port refuses by name rather than guessing, which is a check
+  that could have failed and did. With `glyphClearance.test.ts` and
+  `textClearance.test.ts` provisionally in the manifest,
+  `SCHGEN_SOURCE=... bun run tools/schgen/port.ts` printed
+  `error: render/glyphClearance.test.ts: imports "@/schgen/__fixtures__/circuits", but tools/schgen/port-manifest.json has no entry for "__fixtures__/circuits.ts"`;
+  with that fixture added,
+  `error: render/glyphClearance.test.ts: imports "@/schgen/render/blocks", but ... no entry for "render/blocks.ts"`;
+  with `render/blocks.ts` added,
+  `error: render/blocks.ts: imports "@/schgen/render/pageRefs", but ... no entry for "render/pageRefs.ts"`.
+  The table's rows are `grep -n 'from "' ` over each file in
+  `$SCHGEN_SOURCE/render/`. The three provisional entries were removed and the
+  two files they wrote were deleted; `git status` is clean of them.
+- **Verified** CONFIRMED - this writer added the entries, read each refusal, and
+  removed them.
+- **Why it is open** it is not a defect; it is a sequencing fact the brief got
+  wrong, and it changes what "the clearance checks are ported" means. A later
+  reader who assumes Task 5 left the clearance system tested will be wrong by
+  ten modules.
+- **What would settle it** **CRITERION:** every ported clearance test in the
+  table above exists in the tree and runs to completion against ported template
+  output. **MECHANISM**, stated by the brief itself and untried here: Task 7
+  ports `render/templates/*` and `render/blocks.ts`, after which each row's
+  manifest entry is added with no `cuts` - plus `__fixtures__/circuits.ts` to
+  `tests/schgen/__fixtures__/circuits.ts`, `render/pageRefs.ts`,
+  `render/sheetCheck.ts` for the two glyph tests, and `render/bus.ts` and
+  `render/layoutKit.ts` for `textIndependence.test.ts`.
+
+### G125 - the obstacle-category matrix is enumerated and filled, and **98 of its 105 cells rest on reading the source rather than on a test that could have failed**
+
+This is **G85**'s criterion met in form and only partly in substance, recorded
+plainly because the gap between those two is the whole risk.
+`lib/schgen/render/obstacle-matrix.ts` and its six supporting modules enumerate
+14 obstacle categories and all 105 unordered pairs including self-pairs;
+`tests/schgen/render/obstacle-matrix.test.ts` asserts there is no uncovered
+cell, no duplicate cell, exactly 105 of them, a non-blank reason wherever there
+is no check, and - added under this repository's "verify names against the thing
+itself" rule rather than as a criterion for this work - that every
+`lib/schgen/render/` path and every function name a `checkedBy` cites exists.
+
+**The figures.** 105 cells: **58** name a function this tree contains, **47**
+carry a reason and no check, **44** record in `asymmetric` what their check does
+not reach, **0** are uncovered and **0** carry both a check and a reason.
+
+**Per category, how many of its 14 cells carry a check** - the most useful
+single table this work produced, because it says where the clearance system is
+thin:
+
+| category | cells with a check |
+|---|---|
+| `field-text` | 13 / 14 |
+| `label-outline` | 12 / 14 |
+| `body` | 10 / 14 |
+| `pin-name` | 10 / 14 |
+| `wire` | 10 / 14 |
+| `pin-line` | 9 / 14 |
+| `interior-graphic` | 9 / 14 |
+| `power-glyph` | 9 / 14 |
+| `pwr-flag-glyph` | 9 / 14 |
+| `no-connect-marker` | 6 / 14 |
+| `pin-number` | 4 / 14 |
+| `frame-border` | 3 / 14 |
+| `dnp-cross` | 1 / 14 |
+| `junction` | 0 / 14 |
+
+`field-text` and `label-outline` are well covered because they are members of
+`TextScene.texts`, which `textProblems` iterates and crosses with five other
+lists. Everything that is NOT in `texts` is covered only where some other check
+happens to reach it. **That is the single structural fact behind both G126 and
+G127**: `textProblems` makes `texts` the subject and everything else the
+obstacle, and nothing crosses two non-`texts` lists with each other.
+
+**The honest count, which is the point of this entry.** A `checkedBy` is a claim
+traced to lines of code, not to a running test. Only two clearance tests run in
+this repository (**G124**), and between them they exercise `checkWireSafety`,
+`connectedComponents` and `junctionPoints`. So:
+
+- **1 cell is tested as that pair**: `wire`/`wire`, by
+  `tests/schgen/render/wire-safety.test.ts`'s collinear-overlap, foreign-T,
+  same-net-T and crossing-interiors cases.
+- **4 cells have a running test over part of the pair**: `pin-line`/`wire` (pin
+  END on wire, not the line), `wire`/`label-outline`, `wire`/`no-connect-marker`
+  (the NC pin end, not the marker box), and `wire`/`junction` (whose reason is
+  `junctionPoints`, which `connectivity.test.ts` drives three ways).
+- **2 cells are tested only in a category-blind form**: `wire`/`power-glyph` and
+  `wire`/`pwr-flag-glyph`. `checkWireSafety` sees an `anchor` `ConnItem` and
+  never learns whether it becomes a power symbol, a `PWR_FLAG` or a label, so
+  *"refuses a label anchor on a foreign wire"* is the only test behind both.
+- **98 cells rest on reading alone.** No test in this repository places those two
+  categories as geometry and could have failed on them.
+- **0 cells are backed by a test that places the pair's two categories as real
+  geometry.** Not one. The pedals evidence standard §6 records - a new check run
+  against the historical commit that contained the real defect, with the exact
+  refusal message recorded - is met by nothing here.
+
+- **Found** 2026-10-19, Task 5, Steps 5-6, by reading every ported check line by
+  line to fill the cells.
+- **Evidence** the figures are `PAIR_COVERAGE.filter(...)` counts over the
+  committed module, reproducible in one line of `bun run`; the test file runs
+  **6 pass / 0 fail / 56 expect() calls**. That the first test can fail was
+  driven: adding a fifteenth category `"sheet-note-box"` to
+  `OBSTACLE_CATEGORIES` and leaving it unaccounted turns it red listing exactly
+  its fifteen pairs (`body|sheet-note-box` … `sheet-note-box|sheet-note-box`)
+  and turns the count test red with `Expected: 120 / Received: 105`; restored,
+  and `git diff` of that file is empty. That the name check can fail was driven
+  too: renaming one cell's `checkedBy` function to `glyphLabelProblems` turns it
+  red naming that identifier; restored.
+- **Verified** CONFIRMED - this writer read every ported check, filled every
+  cell, ran both perturbations and restored both.
+- **Why it is open** **G85** is NOT resolved by this work and should not be
+  deleted. Its criterion has two halves - *"the clearance system here is
+  specified as a matrix of obstacle-category pairs enumerated up front"*, which
+  is now done, and *"with each cell's test run against output that every other
+  check accepts"*, which is done for one cell out of 105. The matrix is a ledger
+  that makes the blind spots visible and arguable; it is not coverage, and
+  describing it as coverage would be the exact failure
+  `CLAUDE.md`'s **G52** worked example names.
+- **What would settle it** **CRITERION:** each cell naming a `checkedBy` has a
+  test that constructs the two categories as geometry which every OTHER check
+  accepts, and asserts the exact refusal that cell's function produces - the
+  pedals standard, applied cell by cell. **MECHANISM**, untried: Task 7's
+  template output plus `__fixtures__/circuits.ts` make such a test possible for
+  the 58 checked cells; the ported `glyphClearance.test.ts`,
+  `glyphGlyphClearance.test.ts`, `textClearance.test.ts`, `bodyClearance.test.ts`,
+  `unitText.test.ts` and `noConnectEnds.test.ts` already cover some of them, and
+  the gap between "the ported tests" and "58 cells" is the measurement nobody
+  has made. **Do not read the matrix passing as that measurement.**
+
+### G126 - **a power or PWR_FLAG glyph's BOX is an obstacle for nothing in this tree, while a label outline's box is an obstacle for five categories** - the same geometry, two rules
+
+Found by filling the obstacle matrix, and it is the kind of thing **G85** says
+the matrix exists to find: *category A had been modelled as an obstacle for
+category B but not for category C.* A power symbol and a global label are the
+same kind of thing - a box hung off an anchor point - and they are not held to
+the same rules.
+
+**What a LABEL's box is tested against**, because `textScene` pushes
+`labelBox(l)` into `TextScene.texts`: other texts, `segments` (wires AND pin
+lines), `bodies` (unit bodies and power glyphs), `pinTexts` (pin numbers, pin
+names, interior text, no-connect markers), `strokes` (interior graphics), and
+frame borders. Plus `bodyGlyphProblems`, because `glyphs()` mixes labels in.
+
+**What a GLYPH's box is tested against:** unit graphics, by
+`bodyGlyphProblems`; and other power glyphs, by `glyphGlyphProblems`. That is
+all. `textScene` puts the glyph in `bodies`, and `textProblems` iterates
+`texts` and crosses them with `bodies` - so a glyph is an obstacle FOR a text
+and a text is never an obstacle for a glyph's other neighbours. Wires and pin
+lines live in `segments`, and `bodies` is never crossed with `segments`.
+
+**The consequences, each read off the source:**
+
+- A foreign wire may run straight through a power glyph's box with no refusal.
+  Only the glyph's ANCHOR POINT is tested, by `anchorChecks`
+  (`lib/schgen/render/wire-safety.ts`), which refuses an anchor lying on a
+  foreign-net wire.
+- A power glyph's box may cover a neighbouring pin's LINE with no refusal. Only
+  the anchor point is tested, by `onPinLine`
+  (`lib/schgen/render/body-clearance.ts`). At KiCad's conventional 2.54 mm pin
+  pitch a glyph at one pin's tip is a realistic distance from the next pin's
+  line, which is what makes this worth acting on rather than noting.
+- A power glyph's box may cover a pin number, a pin name, a no-connect marker or
+  an interior graphic stroke with no refusal.
+- **And `glyphGlyphProblems`' stricter rule does not reach labels at all.** It
+  reads `scene.powers` only: two power glyphs of different nets are refused for
+  merely TOUCHING (`touching`, which admits edges and corners - the VSS/VSSA
+  corner-to-corner defect), while a glyph against a label is decided by
+  `textProblems`' `boxesOverlap`, which permits touching. `glyphs()` in the same
+  module mixes labels in, but it is used solely by `bodyGlyphProblems`.
+
+- **Found** 2026-10-19, Task 5, Step 5, while filling the
+  `power-glyph` and `pwr-flag-glyph` rows of the matrix.
+- **Evidence** read directly in the committed ported source:
+  `glyph-clearance.ts`'s `glyphGlyphProblems` takes
+  `Pick<GlyphScene, "symbols" | "powers">` and calls `powerGlyphs(scene)`, never
+  `glyphs(scene)`; `bodyGlyphProblems` compares `bodies(scene)` (built from
+  `graphicsBox(graphics)`) against `glyphs(scene)` and nothing else;
+  `text-scene.ts`'s `textProblems` has exactly six inner loops over `texts`,
+  `segments`, `bodies`, `pinTexts`, `strokes` and `frames`, all of them iterated
+  per `t` of `scene.texts`, so no two of those six lists are ever crossed with
+  each other. The matrix cells that record it are `pin-line`/`power-glyph`,
+  `wire`/`power-glyph`, `power-glyph`/`label-outline` and their `pwr-flag-glyph`
+  counterparts in `lib/schgen/render/obstacle-pairs-body.ts`,
+  `obstacle-pairs-graphic-wire.ts` and `obstacle-pairs-glyph.ts`.
+- **Verified** CONFIRMED by reading - **and NOT by a drawing.** No test in this
+  repository places a power glyph over a wire, so **nobody has seen this
+  happen**; it is a hole in the checks, read off the code, not an observed bad
+  schematic. Whether a template can actually produce one is unknown until Task 7.
+- **Why it is open** closing it means a new check, which is a cell being filled
+  rather than a category being discovered - exactly what the matrix is for - and
+  Task 5's own rule is that it may not author the acceptance criteria for what it
+  produces. It is recorded for the task that has them.
+- **What would settle it** **CRITERION:** a glyph's placed box is decided
+  against `segments` (wires and pin lines) and `pinTexts` by a named check, and
+  a glyph against a label is decided by the same TOUCHING rule as a glyph
+  against a glyph - each with a test that builds geometry every other check
+  accepts and asserts the exact refusal, per the pedals standard. **MECHANISM**,
+  untried and offered as advice only: the smallest change is in `textScene`,
+  adding each power glyph to `texts` as well as to `bodies` so the existing six
+  loops reach it; the risk is that a glyph then becomes an obstacle for itself
+  through the `texts × bodies` loop unless it carries an `owner`, and that its
+  own value text - which `powerValueSpot` deliberately places just beyond the
+  glyph - starts failing. The `glyphs()`-versus-`powerGlyphs` half is a
+  one-line change in `glyphGlyphProblems`' subject and is the easier half.
+
+### G127 - **`textProblems` never crosses `pinTexts` with `segments`, `bodies` or `strokes`**, so a wire, a body or a glyph over a pin number or an offset-0 pin name is refused by nothing - and the reason is the model's own text resolution
+
+The second blind spot the obstacle matrix found, and unlike **G126** it has a
+reason that may well be the right answer rather than an oversight. It is
+recorded because the reason is not obvious, and because the residual is real.
+
+`unitText` (`lib/schgen/render/unit-text.ts`) boxes a pin number as
+`along(tip, dx, dy, p.length, (3 * GRID) / 2)`. `GRID` is 1270 µm
+(`geometry.ts`), so the box reaches **1.905 mm either side of the pin line**,
+3.81 mm across, deliberately: its own comment says *"Numbers (and offset-0
+names) sit beside the pin line, either side: 1.5 grid steps covers both."* On
+KiCad's conventional 2.54 mm symbol pin pitch the half-gap between pins is
+1.27 mm, so **one pin's number box always reaches its neighbour's pin line**,
+and it always covers its own unit's body-side pin end.
+
+**So a `pinTexts`-versus-`segments` test would refuse every multi-pin symbol
+against itself**, and every adjacent-pin fanout the generator draws. That is why
+`textProblems` makes `pinTexts` an obstacle for `texts` and for nothing else,
+and it is the reason **4** cells of the matrix carry
+`obstacle-pairs-reasons.ts`'s `NUMBER_BOX_RESOLUTION` verbatim
+(`body`/`pin-number`, `pin-line`/`pin-number`, `pin-number`/`wire`,
+`pin-number`/`power-glyph`) with five more writing the same argument out
+longhand. `pin-number` ends up with **4 of its 14 cells** carrying a check, the
+third-thinnest row in the matrix (see **G125**'s table).
+
+**The residual, stated so it is not lost inside the reason:** a wire genuinely
+drawn across a pin number, a foreign body within 1.905 mm of a pin line under
+its numbers, a power glyph on a distant pin covering another pin's number, and a
+symbol whose own interior stroke crosses its own pin number are all accepted.
+The glyph case is the one the reason does NOT bound: the "it starts at the same
+pin tip" argument covers a glyph on that pin and its neighbour and says nothing
+about a glyph three pins away.
+
+An offset-0 pin NAME shares all of this, because `unitText` models it as a
+`decoration` beside the pin line rather than as a `nameBox`. An inside name
+(`namesOffset > 0`) does not: it lies within the body, so the clearance box and
+`graphicsBox` checks reach it indirectly.
+
+- **Found** 2026-10-19, Task 5, Step 5, while filling the `pin-number` and
+  `pin-name` rows.
+- **Evidence** read directly: `text-scene.ts`'s `textProblems` iterates
+  `scene.texts` and crosses each `t` with the other five lists, never crossing
+  two non-`texts` lists; `unit-text.ts`'s `decorations` push uses
+  `(3 * GRID) / 2` for `half` and `along()` applies `half` across the pin axis;
+  `geometry.ts` line 31 is `export const GRID: Um = 1270;`. The arithmetic
+  1905 > 1270 is the whole claim and is checkable. **The 2.54 mm pin pitch is
+  KiCad's convention, not a constant in this tree** - nothing here asserts it,
+  and that is a weakness of the reason.
+- **Verified** CONFIRMED by reading the three sources. **The claim that a test
+  would refuse every multi-pin symbol is a prediction, not a measurement** - no
+  such test was written and run, because the fixtures that would place a
+  multi-pin unit need Task 7 (**G124**).
+- **Why it is open** the reason may be correct and the residual may still be
+  worth a check at a finer text model; nobody has measured which. Task 5 may not
+  author the criteria for its own work, so the question is recorded rather than
+  answered.
+- **What would settle it** **CRITERION:** either a measurement showing that a
+  `pinTexts`-versus-`segments` test refuses output the generator legitimately
+  produces - which settles it as a reason - or a check that decides those pairs
+  at a text resolution that does not, with a test that builds geometry every
+  other check accepts. **MECHANISM**, untried: the prediction is cheap to test
+  the moment Task 7 lands, by adding the missing loops to a COPY of
+  `textProblems` in a test and counting the refusals over the template set;
+  if it refuses nothing legitimate the reason is wrong and the loops belong in
+  `textProblems`. Note that `textProblems` is a ported file, so the change
+  belongs in the pedals source (see **G123**'s mechanism for the same
+  constraint).
+
+### G128 - the obstacle matrix deviates from the brief's stated mechanism in five places, each deliberate
+
+**G85**'s mechanism is *"an up-front obstacle-category matrix"* and the Task 5
+brief gave it a shape: thirteen files to port, a `PairCoverage` with three
+fields, and three tests. The criterion was met; the shape was not, in five
+places. Recorded because **CLAUDE.md**'s **G52** worked example is exactly an
+implementer following a mechanism past the point it meets its criterion, and
+because a later reader comparing the brief with the tree needs to know which
+differences are decisions.
+
+1. **`asymmetric` is widened from direction-sensitivity to PARTIAL SUBJECTS.**
+   The brief's field is *"the pair is decided in one direction only"*. Almost
+   every geometry test in this tree is a symmetric box or segment overlap with
+   no direction to be sensitive to. What they do have is partial subjects: a
+   check that decides a pair for a POINT rather than for a box
+   (`onPinLine`, `anchorChecks`), for a FOREIGN unit but not for the same unit
+   (`overlapProblems`), or for one SUBSET of a category (`textProblems`'
+   `mark === true` clause against the DNP crosses). That is G85's failure one
+   level down, so 44 cells use the field for it rather than dropping the
+   information for want of a fourth field. Documented on the field itself.
+2. **`meaninglessBecause` carries "no check is expressible at this model's
+   resolution" as well as "the geometry makes it impossible or harmless".** The
+   brief asks the second; 15 cells can only honestly give the first (see
+   **G127**). The field name overstates those cells, and the alternative -
+   inventing a fourth `openBecause` field - would have made `uncoveredPairs()`
+   return them and the brief's first test fail, which is not a change an
+   implementer may make to its own acceptance criteria.
+3. **Sixteen modules were ported, not thirteen.** The brief's list does not
+   resolve: `render/blockTypes.ts`, `render/sheetTypes.ts` and
+   `render/pinMarks.ts` are in the import closure of the thirteen and
+   `tools/schgen/port.ts` refuses without them. `pin-marks.ts` in particular
+   carries `dnpCross` and the pin-polarity marks, so two of the brief's four
+   hard categories could not have been settled without it.
+4. **The matrix is seven files, not one.** 105 cells with a defensible sentence
+   each is roughly 1,200 lines, over `CLAUDE.md`'s 300-500 ceiling. It is
+   `obstacle-matrix.ts` (types, categories, assembly, `uncoveredPairs`), five
+   `obstacle-pairs-*.ts` row-family data modules, and
+   `obstacle-pairs-reasons.ts` for the reasons several cells share - written
+   once so that a reader who disagrees with one knows from one place which
+   cells fall with it.
+5. **Six tests, not three.** The brief's three are verbatim. Three more enforce
+   standing repository rules rather than criteria for this work: a non-empty
+   guard, because the brief's reason loop asserts nothing at all if every cell
+   has a check (*"no guard that cannot fail"*); a path check and a
+   function-name check, because *"verify names against the thing itself"* and
+   this repository has twice shipped a name from memory; and a check that
+   `frames.ts`, `sheet-check.ts`, `blocks.ts` and `templates/` are still absent
+   from `lib/schgen/render/`, so that the **25** cells whose reasons rest on
+   their absence fail loudly on the commit that ports them instead of standing
+   stale (11 through `FRAME_DERIVED`, 12 through `NO_FLAG_PRODUCER`, plus
+   `body`/`body` and `pin-line`/`pwr-flag-glyph`, counted over the committed
+   module rather than estimated).
+
+- **Found** 2026-10-19, Task 5, Steps 1-7, as each deviation was forced.
+- **Evidence** (1) and (2) are the field doc comments in
+  `lib/schgen/render/obstacle-matrix.ts`; (3) is `tools/schgen/port.ts`'s
+  refusal, which names the missing entry and could have failed differently;
+  (4) is `wc -l` over the seven files, none above 289; (5) is the test file,
+  and both of its new checks were driven red and restored (see **G125**).
+- **Verified** CONFIRMED - each deviation was made by this writer, for the
+  stated reason.
+- **Why it is open** it is not a defect. It is open because a reviewer comparing
+  the brief against the tree will find five differences and should find them
+  already explained, and because (1) and (2) are judgements someone may want to
+  overturn.
+- **What would settle it** **CRITERION:** a reviewer accepts the five
+  deviations, or names which to undo. (2) is the one worth a second opinion: if
+  a cell with no check and no defensible reason should be visible as such rather
+  than absorbed into `meaninglessBecause`, the field set needs a fourth member
+  and `uncoveredPairs()` needs to stay as the brief defined it, which are not
+  obviously compatible. **MECHANISM**, untried: a fourth field `openBecause`,
+  with the first test asserting `uncoveredPairs()` empty over
+  `checkedBy || meaninglessBecause || openBecause` and a separate test printing
+  the open count - which changes a test the brief fixed, so it needs the
+  authority Task 5 does not have.
+
+### G129 - five smaller residuals measured while reading the ported clearance checks, none of them a defect in Task 5's work
+
+Recorded together because each is a sentence a later reader cannot re-derive
+without reading the same files again, and because `CLAUDE.md` requires a
+measurement that found nothing wrong as much as it requires a defect. Each is
+cited by the obstacle matrix cell named beside it.
+
+1. **`sceneClearanceProblems` exempts an attached wire from a unit's body test
+   ENTIRELY.** `body-clearance.ts`:
+   `if (attached(u, w.a, w.net) || attached(u, w.b, w.net)) continue` - so a
+   wire that ends on one of a unit's pins, on that pin's net, may cross a
+   DIFFERENT pin's line or body region of that same unit with no refusal. Cell:
+   `body`/`wire`, and by reference the `interior-graphic`/`wire` and
+   `pin-name`/`wire` cells that lean on the same function.
+2. **Two pin lines of ONE unit are compared by nothing.** `overlapProblems`
+   compares units pairwise and `symbolTextOverlaps` is scoped to pin TEXT - its
+   doc comment is explicit. A library symbol whose two pins are drawn crossing,
+   or whose interior stroke crosses its own pin line, passes every check in this
+   tree. Cells: `pin-line`/`pin-line`, `pin-line`/`interior-graphic`,
+   `pin-number`/`interior-graphic`.
+3. **There are TWO models of the same pin text, and they disagree in shape.**
+   `unit-text.ts`'s `along()` boxes a pin number 1.905 mm across the pin line
+   over the pin's whole length; `symbol-self-text.ts`'s `run()` boxes it
+   `textWidth(number)` long, centred along the pin, `ACROSS = GRID + 254` =
+   1.524 mm to one side, and additionally strips `~{}`/`_{}`/`^{}` markup before
+   measuring, which `unit-text.ts` does not. The sheet checks use the first and
+   the symbol self-check uses the second. Nothing reconciles them, and nothing
+   says which is right. Cells: the `SELF_TEXT_ONLY` reason in
+   `obstacle-pairs-reasons.ts`, cited by three cells.
+4. **Nothing in this tree produces a `flag: true` `PowerSymbol`.**
+   `anchorsToSymbols` (`power-text.ts`) hard-codes `flag: false`, and the only
+   producer is `render/frames.ts`, not ported. So all 14 `pwr-flag-glyph` cells
+   are claims about a check's shape, exercised by nothing - including the
+   `flagOnItsRail` exemption, whose `a.flag !== b.flag` test means it does NOT
+   exempt two flags of one net from each other. Cell: every `pwr-flag-glyph`
+   row member, via `NO_FLAG_PRODUCER`.
+5. **A zero-length pin's no-connect marker straddles its body edge.**
+   `unit-text.ts` skips the pin line and the number for `p.length === 0` but
+   runs the no-connect loop unconditionally over `noConnectEnds`, so for such a
+   pin the marker's `GRID / 2` box sits on the body-side end rather than beyond
+   a pin, and could reach an inside pin name. **Reasoned from the code, not
+   measured**, and no symbol in this repository's vendored set was checked for a
+   zero-length pin. Cell: `pin-name`/`no-connect-marker`.
+
+Measured and found fine, so nobody re-checks it: **a junction can never
+coincide with a no-connect marker.** A junction needs three or more coincident
+wire and pin ends; `componentProblems` (`layout-check.ts`) refuses an NC pin
+that touches anything at all and `pinChecks` (`wire-safety.ts`) refuses any
+coincidence involving an NC pin. The two cannot share a point, and that rests
+on two refusals rather than on an argument.
+
+- **Found** 2026-10-19, Task 5, Step 5.
+- **Evidence** each item names the file and the construct, read directly in the
+  committed ported source; items 1, 2 and 4 are single expressions anyone can
+  grep for (`attached(u, w.a, w.net)`, `flag: false`, `a.flag !== b.flag`), and
+  item 3 is a comparison of `along()` in `unit-text.ts` with `run()` and
+  `ACROSS` in `symbol-self-text.ts`.
+- **Verified** CONFIRMED by reading, and by nothing else: **item 5 is reasoning
+  about an input shape nobody has looked for**, and items 1-4 have no test
+  behind them (see **G125**).
+- **Why it is open** each is a property of the ported source, carried here on
+  purpose. Fixing one means diverging from the pedals source, which needs a task
+  with a stated reason to diverge.
+- **What would settle it** **CRITERION:** for 1 and 2, a named check decides the
+  pair with a test that builds geometry every other check accepts; for 3, one
+  text model, or a recorded statement of why two are correct; for 4, a flag
+  reaches a `GlyphScene` in a test; for 5, a measurement over the vendored and
+  stock symbol sets of whether a zero-length visible pin exists at all - which
+  may settle it as impossible rather than as a defect. **MECHANISMS**, all
+  untried: 1 wants the body test run per-pin rather than per-unit with a
+  whole-unit exemption; 2 wants `symbolSelfText`'s self-check widened from text
+  to geometry; 3 wants `symbolSelfText` to import `unitText`'s boxing, which it
+  deliberately does not, so the reason it does not is the first thing to find
+  out; 4 arrives with `render/frames.ts` in Task 8; 5 is one `grep` over the
+  symbol libraries plus `tools/schgen/symbol-census.ts`.

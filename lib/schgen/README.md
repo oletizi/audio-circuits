@@ -98,8 +98,28 @@ is resolved rather than hand-porting around the gap:
   declaration — the interfaces plus a `createResolver` that threw, naming
   Task 4 — until that task replaced it wholesale with the pedals source and
   removed its `handWritten` entry in favour of a `files[]` one. The
-  hand-written files under `lib/schgen/` are now `strict.ts` and
-  `render/stock-symbols.ts`.
+  hand-written files under `lib/schgen/` are now `strict.ts`,
+  `render/stock-symbols.ts` and the seven `render/obstacle-*.ts` modules
+  (Task 5).
+
+  **`render/obstacle-matrix.ts` and its six `render/obstacle-pairs-*.ts`
+  siblings are hand-written and have no pedals source**, because the pedals
+  generator never did this. They are the obstacle-category matrix
+  `docs/known-gaps.md` **G85** asks for: 14 categories, all 105 unordered
+  pairs including self-pairs, each cell naming the function that decides it or
+  the reason it needs none. They are a LEDGER, not a check — nothing in the
+  pipeline imports them, and `tests/schgen/render/obstacle-matrix.test.ts` is
+  the only reader. **Do not read the matrix passing as clearance coverage**:
+  98 of its 105 cells rest on reading the ported source rather than on a test
+  that could have failed, and **G125** says which. **G126** and **G127** are
+  the two blind spots that filling it found; **G128** records where it
+  deviates from the Task 5 brief's stated shape.
+
+  Why seven files: 105 defensible sentences is about 1,200 lines, over
+  `CLAUDE.md`'s 300-500 ceiling. The data is split by row family and the
+  reasons several cells share live once in `render/obstacle-pairs-reasons.ts`.
+  Those modules take only `import type` from `obstacle-matrix.ts`, so the
+  dependency runs one way at run time.
 
   **`render/stock-symbols.ts` is hand-written and has no pedals source.**
   It builds the nickname-to-library-file map `createResolver` is handed,
@@ -124,6 +144,26 @@ is resolved rather than hand-porting around the gap:
   the manifest rather than landed red, and Task 4 re-added their entries
   (`build.test.ts`, `classify.test.ts` and `validate.test.ts` with the same
   pin-map `cuts` Task 2 derived) and landed them passing.
+
+  **A fifth file is deferred under R4 and for a different reason** —
+  `render/symbolSelfText.test.ts`. It is import-clean and runs, but its
+  fixture makes a `mkdtemp` directory and removes nothing, so
+  `tests/stripboard/temp-scratch.test.ts` refuses the whole suite. Cleanup is
+  content a `cuts` entry cannot add and a ported file may not be hand-edited,
+  so the entry came back out. `docs/known-gaps.md` **G123** carries the
+  evidence, the exact manifest JSON to re-add, and the reason the mechanism
+  touches the pedals repository rather than this one; **G122** is the
+  same cost in the shape the existing exemption table does cover.
+- **The clearance checks are PORTED and exercised by nothing** (Task 5).
+  Sixteen modules — `render/bodyClearance.ts`, `glyphClearance.ts`,
+  `textScene.ts`, `powerText.ts`, `unitPins.ts`, `unitText.ts`, `pinMarks.ts`,
+  `fieldPlacement.ts`, `drawnExtent.ts`, `symbolSelfText.ts`,
+  `layoutCheck.ts`, `blockTypes.ts`, `sheetTypes.ts` and the three already
+  here — typecheck and no test runs them. Every clearance test but
+  `connectivity.test.ts` and `wireSafety.test.ts` imports
+  `@/schgen/render/blocks`, which imports `@/schgen/render/templates/index`:
+  **Task 7**. `docs/known-gaps.md` **G124** has the per-test table and the
+  port's own refusals as evidence.
 - **`@/schgen/gates/oscar/*`.** Five files, deferred to Task 18 by the plan
   (the Pultec reference-graph comparison needs the complete pipeline first).
 - **`@/schgen/design`, `@/schgen/generate`, `@/schgen/generateFiles`,
