@@ -6350,3 +6350,128 @@ currently inert.
   entry resolves to an existing file before the prefix filter narrows the
   set - a separate assertion from the `lib/schgen/` completeness one, since
   the two answer different questions.
+
+### G115 - `render/geometry.test.ts` is a fourth file R4 applies to, not ported this task either - same `fixtureResolver()`-at-module-scope shape as the three `ir/` tests G113 names
+
+Task 3's brief lists `tests/schgen/render/geometry.test.ts` as one of three
+test files to port and run unedited. It does `const lib = fixtureResolver();`
+at module scope (line 7 of the pedals source), exactly the shape **G113**
+and **Controller ruling R4** already named as disqualifying: `fixtureResolver()`
+(ported to `tests/schgen/__fixtures__/fixture-lib.ts`) calls `createResolver`
+directly, and `lib/schgen/render/library.ts`'s `createResolver` is the Task-4
+forward-declaration stub that throws, naming Task 4, rather than implementing
+anything. The throw happens at module load, before any `it(...)` registers -
+the identical mechanism R4 moved `build.test.ts`, `classify.test.ts` and
+`validate.test.ts` for in Task 2, not a new kind of failure.
+
+**This is not "the rewrite is wrong"** - the brief's Step 2 says that failure
+mode means the rewrite is wrong, because render/geometry.test.ts's own
+assertions (rotate, pinEnd, pinSide, grid, boxes) depend on nothing this
+repository lacks. They do not: the module-scope `fixtureResolver()` call is
+what fails, and it fails for the same reason, and with the same stack trace
+shape, as the three files R4 already deferred. The brief was written before
+Task 2 (and R4) existed, so it could not have anticipated this.
+
+Following R4's own reasoning exactly - *"every later implementer runs the
+suite, sees [a] failure, and has to know [it is] expected, which is exactly
+the condition in which a[nother] failure hides"* - this task removed
+`render/geometry.test.ts`'s `port-manifest.json` entry and deleted it from
+the tree in the same change that added it, rather than landing it red or
+silently editing its assertions to route around `fixtureResolver()`. It is
+not ported yet, not skipped, and not abandoned.
+
+- **Found** 2026-10-19, Task 3, while executing the brief's Step 1-2
+  verbatim.
+- **Evidence** `SCHGEN_SOURCE=... bun test tests/schgen/render/` with the
+  file provisionally in the tree: **17 pass / 1 fail / 1 error**, the error
+  a thrown `Error` at `lib/schgen/render/library.ts:46` (`createResolver`),
+  stack trace bottoming out at `tests/schgen/render/geometry.test.ts:14:13`
+  (the module-scope `fixtureResolver()` call) - read directly, not relayed.
+  After removing the file and its manifest entry: `SCHGEN_SOURCE=... bun
+  test tests/schgen/render/` gives **17 pass / 0 fail**, and the full suite
+  gives **2544 pass / 0 fail across 249 files**.
+- **Verified** CONFIRMED - this writer ran both commands and read the full
+  output.
+- **Why it is open** it is not a defect in this task's work; it is the
+  stated, correct consequence of a dependency on Task 4's
+  `render/library.ts` that the plan's Task 3 brief did not anticipate when
+  it was written (before Task 2 and R4 existed).
+- **What would settle it** **CRITERION:** `tests/schgen/render/geometry.test.ts`
+  exists in the tree, is ported (not hand-written), and runs to completion -
+  pass or fail on its own assertions, never erroring at module load.
+  **MECHANISM:** Task 4 ports `digital-pedal-platform`'s real
+  `render/library.ts` (the same work G113 already requires for the three
+  `ir/` tests) and adds this file's `port-manifest.json` entry
+  (`{ "from": "render/geometry.test.ts", "to": "tests/schgen/render/geometry.test.ts" }`,
+  no `cuts`) back alongside them.
+
+### G116 - measured: `um()`'s refusal is the only thing standing between a fractional micrometre and a silently-wrong schematic, and the ported test catches its removal
+
+Task 3's brief Step 5 asks for `um()` to be perturbed from refusing a
+non-integer-micrometre millimetre value to rounding it instead, to confirm
+a test actually depends on the refusal rather than merely exercising the
+happy path. This is a measurement, not a defect: it found the test does
+exactly what it claims.
+
+**What was done.** `lib/schgen/render/geometry.ts`'s `um()` was changed from
+
+```ts
+export function um(mm: number): Um {
+  const v = Math.round(mm * 1000);
+  if (Math.abs(v - mm * 1000) > 1e-6) {
+    throw new Error(`${mm} mm is not a whole number of micrometres`);
+  }
+  return v;
+}
+```
+
+to a version that only rounds (the `if` block removed), then
+`SCHGEN_SOURCE=... bun test tests/schgen/render/` was run, then the file was
+restored verbatim (confirmed by `shasum -a 256` matching before and after:
+`f9cd69325e994ded75634db16a99beba18084e4936c824dec2bcb4ef30989782`), then
+the suite was re-run to confirm green again.
+
+**The ported test that catches it lives in `tests/schgen/render/sexpr-write.test.ts`**,
+not `geometry.test.ts` - `um` is defined in `geometry.ts` but the pedals
+source tests it from `sexprWrite.test.ts` (which imports `um` from
+`@/schgen/render/geometry`), and `geometry.test.ts` itself never calls `um`
+(it is also the file G115 defers to Task 4, so it could not have caught
+this regardless). A reader following the brief's "the geometry test goes
+red" literally, expecting `tests/schgen/render/geometry.test.ts` to be the
+one that fails, would be looking in the wrong file.
+
+- **Found** 2026-10-19, Task 3, Step 5 as directed by the brief.
+- **Evidence** the red run, read directly and in full:
+
+  ```
+  tests/schgen/render/sexpr-write.test.ts:
+  20 |   it("refuses sub-micrometre values instead of rounding them", () => {
+  21 |     expect(() => um(1.0005)).toThrow(/1.0005 mm is not a whole number of micrometres/);
+                                    ^
+  error: expect(received).toThrow(expected)
+
+  Expected pattern: /1.0005 mm is not a whole number of micrometres/
+
+  Received function did not throw
+  Received value: 1001
+
+        at <anonymous> (/Users/orion/work/audio-circuits-work/pultec-modularize/tests/schgen/render/sexpr-write.test.ts:21:30)
+  (fail) micrometre formatting > refuses sub-micrometre values instead of rounding them [0.91ms]
+
+   18 pass
+   1 fail
+   33 expect() calls
+  Ran 19 tests across 3 files. [14.00ms]
+  ```
+
+  and the restore, confirmed by `shasum -a 256 lib/schgen/render/geometry.ts`
+  giving `f9cd69325e994ded75634db16a99beba18084e4936c824dec2bcb4ef30989782`
+  both before the perturbation and after the restore.
+- **Verified** CONFIRMED - this writer ran the perturbation, the test, the
+  restore, and the shasum comparison directly.
+- **Why it is open** it is not a defect; it is a measurement that found the
+  guard sound, recorded per `CLAUDE.md`'s rule that a measurement -
+  including one that finds nothing wrong - belongs in this file, not only
+  in a session report.
+- **What would settle it** nothing further - this entry records the
+  measurement itself and is not waiting on a fix.

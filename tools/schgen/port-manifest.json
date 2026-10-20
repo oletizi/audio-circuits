@@ -69,11 +69,14 @@
     { "from": "ir/validateRule.ts", "to": "lib/schgen/ir/validate-rule.ts" },
     { "from": "__fixtures__/fixtureLib.ts", "to": "tests/schgen/__fixtures__/fixture-lib.ts" },
     { "from": "ir/author.test.ts", "to": "tests/schgen/ir/author.test.ts" },
-    { "from": "ir/order.test.ts", "to": "tests/schgen/ir/order.test.ts" }
+    { "from": "ir/order.test.ts", "to": "tests/schgen/ir/order.test.ts" },
+    { "from": "render/uuid.test.ts", "to": "tests/schgen/render/uuid.test.ts" },
+    { "from": "render/sexprWrite.test.ts", "to": "tests/schgen/render/sexpr-write.test.ts" }
   ],
   "handWritten": [
     "lib/schgen/strict.ts",
     "lib/schgen/render/library.ts",
-    "tests/schgen/ir/single-pin-net-guard.test.ts"
+    "tests/schgen/ir/single-pin-net-guard.test.ts",
+    "tests/schgen/render/uuid-stable.test.ts"
   ]
 }
