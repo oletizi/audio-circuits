@@ -455,12 +455,21 @@ test("a segment is split at a PIN of its own net lying mid-wire, which is what c
 })
 
 /**
- * **A FOREIGN-NET PIN MID-WIRE IS NOT SPLIT FOR, AND THAT IS THE DIFFERENCE BETWEEN A
- * REPRESENTATION CHANGE AND HIDING A DEFECT.**
+ * **A FOREIGN-NET PIN MID-WIRE IS NOT SPLIT FOR, AND ROUND 5's STATED REASON WAS FALSE.**
  *
- * `wireOverPins`' first refusal is *"wire (net X) passes over pin end (net Y)"* - a real clearance
- * defect. Dividing the wire around it would leave the geometry unchanged and the defect unreported,
- * which is exactly the repair obligation 5 forbids. So the splitter reads the net.
+ * Round 5 said splitting there *"would leave the geometry unchanged and the defect unreported"*.
+ * `[RAN]` **The defect is still reported** - `wireOverPins`' first clause tests `onSegment`, which
+ * includes endpoints, so a split reports it **twice**, once per half:
+ *
+ * ```
+ * UNSPLIT  : ["wire 0 (net A) passes over pin end R_B.1 (B) at (3.81, 0)"]
+ * SPLIT FOR: ["wire 0a …", "wire 0b …"]
+ * ```
+ *
+ * **The guard is still right, for a better reason: a split asserts a branch point on THIS net, and
+ * net A has no branch where net B happens to have a pin.** That is inventing topology, which is
+ * precisely what criterion (b) - *represent each net's branches explicitly* - must not be used to
+ * do. The deviation is recorded in `docs/known-gaps.md`.
  */
 test("a FOREIGN-net pin lying mid-wire is NOT split for", () => {
   const t = canonicalTopology(

@@ -112,16 +112,33 @@ export interface CanonicalisationCounts {
   readonly wiresAfter: number
 }
 
-/** `t`'s three removal counts against the wire list it was built from. One shape, three callers. */
-function countsOf(before: readonly Wire[], t: CanonicalTopology): CanonicalisationCounts {
+/**
+ * What canonicalisation did to the router's segment list, **summed over BOTH passes**.
+ *
+ * **ROUND 5 REPORTED ONLY THE PRE-SNAP PASS AND DERIVED `wiresAfter` ARITHMETICALLY, WHICH IS THE
+ * SILENT COUNT R33 SAYS MUST NOT EXIST.** The post-snap canonicalisation computes `contained` and
+ * `split` of its own and they were **discarded**, while a comment above the snap gate claimed they
+ * were *"reported in the counts rather than refused"*. They were not. And because `wiresAfter` was
+ * `before - merges + split` over the FIRST pass only, a post-snap split would have made the
+ * reported before→after disagree with the geometry actually drawn - **and the census's
+ * self-consistency assertion would still have passed**, because it checks that arithmetic against
+ * itself.
+ *
+ * So `wiresAfter` is now the **measured length of the final wire list**, not a derivation, and
+ * `adaptElkLayoutReported` asserts it equals the layout it returns. Today the two passes agree on
+ * all five drawn blocks (14/14/14/14/11), so this was latent rather than wrong - which is exactly
+ * when it is cheap to fix.
+ */
+function countsOf(before: readonly Wire[], passes: readonly CanonicalTopology[], after: number): CanonicalisationCounts {
+  const sum = (pick: (t: Extract<CanonicalTopology, { ok: true }>) => number): number =>
+    passes.reduce((n, t) => n + (t.ok ? pick(t) : 0), 0)
   return {
-    collapsed: t.collapsed,
-    zeroLength: t.zeroLength,
-    contained: t.contained,
-    split: t.split,
+    collapsed: sum((t) => t.collapsed),
+    zeroLength: sum((t) => t.zeroLength),
+    contained: sum((t) => t.contained),
+    split: sum((t) => t.split),
     wiresBefore: before.length,
-    // The three merges remove and the split adds, which is why the sign matters here.
-    wiresAfter: before.length - t.collapsed - t.zeroLength - t.contained + t.split,
+    wiresAfter: after,
   }
 }
 
@@ -169,10 +186,13 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
       // topology is independent of it and canonicalising it measures the backend exactly as it
       // does on every other block. The argument that earned `zeroLength` its place - do not throw
       // away a measurement you have already made - applies unchanged.
-      counts: countsOf(
-        built.wires,
-        canonicalTopology({ placements: built.placements, wires: built.wires, anchors: built.anchors }, placedPins(g, built.placements)),
-      ),
+      counts: (() => {
+        const only = canonicalTopology(
+          { placements: built.placements, wires: built.wires, anchors: built.anchors },
+          placedPins(g, built.placements),
+        )
+        return countsOf(built.wires, [only], only.ok ? only.wires.length : built.wires.length)
+      })(),
       pairs: [],
       problems: [],
     }
@@ -192,12 +212,14 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
       // The counts are known even here - deduplication and the containment collapse both run
       // before the ambiguity check - and the brief's Step 5 requires them per block, so a refusal
       // reports what it measured.
-      counts: countsOf(built.wires, pre),
+      counts: countsOf(built.wires, [pre], built.wires.length - pre.collapsed - pre.zeroLength - pre.contained),
       pairs: [],
       problems: [],
     }
   }
-  const counts = countsOf(built.wires, pre)
+  // Provisional: it carries the pre-snap pass only, for the arms that refuse before the second
+  // pass runs. The value returned on the success path below is recomputed over both.
+  const counts = countsOf(built.wires, [pre], pre.wires.length)
 
   const snapped = snapToGrid({ placements: built.placements, wires: pre.wires, anchors: built.anchors })
   if (!snapped.ok) {
@@ -248,6 +270,18 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
   // ruling R31 gives any other. It is reported in the counts rather than refused.
 
   const layout: BlockLayout = { placements: snapped.placements, wires: post.wires, anchors: snapped.anchors }
+  const bothPasses = countsOf(built.wires, [pre, post], layout.wires.length)
+  // **The count describes the geometry that is returned, and this is what says so.** Nothing else
+  // in the tree compares the two: the census asserts the counts' own arithmetic against itself,
+  // which a count derived from the wrong pass would satisfy.
+  if (bothPasses.wiresAfter !== layout.wires.length) {
+    throw new Error(
+      `block ${g.block.id}: the canonicalisation count reports ${bothPasses.wiresAfter} wires and ` +
+        `the layout being returned holds ${layout.wires.length}. The count must describe the ` +
+        "geometry that is drawn, not a derivation of it; this is a defect in countsOf or in the " +
+        "two canonicalisation passes, not a layout that cannot be drawn.",
+    )
+  }
 
   // Obligation 2, over the canonical topology of the geometry that will actually be drawn. The
   // comparison is against `junctionPoints` - the ported rule the sheet emitter uses - so the two
@@ -263,7 +297,7 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
           "geometry junctionPoints is cosmetic; for ELK geometry it is not, because a branch point " +
           `with no junction is a connection KiCad does not make (spec 1.4 obligation 2). ${junctionIssues.join("; ")}`,
       ),
-      counts,
+      counts: bothPasses,
       pairs: [],
       problems: [],
     }
@@ -272,7 +306,7 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
   // LAST, and the geometry is never touched after it: obligation 5's criterion.
   const problems = checkLayout(g, layout)
   const pairs = clearancePairs(problems)
-  if (problems.length === 0) return { result: { ok: true, layout }, counts, pairs, problems }
+  if (problems.length === 0) return { result: { ok: true, layout }, counts: bothPasses, pairs, problems }
 
   const reason =
     `block ${g.block.id}: the ELK route does not pass the clearance checks that grade template ` +
@@ -285,12 +319,12 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
     // contract is that a pair nobody can check is worse than a refusal that says so.
     return {
       result: invalidGeometry(ELK_RENDERER, connectionOf(g, problems.join("; ")), reason),
-      counts,
+      counts: bothPasses,
       pairs,
       problems,
     }
   }
-  return { result: clearanceViolation(g.block.id, first.constraint, first.obstacles, reason), counts, pairs, problems }
+  return { result: clearanceViolation(g.block.id, first.constraint, first.obstacles, reason), counts: bothPasses, pairs, problems }
 }
 
 /** Spec §5.3: *"an ELK backend implements the same `realise(g: BlockSubgraph): RealiseResult`."* */

@@ -128,5 +128,10 @@ test("the census runs end to end over a real circuit and accounts for every bloc
   // reach the clearance checks, their problems are classified, and an obstacle name the census
   // cannot read would now show up here.
   expect(census.unclassified).toEqual([])
+  // **AND THE TEETH ARE THIN, WHICH IS SAID RATHER THAN IMPLIED.** Reaching `checkLayout` is what
+  // lets a problem be classified at all, but `[RAN]` **exactly ONE pair is classified across the
+  // whole corpus** (`body`/`label-outline`, on one block - docs/known-gaps.md G191). So this
+  // assertion establishes that the classifier RAN, not that it was broadly exercised; the rule
+  // coverage above is what exercises it.
   expect(census.reachedClearance.length, "this case must reach the clearance checks for the line above to bite").toBeGreaterThan(0)
 }, 120_000)

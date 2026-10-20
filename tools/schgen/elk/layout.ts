@@ -34,6 +34,7 @@ import { backendRaised, describeMismatch } from "../../../lib/schgen/render/bloc
 import { selectRenderer, subgraphOf } from "../../../lib/schgen/render/blocks.ts"
 import { TEMPLATES } from "../../../lib/schgen/render/templates/index.ts"
 import { elkInputOf, type ElkBlockInput, type ElkOutcome } from "../../../lib/schgen/elk/graph.ts"
+import { adaptElkLayout } from "../../../lib/schgen/elk/adapt.ts"
 import type { ELK as ElkApi, ElkNode } from "elkjs/lib/elk-api.js"
 import type { Backend, Mismatch, RealiseResult, BlockSubgraph } from "../../../lib/schgen/render/block-types.ts"
 import type { BlockId, Circuit } from "../../../lib/schgen/ir/types.ts"
@@ -151,12 +152,17 @@ export async function layoutBlocks(inputs: readonly ElkBlockInput[]): Promise<Re
  *   it throws naming the block and the pre-pass rather than laying it out lazily, which would make
  *   `realise` asynchronous and defeat **D2**;
  * - **raised** - returned as the `backend-raised` mismatch it is, for `realiseBlock` to refuse on;
- * - **laid out** - and turning that `ElkNode` into a `BlockLayout` is **Task 13's**
- *   `adaptElkLayout` (`lib/schgen/elk/adapt.ts`), which does not exist yet. So this throws, naming
- *   the missing module. It is not approximated: a `BlockLayout` built here without the grid
- *   snapping, the canonical topology and the junction emission spec §1.4 requires would be a
- *   knowingly wrong schematic, which is the one thing **G84** says this generator must never
- *   produce.
+ * - **laid out** - handed to `adaptElkLayout` (`lib/schgen/elk/adapt.ts`), which is spec §1.4's
+ *   realization contract: the canonical topology, the grid snapping, the junction comparison and
+ *   the clearance check, in that order, with a classified `Mismatch` for each way it refuses.
+ *
+ * **THIS ARM THREW UNTIL TASK 13 ROUND 6, AND THE REFUSAL IT THREW WAS FALSE.** It said
+ * `adaptElkLayout` *"does not exist yet"* - and it had existed, exported, with exactly
+ * `Backend.realise`'s signature, since round 1. The consequence was not cosmetic: `generate` takes
+ * this backend, so **no ELK block could be emitted by the real pipeline at all**, and
+ * `tests/schgen/elk/layout.elk.test.ts` asserted the throw, so the suite held the false statement
+ * in place. That is `CLAUDE.md`'s *supersede means delete* and *refusals teach* both inverted - a
+ * refusal that names a missing module which is not missing teaches a reader something untrue.
  */
 export function elkBackendFrom(outcomes: ReadonlyMap<BlockId, ElkOutcome>): Backend {
   return {
@@ -173,14 +179,7 @@ export function elkBackendFrom(outcomes: ReadonlyMap<BlockId, ElkOutcome>): Back
         )
       }
       if (!outcome.ok) return { ok: false, mismatch: outcome.mismatch }
-      throw new Error(
-        `block ${g.block.id}: the ELK pre-pass laid this block out, and turning that ElkNode into a ` +
-          "BlockLayout is lib/schgen/elk/adapt.ts's adaptElkLayout (Task 13 of the M1 " +
-          "schematic-authoring plan), which is not written yet. It is not approximated here: the " +
-          "grid snapping, the canonical wire topology and the junction emission spec 1.4 requires " +
-          "are that module's five obligations, and a layout built without them is a schematic that " +
-          "exports a correct netlist while drawing wrong connections (docs/known-gaps.md G84).",
-      )
+      return adaptElkLayout(g, outcome)
     },
   }
 }

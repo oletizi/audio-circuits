@@ -229,8 +229,12 @@ function splitAtBranches(
       }
     }
     for (const pin of pins) {
-      // A FOREIGN-net pin inside a wire is not split for: it is `wireOverPins`' first refusal, a
-      // real clearance defect, and dividing the wire around it would hide it.
+      // **A FOREIGN-net pin inside a wire is not split for, and the reason is NOT that splitting
+      // would hide the defect.** Round 5 said it would; `[RAN]` it does not - `wireOverPins`' first
+      // clause uses `onSegment`, which includes endpoints, so a split reports the same defect
+      // TWICE (once per half) rather than not at all. The real reason is stronger: **a split
+      // asserts a branch point on THIS net, and net A has no branch where net B happens to have a
+      // pin.** That is inventing topology, which is the one thing criterion (b) must not do.
       if (pin.net !== net) continue
       if (strictlyInside(pin.at, t.wire.a, t.wire.b)) inside.set(pointKey(pin.at), pin.at)
     }

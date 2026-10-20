@@ -7432,8 +7432,10 @@ figure is thirteen newly ported modules, twelve of them unexercised.
 **ROUND 5 CORRECTION TO THE AMENDMENT BELOW: ON THE LANDED CONFIGURATION IT IS ONE CELL, NOT TWO.**
 Ruling **R33** split the segments whose mid-wire ends made `wire`/`wire` fire, so that pair no
 longer does. What fires on the shipped generator is **`body`/`label-outline` alone, on one block** -
-a cell this matrix already marks `checked`. **So 95 becomes 94, not 93**, and **13 of the 14
-categories never appear at all.** The re-validation §1.4 asks for is still not done, and the
+a cell this matrix already marks `checked`. **So 95 becomes 94, not 93**, and **12 of the 14
+categories never appear at all** - `body` and `label-outline` DO appear, through that one pair.
+(Rounds 4 and 5 both wrote *thirteen* here and then listed exactly twelve names; the error is
+corrected rather than left, because it is the caveat the owner gets quoted on.) The re-validation §1.4 asks for is still not done, and the
 paragraph below should be read with its own warning applied to itself: the round-4 figure was taken
 under a probe arm and did not survive landing.
 
@@ -13966,11 +13968,11 @@ because mechanism (2) left those ends in place, which is precisely why mechanism
   evidence: all five are *"no place for its Reference and Value"* field-placement refusals, on
   `ob-buffer`, `oc-power`, `pt-core`, `tp-leg-emitter-bypass` and `tp-stage`.
 
-**AND THE CAVEAT IS LOUDER THAN THE RESULT. 13 of the 14 obstacle categories never appear**:
+**AND THE CAVEAT IS LOUDER THAN THE RESULT. 12 of the 14 obstacle categories never appear**
+(`body` and `label-outline` are the two that do, through the single pair that fired):
 `pin-line`, `pin-number`, `pin-name`, `interior-graphic`, `wire`, `junction`, `power-glyph`,
-`pwr-flag-glyph`, `field-text`, `frame-border`, `no-connect-marker` and `dnp-cross` are untouched,
-and `body` and `label-outline` appear only through one pair on one block. **This is evidence for 1
-cell of 105.** §1.4 predicts *"a fresh blind spot"* from pointing a pairwise-accreted check set at a
+`pwr-flag-glyph`, `field-text`, `frame-border`, `no-connect-marker` and `dnp-cross` are untouched -
+**twelve names, which is what the count must say.** **This is evidence for 1 cell of 105.** §1.4 predicts *"a fresh blind spot"* from pointing a pairwise-accreted check set at a
 new geometry source, and **no uncovered and no reason-only cell fired** - but **an absent blind spot
 on geometry this narrow is not an absent blind spot.** Five blocks of one circuit family drew; the
 other three circuits produced nothing that reached the matrix at all.
@@ -14362,6 +14364,14 @@ connected** - the expensive direction, because it stops a drawing rather than sh
   agree and wire-safety is silent"* asserts all three agree on split geometry **and** that the
   UNSPLIT geometry is what wire-safety refuses, so neither half can pass by finding nothing.
 - **Verified** CONFIRMED - this writer ran every measurement and wrote and deleted the guard.
+- **WHAT NOW COVERS G194's CRITERION, which the deletion would otherwise have left unanswered.**
+  That entry asked that *"every point that carries a join in the pre-collapse topology still carries
+  one in the emitted schematic."* On the final geometry it is `checkLayout` that answers:
+  **`componentProblems`** reports any piece of a labelled net with no label or power symbol and any
+  short between two nets, and **`internalSplitProblems`** reports an internal net split into more
+  than one piece - both over `connectedComponents` of the layout being returned. `[RAN]` **All five
+  drawn blocks pass both with zero problems**, so the join survives the collapse-and-split in the
+  geometry that is actually emitted, checked by code rather than by argument.
 - **Why it is open** it is a property of a ported module that this repository relies on and does not
   intend to change, and it is a trap any future gate can fall into. It is not a defect to fix.
 - **What would settle it** **CRITERION: no check in the realization contract compares connectivity
@@ -14370,3 +14380,161 @@ connected** - the expensive direction, because it stops a drawing rather than sh
   obligation 2 compares junction SETS rather than partitions. **MECHANISM, untried:** state the
   limit on `connectedComponents` itself rather than in its module header, so a caller sees it at
   the call site - which is where the guard that had to be deleted was written.
+
+### G200 - the first evidence for spec §1.7's "one visual language": ELK draws a STAIRCASE where a template draws a column, and 47% of nets double back
+
+**Step 7 is done.** A block that **selects** the ELK backend and **draws** was emitted through the
+real `generate`, exported with `kicad-cli` and read. Until round 6 it could not be: `elkBackendFrom`
+threw a refusal naming `adaptElkLayout` as *"not written yet"* when it had existed since round 1,
+and a test pinned the throw (**G201**).
+
+**WHAT IS RIGHT, AND IT IS THE part R31 AND R33 ARE ABOUT.** **Junctions sit exactly at the branch
+points and nowhere else.** The emitted sheet carries three, each at a degree-3 node - the `3V3` rail
+where two resistors and the rail anchor meet, the collector node where two resistors and the
+transistor meet, and the ground node. **That is R33 working, visible in ink**: before it, those were
+a wire end lying on another wire's interior, which KiCad does not join.
+
+**WHAT IS WRONG IS THE SHAPE, AND IT IS MEASURED RATHER THAN DESCRIBED.** Over the five blocks that
+draw:
+
+| | measured |
+| --- | --- |
+| placements | 14 |
+| **distinct x-coordinates** | **14** |
+| **parts sharing an x-coordinate** | **0** |
+| nets | 19 |
+| segments | 67 (**3.53 per net**) |
+| total wire | 224.0 grid steps |
+| **nets whose route REVERSES direction on an axis** | **9 of 19 (47%)** |
+
+**THE STAIRCASE.** **No two parts share an x-coordinate - 14 of 14.** Every block is a diagonal
+cascade: a horizontal run, down through a part, a step right, down through the next. A
+template-drawn `divider` of the same topology is a **vertical column**, with its two parts on one x.
+**So an ELK block beside a template block does not look like the same hand drew it**, which is
+exactly what §1.7's *"one visual language"* requires and this is the first evidence anyone has had
+about it either way.
+
+**THE DOUBLING-BACK.** **47% of nets reverse direction on an axis**: the route leaves a pin, runs
+away from its destination, turns, and comes back past where it started. On the emitted sheet the
+transistor's base leaves leftward, rises, and runs right again *over the top of the part* to reach a
+resistor that sits above and to the right - **three segments where one would do.** It is systematic
+rather than incidental, and its shape points at port side assignment rather than at bad luck: the
+base pin is on the symbol's left, so the route must leave leftward whatever is to the right of it.
+
+**NEITHER IS THIS ADAPTER's TO FIX, AND NEITHER IS FIXED.** Both are properties of
+`lib/schgen/elk/graph.ts` - the per-net spanning-chain edge model (**G189**) and the port sides it
+fixes from the symbol's own geometry. `CLAUDE.md` says driving a measurable cost down is work to
+automate rather than hand back, and **that is why these are measured here**: segment count, total
+length and reversal rate are numbers a later task can drive down and be held to.
+
+**ONE CAVEAT THAT IS NOT AN ELK FINDING.** The emitted sheet is roughly 85% empty, with the block in
+the top-left corner. That is `packFrames` and its block exclusion, not the router.
+
+- **Found** 2026-10-20, Task 13 round 6, performing Step 7 for the first time.
+- **Evidence** the emitted `.kicad_sch`, its PDF and the rendered PNG, read directly; `generate`
+  reporting `ELK pre-pass outcomes: 1 ELKBLK=laid out` and the sheet carrying 17 wires, 3 junctions
+  and 4 symbols; and the table above, computed over the five parity blocks that draw. A check that
+  could have failed: the staircase measure compares placement count against distinct x-count, so a
+  single shared x would show as a non-zero difference, and the reversal measure reports the
+  denominator.
+- **Verified** CONFIRMED - this writer emitted, rendered and read the sheet and ran the
+  measurements. **The qualitative reading matches the round-5 review's independent description of
+  `tp-leg-upper`**, which reached a picture through a hand-written `Backend`.
+- **Why it is open** nothing here is fixed. The shape is a property of the edge model, and the edge
+  model's one proposed change does not run at the pinned version (**G189**).
+- **What would settle it** **CRITERION: an ELK-drawn block and a template-drawn block of the same
+  topology read as the same visual language - which for a series pair means a shared axis rather
+  than a diagonal - and no net's route reverses direction without a reason in the topology.**
+  **MECHANISMS, untried:** none is offered. The obvious ones are layout options, and
+  `lib/schgen/elk/options.ts` forbids choosing a value because a drawing improves; a reviewed source
+  for a value would have to come first. **The numbers above are the baseline any attempt is measured
+  against.**
+
+### G201 - `elkBackendFrom` refused every laid-out block by naming a module that had existed for five rounds, and a test held the statement in place
+
+`[CODE]` `tools/schgen/elk/layout.ts`'s `elkBackendFrom` threw, for the **laid out** outcome:
+
+> *"turning that ElkNode into a BlockLayout is lib/schgen/elk/adapt.ts's adaptElkLayout (Task 13 of
+> the M1 schematic-authoring plan), **which is not written yet**."*
+
+**It was written, exported and tested from Task 13 round 1, with exactly `Backend.realise`'s
+signature.** The consequence was not cosmetic: `tools/schgen/generate.ts` takes this backend, so
+**the real pipeline could not emit a single ELK block for five rounds** - which is why Step 7 went
+undone in the round where it first became possible, and why the round-5 review had to write its own
+three-line `Backend` to reach a picture.
+
+**AND THE SUITE HELD IT THERE.** `tests/schgen/elk/layout.elk.test.ts` asserted
+`toThrow(/adaptElkLayout/)`, so the one check that would have caught the stale refusal was asserting
+it. **That is `CLAUDE.md`'s *supersede means delete* and *refusals teach* inverted at once**: a
+refusal that names a missing module which is not missing teaches a reader something false, and a
+test that pins it makes the falsehood load-bearing.
+
+**FIXED IN ROUND 6**: one line in the backend, and the test now asserts the backend **adapts** -
+same verdict and same shape as calling `adaptElkLayout` directly, and explicitly `not.toThrow()`.
+
+- **Found** 2026-10-20 by the Task 13 round-5 review; fixed and recorded at round 6.
+- **Evidence** the throw read in the tree at `d7db171`; `generate.ts:159` taking that backend; the
+  replaced assertion; and `generate` now reporting `ELK pre-pass outcomes: 1 ELKBLK=laid out` and
+  writing a sheet (**G200**).
+- **Verified** CONFIRMED for the fix and the emission - this writer made both and read the output.
+  **RELAYED for the discovery.**
+- **Why it is open** it is recorded rather than open: the defect is fixed. It stays because the
+  SHAPE of it is worth a later reader's attention - **a stale refusal with a test pinning it is
+  invisible to a green suite**, and this repository has now produced one.
+- **What would settle it** **CRITERION: no refusal in the tree names a module, a task or a state
+  that no longer applies.** **MECHANISM, untried:** nothing automatic is proposed - a grep for *"not
+  written yet"* and *"does not exist"* across refusal strings would find this class, and is offered
+  as a one-off sweep rather than a guard, because a guard over prose is the shape **G125** warns
+  about.
+
+### G202 - two statements this task made about its own guards were false, and both were measured false rather than argued away
+
+Recorded together because they are one failure mode - **asserting what a guard does instead of
+running it** - and because the register's own rule is that a mechanism is advice from someone who
+had not yet tried it.
+
+**(1) THE FOREIGN-NET SPLIT: the stated reason was wrong and the guard is right for a better one.**
+Round 5 justified `splitAtBranches` skipping a foreign-net pin by saying a split *"would leave the
+geometry unchanged and the defect unreported."* `[RAN]`:
+
+```
+UNSPLIT  : ["wire 0 (net A) passes over pin end R_B.1 (B) at (3.81, 0)"]
+SPLIT FOR: ["wire 0a (net A) passes over pin end R_B.1 (B) at (3.81, 0)",
+            "wire 0b (net A) passes over pin end R_B.1 (B) at (3.81, 0)"]
+```
+
+**The defect is still reported - twice.** `wireOverPins`' first clause tests `onSegment`, which
+includes endpoints, not `strictlyInside`. **The real reason the guard is right is stronger than the
+one given**: a split asserts a branch point on THIS net, and net `A` has no branch where net `B`
+happens to have a pin. That is inventing topology, which is precisely what criterion (b) -
+*represent each net's branches explicitly* - must not be used to do. The comment in
+`lib/schgen/elk/junctions.ts`, the test's doc comment and the report all now say this.
+
+**(2) THE POST-SNAP COUNTS WERE COMPUTED AND DISCARDED, WHILE A COMMENT SAID THEY WERE REPORTED.**
+`adaptElkLayout` canonicalises twice - once before snapping and once after. Round 5 returned the
+**pre-snap** counts only, derived `wiresAfter` arithmetically from them, and carried a comment
+saying the post-snap `contained` and `split` were *"reported in the counts rather than refused."*
+They were dropped. Worse, because `wiresAfter` was a derivation rather than a measurement, **a
+post-snap split would have made the reported before→after disagree with the geometry actually drawn
+and the census's self-consistency assertion would still have passed**, since it checks that
+arithmetic against itself. That is exactly the silent count ruling **R33** says must not exist.
+
+**Fixed**: `countsOf` sums both passes, `wiresAfter` is the measured length of the final wire list,
+and `adaptElkLayout` **throws** if it disagrees with the layout it is about to return - a check
+nothing in the tree previously performed. Today the two passes agree on all five drawn blocks
+(14/14/14/14/11), so this was latent.
+
+- **Found** 2026-10-20 by the Task 13 round-5 review; both reproduced and fixed at round 6.
+- **Evidence** the two-arm `checkWireSafety` output above, run here; the `counts` construction read
+  in `adapt.ts` at `d7db171`; and the new equality throw, which is a check that can fail.
+- **Verified** CONFIRMED - this writer reproduced both and made both fixes. **RELAYED for the
+  discovery of each.**
+- **Why it is open** it is recorded rather than open; both are fixed. It stays because the shape is
+  worth the next writer's attention: **a justification written beside a guard is a claim, and this
+  task shipped two that were false while the guards themselves were right.** A wrong reason attached
+  to a right behaviour survives review more easily than a wrong behaviour, and it is what a later
+  reader will reason from.
+- **What would settle it** **CRITERION: every justification a guard carries is one the writer has
+  run, not one they expect.** **MECHANISM, untried:** state the measurement in the comment, as the
+  two above now do - a comment that quotes its own `[RAN]` output cannot drift from the code without
+  the output being wrong too.

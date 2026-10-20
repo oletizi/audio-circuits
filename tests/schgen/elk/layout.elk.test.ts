@@ -25,6 +25,7 @@ import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { ELK_BACKEND, elkBackendFrom, elkPrePass, layoutBlocks, raiseLines, type ElkOutcome } from "../../../tools/schgen/elk/layout.ts"
 import { elkInputOf } from "../../../lib/schgen/elk/graph.ts"
+import { adaptElkLayout } from "../../../lib/schgen/elk/adapt.ts"
 import { serializeElkInput } from "../../../lib/schgen/elk/serialize.ts"
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts"
 import { circuitSpecFrom } from "../../../lib/schgen/from-network.ts"
@@ -136,11 +137,36 @@ test("the backend forwards a raise to the caller and refuses a missing block by 
   expect(() => backend.realise(g)).toThrow(/holds no outcome for it/)
 })
 
-test("a block the pre-pass DID lay out refuses, naming Task 13's adapter", async () => {
-  const input = elkInputOf(dividerSubgraph())
+/**
+ * **THIS REPLACES A TEST THAT HELD A FALSE STATEMENT IN PLACE.**
+ *
+ * It asserted `toThrow(/adaptElkLayout/)` against a refusal that said the adapter *"is not written
+ * yet"* - and it had been written, exported and tested since Task 13 round 1. Because `generate`
+ * takes this backend, **the real pipeline could not emit a single ELK block**, and this assertion
+ * is what would have turned red if anyone had wired it. A test that pins a stale refusal is the
+ * `CLAUDE.md` failure of *supersede means delete* with a green tick on it.
+ *
+ * What it asserts now is that the backend **adapts**: a laid-out block comes back as a
+ * `RealiseResult` from `adaptElkLayout`, so the three outcomes are absent (throws), raised
+ * (forwarded) and laid out (adapted), with no fourth.
+ */
+test("a block the pre-pass DID lay out is ADAPTED, not refused", async () => {
+  const g = dividerSubgraph()
+  const input = elkInputOf(g)
   const backend = elkBackendFrom(await layoutBlocks([input]))
-  expect(() => backend.realise(dividerSubgraph())).toThrow(/adaptElkLayout/)
-})
+  const direct = adaptElkLayout(g, (await layoutBlocks([input])).get(input.blockId) ?? (() => { throw new Error("no outcome") })())
+  const viaBackend = backend.realise(g)
+  // The backend is exactly `adaptElkLayout` and adds nothing: same verdict, same shape.
+  expect(viaBackend.ok).toBe(direct.ok)
+  if (viaBackend.ok && direct.ok) {
+    expect(viaBackend.layout.wires.length).toBe(direct.layout.wires.length)
+    expect(viaBackend.layout.placements.length).toBe(direct.layout.placements.length)
+  } else if (!viaBackend.ok && !direct.ok) {
+    expect(viaBackend.mismatch.kind).toBe(direct.mismatch.kind)
+  }
+  // And it is NOT a throw, which is what this test replaces.
+  expect(() => backend.realise(g)).not.toThrow()
+}, 120_000)
 
 /**
  * **EVERY DECLARED BLOCK OF THE FOUR PARITY CIRCUITS, THROUGH THE REAL BACKEND.**
