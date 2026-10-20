@@ -28,6 +28,10 @@ import { branchJunctions, canonicalTopology, junctionProblems } from "../../../l
 import { junctionPoints } from "../../../lib/schgen/render/connectivity.ts"
 import { layoutItems } from "../../../lib/schgen/render/layout-check.ts"
 import { dividerSubgraph, groundOfDegreeSix, regulatorBlock } from "./fixtures.ts"
+import { PARITY_CASES, parityResolver } from "../../../tools/schgen/authoring-census.ts"
+import { buildCircuit } from "../../../lib/schgen/ir/build.ts"
+import { circuitSpecFrom } from "../../../lib/schgen/from-network.ts"
+import { subgraphOf } from "../../../lib/schgen/render/blocks.ts"
 import type { BlockSubgraph } from "../../../lib/schgen/render/block-types.ts"
 import type { PlacedPin } from "../../../lib/schgen/render/unit-pins.ts"
 import type { ElkOutcome } from "../../../lib/schgen/elk/graph.ts"
@@ -415,30 +419,40 @@ test("an obligation-3 refusal still reports what it canonicalised", async () => 
 }, 120_000)
 
 /**
- * **THE CANONICALISATION COUNTS DESCRIBE THE GEOMETRY THAT IS RETURNED, AND THIS IS WHAT HOLDS IT.**
+ * **THE CANONICALISATION COUNTS DESCRIBE THE GEOMETRY THAT IS RETURNED, OVER EVERY BLOCK THAT
+ * DRAWS.**
  *
- * Round 6's first attempt at this check compared `counts.wiresAfter` with `layout.wires.length` -
- * and `wiresAfter` **is** `layout.wires.length`, so it was `x !== x`. Perturbation 14 deleted the
- * whole block and **nothing went red**, which is how it was caught. What has teeth is the counts'
- * own arithmetic: `before` less the three merges plus the splits must equal the wire list that
- * comes back. A miscount in either canonicalisation pass fails it.
+ * **It runs over the four parity circuits and not over a fixture, and that is a measured choice.**
+ * Round 6 wrote this against `regulatorBlock`, whose counts are `collapsed: 1` and `split: 0` - so
+ * `[RAN]` a perturbation that made `countsOf` **drop the split entirely** left it green. A fixture
+ * whose split count is zero cannot hold a rule about splits. The blocks that draw on the real
+ * corpus carry `contained: 1` and `split: 1`, so the arithmetic has work to do in both directions,
+ * and the test asserts that at least one of them does before trusting the loop.
  */
-test("the canonicalisation counts add up to the layout that is returned", async () => {
-  // **`regulatorBlock` and not the divider**: measured, the grid-aligned divider's four counts are
-  // all ZERO, so its arithmetic is `7 - 0 + 0 = 7` and the test would pass without exercising
-  // anything. This block collapses a duplicate, so the sum has work to do.
-  const g = regulatorBlock(null)
-  const input = elkInputOf(g)
-  const outcome = (await layoutBlocks([input])).get(input.blockId)
-  if (outcome === undefined) throw new Error("layoutBlocks returned no outcome")
-  const report = adaptElkLayoutReported(g, outcome)
-  expect(report.counts).not.toBeNull()
-  expect(report.result.ok, "this fixture must DRAW, or there is no returned layout to add up to").toBe(true)
-  if (report.counts === null || !report.result.ok) return
-  const c = report.counts
-  expect(c.wiresBefore - c.collapsed - c.zeroLength - c.contained + c.split).toBe(report.result.layout.wires.length)
-  expect(c.wiresAfter).toBe(report.result.layout.wires.length)
-  // Anti-vacuity: this block really does exercise the arithmetic rather than passing with all zeros.
-  expect(c.wiresBefore).toBeGreaterThan(0)
-  expect(c.zeroLength + c.collapsed + c.contained + c.split).toBeGreaterThan(0)
-}, 120_000)
+test("the canonicalisation counts add up to the layout returned, on every block that draws", async () => {
+  const symbols = parityResolver()
+  let drawn = 0
+  let withSplit = 0
+  for (const c of PARITY_CASES) {
+    const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+    for (const declaration of c.authoring.blocks) {
+      const g = subgraphOf(circuit, declaration.id, symbols)
+      const input = elkInputOf(g)
+      const outcome = (await layoutBlocks([input])).get(input.blockId)
+      if (outcome === undefined) throw new Error(`no outcome for ${declaration.id}`)
+      const report = adaptElkLayoutReported(g, outcome)
+      if (!report.result.ok || report.counts === null) continue
+      drawn += 1
+      const n = report.counts
+      expect(
+        n.wiresBefore - n.collapsed - n.zeroLength - n.contained + n.split,
+        `${c.name}/${declaration.id}`,
+      ).toBe(report.result.layout.wires.length)
+      expect(n.wiresAfter, `${c.name}/${declaration.id}`).toBe(report.result.layout.wires.length)
+      if (n.split > 0) withSplit += 1
+    }
+  }
+  // A run over zero drawn blocks, or over blocks that never split, would assert nothing.
+  expect(drawn, "some block must draw for this to be about anything").toBeGreaterThan(0)
+  expect(withSplit, "some drawn block must have been SPLIT, or the split term is untested").toBeGreaterThan(0)
+}, 300_000)
